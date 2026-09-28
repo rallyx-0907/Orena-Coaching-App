@@ -124,6 +124,7 @@ jobs:
           node scripts/test_orena_screen_settings.mjs
           node scripts/test_orena_screen_sheets.mjs
           node scripts/test_orena_agent.mjs
+          node scripts/test_orena_surfaces.mjs
       - run: python -m pytest -q test_app.py tests
         env:
           PERSISTENCE_BACKEND: sqlite

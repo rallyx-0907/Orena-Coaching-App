@@ -8,12 +8,16 @@
    pause (`waiting` holds the seconds); `language_mismatch` hands the learner's message back unsent
    (`unsent`), for the panel to return to the composer once the learning language is re-read;
    `absent` means Orena is off (`absent`), which the panel answers by closing, not by an error. */
-import { CONTRACT_VERSION, EVENTS, CLIENT_EVENTS, fallbackOf, toContractLang, SELECTED_ITEM_TYPES } from './contract.js';
+import { CONTRACT_VERSION, EVENTS, CLIENT_EVENTS, fallbackOf, toContractLang, SELECTED_ITEM_TYPES, normalizeAddress } from './contract.js';
 
 const CONTEXT_FIELDS = ['surface', 'activity_type', 'lesson_id', 'content_id', 'attempt_id', 'take_ref', 'essay_id', 'client_evidence'];
 
-/* §3: omit what does not apply; locale in contract codes (zh → zh-CN); a word by { text, lang }. */
-export function buildRequest({ trigger = 'message', message = '', context = {}, languages = {}, sessionId = '', client = {}, notes = [] }) {
+/* §3: omit what does not apply; locale in contract codes (zh → zh-CN, matching every locale field,
+   not only `target`); a word by { text, lang }. `address` (§5.6) is the caller's own read of
+   agent/memory.js's stored address for the current support language - never derived from the
+   message, the selected item or anything else - normalised here and sent only when it is for this
+   very request's support language; no stored address, or one for a different language, is omitted. */
+export function buildRequest({ trigger = 'message', message = '', context = {}, languages = {}, sessionId = '', client = {}, notes = [], address = null }) {
   const request = { contract_version: CONTRACT_VERSION };
   if (sessionId) request.session_id = sessionId;
   request.trigger = trigger === 'open' ? 'open' : 'message';
@@ -25,10 +29,11 @@ export function buildRequest({ trigger = 'message', message = '', context = {}, 
   };
   const ctx = {};
   for (const field of CONTEXT_FIELDS) if (context[field] != null && context[field] !== '') ctx[field] = context[field];
+  const support = toContractLang(languages.support);
   const target = toContractLang(languages.target);
   ctx.locale = {
-    interface: String(languages.interface || 'en'),
-    support: String(languages.support || 'en'),
+    interface: toContractLang(languages.interface),
+    support,
     target,
     content: toContractLang(context.content_lang || languages.target),
   };
@@ -38,6 +43,10 @@ export function buildRequest({ trigger = 'message', message = '', context = {}, 
       item.type === 'word'
         ? { type: 'word', text: String(item.text).trim(), lang: toContractLang(item.lang || languages.target) }
         : { type: item.type, ...(item.id ? { id: String(item.id) } : {}), text: String(item.text).trim() };
+  }
+  if (address && address.lang === support) {
+    const normalized = normalizeAddress(address, support);
+    if (normalized) ctx.address = normalized;
   }
   request.context = ctx;
   if (notes.length) request.coach_notes = notes;

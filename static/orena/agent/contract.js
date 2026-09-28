@@ -1,10 +1,12 @@
-/* The agent contract as data (docs/project/AGENT_CONTRACT.md, contract_version 4, D-092, D-094, D-095).
+/* The agent contract as data (docs/project/AGENT_CONTRACT.md, contract_version 5, D-092, D-094,
+   D-095, D-096).
 
    Everything the new UI needs to speak the contract lives here: the version, the closed enums, the
-   action allowlist with its fixed risk, the surface / intent id space, and the locale mapping at
-   the UI's boundary. DOM-free, so scripts/test_orena_agent.mjs checks it against the contract text. */
+   action allowlist with its fixed risk, the surface / intent id space, the locale mapping at the
+   UI's boundary, and the §5.6 address rules (how Orena says "I" and "you"). DOM-free, so
+   scripts/test_orena_agent.mjs checks it against the contract text. */
 
-export const CONTRACT_VERSION = 4;
+export const CONTRACT_VERSION = 5;
 
 export const EVENTS = Object.freeze([
   'session', 'segment_delta', 'segment_end', 'tool_call', 'tool_result', 'evidence', 'action',
@@ -114,4 +116,97 @@ export const LIMITS = Object.freeze({
   actionLabel: 24,
   displayReason: 90,
   openingSegment: 240,
+  addressTerm: 24,
+  addressTermWords: 3,
+  surfacePurpose: 90,
 });
+
+/* §5.4/§5.6: coach note kinds, plus `address`, which follows its own rules below and is never sent
+   in coach_notes (§3, §5.6). */
+export const NOTE_KINDS = Object.freeze(['preference', 'goal', 'plan', 'address']);
+
+/* §5.6: which fields of `context.address` each support language takes, and that language's default
+   pair - the object an upsert carries to go back to the default. A support language with no row
+   here takes no address at all: its own ordinary first/second person, never the English pair. */
+export const ADDRESS_FIELDS = Object.freeze({
+  en: Object.freeze(['user']),
+  vi: Object.freeze(['self', 'user']),
+  'zh-CN': Object.freeze(['self', 'user', 'register']),
+});
+
+export const ADDRESS_DEFAULTS = Object.freeze({
+  en: Object.freeze({ user: 'you' }),
+  vi: Object.freeze({ self: 'mình', user: 'bạn' }),
+  'zh-CN': Object.freeze({ self: '我', user: '你', register: 'plain' }),
+});
+
+/* §5.6 term validator: 1-24 characters, at most 3 words, only Unicode letters with their combining
+   marks (\p{L}\p{M} - any script: Vietnamese with diacritics, Han characters) and single spaces
+   between words. No digits, punctuation, symbols, line breaks or markup. \p{M} on its own covers a
+   combining mark wherever Unicode places it, so an NFC term ("Nguyễn") and its NFD decomposition
+   read the same: both letters. A word starts with a letter: a combining mark alone is not one.
+   Length counts characters (code points), so a Han character outside the basic plane counts once.
+   The word count is LIMITS.addressTermWords (one word already matched, so `{0, addressTermWords - 1}`
+   more) - a single source, not a hardcoded duplicate of the same "3 words" rule. */
+const ADDRESS_TERM_RE = new RegExp(`^\\p{L}[\\p{L}\\p{M}]*(?: \\p{L}[\\p{L}\\p{M}]*){0,${LIMITS.addressTermWords - 1}}$`, 'u');
+
+export function isValidAddressTerm(value) {
+  if (typeof value !== 'string') return false;
+  const length = [...value].length;
+  if (length < 1 || length > LIMITS.addressTerm) return false;
+  return ADDRESS_TERM_RE.test(value);
+}
+
+/* The learner reads a term sentence-initial with a capital, stored otherwise as they gave it (§5.6
+   "Casing"). Uppercasing only the first code point is enough for every script this validator takes. */
+export function capitalizeTerm(term) {
+  const text = String(term || '');
+  return text ? text.charAt(0).toUpperCase() + text.slice(1) : text;
+}
+
+export function addressNoteId(lang) {
+  return `address-${lang}`;
+}
+
+/* Normalises a raw address object for a support language (contract code: vi | zh-CN | en, or a
+   language with no §5.6 row): drops any field that language ignores, resolves zh-CN's `register` to
+   plain|polite (always present, defaulting to plain), and returns null when a term is invalid or the
+   language takes no address at all - the caller falls back to that language's default for the whole
+   object (§5.6 "if anything is invalid, uses the default for the whole object"). A field the learner
+   left unset is simply absent from the result; only an explicitly invalid term nulls the object. */
+export function normalizeAddress(address, lang) {
+  const fields = ADDRESS_FIELDS[lang];
+  if (!fields || !address || typeof address !== 'object') return null;
+  const out = { lang };
+  for (const field of fields) {
+    if (field === 'register') {
+      out.register = address.register === 'polite' ? 'polite' : 'plain';
+      continue;
+    }
+    const value = address[field];
+    if (value == null) continue;
+    if (!isValidAddressTerm(value)) return null;
+    out[field] = value;
+  }
+  // §5.6: `lang` and at least one of self, user, register - an object that carries nothing is none.
+  return Object.keys(out).length > 1 ? out : null;
+}
+
+/* The fully-resolved pair for filling {self}/{user} template slots: every field the language takes,
+   the learner's own term where valid, that language's default otherwise (zh-CN's `user` falls back
+   to 你/您 by `register` when no name or form of address was given, never a hardcoded default that
+   ignores register). Null for a language with no §5.6 row - callers use that language's own copy
+   unaddressed. */
+export function resolveAddress(address, lang) {
+  const fields = ADDRESS_FIELDS[lang];
+  const defaults = ADDRESS_DEFAULTS[lang];
+  if (!fields || !defaults) return null;
+  const chosen = normalizeAddress(address, lang) || { lang };
+  if (lang === 'zh-CN') {
+    const register = chosen.register === 'polite' ? 'polite' : 'plain';
+    return { lang, self: chosen.self || defaults.self, user: chosen.user || (register === 'polite' ? '您' : '你'), register };
+  }
+  const out = { lang, user: chosen.user || defaults.user };
+  if (fields.includes('self')) out.self = chosen.self || defaults.self;
+  return out;
+}

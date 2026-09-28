@@ -11,8 +11,8 @@ approval, or production readiness.
 ## Current branch / lane
 
 `codex/work` is the baseline and the UI lane. `feature/orena-intelligence`
-builds Agent Intelligence (D-085) against `AGENT_CONTRACT.md` v4 (D-092, D-094,
-D-095), which is edited only on `codex/work`. Verified history:
+builds Agent Intelligence (D-085) against `AGENT_CONTRACT.md` v5 (D-092, D-094,
+D-095, D-096), which is edited only on `codex/work`. Verified history:
 `PROJECT_STATE.md` "New learner UI migration".
 
 New learner UI (D-088 - D-091): the pinned design is built at `/next` and
@@ -53,7 +53,7 @@ contract v4 (D-095); copy engine fixes; Wave A destinations (REVIEWABLE).
 ## PENDING
 
 Human: the 8011 sandbox migration (BLOCKED); the open design questions in
-`UI_BACKEND_GAPS.md` section N; approval of `AGENT_CONTRACT_V5_PROPOSAL.md`.
+`UI_BACKEND_GAPS.md` section N.
 
 ## BLOCKED
 
@@ -88,11 +88,12 @@ listening, dictation, speaking, writing and review workspaces, the Orena panel
 on the mock, onboarding); then the cutover (tombstones, legacy redirects, the
 old UI and its gates replaced).
 Once every §6.1 surface is built: a one-line purpose per surface id in the copy
-layer (interface, en/vi/zh), published for the intelligence lane - pending the
-human's approval of contract v5 part C.
+layer (interface, en/vi/zh), published for the intelligence lane (contract v5
+§6.2).
 
-Intelligence lane: D-085 against `AGENT_CONTRACT.md` v4; merging `codex/work`
-forward brings the version bump its contract test checks.
+Intelligence lane: D-085 against `AGENT_CONTRACT.md` v5; merging `codex/work`
+forward brings the version bump its contract test checks, the `address` note
+and `context.address`, the S5/S2 wording and `copy/surfaces.json` (§6.2).
 
 ## Grammar Lab (merged from `feature/grammar-lab`)
 

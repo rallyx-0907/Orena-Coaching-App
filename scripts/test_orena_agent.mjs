@@ -1,5 +1,5 @@
-/* Gate for the new UI's side of the Orena agent contract (docs/project/AGENT_CONTRACT.md, v4;
-   D-086, D-092, D-094, D-095). The contract data the UI uses is read against the contract's own
+/* Gate for the new UI's side of the Orena agent contract (docs/project/AGENT_CONTRACT.md, v5;
+   D-086, D-092, D-094, D-095, D-096). The contract data the UI uses is read against the contract's own
    text; the mock's canonical streams keep §4's ordering guarantees and §7's shapes; requests, the
    reducer, the dispatcher, device memory and the intent map behave as the contract says; the live
    transport answers every §2.1 status and §4.1 fallback as the contract's tables say. */
@@ -121,6 +121,12 @@ assert.equal(chooseStream({ message: 'x', context: {} }, 'SE'), 'SE');
 assert.equal(base.contract_version, contract.CONTRACT_VERSION);
 assert.equal(base.context.locale.target, 'zh-CN');
 assert.deepEqual(base.context.selected_item, { type: 'word', text: '是', lang: 'zh-CN' }, 'a word has no id, only text and lang');
+// §3: every locale field maps at its own boundary, not only `target` (D-079 acceptance case C -
+// interface Chinese, support English, target Chinese).
+const interfaceZh = buildRequest({ message: 'x', context: {}, languages: { interface: 'zh', support: 'en', target: 'zh' } });
+assert.equal(interfaceZh.context.locale.interface, 'zh-CN', 'context.locale.interface is mapped to contract codes like support/target/content');
+assert.equal(interfaceZh.context.locale.support, 'en');
+assert.equal(interfaceZh.context.locale.target, 'zh-CN');
 const open = buildRequest({ trigger: 'open', context: { surface: 'orena.home' }, languages: { interface: 'en', support: 'en', target: 'en' } });
 assert.equal(open.trigger, 'open');
 assert.ok(!('message' in open), 'an opening turn has no message');
@@ -288,4 +294,209 @@ gone.opening();
 gone.apply({ event: 'absent', data: {} });
 assert.deepEqual([gone.state().absent, gone.state().thinking, gone.state().messages.length], [true, false, 0], 'absent: no error, nothing to show');
 
-console.log(`Orena agent contract v${contract.CONTRACT_VERSION}: data equals the contract text, ${Object.keys(STREAMS).length} canonical streams keep §4/§7, requests, reducer, dispatcher, device memory and intents behave, every §2.1 status and §4.1 fallback is answered as written; live transport off: PASS`);
+// 11. §5.6 Address (D-096): the defaults table read from the contract text equals contract.js.
+const addressSection = section('### 5.6 Address', 'A support language without a row');
+const addressRows = addressSection.split('\n').filter((line) => /^\|\s*`[\w-]+`\s*\|/.test(line));
+const writtenAddressFields = {};
+const writtenAddressDefaults = {};
+for (const line of addressRows) {
+  const cells = line.split('|').map((c) => c.trim()).filter((c) => c.length);
+  const lang = cells[0].replace(/`/g, '');
+  if (lang === 'lang') continue; // the header row, which also happens to be backtick-quoted
+  const tokens = [...cells[1].matchAll(/`([^`]+)`/g)].map((m) => m[1]);
+  const fields = ['user'];
+  const defaults = { user: tokens[1] };
+  if (cells[2] !== 'ignored') {
+    fields.unshift('self');
+    defaults.self = tokens[0];
+  }
+  if (cells[4] !== 'ignored') {
+    fields.push('register');
+    defaults.register = tokens[2];
+  }
+  writtenAddressFields[lang] = fields.sort();
+  writtenAddressDefaults[lang] = defaults;
+}
+assert.deepEqual(Object.keys(writtenAddressFields).sort(), Object.keys(contract.ADDRESS_FIELDS).sort(), '§5.6 languages');
+for (const lang of Object.keys(writtenAddressFields)) {
+  assert.deepEqual([...contract.ADDRESS_FIELDS[lang]].sort(), writtenAddressFields[lang], `§5.6 ${lang}: fields taken (self/user/register)`);
+  assert.deepEqual({ ...contract.ADDRESS_DEFAULTS[lang] }, writtenAddressDefaults[lang], `§5.6 ${lang}: default pair`);
+}
+
+// Term validation (§5.6): 1-24 characters, at most 3 words, Unicode letters with their combining
+// marks only, single spaces between words; NFC and NFD read the same.
+for (const term of ['Nguyễn', 'anh Hương', '小明', 'Minh', 'chị', '王老师', 'Nguyễn'.normalize('NFD')]) {
+  assert.ok(contract.isValidAddressTerm(term), `isValidAddressTerm accepts "${term}"`);
+}
+for (const [label, term] of [
+  ['empty', ''],
+  ['25 letters', 'x'.repeat(25)],
+  ['four words', 'Minh Van Ha Two'],
+  ['a digit', 'Minh2'],
+  ['punctuation', 'Minh!'],
+  ['markup', '<b>'],
+  ['a line break', 'a\nb'],
+  ['two spaces between words', 'Minh  Van'],
+  ['a combining mark with no letter', String.fromCodePoint(0x301)],
+  ['a word that starts with a combining mark', `a ${String.fromCodePoint(0x301)}b`],
+  ['a zero-width joiner', `Min${String.fromCodePoint(0x200d)}h`],
+  ['an emoji', `Minh${String.fromCodePoint(0x1f600)}`],
+  ['a full-width digit', `Minh${String.fromCodePoint(0xff12)}`],
+  ['a right-to-left mark', `${String.fromCodePoint(0x200f)}Minh`],
+  ['a tab', 'Minh\tVan'],
+  ['a leading space', ' Minh'],
+  ['25 characters outside the basic plane', String.fromCodePoint(0x20000).repeat(25)],
+]) {
+  assert.ok(!contract.isValidAddressTerm(term), `isValidAddressTerm refuses ${label} ("${JSON.stringify(term)}")`);
+}
+// Characters, not UTF-16 units: 24 Han characters outside the basic plane are within the limit.
+assert.ok(contract.isValidAddressTerm(String.fromCodePoint(0x20000).repeat(24)), 'length counts characters');
+
+// normalizeAddress: drops what the language ignores, resolves zh-CN's register, nulls the whole
+// object on an invalid term.
+assert.deepEqual(contract.normalizeAddress({ self: 'chị', user: 'Minh', register: 'polite' }, 'en'), { lang: 'en', user: 'Minh' }, 'en drops self and register');
+assert.deepEqual(contract.normalizeAddress({ self: 'chị', user: 'em', register: 'polite' }, 'vi'), { lang: 'vi', self: 'chị', user: 'em' }, 'vi drops register');
+assert.deepEqual(contract.normalizeAddress({ user: '小明' }, 'zh-CN'), { lang: 'zh-CN', user: '小明', register: 'plain' }, 'zh-CN keeps register and defaults it to plain');
+assert.equal(contract.normalizeAddress({ self: 'Minh2', user: 'em' }, 'vi'), null, 'an invalid term makes the whole object null');
+assert.equal(contract.normalizeAddress(null, 'vi'), null, 'no address: null');
+assert.equal(contract.normalizeAddress({ self: 'chị' }, 'ko'), null, 'a support language with no §5.6 row takes no address');
+assert.equal(contract.normalizeAddress({}, 'vi'), null, 'an object that carries nothing is no address (§5.6: at least one field)');
+assert.equal(contract.normalizeAddress({ self: 'tớ' }, 'en'), null, 'en with only self (which en ignores) carries nothing');
+
+// The address note (§5.6): stored once per support language, replaced by an upsert, never decays
+// or expires, never in requestNotes(), removable, read back by language.
+const addrStore = new Map();
+const addrStorage = { getItem: (k) => addrStore.get(k) ?? null, setItem: (k, v) => addrStore.set(k, v) };
+const addrMemory = agentMemory(addrStorage, 'learner@example.com');
+const addrNow = Date.parse('2026-09-28T00:00:00Z');
+assert.equal(
+  addrMemory.applyUpdate({ op: 'upsert', note: { id: 'address-vi', kind: 'address', address: { self: 'chị', user: 'em', lang: 'vi' }, weight: 1, expires_at: null } }, addrNow),
+  true,
+  'a valid address note is stored',
+);
+assert.deepEqual(addrMemory.addressFor('vi', addrNow), { self: 'chị', user: 'em', lang: 'vi' }, 'read back for its support language');
+assert.equal(addrMemory.addressFor('en', addrNow), null, 'nothing stored for a different support language');
+addrMemory.applyUpdate({ op: 'upsert', note: { id: 'address-vi', kind: 'address', address: { self: 'mình', user: 'bạn', lang: 'vi' }, weight: 1, expires_at: null } }, addrNow);
+assert.equal(addrMemory.notes(addrNow).filter((n) => n.kind === 'address' && n.id === 'address-vi').length, 1, 'one per support language: an upsert replaces it');
+assert.deepEqual(addrMemory.addressFor('vi', addrNow), { self: 'mình', user: 'bạn', lang: 'vi' }, 'back to the default is an upsert carrying the default pair');
+assert.ok(addrMemory.notes(addrNow + 400 * 86400000).some((n) => n.id === 'address-vi'), 'the address note does not decay or expire');
+assert.ok(!addrMemory.requestNotes(addrNow).some((n) => n.kind === 'address'), 'the address note is never sent in coach_notes');
+assert.equal(
+  addrMemory.applyUpdate({ op: 'upsert', note: { id: 'address-en', kind: 'address', address: { user: 'Minh2', lang: 'en' }, weight: 1, expires_at: null } }, addrNow),
+  false,
+  'an invalid address note is refused',
+);
+addrMemory.removeNote('address-vi');
+assert.equal(addrMemory.addressFor('vi', addrNow), null, 'removable, like any note (§10 privacy exit)');
+
+// buildRequest carries context.address only for the current support language and only from memory.
+const withAddress = buildRequest({
+  message: 'x',
+  context: {},
+  languages: { interface: 'vi', support: 'vi', target: 'zh' },
+  address: { self: 'chị', user: 'em', lang: 'vi' },
+});
+assert.deepEqual(withAddress.context.address, { self: 'chị', user: 'em', lang: 'vi' }, 'context.address, normalised, in contract codes');
+const withoutAddress = buildRequest({ message: 'x', context: {}, languages: { interface: 'vi', support: 'vi', target: 'zh' } });
+assert.ok(!('address' in withoutAddress.context), 'no stored address: omitted');
+const wrongLanguage = buildRequest({
+  message: 'x',
+  context: {},
+  languages: { interface: 'vi', support: 'en', target: 'zh' },
+  address: { self: 'chị', user: 'em', lang: 'vi' },
+});
+assert.ok(!('address' in wrongLanguage.context), 'an address for a different support language is never carried');
+
+// S5's reply is an offer that names the button by its interface-language label, never a completion
+// claim, in vi/en/zh, with interface and support languages differing (§7, §10, D-096).
+const NO_COMPLETION = /đã lưu|đã thêm|mình lưu|\bsaved\b|added it|已(?:帮你|为你|替你)?(?:保存|收藏)/i;
+for (const [support, interfaceLang] of [
+  ['vi', 'en'],
+  ['en', 'zh'],
+  ['zh', 'vi'],
+]) {
+  const req = buildRequest({
+    message: 'save',
+    context: { selected_item: { type: 'word', text: '我', lang: 'zh' } },
+    languages: { interface: interfaceLang, support, target: 'zh' },
+  });
+  const events = STREAMS.S5(req).map(([event, data]) => ({ event, data }));
+  const segmentText = events.find((e) => e.event === 'segment_end').data.text;
+  const actionLabel = events.find((e) => e.event === 'action').data.label;
+  assert.ok(segmentText.includes(actionLabel), `S5 (support ${support}, interface ${interfaceLang}): names the button by its interface label`);
+  assert.ok(!NO_COMPLETION.test(segmentText), `S5 (support ${support}, interface ${interfaceLang}): an offer, not a completion claim`);
+}
+
+// No reply, error message or fixture names a provider (§10, D-096).
+const PROVIDER_NAMES = /\b(azure|google|gemini|openai|microsoft|ollama|anthropic)\b/i;
+const mockSource = fs.readFileSync('static/orena/agent/mock.js', 'utf8');
+assert.ok(!PROVIDER_NAMES.test(mockSource), 'mock.js names no provider');
+assert.ok(!PROVIDER_NAMES.test(text), 'AGENT_CONTRACT.md names no provider');
+
+// The §12 S5 and S2 fixture texts are the reworded ones - byte for byte, from the mock itself.
+const s5vi = STREAMS.S5(
+  buildRequest({
+    message: 'Lưu từ này.',
+    context: { selected_item: { type: 'word', text: '我', lang: 'zh' } },
+    languages: { interface: 'vi', support: 'vi', target: 'zh' },
+  }),
+).map(([event, data]) => ({ event, data }));
+assert.equal(s5vi.find((e) => e.event === 'segment_end').data.text, 'Bấm Lưu từ để thêm 我 vào từ vựng của bạn.', '§12 S5 fixture text, byte for byte');
+const s2vi = STREAMS.S2(
+  buildRequest({
+    message: 'Tại sao tôi sai từ này?',
+    context: { selected_item: { type: 'word', id: 'w0', text: '是', lang: 'zh' }, content_id: 'media:1', attempt_id: 'r1' },
+    languages: { interface: 'vi', support: 'vi', target: 'zh' },
+  }),
+).map(([event, data]) => ({ event, data }));
+assert.equal(
+  s2vi.find((e) => e.event === 'segment_end').data.text,
+  'Âm 是 bị đánh dấu là phát âm sai, điểm 6/100. Nghe mẫu rồi thử lại nhé:',
+  '§5.1/§12 S2 fixture text, byte for byte, no provider name',
+);
+
+// S14 (sets the address, already speaks in it) and S15 (identity, addressed by rule) keep §4's
+// guarantees; chooseStream picks them from the message in vi/en/zh.
+const s14Events = STREAMS.S14({ ...base, context: { ...base.context, locale: { ...base.context.locale, support: 'vi' } } }).map(([event, data]) => ({ event, data }));
+assert.equal(s14Events[0].event, 'session', 'S14: session first');
+assert.equal(s14Events.at(-1).event, 'done', 'S14: done last');
+const s14Upsert = s14Events.find((e) => e.event === 'memory_update');
+assert.equal(s14Upsert.data.op, 'upsert');
+assert.equal(s14Upsert.data.note.kind, 'address');
+assert.equal(s14Upsert.data.note.id, 'address-vi');
+assert.deepEqual(s14Upsert.data.note.address, { self: 'chị', user: 'em', lang: 'vi' });
+assert.equal(s14Upsert.data.note.expires_at, null, 'no expiry (§5.6)');
+assert.equal(s14Upsert.data.note.text, 'Xưng hô: Orena xưng "chị", gọi người học là "em".', '§5.6: text is the line the learner reads in preferences.agent_memory, matching the contract\'s own example');
+assert.equal(s14Events.find((e) => e.event === 'segment_end').data.text, 'Được rồi, từ giờ chị gọi em là em nhé.', '§12 S14 fixture text - it already uses the pair it just set');
+
+const s15Request = buildRequest({
+  message: 'Bạn là ai?',
+  context: { surface: 'home' },
+  languages: { interface: 'vi', support: 'vi', target: 'vi' },
+  address: { self: 'chị', user: 'em', lang: 'vi' },
+});
+const s15Events = STREAMS.S15(s15Request).map(([event, data]) => ({ event, data }));
+assert.equal(s15Events[0].event, 'session', 'S15: session first');
+assert.equal(s15Events.at(-1).event, 'done', 'S15: done last');
+assert.ok(!s15Events.some((e) => e.event === 'memory_update'), 'S15 sets nothing');
+const s15Text = s15Events.find((e) => e.event === 'segment_end').data.text;
+assert.ok(s15Text.startsWith('Chị là Orena'), '§12 S15: fixed copy, in the address the request carries');
+assert.ok(s15Text.includes('em'), "§12 S15: the request's own address is applied, not a default");
+
+// §5.6 "Applied only when address.lang equals context.locale.support": the mock stands in for the
+// server side too (§11), so a hand-built request whose context.address is for a different language
+// than context.locale.support falls back to that language's default rather than being misapplied.
+const mismatchedAddressRequest = {
+  context: { locale: { interface: 'vi', support: 'vi', target: 'vi' }, address: { self: 'chị', user: 'em', lang: 'zh-CN' } },
+};
+const mismatchedText = STREAMS.S15(mismatchedAddressRequest).find(([event]) => event === 'segment_end')[1].text;
+assert.equal(mismatchedText, 'Mình là Orena, trợ lý học tập AI của bạn.', 'a context.address for the wrong support language is ignored, not applied (§5.6)');
+
+assert.equal(chooseStream({ message: 'Bạn là ai?', context: {} }), 'S15', 'chooseStream: vi identity question');
+assert.equal(chooseStream({ message: 'Who are you?', context: {} }), 'S15', 'chooseStream: en identity question');
+assert.equal(chooseStream({ message: '你是谁？', context: {} }), 'S15', 'chooseStream: zh identity question');
+assert.equal(chooseStream({ message: 'Gọi mình là em nhé.', context: {} }), 'S14', 'chooseStream: vi address request');
+assert.equal(chooseStream({ message: 'Call me Minh.', context: {} }), 'S14', 'chooseStream: en address request');
+assert.equal(chooseStream({ message: '请叫我小明。', context: {} }), 'S14', 'chooseStream: zh address request');
+
+console.log(`Orena agent contract v${contract.CONTRACT_VERSION}: data equals the contract text, ${Object.keys(STREAMS).length} canonical streams keep §4/§7, requests, reducer, dispatcher, device memory, intents and §5.6 address (defaults, terms, the note, S14/S15, no provider names) behave, every §2.1 status and §4.1 fallback is answered as written; live transport off: PASS`);
