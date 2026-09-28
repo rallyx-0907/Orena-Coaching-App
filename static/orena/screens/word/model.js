@@ -249,7 +249,13 @@ export function mapMasteryEvidence(item) {
 export function restorePayload(item) {
   if (!item) return null;
   const payload = { word: text(item.word) };
-  const strings = ['phonetic', 'part_of_speech', 'definition', 'translation_vi', 'added_at', 'source_fragment', 'source_kind', 'focus_note', 'last_reviewed_at'];
+  // Every string field RestoreVocabularyIn accepts (writing_coach/becoming_library.py), so an undo
+  // puts back the schedule's next_review_at and the catalogue identity, not only the word.
+  const strings = [
+    'phonetic', 'part_of_speech', 'definition', 'translation_vi', 'added_at', 'source_fragment',
+    'source_kind', 'focus_note', 'last_reviewed_at', 'next_review_at',
+    'entry_identity_key', 'entry_id', 'reading_key',
+  ];
   for (const key of strings) if (item[key] != null) payload[key] = text(item[key]);
   const numbers = ['source_essay_id', 'review_stage', 'successful_recalls', 'lapse_count'];
   for (const key of numbers) if (item[key] != null) payload[key] = Number(item[key]);
