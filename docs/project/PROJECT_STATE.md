@@ -55,6 +55,54 @@ operational state.
   production operations, store signing/credentials, billing, and public release
   remain deferred human gates and do not block non-production mobile development.
 
+## New learner UI migration (D-088 - D-095)
+
+Verified state of the migration on `codex/work`; the current step and next task
+live in `CURRENT_HANDOFF.md`.
+
+- Baseline: the unified `codex/work` (Admin + Speaking, PR #63 at `9c0fe31`,
+  integration HEAD `7565f6d`). 2026-09-26: full Linux pytest with PostgreSQL 16
+  `2472 passed, 3 skipped`; all 16 Alembic revisions reach head `20260924_0016`
+  on a throwaway database.
+- Design source (D-088): Claude Design project `e6dc1cb2`, revision
+  `1790473816124946`, read in full - DesignSync for files under 256 KiB, the
+  human's export for `Orena.dc.html` (its first 256 KiB byte-identical to the
+  DesignSync read) - and pinned in `docs/design/canonical-ui/screens/`
+  (`SYNC_2026-09-27.md`, `PINS.tsv`); governance in `e3f8ba2`. Themes follow the
+  OS (D-089), the design's logo and Orena Intelligence mark (D-090), built
+  beside the old UI and replacing it in one cutover (D-091), minimal AA
+  adjustments (D-093).
+- Foundation at `/next` (2026-09-27, local): all 69 CI `.mjs` gates, the browser
+  ESM graph, route tests and the memory/architecture validators pass; the shell
+  measured against the pinned frame at 1440x900, checked at 390x844, in en / vi
+  / zh and both themes. `test_orena_reading_library` and
+  `test_orena_writing_workspace` failed on Windows checkouts because the working
+  tree had CRLF against line-oriented gate patterns; `.gitattributes` keeps
+  source text LF in every checkout (`71e6235`); the gates are unchanged.
+- Agent contract: v2 (D-092) the Orena destination and the opening turn; v3
+  (D-094) interface-layer action labels and prompt intents; v4 (D-095, `5c2aeff`)
+  the HTTP status table and error classes. The UI side runs on the contract mock.
+- Copy engine: a 0 fills its placeholder (`bde3644`); plural forms follow each
+  language's rules, no English singular back-filled into vi/zh (`5c22f0e`);
+  gate `test_orena_copy_engine`.
+- Wave A destinations (`c922e37`, 2026-09-27, local): Today, Discover, Content
+  Detail, Practice Hub, My Library, Collection Detail, Word Detail (stroke
+  sheet), Grammar Library, Grammar Concept, Progress, Profile, Settings, Search,
+  the Import and Notifications sheets, on shared components
+  (`kit/components.js`). Each surface was built from its frame, measured,
+  checked in the browser against the isolated stack in en / vi / zh and both
+  themes, reviewed by an independent agent and fixed; an integration pass
+  removed the per-screen copy workarounds, closed the shared-kit fidelity gaps
+  and wired the bell, CI and docs. All 85 CI `.mjs` gates and the ESM graph (188
+  modules) pass. `test_orena_vocabulary_theme_tokens.mjs`, not run by CI, fails
+  identically on a clean `HEAD` (an old-UI gate for a retired vocabulary CSS
+  scope; replaced at the cutover, not deleted).
+- The isolated verification stack: containers `orena-next-verify-*`,
+  127.0.0.1:8021, PostgreSQL on tmpfs, no provider keys, three public-domain
+  articles, a learner seeded through the app's endpoints
+  (`scripts/seed_sandbox_learner.py --base http://127.0.0.1:8021 --rank 10`).
+  It is empty after every Docker restart.
+
 ## Orena UI/UX integration
 
 - Branch `codex/orena-ui-ux-integration` now includes every previously missing
