@@ -199,10 +199,13 @@ def verify(
                 "checked_quick_practice": verify_report.checked_quick_practice,
                 "checked_formula": verify_report.checked_formula,
                 "unverified": verify_report.unverified,
+                "r5_source_errors": verify_report.r5_source_errors,
             }
             verdict = "OK" if verify_report.ok else f"{len(verify_report.flags)} flag(s)"
             if verify_report.unverified:
                 verdict += f", {len(verify_report.unverified)} not verifiable by the engine"
+            if verify_report.r5_source_errors:
+                verdict += f", {len(verify_report.r5_source_errors)} R5 source error(s) confirmed"
             typer.echo(f"{point_id:40} {verdict}")
     run_id = new_run_id()
     write_step(root, run_id, "verify", {

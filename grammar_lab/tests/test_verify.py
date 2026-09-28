@@ -469,3 +469,25 @@ def test_high_rubric_score_is_not_flagged(tmp_path: Path) -> None:
     report = verify_point(point, evaluator=make_evaluator(tagged),
                            blind_solver=make_multi_blind_solver(tmp_path, CLEAN_STORY_RESPONSES))
     assert "story_rubric_low" not in report.codes()
+
+
+def test_v04_r5_corrections_confirmed_by_the_other_model_are_reported_not_flagged(tmp_path: Path) -> None:
+    # C5 (human, 2026-09-28): when the conversion found R5 wrong, record it for the human.
+    point = v04_point()
+    point["provenance"]["r5_source"] = {"ids": ["a1-alpha"], "content_version": 2, "corrections": [
+        {"r5_id": "a1-alpha", "issue": "R5 example 'He go school.' is wrong.", "fix": "He goes to school."},
+        {"r5_id": "a1-alpha", "issue": "R5 calls -s plural.", "fix": "It is third person."},
+    ]}
+    responses = {
+        "blind_solve": {"answer_index": 1},
+        "formula_coverage": {"covers_all_forms": True, "missing_forms": []},
+        "distractor_plausibility": {"judgements": []},
+        "r5_corrections": {"judgements": [
+            {"index": 0, "r5_was_wrong": True, "note": "missing -es and 'to'"},
+            {"index": 1, "r5_was_wrong": False, "note": "R5 did not say that"},
+        ]},
+    }
+    solver = LLMClient("openai", "gpt-6-luna", api_key="k", cache_dir=tmp_path, transport=multi_blind_solve_transport(responses))
+    report = verify_point(point, evaluator=make_evaluator(V04_CLEAN_TAGS), blind_solver=solver)
+    assert report.ok, report.flags
+    assert report.r5_source_errors == ["a1-alpha: R5 example 'He go school.' is wrong. -> He goes to school. (missing -es and 'to')"]

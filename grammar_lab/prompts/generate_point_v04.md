@@ -1,4 +1,4 @@
-# Prompt: generate_point_v04 (v8)
+# Prompt: generate_point_v04 (v9)
 
 Versioned prompt for one grammar point under schema v0.4 (GRAMMAR_CONTENT_CONTRACT.md).
 `generate.py` fills the placeholders below and sends the result as the `system` message; the
@@ -16,6 +16,9 @@ v7: a slot that is a choice lists its forms in `options` (be -> is | are); formu
 now checked in verify by a different-family model (verify_formula.md).
 v8: two or three quick-practice options, never padded -- a fixed three forced invented third
 options (cates, boxs, floweres) even when told not to; verify_distractors.md now reads for them.
+v9: conversion mode -- a point with `source_refs.r5` is written from the app's R5 lesson(s),
+passed in the user message; the r5_instruction placeholder (empty otherwise) says how, and the model lists
+its corrections to R5 in `r5_corrections` (human, 2026-09-28: R5 is raw material).
 
 ---
 
@@ -97,6 +100,7 @@ Output one JSON object matching the schema you were given -- no commentary outsi
    misspelling: `spelling` is not an acceptable `error_tag` for a distractor, and there are no
    invented forms (no `cates`, `boxs`, `floweres`). Never two defensible answers.
 {pinyin_instruction}
+{r5_instruction}
 ## Rules
 
 1. **Never copy source text** from any catalogue (English Grammar Profile, HSK 3.0, JLPT).

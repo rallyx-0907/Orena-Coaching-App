@@ -26,6 +26,28 @@ STORY_PROMPT_VERSION = "verify_story.v2"
 STORY_PROMPT_PATH = Path(__file__).resolve().parents[1] / "prompts" / "verify_story.md"
 FORMULA_PROMPT_PATH = Path(__file__).resolve().parents[1] / "prompts" / "verify_formula.md"
 DISTRACTORS_PROMPT_PATH = Path(__file__).resolve().parents[1] / "prompts" / "verify_distractors.md"
+R5_CORRECTIONS_PROMPT_PATH = Path(__file__).resolve().parents[1] / "prompts" / "verify_r5_corrections.md"
+
+_R5_CORRECTIONS_SCHEMA = {
+    "type": "object",
+    "additionalProperties": False,
+    "required": ["judgements"],
+    "properties": {
+        "judgements": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": False,
+                "required": ["index", "r5_was_wrong", "note"],
+                "properties": {
+                    "index": {"type": "integer", "minimum": 0},
+                    "r5_was_wrong": {"type": "boolean"},
+                    "note": {"type": "string"},
+                },
+            },
+        },
+    },
+}
 
 _DISTRACTORS_SCHEMA = {
     "type": "object",
@@ -90,6 +112,9 @@ class VerifyReport:
     # Texts the engine refuses as too short (EvaluatorInputTooShort): "not verifiable by the
     # engine" -- neither a flag nor a pass (human, 2026-09-28); route sends the point to review.
     unverified: list[str] = field(default_factory=list)
+    # Conversion mode: corrections to the R5 source that the other-family model confirmed --
+    # a report on R5 for the human, never a flag on this point (human, 2026-09-28).
+    r5_source_errors: list[str] = field(default_factory=list)
 
     @property
     def ok(self) -> bool:
@@ -303,6 +328,8 @@ def verify_point(
         _verify_formula_coverage(point, blind_solver=blind_solver, report=report)
     if point.get("quick_practice") and "header" in point:
         _verify_distractor_plausibility(point, blind_solver=blind_solver, report=report)
+    if ((point.get("provenance") or {}).get("r5_source") or {}).get("corrections"):
+        _verify_r5_corrections(point, blind_solver=blind_solver, report=report)
 
     for index, item in enumerate(point.get("quick_practice", [])):
         report.checked_quick_practice += 1
@@ -370,6 +397,32 @@ def _verify_formula_coverage(point: dict[str, Any], *, blind_solver: LLMClient, 
     if not result.data["covers_all_forms"]:
         missing = ", ".join(result.data["missing_forms"]) or "(unspecified)"
         report.flags.append(VerifyFlag("formula_incomplete", f"pattern.formula does not cover: {missing}"))
+
+
+def _verify_r5_corrections(point: dict[str, Any], *, blind_solver: LLMClient, report: VerifyReport) -> None:
+    """Conversion mode: confirm, with the other-family model, each correction the generator says
+    it made to the R5 source. Confirmed ones go to ``report.r5_source_errors`` for the human."""
+    corrections = point["provenance"]["r5_source"]["corrections"]
+    listing = "\n".join(
+        f"{index}. [{item['r5_id']}] was: {item['issue']} -- now: {item['fix']}" for index, item in enumerate(corrections)
+    )
+    system = R5_CORRECTIONS_PROMPT_PATH.read_text(encoding="utf-8").split("\n---\n", 1)[1].format(
+        target_lang=point["target_lang"], level_framework=point["level"]["framework"],
+        level_value=point["level"]["value"], title=point.get("header", {}).get("native_title", point["id"]),
+        corrections=listing,
+    )
+    try:
+        result = blind_solver.complete(
+            system=system, user="Answer now.", json_schema=_R5_CORRECTIONS_SCHEMA, schema_name="r5_corrections",
+        )
+    except LLMError as exc:
+        report.flags.append(VerifyFlag("blind_solve_error", f"r5 corrections: {exc}"))
+        return
+    for judgement in result.data["judgements"]:
+        index = judgement["index"]
+        if judgement["r5_was_wrong"] and 0 <= index < len(corrections):
+            item = corrections[index]
+            report.r5_source_errors.append(f"{item['r5_id']}: {item['issue']} -> {item['fix']} ({judgement['note']})")
 
 
 def _verify_distractor_plausibility(point: dict[str, Any], *, blind_solver: LLMClient, report: VerifyReport) -> None:

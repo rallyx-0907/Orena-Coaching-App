@@ -630,3 +630,62 @@ def test_generate_normalizes_a_null_label_before_saving(tmp_path: Path) -> None:
     assert example["seg"] == [["She "], ["works", "target"], [" in a bank"], ["."]]
     report = validate_lang("en", lab.root)
     assert report.ok, report.issues
+
+
+# --- conversion mode: R5 lesson(s) as input (human, 2026-09-28) --------------------------
+
+def _capturing_v04_transport(payload: dict, sent: list[dict]) -> httpx.MockTransport:
+    def handler(request: httpx.Request) -> httpx.Response:
+        sent.append(json.loads(request.content))
+        return httpx.Response(200, json={
+            "content": [{"type": "tool_use", "name": "emit_grammar_point_v04", "input": payload}],
+            "usage": {"input_tokens": 500, "output_tokens": 300},
+        })
+    return httpx.MockTransport(handler)
+
+
+def test_generate_v04_converts_from_r5_and_records_the_source_in_provenance(tmp_path: Path) -> None:
+    from grammar_lab.tests.test_r5_source import write_fake_r5
+
+    lab = _v04_lab(tmp_path)
+    lab.points["en.alpha"]["source_refs"] = {"r5": ["a1-alpha"]}
+    lab.write()
+    r5_root = write_fake_r5(tmp_path / "r5")
+    correction = {"r5_id": "a1-alpha", "issue": "R5 rule omits -es.", "fix": "Added -es after s/sh/ch/x."}
+    sent: list[dict] = []
+    llm = LLMClient("anthropic", "claude-haiku-4-5-20251001", api_key="test", cache_dir=lab.root / ".cache",
+                     transport=_capturing_v04_transport({**CANNED_V04, "r5_corrections": [correction]}, sent))
+    outcome = Generator(lang="en", l1="vi", llm=llm, root=lab.root, r5_root=r5_root).generate("en.alpha")
+
+    assert outcome.status == "written", outcome.reason
+    user_text = json.dumps(sent[0]["messages"], ensure_ascii=False)
+    assert "Giải thích." in user_text and "He go." in user_text  # the R5 lesson reached the model
+    assert "r5_corrections" in json.dumps(sent[0]["tools"])       # and it was asked to report corrections
+    point = load_point("en", "en.alpha", lab.root)
+    assert point["provenance"]["r5_source"] == {"ids": ["a1-alpha"], "content_version": 2, "corrections": [correction]}
+    assert validate_lang("en", lab.root).ok
+
+
+def test_generate_v04_without_r5_refs_asks_for_no_corrections(tmp_path: Path) -> None:
+    lab = _v04_lab(tmp_path)
+    lab.write()
+    sent: list[dict] = []
+    llm = LLMClient("anthropic", "claude-haiku-4-5-20251001", api_key="test", cache_dir=lab.root / ".cache",
+                     transport=_capturing_v04_transport(CANNED_V04, sent))
+    Generator(lang="en", l1="vi", llm=llm, root=lab.root).generate("en.alpha")
+    assert "r5_corrections" not in json.dumps(sent[0]["tools"])
+    assert "r5_source" not in load_point("en", "en.alpha", lab.root)["provenance"]
+
+
+def test_generate_v04_unknown_r5_id_is_an_error_before_any_call(tmp_path: Path) -> None:
+    from grammar_lab.tests.test_r5_source import write_fake_r5
+
+    lab = _v04_lab(tmp_path)
+    lab.points["en.alpha"]["source_refs"] = {"r5": ["a1-missing"]}
+    lab.write()
+    sent: list[dict] = []
+    llm = LLMClient("anthropic", "claude-haiku-4-5-20251001", api_key="test", cache_dir=lab.root / ".cache",
+                     transport=_capturing_v04_transport(CANNED_V04, sent))
+    outcome = Generator(lang="en", l1="vi", llm=llm, root=lab.root, r5_root=write_fake_r5(tmp_path / "r5")).generate("en.alpha")
+    assert outcome.status == "error" and "a1-missing" in outcome.reason
+    assert sent == []

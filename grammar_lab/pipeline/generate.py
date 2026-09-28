@@ -36,6 +36,7 @@ from grammar_lab.pipeline.content_store import (
 )
 from grammar_lab.pipeline.jsonio import read_json
 from grammar_lab.pipeline.llm_client import LLMClient
+from grammar_lab.pipeline.r5_source import DEFAULT_R5_ROOT, R5SourceError, load_r5, r5_source_text
 from grammar_lab.pipeline.validate import (
     _HAN,
     ERROR_TAGS_PATH,
@@ -47,7 +48,7 @@ from grammar_lab.rules import en_morphology
 
 PROMPT_VERSION = "generate_point.v1"
 PROMPT_PATH = LAB_ROOT / "prompts" / "generate_point.md"
-PROMPT_VERSION_V04 = "generate_point_v04.v8"
+PROMPT_VERSION_V04 = "generate_point_v04.v9"
 PROMPT_PATH_V04 = LAB_ROOT / "prompts" / "generate_point_v04.md"
 STORY_PROMPT_VERSION = "generate_story.v2"
 # grammar_set.schema.json's story_mode allows "history" too (VOICE.md), but generate.py
@@ -219,7 +220,8 @@ _ZH_SPACE_RUN = re.compile(
 
 
 def _generation_schema_v04(*, locales: list[str], l1s: list[str], error_tags: list[str], engine_tags: list[str],
-                            contrast_with: list[str], point_type: str, zh: bool) -> dict[str, Any]:
+                            contrast_with: list[str], point_type: str, zh: bool,
+                            r5_ids: list[str] | None = None) -> dict[str, Any]:
     """GRAMMAR_CONTENT_CONTRACT.md: the model's output for a schema_version 0.4 point.
 
     Built per point, so nothing here needs if/then (not every provider's structured-output
@@ -331,8 +333,36 @@ def _generation_schema_v04(*, locales: list[str], l1s: list[str], error_tags: li
                 },
             },
         }
+    if r5_ids:
+        # Conversion mode: the model says what it corrected in the R5 source, so verify can have
+        # the other-family model confirm it and the human learns where R5 was wrong.
+        properties["r5_corrections"] = {
+            "type": "array",
+            "items": {
+                "type": "object", "additionalProperties": False, "required": ["r5_id", "issue", "fix"],
+                "properties": {
+                    "r5_id": {"enum": list(r5_ids)},
+                    "issue": {"type": "string", "minLength": 1},
+                    "fix": {"type": "string", "minLength": 1},
+                },
+            },
+        }
     return {"type": "object", "additionalProperties": False, "required": list(properties), "properties": properties}
 
+
+# Conversion mode (human, 2026-09-28): R5 is raw material, not discarded.
+_R5_INSTRUCTION = """
+## Converting from R5
+
+The user message carries the app's current lesson(s) for this point ("R5"). Use them as raw
+material: keep what is right (a good example, a real learner mistake, a clear rule), restructure
+it into this schema, **correct** anything wrong (a wrong rule, an ungrammatical example, a
+mistake that is not one, a level-inappropriate word) and **add** what is missing (the formula,
+the variants, spans, the comparison, the quick check). Do not carry an error over. List every
+correction you made to R5's content in `r5_corrections` (which lesson, what was wrong, what you
+wrote instead) -- another model checks each one; leave it empty if R5 needed none. Scope stays
+this point's: if an R5 lesson covers more than this point, take only this point's part.
+"""
 
 _ILLUSTRATION_INSTRUCTIONS = {
     "tense_aspect": (
@@ -562,6 +592,7 @@ class Generator:
     llm: LLMClient
     root: Path = LAB_ROOT
     num_examples: int = 2
+    r5_root: Path | None = None  # the app's grammar data (r5_source.DEFAULT_R5_ROOT when None)
 
     def generate(
         self, point_id: str, *, regenerate_note: str | None = None, with_story: bool = False, story_mode: str = "everyday"
@@ -669,11 +700,22 @@ class Generator:
         if point_type not in ILLUSTRATION_FOR_POINT_TYPE:
             return GenerateOutcome(point_id, "error", reason="schema_version 0.4 point needs point_type metadata first")
         zh = existing["target_lang"] == ZH_HANS
+        r5_ids: list[str] = list((existing.get("source_refs") or {}).get("r5", []))
+        r5_records: list[dict[str, Any]] = []
+        if r5_ids:
+            try:
+                available = load_r5(self.lang, self.r5_root or DEFAULT_R5_ROOT)
+            except R5SourceError as exc:
+                return GenerateOutcome(point_id, "error", reason=str(exc))
+            unknown = [r5_id for r5_id in r5_ids if r5_id not in available]
+            if unknown:
+                return GenerateOutcome(point_id, "error", reason=f"source_refs.r5 names unknown R5 lesson(s): {unknown}")
+            r5_records = [available[r5_id] for r5_id in r5_ids]
         header = _header_metadata(existing, locales)
         engine_tags = read_json(self.root / ERROR_TAGS_PATH)["languages"][existing["target_lang"]]["tags"]
         schema = _generation_schema_v04(
             locales=locales, l1s=l1s, error_tags=existing["error_tags"], engine_tags=engine_tags,
-            contrast_with=existing["contrasts"], point_type=point_type, zh=zh,
+            contrast_with=existing["contrasts"], point_type=point_type, zh=zh, r5_ids=r5_ids,
         )
         system = PROMPT_PATH_V04.read_text(encoding="utf-8").format(
             point_id=point_id, target_lang=existing["target_lang"],
@@ -691,11 +733,14 @@ class Generator:
                 "an object keyed by locale, with every one of these locales: " + ", ".join(locales) + "."
             ),
             pinyin_instruction=_PINYIN_INSTRUCTION if zh else "",
+            r5_instruction=_R5_INSTRUCTION if r5_records else "",
             num_examples=V04_EXAMPLES,
         )
         user = f"Write the grammar point {point_id} now, matching the structured output schema."
         if regenerate_note:
             user += f" Admin regenerate note: {regenerate_note}"
+        if r5_records:
+            user += "\n\nR5 source lesson(s) for this point (restructure, correct, complete):\n" + r5_source_text(r5_records)
         result = self.llm.complete(
             system=system, user=user, json_schema=schema, schema_name="grammar_point_v04", max_tokens=V04_MAX_TOKENS,
         )
@@ -764,6 +809,12 @@ class Generator:
             },
             "review": None,
         }
+        if r5_records:
+            point["provenance"]["r5_source"] = {
+                "ids": r5_ids,
+                "content_version": max(record["content_version"] for record in r5_records),
+                "corrections": data.get("r5_corrections", []),
+            }
         if existing.get("blocks"):
             point["blocks"] = existing["blocks"]  # only a secondary story can live here on v0.4
         point = {"schema_version": point.pop("schema_version"), **point}
