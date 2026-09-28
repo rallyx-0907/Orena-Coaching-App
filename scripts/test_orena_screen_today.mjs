@@ -1,8 +1,10 @@
 /* Gate for Today's pure data mapping (static/orena/screens/today/model.js): the recommendation
    pool (review/reading/listening/speaking), the continuation (device-memory) mapping, the "For
-   you" rail, and the rule-40 zero-fallback for the goal ring, streak and level/XP card (Design
-   Contract rule 40 - no cross-activity backend; must never render an invented figure). DOM-free:
-   imports only the screen's own model.js and copy.js, no browser. */
+   you" rail, the rule-40 zero-fallback for the goal ring, streak and level/XP card (Design
+   Contract rule 40 - no cross-activity backend; must never render an invented figure), and the
+   header's real-data greeting/subtitle (human review item: never the frame's fixed "Good
+   morning" / "Two things worth doing today..."). DOM-free: imports only the screen's own model.js
+   and copy.js, no browser. */
 import assert from 'node:assert/strict';
 
 // copy/index.js resolves the interface language at import time from window.localStorage/navigator.
@@ -24,6 +26,9 @@ const {
   buildStreak,
   buildLevel,
   todayDateLabel,
+  greetingPeriod,
+  buildGreeting,
+  buildHeadSubtitle,
   RECOMMEND_LIMIT,
 } = await import('../static/orena/screens/today/model.js');
 
@@ -231,4 +236,67 @@ assert.deepEqual(usedRecommendationIds([{ id: 'a' }, { id: 'b' }, { id: null }])
   assert.doesNotMatch(modelSrc, /㐀-鿿/, 'no local Han-range regex left in model.js either - the active learning language is real data, not a script guess');
 }
 
-console.log('Orena Today: recommendation pool, continuation mapping, For-you rail and the rule-40 zero-fallback (goal ring, streak, level) all hold: PASS');
+// 10. greetingPeriod / buildGreeting: the header's real-clock greeting (human review item).
+// Boundaries as documented in model.js - 05:00 starts morning, 12:00 starts afternoon, 18:00
+// starts evening, and the remaining night hours fall back to evening (the frame draws only
+// three greeting states, never a fourth "good night" one).
+{
+  assert.equal(greetingPeriod(0), 'evening', 'midnight is still evening - no fourth state exists');
+  assert.equal(greetingPeriod(4), 'evening', 'one minute-hour before the morning boundary');
+  assert.equal(greetingPeriod(5), 'morning', 'the morning boundary itself, inclusive');
+  assert.equal(greetingPeriod(11), 'morning', 'the last hour still counted as morning');
+  assert.equal(greetingPeriod(12), 'afternoon', 'the afternoon boundary itself, inclusive');
+  assert.equal(greetingPeriod(17), 'afternoon', 'the last hour still counted as afternoon');
+  assert.equal(greetingPeriod(18), 'evening', 'the evening boundary itself, inclusive');
+  assert.equal(greetingPeriod(23), 'evening');
+
+  // Local-time Date constructor (never Date.UTC) so the asserted hour is exactly what
+  // Date#getHours() (the device's own local clock) returns, whatever timezone this gate runs in.
+  assert.equal(buildGreeting(new Date(2026, 0, 1, 7), t), 'Good morning');
+  assert.equal(buildGreeting(new Date(2026, 0, 1, 15), t), 'Good afternoon');
+  assert.equal(buildGreeting(new Date(2026, 0, 1, 21), t), 'Good evening');
+  assert.equal(buildGreeting(new Date(2026, 0, 1, 2), t), 'Good evening', 'the pre-dawn hours read as evening too');
+  assert.equal(buildGreeting(new Date(2026, 0, 1, 5), t), 'Good morning', 'the lower boundary carried through end to end');
+  assert.equal(buildGreeting(new Date(2026, 0, 1, 17), t), 'Good afternoon');
+  assert.equal(buildGreeting(new Date(2026, 0, 1, 18), t), 'Good evening');
+}
+
+// 11. buildHeadSubtitle: the header's real-state subtitle (human review item) - built from the
+// real size of the "Recommended for today" pool and whether the "For you" rail holds anything;
+// never the frame's fixed "Two things worth doing today, then something to enjoy." (rule 40).
+{
+  assert.equal(buildHeadSubtitle({ recommendedCount: 0, forYouCount: 0 }, t), '', 'nothing recommended and nothing for-you: an honest silence, not an invented line');
+  assert.equal(buildHeadSubtitle({ recommendedCount: 0, forYouCount: 6 }, t), '', 'a for-you rail alone (no recommendations) still gives no line - the sentence never leads with "then"');
+  assert.equal(buildHeadSubtitle(undefined, t), '', 'no argument at all behaves exactly like all-zero counts');
+  assert.equal(buildHeadSubtitle({ recommendedCount: 1, forYouCount: 0 }, t), '1 thing worth doing today.', 'singular English wording at exactly one');
+  assert.equal(buildHeadSubtitle({ recommendedCount: 1, forYouCount: 4 }, t), '1 thing worth doing today, then something to enjoy.', 'the enjoy clause only when the for-you rail is real');
+  assert.equal(buildHeadSubtitle({ recommendedCount: 2, forYouCount: 0 }, t), '2 things worth doing today.', 'plural wording, no enjoy clause - the for-you rail is genuinely empty');
+  assert.equal(buildHeadSubtitle({ recommendedCount: 3, forYouCount: 12 }, t), '3 things worth doing today, then something to enjoy.');
+
+  // Not a hardcoded copy of the frame's sample sentence: a different real count produces
+  // different real text (a literal "Two things worth doing today..." return could never do this).
+  assert.notEqual(
+    buildHeadSubtitle({ recommendedCount: 3, forYouCount: 12 }, t),
+    buildHeadSubtitle({ recommendedCount: 1, forYouCount: 12 }, t),
+    'the count actually drives the sentence, so two different real pools read differently',
+  );
+}
+
+// 12. The header is wired from real data end to end, and the eyebrow's own name-fallback stays
+// the source of "the greeting without one [a name]": screen.js never folds the learner's name
+// into the greeting string itself (that would break the no-name case), and no longer shows the
+// static shell page title in the H1 the frame draws as the greeting.
+{
+  const { readFileSync } = await import('node:fs');
+  const screenSrc = readFileSync(new URL('../static/orena/screens/today/screen.js', import.meta.url), 'utf8');
+  assert.match(screenSrc, /buildGreeting\(/, 'the H1 is built from the real-clock greeting');
+  assert.match(screenSrc, /buildHeadSubtitle\(/, 'the subtitle is built from the real recommendation/for-you counts');
+  assert.doesNotMatch(screenSrc, /shellCopy\('today'\)/, 'the H1 no longer shows the static shell page title in place of the real greeting');
+  assert.match(screenSrc, /name \? html`<div class="s-today-eyebrow">/, 'the eyebrow (name) still renders only when a real name exists');
+  // buildGreeting takes no name argument at all - structurally guaranteeing the greeting text
+  // itself never depends on whether a name exists, which is what makes "no name -> the greeting
+  // without one" true by construction rather than by a second branch to keep in sync.
+  assert.equal(buildGreeting.length, 2, 'buildGreeting(date, t) takes no name parameter');
+}
+
+console.log('Orena Today: recommendation pool, continuation mapping, For-you rail, the rule-40 zero-fallback (goal ring, streak, level) and the real-data header greeting/subtitle all hold: PASS');

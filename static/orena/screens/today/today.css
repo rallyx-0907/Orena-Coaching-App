@@ -39,6 +39,12 @@
   font-weight: 700;
   letter-spacing: -0.025em;
 }
+.s-today-sub {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 22px;
+}
 .s-today-date {
   display: var(--hide-mobile);
   height: 40px;
