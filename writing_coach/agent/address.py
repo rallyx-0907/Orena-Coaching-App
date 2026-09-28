@@ -19,6 +19,7 @@ the contract carries the address (proposed v5); only the model applies it now.
 from __future__ import annotations
 
 import re
+import unicodedata
 from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -106,6 +107,88 @@ def address_note(support: str, self_term: str, user_term: str, *, now: datetime 
     }
     CoachNote.model_validate(note)
     return note
+
+
+# --- Vietnamese kinship address, mirrored at once (human direction 2026-09-28) ---------------------
+#
+# A learner who calls themselves anh/chị is answered by an Orena that is "em"; cô/chú/bác, by "cháu". A
+# learner who is "em" (or "cháu") to an Orena they call anh/chị (or cô/chú/bác) is answered with exactly those
+# words. Only clear first- and second-person uses count: "anh tôi", "chị của mình", "anh ấy", "anh trai",
+# "anh Minh" or "chị em" are someone else, and anything unclear keeps the current pair. tao/mày and other
+# casual pairs are never mirrored: they change only on an explicit request (set_address).
+
+ELDER_SELF = {"anh": "em", "chị": "em", "cô": "cháu", "chú": "cháu", "bác": "cháu"}  # learner's word -> Orena's
+YOUNGER_SELF = {"em": ("anh", "chị"), "cháu": ("cô", "chú", "bác")}  # learner's word -> Orena words it goes with
+GENDERED = frozenset({"anh", "chị", "cô", "chú", "bác", "ông", "bà"})  # never used unless the learner used them
+CASUAL = frozenset({"tao", "mày"})  # only on an explicit request
+
+# After a kinship word, these make it someone else (or a name, or a pair of siblings).
+_NOT_A_PERSON_IN_THE_CHAT = (
+    r"(?:tôi|mình|tao|của|ấy|ta|trai|gái|họ|kia|này|nọ|rể|dâu|cả|hai|ba|út|em|chị|anh|nhà|[A-ZĐ]\w*)"
+)
+# The learner as the subject of an act of their own, or the one helped: clear first person.
+_SELF_ACTS = r"(?:muốn|cần|hỏi|cảm ơn|không hiểu|chưa hiểu|đang học|vừa học|thắc mắc|quên|nhớ)"
+
+
+def _self_elder(text: str) -> str | None:
+    """The kinship word the learner calls themselves by, when it is clearly first person."""
+
+    for word in ELDER_SELF:
+        w = re.escape(word)
+        blocked = rf"(?!\s+{_NOT_A_PERSON_IN_THE_CHAT}\b)"
+        patterns = (
+            rf"(?:^|[.!?,]\s*)(?i:{w}){blocked}\s+(?i:{_SELF_ACTS})\b",  # "Anh muốn hỏi…", "Chị cảm ơn em"
+            rf"(?i:\b(?:cho|giúp|giùm|bảo|chỉ)\s+){w}\b{blocked}(?:\s+(?i:hỏi|xin|biết|với|nhé|nha|ạ)\b|\s*[.!?,]|\s*$)",
+        )
+        if any(re.search(p, text) for p in patterns):
+            return word
+    return None
+
+
+def _orena_elder(text: str) -> tuple[str, str] | None:
+    """(Orena's word, the learner's word) when the learner is em/cháu to an Orena they call anh/chị/cô/chú/bác."""
+
+    lowered = text.casefold()
+    for younger, elders in YOUNGER_SELF.items():
+        if not re.search(rf"\b{younger}\b", lowered):
+            continue
+        for elder in elders:
+            e, y = re.escape(elder), re.escape(younger)
+            patterns = (
+                rf"\b{y}\s+(?:hỏi|cảm ơn|chào|nhờ|xin|muốn hỏi)\s+{e}\b(?!\s+{_NOT_A_PERSON_IN_THE_CHAT}\b)",  # "em hỏi chị"
+                rf"\b{e}\s+ơi\b",  # "chị ơi, em…"
+                rf"\b{e}\s+(?:cho|giúp|giải thích cho|chỉ cho|dạy)\s+{y}\b",  # "chị cho em hỏi"
+            )
+            if any(re.search(p, lowered) for p in patterns):
+                return elder, younger
+    return None
+
+
+def mirrored_address(message: str | None) -> tuple[str, str] | None:
+    """(Orena's term, the learner's term) the learner's own Vietnamese kinship address calls for, or None."""
+
+    if not message:
+        return None
+    text = unicodedata.normalize("NFC", message)
+    orena = _orena_elder(text)
+    self_word = _self_elder(text)
+    if orena and self_word:
+        return None  # both readings at once: unclear, keep the current pair
+    if orena:
+        return orena
+    if self_word:
+        return ELDER_SELF[self_word], self_word
+    return None
+
+
+def used_by_learner(term: str, words: str | None) -> bool:
+    return bool(words) and bool(re.search(rf"(?i)(?<!\w){re.escape(term)}(?!\w)", words or ""))
+
+
+def explicit_request(term: str, words: str | None) -> bool:
+    """A casual term the learner asked for in so many words: "xưng tao gọi mày đi"."""
+
+    return used_by_learner(term, words) and bool(re.search(r"(?i)\b(?:xưng|gọi|đổi)\b", words or ""))
 
 
 def capitalised(term: str) -> str:

@@ -151,6 +151,10 @@ R21 (2026-09-28) Trạng thái SRS và mọi nhãn nội bộ đưa cho model l�
     next activities tất định ở backend (model chỉ giải thích), coach notes lớp 3 ở device memory; S13 dùng
     snapshot. Không số liệu nào được bịa: metric không đo được thì để trống (null), không suy diễn - thay câu
     "để 0" ở §24.
+R22 (2026-09-28) Xưng hô tiếng Việt theo quan hệ, thay "hỏi một lần" cho các cặp thông thường: người học tự xưng
+    anh/chị → Orena xưng "em"; cô/chú/bác → "cháu"; người học xưng em gọi Orena anh/chị → Orena xưng đúng từ đó.
+    Đáp theo ngay, lưu note ngay, cập nhật khi người học đổi. Phân biệt tự xưng với nói về người khác ("anh tôi");
+    không chắc thì giữ cặp hiện tại. Không dùng anh/chị… nếu người học chưa dùng. tao/mày chỉ khi được yêu cầu rõ.
 ```
 
 Tiến độ lane (cập nhật mỗi slice):

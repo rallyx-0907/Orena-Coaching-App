@@ -49,7 +49,7 @@ from writing_coach.agent.contract import (
 import secrets
 from datetime import UTC, datetime
 
-from writing_coach.agent.address import address_note, valid_term
+from writing_coach.agent.address import CASUAL, GENDERED, address_note, explicit_request, used_by_learner, valid_term
 from writing_coach.agent.events import ActionEvent, Display, MemoryUpdateEvent, SuggestionEvent, make_action
 from writing_coach.agent.provider import ProviderToolSpec
 from writing_coach.agent.schemas import ClientInfo
@@ -297,6 +297,8 @@ class ReplyOutputs:
     address_asked: bool = False  # already offered in this session
     address_chosen: bool = False  # the learner already chose a pair (or said no): no offer
     notes: Mapping[str, float] = field(default_factory=dict)  # coach note id -> weight, as the device sent them
+    learner_words: str = ""  # this turn's message: a gendered or casual term must come from it
+    address_terms: tuple[str | None, str | None] = (None, None)  # the pair in use
     address_offered_now: bool = False
     memory_updates: list[MemoryUpdateEvent] = field(default_factory=list)
 
@@ -443,6 +445,13 @@ class ReplyOutputs:
         terms = self._address_terms(args)
         if terms is None:
             return "refused: each term is 1-24 letters (spaces, hyphens, apostrophes between), nothing else"
+        for term in terms:
+            if term in self.address_terms:
+                continue  # the pair in use may always be kept
+            if term.casefold() in GENDERED and not used_by_learner(term, self.learner_words):
+                return f"refused: '{term}' is never used unless the learner used it (no guessing gender or age)"
+            if term.casefold() in CASUAL and not explicit_request(term, self.learner_words):
+                return f"refused: '{term}' only when the learner asks for it in so many words"
         note = address_note(self.support, *terms)
         # one pair per support language: a second call in the turn replaces the first
         self.memory_updates = [u for u in self.memory_updates if u.note.get("id") != note["id"]]

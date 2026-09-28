@@ -49,12 +49,13 @@ from writing_coach.agent.decision import (
     RuleDecisionProvider,
 )
 from writing_coach.agent.errors import AgentError, ProviderUnavailable
-from writing_coach.agent.address import address_for
+from writing_coach.agent.address import address_for, address_note, mirrored_address
 from writing_coach.agent.honesty import ClaimGate, offer_for, offer_instead
 from writing_coach.agent.identity import IdentityQuestion
 from writing_coach.agent.events import (
     DoneEvent,
     EvidenceEvent,
+    MemoryUpdateEvent,
     Event,
     SegmentDelta,
     SegmentEnd,
@@ -88,7 +89,8 @@ from writing_coach.agent.provider import (
 )
 from writing_coach.agent.ratelimit import SlidingWindowLimiter
 from writing_coach.agent.redaction import redact_for_provider
-from writing_coach.agent.schemas import TurnRequest
+from writing_coach.agent.locale import to_internal
+from writing_coach.agent.schemas import CoachNote, TurnRequest
 from writing_coach.agent.session import SessionCache, ToolResultRecord
 from writing_coach.agent.tools import (
     FORBIDDEN_ARGUMENTS,
@@ -236,7 +238,21 @@ class _Turn:
     def opening(self) -> bool:
         return self.request.opening and self.stream.version >= 2
 
+    def _mirror(self, turn: TurnInput, tier1) -> tuple[Any, dict | None]:
+        """Vietnamese kinship address answered in kind at once: the pair kept and applied to this very turn."""
+
+        if self.opening or to_internal(self.locale.support) != "vi":
+            return tier1, None
+        pair = mirrored_address(turn.message)
+        current = address_for(tier1.coach_notes, self.locale.support)
+        if pair is None or pair == (current.self_term, current.user_term):
+            return tier1, None
+        note = address_note(self.locale.support, *pair)
+        kept = tuple(n for n in tier1.coach_notes if n.id != note["id"]) + (CoachNote.model_validate(note),)
+        return replace(tier1, coach_notes=kept), note
+
     def _model_turn(self, turn: TurnInput, tier1, decisions: Decisions, session) -> Iterator[Event]:
+        tier1, mirrored = self._mirror(turn, tier1)
         here = [self.rt.capabilities.get(i) for i in decisions.capability_ids]
         snapshot = self._opening_snapshot() if self.opening else None
         messages = opening_messages(
@@ -253,7 +269,14 @@ class _Turn:
             address_asked=session.address_asked,
             address_chosen=address_for(tier1.coach_notes, self.locale.support).chosen,
             notes={note.id: note.weight for note in tier1.coach_notes},
+            learner_words=turn.message or "",
+            address_terms=(
+                address_for(tier1.coach_notes, self.locale.support).self_term,
+                address_for(tier1.coach_notes, self.locale.support).user_term,
+            ),
         )
+        if mirrored is not None:
+            outputs.memory_updates.append(MemoryUpdateEvent(op="upsert", note=mirrored))
         # What the request named may be named back, as what it named; everything else must be read first.
         context = self.request.context
         for key in ("content_id", "lesson_id", "essay_id", "attempt_id"):

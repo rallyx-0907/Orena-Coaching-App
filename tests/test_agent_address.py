@@ -89,7 +89,7 @@ def test_the_instruction_carries_the_rules():
     assert "call yourself context.address.self_term and the learner" in INSTRUCTION
     assert "Change it only from the learner's own words" in INSTRUCTION
     assert "ask once" in INSTRUCTION and "asked_this_session" in INSTRUCTION
-    assert "The words\n  change; your respect does not" in INSTRUCTION
+    assert "The words change; your respect does not" in INSTRUCTION
     assert "Never infer a pair from gender, age, name, writing or personality" in INSTRUCTION
     assert "signs the learner is a\n  minor, keep the default" in INSTRUCTION
 
@@ -135,12 +135,13 @@ def test_an_invalid_pair_is_refused_and_nothing_is_kept():
 
 
 def test_the_learner_is_asked_once_a_session():
-    offer = (ToolCallRequest("c1", OFFER_ADDRESS, {"self_term": "chị", "user_term": "em"}), TurnFinished(0, 2, "tool_calls"))
-    rt, provider = runtime([offer, reply("Bạn muốn mình xưng chị, gọi bạn là em không?"), offer, reply("Ừ.")])
-    first = list(rt.run(request("Em hỏi chị cái này nhé."), ZH))
+    # a pair that is not kinship (kinship is answered in kind at once, below)
+    offer = (ToolCallRequest("c1", OFFER_ADDRESS, {"self_term": "tớ", "user_term": "cậu"}), TurnFinished(0, 2, "tool_calls"))
+    rt, provider = runtime([offer, reply("Bạn muốn mình xưng tớ, gọi bạn là cậu không?"), offer, reply("Ừ.")])
+    first = list(rt.run(request("Tớ hỏi cậu cái này nhé."), ZH))
     session_id = first[0].session_id
     assert provider.requests[1].messages[-1].content.startswith("accepted: ask once")
-    body = request("Em hỏi tiếp nhé.").model_dump(mode="json", exclude_none=True)
+    body = request("Tớ hỏi tiếp nhé.").model_dump(mode="json", exclude_none=True)
     body["session_id"] = session_id
     list(rt.run(TurnRequest.model_validate(body), ZH))
     assert context_of(provider, 2)["address"]["asked_this_session"] is True
@@ -183,7 +184,7 @@ def test_once_the_learner_chose_or_declined_there_is_no_offer():
     rt, provider = runtime([offer, reply("Ok.")])
     list(rt.run(request("Em hỏi tiếp nhé.", notes=(note("vi", "mình", "bạn"),)), ZH))  # they said no: kept as theirs
     assert provider.requests[1].messages[-1].content.startswith("refused: the learner already chose")
-    assert "If they say no, call\n  set_address with the pair you use now" in INSTRUCTION
+    assert "If they say no, call set_address with the pair\n  you use now" in INSTRUCTION
 
 
 # --- a pair already set is changed again (human direction 2026-09-28) ---------------------------
@@ -196,9 +197,107 @@ def test_a_kept_pair_is_replaced_when_the_learner_changes_it_again(self_term, us
         reply("Được."),
     ]
     rt, _ = runtime(rounds)
-    events = list(rt.run(request("Thôi, đổi lại nhé.", notes=(note("vi", "chị", "em"),)), ZH))
+    # the learner names the new pair (a gendered word is used only once they have used it)
+    words = f"Thôi, xưng {self_term} và gọi mình là {user_term} nhé."
+    events = list(rt.run(request(words, notes=(note("vi", "chị", "em"),)), ZH))
     updates = [e for e in events if e.name == "memory_update"]
     assert len(updates) == 1 and updates[0].op == "upsert" and updates[0].note["id"] == "address-vi"  # same id: it replaces
     kept = address_for([CoachNote.model_validate(updates[0].note)], "vi")
     assert (kept.self_term, kept.user_term, kept.chosen) == (self_term, user_term, True)
     assert "back to the default or to another\n  pair: call set_address with that pair" in INSTRUCTION
+
+
+# --- Vietnamese kinship address, answered in kind at once (human direction 2026-09-28) ---------------
+
+from writing_coach.agent.address import mirrored_address  # noqa: E402
+
+
+@pytest.mark.parametrize(
+    ("message", "pair"),
+    [
+        ("Anh muốn hỏi từ 学习 nghĩa là gì?", ("em", "anh")),  # the learner is anh: Orena is em
+        ("Chị cảm ơn em nhé", ("em", "chị")),
+        ("Cho anh hỏi chút", ("em", "anh")),
+        ("Giải thích giúp chị với", ("em", "chị")),
+        ("Em hỏi chị: 朋友 là gì ạ?", ("chị", "em")),  # Orena is chị to a learner who is em
+        ("Chị ơi cho em hỏi từ này", ("chị", "em")),
+        ("Anh ơi, em chưa hiểu", ("anh", "em")),
+        ("Cô muốn học từ mới", ("cháu", "cô")),  # cô / chú / bác: Orena is cháu
+        ("Chú hỏi cháu cái này", ("cháu", "chú")),
+        ("Bác ơi cháu hỏi chút", ("bác", "cháu")),
+    ],
+)
+def test_kinship_address_is_answered_in_kind(message, pair):
+    assert mirrored_address(message) == pair
+
+
+@pytest.mark.parametrize(
+    "message",
+    [
+        "Anh tôi học tiếng Trung",  # someone else
+        "Chị của mình là giáo viên",
+        "Anh ấy nói gì vậy?",
+        "Anh trai mình thích 学习",
+        "Anh Minh hỏi từ này",  # a name
+        "Chị em nhà mình đều học",  # siblings
+        "Em hỏi anh trai rồi",
+        "Cho anh ấy biết với",
+        "Từ 哥哥 là anh trai à?",
+        "Tao hỏi mày cái này",  # casual: never mirrored
+        "Mày giải thích đi",
+        "Giải thích giúp mình",
+        "Anh hỏi em, em hỏi chị",  # both readings: unclear, keep the pair
+    ],
+)
+def test_someone_else_or_anything_unclear_keeps_the_current_pair(message):
+    assert mirrored_address(message) is None
+
+
+def test_the_pair_is_applied_to_this_very_answer_and_kept():
+    rt, provider = runtime([reply("Dạ, em giải thích nhé.")])
+    events = list(rt.run(request("Anh muốn hỏi từ 学习 nghĩa là gì?"), ZH))
+    updates = [e for e in events if e.name == "memory_update"]
+    assert len(updates) == 1 and updates[0].note["id"] == "address-vi"
+    kept = address_for([CoachNote.model_validate(updates[0].note)], "vi")
+    assert (kept.self_term, kept.user_term) == ("em", "anh")
+    style = next(m.content for m in provider.requests[0].messages if m.content.startswith("Cách viết"))
+    assert 'Xưng "em", gọi người học là "anh"' in style  # no asking back: this answer already uses it
+    assert context_of(provider)["address"]["self_term"] == "em"
+
+
+def test_a_pair_already_in_use_is_not_kept_again_and_someone_else_changes_nothing():
+    rt, _ = runtime([reply("Dạ.")])
+    events = list(rt.run(request("Anh muốn hỏi tiếp.", notes=(note("vi", "em", "anh"),)), ZH))
+    assert "memory_update" not in [e.name for e in events]
+    rt2, provider2 = runtime([reply("Ok.")])
+    events2 = list(rt2.run(request("Anh tôi hỏi từ này nghĩa là gì?", notes=(note("vi", "chị", "em"),)), ZH))
+    assert "memory_update" not in [e.name for e in events2]
+    assert context_of(provider2)["address"]["self_term"] == "chị"
+
+
+def test_a_change_of_address_by_the_learner_updates_the_note():
+    rt, _ = runtime([reply("Dạ.")])
+    events = list(rt.run(request("Em hỏi chị: 学生 là gì ạ?", notes=(note("vi", "em", "anh"),)), ZH))
+    update = next(e for e in events if e.name == "memory_update")
+    kept = address_for([CoachNote.model_validate(update.note)], "vi")
+    assert (kept.self_term, kept.user_term) == ("chị", "em")
+
+
+def _set(words, self_term, user_term, current=("mình", "bạn")):
+    client = ClientInfo.model_validate({"ui_version": "t"})
+    from writing_coach.agent.outputs import ReplyOutputs
+
+    out = ReplyOutputs(client=client, interface="vi", support="vi", target="zh-CN", version=4,
+                       learner_words=words, address_terms=current)  # fmt: skip
+    return out.handle(SET_ADDRESS, {"self_term": self_term, "user_term": user_term}, known_evidence=frozenset())
+
+
+def test_a_gendered_word_is_never_used_unless_the_learner_used_it():
+    assert _set("Giải thích giúp mình từ này", "chị", "em").startswith("refused: 'chị' is never used")
+    assert _set("Từ giờ Orena xưng chị, gọi mình là em nhé", "chị", "em").startswith("accepted")
+    assert _set("Tiếp nhé", "chị", "em", current=("chị", "em")).startswith("accepted")  # the pair in use stays
+
+
+def test_tao_may_only_on_an_explicit_request():
+    assert _set("Tao hỏi mày cái này", "tao", "mày").startswith("refused: 'tao' only when")
+    assert _set("Xưng tao gọi mày đi", "tao", "mày").startswith("accepted")

@@ -269,13 +269,19 @@ FLOWS: dict[str, list[tuple[str, str, dict, str | None, dict]]] = {
         ("zh-CN", "request", VI, "Từ giờ Orena xưng chị, gọi mình là em nhé.", {}),
         ("zh-CN", "after", VI, "Chị giải thích từ 机会 cho em với.", {}),
     ],
-    # R19 "ask once": the learner keeps using one pair over several turns, is asked, says no; a new session asks nothing
+    # "ask once" for a pair that is not kinship: used over several turns, asked once, declined, not asked again
     "decline": [
-        ("zh-CN", "pair-1", VI, "Em hỏi chị: 朋友 nghĩa là gì ạ?", {}),
-        ("zh-CN", "pair-2", VI, "Chị ơi, em hỏi tiếp: 学生 là gì ạ?", {}),
-        ("zh-CN", "pair-3", VI, "Em cảm ơn chị. Chị cho em hỏi thêm: 老师 nghĩa là gì ạ?", {}),
+        ("zh-CN", "pair-1", VI, "Tớ hỏi cậu: 朋友 nghĩa là gì?", {}),
+        ("zh-CN", "pair-2", VI, "Cậu ơi, tớ hỏi tiếp: 学生 là gì?", {}),
+        ("zh-CN", "pair-3", VI, "Cảm ơn cậu. Tớ hỏi thêm: 老师 nghĩa là gì?", {}),
         ("zh-CN", "says-no", VI, "Thôi, cứ xưng mình và gọi bạn như cũ là được.", {}),
-        ("zh-CN", "later", VI, "Em hỏi chị tiếp: 学习 là gì ạ?", {"new_session": True}),
+        ("zh-CN", "later", VI, "Tớ hỏi cậu tiếp: 学习 là gì?", {"new_session": True}),
+    ],
+    # Vietnamese kinship answered in kind at once, a change of it, and someone else ("anh tôi") changing nothing
+    "kinship": [
+        ("zh-CN", "anh", VI, "Anh muốn hỏi từ 学习 nghĩa là gì?", {}),
+        ("zh-CN", "chi-em", VI, "Em hỏi chị: 朋友 là gì ạ?", {}),
+        ("zh-CN", "someone-else", VI, "Anh tôi hỏi từ 老师 nghĩa là gì?", {}),
     ],
     # a pair already kept, changed again: back to the default
     "rechange": [
