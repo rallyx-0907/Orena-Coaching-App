@@ -190,6 +190,12 @@ Slice 2  REVIEWABLE (local, 2026-09-28; R20). c5b89c6 Grammar: get_grammar_point
 Review   01e20f0: review đối kháng (8 lỗi xác nhận, đã sửa): selection gửi dạng chuỗi JSON đã escape; ClaimGate
           bỏ câu Orena tự nhận đã làm ở mọi turn, câu bị động chỉ khi có nút, câu hỏi không bao giờ là claim;
           ngôn ngữ support khác không nhận I/you tiếng Anh; từ chối xưng hô cũng được lưu; từ xưng hô ≤ 3 từ.
+Kiểm live 2026-09-28 (trần 0,20 USD, thực ≈ 0,10 USD; sandbox đã gỡ). Sửa từ lần chạy: 30462dc câu mời dựng từ
+          action, quy tắc ở mô tả propose_action; 6780fda action không kèm chữ vẫn là câu trả lời, khối giọng nói cho
+          phép đổi xưng hô; 869575d vòng im lặng được nhắc một lần; 7e9267e mô tả payload từng action (model đoán
+          sai 4 lần); 36b918d ví dụ theo đúng ngôn ngữ và tình huống. Đạt: xưng hô (mặc định, đổi, từ chối được lưu),
+          câu mời thay "đã làm" ở vi/en/zh, lịch sử viết ZH. Chưa đạt: hỏi "màn này để làm gì" - model đoán sai
+          công dụng vì context chỉ có tên màn; cần mô tả công dụng theo surface (§23 app knowledge).
 Tiếp      Người quyết: gói/quota provider trước khi kích hoạt; contract v5 (xưng hô) cho copy cố định; rồi §26.
 ```
 
