@@ -129,6 +129,23 @@ R17 Chạy live [PROVIDER] (chuẩn bị, CHƯA chạy; chờ người duyệt k
     usage khi stream, time-to-first-segment, chi phí thực. Runner dừng trước khi vượt trần.
 ```
 
+Phán quyết sau khi đọc câu trả lời live (2026-09-28):
+
+```text
+R18 Chất lượng câu trả lời: (a) action là nút người học bấm, không bao giờ tả như đã làm - có chốt chặn
+    ở server (agent/honesty.py); (b) không có lỗi được đánh dấu ≠ không có lỗi: "bộ chấm chưa đánh dấu lỗi",
+    không khen chung chung (D-087); (c) lịch sử viết ZH: kiểm ánh xạ zh ↔ zh-CN trước (không phải lỗi lane,
+    test Postgres chứng minh); (d) tên màn hình theo lớp interface, nhãn của app, không title tiếng Anh;
+    (e) giọng: mặc định mình/bạn (zh 我/你, en I/you).
+R19 Xưng hô: đổi chỉ theo lời người học - họ yêu cầu, hoặc họ tự dùng nhất quán và đồng ý khi được hỏi một
+    lần. Mọi cặp họ chọn (em - anh/chị, tôi - anh/chị, tao - mày, 您…), lời vẫn tôn trọng. Không suy đoán
+    giới tính, tuổi, tính cách; dấu hiệu vị thành niên thì giữ mặc định. Lưu bằng memory_update như
+    preference người học nói trực tiếp. Thiết kế chung cho mọi ngôn ngữ support. Copy cố định giữ mình/bạn
+    tới khi contract có trường xưng hô (đề xuất v5 trên codex/work).
+R20 Slice 2: read tool Speaking, Grammar, Reading, Listening. Grammar chỉ đọc R5 (/api/library/grammar*,
+    Concept ID = grammar_id). Tool chỉ chạy trên PostgreSQL, test trên Postgres dùng một lần.
+```
+
 Tiến độ lane (cập nhật mỗi slice):
 
 ```text
@@ -158,7 +175,19 @@ Live      R17 đã chạy 2026-09-28 (duyệt, trần 2,00 USD; sandbox :8015 đ
           (45 turn đạt): event đầu ≈ 0,01 s; segment đầu trung vị 2,9 s, p90 3,9 s; xong trung vị 3,4 s;
           ≈ 3,9k token vào / 140 ra mỗi turn ≈ 0,0015 USD; tổng thực ≈ 0,09 USD. Lỗi còn lại là HTTP 429
           quota của gói key (≈ 25-30 lượt gọi/phút), không phải lỗi request.
-Tiếp      Người quyết: gói/quota provider trước khi kích hoạt; rồi Slice 2 (§26).
+Chất lượng ce89f83, ea1db15 (R18): tên màn hình surface.<id> theo copy của UI mới; ghi chú "bộ chấm chưa
+          đánh dấu lỗi" trong kết quả tool viết; khối giọng nói viết bằng chính ngôn ngữ support, đặt sát lời
+          người học; ClaimGate stream theo câu, thay câu "đã lưu" bằng lời mời bấm nút khi có action (segment_end
+          vẫn đúng bằng các delta). Kiểm live EN/ZH, support VI, trần 0,50 USD (≈ 0,41 USD tính mức xấu nhất).
+Xưng hô  55eb880 (R19): address.py, reply tool set_address / offer_address, note address-<support>,
+          context.address; chưa kiểm live.
+Slice 2  REVIEWABLE (local, 2026-09-28; R20). c5b89c6 Grammar: get_grammar_point, search_grammar_points qua R5;
+          1073d33 Speaking (get_pronunciation_history/attempt/word_detail), Listening
+          (get_current_listening_context, get_listening_attempt), Reading (get_current_reading_context,
+          get_reading_progress). Active: grammar.point, speaking.pronunciation.line, speaking.free_talk,
+          listening.dictation, reading.passage. Test Postgres dùng một lần (ORENA_TEST_POSTGRES_URL): mỗi tool
+          đọc đúng learner và ngôn ngữ.
+Tiếp      Người quyết: gói/quota provider trước khi kích hoạt; contract v5 (xưng hô) cho copy cố định; rồi §26.
 ```
 
 ---
