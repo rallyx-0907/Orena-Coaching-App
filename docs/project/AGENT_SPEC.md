@@ -144,6 +144,13 @@ R19 Xưng hô: đổi chỉ theo lời người học - họ yêu cầu, hoặc 
     tới khi contract có trường xưng hô (đề xuất v5 trên codex/work).
 R20 Slice 2: read tool Speaking, Grammar, Reading, Listening. Grammar chỉ đọc R5 (/api/library/grammar*,
     Concept ID = grammar_id). Tool chỉ chạy trên PostgreSQL, test trên Postgres dùng một lần.
+R21 (2026-09-28) Trạng thái SRS và mọi nhãn nội bộ đưa cho model là nhãn đã dịch theo lớp interface, kèm nghĩa
+    (chưa học / đang học / đến hạn ôn / đã thuộc); không nhãn tiếng Anh nội bộ nào tới người học. Cặp xưng hô đã
+    lưu được đổi lại (về mặc định hay cặp khác) bằng memory_update thay note. Câu mời gọn "Bấm Lưu từ để thêm 我
+    vào từ vựng của bạn.", không mô tả nút hay giao diện. Slice 3: snapshot trên learner_summary, weaknesses,
+    next activities tất định ở backend (model chỉ giải thích), coach notes lớp 3 ở device memory; S13 dùng
+    snapshot. Không số liệu nào được bịa: metric không đo được thì để trống (null), không suy diễn - thay câu
+    "để 0" ở §24.
 ```
 
 Tiến độ lane (cập nhật mỗi slice):
@@ -196,7 +203,17 @@ Kiểm live 2026-09-28 (trần 0,20 USD, thực ≈ 0,10 USD; sandbox đã gỡ)
           sai 4 lần); 36b918d ví dụ theo đúng ngôn ngữ và tình huống. Đạt: xưng hô (mặc định, đổi, từ chối được lưu),
           câu mời thay "đã làm" ở vi/en/zh, lịch sử viết ZH. Chưa đạt: hỏi "màn này để làm gì" - model đoán sai
           công dụng vì context chỉ có tên màn; cần mô tả công dụng theo surface (§23 app knowledge).
-Tiếp      Người quyết: gói/quota provider trước khi kích hoạt; contract v5 (xưng hô) cho copy cố định; rồi §26.
+Sửa R21 161544d: agent/labels.py (SRS, danh mục lỗi hai ngôn ngữ, loại lỗi, lỗi phát âm; LearnerScope mang
+          interface), đổi lại xưng hô, câu mời gọn; "Mình lưu … cho bạn" là claim (v5 B1). Flow live mới: decline
+          (một cặp qua nhiều lượt, hỏi một lần, từ chối), rechange.
+Slice 3  REVIEWABLE (local, 2026-09-28; R21). 03faf0c: coaching.py - build_learning_snapshot (/api/learner-summary
+          30 ngày + review due, không current_level, số demo bị loại, null khi không đọc được),
+          get_learning_weaknesses (đếm tất định trên bản ghi; ngữ pháp null), get_recommended_next_activities
+          (thứ tự backend: từ đến hạn rồi cross-skill cue, kèm id cho navigate); coach notes lớp 3 (remember_note /
+          forget_note → memory_update, id của note người học); S13 dựng trên snapshot, không read tool.
+          coaching.next_steps active. Test Postgres dùng một lần: snapshot và weaknesses đúng learner, đúng ngôn ngữ.
+Tiếp      Người quyết: trần chi phí cho lần live Slice 3 (gộp flow R21); gói/quota provider trước khi kích hoạt;
+          contract v5 (xưng hô) cho copy cố định; rồi Slice 4 (§26).
 ```
 
 ---
@@ -579,7 +596,8 @@ Xây trên `learner_summary.py` (+ `review_queue` cho `review_due`, `cross_skill
 - `producer` và mọi định danh bị che trước khi gửi provider (`agent/redaction.py`); `target` là mã contract (`zh-CN`), ánh xạ
   từ `zh` ở biên agent (`agent/locale.py`).
 
-Một metric không có đo lường thì để 0 và không suy diễn (D-066).
+Một metric không có đo lường thì để trống (`null`) và không suy diễn (D-066; R21 thay "để 0"). Số 0 chỉ khi đã
+đọc được và thật sự là 0 (ví dụ chưa làm bài đọc nào trong 30 ngày).
 
 ---
 
