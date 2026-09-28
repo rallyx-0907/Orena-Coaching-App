@@ -187,6 +187,9 @@ Slice 2  REVIEWABLE (local, 2026-09-28; R20). c5b89c6 Grammar: get_grammar_point
           get_reading_progress). Active: grammar.point, speaking.pronunciation.line, speaking.free_talk,
           listening.dictation, reading.passage. Test Postgres dùng một lần (ORENA_TEST_POSTGRES_URL): mỗi tool
           đọc đúng learner và ngôn ngữ.
+Review   01e20f0: review đối kháng (8 lỗi xác nhận, đã sửa): selection gửi dạng chuỗi JSON đã escape; ClaimGate
+          bỏ câu Orena tự nhận đã làm ở mọi turn, câu bị động chỉ khi có nút, câu hỏi không bao giờ là claim;
+          ngôn ngữ support khác không nhận I/you tiếng Anh; từ chối xưng hô cũng được lưu; từ xưng hô ≤ 3 từ.
 Tiếp      Người quyết: gói/quota provider trước khi kích hoạt; contract v5 (xưng hô) cho copy cố định; rồi §26.
 ```
 
