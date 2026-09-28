@@ -4,27 +4,40 @@
 human approves; on approval it becomes `contract_version: 5` with a DECISION_LOG
 entry, edited on `codex/work` only.
 
-**Why.** Orena speaks to the learner in the support language, and Vietnamese
-(and, less often, Chinese) has no neutral way to say "I" and "you": today the
-server's fixed copy and the model both use the default `mình` / `bạn`. A learner
-who wants to be called `em` by an Orena that says `chị`, or wants `您` in
-Chinese, has no way to say so that sticks. v5 carries that preference as data:
-the learner states it, the device keeps it, every request sends it, and the
-server applies it to the model's reply and to its own fixed copy (identity,
-refusals, errors).
-
-**The rule the whole change rests on:** how Orena says "I" and "you" comes only
-from the learner's own words. Neither side derives it from the profile, a name,
-gender, age, the learner's writing or anything else; neither side asks for it
-unprompted.
+Two changes, one version: **A.** the learner's address preference (how Orena
+says "I" and "you"); **B.** replies offer actions and never report them done,
+and no reply names a provider - with the fixtures that broke either rule.
 
 Compatibility: additive. A client that declares `contract_version` ≤ 4 sends no
 `address` and gets the language defaults, exactly as today; a server never sends
-an `address` note to such a client.
+an `address` note to such a client. Part B changes wording, not shapes.
 
 ---
 
-## 1. `context.address` (§3)
+## A. The address preference
+
+**Why.** Orena speaks in the support language, and Vietnamese (less often
+Chinese) has no neutral "I" and "you": today the server's fixed copy and the
+model use the default `mình` / `bạn`. A learner who wants to be `em` to an Orena
+that is `chị`, or wants `您`, has no way to say so that sticks - and the server's
+fixed copy (identity, refusals, errors) cannot follow a preference the contract
+does not carry.
+
+**The human ruling it follows (R19, 2026-09-28, recorded in the intelligence
+lane's `AGENT_SPEC.md` §0):** the address changes only from the learner's own
+words - they ask for a pair, or they keep using one themselves and say yes when
+asked once. Any pair they choose (em - anh/chị, tôi - anh/chị, 您 …) is accepted
+and the replies stay respectful. Nothing is inferred from gender, age,
+personality, a name or the learner's writing; signs that the learner is a minor
+keep the default. One design for every support language. The UI never derives
+it from the profile or anything else.
+
+The intelligence lane already applies it in model replies (`55eb880`,
+`01e20f0`) with v4's shapes: a `preference` note with id `address-<lang>` whose
+text encodes the pair. v5 gives it a structured shape and lets the server's
+fixed copy follow it.
+
+### A1. `context.address` (§3)
 
 ```json
 "context": {
@@ -33,9 +46,8 @@ an `address` note to such a client.
 }
 ```
 
-- `self` - how Orena refers to itself; `user` - how Orena addresses the
-  learner; `lang` - the support language they belong to, in contract codes
-  (`vi`, `en`, `zh-CN`).
+- `self`: how Orena refers to itself; `user`: how Orena addresses the learner;
+  `lang`: the support language they belong to, in contract codes.
 - Omitted means the language default:
 
   | `lang` | `self` | `user` |
@@ -44,103 +56,132 @@ an `address` note to such a client.
   | `zh-CN` | `我` | `你` |
   | `en` | `I` | `you` |
 
-- The server applies it only when `address.lang` equals `context.locale.support`;
-  otherwise it uses that support language's default. (A learner who switches
-  support language keeps each language's own preference on the device.)
-- It is **data, never instruction.** `self` and `user` are 1-24 characters of
-  letters (any script, with their marks), spaces, hyphens or apostrophes; no
-  digits, other punctuation, line breaks or markup. The client validates before
-  storing and before sending; the server validates again and, on anything else,
-  ignores the object and uses the default. The server passes the values to the
-  model as quoted data, never as part of its instructions.
-- Casing: the device stores the words as the learner gave them; the server
-  capitalises a sentence-initial use (`Chị là Orena…`) and otherwise uses them
-  as stored.
+  A support language without a row uses its own ordinary first and second
+  person, never the English pair.
+- Applied only when `address.lang` equals `context.locale.support`; otherwise
+  that support language's default. Each language keeps its own preference on
+  the device.
+- **Data, never instruction.** Each term is 1-24 characters and at most 3 words
+  ("chị", "cô giáo", "anh Minh"): letters of any script with their marks,
+  spaces, hyphens or apostrophes; no digits, other punctuation, line breaks or
+  markup. The client validates before storing and before sending; the server
+  validates again and on anything else uses the default. The server hands the
+  terms to the model as quoted data, never as part of its instructions.
+- Casing: the device stores the terms as the learner gave them; the server
+  capitalises a sentence-initial use (`Chị là Orena…`).
 
-## 2. What the server applies it to
+### A2. What the server applies it to
 
-- Every **support-layer** text addressed to the learner: model segments in the
-  support language, the opening turn (§3.2), `error.message` (§4), and the
-  server's fixed support copy - identity answers, refusals such as S8, error
-  messages. Fixed copy gains `{self}` / `{user}` slots in the `vi` and `zh-CN`
-  packs whose defaults reproduce today's text exactly.
-- Not to **interface-layer** labels (action and suggestion labels,
-  `tool_call.label`, capability titles, D-080/D-094): those never address the
-  learner in the first or second person, so they need no slot.
-- Not to target-language material: a Chinese example sentence keeps its own
-  `你`/`我`.
+- Every **support-layer** text addressed to the learner: model segments, the
+  opening turn (§3.2), `error.message` (§4), and the server's fixed support copy -
+  identity answers, refusals such as S8, error messages - through `{self}` /
+  `{user}` slots whose defaults reproduce today's text exactly.
+- Not **interface-layer** labels (action and suggestion labels, `tool_call.label`,
+  capability titles; D-080, D-094): they never address the learner in the first
+  or second person.
+- Not target-language material: a Chinese example keeps its own `你` / `我`.
 
-## 3. Coach note kind `address` (§5.4)
-
-The preference is kept in device memory as a coach note:
+### A3. Coach note kind `address` (§5.4)
 
 ```json
-{ "id": "address:vi", "kind": "address",
+{ "id": "address-vi", "kind": "address",
   "address": { "self": "chị", "user": "em", "lang": "vi" },
-  "text": "Xưng chị, gọi em", "weight": 1, "last_reinforced": "ISO-8601", "expires_at": null }
+  "text": "Xưng hô: Orena xưng \"chị\", gọi người học là \"em\".",
+  "weight": 1, "last_reinforced": "ISO-8601", "expires_at": null }
 ```
 
-- Set only through `memory_update { op: "upsert" }` when the learner states a
-  preference in a turn ("Gọi mình là em nhé", "请用您称呼我"). The same reply
-  already uses it. `remove` with `{ id: "address:<lang>" }` when the learner asks
-  to go back to the default.
-- One per support language: `id` is `address:<lang>`, so an upsert replaces the
-  previous one.
-- `text` is the learner-readable summary shown in `preferences.agent_memory`
-  (support language); it is not sent back to the model.
-- It **does not decay** and has no expiry: it stays until the learner changes or
-  deletes it. The learner sees it, and can delete it, in
-  `preferences.agent_memory` - the privacy exit (§10).
-- The client sends it as `context.address` for the matching support language on
-  every request, and **does not** include it in `coach_notes` (so it never
-  competes with the 20-note / 2 KB budget and never reads as a mere preference).
-- The opening turn stays read-only (§3.2): it applies an existing address, never
-  sets one.
+- Set only through `memory_update { op: "upsert" }`, when the learner asks for a
+  pair or says yes to the one offer R19 allows. The same reply already uses it.
+  `remove` with `{ id: "address-<lang>" }` returns to the default.
+- One per support language: `id` is `address-<lang>`, so a change of mind
+  replaces it.
+- `text` is the learner-readable line in `preferences.agent_memory`, in the
+  support language; the server reads `address`, never parses `text`.
+- It does not decay and has no expiry; it stays until the learner changes or
+  deletes it (the privacy exit, §10).
+- The client sends it as `context.address` for the current support language on
+  every request and **does not** put it in `coach_notes`, so it never competes
+  with the 20-note / 2 KB budget.
+- The opening turn applies an existing address and never sets or offers one
+  (§3.2: no `memory_update`).
 
-## 4. Privacy (§10)
+### A4. Privacy (§10)
 
-- The preference is device memory like every coach note; the server applies it
-  to the turn and stores nothing.
-- `user` may be a name the learner asked to be called by. It leaves the device
-  with each request, as the learner's own words, and is redacted like any
-  learner text in traces.
+The preference is device memory like every coach note; the server applies it
+to the turn and stores nothing. A term may contain a name the learner asked to
+be called by ("anh Minh"); it leaves the device with each request as the
+learner's own words and is redacted from traces like any learner text.
 
-## 5. Canonical streams (§12, the mock and the backend's contract tests)
+---
+
+## B. Replies offer actions; no reply names a provider
+
+**Why.** An action is a button the learner taps (`LOW`) or confirms (`CONFIRM`),
+§7. The canonical stream S5 pairs the reply "Mình lưu 我 cho bạn nhé." with a
+`save_word` action the learner has not tapped: it reads as if Orena saved the
+word. And S2 (and the §5.1 example) has the reply name the pronunciation
+provider ("Azure đánh dấu 是 …"), which §10 forbids.
+
+### B1. Rules (§4 segments, §7 actions)
+
+- A segment that comes with an action **offers** it: it never says or implies
+  the action was done ("Mình lưu …", "Saved it for you", "我帮你保存了"). The
+  learner does it by tapping or confirming. A `memory_update` is different: the
+  device applies it without a tap, so a reply may say it is applied (S14).
+- A reply that names the button quotes the action's `label` exactly as the
+  learner sees it - interface language (§7, D-094) - even inside a
+  support-language sentence.
+- No segment, `error.message` or fixed copy names a provider or model (§10);
+  evidence is described by what was measured ("Âm 是 bị đánh dấu …").
+
+### B2. Fixtures reworded (§5.1, §12)
+
+| Where | Now | v5 |
+| --- | --- | --- |
+| §12 S5 | "Mình lưu 我 cho bạn nhé." | "Bấm “Lưu từ” để thêm 我 vào từ vựng của bạn." |
+| §12 S2 | "Azure đánh dấu 是 …" | "Âm 是 bị đánh dấu là phát âm sai …" |
+| §5.1 example | "Azure đánh dấu 是 là phát âm sai, điểm 6/100. Nghe mẫu rồi thử lại nhé:" | "Âm 是 bị đánh dấu là phát âm sai, điểm 6/100. Nghe mẫu rồi thử lại nhé:" |
+
+The same wording follows in the UI's mock (vi, en, zh) and in the intelligence
+lane's tests that copy these fixtures (`tests/test_agent_contract_streams.py`,
+`tests/test_agent_events.py`, `tests/test_agent_turn.py` on
+`feature/orena-intelligence`). The lane's reply check (`agent/honesty.py`)
+currently lets "Mình lưu 我 cho bạn nhé." through as an offer; under B1 it is a
+claim.
+
+---
+
+## C. Canonical streams added (§12)
 
 `S14 address` - surface `orena.home`, "Gọi mình là em, còn Orena xưng chị nhé."
 
 ```text
-session → memory_update{upsert, {id: "address:vi", kind: address, address: {self: "chị", user: "em", lang: "vi"}, text: "Xưng chị, gọi em", weight: 1, expires_at: null}}
+session → memory_update{upsert, {id: "address-vi", kind: address, address: {self: "chị", user: "em", lang: "vi"}, weight: 1, expires_at: null}}
 → segment_end{0, vi, "Được rồi, từ giờ chị gọi em là em nhé.", brief_ack} → done
 ```
 
 `S15 identity with address` - surface `home`, `context.address {self: "chị", user: "em", lang: "vi"}`, "Bạn là ai?"
 
 ```text
-session → segment_end{0, vi, "Chị là Orena, trợ lý học tập AI … của em …", neutral_explain} → done   # fixed copy, answered by rule, no model
+session → segment_end{0, vi, "Chị là Orena, trợ lý học tập AI … của em …", neutral_explain} → done   # fixed copy, by rule, no model
 ```
 
-## 6. What each side builds (after approval)
+## D. What each side builds (after approval)
 
-- **UI (`codex/work`):** `agent/contract.js` (the kind, the validation, the
+- **UI (`codex/work`):** `agent/contract.js` (the kind, the term validation, the
   defaults), `agent/memory.js` (the address note: one per language, no decay,
-  kept out of `coach_notes`), `agent/session.js` (`context.address` from memory
-  for the current support language), the memory sheet lists and deletes it, the
-  mock plays S14/S15, `scripts/test_orena_agent.mjs` checks all of it. No
-  Settings control: the design draws none (Design Contract rule 43), so the
-  preference is set only in conversation.
-- **Intelligence lane:** accept and validate `context.address`, apply it to the
-  prompt as data and to the `vi` / `zh-CN` fixed copy through the slots, emit the
-  `address` note only on an explicit statement, and pass S14/S15.
+  kept out of `coach_notes`), `agent/session.js` (`context.address` for the
+  current support language), the memory sheet lists and deletes it, the mock
+  plays S14 and S15 and the reworded S2 and S5 in vi, en and zh,
+  `scripts/test_orena_agent.mjs` checks all of it. No Settings control: the
+  design draws none (Design Contract rule 43).
+- **Intelligence lane:** move its `preference` note to the `address` kind and
+  object, read `context.address`, fill the fixed-copy slots, treat the S5
+  wording as a claim, reword the copied fixtures, pass S14 and S15.
 
-## 7. Questions for the human
+## E. Question for the human
 
-1. **Names.** May `user` be a name ("gọi mình là Minh"), or only a form of
-   address? *Recommendation: allow a name - it is the learner's own words, kept
-   on the device, turn-scoped on the server.*
-2. **English.** English has no choice of pronoun. Should `address` apply to `en`
-   at all? *Recommendation: `en` accepts only `user` (a name used when greeting
-   or calling the learner), never replaces "I"/"you"; `self` is ignored.*
-3. **Asking.** Should Orena ever offer the choice ("Bạn muốn mình xưng hô thế
-   nào?")? *Recommendation: not in v5 - only on the learner's own statement, as
-   you specified; revisit with onboarding if the design adds it.*
+1. **A name in a term.** R19 accepts "any pair they choose", and the lane accepts
+   up to 3 words ("anh Minh"). Confirm that a name inside a term is fine, since
+   it leaves the device with every request. *Recommendation: yes - the learner's
+   own words, device memory, turn-scoped on the server.*
