@@ -4,8 +4,10 @@ from pathlib import Path
 
 import httpx
 
+import json
+
 from grammar_lab.pipeline.content_store import load_point
-from grammar_lab.pipeline.generate import Generator, _build_check_items, build_rule_table
+from grammar_lab.pipeline.generate import Generator, _build_check_items, _story_generation_schema, build_rule_table
 from grammar_lab.pipeline.llm_client import LLMClient
 from grammar_lab.pipeline.validate import validate_lang
 from grammar_lab.tests.conftest import Lab
@@ -39,8 +41,52 @@ CANNED_BLOCKS = {
 }
 
 
+CANNED_STORY = {
+    "characters": ["Alex", "Sam"],
+    "scene": {"vi": (
+        "Alex vừa chuyển đến một căn hộ mới gần trung tâm thành phố được vài hôm. Sáng thứ hai, Alex "
+        "đứng trong bếp trống, nhìn tủ lạnh trống không, và nhận ra mình chưa mua thức ăn cho cả tuần. "
+        "Ngoài cửa sổ, khu chợ nhỏ đầu phố vừa mở cửa, người bán hàng bắt đầu bày rau củ tươi ra sạp."
+    )},
+    "need": {"vi": (
+        "Alex cần nói với Sam, người bạn cùng phòng, rằng mình đã sống ở căn hộ này được vài ngày rồi, "
+        "không phải chỉ mới hôm nay, để Sam hiểu đúng tình hình mà rủ nhau đi chợ mua đồ ăn chung cho "
+        "cả tuần."
+    )},
+    "form_in_action": {
+        "sentences": ["I have lived here for three days."],
+        "slots": [{"role": "person", "value": "I", "constraint": "a personal pronoun"}],
+    },
+    "alternatives": [
+        {
+            "sentence": "I live here for three days.",
+            "error_tags": ["agreement"],
+            "consequence": {"vi": (
+                "Sam sẽ hiểu sai rằng đây là một thói quen lặp lại, chẳng hạn sống ba ngày mỗi tuần, chứ "
+                "không phải một khoảng thời gian liên tục đã kéo dài đến tận bây giờ, nên có thể hỏi lại "
+                "cho rõ."
+            )},
+            "short": {"vi": "Sam hiểu nhầm thành thói quen lặp lại."},
+            "slots": [],
+        },
+    ],
+    "anchor": {"vi": (
+        "Một sợi dây nối liền từ quá khứ đến hiện tại: hành động hay trạng thái bắt đầu trước đó và vẫn "
+        "còn đúng ngay lúc này, chưa hề đứt."
+    )},
+    "anchor_short": {"vi": "Một sợi dây nối quá khứ với hiện tại, chưa đứt."},
+}
+
+
 def canned_transport() -> httpx.MockTransport:
     def handler(request: httpx.Request) -> httpx.Response:
+        sent = json.loads(request.content)
+        tool_name = sent["tool_choice"]["name"]
+        if tool_name == "emit_story":
+            return httpx.Response(200, json={
+                "content": [{"type": "tool_use", "name": "emit_story", "input": CANNED_STORY}],
+                "usage": {"input_tokens": 400, "output_tokens": 250},
+            })
         return httpx.Response(200, json={
             "content": [{"type": "tool_use", "name": "emit_grammar_point_blocks", "input": CANNED_BLOCKS}],
             "usage": {"input_tokens": 500, "output_tokens": 300},
@@ -182,3 +228,52 @@ def test_build_check_items_options_are_unique() -> None:
     items = _build_check_items(examples, rule_table, [], ["vi"])
     assert len(items) == 1
     assert len(items[0]["options"]) == len(set(items[0]["options"]))
+
+
+# --- story (schema v0.3, STORY_SPEC.md) ------------------------------------------------
+
+def test_with_story_adds_a_story_block_and_bumps_schema_version(tmp_path: Path) -> None:
+    lab = Lab(tmp_path, "en")
+    lab.write()
+    outcome = make_generator(lab.root, canned_transport()).generate("en.alpha", with_story=True)
+    assert outcome.status == "written"
+    point = load_point("en", "en.alpha", lab.root)
+    assert point["schema_version"] == "0.3"
+    story_blocks = [b for b in point["blocks"] if b["type"] == "story"]
+    assert len(story_blocks) == 1
+    assert story_blocks[0]["theme"] == "daily"
+    assert story_blocks[0]["characters"] == ["Alex", "Sam"]
+    # still a fully valid point under v0.3 (needs the daily story, has it)
+    report = validate_lang("en", lab.root)
+    assert report.ok, report.issues
+
+
+def test_without_with_story_keeps_schema_version_0_2(tmp_path: Path) -> None:
+    lab = Lab(tmp_path, "en")
+    lab.write()
+    outcome = make_generator(lab.root, canned_transport()).generate("en.alpha")
+    assert outcome.status == "written"
+    point = load_point("en", "en.alpha", lab.root)
+    assert point["schema_version"] == "0.2"
+    assert not any(b["type"] == "story" for b in point["blocks"])
+
+
+def test_with_story_sums_cost_of_both_calls(tmp_path: Path) -> None:
+    lab = Lab(tmp_path, "en")
+    lab.write()
+    without_story = make_generator(lab.root, canned_transport()).generate("en.alpha")
+    lab2 = Lab(tmp_path.parent / (tmp_path.name + "-2"), "en")
+    lab2.write()
+    with_story = make_generator(lab2.root, canned_transport()).generate("en.alpha", with_story=True)
+    assert with_story.cost_usd > without_story.cost_usd
+
+
+def test_story_generation_schema_constrains_characters_to_the_cast() -> None:
+    schema = _story_generation_schema(locales=["vi"], error_tags=["agreement"], cast_names=["Alex", "Sam"])
+    assert schema["properties"]["characters"]["items"] == {"enum": ["Alex", "Sam"]}
+
+
+def test_story_generation_schema_bounds_alternatives_to_one_per_error_tag() -> None:
+    schema = _story_generation_schema(locales=["vi"], error_tags=["agreement", "tense"], cast_names=["Alex"])
+    alternatives = schema["properties"]["alternatives"]
+    assert alternatives["minItems"] == alternatives["maxItems"] == 2

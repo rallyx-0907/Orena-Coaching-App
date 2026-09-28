@@ -202,6 +202,27 @@ CASES = [
         {**_inv("en.inv.0001"), "status": "out_of_scope"}])),
     fail("schema.invalid", "inventory level on wrong scale", lambda lab: setattr(lab, "inventory", [
         {**_inv("en.inv.0001"), "level": {"framework": "cefr", "value": "N5"}}])),
+    # --- story (schema v0.3, STORY_SPEC.md) --------------------------------------------
+    ok("story.character_unknown", "characters drawn from the cast", lambda lab: _with_story(alpha(lab))),
+    fail("story.character_unknown", "character not in cast/cast.yaml", lambda lab: (
+        story := _with_story(alpha(lab)), story.update(characters=["NotInCast"]))),
+    ok("error_tag.story_alternative_unlisted", "alternative tag listed on the point",
+       lambda lab: _with_story(alpha(lab))),
+    fail("error_tag.story_alternative_unlisted", "alternative tag not on the point", lambda lab: (
+        story := _with_story(alpha(lab)), story["alternatives"][0].update(error_tags=["tense"]))),
+    ok("story.length_out_of_range", "150-250 words vi", lambda lab: _with_story(alpha(lab))),
+    fail("story.length_out_of_range", "too short", lambda lab: (
+        story := _with_story(alpha(lab)),
+        story.update(scene={"vi": "Ngắn."}, need={"vi": "Ngắn."}, anchor={"vi": "Ngắn."}),
+        story["alternatives"][0].update(consequence={"vi": "Ngắn."}))),
+    ok("story.anchor_short_too_long", "anchor_short at or under 20 words", lambda lab: _with_story(alpha(lab))),
+    fail("story.anchor_short_too_long", "anchor_short over 20 words", lambda lab: _with_story(alpha(lab)).update(
+        anchor_short={"vi": " ".join(["từ"] * 21)})),
+    ok("story.short_not_one_line", "short forms have no newline", lambda lab: _with_story(alpha(lab))),
+    fail("story.short_not_one_line", "alternative short has a newline", lambda lab: (
+        story := _with_story(alpha(lab)), story["alternatives"][0]["short"].update(vi="dòng một\ndòng hai"))),
+    fail("story.short_not_one_line", "anchor_short has a newline",
+         lambda lab: _with_story(alpha(lab)).update(anchor_short={"vi": "dòng một\ndòng hai"})),
 ]
 
 
@@ -228,6 +249,59 @@ def _zh_explanations(lab: Lab, text: str) -> None:
     _all_locales(lab, ["vi", "zh-Hans"])
     alpha(lab)["summary"]["zh-Hans"] = text
     lab.functions["functions"][0]["title"]["zh-Hans"] = "习惯"
+
+
+def _valid_story() -> dict:
+    """A schema-valid story block, ~180 words (vi) -- inside STORY_SPEC.md's 150-250 range."""
+    return {
+        "type": "story",
+        "theme": "daily",
+        "characters": ["Alex", "Sam"],
+        "scene": {"vi": (
+            "Alex vừa chuyển đến một căn hộ mới gần trung tâm thành phố được vài hôm. Sáng thứ hai, "
+            "Alex đứng trong bếp trống, nhìn tủ lạnh trống không, và nhận ra mình chưa mua thức ăn cho "
+            "cả tuần. Ngoài cửa sổ, khu chợ nhỏ đầu phố vừa mở cửa, người bán hàng bắt đầu bày rau củ "
+            "tươi ra sạp."
+        )},
+        "need": {"vi": (
+            "Alex cần nói với người bạn cùng phòng, Sam, rằng mình đã sống ở căn hộ này được vài ngày "
+            "rồi, không phải chỉ mới hôm nay, để Sam hiểu đúng tình hình mà rủ nhau đi chợ mua đồ ăn "
+            "chung cho cả tuần."
+        )},
+        "form_in_action": {
+            "sentences": ["I have lived here for three days."],
+            "slots": [
+                {"role": "person", "value": "I", "constraint": "a personal pronoun or proper noun"},
+                {"role": "place", "value": "here", "constraint": "a place reference"},
+            ],
+        },
+        "alternatives": [
+            {
+                "sentence": "I live here for three days.",
+                "error_tags": ["agreement"],
+                "consequence": {"vi": (
+                    "Nếu nói sai thì Sam sẽ hiểu rằng Alex chỉ mới chuyển đến đúng vào lúc đó, chứ không "
+                    "phải đã ở đây một khoảng thời gian, nên có thể ngạc nhiên khi thấy bếp đã bừa bộn "
+                    "như vậy."
+                )},
+                "short": {"vi": "Sam tưởng Alex vừa mới chuyển đến."},
+                "slots": [{"role": "person", "value": "I", "constraint": "a personal pronoun or proper noun"}],
+            },
+        ],
+        "anchor": {"vi": (
+            "Hãy nghĩ đến một sợi dây nối liền từ quá khứ đến hiện tại: hành động hay trạng thái bắt "
+            "đầu trước đó và vẫn còn đúng ngay lúc này, chưa hề kết thúc."
+        )},
+        "anchor_short": {"vi": "Một sợi dây nối quá khứ với hiện tại, chưa đứt."},
+    }
+
+
+def _with_story(point: dict) -> dict:
+    """Bump ``point`` to schema_version 0.3 and append a valid story block; returns the block."""
+    point["schema_version"] = "0.3"
+    story = _valid_story()
+    point["blocks"].append(story)
+    return story
 
 
 @pytest.mark.parametrize("case", CASES, ids=[case.id for case in CASES])

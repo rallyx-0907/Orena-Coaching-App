@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from grammar_lab.pipeline.jsonio import read_json, read_yaml, write_json
-from grammar_lab.pipeline.validate import FUNCTIONS_PATH, LANGS, MANIFEST_NAME, LAB_ROOT
+from grammar_lab.pipeline.validate import CAST_PATH, FUNCTIONS_PATH, LANGS, MANIFEST_NAME, LAB_ROOT
 
 __all__ = [
     "LAB_ROOT",
@@ -19,6 +19,7 @@ __all__ = [
     "point_path",
     "load_manifest",
     "load_functions",
+    "load_cast",
     "load_points",
     "load_point",
     "save_point",
@@ -40,6 +41,11 @@ def load_manifest(lang: str, root: Path = LAB_ROOT) -> dict[str, Any]:
 
 def load_functions(root: Path = LAB_ROOT) -> dict[str, Any]:
     return read_yaml(root / FUNCTIONS_PATH)
+
+
+def load_cast(root: Path = LAB_ROOT) -> list[dict[str, Any]]:
+    """cast/cast.yaml (STORY_SPEC.md §3): the fixed, shared character list every story picks from."""
+    return read_yaml(root / CAST_PATH)["cast"]
 
 
 def load_points(lang: str, root: Path = LAB_ROOT) -> dict[str, dict[str, Any]]:

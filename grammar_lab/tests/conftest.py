@@ -120,6 +120,13 @@ class Lab:
         self.lang = lang
         self.error_tags: dict[str, Any] | None = {"schema_version": "0.2", "languages": copy.deepcopy(ENGINE_TAGS)}
         self.inventory: list[dict[str, Any]] | None = None
+        self.cast: dict[str, Any] | None = {
+            "schema_version": "0.3",
+            "cast": [
+                {"name": "Alex", "personality": {"vi": "Thích thử cái mới."}},
+                {"name": "Sam", "personality": {"vi": "Cẩn thận, hay lên kế hoạch."}},
+            ],
+        }
         self.file_names: dict[str, str] = {}  # point id -> file name override
         self.raw_files: dict[str, str] = {}  # file name -> raw text in content/<lang>/
         if lang == "en":
@@ -175,6 +182,12 @@ class Lab:
             shutil.copy(LAB_ROOT / "schema" / name, schema_dir / name)
         if self.error_tags is not None:
             write_json(schema_dir / "error_tags.json", self.error_tags)
+        if self.cast is not None:
+            cast_dir = self.root / "cast"
+            cast_dir.mkdir(parents=True, exist_ok=True)
+            cast_dir.joinpath("cast.yaml").write_text(
+                yaml.safe_dump(self.cast, allow_unicode=True, sort_keys=False), encoding="utf-8",
+            )
         self.content_dir.mkdir(parents=True, exist_ok=True)
         if self.manifest is not None:
             write_json(self.content_dir / "_set.json", self.manifest)

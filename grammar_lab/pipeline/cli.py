@@ -86,11 +86,15 @@ def generate(
     lang: str = typer.Option(..., "--lang", help=f"Target language: {', '.join(LANGS)}."),
     l1: str = typer.Option("vi", "--l1", help="Learner L1 (informational; blocks cover every L1 in the set manifest)."),
     ids: str = typer.Option(..., "--ids", help="Comma-separated point ids, e.g. en.past_simple,en.there_is_are."),
-    provider: str = typer.Option("anthropic", "--provider", help="LLM provider: anthropic | openai | gemini."),
+    provider: str = typer.Option("anthropic", "--provider", help="LLM provider: anthropic | openai | gemini | groq | deepseek."),
     model: str = typer.Option("claude-haiku-4-5-20251001", "--model", help="Model id for that provider."),
     regenerate_note: str = typer.Option(
         "", "--regenerate-note",
         help="Admin note for regenerating an already-approved point (SPEC §6); required to touch one.",
+    ),
+    with_story: bool = typer.Option(
+        False, "--with-story",
+        help="Also generate the daily-theme story block (STORY_SPEC.md) and bump the point to schema_version 0.3.",
     ),
     root: Path = typer.Option(LAB_ROOT, "--root"),
 ) -> None:
@@ -102,7 +106,7 @@ def generate(
         generator = Generator(lang=lang, l1=l1, llm=llm, root=root)
         for point_id in (p.strip() for p in ids.split(",") if p.strip()):
             try:
-                outcomes.append(generator.generate(point_id, regenerate_note=regenerate_note or None))
+                outcomes.append(generator.generate(point_id, regenerate_note=regenerate_note or None, with_story=with_story))
             except LLMError as exc:
                 outcomes.append(GenerateOutcome(point_id, "error", reason=str(exc)))
     total_cost = sum(o.cost_usd for o in outcomes if o.cost_usd is not None)
@@ -216,6 +220,7 @@ def route(
         outcome = route_point(
             point_id, validate_issue_codes=issue_codes_by_id.get(point_id, set()),
             verify_report=verify_report, threshold=threshold, gold_set_passed=gold_set_passed,
+            target_lang=point.get("target_lang"), has_story=any(b["type"] == "story" for b in point["blocks"]),
         )
         save_point(lang, apply_route(point, outcome), root)
         outcomes[point_id] = {"score": outcome.score, "status": outcome.status, "flags": outcome.flags}

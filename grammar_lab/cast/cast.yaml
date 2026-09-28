@@ -1,0 +1,32 @@
+# Fixed, shared character cast for story blocks (schema v0.3). Every story
+# picks its characters from here rather than inventing new ones, so a learner
+# meets the same people across every grammar point and every target
+# language. Culturally neutral for Vietnamese learners: ordinary given names,
+# no occupation-gender pairing, no ethnic or cultural stereotyping of anyone.
+# Adding a character is a deliberate edit here, not something generate.py does.
+schema_version: '0.3'
+cast:
+  - name: Linh
+    personality:
+      vi: Thực tế và tò mò, luôn là người đầu tiên thử một cách làm mới.
+  - name: Minh
+    personality:
+      vi: Dễ tính, hay quên việc nhỏ nhưng không bao giờ quên sinh nhật bạn bè.
+  - name: Chi
+    personality:
+      vi: Ngăn nắp và hơi thích cạnh tranh, lúc nào cũng có một danh sách việc cần làm.
+  - name: Duy
+    personality:
+      vi: Trầm tính nhưng quan sát tốt, để ý những chi tiết người khác bỏ qua.
+  - name: Mai
+    personality:
+      vi: Cởi mở, dễ bắt chuyện với người lạ và có bạn ở khắp nơi.
+  - name: Nam
+    personality:
+      vi: Cẩn thận, thích lên kế hoạch chi tiết cho mọi chuyến đi.
+  - name: Trang
+    personality:
+      vi: Sáng tạo, hay đổi kế hoạch giữa chừng và vẫn vui vẻ với kết quả.
+  - name: Khoa
+    personality:
+      vi: Điềm đạm và đáng tin cậy, là người bạn bè hay nhờ giúp khi chuyển nhà.

@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:orena:grammar_lab:grammar_set:0.2",
-  "title": "Orena Grammar Lab grammar set (schema v0.2)",
-  "description": "Contract between Grammar Lab and the Orena app (SPEC §3). The root validates one grammar point file content/<lang>/<id>.json. $defs.set_manifest validates content/<lang>/_set.json and $defs.functions_file validates functions/functions.yaml.",
+  "title": "Orena Grammar Lab grammar set (schema v0.2 + v0.3 story block)",
+  "description": "Contract between Grammar Lab and the Orena app (SPEC §3). The root validates one grammar point file content/<lang>/<id>.json. $defs.set_manifest validates content/<lang>/_set.json, $defs.functions_file validates functions/functions.yaml, and $defs.cast_file validates cast/cast.yaml. schema_version 0.3 adds the story block (STORY_SPEC.md) and requires one with theme=daily; 0.2 points are unaffected.",
   "level_scales": {
     "en": {"framework": "cefr", "values": ["A1", "A2", "B1", "B2", "C1", "C2"]},
     "zh-Hans": {"framework": "hsk3", "values": ["1", "2", "3", "4", "5", "6", "7", "8", "9"]},
@@ -10,7 +10,7 @@
   },
   "$ref": "#/$defs/grammar_point",
   "$defs": {
-    "schema_version": {"const": "0.2"},
+    "schema_version": {"enum": ["0.2", "0.3"]},
     "target_lang": {
       "description": "BCP-47 target language. Only simplified script is allowed for Chinese.",
       "enum": ["en", "zh-Hans", "ja"]
@@ -168,6 +168,21 @@
         {
           "if": {"required": ["status"], "properties": {"status": {"const": "rejected"}}},
           "then": {"properties": {"review": {"required": ["reject_reason"]}}}
+        },
+        {
+          "description": "Every v0.3 point needs a daily-theme story (STORY_SPEC.md); v0.2 points are unaffected.",
+          "if": {"required": ["schema_version"], "properties": {"schema_version": {"const": "0.3"}}},
+          "then": {
+            "properties": {
+              "blocks": {
+                "contains": {
+                  "type": "object",
+                  "required": ["type", "theme"],
+                  "properties": {"type": {"const": "story"}, "theme": {"const": "daily"}}
+                }
+              }
+            }
+          }
         }
       ]
     },
@@ -176,7 +191,7 @@
       "type": "object",
       "required": ["type"],
       "properties": {
-        "type": {"enum": ["formula", "rule_table", "timeline", "example", "contrast", "pitfall", "note", "check"]}
+        "type": {"enum": ["formula", "rule_table", "timeline", "example", "contrast", "pitfall", "note", "check", "story"]}
       },
       "allOf": [
         {"if": {"properties": {"type": {"const": "formula"}}}, "then": {"$ref": "#/$defs/block_formula"}},
@@ -186,7 +201,8 @@
         {"if": {"properties": {"type": {"const": "contrast"}}}, "then": {"$ref": "#/$defs/block_contrast"}},
         {"if": {"properties": {"type": {"const": "pitfall"}}}, "then": {"$ref": "#/$defs/block_pitfall"}},
         {"if": {"properties": {"type": {"const": "note"}}}, "then": {"$ref": "#/$defs/block_note"}},
-        {"if": {"properties": {"type": {"const": "check"}}}, "then": {"$ref": "#/$defs/block_check"}}
+        {"if": {"properties": {"type": {"const": "check"}}}, "then": {"$ref": "#/$defs/block_check"}},
+        {"if": {"properties": {"type": {"const": "story"}}}, "then": {"$ref": "#/$defs/block_story"}}
       ]
     },
     "block_formula": {
@@ -329,6 +345,64 @@
         }
       }
     },
+    "story_theme": {
+      "description": "STORY_SPEC.md: daily is required on every point; the others arrive in a later round.",
+      "enum": ["daily", "travel", "work", "exam"]
+    },
+    "story_slot": {
+      "description": "A filled-in role in a story sentence, so the app can later swap it for the learner's own life at the transfer step (STORY_SPEC.md). Filling slots is out of scope for the lab itself -- this only records what is already in the sentence.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "value", "constraint"],
+      "properties": {
+        "role": {"enum": ["person", "place", "action", "object"]},
+        "value": {"description": "The exact word/phrase in the sentence that plays this role.", "type": "string", "minLength": 1},
+        "constraint": {"description": "The grammatical shape a replacement value must keep.", "type": "string", "minLength": 1}
+      }
+    },
+    "story_beat": {
+      "description": "form_in_action: the correct sentence(s) for the scene.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sentences", "slots"],
+      "properties": {
+        "sentences": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "slots": {"type": "array", "items": {"$ref": "#/$defs/story_slot"}}
+      }
+    },
+    "story_alternative": {
+      "description": "Another way to say it, and what goes wrong: verify sends `sentence` to the writing evaluator. If the engine flags it, `error_tags` must be what it flags (a pitfall-style check); if the engine finds nothing, `sentence` is grammatical but implies something else, and the blind-solve model's reading of it must match `consequence`.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sentence", "error_tags", "consequence", "short", "slots"],
+      "properties": {
+        "sentence": {"type": "string", "minLength": 1},
+        "error_tags": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/error_tag"}},
+        "consequence": {"description": "What goes wrong: misunderstanding, awkwardness, or humor.", "$ref": "#/$defs/locale_map"},
+        "short": {"description": "One line, for review (STORY_SPEC.md's alternative_short).", "$ref": "#/$defs/locale_map"},
+        "slots": {"type": "array", "items": {"$ref": "#/$defs/story_slot"}}
+      }
+    },
+    "block_story": {
+      "description": "The centerpiece block (STORY_SPEC.md): a short, vivid narrative that makes the point easy to picture. Beats are stored separately because the app shows them apart (first-time lesson, review, on a mistake via error_tag, or told on request).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "theme", "characters", "scene", "need", "form_in_action", "alternatives", "anchor", "anchor_short"],
+      "properties": {
+        "type": {"const": "story"},
+        "theme": {"$ref": "#/$defs/story_theme"},
+        "characters": {
+          "description": "Names drawn from cast/cast.yaml; validate checks membership.",
+          "type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}
+        },
+        "scene": {"description": "An everyday situation with concrete characters (R5 flow: notice).", "$ref": "#/$defs/locale_map"},
+        "need": {"description": "Why the speaker needs this way of saying it (understand).", "$ref": "#/$defs/locale_map"},
+        "form_in_action": {"$ref": "#/$defs/story_beat"},
+        "alternatives": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/story_alternative"}},
+        "anchor": {"description": "The image/metaphor that fixes when to use this and when not (recall).", "$ref": "#/$defs/locale_map"},
+        "anchor_short": {"description": "<= 20 words, for review.", "$ref": "#/$defs/locale_map"}
+      }
+    },
     "set_manifest": {
       "description": "content/<lang>/_set.json: locales and L1s every point of the set must cover.",
       "type": "object",
@@ -374,6 +448,28 @@
       "properties": {
         "schema_version": {"$ref": "#/$defs/schema_version"},
         "functions": {"type": "array", "items": {"$ref": "#/$defs/function"}}
+      }
+    },
+    "cast_file": {
+      "description": "cast/cast.yaml: the fixed, shared character cast every story picks from (STORY_SPEC.md).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "cast"],
+      "properties": {
+        "schema_version": {"const": "0.3"},
+        "cast": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "personality"],
+            "properties": {
+              "name": {"type": "string", "minLength": 1},
+              "personality": {"$ref": "#/$defs/locale_map"}
+            }
+          }
+        }
       }
     }
   }

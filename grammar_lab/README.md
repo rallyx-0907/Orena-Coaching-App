@@ -29,6 +29,8 @@ python -m grammar_lab.pipeline.cli export-error-tags           # xuất lại sc
 # Giai đoạn 1 (SPEC §5.1-§5.5) -- cần key managed API riêng của lab (không phải key trong sandbox app)
 # và evaluator sandbox: grammar_lab/sandbox/ (docker compose, xem sandbox/README.md).
 python -m grammar_lab.pipeline.cli generate --lang en --ids en.past_simple,en.there_is_are   # provider mặc định: anthropic
+python -m grammar_lab.pipeline.cli generate --lang en --ids en.past_simple --with-story \
+  --provider deepseek --model deepseek-flash    # thêm block story (schema v0.3, STORY_SPEC.md)
 python -m grammar_lab.pipeline.cli verify --lang en --evaluator-url http://localhost:8020    # blind-solve mặc định: gemini
 python -m grammar_lab.pipeline.cli route --lang en --gold-set-passed   # bỏ cờ này -> mọi mục bị flagged (SPEC §5.4)
 python -m grammar_lab.pipeline.cli report --lang en                    # reports/<run_id>/report.{json,html}
@@ -45,28 +47,37 @@ một `run_id` riêng trong `reports/`; `verify` + `route` + `report` cho từng
 `report.json`'s `route_status_counts`/`verify_flag_rate`/`api_cost_usd` giữa hai lần chạy.
 
 `generate`/`verify` gọi API thật (`llm_client.py` có cache theo hash input ở `.cache/llm/`, không
-tính phí lần chạy lại). `evaluator_client.py` chỉ có chế độ staging (HTTP); **không có `base_url` mặc
-định** -- endpoint công khai duy nhất, `orena.chillpickle.org`, chui thẳng vào container production
-(`writing-coach:8000`), một "human gate" theo `AGENTS.md` phần Safety. Trỏ `--evaluator-url` vào một
-sandbox được phép thao tác (vd. `orena-foundation-web` ở `:8011`).
+tính phí lần chạy lại). Bốn provider: `anthropic | openai | gemini | groq`, cộng `deepseek` (chỉ
+`json_object`, không ép schema -- xem docstring `llm_client.py`). Gemini và DeepSeek đọc key từ
+`GEMINI_API_KEY`/`DEEPSEEK_API_KEY`, không bao giờ giá trị literal trong code hay compose. Gemini đi
+qua `rate_limit.py` (chia sẻ một bucket với engine chấm bài trong sandbox nếu engine cũng dùng Gemini
+-- xem `sandbox/README.md`); DeepSeek có bucket riêng nếu cần, không dùng chung với Gemini.
+
+`evaluator_client.py` chỉ có chế độ staging (HTTP); **không có `base_url` mặc định** -- endpoint công
+khai duy nhất, `orena.chillpickle.org`, chui thẳng vào container production (`writing-coach:8000`),
+một "human gate" theo `AGENTS.md` phần Safety. Trỏ `--evaluator-url` vào một sandbox được phép thao
+tác (vd. `grammar_lab/sandbox/` ở `:8020`).
 
 ## Bố cục
 
 | Đường dẫn | Nội dung |
 | --- | --- |
-| `schema/grammar_set.schema.json` | Schema v0.2: grammar point (gốc), `$defs.set_manifest`, `$defs.functions_file`, `level_scales` |
+| `schema/grammar_set.schema.json` | Schema v0.2 + v0.3 (`block_story`): grammar point (gốc), `$defs.set_manifest`, `$defs.functions_file`, `$defs.cast_file`, `level_scales` |
 | `schema/inventory.schema.json` | Danh mục chính `inventory/<lang>.yaml` |
 | `schema/error_tags.json` | Nhãn lỗi của engine chấm bài, **sinh tự động**, không sửa tay |
 | `content/<lang>/_set.json` | Manifest của bộ: locale giải thích và L1 bắt buộc |
 | `content/<lang>/<id>.json` | Mỗi grammar point một file, tên file = `id` |
 | `functions/functions.yaml` | Lớp chức năng giao tiếp dùng chung |
+| `cast/cast.yaml` | Cast nhân vật cố định cho block `story` (schema v0.3, `STORY_SPEC.md` §3) |
 | `inventory/<lang>.yaml` | Danh mục chính (giai đoạn 3; hiện là `[]`) |
 | `pipeline/` | CLI và các bước. `coverage.py` còn là stub (cần inventory, giai đoạn 3); `preview/` là stub giai đoạn 2 |
 | `rules/en_morphology.py` | Bảng biến đổi tất định (SPEC §5.1 bước 1): third person -s, số nhiều, quá khứ, -ing, so sánh |
-| `pipeline/content_store.py` | Đọc/ghi `content/<lang>/` dùng chung giữa generate/verify/route |
-| `pipeline/llm_client.py` | Managed API (Anthropic, OpenAI), cache theo hash input ở `.cache/llm/` |
+| `pipeline/content_store.py` | Đọc/ghi `content/<lang>/` + `cast/cast.yaml` dùng chung giữa generate/verify/route |
+| `pipeline/llm_client.py` | Managed API (Anthropic, OpenAI, Gemini, Groq, DeepSeek), cache theo hash input ở `.cache/llm/` |
+| `pipeline/rate_limit.py`, `secrets_redact.py` | Rate limiter theo bucket dùng chung (Gemini) + che giá trị key khỏi mọi thông báo lỗi |
 | `pipeline/evaluator_client.py` | Client HTTP chế độ staging cho engine chấm bài (không có `base_url` mặc định) |
 | `pipeline/run_context.py`, `report_step.py` | `reports/<run_id>/*.json` + `reports/latest.txt` nối các bước; `report` gộp thành JSON/HTML |
+| `prompts/generate_story.md`, `verify_story.md` | Prompt sinh và verify block `story` (schema v0.3) |
 | `reports/<run_id>/` | Kết quả chạy (không commit) |
 | `sandbox/` | Evaluator sandbox rời (compose project, image, port riêng) cho `verify`; xem `sandbox/README.md` |
 

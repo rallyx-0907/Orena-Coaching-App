@@ -70,13 +70,19 @@ def route_point(
     verify_report: VerifyReport | None,
     threshold: float,
     gold_set_passed: bool,
+    target_lang: str | None = None,
+    has_story: bool = False,
 ) -> RouteOutcome:
     """SPEC §5.4 routing rules, in order:
 
     1. Any validate issue, or any verify flag (including one meaning the
        point could not be checked at all) -> flagged.
-    2. The language/L1 pair has not been through a gold set -> flagged.
-    3. Otherwise: score >= threshold -> auto_ok (a random 10% still sampled
+    2. A Chinese point with a story block -> always flagged, regardless of
+       score or gold-set status (STORY_SPEC.md §6: "Tiếng Trung: luôn vào
+       hàng đợi duyệt" -- stronger than rule 3 below, which a passed gold
+       set can clear).
+    3. The language/L1 pair has not been through a gold set -> flagged.
+    4. Otherwise: score >= threshold -> auto_ok (a random 10% still sampled
        into the review queue); below threshold -> flagged.
     """
     verify_codes = verify_report.codes() if verify_report is not None else {"not_verified"}
@@ -85,6 +91,8 @@ def route_point(
 
     if validate_issue_codes or verify_codes:
         return RouteOutcome(point_id, score_point(verify_codes), "flagged", all_flags)
+    if target_lang == "zh-Hans" and has_story:
+        return RouteOutcome(point_id, score_point(verify_codes), "flagged", ["route:zh_story_always_reviewed"])
     if not gold_set_passed:
         return RouteOutcome(point_id, 1.0, "flagged", ["route:gold_set_not_passed"])
 

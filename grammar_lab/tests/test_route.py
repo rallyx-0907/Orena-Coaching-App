@@ -76,6 +76,31 @@ def test_sampled_points_are_deterministic_across_calls() -> None:
     assert outcome_a.sampled == outcome_b.sampled
 
 
+def test_zh_point_with_story_is_always_flagged_even_with_gold_set_passed() -> None:
+    outcome = route_point(
+        "zh.le_completion", validate_issue_codes=set(), verify_report=clean_verify(),
+        threshold=0.8, gold_set_passed=True, target_lang="zh-Hans", has_story=True,
+    )
+    assert outcome.status == "flagged"
+    assert outcome.flags == ["route:zh_story_always_reviewed"]
+
+
+def test_zh_point_without_story_follows_the_normal_rules() -> None:
+    outcome = route_point(
+        "zh.le_completion", validate_issue_codes=set(), verify_report=clean_verify(),
+        threshold=0.8, gold_set_passed=True, target_lang="zh-Hans", has_story=False,
+    )
+    assert outcome.status == "auto_ok"
+
+
+def test_en_point_with_story_is_unaffected_by_the_zh_rule() -> None:
+    outcome = route_point(
+        "en.alpha", validate_issue_codes=set(), verify_report=clean_verify(),
+        threshold=0.8, gold_set_passed=True, target_lang="en", has_story=True,
+    )
+    assert outcome.status == "auto_ok"
+
+
 def test_apply_route_updates_status_and_flags_without_touching_review() -> None:
     point = {"id": "en.alpha", "status": "draft_ai", "flags": [], "review": None, "version": 1}
     outcome = RouteOutcome("en.alpha", 1.0, "auto_ok", ["route:sampled_for_review"], sampled=True)

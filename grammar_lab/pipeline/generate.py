@@ -26,6 +26,7 @@ from typing import Any
 
 from grammar_lab.pipeline.content_store import (
     LAB_ROOT,
+    load_cast,
     load_functions,
     load_manifest,
     load_point,
@@ -37,6 +38,8 @@ from grammar_lab.rules import en_morphology
 
 PROMPT_VERSION = "generate_point.v1"
 PROMPT_PATH = LAB_ROOT / "prompts" / "generate_point.md"
+STORY_PROMPT_VERSION = "generate_story.v1"
+STORY_PROMPT_PATH = LAB_ROOT / "prompts" / "generate_story.md"
 
 # point id -> (rule label, vocabulary the rule table is built from)
 _EN_RULE_TABLES: dict[str, tuple[str, list[str]]] = {
@@ -171,6 +174,61 @@ def _generation_schema(*, locales: list[str], l1s: list[str], error_tags: list[s
     }
 
 
+def _story_generation_schema(*, locales: list[str], error_tags: list[str], cast_names: list[str]) -> dict[str, Any]:
+    """STORY_SPEC.md §2: the LLM writes everything except ``type``/``theme`` (code sets
+    those). One alternative per error_tag, same bounded-count pattern as pitfalls."""
+    locale_map = _locale_map_schema(locales)
+    slot = {
+        "type": "object", "additionalProperties": False,
+        "required": ["role", "value", "constraint"],
+        "properties": {
+            "role": {"enum": ["person", "place", "action", "object"]},
+            "value": {"type": "string", "minLength": 1},
+            "constraint": {"type": "string", "minLength": 1},
+        },
+    }
+    beat = {
+        "type": "object", "additionalProperties": False,
+        "required": ["sentences", "slots"],
+        "properties": {
+            "sentences": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+            "slots": {"type": "array", "items": slot},
+        },
+    }
+    alternative = {
+        "type": "object", "additionalProperties": False,
+        "required": ["sentence", "error_tags", "consequence", "short", "slots"],
+        "properties": {
+            "sentence": {"type": "string", "minLength": 1},
+            "error_tags": {
+                "type": "array", "minItems": 1, "uniqueItems": True,
+                "items": {"enum": error_tags} if error_tags else {"type": "string"},
+            },
+            "consequence": locale_map,
+            "short": locale_map,
+            "slots": {"type": "array", "items": slot},
+        },
+    }
+    alternative_count = max(1, len(error_tags))
+    return {
+        "type": "object",
+        "additionalProperties": False,
+        "required": ["characters", "scene", "need", "form_in_action", "alternatives", "anchor", "anchor_short"],
+        "properties": {
+            "characters": {
+                "type": "array", "minItems": 1, "uniqueItems": True,
+                "items": {"enum": cast_names} if cast_names else {"type": "string"},
+            },
+            "scene": locale_map,
+            "need": locale_map,
+            "form_in_action": beat,
+            "alternatives": {"type": "array", "minItems": alternative_count, "maxItems": alternative_count, "items": alternative},
+            "anchor": locale_map,
+            "anchor_short": locale_map,
+        },
+    }
+
+
 def _build_check_items(examples: list[dict[str, Any]], rule_table: dict[str, Any] | None,
                         pitfalls: list[dict[str, Any]], locales: list[str], max_items: int = 3) -> list[dict[str, Any]]:
     """Cloze questions built from the examples the LLM just wrote (SPEC §5.1 step 3):
@@ -217,7 +275,7 @@ class Generator:
     root: Path = LAB_ROOT
     num_examples: int = 2
 
-    def generate(self, point_id: str, *, regenerate_note: str | None = None) -> GenerateOutcome:
+    def generate(self, point_id: str, *, regenerate_note: str | None = None, with_story: bool = False) -> GenerateOutcome:
         existing = load_point(self.lang, point_id, self.root)
         if existing is None:
             return GenerateOutcome(point_id, "error", reason="point metadata does not exist yet; seed it from the inventory first")
@@ -264,21 +322,50 @@ class Generator:
         if check_items:
             blocks.append({"type": "check", "items": check_items})
 
+        cost = result.usage.cost_usd(result.model) or 0.0
+        cached = result.cached
+        prompt_version = PROMPT_VERSION
+        schema_version = existing.get("schema_version", "0.2")
+        if with_story:
+            story_result, story_block = self._generate_story(existing, locales)
+            blocks.append(story_block)
+            story_cost = story_result.usage.cost_usd(story_result.model)
+            cost = (cost + story_cost) if story_cost is not None else cost
+            cached = cached and story_result.cached
+            prompt_version = f"{PROMPT_VERSION}+{STORY_PROMPT_VERSION}"
+            schema_version = "0.3"
+
         version = next_draft_version(existing) if regenerate_note and existing["status"] == "approved" else existing["version"]
         point = {
             **existing,
+            "schema_version": schema_version,
             "version": version,
             "blocks": blocks,
             "status": "draft_ai",
             "flags": [],
             "provenance": {
                 "model": f"{result.provider}:{result.model}",
-                "prompt_version": PROMPT_VERSION,
+                "prompt_version": prompt_version,
                 "run_id": f"generate.{int(time.time())}",
                 "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
             },
             "review": None,
         }
         save_point(self.lang, point, self.root)
-        cost = result.usage.cost_usd(result.model)
-        return GenerateOutcome(point_id, "written", cost_usd=cost, cached=result.cached)
+        return GenerateOutcome(point_id, "written", cost_usd=cost or None, cached=cached)
+
+    def _generate_story(self, existing: dict[str, Any], locales: list[str]) -> tuple[Any, dict[str, Any]]:
+        """STORY_SPEC.md: a dedicated call for the point's daily-theme story block."""
+        cast = load_cast(self.root)
+        cast_names = [member["name"] for member in cast]
+        cast_list = "\n".join(f"- {member['name']}: {member['personality'].get('vi', '')}" for member in cast)
+        schema = _story_generation_schema(locales=locales, error_tags=existing["error_tags"], cast_names=cast_names)
+        system = STORY_PROMPT_PATH.read_text(encoding="utf-8").format(
+            point_id=existing["id"], target_lang=existing["target_lang"],
+            level_framework=existing["level"]["framework"], level_value=existing["level"]["value"],
+            locales=", ".join(locales), error_tags=", ".join(existing["error_tags"]) or "(none)",
+            cast_list=cast_list,
+        )
+        user = f"Write the daily-theme story for {existing['id']} now, matching the structured output schema."
+        result = self.llm.complete(system=system, user=user, json_schema=schema, schema_name="story")
+        return result, {"type": "story", "theme": "daily", **result.data}

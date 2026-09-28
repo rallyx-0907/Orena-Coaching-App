@@ -30,6 +30,11 @@ locale.missing              a localized field lacks a locale declared in the man
 locale.l1_undeclared        pitfall.l1 names an L1 not declared in the manifest
 zh.traditional_char         zh-Hans content contains traditional characters
 inventory.duplicate_id      inv_id appears twice in the inventory
+story.character_unknown     a story character is not in cast/cast.yaml
+error_tag.story_alternative_unlisted  a story alternative's error_tag is not in the point's error_tags
+story.length_out_of_range   scene+need+anchor+consequences (vi) is not 150-250 words (STORY_SPEC.md §2)
+story.anchor_short_too_long anchor_short (vi) is more than 20 words
+story.short_not_one_line    an alternative's short (or anchor_short) contains a newline
 """
 
 from __future__ import annotations
@@ -51,9 +56,13 @@ from grammar_lab.pipeline.zh_script import traditional_chars
 LAB_ROOT = Path(__file__).resolve().parents[1]
 MANIFEST_NAME = "_set.json"
 FUNCTIONS_PATH = Path("functions/functions.yaml")
+CAST_PATH = Path("cast/cast.yaml")
 ERROR_TAGS_PATH = Path("schema/error_tags.json")
 GRAMMAR_SCHEMA_PATH = Path("schema/grammar_set.schema.json")
 INVENTORY_SCHEMA_PATH = Path("schema/inventory.schema.json")
+
+STORY_LENGTH_RANGE = (150, 250)  # words, vi (STORY_SPEC.md §2)
+ANCHOR_SHORT_MAX_WORDS = 20
 
 # Short code (content dir, ID prefix, CLI --lang) -> BCP-47 target_lang.
 LANGS = {"en": "en", "zh": "zh-Hans", "ja": "ja"}
@@ -130,6 +139,7 @@ class _Validation:
         self.l1s: list[str] = []
         self.functions: dict[str, dict[str, Any]] = {}
         self.functions_loaded = False  # function references are only checked against a valid functions file
+        self.cast: set[str] | None = None  # story.characters are only checked against a valid cast file
         self.engine_tags: set[str] | None = None
         self.points: dict[str, tuple[str, dict[str, Any]]] = {}  # id -> (file, point) for schema-valid points
         self.known_ids: set[str] = set()  # every ID seen, even in schema-invalid files
@@ -182,6 +192,14 @@ class _Validation:
                 self.issue(file, f"functions[{index}].id", "schema.invalid", f"duplicate function id {function['id']}")
             self.functions[function["id"]] = function
         self.functions_loaded = True
+
+    def load_cast(self) -> None:
+        path = self.root / CAST_PATH
+        file = self.rel(path)
+        ok, data = self.load(path, read_yaml)
+        if not ok or not self.schema_check(file, data, _validator(self.schema, "cast_file")):
+            return
+        self.cast = {member["name"] for member in data["cast"]}
 
     def load_error_tags(self) -> None:
         path = self.root / ERROR_TAGS_PATH
@@ -240,6 +258,8 @@ class _Validation:
                 self.check_pitfall(file, path, block, point)
             elif kind == "contrast":
                 self.check_contrast(file, path, block, point)
+            elif kind == "story":
+                self.check_story(file, path, block, point)
         for path, mapping in _locale_maps(point):
             self.check_locales(file, path, mapping)
         self.check_script(file, point)
@@ -327,6 +347,44 @@ class _Validation:
         if other not in point["contrasts"]:
             self.issue(file, f"{path}.with", "ref.contrast_block_unlisted", f"{other} is not listed in contrasts")
 
+    def check_story(self, file: str, path: str, block: dict[str, Any], point: dict[str, Any]) -> None:
+        if self.cast is not None:
+            for index, name in enumerate(block["characters"]):
+                if name not in self.cast:
+                    self.issue(file, f"{path}.characters[{index}]", "story.character_unknown",
+                               f"{name!r} is not in cast/cast.yaml")
+        for index, alt in enumerate(block["alternatives"]):
+            alt_path = f"{path}.alternatives[{index}]"
+            for tag_index, tag in enumerate(alt["error_tags"]):
+                if tag not in point["error_tags"]:
+                    self.issue(file, f"{alt_path}.error_tags[{tag_index}]", "error_tag.story_alternative_unlisted",
+                               f"{tag!r} is not in the point's error_tags")
+                if self.engine_tags is not None and tag not in self.engine_tags:
+                    self.issue(file, f"{alt_path}.error_tags[{tag_index}]", "error_tag.unknown",
+                               f"{tag!r} is not an engine error label for {self.target_lang}")
+            for locale, text in alt["short"].items():
+                if "\n" in text:
+                    self.issue(file, f"{alt_path}.short.{locale}", "story.short_not_one_line", "contains a newline")
+        for locale, text in block["anchor_short"].items():
+            if "\n" in text:
+                self.issue(file, f"{path}.anchor_short.{locale}", "story.short_not_one_line", "contains a newline")
+        if "vi" not in self.locales:
+            return
+        anchor_short_vi = block["anchor_short"].get("vi", "")
+        words = len(anchor_short_vi.split())
+        if anchor_short_vi and words > ANCHOR_SHORT_MAX_WORDS:
+            self.issue(file, f"{path}.anchor_short.vi", "story.anchor_short_too_long",
+                       f"{words} words, max {ANCHOR_SHORT_MAX_WORDS}")
+        total = (
+            len(block["scene"].get("vi", "").split())
+            + len(block["need"].get("vi", "").split())
+            + len(block["anchor"].get("vi", "").split())
+            + sum(len(alt["consequence"].get("vi", "").split()) for alt in block["alternatives"])
+        )
+        low, high = STORY_LENGTH_RANGE
+        if not (low <= total <= high):
+            self.issue(file, path, "story.length_out_of_range", f"{total} words (vi), expected {low}-{high}")
+
     def check_locales(self, file: str, path: str, mapping: dict[str, str]) -> None:
         missing = [locale for locale in self.locales if locale not in mapping]
         if missing:
@@ -407,6 +465,7 @@ class _Validation:
     def run(self) -> Report:
         self.load_manifest()
         self.load_functions()
+        self.load_cast()
         self.load_error_tags()
         self.load_points()
         for file, point in self.points.values():
@@ -442,6 +501,14 @@ def _locale_maps(point: dict[str, Any]) -> Iterator[tuple[str, dict[str, str]]]:
         elif kind == "check":
             for item_index, item in enumerate(block["items"]):
                 yield f"{path}.items[{item_index}].explain", item["explain"]
+        elif kind == "story":
+            yield f"{path}.scene", block["scene"]
+            yield f"{path}.need", block["need"]
+            yield f"{path}.anchor", block["anchor"]
+            yield f"{path}.anchor_short", block["anchor_short"]
+            for alt_index, alt in enumerate(block["alternatives"]):
+                yield f"{path}.alternatives[{alt_index}].consequence", alt["consequence"]
+                yield f"{path}.alternatives[{alt_index}].short", alt["short"]
 
 
 def _target_texts(point: dict[str, Any]) -> Iterator[tuple[str, str]]:
@@ -472,6 +539,11 @@ def _target_texts(point: dict[str, Any]) -> Iterator[tuple[str, str]]:
                 yield f"{path}.items[{item_index}].q", item["q"]
                 for option_index, option in enumerate(item["options"]):
                     yield f"{path}.items[{item_index}].options[{option_index}]", option
+        elif kind == "story":
+            for sentence_index, sentence in enumerate(block["form_in_action"]["sentences"]):
+                yield f"{path}.form_in_action.sentences[{sentence_index}]", sentence
+            for alt_index, alt in enumerate(block["alternatives"]):
+                yield f"{path}.alternatives[{alt_index}].sentence", alt["sentence"]
 
 
 def _zh_hans_texts(point: dict[str, Any], target_is_zh: bool) -> Iterator[tuple[str, str]]:

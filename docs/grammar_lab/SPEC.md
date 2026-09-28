@@ -146,6 +146,7 @@ Dữ liệu có ba lớp: **function** (chức năng giao tiếp, dùng chung m�
 | `bridge` | `l1`, `realization_id` | tự sinh từ function (không lưu, render lúc chạy) |
 | `note` | `text{locale}` | LLM |
 | `check` | `items[{q, options, answer, explain{locale}}]` | code theo mẫu + LLM |
+| `story` (schema v0.3) | `theme`, `characters[]`, `scene`, `need`, `form_in_action`, `alternatives[]`, `anchor`, `anchor_short` | LLM, chi tiết ở `STORY_SPEC.md` |
 
 **Thay đổi so với mẫu v0.1**
 
@@ -153,6 +154,9 @@ Dữ liệu có ba lớp: **function** (chức năng giao tiếp, dùng chung m�
 - `example.seg` là nguồn sự thật; `text` phải bằng phép ghép các đoạn. `ruby` là mảng song song cho pinyin/furigana.
 - Thêm `version`, `source_refs`, `provenance`, `review`.
 - Giá trị `timeline.kind` là enum đóng: `point_past`, `ongoing_now`, `unspecified_past`, `habit`, `future_condition`, `future_plan`, `past_ongoing`. Mở rộng enum phải kèm component vẽ tương ứng.
+- **Schema v0.3** (28/09/2026, chỉ đạo trực tiếp của người, xem `STORY_SPEC.md`) thêm block `story` cạnh các
+  block trên, không thay thế; bắt buộc một story theme `daily` cho mọi điểm ở v0.3. Điểm ở v0.2 không bị
+  ảnh hưởng — `schema_version` là enum `["0.2", "0.3"]`, không phải hằng số.
 
 **Thang level**: mỗi ngôn ngữ đích dùng thang riêng, không quy đổi sang thang chung. Tiếng Anh dùng CEFR (A1–C2), tiếng Trung dùng HSK 3.0 (cấp 1–9), tiếng Nhật dùng JLPT (N5–N1). Trường `level_scales` trong schema khai báo danh sách cấp theo thứ tự cho từng ngôn ngữ; `rank` suy ra từ vị trí trong danh sách và chỉ dùng để sắp xếp, lọc và kiểm tra `prereqs` trong cùng một ngôn ngữ. Không so sánh level giữa các ngôn ngữ.
 
