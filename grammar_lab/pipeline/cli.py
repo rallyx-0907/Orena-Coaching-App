@@ -134,6 +134,12 @@ def verify(
     ),
     blind_provider: str = typer.Option("gemini", "--blind-provider", help="Must differ from generate's --provider."),
     blind_model: str = typer.Option("gemini-3.5-flash-lite", "--blind-model"),
+    evaluator_rate_limit_key: str = typer.Option(
+        "gemini", "--evaluator-rate-limit-key",
+        help="Shares a rate limiter with --blind-provider when the sandbox's engine and the "
+             "blind-solve model draw on the same provider quota (grammar_lab/sandbox/ defaults "
+             "to Gemini for both). Pass '' to disable if the sandbox uses an unmetered provider.",
+    ),
     root: Path = typer.Option(LAB_ROOT, "--root"),
 ) -> None:
     """SPEC §5.3: engine pitfall match, clean examples, blind solve. Skips points that fail validate."""
@@ -143,7 +149,8 @@ def verify(
     dirty_ids = {report.point_files[file] for file in {i.file for i in report.issues} if file in report.point_files}
     points = load_points(lang, root)
     results: dict[str, dict] = {}
-    with EvaluatorClient(evaluator_url) as evaluator, LLMClient(blind_provider, blind_model) as blind_solver:
+    evaluator = EvaluatorClient(evaluator_url, rate_limit_key=evaluator_rate_limit_key or None)
+    with evaluator, LLMClient(blind_provider, blind_model) as blind_solver:
         for point_id, point in points.items():
             if point_id in dirty_ids:
                 results[point_id] = {"flags": [], "skipped": "validate_failed"}

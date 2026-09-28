@@ -1,6 +1,6 @@
 """Managed LLM API wrapper with a cache keyed by input hash (SPEC §2, §5.1).
 
-Three provider families are wired in, because SPEC §5.3/§9 requires the model
+Four provider families are wired in, because SPEC §5.3/§9 requires the model
 that *verifies* a check item (blind solve) to differ from the model that
 *generated* it — otherwise the same blind spot could pass its own work:
 
@@ -12,14 +12,29 @@ that *verifies* a check item (blind solve) to differ from the model that
 - ``gemini``: ``generateContent`` with ``generationConfig.responseMimeType
   = application/json`` + ``responseSchema``. Uses the ``x-goog-api-key``
   header, never the ``?key=`` query parameter -- a secret does not belong in
-  a URL. Offered because a Gemini key is already provisioned for this
-  project (the app's sandbox, per CLAUDE.md); it is a separate key entered
-  for the lab's own use, never the app's embedded one (grammar_lab is
-  independent and never reads app secrets).
+  a URL.
+- ``groq``: an OpenAI-compatible ``chat/completions`` endpoint
+  (api.groq.com/openai/v1), ``response_format: json_schema`` with
+  ``strict: false`` (Groq's own docs list only best-effort mode as broadly
+  supported; strict mode is model-limited). A genuinely different model
+  family from Gemini even though the request shape mirrors OpenAI's.
 
-None of the three request shapes below have been exercised against a live
-API key from this environment (see README) -- they follow each provider's
-current published reference as of 2026-09-27, not a tested round trip.
+Every key is read from its own environment variable
+(``ANTHROPIC_API_KEY``/``OPENAI_API_KEY``/``GEMINI_API_KEY``/``GROQ_API_KEY``),
+never a literal in code or in a compose file, and is never logged: an error
+message built from a provider's raw response text is passed through
+``secrets_redact.redact`` before it becomes an exception message, in case a
+provider ever echoes a credential back.
+
+Gemini calls go through ``rate_limit.limiter_for("gemini", ...)`` and retry
+on HTTP 429 with backoff: this project's Gemini key is shared with other
+live traffic and has a measured ceiling of roughly 25-30 requests/minute
+(see ``pipeline/rate_limit.py``).
+
+None of the four request shapes below have been exercised against a live
+API key from this environment as of the module's own last edit -- they
+follow each provider's current published reference, not a guaranteed-tested
+round trip; treat the first real call as the actual test.
 
 Every call is cached on disk keyed by a hash of everything that determines
 the output (provider, model, system+user prompt, schema, temperature, seed),
@@ -31,6 +46,9 @@ The cache is content-addressed and never expires; delete
 Pricing in ``PRICING`` is a list-price snapshot, not a live lookup: check the
 provider's current pricing page before trusting a cost estimate for a real
 budget decision (SPEC §9, "Managed API nào dùng... ngân sách mỗi lần chạy").
+Groq pricing for the model this project uses could not be confirmed live and
+is deliberately left out of the table; its cost reports as ``None`` (never a
+guessed number) until a checked price is added.
 """
 
 from __future__ import annotations
@@ -46,6 +64,8 @@ from typing import Any
 import httpx
 
 from grammar_lab.pipeline.jsonio import read_json, write_json
+from grammar_lab.pipeline.rate_limit import GEMINI_MIN_INTERVAL_SECONDS, backoff_delay, limiter_for
+from grammar_lab.pipeline.secrets_redact import redact
 
 LAB_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CACHE_DIR = LAB_ROOT / ".cache" / "llm"
@@ -54,9 +74,17 @@ ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages"
 ANTHROPIC_VERSION = "2023-06-01"
 OPENAI_API_URL = "https://api.openai.com/v1/chat/completions"
 GEMINI_API_URL_TEMPLATE = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
 
-PROVIDERS = {"anthropic", "openai", "gemini"}
-_ENV_VAR_BY_PROVIDER = {"anthropic": "ANTHROPIC_API_KEY", "openai": "OPENAI_API_KEY", "gemini": "GEMINI_API_KEY"}
+GEMINI_MAX_RETRIES = 5
+
+PROVIDERS = {"anthropic", "openai", "gemini", "groq"}
+_ENV_VAR_BY_PROVIDER = {
+    "anthropic": "ANTHROPIC_API_KEY",
+    "openai": "OPENAI_API_KEY",
+    "gemini": "GEMINI_API_KEY",
+    "groq": "GROQ_API_KEY",
+}
 
 # USD per 1,000,000 tokens (input, output). Checked live against
 # platform.claude.com/docs/en/about-claude/pricing, platform.openai.com/docs/pricing
@@ -70,11 +98,16 @@ PRICING: dict[str, tuple[float, float]] = {
     "gpt-6-sol": (2.0, 10.0),
     "gpt-6-astra": (10.0, 50.0),
     "gemini-3.5-flash-lite": (0.30, 2.50),
+    # "openai/gpt-oss-120b" (Groq) deliberately omitted -- see module docstring.
 }
 
 
 class LLMError(RuntimeError):
     """A provider call failed, or its response did not match the requested schema."""
+
+    def __init__(self, message: str, *, status_code: int | None = None) -> None:
+        super().__init__(redact(message))
+        self.status_code = status_code
 
 
 @dataclass(frozen=True)
@@ -167,9 +200,15 @@ class LLMClient:
         if self.provider == "anthropic":
             data, usage = self._call_anthropic(system, user, json_schema, schema_name, temperature, max_tokens)
         elif self.provider == "openai":
-            data, usage = self._call_openai(system, user, json_schema, schema_name, temperature, seed, max_tokens)
+            data, usage = self._call_openai_compatible(
+                OPENAI_API_URL, system, user, json_schema, schema_name, temperature, seed, max_tokens, strict=True,
+            )
+        elif self.provider == "groq":
+            data, usage = self._call_openai_compatible(
+                GROQ_API_URL, system, user, json_schema, schema_name, temperature, seed, max_tokens, strict=False,
+            )
         else:
-            data, usage = self._call_gemini(system, user, json_schema, temperature, max_tokens)
+            data, usage = self._call_gemini_with_retry(system, user, json_schema, temperature, max_tokens)
 
         self._write_cache(key, data, usage)
         return LLMResult(data, usage, self.model, self.provider, cached=False)
@@ -202,9 +241,9 @@ class LLMClient:
         usage = LLMUsage(int(usage_raw.get("input_tokens", 0)), int(usage_raw.get("output_tokens", 0)))
         return tool_use["input"], usage
 
-    def _call_openai(
-        self, system: str, user: str, json_schema: dict[str, Any], schema_name: str,
-        temperature: float, seed: int | None, max_tokens: int,
+    def _call_openai_compatible(
+        self, url: str, system: str, user: str, json_schema: dict[str, Any], schema_name: str,
+        temperature: float, seed: int | None, max_tokens: int, *, strict: bool,
     ) -> tuple[dict[str, Any], LLMUsage]:
         body: dict[str, Any] = {
             "model": self.model,
@@ -213,26 +252,40 @@ class LLMClient:
             "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}],
             "response_format": {
                 "type": "json_schema",
-                "json_schema": {"name": schema_name, "schema": json_schema, "strict": True},
+                "json_schema": {"name": schema_name, "schema": json_schema, "strict": strict},
             },
         }
         if seed is not None:
             body["seed"] = seed
-        response = self._post(OPENAI_API_URL, body, headers={
+        response = self._post(url, body, headers={
             "authorization": f"Bearer {self.api_key}",
             "content-type": "application/json",
         })
         choices = response.get("choices") or []
         if not choices:
-            raise LLMError(f"OpenAI response had no choices: {response!r}")
+            raise LLMError(f"response had no choices: {response!r}")
         content = choices[0]["message"]["content"]
         try:
             data = json.loads(content)
         except json.JSONDecodeError as exc:
-            raise LLMError(f"OpenAI response content was not JSON: {content!r}") from exc
+            raise LLMError(f"response content was not JSON: {content!r}") from exc
         usage_raw = response.get("usage", {})
         usage = LLMUsage(int(usage_raw.get("prompt_tokens", 0)), int(usage_raw.get("completion_tokens", 0)))
         return data, usage
+
+    def _call_gemini_with_retry(
+        self, system: str, user: str, json_schema: dict[str, Any], temperature: float, max_tokens: int,
+    ) -> tuple[dict[str, Any], LLMUsage]:
+        limiter = limiter_for("gemini", GEMINI_MIN_INTERVAL_SECONDS)
+        for attempt in range(GEMINI_MAX_RETRIES):
+            limiter.wait()
+            try:
+                return self._call_gemini(system, user, json_schema, temperature, max_tokens)
+            except LLMError as exc:
+                if exc.status_code != 429 or attempt == GEMINI_MAX_RETRIES - 1:
+                    raise
+                time.sleep(backoff_delay(attempt))
+        raise AssertionError("unreachable")  # loop always returns or raises
 
     def _call_gemini(
         self, system: str, user: str, json_schema: dict[str, Any], temperature: float, max_tokens: int,
@@ -271,7 +324,7 @@ class LLMClient:
         except httpx.HTTPError as exc:
             raise LLMError(f"request to {url} failed: {exc}") from exc
         if response.status_code >= 400:
-            raise LLMError(f"{url} returned {response.status_code}: {response.text[:2000]}")
+            raise LLMError(f"{url} returned {response.status_code}: {response.text[:2000]}", status_code=response.status_code)
         return response.json()
 
     # -- cache ---------------------------------------------------------------------

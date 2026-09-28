@@ -15,18 +15,37 @@ authorized calling production for this run.
 "local" mode (import the engine as a library, SPEC §5.3's other option) is not
 implemented: SPEC principle 1 says the lab does not import app code, and the phase 1
 brief asked for staging mode first.
+
+Rate limiting: pass ``rate_limit_key="gemini"`` (the CLI's ``verify`` command does) when
+the target sandbox's engine is configured for the Gemini key llm_client.py's blind-solve
+calls also use -- the two call sites then share ``rate_limit.limiter_for("gemini", ...)``,
+so their combined rate stays under the account's real ceiling instead of each
+independently budgeting the full amount. Off by default (``None``): a sandbox on a
+different provider, or one with its own budget, should not pay a limiter it does not need.
+Either way, a 429/503 response is retried with backoff rather than failing the whole run.
 """
 
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass
 from typing import Any
 
 import httpx
 
+from grammar_lab.pipeline.rate_limit import GEMINI_MIN_INTERVAL_SECONDS, backoff_delay, limiter_for
+from grammar_lab.pipeline.secrets_redact import redact
+
+_RETRYABLE_STATUS_CODES = {429, 503}
+_MAX_RETRIES = 5
+
 
 class EvaluatorClientError(RuntimeError):
     """The evaluator could not be reached, or its response did not match the expected shape."""
+
+    def __init__(self, message: str, *, status_code: int | None = None) -> None:
+        super().__init__(redact(message))
+        self.status_code = status_code
 
 
 @dataclass(frozen=True)
@@ -54,6 +73,8 @@ class EvaluatorClient:
         learning_language: str | None = None,
         transport: httpx.BaseTransport | None = None,
         timeout: float = 60.0,
+        rate_limit_key: str | None = None,
+        min_interval_seconds: float = GEMINI_MIN_INTERVAL_SECONDS,
     ) -> None:
         if not base_url:
             raise ValueError(
@@ -62,6 +83,8 @@ class EvaluatorClient:
             )
         self.base_url = base_url.rstrip("/")
         self.learning_language = learning_language
+        self._rate_limit_key = rate_limit_key
+        self._min_interval_seconds = min_interval_seconds
         self._client = httpx.Client(transport=transport, timeout=timeout)
 
     def close(self) -> None:
@@ -89,14 +112,7 @@ class EvaluatorClient:
             body["target_cefr"] = target_cefr
         if self.learning_language:
             body["learning_language"] = self.learning_language
-        try:
-            response = self._client.post(f"{self.base_url}/api/evaluate", json=body)
-        except httpx.HTTPError as exc:
-            raise EvaluatorClientError(f"request to {self.base_url}/api/evaluate failed: {exc}") from exc
-        if response.status_code >= 400:
-            raise EvaluatorClientError(
-                f"{self.base_url}/api/evaluate returned {response.status_code}: {response.text[:2000]}"
-            )
+        response = self._post_with_retry(body)
         try:
             data = response.json()
         except ValueError as exc:
@@ -110,3 +126,23 @@ class EvaluatorClient:
             if isinstance(item, dict)
         ]
         return EvaluatorResult(errors, data)
+
+    def _post_with_retry(self, body: dict[str, Any]) -> httpx.Response:
+        url = f"{self.base_url}/api/evaluate"
+        for attempt in range(_MAX_RETRIES):
+            if self._rate_limit_key:
+                limiter_for(self._rate_limit_key, self._min_interval_seconds).wait()
+            try:
+                response = self._client.post(url, json=body)
+            except httpx.HTTPError as exc:
+                raise EvaluatorClientError(f"request to {url} failed: {exc}") from exc
+            if response.status_code in _RETRYABLE_STATUS_CODES and attempt < _MAX_RETRIES - 1:
+                time.sleep(backoff_delay(attempt))
+                continue
+            if response.status_code >= 400:
+                raise EvaluatorClientError(
+                    f"{url} returned {response.status_code}: {response.text[:2000]}",
+                    status_code=response.status_code,
+                )
+            return response
+        raise AssertionError("unreachable")  # loop always returns or raises

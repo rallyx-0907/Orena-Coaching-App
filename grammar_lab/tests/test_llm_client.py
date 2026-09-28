@@ -41,7 +41,22 @@ def _gemini_transport(calls: list[httpx.Request]) -> httpx.MockTransport:
     return httpx.MockTransport(handler)
 
 
-_MODEL_BY_PROVIDER = {"anthropic": "claude-haiku-4-5-20251001", "openai": "gpt-6-luna", "gemini": "gemini-3.5-flash-lite"}
+def _groq_transport(calls: list[httpx.Request]) -> httpx.MockTransport:
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(request)
+        return httpx.Response(200, json={
+            "choices": [{"message": {"content": json.dumps({"greeting": "hi"})}}],
+            "usage": {"prompt_tokens": 5, "completion_tokens": 2},
+        })
+    return httpx.MockTransport(handler)
+
+
+_MODEL_BY_PROVIDER = {
+    "anthropic": "claude-haiku-4-5-20251001",
+    "openai": "gpt-6-luna",
+    "gemini": "gemini-3.5-flash-lite",
+    "groq": "openai/gpt-oss-120b",
+}
 
 
 def client(tmp_path: Path, provider: str, transport: httpx.MockTransport) -> LLMClient:
@@ -90,6 +105,95 @@ def test_gemini_response_without_candidates_raises(tmp_path: Path) -> None:
     c = client(tmp_path, "gemini", httpx.MockTransport(handler))
     with pytest.raises(LLMError, match="candidates"):
         c.complete(system="s", user="u", json_schema=SCHEMA)
+
+
+def test_gemini_retries_on_429_and_then_succeeds(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("grammar_lab.pipeline.llm_client.time.sleep", lambda _seconds: None)
+    calls: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(request)
+        if len(calls) < 3:
+            return httpx.Response(429, text="quota exceeded")
+        return httpx.Response(200, json={
+            "candidates": [{"content": {"parts": [{"text": json.dumps({"greeting": "hi"})}]}}],
+            "usageMetadata": {"promptTokenCount": 1, "candidatesTokenCount": 1},
+        })
+
+    c = client(tmp_path, "gemini", httpx.MockTransport(handler))
+    result = c.complete(system="s", user="u", json_schema=SCHEMA)
+    assert result.data == {"greeting": "hi"}
+    assert len(calls) == 3  # two 429s, then success
+
+
+def test_gemini_gives_up_after_max_retries_on_429(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("grammar_lab.pipeline.llm_client.time.sleep", lambda _seconds: None)
+    calls: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(request)
+        return httpx.Response(429, text="quota exceeded")
+
+    c = client(tmp_path, "gemini", httpx.MockTransport(handler))
+    with pytest.raises(LLMError, match="429"):
+        c.complete(system="s", user="u", json_schema=SCHEMA)
+    assert len(calls) == 5  # GEMINI_MAX_RETRIES, no more
+
+
+def test_gemini_does_not_retry_on_a_non_429_error(tmp_path: Path) -> None:
+    calls: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(request)
+        return httpx.Response(400, text="bad request")
+
+    c = client(tmp_path, "gemini", httpx.MockTransport(handler))
+    with pytest.raises(LLMError, match="400"):
+        c.complete(system="s", user="u", json_schema=SCHEMA)
+    assert len(calls) == 1
+
+
+def test_error_message_redacts_the_api_key(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("GEMINI_API_KEY", "secret-value-should-not-leak")
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(403, text="rejected key secret-value-should-not-leak")
+
+    c = LLMClient("gemini", "gemini-3.5-flash-lite", api_key="secret-value-should-not-leak",
+                  cache_dir=tmp_path, transport=httpx.MockTransport(handler))
+    with pytest.raises(LLMError) as excinfo:
+        c.complete(system="s", user="u", json_schema=SCHEMA)
+    assert "secret-value-should-not-leak" not in str(excinfo.value)
+
+
+def test_groq_returns_parsed_json_content(tmp_path: Path) -> None:
+    calls: list[httpx.Request] = []
+    c = client(tmp_path, "groq", _groq_transport(calls))
+    result = c.complete(system="s", user="u", json_schema=SCHEMA)
+    assert result.data == {"greeting": "hi"}
+    assert result.usage.input_tokens == 5 and result.usage.output_tokens == 2
+    assert len(calls) == 1
+
+
+def test_groq_uses_best_effort_not_strict_schema_mode(tmp_path: Path) -> None:
+    calls: list[httpx.Request] = []
+    client(tmp_path, "groq", _groq_transport(calls)).complete(system="s", user="u", json_schema=SCHEMA)
+    sent = json.loads(calls[0].content)
+    assert sent["response_format"]["json_schema"]["strict"] is False
+
+
+def test_groq_and_openai_hit_different_urls(tmp_path: Path) -> None:
+    groq_calls: list[httpx.Request] = []
+    openai_calls: list[httpx.Request] = []
+    client(tmp_path, "groq", _groq_transport(groq_calls)).complete(system="s", user="u", json_schema=SCHEMA)
+    client(tmp_path, "openai", _openai_transport(openai_calls)).complete(system="s", user="u", json_schema=SCHEMA)
+    assert "groq.com" in str(groq_calls[0].url)
+    assert "openai.com" in str(openai_calls[0].url)
+
+
+def test_unknown_provider_still_rejected(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="groq"):
+        LLMClient("cohere", "some-model", api_key="k", cache_dir=tmp_path)
 
 
 def test_second_call_with_same_input_is_cached_and_makes_no_request(tmp_path: Path) -> None:

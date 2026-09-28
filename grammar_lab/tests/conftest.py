@@ -9,9 +9,23 @@ import pytest
 import yaml
 
 from grammar_lab.pipeline.jsonio import write_json
+from grammar_lab.pipeline.rate_limit import reset_for_tests
 from grammar_lab.pipeline.validate import LAB_ROOT, Report, validate_lang
 
 SCHEMA_FILES = ("grammar_set.schema.json", "inventory.schema.json")
+
+
+@pytest.fixture(autouse=True)
+def _isolated_rate_limiters() -> None:
+    """Every test gets a fresh rate-limiter registry.
+
+    Without this, tests that use the ``gemini`` provider would share one
+    process-wide limiter across test functions and pay real
+    ``GEMINI_MIN_INTERVAL_SECONDS`` delays between them -- correct in
+    production (that sharing is the point, see pipeline/rate_limit.py), but
+    it would make the test suite slow and order-dependent for no reason.
+    """
+    reset_for_tests()
 PROVENANCE = {"model": "test-model", "prompt_version": "v1", "run_id": "test", "generated_at": "2026-09-26T00:00:00Z"}
 ENGINE_TAGS = {"en": {"tags": ["agreement", "tense", "article", "other"]}, "zh-Hans": {"tags": ["aspect", "particle", "other"]}}
 

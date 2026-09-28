@@ -72,3 +72,105 @@ def test_response_without_errors_list_raises() -> None:
     client = EvaluatorClient("http://sandbox.test", transport=transport(200, {"band_status": "estimated"}))
     with pytest.raises(EvaluatorClientError, match="errors"):
         client.evaluate("He goes to school.")
+
+
+def test_429_is_retried_and_then_succeeds(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("grammar_lab.pipeline.evaluator_client.time.sleep", lambda _seconds: None)
+    calls: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(request)
+        if len(calls) < 3:
+            return httpx.Response(429, text="quota exceeded")
+        return httpx.Response(200, json={"errors": []})
+
+    client = EvaluatorClient("http://sandbox.test", transport=httpx.MockTransport(handler))
+    result = client.evaluate("He goes to school.")
+    assert result.errors == []
+    assert len(calls) == 3
+
+
+def test_503_is_retried_like_429(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("grammar_lab.pipeline.evaluator_client.time.sleep", lambda _seconds: None)
+    calls: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(request)
+        if len(calls) < 2:
+            return httpx.Response(503, text="provider unavailable")
+        return httpx.Response(200, json={"errors": []})
+
+    client = EvaluatorClient("http://sandbox.test", transport=httpx.MockTransport(handler))
+    client.evaluate("He goes to school.")
+    assert len(calls) == 2
+
+
+def test_gives_up_after_max_retries_on_429(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("grammar_lab.pipeline.evaluator_client.time.sleep", lambda _seconds: None)
+    calls: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(request)
+        return httpx.Response(429, text="quota exceeded")
+
+    client = EvaluatorClient("http://sandbox.test", transport=httpx.MockTransport(handler))
+    with pytest.raises(EvaluatorClientError, match="429"):
+        client.evaluate("He goes to school.")
+    assert len(calls) == 5
+
+
+def test_a_400_is_not_retried() -> None:
+    calls: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(request)
+        return httpx.Response(400, text="bad request")
+
+    client = EvaluatorClient("http://sandbox.test", transport=httpx.MockTransport(handler))
+    with pytest.raises(EvaluatorClientError, match="400"):
+        client.evaluate("He goes to school.")
+    assert len(calls) == 1
+
+
+def test_error_message_redacts_a_watched_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("GEMINI_API_KEY", "leaked-value-danger")
+    client = EvaluatorClient(
+        "http://sandbox.test",
+        transport=transport(500, "upstream provider rejected key leaked-value-danger"),
+    )
+    with pytest.raises(EvaluatorClientError) as excinfo:
+        client.evaluate("He goes to school.")
+    assert "leaked-value-danger" not in str(excinfo.value)
+
+
+def test_rate_limiting_is_off_by_default(monkeypatch: pytest.MonkeyPatch) -> None:
+    """No rate_limit_key given -> no artificial delay between calls."""
+    import time
+
+    calls: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(request)
+        return httpx.Response(200, json={"errors": []})
+
+    client = EvaluatorClient("http://sandbox.test", transport=httpx.MockTransport(handler))
+    started = time.monotonic()
+    client.evaluate("a")
+    client.evaluate("b")
+    assert time.monotonic() - started < 0.5
+
+
+def test_rate_limiting_can_be_enabled_and_is_shared_by_key() -> None:
+    import time
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={"errors": []})
+
+    client = EvaluatorClient(
+        "http://sandbox.test", transport=httpx.MockTransport(handler),
+        rate_limit_key="test-shared", min_interval_seconds=0.15,
+    )
+    client.evaluate("a")
+    started = time.monotonic()
+    client.evaluate("b")
+    assert time.monotonic() - started >= 0.1
