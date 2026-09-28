@@ -40,3 +40,4 @@ ignore = [
 "**/selftest.py" = ["T20"]
 "**/*_selftest.py" = ["T20"]
 "**/*benchmark_runner.py" = ["T20"]
+"grammar_lab/sandbox/*.py" = ["T20"]  # standalone CLI helper, prints by design
