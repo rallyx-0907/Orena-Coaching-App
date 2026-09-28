@@ -122,10 +122,16 @@ YOUNGER_SELF = {"em": ("anh", "chị"), "cháu": ("cô", "chú", "bác")}  # lea
 GENDERED = frozenset({"anh", "chị", "cô", "chú", "bác", "ông", "bà"})  # never used unless the learner used them
 CASUAL = frozenset({"tao", "mày"})  # only on an explicit request
 
-# After a kinship word, these make it someone else (or a name, or a pair of siblings).
+# After a kinship word, these make it someone else, a name, a pair of siblings, or part of another word
+# ("cô giáo", "bác sĩ", "chú ý", "chú thích", "Anh ngữ", "em bé").
 _NOT_A_PERSON_IN_THE_CHAT = (
-    r"(?:tôi|mình|tao|của|ấy|ta|trai|gái|họ|kia|này|nọ|rể|dâu|cả|hai|ba|út|em|chị|anh|nhà|[A-ZĐ]\w*)"
+    r"(?:tôi|mình|tao|của|ấy|ta|trai|gái|họ|kia|này|nọ|rể|dâu|cả|hai|ba|út|em|chị|anh|nhà|"
+    r"giáo|sĩ|ý|thích|ngữ|văn|quốc|hùng|bé|ruột|[A-ZĐ]\w*)"
 )
+# Before a kinship word, these make it a language, a country or part of another word ("tiếng Anh", "nước Anh",
+# "ghi chú"): never the learner or Orena. Each pattern below also fixes the word before (sentence start, "cho",
+# "để", a verb), so these are a second guard.
+_NOT_AFTER = r"(?i:(?<!tiếng )(?<!nước )(?<!ghi )(?<!người )(?<!dân ))"
 # The learner as the subject of an act of their own, or the one helped: clear first person.
 _SELF_ACTS = r"(?:muốn|cần|hỏi|cảm ơn|không hiểu|chưa hiểu|đang học|vừa học|thắc mắc|quên|nhớ)"
 
@@ -138,9 +144,9 @@ def _self_elder(text: str) -> str | None:
         blocked = rf"(?!\s+{_NOT_A_PERSON_IN_THE_CHAT}\b)"
         patterns = (
             rf"(?:^|[.!?,]\s*)(?i:{w}){blocked}\s+(?i:{_SELF_ACTS})\b",  # "Anh muốn hỏi…", "Chị cảm ơn em"
-            rf"(?i:\b(?:cho|giúp|giùm|bảo|chỉ)\s+){w}\b{blocked}(?:\s+(?i:hỏi|xin|biết|với|nhé|nha|ạ)\b|\s*[.!?,]|\s*$)",
+            rf"(?i:\b(?:cho|để|giúp|giùm|bảo|chỉ)\s+){w}\b{blocked}(?:\s+(?i:hỏi|xin|biết|với|nhé|nha|ạ)\b|\s*[.!?,]|\s*$)",
         )
-        if any(re.search(p, text) for p in patterns):
+        if any(re.search(_NOT_AFTER + p, text) for p in patterns):
             return word
     return None
 
@@ -154,10 +160,11 @@ def _orena_elder(text: str) -> tuple[str, str] | None:
             continue
         for elder in elders:
             e, y = re.escape(elder), re.escape(younger)
+            blocked = rf"(?!\s+{_NOT_A_PERSON_IN_THE_CHAT}\b)"
             patterns = (
-                rf"\b{y}\s+(?:hỏi|cảm ơn|chào|nhờ|xin|muốn hỏi)\s+{e}\b(?!\s+{_NOT_A_PERSON_IN_THE_CHAT}\b)",  # "em hỏi chị"
-                rf"\b{e}\s+ơi\b",  # "chị ơi, em…"
-                rf"\b{e}\s+(?:cho|giúp|giải thích cho|chỉ cho|dạy)\s+{y}\b",  # "chị cho em hỏi"
+                rf"\b{y}\s+(?:hỏi|cảm ơn|chào|nhờ|xin|muốn hỏi)\s+{_NOT_AFTER}{e}\b{blocked}",  # "em hỏi chị"
+                rf"(?:^|[.!?,:;]\s*){e}\s+ơi\b",  # "Chị ơi, em…": calling, so first in its clause
+                rf"{_NOT_AFTER}\b{e}\b{blocked}\s+(?:cho|giúp|giải thích cho|chỉ cho|dạy)\s+{y}\b",  # "chị cho em hỏi"
             )
             if any(re.search(p, lowered) for p in patterns):
                 return elder, younger

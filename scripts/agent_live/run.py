@@ -282,6 +282,7 @@ FLOWS: dict[str, list[tuple[str, str, dict, str | None, dict]]] = {
         ("zh-CN", "anh", VI, "Anh muốn hỏi từ 学习 nghĩa là gì?", {}),
         ("zh-CN", "chi-em", VI, "Em hỏi chị: 朋友 là gì ạ?", {}),
         ("zh-CN", "someone-else", VI, "Anh tôi hỏi từ 老师 nghĩa là gì?", {}),
+        ("zh-CN", "a-language", VI, "Tiếng Anh khó quá", {}),
     ],
     # a pair already kept, changed again: back to the default
     "rechange": [

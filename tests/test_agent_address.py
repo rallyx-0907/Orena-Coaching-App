@@ -301,3 +301,68 @@ def test_a_gendered_word_is_never_used_unless_the_learner_used_it():
 def test_tao_may_only_on_an_explicit_request():
     assert _set("Tao hỏi mày cái này", "tao", "mày").startswith("refused: 'tao' only when")
     assert _set("Xưng tao gọi mày đi", "tao", "mày").startswith("accepted")
+
+
+# A kinship word counts only where one calls oneself or the other (first in the sentence, after "cho"/"để",
+# before a verb); never after "tiếng", "nước", "ghi", nor as part of another word (human direction 2026-09-28).
+NOT_ADDRESS = [
+    "Tiếng Anh khó quá",
+    "Mình muốn học tiếng Anh",
+    "Anh với Trung cái nào dễ hơn?",
+    "Anh có khó hơn Trung không?",
+    "nước Anh",
+    "ghi chú này",
+    "chú ý giúp mình",
+    "chú thích",
+    "bác sĩ nói",
+    "cô giáo mình bảo",
+    "cô ấy",
+    "cô gái",
+    "em bé",
+    "anh em nhà mình",
+    # the same without diacritics
+    "Tieng Anh kho qua",
+    "Minh muon hoc tieng Anh",
+    "Anh voi Trung cai nao de hon?",
+    "Anh co kho hon Trung khong?",
+    "nuoc Anh",
+    "ghi chu nay",
+    "chu y giup minh",
+    "chu thich",
+    "bac si noi",
+    "co giao minh bao",
+    "co ay",
+    "co gai",
+    "em be",
+    "anh em nha minh",
+    # a kinship word inside another word, right where a pronoun could stand
+    "Cháu hỏi cô giáo rồi",
+    "Cháu muốn hỏi bác sĩ",
+    "Cô gái muốn hỏi",
+    "Chú ý muốn nói gì",
+    "Anh ngữ cần gì",
+    "Bác sĩ muốn hỏi",
+    "Em cảm ơn cô giáo",
+    "Học tiếng Anh cho vui.",
+    "Em bé ơi",
+]
+
+
+@pytest.mark.parametrize("message", NOT_ADDRESS)
+def test_a_language_a_country_or_a_compound_word_keeps_the_current_pair(message):
+    assert mirrored_address(message) is None
+    rt, provider = runtime([reply("Ok.")])
+    events = list(rt.run(request(message, notes=(note("vi", "chị", "em"),)), ZH))
+    assert "memory_update" not in [e.name for e in events]
+    assert context_of(provider)["address"]["self_term"] == "chị"
+
+
+@pytest.mark.parametrize(
+    ("message", "pair"),
+    [
+        ("Để anh hỏi thêm", ("em", "anh")),  # after "để"
+        ("Học tiếng Anh xong, anh muốn hỏi", ("em", "anh")),  # "tiếng Anh" first, then the learner
+    ],
+)
+def test_the_word_in_its_own_place_still_counts(message, pair):
+    assert mirrored_address(message) == pair
