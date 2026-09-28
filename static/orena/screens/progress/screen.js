@@ -117,7 +117,11 @@ export default async function progressScreen(element, ctx) {
   // transcript are all real target-language content, in the learner's active learning language
   // (`context.language`) - the language every one of these domains produces or reads in. Reading's
   // own `responseText` (a correct/total count) and Listening's rows (interface labels only, no
-  // real per-event text this build can show, model.js's own comment) are never marked.
+  // real per-event text this build can show, model.js's own comment) are never marked. Writing's
+  // response excerpt marks from the essay's own `responseLanguage` (N-36 point 1, model.js) - a
+  // real per-item field, not the screen's generic active learning language - falling back to it
+  // only when the essay carries no language of its own (kit/lang.js already renders an unknown
+  // code unmarked, so this fallback never produces a wrong `lang`).
   function evidenceRowMarkup(item) {
     const href = openRoute(item);
     const language = context.language;
@@ -131,7 +135,7 @@ export default async function progressScreen(element, ctx) {
       sourceText = item.sourceText || t('skill_writing');
       sourceLang = item.sourceText ? language : '';
       responseText = item.responseText;
-      responseLang = language;
+      responseLang = item.responseLanguage || language;
       resultText = item.score != null ? String(item.score) : '';
     } else if (item.domain === 'reading') {
       sourceText = item.sourceText || t('skill_reading');

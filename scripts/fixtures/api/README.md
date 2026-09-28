@@ -156,9 +156,10 @@ Both screens' field reads (`id`, `language_code`, `level_range`, `item_count`,
   sandbox (an essay needs `POST /api/evaluate`, which is AI-backed and fails
   closed). The file is one list item written field for field from
   `writing_coach/persistence/learning_repository.py` `_essay_payload()` as
-  `app.py` `row_to_dict()` serialises it for the list route - which drops
-  `text` (only `GET /api/essays/{id}` carries it). Re-capture it from a runtime
-  that can evaluate an essay.
+  `app.py` `row_to_dict()` serialises it for the list route: no `text`, and the
+  bounded `excerpt` the list route derives from it (only `GET /api/essays/{id}`
+  carries the full text). Re-capture it from a runtime that can evaluate an
+  essay.
 
 ## Bugs found outside the field-shape class (reported, not fixed here)
 

@@ -1065,6 +1065,29 @@ def evaluate(payload: EssayIn) -> tuple[dict[str, Any], str]:
             "AI evaluation could not produce a usable result.",
         ) from exc
 
+# N-36 point 1 (docs/project/UI_BACKEND_GAPS.md): the list route strips the
+# full essay text (below), but Progress's Evidence rows draw a short excerpt
+# next to each essay's score. This is the one place that excerpt is derived -
+# never the full text, and never a schema/migration change.
+ESSAY_LIST_EXCERPT_MAX_CHARS = 160
+
+
+def essay_list_excerpt(text: Any, max_chars: int = ESSAY_LIST_EXCERPT_MAX_CHARS) -> str:
+    """A short, single-line preview of a stored essay for list rows.
+
+    Collapses all whitespace (including newlines) to single spaces first, so a
+    multi-line prompt/draft reads as the one line the row's layout draws. The
+    cut point is a plain Python string index - a Unicode code point boundary -
+    which never splits a Vietnamese precomposed character or a Chinese
+    character the way a raw byte offset could. An ellipsis is appended only
+    when the text was actually cut, never on text that already fit.
+    """
+    normalized = " ".join(str(text or "").split())
+    if len(normalized) <= max_chars:
+        return normalized
+    return normalized[:max_chars].rstrip() + "…"
+
+
 def row_to_dict(row: dict[str, Any], detail: bool = False) -> dict[str, Any]:
     d = dict(row)
     if detail:
@@ -1120,6 +1143,7 @@ def row_to_dict(row: dict[str, Any], detail: bool = False) -> dict[str, Any]:
         ]
         d["next_actions"] = d["priorities_vi"]
     else:
+        d["excerpt"] = essay_list_excerpt(d.get("text"))
         d.pop("strengths_json", None)
         d.pop("priorities_json", None)
         d.pop("errors_json", None)

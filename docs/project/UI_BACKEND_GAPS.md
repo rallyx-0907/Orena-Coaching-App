@@ -587,10 +587,21 @@ script-check fallback in this build.
 captured from the running app (`scripts/fixtures/api/`). Field reads the API never satisfied were
 fixed in the UI (Search, My Library, Progress, Grammar Concept); three things only the backend can
 change remain:
-1. Progress's Evidence and History rows for an essay cannot show the excerpt the frame draws:
-   `GET /api/essays` (the list route) drops `text` (`app.py` `row_to_dict`, non-detail branch); only
-   `GET /api/essays/{id}` carries it. The row shows its title only. Needs a short excerpt field on
-   the list item.
+1. **RESOLVED (2026-09-28).** Progress's Evidence row for an essay could not show the excerpt the
+   frame draws: `GET /api/essays` (the list route) dropped `text` (`app.py` `row_to_dict`,
+   non-detail branch) with nothing put in its place, so the row showed its title only.
+   `row_to_dict()`'s non-detail branch now derives a short, bounded `excerpt` field
+   (`ESSAY_LIST_EXCERPT_MAX_CHARS = 160`, `essay_list_excerpt()`) from the stored text at
+   serialization time - whitespace collapsed to one line, cut on a Unicode code-point boundary (safe
+   for Vietnamese and Chinese), an ellipsis appended only when actually cut, never the full text.
+   `GET /api/essays/{id}` (detail=True) is unchanged and still carries the full `text`.
+   `static/orena/screens/progress/model.js` `buildWritingEvidence()` now reads `e.excerpt` into the
+   row's `responseText`, and marks it with the essay's own `e.language_code` rather than the
+   screen's generic active learning language. History's row has no excerpt/response slot in the
+   design (D8-progress-profile-onboarding.md: title + trailing meta only) and needed no change.
+   Verified with a pytest that failed before the change
+   (`tests/test_essay_list_excerpt.py`) and live on the isolated stack (`GET /api/essays` after
+   `POST /api/evaluate` via the sandbox's Ollama fallback).
 2. No curated vocabulary collection is published in this build, so `GET
    /api/vocabulary/library/collections` and `GET /api/vocabulary/catalogue/search` answer empty for
    every language (the packs exist in `writing_coach/vocabulary_library.py`; the routes serve
