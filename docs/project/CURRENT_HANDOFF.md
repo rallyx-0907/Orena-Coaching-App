@@ -28,8 +28,14 @@ status: `docs/design/canonical-ui/IMPLEMENTATION_MAP.md`.
   re-checked in the browser, language layer finished, every API reader checked
   against captured real payloads (`scripts/fixtures/api/`). Reviewable at
   http://127.0.0.1:8021/next (isolated stack) until the 8011 sandbox is migrated.
-- Agent UI side: contract v4 on the mock; hiding Orena's entry points when the
+- Agent UI side: contract v5 on the mock; hiding Orena's entry points when the
   agent is absent comes with the Orena panel (Wave B).
+- Grammar: R5 is being retired (human, 2026-09-28): Grammar Lab becomes the only
+  grammar source. The Grammar screens will render `GRAMMAR_CONTENT_CONTRACT.md`
+  (drafted by the Grammar Lab lane, reviewed and committed here like
+  AGENT_CONTRACT.md); no further R5-specific rendering. DECISION_LOG entry when
+  that contract lands; `grammar.point{grammar_id}` (AGENT_CONTRACT §6.1) moves
+  to its ids in a contract bump.
 
 ## Last verified batch
 

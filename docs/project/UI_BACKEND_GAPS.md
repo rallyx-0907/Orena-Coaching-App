@@ -473,7 +473,7 @@ cross-activity streak table, a configurable weekly-goal setting, and an
 achievements/milestone catalogue, before the frontend has anything real to
 bind to.
 
-**N-33** - Grammar Library and Grammar Concept, found on independent review of
+**N-33** - *(R5 content; R5 is being retired - see CURRENT_HANDOFF.md.)* Grammar Library and Grammar Concept, found on independent review of
 N-20 (`static/orena/screens/grammar/`, `static/orena/screens/grammar-concept/`,
 frames 44/47). For the **Chinese-target (HSK) catalogue**,
 `GET /api/library/grammar` and `GET /api/library/grammar/{id}` return `title`
@@ -625,7 +625,10 @@ fallback in place; these ask which fallback should become the real feature.
    for Reading vs. a media file), so wiring it was not assumed. Wire File to
    it now, ahead of the design's own phasing, or wait for a design revision
    that specifies File's real shape?
-3. **Grammar Concept** (N-33) - the Chinese-target (HSK) curriculum's
+3. **Grammar Concept** (N-33) - *Overtaken (2026-09-28): the human is retiring R5;
+   Grammar Lab becomes the only grammar source, rendered from a grammar content
+   contract not yet written. This question will not be answered for R5.* The
+   Chinese-target (HSK) curriculum's
    explanatory prose and, worse, its lesson titles exist only in Vietnamese,
    with no English/Chinese field or locale-map to select from. A learner
    whose support language is not Vietnamese currently sees a Vietnamese
