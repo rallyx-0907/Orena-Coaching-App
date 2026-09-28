@@ -63,8 +63,18 @@ SANDBOX_PORT = 8013
 SANDBOX_PORTS = {8013, 8015}  # 8015 when another lane holds 8013
 SHARED_PORTS = {8000, 8010, 8011, 8012}
 
-# Published paid-tier rate of gemini-3.5-flash-lite (ai.google.dev pricing, read 2026-09-27), USD per 1M tokens.
-PRICE_IN, PRICE_OUT = 0.30, 2.50
+# Published paid-tier rates, USD per 1M tokens in and out (ai.google.dev pricing, read 2026-09-28). The cap is
+# counted at these even on the free tier, where nothing is billed.
+PRICES = {
+    "gemini-3.5-flash-lite": (0.30, 2.50),
+    "gemini-3.5-flash": (1.50, 9.00),
+    "gemini-3.6-flash": (0.75, 3.75),
+    "gemini-3.7-flash": (0.75, 3.75),
+    "gemini-3.8-flash": (0.75, 3.75),
+    "gemini-2.5-flash": (0.30, 2.50),
+}
+MODEL = "gemini-3.5-flash-lite"  # the one model of the run, fixed from its start (--model / --probe-models)
+PRICE_IN, PRICE_OUT = PRICES[MODEL]
 # A turn's worst case under AgentLimits: 5 model rounds, each at most ~16k tokens in and 1024 out.
 WORST_ROUNDS, WORST_IN, WORST_OUT = 5, 16_000, 1024
 # One essay review for S9 per learning language (one model call, generous bound).
@@ -126,6 +136,45 @@ def price(tokens_in: int, tokens_out: int) -> float:
 
 
 WORST_TURN_USD = WORST_ROUNDS * price(WORST_IN, WORST_OUT)
+
+
+def use_model(name: str) -> None:
+    """The run's one model, and the rates its cap is counted at."""
+
+    global MODEL, PRICE_IN, PRICE_OUT, WORST_TURN_USD
+    if name not in PRICES:
+        sys.exit(f"refusing: no published rate for {name} here (PRICES)")
+    MODEL = name
+    PRICE_IN, PRICE_OUT = PRICES[name]
+    WORST_TURN_USD = WORST_ROUNDS * price(WORST_IN, WORST_OUT)
+
+
+PROBES: dict[str, int] = {}  # model -> HTTP status of its one-token probe
+
+
+def probe_models(names: list[str], env: dict[str, str]) -> str | None:
+    """The first of `names` that answers a one-token request (its quota is not spent), or None. The key goes in
+    a header; only the status of each is kept."""
+
+    key = env.get("GEMINI_API_KEY", "")
+    body = json.dumps({"contents": [{"parts": [{"text": "ok"}]}], "generationConfig": {"maxOutputTokens": 8}}).encode()
+    for name in names:
+        request = urllib.request.Request(
+            f"https://generativelanguage.googleapis.com/v1beta/models/{name}:generateContent", data=body, method="POST"
+        )
+        request.add_header("x-goog-api-key", key)
+        request.add_header("Content-Type", "application/json")
+        try:
+            with urllib.request.urlopen(request, timeout=60) as response:
+                PROBES[name] = response.status
+        except urllib.error.HTTPError as error:
+            PROBES[name] = error.code
+        except (urllib.error.URLError, OSError):
+            PROBES[name] = 0
+        print(f"probe {name}: {PROBES[name]}")
+        if PROBES[name] == 200:
+            return name
+    return None
 
 
 @dataclass
@@ -413,6 +462,7 @@ def _compose_env(gemini_env: str | None, port: int) -> dict[str, str]:
             if sep and key.strip() in GEMINI_KEYS and value.strip().strip("'\""):
                 env[key.strip()] = value.strip().strip("'\"")
     env["AGENT_LIVE_PORT"] = str(port)
+    env["GEMINI_MODELS"] = MODEL  # the sandbox offers only the run's one model: nothing to switch to on a failure
     return env
 
 
@@ -455,7 +505,8 @@ class Sandbox:
                                  errors="replace", check=False, timeout=60).stdout  # fmt: skip
         except (OSError, subprocess.TimeoutExpired):
             return ["the web log could not be read"]
-        lines = [line for line in log.splitlines() if "agent provider round" in line or "agent turn failed" in line]
+        lines = [line for line in log.splitlines()
+                 if "agent provider round" in line or "agent turn failed" in line or "agent notes:" in line]  # fmt: skip
         return [re.sub(r"(?i)(key=|bearer\s+|AIza)[\w\-.]+", r"\1<redacted>", line)[-600:] for line in lines]
 
     def down(self) -> None:
@@ -471,6 +522,7 @@ def _stop_on_signal(signum, frame):  # noqa: ANN001 - signal handler
 
 def main() -> int:
     args = _arguments()
+    use_model(args.model)
     turns = plan()["model_turns_per_target_per_repeat"] * args.repeat * len([t for t in args.targets.split(",") if t])
     print(f"plan: {turns} model turns (scenarios); worst case ${turns * WORST_TURN_USD + 2 * WORST_SETUP_USD:.2f}")
     if args.plan:
@@ -494,6 +546,13 @@ def main() -> int:
         if port is None:
             print(f"refusing: {sorted(SANDBOX_PORTS)} are all taken")
             return 1
+        if args.probe_models:
+            chosen = probe_models([m for m in args.probe_models.split(",") if m], _compose_env(args.gemini_env, port))
+            if chosen is None:
+                print(f"stopping: no model answered ({PROBES})")
+                return 1
+            use_model(chosen)
+        print(f"model: {MODEL} (fixed for the whole run)")
         sandbox = Sandbox(_compose_env(args.gemini_env, port))
         # A run killed outright (TerminateProcess, kill -9) runs no finally: its leftovers of this project go first.
         sandbox._compose("down", "--remove-orphans", check=False)
@@ -535,6 +594,9 @@ def _arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--gemini-env", help="a .env file to take GEMINI_* from (default: this environment)")
     parser.add_argument("--cap-usd", type=float)
+    parser.add_argument("--model", default=MODEL, help="the run's one model (fixed; never switched on a failure)")
+    parser.add_argument("--probe-models", default="", help="comma-separated: the first that answers a one-token "
+                        "probe becomes the run's model")
     parser.add_argument("--repeat", type=int, default=3)
     parser.add_argument("--targets", default="en,zh-CN")
     parser.add_argument("--only", default="", help="comma-separated scenario names, e.g. S5,S9 (default: all)")
@@ -563,7 +625,7 @@ def drive(args: argparse.Namespace, base_url: str) -> int:
     if status != 200:
         sys.exit(f"refusing: the agent is not on here ({status})")
     version = int(capabilities["contract_version"])
-    status, _ = client.call("PUT", "/api/admin/ai/config", {"provider": "gemini", "model": "gemini-3.5-flash-lite"})
+    status, _ = client.call("PUT", "/api/admin/ai/config", {"provider": "gemini", "model": MODEL})
     if status != 200:
         sys.exit(f"could not select Gemini ({status})")
 
@@ -644,7 +706,8 @@ def drive(args: argparse.Namespace, base_url: str) -> int:
 
 def finish(rows: list[dict], spent: float, out: str) -> int:
     Path(out).write_text(
-        json.dumps({"spent_bound_usd": round(spent, 4), "price": [PRICE_IN, PRICE_OUT], "lock": LOCK_NOTES, "turns": rows},
+        json.dumps({"model": MODEL, "probes": PROBES, "spent_bound_usd": round(spent, 4), "price": [PRICE_IN, PRICE_OUT],
+                    "lock": LOCK_NOTES, "turns": rows},
                    ensure_ascii=False, indent=2),  # fmt: skip
         encoding="utf-8",
     )

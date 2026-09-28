@@ -406,6 +406,9 @@ class _Turn:
     def _ask_again(self, messages: list[ProviderMessage], round_text: str | list[str], ask: str) -> None:
         """Once: the answer is set aside (nothing of it was streamed) and the model is asked again."""
 
+        # For the operator (which model follows a correction on its own): counts only, no learner words.
+        _log.warning("agent notes: the model changed no note of %d; asked again", len(self.notes_asked),
+                     extra={"trace_id": self.trace_id})  # fmt: skip
         written = "".join(round_text)
         if written:
             messages.append(ProviderMessage(role="assistant", content=written))
@@ -515,6 +518,9 @@ class _Turn:
                     outputs.suggest(intent)
         else:
             unchanged = None
+            if self.notes_asked:
+                _log.warning("agent notes: %s", "unchanged after asking again" if self._note_unchanged(outputs)
+                             else "changed", extra={"trace_id": self.trace_id})  # fmt: skip
             if self._note_unchanged(outputs):  # asked twice and no note changed: said plainly (agent/notes.py)
                 unchanged = learner_copy.text("notes.unchanged", interface=self.locale.interface, support=support,
                                               **copy_terms(learner_copy.language_of("notes.unchanged",
