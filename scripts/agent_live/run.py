@@ -857,12 +857,23 @@ def drive(args: argparse.Namespace, base_url: str) -> int:
 def timing(rows: list[dict]) -> dict:
     """Seconds to the first segment over the turns that answered, client side (median and the slowest)."""
 
-    seconds = sorted(r["t_first_segment"] for r in rows if r.get("t_first_segment") is not None and not r.get("error"))
-    if not seconds:
-        return {"turns": 0}
-    middle = len(seconds) // 2
-    median = seconds[middle] if len(seconds) % 2 else (seconds[middle - 1] + seconds[middle]) / 2
-    return {"turns": len(seconds), "first_segment_median_s": round(median, 3), "first_segment_max_s": seconds[-1]}
+    def summary_of(selected: list[dict]) -> dict:
+        seconds = sorted(r["t_first_segment"] for r in selected if r.get("t_first_segment") is not None and not r.get("error"))
+        if not seconds:
+            return {"turns": 0}
+        middle = len(seconds) // 2
+        median = seconds[middle] if len(seconds) % 2 else (seconds[middle - 1] + seconds[middle]) / 2
+        return {"turns": len(seconds), "first_segment_median_s": round(median, 3), "first_segment_max_s": seconds[-1]}
+
+    out = summary_of(rows)
+    # By kind of turn, for a fair comparison: a turn about a note holds its answer; an opening has no read tools.
+    kinds: dict[str, list[dict]] = {}
+    for row in rows:
+        if row.get("flow"):
+            kinds.setdefault(f"{row['flow']}.{row['step']}", []).append(row)
+    if kinds:
+        out["by_step"] = {kind: summary_of(selected) for kind, selected in kinds.items()}
+    return out
 
 
 def finish(rows: list[dict], spent: float, out: str) -> int:

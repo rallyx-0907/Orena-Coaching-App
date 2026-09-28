@@ -220,6 +220,8 @@ def test_timing_is_over_the_turns_that_answered():
     rows = [{"t_first_segment": 2.0, "error": None}, {"t_first_segment": 4.0, "error": None},
             {"t_first_segment": None, "error": {"class": "provider_unavailable"}}, {"t_first_segment": 3.0, "error": None}]  # fmt: skip
     assert run.timing(rows) == {"turns": 3, "first_segment_median_s": 3.0, "first_segment_max_s": 4.0}
+    by = run.timing([{"flow": "notes", "step": "correct", "t_first_segment": 9.0, "error": None}])["by_step"]
+    assert by == {"notes.correct": {"turns": 1, "first_segment_median_s": 9.0, "first_segment_max_s": 9.0}}
     assert run.timing([]) == {"turns": 0}
 
 
