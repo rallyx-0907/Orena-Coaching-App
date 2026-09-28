@@ -607,9 +607,12 @@ change remain:
    every language (the packs exist in `writing_coach/vocabulary_library.py`; the routes serve
    published packs only). Collection Detail and Search's word results stay empty until packs are
    published - a content decision, not a UI defect.
-3. `GET /api/library/vocabulary/{word}/audio` answers 500 for a catalogued word (`health`,
-   `vacancy`); a word outside the catalogue answers 200 `available: false`. Word Detail and My
-   Library already treat a failure as "no audio"; the 500 is a backend defect to fix.
+3. **RESOLVED (2026-09-28).** `GET /api/library/vocabulary/{word}/audio` answered 500 for a
+   catalogued word (`health`, `vacancy`): the route found real audio, then its cache write failed
+   (`OSError` on a read-only store) and nothing caught it. `writing_coach/word_audio.py` now
+   answers no audio (`available: false`) when the clip cannot be stored - the route serves audio
+   from the store, so an unstored clip has nothing to serve - and logs the storage failure;
+   `tests/test_word_audio.py` covers it.
 
 ### Open design questions for the human
 

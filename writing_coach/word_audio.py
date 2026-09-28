@@ -500,7 +500,19 @@ class WordAudioLibrary:
             )
             if spoken is None:
                 continue
-            return self._keep(identity_key, reading, spoken)
+            try:
+                return self._keep(identity_key, reading, spoken)
+            except OSError as error:
+                # A voice found a real clip, but the store could not keep it -
+                # a read-only mount, a full disk, a permission slip. That is a
+                # storage failure, not "nobody has a recording of it", but the
+                # honest answer to the caller is the same shape either way: no
+                # audio to serve right now, never an unhandled crash for it.
+                _log.warning(
+                    "word audio cache write failed, answering no audio: %s",
+                    type(error).__name__,
+                )
+                return None
         return None
 
     def _keep(self, identity_key: str, reading: str, spoken: Spoken) -> WordAudio:
