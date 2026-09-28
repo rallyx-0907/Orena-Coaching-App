@@ -17,7 +17,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from grammar_lab.pipeline.evaluator_client import EvaluatorClient, EvaluatorClientError
+from grammar_lab.pipeline.evaluator_client import EvaluatorClient, EvaluatorClientError, EvaluatorInputTooShort
 from grammar_lab.pipeline.llm_client import LLMClient, LLMError
 
 PROMPT_VERSION = "blind_solve.v1"
@@ -87,6 +87,9 @@ class VerifyReport:
     checked_common_mistakes: int = 0
     checked_quick_practice: int = 0
     checked_formula: bool = False
+    # Texts the engine refuses as too short (EvaluatorInputTooShort): "not verifiable by the
+    # engine" -- neither a flag nor a pass (human, 2026-09-28); route sends the point to review.
+    unverified: list[str] = field(default_factory=list)
 
     @property
     def ok(self) -> bool:
@@ -138,6 +141,13 @@ _RUBRIC_SCHEMA = {
         "no_forbidden_pattern": {"type": "number", "minimum": 0, "maximum": 1},
     },
 }
+
+
+def _evaluator_failed(report: VerifyReport, label: str, text: str, exc: EvaluatorClientError) -> None:
+    if isinstance(exc, EvaluatorInputTooShort):
+        report.unverified.append(f"{label} {text!r}")
+    else:
+        report.flags.append(VerifyFlag("evaluator_error", f"{label}: {exc}"))
 
 
 def _read_prompt_section(path: Path, name: str) -> str:
@@ -198,7 +208,7 @@ def verify_point(
         try:
             wrong_result = evaluator.evaluate(block["wrong"], target_cefr=target_cefr)
         except EvaluatorClientError as exc:
-            report.flags.append(VerifyFlag("evaluator_error", f"{label} wrong: {exc}"))
+            _evaluator_failed(report, f"{label} wrong", block["wrong"], exc)
             continue
         if block["error_tag"] not in wrong_result.categories():
             report.flags.append(VerifyFlag(
@@ -209,7 +219,7 @@ def verify_point(
         try:
             right_result = evaluator.evaluate(block["right"], target_cefr=target_cefr)
         except EvaluatorClientError as exc:
-            report.flags.append(VerifyFlag("evaluator_error", f"{label} right: {exc}"))
+            _evaluator_failed(report, f"{label} right", block["right"], exc)
             continue
         if right_result.errors:
             report.flags.append(VerifyFlag(
@@ -219,12 +229,12 @@ def verify_point(
             ))
 
     for label, text in _flatten_example_texts(point):
-        report.checked_examples += 1
         try:
             result = evaluator.evaluate(text, target_cefr=target_cefr)
         except EvaluatorClientError as exc:
-            report.flags.append(VerifyFlag("evaluator_error", f"{label}: {exc}"))
+            _evaluator_failed(report, label, text, exc)
             continue
+        report.checked_examples += 1
         if result.errors:
             report.flags.append(VerifyFlag(
                 "example_not_clean",
@@ -269,7 +279,7 @@ def verify_point(
         try:
             wrong_result = evaluator.evaluate(item["wrong"], target_cefr=target_cefr)
         except EvaluatorClientError as exc:
-            report.flags.append(VerifyFlag("evaluator_error", f"{label} wrong: {exc}"))
+            _evaluator_failed(report, f"{label} wrong", item["wrong"], exc)
             continue
         if item["error_tag"] not in wrong_result.categories():
             report.flags.append(VerifyFlag(
@@ -280,7 +290,7 @@ def verify_point(
         try:
             right_result = evaluator.evaluate(item["right"], target_cefr=target_cefr)
         except EvaluatorClientError as exc:
-            report.flags.append(VerifyFlag("evaluator_error", f"{label} right: {exc}"))
+            _evaluator_failed(report, f"{label} right", item["right"], exc)
             continue
         if right_result.errors:
             report.flags.append(VerifyFlag(
@@ -416,7 +426,7 @@ def _verify_quick_practice_options(
         try:
             result = evaluator.evaluate(sentence, target_cefr=target_cefr)
         except EvaluatorClientError as exc:
-            report.flags.append(VerifyFlag("evaluator_error", f"{option_label}: {exc}"))
+            _evaluator_failed(report, option_label, sentence, exc)
             continue
         if option_index == item["answer"]:
             if result.errors:
@@ -447,7 +457,7 @@ def _verify_story(
         try:
             result = evaluator.evaluate(sentence, target_cefr=target_cefr)
         except EvaluatorClientError as exc:
-            report.flags.append(VerifyFlag("evaluator_error", f"{label}.form_in_action.sentences[{sent_index}]: {exc}"))
+            _evaluator_failed(report, f"{label}.form_in_action.sentences[{sent_index}]", sentence, exc)
             continue
         if result.errors:
             report.flags.append(VerifyFlag(
@@ -462,7 +472,7 @@ def _verify_story(
         try:
             result = evaluator.evaluate(alt["sentence"], target_cefr=target_cefr)
         except EvaluatorClientError as exc:
-            report.flags.append(VerifyFlag("evaluator_error", f"{alt_label}: {exc}"))
+            _evaluator_failed(report, alt_label, alt["sentence"], exc)
             continue
         if result.errors:
             if not set(alt["error_tags"]) & result.categories():

@@ -37,6 +37,10 @@ from grammar_lab.pipeline.rate_limit import GEMINI_MIN_INTERVAL_SECONDS, backoff
 from grammar_lab.pipeline.secrets_redact import redact
 
 _RETRYABLE_STATUS_CODES = {429, 503}
+# The app's /api/evaluate model declares ``text`` with min_length=10 (a 422 string_too_short
+# below it). Checked here so a short sentence costs no call; lane codex/work is lifting the
+# limit for short Chinese sentences (human, 2026-09-28) -- lower this when it ships.
+ENGINE_MIN_TEXT_CHARS = 10
 _MAX_RETRIES = 5
 
 
@@ -46,6 +50,11 @@ class EvaluatorClientError(RuntimeError):
     def __init__(self, message: str, *, status_code: int | None = None) -> None:
         super().__init__(redact(message))
         self.status_code = status_code
+
+
+class EvaluatorInputTooShort(EvaluatorClientError):
+    """The engine refuses text this short. Not a verdict on the sentence: verify records it as
+    "not verifiable by the engine", neither failed nor passed."""
 
 
 @dataclass(frozen=True)
@@ -104,6 +113,10 @@ class EvaluatorClient:
         accuracy only, never task achievement -- there is no task, only a
         pitfall/example sentence to check.
         """
+        if len(text.strip()) < ENGINE_MIN_TEXT_CHARS:
+            raise EvaluatorInputTooShort(
+                f"{len(text.strip())} characters, under the engine's minimum of {ENGINE_MIN_TEXT_CHARS}"
+            )
         body: dict[str, Any] = {
             "text": text,
             "writing_mode": "journal",
@@ -159,6 +172,8 @@ class EvaluatorClient:
             if response.status_code in _RETRYABLE_STATUS_CODES and attempt < _MAX_RETRIES - 1:
                 time.sleep(backoff_delay(attempt))
                 continue
+            if response.status_code == 422 and "string_too_short" in response.text:
+                raise EvaluatorInputTooShort(f"{url} returned 422: {response.text[:2000]}", status_code=422)
             if response.status_code >= 400:
                 raise EvaluatorClientError(
                     f"{url} returned {response.status_code}: {response.text[:2000]}",

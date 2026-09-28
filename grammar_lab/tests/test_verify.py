@@ -192,6 +192,20 @@ def test_v04_quick_practice_wrong_answer_is_flagged(tmp_path: Path) -> None:
     assert "blind_solve_wrong" in report.codes()
 
 
+def test_v04_text_too_short_for_the_engine_is_unverified_not_failed_or_passed(tmp_path: Path) -> None:
+    # D7 (human, 2026-09-28): a zh sentence under the engine's 10-character minimum is
+    # "not verifiable by the engine" -- no flag, and not counted as a pass either.
+    point = v04_point()
+    point["examples"][0]["text"] = "She works."
+    point["examples"][0]["spans"] = [{"start": 4, "end": 9, "role": "verb"}]
+    point["examples"].append({**point["examples"][0], "text": "我们吃了饭。", "spans": [{"start": 2, "end": 3, "role": "verb"}]})
+    tagged = {**V04_CLEAN_TAGS, "She works.": []}
+    report = verify_point(point, evaluator=make_evaluator(tagged), blind_solver=make_blind_solver(tmp_path, 1))
+    assert report.ok, report.flags
+    assert report.unverified == ["examples[1] '我们吃了饭。'"]
+    assert report.checked_examples == 1
+
+
 def v04_point_with_formula(title: str, slots: list[dict]) -> dict:
     point = v04_point()
     point["header"] = {

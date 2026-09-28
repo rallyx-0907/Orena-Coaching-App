@@ -198,8 +198,11 @@ def verify(
                 "checked_common_mistakes": verify_report.checked_common_mistakes,
                 "checked_quick_practice": verify_report.checked_quick_practice,
                 "checked_formula": verify_report.checked_formula,
+                "unverified": verify_report.unverified,
             }
             verdict = "OK" if verify_report.ok else f"{len(verify_report.flags)} flag(s)"
+            if verify_report.unverified:
+                verdict += f", {len(verify_report.unverified)} not verifiable by the engine"
             typer.echo(f"{point_id:40} {verdict}")
     run_id = new_run_id()
     write_step(root, run_id, "verify", {
@@ -247,6 +250,7 @@ def route(
             continue
         verify_report = None if entry.get("skipped") else VerifyReport(
             point_id, [VerifyFlag(f["code"], f["detail"]) for f in entry["flags"]],
+            unverified=entry.get("unverified", []),
         )
         outcome = route_point(
             point_id, validate_issue_codes=issue_codes_by_id.get(point_id, set()),

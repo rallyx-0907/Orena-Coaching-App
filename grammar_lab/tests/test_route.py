@@ -109,3 +109,12 @@ def test_apply_route_updates_status_and_flags_without_touching_review() -> None:
     assert updated["flags"] == ["route:sampled_for_review"]
     assert updated["review"] is None
     assert updated["version"] == 1
+
+
+def test_engine_unverified_text_keeps_the_point_out_of_auto_ok_without_counting_as_an_error() -> None:
+    report = VerifyReport("en.alpha", unverified=["examples[0] 'She works'"])
+    outcome = route_point("en.alpha", validate_issue_codes=set(), verify_report=report,
+                          threshold=0.8, gold_set_passed=True)
+    assert outcome.status == "flagged"
+    assert outcome.flags == ["route:engine_unverified:1"]
+    assert outcome.score == 1.0

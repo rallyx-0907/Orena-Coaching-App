@@ -77,6 +77,9 @@ def route_point(
 
     1. Any validate issue, or any verify flag (including one meaning the
        point could not be checked at all) -> flagged.
+    1b. Any text the engine refused as too short (``VerifyReport.unverified``) -> flagged for
+       review with ``route:engine_unverified:<n>``: not an error (the score is untouched), but
+       not a pass either (human, 2026-09-28).
     2. A Chinese point with a story block -> always flagged, regardless of
        score or gold-set status (STORY_SPEC.md §6: "Tiếng Trung: luôn vào
        hàng đợi duyệt" -- stronger than rule 3 below, which a passed gold
@@ -91,6 +94,10 @@ def route_point(
 
     if validate_issue_codes or verify_codes:
         return RouteOutcome(point_id, score_point(verify_codes), "flagged", all_flags)
+    if verify_report is not None and verify_report.unverified:
+        return RouteOutcome(
+            point_id, score_point(verify_codes), "flagged", [f"route:engine_unverified:{len(verify_report.unverified)}"],
+        )
     if target_lang == "zh-Hans" and has_story:
         return RouteOutcome(point_id, score_point(verify_codes), "flagged", ["route:zh_story_always_reviewed"])
     if not gold_set_passed:
