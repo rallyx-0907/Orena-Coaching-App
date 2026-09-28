@@ -116,11 +116,21 @@ def test_a_turn_that_failed_after_a_billed_round_is_counted_from_the_telemetry(s
     assert spent == pytest.approx(run.price(12000, 90) + run.ROUND_WORST_USD + run.price(8000, 60))
 
 
-def test_without_the_telemetry_a_failed_turn_counts_its_whole_worst_case(slept, monkeypatch):
+def test_without_the_telemetry_every_turn_counts_its_whole_worst_case(slept, monkeypatch):
     flow("t", ONE, monkeypatch)
     client = FakeClient([refused(), answered()], telemetry=False)
     rows, spent = run.run_flows(client, 5, ["t"], cap=1.0, gap=0, spent=0.0)
-    assert spent == pytest.approx(run.WORST_TURN_USD + run.price(8000, 60))
+    assert spent == pytest.approx(2 * run.WORST_TURN_USD)
+
+
+def test_a_finished_turn_with_a_round_that_reported_no_usage_counts_that_round_at_its_worst(slept, monkeypatch):
+    # review 2026-09-28: done.usage sums only the rounds that reported usage; the telemetry sees every round
+    flow("t", ONE, monkeypatch)
+    silent = {"capability": "agent_turn_fast", "outcome": "success", "usage": {"prompt_tokens": None, "completion_tokens": None}}
+    finished = answered()
+    finished["rounds"] = [ok_round(500, 50), silent]
+    rows, spent = run.run_flows(FakeClient([finished]), 5, ["t"], cap=1.0, gap=0, spent=0.0)
+    assert spent == pytest.approx(run.price(500, 50) + run.ROUND_WORST_USD)
 
 
 def test_every_send_a_retry_too_fits_the_cap_at_its_worst(slept, monkeypatch):

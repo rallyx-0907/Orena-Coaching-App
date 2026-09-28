@@ -161,8 +161,11 @@ def claims_done(sentence: str, *, remembered: bool = False, action: str | None =
 # The model never offers a button in its own words; the server does, once (human direction 2026-09-28: the
 # live run showed "Bấm Ôn tập từ vựng…" with no button, and "nút bên dưới", "below", "下方的按钮"). Read in the
 # support language only, so a target-language word ("click", "点击") being explained is never taken for one.
-# A tapping verb alone is not an offer ("Nhấn mạnh vào thanh điệu", "tap water", "点击率"): it must be followed
-# by what names a button - a label (a capital, a quote, markup), "nút"/"button"/"按钮", or "here"/"đây"/"下方".
+# A tapping verb alone is not an offer ("Nhấn mạnh vào thanh điệu", "Nhấn để xem thêm câu tiếp theo", "Press to
+# continue", "tap water", "点击率"). After the verb and its small words (the/a/on, vào/cái/ngay…), what comes first
+# must name a button - a label (a capital, a quote, markup), or "here"/"đây" -, or a button word (nút/button/按钮)
+# must follow within a few words ("Tap the Save word button", "Bấm vào cái nút Lưu từ"). "vào để…" ("tap on it
+# to…") points at the screen; a bare "để…"/"to…" does not (review 2026-09-28).
 _OFFER_VERB = MappingProxyType(
     {
         "vi": re.compile(
@@ -174,13 +177,18 @@ _OFFER_VERB = MappingProxyType(
     }
 )
 _OPENING_MARKS = "\"“«'*[`(「『"
-_BUTTON_WORDS = MappingProxyType(
-    {
-        "vi": (("vào", "lên"), ("nút", "đây", "để")),  # "Bấm vào để xem thêm": tap it, in order to…
-        "en": (("on",), ("the button", "button", "here", "below", "to")),
-    }
-)
+_FILLERS = MappingProxyType({"vi": ("vào", "lên", "ngay", "luôn", "cái", "thử"), "en": ("on", "the", "a", "an", "that", "this")})
+_POINTING = MappingProxyType({"vi": ("vào", "lên"), "en": ("on",)})  # "vào để…": tap on it, in order to…
+_HERE = MappingProxyType({"vi": ("đây",), "en": ("here", "below")})
+_BUTTON = MappingProxyType({"vi": ("nút",), "en": ("button", "buttons")})
+_PURPOSE = MappingProxyType({"vi": "để", "en": "to"})
+_WINDOW = 5  # how many words after the verb a button word may come
 _ZH_BUTTON = re.compile(r"^\s*(?:[“「『\"]|.{0,6}?(?:按钮|按键|这里|下方|上方|下面|上面))")
+_WORD = re.compile(r"\S+")
+
+
+def _bare(word: str) -> str:
+    return word.strip(".,!?;:…").casefold()
 
 
 def offers_a_button(sentence: str, support: str) -> bool:
@@ -189,24 +197,27 @@ def offers_a_button(sentence: str, support: str) -> bool:
     if _question(sentence):
         return False  # "Bạn đã bấm Lưu từ chưa?" asks; it offers nothing
     pattern = _OFFER_VERB.get(support, _OFFER_VERB["en"])
+    lang = support if support in _FILLERS else "en"
     for found in pattern.finditer(sentence):
         rest = sentence[found.end():]
         if support == "zh-CN":
             if _ZH_BUTTON.match(rest):
                 return True
             continue
-        skip, words = _BUTTON_WORDS.get(support, _BUTTON_WORDS["en"])
-        rest = rest.lstrip()
-        for word in skip:
-            if rest.casefold().startswith(word + " "):
-                rest = rest[len(word) + 1:].lstrip()
-        if not rest:
+        words = _WORD.findall(rest)
+        if any(_bare(w) in _BUTTON[lang] for w in words[:_WINDOW]):
+            return True  # "Tap the Save word button", "Bấm vào cái nút Lưu từ"
+        index, pointed = 0, False
+        while index < len(words) and _bare(words[index]) in _FILLERS[lang]:
+            pointed = pointed or _bare(words[index]) in _POINTING[lang]
+            index += 1
+        if index == len(words):
             continue
-        if rest[0] in _OPENING_MARKS or rest[0].isupper():
-            return True
-        if any(rest.casefold().startswith(word) and (len(rest) == len(word) or not rest[len(word)].isalpha())
-               for word in words):  # fmt: skip
-            return True
+        first = words[index]
+        if first[0] in _OPENING_MARKS or first[0].isupper() or _bare(first) in _HERE[lang]:
+            return True  # a label, or a place on the screen
+        if pointed and _bare(first) == _PURPOSE[lang]:
+            return True  # "Bấm vào để xem thêm"
     return False
 
 

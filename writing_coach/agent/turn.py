@@ -205,6 +205,7 @@ class _Turn:
         self.provider_rounds = 0
         self.address_offered_now = False
         self.notes_asked: tuple[CoachNote, ...] = ()  # coach notes the message changes (agent/notes.py)
+        self.notes_verdict_logged = False  # one "agent notes" verdict line per turn, never two
         self.coach_notes: tuple[CoachNote, ...] = ()
         self.snapshot: dict | None = None
         # The learner's address for this turn (§5.6): used, never logged or stored (contract §10).
@@ -409,7 +410,8 @@ class _Turn:
         """A turn about a note that failed before its answer: said, so the operator's per-turn reading of the
         "agent notes" lines never carries an "asked again" over to the next turn (counts only)."""
 
-        if self.notes_asked:
+        if self.notes_asked and not self.notes_verdict_logged:
+            self.notes_verdict_logged = True
             _log.warning("agent notes: failed before a verdict", extra={"trace_id": self.trace_id})
 
     def _note_unchanged(self, outputs: ReplyOutputs) -> bool:
@@ -532,7 +534,8 @@ class _Turn:
                     outputs.suggest(intent)
         else:
             unchanged = None
-            if self.notes_asked:
+            if self.notes_asked and not self.notes_verdict_logged:
+                self.notes_verdict_logged = True
                 _log.warning("agent notes: %s", "unchanged after asking again" if self._note_unchanged(outputs)
                              else "changed", extra={"trace_id": self.trace_id})  # fmt: skip
             if self._note_unchanged(outputs):  # asked twice and no note changed: said plainly (agent/notes.py)

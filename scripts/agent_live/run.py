@@ -520,12 +520,10 @@ def run_flows(client: Client, version: int, names: list[str], cap: float, gap: f
 
 
 def turn_cost(summary: dict, ledger: RoundLedger) -> float:
-    """A turn's cost: its reported usage when it finished; otherwise its rounds as the telemetry recorded them;
-    otherwise its worst case."""
+    """A turn's cost, always from its rounds as the sandbox's telemetry recorded them - never from `done.usage`,
+    which sums only the rounds that reported usage (a round that reported none adds nothing there; review
+    2026-09-28) -, or its whole worst case when the telemetry cannot be read."""
 
-    if summary.get("usage_reported") and not summary.get("error"):
-        ledger.mark()
-        return price(summary["tokens_in"], summary["tokens_out"])
     measured = ledger.new_cost()
     return WORST_TURN_USD if measured is None else measured
 
@@ -813,6 +811,8 @@ def drive(args: argparse.Namespace, base_url: str) -> int:
             return finish(rows, spent, args.out)
         provider_answered = True
         essay_id = str(essay.get("id")) if isinstance(essay, dict) else None
+        ledger = RoundLedger(client)
+        ledger.mark()  # the essay review is counted by its own bound
         for repeat in range(args.repeat):
             for scenario in scenarios(target, essay_id):
                 if only and scenario.name not in only:
@@ -828,9 +828,8 @@ def drive(args: argparse.Namespace, base_url: str) -> int:
                     time.sleep(int(result.get("retry_after") or 1))
                     result = client.turn(body)
                 summary = summarize(result) if result["status"] == 200 else {"body": result.get("body")}
-                if scenario.model and result["status"] == 200:
-                    measured = price(summary["tokens_in"], summary["tokens_out"])
-                    spent += measured if summary["usage_reported"] else WORST_TURN_USD
+                if scenario.model:
+                    spent += turn_cost(summary, ledger)
                 expected = canonical(scenario.canonical) if scenario.canonical else None
                 row = {
                     "target": target, "scenario": scenario.name, "repeat": repeat, "status": result["status"],

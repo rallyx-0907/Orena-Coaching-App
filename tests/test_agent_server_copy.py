@@ -119,6 +119,14 @@ def test_the_models_own_offer_is_recognised(sentence, support):
         ("Tap water is safe here.", "en"),
         ("Press releases are formal.", "en"),
         ("点击率很高。", "zh-CN"),
+        # second review: a bare "to"/"để" names no button
+        ("Press to continue with the next question.", "en"),
+        ("Click to copy the sentence.", "en"),
+        ("Tap to hear it again.", "en"),
+        ("Nhấn để xem thêm câu tiếp theo.", "vi"),
+        ("Chạm để tiếp tục.", "vi"),
+        ("Press your tongue against your teeth.", "en"),
+        ("Nhấn mạnh chữ 学 nhé.", "vi"),
     ],
 )
 def test_a_word_being_explained_is_not_an_offer(sentence, support):
@@ -135,7 +143,11 @@ def test_an_answer_that_only_emphasises_is_kept_whole():
 @pytest.mark.parametrize(
     ("sentence", "support"),
     [("Em bấm Lưu từ nhé.", "vi"), ("Bấm vào đây để mở.", "vi"), ("Bấm *Ôn từ ngay* để ôn.", "vi"),
-     ("Press the button below.", "en"), ("Click here to start.", "en"), ("请点击这里开始。", "zh-CN")],
+     ("Press the button below.", "en"), ("Click here to start.", "en"), ("请点击这里开始。", "zh-CN"),
+     # second review: small words between the verb and the button
+     ("Tap the Save word button.", "en"), ("Press the Save button.", "en"), ("Click the “Save word” button.", "en"),
+     ("Tap a button below.", "en"), ("Tap on the Save button.", "en"), ("Bấm vào cái nút Lưu từ.", "vi"),
+     ("Bấm ngay nút Lưu từ.", "vi"), ("Bấm vào để xem thêm nhé.", "vi"), ("点击保存按钮", "zh-CN")],
 )  # fmt: skip
 def test_an_offer_names_a_button(sentence, support):
     assert offers_a_button(sentence, support)
