@@ -214,7 +214,7 @@ def reply_tool_specs(
             ProviderToolSpec(
                 PROPOSE_ACTION,
                 "Offer a button the learner can tap. Nothing happens until they tap it, so your answer "
-                "invites them to (\"Bấm Lưu từ để…\") and never says it is done. "
+                "invites them to tap it by its label, in the support language, and never says it is done. "
                 "Payloads, exactly: " + "; ".join(payload_shapes(a, target) for a in allowed) + ". "
                 "Ids in the payload must come from a tool result or the "
                 "context, never invented; a word is {text, lang} in the language being learned. navigate "
