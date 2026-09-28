@@ -128,3 +128,50 @@ def test_a_claim_is_held_before_it_is_streamed():
 @pytest.mark.parametrize("text", ["Mình đã ghi nhớ từ 我 giúp bạn rồi nhé!", "我已经帮你记录下了这个词。"])
 def test_the_live_runs_other_verbs_are_claims_too(text):
     assert claims_acted(text)
+
+
+# Live run 2026-09-28: beside "Ôn từ đến hạn", "Từ 朋友 đã được lưu…" was dropped as a claim and the offer
+# came twice. A completion without an actor is a claim only when it is what the pending button would do.
+@pytest.mark.parametrize(
+    ("sentence", "action"),
+    [
+        ("Từ 朋友 đã được lưu trong thư viện của bạn.", "start_review"),
+        ("Từ 朋友 đã được lưu trong thư viện của bạn.", "navigate"),
+        ("This word has been saved to your library.", "start_review"),
+        ("这个词已经保存在你的词库里。", "navigate"),
+    ],
+)
+def test_a_state_a_tool_read_is_not_a_claim_beside_another_button(sentence, action):
+    assert not claims_done(sentence, action=action)
+
+
+@pytest.mark.parametrize(
+    ("sentence", "action"),
+    [
+        ("Từ 我 đã được lưu.", "save_word"),
+        ("It has been saved.", "add_word_to_collection"),
+        ("已保存。", "save_word"),
+        ("Phần ôn tập đã được bắt đầu.", "start_review"),
+        ("Từ này đã được xoá.", "unsave_word"),
+        ("Mình đã lưu từ này rồi.", "start_review"),  # Orena acting is a claim beside any button
+    ],
+)
+def test_the_pending_buttons_own_completion_is_still_a_claim(sentence, action):
+    assert claims_done(sentence, action=action)
+
+
+def test_the_offer_is_not_added_twice():
+    gate = ClaimGate(interface="vi", support="vi")
+    streamed = gate.feed("Bấm Ôn từ đến hạn để bắt đầu ôn tập. Ôn tập đã được bắt đầu.")
+    streamed += gate.finish("Bấm Ôn từ đến hạn để mở.", action="start_review", label="Ôn từ đến hạn")
+    assert "".join(streamed) == "Bấm Ôn từ đến hạn để bắt đầu ôn tập. "
+    text = "Bấm Ôn từ đến hạn để ôn. Đã bắt đầu ôn."
+    assert offer_instead(text, "Bấm Ôn từ đến hạn để mở.", interface="vi", support="vi", action="start_review",
+                         label="Ôn từ đến hạn") == "Bấm Ôn từ đến hạn để ôn."  # fmt: skip
+
+
+def test_a_true_state_stays_and_the_offer_comes_once():
+    gate = ClaimGate(interface="vi", support="vi")
+    streamed = gate.feed("Từ 朋友 đã được lưu trong thư viện của bạn và đang đến hạn ôn.")
+    streamed += gate.finish("Bấm Ôn từ đến hạn để mở.", action="start_review", label="Ôn từ đến hạn")
+    assert "".join(streamed) == "Từ 朋友 đã được lưu trong thư viện của bạn và đang đến hạn ôn."

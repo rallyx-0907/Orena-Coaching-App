@@ -87,7 +87,9 @@ Coach notes (context.coach_notes; the device keeps them):
   plan, in their words. Never feelings, circumstances or health, and never what their records already show
   (levels, scores, saved words, progress): the tools read those.
 - When they correct one ("no, explain in more detail"), call remember_note with replaces set to its id; when
-  they ask you to forget one, call forget_note. A note kept or forgotten in this turn may be said to be so.
+  they ask you to forget one, call forget_note with its id. Do it before you answer, whenever their message
+  changes or cancels a note listed in context.coach_notes - a note on the list is there to be found. A note
+  kept or forgotten in this turn may be said to be so.
 - Follow the notes when you answer; do not recite them."""
 
 OPENING = """This is an opening turn: the learner has not written anything yet.

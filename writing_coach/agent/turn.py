@@ -454,15 +454,18 @@ class _Turn:
 
     def _finish(self, outputs: ReplyOutputs) -> Iterator[Event]:
         index = 0
-        offer = None
+        offer = action_type = label = None
         if outputs.actions:  # an action is offered, never reported as done (agent/honesty.py)
             first = outputs.actions[0]
+            action_type, label = first.type, first.label
             offer = offer_for(
                 first.type, first.label, first.payload, interface=self.locale.interface, support=self.locale.support
             )
         if self.opening:
             text = "".join(self.text)
-            text = offer_instead(text, offer, interface=self.locale.interface, support=self.locale.support)
+            text = offer_instead(
+                text, offer, interface=self.locale.interface, support=self.locale.support, action=action_type, label=label
+            )
             if not text.strip() and offer is not None:
                 text = offer
             text = _fit_greeting(text)
@@ -470,7 +473,10 @@ class _Turn:
                 for intent in opening_suggestions(self.request.context.known_surface):
                     outputs.suggest(intent)
         else:
-            for chunk in self.gate.finish(offer, remembered=bool(outputs.memory_updates)):
+            finished = self.gate.finish(
+                offer, remembered=bool(outputs.memory_updates), action=action_type, label=label
+            )
+            for chunk in finished:
                 yield self.stream.emit(SegmentDelta(index=0, lang=self.locale.support, text_delta=chunk))
             text = self.gate.text
         if text:

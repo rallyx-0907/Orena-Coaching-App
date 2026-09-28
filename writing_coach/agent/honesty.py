@@ -67,6 +67,34 @@ def _patterns(vi_done: str, zh_done: str) -> tuple[re.Pattern[str], re.Pattern[s
 
 _SELF, _STATE = _patterns(f"{_VI_ACT}|{_VI_MEMORY}", f"{_ZH_ACT}|{_ZH_MEMORY}")
 _SELF_ACT, _STATE_ACT = _patterns(_VI_ACT, _ZH_ACT)  # when the turn kept a note, remembering is not a claim
+
+# A completion with no actor is false only when it is what the pending button would do: beside "Ôn từ đến
+# hạn", "Từ 朋友 đã được lưu" is a state a tool read, not a claim (live run 2026-09-28).
+_ACTION_VERBS: dict[str, tuple[str, str, str]] = {
+    "save_word": ("lưu|thêm", "saved|added", "保存|添加|加入|收藏"),
+    "add_word_to_collection": ("lưu|thêm", "saved|added", "保存|添加|加入|收藏"),
+    "unsave_word": ("xóa|xoá|bỏ lưu", "removed|deleted", "删除|移除"),
+    "navigate": ("mở|chuyển", "opened", "打开"),
+    "start_review": ("bắt đầu|mở", "started|opened", "开始|打开"),
+    "start_targeted_drill": ("bắt đầu|mở", "started|opened", "开始|打开"),
+}
+
+
+def _stated_for(action: str) -> re.Pattern[str] | None:
+    verbs = _ACTION_VERBS.get(action)
+    if verbs is None:
+        return None
+    vi, en, zh = verbs
+    return re.compile(
+        r"(?i)"
+        rf"\bđã\s+được\s+(?:{vi})\b"
+        rf"|\b(?:has|have|had)\s+been\s+(?:{en})\b"
+        + (r"|\bis\s+now\s+(?:saved|in\s+your)\b" if "saved" in en else "")
+        + rf"|已(?:经)?(?:被)?(?:{zh})"
+    )
+
+
+_STATED_FOR = {action: _stated_for(action) for action in _ACTION_VERBS}
 _SENTENCE = re.compile(r"[^.!?。！？\n]+[.!?。！？]*\s*|\n+")
 _BOUNDARY = re.compile(r"[.!?。！？]+[\"'”’)\]]*\s*|\n+")
 
@@ -81,11 +109,20 @@ def claims_acted(sentence: str, *, remembered: bool = False) -> bool:
     return not _question(sentence) and bool(acted.search(sentence))
 
 
-def claims_done(sentence: str, *, remembered: bool = False) -> bool:
-    """Either kind of claim, in a sentence that is not a question."""
+def claims_done(sentence: str, *, remembered: bool = False, action: str | None = None) -> bool:
+    """Either kind of claim, in a sentence that is not a question. With the pending button's `action`, a
+    completion without an actor counts only when it is that button's own (an action with no verbs here: all)."""
 
     acted, stated = (_SELF_ACT, _STATE_ACT) if remembered else (_SELF, _STATE)
+    if action is not None and _STATED_FOR.get(action) is not None:
+        stated = _STATED_FOR[action]
     return not _question(sentence) and bool(acted.search(sentence) or stated.search(sentence))
+
+
+def _offered(text: str, label: str | None) -> bool:
+    """The answer already offers this button by its label ("Bấm Ôn từ đến hạn để…"): not offered twice."""
+
+    return bool(label) and label.casefold() in text.casefold()
 
 
 def _sentences(text: str) -> list[str]:
@@ -106,17 +143,30 @@ def offer_for(action_type: str, label: str, payload: Mapping[str, Any], *, inter
     return learner_copy.text(key, interface=interface, support=support, label=label, text=text)[1]
 
 
-def offer_instead(text: str, offer: str | None, *, interface: str, support: str, remembered: bool = False) -> str:
+def offer_instead(
+    text: str,
+    offer: str | None,
+    *,
+    interface: str,
+    support: str,
+    remembered: bool = False,
+    action: str | None = None,
+    label: str | None = None,
+) -> str:
     """The whole answer at once (an opening greeting): claims out, the button offered when there is one."""
 
     def claim(part: str) -> bool:
-        return (claims_done if offer else claims_acted)(part, remembered=remembered)
+        if offer:
+            return claims_done(part, remembered=remembered, action=action)
+        return claims_acted(part, remembered=remembered)
 
     parts = _sentences(text)
     if not any(claim(part) for part in parts):
         return text
     kept = "".join(part for part in parts if not claim(part)).strip()
     if offer:
+        if _offered(kept, label):
+            return kept
         return f"{kept} {offer}".strip() if kept else offer
     return kept or _nothing_done(interface, support)
 
@@ -148,19 +198,26 @@ class ClaimGate:
         self.sent.extend(out)
         return out
 
-    def finish(self, offer: str | None, *, remembered: bool = False) -> list[str]:
+    def finish(
+        self, offer: str | None, *, remembered: bool = False, action: str | None = None, label: str | None = None
+    ) -> list[str]:
         tail = self._held + ([self._partial] if self._partial else [])
         self._held, self._partial = [], ""
 
         def claim(part: str) -> bool:
-            return (claims_done if offer is not None else claims_acted)(part, remembered=remembered)
+            if offer is not None:
+                return claims_done(part, remembered=remembered, action=action)
+            return claims_acted(part, remembered=remembered)
 
         if any(claim(part) for part in tail):
             kept = "".join(part for part in tail if not claim(part))
             if not self.text.strip():
                 kept = kept.lstrip()  # the claim opened the answer: no stray space or blank line before the rest
             before = "".join(self.sent) + kept
-            addition = offer if offer is not None else ("" if before.strip() else self._nothing())
+            if offer is not None and _offered(before, label):
+                addition = ""  # the answer already offers this button by name
+            else:
+                addition = offer if offer is not None else ("" if before.strip() else self._nothing())
             joiner = "" if not addition or not before or before.endswith((" ", "\n")) else " "
             chunk = kept + joiner + addition
         else:
