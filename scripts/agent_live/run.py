@@ -81,16 +81,20 @@ ALL_INTENTS = [
 
 
 # What a reviewer checks by eye, flagged on every answer (human review 2026-09-28).
-DONE_CLAIMS = re.compile(r"(?i)\b(đã lưu|đã thêm|đã xóa|đã mở|saved|added|removed|opened)\b|已保存|已添加|已删除")
+DONE_CLAIMS = re.compile(
+    r"(?i)\b(?:mình|orena)\s+(?:vừa\s+)?đã\s+(?:lưu|thêm|xóa|mở)|\bđã\s+được\s+(?:lưu|thêm|xóa|mở)"
+    r"|\b(?:has been|is now|I've|I have)\s+(?:saved|added|removed|opened)\b|已(?:经)?(?:帮你)?(?:保存|添加|删除)"
+)
 PRAISE = re.compile(r"(?i)rất tốt|tuyệt vời|xuất sắc|great job|well done|excellent|很好|非常好|太棒")
-SELF_AS_TOI = re.compile(r"(?i)(^|[^\w])tôi([^\w]|$)")
+# Orena speaking of itself as "tôi" - not "tôi" inside a screen name ("Thư viện của tôi") or a word's gloss.
+SELF_AS_TOI = re.compile(r"(?i)\btôi (không|chỉ|có thể|sẽ|đã|rất|xin|cần|muốn|hiểu|thấy)\b")
 ENGLISH_SCREEN = re.compile(r"\b(Your words|My Library|My words|Practice Hub|Discover|Today)\b")
 
 
 def quality_flags(text: str, has_action: bool) -> list[str]:
     flags = []
-    if has_action and DONE_CLAIMS.search(text):
-        flags.append("action described as done")
+    if DONE_CLAIMS.search(text):
+        flags.append("action described as done" if has_action else "claims it acted")
     if PRAISE.search(text):
         flags.append("general praise")
     if SELF_AS_TOI.search(text):

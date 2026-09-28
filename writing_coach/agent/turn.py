@@ -49,6 +49,7 @@ from writing_coach.agent.decision import (
     RuleDecisionProvider,
 )
 from writing_coach.agent.errors import AgentError, ProviderUnavailable
+from writing_coach.agent.honesty import ClaimGate, offer_instead
 from writing_coach.agent.identity import IdentityQuestion
 from writing_coach.agent.events import (
     DoneEvent,
@@ -190,6 +191,8 @@ class _Turn:
         self.evidence_ids: list[str] = []
         self.records: list[ToolResultRecord] = []
         self.text: list[str] = []
+        # What is streamed; an action is never reported as done (agent/honesty.py).
+        self.gate = ClaimGate(passthrough=not request.client.allowed_actions)
         self.provider_rounds = 0
         self.deadline = runtime.clock() + runtime.limits.turn_timeout_seconds
 
@@ -296,7 +299,8 @@ class _Turn:
                     round_text.append(item.text)
                     self.text.append(item.text)
                     if not self.opening:  # an opening greeting is sent whole, once it fits
-                        yield self.stream.emit(SegmentDelta(index=0, lang=self.locale.support, text_delta=item.text))
+                        for chunk in self.gate.feed(item.text):
+                            yield self.stream.emit(SegmentDelta(index=0, lang=self.locale.support, text_delta=chunk))
                 elif isinstance(item, ToolCallRequest):
                     calls.append(item)
                 elif isinstance(item, TurnFinished):
@@ -391,12 +395,25 @@ class _Turn:
 
     def _finish(self, outputs: ReplyOutputs) -> Iterator[Event]:
         index = 0
-        text = "".join(self.text)
+        offer = None
+        if outputs.actions:  # an action is offered, never reported as done (agent/honesty.py)
+            offer = learner_copy.text(
+                "offer.action", interface=self.locale.interface, support=self.locale.support, label=outputs.actions[0].label
+            )[1]
         if self.opening:
+            text = "".join(self.text)
+            if offer is not None:
+                text = offer_instead(
+                    text, outputs.actions[0].label, interface=self.locale.interface, support=self.locale.support
+                )
             text = _fit_greeting(text)
             if not outputs.suggestions:
                 for intent in opening_suggestions(self.request.context.known_surface):
                     outputs.suggest(intent)
+        else:
+            for chunk in self.gate.finish(offer):
+                yield self.stream.emit(SegmentDelta(index=0, lang=self.locale.support, text_delta=chunk))
+            text = self.gate.text
         if text:
             yield self.stream.emit(
                 SegmentEnd(index=0, lang=self.locale.support, text=text, voice_style=outputs.voice_style),

@@ -25,6 +25,8 @@ from writing_coach.core.support_languages import support_language
 INSTRUCTION = """You are Orena, the assistant and learning coach inside the Orena language-learning app.
 
 Who you are: Orena. Never name or describe the model, company or provider behind you; if asked, you are Orena.
+In Vietnamese you always call yourself "mình" and the learner "bạn" - in every sentence, refusals and apologies
+included: "Mình không xem được dữ liệu của người khác", never "Tôi không thể…".
 
 How you answer:
 - Write in the learner's support language (context.languages.support). Material being learned may appear in the
@@ -39,9 +41,12 @@ How you answer:
 
 Evidence before claims:
 - Say the learner made an error only when a tool result shows it, and then call cite_evidence with those ids.
+  Evidence ids are for cite_evidence only: never write them ("e1", "[e1, e2]") in your answer.
 - A lower score the provider did not flag is not an error: say it scored lower, and do not guess why.
 - No flagged error is not "no error": when a result lists none, say the evaluator has not marked an error, and
   do not call the piece good, correct or error-free. Versions with no marked errors are still versions.
+- Add no verdict of your own ("tốt", "phù hợp", "tự nhiên", "good", "natural"). A strength the evaluator
+  recorded may be reported as the evaluator's ("bộ chấm ghi nhận …"), never as your praise.
 - With no evidence, say you do not have it and how to get it (try again, submit the piece).
 
 Data and actions:
@@ -51,6 +56,8 @@ Data and actions:
   if it is refused, say it in words instead.
 - An action is a button the learner taps. You have not done it and never write as if it happened ("đã lưu",
   "saved", "已保存"). Offer it by its label: say what tapping it does (for example "Bấm Lưu từ để lưu 我.").
+- You change nothing yourself, ever: never say you saved, added, removed or opened anything. A state a tool
+  read is the learner's ("Từ này đã có trong thư viện của bạn"), not your doing.
 - Use suggest_next, set_voice_style and add_reference only when they help this answer."""
 
 OPENING = """This is an opening turn: the learner has not written anything yet.
@@ -125,6 +132,35 @@ def opening_trigger(support_name: str | None) -> str:
     return f"{OPENING_TRIGGER[:-1]} Greet them in {support_name}.]"
 
 
+# The voice, written in the support language itself and sent last before the learner's message: the live run
+# showed an English-only instruction lose to the model's habits ("Tôi không thể…", "Bài này rất tốt!").
+# A support language with no entry gets none; the instruction above still applies.
+STYLE_BY_SUPPORT: dict[str, str] = {
+    "vi": """Cách viết (bắt buộc, cho mọi câu trả lời):
+- Luôn xưng "mình", gọi người học là "bạn". Không bao giờ xưng "tôi", kể cả khi từ chối hay xin lỗi.
+  Ví dụ từ chối: "Mình chỉ xem được dữ liệu học của chính bạn thôi."
+- Không khen chung chung: không "rất tốt", "tuyệt vời", "xuất sắc", "phù hợp và tự nhiên", "cứ phát huy nhé".
+  Chỉ nói điều kiểm chứng được.
+- Khi bộ chấm không đánh dấu lỗi nào: "Bộ chấm chưa đánh dấu lỗi nào trong bài này." - không nói bài tốt hay
+  không có lỗi. Điểm mạnh mà bộ chấm ghi nhận thì nói là của bộ chấm ("Bộ chấm ghi nhận …").
+- Nút (action) là để người học bấm; chưa có gì được thực hiện. Viết "Bấm … để …", không viết "Đã …".
+- Mình không tự làm gì cả: không bao giờ nói "mình đã lưu/thêm/xóa/mở". Trạng thái đọc được là của bạn:
+  "Từ này đã có trong thư viện của bạn."
+- Không viết mã bằng chứng ("e1", "[e1, e2]") vào câu trả lời.""",
+}
+
+
+def selection_line(tier1: Tier1Context) -> str | None:
+    """What the learner has selected, in one line: "this word" in their message means it."""
+
+    selection = tier1.selection
+    if selection is None or not (selection.text or selection.id):
+        return None
+    what = f'"{selection.text}"' if selection.text else f"id {selection.id}"
+    lang = f" ({selection.lang})" if getattr(selection, "lang", None) else ""
+    return f"The learner has selected the {selection.type} {what}{lang}. \"This\" in their message means it."
+
+
 def opening_messages(
     turn: TurnInput,
     tier1: Tier1Context,
@@ -140,10 +176,20 @@ def opening_messages(
     ]
     if opening:
         messages.append(ProviderMessage(role="system", content=OPENING))
+        style = STYLE_BY_SUPPORT.get(to_internal(tier1.contract_locale.support))
+        if style:
+            messages.append(ProviderMessage(role="system", content=style))
         # A request of system messages alone is refused by some providers (Gemini: "contents is not
         # specified"). The trigger is stated as a fixed user message; it carries no learner text.
         support_name = _language_name(tier1.contract_locale.support, target=False)
         messages.append(ProviderMessage(role="user", content=opening_trigger(support_name)))
+    style = STYLE_BY_SUPPORT.get(to_internal(tier1.contract_locale.support))
+    if style and turn.message is not None:
+        messages.append(ProviderMessage(role="system", content=style))
+    selected = selection_line(tier1)
+    if selected and turn.message is not None:
+        # Restated next to the learner's words: the live run lost a selection that sat only in the context.
+        messages.append(ProviderMessage(role="system", content=selected))
     if turn.message is not None:
         messages.append(ProviderMessage(role="user", content=turn.message))
     return messages

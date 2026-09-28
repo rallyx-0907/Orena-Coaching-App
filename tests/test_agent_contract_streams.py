@@ -328,3 +328,46 @@ def test_the_canonical_sequences_are_the_contracts():
         "session", "tool_call", "tool_result", "evidence", "evidence", "segment_end", "action", "done",
     ]  # fmt: skip
     assert canonical("S13") == ["session", "segment_end", "suggestion", "suggestion", "done"]
+
+
+# (a) human review of the live run: S5's answer offers the button, it never says the word is saved.
+@pytest.mark.parametrize(
+    ("target", "claim"),
+    [
+        ("zh-CN", "Từ **我** (wǒ) đã được lưu vào danh sách của bạn."),
+        ("zh-CN", "Mình đã lưu 我 rồi nhé."),
+        ("en", "Từ apple đã được lưu. Đây là một danh từ đếm được."),
+    ],
+)
+def test_s5_never_reports_the_save_as_done(harness, target, claim):
+    word = "我" if target == "zh-CN" else "apple"
+    round_one = (
+        TextDelta(claim),
+        ToolCallRequest("c1", "propose_action", {"type": "save_word", "payload": {"text": word, "lang": target}}),
+        TurnFinished(0, 9, "tool_calls"),
+    )
+    events = turn(
+        harness.client([round_one]), target, "Lưu từ này.",
+        {"surface": "vocabulary.word", "selected_item": {"type": "word", "text": word, "lang": target}},
+        actions=("save_word",),
+    )  # fmt: skip
+    assert names(events) == canonical("S5")
+    text = dict(events)["segment_end"]["text"]
+    assert "đã được lưu" not in text and "đã lưu" not in text
+    assert text.endswith("Bấm “Lưu từ” nếu bạn muốn.")
+    if target == "en":
+        assert text.startswith("Đây là một danh từ đếm được.")  # what was not a claim stays
+
+
+def test_s5_an_offer_is_left_as_it_is(harness):
+    round_one = (
+        TextDelta("Bấm Lưu từ để lưu 我."),
+        ToolCallRequest("c1", "propose_action", {"type": "save_word", "payload": {"text": "我", "lang": "zh-CN"}}),
+        TurnFinished(0, 9, "tool_calls"),
+    )
+    events = turn(
+        harness.client([round_one]), "zh-CN", "Lưu từ này.",
+        {"surface": "vocabulary.word", "selected_item": {"type": "word", "text": "我", "lang": "zh-CN"}},
+        actions=("save_word",),
+    )  # fmt: skip
+    assert dict(events)["segment_end"]["text"] == "Bấm Lưu từ để lưu 我."

@@ -232,7 +232,8 @@ def test_tool_rounds_are_capped_then_the_model_must_answer():
 
 
 def test_the_text_streams_and_ends_as_one_segment():
-    rt, _ = runtime([reply("Màn này giữ các từ bạn đã lưu.", chunk=8)])
+    # a client with actions: the answer streams a sentence at a time (agent/honesty.py holds a claim back)
+    rt, _ = runtime([reply("Màn này giữ các từ bạn đã lưu. Mỗi từ có lịch ôn riêng. Từ đến hạn nằm ở đầu.", chunk=8)])
     events = run(rt)
     deltas = [e for e in events if e.name == "segment_delta"]
     end = next(e for e in events if e.name == "segment_end")
@@ -263,7 +264,7 @@ def test_a_turn_past_its_deadline_is_a_provider_failure():
 
 def test_a_client_that_leaves_stops_the_turn():
     stop = {"now": False}
-    rt, _ = runtime([reply("x" * 60, chunk=10)])
+    rt, _ = runtime([reply("Câu một. " * 8, chunk=10)])
     out = []
     for event in rt.run(turn_request(), VI, should_stop=lambda: stop["now"]):
         out.append(event)
@@ -312,11 +313,24 @@ def test_an_unknown_session_opens_a_new_one():
 def test_the_model_is_told_who_it_is_and_where_the_learner_is_without_a_message_dependency():
     rt, provider = runtime([reply("Được.")])
     run(rt)
-    system, context, user = provider.requests[0].messages
+    system, context, style, selected, user = provider.requests[0].messages
     assert system.role == "system" and "You are Orena" in system.content
     assert '"surface": "speaking.word_detail"' in context.content and '"code": "zh-CN"' in context.content
     assert "speaking.pronunciation.tone" in context.content  # the capabilities here, chosen from surface and language
+    # the voice in the support language, last before the learner's words (the live run: English rules lost)
+    assert style.role == "system" and 'Luôn xưng "mình", gọi người học là "bạn"' in style.content
+    assert "Bộ chấm chưa đánh dấu lỗi nào" in style.content and "Bấm … để …" in style.content
+    # the selection restated next to the learner's words (the live run lost one kept only in the context)
+    assert selected.role == "system" and selected.content.startswith('The learner has selected the word "是"')
     assert user.content == "Tại sao tôi sai từ này?"
+
+
+def test_a_support_language_without_a_style_block_gets_the_instruction_alone():
+    body = turn_request().model_dump(mode="json", exclude_none=True)
+    body["context"]["locale"].update(interface="en", support="en")
+    rt, provider = runtime([reply("Ok.")])
+    run(rt, TurnRequest.model_validate(body))
+    assert [m.role for m in provider.requests[0].messages] == ["system", "system", "system", "user"]  # + selection
 
 
 def test_text_streams_even_when_a_round_also_asks_for_extras():
@@ -663,3 +677,10 @@ def test_orena_speaks_as_minh_to_ban_in_vietnamese():
             assert not re.search(r"\b[Tt]ôi\b", entry.texts["vi"]), key
     assert learner_copy.CATALOG["identity.who"].texts["vi"].startswith("Mình là Orena")
     assert "mình" not in learner_copy.CATALOG["action.play_user"].texts["vi"]  # the learner's take, not Orena's
+
+
+def test_a_client_without_actions_streams_every_delta_as_it_comes():
+    rt, _ = runtime([reply("Màn này giữ các từ bạn đã lưu.", chunk=8)])
+    events = run(rt, turn_request(actions=()))
+    deltas = [e.text_delta for e in events if e.name == "segment_delta"]
+    assert len(deltas) > 1 and "".join(deltas) == next(e for e in events if e.name == "segment_end").text

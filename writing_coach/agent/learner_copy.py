@@ -43,6 +43,12 @@ def _entry(layer: CopyLayer, texts: dict[str, str]) -> CopyEntry:
 
 CATALOG: Mapping[str, CopyEntry] = MappingProxyType(
     {
+        # Said in place of a claim that a button's action is done (agent/honesty.py): support layer,
+        # since it is part of the answer; the label is the button's own interface-layer text.
+        "offer.action": _entry(
+            CopyLayer.SUPPORT,
+            {"en": "Tap “{label}” if you want to.", "vi": "Bấm “{label}” nếu bạn muốn.", "zh-CN": "需要的话，点击“{label}”。"},
+        ),
         "identity.who": _entry(
             CopyLayer.SUPPORT,
             {
