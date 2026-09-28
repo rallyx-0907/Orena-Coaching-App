@@ -6,6 +6,7 @@
 import { html, mount } from '../../kit/html.js';
 import { useStyles } from '../../kit/styles.js';
 import { listRow, rowIconSwatch, sectionHead, pageHeader } from '../../kit/components.js';
+import { langSpan } from '../../kit/lang.js';
 import { emptyMarkup } from '../../kit/states.js';
 import { href, byId } from '../../shell/routes.js';
 import { api } from '../../infrastructure/api.js';
@@ -87,13 +88,19 @@ function continueSub(row) {
   return '';
 }
 
-function continueRowMarkup(row) {
+/* languages-5 / finding A: `row.title` is the real content this continuation entry resumes - an
+   article, a media lesson, a grammar concept - always in the learner's active learning language
+   (`ctx.context.language`, the language every one of Orena's content domains is in; no per-entry
+   field exists on device-memory continuation, kit/lang.js's own "the learner's learning language
+   the screen already read" source). Only `row.title` is marked, not the leading interface label
+   before it. */
+function continueRowMarkup(row, language) {
   return listRow({
     variant: 'shadow',
     radius: 18,
     pad: '12px',
     leading: rowIconSwatch({ iconName: row.icon, tint: row.tint }),
-    title: `${continueRowLabel(row.routeId)} · ${row.title}`,
+    title: html`${continueRowLabel(row.routeId)} · ${langSpan(row.title, language)}`,
     sub: continueSub(row),
     trailing: html`<span class="s-practice-pill">${t('continueCta')}</span>`,
     className: 's-practice-continue-row',
@@ -115,10 +122,11 @@ function recommendationMarkup(rec, skill) {
 async function renderHub(element, ctx, data) {
   const continuation = continuationRows(ctx.context.memory?.value?.continuation || []);
   const sections = buildSkillSections(data);
+  const language = ctx.context.language;
   mount(
     element,
     html`<div class="s-practice">
-      ${continuation.length ? html`<div class="s-practice-continue">${continuation.map(continueRowMarkup)}</div>` : ''}
+      ${continuation.length ? html`<div class="s-practice-continue">${continuation.map((row) => continueRowMarkup(row, language))}</div>` : ''}
       ${sections.map(({ skill, modes }) => sectionMarkup(skill, modes))}
     </div>`,
   );

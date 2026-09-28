@@ -56,6 +56,11 @@ function has(markup, needle) {
   assert.ok(has(full, 'width:40%'), 'mediaCard draws the progress strip at the given percent');
   assert.ok(has(full, 'o-tag--accent') && has(full, '>B1<'), 'mediaCard draws its tags');
   assert.ok(has(full, `data-open="${ESCAPED}"`), 'mediaCard escapes a dataset value used as an attribute');
+  // languages-4 (3) / finding B.3: an open, untranslatable tag (Discover's own `topic` chip) can
+  // be marked with its own `lang`, distinct from the surrounding interface copy.
+  const taggedTopic = String(mediaCard({ title: 'x', tags: [{ label: 'shipping', lang: 'en' }] }));
+  assert.match(taggedTopic, /<span class="o-tag" lang="en">shipping<\/span>/, 'mediaCard carries a tag\'s own lang attribute when given one');
+  assert.ok(!String(mediaCard({ title: 'x', tags: [{ label: 'B1', tone: 'accent' }] })).includes('lang='), 'a tag with no lang given renders no lang attribute at all');
   assert.equal(String(mediaCard({ title: 'x', progress: 140 })).match(/width:(\d+)%/)[1], '100', 'mediaCard clamps progress to 100');
   assert.equal(String(mediaCard({ title: 'x', progress: -20 })).match(/width:(\d+)%/)[1], '0', 'mediaCard clamps progress to 0');
 }

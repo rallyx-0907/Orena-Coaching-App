@@ -526,6 +526,63 @@ workarounds (`zeroSafe()`, the presence-based `fillSafe()`, bare ranked keys
 in place of `_one`/`_other`) are being removed now that the shared fix covers
 them - nothing left for a screen to work around locally.
 
+**N-35** - Language-of-parts audit (languages-4/5, `SCRATCH/reports/verify-languages.md`), three
+raw-backend-value findings across Wave A. Two of the three were a closed value space and are now
+fixed in the frontend (mapped to real interface copy, en/vi/zh); the third is genuinely open and
+stays a backend gap:
+
+1. **Word Detail's part-of-speech chip - fixed, not a gap.** `card.pos`
+   (`POST /api/dictionary/word-detail`'s `partOfSpeech`) is mostly the shared local tagger's closed
+   fifteen-value set (`writing_coach/linguistic_annotation.py` `ALLOWED_POS`), reached through
+   `word_detail.py`'s own lookup path - confirmed against the live source, not assumed. Mapped to
+   real copy (`screens/word/copy.js`'s `pos*` keys, `model.js#posLabel`). A value the fifteen-value
+   map does not recognise (a saved item's own free-text `part_of_speech` -
+   `vocabulary_source_import.py` - or an external monolingual dictionary's own wording,
+   `reading_lookup.py`, neither of which is validated against `ALLOWED_POS`) cannot be honestly
+   translated and is shown exactly as the backend gave it, marked `lang="en"` as untranslated
+   content metadata rather than silent unlabelled English inside a vi/zh sentence.
+2. **Grammar Library's level-group heading - fixed, not a gap.** `library.level_names[level]`
+   (`writing_coach/languages/grammar_registry.py` `GrammarProvider.level_names`) is the backend's
+   own English label for a closed, nine-label space shared by both providers (English A1-C2,
+   Chinese/HSK1-7-9). Backend code is out of scope for this pass, so the mapping lives in the
+   frontend instead, keyed by the level *code* (the one thing both providers already return
+   verbatim) rather than the backend's own English text: `screens/grammar/copy.js`'s `level*` keys,
+   `model.js#levelName`/`LEVEL_NAME_KEY`. A level code neither provider currently uses falls back to
+   the raw code rather than guessing a label.
+3. **Discover's (and Search's) topic chip - a real, open gap.** `entry.topic`
+   (`reading_articles.topic`/vocabulary topic, surfaced identically in `screens/discover/model.js`'s
+   card tag and its Filter Sheet's own topic group, and in `screens/search/model.js`'s meta line) is
+   free-text content metadata set per item by whoever published it - an open, ever-growing
+   taxonomy (`finance`, `shipping`, `human-resources`, `daily-life`, `technology`, `culture`, … and
+   growing), not a closed enum a frontend table could honestly cover, and per D-080 a topic chip is
+   interface-layer metadata that does need to be in the learner's interface language once it can be.
+   Kept, marked `lang="en"` as honest, untranslated content metadata (the conservative option: it is
+   real information about the card, and blanking it would lose that rather than fix the mismatch).
+   Needs the backend to own topic localization: either (a) a closed, stable taxonomy with a slug and
+   a per-language label, returned by `/api/reading/articles`/`/api/vocabulary/...` so the frontend
+   can map slug -> `t()` the same way `typeLabel()`/`levelName()` above now do for a closed enum, or
+   (b) the API returning an already-localized label for the requesting interface language. This is
+   the same underlying gap N-33 already names for Chinese-track lesson titles - a systemic
+   backend-taxonomy-localization absence surfacing on more than one screen, not independent bugs.
+   Search's own meta line (`[topic, level].join(' · ')`) had the identical unmarked-topic issue
+   (review issue 1 on this pass); it is now split the same way as Discover's card tag -
+   `screens/search/model.js`'s `articleItems`/`listeningItems` keep `topic` out of the joined
+   `meta` string, and `screen.js#resultRow` renders it in its own `lang="en"` span - so both
+   screens are honest in the interim the same way. The backend gap itself (no closed taxonomy)
+   still covers both.
+
+Separately, the same audit found no saved-vocabulary item anywhere in this build carries a
+per-item language field back to the frontend: `SavedWord.language_code`
+(`writing_coach/persistence/models.py`) exists in the schema only to scope the
+`GET /api/library/vocabulary` query server-side - `becoming_library.py`'s `_row_to_item` never
+returns it. Every screen that reads this route (Word Detail, My Library's Saved-language tab)
+therefore marks its `lang` from the request's own active learning language (a real, server-enforced
+scope: `current_language_code()` filters the query itself) rather than a genuine per-word field,
+except Word Detail, which additionally falls back to the backend's own Han-range script check
+(`word_detail.py` `script_of`) for a word whose saved language may predate the learner's current
+one. Returning `language_code` on the saved-vocabulary item itself would remove the one remaining
+script-check fallback in this build.
+
 ### Open design questions for the human
 
 Real product/content decisions this section's entries above could not resolve

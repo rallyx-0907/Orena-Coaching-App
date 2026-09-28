@@ -22,6 +22,7 @@ import { html, raw } from '../../kit/html.js';
 import { icon } from '../../kit/icons.js';
 import { useStyles } from '../../kit/styles.js';
 import { toast } from '../../kit/toast.js';
+import { langAttr } from '../../kit/lang.js';
 import { shellCopy as s } from '../../copy/shell.js';
 import { href } from '../../shell/routes.js';
 import { api } from '../../infrastructure/api.js';
@@ -87,7 +88,7 @@ export async function openImport(ctx = {}) {
       <label class="s-import__label" for="s-import-title">${t('fieldTitleLabel')}</label>
       <input id="s-import-title" class="s-import__input" data-field="title" value="${state.title}" placeholder="${t('fieldTitlePlaceholder')}" maxlength="120">
       <label class="s-import__label" for="s-import-text">${t('fieldTextLabel')}</label>
-      <textarea id="s-import-text" class="s-import__textarea" data-field="text" rows="8" placeholder="${t('fieldTextPlaceholder')}" maxlength="12000">${state.text}</textarea>
+      <textarea id="s-import-text" class="s-import__textarea" data-field="text" lang="${langAttr(context.language)}" rows="8" placeholder="${t('fieldTextPlaceholder')}" maxlength="12000">${state.text}</textarea>
       <div class="s-import__stats">
         <span class="o-tag o-tag--accent" data-role="lang">${context.language === 'zh' ? s('lang_zh') : s('lang_en')}</span>
         <span class="o-tag" data-role="stats">${stats.unit === 'characters' ? t('statsCharacters', { count: stats.count, sentences: stats.sentences }) : t('statsWords', { count: stats.count, sentences: stats.sentences })}</span>

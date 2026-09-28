@@ -1,0 +1,251 @@
+{
+  "items": [
+    {
+      "spoken_text_by_segment": {},
+      "lesson_id": "en-science-cosmic-calendar",
+      "media_object_id": "commons-royalsociety-cosmic-calendar",
+      "title": "The cosmic calendar",
+      "description": "The Royal Society compresses the whole history of the universe into a single year.",
+      "language": "en",
+      "topic": "science",
+      "subtopics": [
+        "astronomy",
+        "documentary"
+      ],
+      "level": "B2",
+      "estimated_level": "B2",
+      "reviewed_level": null,
+      "level_source": "deterministic-estimate",
+      "level_evidence": {
+        "vocabulary_band": "academic-popular-science",
+        "sentence_complexity": "multi-clause-narration",
+        "speech_speed": "measured",
+        "review_note": "Deterministic estimate from narration density and science vocabulary; not yet editorially reviewed."
+      },
+      "duration_ms": 46000,
+      "excerpt_start_ms": 1000,
+      "excerpt_end_ms": 47000,
+      "available_modes": [
+        "listen",
+        "active",
+        "dictation",
+        "shadowing"
+      ],
+      "content_tags": [
+        "science",
+        "documentary",
+        "narration",
+        "real-video"
+      ],
+      "vocabulary": [
+        "galaxy",
+        "solar system",
+        "extinct"
+      ],
+      "speech_speed": "measured",
+      "artwork": "science",
+      "poster_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/bc/Deep_time_and_cosmic_history_as_one_year_%E2%80%93_the_cosmic_calendar.webm/960px--Deep_time_and_cosmic_history_as_one_year_%E2%80%93_the_cosmic_calendar.webm.jpg",
+      "playback_kind": "video",
+      "content_type": "video",
+      "published_state": "published",
+      "curation_state": "reviewed",
+      "is_development_candidate": false,
+      "source": {
+        "source_media_id": "commons-royalsociety-cosmic-calendar",
+        "provider": "wikimedia-commons",
+        "type": "licensed-video",
+        "title": "Deep time and cosmic history as one year - the cosmic calendar",
+        "creator": "The Royal Society",
+        "source_url": "https://commons.wikimedia.org/wiki/File:Deep_time_and_cosmic_history_as_one_year_%E2%80%93_the_cosmic_calendar.webm",
+        "provenance_url": "https://commons.wikimedia.org/wiki/File:Deep_time_and_cosmic_history_as_one_year_%E2%80%93_the_cosmic_calendar.webm",
+        "license": "CC BY 3.0",
+        "license_url": "https://creativecommons.org/licenses/by/3.0/",
+        "allowed_usage_type": "creative-commons-attribution",
+        "rights_review_status": "verified"
+      },
+      "thumbnail_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/bc/Deep_time_and_cosmic_history_as_one_year_%E2%80%93_the_cosmic_calendar.webm/960px--Deep_time_and_cosmic_history_as_one_year_%E2%80%93_the_cosmic_calendar.webm.jpg",
+      "media_type": "video",
+      "provider": "wikimedia-commons",
+      "source_label": "Wikimedia Commons",
+      "is_shared_import": false
+    },
+    {
+      "spoken_text_by_segment": {},
+      "lesson_id": "en-daily-pen-in-my-bag",
+      "media_object_id": "commons-voa-anna-pen",
+      "title": "A pen in my bag",
+      "description": "A quick everyday exchange about finding a pen.",
+      "language": "en",
+      "topic": "daily-life",
+      "subtopics": [
+        "conversations",
+        "objects"
+      ],
+      "level": "A1",
+      "estimated_level": "A1",
+      "reviewed_level": "A1",
+      "level_source": "editorial-review",
+      "level_evidence": {
+        "vocabulary_band": "foundation",
+        "sentence_complexity": "simple-questions-and-statements",
+        "speech_speed": "slow",
+        "review_note": "Common concrete nouns and present-simple question/answer pattern."
+      },
+      "duration_ms": 8547,
+      "excerpt_start_ms": 0,
+      "excerpt_end_ms": 8547,
+      "available_modes": [
+        "listen",
+        "active",
+        "dictation",
+        "shadowing"
+      ],
+      "content_tags": [
+        "conversation",
+        "daily-life",
+        "quick-practice",
+        "education"
+      ],
+      "vocabulary": [
+        "pen",
+        "bag"
+      ],
+      "speech_speed": "slow",
+      "artwork": "daily-life",
+      "poster_url": "",
+      "playback_kind": "audio",
+      "content_type": "dialogue",
+      "published_state": "published",
+      "curation_state": "reviewed",
+      "is_development_candidate": false,
+      "source": {
+        "source_media_id": "commons-voa-anna-pen",
+        "provider": "wikimedia-commons",
+        "type": "licensed-audio",
+        "title": "Anna, do you have a pen?",
+        "creator": "VOA Learning English",
+        "source_url": "https://commons.wikimedia.org/wiki/File:Anna,_do_you_have_a_pen.ogg",
+        "provenance_url": "https://commons.wikimedia.org/wiki/File:Anna,_do_you_have_a_pen.ogg",
+        "license": "Public Domain Mark 1.0",
+        "license_url": "https://creativecommons.org/publicdomain/mark/1.0/",
+        "allowed_usage_type": "public-domain",
+        "rights_review_status": "verified"
+      },
+      "thumbnail_url": "",
+      "media_type": "audio",
+      "provider": "wikimedia-commons",
+      "source_label": "Wikimedia Commons",
+      "is_shared_import": false
+    }
+  ],
+  "sections": [
+    {
+      "id": "recommended",
+      "item_ids": [
+        "en-science-cosmic-calendar",
+        "en-daily-pen-in-my-bag"
+      ]
+    },
+    {
+      "id": "quick-practice",
+      "item_ids": [
+        "en-science-cosmic-calendar",
+        "en-daily-pen-in-my-bag"
+      ]
+    },
+    {
+      "id": "daily-conversations",
+      "item_ids": [
+        "en-daily-pen-in-my-bag"
+      ]
+    },
+    {
+      "id": "science-technology",
+      "item_ids": [
+        "en-science-cosmic-calendar"
+      ]
+    },
+    {
+      "id": "dictation",
+      "item_ids": [
+        "en-science-cosmic-calendar",
+        "en-daily-pen-in-my-bag"
+      ]
+    },
+    {
+      "id": "shadowing",
+      "item_ids": [
+        "en-science-cosmic-calendar",
+        "en-daily-pen-in-my-bag"
+      ]
+    },
+    {
+      "id": "new",
+      "item_ids": [
+        "en-science-cosmic-calendar",
+        "en-daily-pen-in-my-bag"
+      ]
+    },
+    {
+      "id": "audio-practice",
+      "item_ids": [
+        "en-daily-pen-in-my-bag"
+      ]
+    },
+    {
+      "id": "beginner",
+      "item_ids": [
+        "en-daily-pen-in-my-bag"
+      ]
+    }
+  ],
+  "topics": [
+    "daily-life",
+    "science"
+  ],
+  "tags": [
+    "conversation",
+    "daily-life",
+    "documentary",
+    "education",
+    "narration",
+    "quick-practice",
+    "real-video",
+    "science"
+  ],
+  "filters": {
+    "language": "en",
+    "levels": [
+      "A1",
+      "B2"
+    ],
+    "topics": [
+      "daily-life",
+      "science"
+    ],
+    "tags": [
+      "conversation",
+      "daily-life",
+      "documentary",
+      "education",
+      "narration",
+      "quick-practice",
+      "real-video",
+      "science"
+    ],
+    "practice_modes": [
+      "active",
+      "dictation",
+      "listen",
+      "shadowing"
+    ],
+    "media_types": [
+      "audio",
+      "video"
+    ],
+    "sources": [
+      "wikimedia-commons"
+    ]
+  },
+  "personalization": "deterministic-curation"
+}

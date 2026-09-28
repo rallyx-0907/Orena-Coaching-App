@@ -2,6 +2,7 @@
    21-Collection-Detail.html, D2 §6). screens/collection/model.js is DOM-free - imported
    directly, no globals to stub. */
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import { supportMeaning, wordRow, collectionViewModel } from '../static/orena/screens/collection/model.js';
 
 // 1. supportMeaning: the learner's support language wins; failing that, any meaning that is not
@@ -40,6 +41,12 @@ import { supportMeaning, wordRow, collectionViewModel } from '../static/orena/sc
 
   const savedButNoStage = wordRow({ headword: 'x', saved: true }, 'vi');
   assert.equal(savedButNoStage.filled, 0, 'a saved word with no review_stage yet is 0 filled bars, not NEW (rule 40: no fabricated stage)');
+
+  // languages-5 / finding A: the word's own `identity.language` (a real per-word field), not the
+  // collection's own language_code - carried through so screen.js can mark the row with it.
+  assert.equal(wordRow({ headword: 'buffer', identity: { language: 'en' } }, 'vi').lang, 'en');
+  assert.equal(wordRow({ headword: '缓冲', identity: { language: 'zh' } }, 'vi').lang, 'zh');
+  assert.equal(wordRow({ headword: 'x' }, 'vi').lang, '', 'no identity field at all is unmarked, never guessed');
 }
 
 // 3. collectionViewModel: percent is learned_count / item_count (the same real metric Discover's
@@ -70,6 +77,28 @@ import { supportMeaning, wordRow, collectionViewModel } from '../static/orena/sc
 
   const levelFallback = collectionViewModel({ id: 'x', title: 'x', level: 'A2', item_count: 1, items: [] }, 'vi');
   assert.equal(levelFallback.level, 'A2', 'level_range missing: falls back to the single level');
+
+  // languages-5 / finding A: the collection's own `language_code` field.
+  assert.equal(collectionViewModel({ id: 'x', title: 'x', language_code: 'zh', item_count: 0, items: [] }, 'vi').language, 'zh');
+  assert.equal(empty.language, '', 'no language_code on this fixture - unmarked, never guessed');
+}
+
+// 4. Hero title line-height (Review fidelity-002): the shared `.c-hero__title` default
+// (kit/components.css) is 1.15, confirmed correct for Content Detail's own explicit 1.15
+// (05-Content-Detail.html). Collection Detail's own frame (21-Collection-Detail.html) draws its
+// 26px/700 hero title with no line-height at all - the browser's "normal", not 1.15 - so this
+// screen closes it locally with its own selector rather than changing the shared default Content
+// Detail depends on. This is a static regression guard (no DOM/browser here); the live-rendered
+// value was confirmed in-browser against the pinned design frame.
+{
+  const css = fs.readFileSync('static/orena/screens/collection/collection.css', 'utf8');
+  const selector = ".c-hero[data-hero='collection'] .c-hero__title";
+  const at = css.indexOf(selector);
+  assert.ok(at >= 0, `${selector} rule present in collection.css`);
+  const open = css.indexOf('{', at);
+  const close = css.indexOf('}', open);
+  const body = css.slice(open + 1, close);
+  assert.match(body, /line-height\s*:\s*normal\s*;?/, "Collection Detail's own hero title resets line-height to the design's unset ('normal'), not the shared 1.15");
 }
 
 console.log('Orena Collection Detail: support-language meaning, mastery-bar mapping, progress percent and the two backend-gap fields are all pure and honest, no invented data: PASS');

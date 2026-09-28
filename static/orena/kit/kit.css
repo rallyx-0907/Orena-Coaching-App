@@ -116,7 +116,15 @@
 }
 
 /* ---- Chips and pills ---- */
-/* Filter sheet options, Settings choices: a selectable pill. */
+/* Filter sheet options, Settings choices: a selectable pill. Every caller's own row is either
+   `overflow-x:auto` (Settings' `.s-settings__tabs`) or `flex-wrap:wrap` (Filter Sheet, Discover,
+   Progress) - both meant to keep each chip's own label width, not compress it. `white-space:nowrap`
+   plus base.css's blanket `:where(#app *){min-width:0}` (which removes the flex item's automatic
+   min-content floor app-wide) let `flex-shrink`'s default of 1 shrink a chip below its own label,
+   clipping glyphs past the pill's `overflow:visible` edge - confirmed live at 390px in en/vi
+   (Settings' longest vi label measured scrollWidth 156 vs a shrunk clientWidth of 77). `flex-shrink:
+   0` restores the intended behaviour (the row scrolls or wraps; the chip never shrinks) without
+   touching the app-wide min-width reset. */
 .o-chip {
   display: inline-flex;
   align-items: center;
@@ -129,6 +137,7 @@
   font-size: 14px;
   font-weight: 600;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 .o-chip[aria-pressed='true'],
 .o-chip[aria-selected='true'] {

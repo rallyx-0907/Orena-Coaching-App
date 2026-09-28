@@ -3,7 +3,17 @@
    every function here takes already-fetched API data and returns the shape the screen paints.
    Design Contract rule 40 (never invent data) is what most of these assertions hold. */
 import assert from 'node:assert/strict';
-import { buildLibraryGroups, droppedCount } from '../static/orena/screens/grammar/model.js';
+import fs from 'node:fs';
+import { buildLibraryGroups, droppedCount, levelName } from '../static/orena/screens/grammar/model.js';
+
+/* A tiny stand-in for grammar/copy.js's translate function, exactly the shape levelName()/
+   buildLibraryGroups() are documented to take (a plain function of one key). */
+const LEVEL_LABELS = {
+  levelFoundation: 'Foundation', levelCore: 'Core', levelBasic: 'Basic', levelIntermediate: 'Intermediate',
+  levelLowerIntermediate: 'Lower-intermediate', levelUpperIntermediate: 'Upper-intermediate',
+  levelAdvanced: 'Advanced', levelMastery: 'Mastery', levelAdvancedMastery: 'Advanced mastery',
+};
+const fakeLevelT = (key) => LEVEL_LABELS[key] ?? key;
 import {
   pickLocale, roleBucket, primaryPattern, examplesOf, mistakeOf, quizQuestions, personalPractice, headerMeta, findBlock,
 } from '../static/orena/screens/grammar-concept/model.js';
@@ -22,23 +32,80 @@ import {
       { id: 'b1-orphan', level: 'B1', kind: 'lesson', module: 'Unlisted', title: 'Not in levels[]', preview: { text: 'x' }, completed: false },
     ],
   };
-  const groups = buildLibraryGroups(library, 'en');
+  const groups = buildLibraryGroups(library, 'en', fakeLevelT);
   assert.equal(groups.length, 2, 'one group per level that actually has items, in the levels[] order (B1 is not in levels[] and is left out)');
   assert.equal(groups[0].level, 'A1');
-  assert.equal(groups[0].levelName, 'Foundation', 'the friendly level_names label, not the raw code');
+  // languages-4 (2) / finding B.2: the level code is mapped to real interface copy
+  // (grammar/copy.js) - never the backend's own English `level_names[level]` text.
+  assert.equal(groups[0].levelName, 'Foundation', 'a translated level-name label, keyed by the level code, not the raw code or the backend English text');
   assert.equal(groups[0].total, 2, 'the review-kind lesson is dropped by grammarShelf, so A1 has 2 concepts, not 3');
   assert.equal(groups[0].completed, 1);
   assert.deepEqual(groups[0].items.map((item) => item.id), ['a1-be', 'a1-pronouns']);
   assert.equal(groups[0].items[0].completed, true);
   assert.equal(groups[0].items[0].note, 'I am ready.', 'no editorial note exists, so the note falls back to the lesson\'s own preview line');
+  // languages-4 (1) / finding A: the English track's own lesson titles are genuine English
+  // (UI_BACKEND_GAPS.md N-33) - marked lang="en".
+  assert.equal(groups[0].titleLang, 'en');
 
   assert.equal(groups[1].level, 'A2');
   assert.equal(groups[1].total, 1, 'the lesson with no preview at all has no line and grammarShelf drops it - never a fabricated one');
 
-  assert.deepEqual(buildLibraryGroups({ levels: [], lessons: [] }, 'en'), [], 'no levels is no groups, not a crash');
-  assert.deepEqual(buildLibraryGroups({}, 'en'), [], 'a missing shape is no groups, not a crash');
+  assert.deepEqual(buildLibraryGroups({ levels: [], lessons: [] }, 'en', fakeLevelT), [], 'no levels is no groups, not a crash');
+  assert.deepEqual(buildLibraryGroups({}, 'en', fakeLevelT), [], 'a missing shape is no groups, not a crash');
 
   assert.equal(droppedCount(library), 2, 'the review lesson and the preview-less lesson are the two the shelf does not surface');
+
+  // languages-4 (2): every level code both providers actually return maps to a real label -
+  // never a fallback to the raw code for a level this build knows about.
+  for (const code of ['A1', 'A2', 'B1', 'B2', 'C1', 'C2', 'HSK1', 'HSK2', 'HSK3', 'HSK4', 'HSK5', 'HSK6', 'HSK7-9']) {
+    assert.notEqual(levelName(code, fakeLevelT), code, `${code} maps to a translated label, not its own raw code`);
+  }
+  assert.equal(levelName('X9', fakeLevelT), 'X9', 'an unrecognised level code (a future provider) falls back to the raw code rather than guessing a label');
+
+  // languages-4 (1) / finding A: the Chinese/HSK track's own lesson titles are a Vietnamese-only
+  // content gap (N-33), never genuinely Chinese - this build must not mark them lang="zh".
+  const hskLibrary = {
+    levels: ['HSK1'],
+    lessons: [{ id: 'hsk1-svo', level: 'HSK1', kind: 'lesson', module: 'Sentence order', title: 'SVO cơ bản', preview: { text: 'x' }, completed: false }],
+  };
+  const hskGroups = buildLibraryGroups(hskLibrary, 'zh', fakeLevelT);
+  assert.equal(hskGroups[0].titleLang, '', 'the HSK track\'s own titles are Vietnamese, not Chinese - left unmarked rather than mislabelled');
+}
+
+// --- Grammar Library copy: the not-yet-done tag is a STATUS in every language, never an action
+//     verb in one and a status in the others (found live: en 'Open' reads as an instruction while
+//     vi 'Chưa học' / zh '未学' both unambiguously mean "not learned yet", the same status the
+//     paired 'done' key expresses consistently across all three) ------------------------------
+{
+  const store = new Map();
+  globalThis.window = {
+    localStorage: { getItem: (k) => store.get(k) ?? null, setItem: (k, v) => store.set(k, String(v)), removeItem: (k) => store.delete(k) },
+  };
+  Object.defineProperty(globalThis, 'navigator', { value: { languages: ['en-US'], language: 'en-US' }, configurable: true });
+  globalThis.document = { documentElement: { lang: 'en', dataset: {} } };
+  await import('../static/orena/screens/grammar/copy.js');
+  const copy = await import('../static/orena/copy/index.js');
+  const table = copy.registeredCopy().get('grammar');
+  assert.ok(table, 'the grammar namespace registered');
+  assert.notEqual(
+    table.packs.en.open.trim().toLowerCase(),
+    'open',
+    'the not-yet-done tag must read as a status (e.g. "Not done"), never a bare imperative ("Open") that only vi/zh disambiguate from the identical-looking action verb used elsewhere (screens/word/copy.js, ui/copy.js)',
+  );
+}
+
+// --- Grammar Library row title line-height: the pinned design's 44-Grammar-Library.html frame
+//     draws this row's 15px title at an explicit line-height:20px, the one exception among every
+//     other 15px-title listRow consumer (which all leave line-height unset, ~19px "normal").
+//     kit/components.js's listRow() carries a titleLineHeight param for exactly this case; the
+//     screen must actually pass it (fidelity-001) --------------------------------------------
+{
+  const screenSrc = fs.readFileSync('static/orena/screens/grammar/screen.js', 'utf8');
+  assert.match(
+    screenSrc,
+    /listRow\(\{[^}]*titleLineHeight:\s*20\b/,
+    'the Grammar Library concept row must pass titleLineHeight: 20 to listRow(), matching the pinned design\'s explicit 20px line-height for this row',
+  );
 }
 
 // --- Grammar Concept: locale picking (support language, English the documented fallback) ------

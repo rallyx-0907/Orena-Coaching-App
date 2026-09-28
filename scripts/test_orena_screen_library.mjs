@@ -98,4 +98,15 @@ import {
   assert.deepEqual(dueListRows({}), [], 'no pinned field is an empty preview list, not a crash');
 }
 
+// languages-5 / finding A: screen.js marks Saved content's title and Saved language's word with
+// the active learning language (both GET /api/collection and GET /api/library/vocabulary are
+// scoped server-side to it) via the shared kit/lang.js helper - never left unmarked.
+{
+  const { readFileSync } = await import('node:fs');
+  const screenSrc = readFileSync(new URL('../static/orena/screens/library/screen.js', import.meta.url), 'utf8');
+  assert.match(screenSrc, /import\s*\{\s*langAttr,\s*langSpan\s*\}\s*from\s*'\.\.\/\.\.\/kit\/lang\.js'/, 'imports the shared lang helper from kit/lang.js');
+  assert.match(screenSrc, /langSpan\(row\.title,\s*language\)/, 'the Saved content row title is wrapped with the active learning language');
+  assert.match(screenSrc, /lang="\$\{langAttr\(language\)\}"/, 'the Saved language row word carries a real lang attribute');
+}
+
 console.log('Orena My Library screen: content/language/collections/due mapping, rule-40 zeros, no invented data: PASS');

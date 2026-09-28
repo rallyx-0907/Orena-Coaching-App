@@ -52,7 +52,7 @@ export function mediaCard({
     <span class="c-media__body">
       <span class="c-media__title">${title}</span>
       ${meta ? html`<span class="c-media__meta">${meta}</span>` : ''}
-      ${tags.length ? html`<span class="c-media__tags">${tags.map((t) => html`<span class="${cls('o-tag', t.tone && `o-tag--${t.tone}`)}">${t.label}</span>`)}</span>` : ''}
+      ${tags.length ? html`<span class="c-media__tags">${tags.map((t) => html`<span class="${cls('o-tag', t.tone && `o-tag--${t.tone}`)}"${t.lang ? raw(` lang="${esc(t.lang)}"`) : ''}>${t.label}</span>`)}</span>` : ''}
     </span>
   </button>`;
 }
@@ -188,7 +188,12 @@ export function segmentedControl({ options = [], variant = 'surface', equalWidth
    against both frames - a kit fidelity pass correction from the primitives pass's own `--toast-
    chip` reuse, a different alpha, .14, meant for the toast's own dark chip). The scrim itself
    still approximates the design's literal `rgba(8,8,16,.85→.05)` with `var(--scrim)` fading to
-   transparent - recorded under "kit requests" below. */
+   transparent - recorded under "kit requests" below.
+
+   `image: ''` (N-19: no backend cover) is not a frame the source draws, but it happens on this
+   sandbox's own seeded content, so `.c-hero`'s own `background-color` fallback (components.css)
+   must still hold white overlay text at AA - it reads `--toast-bg`, not a themed surface (D-093
+   AA fix; caller passes no separate "no image" markup, the fallback is CSS-only). */
 export function heroMedia({ image = '', height = 260, radius = 24, pill = '', title, titleSize = 28, meta = '', dataset = {} } = {}) {
   const rules = [`height:${px(height)}`, `border-radius:${px(radius)}`, image ? `background-image:${image}` : ''].filter(Boolean).join(';');
   return html`<div class="c-hero" style="${rules}"${dataAttrs(dataset)}>

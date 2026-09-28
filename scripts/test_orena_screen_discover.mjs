@@ -60,7 +60,11 @@ const href = (id, params = {}) => `#/${id}${params.id ? `/${params.id}` : ''}`;
   assert.equal(entry.readingSeconds, 340);
   assert.equal(entry.started, true);
   assert.equal(entry.progressPct, 100);
+  assert.equal(entry.language, '', 'no language field on this fixture - never invented');
   assert.equal(entryFromArticle({ id: 'a2', title: 'x' }, []).readingSeconds, null, 'a missing reading_time_seconds is left out, not defaulted to 0');
+  // languages-5 / finding A: the article's own real language field
+  // (reading_content_repository.py's `_learner_row`), carried straight through.
+  assert.equal(entryFromArticle({ id: 'a3', title: 'x', language: 'zh' }, []).language, 'zh');
 }
 
 // 3. entryFromBook: cover only from a real cover_asset_key; progress by the book's chapter-id
@@ -74,6 +78,9 @@ const href = (id, params = {}) => `#/${id}${params.id ? `/${params.id}` : ''}`;
   const started = entryFromBook({ id: 'b3', title: 'x' }, [{ id: 'book:b3:ch4', place: { index: 4, total: 8 } }], '');
   assert.equal(started.started, true);
   assert.equal(started.progressPct, 50);
+  // languages-5 / finding A: a book's own field is `learning_language`, a different name than an
+  // article's `language` - both mapped to the same `entry.language`.
+  assert.equal(entryFromBook({ id: 'b4', title: 'x', learning_language: 'en' }, [], '').language, 'en');
 }
 
 // 4. entryFromMedia: media type from media_type, an insecure or missing poster draws no image,
@@ -88,6 +95,9 @@ const href = (id, params = {}) => `#/${id}${params.id ? `/${params.id}` : ''}`;
   const insecure = entryFromMedia({ media_object_id: 'm2', media_type: 'audio', poster_url: 'http://img/x.jpg' }, []);
   assert.equal(insecure.image, '', 'a non-https poster draws no image');
   assert.equal(insecure.id, 'media:m2', 'falls back to media_object_id when lesson_id is absent');
+  // languages-5 / finding A: the media item's own `language` field
+  // (writing_coach/listening_api.py `stored_media_metadata`/`catalog_lessons`).
+  assert.equal(entryFromMedia({ lesson_id: 'm3', title: 'x', language: 'zh' }, []).language, 'zh');
 }
 
 // 5. entryFromCollection: progress from the collection's own learned/item_count, not the
@@ -104,6 +114,8 @@ const href = (id, params = {}) => `#/${id}${params.id ? `/${params.id}` : ''}`;
   assert.equal(untouched.progressPct, null);
   const empty = entryFromCollection({ id: 'c3', title: 'x', item_count: 0 });
   assert.equal(empty.itemCount, null, 'zero items is left out, not shown as a real count');
+  // languages-5 / finding A: `language_code` (writing_coach/vocabulary_library.py `_summary`).
+  assert.equal(entryFromCollection({ id: 'c4', title: 'x', language_code: 'en' }).language, 'en');
 }
 
 // 6. entryFromTextImport / entryFromMediaImport: device-memory ids travel through this screen's
@@ -193,6 +205,18 @@ const href = (id, params = {}) => `#/${id}${params.id ? `/${params.id}` : ''}`;
   assert.ok(started.tags.some((tag) => tag.label === '56%' && tag.tone === 'good'), 'a started item carries its progress as a tag, in the design\'s own tone');
   const learnedCollection = presentCard({ id: 'collection:1', kind: 'collection', title: 'x', started: true, progressLearned: 10, progressTotal: 40 }, t);
   assert.ok(learnedCollection.tags.some((tag) => tag.label === '10 / 40 learned'), 'a collection\'s progress reads as a count, not a bare percent');
+
+  // languages-5 / finding A: the card's title carries the entry's own real language (or '' for a
+  // device-memory import, which has none) - screen.js wraps it with kit/lang.js's langSpan.
+  assert.equal(presentCard({ id: 'article:1', kind: 'article', title: 'x', language: 'zh' }, t).titleLang, 'zh');
+  assert.equal(presentCard({ id: 'text:1', kind: 'text', title: 'x' }, t).titleLang, '', 'a device-memory import carries no language field - left unmarked, never guessed');
+
+  // languages-4 (3) / finding B.3: the topic tag is real content metadata Discover cannot
+  // translate (an open, ever-growing taxonomy - see UI_BACKEND_GAPS.md N-35) - kept, marked
+  // lang="en", never silently unlabelled.
+  const withTopic = presentCard({ id: 'article:1', kind: 'article', title: 'x', topic: 'shipping' }, t);
+  const topicTag = withTopic.tags.find((tag) => tag.label === 'shipping');
+  assert.equal(topicTag.lang, 'en', 'the topic chip is marked as English content metadata, not translated');
 }
 
 // 12. hrefFor: every kind but a collection opens Content Detail by its content id; a collection

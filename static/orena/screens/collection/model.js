@@ -41,6 +41,12 @@ export function wordRow(card = {}, support = '') {
   return {
     id: headword,
     word: headword,
+    // languages-5 / finding A: the card's own `identity.language` (this module's header comment:
+    // vocabulary_card_from_catalog_entry()'s `{identity:{language,normalized}, ...}` shape) - the
+    // word's own real field, not the collection's language_code (a multi-level pack could in
+    // principle mix scripts; this build's collections do not, but the per-word field is the more
+    // precise source and costs nothing extra to read).
+    lang: String(card.identity?.language || ''),
     meaning: supportMeaning(card, support),
     isNew: !saved,
     filled: saved ? stage : 0,
@@ -62,6 +68,9 @@ export function collectionViewModel(collection = {}, support = '') {
   return {
     id: String(collection.id || ''),
     title: String(collection.title || ''),
+    // languages-5 / finding A: the collection's own field (writing_coach/vocabulary_library.py
+    // `_summary`'s `language_code`).
+    language: String(collection.language_code || ''),
     level: String(collection.level_range || collection.level || ''),
     description: '', // rule 40: no description field exists on VocabularyCollection
     wordCount,

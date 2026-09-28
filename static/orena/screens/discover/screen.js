@@ -6,6 +6,7 @@ import { html, mount, raw } from '../../kit/html.js';
 import { icon } from '../../kit/icons.js';
 import { useStyles } from '../../kit/styles.js';
 import { mediaCard } from '../../kit/components.js';
+import { langSpan, langAttr } from '../../kit/lang.js';
 import { emptyMarkup } from '../../kit/states.js';
 import { openSheet, sheetHead, fillSheet } from '../../kit/overlay.js';
 import { api } from '../../infrastructure/api.js';
@@ -109,7 +110,10 @@ export default async function discover(element, ctx) {
     } else {
       mount(
         resultsEl,
-        html`<div class="s-discover__grid">${list.map((entry) => mediaCard({ ...presentCard(entry, t), dataset: { go: hrefFor(entry, ctx.href) } }))}</div>`,
+        html`<div class="s-discover__grid">${list.map((entry) => {
+          const card = presentCard(entry, t);
+          return mediaCard({ ...card, title: langSpan(card.title, card.titleLang), dataset: { go: hrefFor(entry, ctx.href) } });
+        })}</div>`,
       );
     }
     paintFilterBadge();
@@ -141,7 +145,11 @@ export default async function discover(element, ctx) {
               ${groups[group.key].map((value) => {
                 const pressed = state.filters[group.key].has(value);
                 const label = group.key === 'type' ? typeLabel(value, t) : value;
-                return html`<button type="button" class="o-chip" aria-pressed="${pressed ? 'true' : 'false'}" data-fgroup="${group.key}" data-fvalue="${value}">${label}</button>`;
+                // languages-4 (3) / finding B.3: the topic group's own chip is the same open,
+                // untranslatable content metadata as the card's own topic tag (presentCard above) -
+                // marked lang="en" for the same reason, never silently unlabelled.
+                const lang = group.key === 'topic' ? langAttr('en') : '';
+                return html`<button type="button" class="o-chip" aria-pressed="${pressed ? 'true' : 'false'}" lang="${lang}" data-fgroup="${group.key}" data-fvalue="${value}">${label}</button>`;
               })}
             </div>
           </div>`,

@@ -6,6 +6,7 @@
 import { html, mount, raw } from '../../kit/html.js';
 import { icon } from '../../kit/icons.js';
 import { listRow } from '../../kit/components.js';
+import { langSpan } from '../../kit/lang.js';
 import { useStyles } from '../../kit/styles.js';
 import { api } from '../../infrastructure/api.js';
 import { shellCopy as ts } from '../../copy/shell.js';
@@ -109,14 +110,22 @@ export default async function search(element, ctx) {
 
   function resultRow(groupKey, index, item) {
     const label = KIND_LABEL[item.kindKey] ? KIND_LABEL[item.kindKey]() : item.kindKey;
+    // languages-5 fix (review issue 1, finding B.3 "also Search"): an article/media result's own
+    // `topic` (model.js) is the same open, untranslatable content metadata as Discover's card tag
+    // (docs/project/UI_BACKEND_GAPS.md N-35) - rendered in its own lang="en" span, never folded
+    // unmarked into the meta string the way it used to be.
+    const sub = item.topic ? html`${langSpan(item.topic, 'en')}${item.meta ? html` · ${item.meta}` : ''}` : item.meta;
     return listRow({
       tag: item.open ? 'button' : 'div',
       variant: 'outline',
       radius: 14,
       pad: '13px 18px',
       leading: html`<span class="s-search__kind">${label}</span>`,
-      title: item.title,
-      sub: item.meta,
+      // languages-5 / finding A: word/article/media results carry the real language they were
+      // queried in (model.js); every other kind (a learner's own saved item/import) has none and
+      // renders bare - never guessed.
+      title: langSpan(item.title, item.lang),
+      sub,
       chevron: !!item.open,
       dataset: { group: groupKey, index },
     });
@@ -158,13 +167,13 @@ export default async function search(element, ctx) {
     ]);
     if (mine !== token || !ctx.isCurrent()) return;
     const content = [
-      ...articleItems(articles, q),
-      ...listeningItems(listening, q),
+      ...articleItems(articles, q, language),
+      ...listeningItems(listening, q, language),
       ...deviceTextItems(memoryValue, q),
       ...deviceMediaItems(memoryValue, q),
     ];
     groups = [
-      { key: 'words', label: t('wordsGroup'), items: wordItems(catalogue) },
+      { key: 'words', label: t('wordsGroup'), items: wordItems(catalogue, language) },
       { key: 'content', label: ts('content'), items: content },
       { key: 'library', label: ts('myLibrary'), items: collectionItems(collection, relationshipLabel) },
     ].filter((g) => g.items.length);

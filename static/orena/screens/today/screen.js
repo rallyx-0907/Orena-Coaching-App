@@ -7,6 +7,7 @@
 import { html, mount, raw } from '../../kit/html.js';
 import { icon } from '../../kit/icons.js';
 import { mediaCard, sectionHead, progressRing } from '../../kit/components.js';
+import { langSpan } from '../../kit/lang.js';
 import { useStyles } from '../../kit/styles.js';
 import { api } from '../../infrastructure/api.js';
 import { languages } from '../../copy/index.js';
@@ -48,7 +49,7 @@ export default async function mountToday(element, ctx) {
   // first_due_word}. A rejected/aborted call is a rule-40 empty queue, never an invented one.
   const review = reviewResult.status === 'fulfilled' ? reviewResult.value : { due_count: 0, first_due_word: '' };
 
-  const pool = buildRecommendationPool({ reading, listening: listeningItems, speaking: speakingItems, review }, t);
+  const pool = buildRecommendationPool({ reading, listening: listeningItems, speaking: speakingItems, review, language }, t);
   const usedIds = usedRecommendationIds(pool);
   const continuation = Array.isArray(state.memory?.value?.continuation) ? state.memory.value.continuation : [];
   const forYou = buildForYou(
@@ -59,6 +60,7 @@ export default async function mountToday(element, ctx) {
       feed: feedItems,
       usedIds,
       supportLang,
+      language,
     },
     t,
   );
@@ -72,6 +74,14 @@ export default async function mountToday(element, ctx) {
 
   function goAttr(item) {
     return ctx.href(item.routeId, item.routeParams, item.routeQuery);
+  }
+
+  // languages-5 / finding A: kit/lang.js's shared helper, given the real language model.js already
+  // set on a title that actually *is* a vocabulary word (the due-review headword, a Daily
+  // Vocabulary Feed word) - a catalogue item's own title carries no `lang` field at all and renders
+  // bare, unchanged.
+  function wordTitle(item) {
+    return langSpan(item.title, item.lang);
   }
 
   function headMarkup() {
@@ -158,7 +168,7 @@ export default async function mountToday(element, ctx) {
             <span class="s-today-hero__kind">${[hero.kind, hero.durationLabel].filter(Boolean).join(' · ')}</span>
           </span>
           <span class="s-today-hero__body">
-            <span class="s-today-hero__title">${hero.title}</span>
+            <span class="s-today-hero__title">${wordTitle(hero)}</span>
             ${hero.reason ? html`<span class="s-today-hero__reason">${hero.reason}</span>` : ''}
           </span>
           <span class="s-today-hero__cta">${t('startAction')} ${raw(icon('arrow-right', { size: 17 }))}</span>
@@ -167,7 +177,7 @@ export default async function mountToday(element, ctx) {
           ${rest.map(
             (item) => html`<button type="button" class="s-today-rest-card" data-go="${goAttr(item)}">
               <span class="s-today-rest-card__icon" style="background:${item.tint}">${raw(icon(item.icon, { size: 20 }))}</span>
-              <span class="s-today-rest-card__title">${item.title}</span>
+              <span class="s-today-rest-card__title">${wordTitle(item)}</span>
               <span class="s-today-rest-card__meta">${[item.kind, item.durationLabel].filter(Boolean).join(' · ')}</span>
             </button>`,
           )}
@@ -187,7 +197,7 @@ export default async function mountToday(element, ctx) {
             imageHeight: 130,
             kind: item.kind,
             duration: item.durationLabel,
-            title: item.title,
+            title: wordTitle(item),
             meta: item.meta || '',
             tags: item.tag ? [{ label: item.tag }] : [],
             dataset: { go: ctx.href(item.routeId, item.routeParams, item.routeQuery) },

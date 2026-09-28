@@ -100,6 +100,9 @@ export function normalizeArticle(article) {
   const body = String(article?.body || '');
   return {
     title: String(article?.title || ''),
+    // languages-5 / finding A: the article's own field (reading_content_repository.py's
+    // `_article` projection), not the learner's current active learning language.
+    language: String(article?.language || ''),
     source: String(article?.attribution?.author || ''),
     level: String(article?.level || ''),
     minutes: minutesFrom(article?.reading_time_seconds),
@@ -111,6 +114,9 @@ export function normalizeArticle(article) {
 export function normalizeBook(book) {
   return {
     title: String(book?.title || ''),
+    // languages-5 / finding A: `learning_language` (writing_coach/reading_library_api.py
+    // `_with_reading_time`) - a book's own field, named differently from an article's `language`.
+    language: String(book?.learning_language || ''),
     source: String(book?.author || ''),
     level: '',
     minutes: null,
@@ -130,6 +136,11 @@ export function normalizeMedia(payload) {
   const segments = payload?.transcript?.segments || [];
   return {
     title: String(catalog?.title || asset.title || ''),
+    // languages-5 / finding A: `catalog.language` (writing_coach/listening_api.py
+    // `stored_media_metadata`) for a curated/shared lesson, else the asset's own
+    // `source_language` (`_stored_asset`) for a learner's own upload - the same field name
+    // difference `normalizeArticle`/`normalizeBook` already carry.
+    language: String(catalog?.language || asset.source_language || ''),
     source: String(catalog?.source?.creator || asset.source_provider || ''),
     level: String(catalog?.level || ''),
     minutes: minutesFrom(catalog?.duration_ms ?? asset.duration_ms, { unitMs: true }),
