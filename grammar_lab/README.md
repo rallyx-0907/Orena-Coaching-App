@@ -36,6 +36,7 @@ python -m grammar_lab.pipeline.cli generate --lang en --ids en.past_simple --wit
 python -m grammar_lab.pipeline.cli verify --lang en --evaluator-url http://localhost:8020    # blind-solve mặc định: gemini
 python -m grammar_lab.pipeline.cli route --lang en --gold-set-passed   # bỏ cờ này -> mọi mục bị flagged (SPEC §5.4)
 python -m grammar_lab.pipeline.cli report --lang en                    # reports/<run_id>/report.{json,html}
+python -m grammar_lab.pipeline.cli preview --serve                     # duyệt nội dung v0.4: http://127.0.0.1:8031/
 
 python -m pytest grammar_lab/tests                              # toàn bộ test
 ```
@@ -78,7 +79,8 @@ tác (vd. `grammar_lab/sandbox/` ở `:8020`).
 | `functions/functions.yaml` | Lớp chức năng giao tiếp dùng chung |
 | `cast/cast.yaml` | Cast nhân vật cố định cho block `story` (schema v0.3, `STORY_SPEC.md` §3) |
 | `inventory/<lang>.yaml` | Danh mục chính (giai đoạn 3; hiện là `[]`) |
-| `pipeline/` | CLI và các bước. `coverage.py` còn là stub (cần inventory, giai đoạn 3); `preview/` là stub giai đoạn 2 |
+| `pipeline/` | CLI và các bước. `coverage.py` còn là stub (cần inventory, giai đoạn 3) |
+| `pipeline/preview.py`, `preview/template.html` | Trang preview nội bộ để duyệt nội dung v0.4 (không phải UI người học): `python -m grammar_lab.pipeline.cli preview --serve` → http://127.0.0.1:8031/. `preview/serve.py` (ghi kết quả duyệt ngược vào content/) vẫn là stub giai đoạn 2 |
 | `rules/en_morphology.py` | Bảng biến đổi tất định (SPEC §5.1 bước 1): third person -s, số nhiều, quá khứ, -ing, so sánh |
 | `pipeline/content_store.py` | Đọc/ghi `content/<lang>/` + `cast/cast.yaml` dùng chung giữa generate/verify/route |
 | `pipeline/llm_client.py` | Managed API (Anthropic, OpenAI, Gemini, Groq, DeepSeek), cache theo hash input ở `.cache/llm/` |

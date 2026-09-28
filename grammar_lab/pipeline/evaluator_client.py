@@ -86,6 +86,7 @@ class EvaluatorClient:
         self._rate_limit_key = rate_limit_key
         self._min_interval_seconds = min_interval_seconds
         self._client = httpx.Client(transport=transport, timeout=timeout)
+        self._language_selected = False
 
     def close(self) -> None:
         self._client.close()
@@ -111,6 +112,7 @@ class EvaluatorClient:
         if target_cefr:
             body["target_cefr"] = target_cefr
         if self.learning_language:
+            self._select_language()
             body["learning_language"] = self.learning_language
         response = self._post_with_retry(body)
         try:
@@ -126,6 +128,24 @@ class EvaluatorClient:
             if isinstance(item, dict)
         ]
         return EvaluatorResult(errors, data)
+
+    def _select_language(self) -> None:
+        """The app grades in the language of the *session* (auth_support.py's middleware reads
+        ``session["language"]``; ``POST /api/platform/language`` sets it). This client keeps its
+        own cookie jar, so selecting once scopes every later call -- a session change, never a
+        stored profile change."""
+        if self._language_selected:
+            return
+        url = f"{self.base_url}/api/platform/language"
+        try:
+            response = self._client.post(url, json={"language": self.learning_language})
+        except httpx.HTTPError as exc:
+            raise EvaluatorClientError(f"request to {url} failed: {exc}") from exc
+        if response.status_code >= 400:
+            raise EvaluatorClientError(
+                f"{url} returned {response.status_code}: {response.text[:2000]}", status_code=response.status_code,
+            )
+        self._language_selected = True
 
     def _post_with_retry(self, body: dict[str, Any]) -> httpx.Response:
         url = f"{self.base_url}/api/evaluate"

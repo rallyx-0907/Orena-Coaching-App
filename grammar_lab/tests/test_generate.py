@@ -10,9 +10,11 @@ from grammar_lab.pipeline.content_store import load_point
 from grammar_lab.pipeline.generate import (
     Generator,
     _build_check_items,
+    _generation_schema_v04,
     _normalize_seg,
     _story_generation_schema,
     build_rule_table,
+    resolve_spans,
 )
 from grammar_lab.pipeline.llm_client import LLMClient
 from grammar_lab.pipeline.validate import validate_lang
@@ -90,41 +92,116 @@ CANNED_STORY = {
 }
 
 
+def _canned_slot(text: str, role: str, label: str, pairs: list[list[str]] | None = None) -> dict:
+    slot = {"text": text, "role": role, "label": {"vi": label}, "optional": False}
+    if pairs is not None:
+        slot["pinyin_pairs"] = pairs
+    return slot
+
+
+def _canned_qp(q: str, right: str, wrongs: list[tuple[str, str]]) -> dict:
+    return {
+        "q": q,
+        "options": [{"text": right, "error_tag": None}, *({"text": t, "error_tag": tag} for t, tag in wrongs)],
+        "answer": 0,
+        "explain": {"vi": "Giải thích."},
+    }
+
+
+# en.alpha as a morphology point (third person -s): what the model returns for schema v0.4.
 CANNED_V04 = {
+    "summary": {"vi": "He/she/it ở hiện tại đơn: động từ thêm -s."},
     "when_to_use": [{"vi": "Khi chủ ngữ là he/she/it."}, {"vi": "Nói về thói quen."}],
-    "pattern": {
-        "parts": [{"text": "He / She / It", "role": "subject"}, {"text": "works", "role": "verb"}],
-        "illustration_kind": "timeline",
-        "timeline_shape": "habit",
-    },
+    "formula": [_canned_slot("He / She / It", "subject", "chủ ngữ ngôi ba"), _canned_slot("V-s", "verb", "động từ thêm -s")],
+    "negative": [
+        _canned_slot("He / She / It", "subject", "chủ ngữ ngôi ba"), _canned_slot("doesn't", "aux", "trợ động từ phủ định"),
+        _canned_slot("V", "verb", "động từ nguyên mẫu"),
+    ],
+    "question": [],
+    "morphology": [{"base": "work", "affix": "-s", "result": "works"}, {"base": "study", "affix": "-ies", "result": "studies"}],
     "examples": [
         {
-            "text": "She works in a bank.",
-            "spans": [{"start": 4, "end": 9, "role": "verb"}],
-            "annotation": {"vi": "ngôi thứ ba số ít: +s"},
-            "translation": {"vi": "Cô ấy làm ở ngân hàng."},
+            "text": "She works in a bank.", "form": "affirmative",
+            "spans": [{"text": "She", "role": "subject"}, {"text": "works", "role": "verb"}],
+            "annotation": {"vi": "ngôi ba số ít: +s"}, "translation": {"vi": "Cô ấy làm ở ngân hàng."},
         },
         {
-            "text": "He studies every day.",
-            "spans": [{"start": 3, "end": 10, "role": "verb"}],
-            "annotation": {"vi": "phụ âm + y: -ies"},
-            "translation": {"vi": "Anh ấy học mỗi ngày."},
+            "text": "He studies every day.", "form": "affirmative",
+            "spans": [{"text": "He", "role": "subject"}, {"text": "studies", "role": "verb"}],
+            "annotation": {"vi": "phụ âm + y: -ies"}, "translation": {"vi": "Anh ấy học mỗi ngày."},
+        },
+        {
+            "text": "He doesn't like tea.", "form": "negative",
+            "spans": [
+                {"text": "He", "role": "subject"}, {"text": "doesn't", "role": "aux"}, {"text": "like", "role": "verb"},
+            ],
+            "annotation": {"vi": "phủ định: doesn't + V"}, "translation": {"vi": "Anh ấy không thích trà."},
         },
     ],
     "compare": [],
     "common_mistakes": [
         {
             "wrong": "He go to school.", "right": "He goes to school.",
-            "reason": {"vi": "Ngôi thứ ba số ít cần thêm -s."},
-            "error_tag": "agreement", "l1": ["vi"],
+            "reason": {"vi": "Ngôi thứ ba số ít cần thêm -s."}, "error_tag": "agreement", "l1": ["vi"],
         },
     ],
     "quick_practice": [
-        {"q": "He ___ to school.", "options": ["go", "goes"], "answer": 1, "explain": {"vi": "Thêm -s."}},
-        {"q": "She ___ a book.", "options": ["read", "reads"], "answer": 1, "explain": {"vi": "Thêm -s."}},
-        {"q": "It ___ every morning.", "options": ["rain", "rains"], "answer": 1, "explain": {"vi": "Thêm -s."}},
+        _canned_qp("He ___ to school.", "goes", [("go", "agreement"), ("going", "tense")]),
+        _canned_qp("She ___ a book every week.", "reads", [("read", "agreement"), ("is read", "tense")]),
+        _canned_qp("It ___ every morning.", "rains", [("rain", "agreement"), ("raining", "tense")]),
     ],
 }
+
+_ZH_TEXT_PAIRS = {
+    "我们吃了饭。": [["我", "wǒ"], ["们", "men"], ["吃", "chī"], ["了", "le"], ["饭", "fàn"], ["。", ""]],
+    "他买了书。": [["他", "tā"], ["买", "mǎi"], ["了", "le"], ["书", "shū"], ["。", ""]],
+    "她来了。": [["她", "tā"], ["来", "lái"], ["了", "le"], ["。", ""]],
+    "我昨天吃饭。": [["我", "wǒ"], ["昨", "zuó"], ["天", "tiān"], ["吃", "chī"], ["饭", "fàn"], ["。", ""]],
+    "我昨天吃了饭。": [["我", "wǒ"], ["昨", "zuó"], ["天", "tiān"], ["吃", "chī"], ["了", "le"], ["饭", "fàn"], ["。", ""]],
+}
+
+
+def _zh_example(text: str, verb: str) -> dict:
+    return {
+        "text": text, "form": "affirmative",
+        "spans": [{"text": verb, "role": "verb"}, {"text": "了", "role": "particle"}],
+        "annotation": {"vi": "đã xong"}, "translation": {"vi": "Bản dịch."}, "pinyin_pairs": _ZH_TEXT_PAIRS[text],
+    }
+
+
+# zh.le_completion as a tense_aspect point.
+CANNED_V04_ZH = {
+    "summary": {"vi": "了 sau động từ: hành động đã xong."},
+    "when_to_use": [{"vi": "Hành động đã xong."}, {"vi": "Có mốc thời gian cụ thể."}],
+    "formula": [
+        _canned_slot("动词", "verb", "động từ", [["动", "dòng"], ["词", "cí"]]),
+        _canned_slot("了", "particle", "trợ từ hoàn thành", [["了", "le"]]),
+    ],
+    "negative": [],
+    "question": [],
+    "timeline_shape": "point_past",
+    "examples": [_zh_example("我们吃了饭。", "吃"), _zh_example("他买了书。", "买"), _zh_example("她来了。", "来")],
+    "compare": [],
+    "common_mistakes": [{
+        "wrong": "我昨天吃饭。", "right": "我昨天吃了饭。", "reason": {"vi": "Đã xong cần 了."},
+        "error_tag": "aspect", "l1": ["vi"],
+        "wrong_pinyin_pairs": _ZH_TEXT_PAIRS["我昨天吃饭。"], "right_pinyin_pairs": _ZH_TEXT_PAIRS["我昨天吃了饭。"],
+    }],
+    "quick_practice": [
+        _canned_qp("我吃___饭。", "了", [("着", "aspect"), ("过", "aspect")]),
+        _canned_qp("他走___。", "了", [("着", "aspect"), ("在", "aspect")]),
+        _canned_qp("你吃___吗？", "了", [("着", "aspect"), ("在", "aspect")]),
+    ],
+}
+
+
+def v04_transport(payload: dict) -> httpx.MockTransport:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={
+            "content": [{"type": "tool_use", "name": "emit_grammar_point_v04", "input": payload}],
+            "usage": {"input_tokens": 500, "output_tokens": 300},
+        })
+    return httpx.MockTransport(handler)
 
 
 def canned_transport() -> httpx.MockTransport:
@@ -327,53 +404,172 @@ def test_story_generation_schema_constrains_characters_to_the_cast() -> None:
     assert schema["properties"]["characters"]["items"] == {"enum": ["Alex", "Sam"]}
 
 
-def test_generate_v04_writes_the_six_fixed_content_blocks(tmp_path: Path) -> None:
-    """GRAMMAR_CONTENT_CONTRACT.md: a point already on schema_version 0.4 regenerates
-    through the new when_to_use/pattern/examples/compare/common_mistakes/quick_practice
-    path, not the old free-form blocks[] one."""
-    lab = Lab(tmp_path, "en")
-    lab.points["en.alpha"]["schema_version"] = "0.4"
-    lab.points["en.alpha"].pop("blocks", None)
+def _v04_lab(tmp_path: Path, lang: str = "en", point_type: str = "morphology") -> Lab:
+    """A lab whose one point is on schema_version 0.4 in metadata only (legacy top-level
+    title, no content yet) -- the state a point is in before its first v0.4 generate."""
+    lab = Lab(tmp_path, lang)
+    point_id = "en.alpha" if lang == "en" else "zh.le_completion"
+    point = lab.points[point_id]
+    point["schema_version"] = "0.4"
+    point["point_type"] = point_type
+    point.pop("blocks", None)
+    return lab
+
+
+def test_generate_v04_writes_header_and_the_fixed_content_blocks(tmp_path: Path) -> None:
+    lab = _v04_lab(tmp_path)
     lab.write()
 
-    outcome = make_generator(lab.root, canned_transport()).generate("en.alpha")
+    outcome = make_generator(lab.root, v04_transport(CANNED_V04)).generate("en.alpha")
 
-    assert outcome.status == "written"
+    assert outcome.status == "written", outcome.reason
     point = load_point("en", "en.alpha", lab.root)
     assert point["schema_version"] == "0.4"
-    assert "blocks" not in point
-    assert point["when_to_use"] == CANNED_V04["when_to_use"]
-    assert point["pattern"]["illustration"] == {"kind": "timeline", "timeline": {"shape": "habit"}}
-    assert len(point["examples"]) == 2
-    assert len(point["common_mistakes"]) == 1
+    assert "blocks" not in point and "title" not in point and "summary" not in point
+    assert point["header"] == {
+        "title": {"vi": "Tiêu đề"}, "native_title": "Title", "level": point["level"], "summary": CANNED_V04["summary"],
+    }
+    assert [slot["text"] for slot in point["pattern"]["formula"]] == ["He / She / It", "V-s"]
+    assert "question" not in point["pattern"]["variants"]  # empty variants are dropped
+    assert point["pattern"]["illustration"] == {"kind": "morphology", "morphology": CANNED_V04["morphology"]}
     assert len(point["quick_practice"]) == 3
     report = validate_lang("en", lab.root)
     assert report.ok, report.issues
 
 
-def test_generate_v04_illustration_drops_timeline_when_kind_is_not_timeline(tmp_path: Path) -> None:
-    lab = Lab(tmp_path, "en")
-    lab.points["en.alpha"]["schema_version"] = "0.4"
-    lab.points["en.alpha"].pop("blocks", None)
+def test_generate_v04_resolves_span_substrings_to_offsets(tmp_path: Path) -> None:
+    lab = _v04_lab(tmp_path)
     lab.write()
-    canned = {**CANNED_V04, "pattern": {**CANNED_V04["pattern"], "illustration_kind": "none"}}
+    make_generator(lab.root, v04_transport(CANNED_V04)).generate("en.alpha")
+    negative = load_point("en", "en.alpha", lab.root)["examples"][2]
+    text = negative["text"]
+    assert [(text[s["start"]:s["end"]], s["role"]) for s in negative["spans"]] == [
+        ("He", "subject"), ("doesn't", "aux"), ("like", "verb"),
+    ]
+
+
+def test_generate_v04_illustration_follows_point_type_not_the_model(tmp_path: Path) -> None:
+    lab = _v04_lab(tmp_path, point_type="other")
+    lab.write()
+    make_generator(lab.root, v04_transport(CANNED_V04)).generate("en.alpha")
+    assert load_point("en", "en.alpha", lab.root)["pattern"]["illustration"] == {"kind": "none"}
+
+
+def test_generate_v04_zh_turns_pinyin_pairs_into_per_character_pinyin(tmp_path: Path) -> None:
+    lab = _v04_lab(tmp_path, "zh", point_type="tense_aspect")
+    lab.write()
+    llm = LLMClient("anthropic", "claude-haiku-4-5-20251001", api_key="test", cache_dir=lab.root / ".cache",
+                     transport=v04_transport(CANNED_V04_ZH))
+    outcome = Generator(lang="zh", l1="vi", llm=llm, root=lab.root).generate("zh.le_completion")
+    assert outcome.status == "written", outcome.reason
+    point = load_point("zh", "zh.le_completion", lab.root)
+    assert point["header"]["native_title"] == "动态助词“了”"
+    assert point["examples"][0]["pinyin"] == ["wǒ", "men", "chī", "le", "fàn", ""]
+    assert point["pattern"]["formula"][0]["pinyin"] == ["dòng", "cí"]
+    assert point["common_mistakes"][0]["right_pinyin"][4] == "le"
+    assert point["pattern"]["illustration"] == {"kind": "timeline", "timeline": {"shape": "point_past"}}
+    report = validate_lang("zh", lab.root)
+    assert report.ok, report.issues
+
+
+def test_generate_v04_zh_removes_spaces_the_model_puts_around_the_blank(tmp_path: Path) -> None:
+    # DeepSeek wrote every zh question of the first v0.4 run as "他 ___ 吃过越南菜。".
+    lab = _v04_lab(tmp_path, "zh", point_type="tense_aspect")
+    lab.write()
+    spaced = _canned_qp("我 ___ 饭。", "了", [("着", "aspect"), ("过", "aspect")])
+    canned = {**CANNED_V04_ZH, "quick_practice": [spaced, *CANNED_V04_ZH["quick_practice"][1:]]}
+    llm = LLMClient("anthropic", "claude-haiku-4-5-20251001", api_key="test", cache_dir=lab.root / ".cache",
+                     transport=v04_transport(canned))
+    Generator(lang="zh", l1="vi", llm=llm, root=lab.root).generate("zh.le_completion")
+    point = load_point("zh", "zh.le_completion", lab.root)
+    assert point["quick_practice"][0]["q"] == "我___饭。"
+    assert validate_lang("zh", lab.root).ok
+
+
+def test_generate_v04_wraps_bare_string_locale_fields_when_there_is_one_locale(tmp_path: Path) -> None:
+    # DeepSeek's json_object mode (no schema enforcement) returned these as bare strings live.
+    lab = _v04_lab(tmp_path)
+    lab.write()
+    canned = {**CANNED_V04, "summary": "Tóm tắt.", "when_to_use": ["Ý một.", "Ý hai."]}
+    make_generator(lab.root, v04_transport(canned)).generate("en.alpha")
+    point = load_point("en", "en.alpha", lab.root)
+    assert point["header"]["summary"] == {"vi": "Tóm tắt."}
+    assert point["when_to_use"] == [{"vi": "Ý một."}, {"vi": "Ý hai."}]
+    assert validate_lang("en", lab.root).ok
+
+
+def test_generate_v04_passes_a_regenerate_note_to_the_model(tmp_path: Path) -> None:
+    lab = _v04_lab(tmp_path)
+    lab.write()
+    sent: list[dict] = []
 
     def handler(request: httpx.Request) -> httpx.Response:
+        sent.append(json.loads(request.content))
         return httpx.Response(200, json={
-            "content": [{"type": "tool_use", "name": "emit_grammar_point_v04", "input": canned}],
-            "usage": {"input_tokens": 500, "output_tokens": 300},
+            "content": [{"type": "tool_use", "name": "emit_grammar_point_v04", "input": CANNED_V04}],
+            "usage": {"input_tokens": 1, "output_tokens": 1},
         })
 
-    outcome = make_generator(lab.root, httpx.MockTransport(handler)).generate("en.alpha")
-    assert outcome.status == "written"
-    point = load_point("en", "en.alpha", lab.root)
-    assert point["pattern"]["illustration"] == {"kind": "none"}
+    make_generator(lab.root, httpx.MockTransport(handler)).generate("en.alpha", regenerate_note="span the base and -s apart")
+    assert "span the base and -s apart" in sent[0]["messages"][0]["content"]
+
+
+def test_generate_v04_keeps_slot_options_and_drops_a_single_one(tmp_path: Path) -> None:
+    lab = _v04_lab(tmp_path)
+    lab.write()
+    formula = [
+        {**CANNED_V04["formula"][0], "options": [{"text": "He"}, {"text": "She"}, {"text": "It"}]},
+        {**CANNED_V04["formula"][1], "options": [{"text": "works"}]},  # one form is not a choice
+    ]
+    make_generator(lab.root, v04_transport({**CANNED_V04, "formula": formula})).generate("en.alpha")
+    slots = load_point("en", "en.alpha", lab.root)["pattern"]["formula"]
+    assert slots[0]["options"] == [{"text": "He"}, {"text": "She"}, {"text": "It"}]
+    assert "options" not in slots[1]
+    assert validate_lang("en", lab.root).ok
+
+
+def test_generate_v04_needs_point_type(tmp_path: Path) -> None:
+    lab = _v04_lab(tmp_path)
+    lab.points["en.alpha"].pop("point_type")
+    lab.write()
+    outcome = make_generator(lab.root, v04_transport(CANNED_V04)).generate("en.alpha")
+    assert outcome.status == "error"
+    assert "point_type" in outcome.reason
+
+
+def test_resolve_spans_takes_the_next_free_occurrence_and_drops_what_is_absent() -> None:
+    text = "The cat saw the other cat."
+    spans = resolve_spans(text, [
+        {"text": "cat", "role": "subject"}, {"text": "cat", "role": "object"}, {"text": "dog", "role": "other"},
+    ])
+    assert [(text[s["start"]:s["end"]], s["start"], s["role"]) for s in spans] == [
+        ("cat", 4, "subject"), ("cat", 22, "object"),
+    ]
+
+
+def test_resolve_spans_follows_sentence_order_so_an_affix_lands_after_its_base() -> None:
+    text = "She sells two books."
+    spans = resolve_spans(text, [{"text": "book", "role": "object"}, {"text": "s", "role": "other"}])
+    assert [(text[s["start"]:s["end"]], s["start"]) for s in spans] == [("book", 14), ("s", 18)]
+
+
+def test_generation_schema_v04_asks_only_for_the_illustration_data_the_point_type_needs() -> None:
+    common = {"locales": ["vi"], "l1s": ["vi"], "error_tags": ["agreement"], "engine_tags": ["agreement"],
+              "contrast_with": [], "zh": False}
+    morph = _generation_schema_v04(point_type="morphology", **common)["properties"]
+    tense = _generation_schema_v04(point_type="tense_aspect", **common)["properties"]
+    other = _generation_schema_v04(point_type="other", **common)["properties"]
+    assert "morphology" in morph and "timeline_shape" not in morph
+    assert "timeline_shape" in tense and "morphology" not in tense
+    assert "timeline_shape" not in other and "morphology" not in other
+    # one explanation locale -> plain strings (generate.py files them under it); several -> locale maps
+    assert morph["summary"] == {"type": "string", "minLength": 1}
+    two = _generation_schema_v04(point_type="other", **{**common, "locales": ["vi", "en"]})["properties"]
+    assert two["summary"]["type"] == "object"
 
 
 def test_generate_v04_rejects_with_story(tmp_path: Path) -> None:
-    lab = Lab(tmp_path, "en")
-    lab.points["en.alpha"]["schema_version"] = "0.4"
-    lab.points["en.alpha"].pop("blocks", None)
+    lab = _v04_lab(tmp_path)
     lab.write()
     try:
         make_generator(lab.root, canned_transport()).generate("en.alpha", with_story=True)

@@ -45,12 +45,44 @@ def test_request_shape_is_journal_mode_grammar_check() -> None:
 
     client = EvaluatorClient("http://sandbox.test", learning_language="en", transport=httpx.MockTransport(handler))
     client.evaluate("He goes to school.", target_cefr="A1")
-    sent = json.loads(captured[0].content)
+    evaluate_calls = [r for r in captured if r.url.path == "/api/evaluate"]
+    sent = json.loads(evaluate_calls[0].content)
     assert sent["writing_mode"] == "journal"
     assert sent["text"] == "He goes to school."
     assert sent["target_cefr"] == "A1"
     assert sent["learning_language"] == "en"
     assert "journal_context" in sent["writing_context"]
+
+
+def test_learning_language_selects_the_session_language_once_and_keeps_its_cookie() -> None:
+    """The app grades in the session's language, so a zh check must select zh first --
+    a session-scoped change the client's own cookie jar carries, not a stored profile change."""
+    captured: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured.append(request)
+        if request.url.path == "/api/platform/language":
+            return httpx.Response(200, json={"active": "zh"}, headers={"set-cookie": "session=zh-scope; Path=/"})
+        return httpx.Response(200, json={"errors": []})
+
+    client = EvaluatorClient("http://sandbox.test", learning_language="zh", transport=httpx.MockTransport(handler))
+    client.evaluate("我们吃了饭。")
+    client.evaluate("他走了。")
+    paths = [r.url.path for r in captured]
+    assert paths == ["/api/platform/language", "/api/evaluate", "/api/evaluate"]
+    assert json.loads(captured[0].content) == {"language": "zh"}
+    assert "session=zh-scope" in captured[1].headers.get("cookie", "")
+
+
+def test_no_learning_language_selects_nothing() -> None:
+    captured: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured.append(request)
+        return httpx.Response(200, json={"errors": []})
+
+    EvaluatorClient("http://sandbox.test", transport=httpx.MockTransport(handler)).evaluate("He goes.")
+    assert [r.url.path for r in captured] == ["/api/evaluate"]
 
 
 def test_non_2xx_raises_evaluator_client_error() -> None:

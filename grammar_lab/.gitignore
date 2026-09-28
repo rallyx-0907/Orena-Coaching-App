@@ -6,3 +6,4 @@ reports/*
 .cache/
 *.egg-info/
 build/
+preview/out/

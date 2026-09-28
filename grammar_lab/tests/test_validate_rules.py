@@ -229,14 +229,82 @@ CASES = [
         story := _with_story(alpha(lab)),
         story["scene"].update(vi="Ngày xửa ngày xưa. " + story["scene"]["vi"]))),
     # --- v0.4 fixed content blocks (GRAMMAR_CONTENT_CONTRACT.md) -----------------------
+    ok("header.level_mismatch", "header level equals the point level", lambda lab: _with_v04(alpha(lab))),
+    fail("header.level_mismatch", "header level differs", lambda lab: (
+        point := _with_v04(alpha(lab)), point["header"]["level"].update(value="A2", rank=2))),
+    ok("illustration.kind_mismatch", "morphology point, morphology illustration", lambda lab: _with_v04(alpha(lab))),
+    fail("illustration.kind_mismatch", "tense_aspect point drawn as morphology", lambda lab: (
+        point := _with_v04(alpha(lab)), point.update(point_type="tense_aspect"))),
+    fail("schema.invalid", "morphology illustration without items", lambda lab: (
+        point := _with_v04(alpha(lab)), point["pattern"]["illustration"].pop("morphology"))),
+    fail("schema.invalid", "v0.4 point keeps a top-level title", lambda lab: (
+        point := _with_v04(alpha(lab)), point.update(title={"vi": "Tiêu đề"}))),
     ok("example.span_invalid", "span within text bounds", lambda lab: _with_v04(alpha(lab))),
     fail("example.span_invalid", "span end beyond text length", lambda lab: (
         point := _with_v04(alpha(lab)), point["examples"][0]["spans"][0].update(end=999))),
     fail("example.span_invalid", "span start >= end", lambda lab: (
         point := _with_v04(alpha(lab)), point["examples"][0]["spans"][0].update(start=5, end=5))),
-    ok("example.pinyin_length_mismatch", "pinyin matches character count", lambda lab: _with_v04_zh(lab), lang="zh"),
-    fail("example.pinyin_length_mismatch", "pinyin shorter than text",
-         lambda lab: _with_v04_zh(lab, pinyin=["wǒ"]), lang="zh"),
+    ok("example.form_without_variant", "affirmative example", lambda lab: _with_v04(alpha(lab))),
+    fail("example.form_without_variant", "negative example with no negative formula", lambda lab: (
+        point := _with_v04(alpha(lab)), point["examples"][0].update(form="negative"))),
+    ok("example.formula_role_missing", "every required role spanned", lambda lab: _with_v04(alpha(lab))),
+    ok("example.formula_role_missing", "an optional slot may go unspanned", lambda lab: (
+        point := _with_v04(alpha(lab)),
+        point["pattern"]["formula"].append(_slot("in the house", "place", "nơi chốn", optional=True)))),
+    fail("example.formula_role_missing", "marker slot not spanned", lambda lab: (
+        point := _with_v04(alpha(lab)), point["examples"][0]["spans"].pop(0))),
+    ok("example.span_role_not_in_formula", "span roles all in the formula", lambda lab: _with_v04(alpha(lab))),
+    fail("example.span_role_not_in_formula", "extra span role outside the formula", lambda lab: (
+        point := _with_v04(alpha(lab)), point["examples"][0]["spans"].append({"start": 0, "end": 1, "role": "subject"}))),
+    ok("zh.pinyin_invalid", "per-character toned pinyin everywhere", lambda lab: _with_v04_zh(lab), lang="zh"),
+    fail("zh.pinyin_invalid", "example pinyin shorter than text", lambda lab: (
+        point := _with_v04_zh(lab), point["examples"][0].update(pinyin=["wǒ"])), lang="zh"),
+    fail("zh.pinyin_invalid", "tone number instead of tone mark", lambda lab: (
+        point := _with_v04_zh(lab), point["examples"][0]["pinyin"].__setitem__(0, "wo3")), lang="zh"),
+    fail("zh.pinyin_invalid", "punctuation given a syllable", lambda lab: (
+        point := _with_v04_zh(lab), point["examples"][0]["pinyin"].__setitem__(5, "ju")), lang="zh"),
+    fail("zh.pinyin_invalid", "formula slot without pinyin", lambda lab: (
+        point := _with_v04_zh(lab), point["pattern"]["formula"][0].pop("pinyin")), lang="zh"),
+    fail("zh.pinyin_invalid", "common mistake without pinyin", lambda lab: (
+        point := _with_v04_zh(lab), point["common_mistakes"][0].pop("wrong_pinyin")), lang="zh"),
+    ok("quick_practice.blank_invalid", "one blank per question", lambda lab: _with_v04(alpha(lab))),
+    fail("quick_practice.blank_invalid", "no blank", lambda lab: (
+        point := _with_v04(alpha(lab)), point["quick_practice"][0].update(q="I have two cats."))),
+    ok("quick_practice.answer_tagged", "correct option untagged", lambda lab: _with_v04(alpha(lab))),
+    fail("quick_practice.answer_tagged", "correct option carries a tag", lambda lab: (
+        point := _with_v04(alpha(lab)), point["quick_practice"][0]["options"][1].update(error_tag="agreement"))),
+    ok("quick_practice.distractor_untagged", "every wrong option tagged", lambda lab: _with_v04(alpha(lab))),
+    fail("quick_practice.distractor_untagged", "wrong option with no learner error", lambda lab: (
+        point := _with_v04(alpha(lab)), point["quick_practice"][0]["options"][0].update(error_tag=None))),
+    ok("quick_practice.distractor_misspelling", "distractors are grammar mistakes", lambda lab: _with_v04(alpha(lab))),
+    fail("quick_practice.distractor_misspelling", "a distractor that is only a misspelling", lambda lab: (
+        point := _with_v04(alpha(lab)),
+        point["quick_practice"][0]["options"][0].update(text="cates", error_tag="spelling"),
+        lab.error_tags["languages"]["en"]["tags"].append("spelling"))),
+    ok("formula.option_duplicate", "a slot with distinct options", lambda lab: (
+        point := _with_v04(alpha(lab)),
+        point["pattern"]["formula"][0].update(options=[{"text": "two"}, {"text": "many"}]))),
+    fail("formula.option_duplicate", "the same option twice", lambda lab: (
+        point := _with_v04(alpha(lab)),
+        point["pattern"]["formula"][0].update(options=[{"text": "two"}, {"text": "Two"}]))),
+    fail("formula.slot_has_joiner", "an option carrying '+'", lambda lab: (
+        point := _with_v04(alpha(lab)),
+        point["pattern"]["formula"][0].update(options=[{"text": "two"}, {"text": "a + few"}]))),
+    fail("zh.pinyin_invalid", "a zh slot option without pinyin", lambda lab: (
+        point := _with_v04_zh(lab),
+        point["pattern"]["formula"][1].update(options=[{"text": "了", "pinyin": ["le"]}, {"text": "过"}])), lang="zh"),
+    ok("zh.whitespace", "zh text written without spaces", lambda lab: _with_v04_zh(lab), lang="zh"),
+    fail("zh.whitespace", "spaces around the blank in a zh question", lambda lab: (
+        point := _with_v04_zh(lab), point["quick_practice"][0].update(q="我 ___ 饭。")), lang="zh"),
+    fail("zh.whitespace", "a space between Han characters in a zh example", lambda lab: (
+        point := _with_v04_zh(lab),
+        point["examples"][0].update(text="我们 吃了饭。", pinyin=["wǒ", "men", "", "chī", "le", "fàn", ""])),
+        lang="zh"),
+    ok("formula.slot_has_joiner", "slots without '+'", lambda lab: _with_v04(alpha(lab))),
+    fail("formula.slot_has_joiner", "a slot carrying its own '+'", lambda lab: (
+        point := _with_v04(alpha(lab)), point["pattern"]["formula"][1].update(text="+ -s"))),
+    fail("error_tag.unknown", "distractor tag not an engine label", lambda lab: (
+        point := _with_v04(alpha(lab)), point["quick_practice"][0]["options"][0].update(error_tag="spelling_x"))),
     ok("common_mistake.same_wrong_right", "wrong differs from right", lambda lab: _with_v04(alpha(lab))),
     fail("common_mistake.same_wrong_right", "wrong equals right", lambda lab: (
         point := _with_v04(alpha(lab)), point["common_mistakes"][0].update(right="I have two cat."))),
@@ -331,70 +399,103 @@ def _with_story(point: dict) -> dict:
     return story
 
 
-def _v04_fields(*, error_tag: str = "agreement") -> dict:
-    """A schema-valid set of the six v0.4 content fields (GRAMMAR_CONTENT_CONTRACT.md)."""
+def _slot(text: str, role: str, label: str, **extra: object) -> dict:
+    return {"text": text, "role": role, "label": {"vi": label}, **extra}
+
+
+def _qp(q: str, right: str, wrong: str, tag: str) -> dict:
     return {
+        "q": q,
+        "options": [{"text": wrong, "error_tag": tag}, {"text": right, "error_tag": None}],
+        "answer": 1,
+        "explain": {"vi": "Giải thích."},
+    }
+
+
+def _v04_fields(point: dict) -> dict:
+    """A schema-valid set of the v0.4 fields for en.alpha (GRAMMAR_CONTENT_CONTRACT.md)."""
+    text = "I have two cats."
+    return {
+        "point_type": "morphology",
+        "header": {
+            "title": {"vi": "Danh từ số nhiều"}, "native_title": "Plural nouns",
+            "level": dict(point["level"]), "summary": {"vi": "Từ hai trở lên thì thêm -s."},
+        },
         "when_to_use": [{"vi": "Khi có từ hai trở lên."}, {"vi": "Khi đếm được."}],
         "pattern": {
-            "parts": [{"text": "two", "role": "marker"}, {"text": "cats", "role": "object"}],
-            "illustration": {"kind": "none"},
+            "formula": [_slot("two / many", "marker", "từ chỉ số lượng"), _slot("N-s", "object", "danh từ số nhiều")],
+            "illustration": {"kind": "morphology", "morphology": [{"base": "cat", "affix": "-s", "result": "cats"}]},
         },
         "examples": [{
-            "text": "I have two cats.",
-            "spans": [{"start": 12, "end": 16, "role": "object"}],
-            "annotation": {"vi": "số nhiều"},
-            "translation": {"vi": "Tôi có hai con mèo."},
+            "text": text, "form": "affirmative",
+            "spans": [
+                {"start": text.index("two"), "end": text.index("two") + 3, "role": "marker"},
+                {"start": text.index("cats"), "end": text.index("cats") + 4, "role": "object"},
+            ],
+            "annotation": {"vi": "số nhiều"}, "translation": {"vi": "Tôi có hai con mèo."},
         }],
         "compare": [],
         "common_mistakes": [{
             "wrong": "I have two cat.", "right": "I have two cats.",
-            "reason": {"vi": "Đếm được, từ hai trở lên phải thêm -s."},
-            "error_tag": error_tag, "l1": ["vi"],
+            "reason": {"vi": "Đếm được, từ hai trở lên phải thêm -s."}, "error_tag": "agreement", "l1": ["vi"],
         }],
         "quick_practice": [
-            {"q": "I have two ___.", "options": ["cat", "cats"], "answer": 1, "explain": {"vi": "Thêm -s."}},
-            {"q": "She has three ___.", "options": ["book", "books"], "answer": 1, "explain": {"vi": "Thêm -s."}},
-            {"q": "There are five ___.", "options": ["box", "boxes"], "answer": 1, "explain": {"vi": "Thêm -es."}},
+            _qp("I have two ___.", "cats", "cat", "agreement"),
+            _qp("She has three ___.", "books", "book", "agreement"),
+            _qp("There are five ___.", "boxes", "box", "agreement"),
         ],
     }
 
 
-def _with_v04(point: dict, **field_overrides: object) -> dict:
-    """Bump ``point`` to schema_version 0.4 with a valid set of the new content fields."""
+def _with_v04(point: dict) -> dict:
+    """Bump ``point`` to a valid schema_version 0.4 point; returns it."""
     point["schema_version"] = "0.4"
-    point.pop("blocks", None)
-    point.update(_v04_fields())
-    point.update(field_overrides)
+    for key in ("blocks", "title", "summary"):
+        point.pop(key, None)
+    point.update(_v04_fields(point))
     return point
 
 
-def _with_v04_zh(lab: Lab, *, pinyin: list[str] | None = None) -> dict:
-    """A schema-valid v0.4 zh.le_completion point, for the pinyin-length rule (zh-Hans only)."""
+def _with_v04_zh(lab: Lab) -> dict:
+    """A schema-valid v0.4 zh.le_completion point (zh-Hans: pinyin everywhere)."""
     point = lab.points["zh.le_completion"]
     point["schema_version"] = "0.4"
-    point.pop("blocks", None)
-    fields = _v04_fields(error_tag="aspect")
-    fields["pattern"] = {
-        "parts": [{"text": "动词", "role": "verb"}, {"text": "了", "role": "particle"}],
-        "illustration": {"kind": "none"},
-    }
-    fields["examples"] = [{
-        "text": "我们吃了饭。",
-        "spans": [{"start": 2, "end": 4, "role": "particle"}],
-        "annotation": {"vi": "đã hoàn thành"},
-        "translation": {"vi": "Chúng tôi đã ăn cơm."},
-        "pinyin": pinyin if pinyin is not None else ["wǒ", "men", "chī", "le", "fàn", ""],
-    }]
-    fields["common_mistakes"] = [{
-        "wrong": "我昨天吃饭。", "right": "我昨天吃了饭。",
-        "reason": {"vi": "Hành động đã xong cần 了."}, "error_tag": "aspect", "l1": ["vi"],
-    }]
-    fields["quick_practice"] = [
-        {"q": "我___饭。", "options": ["吃了", "吃着"], "answer": 0, "explain": {"vi": "Đã xong."}},
-        {"q": "他___了。", "options": ["走", "走了"], "answer": 1, "explain": {"vi": "Đã xong."}},
-        {"q": "你___吗？", "options": ["吃了", "吃着呢"], "answer": 0, "explain": {"vi": "Hỏi đã xong chưa."}},
-    ]
-    point.update(fields)
+    for key in ("blocks", "title", "summary"):
+        point.pop(key, None)
+    text = "我们吃了饭。"
+    point.update({
+        "point_type": "tense_aspect",
+        "header": {
+            "title": {"vi": "Trợ từ 了"}, "native_title": "动态助词了",
+            "level": dict(point["level"]), "summary": {"vi": "了 sau động từ: hành động đã xong."},
+        },
+        "when_to_use": [{"vi": "Hành động đã xong."}, {"vi": "Có mốc thời gian cụ thể."}],
+        "pattern": {
+            "formula": [
+                _slot("动词", "verb", "động từ", pinyin=["dòng", "cí"]),
+                _slot("了", "particle", "trợ từ hoàn thành", pinyin=["le"]),
+            ],
+            "illustration": {"kind": "timeline", "timeline": {"shape": "point_past"}},
+        },
+        "examples": [{
+            "text": text, "form": "affirmative",
+            "spans": [{"start": 2, "end": 3, "role": "verb"}, {"start": 3, "end": 4, "role": "particle"}],
+            "annotation": {"vi": "đã hoàn thành"}, "translation": {"vi": "Chúng tôi đã ăn cơm."},
+            "pinyin": ["wǒ", "men", "chī", "le", "fàn", ""],
+        }],
+        "compare": [],
+        "common_mistakes": [{
+            "wrong": "我昨天吃饭。", "right": "我昨天吃了饭。",
+            "reason": {"vi": "Hành động đã xong cần 了."}, "error_tag": "aspect", "l1": ["vi"],
+            "wrong_pinyin": ["wǒ", "zuó", "tiān", "chī", "fàn", ""],
+            "right_pinyin": ["wǒ", "zuó", "tiān", "chī", "le", "fàn", ""],
+        }],
+        "quick_practice": [
+            _qp("我吃___饭。", "了", "着", "aspect"),
+            _qp("他走___。", "了", "过", "aspect"),
+            _qp("你吃___吗？", "了", "着", "aspect"),
+        ],
+    })
     return point
 
 

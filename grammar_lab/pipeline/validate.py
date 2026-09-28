@@ -36,10 +36,22 @@ story.length_out_of_range   hook+scene+need+reveal+consequences (vi) is not 150-
 story.reveal_short_too_long reveal_short (vi) is more than 20 words
 story.short_not_one_line    an alternative's short (or reveal_short) contains a newline
 story.forbidden_phrase      vi text uses a phrase VOICE.md bans (fairy-tale opener/vocabulary, etc.)
-example.span_invalid        examples[].spans start>=end or end beyond text length (GRAMMAR_CONTENT_CONTRACT.md v0.4)
-example.pinyin_length_mismatch  examples[].pinyin length differs from text's character count (zh-Hans, v0.4)
+header.level_mismatch       header.level differs from the point's level (GRAMMAR_CONTENT_CONTRACT.md v0.4)
+illustration.kind_mismatch  pattern.illustration.kind does not fit point_type (tense_aspect->timeline, ...) (v0.4)
+example.span_invalid        examples[].spans start>=end or end beyond text length (v0.4)
+example.form_without_variant  an example's form (negative/question) has no pattern.variants formula (v0.4)
+example.formula_role_missing  a required (non-optional) formula role has no span in the example (v0.4)
+example.span_role_not_in_formula  a span's role is not a role of the example's formula (v0.4)
+zh.pinyin_invalid           zh-Hans pinyin missing, wrong length, untoned/numbered, or set on a non-Han char (v0.4)
 common_mistake.same_wrong_right  common_mistakes[].wrong and .right are identical (v0.4)
 error_tag.common_mistake_unlisted  common_mistakes[].error_tag is not in the point's error_tags (v0.4)
+quick_practice.blank_invalid  q does not contain exactly one ___ (v0.4)
+quick_practice.answer_tagged  the correct option carries an error_tag (v0.4)
+quick_practice.distractor_untagged  a wrong option names no learner error_tag (v0.4)
+quick_practice.distractor_misspelling  a wrong option is only a misspelling (error_tag spelling) (v0.4)
+formula.slot_has_joiner     a formula slot's text (or one of its options) contains '+' (the app draws joiners) (v0.4)
+formula.option_duplicate    a formula slot lists the same option twice (v0.4)
+zh.whitespace               a zh-Hans target string has a space next to a Han character or the ___ blank (v0.4)
 """
 
 from __future__ import annotations
@@ -68,6 +80,26 @@ INVENTORY_SCHEMA_PATH = Path("schema/inventory.schema.json")
 
 STORY_LENGTH_RANGE = (150, 250)  # words, vi (STORY_SPEC.md §2)
 REVEAL_SHORT_MAX_WORDS = 20
+
+# GRAMMAR_CONTENT_CONTRACT.md §2: the illustration a point's type calls for.
+ILLUSTRATION_FOR_POINT_TYPE = {
+    "tense_aspect": "timeline",
+    "word_order": "word_order",
+    "morphology": "morphology",
+    "other": "none",
+}
+QUICK_PRACTICE_BLANK = "___"
+# GRAMMAR_CONTENT_CONTRACT.md §7: a distractor must be a real learner *grammar* mistake. An
+# engine label that only means "misspelled" (boxs, cates) would pass verify -- the engine does
+# flag it -- while being exactly the invented form the contract rules out.
+NONSENSE_DISTRACTOR_TAGS = frozenset({"spelling"})
+FORMULA_JOINER = "+"  # the app draws the joiner between slots; a slot never carries it
+_HAN = re.compile(r"[㐀-䶿一-鿿豈-﫿]")
+# Chinese is written without spaces; the first zh v0.4 run put one on each side of the blank
+# ("他 ___ 吃过越南菜。"), which the learner would see and verify filled in as "他 没 吃过".
+_ZH_SPACE = re.compile(rf"(?:{_HAN.pattern}|{QUICK_PRACTICE_BLANK})\s|\s(?:{_HAN.pattern}|{QUICK_PRACTICE_BLANK})")
+# A tone-marked (or neutral-tone, unmarked) pinyin syllable; tone numbers like "wo3" are rejected.
+_PINYIN_SYLLABLE = re.compile(r"^[a-zāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜüê]+$")
 
 # VOICE.md §2: fairy-tale opener/vocabulary and other patterns an adult-voice story may
 # never use, in any form (checked as a case-insensitive substring of vi text).
@@ -275,14 +307,17 @@ class _Validation:
                 self.check_contrast(file, path, block, point)
             elif kind == "story":
                 self.check_story(file, path, block, point)
-        if "examples" in point:
+        if point.get("schema_version") == "0.4":
+            self.check_header_v04(file, point)
+            self.check_formula_slots_v04(file, point)
+            self.check_illustration_v04(file, point)
             self.check_examples_v04(file, point)
-        if "compare" in point:
             self.check_compare_v04(file, point)
-        if "common_mistakes" in point:
             self.check_common_mistakes_v04(file, point)
-        if "quick_practice" in point:
             self.check_quick_practice_v04(file, point)
+            if self.target_lang == ZH_HANS:
+                self.check_pinyin_v04(file, point)
+                self.check_zh_whitespace_v04(file, point)
         for path, mapping in _locale_maps(point):
             self.check_locales(file, path, mapping)
         self.check_script(file, point)
@@ -415,6 +450,35 @@ class _Validation:
         if not (low <= total <= high):
             self.issue(file, path, "story.length_out_of_range", f"{total} words (vi), expected {low}-{high}")
 
+    def check_header_v04(self, file: str, point: dict[str, Any]) -> None:
+        if point["header"]["level"] != point["level"]:
+            self.issue(file, "header.level", "header.level_mismatch",
+                       f"header says {point['header']['level']}, the point is {point['level']}")
+
+    def check_formula_slots_v04(self, file: str, point: dict[str, Any]) -> None:
+        for base, slots in _formulas(point["pattern"]):
+            for index, slot in enumerate(slots):
+                if FORMULA_JOINER in slot["text"]:
+                    self.issue(file, f"{base}[{index}].text", "formula.slot_has_joiner",
+                               f"{slot['text']!r}: the app draws '+' between slots; split it into its own slots")
+                seen: set[str] = set()
+                for option_index, option in enumerate(slot.get("options", [])):
+                    path = f"{base}[{index}].options[{option_index}].text"
+                    if FORMULA_JOINER in option["text"]:
+                        self.issue(file, path, "formula.slot_has_joiner",
+                                   f"{option['text']!r}: an option is one form, never a '+' sequence")
+                    key = _normalize(option["text"])
+                    if key in seen:
+                        self.issue(file, path, "formula.option_duplicate", f"{option['text']!r} is listed twice")
+                    seen.add(key)
+
+    def check_illustration_v04(self, file: str, point: dict[str, Any]) -> None:
+        expected = ILLUSTRATION_FOR_POINT_TYPE[point["point_type"]]
+        kind = point["pattern"]["illustration"]["kind"]
+        if kind != expected:
+            self.issue(file, "pattern.illustration.kind", "illustration.kind_mismatch",
+                       f"point_type {point['point_type']} needs {expected!r}, got {kind!r}")
+
     def check_examples_v04(self, file: str, point: dict[str, Any]) -> None:
         for index, example in enumerate(point["examples"]):
             path = f"examples[{index}]"
@@ -423,10 +487,30 @@ class _Validation:
                 if span["start"] >= span["end"] or span["end"] > text_len:
                     self.issue(file, f"{path}.spans[{span_index}]", "example.span_invalid",
                                f"start={span['start']} end={span['end']} out of range for text of length {text_len}")
-            pinyin = example.get("pinyin")
-            if self.target_lang == ZH_HANS and pinyin is not None and len(pinyin) != text_len:
-                self.issue(file, f"{path}.pinyin", "example.pinyin_length_mismatch",
-                           f"pinyin has {len(pinyin)} entries, text has {text_len} characters")
+            formula = _formula_for_form(point["pattern"], example["form"])
+            if formula is None:
+                self.issue(file, f"{path}.form", "example.form_without_variant",
+                           f"form {example['form']!r} but pattern.variants has no {example['form']!r} formula")
+                continue
+            span_roles = {span["role"] for span in example["spans"]}
+            required = {slot["role"] for slot in formula if not slot.get("optional")}
+            for role in sorted(required - span_roles):
+                self.issue(file, f"{path}.spans", "example.formula_role_missing",
+                           f"no span with role {role!r}, which the {example['form']} formula requires")
+            for role in sorted(span_roles - {slot["role"] for slot in formula}):
+                self.issue(file, f"{path}.spans", "example.span_role_not_in_formula",
+                           f"span role {role!r} is not a role of the {example['form']} formula")
+
+    def check_pinyin_v04(self, file: str, point: dict[str, Any]) -> None:
+        for path, text, pinyin in _pinyin_targets(point):
+            problem = _pinyin_problem(text, pinyin)
+            if problem:
+                self.issue(file, path, "zh.pinyin_invalid", problem)
+
+    def check_zh_whitespace_v04(self, file: str, point: dict[str, Any]) -> None:
+        for path, text in _target_texts(point):
+            if _ZH_SPACE.search(text):
+                self.issue(file, path, "zh.whitespace", f"space inside Chinese text: {text!r}")
 
     def check_compare_v04(self, file: str, point: dict[str, Any]) -> None:
         for index, item in enumerate(point["compare"]):
@@ -457,17 +541,37 @@ class _Validation:
     def check_quick_practice_v04(self, file: str, point: dict[str, Any]) -> None:
         for index, item in enumerate(point["quick_practice"]):
             path = f"quick_practice[{index}]"
+            blanks = item["q"].count(QUICK_PRACTICE_BLANK)
+            if blanks != 1:
+                self.issue(file, f"{path}.q", "quick_practice.blank_invalid",
+                           f"q must contain exactly one {QUICK_PRACTICE_BLANK}, found {blanks}")
             if item["answer"] >= len(item["options"]):
                 self.issue(file, f"{path}.answer", "check.answer_out_of_range",
                            f"answer {item['answer']} but only {len(item['options'])} options")
             seen: dict[str, int] = {}
             for option_index, option in enumerate(item["options"]):
-                key = _normalize(option)
+                option_path = f"{path}.options[{option_index}]"
+                key = _normalize(option["text"])
                 if key in seen:
-                    self.issue(file, f"{path}.options[{option_index}]", "check.duplicate_options",
-                               f"{option!r} duplicates option {seen[key]}")
+                    self.issue(file, option_path, "check.duplicate_options",
+                               f"{option['text']!r} duplicates option {seen[key]}")
                 else:
                     seen[key] = option_index
+                tag = option["error_tag"]
+                if option_index == item["answer"]:
+                    if tag is not None:
+                        self.issue(file, f"{option_path}.error_tag", "quick_practice.answer_tagged",
+                                   f"the correct option carries error_tag {tag!r}")
+                elif tag is None:
+                    self.issue(file, f"{option_path}.error_tag", "quick_practice.distractor_untagged",
+                               f"wrong option {option['text']!r} names no learner error")
+                elif tag in NONSENSE_DISTRACTOR_TAGS:
+                    self.issue(file, f"{option_path}.error_tag", "quick_practice.distractor_misspelling",
+                               f"wrong option {option['text']!r} is only a misspelling ({tag}), not a grammar "
+                               "mistake this point teaches")
+                elif self.engine_tags is not None and tag not in self.engine_tags:
+                    self.issue(file, f"{option_path}.error_tag", "error_tag.unknown",
+                               f"{tag!r} is not an engine error label for {self.target_lang}")
 
     def check_locales(self, file: str, path: str, mapping: dict[str, str]) -> None:
         missing = [locale for locale in self.locales if locale not in mapping]
@@ -565,6 +669,46 @@ def _normalize(text: str) -> str:
     return re.sub(r"\s+", " ", text).strip().casefold()
 
 
+def _formula_for_form(pattern: dict[str, Any], form: str) -> list[dict[str, Any]] | None:
+    if form == "affirmative":
+        return pattern["formula"]
+    return pattern.get("variants", {}).get(form)
+
+
+def _formulas(pattern: dict[str, Any]) -> Iterator[tuple[str, list[dict[str, Any]]]]:
+    yield "pattern.formula", pattern["formula"]
+    for name, slots in pattern.get("variants", {}).items():
+        yield f"pattern.variants.{name}", slots
+
+
+def _pinyin_targets(point: dict[str, Any]) -> Iterator[tuple[str, str, list[str] | None]]:
+    """(path, text, pinyin) for every zh-Hans string that must carry per-character pinyin."""
+    for base, slots in _formulas(point["pattern"]):
+        for index, slot in enumerate(slots):
+            yield f"{base}[{index}].pinyin", slot["text"], slot.get("pinyin")
+            for option_index, option in enumerate(slot.get("options", [])):
+                yield f"{base}[{index}].options[{option_index}].pinyin", option["text"], option.get("pinyin")
+    for index, example in enumerate(point["examples"]):
+        yield f"examples[{index}].pinyin", example["text"], example.get("pinyin")
+    for index, item in enumerate(point["common_mistakes"]):
+        yield f"common_mistakes[{index}].wrong_pinyin", item["wrong"], item.get("wrong_pinyin")
+        yield f"common_mistakes[{index}].right_pinyin", item["right"], item.get("right_pinyin")
+
+
+def _pinyin_problem(text: str, pinyin: list[str] | None) -> str | None:
+    if pinyin is None:
+        return "missing (zh-Hans needs one entry per character)"
+    if len(pinyin) != len(text):
+        return f"{len(pinyin)} entries for {len(text)} characters"
+    for char, syllable in zip(text, pinyin, strict=True):
+        if _HAN.match(char):
+            if not _PINYIN_SYLLABLE.match(syllable.casefold()):
+                return f"{char!r} needs a tone-marked syllable, got {syllable!r}"
+        elif syllable:
+            return f"non-Han character {char!r} must map to '', got {syllable!r}"
+    return None
+
+
 def _story_forbidden_check_texts(block: dict[str, Any]) -> Iterator[tuple[str, str]]:
     """Every vi-locale string in a story block, for the VOICE.md banned-phrase check."""
     yield "hook.text.vi", block["hook"]["text"].get("vi", "")
@@ -579,8 +723,16 @@ def _story_forbidden_check_texts(block: dict[str, Any]) -> Iterator[tuple[str, s
 
 
 def _locale_maps(point: dict[str, Any]) -> Iterator[tuple[str, dict[str, str]]]:
-    yield "title", point["title"]
-    yield "summary", point["summary"]
+    if "header" in point:
+        yield "header.title", point["header"]["title"]
+        yield "header.summary", point["header"]["summary"]
+    else:
+        yield "title", point["title"]
+        yield "summary", point["summary"]
+    if "pattern" in point:
+        for base, slots in _formulas(point["pattern"]):
+            for index, slot in enumerate(slots):
+                yield f"{base}[{index}].label", slot["label"]
     for index, item in enumerate(point.get("when_to_use", [])):
         yield f"when_to_use[{index}]", item
     for index, example in enumerate(point.get("examples", [])):
@@ -624,12 +776,17 @@ def _locale_maps(point: dict[str, Any]) -> Iterator[tuple[str, dict[str, str]]]:
 
 def _target_texts(point: dict[str, Any]) -> Iterator[tuple[str, str]]:
     """Strings written in the target language (as opposed to explanation locales)."""
+    if "header" in point:
+        yield "header.native_title", point["header"]["native_title"]
     if "pattern" in point:
-        for part_index, part in enumerate(point["pattern"]["parts"]):
-            yield f"pattern.parts[{part_index}].text", part["text"]
-        for variant_name, parts in point["pattern"].get("variants", {}).items():
-            for part_index, part in enumerate(parts):
-                yield f"pattern.variants.{variant_name}[{part_index}].text", part["text"]
+        for base, slots in _formulas(point["pattern"]):
+            for index, slot in enumerate(slots):
+                yield f"{base}[{index}].text", slot["text"]
+                for option_index, option in enumerate(slot.get("options", [])):
+                    yield f"{base}[{index}].options[{option_index}].text", option["text"]
+        for index, item in enumerate(point["pattern"]["illustration"].get("morphology", [])):
+            for key in ("base", "affix", "result"):
+                yield f"pattern.illustration.morphology[{index}].{key}", item[key]
     for index, example in enumerate(point.get("examples", [])):
         yield f"examples[{index}].text", example["text"]
     for index, item in enumerate(point.get("compare", [])):
@@ -641,7 +798,7 @@ def _target_texts(point: dict[str, Any]) -> Iterator[tuple[str, str]]:
     for index, item in enumerate(point.get("quick_practice", [])):
         yield f"quick_practice[{index}].q", item["q"]
         for option_index, option in enumerate(item["options"]):
-            yield f"quick_practice[{index}].options[{option_index}]", option
+            yield f"quick_practice[{index}].options[{option_index}].text", option["text"]
     for index, block in enumerate(point.get("blocks", [])):
         path = f"blocks[{index}]"
         kind = block["type"]

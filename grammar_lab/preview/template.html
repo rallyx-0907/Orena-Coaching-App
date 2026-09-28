@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Grammar Lab preview</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --panel: #ffffff; --ink: #1f2430; --muted: #5d6576; --line: #dde1e8;
+    --ok: #0f7a4d; --bad: #b42318; --warn: #a15c07;
+    --subject: #2563eb; --verb: #dc2626; --aux: #7c3aed; --object: #059669; --complement: #0d9488;
+    --time: #d97706; --place: #92400e; --marker: #db2777; --particle: #4f46e5; --connector: #6b7280;
+    --other: #475569;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.55 system-ui, "Segoe UI", sans-serif; }
+  header.bar { position: sticky; top: 0; z-index: 2; display: flex; gap: 16px; align-items: center; flex-wrap: wrap;
+    padding: 10px 16px; background: #1f2430; color: #fff; }
+  header.bar h1 { font-size: 15px; margin: 0; font-weight: 600; }
+  header.bar .note { font-size: 12px; opacity: .75; }
+  .langs button { background: transparent; color: #fff; border: 1px solid #5d6576; border-radius: 6px; padding: 3px 10px;
+    cursor: pointer; margin-right: 4px; }
+  .langs button[aria-pressed="true"] { background: #fff; color: #1f2430; }
+  .layout { display: grid; grid-template-columns: 260px 1fr; gap: 16px; padding: 16px; max-width: 1280px; margin: 0 auto; }
+  nav.points { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px; align-self: start;
+    position: sticky; top: 64px; max-height: calc(100vh - 80px); overflow: auto; }
+  nav.points button { display: block; width: 100%; text-align: left; border: 0; background: none; padding: 8px 10px;
+    border-radius: 8px; cursor: pointer; color: var(--ink); font: inherit; }
+  nav.points button[aria-current="true"] { background: #eef2ff; }
+  nav.points .pid { font-size: 12px; color: var(--muted); display: block; }
+  .badge { display: inline-block; font-size: 11px; padding: 1px 7px; border-radius: 999px; border: 1px solid var(--line);
+    color: var(--muted); margin-left: 4px; vertical-align: 1px; }
+  .badge.bad { color: var(--bad); border-color: #f3b8b2; background: #fff3f2; }
+  .badge.ok { color: var(--ok); border-color: #a7e3c6; background: #effaf4; }
+  main section { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px 20px; margin-bottom: 14px; }
+  main h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 10px; }
+  .title { font-size: 26px; font-weight: 700; margin: 0; }
+  .native { font-size: 17px; color: var(--muted); margin-left: 8px; font-weight: 500; }
+  .summary { margin: 6px 0 0; font-size: 16px; }
+  .formula { display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch; }
+  .slot { border: 2px solid currentColor; border-radius: 10px; padding: 8px 12px 6px; min-width: 64px; text-align: center; }
+  .slot .t { font-size: 20px; font-weight: 700; display: block; color: var(--ink); }
+  .slot .l { font-size: 12px; display: block; }
+  .slot .opts { display: block; font-size: 15px; font-weight: 600; color: var(--ink); }
+  .slot .opts .bar { color: var(--muted); font-weight: 400; }
+  .slot.optional { border-style: dashed; }
+  .plus { align-self: center; color: var(--muted); font-size: 18px; }
+  .variant { margin-top: 12px; }
+  .variant .name { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  .variant .slot .t { font-size: 16px; }
+  .illustration { margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--line); }
+  .wo { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .wo .n { font-size: 11px; color: var(--muted); display: block; }
+  .arrow { color: var(--muted); }
+  .morph { display: grid; grid-template-columns: repeat(5, auto); gap: 6px 10px; align-items: center; justify-content: start; font-size: 18px; }
+  .morph .affix { font-weight: 700; color: var(--marker); }
+  .morph .result { font-weight: 700; }
+  ul.when { margin: 0; padding-left: 20px; }
+  .ex { padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .ex:last-child { border-bottom: 0; }
+  .sentence { font-size: 20px; }
+  .zh .sentence { font-size: 24px; }
+  .hl { border-bottom: 3px solid currentColor; padding: 0 1px; }
+  .hl > .ink, .hl ruby { color: var(--ink); }
+  ruby rt { font-size: 11px; color: var(--muted); }
+  .meta { font-size: 13px; color: var(--muted); }
+  .form { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin-right: 6px; }
+  .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .col { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+  .col h3 { margin: 0 0 6px; font-size: 14px; }
+  .mistake { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .mistake:last-child { border-bottom: 0; }
+  .wrong { color: var(--bad); text-decoration: line-through; text-decoration-thickness: 1px; }
+  .right { color: var(--ok); font-weight: 600; }
+  .mistake .reason { grid-column: 1 / -1; font-size: 14px; }
+  .tag { font-family: ui-monospace, Consolas, monospace; font-size: 12px; background: #f1f3f6; border-radius: 4px; padding: 1px 6px; }
+  .qp { padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .qp:last-child { border-bottom: 0; }
+  .qp .q { font-size: 18px; margin-bottom: 8px; }
+  .qp button.opt { font: inherit; font-size: 16px; padding: 6px 14px; margin: 0 8px 8px 0; border-radius: 8px;
+    border: 1px solid var(--line); background: #fff; cursor: pointer; }
+  .qp button.opt.correct { border-color: var(--ok); background: #effaf4; }
+  .qp button.opt.incorrect { border-color: var(--bad); background: #fff3f2; }
+  .qp .feedback { font-size: 14px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; }
+  .legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 3px;
+    background: currentColor; margin-right: 5px; vertical-align: -1px; }
+  .flags li { font-size: 13px; }
+  .flags code { font-size: 12px; }
+  svg text { font: 12px system-ui, sans-serif; fill: var(--muted); }
+  @media (max-width: 760px) {
+    .layout { grid-template-columns: 1fr; padding: 12px; }
+    nav.points { position: static; max-height: none; }
+    .compare, .mistake { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<header class="bar">
+  <h1>Grammar Lab preview</h1>
+  <span class="note">Nội bộ, chỉ để duyệt nội dung v0.4 — không phải UI người học.</span>
+  <span class="langs" id="langs"></span>
+  <span class="note" id="generated"></span>
+</header>
+<div class="layout">
+  <nav class="points" id="points" aria-label="Điểm ngữ pháp"></nav>
+  <main id="main"></main>
+</div>
+<script type="application/json" id="data">__DATA__</script>
+<script>
+(() => {
+  const DATA = JSON.parse(document.getElementById("data").textContent);
+  const ROLE_VI = {
+    subject: "chủ ngữ", verb: "động từ", aux: "trợ động từ", object: "tân ngữ", complement: "bổ ngữ",
+    time: "thời gian", place: "nơi chốn", marker: "từ đánh dấu", particle: "trợ từ", connector: "liên từ", other: "khác",
+  };
+  const FORM_VI = { affirmative: "khẳng định", negative: "phủ định", question: "nghi vấn" };
+  const state = { lang: Object.keys(DATA.langs)[0], id: null };
+
+  const el = (tag, attrs = {}, ...children) => {
+    const node = document.createElement(tag);
+    for (const [key, value] of Object.entries(attrs)) {
+      if (key === "class") node.className = value;
+      else if (key === "style") node.style.cssText = value;
+      else if (key.startsWith("on")) node.addEventListener(key.slice(2), value);
+      else node.setAttribute(key, value);
+    }
+    for (const child of children.flat(Infinity)) {
+      if (child == null || child === false) continue;
+      node.append(child instanceof Node ? child : document.createTextNode(String(child)));
+    }
+    return node;
+  };
+  const vi = (map) => (map && (map.vi ?? Object.values(map)[0])) || "";
+  const roleColor = (role) => `color: var(--${role})`;
+
+  // Text with optional per-character pinyin, and optional role spans (character offsets).
+  function richText(text, pinyin, spans) {
+    const chars = Array.from(text);
+    const roleAt = new Array(chars.length).fill(null);
+    for (const span of spans || []) for (let i = span.start; i < span.end && i < chars.length; i++) roleAt[i] = span.role;
+    const out = [];
+    let i = 0;
+    while (i < chars.length) {
+      const role = roleAt[i];
+      let j = i;
+      while (j < chars.length && roleAt[j] === role) j++;
+      const parts = [];
+      let plain = "";
+      for (let k = i; k < j; k++) {
+        if (pinyin && pinyin[k]) {
+          if (plain) { parts.push(plain); plain = ""; }
+          parts.push(el("ruby", {}, chars[k], el("rt", {}, pinyin[k])));
+        } else plain += chars[k];
+      }
+      if (plain) parts.push(plain);
+      out.push(role ? el("span", { class: "hl", style: roleColor(role), title: ROLE_VI[role] || role },
+        el("span", { class: "ink" }, parts)) : parts);
+      i = j;
+    }
+    return out;
+  }
+
+  function slotBox(slot, index, numbered) {
+    return el("div", { class: "slot" + (slot.optional ? " optional" : ""), style: roleColor(slot.role),
+        title: `${ROLE_VI[slot.role] || slot.role}${slot.optional ? " (tuỳ chọn)" : ""}` },
+      numbered ? el("span", { class: "n" }, index + 1) : null,
+      el("span", { class: "t" }, richText(slot.text, slot.pinyin)),
+      slot.options ? el("span", { class: "opts" }, slot.options.map((option, i) =>
+        [i ? el("span", { class: "bar" }, " | ") : null, richText(option.text, option.pinyin)])) : null,
+      el("span", { class: "l" }, vi(slot.label)));
+  }
+
+  function formulaRow(slots, numbered) {
+    const row = el("div", { class: numbered ? "wo" : "formula" });
+    slots.forEach((slot, index) => {
+      if (index) row.append(numbered ? el("span", { class: "arrow" }, "→") : el("span", { class: "plus" }, "+"));
+      row.append(slotBox(slot, index, numbered));
+    });
+    return row;
+  }
+
+  function timelineSvg(timeline) {
+    const W = 600, H = 120, y = 70, x = { past: 130, now: 300, future: 470 };
+    const ns = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(ns, "svg");
+    svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+    svg.setAttribute("width", "100%");
+    svg.setAttribute("style", "max-width: 640px");
+    const add = (tag, attrs, text) => {
+      const node = document.createElementNS(ns, tag);
+      for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
+      if (text) node.textContent = text;
+      svg.append(node);
+      return node;
+    };
+    add("line", { x1: 30, y1: y, x2: 570, y2: y, stroke: "#9aa3b2", "stroke-width": 2 });
+    add("polygon", { points: `570,${y - 5} 580,${y} 570,${y + 5}`, fill: "#9aa3b2" });
+    add("line", { x1: x.now, y1: y - 12, x2: x.now, y2: y + 12, stroke: "#1f2430", "stroke-width": 2 });
+    add("text", { x: x.past, y: y + 30, "text-anchor": "middle" }, "quá khứ");
+    add("text", { x: x.now, y: y + 30, "text-anchor": "middle" }, "bây giờ");
+    add("text", { x: x.future, y: y + 30, "text-anchor": "middle" }, "tương lai");
+    const accent = "var(--verb)";
+    const dot = (cx, label) => {
+      add("circle", { cx, cy: y, r: 8, fill: accent });
+      if (label) add("text", { x: cx, y: y - 18, "text-anchor": "middle", style: "fill: var(--ink)" }, label);
+    };
+    const bar = (x1, x2, label) => {
+      add("rect", { x: x1, y: y - 7, width: x2 - x1, height: 14, rx: 7, fill: accent, opacity: 0.8 });
+      if (label) add("text", { x: (x1 + x2) / 2, y: y - 18, "text-anchor": "middle", style: "fill: var(--ink)" }, label);
+    };
+    switch (timeline.shape) {
+      case "point_past": dot(150, "một thời điểm đã xong"); break;
+      case "past_ongoing": bar(90, 220, "đang diễn ra trong quá khứ"); break;
+      case "unspecified_past":
+        [70, 120, 175, 230].forEach((cx) => add("circle", { cx, cy: y, r: 5, fill: accent, opacity: 0.55 }));
+        add("path", { d: `M 70 ${y - 22} Q 190 ${y - 55} ${x.now - 6} ${y - 14}`, fill: "none", stroke: accent,
+          "stroke-width": 2, "marker-end": "" });
+        add("text", { x: 180, y: y - 40, "text-anchor": "middle", style: "fill: var(--ink)" },
+          `đã từng, không rõ khi nào${timeline.relevance ? " → " + timeline.relevance : ""}`);
+        break;
+      case "ongoing_now": bar(250, 350, "đang diễn ra lúc này"); break;
+      case "habit":
+        [70, 125, 180, 235, 290, 345, 400, 455, 510].forEach((cx) => add("circle", { cx, cy: y, r: 5, fill: accent }));
+        add("text", { x: x.now, y: y - 18, "text-anchor": "middle", style: "fill: var(--ink)" }, "lặp lại / thói quen");
+        break;
+      case "future_condition":
+        dot(400, "nếu…"); dot(490, "thì…");
+        add("line", { x1: 410, y1: y, x2: 478, y2: y, stroke: accent, "stroke-width": 3 });
+        break;
+      case "future_plan": dot(450, "dự định trong tương lai"); break;
+      default: add("text", { x: x.now, y: 20, "text-anchor": "middle" }, timeline.shape);
+    }
+    return svg;
+  }
+
+  function illustration(point) {
+    const ill = point.pattern.illustration;
+    const box = el("div", { class: "illustration" }, el("h2", {}, `Minh hoạ — ${ill.kind}`));
+    if (ill.kind === "timeline") box.append(timelineSvg(ill.timeline));
+    else if (ill.kind === "word_order") box.append(formulaRow(point.pattern.formula, true));
+    else if (ill.kind === "morphology") {
+      const grid = el("div", { class: "morph" });
+      for (const item of ill.morphology) {
+        grid.append(el("span", {}, item.base), el("span", { class: "plus" }, "+"),
+          el("span", { class: "affix" }, item.affix), el("span", { class: "arrow" }, "→"),
+          el("span", { class: "result" }, item.result));
+      }
+      box.append(grid);
+    } else box.append(el("span", { class: "meta" }, "Không có minh hoạ (point_type other)."));
+    return box;
+  }
+
+  function section(title, ...children) { return el("section", {}, el("h2", {}, title), ...children); }
+
+  function renderPoint(point, check) {
+    const main = document.getElementById("main");
+    main.replaceChildren();
+    main.className = point.target_lang === "zh-Hans" ? "zh" : "";
+    const h = point.header;
+    main.append(el("section", {},
+      el("p", { class: "title" }, vi(h.title), el("span", { class: "native" }, h.native_title)),
+      el("div", { class: "meta" }, `${h.level.framework === "hsk3" ? "HSK 3.0" : h.level.framework.toUpperCase()} ${h.level.value}`,
+        el("span", { class: "badge" }, point.id), el("span", { class: "badge" }, point.point_type),
+        el("span", { class: "badge" }, point.status)),
+      el("p", { class: "summary" }, vi(h.summary))));
+
+    const pattern = section("Công thức", formulaRow(point.pattern.formula, false));
+    for (const [name, slots] of Object.entries(point.pattern.variants || {})) {
+      pattern.append(el("div", { class: "variant" }, el("div", { class: "name" }, FORM_VI[name] || name),
+        formulaRow(slots, false)));
+    }
+    pattern.append(illustration(point));
+    const roles = new Set([point.pattern.formula, ...Object.values(point.pattern.variants || {})].flat().map((s) => s.role));
+    pattern.append(el("div", { class: "legend", style: "margin-top: 12px" },
+      [...roles].map((role) => el("span", { style: roleColor(role) }, ROLE_VI[role] || role))));
+    main.append(pattern);
+
+    main.append(section("Khi nào dùng", el("ul", { class: "when" }, point.when_to_use.map((item) => el("li", {}, vi(item))))));
+
+    main.append(section("Ví dụ", point.examples.map((ex) => el("div", { class: "ex" },
+      el("div", { class: "sentence" }, el("span", { class: "form" }, FORM_VI[ex.form] || ex.form),
+        richText(ex.text, ex.pinyin, ex.spans)),
+      el("div", {}, vi(ex.translation)),
+      el("div", { class: "meta" }, vi(ex.annotation))))));
+
+    if (point.compare.length) {
+      main.append(section("So sánh", point.compare.map((c) => el("div", { class: "compare" },
+        el("div", { class: "col" }, el("h3", {}, `${vi(h.title)} (${point.id})`), el("div", {}, vi(c.this_meaning)),
+          el("div", { class: "sentence" }, c.this_example)),
+        el("div", { class: "col" }, el("h3", {}, c.with), el("div", {}, vi(c.other_meaning)),
+          el("div", { class: "sentence" }, c.other_example))))));
+    }
+
+    main.append(section("Lỗi thường gặp", point.common_mistakes.map((m) => el("div", { class: "mistake" },
+      el("div", {}, "✗ ", el("span", { class: "wrong sentence" }, richText(m.wrong, m.wrong_pinyin))),
+      el("div", {}, "✓ ", el("span", { class: "right sentence" }, richText(m.right, m.right_pinyin))),
+      el("div", { class: "reason" }, vi(m.reason), " ", el("span", { class: "tag" }, m.error_tag))))));
+
+    main.append(section("Luyện nhanh", point.quick_practice.map((item) => {
+      const feedback = el("div", { class: "feedback" });
+      const buttons = item.options.map((opt, index) => el("button", { class: "opt", type: "button", onclick: (event) => {
+        for (const b of buttons) b.classList.remove("correct", "incorrect");
+        const right = index === item.answer;
+        event.currentTarget.classList.add(right ? "correct" : "incorrect");
+        if (!right) buttons[item.answer].classList.add("correct");
+        feedback.replaceChildren(el("span", {}, right ? "Đúng. " : "Chưa đúng. ",
+          !right && opt.error_tag ? [el("span", { class: "tag" }, opt.error_tag), " "] : null, vi(item.explain)));
+      } }, opt.text));
+      return el("div", { class: "qp" }, el("div", { class: "q" }, item.q), el("div", {}, buttons), feedback);
+    })));
+
+    const verifyFlags = check.verify ? check.verify.flags : null;
+    main.append(section("Kiểm tra (validate / verify)",
+      el("div", { class: "meta" }, check.verify ? `verify run ${check.verify.run_id}` : "chưa có lượt verify cho điểm này"),
+      el("ul", { class: "flags" },
+        check.validate.map((i) => el("li", {}, el("code", {}, i.code), ` ${i.path} — ${i.message}`)),
+        (verifyFlags || []).map((f) => el("li", {}, el("code", {}, f.code), ` ${f.detail}`)),
+        !check.validate.length && verifyFlags && !verifyFlags.length ? el("li", {}, "Không có cờ nào.") : null)));
+  }
+
+  function renderNav() {
+    const nav = document.getElementById("points");
+    nav.replaceChildren();
+    const lang = DATA.langs[state.lang];
+    for (const entry of lang.points) {
+      const flags = entry.check.validate.length + (entry.check.verify ? entry.check.verify.flags.length : 0);
+      nav.append(el("button", { type: "button", "aria-current": String(entry.point.id === state.id),
+          onclick: () => { state.id = entry.point.id; renderNav(); renderPoint(entry.point, entry.check); } },
+        vi(entry.point.header.title),
+        el("span", { class: "badge " + (flags ? "bad" : entry.check.verify ? "ok" : "") },
+          flags ? `${flags} cờ` : entry.check.verify ? "sạch" : "chưa verify"),
+        el("span", { class: "pid" }, entry.point.id)));
+    }
+    if (lang.skipped.length) nav.append(el("div", { class: "meta", style: "padding: 8px 10px" },
+      `Bỏ qua (không phải v0.4): ${lang.skipped.join(", ")}`));
+  }
+
+  function renderLangs() {
+    const box = document.getElementById("langs");
+    box.replaceChildren(...Object.keys(DATA.langs).map((code) => el("button", { type: "button",
+      "aria-pressed": String(code === state.lang), onclick: () => { state.lang = code; state.id = null; start(); } },
+      code.toUpperCase())));
+  }
+
+  function start() {
+    renderLangs();
+    const points = DATA.langs[state.lang].points;
+    if (!state.id && points.length) state.id = points[0].point.id;
+    renderNav();
+    const entry = points.find((p) => p.point.id === state.id);
+    if (entry) renderPoint(entry.point, entry.check);
+    else document.getElementById("main").replaceChildren(el("section", {}, "Không có điểm v0.4 nào."));
+  }
+
+  document.getElementById("generated").textContent = `dựng lúc ${DATA.generated_at}`;
+  start();
+})();
+</script>
+</body>
+</html>

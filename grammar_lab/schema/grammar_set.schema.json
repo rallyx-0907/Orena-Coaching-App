@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:orena:grammar_lab:grammar_set:0.2",
-  "title": "Orena Grammar Lab grammar set (schema v0.2 + v0.3 story block)",
-  "description": "Contract between Grammar Lab and the Orena app (SPEC §3). The root validates one grammar point file content/<lang>/<id>.json. $defs.set_manifest validates content/<lang>/_set.json, $defs.functions_file validates functions/functions.yaml, and $defs.cast_file validates cast/cast.yaml. schema_version 0.3 adds the story block (STORY_SPEC.md) and requires one with theme=daily; 0.2 points are unaffected.",
+  "title": "Orena Grammar Lab grammar set (schema v0.2, v0.3 story block, v0.4 fixed content blocks)",
+  "description": "Contract between Grammar Lab and the Orena app (SPEC §3). The root validates one grammar point file content/<lang>/<id>.json. $defs.set_manifest validates content/<lang>/_set.json, $defs.functions_file validates functions/functions.yaml, and $defs.cast_file validates cast/cast.yaml. schema_version 0.3 adds the story block (STORY_SPEC.md) and requires one with theme=daily; 0.4 replaces blocks[] with header + fixed content blocks (GRAMMAR_CONTENT_CONTRACT.md).",
   "level_scales": {
     "en": {"framework": "cefr", "values": ["A1", "A2", "B1", "B2", "C1", "C2"]},
     "zh-Hans": {"framework": "hsk3", "values": ["1", "2", "3", "4", "5", "6", "7", "8", "9"]},
@@ -102,7 +102,7 @@
       "additionalProperties": false,
       "required": [
         "schema_version", "id", "version", "target_lang", "function", "level", "prereqs", "contrasts",
-        "error_tags", "source_refs", "title", "summary", "status", "provenance", "review"
+        "error_tags", "source_refs", "status", "provenance", "review"
       ],
       "properties": {
         "schema_version": {"$ref": "#/$defs/schema_version"},
@@ -120,8 +120,10 @@
           "propertyNames": {"pattern": "^[a-z][a-z0-9_]*$"},
           "additionalProperties": {"type": "array", "items": {"type": "string", "minLength": 1}}
         },
-        "title": {"$ref": "#/$defs/locale_map"},
-        "summary": {"$ref": "#/$defs/locale_map"},
+        "title": {"description": "v0.2/v0.3 only; v0.4 moves it into header.", "$ref": "#/$defs/locale_map"},
+        "summary": {"description": "v0.2/v0.3 only; v0.4 moves it into header.", "$ref": "#/$defs/locale_map"},
+        "point_type": {"$ref": "#/$defs/point_type"},
+        "header": {"$ref": "#/$defs/header"},
         "blocks": {
           "description": "v0.2/v0.3: the point's whole content. v0.4 (GRAMMAR_CONTENT_CONTRACT.md): optional, story only -- the primary content moved to when_to_use/pattern/examples/compare/common_mistakes/quick_practice below.",
           "type": "array", "items": {"$ref": "#/$defs/block"}
@@ -196,27 +198,18 @@
         {
           "description": "v0.2/v0.3: blocks is the point's whole content, required and non-empty (GRAMMAR_CONTENT_CONTRACT.md did not exist yet).",
           "if": {"required": ["schema_version"], "properties": {"schema_version": {"enum": ["0.2", "0.3"]}}},
-          "then": {"required": ["blocks"], "properties": {"blocks": {"minItems": 1}}}
+          "then": {"required": ["blocks", "title", "summary"], "properties": {"blocks": {"minItems": 1}}}
         },
         {
-          "description": "v0.4 (GRAMMAR_CONTENT_CONTRACT.md): the fixed content blocks are required; blocks, if present at all, may only carry the optional secondary story (STORY_SPEC.md/VOICE.md) -- not the v0.2/v0.3 formula/rule_table/example/pitfall/note/check types, which this shape replaces.",
+          "description": "v0.4 (GRAMMAR_CONTENT_CONTRACT.md): header + point_type + the fixed content blocks are required, and title/summary live only inside header. blocks, if present at all, may only carry the optional secondary story (STORY_SPEC.md/VOICE.md) -- not the v0.2/v0.3 formula/rule_table/example/pitfall/note/check types, which this shape replaces.",
           "if": {"required": ["schema_version"], "properties": {"schema_version": {"const": "0.4"}}},
           "then": {
-            "required": ["when_to_use", "pattern", "examples", "compare", "common_mistakes", "quick_practice"],
+            "required": [
+              "point_type", "header", "when_to_use", "pattern", "examples", "compare", "common_mistakes", "quick_practice"
+            ],
+            "not": {"anyOf": [{"required": ["title"]}, {"required": ["summary"]}]},
             "properties": {
               "blocks": {"items": {"properties": {"type": {"const": "story"}}}}
-            }
-          }
-        },
-        {
-          "description": "v0.4 examples: pinyin is required, one entry per character in text, only when target_lang is zh-Hans.",
-          "if": {
-            "required": ["schema_version", "target_lang"],
-            "properties": {"schema_version": {"const": "0.4"}, "target_lang": {"const": "zh-Hans"}}
-          },
-          "then": {
-            "properties": {
-              "examples": {"items": {"required": ["pinyin"]}}
             }
           }
         }
@@ -463,26 +456,64 @@
         "teaser": {"description": "VOICE.md: a closing paradox or open question, never a preview of the next lesson.", "$ref": "#/$defs/locale_map"}
       }
     },
+    "pinyin": {
+      "description": "zh-Hans only (validate.py): one entry per character of the sibling text; a Han character gets its tone-marked syllable (neutral tone unmarked), anything else ''.",
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "point_type": {
+      "description": "GRAMMAR_CONTENT_CONTRACT.md §2: what the point is fundamentally about. Structural metadata from the inventory, not generated. Fixes pattern.illustration.kind: tense_aspect -> timeline, word_order -> word_order, morphology -> morphology, other -> none (validate: illustration.kind_mismatch).",
+      "enum": ["tense_aspect", "word_order", "morphology", "other"]
+    },
     "pattern_role": {
-      "description": "GRAMMAR_CONTENT_CONTRACT.md §2/§4: shared by pattern.parts[].role and examples[].spans[].role so the app colours both consistently.",
+      "description": "GRAMMAR_CONTENT_CONTRACT.md §2/§4: shared by pattern.formula[].role and examples[].spans[].role so the app colours a slot and its realisation in a sentence the same way.",
       "enum": ["subject", "verb", "aux", "object", "complement", "time", "place", "marker", "particle", "connector", "other"]
     },
-    "pattern_part": {
+    "formula_slot": {
+      "description": "One abstract slot of the formula (S, have/has, V3, for/since, 把, 主语...) -- never a concrete sentence; concrete sentences live only in examples.",
       "type": "object",
       "additionalProperties": false,
-      "required": ["text", "role"],
+      "required": ["text", "role", "label"],
       "properties": {
         "text": {"type": "string", "minLength": 1},
-        "role": {"$ref": "#/$defs/pattern_role"}
+        "role": {"$ref": "#/$defs/pattern_role"},
+        "label": {"description": "What the slot is, in the explanation locale(s): 'chủ ngữ', 'quá khứ phân từ'.", "$ref": "#/$defs/locale_map"},
+        "optional": {"description": "The slot may be absent from a valid sentence (e.g. 'for/since + time').", "type": "boolean"},
+        "options": {
+          "description": "The concrete forms the slot can take, when there is a choice: be -> is | are, much | many. The slot's text names the choice; each option is one form.",
+          "type": "array", "minItems": 2, "items": {"$ref": "#/$defs/formula_option"}
+        },
+        "pinyin": {"$ref": "#/$defs/pinyin"}
+      }
+    },
+    "formula_option": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["text"],
+      "properties": {
+        "text": {"type": "string", "minLength": 1},
+        "pinyin": {"$ref": "#/$defs/pinyin"}
+      }
+    },
+    "formula": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/formula_slot"}},
+    "morphology_item": {
+      "description": "base + affix -> result, e.g. book + -s -> books, city + -ies -> cities.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["base", "affix", "result"],
+      "properties": {
+        "base": {"type": "string", "minLength": 1},
+        "affix": {"type": "string", "minLength": 1},
+        "result": {"type": "string", "minLength": 1}
       }
     },
     "pattern_illustration": {
-      "description": "GRAMMAR_CONTENT_CONTRACT.md §2. word_order needs no extra data: the app draws pattern.parts (and variants) as ordered boxes. timeline reuses the same closed shape enum as the legacy block_timeline.",
+      "description": "GRAMMAR_CONTENT_CONTRACT.md §2. word_order needs no extra data: the app draws the formula slots as ordered boxes. timeline reuses the closed shape enum of the legacy block_timeline; morphology lists base + affix -> result.",
       "type": "object",
       "additionalProperties": false,
       "required": ["kind"],
       "properties": {
-        "kind": {"enum": ["timeline", "word_order", "none"]},
+        "kind": {"enum": ["timeline", "word_order", "morphology", "none"]},
         "timeline": {
           "type": "object",
           "additionalProperties": false,
@@ -491,28 +522,45 @@
             "shape": {"$ref": "#/$defs/timeline_shape"},
             "relevance": {"type": "string", "minLength": 1}
           }
-        }
+        },
+        "morphology": {"type": "array", "minItems": 1, "maxItems": 4, "items": {"$ref": "#/$defs/morphology_item"}}
       },
       "allOf": [
-        {"if": {"properties": {"kind": {"const": "timeline"}}}, "then": {"required": ["timeline"]}},
-        {"if": {"properties": {"kind": {"enum": ["word_order", "none"]}}}, "then": {"not": {"required": ["timeline"]}}}
+        {"if": {"properties": {"kind": {"const": "timeline"}}}, "then": {"required": ["timeline"], "not": {"required": ["morphology"]}}},
+        {"if": {"properties": {"kind": {"const": "morphology"}}}, "then": {"required": ["morphology"], "not": {"required": ["timeline"]}}},
+        {
+          "if": {"properties": {"kind": {"enum": ["word_order", "none"]}}},
+          "then": {"not": {"anyOf": [{"required": ["timeline"]}, {"required": ["morphology"]}]}}
+        }
       ]
     },
     "pattern": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["parts", "illustration"],
+      "required": ["formula", "illustration"],
       "properties": {
-        "parts": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/pattern_part"}},
+        "formula": {"$ref": "#/$defs/formula"},
         "variants": {
           "type": "object",
           "additionalProperties": false,
           "properties": {
-            "negative": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/pattern_part"}},
-            "question": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/pattern_part"}}
+            "negative": {"$ref": "#/$defs/formula"},
+            "question": {"$ref": "#/$defs/formula"}
           }
         },
         "illustration": {"$ref": "#/$defs/pattern_illustration"}
+      }
+    },
+    "header": {
+      "description": "GRAMMAR_CONTENT_CONTRACT.md §1: what the app shows at the top of the point. level must equal the point's own level (validate: header.level_mismatch).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["title", "native_title", "level", "summary"],
+      "properties": {
+        "title": {"description": "In the explanation locale(s).", "$ref": "#/$defs/locale_map"},
+        "native_title": {"description": "The point's name in the target language: 'Present perfect', '把字句'.", "type": "string", "minLength": 1},
+        "level": {"$ref": "#/$defs/level"},
+        "summary": {"description": "One sentence.", "$ref": "#/$defs/locale_map"}
       }
     },
     "when_to_use": {
@@ -535,17 +583,20 @@
     "example_item": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["text", "spans", "annotation", "translation"],
+      "required": ["text", "form", "spans", "annotation", "translation"],
       "properties": {
         "text": {"type": "string", "minLength": 1},
-        "spans": {"type": "array", "items": {"$ref": "#/$defs/example_span"}},
+        "form": {
+          "description": "Which formula the sentence realises: affirmative = pattern.formula, negative/question = pattern.variants.<form>. Its spans must cover every required role of that formula (validate).",
+          "enum": ["affirmative", "negative", "question"]
+        },
+        "spans": {
+          "description": "Every part of the sentence that realises a formula slot, each with that slot's role.",
+          "type": "array", "minItems": 1, "items": {"$ref": "#/$defs/example_span"}
+        },
         "annotation": {"$ref": "#/$defs/locale_map"},
         "translation": {"$ref": "#/$defs/locale_map"},
-        "pinyin": {
-          "description": "Required (validate.py) when target_lang is zh-Hans: one entry per character in text, '' for punctuation/spaces. Absent for other target languages.",
-          "type": "array",
-          "items": {"type": "string"}
-        }
+        "pinyin": {"$ref": "#/$defs/pinyin"}
       }
     },
     "compare_item": {
@@ -569,7 +620,19 @@
         "right": {"type": "string", "minLength": 1},
         "reason": {"$ref": "#/$defs/locale_map"},
         "error_tag": {"$ref": "#/$defs/error_tag"},
-        "l1": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/l1"}}
+        "l1": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/l1"}},
+        "wrong_pinyin": {"$ref": "#/$defs/pinyin"},
+        "right_pinyin": {"$ref": "#/$defs/pinyin"}
+      }
+    },
+    "quick_practice_option": {
+      "description": "error_tag is null for the correct option; every wrong option names the real learner error it represents (an engine label) -- never a nonsense form.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["text", "error_tag"],
+      "properties": {
+        "text": {"type": "string", "minLength": 1},
+        "error_tag": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/error_tag"}]}
       }
     },
     "quick_practice_item": {
@@ -577,8 +640,8 @@
       "additionalProperties": false,
       "required": ["q", "options", "answer", "explain"],
       "properties": {
-        "q": {"type": "string", "minLength": 1},
-        "options": {"type": "array", "minItems": 2, "items": {"type": "string", "minLength": 1}},
+        "q": {"description": "Contains exactly one ___ blank (validate).", "type": "string", "minLength": 1},
+        "options": {"type": "array", "minItems": 2, "maxItems": 4, "items": {"$ref": "#/$defs/quick_practice_option"}},
         "answer": {"description": "0-based index into options.", "type": "integer", "minimum": 0},
         "explain": {"$ref": "#/$defs/locale_map"}
       }

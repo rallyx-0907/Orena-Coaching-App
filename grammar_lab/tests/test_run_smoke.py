@@ -55,6 +55,7 @@ def test_quota_groups_follow_the_providers_actually_used() -> None:
     assert module.quota_groups("deepseek", "groq") == ["gemini-text", "deepseek"]
     assert module.quota_groups("gemini", "groq") == ["gemini-text"]
     assert module.quota_groups("anthropic", "deepseek") == ["gemini-text", "deepseek"]
+    assert module.quota_groups(None, "groq") == ["gemini-text"]  # --skip-generate: no DeepSeek lock
 
 
 def test_wait_for_clear_to_run_proceeds_immediately_when_nothing_is_live(tmp_path: Path) -> None:

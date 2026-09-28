@@ -19,6 +19,9 @@ from grammar_lab.pipeline.evaluator_client import EvaluatorClient
 from grammar_lab.pipeline.export_error_tags import export_error_tags
 from grammar_lab.pipeline.generate import GenerateOutcome, Generator
 from grammar_lab.pipeline.llm_client import LLMClient, LLMError
+from grammar_lab.pipeline.preview import DEFAULT_OUT_DIR as DEFAULT_PREVIEW_DIR
+from grammar_lab.pipeline.preview import serve as serve_preview
+from grammar_lab.pipeline.preview import write_preview
 from grammar_lab.pipeline.report_step import build_report, render_html
 from grammar_lab.pipeline.route import DEFAULT_THRESHOLD_BY_LANG, apply_route, route_point
 from grammar_lab.pipeline.run_context import new_run_id, resolve_run_id, run_dir, write_step
@@ -178,7 +181,8 @@ def verify(
         wanted = {p.strip() for p in ids.split(",") if p.strip()}
         points = {point_id: point for point_id, point in points.items() if point_id in wanted}
     results: dict[str, dict] = {}
-    evaluator = EvaluatorClient(evaluator_url, rate_limit_key=evaluator_rate_limit_key or None)
+    # The app grades in its session's language; selecting it per client keeps zh checks graded as zh.
+    evaluator = EvaluatorClient(evaluator_url, learning_language=lang, rate_limit_key=evaluator_rate_limit_key or None)
     with evaluator, LLMClient(blind_provider, blind_model, deepseek_thinking=deepseek_thinking) as blind_solver:
         for point_id, point in points.items():
             if point_id in dirty_ids:
@@ -193,6 +197,7 @@ def verify(
                 "checked_story_sentences": verify_report.checked_story_sentences,
                 "checked_common_mistakes": verify_report.checked_common_mistakes,
                 "checked_quick_practice": verify_report.checked_quick_practice,
+                "checked_formula": verify_report.checked_formula,
             }
             verdict = "OK" if verify_report.ok else f"{len(verify_report.flags)} flag(s)"
             typer.echo(f"{point_id:40} {verdict}")
@@ -275,6 +280,21 @@ def report(
     (out_dir / "report.html").write_text(render_html(data), encoding="utf-8", newline="\n")
     typer.echo(json.dumps(data, ensure_ascii=False, indent=2))
     typer.echo(f"wrote {out_dir / 'report.json'} and {out_dir / 'report.html'}")
+
+
+@app.command()
+def preview(
+    root: Path = typer.Option(LAB_ROOT, "--root"),
+    out: Path = typer.Option(DEFAULT_PREVIEW_DIR, "--out", help="Where index.html is written (gitignored)."),
+    serve: bool = typer.Option(False, "--serve", help="Serve the preview read-only on 127.0.0.1 after building it."),
+    port: int = typer.Option(8031, "--port"),
+) -> None:
+    """Internal content-review preview of every schema v0.4 point -- not a learner UI."""
+    path = write_preview(root, out)
+    typer.echo(f"wrote {path}")
+    if serve:
+        typer.echo(f"serving http://127.0.0.1:{port}/ (Ctrl+C to stop)")
+        serve_preview(out, port)
 
 
 if __name__ == "__main__":

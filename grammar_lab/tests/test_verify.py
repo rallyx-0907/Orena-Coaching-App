@@ -134,20 +134,41 @@ def v04_point() -> dict:
         "reason": {"vi": "Ngôi thứ ba số ít cần thêm -s."},
         "error_tag": "agreement", "l1": ["vi"],
     }]
-    point["quick_practice"] = [
-        {"q": "He ___ to school.", "options": ["go", "goes"], "answer": 1, "explain": {"vi": "Thêm -s."}},
-    ]
+    point["quick_practice"] = [{
+        "q": "She ___ in a bank.",
+        "options": [{"text": "work", "error_tag": "agreement"}, {"text": "works", "error_tag": None}],
+        "answer": 1, "explain": {"vi": "Thêm -s."},
+    }]
     return point
+
+
+V04_CLEAN_TAGS = {
+    "He go to school.": ["agreement"], "He goes to school.": [],
+    "She works in a bank.": [], "She work in a bank.": ["agreement"],
+}
 
 
 def test_v04_all_checks_pass_produces_no_flags(tmp_path: Path) -> None:
     point = v04_point()
-    tagged = {"He go to school.": ["agreement"], "He goes to school.": [], "She works in a bank.": []}
-    report = verify_point(point, evaluator=make_evaluator(tagged), blind_solver=make_blind_solver(tmp_path, 1))
+    report = verify_point(point, evaluator=make_evaluator(V04_CLEAN_TAGS), blind_solver=make_blind_solver(tmp_path, 1))
     assert report.ok, report.flags
     assert report.checked_examples == 1
     assert report.checked_common_mistakes == 1
     assert report.checked_quick_practice == 1
+
+
+def test_v04_quick_practice_distractor_must_be_caught_as_its_declared_error(tmp_path: Path) -> None:
+    point = v04_point()
+    tagged = {**V04_CLEAN_TAGS, "She work in a bank.": ["spelling"]}  # engine sees a different error
+    report = verify_point(point, evaluator=make_evaluator(tagged), blind_solver=make_blind_solver(tmp_path, 1))
+    assert "quick_practice_distractor_not_caught" in report.codes()
+
+
+def test_v04_quick_practice_answer_must_read_clean(tmp_path: Path) -> None:
+    point = v04_point()
+    tagged = {**V04_CLEAN_TAGS, "She works in a bank.": ["punctuation"]}
+    report = verify_point(point, evaluator=make_evaluator(tagged), blind_solver=make_blind_solver(tmp_path, 1))
+    assert "quick_practice_answer_not_clean" in report.codes()
 
 
 def test_v04_common_mistake_not_caught_is_flagged(tmp_path: Path) -> None:
@@ -169,6 +190,87 @@ def test_v04_quick_practice_wrong_answer_is_flagged(tmp_path: Path) -> None:
     tagged = {"He go to school.": ["agreement"], "He goes to school.": [], "She works in a bank.": []}
     report = verify_point(point, evaluator=make_evaluator(tagged), blind_solver=make_blind_solver(tmp_path, 0))
     assert "blind_solve_wrong" in report.codes()
+
+
+def v04_point_with_formula(title: str, slots: list[dict]) -> dict:
+    point = v04_point()
+    point["header"] = {
+        "title": {"vi": title}, "native_title": title, "level": point["level"], "summary": {"vi": "Tóm tắt."},
+    }
+    point["pattern"] = {"formula": slots, "illustration": {"kind": "none"}}
+    return point
+
+
+def _formula_solver(tmp_path: Path, coverage: dict) -> LLMClient:
+    return LLMClient("openai", "gpt-6-luna", api_key="k", cache_dir=tmp_path, transport=multi_blind_solve_transport(
+        {"blind_solve": {"answer_index": 1}, "formula_coverage": coverage,
+         "distractor_plausibility": {"judgements": []}},
+    ))
+
+
+def test_v04_formula_missing_a_form_the_title_names_is_flagged(tmp_path: Path) -> None:
+    point = v04_point_with_formula("There is / There are", [
+        {"text": "There", "role": "marker", "label": {"vi": "there"}},
+        {"text": "is", "role": "verb", "label": {"vi": "be"}},
+    ])
+    sent: list[dict] = []
+    solver = _formula_solver(tmp_path, {"covers_all_forms": False, "missing_forms": ["are"]})
+    original = solver._client.send
+
+    def spy(request, *args, **kwargs):
+        sent.append(json.loads(request.content))
+        return original(request, *args, **kwargs)
+
+    solver._client.send = spy
+    report = verify_point(point, evaluator=make_evaluator(V04_CLEAN_TAGS), blind_solver=solver)
+    assert "formula_incomplete" in report.codes()
+    assert report.checked_formula
+    formula_call = next(s for s in sent if s["response_format"]["json_schema"]["name"] == "formula_coverage")
+    system = formula_call["messages"][0]["content"]
+    assert "There is / There are" in system and "There + is" in system
+
+
+def test_v04_formula_options_reach_the_checker_and_full_coverage_passes(tmp_path: Path) -> None:
+    point = v04_point_with_formula("There is / There are", [
+        {"text": "There", "role": "marker", "label": {"vi": "there"}},
+        {"text": "be", "role": "verb", "label": {"vi": "be"}, "options": [{"text": "is"}, {"text": "are"}]},
+    ])
+    report = verify_point(point, evaluator=make_evaluator(V04_CLEAN_TAGS),
+                          blind_solver=_formula_solver(tmp_path, {"covers_all_forms": True, "missing_forms": []}))
+    assert "formula_incomplete" not in report.codes()
+    assert report.checked_formula
+
+
+def _solver(tmp_path: Path, responses: dict) -> LLMClient:
+    return LLMClient("openai", "gpt-6-luna", api_key="k", cache_dir=tmp_path,
+                     transport=multi_blind_solve_transport({"blind_solve": {"answer_index": 1}, **responses}))
+
+
+def test_v04_invented_distractor_is_flagged_even_when_tagged_as_a_grammar_error(tmp_path: Path) -> None:
+    point = v04_point_with_formula("Plural nouns", [{"text": "N", "role": "object", "label": {"vi": "danh từ"}}])
+    point["quick_practice"][0]["options"].append({"text": "worksed", "error_tag": "agreement"})
+    responses = {
+        "formula_coverage": {"covers_all_forms": True, "missing_forms": []},
+        "distractor_plausibility": {"judgements": [
+            {"question": 0, "option": 0, "plausible": True, "reason": "real bare-verb mistake"},
+            {"question": 0, "option": 2, "plausible": False, "reason": "invented form"},
+            {"question": 0, "option": 1, "plausible": False, "reason": "the correct option is never judged"},
+        ]},
+    }
+    report = verify_point(point, evaluator=make_evaluator({**V04_CLEAN_TAGS, "She worksed in a bank.": ["agreement"]}),
+                          blind_solver=_solver(tmp_path, responses))
+    implausible = [f for f in report.flags if f.code == "quick_practice_distractor_implausible"]
+    assert len(implausible) == 1
+    assert "worksed" in implausible[0].detail
+
+
+def test_formula_text_shows_options_and_optional_slots() -> None:
+    from grammar_lab.pipeline.verify import _formula_text
+    assert _formula_text([
+        {"text": "There", "role": "marker"},
+        {"text": "be", "role": "verb", "options": [{"text": "is"}, {"text": "are"}]},
+        {"text": "place", "role": "place", "optional": True},
+    ]) == "There + be (is | are) + place [optional]"
 
 
 def test_contrast_pair_sentences_are_checked_too(tmp_path: Path) -> None:

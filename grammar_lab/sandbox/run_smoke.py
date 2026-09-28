@@ -84,9 +84,10 @@ def _docker_ps_names() -> list[str]:
 _PROVIDER_QUOTA_GROUP = {"gemini": "gemini-text", "deepseek": "deepseek"}
 
 
-def quota_groups(generate_provider: str, blind_provider: str) -> list[str]:
+def quota_groups(generate_provider: str | None, blind_provider: str) -> list[str]:
     """The lock groups a run draws on: the engine's Gemini text quota always, plus whichever
-    of generate/blind-solve maps to a locked group (Groq and others have no lock)."""
+    of generate/blind-solve maps to a locked group (Groq and others have no lock). None for
+    generate means the run does not generate at all (--skip-generate)."""
     used = {"gemini-text"}
     used.update(_PROVIDER_QUOTA_GROUP[p] for p in (generate_provider, blind_provider) if p in _PROVIDER_QUOTA_GROUP)
     return [group for group in live_provider_lock.GROUP_ORDER if group in used]
@@ -149,6 +150,10 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--blind-api-key-name", default=None, help="Default: <PROVIDER>_API_KEY.")
     parser.add_argument("--gemini-api-key-name", default="GEMINI_API_KEY", help="For the sandbox's own engine.")
     parser.add_argument("--with-story", action="store_true")
+    parser.add_argument(
+        "--skip-generate", action="store_true",
+        help="Verify the content already on disk: no generate call, and no DeepSeek lock unless blind-solve uses it.",
+    )
     parser.add_argument("--deepseek-thinking", default="off")
     parser.add_argument("--story-mode", default="everyday")
     parser.add_argument("--lane", default="grammar-lab")
@@ -162,7 +167,7 @@ def main(argv: list[str]) -> int:
     generate_key_name = args.generate_api_key_name or f"{args.generate_provider.upper()}_API_KEY"
     blind_key_name = args.blind_api_key_name or f"{args.blind_provider.upper()}_API_KEY"
 
-    groups = quota_groups(args.generate_provider, args.blind_provider)
+    groups = quota_groups(None if args.skip_generate else args.generate_provider, args.blind_provider)
     print(f"=== acquiring quota-group locks: {','.join(groups)} ===")
     taken = wait_for_clear_to_run(
         args.lane, args.cost_ceiling_usd, groups,
@@ -200,7 +205,8 @@ def main(argv: list[str]) -> int:
         ]
         if args.with_story:
             generate_command += ["--with-story", "--story-mode", args.story_mode]
-        _run(generate_command, cwd=LAB_ROOT)
+        if not args.skip_generate:
+            _run(generate_command, cwd=LAB_ROOT)
 
         _run([venv_py, "-m", "grammar_lab.pipeline.cli", "validate", "--lang", args.lang], cwd=LAB_ROOT)
 
