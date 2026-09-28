@@ -21,11 +21,23 @@ sys.modules.setdefault("agent_live_run", run)
 _SPEC.loader.exec_module(run)
 
 
-def refused() -> dict:
+def refused(rounds=None) -> dict:
+    """A turn that ended in provider_unavailable; `rounds` are what the sandbox's telemetry recorded for it
+    (default: one refused round)."""
+
     return {"status": 200, "t_first_event": 0.01, "t_first_segment": None, "t_done": 0.4, "events": [
         {"name": "session", "data": {"session_id": "s1"}},
         {"name": "error", "data": {"class": "provider_unavailable", "message": "Orena đang bận", "fallback": "retry"}},
-    ]}  # fmt: skip
+    ], "rounds": rounds if rounds is not None else [failed_round()]}  # fmt: skip
+
+
+def ok_round(tokens_in=8000, tokens_out=60) -> dict:
+    return {"capability": "agent_turn_fast", "outcome": "success",
+            "usage": {"prompt_tokens": tokens_in, "completion_tokens": tokens_out}}  # fmt: skip
+
+
+def failed_round() -> dict:
+    return {"capability": "agent_turn_fast", "outcome": "failure", "usage": {"prompt_tokens": None, "completion_tokens": None}}
 
 
 def answered(text="Được.", memory=(), segment=1.5) -> dict:
@@ -34,20 +46,30 @@ def answered(text="Được.", memory=(), segment=1.5) -> dict:
     events += [{"name": "memory_update", "data": m} for m in memory]
     events += [{"name": "segment_end", "data": {"index": 0, "lang": "vi", "text": text, "voice_style": "neutral_explain"}},
                {"name": "done", "data": {"usage": {"input_tokens": 8000, "output_tokens": 60}, "trace_id": "t"}}]  # fmt: skip
-    return {"status": 200, "t_first_event": 0.01, "t_first_segment": segment, "t_done": segment + 0.5, "events": events}
+    return {"status": 200, "t_first_event": 0.01, "t_first_segment": segment, "t_done": segment + 0.5, "events": events,
+            "rounds": [ok_round()]}  # fmt: skip
 
 
 class FakeClient:
-    def __init__(self, results):
+    """The sandbox as the runner sees it: turns, and the telemetry of the rounds each turn made."""
+
+    def __init__(self, results, telemetry=True):
         self.results = list(results)
         self.sent: list[dict] = []
+        self.ops: list[dict] = []
+        self.telemetry = telemetry
 
     def call(self, method, path, body=None, timeout=90):
+        if path.startswith("/api/admin/ai/operations"):
+            return (200, {"recent": list(self.ops)}) if self.telemetry else (403, {"detail": "no"})
         return 200, {}
 
     def turn(self, body):
         self.sent.append(json.loads(json.dumps(body)))
-        return self.results.pop(0)
+        result = self.results.pop(0)
+        for event in result.get("rounds", []):
+            self.ops.append({**event, "created_at": f"t{len(self.ops)}", "latency_ms": len(self.ops)})
+        return result
 
 
 @pytest.fixture()
@@ -72,7 +94,7 @@ def test_a_refused_first_round_is_retried_with_growing_waits_then_answers(slept,
     rows, spent = run.run_flows(client, 5, ["t"], cap=0.15, gap=0, spent=0.0)
     assert [w for w in slept if w] == [5, 15]  # two retries, the gap between turns is 0 here
     assert len(client.sent) == 3 and rows[0]["attempts"] == 3 and not rows[0]["error"]
-    assert spent == pytest.approx(2 * run.ROUND_WORST_USD + run.price(8000, 60))
+    assert spent == pytest.approx(2 * run.ROUND_WORST_USD + run.price(8000, 60))  # refused rounds at their worst
 
 
 def test_still_refused_after_three_retries_the_run_stops(slept, monkeypatch):
@@ -85,6 +107,22 @@ def test_still_refused_after_three_retries_the_run_stops(slept, monkeypatch):
     assert spent == pytest.approx(4 * run.ROUND_WORST_USD)
 
 
+def test_a_turn_that_failed_after_a_billed_round_is_counted_from_the_telemetry(slept, monkeypatch):
+    # The review's case: a turn about a note holds its answer; round 1 answered (billed), round 2 (after the nudge)
+    # was refused. The client saw only session + error; the telemetry shows both rounds.
+    flow("t", ONE, monkeypatch)
+    client = FakeClient([refused(rounds=[ok_round(12000, 90), failed_round()]), answered()])
+    rows, spent = run.run_flows(client, 5, ["t"], cap=1.0, gap=0, spent=0.0)
+    assert spent == pytest.approx(run.price(12000, 90) + run.ROUND_WORST_USD + run.price(8000, 60))
+
+
+def test_without_the_telemetry_a_failed_turn_counts_its_whole_worst_case(slept, monkeypatch):
+    flow("t", ONE, monkeypatch)
+    client = FakeClient([refused(), answered()], telemetry=False)
+    rows, spent = run.run_flows(client, 5, ["t"], cap=1.0, gap=0, spent=0.0)
+    assert spent == pytest.approx(run.WORST_TURN_USD + run.price(8000, 60))
+
+
 def test_every_send_a_retry_too_fits_the_cap_at_its_worst(slept, monkeypatch):
     flow("t", ONE, monkeypatch)
     cap = run.WORST_TURN_USD + run.ROUND_WORST_USD / 2  # room for the first send, not for a retry after a refusal
@@ -95,9 +133,14 @@ def test_every_send_a_retry_too_fits_the_cap_at_its_worst(slept, monkeypatch):
     assert spent + run.WORST_TURN_USD > cap
 
 
-def test_the_model_is_one_for_both_agent_keys_and_rates_follow_it(slept):
+def test_the_model_is_one_for_both_agent_keys_and_rates_follow_it(slept, tmp_path):
     assert run.MODEL == "gemini-3.8-flash" and (run.PRICE_IN, run.PRICE_OUT) == (0.75, 3.75)
     assert run.WORST_TURN_USD == pytest.approx(run.WORST_ROUNDS * run.ROUND_WORST_USD)
+    out = tmp_path / "result.json"
+    run.finish([], 0.0, str(out))
+    result = json.loads(out.read_text(encoding="utf-8"))
+    assert result["model"] == "gemini-3.8-flash"
+    assert result["capability_models"] == {"agent_turn_fast": "gemini-3.8-flash", "agent_turn_deep": "gemini-3.8-flash"}
 
 
 def note(note_id, text="Thích ví dụ thật ngắn"):
@@ -148,6 +191,18 @@ def test_the_note_nudges_are_read_per_turn_from_the_server_lines():
         {"asked_again": True, "changed": True},
         {"asked_again": False, "changed": True},
         {"asked_again": True, "changed": False},
+    ]
+
+
+def test_a_note_turn_that_failed_after_asking_again_does_not_leak_into_the_next():
+    lines = [
+        "web-1 | agent notes: the model changed no note of 1; asked again",
+        "web-1 | agent notes: failed before a verdict",  # the attempt failed; the runner sends it again
+        "web-1 | agent notes: changed",  # the retry changed it on its own
+    ]
+    assert run.notes_log(lines) == [
+        {"asked_again": True, "changed": None, "failed": True},
+        {"asked_again": False, "changed": True},
     ]
 
 

@@ -111,10 +111,34 @@ def test_the_models_own_offer_is_recognised(sentence, support):
         ("Từ này dùng khi bạn muốn lưu lại điều gì đó.", "vi"),
         ("The word 'tap' also means a faucet.", "en"),
         ("“点击”的意思是用鼠标按。", "zh-CN"),
+        # review 2026-09-28: a tapping verb alone is not an offer
+        ("Nhấn mạnh vào thanh điệu nhé.", "vi"),
+        ("Nhấn giọng ở âm tiết thứ hai.", "vi"),
+        ("Chạm vào trái tim người nghe là điều khó.", "vi"),
+        ("Bạn đã bấm Lưu từ chưa?", "vi"),  # a question
+        ("Tap water is safe here.", "en"),
+        ("Press releases are formal.", "en"),
+        ("点击率很高。", "zh-CN"),
     ],
 )
 def test_a_word_being_explained_is_not_an_offer(sentence, support):
     assert not offers_a_button(sentence, support)
+
+
+def test_an_answer_that_only_emphasises_is_kept_whole():
+    gate = ClaimGate(interface="vi", support="vi")
+    out = gate.feed("Nhấn mạnh vào thanh điệu nhé. ")
+    out += gate.finish(None, pending=False)
+    assert "".join(out) == "Nhấn mạnh vào thanh điệu nhé. "  # never "Mình chưa thay đổi gì cả."
+
+
+@pytest.mark.parametrize(
+    ("sentence", "support"),
+    [("Em bấm Lưu từ nhé.", "vi"), ("Bấm vào đây để mở.", "vi"), ("Bấm *Ôn từ ngay* để ôn.", "vi"),
+     ("Press the button below.", "en"), ("Click here to start.", "en"), ("请点击这里开始。", "zh-CN")],
+)  # fmt: skip
+def test_an_offer_names_a_button(sentence, support):
+    assert offers_a_button(sentence, support)
 
 
 def test_with_no_button_there_is_no_offer():
@@ -292,3 +316,25 @@ def test_an_opening_with_an_unread_snapshot_says_so(monkeypatch):
     monkeypatch.setattr(coaching, "_due_count", lambda: None)
     events, _ = run([reply("Chào bạn! Hôm nay mình cùng học nhé.")], request(None, trigger="open"))
     assert segments(events)[0][1] == "Chào bạn! Mình chưa đọc được tiến độ lúc này."
+
+
+def test_a_note_turn_that_fails_after_asking_again_says_so_in_the_log(caplog):
+    import logging
+
+    from writing_coach.agent.errors import ProviderUnavailable
+
+    class Failing(FakeAgentTurnProvider):
+        def stream(self, request, **kw):
+            if len(self.requests) >= 1:  # the second round (after the nudge) is refused
+                self.requests.append(request)
+                raise ProviderUnavailable("503")
+            return super().stream(request, **kw)
+
+    tools = build_tool_registry(writing_review=lambda essay_id: None)
+    rt = AgentRuntime(provider=Failing([reply("Bạn chưa lưu ghi chú nào.")]), tools=tools,
+                      capabilities=load_capability_registry(registered_tools=tools.names()), sessions=SessionCache())  # fmt: skip
+    caplog.set_level(logging.WARNING)
+    events = list(rt.run(request("Quên ghi chú về ví dụ đó đi.", notes=(SHORT,)), ZH))
+    assert events[-1].name == "error"
+    lines = [r.getMessage() for r in caplog.records if r.getMessage().startswith("agent notes:")]
+    assert lines == ["agent notes: the model changed no note of 1; asked again", "agent notes: failed before a verdict"]

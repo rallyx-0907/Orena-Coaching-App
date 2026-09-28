@@ -167,6 +167,11 @@ R24 (2026-09-28) Contract v5 (D-096) được phục vụ: xưng hô đi qua con
     tính, lỗi, câu mời, câu chào) có chỗ {self}/{user}. Client v4: không address, không note address. Tên màn
     đọc từ static/orena/copy/surfaces.json (purpose khi UI viết). Câu "Mình lưu … cho bạn" và các dạng theo cặp
     xưng hô ("Chị lưu … cho em") là khẳng định đã làm. memory_update đứng trước segment_end (S14).
+R25 (2026-09-28) Dev: agent_turn_fast và agent_turn_deep ghim cùng một model cho cả lần chạy (gemini-3.8-flash;
+    gemini-3.7-flash nếu 3.8 vẫn quá tải, ghi rõ). Theo R8 agent vẫn đi qua một lựa chọn duy nhất, nên ghim trong
+    sandbox là ghim cho cả hai key; key riêng vẫn là bước kích hoạt có review. Model riêng cho lượt thường chọn khi
+    chuẩn bị ra mắt. Live: 503/quá tải thì thử lại cùng model tối đa 3 lần (5 s, 15 s, 45 s) rồi dừng; trần tính
+    trước mỗi lần gửi, kể cả lần thử lại; ghi thời gian tới segment đầu để so với flash-lite.
 ```
 
 Tiến độ lane (cập nhật mỗi slice):
@@ -545,6 +550,9 @@ EN/ZH cho Admin (R1), mỗi key `implemented=False`, `configurable=False`, fallb
 ```text
 agent_turn_fast       provider/model do operator chọn trong Admin › AI (sandbox: gemini)
 agent_turn_deep       V1 cấu hình giống agent_turn_fast; không tự rơi về key khác
+                      Dev (R25): cả hai key ghim cùng một model cho cả lần chạy - gemini-3.8-flash, hoặc
+                      gemini-3.7-flash khi 3.8 quá tải (ghi rõ trong kết quả). Model riêng cho lượt thường chọn khi
+                      chuẩn bị ra mắt.
 conversational_speech chưa duyệt (R6)
 text_to_speech        chưa duyệt (R6)
 ```

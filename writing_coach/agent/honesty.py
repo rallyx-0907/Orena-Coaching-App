@@ -25,7 +25,6 @@ action allowlist (save, add, remove, open, start).
 from __future__ import annotations
 
 import re
-from functools import lru_cache
 from collections.abc import Mapping
 from types import MappingProxyType
 from typing import Any
@@ -90,9 +89,9 @@ _SELF, _STATE = _patterns(f"{_VI_ACT}|{_VI_MEMORY}", f"{_ZH_ACT}|{_ZH_MEMORY}")
 _SELF_ACT, _STATE_ACT = _patterns(_VI_ACT, _ZH_ACT)  # when the turn kept a note, remembering is not a claim
 
 
-@lru_cache(maxsize=64)
 def _addressed(self_term: str | None, user_term: str | None, remembered: bool) -> tuple[re.Pattern[str], re.Pattern[str]]:
-    """The claim patterns with the learner's address added to the defaults."""
+    """The claim patterns with the learner's address added to the defaults. Built per call, never cached: the terms
+    may carry the learner's name and belong to this turn only (contract v5 §5.6, §10)."""
 
     extra_self = (self_term,) if self_term else ()
     extra_user = (user_term,) if user_term else ()
@@ -162,19 +161,53 @@ def claims_done(sentence: str, *, remembered: bool = False, action: str | None =
 # The model never offers a button in its own words; the server does, once (human direction 2026-09-28: the
 # live run showed "Bấm Ôn tập từ vựng…" with no button, and "nút bên dưới", "below", "下方的按钮"). Read in the
 # support language only, so a target-language word ("click", "点击") being explained is never taken for one.
-_OFFER_SENTENCE = MappingProxyType(
+# A tapping verb alone is not an offer ("Nhấn mạnh vào thanh điệu", "tap water", "点击率"): it must be followed
+# by what names a button - a label (a capital, a quote, markup), "nút"/"button"/"按钮", or "here"/"đây"/"下方".
+_OFFER_VERB = MappingProxyType(
     {
-        "vi": re.compile(r"(?i)(?:^\W*|\b(?:hãy|có thể|cứ|chỉ cần|vui lòng)\s+)(?:bấm|nhấn|chạm|nhấp)\b"),
-        "en": re.compile(r"(?i)(?:^\W*|\b(?:can|just|please|simply)\s+)(?:tap|click|press)\b"),
-        # not a quoted word ("“点击”的意思…"): a closing quote right after it
-        "zh-CN": re.compile(r"(?:^\W*|你可以|可以|请|直接|只要)(?:点击|点一下|轻点|点按|按一下)(?![”\"」』])"),
+        "vi": re.compile(
+            r"(?i)(?:^\W*(?:(?:bạn|em|anh|chị|cậu|cháu|con)\s+)?|\b(?:hãy|có thể|cứ|chỉ cần|vui lòng)\s+)"
+            r"(?:bấm|nhấn|chạm|nhấp)(?=\s)"
+        ),
+        "en": re.compile(r"(?i)(?:^\W*(?:(?:you|just|simply|please)\s+)?|\b(?:can|just|please|simply)\s+)(?:tap|click|press)\b"),
+        "zh-CN": re.compile(r"(?:^\W*|你可以|您可以|可以|请|直接|只要)(?:点击|点一下|轻点|点按|按一下)"),
     }
 )
+_OPENING_MARKS = "\"“«'*[`(「『"
+_BUTTON_WORDS = MappingProxyType(
+    {
+        "vi": (("vào", "lên"), ("nút", "đây", "để")),  # "Bấm vào để xem thêm": tap it, in order to…
+        "en": (("on",), ("the button", "button", "here", "below", "to")),
+    }
+)
+_ZH_BUTTON = re.compile(r"^\s*(?:[“「『\"]|.{0,6}?(?:按钮|按键|这里|下方|上方|下面|上面))")
 
 
 def offers_a_button(sentence: str, support: str) -> bool:
-    pattern = _OFFER_SENTENCE.get(support, _OFFER_SENTENCE["en"])
-    return bool(pattern.search(sentence))
+    """Whether a sentence offers a button in the model's own words (then it is the server's to write)."""
+
+    if _question(sentence):
+        return False  # "Bạn đã bấm Lưu từ chưa?" asks; it offers nothing
+    pattern = _OFFER_VERB.get(support, _OFFER_VERB["en"])
+    for found in pattern.finditer(sentence):
+        rest = sentence[found.end():]
+        if support == "zh-CN":
+            if _ZH_BUTTON.match(rest):
+                return True
+            continue
+        skip, words = _BUTTON_WORDS.get(support, _BUTTON_WORDS["en"])
+        rest = rest.lstrip()
+        for word in skip:
+            if rest.casefold().startswith(word + " "):
+                rest = rest[len(word) + 1:].lstrip()
+        if not rest:
+            continue
+        if rest[0] in _OPENING_MARKS or rest[0].isupper():
+            return True
+        if any(rest.casefold().startswith(word) and (len(rest) == len(word) or not rest[len(word)].isalpha())
+               for word in words):  # fmt: skip
+            return True
+    return False
 
 
 def _sentences(text: str) -> list[str]:

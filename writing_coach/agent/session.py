@@ -54,7 +54,9 @@ class AgentSessionState:
 
     def with_context(self, context: AppContextSnapshot) -> AgentSessionState:
         selected = context.selected_item or self.last_selected_entity
-        return replace(self, current_app_context=context, last_selected_entity=selected)
+        # The address may carry the learner's name: used for its turn, never kept (contract v5 §5.6, §10).
+        kept = context.model_copy(update={"address": None}) if context.address is not None else context
+        return replace(self, current_app_context=kept, last_selected_entity=selected)
 
     def with_tool_result(self, record: ToolResultRecord, *, limit: int) -> AgentSessionState:
         kept = (*self.recent_tool_results, record)[-limit:]

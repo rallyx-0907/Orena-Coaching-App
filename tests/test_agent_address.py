@@ -455,3 +455,26 @@ def test_the_terms_are_data_in_the_instructions_and_never_logged(caplog):
     list(rt.run(request("Chào.", notes=(note("vi", "chị", "Hương"),)), ZH))
     assert context_of(provider)["address"]["user_term"] == "Hương"  # JSON data in the context
     assert "Hương" not in caplog.text
+
+
+# --- review 2026-09-28: privacy and robustness -----------------------------------------------------------
+
+
+def test_the_session_keeps_no_address_terms():
+    rt, _ = runtime([reply("Dạ.")])
+    list(rt.run(request("Chào.", notes=(note("vi", "chị", "Hương"),)), ZH))
+    kept = list(rt.sessions._sessions.values())
+    assert len(kept) == 1 and kept[0].current_app_context is not None
+    assert kept[0].current_app_context.address is None  # used for the turn, never stored (§5.6, §10)
+
+
+def test_a_malformed_address_note_in_coach_notes_is_dropped_not_refused():
+    body = request("Chào.").model_dump(mode="json", exclude_none=True)
+    body["coach_notes"] = [{"id": "address-vi", "kind": "address", "text": "Xưng hô: cũ", "weight": 1.0,
+                            "last_reinforced": "2026-09-28T08:00:00+00:00"}]  # fmt: skip
+    assert TurnRequest.model_validate(body).coach_notes == []
+
+
+def test_english_never_puts_the_name_in_place_of_you():
+    assert 'English: you are always "I" and the learner always "you"' in INSTRUCTION
+    assert 'never a word in place of "you" or "your"' in INSTRUCTION

@@ -174,8 +174,10 @@ class CoachNote(_Incoming):
 
     @model_validator(mode="after")
     def _address(self) -> CoachNote:
-        if (self.kind == ADDRESS_NOTE_KIND) != (self.address is not None):
-            raise ValueError("an address note carries `address`, and only an address note does")
+        # Only an address note carries `address`. An address note that lacks it is accepted here and dropped by
+        # TurnRequest (it never belongs in coach_notes): a device's stale note must not refuse the whole turn.
+        if self.address is not None and self.kind != ADDRESS_NOTE_KIND:
+            raise ValueError("only an address note carries `address`")
         return self
 
 

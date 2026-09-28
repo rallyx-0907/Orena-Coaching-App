@@ -156,11 +156,57 @@ def use_model(name: str) -> None:
     WORST_TURN_USD = WORST_ROUNDS * ROUND_WORST_USD
 
 
-def first_round_refused(summary: dict) -> bool:
-    """The turn ended in provider_unavailable before anything came back: at most its first round was sent."""
+def provider_refused(summary: dict) -> bool:
+    """The turn ended in provider_unavailable (a 503 "high demand", a spent quota): sent again, same model."""
 
-    error = summary.get("error") or {}
-    return error.get("class") == "provider_unavailable" and not summary.get("tools") and not summary.get("deltas")
+    return (summary.get("error") or {}).get("class") == "provider_unavailable"
+
+
+class RoundLedger:
+    """What each agent round cost, from the sandbox's own telemetry (GET /api/admin/ai/operations): one event per
+    provider round, with its outcome and usage. A turn that failed shows the client nothing of its earlier rounds
+    (a turn about a note holds its whole answer), so its cost is read here, never guessed: a round with usage at
+    the model's rate, a round without it (a failure, or usage unreported) at one round's worst case. When the
+    telemetry cannot be read, the whole turn's worst case is counted."""
+
+    def __init__(self, client: Client) -> None:
+        self.client = client
+        self.seen: set[tuple] = set()
+
+    def _rounds(self) -> list[dict] | None:
+        status, body = self.client.call("GET", "/api/admin/ai/operations?limit=200")
+        if status != 200 or not isinstance(body, dict) or not isinstance(body.get("recent"), list):
+            return None
+        return [e for e in body["recent"] if isinstance(e, dict) and e.get("capability") == "agent_turn_fast"]
+
+    @staticmethod
+    def _key(event: dict) -> tuple:
+        return event.get("created_at"), event.get("latency_ms"), event.get("outcome")
+
+    def mark(self) -> None:
+        """Everything recorded so far is accounted for."""
+
+        rounds = self._rounds()
+        if rounds is not None:
+            self.seen |= {self._key(e) for e in rounds}
+
+    def new_cost(self) -> float | None:
+        """The cost of the rounds recorded since the last look, or None when the telemetry cannot be read."""
+
+        rounds = self._rounds()
+        if rounds is None:
+            return None
+        fresh = [e for e in rounds if self._key(e) not in self.seen]
+        self.seen |= {self._key(e) for e in fresh}
+        cost = 0.0
+        for event in fresh:
+            usage = event.get("usage") or {}
+            tokens_in, tokens_out = usage.get("prompt_tokens"), usage.get("completion_tokens")
+            if event.get("outcome") == "success" and isinstance(tokens_in, int) and isinstance(tokens_out, int):
+                cost += price(tokens_in, tokens_out)
+            else:
+                cost += ROUND_WORST_USD
+        return cost
 
 
 PROBES: dict[str, int] = {}  # model -> HTTP status of its one-token probe
@@ -395,6 +441,8 @@ ESSAY_FLOWS = frozenset({"history"})  # the flows that read the essay review; th
 
 def run_flows(client: Client, version: int, names: list[str], cap: float, gap: float, spent: float) -> tuple[list[dict], float]:
     rows: list[dict] = []
+    ledger = RoundLedger(client)
+    ledger.mark()  # the setup's calls are counted by their own bound
     for name in names:
         session_id, notes = None, {}
         for target, step, locale, message, extra in FLOWS[name]:
@@ -441,9 +489,9 @@ def run_flows(client: Client, version: int, names: list[str], cap: float, gap: f
                     time.sleep(int(result.get("retry_after") or 1))
                     result = client.turn(body)
                 summary = summarize(result) if result["status"] == 200 else {"body": result.get("body")}
-                if not first_round_refused(summary):
+                spent += turn_cost(summary, ledger)
+                if not provider_refused(summary):
                     break
-                spent += ROUND_WORST_USD  # at most the one round that was refused (a 503/429 is not billed)
                 if refused == len(RETRY_DELAYS):
                     print(f"stopping: the provider refused {name}/{step} {refused + 1} times with {MODEL} "
                           f"(see provider_errors)")  # fmt: skip
@@ -462,19 +510,24 @@ def run_flows(client: Client, version: int, names: list[str], cap: float, gap: f
                 if event["name"] == "memory_update" and event["data"]["op"] == "remove":
                     notes.pop(event["data"]["note"]["id"], None)  # the device drops it, as it would
             memory = [e["data"] for e in result.get("events", []) if e["name"] == "memory_update"]
-            if result["status"] == 200 and not first_round_refused(summary):
-                spent += price(summary["tokens_in"], summary["tokens_out"]) if summary["usage_reported"] else WORST_TURN_USD
             rows.append(_row(name, step, target, locale, message, result, summary, memory, refused + 1))
-            unavailable = [r for r in rows[-2:] if (r.get("error") or {}).get("class") == "provider_unavailable"]
-            if len(unavailable) == 2:  # the provider is refusing (a spent quota answers 429): stop, spend no more
-                print("stopping: two provider_unavailable in a row (see provider_errors)")
-                return rows, spent
             print(f"{name:8} {step:12} {target:6} {result['status']} tools={summary.get('tools')} "
                   f"memory={[(m['op'], m['note'].get('text') or m['note'].get('id')) for m in memory]} "
                   f"flags={summary.get('flags')} segment={result.get('t_first_segment')}s "
                   f"spent=${spent:.4f}")  # fmt: skip
             time.sleep(gap)
     return rows, spent
+
+
+def turn_cost(summary: dict, ledger: RoundLedger) -> float:
+    """A turn's cost: its reported usage when it finished; otherwise its rounds as the telemetry recorded them;
+    otherwise its worst case."""
+
+    if summary.get("usage_reported") and not summary.get("error"):
+        ledger.mark()
+        return price(summary["tokens_in"], summary["tokens_out"])
+    measured = ledger.new_cost()
+    return WORST_TURN_USD if measured is None else measured
 
 
 def _row(name, step, target, locale, message, result, summary, memory, attempts) -> dict:  # noqa: ANN001
@@ -519,6 +572,9 @@ def notes_log(lines: list[str]) -> list[dict]:
             asked = True
         elif "agent notes: changed" in line or "unchanged after asking again" in line:
             turns.append({"asked_again": asked, "changed": "unchanged" not in line})
+            asked = False
+        elif "failed before a verdict" in line:  # the attempt failed (it is sent again): its own entry, no carry-over
+            turns.append({"asked_again": asked, "changed": None, "failed": True})
             asked = False
     return turns
 
@@ -723,13 +779,17 @@ def drive(args: argparse.Namespace, base_url: str) -> int:
     spent, rows, provider_failures, provider_answered = 0.0, [], 0, False
     if args.flows:
         names = [n for n in args.flows.split(",") if n]
-        for target in ("zh-CN", "en"):  # the words, and the essay only the flows that read one need
+        essay_targets = {step[0] for name in names if name in ESSAY_FLOWS for step in FLOWS[name]}
+        for target in ("zh-CN", "en"):  # the words, and the essay only for the targets the flows that read one use
             t = TARGETS[target]
             client.call("POST", "/api/platform/language", {"language": t["language"]})
             for word in t["words"]:
                 client.call("POST", "/api/library/vocabulary", {"word": word})
-            if not set(names) & ESSAY_FLOWS:
+            if target not in essay_targets:
                 continue
+            if spent + WORST_SETUP_USD > args.cap_usd:
+                print("cap reached before the essay review; stopping")
+                return finish(rows, spent, args.out)
             status, essay = client.call("POST", "/api/evaluate", {"text": t["essay"], "learning_language": t["language"]})
             spent += WORST_SETUP_USD
             if status != 200:

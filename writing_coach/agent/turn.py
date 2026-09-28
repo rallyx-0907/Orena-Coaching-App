@@ -234,11 +234,13 @@ class _Turn:
             if self.should_stop():
                 return
         except AgentError as exc:
+            self._notes_unresolved()
             if not self.should_stop():
                 yield self._error(exc.error_class)
             return
         except Exception:  # an unexpected failure still ends the stream properly
             _log.exception("agent turn failed", extra={"trace_id": self.trace_id})
+            self._notes_unresolved()
             if not self.should_stop():
                 yield self._error("internal_error")
             return
@@ -402,6 +404,13 @@ class _Turn:
                     self._ask_again(messages, "", note_nudge(self.notes_asked))
                     continue
                 return  # the answer is written and its extras are attached
+
+    def _notes_unresolved(self) -> None:
+        """A turn about a note that failed before its answer: said, so the operator's per-turn reading of the
+        "agent notes" lines never carries an "asked again" over to the next turn (counts only)."""
+
+        if self.notes_asked:
+            _log.warning("agent notes: failed before a verdict", extra={"trace_id": self.trace_id})
 
     def _note_unchanged(self, outputs: ReplyOutputs) -> bool:
         return bool(self.notes_asked) and not outputs.note_changed
