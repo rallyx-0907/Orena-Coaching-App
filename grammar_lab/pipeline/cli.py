@@ -172,6 +172,7 @@ def verify(
                 "checked_pitfalls": verify_report.checked_pitfalls,
                 "checked_examples": verify_report.checked_examples,
                 "checked_checks": verify_report.checked_checks,
+                "checked_story_sentences": verify_report.checked_story_sentences,
             }
             verdict = "OK" if verify_report.ok else f"{len(verify_report.flags)} flag(s)"
             typer.echo(f"{point_id:40} {verdict}")
