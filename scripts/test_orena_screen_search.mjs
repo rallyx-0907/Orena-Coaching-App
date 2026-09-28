@@ -61,7 +61,7 @@ assert.equal(matchesText('Anything', ''), true, 'an empty needle matches everyth
   assert.equal(articleItems(payload, 'daily').length, 1, 'a topic match counts too');
   assert.equal(articleItems(payload, 'nothing-like-this').length, 0);
 
-  const media = listeningItems({ items: [{ id: 'm1', title: 'Café Talk', topic: 'Daily life' }] }, 'café');
+  const media = listeningItems({ items: [{ lesson_id: 'm1', media_object_id: 'obj-m1', title: 'Café Talk', topic: 'Daily life' }] }, 'café');
   assert.deepEqual(media[0].open, { route: 'content', id: 'media:m1' });
 
   // languages-5 fix (review issue 1, finding B.3 "also Search"): `topic` is kept separate from the
@@ -79,8 +79,26 @@ assert.equal(matchesText('Anything', ''), true, 'an empty needle matches everyth
   // own queried language is the fallback for a payload that carries none.
   assert.equal(articleItems({ items: [{ id: 1, title: 'x', language: 'zh' }] }, '', 'en')[0].lang, 'zh', 'the article\'s own field wins over the query language');
   assert.equal(articleItems({ items: [{ id: 1, title: 'x' }] }, '', 'en')[0].lang, 'en', 'falls back to the language this search itself queried with');
-  assert.equal(listeningItems({ items: [{ id: 'm2', title: 'x', language: 'zh' }] }, '', 'en')[0].lang, 'zh');
-  assert.equal(listeningItems({ items: [{ id: 'm2', title: 'x' }] }, '', 'en')[0].lang, 'en');
+  assert.equal(listeningItems({ items: [{ lesson_id: 'm2', title: 'x', language: 'zh' }] }, '', 'en')[0].lang, 'zh');
+  assert.equal(listeningItems({ items: [{ lesson_id: 'm2', title: 'x' }] }, '', 'en')[0].lang, 'en');
+}
+
+// 4b. The real GET /api/listening/library payload (captured from the running app,
+// scripts/fixtures/api/listening_library.en.json): its items carry `lesson_id` and
+// `media_object_id` and no `id`. Reading an `id` dropped every listening item from Search.
+{
+  const fs = await import('node:fs');
+  const real = JSON.parse(fs.readFileSync(new URL('./fixtures/api/listening_library.en.json', import.meta.url), 'utf8'));
+  assert.ok(real.items.length >= 2 && real.items.every((item) => !('id' in item) && item.lesson_id && item.media_object_id), 'the fixture keeps the real shape: lesson_id and media_object_id, no id');
+  const all = listeningItems(real, '', 'en');
+  assert.equal(all.length, real.items.length, 'every real listening item reaches Search');
+  assert.deepEqual(all.map((item) => item.open.id), real.items.map((item) => `media:${item.lesson_id}`), 'opened by lesson_id, the key the lesson route reads');
+  const cosmic = real.items.find((item) => /cosmic/i.test(item.title));
+  assert.deepEqual(listeningItems(real, 'cosmic', 'en').map((item) => item.title), [cosmic.title], 'a title search finds the real item');
+  assert.equal(listeningItems(real, cosmic.topic, 'en').length >= 1, true, 'a topic search finds it too');
+  const importedOnly = { items: [{ ...real.items[0], lesson_id: undefined }] };
+  assert.equal(listeningItems(importedOnly, '', 'en')[0].open.id, `media:${real.items[0].media_object_id}`, 'without a lesson id, the media object names it');
+  assert.equal(listeningItems({ items: [{ title: 'no id at all' }] }, '', 'en').length, 0, 'an item with neither id is not offered');
 }
 
 // 5. Device-memory imports: a text import's route id is its own stored id unchanged (one
@@ -157,7 +175,7 @@ assert.equal(totalItems([{ items: [1, 2] }, { items: [] }, { items: [3] }]), 3);
   if (fs.existsSync(contentModelPath)) {
     const { parseContentId } = await import(contentModelPath.href);
     assert.deepEqual(parseContentId(articleItems({ items: [{ id: 9, title: 'x' }] }, '').at(0)?.open.id), { kind: 'article', id: '9' });
-    assert.deepEqual(parseContentId(listeningItems({ items: [{ id: 'm1', title: 'x' }] }, '').at(0)?.open.id), { kind: 'media', id: 'm1' });
+    assert.deepEqual(parseContentId(listeningItems({ items: [{ lesson_id: 'm1', title: 'x' }] }, '').at(0)?.open.id), { kind: 'media', id: 'm1' });
     const text = deviceTextItems({ imports: [{ id: 'text:abc', title: 'x' }] }, '').at(0);
     assert.deepEqual(parseContentId(text.open.id), { kind: 'text', id: 'abc' }, 'a text import\'s route id parses to the bare uuid content/screen.js re-prefixes');
     const upload = deviceMediaItems({ mediaImports: [{ id: 'upload:1', title: 'x' }] }, '').at(0);

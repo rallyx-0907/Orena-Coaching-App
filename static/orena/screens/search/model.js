@@ -116,15 +116,17 @@ export function articleItems(payload, query, language = '') {
 }
 
 /* GET /api/listening/library - the curated + admin-imported catalogue, client-filtered the same
-   way (the route takes level/topic/tag filters, not a free-text query). */
+   way (the route takes level/topic/tag filters, not a free-text query). An item has no `id`: it
+   is named by `lesson_id` (the key GET /api/listening/library/{lessonId} reads), else by
+   `media_object_id` (writing_coach/listening_api.py), as Discover's entryFromMedia reads it. */
 export function listeningItems(payload, query, language = '') {
   const items = Array.isArray(payload?.items) ? payload.items : [];
   return items
     .filter((item) => matchesText(item?.title, query) || matchesText(item?.topic, query))
     .map((item) => {
-      const id = item?.id;
+      const id = item?.lesson_id || item?.media_object_id || '';
       const title = String(item?.title ?? '').trim();
-      if (id == null || !title) return null;
+      if (!id || !title) return null;
       // languages-5 fix (review issue 1, finding B.3 "also Search"): same open-taxonomy topic as
       // articleItems above - kept separate from `meta` for the same reason.
       return {
