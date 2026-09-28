@@ -1,8 +1,12 @@
-# Agent contract v5 — proposal (awaiting human approval)
+# Agent contract v5 — proposal (approved)
 
-**Status:** PROPOSED, 2026-09-28. Nothing in `AGENT_CONTRACT.md` changes until the
-human approves; on approval it becomes `contract_version: 5` with a DECISION_LOG
-entry, edited on `codex/work` only.
+**Status:** APPROVED by the human on 2026-09-28 with seven reconciliation points
+and two clarifications, and applied: `AGENT_CONTRACT.md` is `contract_version: 5`
+(D-096). Where this proposal and the contract differ - English takes only `user`,
+Chinese adds `register` (你/您), the R22 kinship rule, the terms' privacy and
+escaping, back-to-default as an upsert, the S5 wording without quotation marks -
+the contract and D-096 are the authority. This file stays as the record of the
+reasoning.
 
 Three changes, one version: **A.** the learner's address preference (how Orena
 says "I" and "you"); **B.** replies offer actions and never report them done,

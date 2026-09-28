@@ -66,7 +66,7 @@ shape).
 | 12 | My Library | `#/library` | shell | `screens/library/` | reviewable |
 | 21 | Collection Detail | `#/collection/:id` | shell | `screens/collection/` | reviewable |
 | 22 | Word Detail | `#/word/:id` | shell | `screens/word/` | reviewable |
-| 44 | Grammar Library | `#/grammar` | shell | `screens/grammar/` | reviewable |
+| 44 | Grammar Library | `#/grammar` | shell | `screens/grammar/` | reviewable (renders R5; to be rebuilt on the grammar content contract) |
 | 17 | Progress | `#/progress` (`?tab=` per Profile's own links) | shell | `screens/progress/` | reviewable |
 | 24–25 | Profile, Today's progress | `#/profile` | shell | `screens/profile/` | reviewable |
 | 51 | Coming soon | `#/coming/:key` | shell | `screens/coming/` | reviewable |
@@ -102,7 +102,7 @@ shape).
 | 35 | Context Transfer | `#/review/transfer` | focus | `screens/transfer/` | planned |
 | 36 | Vocabulary Daily Feed | `#/feed` | focus | `screens/feed/` | planned |
 | 50 | From Your Errors | `#/errors` | focus | `screens/errors/` | planned |
-| 23, 47 | Grammar Concept | `#/grammar/:id` | focus | `screens/grammar-concept/` | reviewable |
+| 23, 47 | Grammar Concept | `#/grammar/:id` | focus | `screens/grammar-concept/` | reviewable (renders R5; to be rebuilt on the grammar content contract) |
 | Onboarding 01–05 | Welcome, Account, Languages, Level, Meet Orena | `#/welcome` | none | `screens/onboarding/` | planned |
 
 ## Retired by the cutover

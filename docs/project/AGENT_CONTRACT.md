@@ -3,10 +3,12 @@
 Governance
 
 Purpose: the single interface between the Orena Intelligence backend (lane `feature/orena-intelligence`, D-085) and the new learner UI that replaces the old one on `codex/work` (D-086). Both sides implement this file; neither reads the other's implementation.
-Authority: D-085, D-086, D-092, D-094, D-095. Below AGENTS.md, ARCHITECTURE_INVARIANTS.md and the human gates; above either lane's own notes.
+Authority: D-085, D-086, D-092, D-094, D-095, D-096. Below AGENTS.md, ARCHITECTURE_INVARIANTS.md and the human gates; above either lane's own notes.
 Change when: a field, event, action, intent or rule below changes. Edit **only on `codex/work`** through a reviewed commit that bumps `contract_version` and records the change in DECISION_LOG.md; the intelligence lane receives it by merging `codex/work` forward. Never edit this file on the intelligence lane.
 
-`contract_version: 4`
+`contract_version: 5`
+
+v5 (D-096, 2026-09-28): the learner's address - how Orena says "I" and "you" - travels as `context.address` and is kept as a coach note of kind `address` (§5.6), and the server's fixed copy follows it; a reply that comes with an action offers it and never reports it done, and no reply names a provider (§7, §10; S2 and S5 reworded); the UI publishes each surface's name and purpose for the server (§6.2); new canonical streams S14 and S15. A client that declares `contract_version` ≤ 4 sends no `address` and gets the language defaults; a server never sends an `address` note to it.
 
 v4 (D-095, 2026-09-27): §2.1 names the HTTP statuses of `/api/agent/*` and what the UI does with each - `404` while the agent is off (Orena is absent, not an error), `409 target_language_mismatch`, `429 rate_limited` with `Retry-After` (wait, then send again) - and §4.1 names the stream's error classes and what each `fallback` asks of the UI. No event, field, action or intent changed; a server answers a v3 client exactly as before.
 
@@ -63,7 +65,7 @@ A `409` or `422` counts toward the learner's limit; only a refused `429` does no
 
 ```json
 {
-  "contract_version": 4,
+  "contract_version": 5,
   "session_id": "optional, from a previous session event",
   "trigger": "message",
   "message": "Tại sao tôi cứ sai từ này?",
@@ -78,6 +80,7 @@ A `409` or `422` counts toward the learner's limit; only a refused `429` does no
     "locale": { "interface": "vi", "support": "vi", "target": "zh-CN", "content": "zh-CN" },
     "lesson_id": "…", "content_id": "…", "attempt_id": "…", "take_ref": "…", "essay_id": "…",
     "selected_item": { "type": "word", "text": "我", "lang": "zh-CN" },
+    "address": { "self": "chị", "user": "em", "lang": "vi" },
     "client_evidence": { "pitch_contour_ref": "optional; measured client-side, never invented" }
   },
   "coach_notes": [
@@ -96,7 +99,8 @@ Rules:
 - `selected_item`: `type` ∈ `word | sentence | feedback_item | grammar_point`. A word is named by `{ text, lang }` - the product has no word ids. A sentence, feedback item or grammar point carries its `id` and `text`.
 - `attempt_id` is the id of the audio-free record the server stored for an assessed speaking take (`POST /api/speech/attempts` returns it). While no read-by-id exists (backend gap N-9), the client sends it only together with `content_id` and `selected_item.id` (the line), so the tool gateway can find the record through the existing filtered list. Evidence always comes from the server's record, never from client-supplied scores. When no record was stored, `attempt_id` is omitted.
 - `take_ref` names a speaking take the new UI holds for the session (the server stores no take audio, D-076). It is minted by the client; the agent may only echo back a `take_ref` it received.
-- `coach_notes` live in device memory (D-085 lane spec D7/D18); send at most 20, most weighted first, total ≤ 2 KB.
+- `coach_notes` live in device memory (D-085 lane spec D7/D18); send at most 20, most weighted first, total ≤ 2 KB. They are of kind `preference`, `goal` or `plan`; the `address` note is never among them (§5.6).
+- `address` is the learner's chosen way for Orena to say "I" and "you" in the support language (§5.6); omitted means that language's default.
 
 ### 3.1 Client capabilities are binding
 
@@ -111,7 +115,7 @@ session → segment_delta… → segment_end{0, <support>, …, neutral_explain}
 → suggestion{label, intent} ×(1-5) → [action{…} ×(0-2)] → done
 ```
 
-- Read-only: no `memory_update`; only `LOW`-risk actions; no error claim without `evidence` (§5.3).
+- Read-only: no `memory_update`; only `LOW`-risk actions; no error claim without `evidence` (§5.3). It applies an existing `context.address` and never sets or offers one.
 - One segment, ≤ 240 characters, in the `support` language; Design Contract rule 50 (learning-first copy) governs it.
 - Not a learner turn: it does not advance `turn_ordinal`. A `soft_limited` learner gets the suggestions without the greeting, never an error.
 - At most one per thread; the client may reuse it for the same `surface` + `selected_item` within a session.
@@ -141,7 +145,7 @@ done           { usage: { input_tokens, output_tokens }, trace_id }
 
 Ordering guarantees: `session` first; every `segment_delta` for an index precedes its `segment_end`; an `evidence` event precedes any `segment_end` that cites it; `done` or `error` last.
 
-`error.message` is learner-safe and already in the `support` language. It never contains a provider name, key, region or raw provider output.
+`error.message` is learner-safe, already in the `support` language and addressed as §5.6 says. It never contains a provider name, key, region or raw provider output.
 
 ### 4.1 Error classes
 
@@ -176,7 +180,7 @@ The client shows Orena as thinking from the moment it sends a turn until the fir
 A reply is a list of segments, not one string, so mixed-language speech and reference audio can be routed.
 
 ```json
-{ "index": 0, "lang": "vi",    "text": "Azure đánh dấu 是 là phát âm sai, điểm 6/100. Nghe mẫu rồi thử lại nhé:", "voice_style": "gentle_correction" }
+{ "index": 0, "lang": "vi",    "text": "Âm 是 bị đánh dấu là phát âm sai, điểm 6/100. Nghe mẫu rồi thử lại nhé:", "voice_style": "gentle_correction" }
 { "index": 1, "lang": "zh-CN", "text": "是", "voice_style": "reference" }
 ```
 
@@ -201,7 +205,7 @@ Every statement that a learner made an error cites at least one evidence item. N
 
 ### 5.4 Coach notes
 
-The agent proposes; the device stores. `upsert` carries a full note (§3 shape, with a new or existing `id`); `remove` carries `{ id }`. The client applies it, keeps weights and expiry, and drops notes whose weight decays below its threshold. The agent only proposes notes the learner stated directly; never emotions, circumstances or health.
+The agent proposes; the device stores. `upsert` carries a full note (§3 shape, with a new or existing `id`); `remove` carries `{ id }`. The client applies it, keeps weights and expiry, and drops notes whose weight decays below its threshold. The agent only proposes notes the learner stated directly; never emotions, circumstances or health. Kinds are `preference | goal | plan`, plus `address` (§5.6), which follows its own rules.
 
 ### 5.5 Display (actions and evidence, optional)
 
@@ -212,6 +216,54 @@ The new UI draws an action as a card (kind and duration, a title, one line on wh
 ```
 
 `title`, `kind` and `duration_s` are copied from the domain record the server read for this action or evidence - never generated or estimated, absent when there is none. `reason` is the only generated field: ≤ 90 characters, in the `support` language, a statement the learner can check, never praise. The button's text is still `action.label`. A client that draws no cards ignores `display`.
+
+### 5.6 Address (how Orena says "I" and "you")
+
+`context.address` carries the learner's own choice, for their support language; omitted means that language's default. The object has `lang` and at least one of `self`, `user`, `register`:
+
+```json
+"address": { "self": "chị", "user": "em", "lang": "vi" }
+"address": { "user": "小明", "register": "polite", "lang": "zh-CN" }
+"address": { "user": "Minh", "lang": "en" }
+```
+
+| `lang` | default | `self` (how Orena refers to itself) | `user` (how Orena addresses the learner) | `register` |
+| --- | --- | --- | --- | --- |
+| `vi` | `mình` / `bạn` | e.g. `chị`, `em`, `tớ` | e.g. `em`, `anh`, `Minh`, `anh Minh` | ignored |
+| `zh-CN` | `我` / `你`, `plain` | optional, default `我` | a form of address or name, e.g. `小明`, `王老师` | `plain` (你, the default) or `polite` (您, only when the learner asks) |
+| `en` | `I` / `you` | ignored | a form of address or name used when calling the learner; it never replaces "you" | ignored |
+
+A support language without a row uses its own ordinary first and second person, never the English pair.
+
+- **Applied** only when `address.lang` equals `context.locale.support`; otherwise that language's default. It applies to every support-layer text addressed to the learner: segments in the support language, the opening turn (§3.2), `error.message` (§4), and the server's fixed support copy - identity answers, refusals, errors - through `{self}` / `{user}` slots whose defaults reproduce the unaddressed text. Not to interface-layer labels, which never address the learner in the first or second person, and not to target-language material (a Chinese example keeps its own `你` / `我`).
+- **Terms.** `self` and `user` are 1-24 characters and at most 3 words, made only of Unicode letters - any script, with their combining marks: Vietnamese with its diacritics, Han characters - and single spaces between words. No digits, punctuation, symbols, line breaks or markup. `Nguyễn`, `anh Hương`, `小明` are valid. The client validates before storing and before sending; the server validates again and, if anything is invalid, uses the default for the whole object.
+- **Data, never instruction.** The server always escapes the terms before they reach the model and never inserts them raw into its instructions.
+- **This turn only.** The terms may carry the learner's name. The server uses them for the turn and never writes them to logs, telemetry, traces or any server store.
+- **Casing.** Stored as the learner gave them; the server capitalises a sentence-initial use (`Chị là Orena…`).
+
+How it changes - both lanes read these the same way:
+
+1. Orena never asks about address on its own when the learner has given no sign of one.
+2. The learner asks for a pair or a register ("Gọi mình là em nhé", "请用您称呼我", "Call me Minh"): applied at once.
+3. Vietnamese kinship terms the learner uses of themselves or of Orena are answered in kind at once and saved: the learner calls themselves `anh` / `chị` → Orena says `em`; `cô` / `chú` / `bác` → `cháu`; the learner says `em` and calls Orena `anh` / `chị` → Orena uses that word. Self-reference is told apart from talk about others ("anh tôi"); when unsure, the current pair stays. Orena never uses a kinship term the learner has not used, and `tao` / `mày` only when explicitly asked.
+4. A pair the learner keeps using that the server does not map by itself (e.g. `tớ` - `cậu`): Orena confirms once whether to use it. A yes sets it; a no is saved as the current pair, so Orena does not ask again.
+5. Signs that the learner is a minor keep the default.
+6. Nothing is inferred from gender, age, personality, a name or the learner's writing. The UI never derives it from the profile or anything else.
+
+The note that keeps it:
+
+```json
+{ "id": "address-vi", "kind": "address",
+  "address": { "self": "chị", "user": "em", "lang": "vi" },
+  "text": "Xưng hô: Orena xưng \"chị\", gọi người học là \"em\".",
+  "weight": 1, "last_reinforced": "ISO-8601", "expires_at": null }
+```
+
+- Set by `memory_update { op: "upsert" }` under the rules above; the reply that sets it already uses it. A change - to another pair, or back to the default - is an upsert that replaces the note (back to the default carries the default pair).
+- One per support language: `id` is `address-<lang>`.
+- `text` is the line the learner reads in `preferences.agent_memory`, in the support language; the server reads `address`, never parses `text`.
+- It does not decay and has no expiry. The learner can delete it there (the privacy exit, §10); without it the default applies.
+- The client sends it as `context.address` for the current support language on every request and never puts it in `coach_notes`.
 
 ---
 
@@ -238,6 +290,24 @@ preferences                preferences.agent_memory
 `{…}` are required parameters, passed in `action.payload`. An id the new UI does not implement is simply absent from `client.supported_intents`.
 
 Adding an id: contract change (bump version). Renaming a screen in the UI: no contract change.
+
+### 6.2 Surface names and purposes (published by the UI)
+
+The UI owns its places and says what they are, once. For every §6.1 id it publishes the place's `name` - the title of the route the id opens, from the shell's own copy, as the learner reads it - and a one-line `purpose`: what the learner does there, at most 90 characters, learning-first (Design Contract rule 50). Both are interface layer, in `en`, `vi` and `zh-CN`.
+
+- Written in the new UI's copy layer (`static/orena/copy/surfaces.js`) and published as generated data, `static/orena/copy/surfaces.json`:
+
+  ```json
+  { "contract_version": 5,
+    "surfaces": {
+      "vocabulary.my_language": {
+        "name":    { "en": "…", "vi": "…", "zh-CN": "…" },
+        "purpose": { "en": "…", "vi": "…", "zh-CN": "…" } } } }
+  ```
+
+- A gate regenerates the file from the copy and fails on any difference, a §6.1 id without a `name`, or a `purpose` over the limit.
+- The server reads names and purposes from this file (it arrives with `codex/work` merged forward) for "what is this screen for?" answers and for naming a place, and keeps no copies of its own. A surface without a `purpose` gets its name only; the server never writes a purpose of its own.
+- Purposes are written once `docs/design/canonical-ui/IMPLEMENTATION_MAP.md` is stable - every screen a §6.1 id opens is built - so each describes a place that exists as drawn. Until then the file carries names only.
 
 ---
 
@@ -266,6 +336,8 @@ Rules:
 - `label` is in the `interface` language (`context.locale.interface`), ≤ 24 characters: a button is interface layer (D-080). The text an action's card explains (`display.reason`) stays in the `support` language.
 - An action with an unknown `type`, or not in `supported_actions`, is ignored and logged by the client.
 - An action is shown as a button; the client never runs it without a learner tap, except `navigate` when the learner's message was itself the request ("đưa tôi tới…").
+- A segment that comes with an action **offers** it: it never says or implies the action was done ("Mình lưu …", "Saved it for you", "我帮你保存了"). The learner does it by tapping or confirming. A `memory_update` is different: the device applies it without a tap, so a reply may say it is applied (S14).
+- A reply that names the button uses its `label` as the learner sees it (interface language), and does not describe the button or the interface: "Bấm Lưu từ để thêm 我 vào từ vựng của bạn."
 - Words: the vocabulary library keys a word on its text and the **session's active learning language**. A word action whose `lang` is not the active learning language is not executed; the client logs it.
 - Ids in payloads (`content_id`, `grammar_id`, `essay_id`, `target.id`) come from tool reads, never from generation; `take_ref` only from the request's context.
 - Nothing due, a word not saved, an unknown or expired `take_ref`: the client says so in its own words and does nothing else.
@@ -275,7 +347,7 @@ Rules:
 ## 8. Capabilities — `GET /api/agent/capabilities`
 
 ```json
-{ "contract_version": 4,
+{ "contract_version": 5,
   "capabilities": [
     { "id": "speaking.pronunciation.line", "title": "…", "surfaces": ["speaking.workspace"],
       "actions": ["play_model", "play_user", "say_again", "compare_with_model"],
@@ -305,7 +377,8 @@ POST /api/agent/voice/session
 
 ## 10. Identity and privacy
 
-- Learner-facing name is **Orena**. The UI never displays a provider or model name taken from a reply. Provider metadata, if ever shown, comes from runtime metadata outside this contract.
+- Learner-facing name is **Orena**. No segment, `error.message` or fixed copy names a provider or model - evidence is described by what was measured ("Âm 是 bị đánh dấu …") - and the UI never displays a provider or model name taken from a reply. Provider metadata, if ever shown, comes from runtime metadata outside this contract.
+- The address terms (§5.6) are used for the turn only and never logged or stored by the server.
 - The client sends the minimum context in §3; the server applies its own redaction.
 - Conversation history and coach notes are device memory; the account store is out of scope until an architecture review under ORENA_ACCOUNT_DATA_ARCHITECTURE.md.
 - `preferences.agent_memory` lists coach notes and lets the learner delete them. It is not a feature; it is the privacy exit.
@@ -331,7 +404,7 @@ session → segment_delta… → segment_end{0, vi, …, neutral_explain} → su
 `S5 save_word` — selected word 我 (`{ type: word, text: "我", lang: "zh-CN" }`), "Lưu từ này."
 
 ```text
-session → segment_end{0, vi, "Mình lưu 我 cho bạn nhé.", brief_ack}
+session → segment_end{0, vi, "Bấm Lưu từ để thêm 我 vào từ vựng của bạn.", brief_ack}
 → action{type: save_word, payload:{text: "我", lang: "zh-CN"}, risk: LOW} → done
 ```
 
@@ -354,7 +427,7 @@ session → tool_call{get_current_writing_evaluation} → tool_result{…, evide
 ```text
 session → tool_call{get_pronunciation_attempt} → tool_result{…, [e1]}
 → evidence{e1, speech.pronunciation, {attempt_id,…}, {pinyin:"shi", tone:4, score:6, flagged:true}}
-→ segment_end{0, vi, "Azure đánh dấu 是 …", gentle_correction} → segment_end{1, zh-CN, "是", reference}
+→ segment_end{0, vi, "Âm 是 bị đánh dấu là phát âm sai …", gentle_correction} → segment_end{1, zh-CN, "是", reference}
 → action{play_model, {content_id, item_id}} → action{say_again, {content_id, item_id}} → done
 ```
 
@@ -370,3 +443,16 @@ session → segment_end{0, vi, "…", neutral_explain}
 ```
 
 `SE provider failure` — `session → error{class:"provider_unavailable", message:"Orena đang bận, thử lại sau nhé.", fallback:"retry"}`.
+
+`S14 address` — surface `orena.home`, "Gọi mình là em, còn Orena xưng chị nhé."
+
+```text
+session → memory_update{upsert, {id: "address-vi", kind: address, address: {self: "chị", user: "em", lang: "vi"}, weight: 1, expires_at: null}}
+→ segment_end{0, vi, "Được rồi, từ giờ chị gọi em là em nhé.", brief_ack} → done
+```
+
+`S15 identity with address` — surface `home`, `context.address {self: "chị", user: "em", lang: "vi"}`, "Bạn là ai?"
+
+```text
+session → segment_end{0, vi, "Chị là Orena, trợ lý học tập AI … của em …", neutral_explain} → done   # fixed copy, by rule, no model
+```

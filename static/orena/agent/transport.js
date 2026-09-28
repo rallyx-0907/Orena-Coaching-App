@@ -8,7 +8,7 @@
    error (§4.1). */
 import { parseEvents, bodyChunks } from './sse.js';
 import { mockTurn } from './mock.js';
-import { readStatus } from './contract.js';
+import { readStatus, toContractLang } from './contract.js';
 import { markOrenaAbsent } from './presence.js';
 
 export const AGENT_LIVE = false;
@@ -35,7 +35,7 @@ export async function* turn(request, { signal } = {}) {
 export async function probe({ interfaceLang = 'en', fetchImpl = globalThis.fetch } = {}) {
   if (!AGENT_LIVE) return true;
   try {
-    const response = await fetchImpl(`/api/agent/capabilities?interface=${encodeURIComponent(interfaceLang)}`, { credentials: 'same-origin' });
+    const response = await fetchImpl(`/api/agent/capabilities?interface=${encodeURIComponent(toContractLang(interfaceLang))}`, { credentials: 'same-origin' });
     if (response.status === 404) {
       markOrenaAbsent();
       return false;
