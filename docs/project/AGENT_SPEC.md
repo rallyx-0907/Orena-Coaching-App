@@ -235,8 +235,12 @@ Slice 3  IMPLEMENTING (2026-09-28; R21, R23). Gate local đạt; live chưa ki�
           forget_note → memory_update, id của note người học); S13 dựng trên snapshot, không read tool.
           coaching.next_steps active. Test Postgres dùng một lần: snapshot và weaknesses đúng learner, đúng ngôn ngữ.
 v5       R24: contract v5 (D-096) - context.address, note kind address, copy có chỗ xưng hô, surfaces.json, S14/S15.
-Tiếp      Người quyết: model ghim cho agent_turn/agent_turn_deep và trần cho lần live Slice 3 (coaching, notes,
-          claims); gói/quota provider trước khi kích hoạt; rồi Slice 4 (§26).
+Live     2026-09-28 notes trên gemini-3.8-flash (R25): lưu note đạt; sửa note đạt nhưng chỉ sau lời nhắc của server
+          (vòng 1 không gọi tool); xoá chưa kiểm được - 503 "high demand" 3 lần, lần thứ 4 vượt trần đợt 0,15 USD
+          (bound 0,0802; chi phí thật 0, gói miễn phí). Tới segment đầu 17,6 s / 19,1 s (flash-lite trước đây: trung vị
+          2,96 s trên 82 lượt khác). Lần sau: gemini-3.7-flash.
+Tiếp      Người quyết: trần mới cho lần live Slice 3 (notes, coaching, claims) trên gemini-3.7-flash; gói/quota provider
+          trước khi kích hoạt; rồi Slice 4 (§26).
 ```
 
 ---
