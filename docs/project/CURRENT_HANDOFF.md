@@ -51,7 +51,7 @@ contract v4 (D-095); copy engine fixes; Wave A destinations checkpoint.
 ## PENDING
 
 Human: the 8011 sandbox migration (BLOCKED); the open design questions in
-`UI_BACKEND_GAPS.md` section N.
+`UI_BACKEND_GAPS.md` section N; approval of `AGENT_CONTRACT_V5_PROPOSAL.md`.
 
 ## BLOCKED
 
@@ -85,6 +85,9 @@ UI lane: Wave A to REVIEWABLE and presented; then Wave B (the reading,
 listening, dictation, speaking, writing and review workspaces, the Orena panel
 on the mock, onboarding); then the cutover (tombstones, legacy redirects, the
 old UI and its gates replaced).
+Once every §6.1 surface is built: a one-line purpose per surface id in the copy
+layer (interface, en/vi/zh), published for the intelligence lane - pending the
+human's approval of contract v5 part C.
 
 Intelligence lane: D-085 against `AGENT_CONTRACT.md` v4; merging `codex/work`
 forward brings the version bump its contract test checks.

@@ -4,13 +4,16 @@
 human approves; on approval it becomes `contract_version: 5` with a DECISION_LOG
 entry, edited on `codex/work` only.
 
-Two changes, one version: **A.** the learner's address preference (how Orena
+Three changes, one version: **A.** the learner's address preference (how Orena
 says "I" and "you"); **B.** replies offer actions and never report them done,
-and no reply names a provider - with the fixtures that broke either rule.
+and no reply names a provider - with the fixtures that broke either rule; **C.**
+each surface's name and one-line purpose, owned by the UI's copy and read by the
+server instead of its own copies.
 
 Compatibility: additive. A client that declares `contract_version` ≤ 4 sends no
 `address` and gets the language defaults, exactly as today; a server never sends
-an `address` note to such a client. Part B changes wording, not shapes.
+an `address` note to such a client. Part B changes wording, not shapes. Part C
+adds a file the UI publishes; no request or event changes.
 
 ---
 
@@ -151,7 +154,44 @@ claim.
 
 ---
 
-## C. Canonical streams added (§12)
+## C. Surface names and purposes, owned by the UI (§6.1)
+
+**Why.** To answer "what is this screen for?" and to name a place the way the
+learner reads it, the server needs each surface's name and purpose in the
+learner's language. Today it keeps its own copies (`surface.<id>` in
+`writing_coach/agent/learner_copy.py` on the intelligence lane, typed from the
+new UI's shell copy), which drift as the UI changes. The UI owns its places; it
+should say what they are, once.
+
+- **What:** for every §6.1 surface id, the place's `name` (as the learner reads
+  it: the title of the route the id opens, from the shell's own copy, so the two
+  cannot drift) and a one-line `purpose` (what the learner does there, at most
+  90 characters, learning-first per Design Contract rule 50). Interface layer
+  (the human's direction), in `en`, `vi` and `zh-CN`.
+- **Where:** written in the new UI's copy layer (`static/orena/copy/surfaces.js`,
+  a `defineCopy` table like every other, layer `interface`), and published for
+  the server as generated data, `static/orena/copy/surfaces.json`:
+
+  ```json
+  { "contract_version": 5,
+    "surfaces": {
+      "vocabulary.my_language": {
+        "name":    { "en": "My Library", "vi": "Thư viện của tôi", "zh-CN": "我的书库" },
+        "purpose": { "en": "…", "vi": "…", "zh-CN": "…" } } } }
+  ```
+
+  A gate regenerates the JSON from the copy table and the route titles and fails
+  on any difference, a §6.1 id without a name, or a purpose over the limit. The
+  JSON uses contract language codes (`zh-CN`); the UI's copy says `zh`.
+- **The server** reads names and purposes from that file (it arrives with
+  `codex/work` merged forward) and drops its own copies. A surface the file does
+  not carry gets its name only; the server never writes a purpose of its own.
+- **When:** the mechanism with v5; the purpose lines once the implementation map
+  (`docs/design/canonical-ui/IMPLEMENTATION_MAP.md`) is stable - every surface
+  a §6.1 id opens is built (after Wave B) - so a purpose describes a place that
+  exists as drawn. Until then the file carries names only.
+
+## D. Canonical streams added (§12)
 
 `S14 address` - surface `orena.home`, "Gọi mình là em, còn Orena xưng chị nhé."
 
@@ -166,7 +206,7 @@ session → memory_update{upsert, {id: "address-vi", kind: address, address: {se
 session → segment_end{0, vi, "Chị là Orena, trợ lý học tập AI … của em …", neutral_explain} → done   # fixed copy, by rule, no model
 ```
 
-## D. What each side builds (after approval)
+## E. What each side builds (after approval)
 
 - **UI (`codex/work`):** `agent/contract.js` (the kind, the term validation, the
   defaults), `agent/memory.js` (the address note: one per language, no decay,
@@ -174,14 +214,21 @@ session → segment_end{0, vi, "Chị là Orena, trợ lý học tập AI … c�
   current support language), the memory sheet lists and deletes it, the mock
   plays S14 and S15 and the reworded S2 and S5 in vi, en and zh,
   `scripts/test_orena_agent.mjs` checks all of it. No Settings control: the
-  design draws none (Design Contract rule 43).
+  design draws none (Design Contract rule 43). `copy/surfaces.js`, the generator
+  and gate for `copy/surfaces.json` (names now, purposes once the map is
+  stable).
 - **Intelligence lane:** move its `preference` note to the `address` kind and
   object, read `context.address`, fill the fixed-copy slots, treat the S5
-  wording as a claim, reword the copied fixtures, pass S14 and S15.
+  wording as a claim, reword the copied fixtures, pass S14 and S15; read
+  surface names and purposes from `copy/surfaces.json` and delete its
+  `surface.<id>` copies.
 
-## E. Question for the human
+## F. Questions for the human
 
 1. **A name in a term.** R19 accepts "any pair they choose", and the lane accepts
    up to 3 words ("anh Minh"). Confirm that a name inside a term is fine, since
    it leaves the device with every request. *Recommendation: yes - the learner's
    own words, device memory, turn-scoped on the server.*
+2. **"NEW_UI_MAP".** No file has that name; this proposal reads it as
+   `docs/design/canonical-ui/IMPLEMENTATION_MAP.md`, the new UI's frame → route →
+   code → status map. *Correct me if you meant another file.*
