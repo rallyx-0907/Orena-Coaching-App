@@ -33,8 +33,11 @@ status: `docs/design/canonical-ui/IMPLEMENTATION_MAP.md`.
 - Grammar: R5 is being retired (human, 2026-09-28): Grammar Lab becomes the only
   grammar source. The Grammar screens will render `GRAMMAR_CONTENT_CONTRACT.md`
   (drafted by the Grammar Lab lane, reviewed and committed here like
-  AGENT_CONTRACT.md); no further R5-specific rendering. DECISION_LOG entry when
-  that contract lands; `grammar.point{grammar_id}` (AGENT_CONTRACT §6.1) moves
+  AGENT_CONTRACT.md); no further R5-specific rendering. Order: the lane's PR
+  `governance/grammar-content-contract` into `codex/work` → reviewed here
+  against the screens' needs, gaps listed, nothing fixed → the human approves
+  and merges → DECISION_LOG entry (R5 replaced by Grammar Lab) → the two Grammar
+  screens are rebuilt. `grammar.point{grammar_id}` (AGENT_CONTRACT §6.1) moves
   to its ids in a contract bump.
 
 ## Last verified batch
