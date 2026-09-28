@@ -44,6 +44,10 @@ RESULT_BUDGET_BYTES = 7 * 1024
 WritingReviewReader = Callable[[int], Mapping[str, Any] | None]
 
 
+# What a result with nothing flagged means - and does not (the evaluator marks what it finds).
+NO_MARKED_ERROR = "The evaluator marked no error here. That is not proof there is none; it is not praise."
+
+
 def _clip(value: object, limit: int) -> str:
     text = str(value or "").strip()
     return text if len(text) <= limit else text[: limit - 1] + "…"
@@ -142,6 +146,7 @@ def _writing_evaluation(read: WritingReviewReader) -> Callable[[LearnerScope, Es
                 "found": True,
                 "essay_id": args.essay_id,
                 "summary": _clip(review.get("summary"), 300),
+                **({"note": NO_MARKED_ERROR} if not issues else {}),
                 "issue_count": len(issues),
                 "issues": [
                     {
@@ -331,6 +336,7 @@ def _feedback_items(read: WritingReviewReader) -> Callable[[LearnerScope, Feedba
                     "essay_id": args.essay_id,
                     "kind": args.kind,
                     "strengths": strengths,
+                    **({"note": NO_MARKED_ERROR} if not issues else {}),
                     "issues": [
                         {
                             "evidence": f"issues[{index}]",
@@ -385,7 +391,11 @@ def _history_summary(read: WritingHistoryReader) -> Callable[[LearnerScope, Base
             kept = rows[:keep]
             return ToolResult(
                 summary=f"{len(categories)} error categories over {revisions} versions",
-                data={"revision_count": revisions, "categories": kept},
+                data={
+                    "revision_count": revisions,
+                    "categories": kept,
+                    **({"note": NO_MARKED_ERROR} if revisions and not categories else {}),
+                },
                 evidence=tuple(
                     ToolEvidence(
                         id=f"history{index}",

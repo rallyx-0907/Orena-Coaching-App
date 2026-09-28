@@ -595,3 +595,71 @@ def test_a_calls_provider_data_goes_back_with_it_in_the_next_round():
     run(rt)
     assistant = [m for m in provider.requests[1].messages if m.role == "assistant"][-1]
     assert assistant.tool_calls[0].echo == signature
+
+
+# --- answer quality, from the live run (human review 2026-09-28) ---------------------------
+
+
+def _context_of(provider):
+    import json
+
+    system = [m.content for m in provider.requests[0].messages if m.role == "system"]
+    return json.loads(next(c for c in system if c.startswith("context: "))[len("context: "):])
+
+
+def test_a_accepted_action_is_offered_as_a_button_never_as_done():
+    """(a) S5: the model is told the button's label and that the learner has not tapped it."""
+
+    from writing_coach.agent.prompts import INSTRUCTION
+
+    rounds = [
+        (
+            ToolCallRequest("c1", "propose_action", {"type": "save_word", "payload": {"text": "是", "lang": "zh-CN"}}),
+            TurnFinished(0, 3, "tool_calls"),
+        ),
+        reply("Bấm Lưu từ để lưu 是."),
+    ]
+    rt, provider = runtime(rounds)
+    run(rt)
+    told = provider.requests[1].messages[-1].content
+    assert "shown as the button 'Lưu từ'" in told and "has not tapped it" in told and "do not say it is done" in told
+    assert "never write as if it happened" in INSTRUCTION and "Bấm Lưu từ để lưu" in INSTRUCTION
+
+
+def test_no_marked_error_is_not_no_error_and_praise_is_not_an_answer():
+    """(b) D-087: say the evaluator marked nothing; no general praise."""
+
+    from writing_coach.agent.prompts import INSTRUCTION
+
+    assert "No flagged error is not \"no error\"" in INSTRUCTION
+    assert "the evaluator has not marked an error" in INSTRUCTION
+    assert "No general praise" in INSTRUCTION
+
+
+def test_the_screen_is_named_in_the_interface_language():
+    """(d) the app's own label for the place, and capability titles, in the interface language."""
+
+    rt, provider = runtime([reply("Ok.")])
+    body = turn_request().model_dump(mode="json", exclude_none=True)
+    body["context"]["surface"] = "vocabulary.my_language"
+    run(rt, TurnRequest.model_validate(body))
+    context = _context_of(provider)
+    assert context["screen"] == {"name": "Thư viện của tôi"}
+    titles = {c["id"]: c["title"] for c in context["capabilities_here"]}
+    assert titles["vocabulary.words"] == rt.capabilities.get("vocabulary.words").title["vi"]
+    assert all(title == rt.capabilities.get(cid).title["vi"] for cid, title in titles.items())
+
+
+def test_orena_speaks_as_minh_to_ban_in_vietnamese():
+    """(e) the instruction says it; the server's own Vietnamese sentences keep it."""
+
+    import re
+
+    from writing_coach.agent.prompts import INSTRUCTION
+
+    assert 'In Vietnamese, you are "mình" and the learner is "bạn", in every sentence, refusals included.' in INSTRUCTION
+    for key, entry in learner_copy.CATALOG.items():
+        if entry.layer is learner_copy.CopyLayer.SUPPORT:  # what Orena says, not a button or the learner's own words
+            assert not re.search(r"\b[Tt]ôi\b", entry.texts["vi"]), key
+    assert learner_copy.CATALOG["identity.who"].texts["vi"].startswith("Mình là Orena")
+    assert "mình" not in learner_copy.CATALOG["action.play_user"].texts["vi"]  # the learner's take, not Orena's

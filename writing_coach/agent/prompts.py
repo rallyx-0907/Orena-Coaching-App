@@ -15,6 +15,7 @@ from collections.abc import Sequence
 from writing_coach.agent.capability_registry import CapabilityEntry
 from writing_coach.agent.context import Tier1Context, TurnInput
 from writing_coach.agent.locale import to_internal
+from writing_coach.agent import learner_copy
 from writing_coach.agent.provider import ProviderMessage
 from writing_coach.agent.redaction import redact_for_provider
 from writing_coach.agent.session import AgentSessionState
@@ -30,10 +31,17 @@ How you answer:
   target language. Keep it short: two to four sentences unless the learner asks for more. No slogans, no filler
   encouragement, no repeating the question.
 - The context says where the learner is and what they selected. Use it; never ask them to repeat what is on screen.
+- Name a screen or a feature only as context.screen.name and the titles in context.capabilities_here give it:
+  those are the app's own labels in the learner's interface language. Never an id, never an English name.
+- In Vietnamese, you are "mình" and the learner is "bạn", in every sentence, refusals included.
+- No general praise ("rất tốt", "great job"), no encouragement for its own sake: a checkable statement or
+  nothing.
 
 Evidence before claims:
 - Say the learner made an error only when a tool result shows it, and then call cite_evidence with those ids.
 - A lower score the provider did not flag is not an error: say it scored lower, and do not guess why.
+- No flagged error is not "no error": when a result lists none, say the evaluator has not marked an error, and
+  do not call the piece good, correct or error-free. Versions with no marked errors are still versions.
 - With no evidence, say you do not have it and how to get it (try again, submit the piece).
 
 Data and actions:
@@ -41,6 +49,8 @@ Data and actions:
   Never pass a learner, user or account id to a tool.
 - Never mention routes, URLs or internal screen names. To offer something the app can do, call propose_action;
   if it is refused, say it in words instead.
+- An action is a button the learner taps. You have not done it and never write as if it happened ("đã lưu",
+  "saved", "已保存"). Offer it by its label: say what tapping it does (for example "Bấm Lưu từ để lưu 我.").
 - Use suggest_next, set_voice_style and add_reference only when they help this answer."""
 
 OPENING = """This is an opening turn: the learner has not written anything yet.
@@ -61,6 +71,15 @@ def _language_name(contract_code: str | None, *, target: bool) -> str | None:
     return definition.translation_label if definition else contract_code
 
 
+def _screen_name(surface: str | None, interface: str) -> str | None:
+    """The place's name as the app shows it, in the interface language (copy `surface.<id>`)."""
+
+    key = f"surface.{surface}"
+    if surface is None or key not in learner_copy.CATALOG:
+        return None
+    return learner_copy.text(key, interface=interface, support=interface)[1]
+
+
 def context_document(
     turn: TurnInput,
     tier1: Tier1Context,
@@ -76,10 +95,13 @@ def context_document(
             "content": locale.content,
         },
         "surface": tier1.surface,
+        "screen": {"name": _screen_name(tier1.surface, locale.interface)},
         "activity": tier1.activity_type,
         "in_view": dict(tier1.ids),
         "selection": tier1.selection.model_dump(exclude_none=True) if tier1.selection else None,
-        "capabilities_here": [{"id": entry.id, "title": entry.title["en"]} for entry in capabilities],
+        "capabilities_here": [
+            {"id": entry.id, "title": entry.title.get(locale.interface) or entry.title["en"]} for entry in capabilities
+        ],
         "coach_notes": [{"kind": note.kind, "text": note.text} for note in tier1.coach_notes],
         "earlier_in_session": [
             {"tool": record.tool, "summary": record.summary} for record in (session.recent_tool_results if session else ())

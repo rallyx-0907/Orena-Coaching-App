@@ -278,7 +278,10 @@ class ReplyOutputs:
         except (ValidationError, ValueError) as exc:
             return f"refused: payload does not fit {action_type} ({_first_error(exc)})"
         self.actions.append(action)
-        return f"accepted: {action.id}"
+        return (
+            f"accepted: {action.id}, shown as the button '{action.label}'. The learner has not tapped it: "
+            "offer it by that label; do not say it is done."
+        )
 
     def _provenance(self, action_type: str, payload: Mapping[str, Any]) -> str | None:
         """None when every id and word in the payload is one the turn may name."""

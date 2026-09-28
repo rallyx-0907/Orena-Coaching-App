@@ -154,7 +154,7 @@ CATALOG: Mapping[str, CopyEntry] = MappingProxyType(
         ),
         "action.play_user": _entry(
             CopyLayer.INTERFACE,
-            {"en": "Play my take", "vi": "Nghe lại mình", "zh-CN": "播放我的录音"},
+            {"en": "Play my take", "vi": "Nghe lại giọng bạn", "zh-CN": "播放我的录音"},
         ),
         "action.say_again": _entry(
             CopyLayer.INTERFACE,
@@ -246,7 +246,7 @@ CATALOG: Mapping[str, CopyEntry] = MappingProxyType(
         ),
         "navigate.vocabulary.my_language": _entry(
             CopyLayer.INTERFACE,
-            {"en": "My words", "vi": "Từ của tôi", "zh-CN": "我的词汇"},
+            {"en": "My Library", "vi": "Thư viện của tôi", "zh-CN": "我的书库"},
         ),
         "navigate.vocabulary.word": _entry(
             CopyLayer.INTERFACE,
@@ -288,6 +288,37 @@ CATALOG: Mapping[str, CopyEntry] = MappingProxyType(
             CopyLayer.INTERFACE,
             {"en": "What is this screen for?", "vi": "Màn này dùng để làm gì?", "zh-CN": "这个页面是做什么的？"},
         ),
+        # Each place's name as the new UI shows it (its shell copy), so an answer names a screen the way
+        # the learner reads it, never by an id or an English title.
+        **{
+            f"surface.{surface}": _entry(CopyLayer.INTERFACE, {"en": en, "vi": vi, "zh-CN": zh})
+            for surface, (en, vi, zh) in {
+                "home": ("Today", "Hôm nay", "今天"),
+                "orena.home": ("Orena", "Orena", "Orena"),
+                "library": ("Discover", "Khám phá", "发现"),
+                "reading.library": ("Discover", "Khám phá", "发现"),
+                "reading.workspace": ("Reader", "Đọc", "阅读"),
+                "listening.library": ("Discover", "Khám phá", "发现"),
+                "listening.workspace": ("Listening", "Nghe", "听力"),
+                "listening.dictation": ("Dictation", "Chép chính tả", "听写"),
+                "speaking.library": ("Practice Hub", "Luyện tập", "练习中心"),
+                "speaking.workspace": ("Pronunciation", "Phát âm", "发音"),
+                "speaking.free_talk": ("Free Talk", "Nói tự do", "自由说"),
+                "speaking.word_detail": ("Compare with model", "So với mẫu", "与示范对比"),
+                "speaking.compare": ("Compare with model", "So với mẫu", "与示范对比"),
+                "writing.workspace": ("Writing", "Viết", "写作"),
+                "writing.review": ("Writing", "Viết", "写作"),
+                "writing.revision": ("Compare versions", "So sánh phiên bản", "版本对比"),
+                "vocabulary.my_language": ("My Library", "Thư viện của tôi", "我的书库"),
+                "vocabulary.word": ("Word", "Từ", "词语"),
+                "vocabulary.review_due": ("Review", "Ôn tập", "复习"),
+                "grammar.catalog": ("Grammar", "Ngữ pháp", "语法"),
+                "grammar.point": ("Grammar", "Ngữ pháp", "语法"),
+                "progress": ("Progress", "Tiến độ", "进度"),
+                "preferences": ("Settings", "Cài đặt", "设置"),
+                "preferences.agent_memory": ("Settings", "Cài đặt", "设置"),
+            }.items()
+        },
     }
 )
 

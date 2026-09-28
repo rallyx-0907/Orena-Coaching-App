@@ -80,6 +80,26 @@ ALL_INTENTS = [
 ]  # fmt: skip
 
 
+# What a reviewer checks by eye, flagged on every answer (human review 2026-09-28).
+DONE_CLAIMS = re.compile(r"(?i)\b(đã lưu|đã thêm|đã xóa|đã mở|saved|added|removed|opened)\b|已保存|已添加|已删除")
+PRAISE = re.compile(r"(?i)rất tốt|tuyệt vời|xuất sắc|great job|well done|excellent|很好|非常好|太棒")
+SELF_AS_TOI = re.compile(r"(?i)(^|[^\w])tôi([^\w]|$)")
+ENGLISH_SCREEN = re.compile(r"\b(Your words|My Library|My words|Practice Hub|Discover|Today)\b")
+
+
+def quality_flags(text: str, has_action: bool) -> list[str]:
+    flags = []
+    if has_action and DONE_CLAIMS.search(text):
+        flags.append("action described as done")
+    if PRAISE.search(text):
+        flags.append("general praise")
+    if SELF_AS_TOI.search(text):
+        flags.append("tôi instead of mình")
+    if ENGLISH_SCREEN.search(text):
+        flags.append("English screen name")
+    return flags
+
+
 def price(tokens_in: int, tokens_out: int) -> float:
     return (tokens_in * PRICE_IN + tokens_out * PRICE_OUT) / 1_000_000
 
@@ -216,6 +236,7 @@ def summarize(result: dict) -> dict:
         "usage_reported": bool(tokens_in or tokens_out),
         "error": error,
         "text": text[:400],
+        "flags": quality_flags(text, any(e["name"] == "action" for e in result["events"])),
     }
 
 
@@ -231,6 +252,7 @@ def main() -> int:
     parser.add_argument("--repeat", type=int, default=3)
     parser.add_argument("--targets", default="en,zh-CN")
     parser.add_argument("--only", default="", help="comma-separated scenario names, e.g. S5,S9 (default: all)")
+    parser.add_argument("--gap", type=float, default=TURN_GAP_SECONDS, help="seconds between turns (provider quota)")
     parser.add_argument("--approved", action="store_true", help="the human approved this run and its cap")
     parser.add_argument("--plan", action="store_true", help="print the plan and its worst case; send nothing")
     parser.add_argument("--out", default=str(Path(tempfile.gettempdir()) / "orena-agent-live-run.json"))
@@ -314,8 +336,9 @@ def main() -> int:
                     f"{target:6} {scenario.name:15} #{repeat} {result['status']} first={row['t_first_event']}s "
                     f"segment={row['t_first_segment']}s done={row['t_done']}s tools={summary.get('tools')} "
                     f"tokens={summary.get('tokens_in')}/{summary.get('tokens_out')} spent=${spent:.4f}"
+                    + (f" FLAGS={summary['flags']}" if summary.get("flags") else "")
                 )
-                time.sleep(TURN_GAP_SECONDS)
+                time.sleep(args.gap)
     return finish(rows, spent, args.out)
 
 

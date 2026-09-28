@@ -297,3 +297,23 @@ def test_word_detail_reads_a_published_entry_too(monkeypatch):
     result = registry().invoke("get_word_detail", ZH, {"text": "机会"})
     assert result.data["definition"] == "恰好的时候；时机"
     assert result.data["translations"] == {"vi": "cơ hội"} and result.data["readings"] == ["jīhuì"]
+
+
+
+def test_a_result_with_no_marked_error_says_what_that_means():
+    """(b) the evaluator marking nothing is stated for the model, never as praise or as proof."""
+
+    from writing_coach.agent.read_tools import NO_MARKED_ERROR
+    from writing_coach.agent.runtime import build_tool_registry
+
+    tools = registry(lambda essay_id: {"summary": "", "strengths": "", "issues": []})
+    evaluation = tools.invoke("get_current_writing_evaluation", ZH, {"essay_id": "3"})
+    feedback = tools.invoke("get_writing_feedback_items", ZH, {"essay_id": "3"})
+    assert evaluation.data["note"] == NO_MARKED_ERROR and feedback.data["note"] == NO_MARKED_ERROR
+    history = build_tool_registry(writing_review=lambda i: None, writing_history=lambda: {"revision_count": 1, "items": []})
+    summary = history.invoke("get_writing_history_summary", ZH, {})
+    assert summary.data == {"revision_count": 1, "categories": [], "note": NO_MARKED_ERROR}
+    empty = build_tool_registry(writing_review=lambda i: None, writing_history=lambda: {"revision_count": 0, "items": []})
+    assert "note" not in empty.invoke("get_writing_history_summary", ZH, {}).data  # no versions: nothing to qualify
+    with_issue = registry(lambda essay_id: {"issues": [{"fragment": "a", "correction": "b", "kind": "grammar"}]})
+    assert "note" not in with_issue.invoke("get_current_writing_evaluation", ZH, {"essay_id": "3"}).data

@@ -72,3 +72,13 @@ def test_every_copy_text_is_silent_about_providers():
     for key, entry in learner_copy.CATALOG.items():
         for text in entry.texts.values():
             assert not any(word in text.casefold() for word in words), key
+
+
+
+def test_every_surface_has_its_name_in_every_interface_language():
+    from writing_coach.agent.contract import SURFACES
+
+    for surface in SURFACES:
+        entry = learner_copy.CATALOG[f"surface.{surface}"]
+        assert entry.layer is learner_copy.CopyLayer.INTERFACE
+        assert set(entry.texts) == {"en", "vi", "zh-CN"} and all(entry.texts.values()), surface
