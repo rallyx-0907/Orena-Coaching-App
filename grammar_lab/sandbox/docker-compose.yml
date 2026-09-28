@@ -24,24 +24,26 @@ services:
     ports:
       - "8020:8000"
     environment:
-      PERSISTENCE_BACKEND: sqlite
-      POSTGRES_RUNTIME_URL: ""
-      WRITING_DB: /rundata/w.db
-      AUTH_DB: /rundata/a.db
-      PLATFORM_DB: /rundata/p.db
-      PRODUCT_DB: /rundata/pr.db
-      GOOGLE_CLIENT_ID: ""
-      GOOGLE_CLIENT_SECRET: ""
-      GOOGLE_REDIRECT_URI: ""
-      APP_ENV: development
-      PUBLIC_BASE_URL: http://localhost:8020
-      SESSION_SECRET: ""
-      # Grammar Lab's own Gemini key, never the app's. Set GRAMMAR_LAB_GEMINI_API_KEY
-      # in the shell that runs `docker compose`, or in a .env file next to this
-      # one that is never committed (see .gitignore). Empty is fine for build/
-      # boot: the container comes up and reports ai_ready=false until it is set.
-      GEMINI_API_KEY: ${GRAMMAR_LAB_GEMINI_API_KEY:-}
-      GEMINI_MODELS: gemini-3.5-flash-lite
+      - PERSISTENCE_BACKEND=sqlite
+      - POSTGRES_RUNTIME_URL=
+      - WRITING_DB=/rundata/w.db
+      - AUTH_DB=/rundata/a.db
+      - PLATFORM_DB=/rundata/p.db
+      - PRODUCT_DB=/rundata/pr.db
+      - GOOGLE_CLIENT_ID=
+      - GOOGLE_CLIENT_SECRET=
+      - GOOGLE_REDIRECT_URI=
+      - APP_ENV=development
+      - PUBLIC_BASE_URL=http://localhost:8020
+      - SESSION_SECRET=
+      # Bare name (no "="): compose passes this through from whatever
+      # process's environment invokes `docker compose`, and the value never
+      # appears anywhere in this file. That invoking process reads it from
+      # the .env vault by code and never prints it (see sandbox/README.md).
+      # Absent/empty is fine for build/boot: the container comes up and
+      # reports ai_ready=false until it is set.
+      - GEMINI_API_KEY
+      - GEMINI_MODELS=gemini-3.5-flash-lite
     tmpfs:
       - /rundata
     restart: "no"

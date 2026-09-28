@@ -38,13 +38,25 @@ this sandbox invented.
 
 ## Bring it up
 
+`GEMINI_API_KEY` is a bare pass-through in `docker-compose.yml` (`- GEMINI_API_KEY`,
+no value): compose reads it from whatever environment invokes `docker compose`,
+and the literal value never appears in this file, in `git`, or in this
+session's own transcript. In practice: a short-lived script reads only that
+one variable's value from wherever it is kept (e.g. another checkout's
+`.env`) into the invoking process's environment and immediately calls
+`docker compose up` in the same process -- never `cat`/`type`/`echo`ed,
+never on a command line, never copied into a file here.
+
 ```bash
-export GRAMMAR_LAB_GEMINI_API_KEY=<your own Gemini key -- never the app's>
-docker compose -p grammar-lab-eval -f grammar_lab/sandbox/docker-compose.yml up -d --build
+docker compose -p grammar-lab-eval -f grammar_lab/sandbox/docker-compose.yml up -d
 ```
 
 Wait for it to be healthy, then select Gemini as the active provider (legacy
-AI routing mode, the app's default -- see `writing_coach/ai/platform.py`):
+AI routing mode, the app's default -- see `writing_coach/ai/platform.py`).
+**Never `docker compose config` or `docker inspect` this container** once a
+real key is loaded -- both print the fully resolved environment, including
+the key value. Use `GET /api/admin/ai/config` (below) to check state instead;
+it never echoes credential values, only whether one is configured.
 
 ```bash
 curl -s http://localhost:8020/api/health
@@ -54,23 +66,26 @@ curl -s -X PUT http://localhost:8020/api/admin/ai/config \
 curl -s http://localhost:8020/api/health   # ai_ready should now be true
 ```
 
-Then point `grammar_lab verify` at it:
+Then point `grammar_lab verify` at it. `--evaluator-rate-limit-key gemini`
+(the default) shares one rate limiter between the sandbox's own Gemini calls
+and a Gemini blind-solve model; drop it (pass `''`) if the blind-solve model
+is not also drawing on the Gemini quota:
 
 ```bash
-python -m grammar_lab.pipeline.cli verify --lang en \
-  --evaluator-url http://localhost:8020 --blind-provider gemini --blind-model gemini-3.5-flash-lite
+python -m grammar_lab.pipeline.cli verify --lang en --evaluator-url http://localhost:8020 \
+  --blind-provider <family different from generate's --provider> --blind-model <its model>
 ```
 
 ## Cost
 
 Every call `verify` makes to `/api/evaluate` here has the sandbox's own
 Gemini call behind it (the engine grading a pitfall/example sentence), on top
-of `llm_client.py`'s own blind-solve calls -- both sides use
-`GEMINI_API_KEY`/`GRAMMAR_LAB_GEMINI_API_KEY` and belong in the same run's
-cost estimate. `GET http://localhost:8020/api/admin/ai/operations` (also
-open under the same dev-mode admin bypass) returns the app's own recorded
-per-call cost telemetry after a run -- read that for the real figure rather
-than re-deriving it from prompt lengths.
+of whichever calls `llm_client.py` makes for `generate` and blind-solve --
+all belong in the same run's cost estimate. `GET
+http://localhost:8020/api/admin/ai/operations` (open under the same dev-mode
+admin bypass) returns the app's own recorded per-call cost telemetry after a
+run -- read that for the engine side's real figure rather than re-deriving
+it from prompt lengths.
 
 ## Tear down
 
