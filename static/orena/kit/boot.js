@@ -1,14 +1,18 @@
 /* First-paint attributes for the new learner UI, run as a classic script before any stylesheet
    applies (D-089, Design Contract rules 30 and 48).
 
-   - data-theme: the learner's own choice from the Reader's light/dark button, kept on this device
-     under APPEARANCE_KEY, else the operating system's prefers-color-scheme. Follows the system
-     live while no choice is stored.
+   - data-theme: the learner's own choice from Settings' Appearance row (D-067 review item: Light /
+     Dark / System, screens/settings), kept on this device under APPEARANCE_KEY, else the operating
+     system's prefers-color-scheme. The stored value is 'light', 'dark' or 'system'; anything else
+     - unset, 'system' itself, or a corrupted/unrecognised value - reads the same as System and
+     follows the OS live while it stays chosen, so there is never a flash from a guess this file and
+     kit/device.js resolve differently.
    - data-device: "mobile" below 900px, else "desktop" - the design's two frames and nothing between.
    - lang: the interface language (the device's choice, else the browser's when Orena speaks it,
      else English), so :lang(vi) can pick a face with Vietnamese glyphs from the first paint.
 
-   kit/device.js owns the same keys for the modules; this file only makes the first paint right. */
+   kit/device.js owns the same key and the same fallback for the modules (its own `appearance()`/
+   `setAppearance()`); this file only makes the first paint right, before that module has loaded. */
 (function () {
   var root = document.documentElement;
   var APPEARANCE_KEY = 'orena.appearance';

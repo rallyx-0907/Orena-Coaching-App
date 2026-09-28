@@ -3219,3 +3219,13 @@ The UI's side ships with it: `static/orena/agent/contract.js` (version 4, the ta
 The UI's side ships with the version: the address validation, note and request field, the mock's S14/S15 and reworded S2/S5 in vi/en/zh, the surfaces copy and its generated file, and their gates.
 
 **Amends:** D-092 (§3, §5.4, §7, §10, §12). D-092, D-094 and D-095 otherwise stand. A client that declares `contract_version` ≤ 4 gets the defaults.
+
+## D-097 — The learner can choose the theme in Settings (amends D-089)
+
+**Date:** 2026-09-28. **Status:** Accepted (explicit human direction, a Wave A review item).
+
+**Context.** D-089 ships the design's light and dark themes following the operating system, with the Reader's light/dark button as the only in-product switch, and added no Settings row because the design draws none. Reviewing Wave A, the human asked for the choice Light / Dark / System in Settings.
+
+**Decision.** Settings offers Light, Dark and System (the Learning tab, drawn with the design's own choice-row control). System is the default and follows the operating system live, as D-089 says. The choice is a device preference in the browser, like the interface language, never account data; it is applied before first paint, at once when changed, and an unknown stored value reads as System. The Reader's light/dark button, when built, sets the same preference. Colour keeps its one owner and AA holds in both themes.
+
+**Amends:** D-089 point 2 ("No Settings row is added"). D-089 otherwise stands; DESIGN_CONTRACT rule 30 says the same.

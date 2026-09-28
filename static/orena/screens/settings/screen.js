@@ -32,6 +32,7 @@ import { readReaderSettings, writeReaderSettings, sizeBucketOf, SIZE_BUCKETS } f
 import { readStage, writeStage, transcriptDefaults } from '../../product/transcript-stage.js';
 import { readReviewSettings } from '../../product/recall-modes.js';
 import { MIC_STATES, watchMicrophone } from '../../capabilities/mic-readiness.js';
+import { appearance, setAppearance } from '../../kit/device.js';
 import { t } from './copy.js';
 import { TABS, tabFromQuery, rowsForTab, barPercent } from './model.js';
 
@@ -80,10 +81,13 @@ function targetOptionLabel(opt) {
   return opt.nativeName && opt.nativeName !== translated ? `${translated} · ${opt.nativeName}` : translated;
 }
 
+const THEME_LABEL_KEY = { light: 'themeLight', dark: 'themeDark', system: 'themeSystem' };
+
 function choiceOptions(row) {
   if (row.id === 'target') return row.options.map((opt) => ({ value: opt.code, label: targetOptionLabel(opt), selected: opt.code === row.value }));
   if (row.id === 'support') return row.options.map((opt) => ({ value: opt.code, label: opt.label, selected: opt.code === row.value }));
   if (row.id === 'interface') return row.options.map((opt) => ({ value: opt.code, label: opt.label, selected: opt.code === row.value }));
+  if (row.id === 'theme') return row.options.map((value) => ({ value, label: t(THEME_LABEL_KEY[value]), selected: value === row.value }));
   if (row.id === 'readerSize') return row.options.map((size) => ({ value: size, label: t(`size${size}`), selected: size === row.value }));
   // sessionLength: plain numerals, identical in every locale.
   return row.options.map((value) => ({ value, label: value, selected: value === row.value }));
@@ -185,6 +189,7 @@ export default async function settingsScreen(element, ctx) {
         sizeBucket: sizeBucketOf(reader.size),
         autoscroll: stage.autoscroll,
         meaning: stage.meaning,
+        theme: appearance(),
       },
       review: { modes: reviewSettings?.modes },
       plan: {
@@ -282,12 +287,22 @@ export default async function settingsScreen(element, ctx) {
     paintTab();
   }
 
+  /* Appearance: kit/device.js applies the change immediately (paints data-theme, no reload) and
+     persists it under its own one-key device preference - never server data (Architecture holds,
+     "Learner-data persistence"). Repaint so the segmented control's selection reflects the value
+     setAppearance actually stored (its own normalize, not an optimistic echo of `value`). */
+  function onThemePick(value) {
+    setAppearance(value);
+    paintTab();
+  }
+
   function onChoicePick(rowId, value) {
     const row = currentRows().find((r) => r.id === rowId);
     if (!row || row.disabled) return;
     if (rowId === 'target') return onTargetPick(value);
     if (rowId === 'support') return onSupportPick(value);
     if (rowId === 'interface') return onInterfacePick(value);
+    if (rowId === 'theme') return onThemePick(value);
     if (rowId === 'readerSize') return onReaderSizePick(value);
     // sessionLength is always disabled today (model.js) - nothing to wire.
   }

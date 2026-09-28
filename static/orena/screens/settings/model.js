@@ -64,8 +64,25 @@ export function languageRows({ languages, supportLanguages, targetCode, supportC
   ];
 }
 
-export function learningRows({ sizeBucket, autoscroll, meaning }) {
+/* Appearance (D-067 review item): Light / Dark / System, System the default (D-089). The design
+   draws no appearance/theme group anywhere in Settings (docs/design/canonical-ui, frame 26 - every
+   row across all five tabs is accounted for in the inventory and none is a theme control), so this
+   row goes in the most fitting existing group rather than inventing one: Learning is the only tab
+   that already holds a pure, device-only *display* preference with no language and no account
+   effect - Reader text size - the same shape Appearance is. It leads the tab, since it is the most
+   general of the group (it affects the whole app, not only the Reader). `theme` is already
+   normalized by kit/device.js's `appearance()` (light/dark/system, an invalid value read back as
+   system) - `appearanceValue` here is a second, independent fallback so this pure module never
+   trusts its caller and never throws on an unexpected value either (the same defensive shape
+   `sizeBucketOf` already gives Reader text size). */
+const APPEARANCE_VALUES = Object.freeze(['light', 'dark', 'system']);
+function appearanceValue(value) {
+  return APPEARANCE_VALUES.includes(value) ? value : 'system';
+}
+
+export function learningRows({ sizeBucket, autoscroll, meaning, theme }) {
   return [
+    { id: 'theme', kind: 'choice', options: APPEARANCE_VALUES, value: appearanceValue(theme), disabled: false },
     { id: 'readerSize', kind: 'choice', options: ['S', 'M', 'L'], value: sizeBucket, disabled: false },
     { id: 'autoscroll', kind: 'toggle', value: Boolean(autoscroll), disabled: false },
     { id: 'meaning', kind: 'toggle', value: Boolean(meaning), disabled: false },
