@@ -30,7 +30,6 @@ def test_a_completion_is_a_claim(text):
     "text",
     [
         "Bấm Lưu từ để lưu 我.",
-        "Mình lưu 我 cho bạn nhé.",
         "Tap Save word to keep it.",
         "点击“保存”即可。",
         "Bộ chấm chưa đánh dấu lỗi nào trong bài này.",
@@ -60,7 +59,7 @@ from writing_coach.agent.honesty import ClaimGate, claims_acted  # noqa: E402
 
 @pytest.mark.parametrize(
     "text",
-    ["Mình lưu 是 cho bạn rồi nhé!", "Mình vừa lưu 是 cho bạn.", "Orena thêm 是 vào bộ sưu tập rồi nhé.",
+    ["Mình lưu 是 cho bạn rồi nhé!", "Mình vừa lưu 是 cho bạn.", "Mình lưu 我 cho bạn nhé.", "Mình sẽ lưu nó cho bạn.", "Orena thêm 是 vào bộ sưu tập rồi nhé.",
      "Saved!", "Done, saved.", "我帮你保存了这个词。"],
 )  # fmt: skip
 def test_the_common_ways_of_saying_it_acted_are_claims(text):

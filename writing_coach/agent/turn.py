@@ -34,7 +34,7 @@ import time
 import uuid
 from collections.abc import Callable, Iterator, Mapping
 from contextlib import contextmanager
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from types import MappingProxyType
 from typing import Any
 
@@ -352,7 +352,7 @@ class _Turn:
         yield self.stream.emit(ToolCallEvent(tool=tool.name, label=label))
         try:
             with learner_context(self.learner):
-                result = self.rt.tools.invoke(tool.name, self.learner, args)
+                result = self.rt.tools.invoke(tool.name, replace(self.learner, interface=self.locale.interface), args)
         except ToolArgumentsInvalid:
             yield self._unavailable(tool.name)
             return "refused: arguments do not fit this tool's schema"

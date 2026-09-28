@@ -51,7 +51,7 @@ def test_an_attempt_cites_only_what_the_provider_flagged():
     assert seen == [(100, "lesson-9", "s1")]  # no read-by-id (N-9): the list the client's ids filter
     assert result.data["found"] and result.data["flagged_count"] == 1 and result.count == 1
     assert [e.ref for e in result.evidence] == [{"attempt_id": "a-1", "path": "words[1]"}]
-    assert result.evidence[0].excerpt["error_type"] == "Mispronunciation"
+    assert result.evidence[0].excerpt["error"] == "Mispronounced"  # the provider's mark, named - never "Mispronunciation"
     assert [w["flagged"] for w in result.data["words"]] == [False, True, False]
     assert result.data["content_id"] == "lesson-9" and result.data["item_id"] == "s1"
     missing = tools(speaking_attempts=attempts_reader([ATTEMPT])).invoke("get_pronunciation_attempt", ZH, {"attempt_id": "nope"})

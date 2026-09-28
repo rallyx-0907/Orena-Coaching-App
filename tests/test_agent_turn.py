@@ -153,7 +153,8 @@ def test_evidence_then_claim_then_actions():
     action = next(e for e in events if e.name == "action")
     assert (action.type, action.label, action.risk) == ("play_model", "Nghe mẫu", "LOW")
     # the tool ran as the authenticated learner, inside that learner's request context
-    assert seen[0][0] is VI and seen[0][1] == "learner-1"
+    assert (seen[0][0].user_key, seen[0][0].language) == (VI.user_key, VI.language) and seen[0][1] == "learner-1"
+    assert seen[0][0].interface == "vi"  # labels a tool hands the model are in the interface language
     # what the model saw of the tool: redacted, with the turn's evidence ids
     tool_message = provider.requests[1].messages[-1].content
     assert '"e1"' in tool_message and "internal-model" not in tool_message
@@ -319,7 +320,7 @@ def test_the_model_is_told_who_it_is_and_where_the_learner_is_without_a_message_
     assert "speaking.pronunciation.tone" in context.content  # the capabilities here, chosen from surface and language
     # the voice in the support language, last before the learner's words (the live run: English rules lost)
     assert style.role == "system" and 'Xưng "mình", gọi người học là "bạn"' in style.content
-    assert "Bộ chấm chưa đánh dấu lỗi nào" in style.content and "Bấm … để …" in style.content
+    assert "Bộ chấm chưa đánh dấu lỗi nào" in style.content and '"Bấm <nhãn nút> để <việc' in style.content
     # the selection restated next to the learner's words (the live run lost one kept only in the context)
     assert selected.role == "system" and selected.content.startswith('The learner has selected the word "是"')
     assert user.content == "Tại sao tôi sai từ này?"
@@ -638,7 +639,7 @@ def test_a_accepted_action_is_offered_as_a_button_never_as_done():
     run(rt)
     told = provider.requests[1].messages[-1].content
     assert "shown as the button 'Lưu từ'" in told and "has not tapped it" in told and "do not say it is done" in told
-    assert "never write as if it happened" in INSTRUCTION and "Bấm Lưu từ để lưu" in INSTRUCTION
+    assert "never write as if it happened" in INSTRUCTION and "Bấm Lưu từ để thêm 我 vào từ vựng của bạn." in INSTRUCTION
 
 
 def test_no_marked_error_is_not_no_error_and_praise_is_not_an_answer():
@@ -765,3 +766,14 @@ def test_the_model_is_told_each_payload_exactly_and_a_refusal_says_the_shape():
     run(rt)
     told = provider.requests[1].messages[-1].content
     assert told.startswith("refused: payload does not fit save_word") and 'It takes save_word: {"lang": "zh-CN", "text": "…"}' in told
+
+
+def test_the_offer_is_one_short_sentence_and_never_describes_the_button():
+    from writing_coach.agent.honesty import offer_for
+    from writing_coach.agent.prompts import INSTRUCTION, style_for
+
+    assert offer_for("save_word", "Lưu từ", {"text": "我", "lang": "zh-CN"}, interface="vi", support="vi") == (
+        "Bấm Lưu từ để thêm 我 vào từ vựng của bạn."
+    )
+    assert 'Never describe the button or the\n  screen ("the button below"' in INSTRUCTION
+    assert '"nút bên dưới", "mình đã chuẩn bị sẵn nút"' in style_for("vi", [])

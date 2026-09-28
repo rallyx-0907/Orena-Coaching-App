@@ -33,6 +33,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from writing_coach import becoming_library
 from writing_coach.vocabulary_library import normalize_vocabulary_word
+from writing_coach.agent.labels import category_label, issue_label, review_state
 from writing_coach.agent.tools import AgentTool, LearnerScope, ToolEvidence, ToolPermission, ToolResult
 
 BOTH = ("en", "zh-CN")
@@ -104,7 +105,7 @@ def _due_vocabulary(learner: LearnerScope, args: DueWordsArguments) -> ToolResul
             {
                 "word": _clip(row.get("word"), 60),
                 "meaning": _clip(meaning, 80),
-                "stage": _clip(row.get("stage_label"), 40),
+                **review_state(row.get("review_stage"), True, learner.interface),
                 "lapses": int(row.get("lapse_count") or 0),
                 "next_review_at": row.get("next_review_at"),
             }
@@ -137,7 +138,7 @@ def _writing_evaluation(read: WritingReviewReader) -> Callable[[LearnerScope, Es
                     excerpt={
                         "fragment": _clip(issue.get("fragment"), 120),
                         "correction": _clip(issue.get("correction"), 120),
-                        "kind": _clip(issue.get("kind"), 40),
+                        "kind": issue_label(issue.get("kind"), learner.interface),
                     },
                 )
                 for index, issue in enumerate(kept)
@@ -155,7 +156,7 @@ def _writing_evaluation(read: WritingReviewReader) -> Callable[[LearnerScope, Es
                         "correction": _clip(issue.get("correction"), 120),
                         "why": _clip(issue.get("why"), 200),
                         "rule": _clip(issue.get("rule"), 120),
-                        "kind": _clip(issue.get("kind"), 40),
+                        "kind": issue_label(issue.get("kind"), learner.interface),
                     }
                     for index, issue in enumerate(kept)
                 ],
@@ -234,13 +235,12 @@ class FeedbackArguments(BaseModel):
     kind: str | None = Field(default=None, description=f"Only issues of this kind: {', '.join(ISSUE_KINDS)}.")
 
 
-def _state_of(item: Mapping[str, Any] | None) -> dict[str, Any]:
+def _state_of(item: Mapping[str, Any] | None, interface: str) -> dict[str, Any]:
     if not item:
         return {"saved": False}
     return {
         "saved": True,
-        "stage": _clip(item.get("stage_label"), 40),
-        "due": bool(item.get("due")),
+        **review_state(item.get("review_stage"), bool(item.get("due")), interface),
         "lapses": int(item.get("lapse_count") or 0),
         "next_review_at": item.get("next_review_at"),
     }
@@ -252,7 +252,7 @@ def _saved_word_state(learner: LearnerScope, args: WordsArguments) -> ToolResult
     rows = []
     for word in words:
         key = normalize_vocabulary_word(word) or word.casefold()
-        rows.append({"word": _clip(word, 60), **_state_of(states.get(key))})
+        rows.append({"word": _clip(word, 60), **_state_of(states.get(key), learner.interface)})
     saved = [row for row in rows if row["saved"]]
 
     def build(keep: int) -> ToolResult:
@@ -265,7 +265,7 @@ def _saved_word_state(learner: LearnerScope, args: WordsArguments) -> ToolResult
                     id=f"word{index}",
                     source="vocabulary.review",
                     ref={"text": row["word"]},
-                    excerpt={"saved": True, "stage": row["stage"], "due": row["due"]},
+                    excerpt={"saved": True, "status": row["status"], "due": row["due"]},
                 )
                 for index, row in enumerate(shown)
             ),
@@ -306,7 +306,7 @@ def _word_detail(learner: LearnerScope, args: WordArguments) -> ToolResult:
         "translations": {str(code): _clip(text, 120) for code, text in list(translations.items())[:3]},
         "readings": _texts(entry.get("readings") or entry.get("reading") or entry.get("pinyin"), 3, 60),
         "examples": _texts(entry.get("examples"), 2, 160),
-        **_state_of(saved),
+        **_state_of(saved, learner.interface),
     }
     return ToolResult(
         summary=f"{data['word']}: {'in' if entry else 'not in'} the catalogue, {'saved' if saved else 'not saved'}",
@@ -343,7 +343,7 @@ def _feedback_items(read: WritingReviewReader) -> Callable[[LearnerScope, Feedba
                             "fragment": _clip(issue.get("fragment"), 120),
                             "correction": _clip(issue.get("correction"), 120),
                             "why": _clip(issue.get("why"), 200),
-                            "kind": _clip(issue.get("kind"), 40),
+                            "kind": issue_label(issue.get("kind"), learner.interface),
                         }
                         for index, issue in kept
                     ],
@@ -356,7 +356,7 @@ def _feedback_items(read: WritingReviewReader) -> Callable[[LearnerScope, Feedba
                         excerpt={
                             "fragment": _clip(issue.get("fragment"), 120),
                             "correction": _clip(issue.get("correction"), 120),
-                            "kind": _clip(issue.get("kind"), 40),
+                            "kind": issue_label(issue.get("kind"), learner.interface),
                         },
                     )
                     for index, issue in kept
@@ -374,9 +374,10 @@ def _history_summary(read: WritingHistoryReader) -> Callable[[LearnerScope, Base
         memory = read() or {}
         categories = [item for item in memory.get("items") or () if isinstance(item, Mapping)]
         categories.sort(key=lambda item: (-int(item.get("total") or 0), str(item.get("category"))))
+        keys = [str(item.get("category") or "") for item in categories[:MAX_HISTORY_CATEGORIES]]
         rows = [
             {
-                "category": _clip(item.get("category"), 40),
+                "category": category_label(item.get("category"), learner.interface),
                 "total": int(item.get("total") or 0),
                 "older": int(item.get("older") or 0),
                 "newer": int(item.get("newer") or 0),
@@ -400,7 +401,7 @@ def _history_summary(read: WritingHistoryReader) -> Callable[[LearnerScope, Base
                     ToolEvidence(
                         id=f"history{index}",
                         source="writing.evaluation",
-                        ref={"scope": "history", "category": row["category"]},
+                        ref={"scope": "history", "category": keys[index]},
                         excerpt={"total": row["total"], "older": row["older"], "newer": row["newer"]},
                     )
                     for index, row in enumerate(kept)

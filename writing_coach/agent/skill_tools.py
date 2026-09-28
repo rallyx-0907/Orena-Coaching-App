@@ -38,6 +38,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from writing_coach.agent.labels import pronunciation_label
 from writing_coach.agent.read_tools import BOTH, _clip, _fit
 from writing_coach.agent.tools import AgentTool, LearnerScope, ToolEvidence, ToolPermission, ToolResult
 
@@ -179,7 +180,7 @@ def _attempt(attempts: SpeakingAttempts) -> Callable[[LearnerScope, AttemptArgum
                             "word": _clip(word.get("word"), 60),
                             "accuracy": _score(word.get("accuracy_score")),
                             "flagged": flagged(word),
-                            "error_type": _clip(word.get("error_type"), 40) if flagged(word) else None,
+                            "error": pronunciation_label(word.get("error_type"), learner.interface) if flagged(word) else None,
                         }
                         for index, word in shown
                     ],
@@ -194,7 +195,7 @@ def _attempt(attempts: SpeakingAttempts) -> Callable[[LearnerScope, AttemptArgum
                         excerpt={
                             "word": _clip(word.get("word"), 60),
                             "accuracy": _score(word.get("accuracy_score")),
-                            "error_type": _clip(word.get("error_type"), 40),
+                            "error": pronunciation_label(word.get("error_type"), learner.interface),
                         },
                     )
                     for index, word in marked
@@ -233,7 +234,7 @@ def _word_detail(attempts: SpeakingAttempts) -> Callable[[LearnerScope, WordArgu
             "word": _clip(word.get("word"), 60),
             "accuracy": _score(word.get("accuracy_score")),
             "flagged": flagged(word),
-            "error_type": _clip(word.get("error_type"), 40) if flagged(word) else None,
+            "error": pronunciation_label(word.get("error_type"), learner.interface) if flagged(word) else None,
             "phonemes": phonemes,
             "note": "Syllables, tones and timings are not stored for an attempt.",
         }

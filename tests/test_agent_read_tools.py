@@ -213,13 +213,15 @@ def test_saved_word_state_answers_word_by_word(monkeypatch):
 
     def state(candidates):
         seen.append(candidates)
-        return {"机会": {"word": "机会", "stage_label": "Learning", "due": True, "lapse_count": 2, "next_review_at": "2026-09-28"}}
+        return {"机会": {"word": "机会", "stage_label": "Learning", "review_stage": 1, "due": True, "lapse_count": 2,
+                        "next_review_at": "2026-09-28"}}  # fmt: skip
 
     monkeypatch.setattr(becoming_library, "saved_vocabulary_state", state)
     result = registry().invoke("get_saved_word_state", ZH, {"words": ["机会", "学习"]})
     assert seen == [("机会", "学习")]
     assert result.data["words"] == [
-        {"word": "机会", "saved": True, "stage": "Learning", "due": True, "lapses": 2, "next_review_at": "2026-09-28"},
+        {"word": "机会", "saved": True, "status": "Learning", "status_meaning": "reviewed a few times, not yet secure",
+         "due": True, "due_label": "Due for review", "lapses": 2, "next_review_at": "2026-09-28"},  # fmt: skip
         {"word": "学习", "saved": False},
     ]
     assert result.count == 1 and [e.ref for e in result.evidence] == [{"text": "机会"}]
@@ -274,7 +276,8 @@ def test_history_summary_reads_the_apps_error_memory():
     }
     tools = build_tool_registry(writing_review=lambda essay_id: None, writing_history=lambda: memory)
     result = tools.invoke("get_writing_history_summary", EN, {})
-    assert [row["category"] for row in result.data["categories"]] == ["article", "tense"]
+    assert [row["category"] for row in result.data["categories"]] == ["Articles", "Tense"]  # named, never the key
+    assert [e.ref["category"] for e in result.evidence] == ["article", "tense"]  # the record's key stays in the ref
     assert result.data["revision_count"] == 12 and result.count == 2
     assert result.evidence[0].excerpt == {"total": 9, "older": 3, "newer": 6}
 

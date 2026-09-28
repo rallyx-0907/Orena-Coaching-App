@@ -96,6 +96,7 @@ class LearnerScope:
 
     user_key: str
     language: str  # the backend's internal target code ("en", "zh")
+    interface: str = "en"  # the learner's interface language: the language of labels a tool hands the model
 
     @classmethod
     def from_request_context(cls) -> LearnerScope:

@@ -40,6 +40,7 @@ _SELF = re.compile(
     rf"\b(?:mình|orena)\s+(?:vừa\s+|đã\s+|vừa\s+đã\s+)?{_VI_DONE}\b[^.!?\n]{{0,60}}?\b(?:rồi|xong)\b"
     rf"|\b(?:mình|orena)\s+(?:vừa\s+)?đã\s+{_VI_DONE}\b"
     rf"|\b(?:mình|orena)\s+vừa\s+{_VI_DONE}\b"
+    rf"|\b(?:mình|orena)\s+(?:sẽ\s+)?{_VI_DONE}\b[^.!?\n]{{0,40}}?\bcho\s+bạn\b"
     rf"|^\W*đã\s+{_VI_DONE}\b"
     rf"|\b(?:lưu|thêm|xóa|xoá)\s+xong\b"
     rf"|\bI(?:'ve|\s+have)?\s+(?:just\s+)?{_EN_DONE}\b"

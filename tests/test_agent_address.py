@@ -184,3 +184,21 @@ def test_once_the_learner_chose_or_declined_there_is_no_offer():
     list(rt.run(request("Em hỏi tiếp nhé.", notes=(note("vi", "mình", "bạn"),)), ZH))  # they said no: kept as theirs
     assert provider.requests[1].messages[-1].content.startswith("refused: the learner already chose")
     assert "If they say no, call\n  set_address with the pair you use now" in INSTRUCTION
+
+
+# --- a pair already set is changed again (human direction 2026-09-28) ---------------------------
+
+
+@pytest.mark.parametrize(("self_term", "user_term"), [("mình", "bạn"), ("tôi", "anh")])
+def test_a_kept_pair_is_replaced_when_the_learner_changes_it_again(self_term, user_term):
+    rounds = [
+        (ToolCallRequest("c1", SET_ADDRESS, {"self_term": self_term, "user_term": user_term}), TurnFinished(0, 2, "tool_calls")),
+        reply("Được."),
+    ]
+    rt, _ = runtime(rounds)
+    events = list(rt.run(request("Thôi, đổi lại nhé.", notes=(note("vi", "chị", "em"),)), ZH))
+    updates = [e for e in events if e.name == "memory_update"]
+    assert len(updates) == 1 and updates[0].op == "upsert" and updates[0].note["id"] == "address-vi"  # same id: it replaces
+    kept = address_for([CoachNote.model_validate(updates[0].note)], "vi")
+    assert (kept.self_term, kept.user_term, kept.chosen) == (self_term, user_term, True)
+    assert "back to the default or to another\n  pair: call set_address with that pair" in INSTRUCTION
