@@ -30,7 +30,9 @@ python -m grammar_lab.pipeline.cli export-error-tags           # xuất lại sc
 # và evaluator sandbox: grammar_lab/sandbox/ (docker compose, xem sandbox/README.md).
 python -m grammar_lab.pipeline.cli generate --lang en --ids en.past_simple,en.there_is_are   # provider mặc định: anthropic
 python -m grammar_lab.pipeline.cli generate --lang en --ids en.past_simple --with-story \
-  --provider deepseek --model deepseek-flash    # thêm block story (schema v0.3, STORY_SPEC.md)
+  --provider deepseek --model deepseek-flash --deepseek-thinking off   # thêm block story (schema v0.3)
+# --deepseek-thinking off|low|high (mặc định off) -- xem docstring llm_client.py: thinking chia sẻ
+# max_tokens với câu trả lời, low/high tự thêm khoảng đệm (+4096/+8192); ghi vào reports/<run_id>/generate.json
 python -m grammar_lab.pipeline.cli verify --lang en --evaluator-url http://localhost:8020    # blind-solve mặc định: gemini
 python -m grammar_lab.pipeline.cli route --lang en --gold-set-passed   # bỏ cờ này -> mọi mục bị flagged (SPEC §5.4)
 python -m grammar_lab.pipeline.cli report --lang en                    # reports/<run_id>/report.{json,html}

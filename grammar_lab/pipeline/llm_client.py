@@ -31,11 +31,22 @@ that *verifies* a check item (blind solve) to differ from the model that
   with empty ``content`` for every call. Cause: DeepSeek's thinking mode is
   **on by default at "high" effort** (its own docs), and for a schema this
   size it reliably spent the entire ``max_tokens`` budget on
-  ``reasoning_content`` before ever writing to ``content``. Fixed by sending
-  ``"thinking": {"type": "disabled"}`` -- chain-of-thought buys nothing for
-  filling in a schema. A 3-attempt retry remains as a safety net for the
-  separate "occasionally empty" case DeepSeek's own json-mode docs warn
-  about even outside thinking mode.
+  ``reasoning_content`` before ever writing to ``content``.
+
+  ``deepseek_thinking`` (``"off" | "low" | "high"``, default ``"off"``)
+  controls this rather than hard-coding it off: "off" sends
+  ``{"type": "disabled"}``; "low"/"high" send ``{"type": "enabled"}`` with
+  that ``reasoning_effort`` and, since reasoning shares the one
+  ``max_tokens`` budget with the final answer, automatically add headroom
+  (+4096 for low, +8192 for high) on top of the caller's ``max_tokens`` so
+  there is still room left for ``content`` after the reasoning. The CLI
+  records which level a run used in ``reports/<run_id>/generate.json``, and
+  exposes it as ``--deepseek-thinking`` for the phase-1 gold-set comparison
+  of off vs. low (SPEC §5.4's calibration idea, applied to provider choice).
+
+  A 3-attempt retry remains as a safety net for the separate "occasionally
+  empty" case DeepSeek's own json-mode docs warn about even outside
+  thinking mode.
 
 Every key is read from its own environment variable
 (``ANTHROPIC_API_KEY``/``OPENAI_API_KEY``/``GEMINI_API_KEY``/``GROQ_API_KEY``/
@@ -111,6 +122,12 @@ _ENV_VAR_BY_PROVIDER = {
     "groq": "GROQ_API_KEY",
     "deepseek": "DEEPSEEK_API_KEY",
 }
+
+DEEPSEEK_THINKING_LEVELS = {"off", "low", "high"}
+# Reasoning shares one max_tokens budget with the final answer (see module
+# docstring): headroom added on top of the caller's max_tokens so content
+# still has room to be written after the reasoning phase.
+DEEPSEEK_THINKING_HEADROOM = {"off": 0, "low": 4096, "high": 8192}
 
 # USD per 1,000,000 tokens (input, output). Checked live against
 # platform.claude.com/docs/en/about-claude/pricing, platform.openai.com/docs/pricing
@@ -236,12 +253,16 @@ class LLMClient:
         cache_dir: Path = DEFAULT_CACHE_DIR,
         transport: httpx.BaseTransport | None = None,
         timeout: float = 120.0,
+        deepseek_thinking: str = "off",
     ) -> None:
         if provider not in PROVIDERS:
             raise ValueError(f"unknown provider {provider!r}; expected one of {sorted(PROVIDERS)}")
+        if deepseek_thinking not in DEEPSEEK_THINKING_LEVELS:
+            raise ValueError(f"unknown deepseek_thinking {deepseek_thinking!r}; expected one of {sorted(DEEPSEEK_THINKING_LEVELS)}")
         self.provider = provider
         self.model = model
         self.cache_dir = cache_dir
+        self.deepseek_thinking = deepseek_thinking
         self.api_key = api_key if api_key is not None else os.environ.get(_ENV_VAR_BY_PROVIDER[provider], "")
         self._client = httpx.Client(transport=transport, timeout=timeout)
 
@@ -364,30 +385,35 @@ class LLMClient:
         docstring): the schema is spelled out in the prompt instead, and the
         word "json" must appear for the mode to activate at all.
 
-        Thinking mode is on by default at "high" effort (DeepSeek's own docs).
-        Live testing (2026-09-28) found it reliably burns the whole
-        ``max_tokens`` budget on ``reasoning_content`` before writing anything
-        to ``content`` for a schema this size, coming back with empty
-        ``content`` every time -- explicitly disabled here since chain-of-
-        thought buys nothing for filling in a schema. A short retry remains
-        as a safety net for the "occasionally empty" case DeepSeek's own
-        json-mode docs separately warn about.
+        ``self.deepseek_thinking`` controls thinking mode (off by default --
+        see module docstring for why, and for the +4096/+8192 max_tokens
+        headroom added for low/high so reasoning does not crowd out the
+        final answer). A short retry remains as a safety net for the
+        "occasionally empty" case DeepSeek's own json-mode docs separately
+        warn about, independent of thinking mode.
         """
         schema_instruction = (
             "\n\nRespond with a single JSON object and nothing else (no markdown fences, no commentary), "
             f"matching this JSON Schema exactly:\n{json.dumps(json_schema, ensure_ascii=False)}"
         )
-        body = {
+        if self.deepseek_thinking == "off":
+            thinking: dict[str, Any] = {"type": "disabled"}
+        else:
+            thinking = {"type": "enabled"}
+            max_tokens += DEEPSEEK_THINKING_HEADROOM[self.deepseek_thinking]
+        body: dict[str, Any] = {
             "model": self.model,
             "temperature": temperature,
             "max_tokens": max_tokens,
-            "thinking": {"type": "disabled"},
+            "thinking": thinking,
             "messages": [
                 {"role": "system", "content": system + schema_instruction},
                 {"role": "user", "content": user},
             ],
             "response_format": {"type": "json_object"},
         }
+        if self.deepseek_thinking != "off":
+            body["reasoning_effort"] = self.deepseek_thinking
         spent_input = 0
         spent_output = 0
         last_message = "DeepSeek returned empty content 3 times (a known json_object-mode issue per its own docs)"

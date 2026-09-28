@@ -251,11 +251,51 @@ def test_deepseek_empty_content_raises_llm_error_after_3_attempts(tmp_path: Path
     assert excinfo.value.usage == LLMUsage(300, 1500)
 
 
-def test_deepseek_sends_thinking_disabled(tmp_path: Path) -> None:
+def test_deepseek_sends_thinking_disabled_by_default(tmp_path: Path) -> None:
     calls: list[httpx.Request] = []
     client(tmp_path, "deepseek", _deepseek_transport(calls)).complete(system="s", user="u", json_schema=SCHEMA)
     sent = json.loads(calls[0].content)
     assert sent["thinking"] == {"type": "disabled"}
+    assert "reasoning_effort" not in sent
+
+
+def test_deepseek_thinking_low_enables_and_adds_headroom(tmp_path: Path) -> None:
+    calls: list[httpx.Request] = []
+    c = LLMClient("deepseek", "deepseek-flash", api_key="k", cache_dir=tmp_path,
+                  transport=_deepseek_transport(calls), deepseek_thinking="low")
+    c.complete(system="s", user="u", json_schema=SCHEMA, max_tokens=1000)
+    sent = json.loads(calls[0].content)
+    assert sent["thinking"] == {"type": "enabled"}
+    assert sent["reasoning_effort"] == "low"
+    assert sent["max_tokens"] == 1000 + 4096
+
+
+def test_deepseek_thinking_high_enables_and_adds_more_headroom(tmp_path: Path) -> None:
+    calls: list[httpx.Request] = []
+    c = LLMClient("deepseek", "deepseek-flash", api_key="k", cache_dir=tmp_path,
+                  transport=_deepseek_transport(calls), deepseek_thinking="high")
+    c.complete(system="s", user="u", json_schema=SCHEMA, max_tokens=1000)
+    sent = json.loads(calls[0].content)
+    assert sent["thinking"] == {"type": "enabled"}
+    assert sent["reasoning_effort"] == "high"
+    assert sent["max_tokens"] == 1000 + 8192
+
+
+def test_unknown_deepseek_thinking_level_is_rejected(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="deepseek_thinking"):
+        LLMClient("deepseek", "deepseek-flash", api_key="k", cache_dir=tmp_path, deepseek_thinking="medium")
+
+
+def test_deepseek_thinking_only_affects_deepseek_requests(tmp_path: Path) -> None:
+    """A non-default deepseek_thinking on a non-DeepSeek client is accepted (it is
+    simply unused) rather than rejected -- the field is provider-specific, not a
+    cross-provider concept."""
+    calls: list[httpx.Request] = []
+    c = LLMClient("groq", "openai/gpt-oss-120b", api_key="k", cache_dir=tmp_path,
+                  transport=_groq_transport(calls), deepseek_thinking="high")
+    c.complete(system="s", user="u", json_schema=SCHEMA)
+    sent = json.loads(calls[0].content)
+    assert "thinking" not in sent
 
 
 def test_deepseek_retries_empty_content_then_succeeds(tmp_path: Path) -> None:

@@ -96,13 +96,18 @@ def generate(
         False, "--with-story",
         help="Also generate the daily-theme story block (STORY_SPEC.md) and bump the point to schema_version 0.3.",
     ),
+    deepseek_thinking: str = typer.Option(
+        "off", "--deepseek-thinking",
+        help="Only meaningful with --provider deepseek: off | low | high. Reasoning shares max_tokens "
+             "with the final answer, so low/high add headroom automatically (llm_client.py docstring).",
+    ),
     root: Path = typer.Option(LAB_ROOT, "--root"),
 ) -> None:
     """SPEC §5.1: code-generated rule_table + LLM-generated blocks + templated check items."""
     if lang not in LANGS:
         raise typer.BadParameter(f"expected one of {', '.join(LANGS)}", param_hint="--lang")
     outcomes = []
-    with LLMClient(provider, model) as llm:
+    with LLMClient(provider, model, deepseek_thinking=deepseek_thinking) as llm:
         generator = Generator(lang=lang, l1=l1, llm=llm, root=root)
         for point_id in (p.strip() for p in ids.split(",") if p.strip()):
             try:
@@ -120,6 +125,7 @@ def generate(
     run_id = new_run_id()
     write_step(root, run_id, "generate", {
         "run_id": run_id, "lang": lang, "provider": provider, "model": model,
+        "deepseek_thinking": deepseek_thinking if provider == "deepseek" else None,
         "outcomes": [
             {"point_id": o.point_id, "status": o.status, "reason": o.reason, "cost_usd": o.cost_usd, "cached": o.cached}
             for o in outcomes
@@ -148,6 +154,10 @@ def verify(
              "to Gemini for both). Pass '' to disable if the sandbox uses an unmetered provider.",
     ),
     ids: str = typer.Option("", "--ids", help="Comma-separated point ids to verify (default: every point)."),
+    deepseek_thinking: str = typer.Option(
+        "off", "--deepseek-thinking",
+        help="Only meaningful with --blind-provider deepseek: off | low | high (see generate --help).",
+    ),
     root: Path = typer.Option(LAB_ROOT, "--root"),
 ) -> None:
     """SPEC §5.3: engine pitfall match, clean examples, blind solve. Skips points that fail validate."""
@@ -161,7 +171,7 @@ def verify(
         points = {point_id: point for point_id, point in points.items() if point_id in wanted}
     results: dict[str, dict] = {}
     evaluator = EvaluatorClient(evaluator_url, rate_limit_key=evaluator_rate_limit_key or None)
-    with evaluator, LLMClient(blind_provider, blind_model) as blind_solver:
+    with evaluator, LLMClient(blind_provider, blind_model, deepseek_thinking=deepseek_thinking) as blind_solver:
         for point_id, point in points.items():
             if point_id in dirty_ids:
                 results[point_id] = {"flags": [], "skipped": "validate_failed"}
@@ -179,7 +189,9 @@ def verify(
     run_id = new_run_id()
     write_step(root, run_id, "verify", {
         "run_id": run_id, "lang": lang, "evaluator_url": evaluator_url,
-        "blind_provider": blind_provider, "blind_model": blind_model, "points": results,
+        "blind_provider": blind_provider, "blind_model": blind_model,
+        "deepseek_thinking": deepseek_thinking if blind_provider == "deepseek" else None,
+        "points": results,
     })
     typer.echo(f"verify --lang {lang}: {len(results)} point(s) checked")
 
