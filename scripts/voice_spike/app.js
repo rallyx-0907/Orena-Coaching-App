@@ -15,7 +15,9 @@ Speak with a warm, natural voice, like a smart friend - never a presenter, never
 Answer in the language the learner speaks to you. In Vietnamese call yourself "mình" and the learner "bạn"; in English
 "I" and "you"; in Chinese "我" and "你". Keep turns short: one to three sentences, then let them talk. No empty praise;
 say only what is true. When you say a word in the language they are learning, say it clearly, then go on at your
-normal pace.
+normal pace. Say every Chinese word in Mandarin with its tones, as its pinyin reads (学 is xué), never in its
+Sino-Vietnamese (Hán-Việt) reading, even inside a Vietnamese sentence; if the Hán-Việt reading helps, say it after,
+as a separate word ("học").
 Voice style, sentence by sentence: before each sentence, silently choose one style and speak that sentence in it -
 neutral_explain (clear, even), warm_encourage (warm, smiling), gentle_correct (soft, unhurried, never scolding),
 celebrate (bright, a little faster), slow_model (slow and precise: a word or sentence for them to repeat).
@@ -28,7 +30,7 @@ const $ = (id) => document.getElementById(id);
 const state = {
   ws: null, ready: false, model: "", playCtx: null, nextTime: 0, sources: new Set(),
   micCtx: null, micStream: null, micNode: null,
-  speaking: false, loudAt: 0, speechEndAt: 0, textAt: 0, bargeAt: 0,
+  speaking: false, loudAt: 0, segmentAt: 0, speechEndAt: 0, textAt: 0, bargeAt: 0,
   turn: null, rows: [], inText: "", outText: "",
 };
 
@@ -93,12 +95,16 @@ const playing = () => state.sources.size > 0;
 
 function openTurn() {
   // From the last loud moment of what was said (the page's own measure), or from Send for a typed line.
-  const trigger = state.textAt && state.textAt > state.loudAt ? "gõ" : "nói";
-  const from = trigger === "gõ" ? state.textAt : state.loudAt;
+  const spoken = state.speaking && state.loudAt - state.segmentAt >= SPEECH_MS ? state.loudAt : state.speechEndAt;
+  const trigger = state.textAt && state.textAt > spoken ? "gõ" : "nói";
+  const from = trigger === "gõ" ? state.textAt : spoken;
   state.turn = { n: state.rows.length + 1, model: state.model, trigger, first_audio_ms: from ? Math.round(performance.now() - from) : null,
                  interrupted: false, barge_to_stop_ms: null, lang: "", said: "", heard: trigger === "gõ" ? state.typed : state.inText.trim(),
                  quality: "", note: "" };  // prettier-ignore
-  state.inText = ""; state.outText = "";
+  if (state.turn.first_audio_ms !== null && state.turn.first_audio_ms < 150) {
+    state.turn.first_audio_ms = null; // the mic still heard something (noise, or Orena through speakers): not a measure
+  }
+  state.inText = "";
 }
 
 function closeTurn() {
@@ -108,7 +114,7 @@ function closeTurn() {
   if (state.turn.said) log("orena", `Orena: ${state.turn.said}`);
   state.rows.push(state.turn);
   renderRow(state.turn);
-  state.turn = null; state.outText = "";
+  state.turn = null; state.outText = ""; state.bargeAt = 0;
 }
 
 function renderRow(row) {
@@ -201,6 +207,7 @@ function handle(msg) {
 
 const LOUD = 0.02; // the page's own speech threshold (timing only; the server's VAD decides the turn)
 const SILENCE_MS = 500;
+const SPEECH_MS = 250;
 
 async function startMic() {
   state.micStream = await navigator.mediaDevices.getUserMedia({
@@ -214,10 +221,13 @@ async function startMic() {
     const now = performance.now();
     $("level").firstElementChild.style.width = `${Math.min(100, data.level * 600)}%`;
     if (data.level > LOUD) {
-      if (!state.speaking && playing() && !state.bargeAt) state.bargeAt = now; // speaking over Orena: a barge-in
+      if (!state.speaking) state.segmentAt = now;
       state.speaking = true; state.loudAt = now;
+      // Speaking over Orena for 250 ms: a barge-in, timed from when it began.
+      if (playing() && !state.bargeAt && now - state.segmentAt >= SPEECH_MS) state.bargeAt = state.segmentAt;
     } else if (state.speaking && now - state.loudAt > SILENCE_MS) {
-      state.speaking = false; state.speechEndAt = state.loudAt; // the end of what was said
+      state.speaking = false;
+      if (state.loudAt - state.segmentAt >= SPEECH_MS) state.speechEndAt = state.loudAt; // the end of what was said
     }
     if (state.ready) {
       const bytes = new Uint8Array(data.pcm);
