@@ -7,7 +7,13 @@ import httpx
 import json
 
 from grammar_lab.pipeline.content_store import load_point
-from grammar_lab.pipeline.generate import Generator, _build_check_items, _story_generation_schema, build_rule_table
+from grammar_lab.pipeline.generate import (
+    Generator,
+    _build_check_items,
+    _normalize_seg,
+    _story_generation_schema,
+    build_rule_table,
+)
 from grammar_lab.pipeline.llm_client import LLMClient
 from grammar_lab.pipeline.validate import validate_lang
 from grammar_lab.tests.conftest import Lab
@@ -277,3 +283,50 @@ def test_story_generation_schema_bounds_alternatives_to_one_per_error_tag() -> N
     schema = _story_generation_schema(locales=["vi"], error_tags=["agreement", "tense"], cast_names=["Alex"])
     alternatives = schema["properties"]["alternatives"]
     assert alternatives["minItems"] == alternatives["maxItems"] == 2
+
+
+# --- seg normalization (DeepSeek json_object mode, live finding 2026-09-28) -----------
+
+def test_normalize_seg_drops_a_null_label() -> None:
+    seg = [["She "], ["works", None], [" today."]]
+    assert _normalize_seg(seg) == [["She "], ["works"], [" today."]]
+
+
+def test_normalize_seg_keeps_a_real_label() -> None:
+    seg = [["She "], ["works", "target"], [" today."]]
+    assert _normalize_seg(seg) == [["She "], ["works", "target"], [" today."]]
+
+
+def test_normalize_seg_leaves_single_element_segments_alone() -> None:
+    seg = [["She "], ["works"]]
+    assert _normalize_seg(seg) == [["She "], ["works"]]
+
+
+def test_generate_normalizes_a_null_label_before_saving(tmp_path: Path) -> None:
+    lab = Lab(tmp_path, "en")
+    lab.write()
+    blocks_with_null_label = dict(CANNED_BLOCKS)
+    blocks_with_null_label["examples"] = [
+        {
+            "text": "She works in a bank.",
+            # "works" keeps a real target label; " in a bank" carries DeepSeek's stray
+            # null instead of being omitted -- exactly the live-found shape.
+            "seg": [["She "], ["works", "target"], [" in a bank", None], ["."]],
+            "tr": {"vi": "x"},
+        },
+        CANNED_BLOCKS["examples"][1],
+    ]
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={
+            "content": [{"type": "tool_use", "name": "emit_grammar_point_blocks", "input": blocks_with_null_label}],
+            "usage": {"input_tokens": 500, "output_tokens": 300},
+        })
+
+    outcome = make_generator(lab.root, httpx.MockTransport(handler)).generate("en.alpha")
+    assert outcome.status == "written"
+    point = load_point("en", "en.alpha", lab.root)
+    example = next(b for b in point["blocks"] if b["type"] == "example" and b["text"] == "She works in a bank.")
+    assert example["seg"] == [["She "], ["works", "target"], [" in a bank"], ["."]]
+    report = validate_lang("en", lab.root)
+    assert report.ok, report.issues

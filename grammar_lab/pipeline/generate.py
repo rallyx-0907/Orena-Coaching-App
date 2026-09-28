@@ -93,6 +93,18 @@ def _rule_table_summary(rule_table: dict[str, Any] | None) -> str:
     return "; ".join(f"{base} -> {derived}" for base, derived, _ in rule_table["rows"])
 
 
+def _normalize_seg(seg: list[list[Any]]) -> list[list[Any]]:
+    """``example.seg`` items are ``[text]`` or ``[text, label]`` -- the label is
+    genuinely optional (SPEC §3), not nullable. A provider with no real schema
+    enforcement (DeepSeek's json_object mode; live testing 2026-09-28) reached
+    for the more common JSON convention instead and sent ``[text, null]`` for
+    an unlabelled segment rather than omitting the second element. Providers
+    with real structured-output enforcement (Gemini, OpenAI, Groq, Anthropic
+    tool-use) never produce this -- the schema itself forbids it -- so this is
+    a no-op for them."""
+    return [segment[:1] if len(segment) > 1 and segment[1] is None else segment for segment in seg]
+
+
 def _locale_map_schema(locales: list[str]) -> dict[str, Any]:
     return {
         "type": "object",
@@ -305,6 +317,8 @@ class Generator:
         user = f"Write the grammar point {point_id} now, matching the structured output schema."
         note_suffix = f" Admin regenerate note: {regenerate_note}" if regenerate_note else ""
         result = self.llm.complete(system=system, user=user + note_suffix, json_schema=schema, schema_name="grammar_point_blocks")
+        for example in result.data["examples"]:
+            example["seg"] = _normalize_seg(example["seg"])
 
         blocks: list[dict[str, Any]] = [{"type": "formula", **result.data["formula"]}]
         if result.data.get("timeline"):
