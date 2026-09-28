@@ -11,7 +11,7 @@
         "reading.library",
         "reading.workspace"
       ],
-      "status": "pending",
+      "status": "active",
       "contexts": [
         "content_id",
         "selected_item"
@@ -28,9 +28,7 @@
       "evidence_source": "reading.comprehension",
       "tools": [
         "get_current_reading_context",
-        "get_reading_progress",
-        "get_reading_mistakes",
-        "get_word_context_in_reading"
+        "get_reading_progress"
       ]
     }
   ]

@@ -138,6 +138,62 @@ CATALOG: Mapping[str, CopyEntry] = MappingProxyType(
             CopyLayer.INTERFACE,
             {"en": "Saved: {n}", "vi": "Đã lưu: {n}", "zh-CN": "已保存：{n}"},
         ),
+        "tool.get_pronunciation_history": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Checking your speaking", "vi": "Đang xem các lần nói", "zh-CN": "正在查看口语记录"},
+        ),
+        "result.get_pronunciation_history": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Attempts: {n}", "vi": "Lần nói: {n}", "zh-CN": "录音：{n}"},
+        ),
+        "tool.get_pronunciation_attempt": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Checking this take", "vi": "Đang xem lần nói này", "zh-CN": "正在查看这次录音"},
+        ),
+        "result.get_pronunciation_attempt": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Flagged: {n}", "vi": "Được đánh dấu: {n}", "zh-CN": "被标记：{n}"},
+        ),
+        "tool.get_pronunciation_word_detail": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Checking the word", "vi": "Đang xem từ này", "zh-CN": "正在查看这个词"},
+        ),
+        "result.get_pronunciation_word_detail": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Words: {n}", "vi": "Từ: {n}", "zh-CN": "词：{n}"},
+        ),
+        "tool.get_current_listening_context": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Opening the lesson", "vi": "Đang mở bài nghe", "zh-CN": "正在打开听力课"},
+        ),
+        "result.get_current_listening_context": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Lessons: {n}", "vi": "Bài: {n}", "zh-CN": "课：{n}"},
+        ),
+        "tool.get_listening_attempt": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Checking your dictation", "vi": "Đang xem bài chép", "zh-CN": "正在查看听写记录"},
+        ),
+        "result.get_listening_attempt": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Lines: {n}", "vi": "Câu: {n}", "zh-CN": "句子：{n}"},
+        ),
+        "tool.get_current_reading_context": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Opening the text", "vi": "Đang mở bài đọc", "zh-CN": "正在打开阅读"},
+        ),
+        "result.get_current_reading_context": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Texts: {n}", "vi": "Bài đọc: {n}", "zh-CN": "文章：{n}"},
+        ),
+        "tool.get_reading_progress": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Checking your reading", "vi": "Đang xem các lần đọc", "zh-CN": "正在查看阅读记录"},
+        ),
+        "result.get_reading_progress": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Attempts: {n}", "vi": "Lần làm: {n}", "zh-CN": "作答：{n}"},
+        ),
         "tool.get_grammar_point": _entry(
             CopyLayer.INTERFACE,
             {"en": "Opening the grammar point", "vi": "Đang mở điểm ngữ pháp", "zh-CN": "正在打开语法点"},

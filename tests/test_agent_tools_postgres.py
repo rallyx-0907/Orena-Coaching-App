@@ -157,3 +157,117 @@ def test_grammar_completion_is_the_learners_own_in_their_language(learning, app_
     assert before.data["completed"] is False and after.data["completed"] is True
     assert next(p for p in listed.data["points"] if p["grammar_id"] == point)["completed"] is True
     assert other.data["completed"] is False
+
+
+def _skill_tools(app_module, engine):
+    from writing_coach.agent.runtime import AppReads, build_tool_registry
+    from writing_coach.persistence.reading_content_repository import ReadingContentRepository
+    from writing_coach.persistence.reading_evidence_repository import ReadingEvidenceRepository
+    from writing_coach.persistence.specialized_repository import PostgresSpecializedLearningRepository
+
+    specialized = PostgresSpecializedLearningRepository(engine)
+    evidence = ReadingEvidenceRepository(engine)
+    return specialized, evidence, build_tool_registry(
+        writing_review=lambda essay_id: None,
+        reads=AppReads(
+            speaking_attempts=lambda limit, *, asset_id=None, segment_id=None: specialized.list_speaking_attempt_records(
+                limit, asset_id=asset_id, segment_id=segment_id
+            ),
+            speaking_progress=specialized.speaking_progress,
+            listening_lesson=app_module._agent_listening_lesson,
+            listening_progress=specialized.list_listening_progress_records,
+            reading_article=ReadingContentRepository(engine).get_published_article,
+            reading_evidence=evidence.list_evidence,
+        ),
+    )
+
+
+def test_speaking_attempts_are_the_learners_own_in_their_language(engine, app_module):
+    specialized, _, tools = _skill_tools(app_module, engine)
+    words = [{"word": "是", "accuracy_score": 40.0, "error_type": "Mispronunciation", "phonemes": []}]
+    with learner_context(ZH):
+        stored = specialized.create_speaking_attempt_record(
+            {
+                "created_at": "2026-09-28T08:00:00+00:00", "language": "zh", "take_id": f"s1:1:{uuid.uuid4().hex}",
+                "asset_id": "lesson-9", "segment_id": "s1", "reference_text": "我是学生", "transcript_text": "我是学生",
+                "dimensions": {"pronunciation": 70.0}, "provenance": {},
+                "evidence": {"pronunciation": {"words": words}},
+            }
+        )  # fmt: skip
+        attempt = tools.invoke(
+            "get_pronunciation_attempt", ZH, {"attempt_id": stored["id"], "content_id": "lesson-9", "item_id": "s1"}
+        )
+        history = tools.invoke("get_pronunciation_history", ZH, {})
+    assert attempt.data["found"] and attempt.data["flagged_count"] == 1
+    assert history.count == 1 and history.data["attempts"][0]["attempt_id"] == stored["id"]
+    for learner in (EN, OTHER_ZH):  # the other language, the other learner: nothing
+        with learner_context(learner):
+            assert tools.invoke("get_pronunciation_history", learner, {}).count == 0
+            assert tools.invoke("get_pronunciation_attempt", learner, {"attempt_id": stored["id"]}).data == {"found": False}
+
+
+def test_listening_progress_is_read_by_the_lessons_media_asset(engine, app_module):
+    from writing_coach.listening_catalog import catalog_lessons, lesson_metadata
+
+    specialized, _, tools = _skill_tools(app_module, engine)
+    lesson = next((item for item in catalog_lessons() if str(lesson_metadata(item)["language"]).startswith("zh")), None)
+    if lesson is None:
+        pytest.skip("no published Chinese listening lesson in the catalogue")
+    metadata = app_module._agent_listening_lesson(lesson.lesson_id)
+    with learner_context(ZH):
+        specialized.save_listening_progress_record(
+            {
+                "asset_id": metadata["media_object_id"], "segment_id": "s1", "presentation": "checked",
+                "revealed": False, "checked_attempt_count": 2, "best_accuracy_percent": 100.0, "best_exact": True,
+                "last_answer": "", "updated_at": "2026-09-28T08:00:00+00:00",
+            }
+        )  # fmt: skip
+        context = tools.invoke("get_current_listening_context", ZH, {"content_id": lesson.lesson_id})
+        attempt = tools.invoke("get_listening_attempt", ZH, {"content_id": lesson.lesson_id})
+    assert context.data["found"] and context.data["title"]
+    assert attempt.count == 1 and attempt.data["exact_count"] == 1
+    with learner_context(OTHER_ZH):
+        assert tools.invoke("get_listening_attempt", OTHER_ZH, {"content_id": lesson.lesson_id}).count == 0
+
+
+def test_reading_context_and_progress(engine, app_module):
+    from writing_coach.persistence.reading_content_repository import ReadingContentRepository
+    from writing_coach.persistence.reading_evidence_repository import QuestionInput, body_sha256
+
+    _, evidence, tools = _skill_tools(app_module, engine)
+    content = ReadingContentRepository(engine)
+    content.ensure_built_in_sources()
+    body = "Tom missed the early train. He waited forty minutes on a cold platform. The next one was full."
+    snapshot = content.record_source_item(
+        source_id=content.built_in_source_id("manual"), source_native_id="", canonical_url="", title="T",
+        author="", published_at=None, language="en", body=body, content_hash=uuid.uuid4().hex * 2,
+        metadata={}, rights={"can_republish": True},
+    )  # fmt: skip
+    article = content.create_article(
+        source_item_id=snapshot["id"], title="The Early Train", body=body, excerpt="", language="en", topic="travel",
+        estimated_level="B1", estimated_confidence=0.7, word_count=20, reading_time_seconds=60, analysis={}, targets=[],
+    )  # fmt: skip
+    content.set_status(article["id"], "published", actor="admin")
+    built = evidence.create_set(
+        article["id"], expected_body_sha256=body_sha256(content.get_article(article["id"])["body"]),
+        support_language="vi", generator_version="test/1", model="stub",
+        questions=[QuestionInput("detail", "How long?", ["forty", "ten"], 0, "x", "forty minutes")],
+        validation={}, actor="admin",
+    )  # fmt: skip
+    evidence.transition(built["id"], "needs_review", actor="admin")
+    for question in built["questions"]:
+        evidence.decide_question(built["id"], question["id"], decision="approve", actor="admin")
+    evidence.transition(built["id"], "approved", actor="admin")
+    content_id = f"article:{article['id']}"
+    with learner_context(EN):
+        evidence.submit_attempt(
+            set_id=built["id"], operation_id=uuid.uuid4().hex,
+            answers={q["id"]: 0 for q in built["questions"]}, support_language="vi",
+        )  # fmt: skip
+        in_view = tools.invoke("get_current_reading_context", EN, {"content_id": content_id})
+        progress = tools.invoke("get_reading_progress", EN, {})
+    assert in_view.data["found"] and in_view.data["title"] == "The Early Train"
+    assert progress.count >= 1 and progress.data["attempts"][0]["content_id"] == content_id
+    assert progress.data["attempts"][0]["correct"] == 1
+    with learner_context(ZH):  # shared content, but in the learner's language only
+        assert tools.invoke("get_current_reading_context", ZH, {"content_id": content_id}).data == {"found": False}

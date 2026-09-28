@@ -12,7 +12,7 @@
         "listening.workspace",
         "listening.dictation"
       ],
-      "status": "pending",
+      "status": "active",
       "contexts": [
         "content_id",
         "lesson_id",
@@ -29,8 +29,7 @@
       "evidence_source": "listening.dictation",
       "tools": [
         "get_current_listening_context",
-        "get_listening_attempt",
-        "get_listening_mistakes"
+        "get_listening_attempt"
       ]
     }
   ]

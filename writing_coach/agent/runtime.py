@@ -23,6 +23,19 @@ from writing_coach.agent.platform_provider import PlatformAgentTurnProvider
 from writing_coach.agent.provider import AgentTurnProvider
 from writing_coach.agent.read_tools import WritingHistoryReader, WritingReviewReader, more_read_tools, read_tools
 from writing_coach.agent.session import SessionCache
+from writing_coach.agent.skill_tools import (
+    ListeningLesson,
+    ListeningProgress,
+    ReadingArticle,
+    ReadingChapter,
+    ReadingEvidence,
+    SpeakingAttempts,
+    SpeakingProgress,
+    _empty,
+    _no_progress,
+    _none,
+    skill_tools,
+)
 from writing_coach.agent.tools import ToolRegistry
 from writing_coach.agent.turn import AgentRuntime
 
@@ -43,6 +56,13 @@ class AppReads:
 
     grammar_library: GrammarLibraryReader = _no_library
     grammar_lesson: GrammarLessonReader = _no_lesson
+    speaking_attempts: SpeakingAttempts = _empty
+    speaking_progress: SpeakingProgress = _no_progress
+    listening_lesson: ListeningLesson = _none
+    listening_progress: ListeningProgress = _empty
+    reading_article: ReadingArticle = _none
+    reading_chapter: ReadingChapter = _none
+    reading_evidence: ReadingEvidence = _empty
 
 
 def build_tool_registry(
@@ -57,6 +77,15 @@ def build_tool_registry(
         *read_tools(writing_review=writing_review),
         *more_read_tools(writing_review=writing_review, writing_history=writing_history),
         *grammar_tools(library=reads.grammar_library, lesson=reads.grammar_lesson),
+        *skill_tools(
+            speaking_attempts=reads.speaking_attempts,
+            speaking_progress=reads.speaking_progress,
+            listening_lesson=reads.listening_lesson,
+            listening_progress=reads.listening_progress,
+            reading_article=reads.reading_article,
+            reading_chapter=reads.reading_chapter,
+            reading_evidence=reads.reading_evidence,
+        ),
     ):
         registry.register(tool)
     return registry

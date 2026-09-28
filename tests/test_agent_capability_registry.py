@@ -45,9 +45,13 @@ def test_every_v1_domain_is_known(registry):
         assert expected in ids
 
 
-def test_vocabulary_writing_and_grammar_are_active_and_everything_else_pending(registry):
+def test_the_capabilities_whose_tools_all_run_are_active(registry):
     active = {entry.id for entry in registry.entries() if entry.status == "active"}
-    assert active == {"vocabulary.words", "review.due", "writing.review", "grammar.point"}
+    assert active == {
+        "vocabulary.words", "review.due", "writing.review", "grammar.point",
+        "speaking.pronunciation.line", "speaking.free_talk", "listening.dictation", "reading.passage",
+    }  # fmt: skip
+    # tone and stress wait for a measured source (gaps I-A); home, library, progress and memory for their tools
     assert {entry.status for entry in registry.entries() if entry.id not in active} == {"pending"}
 
 
