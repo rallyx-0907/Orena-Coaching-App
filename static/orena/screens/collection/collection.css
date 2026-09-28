@@ -30,6 +30,18 @@
   aspect-ratio: 16 / 8;
 }
 
+/* Hero title line-height: the shared `.c-hero__title` (kit/components.css) sets
+   line-height:1.15, confirmed correct for Content Detail (05-Content-Detail.html draws
+   line-height:1.15 explicitly). Collection Detail's own frame (21-Collection-Detail.html)
+   draws its 26px/700 hero title with no line-height at all - the browser's "normal" for this
+   size/weight, a real, larger value, not 1.15. heroMedia() has no titleLineHeight override
+   (kit/components.js, not this pass's file to touch - Content Detail's own hero title stays on
+   the confirmed-correct 1.15 default), so this frame's own value is closed locally, the same
+   pattern content.css already uses for `.c-row__title` (Review fidelity-002). */
+.c-hero[data-hero='collection'] .c-hero__title {
+  line-height: normal;
+}
+
 /* Bare (unlabeled) progress track - Content Detail's own is the same track/fill plus a label
    row this frame does not draw. */
 .s-collection-bar {

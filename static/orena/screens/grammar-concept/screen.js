@@ -13,6 +13,7 @@ import { html, mount, raw } from '../../kit/html.js';
 import { icon } from '../../kit/icons.js';
 import { useStyles } from '../../kit/styles.js';
 import { pageHeader } from '../../kit/components.js';
+import { langAttr, langSpan } from '../../kit/lang.js';
 import { shellCopy as shell } from '../../copy/shell.js';
 import { t } from './copy.js';
 import { api } from '../../infrastructure/api.js';
@@ -20,20 +21,31 @@ import { supportLanguage } from '../../product/languages.js';
 import { askOrena } from '../../shell/agent-bridge.js';
 import { pickLocale, primaryPattern, examplesOf, mistakeOf, quizQuestions, personalPractice, headerMeta } from './model.js';
 
-function patternMarkup(pattern) {
+/* languages-5 / finding A: `pattern.parts[].text`/`.from`/`.to` are the concept's own real
+   target-language content - a pattern word, a transformed sentence (model.js's own header comment:
+   "a plain string is target-language content") - marked with the learner's active learning
+   language, the one this whole concept is written in (`ctx.context.language`, the third source
+   kit/lang.js's own doc comment names: no per-field language comes back from GET /api/library/
+   grammar/{id}, but every field this screen shows is definitionally in that one language). `part.
+   label`/the chip's own `title` attribute is support-layer prose (pickLocale), never marked. */
+function patternMarkup(pattern, lang) {
   const eyebrow = html`<div class="s-gc__eyebrow">${t('pattern')}</div>`;
   if (pattern.kind === 'chips') {
     return html`${eyebrow}<div class="s-gc__chips">${pattern.parts.map(
-      (part) => html`<span class="${`s-gc__chip s-gc__chip--${part.role}`}" title="${part.label}">${part.text}</span>`,
+      (part) => html`<span class="${`s-gc__chip s-gc__chip--${part.role}`}" lang="${langAttr(lang)}" title="${part.label}">${part.text}</span>`,
     )}</div>`;
   }
   if (pattern.kind === 'transform') {
     return html`${eyebrow}<div class="s-gc__chips">
-      <span class="s-gc__chip s-gc__chip--k">${pattern.from}</span>
+      <span class="s-gc__chip s-gc__chip--k" lang="${langAttr(lang)}">${pattern.from}</span>
       <span class="s-gc__arrow" aria-hidden="true">${raw(icon('arrow-right', { size: 16 }))}</span>
-      <span class="s-gc__chip s-gc__chip--b">${pattern.to}</span>
+      <span class="s-gc__chip s-gc__chip--b" lang="${langAttr(lang)}">${pattern.to}</span>
     </div>`;
   }
+  // `kind: 'rows'` is the generic fallback for a block type frame 47 draws no chip shape for
+  // (model.js's own comment) - its `text`/`label` may be target-language content or support prose
+  // depending on the block, a distinction the pure mapping does not carry through, so this shape
+  // is left unmarked rather than guessed at (kit/lang.js: no `lang` is safer than a wrong one).
   return html`${eyebrow}${pattern.rows.map(
     (row) => html`<div class="s-gc__row">${row.label ? html`<div class="s-gc__rowLabel">${row.label}</div>` : ''}<div>${row.text}</div>${
       row.note ? html`<div class="s-gc__rowNote">${row.note}</div>` : ''
@@ -41,15 +53,18 @@ function patternMarkup(pattern) {
   )}`;
 }
 
-function exampleMarkup(example) {
-  return html`<div class="s-gc__example">${example.text}${example.translation ? html`<div class="s-gc__exampleTr">${example.translation}</div>` : ''}</div>`;
+function exampleMarkup(example, lang) {
+  // `lang` sits on a span around the target-language sentence only, not the row - the translation
+  // line right below it is support-layer prose (D-079: Vietnamese today, per model.js's own
+  // comment), a different language the outer element must not also claim.
+  return html`<div class="s-gc__example"><span lang="${langAttr(lang)}">${example.text}</span>${example.translation ? html`<div class="s-gc__exampleTr">${example.translation}</div>` : ''}</div>`;
 }
 
-function mistakeMarkup(mistake) {
+function mistakeMarkup(mistake, lang) {
   return html`<div class="s-gc__eyebrow">${t('mistake')}</div>
   <div class="s-gc__mistake">
-    <div class="s-gc__mline"><span class="s-gc__glyph s-gc__glyph--bad">✕</span><span class="s-gc__mtext--bad">${mistake.incorrect}</span></div>
-    <div class="s-gc__mline"><span class="s-gc__glyph s-gc__glyph--good">✓</span><span class="s-gc__mtext--good">${mistake.correct}</span></div>
+    <div class="s-gc__mline"><span class="s-gc__glyph s-gc__glyph--bad">✕</span><span class="s-gc__mtext--bad" lang="${langAttr(lang)}">${mistake.incorrect}</span></div>
+    <div class="s-gc__mline"><span class="s-gc__glyph s-gc__glyph--good">✓</span><span class="s-gc__mtext--good" lang="${langAttr(lang)}">${mistake.correct}</span></div>
     ${mistake.why ? html`<div class="s-gc__mwhy">${mistake.why}</div>` : ''}
   </div>`;
 }
@@ -115,13 +130,20 @@ export default async function grammarConcept(element, ctx) {
   const tryIt = personalPractice(lesson, support);
   const meta = headerMeta(lesson);
   const summary = pickLocale(lesson?.learning_model?.meaning?.summary, support);
+  // languages-5 / finding A: the active learning language this whole concept is written in - the
+  // pattern/example/mistake target-language text is genuinely in it for both tracks (N-33's own
+  // finding: "the raw Chinese example sentences...are genuinely theirs"). The lesson *title* is a
+  // narrower case (N-33/N-20): the Chinese/HSK track's own titles are a Vietnamese-only content
+  // gap, not genuinely Chinese, so only the English track's title is marked.
+  const language = context.language === 'zh' ? 'zh' : 'en';
+  const titleLang = language === 'zh' ? '' : 'en';
 
   mount(
     element,
     html`<div class="s-gc">
       <div class="s-gc__head">${pageHeader({
         back: { label: shell('back'), dataset: { back: '1' } },
-        title: lesson.title,
+        title: langSpan(lesson.title, titleLang),
         meta: [shell('grammar'), meta.level, meta.family].filter(Boolean).join(' · '),
         compact: true,
         actions: [html`<button type="button" class="s-gc__ask" data-ask>${t('askOrena')}</button>`],
@@ -130,9 +152,9 @@ export default async function grammarConcept(element, ctx) {
         <div class="s-gc__inner">
           <div class="o-card o-card--24 s-gc__card">
             ${summary ? html`<div class="s-gc__summary">${summary}</div>` : ''}
-            ${pattern ? patternMarkup(pattern) : ''}
-            ${examples.length ? html`<div class="s-gc__eyebrow">${t('examples')}</div>${examples.map(exampleMarkup)}` : ''}
-            ${mistake ? mistakeMarkup(mistake) : ''}
+            ${pattern ? patternMarkup(pattern, language) : ''}
+            ${examples.length ? html`<div class="s-gc__eyebrow">${t('examples')}</div>${examples.map((example) => exampleMarkup(example, language))}` : ''}
+            ${mistake ? mistakeMarkup(mistake, language) : ''}
           </div>
           ${quiz.length ? html`<div class="o-card o-card--24 s-gc__card" data-quiz></div>` : ''}
           ${tryIt ? html`<div class="o-card o-card--24 s-gc__card" data-try></div>` : ''}

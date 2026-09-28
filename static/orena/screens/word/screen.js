@@ -8,9 +8,11 @@
 import { html, mount, raw, cls } from '../../kit/html.js';
 import { icon } from '../../kit/icons.js';
 import { useStyles } from '../../kit/styles.js';
+import { loadingMarkup } from '../../kit/states.js';
 import { toast } from '../../kit/toast.js';
 import { openSheet } from '../../kit/overlay.js';
 import { masteryBars, rowBadge } from '../../kit/components.js';
+import { langAttr } from '../../kit/lang.js';
 import { shellCopy } from '../../copy/shell.js';
 import { languages } from '../../copy/index.js';
 import { api } from '../../infrastructure/api.js';
@@ -23,6 +25,8 @@ import {
   mapMasteryEvidence,
   restorePayload,
   savePayload,
+  cardLanguage,
+  posLabel,
 } from './model.js';
 import { mountStrokeSheet } from './stroke-sheet.js';
 
@@ -85,10 +89,20 @@ function deepWordMarkup(rows) {
   </details>`;
 }
 
+/* languages-4 (2): the pos chip's closed-space translation, honest about what it could not
+   translate (model.js#posLabel's own comment) - an unmapped value is marked `lang="en"` as
+   untranslated content metadata rather than shown as if it were interface copy. */
+function posMarkup(pos) {
+  if (!pos) return '';
+  const label = posLabel(pos, t);
+  return html`<span class="o-tag"${label.known ? '' : raw(` lang="${langAttr('en')}"`)}>${label.text}</span>`;
+}
+
 function cardMarkup(card, strokeTiles) {
+  const cardLang = cardLanguage(card.script);
   const meta = [
     card.ipa ? html`<span class="s-word-card__ipa">${card.ipa}</span>` : '',
-    card.pos ? html`<span class="o-tag">${card.pos}</span>` : '',
+    posMarkup(card.pos),
     card.hasLevel ? html`<span class="o-tag s-word-card__level">${card.level}</span>` : '',
   ];
   const footer = [];
@@ -100,7 +114,7 @@ function cardMarkup(card, strokeTiles) {
   return html`<div class="s-word-card">
     <div class="s-word-card__top">
       <div class="s-word-card__id">
-        <div class="s-word-card__word" lang="${card.script === 'hanzi' ? 'zh' : ''}">${card.word}</div>
+        <div class="s-word-card__word" lang="${langAttr(cardLang)}">${card.word}</div>
         <div class="s-word-card__meta">${meta}</div>
       </div>
       <div class="s-word-card__actions">
@@ -115,7 +129,7 @@ function cardMarkup(card, strokeTiles) {
     }
     ${
       card.hasExample
-        ? html`<div class="s-word-card__example" lang="${card.script === 'hanzi' ? 'zh' : ''}">“${card.exampleParts.map((part) => html`<span class="${cls(part.hit && 's-word-card__hit')}">${part.value}</span>`)}”</div>`
+        ? html`<div class="s-word-card__example" lang="${langAttr(cardLang)}">“${card.exampleParts.map((part) => html`<span class="${cls(part.hit && 's-word-card__hit')}">${part.value}</span>`)}”</div>`
         : ''
     }
     ${strokeTiles}
@@ -128,7 +142,15 @@ export default async function mountWordDetail(element, ctx) {
   const word = String(ctx.params?.id || '').trim();
   const language = ctx.context?.language || 'en';
 
-  mount(element, html`<button type="button" class="o-iconbtn" data-back aria-label="${shellCopy('back')}">${raw(icon('arrow-left', { size: 19 }))}</button>`);
+  // The Deep Word lookup (api.wordDetail) is AI-backed and can take several seconds on an
+  // uncached word (writing_coach/word_detail.py); paint the shared loading skeleton (kit/states.js
+  // - the same primitive the router's own lesson skeleton and Collection Detail use) beneath the
+  // back button immediately, rather than leaving the main column blank until both lookups settle.
+  mount(
+    element,
+    html`<button type="button" class="o-iconbtn" data-back aria-label="${shellCopy('back')}">${raw(icon('arrow-left', { size: 19 }))}</button>
+    ${loadingMarkup(t('wordLoading'))}`,
+  );
   element.classList.add('s-word-root');
   element.querySelector('[data-back]').addEventListener('click', () => ctx.back());
 

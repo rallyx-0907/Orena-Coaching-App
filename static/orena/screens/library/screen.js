@@ -5,6 +5,7 @@ import { html, mount, raw, cls } from '../../kit/html.js';
 import { icon } from '../../kit/icons.js';
 import { useStyles } from '../../kit/styles.js';
 import { mediaCard, masteryBars } from '../../kit/components.js';
+import { langAttr, langSpan } from '../../kit/lang.js';
 import { emptyMarkup } from '../../kit/states.js';
 import { api } from '../../infrastructure/api.js';
 import { shellCopy as sc } from '../../copy/shell.js';
@@ -31,12 +32,17 @@ function tabsMarkup(active, dueCount) {
   return html`<div class="o-tabs" role="tablist">${TABS.map((id) => html`<button type="button" class="o-tab" role="tab" aria-selected="${id === active ? 'true' : 'false'}" data-tab="${id}"><span>${tabLabel(id, dueCount)}</span><span class="o-tab__bar"></span></button>`)}</div>`;
 }
 
-function contentPanel(rows) {
+/* languages-5 / finding A: both `row.title` (Saved content) and `row.word` (Saved language) are
+   real content this account saved, both fetched through routes scoped to the learner's active
+   learning language server-side (GET /api/collection and GET /api/library/vocabulary both read
+   `current_language_code()`, writing_coach/collection_api.py / becoming_library.py) - never a
+   guess, the actual language every row this call can return is in. */
+function contentPanel(rows, language) {
   if (!rows.length) return html``;
   return html`<div class="s-library-content-grid">${rows.map((row) => html`<button type="button" class="s-library-content-row" data-content="${row.contentId}">
     <span class="s-library-content-row__body">
       <span class="s-library-content-row__type">${row.domain === 'media' ? sc('listening') : sc('content')}</span>
-      <span class="s-library-content-row__title">${row.title}</span>
+      <span class="s-library-content-row__title">${langSpan(row.title, language)}</span>
       ${row.source ? html`<span class="s-library-content-row__source">${row.source}</span>` : ''}
       <span class="s-library-content-row__progress"><span class="o-progress"><span style="width:${row.pct}%"></span></span><span class="s-library-content-row__pct">${row.pct}%</span></span>
     </span>
@@ -44,20 +50,20 @@ function contentPanel(rows) {
   </button>`)}</div>`;
 }
 
-function languageRow(row) {
+function languageRow(row, language) {
   return html`<div class="s-library-lang-row">
     <span class="s-library-chip">${row.kind === 'phrase' ? t('typePhrase') : sc('word')}</span>
-    <span class="s-library-lang-row__text"><span class="s-library-lang-row__word">${row.word}</span>${row.sub ? html`<span class="s-library-lang-row__sub">${row.sub}</span>` : ''}</span>
+    <span class="s-library-lang-row__text"><span class="s-library-lang-row__word" lang="${langAttr(language)}">${row.word}</span>${row.sub ? html`<span class="s-library-lang-row__sub">${row.sub}</span>` : ''}</span>
     ${row.isNew ? html`<span class="${cls('s-library-chip', 's-library-chip--new')}">${t('newBadge')}</span>` : html`${masteryBars({ filled: row.filled })}`}
     <button type="button" class="s-library-lang-row__play" data-play="${row.word}" aria-label="${sc('pronunciation')}">${raw(icon('volume-2', { size: 18 }))}</button>
   </div>`;
 }
 
-function languagePanel(rows) {
+function languagePanel(rows, language) {
   if (!rows.length) {
     return html`<div class="s-library-lang-empty">${emptyMarkup({ text: t('emptyLanguage'), iconName: 'inbox' })}</div>`;
   }
-  return html`<div class="s-library-lang-list">${rows.map(languageRow)}</div>`;
+  return html`<div class="s-library-lang-list">${rows.map((row) => languageRow(row, language))}</div>`;
 }
 
 function itemCountLabel(n) {
@@ -139,6 +145,7 @@ async function safe(promise, fallback) {
 export default async function library(element, ctx) {
   await useStyles('screens/library/library.css');
   const support = languages().support;
+  const language = ctx.context.language;
   let active = 'content';
 
   const [collection, vocabulary, collections, decks, queue] = await Promise.all([
@@ -158,8 +165,8 @@ export default async function library(element, ctx) {
   const dueRows = dueListRows(queue);
 
   function panelFor(id) {
-    if (id === 'content') return contentPanel(rows.content);
-    if (id === 'language') return languagePanel(rows.language);
+    if (id === 'content') return contentPanel(rows.content, language);
+    if (id === 'language') return languagePanel(rows.language, language);
     if (id === 'collections') return collectionsPanel(rows.collections);
     if (id === 'active') return activePanel(stats);
     return duePanel(stats, dueRows);

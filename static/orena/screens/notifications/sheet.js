@@ -16,6 +16,7 @@ import { openSheet, fillSheet } from '../../kit/overlay.js';
 import { html, raw } from '../../kit/html.js';
 import { icon } from '../../kit/icons.js';
 import { listRow } from '../../kit/components.js';
+import { langSpan } from '../../kit/lang.js';
 import { emptyMarkup } from '../../kit/states.js';
 import { useStyles } from '../../kit/styles.js';
 import { shellCopy as s } from '../../copy/shell.js';
@@ -46,7 +47,10 @@ export async function openNotifications(ctx = {}) {
       return listRow({ variant: 'outline', pad: '14px 18px', kind: t('reviewKind'), title, dataset: { row: 'due' } });
     }
     const sub = row.percent != null ? t('percentComplete', { n: row.percent }) : '';
-    return listRow({ variant: 'outline', pad: '14px 18px', kind: t(KIND_LABEL[row.kind]), title: row.title, sub, dataset: { row: 'continue', route: row.routeId, id: row.id } });
+    // languages-5 / finding A: `row.title` is the real content this continuation entry resumes -
+    // always in the learner's active learning language (kit/lang.js's "the learner's learning
+    // language the screen already read" source; no per-entry field exists on device memory).
+    return listRow({ variant: 'outline', pad: '14px 18px', kind: t(KIND_LABEL[row.kind]), title: langSpan(row.title, context.language), sub, dataset: { row: 'continue', route: row.routeId, id: row.id } });
   }
 
   function bodyMarkup() {

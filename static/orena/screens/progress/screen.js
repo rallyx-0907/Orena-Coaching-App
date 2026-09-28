@@ -15,6 +15,7 @@ import { icon } from '../../kit/icons.js';
 import { useStyles } from '../../kit/styles.js';
 import { emptyMarkup } from '../../kit/states.js';
 import { listRow, segmentedControl } from '../../kit/components.js';
+import { langSpan } from '../../kit/lang.js';
 import { shellCopy } from '../../copy/shell.js';
 import { languages } from '../../copy/index.js';
 import { api } from '../../infrastructure/api.js';
@@ -112,24 +113,36 @@ export default async function progressScreen(element, ctx) {
     return html`<span class="o-tag">${t(key)}</span>`;
   }
 
+  // languages-5 / finding A: a writing prompt/draft, a read article's title and a spoken attempt's
+  // transcript are all real target-language content, in the learner's active learning language
+  // (`context.language`) - the language every one of these domains produces or reads in. Reading's
+  // own `responseText` (a correct/total count) and Listening's rows (interface labels only, no
+  // real per-event text this build can show, model.js's own comment) are never marked.
   function evidenceRowMarkup(item) {
     const href = openRoute(item);
+    const language = context.language;
     let sourceText = '';
     let responseText = '';
+    let sourceLang = '';
+    let responseLang = '';
     let resultText = '';
     let resultColor = 'var(--muted)';
     if (item.domain === 'writing') {
       sourceText = item.sourceText || t('skill_writing');
+      sourceLang = item.sourceText ? language : '';
       responseText = item.responseText;
+      responseLang = language;
       resultText = item.score != null ? String(item.score) : '';
     } else if (item.domain === 'reading') {
       sourceText = item.sourceText || t('skill_reading');
+      sourceLang = item.sourceText ? language : '';
       responseText = `${item.correct} / ${item.total}`;
       resultText = item.total ? `${Math.round((item.correct / item.total) * 100)}%` : '';
       resultColor = item.total && item.correct === item.total ? 'var(--green)' : item.correct === 0 ? 'var(--red)' : 'var(--muted)';
     } else if (item.domain === 'speaking') {
       sourceText = t('skill_speaking');
       responseText = item.responseText;
+      responseLang = language;
       resultText = item.score != null ? String(item.score) : '';
       resultColor = item.score != null ? (item.score >= 80 ? 'var(--green)' : 'var(--muted)') : 'var(--muted)';
     } else if (item.domain === 'listening') {
@@ -140,20 +153,24 @@ export default async function progressScreen(element, ctx) {
     }
     const lead = html`<span class="s-progress-ev__lead"><span class="s-progress-ev__date">${formatDate(item.at)}</span>${skillChip(item.domain)}</span>`;
     const trailing = resultText ? html`<span class="s-progress-ev__result" style="color:${resultColor}">${resultText}</span>` : null;
-    const rowMarkup = listRow({ tag: href ? 'button' : 'div', variant: 'outline', radius: 16, pad: '14px 18px', leading: lead, title: sourceText, sub: responseText, trailing, dataset: href ? { go: href } : {} });
+    const rowMarkup = listRow({ tag: href ? 'button' : 'div', variant: 'outline', radius: 16, pad: '14px 18px', leading: lead, title: langSpan(sourceText, sourceLang), sub: responseText ? langSpan(responseText, responseLang) : '', trailing, dataset: href ? { go: href } : {} });
     return rowMarkup;
   }
 
   function historyRowMarkup(item) {
     const href = openRoute(item);
+    const language = context.language;
     const kindKey = { writing: 'skill_writing', reading: 'skill_reading', speaking: 'skill_speaking', listening: 'skill_listening' }[item.domain] || item.domain;
     let title = '';
+    let titleLang = '';
     let meta = '';
     if (item.domain === 'writing') {
       title = item.sourceText || t('skill_writing');
+      titleLang = item.sourceText ? language : '';
       meta = item.score != null ? String(item.score) : '';
     } else if (item.domain === 'reading') {
       title = item.sourceText || t('skill_reading');
+      titleLang = item.sourceText ? language : '';
       meta = item.total ? `${item.correct}/${item.total}` : '';
     } else if (item.domain === 'speaking') {
       title = t('skill_speaking');
@@ -163,7 +180,7 @@ export default async function progressScreen(element, ctx) {
       meta = item.score != null ? String(item.score) : '';
     }
     const lead = html`<span class="s-progress-hi__lead"><span class="s-progress-hi__time">${formatTime(item.at)}</span><span class="o-tag">${t(kindKey)}</span></span>`;
-    return listRow({ tag: href ? 'button' : 'div', variant: 'outline', radius: 14, pad: '13px 18px', leading: lead, title, trailing: meta ? html`<span class="o-muted" style="font-size:13px">${meta}</span>` : null, dataset: href ? { go: href } : {} });
+    return listRow({ tag: href ? 'button' : 'div', variant: 'outline', radius: 14, pad: '13px 18px', leading: lead, title: langSpan(title, titleLang), trailing: meta ? html`<span class="o-muted" style="font-size:13px">${meta}</span>` : null, dataset: href ? { go: href } : {} });
   }
 
   async function renderOverview() {

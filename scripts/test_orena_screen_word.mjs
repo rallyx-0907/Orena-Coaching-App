@@ -4,6 +4,7 @@
    payload) rather than the frame's own sample data, and checks rule 40 (never invent a metric,
    never fabricate a record) explicitly. */
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import {
   contextFor,
   pronunciationOf,
@@ -21,6 +22,8 @@ import {
   savePayload,
   hanziCharsOf,
   mapStrokeCharacters,
+  cardLanguage,
+  posLabel,
 } from '../static/orena/screens/word/model.js';
 
 /* --- contextFor: the server rejects a context that does not contain the word --- */
@@ -193,5 +196,44 @@ assert.equal(strokes[2].available, true, 'the second occurrence of a character a
 assert.deepEqual(strokes[2].data, strokes[1].data);
 const missing = mapStrokeCharacters('缓氿', { characters: [{ character: '缓', stroke_count: 12, stroke_paths: [], medians: [] }], unavailable: ['氿'] });
 assert.equal(missing[1].available, false, "a character the pack doesn't have is unavailable, not zero strokes");
+
+/* --- languages-5 / finding A: cardLanguage - the one script-check fallback in this build, turned
+   into a real `lang` code (kit/lang.js's `langAttr`/`langSpan` take 'en'/'zh', never 'hanzi'/
+   'latin'). Fixes the bug this pass found: a Latin headword used to get lang="" (no attribute
+   effect at all), not lang="en" - English text under a vi/zh interface went unmarked. --- */
+assert.equal(cardLanguage('hanzi'), 'zh');
+assert.equal(cardLanguage('latin'), 'en', 'a Latin-script card is real English, not an unmarked language');
+
+/* --- languages-4 (2) / finding B.1: posLabel - the closed ALLOWED_POS space translates; anything
+   else (an external dictionary's own wording, a content-authored free-text field) is returned
+   verbatim with known:false, for the caller to mark lang="en" rather than translate it. --- */
+const fakeT = (key) => `[${key}]`;
+assert.deepEqual(posLabel('pronoun', fakeT), { text: '[posPronoun]', known: true });
+assert.deepEqual(posLabel('PROPER_NOUN', fakeT), { text: '[posProperNoun]', known: true }, 'case-insensitive against the backend value');
+assert.deepEqual(posLabel('transitive verb phrase', fakeT), { text: 'transitive verb phrase', known: false }, 'an unrecognised value is shown as-is, never guessed into one of the fifteen');
+assert.deepEqual(posLabel('', fakeT), { text: '', known: false }, 'no part of speech at all is not a translated label either');
+
+/* --- journeys-1 (P1): the main column must never sit blank behind only the back button while
+   api.wordDetail() (AI-backed, 11-15s+ uncached in the sandbox) and api.wordClips() are pending.
+   screen.js has no DOM to mount in this gate (no `document`), so this checks the source directly:
+   the shared loading skeleton (kit/states.js - the same primitive the router's own lesson skeleton
+   and Collection Detail already use, rule 40's "reuse before inventing") is painted before either
+   async lookup starts, not only after both resolve. --- */
+const screenSrc = readFileSync(new URL('../static/orena/screens/word/screen.js', import.meta.url), 'utf8');
+// languages-5 / finding A: wires the shared kit/lang.js helper (never the old ad-hoc
+// `? 'zh' : ''` ternary, which left a Latin card with no lang attribute at all).
+assert.match(screenSrc, /import\s*\{\s*langAttr\s*\}\s*from\s*'\.\.\/\.\.\/kit\/lang\.js'/, 'imports the shared lang helper from kit/lang.js');
+assert.doesNotMatch(screenSrc, /'hanzi'\s*\?\s*'zh'\s*:\s*''/, 'no ad-hoc script-to-lang ternary left inline (kit/lang.js + model.js#cardLanguage own this now)');
+assert.match(screenSrc, /lang="\$\{langAttr\(cardLang\)\}"/, 'both the headword and the example carry a real lang attribute via the shared helper');
+assert.match(screenSrc, /import\s*\{\s*loadingMarkup\s*\}\s*from\s*'\.\.\/\.\.\/kit\/states\.js'/, 'imports the shared loading skeleton primitive, not a bespoke one');
+assert.match(screenSrc, /loadingMarkup\(t\('wordLoading'\)\)/, 'paints the loading skeleton with a real, translated status label');
+const loadingCallIndex = screenSrc.indexOf("loadingMarkup(t('wordLoading'))");
+const fetchItemCallIndex = screenSrc.indexOf('await fetchItem(word)');
+const promiseAllIndex = screenSrc.indexOf('Promise.all([');
+assert.ok(loadingCallIndex > -1 && fetchItemCallIndex > -1 && promiseAllIndex > -1, 'all three anchors are present in the mount function');
+assert.ok(
+  loadingCallIndex < fetchItemCallIndex && fetchItemCallIndex < promiseAllIndex,
+  'the loading skeleton is mounted before the item lookup and before the AI-backed wordDetail/wordClips fetch, so the main column is never blank while either is pending',
+);
 
 console.log('test_orena_screen_word.mjs: Word Detail data mapping - real backend contracts, rule 40 throughout: PASS');

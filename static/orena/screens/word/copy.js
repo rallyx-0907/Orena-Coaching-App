@@ -7,6 +7,7 @@
 import { defineCopy } from '../../copy/index.js';
 
 const LAYERS = {
+  wordLoading: 'interface',
   contextClipsTitle: 'interface', contextClipsEmpty: 'interface', open: 'interface',
   deepWordTitle: 'interface', deepCoreIdea: 'interface', deepWhyHere: 'interface',
   deepWatchOut: 'interface', deepPatterns: 'interface',
@@ -24,11 +25,20 @@ const LAYERS = {
   strokeUnavailable: 'support', watchStrokes: 'interface', writeIt: 'interface', nextCharacter: 'interface',
   strokeWatching: 'support', strokeStep: 'support', strokeTryAgain: 'support',
   strokeComplete: 'support', playClip: 'interface',
+  // languages-4 (1) / finding B.1: the part-of-speech chip's closed value space
+  // (writing_coach/linguistic_annotation.py ALLOWED_POS), mapped to interface copy - see
+  // model.js's posLabel().
+  posNoun: 'interface', posVerb: 'interface', posAdjective: 'interface', posAdverb: 'interface',
+  posPronoun: 'interface', posDeterminer: 'interface', posPreposition: 'interface',
+  posConjunction: 'interface', posNumeral: 'interface', posParticle: 'interface',
+  posAuxiliary: 'interface', posInterjection: 'interface', posClassifier: 'interface',
+  posProperNoun: 'interface', posOther: 'interface',
 };
 
 export const t = defineCopy('word', {
   layers: LAYERS,
   en: {
+    wordLoading: 'Loading word…',
     contextClipsTitle: 'Context clips · {n}', contextClipsEmpty: 'No context clips yet', open: 'Open',
     deepWordTitle: 'Deep Word', deepCoreIdea: 'Core idea', deepWhyHere: 'Why here',
     deepWatchOut: 'Watch out', deepPatterns: 'Natural patterns',
@@ -53,8 +63,14 @@ export const t = defineCopy('word', {
     strokeWatching: 'Watching stroke order', strokeStep: 'Stroke {n} of {total}',
     strokeTryAgain: 'Wrong direction — try again', strokeComplete: 'All strokes done',
     playClip: 'Play clip',
+    posNoun: 'Noun', posVerb: 'Verb', posAdjective: 'Adjective', posAdverb: 'Adverb',
+    posPronoun: 'Pronoun', posDeterminer: 'Determiner', posPreposition: 'Preposition',
+    posConjunction: 'Conjunction', posNumeral: 'Numeral', posParticle: 'Particle',
+    posAuxiliary: 'Auxiliary', posInterjection: 'Interjection', posClassifier: 'Classifier',
+    posProperNoun: 'Proper noun', posOther: 'Other',
   },
   vi: {
+    wordLoading: 'Đang tải từ…',
     contextClipsTitle: 'Ngữ cảnh thực tế · {n}', contextClipsEmpty: 'Chưa có ngữ cảnh nào', open: 'Mở',
     deepWordTitle: 'Tìm hiểu sâu', deepCoreIdea: 'Ý chính', deepWhyHere: 'Vì sao dùng ở đây',
     deepWatchOut: 'Lưu ý', deepPatterns: 'Cách dùng tự nhiên',
@@ -79,8 +95,14 @@ export const t = defineCopy('word', {
     strokeWatching: 'Đang xem thứ tự nét', strokeStep: 'Nét {n} trong {total}',
     strokeTryAgain: 'Sai hướng — thử lại', strokeComplete: 'Đã viết đủ các nét',
     playClip: 'Nghe đoạn ghi',
+    posNoun: 'Danh từ', posVerb: 'Động từ', posAdjective: 'Tính từ', posAdverb: 'Trạng từ',
+    posPronoun: 'Đại từ', posDeterminer: 'Từ hạn định', posPreposition: 'Giới từ',
+    posConjunction: 'Liên từ', posNumeral: 'Số từ', posParticle: 'Trợ từ',
+    posAuxiliary: 'Trợ động từ', posInterjection: 'Thán từ', posClassifier: 'Loại từ',
+    posProperNoun: 'Danh từ riêng', posOther: 'Khác',
   },
   zh: {
+    wordLoading: '正在加载单词…',
     contextClipsTitle: '真实语境 · {n}', contextClipsEmpty: '暂无语境片段', open: '打开',
     deepWordTitle: '深入了解', deepCoreIdea: '核心含义', deepWhyHere: '为何这样用',
     deepWatchOut: '注意', deepPatterns: '自然用法',
@@ -105,5 +127,10 @@ export const t = defineCopy('word', {
     strokeWatching: '正在演示笔顺', strokeStep: '第 {n} 笔，共 {total} 笔',
     strokeTryAgain: '方向不对，请再试一次', strokeComplete: '已写完所有笔画',
     playClip: '播放片段',
+    posNoun: '名词', posVerb: '动词', posAdjective: '形容词', posAdverb: '副词',
+    posPronoun: '代词', posDeterminer: '限定词', posPreposition: '介词',
+    posConjunction: '连词', posNumeral: '数词', posParticle: '助词',
+    posAuxiliary: '助动词', posInterjection: '叹词', posClassifier: '量词',
+    posProperNoun: '专有名词', posOther: '其他',
   },
 });

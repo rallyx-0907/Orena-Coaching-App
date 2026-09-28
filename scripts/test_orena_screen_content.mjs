@@ -79,9 +79,12 @@ assert.deepEqual(placeFor([{ id: 'other', place: { within: 50 } }], 'article:x')
 // 7. Article/book/media/text normalisation: real fields carried through, an absent field is ''
 // or null, never a placeholder string or a guessed number.
 assert.deepEqual(normalizeArticle({ title: 'Sông Hồng', attribution: { author: 'Báo X' }, level: 'B1', reading_time_seconds: 300, body: 'ngắn' }), {
-  title: 'Sông Hồng', source: 'Báo X', level: 'B1', minutes: 5, desc: 'ngắn', image: '',
+  title: 'Sông Hồng', language: '', source: 'Báo X', level: 'B1', minutes: 5, desc: 'ngắn', image: '',
 });
-assert.deepEqual(normalizeArticle({ title: 'No attribution', body: 'text' }), { title: 'No attribution', source: '', level: '', minutes: null, desc: 'text', image: '' });
+assert.deepEqual(normalizeArticle({ title: 'No attribution', body: 'text' }), { title: 'No attribution', language: '', source: '', level: '', minutes: null, desc: 'text', image: '' });
+// languages-5 / finding A: the article's own real language field
+// (reading_content_repository.py's `_article` projection), carried through untranslated.
+assert.equal(normalizeArticle({ title: 'x', body: '', language: 'zh' }).language, 'zh');
 {
   const long = 'x'.repeat(400);
   const article = normalizeArticle({ title: 'Long', body: long });
@@ -90,8 +93,11 @@ assert.deepEqual(normalizeArticle({ title: 'No attribution', body: 'text' }), { 
 }
 
 assert.deepEqual(normalizeBook({ id: 'b1', title: 'Truyện', author: 'Tác giả', description: 'Mô tả' }), {
-  title: 'Truyện', source: 'Tác giả', level: '', minutes: null, desc: 'Mô tả', image: '',
+  title: 'Truyện', language: '', source: 'Tác giả', level: '', minutes: null, desc: 'Mô tả', image: '',
 });
+// languages-5 / finding A: `learning_language`, a book's own field name (different from an
+// article's `language`).
+assert.equal(normalizeBook({ id: 'b1', title: 'T', learning_language: 'en' }).language, 'en');
 assert.equal(
   normalizeBook({ id: 'b1', title: 'T', cover_asset_key: 'books/b1/cover.jpg' }).image,
   'url("/api/reading/library/books/b1/cover")',
@@ -110,9 +116,14 @@ assert.equal(media.minutes, 2);
 assert.equal(media.playbackKind, 'audio');
 assert.equal(media.transcriptOrigin, 'generated_asr');
 assert.deepEqual(media.segments, [{ time: '0:00', text: 'Xin chào' }], 'an empty text or an unreal timestamp is dropped, not shown blank');
+assert.equal(media.language, '', 'this fixture carries neither catalog.language nor asset.source_language');
+// languages-5 / finding A: `catalog.language` for a curated/shared lesson.
+assert.equal(normalizeMedia({ catalog: { language: 'zh' }, asset: {} }).language, 'zh');
+// ...else the asset's own `source_language`, for a learner's own upload (no `catalog` at all).
+assert.equal(normalizeMedia({ asset: { source_language: 'en' } }).language, 'en');
 
 const upload = normalizeMedia({ asset: { title: 'Học viên tự tải lên', duration_ms: null }, playback: { kind: 'video' }, transcript: null });
-assert.deepEqual(upload, { title: 'Học viên tự tải lên', source: '', level: '', minutes: null, desc: '', image: '', playbackKind: 'video', transcriptOrigin: 'none', segments: [] });
+assert.deepEqual(upload, { title: 'Học viên tự tải lên', language: '', source: '', level: '', minutes: null, desc: '', image: '', playbackKind: 'video', transcriptOrigin: 'none', segments: [] });
 
 const text = normalizeText({ title: 'Của tôi', text: 'ngắn' });
 assert.deepEqual(text, { title: 'Của tôi', source: '', level: '', minutes: null, desc: 'ngắn', image: '' });

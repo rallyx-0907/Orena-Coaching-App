@@ -4,8 +4,9 @@
 
 /* A rough script check, just enough to choose "characters" over "words" for a text stat (Chinese
    text has no spaces to split on; counting words there would undercount by whole sentences). Not a
-   language detector - the learner's pasted text is assumed to be in their current learning
-   language, exactly as the old text-import dialog set the textarea's own `lang` attribute. */
+   language detector - the learner's pasted text is in their current learning language
+   (`ctx.context.language`), the real source sheet.js's own `<textarea lang="…">` now reads
+   (languages-5 / finding A), the same way the old text-import dialog set that attribute. */
 const HAN_RANGE = /[㐀-鿿豈-﫿]/;
 
 function isMostlyHan(text) {

@@ -12,13 +12,34 @@
    SCRATCH/reports/grammar.md, not resolved by inventing the mock's other three groups. */
 import { grammarShelf, grammarFamilies } from '../../product/grammar-shelf.js';
 
+/* languages-4 (2) / finding B.2: `level_names[level]` (writing_coach/languages/grammar_registry.py
+   `GrammarProvider.level_names`) is the backend's own English label ("Foundation", "Upper-
+   intermediate", …) for a closed, small value space - exactly nine distinct labels across both
+   providers, the English track's six (A1-C2) and the Chinese/HSK track's seven (HSK1-7-9), each
+   provider reusing the same English word for the levels that mean the same standing. Closed enough
+   to map the level *code* (not the backend's own English text, which is not itself translated) to
+   real interface copy in en/vi/zh (grammar/copy.js) - this frontend cannot change backend code, so
+   the mapping lives here, keyed by the one stable thing both providers already return: `library.
+   levels`, the same array `level` itself comes from. A level code this table does not recognise
+   (a future provider) falls back to the raw code rather than guessing a label. */
+const LEVEL_NAME_KEY = Object.freeze({
+  A1: 'levelFoundation', A2: 'levelCore', B1: 'levelIntermediate', B2: 'levelUpperIntermediate',
+  C1: 'levelAdvanced', C2: 'levelMastery',
+  HSK1: 'levelFoundation', HSK2: 'levelBasic', HSK3: 'levelLowerIntermediate', HSK4: 'levelIntermediate',
+  HSK5: 'levelUpperIntermediate', HSK6: 'levelAdvanced', 'HSK7-9': 'levelAdvancedMastery',
+});
+
+export function levelName(level, t) {
+  const key = LEVEL_NAME_KEY[level];
+  return key ? t(key) : String(level || '');
+}
+
 /* One row per level the API lists, in the order it lists them (curriculum order, A1..C2), each
    with the concepts of that level as the group's grid. A level with no concepts (should not
    happen against a real catalogue) is left out rather than drawn empty. */
-export function buildLibraryGroups(library, support = 'en') {
+export function buildLibraryGroups(library, support = 'en', t) {
   const lessons = Array.isArray(library?.lessons) ? library.lessons : [];
   const levels = Array.isArray(library?.levels) ? library.levels : [];
-  const levelNames = library?.level_names || {};
   const items = grammarShelf({ lessons }, [], support);
   const groups = [];
   for (const level of levels) {
@@ -28,7 +49,16 @@ export function buildLibraryGroups(library, support = 'en') {
     const completed = levelItems.filter((item) => item.completed).length;
     groups.push({
       level,
-      levelName: levelNames[level] || level,
+      levelName: levelName(level, t),
+      // languages-4 (1) / finding A: whether this group's own lesson titles are genuine
+      // target-language content this build can honestly mark with `lang`. The English track's
+      // titles are real English at every level (docs/project/UI_BACKEND_GAPS.md N-33, spot-checked
+      // against writing_coach/languages/english/grammar_curriculum.json); the Chinese/HSK track's
+      // titles are a content gap - authored in Vietnamese only, not Chinese, with no locale-map
+      // shape to select from (N-33) - so marking them `lang="zh"` would misrepresent Vietnamese
+      // text as Chinese. `library.levels` (and so every group built from it) is scoped to one
+      // provider per response - never a mix - so this is decided once per group, not per item.
+      titleLang: level.startsWith('HSK') ? '' : 'en',
       topics: rollup?.families?.length || 0,
       total: levelItems.length,
       completed,

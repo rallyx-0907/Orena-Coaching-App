@@ -8,6 +8,7 @@
 import { html, mount } from '../../kit/html.js';
 import { useStyles } from '../../kit/styles.js';
 import { pageHeader, listRow } from '../../kit/components.js';
+import { langSpan } from '../../kit/lang.js';
 import { emptyMarkup } from '../../kit/states.js';
 import { shellCopy as shell } from '../../copy/shell.js';
 import { t } from './copy.js';
@@ -29,7 +30,7 @@ export default async function grammarLibrary(element, ctx) {
   const support = supportLanguage(context.profile);
   const library = await api.grammarLibrary();
   if (!ctx.isCurrent()) return;
-  const groups = buildLibraryGroups(library, support);
+  const groups = buildLibraryGroups(library, support, t);
 
   mount(
     element,
@@ -49,7 +50,8 @@ export default async function grammarLibrary(element, ctx) {
                       radius: 20,
                       pad: '16px',
                       leading: levelTile(item.level),
-                      title: item.title,
+                      title: langSpan(item.title, group.titleLang),
+                      titleLineHeight: 20,
                       sub: item.note,
                       trailing: statusTag(item),
                       dataset: { open: item.id },

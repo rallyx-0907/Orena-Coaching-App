@@ -85,6 +85,14 @@ assert.equal(pickMeaning([], 'en'), '', 'no meanings at all is empty, not invent
   assert.equal(withReview[0].reason, '6 words due for review', 'a real, non-empty reason string - the due count itself');
   assert.equal(withReview[0].icon, 'whole-word');
   assert.equal(withReview[0].tint, 'var(--skill-vocab)');
+  // languages-5 / finding A: a real vocabulary word carries the real active learning language
+  // screen.js already read from ctx.context (never a script guess - kit/lang.js's own doc comment)
+  // so screen.js can mark it with a real `lang` attribute via the shared helper.
+  assert.equal(withReview[0].lang, '', 'no `language` argument (a rejected/unset context) carries an unknown lang - never an invented one');
+  const withReviewEn = buildRecommendationPool({ reading: { available: false, next: null }, listening, speaking, review: { due_count: 6, first_due_word: 'buffer' }, language: 'en' }, t);
+  assert.equal(withReviewEn[0].lang, 'en', 'an English-learning due word is marked lang="en", not left unmarked');
+  const withHanziReview = buildRecommendationPool({ reading: { available: false, next: null }, listening: [], speaking: [], review: { due_count: 1, first_due_word: '生病' }, language: 'zh' }, t);
+  assert.equal(withHanziReview[0].lang, 'zh', 'the active learning language is carried straight onto the review item, not re-derived from the word\'s script');
 
   // Singular English wording at exactly one due word.
   const singular = buildRecommendationPool({ reading: { available: false, next: null }, listening: [], speaking: [], review: { due_count: 1, first_due_word: 'habit' } }, t);
@@ -133,7 +141,7 @@ assert.equal(pickMeaning([], 'en'), '', 'no meanings at all is empty, not invent
   const speaking = [{ id: 's1', title: 'Speak item', level: 'B1' }];
   const feed = [{ headword: 'habit', level: 'A2', meanings: [{ language: 'en', text: 'a settled tendency' }] }];
   const usedIds = new Set(['l1']);
-  const items = buildForYou({ continuation, listening, speaking, feed, usedIds, supportLang: 'en' }, t);
+  const items = buildForYou({ continuation, listening, speaking, feed, usedIds, supportLang: 'en', language: 'en' }, t);
   assert.equal(items[0].source, 'continue', 'unfinished work leads the rail');
   assert.ok(!items.some((item) => item.id === 'l1'), 'an item already used by the recommendation pool is not repeated');
   assert.ok(items.some((item) => item.id === 'l2'), 'the rest of the Listening catalogue fills in');
@@ -142,6 +150,14 @@ assert.equal(pickMeaning([], 'en'), '', 'no meanings at all is empty, not invent
   assert.equal(word.title, 'habit');
   assert.equal(word.meta, 'a settled tendency');
   assert.equal(word.tag, 'A2');
+  // languages-5 / finding A: the Daily Vocabulary Feed word carries the real active learning
+  // language (already threaded through from the caller), never a script guess.
+  assert.equal(word.lang, 'en');
+  assert.ok(!('lang' in items.find((item) => item.source === 'listening')), 'a catalogue item is never given a `lang` - only a real vocabulary word is');
+
+  const hanziFeed = [{ headword: '生病', level: 'A2', meanings: [{ language: 'en', text: 'to fall ill' }] }];
+  const hanziItems = buildForYou({ feed: hanziFeed, supportLang: 'en', language: 'zh' }, t);
+  assert.equal(hanziItems.find((item) => item.source === 'word').lang, 'zh', 'the active learning language is carried straight onto the feed item, not re-derived from the word\'s script');
 
   const many = Array.from({ length: 30 }, (_, i) => ({ lesson_id: `x${i}`, title: `x${i}` }));
   assert.ok(buildForYou({ listening: many }, t).length <= 12, 'the rail is capped, not unbounded');
@@ -202,6 +218,17 @@ assert.deepEqual(usedRecommendationIds([{ id: 'a' }, { id: 'b' }, { id: null }])
   const zh = todayDateLabel(date, 'zh');
   assert.ok(vi.length > 0 && zh.length > 0);
   assert.equal(todayDateLabel(date, '!!!'), todayDateLabel(date, 'en'), 'a locale Intl rejects falls back to English rather than throwing');
+}
+
+// 9. languages-5 / finding A: screen.js wires the shared kit/lang.js helper for a vocabulary
+// word's title - never a per-screen Han-range copy (the defect this pass fixed for real).
+{
+  const { readFileSync } = await import('node:fs');
+  const screenSrc = readFileSync(new URL('../static/orena/screens/today/screen.js', import.meta.url), 'utf8');
+  assert.match(screenSrc, /import\s*\{\s*langSpan\s*\}\s*from\s*'\.\.\/\.\.\/kit\/lang\.js'/, 'imports the shared lang helper from kit/lang.js');
+  assert.doesNotMatch(screenSrc, /㐀-鿿/, 'no local Han-range regex left in screen.js');
+  const modelSrc = readFileSync(new URL('../static/orena/screens/today/model.js', import.meta.url), 'utf8');
+  assert.doesNotMatch(modelSrc, /㐀-鿿/, 'no local Han-range regex left in model.js either - the active learning language is real data, not a script guess');
 }
 
 console.log('Orena Today: recommendation pool, continuation mapping, For-you rail and the rule-40 zero-fallback (goal ring, streak, level) all hold: PASS');

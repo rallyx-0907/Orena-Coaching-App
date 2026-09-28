@@ -71,21 +71,23 @@ function firstMeaning(list) {
 
 /* GET /api/vocabulary/catalogue/search - the shared, admin-curated dictionary. Server-searched
    and server-bounded; no client filtering. */
-export function wordItems(payload) {
+export function wordItems(payload, language = '') {
   const items = Array.isArray(payload?.items) ? payload.items : [];
   return items
     .map((entry) => {
       const word = String(entry?.word ?? '').trim();
       if (!word) return null;
       const meta = [firstMeaning(entry?.short_meanings), entry?.part_of_speech].filter(Boolean).join(' · ');
-      return { kindKey: 'word', title: word, meta, open: { route: 'word', id: word } };
+      // languages-5 / finding A: GET /api/vocabulary/catalogue/search is called with `language`
+      // (screen.js's own `runSearch`), the same value every returned word is catalogued under.
+      return { kindKey: 'word', title: word, lang: language, meta, open: { route: 'word', id: word } };
     })
     .filter(Boolean);
 }
 
 /* GET /api/reading/articles - one page of published articles, client-filtered by title/topic
    since the route takes no free-text query (SCRATCH C2 §1). */
-export function articleItems(payload, query) {
+export function articleItems(payload, query, language = '') {
   const items = Array.isArray(payload?.items) ? payload.items : [];
   return items
     .filter((article) => matchesText(article?.title, query) || matchesText(article?.topic, query))
@@ -93,15 +95,29 @@ export function articleItems(payload, query) {
       const id = article?.id;
       const title = String(article?.title ?? '').trim();
       if (id == null || !title) return null;
-      const meta = [article?.topic, article?.level].filter(Boolean).join(' · ');
-      return { kindKey: 'article', title, meta, open: { route: 'content', id: `article:${id}` } };
+      // languages-5 fix (review issue 1, finding B.3 "also Search"): `topic` is the same open,
+      // untranslatable content metadata as Discover's card tag (docs/project/UI_BACKEND_GAPS.md
+      // N-35) - kept out of the joined `meta` string so screen.js can mark it lang="en" on its own
+      // element, the same way mediaCard's tag.lang does for Discover, instead of folding raw
+      // English into an unmarked vi/zh sentence.
+      return {
+        kindKey: 'article',
+        title,
+        // languages-5 / finding A: the article's own `language` field when the payload carries one
+        // (reading_content_repository.py's `_learner_row`), else the same language this search
+        // itself queried GET /api/reading/articles with (screen.js's `runSearch`).
+        lang: article?.language || language,
+        topic: article?.topic || '',
+        meta: article?.level || '',
+        open: { route: 'content', id: `article:${id}` },
+      };
     })
     .filter(Boolean);
 }
 
 /* GET /api/listening/library - the curated + admin-imported catalogue, client-filtered the same
    way (the route takes level/topic/tag filters, not a free-text query). */
-export function listeningItems(payload, query) {
+export function listeningItems(payload, query, language = '') {
   const items = Array.isArray(payload?.items) ? payload.items : [];
   return items
     .filter((item) => matchesText(item?.title, query) || matchesText(item?.topic, query))
@@ -109,8 +125,19 @@ export function listeningItems(payload, query) {
       const id = item?.id;
       const title = String(item?.title ?? '').trim();
       if (id == null || !title) return null;
-      const meta = [item?.topic, item?.level].filter(Boolean).join(' · ');
-      return { kindKey: 'media', title, meta, open: { route: 'content', id: `media:${id}` } };
+      // languages-5 fix (review issue 1, finding B.3 "also Search"): same open-taxonomy topic as
+      // articleItems above - kept separate from `meta` for the same reason.
+      return {
+        kindKey: 'media',
+        title,
+        // languages-5 / finding A: the item's own `language` field (writing_coach/listening_api.py
+        // `stored_media_metadata`), else the language this search itself queried
+        // GET /api/listening/library with.
+        lang: item?.language || language,
+        topic: item?.topic || '',
+        meta: item?.level || '',
+        open: { route: 'content', id: `media:${id}` },
+      };
     })
     .filter(Boolean);
 }

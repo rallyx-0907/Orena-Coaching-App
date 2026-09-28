@@ -86,4 +86,17 @@ assert.deepEqual(notificationRows({ due: 0, continuation: [] }), [], 'no real si
 const zeroPercentRows = notificationRows({ due: 0, continuation: [{ id: 'text:z', title: 'Just started', place: { index: 0, total: 2, within: 0 } }] });
 assert.equal(zeroPercentRows[0].percent, 0, 'a real 0% is kept as the number 0, distinct from no place recorded (null)');
 
+// languages-5 / finding A: sheet.js source checks (not imported as a module, per this gate's own
+// rule above - read as plain text) confirming both sheets wire the shared kit/lang.js helper.
+{
+  const { readFileSync } = await import('node:fs');
+  const importSrc = readFileSync(new URL('../static/orena/screens/import/sheet.js', import.meta.url), 'utf8');
+  assert.match(importSrc, /import\s*\{\s*langAttr\s*\}\s*from\s*'\.\.\/\.\.\/kit\/lang\.js'/, 'Import sheet imports the shared lang helper');
+  assert.match(importSrc, /<textarea[^>]*lang="\$\{langAttr\(context\.language\)\}"/, 'the pasted-text textarea carries a real lang attribute, matching the old text-import dialog\'s own behaviour');
+
+  const notificationsSrc = readFileSync(new URL('../static/orena/screens/notifications/sheet.js', import.meta.url), 'utf8');
+  assert.match(notificationsSrc, /import\s*\{\s*langSpan\s*\}\s*from\s*'\.\.\/\.\.\/kit\/lang\.js'/, 'Notifications sheet imports the shared lang helper');
+  assert.match(notificationsSrc, /langSpan\(row\.title,\s*context\.language\)/, 'a continuation row\'s title is wrapped with the active learning language');
+}
+
 console.log('Orena screen sheets (Import, Notifications): media-url move, text stats, error mapping, membership records and continuation routing all pure and honest: PASS');

@@ -106,6 +106,10 @@ const PAIRS = [
   ['badge-ink', 'red'], ['badge-ink', 'green'], ['badge-ink', 'amber'], ['badge-ink', 'accent-text'],
   ['green', 'green-soft'], ['red', 'red-soft'], ['amber', 'amber-soft'], ['ai-ink', 'ai-soft'],
   ['green', 'surface'], ['red', 'surface'], ['amber', 'surface'],
+  // heroMedia()'s overlay text/pill (components.css .c-hero__content/.c-hero__pill) and the toast
+  // both draw white ink on this fixed-dark, theme-independent pairing (D-093 AA fix: the hero's
+  // own `background-color` fallback used to be the themed --surface2, near-white in light theme).
+  ['toast-ink', 'toast-bg'],
 ];
 const measured = [];
 for (const theme of ['dark', 'light']) {
@@ -168,5 +172,19 @@ assert.equal(String(html`<p>${'<b>&"'}</p>`), '<p>&lt;b&gt;&amp;&quot;</p>');
 assert.equal(String(html`<p>${raw('<b>x</b>')}</p>`), '<p><b>x</b></p>');
 assert.equal(String(html`<ul>${['<a>', html`<li>ok</li>`]}</ul>`), '<ul>&lt;a&gt;<li>ok</li></ul>');
 assert.equal(String(html`${null}${false}${undefined}${0}`), '0');
+
+// 8. Two verify-fix regressions (kit group, languages-1/languages-2):
+const componentsCss = fs.readFileSync(path.join(ROOT, 'kit/components.css'), 'utf8');
+assert.match(
+  block(componentsCss, '.c-hero {'),
+  /background-color:\s*var\(--toast-bg\)/,
+  '.c-hero: no-image fallback stays the fixed-dark --toast-bg, not a themed surface (D-093 AA - white overlay text must hold contrast with no cover photo)',
+);
+const kitCss = fs.readFileSync(path.join(ROOT, 'kit/kit.css'), 'utf8');
+assert.match(
+  block(kitCss, '.o-chip {'),
+  /flex-shrink:\s*0/,
+  '.o-chip: never shrinks below its label (its row scrolls or wraps instead) - a shrunk chip clips its own text',
+);
 
 console.log(`Orena kit: tokens and device variables are the pinned design's, AA holds in both themes (${measured.length} pairs; D-093 adjustments), icons are lucide-static@${release}, one colour owner, no old UI imported: PASS`);

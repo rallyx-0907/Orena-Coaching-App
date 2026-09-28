@@ -50,6 +50,10 @@ export function entryFromArticle(item, continuation) {
     id,
     kind: 'article',
     title: item.title || '',
+    // languages-5 / finding A: the article's own language field (reading_content_repository.py's
+    // `_learner_row`), not the learner's active learning language - an article's language never
+    // changes with a later switch, and this is the value the data itself declares.
+    language: item.language || '',
     author: '',
     level: item.level || '',
     topic: item.topic || '',
@@ -69,6 +73,10 @@ export function entryFromBook(item, continuation, coverUrl) {
     id,
     kind: 'book',
     title: item.title || '',
+    // languages-5 / finding A: `learning_language` (writing_coach/reading_library_api.py
+    // `_with_reading_time`) - the book's own field, one API field name different from an
+    // article's `language`, both mapped to the same `entry.language`.
+    language: item.learning_language || '',
     author: item.author || '',
     level: '',
     topic: '',
@@ -91,6 +99,10 @@ export function entryFromMedia(item, continuation) {
     kind: 'media',
     mediaType: item.media_type === 'video' ? 'video' : 'audio',
     title: item.title || '',
+    // languages-5 / finding A: `language` (writing_coach/listening_api.py `stored_media_metadata` /
+    // `catalog_lessons`) - the item's own field, real for both the curated catalogue and a
+    // learner's shared import.
+    language: item.language || '',
     author: item.source_label || '',
     level: item.level || item.estimated_level || '',
     topic: item.topic || '',
@@ -111,6 +123,9 @@ export function entryFromCollection(item) {
     id,
     kind: 'collection',
     title: item.title || '',
+    // languages-5 / finding A: `language_code` (writing_coach/vocabulary_library.py `_summary`) -
+    // the collection's own field.
+    language: item.language_code || '',
     author: '',
     level: item.level_range || item.level || '',
     topic: item.topic || '',
@@ -256,7 +271,13 @@ export function presentCard(entry, t) {
   if (entry.kind === 'collection' && entry.itemCount != null) meta = t.plural('collectionWordCount', entry.itemCount);
   const tags = [];
   if (entry.level) tags.push({ label: entry.level, tone: 'accent' });
-  if (entry.topic) tags.push({ label: entry.topic });
+  // languages-4 (3) / finding B.3, docs/project/UI_BACKEND_GAPS.md N-35: `entry.topic` is open,
+  // ever-growing content metadata (reading_articles.topic/vocabulary topic, no closed taxonomy to
+  // map through copy.js the way typeLabel() maps the closed `kind` enum) - it cannot be honestly
+  // translated. Kept, rather than dropped, because it is real information about the card; marked
+  // `lang="en"` so it is honest content metadata, not silently unlabelled English inside a vi/zh
+  // sentence.
+  if (entry.topic) tags.push({ label: entry.topic, lang: 'en' });
   if (entry.started) {
     const label =
       entry.kind === 'collection' && entry.progressLearned != null
@@ -270,6 +291,10 @@ export function presentCard(entry, t) {
     duration: durationLabel,
     progress: entry.started ? entry.progressPct : null,
     title: entry.title,
+    // languages-5 / finding A: the language the entry's own source declared, or '' for the two
+    // device-memory kinds (a learner's own pasted text/media import), which carry no such field -
+    // left unmarked rather than guessed at.
+    titleLang: entry.language || '',
     meta,
     tags,
   };

@@ -156,4 +156,14 @@ import { withinWindow, sortByRecency, dayBucket, groupByDay } from '../static/or
   assert.equal(groups[0].key, 'today');
 }
 
+// languages-5 / finding A: screen.js marks a writing prompt/draft, a read article's title and a
+// spoken attempt's transcript with the active learning language via the shared kit/lang.js helper.
+{
+  const { readFileSync } = await import('node:fs');
+  const screenSrc = readFileSync(new URL('../static/orena/screens/progress/screen.js', import.meta.url), 'utf8');
+  assert.match(screenSrc, /import\s*\{\s*langSpan\s*\}\s*from\s*'\.\.\/\.\.\/kit\/lang\.js'/, 'imports the shared lang helper from kit/lang.js');
+  assert.match(screenSrc, /langSpan\(sourceText,\s*sourceLang\)/, 'Evidence rows wrap the real source text with its own language');
+  assert.match(screenSrc, /langSpan\(title,\s*titleLang\)/, 'History rows wrap the real title text with its own language');
+}
+
 console.log('PASS Progress screen: rule-40 zero fallbacks, real rank/skills mapping, evidence/history grouping — screens/progress/model.js + product/activity-log.js');

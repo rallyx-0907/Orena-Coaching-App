@@ -283,10 +283,16 @@
 }
 
 /* ---- Hero media (Content Detail, Collection Detail) ---- */
+/* `background-color` is the fallback the frame never draws (N-19: every source frame has a cover
+   photo; the app sometimes has none - rule 40). `background-size:cover` means it is only visible
+   there, so it must hold the same "photo + dark scrim" contract the always-white overlay text
+   below assumes: `--toast-bg`, the kit's other fixed-dark/white-ink pairing (the toast), not
+   `--surface2` (a themed near-white in light theme - D-093 AA fix: title/pill were ~1.1:1
+   against it, invisible, confirmed live on Content Detail/Collection Detail with no cover). */
 .c-hero {
   position: relative;
   overflow: hidden;
-  background-color: var(--surface2);
+  background-color: var(--toast-bg);
   background-size: cover;
   background-position: center;
 }

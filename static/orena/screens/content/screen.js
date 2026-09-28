@@ -12,6 +12,7 @@
 import { html, mount, cls } from '../../kit/html.js';
 import { useStyles } from '../../kit/styles.js';
 import { heroMedia, listRow, rowThumb } from '../../kit/components.js';
+import { langSpan, langAttr } from '../../kit/lang.js';
 import { api } from '../../infrastructure/api.js';
 import { t } from './copy.js';
 import {
@@ -87,6 +88,9 @@ async function loadRelated(kind, id, language) {
         map: (item) => ({
           id: contentIdFor('article', item.id),
           title: item.title,
+          // languages-5 / finding A: the related list is the same language-scoped catalogue this
+          // content item itself came from (loadRelated's own `language` argument).
+          lang: language,
           meta: metaLine([t('typeArticle'), item.level, minutesLabel(minutesFrom(item.reading_time_seconds))]),
           image: '',
         }),
@@ -99,6 +103,7 @@ async function loadRelated(kind, id, language) {
         map: (item) => ({
           id: contentIdFor('book', item.id),
           title: item.title,
+          lang: language,
           meta: metaLine([t('typeBook'), item.author || '']),
           image: item.cover_asset_key ? `url("/api/reading/library/books/${encodeURIComponent(item.id)}/cover")` : '',
         }),
@@ -111,6 +116,7 @@ async function loadRelated(kind, id, language) {
         map: (item) => ({
           id: contentIdFor('media', item.lesson_id),
           title: item.title,
+          lang: language,
           meta: metaLine([item.media_type === 'audio' ? t('typeAudio') : t('typeVideo'), item.level, minutesLabel(minutesFrom(item.duration_ms, { unitMs: true }))]),
           image: item.thumbnail_url ? `url("${item.thumbnail_url}")` : '',
         }),
@@ -159,7 +165,7 @@ export default async function content(element, ctx) {
         image: detail.image,
         height: 'var(--hero-h)',
         pill: typeLabel(kind, detail.playbackKind),
-        title: detail.title,
+        title: langSpan(detail.title, detail.language),
         meta: metaLine([detail.source, detail.level, minutesLabel(detail.minutes)]),
       })}
       <div class="${cls('s-content__grid', !related.length && 's-content__grid--full')}">
@@ -175,14 +181,14 @@ export default async function content(element, ctx) {
             ${hasPractice ? html`<a class="s-content__ai" href="${ctx.href('checku', { id: contentId })}">${t('practiceThisText')}</a>` : ''}
             <button type="button" class="s-content__secondary" data-save aria-pressed="${state.saved ? 'true' : 'false'}">${state.saved ? t('saved') : t('save')}</button>
           </div>
-          ${detail.desc ? html`<p class="s-content__desc">${detail.desc}</p>` : ''}
+          ${detail.desc ? html`<p class="s-content__desc" lang="${langAttr(detail.language)}">${detail.desc}</p>` : ''}
           ${isMedia
             ? html`<div class="o-card s-content__transcript">
                 <div class="s-content__transcript-head">
                   <span>${t('transcript')}</span><span class="o-tag">${transcriptLabel}</span>
                 </div>
                 <div class="s-content__transcript-body">
-                  ${detail.segments.slice(0, 3).map((segment) => html`<div class="s-content__seg"><span class="s-content__seg-time">${segment.time}</span><span class="s-content__seg-text">${segment.text}</span></div>`)}
+                  ${detail.segments.slice(0, 3).map((segment) => html`<div class="s-content__seg"><span class="s-content__seg-time">${segment.time}</span><span class="s-content__seg-text" lang="${langAttr(detail.language)}">${segment.text}</span></div>`)}
                 </div>
               </div>`
             : ''}
@@ -195,7 +201,7 @@ export default async function content(element, ctx) {
                 radius: 16,
                 pad: '12px',
                 leading: item.image ? rowThumb({ image: item.image, width: 64, height: 48, radius: 12 }) : null,
-                title: item.title,
+                title: langSpan(item.title, item.lang),
                 sub: item.meta,
                 dataset: { go: ctx.href('content', { id: item.id }) },
               }))}

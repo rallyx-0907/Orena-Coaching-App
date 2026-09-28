@@ -10,6 +10,7 @@ import { useStyles } from '../../kit/styles.js';
 import { loadingMarkup, emptyMarkup } from '../../kit/states.js';
 import { toast } from '../../kit/toast.js';
 import { heroMedia, masteryBars } from '../../kit/components.js';
+import { langAttr, langSpan } from '../../kit/lang.js';
 import { api } from '../../infrastructure/api.js';
 import { languages } from '../../copy/index.js';
 import { shellCopy } from '../../copy/shell.js';
@@ -30,7 +31,7 @@ function wordRowMarkup(word) {
     : masteryBars({ filled: word.filled, total: word.total, color: 'var(--green)' });
   return html`<div class="s-collection-word" role="button" tabindex="0" data-word-open data-word="${word.id}">
     <span class="s-collection-word__body">
-      <span class="s-collection-word__title">${word.word}</span>
+      <span class="s-collection-word__title" lang="${langAttr(word.lang)}">${word.word}</span>
       <span class="s-collection-word__meaning">${word.meaning}</span>
     </span>
     ${badge}
@@ -46,7 +47,7 @@ function screenMarkup(model) {
     height: 'auto',
     titleSize: 26,
     pill,
-    title: model.title,
+    title: langSpan(model.title, model.language),
     meta,
     dataset: { hero: 'collection' },
   });

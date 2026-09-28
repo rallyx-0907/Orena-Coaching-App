@@ -45,7 +45,10 @@ assert.equal(matchesText('Anything', ''), true, 'an empty needle matches everyth
 {
   const items = wordItems({ items: [{ word: 'buffer', part_of_speech: 'noun', short_meanings: ['a cushion of time'] }, { word: '' }] });
   assert.equal(items.length, 1, 'an entry with no word text is dropped');
-  assert.deepEqual(items[0], { kindKey: 'word', title: 'buffer', meta: 'a cushion of time · noun', open: { route: 'word', id: 'buffer' } });
+  assert.deepEqual(items[0], { kindKey: 'word', title: 'buffer', lang: '', meta: 'a cushion of time · noun', open: { route: 'word', id: 'buffer' } });
+  // languages-5 / finding A: GET /api/vocabulary/catalogue/search is queried with a real language
+  // (screen.js's own runSearch), carried straight onto every returned word.
+  assert.equal(wordItems({ items: [{ word: 'x' }] }, 'zh')[0].lang, 'zh');
 }
 
 // 4. articleItems / listeningItems: client-filtered by title or topic (neither route takes a
@@ -60,6 +63,24 @@ assert.equal(matchesText('Anything', ''), true, 'an empty needle matches everyth
 
   const media = listeningItems({ items: [{ id: 'm1', title: 'Café Talk', topic: 'Daily life' }] }, 'café');
   assert.deepEqual(media[0].open, { route: 'content', id: 'media:m1' });
+
+  // languages-5 fix (review issue 1, finding B.3 "also Search"): `topic` is kept separate from the
+  // joined `meta` string (never folded in unmarked) so screen.js can mark it lang="en" on its own,
+  // the same open-taxonomy metadata as Discover's card tag (docs/project/UI_BACKEND_GAPS.md N-35).
+  assert.equal(found[0].topic, 'Daily life');
+  assert.equal(found[0].meta, 'B1', 'meta carries only the level now - topic moved to its own field');
+  const noLevel = articleItems(payload, '').find((a) => a.title === 'Cooking Basics');
+  assert.equal(noLevel.topic, 'Food');
+  assert.equal(noLevel.meta, '', 'no level on this fixture - meta is empty, not "undefined"/"null"');
+  assert.equal(media[0].topic, 'Daily life');
+  assert.equal(media[0].meta, '', 'no level on this fixture - meta is empty, not "undefined"/"null"');
+
+  // languages-5 / finding A: the item's own real `language` field wins when present; the search's
+  // own queried language is the fallback for a payload that carries none.
+  assert.equal(articleItems({ items: [{ id: 1, title: 'x', language: 'zh' }] }, '', 'en')[0].lang, 'zh', 'the article\'s own field wins over the query language');
+  assert.equal(articleItems({ items: [{ id: 1, title: 'x' }] }, '', 'en')[0].lang, 'en', 'falls back to the language this search itself queried with');
+  assert.equal(listeningItems({ items: [{ id: 'm2', title: 'x', language: 'zh' }] }, '', 'en')[0].lang, 'zh');
+  assert.equal(listeningItems({ items: [{ id: 'm2', title: 'x' }] }, '', 'en')[0].lang, 'en');
 }
 
 // 5. Device-memory imports: a text import's route id is its own stored id unchanged (one
@@ -148,6 +169,17 @@ assert.equal(totalItems([{ items: [1, 2] }, { items: [] }, { items: [3] }]), 3);
   } else {
     console.log('Orena search screen: content/model.js not present yet in this tree - cross-surface check skipped, not failed');
   }
+}
+
+// 10. languages-5 / finding A: screen.js wires the shared kit/lang.js helper for a result's title.
+{
+  const { readFileSync } = await import('node:fs');
+  const screenSrc = readFileSync(new URL('../static/orena/screens/search/screen.js', import.meta.url), 'utf8');
+  assert.match(screenSrc, /import\s*\{\s*langSpan\s*\}\s*from\s*'\.\.\/\.\.\/kit\/lang\.js'/, 'imports the shared lang helper from kit/lang.js');
+  assert.match(screenSrc, /langSpan\(item\.title,\s*item\.lang\)/, 'a result row title is wrapped with the item\'s own language');
+  // languages-5 fix (review issue 1, finding B.3 "also Search"): a result's own open-taxonomy
+  // `topic` (article/media) is wrapped lang="en" in its own span, not folded unmarked into `sub`.
+  assert.match(screenSrc, /langSpan\(item\.topic,\s*'en'\)/, 'an article/media result\'s topic is marked lang="en", mirroring Discover\'s card tag');
 }
 
 console.log('Orena search screen: recent searches, real-source mapping, rule-40 fallbacks: PASS');

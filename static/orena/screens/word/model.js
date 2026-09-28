@@ -18,6 +18,49 @@ const STAGE_COPY_KEY = {
 
 const HAN = /[㐀-鿿]/;
 
+/* languages-5 / finding A: the one legitimate script check in this build. A saved word carries no
+   per-item language field from the backend at all - `SavedWord.language_code`
+   (writing_coach/persistence/models.py) exists only to scope the `/api/library/vocabulary` query
+   server-side (becoming_library.py's `_row_to_item` never returns it), and the word being viewed
+   here may predate the learner's *current* active learning language (a word saved while studying
+   Chinese, viewed after switching to English). The backend's own WordDetail answer resolves the
+   same way (writing_coach/word_detail.py `script_of`): hanzi when the requested learning language
+   is Chinese, or - the same fallback this module uses - when the headword itself contains Han
+   characters, so a saved Chinese word still renders correctly even under a stale request language.
+   `cardLanguage` turns that script into the actual code kit/lang.js's `langAttr`/`langSpan` take:
+   this build has exactly two learning languages (product/languages.js `learningLanguage`), so
+   'latin' always means 'en' here - never Vietnamese, which is an interface/support language only,
+   not a learning-language option. */
+export function cardLanguage(script) {
+  return script === 'hanzi' ? 'zh' : 'en';
+}
+
+/* languages-4 (2) / finding B.1: the part-of-speech chip's value is mostly the shared local
+   tagger's closed label set (writing_coach/linguistic_annotation.py `ALLOWED_POS`: noun/verb/
+   adjective/adverb/pronoun/determiner/preposition/conjunction/numeral/particle/auxiliary/
+   interjection/classifier/proper_noun/other), reachable through word_detail.py's own lookup path
+   - but a saved item's own `part_of_speech` (vocabulary_source_import.py, content-authored free
+   text) or an external monolingual dictionary's own wording (reading_lookup.py) is not guaranteed
+   to be one of those fifteen. The closed part is mapped to real copy in en/vi/zh (word/copy.js); a
+   value outside it cannot be translated - there is no dictionary of an arbitrary source's own
+   wording - so it is shown exactly as the backend gave it (`known: false`), for the caller to mark
+   `lang="en"` as untranslated content metadata rather than let unlabelled English sit silently
+   inside a vi/zh sentence (the same honest choice this pass records for Discover's open `topic`
+   field, docs/project/UI_BACKEND_GAPS.md). */
+const POS_LABEL_KEY = Object.freeze({
+  noun: 'posNoun', verb: 'posVerb', adjective: 'posAdjective', adverb: 'posAdverb',
+  pronoun: 'posPronoun', determiner: 'posDeterminer', preposition: 'posPreposition',
+  conjunction: 'posConjunction', numeral: 'posNumeral', particle: 'posParticle',
+  auxiliary: 'posAuxiliary', interjection: 'posInterjection', classifier: 'posClassifier',
+  proper_noun: 'posProperNoun', other: 'posOther',
+});
+
+export function posLabel(value, t) {
+  const raw = String(value || '').trim();
+  const key = POS_LABEL_KEY[raw.toLowerCase()];
+  return key ? { text: t(key), known: true } : { text: raw, known: false };
+}
+
 function text(value) {
   return String(value ?? '').trim();
 }

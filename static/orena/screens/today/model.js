@@ -48,7 +48,7 @@ export function pickMeaning(meanings, supportLang) {
    card whenever the mock queue is non-empty. A source with nothing available (no due reviews, no
    published article in this environment, an empty catalogue) simply contributes nothing - the
    pool is shorter, never padded with an invented kind. */
-export function buildRecommendationPool({ reading, listening = [], speaking = [], review = null }, t) {
+export function buildRecommendationPool({ reading, listening = [], speaking = [], review = null, language = '' }, t) {
   const pool = [];
   const dueCount = Number(review?.due_count) || 0;
   const dueWord = String(review?.first_due_word || '').trim();
@@ -58,6 +58,11 @@ export function buildRecommendationPool({ reading, listening = [], speaking = []
       id: `review:${dueWord}`,
       kind: t('kindReview'),
       title: dueWord,
+      // languages-5 / finding A: a real vocabulary word, not a catalogue title - the due-review
+      // queue (GET /api/library/review-queue) answers for the learner's one active learning
+      // language, so that language (already read by screen.js from ctx.context) is the word's own,
+      // never a script guess (kit/lang.js's own doc comment on why this build never sniffs script).
+      lang: language,
       level: '',
       durationLabel: '',
       image: '',
@@ -185,7 +190,7 @@ export function mapContinuationEntry(entry, t) {
 /* Everything the recommendation pool did not use: the learner's unfinished work first (most
    recent continuation entries, device memory), then the rest of the real Listening and Speaking
    catalogues, then today's Daily Vocabulary Feed words - never an invented card. */
-export function buildForYou({ continuation = [], listening = [], speaking = [], feed = [], usedIds = new Set(), supportLang = 'en' }, t) {
+export function buildForYou({ continuation = [], listening = [], speaking = [], feed = [], usedIds = new Set(), supportLang = 'en', language = '' }, t) {
   const items = [];
   for (const entry of continuation) {
     if (items.length >= FOR_YOU_LIMIT) break;
@@ -235,6 +240,10 @@ export function buildForYou({ continuation = [], listening = [], speaking = [], 
       id: `word:${headword}`,
       kind: t('kindWord'),
       title: headword,
+      // languages-5 / finding A: the Daily Vocabulary Feed (GET /api/vocabulary/daily-feed) is
+      // fetched for the same active learning language screen.js already read - real data, not a
+      // script guess.
+      lang: language,
       meta: pickMeaning(word.meanings, supportLang),
       tag: word.level || null,
       durationLabel: '',
