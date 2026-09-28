@@ -104,6 +104,7 @@ _log = logging.getLogger(__name__)
 Meter = Callable[[str, str, int, str], None]  # (user_key, feature, amount, request_id)
 TURN_FEATURE = "agent.turn"
 OPEN_FEATURE = "agent.open"
+ANSWER_NUDGE = "[No answer was written. Answer the learner now, in words, in their support language.]"
 TOKENS_FEATURE = "agent.tokens"
 
 
@@ -283,6 +284,7 @@ class _Turn:
             self.request.client, self.locale.target, version=self.stream.version, opening=self.opening
         )
         limit = self.rt.limits.max_tool_iterations_per_turn
+        nudged = False
         for round_index in range(limit + 1):
             remaining = self.deadline - self.rt.clock()
             if remaining <= 0:
@@ -315,8 +317,16 @@ class _Turn:
                         self.usage_known = False  # never a guessed zero (R5 counts what was reported)
                     self.usage_in += item.input_tokens or 0
                     self.usage_out += item.output_tokens or 0
-            if self.should_stop() or not calls:
+            if self.should_stop():
                 return
+            if not calls:
+                if self.text or outputs.actions or nudged or round_index >= limit:
+                    return
+                # A round that ended with no words and nothing offered (the live run: a refused action,
+                # then silence). Once, the model is asked for its answer in words, not failed at once.
+                nudged = True
+                messages.append(ProviderMessage(role="user", content=ANSWER_NUDGE))
+                continue
             messages.append(ProviderMessage(role="assistant", content="".join(round_text), tool_calls=tuple(calls)))
             read_any = False
             for call in calls:

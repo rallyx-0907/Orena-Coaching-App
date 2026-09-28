@@ -351,8 +351,9 @@ def test_text_streams_even_when_a_round_also_asks_for_extras():
 
 
 def test_a_round_with_nothing_in_it_is_a_provider_failure_and_not_metered():
+    # nothing, then nothing again after the one nudge for words
     meter = []
-    rt, _ = runtime([(TurnFinished(10, 0, "stop"),)], meter=lambda *args: meter.append(args))
+    rt, _ = runtime([(TurnFinished(10, 0, "stop"),), (TurnFinished(10, 0, "stop"),)], meter=lambda *args: meter.append(args))
     events = run(rt)
     assert names(events) == ["session", "error"] and events[-1].error_class == "provider_unavailable"
     assert meter == []
@@ -726,3 +727,23 @@ def test_the_voice_block_opens_the_way_to_a_change():
 
     style = style_for("vi", [])
     assert "gọi set_address" in style and "không từ chối" in style
+
+
+def test_a_silent_round_is_asked_once_for_words_before_it_is_a_failure():
+    """Live run: an action refused, then an empty round. The model is nudged once, not failed at once."""
+
+    from writing_coach.agent.turn import ANSWER_NUDGE
+
+    rounds = [(TurnFinished(0, 0, "stop"),), reply("Từ 是 nghĩa là “là”.")]
+    rt, provider = runtime(rounds)
+    events = run(rt)
+    assert next(e for e in events if e.name == "segment_end").text == "Từ 是 nghĩa là “là”."
+    assert provider.requests[1].messages[-1].content == ANSWER_NUDGE
+    rt2, _ = runtime([(TurnFinished(0, 0, "stop"),), (TurnFinished(0, 0, "stop"),)])
+    assert names(run(rt2)) == ["session", "error"]  # twice silent: the learner is told, as before
+
+
+def test_a_dropped_opening_claim_leaves_no_leading_space():
+    rt, _ = runtime([reply("Mình đã lưu 是 rồi.\n\nTừ này nghĩa là “là”.")])
+    events = run(rt, turn_request(actions=()))
+    assert next(e for e in events if e.name == "segment_end").text == "Từ này nghĩa là “là”."

@@ -138,6 +138,8 @@ class ClaimGate:
         claim = claims_done if offer is not None else claims_acted
         if any(claim(part) for part in tail):
             kept = "".join(part for part in tail if not claim(part))
+            if not self.text.strip():
+                kept = kept.lstrip()  # the claim opened the answer: no stray space or blank line before the rest
             before = "".join(self.sent) + kept
             addition = offer if offer is not None else ("" if before.strip() else self._nothing())
             joiner = "" if not addition or not before or before.endswith((" ", "\n")) else " "
