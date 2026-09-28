@@ -327,6 +327,9 @@ FLOWS: dict[str, list[tuple[str, str, dict, str | None, dict]]] = {
 }
 
 
+ESSAY_FLOWS = frozenset({"history"})  # the flows that read the essay review; the rest skip that provider call
+
+
 def run_flows(client: Client, version: int, names: list[str], cap: float, gap: float, spent: float) -> tuple[list[dict], float]:
     rows: list[dict] = []
     for name in names:
@@ -562,17 +565,20 @@ def drive(args: argparse.Namespace, base_url: str) -> int:
 
     spent, rows, provider_failures, provider_answered = 0.0, [], 0, False
     if args.flows:
-        for target in ("zh-CN", "en"):  # the words and the essay the flows read
+        names = [n for n in args.flows.split(",") if n]
+        for target in ("zh-CN", "en"):  # the words, and the essay only the flows that read one need
             t = TARGETS[target]
             client.call("POST", "/api/platform/language", {"language": t["language"]})
             for word in t["words"]:
                 client.call("POST", "/api/library/vocabulary", {"word": word})
+            if not set(names) & ESSAY_FLOWS:
+                continue
             status, essay = client.call("POST", "/api/evaluate", {"text": t["essay"], "learning_language": t["language"]})
             spent += WORST_SETUP_USD
             if status != 200:
                 print(f"stopping: the essay review (a provider call) answered {status}: {str(essay)[:300]}")
                 return finish(rows, spent, args.out)
-        rows, spent = run_flows(client, version, [n for n in args.flows.split(",") if n], args.cap_usd, args.gap, spent)
+        rows, spent = run_flows(client, version, names, args.cap_usd, args.gap, spent)
         return finish(rows, spent, args.out)
     for target in targets:
         t = TARGETS[target]
