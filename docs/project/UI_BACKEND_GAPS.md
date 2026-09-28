@@ -583,6 +583,23 @@ except Word Detail, which additionally falls back to the backend's own Han-range
 one. Returning `language_code` on the saved-vocabulary item itself would remove the one remaining
 script-check fallback in this build.
 
+**N-36** - API shape audit (2026-09-28): every new-UI reader was checked against real payloads
+captured from the running app (`scripts/fixtures/api/`). Field reads the API never satisfied were
+fixed in the UI (Search, My Library, Progress, Grammar Concept); three things only the backend can
+change remain:
+1. Progress's Evidence and History rows for an essay cannot show the excerpt the frame draws:
+   `GET /api/essays` (the list route) drops `text` (`app.py` `row_to_dict`, non-detail branch); only
+   `GET /api/essays/{id}` carries it. The row shows its title only. Needs a short excerpt field on
+   the list item.
+2. No curated vocabulary collection is published in this build, so `GET
+   /api/vocabulary/library/collections` and `GET /api/vocabulary/catalogue/search` answer empty for
+   every language (the packs exist in `writing_coach/vocabulary_library.py`; the routes serve
+   published packs only). Collection Detail and Search's word results stay empty until packs are
+   published - a content decision, not a UI defect.
+3. `GET /api/library/vocabulary/{word}/audio` answers 500 for a catalogued word (`health`,
+   `vacancy`); a word outside the catalogue answers 200 `available: false`. Word Detail and My
+   Library already treat a failure as "no audio"; the 500 is a backend defect to fix.
+
 ### Open design questions for the human
 
 Real product/content decisions this section's entries above could not resolve

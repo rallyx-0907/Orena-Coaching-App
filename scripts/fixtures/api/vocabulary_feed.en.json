@@ -1,0 +1,98 @@
+{
+  "items": [
+    {
+      "identity": {
+        "language": "en",
+        "normalized": "vacancy"
+      },
+      "headword": "vacancy",
+      "meanings": [
+        {
+          "language": "en",
+          "text": "a job or position that is currently unfilled"
+        },
+        {
+          "language": "vi",
+          "text": "vị trí tuyển dụng"
+        }
+      ],
+      "examples": [
+        {
+          "language": "en",
+          "text": "The hospital has a vacancy for an experienced nurse."
+        }
+      ],
+      "collocations": [],
+      "related": [],
+      "learner_traps": [],
+      "pronunciation": "/ˈveɪkənsi/",
+      "part_of_speech": "noun",
+      "level": "A2",
+      "framework": "toeic",
+      "topic": "human-resources"
+    },
+    {
+      "identity": {
+        "language": "en",
+        "normalized": "happy"
+      },
+      "headword": "happy",
+      "meanings": [
+        {
+          "language": "en",
+          "text": "feeling or showing pleasure and contentment"
+        },
+        {
+          "language": "vi",
+          "text": "vui vẻ, hạnh phúc"
+        }
+      ],
+      "examples": [
+        {
+          "language": "en",
+          "text": "She felt happy after hearing the good news."
+        }
+      ],
+      "collocations": [],
+      "related": [],
+      "learner_traps": [],
+      "pronunciation": "/ˈhæpi/",
+      "part_of_speech": "adjective",
+      "level": "A1",
+      "framework": "cefr-internal",
+      "topic": "emotions"
+    },
+    {
+      "identity": {
+        "language": "en",
+        "normalized": "community"
+      },
+      "headword": "community",
+      "meanings": [
+        {
+          "language": "en",
+          "text": "a group of people living in the same area or sharing common interests"
+        },
+        {
+          "language": "vi",
+          "text": "cộng đồng"
+        }
+      ],
+      "examples": [
+        {
+          "language": "en",
+          "text": "The new library brings the community together."
+        }
+      ],
+      "collocations": [],
+      "related": [],
+      "learner_traps": [],
+      "pronunciation": "/kəˈmjuːnəti/",
+      "part_of_speech": "noun",
+      "level": "A2",
+      "framework": "cefr-internal",
+      "topic": "places"
+    }
+  ],
+  "date": "2026-09-28"
+}

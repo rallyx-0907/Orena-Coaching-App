@@ -1,0 +1,208 @@
+{
+  "lessons": [
+    {
+      "id": "a1-complete-sentences-and-basic-word-order",
+      "order": 1,
+      "level": "A1",
+      "kind": "lesson",
+      "module": "Sentence foundations",
+      "category": "Sentence foundations",
+      "title": "Complete sentences and basic word order",
+      "objective_vi": "Hiểu form, meaning, use, contrast và giới hạn của Complete sentences and basic word order; dùng được trong câu/đoạn phù hợp A1.",
+      "scope": [
+        "Authoritative target grammar point: Complete sentences and basic word order.",
+        "Required learner outcome: Hiểu form, meaning, use, contrast và giới hạn của Complete sentences and basic word order; dùng được trong câu/đoạn phù hợp A1.",
+        "Required contrast targets only: Be: am/is/are."
+      ],
+      "prerequisites": [],
+      "contrasts": [
+        "Be: am/is/are"
+      ],
+      "restrictions": [
+        "Stay inside this level's locked syllabus scope.",
+        "Teach usage constraints, not form alone.",
+        "Do not promote the lesson as an official one-to-one CEFR/HSK mapping."
+      ],
+      "common_traps": [
+        "Không học công thức tách khỏi meaning/context; đối chiếu form với chức năng thật.",
+        "Không coi một ví dụ đúng là bằng chứng đã thành thạo; cần production và transfer."
+      ],
+      "practice_blueprint": {
+        "recognition": 4,
+        "controlled": 6,
+        "contrast": 4,
+        "correction": 3,
+        "transformation": 3,
+        "production": 2,
+        "review_after_days": [
+          1,
+          7,
+          30
+        ]
+      },
+      "completion_policy": "lesson_plus_self_check_not_mastery",
+      "reference_basis": [
+        "CEFR-aligned Orena internal syllabus",
+        "Destination Grammar & Vocabulary: coverage/review-pattern reference only"
+      ],
+      "official_mapping": false,
+      "content_version": 2,
+      "module_scope": [
+        "Basic English clause order: subject before finite verb; complements follow the verb in ordinary statements.",
+        "Be, pronouns, possessives, noun number, articles, demonstratives and existential there as the minimum sentence-building system.",
+        "Affirmative, negative and basic question form must stay visibly distinct at beginner level."
+      ],
+      "preview": {
+        "text": "I study English every day.",
+        "pinyin": ""
+      },
+      "completed": false
+    },
+    {
+      "id": "a1-be-am-is-are",
+      "order": 2,
+      "level": "A1",
+      "kind": "lesson",
+      "module": "Sentence foundations",
+      "category": "Sentence foundations",
+      "title": "Be: am/is/are",
+      "objective_vi": "Hiểu form, meaning, use, contrast và giới hạn của Be: am/is/are; dùng được trong câu/đoạn phù hợp A1.",
+      "scope": [
+        "Authoritative target grammar point: Be: am/is/are.",
+        "Required learner outcome: Hiểu form, meaning, use, contrast và giới hạn của Be: am/is/are; dùng được trong câu/đoạn phù hợp A1.",
+        "Required contrast targets only: Complete sentences and basic word order, Subject and object pronouns."
+      ],
+      "prerequisites": [
+        "a1-complete-sentences-and-basic-word-order"
+      ],
+      "contrasts": [
+        "Complete sentences and basic word order",
+        "Subject and object pronouns"
+      ],
+      "restrictions": [
+        "Stay inside this level's locked syllabus scope.",
+        "Teach usage constraints, not form alone.",
+        "Do not promote the lesson as an official one-to-one CEFR/HSK mapping."
+      ],
+      "common_traps": [
+        "Không học công thức tách khỏi meaning/context; đối chiếu form với chức năng thật.",
+        "Không coi một ví dụ đúng là bằng chứng đã thành thạo; cần production và transfer."
+      ],
+      "practice_blueprint": {
+        "recognition": 4,
+        "controlled": 6,
+        "contrast": 4,
+        "correction": 3,
+        "transformation": 3,
+        "production": 2,
+        "review_after_days": [
+          1,
+          7,
+          30
+        ]
+      },
+      "completion_policy": "lesson_plus_self_check_not_mastery",
+      "reference_basis": [
+        "CEFR-aligned Orena internal syllabus",
+        "Destination Grammar & Vocabulary: coverage/review-pattern reference only"
+      ],
+      "official_mapping": false,
+      "content_version": 2,
+      "module_scope": [
+        "Basic English clause order: subject before finite verb; complements follow the verb in ordinary statements.",
+        "Be, pronouns, possessives, noun number, articles, demonstratives and existential there as the minimum sentence-building system.",
+        "Affirmative, negative and basic question form must stay visibly distinct at beginner level."
+      ],
+      "preview": {
+        "text": "I am sixteen years old.",
+        "pinyin": ""
+      },
+      "completed": false
+    },
+    {
+      "id": "a1-subject-and-object-pronouns",
+      "order": 3,
+      "level": "A1",
+      "kind": "lesson",
+      "module": "Sentence foundations",
+      "category": "Sentence foundations",
+      "title": "Subject and object pronouns",
+      "objective_vi": "Hiểu form, meaning, use, contrast và giới hạn của Subject and object pronouns; dùng được trong câu/đoạn phù hợp A1.",
+      "scope": [
+        "Authoritative target grammar point: Subject and object pronouns.",
+        "Required learner outcome: Hiểu form, meaning, use, contrast và giới hạn của Subject and object pronouns; dùng được trong câu/đoạn phù hợp A1.",
+        "Required contrast targets only: Be: am/is/are, Possessive adjectives, pronouns and possessive 's."
+      ],
+      "prerequisites": [
+        "a1-complete-sentences-and-basic-word-order",
+        "a1-be-am-is-are"
+      ],
+      "contrasts": [
+        "Be: am/is/are",
+        "Possessive adjectives, pronouns and possessive 's"
+      ],
+      "restrictions": [
+        "Stay inside this level's locked syllabus scope.",
+        "Teach usage constraints, not form alone.",
+        "Do not promote the lesson as an official one-to-one CEFR/HSK mapping."
+      ],
+      "common_traps": [
+        "Không học công thức tách khỏi meaning/context; đối chiếu form với chức năng thật.",
+        "Không coi một ví dụ đúng là bằng chứng đã thành thạo; cần production và transfer."
+      ],
+      "practice_blueprint": {
+        "recognition": 4,
+        "controlled": 6,
+        "contrast": 4,
+        "correction": 3,
+        "transformation": 3,
+        "production": 2,
+        "review_after_days": [
+          1,
+          7,
+          30
+        ]
+      },
+      "completion_policy": "lesson_plus_self_check_not_mastery",
+      "reference_basis": [
+        "CEFR-aligned Orena internal syllabus",
+        "Destination Grammar & Vocabulary: coverage/review-pattern reference only"
+      ],
+      "official_mapping": false,
+      "content_version": 2,
+      "module_scope": [
+        "Basic English clause order: subject before finite verb; complements follow the verb in ordinary statements.",
+        "Be, pronouns, possessives, noun number, articles, demonstratives and existential there as the minimum sentence-building system.",
+        "Affirmative, negative and basic question form must stay visibly distinct at beginner level."
+      ],
+      "preview": {
+        "text": "She calls me after school.",
+        "pinyin": ""
+      },
+      "completed": false
+    }
+  ],
+  "total": 269,
+  "completed": 0,
+  "levels": [
+    "A1",
+    "A2",
+    "B1"
+  ],
+  "level_names": {
+    "A1": "Foundation",
+    "A2": "Core",
+    "B1": "Intermediate",
+    "B2": "Upper-intermediate",
+    "C1": "Advanced",
+    "C2": "Mastery"
+  },
+  "language": "en",
+  "curriculum_policy": {
+    "completion_is_mastery": false,
+    "official_one_to_one_mapping": false,
+    "lesson_scope_is_locked": true,
+    "content_version": 2,
+    "storage_namespace": "language+content_version+lesson_id"
+  }
+}

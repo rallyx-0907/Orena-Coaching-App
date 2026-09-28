@@ -46,10 +46,20 @@ function patternMarkup(pattern, lang) {
   // (model.js's own comment) - its `text`/`label` may be target-language content or support prose
   // depending on the block, a distinction the pure mapping does not carry through, so this shape
   // is left unmarked rather than guessed at (kit/lang.js: no `lang` is safer than a wrong one).
+  //
+  // `text` is conditional, matching `label`/`note`: a `timeline` block's `events[]` never carries
+  // a `text` field (writing_coach/grammar_learning_model.py `_validate_timeline` - only
+  // `label`/`position`/`note`), so `pattern.rows[].text` is always `''` for that block type.
+  // Rendering it unconditionally left a permanently empty middle line on every timeline row (real,
+  // reachable: `a2-present-perfect-vs-past-simple`'s primary pattern block, per
+  // capabilities/grammar-pedagogy.js's `primaryModelType` for the `temporal_aspect` archetype).
+  // Other row-shaped blocks (`contrast`, `scene`) always carry a real `text`, so this changes
+  // nothing for them - only the row's designated main-text slot, always empty before, is now
+  // honestly left out instead of drawn empty (rule 40).
   return html`${eyebrow}${pattern.rows.map(
-    (row) => html`<div class="s-gc__row">${row.label ? html`<div class="s-gc__rowLabel">${row.label}</div>` : ''}<div>${row.text}</div>${
-      row.note ? html`<div class="s-gc__rowNote">${row.note}</div>` : ''
-    }</div>`,
+    (row) => html`<div class="s-gc__row">${row.label ? html`<div class="s-gc__rowLabel">${row.label}</div>` : ''}${
+      row.text ? html`<div>${row.text}</div>` : ''
+    }${row.note ? html`<div class="s-gc__rowNote">${row.note}</div>` : ''}</div>`,
   )}`;
 }
 

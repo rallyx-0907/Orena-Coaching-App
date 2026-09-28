@@ -1,0 +1,127 @@
+{
+  "asset": {
+    "asset_id": "commons-royalsociety-cosmic-calendar",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Deep_time_and_cosmic_history_as_one_year_%E2%80%93_the_cosmic_calendar.webm",
+    "source_provider": "wikimedia-commons",
+    "source_type": "licensed-video",
+    "title": "The cosmic calendar",
+    "source_language": "en",
+    "processing_state": "ready",
+    "duration_ms": 47328,
+    "transcript_available": true,
+    "translation_available": false,
+    "thumbnail_url": ""
+  },
+  "playback": {
+    "provider": "wikimedia-commons",
+    "kind": "video",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/transcoded/b/bc/Deep_time_and_cosmic_history_as_one_year_%E2%80%93_the_cosmic_calendar.webm/Deep_time_and_cosmic_history_as_one_year_%E2%80%93_the_cosmic_calendar.webm.480p.vp9.webm"
+  },
+  "transcript": {
+    "asset_id": "commons-royalsociety-cosmic-calendar",
+    "source_language": "en",
+    "segments": [
+      {
+        "segment_id": "commons-royalsociety-cosmic-calendar:000",
+        "order": 0,
+        "start_ms": 1000,
+        "end_ms": 6500,
+        "original_text": "With the big bang starting the year and as cheering new year's eve one year later",
+        "words": []
+      },
+      {
+        "segment_id": "commons-royalsociety-cosmic-calendar:001",
+        "order": 1,
+        "start_ms": 7500,
+        "end_ms": 12500,
+        "original_text": "Using this scale the universe slowed and cooled for the first few days of January",
+        "words": []
+      },
+      {
+        "segment_id": "commons-royalsociety-cosmic-calendar:002",
+        "order": 2,
+        "start_ms": 13500,
+        "end_ms": 19000,
+        "original_text": "The first stars formed on the 5th of January and the first galaxies formed on the 9th",
+        "words": []
+      }
+    ]
+  },
+  "transcript_origin": "provider_caption",
+  "translations": [],
+  "translation": {
+    "status": "not_required",
+    "target_language": "en",
+    "source": {
+      "capability_key": null,
+      "provider": "curated-editorial",
+      "model": null,
+      "request_count": 0
+    },
+    "failure_kind": null
+  },
+  "catalog": {
+    "spoken_text_by_segment": {},
+    "lesson_id": "en-science-cosmic-calendar",
+    "media_object_id": "commons-royalsociety-cosmic-calendar",
+    "title": "The cosmic calendar",
+    "description": "The Royal Society compresses the whole history of the universe into a single year.",
+    "language": "en",
+    "topic": "science",
+    "subtopics": [
+      "astronomy",
+      "documentary"
+    ],
+    "level": "B2",
+    "estimated_level": "B2",
+    "reviewed_level": null,
+    "level_source": "deterministic-estimate",
+    "level_evidence": {
+      "vocabulary_band": "academic-popular-science",
+      "sentence_complexity": "multi-clause-narration",
+      "speech_speed": "measured",
+      "review_note": "Deterministic estimate from narration density and science vocabulary; not yet editorially reviewed."
+    },
+    "duration_ms": 46000,
+    "excerpt_start_ms": 1000,
+    "excerpt_end_ms": 47000,
+    "available_modes": [
+      "listen",
+      "active",
+      "dictation"
+    ],
+    "content_tags": [
+      "science",
+      "documentary",
+      "narration"
+    ],
+    "vocabulary": [
+      "galaxy",
+      "solar system",
+      "extinct"
+    ],
+    "speech_speed": "measured",
+    "artwork": "science",
+    "poster_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/bc/Deep_time_and_cosmic_history_as_one_year_%E2%80%93_the_cosmic_calendar.webm/960px--Deep_time_and_cosmic_history_as_one_year_%E2%80%93_the_cosmic_calendar.webm.jpg",
+    "playback_kind": "video",
+    "content_type": "video",
+    "published_state": "published",
+    "curation_state": "reviewed",
+    "is_development_candidate": false,
+    "source": {
+      "source_media_id": "commons-royalsociety-cosmic-calendar",
+      "provider": "wikimedia-commons",
+      "type": "licensed-video",
+      "title": "Deep time and cosmic history as one year - the cosmic calendar",
+      "creator": "The Royal Society",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Deep_time_and_cosmic_history_as_one_year_%E2%80%93_the_cosmic_calendar.webm",
+      "provenance_url": "https://commons.wikimedia.org/wiki/File:Deep_time_and_cosmic_history_as_one_year_%E2%80%93_the_cosmic_calendar.webm",
+      "license": "CC BY 3.0",
+      "license_url": "https://creativecommons.org/licenses/by/3.0/",
+      "allowed_usage_type": "creative-commons-attribution",
+      "rights_review_status": "verified"
+    },
+    "pinyin_by_segment": {},
+    "pinyin_chars_by_segment": {}
+  }
+}

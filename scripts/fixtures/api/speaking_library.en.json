@@ -1,0 +1,29 @@
+{
+  "language": "en",
+  "items": [
+    {
+      "id": "media:en-daily-pen-in-my-bag",
+      "source": "listening",
+      "practice_type": "clip",
+      "title": "A pen in my bag",
+      "language": "en",
+      "level": "A1",
+      "line_count": 2,
+      "duration_ms": 8547,
+      "artwork": "daily-life",
+      "thumbnail_url": ""
+    },
+    {
+      "id": "media:en-science-cosmic-calendar",
+      "source": "listening",
+      "practice_type": "clip",
+      "title": "The cosmic calendar",
+      "language": "en",
+      "level": "B2",
+      "line_count": 6,
+      "duration_ms": 46000,
+      "artwork": "science",
+      "thumbnail_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/bc/Deep_time_and_cosmic_history_as_one_year_%E2%80%93_the_cosmic_calendar.webm/960px--Deep_time_and_cosmic_history_as_one_year_%E2%80%93_the_cosmic_calendar.webm.jpg"
+    }
+  ]
+}

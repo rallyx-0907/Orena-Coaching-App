@@ -1,0 +1,14 @@
+{
+  "items": [
+    {
+      "id": "468d7d96-67f3-491a-9d83-5e6d727f170d",
+      "title": "Orena Audit Sample Book",
+      "author": "Orena API Audit",
+      "learning_language": "en",
+      "cover_asset_key": null,
+      "chapter_count": 1,
+      "word_count": 83
+    }
+  ],
+  "next_cursor": null
+}

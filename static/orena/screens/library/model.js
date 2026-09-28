@@ -153,9 +153,20 @@ export function dueStats(queue = {}) {
 
 /* A fallback label key for a pinned row with no title of its own (only a word-kind pinned item
    carries readable text; the rest are shown by their kind, a real fact about the row, not a
-   placeholder). */
+   placeholder).
+
+   `item.kind` here is a `LibraryItem.kind` (`writing_coach/persistence/models.py`'s
+   `LIBRARY_KINDS = ('word', 'grammar', 'reading', 'listening', 'note', 'writing', 'speaking',
+   'book')`), never a `/api/collection` *domain* - that is a different, sibling vocabulary
+   `contentRows()` above reads instead (`entry.ref.domain`, which does use `'media'`). The map key
+   is `listening`, the real value the backend writes for a listening pin (confirmed live via
+   `POST /api/library/items {kind:'listening', ...}` -> `GET /api/library/review-queue`'s
+   `pinned[].kind`, `scripts/fixtures/api/library_review_queue_pinned_listening.json`, and matched
+   at both write sites that produce it: `screens/content/model.js`'s `libraryKindFor` and
+   `ui/collection.js`'s `ITEM_KIND`). `'media'` is never a `LibraryItem.kind` value, so it could
+   never match here - the row silently fell back to `'kindWord'` for every pinned listening item. */
 export function pinnedKindKey(item = {}) {
-  const map = { word: 'kindWord', reading: 'kindReading', media: 'kindMedia', writing: 'kindWriting', speaking: 'kindSpeaking', grammar: 'kindGrammar' };
+  const map = { word: 'kindWord', reading: 'kindReading', listening: 'kindMedia', writing: 'kindWriting', speaking: 'kindSpeaking', grammar: 'kindGrammar' };
   return map[item.kind] || 'kindWord';
 }
 

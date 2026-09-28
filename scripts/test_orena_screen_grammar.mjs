@@ -17,6 +17,7 @@ const fakeLevelT = (key) => LEVEL_LABELS[key] ?? key;
 import {
   pickLocale, roleBucket, primaryPattern, examplesOf, mistakeOf, quizQuestions, personalPractice, headerMeta, findBlock,
 } from '../static/orena/screens/grammar-concept/model.js';
+import { classifyArchetype } from '../static/orena/capabilities/grammar-pedagogy.js';
 
 // --- Grammar Library: real fields group it, review-kind and preview-less lessons drop out ------
 {
@@ -181,6 +182,66 @@ import {
   assert.equal(primaryPattern({ id: 'x', title: 'x', learning_model: { blocks: [] } }), null, 'no pattern block at all is null, not a fabricated one');
   assert.equal(findBlock({ learning_model: { blocks: [{ id: 'a', type: 'common_mistake' }] } }, 'common_mistake').id, 'a');
   assert.equal(findBlock({}, 'common_mistake'), null, 'a missing learning_model is a miss, not a crash');
+}
+
+// --- primaryPattern / patternMarkup: a `timeline` block's events[] never carries a `text` field
+//     (grammar_learning_model.py `_validate_timeline` validates only label/position/note - no
+//     event anywhere in the real catalogue has ever had one), so the generic-row renderer's middle
+//     text line must be conditional like label/note, not drawn as a permanently empty <div> for
+//     every timeline block. Captured live (GET /api/library/grammar/a2-present-perfect-vs-past-
+//     simple, the reachable primary pattern for the temporal_aspect archetype -
+//     capabilities/grammar-pedagogy.js primaryModelType) - fixtures/api/
+//     grammar_concept_library_grammar_lesson_timeline.json -----------------------------------
+{
+  const timelineLesson = JSON.parse(
+    fs.readFileSync(new URL('./fixtures/api/grammar_concept_library_grammar_lesson_timeline.json', import.meta.url)),
+  );
+  const timelinePattern = primaryPattern(timelineLesson, 'vi');
+  assert.equal(timelinePattern.kind, 'rows', 'a timeline block has no drawn chip shape and falls back to rows, same as contrast/scene');
+  assert.equal(timelinePattern.rows.length, 3, 'the real a2-time-view block has exactly three events');
+  for (const row of timelinePattern.rows) {
+    assert.equal(row.text, '', 'a timeline event never carries a text field (schema-enforced, and true of every timeline event in the real catalogue) - the mapped row.text is always empty, never fabricated');
+    assert.ok(row.label, 'every real timeline event has a label');
+  }
+  assert.equal(timelinePattern.rows[1].note, 'Nếu có, present perfect có thể là lựa chọn tự nhiên.', 'note text is real and must still render - only the always-empty text slot changes');
+
+  // screen.js has no DOM/fetch (this gate's own header comment) - patternMarkup is unexported and
+  // pure string-templated, so the render contract is checked the same way this file's other
+  // fidelity assertion checks a markup call (titleLineHeight, above): against the source itself.
+  const conceptScreenSrc = fs.readFileSync('static/orena/screens/grammar-concept/screen.js', 'utf8');
+  assert.match(
+    conceptScreenSrc,
+    /row\.text\s*\?\s*html`<div>\$\{row\.text\}<\/div>`\s*:\s*''/,
+    'the rows fallback\'s middle text line must render conditionally on row.text, matching label/note - rendering it unconditionally (`<div>${row.text}</div>`) draws a permanently empty line for every timeline block, since row.text is always \'\' for one (fails against the pre-fix source, which renders it unconditionally)',
+  );
+}
+
+// --- classifyArchetype / archetypeSignal (capabilities/grammar-pedagogy.js): a pattern-stage
+//     block's payload shape is keyed by block.type, not block.stage
+//     (writing_coach/grammar_learning_model.py _validate_payload) - `formula` -> `parts`;
+//     `semantic_sentence`/`position`/`word_order`/etc. -> `segments`; but `timeline` ->
+//     `{events:[{label,position,note}]}`, with no `parts`/`segments` key at all. Nothing ties
+//     stage to type, so a pattern-stage block can legally be timeline-shaped - reading only
+//     payload.parts/payload.segments silently dropped that block's own wording (the event
+//     labels/notes) from the classification signal. Isolated with the real timeline block
+//     captured live (GET /api/library/grammar/a2-present-perfect-vs-past-simple - fixtures/api/
+//     grammar_concept_library_grammar_lesson_timeline.json, block "a2-time-view"), wrapped in a
+//     neutral id/title/kind that matches no archetype rule on its own, so only the block's own
+//     event text can supply the signal ---------------------------------------------------------
+{
+  const realLesson = JSON.parse(
+    fs.readFileSync(new URL('./fixtures/api/grammar_concept_library_grammar_lesson_timeline.json', import.meta.url)),
+  );
+  const timelineBlock = realLesson.learning_model.blocks.find((block) => block.id === 'a2-time-view');
+  assert.equal(timelineBlock?.type, 'timeline', 'sanity: the real captured block is still timeline-shaped');
+  assert.equal(timelineBlock?.stage, 'pattern', 'sanity: the real captured block is still pattern-stage');
+
+  const isolated = { id: 'x', title: 'x', kind: '', learning_model: { blocks: [timelineBlock] } };
+  assert.equal(
+    classifyArchetype(isolated),
+    'temporal_aspect',
+    'a pattern-stage timeline block\'s own event text ("Past event" / "present perfect" / "past simple") must reach the classifier - with id/title/kind carrying no archetype keyword of their own, this only passes once payload.events is read alongside payload.parts/payload.segments (fails against the pre-fix source, which resolves \'general\' here because patternText stays empty)',
+  );
 }
 
 // --- examplesOf: the lesson's own examples[]; its lone translation field is Vietnamese-only in

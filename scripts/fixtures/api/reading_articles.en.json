@@ -1,0 +1,29 @@
+{
+  "items": [
+    {
+      "id": "cdd1266f-a23e-427e-9d5f-5b5b79415b7e",
+      "title": "The Fox and the Grapes",
+      "language": "en",
+      "level": "B2",
+      "topic": "",
+      "reading_time_seconds": 28,
+      "word_count": 83,
+      "excerpt": "A famished fox saw some clusters of ripe black grapes hanging from a trellised vine. She resorted to all her tricks to get at them, but wearied herself in vain, for she could not reach them. At last she turned away, hiding her disappointment and saying: \"The grapes are sour, and ",
+      "published_at": "2026-09-27T23:20:24.105773+00:00",
+      "content_revision": 2
+    },
+    {
+      "id": "ae6cf3fc-b5e9-486d-ab63-05a54a5a715b",
+      "title": "The Tortoise and the Hare",
+      "language": "en",
+      "level": "B2",
+      "topic": "",
+      "reading_time_seconds": 45,
+      "word_count": 134,
+      "excerpt": "A hare one day ridiculed the short feet and slow pace of the tortoise, who replied, laughing: \"Though you be swift as the wind, I will beat you in a race.\" The hare, believing her assertion to be simply impossible, assented to the proposal; and they agreed that the fox should cho",
+      "published_at": "2026-09-27T23:20:24.095612+00:00",
+      "content_revision": 2
+    }
+  ],
+  "next_cursor": null
+}
