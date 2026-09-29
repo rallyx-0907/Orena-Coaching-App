@@ -307,11 +307,15 @@ These are open questions the human has reserved. Implement around them; do not
 resolve them.
 
 - **Learner-data persistence, schema and account sync.** GPT-6 will define the
-  canonical multi-user / account architecture for the ~100,000-user target. Do
-  not make new persistence, schema or account-sync decisions for learner-owned
-  data, and do not deepen local-device persistence as though it were final.
-  Kept-language provenance, conversations, drafts and continuation are device
-  memory *by design*, not by omission.
+  canonical multi-user / account architecture for the ~100,000-user target.
+  Learner-owned records the human has approved for the server (D-104: drafts,
+  conversations, continuation/place, notes/highlights/annotations,
+  learner-imported private content, and the provenance of learner content and
+  actions) are server records, built through the reviewed D4 proposal. Still
+  reserved, not decided by an agent: the general multi-device sync protocol,
+  receipt compaction, the account-deletion runtime, the export format, Orena
+  conversation/history persistence (unless the Agent Contract changes it), and
+  any other new persistence or schema decision for learner-owned data.
 - **Native mobile** — frozen (§5).
 - **Platform Admin** — the admin console was merged into `codex/work` by PR #63
   (D-085) and runs at `/#/admin` in the old UI, untouched until the cutover. It

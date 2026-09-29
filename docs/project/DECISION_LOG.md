@@ -3600,3 +3600,95 @@ Orena and the cutover stand as D-101 says, except where this entry changes them.
 
 D4 stays one persistence proposal and one independent review before any learner-data migration is
 promoted.
+
+## D-104 — The D4 decisions, the Admin answers and the evaluator option (4)
+
+**Date:** 2026-09-30. **Status:** Accepted (explicit human direction, on
+`proposals/LEARNER_RECORDS_D4.md` rev 2 and the Admin slice 1 report).
+
+**D4 (learner records).**
+- **H-18, approved.** AGENTS section 7 is amended: these learner-owned records live on the server:
+  - drafts;
+  - conversations;
+  - continuation/place;
+  - notes, highlights and annotations;
+  - learner-imported private content;
+  - the provenance needed to keep where learner content and actions came from.
+
+  Still deferred: the general multi-device sync protocol, receipt compaction, the account-deletion
+  runtime, the export format, and Orena conversation/history persistence (unless the Agent
+  Contract changes it).
+
+  Storage ownership:
+  - `users`: `learning_language`, `interface_language`, `weekly_goal_days`,
+    `settings_updated_at`.
+  - `user_language_profiles`: `declared_level`, review settings, and settings that belong to one
+    learning language.
+
+  There is no generic account-settings table.
+- **H-12: Design B.** Continuation/place lives on `library_items`. It is navigation and progress
+  state, not learning evidence. `works` continuation with high-volume receipts is not used.
+  Migration 0022 is part of D4.
+- **H-17: versioned account settings.**
+  - `users.settings_updated_at` carries a server-owned conditional (expected-version) update for
+    account scalar settings.
+  - There is no blind arrival-order last-write-wins, and a client timestamp never resolves a
+    conflict.
+  - Migration 0018 includes the column.
+- **H-11: backbone approved.**
+  - `ORENA_ACCOUNT_BACKBONE` is enabled on the lane runtime once the D4 migrations have passed a
+    PostgreSQL up/down/up rehearsal and have been applied to that lane.
+  - Its default stays off. :8000 is enabled only after the merge, a backup, the migration human
+    gate and smoke verification.
+- **H-6: no bulk device migration.**
+  - There is no "bring this device's work into your account" flow and no silent bulk upload.
+  - Legacy device values stay readable where a compatibility path already reads them.
+  - New learner state from the finished `/next` flows uses the server. Existing draft sync may
+    remain.
+- **H-1, approved.** Welcome/setup is required once per learning language whose learner-language
+  profile does not exist yet, without replaying the whole onboarding.
+- **H-5: a real streak.**
+  - No new streak table; it is derived from meaningful, timestamped server-side learning activity.
+    Page visits do not count.
+  - It is not permanently limited to Reading/Writing/Speaking: every staging skill with equally
+    valid server-side completed activity counts, using the domain records available after D4/D7.
+- **H-4: quiz result stored.** Grammar progress keeps `last_quiz_correct`, `last_quiz_total` and
+  `last_quiz_at` beside the existing completion state.
+  - Try-it-yourself results belong to the Writing/evaluator record and are not duplicated.
+  - Migration 0023 is part of D4.
+  - A future Grammar API validates the published point before accepting progress; R5 is not
+    revived as learner authority.
+- **H-14, approved.** Legacy Dictation numbers that were not server-verified are superseded by the
+  learner's next server-verified result, never rewritten as if verified.
+- **H-15, approved.** An old Chinese essay is not refreshed when its stored review identity does
+  not prove the original language pair; that identity is never inferred from the current
+  profile.
+- **H-3, approved.** Reading Transfer is stored as learner work/response, not mastery evidence.
+
+**Admin.**
+- **AD-6.** The warning is compact operational status, shown only while it is true: "Saved ·
+  learner evaluator still uses legacy routing." It is removed when learner evaluation consumes
+  the configured route. Save never pretends to change runtime behaviour.
+- **AD-7, approved.** Provider tiles use the shared accent/status tokens; no provider-brand colours.
+- **AD-8.** Back to Orena is added: the Admin utility action on desktop, and a compact back action
+  in the Admin header on phone.
+- **AD-1/AD-2.**
+  - Credentials stay write-only, and no last-four characters are stored or shown.
+  - Allowed provider metadata: configured / not configured, credential updated timestamp, last
+    provider test, latency, last success/failure, and last error where available.
+  - Existing audit/test records are reused. No new provider-test-history store is built for the
+    UI.
+
+**Chinese evaluator option (4).** Not activated. Measured recall is EN 0.60 and ZH 0.60, which
+shows no Chinese-specific deficit and does not show that broadening the prompt helps without
+more false positives. The v2.7 fixes stay. Option (4) needs comparative benchmark evidence of a
+meaningful recall gain without a material clean-case/precision regression.
+
+**Next.**
+1. The D4 proposal and the proposed migrations follow these choices: 0018 carries
+   `settings_updated_at`, and 0022 and 0023 are required.
+2. The PostgreSQL throwaway up/down/up rehearsal runs.
+3. The migrations are not moved to `versions/` or applied to :8000 without the existing human
+   gate.
+
+E continues in parallel where it does not depend on D4 schema.
