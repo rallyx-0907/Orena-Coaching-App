@@ -1,55 +1,14 @@
 /* The line as it is drawn in the Speaking views: tappable units, the provider's flagged words
-   marked, a word being practised alone lit. Shared by the workspace and its other views. */
+   marked, a word being practised alone lit. Shared by the workspace and its other views.
+
+   `lineUnits`/`placeWords` moved (not copied, D-091 migration) to `product/speaking-line.js`,
+   which the new `screens/speak`/`screens/compare` also import: both were already DOM-free, and
+   this file's own contribution is only `sentenceHtml`'s markup below, which still belongs to the
+   old presentation. */
 import { esc } from './html.js';
+import { lineUnits, placeWords } from '../product/speaking-line.js';
 
-const isHan = (text) => /^\p{Script=Han}$/u.test(text);
-
-/* --- The line as tappable units ---------------------------------------------------------------
-   Chinese: one unit per Han character. Other languages: one unit per word. Punctuation and spaces
-   stay as they are written. Each unit knows its character range, so the provider's words can be
-   laid over it to mark the ones it flagged. */
-export function lineUnits(text, language) {
-  const units = [];
-  const value = String(text || '');
-  if (language === 'zh') {
-    let at = 0;
-    for (const ch of value) {
-      units.push({ text: ch, start: at, end: at + ch.length, unit: isHan(ch) });
-      at += ch.length;
-    }
-    return units;
-  }
-  const pattern = /[\p{L}\p{N}]+(?:['’-][\p{L}\p{N}]+)*/gu;
-  let last = 0;
-  for (const match of value.matchAll(pattern)) {
-    if (match.index > last) units.push({ text: value.slice(last, match.index), start: last, end: match.index, unit: false });
-    units.push({ text: match[0], start: match.index, end: match.index + match[0].length, unit: true });
-    last = match.index + match[0].length;
-  }
-  if (last < value.length) units.push({ text: value.slice(last), start: last, end: value.length, unit: false });
-  return units;
-}
-
-/* Where each assessed word sits in the line, found in order; a word that cannot be placed is not
-   marked anywhere rather than marked somewhere wrong. */
-export function placeWords(text, words, language) {
-  const haystack = String(text || '').toLocaleLowerCase();
-  let cursor = 0;
-  return words.map((word) => {
-    const needle = String(word.text || '').toLocaleLowerCase();
-    if (!needle) return null;
-    const at = haystack.indexOf(needle, cursor);
-    if (at < 0) return null;
-    // An English word must not be found inside a longer word.
-    if (language !== 'zh') {
-      const before = haystack[at - 1] || ' ';
-      const after = haystack[at + needle.length] || ' ';
-      if (/[\p{L}\p{N}]/u.test(before) || /[\p{L}\p{N}]/u.test(after)) return null;
-    }
-    cursor = at + needle.length;
-    return { start: at, end: at + needle.length };
-  });
-}
+export { lineUnits, placeWords };
 
 export function sentenceHtml(text, language, view, focus = null) {
   const units = lineUnits(text, language);

@@ -134,6 +134,10 @@ jobs:
           node scripts/test_orena_screen_free-talk.mjs
           node scripts/test_orena_screen_conversation.mjs
           node scripts/test_orena_screen_situation.mjs
+          node scripts/test_orena_screen_speak.mjs
+          node scripts/test_orena_screen_compare.mjs
+          node scripts/test_orena_screen_attempts.mjs
+          node scripts/test_orena_screen_speak-summary.mjs
           node scripts/test_orena_agent.mjs
           node scripts/test_orena_surfaces.mjs
       - run: python -m pytest -q test_app.py tests

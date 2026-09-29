@@ -75,6 +75,7 @@ Rules:
 | `library_review_queue_pinned_listening.json` | `GET /api/library/review-queue` after pinning a listening item (`POST /api/library/items {kind: "listening"}`) | 2026-09-28 |
 | `grammar_concept_library_grammar_lesson_timeline.json` | `GET /api/library/grammar/a2-present-perfect-vs-past-simple` (a pattern-stage block of type `timeline`) | 2026-09-28 |
 | `progress_essays_list.json` | **built, not captured** - see "Built from the serializer" below | 2026-09-28 |
+| `speaking_item.json` | `GET /api/speaking/items/{id}` - **built, not captured** (the Speaking catalogue ships empty, `writing_coach/content/speaking_catalog.v1.json` is `{"items":[]}` in this sandbox, so no `speak:` id exists to ask for - `speech_api`/`speaking_library.py#_catalog_card`+`read_speaking_item` own field shapes, see "Built from the serializer" below) | 2026-09-28 |
 | `text_discussion_empty.json` | `GET /api/texts/discussion?source_kind=story&source_id={articleId}` (a source with no thread yet - real, common shape) | 2026-09-28 |
 | `reading_practice_article_set_approved.json` | `GET /api/reading/practice/articles/{id}` - **built, not captured** (no article in this sandbox has an approved comprehension set - see "Built from the serializer" below) | 2026-09-28 |
 | `reading_practice_grade_result.json` | `POST /api/reading/practice/sets/{id}/questions/{id}/grade` - **built, not captured** (same reason: no approved set to grade a question from, and `ORENA_READING_PRACTICE_SUBMIT` is unset besides) | 2026-09-28 |
@@ -201,6 +202,30 @@ Both screens' field reads (`id`, `language_code`, `level_range`, `item_count`,
   bounded `excerpt` the list route derives from it (only `GET /api/essays/{id}`
   carries the full text). Re-capture it from a runtime that can evaluate an
   essay.
+- `speaking_item.json`: the Speaking catalogue (`writing_coach/content/speaking_catalog.v1.json`)
+  is `{"schema_version": 1, "items": []}` in this sandbox (confirmed by reading the file directly)
+  - real, not a bug: `writing_coach/speaking_library.py`'s own module docstring says it "ships
+    empty. Adding an item is a content decision, not code (UI_BACKEND_GAPS SP-1)." There is no
+    `speak:` id `GET /api/speaking/items/{id}` can answer for in this environment, so this fixture
+    is one item written field for field from `speaking_library.py#_catalog_card()` and
+    `read_speaking_item()`'s own dict literals - `id`, `source`, `practice_type`, `title`,
+    `language`, `level`, `line_count`, `duration_ms`, `artwork`, `thumbnail_url`, `lines[].
+    {line_id, text, reading, translations}`. `screens/speak`, `screens/compare`,
+    `screens/attempts` and `screens/speak-summary` all verified end to end against a real
+    `media:<lessonId>` source instead (a Listening lesson eligible for shadowing - real content in
+    this sandbox), the wave's own report says how.
+- `pronunciation_measured` (used inline in `scripts/test_orena_screen_speak.mjs` and
+  `scripts/test_orena_screen_compare.mjs`, not a shipped file): this sandbox has no speech
+  provider (`docs/design/canonical-ui` verification notes), so `POST /api/speech/pronunciation`
+  cannot answer its `score_kind:"measured"` shape here. Built field for field from
+  `writing_coach/speech_api.py`'s own response dict (`sed -n '558..591p' speech_api.py`) and
+  `writing_coach/speech_pronunciation.py`'s `PronunciationWord`/`SpeechPronunciationResult`
+  dataclasses: `score_kind`, `mode`, `reference_text`, `recognized_text`, `pron_score`,
+  `accuracy_score`, `fluency_score`, `completeness_score`, `prosody_score`, `words[].{word,
+  accuracy_score, error_type, offset_ms, duration_ms, syllables[], phonemes[]}`. The real,
+  documented `score_kind:"synthetic_demo"`/error paths were exercised live instead (no provider
+  configured - `speak`'s own real error state, verified against `writing_coach/speech_api.py`'s
+  503 `pronunciation_unconfigured` path).
 - `reading_practice_article_set_approved.json` / `reading_practice_grade_result.json`: no article
   in this sandbox has an approved comprehension set (`reading_practice_article_set.json` above is
   the real 404 every article answers instead), so Check Understanding's interactive quiz could not
