@@ -18,7 +18,7 @@ release: content breadth is its own gate (`CONTENT_SCALE_READY`).
 | # | Milestone | Status | Done when |
 | --- | --- | --- | --- |
 | A | Staging scripts `staging_update.ps1`, `staging_backup.ps1` (kept) | TOOLING_READY / DEPLOYMENT_DEFERRED (`788a54e`, D-102) | :8011 only if the human asks |
-| D2 | P1: shared modules out of `ui/` into `capabilities/` or `kit/`; a gate against `/next` importing `ui/` | in progress | the gate is green, both UIs use one module, no behaviour change |
+| D2 | P1: shared modules out of `ui/` into `capabilities/` or `kit/`; a gate against `/next` importing `ui/` | done: the new UI reached one `ui/` module (`ui/html.js` `esc`, via `capabilities/media-player.js`); both UIs now use `kit/html.js`'s; `test_orena_shell.mjs` walks `main.js`'s graph and fails on any `ui/` import. `capabilities/lexical.js` still imports `ui/` but `/next` does not load it: its reuse is a D3/D7 question | the gate is green, both UIs use one module, no behaviour change |
 | D3 | The matrix: every skill and flow × content / do / assess / store / come back | planned | sent to the human once |
 | D4 | One persistence proposal (H2 included) → independent review → approval → rehearsed migrations | planned | approved and rehearsed; the human runs the migration |
 | E | Admin in the new UI, on the pinned `Orena Admin.dc.html`, existing logic and APIs | planned | real content is imported, reviewed and published, and a learner learns with it on `/next`; the three access tests pass |

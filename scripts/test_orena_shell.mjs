@@ -90,6 +90,33 @@ assert.equal(byId('reader').focus, true);
   for (const address of named) assert.ok(paths.has(address), `IMPLEMENTATION_MAP names ${address}, which shell/routes.js does not serve`);
 }
 
+/* D-101 D2: nothing the new UI loads comes from the old UI's `ui/`. Walked from main.js through
+   every static and dynamic relative import; a shared helper moves to kit/ or capabilities/ and the
+   old UI points at it, never the other way round. */
+{
+  const path = await import('node:path');
+  const root = path.resolve('static/orena');
+  const pattern = /(?:import|export)\s[^'"]*?from\s*['"]([^'"]+)['"]|import\s*\(\s*['"]([^'"]+)['"]\s*\)|import\s*['"]([^'"]+)['"]/g;
+  const seen = new Map();
+  const queue = [[path.join(root, 'main.js'), 'entry']];
+  while (queue.length) {
+    const [file, from] = queue.shift();
+    if (seen.has(file) || !fs.existsSync(file)) continue;
+    seen.set(file, from);
+    for (const m of fs.readFileSync(file, 'utf8').matchAll(pattern)) {
+      const spec = m[1] || m[2] || m[3];
+      if (spec && spec.startsWith('.')) queue.push([path.resolve(path.dirname(file), spec), file]);
+    }
+  }
+  assert.ok(seen.size > 150, `the new UI's module graph was walked (${seen.size})`);
+  const fromOld = [...seen].filter(([file]) => path.relative(root, file).split(path.sep).join('/').startsWith('ui/'));
+  assert.deepEqual(
+    fromOld.map(([file, from]) => `${path.relative(root, file)} <- ${path.relative(root, from)}`),
+    [],
+    'a module the new UI loads imports the old ui/ presentation layer',
+  );
+}
+
 // 6. Agent intents are the contract's (AGENT_CONTRACT §6.1), each used once.
 const contract = fs.readFileSync('docs/project/AGENT_CONTRACT.md', 'utf8');
 const sixOne = contract.slice(contract.indexOf('### 6.1'), contract.indexOf('## 7.'));
