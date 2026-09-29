@@ -1,0 +1,181 @@
+{
+  "sample": true,
+  "approved": false,
+  "note": "Sample content for UI development. AI drafts (status draft_ai), not reviewed, not approved, not for learners.",
+  "contract": "docs/project/GRAMMAR_CONTENT_CONTRACT.md (schema v0.4 with the 2026-09-30 patch)",
+  "counts": {
+    "en": 10,
+    "zh-Hans": 3
+  },
+  "points": [
+    {
+      "id": "en.articles.a_an",
+      "target_lang": "en",
+      "function": "fn.reference",
+      "level": {
+        "framework": "cefr",
+        "value": "A1",
+        "rank": 1
+      },
+      "sequence": 1,
+      "status": "draft_ai",
+      "file": "points/en.articles.a_an.json"
+    },
+    {
+      "id": "en.articles.the",
+      "target_lang": "en",
+      "function": "fn.reference",
+      "level": {
+        "framework": "cefr",
+        "value": "A2",
+        "rank": 2
+      },
+      "sequence": 2,
+      "status": "draft_ai",
+      "file": "points/en.articles.the.json"
+    },
+    {
+      "id": "en.comparatives",
+      "target_lang": "en",
+      "function": "fn.comparison",
+      "level": {
+        "framework": "cefr",
+        "value": "A2",
+        "rank": 2
+      },
+      "sequence": 1,
+      "status": "draft_ai",
+      "file": "points/en.comparatives.json"
+    },
+    {
+      "id": "en.conditional_first",
+      "target_lang": "en",
+      "function": "fn.condition_real",
+      "level": {
+        "framework": "cefr",
+        "value": "B1",
+        "rank": 3
+      },
+      "sequence": 1,
+      "status": "draft_ai",
+      "file": "points/en.conditional_first.json"
+    },
+    {
+      "id": "en.past_simple",
+      "target_lang": "en",
+      "function": "fn.completed_past",
+      "level": {
+        "framework": "cefr",
+        "value": "A2",
+        "rank": 2
+      },
+      "sequence": 1,
+      "status": "draft_ai",
+      "file": "points/en.past_simple.json"
+    },
+    {
+      "id": "en.plural_nouns.regular",
+      "target_lang": "en",
+      "function": "fn.quantity",
+      "level": {
+        "framework": "cefr",
+        "value": "A1",
+        "rank": 1
+      },
+      "sequence": 1,
+      "status": "draft_ai",
+      "file": "points/en.plural_nouns.regular.json"
+    },
+    {
+      "id": "en.present_continuous.now",
+      "target_lang": "en",
+      "function": "fn.ongoing_now",
+      "level": {
+        "framework": "cefr",
+        "value": "A1",
+        "rank": 1
+      },
+      "sequence": 1,
+      "status": "draft_ai",
+      "file": "points/en.present_continuous.now.json"
+    },
+    {
+      "id": "en.present_perfect.experience",
+      "target_lang": "en",
+      "function": "fn.past_experience",
+      "level": {
+        "framework": "cefr",
+        "value": "A2",
+        "rank": 2
+      },
+      "sequence": 1,
+      "status": "draft_ai",
+      "file": "points/en.present_perfect.experience.json"
+    },
+    {
+      "id": "en.present_simple.third_person_s",
+      "target_lang": "en",
+      "function": "fn.habit_fact",
+      "level": {
+        "framework": "cefr",
+        "value": "A1",
+        "rank": 1
+      },
+      "sequence": 1,
+      "status": "draft_ai",
+      "file": "points/en.present_simple.third_person_s.json"
+    },
+    {
+      "id": "en.there_is_are",
+      "target_lang": "en",
+      "function": "fn.existence",
+      "level": {
+        "framework": "cefr",
+        "value": "A1",
+        "rank": 1
+      },
+      "sequence": 1,
+      "status": "draft_ai",
+      "file": "points/en.there_is_are.json"
+    },
+    {
+      "id": "zh.ba_construction",
+      "target_lang": "zh-Hans",
+      "function": "fn.object_disposal",
+      "level": {
+        "framework": "hsk3",
+        "value": "3",
+        "rank": 3
+      },
+      "sequence": 1,
+      "status": "draft_ai",
+      "file": "points/zh.ba_construction.json"
+    },
+    {
+      "id": "zh.guo_experience",
+      "target_lang": "zh-Hans",
+      "function": "fn.past_experience",
+      "level": {
+        "framework": "hsk3",
+        "value": "2",
+        "rank": 2
+      },
+      "sequence": 1,
+      "status": "draft_ai",
+      "file": "points/zh.guo_experience.json"
+    },
+    {
+      "id": "zh.le_completion",
+      "target_lang": "zh-Hans",
+      "function": "fn.completed_past",
+      "level": {
+        "framework": "hsk3",
+        "value": "1",
+        "rank": 1
+      },
+      "sequence": 1,
+      "status": "draft_ai",
+      "file": "points/zh.le_completion.json"
+    }
+  ]
+}
