@@ -1,0 +1,192 @@
+/* Respond to Content (frame 45, D-091). Rule-49 recomposition (docs/project/UI_BACKEND_GAPS.md
+   N-6, SCRATCH/reports/listening.md): the frame has no scroll region of its own (a long response,
+   a long result or a long source excerpt would page-scroll, and on a phone the source sits below
+   the editor). Here the header stays fixed; the card hugs its content as the frame draws it and
+   shrinks to what is left of the viewport, with the chips and prompt above and the action row
+   below a body region that alone scrolls (the textarea, or the result: tiles, fixes, next step);
+   the source panel keeps its known size and only its lines scroll. The two columns follow the
+   frame's own proportions (--ls-cols); on the phone they stack with the card first, the source
+   held to a third of the height so the primary action never leaves the screen. */
+
+.s-respond {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  gap: 20px;
+  padding-top: 20px;
+  padding-bottom: 32px;
+}
+:root[data-device="mobile"] .s-respond { padding-bottom: 16px; padding-top: 14px; gap: 16px; }
+.s-respond > .c-pagehead { flex: none; }
+
+.s-respond__body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: var(--ls-cols);
+  grid-template-rows: minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+:root[data-device="mobile"] .s-respond__body {
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 14px;
+}
+
+/* ---- The card ---- */
+.s-respond__card {
+  min-width: 0;
+  max-height: 100%;
+  border-radius: 24px;
+  background: var(--surface);
+  box-shadow: var(--sh1);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+:root[data-device="mobile"] .s-respond__card { padding: 20px; align-self: stretch; }
+.s-respond__kinds { flex: none; display: flex; gap: 8px; flex-wrap: wrap; }
+.s-respond__kind {
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 600;
+}
+.s-respond__kind[aria-pressed="true"] {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--tint2);
+}
+.s-respond__prompt { flex: none; font-size: 19px; font-weight: 600; line-height: 27px; }
+
+.s-respond__region {
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.s-respond__region > * { flex: none; }
+.s-respond__textarea {
+  flex: 0 1 auto;
+  width: 100%;
+  min-height: 96px;
+  resize: vertical;
+  border-radius: 16px;
+  border: 1.5px solid transparent;
+  background: var(--surface2);
+  color: var(--text);
+  font-size: 16px;
+  line-height: 1.6;
+  padding: 16px;
+  outline: 0;
+  font-family: inherit;
+}
+.s-respond__textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--ring); }
+:root[data-device="desktop"] .s-respond__textarea { height: calc(8 * 1.6em + 34px); }
+:root[data-device="mobile"] .s-respond__region:has(.s-respond__textarea) { flex: 1 1 auto; }
+:root[data-device="mobile"] .s-respond__textarea { flex: 1 1 auto; resize: none; }
+
+.s-respond__foot { flex: none; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.s-respond__count { font-size: 13px; color: var(--muted); }
+.s-respond__spacer { flex: 1; }
+.s-respond__primary {
+  height: 48px;
+  padding: 0 20px;
+  border-radius: 14px;
+  border: 0;
+  background: var(--accent-fill);
+  color: var(--accent-ink);
+  font-size: 15px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.s-respond__primary:hover { background: var(--accent-fill-hover); }
+.s-respond__btn {
+  height: 44px;
+  padding: 0 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.s-respond__btn:hover { background: var(--surface2); }
+
+/* ---- Result ---- */
+.s-respond__tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.s-respond__tile { padding: 14px; border-radius: 16px; background: var(--surface2); }
+.s-respond__tile-label { font-size: 12px; color: var(--muted); }
+.s-respond__tile-value { font-size: 20px; font-weight: 700; margin-top: 2px; }
+.s-respond__fix { padding: 12px 14px; border-radius: 14px; background: var(--surface2); }
+.s-respond__fix-line { font-size: 15px; }
+.s-respond__fix-line s { color: var(--red); }
+.s-respond__fix-line b { font-weight: 700; }
+.s-respond__fix-why { font-size: 13px; color: var(--muted); margin-top: 2px; }
+.s-respond__callout { padding: 14px 16px; border-radius: 14px; background: var(--accent-soft); font-size: 14px; line-height: 1.5; }
+.s-respond__callout b { color: var(--accent); }
+
+/* ---- Source panel ---- */
+.s-respond__source {
+  min-width: 0;
+  max-height: 100%;
+  border-radius: 20px;
+  background: var(--surface2);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+:root[data-device="mobile"] .s-respond__source { max-height: 34vh; padding: 16px 20px; }
+/* On the phone, once there is feedback to read, the source (support information) gives way
+   first: its lines fold away and the card takes the room; "Open source" stays. */
+:root[data-device="mobile"] .s-respond.is-result .s-respond__source-lines { display: none; }
+.s-respond__source-label { flex: none; font-size: 13px; font-weight: 600; color: var(--muted); }
+.s-respond__source-title { flex: none; font-size: 16px; font-weight: 600; }
+.s-respond__source-lines {
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.s-respond__source-line {
+  flex: none;
+  margin: 0;
+  font-family: Literata, 'Noto Serif SC', Georgia, serif;
+  font-size: 15px;
+  line-height: 1.7;
+}
+.s-respond__source-open {
+  flex: none;
+  align-self: flex-start;
+  margin-top: 4px;
+  height: 44px;
+  padding: 0 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}

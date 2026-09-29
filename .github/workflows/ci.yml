@@ -147,6 +147,9 @@ jobs:
           node scripts/test_orena_screen_orena.mjs
           node scripts/test_orena_screen_writing.mjs
           node scripts/test_orena_screen_writing-compare.mjs
+          node scripts/test_orena_screen_listening.mjs
+          node scripts/test_orena_screen_react.mjs
+          node scripts/test_orena_screen_respond.mjs
           node scripts/test_orena_agent.mjs
           node scripts/test_orena_surfaces.mjs
       - run: python -m pytest -q test_app.py tests

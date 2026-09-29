@@ -3982,6 +3982,97 @@ context.
   prior pointer input Chromium draws its focus ring around the whole column (visible in the
   screenshots of every focus route). `.o-main:focus { outline: 0 }` in `shell.css` would remove it.
 
+## Listening Workspace, React / Reuse, Respond to Content (D-088 frames 06/54/33/45), Wave B, 2026-09-28
+
+Resumed session: `screens/listening/` and `screens/react/` were already built by an interrupted
+earlier attempt and kept (verified, not rebuilt); `screens/respond/` was built fresh. Full detail,
+gates run and every rule-40 fallback: `SCRATCH/reports/listening.md`. Summary here:
+
+- **Three real cross-screen bugs found in the resumed code and fixed, not merely re-verified:**
+  (1) `api.listeningLibrary({ language })` called a wrapper that takes a positional string
+  (`listeningLibrary:(language,filters={})`), so the end-of-media "next recommendation" row could
+  never match - fixed to `api.listeningLibrary(language)`. (2) Listening's "Write a response" sent
+  `ctx.href('respond', { id: lessonId }, { source: 'media' })` while Reader's own, already-built
+  entry sends `ctx.href('respond', { id: realContentId })` (the one real "<kind>:<id>" scheme,
+  `screens/content/model.js#contentIdFor`) - fixed Listening to send
+  `ctx.href('respond', { id: contentIdFor(lessonId) })` so both entries agree, and built
+  `respond/model.js#parseContentId` around that one real scheme instead of a second query flag.
+  (3) Listening's "Dictation"/"Shadowing" actions and the Shadowing-mode tap sent a `segment` query
+  key, but `screens/dictation/screen.js` and `screens/shadowing/screen.js` (a different Wave B
+  agent's build) both read `ctx.query.get('seg')` - confirmed by reading their source directly, not
+  assumed. Fixed all three Listening call sites to `{ seg: id }`; without this, "start Dictation/
+  Shadowing here" from a selected line silently landed on segment 1 every time.
+- **`react.css`: white ink directly on `--accent`** (`.s-react__mark`, the Reveal step's highlighted
+  phrase) - D-093/the kit gate forbid this (`--accent-fill` for filled controls with ink text).
+  Fixed. The full kit gate (`scripts/test_orena_kit.mjs`) currently aborts before reaching this
+  file's alphabetical position on an unrelated pre-existing `rgba(` literal in
+  `screens/orena/orena.css` (a different Wave B agent's file, not touched here); the gate's own
+  three checks were replayed standalone against `listening/`+`react/`+`respond/` only, clean after
+  this fix.
+- **Save Phrase has no home.** The Listening frame draws a `savePhrase` button (saves the *selected
+  segment/phrase* as a whole), but no endpoint exists at that grain - only
+  `POST /api/library/vocabulary` (a single word) and `POST /api/library/collections/{id}/items`
+  (an already-kept item). Left out entirely (rule 40) rather than wired to the wrong-grained
+  endpoint. A real sentence/phrase-grain save endpoint would close this.
+- **Respond's "uses the source?" result tile is not built.** The source script computes it with a
+  client-side keyword-overlap heuristic against the learner's answer - no real endpoint measures
+  whether a response draws on its source (`POST /api/evaluate` grades grammar/vocabulary/coherence/
+  task-achievement/naturalness only). The Result state keeps the frame's three tiles - Words (real),
+  Uses the source (an honest rule-40 "0"), Fixes (real) - plus the evaluator's own first priority
+  as "Next step", omitted, not guessed, when the evaluator named none.
+- **Verification gap - RESOLVED (finish pass, 2026-09-29).** The prior session's `docker`/sandbox
+  unreachability was environment-level, not a defect; the isolated app (`127.0.0.1:8021/next`) and
+  the design pin (`127.0.0.1:8765`) were both reachable this pass, and the brief's §5 verification
+  was completed against them:
+  - **Rule 49, all four sizes, real content, both device kinds.** `workspaceCheck` at 1920x1080,
+    1366x768 (Listening Workspace) and 390x844/360x740 (mobile, `hasTouch`/`isMobile`) all report
+    `pageScrolls:false`, `horizontalOverflow:false`, no primary control outside a
+    `[data-scroll-region]` - on the real, longer B2 video lesson, not a short fixture. React/Reuse
+    and Respond checked the same way at 1440x900 and 390x844, same result. Confirms the code-level
+    reasoning the prior session recorded, now measured.
+  - **The three cross-screen navigation fixes hold live**: a word tap on a real transcript row opens
+    the shared Quick Sheet; switching to Active mode really presses the pill
+    (`aria-pressed="true"`); React/Reuse's own step CTA really advances the flow.
+  - **Both AI-backed calls this group uses succeed on this sandbox, live, end to end** -
+    `POST /api/evaluate` (Respond's "Get feedback") and `POST /api/dictionary/spoken-response`
+    (React/Reuse's Result) both answered `200` with real generated content (not the documented
+    failure path) via this sandbox's own local Ollama model (`qwen3:8b`) - the prior session's "no
+    AI provider key, the route always fails here" note was **incorrect** for these two
+    text-generation routes specifically (it is correct for `word-detail`/`sentence-sheet`/
+    `translate`/speech, which genuinely have no provider here); corrected in
+    `screens/react/model.js`'s and `screens/respond/model.js`'s own header comments. Respond's
+    Result rendered real tiles/fixes/next-step from a real graded response; React/Reuse's Result
+    rendered the real (honest, rule-40) tile fallbacks for a segment whose catalogued phrase the
+    typed answer did not reuse. Both calls took several seconds to tens of seconds (shared local
+    model, consistent with the documented 17-54s Ollama latency, longer under concurrent load from
+    other agents' sessions in the same pass) - a verification script with too short a wait
+    (15s) read this as a timeout on first try; a longer wait (90s) showed the real success path.
+  - **Respond, article-sourced entry** (`#/respond/article:<id>`) verified separately from the
+    media-sourced entry already covered above: real title, 4 real sentences, "Source · Article".
+  - **EN/VI/ZH interface, and a real Chinese learning-language lesson**: Listening screenshotted in
+    all three interface languages; a real HSK1 Chinese lesson (`zh-daily-what-is-this`, switched via
+    `POST /api/platform/language {"language":"zh"}`, switched back to `en` afterward, per the brief)
+    rendered 42 real Han-character tokens with 42 real pinyin readings from the backend's own
+    `pinyin_chars_by_segment` alignment - no fallback plain-split was needed for this capture.
+  - Console (`pageerror`) was clean across every page in this pass.
+  - Screenshots: `SCRATCH/shots/listening-*.png`, `react-*.png`, `respond-*.png` (desktop/phone,
+    light/dark, en/vi/zh, the zh-content capture, the get-feedback and react-result outcomes).
+- **New gap found in this pass: Respond's live word/character counter now reads in the request's
+  own floor unit, but the frame still draws no "why is the button off" notice.** The counter beside
+  "Get feedback" used to show a plain `Intl.Segmenter` word count, which can disagree with the real
+  gate (`capabilities/writing-limits.js#measureMinimum`: Han characters for a Chinese response, not
+  Segmenter words) - a learner could see a non-zero count while the button stayed disabled for a
+  reason the number did not reflect. Fixed: the live counter (pre-submission only - the Result
+  state's own "Words" tile is unchanged, since that one answers "how long is this piece", the same
+  split `screens/writing/model.js` already draws) now reads `measureMinimum(text, language).count`,
+  confirmed live: one Han character shows "1" and keeps the button disabled, two shows "2" and
+  enables it, matching the real per-language floor of 2. What is still missing, and is not this
+  screen's to invent (rule 43): the frame draws no equivalent of Writing's own `tooShortNotice` (the
+  "N more needed" line Writing's frame does draw), so a learner under the floor still has no on-screen
+  text saying why - only a smaller number than they expected and a disabled button. Needs either a
+  design answer (does Respond's frame gain a notice like Writing's) or a product decision that none is
+  wanted here.
+
 ## Reader and Reading Complete (D-088 frames 14/40), Wave B, 2026-09-29
 
 `screens/reader/` (`#/read/:id`) and `screens/reader-complete/` (`#/read/:id/done`). Resumed from an
