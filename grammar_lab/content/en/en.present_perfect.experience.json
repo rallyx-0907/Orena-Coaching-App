@@ -187,5 +187,6 @@
       ]
     },
     "sample": {"text": "I have been to Da Nang twice."}
-  }
+  },
+  "source_anchors": {"status": "unanchored", "items": []}
 }

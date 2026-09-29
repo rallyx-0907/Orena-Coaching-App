@@ -194,5 +194,6 @@
     "target_form": "affirmative",
     "pattern_rule": {"ordered": true, "slots": [{"role": "particle", "any_of": ["了"]}]},
     "sample": {"text": "我今天吃了早饭。", "pinyin": ["wǒ", "jīn", "tiān", "chī", "le", "zǎo", "fàn", ""]}
-  }
+  },
+  "source_anchors": {"status": "unanchored", "items": []}
 }

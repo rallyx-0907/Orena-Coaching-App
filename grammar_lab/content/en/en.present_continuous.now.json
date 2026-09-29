@@ -168,5 +168,6 @@
       ]
     },
     "sample": {"text": "I am cooking dinner now."}
-  }
+  },
+  "source_anchors": {"status": "unanchored", "items": []}
 }

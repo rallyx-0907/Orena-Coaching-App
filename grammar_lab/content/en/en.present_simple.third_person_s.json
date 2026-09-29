@@ -161,5 +161,6 @@
       "slots": [{"role": "particle", "regex": "\\b(?:he|she|it)\\s+(?:\\w+\\s+)?\\w+(?:s|es)\\b"}]
     },
     "sample": {"text": "She works in a bank."}
-  }
+  },
+  "source_anchors": {"status": "unanchored", "items": []}
 }

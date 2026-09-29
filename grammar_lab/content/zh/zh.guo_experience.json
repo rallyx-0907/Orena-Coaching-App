@@ -194,5 +194,6 @@
     "target_form": "affirmative",
     "pattern_rule": {"ordered": true, "slots": [{"role": "particle", "any_of": ["过"]}]},
     "sample": {"text": "我去过上海。", "pinyin": ["wǒ", "qù", "guò", "shàng", "hǎi", ""]}
-  }
+  },
+  "source_anchors": {"status": "unanchored", "items": []}
 }

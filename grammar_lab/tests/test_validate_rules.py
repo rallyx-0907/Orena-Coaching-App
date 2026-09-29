@@ -211,6 +211,8 @@ CASES = [
         point := _with_v04_zh(lab), point.update(zh_note="含汉字"),
         setattr(lab, "schema_patch", lambda schema: schema["$defs"]["grammar_point"]["properties"].update(
             zh_note={"type": "string"}))), lang="zh"),
+    ok("anchors.missing", "unanchored is a valid answer", lambda lab: _with_v04(alpha(lab))),
+    fail("anchors.missing", "no source_anchors on a v0.4 point", lambda lab: _with_v04(alpha(lab)).pop("source_anchors")),
     ok("contrasts.asymmetric", "both directions listed", nothing),
     fail("contrasts.asymmetric", "only one direction listed", lambda lab: alpha(lab).update(contrasts=[])),
     ok("aliases.duplicate", "distinct R5 ids", lambda lab: (
@@ -499,6 +501,7 @@ def _v04_fields(point: dict) -> dict:
     text = "I have two cats."
     return {
         "point_type": "morphology",
+        "source_anchors": {"status": "unanchored", "items": []},
         "header": {
             "title": {"vi": "Danh từ số nhiều"}, "native_title": "Plural nouns",
             "level": dict(point["level"]), "summary": {"vi": "Từ hai trở lên thì thêm -s."},
@@ -547,6 +550,7 @@ def _with_v04_zh(lab: Lab) -> dict:
     text = "我们吃了饭。"
     point.update({
         "point_type": "tense_aspect",
+        "source_anchors": {"status": "unanchored", "items": []},
         "header": {
             "title": {"vi": "Trợ từ 了"}, "native_title": "动态助词了",
             "native_title_pinyin": ["dòng", "tài", "zhù", "cí", "le"],

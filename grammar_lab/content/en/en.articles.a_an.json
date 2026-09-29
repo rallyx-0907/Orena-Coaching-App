@@ -139,5 +139,6 @@
     "target_form": "affirmative",
     "pattern_rule": {"ordered": true, "slots": [{"role": "marker", "any_of": ["a", "an"]}]},
     "sample": {"text": "I have an orange."}
-  }
+  },
+  "source_anchors": {"status": "unanchored", "items": []}
 }

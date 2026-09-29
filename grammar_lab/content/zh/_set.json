@@ -2,7 +2,7 @@
   "schema_version": "0.4",
   "set_id": "zh.core",
   "target_lang": "zh-Hans",
-  "explanation_locales": ["vi"],
+  "explanation_locales": ["vi", "en"],
   "l1": ["vi"],
   "note": "First zh-Hans sample points, authored directly in schema v0.4 (GRAMMAR_CONTENT_CONTRACT.md); no v0.2 zh content existed before."
 }

@@ -59,6 +59,7 @@ personal_production.rule_invalid  a pattern_rule slot lacks exactly one of any_o
 personal_production.rule_role_not_in_formula  a pattern_rule slot's role is not a role of the target_form formula (v0.4)
 personal_production.rule_rejects_sample  the pattern_rule does not match personal_production.sample.text (v0.4)
 personal_production.rule_rejects_example  the pattern_rule does not match an example of the target_form (rule too strict) (v0.4)
+anchors.missing             a v0.4 point has no source_anchors (status unanchored is fine; absent is not) (v0.4)
 contrasts.asymmetric        A lists B in contrasts but B does not list A (both in the set) (v0.4)
 aliases.duplicate           an R5 id appears in the aliases of two points (v0.4)
 """
@@ -340,6 +341,9 @@ class _Validation:
             if "sequence" not in point:
                 self.issue(file, "sequence", "point.sequence_missing", "an approved point needs sequence")
         if point.get("schema_version") == "0.4":
+            if "source_anchors" not in point:
+                self.issue(file, "source_anchors", "anchors.missing",
+                           'add source_anchors ({"status": "unanchored", "items": []} when no source item is found)')
             self.check_personal_production_v04(file, point)
             if self.target_lang == ZH_HANS:
                 self.check_pinyin_field_unlisted_v04(file, point)

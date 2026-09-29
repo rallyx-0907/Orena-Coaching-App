@@ -219,19 +219,11 @@ _ZH_SPACE_RUN = re.compile(
 )
 
 
-def _generation_schema_v04(*, locales: list[str], l1s: list[str], error_tags: list[str], engine_tags: list[str],
-                            contrast_with: list[str], point_type: str, zh: bool,
-                            r5_ids: list[str] | None = None) -> dict[str, Any]:
-    """GRAMMAR_CONTENT_CONTRACT.md: the model's output for a schema_version 0.4 point.
-
-    Built per point, so nothing here needs if/then (not every provider's structured-output
-    dialect supports it): the illustration kind is fixed by point_type in code, and only
-    the data that kind needs is asked for. Things the model is bad at are moved to code:
-    spans are given as the substring and resolved to offsets by generate.py; zh pinyin is
-    given as [character, syllable] pairs so the alignment is explicit; and with a single
-    explanation locale every explanation field is a plain string that generate.py files
-    under that locale (live DeepSeek runs kept malforming one-key locale objects inside
-    arrays -- `[ "vi": "..." ]`)."""
+def _item_schemas_v04(*, locales: list[str], l1s: list[str], error_tags: list[str], engine_tags: list[str],
+                      contrast_with: list[str], zh: bool) -> dict[str, Any]:
+    """The model-side schema of each repeated item of a v0.4 point (slot, example, compare item,
+    common mistake, quick-practice item). Shared by full generation and by block-level regeneration
+    (apply_feedback.py), so both ask for, and assemble, exactly the same shapes."""
     locale_map = {"type": "string", "minLength": 1} if len(locales) == 1 else _locale_map_schema(locales)
     pinyin_pairs = {
         "type": "array",
@@ -307,6 +299,32 @@ def _generation_schema_v04(*, locales: list[str], l1s: list[str], error_tags: li
             "explain": locale_map,
         },
     }, "q_pinyin_pairs")
+    return {
+        "locale_map": locale_map, "pinyin_pairs": pinyin_pairs, "with_pinyin": with_pinyin, "slot": slot,
+        "example": example, "compare_item": compare_item, "common_mistake": common_mistake,
+        "quick_practice_item": quick_practice_item,
+    }
+
+
+def _generation_schema_v04(*, locales: list[str], l1s: list[str], error_tags: list[str], engine_tags: list[str],
+                            contrast_with: list[str], point_type: str, zh: bool,
+                            r5_ids: list[str] | None = None) -> dict[str, Any]:
+    """GRAMMAR_CONTENT_CONTRACT.md: the model's output for a schema_version 0.4 point.
+
+    Built per point, so nothing here needs if/then (not every provider's structured-output
+    dialect supports it): the illustration kind is fixed by point_type in code, and only
+    the data that kind needs is asked for. Things the model is bad at are moved to code:
+    spans are given as the substring and resolved to offsets by generate.py; zh pinyin is
+    given as [character, syllable] pairs so the alignment is explicit; and with a single
+    explanation locale every explanation field is a plain string that generate.py files
+    under that locale (live DeepSeek runs kept malforming one-key locale objects inside
+    arrays -- `[ "vi": "..." ]`)."""
+    items = _item_schemas_v04(
+        locales=locales, l1s=l1s, error_tags=error_tags, engine_tags=engine_tags, contrast_with=contrast_with, zh=zh,
+    )
+    locale_map, pinyin_pairs, with_pinyin = items["locale_map"], items["pinyin_pairs"], items["with_pinyin"]
+    slot, example, compare_item = items["slot"], items["example"], items["compare_item"]
+    common_mistake, quick_practice_item = items["common_mistake"], items["quick_practice_item"]
     formula = {"type": "array", "minItems": 1, "items": slot}
     mistake_count = max(1, len(error_tags))
     properties: dict[str, Any] = {
@@ -460,6 +478,59 @@ def zh_unspaced(text: str) -> str:
     pairs of the spaces via unspaced_pairs); a spaced example would misalign its pinyin, so validate
     (zh.whitespace) reports that one."""
     return _ZH_SPACE_RUN.sub("", text)
+
+
+def assemble_example(raw: dict[str, Any], zh: bool, loc: Any) -> dict[str, Any]:
+    """Model output -> the stored example: substring spans become offsets, pinyin pairs a list."""
+    example = {
+        "text": raw["text"], "form": raw["form"], "spans": resolve_spans(raw["text"], raw["spans"]),
+        "annotation": loc(raw["annotation"]), "translation": loc(raw["translation"]),
+    }
+    if zh:
+        example["pinyin"] = pinyin_from_pairs(raw["pinyin_pairs"])
+    return example
+
+
+def assemble_compare_item(item: dict[str, Any], zh: bool, loc: Any) -> dict[str, Any]:
+    entry = {key: item[key] for key in ("with", "this_example", "other_example")} | {
+        "this_meaning": loc(item["this_meaning"]), "other_meaning": loc(item["other_meaning"]),
+    }
+    if zh:
+        entry["this_example_pinyin"] = pinyin_from_pairs(item["this_example_pinyin_pairs"])
+        entry["other_example_pinyin"] = pinyin_from_pairs(item["other_example_pinyin_pairs"])
+    return entry
+
+
+def assemble_quick_practice_item(item: dict[str, Any], zh: bool, loc: Any) -> dict[str, Any]:
+    entry = {
+        "q": zh_unspaced(item["q"]) if zh else item["q"],
+        "options": [
+            {"text": option["text"], "error_tag": option["error_tag"],
+             **({"pinyin": pinyin_from_pairs(option["pinyin_pairs"])} if zh else {})}
+            for option in item["options"]
+        ],
+        "answer": item["answer"], "explain": loc(item["explain"]),
+    }
+    if zh:
+        entry["q_pinyin"] = pinyin_from_pairs(unspaced_pairs(item["q_pinyin_pairs"]))
+    return entry
+
+
+def assemble_common_mistake(raw: dict[str, Any], zh: bool, loc: Any) -> dict[str, Any]:
+    mistake = {key: raw[key] for key in ("wrong", "right", "reason", "error_tag", "l1")}
+    mistake["reason"] = loc(mistake["reason"])
+    if zh:
+        mistake["wrong_pinyin"] = pinyin_from_pairs(raw["wrong_pinyin_pairs"])
+        mistake["right_pinyin"] = pinyin_from_pairs(raw["right_pinyin_pairs"])
+    return mistake
+
+
+def assemble_morphology_row(raw: dict[str, Any], zh: bool) -> dict[str, Any]:
+    row = {key: raw[key] for key in ("base", "affix", "result")}
+    if zh:
+        for key in ("base", "affix", "result"):
+            row[f"{key}_pinyin"] = pinyin_from_pairs(raw[f"{key}_pinyin_pairs"])
+    return row
 
 
 def _as_locale_map(value: Any, locales: list[str]) -> Any:
@@ -759,14 +830,7 @@ class Generator:
         if point_type == "tense_aspect":
             illustration["timeline"] = {"shape": data["timeline_shape"]}
         elif point_type == "morphology":
-            rows = []
-            for raw in data["morphology"]:
-                row = {key: raw[key] for key in ("base", "affix", "result")}
-                if zh:
-                    for key in ("base", "affix", "result"):
-                        row[f"{key}_pinyin"] = pinyin_from_pairs(raw[f"{key}_pinyin_pairs"])
-                rows.append(row)
-            illustration["morphology"] = rows
+            illustration["morphology"] = [assemble_morphology_row(raw, zh) for raw in data["morphology"]]
         def loc(value: Any) -> Any:
             return _as_locale_map(value, locales)
 
@@ -776,46 +840,10 @@ class Generator:
             pattern["variants"] = variants
         pattern["illustration"] = illustration
 
-        examples = []
-        for raw in data["examples"]:
-            example = {
-                "text": raw["text"], "form": raw["form"], "spans": resolve_spans(raw["text"], raw["spans"]),
-                "annotation": loc(raw["annotation"]), "translation": loc(raw["translation"]),
-            }
-            if zh:
-                example["pinyin"] = pinyin_from_pairs(raw["pinyin_pairs"])
-            examples.append(example)
-        compare = []
-        for item in data["compare"]:
-            entry = {
-                key: item[key] for key in ("with", "this_example", "other_example")
-            } | {"this_meaning": loc(item["this_meaning"]), "other_meaning": loc(item["other_meaning"])}
-            if zh:
-                entry["this_example_pinyin"] = pinyin_from_pairs(item["this_example_pinyin_pairs"])
-                entry["other_example_pinyin"] = pinyin_from_pairs(item["other_example_pinyin_pairs"])
-            compare.append(entry)
-        quick_practice = []
-        for item in data["quick_practice"]:
-            entry = {
-                "q": zh_unspaced(item["q"]) if zh else item["q"],
-                "options": [
-                    {"text": option["text"], "error_tag": option["error_tag"],
-                     **({"pinyin": pinyin_from_pairs(option["pinyin_pairs"])} if zh else {})}
-                    for option in item["options"]
-                ],
-                "answer": item["answer"], "explain": loc(item["explain"]),
-            }
-            if zh:
-                entry["q_pinyin"] = pinyin_from_pairs(unspaced_pairs(item["q_pinyin_pairs"]))
-            quick_practice.append(entry)
-        mistakes = []
-        for raw in data["common_mistakes"]:
-            mistake = {key: raw[key] for key in ("wrong", "right", "reason", "error_tag", "l1")}
-            mistake["reason"] = loc(mistake["reason"])
-            if zh:
-                mistake["wrong_pinyin"] = pinyin_from_pairs(raw["wrong_pinyin_pairs"])
-                mistake["right_pinyin"] = pinyin_from_pairs(raw["right_pinyin_pairs"])
-            mistakes.append(mistake)
+        examples = [assemble_example(raw, zh, loc) for raw in data["examples"]]
+        compare = [assemble_compare_item(item, zh, loc) for item in data["compare"]]
+        quick_practice = [assemble_quick_practice_item(item, zh, loc) for item in data["quick_practice"]]
+        mistakes = [assemble_common_mistake(raw, zh, loc) for raw in data["common_mistakes"]]
 
         point = {
             **{key: existing[key] for key in (
@@ -823,8 +851,12 @@ class Generator:
             )},
             "schema_version": "0.4",
             "point_type": point_type,
+            # structural metadata and the fields generate does not write yet: carried over, never dropped
+            **{key: existing[key] for key in ("sequence", "aliases", "personal_production") if key in existing},
+            "source_anchors": existing.get("source_anchors") or {"status": "unanchored", "items": []},
             "header": {
                 **header, "summary": loc(data["summary"]),
+                **({"sub": existing["header"]["sub"]} if "sub" in existing.get("header", {}) else {}),
                 **({"native_title_pinyin": pinyin_from_pairs(data["native_title_pinyin_pairs"])} if zh else {}),
             },
             "when_to_use": [loc(item) for item in data["when_to_use"]],

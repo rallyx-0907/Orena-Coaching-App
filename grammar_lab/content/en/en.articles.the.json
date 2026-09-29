@@ -127,5 +127,6 @@
     "target_form": "affirmative",
     "pattern_rule": {"ordered": true, "slots": [{"role": "marker", "any_of": ["the"]}]},
     "sample": {"text": "The dog is under the table."}
-  }
+  },
+  "source_anchors": {"status": "unanchored", "items": []}
 }

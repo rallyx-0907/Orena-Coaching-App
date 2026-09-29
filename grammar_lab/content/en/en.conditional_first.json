@@ -175,5 +175,6 @@
       "slots": [{"role": "marker", "any_of": ["if"]}, {"role": "aux", "any_of": ["will", "won't"]}]
     },
     "sample": {"text": "If it is sunny tomorrow, I will go to the park."}
-  }
+  },
+  "source_anchors": {"status": "unanchored", "items": []}
 }

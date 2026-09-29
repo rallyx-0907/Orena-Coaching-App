@@ -14,6 +14,8 @@ from pathlib import Path
 
 import typer
 
+from grammar_lab.pipeline.apply_feedback import apply_feedback as run_apply_feedback
+from grammar_lab.pipeline.apply_feedback import dedupe, feedback_stats, parse_files
 from grammar_lab.pipeline.content_store import load_point, load_points, save_point
 from grammar_lab.pipeline.evaluator_client import EvaluatorClient
 from grammar_lab.pipeline.export_error_tags import export_error_tags
@@ -23,6 +25,7 @@ from grammar_lab.pipeline.preview import DEFAULT_OUT_DIR as DEFAULT_PREVIEW_DIR
 from grammar_lab.pipeline.preview import serve as serve_preview
 from grammar_lab.pipeline.preview import write_preview
 from grammar_lab.pipeline.report_step import build_report, render_html
+from grammar_lab.pipeline.review_export import levels_present, review_path, write_review
 from grammar_lab.pipeline.route import DEFAULT_THRESHOLD_BY_LANG, apply_route, route_point
 from grammar_lab.pipeline.run_context import new_run_id, resolve_run_id, run_dir, write_step
 from grammar_lab.pipeline.validate import ERROR_TAGS_PATH, LAB_ROOT, LANGS, apply_flags, validate_lang
@@ -287,6 +290,75 @@ def report(
     (out_dir / "report.html").write_text(render_html(data), encoding="utf-8", newline="\n")
     typer.echo(json.dumps(data, ensure_ascii=False, indent=2))
     typer.echo(f"wrote {out_dir / 'report.json'} and {out_dir / 'report.html'}")
+
+
+@app.command("review-export")
+def review_export(
+    lang: str = typer.Option(..., "--lang", help=f"Target language: {', '.join(LANGS)}."),
+    level: str = typer.Option("", "--level", help="A1, B2, HSK3, ... (default: every level with points)."),
+    root: Path = typer.Option(LAB_ROOT, "--root"),
+) -> None:
+    """Write grammar_lab/review/<lang>/<level>.md for review by an external model (two passes, JSONL feedback)."""
+    if lang not in LANGS:
+        raise typer.BadParameter(f"expected one of {', '.join(LANGS)}", param_hint="--lang")
+    for label in [level] if level else levels_present(lang, root):
+        path = write_review(lang, label, root, root / "review")
+        typer.echo(f"wrote {path} ({path.stat().st_size:,} bytes)")
+
+
+@app.command("apply-feedback")
+def apply_feedback_command(
+    lang: str = typer.Option(..., "--lang", help=f"Target language: {', '.join(LANGS)}."),
+    level: str = typer.Option(..., "--level", help="The level the feedback files are about (A1, HSK1, ...)."),
+    files: list[Path] = typer.Option(..., "--files", help="One or more JSONL feedback files (repeat the option)."),
+    provider: str = typer.Option("deepseek", "--provider"),
+    model: str = typer.Option("deepseek-flash", "--model"),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Parse, de-duplicate and show the plan and estimated cost; call no model."),
+    allow_approved: bool = typer.Option(False, "--allow-approved", help="Also touch approved points."),
+    cost_ceiling_usd: float = typer.Option(0.5, "--cost-ceiling-usd", help="Stop regenerating once this much is spent."),
+    root: Path = typer.Option(LAB_ROOT, "--root"),
+) -> None:
+    """Fold external-review feedback into a level: de-duplicate, regenerate the flagged blocks, validate, log."""
+    if lang not in LANGS:
+        raise typer.BadParameter(f"expected one of {', '.join(LANGS)}", param_hint="--lang")
+    if dry_run:
+        result = run_apply_feedback(lang, level, files, llm=LLMClient(provider, model), root=root, dry_run=True)
+    else:
+        with LLMClient(provider, model) as llm:
+            result = run_apply_feedback(
+                lang, level, files, llm=llm, root=root, allow_approved=allow_approved, cost_ceiling_usd=cost_ceiling_usd,
+            )
+    for outcome in result.outcomes:
+        typer.echo(f"{outcome.status:8} {outcome.item.id:36} {outcome.item.block:22} {outcome.reason}")
+    for bad in result.unparsed:
+        typer.echo(f"unparsed {bad['where']}: {bad['reason']}")
+    counts: dict[str, int] = {}
+    for outcome in result.outcomes:
+        counts[outcome.status] = counts.get(outcome.status, 0) + 1
+    label = "estimated" if dry_run else "spent"
+    typer.echo(f"apply-feedback {lang} {level}: {counts}, {len(result.unparsed)} unparsed line(s), "
+               f"{result.calls} model call(s), {label} ~${result.cost_usd:.4f}")
+    if not dry_run:
+        typer.echo(f"log: {review_path(lang, level, root / 'review').with_suffix('.applied.json')}")
+
+
+@app.command("feedback-stats")
+def feedback_stats_command(
+    files: list[Path] = typer.Option(..., "--files", help="JSONL feedback files."),
+    as_json: bool = typer.Option(False, "--json"),
+) -> None:
+    """Group feedback (after de-duplication) by type: knowledge / scope / wording / format."""
+    items, unparsed = parse_files(files)
+    items, merged = dedupe(items)
+    stats = feedback_stats(items)
+    stats["merged_duplicates"] = len(merged)
+    stats["unparsed"] = len(unparsed)
+    if as_json:
+        typer.echo(json.dumps(stats, ensure_ascii=False, indent=2))
+        return
+    typer.echo(f"{stats['total']} item(s), {stats['merged_duplicates']} duplicate(s) merged, {stats['unparsed']} unparsed")
+    for title in ("by_type", "by_severity", "by_block"):
+        typer.echo(f"{title}: " + ", ".join(f"{k}={v}" for k, v in stats[title].items()))
 
 
 @app.command()

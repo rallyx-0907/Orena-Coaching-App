@@ -80,6 +80,22 @@
             "schema_version": {"type": "string", "minLength": 1}
           }
         },
+        "feedback": {
+          "description": "apply_feedback.py: external-review feedback applied to a block of this point (human, 2026-09-29). Never sets status.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["block", "applied_at", "model", "issues"],
+            "properties": {
+              "block": {"type": "string", "minLength": 1},
+              "applied_at": {"$ref": "#/$defs/timestamp"},
+              "model": {"type": "string", "minLength": 1},
+              "issues": {"type": "integer", "minimum": 1},
+              "sources": {"type": "array", "items": {"type": "string"}}
+            }
+          }
+        },
         "r5_source": {
           "description": "Conversion mode (human, 2026-09-28): the R5 lesson(s) this point was generated from -- the source of the redirect table for old R5 links -- and the corrections the generator says it made to them (verify has another model confirm each).",
           "type": "object",
@@ -147,6 +163,7 @@
         "summary": {"description": "v0.2/v0.3 only; v0.4 moves it into header.", "$ref": "#/$defs/locale_map"},
         "point_type": {"$ref": "#/$defs/point_type"},
         "sequence": {"description": "GRAMMAR_CONTENT_CONTRACT.md section 0: reading order within function + level; required when status is approved (validate: point.sequence_missing).", "type": "integer", "minimum": 1},
+        "source_anchors": {"$ref": "#/$defs/source_anchors"},
         "aliases": {"description": "R5 ids this point replaces (contract section 9); no R5 id may appear in two points (validate: aliases.duplicate).", "type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
         "header": {"$ref": "#/$defs/header"},
         "blocks": {
@@ -682,6 +699,32 @@
         "answer": {"description": "0-based index into options.", "type": "integer", "minimum": 0},
         "explain": {"$ref": "#/$defs/locale_map"}
       }
+    },
+    "source_anchors": {
+      "description": "Where the reference framework places this point (human, 2026-09-29): the item code in the source and the level the source gives it. status unanchored = no source item found yet -- never a guess. Internal, like provenance; not part of the published contract.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "items"],
+      "properties": {
+        "status": {"enum": ["anchored", "unanchored"]},
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["source", "code", "level"],
+            "properties": {
+              "source": {"enum": ["core_inventory", "egp", "hsk3"]},
+              "code": {"type": "string", "minLength": 1},
+              "level": {"type": "string", "minLength": 1},
+              "note": {"type": "string"}
+            }
+          }
+        }
+      },
+      "if": {"properties": {"status": {"const": "anchored"}}},
+      "then": {"properties": {"items": {"minItems": 1}}},
+      "else": {"properties": {"items": {"maxItems": 0}}}
     },
     "pattern_rule_slot": {
       "description": "One role whose presence shows the learner used the pattern. Exactly one of any_of (whole words in EN, substrings in ZH) or regex (re.search, case-insensitive) -- enforced by validate: personal_production.rule_invalid.",
