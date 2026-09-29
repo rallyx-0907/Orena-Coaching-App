@@ -1055,6 +1055,7 @@ export const COPY_LAYERS = Object.freeze({
   "writingTooLongPaste": "support",
   "writingTooShortWords": "support",
   "writingTooShortHan": "support",
+  "writingTooShortKanaHan": "support",
   "reviewStale": "support",
   "reviewStaleAction": "interface",
   "reviewDeeper": "interface",

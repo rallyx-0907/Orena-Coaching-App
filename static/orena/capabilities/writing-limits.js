@@ -96,6 +96,11 @@ export function editWouldFit(current, replacement, selectionStart, selectionEnd)
             `你好。` is two. Stated ranges, not `\p{Script=Han}`, so the server can
             state the same ones: CJK Unified Ideographs and Extension A, the
             compatibility ideographs, and Extensions B onward. Radicals are left out.
+     kana_han  What Japanese is written in: the Han characters above, the iteration
+            mark 々, hiragana, katakana (with the long-vowel mark ー) and halfwidth
+            katakana. Japanese punctuation such as 。 and the middle dot ・ are not
+            characters of writing, nor are the voicing marks, which belong to the
+            kana before them.
      words  Runs of letters and digits, joined by an apostrophe or a hyphen inside
             a word, that hold at least one letter. A number alone is not a word of
             writing; punctuation, whitespace and emoji are not words. Normalised
@@ -122,17 +127,24 @@ export function editWouldFit(current, replacement, selectionStart, selectionEnd)
 export const MINIMUM_BY_LANGUAGE = Object.freeze({
   en: Object.freeze({ unit: 'words', minimum: 2 }),
   zh: Object.freeze({ unit: 'han', minimum: 2 }),
+  ja: Object.freeze({ unit: 'kana_han', minimum: 2 }),
 });
 
 /* What a language with no row of its own is held to. */
 export const DEFAULT_MINIMUM = Object.freeze({ unit: 'words', minimum: 2 });
 
 const HAN = /[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\u{20000}-\u{2fa1f}\u{30000}-\u{323af}]/gu;
+const KANA_HAN =
+  /[\u3005\u3041-\u3096\u309d-\u309f\u30a1-\u30fa\u30fc-\u30ff\u31f0-\u31ff\uff66-\uff9d\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\u{20000}-\u{2fa1f}\u{30000}-\u{323af}]/gu;
 const WORD = /[\p{L}\p{N}]+(?:['\u2019-][\p{L}\p{N}]+)*/gu;
 const LETTER = /\p{L}/u;
 
 export function countHan(text) {
   return (String(text ?? '').match(HAN) || []).length;
+}
+
+export function countKanaHan(text) {
+  return (String(text ?? '').match(KANA_HAN) || []).length;
 }
 
 export function countWords(text) {
@@ -143,7 +155,7 @@ export function countWords(text) {
   return count;
 }
 
-const COUNTERS = Object.freeze({ han: countHan, words: countWords });
+const COUNTERS = Object.freeze({ han: countHan, kana_han: countKanaHan, words: countWords });
 
 /* The language a code names, without its region: `zh-CN` and `zh_TW` are `zh`. */
 export function languageKey(code) {

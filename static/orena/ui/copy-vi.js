@@ -1011,6 +1011,7 @@ export const vi = {
     'Nội dung dán vào quá dài để thêm ở đây. Bài bạn viết vẫn nguyên vẹn.',
   writingTooShortWords: 'Viết ít nhất {n} từ để yêu cầu nhận xét.',
   writingTooShortHan: 'Viết ít nhất {n} chữ Hán để yêu cầu nhận xét.',
+  writingTooShortKanaHan: 'Viết ít nhất {n} chữ tiếng Nhật để yêu cầu nhận xét.',
   reviewStale:
     'Bạn đã sửa bài này. Nhận xét dưới đây thuộc về bản trước khi sửa.',
   reviewStaleAction: 'Nhận xét bản mới',

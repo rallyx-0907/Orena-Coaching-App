@@ -89,7 +89,7 @@ export function reviewGate(value, language) {
 }
 
 /* The copy key and count that say what would be enough, in the unit the language writes in. */
-const UNIT_NOTICE_KEY = { han: 'tooShortHan', words: 'tooShortWords' };
+const UNIT_NOTICE_KEY = { han: 'tooShortHan', kana_han: 'tooShortKanaHan', words: 'tooShortWords' };
 export function tooShortNotice(language) {
   const { unit, minimum } = minimumFor(language);
   return { key: UNIT_NOTICE_KEY[unit] || 'tooShortWords', n: minimum };

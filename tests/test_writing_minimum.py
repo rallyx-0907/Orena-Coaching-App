@@ -45,6 +45,7 @@ UNLISTED = "xx"
 # new unit needs a builder here, so a new row cannot land untested.
 SAMPLES = {
     "han": lambda n: ("好" * n + "。") if n else "",
+    "kana_han": lambda n: ("は" * n + "。") if n else "",
     "words": lambda n: (" ".join(["word"] * n) + ".") if n else "",
 }
 
@@ -105,6 +106,10 @@ def test_chinese_is_counted_in_han_characters_and_english_in_words() -> None:
     assert limits.MINIMUM_BY_LANGUAGE["en"].unit == "words"
 
 
+def test_japanese_is_counted_in_kana_and_han_characters() -> None:
+    assert limits.MINIMUM_BY_LANGUAGE["ja"].unit == "kana_han"
+
+
 def test_a_language_with_no_row_gets_the_stated_default() -> None:
     assert UNLISTED not in limits.MINIMUM_BY_LANGUAGE
     for language in (UNLISTED, None, "", "  "):
@@ -114,7 +119,7 @@ def test_a_language_with_no_row_gets_the_stated_default() -> None:
 
 def test_the_table_cannot_be_changed_by_a_caller() -> None:
     with pytest.raises(TypeError):
-        limits.MINIMUM_BY_LANGUAGE["ja"] = limits.DEFAULT_MINIMUM  # type: ignore[index]
+        limits.MINIMUM_BY_LANGUAGE["ko"] = limits.DEFAULT_MINIMUM  # type: ignore[index]
 
 
 # --- The counts, held to the same cases as the browser -------------------

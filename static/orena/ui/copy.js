@@ -2388,6 +2388,7 @@ Object.assign(copy.en, {
   writingTooLongPaste: 'That paste is too long to add here. What you wrote is untouched.',
   writingTooShortWords: 'Write at least {n} words to request a review.',
   writingTooShortHan: 'Write at least {n} Hanzi to request a review.',
+  writingTooShortKanaHan: 'Write at least {n} Japanese characters to request a review.',
   reviewStale: 'You have changed this piece. This review belongs to the version before your edits.',
   reviewStaleAction: 'Review the new version',
 });
@@ -2396,6 +2397,7 @@ Object.assign(copy.zh, {
   writingTooLongPaste: '要粘贴的内容太长，无法加在这里。你写的东西原封不动。',
   writingTooShortWords: '至少写 {n} 个词才能获得反馈。',
   writingTooShortHan: '至少写 {n} 个汉字才能获得反馈。',
+  writingTooShortKanaHan: '至少写 {n} 个日文字符才能获得反馈。',
   reviewStale: '你已经改过这篇文字。这份反馈对应的是修改之前的版本。',
   reviewStaleAction: '查看新版本的反馈',
 });

@@ -2,7 +2,8 @@
   "_about": "The one statement of the Writing request minimum that both sides are held to. writing_coach/writing_limits.py (the server) and static/orena/capabilities/writing-limits.js (the browser) each carry their own implementation; tests/test_writing_minimum.py and scripts/test_orena_writing_workspace.mjs both read THIS file and fail when either side stops producing exactly these tables and these counts. Change a number or a case here and both gates say so.",
   "table": {
     "en": { "unit": "words", "minimum": 2 },
-    "zh": { "unit": "han", "minimum": 2 }
+    "zh": { "unit": "han", "minimum": 2 },
+    "ja": { "unit": "kana_han", "minimum": 2 }
   },
   "default": { "unit": "words", "minimum": 2 },
   "cases": [
@@ -28,6 +29,17 @@
     { "note": "a region subtag reads as the language", "language": "zh-CN", "text": "你好", "unit": "han", "count": 2, "meets": true },
     { "note": "an underscore region reads as the language", "language": "zh_TW", "text": "你好", "unit": "han", "count": 2, "meets": true },
     { "note": "case does not matter", "language": "ZH", "text": "你好", "unit": "han", "count": 2, "meets": true },
+
+    { "note": "a Japanese sentence in kanji and kana (D-098)", "language": "ja", "text": "私は学生です。", "unit": "kana_han", "count": 6, "meets": true },
+    { "note": "hiragana only", "language": "ja", "text": "はい", "unit": "kana_han", "count": 2, "meets": true },
+    { "note": "katakana with the long-vowel mark", "language": "ja", "text": "コーヒー", "unit": "kana_han", "count": 4, "meets": true },
+    { "note": "the iteration mark is writing", "language": "ja", "text": "人々", "unit": "kana_han", "count": 2, "meets": true },
+    { "note": "halfwidth katakana", "language": "ja", "text": "ｱｲ", "unit": "kana_han", "count": 2, "meets": true },
+    { "note": "one kana and its full stop is still one", "language": "ja", "text": "は。", "unit": "kana_han", "count": 1, "meets": false },
+    { "note": "a kana and a combining voicing mark is one", "language": "ja", "text": "か\u3099", "unit": "kana_han", "count": 1, "meets": false },
+    { "note": "Japanese punctuation and the middle dot are not writing", "language": "ja", "text": "。、・「」", "unit": "kana_han", "count": 0, "meets": false },
+    { "note": "Latin words are not Japanese characters", "language": "ja", "text": "Hello world", "unit": "kana_han", "count": 0, "meets": false },
+    { "note": "a region subtag reads as the language", "language": "ja-JP", "text": "はい", "unit": "kana_han", "count": 2, "meets": true },
 
     { "note": "a two-word sentence", "language": "en", "text": "Hi Bob.", "unit": "words", "count": 2, "meets": true },
     { "note": "a second two-word sentence", "language": "en", "text": "I agree.", "unit": "words", "count": 2, "meets": true },

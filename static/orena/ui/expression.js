@@ -567,7 +567,8 @@ export async function renderExpression(root, ctx) {
        unit they write in, before any request; the server holds the same table. */
     const floor = measureMinimum(box.value, language);
     if (!floor.met) {
-      const template = floor.unit === 'han' ? c.writingTooShortHan : c.writingTooShortWords;
+      const template =
+        { han: c.writingTooShortHan, kana_han: c.writingTooShortKanaHan }[floor.unit] || c.writingTooShortWords;
       sayTrouble(`<span data-writing-short>${esc(String(template).replace('{n}', floor.minimum))}</span>`);
       box.focus();
       return;

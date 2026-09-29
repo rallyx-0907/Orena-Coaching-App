@@ -146,6 +146,11 @@ def fits(text: str) -> bool:
 #          Ideographs and Extension A, the compatibility ideographs, and the
 #          supplementary-plane Extensions B onward. Radicals are not a
 #          character anyone writes and are left out.
+#   kana_han  What Japanese is written in: the Han characters above, the
+#          iteration mark 々, hiragana, katakana (with the long-vowel mark ー)
+#          and halfwidth katakana. Japanese punctuation such as 。 and the
+#          middle dot ・ are not characters of writing, and neither are the
+#          voicing marks, which belong to the kana before them.
 #   words  Runs of letters and digits, joined by an apostrophe or a hyphen
 #          inside a word, that hold at least one letter. A number alone is not
 #          a word of writing, and punctuation, whitespace and emoji are not
@@ -176,12 +181,21 @@ def fits(text: str) -> bool:
 _HAN = re.compile(
     "[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\U00020000-\U0002fa1f\U00030000-\U000323af]"
 )
+_KANA_HAN = re.compile(
+    "[\u3005\u3041-\u3096\u309d-\u309f\u30a1-\u30fa\u30fc-\u30ff\u31f0-\u31ff\uff66-\uff9d"
+    "\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\U00020000-\U0002fa1f\U00030000-\U000323af]"
+)
 _WORD = re.compile(r"[^\W_]+(?:['\u2019-][^\W_]+)*")
 
 
 def count_han(text: str) -> int:
     """Han characters in the text: what a Chinese learner has written."""
     return len(_HAN.findall(text if isinstance(text, str) else str(text or "")))
+
+
+def count_kana_han(text: str) -> int:
+    """Kana and Han characters in the text: what a Japanese learner has written."""
+    return len(_KANA_HAN.findall(text if isinstance(text, str) else str(text or "")))
 
 
 def count_words(text: str) -> int:
@@ -192,9 +206,15 @@ def count_words(text: str) -> int:
     )
 
 
-_COUNTERS = MappingProxyType({"han": count_han, "words": count_words})
+_COUNTERS = MappingProxyType(
+    {"han": count_han, "kana_han": count_kana_han, "words": count_words}
+)
 _UNIT_NOUNS = MappingProxyType(
-    {"han": ("Chinese character", "Chinese characters"), "words": ("word", "words")}
+    {
+        "han": ("Chinese character", "Chinese characters"),
+        "kana_han": ("Japanese character", "Japanese characters"),
+        "words": ("word", "words"),
+    }
 )
 
 
@@ -214,12 +234,13 @@ class MinimumRule:
 
 # One row per language the product teaches to write in, keyed the way the rest
 # of Writing keys a language. English is counted in words, Chinese in Han
-# characters; the values are the smallest that still refuse a stray character
+# characters, Japanese in kana and Han characters (D-098); the values are the smallest that still refuse a stray character
 # and admit a real greeting: `你好。` and `Hi Bob.` are both attempts.
 MINIMUM_BY_LANGUAGE: Mapping[str, MinimumRule] = MappingProxyType(
     {
         "en": MinimumRule(unit="words", minimum=2),
         "zh": MinimumRule(unit="han", minimum=2),
+        "ja": MinimumRule(unit="kana_han", minimum=2),
     }
 )
 
