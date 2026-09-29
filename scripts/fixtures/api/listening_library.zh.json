@@ -1,0 +1,284 @@
+{
+  "items": [
+    {
+      "spoken_text_by_segment": {},
+      "lesson_id": "zh-technology-search-wikipedia",
+      "media_object_id": "commons-zh-wikipedia-tutorial-1",
+      "title": "怎么搜索维基百科",
+      "description": "A screencast walkthrough of searching the Chinese Wikipedia, narrated step by step.",
+      "language": "zh",
+      "topic": "technology",
+      "subtopics": [
+        "how-to",
+        "internet"
+      ],
+      "level": "HSK4",
+      "estimated_level": "HSK4",
+      "reviewed_level": null,
+      "level_source": "deterministic-estimate",
+      "level_evidence": {
+        "vocabulary_band": "everyday-technical",
+        "sentence_complexity": "instructional-statements",
+        "speech_speed": "measured",
+        "review_note": "Deterministic estimate from instructional vocabulary; spoken variety and level still need human review."
+      },
+      "duration_ms": 43280,
+      "excerpt_start_ms": 16120,
+      "excerpt_end_ms": 59400,
+      "available_modes": [
+        "listen",
+        "active",
+        "dictation"
+      ],
+      "content_tags": [
+        "technology",
+        "how-to",
+        "narration"
+      ],
+      "vocabulary": [
+        "输入",
+        "条目",
+        "搜寻"
+      ],
+      "speech_speed": "measured",
+      "artwork": "technology",
+      "poster_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b1/%E4%B8%AD%E6%96%87%E7%B6%AD%E5%9F%BA%E7%99%BE%E7%A7%91%E6%95%99%E5%AD%B8%E9%A0%BB%E9%81%93%E7%AC%AC%E4%B8%80%E7%AB%A0.ogv/960px--%E4%B8%AD%E6%96%87%E7%B6%AD%E5%9F%BA%E7%99%BE%E7%A7%91%E6%95%99%E5%AD%B8%E9%A0%BB%E9%81%93%E7%AC%AC%E4%B8%80%E7%AB%A0.ogv.jpg",
+      "playback_kind": "video",
+      "content_type": "video",
+      "published_state": "published",
+      "curation_state": "reviewed",
+      "is_development_candidate": false,
+      "source": {
+        "source_media_id": "commons-zh-wikipedia-tutorial-1",
+        "provider": "wikimedia-commons",
+        "type": "licensed-video",
+        "title": "中文維基百科教學頻道第一章",
+        "creator": "香港分子 (Wikimedia Commons)",
+        "source_url": "https://commons.wikimedia.org/wiki/File:%E4%B8%AD%E6%96%87%E7%B6%AD%E5%9F%BA%E7%99%BE%E7%A7%91%E6%95%99%E5%AD%B8%E9%A0%BB%E9%81%93%E7%AC%AC%E4%B8%80%E7%AB%A0.ogv",
+        "provenance_url": "https://commons.wikimedia.org/wiki/File:%E4%B8%AD%E6%96%87%E7%B6%AD%E5%9F%BA%E7%99%BE%E7%A7%91%E6%95%99%E5%AD%B8%E9%A0%BB%E9%81%93%E7%AC%AC%E4%B8%80%E7%AB%A0.ogv",
+        "license": "CC BY-SA 3.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/3.0/",
+        "allowed_usage_type": "creative-commons-attribution-sharealike",
+        "rights_review_status": "verified"
+      },
+      "thumbnail_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b1/%E4%B8%AD%E6%96%87%E7%B6%AD%E5%9F%BA%E7%99%BE%E7%A7%91%E6%95%99%E5%AD%B8%E9%A0%BB%E9%81%93%E7%AC%AC%E4%B8%80%E7%AB%A0.ogv/960px--%E4%B8%AD%E6%96%87%E7%B6%AD%E5%9F%BA%E7%99%BE%E7%A7%91%E6%95%99%E5%AD%B8%E9%A0%BB%E9%81%93%E7%AC%AC%E4%B8%80%E7%AB%A0.ogv.jpg",
+      "media_type": "video",
+      "provider": "wikimedia-commons",
+      "source_label": "Wikimedia Commons",
+      "is_shared_import": false
+    },
+    {
+      "spoken_text_by_segment": {
+        "commons-zh-lesson-1-dialogue-2:000": "他们是谁？",
+        "commons-zh-lesson-1-dialogue-2:001": "她是艾美，她是中国人。他是东尼，他是美国人。",
+        "commons-zh-lesson-1-dialogue-2:002": "你也是美国人吗？",
+        "commons-zh-lesson-1-dialogue-2:003": "不是，我是英国人。你呢？你是哪国人？",
+        "commons-zh-lesson-1-dialogue-2:004": "我是法国人。"
+      },
+      "lesson_id": "zh-culture-nationalities",
+      "media_object_id": "commons-zh-lesson-1-dialogue-2",
+      "title": "他们是谁？",
+      "description": "听一段介绍朋友和国籍的自然对话。",
+      "language": "zh",
+      "topic": "culture",
+      "subtopics": [
+        "conversations",
+        "social-life"
+      ],
+      "level": "HSK2",
+      "estimated_level": "HSK2",
+      "reviewed_level": "HSK2",
+      "level_source": "editorial-review",
+      "level_evidence": {
+        "vocabulary_band": "hsk-basic",
+        "sentence_complexity": "linked-identification",
+        "speech_speed": "natural",
+        "review_note": "Introductions combine pronouns, names, and nationality nouns in connected speech."
+      },
+      "duration_ms": 8385,
+      "excerpt_start_ms": 0,
+      "excerpt_end_ms": 8385,
+      "available_modes": [
+        "listen",
+        "active",
+        "dictation"
+      ],
+      "content_tags": [
+        "conversation",
+        "culture",
+        "social-life"
+      ],
+      "vocabulary": [
+        "他们",
+        "中国人",
+        "美国人"
+      ],
+      "speech_speed": "natural",
+      "artwork": "culture",
+      "poster_url": "",
+      "playback_kind": "audio",
+      "content_type": "culture",
+      "published_state": "published",
+      "curation_state": "reviewed",
+      "is_development_candidate": false,
+      "source": {
+        "source_media_id": "commons-zh-lesson-1-dialogue-2",
+        "provider": "wikimedia-commons",
+        "type": "licensed-audio",
+        "title": "Chinese lesson 1 dialogue 2",
+        "creator": "Deranged physicist / English Wikibooks",
+        "source_url": "https://commons.wikimedia.org/wiki/File:Chinese-Lesson1-Dialogue2.ogg",
+        "provenance_url": "https://commons.wikimedia.org/wiki/File:Chinese-Lesson1-Dialogue2.ogg",
+        "license": "CC BY-SA 3.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/3.0/",
+        "allowed_usage_type": "creative-commons-attribution-sharealike",
+        "rights_review_status": "verified"
+      },
+      "thumbnail_url": "",
+      "media_type": "audio",
+      "provider": "wikimedia-commons",
+      "source_label": "Wikimedia Commons",
+      "is_shared_import": false
+    },
+    {
+      "spoken_text_by_segment": {
+        "commons-zh-lesson-1-dialogue-2:000": "他们是谁？",
+        "commons-zh-lesson-1-dialogue-2:001": "她是艾美，她是中国人。他是东尼，他是美国人。",
+        "commons-zh-lesson-1-dialogue-2:002": "你也是美国人吗？",
+        "commons-zh-lesson-1-dialogue-2:003": "不是，我是英国人。你呢？你是哪国人？",
+        "commons-zh-lesson-1-dialogue-2:004": "我是法国人。"
+      },
+      "lesson_id": "zh-culture-where-are-you-from",
+      "media_object_id": "commons-zh-lesson-1-dialogue-2",
+      "title": "你是哪国人？",
+      "description": "练习询问和回答国籍，然后接着跟读。",
+      "language": "zh",
+      "topic": "culture",
+      "subtopics": [
+        "conversations",
+        "social-life"
+      ],
+      "level": "HSK2",
+      "estimated_level": "HSK2",
+      "reviewed_level": "HSK2",
+      "level_source": "editorial-review",
+      "level_evidence": {
+        "vocabulary_band": "hsk-basic",
+        "sentence_complexity": "question-answer-sequence",
+        "speech_speed": "natural",
+        "review_note": "Short nationality question-and-answer sequence with 也, 吗, and 呢."
+      },
+      "duration_ms": 11101,
+      "excerpt_start_ms": 10018,
+      "excerpt_end_ms": 21119,
+      "available_modes": [
+        "listen",
+        "active",
+        "dictation"
+      ],
+      "content_tags": [
+        "conversation",
+        "culture",
+        "social-life"
+      ],
+      "vocabulary": [
+        "英国人",
+        "法国人",
+        "哪国人"
+      ],
+      "speech_speed": "natural",
+      "artwork": "culture",
+      "poster_url": "",
+      "playback_kind": "audio",
+      "content_type": "culture",
+      "published_state": "published",
+      "curation_state": "reviewed",
+      "is_development_candidate": false,
+      "source": {
+        "source_media_id": "commons-zh-lesson-1-dialogue-2",
+        "provider": "wikimedia-commons",
+        "type": "licensed-audio",
+        "title": "Chinese lesson 1 dialogue 2",
+        "creator": "Deranged physicist / English Wikibooks",
+        "source_url": "https://commons.wikimedia.org/wiki/File:Chinese-Lesson1-Dialogue2.ogg",
+        "provenance_url": "https://commons.wikimedia.org/wiki/File:Chinese-Lesson1-Dialogue2.ogg",
+        "license": "CC BY-SA 3.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/3.0/",
+        "allowed_usage_type": "creative-commons-attribution-sharealike",
+        "rights_review_status": "verified"
+      },
+      "thumbnail_url": "",
+      "media_type": "audio",
+      "provider": "wikimedia-commons",
+      "source_label": "Wikimedia Commons",
+      "is_shared_import": false
+    }
+  ],
+  "sections": [
+    {
+      "id": "recommended",
+      "item_ids": [
+        "zh-technology-search-wikipedia",
+        "zh-culture-nationalities",
+        "zh-culture-where-are-you-from"
+      ]
+    },
+    {
+      "id": "quick-practice",
+      "item_ids": [
+        "zh-technology-search-wikipedia",
+        "zh-culture-nationalities",
+        "zh-culture-where-are-you-from"
+      ]
+    },
+    {
+      "id": "daily-conversations",
+      "item_ids": [
+        "zh-culture-nationalities",
+        "zh-culture-where-are-you-from",
+        "zh-daily-what-is-this"
+      ]
+    }
+  ],
+  "topics": [
+    "conversations",
+    "culture",
+    "technology"
+  ],
+  "tags": [
+    "conversation",
+    "culture",
+    "daily-life"
+  ],
+  "filters": {
+    "language": "zh",
+    "levels": [
+      "HSK1",
+      "HSK2",
+      "HSK4"
+    ],
+    "topics": [
+      "conversations",
+      "culture",
+      "technology"
+    ],
+    "tags": [
+      "conversation",
+      "culture",
+      "daily-life"
+    ],
+    "practice_modes": [
+      "active",
+      "dictation",
+      "listen"
+    ],
+    "media_types": [
+      "audio",
+      "video"
+    ],
+    "sources": [
+      "wikimedia-commons"
+    ]
+  },
+  "personalization": "deterministic-curation"
+}

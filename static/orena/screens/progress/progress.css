@@ -1,0 +1,334 @@
+/* Progress (17-Progress.html). Progress is one of the four hub places that keep the rail/tab bar
+   (Design Contract rule 47) and its route is not `focus` (shell/routes.js) - a normal scrolling
+   hub page, not a viewport-bound workspace (rule 49 does not apply here). Colours are tokens only;
+   device differences are the shell's own `--pad`/`--h1`/`--ls-cols`/`--cols-ip` (kit/device.css),
+   never a width media query. */
+.s-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding-top: 22px;
+}
+.s-progress-back {
+  align-self: flex-start;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 12px 0 8px;
+  border-radius: 12px;
+  border: 0;
+  background: var(--surface);
+  box-shadow: var(--sh1);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* ---- Tab panel wrapper ---- */
+.s-progress-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ---- Overview: hero (range picker). The frame's time readout and 7-day bar chart have no real
+   source anywhere in this codebase (no domain tracks minutes or a streak - see model.js's doc
+   comment) and are dropped for an honest note (rule 40's "or an honest empty state") rather than
+   a fabricated "0 hr 0 min" and seven zero-height bars; the range control itself is real and still
+   changes the Skills card below via GET /api/learner-summary. */
+.s-progress-hero {
+  border-radius: 24px;
+  background: var(--accent-fill); /* D-093: white ink never sits on --accent; the frame's own binding is --accent */
+  color: var(--accent-ink);
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.s-progress-hero .c-seg {
+  align-self: stretch;
+  max-width: 420px;
+}
+.s-progress-hero .o-muted {
+  color: var(--accent-ink);
+  opacity: 0.85;
+}
+
+/* ---- Overview: two-column grids (device: --ls-cols) ---- */
+.s-progress-grid2 {
+  display: grid;
+  grid-template-columns: var(--ls-cols);
+  gap: 20px;
+}
+.s-progress-story {
+  padding: 26px;
+  border-radius: 24px;
+  background: var(--tint2);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.s-progress-story__eyebrow {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent-text);
+}
+.s-progress-story__headline {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+.s-progress-story__empty {
+  font-size: 15px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+.s-progress-story__stats {
+  display: flex;
+  gap: 22px;
+  flex-wrap: wrap;
+  font-size: 14px;
+  color: var(--muted);
+}
+.s-progress-story__stats b {
+  font-size: 22px;
+  color: var(--text);
+}
+
+.s-progress-card {
+  padding: 22px;
+  border-radius: 24px;
+  background: var(--surface);
+  box-shadow: var(--sh1);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.s-progress-card__title {
+  font-size: 15px;
+  font-weight: 600;
+}
+.s-progress-card__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.s-progress-card__link {
+  border: 0;
+  background: none;
+  color: var(--accent-text);
+  font-size: 13px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Skills rows */
+.s-progress-skill {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border: 0;
+  background: none;
+  padding: 8px 0;
+  color: var(--text);
+  text-align: left;
+  width: 100%;
+}
+.s-progress-skill__label {
+  width: 92px;
+  font-size: 14px;
+  font-weight: 600;
+  flex: none;
+}
+.s-progress-skill__track {
+  flex: 1;
+}
+.s-progress-skill__delta {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  width: 38px;
+  text-align: right;
+}
+
+/* Knowing -> Using mini bars (Overview inline card) */
+.s-progress-ku-mini {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  height: 90px;
+}
+.s-progress-ku-mini__col {
+  flex: 1;
+  border: 0;
+  background: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  height: 100%;
+  justify-content: flex-end;
+  color: var(--text);
+}
+.s-progress-ku-mini__bar {
+  width: 100%;
+  border-radius: 8px 8px 3px 3px;
+  min-height: 8px;
+}
+.s-progress-ku-mini__label {
+  font-size: 12px;
+  color: var(--muted);
+  text-align: center;
+  line-height: 1.2;
+}
+
+/* Knowing -> Using full tab */
+.s-progress-ku-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.s-progress-ku-badge {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 17px;
+  color: var(--accent-ink);
+}
+.s-progress-ku-footer {
+  font-size: 13px;
+  color: var(--muted);
+  padding: 8px 2px;
+}
+
+/* Evidence tab */
+.s-progress-filters {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.s-progress-filter {
+  padding: 9px 14px;
+}
+.s-progress-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.s-progress-ev__lead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.s-progress-ev__date {
+  width: 64px;
+  flex: none;
+  font-size: 13px;
+  color: var(--muted);
+}
+.s-progress-ev__result {
+  font-size: 13px;
+  font-weight: 600;
+  flex: none;
+}
+
+/* Rank tab */
+.s-progress-rank {
+  padding: 28px;
+  border-radius: 24px;
+  background: var(--surface);
+  box-shadow: var(--sh1);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  align-items: flex-start;
+}
+.s-progress-rank__badge {
+  width: 72px;
+  height: 72px;
+  border-radius: 24px;
+  background: var(--ai);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--accent-ink);
+}
+.s-progress-rank__name {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.s-progress-rank__sub {
+  font-size: 14px;
+  color: var(--muted);
+}
+.s-progress-rank__bar {
+  width: 100%;
+  height: 10px;
+  border-radius: 99px;
+  background: var(--surface2);
+  overflow: hidden;
+}
+.s-progress-rank__bar > span {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  background: var(--accent);
+}
+.s-progress-rank__note {
+  font-size: 13.5px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.s-progress-milestones {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* History tab */
+.s-progress-history {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+.s-progress-history__day {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.s-progress-history__items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.s-progress-hi__lead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.s-progress-hi__time {
+  font-family: 'JetBrains Mono', monospace;
+  width: 46px;
+  font-size: 13px;
+  color: var(--muted);
+  flex: none;
+}
+
+/* Empty-state cards inside a tab (rule 40: honest, not invented) */
+.s-progress-card > .o-empty {
+  margin: 0;
+}

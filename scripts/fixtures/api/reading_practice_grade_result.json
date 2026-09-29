@@ -1,0 +1,11 @@
+{
+  "_note": "Built from the serializer, not captured (see reading_practice_article_set_approved.json's own note - the same sandbox has no approved set to grade a real question from). Field-for-field from writing_coach/persistence/reading_evidence_repository.py's grade_question(), the POST /api/reading/practice/sets/{setId}/questions/{questionId}/grade response `result` object (also the exact per-answer shape _results() builds for POST /attempts). evidence_fragment is the question's stored evidence_text: words copied exactly from the article body (reading_evidence_repository.py verifies body[evidence_start:evidence_end] == evidence_text), so it carries no quotation marks of its own, and it is '' for a main_idea / authors_purpose question that has none.",
+  "result": {
+    "question_id": "q1-main-idea",
+    "selected_index": 0,
+    "correct": true,
+    "correct_index": 0,
+    "explanation": "The story ends with the fox deciding the grapes were sour and not worth having, so she leaves without regret.",
+    "evidence_fragment": "The grapes are sour, and not ripe as I thought."
+  }
+}

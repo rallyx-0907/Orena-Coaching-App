@@ -98,9 +98,18 @@ const PAIRS = [
   ['muted', 'bg'], ['muted', 'surface'], ['muted', 'surface2'],
   ['text3', 'bg'], ['text3', 'surface'], ['text3', 'surface2'],
   ['accent', 'bg'], ['accent', 'surface'], ['accent', 'accent-soft'], ['accent-text', 'accent-soft'], ['accent-text', 'surface'],
-  ['accent-ink', 'accent-fill'], ['accent-ink', 'accent-fill-hover'], ['accent-ink', 'accent-fill-press'], ['badge-ink', 'red'],
+  ['accent-ink', 'accent-fill'], ['accent-ink', 'accent-fill-hover'], ['accent-ink', 'accent-fill-press'],
+  // kit.css's .o-banner__glyph (every kind: ok/info/warn/err) reads --badge-ink against its own
+  // kind's solid fill, not --accent-ink (D-091 kit fidelity pass - white ink fails AA against all
+  // four in dark theme; --badge-ink is the same fix grammar-concept.css already used for its own
+  // mistake/quiz glyphs).
+  ['badge-ink', 'red'], ['badge-ink', 'green'], ['badge-ink', 'amber'], ['badge-ink', 'accent-text'],
   ['green', 'green-soft'], ['red', 'red-soft'], ['amber', 'amber-soft'], ['ai-ink', 'ai-soft'],
   ['green', 'surface'], ['red', 'surface'], ['amber', 'surface'],
+  // heroMedia()'s overlay text/pill (components.css .c-hero__content/.c-hero__pill) and the toast
+  // both draw white ink on this fixed-dark, theme-independent pairing (D-093 AA fix: the hero's
+  // own `background-color` fallback used to be the themed --surface2, near-white in light theme).
+  ['toast-ink', 'toast-bg'],
 ];
 const measured = [];
 for (const theme of ['dark', 'light']) {
@@ -144,6 +153,11 @@ for (const file of files) {
       if (/background:\s*var\(--accent\)\s*;/.test(rule) && /(^|[^-])color:\s*var\(--(accent-ink|badge-ink)\)/.test(rule)) {
         assert.fail(`${file}: white ink on --accent - use --accent-fill (D-093)`);
       }
+      // Nor on a solid semantic fill: white on --red/--green/--amber fails AA in the dark theme,
+      // where --badge-ink is the ink the pairs above hold to AA.
+      if (/background:\s*var\(--(red|green|amber)\)\s*;/.test(rule) && /(^|[^-])color:\s*var\(--accent-ink\)/.test(rule)) {
+        assert.fail(`${file}: white ink on a solid --red/--green/--amber fill - use --badge-ink`);
+      }
     }
   }
   // 6. The new UI does not import the old UI.
@@ -163,5 +177,19 @@ assert.equal(String(html`<p>${'<b>&"'}</p>`), '<p>&lt;b&gt;&amp;&quot;</p>');
 assert.equal(String(html`<p>${raw('<b>x</b>')}</p>`), '<p><b>x</b></p>');
 assert.equal(String(html`<ul>${['<a>', html`<li>ok</li>`]}</ul>`), '<ul>&lt;a&gt;<li>ok</li></ul>');
 assert.equal(String(html`${null}${false}${undefined}${0}`), '0');
+
+// 8. Two verify-fix regressions (kit group, languages-1/languages-2):
+const componentsCss = fs.readFileSync(path.join(ROOT, 'kit/components.css'), 'utf8');
+assert.match(
+  block(componentsCss, '.c-hero {'),
+  /background-color:\s*var\(--toast-bg\)/,
+  '.c-hero: no-image fallback stays the fixed-dark --toast-bg, not a themed surface (D-093 AA - white overlay text must hold contrast with no cover photo)',
+);
+const kitCss = fs.readFileSync(path.join(ROOT, 'kit/kit.css'), 'utf8');
+assert.match(
+  block(kitCss, '.o-chip {'),
+  /flex-shrink:\s*0/,
+  '.o-chip: never shrinks below its label (its row scrolls or wraps instead) - a shrunk chip clips its own text',
+);
 
 console.log(`Orena kit: tokens and device variables are the pinned design's, AA holds in both themes (${measured.length} pairs; D-093 adjustments), icons are lucide-static@${release}, one colour owner, no old UI imported: PASS`);

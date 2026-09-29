@@ -78,6 +78,7 @@ NAMES = sorted(
         "panels-top-left",
         "pause",
         "pen-line",
+        "pencil",
         "play",
         "puzzle",
         "quote",

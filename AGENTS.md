@@ -313,9 +313,11 @@ resolve them.
   Kept-language provenance, conversations, drafts and continuation are device
   memory *by design*, not by omission.
 - **Native mobile** — frozen (§5).
-- **Platform Admin** — its APIs and `static/admin.js` survive but are inert
-  since the historical shell was removed. Preserve it; do not restore the old
-  shell to give it a host.
+- **Platform Admin** — the admin console was merged into `codex/work` by PR #63
+  (D-085) and runs at `/#/admin` in the old UI. At the cutover it keeps running
+  at an address of its own until the Admin wave, built on the pinned
+  `Orena Admin.dc.html`, replaces it, so the cutover does not wait for Admin
+  (D-099). Its APIs and `static/admin.js` are preserved.
 - **Reading library breadth** — the contract, rights fields and admission gate
   exist. Adding a text is a rights decision per text, not an implementation
   task.

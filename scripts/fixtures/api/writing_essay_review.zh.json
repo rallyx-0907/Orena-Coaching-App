@@ -1,0 +1,46 @@
+{
+  "draftId": "1",
+  "version": 1,
+  "wordCount": 40,
+  "summary": "Bài viết rõ ràng, dùng đúng nhiều mẫu câu cơ bản; cần chú ý trật tự các hành động nối tiếp nhau.",
+  "strengths": "Bạn kể được các hoạt động trong ngày một cách mạch lạc.",
+  "issues": [
+    {
+      "id": "issue-a7e56225dfd10ec4",
+      "fragment": "做完了在回家",
+      "correction": "做完了再回家",
+      "why": "Để nói làm xong việc này rồi mới làm việc kia, cần dùng liên từ chỉ trình tự, không dùng giới từ chỉ nơi chốn.",
+      "rule": "Làm xong việc thứ nhất rồi mới làm việc thứ hai: dùng từ chỉ trình tự nối hai hành động.",
+      "grammarRef": "zh-hsk4-5-topic-106",
+      "examples": [
+        "吃完饭再去看电影。"
+      ],
+      "kind": "grammar",
+      "anchored": true,
+      "span": {
+        "start": 38,
+        "end": 44
+      }
+    }
+  ],
+  "dimensions": [
+    {
+      "name": "naturalness",
+      "value": 57.0
+    },
+    {
+      "name": "grammar",
+      "value": 58.0
+    },
+    {
+      "name": "vocabulary",
+      "value": 60.0
+    },
+    {
+      "name": "coherence",
+      "value": 65.0
+    }
+  ],
+  "id": 1,
+  "parentId": null
+}

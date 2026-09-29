@@ -117,8 +117,8 @@
         "web_is_visual_source_of_truth": {"const": true},
         "native_strategy": {"const": "full_native_port"},
         "native_may_redesign_product": {"const": false},
-        "visual_authority": {"const": "canonical_ui_baseline_d066"},
-        "themes": {"type": "array", "minItems": 1, "maxItems": 1, "items": {"const": "dark_glass"}}
+        "visual_authority": {"const": "canonical_ui_design_d088"},
+        "themes": {"type": "array", "minItems": 2, "maxItems": 2, "uniqueItems": true, "items": {"enum": ["light", "dark"]}}
       }
     },
     "languages": {

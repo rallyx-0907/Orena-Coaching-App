@@ -181,8 +181,9 @@ the design project `e6dc1cb2-72d0-40b4-a916-5dcd47e17cc0` in Claude Design,
 ## The design's visual rules (D-088, D-089)
 
 30. **One system, two themes.** The design's light and dark token sets, both
-    shipped, following the operating system (D-089); the Reader's light/dark
-    button is the one in-product switch and is a device preference. Colour
+    shipped, following the operating system by default (D-089). The learner can
+    choose Light, Dark or System in Settings (D-097), and the Reader's light/dark
+    button sets the same device preference. Colour
     values live only in the new UI's token file (`static/orena/kit/tokens.css`;
     the old `theme.css` serves only the old UI until the cutover, D-091), taken
     from the design exactly except the AA adjustments of D-093; no component

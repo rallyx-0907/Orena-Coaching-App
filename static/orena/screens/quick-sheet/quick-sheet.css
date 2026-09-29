@@ -1,0 +1,386 @@
+/* Word Quick Sheet (frame 53) and Sentence Quick Sheet (frame 57), E5 §3/§4. The sheet shell
+   itself (`.o-sheet`, the right-docked 440px desk panel / bottom sheet on a phone) is
+   `kit/kit.css`'s; only this overlay's own head/body content is styled here. Every measurement
+   below is fixed px on both devices per the source (E5: "none of them reference var(--pad) or any
+   other device var; only the four --sheet-* vars change") - no width media query, per rule 49/50's
+   device-variable convention. Colours are tokens only. */
+
+.s-qs__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 22px 24px 0;
+  flex: none;
+}
+.s-qs__label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.s-qs__body {
+  flex: 1;
+  overflow: auto;
+  padding: 14px 24px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* ---- Word row (both branches) ---- */
+.s-qs__row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.s-qs__word {
+  font-size: 32px;
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.s-qs__meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+.s-qs__ipa {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--muted);
+}
+.s-qs__chip {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 6px;
+  background: var(--surface2);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+/* The level chip (real CEFR level, saved words only) is a distinct, higher-contrast ink from the
+   POS chip it shares a box with - measured live against the pinned design (E5 §3.2). */
+.s-qs__chip--level {
+  color: var(--text);
+}
+.s-qs__icons {
+  display: flex;
+  gap: 8px;
+  flex: none;
+}
+.s-qs__iconbtn {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  border: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+.s-qs__iconbtn[data-play] {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+/* ---- Meaning card (both branches) ---- */
+.s-qs__card {
+  border-radius: 16px;
+  background: var(--surface2);
+  padding: 14px 16px;
+}
+.s-qs__meaning {
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+/* ---- Example (content branch, only when the explanation actually has one) ---- */
+.s-qs__example {
+  font-family: Literata, 'Noto Serif SC', Georgia, serif;
+  font-size: 17px;
+  line-height: 1.7;
+  color: var(--muted);
+}
+/* The frame's own literal here is `rgba(242,183,5,.25)` - an amber highlight tint with no token of
+   its own (Design Contract: colours only via kit/tokens.css, which is not this screen's file to
+   edit). `--amber-soft` is the nearest existing semantic token for a soft amber tint; recorded as a
+   kit request (a purpose-named "matched-text highlight" token) rather than a literal. */
+.s-qs__example mark {
+  background: var(--amber-soft);
+  color: inherit;
+  font-weight: 600;
+  border-radius: 3px;
+}
+
+/* ---- Stroke order block (zh, content branch only) ---- */
+.s-qs__eyebrow {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.s-qs__stroke .o-btn--sm {
+  height: 38px;
+  padding: 0 14px;
+  border-radius: 12px;
+  font-size: 13.5px;
+}
+
+/* ---- Mastery row (content branch, only with a real schedule) ---- */
+.s-qs__mastery {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+.s-qs__stage {
+  font-size: 14px;
+  font-weight: 600;
+}
+.s-qs__due {
+  font-size: 13px;
+  color: var(--text3);
+  margin-left: auto;
+}
+
+/* ---- Fallback branch: no prepared gloss ---- */
+.s-qs__card .s-qs__meaning {
+  color: var(--text);
+}
+.s-qs__source-text {
+  font-family: Literata, 'Noto Serif SC', Georgia, serif;
+  font-size: 15.5px;
+  line-height: 1.55;
+}
+.s-qs__notice {
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 13.5px;
+  color: var(--muted);
+}
+
+/* ---- Bottom actions (both branches / both sheets) ---- */
+.s-qs__actions {
+  display: flex;
+  gap: 10px;
+}
+.s-qs__grow {
+  flex: 1;
+}
+.o-btn.s-qs__grow {
+  padding: 14px;
+  border-radius: 16px;
+  font-size: 14.5px;
+}
+.s-qs__ask {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid var(--ai-line);
+  background: var(--ai-soft);
+  color: var(--ai-ink);
+  font-size: 14.5px;
+  font-weight: 600;
+}
+.s-qs__why {
+  width: 100%;
+  text-align: left;
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid var(--border2);
+  background: transparent;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--text);
+}
+.s-qs__why-text {
+  font-weight: 400;
+  color: var(--muted);
+}
+.s-qs__detail {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: 0;
+  padding: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent-text);
+  align-self: flex-start;
+}
+
+/* ---- Sentence Quick Sheet ---- */
+.s-qs__sentence {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+.s-qs__tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.s-qs__tab {
+  padding: 9px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--muted);
+}
+.s-qs__tab.is-active {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--tint2);
+}
+.s-qs__panel {
+  padding: 18px;
+  border-radius: 16px;
+  background: var(--surface2);
+  font-size: 16px;
+  line-height: 1.55;
+}
+.s-qs__structure-row {
+  font-size: 15px;
+  line-height: 1.55;
+}
+.s-qs__structure-row + .s-qs__structure-row {
+  margin-top: 6px;
+}
+
+.s-qs__vocab-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.s-qs__vocab {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: var(--sh1);
+}
+.s-qs__vocab-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.s-qs__vocab-term {
+  font-size: 16px;
+  font-weight: 700;
+}
+.s-qs__vocab-meaning {
+  font-size: 14px;
+  color: var(--muted);
+}
+.s-qs__vocab-save {
+  flex: none;
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border2);
+  background: var(--surface2);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+}
+.s-qs__vocab-save.is-saved {
+  background: var(--green-soft);
+  border-color: var(--green-soft);
+  color: var(--green);
+}
+.s-qs__empty {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.s-qs__panel--note {
+  background: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.s-qs__notechips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.s-qs__notechip {
+  padding: 9px 13px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--muted);
+}
+.s-qs__notechip.is-active {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--tint2);
+}
+.s-qs__textarea {
+  width: 100%;
+  resize: none;
+  border-radius: 14px;
+  border: 1.5px solid transparent;
+  background: var(--surface2);
+  font-size: 15px;
+  line-height: 1.5;
+  padding: 14px;
+  color: var(--text);
+  font-family: inherit;
+}
+.s-qs__textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--ring);
+}
+.s-qs__notes {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.s-qs__note {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--surface2);
+  font-size: 14px;
+  line-height: 1.45;
+}
+.s-qs__note-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.s-qs__note-type {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.s-qs__note-del {
+  border: 0;
+  background: none;
+  color: var(--muted);
+  padding: 2px;
+  display: flex;
+  flex: none;
+}

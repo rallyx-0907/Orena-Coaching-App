@@ -1,0 +1,17 @@
+{
+  "entries": [],
+  "kindTotals": {},
+  "domainTotals": {},
+  "nextCursor": null,
+  "completeness": "complete",
+  "unavailableOwners": [],
+  "truncatedOwners": [],
+  "snapshotVersion": "4313859034b26bd87bd38b7662c8cc0a",
+  "total": 0,
+  "totalKind": "exact",
+  "searchedFields": [
+    "title",
+    "snippet"
+  ],
+  "learningLanguage": "en"
+}

@@ -1,0 +1,38 @@
+{
+  "summary": {
+    "total": 3013,
+    "saved": 3013,
+    "due": 1,
+    "due_next_day": 12,
+    "learning": 13,
+    "mastered": 3000,
+    "available": 3000
+  },
+  "ladder": [
+    {
+      "tier": 1,
+      "name": "Initiate",
+      "band": "Amethyst",
+      "words": 50
+    },
+    {
+      "tier": 2,
+      "name": "Apprentice",
+      "band": "Amethyst",
+      "words": 150
+    },
+    {
+      "tier": 3,
+      "name": "Scribe",
+      "band": "Amethyst",
+      "words": 300
+    }
+  ],
+  "rank": 11,
+  "rank_total": 32,
+  "rank_name": "Luminary",
+  "band": "Orchid",
+  "next_rank_name": "Oracle",
+  "next_rank_words": 4500,
+  "next_rank_remaining": 1500
+}

@@ -1,0 +1,172 @@
+/* Content Detail (design route `detail`, frame 05). Not a learning workspace (rule 49 does not
+   apply): a browse/preview surface that hands off to the Reader/Listening workspace to actually
+   consume the content. `.o-main` already supplies the outer gutter (var(--pad)); this file only
+   holds what the frame draws inside it. Colours are tokens only. */
+
+.s-content {
+  padding-top: 16px;
+}
+
+.s-content__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 0;
+}
+.s-content__back:hover {
+  color: var(--text);
+}
+
+.s-content > .c-hero {
+  margin-top: 10px;
+}
+
+.s-content__grid {
+  display: grid;
+  grid-template-columns: var(--ls-cols);
+  gap: 24px;
+  margin-top: 20px;
+}
+.s-content__grid--full {
+  grid-template-columns: 1fr;
+}
+
+.s-content__main {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  min-width: 0;
+}
+
+.s-content__progress-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  color: var(--muted);
+}
+.s-content__bar {
+  height: 6px;
+  border-radius: 99px;
+  background: var(--surface2);
+  margin-top: 6px;
+  overflow: hidden;
+}
+.s-content__bar > span {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  background: var(--accent);
+}
+
+.s-content__actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+/* The three action-button geometries this frame draws (48px tall, 14px radius) - a real,
+   measured size distinct from the 44px/16px-radius `.o-btn` default (D2 §7: three accent-button
+   sizes exist by design), so this screen carries its own sizing rather than editing kit/kit.css. */
+.s-content__primary,
+.s-content__ai,
+.s-content__secondary {
+  height: 48px;
+  padding: 0 22px;
+  border-radius: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: background 0.15s, transform 0.15s;
+}
+.s-content__primary {
+  flex: 1;
+  min-width: 180px;
+  font-size: 16px;
+  font-weight: 600;
+}
+.s-content__ai,
+.s-content__secondary {
+  font-size: 15px;
+  font-weight: 600;
+}
+.s-content__ai {
+  border: 1px solid var(--ai-line);
+  background: var(--ai-soft);
+  color: var(--ai-ink);
+}
+.s-content__secondary {
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--text);
+}
+.s-content__secondary:hover {
+  background: var(--surface2);
+}
+
+.s-content__desc {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--text);
+}
+
+.s-content__transcript {
+  padding: 20px;
+}
+.s-content__transcript-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.s-content__transcript-head > span:first-child {
+  font-size: 15px;
+  font-weight: 600;
+}
+.s-content__transcript-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.s-content__seg {
+  display: flex;
+  gap: 14px;
+  font-size: 14.5px;
+  line-height: 1.5;
+}
+.s-content__seg-time {
+  flex: none;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--accent-text);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+.s-content__seg-text {
+  color: var(--muted);
+}
+
+.s-content__side {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+.s-content__side-head {
+  font-size: 15px;
+  font-weight: 600;
+}
+/* Related row title: the shared `.c-row__title` (kit/components.css) is 15px; this frame's own
+   Related row (05-Content-Detail.html line 29) draws it at 14.5px. A shared-primitive size this
+   screen doesn't own - closed locally per the brief's §2 kit-request path rather than editing
+   kit/components.css, which other surfaces also read at 15px. Review P2, confirmed against the
+   frame's own inline style. */
+.s-content__side .c-row__title {
+  font-size: 14.5px;
+}

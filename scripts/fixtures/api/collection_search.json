@@ -1,0 +1,47 @@
+{
+  "entries": [
+    {
+      "ref": {
+        "domain": "language",
+        "id": "health"
+      },
+      "kind": "language",
+      "title": "health",
+      "snippet": "",
+      "learningLanguage": "en",
+      "relationship": "saved",
+      "availability": "available",
+      "durability": "account",
+      "updatedAt": "2026-09-27T23:40:03+00:00",
+      "action": {
+        "kind": "review_language",
+        "route": "#/language"
+      },
+      "detail": {
+        "sourceKind": "dictionary",
+        "successfulRecalls": 0,
+        "lastReviewedAt": "",
+        "nextReviewAt": "2026-09-27T23:40:03+00:00",
+        "sourceFragment": ""
+      }
+    }
+  ],
+  "kindTotals": {
+    "language": 1
+  },
+  "domainTotals": {
+    "language": 1
+  },
+  "nextCursor": null,
+  "completeness": "complete",
+  "unavailableOwners": [],
+  "truncatedOwners": [],
+  "snapshotVersion": "886d59d5412a1706b503dc4328f9612d",
+  "total": 1,
+  "totalKind": "exact",
+  "searchedFields": [
+    "title",
+    "snippet"
+  ],
+  "learningLanguage": "en"
+}

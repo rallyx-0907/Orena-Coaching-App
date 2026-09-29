@@ -10,14 +10,15 @@ import fs from 'node:fs';
 const PIN = fs.readFileSync('docs/design/canonical-ui/screens/Orena.dc.html', 'utf8');
 const script = PIN.slice(PIN.lastIndexOf('</x-dc>'));
 
-const { ROUTES, PRIMARY, match, href, byId } = await import('../static/orena/shell/routes.js');
+const { ROUTES, PRIMARY, entryRoute, match, href, byId } = await import('../static/orena/shell/routes.js');
 
 // 1. Focus routes are exactly the design's focus list (applyBody).
 const focusList = JSON.parse(script.match(/b\.dataset\.focus=(\[[^\]]+\])\.includes/)[1]);
 // The design's "grammar" (one fixed concept) and "gconcept" (any concept) are one screen here.
 const ALIASES = { grammar: 'gconcept' };
 const designFocus = new Set(focusList.map((key) => ALIASES[key] || key));
-const ourFocus = new Set(ROUTES.filter((route) => route.focus).map((route) => route.design));
+// Onboarding (bare) comes from Onboarding.dc.html, not from Orena.dc.html's focus list.
+const ourFocus = new Set(ROUTES.filter((route) => route.focus && !route.bare).map((route) => route.design));
 assert.deepEqual([...ourFocus].sort(), [...designFocus].sort(), 'learning workspaces are the design focus list');
 for (const route of ROUTES.filter((r) => !r.focus)) assert.ok(!designFocus.has(route.design), `${route.id} keeps the shell, as the design does`);
 
@@ -38,6 +39,7 @@ const ROUTE_OF_FLAG = {
   Mock: 'mock', Sound: 'sound', ErrFix: 'errfix', Coming: 'coming',
 };
 const designKeys = new Set(ROUTES.map((route) => route.design));
+assert.ok(ROUTES.every((route) => !route.bare || route.design === 'onboarding'), 'only onboarding is drawn without a shell');
 for (const flag of designRoutes) {
   assert.ok(flag in ROUTE_OF_FLAG, `design screen flag is${flag} is mapped`);
   assert.ok(designKeys.has(ROUTE_OF_FLAG[flag]), `design screen ${flag} has a route`);
@@ -67,7 +69,26 @@ for (const route of ROUTES) {
 }
 assert.equal(match('#/').route.id, 'today', 'the empty address is Today');
 assert.equal(match('#/no-such-place'), null, 'an unknown address is refused');
+/* The entry (D-098): Welcome only when the server says there is no profile, or no learning language. */
+assert.equal(entryRoute({ profile: { exists: false }, activeLanguage: 'en' }), 'welcome', 'no profile: Welcome');
+assert.equal(entryRoute({ profile: { exists: true, language: '' }, activeLanguage: '' }), 'welcome', 'no learning language: Welcome');
+assert.equal(entryRoute({ profile: { exists: true, language: 'zh', declared_level: '' }, activeLanguage: 'zh' }), 'today', 'a level the backend cannot store is not asked for');
+assert.equal(entryRoute({ profile: { exists: true, language: '' }, activeLanguage: 'en' }), 'today', 'the session names the learning language');
+assert.equal(entryRoute({ profile: null, activeLanguage: 'en' }), 'today', 'an unreadable profile is not a missing one');
+assert.equal(entryRoute(), 'today');
+assert.equal(byId(entryRoute({ profile: { exists: false } })).bare, true, 'Welcome is the bare onboarding route');
 assert.equal(byId('reader').focus, true);
+
+/* The implementation map names each screen's route; it must name the one the router serves, or a
+   later design revision is applied to the wrong address (a drift found 2026-09-29). */
+{
+  const map = fs.readFileSync('docs/design/canonical-ui/IMPLEMENTATION_MAP.md', 'utf8');
+  const screens = map.slice(map.indexOf('## Screens'), map.indexOf('## Retired by the cutover'));
+  const paths = new Set(ROUTES.map((route) => `#/${route.path}`));
+  const named = [...screens.matchAll(/^\|[^|]*\|[^|]*\|\s*(`#\/[^|]*)\|/gm)].flatMap((m) => [...m[1].matchAll(/`(#\/[^`?]+)[^`]*`/g)].map((x) => x[1]));
+  assert.ok(named.length >= 45, `the map's screen table names its routes (${named.length})`);
+  for (const address of named) assert.ok(paths.has(address), `IMPLEMENTATION_MAP names ${address}, which shell/routes.js does not serve`);
+}
 
 // 6. Agent intents are the contract's (AGENT_CONTRACT §6.1), each used once.
 const contract = fs.readFileSync('docs/project/AGENT_CONTRACT.md', 'utf8');

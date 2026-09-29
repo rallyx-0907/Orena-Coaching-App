@@ -10,7 +10,7 @@ import { esc, safeExternal, dialog, status, focusRegion, focusWork } from './htm
 import { openUnderstanding, selectionWithin } from './understanding.js';
 import { mountReader } from './reader.js';
 import { discussionSection, discussionSource, mountDiscussion } from './discussion.js';
-import { mountLexicalLayer } from './lexical.js';
+import { mountLexicalLayer } from '../capabilities/lexical.js';
 import { icon } from './phosphor.js';
 import { refCopy } from './reference.js';
 import { publishedReading } from '../content/reading-library.js';
@@ -52,6 +52,7 @@ import { dictationHintView, dictationResult, HINT_LEVELS, readingsFor, readingLi
 import { screenHtml, shapeHtml, hintLevelHtml, resultHtml } from './dictation-screen.js';
 import { openLineSheet } from './line-sheet.js';
 import { symbol } from './symbols.js';
+import { readStage, writeStage } from '../product/transcript-stage.js';
 
 /* How to read the follow panel - the words of the line being spoken, the
    meaning of every line - as two small switches on its title row. Each is a
@@ -914,15 +915,6 @@ export async function renderEncounter(root, ctx) {
      said, and whether the words carry their class as colour. They are learner
      preferences, kept the way the reader keeps its own (one key, try/catch),
      rather than a new place to store three booleans. */
-  const STAGE_KEY = 'orena.stage';
-  const readStage = () => {
-    try {
-      const raw = JSON.parse(localStorage.getItem(STAGE_KEY) || 'null');
-      return raw && typeof raw === 'object' ? raw : {};
-    } catch {
-      return {};
-    }
-  };
   const savedStage = readStage();
   const stage = {
     meaning: savedStage.meaning !== false,
@@ -932,13 +924,7 @@ export async function renderEncounter(root, ctx) {
     autoscroll: savedStage.autoscroll !== false,
   };
   const showPinyin = () => language === 'zh' && stage.pinyin && ctx.profile.pinyin !== 'off';
-  const keepStage = () => {
-    try {
-      localStorage.setItem(STAGE_KEY, JSON.stringify(stage));
-    } catch {
-      // A device that cannot keep the preference still honours it this visit.
-    }
-  };
+  const keepStage = () => writeStage(stage);
   /* Whether a line's meaning and its reading are shown is a property of the
      panel, not of a row: every row has both slots, and the panel says which of
      them count. That is what makes a change of current line free of geometry -

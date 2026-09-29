@@ -10,7 +10,7 @@
    shown; it is never offered "apply", which would replace the wrong words. */
 import { esc } from './html.js';
 import { icon } from './phosphor.js';
-import { applyRevision, revisionTarget } from '../product/revision.js';
+import { applyFix } from '../product/revision.js';
 import { markedHtml } from './draft-marks.js';
 
 // The four dimensions the baseline draws, in its order. The evaluator scores a
@@ -151,17 +151,10 @@ export function writingReviewWaiting(c) {
   return `<div class="review-waiting"><small>${esc(c.review)}</small><p>${esc(c.reviewWaiting)}</p></div>`;
 }
 
-/* Where an applied fix goes. The words must be in the draft exactly once - a
-   repeated quotation leaves the learner to choose - and the result must fit the
-   writing limit; otherwise nothing is replaced and the finding stays guidance.
-   The rule is the shared one (`product/revision.js`), not a second copy of it. */
-export function applyFix(text, issue) {
-  const target = revisionTarget(text, issue.fragment);
-  const changed = target ? applyRevision(text, issue.fragment, issue.correction || '') : null;
-  if (changed === null) return null;
-  const replacement = issue.correction.trim();
-  return { text: changed, start: target.start, end: target.start + replacement.length };
-}
+/* `applyFix` moved to `product/revision.js` (D-091, imported above) - the new learner UI's
+   Writing screen needs this pure logic too, and it lived only here. Re-exported so every existing
+   importer of this module keeps working unchanged. */
+export { applyFix };
 
 /* The controller: opens a finding as a sheet, asks about it, and applies it to
    the draft. The host owns the two regions (the feedback, the draft); this owns

@@ -107,6 +107,16 @@
   font-size: 14px;
   font-weight: 600;
 }
+.o-ask__headtext {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.o-ask__sub {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--muted);
+}
 .o-ask__row {
   display: flex;
   align-items: center;
@@ -479,4 +489,15 @@
 }
 [data-part='banner']:empty {
   display: none;
+}
+
+/* Onboarding (route.bare): its own full-window flow, no shell at all. */
+:root[data-bare='1'] .o-rail,
+:root[data-bare='1'] .o-topbar,
+:root[data-bare='1'] .o-mhead,
+:root[data-bare='1'] .o-bnav {
+  display: none;
+}
+:root[data-bare='1'] .o-main {
+  padding: 0;
 }

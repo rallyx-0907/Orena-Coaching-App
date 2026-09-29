@@ -1,0 +1,8 @@
+{
+  "detail": {
+    "category": "reading_set_not_available",
+    "message": "This article has no practice for you yet.",
+    "retryable": false,
+    "context": {}
+  }
+}

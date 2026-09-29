@@ -2539,7 +2539,8 @@ actually have. The lane's migration chain was rebased onto the merged head
 
 **What this decision does not authorize.** It is not authorization for the
 reverse merge. `admin/control-center` is still not merged into `codex/work` or
-`main`, and nothing here changes `AGENTS.md` §3's rule that the two
+`main` *(as of 2026-09-27; overtaken by PR #63, which merged it into
+`codex/work` at `9c0fe31` - see D-085 and D-099)*, and nothing here changes `AGENTS.md` §3's rule that the two
 implementations stay independent: a future sync in either direction is its own
 human instruction, recorded on its own.
 
@@ -3184,3 +3185,103 @@ forward, would be integrating its agent into a moving hybrid.
 **Amends:** D-092 point 3/§7 rule on `label`. D-092 otherwise stands.
 
 **Addendum (2026-09-27, the same amendment, explicit human direction).** Contract v3 also fixes the canonical streams S1 and S13, which put a §6.1 navigation id (`review_due`, `vocabulary.review_due`) in `suggestion.intent` although §4 requires a prompt intent. §4 now defines a prompt intent (the `prompt.` namespace, never a §6.1 id; tapping a suggestion sends its label as the learner's message), S1 and S13 use `prompt.review_due`, the mock follows, and `scripts/test_orena_agent.mjs` checks both the fixtures and the mock. `contract_version` stays 3.
+
+## D-095 — Agent contract v4: HTTP statuses and error classes the UI must handle (amends D-092)
+
+**Date:** 2026-09-27. **Status:** Accepted (explicit human direction).
+
+**Context.** Contracts v2 and v3 described the turn stream and its `error` event but not the HTTP statuses of `/api/agent/*` or the error classes. The intelligence lane's server (`writing_coach/agent/api.py`, `errors.py`, `ratelimit.py`, read on `feature/orena-intelligence` at `f36f465`) answers 404 while `AGENT_ENABLED` is off (always in production), 429 `rate_limited` with `Retry-After` from a per-learner sliding window, 409 `target_language_mismatch` when the request's target language is not the learner's learning language, and 422 for a malformed request; its stream errors are `provider_unavailable` and `internal_error` (`retry`) and `voice_unavailable` (`text_only`). A UI that reads a 404 as an error, or treats a rate limit as a failure, would show the learner something false.
+
+**Decision.** `AGENT_CONTRACT.md` becomes `contract_version: 4`.
+
+1. §2.1 is the status table. 404: Orena is absent for the visit - every entry point hidden, no error, no retry; learned from `GET /api/agent/capabilities` at start or any 404. 429: a brief wait state (Orena stays thinking), then the same request again after `Retry-After`, waiting again if refused, cancellable. 409 `target_language_mismatch`: the UI re-reads the learning language, applies it as any language change and keeps the message unsent; no automatic resend. 401 is the app's sign-in handling; 422 is a client defect ending the turn with `fallback: none`.
+2. §4.1 lists the classes and fallbacks. The UI acts on `fallback` (`retry`: a learner's retry control, never automatic; `text_only`: voice closes, text continues; `none`: message only), an unknown class by its fallback, an unknown fallback as `none`. The client's own `transport` class covers a network failure, an unlisted status and a stream without `done`/`error`.
+3. The mock plays H404, H409 and H429 for review.
+
+The UI's side ships with it: `static/orena/agent/contract.js` (version 4, the tables as data), `transport.js` (the live path answers every status; still off), `presence.js` (Orena absent for the visit), `session.js` (wait, unsent and absent states), `mock.js`; `scripts/test_orena_agent.mjs` reads both tables from the contract text and drives the live transport with a fake fetch. Hiding the shell's entry points on `absent` is wired with the Wave A shell integration.
+
+**Amends:** D-092 (§2 and §4 grow a table each; nothing else changes). A server answers a v3 client as before.
+
+## D-096 — Agent contract v5: the learner's address, offers not claims, surface names and purposes
+
+**Date:** 2026-09-28. **Status:** Accepted (explicit human direction, on `docs/project/AGENT_CONTRACT_V5_PROPOSAL.md`, with seven reconciliation points and two clarifications).
+
+**Context.** Vietnamese (and, less often, Chinese) has no neutral "I" and "you"; the server's fixed copy and the model used `mình` / `bạn` for everyone, and a learner's own choice could not stick. The intelligence lane had applied the choice in model replies under the human's rulings R19, R21 and R22 with v4's shapes, but its fixed copy could not follow a preference the contract did not carry. Separately, fixture S5 ("Mình lưu 我 cho bạn nhé.") read as if Orena had saved a word the learner had not tapped, S2 and the §5.1 example named the pronunciation provider, and the intelligence lane kept its own copies of the UI's screen names.
+
+**Decision.** `AGENT_CONTRACT.md` becomes `contract_version: 5`.
+
+1. **Address (§5.6).** `context.address { self?, user?, register?, lang }` carries the learner's choice for their support language; omitted is the default (vi `mình`/`bạn`, zh-CN `我`/`你` and `plain`, en `I`/`you`). `user` may be a name or a form of address with a name ("Minh", "anh Minh"). English takes only `user`, ignores `self` and never replaces "I"/"you". Chinese also takes `register`: `plain` (你) by default, `polite` (您) only when the learner asks. Terms are 1-24 characters, at most 3 words, Unicode letters (any script with its marks: Vietnamese with diacritics, Han characters) and single spaces; validated on both sides, invalid means default. The server always escapes the terms before the model and never inserts them raw, uses them for the turn only, and never writes them to logs, telemetry, traces or any store. It applies them to support-layer text and to its fixed copy through `{self}` / `{user}` slots; never to interface labels or target-language material.
+2. **How it changes.** Orena never asks on its own when the learner has given no sign. A learner's request applies at once. Vietnamese kinship terms the learner uses of themselves or of Orena are answered in kind at once and saved (R22). A pair the learner keeps using that the server does not map by itself (e.g. `tớ` - `cậu`) is confirmed once; a no is saved. Signs of a minor keep the default. Nothing is inferred from gender, age, personality, a name or the learner's writing.
+3. **The note.** Kind `address`, id `address-<lang>`, one per support language, no decay or expiry, set by `memory_update` upsert; a change, including back to the default, is an upsert that replaces it (R21). Sent as `context.address`, never in `coach_notes`; listed and deletable in `preferences.agent_memory`.
+4. **Offers, not claims (§7, §10).** A segment that comes with an action offers it and never reports it done; a reply that names the button uses its interface-language label and does not describe the interface ("Bấm Lưu từ để thêm 我 vào từ vựng của bạn."). No reply, error message or fixed copy names a provider or model. S5, S2 and the §5.1 example are reworded.
+5. **Surface names and purposes (§6.2).** The UI publishes, per §6.1 id, the place's name (from the shell's route titles) and a one-line purpose (interface layer, en/vi/zh-CN, ≤ 90 characters) as `static/orena/copy/surfaces.json`, generated from `static/orena/copy/surfaces.js` and gated; the server reads it and keeps no copies. "NEW_UI_MAP" is `docs/design/canonical-ui/IMPLEMENTATION_MAP.md`: purposes are written once it is stable.
+6. New canonical streams S14 (setting an address) and S15 (identity answered by rule with an address).
+
+The UI's side ships with the version: the address validation, note and request field, the mock's S14/S15 and reworded S2/S5 in vi/en/zh, the surfaces copy and its generated file, and their gates.
+
+**Amends:** D-092 (§3, §5.4, §7, §10, §12). D-092, D-094 and D-095 otherwise stand. A client that declares `contract_version` ≤ 4 gets the defaults.
+
+## D-097 — The learner can choose the theme in Settings (amends D-089)
+
+**Date:** 2026-09-28. **Status:** Accepted (explicit human direction, a Wave A review item).
+
+**Context.** D-089 ships the design's light and dark themes following the operating system, with the Reader's light/dark button as the only in-product switch, and added no Settings row because the design draws none. Reviewing Wave A, the human asked for the choice Light / Dark / System in Settings.
+
+**Decision.** Settings offers Light, Dark and System (the Learning tab, drawn with the design's own choice-row control). System is the default and follows the operating system live, as D-089 says. The choice is a device preference in the browser, like the interface language, never account data; it is applied before first paint, at once when changed, and an unknown stored value reads as System. The Reader's light/dark button, when built, sets the same preference. Colour keeps its one owner and AA holds in both themes.
+
+**Amends:** D-089 point 2 ("No Settings row is added"). D-089 otherwise stands; DESIGN_CONTRACT rule 30 says the same.
+
+## D-098 — Answers to the new UI's open design questions and the Wave B review decisions
+
+**Date:** 2026-09-29. **Status:** Accepted (explicit human direction).
+
+**Context.** `UI_BACKEND_GAPS.md` section N, "Open design questions", and the Wave B hand-off left choices only the human could make. The human answered them in one message.
+
+**Decision.**
+
+1. **Today** keeps what the pinned frame draws: no review-reminder pill (brief part D) and no practice shortcuts (part G).
+2. **Import, File** is wired to `POST /api/media-learning/upload` with the file types and size limit that endpoint already enforces; the UI states no limit of its own.
+3. **Settings, support language** stays the frame's segmented control while the list has at most 4 languages, and becomes a picker, built from the kit's existing sheet and row components, when it has more.
+4. **Grammar on Grammar Lab content** (question 6): the UI lane may build the word_order and morphology illustrations, a Chinese Grammar Library, Chinese-specific structures, and role colours linking a formula to its examples, using only the kit's existing tokens and components and modelled on the timeline component. No new visual language. The human reviews these by eye. Frame 23 or 47 (question 4) is answered separately.
+5. **Japanese** gets a Writing-minimum row, counted in characters as for Chinese.
+6. **Writing, Get feedback disabled:** one line says why, with a countdown of the words or characters still missing (interface layer, vi/en/zh).
+7. **Lesson complete** shows only numbers the backend actually measured (for example correct / total); a tile with no measured number is hidden. No invented numbers.
+8. **Onboarding** keeps the learner's self-chosen level; a placement check is deferred.
+9. **Entry routing:** `/next` opens `#/welcome` when the profile has no learning language or no level, and Today otherwise. No new stored field.
+10. **Compare Versions** follows the frame exactly.
+11. **Lane:** `codex/work` is the UI lane (D-066) whichever agent works it, Claude included.
+
+**Consequences.** Each Wave B item is its own commit. The Grammar authorisation takes effect when the Grammar screens are rebuilt on the grammar content contract.
+
+## D-099 — Admin keeps its own address through the cutover; Grammar Concept is frame 47; the declared level goes to review
+
+**Date:** 2026-09-29. **Status:** Accepted (explicit human direction).
+
+**Context.** Planning the cutover (`UI_COMPLETION_ROADMAP.md`) found that the admin console,
+merged into `codex/work` by PR #63 (D-085), would lose its host when `/` becomes the new UI, while
+AGENTS section 7 and D-081 still described Admin as inert and unmerged. D-098 left the declared
+level out of the entry rule because the backend does not store it.
+
+**Decision.**
+
+1. **Admin through the cutover.** The old admin console keeps running at an address of its own
+   until the Admin wave, built on the pinned `Orena Admin.dc.html`, replaces it. The cutover does
+   not wait for the Admin wave. `Orena Admin.dc.html` is pinned from the Claude Design project like
+   the other design files. AGENTS section 7 says this; D-081's "not merged" is marked as overtaken.
+2. **Before the cutover** the shared code the new UI still reaches in old `ui/` moves into
+   `capabilities/` (roadmap step 3).
+3. **H1:** frame 47 is the canonical Grammar Concept frame; frame 23 is not built. The timeline,
+   word_order and morphology illustrations are built from the kit, as D-098 point 4 authorised.
+4. **H2, the declared level.** The entry rule keeps its learning-language half now. Storing the
+   declared level per learning language (CEFR for en, HSK 1-9 for zh, room for ja) follows the
+   AGENTS section 7 process: a proposal after `ORENA_ACCOUNT_DATA_ARCHITECTURE.md`, an independent
+   architecture review, human approval, then code, migration and tests. The human runs the
+   migration on the sandbox; production is not touched. When it lands, `#/welcome` opens when there
+   is no learning language or no level for it.
+5. **Chinese Writing evaluator** (`ZH_WRITING_EVALUATOR_RECALL.md`): fix (1) with a zh+vi test now,
+   benchmark (5) in parallel, prompt (4) only after (5) has measured, no deterministic detector
+   (6), the token budget (7) only if truncation is measured.
+
+**Amends:** D-081 (its "not merged" statement, as a matter of fact), AGENTS section 7's Platform
+Admin hold. D-098 point 9 stands; its level half waits for point 4 here.
+

@@ -10,7 +10,9 @@
                 no phone bar.
    - `crumb`    the key of its title in copy/shell.js (the top bar's breadcrumb screen label).
    - `lesson`   a content route that shows the design's loading skeleton while it loads.
-   - `intent`   the AGENT_CONTRACT §6.1 id that opens it, when there is one. */
+   - `intent`   the AGENT_CONTRACT §6.1 id that opens it, when there is one.
+   - `bare`     drawn with no rail, top bar, phone header or bar at all: onboarding, whose frames
+                (Onboarding.dc.html) are a separate full-window flow. */
 
 export const PRIMARY = Object.freeze(['today', 'discover', 'orena', 'practice', 'library', 'progress']);
 
@@ -65,9 +67,24 @@ export const ROUTES = Object.freeze([
   { id: 'feed', path: 'feed', design: 'feed', screen: 'feed', focus: true, crumb: 'dailyFeed', lesson: true },
   { id: 'errfix', path: 'from-your-errors', design: 'errfix', screen: 'errors', focus: true, crumb: 'fromYourErrors', lesson: true },
   { id: 'gconcept', path: 'grammar/:id', design: 'gconcept', screen: 'grammar-concept', focus: true, crumb: 'grammar', lesson: true, intent: 'grammar.point' },
+
+  // First run: Onboarding.dc.html, its own full-window flow.
+  { id: 'welcome', path: 'welcome', design: 'onboarding', screen: 'onboarding', focus: false, bare: true, crumb: 'welcome' },
 ]);
 
 export const DEFAULT_ROUTE = 'today';
+
+/* Where the empty address opens (D-098): Welcome for a learner the backend has no profile for, or
+   whose profile names no learning language; Today otherwise. Only what the server answered decides
+   it - a profile that could not be read (null) is not "no profile", and opens Today. The declared
+   level is not read: the backend does not store one (`writing_coach/account_profile.py`,
+   `declared_level` is `stored=False`), so requiring it would send every learner to Welcome on every
+   visit - left to the human (UI_BACKEND_GAPS, "Entry routing and the declared level"). */
+export function entryRoute({ profile, activeLanguage } = {}) {
+  if (profile && profile.exists === false) return 'welcome';
+  if (profile && !String(profile.language || activeLanguage || '').trim()) return 'welcome';
+  return DEFAULT_ROUTE;
+}
 
 const compiled = ROUTES.map((route) => {
   const names = [];

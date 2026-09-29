@@ -1,0 +1,8 @@
+{
+  "detail": {
+    "category": "speech_asr_unconfigured",
+    "message": "Speech recognition is not configured.",
+    "retryable": false,
+    "context": {}
+  }
+}

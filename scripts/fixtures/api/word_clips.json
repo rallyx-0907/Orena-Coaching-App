@@ -1,0 +1,34 @@
+{
+  "word": "pen",
+  "total": 2,
+  "clips": [
+    {
+      "lessonId": "en-daily-pen-in-my-bag",
+      "title": "A pen in my bag",
+      "at": "00:00",
+      "startMs": 517,
+      "endMs": 2336,
+      "seconds": 1,
+      "text": "Anna, do you have a pen?",
+      "pinyin": "",
+      "translation": "",
+      "artwork": "daily-life",
+      "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Anna,_do_you_have_a_pen.ogg",
+      "kind": "audio"
+    },
+    {
+      "lessonId": "en-daily-pen-in-my-bag",
+      "title": "A pen in my bag",
+      "at": "00:03",
+      "startMs": 3581,
+      "endMs": 7885,
+      "seconds": 4,
+      "text": "Yes. I have a pen in my bag.",
+      "pinyin": "",
+      "translation": "",
+      "artwork": "daily-life",
+      "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Anna,_do_you_have_a_pen.ogg",
+      "kind": "audio"
+    }
+  ]
+}

@@ -7,6 +7,8 @@ import { icon } from '../kit/icons.js';
 import { brandChip, intelChip } from '../kit/brand.js';
 import { shellCopy as t } from '../copy/shell.js';
 import { href } from './routes.js';
+import { orenaPresent, onOrenaPresence } from '../agent/presence.js';
+import { probe } from '../agent/transport.js';
 
 const RAIL = [
   { id: 'today', icon: 'house', label: 'today' },
@@ -55,10 +57,12 @@ function railMarkup(state) {
       }</a>`;
     })}
     <div class="o-rail__spacer"></div>
-    <div class="o-ask" role="link" tabindex="0" data-go="${href('orena')}"${current(active, 'orena')}>
-      <div class="o-ask__head">${intelChip({ size: 32, mark: 26 })}<span>${t('askOrena')}</span></div>
+    ${orenaPresent()
+      ? html`<div class="o-ask" role="link" tabindex="0" data-go="${href('orena')}"${current(active, 'orena')}>
+      <div class="o-ask__head">${intelChip({ size: 32, mark: 26 })}<div class="o-ask__headtext"><span>${t('askOrena')}</span><span class="o-ask__sub">${t('askOrenaSub')}</span></div></div>
       <div class="o-ask__row"><span class="o-ask__field">${t('askAnything')}</span><button type="button" class="o-ask__voice" data-voice="rail" aria-label="${t('talkToOrena')}" title="${t('talkToOrena')}">${raw(icon('mic', { size: 17 }))}</button></div>
-    </div>
+    </div>`
+      : ''}
     <a class="o-account" href="${href('profile')}"${current(active, 'profile')}>
       ${avatar(context)}
       <div style="flex:1;min-width:0"><div class="o-account__name">${context.name}</div><div class="o-account__meta">${learningLabel(context)}</div></div>
@@ -69,6 +73,7 @@ function barMarkup(state) {
   const { active, context } = state;
   return html`${BAR.map((item) => {
     if (item.orena) {
+      if (!orenaPresent()) return '';
       return html`<a class="o-bnav__orena" href="${href('orena')}"${current(active, 'orena')}><span class="o-bnav__disc">${raw(
         '<svg width="46" height="46" viewBox="0 0 100 100" style="display:block;flex:none;overflow:visible" aria-hidden="true"><use href="#ol-intel"></use></svg>',
       )}</span>${t('orena')}</a>`;
@@ -125,18 +130,38 @@ export function drawFrame(root) {
     </div>`,
   );
   const part = (name) => root.querySelector(`[data-part="${name}"]`);
-  return {
+  let lastState = null;
+  const handles = {
     main: root.querySelector('#main'),
     layer: part('layer'),
     paint(state) {
+      lastState = state;
       mount(part('rail'), railMarkup(state));
       mount(part('mhead'), mheadMarkup(state));
       mount(part('topbar'), topbarMarkup(state));
       mount(part('bnav'), barMarkup(state));
+      // The rail's mic (desktop only - `.o-ask` is not drawn on mobile) opens the full-screen
+      // voice mode (frame 56, E5 §7.1: this is the one place it is reached from). Rebound every
+      // paint since railMarkup() replaces the rail's markup wholesale each time.
+      part('rail')
+        .querySelector('[data-voice="rail"]')
+        ?.addEventListener('click', (event) => {
+          event.stopPropagation();
+          import('../screens/orena/voice.js')
+            .then((module) => module.openVoiceFull())
+            .catch((error) => console.error('[Orena] voice mode could not load', error));
+        });
     },
     paintCrumb(state) {
       const crumb = part('topbar').querySelector('.o-crumb');
       if (crumb) mount(crumb, crumbMarkup(state));
     },
   };
+  // §2.1: asked once when the UI starts; the mock answers instantly (AGENT_LIVE false), a live
+  // server's 404 hides every entry point via the `onOrenaPresence` repaint below.
+  void probe();
+  onOrenaPresence(() => {
+    if (lastState) handles.paint(lastState);
+  });
+  return handles;
 }

@@ -1,0 +1,267 @@
+/* Shadowing (frame 28, D-088), measured against the pin. A learning workspace (route.focus,
+   Design Contract rule 49): `.o-main` stops scrolling as a page, so `.s-shadow` fills the column and
+   the card - content-height, as the frame draws it - shrinks to what is left and scrolls only its
+   own body (`data-scroll-region`); the start call-to-action and the result's buttons are docked
+   under that body and never scroll away. No device-variable branching in the source frame (E2 §1):
+   every reflow here is `flex-wrap`, matching it. */
+.s-shadow {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 720px;
+  width: 100%;
+  margin: 0 auto;
+  padding-top: 14px;
+}
+
+.s-shadow__head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.s-shadow__headcol {
+  flex: 1;
+  min-width: 0;
+}
+.s-shadow__title {
+  font-size: 16px;
+  font-weight: 600;
+}
+.s-shadow__sub {
+  font-size: 13px;
+  color: var(--muted);
+}
+.s-shadow__rate {
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  flex: none;
+}
+.s-shadow__rate:hover {
+  background: var(--surface2);
+}
+
+.s-shadow__card {
+  flex: 0 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  align-items: center;
+  text-align: center;
+  border-radius: 24px;
+  background: var(--surface);
+  padding: 28px;
+  box-shadow: var(--sh1);
+}
+.s-shadow__body {
+  flex: 0 1 auto;
+  min-height: 0;
+  width: 100%;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  align-items: center;
+}
+.s-shadow__body > * {
+  flex: none;
+}
+.s-shadow__dock {
+  flex: none;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  align-items: center;
+}
+.s-shadow__dock:empty {
+  display: none;
+}
+
+.s-shadow__phase {
+  font-size: 13px;
+  font-weight: 600;
+}
+.s-shadow__phase--muted {
+  color: var(--muted);
+}
+.s-shadow__phase--accent {
+  color: var(--accent-text);
+}
+.s-shadow__phase--amber {
+  color: var(--amber);
+}
+.s-shadow__phase--red {
+  color: var(--red);
+}
+.s-shadow__phase--green {
+  color: var(--green);
+}
+.s-shadow__line {
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.s-shadow__count {
+  font-size: 64px;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  color: var(--accent-text);
+  animation: pulse 0.9s infinite;
+}
+
+.s-shadow__wave {
+  display: flex;
+  gap: 4px;
+  height: 40px;
+  align-items: center;
+  width: 100%;
+  opacity: 0.2;
+}
+.s-shadow__wave.is-active {
+  opacity: 1;
+}
+.s-shadow__bar {
+  flex: 1;
+  border-radius: 2px;
+  background: var(--accent);
+  animation: pulse 0.9s ease-in-out infinite;
+}
+.s-shadow__wave.is-speaking .s-shadow__bar {
+  background: var(--red);
+  /* Speaking: the bars are the microphone's real level, so no decorative pulse. */
+  animation: none;
+  transition: height 0.08s linear;
+}
+
+.s-shadow__start.o-btn.o-btn--primary {
+  height: 48px;
+  padding: 0 22px;
+  border-radius: 14px;
+  font-size: 16px;
+  gap: 8px;
+  white-space: nowrap;
+}
+.s-shadow__start .ic *,
+.s-shadow__resultbtn .ic * {
+  fill: currentColor;
+}
+.s-shadow__note {
+  font-size: 13px;
+  color: var(--muted);
+}
+.s-shadow__recording {
+  font-size: 14px;
+  color: var(--red);
+  font-weight: 700;
+}
+
+.s-shadow__stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+}
+.s-shadow__stat {
+  padding: 14px;
+  border-radius: 16px;
+  background: var(--surface2);
+}
+.s-shadow__statlabel {
+  font-size: 13px;
+  color: var(--muted);
+}
+.s-shadow__statvalue {
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.s-shadow__issue {
+  padding: 14px 18px;
+  border-radius: 14px;
+  background: var(--accent-soft);
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.5;
+  text-align: left;
+  width: 100%;
+}
+.s-shadow__issue b {
+  color: var(--accent-text);
+}
+
+.s-shadow__resultrow {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.s-shadow__resultbtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 18px;
+  border-radius: 12px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  min-height: 44px;
+}
+.s-shadow__resultbtn:hover:not(:disabled) {
+  background: var(--surface2);
+}
+
+.o-btn.s-shadow__retry {
+  padding: 12px 20px;
+  border-radius: 12px;
+  min-height: 44px;
+  font-size: 14px;
+}
+
+.s-shadow__foot {
+  flex: none;
+  display: flex;
+  justify-content: space-between;
+}
+.s-shadow__navbtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 18px;
+  border-radius: 14px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  min-height: 44px;
+}
+.s-shadow__navbtn:hover:not(:disabled) {
+  background: var(--surface2);
+}
+
+
+/* The hidden player: rendered (a playing clip needs a live element) but never seen. */
+.s-shadow__media {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  opacity: 0;
+  pointer-events: none;
+}

@@ -1,0 +1,99 @@
+{
+  "available": true,
+  "plan": {
+    "id": "free",
+    "name": "Free",
+    "description": "Core writing practice for everyday learning.",
+    "price_label": "Free"
+  },
+  "subscription": {
+    "state": "none",
+    "status": "inactive"
+  },
+  "plan_state": "default",
+  "features": {
+    "writing.evaluate": {
+      "key": "writing.evaluate",
+      "enabled": true,
+      "monthly_limit": 30,
+      "used": 0,
+      "remaining": 30,
+      "usage_state": "known",
+      "entitlement_state": "enabled"
+    },
+    "writing.improve": {
+      "key": "writing.improve",
+      "enabled": true,
+      "monthly_limit": 10,
+      "used": 0,
+      "remaining": 10,
+      "usage_state": "known",
+      "entitlement_state": "enabled"
+    },
+    "library.grammar": {
+      "key": "library.grammar",
+      "enabled": true,
+      "monthly_limit": null,
+      "used": 0,
+      "remaining": null,
+      "usage_state": "known",
+      "entitlement_state": "enabled"
+    },
+    "dictionary.lookup": {
+      "key": "dictionary.lookup",
+      "enabled": true,
+      "monthly_limit": 120,
+      "used": 0,
+      "remaining": 120,
+      "usage_state": "known",
+      "entitlement_state": "enabled"
+    },
+    "vocabulary.save": {
+      "key": "vocabulary.save",
+      "enabled": true,
+      "monthly_limit": 100,
+      "used": 0,
+      "remaining": 100,
+      "usage_state": "known",
+      "entitlement_state": "enabled"
+    },
+    "analytics.basic": {
+      "key": "analytics.basic",
+      "enabled": true,
+      "monthly_limit": null,
+      "used": 0,
+      "remaining": null,
+      "usage_state": "known",
+      "entitlement_state": "enabled"
+    },
+    "analytics.advanced": {
+      "key": "analytics.advanced",
+      "enabled": false,
+      "monthly_limit": null,
+      "used": 0,
+      "remaining": null,
+      "usage_state": "known",
+      "entitlement_state": "disabled"
+    },
+    "practice.personalized": {
+      "key": "practice.personalized",
+      "enabled": false,
+      "monthly_limit": null,
+      "used": 0,
+      "remaining": null,
+      "usage_state": "known",
+      "entitlement_state": "disabled"
+    },
+    "export.report": {
+      "key": "export.report",
+      "enabled": false,
+      "monthly_limit": null,
+      "used": 0,
+      "remaining": null,
+      "usage_state": "known",
+      "entitlement_state": "disabled"
+    }
+  },
+  "billing_ready": false,
+  "readiness": "known"
+}

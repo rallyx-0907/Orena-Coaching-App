@@ -322,6 +322,17 @@ export const api={
     body:JSON.stringify({set_id:setId,operation_id:operationId,answers,...(recommendation?{recommendation}:{})}),
   }),
   readingEvidence:(limit=20)=>request(`/api/reading/practice/evidence?limit=${encodeURIComponent(limit)}`),
+  // A learner's persistent Q&A thread about one text (D-072.2). `sourceKind` is one of
+  // story/media/reading_session/book_chapter (writing_coach/persistence/discussion_repository.py
+  // SOURCE_KINDS); the GET is a safe read even before any thread exists (an empty shape, never
+  // a 404). `sendDiscussionTurn`'s `request_id` makes a retry of the same submission idempotent
+  // server-side - the caller supplies one per attempt, not per keystroke.
+  textDiscussion:(sourceKind,sourceId)=>request(`/api/texts/discussion?source_kind=${encodeURIComponent(sourceKind)}&source_id=${encodeURIComponent(sourceId)}`),
+  sendDiscussionTurn:(payload)=>request('/api/texts/discussion/turns',{
+    method:'POST',
+    headers:JSON_HEADERS,
+    body:JSON.stringify(payload),
+  }),
   importMedia:(payload)=>request('/api/media-learning/import',{
     method:'POST',
     headers:JSON_HEADERS,

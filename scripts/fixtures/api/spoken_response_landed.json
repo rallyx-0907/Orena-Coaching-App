@@ -1,0 +1,45 @@
+{
+  "source_language": "en",
+  "target_language": "vi",
+  "transcript": "I like walk in the morning because it quiet. Then I go to work by bus and I meet my friend.",
+  "situation": "Tell someone about a small change that made your day better. What was it like before, and what happened next?",
+  "carried": [
+    {
+      "quote": "I like walk in the morning",
+      "why": "shows a preference for walking, which is a positive habit"
+    },
+    {
+      "quote": "it quiet",
+      "why": "suggests a peaceful environment, which is a key part of the question"
+    },
+    {
+      "quote": "Then I go to work by bus and I meet my friend",
+      "why": "shows a routine and a positive interaction"
+    }
+  ],
+  "landed_differently": [
+    {
+      "quote": "I like walk in the morning",
+      "why": "should be 'I like walking in the morning' for correct grammar and clarity.",
+      "instead": "I like walking in the morning.",
+      "judgement": "grammatically_impossible"
+    },
+    {
+      "quote": "it quiet",
+      "why": "should be 'it's quiet' for correct grammar and clarity.",
+      "instead": "it's quiet.",
+      "judgement": "grammatically_impossible"
+    },
+    {
+      "quote": "Then I go to work by bus and I meet my friend",
+      "why": "could be more specific about the change and how it improved the day.",
+      "instead": "Then I go to work by bus and I meet my friend, which makes my day better.",
+      "judgement": "contextually_inappropriate"
+    }
+  ],
+  "another_way": "I enjoy walking in the morning because it's quiet, and then I take the bus to work where I meet my friend.",
+  "next_attempt": "Try to clearly describe how the small change made your day better, and use correct grammar.",
+  "say_again": "I like walk in the morning because it quiet. Then I go to work by bus and I meet my friend.",
+  "available": true,
+  "claim": "spoken_response_coaching_from_transcript"
+}

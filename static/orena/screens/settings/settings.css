@@ -1,0 +1,193 @@
+/* Frame 26 "Settings" (docs/design/canonical-ui/screens/Orena.dc.html, SCRATCH E1). A learning
+   workspace (route.focus, Design Contract rule 49): `.o-main` stops scrolling as a page, so this
+   fills the column itself and scrolls only inside `.s-settings__body` (`data-scroll-region`). No
+   frame-local device branch (E1 §3) - `--pad`/`--h1` already shrink through the shell's own
+   device variables; only the row list's own overrides below are device-independent fixes. */
+.o-screen[data-screen='settings'] {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.s-settings {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 760px;
+  width: 100%;
+  margin: 0 auto;
+  padding-top: 14px;
+}
+
+/* Tab strip: the shared `.o-chip` pill (kit.css: "Filter sheet options, Settings choices"),
+   the design's own `chip()` selected/unselected pair (orena-script.js's own `chip()` helper) -
+   not rebuilt here, with two measured corrections scoped to this screen only (rule 42; a kit
+   request below asks for the fix in `.o-chip` itself, which every one of its other callers -
+   Filter Sheet, Discover - draws with the same two numbers, so this is likely not Settings-only):
+   the frame's own horizontal padding is 20px, not the shared chip's 18px, and an *unselected*
+   chip's own text is `var(--muted)`, not `.o-chip`'s default `var(--text)` - only the selected
+   chip is full-contrast. */
+.s-settings__tabs {
+  flex: none;
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 4px;
+}
+.s-settings__tabs .o-chip {
+  padding: 11px 20px;
+}
+.s-settings__tabs .o-chip:not([aria-pressed='true']) {
+  color: var(--muted);
+}
+
+.s-settings__body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Row shape is `kit/components.js`'s listRow (radius 16, shadow variant) with corrections
+   measured against the live frame at phone width (rule 42), where a label the shared row's own
+   `nowrap`/ellipsis would otherwise cut off - "Target language" - visibly wraps in place in the
+   live prototype instead ("Target" / "language" on two lines): the label is 15.5px, not the
+   shared row's 15px, and both the title and the sub wrap (the design draws no `white-space:nowrap`
+   on either) rather than truncate - the row itself stays one flex line, label and trailing control
+   side by side, only the text inside the label column wraps. */
+.s-settings .c-row__title {
+  font-size: 15.5px;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}
+.s-settings .c-row__sub {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+/* Toggle (measured: track 46x28, knob 22x22 at 3px/21px). The frame's own literal `#fff` knob is
+   drawn with `--accent-ink` (white in both themes, the token this codebase already uses for ink on
+   a filled control) and the frame's literal `--accent` track is `--accent-fill` instead (D-093:
+   every other filled/selected control in this codebase already makes that substitution). */
+.s-settings-toggle {
+  flex: none;
+  width: 46px;
+  height: 28px;
+  border-radius: 99px;
+  border: 0;
+  position: relative;
+  background: var(--border);
+  transition: background 0.2s;
+}
+.s-settings-toggle[aria-checked='true'] {
+  background: var(--accent-fill);
+}
+.s-settings-toggle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.s-settings-toggle__knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--accent-ink);
+  transition: left 0.2s;
+}
+.s-settings-toggle[aria-checked='true'] .s-settings-toggle__knob {
+  left: 21px;
+}
+
+/* Choice rows use kit/components.js's segmentedControl as-is (measured live against this exact
+   screen, per its own doc comment). A disabled choice row (Session length) stays drawn - rule 43 -
+   with its control inert: dimmed and unclickable, never removed and never wired to pretend.
+
+   Support language draws every language the platform lists (model.js) - up to 12, not the frame's
+   2-option sample (D-068), and its own row is the one place in this screen real data outgrows the
+   design's sample: no segmented control fits 12 options on one line at any width the live design
+   itself is measurable at. Rule 49: its own track becomes its own horizontal scroll region
+   (content that does not fit scrolls inside itself, never off the edge of the screen) - the same
+   `overflow-x:auto` shape the tab strip above it already draws, for the same reason. */
+.s-settings .c-row__trail {
+  max-width: 55%;
+}
+.s-settings .c-seg {
+  max-width: 100%;
+  overflow-x: auto;
+}
+.s-settings-row__inert {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* Bar (measured: 140px fixed width, 6px track, 4px gap to the labels). No text sits on the accent
+   fill, so this keeps the frame's own `--accent` (progressRing's default fill is the same token
+   for the same reason - D-093 only forbids white ink over a solid `--accent`). */
+.s-settings-bar {
+  flex: none;
+  width: 140px;
+}
+.s-settings-bar__labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--muted);
+}
+.s-settings-bar__track {
+  height: 6px;
+  border-radius: 99px;
+  background: var(--surface2);
+  margin-top: 4px;
+}
+.s-settings-bar__fill {
+  height: 100%;
+  border-radius: 99px;
+  background: var(--accent);
+}
+
+/* Action (measured: padding 10px 14px, radius 10px). */
+.s-settings-action {
+  flex: none;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+}
+/* The picker's button (D-098): the row's action button, with the current value and a chevron. */
+.s-settings-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 220px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.s-settings-picker__list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.s-settings-picker__row .c-row__trail {
+  color: var(--accent);
+}
+.s-settings-action:hover:not(:disabled) {
+  background: var(--surface2);
+}
+.s-settings-action:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

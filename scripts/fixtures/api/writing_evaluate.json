@@ -1,0 +1,244 @@
+{
+  "id": 2,
+  "series_id": 1,
+  "revision_no": 2,
+  "parent_id": 1,
+  "overall": 68.5,
+  "app_cefr": "B2",
+  "evaluator": "captured:fixed-answer",
+  "delta": {
+    "grammar": 23.0,
+    "vocabulary": 2.0,
+    "coherence": 6.0,
+    "task_achievement": 4.0,
+    "naturalness": 11.0,
+    "overall": 9.8,
+    "issues": {
+      "removed": [
+        {
+          "id": "issue-f3c5700ad74dbc4c",
+          "category": "agreement",
+          "fragment": "We was very happy",
+          "quote": "We was very happy",
+          "span": {
+            "start": 47,
+            "end": 64
+          },
+          "anchored": true,
+          "explanation_vi": "Chủ ngữ 'we' đi với 'were', không đi với 'was'.",
+          "suggestion": "We were very happy",
+          "mini_rule_vi": "We / you / they + were; I / he / she / it + was.",
+          "example": "They were tired after the trip.",
+          "confidence": 0.9
+        },
+        {
+          "id": "issue-f1ae3c62ef079be2",
+          "category": "agreement",
+          "fragment": "the weather were nice",
+          "quote": "the weather were nice",
+          "span": {
+            "start": 73,
+            "end": 94
+          },
+          "anchored": true,
+          "explanation_vi": "'Weather' là danh từ không đếm được, số ít nên đi với 'was'.",
+          "suggestion": "the weather was nice",
+          "mini_rule_vi": "Danh từ không đếm được dùng động từ số ít.",
+          "example": "The news was good.",
+          "confidence": 0.85
+        },
+        {
+          "id": "issue-0a9b6a5e89c47a56",
+          "category": "punctuation",
+          "fragment": "together, it was",
+          "quote": "together, it was",
+          "span": {
+            "start": 180,
+            "end": 196
+          },
+          "anchored": true,
+          "explanation_vi": "Hai mệnh đề độc lập không thể nối chỉ bằng dấu phẩy; hãy tách thành hai câu.",
+          "suggestion": "together. It was",
+          "mini_rule_vi": "Hai mệnh đề độc lập cần dấu chấm hoặc liên từ, không chỉ dấu phẩy.",
+          "example": "",
+          "confidence": 0.75
+        },
+        {
+          "id": "issue-b8a30a1dcda2756e",
+          "category": "tense",
+          "fragment": "I go to the beach",
+          "quote": "I go to the beach",
+          "span": {
+            "start": 13,
+            "end": 30
+          },
+          "anchored": true,
+          "explanation_vi": "Câu kể về chuyến đi cuối tuần trước nên cần dùng thì quá khứ đơn.",
+          "suggestion": "I went to the beach",
+          "mini_rule_vi": "Sự việc đã xảy ra và đã kết thúc: dùng quá khứ đơn (went, not go).",
+          "example": "Yesterday I went to school.",
+          "confidence": 0.95
+        }
+      ],
+      "persistent": [
+        {
+          "id": "issue-31c29a12a341e714",
+          "category": "word_form",
+          "fragment": "I like swim in the sea",
+          "quote": "I like swim in the sea",
+          "span": {
+            "start": 98,
+            "end": 120
+          },
+          "anchored": true,
+          "explanation_vi": "Sau 'like' để nói sở thích, dùng động từ dạng V-ing.",
+          "suggestion": "I like swimming in the sea",
+          "mini_rule_vi": "like + V-ing (sở thích chung).",
+          "example": "She likes cooking dinner.",
+          "confidence": 0.9
+        }
+      ],
+      "new": [
+        {
+          "id": "issue-a7bc23f59932ca50",
+          "category": "word_choice",
+          "fragment": "go their again",
+          "quote": "go their again",
+          "span": {
+            "start": 233,
+            "end": 247
+          },
+          "anchored": true,
+          "explanation_vi": "'Their' là tính từ sở hữu; chỉ nơi chốn phải dùng 'there'.",
+          "suggestion": "go there again",
+          "mini_rule_vi": "there = ở đó; their = của họ.",
+          "example": "I hope to go there again.",
+          "confidence": 0.85
+        }
+      ],
+      "changed": []
+    }
+  },
+  "schema_version": "writing-evaluation-v2",
+  "text_hash": "9fb227d56d34f438c99e9417485a0f2997a2c2802f6494cdb620e737f8bdcada",
+  "grammar": 71.0,
+  "vocabulary": 64.0,
+  "coherence": 72.0,
+  "task_achievement": 68.0,
+  "naturalness": 66.0,
+  "band_status": "estimated",
+  "cefr_estimate": "B1",
+  "summary_vi": "Bạn đã sửa được phần lớn lỗi chia động từ; bài viết trôi chảy hơn hẳn. Còn một lỗi dạng động từ và một lỗi chính tả mới.",
+  "strengths_vi": [
+    "Các câu đã có thì và chủ ngữ hợp lý."
+  ],
+  "priorities_vi": [
+    "Ôn lại cấu trúc like + V-ing."
+  ],
+  "strength_evidence": [
+    {
+      "id": "strength-1",
+      "category": "coherence",
+      "fragment": "In the evening, we watched the sunset together",
+      "quote": "In the evening, we watched the sunset together",
+      "span": {
+        "start": 144,
+        "end": 190
+      },
+      "explanation_vi": "Bạn dùng mở đầu chỉ thời gian để nối các ý tự nhiên.",
+      "confidence": 0.9
+    }
+  ],
+  "errors": [
+    {
+      "id": "issue-31c29a12a341e714",
+      "category": "word_form",
+      "fragment": "I like swim in the sea",
+      "quote": "I like swim in the sea",
+      "span": {
+        "start": 98,
+        "end": 120
+      },
+      "anchored": true,
+      "explanation_vi": "Sau 'like' để nói sở thích, dùng động từ dạng V-ing.",
+      "suggestion": "I like swimming in the sea",
+      "mini_rule_vi": "like + V-ing (sở thích chung).",
+      "example": "She likes cooking dinner.",
+      "confidence": 0.9
+    },
+    {
+      "id": "issue-a7bc23f59932ca50",
+      "category": "word_choice",
+      "fragment": "go their again",
+      "quote": "go their again",
+      "span": {
+        "start": 233,
+        "end": 247
+      },
+      "anchored": true,
+      "explanation_vi": "'Their' là tính từ sở hữu; chỉ nơi chốn phải dùng 'there'.",
+      "suggestion": "go there again",
+      "mini_rule_vi": "there = ở đó; their = của họ.",
+      "example": "I hope to go there again.",
+      "confidence": 0.85
+    }
+  ],
+  "summary": {
+    "headline": "Các câu đã có thì và chủ ngữ hợp lý.",
+    "interpretation": "Bạn đã sửa được phần lớn lỗi chia động từ; bài viết trôi chảy hơn hẳn. Còn một lỗi dạng động từ và một lỗi chính tả mới."
+  },
+  "dimensions": {
+    "grammar": 71.0,
+    "vocabulary": 64.0,
+    "coherence": 72.0,
+    "task_achievement": 68.0,
+    "naturalness": 66.0
+  },
+  "issues": [
+    {
+      "id": "issue-31c29a12a341e714",
+      "category": "word_form",
+      "priority": "high",
+      "span": {
+        "start": 98,
+        "end": 120
+      },
+      "quote": "I like swim in the sea",
+      "why": "Sau 'like' để nói sở thích, dùng động từ dạng V-ing.",
+      "how": "like + V-ing (sở thích chung).",
+      "suggestion": "I like swimming in the sea",
+      "examples": []
+    },
+    {
+      "id": "issue-a7bc23f59932ca50",
+      "category": "word_choice",
+      "priority": "medium",
+      "span": {
+        "start": 233,
+        "end": 247
+      },
+      "quote": "go their again",
+      "why": "'Their' là tính từ sở hữu; chỉ nơi chốn phải dùng 'there'.",
+      "how": "there = ở đó; their = của họ.",
+      "suggestion": "go there again",
+      "examples": []
+    }
+  ],
+  "strengths": [
+    {
+      "id": "strength-1",
+      "category": "coherence",
+      "span": {
+        "start": 144,
+        "end": 190
+      },
+      "quote": "In the evening, we watched the sunset together",
+      "why": "Bạn dùng mở đầu chỉ thời gian để nối các ý tự nhiên."
+    }
+  ],
+  "next_actions": [
+    "Ôn lại cấu trúc like + V-ing."
+  ],
+  "_runtime": {},
+  "grammar_links": []
+}

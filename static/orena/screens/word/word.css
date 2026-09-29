@@ -1,0 +1,398 @@
+/* Word Detail (frame 22) and its Stroke Practice sheet (frame 60), measured against the pinned
+   design. Device difference (the two-column grid collapsing to one on a phone) is the shared
+   `var(--ls-cols)` from kit/device.css - no width media query here (rule 49). Colours are tokens
+   only. */
+
+.s-word-root {
+  max-width: 820px;
+  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding-top: 16px;
+  animation: rise 0.3s ease;
+}
+
+/* ---- Word card ---- */
+.s-word-card {
+  border-radius: 24px;
+  background: var(--surface);
+  box-shadow: var(--sh1);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  text-align: left;
+}
+.s-word-card__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+.s-word-card__id {
+  min-width: 0;
+}
+.s-word-card__word {
+  font-size: 32px;
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.s-word-card__meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+.s-word-card__ipa {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--muted);
+}
+.s-word-card__level {
+  color: var(--text);
+}
+.s-word-card__actions {
+  display: flex;
+  gap: 8px;
+  flex: none;
+}
+.s-word-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  border: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.s-word-icon--play {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.s-word-card__meaning {
+  border-radius: 16px;
+  background: var(--surface2);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.s-word-card__meaning-text {
+  font-size: 16px;
+  line-height: 1.5;
+}
+.s-word-card__support {
+  font-size: 13px;
+  color: var(--muted);
+}
+.s-word-card__example {
+  font-family: Literata, 'Noto Serif SC', Georgia, serif;
+  font-size: 17px;
+  line-height: 1.7;
+  color: var(--muted);
+}
+.s-word-card__hit {
+  /* The frame's own exParts binding sets `color:"inherit"` on every part, highlighted or not
+     (script.js `wordCard()`) - only weight and this soft amber patch mark the headword, the ink
+     stays the surrounding sentence's muted colour. */
+  background: var(--amber-soft);
+  border-radius: 4px;
+  padding: 0 2px;
+  font-weight: 600;
+}
+.s-word-strokes {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+.s-word-strokes__label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.s-word-strokes__tiles {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.s-word-strokes__tile {
+  width: 76px;
+  height: 76px;
+  border-radius: 12px;
+  background: var(--surface2);
+  display: block;
+  color: var(--text);
+}
+.s-word-strokes__tile svg {
+  width: 100%;
+  height: 100%;
+}
+.s-word-strokes__btn {
+  align-self: flex-start;
+  height: 38px;
+  padding: 0 14px;
+  border-radius: 12px;
+  font-size: 13.5px;
+}
+.s-word-card__footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+.s-word-card__stage {
+  font-size: 14px;
+  font-weight: 600;
+}
+.s-word-card__due {
+  font-size: 13px;
+  color: var(--text3);
+}
+
+/* ---- Two-column content grid ---- */
+.s-word-grid {
+  display: grid;
+  grid-template-columns: var(--ls-cols);
+  gap: 20px;
+  align-items: start;
+}
+.s-word-col {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.s-word-panel {
+  padding: 22px;
+  border-radius: 20px;
+  background: var(--surface);
+  box-shadow: var(--sh1);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.s-word-panel__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.s-word-panel__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: default;
+}
+/* The Deep Word summary is its own signature in the frame: 14px, default ink (not muted),
+   pointer cursor - distinct from the plain Context clips / Mastery evidence panel titles. */
+.s-word-deep summary.s-word-panel__title {
+  font-size: 14px;
+  color: var(--text);
+  cursor: pointer;
+}
+.s-word-empty {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* Context clip row */
+.s-word-clip {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--surface2);
+}
+.s-word-clip__play {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--text);
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.s-word-clip__body {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+}
+.s-word-clip__text {
+  font-size: 15px;
+  line-height: 1.5;
+}
+.s-word-clip__source {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.s-word-clip__open {
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+  flex: none;
+}
+
+/* Deep Word */
+.s-word-deep__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+/* Mastery evidence row */
+.s-word-evidence {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+.s-word-evidence:last-child {
+  border-bottom: 0;
+}
+.s-word-evidence__body {
+  flex: 1;
+  text-align: left;
+}
+.s-word-evidence__label {
+  font-size: 14.5px;
+  font-weight: 600;
+}
+.s-word-evidence__note {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* ---- Stroke Practice sheet (frame 60) - the .o-sheet wrapper is kit.css's; this styles what
+   goes inside it. ---- */
+.s-word-sk-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 22px 24px 0;
+}
+.s-word-sk-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.s-word-sk-body {
+  flex: 1;
+  overflow: auto;
+  padding: 16px 24px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+  text-align: center;
+}
+.s-word-chars {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.s-word-char {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  border: 1.5px solid var(--border2);
+  background: var(--surface);
+  color: var(--text);
+  font-family: 'Noto Sans SC', 'PingFang SC', sans-serif;
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.s-word-char.is-selected {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.s-word-info {
+  font-size: 14px;
+  color: var(--muted);
+}
+.s-word-stage {
+  position: relative;
+  width: 240px;
+  height: 240px;
+  border-radius: 18px;
+  background-color: var(--surface2);
+  background-image: linear-gradient(var(--border2) 1px, transparent 1px), linear-gradient(90deg, var(--border2) 1px, transparent 1px);
+  background-size: 120px 120px;
+  background-position: -1px -1px;
+  touch-action: none;
+  flex: none;
+}
+.s-word-stage.is-wrong {
+  animation: s-word-shake 0.3s ease;
+}
+.s-word-stage .stroke-glyph {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.s-word-stage .stroke-glyph__on {
+  fill: var(--accent);
+}
+.s-word-stage .stroke-glyph__off {
+  fill: var(--border2);
+}
+.s-word-ink {
+  position: absolute;
+  inset: 0;
+}
+.s-word-ink__path {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 24;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.s-word-status {
+  font-size: 14.5px;
+  font-weight: 600;
+}
+.s-word-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.s-word-actions .o-btn {
+  height: 44px;
+  padding: 0 16px;
+  border-radius: 12px;
+  font-size: 14px;
+}
+.s-word-action--accent {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+@keyframes s-word-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}

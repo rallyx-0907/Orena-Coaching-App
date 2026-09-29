@@ -25,6 +25,7 @@ const state = {
   picture: '',
   owner: 'local',
   language: 'en',
+  activeLanguage: '',
   languageOptions: [],
   profile: null,
   level: '',
@@ -58,6 +59,7 @@ export async function loadContext(storage = window.localStorage) {
   state.picture = typeof user?.picture === 'string' && /^https:\/\//.test(user.picture) ? user.picture : '';
   state.owner = user?.email || user?.mode || 'local';
   state.language = learningLanguage(bootstrap?.language?.active);
+  state.activeLanguage = String(bootstrap?.language?.active || '').trim();
   state.languageOptions = Array.isArray(bootstrap?.language?.options) ? bootstrap.language.options : [];
   state.profile = profile;
   state.level = String(profile?.declared_level || '').trim();

@@ -5,7 +5,14 @@
    - an unknown type, or one this client does not support, is ignored and logged;
    - CONFIRM actions need the UI's own confirmation first;
    - word actions run only in the session's active learning language;
-   - take_ref / content ids are used only as received.
+   - take_ref / content ids are used only as received;
+   - a call that throws (the network, a 4xx) is a failed action - `{ ok: false, reason: 'failed' }` -
+     never an unhandled rejection, so the caller can tell the learner and leave the button usable.
+
+   `api` is the app's own `infrastructure/api.js` object: the methods called below are the real
+   ones (scripts/test_orena_agent.mjs reads this file and that one and fails when a name here is
+   not exported there), so a hand-written fake in a test can no longer agree with a name the app
+   does not have.
 
    Actions that belong to a workspace (play_model, play_user, say_again, compare_with_model,
    start_targeted_drill) are supported only while a screen registers a handler for them - so
@@ -27,13 +34,13 @@ export function createDispatcher({ api, go, learningLanguage, confirm, log = con
     save_word: async (payload) => {
       const word = wordOf(payload, learningLanguage());
       if (!word.ok) return word;
-      await api.saveWord(word.text);
+      await api.saveLibraryVocabulary({ word: word.text });
       return { ok: true };
     },
     unsave_word: async (payload) => {
       const word = wordOf(payload, learningLanguage());
       if (!word.ok) return word;
-      await api.deleteWord(word.text);
+      await api.deleteLibraryVocabulary(word.text);
       return { ok: true };
     },
     start_review: async (payload) => {
@@ -59,13 +66,13 @@ export function createDispatcher({ api, go, learningLanguage, confirm, log = con
         return picker ? picker({ text: word.text }) : { ok: false, reason: 'no_target' };
       }
       if (!['deck', 'library'].includes(target.system) || !target.id) return { ok: false, reason: 'bad_target' };
-      await api.saveWord(word.text).catch(() => null); // already saved is fine; filing needs it saved
-      if (target.system === 'deck') await api.addToDeck(target.id, word.text);
+      await api.saveLibraryVocabulary({ word: word.text }).catch(() => null); // already saved is fine; filing needs it saved
+      if (target.system === 'deck') await api.vocabularyDeckAdd(target.id, word.text);
       else {
-        const kept = await api.keepWord(word.text);
+        const kept = await api.libraryKeep({ kind: 'word', word: word.text });
         const itemId = kept?.item?.id || kept?.id;
         if (!itemId) return { ok: false, reason: 'not_kept' };
-        await api.addToCollection(target.id, itemId);
+        await api.libraryCollectionAdd(target.id, itemId);
       }
       return { ok: true };
     },
@@ -96,7 +103,12 @@ export function createDispatcher({ api, go, learningLanguage, confirm, log = con
     }
     const payload = action.payload || {};
     const handler = handlers.get(type) || core[type];
-    return handler(payload, action);
+    try {
+      return await handler(payload, action);
+    } catch (error) {
+      log('[Orena agent] the action failed', type, error);
+      return { ok: false, reason: 'failed' };
+    }
   }
 
   return { run, supported };

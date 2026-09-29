@@ -108,7 +108,50 @@ jobs:
           node scripts/test_orena_kit.mjs
           node scripts/test_orena_shell.mjs
           node scripts/test_orena_copy.mjs
+          node scripts/test_orena_copy_engine.mjs
+          node scripts/test_orena_components.mjs
+          node scripts/test_orena_screen_today.mjs
+          node scripts/test_orena_screen_discover.mjs
+          node scripts/test_orena_screen_content.mjs
+          node scripts/test_orena_screen_practice.mjs
+          node scripts/test_orena_screen_library.mjs
+          node scripts/test_orena_screen_collection.mjs
+          node scripts/test_orena_screen_word.mjs
+          node scripts/test_orena_screen_grammar.mjs
+          node scripts/test_orena_screen_search.mjs
+          node scripts/test_orena_screen_progress.mjs
+          node scripts/test_orena_screen_profile.mjs
+          node scripts/test_orena_screen_settings.mjs
+          node scripts/test_orena_screen_sheets.mjs
+          node scripts/test_orena_screen_quick-sheet.mjs
+          node scripts/test_orena_screen_mic.mjs
+          node scripts/test_orena_screen_lesson-complete.mjs
+          node scripts/test_orena_screen_check.mjs
+          node scripts/test_orena_screen_discussion.mjs
+          node scripts/test_orena_screen_reading-transfer.mjs
+          node scripts/test_orena_screen_dictation.mjs
+          node scripts/test_orena_screen_shadowing.mjs
+          node scripts/test_orena_screen_free-talk.mjs
+          node scripts/test_orena_screen_conversation.mjs
+          node scripts/test_orena_screen_situation.mjs
+          node scripts/test_orena_screen_speak.mjs
+          node scripts/test_orena_screen_compare.mjs
+          node scripts/test_orena_screen_attempts.mjs
+          node scripts/test_orena_screen_speak-summary.mjs
+          node scripts/test_orena_screen_review.mjs
+          node scripts/test_orena_screen_feed.mjs
+          node scripts/test_orena_screen_errors.mjs
+          node scripts/test_orena_screen_reader.mjs
+          node scripts/test_orena_screen_reader-complete.mjs
+          node scripts/test_orena_screen_onboarding.mjs
+          node scripts/test_orena_screen_orena.mjs
+          node scripts/test_orena_screen_writing.mjs
+          node scripts/test_orena_screen_writing-compare.mjs
+          node scripts/test_orena_screen_listening.mjs
+          node scripts/test_orena_screen_react.mjs
+          node scripts/test_orena_screen_respond.mjs
           node scripts/test_orena_agent.mjs
+          node scripts/test_orena_surfaces.mjs
       - run: python -m pytest -q test_app.py tests
         env:
           PERSISTENCE_BACKEND: sqlite

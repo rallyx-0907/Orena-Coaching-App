@@ -1,0 +1,191 @@
+/* Compare Versions (frame 19), measured against the pinned design. `--cv-cols` is scoped to this
+   screen (D6: not shared with any other frame). A focus route (rule 49): the root fills the
+   column and never scrolls as a page - each draft card and the legend scroll in their own region.
+   On a phone the frame's single column becomes a flex column: the draft card takes what is left,
+   the legend keeps its natural height up to 45% of the room and scrolls beyond it. */
+
+/* The router's `.o-screen` wrapper carries no height of its own (shell.css gives it only the entrance
+   animation, which is also the frame's own `rise`); it is given the column here, scoped with `:has`,
+   so a percentage height below it resolves (shell.css is never touched). */
+.o-screen:has(> .s-wrc__root) {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.s-wrc__root {
+  --cv-cols: minmax(0, 1fr) 220px minmax(0, 1fr);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding-top: 14px;
+  height: 100%;
+  min-height: 0;
+}
+:root[data-device='mobile'] .s-wrc__root {
+  --cv-cols: 1fr;
+}
+
+.s-wrc__header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: none;
+}
+.s-wrc__title {
+  flex: 1;
+  min-width: 0;
+}
+.s-wrc__title-text {
+  font-size: 16px;
+  font-weight: 600;
+}
+.s-wrc__title-meta {
+  font-size: 13px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.s-wrc__tabs {
+  display: none;
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--surface2);
+  padding: 4px;
+  gap: 4px;
+  flex: none;
+}
+:root[data-device='mobile'] .s-wrc__tabs {
+  display: flex;
+}
+.s-wrc__tab {
+  flex: 1;
+  height: 40px;
+  border-radius: 10px;
+  border: 0;
+  background: transparent;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.s-wrc__tab[aria-selected='true'] {
+  background: var(--surface);
+  color: var(--text);
+}
+
+.s-wrc__grid {
+  display: grid;
+  grid-template-columns: var(--cv-cols);
+  grid-template-rows: minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+  flex: 1;
+  min-height: 0;
+}
+:root[data-device='mobile'] .s-wrc__grid {
+  display: flex;
+  flex-direction: column;
+}
+.s-wrc__col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  min-height: 0;
+  max-height: 100%;
+}
+:root[data-device='mobile'] .s-wrc__col {
+  flex: 1 1 0;
+  max-height: none;
+}
+:root[data-device='mobile'] .s-wrc__root[data-active-pane='earlier'] .s-wrc__col--revised,
+:root[data-device='mobile'] .s-wrc__root[data-active-pane='revised'] .s-wrc__col--earlier {
+  display: none;
+}
+.s-wrc__collabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  flex: none;
+}
+.s-wrc__card {
+  border-radius: 20px;
+  background: var(--surface);
+  padding: 20px 22px;
+  font-size: 16px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  box-shadow: var(--sh1);
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+:root[data-device='mobile'] .s-wrc__card {
+  flex: 1 1 0;
+}
+.s-wrc__card--revised {
+  background: var(--tint2);
+  box-shadow: none;
+}
+/* The frame marks the words flagged in a version one way: a red wash and no line (its segments
+   carry `--red-soft` and `border-bottom: 0`). What kind of change each was is the legend's to say. */
+.s-wrc__diff {
+  border-radius: 3px;
+  background: var(--red-soft);
+}
+
+.s-wrc__legendcol {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  max-height: 100%;
+  overflow: auto;
+}
+:root[data-device='mobile'] .s-wrc__legendcol {
+  flex: 0 1 auto;
+  max-height: 45%;
+}
+.s-wrc__coltitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  flex: none;
+}
+.s-wrc__legendcard {
+  padding: 14px;
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: var(--sh1);
+  flex: none;
+}
+.s-wrc__legendhead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.s-wrc__legendhead span {
+  font-size: 13px;
+  font-weight: 600;
+}
+.s-wrc__legendhead b {
+  font-size: 17px;
+}
+.s-wrc__legenditems {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 4px;
+  line-height: 1.45;
+}
+.s-wrc__delta {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.s-wrc__delta b {
+  color: var(--text);
+}

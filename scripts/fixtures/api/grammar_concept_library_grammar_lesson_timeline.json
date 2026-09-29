@@ -1,0 +1,609 @@
+{
+  "id": "a2-present-perfect-vs-past-simple",
+  "order": 38,
+  "level": "A2",
+  "kind": "lesson",
+  "module": "Past and future",
+  "category": "Past and future",
+  "title": "Present perfect vs past simple",
+  "objective_vi": "Hiểu form, meaning, use, contrast và giới hạn của Present perfect vs past simple; dùng được trong câu/đoạn phù hợp A2.",
+  "scope": [
+    "Authoritative target grammar point: Present perfect vs past simple.",
+    "Required learner outcome: Hiểu form, meaning, use, contrast và giới hạn của Present perfect vs past simple; dùng được trong câu/đoạn phù hợp A2.",
+    "Required contrast targets only: Present perfect: introduction, Going to.",
+    "Prerequisite context only: Past simple vs past continuous, Present perfect: introduction.",
+    "Teach form, meaning, use, word/clause position, restrictions and exceptions only as they apply to this target grammar point.",
+    "Production evidence: learner must create at least two original uses of this target in meaningfully different contexts.",
+    "Do not teach sibling topics from the module unless they are explicitly named as a contrast or prerequisite."
+  ],
+  "prerequisites": [
+    "a2-past-simple-vs-past-continuous",
+    "a2-present-perfect-introduction"
+  ],
+  "contrasts": [
+    "I've seen that film ↔ I saw it last Friday.",
+    "Have you ever been to China? ↔ When did you go?"
+  ],
+  "restrictions": [
+    "Stay inside this level's locked syllabus scope.",
+    "Teach usage constraints, not form alone.",
+    "Do not promote the lesson as an official one-to-one CEFR/HSK mapping."
+  ],
+  "common_traps": [
+    "Không học công thức tách khỏi meaning/context; đối chiếu form với chức năng thật.",
+    "Không coi một ví dụ đúng là bằng chứng đã thành thạo; cần production và transfer."
+  ],
+  "practice_blueprint": {
+    "recognition": 4,
+    "controlled": 6,
+    "contrast": 4,
+    "correction": 3,
+    "transformation": 3,
+    "production": 2,
+    "review_after_days": [
+      1,
+      7,
+      30
+    ]
+  },
+  "completion_policy": "lesson_plus_self_check_not_mastery",
+  "reference_basis": [
+    "CEFR-aligned Orena internal syllabus",
+    "Destination Grammar & Vocabulary: coverage/review-pattern reference only"
+  ],
+  "official_mapping": false,
+  "content_version": 2,
+  "module_scope": [
+    "Past simple/continuous for completed events, background and interruption.",
+    "Introductory present perfect for experience/recent relevance contrasted with finished past time.",
+    "Going to, will, present continuous arrangements and timetable present simple as distinct future choices.",
+    "Exclude advanced perfect aspect and future perfect from A2."
+  ],
+  "explanation_vi": "Hỏi 'Khi nào?': nếu có yesterday/last year/in 2024/ago, past simple. Nếu trọng tâm experience/current result và time không chốt, present perfect.",
+  "rules": [
+    "present perfect: have/has + participle without finished-time marker.",
+    "past simple: V2/did for event at finished past time."
+  ],
+  "exceptions": [
+    "Không dùng present perfect với explicit finished-time adverbials trong target contrast.",
+    "Không suy rằng mọi recent event bắt buộc present perfect; scope A2 dùng core distinction."
+  ],
+  "examples": [
+    {
+      "target": "I've visited Da Nang several times.",
+      "meaning_vi": "Tôi đã từng đến Đà Nẵng vài lần.",
+      "pinyin": "",
+      "vi": "",
+      "note_vi": ""
+    },
+    {
+      "target": "I visited Da Nang last month.",
+      "meaning_vi": "Tôi đến Đà Nẵng tháng trước.",
+      "pinyin": "",
+      "vi": "",
+      "note_vi": ""
+    },
+    {
+      "target": "Have you ever ridden a horse?",
+      "meaning_vi": "Bạn từng cưỡi ngựa?",
+      "pinyin": "",
+      "vi": "",
+      "note_vi": ""
+    },
+    {
+      "target": "When did you ride one?",
+      "meaning_vi": "Bạn cưỡi khi nào?",
+      "pinyin": "",
+      "vi": "",
+      "note_vi": ""
+    }
+  ],
+  "mistakes": [
+    {
+      "incorrect": "I've met her last week.",
+      "why": "last week = finished time.",
+      "correct": "I met her last week.",
+      "context": "Past event."
+    },
+    {
+      "incorrect": "I have saw that film.",
+      "why": "Present perfect cần participle seen.",
+      "correct": "I have seen that film.",
+      "context": "Experience."
+    }
+  ],
+  "guided_practice": [
+    {
+      "type": "distinction",
+      "prompt": "I have lost/lost my keys yesterday.",
+      "answer": "lost",
+      "explanation": "Finished time."
+    },
+    {
+      "type": "distinction",
+      "prompt": "I have never saw/seen snow.",
+      "answer": "seen",
+      "explanation": "Participle."
+    },
+    {
+      "type": "correct",
+      "prompt": "Sửa: She has arrived two hours ago.",
+      "answer": "She arrived two hours ago.",
+      "explanation": "ago = finished reference."
+    },
+    {
+      "type": "production",
+      "prompt": "Viết 2 experience + 2 finished-time sentences.",
+      "answer": "Answers vary.",
+      "explanation": "Pair contrast."
+    }
+  ],
+  "production_task_vi": "Viết 6 travel sentences: 3 experiences, 3 dated trips.",
+  "writing_tip_vi": "Chọn tense theo time reference.",
+  "quick_reference": {
+    "summary_vi": "Present perfect dùng khi past nối với hiện tại và không chốt finished time; past simple dùng khi event nằm trong thời gian quá khứ đã kết thúc.",
+    "aliases": [
+      "Present perfect vs past simple"
+    ],
+    "contrasts": [
+      "I've seen that film ↔ I saw it last Friday.",
+      "Have you ever been to China? ↔ When did you go?"
+    ],
+    "restrictions": [
+      "Không dùng present perfect với explicit finished-time adverbials trong target contrast.",
+      "Không suy rằng mọi recent event bắt buộc present perfect; scope A2 dùng core distinction."
+    ],
+    "common_traps": [
+      "last week = finished time.",
+      "Present perfect cần participle seen."
+    ],
+    "lookup_tags": [
+      "Present perfect vs past simple",
+      "Past and future",
+      "A2",
+      "have/has + participle",
+      "V2",
+      "ever/never",
+      "yesterday",
+      "last year",
+      "finished time"
+    ]
+  },
+  "cross_skill": {
+    "grammar_id": "a2-present-perfect-vs-past-simple",
+    "annotatable": true,
+    "lookup_terms": [
+      "Present perfect vs past simple",
+      "Past and future",
+      "A2"
+    ]
+  },
+  "learning_model": {
+    "schema_version": 2,
+    "flow": [
+      "notice",
+      "understand",
+      "pattern",
+      "context",
+      "compare",
+      "apply",
+      "recall",
+      "transfer"
+    ],
+    "language_policy": {
+      "target_language": "en",
+      "explanation_languages": [
+        "en",
+        "vi"
+      ],
+      "translation_languages": [
+        "en",
+        "vi"
+      ]
+    },
+    "capabilities": [
+      "formula",
+      "tense",
+      "aspect",
+      "timeline",
+      "comparison",
+      "context-scene",
+      "contrast"
+    ],
+    "hook": {
+      "eyebrow": {
+        "en": "Same past, different viewpoint",
+        "vi": "Cùng nói chuyện quá khứ, khác góc nhìn",
+        "zh": "都谈过去，但视角不同"
+      },
+      "prompt": {
+        "en": "Your friend asks for your charger. You say “I've lost it.” What changes when you say “I lost it yesterday”?",
+        "vi": "Bạn của bạn hỏi mượn sạc. Bạn nói “I've lost it.” Điều gì thay đổi khi bạn nói “I lost it yesterday”?",
+        "zh": "朋友想借充电器。你说“I've lost it.” 换成“I lost it yesterday”时，视角发生了什么变化？"
+      }
+    },
+    "meaning": {
+      "summary": {
+        "en": "Past simple puts an event inside a finished past time; present perfect looks back from NOW when the past still matters now or the time is not finished.",
+        "vi": "Past simple đặt sự việc trong một khoảng quá khứ đã khép lại; present perfect nhìn ngược từ HIỆN TẠI khi quá khứ vẫn liên hệ tới hiện tại hoặc khoảng thời gian chưa kết thúc.",
+        "zh": "一般过去时把事件放在已结束的过去时间；现在完成时从“现在”回看，强调过去与现在仍有关联或时间尚未结束。"
+      },
+      "mental_model": {
+        "en": "Closed past box → past simple. Past-to-now bridge → present perfect.",
+        "vi": "Hộp thời gian quá khứ đã đóng → Past Simple. Cây cầu từ quá khứ tới hiện tại → Present Perfect.",
+        "zh": "已关闭的过去时间盒 → 一般过去时；过去连到现在的桥 → 现在完成时。"
+      },
+      "use_when": [
+        {
+          "en": "Use past simple with a finished past time.",
+          "vi": "Dùng past simple với mốc/khoảng quá khứ đã kết thúc.",
+          "zh": "已结束的过去时间用一般过去时。"
+        },
+        {
+          "en": "Use present perfect for a current result, experience, or unfinished time.",
+          "vi": "Dùng present perfect cho kết quả hiện tại, trải nghiệm hoặc khoảng thời gian chưa kết thúc.",
+          "zh": "当前结果、经历或未结束时间用现在完成时。"
+        }
+      ]
+    },
+    "blocks": [
+      {
+        "id": "a2-pp-formula",
+        "type": "formula",
+        "stage": "pattern",
+        "title": {
+          "en": "Present perfect form",
+          "vi": "Công thức Present Perfect",
+          "zh": "现在完成时结构"
+        },
+        "payload": {
+          "parts": [
+            {
+              "text": "subject",
+              "role": "subject"
+            },
+            {
+              "text": "have / has",
+              "role": "auxiliary"
+            },
+            {
+              "text": "past participle (V3)",
+              "role": "verb"
+            }
+          ]
+        }
+      },
+      {
+        "id": "a2-ps-formula",
+        "type": "formula",
+        "stage": "pattern",
+        "title": {
+          "en": "Past simple form",
+          "vi": "Công thức Past Simple",
+          "zh": "一般过去时结构"
+        },
+        "payload": {
+          "parts": [
+            {
+              "text": "subject",
+              "role": "subject"
+            },
+            {
+              "text": "past form (V2 / -ed)",
+              "role": "verb"
+            },
+            {
+              "text": "finished-time context",
+              "role": "time"
+            }
+          ]
+        }
+      },
+      {
+        "id": "a2-time-view",
+        "type": "timeline",
+        "stage": "pattern",
+        "title": {
+          "en": "Where is the speaker standing?",
+          "vi": "Người nói đang đứng ở điểm nhìn nào?",
+          "zh": "说话者站在哪个时间视角？"
+        },
+        "instruction": {
+          "vi": "Đừng săn signal word trước. Hãy xác định khoảng thời gian đã đóng hay vẫn nối tới hiện tại.",
+          "en": "Do not hunt for signal words first. Decide whether the time frame is closed or still connected to the present."
+        },
+        "payload": {
+          "events": [
+            {
+              "label": {
+                "vi": "Sự việc quá khứ",
+                "en": "Past event"
+              },
+              "position": "past",
+              "note": {
+                "vi": "lost / visited / finished",
+                "en": "lost / visited / finished"
+              }
+            },
+            {
+              "label": {
+                "vi": "HIỆN TẠI: kết quả còn liên quan?",
+                "en": "NOW: does the result still matter?"
+              },
+              "position": "now",
+              "note": {
+                "vi": "Nếu có, present perfect có thể là lựa chọn tự nhiên.",
+                "en": "If yes, present perfect may be the natural choice."
+              }
+            },
+            {
+              "label": {
+                "vi": "Mốc đã đóng: yesterday / in 2024 / last week",
+                "en": "Closed time: yesterday / in 2024 / last week"
+              },
+              "position": "context",
+              "note": {
+                "vi": "Mốc này kéo câu về past simple.",
+                "en": "This kind of time frame points to past simple."
+              }
+            }
+          ]
+        }
+      },
+      {
+        "id": "a2-pp-scene",
+        "type": "scene",
+        "stage": "context",
+        "title": {
+          "en": "One situation, two questions",
+          "vi": "Một tình huống, hai câu hỏi",
+          "zh": "同一情境，两种问题"
+        },
+        "payload": {
+          "setup": {
+            "vi": "Bạn đang tìm chìa khóa trước khi ra khỏi nhà.",
+            "en": "You are looking for your keys before leaving home."
+          },
+          "lines": [
+            {
+              "speaker": "You",
+              "text": "I've lost my keys.",
+              "meaning": {
+                "vi": "Bây giờ tôi vẫn chưa có chìa khóa — kết quả hiện tại quan trọng.",
+                "en": "I still do not have the keys now — the present result matters."
+              }
+            },
+            {
+              "speaker": "Friend",
+              "text": "When did you last see them?",
+              "meaning": {
+                "vi": "Hỏi một thời điểm quá khứ cụ thể.",
+                "en": "This asks about a specific past time."
+              }
+            },
+            {
+              "speaker": "You",
+              "text": "I saw them on the desk this morning.",
+              "meaning": {
+                "vi": "Một sự việc ở mốc quá khứ đã xác định.",
+                "en": "This places the event at a defined past time."
+              }
+            }
+          ]
+        }
+      },
+      {
+        "id": "a2-pp-contrast",
+        "type": "contrast",
+        "stage": "compare",
+        "title": {
+          "en": "Don't confuse these viewpoints",
+          "vi": "Đừng nhầm hai góc nhìn này",
+          "zh": "别混淆这两种视角"
+        },
+        "payload": {
+          "items": [
+            {
+              "label": "Present Perfect",
+              "text": "I've sent the file.",
+              "note": {
+                "vi": "Điểm chính: bây giờ file đã được gửi; người nghe có thể kiểm tra.",
+                "en": "Main point: the file has now been sent, so the listener can check it."
+              }
+            },
+            {
+              "label": "Past Simple",
+              "text": "I sent the file at 8:00.",
+              "note": {
+                "vi": "Điểm chính: sự việc xảy ra ở một mốc quá khứ đã xác định.",
+                "en": "Main point: the event happened at a defined past time."
+              }
+            }
+          ]
+        }
+      },
+      {
+        "id": "a2-pp-mistake",
+        "type": "common_mistake",
+        "stage": "compare",
+        "title": {
+          "en": "Finished-time trap",
+          "vi": "Bẫy mốc thời gian đã kết thúc",
+          "zh": "已结束时间的常见错误"
+        },
+        "payload": {
+          "incorrect": "I have seen her yesterday.",
+          "why": {
+            "vi": "Yesterday là một khoảng thời gian đã kết thúc. Khi đặt sự việc trực tiếp vào khoảng đó, dùng past simple.",
+            "en": "Yesterday is a finished time period. When you place the event directly inside that finished time, use past simple."
+          },
+          "correct": "I saw her yesterday.",
+          "context": {
+            "vi": "Bạn đang kể khi nào lần gặp đó xảy ra.",
+            "en": "You are saying when that meeting happened."
+          }
+        }
+      },
+      {
+        "id": "a2-pp-exception",
+        "type": "exception",
+        "stage": "compare",
+        "title": {
+          "en": "Today is not always finished",
+          "vi": "Today không phải lúc nào cũng là thời gian đã đóng",
+          "zh": "today 不一定已经结束"
+        },
+        "payload": {
+          "rule": {
+            "vi": "Mốc thời gian đã kết thúc thường đi với past simple.",
+            "en": "A finished past time normally goes with past simple."
+          },
+          "exception": {
+            "vi": "Today / this week / this year có thể vẫn chưa kết thúc, nên present perfect có thể tự nhiên.",
+            "en": "Today / this week / this year may still be unfinished, so present perfect can be natural."
+          },
+          "why": {
+            "vi": "Lựa chọn phụ thuộc cách người nói nhìn khoảng thời gian: đã đóng hay vẫn còn mở tới hiện tại.",
+            "en": "The choice depends on how the speaker views the time frame: closed, or still open up to now."
+          },
+          "context": {
+            "vi": "I've had three meetings today. (Ngày hôm nay vẫn đang tiếp diễn.)",
+            "en": "I've had three meetings today. (Today is still in progress.)"
+          }
+        }
+      },
+      {
+        "id": "a2-pp-micro",
+        "type": "micro_practice",
+        "stage": "apply",
+        "title": {
+          "en": "Choose the viewpoint",
+          "vi": "Chọn theo góc nhìn",
+          "zh": "根据视角选择"
+        },
+        "payload": {
+          "interaction": "compare",
+          "prompt": {
+            "vi": "Bạn vừa gửi file và muốn người nhận kiểm tra ngay bây giờ. Câu nào phù hợp hơn?",
+            "en": "You have just sent the file and want the recipient to check it now. Which sentence fits better?"
+          },
+          "options": [
+            "I've sent the file. Check your inbox.",
+            "I sent the file at 8:00 yesterday."
+          ],
+          "answer": "I've sent the file. Check your inbox.",
+          "explanation": {
+            "vi": "Tình huống tập trung vào kết quả hiện tại: file hiện đã nằm trong inbox.",
+            "en": "The situation focuses on the present result: the file is now in the inbox."
+          }
+        }
+      },
+      {
+        "id": "a2-pp-personal",
+        "type": "personal_practice",
+        "stage": "apply",
+        "title": {
+          "en": "Use your own timeline",
+          "vi": "Dùng timeline của chính bạn",
+          "zh": "用你自己的时间线"
+        },
+        "payload": {
+          "prompt": {
+            "vi": "Viết 2 câu thật: một trải nghiệm/kết quả còn liên quan hiện tại bằng present perfect; một việc ở mốc quá khứ đã kết thúc bằng past simple. Ghi ngắn lý do cho mỗi lựa chọn.",
+            "en": "Write two true sentences: one experience or result still connected to now using present perfect, and one event in a finished past time using past simple. Give a short reason for each choice."
+          },
+          "placeholder": {
+            "vi": "1) I've ... because ...\n2) I ... last ... because ...",
+            "en": "1) I've ... because ...\n2) I ... last ... because ..."
+          }
+        }
+      },
+      {
+        "id": "a2-pp-recall",
+        "type": "recall",
+        "stage": "recall",
+        "title": {
+          "en": "Rebuild the decision rule",
+          "vi": "Tự dựng lại quy tắc quyết định",
+          "zh": "主动重建选择规则"
+        },
+        "payload": {
+          "prompt": {
+            "vi": "Không nhìn timeline: viết 2 câu hỏi bạn tự hỏi trước khi chọn Present Perfect hay Past Simple.",
+            "en": "Without looking at the timeline, write two questions you can ask yourself before choosing Present Perfect or Past Simple."
+          },
+          "answer": "Is the time finished/specific in the past? Does the past event still connect to now or an unfinished time?"
+        }
+      },
+      {
+        "id": "a2-pp-memory",
+        "type": "memory_hook",
+        "stage": "recall",
+        "title": {
+          "en": "Memory hook",
+          "vi": "Móc ghi nhớ",
+          "zh": "记忆钩子"
+        },
+        "payload": {
+          "cue": {
+            "vi": "CLOSED TIME → Past Simple · BRIDGE TO NOW → Present Perfect",
+            "en": "CLOSED TIME → Past Simple · BRIDGE TO NOW → Present Perfect"
+          },
+          "remember": {
+            "vi": "Đừng chỉ học signal words. Hãy nhìn xem khoảng thời gian đã đóng hay câu đang nối quá khứ với hiện tại.",
+            "en": "Do not rely only on signal words. Ask whether the time is closed or whether the sentence builds a bridge from the past to now."
+          }
+        }
+      },
+      {
+        "id": "a2-pp-transfer",
+        "type": "skill_transfer",
+        "stage": "transfer",
+        "title": {
+          "en": "Transfer the viewpoint",
+          "vi": "Chuyển góc nhìn sang các kỹ năng",
+          "zh": "把时间视角迁移到各项技能"
+        },
+        "payload": {
+          "skills": {
+            "writing": {
+              "vi": "Viết 3 câu cập nhật tiến độ: dùng present perfect cho kết quả hiện tại và past simple cho việc có mốc quá khứ.",
+              "en": "Write three progress-update sentences: use present perfect for a current result and past simple for an event with a finished past time."
+            },
+            "speaking": {
+              "vi": "Nói 20 giây về một trải nghiệm; sau đó thêm mốc cụ thể và chuyển sang past simple.",
+              "en": "Speak for 20 seconds about an experience; then add a specific time and switch to past simple."
+            },
+            "reading": {
+              "vi": "Khi gặp present perfect, tìm xem câu nối với NOW bằng kết quả, trải nghiệm hay khoảng thời gian chưa kết thúc.",
+              "en": "When you meet present perfect in reading, identify whether it connects to NOW through a result, an experience, or unfinished time."
+            },
+            "listening": {
+              "vi": "Nghe xem người nói chuyển từ present perfect sang past simple khi bắt đầu kể chi tiết thời gian cụ thể.",
+              "en": "Listen for the point where a speaker shifts from present perfect to past simple when they start giving specific past-time details."
+            }
+          }
+        }
+      }
+    ],
+    "completion": {
+      "required_stages": [
+        "apply",
+        "recall",
+        "transfer"
+      ]
+    },
+    "authoring": {
+      "status": "source-backed-concept-specific",
+      "family": "present_simple",
+      "classification_version": 2,
+      "source_runtime_ai": false,
+      "human_expert_validation": "representative-reviewed"
+    }
+  },
+  "content_status": "curated",
+  "completed": false,
+  "source": "static-grammar-kb",
+  "language": "en",
+  "completion_claim": "activity_evidence_not_mastery"
+}

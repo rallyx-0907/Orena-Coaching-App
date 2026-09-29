@@ -1,0 +1,58 @@
+/* Frame 04-Discover.html, measured. The page header, search bar, underline tabs, content card and
+   empty state all reuse kit/kit.css (.o-pagehead/.o-h1, .o-search, .o-tabs/.o-tab, .o-card, .o-empty)
+   and kit/components.js (mediaCard()) unchanged - this file holds only Discover's own layout: the
+   header's action row, the filter-count badge, the results row and the card grid. */
+.s-discover {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 28px;
+}
+.s-discover__actions {
+  display: flex;
+  gap: 10px;
+}
+/* kit.css's shared .o-search/.o-tabs carry no top margin of their own (a caller's context sets
+   it) - the horizontal scroll a longer vi/zh tab-label set needs is now kit/kit.css's own .o-tabs
+   rule (D-091 kit fidelity pass; previously duplicated here). */
+.s-discover .o-search {
+  margin-top: 24px;
+}
+.s-discover .o-tabs {
+  margin-top: 24px;
+}
+.s-discover__filtercount {
+  background: var(--accent-fill);
+  color: var(--accent-ink);
+  border-radius: 999px;
+  padding: 1px 9px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.s-discover__results {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 22px;
+  font-size: 14px;
+  color: var(--muted);
+}
+.s-discover__grid {
+  display: grid;
+  grid-template-columns: var(--cols);
+  gap: 20px;
+  margin-top: 12px;
+}
+
+/* Filter Sheet body (frame 52-Filter-Sheet.html): one block per group, a wrapped chip row. The
+   sheet shell itself (position/inset/width/radius/header/footer) is kit.css's .o-sheet family. */
+.s-discover-fgroup__label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.s-discover-fgroup__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}

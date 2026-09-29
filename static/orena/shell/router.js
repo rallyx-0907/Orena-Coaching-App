@@ -17,7 +17,7 @@ import { mount } from '../kit/html.js';
 import { closeSheet } from '../kit/overlay.js';
 import { loadingMarkup, errorMarkup } from '../kit/states.js';
 import { shellCopy as t } from '../copy/shell.js';
-import { PRIMARY, DEFAULT_ROUTE, match, href, byId } from './routes.js';
+import { PRIMARY, DEFAULT_ROUTE, entryRoute, match, href, byId } from './routes.js';
 import { SCREENS } from './screens.js';
 
 const CRUMB_PRIMARY = ['today', 'discover', 'orena', 'practice', 'library', 'profile'];
@@ -104,6 +104,11 @@ export function createRouter({ frame, getContext }) {
   }
 
   async function render() {
+    /* The empty address is an entry, not a place: it opens where `entryRoute` says (D-098). */
+    if (!String(location.hash).replace(/^#\/?/, '').split('?')[0].replace(/\/+$/, '')) {
+      go(href(entryRoute(getContext())), { replace: true });
+      return;
+    }
     const found = match(location.hash);
     if (!found) {
       go(href(DEFAULT_ROUTE), { replace: true });
@@ -126,6 +131,7 @@ export function createRouter({ frame, getContext }) {
       session(ORIGIN_KEY, origin);
     }
     root.dataset.focus = route.focus ? '1' : '0';
+    root.dataset.bare = route.bare ? '1' : '0';
     root.dataset.route = route.id;
     paint();
 
@@ -222,12 +228,29 @@ export function createRouter({ frame, getContext }) {
     go(link.getAttribute('href'));
   }
 
+  /* The bell (desktop top bar and phone header, shell/frame.js's two `[data-open="notifications"]`
+     buttons): opens the design's notifications sheet (screens/notifications/sheet.js), loaded
+     lazily so it never joins first paint - the same `import(...).then(...)` pattern every other
+     shell-drawn sheet trigger already uses (e.g. discover/screen.js's Import button). */
+  function onOpenClick(event) {
+    const target = event.target.closest?.('[data-open]');
+    if (!target || event.defaultPrevented) return;
+    const which = target.dataset.open;
+    if (which === 'notifications') {
+      event.preventDefault();
+      import('../screens/notifications/sheet.js')
+        .then((module) => module.openNotifications({ context: getContext(), go }))
+        .catch((error) => console.error('[Orena] Notifications is not available yet', error));
+    }
+  }
+
   return {
     start() {
       window.addEventListener('hashchange', render);
       document.addEventListener('keydown', onKey);
       document.addEventListener('click', onClick);
       document.addEventListener('click', onLinkClick);
+      document.addEventListener('click', onOpenClick);
       document.addEventListener('keydown', (event) => {
         if (event.key === 'Enter' && event.target.matches?.('[data-go][role="link"]')) go(event.target.dataset.go);
       });

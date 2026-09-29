@@ -1,0 +1,173 @@
+{
+  "contract_version": 5,
+  "surfaces": {
+    "home": {
+      "name": {
+        "en": "Today",
+        "vi": "Hôm nay",
+        "zh-CN": "今天"
+      }
+    },
+    "orena.home": {
+      "name": {
+        "en": "Orena",
+        "vi": "Orena",
+        "zh-CN": "Orena"
+      }
+    },
+    "library": {
+      "name": {
+        "en": "Discover",
+        "vi": "Khám phá",
+        "zh-CN": "发现"
+      }
+    },
+    "reading.library": {
+      "name": {
+        "en": "Discover",
+        "vi": "Khám phá",
+        "zh-CN": "发现"
+      }
+    },
+    "reading.workspace": {
+      "name": {
+        "en": "Reader",
+        "vi": "Đọc",
+        "zh-CN": "阅读"
+      }
+    },
+    "listening.library": {
+      "name": {
+        "en": "Discover",
+        "vi": "Khám phá",
+        "zh-CN": "发现"
+      }
+    },
+    "listening.workspace": {
+      "name": {
+        "en": "Listening",
+        "vi": "Nghe",
+        "zh-CN": "听力"
+      }
+    },
+    "listening.dictation": {
+      "name": {
+        "en": "Dictation",
+        "vi": "Chép chính tả",
+        "zh-CN": "听写"
+      }
+    },
+    "speaking.library": {
+      "name": {
+        "en": "Practice Hub",
+        "vi": "Luyện tập",
+        "zh-CN": "练习中心"
+      }
+    },
+    "speaking.workspace": {
+      "name": {
+        "en": "Pronunciation",
+        "vi": "Phát âm",
+        "zh-CN": "发音"
+      }
+    },
+    "speaking.free_talk": {
+      "name": {
+        "en": "Free Talk",
+        "vi": "Nói tự do",
+        "zh-CN": "自由说"
+      }
+    },
+    "speaking.word_detail": {
+      "name": {
+        "en": "Compare with model",
+        "vi": "So với mẫu",
+        "zh-CN": "与示范对比"
+      }
+    },
+    "speaking.compare": {
+      "name": {
+        "en": "Compare with model",
+        "vi": "So với mẫu",
+        "zh-CN": "与示范对比"
+      }
+    },
+    "writing.workspace": {
+      "name": {
+        "en": "Writing",
+        "vi": "Viết",
+        "zh-CN": "写作"
+      }
+    },
+    "writing.review": {
+      "name": {
+        "en": "Writing",
+        "vi": "Viết",
+        "zh-CN": "写作"
+      }
+    },
+    "writing.revision": {
+      "name": {
+        "en": "Compare versions",
+        "vi": "So sánh phiên bản",
+        "zh-CN": "版本对比"
+      }
+    },
+    "vocabulary.my_language": {
+      "name": {
+        "en": "My Library",
+        "vi": "Thư viện của tôi",
+        "zh-CN": "我的书库"
+      }
+    },
+    "vocabulary.word": {
+      "name": {
+        "en": "Word",
+        "vi": "Từ",
+        "zh-CN": "词语"
+      }
+    },
+    "vocabulary.review_due": {
+      "name": {
+        "en": "Review",
+        "vi": "Ôn tập",
+        "zh-CN": "复习"
+      }
+    },
+    "grammar.catalog": {
+      "name": {
+        "en": "Grammar",
+        "vi": "Ngữ pháp",
+        "zh-CN": "语法"
+      }
+    },
+    "grammar.point": {
+      "name": {
+        "en": "Grammar",
+        "vi": "Ngữ pháp",
+        "zh-CN": "语法"
+      }
+    },
+    "progress": {
+      "name": {
+        "en": "Progress",
+        "vi": "Tiến độ",
+        "zh-CN": "进度"
+      }
+    },
+    "preferences": {
+      "name": {
+        "en": "Settings",
+        "vi": "Cài đặt",
+        "zh-CN": "设置"
+      }
+    },
+    "preferences.agent_memory": {
+      "name": {
+        "en": "Settings",
+        "vi": "Cài đặt",
+        "zh-CN": "设置"
+      }
+    }
+  }
+}

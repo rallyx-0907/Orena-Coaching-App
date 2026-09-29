@@ -116,7 +116,15 @@
 }
 
 /* ---- Chips and pills ---- */
-/* Filter sheet options, Settings choices: a selectable pill. */
+/* Filter sheet options, Settings choices: a selectable pill. Every caller's own row is either
+   `overflow-x:auto` (Settings' `.s-settings__tabs`) or `flex-wrap:wrap` (Filter Sheet, Discover,
+   Progress) - both meant to keep each chip's own label width, not compress it. `white-space:nowrap`
+   plus base.css's blanket `:where(#app *){min-width:0}` (which removes the flex item's automatic
+   min-content floor app-wide) let `flex-shrink`'s default of 1 shrink a chip below its own label,
+   clipping glyphs past the pill's `overflow:visible` edge - confirmed live at 390px in en/vi
+   (Settings' longest vi label measured scrollWidth 156 vs a shrunk clientWidth of 77). `flex-shrink:
+   0` restores the intended behaviour (the row scrolls or wraps; the chip never shrinks) without
+   touching the app-wide min-width reset. */
 .o-chip {
   display: inline-flex;
   align-items: center;
@@ -129,6 +137,7 @@
   font-size: 14px;
   font-weight: 600;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 .o-chip[aria-pressed='true'],
 .o-chip[aria-selected='true'] {
@@ -176,10 +185,17 @@
 }
 
 /* ---- Underline tabs: Discover, My Library, Progress ---- */
+/* Every tab strip the design draws (04-Discover.html, 12-My-Library.html, 17-Progress.html) sets
+   `overflow-x:auto;overflow-y:hidden` on this row unconditionally (not a mobile-only rule) - a
+   longer vi/zh label set or a six-tab screen scrolls the strip itself rather than wrapping or
+   overflowing the page, confirmed live (Progress's own mobile frame: scrollWidth 509 / clientWidth
+   350). Previously duplicated as a scoped override in three screens' own CSS; owned here now. */
 .o-tabs {
   display: flex;
   gap: 28px;
   border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 .o-tab {
   flex: none;
@@ -260,7 +276,10 @@
   font-family: 'JetBrains Mono', monospace;
 }
 
-/* Search field: Discover's inline search (height 52, radius 16). */
+/* Search field: Discover's inline search (height 52, radius 16). The container's own colour is
+   --text3 in the frame (04-Discover.html); the icon and input both carry their own explicit
+   colour (--muted / --text respectively), so this has no visible effect today, but it is the
+   correct token to inherit from for any future child that relies on it. */
 .o-search {
   display: flex;
   align-items: center;
@@ -270,7 +289,7 @@
   border-radius: 16px;
   background: var(--surface);
   box-shadow: var(--sh1);
-  color: var(--muted);
+  color: var(--text3);
 }
 .o-search input {
   flex: 1;
@@ -457,11 +476,17 @@
   border-radius: 16px;
   box-shadow: var(--sh1);
 }
+/* Ink is --badge-ink, not --accent-ink: the frame binds this glyph to white text on all four
+   kinds' own solid fill (--green/--accent-text/--amber/--red), which fails AA in dark theme for
+   every one of them (1.81-2.77:1 measured; needs 4.5:1) - the same gap grammar-concept.css already
+   fixed for its own mistake/quiz glyphs, with the same ink. --badge-ink is #fff in light theme
+   (identical to --accent-ink there, so no visual change) and near-black in dark theme (6.94-10.59:1
+   against all four fills - scripts/test_orena_kit.mjs's AA pairs cover them). */
 .o-banner__glyph {
   width: 24px;
   height: 24px;
   border-radius: 999px;
-  color: var(--accent-ink);
+  color: var(--badge-ink);
   display: flex;
   align-items: center;
   justify-content: center;
