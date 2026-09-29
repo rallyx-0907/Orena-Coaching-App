@@ -40,6 +40,7 @@ Rules:
 | `reading_library_books.en.json` | `GET /api/reading/library/books?learning_language=en` (captured after importing one EPUB through the real admin `POST /api/reading/library/import` flow - see "Data created for this capture" below) | 2026-09-28 |
 | `reading_library_books.zh.json` | `GET /api/reading/library/books?learning_language=zh` (no Chinese book imported - real empty shape) | 2026-09-28 |
 | `reading_library_book_detail.json` | `GET /api/reading/library/books/{id}` | 2026-09-28 |
+| `reading_library_book_chapter.json` | `GET /api/reading/library/books/{id}/chapters/{chapterId}` (Reader's own chapter-content contract; `blocks`/`paragraphs` trimmed to the first heading + 5 paragraphs of a real chapter, see "Data created for this capture") | 2026-09-28 |
 | `vocabulary_library_collections.en.json` | `GET /api/vocabulary/library/collections?language_code=en` (empty - see "Content-state gaps") | 2026-09-28 |
 | `vocabulary_library_collections.zh.json` | `GET /api/vocabulary/library/collections?language_code=zh` (empty, same reason) | 2026-09-28 |
 | `library_vocabulary.json` | `GET /api/library/vocabulary?limit=5` (English, the seeded 3012-word learner) | 2026-09-28 |
@@ -72,6 +73,13 @@ Rules:
 | `library_review_queue_pinned_listening.json` | `GET /api/library/review-queue` after pinning a listening item (`POST /api/library/items {kind: "listening"}`) | 2026-09-28 |
 | `grammar_concept_library_grammar_lesson_timeline.json` | `GET /api/library/grammar/a2-present-perfect-vs-past-simple` (a pattern-stage block of type `timeline`) | 2026-09-28 |
 | `progress_essays_list.json` | **built, not captured** - see "Built from the serializer" below | 2026-09-28 |
+| `text_discussion_empty.json` | `GET /api/texts/discussion?source_kind=story&source_id={articleId}` (a source with no thread yet - real, common shape) | 2026-09-28 |
+| `reading_practice_article_set_approved.json` | `GET /api/reading/practice/articles/{id}` - **built, not captured** (no article in this sandbox has an approved comprehension set - see "Built from the serializer" below) | 2026-09-28 |
+| `reading_practice_grade_result.json` | `POST /api/reading/practice/sets/{id}/questions/{id}/grade` - **built, not captured** (same reason: no approved set to grade a question from, and `ORENA_READING_PRACTICE_SUBMIT` is unset besides) | 2026-09-28 |
+| `text_discussion_thread.json` | `GET /api/texts/discussion?source_kind=story&source_id={articleId}` after one real question (`POST .../turns`) - a populated thread; the assistant turn is the isolated stack's local model (`ollama` / `qwen3:8b`) | 2026-09-29 |
+| `text_discussion_turn_response.json` | `POST /api/texts/discussion/turns` (the exchange's own response: the thread plus `reused`) | 2026-09-29 |
+| `spoken_response.json` | `POST /api/dictionary/spoken-response` with a Paraphrase-mode `situation` and a typed answer (`target_language: vi`; the model answered its `why` lines in English - a real model quirk, not a shape difference). `landed_differently` is empty here: a real, common shape | 2026-09-29 |
+| `spoken_response_landed.json` | `POST /api/dictionary/spoken-response` with a spoken-style answer that has errors (`target_language: vi`): `carried` and `landed_differently` both populated, each fix with `quote`/`instead`/`why`/`judgement` - the shape Free Talk's Fixes rows, Conversation's per-turn coaching and Situation Reaction's rows read | 2026-09-29 |
 
 ## Data created for this capture
 
@@ -113,6 +121,7 @@ in `writing_coach/vocabulary_library.py` / `writing_coach/vocabulary_cards.py`.
 Both screens' field reads (`id`, `language_code`, `level_range`, `item_count`,
 `progress.learned_count`, `headword`, `identity.language`, `review_stage`,
 `saved`) match those serializers exactly.
+
 
 ## Not captured - genuinely not producible in this sandbox
 
@@ -169,6 +178,22 @@ Both screens' field reads (`id`, `language_code`, `level_range`, `item_count`,
   bounded `excerpt` the list route derives from it (only `GET /api/essays/{id}`
   carries the full text). Re-capture it from a runtime that can evaluate an
   essay.
+- `reading_practice_article_set_approved.json` / `reading_practice_grade_result.json`: no article
+  in this sandbox has an approved comprehension set (`reading_practice_article_set.json` above is
+  the real 404 every article answers instead), so Check Understanding's interactive quiz could not
+  be exercised against real content here. Built field for field from
+  `writing_coach/persistence/reading_evidence_repository.py`'s own `_set_payload()`/
+  `_question_payload(with_answer=False)`/`served_set()` (the approved-set shape) and
+  `grade_question()` (the graded-answer shape) - `id/rank/question_type/prompt/options` for a
+  question, `question_id/selected_index/correct/correct_index/explanation/evidence_fragment` for a
+  grade result. `question_type` uses only the backend's real closed set (`main_idea`, `detail`,
+  `inference`, `vocabulary_in_context`, `cause_effect`, `sequence`, `authors_purpose`,
+  `reference`), never the design frame's own sample "factual/inference/meaning/intent" wording.
+  `evidence_fragment` is the question's stored `evidence_text`: words copied exactly from the article
+  body (`reading_evidence_repository.py` verifies `body[evidence_start:evidence_end] == evidence_text`),
+  so it carries no quotation marks of its own, and it is `""` for a `main_idea` / `authors_purpose`
+  question that has none.
+
 
 ## Bugs found outside the field-shape class (reported, not fixed here)
 

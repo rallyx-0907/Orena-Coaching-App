@@ -17,6 +17,16 @@ import {
   readerSettings,
   readerPresentation,
 } from '../product/reader-settings.js';
+import {
+  LOOKUP_LIMITS,
+  TRANSLATE_LIMITS,
+  EXPLAIN_LIMITS,
+  blocksFrom as sharedBlocksFrom,
+  chapterNeighbours as sharedChapterNeighbours,
+  selectionKind as sharedSelectionKind,
+  sentenceAround as sharedSentenceAround,
+  sentenceSpans,
+} from '../product/reader-text.js';
 /* Re-exported unchanged: ui/reader.js, ui/lexical.js and
    scripts/test_orena_reading_room.mjs import these names from this module. The values and the
    clamping now live in product/reader-settings.js (moved there so the new Settings screen can use
@@ -24,10 +34,9 @@ import {
 export { READER_DEFAULTS, READER_SIZE, readerSettings, readerPresentation };
 
 /* What each endpoint accepts, named once so a request is shaped to fit rather
-   than refused. */
-export const LOOKUP_LIMITS = Object.freeze({ selection: 80, context: 1200 });
-export const TRANSLATE_LIMITS = Object.freeze({ text: 5900 });
-export const EXPLAIN_LIMITS = Object.freeze({ selection: 1600, context: 2400 });
+   than refused. Moved to product/reader-text.js (moved there so the new Reader screen can shape
+   text and selections without importing old UI); re-exported unchanged. */
+export { LOOKUP_LIMITS, TRANSLATE_LIMITS, EXPLAIN_LIMITS };
 
 const lines = (value) => esc(value).replace(/\n/g, '<br>');
 const tidy = (value) =>
@@ -40,39 +49,9 @@ const flat = (value) => tidy(value).replace(/\n/g, ' ').toLowerCase();
 
 /* --- Content ------------------------------------------------------------- */
 
-/* The blocks a text is read as. A structured chapter keeps its headings,
-   paragraphs and section breaks; a text that only has paragraphs reads as
-   paragraphs. Anything else - an unknown block, an empty one, a break with
-   nothing on one side of it - is dropped rather than shown. */
-export function blocksFrom(item = {}) {
-  const source =
-    Array.isArray(item.blocks) && item.blocks.length
-      ? item.blocks
-      : (item.paragraphs || []).map((text) => ({ type: 'paragraph', text }));
-  const blocks = [];
-  for (const block of source) {
-    if (!block || typeof block !== 'object') continue;
-    if (block.type === 'break') {
-      if (blocks.length && blocks[blocks.length - 1].type !== 'break')
-        blocks.push({ type: 'break' });
-      continue;
-    }
-    if (block.type !== 'heading' && block.type !== 'paragraph') continue;
-    const text = tidy(block.text);
-    if (!text) continue;
-    blocks.push(
-      block.type === 'heading'
-        ? {
-            type: 'heading',
-            level: Math.min(6, Math.max(1, Number.parseInt(block.level, 10) || 2)),
-            text,
-          }
-        : { type: 'paragraph', text },
-    );
-  }
-  while (blocks.length && blocks[blocks.length - 1].type === 'break') blocks.pop();
-  return blocks;
-}
+/* Moved to product/reader-text.js (so the new Reader screen can shape a document's text without
+   importing old UI); re-exported unchanged for this module's own callers below. */
+export const blocksFrom = sharedBlocksFrom;
 
 // A paragraph's text, escaped, with its own line breaks and an optional mark.
 export function paragraphHtml(text, mark = null) {
@@ -126,17 +105,9 @@ export function readerArticleHtml(c, { title, language, blocks, marks = new Map(
 const byPosition = (chapters) =>
   [...(chapters || [])].sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
 
-export function chapterNeighbours(chapters, chapterId) {
-  const ordered = byPosition(chapters);
-  const index = ordered.findIndex((chapter) => String(chapter.id) === String(chapterId));
-  if (index < 0) return null;
-  return {
-    index,
-    total: ordered.length,
-    previous: ordered[index - 1] || null,
-    next: ordered[index + 1] || null,
-  };
-}
+/* Moved to product/reader-text.js (so the new Reader screen can find chapter neighbours without
+   importing old UI); re-exported unchanged. */
+export const chapterNeighbours = sharedChapterNeighbours;
 
 /* The bar names the chapter and nothing more - "chương 3" - because that
    is what the frame writes there, beside what is left to read. How many
@@ -187,24 +158,9 @@ export function settingsHtml(c, settings) {
 
 /* --- Selection ----------------------------------------------------------- */
 
-/* What the learner selected: a word (looked up), a phrase (translated, and
-   worth keeping), or a passage (translated or explained). Too much to act on
-   is nothing. */
-export function selectionKind(text, language) {
-  const value = String(text ?? '').replace(/\s+/g, ' ').trim();
-  if (!value || value.length > EXPLAIN_LIMITS.selection) return null;
-  if (language === 'zh') {
-    if (/[。！？；…!?;]/.test(value) || value.length > 24) return 'passage';
-    if (value.length <= 4 && !/[\s，、,.：:“”"'‘’（）()]/.test(value)) return 'word';
-    return 'phrase';
-  }
-  const words = value.split(' ');
-  if (words.length === 1 && value.length <= 40 && /^[\p{L}\p{M}'’-]+$/u.test(value))
-    return 'word';
-  if (words.length <= 6 && value.length <= LOOKUP_LIMITS.selection && !/[.!?;:]/.test(value))
-    return 'phrase';
-  return 'passage';
-}
+/* Moved to product/reader-text.js (so the new Reader screen can classify a selection without
+   importing old UI); re-exported unchanged. */
+export const selectionKind = sharedSelectionKind;
 
 // A kept word carries its meaning and the sentence it was met in.
 export function keepPayload({ selection, result = {}, context = '', title = '' }) {
@@ -223,19 +179,8 @@ export function keepPayload({ selection, result = {}, context = '', title = '' }
 
 /* --- Context ------------------------------------------------------------- */
 
-const SENTENCE_END = /[.!?…。！？]+["'”’」』）)\]]*\s*|\n+/gu;
-
-function sentenceSpans(text) {
-  const spans = [];
-  let start = 0;
-  for (const match of text.matchAll(SENTENCE_END)) {
-    const end = match.index + match[0].length;
-    if (end > start) spans.push({ start, end });
-    start = end;
-  }
-  if (start < text.length) spans.push({ start, end: text.length });
-  return spans;
-}
+/* sentenceSpans now lives in product/reader-text.js (exported there for the new Reader screen's
+   own sentence-level markup); chunkSpans below still needs it, so it is imported, not redefined. */
 
 function chunkSpans(text, max) {
   const chunks = [];
@@ -263,21 +208,7 @@ function chunkSpans(text, max) {
   return chunks;
 }
 
-// The sentence a selection sits in, so a meaning is asked about its own use.
-export function sentenceAround(text, start, end, limit = LOOKUP_LIMITS.context) {
-  const value = String(text ?? '');
-  const spans = sentenceSpans(value);
-  let from = (spans.find((s) => s.start <= start && start < s.end) || { start: 0 }).start;
-  let to = (spans.find((s) => s.start < end && end <= s.end) || { end: value.length }).end;
-  if (to - from > limit) {
-    const room = Math.max(0, limit - (end - start));
-    from = Math.max(0, start - Math.floor(room / 2));
-    to = Math.min(value.length, from + limit);
-    if (to < end) {
-      to = end;
-      from = Math.max(0, to - limit);
-    }
-  }
-  return value.slice(from, to).trim();
-}
+// Moved to product/reader-text.js (so the new Reader screen can find a selection's sentence
+// context without importing old UI); re-exported unchanged.
+export const sentenceAround = sharedSentenceAround;
 

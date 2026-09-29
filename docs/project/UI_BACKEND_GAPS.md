@@ -3269,3 +3269,123 @@ wiring these to the real backend, for the ten workspace agents that call them an
   losing the due date on undo. **RESOLVED (2026-09-28):** `restorePayload` now carries every string
   field `RestoreVocabularyIn` accepts; `scripts/test_orena_screen_word.mjs` reads the model's fields
   from the backend source and fails if one is missing.
+
+## Check Understanding / Discussion / Reading Transfer (D-088 frames 20/46/39), Wave B, 2026-09-29
+
+Built `static/orena/screens/check/` (route `checku`), `static/orena/screens/discussion/` (route
+`discussion`) and `static/orena/screens/reading-transfer/` (route `rtransfer`), all registered in
+`shell/screens.js`. An earlier pass of this section (2026-09-28) left Reading Transfer on Coming
+soon on the ground that no backend exists for it; that is corrected below - the honest coaching
+endpoint the other Speaking/Listening rooms already read serves it.
+
+- **RT-1. Reading Transfer stands on the coaching endpoint, and the frame's two verdict tiles are
+  replaced by its real lists.** `POST /api/dictionary/spoken-response`
+  (`writing_coach/media_interaction.py#coach_spoken_response`) takes what the learner wrote or said
+  and a `situation` (what they were asked to do) and answers `carried` / `landed_differently`
+  (each item a quotation of the learner's own words with its reason, the backend drops any quotation
+  that is not in the transcript), `another_way`, `next_attempt`, `say_again`, `available`. The screen
+  sends the mode's plain-English task plus the source sentence as the `situation`, and draws: the
+  learner's answer, two tiles - "What carried" and "What would land differently" (a tile with no
+  points is not drawn) - and the frame's "One useful improvement" callout = `next_attempt`
+  (falling back to `another_way`, nothing when both are empty). **Not drawn:** "Meaning preserved?"
+  and "Missing important idea?" - the frame's own scoring is a client-side content-word overlap and an
+  answer-length check, the endpoint's own prompt forbids it to "score, grade or estimate a level",
+  and no backend measures meaning preservation, so any verdict there would be invented (rule 40).
+  `say_again` is not drawn either (the frame has no such element); `another_way` is drawn only as the
+  callout's fallback. The tiles stack on a phone (real points are quotations with reasons, not the
+  frame's one-word values - a recomposition, recorded).
+- **RT-2. What the frame's verdicts would need.** A purpose-built, versioned grading contract that
+  measures rather than coaches: source sentence + mode + answer -> meaning preserved
+  (yes / partly / no), the important idea missing, one improvement - server-side, with the
+  deterministic part (a copy that is not a paraphrase) separate from the model's judgement. Until it
+  exists the two tiles are coaching lists, honestly labelled.
+- **RT-3. Nothing is recorded.** There is no Reading Transfer evidence contract: a check writes
+  nothing to the learner's record, Progress does not count it, and "Finish" only leaves. (Check
+  Understanding is the one Reading activity that writes evidence.)
+- **RT-4. The text must be in the learning language.** The endpoint answers 409 unless
+  `source_language` is the learner's *current learning language*; the screen passes it from the
+  learner's context, never from the text. A text in another language fails with the generic
+  "Coaching isn't available right now" toast - the frame draws no distinct state for it.
+- **RT-5. Which sentence.** No "where I stopped reading" signal reaches this screen, so it starts at
+  the first *workable* sentence of the text (at least 4 words, or 6 Han characters for Chinese; at
+  most 400 characters so it fits the request's `situation` beside its task) and "Another sentence"
+  moves on in reading order, wrapping. The frame starts at a fixed demo index. With a single workable
+  sentence "Another sentence" is not offered (it would only repeat Retry).
+- **RT-6. Observed on the isolated stack.** With `target_language: vi` the local model
+  (`ollama` / `qwen3:8b`) returned its `why` lines in English. A model-following quirk, not a shape
+  difference - the screen marks the coach's lines with the learner's support language and does not
+  second-guess it.
+- **Check Understanding's grading is off by default, and the disabled state must be honest.**
+  `POST /api/reading/practice/sets/{id}/questions/{id}/grade` and `POST
+  /api/reading/practice/attempts` both 503 (`reading_submit_disabled`) unless
+  `ORENA_READING_PRACTICE_SUBMIT=on` (`writing_coach/reading_practice_api.py`) - confirmed live on
+  the isolated stack, where the flag is unset. Rather than let a learner tap an option and hit a
+  503 mid-quiz, the screen reads the `submit_enabled` flag `GET
+  /api/reading/practice/articles/{id}` already returns alongside the question set, before showing
+  any interactive card, and shows the honest "Practice answers aren't being saved yet" empty state
+  instead when it is false. Separately, **no article in this sandbox has an approved comprehension
+  set at all** (`scripts/fixtures/api/reading_practice_article_set.json` - the real, captured 404
+  every article currently answers), so the interactive quiz/grading/score-summary path is exercised
+  against a set built from `reading_evidence_repository.py`'s own serializer shape
+  (`scripts/fixtures/api/reading_practice_article_set_approved.json`,
+  `reading_practice_grade_result.json` - both "built, not captured", per the fixtures README) with
+  only the network answer substituted in a real browser; re-verify once an approved set and
+  `ORENA_READING_PRACTICE_SUBMIT=on` exist on a runtime that has both.
+- **A question's evidence may be empty, and is never quoted by the backend.** `evidence_fragment` is
+  the stored `evidence_text`: words copied exactly from the article body
+  (`reading_evidence_repository.py` verifies `body[evidence_start:evidence_end] == evidence_text`),
+  so it carries no quotation marks of its own (the screen adds the frame's curly ones), and it is `""`
+  for a `main_idea` / `authors_purpose` question that has none - the evidence block and "Show in
+  text" are then not drawn. The hand-built fixture of the earlier pass wrongly gave the fragment its
+  own quotation marks (two layers of quotes on screen); corrected.
+- **Check Understanding's "Go deeper" chips only include Discuss/Reading Transfer.** The frame's
+  `cuDeeper` list (D3 §2.4) is inferred, not specified, to also cover "review saved words" and
+  "next chapter" - neither has a real per-document data source this screen can read honestly (a
+  saved-word count scoped to *this* document does not exist anywhere, the same absence N-10/N-23
+  already name for a related concept; a book chapter's own "is there a next one" needs the book's
+  chapter list). Left out rather than shown with a guessed destination (rule 40).
+- **Check Understanding's "Show in text" has no addressable evidence location.** The frame's own
+  action (`cuShowInText`, D3 §2.4) returns to the Reader and opens the Sentence Quick Sheet on the
+  evidence sentence; the Reader (now built, `screens/reader/`) accepts no anchor for a sentence, and
+  the backend stores the evidence as a character span (`evidence_start`/`evidence_end`) that
+  `GET /api/reading/practice/articles/{id}` does not return. Built conservatively: the button opens
+  the Reader for the same text, without scrolling to or opening the evidence sentence. Needs the span
+  on the served set and an anchor the Reader accepts.
+- **Discussion's source-kind mapping is a judgment call, recorded, not resolved by any spec.** The
+  backend's real source kinds (`writing_coach/persistence/discussion_repository.py` `SOURCE_KINDS`:
+  `story | media | reading_session | book_chapter`) were written for the old content model; the new
+  "<kind>:<id>" content-id scheme every screen shares has no `article` kind. This screen maps an
+  article or a learner's own imported text to the generic `story` kind (the same fallback
+  `static/orena/ui/discussion.js#discussionSource`'s old mapping used for anything it did not
+  special-case) and a book chapter to `book_chapter` with source id `"<bookId>:<chapterId>"`. This
+  is the conservative reading of the existing enum, not a new endpoint or schema need - flagged so
+  a reviewer who expects a dedicated `article` kind knows why there isn't one.
+- **Discussion: the frame's first Orena bubble is dropped (rule 50).** The design seeds every new
+  thread with an Orena message ("I'm attached to “{title}”. Ask what a part means, why the author
+  says something, or how you'd interpret it - the thread stays with this text."). It restates the
+  header's own subtitle and the five starter chips, so a new thread shows only the chips and the
+  input bar. (The earlier pass recorded this as "the frame draws none"; the frame does draw it, and
+  the drop is a rule-50 decision, not an absence.) A human decision may reverse it.
+- **The isolated stack answers real AI calls** (local model, `ollama` / `qwen3:8b`, roughly 2-40 s a
+  call): `POST /api/texts/discussion/turns` and `POST /api/dictionary/spoken-response` both succeed
+  there, which supersedes this section's earlier note that they always 503. Real payloads are now
+  captured in `scripts/fixtures/api/` (`text_discussion_thread.json`,
+  `text_discussion_turn_response.json`, `spoken_response.json`); the "built, not captured"
+  Discussion thread fixture is replaced.
+- **Screen-level: a route's own height rule must not apply to an empty screen element.** Each of
+  these three screens needs the router's `.o-screen` to have real height (a percentage height only
+  resolves against a sized ancestor). Scoped by route id, the rule made the still-empty element
+  fill the viewport while the text loaded or after a failed load, pushing the router's loading
+  skeleton and load error (appended after it) out of the viewport - a blank screen. Scoped with
+  `:has(> .s-...)` (as the Orena home does) it applies only once the screen has mounted. Verified:
+  skeleton and Back / Retry visible at 1440x900 and 360x740 on all three routes.
+- **For the lead (not in this pass's files):** `kit/html.js` renders `false` as nothing, so
+  `aria-pressed="${flag}"` / `aria-selected="${flag}"` becomes an empty attribute when the flag is
+  false, which is not valid ARIA. Most screens already write `'true' : 'false'` or `String(flag)`;
+  as of 2026-09-29 these still build it bare: `screens/compare/screen.js:322,333,371,501,518`,
+  `screens/quick-sheet/sheet.js:332`, `screens/speak/screen.js:249,328`. A kit-level fix (stringify
+  a boolean in an `aria-*` position)
+  would close it everywhere. Also: `kit/base.css` `button:disabled { background: ... !important }`
+  overrides any state colour an inline style gives a disabled button (Check's graded options lost
+  their green/red that way) - a control that carries a verdict look must use `aria-disabled`, not
+  `disabled`.
