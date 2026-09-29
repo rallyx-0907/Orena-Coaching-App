@@ -211,6 +211,13 @@ CASES = [
         point := _with_v04_zh(lab), point.update(zh_note="含汉字"),
         setattr(lab, "schema_patch", lambda schema: schema["$defs"]["grammar_point"]["properties"].update(
             zh_note={"type": "string"}))), lang="zh"),
+    ok("example.span_slot_mismatch", "spans follow the slot order", lambda lab: _with_v04(alpha(lab))),
+    fail("example.span_slot_mismatch", "the formula lists the slots the other way round", lambda lab: (
+        point := _with_v04(alpha(lab)), point["pattern"]["formula"].reverse())),
+    ok("example.slot_uncovered", "every required slot has a span", lambda lab: _with_v04(alpha(lab))),
+    fail("example.slot_uncovered", "two marker slots, one marker span", lambda lab: (
+        point := _with_v04(alpha(lab)),
+        point["pattern"]["formula"].insert(0, _slot("about", "marker", "từ chỉ số lượng thứ hai")))),
     ok("anchors.missing", "unanchored is a valid answer", lambda lab: _with_v04(alpha(lab))),
     fail("anchors.missing", "no source_anchors on a v0.4 point", lambda lab: _with_v04(alpha(lab)).pop("source_anchors")),
     ok("contrasts.asymmetric", "both directions listed", nothing),

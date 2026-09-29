@@ -59,6 +59,8 @@ personal_production.rule_invalid  a pattern_rule slot lacks exactly one of any_o
 personal_production.rule_role_not_in_formula  a pattern_rule slot's role is not a role of the target_form formula (v0.4)
 personal_production.rule_rejects_sample  the pattern_rule does not match personal_production.sample.text (v0.4)
 personal_production.rule_rejects_example  the pattern_rule does not match an example of the target_form (rule too strict) (v0.4)
+example.span_slot_mismatch  an example's spans, in text order, do not fit the slots of its formula in order (v0.4)
+example.slot_uncovered      a required (non-optional) formula slot has no span in the example, even when its role appears (v0.4)
 anchors.missing             a v0.4 point has no source_anchors (status unanchored is fine; absent is not) (v0.4)
 contrasts.asymmetric        A lists B in contrasts but B does not list A (both in the set) (v0.4)
 aliases.duplicate           an R5 id appears in the aliases of two points (v0.4)
@@ -521,12 +523,38 @@ class _Validation:
                 continue
             span_roles = {span["role"] for span in example["spans"]}
             required = {slot["role"] for slot in formula if not slot.get("optional")}
+            role_problems = 0
             for role in sorted(required - span_roles):
+                role_problems += 1
                 self.issue(file, f"{path}.spans", "example.formula_role_missing",
                            f"no span with role {role!r}, which the {example['form']} formula requires")
             for role in sorted(span_roles - {slot["role"] for slot in formula}):
+                role_problems += 1
                 self.issue(file, f"{path}.spans", "example.span_role_not_in_formula",
                            f"span role {role!r} is not a role of the {example['form']} formula")
+            if not role_problems:  # the slot-by-slot walk only adds what the role check cannot see
+                self.check_span_slots_v04(file, path, example, formula)
+
+    def check_span_slots_v04(self, file: str, path: str, example: dict[str, Any], formula: list[dict[str, Any]]) -> None:
+        """Span by slot, not only by role: walk the spans in text order and give each the first slot of its
+        role at or after the previous span's slot. A span with no such slot breaks the formula's order;
+        a required slot no span reached is uncovered (roles repeat: S ... S, V ... V)."""
+        roles = [slot["role"] for slot in formula]
+        position = 0
+        reached: set[int] = set()
+        for span in sorted(example["spans"], key=lambda item: item["start"]):
+            slot_index = next((i for i in range(position, len(roles)) if roles[i] == span["role"]), None)
+            if slot_index is None:
+                text = example["text"][span["start"]:span["end"]]
+                self.issue(file, f"{path}.spans", "example.span_slot_mismatch",
+                           f"span {text!r} ({span['role']}) has no slot left in the formula order")
+                return
+            position = slot_index
+            reached.add(slot_index)
+        for index, slot in enumerate(formula):
+            if not slot.get("optional") and index not in reached:
+                self.issue(file, f"{path}.spans", "example.slot_uncovered",
+                           f"no span for the required slot {slot['text']!r} ({slot['role']})")
 
     def check_pinyin_v04(self, file: str, point: dict[str, Any]) -> None:
         for path, text, pinyin in _pinyin_targets(point):
