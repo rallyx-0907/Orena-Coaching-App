@@ -60,27 +60,13 @@ mounts the checkout read-only, so a real upload cannot be stored there; the
 upload route is covered by `tests/test_media_learner_upload.py` (real WAV,
 ffprobe) instead.
 
-Before it: 2026-09-29, `161d917`, local: each Wave B commit was checked on a clean export
-of HEAD plus the commit (all CI gate commands - 113 at the last, the browser ESM
-graph and the memory/architecture validators pass) and reviewed in the browser
-on the isolated stack (en/vi/zh, both themes, the four rule-49 sizes). Full
-pytest on a clean export (SQLite, CI backend): `2420 passed, 195 skipped`
-(`51522e4`). No CI pass is claimed. Visual-source gate: PINNED.
-
 ## DONE
 
 Design pinned and governed (D-088 - D-093); foundation at `/next`; agent
 contract v4 (D-095); copy engine fixes; Wave A destinations and Wave B
 workspaces (REVIEWABLE); the Writing request minimum per learning language.
-D-098 (the human's answers, 2026-09-29): Japanese Writing-minimum row
-(`c1393c9`); Writing's countdown while Review is off (`1ac1e6f`); Lesson
-complete draws only server-measured numbers (`6a402af`); the empty address
-opens Welcome for a learner with no profile (`81ae4bb`, the level half is H2
-below); Compare Versions follows the frame (`b221909`); Import > File uploads
-audio/video (`2052cb7`); the support-language picker past four (`3f2cc23`).
-Wave A review items confirmed in HEAD: theme row `b4373e2`, Today greeting
-`755d65b`, word audio 500 `7574765`, essay excerpt `8de1863`. PR #66 was
-reviewed on the PR (2026-09-28, three levels); it awaits the human.
+The D-098 and D-099 items (2026-09-29, `5d9d64c`..`b83142d`); commit list in
+`PROJECT_STATE.md` "New learner UI migration".
 
 ## IN PROGRESS
 
