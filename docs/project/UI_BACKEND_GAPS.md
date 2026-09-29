@@ -696,6 +696,12 @@ contract leave open, each already filled the conservative way (rule 40) rather t
 
 ### Open design questions for the human
 
+**Answered 2026-09-29 (D-098):** 1 - as the frame draws, nothing added; 2 - File wired to
+`POST /api/media-learning/upload` with that endpoint's own type/size limits; 3 - overtaken
+(R5 retired); 4 - open, the human answers after looking; 5 - segmented control up to 4
+languages, a picker from the kit's sheet and rows beyond; 6 - authorised with the kit's
+existing tokens and components, modelled on the timeline, reviewed by eye.
+
 Real product/content decisions this section's entries above could not resolve
 by building conservatively - each already has its own no-invented-data
 fallback in place; these ask which fallback should become the real feature.

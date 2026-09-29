@@ -10,7 +10,8 @@ approval, or production readiness.
 
 ## Current branch / lane
 
-`codex/work` is the baseline and the UI lane. `feature/orena-intelligence`
+`codex/work` is the baseline and the UI lane. It is the UI lane (D-066, D-098)
+whichever agent works it: a Claude session continues here, not on `claude/<task>`. `feature/orena-intelligence`
 builds Agent Intelligence (D-085) against `AGENT_CONTRACT.md` v5 (D-092, D-094,
 D-095, D-096), which is edited only on `codex/work`. Verified history:
 `PROJECT_STATE.md` "New learner UI migration".

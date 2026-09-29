@@ -3229,3 +3229,25 @@ The UI's side ships with the version: the address validation, note and request f
 **Decision.** Settings offers Light, Dark and System (the Learning tab, drawn with the design's own choice-row control). System is the default and follows the operating system live, as D-089 says. The choice is a device preference in the browser, like the interface language, never account data; it is applied before first paint, at once when changed, and an unknown stored value reads as System. The Reader's light/dark button, when built, sets the same preference. Colour keeps its one owner and AA holds in both themes.
 
 **Amends:** D-089 point 2 ("No Settings row is added"). D-089 otherwise stands; DESIGN_CONTRACT rule 30 says the same.
+
+## D-098 — Answers to the new UI's open design questions and the Wave B review decisions
+
+**Date:** 2026-09-29. **Status:** Accepted (explicit human direction).
+
+**Context.** `UI_BACKEND_GAPS.md` section N, "Open design questions", and the Wave B hand-off left choices only the human could make. The human answered them in one message.
+
+**Decision.**
+
+1. **Today** keeps what the pinned frame draws: no review-reminder pill (brief part D) and no practice shortcuts (part G).
+2. **Import, File** is wired to `POST /api/media-learning/upload` with the file types and size limit that endpoint already enforces; the UI states no limit of its own.
+3. **Settings, support language** stays the frame's segmented control while the list has at most 4 languages, and becomes a picker, built from the kit's existing sheet and row components, when it has more.
+4. **Grammar on Grammar Lab content** (question 6): the UI lane may build the word_order and morphology illustrations, a Chinese Grammar Library, Chinese-specific structures, and role colours linking a formula to its examples, using only the kit's existing tokens and components and modelled on the timeline component. No new visual language. The human reviews these by eye. Frame 23 or 47 (question 4) is answered separately.
+5. **Japanese** gets a Writing-minimum row, counted in characters as for Chinese.
+6. **Writing, Get feedback disabled:** one line says why, with a countdown of the words or characters still missing (interface layer, vi/en/zh).
+7. **Lesson complete** shows only numbers the backend actually measured (for example correct / total); a tile with no measured number is hidden. No invented numbers.
+8. **Onboarding** keeps the learner's self-chosen level; a placement check is deferred.
+9. **Entry routing:** `/next` opens `#/welcome` when the profile has no learning language or no level, and Today otherwise. No new stored field.
+10. **Compare Versions** follows the frame exactly.
+11. **Lane:** `codex/work` is the UI lane (D-066) whichever agent works it, Claude included.
+
+**Consequences.** Each Wave B item is its own commit. The Grammar authorisation takes effect when the Grammar screens are rebuilt on the grammar content contract.
