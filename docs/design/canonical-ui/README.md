@@ -21,12 +21,12 @@ Pinned revision: **`1790473816124946`**, 2026-09-27 (`SYNC_2026-09-27.md`).
 | `screens/Onboarding.dc.html` | First run. |
 | `screens/Compare-With-Model.dc.html` | Speaking comparison, embedded by the Compare With Model frame. |
 | `screens/support.js` | The design tool's runtime, to render the frames offline. Not product code. |
-| `screens/Orena-Admin-Control-Center.dc.html` | Platform Admin's authority (project 7a5604ca, pinned 2026-09-23, `SYNC_2026-09-23.md`) until the human opens Admin. |
+| `screens/Orena-Admin.dc.html` | Platform Admin's authority (project e6dc1cb2, pinned 2026-09-29, `SYNC_2026-09-29.md`, D-099). Its brief is `brief/ORENA_ADMIN_DESIGN_SPEC.md`. |
 | `brief/` | The designer's brief, fidelity rules and project note: intent, not authority over a frame. |
 | `IMPLEMENTATION_MAP.md` | Frame → route → code → gate → status, for every frame. |
 | `data-contracts/*.json` | Backend response contracts written for the previous design; still read by backend tests (`WritingReview`, `WordDetail`, `DictationResult`). A surface's data is shaped by the new frames; these change only with their backend. |
 | `tokens.json` | The superseded Dark Glass tokens, read only by the old UI's foundation gate until the cutover (D-091). |
-| `superseded/7a5604ca/` | The previous learner design and its sync notes. History, never a visual source. |
+| `superseded/7a5604ca/` | The previous learner design, the previous Admin Control Center and their sync notes. History, never a visual source. |
 | `PINS.tsv` | Byte size and SHA-256 of every file here, recomputed from disk. |
 
 ## Reading a `.dc.html` file

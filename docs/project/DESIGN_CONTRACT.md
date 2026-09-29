@@ -53,8 +53,9 @@ the design project `e6dc1cb2-72d0-40b4-a916-5dcd47e17cc0` in Claude Design,
   design; a rule that conflicts with it is void, not "balanced" against it -
   except rules 49 and 50, which the human reaffirmed for the new design: where
   a frame breaks them, the surface is recomposed and the deviation recorded.
-- Platform Admin keeps `screens/Orena-Admin-Control-Center.dc.html` (project
-  7a5604ca) until the human opens Admin (D-088 point 6).
+- Platform Admin's authority is `screens/Orena-Admin.dc.html` from the same
+  project (pinned 2026-09-29, D-099); the Control Center of project 7a5604ca is
+  superseded (D-088 point 6 fulfilled).
 
 ## What "the same as the design" means (D-067)
 

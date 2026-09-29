@@ -1,7 +1,12 @@
 # Admin: canonical design ↔ console ↔ backend
 
+> **Superseded as a target, 2026-09-29 (D-099).** The Admin authority is now
+> `docs/design/canonical-ui/screens/Orena-Admin.dc.html`; the Control Center below moved to
+> `superseded/7a5604ca/`. This file stays as the record of the old console's alignment until the
+> Admin wave replaces it.
+
 The Platform Admin design is the target
-(`docs/design/canonical-ui/screens/Orena-Admin-Control-Center.dc.html`, pinned
+(`docs/design/canonical-ui/superseded/7a5604ca/Orena-Admin-Control-Center.dc.html`, pinned
 2026-09-23). The console is the implementation state, and the backend is what
 it can honestly answer with. This file is the third column: where those three
 disagree, and which way the disagreement is meant to be resolved.
