@@ -41,8 +41,10 @@ status: `docs/design/canonical-ui/IMPLEMENTATION_MAP.md`.
 - Agent UI side: contract v5 on the mock; Orena's entry points hide when the
   agent is absent.
 - Grammar: Grammar Lab replaces R5 (D-100; PR #66 merged at `f86a2bf`). The two
-  Grammar screens (frames 44 and 47) are being framed on the merged contract and
-  connect to data when the lane's 13-point fixture arrives (its PR B); its PR A
+  Grammar screens (frames 44 and 47) are built on the merged contract (`b83142d`,
+  status building: no content until the lane's 13-point fixture, its PR B, is
+  placed behind `product/grammar-source.js`; open items G-1..G-9 in
+  UI_BACKEND_GAPS); its PR A
   patches the contract and adds the "Try it yourself" rule, and until then the
   card never concludes the pattern was used. `/api/grammar/v1/*` waits for its
   own architecture review.
@@ -85,6 +87,12 @@ reviewed on the PR (2026-09-28, three levels); it awaits the human.
 - Human review of Wave A and Wave B.
 - Chinese writing evaluator recall: causes and fix options in
   `ZH_WRITING_EVALUATOR_RECALL.md`; no change until the human chooses a fix.
+- H2, the declared level: `proposals/DECLARED_LEVEL_STORAGE.md`, independently
+  reviewed (APPROVE at `6c0db16`, review in the same folder); waits for the
+  human's approval and three confirmations. No code or migration yet.
+- Chinese evaluator: fix (1) landed (`871e2b9`, contract v2.7) and the benchmark
+  measures recall (`fa93601`, v2); the live run that gives (4) its numbers waits
+  for the human's go (provider cost).
 - `UI_COMPLETION_ROADMAP.md` (PROPOSED): Grammar, the eight Coming-soon
   screens, cutover preparation and cutover, Admin, the live Orena panel; its
   decisions H1-H10 wait for the human.
