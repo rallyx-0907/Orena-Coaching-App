@@ -47,7 +47,10 @@ from typing import Any
 # same question: the response schema, the rubric or its weights, the system
 # prompt, or how the request is built. Do not raise it for a change that cannot
 # alter the answer - every raise costs every learner their stored reviews.
-EVALUATOR_CONTRACT_VERSION = "writing-evaluation-v2.6"
+# v2.7 (2026-09-29): a Chinese finding explained in a non-CJK support language is no longer
+# dropped for quoting the character it teaches (support_prose_admits), so a stored Chinese
+# review can be missing findings the same request now returns.
+EVALUATOR_CONTRACT_VERSION = "writing-evaluation-v2.7"
 
 _IDENTITY_KEY = "review"
 
