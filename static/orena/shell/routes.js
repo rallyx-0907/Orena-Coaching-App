@@ -74,6 +74,18 @@ export const ROUTES = Object.freeze([
 
 export const DEFAULT_ROUTE = 'today';
 
+/* Where the empty address opens (D-098): Welcome for a learner the backend has no profile for, or
+   whose profile names no learning language; Today otherwise. Only what the server answered decides
+   it - a profile that could not be read (null) is not "no profile", and opens Today. The declared
+   level is not read: the backend does not store one (`writing_coach/account_profile.py`,
+   `declared_level` is `stored=False`), so requiring it would send every learner to Welcome on every
+   visit - left to the human (UI_BACKEND_GAPS, "Entry routing and the declared level"). */
+export function entryRoute({ profile, activeLanguage } = {}) {
+  if (profile && profile.exists === false) return 'welcome';
+  if (profile && !String(profile.language || activeLanguage || '').trim()) return 'welcome';
+  return DEFAULT_ROUTE;
+}
+
 const compiled = ROUTES.map((route) => {
   const names = [];
   const pattern = route.path

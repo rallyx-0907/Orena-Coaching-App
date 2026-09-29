@@ -10,7 +10,7 @@ import fs from 'node:fs';
 const PIN = fs.readFileSync('docs/design/canonical-ui/screens/Orena.dc.html', 'utf8');
 const script = PIN.slice(PIN.lastIndexOf('</x-dc>'));
 
-const { ROUTES, PRIMARY, match, href, byId } = await import('../static/orena/shell/routes.js');
+const { ROUTES, PRIMARY, entryRoute, match, href, byId } = await import('../static/orena/shell/routes.js');
 
 // 1. Focus routes are exactly the design's focus list (applyBody).
 const focusList = JSON.parse(script.match(/b\.dataset\.focus=(\[[^\]]+\])\.includes/)[1]);
@@ -69,6 +69,14 @@ for (const route of ROUTES) {
 }
 assert.equal(match('#/').route.id, 'today', 'the empty address is Today');
 assert.equal(match('#/no-such-place'), null, 'an unknown address is refused');
+/* The entry (D-098): Welcome only when the server says there is no profile, or no learning language. */
+assert.equal(entryRoute({ profile: { exists: false }, activeLanguage: 'en' }), 'welcome', 'no profile: Welcome');
+assert.equal(entryRoute({ profile: { exists: true, language: '' }, activeLanguage: '' }), 'welcome', 'no learning language: Welcome');
+assert.equal(entryRoute({ profile: { exists: true, language: 'zh', declared_level: '' }, activeLanguage: 'zh' }), 'today', 'a level the backend cannot store is not asked for');
+assert.equal(entryRoute({ profile: { exists: true, language: '' }, activeLanguage: 'en' }), 'today', 'the session names the learning language');
+assert.equal(entryRoute({ profile: null, activeLanguage: 'en' }), 'today', 'an unreadable profile is not a missing one');
+assert.equal(entryRoute(), 'today');
+assert.equal(byId(entryRoute({ profile: { exists: false } })).bare, true, 'Welcome is the bare onboarding route');
 assert.equal(byId('reader').focus, true);
 
 // 6. Agent intents are the contract's (AGENT_CONTRACT §6.1), each used once.

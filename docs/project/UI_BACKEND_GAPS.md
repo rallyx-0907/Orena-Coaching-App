@@ -3613,6 +3613,18 @@ Other gaps, each already filled the conservative way (rule 40) rather than guess
   `QS`); shipping those would be invented pedagogical content. Only the frame's own `noScore` branch
   is built - "Choose your level", the CEFR/HSK grid, real standard frameworks. **Question for the
   lead:** build a real placement-check backend (items + scoring), or keep the self-pick permanently.
+  **Answered 2026-09-29 (D-098):** keep the self-pick; a placement check is deferred.
+- **Entry routing and the declared level (2026-09-29, D-098, open for the human).** The human's
+  rule: `/next` opens `#/welcome` when the profile has no learning language **or no level**, Today
+  otherwise, with no new stored field. Built: `shell/routes.js` `entryRoute` sends the empty address
+  to Welcome when the server answers `exists: false` or names no learning language. **Not built,
+  the level half:** `writing_coach/account_profile.py` declares `declared_level` with `stored=False`
+  (CEFR values only; an HSK pick is never sent), so every learner reads `declared_level: ''`, and the
+  rule as written would send every learner to Welcome on every visit. Storing it is new learner-owned
+  persistence (AGENTS section 7 hold). Options for the human: (a) store `declared_level`, with HSK
+  values, under an architecture review, then turn the level half on (recommended); (b) read "has a
+  level" from evidence the backend already keeps, which exists only after some activity; (c) keep
+  the entry rule without the level.
 - **Meet Orena draws starter chips, a free-text composer and simulated replies** (the prototype
   script's own fake-timer, regex-matched `answer()` - explicitly not behaviour to copy). No chat
   capability exists yet (`orena` is still Coming Soon; `shell/agent-bridge.js`'s `askOrena()` has no
