@@ -41,6 +41,10 @@ Rules:
 | `reading_library_books.zh.json` | `GET /api/reading/library/books?learning_language=zh` (no Chinese book imported - real empty shape) | 2026-09-28 |
 | `reading_library_book_detail.json` | `GET /api/reading/library/books/{id}` | 2026-09-28 |
 | `reading_library_book_chapter.json` | `GET /api/reading/library/books/{id}/chapters/{chapterId}` (Reader's own chapter-content contract; `blocks`/`paragraphs` trimmed to the first heading + 5 paragraphs of a real chapter, see "Data created for this capture") | 2026-09-28 |
+| `media_annotate.en.json` | `POST /api/media-learning/annotate` (the local, non-AI tagger the Reader's word-role lens, pinyin and tap-to-word read; English - `annotations[].{fragment,start,end,pos,pronunciation,lemma}`) | 2026-09-29 |
+| `media_annotate.zh.json` | `POST /api/media-learning/annotate` (Chinese, session switched to zh first; `pronunciation` is one pinyin syllable per character, space separated) | 2026-09-29 |
+| `reading_translate.json` | `POST /api/reading/translate` (`status: "unavailable"` - no AI provider key in this sandbox; the ready shape, `translations[].{segment_id,translated_meaning}`, is `writing_coach/reading_translation_api.py`'s own serializer) | 2026-09-29 |
+| `reading_practice_evidence_attempt.json` | `GET /api/reading/practice/evidence` with one attempt - **built, not captured** (submission is off in this sandbox, see "Built from the serializer" below) | 2026-09-29 |
 | `vocabulary_library_collections.en.json` | `GET /api/vocabulary/library/collections?language_code=en` (empty - see "Content-state gaps") | 2026-09-28 |
 | `vocabulary_library_collections.zh.json` | `GET /api/vocabulary/library/collections?language_code=zh` (empty, same reason) | 2026-09-28 |
 | `library_vocabulary.json` | `GET /api/library/vocabulary?limit=5` (English, the seeded 3012-word learner) | 2026-09-28 |
@@ -96,6 +100,17 @@ database write:
   route: a minimal, real EPUB (one short chapter of original placeholder
   prose, no copyrighted text) was built and imported through the real admin
   flow, `POST /api/reading/library/import`.
+- **A second book** (Reader pass, 2026-09-28): the sandbox's PostgreSQL runs on
+  tmpfs, so the book above no longer exists by the time this pass ran (`GET
+  /api/reading/library/books/{id}` now 404s for its id; the listing route
+  answers empty). A public-domain EPUB already on disk in this worktree
+  (`data/reading_library_assets/books/12c0b5f7.../original.epub`) was
+  imported the same way to capture `reading_library_book_chapter.json` - the
+  one route (`GET .../books/{id}/chapters/{chapterId}`) that had no fixture
+  yet. The resulting book (*Alice's Adventures in Wonderland*, 12 real
+  chapters) was left in the sandbox, not cleaned up - the same "harmless seed
+  row" reasoning as below, and useful real multi-chapter content for the
+  Reader's own chapter-navigation journey.
 - **A deck**, via `POST /api/vocabulary/decks`.
 - **A filing collection**, via `POST /api/library/collections`, with one kept
   word filed into it via `POST /api/library/collections/{id}/items`.
@@ -242,6 +257,11 @@ Both screens' field reads (`id`, `language_code`, `level_range`, `item_count`,
   so it carries no quotation marks of its own, and it is `""` for a `main_idea` / `authors_purpose`
   question that has none.
 
+- `reading_practice_evidence_attempt.json`: `GET /api/reading/practice/evidence` is empty here (`ORENA_READING_PRACTICE_SUBMIT` is unset, so no attempt can be written).
+  One item, field for field from `writing_coach/persistence/reading_evidence_repository.py#list_evidence()`
+  (`id/kind/article_id/set_id/language/title/topic/content_kind/created_at/passage_level/correct_count/total`,
+  `content_kind` one of the model's `article`/`news`). Reading Complete's "understood" stat reads
+  `article_id`, `correct_count` and `total` from it.
 
 ## Bugs found outside the field-shape class (reported, not fixed here)
 

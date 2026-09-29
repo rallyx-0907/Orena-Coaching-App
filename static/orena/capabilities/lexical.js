@@ -30,6 +30,7 @@ import {
   selectionKind,
   sentenceAround,
 } from '../ui/reading-room.js';
+import { plainWordAt } from '../product/word-span.js';
 
 // What the shared tagger accepts in one request (media_interaction.MediaAnnotateIn).
 const ANNOTATE_LIMIT = 1200;
@@ -61,23 +62,6 @@ function offsetAt(unit, x, y) {
     node = walker.nextNode();
   }
   return null;
-}
-
-/* Without the tagger: a run of letters for an alphabet, and one character for a
-   script written without spaces. Deliberately the smallest honest unit -
-   guessing a longer Chinese word here would hand the lookup something the
-   learner did not point at. */
-export function plainWordAt(text, offset) {
-  const at = Math.min(Math.max(0, offset), Math.max(0, text.length - 1));
-  if (!/[\p{L}\p{N}]/u.test(text[at] || '')) return null;
-  if (/[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u.test(text[at]))
-    return { start: at, end: at + 1 };
-  let start = at;
-  let end = at + 1;
-  const wordish = /[\p{L}\p{M}\p{N}'’-]/u;
-  while (start > 0 && wordish.test(text[start - 1])) start -= 1;
-  while (end < text.length && wordish.test(text[end])) end += 1;
-  return { start, end };
 }
 
 function selectRange(unit, start, end) {

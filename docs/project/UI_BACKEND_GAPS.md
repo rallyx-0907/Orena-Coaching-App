@@ -3740,3 +3740,83 @@ context.
 - **Shell observation.** After a route paints, `router.js` focuses `<main tabindex="-1">`; with no
   prior pointer input Chromium draws its focus ring around the whole column (visible in the
   screenshots of every focus route). `.o-main:focus { outline: 0 }` in `shell.css` would remove it.
+
+## Reader and Reading Complete (D-088 frames 14/40), Wave B, 2026-09-29
+
+`screens/reader/` (`#/read/:id`) and `screens/reader-complete/` (`#/read/:id/done`). Resumed from an
+interrupted attempt: its moves out of `ui/reading-room.js` into `product/reader-text.js` were kept
+(old gates re-run, green); the screen itself was rebuilt against the frame. Full detail, the final
+measurement diff and every rule-40 fallback: `SCRATCH/reports/reader.md`. What the frame draws and the
+backend cannot yet serve:
+
+- **Summary has no backend.** No endpoint summarises a text (checked: no route in `app.py` or the
+  reading APIs). The "Summary" item in the Reader's "⋯" menu answers with the design's own
+  "not prepared" toast (frame 14's own state for an imported text) instead of a panel of invented
+  bullets. Needs an endpoint that returns bullets with a provenance (source-provided / deterministic /
+  generated on request - spec R3) before the docked panel can be drawn.
+- **The vocabulary lens shows only words kept from this text's own sentences.** The frame underlines
+  words the learner knows; the backend has no bulk "which of these words are saved" route
+  (`saved_vocabulary_words()` in `writing_coach/becoming_library.py` exists and serves the sentence
+  sheet, but is exposed by no route, and `api.libraryVocabulary` must never read the whole
+  vocabulary). The lens - and the amber tint the frame gives a saved word - are drawn from the
+  learner's most recent 100 saves whose `source_fragment` is a sentence of this text. A membership
+  route (`POST /api/library/vocabulary/membership { words: [...] }`) would show every saved word.
+- **No link from a saved word to its document.** `POST /api/library/vocabulary` carries no content id.
+  Reading Complete's "saved from this text" counts saved words whose `source_fragment` equals a
+  sentence of this text (exact, not a guess from the word appearing somewhere) - correct for words
+  saved through the Quick Sheet, blind to words saved elsewhere and to saves older than the 100 most
+  recent. A `source_ref` on the saved word would make it exact.
+- **Notes and highlights are device memory.** Notes are the Sentence Quick Sheet's own
+  (`orena.quicksheet.notes.v1`); highlights (frame 14's "Highlight" and the green rows of "Notes &
+  highlights") are the Reader's, sentence-level, in `orena.reader.highlights.v1`. Both are
+  learner-owned data with no server schema (AGENTS section 7 hold): they do not follow the learner
+  to another device. The frame's mock also filed a highlight into My Library (`s.saved`); no
+  endpoint has a sentence grain (the same gap as the Sentence Quick Sheet's "Save highlight", above),
+  so a highlight is not in My Library.
+- **Read-aloud is the browser's own speech synthesis.** No server voice exists for reading texts. A
+  device with no voice for the text's language (Chinese on many desktops) gets a toast, not a silent
+  button. Chunked one paragraph at a time from the learner's position.
+- **Translation needs the AI provider.** `POST /api/reading/translate` answers `status:
+  "unavailable"` here (captured, `reading_translate.json`); the Reader asks in turns of 12
+  paragraphs (the route's own comment: a chapter is "sent in turns") and, when nothing comes back,
+  switches the aid off with a toast. The `ready` rendering was verified with a route-intercepted
+  response of the serializer's own shape, never shipped.
+- **"Next" on Reading Complete has no relatedness signal.** The frame says "Next - same theme"; the
+  row names a real next chapter or the first unfinished article of the same language (the
+  catalogue's own order), labelled "Next" only - the "same theme" claim is not made.
+- **"Understood" reads `GET /api/reading/practice/evidence`** (latest attempt at this article). No
+  article has an approved set here and submission is off, so it shows the frame's em dash; the
+  payload shape is `reading_practice_evidence_attempt.json` (built from `list_evidence()`).
+- **Progress links the Reader with a bare article id.** `screens/progress/screen.js`
+  (`ctx.href('reader', { id: item.articleId })`) passes the article's UUID, not the content id
+  `article:<uuid>` every screen shares (`screens/content/model.js#contentIdFor`); the Reader shows
+  its load error for it. One-line fix in Progress: `contentIdFor('article', item.articleId)`.
+- **Check's "Show in text" still cannot land on the evidence sentence** (unchanged from the Check
+  entry above): the Reader takes no anchor and the served set carries no span.
+- **`capabilities/lexical.js` still builds the OLD Reader's sheet** (it imports `ui/html.js`,
+  `ui/quick-sheet.js`, `ui/reading-room.js`). The Reader therefore has its own small pointer layer
+  (`screens/reader/lexical.js`: tap a word, tap a sentence, select text) over the new quick-sheet
+  overlay. When the old rooms go, that layer moves to `capabilities/` so Reading and Listening share
+  one. (Finish pass, 2026-09-29: the two files had drifted into two copies of `plainWordAt` - the
+  no-tagger word-span rule both use for a tap. Moved to one shared, DOM-free module,
+  `product/word-span.js`, imported by both; no behaviour change.)
+- **Not a defect: word roles/pinyin 409 on the one Chinese article unless the learning language is
+  zh.** `POST /api/media-learning/annotate` enforces the same rule as Reading Transfer's RT-4 above:
+  `source_language` must equal the learner's *current* learning language (`current_language_code()`,
+  set from `POST /api/platform/language`), not merely the text's own language. Discover/Library only
+  ever surface an article in the learner's active learning language, so under normal navigation
+  `doc.language` and the learner's learning language already agree and this never fires; it only
+  fires when a route is opened directly for content in a language the learner has not activated (as
+  a reviewer testing the Chinese article without first switching the sandbox's learning language to
+  zh will see). Verified directly against the sandbox (2026-09-29): the same annotate call 409s with
+  the learning language left at `en` and answers 200 with real annotations once switched to `zh`
+  (`POST /api/platform/language {"language":"zh"}`, per the brief). The Reader's request
+  (`source_language: doc.language`) is correct and needs no change; `fetchAnnotations`'s existing
+  catch already leaves the paragraph plain on any failure, so a genuine mismatch degrades gracefully
+  rather than breaking the room.
+- **Overlay defect - RESOLVED (2026-09-29):** the Sentence Quick Sheet's repaint after "Add note" used
+  to drop focus to the page, so Escape (bound on the sheet element) no longer closed it. The shared
+  overlays' fix keeps focus inside the sheet on every repaint; verified on the Reader.
+- **Phone recomposition (N-6, rule 49).** The frame stacks the Notes & highlights panel below a long
+  article on a phone, where it is unreachable in a workspace that scrolls only inside the text; the
+  panel opens as the design's bottom sheet on a phone and stays docked beside the text on a desk.
