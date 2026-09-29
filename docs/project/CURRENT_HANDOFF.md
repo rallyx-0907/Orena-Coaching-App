@@ -79,7 +79,7 @@ The D-098 and D-099 items (2026-09-29, `5d9d64c`..`b83142d`); commit list in
 - Chinese evaluator: fix (1) landed (`871e2b9`, contract v2.7) and the benchmark
   measures recall (`fa93601`, v2); the live run that gives (4) its numbers waits
   for the human's go (provider cost).
-- D-101/D-102: finish the product on `codex/work`, PR into `main`; D2 in progress.
+- D-101/D-102: D2 done (`ff68f45`), H9 done (`93911f0`), D3 done (`D3_PRODUCT_MATRIX.md`, six decisions asked); D4 in progress.
 
 ## PENDING
 
