@@ -13,6 +13,7 @@ export const SCREENS = Object.freeze({
   discussion: () => import('../screens/discussion/screen.js'),
   'reading-transfer': () => import('../screens/reading-transfer/screen.js'),
   discover: () => import('../screens/discover/screen.js'),
+  orena: () => import('../screens/orena/screen.js'),
   progress: () => import('../screens/progress/screen.js'),
   collection: () => import('../screens/collection/screen.js'),
   grammar: () => import('../screens/grammar/screen.js'),

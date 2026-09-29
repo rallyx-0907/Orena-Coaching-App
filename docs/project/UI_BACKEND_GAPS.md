@@ -614,6 +614,86 @@ change remain:
    from the store, so an unstored clip has nothing to serve - and logs the storage failure;
    `tests/test_word_audio.py` covers it.
 
+**N-37** - Orena (`static/orena/screens/orena/` - Home #/orena frame 11, the Contextual panel frame
+55, full-screen voice frame 56; D1 §6, E5 §6-7). Built against AGENT_CONTRACT v5 and the contract
+mock (`agent/mock.js`, D-086 - the intelligence lane is not integrated yet). Gaps the frames or the
+contract leave open, each already filled the conservative way (rule 40) rather than guessed:
+1. Frame 11's header subtitle reads "Knows your `{{ tlLabel }}` · last active: Listening, 2 h ago" -
+   only `tlLabel` is a binding; "last active: …" is literal sample text in the export (D1 §6 own copy
+   audit already flags this). No device or server record of "which capability the learner last used,
+   and when" exists anywhere in this build (`product/memory.js`'s `continuation` entries carry no
+   timestamp or capability field at all) - the clause is dropped, not shown with an invented time
+   (`screens/orena/model.js` `homeSubtitle()`). Needs a real per-learner "last active capability +
+   time" record before it can ship.
+2. Frame 55 (Contextual Orena) draws no action-handoff or evidence card of its own - E5's own
+   inventory for this frame finds neither component exists in its export, unlike frame 11 which draws
+   both (OA3/OA4) inline in its thread. An offered action must still be tappable wherever it is
+   returned (AGENT_CONTRACT §7), so the panel reuses frame 11's one measured OA3 action-card shape
+   rather than inventing a second, undrawn one (Design Contract rule 7's conservative fill;
+   `screens/orena/cards.js`). Confirm with the design whether the panel should eventually draw its
+   own, narrower card for its ~440px sheet width. An action whose `display` carries nothing to draw
+   (the mock never sends one; a real server sends `display` only when it read a domain record) is
+   drawn as the card's own button alone, not an empty card around it. `display.kind` is an enum
+   (reading | listening | ...) written out in the learner's interface language, `duration_s` as
+   "~N min"; an action this client cannot run right now (`play_model`, `say_again` ... with no
+   workspace mounted) is not drawn at all (§7 "ignored and logged").
+3. Frame 11's own OA4 "source" card (`hm.sources`: optional thumbnail, title, kind, one-line meta,
+   trailing chevron - a tappable reference, implicitly navigable) has no full match in the real
+   `evidence` event (`{id, source, ref, excerpt, display?}`, AGENT_CONTRACT §5.3/§5.5). §5.5's
+   `display` can carry a real `title` and `kind` for an evidence item, but never a thumbnail, a
+   navigable `ref` (`ref` is an evaluation/attempt locator such as `{attempt_id, path}`, not a route)
+   or a chevron's implied "tap to open" - so even a fully-populated `display` could not make the
+   frame's card function as the frame draws it. Built instead as a plain, non-interactive card
+   (kind and title, from `display`) or, with no `display`, a small note naming the source in the
+   interface language (`screens/orena/cards.js` `evidenceMarkup()`). The evidence `excerpt` (§5.3:
+   the UI "may offer" a "why?" affordance by rendering it) is not drawn: no frame draws one, and its
+   keys are machine names (`pinyin`, `flagged`, ...) that are not learner copy. If evidence is ever
+   meant to open something, its event needs a real navigable target, not only `display.title`.
+4. The coach-notes sheet (`screens/orena/memory-sheet.js`, `openAgentMemory()` - AGENT_CONTRACT §10
+   "the privacy exit") has no entry point in the frames (D1/E5 read only Home, the Contextual panel
+   and full-screen voice; Settings' Plan & privacy tab draws no row for it). It is built, exported
+   and exercised against the real app (notes list with delete, the address note first with its own
+   line; deleting it returns Orena to the default address), ready for Settings to call from a
+   "What Orena remembers" row in Plan & privacy. `agent/intents.js` maps `preferences.agent_memory`
+   to `#/settings?tab=privacy&section=orena`, which Settings does not read (its tabs are
+   languages/learning/review/notifications/plan): the intent lands on Settings' first tab. No
+   button is invented here (rule 43); the Settings owner needs to decide the row and the tab.
+5. Full-screen voice (frame 56) is reachable only from the desk rail's mic - E5 §7.1's own review of
+   the export found no mobile trigger for it anywhere. None is invented; a phone learner reaches
+   voice mode only through Home's or the panel's inline voice row. Confirm this is intentional for
+   this revision (mobile voice is meant to stay inline, never full-screen) or a gap in the export.
+6. AGENT_CONTRACT §9's real-time voice session (a provider audio stream, `mode` chosen server-side)
+   is explicitly provisional and unbuilt. Voice mode in this build is the cascade the Wave B brief
+   names instead: the shared mic sheet gates the microphone, `capabilities/audio-recorder.js`
+   records, `POST /api/speech/transcribe` turns the clip into text (no `language` is sent: the
+   learner may speak their support language or the one they are learning, and the endpoint accepts
+   only en|zh when it is named), the text becomes an ordinary turn, and a finished reply's segments
+   (skipping `reference`-style ones, and nothing at all on a metered turn, §12 S12) are read aloud
+   with the browser's own `speechSynthesis` (`screens/orena/voice.js`). No server audio_chunk is
+   ever played. This is a placeholder for §9's real session, not a claim that a live provider voice
+   session exists.
+7. The shared Mic state sheet (frame 62) has no state for "Orena could not turn your voice into
+   text": its `provider` state is Speaking's ("Assessment is unavailable", "Retry assessment",
+   "Continue without score", "Your recording is kept") and would say things that are false here (no
+   score, no recording kept). Voice mode answers a failed transcription with one toast line instead
+   (`voiceTranscribeFailed`); permission, blocked and "we didn't hear you" use the shared sheet as
+   drawn. If the design wants a sheet for it, it needs its own state.
+8. Rule 50 (D-087) drops, all restating a control or filling a state the screen already shows: the
+   panel header's subtitle "About your selection · closing returns you to the same place" (it also
+   wraps to two lines in the 440px sheet and says "selection" when the context is a whole video or a
+   grammar point - the context pill below it already names what Orena is attached to); the voice
+   row's fixed lines ("Tap the mic and ask your question", "Say your question…", "Answering out loud
+   · reply is in the chat") and the status suffix ("Ready · tap the mic to speak" is "Ready"); the
+   voice screen's context line ("Ask anything about your learning"); frame 55/56's sample starter and
+   suggestion chips (only the reply's own `suggestion` events are drawn, rule 40); the voice screen's
+   "Microphone isn't available here, so a demo question is used" (a prototype-only simulation).
+   The rail card's "Your study companion" is N-7.
+9. Literal colours the source draws on the voice controls, the composer's shadow and the immersive
+   voice screen have no token yet: `orena.css` keeps them in one `:root` block at its top
+   (`--sh-composer`, `--mark-glow-hero`, `--voice-*`), marked KIT REQUEST. Until that block moves to
+   `kit/tokens.css` (a cut and paste; nothing below it changes) `scripts/test_orena_kit.mjs` reports
+   those lines and nothing else.
+
 ### Open design questions for the human
 
 Real product/content decisions this section's entries above could not resolve

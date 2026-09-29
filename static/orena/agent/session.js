@@ -60,6 +60,7 @@ export function createSession({ log = console.warn } = {}) {
   let tool = null;
   let waiting = null;
   let unsent = null;
+  let unsentWhy = '';
   let absent = false;
 
   const current = () => {
@@ -71,17 +72,42 @@ export function createSession({ log = console.warn } = {}) {
   };
 
   return {
-    state: () => ({ sessionId, messages: messages.map((m) => ({ ...m })), thinking, tool, waiting, unsent, absent }),
+    state: () => ({ sessionId, messages: messages.map((m) => ({ ...m })), thinking, tool, waiting, unsent, unsentWhy, absent }),
     sessionId: () => sessionId,
     /* The learner's own message (not added for an opening turn). */
     learner(text) {
       messages.push({ role: 'learner', text: String(text) });
       thinking = true;
       unsent = null;
+      unsentWhy = '';
     },
     opening() {
       thinking = true;
       unsent = null;
+      unsentWhy = '';
+    },
+    /* §4.1 `retry`: the same turn goes again as a new request. The reply that ended in an error
+       goes; the learner's own message stays where it is. */
+    retry() {
+      const last = messages[messages.length - 1];
+      if (last?.role === 'orena' && last.error) messages.pop();
+      thinking = true;
+      unsent = null;
+      unsentWhy = '';
+    },
+    /* The learner's own stop (§2.1 429 "the learner may cancel the wait"): nothing more will
+       arrive for the turn in flight. The question they asked comes back unsent, like any other
+       turn that did not get an answer - but the reason is theirs, not a changed language. */
+    cancel() {
+      thinking = false;
+      waiting = null;
+      tool = null;
+      const last = messages[messages.length - 1];
+      if (last?.role === 'learner') {
+        messages.pop();
+        unsent = last.text;
+        unsentWhy = 'cancel';
+      }
     },
     restore(saved) {
       for (const message of saved || []) messages.push({ ...message, done: true });
@@ -100,6 +126,7 @@ export function createSession({ log = console.warn } = {}) {
         if (last?.role === 'learner') {
           messages.pop();
           unsent = last.text;
+          unsentWhy = event === 'language_mismatch' ? 'language' : '';
         }
         if (event === 'absent') absent = true;
         return;

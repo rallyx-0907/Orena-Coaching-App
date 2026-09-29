@@ -107,6 +107,16 @@
   font-size: 14px;
   font-weight: 600;
 }
+.o-ask__headtext {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.o-ask__sub {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--muted);
+}
 .o-ask__row {
   display: flex;
   align-items: center;
