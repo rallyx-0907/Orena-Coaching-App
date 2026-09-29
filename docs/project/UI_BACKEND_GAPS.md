@@ -3390,6 +3390,176 @@ endpoint the other Speaking/Listening rooms already read serves it.
   their green/red that way) - a control that carries a verdict look must use `aria-disabled`, not
   `disabled`.
 
+## Speak more: Free Talk, Conversation, Situation Reaction, and Retell / Timed Reaction / Mock Interview / Sound-Tone (D-088 frames 29-32, 43, 48-49), Wave B, 2026-09-28
+
+Built for real, against a real backend: `screens/free-talk/`, `screens/conversation/`,
+`screens/situation/` (routes 'freetalk'/'conv'/'situation'). **Deliberately left unregistered**,
+falling through to the design's Coming soon screen (`shell/screens.js`'s own documented-omission
+pattern, matching `rewrite`/`timed-writing`'s precedent): `retell/:id`, `timed-reaction`,
+`interview`, `sounds`. None of the four has real backend content to build against - not a styling
+gap, a content one:
+
+- **Retell** (frame 32) scores against 5 fixed key-point checkpoints and a 10-phrase reuse list,
+  both hand-authored for one specific video in the source (`RETELL_POINTS`/`REUSE`,
+  `orena-script.js`). No field anywhere in the schema carries a "key points to cover" or "phrases
+  worth reusing" list for a piece of content - not on a Listening lesson, not on a Speaking
+  catalogue item (`writing_coach/speaking_library.py`'s `SpeakingItem`/`SpeakingLine` carry only
+  `{line_id, text, reading, translations}`). Real semantic-coverage scoring against arbitrary
+  content needs its own content/schema decision, not a per-screen invention.
+- **Timed Reaction** (frame 43) draws from a 3-item inline prompt bank (`TRE`, Vietnamese prompts
+  with English `must[]` regex checkpoints) with no backend equivalent at all - no prompt-bank
+  endpoint, no per-language-pair content table.
+- **Mock Interview** (frame 48) draws from a 4-question fixed bank (`MOCK_Q`) with model answers
+  and STAR-structure detection hand-tuned to one of the four questions. No interview-question
+  catalogue exists.
+- **Sound / Tone** (frame 49) draws from a 7-pair English IPA minimal-pair bank (`PAIRS`) with **no
+  Chinese tone-pair dataset at all**, despite the frame's own Chinese copy promising one ("tone
+  pairs... pick the character") - the clearest case in this set of the frame promising content the
+  data model has never had (E2 §10's own finding, confirmed again here).
+
+All four practice types exist as *names* in `speaking_library.py`'s `PRACTICE_TYPES`
+("retell"/"interview"/"sounds"), but the Speaking catalogue ships empty by product decision
+(`content/speaking_catalog.v1.json`, `{"items": []}`, UI_BACKEND_GAPS SP-1) - so even once
+authored, an item of one of these types would still carry no checkpoint/question/pair data, only a
+title and lines. A real build of any of the four needs a content/schema decision first (what a
+"key point", an "interview question bank", or a "tone pair" is, as a real field), not a client-side
+regex/heuristic reproduction of the frame's own prototype scoring - which is exactly what Wave B's
+brief asked this pass not to build. Their routes (`shell/routes.js` 'retell'/'timedreact'/'mock'/
+'sound', already wired by an earlier pass) render the design's Coming soon screen, titled from
+their own real `shellCopy` crumb, until that content exists.
+
+### Free Talk, Conversation, Situation Reaction - real data, recorded deviations
+
+All three replace the frames' own prototype content and scoring with real sources: the recording
+pipeline (`capabilities/audio-recorder.js`, the shared Mic state sheet's `micGate`/`openMicState`),
+real ASR (`POST /api/speech/transcribe`), and real coaching
+(`POST /api/dictionary/spoken-response`, `writing_coach/media_interaction.py#coach_spoken_response`
+- the same "carried / landed_differently / another_way / next_attempt / say_again" shape the
+current Free Talk's own `ui/speaking-free.js` already calls, reused as the real contract, not
+duplicated). Conversation additionally reuses `product/conversation.js`'s existing turn state
+machine and `POST /api/dictionary/conversation-turn` whole. Scenario/topic content for all three
+comes from `content/voice-invitations.js` (3 real, Orena-authored situations per learning
+language) - the same bank the current Free Talk already draws from - in place of each frame's own
+fixed prototype set (Free Talk's `ftSuggest`, Conversation's 4-scenario `CONV` script, Situation
+Reaction's 2-item `SITUATIONS`).
+
+Deviations recorded, not silently resolved:
+
+- **Free Talk's three result stat tiles keep the frame's own labels (Words / Pace / Linking), but
+  only two are real.** Words and Pace are computed from the real transcript and the real elapsed
+  recording time (language-aware: Han characters for `zh`, whitespace words otherwise) - genuine
+  derived numbers, not the frame's own regex `analyze()` estimate. Linking has no real detector
+  anywhere in this build and always renders `0` (rule 40's UI fallback, never stored or sent as a
+  measurement) - relabeling it to a different, unrelated real metric under the same name was
+  considered and rejected as a bigger invention than showing an honest zero under the frame's own
+  label. Under 5 s of recording there is not enough to say a pace, and the tile draws the frame's
+  own "—" (`wpm: fb.wpm == null ? "—" : fb.wpm` in the source), never a made-up 0; a transcript the
+  learner typed instead of speaking (the mic sheet's "Continue"/"Type instead") is measured against
+  no time at all, so it shows the dash too.
+- **Free Talk's "Ask about this" uses `speaking.free_talk`** (AGENT_CONTRACT.md §6.1's one real
+  Speak surface id for this screen). No equivalent surface id exists for Conversation or Situation
+  Reaction, so neither gets an "Ask Orena" chip; adding one would be a contract change (§6.1: "a
+  new id is a contract change, bump version"), out of this pass's scope. Situation Reaction draws
+  no per-answer coaching UI beyond its own Improvement/Alternative cards (already covered above).
+  Precision correction (found on this resumed pass): Conversation's per-turn "How did that land?"
+  is NOT coaching-UI-free - the source's own handler (`orena-script.js`'s `onCoach`) actually opens
+  the Orena panel with a *simulated* regex analysis (`analyze()`'s fake fix/strength), one of the
+  prototype's own internal simulations this build must not copy (brief §1, "NOT behaviour to
+  copy"), not a real design pattern to reproduce literally. Real content exists instead
+  (`POST /api/dictionary/spoken-response`, the same endpoint/shape Free Talk and Situation Reaction
+  already use) but no real Orena surface id to carry it through, so it renders inline under the
+  learner's own bubble (`.s-conv__coach`) - real data, but genuinely new UI the frame does not
+  draw, kept as the more real, more useful choice for this contract gap rather than dropping
+  "How did that land?" outright. Recorded here in full rather than left implied.
+- **Conversation opens with the learner's own first line, never a seeded partner opener.** The
+  frame's own `cvStart` seeds a fixed partner line before the learner has said anything; the real
+  contract cannot do that - `ConversationIn` (`writing_coach/conversation.py`) requires the last
+  turn to be the learner's pending one, and `product/conversation.js#conversationRequest` throws
+  without one. A real conversation therefore always starts with the learner speaking. The
+  situation the learner is answering (the chosen card's own `prompt`) is drawn as the frame's
+  partner-style first bubble so the chat does not open blank; it is presentation only and is never
+  sent as a turn. **Decision for the human:** the frame ends a chat only when its 4-line partner
+  script runs out ("Conversation complete" with New scenario / Finish). An open-ended AI partner has
+  no such end, so a single "End" text button sits in the header (where a page's own action sits in
+  the design; the current UI had "End conversation" too), and the 24-turn cap
+  (`MAX_CONVERSATION_TURNS`) leads to the same card. It is the one control here the frame does not
+  draw; if the design should place it differently (a "⋯" menu, the composer row), that is a design
+  call.
+- **Conversation drops the frame's B1/B2/C1 difficulty picker entirely** (E2 §3: cosmetic even in
+  the source - "nothing in `cvSend`/`CONV` branches on `diff`") rather than keeping an inert
+  control, and drops the partner reply's own `meaning` (support-language gloss) line - real data
+  `product/conversation.js#partnerTurn` already carries, but no element in frame 30 draws it (rule
+  43: nothing added the source does not draw).
+- **A failed partner reply or coaching call leaves the learner's own words on screen and offers a
+  real Retry**, rather than the silent client-only failure the frames don't model at all (neither
+  frame draws a "processing"/service-failure state for what was, in the prototype, a synchronous
+  regex call - E2 §11 Contract gap 9). Retry resends the exact same request.
+- **Situation Reaction's Intent-achieved / Clarity result grid is not built.** The frame's own
+  `srSubmit` counts regex-hit ratios against `SITUATIONS[].must` and buckets a word count into a
+  "clarity" label - E2 §4's own words: "not a real clarity judgement." Nothing in the real backend
+  measures either. "One useful improvement" and "Natural alternative" instead bind to the real
+  coaching's own `next_attempt` and `say_again`/`another_way` - the two blocks the frame already
+  draws in that shape, now carrying real content instead of a fabricated verdict.
+- **"Try another context" is dropped** together with its amber context-variant pill and the
+  "Transfer evidence recorded" line - all three depend on the frame's own `.variant` sub-object,
+  which no real scenario carries (only 3 real situations exist, none with a second "context"
+  variant). Cycling through the 3 real scenarios ("New scenario") is kept.
+- **The small delivery-mode pill above the scenario ("Chat message to a colleague", "Walking into
+  the room") is also dropped** (found and corrected on this resumed pass, not recorded by the
+  interrupted attempt): every `SITUATIONS[]` entry in the source carries this as its own top-level
+  `context` field, always shown, separate from the `.variant.context` the bullet above already
+  covers. `content/voice-invitations.js`'s real items carry no equivalent field (only
+  `title`/`prompt`/`cue`) - inventing a delivery-mode label per situation was rejected as content
+  the source's own author never wrote, not merely gated by a variant toggle. Left undrawn (rule 40),
+  not filled with a placeholder.
+- **Situation Reaction's "Finish" is reproduced as the frame's own outline button**, not the
+  filled accent CTA every other frame in this family uses - a real, already-flagged inconsistency
+  in the source itself (E2 §11 Contract gap 8, still unresolved by the human as of this pass) -
+  not silently "fixed" here.
+- **`ctx.go(ctx.href('spsummary'))`** is what "Finish" calls in all three - the real route
+  (`shell/routes.js` 'spsummary', crumb `speakingSummary`) another Wave B pass owns (`screens/
+  speak-summary/`, registered in `shell/screens.js` while this pass was running). At the time of
+  this pass's own browser verification that folder had no `screen.js` yet (a live, in-progress
+  sibling build, confirmed via `git status` - not this pass's file), so "Finish" showed the
+  router's own load-error screen rather than a real summary; expected to resolve once that sibling
+  pass finishes, not a defect of this one. **Update (resumed pass):** `screens/speak-summary/`
+  exists now and reads `product/speaking-session.js`, the session's own speaking ledger (written by
+  `screens/speak`; its header invites "any later speaking screen" to log to it). "Finish" therefore
+  writes one entry before it navigates, like the source's `spFinish` (`[Free Talk, summary]`,
+  `[Conversation, "n turns"]`): `kind: 'free_talk'` with the measured Words/Pace as strings,
+  `kind: 'conversation'` with the turn count, `kind: 'situation_reaction'` with no facts (nothing was
+  measured). The facts are strings on purpose: the summary's "key improvement" reducer reads numeric
+  facts as low scores, and a word count is not a score. **Integration item for the lead:**
+  `screens/speak-summary/screen.js` labels a task through `TASK_LABEL_KEY`, which knows only
+  `scripted_pronunciation`; any other `kind` is printed as its raw key ("free_talk"). Three entries
+  (`free_talk`, `conversation`, `situation_reaction`) and their en/vi/zh labels
+  (`shellCopy` already holds "Free Talk" / "Nói tự do" / "自由说", "Conversation" / "Hội thoại" /
+  "对话" and "Situation Reaction" / "Phản xạ tình huống" / "情景反应", so the labels can reuse those
+  three keys) belong in that screen's map - not edited here, it is another agent's file.
+- **Per-turn coaching in Conversation composes the Free Talk result's own drawn patterns** (green-soft
+  strength rows, surface fix cards with a struck-through original and its `judgement` label,
+  accent-soft "Another way to say it" / "Next attempt" rows) instead of the Orena panel the frame
+  opens - see the "How did that land?" paragraph above. To be replaced by a real "Ask Orena"
+  hand-off if the contract ever gains a Conversation surface id (§6.1 has none; `activity_type`
+  already has `conversation_practice`).
+- **The Mic state sheet's buttons are wired to real behaviour** in all three screens: Retry sends the
+  same recorded take to `POST /api/speech/transcribe` again (or asks for the microphone again from
+  the "blocked" state), "Try again" after nothing was heard records again, and "Continue" / "Type
+  instead" leave the learner in the typing surface the screen already has (Free Talk opens its
+  editable transcript empty). An outage while the browser is offline opens the sheet's own "offline"
+  state instead of "provider".
+
+See `scripts/fixtures/api/README.md`'s "Not captured (speak-more pass)" note for the one route this
+pass could not capture a success for: `POST /api/speech/transcribe` (`GET /api/speech/status` →
+`configured: false`, the route answers a real 503 `speech_asr_unconfigured`, captured as
+`speech_transcribe_unavailable.json`); its success body is read from
+`writing_coach/speech_api.py#transcribe_speech` in the screens' gate. The text-generation routes DO
+answer on the isolated stack (a local model): `POST /api/dictionary/spoken-response` and
+`POST /api/dictionary/conversation-turn` are real captures
+(`spoken_response*.json`, `conversation_turn.json`) that the three gates read, so a renamed field
+fails a gate rather than a browser. (An earlier version of this section said the sandbox carried no
+AI provider; that was wrong for text generation - only speech is unconfigured.)
+
 ## Dictation + Shadowing (D-088 frames 07/28), Wave B, 2026-09-29
 
 Built `static/orena/screens/dictation/` (`#/listen/:id/dictation`) and

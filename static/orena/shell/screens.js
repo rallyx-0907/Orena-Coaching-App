@@ -22,4 +22,19 @@ export const SCREENS = Object.freeze({
   settings: () => import('../screens/settings/screen.js'),
   dictation: () => import('../screens/dictation/screen.js'),
   shadowing: () => import('../screens/shadowing/screen.js'),
+  'free-talk': () => import('../screens/free-talk/screen.js'),
+  conversation: () => import('../screens/conversation/screen.js'),
+  situation: () => import('../screens/situation/screen.js'),
+  // retell ('retell/:id'), timed-reaction ('timedreact'), interview ('mock') and sounds ('sound')
+  // are deliberately NOT registered here, the same documented-omission pattern as rewrite/
+  // timed-writing above: no real backend exists for any of the four. The Speaking catalogue
+  // (`writing_coach/speaking_library.py`, PRACTICE_TYPES "retell"/"sounds"/"interview") ships
+  // empty by product decision (UI_BACKEND_GAPS SP-1) and, even authored, its schema carries only
+  // {line_id, text, reading, translations} - no key-point checkpoints for Retell's real coverage
+  // scoring, no interview-question bank, no minimal-/tone-pair dataset, no timed-prompt bank; the
+  // frames' own RETELL_POINTS/MOCK_Q/TRE/PAIRS are prototype-only fixtures, not content this build
+  // can read for real (see SCRATCH/reports/speak-more.md). Their routes fall through to this
+  // file's own documented fallback above and render the design's Coming soon screen, titled from
+  // their own `crumb` (shell/routes.js: 'retell' / 'timedReaction' / 'mockInterview' / 'soundTone',
+  // already real shellCopy keys).
 });

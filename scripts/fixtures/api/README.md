@@ -82,6 +82,8 @@ Rules:
 | `text_discussion_turn_response.json` | `POST /api/texts/discussion/turns` (the exchange's own response: the thread plus `reused`) | 2026-09-29 |
 | `spoken_response.json` | `POST /api/dictionary/spoken-response` with a Paraphrase-mode `situation` and a typed answer (`target_language: vi`; the model answered its `why` lines in English - a real model quirk, not a shape difference). `landed_differently` is empty here: a real, common shape | 2026-09-29 |
 | `spoken_response_landed.json` | `POST /api/dictionary/spoken-response` with a spoken-style answer that has errors (`target_language: vi`): `carried` and `landed_differently` both populated, each fix with `quote`/`instead`/`why`/`judgement` - the shape Free Talk's Fixes rows, Conversation's per-turn coaching and Situation Reaction's rows read | 2026-09-29 |
+| `conversation_turn.json` | `POST /api/dictionary/conversation-turn` (one learner turn `l1`; the partner's `reply_to`/`text`/`meaning`/`support`, the local model's own words) | 2026-09-29 |
+| `speech_transcribe_unavailable.json` | `POST /api/speech/transcribe` on the isolated stack: HTTP 503, `detail.category: speech_asr_unconfigured` (no speech provider is configured here, so the success body `{provider, model, language, text, segments, words}` cannot be captured - it is read from `writing_coach/speech_api.py`, see "Not captured (speak-more pass)") | 2026-09-29 |
 
 ## Data created for this capture
 
@@ -123,6 +125,17 @@ in `writing_coach/vocabulary_library.py` / `writing_coach/vocabulary_cards.py`.
 Both screens' field reads (`id`, `language_code`, `level_range`, `item_count`,
 `progress.learned_count`, `headword`, `identity.language`, `review_stage`,
 `saved`) match those serializers exactly.
+
+## Not captured (speak-more pass, 2026-09-29)
+
+- **A successful `POST /api/speech/transcribe`**: this sandbox has no speech provider
+  (`GET /api/speech/status` answers `configured: false`), so the route answers the 503 captured in
+  `speech_transcribe_unavailable.json`. Free Talk, Conversation and Situation Reaction read only its
+  `text`; `scripts/test_orena_screen_free-talk.mjs` checks that `writing_coach/speech_api.py` returns
+  `"text": result.text`, and the screens' success paths are verified through a verification-only
+  route intercept, never a shipped fixture. The text-generation routes (`spoken-response`,
+  `conversation-turn`) DO answer on this stack - the isolated app carries a local model - so those
+  are real captures.
 
 ## Not captured (Dictation/Shadowing pass, 2026-09-28)
 
