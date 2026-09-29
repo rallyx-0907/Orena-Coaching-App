@@ -7,17 +7,30 @@
    client never asks the server for admin data. The server refuses non-admins on its own
    (tests/test_admin_authorization_matrix.py); this is the client keeping its side of that. */
 
-/* The areas the staging draws (D-101 E: shell, AI & Models now; Reading pipeline, Imports and
-   Content follow, and enter this list when they are built - the design draws them, the staging does
-   not yet). Overview, Users and Operations are out of the staging scope and are not drawn. */
-export const AREAS = Object.freeze([{ id: 'ai', route: 'adminAi', label: 'navAi' }]);
+/* The areas the staging draws (D-101 E: shell, AI & Models, Content with its Reading pipeline, and
+   Imports). Overview, Users and Operations are out of the staging scope and are not drawn; the
+   Practice generator has no backend. Reading lives inside Content, as the design draws it. */
+export const AREAS = Object.freeze([
+  { id: 'ai', route: 'adminAi', label: 'navAi' },
+  { id: 'content', route: 'adminContent', label: 'navContent' },
+  { id: 'imports', route: 'adminImports', label: 'navImports' },
+]);
 
-/* Which area a route belongs to. */
+/* Which area each admin route belongs to, and the module that draws it. */
+const ROUTES_OF = {
+  ai: ['adminAi', 'adminProvider', 'adminProviderKey', 'adminCapability'],
+  content: ['adminContent', 'adminBooks', 'adminBook', 'adminMedia', 'adminMediaItem', 'adminVocab', 'adminCollection',
+    'adminReading', 'adminQueue', 'adminArticle', 'adminSet', 'adminAdd', 'adminSources', 'adminSource'],
+  imports: ['adminImports', 'adminImportBooks', 'adminImportMedia', 'adminImportVocab', 'adminImportSource', 'adminJobs', 'adminJob', 'adminHistory'],
+};
+
 export function areaOf(routeId) {
   if (routeId === 'admin') return 'ai';
-  if (String(routeId).startsWith('adminAi') || ['adminProvider', 'adminProviderKey', 'adminCapability'].includes(routeId)) return 'ai';
-  return '';
+  return Object.keys(ROUTES_OF).find((area) => ROUTES_OF[area].includes(routeId)) || '';
 }
+
+/* Every route the Admin serves, for the gates. */
+export const ADMIN_ROUTE_IDS = Object.freeze(['admin', ...Object.values(ROUTES_OF).flat()]);
 
 /* May this account open Platform Admin? Only an account the server named an admin. `email` is what
    the No access frame quotes back; an account with none (local mode) is quoted by name, or not at all. */

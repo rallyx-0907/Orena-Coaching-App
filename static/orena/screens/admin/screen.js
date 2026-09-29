@@ -12,10 +12,16 @@ import { useStyles } from '../../kit/styles.js';
 import { adminAccess, areaOf } from './model.js';
 import { renderNoAccess } from './no-access.js';
 import { drawAdminShell } from './frame.js';
+import { mountTray } from './tray.js';
 
 const AREA_PAGES = {
   ai: () => import('./ai.js').then((module) => module.mountAi),
+  content: (routeId) => (READING_ROUTES.has(routeId)
+    ? import('./reading.js').then((module) => module.mountReading)
+    : import('./content.js').then((module) => module.mountContent)),
+  imports: () => import('./imports.js').then((module) => module.mountImports),
 };
+const READING_ROUTES = new Set(['adminReading', 'adminQueue', 'adminArticle', 'adminSet', 'adminAdd', 'adminSources', 'adminSource']);
 
 export default async function admin(element, ctx) {
   await useStyles('screens/admin/admin.css');
@@ -36,7 +42,15 @@ export default async function admin(element, ctx) {
     return undefined;
   }
   const shell = drawAdminShell(element, { area, href: ctx.href, name: access.name });
-  const mount = await load();
-  if (!ctx.isCurrent()) return undefined;
-  return mount(shell, ctx);
+  const leaveTray = mountTray(shell.tray, ctx.href);
+  const mount = await load(ctx.route.id);
+  if (!ctx.isCurrent()) {
+    leaveTray();
+    return undefined;
+  }
+  const leavePage = await mount(shell, ctx);
+  return () => {
+    leaveTray();
+    if (typeof leavePage === 'function') leavePage();
+  };
 }

@@ -34,11 +34,12 @@ export function drawAdminShell(element, { area, href, name }) {
     html`<div class="a-shell" data-area="${area}">
       <nav class="a-rail" aria-label="${t('navLabel')}" data-part="rail"></nav>
       <div class="a-col">
-        <header class="a-top"><div class="a-top__title" data-part="title"></div><input class="a-filter" type="search" data-part="filter" placeholder="${t('filterPlaceholder')}" aria-label="${t('filterPlaceholder')}" title="${t('filterTip')}" autocomplete="off"></header>
+        <header class="a-top"><a class="a-topback" href="${href('today')}" aria-label="${t('backToLearner')}" title="${t('backToLearner')}">${raw(icon('arrow-left', { size: 18 }))}</a><div class="a-top__title" data-part="title"></div><input class="a-filter" type="search" data-part="filter" placeholder="${t('filterPlaceholder')}" aria-label="${t('filterPlaceholder')}" title="${t('filterTip')}" autocomplete="off"></header>
         <nav class="a-mnav" aria-label="${t('navLabel')}" data-part="chips"></nav>
         <main class="a-main" id="admin-main" tabindex="-1"><div class="a-main__inner" data-part="page"></div></main>
       </div>
       <div class="a-layer" data-part="layer"></div>
+      <div class="a-tray" data-part="tray"></div>
     </div>`,
   );
   const part = (key) => element.querySelector(`[data-part="${key}"]`);
@@ -50,6 +51,7 @@ export function drawAdminShell(element, { area, href, name }) {
     main: element.querySelector('.a-main'),
     page: part('page'),
     layer: part('layer'),
+    tray: part('tray'),
     filter,
     setTitle(text) {
       part('title').textContent = text;

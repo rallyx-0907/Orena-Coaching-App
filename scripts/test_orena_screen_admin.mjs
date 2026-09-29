@@ -78,11 +78,13 @@ const { ROUTES, match, href, isAdminHash } = await import('../static/orena/shell
 /* ---- 1. routes: Admin is bare, admin-only, and on the pinned design's own keys ---------------- */
 const pin = fs.readFileSync('docs/design/canonical-ui/screens/Orena-Admin.dc.html', 'utf8');
 const adminRoutes = ROUTES.filter((route) => route.admin);
-assert.deepEqual(adminRoutes.map((route) => route.id), ['admin', 'adminAi', 'adminProvider', 'adminProviderKey', 'adminCapability']);
+assert.deepEqual(adminRoutes.map((route) => route.id).sort(), [...model.ADMIN_ROUTE_IDS].sort(), 'every admin route the shell serves is one the Admin model knows');
 for (const route of adminRoutes) {
   assert.ok(route.bare && !route.focus, `${route.id} draws no learner frame and is not a learning workspace`);
   assert.equal(route.screen, 'admin');
-  if (route.id !== 'admin') assert.ok(pin.includes(`r==="${route.design}"`), `${route.id}: "${route.design}" is a page of the pinned Admin design`);
+  /* The design's own page keys: a frame it draws through its `isReading`-style flags (queue, detail, add,
+     cset) is named by the state script's go("...") calls; every other page by its route branch. */
+  if (route.id !== 'admin') assert.ok(pin.includes(`r==="${route.design}"`) || pin.includes(`"${route.design}"`), `${route.id}: "${route.design}" is a page of the pinned Admin design`);
 }
 assert.equal(match('#/admin/ai/provider/openai').params.id, 'openai');
 assert.equal(match('#/admin/ai/provider/openai/key').route.id, 'adminProviderKey');
@@ -90,10 +92,12 @@ assert.equal(match('#/admin/ai/capability/learner_dictionary').route.id, 'adminC
 assert.equal(href('adminAi', {}, { tab: 'route' }), '#/admin/ai?tab=route');
 for (const hash of ['#/admin', '#/admin/ai', '#/admin?x=1', '#admin/ai']) assert.ok(isAdminHash(hash), `${hash} is an admin address`);
 for (const hash of ['#/today', '#/administrator', '#/', '']) assert.ok(!isAdminHash(hash), `${hash} is not`);
-/* Only what the staging draws is in the navigation: AI & Models. Overview, Users and Operations are
-   out of scope; Reading pipeline, Imports and Content join when they are built. */
-assert.deepEqual(model.AREAS.map((area) => area.id), ['ai']);
+/* Only what the staging draws is in the navigation: AI & Models, Content (with Reading) and Imports.
+   Overview, Users and Operations are out of scope. */
+assert.deepEqual(model.AREAS.map((area) => area.id), ['ai', 'content', 'imports']);
 assert.equal(model.areaOf('adminCapability'), 'ai');
+assert.equal(model.areaOf('adminQueue'), 'content');
+assert.equal(model.areaOf('adminJob'), 'imports');
 assert.equal(model.areaOf('today'), '');
 
 /* ---- 2. model ---------------------------------------------------------------------------------- */
@@ -207,6 +211,17 @@ assert.equal(shared.standbySameProvider({ provider: 'a', backup_provider: 'a' })
 assert.equal(shared.healthErrorClass({ body: { detail: { error_class: 'provider_unavailable' } } }), 'provider_unavailable');
 assert.equal(shared.healthErrorClass({ body: { detail: { error_class: 'made_up' } } }), '');
 
+/* D-104: the legacy-routing status shows only while it is true, and never claims a Save went live. */
+assert.equal(shared.routingIsLive({ learner_runtime: { mode: 'legacy' }, policy: { learner_runtime_uses_capability_config: false } }), false);
+assert.equal(shared.routingIsLive({ learner_runtime: { mode: 'capability' }, policy: { learner_runtime_uses_capability_config: false } }), false, 'a mode alone is not proof');
+assert.equal(shared.routingIsLive({ learner_runtime: { mode: 'capability' }, policy: { learner_runtime_uses_capability_config: true } }), true);
+const stamped = shared.providerUsage({ recent: [
+  { provider: 'openai', outcome: 'success', latency_ms: 100, created_at: '2026-09-29T10:00:00Z' },
+  { provider: 'openai', outcome: 'failure', latency_ms: 200, error_class: 'provider_unavailable', created_at: '2026-09-29T11:00:00Z' },
+  { provider: 'openai', outcome: 'success', latency_ms: 300, created_at: '2026-09-29T12:00:00Z' },
+] }, 'openai');
+assert.deepEqual([stamped.lastSuccessAt, stamped.lastFailureAt, stamped.lastError], ['2026-09-29T12:00:00Z', '2026-09-29T11:00:00Z', 'provider_unavailable']);
+
 const rows = shared.capabilityRows(configFixture, operationsFixture, providers);
 const state = Object.fromEntries(rows.map((row) => [row.key, row.state]));
 assert.deepEqual(state, {
@@ -270,6 +285,11 @@ for (const ui of ['en', 'vi', 'zh']) {
     assert.doesNotMatch(text, /<script|onerror=/i);
   }
   assert.deepEqual(problems, [], `${ui}: no copy key is missing`);
+  const routeTab = String(drawn[1].markup);
+  assert.ok(routeTab.includes('a-opstatus') && routeTab.includes(packs[ui].runtimeLegacyStatus), `${ui}: the legacy-routing status is drawn while learners use legacy routing`);
+  assert.ok(routeTab.includes(`a-opstatus__dot" aria-hidden="true"></span>${packs[ui].runtimeLegacyStatus}`), `${ui}: and it is a status line, not a banner`);
+  const liveConfig = { ...live, config: { ...configFixture, learner_runtime: { mode: 'capability' }, policy: { learner_runtime_uses_capability_config: true } } };
+  assert.ok(!String(pages.listPage({ ...common, state: liveConfig, view: { tab: 'route', query: '' } }).markup).includes('a-opstatus'), `${ui}: it disappears once learners consume the configured route`);
   /* Listing: the provider rows say what the control plane knows, no more. */
   const list = String(drawn[0].markup);
   assert.ok(list.includes('OpenAI') && list.includes('Google Gemini'));
@@ -316,7 +336,7 @@ for (const [label, context] of [
   ['an unknown account', {}],
   ['a truthy non-boolean', { isAdmin: 'yes', user: {} }],
 ]) {
-  for (const routeId of ['admin', 'adminAi', 'adminProvider', 'adminProviderKey', 'adminCapability']) {
+  for (const routeId of model.ADMIN_ROUTE_IDS) {
     requests.length = 0;
     const element = new Fake();
     const result = await screen(element, ctxFor(context, routeId, { params: { id: 'openai' } }));

@@ -112,6 +112,15 @@ export function healthErrorClass(result) {
   return HEALTH_ERRORS.has(code) ? code : '';
 }
 
+/* Do saved routes reach learners? Only when the learner runtime routes per capability. While it is
+   `legacy` (one saved model for every request) a Save records the route and changes nothing a learner
+   meets - the console must not imply otherwise. Read from the control plane's own fields. */
+export function routingIsLive(config) {
+  const mode = config?.learner_runtime?.mode;
+  const uses = config?.policy?.learner_runtime_uses_capability_config;
+  return mode === 'capability' && uses !== false;
+}
+
 /* Does the draft differ from what is saved? */
 export function routeChanged(saved, draft) {
   const base = routeDraft({ config: saved }, []);
@@ -172,7 +181,14 @@ export function providerUsage(operations, providerId) {
   if (!events.length) return null;
   const failures = events.filter((event) => event.outcome !== 'success').length;
   const latencies = events.map((event) => event.latency_ms).filter((value) => Number.isFinite(value));
+  const stamp = (event) => (event?.created_at ? Date.parse(event.created_at) : NaN);
+  const newest = (list) => list.filter((event) => Number.isFinite(stamp(event))).sort((a, b) => stamp(b) - stamp(a))[0] || null;
+  const lastSuccess = newest(events.filter((event) => event.outcome === 'success'));
+  const lastFailure = newest(events.filter((event) => event.outcome !== 'success'));
   return {
+    lastSuccessAt: lastSuccess ? lastSuccess.created_at : '',
+    lastFailureAt: lastFailure ? lastFailure.created_at : '',
+    lastError: lastFailure?.error_class || '',
     requests: events.length,
     failures,
     failureRate: (failures / events.length) * 100,

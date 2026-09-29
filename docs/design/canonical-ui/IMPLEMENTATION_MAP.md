@@ -110,11 +110,13 @@ shape).
 `Orena-Admin.dc.html` (pinned 2026-09-29, `SYNC_2026-09-29.md`) inside this UI, on the existing Admin
 backend (`/api/admin/*`, `require_admin`) and its client, moved to shared modules the old console
 also imports: `capabilities/admin-api.js` (client), `capabilities/admin-format.js` (formatters),
-`capabilities/admin-ai.js` (AI control-plane rules and the session controller). Routes are `bare`
+`capabilities/admin-ai.js` (AI control-plane rules and the session controller), `admin-reading.js`
+(Reading rules and requests), `admin-imports.js` (importer rules and flows), `admin-content.js`
+(catalogue lifecycle and publish admission), `admin-tray.js` (the progress tray's memory and clock). Routes are `bare`
 (no learner frame): the Admin draws its own shell (`screens/admin/frame.js`). Only what the staging
-draws is in the navigation - AI & Models now; Reading pipeline, Imports and Content when built.
-Overview, Users and Operations are out of the staging scope and are not drawn. The old console stays
-at `/#/admin` until the cutover.
+draws is in the navigation - AI & Models, Content (with its Reading pipeline) and Imports.
+Overview, Users, Operations and the Practice generator are out of the staging scope and are not
+drawn. The old console stays at `/#/admin` until the cutover.
 
 | Frame | Screen | Route | Shell | Code | Gate | Status |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -125,7 +127,22 @@ at `/#/admin` until the cutover.
 | A4 Provider detail | Credential, test, models, used by, usage | `#/admin/ai/provider/:id` | Admin's own | `ai-pages.js` `providerPage` | same | building |
 | A5 Capability routing | Primary, standby, availability | `#/admin/ai/capability/:id` | Admin's own | `ai-pages.js` `capabilityPage` | same | building |
 | Profile entry "Platform admin" | Profile action row | `#/profile` (admin only) | learner | `screens/profile/{model,screen}.js` | `test_orena_screen_profile.mjs`, `test_orena_screen_admin.mjs` | building |
-| A8 Content, A15-A17, A21, Comprehension set review | Reading pipeline, Imports, Content | (later slices) | - | - | - | planned |
+| A8 Content | Content home | `#/admin/content` | Admin's own | `screens/admin/content-pages.js` `homePage`, `content.js` | `scripts/test_orena_screen_admin_areas.mjs` | building (2026-09-30, slice 2) |
+| A9 Books, A10 Book detail | Books, book lifecycle | `#/admin/content/books`, `#/admin/content/books/:id` | Admin's own | `content-pages.js` `listPage`/`bookPage` | `test_orena_screen_admin_areas.mjs` | building |
+| A11 Media, A12 Media detail | Media, reprocess, lifecycle | `#/admin/content/media`, `#/admin/content/media/:id` | Admin's own | `content-pages.js` `mediaPage` | same | building |
+| A13 Vocabulary, A14 Vocabulary detail | Collections, publish admission | `#/admin/content/vocabulary`, `#/admin/content/vocabulary/:id` | Admin's own | `content-pages.js` `collectionPage` | same | building |
+| A15 Reading overview | Reading | `#/admin/reading` | Admin's own | `screens/admin/reading-pages.js` `overviewPage`, `reading.js` | same | building |
+| A16 Reading queue | Review queue, Published, Rejected, Archived | `#/admin/reading/queue` | Admin's own | `reading-pages.js` `queuePage` | same | building |
+| A17 Reading review detail | Article, targets, original, evidence, sets | `#/admin/reading/article/:id` | Admin's own | `reading-pages.js` `articlePage` | same | building |
+| Comprehension set review | Question review, set lifecycle | `#/admin/reading/set/:id` | Admin's own | `reading-pages.js` `setPage` | same | building |
+| A21 Add reading content | URL / text / file, rights, progress tray | `#/admin/reading/add` | Admin's own | `reading-pages.js` `addPage`; `screens/admin/tray.js` | same | building |
+| A22 Reading sources, A23 Source detail | Sources | `#/admin/reading/sources`, `#/admin/reading/source/:id` | Admin's own | `reading-pages.js` `sourcesPage`/`sourcePage` | same | building |
+| A28 Imports | Imports hub | `#/admin/imports` | Admin's own | `screens/admin/imports-pages.js` `hubPage`, `imports.js` | same | building |
+| Import books / media / vocabulary | The three importers | `#/admin/imports/books`, `#/admin/imports/media`, `#/admin/imports/vocabulary` | Admin's own | `imports-pages.js` | same | building |
+| Register source | Register a source | `#/admin/imports/sources` | Admin's own | `imports-pages.js` `sourceFormPage` | same | building |
+| Reading jobs, A29 Job detail, A30 History | Jobs, retry, history | `#/admin/imports/jobs`, `#/admin/imports/jobs/:id`, `#/admin/imports/history` | Admin's own | `imports-pages.js` | same | building |
+| Progress tray | Global tray | every Admin place | Admin's own | `screens/admin/tray.js`, `capabilities/admin-tray.js` | same | building |
+| Grammar Lab package import | not drawn by the Admin design | - | - | not built: no grammar store or `/api/grammar/v1/*` (D-100) | - | blocked (see `UI_BACKEND_GAPS.md`) |
 | A1 Overview, A6-A7 Users, A24-A27 Practice generator, A31-A34 Operations | out of staging scope | - | - | - | - | not drawn |
 
 ## Retired by the cutover

@@ -17,6 +17,7 @@ import {
   providerUsedBy,
   removalConsequences,
   routeChanged,
+  routingIsLive,
   standbySameProvider,
 } from '../../capabilities/admin-ai.js';
 import { relative, latency, num, percent } from '../../capabilities/admin-format.js';
@@ -63,8 +64,9 @@ function failingBanner(t, state, href) {
   }];
 }
 
-function legacyBanner(t, state) {
-  return state.config?.learner_runtime?.mode === 'legacy' ? [{ tone: 'info', title: t('runtimeLegacyTitle'), text: t('runtimeLegacyText') }] : [];
+/* A compact operational status, not body copy (D-104): shown only while it is true. */
+function legacyStatus(t, state) {
+  return routingIsLive(state.config) ? '' : html`<div class="a-opstatus" role="status"><span class="a-opstatus__dot" aria-hidden="true"></span>${t('runtimeLegacyStatus')}</div>`;
 }
 
 /* What an empty list says: nothing matches the header filter, or there is nothing to list. */
@@ -125,12 +127,13 @@ export function listPage({ state, view, t, ui, href, now }) {
       emptyList(t, view.query),
     );
   }
-  const banners = [...failingBanner(t, state, href), ...(tab === 'route' ? legacyBanner(t, state) : [])];
+  const banners = failingBanner(t, state, href);
   return {
     title: t('aiTitle'),
     markup: html`<section class="a-page" data-screen-label="A2 AI &amp; Models">
       ${pageHead({ title: t('aiTitle'), sub: t('aiSub') })}
       ${banners.map(banner)}
+      ${tab === 'route' ? legacyStatus(t, state) : ''}
       ${tabs([
         { id: 'prov', label: t('tabProviders'), count: num(state.providers.length, ui), selected: tab === 'prov' },
         { id: 'route', label: t('tabRouting'), count: num(rows.length, ui), selected: tab === 'route' },
@@ -220,6 +223,8 @@ export function providerPage({ state, view, t, ui, href, now }) {
           { key: t('kvStatus'), value: t(sourceLabel(credential)), tone: ['encrypted_server_store', 'server_environment', 'configured'].includes(credential) ? 'ok' : credential === 'unreadable' ? 'err' : '' },
           { key: t('kvEndpoint'), value: endpoint || '—', mono: true },
           { key: t('kvDefaultModel'), value: provider.default_model || '—', mono: true },
+          ...(usage?.lastSuccessAt ? [{ key: t('kvLastSuccess'), value: relative(usage.lastSuccessAt, ui, now), tone: 'ok' }] : []),
+          ...(usage?.lastFailureAt ? [{ key: t('kvLastFailure'), value: relative(usage.lastFailureAt, ui, now), tone: 'err' }, ...(usage.lastError ? [{ key: t('kvLastError'), value: usage.lastError, mono: true }] : [])] : []),
         ]) })}
         ${testBlock(t, provider, test, ui, now)}
         ${models}
@@ -335,7 +340,7 @@ export function capabilityPage({ state, view, t, ui, href }) {
   const standbyLine = routeTestLine(t, state.routeTests.get(`${capability.key}:standby`), ui, needs('s'));
   const primaryModels = modelOptions('p');
   const standbyModels = modelOptions('s');
-  const banners = [...legacyBanner(t, state), ...(standbySameProvider(draft) ? [{ tone: 'warn', title: t('sameProviderTitle'), text: t('sameProviderText') }] : [])];
+  const banners = [...(standbySameProvider(draft) ? [{ tone: 'warn', title: t('sameProviderTitle'), text: t('sameProviderText') }] : [])];
 
   const enabledPill = draft.enabled ? { label: t('routeEnabled'), tone: 'ok' } : { label: t('routeDisabledPill'), tone: 'mute' };
   return {
@@ -344,6 +349,7 @@ export function capabilityPage({ state, view, t, ui, href }) {
     markup: html`<section class="a-page" data-screen-label="A5 Capability routing">
       ${pageHead({ back: { href: href('adminAi', {}, { tab: 'route' }), label: t('tabRouting') }, pills: [enabledPill], title: name, sub: capHint(t, capability.key) })}
       ${banners.map(banner)}
+      ${legacyStatus(t, state)}
       <div class="a-blocks">
         ${formBlock({
           title: t('blockPrimary'),

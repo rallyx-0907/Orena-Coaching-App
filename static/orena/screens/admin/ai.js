@@ -6,7 +6,7 @@
 import { html, mount } from '../../kit/html.js';
 import { toast } from '../../kit/toast.js';
 import { languages } from '../../copy/index.js';
-import { createAiAdmin, credentialState, routeDraft } from '../../capabilities/admin-ai.js';
+import { createAiAdmin, credentialState, routeDraft, routingIsLive } from '../../capabilities/admin-ai.js';
 import { t } from './copy.js';
 import { capabilityPage, keyPage, listPage, loadFailed, providerPage, removeDialog } from './ai-pages.js';
 import { dialog, pageHead, skeleton } from './blocks.js';
@@ -178,7 +178,7 @@ export async function mountAi(shell, ctx) {
     view.busy = false;
     if (result.ok) {
       view.draft = null;
-      toast(t('routeSaved'));
+      toast(t(routingIsLive(controller.state.config) ? 'routeSaved' : 'routeSavedLegacy'));
     } else {
       view.error = t('routeRejected', { reason: result.reason || t('healthError_unknown') });
     }

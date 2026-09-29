@@ -4314,3 +4314,107 @@ for the human.
   tabs, rows, pills, buttons, banner, blocks, key/value, state, metric, form, seg, toggle and No access
   frame matches. Browser-checked in en/vi/zh, both themes, at 1920x1080, 1366x768, 390x844 and 360x740
   (touch): no page scroll or horizontal overflow on any of the five pages, no page error.
+
+## Platform Admin slice 2: Reading pipeline, Imports, Content (Orena-Admin.dc.html A8-A17, A21-A23, A28-A30, D-101 E), 2026-09-30
+
+Built on the existing Admin backend and client; no admin API was added. The shared rules moved out
+of the old console into `capabilities/admin-reading.js`, `admin-imports.js`, `admin-content.js` and
+`admin-tray.js`; the old console imports them (`admin/reading.js`, `imports.js`, `content.js`,
+`tray.js`) and its gates pass. D-104 is applied to slice 1 as well (see below).
+
+- **The real loop, on :8021 (2026-09-29/30), through the new Admin UI, real endpoints, real AI.**
+  1. Add: `#/admin/reading/add`, text, English, rights answered "Allow" (the Townsend translation of
+     *The Lion and the Mouse*, Aesop's Fables, Project Gutenberg eBook #21, public domain in the
+     United States; source URL and licence note entered). `POST /api/admin/reading/jobs` -> 202, job
+     `889c0ac8-b84c-4aec-9f2e-77f11a39b1ff`; the tray followed it to completed / `article_created`.
+  2. Review: article `b483bd10-e42a-4f42-8dd4-d60a84465e5e` (`needs_review`, level C1, 133 words),
+     rights pills Republish Allow / Adapt Unknown / Automation Unknown / Attribution Unknown. Two
+     targets kept (`POST .../articles/{id}/targets/{target}` x2).
+  3. Publish: `POST .../articles/{id}/status` `published`. Attribution was never confirmed, so the
+     dialog listed that warning; Publish stayed enabled and the audit records the override
+     (`publication_warnings`). Status then `published`.
+  4. Comprehension set: `POST .../articles/{id}/comprehension-sets` (`support_language` vi) -> set
+     `996f0f65-a107-477b-b515-195d11d31284`, 4 questions, model `gemini-3.5-flash-lite` (the bench's
+     configured provider; one article, one generation). `POST .../comprehension-sets/{set}/status`
+     `needs_review`, `POST .../questions/{q}` `approve` x4, `POST .../status` `approved`. A decided set is
+     frozen (the database's rule, shown as disabled controls).
+  5. Learner: `GET /api/reading/practice/articles/{id}` serves the approved set (`status: approved`,
+     4 prompts, `support_language: vi`). `#/content/article:{id}` opens the article (Aesop (trans. George
+     Fyler Townsend), C1, 1 min, "Practice this text"); `#/read/article:{id}/check` is Check Understanding.
+  6. **Caveat, for the human.** The bench answers `submit_enabled: false` (the runtime flag
+     `ORENA_READING_PRACTICE_SUBMIT` is off on :8021), and Check Understanding then draws its "Practice
+     answers aren't being saved yet" notice instead of the questions. With only that one field overridden
+     in the browser (the questions are the server's), Check Understanding shows "question 1 of 4 - What woke
+     the Lion up from his sleep?" with its four options, desktop and phone. The bench needs the flag on to
+     show the quiz without an override; I did not restart it (Docker was limited to the admin pytest).
+  7. Vocabulary: no importable word-list source exists in the repository (`scripts/fixtures/**` are API
+     fixtures and `languages/*/vocabulary_collections.json` are the built-in catalogue), so no collection was
+     published. The importer's read side (preview and column mapping) was exercised on a two-row CSV that
+     writes nothing; the publish path is covered by the node gate (fixture) and the old console's server tests.
+  D3 notes: Reading `content -> do -> assess`: an admin can now take a real article to a served, approved
+  comprehension set entirely from the new Admin; `store` / `come back` stay the learner side's. The learner
+  surface for the loop is blocked by the runtime flag above, not by content.
+- **Grammar Lab package import: not built, reported.** `docs/grammar_lab/INTEGRATION_DESIGN.md` is not in
+  this repository (only `README.md`, `SPEC.md`, `PHASE0_DECISIONS.md` and a sample), the pinned Admin design
+  draws no grammar frame, and there is no grammar store or `/api/grammar/v1/*` (D-100 point 4: it goes
+  through its own architecture review). Missing, exactly: (1) the integration design document; (2) a grammar
+  content store for approved points (schema, review status, provenance, alias table); (3) admin routes to
+  validate an export, list and review points, and publish (with their rows in the authorization matrix);
+  (4) the learner read API that replaces `CONTENT_BASE` in `product/grammar-source.js`; (5) an Admin frame
+  from the design project for it. Nothing was drawn or stubbed.
+- **AD-A · The queue list carries no source, rights or target count per row** (the design draws them).
+  `GET /api/admin/reading/queue` returns title, language, topic, level, words, time, status; the review
+  detail has the rest. Not drawn in the list; the overview's "Next in review" shows no rights pill for the
+  same reason. Needs `source_name`, `rights_level` and `target_count` on `list_queue`.
+- **AD-B · Rights are evidence, not a control.** The design's Rights card is an editable Unknown/Allow/Deny
+  control. The engine records four answers at ingestion (`rights_state`) and has no route to change them on
+  an article, so the card shows them as pills; the Add form's tri-state answers `can_republish` only
+  (attribution, adaptation and automation are not asked there, so a fresh article always warns "attribution
+  unknown" at Publish). A route to answer them, or two more questions on the form, is a decision.
+- **AD-C · Learning targets' meaning is read-only.** The design edits a target's meaning inline; `POST
+  .../targets` adds a target with a meaning but no route edits one afterwards. Kept / dropped / order / add
+  are real.
+- **AD-D · Source pages are thinner than the design.** No per-source imported/published/rejected counts and
+  no "articles from this source" list (no endpoint filters the queue by source). Rights are read-only (the
+  source route changes state and polling only). Deny cannot be recorded at source level (booleans).
+- **AD-E · Queue position ("3 of 7 in queue") is not drawn** (the detail has no neighbours); the back link
+  names the tab the article belongs to.
+- **AD-F · Books import asks for a language** (the design draws none; `POST .../imports/books` needs
+  `learning_language`); media links and uploads ask the same. The design's sample-file shortcuts are
+  prototype fixtures and are not drawn.
+- **AD-G · A book's opening text and reader counts, a media item's pipeline steps and play counts** are not
+  in the detail responses, so the design's "learner preview", "readers", "plays" and transcript-pipeline
+  steps are not drawn; the learner link (built for `/next`, not the server's old-UI address) and the
+  transcript segments are.
+- **AD-H · Vocabulary publishing.** The design says publishing is blocked until every check passes. The
+  server (`POST .../vocabulary/{id}/publish`) refuses only an unattested request; rights and completeness
+  warn and are recorded with the decision. The page states the server's rule ("How publishing is decided"),
+  shows the three checks as Pass / Warns / Required, and keeps Publish enabled once the attestation is
+  ticked. If the human wants the design's hard gate, that is a server change.
+- **AD-I · Curated media has no lifecycle actions** (`actions: ['preview']` only), so the bench's six
+  curated items show details and transcripts with no buttons; imported media would show Unpublish, Archive
+  and Reprocess.
+- **AD-J · Jobs have no title or source** (the job list and detail carry the job type and stage only), so a
+  job is named by its input kind. The tray keeps the title the operator typed, in memory, for the session.
+- **AD-K · History is per domain** (Books, Media, Vocabulary); Reading jobs page separately. The design
+  marks the unified timeline Future and the page says so.
+- **D-104 applied to slice 1.** AD-6: the banner is now a compact status line, "Saved · learner evaluator
+  still uses legacy routing." (en/vi/zh), shown only while `learner_runtime.mode` is not `capability` or
+  `policy.learner_runtime_uses_capability_config` is false, and it disappears when learners consume the
+  route; the save toast says the same while it is true. AD-7: approved (accent tiles). AD-8: the rail link
+  reads "Back to Orena" and the phone header has a compact back button. AD-1/AD-2: no fingerprint or last
+  four is stored or shown. Provider detail now shows last success, last failure and its error class from the
+  recorded AI operation events when they carry a time. Still not available from any existing record: the
+  credential's updated-at timestamp and provider connection-test history (a connection test is audited but
+  not readable through an existing endpoint); nothing was added.
+- **Tray.** Drawn as the design draws it (fixed bottom right on a desk, full width on a phone, collapsible,
+  "Finished items clear themselves after a short while"). It follows Reading jobs, the only long-running
+  admin work; comprehension generation is one request and shows its own "Generating..." state.
+- **Measured (rule 42), 2026-09-30.** Computed styles of the pin vs the app, desktop 1920x1080, light:
+  Content home tiles, Reading overview tiles and actions, queue head/rows/search/level chips/row actions,
+  Add content frame. What is left: the kit's token values (text3, green), heights that follow the sample
+  text, the mono tile colour (AD-7), the browser default font size on the pin's unreset buttons. The pin
+  draws A8, A15, A16 and A21 by hand, so those pages carry its own h1 line-height and sub spacing, and A15's
+  14px-padded actions. Browser-checked (desktop 1920x1080 and touch phone 390x844, en/vi/zh, light and
+  dark) on 18 addresses: no page scroll or horizontal overflow, no page error; access: 17 addresses x
+  desktop and phone for a non-admin, zero admin requests.

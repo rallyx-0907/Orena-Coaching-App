@@ -94,10 +94,16 @@ function field(item) {
   let control;
   if (item.kind === 'seg') {
     control = html`<div class="a-seg" role="group" aria-label="${item.label}">${item.options.map((option) => html`<button type="button" class="a-seg__option" data-a="pick" data-field="${item.id}" data-value="${option.id}" aria-pressed="${option.on ? 'true' : 'false'}"${raw(option.disabled ? ' disabled' : '')}${option.tip ? html` title="${option.tip}"` : ''}><span>${option.label}</span>${option.sub ? html`<span class="a-seg__sub">${option.sub}</span>` : ''}</button>`)}</div>`;
+  } else if (item.kind === 'select') {
+    control = html`<select class="a-input" name="${item.id}" data-a-input="${item.id}" aria-label="${item.label}"${raw(item.disabled ? ' disabled' : '')}>${item.options.map((option) => html`<option value="${option.id}"${raw(option.on ? ' selected' : '')}>${option.label}</option>`)}</select>`;
+  } else if (item.kind === 'area') {
+    control = html`<textarea class="a-input a-input--area" name="${item.id}" rows="${item.rows || 6}" placeholder="${item.placeholder || ''}" spellcheck="false" aria-label="${item.label}" data-a-input="${item.id}"${raw(item.readOnly ? ' readonly' : '')}>${item.value || ''}</textarea>`;
+  } else if (item.kind === 'file') {
+    control = html`<label class="a-file"><span class="a-file__icon" aria-hidden="true">${raw(icon('upload', { size: 18 }))}</span><span class="a-file__text"><span class="a-file__label">${item.fileLabel}</span><span class="a-file__accept">${item.accept}</span></span><input type="file" class="a-file__input" data-a-file="${item.id}" accept="${item.acceptAttr || ''}"${raw(item.multiple ? ' multiple' : '')}></label>`;
   } else if (item.kind === 'toggle') {
-    control = html`<button type="button" class="a-toggle" role="switch" aria-checked="${item.on ? 'true' : 'false'}" data-a="toggle" data-field="${item.id}"><span class="a-toggle__track"><span class="a-toggle__knob"></span></span><span class="a-toggle__label">${item.toggleLabel}</span></button>`;
+    control = html`<button type="button" class="a-toggle" role="switch" aria-checked="${item.on ? 'true' : 'false'}" data-a="toggle" data-field="${item.id}"${raw(item.disabledToggle ? ' disabled' : '')}><span class="a-toggle__track"><span class="a-toggle__knob"></span></span><span class="a-toggle__label">${item.toggleLabel}</span></button>`;
   } else {
-    control = html`<input class="a-input${item.invalid ? ' a-input--invalid' : ''}" name="${item.id}" type="${item.type || 'text'}" value="${item.value || ''}" placeholder="${item.placeholder || ''}" autocomplete="${item.type === 'password' ? 'new-password' : 'off'}" spellcheck="false" aria-label="${item.label}" data-a-input="${item.id}">`;
+    control = html`<input class="a-input${item.invalid ? ' a-input--invalid' : ''}" name="${item.id}" type="${item.type || 'text'}" value="${item.value || ''}" placeholder="${item.placeholder || ''}" autocomplete="${item.type === 'password' ? 'new-password' : 'off'}" spellcheck="false" aria-label="${item.label}" data-a-input="${item.id}"${raw(item.readOnly ? ' readonly' : '')}>`;
   }
   return html`<div class="a-field${item.span ? ' a-field--full' : ''}">${label}${control}${item.hint ? html`<span class="a-field__hint" data-tone="${item.hintTone || ''}">${item.hint}</span>` : ''}</div>`;
 }
@@ -117,14 +123,58 @@ export function skeleton(label) {
   return html`<div class="a-skeleton" role="status" aria-live="polite">${[0, 1, 2, 3].map(() => html`<div class="a-skeleton__card"><span class="a-skeleton__bone a-skeleton__bone--short"></span><span class="a-skeleton__bone"></span></div>`)}</div><div class="a-loading">${label}</div>`;
 }
 
-/* The confirm dialog: title, sentence, an optional list of consequences and a word to type. */
-export function dialog({ title, body, list = [], typeWord = '', typeLabel = '', typed = '', cancel, confirm, danger = true, ready = true }) {
+/* The confirm dialog: title, sentence, an optional list of consequences, a word to type or a reason
+   to give (a rejection keeps its reason). */
+export function dialog({ title, body, list = [], typeWord = '', typeLabel = '', typed = '', reason = null, cancel, confirm, danger = true, ready = true }) {
   return html`<div class="a-scrim" data-a="dialog-cancel"></div>
     <div class="a-dialog" role="dialog" aria-modal="true" aria-label="${title}">
       <div class="a-dialog__title">${title}</div>
       <div class="a-dialog__body">${body}</div>
-      ${list.length ? html`<div class="a-dialog__list">${list.map((line) => html`<div class="a-dialog__item"><span aria-hidden="true">•</span><span>${line}</span></div>`)}</div>` : ''}
+      ${list.length ? html`<div class="a-dialog__list${danger ? '' : ' a-dialog__list--warn'}">${list.map((line) => html`<div class="a-dialog__item"><span aria-hidden="true">•</span><span>${line}</span></div>`)}</div>` : ''}
       ${typeWord ? html`<label class="a-dialog__type"><span>${typeLabel}</span><input class="a-input" name="confirm-word" value="${typed}" autocomplete="off" spellcheck="false" data-a-typed></label>` : ''}
+      ${reason ? html`<label class="a-dialog__type"><span>${reason.label}</span><textarea class="a-input a-input--area" name="confirm-reason" rows="2" placeholder="${reason.placeholder || ''}" data-a-reason>${reason.value || ''}</textarea></label>` : ''}
       <div class="a-actions a-actions--end"><button type="button" class="a-btn a-btn--md" data-a="dialog-cancel">${cancel}</button><button type="button" class="a-btn a-btn--md ${danger ? 'a-btn--danger' : 'a-btn--primary'}" data-a="dialog-confirm"${raw(ready ? '' : ' disabled')}>${confirm}</button></div>
     </div>`;
+}
+
+/* ---- pieces the Reading, Imports and Content pages draw ---------------------------------------- */
+
+/* A row of filter pills with a label (the page frame's `filters`). */
+export function chipRow({ label = '', options, a = 'filter', field = '' }) {
+  return html`<div class="a-chiprow">${label ? html`<span class="a-chiprow__label">${label}</span>` : ''}${options.map((option) => html`<button type="button" class="a-chipbtn" data-a="${a}" data-field="${field}" data-value="${option.id}" aria-pressed="${option.on ? 'true' : 'false'}">${option.label}</button>`)}</div>`;
+}
+
+/* The search field above a list. */
+export function searchField({ id = 'q', value = '', placeholder }) {
+  return html`<input class="a-input a-search" type="search" name="${id}" value="${value}" placeholder="${placeholder}" aria-label="${placeholder}" autocomplete="off" data-a-input="${id}">`;
+}
+
+/* Clickable metric tiles (Reading overview): a label, a big value in a tone, a note. */
+export function tiles(items) {
+  return html`<div class="a-tiles">${items.map((item) => html`<button type="button" class="a-tile"${item.go ? html` data-go="${item.go}"` : ''}${raw(item.go ? '' : ' disabled')}><span class="a-tile__label">${item.label}</span><span class="a-tile__value" data-tone="${item.tone || ''}">${item.value}</span><span class="a-tile__note">${item.note || ''}</span></button>`)}</div>`;
+}
+
+/* A vertical run of stages: done, the one in progress, the one that failed, the ones to come. */
+export function stepsBlock({ title = '', span = false, items }) {
+  return block({
+    title,
+    span,
+    body: html`<ol class="a-steps">${items.map((item, index) => html`<li class="a-step" data-state="${item.state}"><span class="a-step__dot" aria-hidden="true">${item.state === 'done' ? raw(icon('check', { size: 13, stroke: 3 })) : item.state === 'fail' ? raw(icon('x', { size: 13, stroke: 3 })) : item.state === 'active' ? '•' : ''}</span><span class="a-step__text"><span class="a-step__label">${item.label}</span>${item.note ? html`<span class="a-step__note">${item.note}</span>` : ''}</span></li>`)}</ol>`,
+  });
+}
+
+/* Text set in a well: a learner preview, a technical detail. */
+export function textBlock({ title = '', sub = '', actions: list = [], span = false, text, mono = false, maxHeight = '' }) {
+  return block({ title, sub, actions: list, span, body: html`<div class="a-text${mono ? ' a-text--mono' : ''}"${maxHeight ? html` style="max-height:${maxHeight}"` : ''}>${text}</div>` });
+}
+
+/* The dashed card the design draws for what it marks Future: a name, a Future pill, one sentence. */
+export function futureCard({ title, text, pill }) {
+  return html`<div class="a-future"><span class="a-future__icon" aria-hidden="true">${raw(icon('clock', { size: 20 }))}</span><div class="a-future__body"><div class="a-future__head"><span class="a-future__title">${title}</span><span class="a-pill" data-tone="fut">${pill}</span></div><div class="a-future__text">${text}</div></div></div>`;
+}
+
+/* The overlay panel the design opens from a row (a learner preview): scrim, a side panel with a
+   head, a scrolling body and a foot of actions. */
+export function panelOverlay({ kicker, title, meta = '', body, actions: list = [], closeLabel }) {
+  return html`<div class="a-scrim a-scrim--panel" data-a="panel-close"></div><aside class="a-panel" role="dialog" aria-modal="true" aria-label="${title}"><div class="a-panel__head"><div><div class="a-panel__kicker">${kicker}</div><div class="a-panel__title">${title}</div>${meta ? html`<div class="a-panel__meta">${meta}</div>` : ''}</div><button type="button" class="a-panel__close" data-a="panel-close" aria-label="${closeLabel}">${raw(icon('x', { size: 16 }))}</button></div><div class="a-panel__body">${body}</div>${list.length ? html`<div class="a-panel__foot">${list.map(button)}</div>` : ''}</aside>`;
 }

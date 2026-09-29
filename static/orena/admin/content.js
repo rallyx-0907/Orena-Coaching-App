@@ -14,6 +14,7 @@
    decision can be undone, which is the whole reason these are states and not
    a row that disappears. */
 import { adminApi } from './api.js';
+import { PAGE_SIZE as SHARED_PAGE_SIZE, RIGHTS as SHARED_RIGHTS, MEDIA_STATES, COLLECTION_STATES, applyLifecycle, contentCounts as sharedCounts } from '../capabilities/admin-content.js';
 import { renderReading } from './reading.js';
 import { gapNote, loadingBlock } from './states.js';
 import { openDrawer } from './drawer.js';
@@ -21,10 +22,10 @@ import { chip, dateShort, dateTime, duration, esc, fill, kv, languageName, notic
 import { safeExternal } from '../ui/html.js';
 import { entryIcon } from '../ui/icons.js';
 
-export const PAGE_SIZE = 25;
+export const PAGE_SIZE = SHARED_PAGE_SIZE;
 const KINDS = ['all', 'book', 'media', 'vocabulary', 'reading'];
 const KIND_ICON = { book: 'book', media: 'sound', vocabulary: 'leaf' };
-export const RIGHTS = ['public_domain', 'licensed', 'creator_authorized', 'internal_curated'];
+export const RIGHTS = SHARED_RIGHTS;
 
 export function imageSource(url) {
   const value = String(url || '');
@@ -119,23 +120,8 @@ function learnerLink(detail, t) {
     : '';
 }
 
-/* Which state each lifecycle button asks the server for. */
-const MEDIA_STATES = {
-  unpublish: 'unpublished',
-  archive: 'archived',
-  republish: 'published',
-  restore: 'published',
-};
-
-/* A collection's flow, as the human settled it. Restore goes to `unpublished`
-   and never to `published`: coming back from archived returns it to the shelf,
-   and putting it in front of learners again is a separate decision. */
-const COLLECTION_STATES = {
-  publish: 'published',
-  unpublish: 'unpublished',
-  archive: 'archived',
-  restore: 'unpublished',
-};
+/* The states each lifecycle button asks for (MEDIA_STATES, COLLECTION_STATES) and the routes they call
+   live in capabilities/admin-content.js, shared with the new UI's Admin (D-101 E). */
 
 /* What each lifecycle decision means, in the words of the thing it does. The
    two that take an item back say what survives, because "unpublish" and
@@ -287,16 +273,7 @@ export function contentDetailView(detail, t, ui, intent = '') {
    an operator reading "Reading 0" beside a full review queue would be reading
    a lie. */
 async function contentCounts(api) {
-  const [shared, reading] = await Promise.allSettled([
-    api.content({ limit: 1, offset: 0 }),
-    api.readingOperations(),
-  ]);
-  const counts = shared.status === 'fulfilled' ? { ...(shared.value.counts || {}) } : {};
-  if (reading.status === 'fulfilled') {
-    const articles = reading.value.articles || {};
-    counts.reading = Object.values(articles).reduce((total, value) => total + Number(value || 0), 0);
-  }
-  return counts;
+  return (await sharedCounts(api)).counts;
 }
 
 function bindKindTabs(container, env) {
@@ -406,30 +383,14 @@ export async function renderContent(container, env) {
       const result = drawer.element.querySelector('[data-ac-result]');
       action.disabled = true;
       try {
-        /* `archive` means two different things to two catalogs, so the kind
-           decides, not the word: a book has its own archive route, and media
-           moves between states. Reading the intent alone sent every media
-           archive to the book endpoint, which answered 404 and left the item
-           published. */
-        if (action.dataset.acDo === 'archive' && kind === 'book') {
-          await api.archiveBook(id);
-          env.notify?.(t.archived);
-        } else if (action.dataset.acDo === 'restore' && kind === 'book') {
-          await api.restoreBook(id);
-          env.notify?.(t.mediaDone_restore);
-        } else if (kind === 'vocabulary' && COLLECTION_STATES[action.dataset.acDo]) {
-          await api.setCollectionStatus(id, COLLECTION_STATES[action.dataset.acDo]);
-          env.notify?.(t[`mediaDone_${action.dataset.acDo}`] || t.saved);
-        } else if (kind === 'media' && MEDIA_STATES[action.dataset.acDo]) {
-          /* A state, not a deletion: the transcript, the provenance and the
-             audit trail all survive it, which is why the confirmation says
-             "off the shelf" rather than "remove". */
-          await api.setMediaStatus(id, MEDIA_STATES[action.dataset.acDo]);
-          env.notify?.(t[`mediaDone_${action.dataset.acDo}`] || t.saved);
-        } else if (action.dataset.acDo === 'reprocess') {
-          const outcome = await api.reprocessMedia(id);
-          env.notify?.(fill(t.reprocessDone, { status: t[`status_${outcome.item?.status}`] || outcome.item?.status || '' }));
-        }
+        /* `archive` means two different things to two catalogs, so the kind decides, not the word
+           (capabilities/admin-content.js applyLifecycle). */
+        const intentDone = action.dataset.acDo;
+        const outcome = await applyLifecycle(api, kind, id, intentDone);
+        if (intentDone === 'archive' && kind === 'book') env.notify?.(t.archived);
+        else if (intentDone === 'restore' && kind === 'book') env.notify?.(t.mediaDone_restore);
+        else if (intentDone === 'reprocess') env.notify?.(fill(t.reprocessDone, { status: t[`status_${outcome.item?.status}`] || outcome.item?.status || '' }));
+        else env.notify?.(t[`mediaDone_${intentDone}`] || t.saved);
         await load();
         paint('');
         reload();

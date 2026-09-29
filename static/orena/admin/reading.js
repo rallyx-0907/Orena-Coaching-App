@@ -22,17 +22,19 @@
    * **Nothing rendered here is trusted markup.** Every value from the server
      goes through `esc`; a title an admin pasted from a hostile page is text. */
 import { adminApi } from './api.js';
+import { TAB_STATUS, levelOptions as sharedLevelOptions } from '../capabilities/admin-reading.js';
 import { openDrawer } from './drawer.js';
 import { errorBlock, failureDetail, loadingBlock, pending } from './states.js';
 import { subscribe as onTrayChange, watch as watchJob } from './tray.js';
 import { chip, dateTime, esc, fill, kv, mono, notice, num, panel, select, table } from './format.js';
 
 export const VIEWS = ['queue', 'published', 'rejected', 'archived', 'sources', 'add'];
+/* The statuses each view asks for are the shared rules' (capabilities/admin-reading.js). */
 export const VIEW_STATUS = {
-  queue: 'draft,processing,needs_review,ready',
-  published: 'published',
-  rejected: 'rejected',
-  archived: 'archived,unpublished',
+  queue: TAB_STATUS.review,
+  published: TAB_STATUS.published,
+  rejected: TAB_STATUS.rejected,
+  archived: TAB_STATUS.archived,
 };
 const INPUT_KINDS = ['text', 'url', 'file'];
 const LANGUAGES = ['en', 'zh'];
@@ -256,10 +258,7 @@ export function previewBody(article, t, ui) {
 }
 
 export function levelOptions(language) {
-  const levels = language === 'zh'
-    ? ['HSK1', 'HSK2', 'HSK3', 'HSK4', 'HSK5', 'HSK6']
-    : ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
-  return levels.map((level) => [level, level]);
+  return sharedLevelOptions(language).map((level) => [level, level]);
 }
 
 export function sourceRows(sources, t, ui) {

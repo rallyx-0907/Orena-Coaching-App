@@ -9,13 +9,16 @@
    (writing_coach/ai/capabilities.py); scripts/test_orena_screen_admin.mjs proves every registry
    entry is named here, and an entry added later falls back to its humanised key until it is. */
 import { defineCopy } from '../../copy/index.js';
+import * as reading from './copy-reading.js';
+import * as imports from './copy-imports.js';
+import * as content from './copy-content.js';
 
 const en = {
   // Shell
   railSub: 'Platform admin',
   navLabel: 'Admin sections',
   navAi: 'AI & Models',
-  backToLearner: 'Back to learner app',
+  backToLearner: 'Back to Orena',
   accessFull: 'Full access',
   adminName: 'Admin · {name}',
   filterPlaceholder: 'Filter this page…',
@@ -38,8 +41,8 @@ const en = {
   aiSub: 'Which provider serves each capability, and whether it works right now.',
   tabProviders: 'Providers',
   tabRouting: 'Capability routing',
-  runtimeLegacyTitle: 'Routes are saved, not live yet',
-  runtimeLegacyText: 'Learners still use the single saved model. Switching to per-capability routing is a deployment decision.',
+  runtimeLegacyStatus: 'Saved · learner evaluator still uses legacy routing.',
+  routeSavedLegacy: 'Saved · learner evaluator still uses legacy routing.',
   failingTitle: '{provider} is failing its test',
   failingText: 'Anything routed to it may return errors until it passes again.',
   openProvider: 'Open provider',
@@ -76,6 +79,9 @@ const en = {
   kvStatus: 'Status',
   kvEndpoint: 'Endpoint',
   kvDefaultModel: 'Default model',
+  kvLastSuccess: 'Last success',
+  kvLastFailure: 'Last failure',
+  kvLastError: 'Last error',
   testBlock: 'Connection test',
   testRunning: 'Testing…',
   testRunningText: 'Sending a small request.',
@@ -232,7 +238,7 @@ const vi = {
   railSub: 'Quản trị nền tảng',
   navLabel: 'Các mục quản trị',
   navAi: 'AI & Mô hình',
-  backToLearner: 'Về ứng dụng người học',
+  backToLearner: 'Về Orena',
   accessFull: 'Toàn quyền',
   adminName: 'Quản trị · {name}',
   filterPlaceholder: 'Lọc trang này…',
@@ -253,8 +259,8 @@ const vi = {
   aiSub: 'Nhà cung cấp nào phục vụ từng năng lực, và hiện có hoạt động không.',
   tabProviders: 'Nhà cung cấp',
   tabRouting: 'Định tuyến năng lực',
-  runtimeLegacyTitle: 'Tuyến đã lưu, chưa áp dụng',
-  runtimeLegacyText: 'Người học vẫn dùng một mô hình đã lưu. Chuyển sang định tuyến theo từng năng lực là quyết định khi triển khai.',
+  runtimeLegacyStatus: 'Đã lưu · bộ đánh giá của người học vẫn dùng định tuyến cũ.',
+  routeSavedLegacy: 'Đã lưu · bộ đánh giá của người học vẫn dùng định tuyến cũ.',
   failingTitle: '{provider} đang lỗi khi kiểm tra',
   failingText: 'Mọi thứ định tuyến tới nó có thể báo lỗi cho đến khi kiểm tra lại thành công.',
   openProvider: 'Mở nhà cung cấp',
@@ -289,6 +295,9 @@ const vi = {
   kvStatus: 'Trạng thái',
   kvEndpoint: 'Điểm cuối',
   kvDefaultModel: 'Mô hình mặc định',
+  kvLastSuccess: 'Thành công lần cuối',
+  kvLastFailure: 'Lỗi lần cuối',
+  kvLastError: 'Lỗi gần nhất',
   testBlock: 'Kiểm tra kết nối',
   testRunning: 'Đang kiểm tra…',
   testRunningText: 'Đang gửi một yêu cầu nhỏ.',
@@ -440,7 +449,7 @@ const zh = {
   railSub: '平台管理',
   navLabel: '管理分区',
   navAi: 'AI 与模型',
-  backToLearner: '返回学习者应用',
+  backToLearner: '返回 Orena',
   accessFull: '完全访问权限',
   adminName: '管理员 · {name}',
   filterPlaceholder: '筛选此页…',
@@ -461,8 +470,8 @@ const zh = {
   aiSub: '每项能力由哪个服务商提供，以及它现在是否可用。',
   tabProviders: '服务商',
   tabRouting: '能力路由',
-  runtimeLegacyTitle: '路由已保存，尚未生效',
-  runtimeLegacyText: '学习者仍使用唯一已保存的模型。切换为按能力路由是部署时的决定。',
+  runtimeLegacyStatus: '已保存 · 学习者的评估仍使用旧路由。',
+  routeSavedLegacy: '已保存 · 学习者的评估仍使用旧路由。',
   failingTitle: '{provider} 测试失败',
   failingText: '路由到它的功能在它再次通过测试之前可能会报错。',
   openProvider: '打开服务商',
@@ -497,6 +506,9 @@ const zh = {
   kvStatus: '状态',
   kvEndpoint: '端点',
   kvDefaultModel: '默认模型',
+  kvLastSuccess: '上次成功',
+  kvLastFailure: '上次失败',
+  kvLastError: '最近错误',
   testBlock: '连接测试',
   testRunning: '测试中…',
   testRunningText: '正在发送一个小请求。',
@@ -644,12 +656,20 @@ const zh = {
   capHint_text_to_speech: '朗读 Orena 的回复和参考文本。',
 };
 
+/* The Reading, Imports and Content areas keep their words in their own files and share this one
+   table, so the copy gate reads every Admin key once. */
+const packs = {
+  en: { ...en, ...reading.en, ...imports.en, ...content.en },
+  vi: { ...vi, ...reading.vi, ...imports.vi, ...content.vi },
+  zh: { ...zh, ...reading.zh, ...imports.zh, ...content.zh },
+};
+
 /* A key with a plural suffix is declared once, by its bare name (copy/index.js `plural`). */
 const layers = Object.fromEntries(
-  Object.keys(en)
+  Object.keys(packs.en)
     .map((key) => key.replace(/_(one|other)$/, ''))
     .filter((key, index, all) => all.indexOf(key) === index)
     .map((key) => [key, 'interface']),
 );
 
-export const t = defineCopy('admin', { layers, en, vi, zh });
+export const t = defineCopy('admin', { layers, ...packs });

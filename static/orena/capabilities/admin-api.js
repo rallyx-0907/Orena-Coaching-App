@@ -110,6 +110,23 @@ export const adminApi = {
       `/api/admin/reading/articles/${encodeURIComponent(articleId)}/target-order`,
       json('POST', { order }),
     ),
+  readingAddTarget: (articleId, body) =>
+    request(`/api/admin/reading/articles/${encodeURIComponent(articleId)}/targets`, json('POST', body)),
+  // Canonical Reading comprehension sets (D-082): generated for a published article, every question
+  // decided by an administrator, invisible to learners until the set is approved.
+  readingSets: (articleId) => request(`/api/admin/reading/articles/${encodeURIComponent(articleId)}/comprehension-sets`),
+  readingGenerateSet: (articleId, supportLanguage) =>
+    request(`/api/admin/reading/articles/${encodeURIComponent(articleId)}/comprehension-sets`, json('POST', { support_language: supportLanguage })),
+  readingSet: (setId) => request(`/api/admin/reading/comprehension-sets/${encodeURIComponent(setId)}`),
+  readingDecideQuestion: (setId, questionId, decision) =>
+    request(
+      `/api/admin/reading/comprehension-sets/${encodeURIComponent(setId)}/questions/${encodeURIComponent(questionId)}`,
+      json('POST', { decision }),
+    ),
+  readingSetTransition: (setId, status, reason = '') =>
+    request(`/api/admin/reading/comprehension-sets/${encodeURIComponent(setId)}/status`, json('POST', { status, reason })),
+  readingDiscardSet: (setId) =>
+    request(`/api/admin/reading/comprehension-sets/${encodeURIComponent(setId)}/discard`, { method: 'POST' }),
   readingJobs: (params) => request(`/api/admin/reading/jobs${query(params)}`),
   readingJob: (id) => request(`/api/admin/reading/jobs/${encodeURIComponent(id)}`),
   readingRetryJob: (id) => request(`/api/admin/reading/jobs/${encodeURIComponent(id)}/retry`, { method: 'POST' }),
