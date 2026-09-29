@@ -1,7 +1,11 @@
 # Proposal (D-101 D4): the learner records D3 found missing on the server
 
-Status: **PROPOSED, revision 2** (2026-09-30, `codex/work` at `c2e4e63`), answering the independent review
-`LEARNER_RECORDS_D4.REVIEW.md` (REQUEST CHANGES; P1-1..P1-5, P2-1..P2-12; the mapping is section 12). Document only: no code,
+Status: **PROPOSED, revision 3** (2026-09-30, `codex/work` at `aafe968`), matching the human's decisions in
+**D-104** (`DECISION_LOG.md:3604`; AGENTS §7 is amended accordingly). Revision 2 answered the independent review
+`LEARNER_RECORDS_D4.REVIEW.md` (REQUEST CHANGES at rev 1; the reviewer's APPROVE is recorded at rev 2 in Git); the
+finding-by-finding mapping is section 12 and what D-104 changed is section 14. The proposed migrations now exist as
+files in `migrations/proposed/` (not `versions/`) and the rehearsal script is
+`scripts/rehearse_learner_records_schema.py` (section 6). Document only: no code,
 schema or migration is changed by this file. Process (AGENTS §1 "Architecture review authority", §7,
 D-054 workflow, D-102): proposal -> independent architecture review -> human approval -> code +
 migration + tests -> rehearsal on a throwaway PostgreSQL -> the human applies migrations to a runtime.
@@ -55,7 +59,7 @@ to enable it are (a) is the flag turned on for the lane runtime and for :8000 af
 and (b) are the D-055 preconditions still the reason to hold. This proposal recommends **on** (section 2),
 as a human-gated configuration change, not a schema change.
 
-Consequence: the proposal needs **five additive migrations and one conditional one**, and **one new table**
+Consequence: the proposal needs **seven additive migrations (0017-0023, all required by D-104)**, and **one new table**
 (an append-only review history, I19, justified there), not one table per gap (section 5). Everything else is
 registry entries, routes and repositories over existing tables.
 
@@ -69,36 +73,38 @@ Class: **S** server-required; **P** presentation, no server; **D** device by con
 | I1 | `declared_level` (H2) | S | `user_language_profiles.declared_level` | column | 0017 | Welcome level step, `entryRoute`, Today |
 | I2 | Learning language on the account | S | `users.learning_language` | column | 0018 | Welcome languages step, Settings, session bootstrap |
 | I3 | Interface language | S (H) | `users.interface_language` | column | 0018 | Settings, first paint |
-| I3b | Weekly goal (days per week) | S | `users.weekly_goal_days` | column | 0018 | Profile weekly-goal bar |
-| I4 | Reading/listening position and completion ("continue") | S (H-12) | **recommended:** `library_items` (`started`) + `place` columns; alternative: `works` kind `continuation` with server coalescing | columns (recommended) / none | 0022 (conditional on H-12) / none | Today, Discover, Content Detail, Practice Hub, My Library, Reading Complete |
+| I3b | Weekly goal (days per week) | S | `users.weekly_goal_days` (+ `users.settings_updated_at`, the version token) | column | 0018 | Profile weekly-goal bar |
+| I4 | Reading/listening position and completion ("continue") | S (D-104 H-12: Design B) | `library_items` (`started` relationship) + `place`, `place_at` columns | columns | 0022 | Today, Discover, Content Detail, Practice Hub, My Library, Reading Complete |
 | I5 | Writing drafts (+ register, target length) | S | `works` kind `draft` (exists) | none | none (flag on) | Writing |
 | I6 | Conversation records | S | `works` kind `conversation` + `work_turns` | none | none (code + flag) | Conversation |
 | I7 | Speaking Summary | derived | `speaking_attempts` + `works` `response` reads | none | none | Speaking Summary |
 | I8 | Free Talk / Situation / React results | S | audio-free `speaking_attempts` when spoken; `works` `response` when typed | none | none | Free Talk, Situation, React |
 | I9 | Reading Transfer results | S (H) | `works` kind `response` (not evidence) | none | none | Reading Transfer, Reading Complete |
 | I10 | Sentence notes and highlights | S | `works` kind `annotation` | none | none | Reader, Quick Sheet, Reading Complete |
-| I11 | Grammar progress per Grammar Lab point | S | `grammar_progress` (+ optional quiz columns) | columns (H) | 0023 (conditional) | Grammar Library, Grammar Concept |
+| I11 | Grammar progress per Grammar Lab point | S | `grammar_progress` + `last_quiz_*` columns | columns | 0023 | Grammar Library, Grammar Concept |
 | I12 | Imported texts, kept texts, `url:` media, kept-language provenance | S | `works` kind `imported`; `library_items`; `language_provenance` | none | none | Import, Discover, Content Detail, Quick Sheet |
 | I13 | Review modes and limits | S | `user_language_profiles` named columns | columns | 0019 | Settings Review tab, Review Session |
-| I14 | Profile/Progress metrics: real streak, weekly-goal days, activity counts; the rest hidden | derived (H for the streak policy) | derived read over existing rows (+ I3b) | none (option: 1 small table, H-5) | none | Profile, Today, Progress |
+| I14 | Profile/Progress metrics: real streak, weekly-goal days, activity counts; the rest hidden | derived (D-104 H-5) | derived read over existing server records (+ I3b); no streak table | none | none | Profile, Today, Progress |
 | I15 | Orena history and coach notes | D (flag) | device, per AGENT_CONTRACT:383 | none | none | Orena |
 | I16 | Listening/shadowing progress language check; Shadowing read-back | S (fix) | `listening_progress`, `shadowing_progress` (exist) | none | none | Listening, Dictation, Shadowing |
 | I17 | Theme, text size, transcript prefs, search recents, step/nav state | P | device | none | none | - |
 | I18 | Dictation: server recomputes the score (D-103.2) | S | `listening_progress` (exists) + `score_source` | column | 0020 | Dictation |
 | I19 | Chinese evaluator refresh: previous review kept as immutable history (D-103.7) | S | `essays` (current review) + new `essay_review_history` | **new table** | 0021 | Writing review (reopen an old essay) |
 
-New tables: **one** (`essay_review_history`, I19). New columns: 0017: 1; 0018: 3; 0019: 3 named review
-columns; 0020: 1; 0022 (conditional, I4 Design B): 2; 0023 (conditional, I11): up to 3.
+New tables: **one** (`essay_review_history`, I19). New columns: 0017: 1; 0018: 4 (three settings + `settings_updated_at`); 0019: 3 named review
+columns; 0020: 1; 0022 (I4): 2; 0023 (I11): 3.
 
 ## 2. Cross-cutting design
 
-**2.1 Activate the backbone (recommended; a human gate, not a migration).** Items I4-I6, I8-I10, I12 need
-`ORENA_ACCOUNT_BACKBONE=on`. Steps: the lane runtime :8021 sets it (lane decision, sandbox-class per D-054);
-`compose.yaml` passes `ORENA_ACCOUNT_BACKBONE: ${ORENA_ACCOUNT_BACKBONE:-off}` (a config diff, default stays off);
-:8000 sets it after the merge under the D-102 point 7 gate, after backup and smoke. Every client already asks
+**2.1 The account-work backbone (D-104 H-11: approved, default off).** Items I5, I6, I8-I10 and I12 need
+`ORENA_ACCOUNT_BACKBONE=on`. The gate order is fixed by D-104: (1) the D4 migrations pass the PostgreSQL up/down/up
+rehearsal (section 6); (2) they are applied to the lane runtime under its gate; (3) **only then** the flag is set on
+the lane runtime. The flag's **default stays off** (`compose.yaml` passes `ORENA_ACCOUNT_BACKBONE:
+${ORENA_ACCOUNT_BACKBONE:-off}`, a config diff in the implementation). **:8000 is enabled only after the merge, a
+backup, the migration human gate and smoke verification** (D-102 point 7). Every client already asks
 `GET /api/account-backbone` first and falls back to device when `disabled` (`draft-sync.js`;
 `infrastructure/api.js:485`) [V]. The room says "kept with your account" only for a server-acknowledged save, so
-turning the flag off later degrades to device honestly.
+turning the flag off later degrades to device honestly. I4 does **not** depend on the backbone (Design B).
 
 **2.2 Mutation contract for new kinds.** Same as drafts (`work_api.py:156-205, 234-260`) [V]: client
 `operationId` + `expectedVersion`; `committed`/`replay` 200; `conflict` 409 with server payload, nothing merged
@@ -115,27 +121,31 @@ recent". Add `GET /api/works?kind=&source_kind=&limit=` (limit <= 50), scope-che
 last-write-wins by client timestamp and forbids automatic prose merges [V]. The rules used here:
 - **Text and structured work (drafts, imported text, conversations, annotations):** `expectedVersion`; a stale write
   gets 409 with the server copy and nothing is merged. Annotations are a set: on a 409 the client unions by id and
-  re-PUTs (a client action the learner did not have to resolve, not a server merge of prose).
-- **Profile row fields (`user_language_profiles`: declared level, review settings):** `expected_updated_at`, the H2
-  conditional write (I1, N1).
-- **Account scalars on `users` (learning language, interface language, weekly goal): arrival-order last write.**
-  `users` has no version or `updated_at` column (`models.py:32-42`) [V], and the H2 review did not authorise an
-  integer version column (H2 review P2-4: it belongs to the canonical account architecture). So there is no
-  token and no 409: the request the server commits last wins, ordered by the database transaction, never by a
-  client clock. **Consequence:** two devices changing the same scalar within moments silently keep the later one; a
-  device that was offline and writes an old choice later overwrites a newer one. For single scalars a learner
-  can see and re-set, this is judged acceptable, and it is a **recorded exception to ADA §1 `:62-63`** ("expected
-  profile version"), for the human to accept (H-17). If the human wants a token, the cost is one column
-  (`users.settings_updated_at`) added to 0018 and the expected-version rule for these three fields.
-- **Positions (I4):** see I4; a position is single-valued and the newest arrival wins.
+  re-PUTs (a client action, not a server merge of prose).
+- **Profile row fields (`user_language_profiles`: declared level, review settings, per-language settings):**
+  `expected_updated_at`, the H2 conditional write (I1, N1).
+- **Account scalars on `users` (learning language, interface language, weekly goal): server-owned conditional
+  update, D-104 H-17.** `users.settings_updated_at` (migration 0018) is the version token of the three scalars. A
+  write carries the token it read (`NULL` = never written); the server updates `WHERE id = :id AND
+  settings_updated_at IS NOT DISTINCT FROM :expected` and sets `settings_updated_at` to the **server** time in the
+  same statement. Zero rows means 409 `version_conflict` carrying the current token, so a stale device learns it is
+  stale. **A client timestamp is never a token and never resolves a conflict**, and there is **no blind
+  arrival-order last write** (the exception revision 2 proposed is withdrawn). TIMESTAMPTZ has microsecond
+  resolution, which avoids the one-second token collisions of the profile row; the residual is two writes committed in
+  the same microsecond, which the row lock serialises anyway. Onboarding or Settings that gets a 409 re-reads and
+  re-applies once (H2's precedent).
+- **Positions (I4):** single-valued, on `library_items`, updated in place; the newest write wins. The place is
+  navigation state and not learning evidence, so it deliberately has no version check (see I4).
 Nothing here defines cross-device sync, cursors, tombstone horizons or receipt compaction (AGENTS §7, ADA §5).
 
-**2.5 Device import is a human decision.** ADA §6 step 6 (`:216-219`) [V] allows only an *explicit learner
-import with preview, per-item validation, deterministic operation ids, and originals kept until acknowledged*;
-D-002 forbids startup or hidden import. Precedent: `draft-sync.js` already sends a device draft when the server
-holds none (automatic, per piece) [V]. The proposal's default is **no import** for every item except drafts
-(existing behaviour); a single explicit "Bring this device's work into your account" action for I4, I6, I10,
-I12 is offered as human decision H-6 (section 8). It is never done at startup.
+**2.5 No bulk device migration (D-104 H-6).** There is no "bring this device's work into your account" flow and no
+silent bulk upload; nothing is imported at startup (D-002). **Legacy device values stay readable where a
+compatibility path already reads them** (for example `orena.encounters.v1` for a learner's existing continuation,
+notes and highlights while the device holds them; the client shows the device value when the server has none). New
+learner state from the finished `/next` flows is written to the server. The existing draft sync
+(`draft-sync.js` sends a device draft when the server holds none, per piece) may remain as it is. ADA §6 step 6
+(explicit learner import with preview) is therefore **not** implemented by this proposal; if it is wanted later it is
+its own slice.
 
 **2.6 Deletion, incarnation and export (all items) - corrected by review P1-1.** There are two kinds of row and
 they behave differently, because the `users` row **survives** account deletion: `account_incarnations.user_id ->
@@ -170,11 +180,14 @@ Sections repeat only what is not already in section 2.
 - **Class.** S. **Store.** `user_language_profiles.declared_level VARCHAR(20) NOT NULL DEFAULT ''`.
   **API.** existing `/api/learner-profile` (GET/PATCH/PUT), allowed set from the registry per scope language, fails
   closed, conditional `UPDATE ... WHERE updated_at = :expected`.
-- **Migration.** `20260929_0017_declared_level` chained on `20260924_0016`; `SET LOCAL lock_timeout = '5s'`;
+- **Migration.** `20260930_0017_declared_level` chained on `20260924_0016`; `SET LOCAL lock_timeout = '5s'`;
   add column; downgrade drops it (rehearsal only). Written in `migrations/proposed/`, `git mv` after review,
   rehearsal and authorization. Full design: `DECLARED_LEVEL_STORAGE.md` sections 1-9.
-- **Existing accounts.** Default `''`: everyone sees Welcome once per learning language (H2 section 5.2 option A);
-  the backfill from evidence is rejected. Extended to I2 in H-1.
+- **Existing accounts (D-104 H-1).** Default `''`; the backfill from evidence is rejected. **Welcome/setup is required
+  once per learning language whose learner-language profile does not exist yet, without replaying the whole
+  onboarding.** So the entry rule is keyed on the absence of the `user_language_profiles` row for the language, not on
+  an empty level (this narrows H2's "row without a level opens Welcome", section 4 of the H2 proposal; see section 14
+  for what stays open). A language with a profile row and `declared_level = ''` is not sent to Welcome by this rule.
 - **H2 review N1 (copied, P2-1).** The conditional write needs an interface and a creation path. (a) Add an
   explicit parameter to `SpecializedLearningRepository.upsert_profile_record` (for example
   `expected_updated_at: str | None`, where `None` means unconditional, which PUT keeps) rather than a magic key
@@ -204,7 +217,7 @@ Sections repeat only what is not already in section 2.
   `ALTER` if a test needs it [I].
 - **Semantics.** The stored value **seeds a session that has none**; it does not override a session that already
   chose (a second device may be in the other language). `POST /api/platform/language` writes the session and the
-  column (arrival-order last write, section 2.4 and H-17). Seeding point: `session/bootstrap`
+  column, under the server-owned expected-version rule of section 2.4 (`users.settings_updated_at`). Seeding point: `session/bootstrap`
   (`auth_support.py:376-401`) and the middleware read `request.session.get("language")`; when absent and the
   column is non-empty, use it [I: exact seeding site to be verified]. **No per-request database read (P2-9):** the
   stored value is read only when the session has no language, and is then written into the session, so every
@@ -213,7 +226,7 @@ Sections repeat only what is not already in section 2.
   default behave as today.
 - **API.** Existing `POST /api/platform/language` (extended, same body) and `GET /api/session/bootstrap`, which
   gains `language.stored: bool` (additive, so the entry rule can tell "never chosen" from the default).
-- **Migration.** 0018 (with I3). Default `''` for all accounts; no backfill (a guess from `user_language_profiles`
+- **Migration.** 0018 (with I3, I3b and `settings_updated_at`). Default `''` for all accounts; no backfill (a guess from `user_language_profiles`
   recency would store an inferred value in a stated field, the same reason H2 rejected it).
 - **Deletion/export.** Column on the surviving `users` row: **reset by the D-055(b) workflow** (section 2.6), not
   removed with anything.
@@ -232,7 +245,7 @@ Sections repeat only what is not already in section 2.
 - **API.** `interface_language` flips to `stored=True` in `account_profile.ACCOUNT_SETTINGS`, but its column is on
   `users`, so `becoming_memory` needs an account-level write path beside the language-row one [I]. Device
   `orena.interface` stays as the first-paint cache; the server value reconciles at bootstrap. Conflict rule:
-  arrival-order last write (section 2.4, H-17); no expected version. Deletion: reset on the `users` row.
+  the `settings_updated_at` expected-version update of section 2.4. Deletion: reset on the `users` row.
 - **Default.** `''` = follow the device/OS as today. No import needed. **Consumer.** Settings, `kit/boot.js`.
 
 ### I3b. Weekly goal (target days per week)
@@ -245,71 +258,45 @@ Sections repeat only what is not already in section 2.
   stored for it.
 - **Store.** `users.weekly_goal_days SMALLINT NULL` (`NULL` = not set; 1-7 validated by the application), in 0018
   beside I2/I3, account-wide for the same reason as I2. **API.** Account-level PATCH beside `/api/learner-profile`
-  (arrival-order last write like I3, section 2.4; deletion: reset on the `users` row). **Default.** `NULL`: Profile shows the count of active days without a target
+  (the `settings_updated_at` expected-version update of section 2.4; deletion: reset on the `users` row). **Default.** `NULL`: Profile shows the count of active days without a target
   (D7/design decision whether the bar is drawn; not decided here). **Deletion.** Column on the account row.
 
-### I4. Reading and listening position and completion (decision H-12, both designs given)
+### I4. Reading and listening position and completion (D-104 H-12: Design B, migration 0022)
 
 - **State.** Per content item and learning language: where the learner is (paragraph/segment index of total,
   furthest percent, chapter), when last, and whether they finished (Reading Complete's "Finished").
 - **D3.** Reading R4/R5/K3 (MISSING store/return), Listening L1.s/L1.r, Navigation N-st/N-rt [V]. Device key
   `orena.encounters.v1:<owner>:<lang>` `.continuation[]`, up to 20 (`product/memory.js:49-50,276`; `readPlace` :26-37).
-- **Class.** S. **Not evidence:** EA §1 "Continue: work/source reference and actual lifecycle; excluded claim:
-  unfinished thread is a recommendation backed by mastery" (`EA:16`), and "reading time alone proves understanding"
-  (`EA:11`) [V]. A finished flag is a continuation marker only.
-- **Why this is the one item that needs a real decision (review P1-2).** It is the highest-frequency learner write.
-  On the backbone every commit writes a `mutation_receipts` row and a `change_records` row and takes the per-account
-  stream lock (`work_repository.py:87-`) [V]; receipt compaction is unspecified and reserved (ADA `:199-203`). A
-  client throttle cannot be enforced against the old UI or the frozen native client. Two designs follow.
-
-**Design A - `works` kind `continuation` with server-enforced coalescing.** One work per content id (deterministic
-id, drafts pattern), payload `{title, intent, place, finished, cleared, at}`; ADA §2's own row ("Continue | account
-work-derived index", `:84`).
-- *Coalescing, enforced in the route, not the client.* `PUT /api/continue/{content_id}` first reads the work. It
-  **no-ops (200 `status:'coalesced'`, no receipt, no change record, no stream lock)** when the place is unchanged,
-  or when the last commit is under 60 s old and the write is not a boundary. A **boundary** always commits: first
-  write for the item, the `finished` transition, or a change of chapter. A per-account cap of 200 committed
-  continuation writes per day answers 429 `Retry-After` beyond it. The device copy remains the cache, so a coalesced
-  write loses at most 60 s of position.
-- *Volume estimate.* Committed writes per active learner-day <= min(cap 200, one per 60 s of activity + boundaries);
-  a realistic 30-45 min of reading and listening is 15-40 commits. At the ~100,000-account target with an assumed 20%
-  daily active (20,000 x 25 = 0.5 M) that is about **0.5 M receipt rows plus 0.5 M change rows per day, about 180 M
-  of each per year**; the hard ceiling (cap 200 x 20,000) is 4 M per day. The reviewer's unbounded estimate was
-  2-3 M per day; coalescing lowers it by roughly a factor of 4-5 but does **not** make it bounded by data volume.
-- *Terminal `deleted` (P2-7).* `lifecycle_change` makes `deleted` terminal and ids are not reused
-  (`work_contract.py`), and the id is deterministic, so "clear" is `{cleared:true}` in the payload, **never**
-  lifecycle `deleted`.
-
-**Design B - position on `library_items` (no receipt, no stream).** `library_items` already has the
-`started` relationship (`models.py:577`) and is the "ContentMembership ... a relationship, never a copy"
-(`models.py:565-570`). Migration 0022 adds `place JSON NULL` and `place_at TIMESTAMPTZ NULL` (plus a partial index
-`(user_id, language_code, place_at DESC) WHERE place IS NOT NULL`).
-- One row per (learner, language, kind, content id) is created on first open (`kind` reading/listening/book,
-  `relationship='started'`; `source_id` <= 255, so a `url:` id is its digest and the URL lives in the imported work of
-  I12) and **updated in place**. Row count is bounded by the content the learner opens, not by time spent; there
-  is no receipt, no change record and no stream lock.
-- The place write does **not** touch `library_items.version` or `updated_at`, so it cannot make a learner's pin,
-  note or state PATCH (`expected_version`, `library_repository.py`) conflict; it is arrival-order last write
-  ordered by the server (`place_at`). The same 30 s server coalescing may apply to cap UPDATE rate; volume is about
-  0.5 M in-place UPDATEs per day at the same assumptions, with no row growth (hot-update friendly).
-- Costs: it departs from ADA §2's "work-derived index" wording (Continue would live on the relationship record, and
-  needs the reviewer's and human's acceptance of that departure); it is a migration; the finished flag lives in the
-  place JSON.
-
-**Recommendation: Design B.** Position is high-frequency, single-valued, last-write and not evidence, so the
-receipt/version/stream machinery buys nothing, and B avoids growth in a reserved area (receipt compaction). If the
-human prefers to follow ADA §2 literally, Design A with the coalescing above is the fallback, with growth of about
-0.5 M rows per day per table accepted explicitly until the sync/compaction package. **I4 is not approved by this
-proposal until the human chooses (H-12)**; the other items do not depend on it.
-- **API (either design).** `PUT /api/continue/{content_id}` and `GET /api/continue?limit=` (<= 50, ordered by recency).
-  Both refuse unless the store is available (A: backbone `active`; B: PostgreSQL runtime); device memory stays the
-  fallback and cache.
-- **Default for existing accounts.** Empty; device list imported only via H-6.
-- **Deletion/export.** A: incarnation-keyed work rows, deleted explicitly by the workflow (2.6). B: `library_items`
-  rows keyed by account, deleted explicitly by the workflow. A source removed makes the item "unavailable".
-- **Retirement (D-103.1).** The old `#/continue` room retires (UI and route only). Its data was device memory, so
-  nothing server-side is deleted; the store above replaces its function in Today "For you", the Practice Hub row
-  and Content Detail. No consumer is built for the retired room.
+- **Class.** S. **Navigation and progress state, not learning evidence** (D-104 H-12; EA §1 "Continue ... excluded
+  claim: unfinished thread is a recommendation backed by mastery", `EA:16`; "reading time alone proves understanding",
+  `EA:11`) [V]. A finished flag is a continuation marker only.
+- **Store (decided).** `library_items`, the "ContentMembership ... a relationship, never a copy"
+  (`models.py:565-570`), on its already-allowed `started` relationship (`models.py:577`). Migration **0022** adds
+  `place JSON NULL` and `place_at TIMESTAMPTZ NULL` and a partial index `(user_id, language_code, place_at) WHERE place
+  IS NOT NULL`. The `works` continuation design with high-volume receipts is **not used** (D-104): a position write
+  produces no mutation receipt, no change record and no stream lock, so it adds nothing to the reserved receipt
+  stream (ADA `:199-203`).
+- **Rows and writes.** One row per (learner, language, kind, content id), kind `reading`, `listening` or `book`,
+  relationship `started`; `source_id` is at most 255 characters, so a `url:` id is its digest and the URL lives in the
+  imported record of I12. The row is created on first open and **updated in place**; its count is bounded by the
+  content the learner opens, not by time spent. The place write does **not** touch `library_items.version` or
+  `updated_at`, so it can never make a learner's pin, note or state PATCH (`expected_version`,
+  `library_repository.py`) conflict; `place_at` is the server-set time of the last place write and orders the list. The
+  server may cap the UPDATE rate per row (a write under 30 s old that crosses no boundary is answered `coalesced`
+  without an UPDATE); volume is about 0.5 M in-place UPDATEs per day at 20,000 daily-active learners x 25 writes,
+  with no row growth.
+- **Payload.** `place` = `{index, total, within, finished, cleared, title, intent}` (bounded, validated like
+  `readPlace`); "clear" is `cleared: true`, never deleting the relationship the learner may also have kept or pinned.
+- **API.** New `PUT /api/continue/{content_id}` (server-set `place_at`; unconditional, newest wins) and `GET
+  /api/continue?limit=` (<= 50, ordered by `place_at`). PostgreSQL runtime only; device memory stays the cache and the
+  fallback.
+- **Departure from ADA §2 (recorded).** ADA §2 names Continue an "account work-derived index". This decision stores it
+  on the relationship record instead, for the reason above; D-104 accepts it.
+- **Default and legacy.** Empty for existing accounts; the device's continuation list stays readable through the
+  existing compatibility path (section 2.5) and is not uploaded.
+- **Deletion/export.** `library_items` rows are keyed by account (the `users` row survives), so the D-055(b) workflow
+  deletes them explicitly (section 2.6). A source removed makes the item "unavailable".
+- **Retirement (D-103.1).** The old `#/continue` room retires (UI and route only); its data was device memory.
 - **Consumers.** Today (`today/model.js:134-190`), Discover (`discover/model.js:31-112`), Content Detail
   (`content/screen.js:150-153`), Practice Hub continue row (`practice/model.js:207-233`), My Library progress
   (`library/model.js:31-36`, `pct` currently always 0), Reading Complete (`reader-complete/screen.js:80`) [V].
@@ -354,7 +341,7 @@ proposal until the human chooses (H-12)**; the other items do not depend on it.
   server-side. `GET /api/works/{id}` returns the head; a list via section 2.3. Coaching
   ("how did it land") is not a turn: it is derived from the turn and is regenerated or kept in the turn payload,
   **H-8**.
-- **Migration.** None (tables exist). **Default.** None; the device's 12 conversations import only via H-6.
+- **Migration.** None (tables exist). **Default.** None; the device's conversations are not uploaded (H-6).
 - **Consumer.** Conversation room: restore on reload, scenario picker shows resumable conversations.
 
 ### I7. Speaking Summary
@@ -429,7 +416,8 @@ proposal until the human chooses (H-12)**; the other items do not depend on it.
   and a note type do not fit without a JSON column.
 - **API.** `GET/PUT /api/annotations/{content_id}` (deterministic work id). On 409 the client unions by id and
   re-PUTs (section 2.4).
-- **Migration.** None. **Default/import.** Empty; import via H-6. **Consumer.** Reader, Quick Sheet Note tab,
+- **Migration.** None. **Default/import.** Empty; device notes and highlights stay readable through their existing
+  compatibility path and are not uploaded (H-6). **Consumer.** Reader, Quick Sheet Note tab,
   Reading Complete ("notes & highlights" count, currently device, `reader-complete/screen.js:59-68`).
 
 ### I11. Grammar progress per Grammar Lab point
@@ -448,21 +436,22 @@ proposal until the human chooses (H-12)**; the other items do not depend on it.
   already written keep their R5 id. **Alias provenance without rewriting data:** the *read* joins a point to
   completions under its own id **or any id in its `aliases`**, and marks the row `via: 'alias'` in the response.
   Nothing is migrated or rewritten, so provenance stays in the row's own `lesson_id`.
-- **Store (quiz/try-it results).** EA §1 Grammar: "canonical Concept ID, actual response and existing domain
-  judgment"; "concept visit equals mastery" excluded (`EA:14`) [V]. The quiz key ships in the content and is graded
-  in the browser (G6); Try-it is graded by the Writing engine and lands in `essays` (G8/G9), so *Try-it needs no
-  new store*. For the quiz there are two options (**H-4**): (a) store nothing beyond completion, the honest
-  reading of D-098 point 7 (only backend-measured numbers are shown); (b) additive nullable columns on
-  `grammar_progress` (`last_quiz_correct`, `last_quiz_total`, `last_quiz_at`), migration 0023, stored alongside
-  completion (`completed_at` is `NOT NULL`, so a result without completion is not representable without
-  relaxing it, which this proposal does not do). (b) records a client-reported number, the same trade-off as the
-  Dictation decision (D3 decision 2).
-- **Dependency, not decided here.** The new route that accepts a point id must validate it against the
+- **Store (quiz result, decided: D-104 H-4; Try-it stays in Writing).** Migration **0023** adds `last_quiz_correct`,
+  `last_quiz_total` (SMALLINT) and `last_quiz_at` (TIMESTAMPTZ) to `grammar_progress`, all NULL until a result is
+  stored, "beside the existing completion state" (`completed_at` stays `NOT NULL`). On PostgreSQL a CHECK keeps the
+  three together and `0 <= correct <= total`, `total >= 1`. A quiz result is written **with** the completion upsert
+  (one row per point per learner); a quiz abandoned before completion is not stored. **Try-it-yourself results belong
+  to the Writing/evaluator record (`essays`) and are not duplicated here**: the quiz key ships in the content and is
+  graded in the browser, so the stored number is client-reported (the same trade-off as the pre-D-103 Dictation; a
+  future Grammar API that holds the published key may regrade). EA §1 Grammar: "canonical Concept ID, actual response
+  and existing domain judgment"; "concept visit equals mastery" excluded (`EA:14`) [V].
+- **Dependency (D-104 H-4).** A future Grammar API validates the published point before accepting progress; R5 is not
+  revived as learner authority. The new route that accepts a point id must validate it against the
   **published** catalogue, whose serving API is held for its own architecture review (D-100 point 4).
   Until then this item is design-only; the completion route is named `PUT /api/learner/grammar/{point_id}/completion`
   (placeholder) and lands with that review or after it. The R5 `completeGrammar` route and the R5 table remain
   until the old-path retirement (`LEGACY_TOMBSTONES.md` entry on the human's instruction, D-100 point 5).
-- **Migration.** None for (a). 0023 (three nullable columns, lock_timeout) for (b).
+- **Migration.** 0023 (three nullable columns and the PostgreSQL CHECK, under lock_timeout).
 - **Default/import.** Existing R5 completions count via aliases; no data moves. **Consumer.** Grammar Library
   ("recent/saved/suggested" needs the same table plus `library_items kind='grammar'` for "saved"), Grammar Concept.
 
@@ -482,7 +471,8 @@ proposal until the human chooses (H-12)**; the other items do not depend on it.
   - (d): `language_provenance` (migration 0005) with `provenance_repository.attach_occurrence` existing
     (`provenance_repository.py:125`) [V]; **no HTTP route exists**, so a route (`POST /api/library/vocabulary/{word}/provenance`,
     placeholder) is new. The saved word itself is already server (`saved_words`).
-- **Migration.** None. **Default/import.** Empty; import via H-6 (imports carry learner text, so the preview step
+- **Migration.** None. **Default/import.** Empty; no bulk upload (H-6); a text the learner imports from now on is
+  stored on the server (imports carry learner text, so the preview step
   is mandatory). `text:` ids change on import, so device references (continuation, kept) are remapped in the same
   operation.
 - **Deletion.** A learner-imported text is private and deletable; deleting it marks dependent continuation
@@ -513,38 +503,43 @@ proposal until the human chooses (H-12)**; the other items do not depend on it.
 - **Migration.** 0019, own revision so it can be dropped from the batch. **API.** `/api/learner-profile` PATCH.
 - **Consumer.** Settings Review tab, Review Session limits.
 
-### I14. Profile/Progress metrics: a real metric or no metric (D-103.4)
+### I14. Profile/Progress metrics: a real metric or no metric (D-103.4, D-104 H-5)
 
 - **State.** Streak, weekly done-count, activity counts; minutes, daily goal, achievements, trends, skill %, level/XP.
 - **D3.** P3, T-s, Q3, `UI_BACKEND_GAPS` N-21/N-32 [V]: no backend measure; an unmeasured value must never render
   as 0 (D-103.4). `learner_summary` says growth is unavailable per domain (`learner_summary.py:47-55`).
-- **Built in D4 (defensible semantics, real server evidence, derived before persisted):**
-  1. **Active days and streak.** A *day* is a calendar day in the learner's timezone on which at least one
-     acknowledged learning event exists. The streak is consecutive days ending today or yesterday (the rule
-     `GET /api/dashboard` already uses for writing, `app.py:2713-2725` [V], now cross-skill). **No storage:** a new
-     read `GET /api/learner-activity?tz=<IANA>&days=` computes from rows that already carry an immutable
-     per-event timestamp: `essays.created_at`, `speaking_attempts.created_at`, `reading_attempts.created_at`
-     (`models.py:66,347,1276`) [V]. The timezone is a validated per-request parameter (zoneinfo), not stored; the
-     server clock never decides a day boundary. Week = ISO week, Monday start [H-5].
-  2. **Weekly-goal done-count** = distinct active days this week, against the persisted target of I3b.
-  3. **Activity counts**: the existing `GET /api/learner-summary` (`window=`), unchanged.
-- **The limit that must be decided (H-5).** Listening, Dictation, Shadowing and review carry only a
-  last-update timestamp: `listening_progress.updated_at`, `shadowing_progress.updated_at`,
-  `saved_words.last_reviewed_at` are overwritten on the next write (`models.py:277-336`) [V], so a *past* day whose
-  only activity was a dictation cannot be proved, and counting it "best effort" would let a later write erase the
-  day and falsely break a streak. Options: **(a, recommended)** count only the three immutable sources above and
-  say in the approval entry that dictation-only days do not extend the streak (derivation first, no new
-  persistence); **(b)** add an append-only per-day marker (`learning_days`: account, language, local date, skill;
-  unique on those four, upserted by the domain owner in the same transaction as its write) so every skill counts,
-  at the cost of one small new table and the tz being fixed at write time; **(c)** include the last-update
-  timestamps and document the undercount (not recommended: a headline number that can be wrong). (b) is a new
-  revision (0024) and needs its own review.
-- **Hidden until a contract exists (no storage designed):** weekly minutes (no genuine duration is measured;
-  client time is contextual, `EA:35-36`), the daily-goal ring and its minutes setting, achievements
-  (`no_approved_policy`), trends, skill percentages, level/XP. The API returns these as absent, and the client
-  hides them; it never returns 0 for an unmeasured value (D3 wrong-data risk 2 is fixed in the read model, I8).
-- **Migration.** None for (a). **Consumers.** Profile (streak, week done-count), Today (streak card; the goal ring
-  stays hidden), Progress (counts).
+- **Built in D4 (derived, no new table): a real streak.** D-104 H-5: **no streak table**; the streak is derived from
+  **meaningful, timestamped server-side learning activity**. **Page visits do not count.** It is **not permanently
+  limited** to Reading, Writing and Speaking: **every staging skill counts once it has equally valid server-side
+  completed records**, using the domain records available after D4 and D7.
+  1. **Definition.** A *day* is a calendar day in the learner's timezone on which at least one such record exists; the
+     streak is consecutive days ending today or yesterday (the rule `GET /api/dashboard` already uses for writing,
+     `app.py:2713-2725` [V], now cross-skill). Week = ISO week, Monday start. A new read `GET
+     /api/learner-activity?tz=<IANA>&days=` computes it; the timezone is a validated per-request parameter (zoneinfo),
+     not stored, and the server clock never decides a day boundary.
+  2. **A registry, not a table.** Each skill contributes one *activity source*: a function that, for the scope, yields
+     the timestamps of its valid completed records. The set grows as records become valid; **a source counts only
+     when its record is completed, server-written and its timestamp survives** (below). At D4 the sources are
+     `essays.created_at` (each submission; a revision on another day is another active day), `speaking_attempts.created_at`
+     and `reading_attempts.created_at` [V]. D7 adds a source when a flow writes a qualifying record: for example a
+     server-verified Dictation check (I18) once its timestamp is kept per event (see below), Shadowing rounds and
+     vocabulary reviews once each keeps an event time rather than a last-update time, Grammar completions
+     (`grammar_progress.completed_at`) and Reading Transfer/typed responses (`works` `response`, `created_at`).
+  3. **What survives.** Listening, Dictation, Shadowing and review rows carry only a last-update time today
+     (`listening_progress.updated_at`, `shadowing_progress.updated_at`, `saved_words.last_reviewed_at`, overwritten
+     on the next write; `models.py:277-336`) [V], so a *past* day cannot be proved from them, and counting them by
+     last-update would let a later write erase a day and falsely break a streak. Those skills therefore enter the streak
+     **when their domain records keep a per-event timestamp** (a D7 change to the domain owner, not a streak table);
+     until then their days are not counted, and the approval entry says so. This is the honest reading of "every
+     staging skill with equally valid server-side completed activity".
+  4. **Weekly done-count** = distinct active days this week against the persisted target of I3b. **Activity counts**:
+     the existing `GET /api/learner-summary`, unchanged.
+- **Hidden until a contract exists (no storage designed):** weekly minutes (shown only if duration is genuinely
+  measured; nothing measures it, and client time is contextual, `EA:35-36`), the daily-goal ring and its minutes setting,
+  achievements (`no_approved_policy`), trends, skill percentages, level/XP. The API returns these as absent and the
+  client hides them; it never returns 0 for an unmeasured value (D3 wrong-data risk 2 is fixed in the read model, I8).
+- **Migration.** None. **Consumers.** Profile (streak, week done-count), Today (streak card; the goal ring stays
+  hidden), Progress (counts).
 
 ### I15. Orena history and coach notes (flag, do not decide)
 
@@ -724,10 +719,10 @@ device; D-101 "Persistence" makes none of them required.
 
 | Item | Default for an existing account | Device import |
 | --- | --- | --- |
-| I1 declared_level | `''` -> Welcome once (H2 5.2 A) | none |
-| I2 learning_language | `''` -> session default `en`, Welcome once | none |
+| I1 declared_level | `''`; Welcome only for a language with no profile row (D-104 H-1) | none |
+| I2 learning_language | `''` -> session default `en`; Welcome for a language with no profile row | none |
 | I3 interface_language | `''` -> device/OS | none (device value seeds the first save) |
-| I4, I6, I10, I12 | empty | only via H-6 (explicit, preview) |
+| I4, I6, I10, I12 | empty; device values stay readable where a compatibility path reads them | none (no bulk migration, D-104 H-6) |
 | I5 drafts | empty | existing automatic per-piece send |
 | I11 grammar | R5 completions count via aliases | none |
 | I13 review settings | `NULL` = client defaults | the device value seeds the first save [I] |
@@ -745,14 +740,17 @@ only `scripts/bootstrap_runtime_schema.py` applies them. None is added to `GATED
 
 | Rev | File | Adds | Guard |
 | --- | --- | --- | --- |
-| 0017 | `20260929_0017_declared_level.py` | `user_language_profiles.declared_level` | H2 section 3 verbatim |
-| 0018 | `20260929_0018_account_settings.py` | `users.learning_language`, `users.interface_language` (`NOT NULL DEFAULT ''`), `users.weekly_goal_days` (`SMALLINT NULL`) | `users` is hot: lock_timeout matters most here |
-| 0019 | `20260929_0019_review_settings.py` | `user_language_profiles.review_new_per_day`, `review_limit_per_day`, `review_modes` (nullable) | - |
-| 0020 | `20260929_0020_listening_score_source.py` | `listening_progress.score_source VARCHAR(12) NOT NULL DEFAULT 'client'` | `listening_progress` is written on every check; a constant default is metadata-only |
-| 0021 | `20260929_0021_essay_review_history.py` | **new table** `essay_review_history` (I19): FKs to `essays`/`users` `ON DELETE CASCADE`, `UNIQUE (essay_id, prior_fingerprint)`, one index | `CREATE TABLE` locks no existing table |
-| 0022 | `20260929_0022_library_items_place.py` (conditional on H-12 = Design B, recommended) | `library_items.place JSON NULL`, `library_items.place_at TIMESTAMPTZ NULL`, partial index | `library_items` is written by keeps; nullable columns, no default |
-| 0023 | `20260929_0023_grammar_quiz_result.py` (conditional on H-4b) | `grammar_progress.last_quiz_correct/total/at` (nullable) | - |
-| 0024 | (conditional on H-5b, **not** proposed) | append-only per-day marker (I14 option b) | own review |
+| 0017 | `20260930_0017_declared_level.py` | `user_language_profiles.declared_level` | H2 section 3 verbatim |
+| 0018 | `20260930_0018_account_settings.py` | `users.learning_language`, `users.interface_language` (`NOT NULL DEFAULT ''`), `users.weekly_goal_days` (`SMALLINT NULL`), `users.settings_updated_at` (`TIMESTAMPTZ NULL`, the version token) | `users` is hot: lock_timeout matters most here; own operator step after a backup |
+| 0019 | `20260930_0019_review_settings.py` | `user_language_profiles.review_new_per_day`, `review_limit_per_day`, `review_modes` (nullable) | - |
+| 0020 | `20260930_0020_listening_score_source.py` | `listening_progress.score_source VARCHAR(12) NOT NULL DEFAULT 'client'` | `listening_progress` is written on every check; a constant default is metadata-only |
+| 0021 | `20260930_0021_essay_review_history.py` | **new table** `essay_review_history` (I19): FKs to `essays`/`users` `ON DELETE CASCADE`, `UNIQUE (essay_id, prior_fingerprint)`, one index, PostgreSQL `BEFORE UPDATE` immutability trigger | `CREATE TABLE` locks no existing table |
+| 0022 | `20260930_0022_library_items_place.py` (required, D-104 H-12) | `library_items.place JSON NULL`, `library_items.place_at TIMESTAMPTZ NULL`, partial index | `library_items` is written by keeps; nullable columns, no default |
+| 0023 | `20260930_0023_grammar_quiz_result.py` (required, D-104 H-4) | `grammar_progress.last_quiz_correct/total/at` (nullable) + PostgreSQL CHECK `ck_grammar_progress_quiz` | - |
+
+The files are in `migrations/proposed/` (not `versions/`), each with the review and gate in its docstring; the
+`git mv` to `versions/` happens one revision at a time, in chain order, only after the recorded rehearsal and the
+human's authorization (D-104 next steps 2 and 3). No `learning_days` table is proposed (D-104 H-5).
 
 Rules for every revision:
 - `upgrade()` and `downgrade()` first run `SET LOCAL lock_timeout = '5s'` **guarded by dialect**:
@@ -778,14 +776,23 @@ Rules for every revision:
   the human takes `scripts/runtime_backup.py` immediately before
   `python scripts/bootstrap_runtime_schema.py --upgrade --from <head> --confirm`.
 
-Non-migration changes, in order of dependence: registry entries (`WORK_KINDS`: `continuation`, `annotation`,
-`imported`; `MUTATION_DOMAINS` likewise); `GET /api/works` list; `PUT/GET /api/continue`,
+Non-migration changes, in order of dependence: registry entries (`WORK_KINDS`: `annotation`,
+`imported`; `MUTATION_DOMAINS` likewise); `GET /api/works` list; `PUT/GET /api/continue` (on `library_items`, I4),
 `/api/annotations`; turn append; provenance route; profile settings; language endpoints; `since` on speech
 attempts; listening language check and server-side Dictation scoring (`writing_coach/dictation_evaluator.py`);
 `GET /api/learner-activity`; `POST /api/essays/{id}/review/refresh` and `GET .../review/history`;
 pair-aware `effective_contract_version`; flag in `compose.yaml`.
 
 ## 6. Rehearsal (D-102 point 7; ADA §6 step 3)
+
+Run by the lead with `scripts/rehearse_learner_records_schema.py <throwaway URL>`: it refuses a URL that is not clearly
+throwaway (database name contains `rehears`, `throwaway` or `scratch`, local or rehearsal host, not the configured
+runtime, not a runtime port) and a database that is not empty; builds the chain to `20260924_0016` from `versions/`;
+seeds pre-existing rows; adds `migrations/proposed/` to `version_locations`; upgrades to head; probes every new column,
+table, constraint, index and trigger; proves `lock_timeout` by holding a lock on `users` during a downgrade and an
+upgrade (SQLSTATE 55P03 after about 5 s, nothing half-applied); runs up -> down to 0016 -> up and compares the two
+schemas; races two writers on the history key; prints a PASS/FAIL table and exits non-zero on any FAIL. The steps below
+state the intent it implements.
 
 On a throwaway PostgreSQL 17 (`docker run` with a random port and no shared volume), never a shared runtime or
 volume; heavy Docker work does not overlap another lane's (D-101 working rules). CI has no PostgreSQL service
@@ -795,12 +802,13 @@ volume; heavy Docker work does not overlap another lane's (D-101 working rules).
 1. Create at `0016`, seed rows: profiles for two accounts x en/zh, `users` rows, `grammar_progress` R5 rows, works,
    `listening_progress` rows (one with a wrong-language asset, like the bench probe), essays with and without a
    stored review identity.
-2. `upgrade` 0017 -> 0018 -> 0019 -> 0020 -> 0021 (-> 0022, 0023), asserting per revision: pre-existing rows read the default, no lock
+2. `upgrade` 0017 -> 0018 -> 0019 -> 0020 -> 0021 -> 0022 -> 0023, asserting per revision: pre-existing rows read the default, no lock
    wait beyond 5 s while a concurrent transaction holds a row lock on `users`/`user_language_profiles`.
-3. `downgrade` to `0016`, then `upgrade` again (up/down/up), asserting the ORM equals the migrated schema
-   (`tests/test_reading_evidence_schema_parity.py` pattern) at each head.
-4. Concurrency on the real repositories: two PATCHes with one `expected_version` give one 200 and one 409; two
-   position writes with one `expectedVersion` give one commit and one conflict; two turn appends at one head give
+3. `downgrade` to `0016`, then `upgrade` again (up/down/up), asserting the schema after the second upgrade equals the
+   first. The ORM-equals-migrated-schema check (`tests/test_reading_evidence_schema_parity.py` pattern) belongs to the
+   implementation, because the models change only after authorization (section 15).
+4. Concurrency (the script covers the history key; the rest is the implementation's PostgreSQL tests): two PATCHes with one `expected_version` give one 200 and one 409; two
+   account-setting writes with one `settings_updated_at` give one 200 and one 409; two turn appends at one head give
    one turn and one conflict; two simultaneous refreshes of one essay give one provider call, one history row and
    one `refreshed` (the other `current`); a forged Dictation `best_accuracy_percent` of 100 with a wrong answer is
    stored as the computed value.
@@ -822,7 +830,9 @@ volume; heavy Docker work does not overlap another lane's (D-101 working rules).
 
 - The canonical multi-user / account-sync architecture: no sync cursor, tombstone horizon, snapshot token or
   receipt compaction is designed; conflict handling is the per-record rule in section 2.4 only.
-- Receipt compaction and cursors (I4 Design B avoids them; Design A coalesces but does not remove the growth).
+- Receipt compaction and cursors (I4 avoids them by storing position on `library_items`).
+- The general multi-device sync protocol, the account-deletion runtime, the export format, and Orena
+  conversation/history persistence (D-104 H-18 leaves these deferred).
 - Native mobile (frozen). Platform Admin. Reading library breadth.
 - Account deletion and re-registration runtime (D-055 preconditions); export format (none exists).
 - `support_language` stored per language row; `ja` level list and the `HSK7-9` onboarding cell (H2 section 9).
@@ -850,10 +860,14 @@ with the same `operationId` returns the same result):
   SQLite plain insert or `DO NOTHING` with a rowcount check).
 - **I2:** POST language then a fresh session (new cookie jar) for the same account reads the stored language;
   a session that already chose keeps its own; `''` yields `stored:false` and Welcome; two accounts do not leak.
-- **I3, I13:** patch, read-back, clamp, PUT does not erase, stale `expected_version` -> 409, `''`/`NULL` defaults.
-- **I4:** PUT position then GET on a new session returns it; list ordered by recency and bounded; a stale version
-  conflicts and the client's re-apply wins by version; finished flag round-trips; `text:`/`url:`/`book:` ids
-  round-trip; a source removed reads "unavailable". Front end: throttling test with an injected clock.
+- **I3, I3b:** the `settings_updated_at` update: a `NULL` token writes and sets a server time; the same stale token ->
+  409 with the current token; a client-supplied timestamp is ignored; two concurrent writers with one token give one
+  200 and one 409; the three scalars share one token.
+- **I13:** patch, read-back, clamp, PUT does not erase, stale `expected_updated_at` -> 409, `NULL` defaults.
+- **I4:** PUT place then GET on a new session returns it; the list is ordered by `place_at` and bounded; a place write
+  leaves `library_items.version` and `updated_at` unchanged and never makes a concurrent pin/note PATCH conflict; the
+  30 s coalescing answers `coalesced` without an UPDATE; finished/cleared round-trip; `text:`/`url:`/`book:` ids
+  round-trip; the `started` row of one item is one row (unique key); a source removed reads "unavailable".
 - **I5:** the existing work-API and PG tests, plus register/target length if H-7(a).
 - **I6:** append at head, replay returns the same turn, two appends at one head give one turn + 409, role
   alternation and `reply_to` enforced, ordinals contiguous (`uq_work_turn_ordinal`), cross-scope turn refused
@@ -866,7 +880,8 @@ with the same `operationId` returns the same result):
 - **I10:** notes and highlights round-trip; concurrent add from two clients -> 409 -> union -> both present;
   over-bound payload refused.
 - **I11:** completion under a Grammar Lab id; an R5 completion is returned for the aliased point with `via:alias`
-  and nothing is rewritten; unknown/unpublished id refused; (b) quiz columns round-trip.
+  and nothing is rewritten; unknown/unpublished id refused; the quiz columns round-trip with the completion; the CHECK
+  refuses `correct > total` and a partial result; Try-it writes nothing to `grammar_progress`.
 - **I12:** import text -> `text:<uuid>` opens on a "new device"; kept mapping; provenance attach and read;
   deletion marks dependents unavailable.
 - **I16:** listening/shadowing save with a ZH asset under an EN scope -> 422; unknown asset -> 404; valid -> 200;
@@ -889,7 +904,8 @@ with the same `operationId` returns the same result):
   `unavailable`; essay without stored identity -> not refreshed; another account's essay -> not found; the history
   repository has no update or delete method; essay deletion cascades; `module_data` keys other than `review` (for
   example `practice_context`, `grammar_links`, `prompt_ref`) survive a refresh.
-- **I14:** streak over a hand-built set of essays and attempts across days and two timezones (a day boundary in
+- **I14:** no streak table exists; a page visit adds nothing; a source is counted only from a completed server-written
+  record; streak over a hand-built set of essays and attempts across days and two timezones (a day boundary in
   `Asia/Ho_Chi_Minh` differs from UTC); a gap breaks it; the today-or-yesterday rule; weekly done-count against
   `weekly_goal_days`; nothing unmeasured is returned as 0 (fields absent).
 - **Backbone off:** every new route answers `503 account_backbone_disabled` and clients fall back to device
@@ -900,45 +916,35 @@ with the same `operationId` returns the same result):
   `shadowing_progress`, `speaking_attempts`, `essays`, `essay_review_history`, `library_items` (incl. `place`),
   `saved_words`, and the incarnation-keyed `works`, `work_turns`, `mutation_receipts`, `change_records`,
   `language_provenance`. The D-055 gate test that no runtime path deletes stays.
-- **Generic work route (P1-5):** `PUT /api/works/{id}` with kind `annotation`, `imported` (or `continuation`) is
+- **Generic work route (P1-5):** `PUT /api/works/{id}` with kind `annotation`, `imported` is
   refused 422 `work_kind_invalid`; the dedicated routes accept them.
 - **Browser (D-102 point 5, real backend, PostgreSQL):** EN and ZH, a new browser context reads back position,
   draft, conversation, note, level and language; results recorded in D3.
 
-## 10. Open human decisions
+## 10. Human decisions: settled by D-104, and what remains
 
-- **H-1 Existing accounts.** H2 5.2 option A (everyone sees Welcome once per language they use) extended to I2
-  (learning language). Recommended: yes.
-- **H-2 Interface language (I3):** server-stored account setting (recommended), or device only.
-- **H-3 Reading Transfer (I9):** store as a non-evidence `response` (recommended), or define a Transfer evidence
-  producer, or store nothing.
-- **H-4 Grammar quiz result (I11):** completion only (a, recommended), or nullable quiz columns (b, migration 0023).
-- **H-5 Streak policy (I14, D-103.4):** (a, recommended) days from the three immutable sources, accepting that
-  dictation, shadowing and review-only days do not extend the streak; (b) a small append-only per-day marker so
-  every skill counts (new table, own review); (c) not recommended. Also: the learner timezone is a per-request
-  parameter (not stored) and the week starts on Monday.
-- **H-6 Device import:** none (default), or one explicit "Bring this device's work into your account" action for
-  positions, conversations, annotations, imports; never at startup. It moves device data to the server.
-- **H-7 Writing register and target length:** store in the draft and make the evaluator read them, or retire the
+**Settled by D-104 (`DECISION_LOG.md:3604`):** H-18 (storage ownership; AGENTS §7 amended), H-12 (Design B, 0022
+required), H-17 (`users.settings_updated_at`, conditional update, no blind last write), H-11 (backbone: lane after
+rehearsal and apply, default off, :8000 after merge), H-6 (no bulk device migration), H-1 (Welcome once per language with
+no profile row), H-5 (derived real streak, no table), H-4 (0023 quiz columns), H-14 (legacy Dictation numbers
+superseded, never rewritten as verified), H-15 (old Chinese essays with an unproven pair are not refreshed), H-3 (Reading
+Transfer stored as learner work, not evidence).
+
+**Previously recommended and not contradicted by D-104 (this proposal keeps them):** H-2 interface language stored on
+the account (`users.interface_language`, D-104 lists it); H-10 Orena history stays device memory (deferred by D-104
+unless the Agent Contract changes); H-13 the two D3 corrections stand.
+
+**Still open (product or design calls with no storage impact, or not answered by D-104):**
+- **H-7** Writing register and target length: store in the draft and make the evaluator read them, or retire the
   controls.
-- **H-8 Conversation coaching:** part of the turn, or regenerated on demand.
-- **H-9 History:** whether Progress > History lists typed Free Talk/Situation/React responses.
-- **H-10 Orena history:** keep device by AGENT_CONTRACT:383 (recommended until G), or reopen the review.
-- **H-11 Activate the backbone:** turn `ORENA_ACCOUNT_BACKBONE` on for the lane runtime and for :8000 after the
-  merge (recommended), given D-055's open deletion preconditions.
-- **H-12 Continuation store (I4), a real decision:** Design B, `place` columns on `library_items` (recommended: no
-  receipts, no growth in a reserved area; departs from ADA §2's wording), or Design A, `works` `continuation` with
-  server coalescing and an accepted ~0.5 M rows/day in each of two tables until the compaction package.
-- **H-14 Old Dictation numbers (I18):** superseded by the next verified check (recommended), or kept and labelled.
-- **H-15 Old Chinese essays with no stored review identity (I19):** not refreshed because their pair cannot be
-  verified (recommended), or refreshed on a stated assumption.
-- **H-16 Weekly goal display (I3b):** whether the Profile bar is drawn when no target is set (a design question).
-- **H-17 Account scalars (P1-4):** accept arrival-order last write for `users.learning_language`,
-  `interface_language` and `weekly_goal_days` as a recorded exception to ADA §1 (recommended), or add
-  `users.settings_updated_at` and the expected-version rule.
-- **H-18 AGENTS §7 amendment and `users` placement (P1-5), see section 13.**
-- **H-13 Data-model corrections in D3** (no decision, please confirm): Part 3's `reviewSettings` "not read by /next"
-  is wrong (I13); Speaking attempts require a `segment_id` even for free expression (I8).
+- **H-8** Conversation coaching: part of the turn, or regenerated on demand (reviewer: regenerate).
+- **H-9** Whether Progress > History lists typed Free Talk/Situation/React responses.
+- **H-16** Whether the Profile weekly-goal bar is drawn when no target is set.
+- **H-19 (new, from D-104 H-1)** What opens the level question for a language whose profile row exists with
+  `declared_level = ''`: D-104 keys Welcome on a missing profile row only, while H2's proposal opened Welcome on a row
+  without a level. Section 14 records the reading taken and asks for confirmation.
+- **H-20 (new, from D-104 H-4)** Whether a grammar quiz result is stored only when the learner completes the point
+  (this proposal's reading, because `completed_at` is `NOT NULL`) or also for an abandoned quiz.
 
 ## 11. Consumers: which D7 change uses which item
 
@@ -963,6 +969,8 @@ with the same `operationId` returns the same result):
 
 ## 12. Review response (`LEARNER_RECORDS_D4.REVIEW.md`, REQUEST CHANGES)
 
+_Revision 2 wording. Where D-104 later chose differently (I4 Design A is dropped, the arrival-order exception is withdrawn, the device import is dropped), section 14 states the final position._
+
 | Finding | Resolution |
 | --- | --- |
 | P1-1 deletion/incarnation | Section 2.6 rewritten: the `users` row survives (RESTRICT); incarnation-keyed rows need explicit deletion because the kept incarnation row's cascade does not fire; account-keyed rows and the new `users` columns are deleted or **reset** by the D-055(b) workflow. I2/I3/I3b corrected; the section 9 enumeration test lists them. |
@@ -983,24 +991,61 @@ with the same `operationId` returns the same result):
 | P2-11 streak | Recorded: `essays.created_at` is per submission, so each revision day counts as an active day. |
 | P2-12 export | Unchanged: not decided. |
 
-## 13. Requested amendments and decisions that go to the human
+## 13. Amendments and decisions (all decided by D-104)
 
-1. **AGENTS §7 amendment (H-18).** §7 says kept-language provenance, conversations, drafts and continuation are
-   device memory "by design" and forbids new learner-data persistence decisions. D-101 "Persistence" and D-103 are
-   explicit current human instructions to store learning records, and ADA §2 already names the targets. The approval
-   entry should amend §7 to say: **drafts, conversations, continuation, annotations, imported texts, provenance, the
-   listed account settings and the evidence records in this proposal are server-owned records**; and that the
-   **holds remaining** are sync cursors and multi-device conflict design, tombstone horizon, receipt compaction,
-   account deletion and re-registration runtime (D-055), export format, native mobile, and Orena history
-   (`AGENT_CONTRACT.md:383`, I15). This proposal changes no other reserved matter.
-2. **`users` placement (H-18).** Account-wide settings on `users` (`learning_language`, `interface_language`,
-   `weekly_goal_days`) extend the identity-mapping table with learner preferences. Alternative: a per-account settings
-   table (a new table, against "no ad-hoc tables" unless the human accepts it). Recommended: columns on `users`,
-   with the D-055(b) reset in section 2.6.
-3. **Generic work route.** New kinds are reachable only through their dedicated routes; the pre-existing kinds keep
-   their behaviour. Dedicated routes define server-side rules (deterministic ids, payload bounds, and for turns the
-   role alternation and `reply_to` rules copied from `restoreConversation`), which the human approves with this
-   proposal.
-4. **Decisions for the human now:** H-12 (continuation store), H-17 (account-scalar conflict rule), H-18 (AGENTS §7
-   and `users`), H-11 (activate the backbone), H-6 (device import), H-1 (Welcome once), H-5 (streak policy), H-3,
-   H-4, H-2, H-14, H-15. H-7, H-8, H-9, H-16 are product or design calls with no storage impact.
+1. **AGENTS §7 (H-18): amended by D-104.** These learner-owned records live on the server: drafts, conversations,
+   continuation/place, notes, highlights and annotations, learner-imported private content, and the provenance needed
+   to keep where learner content and actions came from. Still deferred: the general multi-device sync protocol, receipt
+   compaction, the account-deletion runtime, the export format, and Orena conversation/history persistence (unless the
+   Agent Contract changes it).
+2. **Storage ownership (H-18).** `users`: `learning_language`, `interface_language`, `weekly_goal_days`,
+   `settings_updated_at`. `user_language_profiles`: `declared_level`, review settings, and settings that belong to one
+   learning language. **There is no generic account-settings table.**
+3. **Generic work route.** `PUT /api/works/{id}` refuses the kinds added by this proposal (`annotation`, `imported`);
+   they are reachable only through their dedicated routes, which define deterministic ids, payload bounds and, for
+   turns, the role-alternation and `reply_to` rules copied from `restoreConversation`. (`continuation` is no longer a
+   work kind: I4 is on `library_items`.) The pre-existing kinds keep their behaviour.
+
+## 14. D-104 changes (revision 2 -> 3)
+
+| Area | Revision 2 | Revision 3 (D-104) |
+| --- | --- | --- |
+| Storage ownership (H-18) | `users` placement was a request | Decided: `users` = the four account settings; `user_language_profiles` = declared level, review settings, per-language settings; no settings table |
+| Continuation (H-12) | Design A (`works`, coalescing) or Design B, recommended B | **Design B only**; migration 0022 required; the `works` continuation design, its coalescing and volume section are removed |
+| Account scalars (H-17) | Arrival-order last write as a recorded exception | **Withdrawn.** `users.settings_updated_at` (0018), server-owned expected-version update, 409 on stale, never a client timestamp |
+| Backbone (H-11) | Recommended on for the lane runtime | On the lane only **after** the rehearsal and applying the migrations; default off; :8000 after merge, backup, gate, smoke |
+| Device data (H-6) | Optional explicit import (recommended none) | **No bulk migration** and no import flow; legacy values stay readable through existing compatibility paths; new state goes to the server |
+| Welcome (H-1) | Everyone sees Welcome once per language | Setup once per language **whose profile row does not exist**, without replaying onboarding (see H-19) |
+| Streak (H-5) | Options (a)/(b)/(c); (a) three immutable sources recommended | **Real streak derived from server records; no table; every staging skill counts once it has valid completed records with surviving timestamps**; page visits never count |
+| Quiz (H-4) | Recommended completion only | **Stored** (0023), beside completion; Try-it stays in Writing; a future Grammar API validates the published point |
+| H-14, H-15, H-3 | Recommended | Approved as recommended |
+| Migrations | Numbered and described | Written as real revision files `20260930_0017`-`0023` in `migrations/proposed/`; rehearsal script written |
+
+**Open by this revision, not decided by D-104:** H-19 (what asks for the level when a profile row exists with an empty
+level) and H-20 (quiz stored only with completion). I took the literal D-104 reading in both cases and marked them.
+
+## 15. Model and code changes the implementation makes after authorization
+
+None of these is in this change: the ORM models and application code stay as they are so that runtimes whose schema is
+at `20260924_0016` keep working. After the human authorizes the migrations (and only then):
+- `writing_coach/persistence/models.py`: `User` (4 columns), `UserLanguageProfile` (1 + 3), `ListeningProgress`
+  (`score_source`), `LibraryItem` (`place`, `place_at`, the partial index), `GrammarProgress` (3 columns, no CHECK in
+  the ORM on SQLite), and a new `EssayReviewHistory`; SQLite `initialize()` mirrors (guarded `ALTER TABLE`, and
+  `CREATE TABLE IF NOT EXISTS essay_review_history`). Head-sensitive tests move to `20260930_0023`
+  (`tests/test_adaptive_reading_schema.py`, `tests/test_reading_canonical_cutover_scripts.py`).
+- `account_profile.py` / `becoming_memory.py`: `declared_level` and the review settings `stored=True`; the H2 conditional
+  write with `expected_updated_at` and its creation-race handling (N1); an account-level settings path on `users` with
+  the `settings_updated_at` conditional update; `interface_language` moves to `users`.
+- `core/platform_api.py`, `auth_support.py`: learning-language seeding into the session and `language.stored` on
+  bootstrap.
+- `library_api.py` and the library repository: `PUT/GET /api/continue` writing `place`/`place_at` without touching
+  `version` or `updated_at`.
+- `work_contract.py`, `work_api.py`, `work_repository.py`: kinds `annotation` and `imported`, dedicated routes, the
+  generic route refusing them, `GET /api/works` (bounded list), turn append, the provenance route.
+- `listening_api.py` and the specialized repository: language and asset check, server-side Dictation scoring
+  (`writing_coach/dictation_evaluator.py`, golden vectors), `score_source`.
+- `app.py`, `writing_review_identity.py`, the specialized repository: the refresh contract of I19
+  (`refresh_essay_review`, row lock, provider-only `evaluate`, the `becoming_linguistics` key-level merge).
+- `speech_api.py`: `since` on the attempts list; the grammar progress route (when the Grammar API exists);
+  `GET /api/learner-activity`; `compose.yaml` passes `ORENA_ACCOUNT_BACKBONE` with default `off`.
+- Front end (D7): the consumers in section 11.
