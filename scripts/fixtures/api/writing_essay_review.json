@@ -1,0 +1,63 @@
+{
+  "draftId": "1",
+  "version": 2,
+  "wordCount": 49,
+  "summary": "Bạn đã sửa được phần lớn lỗi chia động từ; bài viết trôi chảy hơn hẳn. Còn một lỗi dạng động từ và một lỗi chính tả mới.",
+  "strengths": "Các câu đã có thì và chủ ngữ hợp lý.",
+  "issues": [
+    {
+      "id": "issue-31c29a12a341e714",
+      "fragment": "I like swim in the sea",
+      "correction": "I like swimming in the sea",
+      "why": "Sau 'like' để nói sở thích, dùng động từ dạng V-ing.",
+      "rule": "like + V-ing (sở thích chung).",
+      "grammarRef": null,
+      "examples": [
+        "She likes cooking dinner."
+      ],
+      "kind": "grammar",
+      "anchored": true,
+      "span": {
+        "start": 98,
+        "end": 120
+      }
+    },
+    {
+      "id": "issue-a7bc23f59932ca50",
+      "fragment": "go their again",
+      "correction": "go there again",
+      "why": "'Their' là tính từ sở hữu; chỉ nơi chốn phải dùng 'there'.",
+      "rule": "there = ở đó; their = của họ.",
+      "grammarRef": null,
+      "examples": [
+        "I hope to go there again."
+      ],
+      "kind": "vocabulary",
+      "anchored": true,
+      "span": {
+        "start": 233,
+        "end": 247
+      }
+    }
+  ],
+  "dimensions": [
+    {
+      "name": "naturalness",
+      "value": 66.0
+    },
+    {
+      "name": "grammar",
+      "value": 71.0
+    },
+    {
+      "name": "vocabulary",
+      "value": 64.0
+    },
+    {
+      "name": "coherence",
+      "value": 72.0
+    }
+  ],
+  "id": 2,
+  "parentId": 1
+}

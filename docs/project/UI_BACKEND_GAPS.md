@@ -3470,6 +3470,111 @@ endpoint the other Speaking/Listening rooms already read serves it.
   their green/red that way) - a control that carries a verdict look must use `aria-disabled`, not
   `disabled`.
 
+## Writing / Compare Versions (D-088 frames 18, 61, 19; 37, 38 left unbuilt), Wave B, 2026-09-28
+
+Built `static/orena/screens/writing/` (routes `writing` `#/write`, `writingDraft` `#/write/:id`;
+frames 18 Writing + 61 Prompt Setup, the latter a sheet, no frame draws it as its own route) and
+`static/orena/screens/writing-compare/` (route `wrcompare`, `#/write/:id/compare`; frame 19), both
+registered in `shell/screens.js`. `rewrite` (`#/rewrite`, frame 37 Context Rewrite) and
+`timed-writing` (`#/timed-writing`, frame 38 Timed Writing) were **not** built - see below.
+
+- **Context Rewrite and Timed Writing have no real backend at all**, confirmed by a full read of
+  `infrastructure/api.js` and a grep of `app.py`/`writing_coach/*` for anything matching either
+  drill's shape. Both frames' underlying logic in the current app is **entirely client-side**: the
+  old prototype's `cwSubmit`/`twSubmit` (state script) grade with regex heuristics
+  (`must`-pattern arrays, a hand-rolled `regOf()` register classifier) against a **hardcoded**
+  core message ("I can't make it.") and three hardcoded audience contexts / a hardcoded 3-prompt
+  bank - sample content per D-068, not data. `POST /api/tasks/generate` generates a single essay
+  prompt (`TaskGenerateIn`: task_type/topic/target_cefr/word_target), not a message-to-preserve
+  plus N audience-register variations, and grades nothing; `POST /api/evaluate`/`/api/improve` are
+  Writing's own full-draft endpoints, not a per-sentence "intent preserved? / register fit /
+  politeness / clarity" or "communication worked? / register fit" contract, and repurposing either
+  for a different, un-designed grading shape is a product decision this pass has no standing to
+  invent. Per the Wave B brief's own instruction for these two ("real backends only, else Coming
+  soon"), both routes were left **unregistered** in `shell/screens.js` - `shell/router.js
+  #loadScreen`'s existing, already-tested fallback serves the design's own Coming soon screen,
+  titled from each route's own `crumb` (`contextRewrite` / `timedWriting`, both already real
+  `copy/shell.js` keys - no new key needed). No `screen.js`/`model.js`/`copy.js`/test gate was
+  written for either folder: there is no real behaviour to implement, and shipping an interactive
+  drill scored by a client-side heuristic is exactly the invented-behaviour rule 40 forbids. Needs
+  a real single-sentence/short-response grading contract (register/politeness/clarity for Context
+  Rewrite; a timed "did this land" judgement for Timed Writing), server-side and versioned, plus a
+  real content source for the core message/contexts and the timed prompt bank, before either can be
+  more than Coming soon.
+- **A finding's `priority` is real, but this build only ever marks one "high" per essay.**
+  `GET /api/essays/{id}` (`app.py#row_to_dict`, `detail=True`) computes
+  `"priority": "high" if index == 0 else "medium"` - i.e. exactly the *first*-listed finding, never
+  more than one, regardless of how severe the others are. The Writing screen uses this real field
+  as-is for the frame's Priority/Other split (rule 40: use the real signal, do not re-derive a
+  better one client-side) rather than inventing its own ranking - but this means "Priority issues"
+  will show at most 1 item today even when the frame's own placeholder count suggests up to 3.
+  Needs a real multi-issue severity ranking server-side (`writing_contract.py`/the evaluator
+  itself) if more than one finding should ever be able to surface as priority.
+- **Register and Target length (Prompt Setup, frame 61) have no field of their own in `EssayIn`**
+  (checked in full: `prompt`, `text`, `target_cefr`, `writing_mode`, `writing_context`
+  {topic_id/length_id/prompt_id/prompt_text/journal_context}, `parent_essay_id`,
+  `practice_context`, `learning_language` - no register, no word-count target). An earlier pass
+  folded the pick into `writing_context.journal_context` as a "real-effect note"; re-reading
+  `evaluate_with_ai` (`app.py`) end to end during finishing found that function never reads
+  `payload.writing_context` at all - only `prompt`, `text` and `target_cefr` reach the evaluator - so
+  a `journal_context` note would have been silently discarded server-side and would only have looked
+  like an effect. The finished build (`model.js#reviewPayload`) sends only the three fields the
+  evaluator actually reads; Register and Target length stay real, visible state for the pieces this
+  screen is open on this visit (the header meta line, the setup sheet's own pills, an in-memory
+  `intentions` map keyed by draft/essay), never sent to the server and never claimed as an effect on
+  the review. Nothing is persisted across a reload (no device-memory or server field exists, and
+  AGENTS.md §7 reserves new persistence decisions for learner-owned data). Needs a real
+  `EssayIn` field (and an evaluator that reads it) before Register/Target can affect a review, or a
+  product decision to persist the pick without one.
+- **"Writing mode" (which of Prompt / Free Writing / Your Topic / Respond to Content / Context
+  Rewrite / Timed Writing an essay started from) is not persisted at all** - `create_essay()`
+  (`app.py`) never writes a `writing_mode` column, so `GET /api/essays/{id}` cannot answer it. The
+  frame's own header meta line reads `Prompt · {{ wrLevel }} · {{ wrRegister }} · ~{{ wrTarget }}
+  words · {{ wrVersionLabel }}`, where the literal word "Prompt" appears to name the entry mode,
+  not a bound value; with no real field to bind it to, this build's meta line omits that word
+  entirely rather than show a permanent, possibly-wrong "Prompt" label on every piece regardless of
+  how it was actually started.
+- **"Related grammar" and W8B "Practice this" are both left out of the finding detail, for two
+  different reasons.** An earlier pass built a real "Related grammar" chip from `grammarRef`
+  (`GET /api/essays/{id}/review`'s per-issue R5 concept link, `writing_contract.py`), opening
+  `#/grammar?id=...`. R5 is being retired (human decision, 2026-09-28) and Grammar Lab will own
+  grammar content under a `GRAMMAR_CONTENT_CONTRACT.md` not yet written, so the finished build reads
+  no `grammar_links`/`grammarRef` at all and shows no "Related grammar" affordance - per the Wave B
+  instruction to build no new R5-specific grammar rendering or reads. "Practice this" (a targeted
+  drill launched from one finding) was already unbuilt before that decision: the backend has the
+  natural primitive (`GET /api/grammar/{grammar_id}/practice`, confirmed unused by any frontend
+  code), but no route or screen exists to receive it, and none of this pass's five frames draws what
+  that screen looks like. The finding-detail action row is Apply / Ask deeper only. Needs Grammar
+  Lab's contract before either affordance has anywhere real to point.
+- **W8A "Kept Review" has no list of its own anywhere in the design export** - only the inline
+  Keep/Unkeep toggle on the review card the Writing screen already has (wired to the real,
+  previously-unused `POST`/`DELETE /api/essays/{id}/keep`). A "kept reviews" browsing screen (the
+  spec names it; no frame was captured for it in this pass's scope) is not built.
+- **Register exploration (`ui/registers.js`, `POST /api/dictionary/registers`) has no home in any
+  of this pass's five frames** - confirmed absent from `18-Writing.html` (no "explore other
+  registers" affordance is drawn anywhere the review or the editor). Not carried into the new
+  screen; the real backend endpoint remains unused. A product/design decision, not resolved here.
+- **Compare Versions' summary line shows only the Grammar dimension's movement, matching the frame
+  literally.** An earlier pass repeated the delta card once per scored dimension (naturalness,
+  grammar, vocabulary, coherence), reasoning that hiding three other real, measured movements read
+  as closer to a rule-40 violation than following the sample literally. On finishing, `19-Compare-
+  Versions.html` was re-read against that choice: the frame draws exactly one summary line with the
+  literal word "Grammar" typed in - not a name-bound repeating card - so the finished build
+  (`writing-compare/model.js#mapCompare`) reads only `dimensionDeltas`' `grammar` entry and drops the
+  rest, matching rule 43 (nothing the frame does not draw) instead of rule 40's "show every real
+  number" reading. The other three dimensions' real deltas remain unused by this screen. Reversible
+  in one place (`model.js#mapCompare`'s `grammar` line) if showing every dimension is confirmed
+  intentional instead.
+- **Compare Versions' summary line's "range" (CEFR band) delta is now shown for real, when both
+  sides have one.** `RevisionCompare` itself carries no `app_cefr`/range and no id for the earlier
+  revision, but the *current* essay's own `GET /api/essays/{id}` answer carries a `revisions[]` list
+  (id + revision_no + created_at) for the whole series, including the earlier one being compared;
+  the finished build (`writing-compare/screen.js`) reads the earlier revision's id off that list
+  (`model.js#revisionIdOf`) and fetches its own `GET /api/essays/{id}` for its `cefr_estimate`, then
+  pairs it with the current essay's own range. The line is shown only when both sides answered a
+  real estimate; when the earlier fetch fails or either side's range was too thin a sample to state,
+  the range half of the line is simply omitted (rule 40), never a placeholder.
+
 ## Onboarding (D-088 Onboarding.dc.html frames 01-05), Wave B, 2026-09-29
 
 Built `static/orena/screens/onboarding/` (route `welcome`, `#/welcome`, bare - no rail, top bar,

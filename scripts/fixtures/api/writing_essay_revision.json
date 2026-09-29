@@ -1,0 +1,70 @@
+{
+  "previous": {
+    "version": 1,
+    "wordCount": 42,
+    "text": "Last weekend I go to the beach with my family. We was very happy because the weather were nice. I like swim in the sea and eat fresh seafood. In the evening, we watched the sunset together, it was a wonderful memory."
+  },
+  "current": {
+    "version": 2,
+    "wordCount": 49,
+    "text": "Last weekend I went to the beach with my family. We were very happy because the weather was nice. I like swim in the sea and eat fresh seafood. In the evening, we watched the sunset together. It was a wonderful memory, and I hope to go their again."
+  },
+  "fixed": [
+    {
+      "title": "We was very happy",
+      "kind": "grammar",
+      "detail": "We was very happy → We were very happy"
+    },
+    {
+      "title": "the weather were nice",
+      "kind": "grammar",
+      "detail": "the weather were nice → the weather was nice"
+    },
+    {
+      "title": "together, it was",
+      "kind": "punctuation",
+      "detail": "together, it was → together. It was"
+    },
+    {
+      "title": "I go to the beach",
+      "kind": "grammar",
+      "detail": "I go to the beach → I went to the beach"
+    }
+  ],
+  "remaining": [
+    {
+      "title": "I like swim in the sea",
+      "kind": "grammar",
+      "detail": "I like swimming in the sea - Sau 'like' để nói sở thích, dùng động từ dạng V-ing."
+    }
+  ],
+  "added": [
+    {
+      "title": "go their again",
+      "kind": "vocabulary",
+      "detail": "go there again - 'Their' là tính từ sở hữu; chỉ nơi chốn phải dùng 'there'."
+    }
+  ],
+  "dimensionDeltas": [
+    {
+      "name": "naturalness",
+      "from": 55.0,
+      "to": 66.0
+    },
+    {
+      "name": "grammar",
+      "from": 48.0,
+      "to": 71.0
+    },
+    {
+      "name": "vocabulary",
+      "from": 62.0,
+      "to": 64.0
+    },
+    {
+      "name": "coherence",
+      "from": 66.0,
+      "to": 72.0
+    }
+  ]
+}

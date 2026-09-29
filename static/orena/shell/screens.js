@@ -27,6 +27,18 @@ export const SCREENS = Object.freeze({
   dictation: () => import('../screens/dictation/screen.js'),
   shadowing: () => import('../screens/shadowing/screen.js'),
   onboarding: () => import('../screens/onboarding/screen.js'),
+  writing: () => import('../screens/writing/screen.js'),
+  'writing-compare': () => import('../screens/writing-compare/screen.js'),
+  // rewrite ('rewrite', #/rewrite) and timed-writing ('timed-writing', #/timed-writing) are
+  // deliberately NOT registered: no real backend exists for either (no content endpoint for a
+  // fixed core-message + register-context rewrite drill, no timed-prompt bank, no AI grading of
+  // "communication worked"/"register fit" - the old UI's versions used only client-side regex
+  // heuristics, never a server contract; checked `infrastructure/api.js` and `app.py` in full).
+  // Per the Wave B brief ("Context Rewrite / Timed Writing: real backends only, else Coming
+  // soon"), their routes fall through to this file's own documented fallback above and render
+  // the design's Coming soon screen, titled from their own `crumb` (shell/routes.js:
+  // 'contextRewrite' / 'timedWriting', both already real shellCopy keys). See
+  // SCRATCH/reports/write.md.
   speak: () => import('../screens/speak/screen.js'),
   compare: () => import('../screens/compare/screen.js'),
   attempts: () => import('../screens/attempts/screen.js'),

@@ -1,0 +1,496 @@
+{
+  "id": 9,
+  "created_at": "2026-09-28T20:19:23+00:00",
+  "prompt": "Write about your last weekend",
+  "text": "Last weekend I went to the beach with my family. We were very happy because the weather was nice. I like swim in the sea and eat fresh seafood. In the evening, we watched the sunset together, it was a wonderful memory.",
+  "word_count": 42,
+  "target_cefr": "B1",
+  "grammar": 65,
+  "vocabulary": 60,
+  "coherence": 65,
+  "task_achievement": 85,
+  "naturalness": 60,
+  "overall": 67.2,
+  "cefr_estimate": "",
+  "evaluator": "ollama:qwen3:8b",
+  "summary_vi": "Bài viết của bạn mô tả một kỳ nghỉ cuối tuần rất vui vẻ và tích cực. Bạn đã thể hiện rõ sự vui vẻ và niềm vui khi đi biển cùng gia đình. Tuy nhiên, bài viết cần cải thiện về mặt ngữ pháp và từ vựng để trở nên tự nhiên và chính xác hơn.",
+  "series_id": 8,
+  "revision_no": 2,
+  "parent_id": 8,
+  "language_code": "en",
+  "target_level": "B1",
+  "level_estimate": "",
+  "review_kept_at": null,
+  "strengths_vi": [
+    "Câu 'Last weekend I went to the beach with my family.' thể hiện rõ sự kiện và người tham gia một cách đơn giản và dễ hiểu.",
+    "Câu 'We were very happy because the weather was nice.' cho thấy bạn có thể sử dụng cấu trúc 'because' để liên kết lý do và kết quả một cách cơ bản."
+  ],
+  "strength_evidence": [
+    {
+      "id": "strength-1",
+      "category": "coherence",
+      "fragment": "Last weekend I went to the beach with my family.",
+      "quote": "Last weekend I went to the beach with my family.",
+      "span": {
+        "start": 0,
+        "end": 48
+      },
+      "explanation_vi": "Câu này mở đầu bài viết một cách rõ ràng và trực tiếp, giúp người đọc hiểu ngay được sự kiện chính của bài viết.",
+      "confidence": 0.9
+    },
+    {
+      "id": "strength-2",
+      "category": "coherence",
+      "fragment": "We were very happy because the weather was nice.",
+      "quote": "We were very happy because the weather was nice.",
+      "span": {
+        "start": 49,
+        "end": 97
+      },
+      "explanation_vi": "Câu này sử dụng cấu trúc 'because' để liên kết lý do và cảm xúc một cách cơ bản, giúp bài viết có sự mạch lạc hơn.",
+      "confidence": 0.9
+    }
+  ],
+  "priorities_vi": [
+    "Cần chú ý đến sự chính xác của động từ và thời gian trong câu, ví dụ như 'I like swim in the sea' nên là 'I like swimming in the sea'.",
+    "Cần sử dụng từ vựng phù hợp và tự nhiên hơn, ví dụ như 'eat fresh seafood' có thể thay bằng 'ate fresh seafood' để phù hợp với thời gian trong câu.",
+    "Cần kiểm tra lại cấu trúc câu và đảm bảo rằng các câu được nối với nhau một cách mạch lạc và tự nhiên hơn."
+  ],
+  "errors": [
+    {
+      "id": "issue-a5075191fac0f952",
+      "category": "article",
+      "fragment": "I like swim in the sea",
+      "quote": "I like swim in the sea",
+      "span": {
+        "start": 98,
+        "end": 120
+      },
+      "anchored": true,
+      "explanation_vi": "Bạn đã quên sử dụng động từ đúng dạng và thiếu giới từ 'in' trong câu. Câu nên là 'I like swimming in the sea'.",
+      "suggestion": "I like swimming in the sea",
+      "mini_rule_vi": "Khi nói về sở thích, bạn cần sử dụng động từ đúng dạng và kết hợp với giới từ phù hợp.",
+      "example": "I like swimming in the sea",
+      "confidence": 0.9
+    },
+    {
+      "id": "issue-51edfc1db2d0132e",
+      "category": "tense",
+      "fragment": "I like swim in the sea",
+      "quote": "I like swim in the sea",
+      "span": {
+        "start": 98,
+        "end": 120
+      },
+      "anchored": true,
+      "explanation_vi": "Bạn đã sử dụng động từ 'like' nhưng chưa kết hợp đúng với động từ 'swim' ở dạng đúng. Câu nên là 'I like swimming in the sea'.",
+      "suggestion": "I like swimming in the sea",
+      "mini_rule_vi": "Khi sử dụng động từ 'like', bạn cần kết hợp với động từ ở dạng V-ing để thể hiện sở thích.",
+      "example": "I like swimming in the sea",
+      "confidence": 0.9
+    },
+    {
+      "id": "issue-b175166b3f2b2145",
+      "category": "tense",
+      "fragment": "I like eat fresh seafood",
+      "quote": "I like eat fresh seafood",
+      "span": {
+        "start": 0,
+        "end": 0
+      },
+      "anchored": false,
+      "explanation_vi": "Bạn đã sử dụng động từ 'like' nhưng chưa kết hợp đúng với động từ 'eat' ở dạng đúng. Câu nên là 'I like eating fresh seafood'.",
+      "suggestion": "I like eating fresh seafood",
+      "mini_rule_vi": "Khi sử dụng động từ 'like', bạn cần kết hợp với động từ ở dạng V-ing để thể hiện sở thích.",
+      "example": "I like eating fresh seafood",
+      "confidence": 0.9
+    },
+    {
+      "id": "issue-aa04f57afcadc282",
+      "category": "punctuation",
+      "fragment": "In the evening, we watched the sunset together, it was a wonderful memory.",
+      "quote": "In the evening, we watched the sunset together, it was a wonderful memory.",
+      "span": {
+        "start": 144,
+        "end": 218
+      },
+      "anchored": true,
+      "explanation_vi": "Bạn đã quên sử dụng dấu chấm phẩy hoặc dấu chấm để tách hai câu. Câu nên là 'In the evening, we watched the sunset together. It was a wonderful memory.'",
+      "suggestion": "In the evening, we watched the sunset together. It was a wonderful memory.",
+      "mini_rule_vi": "Khi có hai câu độc lập, bạn cần sử dụng dấu chấm hoặc dấu chấm phẩy để tách chúng.",
+      "example": "In the evening, we watched the sunset together. It was a wonderful memory.",
+      "confidence": 0.9
+    }
+  ],
+  "module_data": {
+    "practice": null,
+    "grammar_links": [
+      {
+        "issue_id": "issue-a5075191fac0f952",
+        "category": "article",
+        "grammar_id": "b1-articles-beyond-basics",
+        "title": "Articles beyond basics",
+        "level": "B1",
+        "reason": "Writing finding category: article",
+        "evidence": "I like swim in the sea",
+        "source": "static-grammar-kb"
+      },
+      {
+        "issue_id": "issue-a5075191fac0f952",
+        "category": "article",
+        "grammar_id": "b1-both-either-neither",
+        "title": "Both/either/neither",
+        "level": "B1",
+        "reason": "Writing finding category: article",
+        "evidence": "I like swim in the sea",
+        "source": "static-grammar-kb"
+      },
+      {
+        "issue_id": "issue-51edfc1db2d0132e",
+        "category": "tense",
+        "grammar_id": "b1-ability-across-time",
+        "title": "Ability across time",
+        "level": "B1",
+        "reason": "Writing finding category: tense",
+        "evidence": "I like swim in the sea",
+        "source": "static-grammar-kb"
+      },
+      {
+        "issue_id": "issue-51edfc1db2d0132e",
+        "category": "tense",
+        "grammar_id": "b1-future-forms-in-context",
+        "title": "Future forms in context",
+        "level": "B1",
+        "reason": "Writing finding category: tense",
+        "evidence": "I like swim in the sea",
+        "source": "static-grammar-kb"
+      },
+      {
+        "issue_id": "issue-aa04f57afcadc282",
+        "category": "punctuation",
+        "grammar_id": "b2-punctuation-with-complex-clauses",
+        "title": "Punctuation with complex clauses",
+        "level": "B2",
+        "reason": "Writing finding category: punctuation",
+        "evidence": "In the evening, we watched the sunset together, it was a wonderful memory.",
+        "source": "static-grammar-kb"
+      },
+      {
+        "issue_id": "issue-aa04f57afcadc282",
+        "category": "punctuation",
+        "grammar_id": "b2-review-reference-and-register-2",
+        "title": "B2 · Reference and register · Review 2",
+        "level": "B2",
+        "reason": "Writing finding category: punctuation",
+        "evidence": "In the evening, we watched the sunset together, it was a wonderful memory.",
+        "source": "static-grammar-kb"
+      }
+    ],
+    "review": {
+      "contract": "writing-evaluation-v2.6",
+      "learning_language": "en",
+      "support_language": "vi",
+      "target_level": "B1",
+      "text_hash": "d0158a8c1c71d07ab0fa37a1a9b265f1a1e767a59ce0d6cd2f8c968abb4ea952",
+      "prompt_hash": "0487e80d44e492156b7a281082341f10d1eaf09390117fd73dc01ef0b3e3cc61",
+      "fingerprint": "9baa9152a2d17430d6d83295f12f25f6d02e6dab67c94a7618defb3440f2b3b8"
+    }
+  },
+  "practice_context": null,
+  "grammar_links": [
+    {
+      "issue_id": "issue-a5075191fac0f952",
+      "category": "article",
+      "grammar_id": "b1-articles-beyond-basics",
+      "title": "Articles beyond basics",
+      "level": "B1",
+      "reason": "Writing finding category: article",
+      "evidence": "I like swim in the sea",
+      "source": "static-grammar-kb"
+    },
+    {
+      "issue_id": "issue-a5075191fac0f952",
+      "category": "article",
+      "grammar_id": "b1-both-either-neither",
+      "title": "Both/either/neither",
+      "level": "B1",
+      "reason": "Writing finding category: article",
+      "evidence": "I like swim in the sea",
+      "source": "static-grammar-kb"
+    },
+    {
+      "issue_id": "issue-51edfc1db2d0132e",
+      "category": "tense",
+      "grammar_id": "b1-ability-across-time",
+      "title": "Ability across time",
+      "level": "B1",
+      "reason": "Writing finding category: tense",
+      "evidence": "I like swim in the sea",
+      "source": "static-grammar-kb"
+    },
+    {
+      "issue_id": "issue-51edfc1db2d0132e",
+      "category": "tense",
+      "grammar_id": "b1-future-forms-in-context",
+      "title": "Future forms in context",
+      "level": "B1",
+      "reason": "Writing finding category: tense",
+      "evidence": "I like swim in the sea",
+      "source": "static-grammar-kb"
+    },
+    {
+      "issue_id": "issue-aa04f57afcadc282",
+      "category": "punctuation",
+      "grammar_id": "b2-punctuation-with-complex-clauses",
+      "title": "Punctuation with complex clauses",
+      "level": "B2",
+      "reason": "Writing finding category: punctuation",
+      "evidence": "In the evening, we watched the sunset together, it was a wonderful memory.",
+      "source": "static-grammar-kb"
+    },
+    {
+      "issue_id": "issue-aa04f57afcadc282",
+      "category": "punctuation",
+      "grammar_id": "b2-review-reference-and-register-2",
+      "title": "B2 · Reference and register · Review 2",
+      "level": "B2",
+      "reason": "Writing finding category: punctuation",
+      "evidence": "In the evening, we watched the sunset together, it was a wonderful memory.",
+      "source": "static-grammar-kb"
+    }
+  ],
+  "schema_version": "writing-evaluation-v2",
+  "text_hash": "4c5cb6d437de8e2a6e247b16a3a86d424b450e418a090a816421625bf217f989",
+  "summary": {
+    "headline": "Câu 'Last weekend I went to the beach with my family.' thể hiện rõ sự kiện và người tham gia một cách đơn giản và dễ hiểu.",
+    "interpretation": "Bài viết của bạn mô tả một kỳ nghỉ cuối tuần rất vui vẻ và tích cực. Bạn đã thể hiện rõ sự vui vẻ và niềm vui khi đi biển cùng gia đình. Tuy nhiên, bài viết cần cải thiện về mặt ngữ pháp và từ vựng để trở nên tự nhiên và chính xác hơn."
+  },
+  "dimensions": {
+    "grammar": 65,
+    "vocabulary": 60,
+    "coherence": 65,
+    "task_achievement": 85,
+    "naturalness": 60
+  },
+  "issues": [
+    {
+      "id": "issue-a5075191fac0f952",
+      "category": "article",
+      "priority": "high",
+      "span": {
+        "start": 98,
+        "end": 120
+      },
+      "quote": "I like swim in the sea",
+      "why": "Bạn đã quên sử dụng động từ đúng dạng và thiếu giới từ 'in' trong câu. Câu nên là 'I like swimming in the sea'.",
+      "how": "Khi nói về sở thích, bạn cần sử dụng động từ đúng dạng và kết hợp với giới từ phù hợp.",
+      "suggestion": "I like swimming in the sea",
+      "examples": [
+        "I like swimming in the sea"
+      ]
+    },
+    {
+      "id": "issue-51edfc1db2d0132e",
+      "category": "tense",
+      "priority": "medium",
+      "span": {
+        "start": 98,
+        "end": 120
+      },
+      "quote": "I like swim in the sea",
+      "why": "Bạn đã sử dụng động từ 'like' nhưng chưa kết hợp đúng với động từ 'swim' ở dạng đúng. Câu nên là 'I like swimming in the sea'.",
+      "how": "Khi sử dụng động từ 'like', bạn cần kết hợp với động từ ở dạng V-ing để thể hiện sở thích.",
+      "suggestion": "I like swimming in the sea",
+      "examples": [
+        "I like swimming in the sea"
+      ]
+    },
+    {
+      "id": "issue-b175166b3f2b2145",
+      "category": "tense",
+      "priority": "medium",
+      "span": {
+        "start": 0,
+        "end": 0
+      },
+      "quote": "I like eat fresh seafood",
+      "why": "Bạn đã sử dụng động từ 'like' nhưng chưa kết hợp đúng với động từ 'eat' ở dạng đúng. Câu nên là 'I like eating fresh seafood'.",
+      "how": "Khi sử dụng động từ 'like', bạn cần kết hợp với động từ ở dạng V-ing để thể hiện sở thích.",
+      "suggestion": "I like eating fresh seafood",
+      "examples": [
+        "I like eating fresh seafood"
+      ]
+    },
+    {
+      "id": "issue-aa04f57afcadc282",
+      "category": "punctuation",
+      "priority": "medium",
+      "span": {
+        "start": 144,
+        "end": 218
+      },
+      "quote": "In the evening, we watched the sunset together, it was a wonderful memory.",
+      "why": "Bạn đã quên sử dụng dấu chấm phẩy hoặc dấu chấm để tách hai câu. Câu nên là 'In the evening, we watched the sunset together. It was a wonderful memory.'",
+      "how": "Khi có hai câu độc lập, bạn cần sử dụng dấu chấm hoặc dấu chấm phẩy để tách chúng.",
+      "suggestion": "In the evening, we watched the sunset together. It was a wonderful memory.",
+      "examples": [
+        "In the evening, we watched the sunset together. It was a wonderful memory."
+      ]
+    }
+  ],
+  "strengths": [
+    {
+      "id": "strength-1",
+      "category": "coherence",
+      "span": {
+        "start": 0,
+        "end": 48
+      },
+      "quote": "Last weekend I went to the beach with my family.",
+      "why": "Câu này mở đầu bài viết một cách rõ ràng và trực tiếp, giúp người đọc hiểu ngay được sự kiện chính của bài viết."
+    },
+    {
+      "id": "strength-2",
+      "category": "coherence",
+      "span": {
+        "start": 49,
+        "end": 97
+      },
+      "quote": "We were very happy because the weather was nice.",
+      "why": "Câu này sử dụng cấu trúc 'because' để liên kết lý do và cảm xúc một cách cơ bản, giúp bài viết có sự mạch lạc hơn."
+    }
+  ],
+  "next_actions": [
+    "Cần chú ý đến sự chính xác của động từ và thời gian trong câu, ví dụ như 'I like swim in the sea' nên là 'I like swimming in the sea'.",
+    "Cần sử dụng từ vựng phù hợp và tự nhiên hơn, ví dụ như 'eat fresh seafood' có thể thay bằng 'ate fresh seafood' để phù hợp với thời gian trong câu.",
+    "Cần kiểm tra lại cấu trúc câu và đảm bảo rằng các câu được nối với nhau một cách mạch lạc và tự nhiên hơn."
+  ],
+  "revisions": [
+    {
+      "id": 8,
+      "revision_no": 1,
+      "overall": 55.2,
+      "created_at": "2026-09-28T20:18:40+00:00"
+    },
+    {
+      "id": 9,
+      "revision_no": 2,
+      "overall": 67.2,
+      "created_at": "2026-09-28T20:19:23+00:00"
+    }
+  ],
+  "delta": {
+    "grammar": 10,
+    "vocabulary": 10,
+    "coherence": 15,
+    "task_achievement": 15,
+    "naturalness": 10,
+    "overall": 12,
+    "issues": {
+      "removed": [
+        {
+          "id": "issue-a41044c86fb5f78b",
+          "category": "tense",
+          "fragment": "Last weekend I go to the beach with my family.",
+          "quote": "Last weekend I go to the beach with my family.",
+          "span": {
+            "start": 0,
+            "end": 46
+          },
+          "anchored": true,
+          "explanation_vi": "You used the present simple tense 'go' instead of the past simple 'went' for an action that happened in the past. Use 'went' to describe events that occurred last weekend.",
+          "suggestion": "Last weekend I went to the beach with my family.",
+          "mini_rule_vi": "Use the past simple tense for actions that happened in the past. For example, 'went', 'was', 'ate'.",
+          "example": "Last weekend I went to the beach with my family.",
+          "confidence": 0.95
+        },
+        {
+          "id": "issue-2012ddd63666aada",
+          "category": "tense",
+          "fragment": "We was very happy because the weather were nice.",
+          "quote": "We was very happy because the weather were nice.",
+          "span": {
+            "start": 47,
+            "end": 95
+          },
+          "anchored": true,
+          "explanation_vi": "You used the incorrect verb forms 'was' and 'were'. 'We' is plural, so use 'were' for the verb. Also, 'weather' is uncountable, so it doesn't take 'the' or 'were'. Use 'was' for 'the weather' and 'were' for 'we'.",
+          "suggestion": "We were very happy because the weather was nice.",
+          "mini_rule_vi": "Use 'were' for plural subjects like 'we', and 'was' for singular nouns like 'the weather'.",
+          "example": "We were very happy because the weather was nice.",
+          "confidence": 0.95
+        }
+      ],
+      "persistent": [
+        {
+          "id": "issue-a5075191fac0f952",
+          "category": "article",
+          "fragment": "I like swim in the sea",
+          "quote": "I like swim in the sea",
+          "span": {
+            "start": 98,
+            "end": 120
+          },
+          "anchored": true,
+          "explanation_vi": "Bạn đã quên sử dụng động từ đúng dạng và thiếu giới từ 'in' trong câu. Câu nên là 'I like swimming in the sea'.",
+          "suggestion": "I like swimming in the sea",
+          "mini_rule_vi": "Khi nói về sở thích, bạn cần sử dụng động từ đúng dạng và kết hợp với giới từ phù hợp.",
+          "example": "I like swimming in the sea",
+          "confidence": 0.9
+        },
+        {
+          "id": "issue-aa04f57afcadc282",
+          "category": "punctuation",
+          "fragment": "In the evening, we watched the sunset together, it was a wonderful memory.",
+          "quote": "In the evening, we watched the sunset together, it was a wonderful memory.",
+          "span": {
+            "start": 144,
+            "end": 218
+          },
+          "anchored": true,
+          "explanation_vi": "Bạn đã quên sử dụng dấu chấm phẩy hoặc dấu chấm để tách hai câu. Câu nên là 'In the evening, we watched the sunset together. It was a wonderful memory.'",
+          "suggestion": "In the evening, we watched the sunset together. It was a wonderful memory.",
+          "mini_rule_vi": "Khi có hai câu độc lập, bạn cần sử dụng dấu chấm hoặc dấu chấm phẩy để tách chúng.",
+          "example": "In the evening, we watched the sunset together. It was a wonderful memory.",
+          "confidence": 0.9
+        },
+        {
+          "id": "issue-51edfc1db2d0132e",
+          "category": "tense",
+          "fragment": "I like swim in the sea",
+          "quote": "I like swim in the sea",
+          "span": {
+            "start": 98,
+            "end": 120
+          },
+          "anchored": true,
+          "explanation_vi": "Bạn đã sử dụng động từ 'like' nhưng chưa kết hợp đúng với động từ 'swim' ở dạng đúng. Câu nên là 'I like swimming in the sea'.",
+          "suggestion": "I like swimming in the sea",
+          "mini_rule_vi": "Khi sử dụng động từ 'like', bạn cần kết hợp với động từ ở dạng V-ing để thể hiện sở thích.",
+          "example": "I like swimming in the sea",
+          "confidence": 0.9
+        }
+      ],
+      "new": [
+        {
+          "id": "issue-b175166b3f2b2145",
+          "category": "tense",
+          "fragment": "I like eat fresh seafood",
+          "quote": "I like eat fresh seafood",
+          "span": {
+            "start": 0,
+            "end": 0
+          },
+          "anchored": false,
+          "explanation_vi": "Bạn đã sử dụng động từ 'like' nhưng chưa kết hợp đúng với động từ 'eat' ở dạng đúng. Câu nên là 'I like eating fresh seafood'.",
+          "suggestion": "I like eating fresh seafood",
+          "mini_rule_vi": "Khi sử dụng động từ 'like', bạn cần kết hợp với động từ ở dạng V-ing để thể hiện sở thích.",
+          "example": "I like eating fresh seafood",
+          "confidence": 0.9
+        }
+      ],
+      "changed": []
+    }
+  },
+  "app_cefr": "B2"
+}

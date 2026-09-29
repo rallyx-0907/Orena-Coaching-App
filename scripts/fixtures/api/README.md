@@ -89,6 +89,29 @@ Rules:
 | `spoken_response_landed.json` | `POST /api/dictionary/spoken-response` with a spoken-style answer that has errors (`target_language: vi`): `carried` and `landed_differently` both populated, each fix with `quote`/`instead`/`why`/`judgement` - the shape Free Talk's Fixes rows, Conversation's per-turn coaching and Situation Reaction's rows read | 2026-09-29 |
 | `conversation_turn.json` | `POST /api/dictionary/conversation-turn` (one learner turn `l1`; the partner's `reply_to`/`text`/`meaning`/`support`, the local model's own words) | 2026-09-29 |
 | `speech_transcribe_unavailable.json` | `POST /api/speech/transcribe` on the isolated stack: HTTP 503, `detail.category: speech_asr_unconfigured` (no speech provider is configured here, so the success body `{provider, model, language, text, segments, words}` cannot be captured - it is read from `writing_coach/speech_api.py`, see "Not captured (speak-more pass)") | 2026-09-29 |
+| `writing_essay_detail_live.json` | `GET /api/essays/{id}` on the isolated stack after two real reviews of one piece through the Writing room (`POST /api/evaluate`, the local model `ollama` / `qwen3:8b`; English, level B1): the second version, with its `revisions[]` series and `delta`. The model named no demonstrated band (`cefr_estimate: ""`) and its findings overlap - real, common shapes | 2026-09-29 |
+| `writing_essay_review_live.json` | `GET /api/essays/{id}/review` for the same essay (WritingReview: per-issue `kind`, `grammarRef`, `span`, `anchored`) | 2026-09-29 |
+| `writing_essay_revision_live.json` | `GET /api/essays/{id}/revision` for the same essay (RevisionCompare: `fixed` / `remaining` / `added`, `dimensionDeltas`) | 2026-09-29 |
+| `writing_essay_detail_v1_live.json` | `GET /api/essays/{id}` for the first version of that series | 2026-09-29 |
+| `writing_evaluate.json` | `POST /api/evaluate` (a revision of a stored essay: `id`, `series_id`, `revision_no`, `delta`, `errors[]`, ...) - see "Built with a fixed evaluator answer" below | 2026-09-29 |
+| `writing_essay_detail_v1.json`, `writing_essay_detail.json` | `GET /api/essays/{id}` for the two versions of an English piece (`revisions[]`, `issues[]` with the real `priority` flag, `strengths[]`, `dimensions`, `summary.interpretation`) - see "Built with a fixed evaluator answer" below | 2026-09-29 |
+| `writing_essay_review_v1.json`, `writing_essay_review.json` | `GET /api/essays/{id}/review` for the same two versions | 2026-09-29 |
+| `writing_essay_revision.json` | `GET /api/essays/{id}/revision` for the second version (four fixed, one remaining, one added; four dimension deltas) | 2026-09-29 |
+| `writing_essay_revision_first.json` | `GET /api/essays/{id}/revision` for a first version: HTTP 404 (`{status, body}`) - nothing to compare with | 2026-09-29 |
+| `writing_essay_keep.json` | `POST /api/essays/{id}/keep` (`{id, kept, kept_at}`) | 2026-09-29 |
+| `writing_essay_detail.zh.json`, `writing_essay_review.zh.json` | the same two routes for a Chinese piece (an HSK-shaped `cefr_estimate` and a `conjunction` finding, a Chinese-only category) - see "Built with a fixed evaluator answer" below | 2026-09-29 |
+## Built with a fixed evaluator answer (Writing, 2026-09-29)
+
+The `writing_*.json` files above that are not `_live` came from `scripts/capture_writing_fixtures.py`,
+which runs the real application in-process (FastAPI `TestClient`, a throwaway SQLite database, the
+way `tests/test_saved_reviews.py` does) and replaces only the model call (`app.generate_structured`)
+with one fixed structured evaluator answer per call. `validate_result`, the weighted overall, the
+review bounds, persistence, `row_to_dict`, `revision_delta`, `project_writing_review` and
+`project_revision_compare` are the product's own code, so each payload is what the routes really
+return for those answers - nothing is written into a response by hand. They exist because they are
+predictable (the same words, findings and scores on every re-capture, English with Vietnamese support
+text, and a Chinese piece) where a local model's answer is not; the `_live` files are the same routes
+answered by the isolated stack's own local model. The Writing gates read both.
 
 ## Data created for this capture
 
