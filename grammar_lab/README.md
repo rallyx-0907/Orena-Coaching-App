@@ -60,7 +60,8 @@ Trước một lần chạy live bất kỳ (kể cả smoke test): giữ khóa 
 (`sandbox/live_provider_lock.py`, mỗi nhóm một file trong `%USERPROFILE%\.orena\`:
 `live-gemini-text.lock`, `live-gemini-live.lock`, `live-deepseek.lock`). Grammar Lab
 giữ gemini-text (engine) + deepseek (khi DeepSeek chạy); giải phóng trong cùng `finally`
-gỡ sandbox -- xem `sandbox/README.md`.
+gỡ sandbox -- xem `sandbox/README.md`. Khóa có nhịp tim (`heartbeat_at`, cập nhật mỗi 60 giây):
+khóa của lane khác chỉ mồ côi khi nhịp tim cũ hơn 10 phút và không bao giờ bị kiểm PID.
 
 `evaluator_client.py` chỉ có chế độ staging (HTTP); **không có `base_url` mặc định** -- endpoint công
 khai duy nhất, `orena.chillpickle.org`, chui thẳng vào container production (`writing-coach:8000`),

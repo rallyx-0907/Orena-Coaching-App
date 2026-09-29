@@ -49,8 +49,12 @@ Groq has no lock yet. Each file is one JSON object:
 
 ```json
 {"lane": "grammar-lab", "pid": 12345, "acquired_at": "2026-09-28T06:15:00+00:00",
- "cost_ceiling_usd": 0.05}
+ "heartbeat_at": "2026-09-28T06:16:00+00:00", "cost_ceiling_usd": 0.05}
 ```
+
+`heartbeat_at` (ISO 8601 UTC) is rewritten every 60 seconds while the lock is held; the
+format is shared with the Orena Intelligence lane. A lock in the old format (no
+`heartbeat_at`) is still read, using `acquired_at`.
 
 A lane holds only the groups it uses. Grammar Lab uses **gemini-text** (always -- the
 sandbox engine) and **deepseek** (when DeepSeek generates or blind-solves); `run_smoke.py`
@@ -78,8 +82,19 @@ Behaviour:
   total across all groups (`--wait-max-seconds`); past that, `acquire` exits 1 and prints
   the lock file and the holder's lane/PID. It never kills or waits on that lane's container
   -- only on the lock file.
-- **Orphaned lock** (its PID is no longer running, or `acquired_at` is more than 60 minutes
-  old, `--stale-seconds`): removed, printed as
+- **Heartbeat:** `run_smoke.py` starts a `Heartbeat` thread once the locks are held and stops
+  it before releasing. A standalone script runs
+  `live_provider_lock.py heartbeat --lane ... --pid $$ --groups ...` in the background (it
+  exits by itself when no lock of that lane/PID remains; `--once` does a single stamp).
+  While `acquire` waits for a later group, the locks it already holds are stamped at each poll.
+- **Orphaned lock** -- who owns it decides the test, and another lane's PID is **never**
+  checked (a runner once deleted the intelligence lane's live lock on a PID check):
+  - another lane's lock: `heartbeat_at` older than 10 minutes (`--stale-seconds 600`);
+  - this lane's own lock: its PID is dead, or `heartbeat_at` older than 10 minutes;
+  - old format, no `heartbeat_at`: `acquired_at` older than 60 minutes
+    (`--legacy-stale-seconds 3600`), PID checked for this lane's own lock only.
+
+  An orphan is removed, printed as
   `orphan lock removed: lane=... reason=dead-pid|stale` (followed by `pid=`/`lock=` detail),
   and acquisition retries immediately.
 - **Release** only deletes a file whose `lane` and `pid` still match what this process

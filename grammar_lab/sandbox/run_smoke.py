@@ -174,7 +174,10 @@ def main(argv: list[str]) -> int:
         pid=pid, wait_max_seconds=args.wait_max_seconds, poll_seconds=args.poll_seconds,
     )
 
+    heartbeat = live_provider_lock.Heartbeat(args.lane, taken, pid=pid).start()
+
     def cleanup() -> None:
+        heartbeat.stop()
         print("=== tearing down sandbox ===")
         try:
             _run([

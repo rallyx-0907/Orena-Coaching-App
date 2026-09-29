@@ -5,6 +5,8 @@ import json
 import os
 import subprocess
 import sys
+import time
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from types import ModuleType
 
@@ -46,7 +48,9 @@ def test_acquire_creates_the_lock_file_with_lane_pid_timestamp_and_ceiling(tmp_p
     assert (info.lane, info.pid, info.cost_ceiling_usd) == ("grammar-lab", 4242, 0.05)
     assert json.loads(path.read_text(encoding="utf-8")) == {
         "lane": "grammar-lab", "pid": 4242, "acquired_at": info.acquired_at, "cost_ceiling_usd": 0.05,
+        "heartbeat_at": info.heartbeat_at,
     }
+    assert info.heartbeat_at == info.acquired_at
 
 
 def test_acquire_times_out_and_names_the_holder_and_the_lock(tmp_path: Path) -> None:
@@ -66,15 +70,145 @@ def test_acquire_times_out_and_names_the_holder_and_the_lock(tmp_path: Path) -> 
     assert slept == [30]
 
 
-def test_acquire_removes_an_orphaned_lock_held_by_a_dead_pid(tmp_path: Path) -> None:
-    path = _hold(tmp_path, "deepseek", "intelligence", _spawn_and_wait_for_a_finished_process())
-    removed: list[tuple[str, str, str]] = []
+def _write_lock(path: Path, lane: str, pid: int, *, heartbeat_age: float | None, acquired_age: float = 0.0) -> None:
+    """A lock as any lane writes it; ``heartbeat_age=None`` writes the old format (no heartbeat_at)."""
+    now = datetime.now(UTC)
+    payload = {
+        "lane": lane, "pid": pid, "acquired_at": (now - timedelta(seconds=acquired_age)).isoformat(),
+        "cost_ceiling_usd": 1.0,
+    }
+    if heartbeat_age is not None:
+        payload["heartbeat_at"] = (now - timedelta(seconds=heartbeat_age)).isoformat()
+    path.write_text(json.dumps(payload), encoding="utf-8")
+
+
+def _take(path: Path, lane: str = "grammar-lab") -> tuple[object, list[tuple[str, str]]]:
+    removed: list[tuple[str, str]] = []
     info = module.acquire(
-        "grammar-lab", 0.05, path=path, pid=os.getpid(),
-        on_orphan_removed=lambda existing, reason, lock: removed.append((existing.lane, reason, lock.name)),
+        lane, 0.05, path=path, pid=os.getpid(), wait_max_seconds=0, poll_seconds=0,
+        on_orphan_removed=lambda existing, reason, lock: removed.append((existing.lane, reason)),
     )
+    return info, removed
+
+
+def test_own_lock_with_a_dead_pid_is_an_orphan(tmp_path: Path) -> None:
+    path = tmp_path / "live-deepseek.lock"
+    _write_lock(path, "grammar-lab", _spawn_and_wait_for_a_finished_process(), heartbeat_age=1)
+    info, removed = _take(path)
     assert info.lane == "grammar-lab"
-    assert removed == [("intelligence", "dead-pid", "live-deepseek.lock")]
+    assert removed == [("grammar-lab", "dead-pid")]
+
+
+def test_own_lock_with_a_stale_heartbeat_is_an_orphan_even_if_the_pid_lives(tmp_path: Path) -> None:
+    path = tmp_path / "live-deepseek.lock"
+    _write_lock(path, "grammar-lab", os.getpid(), heartbeat_age=601)
+    _, removed = _take(path)
+    assert removed == [("grammar-lab", "stale")]
+
+
+def test_other_lanes_lock_with_an_uncheckable_pid_survives_while_the_heartbeat_is_fresh(tmp_path: Path) -> None:
+    # The bug this fixes: another lane's PID cannot be checked from here (it read "dead" for a live
+    # holder and its lock was deleted). A fresh heartbeat must protect it whatever the PID looks like.
+    path = tmp_path / "live-deepseek.lock"
+    _write_lock(path, "intelligence", _spawn_and_wait_for_a_finished_process(), heartbeat_age=5)
+    with pytest.raises(module.LiveProviderLockTimeout):
+        _take(path)
+    assert json.loads(path.read_text(encoding="utf-8"))["lane"] == "intelligence"
+
+
+def test_other_lanes_pid_is_never_looked_up(tmp_path: Path) -> None:
+    path = tmp_path / "live-deepseek.lock"
+    _write_lock(path, "intelligence", 4242, heartbeat_age=5)
+    looked_up: list[int] = []
+
+    def pid_alive(pid: int) -> bool:
+        looked_up.append(pid)
+        return False
+
+    with pytest.raises(module.LiveProviderLockTimeout):
+        module.acquire("grammar-lab", 0.05, path=path, pid=1, wait_max_seconds=0, poll_seconds=0, pid_alive=pid_alive)
+    assert looked_up == []
+
+
+def test_other_lanes_lock_with_a_stale_heartbeat_is_an_orphan(tmp_path: Path) -> None:
+    path = tmp_path / "live-deepseek.lock"
+    _write_lock(path, "intelligence", os.getpid(), heartbeat_age=601)
+    info, removed = _take(path)
+    assert info.lane == "grammar-lab"
+    assert removed == [("intelligence", "stale")]
+
+
+def test_old_format_lock_falls_back_to_acquired_at_with_the_sixty_minute_window(tmp_path: Path) -> None:
+    path = tmp_path / "live-deepseek.lock"
+    _write_lock(path, "intelligence", os.getpid(), heartbeat_age=None, acquired_age=3500)
+    with pytest.raises(module.LiveProviderLockTimeout):  # 58 min: still inside the window
+        _take(path)
+    _write_lock(path, "intelligence", os.getpid(), heartbeat_age=None, acquired_age=3700)
+    _, removed = _take(path)
+    assert removed == [("intelligence", "stale")]
+
+
+def test_old_format_lock_of_another_lane_is_not_removed_by_pid(tmp_path: Path) -> None:
+    path = tmp_path / "live-deepseek.lock"
+    _write_lock(path, "intelligence", _spawn_and_wait_for_a_finished_process(), heartbeat_age=None, acquired_age=10)
+    with pytest.raises(module.LiveProviderLockTimeout):
+        _take(path)
+
+
+def test_refresh_heartbeat_updates_only_the_owners_lock(tmp_path: Path) -> None:
+    path = tmp_path / "live-deepseek.lock"
+    _write_lock(path, "grammar-lab", 4242, heartbeat_age=300)
+    before = json.loads(path.read_text(encoding="utf-8"))
+    assert module.refresh_heartbeat("intelligence", path=path, pid=4242) is False
+    assert module.refresh_heartbeat("grammar-lab", path=path, pid=999) is False
+    assert json.loads(path.read_text(encoding="utf-8")) == before
+    assert module.refresh_heartbeat("grammar-lab", path=path, pid=4242) is True
+    after = json.loads(path.read_text(encoding="utf-8"))
+    assert after["heartbeat_at"] > before["heartbeat_at"]
+    assert {k: v for k, v in after.items() if k != "heartbeat_at"} == {
+        k: v for k, v in before.items() if k != "heartbeat_at"
+    }
+    assert module.refresh_heartbeat("grammar-lab", path=tmp_path / "missing.lock", pid=4242) is False
+
+
+def test_heartbeat_thread_keeps_the_lock_fresh_and_stops(tmp_path: Path) -> None:
+    path = tmp_path / "live-deepseek.lock"
+    _write_lock(path, "grammar-lab", 4242, heartbeat_age=500)
+    stale = json.loads(path.read_text(encoding="utf-8"))["heartbeat_at"]
+    beater = module.Heartbeat("grammar-lab", ["deepseek"], directory=tmp_path, pid=4242, interval=0.01).start()
+    deadline = time.monotonic() + 5
+    while time.monotonic() < deadline and json.loads(path.read_text(encoding="utf-8"))["heartbeat_at"] == stale:
+        time.sleep(0.01)
+    beater.stop()
+    assert json.loads(path.read_text(encoding="utf-8"))["heartbeat_at"] > stale
+
+
+def test_acquire_groups_heartbeats_locks_already_taken_while_waiting(tmp_path: Path) -> None:
+    _write_lock(tmp_path / "live-deepseek.lock", "intelligence", 555, heartbeat_age=1)
+    gemini = tmp_path / "live-gemini-text.lock"
+    seen: list[str] = []
+
+    def sleep(_: float) -> None:
+        seen.append(json.loads(gemini.read_text(encoding="utf-8"))["heartbeat_at"])
+
+    ticks = iter([0, 0, 0, 0, 0, 10, 100])
+    with pytest.raises(module.LiveProviderLockTimeout):
+        module.acquire_groups(
+            "grammar-lab", 0.05, ["gemini-text", "deepseek"], directory=tmp_path, pid=4242,
+            wait_max_seconds=50, poll_seconds=30, clock=lambda: next(ticks), sleep=sleep,
+        )
+    assert seen  # the held gemini-text lock was stamped on the poll, not left to age
+    assert not gemini.exists()  # and given back on timeout
+
+
+def test_heartbeat_cli_once_reports_whether_the_lock_is_still_ours(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(module, "lock_dir", lambda: tmp_path)
+    args = ["heartbeat", "--lane", "grammar-lab", "--pid", "4242", "--groups", "deepseek", "--once"]
+    assert module.main(args) == 1  # nothing held
+    module.acquire_groups("grammar-lab", 0.05, ["deepseek"], directory=tmp_path, pid=4242)
+    assert module.main(args) == 0
 
 
 def test_acquire_removes_a_lock_older_than_the_stale_window(tmp_path: Path) -> None:
@@ -205,9 +339,11 @@ def test_main_prints_the_shared_orphan_message(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
     monkeypatch.setattr(module, "lock_dir", lambda: tmp_path)
-    _hold(tmp_path, "deepseek", "intelligence", _spawn_and_wait_for_a_finished_process())
+    _write_lock(
+        tmp_path / "live-deepseek.lock", "grammar-lab", _spawn_and_wait_for_a_finished_process(), heartbeat_age=1,
+    )
     code = module.main([
         "acquire", "--lane", "grammar-lab", "--pid", "4242", "--groups", "deepseek", "--cost-ceiling-usd", "0.05",
     ])
     assert code == 0
-    assert "orphan lock removed: lane=intelligence reason=dead-pid" in capsys.readouterr().out
+    assert "orphan lock removed: lane=grammar-lab reason=dead-pid" in capsys.readouterr().out
