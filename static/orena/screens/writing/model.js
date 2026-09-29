@@ -95,6 +95,15 @@ export function tooShortNotice(language) {
   return { key: UNIT_NOTICE_KEY[unit] || 'tooShortWords', n: minimum };
 }
 
+/* The countdown under a draft that is not writing yet (D-098): how many more of the language's own
+   unit the floor still wants, counted exactly as the gate counts, so the line reaches 0 on the
+   keystroke that turns Review on. */
+const UNIT_MORE_KEY = { han: 'moreHan', kana_han: 'moreKanaHan', words: 'moreWords' };
+export function reviewCountdown(value, language) {
+  const { unit, minimum, count } = measureMinimum(text(value), language);
+  return { key: UNIT_MORE_KEY[unit] || 'moreWords', n: Math.max(0, minimum - count) };
+}
+
 /* ---------------------------------------------------------------------------- which piece -- */
 
 /* `#/write/:id` is opened with an essay's number (Progress, Search) or with a continuation entry's

@@ -28,6 +28,7 @@ import {
   saveTone,
   setupLevels,
   tooShortNotice,
+  reviewCountdown,
   whenLabel,
   wordCountOf,
 } from '../static/orena/screens/writing/model.js';
@@ -111,6 +112,15 @@ assert.equal(reviewGate('   我是学生。   ', 'zh').canReview, true);
 assert.deepEqual(tooShortNotice('zh'), { key: 'tooShortHan', n: 2 });
 assert.deepEqual(tooShortNotice('zh-CN'), { key: 'tooShortHan', n: 2 });
 assert.deepEqual(tooShortNotice('en'), { key: 'tooShortWords', n: 2 });
+/* The countdown (D-098) counts as the gate counts and reaches 0 when Review turns on. */
+assert.deepEqual(reviewCountdown('', 'en'), { key: 'moreWords', n: 2 });
+assert.deepEqual(reviewCountdown('Hello', 'en'), { key: 'moreWords', n: 1 });
+assert.deepEqual(reviewCountdown('Hello there', 'en'), { key: 'moreWords', n: 0 });
+assert.deepEqual(reviewCountdown('好。', 'zh'), { key: 'moreHan', n: 1 });
+assert.deepEqual(reviewCountdown('はい', 'ja'), { key: 'moreKanaHan', n: 0 });
+for (const [draft, language] of [['', 'en'], ['Hello', 'en'], ['Hello there', 'en'], ['好', 'zh'], ['我是学生', 'zh'], ['は', 'ja']]) {
+  assert.equal(reviewCountdown(draft, language).n === 0, reviewGate(draft, language).canReview, `${language} ${draft}: countdown and gate agree`);
+}
 assert.deepEqual(tooShortNotice('xx'), { key: 'tooShortWords', n: 2 });
 assert.deepEqual(tooShortNotice(), { key: 'tooShortWords', n: 2 });
 

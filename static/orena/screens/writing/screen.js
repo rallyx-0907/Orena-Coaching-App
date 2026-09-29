@@ -58,6 +58,7 @@ import {
   saveTone,
   setupLevels,
   tooShortNotice,
+  reviewCountdown,
   whenLabel,
   wordCountOf,
 } from './model.js';
@@ -196,7 +197,7 @@ export default async function mountWriting(element, ctx) {
       </div>
       <button type="button" class="s-writing__btn" data-act="setup">${t('setupBtn')}</button>
       ${essay?.canCompare ? html`<button type="button" class="s-writing__btn" data-act="compare">${s('compareVersions')}</button>` : ''}
-      <button type="button" class="s-writing__cta" data-act="review">${busyReview ? t('reviewingCta') : essay ? t('reviewAgainCta') : t('reviewCta')}</button>`;
+      <button type="button" class="s-writing__cta" data-act="review" aria-describedby="writing-review-hint">${busyReview ? t('reviewingCta') : essay ? t('reviewAgainCta') : t('reviewCta')}</button>`;
   }
 
   function tabsMarkup() {
@@ -207,6 +208,7 @@ export default async function mountWriting(element, ctx) {
     const tone = saveTone(saveWhere);
     return html`<div class="s-writing__draftmeta">
       <span data-count-label>${countLabel()}</span>
+      <span class="s-writing__hint" id="writing-review-hint" data-review-hint aria-live="polite">${reviewHint()}</span>
       <span class="s-writing__save" style="color:${tone.color}"><i class="s-writing__save-dot" data-save-dot style="background:${tone.color}"></i><span data-save-label>${t(tone.key)}</span></span>
     </div>`;
   }
@@ -442,6 +444,21 @@ export default async function mountWriting(element, ctx) {
       cta.disabled = !gate.canReview || busyReview;
       cta.title = !gate.canReview && !busyReview ? gateNotice(gate.reason) : '';
     }
+    const hintEl = root.querySelector('[data-review-hint]');
+    if (hintEl) hintEl.textContent = reviewHint();
+  }
+
+  /* One line under the draft while Review is off (D-098): what is still missing, counting down in
+     the unit the language is written in, or which ceiling the draft is over. Empty otherwise. */
+  function reviewHint() {
+    if (busyReview) return '';
+    const gate = reviewGate(text, language);
+    if (gate.canReview) return '';
+    if (gate.reason === 'tooShort') {
+      const { key: moreKey, n } = reviewCountdown(text, language);
+      return t.plural(moreKey, n);
+    }
+    return gateNotice(gate.reason);
   }
 
   /* Why Review is off, said in the unit the language is written in ("at least 2 Hanzi"). */

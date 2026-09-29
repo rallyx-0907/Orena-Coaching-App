@@ -150,6 +150,28 @@
   color: var(--muted);
   flex: none;
 }
+/* The countdown while Review is off (D-098): the meta row's own muted type, one line. */
+.s-writing__hint {
+  flex: 1;
+  min-width: 0;
+  margin: 0 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* A phone row has no room beside the count and the save state: the line takes its own row, whole. */
+:root[data-device='mobile'] .s-writing__draftmeta {
+  flex-wrap: wrap;
+}
+:root[data-device='mobile'] .s-writing__hint {
+  order: 3;
+  flex-basis: 100%;
+  margin: 4px 0 0;
+  white-space: normal;
+}
+.s-writing__hint:empty {
+  display: none;
+}
 .s-writing__save {
   display: flex;
   align-items: center;
