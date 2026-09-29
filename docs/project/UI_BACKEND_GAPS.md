@@ -4245,3 +4245,72 @@ backend cannot yet serve:
   radius, padding, gap and fill of every other element match. Browser-checked in en/vi/zh, both
   themes, at 1920x1080, 1366x768, 390x844 and 360x740 (touch): no page scroll or horizontal
   overflow on the Concept (the card column scrolls in its own region), no shell on it, no page error.
+
+## Platform Admin in the new UI: shell, No access, AI & Models (`Orena-Admin.dc.html` A2-A5, D-101 E slice 1), 2026-09-30
+
+Built on the existing Admin backend and its client, moved to shared modules the old console also
+imports (`capabilities/admin-api.js`, `admin-format.js`, `admin-ai.js`); no admin API was added. The old
+console at `/#/admin` is unchanged and its gates pass. What the design draws that the control plane
+cannot answer is left out, not invented; what the design does not draw but the truth needs is listed
+for the human.
+
+- **AD-1 · Key fingerprint and age.** The design's provider row and detail say "Key …4f2a · updated 6d
+  ago". No admin endpoint returns a fingerprint or an updated-at for a stored credential (the brief
+  says a saved key is never shown again). Not drawn: the row says where the credential comes from
+  (stored key / server environment / none needed). Needs a backend decision to store and return
+  `last4` and `updated_at`.
+- **AD-2 · Test history.** The design's provider detail has a "Test history" block. Provider tests are
+  audited (`admin.ai.provider.test`) but no endpoint reads them, so there is no history. Not drawn; the
+  Connection test block shows this session's last result. Needs an audit-read endpoint.
+- **AD-3 · Header environment pill.** The design draws a "Staging" pill. No admin API names the
+  environment. Not drawn.
+- **AD-4 · Test primary / Test standby test the SAVED route.** `POST /api/admin/ai/test/{key}` has no
+  body; the design tests the draft. The buttons are disabled while the draft differs from what is saved
+  ("Save the route to test it").
+- **AD-5 · Usage is a recent sample, not "last 24 h".** `/api/admin/ai/operations` returns a bounded
+  sample of events (`sample_limit`); per-provider requests, failure rate and mean latency are counted
+  from it and labelled "Recent usage - counted from the latest N recorded operations". P95 is "Not
+  available - not collected yet", as the design itself says.
+- **AD-6 · A notice the design does not draw (decision).** While the learner runtime is `legacy`, a saved
+  route does not change what learners use. The routing tab and a capability page therefore show one info
+  banner (the design's banner component) - "Routes are saved, not live yet". The design draws no such
+  text; without it the page implies a saved route is live. Keep, reword or delete?
+- **AD-7 · Provider tile colour (decision).** The design colours each provider's two-letter tile with a
+  brand hex. Colour has one owner (the tokens), so every tile is `--accent-fill`. A per-provider token
+  set is a design decision.
+- **AD-8 · Leaving Admin on a phone (decision).** The design's phone frame has no "Back to learner app"
+  and no account block (both live in the desktop rail only). Built as drawn; on a phone the only way out
+  is the browser's back. A chip or a header action would be an addition.
+- **AD-9 · Header filter.** The design's "Filter this page…" is real on the AI list (providers, routes)
+  and disabled elsewhere (detail pages have nothing to filter), with the design's own tooltip.
+- **AD-10 · Save vs Save & test.** The server verifies a key against the live catalog itself and wants
+  the default/allowed models from it, so both buttons try the draft key first and store nothing if it
+  cannot connect. "Save & test" keeps that passing test as the provider's result; "Save" leaves the
+  provider untested. Following the design, a key is required on every save (a provider that needs none,
+  such as Ollama, edits its endpoint only).
+- **AD-11 · Remove key** is offered for a key stored in the encrypted store (and an unreadable one). A
+  key that comes from the server environment cannot be deleted by the app; only "Update key" (which
+  stores an override) is offered.
+- **AD-12 · Non-routable capabilities** (deterministic, reserved) are listed with a pill ("Local
+  processing", "Not routable yet") and no Edit, so the list matches the registry; the design lists only
+  routable ones.
+- **AD-13 · Access, three ways (tests).** Profile entry: `scripts/test_orena_screen_admin.mjs` (present
+  only for an admin, opens `#/admin/ai`). Direct address: the same gate stubs `fetch` and asserts the
+  No access frame and zero requests for a learner, an unknown account and a non-boolean `isAdmin`, on
+  every admin route; verified in a browser (12 combinations, en/vi/zh, both themes, desktop and touch
+  phone) with `/api/me` intercepted: no request to `/api/*admin*`. `main.js` shows the frame to a
+  non-admin at an admin address and keeps the internal-review notice everywhere else. Server:
+  `tests/test_admin_authorization_matrix.py` enumerates every admin route from the app (60) and asserts
+  401 anonymous, 403 learner, admin reaches it; the node gate cross-checks that every endpoint the AI
+  screens call is one of them; one case added tying `/api/me` `is_admin` to the guard.
+- **Measured (rule 42), 2026-09-30.** Computed styles of the pin (`Orena-Admin.dc.html`) vs the app,
+  desktop 1920x1080, light and dark for the No access frame, light for the pages; phone 390x844 for the
+  list. Left: the kit's token values (text3, green, red, dark accent, dark accent fill: D-093's AA
+  values), the body font stack (the kit appends Noto Sans SC), content-driven widths and heights, the
+  provider tile colour (AD-7), the toggle knob's shadow (`--sh1` instead of a literal), and the search
+  field's font (the pin's input inherits nothing and renders Arial; the app inherits Outfit). The pin's
+  tab buttons are unreset browser buttons, so their 1px 6px padding is drawn as the pin renders it.
+  Every other radius, padding, gap, size, weight, letter-spacing and fill of the shell, page header,
+  tabs, rows, pills, buttons, banner, blocks, key/value, state, metric, form, seg, toggle and No access
+  frame matches. Browser-checked in en/vi/zh, both themes, at 1920x1080, 1366x768, 390x844 and 360x740
+  (touch): no page scroll or horizontal overflow on any of the five pages, no page error.

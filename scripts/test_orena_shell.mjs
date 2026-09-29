@@ -39,7 +39,11 @@ const ROUTE_OF_FLAG = {
   Mock: 'mock', Sound: 'sound', ErrFix: 'errfix', Coming: 'coming',
 };
 const designKeys = new Set(ROUTES.map((route) => route.design));
-assert.ok(ROUTES.every((route) => !route.bare || route.design === 'onboarding'), 'only onboarding is drawn without a shell');
+assert.ok(
+  ROUTES.every((route) => !route.bare || route.design === 'onboarding' || route.admin === true),
+  'only onboarding and Platform Admin (which draws its own shell, Orena-Admin.dc.html) are drawn without the learner shell',
+);
+assert.ok(ROUTES.filter((route) => route.admin).every((route) => route.bare && !route.focus), 'an admin place is bare and not a learning workspace');
 for (const flag of designRoutes) {
   assert.ok(flag in ROUTE_OF_FLAG, `design screen flag is${flag} is mapped`);
   assert.ok(designKeys.has(ROUTE_OF_FLAG[flag]), `design screen ${flag} has a route`);

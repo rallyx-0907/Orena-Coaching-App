@@ -14,7 +14,7 @@ const KEYS = [
   'conversation', 'situationReaction', 'retell', 'reactReuse', 'timedRecall', 'contextTransfer', 'dailyFeed',
   'contextRewrite', 'timedWriting', 'readingTransfer', 'readingComplete', 'attemptHistory', 'speakingSummary',
   'timedReaction', 'respondToContent', 'discussion', 'mockInterview', 'soundTone', 'fromYourErrors',
-  'welcome',
+  'welcome', 'admin',
 ];
 
 export const shellCopy = defineCopy('shell', {
@@ -40,7 +40,7 @@ export const shellCopy = defineCopy('shell', {
     timedWriting: 'Timed Writing', readingTransfer: 'Reading Transfer', readingComplete: 'Reading complete',
     attemptHistory: 'Attempt history', speakingSummary: 'Speaking summary', timedReaction: 'Timed Reaction',
     respondToContent: 'Respond to content', discussion: 'Discussion', mockInterview: 'Mock Interview',
-    soundTone: 'Sound / Tone', fromYourErrors: 'From your errors', welcome: 'Welcome',
+    soundTone: 'Sound / Tone', fromYourErrors: 'From your errors', welcome: 'Welcome', admin: 'Platform admin',
   },
   vi: {
     mainNavigation: 'Điều hướng chính', skipToContent: 'Đến nội dung',
@@ -63,7 +63,7 @@ export const shellCopy = defineCopy('shell', {
     timedWriting: 'Viết có giờ', readingTransfer: 'Vận dụng bài đọc', readingComplete: 'Đọc xong',
     attemptHistory: 'Các lần thử', speakingSummary: 'Tổng kết buổi nói', timedReaction: 'Phản xạ có giờ',
     respondToContent: 'Phản hồi nội dung', discussion: 'Thảo luận', mockInterview: 'Phỏng vấn thử',
-    soundTone: 'Âm và thanh điệu', fromYourErrors: 'Từ lỗi của bạn', welcome: 'Chào mừng',
+    soundTone: 'Âm và thanh điệu', fromYourErrors: 'Từ lỗi của bạn', welcome: 'Chào mừng', admin: 'Quản trị nền tảng',
   },
   zh: {
     mainNavigation: '主导航', skipToContent: '跳至内容',
@@ -86,6 +86,6 @@ export const shellCopy = defineCopy('shell', {
     timedWriting: '限时写作', readingTransfer: '阅读迁移', readingComplete: '读完了',
     attemptHistory: '尝试记录', speakingSummary: '口语总结', timedReaction: '限时反应',
     respondToContent: '回应内容', discussion: '讨论', mockInterview: '模拟面试',
-    soundTone: '音与声调', fromYourErrors: '从错误中练', welcome: '欢迎',
+    soundTone: '音与声调', fromYourErrors: '从错误中练', welcome: '欢迎', admin: '平台管理',
   },
 });

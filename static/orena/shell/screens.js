@@ -28,6 +28,7 @@ export const SCREENS = Object.freeze({
   dictation: () => import('../screens/dictation/screen.js'),
   shadowing: () => import('../screens/shadowing/screen.js'),
   onboarding: () => import('../screens/onboarding/screen.js'),
+  admin: () => import('../screens/admin/screen.js'),
   writing: () => import('../screens/writing/screen.js'),
   'writing-compare': () => import('../screens/writing-compare/screen.js'),
   // rewrite ('rewrite', #/rewrite) and timed-writing ('timed-writing', #/timed-writing) are

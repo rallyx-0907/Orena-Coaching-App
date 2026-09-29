@@ -105,6 +105,29 @@ shape).
 | 47 (canonical, H1 2026-09-29; 23 is not built) | Grammar Concept | `#/grammar/:id` | focus | `screens/grammar-concept/` (data: `product/grammar-source.js`) | building (2026-09-29: rebuilt on `GRAMMAR_CONTENT_CONTRACT.md` §0-§8, D-100; no R5 read or write; an R5 id resolves through `aliases`; with no content served every point draws "not available"; verified with the test-only fixture `scripts/fixtures/grammar/`; waits for Grammar Lab PR B) |
 | Onboarding 01–05 | Welcome, Account, Languages, Level, Meet Orena | `#/welcome` | none | `screens/onboarding/` | reviewable |
 
+## Platform Admin (D-101 E)
+
+`Orena-Admin.dc.html` (pinned 2026-09-29, `SYNC_2026-09-29.md`) inside this UI, on the existing Admin
+backend (`/api/admin/*`, `require_admin`) and its client, moved to shared modules the old console
+also imports: `capabilities/admin-api.js` (client), `capabilities/admin-format.js` (formatters),
+`capabilities/admin-ai.js` (AI control-plane rules and the session controller). Routes are `bare`
+(no learner frame): the Admin draws its own shell (`screens/admin/frame.js`). Only what the staging
+draws is in the navigation - AI & Models now; Reading pipeline, Imports and Content when built.
+Overview, Users and Operations are out of the staging scope and are not drawn. The old console stays
+at `/#/admin` until the cutover.
+
+| Frame | Screen | Route | Shell | Code | Gate | Status |
+| --- | --- | --- | --- | --- | --- | --- |
+| Admin shell (rail, header, phone chips) | Platform Admin | `#/admin` (opens `#/admin/ai`) | Admin's own | `screens/admin/{screen,frame,model,blocks}.js`, `admin.css` | `scripts/test_orena_screen_admin.mjs` | building (2026-09-30, slice 1) |
+| No access | Admin access required | any `#/admin/...` for a non-admin | Admin's own | `screens/admin/no-access.js`; `main.js` (internal-review gate) | `test_orena_screen_admin.mjs` (zero requests) | building |
+| A2 AI & Models | Providers, Capability routing | `#/admin/ai` (`?tab=route`) | Admin's own | `screens/admin/ai-pages.js` `listPage`, `ai.js` | `test_orena_screen_admin.mjs` | building |
+| A3 Provider configure | Write-only key, endpoint | `#/admin/ai/provider/:id/key` | Admin's own | `ai-pages.js` `keyPage` | same | building |
+| A4 Provider detail | Credential, test, models, used by, usage | `#/admin/ai/provider/:id` | Admin's own | `ai-pages.js` `providerPage` | same | building |
+| A5 Capability routing | Primary, standby, availability | `#/admin/ai/capability/:id` | Admin's own | `ai-pages.js` `capabilityPage` | same | building |
+| Profile entry "Platform admin" | Profile action row | `#/profile` (admin only) | learner | `screens/profile/{model,screen}.js` | `test_orena_screen_profile.mjs`, `test_orena_screen_admin.mjs` | building |
+| A8 Content, A15-A17, A21, Comprehension set review | Reading pipeline, Imports, Content | (later slices) | - | - | - | planned |
+| A1 Overview, A6-A7 Users, A24-A27 Practice generator, A31-A34 Operations | out of staging scope | - | - | - | - | not drawn |
+
 ## Retired by the cutover
 
 Filled in by the cutover slice: every old address, the surface that replaced it,

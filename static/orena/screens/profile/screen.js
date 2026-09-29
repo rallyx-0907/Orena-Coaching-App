@@ -215,6 +215,7 @@ function actionSub(action) {
 
 function actionHref(id, ctx) {
   return {
+    admin: ctx.href('adminAi'),
     settings: ctx.href('settings'),
     history: ctx.href('progress', {}, { tab: 'history' }),
     progress: ctx.href('progress'),
@@ -232,7 +233,6 @@ function actionRow(action, ctx) {
   const label = ACTION_LABEL(action.id);
   const sub = actionSub(action);
   const common = { variant: 'outline', radius: 16, pad: '18px 20px', titleSize: 16, inlineSub: true, title: label, sub, chevron: true };
-  if (action.kind === 'external') return listRow({ ...common, tag: 'a', href: action.href });
   if (action.kind === 'signout') return listRow({ ...common, dataset: { action: 'signout' } });
   return listRow({ ...common, dataset: { go: actionHref(action.id, ctx) } });
 }
@@ -282,5 +282,5 @@ export default async function profile(element, ctx) {
 // rule-40 zero fallback in the rendered text, the weekly-goal bar count, the weekday strip length.
 export const __internal = {
   avatarMarkup, heroMarkup, identityMarkup, statsMarkup, actionRow, dueTileValue, actionSub, WEEKLY_GOAL_TARGET,
-  streakDaysTileValue, weekMinutesTileValue, dailyGoalTileMarkup,
+  streakDaysTileValue, weekMinutesTileValue, dailyGoalTileMarkup, actionHref,
 };

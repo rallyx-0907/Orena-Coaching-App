@@ -12,7 +12,9 @@
    - `lesson`   a content route that shows the design's loading skeleton while it loads.
    - `intent`   the AGENT_CONTRACT §6.1 id that opens it, when there is one.
    - `bare`     drawn with no rail, top bar, phone header or bar at all: onboarding, whose frames
-                (Onboarding.dc.html) are a separate full-window flow. */
+                (Onboarding.dc.html) are a separate full-window flow.
+   - `admin`    a Platform Admin place (Orena-Admin.dc.html): drawn `bare` (no learner frame) with the
+                Admin's own shell, and only for an admin. `design` is the Admin state script's route key. */
 
 export const PRIMARY = Object.freeze(['today', 'discover', 'orena', 'practice', 'library', 'progress']);
 
@@ -70,7 +72,22 @@ export const ROUTES = Object.freeze([
 
   // First run: Onboarding.dc.html, its own full-window flow.
   { id: 'welcome', path: 'welcome', design: 'onboarding', screen: 'onboarding', focus: false, bare: true, crumb: 'welcome' },
+
+  // Platform Admin (D-101 E): Orena-Admin.dc.html, its own shell (rail, header, phone switcher)
+  // instead of the learner's, so `bare` here means "no learner frame". Only for an admin; anyone
+  // else meets the design's No access frame and no admin request is made (screens/admin).
+  { id: 'admin', path: 'admin', design: 'admin', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
+  { id: 'adminAi', path: 'admin/ai', design: 'ai', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
+  { id: 'adminProvider', path: 'admin/ai/provider/:id', design: 'aiprov', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
+  { id: 'adminProviderKey', path: 'admin/ai/provider/:id/key', design: 'aiconf', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
+  { id: 'adminCapability', path: 'admin/ai/capability/:id', design: 'aicap', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
 ]);
+
+/* An address inside Platform Admin. main.js asks this for a signed-in account that is not an admin,
+   so it can show the No access frame in place of the internal-review notice. */
+export function isAdminHash(hash = '') {
+  return /^#\/?admin(?:[/?]|$)/.test(String(hash));
+}
 
 export const DEFAULT_ROUTE = 'today';
 

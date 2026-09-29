@@ -224,6 +224,21 @@ def test_an_administrator_reaches_what_the_route_was_built_to_answer(secured, ro
     assert "sk-matrix" not in response.text
 
 
+def test_the_identity_the_new_ui_reads_agrees_with_the_guard(secured):
+    """The new UI decides Admin access from /api/me (`is_admin`) before it asks for any admin data.
+
+    That answer must be the same one the guard gives: an account /api/me calls an admin reaches the
+    admin routes, and one it does not is refused by every one of them (the matrix above). If the two
+    ever disagreed the client would show No access to an admin, or ask a learner for data the server
+    then refuses - the refusal would still hold, but the screen would be wrong.
+    """
+    learner = _request(secured, "GET", "/api/me", {}, LEARNER).json()
+    admin = _request(secured, "GET", "/api/me", {}, ADMIN).json()
+    assert learner["is_admin"] is False and admin["is_admin"] is True
+    assert _request(secured, "GET", "/api/admin/ai/config", {}, LEARNER).status_code == 403
+    assert _request(secured, "GET", "/api/admin/ai/config", {}, ADMIN).status_code == 200
+
+
 def test_every_admin_seam_is_wired_to_the_one_guard():
     source = inspect.getsource(app_module)
     assert "install_platform_ai(app, require_admin)" in source

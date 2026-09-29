@@ -15,6 +15,22 @@
    back. */
 import { adminApi, failureReason } from './api.js';
 import { chip, esc, fill, info, kv, latency, mono, num, panel, table, tone, notice } from './format.js';
+import {
+  capabilityKind,
+  credentialState,
+  mergeProviders,
+  removalConsequences,
+  routeDraft,
+  routeBody,
+  providerBody,
+  healthErrorClass,
+} from '../capabilities/admin-ai.js';
+
+/* The rules of the AI control plane - what is routable, where a credential comes from, what a
+   route body and a credential body contain, how removal is described - live in
+   capabilities/admin-ai.js, shared with the new UI's Admin (D-101 E). This file is the old
+   console's presentation and its own DOM flow. */
+export { capabilityKind, credentialState, mergeProviders, removalConsequences };
 
 /* The dot the canonical row opens with: the same state the health column
    carries, said once more where the eye lands first. A capability the console
@@ -24,41 +40,8 @@ function healthState(row, kind) {
   return row?.health_state || 'no_data';
 }
 
-const HEALTH_ERRORS = new Set([
-  'capability_disabled', 'capability_not_configured', 'provider_not_configured', 'model_catalog_empty',
-  'model_unavailable', 'provider_unavailable', 'provider_response_invalid', 'provider_error', 'capability_invalid',
-]);
-
-export function capabilityKind(capability) {
-  if (!capability?.implemented) return 'reserved';
-  if (!capability.provider_backed) return 'deterministic';
-  return capability.configurable ? 'configurable' : 'reserved';
-}
-
 export function capabilityLabel(key, t) {
   return t[`cap_${key}`] || String(key || '').replaceAll('_', ' ');
-}
-
-export function credentialState(provider) {
-  const configuration = provider?.configuration || {};
-  if (configuration.credential_env === null || provider?.secret_mode === 'none') return 'not_required';
-  if (configuration.credential_source === 'encrypted_server_store') return provider.configured ? 'encrypted_server_store' : 'unreadable';
-  if (configuration.credential_source === 'server_environment') return 'server_environment';
-  return 'not_configured';
-}
-
-export function mergeProviders(config, catalog) {
-  const live = new Map((catalog?.providers || []).map((provider) => [provider.id, provider]));
-  return (config?.providers || []).map((provider) => {
-    const found = live.get(provider.id) || {};
-    return {
-      ...provider,
-      ...found,
-      configured: found.configured ?? provider.server_configured ?? false,
-      models: Array.isArray(found.models) ? found.models : [],
-      catalogLoaded: live.has(provider.id),
-    };
-  });
 }
 
 function testLine(test, standby, t, ui) {
@@ -233,18 +216,6 @@ function providerForm(provider, state, t) {
    Every capability routed through this provider is listed with what happens to
    it - a named fallback, or nothing and it stops - and the provider's name is
    typed to confirm, because the consequence is not reversible by undo. */
-export function removalConsequences(providerId, capabilities, providers, t) {
-  const name = (id) => providers.find((item) => item.id === id)?.name || id;
-  return (capabilities || [])
-    .filter((capability) => capability.config?.provider === providerId && capability.config?.enabled !== false)
-    .map((capability) => ({
-      key: capability.key,
-      fallback: capability.config?.backup_provider && capability.config.backup_provider !== providerId
-        ? name(capability.config.backup_provider)
-        : '',
-    }));
-}
-
 export function removeConfirm(provider, state, t) {
   const affected = removalConsequences(provider.id, state.config?.capabilities, state.providers, t);
   const typed = (state.removeTyped || '').trim();
@@ -324,9 +295,8 @@ export function aiView(state, t, ui) {
 }
 
 function healthReason(result, t) {
-  const detail = result?.body?.detail;
-  const code = detail && typeof detail === 'object' ? detail.error_class : '';
-  return HEALTH_ERRORS.has(code) ? t[`healthError_${code}`] : failureReason(result) || t.healthError_unknown;
+  const code = healthErrorClass(result);
+  return code ? t[`healthError_${code}`] : failureReason(result) || t.healthError_unknown;
 }
 
 export async function renderAi(container, env) {
@@ -385,15 +355,7 @@ export async function renderAi(container, env) {
 
   const draftFrom = (key) => {
     const capability = (state.config?.capabilities || []).find((item) => item.key === key) || {};
-    const config = capability.config || {};
-    return {
-      provider: config.provider || state.providers.find((provider) => provider.configured)?.id || state.providers[0]?.id || '',
-      model: config.model_redacted ? '' : config.model || '',
-      backup_provider: config.backup_provider || '',
-      backup_model: config.backup_model_redacted ? '' : config.backup_model || '',
-      enabled: config.enabled !== false,
-      message: '',
-    };
+    return { ...routeDraft(capability, state.providers), message: '' };
   };
 
   const test = async (key, standby) => {
@@ -508,17 +470,13 @@ export async function renderAi(container, env) {
     if (routeForm) {
       const key = routeForm.dataset.acRouteForm;
       const capability = (state.config?.capabilities || []).find((item) => item.key === key) || {};
-      const saved = capability.config || {};
-      const body = {
+      const body = routeBody(capability, {
         enabled: routeForm.elements.enabled.checked,
         provider: routeForm.elements.provider.value,
         model: routeForm.elements.model.value,
-        backup_provider: routeForm.elements.backup_provider.value || null,
-        backup_model: routeForm.elements.backup_model.value || null,
-        timeout_seconds: saved.timeout_seconds ?? null,
-        temperature: saved.temperature ?? null,
-        fallback_policy: saved.fallback_policy || (capability.allowed_fallback_policies || ['none'])[0],
-      };
+        backup_provider: routeForm.elements.backup_provider.value,
+        backup_model: routeForm.elements.backup_model.value,
+      });
       state.draft = { ...state.draft, message: t.saving };
       paint();
       const result = await api.saveCapability(key, body);
@@ -536,9 +494,8 @@ export async function renderAi(container, env) {
     const id = providerFormNode.dataset.acProviderForm;
     const elements = providerFormNode.elements;
     const models = [...providerFormNode.querySelectorAll('input[name="models"]:checked')].map((input) => input.value);
-    const body = { base_url: elements.base_url?.value?.trim() || undefined, default_model: elements.default_model?.value || '', models };
     const key = elements.api_key?.value?.trim();
-    if (key) body.api_key = key;
+    const body = providerBody({ baseUrl: elements.base_url?.value, apiKey: key, defaultModel: elements.default_model?.value, models });
     if (elements.api_key) elements.api_key.value = '';
     // "Test the key before saving": the same test endpoint, with the draft
     // values, so a key that cannot connect is never stored.

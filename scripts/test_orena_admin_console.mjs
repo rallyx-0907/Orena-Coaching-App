@@ -645,7 +645,7 @@ assert.doesNotMatch(addMarkup, /can_republish\?\.checked/,
 for (const key of ['readingRightsUnanswered', 'readingRightsAllowed', 'readingRightsDenied']) {
   assert.ok(en[key] && zh[key], `the rights choice "${key}" has words in both languages`);
 }
-const apiSource = read('static/orena/admin/api.js');
+const apiSource = read('static/orena/capabilities/admin-api.js');
 assert.match(apiSource, /value === undefined \|\| value === null/,
   'the submit client omits an absent field instead of posting an empty string');
 

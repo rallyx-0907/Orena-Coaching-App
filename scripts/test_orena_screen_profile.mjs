@@ -90,8 +90,8 @@ const { dueTileValue, actionSub, streakDaysTileValue, weekMinutesTileValue, dail
 {
   const admin = profileActions({ isAdmin: true, planName: 'Plus' });
   assert.deepEqual(admin.map((a) => a.id), ['admin', 'settings', 'history', 'progress', 'plan', 'signout']);
-  assert.equal(admin[0].kind, 'external');
-  assert.equal(admin[0].href, '/#/admin');
+  assert.equal(admin[0].kind, 'nav', 'Platform admin opens the Admin inside this UI (D-101 E), not the old console');
+  assert.equal('href' in admin[0], false, 'the row names no address of its own: the screen resolves it from the router');
   assert.equal(admin.find((a) => a.id === 'plan').sub, 'Plus');
 
   const learner = profileActions({ isAdmin: false, planName: '' });
