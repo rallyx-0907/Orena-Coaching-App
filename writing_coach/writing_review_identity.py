@@ -47,10 +47,32 @@ from typing import Any
 # same question: the response schema, the rubric or its weights, the system
 # prompt, or how the request is built. Do not raise it for a change that cannot
 # alter the answer - every raise costs every learner their stored reviews.
-# v2.7 (2026-09-29): a Chinese finding explained in a non-CJK support language is no longer
-# dropped for quoting the character it teaches (support_prose_admits), so a stored Chinese
-# review can be missing findings the same request now returns.
+#
+# The version is effective per language pair (D-103 point 7): a change that alters the answer
+# for some pairs only moves those pairs, so a learner of any other pair keeps their stored reviews
+# and is never re-graded for a change that cannot touch them.
+#
+# v2.7 (2026-09-29): a Chinese finding explained in a support language other than Chinese is no
+# longer dropped for quoting the character it teaches (support_prose_admits, 871e2b9). It alters
+# the answer only when the learning language is Chinese and the explanation language is not.
 EVALUATOR_CONTRACT_VERSION = "writing-evaluation-v2.7"
+PREVIOUS_EVALUATOR_CONTRACT_VERSION = "writing-evaluation-v2.6"
+
+
+def _language_key(code: str) -> str:
+    return str(code or "").strip().casefold().replace("_", "-").split("-", 1)[0]
+
+
+def v27_affects(learning_language: str, support_language: str) -> bool:
+    """The pairs v2.7 changes: Chinese learning language, explanation language not Chinese."""
+    return _language_key(learning_language) == "zh" and _language_key(support_language) != "zh"
+
+
+def contract_version_for(learning_language: str, support_language: str) -> str:
+    """The evaluator contract version in effect for one language pair."""
+    if v27_affects(learning_language, support_language):
+        return EVALUATOR_CONTRACT_VERSION
+    return PREVIOUS_EVALUATOR_CONTRACT_VERSION
 
 _IDENTITY_KEY = "review"
 
@@ -74,9 +96,15 @@ def review_identity(
     support_language: str,
     target_level: str = "",
     prompt: str = "",
-    contract_version: str = EVALUATOR_CONTRACT_VERSION,
+    contract_version: str | None = None,
 ) -> dict[str, str]:
-    """The identity of one review, as it is asked for and as it is stored."""
+    """The identity of one review, as it is asked for and as it is stored.
+
+    Without an explicit `contract_version` the version in effect for this language pair is used
+    (`contract_version_for`), so an unaffected pair keeps matching its stored reviews.
+    """
+    if contract_version is None:
+        contract_version = contract_version_for(learning_language, support_language)
     normalized_learning = str(learning_language or "").casefold().replace("_", "-")
     normalized_support = str(support_language or "").casefold().replace("_", "-")
     normalized_target = str(target_level or "").strip().upper()
