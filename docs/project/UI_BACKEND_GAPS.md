@@ -3390,6 +3390,62 @@ endpoint the other Speaking/Listening rooms already read serves it.
   their green/red that way) - a control that carries a verdict look must use `aria-disabled`, not
   `disabled`.
 
+## Onboarding (D-088 Onboarding.dc.html frames 01-05), Wave B, 2026-09-29
+
+Built `static/orena/screens/onboarding/` (route `welcome`, `#/welcome`, bare - no rail, top bar,
+phone header or bar), five steps: Welcome, Account, Languages, Level, Meet Orena. Reviewed once,
+then fixed against that review (independent review P1 and every P2 closed; see the dated "Fixes"
+section of `SCRATCH/reports/onboarding.md` for the full account). Two human gates were respected,
+not worked around:
+
+- **Production auth is a human gate.** The app requires sign-in before `/next` is ever reached, so
+  Account shows the identity already established (name, avatar/initial, email when the account has
+  one, "Signed in with Google" / "on this device") with only Continue - not the frame's credential
+  form (create/log-in tabs, Google button, name/email/password, terms line), which this build cannot
+  show for real. No frame draws the identity card built here (it cannot be measured against the
+  source); it is a recomposition in the frame's own card language, not an invention of new
+  behaviour (rule 43/50 - its only action is Continue).
+- **`declared_level` is learner-owned data with no schema yet** (`writing_coach/account_profile.py`:
+  `stored=False`, AGENTS.md §7 "Architecture holds" reserves new persistence/schema decisions for
+  learner-owned data). No backend storage or migration was added for this unit. The Level step's
+  Continue still PATCHes a CEFR pick (it answers 501 "not_yet_stored" - a documented, non-blocking
+  gap, tracked as **SH-2**) but never an HSK pick (the field's `allowed` tuple is CEFR-only, so an
+  HSK code would 400 on every attempt, forever - not sent at all, fixed in the review pass). The UI
+  is honest about this: the pick is real state for this visit (the shell's in-memory `level`, Meet
+  Orena's own line) and is never shown as if the server had saved it; a reload restores the step and
+  the unsent pick together (session-only, `sessionStorage`), never a completion flag.
+
+Other gaps, each already filled the conservative way (rule 40) rather than guessed:
+
+- **No placement check exists anywhere in the backend** (no items, no scoring). The frame's frame 04
+  draws a 5-question placement check with hand-authored sample questions (the prototype script's
+  `QS`); shipping those would be invented pedagogical content. Only the frame's own `noScore` branch
+  is built - "Choose your level", the CEFR/HSK grid, real standard frameworks. **Question for the
+  lead:** build a real placement-check backend (items + scoring), or keep the self-pick permanently.
+- **Meet Orena draws starter chips, a free-text composer and simulated replies** (the prototype
+  script's own fake-timer, regex-matched `answer()` - explicitly not behaviour to copy). No chat
+  capability exists yet (`orena` is still Coming Soon; `shell/agent-bridge.js`'s `askOrena()` has no
+  message field and AGENT_CONTRACT.md §6.1 names no onboarding surface id), so this build keeps only
+  the mark, one greeting line (a template from real, already-known state - the learner's account
+  name, picked target/support/level, never an AI call) and "Go to Today →". **Question for the
+  lead:** wire the starters/composer to `askOrena()` once a surface id and a message path exist.
+- **Nothing routes a learner who has not onboarded to `#/welcome` yet.** `GET /api/learner-profile`
+  already carries `exists`, the natural signal; deciding where that check lives (shell boot, a route
+  guard) is shell/main routing, out of this unit's files.
+- **`scripts/fixtures/api/platform_languages.json` is stale**: it holds 3 support languages and 3
+  levels per learning language; the running sandbox answers 12 support languages and 6 real
+  CEFR/HSK levels. The gate asserts `en`/`vi`/`zh` are present and checks the model's level-filtering
+  logic against the fixture's own (smaller) real shape, so a re-capture only strengthens the
+  coverage, never breaks the gate. Re-capture belongs to the fixtures owner.
+- **Kit token gaps remain open on the largest surface** (not this unit's files to fix -
+  `static/orena/kit/tokens.css` is shared): the desktop aside's background is `--mark-disc` (two
+  stops) where the frame draws a third `#0E0E16` stop (`radial-gradient(120% 140% at 0% 0%, #2B2158
+  0%, #150F2E 62%, #0E0E16 100%)`), the big hero mark's shadow is `--mark-glow-strong` (`0 4px 12px`)
+  where the frame draws `0 20px 50px rgba(122,92,246,.35)`, and the aside's ink is `--toast-ink`
+  (`#fff`) where the frame's dark-only text is `#F3F3F8`. **For the lead:** add theme-independent
+  tokens for the aside gradient, a stronger hero glow and the aside ink, then this screen swaps them
+  in - no literal colour was added locally to approximate them (product invariant).
+
 ## Speak more: Free Talk, Conversation, Situation Reaction, and Retell / Timed Reaction / Mock Interview / Sound-Tone (D-088 frames 29-32, 43, 48-49), Wave B, 2026-09-28
 
 Built for real, against a real backend: `screens/free-talk/`, `screens/conversation/`,

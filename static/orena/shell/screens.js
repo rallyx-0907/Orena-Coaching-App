@@ -25,6 +25,7 @@ export const SCREENS = Object.freeze({
   errors: () => import('../screens/errors/screen.js'),
   dictation: () => import('../screens/dictation/screen.js'),
   shadowing: () => import('../screens/shadowing/screen.js'),
+  onboarding: () => import('../screens/onboarding/screen.js'),
   speak: () => import('../screens/speak/screen.js'),
   compare: () => import('../screens/compare/screen.js'),
   attempts: () => import('../screens/attempts/screen.js'),

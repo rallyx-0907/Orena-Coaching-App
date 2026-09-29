@@ -7,6 +7,7 @@
    effect for is never wired to pretend, and never removed either (rule 43) - it is drawn, with its
    control inert. Every disabled row here is named in the report and in
    docs/project/UI_BACKEND_GAPS.md, not silently decided. */
+import { INTERFACE_ENDONYMS, INTERFACE_LOCALES, interfaceLanguageOptions as sharedInterfaceLanguageOptions } from '../../kit/lang.js';
 
 export const TABS = Object.freeze(['languages', 'learning', 'review', 'notifications', 'plan']);
 
@@ -17,9 +18,10 @@ export function tabFromQuery(raw) {
 
 /* A language's own endonym, invariant across every interface language - the same choice
    static/orena/app.js's own preferences dialog already makes (INTERFACE_NAMES), so a learner who
-   cannot yet read English still recognises "English" as the option that means English. */
-export const INTERFACE_ENDONYMS = Object.freeze({ en: 'English', vi: 'Tiếng Việt', zh: '中文' });
-export const INTERFACE_LOCALES = Object.freeze(['en', 'vi', 'zh']);
+   cannot yet read English still recognises "English" as the option that means English. Shared with
+   Onboarding's own Languages step (kit/lang.js), which draws the identical picker, so the two
+   screens cannot independently diverge on it. */
+export { INTERFACE_ENDONYMS, INTERFACE_LOCALES };
 
 /* Target language: the two enabled learning languages the platform actually has
    (GET /api/platform/languages `languages[]`), each labelled with the interface's own translated
@@ -43,7 +45,7 @@ export function supportLanguageOptions(supportLanguages) {
 }
 
 export function interfaceLanguageOptions(locales = INTERFACE_LOCALES) {
-  return locales.map((code) => ({ code, label: INTERFACE_ENDONYMS[code] || code }));
+  return sharedInterfaceLanguageOptions(locales);
 }
 
 /* A quota bar's fill: 0 whenever the limit is not a real positive number (rule 40 - a metric with

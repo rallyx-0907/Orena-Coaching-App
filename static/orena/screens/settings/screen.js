@@ -33,6 +33,7 @@ import { readStage, writeStage, transcriptDefaults } from '../../product/transcr
 import { readReviewSettings } from '../../product/recall-modes.js';
 import { MIC_STATES, watchMicrophone } from '../../capabilities/mic-readiness.js';
 import { appearance, setAppearance } from '../../kit/device.js';
+import { appendNativeName } from '../../kit/lang.js';
 import { t } from './copy.js';
 import { TABS, tabFromQuery, rowsForTab, barPercent } from './model.js';
 
@@ -77,8 +78,10 @@ function targetOptionLabel(opt) {
   // Compare against `translated` (the string actually about to render), not the backend's raw,
   // always-English `opt.name`: under a Chinese interface shellCopy('lang_zh') already resolves to
   // "中文", so comparing against the untranslated "Chinese" would still differ and wrongly append
-  // the native name again, producing "中文 · 中文" (P1, independent review).
-  return opt.nativeName && opt.nativeName !== translated ? `${translated} · ${opt.nativeName}` : translated;
+  // the native name again, producing "中文 · 中文" (P1, independent review). The doubling guard
+  // itself is shared with Onboarding's own targetLabel (kit/lang.js's appendNativeName), so the fix
+  // cannot diverge a third time.
+  return appendNativeName(translated, opt.nativeName);
 }
 
 const THEME_LABEL_KEY = { light: 'themeLight', dark: 'themeDark', system: 'themeSystem' };
