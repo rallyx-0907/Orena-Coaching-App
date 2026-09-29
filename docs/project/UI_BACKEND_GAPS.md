@@ -3571,6 +3571,7 @@ registered in `shell/screens.js`. `rewrite` (`#/rewrite`, frame 37 Context Rewri
   number" reading. The other three dimensions' real deltas remain unused by this screen. Reversible
   in one place (`model.js#mapCompare`'s `grammar` line) if showing every dimension is confirmed
   intentional instead.
+  **Answered 2026-09-29 (D-098): follow the frame** - one Grammar line, as built; closed.
 - **Compare Versions' summary line's "range" (CEFR band) delta is now shown for real, when both
   sides have one.** `RevisionCompare` itself carries no `app_cefr`/range and no id for the earlier
   revision, but the *current* essay's own `GET /api/essays/{id}` answer carries a `revisions[]` list
