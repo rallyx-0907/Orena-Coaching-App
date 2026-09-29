@@ -4173,3 +4173,75 @@ backend cannot yet serve:
 - **Phone recomposition (N-6, rule 49).** The frame stacks the Notes & highlights panel below a long
   article on a phone, where it is unreachable in a workspace that scrolls only inside the text; the
   panel opens as the design's bottom sheet on a phone and stays docked beside the text on a desk.
+
+## Grammar Library and Grammar Concept on the grammar content contract (frames 44/47, D-100), 2026-09-29
+
+`screens/grammar/` (`#/grammar`) and `screens/grammar-concept/` (`#/grammar/:id`) no longer read R5
+(`/api/library/grammar*`); they read `GRAMMAR_CONTENT_CONTRACT.md` (schema v0.4) through one seam,
+`static/orena/product/grammar-source.js`. R5 modules, contracts, Concept IDs and gates are untouched
+(D-100 point 5). What could not be resolved inside the lane:
+
+- **G-1 · No content is served, by design.** No API exists (`/api/grammar/v1/*` waits for its own
+  architecture review, D-100 point 4) and Grammar Lab's sample points (PR B) have not arrived. The
+  seam reads static JSON at `/orena-assets/content/grammar/catalog.<lang>.json` and
+  `/orena-assets/content/grammar/points/<id>.json`; nothing is there, so each read is a clean 404 =
+  "no content": the Library draws its heading and the design's empty state, the Concept draws its
+  header and "This grammar point is not available." When PR B arrives its files go at those paths (or
+  the seam's two readers point at the API); no screen changes. The seam applies the contract's
+  "only `approved` reaches the UI" rule because it is the feeder until the API exists. The node gate
+  and the browser check use a TEST-ONLY fixture (`scripts/fixtures/grammar/`, built from the
+  contract's own examples; never shipped - the gate asserts `static/orena/content/grammar` does not
+  exist).
+- **G-2 · Every existing grammar link carries an R5 id.** Search, Today, Practice continuation, From
+  Your Errors and Writing's `grammar_links` open `#/grammar/<r5-id>`. The Concept resolves an R5 id
+  through the catalogue's `aliases` and replaces the address (contract §9 rule 1); until content
+  with `aliases` exists every such link lands on "not available". Those surfaces are not changed in
+  this slice.
+- **G-3 · Learner state has no source (§9).** Frame 44 draws four groups (recent errors, at your
+  level, saved, recommended) and a status tag per card ("Open", "In progress", "New"); the contract
+  carries none of it and no route joins learner state to Grammar Lab ids. The Library groups by
+  level (`level.rank`), counts `function` topics per level, and draws no status tag (the R5
+  `completed` flag keys R5 ids). **Decision for the human:** keep the tag out until a learner-state
+  source exists, or draw it from R5 progress through `aliases`.
+- **G-4 · The quiz writes nothing.** The old screen called the R5 completion endpoint on "Finish";
+  it does not know Grammar Lab ids and was removed. No evidence route exists for the new ids.
+- **G-5 · "Try it yourself" has no verdict (D-100 point 3).** Drawn as frame 47 draws it (prompt,
+  one-line input, Check, a result line). The frame's result line is a green/red verdict ("The
+  pattern is right. Recorded as Use evidence…"); the screen instead shows the contract's `sample`
+  ("Sample: …") in the frame's neutral well (surface2, text) and records nothing. The button keeps
+  the frame's label "Check" although nothing is checked. **Decision for the human:** keep "Check",
+  or relabel; and whether the sentence goes to the Writing engine once PR A adds the recognition
+  rule.
+- **G-6 · Contract content frame 47 gives no place (rule 43).** Not drawn, kept in the data:
+  `when_to_use` (§3), `compare` (§5), example `translation` and `annotation` (§4), every
+  `common_mistakes` entry after the one chosen (§6), `pattern.variants` as chips, and each formula
+  cell's `label` except in the word-order illustration. Candidates are "⋯" or a sheet; the human
+  decides.
+- **G-7 · Illustrations built under D-098 point 4, for the human's eye review.** Timeline, word order
+  and word form are drawn from frame 23's timeline track and pattern boxes (surface2 well, radius
+  16, padding 18; 2px axis, 10px accent bar at .75, 12px green dot, 12px muted marks, one 12px/700
+  accent line) under a frame-47 eyebrow. The marks and the line are UI copy generated from
+  `timeline.shape` (en/vi/zh); an authored `relevance` replaces the shape's line when present. The
+  line sits under the track instead of inside it, so a long Vietnamese line cannot run out of the
+  well. The "+" joiner between formula cells is frame 23's (text3, 600); an optional cell is drawn
+  in parentheses, as the design's own "(now)" chip. Role colours: aux/marker/particle/connector/
+  classifier accent, verb/complement green, subject/object/other neutral, time/place amber - the same
+  bucket colours the example's spans take.
+- **G-8 · Chinese.** A Chinese Library is frame 44 with HSK 3.0 levels (headings "HSK 3 · 初等",
+  tile "HSK3"). Pinyin (§8) is drawn with the design's Hanzi-over-Pinyin stack (`data-py`/`data-hz`,
+  kit/base.css; on only when the learning language is Chinese and the pinyin preference is on) on
+  the title, examples, mistake, quiz, morphology and sample; not in the pattern chips, which the
+  frame draws as plain chips. A reading whose length differs from the text is not guessed: the text
+  is drawn plain. Contract ambiguity for Grammar Lab: §7 says quick-practice options carry
+  "`_pinyin`" while §8 says "`pinyin` beside `text`"; the screen reads `options[].pinyin` (§8).
+- **G-9 · Recorded deviations (rule 41).** The quiz letter dot: frame 47 draws white on
+  `--surface3`, which fails AA; the ink is `--text`. The mistake and answered-option glyphs use
+  `--badge-ink` instead of white (unchanged from the previous build).
+- **Measured (rule 42), 2026-09-29.** Computed styles of frames 44 and 47 at the pin vs the app
+  (fixture-fed), desktop 1920x1080 and phone 390x844, light and dark. What is left: the kit's token
+  values, not this screen's (text3 `#8E8EA2`/`#6E6E86` light, red `#D93D42`/`#D0292E` light, dark
+  accent `#7D78F5`/`#847FF6`, dark accent fill `#7D78F5`/`#6862F3` - D-093's AA values); the glyph
+  inks of G-9; heights that follow the sample text. Font size, weight, family, letter-spacing,
+  radius, padding, gap and fill of every other element match. Browser-checked in en/vi/zh, both
+  themes, at 1920x1080, 1366x768, 390x844 and 360x740 (touch): no page scroll or horizontal
+  overflow on the Concept (the card column scrolls in its own region), no shell on it, no page error.

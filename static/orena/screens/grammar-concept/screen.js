@@ -1,173 +1,203 @@
-/* Frame "Grammar Concept" (pinned design, frame 47 - the generic template every real concept
-   route reaches; route "gconcept", a learning workspace, Design Contract rule 49).
+/* Frame "Grammar Concept" (pinned design, frame 47 - canonical per D-099; frame 23 is not built;
+   route "gconcept", a learning workspace, Design Contract rule 49).
 
-   Rule 40 / rule 44 notes (see model.js's header comment for the data-shaping decisions):
-   - the "Try it yourself" card's button asks Orena instead of grading with a fabricated regex -
-     the backend has no correctness judgement for free text (SCRATCH/inventory/C6, §3.2);
-   - a block type frame 47 draws no visual for degrades to a generic chip/row rendering rather
-     than a bespoke widget;
-   - completion (`POST /api/library/grammar/{id}/complete`) fires once the learner finishes the
-     quiz - the closest drawn signal to "did something evidencing engagement" this frame has (no
-     control on 47 calls it explicitly); recorded as a decision, not left unresolved. */
+   Data: one point of the grammar content contract, through the seam product/grammar-source.js
+   (D-100). No API exists yet, so every point is "not found" and the screen draws the design's
+   empty state under its own header; an old R5 id resolves through the catalogue's `aliases` and
+   the address is replaced (contract §9). model.js says what each part draws from which field.
+
+   "Try it yourself" (D-100 point 3): drawn as frame 47 draws it - prompt, one-line input, Check,
+   and the result line under it. Until the contract has a rule for recognising the target pattern,
+   the result line never says the pattern was used and nothing is recorded as evidence: it shows
+   the contract's `sample` sentence, the one thing that can honestly be said. The quiz writes
+   nothing either (the R5 completion endpoint does not know Grammar Lab ids). */
 import { html, mount, raw } from '../../kit/html.js';
-import { icon } from '../../kit/icons.js';
 import { useStyles } from '../../kit/styles.js';
 import { pageHeader } from '../../kit/components.js';
 import { langAttr, langSpan } from '../../kit/lang.js';
+import { emptyMarkup } from '../../kit/states.js';
 import { shellCopy as shell } from '../../copy/shell.js';
+import { languages } from '../../copy/index.js';
 import { t } from './copy.js';
-import { api } from '../../infrastructure/api.js';
-import { supportLanguage } from '../../product/languages.js';
+import { grammarPoint } from '../../product/grammar-source.js';
 import { askOrena } from '../../shell/agent-bridge.js';
-import { pickLocale, primaryPattern, examplesOf, mistakeOf, quizQuestions, personalPractice, headerMeta } from './model.js';
+import { conceptView } from './model.js';
+import { hanziMarkup } from '../grammar/hanzi.js';
 
-/* languages-5 / finding A: `pattern.parts[].text`/`.from`/`.to` are the concept's own real
-   target-language content - a pattern word, a transformed sentence (model.js's own header comment:
-   "a plain string is target-language content") - marked with the learner's active learning
-   language, the one this whole concept is written in (`ctx.context.language`, the third source
-   kit/lang.js's own doc comment names: no per-field language comes back from GET /api/library/
-   grammar/{id}, but every field this screen shows is definitionally in that one language). `part.
-   label`/the chip's own `title` attribute is support-layer prose (pickLocale), never marked. */
-function patternMarkup(pattern, lang) {
-  const eyebrow = html`<div class="s-gc__eyebrow">${t('pattern')}</div>`;
-  if (pattern.kind === 'chips') {
-    return html`${eyebrow}<div class="s-gc__chips">${pattern.parts.map(
-      (part) => html`<span class="${`s-gc__chip s-gc__chip--${part.role}`}" lang="${langAttr(lang)}" title="${part.label}">${part.text}</span>`,
-    )}</div>`;
-  }
-  if (pattern.kind === 'transform') {
-    return html`${eyebrow}<div class="s-gc__chips">
-      <span class="s-gc__chip s-gc__chip--k" lang="${langAttr(lang)}">${pattern.from}</span>
-      <span class="s-gc__arrow" aria-hidden="true">${raw(icon('arrow-right', { size: 16 }))}</span>
-      <span class="s-gc__chip s-gc__chip--b" lang="${langAttr(lang)}">${pattern.to}</span>
-    </div>`;
-  }
-  // `kind: 'rows'` is the generic fallback for a block type frame 47 draws no chip shape for
-  // (model.js's own comment) - its `text`/`label` may be target-language content or support prose
-  // depending on the block, a distinction the pure mapping does not carry through, so this shape
-  // is left unmarked rather than guessed at (kit/lang.js: no `lang` is safer than a wrong one).
-  //
-  // `text` is conditional, matching `label`/`note`: a `timeline` block's `events[]` never carries
-  // a `text` field (writing_coach/grammar_learning_model.py `_validate_timeline` - only
-  // `label`/`position`/`note`), so `pattern.rows[].text` is always `''` for that block type.
-  // Rendering it unconditionally left a permanently empty middle line on every timeline row (real,
-  // reachable: `a2-present-perfect-vs-past-simple`'s primary pattern block, per
-  // capabilities/grammar-pedagogy.js's `primaryModelType` for the `temporal_aspect` archetype).
-  // Other row-shaped blocks (`contrast`, `scene`) always carry a real `text`, so this changes
-  // nothing for them - only the row's designated main-text slot, always empty before, is now
-  // honestly left out instead of drawn empty (rule 40).
-  return html`${eyebrow}${pattern.rows.map(
-    (row) => html`<div class="s-gc__row">${row.label ? html`<div class="s-gc__rowLabel">${row.label}</div>` : ''}${
-      row.text ? html`<div>${row.text}</div>` : ''
-    }${row.note ? html`<div class="s-gc__rowNote">${row.note}</div>` : ''}</div>`,
-  )}`;
+const HEADINGS = { timeline: 'timeline', word_order: 'wordOrder', morphology: 'wordForm' };
+
+function eyebrow(text) {
+  return html`<div class="s-gc__eyebrow">${text}</div>`;
+}
+
+/* Target-language text, with its pinyin stack when it is Chinese. */
+function material(text, pinyin, lang) {
+  return lang === 'zh' ? hanziMarkup(text, pinyin) : text;
+}
+
+const joiner = (glyph) => html`<span class="s-gc__join" aria-hidden="true">${glyph}</span>`;
+
+function joined(items, glyph = '+') {
+  return items.map((item, i) => (i ? html`${joiner(glyph)}${item}` : item));
+}
+
+function patternMarkup(cells, lang) {
+  return html`${eyebrow(t('pattern'))}<div class="s-gc__chips" lang="${langAttr(lang)}">${joined(
+    cells.map((cell) => html`<span class="${`s-gc__chip s-gc__chip--${cell.bucket}`}">${cell.text}</span>`),
+  )}</div>`;
+}
+
+function timelineMarkup(ill) {
+  const at = (n) => `left:${n}%`;
+  return html`<div class="s-gc__tl">
+      <div class="s-gc__tlAxis"></div>
+      ${ill.bars.map((bar) => html`<div class="s-gc__tlBar" style="${`left:${bar.from}%;width:${bar.to - bar.from}%`}"></div>`)}
+      ${ill.dots.map((n) => html`<span class="s-gc__tlDot" style="${at(n)}"></span>`)}
+      ${ill.marks.map((mark) => html`<span class="s-gc__tlMark" style="${at(mark.at)}">${t(mark.key)}</span>`)}
+      <span class="s-gc__tlMark" style="${at(ill.now)}">${t('markNow')}</span>
+    </div>
+    <div class="s-gc__tlCaption">${ill.relevance || t(ill.caption)}</div>`;
+}
+
+function boxesMarkup(ill, lang) {
+  return html`<div class="s-gc__boxes">${joined(
+    ill.boxes.map(
+      (box) => html`<div class="s-gc__box"><span class="${`s-gc__boxChip s-gc__boxChip--${box.bucket}`}" lang="${langAttr(lang)}">${box.text}</span>${
+        box.label ? html`<span class="s-gc__boxLabel">${box.label}</span>` : ''
+      }</div>`,
+    ),
+  )}</div>`;
+}
+
+function morphologyMarkup(ill, lang) {
+  return ill.rows.map(
+    (row) => html`<div class="s-gc__morph">
+      <div class="s-gc__morphRow" lang="${langAttr(lang)}">
+        <span class="s-gc__boxChip s-gc__boxChip--k">${material(row.base, row.basePinyin, lang)}</span>
+        ${row.affix ? html`${joiner('+')}<span class="s-gc__boxChip s-gc__boxChip--a">${row.affix}</span>` : ''}
+        ${joiner('→')}
+        <span class="s-gc__boxChip s-gc__boxChip--b">${material(row.result, row.resultPinyin, lang)}</span>
+      </div>
+      ${row.note ? html`<div class="s-gc__boxLabel">${row.note}</div>` : ''}
+    </div>`,
+  );
+}
+
+function illustrationMarkup(ill, lang) {
+  const body = ill.kind === 'timeline' ? timelineMarkup(ill) : ill.kind === 'word_order' ? boxesMarkup(ill, lang) : morphologyMarkup(ill, lang);
+  return html`${eyebrow(t(HEADINGS[ill.kind]))}<div class="s-gc__ill">${body}</div>`;
 }
 
 function exampleMarkup(example, lang) {
-  // `lang` sits on a span around the target-language sentence only, not the row - the translation
-  // line right below it is support-layer prose (D-079: Vietnamese today, per model.js's own
-  // comment), a different language the outer element must not also claim.
-  return html`<div class="s-gc__example"><span lang="${langAttr(lang)}">${example.text}</span>${example.translation ? html`<div class="s-gc__exampleTr">${example.translation}</div>` : ''}</div>`;
+  return html`<div class="s-gc__example" lang="${langAttr(lang)}">${example.parts.map((part) => {
+    const text = material(part.text, part.pinyin, lang);
+    return part.bucket ? html`<span class="${`s-gc__hl s-gc__hl--${part.bucket}`}">${text}</span>` : text;
+  })}</div>`;
 }
 
 function mistakeMarkup(mistake, lang) {
-  return html`<div class="s-gc__eyebrow">${t('mistake')}</div>
+  return html`${eyebrow(t('mistake'))}
   <div class="s-gc__mistake">
-    <div class="s-gc__mline"><span class="s-gc__glyph s-gc__glyph--bad">✕</span><span class="s-gc__mtext--bad" lang="${langAttr(lang)}">${mistake.incorrect}</span></div>
-    <div class="s-gc__mline"><span class="s-gc__glyph s-gc__glyph--good">✓</span><span class="s-gc__mtext--good" lang="${langAttr(lang)}">${mistake.correct}</span></div>
-    ${mistake.why ? html`<div class="s-gc__mwhy">${mistake.why}</div>` : ''}
+    <div class="s-gc__mline"><span class="s-gc__glyph s-gc__glyph--bad" aria-hidden="true">✕</span><s class="s-gc__mbad" lang="${langAttr(lang)}">${material(mistake.wrong, mistake.wrongPinyin, lang)}</s></div>
+    <div class="s-gc__mline s-gc__mline--good"><span class="s-gc__glyph s-gc__glyph--good" aria-hidden="true">✓</span><span lang="${langAttr(lang)}">${material(mistake.right, mistake.rightPinyin, lang)}</span></div>
+    ${mistake.reason ? html`<div class="s-gc__mwhy">${t('why')} ${mistake.reason}</div>` : ''}
   </div>`;
 }
 
-function optionMarkup(option, index, pick, answered, question) {
-  const isPicked = pick === index;
-  const isCorrect = option === question.answer;
-  let cls = 's-gc__opt';
-  let glyph = String.fromCharCode(65 + index);
-  if (answered && isCorrect) {
-    cls += ' s-gc__opt--correct';
-    glyph = '✓';
-  } else if (answered && isPicked) {
-    cls += ' s-gc__opt--wrong';
-    glyph = '✕';
-  }
-  return html`<button type="button" class="${cls}" data-pick="${index}"${answered ? raw(' disabled') : ''}><span class="s-gc__optGlyph">${glyph}</span>${option}</button>`;
+function optionMarkup(option, index, pick, question, lang) {
+  const answered = pick != null;
+  const state = answered && index === question.answer ? 'ok' : answered && index === pick ? 'bad' : '';
+  const glyph = state === 'ok' ? '✓' : state === 'bad' ? '✕' : String.fromCharCode(65 + index);
+  return html`<button type="button" class="${`s-gc__opt${state ? ` s-gc__opt--${state}` : ''}`}" data-pick="${index}"${answered ? raw(' disabled') : ''}><span class="s-gc__optGlyph">${glyph}</span><span class="s-gc__optText" lang="${langAttr(lang)}">${material(option.text, option.pinyin, lang)}</span></button>`;
 }
 
-function quizMarkup(quiz, state) {
-  if (state.done) {
-    const score = quiz.reduce((sum, question, i) => sum + (question.options[state.picks[i]] === question.answer ? 1 : 0), 0);
-    return html`<div class="s-gc__quizhead"><h2 class="s-gc__title">${t('quiz')}</h2></div>
-      <div class="s-gc__qdone">
-        <div class="s-gc__score">${t('quizScore', { score, total: quiz.length })}</div>
-        <button type="button" class="o-btn o-btn--secondary" data-quiz-retry>${t('retryQuiz')}</button>
-      </div>`;
+function quizMarkup(quiz, state, lang) {
+  const done = state.qi >= quiz.length;
+  const head = html`<div class="s-gc__quizhead"><h2 class="s-gc__title">${t('quiz')}</h2><span class="s-gc__quizprog">${
+    done ? t('quizDone') : t('quizProgress', { n: state.qi + 1, total: quiz.length })
+  }</span></div>`;
+  if (done) {
+    const score = quiz.filter((question, i) => state.picks[i] === question.answer).length;
+    return html`${head}<div class="s-gc__score">${t('quizScore', { score, total: quiz.length })}</div>
+      <button type="button" class="o-btn o-btn--secondary s-gc__retry" data-quiz-retry>${t('retryQuiz')}</button>`;
   }
   const question = quiz[state.qi];
   const pick = state.picks[state.qi];
-  const answered = pick != null;
-  return html`<div class="s-gc__quizhead"><h2 class="s-gc__title">${t('quiz')}</h2><span class="s-gc__quizprog">${t('quizProgress', { n: state.qi + 1, total: quiz.length })}</span></div>
-    <div class="s-gc__qprompt">${question.prompt}</div>
-    <div class="s-gc__options">${question.options.map((option, i) => optionMarkup(option, i, pick, answered, question))}</div>
+  return html`${head}
+    <div class="s-gc__qprompt" lang="${langAttr(lang)}">${material(question.q, question.qPinyin, lang)}</div>
+    <div class="s-gc__options">${question.options.map((option, i) => optionMarkup(option, i, pick, question, lang))}</div>
     ${
-      answered
-        ? html`<div class="s-gc__why">${question.explanation}</div><div class="s-gc__quizfoot"><button type="button" class="o-btn o-btn--primary s-gc__cta" data-quiz-next>${
+      pick != null
+        ? html`${question.explain ? html`<div class="s-gc__why"><b>${t('why')}</b> ${question.explain}</div>` : ''}<button type="button" class="o-btn o-btn--primary s-gc__cta s-gc__next" data-quiz-next>${
             state.qi < quiz.length - 1 ? t('next') : t('finish')
-          }</button></div>`
+          }</button>`
         : ''
     }`;
 }
 
-function tryMarkup(tryIt) {
+function tryMarkup(tryIt, lang) {
   return html`<h2 class="s-gc__title">${t('tryIt')}</h2>
-    ${tryIt.prompt ? html`<div class="s-gc__tryPrompt">${tryIt.prompt}</div>` : ''}
-    <div class="s-gc__tryRow"><textarea class="s-gc__tryInput" data-try-input placeholder="${tryIt.placeholder}"></textarea></div>
-    <div class="s-gc__quizfoot"><button type="button" class="o-btn o-btn--primary s-gc__cta" data-try-ask>${t('checkWithOrena')}</button></div>`;
+    <div class="s-gc__tryPrompt">${tryIt.prompt}</div>
+    <div class="s-gc__tryRow">
+      <input class="s-gc__tryInput" data-try-input lang="${langAttr(lang)}" placeholder="${tryIt.placeholder || t('tryPlaceholder')}" aria-label="${tryIt.prompt}">
+      <button type="button" class="o-btn o-btn--primary s-gc__cta" data-try-check>${t('check')}</button>
+    </div>
+    <div data-try-result></div>`;
+}
+
+function notFound(element, ctx) {
+  mount(
+    element,
+    html`<div class="s-gc">
+      <div class="s-gc__head">${pageHeader({ back: { label: shell('back'), dataset: { back: '1' } }, title: shell('grammar'), compact: true })}</div>
+      ${emptyMarkup({ text: t('notFound'), iconName: 'inbox' })}
+    </div>`,
+  );
+  element.querySelector('[data-back]')?.addEventListener('click', () => ctx.back());
 }
 
 export default async function grammarConcept(element, ctx) {
   await useStyles('screens/grammar-concept/grammar-concept.css');
   const context = ctx.context;
-  const support = supportLanguage(context.profile);
-  const lesson = await api.grammarLesson(ctx.params.id);
+  const found = await grammarPoint(ctx.params.id, { targetLang: context.language === 'zh' ? 'zh' : 'en' });
   if (!ctx.isCurrent()) return;
-  ctx.setCrumb(lesson.title);
+  if (found.redirect) {
+    ctx.replace(ctx.href('gconcept', { id: found.redirect }));
+    return;
+  }
+  if (!found.point) {
+    notFound(element, ctx);
+    return;
+  }
 
-  const pattern = primaryPattern(lesson, support);
-  const examples = examplesOf(lesson, support);
-  const mistake = mistakeOf(lesson, support);
-  const quiz = quizQuestions(lesson, support);
-  const tryIt = personalPractice(lesson, support);
-  const meta = headerMeta(lesson);
-  const summary = pickLocale(lesson?.learning_model?.meaning?.summary, support);
-  // languages-5 / finding A: the active learning language this whole concept is written in - the
-  // pattern/example/mistake target-language text is genuinely in it for both tracks (N-33's own
-  // finding: "the raw Chinese example sentences...are genuinely theirs"). The lesson *title* is a
-  // narrower case (N-33/N-20): the Chinese/HSK track's own titles are a Vietnamese-only content
-  // gap, not genuinely Chinese, so only the English track's title is marked.
-  const language = context.language === 'zh' ? 'zh' : 'en';
-  const titleLang = language === 'zh' ? '' : 'en';
+  const view = conceptView(found.point, { support: languages().support, native: context.profile?.native_language });
+  const { header } = view;
+  const lang = header.lang;
+  ctx.setCrumb(header.title);
+
+  const card = [
+    header.summary ? html`<div class="s-gc__summary">${header.summary}</div>` : '',
+    view.pattern.length ? patternMarkup(view.pattern, lang) : '',
+    view.illustration ? illustrationMarkup(view.illustration, lang) : '',
+    view.examples.length ? html`${eyebrow(t('examples'))}<div class="s-gc__examples">${view.examples.map((example) => exampleMarkup(example, lang))}</div>` : '',
+    view.mistake ? mistakeMarkup(view.mistake, lang) : '',
+  ];
 
   mount(
     element,
     html`<div class="s-gc">
       <div class="s-gc__head">${pageHeader({
         back: { label: shell('back'), dataset: { back: '1' } },
-        title: langSpan(lesson.title, titleLang),
-        meta: [shell('grammar'), meta.level, meta.family].filter(Boolean).join(' · '),
+        title: langSpan(material(header.title, header.titlePinyin, lang), lang),
+        meta: [shell('grammar'), header.level, header.sub].filter(Boolean).join(' · '),
         compact: true,
         actions: [html`<button type="button" class="s-gc__ask" data-ask>${t('askOrena')}</button>`],
       })}</div>
       <div class="s-gc__scroll" data-scroll-region>
         <div class="s-gc__inner">
-          <div class="o-card o-card--24 s-gc__card">
-            ${summary ? html`<div class="s-gc__summary">${summary}</div>` : ''}
-            ${pattern ? patternMarkup(pattern, language) : ''}
-            ${examples.length ? html`<div class="s-gc__eyebrow">${t('examples')}</div>${examples.map((example) => exampleMarkup(example, language))}` : ''}
-            ${mistake ? mistakeMarkup(mistake, language) : ''}
-          </div>
-          ${quiz.length ? html`<div class="o-card o-card--24 s-gc__card" data-quiz></div>` : ''}
-          ${tryIt ? html`<div class="o-card o-card--24 s-gc__card" data-try></div>` : ''}
+          <div class="o-card o-card--24 s-gc__card">${card}</div>
+          ${view.quiz.length ? html`<div class="o-card o-card--24 s-gc__card" data-quiz></div>` : ''}
+          ${view.tryIt ? html`<div class="o-card o-card--24 s-gc__card" data-try></div>` : ''}
         </div>
       </div>
     </div>`,
@@ -178,58 +208,46 @@ export default async function grammarConcept(element, ctx) {
     askOrena({
       surface: 'grammar_concept',
       activity_type: 'grammar',
-      content_id: lesson.id,
-      selected_item: { type: 'grammar_point', id: lesson.id, text: lesson.title },
+      content_id: view.id,
+      selected_item: { type: 'grammar_point', id: view.id, text: header.title },
     }),
   );
 
   const quizHolder = element.querySelector('[data-quiz]');
-  if (quizHolder && quiz.length) {
-    const state = { qi: 0, picks: new Array(quiz.length).fill(null), done: false };
-    const renderQuiz = () => {
-      mount(quizHolder, quizMarkup(quiz, state));
-      if (state.done) {
-        quizHolder.querySelector('[data-quiz-retry]')?.addEventListener('click', () => {
-          state.qi = 0;
-          state.picks.fill(null);
-          state.done = false;
-          renderQuiz();
-        });
-        return;
+  if (quizHolder) {
+    const state = { qi: 0, picks: new Array(view.quiz.length).fill(null) };
+    const renderQuiz = () => mount(quizHolder, quizMarkup(view.quiz, state, lang));
+    quizHolder.addEventListener('click', (event) => {
+      const pick = event.target.closest('[data-pick]');
+      if (pick && state.picks[state.qi] == null) {
+        state.picks[state.qi] = Number(pick.dataset.pick);
+        renderQuiz();
+      } else if (event.target.closest('[data-quiz-next]')) {
+        state.qi += 1;
+        renderQuiz();
+      } else if (event.target.closest('[data-quiz-retry]')) {
+        state.qi = 0;
+        state.picks.fill(null);
+        renderQuiz();
       }
-      if (state.picks[state.qi] == null) {
-        quizHolder.querySelectorAll('[data-pick]').forEach((button) => {
-          button.addEventListener('click', () => {
-            state.picks[state.qi] = Number(button.dataset.pick);
-            renderQuiz();
-          });
-        });
-      } else {
-        quizHolder.querySelector('[data-quiz-next]')?.addEventListener('click', () => {
-          if (state.qi < quiz.length - 1) {
-            state.qi += 1;
-          } else {
-            state.done = true;
-            api.completeGrammar(lesson.id).catch(() => {});
-          }
-          renderQuiz();
-        });
-      }
-    };
+    });
     renderQuiz();
   }
 
   const tryHolder = element.querySelector('[data-try]');
-  if (tryHolder && tryIt) {
-    mount(tryHolder, tryMarkup(tryIt));
-    tryHolder.querySelector('[data-try-ask]')?.addEventListener('click', () => {
-      const text = tryHolder.querySelector('[data-try-input]')?.value.trim() || '';
-      askOrena({
-        surface: 'grammar_concept',
-        activity_type: 'grammar',
-        content_id: lesson.id,
-        selected_item: text ? { type: 'sentence', text } : { type: 'grammar_point', id: lesson.id, text: lesson.title },
-      });
+  if (tryHolder) {
+    const tryIt = view.tryIt;
+    mount(tryHolder, tryMarkup(tryIt, lang));
+    const input = tryHolder.querySelector('[data-try-input]');
+    const result = tryHolder.querySelector('[data-try-result]');
+    const check = () => {
+      if (!input.value.trim() || !tryIt.sample) return;
+      mount(result, html`<div class="s-gc__tryResult"><span>${t('sample')}</span> <span lang="${langAttr(lang)}">${material(tryIt.sample, tryIt.samplePinyin, lang)}</span></div>`);
+    };
+    input.addEventListener('input', () => mount(result, ''));
+    input.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') check();
     });
+    tryHolder.querySelector('[data-try-check]').addEventListener('click', check);
   }
 }

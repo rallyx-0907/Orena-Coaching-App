@@ -1,0 +1,45 @@
+{
+  "_fixture": "TEST-ONLY - not learner content, never shipped. Built from the contract's own in-text examples (docs/project/GRAMMAR_CONTENT_CONTRACT.md): the formula `N` + `-s/-es` (§2, formula.slot_has_joiner), the morphology row `book + -s → books` (§2 table) and the two-option question `cat`/`cats` (§7). Titles, `function` and the `en`/`vi` glosses are this fixture's placeholders. No personal_production: the card must not be drawn (§7b).",
+  "id": "en.plural_nouns",
+  "version": 1,
+  "status": "approved",
+  "target_lang": "en",
+  "function": "fn.count_things",
+  "level": {"framework": "cefr", "value": "A1", "rank": 1},
+  "sequence": 1,
+  "prereqs": [],
+  "contrasts": [],
+  "error_tags": ["plural"],
+  "source_refs": [],
+  "aliases": [],
+  "point_type": "morphology",
+  "header": {
+    "title": {"vi": "Danh từ số nhiều", "en": "Plural nouns"},
+    "native_title": "Plural nouns",
+    "sub": {"vi": "thêm -s/-es", "en": "adding -s/-es"},
+    "level": {"framework": "cefr", "value": "A1", "rank": 1},
+    "summary": {"vi": "Nhiều hơn một thì thêm -s hoặc -es.", "en": "More than one takes -s or -es."}
+  },
+  "pattern": {
+    "formula": [
+      {"text": "N", "role": "other", "label": {"vi": "danh từ", "en": "noun"}},
+      {"text": "-s/-es", "role": "marker", "label": {"vi": "đuôi số nhiều", "en": "plural ending"}}
+    ],
+    "illustration": {"kind": "morphology", "morphology": [
+      {"base": "book", "affix": "-s", "result": "books"}
+    ]}
+  },
+  "examples": [],
+  "common_mistakes": [],
+  "quick_practice": [
+    {
+      "q": "I have two ___.",
+      "options": [
+        {"text": "cats", "error_tag": null},
+        {"text": "cat", "error_tag": "plural"}
+      ],
+      "answer": 0,
+      "explain": {"vi": "Hai con → số nhiều: cats.", "en": "Two → plural: cats."}
+    }
+  ]
+}

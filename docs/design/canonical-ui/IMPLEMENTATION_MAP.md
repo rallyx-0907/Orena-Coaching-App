@@ -66,7 +66,7 @@ shape).
 | 12 | My Library | `#/library` | shell | `screens/library/` | reviewable |
 | 21 | Collection Detail | `#/collection/:id` | shell | `screens/collection/` | reviewable |
 | 22 | Word Detail | `#/word/:id` | shell | `screens/word/` | reviewable |
-| 44 | Grammar Library | `#/grammar` | shell | `screens/grammar/` | reviewable (renders R5; to be rebuilt on the grammar content contract) |
+| 44 | Grammar Library | `#/grammar` | shell | `screens/grammar/` (data: `product/grammar-source.js`) | building (2026-09-29: rebuilt on `GRAMMAR_CONTENT_CONTRACT.md` §9, D-100; no R5 read; no content is served yet, so it draws the empty state; verified with the test-only fixture `scripts/fixtures/grammar/`; waits for Grammar Lab PR B) |
 | 17 | Progress | `#/progress` (`?tab=` per Profile's own links) | shell | `screens/progress/` | reviewable |
 | 24–25 | Profile, Today's progress | `#/profile` | shell | `screens/profile/` | reviewable |
 | 51 | Coming soon | `#/coming/:key` | shell | `screens/coming/` | reviewable |
@@ -102,7 +102,7 @@ shape).
 | 35 | Context Transfer | `#/transfer` | focus | `screens/coming/` | coming-soon (no backend or content) |
 | 36 | Vocabulary Daily Feed | `#/feed` | focus | `screens/feed/` | reviewable |
 | 50 | From Your Errors | `#/from-your-errors` | focus | `screens/errors/` | reviewable |
-| 47 (canonical, H1 2026-09-29; 23 is not built) | Grammar Concept | `#/grammar/:id` | focus | `screens/grammar-concept/` | reviewable (renders R5; to be rebuilt on the grammar content contract) |
+| 47 (canonical, H1 2026-09-29; 23 is not built) | Grammar Concept | `#/grammar/:id` | focus | `screens/grammar-concept/` (data: `product/grammar-source.js`) | building (2026-09-29: rebuilt on `GRAMMAR_CONTENT_CONTRACT.md` §0-§8, D-100; no R5 read or write; an R5 id resolves through `aliases`; with no content served every point draws "not available"; verified with the test-only fixture `scripts/fixtures/grammar/`; waits for Grammar Lab PR B) |
 | Onboarding 01–05 | Welcome, Account, Languages, Level, Meet Orena | `#/welcome` | none | `screens/onboarding/` | reviewable |
 
 ## Retired by the cutover

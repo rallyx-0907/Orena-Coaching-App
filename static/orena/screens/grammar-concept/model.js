@@ -1,185 +1,216 @@
-/* Pure data shaping for the Grammar Concept screen (pinned design frame 47, the generic
-   "gconcept" template - the only Grammar Concept route the shell has; SCRATCH/reports/
-   primitives.md's own measurement confirms 47, not the hand-built 23, is the one reachable from a
-   real route). No DOM, no fetch: a node gate (scripts/test_orena_screen_grammar.mjs) exercises
-   this directly.
+/* Pure data shaping for Grammar Concept (pinned design frame 47, canonical per D-099; route
+   "gconcept") on one point of the grammar content contract (docs/project/GRAMMAR_CONTENT_CONTRACT.md,
+   schema v0.4; D-100). No DOM, no fetch: scripts/test_orena_screen_grammar.mjs exercises this
+   against a contract-shaped, test-only fixture.
 
-   The backend (GET /api/library/grammar/{id}) returns a full `learning_model` (schema v2,
-   writing_coach/grammar_learning_model.py): a flow of stages, each carrying one or more typed
-   `blocks`. static/orena/capabilities/grammar-pedagogy.js already classifies a concept's
-   archetype and picks the block type that should lead ("primaryModelType") - this module wires
-   that classifier onto frame 47's three drawn cards (Concept: pattern + examples + common
-   mistake; Quiz: multiple-choice micro_practice; Try it yourself: personal_practice) rather than
-   re-deriving the pedagogy. A block type 47 draws no visual for (timeline, contrast, scene,
-   sentence_builder, transformation, inflection_table, recall, memory_hook, skill_transfer) is
-   never invented a bespoke widget (rule 44); the pattern slot falls back to a generic
-   chip/row rendering built only from primitives the frame already draws (see primaryPattern's
-   'rows' kind) - recorded as a backend/design gap in SCRATCH/reports/grammar.md. */
-import { primaryModelType } from '../../capabilities/grammar-pedagogy.js';
-import { guidanceLocale } from '../../product/languages.js';
+   What frame 47 draws, from which field:
+   - header   title `header.native_title` (+ `native_title_pinyin`), never `header.title` (§1);
+              meta "Grammar · {level} · {sub}" from `level` and `header.sub`;
+   - card 1   summary `header.summary`; Pattern chips `pattern.formula` (role -> colour, UI-drawn
+              "+" between cells, §2); the illustration `pattern.illustration` (timeline / word
+              order / word form, D-098 point 4, built from the timeline component frame 23
+              draws); Examples `examples[]`, every `spans[]` part in its cell's colour (§4);
+              Common mistake: the first `common_mistakes[]` whose `l1` is the learner's native
+              language, else the first (§6);
+   - quiz     `quick_practice[]` (§7): `answer` is an index into `options` (2 or 3 of them);
+   - try it   `personal_production` (§7b): prompt, placeholder, and `sample`, the only thing the
+              screen says after a submission - it never concludes the pattern was used (D-100
+              point 3) and writes no evidence.
 
-/* A learning_model text field is a plain string (target-language content: a pattern word, an
-   example) or a locale map (explanatory prose, authored in whichever of en/vi/zh the curriculum
-   has - grammar_learning_model.py's `_text()`). Picked by the learner's support language, English
-   the documented fallback (never the interface language - D-079).
+   Not drawn by frame 47 and left out, each recorded in docs/project/UI_BACKEND_GAPS.md:
+   `when_to_use` (§3), `compare` (§5), example `translation`/`annotation` (§4), the other
+   `common_mistakes`, `pattern.variants` as chips. */
+import { contractText, levelCode } from '../../product/grammar-source.js';
 
-   `_text()`'s own validator (writing_coach/grammar_learning_model.py `_locale_key`) accepts a key
-   that is either a BCP-47 code or the literal string `"default"` - a locale-neutral fallback the
-   schema itself defines, not a frontend guess. The live catalogue actually uses it: every concept
-   checked has `{vi: "...", default: "..."}` for its summary/common-mistake/personal-practice
-   prose (identical text under both keys right now - the pipeline has only authored Vietnamese
-   explanatory prose so far, a content gap recorded in SCRATCH/reports/grammar.md and
-   docs/project/UI_BACKEND_GAPS.md, not a fabrication). Falling through to `value[codes[0]]` when
-   neither the support locale nor English exists happened to read right by accident (`vi` is
-   inserted before `default` in every concept seen), but is a coincidence of object key order, not
-   a rule - `value.default` is the schema's own documented fallback and is checked explicitly. */
-export function pickLocale(value, support = 'en') {
-  if (value == null) return '';
-  if (typeof value === 'string') return value;
-  if (typeof value === 'object') {
-    const codes = Object.keys(value);
-    if (!codes.length) return '';
-    const code = guidanceLocale(support, codes);
-    return value[code] ?? value.en ?? value.default ?? value[codes[0]] ?? '';
-  }
-  return String(value);
-}
-
-export function findBlock(lesson, type) {
-  const blocks = lesson?.learning_model?.blocks;
-  return Array.isArray(blocks) ? blocks.find((block) => block?.type === type) || null : null;
-}
-
-function blocksOfType(lesson, type) {
-  const blocks = lesson?.learning_model?.blocks;
-  return Array.isArray(blocks) ? blocks.filter((block) => block?.type === type) : [];
-}
-
-/* The four semantic-role buckets frame 47's pattern chips draw (a=accent/b=green/k=neutral/
-   m=amber, E5 §2.2). grammar_learning_model.py's SEMANTIC_ROLES has 30+ roles (far more than the
-   two concepts the mock ever exercised); this buckets every one deterministically rather than
-   adding a fifth colour the frame does not draw. Functional/operating words lead (accent); the
-   result/outcome of the pattern is the "changed" state (green); the participants are neutral;
-   everything else (time, place, degree, form-class, exceptions) is the marked/amber case. */
-const ROLE_BUCKET = {
-  verb: 'a', auxiliary: 'a', particle: 'a', negation: 'a', connector: 'a', conjunction: 'a', marker: 'a',
-  complement: 'b', result: 'b', changed: 'b',
-  subject: 'k', agent: 'k', patient: 'k', topic: 'k', pronoun: 'k', noun: 'k', object: 'k',
-};
+/* Contract roles (§2) -> the four chip colours frame 47 draws (a = accent, b = green, k = neutral,
+   m = amber), the same buckets for a formula cell and the example text of that role, so a cell
+   and its words share a colour. Read off the design's own samples: the operating words of a
+   pattern are accent (have/has, 虽然, that/which), the verb and what completes it green (past
+   participle, verb-ing, 但是), participants neutral (Subject, noun, clause), time and place amber
+   (for/since, "(now)"). */
+const ROLE_BUCKET = Object.freeze({
+  aux: 'a', marker: 'a', particle: 'a', connector: 'a', classifier: 'a',
+  verb: 'b', complement: 'b',
+  subject: 'k', object: 'k', other: 'k',
+  time: 'm', place: 'm',
+});
 
 export function roleBucket(role) {
-  return ROLE_BUCKET[String(role || '').toLowerCase()] || 'm';
+  return ROLE_BUCKET[String(role || '').toLowerCase()] || 'k';
 }
 
-/* The lead teaching object for the "Pattern" section: the block composeLesson's archetype names
-   as primary if the concept has it, else the flow's own pattern-stage block. `kind: 'chips'`
-   covers every segment-shaped block type (formula/semantic_sentence/word_order/position/
-   insertion/particle_position/agreement_map - all `{parts|segments:[{text,role,label|meaning}]}`,
-   the same shape frame 47 draws for `formula`). `kind: 'transform'` covers `transformation`
-   (from/to, no chip shape in the source - rendered as two chips with an arrow, reusing the chip
-   primitive rather than inventing a new one). Anything else falls back to `kind: 'rows'`, reusing
-   frame 47's own example-row shell generically (label/text/note) rather than building the
-   timeline/contrast/scene/table visuals the archetype system implies but no reachable frame
-   draws. */
-export function primaryPattern(lesson, support = 'en') {
-  const type = primaryModelType(lesson);
-  const block = (type && blocksOfType(lesson, type)[0]) || findBlock(lesson, 'formula') || findBlock(lesson, 'semantic_sentence');
-  if (!block) return null;
-  const payload = block.payload || {};
-  const title = pickLocale(block.title, support);
-  const parts = payload.parts || payload.segments;
-  if (Array.isArray(parts)) {
-    return {
-      kind: 'chips',
-      title,
-      parts: parts.map((part) => ({
-        text: pickLocale(part.text, support),
-        role: roleBucket(part.role),
-        label: pickLocale(part.label ?? part.meaning, support),
-      })),
-    };
-  }
-  if (block.type === 'transformation') {
-    return { kind: 'transform', title, from: pickLocale(payload.from, support), to: pickLocale(payload.to, support) };
-  }
-  const rows =
-    payload.events ||
-    payload.items ||
-    payload.lines ||
-    (payload.slots || []).map((slot) => ({ label: slot.label, text: (slot.options || []).map((option) => pickLocale(option, support)).join(' / ') })) ||
-    [];
+const pinyinOf = (value) => (Array.isArray(value) ? value : null);
+
+function cellText(cell) {
+  if (Array.isArray(cell?.options) && cell.options.length >= 2) return cell.options.map((option) => String(option?.text || '')).join(' / ');
+  return String(cell?.text || '');
+}
+
+/* One formula cell as a chip. An optional cell is drawn in parentheses, as the design draws its own
+   optional "(now)" chip; a cell of options shows its forms, "is / are" (§2). */
+function cell(entry, support) {
+  const text = cellText(entry);
   return {
-    kind: 'rows',
-    title,
-    rows: (Array.isArray(rows) ? rows : []).map((row) => ({
-      label: pickLocale(row.label ?? row.speaker, support),
-      text: pickLocale(row.text, support),
-      note: pickLocale(row.note ?? row.meaning, support),
-    })),
+    text: entry?.optional ? `(${text})` : text,
+    bucket: roleBucket(entry?.role),
+    label: contractText(entry?.label, support),
+    optional: Boolean(entry?.optional),
   };
 }
 
-/* Frame 47's "Examples" section is the lesson's own authored `examples[]` (plain target-language
-   sentences with a translation), not the learning_model's `scene` block - a closer visual and
-   content match (E5 §2.2: plain sentence rows, not a dialogue).
-
-   Bug fixed here: every example in the real catalogue (English- and Chinese-target alike) only
-   ever carries a Vietnamese gloss (`meaning_vi`, `vi` - confirmed against the live API for both
-   target languages; no `meaning_en`/`meaning_zh` field exists anywhere in the content pipeline).
-   The first version of this function returned that Vietnamese text unconditionally, regardless of
-   the learner's actual support language - a real EN/ZH parity break (D-079, AGENTS.md "no
-   hardcoding"): an English- or Chinese-support learner would see an unlabelled Vietnamese
-   sentence they cannot read, not an absent translation. `guidanceLocale` (product/languages.js) is
-   the existing primitive for "does the learner's support language match a pack this field
-   actually has" - here the only pack is `['vi']` - so the gloss is shown only when the learner's
-   support language resolves to vi, and left off (rule 40's honest empty, not a fabricated one)
-   for every other support language. */
-export function examplesOf(lesson, support = 'en') {
-  const hasViGloss = guidanceLocale(support, ['vi']) === 'vi';
-  return (Array.isArray(lesson?.examples) ? lesson.examples : [])
-    .filter((example) => example?.target)
-    .map((example) => ({ text: example.target, translation: hasViGloss ? example.meaning_vi || example.vi || '' : '' }));
+export function formulaCells(point, support = 'en') {
+  const formula = point?.pattern?.formula;
+  return Array.isArray(formula) ? formula.filter((entry) => cellText(entry)).map((entry) => cell(entry, support)) : [];
 }
 
-export function mistakeOf(lesson, support = 'en') {
-  const block = findBlock(lesson, 'common_mistake');
-  if (!block) return null;
-  const payload = block.payload || {};
+/* Timeline geometry, generated by the UI from `timeline.shape` alone (§2: "nhãn điểm trên trục do
+   UI tự sinh từ shape"). Positions are percentages of the axis; `now` is where the present sits.
+   `marks` are the small labels above the axis (copy keys), `caption` the one line under it. The
+   shape set is closed; a shape this build cannot draw is no illustration, not a guess. */
+const NOW = 72;
+const TIMELINE = Object.freeze({
+  point_past: { dots: [30], bars: [], marks: [{ at: 30, key: 'markThen' }], caption: 'shapePointPast' },
+  unspecified_past: { dots: [40], bars: [], marks: [{ at: 40, key: 'markSomeTime' }], caption: 'shapeUnspecifiedPast' },
+  ongoing_now: { dots: [], bars: [{ from: 58, to: 86 }], marks: [], caption: 'shapeOngoingNow' },
+  habit: { dots: [16, 30, 44, 58, 86], bars: [], marks: [], caption: 'shapeHabit' },
+  past_ongoing: { dots: [], bars: [{ from: 18, to: 46 }], marks: [{ at: 18, key: 'markThen' }], caption: 'shapePastOngoing' },
+  future_plan: { dots: [88], bars: [], marks: [{ at: 88, key: 'markLater' }], caption: 'shapeFuturePlan' },
+  future_condition: { dots: [88], bars: [], marks: [{ at: 88, key: 'markIf' }], caption: 'shapeFutureCondition' },
+});
+
+export function timelineOf(shape) {
+  const spec = TIMELINE[shape];
+  if (!spec) return null;
+  return { now: NOW, dots: [...spec.dots], bars: spec.bars.map((bar) => ({ ...bar })), marks: spec.marks.map((mark) => ({ ...mark })), caption: spec.caption };
+}
+
+/* The illustration `point_type` chose (§2 table). word_order has no data of its own: the formula's
+   cells are drawn as boxes in order, each with its label. morphology is 1-4 rows base + affix ->
+   result. */
+export function illustrationOf(point, support = 'en') {
+  const illustration = point?.pattern?.illustration;
+  const kind = illustration?.kind;
+  if (kind === 'timeline') {
+    const timeline = timelineOf(illustration.timeline?.shape);
+    if (!timeline) return null;
+    return { kind, ...timeline, relevance: contractText(illustration.timeline?.relevance, support) };
+  }
+  if (kind === 'word_order') {
+    const boxes = formulaCells(point, support);
+    return boxes.length ? { kind, boxes } : null;
+  }
+  if (kind === 'morphology') {
+    const rows = (Array.isArray(illustration.morphology) ? illustration.morphology : [])
+      .filter((row) => row?.base && row?.result)
+      .slice(0, 4)
+      .map((row) => ({
+        base: String(row.base),
+        basePinyin: pinyinOf(row.base_pinyin),
+        affix: String(row.affix || ''),
+        result: String(row.result),
+        resultPinyin: pinyinOf(row.result_pinyin),
+        note: contractText(row.note, support),
+      }));
+    return rows.length ? { kind, rows } : null;
+  }
+  return null;
+}
+
+/* An example cut into its parts: each valid span in its role's colour, the rest plain. Positions
+   are character positions (§4, 0-based, end exclusive); a span that overlaps an earlier one or
+   leaves the text is ignored rather than drawn wrong. Pinyin (§8) is cut with the same positions. */
+export function exampleParts(example) {
+  const chars = Array.from(String(example?.text || ''));
+  const pinyin = pinyinOf(example?.pinyin);
+  const reading = pinyin && pinyin.length === chars.length ? pinyin : null;
+  const spans = (Array.isArray(example?.spans) ? example.spans : [])
+    .filter((span) => Number.isInteger(span?.start) && Number.isInteger(span?.end) && span.start >= 0 && span.end > span.start && span.end <= chars.length)
+    .sort((a, b) => a.start - b.start);
+  const parts = [];
+  let at = 0;
+  const push = (from, to, bucket) => {
+    if (to <= from) return;
+    parts.push({ text: chars.slice(from, to).join(''), pinyin: reading ? reading.slice(from, to) : null, bucket });
+  };
+  for (const span of spans) {
+    if (span.start < at) continue;
+    push(at, span.start, null);
+    push(span.start, span.end, roleBucket(span.role));
+    at = span.end;
+  }
+  push(at, chars.length, null);
+  return parts;
+}
+
+export function examplesOf(point) {
+  return (Array.isArray(point?.examples) ? point.examples : []).filter((example) => example?.text).map((example) => ({ parts: exampleParts(example) }));
+}
+
+/* §6: one "Common mistake" block - the first entry whose `l1` is the learner's native language,
+   else the first. */
+export function mistakeOf(point, support = 'en', native = '') {
+  const list = (Array.isArray(point?.common_mistakes) ? point.common_mistakes : []).filter((entry) => entry?.wrong && entry?.right);
+  if (!list.length) return null;
+  const l1 = String(native || '').trim().toLowerCase();
+  const entry = (l1 && list.find((item) => String(item.l1 || '').toLowerCase() === l1)) || list[0];
   return {
-    incorrect: pickLocale(payload.incorrect, support),
-    correct: pickLocale(payload.correct, support),
-    why: pickLocale(payload.why, support),
+    wrong: String(entry.wrong),
+    wrongPinyin: pinyinOf(entry.wrong_pinyin),
+    right: String(entry.right),
+    rightPinyin: pinyinOf(entry.right_pinyin),
+    reason: contractText(entry.reason, support),
   };
 }
 
-const CHOICE_INTERACTIONS = new Set(['choose', 'classify', 'identify', 'compare']);
-
-/* Every micro_practice block whose interaction is a "pick one option" shape - the only shape
-   frame 47's quiz card draws (lettered options, one answer, an explanation on reveal). A
-   reorder/build/match/fill/transform/speak/write interaction has no drawn quiz visual and is left
-   out of the quiz rather than forced into it (rule 43); recorded as a design gap. */
-export function quizQuestions(lesson, support = 'en') {
-  return blocksOfType(lesson, 'micro_practice')
-    .map((block) => block.payload || {})
-    .filter((payload) => CHOICE_INTERACTIONS.has(payload.interaction))
-    .map((payload) => ({
-      prompt: pickLocale(payload.prompt, support),
-      options: (Array.isArray(payload.options) ? payload.options : []).map((option) => pickLocale(option, support)),
-      answer: pickLocale(payload.answer, support),
-      explanation: pickLocale(payload.explanation, support),
+/* §7: `answer` is a 0-based index into 2 or 3 options - compared by index, never by text. A question
+   whose answer does not index one of its options is left out. */
+export function quizOf(point, support = 'en') {
+  return (Array.isArray(point?.quick_practice) ? point.quick_practice : [])
+    .map((item) => ({
+      q: String(item?.q || ''),
+      qPinyin: pinyinOf(item?.q_pinyin),
+      options: (Array.isArray(item?.options) ? item.options : []).map((option) => ({ text: String(option?.text || ''), pinyin: pinyinOf(option?.pinyin) })),
+      answer: Number(item?.answer),
+      explain: contractText(item?.explain, support),
     }))
-    .filter((question) => question.prompt && question.options.length);
+    .filter((item) => item.q && item.options.length >= 2 && Number.isInteger(item.answer) && item.answer >= 0 && item.answer < item.options.length);
 }
 
-export function personalPractice(lesson, support = 'en') {
-  const block = findBlock(lesson, 'personal_practice');
-  if (!block) return null;
-  const payload = block.payload || {};
-  return { prompt: pickLocale(payload.prompt, support), placeholder: pickLocale(payload.placeholder, support) };
+/* §7b: no block, no card (the contract's own rule). */
+export function tryItOf(point, support = 'en') {
+  const block = point?.personal_production;
+  if (!block || typeof block !== 'object') return null;
+  const prompt = contractText(block.prompt, support);
+  if (!prompt) return null;
+  return {
+    prompt,
+    placeholder: contractText(block.placeholder, support),
+    sample: String(block.sample?.text || ''),
+    samplePinyin: pinyinOf(block.sample?.pinyin),
+  };
 }
 
-/* "Grammar · {level} · {family}" (E5 §2.2's header meta), family being whichever real field the
-   lesson carries. */
-export function headerMeta(lesson) {
-  return { level: lesson?.level || '', family: lesson?.module || lesson?.category || '' };
+export function headerOf(point, support = 'en') {
+  const header = point?.header || {};
+  return {
+    title: String(header.native_title || ''),
+    titlePinyin: pinyinOf(header.native_title_pinyin),
+    lang: point?.target_lang === 'zh' ? 'zh' : 'en',
+    level: levelCode(point?.level || header.level),
+    sub: contractText(header.sub, support),
+    summary: contractText(header.summary, support),
+  };
+}
+
+export function conceptView(point, { support = 'en', native = '' } = {}) {
+  return {
+    id: String(point?.id || ''),
+    header: headerOf(point, support),
+    pattern: formulaCells(point, support),
+    illustration: illustrationOf(point, support),
+    examples: examplesOf(point),
+    mistake: mistakeOf(point, support, native),
+    quiz: quizOf(point, support),
+    tryIt: tryItOf(point, support),
+  };
 }

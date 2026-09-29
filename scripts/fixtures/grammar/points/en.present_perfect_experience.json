@@ -1,0 +1,90 @@
+{
+  "_fixture": "TEST-ONLY - not learner content, never shipped. Built from the JSON examples of docs/project/GRAMMAR_CONTENT_CONTRACT.md (schema v0.4): header §1, pattern §2, example §4, compare §5, quick_practice §7, personal_production §7b, verbatim for `vi`. `en` strings are this fixture's translations of those `vi` strings (the contract requires both); common_mistakes (§6 has no JSON example) is the §7 question filled with its word_form distractor and its answer; `function` and `when_to_use` are placeholders.",
+  "id": "en.present_perfect_experience",
+  "version": 1,
+  "status": "approved",
+  "target_lang": "en",
+  "function": "fn.talk_about_experience",
+  "level": {"framework": "cefr", "value": "A2", "rank": 2},
+  "sequence": 1,
+  "prereqs": [],
+  "contrasts": ["en.past_simple"],
+  "error_tags": ["tense", "word_form"],
+  "source_refs": [],
+  "aliases": ["test-r5-present-perfect"],
+  "point_type": "tense_aspect",
+  "header": {
+    "title": {"vi": "Hiện tại hoàn thành (trải nghiệm)", "en": "Present perfect (experience)"},
+    "native_title": "Present perfect",
+    "sub": {"vi": "trải nghiệm", "en": "experience"},
+    "level": {"framework": "cefr", "value": "A2", "rank": 2},
+    "summary": {"vi": "Nói đã từng làm gì, không nêu thời điểm.", "en": "Say what you have done, without saying when."}
+  },
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {"text": "have/has", "role": "aux", "label": {"vi": "trợ động từ", "en": "auxiliary"}},
+      {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}},
+      {"text": "for/since …", "role": "time", "label": {"vi": "mốc thời gian", "en": "time marker"}, "optional": true}
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {"text": "haven't/hasn't", "role": "aux", "label": {"vi": "trợ động từ phủ định", "en": "negative auxiliary"}},
+        {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}}
+      ]
+    },
+    "illustration": {"kind": "timeline", "timeline": {"shape": "unspecified_past"}}
+  },
+  "when_to_use": [],
+  "examples": [
+    {
+      "text": "I have lived here since 2020.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 2, "end": 6, "role": "aux"},
+        {"start": 7, "end": 12, "role": "verb"},
+        {"start": 18, "end": 28, "role": "time"}
+      ],
+      "annotation": {"vi": "bắt đầu 2020 → vẫn đúng bây giờ", "en": "started in 2020 → still true now"},
+      "translation": {"vi": "Tôi sống ở đây từ năm 2020.", "en": "I have lived here since 2020."}
+    }
+  ],
+  "compare": [
+    {
+      "with": "en.past_simple",
+      "this_meaning": {"vi": "Đã từng, không nêu lúc nào", "en": "Has happened, no time given"},
+      "this_example": "I have been to Japan.",
+      "other_meaning": {"vi": "Xong ở một thời điểm đã nêu", "en": "Finished at a stated time"},
+      "other_example": "I went to Japan in 2019."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "wrong": "She has went to Japan twice.",
+      "right": "She has been to Japan twice.",
+      "reason": {"vi": "Trải nghiệm, không nêu thời điểm → has + V3.", "en": "Experience, no time given → has + V3."},
+      "error_tag": "word_form",
+      "l1": "vi"
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "She ___ to Japan twice.",
+      "options": [
+        {"text": "has been", "error_tag": null},
+        {"text": "was", "error_tag": "tense"},
+        {"text": "has went", "error_tag": "word_form"}
+      ],
+      "answer": 0,
+      "explain": {"vi": "Trải nghiệm, không nêu thời điểm → has + V3.", "en": "Experience, no time given → has + V3."}
+    }
+  ],
+  "personal_production": {
+    "prompt": {"vi": "Viết một câu về nơi bạn đã từng đến.", "en": "Write a sentence about a place you have been to."},
+    "placeholder": {"vi": "I have been to …", "en": "I have been to …"},
+    "target_form": "affirmative",
+    "sample": {"text": "I have been to Da Nang twice."}
+  }
+}
