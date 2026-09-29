@@ -314,10 +314,10 @@ resolve them.
   memory *by design*, not by omission.
 - **Native mobile** — frozen (§5).
 - **Platform Admin** — the admin console was merged into `codex/work` by PR #63
-  (D-085) and runs at `/#/admin` in the old UI. At the cutover it keeps running
-  at an address of its own until the Admin wave, built on the pinned
-  `Orena Admin.dc.html`, replaces it, so the cutover does not wait for Admin
-  (D-099). Its APIs and `static/admin.js` are preserved.
+  (D-085) and runs at `/#/admin` in the old UI, untouched until the cutover. It
+  moves into the new UI on the pinned `Orena Admin.dc.html`, reusing its logic,
+  APIs and `require_admin` (D-101 E); there is no second admin backend. Its
+  APIs and `static/admin.js` are preserved.
 - **Reading library breadth** — the contract, rights fields and admission gate
   exist. Adding a text is a rights decision per text, not an implementation
   task.

@@ -79,16 +79,12 @@ The D-098 and D-099 items (2026-09-29, `5d9d64c`..`b83142d`); commit list in
 - Chinese evaluator: fix (1) landed (`871e2b9`, contract v2.7) and the benchmark
   measures recall (`fa93601`, v2); the live run that gives (4) its numbers waits
   for the human's go (provider cost).
-- `UI_COMPLETION_ROADMAP.md` (PROPOSED): Grammar, the eight Coming-soon
-  screens, cutover preparation and cutover, Admin, the live Orena panel; its
-  decisions H1-H10 wait for the human.
+- D-101: one complete staging on :8011 (roadmap accepted); milestone A in progress.
 
 ## PENDING
 
-Human: the 8011 sandbox migration (BLOCKED); approval of
-`UI_COMPLETION_ROADMAP.md` and its decisions H1-H10 (H1 Grammar Concept frame
-23 or 47; H2 storing the declared level for the entry rule); the Chinese
-evaluator fix; merging PR #66.
+Human: running `staging_update.ps1` once milestone A lands (it takes :8011 from 0014 to head; migrations are the human's gate);
+PR #67 (`pattern_rule`) and #68 (fixtures) from the Grammar Lab lane.
 
 ## BLOCKED
 
@@ -118,19 +114,14 @@ human gates. Never touch persistent volumes as cleanup.
 
 ## NEXT EXACT TASK
 
-UI lane: wait for the human's decision on `UI_COMPLETION_ROADMAP.md`, then follow
-its approved order: the two Grammar screens after PR #66 is merged and the R5 →
-Grammar Lab decision is recorded; the Coming-soon screens; cutover preparation
-(the new UI's indirect imports of old `ui/`, Admin's host, the map's routes);
-then the cutover (tombstones, legacy redirects, the old UI and its gates
-replaced).
-Once every §6.1 surface is built: a one-line purpose per surface id in the copy
-layer (interface, en/vi/zh), published for the intelligence lane (contract v5
-§6.2).
+UI lane, per D-101 and `UI_COMPLETION_ROADMAP.md`: A (staging scripts on :8011, the human runs
+`staging_update`), then D2 (P1: shared modules out of `ui/`, gate), then D3 (the matrix, sent once),
+then D4 persistence, E Admin, F Grammar, the `MISSING` cells, G Orena live; cutover only on the
+human's word. C (Chinese evaluator) when Docker is free, after D3, approach reported first.
+Every try-it instruction points at `:8011/next`; :8021 is the lane's bench.
 
-Intelligence lane: D-085 against `AGENT_CONTRACT.md` v5; merging `codex/work`
-forward brings the version bump its contract test checks, the `address` note
-and `context.address`, the S5/S2 wording and `copy/surfaces.json` (§6.2).
+Intelligence lane: D-085 against `AGENT_CONTRACT.md` v5; merge `codex/work` forward; its merged PR
+is what switches `AGENT_LIVE` on :8011 (D-101 G).
 
 ## Grammar Lab (merged from `feature/grammar-lab`)
 

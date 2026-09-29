@@ -48,9 +48,9 @@
     "status": "human_gate"
   },
   "current_primary_workstream": {
-    "id": "new_learner_ui_d088",
+    "id": "new_learner_ui_staging_d101",
     "status": "in_progress",
-    "next_task": "Human review of Wave A and Wave B at /next; the two Grammar screens after the grammar content contract (PR #66) is merged and the R5 to Grammar Lab decision is recorded; then the cutover (D-091). The intelligence lane builds against AGENT_CONTRACT.md v5 and integrates last."
+    "next_task": "D-101: A staging scripts on :8011 (the human runs staging_update), D2 shared modules out of ui/, D3 skill x step matrix, D4 persistence proposal, E Admin in the new UI, F Grammar on approved content, the MISSING cells, G Orena live on :8011; cutover only on the human's word."
   },
   "design": {
     "web_is_visual_source_of_truth": true,
@@ -194,7 +194,6 @@
   ],
   "current_p0": [],
   "current_p1": [
-    "platform_admin_console_keeps_its_own_address_through_the_cutover_until_the_admin_wave_d099",
     "grammar_breadth_remains_a_human_review_question",
     "cross_device_continuity_design_specified_schema_and_sync_activation_gated",
     "startup_auto_alembic_conflicts_with_D002_requires_explicit_operator_migration",
@@ -205,7 +204,8 @@
     "art_bible_rules_written_real_book_cover_and_audio_artwork_assets_still_absent",
     "new_learner_ui_d088_at_next_until_the_d091_cutover_old_ui_at_root_is_replaced_not_preserved",
     "grammar_screens_wait_for_the_grammar_content_contract_r5_is_being_retired",
-    "eight_design_screens_are_coming_soon_until_a_backend_exists"
+    "eight_design_screens_are_coming_soon_until_a_backend_exists",
+    "platform_admin_moves_into_the_new_ui_d101_old_admin_untouched_until_cutover"
   ],
   "last_verified_at": "2026-09-29"
 }
