@@ -54,3 +54,31 @@ Not causes (checked): `insufficient_evidence` keeps errors (`writing_evaluation.
 7. **Nâng/giải quyết ngân sách token** (tăng max_output_tokens hoặc phát hiện finish_reason=length rồi báo) — công: nhỏ, rủi ro: thấp-trung bình (chi phí); chỉ làm sau khi đo được là có cắt cụt.
 
 **Khuyến nghị:** Làm (1) trước kèm test hồi quy zh+vi (đây là nguyên nhân chính, đã tái hiện, do c71c644 gây ra), cùng lúc (5) để đo được recall, rồi (4) + bump EVALUATOR_CONTRACT_VERSION; (3) sau đó; bỏ (6).
+
+## Live measurement, benchmark v2 (2026-09-29, D-103 point 7)
+
+Run on the lane runtime :8021 through the product's own `POST /api/evaluate`, with the learner
+route set to Gemini `gemini-3.5-flash-lite`. It ran at `9b23930`, which carries fix (1)
+(`871e2b9`) and the Gemini catalogue fix. The support language was Vietnamese. The captured
+results were scored by the runner's own replay mode, with the scoring code unchanged.
+
+- **Cost:** 26 requests, 25 answered. `zh-strong-argument` returned 502
+  `evaluation_provider_failure`. The estimated spend was USD 0.093 at deliberately high rates
+  (USD 1/M input, 5/M output), against the 0.50 ceiling. Telemetry reports the model as unpriced.
+- **Cases:** 24 of the 25 answered cases pass.
+- **Recall on the seeded paragraphs**, the measure option (4) waits for:
+
+| Language | Seeded | Found | Recall | Missed |
+| --- | --- | --- | --- | --- |
+| EN | 5 | 3 | **0.60** | "am agree" (not reported); "two brother" reported as `word_choice`, outside its allowed categories (agreement, word_form) |
+| ZH | 5 | 3 | **0.60** | "比我很高" (not reported); "去过了" reported as `aspect` but anchored on "北京", so it does not overlap the seed |
+
+- **ZH single-sentence case:** `zh-measure-collocation` (我买了三个书，也做了一张重要的决定。) came
+  back with **no errors at all**, so its required-recall check fails. The raw provider output was
+  not kept, so whether the model omitted them or normalization dropped them is [I]. A re-run
+  capturing the raw answer would settle it.
+- **Reading:** recall is the same in the two languages (0.60 each) with this model. Both misses
+  include an unreported error and a finding the benchmark could not credit (wrong category, or an
+  anchor on the wrong fragment). Option (4), the prompt alignment, targets the unreported-error
+  kind. The anchoring kind is option (3). Nothing is changed until the human reviews these
+  numbers.
