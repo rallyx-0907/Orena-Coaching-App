@@ -13,7 +13,7 @@
    - Save: into the learner's collection, with the sentence it came from.
    - Pronounce: the device's own speech, when it has any. */
 import { esc, dialog } from './html.js';
-import { mountLexicalLayer } from './lexical.js';
+import { mountLexicalLayer } from '../capabilities/lexical.js';
 import { icon } from './phosphor.js';
 import { refCopy } from './reference.js';
 import { contentCover } from './cover.js';

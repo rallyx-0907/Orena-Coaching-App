@@ -53,6 +53,10 @@ Rules:
 | `chinese_stroke_order.json` | `GET /api/chinese/stroke-order?word=你好` | 2026-09-28 |
 | `word_detail.json` | `POST /api/dictionary/word-detail` (English word; `available: false` - no AI provider key in this sandbox, the documented fallback shape) | 2026-09-28 |
 | `word_detail.zh.json` | `POST /api/dictionary/word-detail` (Chinese word, session switched to zh first; shows `script: "hanzi"` and a real `pinyin` value) | 2026-09-28 |
+| `word_detail_sheet.json` | `POST /api/dictionary/word-detail` with `depth: "sheet"` (Word Quick Sheet's own contract, English; `available: false` - no AI provider key) | 2026-09-28 |
+| `word_detail_sheet.zh.json` | `POST /api/dictionary/word-detail` with `depth: "sheet"` (Chinese; `script: "hanzi"`, real `pinyin`) | 2026-09-28 |
+| `sentence_sheet.json` | `POST /api/dictionary/sentence-sheet` (Sentence Quick Sheet, English; `available: false` - no AI provider key, the documented `sentence_sheet_unavailable` fallback) | 2026-09-28 |
+| `sentence_sheet.zh.json` | `POST /api/dictionary/sentence-sheet` (Chinese, session switched to zh first) | 2026-09-28 |
 | `listening_library_lesson.en.json` | `GET /api/listening/library/{lessonId}?target_language=en` | 2026-09-28 |
 | `listening_library_lesson.zh.json` | `GET /api/listening/library/{lessonId}?target_language=zh` | 2026-09-28 |
 | `reading_practice_article_set.json` | `GET /api/reading/practice/articles/{id}` (404 `reading_set_not_available` - the real shape while no article has an approved set; see `reading_practice_next.json`) | 2026-09-28 |
@@ -128,8 +132,13 @@ Both screens' field reads (`id`, `language_code`, `level_range`, `item_count`,
   populated `GET /api/library/vocabulary/{word}/audio`**: this sandbox has no
   AI or speech provider key, so every AI-backed route answers its documented
   fallback (`available: false`) - which is itself the fixture captured (see
-  `word_detail.json`, `word_audio.json`). This is the environment, not a UI
-  defect, per the task brief.
+  `word_detail.json`, `word_audio.json`, `word_detail_sheet.json`,
+  `sentence_sheet.json`). This is the environment, not a UI defect, per the
+  task brief. The `available: true` shape for both routes (a populated
+  `contextMeaning`/`structure`/`vocabulary`) was instead checked against
+  `writing_coach/word_detail.py`'s `project_word_detail()` /
+  `project_sentence_sheet()` projection functions directly - every field the
+  Quick Sheet screens read is one of these two functions' own output keys.
 - **A non-empty `GET /api/essays`, `/api/practice-outcomes`,
   `/api/speech/attempts`**: an essay requires `POST /api/evaluate` to
   succeed, which is AI-backed and fails closed in this sandbox

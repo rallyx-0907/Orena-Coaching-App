@@ -1,0 +1,75 @@
+/* Mic state (frame 62, E2 §11). A centred modal-style sheet, not the left-aligned head+body shape
+   most sheets use - `.o-sheet` gives the shell/positioning (desk right panel, phone bottom sheet);
+   this file only adds the centred content layout and the frame's own sizes. Fixed px on both
+   devices (the source sets no device var beyond the shared `--sheet-*` ones). */
+.s-mic {
+  align-items: center;
+  text-align: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 28px 24px 28px;
+}
+.s-mic__icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+.s-mic__title {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 28px;
+}
+.s-mic__body {
+  font-size: 15px;
+  line-height: 22px;
+  color: var(--muted);
+  max-width: 360px;
+}
+.s-mic__steps {
+  width: 100%;
+  max-width: 360px;
+  border-radius: 14px;
+  background: var(--surface2);
+  padding: 12px 14px;
+  text-align: left;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--muted);
+}
+.s-mic__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  max-width: 360px;
+  margin-top: 4px;
+}
+.s-mic__action {
+  height: 48px;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 600;
+  border: 0;
+}
+.s-mic__action--primary {
+  background: var(--accent-fill);
+  color: var(--accent-ink);
+}
+.s-mic__action--primary:hover {
+  background: var(--accent-fill-hover);
+}
+.s-mic__action--primary:active {
+  background: var(--accent-fill-press);
+}
+.s-mic__action--secondary {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  color: var(--text);
+}
+.s-mic__action--secondary:hover {
+  background: var(--surface2);
+}

@@ -10,7 +10,7 @@ import { esc, safeExternal, dialog, status, focusRegion, focusWork } from './htm
 import { openUnderstanding, selectionWithin } from './understanding.js';
 import { mountReader } from './reader.js';
 import { discussionSection, discussionSource, mountDiscussion } from './discussion.js';
-import { mountLexicalLayer } from './lexical.js';
+import { mountLexicalLayer } from '../capabilities/lexical.js';
 import { icon } from './phosphor.js';
 import { refCopy } from './reference.js';
 import { publishedReading } from '../content/reading-library.js';

@@ -3225,3 +3225,47 @@ commit is reused.
 - **Still open:** S24 (Grammar's official way in) for the human; AUDIT-1b (static guidance outside
   Speaking still reads the interface pack); storing the interface language on the account (gated
   migration).
+
+## Shared overlays (D-088 frames 53/57/62/63), Wave B first phase, 2026-09-28
+
+Built `static/orena/screens/quick-sheet/` (`openWordSheet`/`openSentenceSheet`), `screens/mic/`
+(`openMicState`/`micGate`), `screens/lesson-complete/` (`openLessonComplete`). Gaps found while
+wiring these to the real backend, for the ten workspace agents that call them and for the human:
+
+- **No backend representation for a saved sentence/highlight.** The Sentence Quick Sheet's frame
+  (57) draws a "Save highlight" bottom action (`toggleSave("highlight", qss.t, null)` in the
+  source); the real `POST /api/library/items` only accepts a content-domain `kind`
+  (`word | grammar | reading | listening | writing | speaking`, one row per content item a learner
+  is engaged with, `writing_coach/becoming_library.py` / `static/orena/ui/collection.js`'s own
+  `ITEM_KIND` map) - there is no grain for "this one sentence inside that content." **Not built**
+  (rule 40): the Sentence Quick Sheet ships with "Ask deeper" only in its bottom actions, no "Save
+  highlight". Needs a product/schema decision (a new item kind? a sub-row under the content item?)
+  before it can be built for real. The per-word saves inside the same sheet's Vocabulary tab are
+  unaffected (real, `POST /api/library/vocabulary`, same as the Word Quick Sheet).
+- **No "mark as known" action.** The Word Quick Sheet's mastery row (frame 53, `qsHasWC` branch)
+  draws a text "Mark as known" toggle (`onKnown`) beside the mastery bars. The real vocabulary
+  contract only exposes incremental SRS grading (`POST /api/library/vocabulary/{word}/review
+  {result: again|unsure|got_it}`, `writing_coach`'s own schedule), which advances a word one step,
+  never jumps it straight to the mastered/"Available" stage. **Not built** - no safe real mapping
+  from a single tap to "known" exists without inventing a scoring rule the backend does not have.
+- **`deeper.whyHere` needs a provider.** The Word Quick Sheet's "Why here?" row is always drawn
+  (measured live against the source: it shows a generic fallback prompt, "Ask Orena for the reason
+  it appears here," when no real reason is prepared yet, rather than being hidden - a real finding
+  from driving `window.__orenaLive`, not in the static frame export alone) - built that way here.
+  With no AI provider key in this sandbox, `deeper.whyHere`/`judgement_reason` is always empty, so
+  every word currently shows the fallback; verify the real-reason path once a provider is
+  configured.
+- **`source.title` is caller-supplied, optional.** The frame's "Source sentence · {{time}}" binding
+  turned out, measured live, to show the *content's title* (e.g. an article's), not a timestamp as
+  the static export's own placeholder name suggested. `openWordSheet`'s `source` therefore accepts
+  an optional `title` field; a caller with a real one (content_id already resolves to a title in
+  most rooms) should pass it, or the sheet falls back to the bare "Source sentence" label - never a
+  guessed title.
+- **`screens/word/model.js#restorePayload` is missing `next_review_at` (and the newer
+  `entry_identity_key`/`entry_id`/`reading_key` fields `RestoreVocabularyIn` also accepts,
+  `writing_coach/becoming_library.py`).** Found while writing this pass's own equivalent
+  (`screens/quick-sheet/model.js#wordRestorePayload`, which includes all of them) - an Undo after
+  unsaving a word from Word Detail currently restores without its schedule's `next_review_at`,
+  losing the due date on undo. **RESOLVED (2026-09-28):** `restorePayload` now carries every string
+  field `RestoreVocabularyIn` accepts; `scripts/test_orena_screen_word.mjs` reads the model's fields
+  from the backend source and fails if one is missing.

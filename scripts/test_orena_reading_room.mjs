@@ -326,8 +326,9 @@ assert.ok(encounter.length > 0, 'the text encounter exists');
 
    Reading and Listening must answer a tapped word the same way, and the only
    way to be sure they keep doing so is for there to be one implementation.
-   `ui/lexical.js` is it; the rooms supply nothing but where their text is. */
-const lexical = readFileSync('static/orena/ui/lexical.js', 'utf8');
+   `capabilities/lexical.js` is it (moved from `ui/lexical.js`, Wave B); the
+   rooms supply nothing but where their text is. */
+const lexical = readFileSync('static/orena/capabilities/lexical.js', 'utf8');
 const quickSheetSource = readFileSync('static/orena/ui/quick-sheet.js', 'utf8');
 assert.match(quickSheetSource, /api\s*\.readingLookup\(/, 'the first answer is the deterministic lookup');
 assert.match(quickSheetSource, /api\.wordDetail\(/);

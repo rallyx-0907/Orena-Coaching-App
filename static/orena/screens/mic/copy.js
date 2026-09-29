@@ -1,0 +1,78 @@
+/* Words of the Mic state sheet (frame 62, E2 §11): the six permission/recording states shared by
+   every speaking surface. Titles and button labels are chrome ('interface'); the body/steps text
+   that explains what happened and why is 'support' - both layers real, functional copy (E2's own
+   audit: "the cleanest frame in the set against rule 50 by construction"). */
+import { defineCopy } from '../../copy/index.js';
+
+const INTERFACE_KEYS = [
+  'permissionTitle', 'permissionAllow', 'permissionDismiss',
+  'blockedTitle', 'blockedRetry', 'blockedTypeInstead', 'blockedClose',
+  'notheardTitle', 'notheardTryAgain', 'notheardCancel',
+  'noisyTitle', 'noisyKeep', 'noisyRecordAgain',
+  'providerTitle', 'providerRetry', 'providerContinue',
+  'offlineTitle', 'offlineOk',
+];
+const SUPPORT_KEYS = [
+  'permissionBody',
+  'blockedBodyFallback', 'blockedBodyNoFallback', 'blockedSteps', 'blockedStillBlocked',
+  'notheardBody', 'noisyBody', 'providerBody', 'offlineBody',
+  'micOffTypeInstead',
+];
+
+export const t = defineCopy('mic', {
+  layers: Object.fromEntries([...INTERFACE_KEYS.map((k) => [k, 'interface']), ...SUPPORT_KEYS.map((k) => [k, 'support'])]),
+  en: {
+    permissionTitle: 'Allow microphone', permissionAllow: 'Allow microphone', permissionDismiss: 'Not now',
+    permissionBody: 'Orena listens only while you record. Audio is used to assess this attempt and is kept according to your privacy settings.',
+    blockedTitle: 'Microphone is blocked', blockedRetry: 'Retry', blockedTypeInstead: 'Type instead', blockedClose: 'Close',
+    blockedBodyFallback: 'Your browser denied access. You can fix it in settings, or type your answer instead.',
+    blockedBodyNoFallback: 'Your browser denied access. Pronunciation needs audio, so there is no text fallback here.',
+    blockedSteps: 'Address bar → site settings → Microphone → Allow. Then come back and tap Retry.',
+    blockedStillBlocked: 'Still blocked — change the browser setting first',
+    notheardTitle: 'We didn’t hear you', notheardTryAgain: 'Try again', notheardCancel: 'Cancel',
+    notheardBody: 'The input level stayed very low. Move closer to the microphone or check which input is selected.',
+    noisyTitle: 'Background noise detected', noisyKeep: 'Keep this attempt', noisyRecordAgain: 'Record again',
+    noisyBody: 'This result may under-score you. A quieter spot gives a fairer assessment.',
+    providerTitle: 'Assessment is unavailable', providerRetry: 'Retry assessment', providerContinue: 'Continue without score',
+    providerBody: 'Your recording is kept. Orena won’t show a made-up score — retry the assessment, or continue without one.',
+    offlineTitle: 'You’re offline', offlineOk: 'OK',
+    offlineBody: 'The recording is saved on this device and will be assessed automatically when you’re back online.',
+    micOffTypeInstead: 'Mic off · type your answer in the box',
+  },
+  vi: {
+    permissionTitle: 'Cho phép dùng micro', permissionAllow: 'Cho phép micro', permissionDismiss: 'Để sau',
+    permissionBody: 'Orena chỉ nghe khi bạn đang ghi âm. Âm thanh dùng để chấm lượt này và được giữ theo cài đặt quyền riêng tư của bạn.',
+    blockedTitle: 'Micro đang bị chặn', blockedRetry: 'Thử lại', blockedTypeInstead: 'Gõ thay vào đó', blockedClose: 'Đóng',
+    blockedBodyFallback: 'Trình duyệt của bạn đã từ chối quyền truy cập. Bạn có thể sửa trong cài đặt, hoặc gõ câu trả lời thay vào đó.',
+    blockedBodyNoFallback: 'Trình duyệt của bạn đã từ chối quyền truy cập. Phát âm cần có âm thanh nên ở đây không có cách gõ chữ thay thế.',
+    blockedSteps: 'Thanh địa chỉ → cài đặt trang → Micro → Cho phép. Sau đó quay lại và nhấn Thử lại.',
+    blockedStillBlocked: 'Vẫn đang bị chặn — hãy đổi cài đặt trình duyệt trước',
+    notheardTitle: 'Chưa nghe thấy bạn nói', notheardTryAgain: 'Thử lại', notheardCancel: 'Huỷ',
+    notheardBody: 'Mức âm thanh vào quá thấp. Hãy lại gần micro hơn hoặc kiểm tra thiết bị đang chọn.',
+    noisyTitle: 'Phát hiện tiếng ồn', noisyKeep: 'Giữ lượt này', noisyRecordAgain: 'Ghi âm lại',
+    noisyBody: 'Kết quả này có thể bị chấm thấp hơn thực tế. Một nơi yên tĩnh hơn sẽ cho kết quả công bằng hơn.',
+    providerTitle: 'Không thể chấm điểm lúc này', providerRetry: 'Thử chấm lại', providerContinue: 'Tiếp tục không cần điểm',
+    providerBody: 'Bản ghi âm của bạn vẫn được giữ lại. Orena sẽ không hiện điểm bịa — hãy thử chấm lại, hoặc tiếp tục mà không cần điểm.',
+    offlineTitle: 'Bạn đang ngoại tuyến', offlineOk: 'Đã hiểu',
+    offlineBody: 'Bản ghi âm được lưu trên thiết bị này và sẽ tự động được chấm khi bạn có mạng trở lại.',
+    micOffTypeInstead: 'Micro tắt · gõ câu trả lời vào ô bên dưới',
+  },
+  zh: {
+    permissionTitle: '允许使用麦克风', permissionAllow: '允许麦克风', permissionDismiss: '暂不',
+    permissionBody: 'Orena 只会在你录音时监听。录音用于评估本次练习，并按你的隐私设置保留。',
+    blockedTitle: '麦克风被禁用了', blockedRetry: '重试', blockedTypeInstead: '改为输入', blockedClose: '关闭',
+    blockedBodyFallback: '浏览器拒绝了访问权限。你可以在设置中修改，或者改为输入你的答案。',
+    blockedBodyNoFallback: '浏览器拒绝了访问权限。发音练习需要用到音频，这里没有输入文字的替代方式。',
+    blockedSteps: '地址栏 → 网站设置 → 麦克风 → 允许。然后回来点击重试。',
+    blockedStillBlocked: '仍被禁用 — 请先修改浏览器设置',
+    notheardTitle: '没有听到你的声音', notheardTryAgain: '再试一次', notheardCancel: '取消',
+    notheardBody: '输入音量一直很低。请靠近麦克风，或检查选用的输入设备。',
+    noisyTitle: '检测到背景噪音', noisyKeep: '保留这次尝试', noisyRecordAgain: '重新录音',
+    noisyBody: '这个结果可能被低估。安静一点的环境能得到更公平的评估。',
+    providerTitle: '暂时无法评估', providerRetry: '重新评估', providerContinue: '不看分数继续',
+    providerBody: '你的录音已保留。Orena 不会显示编造的分数 —— 你可以重新评估，或者不看分数继续。',
+    offlineTitle: '你已离线', offlineOk: '好的',
+    offlineBody: '录音已保存在这台设备上，等你恢复网络后会自动评估。',
+    micOffTypeInstead: '麦克风已关闭 · 请在下方输入你的答案',
+  },
+});

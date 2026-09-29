@@ -12,16 +12,24 @@
    difference is the `units` adapter, and it is the whole difference.
 
    Nothing here runs on its own. A lookup, a translation, a tokenisation and an
-   explanation each happen because the learner asked for one. */
-import { focusRegion } from './html.js';
-import { createQuickSheet } from './quick-sheet.js';
+   explanation each happen because the learner asked for one.
+
+   Moved from `static/orena/ui/lexical.js` to `static/orena/capabilities/lexical.js`
+   (Wave B, shared-overlays pass): a capability, not old presentation - but the
+   old Reader/Listening rooms it serves (`ui/reader.js`, `ui/encounter.js`) are
+   unchanged and still the ones that mount it, so its old dependency on the old
+   UI's own `ui/quick-sheet.js`/`ui/html.js`/`ui/reading-room.js` moves with it
+   unchanged; this is a location change only, never a rewrite onto the new
+   `screens/quick-sheet/` overlay, which is for the new UI's own screens. */
+import { focusRegion } from '../ui/html.js';
+import { createQuickSheet } from '../ui/quick-sheet.js';
 import {
   EXPLAIN_LIMITS,
   LOOKUP_LIMITS,
   TRANSLATE_LIMITS,
   selectionKind,
   sentenceAround,
-} from './reading-room.js';
+} from '../ui/reading-room.js';
 
 // What the shared tagger accepts in one request (media_interaction.MediaAnnotateIn).
 const ANNOTATE_LIMIT = 1200;

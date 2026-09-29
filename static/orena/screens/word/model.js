@@ -18,6 +18,14 @@ const STAGE_COPY_KEY = {
 
 const HAN = /[㐀-鿿]/;
 
+/* The due-date pure function is shared with `screens/quick-sheet/model.js` (2026-09-29 fix pass:
+   the two had drifted into a byte-for-byte copy with divergent callers) - see
+   `product/due-schedule.js`'s own header. Re-exported here so this module's existing callers
+   (`mapWordCard` below, and this gate's own `import { dueInfo } from '.../word/model.js'`) keep
+   working unchanged. */
+export { dueInfo } from '../../product/due-schedule.js';
+import { dueInfo } from '../../product/due-schedule.js';
+
 /* languages-5 / finding A: the one legitimate script check in this build. A saved word carries no
    per-item language field from the backend at all - `SavedWord.language_code`
    (writing_coach/persistence/models.py) exists only to scope the `/api/library/vocabulary` query
@@ -101,20 +109,6 @@ export function masteryFilled(item) {
    stages. Empty when there is no saved item to report a stage for. */
 export function stageCopyKey(item) {
   return STAGE_COPY_KEY[text(item?.stage_label)] || '';
-}
-
-/* When this word next comes due, from the real schedule - `null` when there is none to report
-   (a word that was never saved, or a payload with no next_review_at) so the caller can leave the
-   whole due line out rather than showing an invented date. */
-export function dueInfo(item, now = Date.now()) {
-  if (!item) return null;
-  const raw = text(item.next_review_at);
-  if (!raw) return null;
-  const at = Date.parse(raw);
-  if (!Number.isFinite(at)) return null;
-  const days = Math.ceil((at - now) / 86400000);
-  if (item.due || days <= 0) return { key: 'dueToday' };
-  return { key: 'dueInDays', n: Math.max(1, days) };
 }
 
 /* The example sentence split around the headword, for the frame's tinted-highlight treatment
