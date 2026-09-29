@@ -39,7 +39,29 @@ python -m grammar_lab.pipeline.cli report --lang en                    # reports
 python -m grammar_lab.pipeline.cli preview --serve                     # duyệt nội dung v0.4: http://127.0.0.1:8031/
 
 python -m pytest grammar_lab/tests                              # toàn bộ test
+
+# Nội dung theo bậc (quyết định của người, 29-30/09/2026): seed -> sinh -> review ngoài -> áp góp ý -> chấm engine
+python -m grammar_lab.pipeline.cli generate --lang en --level A1 --provider deepseek --model deepseek-flash   --cost-ceiling-usd 1     # điểm lấy từ inventory/seeds_en.yaml; giữ khoá quota của provider, báo chi phí thực
+python -m grammar_lab.pipeline.cli review-export --lang en --level A1   # -> review/en/A1.md cho model ngoài
+python -m grammar_lab.pipeline.cli apply-feedback --lang en --level A1 --files a.jsonl b.jsonl --dry-run
+python -m grammar_lab.pipeline.cli feedback-stats --files a.jsonl b.jsonl   # sai kiến thức / phạm vi / diễn đạt / định dạng
+python -m grammar_lab.pipeline.cli engine-grade --lang en --level A1 --evaluator-url http://localhost:8020  # in ước tính rồi dừng; --yes để chạy
 ```
+
+- **Seed** (`inventory/seeds_<lang>.yaml`): danh mục điểm cần viết -- id, bậc, function, loại, tên, bài R5 nguồn,
+  contrasts hai chiều, prereqs, nhãn lỗi, neo khung chuẩn. `generate` bắt đầu từ seed: điểm chưa có file được tạo
+  từ seed, điểm đã có giữ nội dung nhưng lấy metadata của seed. Chỉ nội dung được sinh.
+- **Chế độ chuyển đổi**: điểm có `source_refs.r5` nhận nội dung bài R5 làm đầu vào; provenance ghi id R5 gốc.
+- **Sinh không verify bằng engine.** `verify` chạy engine trên ví dụ/câu sai; blind-solve và các kiểm tra cần model
+  khác họ **tắt mặc định** (`--blind-solve` để bật, và model phải khác họ với model sinh). Mọi câu trả lời của
+  model được kiểm JSON Schema đầy đủ ngay khi về.
+- **Review ngoài**: file `review/<lang>/<bậc>.md` có hướng dẫn hai lượt, danh sách nhãn lỗi engine, bảng tổng quan và
+  các phần ~10 điểm; góp ý trả về JSONL `{"id","block","issue","severity","fix"}`; `issue` mở đầu bằng
+  `[knowledge]`, `[scope]`, `[wording]` hoặc `[format]`. `apply-feedback` bỏ trùng, sinh lại đúng khối bị góp ý, validate
+  lại (khối làm hỏng validate bị trả về như cũ), ghi `review/<lang>/<bậc>.applied.json`, không bao giờ đặt `approved`.
+- **Chấm engine** (`engine-grade`) chỉ `common_mistakes` và `quick_practice`, luôn in số lượt gọi và chi phí ước tính
+  trước (mặc định dừng ở đó).
+- **Nguồn đối chiếu**: `inventory/raw/` (metadata mã và bậc, không chép lời giải thích), `sources/` (script trích).
 
 Mã lỗi của `validate` được liệt kê ở đầu [`pipeline/validate.py`](pipeline/validate.py); mỗi mã có ít
 nhất một ca đúng và một ca sai trong `tests/test_validate_rules.py`.

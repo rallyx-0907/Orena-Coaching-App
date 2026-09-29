@@ -18,7 +18,7 @@ import typer
 from grammar_lab.pipeline.apply_feedback import apply_feedback as run_apply_feedback
 from grammar_lab.pipeline.apply_feedback import dedupe, feedback_stats, parse_files
 from grammar_lab.pipeline.content_store import load_point, load_points, save_point
-from grammar_lab.pipeline import engine_grade
+from grammar_lab.pipeline import engine_grade, live_lock
 from grammar_lab.pipeline.evaluator_client import EvaluatorClient
 from grammar_lab.pipeline.export_error_tags import export_error_tags
 from grammar_lab.pipeline.generate import GenerateOutcome, Generator
@@ -29,6 +29,7 @@ from grammar_lab.pipeline.preview import write_preview
 from grammar_lab.pipeline.report_step import build_report, render_html
 from grammar_lab.pipeline.review_export import levels_present, review_path, write_review
 from grammar_lab.pipeline.route import DEFAULT_THRESHOLD_BY_LANG, apply_route, route_point
+from grammar_lab.pipeline.seed import load_seeds
 from grammar_lab.pipeline.run_context import new_run_id, resolve_run_id, run_dir, write_step
 from grammar_lab.pipeline.validate import ERROR_TAGS_PATH, LAB_ROOT, LANGS, apply_flags, validate_lang
 from grammar_lab.pipeline.verify import VerifyFlag, VerifyReport, verify_point
@@ -93,7 +94,8 @@ def export_error_tags_command(
 def generate(
     lang: str = typer.Option(..., "--lang", help=f"Target language: {', '.join(LANGS)}."),
     l1: str = typer.Option("vi", "--l1", help="Learner L1 (informational; blocks cover every L1 in the set manifest)."),
-    ids: str = typer.Option(..., "--ids", help="Comma-separated point ids, e.g. en.past_simple,en.there_is_are."),
+    ids: str = typer.Option("", "--ids", help="Comma-separated point ids, e.g. en.past_simple,en.there_is_are."),
+    level: str = typer.Option("", "--level", help="Instead of --ids: every seed of this level (A1, HSK2, ...), in catalogue order."),
     provider: str = typer.Option("anthropic", "--provider", help="LLM provider: anthropic | openai | gemini | groq | deepseek."),
     model: str = typer.Option("claude-haiku-4-5-20251001", "--model", help="Model id for that provider."),
     regenerate_note: str = typer.Option(
@@ -123,10 +125,18 @@ def generate(
     """SPEC §5.1: code-generated rule_table + LLM-generated blocks + templated check items."""
     if lang not in LANGS:
         raise typer.BadParameter(f"expected one of {', '.join(LANGS)}", param_hint="--lang")
+    if bool(ids) == bool(level):
+        raise typer.BadParameter("give exactly one of --ids and --level")
+    point_ids = [p.strip() for p in ids.split(",") if p.strip()]
+    if level:
+        wanted = level.removeprefix("HSK") if lang == "zh" else level
+        point_ids = [seed["id"] for seed in load_seeds(lang, root) if str(seed["level"]) == wanted]
+        if not point_ids:
+            raise typer.BadParameter(f"no seeds at level {level}", param_hint="--level")
     outcomes = []
-    with LLMClient(provider, model, deepseek_thinking=deepseek_thinking) as llm:
+    with live_lock.hold([provider], cost_ceiling_usd), LLMClient(provider, model, deepseek_thinking=deepseek_thinking) as llm:
         generator = Generator(lang=lang, l1=l1, llm=llm, root=root)
-        for point_id in (p.strip() for p in ids.split(",") if p.strip()):
+        for point_id in point_ids:
             spent = sum(o.cost_usd for o in outcomes if o.cost_usd is not None)
             if spent >= cost_ceiling_usd:
                 outcomes.append(GenerateOutcome(point_id, "skipped_ceiling", reason=f"cost ceiling ${cost_ceiling_usd} reached"))
