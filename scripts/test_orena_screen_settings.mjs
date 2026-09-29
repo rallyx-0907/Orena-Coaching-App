@@ -18,6 +18,8 @@ import {
   planRows,
   rowsForTab,
   SESSION_LENGTH_FALLBACK,
+  SEGMENTED_MAX_OPTIONS,
+  usesPicker,
 } from '../static/orena/screens/settings/model.js';
 import { sizeBucketOf, READER_SIZE, READER_DEFAULTS } from '../static/orena/product/reader-settings.js';
 
@@ -351,6 +353,16 @@ import { sizeBucketOf, READER_SIZE, READER_DEFAULTS } from '../static/orena/prod
   assert.equal(themeOpts.find((o) => o.value === 'light').selected, false);
   assert.equal(__internal.rowLabel({ id: 'theme' }), t('themeLabel'));
   assert.equal(__internal.rowSub({ id: 'theme' }), t('themeSub'), 'an ordinary row reads `${id}Sub`, no SUB_KEY override needed');
+}
+
+/* D-098: the support language is the frame's segmented control up to 4 options, a picker beyond. */
+{
+  const opts = (n) => Array.from({ length: n }, (_, i) => ({ code: `l${i}`, label: `L${i}` }));
+  assert.equal(SEGMENTED_MAX_OPTIONS, 4);
+  assert.equal(usesPicker({ id: 'support', options: opts(4) }), false, 'four languages: the segmented control');
+  assert.equal(usesPicker({ id: 'support', options: opts(5) }), true, 'five: the picker');
+  assert.equal(usesPicker({ id: 'interface', options: opts(9) }), false, 'only the support language row changes');
+  assert.equal(usesPicker(null), false);
 }
 
 console.log('Settings: rows built from real data, every backend gap disabled and recorded, EN/VI/ZH covered: PASS');

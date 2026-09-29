@@ -18,7 +18,9 @@
    an inert control (rule 40/43) - see docs/project/UI_BACKEND_GAPS.md N-25..N-31 (renumbered from
    this section's earlier N-11..N-17 once N-11 collided with Word Detail's own gap; model.js's own
    per-row comments already cite the current ids). */
-import { html, mount } from '../../kit/html.js';
+import { html, mount, raw } from '../../kit/html.js';
+import { icon } from '../../kit/icons.js';
+import { openSheet, fillSheet, sheetHead } from '../../kit/overlay.js';
 import { useStyles } from '../../kit/styles.js';
 import { listRow, segmentedControl, pageHeader } from '../../kit/components.js';
 import { toast } from '../../kit/toast.js';
@@ -35,7 +37,7 @@ import { MIC_STATES, watchMicrophone } from '../../capabilities/mic-readiness.js
 import { appearance, setAppearance } from '../../kit/device.js';
 import { appendNativeName } from '../../kit/lang.js';
 import { t } from './copy.js';
-import { TABS, tabFromQuery, rowsForTab, barPercent } from './model.js';
+import { TABS, tabFromQuery, rowsForTab, barPercent, usesPicker } from './model.js';
 
 const TAB_LABEL_KEY = { languages: 'tabLanguages', learning: 'tabLearning', review: 'tabReview', notifications: 'tabNotifications', plan: 'tabPlan' };
 /* Every row's sub reads t(`${id}Sub`) except these two: "Plan" has no chrome sub at all (its sub
@@ -100,7 +102,15 @@ function toggleControl(row) {
   return html`<button type="button" class="s-settings-toggle" role="switch" aria-checked="${row.value ? 'true' : 'false'}" data-toggle="${row.id}" ${row.disabled ? 'disabled' : ''}><span class="s-settings-toggle__knob"></span></button>`;
 }
 
+/* More options than a segmented control holds (D-098): the row's current value on the row's own
+   action button, which opens a sheet of rows (`openPicker`). */
+function pickerControl(row) {
+  const current = choiceOptions(row).find((opt) => opt.selected);
+  return html`<button type="button" class="s-settings-action s-settings-picker" data-picker="${row.id}" aria-haspopup="dialog" ${row.disabled ? 'disabled' : ''}>${current ? current.label : rowLabel(row)}${raw(icon('chevron-down', { size: 16 }))}</button>`;
+}
+
 function choiceControl(row) {
+  if (usesPicker(row)) return pickerControl(row);
   const control = segmentedControl({ options: choiceOptions(row), name: row.id });
   return row.disabled ? html`<span class="s-settings-row__inert">${control}</span>` : control;
 }
@@ -372,8 +382,45 @@ export default async function settingsScreen(element, ctx) {
       if (group) return onChoicePick(group.dataset.seg, segOpt.dataset.value);
       return;
     }
+    const pickerBtn = event.target.closest('[data-picker]');
+    if (pickerBtn) return openPicker(pickerBtn.dataset.picker);
     const actionBtn = event.target.closest('[data-action-row]');
     if (actionBtn) return onAction(actionBtn.dataset.actionRow);
+  }
+
+  /* The picker: the kit's sheet with its drawn header, one row per option, a check on the current
+     one. Picking closes the sheet and goes through the same handler the segmented control uses. */
+  function openPicker(rowId) {
+    const row = currentRows().find((r) => r.id === rowId);
+    if (!row || row.disabled) return;
+    const options = choiceOptions(row);
+    openSheet({
+      label: rowLabel(row),
+      className: 's-settings-picker-sheet',
+      render(sheet, handle) {
+        fillSheet(
+          sheet,
+          handle,
+          html`${sheetHead({ title: rowLabel(row), closeLabel: shellCopy('close') })}<div class="o-sheet__body s-settings-picker__list" role="listbox" aria-label="${rowLabel(row)}">${options.map((opt) =>
+            listRow({
+              title: opt.label,
+              trailing: opt.selected ? raw(icon('check', { size: 18 })) : null,
+              dataset: { pick: opt.value, selected: opt.selected ? '1' : '0' },
+              className: 's-settings-picker__row',
+            }),
+          )}</div>`,
+        );
+        for (const button of sheet.querySelectorAll('[data-pick]')) {
+          button.setAttribute('role', 'option');
+          button.setAttribute('aria-selected', button.dataset.selected === '1' ? 'true' : 'false');
+          button.addEventListener('click', () => {
+            handle.close();
+            onChoicePick(rowId, button.dataset.pick);
+          });
+        }
+        return null;
+      },
+    });
   }
 
   paintShell();

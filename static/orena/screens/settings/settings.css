@@ -166,6 +166,24 @@
   font-size: 13px;
   font-weight: 600;
 }
+/* The picker's button (D-098): the row's action button, with the current value and a chevron. */
+.s-settings-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 220px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.s-settings-picker__list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.s-settings-picker__row .c-row__trail {
+  color: var(--accent);
+}
 .s-settings-action:hover:not(:disabled) {
   background: var(--surface2);
 }

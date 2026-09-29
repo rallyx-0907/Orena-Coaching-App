@@ -44,6 +44,14 @@ export function supportLanguageOptions(supportLanguages) {
     .map((item) => ({ code: item.code, label: item.label }));
 }
 
+/* The frame draws the support language as a segmented control, which holds a short list. Past
+   this many options it becomes a picker - a button that opens a sheet of rows (D-098). */
+export const SEGMENTED_MAX_OPTIONS = 4;
+
+export function usesPicker(row) {
+  return row?.id === 'support' && Array.isArray(row.options) && row.options.length > SEGMENTED_MAX_OPTIONS;
+}
+
 export function interfaceLanguageOptions(locales = INTERFACE_LOCALES) {
   return sharedInterfaceLanguageOptions(locales);
 }
