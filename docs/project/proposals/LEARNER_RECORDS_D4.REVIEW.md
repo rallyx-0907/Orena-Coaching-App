@@ -313,3 +313,167 @@ remain outside this review, all the human's:
   re-registers, is accepted.
 
 This review is not product approval and does not authorise applying any migration.
+
+## Delta review of revision 3 and the migration code
+
+- **Reviewer:** the same Delegated Architecture Reviewer, independent of the implementer.
+- **Reviewed HEAD:** `0706e36585637abbb4ffd57c58e9d667e7f4fce9` (`codex/work`), which contains D-104 (`aafe968`),
+  proposal revision 3, `migrations/proposed/20260930_0017..0023_*.py`, `scripts/rehearse_learner_records_schema.py` and
+  `LEARNER_RECORDS_D4.REHEARSAL.md`.
+- **Scope:** the delta only. Read: D-104, AGENTS section 7 as amended, proposal sections 2.4, I1, I2, I4, I11, 5, 10, 13-15,
+  the seven revision files, the rehearsal script and its recorded output. Nothing was run; the 48 PASS is the
+  implementer's recorded local run on a throwaway PostgreSQL 17, and I do not restate it as my own result.
+
+### Verdict: **APPROVE** (revision 3 and the seven proposed revisions, for promotion review)
+
+There is no P0 and no P1. Revision 3 matches D-104, and the migrations are additive, correctly chained and symmetric.
+Six P2 items are conditions to close before the first `git mv` into `versions/`. Human authorization, the backbone
+gate and the `git mv` remain the human's; this is not authorization to apply anything.
+
+### 1. Revision 3 against D-104 and AGENTS section 7
+
+| D-104 point | Revision 3 | Result |
+| --- | --- | --- |
+| H-18 storage ownership (`users` four columns; profile row for per-language; no settings table) | Sections 13-14, I2/I3/I3b, 0018/0019 | Matches |
+| H-12 Design B, 0022 required | I4 is Design B only; `works` continuation removed; generic PUT refuses `annotation`/`imported` | Matches |
+| H-17 server-owned expected-version on `users.settings_updated_at`; no blind LWW; never a client timestamp | Section 2.4 (L127-136), 0018 | Matches; the arrival-order exception is withdrawn |
+| H-11 flag on the lane only after rehearsal and apply; default off; :8000 after merge, backup, gate, smoke | Section 14 | Matches |
+| H-6 no bulk migration, no import flow | Section 14 | Matches |
+| H-1 Welcome once per language whose profile row does not exist | I1 (L187-190) | Matches literally; see H-19 below |
+| H-5 real derived streak, no table, every staging skill with valid records, page visits never count | Section 14 | Matches |
+| H-4 quiz stored; 0023 required; Try-it stays in Writing | I11, 0023 | Matches; see H-20 below |
+| H-14, H-15, H-3 | Section 14 | Match |
+
+AGENTS section 7 as amended lists drafts, conversations, continuation/place, notes/highlights/annotations, learner-imported
+private content and provenance as server records, and keeps sync protocol, receipt compaction, the deletion runtime,
+export and Orena history reserved. The proposal adds nothing to the reserved list: no cursor, tombstone horizon or
+compaction; account settings and evidence records (Dictation, refresh history, quiz) are covered by D-104's own
+ownership statement rather than section 7's list, which is acceptable because D-104 is the explicit instruction.
+One drafting drift (P2-6): proposal section 5 still shows `op.get_bind().dialect.name` while the files correctly use
+`op.get_context().dialect.name`.
+
+### 2. The migration code
+
+Verified against the files and the code they touch:
+
+- **Chain.** `20260930_0017.down_revision = 20260924_0016`, then 0018...0023 each revise the previous one; `20260924_0016`
+  is the current head (`migrations/versions/20260924_0016_adaptive_reading.py:89`). Alembic does not read `proposed/`, so
+  no startup check is affected; `GATED_REVISIONS` is not touched (all additive).
+- **Additive only.** Only `ADD COLUMN`, one `CREATE TABLE`, indexes, a trigger, and one CHECK. No type change, no
+  backfill, no drop. Existing rows: `NOT NULL DEFAULT ''` / `'client'` are constant defaults (metadata-only on PG 11+;
+  runtime is PG 17); every other new column is nullable with no default. Column types fit their values:
+  `essay_review_history.prior_fingerprint`/`replaced_by_fingerprint` String(64) equals a SHA-256 hex digest
+  (`writing_review_identity.py:_digest`), `prior_contract` String(40) fits `writing-evaluation-v2.6`.
+- **Dialect guards and lock_timeout.** Every file sets `SET LOCAL lock_timeout = '5s'` behind
+  `op.get_context().dialect.name == "postgresql"` in both directions (the offline-safe form, as in
+  `20260924_0015`). 0021's trigger and function, and 0023's CHECK, are PostgreSQL-only and guarded in both
+  directions. This matches the precedent (0015 creates its snapshot trigger the same way).
+- **Downgrade symmetry.** Each `downgrade()` drops exactly what `upgrade()` added, in reverse order, indexes and
+  constraints before columns (0022 drops the index before the columns it covers, which matters on SQLite), and each
+  docstring says it drops learner data and is for rehearsal only.
+- **SQLite test backend.** The Alembic chain is not run on SQLite by the suite (`migrations/env.py` has no SQLite path and
+  the earlier revisions are PostgreSQL-oriented); the SQLite backend gets its schema from ORM metadata and
+  `initialize()`. The guards make the files inert for PG-only objects on another dialect, as the precedent revisions do.
+  The ORM models are intentionally unchanged, so the hermetic suite is unaffected until promotion.
+- **`essay_review_history`.** Unique `(essay_id, prior_fingerprint)` and the scope index are right. The UPDATE-only
+  `BEFORE UPDATE` trigger raises `integrity_constraint_violation`; DELETE is not trapped, so the two `ON DELETE CASCADE`
+  paths work (the rehearsal deletes an essay and a user and finds no history left).
+- **`library_items` place.** Two nullable columns and a partial index `(user_id, language_code, place_at) WHERE place IS
+  NOT NULL`. Consistent with `LibraryItem` (`models.py:583-665`): `kind` allows reading/listening/book, `relationship`
+  allows `started`, `source_id` is 255, and `version`/`updated_at` are separate columns the place write does not touch.
+- **`grammar_progress`.** Three nullable columns; the CHECK ties them together and bounds the score. `completed_at` stays
+  NOT NULL, unchanged.
+
+Findings (all P2, non-blocking; close before the first `git mv`):
+
+- **P2-1 The whole chain is one transaction, so locks accumulate.** `migrations/env.py:28,39,53` runs the run in a single
+  `begin_transaction()`, and `SET LOCAL` and every ACCESS EXCLUSIVE lock last to commit. Applied as one
+  `--upgrade` to head, the `users` lock taken by 0018 is held through 0022's index build (a SHARE lock and a scan of
+  `library_items`) and 0023's CHECK validation (an ACCESS EXCLUSIVE scan of `grammar_progress`). `users` is written on
+  every sign-in, so logins would queue for the whole run. `bootstrap_runtime_schema.py` has `--to-revision`
+  (`:205`). **Required change:** the operator runbook and approval entry apply the revisions in separate invocations, with
+  0018 alone after a fresh backup, and the rehearsal records the order used. The proposal text ("promoted one at a time")
+  should say "applied one at a time with `--to-revision`".
+- **P2-2 The rehearsal proves shape, not scale.** Every table holds one or two seed rows. Nothing measures how long 0022's
+  `CREATE INDEX` (non-concurrent) or 0023's `ADD CONSTRAINT ... CHECK` hold their locks on realistic row counts, and
+  `lock_timeout` only bounds waiting for a lock, not how long a granted one is held. **Required change:** either run
+  the same script with a volume seed (order of 100k `users`, a few million `library_items` and `grammar_progress`) and
+  record the two durations, or state in the approval entry that the operator applies 0022 and 0023 in a maintenance
+  window with an expected duration. Consider `ADD CONSTRAINT ... NOT VALID` then a separate `VALIDATE CONSTRAINT`.
+- **P2-3 JSON `null` versus SQL `NULL` in the new JSON columns.** The partial index and the "no place" semantics depend on
+  `place IS NOT NULL`. A SQLAlchemy `JSON` column persists Python `None` as the JSON literal `null`, not SQL `NULL`,
+  unless declared `JSON(none_as_null=True)`; a JSON `null` row would satisfy `place IS NOT NULL` and enter the index.
+  The same applies to `review_modes`. The rehearsal cannot see this (it writes with raw SQL). **Required change:** section
+  15's model changes declare `place` and `review_modes` with `none_as_null=True`, and a real-repository test writes and
+  clears a place and asserts SQL `NULL`.
+- **P2-4 Parent scope on `essay_review_history`.** `user_id` and `language_code` are copied from the essay with no
+  constraint tying them to it; ADA section 3 asks that child rows verify parent scope. **Required change:** either drop
+  the redundant columns and read scope through the essay, or keep them and add a repository test that refuses a row whose
+  scope differs from the essay's (a composite FK would need a new unique key on `essays`, which this proposal should
+  not add).
+- **P2-5 Settings token handling.** The token has microsecond resolution (good, and better than the profile row's
+  one-second `updated_at`, `becoming_memory.py:83-91`). **Required change:** state that the API serves it as an opaque
+  string (a JavaScript `Date` truncates to milliseconds), that the server sets it, and test a stale token across the API,
+  not only the SQL. The shared token also makes two unrelated scalar edits conflict; the 409 re-read-and-reapply covers it.
+- **P2-6 Small drafting points.** Section 5's guard text (`get_bind`) versus the files (`get_context`); the ORM should
+  declare the 0023 CHECK so the PostgreSQL schema-parity test passes, while the SQLite `initialize()` ALTER path cannot
+  add it (a fresh `create_all` can); and promotion moves `tests/test_adaptive_reading_schema.py` and
+  `tests/test_reading_canonical_cutover_scripts.py` to the new head in the same commit (already in section 15).
+
+### 3. Does the rehearsal prove what it claims?
+
+It proves the DDL: the chain builds to 0016 from `versions/`, one head after 0016 with `proposed/`, upgrade, downgrade,
+upgrade, identical schema signature, columns and defaults per column, defaults read by pre-existing rows (seeded before the
+upgrade and checked after both upgrades), the CHECK's accepted and refused shapes with the constraint name asserted, the
+UPDATE trigger (asserted on the message), both cascades, the unique key and a two-thread race that produced one row and one
+refusal, and `lock_timeout` behaviour (55P03 after about 5.2 s, atomic rollback, both directions). The lock probes are not
+vacuous: they assert a failure occurred, the SQLSTATE, the elapsed window 3-20 s, an unchanged revision and the state of a
+`0018` column. I found no probe that can pass with nothing there, but several are weaker than their labels:
+
+- **"an unknown essay" is refused** matches only the substring `essay_review_history` (`:605`), which appears in any error
+  naming the table; assert `foreign key` or the constraint name.
+- **"place is writable ... leaves version 1"** runs a plain `UPDATE` that never touches `version`, so it would pass for any
+  schema with the column; it proves nothing about the application. Keep as a smoke line, do not cite it as evidence.
+- **"conditional update"** exercises the probe's own SQL, which shows `IS NOT DISTINCT FROM` and microsecond round-trip work
+  on the column; the application's statement does not exist yet (P2-5 covers the API).
+- **"schema after up-down-up equals the first upgrade"** compares two heads, not the schema at 0016 before the upgrade with
+  the schema after the downgrade. `everything_removed` checks the added objects but would miss a downgrade that altered
+  something else. Capture the `schema_signature` of the touched tables at 0016 before upgrading and compare after
+  downgrading.
+- **"every revision sets lock_timeout"** is a source grep; the behavioural probes cover only `users`, so a missing guard in
+  a later revision is caught only by the grep.
+- **Old-code compatibility** is probed for `listening_progress` only. Add an insert into `users` and
+  `user_language_profiles` that names none of the new columns (what a runtime at 0016 does after a code rollback).
+
+None changes the verdict; the first two and the last two are cheap and I recommend adding them with P2-2.
+
+### 4. The two open points
+
+- **H-19 (a profile row with empty `declared_level` never reaches Welcome).** The literal D-104 H-1 rule is followed; the
+  consequences are real. `GET /api/learner-profile` does not create a row (`becoming_memory.py:130`, `exists` flag), but
+  any PATCH or PUT of another field (goal, style, support language, review settings) does. Any earlier onboarding step
+  that writes the row, an abandoned onboarding, and every existing account that already has a row leave
+  `declared_level = ''` for good, so the level that H2 exists to store is never asked of them, and `entryRoute` and Today
+  must treat `''` as "not declared". **Recommendation:** keep the literal rule for entry routing (missing row opens
+  setup, nothing is replayed), verify that the onboarding flow writes the row only at its final step or only after the
+  level answer, and ask for a level for an existing row with `''` through a non-blocking, dismissible prompt on Profile
+  or Today rather than a forced route. A forced route needs a stored "dismissed" marker, which is another persistence
+  decision the proposal does not have and should not invent. Record the choice in the human's answer to H-19.
+- **H-20 (quiz result stored only with completion).** **Accept the proposal's reading.** `completed_at` is the owner
+  table's NOT NULL completion fact (`models.py:214-226`); relaxing it would change what a `grammar_progress` row means for
+  R5 history and for the alias reads, which this proposal rightly avoids. A quiz abandoned before completion is not a
+  result. Conditions: (a) the completion write and the quiz fields are one upsert in one route; (b) a retake updates
+  `last_quiz_*` and leaves the first `completed_at` (say which); (c) the number is browser-graded and therefore labelled
+  client-reported and never read as evidence (`EA:14`); (d) the future route validates the published point id before
+  accepting anything, as D-104 says.
+
+### Required before the first `git mv`
+
+1. P2-1 (apply one revision per invocation, 0018 alone) and P2-2 (a volume run, or a stated maintenance window).
+2. P2-3 (`none_as_null`), P2-4 (child scope), P2-5 (opaque token) recorded in section 15 with their tests.
+3. The rehearsal strengthened as listed in section 3, then re-recorded.
+4. The human's answers to H-19 and H-20.
+
+This delta review approves the revision-3 text and the migration files as proposals. It is not product approval, it does
+not authorise moving any file into `versions/` or applying any migration, and it does not enable
+`ORENA_ACCOUNT_BACKBONE`.
