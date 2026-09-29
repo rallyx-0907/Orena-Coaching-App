@@ -20,4 +20,6 @@ export const SCREENS = Object.freeze({
   search: () => import('../screens/search/screen.js'),
   practice: () => import('../screens/practice/screen.js'),
   settings: () => import('../screens/settings/screen.js'),
+  dictation: () => import('../screens/dictation/screen.js'),
+  shadowing: () => import('../screens/shadowing/screen.js'),
 });

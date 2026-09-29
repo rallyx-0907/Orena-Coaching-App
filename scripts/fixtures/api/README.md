@@ -60,6 +60,8 @@ Rules:
 | `sentence_sheet.zh.json` | `POST /api/dictionary/sentence-sheet` (Chinese, session switched to zh first) | 2026-09-28 |
 | `listening_library_lesson.en.json` | `GET /api/listening/library/{lessonId}?target_language=en` | 2026-09-28 |
 | `listening_library_lesson.zh.json` | `GET /api/listening/library/{lessonId}?target_language=zh` | 2026-09-28 |
+| `listening_progress.json` | `GET /api/listening/progress?asset_id=...` (captured after Dictation's own real `POST` from a live Check - `checked_attempt_count:1`, `best_accuracy_percent:44`, `last_answer` is the exact partial answer typed) | 2026-09-28 |
+| `listening_shadowing_progress.json` | `GET /api/listening/shadowing-progress?asset_id=...` (one row per shadowed segment: `segment_id`, `completed_rounds`, `updated_at`; captured after real rounds of Shadowing completed on the isolated app) | 2026-09-29 |
 | `reading_practice_article_set.json` | `GET /api/reading/practice/articles/{id}` (404 `reading_set_not_available` - the real shape while no article has an approved set; see `reading_practice_next.json`) | 2026-09-28 |
 | `practice_recommendation.json` | `GET /api/practice-recommendation` | 2026-09-28 |
 | `essays.json` | `GET /api/essays` (empty - see "Content/data gaps this sandbox cannot fill") | 2026-09-28 |
@@ -122,6 +124,14 @@ Both screens' field reads (`id`, `language_code`, `level_range`, `item_count`,
 `progress.learned_count`, `headword`, `identity.language`, `review_stage`,
 `saved`) match those serializers exactly.
 
+## Not captured (Dictation/Shadowing pass, 2026-09-28)
+
+- **A real measured `POST /api/speech/pronunciation` response**: this sandbox has no speech provider
+  key, so a completed Shadowing round's result panel is verified with the provider-neutral envelope
+  built field-for-field from `writing_coach/speech_pronunciation.py#SpeechPronunciationResult`
+  (`words[].offset_ms`/`duration_ms`, `error_type`, the score fields) and served to the real screen
+  through a verification-only route intercept - never shipped, never a fixture here; the model
+  functions are exercised against the same shape in `scripts/test_orena_screen_shadowing.mjs`.
 
 ## Not captured - genuinely not producible in this sandbox
 

@@ -1,0 +1,19 @@
+{
+  "items": [
+    {
+      "id": "9862aa4e-6704-5192-b955-64d61c942a81",
+      "language": "en",
+      "asset_id": "commons-royalsociety-cosmic-calendar",
+      "segment_id": "commons-royalsociety-cosmic-calendar:000",
+      "presentation": "checked",
+      "revealed": false,
+      "checked_attempt_count": 1,
+      "best_accuracy_percent": 44,
+      "best_exact": false,
+      "last_answer": "With the big bang starting the year",
+      "last_used_hint": false,
+      "last_hint_level": 0,
+      "updated_at": "2026-09-28T11:00:02.976129+00:00"
+    }
+  ]
+}

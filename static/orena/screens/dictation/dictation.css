@@ -1,0 +1,429 @@
+/* Dictation (frame 07, D-088), measured against the pin. A learning workspace (route.focus,
+   Design Contract rule 49): `.o-main` stops scrolling as a page, so `.s-dict` fills the column and
+   the card - content-height, as the frame draws it - shrinks to what is left and scrolls only its
+   own body (`data-scroll-region`); the hint/check row (or Retry / Explain / Next) is docked under
+   that body and never scrolls away. The frame carries no device-variable branching (D4 §3): every
+   reflow is `flex-wrap`, matching the source. */
+.s-dict {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  max-width: 760px;
+  width: 100%;
+  margin: 0 auto;
+  padding-top: 14px;
+}
+
+.s-dict__head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.s-dict__headcol {
+  flex: 1;
+  min-width: 0;
+}
+.s-dict__title {
+  font-size: 16px;
+  font-weight: 600;
+}
+.s-dict__sub {
+  font-size: 13px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.s-dict__dots {
+  flex: none;
+  display: flex;
+  gap: 6px;
+}
+.s-dict__dot {
+  flex: 1;
+  height: 6px;
+  border-radius: 99px;
+  background: var(--border);
+  display: block;
+}
+.s-dict__dot--current {
+  background: var(--accent);
+}
+.s-dict__dot--exact {
+  background: var(--green);
+}
+.s-dict__dot--partial {
+  background: var(--amber);
+}
+
+.s-dict__card {
+  flex: 0 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  border-radius: 20px;
+  background: var(--surface);
+  padding: 24px;
+  box-shadow: var(--sh1);
+}
+/* The 4px inset keeps the answer box's focus ring inside the scrolling body's clip. */
+.s-dict__body {
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 4px;
+  margin: -4px;
+}
+.s-dict__stage {
+  display: contents;
+}
+.s-dict__dock {
+  flex: none;
+}
+.s-dict__dock:empty {
+  display: none;
+}
+
+.s-dict__player {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.s-dict__play {
+  width: 52px;
+  height: 52px;
+  border-radius: 999px;
+  border: 0;
+  background: var(--accent-fill);
+  color: var(--accent-ink);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  transition: background 0.15s, transform 0.15s;
+}
+.s-dict__play .ic * {
+  fill: currentColor;
+}
+.s-dict__play:hover {
+  background: var(--accent-fill-hover);
+}
+.s-dict__play:active {
+  background: var(--accent-fill-press);
+  transform: scale(0.97);
+}
+
+.s-dict__playcopy {
+  flex: 1;
+  min-width: 0;
+}
+.s-dict__playlabel {
+  font-size: 15px;
+  font-weight: 600;
+}
+.s-dict__playtime {
+  font-size: 13px;
+  color: var(--muted);
+}
+.s-dict__rate {
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  flex: none;
+}
+.s-dict__rate:hover {
+  background: var(--surface2);
+}
+
+.s-dict__wave {
+  flex: none;
+  display: flex;
+  gap: 4px;
+  height: 28px;
+  align-items: center;
+  opacity: 0.25;
+}
+.s-dict__wave.is-playing {
+  opacity: 1;
+}
+.s-dict__bar {
+  flex: 1;
+  border-radius: 2px;
+  background: var(--accent);
+  animation: pulse 1s ease-in-out infinite;
+}
+
+.s-dict__input {
+  flex: none;
+  width: 100%;
+  resize: none;
+  border-radius: 16px;
+  border: 1.5px solid transparent;
+  background: var(--surface2);
+  color: var(--text);
+  font-size: 17px;
+  line-height: 1.5;
+  padding: 18px;
+  outline: 0;
+  font-family: inherit;
+}
+.s-dict__input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--ring);
+}
+
+/* The frame's "Live check" strip (`dLiveOn`): on while a hint is in use and the line is unchecked.
+   Chip states are the design's `dLive` bindings, tokens as the design draws them. */
+.s-dict__live {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--surface2);
+}
+.s-dict__live[hidden] {
+  display: none;
+}
+.s-dict__livehead {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+}
+.s-dict__livelabel {
+  font-weight: 600;
+}
+.s-dict__livecount {
+  color: var(--muted);
+}
+.s-dict__livechips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.s-dict__livechip {
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+  font-weight: 500;
+  font-family: 'JetBrains Mono', monospace;
+  border: 1.5px dashed var(--border2);
+  background: var(--surface);
+  color: var(--text3);
+}
+.s-dict__livechip .ic {
+  display: block;
+  flex: none;
+}
+.s-dict__livechip--ok {
+  background: var(--green-soft);
+  color: var(--green);
+  border: 1.5px solid transparent;
+  font-family: inherit;
+}
+.s-dict__livechip--wrong {
+  background: var(--red-soft);
+  color: var(--red);
+  border-color: var(--red);
+}
+.s-dict__livechip--partial {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.s-dict__hintrow {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.s-dict__hint {
+  padding: 13px 18px;
+  border-radius: 14px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  min-height: 44px;
+}
+.s-dict__hint:hover:not(:disabled) {
+  background: var(--surface2);
+}
+
+.s-dict__hintnote {
+  font-size: 13px;
+  color: var(--muted);
+}
+.s-dict__spacer {
+  flex: 1;
+}
+.o-btn.s-dict__check {
+  padding: 13px 24px;
+  border-radius: 16px;
+  min-height: 44px;
+  font-size: 15px;
+}
+
+.s-dict__result {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  animation: rise 0.25s ease;
+}
+.s-dict__scorerow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.s-dict__score {
+  font-size: 22px;
+  font-weight: 600;
+}
+.s-dict__scorenote {
+  font-size: 14px;
+  color: var(--muted);
+}
+.s-dict__hintbadge {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 6px;
+  background: var(--surface2);
+  color: var(--amber);
+}
+
+.s-dict__chiplabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.s-dict__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  font-size: 17px;
+  line-height: 1.6;
+}
+.s-dict__chip {
+  padding: 4px 10px;
+  border-radius: 10px;
+  font-weight: 500;
+  background: transparent;
+  color: var(--text);
+}
+.s-dict__chip--mine-bad {
+  background: var(--red-soft);
+  color: var(--red);
+  text-decoration: underline wavy var(--red);
+}
+.s-dict__chip--src-fix {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+.s-dict__chipempty {
+  color: var(--muted);
+  font-style: italic;
+}
+.s-dict__support {
+  font-size: 13.5px;
+  color: var(--muted);
+  margin-top: 6px;
+}
+
+.s-dict__actions {
+  /* The frame keeps this row inside the result block (14px gap), not the card's 18px. */
+  margin-top: -4px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.s-dict__navbtn.s-dict__retry {
+  padding-top: 13px;
+  padding-bottom: 13px;
+}
+.s-dict__ai {
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 12px;
+  border: 1px solid var(--ai-line);
+  background: var(--ai-soft);
+  color: var(--ai-ink);
+  font-size: 14px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+.o-btn.s-dict__next {
+  padding: 13px 24px;
+  border-radius: 16px;
+  min-height: 44px;
+  font-size: 15px;
+}
+
+.s-dict__foot {
+  flex: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.s-dict__navbtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 18px;
+  border-radius: 14px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  min-height: 44px;
+}
+.s-dict__navbtn:hover:not(:disabled) {
+  background: var(--surface2);
+}
+
+.s-dict__donelabel {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* The hidden player: rendered (a playing clip needs a live element) but never seen. */
+.s-dict__media {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  opacity: 0;
+  pointer-events: none;
+}

@@ -3389,3 +3389,66 @@ endpoint the other Speaking/Listening rooms already read serves it.
   overrides any state colour an inline style gives a disabled button (Check's graded options lost
   their green/red that way) - a control that carries a verdict look must use `aria-disabled`, not
   `disabled`.
+
+## Dictation + Shadowing (D-088 frames 07/28), Wave B, 2026-09-29
+
+Built `static/orena/screens/dictation/` (`#/listen/:id/dictation`) and
+`static/orena/screens/shadowing/` (`#/listen/:id/shadow`), both against
+`GET /api/listening/library/{id}` and real per-segment progress
+(`GET`/`POST /api/listening/progress`, `GET`/`POST /api/listening/shadowing-progress`). Read from
+the frames AND the pinned state script (`Orena.dc.html`, the `dLiveOn`/`hintNote`/`tok`/`shPhase`
+bindings), not from the compact frames alone. Gaps and decisions for the human:
+
+- **Dictation's "Live check" strip is built** (`dLiveOn` is `dHint > 0 && no result`, so it appears
+  the moment a hint is taken - an earlier note here saying nothing ever sets it was wrong). The
+  design's hint ladder is three taps: word shapes, first letters, "some words revealed". The
+  prototype's own level 3 reveals *every* word, which contradicts its own note and the brief (LS5:
+  "a wrong word is not fully exposed merely because the learner asks for a hint"); this build reveals
+  every third word the learner has not earned and did not type wrong, and never confirms a word the
+  learner has not reached (`capabilities/dictation-hints.js#wordProgress`). Chinese groups
+  characters into words with `Intl.Segmenter` (a runtime without word data degrades to one
+  character per chip, where level 2 shows nothing new) so a hint is never a single character given
+  away whole. Decision for the human: is "some words revealed" every third word, or a different rule?
+- **Chinese reading (pinyin) under characters is not drawn in Dictation.** The frame's result and
+  live chips carry only a flat string per token (D4 §6) although the spec (LS5) asks for a reading
+  under each character "when enabled"; adding it is a frame change, not built. Chinese compares Han
+  characters as before (`listeningUnits`); note that shared evaluator joins a Latin run and the Han
+  character next to it into one unit (`"Vector版"` in `zh-technology-search-wikipedia`).
+- **Result colours come from the state script's `tok()`**: a matched token is plain, a wrong token
+  on "You wrote" is `--red-soft`/`--red` with a wavy underline (`dMine`), an unmatched transcript
+  token is `--accent-soft`/`--accent-text`. The score is `matched/total` and its note has three
+  tiers (every word / close at 0.7 or better / replay), as the script draws them.
+- **Dictation's "Finish" (last segment, checked) leaves the room via `ctx.back()`**, not a forced
+  navigation to Listening or a Lesson-complete modal - the frame draws no terminal screen for
+  Dictation, and inventing one (even reusing the shared `screens/lesson-complete/` sheet) would be
+  adding UI the source does not draw.
+- **Both rooms show the kit's disabled state on an unavailable Previous / Next** (the first and last
+  segment); the frame draws only the enabled control and its script simply ignores the tap.
+- **The typed answer is device memory** (`memory.answers[<asset>:<segment>]`, the key the old
+  Dictation used), so leaving the room and coming back keeps a draft. Checks are real records
+  (`POST /api/listening/progress`); a blank check is not an attempt and is neither saved nor counted.
+- **Shadowing's "Start lag"/"Timing match"** come from the provider's own per-word offsets
+  (`capabilities/pronunciation-result.js` `offsetMs`/`durationMs`, `screens/shadowing/model.js#lagMs`/
+  `matchPercent`); the old prototype's retry-count formula (`shTries`) is not reproduced. Each
+  renders "—" (rule 40) when the provider measured nothing. The "Speed" tile is the rate the round
+  was shadowed at (the frame's own binding, `speed + "x"`), not a measured pace. The bars are the
+  microphone's real level while the learner speaks and the frame's resting shape otherwise.
+  Verified end to end with a fake microphone and a verification-only stub of the provider envelope
+  (no speech key in the sandbox); never shipped.
+- **Shadowing's "Phrase rehearsal"** routes to `speak/media:<lessonId>?segment=<line>`;
+  `product/speaking-source.js#segmentOf` (the Speak room's) reads `segment`. Dictation and
+  Shadowing read `seg` (what the Listening Workspace passes) and also accept `segment`.
+- **The shared mic sheet's "Microphone is blocked" state offers "Type instead"**, which Shadowing has
+  no meaning for (there is nothing to type). It is raised by `screens/mic/sheet.js#micGate`'s own
+  blocked branch, which takes no `textFallback` option (`openMicState` does); request: `micGate(ctx,
+  start, { textFallback: false })`. Every other mic state is used as the sheet draws it.
+- **The offline sheet says the recording "will be assessed automatically when you're back online"**;
+  Shadowing keeps that promise while the room is open (the take is held in this tab and re-assessed
+  when the browser reports online) and only then - a take is never stored (D-076).
+- **The speed ladder is the design's shared one** (1, 0.75, 0.5, 1.25) in both rooms; the Listening
+  Workspace keeps its own local ladder and the speed is not carried between rooms.
+- **No AGENT_CONTRACT §6.1 surface id exists for Shadowing** (`SURFACES` names `listening.dictation`
+  only); the frame draws no Explain/AI action for it, so nothing is asked of the agent. Shadowing
+  registers `play_model`, `play_user` and `say_again` while mounted; Dictation registers
+  `play_model`. Shadowing does not log to the Speaking Summary session ledger (its kinds are the
+  Speak room's, and the frame draws no path from Shadowing to that summary, E2 §1).
