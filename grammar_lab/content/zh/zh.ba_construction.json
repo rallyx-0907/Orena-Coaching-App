@@ -11,12 +11,15 @@
   "source_refs": {},
   "point_type": "word_order",
   "header": {
-    "title": {"vi": "Câu chữ 把"},
+    "title": {"vi": "Câu chữ 把", "en": "The 把 sentence"},
     "native_title": "把字句",
     "level": {"framework": "hsk3", "value": "3", "rank": 3},
     "summary": {
-      "vi": "Câu chữ 把 dùng để nhấn mạnh việc xử lý một vật cụ thể và kết quả của việc đó, với vật bị xử lý đứng ngay sau 把."
-    }
+      "vi": "Câu chữ 把 dùng để nhấn mạnh việc xử lý một vật cụ thể và kết quả của việc đó, với vật bị xử lý đứng ngay sau 把.",
+      "en": "把 puts the object before the verb to stress what was done to it and the result."
+    },
+    "sub": {"vi": "kết quả xử lý", "en": "handling an object"},
+    "native_title_pinyin": ["bǎ", "zì", "jù"]
   },
   "when_to_use": [
     {"vi": "Khi muốn nói rõ mình đã làm gì với một vật cụ thể và kết quả ra sao."},
@@ -121,38 +124,41 @@
     {
       "q": "请___窗户关好。",
       "options": [
-        {"text": "把", "error_tag": null},
-        {"text": "被", "error_tag": "bei_sentence"},
-        {"text": "在", "error_tag": "word_choice"}
+        {"text": "把", "error_tag": null, "pinyin": ["bǎ"]},
+        {"text": "被", "error_tag": "bei_sentence", "pinyin": ["bèi"]},
+        {"text": "在", "error_tag": "word_choice", "pinyin": ["zài"]}
       ],
       "answer": 0,
       "explain": {
         "vi": "Câu chữ 把 dùng 把 trước tân ngữ để nhấn mạnh việc xử lý; 被 là câu bị động, 在 không phù hợp ở vị trí này."
-      }
+      },
+      "q_pinyin": ["qǐng", "", "", "", "chuāng", "hù", "guān", "hǎo", ""]
     },
     {
       "q": "我___书放在桌子上了。",
       "options": [
-        {"text": "把", "error_tag": null},
-        {"text": "被", "error_tag": "bei_sentence"},
-        {"text": "给", "error_tag": "word_choice"}
+        {"text": "把", "error_tag": null, "pinyin": ["bǎ"]},
+        {"text": "被", "error_tag": "bei_sentence", "pinyin": ["bèi"]},
+        {"text": "给", "error_tag": "word_choice", "pinyin": ["gěi"]}
       ],
       "answer": 0,
       "explain": {
         "vi": "Chủ ngữ 我 thực hiện hành động lên 书, nên dùng 把; 被 dùng khi chủ ngữ bị tác động, 给 không đúng ngữ pháp ở đây."
-      }
+      },
+      "q_pinyin": ["wǒ", "", "", "", "shū", "fàng", "zài", "zhuō", "zi", "shàng", "le", ""]
     },
     {
       "q": "他___作业做完了。",
       "options": [
-        {"text": "把", "error_tag": null},
-        {"text": "被", "error_tag": "bei_sentence"},
-        {"text": "对", "error_tag": "word_choice"}
+        {"text": "把", "error_tag": null, "pinyin": ["bǎ"]},
+        {"text": "被", "error_tag": "bei_sentence", "pinyin": ["bèi"]},
+        {"text": "对", "error_tag": "word_choice", "pinyin": ["duì"]}
       ],
       "answer": 0,
       "explain": {
         "vi": "Câu chữ 把 cần 把 trước tân ngữ 作业 để nêu kết quả xử lý; 被 sai hướng tác động, 对 không dùng trong cấu trúc này."
-      }
+      },
+      "q_pinyin": ["tā", "", "", "", "zuò", "yè", "zuò", "wán", "le", ""]
     }
   ],
   "status": "draft_ai",
@@ -163,5 +169,20 @@
     "run_id": "generate.1790589990",
     "generated_at": "2026-09-28T10:06:30Z"
   },
-  "review": null
+  "review": null,
+  "sequence": 1,
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu nói bạn đã làm gì với một vật và kết quả ra sao (dùng 把).",
+      "en": "Write a sentence about what you did to something and the result (use 把)."
+    },
+    "placeholder": "我把……",
+    "placeholder_pinyin": ["wǒ", "bǎ", "", ""],
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "marker", "any_of": ["把"]}, {"role": "complement", "regex": "[完好在到给成]"}]
+    },
+    "sample": {"text": "我把作业做完了。", "pinyin": ["wǒ", "bǎ", "zuò", "yè", "zuò", "wán", "le", ""]}
+  }
 }

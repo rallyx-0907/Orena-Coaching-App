@@ -11,10 +11,14 @@
   "source_refs": {},
   "point_type": "morphology",
   "header": {
-    "title": {"vi": "Danh từ số nhiều"},
+    "title": {"vi": "Danh từ số nhiều", "en": "Plural nouns"},
     "native_title": "Plural nouns",
     "level": {"framework": "cefr", "value": "A1", "rank": 1},
-    "summary": {"vi": "Danh từ đếm được ở số nhiều thường thêm -s hoặc -es vào cuối từ."}
+    "summary": {
+      "vi": "Danh từ đếm được ở số nhiều thường thêm -s hoặc -es vào cuối từ.",
+      "en": "Countable nouns usually add -s or -es to show more than one."
+    },
+    "sub": {"vi": "thêm -s / -es", "en": "add -s / -es"}
   },
   "when_to_use": [
     {"vi": "Khi nói về hai hoặc nhiều người, vật, hoặc sự việc."},
@@ -104,5 +108,19 @@
     "run_id": "generate.1790591370",
     "generated_at": "2026-09-28T10:29:30Z"
   },
-  "review": null
+  "review": null,
+  "sequence": 1,
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu nói bạn có hoặc thấy nhiều hơn một thứ.",
+      "en": "Write a sentence about having or seeing more than one thing."
+    },
+    "placeholder": "I have three ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "other", "regex": "\\b(?!this\\b|its\\b|was\\b|has\\b|does\\b|yes\\b)\\w{3,}s\\b"}]
+    },
+    "sample": {"text": "I see two birds."}
+  }
 }

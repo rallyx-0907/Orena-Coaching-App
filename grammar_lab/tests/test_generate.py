@@ -99,13 +99,24 @@ def _canned_slot(text: str, role: str, label: str, pairs: list[list[str]] | None
     return slot
 
 
-def _canned_qp(q: str, right: str, wrongs: list[tuple[str, str]]) -> dict:
-    return {
-        "q": q,
-        "options": [{"text": right, "error_tag": None}, *({"text": t, "error_tag": tag} for t, tag in wrongs)],
-        "answer": 0,
-        "explain": {"vi": "Giải thích."},
-    }
+_ZH_CHAR_PINYIN = {
+    "我": "wǒ", "吃": "chī", "饭": "fàn", "了": "le", "着": "zhe", "过": "guo", "他": "tā", "走": "zǒu",
+    "在": "zài", "你": "nǐ", "吗": "ma", "动": "dòng", "态": "tài", "助": "zhù", "词": "cí",
+}
+
+
+def _pairs(text: str) -> list[list[str]]:
+    return [[char, _ZH_CHAR_PINYIN.get(char, "")] for char in text]
+
+
+def _canned_qp(q: str, right: str, wrongs: list[tuple[str, str]], zh: bool = False) -> dict:
+    options = [{"text": right, "error_tag": None}, *({"text": t, "error_tag": tag} for t, tag in wrongs)]
+    if zh:
+        options = [{**option, "pinyin_pairs": _pairs(option["text"])} for option in options]
+    item = {"q": q, "options": options, "answer": 0, "explain": {"vi": "Giải thích."}}
+    if zh:
+        item["q_pinyin_pairs"] = _pairs(q)
+    return item
 
 
 # en.alpha as a morphology point (third person -s): what the model returns for schema v0.4.
@@ -171,6 +182,7 @@ def _zh_example(text: str, verb: str) -> dict:
 
 # zh.le_completion as a tense_aspect point.
 CANNED_V04_ZH = {
+    "native_title_pinyin_pairs": _pairs("动态助词“了”"),
     "summary": {"vi": "了 sau động từ: hành động đã xong."},
     "when_to_use": [{"vi": "Hành động đã xong."}, {"vi": "Có mốc thời gian cụ thể."}],
     "formula": [
@@ -188,9 +200,9 @@ CANNED_V04_ZH = {
         "wrong_pinyin_pairs": _ZH_TEXT_PAIRS["我昨天吃饭。"], "right_pinyin_pairs": _ZH_TEXT_PAIRS["我昨天吃了饭。"],
     }],
     "quick_practice": [
-        _canned_qp("我吃___饭。", "了", [("着", "aspect"), ("过", "aspect")]),
-        _canned_qp("他走___。", "了", [("着", "aspect"), ("在", "aspect")]),
-        _canned_qp("你吃___吗？", "了", [("着", "aspect"), ("在", "aspect")]),
+        _canned_qp("我吃___饭。", "了", [("着", "aspect"), ("过", "aspect")], zh=True),
+        _canned_qp("他走___。", "了", [("着", "aspect"), ("在", "aspect")], zh=True),
+        _canned_qp("你吃___吗？", "了", [("着", "aspect"), ("在", "aspect")], zh=True),
     ],
 }
 
@@ -476,7 +488,7 @@ def test_generate_v04_zh_removes_spaces_the_model_puts_around_the_blank(tmp_path
     # DeepSeek wrote every zh question of the first v0.4 run as "他 ___ 吃过越南菜。".
     lab = _v04_lab(tmp_path, "zh", point_type="tense_aspect")
     lab.write()
-    spaced = _canned_qp("我 ___ 饭。", "了", [("着", "aspect"), ("过", "aspect")])
+    spaced = _canned_qp("我 ___ 饭。", "了", [("着", "aspect"), ("过", "aspect")], zh=True)
     canned = {**CANNED_V04_ZH, "quick_practice": [spaced, *CANNED_V04_ZH["quick_practice"][1:]]}
     llm = LLMClient("anthropic", "claude-haiku-4-5-20251001", api_key="test", cache_dir=lab.root / ".cache",
                      transport=v04_transport(canned))

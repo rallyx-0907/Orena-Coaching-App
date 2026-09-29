@@ -11,10 +11,14 @@
   "source_refs": {},
   "point_type": "tense_aspect",
   "header": {
-    "title": {"vi": "Hiện tại tiếp diễn"},
+    "title": {"vi": "Hiện tại tiếp diễn", "en": "Present continuous"},
     "native_title": "Present continuous",
     "level": {"framework": "cefr", "value": "A1", "rank": 1},
-    "summary": {"vi": "Thì hiện tại tiếp diễn dùng để nói về một hành động đang xảy ra ngay lúc nói."}
+    "summary": {
+      "vi": "Thì hiện tại tiếp diễn dùng để nói về một hành động đang xảy ra ngay lúc nói.",
+      "en": "Talk about an action that is happening right now."
+    },
+    "sub": {"vi": "đang diễn ra", "en": "happening now"}
   },
   "when_to_use": [
     {"vi": "Hành động đang diễn ra ngay bây giờ, người nói nhìn thấy hoặc biết rõ."},
@@ -147,5 +151,22 @@
     "run_id": "generate.1790589955",
     "generated_at": "2026-09-28T10:05:55Z"
   },
-  "review": null
+  "review": null,
+  "sequence": 1,
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về việc bạn đang làm lúc này.",
+      "en": "Write a sentence about what you are doing right now."
+    },
+    "placeholder": "I am ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "aux", "any_of": ["am", "is", "are", "'m", "'s", "'re"]},
+        {"role": "verb", "regex": "\\b\\w+ing\\b"}
+      ]
+    },
+    "sample": {"text": "I am cooking dinner now."}
+  }
 }

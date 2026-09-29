@@ -11,12 +11,14 @@
   "source_refs": {},
   "point_type": "other",
   "header": {
-    "title": {"vi": "Mạo từ xác định the"},
+    "title": {"vi": "Mạo từ xác định the", "en": "The definite article: the"},
     "native_title": "The definite article: the",
     "level": {"framework": "cefr", "value": "A2", "rank": 2},
     "summary": {
-      "vi": "Mạo từ xác định \"the\" dùng để chỉ một người hoặc vật cụ thể mà cả người nói và người nghe đều đã biết."
-    }
+      "vi": "Mạo từ xác định \"the\" dùng để chỉ một người hoặc vật cụ thể mà cả người nói và người nghe đều đã biết.",
+      "en": "Use the for one specific person or thing that speaker and listener both know."
+    },
+    "sub": {"vi": "xác định", "en": "definite"}
   },
   "when_to_use": [
     {"vi": "Khi người nghe đã biết bạn đang nói về người hoặc vật nào."},
@@ -114,5 +116,16 @@
     "run_id": "generate.1790591198",
     "generated_at": "2026-09-28T10:26:38Z"
   },
-  "review": null
+  "review": null,
+  "sequence": 2,
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một vật cụ thể mà cả hai người đều biết (dùng the).",
+      "en": "Write a sentence about one specific thing you both know (use the)."
+    },
+    "placeholder": "The ... is ...",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"role": "marker", "any_of": ["the"]}]},
+    "sample": {"text": "The dog is under the table."}
+  }
 }

@@ -11,12 +11,14 @@
   "source_refs": {},
   "point_type": "tense_aspect",
   "header": {
-    "title": {"vi": "Câu điều kiện loại 1"},
+    "title": {"vi": "Câu điều kiện loại 1", "en": "First conditional"},
     "native_title": "First conditional",
     "level": {"framework": "cefr", "value": "B1", "rank": 3},
     "summary": {
-      "vi": "Câu điều kiện loại 1 dùng để nói về một điều kiện có thể xảy ra trong hiện tại hoặc tương lai và kết quả của nó."
-    }
+      "vi": "Câu điều kiện loại 1 dùng để nói về một điều kiện có thể xảy ra trong hiện tại hoặc tương lai và kết quả của nó.",
+      "en": "Talk about a possible condition and its likely result in the future."
+    },
+    "sub": {"vi": "điều kiện có thể", "en": "real conditions"}
   },
   "when_to_use": [
     {"vi": "Khi bạn muốn nói một việc có thể xảy ra nếu một điều kiện nào đó được đáp ứng."},
@@ -159,5 +161,19 @@
     "run_id": "generate.1790590028",
     "generated_at": "2026-09-28T10:07:08Z"
   },
-  "review": null
+  "review": null,
+  "sequence": 1,
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về điều bạn sẽ làm nếu trời mai đẹp.",
+      "en": "Write a sentence about what you will do if the weather is nice tomorrow."
+    },
+    "placeholder": "If it is sunny tomorrow, ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "marker", "any_of": ["if"]}, {"role": "aux", "any_of": ["will", "won't"]}]
+    },
+    "sample": {"text": "If it is sunny tomorrow, I will go to the park."}
+  }
 }

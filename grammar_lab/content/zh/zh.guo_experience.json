@@ -11,12 +11,15 @@
   "source_refs": {},
   "point_type": "tense_aspect",
   "header": {
-    "title": {"vi": "Trợ từ 过 (đã từng)"},
+    "title": {"vi": "Trợ từ 过 (đã từng)", "en": "The particle 过"},
     "native_title": "动态助词“过”",
     "level": {"framework": "hsk3", "value": "2", "rank": 2},
     "summary": {
-      "vi": "Trợ từ động thái 过 đặt sau động từ để nói rằng chủ thể đã từng trải qua hành động đó ít nhất một lần trong quá khứ, tính đến hiện tại."
-    }
+      "vi": "Trợ từ động thái 过 đặt sau động từ để nói rằng chủ thể đã từng trải qua hành động đó ít nhất một lần trong quá khứ, tính đến hiện tại.",
+      "en": "过 after a verb says the subject has had that experience before."
+    },
+    "sub": {"vi": "đã từng", "en": "have done before"},
+    "native_title_pinyin": ["dòng", "tài", "zhù", "cí", "", "guò", ""]
   },
   "when_to_use": [
     {"vi": "Khi muốn kể một trải nghiệm đã từng xảy ra, không quan tâm thời điểm cụ thể."},
@@ -118,7 +121,9 @@
       "other_meaning": {
         "vi": "了 nhấn mạnh hành động đã hoàn thành, thường gắn với một thời điểm hoặc kết quả cụ thể."
       },
-      "other_example": "我看了那部电影。"
+      "other_example": "我看了那部电影。",
+      "this_example_pinyin": ["wǒ", "kàn", "guo", "nà", "bù", "diàn", "yǐng", ""],
+      "other_example_pinyin": ["wǒ", "kàn", "le", "nà", "bù", "diàn", "yǐng", ""]
     }
   ],
   "common_mistakes": [
@@ -138,32 +143,35 @@
     {
       "q": "我___过日本。",
       "options": [
-        {"text": "去", "error_tag": null},
-        {"text": "不", "error_tag": "aspect"},
-        {"text": "了", "error_tag": "aspect"}
+        {"text": "去", "error_tag": null, "pinyin": ["qù"]},
+        {"text": "不", "error_tag": "aspect", "pinyin": ["bù"]},
+        {"text": "了", "error_tag": "aspect", "pinyin": ["le"]}
       ],
       "answer": 0,
-      "explain": {"vi": "Câu khẳng định kể trải nghiệm dùng động từ + 过, nên chỗ trống là động từ 去."}
+      "explain": {"vi": "Câu khẳng định kể trải nghiệm dùng động từ + 过, nên chỗ trống là động từ 去."},
+      "q_pinyin": ["wǒ", "", "", "", "guo", "rì", "běn", ""]
     },
     {
       "q": "他___吃过越南菜。",
       "options": [
-        {"text": "没", "error_tag": null},
-        {"text": "不", "error_tag": "aspect"},
-        {"text": "了", "error_tag": "aspect"}
+        {"text": "没", "error_tag": null, "pinyin": ["méi"]},
+        {"text": "不", "error_tag": "aspect", "pinyin": ["bù"]},
+        {"text": "了", "error_tag": "aspect", "pinyin": ["le"]}
       ],
       "answer": 0,
-      "explain": {"vi": "Phủ định trải nghiệm với 过 dùng 没, không dùng 不 hay 了."}
+      "explain": {"vi": "Phủ định trải nghiệm với 过 dùng 没, không dùng 不 hay 了."},
+      "q_pinyin": ["tā", "", "", "", "chī", "guo", "yuè", "nán", "cài", ""]
     },
     {
       "q": "你学___汉语吗？",
       "options": [
-        {"text": "过", "error_tag": null},
-        {"text": "了", "error_tag": "aspect"},
-        {"text": "不", "error_tag": "aspect"}
+        {"text": "过", "error_tag": null, "pinyin": ["guo"]},
+        {"text": "了", "error_tag": "aspect", "pinyin": ["le"]},
+        {"text": "不", "error_tag": "aspect", "pinyin": ["bù"]}
       ],
       "answer": 0,
-      "explain": {"vi": "Câu hỏi về trải nghiệm dùng 过 sau động từ, không dùng 了 hay 不."}
+      "explain": {"vi": "Câu hỏi về trải nghiệm dùng 过 sau động từ, không dùng 了 hay 不."},
+      "q_pinyin": ["nǐ", "xué", "", "", "", "hàn", "yǔ", "ma", ""]
     }
   ],
   "status": "draft_ai",
@@ -174,5 +182,17 @@
     "run_id": "generate.1790589982",
     "generated_at": "2026-09-28T10:06:22Z"
   },
-  "review": null
+  "review": null,
+  "sequence": 1,
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về nơi bạn đã từng đến (dùng 过).",
+      "en": "Write a sentence about a place you have been to (use 过)."
+    },
+    "placeholder": "我去过……",
+    "placeholder_pinyin": ["wǒ", "qù", "guò", "", ""],
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"role": "particle", "any_of": ["过"]}]},
+    "sample": {"text": "我去过上海。", "pinyin": ["wǒ", "qù", "guò", "shàng", "hǎi", ""]}
+  }
 }

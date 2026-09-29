@@ -1,10 +1,10 @@
-# Communicative functions shared by every target language (SPEC §3).
 schema_version: '0.2'
 functions:
 - id: fn.habit_fact
   title:
     vi: Nói về thói quen, sự thật
     en: Habits and facts
+    zh-Hans: 谈论习惯和事实
   realizations:
     en:
     - en.present_simple.third_person_s
@@ -15,6 +15,7 @@ functions:
   title:
     vi: Nói cái gì đó có ở đâu
     en: Existence
+    zh-Hans: 谈论存在
   realizations:
     en:
     - en.there_is_are
@@ -27,10 +28,10 @@ functions:
   title:
     vi: Số lượng, số nhiều
     en: Quantity and plurality
+    zh-Hans: 数量与复数
   realizations:
     en:
     - en.plural_nouns.regular
-    - en.countable_uncountable.much_many
   planned:
     zh-Hans:
     - zh.measure_words
@@ -40,6 +41,7 @@ functions:
   title:
     vi: Chỉ định người/vật (đã biết hay chưa)
     en: Reference
+    zh-Hans: 指代
   realizations:
     en:
     - en.articles.a_an
@@ -53,6 +55,7 @@ functions:
   title:
     vi: Việc đang diễn ra
     en: Ongoing action
+    zh-Hans: 正在进行的动作
   realizations:
     en:
     - en.present_continuous.now
@@ -65,6 +68,7 @@ functions:
   title:
     vi: Việc đã xong trong quá khứ
     en: Completed past action
+    zh-Hans: 过去已完成的动作
   realizations:
     en:
     - en.past_simple
@@ -77,6 +81,7 @@ functions:
   title:
     vi: Trải nghiệm đã từng
     en: Past experience
+    zh-Hans: 谈论经历
   realizations:
     en:
     - en.present_perfect.experience
@@ -89,6 +94,7 @@ functions:
   title:
     vi: So sánh hơn
     en: Comparison
+    zh-Hans: 比较
   realizations:
     en:
     - en.comparatives
@@ -101,6 +107,7 @@ functions:
   title:
     vi: Điều kiện có thể xảy ra
     en: Real condition
+    zh-Hans: 可能发生的条件
   realizations:
     en:
     - en.conditional_first
@@ -113,6 +120,7 @@ functions:
   title:
     vi: Nhấn mạnh kết quả xử lý một vật cụ thể
     zh-Hans: 强调对具体事物的处理结果
+    en: Stressing the result of handling an object
   realizations:
     zh-Hans:
     - zh.ba_construction

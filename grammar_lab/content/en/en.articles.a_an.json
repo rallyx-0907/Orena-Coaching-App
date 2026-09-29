@@ -11,12 +11,14 @@
   "source_refs": {},
   "point_type": "other",
   "header": {
-    "title": {"vi": "Mạo từ không xác định a/an"},
+    "title": {"vi": "Mạo từ không xác định a/an", "en": "Indefinite articles a / an"},
     "native_title": "Indefinite articles: a / an",
     "level": {"framework": "cefr", "value": "A1", "rank": 1},
     "summary": {
-      "vi": "Mạo từ không xác định a/an đứng trước danh từ đếm được số ít khi người nói không xác định rõ đối tượng cụ thể."
-    }
+      "vi": "Mạo từ không xác định a/an đứng trước danh từ đếm được số ít khi người nói không xác định rõ đối tượng cụ thể.",
+      "en": "Use a or an before a singular countable noun when the listener does not know which one."
+    },
+    "sub": {"vi": "không xác định", "en": "indefinite"}
   },
   "when_to_use": [
     {
@@ -126,5 +128,16 @@
     "run_id": "generate.1790591165",
     "generated_at": "2026-09-28T10:26:05Z"
   },
-  "review": null
+  "review": null,
+  "sequence": 1,
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một thứ bạn có hoặc thấy (dùng a hoặc an).",
+      "en": "Write a sentence about something you have or see (use a or an)."
+    },
+    "placeholder": "I have a ...",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"role": "marker", "any_of": ["a", "an"]}]},
+    "sample": {"text": "I have an orange."}
+  }
 }

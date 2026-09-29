@@ -146,6 +146,8 @@
         "title": {"description": "v0.2/v0.3 only; v0.4 moves it into header.", "$ref": "#/$defs/locale_map"},
         "summary": {"description": "v0.2/v0.3 only; v0.4 moves it into header.", "$ref": "#/$defs/locale_map"},
         "point_type": {"$ref": "#/$defs/point_type"},
+        "sequence": {"description": "GRAMMAR_CONTENT_CONTRACT.md section 0: reading order within function + level; required when status is approved (validate: point.sequence_missing).", "type": "integer", "minimum": 1},
+        "aliases": {"description": "R5 ids this point replaces (contract section 9); no R5 id may appear in two points (validate: aliases.duplicate).", "type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
         "header": {"$ref": "#/$defs/header"},
         "blocks": {
           "description": "v0.2/v0.3: the point's whole content. v0.4 (GRAMMAR_CONTENT_CONTRACT.md): optional, story only -- the primary content moved to when_to_use/pattern/examples/compare/common_mistakes/quick_practice below.",
@@ -157,6 +159,7 @@
         "compare": {"type": "array", "items": {"$ref": "#/$defs/compare_item"}},
         "common_mistakes": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/common_mistake_item"}},
         "quick_practice": {"type": "array", "minItems": 3, "maxItems": 3, "items": {"$ref": "#/$defs/quick_practice_item"}},
+        "personal_production": {"$ref": "#/$defs/personal_production"},
         "status": {"$ref": "#/$defs/status"},
         "flags": {
           "description": "Routing reasons, e.g. validate:example.no_target.",
@@ -490,7 +493,7 @@
     },
     "pattern_role": {
       "description": "GRAMMAR_CONTENT_CONTRACT.md §2/§4: shared by pattern.formula[].role and examples[].spans[].role so the app colours a slot and its realisation in a sentence the same way.",
-      "enum": ["subject", "verb", "aux", "object", "complement", "time", "place", "marker", "particle", "connector", "other"]
+      "enum": ["subject", "verb", "aux", "object", "complement", "classifier", "time", "place", "marker", "particle", "connector", "other"]
     },
     "formula_slot": {
       "description": "One abstract slot of the formula (S, have/has, V3, for/since, 把, 主语...) -- never a concrete sentence; concrete sentences live only in examples.",
@@ -525,9 +528,14 @@
       "additionalProperties": false,
       "required": ["base", "affix", "result"],
       "properties": {
-        "base": {"type": "string", "minLength": 1},
-        "affix": {"type": "string", "minLength": 1},
-        "result": {"type": "string", "minLength": 1}
+        "base": {"description": "Target-language text only.", "type": "string", "minLength": 1},
+        "affix": {"description": "Target-language text only; any note about it is affix_note.", "type": "string", "minLength": 1},
+        "result": {"description": "Target-language text only.", "type": "string", "minLength": 1},
+        "affix_note": {"description": "Explanation of the affix, in the explanation locale(s): {vi: 'lap lai dong tu'}.", "$ref": "#/$defs/locale_map"},
+        "note": {"description": "Explanation of the whole row.", "$ref": "#/$defs/locale_map"},
+        "base_pinyin": {"$ref": "#/$defs/pinyin"},
+        "affix_pinyin": {"$ref": "#/$defs/pinyin"},
+        "result_pinyin": {"$ref": "#/$defs/pinyin"}
       }
     },
     "pattern_illustration": {
@@ -543,7 +551,7 @@
           "required": ["shape"],
           "properties": {
             "shape": {"$ref": "#/$defs/timeline_shape"},
-            "relevance": {"type": "string", "minLength": 1}
+            "relevance": {"$ref": "#/$defs/locale_map"}
           }
         },
         "morphology": {"type": "array", "minItems": 1, "maxItems": 4, "items": {"$ref": "#/$defs/morphology_item"}}
@@ -580,8 +588,10 @@
       "additionalProperties": false,
       "required": ["title", "native_title", "level", "summary"],
       "properties": {
-        "title": {"description": "In the explanation locale(s).", "$ref": "#/$defs/locale_map"},
-        "native_title": {"description": "The point's name in the target language: 'Present perfect', '把字句'.", "type": "string", "minLength": 1},
+        "title": {"description": "In the explanation locale(s). Never bound to the screen title cell; that is native_title.", "$ref": "#/$defs/locale_map"},
+        "native_title": {"description": "The point's name in the target language: 'Present perfect', '把字句'. The screen title.", "type": "string", "minLength": 1},
+        "native_title_pinyin": {"$ref": "#/$defs/pinyin"},
+        "sub": {"description": "Short subtitle for 'Grammar . level . sub'; required when status is approved (validate: header.sub_missing).", "$ref": "#/$defs/locale_map"},
         "level": {"$ref": "#/$defs/level"},
         "summary": {"description": "One sentence.", "$ref": "#/$defs/locale_map"}
       }
@@ -631,7 +641,9 @@
         "this_meaning": {"$ref": "#/$defs/locale_map"},
         "this_example": {"type": "string", "minLength": 1},
         "other_meaning": {"$ref": "#/$defs/locale_map"},
-        "other_example": {"type": "string", "minLength": 1}
+        "other_example": {"type": "string", "minLength": 1},
+        "this_example_pinyin": {"$ref": "#/$defs/pinyin"},
+        "other_example_pinyin": {"$ref": "#/$defs/pinyin"}
       }
     },
     "common_mistake_item": {
@@ -655,7 +667,8 @@
       "required": ["text", "error_tag"],
       "properties": {
         "text": {"type": "string", "minLength": 1},
-        "error_tag": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/error_tag"}]}
+        "error_tag": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/error_tag"}]},
+        "pinyin": {"$ref": "#/$defs/pinyin"}
       }
     },
     "quick_practice_item": {
@@ -664,9 +677,52 @@
       "required": ["q", "options", "answer", "explain"],
       "properties": {
         "q": {"description": "Contains exactly one ___ blank (validate).", "type": "string", "minLength": 1},
+        "q_pinyin": {"$ref": "#/$defs/pinyin"},
         "options": {"type": "array", "minItems": 2, "maxItems": 4, "items": {"$ref": "#/$defs/quick_practice_option"}},
         "answer": {"description": "0-based index into options.", "type": "integer", "minimum": 0},
         "explain": {"$ref": "#/$defs/locale_map"}
+      }
+    },
+    "pattern_rule_slot": {
+      "description": "One role whose presence shows the learner used the pattern. Exactly one of any_of (whole words in EN, substrings in ZH) or regex (re.search, case-insensitive) -- enforced by validate: personal_production.rule_invalid.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role"],
+      "properties": {
+        "role": {"$ref": "#/$defs/pattern_role"},
+        "any_of": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "regex": {"type": "string", "minLength": 1}
+      }
+    },
+    "personal_production": {
+      "description": "GRAMMAR_CONTENT_CONTRACT.md section 7b: the 'Try it yourself' card. placeholder is target-language text only; any note is placeholder_note.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["prompt", "placeholder", "target_form", "pattern_rule", "sample"],
+      "properties": {
+        "prompt": {"$ref": "#/$defs/locale_map"},
+        "placeholder": {"type": "string", "minLength": 1},
+        "placeholder_pinyin": {"$ref": "#/$defs/pinyin"},
+        "placeholder_note": {"$ref": "#/$defs/locale_map"},
+        "target_form": {"enum": ["affirmative", "negative", "question"]},
+        "pattern_rule": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["ordered", "slots"],
+          "properties": {
+            "ordered": {"type": "boolean"},
+            "slots": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/pattern_rule_slot"}}
+          }
+        },
+        "sample": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["text"],
+          "properties": {
+            "text": {"type": "string", "minLength": 1},
+            "pinyin": {"$ref": "#/$defs/pinyin"}
+          }
+        }
       }
     },
     "set_manifest": {

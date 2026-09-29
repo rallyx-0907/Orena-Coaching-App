@@ -6,15 +6,19 @@
   "function": "fn.completed_past",
   "level": {"framework": "cefr", "value": "A2", "rank": 2},
   "prereqs": [],
-  "contrasts": [],
+  "contrasts": ["en.present_perfect.experience"],
   "error_tags": ["tense"],
   "source_refs": {},
   "point_type": "tense_aspect",
   "header": {
-    "title": {"vi": "Quá khứ đơn"},
+    "title": {"vi": "Quá khứ đơn", "en": "Past simple"},
     "native_title": "Past simple",
     "level": {"framework": "cefr", "value": "A2", "rank": 2},
-    "summary": {"vi": "Thì quá khứ đơn dùng để nói về một hành động đã xảy ra và kết thúc trong quá khứ."}
+    "summary": {
+      "vi": "Thì quá khứ đơn dùng để nói về một hành động đã xảy ra và kết thúc trong quá khứ.",
+      "en": "Talk about an action that happened and finished at a definite time in the past."
+    },
+    "sub": {"vi": "việc đã xong", "en": "finished past"}
   },
   "when_to_use": [
     {"vi": "Kể lại một sự việc đã xảy ra và kết thúc tại một thời điểm cụ thể trong quá khứ."},
@@ -138,5 +142,24 @@
     "run_id": "generate.1790591150",
     "generated_at": "2026-09-28T10:25:50Z"
   },
-  "review": null
+  "review": null,
+  "sequence": 1,
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về việc bạn đã làm vào cuối tuần trước.",
+      "en": "Write a sentence about something you did last weekend."
+    },
+    "placeholder": "Last weekend I ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {
+          "role": "verb",
+          "regex": "\\b(?:\\w+ed|went|saw|ate|had|did|came|took|made|bought|got|gave|found|met|ran)\\b"
+        }
+      ]
+    },
+    "sample": {"text": "I visited a museum last weekend."}
+  }
 }

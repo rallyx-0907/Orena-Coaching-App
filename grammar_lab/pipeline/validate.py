@@ -26,7 +26,7 @@ ref.unknown_realization     a function realization ID does not exist
 error_tag.list_missing      schema/error_tags.json has no tag list for the language
 error_tag.unknown           tag is not an engine error label
 error_tag.pitfall_unlisted  pitfall.error_tag is not in the point's error_tags
-locale.missing              a localized field lacks a locale declared in the manifest
+locale.missing              a locale map lacks vi (always), en (status approved), or a function title lacks vi/en/zh-Hans (contract "Locale")
 locale.l1_undeclared        pitfall.l1 names an L1 not declared in the manifest
 zh.traditional_char         zh-Hans content contains traditional characters
 inventory.duplicate_id      inv_id appears twice in the inventory
@@ -52,6 +52,15 @@ quick_practice.distractor_misspelling  a wrong option is only a misspelling (err
 formula.slot_has_joiner     a formula slot's text (or one of its options) contains '+' (the app draws joiners) (v0.4)
 formula.option_duplicate    a formula slot lists the same option twice (v0.4)
 zh.whitespace               a zh-Hans target string has a space next to a Han character or the ___ blank (v0.4)
+zh.pinyin_field_unlisted    a flat string outside the contract's pinyin table carries Han characters (locale maps are never scanned) (v0.4)
+header.sub_missing          an approved point has no header.sub (v0.4)
+point.sequence_missing      an approved point has no sequence (v0.4)
+personal_production.rule_invalid  a pattern_rule slot lacks exactly one of any_of/regex, or its regex does not compile (v0.4)
+personal_production.rule_role_not_in_formula  a pattern_rule slot's role is not a role of the target_form formula (v0.4)
+personal_production.rule_rejects_sample  the pattern_rule does not match personal_production.sample.text (v0.4)
+personal_production.rule_rejects_example  the pattern_rule does not match an example of the target_form (rule too strict) (v0.4)
+contrasts.asymmetric        A lists B in contrasts but B does not list A (both in the set) (v0.4)
+aliases.duplicate           an R5 id appears in the aliases of two points (v0.4)
 """
 
 from __future__ import annotations
@@ -93,6 +102,10 @@ QUICK_PRACTICE_BLANK = "___"
 # engine label that only means "misspelled" (boxs, cates) would pass verify -- the engine does
 # flag it -- while being exactly the invented form the contract rules out.
 NONSENSE_DISTRACTOR_TAGS = frozenset({"spelling"})
+REQUIRED_LOCALES = ("vi",)  # every status; "en" joins at approved (contract "Locale")
+APPROVED_LOCALES = ("vi", "en")
+FUNCTION_LOCALES = ("vi", "en", "zh-Hans")  # a function's label is the Library group header, all three UI languages
+_LOCALE_KEYS = frozenset({"vi", "en", "zh-Hans", "ja"})
 FORMULA_JOINER = "+"  # the app draws the joiner between slots; a slot never carries it
 _HAN = re.compile(r"[㐀-䶿一-鿿豈-﫿]")
 # Chinese is written without spaces; the first zh v0.4 run put one on each side of the blank
@@ -318,8 +331,18 @@ class _Validation:
             if self.target_lang == ZH_HANS:
                 self.check_pinyin_v04(file, point)
                 self.check_zh_whitespace_v04(file, point)
+        required = APPROVED_LOCALES if point["status"] == "approved" else REQUIRED_LOCALES
         for path, mapping in _locale_maps(point):
-            self.check_locales(file, path, mapping)
+            self.check_locales(file, path, mapping, required)
+        if point["status"] == "approved" and point.get("schema_version") == "0.4":
+            if "sub" not in point["header"]:
+                self.issue(file, "header.sub", "header.sub_missing", "an approved point needs header.sub")
+            if "sequence" not in point:
+                self.issue(file, "sequence", "point.sequence_missing", "an approved point needs sequence")
+        if point.get("schema_version") == "0.4":
+            self.check_personal_production_v04(file, point)
+            if self.target_lang == ZH_HANS:
+                self.check_pinyin_field_unlisted_v04(file, point)
         self.check_script(file, point)
 
     def check_level(self, file: str, point: dict[str, Any]) -> None:
@@ -573,8 +596,77 @@ class _Validation:
                     self.issue(file, f"{option_path}.error_tag", "error_tag.unknown",
                                f"{tag!r} is not an engine error label for {self.target_lang}")
 
-    def check_locales(self, file: str, path: str, mapping: dict[str, str]) -> None:
-        missing = [locale for locale in self.locales if locale not in mapping]
+    def check_pinyin_field_unlisted_v04(self, file: str, point: dict[str, Any]) -> None:
+        """A flat string outside the contract's pinyin table that carries Han characters is a target-text
+        field nobody registered. Locale maps (explanations) are never scanned."""
+        listed = {path for path, _, _ in _pinyin_targets(point)}
+        listed_texts = {path for path, _ in _target_texts(point)}
+
+        def walk(node: Any, path: str) -> Iterator[tuple[str, str]]:
+            if isinstance(node, dict):
+                if node and all(key in _LOCALE_KEYS for key in node):
+                    return  # a locale map: explanation text, may quote Han characters to teach them
+                for key, value in node.items():
+                    if key in ("source_refs", "provenance", "review", "flags", "id", "prereqs", "contrasts",
+                               "aliases", "error_tags", "error_tag", "l1", "with", "function", "blocks", "pattern_rule"):
+                        continue
+                    yield from walk(value, f"{path}.{key}" if path else key)
+            elif isinstance(node, list):
+                for index, value in enumerate(node):
+                    yield from walk(value, f"{path}[{index}]")
+            elif isinstance(node, str) and _HAN.search(node):
+                yield path, node
+
+        for path, _text in walk(point, ""):
+            if path not in listed_texts and path not in listed:
+                self.issue(file, path, "zh.pinyin_field_unlisted",
+                           "this field carries Chinese characters but is not in the contract's pinyin table (section 8)")
+
+    def check_personal_production_v04(self, file: str, point: dict[str, Any]) -> None:
+        production = point.get("personal_production")
+        if not production:
+            return
+        base = "personal_production"
+        formula = _formula_for_form(point["pattern"], production["target_form"])
+        if formula is None:
+            self.issue(file, f"{base}.target_form", "example.form_without_variant",
+                       f"target_form {production['target_form']!r} but pattern.variants has no such formula")
+            return
+        formula_roles = {slot["role"] for slot in formula}
+        rule = production["pattern_rule"]
+        matchers = []
+        for index, slot in enumerate(rule["slots"]):
+            slot_path = f"{base}.pattern_rule.slots[{index}]"
+            has_any, has_regex = "any_of" in slot, "regex" in slot
+            if has_any == has_regex:
+                self.issue(file, slot_path, "personal_production.rule_invalid",
+                           "a slot needs exactly one of any_of or regex")
+                return
+            if slot["role"] not in formula_roles:
+                self.issue(file, f"{slot_path}.role", "personal_production.rule_role_not_in_formula",
+                           f"role {slot['role']!r} is not in the {production['target_form']} formula")
+            if has_regex:
+                try:
+                    matchers.append(re.compile(slot["regex"], re.IGNORECASE))
+                except re.error as exc:
+                    self.issue(file, f"{slot_path}.regex", "personal_production.rule_invalid", f"regex: {exc}")
+                    return
+            else:
+                matchers.append(slot["any_of"])
+        zh = self.target_lang == ZH_HANS
+        texts = [(f"{base}.sample.text", production["sample"]["text"], "personal_production.rule_rejects_sample")]
+        texts += [
+            (f"examples[{index}].text", example["text"], "personal_production.rule_rejects_example")
+            for index, example in enumerate(point["examples"]) if example["form"] == production["target_form"]
+        ]
+        for path, text, code in texts:
+            if not pattern_rule_matches(rule["ordered"], matchers, text, zh):
+                self.issue(file, path, code, f"the pattern_rule does not match {text!r}")
+
+    def check_locales(
+        self, file: str, path: str, mapping: dict[str, str], required: tuple[str, ...] = REQUIRED_LOCALES
+    ) -> None:
+        missing = [locale for locale in required if locale not in mapping]
         if missing:
             self.issue(file, path, "locale.missing", f"missing locale(s): {', '.join(missing)}")
 
@@ -613,6 +705,23 @@ class _Validation:
             if node not in state:
                 visit(node)
 
+    def check_contrasts_symmetric(self) -> None:
+        for pid, (file, point) in sorted(self.points.items()):
+            for index, other in enumerate(point["contrasts"]):
+                if other in self.points and pid not in self.points[other][1]["contrasts"]:
+                    self.issue(file, f"contrasts[{index}]", "contrasts.asymmetric",
+                               f"{pid} lists {other} but {other} does not list {pid}")
+
+    def check_aliases(self) -> None:
+        seen: dict[str, str] = {}
+        for pid, (file, point) in sorted(self.points.items()):
+            for index, alias in enumerate(point.get("aliases", [])):
+                if alias in seen:
+                    self.issue(file, f"aliases[{index}]", "aliases.duplicate",
+                               f"R5 id {alias} is already an alias of {seen[alias]}")
+                else:
+                    seen[alias] = pid
+
     def check_functions(self) -> None:
         file = FUNCTIONS_PATH.as_posix()
         used = {point["function"] for _, point in self.points.values()}
@@ -623,7 +732,7 @@ class _Validation:
                     self.issue(file, f"{fid}.realizations.{self.target_lang}[{index}]", "ref.unknown_realization",
                                f"unknown grammar point {realization}")
             if fid in used:
-                self.check_locales(file, f"{fid}.title", function["title"])
+                self.check_locales(file, f"{fid}.title", function["title"], FUNCTION_LOCALES)
             zh_title = function["title"].get(ZH_HANS)
             if zh_title and traditional_chars(zh_title):
                 self.issue(file, f"{fid}.title.{ZH_HANS}", "zh.traditional_char",
@@ -659,10 +768,40 @@ class _Validation:
         for file, point in self.points.values():
             self.check_point(file, point)
         self.check_prereq_cycles()
+        self.check_contrasts_symmetric()
+        self.check_aliases()
         self.check_functions()
         self.check_inventory()
         self.report.issues.sort()
         return self.report
+
+
+def pattern_rule_matches(ordered: bool, matchers: list[Any], text: str, zh: bool) -> bool:
+    """GRAMMAR_CONTENT_CONTRACT.md section 7b: does a learner sentence use the pattern?
+
+    ``matchers`` holds, per slot, a compiled regex or a list of literal alternatives. Literals match whole
+    words (EN) or substrings (ZH). Ordered rules need the slots to match left to right without overlap."""
+    normalized = text.casefold().replace("\u2019", "'")
+    position = 0
+    for matcher in matchers:
+        best = None
+        if isinstance(matcher, list):
+            candidates = []
+            for literal in matcher:
+                literal = literal.casefold()
+                pattern = re.escape(literal) if zh else rf"(?<![\w']){re.escape(literal)}(?![\w])"
+                candidates.append(re.compile(pattern))
+        else:
+            candidates = [matcher]
+        for pattern in candidates:
+            found = pattern.search(normalized, position if ordered else 0)
+            if found and (best is None or found.start() < best.start()):
+                best = found
+        if best is None:
+            return False
+        if ordered:
+            position = best.end()
+    return True
 
 
 def _normalize(text: str) -> str:
@@ -682,7 +821,10 @@ def _formulas(pattern: dict[str, Any]) -> Iterator[tuple[str, list[dict[str, Any
 
 
 def _pinyin_targets(point: dict[str, Any]) -> Iterator[tuple[str, str, list[str] | None]]:
-    """(path, text, pinyin) for every zh-Hans string that must carry per-character pinyin."""
+    """(path, text, pinyin) for every zh-Hans string that must carry per-character pinyin
+    (the table of GRAMMAR_CONTENT_CONTRACT.md section 8, and nothing else)."""
+    if "header" in point:
+        yield "header.native_title_pinyin", point["header"]["native_title"], point["header"].get("native_title_pinyin")
     for base, slots in _formulas(point["pattern"]):
         for index, slot in enumerate(slots):
             yield f"{base}[{index}].pinyin", slot["text"], slot.get("pinyin")
@@ -693,6 +835,20 @@ def _pinyin_targets(point: dict[str, Any]) -> Iterator[tuple[str, str, list[str]
     for index, item in enumerate(point["common_mistakes"]):
         yield f"common_mistakes[{index}].wrong_pinyin", item["wrong"], item.get("wrong_pinyin")
         yield f"common_mistakes[{index}].right_pinyin", item["right"], item.get("right_pinyin")
+    for index, item in enumerate(point.get("compare", [])):
+        for side in ("this", "other"):
+            yield f"compare[{index}].{side}_example_pinyin", item[f"{side}_example"], item.get(f"{side}_example_pinyin")
+    for index, item in enumerate(point.get("quick_practice", [])):
+        yield f"quick_practice[{index}].q_pinyin", item["q"], item.get("q_pinyin")
+        for option_index, option in enumerate(item["options"]):
+            yield (f"quick_practice[{index}].options[{option_index}].pinyin", option["text"], option.get("pinyin"))
+    for index, item in enumerate(point["pattern"]["illustration"].get("morphology", [])):
+        for key in ("base", "affix", "result"):
+            yield f"pattern.illustration.morphology[{index}].{key}_pinyin", item[key], item.get(f"{key}_pinyin")
+    production = point.get("personal_production")
+    if production:
+        yield "personal_production.placeholder_pinyin", production["placeholder"], production.get("placeholder_pinyin")
+        yield "personal_production.sample.pinyin", production["sample"]["text"], production["sample"].get("pinyin")
 
 
 def _pinyin_problem(text: str, pinyin: list[str] | None) -> str | None:
@@ -726,6 +882,8 @@ def _locale_maps(point: dict[str, Any]) -> Iterator[tuple[str, dict[str, str]]]:
     if "header" in point:
         yield "header.title", point["header"]["title"]
         yield "header.summary", point["header"]["summary"]
+        if "sub" in point["header"]:
+            yield "header.sub", point["header"]["sub"]
     else:
         yield "title", point["title"]
         yield "summary", point["summary"]
@@ -733,6 +891,18 @@ def _locale_maps(point: dict[str, Any]) -> Iterator[tuple[str, dict[str, str]]]:
         for base, slots in _formulas(point["pattern"]):
             for index, slot in enumerate(slots):
                 yield f"{base}[{index}].label", slot["label"]
+        illustration = point["pattern"]["illustration"]
+        if "relevance" in illustration.get("timeline", {}):
+            yield "pattern.illustration.timeline.relevance", illustration["timeline"]["relevance"]
+        for index, item in enumerate(illustration.get("morphology", [])):
+            for key in ("affix_note", "note"):
+                if key in item:
+                    yield f"pattern.illustration.morphology[{index}].{key}", item[key]
+    production = point.get("personal_production")
+    if production:
+        yield "personal_production.prompt", production["prompt"]
+        if "placeholder_note" in production:
+            yield "personal_production.placeholder_note", production["placeholder_note"]
     for index, item in enumerate(point.get("when_to_use", [])):
         yield f"when_to_use[{index}]", item
     for index, example in enumerate(point.get("examples", [])):
@@ -787,6 +957,10 @@ def _target_texts(point: dict[str, Any]) -> Iterator[tuple[str, str]]:
         for index, item in enumerate(point["pattern"]["illustration"].get("morphology", [])):
             for key in ("base", "affix", "result"):
                 yield f"pattern.illustration.morphology[{index}].{key}", item[key]
+    production = point.get("personal_production")
+    if production:
+        yield "personal_production.placeholder", production["placeholder"]
+        yield "personal_production.sample.text", production["sample"]["text"]
     for index, example in enumerate(point.get("examples", [])):
         yield f"examples[{index}].text", example["text"]
     for index, item in enumerate(point.get("compare", [])):

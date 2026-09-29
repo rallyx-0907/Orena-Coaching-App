@@ -63,8 +63,9 @@ CASES = [
     # --- JSON Schema v0.2 ---------------------------------------------------------------
     ok("schema.invalid", "baseline", nothing),
     ok("schema.invalid", "timeline future_plan", lambda lab: block(alpha(lab), "timeline").update(kind="future_plan")),
-    ok("schema.invalid", "approved with review", lambda lab: alpha(lab).update(
-        status="approved", review={"reviewer": "owner", "reviewed_at": "2026-09-26T10:00:00+07:00", "seconds": 42})),
+    ok("schema.invalid", "approved with review", lambda lab: (
+        _all_locales(lab, ["vi", "en"]), alpha(lab).update(
+            status="approved", review={"reviewer": "owner", "reviewed_at": "2026-09-26T10:00:00+07:00", "seconds": 42}))),
     fail("schema.invalid", "timeline kind outside enum", lambda lab: block(alpha(lab), "timeline").update(kind="future_perfect")),
     fail("schema.invalid", "pitfall l1 as string", lambda lab: block(alpha(lab), "pitfall").update(l1="vi")),
     fail("schema.invalid", "pitfall without error_tag", lambda lab: block(alpha(lab), "pitfall").pop("error_tag")),
@@ -141,9 +142,10 @@ CASES = [
     ok("ref.unknown_contrast", "baseline", nothing),
     fail("ref.unknown_contrast", "contrasts entry missing", lambda lab: beta(lab).update(contrasts=["en.alpha", "en.gamma"])),
     fail("ref.unknown_contrast", "contrast block with missing point", lambda lab: (
-        beta(lab).update(contrasts=["en.gamma"]), block(beta(lab), "contrast").update(**{"with": "en.gamma"}))),
+        beta(lab).update(contrasts=["en.gamma"]), alpha(lab).update(contrasts=[]),
+        block(beta(lab), "contrast").update(**{"with": "en.gamma"}))),
     ok("ref.contrast_block_unlisted", "baseline", nothing),
-    fail("ref.contrast_block_unlisted", "with not in contrasts", lambda lab: beta(lab).update(contrasts=[])),
+    fail("ref.contrast_block_unlisted", "with not in contrasts", lambda lab: (beta(lab).update(contrasts=[]), alpha(lab).update(contrasts=[]))),
     ok("ref.prereq_cycle", "chain without cycle", nothing),
     fail("ref.prereq_cycle", "two-point cycle", lambda lab: (
         set_level(alpha(lab), "A2", 2), alpha(lab).update(prereqs=["en.beta"]))),
@@ -170,8 +172,12 @@ CASES = [
     fail("error_tag.pitfall_unlisted", "pitfall tag not on the point", lambda lab: block(alpha(lab), "pitfall").update(error_tag="tense")),
     # --- locales ----------------------------------------------------------------------
     ok("locale.missing", "two declared locales, all present", lambda lab: _all_locales(lab, ["vi", "en"])),
-    fail("locale.missing", "example translation lacks a locale", lambda lab: (
+    fail("locale.missing", "example translation lacks en on an approved point", lambda lab: (
+        _all_locales(lab, ["vi", "en"]), _approve(alpha(lab)), block(alpha(lab), "example")["tr"].pop("en"))),
+    ok("locale.missing", "a draft point may lack en", lambda lab: (
         _all_locales(lab, ["vi", "en"]), block(alpha(lab), "example")["tr"].pop("en"))),
+    fail("locale.missing", "a draft point still needs vi", lambda lab: (
+        _all_locales(lab, ["vi", "en"]), block(alpha(lab), "example")["tr"].pop("vi"))),
     fail("locale.missing", "rule_table note lacks a locale", lambda lab: (
         _all_locales(lab, ["vi", "en"]), block(alpha(lab), "rule_table")["rows"][0][2].pop("vi"))),
     fail("locale.missing", "function title lacks a locale", lambda lab: (
@@ -179,6 +185,38 @@ CASES = [
     ok("locale.l1_undeclared", "declared second L1", lambda lab: (
         lab.manifest.update(l1=["vi", "zh"]), block(alpha(lab), "pitfall").update(l1=["vi", "zh"]))),
     fail("locale.l1_undeclared", "pitfall for undeclared L1", lambda lab: block(alpha(lab), "pitfall").update(l1=["vi", "zh"])),
+    # --- v0.4 patch: sub, sequence, personal_production, pinyin scope, contrasts, aliases ------------
+    ok("header.sub_missing", "approved with sub", lambda lab: _approved_v04(lab, sub=True)),
+    fail("header.sub_missing", "approved without sub", lambda lab: _approved_v04(lab, sub=False, sequence=True)),
+    ok("point.sequence_missing", "approved with sequence", lambda lab: _approved_v04(lab, sub=True, sequence=True)),
+    fail("point.sequence_missing", "approved without sequence", lambda lab: _approved_v04(lab, sub=True, sequence=False)),
+    ok("personal_production.rule_invalid", "a valid rule", lambda lab: _with_production(lab)),
+    fail("personal_production.rule_invalid", "a slot with both any_of and regex", lambda lab: _with_production(
+        lab, slots=[{"role": "marker", "any_of": ["two"], "regex": "two"}])),
+    fail("personal_production.rule_invalid", "a regex that does not compile", lambda lab: _with_production(
+        lab, slots=[{"role": "marker", "regex": "("}])),
+    ok("personal_production.rule_role_not_in_formula", "roles of the formula", lambda lab: _with_production(lab)),
+    fail("personal_production.rule_role_not_in_formula", "a role the formula lacks", lambda lab: _with_production(
+        lab, slots=[{"role": "aux", "any_of": ["have"]}])),
+    ok("personal_production.rule_rejects_sample", "the rule matches the sample", lambda lab: _with_production(lab)),
+    fail("personal_production.rule_rejects_sample", "the rule misses the sample", lambda lab: _with_production(
+        lab, sample="I have a cat.", slots=[{"role": "marker", "any_of": ["two", "three"]}])),
+    ok("personal_production.rule_rejects_example", "the rule matches the example", lambda lab: _with_production(lab)),
+    fail("personal_production.rule_rejects_example", "the rule is stricter than the example", lambda lab: _with_production(
+        lab, sample="I have ten cats.", slots=[{"role": "marker", "any_of": ["ten"]}])),
+    ok("zh.pinyin_field_unlisted", "Han in an explanation is not scanned", lambda lab: (
+        point := _with_v04_zh(lab), point["common_mistakes"][0].update(reason={"vi": "Bổ ngữ như 完, 好 cần 了."})),
+        lang="zh"),
+    fail("zh.pinyin_field_unlisted", "a flat field outside the pinyin table with Han", lambda lab: (
+        point := _with_v04_zh(lab), point.update(zh_note="含汉字"),
+        setattr(lab, "schema_patch", lambda schema: schema["$defs"]["grammar_point"]["properties"].update(
+            zh_note={"type": "string"}))), lang="zh"),
+    ok("contrasts.asymmetric", "both directions listed", nothing),
+    fail("contrasts.asymmetric", "only one direction listed", lambda lab: alpha(lab).update(contrasts=[])),
+    ok("aliases.duplicate", "distinct R5 ids", lambda lab: (
+        alpha(lab).update(aliases=["a1-x"]), beta(lab).update(aliases=["a1-y"]))),
+    fail("aliases.duplicate", "one R5 id on two points", lambda lab: (
+        alpha(lab).update(aliases=["a1-x"]), beta(lab).update(aliases=["a1-x"]))),
     # --- simplified Chinese only ------------------------------------------------------
     ok("zh.traditional_char", "simplified content with 乾/於", lambda lab: block(zh(lab), "pitfall").update(
         wrong="他於昨天吃饭。", right="他于昨天吃了饼乾。"), lang="zh"),
@@ -295,7 +333,9 @@ CASES = [
         point["pattern"]["formula"][1].update(options=[{"text": "了", "pinyin": ["le"]}, {"text": "过"}])), lang="zh"),
     ok("zh.whitespace", "zh text written without spaces", lambda lab: _with_v04_zh(lab), lang="zh"),
     fail("zh.whitespace", "spaces around the blank in a zh question", lambda lab: (
-        point := _with_v04_zh(lab), point["quick_practice"][0].update(q="我 ___ 饭。")), lang="zh"),
+        point := _with_v04_zh(lab),
+        point["quick_practice"][0].update(q="我 ___ 饭。", q_pinyin=["wǒ", "", "", "", "", "", "fàn", ""])),
+        lang="zh"),
     fail("zh.whitespace", "a space between Han characters in a zh example", lambda lab: (
         point := _with_v04_zh(lab),
         point["examples"][0].update(text="我们 吃了饭。", pinyin=["wǒ", "men", "", "chī", "le", "fàn", ""])),
@@ -412,6 +452,48 @@ def _qp(q: str, right: str, wrong: str, tag: str) -> dict:
     }
 
 
+_ZH_OPTION_PINYIN = {"了": ["le"], "着": ["zhe"], "过": ["guo"]}
+
+
+def _qp_zh(q: str, q_pinyin: list[str], right: str, wrong: str, tag: str) -> dict:
+    item = _qp(q, right, wrong, tag)
+    item["q_pinyin"] = q_pinyin
+    for option in item["options"]:
+        option["pinyin"] = _ZH_OPTION_PINYIN[option["text"]]
+    return item
+
+
+def _approve(point: dict) -> None:
+    point.update(status="approved", review={"reviewer": "owner", "reviewed_at": "2026-09-26T10:00:00+07:00", "seconds": 42})
+
+
+def _approved_v04(lab: Lab, *, sub: bool, sequence: bool = True) -> None:
+    """en.alpha as an approved v0.4 point with every locale filled, optionally lacking sub / sequence."""
+    point = _with_v04(alpha(lab))
+    _approve(point)
+    if sub:
+        point["header"]["sub"] = {"vi": "số nhiều", "en": "plurals"}
+    if sequence:
+        point["sequence"] = 1
+    _all_locales(lab, ["vi", "en"])
+
+
+def _with_production(lab: Lab, *, sample: str = "I have three cats.", slots: list | None = None) -> None:
+    point = _with_v04(alpha(lab))
+    point["personal_production"] = {
+        "prompt": {"vi": "Viết một câu về thú cưng."},
+        "placeholder": "I have two ...",
+        "target_form": "affirmative",
+        "pattern_rule": {
+            "ordered": True,
+            "slots": slots if slots is not None else [
+                {"role": "marker", "any_of": ["two", "three", "four"]}, {"role": "object", "regex": r"\b\w+s\b"},
+            ],
+        },
+        "sample": {"text": sample},
+    }
+
+
 def _v04_fields(point: dict) -> dict:
     """A schema-valid set of the v0.4 fields for en.alpha (GRAMMAR_CONTENT_CONTRACT.md)."""
     text = "I have two cats."
@@ -467,6 +549,7 @@ def _with_v04_zh(lab: Lab) -> dict:
         "point_type": "tense_aspect",
         "header": {
             "title": {"vi": "Trợ từ 了"}, "native_title": "动态助词了",
+            "native_title_pinyin": ["dòng", "tài", "zhù", "cí", "le"],
             "level": dict(point["level"]), "summary": {"vi": "了 sau động từ: hành động đã xong."},
         },
         "when_to_use": [{"vi": "Hành động đã xong."}, {"vi": "Có mốc thời gian cụ thể."}],
@@ -491,9 +574,9 @@ def _with_v04_zh(lab: Lab) -> dict:
             "right_pinyin": ["wǒ", "zuó", "tiān", "chī", "le", "fàn", ""],
         }],
         "quick_practice": [
-            _qp("我吃___饭。", "了", "着", "aspect"),
-            _qp("他走___。", "了", "过", "aspect"),
-            _qp("你吃___吗？", "了", "着", "aspect"),
+            _qp_zh("我吃___饭。", ["wǒ", "chī", "", "", "", "fàn", ""], "了", "着", "aspect"),
+            _qp_zh("他走___。", ["tā", "zǒu", "", "", "", ""], "了", "过", "aspect"),
+            _qp_zh("你吃___吗？", ["nǐ", "chī", "", "", "", "ma", ""], "了", "着", "aspect"),
         ],
     })
     return point

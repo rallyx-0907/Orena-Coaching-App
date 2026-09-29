@@ -35,7 +35,7 @@ def test_traditional_chars(text: str, expected: list[str]) -> None:
 def test_cli_validate_committed_content_exits_zero() -> None:
     result = runner.invoke(app, ["validate", "--lang", "en"])
     assert result.exit_code == 0, result.output
-    assert "11 point(s), OK" in result.output  # articles split into a_an + the (2026-09-28)
+    assert "10 point(s), OK" in result.output  # much_many is replaced by the R5-based split (2026-09-30)
 
 
 def test_cli_validate_reports_issues_and_exits_one(lab: Lab) -> None:
@@ -92,6 +92,7 @@ def test_validate_100_points_under_5_seconds(lab: Lab) -> None:
         point = copy.deepcopy(base)
         point["id"] = point_id
         point["prereqs"] = [ids[index - 1]] if index else []
+        point["contrasts"] = []
         lab.points[point_id] = point
     lab.functions["functions"][0]["realizations"]["en"] = ids
     lab.write()

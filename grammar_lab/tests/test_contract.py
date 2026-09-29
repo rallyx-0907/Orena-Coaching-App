@@ -6,10 +6,11 @@ import shutil
 from pathlib import Path
 
 import pytest
+import yaml
 from jsonschema import Draft202012Validator
 
 from grammar_lab.pipeline.export_error_tags import ExportError, build_error_tags, read_constant
-from grammar_lab.pipeline.jsonio import read_json
+from grammar_lab.pipeline.jsonio import read_json, write_json
 from grammar_lab.pipeline.migrate_sample_v01 import SAMPLE, migrate
 from grammar_lab.pipeline.validate import LAB_ROOT, validate_lang
 
@@ -60,7 +61,7 @@ def test_bridge_is_not_a_storable_block() -> None:
     assert "bridge" not in SCHEMA["$defs"]["block"]["properties"]["type"]["enum"]
 
 
-@pytest.mark.parametrize(("lang", "points"), [("en", 11), ("zh", 3)])
+@pytest.mark.parametrize(("lang", "points"), [("en", 10), ("zh", 3)])
 def test_committed_sample_validates_clean(lang: str, points: int) -> None:
     report = validate_lang(lang, LAB_ROOT)
     assert report.points == points
@@ -80,6 +81,21 @@ def test_migration_produces_valid_v02_content(tmp_path: Path) -> None:
     shutil.copytree(LAB_ROOT / "cast", tmp_path / "cast")
     written = migrate(SAMPLE, tmp_path)
     assert len(written) == 12  # manifest + 10 points + functions
+    # a function's label needs zh-Hans as well since the v0.4 patch (contract "Locale"); migrate() predates it
+    functions_path = tmp_path / "functions" / "functions.yaml"
+    functions = yaml.safe_load(functions_path.read_text(encoding="utf-8"))
+    for function in functions["functions"]:
+        function["title"].setdefault("zh-Hans", "功能")
+    functions_path.write_text(yaml.safe_dump(functions, allow_unicode=True, sort_keys=False), encoding="utf-8")
+    # ... and contrasts must be listed both ways (contrasts.asymmetric); the old sample lists one way
+    points = {path: read_json(path) for path in (tmp_path / "content" / "en").glob("en.*.json")}
+    by_id = {point["id"]: point for point in points.values()}
+    for point in points.values():
+        for other in point["contrasts"]:
+            if point["id"] not in by_id[other]["contrasts"]:
+                by_id[other]["contrasts"].append(point["id"])
+    for path, point in points.items():
+        write_json(path, point)
     report = validate_lang("en", tmp_path)
     assert report.ok, [issue.to_dict() for issue in report.issues]
 

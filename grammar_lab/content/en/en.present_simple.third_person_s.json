@@ -6,15 +6,19 @@
   "function": "fn.habit_fact",
   "level": {"framework": "cefr", "value": "A1", "rank": 1},
   "prereqs": [],
-  "contrasts": [],
+  "contrasts": ["en.present_continuous.now"],
   "error_tags": ["agreement"],
   "source_refs": {},
   "point_type": "morphology",
   "header": {
-    "title": {"vi": "Thêm -s/-es với he/she/it"},
+    "title": {"vi": "Thêm -s/-es với he/she/it", "en": "Third person -s"},
     "native_title": "Third person -s",
     "level": {"framework": "cefr", "value": "A1", "rank": 1},
-    "summary": {"vi": "Thì hiện tại đơn với chủ ngữ he, she, it hoặc danh từ số ít: động từ thêm -s hoặc -es."}
+    "summary": {
+      "vi": "Thì hiện tại đơn với chủ ngữ he, she, it hoặc danh từ số ít: động từ thêm -s hoặc -es.",
+      "en": "In the present simple, verbs add -s or -es after he, she, it or a singular noun."
+    },
+    "sub": {"vi": "he / she / it", "en": "he / she / it"}
   },
   "when_to_use": [
     {"vi": "Khi chủ ngữ là he, she, it hoặc một danh từ số ít (my brother, the cat, this book)."},
@@ -143,5 +147,19 @@
     "run_id": "generate.1790589944",
     "generated_at": "2026-09-28T10:05:44Z"
   },
-  "review": null
+  "review": null,
+  "sequence": 1,
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về thói quen của một người khác (he hoặc she).",
+      "en": "Write a sentence about another person's habit (he or she)."
+    },
+    "placeholder": "She ... every day.",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "particle", "regex": "\\b(?:he|she|it)\\s+(?:\\w+\\s+)?\\w+(?:s|es)\\b"}]
+    },
+    "sample": {"text": "She works in a bank."}
+  }
 }

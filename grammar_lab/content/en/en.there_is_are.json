@@ -11,12 +11,14 @@
   "source_refs": {},
   "point_type": "word_order",
   "header": {
-    "title": {"vi": "There is / There are"},
+    "title": {"vi": "There is / There are", "en": "There is / There are"},
     "native_title": "There is / There are",
     "level": {"framework": "cefr", "value": "A1", "rank": 1},
     "summary": {
-      "vi": "Cấu trúc \"There is / There are\" dùng để nói rằng một người hay vật nào đó tồn tại hoặc hiện diện ở một nơi nào đó."
-    }
+      "vi": "Cấu trúc \"There is / There are\" dùng để nói rằng một người hay vật nào đó tồn tại hoặc hiện diện ở một nơi nào đó.",
+      "en": "Say that a person or thing exists somewhere: there is for one, there are for more."
+    },
+    "sub": {"vi": "có ... ở đâu", "en": "existence"}
   },
   "when_to_use": [
     {"vi": "Khi bạn muốn nói có một thứ gì đó tồn tại hoặc đang ở một nơi cụ thể."},
@@ -171,5 +173,19 @@
     "run_id": "generate.1790591161",
     "generated_at": "2026-09-28T10:26:01Z"
   },
-  "review": null
+  "review": null,
+  "sequence": 1,
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu nói có gì ở trong phòng của bạn.",
+      "en": "Write a sentence about what is in your room."
+    },
+    "placeholder": "There is ... in my room.",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "other", "any_of": ["there"]}, {"role": "verb", "any_of": ["is", "are"]}]
+    },
+    "sample": {"text": "There are three chairs in the room."}
+  }
 }

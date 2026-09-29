@@ -11,12 +11,14 @@
   "source_refs": {},
   "point_type": "morphology",
   "header": {
-    "title": {"vi": "So sánh hơn"},
+    "title": {"vi": "So sánh hơn", "en": "Comparatives"},
     "native_title": "Comparatives",
     "level": {"framework": "cefr", "value": "A2", "rank": 2},
     "summary": {
-      "vi": "So sánh hơn dùng để so sánh hai người hoặc hai vật, cho thấy một bên có đặc điểm nhiều hơn bên kia."
-    }
+      "vi": "So sánh hơn dùng để so sánh hai người hoặc hai vật, cho thấy một bên có đặc điểm nhiều hơn bên kia.",
+      "en": "Compare two people or things: one has more of a quality than the other."
+    },
+    "sub": {"vi": "so sánh hơn", "en": "comparing two"}
   },
   "when_to_use": [
     {"vi": "Khi so sánh hai người, hai vật hoặc hai nhóm cụ thể."},
@@ -158,5 +160,22 @@
     "run_id": "generate.1790589933",
     "generated_at": "2026-09-28T10:05:33Z"
   },
-  "review": null
+  "review": null,
+  "sequence": 1,
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu so sánh hai người hoặc hai vật.",
+      "en": "Write a sentence comparing two people or things."
+    },
+    "placeholder": "My brother is ... than me.",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "complement", "regex": "\\b\\w+er\\b|\\bmore \\w+\\b"},
+        {"role": "marker", "any_of": ["than"]}
+      ]
+    },
+    "sample": {"text": "My brother is taller than me."}
+  }
 }

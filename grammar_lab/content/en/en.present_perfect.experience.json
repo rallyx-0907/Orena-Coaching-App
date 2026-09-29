@@ -11,12 +11,14 @@
   "source_refs": {},
   "point_type": "tense_aspect",
   "header": {
-    "title": {"vi": "Hiện tại hoàn thành (trải nghiệm)"},
+    "title": {"vi": "Hiện tại hoàn thành (trải nghiệm)", "en": "Present perfect for experience"},
     "native_title": "Present perfect for experience",
     "level": {"framework": "cefr", "value": "A2", "rank": 2},
     "summary": {
-      "vi": "Thì hiện tại hoàn thành dùng để nói về một trải nghiệm trong quá khứ mà không nêu rõ thời điểm, và trải nghiệm đó vẫn còn liên quan đến hiện tại."
-    }
+      "vi": "Thì hiện tại hoàn thành dùng để nói về một trải nghiệm trong quá khứ mà không nêu rõ thời điểm, và trải nghiệm đó vẫn còn liên quan đến hiện tại.",
+      "en": "Say what you have done in your life, without saying when."
+    },
+    "sub": {"vi": "trải nghiệm", "en": "experience"}
   },
   "when_to_use": [
     {
@@ -165,5 +167,25 @@
     "run_id": "generate.1790590041",
     "generated_at": "2026-09-28T10:07:21Z"
   },
-  "review": null
+  "review": null,
+  "sequence": 1,
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về nơi bạn đã từng đến.",
+      "en": "Write a sentence about a place you have been to."
+    },
+    "placeholder": "I have been to ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "aux", "any_of": ["have", "has", "'ve"]},
+        {
+          "role": "verb",
+          "regex": "\\b(?:been|gone|seen|eaten|visited|tried|done|met|read|\\w+ed)\\b"
+        }
+      ]
+    },
+    "sample": {"text": "I have been to Da Nang twice."}
+  }
 }

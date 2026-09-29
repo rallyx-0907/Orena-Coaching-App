@@ -11,10 +11,15 @@
   "source_refs": {},
   "point_type": "tense_aspect",
   "header": {
-    "title": {"vi": "Trợ từ 了 (hoàn thành)"},
+    "title": {"vi": "Trợ từ 了 (hoàn thành)", "en": "The particle 了"},
     "native_title": "动态助词“了”",
     "level": {"framework": "hsk3", "value": "1", "rank": 1},
-    "summary": {"vi": "Trợ từ 了 đặt sau động từ để nói một hành động đã hoàn thành, thường là trong quá khứ."}
+    "summary": {
+      "vi": "Trợ từ 了 đặt sau động từ để nói một hành động đã hoàn thành, thường là trong quá khứ.",
+      "en": "了 after a verb says an action is completed."
+    },
+    "sub": {"vi": "hoàn thành", "en": "completed action"},
+    "native_title_pinyin": ["dòng", "tài", "zhù", "cí", "", "le", ""]
   },
   "when_to_use": [
     {"vi": "Khi muốn nói một hành động đã xảy ra và đã kết thúc, không cần nêu rõ thời gian."},
@@ -79,17 +84,17 @@
       "pinyin": ["wǒ", "zuó", "tiān", "mǎi", "le", "yī", "běn", "shū", ""]
     },
     {
-      "text": "他没吃了早饭。",
+      "text": "他没吃早饭。",
       "form": "negative",
       "spans": [
         {"start": 0, "end": 1, "role": "subject"},
         {"start": 1, "end": 2, "role": "aux"},
         {"start": 2, "end": 3, "role": "verb"},
-        {"start": 4, "end": 6, "role": "object"}
+        {"start": 3, "end": 5, "role": "object"}
       ],
       "annotation": {"vi": "Phủ định của hành động đã hoàn thành dùng 没, không dùng 了."},
       "translation": {"vi": "Anh ấy chưa ăn sáng."},
-      "pinyin": ["tā", "méi", "chī", "le", "zǎo", "fàn", ""]
+      "pinyin": ["tā", "méi", "chī", "zǎo", "fàn", ""]
     },
     {
       "text": "你看了那个电影吗？",
@@ -116,7 +121,9 @@
       "other_meaning": {
         "vi": "过 nhấn mạnh kinh nghiệm từng trải qua ít nhất một lần, không quan tâm thời điểm cụ thể."
       },
-      "other_example": "我去过北京。"
+      "other_example": "我去过北京。",
+      "this_example_pinyin": ["wǒ", "zuó", "tiān", "mǎi", "le", "yī", "běn", "shū", ""],
+      "other_example_pinyin": ["wǒ", "qù", "guo", "běi", "jīng", ""]
     }
   ],
   "common_mistakes": [
@@ -136,32 +143,35 @@
     {
       "q": "我昨天___两碗米饭。",
       "options": [
-        {"text": "吃了", "error_tag": null},
-        {"text": "吃", "error_tag": "aspect"},
-        {"text": "吃过", "error_tag": "aspect"}
+        {"text": "吃了", "error_tag": null, "pinyin": ["chī", "le"]},
+        {"text": "吃", "error_tag": "aspect", "pinyin": ["chī"]},
+        {"text": "吃过", "error_tag": "aspect", "pinyin": ["chī", "guo"]}
       ],
       "answer": 0,
-      "explain": {"vi": "Hành động ăn đã hoàn thành trong quá khứ, cần 了 sau động từ 吃."}
+      "explain": {"vi": "Hành động ăn đã hoàn thành trong quá khứ, cần 了 sau động từ 吃."},
+      "q_pinyin": ["wǒ", "zuó", "tiān", "", "", "", "liǎng", "wǎn", "mǐ", "fàn", ""]
     },
     {
       "q": "他___去学校。",
       "options": [
-        {"text": "没", "error_tag": null},
-        {"text": "没了", "error_tag": "aspect"},
-        {"text": "不", "error_tag": "aspect"}
+        {"text": "没", "error_tag": null, "pinyin": ["méi"]},
+        {"text": "没了", "error_tag": "aspect", "pinyin": ["méi", "le"]},
+        {"text": "不", "error_tag": "aspect", "pinyin": ["bù"]}
       ],
       "answer": 0,
-      "explain": {"vi": "Phủ định của hành động đã hoàn thành dùng 没, không dùng 了 hay 不."}
+      "explain": {"vi": "Phủ định của hành động đã hoàn thành dùng 没, không dùng 了 hay 不."},
+      "q_pinyin": ["tā", "", "", "", "qù", "xué", "xiào", ""]
     },
     {
       "q": "你___那个电影吗？",
       "options": [
-        {"text": "看了", "error_tag": null},
-        {"text": "看", "error_tag": "aspect"},
-        {"text": "看过", "error_tag": "aspect"}
+        {"text": "看了", "error_tag": null, "pinyin": ["kàn", "le"]},
+        {"text": "看", "error_tag": "aspect", "pinyin": ["kàn"]},
+        {"text": "看过", "error_tag": "aspect", "pinyin": ["kàn", "guo"]}
       ],
       "answer": 0,
-      "explain": {"vi": "Câu hỏi về hành động đã hoàn thành dùng 了 sau động từ 看."}
+      "explain": {"vi": "Câu hỏi về hành động đã hoàn thành dùng 了 sau động từ 看."},
+      "q_pinyin": ["nǐ", "", "", "", "nà", "gè", "diàn", "yǐng", "ma", ""]
     }
   ],
   "status": "draft_ai",
@@ -172,5 +182,17 @@
     "run_id": "generate.1790589975",
     "generated_at": "2026-09-28T10:06:15Z"
   },
-  "review": null
+  "review": null,
+  "sequence": 1,
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về việc bạn đã làm xong hôm nay (dùng 了).",
+      "en": "Write a sentence about something you finished today (use 了)."
+    },
+    "placeholder": "我今天吃了……",
+    "placeholder_pinyin": ["wǒ", "jīn", "tiān", "chī", "le", "", ""],
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"role": "particle", "any_of": ["了"]}]},
+    "sample": {"text": "我今天吃了早饭。", "pinyin": ["wǒ", "jīn", "tiān", "chī", "le", "zǎo", "fàn", ""]}
+  }
 }

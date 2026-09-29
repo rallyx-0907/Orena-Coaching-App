@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import json
 import shutil
 from pathlib import Path
 from typing import Any
@@ -127,6 +128,7 @@ class Lab:
                 {"name": "Sam", "personality": {"vi": "Cẩn thận, hay lên kế hoạch."}},
             ],
         }
+        self.schema_patch: Any = None  # optional callable(schema dict) run on the copied grammar schema
         self.file_names: dict[str, str] = {}  # point id -> file name override
         self.raw_files: dict[str, str] = {}  # file name -> raw text in content/<lang>/
         if lang == "en":
@@ -157,7 +159,7 @@ class Lab:
                     "why": {"vi": "Phải chia quá khứ."},
                 },
             ]
-            self.points = {"en.alpha": en_point("en.alpha", "A1", 1), "en.beta": beta}
+            self.points = {"en.alpha": en_point("en.alpha", "A1", 1, contrasts=["en.beta"]), "en.beta": beta}
             realizations = {"en": ["en.alpha", "en.beta"]}
         else:
             self.manifest = {
@@ -168,7 +170,7 @@ class Lab:
             realizations = {"zh-Hans": ["zh.le_completion"]}
         self.functions: dict[str, Any] = {
             "schema_version": "0.2",
-            "functions": [{"id": "fn.alpha", "title": {"vi": "Chức năng", "en": "Function"}, "realizations": realizations}],
+            "functions": [{"id": "fn.alpha", "title": {"vi": "Chức năng", "en": "Function", "zh-Hans": "功能"}, "realizations": realizations}],
         }
 
     @property
@@ -180,6 +182,11 @@ class Lab:
         schema_dir.mkdir(parents=True, exist_ok=True)
         for name in SCHEMA_FILES:
             shutil.copy(LAB_ROOT / "schema" / name, schema_dir / name)
+        if self.schema_patch is not None:
+            schema_path = schema_dir / "grammar_set.schema.json"
+            schema = json.loads(schema_path.read_text(encoding="utf-8"))
+            self.schema_patch(schema)
+            write_json(schema_path, schema)
         if self.error_tags is not None:
             write_json(schema_dir / "error_tags.json", self.error_tags)
         if self.cast is not None:

@@ -272,7 +272,7 @@ def _generation_schema_v04(*, locales: list[str], l1s: list[str], error_tags: li
             "translation": locale_map,
         },
     }, "pinyin_pairs")
-    compare_item = {
+    compare_item = with_pinyin({
         "type": "object", "additionalProperties": False,
         "required": ["with", "this_meaning", "this_example", "other_meaning", "other_example"],
         "properties": {
@@ -280,7 +280,7 @@ def _generation_schema_v04(*, locales: list[str], l1s: list[str], error_tags: li
             "this_meaning": locale_map, "this_example": {"type": "string", "minLength": 1},
             "other_meaning": locale_map, "other_example": {"type": "string", "minLength": 1},
         },
-    }
+    }, "this_example_pinyin_pairs", "other_example_pinyin_pairs")
     common_mistake = with_pinyin({
         "type": "object", "additionalProperties": False,
         "required": ["wrong", "right", "reason", "error_tag", "l1"],
@@ -291,14 +291,14 @@ def _generation_schema_v04(*, locales: list[str], l1s: list[str], error_tags: li
             "l1": {"type": "array", "minItems": 1, "items": {"enum": l1s} if l1s else {"type": "string"}},
         },
     }, "wrong_pinyin_pairs", "right_pinyin_pairs")
-    option = {
+    option = with_pinyin({
         "type": "object", "additionalProperties": False, "required": ["text", "error_tag"],
         "properties": {
             "text": {"type": "string", "minLength": 1},
             "error_tag": {"enum": [*engine_tags, None]} if engine_tags else {"type": ["string", "null"]},
         },
-    }
-    quick_practice_item = {
+    }, "pinyin_pairs")
+    quick_practice_item = with_pinyin({
         "type": "object", "additionalProperties": False, "required": ["q", "options", "answer", "explain"],
         "properties": {
             "q": {"type": "string", "minLength": 1},
@@ -306,7 +306,7 @@ def _generation_schema_v04(*, locales: list[str], l1s: list[str], error_tags: li
             "answer": {"type": "integer", "minimum": 0, "maximum": 2},
             "explain": locale_map,
         },
-    }
+    }, "q_pinyin_pairs")
     formula = {"type": "array", "minItems": 1, "items": slot}
     mistake_count = max(1, len(error_tags))
     properties: dict[str, Any] = {
@@ -320,18 +320,20 @@ def _generation_schema_v04(*, locales: list[str], l1s: list[str], error_tags: li
         "common_mistakes": {"type": "array", "minItems": mistake_count, "maxItems": mistake_count, "items": common_mistake},
         "quick_practice": {"type": "array", "minItems": 3, "maxItems": 3, "items": quick_practice_item},
     }
+    if zh:  # the point's own name is carried over, not generated, but its pinyin still has to be written
+        properties["native_title_pinyin_pairs"] = pinyin_pairs
     if point_type == "tense_aspect":
         properties["timeline_shape"] = {"enum": _TIMELINE_SHAPES}
     elif point_type == "morphology":
         properties["morphology"] = {
             "type": "array", "minItems": 1, "maxItems": 4,
-            "items": {
+            "items": with_pinyin({
                 "type": "object", "additionalProperties": False, "required": ["base", "affix", "result"],
                 "properties": {
                     "base": {"type": "string", "minLength": 1}, "affix": {"type": "string", "minLength": 1},
                     "result": {"type": "string", "minLength": 1},
                 },
-            },
+            }, "base_pinyin_pairs", "affix_pinyin_pairs", "result_pinyin_pairs"),
         }
     if r5_ids:
         # Conversion mode: the model says what it corrected in the R5 source, so verify can have
@@ -388,7 +390,8 @@ _PINYIN_INSTRUCTION = """
 ## Pinyin (zh-Hans)
 
 Every Chinese string you write -- each formula slot's `text`, each example's `text`, each common
-mistake's `wrong` and `right` -- gets its pinyin as `[character, syllable]` pairs: one pair per
+mistake's `wrong` and `right`, each comparison example, each quick-practice question and option,
+each morphology `base`/`affix`/`result`, and the point's `native_title` -- gets its pinyin as `[character, syllable]` pairs: one pair per
 character, in order, with the **tone mark** on the syllable (`wǒ`, `bǎ`, `shū`; neutral tone
 unmarked: `le`, `men`). Never tone numbers (`wo3`). A character that is not a Han character
 (punctuation, a Latin letter, a space, `+`) still gets its own pair, with syllable `""`. Read each
@@ -446,10 +449,16 @@ def pinyin_from_pairs(pairs: list[list[str]]) -> list[str]:
     return [syllable for _, syllable in pairs]
 
 
+def unspaced_pairs(pairs: list[list[str]]) -> list[list[str]]:
+    """The pinyin pairs of a string whose spaces zh_unspaced removes: drop the pairs of the spaces."""
+    return [pair for pair in pairs if not pair[0].isspace()]
+
+
 def zh_unspaced(text: str) -> str:
     """Chinese is written without spaces; DeepSeek put one on each side of every quick-practice
-    blank in the first zh v0.4 run. Only the question is repaired here -- it carries no pinyin;
-    a spaced example would misalign its pinyin, so validate (zh.whitespace) reports that one."""
+    blank in the first zh v0.4 run. Only the question is repaired here (its pinyin pairs lose the
+    pairs of the spaces via unspaced_pairs); a spaced example would misalign its pinyin, so validate
+    (zh.whitespace) reports that one."""
     return _ZH_SPACE_RUN.sub("", text)
 
 
@@ -750,7 +759,14 @@ class Generator:
         if point_type == "tense_aspect":
             illustration["timeline"] = {"shape": data["timeline_shape"]}
         elif point_type == "morphology":
-            illustration["morphology"] = data["morphology"]
+            rows = []
+            for raw in data["morphology"]:
+                row = {key: raw[key] for key in ("base", "affix", "result")}
+                if zh:
+                    for key in ("base", "affix", "result"):
+                        row[f"{key}_pinyin"] = pinyin_from_pairs(raw[f"{key}_pinyin_pairs"])
+                rows.append(row)
+            illustration["morphology"] = rows
         def loc(value: Any) -> Any:
             return _as_locale_map(value, locales)
 
@@ -769,14 +785,29 @@ class Generator:
             if zh:
                 example["pinyin"] = pinyin_from_pairs(raw["pinyin_pairs"])
             examples.append(example)
-        compare = [
-            {**item, "this_meaning": loc(item["this_meaning"]), "other_meaning": loc(item["other_meaning"])}
-            for item in data["compare"]
-        ]
-        quick_practice = [
-            {**item, "q": zh_unspaced(item["q"]) if zh else item["q"], "explain": loc(item["explain"])}
-            for item in data["quick_practice"]
-        ]
+        compare = []
+        for item in data["compare"]:
+            entry = {
+                key: item[key] for key in ("with", "this_example", "other_example")
+            } | {"this_meaning": loc(item["this_meaning"]), "other_meaning": loc(item["other_meaning"])}
+            if zh:
+                entry["this_example_pinyin"] = pinyin_from_pairs(item["this_example_pinyin_pairs"])
+                entry["other_example_pinyin"] = pinyin_from_pairs(item["other_example_pinyin_pairs"])
+            compare.append(entry)
+        quick_practice = []
+        for item in data["quick_practice"]:
+            entry = {
+                "q": zh_unspaced(item["q"]) if zh else item["q"],
+                "options": [
+                    {"text": option["text"], "error_tag": option["error_tag"],
+                     **({"pinyin": pinyin_from_pairs(option["pinyin_pairs"])} if zh else {})}
+                    for option in item["options"]
+                ],
+                "answer": item["answer"], "explain": loc(item["explain"]),
+            }
+            if zh:
+                entry["q_pinyin"] = pinyin_from_pairs(unspaced_pairs(item["q_pinyin_pairs"]))
+            quick_practice.append(entry)
         mistakes = []
         for raw in data["common_mistakes"]:
             mistake = {key: raw[key] for key in ("wrong", "right", "reason", "error_tag", "l1")}
@@ -792,7 +823,10 @@ class Generator:
             )},
             "schema_version": "0.4",
             "point_type": point_type,
-            "header": {**header, "summary": loc(data["summary"])},
+            "header": {
+                **header, "summary": loc(data["summary"]),
+                **({"native_title_pinyin": pinyin_from_pairs(data["native_title_pinyin_pairs"])} if zh else {}),
+            },
             "when_to_use": [loc(item) for item in data["when_to_use"]],
             "pattern": pattern,
             "examples": examples,
