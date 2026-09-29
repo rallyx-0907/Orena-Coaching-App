@@ -17,7 +17,7 @@ import { html, mount, raw } from '../../kit/html.js';
 import { icon } from '../../kit/icons.js';
 import { useStyles } from '../../kit/styles.js';
 import { t } from './copy.js';
-import { sanitizeFacts } from './model.js';
+import { measuredScore, sanitizeFacts } from './model.js';
 
 function factMarkup(fact) {
   return html`<span class="s-lc__fact"><b>${fact.value}</b> ${fact.label}</span>`;
@@ -25,11 +25,13 @@ function factMarkup(fact) {
 
 /* `next`, once Continue is pressed and the modal has closed: a route string (`ctx.go(next)`) or a
    callback - either is optional; the source's own Continue is a dismiss only (`lcClose`), so a
-   caller that wants nothing further to happen simply omits it. */
-export async function openLessonComplete(ctx = {}, { title, facts, next } = {}) {
+   caller that wants nothing further to happen simply omits it. `measured` ({correct, total}, the
+   server's own counts) draws the frame's percentage; without it the percentage is not drawn. */
+export async function openLessonComplete(ctx = {}, { title, facts, measured, next } = {}) {
   await useStyles('screens/lesson-complete/lesson-complete.css');
   if (ctx.isCurrent && !ctx.isCurrent()) return null;
   const realFacts = sanitizeFacts(facts);
+  const score = measuredScore(measured);
   const handle = openSheet({
     label: `${t('eyebrow')} · ${String(title || '')}`.trim(),
     className: 's-lc',
@@ -42,6 +44,7 @@ export async function openLessonComplete(ctx = {}, { title, facts, next } = {}) 
           <div class="s-lc__icon">${raw(icon('check', { size: 30, stroke: 2.4 }))}</div>
           <div class="s-lc__eyebrow">${t('eyebrow')}</div>
           ${title ? html`<div class="s-lc__title">${title}</div>` : ''}
+          ${score == null ? '' : html`<div class="s-lc__score">${score}<span>%</span></div>`}
           ${realFacts.length ? html`<div class="s-lc__facts">${realFacts.map(factMarkup)}</div>` : ''}
           <button type="button" class="o-btn o-btn--primary o-btn--block s-lc__continue" data-continue>${t('continueLabel')}</button>
         </div>`,

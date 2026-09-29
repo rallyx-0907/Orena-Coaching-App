@@ -218,10 +218,11 @@ export default async function mountCheck(element, ctx) {
       return;
     }
     busy = true;
+    let attempt = null;
     try {
       const answers = {};
       for (const question of questions) if (graded[question.id]) answers[question.id] = graded[question.id].selected_index;
-      await api.submitReadingPractice(setId, operationId, answers);
+      attempt = (await api.submitReadingPractice(setId, operationId, answers))?.attempt || null;
     } catch (error) {
       if (ctx.isCurrent()) toast(error?.message || t('practiceOffTitle'), { iconName: 'circle-alert' });
     } finally {
@@ -230,10 +231,19 @@ export default async function mountCheck(element, ctx) {
     if (!ctx.isCurrent()) return;
     done = true;
     paint();
+    /* Only what the server measured (D-098): the committed attempt's own counts. Without an
+       attempt (the submit failed) the per-question grades - each answered by the grade endpoint -
+       still give correct / answered; the percentage is drawn only from the attempt. */
     const summary = scoreSummary(questions, graded, t);
+    const measured = attempt ? { correct: attempt.correct_count, total: attempt.total } : null;
+    const answered = questions.filter((question) => graded[question.id]).length;
+    const fraction = measured && Number.isInteger(measured.correct) && Number.isInteger(measured.total)
+      ? `${measured.correct}/${measured.total}`
+      : answered ? `${summary.correctCount}/${answered}` : '';
     openLessonComplete(ctx, {
       title: shellCopy('checkUnderstanding'),
-      facts: [{ label: t('correctLabel'), value: `${summary.correctCount}/${summary.total}` }],
+      measured,
+      facts: [{ label: t('correctLabel'), value: fraction }],
     });
   }
 

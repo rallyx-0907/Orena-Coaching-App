@@ -15,3 +15,15 @@ export function sanitizeFacts(facts) {
     .map((fact) => ({ label: String(fact?.label ?? '').trim(), value: fact?.value }))
     .filter((fact) => fact.label && fact.value != null && String(fact.value).trim() !== '');
 }
+
+/* The frame's large percentage (D-098): only when the backend measured it, as a count right out of
+   a total the caller received from the server (a committed attempt's `correct_count` / `total`).
+   Anything else (no total, a zero total, a count outside it, a non-integer) is not a measurement,
+   and the percentage is hidden rather than guessed. */
+export function measuredScore(measured) {
+  const correct = measured?.correct;
+  const total = measured?.total;
+  if (!Number.isInteger(correct) || !Number.isInteger(total)) return null;
+  if (total <= 0 || correct < 0 || correct > total) return null;
+  return Math.round((correct / total) * 100);
+}

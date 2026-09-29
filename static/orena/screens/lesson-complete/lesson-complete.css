@@ -70,6 +70,19 @@
   font-size: 14px;
   color: var(--muted);
 }
+/* The frame's percentage: 40/700 text, its % sign 18/500 muted - drawn only when measured. */
+.s-lc__score {
+  position: relative;
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text);
+}
+.s-lc__score span {
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--muted);
+}
 .s-lc__facts {
   position: relative;
   display: flex;
