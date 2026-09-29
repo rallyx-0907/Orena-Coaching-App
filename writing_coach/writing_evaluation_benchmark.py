@@ -17,7 +17,7 @@ from typing import Any, Mapping, Sequence
 from writing_coach.writing_evaluation import CONFIDENCE_THRESHOLD
 
 
-WRITING_BENCHMARK_VERSION = 1
+WRITING_BENCHMARK_VERSION = 2
 PAIRWISE_SCORE_TOLERANCE = 1.0
 TARGET_LEVEL_SCORE_TOLERANCE = 5.0
 
@@ -51,8 +51,26 @@ class ScoreBand:
 
 
 @dataclass(frozen=True)
+class ExpectedError:
+    """One error seeded into a case: where it is, what it may be called, and a fix.
+
+    Found when a reported error's literal fragment overlaps ``fragment`` (either
+    holds the other) and its category is one of ``categories``. ``correction``
+    is the fixture's own answer, used only to build the known-passing result.
+    """
+
+    fragment: str
+    categories: frozenset[str]
+    correction: str
+
+
+@dataclass(frozen=True)
 class BenchmarkConstraints:
     required_error_categories: frozenset[str] = frozenset()
+    # Recall, measured rather than "any one category appeared" (v2): the share of
+    # ``expected_errors`` found, held to ``min_recall`` when the case sets one.
+    expected_errors: tuple[ExpectedError, ...] = ()
+    min_recall: float | None = None
     protected_correct_fragments: tuple[str, ...] = ()
     score_bands: tuple[ScoreBand, ...] = ()
     expected_demonstrated_levels: tuple[str, ...] = ()
@@ -149,6 +167,19 @@ def _is_material_correction(fragment: Any, suggestion: Any) -> bool:
 def _result_scores(result: Mapping[str, Any]) -> Mapping[str, Any]:
     # Normalized Writing results expose rubric dimensions at the top level.
     return result
+
+
+def _found(seeded: ExpectedError, errors: Sequence[Any]) -> bool:
+    for item in errors:
+        if not isinstance(item, Mapping):
+            continue
+        fragment = item.get("fragment")
+        if not isinstance(fragment, str) or not fragment:
+            continue
+        overlaps = fragment in seeded.fragment or seeded.fragment in fragment
+        if overlaps and item.get("category") in seeded.categories:
+            return True
+    return False
 
 
 def evaluate_benchmark_result(
@@ -289,6 +320,17 @@ def evaluate_benchmark_result(
             )
         )
 
+    expected = case.constraints.expected_errors
+    matched = sum(1 for seeded in expected if _found(seeded, errors))
+    recall = round(matched / len(expected), 3) if expected else None
+    if recall is not None and case.constraints.min_recall is not None and recall < case.constraints.min_recall:
+        failures.append(
+            BenchmarkFinding(
+                "error_recall",
+                f"found {matched} of {len(expected)} seeded errors; the case needs {case.constraints.min_recall:g}",
+            )
+        )
+
     if case.constraints.max_error_count is not None and len(errors) > case.constraints.max_error_count:
         failures.append(
             BenchmarkFinding(
@@ -312,6 +354,12 @@ def evaluate_benchmark_result(
         ("error_count", len(errors)),
         ("false_positive_count", false_positive_count),
     )
+    if recall is not None:
+        metrics += (
+            ("expected_error_count", len(expected)),
+            ("matched_expected_error_count", matched),
+            ("recall", recall),
+        )
     return BenchmarkEvaluation(
         case_id=case.case_id,
         passed=not failures,
