@@ -26,12 +26,13 @@ cần giải thích thêm; prompt story v3 đang tạm dừng.
   chuẩn vẫn là quyết định của người (`UI_BACKEND_GAPS.md` mục 4).
 - **Hợp đồng chỉ mô tả nội dung tác giả.** Trạng thái học viên (đã học, đã lưu, lỗi gần đây,
   gợi ý) không nằm trong đây — app nối vào theo `id` (§9).
-- **Locale.** Mọi field "locale map" là `{"vi": …, "en": …, "zh": …}`. `vi` và `en` được sinh
-  cùng lúc từ đầu cho mọi điểm (quyết định của người, 29/09/2026); `zh` là một đợt sau, khi nội
+- **Locale.** Mọi field "locale map" là `{"vi": …, "en": …, "zh-Hans": …}` (khoá tiếng Trung là `zh-Hans`, đúng
+  schema của Grammar Lab; UI ánh xạ ngôn ngữ giao diện `zh` sang khoá này). `vi` và `en` được sinh
+  cùng lúc từ đầu cho mọi điểm (quyết định của người, 29/09/2026); `zh-Hans` là một đợt sau, khi nội
   dung đã ổn định. Validate `locale.missing` chạy trên **mọi** locale map của điểm với luật cố
   định, không phải cấu hình: **`vi` luôn bắt buộc** (mọi `status`); **`en` bắt buộc ở bước
   chuyển sang `approved`** (một điểm `draft_ai`/`auto_ok`/`flagged` chưa có `en` vẫn hợp lệ);
-  `zh` không bao giờ bắt buộc. Ngoại lệ là nhãn `function` (mục 0), cần đủ `vi`, `en`, `zh`. Thiếu
+  `zh-Hans` không bao giờ bắt buộc. Ngoại lệ là nhãn `function` (mục 0), cần đủ `vi`, `en`, `zh-Hans`. Thiếu
   key thì app rơi về `en`, không bao giờ rơi âm thầm về `vi`. Mọi ví dụ bên dưới chỉ ghi `vi`
   cho gọn.
 - **Chữ Hán là giản thể** (`zh-Hans`), cả nội dung lẫn locale giải thích (`docs/grammar_lab/SPEC.md`
@@ -54,7 +55,7 @@ Nhắc lại tại chỗ (không cần đọc v0.2):
 | `id` | string | `<lang>.<slug>` (`en.present_perfect_experience`, `zh.ba_sentence`), bất biến sau khi publish |
 | `version` | int | tăng khi nội dung đổi; tiến độ/bookmark của học viên khoá theo `id`, **không** theo `version` |
 | `status` | enum | `draft_ai | auto_ok | flagged | approved | rejected`. **Chỉ `approved` được tới UI**; lọc là việc của nguồn cấp (`grammar.catalog`, `grammar.point`), UI không tự lọc |
-| `target_lang` | `en | zh` | |
+| `target_lang` | `en | zh-Hans` | |
 | `function` | string | `fn.<snake_case>`, khoá **nhóm** của Library (thay `module`/`category` của R5), kèm nhãn hiển thị bên dưới. Không phải nguồn của `header.sub` |
 | `level` | object | `{framework, value, rank}` — `cefr` A1–C2 (`rank` 1–6) cho EN; `hsk3` cho ZH với bảng mức HSK 3.0 là **1–9** (`value` `"1"`…`"9"`, `rank` = số đó). Đề cương xếp chung dải 7–9: mục nào đề cương không tách riêng lấy mức thấp nhất của dải (`"7"`) |
 | `sequence` | int | thứ tự đọc trong cùng `function` + `level` (tăng dần, duy nhất trong nhóm). **Điểm "tiếp theo"** = điểm có `sequence` kế tiếp cùng nhóm, hết nhóm thì điểm đầu nhóm/level kế tiếp mà mọi `prereqs` đã nằm trước nó; `prereqs` chỉ là điều kiện, không phải thứ tự |
@@ -70,13 +71,13 @@ có một mục trong file `functions` đi cùng bộ xuất bản (`functions.y
 
 ```json
 {"id": "fn.past_experience",
- "title": {"vi": "Nói về trải nghiệm", "en": "Talking about experience", "zh": "谈论经历"}}
+ "title": {"vi": "Nói về trải nghiệm", "en": "Talking about experience", "zh-Hans": "谈论经历"}}
 ```
 
-`title` là locale map **đủ ba key `vi`, `en`, `zh`** (nhãn ngắn, ít chữ; là chỗ duy nhất `zh` bắt
+`title` là locale map **đủ ba key `vi`, `en`, `zh-Hans`** (nhãn ngắn, ít chữ; là chỗ duy nhất `zh-Hans` bắt
 buộc ngay từ đầu vì Library dùng nó cho học viên đặt giao diện tiếng Trung). Header nhóm của
 Library lấy `title[ngôn ngữ giao diện]`, thiếu thì `en`. Validate `locale.missing` (theo luật
-trên, với `vi`+`en`+`zh`) chạy trên mọi `function` mà có điểm đang dùng. `zh` ở đây là giản thể
+trên, với `vi`+`en`+`zh-Hans`) chạy trên mọi `function` mà có điểm đang dùng. `zh-Hans` ở đây là giản thể
 (`zh.traditional_char`).
 
 Đối với tiếng Trung, `point_type` chọn theo hiện tượng: 了/过/着 → `tense_aspect`; 把/被 →
@@ -335,7 +336,8 @@ sách field và tên field pinyin (đóng, không có tên nào khác):
 | `personal_production.placeholder` | `placeholder_pinyin` |
 | `personal_production.sample.text` | `sample.pinyin` |
 
-**Chỉ những field trong bảng này được quét.** Locale map — phần giải thích (`title`, `summary`,
+**Chỉ những field trong bảng này được quét.** Bộ so khớp `personal_production.pattern_rule` (`any_of`,
+`regex`) chứa chữ Hán để so khớp, không hiển thị cho học viên, nên không cần pinyin và không bị quét. Locale map — phần giải thích (`title`, `summary`,
 `label`, `annotation`, `translation`, `reason`, `explain`, `*_note`, …) — không bao giờ bị
 quét, kể cả khi lời giải thích trích chữ Hán để dạy (vd. `"reason": {"vi": "bổ ngữ như 完, 好"}`
 không cần pinyin và không bị cờ). `zh.pinyin_field_unlisted` chỉ bắt một **field chuỗi phẳng
@@ -383,7 +385,7 @@ tối đa một điểm (`aliases.duplicate`).
 | Minh hoạ hợp `point_type` | Tất định | `illustration.kind_mismatch` |
 | Pinyin | Tất định (chỉ các field trong bảng §8; locale map không quét) | `zh.pinyin_invalid`, `zh.pinyin_field_unlisted` |
 | Chữ đa âm đọc đúng âm | Model khác họ đọc | `zh.pinyin_polyphone_suspect` |
-| Locale map: `vi` luôn, `en` khi `approved`; nhãn `function` đủ `vi`+`en`+`zh` | Tất định | `locale.missing` |
+| Locale map: `vi` luôn, `en` khi `approved`; nhãn `function` đủ `vi`+`en`+`zh-Hans` | Tất định | `locale.missing` |
 | Giản thể | Tất định | `zh.traditional_char` |
 | `contrasts` đối xứng, `aliases` không trùng | Tất định trên cả danh mục | `contrasts.asymmetric`, `aliases.duplicate` |
 | Luật nhận diện mẫu của `personal_production` hợp lệ, khớp `sample` và ví dụ cùng dạng | Tất định | `personal_production.rule_invalid`, `personal_production.rule_role_not_in_formula`, `personal_production.rule_rejects_sample`, `personal_production.rule_rejects_example` |
