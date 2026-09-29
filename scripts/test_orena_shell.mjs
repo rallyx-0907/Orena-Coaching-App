@@ -78,6 +78,12 @@ assert.equal(entryRoute({ profile: null, activeLanguage: 'en' }), 'today', 'an u
 assert.equal(entryRoute(), 'today');
 assert.equal(byId(entryRoute({ profile: { exists: false } })).bare, true, 'Welcome is the bare onboarding route');
 assert.equal(byId('reader').focus, true);
+/* D-101 H9: exactly the eight Coming-soon routes are deferred, and no screen links to one. */
+{
+  const { isDeferred } = await import('../static/orena/shell/routes.js');
+  const deferred = ROUTES.filter((route) => isDeferred(route.id)).map((route) => route.id).sort();
+  assert.deepEqual(deferred, ['mock', 'retell', 'rewrite', 'sound', 'timed', 'timedreact', 'timedwr', 'transfer']);
+}
 
 /* The implementation map names each screen's route; it must name the one the router serves, or a
    later design revision is applied to the wrong address (a drift found 2026-09-29). */

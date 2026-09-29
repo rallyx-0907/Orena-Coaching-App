@@ -52,18 +52,18 @@ export const ROUTES = Object.freeze([
   { id: 'freetalk', path: 'free-talk', design: 'freetalk', screen: 'free-talk', focus: true, crumb: 'freeTalk', lesson: true, intent: 'speaking.free_talk' },
   { id: 'conv', path: 'conversation', design: 'conv', screen: 'conversation', focus: true, crumb: 'conversation', lesson: true },
   { id: 'situation', path: 'situation', design: 'situation', screen: 'situation', focus: true, crumb: 'situationReaction', lesson: true },
-  { id: 'retell', path: 'retell/:id', design: 'retell', screen: 'retell', focus: true, crumb: 'retell', lesson: true },
-  { id: 'timedreact', path: 'timed-reaction', design: 'timedreact', screen: 'timed-reaction', focus: true, crumb: 'timedReaction', lesson: true },
-  { id: 'mock', path: 'interview', design: 'mock', screen: 'interview', focus: true, crumb: 'mockInterview', lesson: true },
-  { id: 'sound', path: 'sounds', design: 'sound', screen: 'sounds', focus: true, crumb: 'soundTone', lesson: true },
+  { id: 'retell', path: 'retell/:id', design: 'retell', screen: 'retell', focus: true, crumb: 'retell', lesson: true , deferred: true },
+  { id: 'timedreact', path: 'timed-reaction', design: 'timedreact', screen: 'timed-reaction', focus: true, crumb: 'timedReaction', lesson: true , deferred: true },
+  { id: 'mock', path: 'interview', design: 'mock', screen: 'interview', focus: true, crumb: 'mockInterview', lesson: true , deferred: true },
+  { id: 'sound', path: 'sounds', design: 'sound', screen: 'sounds', focus: true, crumb: 'soundTone', lesson: true , deferred: true },
   { id: 'writing', path: 'write', design: 'writing', screen: 'writing', focus: true, crumb: 'writing', lesson: true, intent: 'writing.workspace' },
   { id: 'writingDraft', path: 'write/:id', design: 'writing', screen: 'writing', focus: true, crumb: 'writing', lesson: true, intent: 'writing.review' },
   { id: 'wrcompare', path: 'write/:id/compare', design: 'wrcompare', screen: 'writing-compare', focus: true, crumb: 'compareVersions', intent: 'writing.revision' },
-  { id: 'rewrite', path: 'rewrite', design: 'rewrite', screen: 'rewrite', focus: true, crumb: 'contextRewrite', lesson: true },
-  { id: 'timedwr', path: 'timed-writing', design: 'timedwr', screen: 'timed-writing', focus: true, crumb: 'timedWriting', lesson: true },
+  { id: 'rewrite', path: 'rewrite', design: 'rewrite', screen: 'rewrite', focus: true, crumb: 'contextRewrite', lesson: true , deferred: true },
+  { id: 'timedwr', path: 'timed-writing', design: 'timedwr', screen: 'timed-writing', focus: true, crumb: 'timedWriting', lesson: true , deferred: true },
   { id: 'review', path: 'review', design: 'review', screen: 'review', focus: true, crumb: 'review', lesson: true, intent: 'vocabulary.review_due' },
-  { id: 'timed', path: 'timed-recall', design: 'timed', screen: 'timed-recall', focus: true, crumb: 'timedRecall', lesson: true },
-  { id: 'transfer', path: 'transfer', design: 'transfer', screen: 'transfer', focus: true, crumb: 'contextTransfer', lesson: true },
+  { id: 'timed', path: 'timed-recall', design: 'timed', screen: 'timed-recall', focus: true, crumb: 'timedRecall', lesson: true , deferred: true },
+  { id: 'transfer', path: 'transfer', design: 'transfer', screen: 'transfer', focus: true, crumb: 'contextTransfer', lesson: true , deferred: true },
   { id: 'feed', path: 'feed', design: 'feed', screen: 'feed', focus: true, crumb: 'dailyFeed', lesson: true },
   { id: 'errfix', path: 'from-your-errors', design: 'errfix', screen: 'errors', focus: true, crumb: 'fromYourErrors', lesson: true },
   { id: 'gconcept', path: 'grammar/:id', design: 'gconcept', screen: 'grammar-concept', focus: true, crumb: 'grammar', lesson: true, intent: 'grammar.point' },
@@ -73,6 +73,12 @@ export const ROUTES = Object.freeze([
 ]);
 
 export const DEFAULT_ROUTE = 'today';
+
+/* The eight Coming-soon screens are not in this release (D-101 H9): their routes stay (an old link
+   still lands on the design's Coming soon screen), but no entry to them is drawn anywhere. */
+export function isDeferred(routeId) {
+  return Boolean(byId(routeId)?.deferred);
+}
 
 /* Where the empty address opens (D-098): Welcome for a learner the backend has no profile for, or
    whose profile names no learning language; Today otherwise. Only what the server answered decides

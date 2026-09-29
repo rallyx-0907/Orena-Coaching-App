@@ -15,6 +15,7 @@
    `buildSkillSections`), never a hardcoded list of which skills "have" content - if the Listening
    library or the Reading queue is temporarily empty, that skill's section simply does not render
    that visit, the same way the design's own Continue section disappears when it is empty. */
+import { isDeferred } from '../../shell/routes.js';
 
 /* Every mode maps to a real shell/routes.js entry; its label is that route's own crumb, already
    translated in copy/shell.js (shellCopy) - this file only decides *which* routes belong to which
@@ -103,17 +104,22 @@ export function speakModes(items = []) {
   if (clip) modes.push({ key: 'shadow', routeId: 'shadow', params: { id: String(clip.id).replace(/^media:/, '') }, level: clip.level || '' });
   const retell = firstOfType(list, 'retell');
   if (retell) modes.push({ key: 'retell', routeId: 'retell', params: { id: retell.id }, level: retell.level || '' });
-  return modes;
+  return shown(modes);
+}
+
+/* D-101 H9: a mode whose route is deferred is not offered. */
+function shown(modes) {
+  return modes.filter((mode) => !isDeferred(mode.routeId));
 }
 
 /* Write's three modes are all parameterless routes; Writing's own entry setup (free / from a
    prompt / a reply) is that screen's own concern once it is built, not a Practice Hub fork. */
 export function writeModes() {
-  return [
+  return shown([
     { key: 'writing', routeId: 'writing' },
     { key: 'rewrite', routeId: 'rewrite' },
     { key: 'timedwr', routeId: 'timedwr' },
-  ];
+  ]);
 }
 
 /* One Listening library item (GET /api/listening/library) whose `available_modes`
@@ -165,12 +171,12 @@ export function readingModes(reading) {
    route this screen can address without inventing a query contract, so they stay out. */
 export function vocabularyModes(due = 0) {
   const n = Number.isFinite(Number(due)) ? Math.max(0, Number(due)) : 0;
-  return [
+  return shown([
     { key: 'review', routeId: 'review', due: n },
     { key: 'timed', routeId: 'timed' },
     { key: 'transfer', routeId: 'transfer' },
     { key: 'feed', routeId: 'feed' },
-  ];
+  ]);
 }
 
 /* Grammar library is the one entry point this round wires for real; a "next concept"/"quick quiz"
