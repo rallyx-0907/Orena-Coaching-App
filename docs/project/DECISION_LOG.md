@@ -3285,3 +3285,36 @@ level out of the entry rule because the backend does not store it.
 **Amends:** D-081 (its "not merged" statement, as a matter of fact), AGENTS section 7's Platform
 Admin hold. D-098 point 9 stands; its level half waits for point 4 here.
 
+## D-100 — Grammar Lab replaces R5 as Orena's grammar source
+
+**Date:** 2026-09-29. **Status:** Accepted (explicit human direction; PR #66 merged at `f86a2bf`).
+
+**Context.** On 2026-09-28 the human began retiring R5 Grammar: Grammar Lab becomes the only
+grammar source. The Grammar Lab lane drafted `docs/project/GRAMMAR_CONTENT_CONTRACT.md` (schema
+v0.4). The UI lane reviewed it against the two Grammar screens, and the lane revised it
+(`e293feb`, `4992cec`). The human merged it by PR #66.
+
+**Decision.**
+
+1. **Source.** Grammar content comes from Grammar Lab, in the shape of
+   `GRAMMAR_CONTENT_CONTRACT.md`. R5 is no longer a grammar source: no new R5-specific rendering,
+   content or contract work. The two Grammar screens are rebuilt on the contract: Grammar Library
+   (frame 44) and Grammar Concept (frame 47, canonical per D-099).
+2. **Order.** The UI lane builds the two screens' frame on the merged contract now and connects
+   them to real data when the lane's fixture of 13 sample points arrives (Grammar Lab PR B). The
+   lane's contract patch (PR A) fixes the five inconsistencies the UI lane listed and adds the
+   "Try it yourself" recognition rule.
+3. **Try it yourself** is drawn as frame 47 draws it. Until the contract carries a rule for
+   recognising the target pattern, the screen never concludes "you used the pattern": a clean
+   sentence is not evidence of use.
+4. **API.** `/api/grammar/v1/*` is not built as part of this decision. It goes through its own
+   architecture review. Until then the screens read fixtures, not a new route.
+5. **What stays.** R5 code, Concept IDs and their gates remain until the rebuilt screens replace
+   what reads them. Removing them is its own step, with a `LEGACY_TOMBSTONES.md` entry written on
+   the human's instruction. AGENTS section 6 still lists "R5 Grammar contracts and Concept IDs" as
+   protected until then. AGENT_CONTRACT section 6.1's `grammar.point{grammar_id}` moves to Grammar
+   Lab ids in a contract bump.
+
+**Supersedes:** R5 Grammar as the grammar authority (the R5 entries this log accepted stand as
+history). Amends nothing else.
+

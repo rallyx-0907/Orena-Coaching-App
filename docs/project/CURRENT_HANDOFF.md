@@ -40,15 +40,12 @@ status: `docs/design/canonical-ui/IMPLEMENTATION_MAP.md`.
   contract below.
 - Agent UI side: contract v5 on the mock; Orena's entry points hide when the
   agent is absent.
-- Grammar: R5 is being retired (human, 2026-09-28): Grammar Lab becomes the only
-  grammar source. The Grammar screens will render `GRAMMAR_CONTENT_CONTRACT.md`
-  (drafted by the Grammar Lab lane, reviewed and committed here like
-  AGENT_CONTRACT.md); no further R5-specific rendering. Order: the lane's PR
-  `governance/grammar-content-contract` into `codex/work` → reviewed here
-  against the screens' needs, gaps listed, nothing fixed → the human approves
-  and merges → DECISION_LOG entry (R5 replaced by Grammar Lab) → the two Grammar
-  screens are rebuilt. `grammar.point{grammar_id}` (AGENT_CONTRACT §6.1) moves
-  to its ids in a contract bump.
+- Grammar: Grammar Lab replaces R5 (D-100; PR #66 merged at `f86a2bf`). The two
+  Grammar screens (frames 44 and 47) are being framed on the merged contract and
+  connect to data when the lane's 13-point fixture arrives (its PR B); its PR A
+  patches the contract and adds the "Try it yourself" rule, and until then the
+  card never concludes the pattern was used. `/api/grammar/v1/*` waits for its
+  own architecture review.
 
 ## Last verified batch
 
