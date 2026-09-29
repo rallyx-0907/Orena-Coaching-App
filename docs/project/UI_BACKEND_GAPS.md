@@ -3622,3 +3622,121 @@ bindings), not from the compact frames alone. Gaps and decisions for the human:
   registers `play_model`, `play_user` and `say_again` while mounted; Dictation registers
   `play_model`. Shadowing does not log to the Speaking Summary session ledger (its kinds are the
   Speak room's, and the frame draws no path from Shadowing to that summary, E2 §1).
+
+## Review Session, Vocabulary Daily Feed, From Your Errors (D-088 frames 13/36/50; 34/35 left unbuilt), Wave B, 2026-09-29
+
+Built `static/orena/screens/review/` (route `review`, `#/review`; `?word=` / `?collection=`),
+`static/orena/screens/feed/` (route `feed`, `#/feed`) and `static/orena/screens/errors/` (route
+`errfix`, `#/from-your-errors`), each registered by one line in `shell/screens.js`. `timed`
+(`#/timed-recall`, frame 34) and `transfer` (`#/transfer`, frame 35) are **not** built - see below.
+Node gates (`test_orena_screen_review.mjs`, `_feed.mjs`, `_errors.mjs`) pass. Measured against the
+pinned design (rule 42) in every state each frame draws, desktop dark/light and phone light/dark: the
+remaining differences are the D-093 accent/AA tokens, sample content, and the items recorded here.
+Verified live on the isolated app: real journeys, the four rule-49 sizes with the longest content
+the API accepts, en/vi/zh interface, a zh learning language, real touch (swipe, tap) on a phone
+context.
+
+- **Timed Recall and Context Transfer have no real backend at all**, confirmed by a grep of
+  `app.py` and `writing_coach/*` for anything of either drill's shape (`timed_recall`,
+  `context_transfer`, `fast_retrieval`, `transfer_count`, ...) and of the old UI (nothing in
+  `static/orena/ui` draws either). Both frames' logic in the design's own state script is client-side
+  over a hardcoded six-word list (`DUE_SEED`); Progress's "Fast retrieval" / "Transferred" stages have
+  no owner either (`screens/progress/model.js#buildKuStages` is the rule-40 zero). Per the Wave B
+  brief ("real backends only, else Coming soon") both routes stay **unregistered**, and
+  `shell/router.js#loadScreen` serves the design's Coming soon titled from each route's `crumb`
+  (`timedRecall` / `contextTransfer`, present in en/vi/zh; checked in all three, and the workspace is
+  the viewport at 390x844 and 360x740). What a build needs: a timed-retrieval contract (word, prompt,
+  shown / first-keystroke / submit timestamps, a server-graded fast / slow / miss that feeds
+  Progress) and a situational-prompt use/transfer grading contract (plural prompts per word, not a
+  fixed 2). A client-only timer graded by a UI constant, feeding the existing review endpoint, would
+  be possible but is product behaviour this pass has no standing to invent (see the report's
+  questions).
+- **Review Session: three real grades, never the frame's four** (rule 40). The frame draws
+  Again / Hard / Good / Easy with four fixed intervals. The real scheduler
+  (`becoming_library.py#review_schedule`, on every item as `item.schedule`) accepts exactly three
+  (`again` / `unsure` / `got_it`, `VocabularyReviewIn.result`) and reports a real interval per grade
+  for *this* card's own stage. Three buttons, each labelled with the number `item.schedule` carries
+  for that card ("10 min / 1 day / 1 day" verified live); `unsure` takes the frame's "Hard" amber,
+  `got_it` its "Good" fill; "Easy" has nothing to bind to and is dropped, not merged.
+- **Review Session: the frame's two ways of asking are both built** (`rvMode`, D7 §1.5), on real
+  data only. "Target -> meaning" (the word; cue = reading + part of speech; hint = the learner's
+  own-language gloss, and no Hint button when the card has none) and "Source-aware cue" (the sentence
+  the learner met the word in with every occurrence taken out; hint = first letter and length). A
+  card is source-aware exactly when its saved `source_fragment` really contains the word (the old
+  product's `recall.js` rule), so the same card is always asked the same way. The frame's cue
+  "... - A Morning in the City - 0:24" is drawn without the title and time: a saved item carries no
+  source title or timestamp, only `source_kind` (reading / feedback / strength name a source; the
+  rest draw none).
+- **Review Session: offline answers use the device review queue** (`product/review-queue.js`,
+  `memory.reviewQueue`, brief). A grade that cannot reach the server waits there and is sent, oldest
+  first, on the next connection - at the start of the next Review and on the `online` event while
+  Review is open - and still counts in that session's summary. The pinned frame draws no offline
+  state, so the only signal is one toast in the nearest drawn pattern (support copy, "No connection -
+  saved on this device, ..."). A server refusal (4xx) is not kept (it would be refused again) and
+  toasts the existing "couldn't save that grade" line; a card unsaved mid-grade (`{found:false}`) is
+  not counted. Flushing while the learner is elsewhere in the app would need a shell-level `online`
+  handler (kit/shell request, not built here).
+- **Review Session: `?word=` and `?collection=` now actually scope the session.** The router hands a
+  room its query as a `URLSearchParams`; the first build read it as a plain object, so Collection
+  Detail's "Start review" quietly reviewed the whole due queue. Fixed and gated. "Mark known" (the
+  Word Card's `onKnown`) is still not built in Review or Feed - no real backend action (same as Word
+  Detail).
+- **Review Session / Feed: the Word Card's Hanzi block is drawn as Word Detail draws it** - "Stroke
+  order", a tile per character from `GET /api/chinese/stroke-order` (`product/hanzi-strokes.js`), then
+  "Practise strokes"; a character the pack does not carry gets no tile.
+- **Rule 50 drops.** Review: "Items marked Again come back sooner. Nothing else to schedule by
+  hand." (obvious scheduler behaviour). Feed: the front-card caption "Tap to reveal meaning and
+  example" (the header already says "tap to flip"; E4 §3 flags it). From Your Errors: the header
+  prefix "Fix sentences you actually said" (a description of the screen the title already names - and
+  "said" is not even true, the evidence is Writing).
+- **Vocabulary Daily Feed: no per-word image and no measured mastery - both drawn as the design's
+  own fallbacks** (rules 37 and 40; the first build had removed the region, which left the card
+  half empty). The front card keeps the frame's image region as the design's missing-artwork
+  placeholder (`.o-art`, at the real ratio, replaced with no layout change when a word gets real
+  art: `VocabularyCard` carries no image field) and its mastery meter at the measured value - no bar
+  filled and the real stage-0 label "New" - never the frame's sample "Recalled". The front Play label
+  is "Play", not the frame's "Hear in context" / "No audio": the payload carries no per-card
+  audio-availability, and the frame's label depends on a transcript segment the feed does not have.
+  A flip or save keeps the rail where the learner swiped to (a repaint used to send it back to the
+  first card).
+- **From Your Errors is Writing-only by construction.** `GET /api/practice-outcomes`
+  (`becoming_outcomes.py`) is the only endpoint that names which of the learner's own targeted
+  attempts had a real recorded issue, and it covers Writing only; the design's sample drills also
+  draw from Speaking (Free Talk, Conversation, E4 §6), which has no equivalent to join against an
+  essay's `issues[]`. No R5 grammar read anywhere (2026-09-28 decision). A sentence with no matching
+  issue or no real correction is never turned into a drill card.
+- **From Your Errors: drawn as the frame draws it, including where it differs from its siblings.**
+  Its back button (`radius:12px`, icon `19`), title (`17px`) and progress bar (`5px`) differ from the
+  sibling drill frames' `14px / 21 / 16px / 4px` (E4 §6 flags it as a possible export artefact).
+  The previous build normalised them to the siblings; this one follows the pinned frame, because
+  "normalise" is a decision the brief reserves. One line to change if the human prefers the sibling
+  signature (`errors.css`: `.s-errors-back`, `.s-errors-head__name`, `.s-errors-bar`).
+- **From Your Errors: the result box draws the sentence as it was (struck), the correction and the
+  reason in every state, as the frame does**, so a wrong check also shows the correction next to
+  "Try again". Hiding it until "Show answer" would be a pedagogical choice the frame does not draw
+  (recorded as a question). A right answer is only ever the real correction (case, spacing and
+  punctuation in any script are forgiven, words are not): another valid fix of the sentence is
+  "Not quite yet" until the learner asks for the answer - a limit of grading against one AI
+  suggestion, not something to loosen by guessing. "Fixed after a retry" is built as the frame's
+  copy says it; the prototype's own `efCheck` can never reach it (its first line credits a first try
+  on any right answer).
+- **From Your Errors' real entry point is a screen outside this pass's scope.** E4 §6: the frame's
+  only entry in the design's script is a practice-rail item ("!", red) beside Dictation / Grammar /
+  Pronunciation / Retell / React-Reuse. The route is reachable through `ctx.href('errfix')`; wiring
+  the rail item is the other surface's job.
+- **Live coverage note.** The isolated app's learner has no practice outcomes
+  (`GET /api/practice-outcomes` -> `{items:[],latest:null}`), so From Your Errors was driven live on
+  payloads shaped by the two serializers (`derive_practice_outcome`, `row_to_dict(detail=True)`),
+  intercepted in the browser (test scaffolding, never shipped): the whole edit -> check -> retry ->
+  show answer -> next -> done -> run again -> re-enter journey ran, at four sizes with the longest
+  sentence, explanation and pattern name, in en/vi/zh. The empty state renders on the real API.
+- **Observation for other lanes (not fixed here).** `LibraryVocabularyIn.source_kind` only accepts
+  `manual|dictionary|feedback|strength|reading|feed|collection` (`becoming_library.py`), so
+  `POST /api/library/vocabulary` with `source_kind: 'listening'` answers **422** (checked live), yet
+  `screens/listening/vocab-sheet.js` and `screens/quick-sheet/model.js` (which also maps `writing` /
+  `speaking`) send those kinds - a word saved from a Listening, Writing or Speaking context would
+  fail. Either the UI maps to an accepted kind or the backend adds them; a contract decision, not an
+  implementation detail.
+- **Shell observation.** After a route paints, `router.js` focuses `<main tabindex="-1">`; with no
+  prior pointer input Chromium draws its focus ring around the whole column (visible in the
+  screenshots of every focus route). `.o-main:focus { outline: 0 }` in `shell.css` would remove it.
