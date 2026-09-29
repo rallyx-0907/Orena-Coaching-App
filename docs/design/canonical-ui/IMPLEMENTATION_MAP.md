@@ -85,24 +85,24 @@ shape).
 | 15 | Scripted Pronunciation | `#/speak/:id` | focus | `screens/speak/` | reviewable |
 | 16 | Compare With Model | `#/speak/:id/compare` | focus | `screens/compare/` | reviewable |
 | 41 | Attempt History | `#/speak/:id/attempts` | focus | `screens/attempts/` | reviewable |
-| 42 | Speaking Summary | `#/speak/summary` | focus | `screens/speak-summary/` | reviewable |
-| 29 | Free Talk | `#/speak/free` | focus | `screens/free-talk/` | reviewable |
-| 30 | Conversation | `#/speak/conversation` | focus | `screens/conversation/` | reviewable |
-| 31 | Situation Reaction | `#/speak/situation` | focus | `screens/situation/` | reviewable |
-| 32 | Retell | `#/speak/retell/:id` | focus | `screens/coming/` | coming-soon (no backend or content) |
-| 43 | Timed Reaction | `#/speak/timed` | focus | `screens/coming/` | coming-soon (no backend or content) |
-| 48 | Mock Interview | `#/speak/interview` | focus | `screens/coming/` | coming-soon (no backend or content) |
-| 49 | Sound / Tone | `#/speak/sounds` | focus | `screens/coming/` | coming-soon (no backend or content) |
+| 42 | Speaking Summary | `#/speak-summary` | focus | `screens/speak-summary/` | reviewable |
+| 29 | Free Talk | `#/free-talk` | focus | `screens/free-talk/` | reviewable |
+| 30 | Conversation | `#/conversation` | focus | `screens/conversation/` | reviewable |
+| 31 | Situation Reaction | `#/situation` | focus | `screens/situation/` | reviewable |
+| 32 | Retell | `#/retell/:id` | focus | `screens/coming/` | coming-soon (no backend or content) |
+| 43 | Timed Reaction | `#/timed-reaction` | focus | `screens/coming/` | coming-soon (no backend or content) |
+| 48 | Mock Interview | `#/interview` | focus | `screens/coming/` | coming-soon (no backend or content) |
+| 49 | Sound / Tone | `#/sounds` | focus | `screens/coming/` | coming-soon (no backend or content) |
 | 18 | Writing | `#/write` · `#/write/:id` | focus | `screens/writing/` | reviewable |
 | 19 | Compare Versions | `#/write/:id/compare` | focus | `screens/writing-compare/` | reviewable |
-| 37 | Context Rewrite | `#/write/rewrite` | focus | `screens/coming/` | coming-soon (no backend or content) |
-| 38 | Timed Writing | `#/write/timed` | focus | `screens/coming/` | coming-soon (no backend or content) |
+| 37 | Context Rewrite | `#/rewrite` | focus | `screens/coming/` | coming-soon (no backend or content) |
+| 38 | Timed Writing | `#/timed-writing` | focus | `screens/coming/` | coming-soon (no backend or content) |
 | 13 | Review Session | `#/review` | focus | `screens/review/` | reviewable |
-| 34 | Timed Recall | `#/review/timed` | focus | `screens/coming/` | coming-soon (no backend or content) |
-| 35 | Context Transfer | `#/review/transfer` | focus | `screens/coming/` | coming-soon (no backend or content) |
+| 34 | Timed Recall | `#/timed-recall` | focus | `screens/coming/` | coming-soon (no backend or content) |
+| 35 | Context Transfer | `#/transfer` | focus | `screens/coming/` | coming-soon (no backend or content) |
 | 36 | Vocabulary Daily Feed | `#/feed` | focus | `screens/feed/` | reviewable |
-| 50 | From Your Errors | `#/errors` | focus | `screens/errors/` | reviewable |
-| 23, 47 | Grammar Concept | `#/grammar/:id` | focus | `screens/grammar-concept/` | reviewable (renders R5; to be rebuilt on the grammar content contract) |
+| 50 | From Your Errors | `#/from-your-errors` | focus | `screens/errors/` | reviewable |
+| 47 (canonical, H1 2026-09-29; 23 is not built) | Grammar Concept | `#/grammar/:id` | focus | `screens/grammar-concept/` | reviewable (renders R5; to be rebuilt on the grammar content contract) |
 | Onboarding 01–05 | Welcome, Account, Languages, Level, Meet Orena | `#/welcome` | none | `screens/onboarding/` | reviewable |
 
 ## Retired by the cutover

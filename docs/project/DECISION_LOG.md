@@ -2539,7 +2539,8 @@ actually have. The lane's migration chain was rebased onto the merged head
 
 **What this decision does not authorize.** It is not authorization for the
 reverse merge. `admin/control-center` is still not merged into `codex/work` or
-`main`, and nothing here changes `AGENTS.md` §3's rule that the two
+`main` *(as of 2026-09-27; overtaken by PR #63, which merged it into
+`codex/work` at `9c0fe31` - see D-085 and D-099)*, and nothing here changes `AGENTS.md` §3's rule that the two
 implementations stay independent: a future sync in either direction is its own
 human instruction, recorded on its own.
 
@@ -3251,3 +3252,36 @@ The UI's side ships with the version: the address validation, note and request f
 11. **Lane:** `codex/work` is the UI lane (D-066) whichever agent works it, Claude included.
 
 **Consequences.** Each Wave B item is its own commit. The Grammar authorisation takes effect when the Grammar screens are rebuilt on the grammar content contract.
+
+## D-099 — Admin keeps its own address through the cutover; Grammar Concept is frame 47; the declared level goes to review
+
+**Date:** 2026-09-29. **Status:** Accepted (explicit human direction).
+
+**Context.** Planning the cutover (`UI_COMPLETION_ROADMAP.md`) found that the admin console,
+merged into `codex/work` by PR #63 (D-085), would lose its host when `/` becomes the new UI, while
+AGENTS section 7 and D-081 still described Admin as inert and unmerged. D-098 left the declared
+level out of the entry rule because the backend does not store it.
+
+**Decision.**
+
+1. **Admin through the cutover.** The old admin console keeps running at an address of its own
+   until the Admin wave, built on the pinned `Orena Admin.dc.html`, replaces it. The cutover does
+   not wait for the Admin wave. `Orena Admin.dc.html` is pinned from the Claude Design project like
+   the other design files. AGENTS section 7 says this; D-081's "not merged" is marked as overtaken.
+2. **Before the cutover** the shared code the new UI still reaches in old `ui/` moves into
+   `capabilities/` (roadmap step 3).
+3. **H1:** frame 47 is the canonical Grammar Concept frame; frame 23 is not built. The timeline,
+   word_order and morphology illustrations are built from the kit, as D-098 point 4 authorised.
+4. **H2, the declared level.** The entry rule keeps its learning-language half now. Storing the
+   declared level per learning language (CEFR for en, HSK 1-9 for zh, room for ja) follows the
+   AGENTS section 7 process: a proposal after `ORENA_ACCOUNT_DATA_ARCHITECTURE.md`, an independent
+   architecture review, human approval, then code, migration and tests. The human runs the
+   migration on the sandbox; production is not touched. When it lands, `#/welcome` opens when there
+   is no learning language or no level for it.
+5. **Chinese Writing evaluator** (`ZH_WRITING_EVALUATOR_RECALL.md`): fix (1) with a zh+vi test now,
+   benchmark (5) in parallel, prompt (4) only after (5) has measured, no deterministic detector
+   (6), the token budget (7) only if truncation is measured.
+
+**Amends:** D-081 (its "not merged" statement, as a matter of fact), AGENTS section 7's Platform
+Admin hold. D-098 point 9 stands; its level half waits for point 4 here.
+

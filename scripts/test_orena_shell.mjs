@@ -79,6 +79,17 @@ assert.equal(entryRoute(), 'today');
 assert.equal(byId(entryRoute({ profile: { exists: false } })).bare, true, 'Welcome is the bare onboarding route');
 assert.equal(byId('reader').focus, true);
 
+/* The implementation map names each screen's route; it must name the one the router serves, or a
+   later design revision is applied to the wrong address (a drift found 2026-09-29). */
+{
+  const map = fs.readFileSync('docs/design/canonical-ui/IMPLEMENTATION_MAP.md', 'utf8');
+  const screens = map.slice(map.indexOf('## Screens'), map.indexOf('## Retired by the cutover'));
+  const paths = new Set(ROUTES.map((route) => `#/${route.path}`));
+  const named = [...screens.matchAll(/^\|[^|]*\|[^|]*\|\s*(`#\/[^|]*)\|/gm)].flatMap((m) => [...m[1].matchAll(/`(#\/[^`?]+)[^`]*`/g)].map((x) => x[1]));
+  assert.ok(named.length >= 45, `the map's screen table names its routes (${named.length})`);
+  for (const address of named) assert.ok(paths.has(address), `IMPLEMENTATION_MAP names ${address}, which shell/routes.js does not serve`);
+}
+
 // 6. Agent intents are the contract's (AGENT_CONTRACT §6.1), each used once.
 const contract = fs.readFileSync('docs/project/AGENT_CONTRACT.md', 'utf8');
 const sixOne = contract.slice(contract.indexOf('### 6.1'), contract.indexOf('## 7.'));

@@ -194,7 +194,7 @@
   ],
   "current_p0": [],
   "current_p1": [
-    "platform_admin_host_remains_a_human_hold",
+    "platform_admin_console_keeps_its_own_address_through_the_cutover_until_the_admin_wave_d099",
     "grammar_breadth_remains_a_human_review_question",
     "cross_device_continuity_design_specified_schema_and_sync_activation_gated",
     "startup_auto_alembic_conflicts_with_D002_requires_explicit_operator_migration",

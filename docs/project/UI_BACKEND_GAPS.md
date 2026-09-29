@@ -2115,7 +2115,9 @@ this screen also answers the open question left by the Vocabulary Library entry
 above ("where do the learner's own words live"), so it should be decided with
 that one rather than separately.
 
-**Admin Control Center (21 frames, new) - held.** AGENTS §7 keeps Platform
+**Admin Control Center (21 frames, new) - held.** *Overtaken 2026-09-29 (D-099): the console was
+merged by PR #63 and runs at `/#/admin`; it keeps its own address through the cutover, and the
+Admin wave builds on the pinned `Orena Admin.dc.html`, which supersedes this Control Center.* AGENTS §7 keeps Platform
 Admin inert: its APIs and `static/admin.js` survive, the historical shell was
 removed, and the hold says not to restore a host for it. The design now draws
 that host in full. **This lane will not build it until the human lifts the
