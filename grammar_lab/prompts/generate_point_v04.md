@@ -1,4 +1,4 @@
-# Prompt: generate_point_v04 (v9)
+# Prompt: generate_point_v04 (v10)
 
 Versioned prompt for one grammar point under schema v0.4 (GRAMMAR_CONTENT_CONTRACT.md).
 `generate.py` fills the placeholders below and sends the result as the `system` message; the
@@ -19,6 +19,9 @@ options (cates, boxs, floweres) even when told not to; verify_distractors.md now
 v9: conversion mode -- a point with `source_refs.r5` is written from the app's R5 lesson(s),
 passed in the user message; the r5_instruction placeholder (empty otherwise) says how, and the model lists
 its corrections to R5 in `r5_corrections` (human, 2026-09-28: R5 is raw material).
+v10 (2026-09-30): the contract patch -- `sub` (the short third cell of the header) and `personal_production`
+(the "Try it yourself" card with its deterministic pattern_rule) are written by the model; the role list gains
+`classifier` (Chinese measure words); explanations come in `vi` and `en` together.
 
 ---
 
@@ -40,10 +43,10 @@ Output one JSON object matching the schema you were given -- no commentary outsi
 
 ## Format
 
-- Explanation fields (`summary`, each `when_to_use` item, `label`, `annotation`, `translation`,
+- Explanation fields (`summary`, `sub`, each `when_to_use` item, `personal_production.prompt`, `label`, `annotation`, `translation`,
   `this_meaning`, `other_meaning`, `reason`, `explain`): {locale_format}
-- `role` is exactly one of: subject, verb, aux, object, complement, time, place, marker,
-  particle, connector, other. Nothing else -- there is no punctuation role, and **punctuation
+- `role` is exactly one of: subject, verb, aux, object, complement, classifier, time, place, marker,
+  particle, connector, other (`classifier` is the Chinese measure word). Nothing else -- there is no punctuation role, and **punctuation
   (a comma, a full stop) is never a slot and never a span**.
 
 ## What to write
@@ -99,6 +102,22 @@ Output one JSON object matching the schema you were given -- no commentary outsi
    this point (wrong form, wrong agreement, wrong tense, missing article...), never just a
    misspelling: `spelling` is not an acceptable `error_tag` for a distractor, and there are no
    invented forms (no `cates`, `boxs`, `floweres`). Never two defensible answers.
+9. **sub**: the short label after the level in the header ("Grammar - A2 - <sub>"): two to four words
+   naming the use, not a sentence and not the title again (`trải nghiệm`, `experience`; `he / she / it`).
+10. **personal_production**: the "Try it yourself" card, one sentence the learner writes about
+   themselves. `prompt`: what to write, one line, that leads straight to this point's pattern.
+   `placeholder`: the start of the sentence in {target_lang} only (no explanation in it; `I have been to ...`,
+   `我去过……`). `target_form`: which formula the sentence follows (usually `affirmative`).
+   `sample`: one clean model sentence in {target_lang} that follows that formula.
+   **pattern_rule** is how code decides, without any model, whether a learner's sentence really used the
+   pattern: `slots` lists the roles of the `target_form` formula whose presence proves the pattern is used
+   (skip a role any sentence has, like `subject` -- pick the ones that carry the point: the auxiliary and
+   the participle, the particle, the marker). Each slot has its `role` and exactly one matcher: `any_of`
+   (a list of the exact words or characters, with contractions) OR `regex` (a case-insensitive regular
+   expression, for forms a list cannot cover -- the participle, `-ing`). Fill the matcher you do not use
+   with an empty list / empty string. `ordered: true` when the roles must appear in that order. Two
+   checks run on it: the rule must match your `sample`, and it must match every `affirmative` example
+   you wrote -- so do not make it stricter than the pattern is.
 {pinyin_instruction}
 {r5_instruction}
 ## Rules
@@ -108,6 +127,7 @@ Output one JSON object matching the schema you were given -- no commentary outsi
 3. **Examples must be clean.** Every sentence in `examples`, `compare`, the `right` side of
    `common_mistakes`, and each quick-practice question with its correct option filled in must
    be grammatically correct -- the verify step re-checks each against the writing evaluator.
-4. **Every locale map needs every declared locale**, independently written.
+4. **Every locale map needs every declared locale**, independently written (`vi` and `en` are two
+   original explanations, not a translation of each other word for word).
 5. **Voice**: clear and direct, for an adult learner. No flourish, no encouragement, no
    exclamation marks.

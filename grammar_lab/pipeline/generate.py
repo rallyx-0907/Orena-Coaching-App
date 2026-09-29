@@ -48,7 +48,7 @@ from grammar_lab.rules import en_morphology
 
 PROMPT_VERSION = "generate_point.v1"
 PROMPT_PATH = LAB_ROOT / "prompts" / "generate_point.md"
-PROMPT_VERSION_V04 = "generate_point_v04.v9"
+PROMPT_VERSION_V04 = "generate_point_v04.v10"
 PROMPT_PATH_V04 = LAB_ROOT / "prompts" / "generate_point_v04.md"
 STORY_PROMPT_VERSION = "generate_story.v2"
 # grammar_set.schema.json's story_mode allows "history" too (VOICE.md), but generate.py
@@ -204,7 +204,8 @@ def _generation_schema(*, locales: list[str], l1s: list[str], error_tags: list[s
 
 
 _PATTERN_ROLES = [
-    "subject", "verb", "aux", "object", "complement", "time", "place", "marker", "particle", "connector", "other",
+    "subject", "verb", "aux", "object", "complement", "classifier", "time", "place", "marker", "particle", "connector",
+    "other",
 ]
 _TIMELINE_SHAPES = [
     "point_past", "ongoing_now", "unspecified_past", "habit", "future_condition", "future_plan", "past_ongoing",
@@ -299,10 +300,33 @@ def _item_schemas_v04(*, locales: list[str], l1s: list[str], error_tags: list[st
             "explain": locale_map,
         },
     }, "q_pinyin_pairs")
+    rule_slot = {
+        "type": "object", "additionalProperties": False, "required": ["role", "any_of", "regex"],
+        "properties": {
+            "role": {"enum": _PATTERN_ROLES},
+            # exactly one of the two is filled: the other is an empty list / empty string
+            "any_of": {"type": "array", "items": {"type": "string", "minLength": 1}},
+            "regex": {"type": "string"},
+        },
+    }
+    personal_production = with_pinyin({
+        "type": "object", "additionalProperties": False,
+        "required": ["prompt", "placeholder", "target_form", "pattern_rule", "sample"],
+        "properties": {
+            "prompt": locale_map,
+            "placeholder": {"type": "string", "minLength": 1},
+            "target_form": {"enum": ["affirmative", "negative", "question"]},
+            "pattern_rule": {
+                "type": "object", "additionalProperties": False, "required": ["ordered", "slots"],
+                "properties": {"ordered": {"type": "boolean"}, "slots": {"type": "array", "minItems": 1, "items": rule_slot}},
+            },
+            "sample": {"type": "string", "minLength": 1},
+        },
+    }, "placeholder_pinyin_pairs", "sample_pinyin_pairs")
     return {
         "locale_map": locale_map, "pinyin_pairs": pinyin_pairs, "with_pinyin": with_pinyin, "slot": slot,
         "example": example, "compare_item": compare_item, "common_mistake": common_mistake,
-        "quick_practice_item": quick_practice_item,
+        "quick_practice_item": quick_practice_item, "personal_production": personal_production,
     }
 
 
@@ -329,6 +353,7 @@ def _generation_schema_v04(*, locales: list[str], l1s: list[str], error_tags: li
     mistake_count = max(1, len(error_tags))
     properties: dict[str, Any] = {
         "summary": locale_map,
+        "sub": locale_map,
         "when_to_use": {"type": "array", "minItems": 2, "maxItems": 4, "items": locale_map},
         "formula": formula,
         "negative": {"type": "array", "items": slot},
@@ -337,6 +362,7 @@ def _generation_schema_v04(*, locales: list[str], l1s: list[str], error_tags: li
         "compare": {"type": "array", "minItems": len(contrast_with), "maxItems": len(contrast_with), "items": compare_item},
         "common_mistakes": {"type": "array", "minItems": mistake_count, "maxItems": mistake_count, "items": common_mistake},
         "quick_practice": {"type": "array", "minItems": 3, "maxItems": 3, "items": quick_practice_item},
+        "personal_production": items["personal_production"],
     }
     if zh:  # the point's own name is carried over, not generated, but its pinyin still has to be written
         properties["native_title_pinyin_pairs"] = pinyin_pairs
@@ -523,6 +549,23 @@ def assemble_common_mistake(raw: dict[str, Any], zh: bool, loc: Any) -> dict[str
         mistake["wrong_pinyin"] = pinyin_from_pairs(raw["wrong_pinyin_pairs"])
         mistake["right_pinyin"] = pinyin_from_pairs(raw["right_pinyin_pairs"])
     return mistake
+
+
+def assemble_personal_production(raw: dict[str, Any], zh: bool, loc: Any) -> dict[str, Any]:
+    """Model output -> the stored "Try it yourself" block. A rule slot names its matcher with exactly one of
+    ``any_of`` / ``regex``; the model fills the other with an empty value, which is dropped here."""
+    slots = []
+    for slot in raw["pattern_rule"]["slots"]:
+        slots.append({key: value for key, value in slot.items() if value not in (None, "", [])})
+    block: dict[str, Any] = {
+        "prompt": loc(raw["prompt"]), "placeholder": raw["placeholder"], "target_form": raw["target_form"],
+        "pattern_rule": {"ordered": raw["pattern_rule"]["ordered"], "slots": slots},
+        "sample": {"text": raw["sample"]},
+    }
+    if zh:
+        block["placeholder_pinyin"] = pinyin_from_pairs(raw["placeholder_pinyin_pairs"])
+        block["sample"]["pinyin"] = pinyin_from_pairs(raw["sample_pinyin_pairs"])
+    return block
 
 
 def assemble_morphology_row(raw: dict[str, Any], zh: bool) -> dict[str, Any]:
@@ -855,11 +898,11 @@ class Generator:
             "schema_version": "0.4",
             "point_type": point_type,
             # structural metadata and the fields generate does not write yet: carried over, never dropped
-            **{key: existing[key] for key in ("sequence", "aliases", "personal_production") if key in existing},
+            **{key: existing[key] for key in ("sequence", "aliases") if key in existing},
             "source_anchors": existing.get("source_anchors") or {"status": "unanchored", "items": []},
             "header": {
                 **header, "summary": loc(data["summary"]),
-                **({"sub": existing["header"]["sub"]} if "sub" in existing.get("header", {}) else {}),
+                "sub": loc(data["sub"]),
                 **({"native_title_pinyin": pinyin_from_pairs(data["native_title_pinyin_pairs"])} if zh else {}),
             },
             "when_to_use": [loc(item) for item in data["when_to_use"]],
@@ -868,6 +911,7 @@ class Generator:
             "compare": compare,
             "common_mistakes": mistakes,
             "quick_practice": quick_practice,
+            "personal_production": assemble_personal_production(data["personal_production"], zh, loc),
             "status": "draft_ai",
             "flags": [],
             "provenance": {

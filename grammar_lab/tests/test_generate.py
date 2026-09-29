@@ -122,6 +122,13 @@ def _canned_qp(q: str, right: str, wrongs: list[tuple[str, str]], zh: bool = Fal
 # en.alpha as a morphology point (third person -s): what the model returns for schema v0.4.
 CANNED_V04 = {
     "summary": {"vi": "He/she/it ở hiện tại đơn: động từ thêm -s."},
+    "sub": {"vi": "he / she / it"},
+    "personal_production": {
+        "prompt": {"vi": "Viết một câu về thói quen của một người."}, "placeholder": "She ... every day.",
+        "target_form": "affirmative",
+        "pattern_rule": {"ordered": True, "slots": [{"role": "verb", "any_of": [], "regex": r"\b\w+(?:s|es)\b"}]},
+        "sample": "She reads a book.",
+    },
     "when_to_use": [{"vi": "Khi chủ ngữ là he/she/it."}, {"vi": "Nói về thói quen."}],
     "formula": [_canned_slot("He / She / It", "subject", "chủ ngữ ngôi ba"), _canned_slot("V-s", "verb", "động từ thêm -s")],
     "negative": [
@@ -185,6 +192,13 @@ def _zh_example(text: str, verb: str) -> dict:
 
 # zh.le_completion as a tense_aspect point.
 CANNED_V04_ZH = {
+    "sub": {"vi": "hoàn thành"},
+    "personal_production": {
+        "prompt": {"vi": "Viết một câu về việc đã làm xong."}, "placeholder": "我吃了……",
+        "placeholder_pinyin_pairs": _pairs("我吃了……"), "target_form": "affirmative",
+        "pattern_rule": {"ordered": True, "slots": [{"role": "particle", "any_of": ["了"], "regex": ""}]},
+        "sample": "我吃了饭。", "sample_pinyin_pairs": _pairs("我吃了饭。"),
+    },
     "native_title_pinyin_pairs": _pairs("动态助词“了”"),
     "summary": {"vi": "了 sau động từ: hành động đã xong."},
     "when_to_use": [{"vi": "Hành động đã xong."}, {"vi": "Có mốc thời gian cụ thể."}],
@@ -471,7 +485,10 @@ def test_generate_v04_writes_header_and_the_fixed_content_blocks(tmp_path: Path)
     assert "blocks" not in point and "title" not in point and "summary" not in point
     assert point["header"] == {
         "title": {"vi": "Tiêu đề"}, "native_title": "Title", "level": point["level"], "summary": CANNED_V04["summary"],
+        "sub": CANNED_V04["sub"],
     }
+    assert point["personal_production"]["sample"] == {"text": "She reads a book."}
+    assert point["personal_production"]["pattern_rule"]["slots"] == [{"role": "verb", "regex": r"\b\w+(?:s|es)\b"}]  # the empty any_of is dropped
     assert [slot["text"] for slot in point["pattern"]["formula"]] == ["He / She / It", "V-s"]
     assert "question" not in point["pattern"]["variants"]  # empty variants are dropped
     assert point["pattern"]["illustration"] == {"kind": "morphology", "morphology": CANNED_V04["morphology"]}

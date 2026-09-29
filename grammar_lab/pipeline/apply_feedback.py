@@ -33,7 +33,6 @@ from typing import Any
 
 from grammar_lab.pipeline.content_store import load_functions, load_manifest, load_points, save_point
 from grammar_lab.pipeline.generate import (
-    _PATTERN_ROLES,
     _PINYIN_INSTRUCTION,
     _TIMELINE_SHAPES,
     _as_locale_map,
@@ -43,8 +42,8 @@ from grammar_lab.pipeline.generate import (
     assemble_compare_item,
     assemble_example,
     assemble_morphology_row,
+    assemble_personal_production,
     assemble_quick_practice_item,
-    pinyin_from_pairs,
 )
 from grammar_lab.pipeline.jsonio import read_json
 from grammar_lab.pipeline.llm_client import LLMClient, LLMError, LLMUsage
@@ -170,7 +169,6 @@ def _schema_for(kind: str, point: dict[str, Any], *, locales: list[str], l1s: li
         contrast_with=point["contrasts"], zh=zh,
     )
     locale_map = items["locale_map"]
-    pairs = items["pinyin_pairs"]
     if kind == "header":
         props = {"title": locale_map, "summary": locale_map, "sub": locale_map}
         block: dict[str, Any] = {"type": "object", "additionalProperties": False, "required": list(props), "properties": props}
@@ -197,21 +195,7 @@ def _schema_for(kind: str, point: dict[str, Any], *, locales: list[str], l1s: li
     elif kind == "quick_practice":
         block = items["quick_practice_item"]
     else:  # personal_production
-        slot = {"type": "object", "additionalProperties": False, "required": ["role"],
-                "properties": {"role": {"enum": _PATTERN_ROLES}, "any_of": {"type": "array", "items": {"type": "string"}},
-                               "regex": {"type": "string"}}}
-        props = {
-            "prompt": locale_map, "placeholder": {"type": "string", "minLength": 1},
-            "target_form": {"enum": ["affirmative", "negative", "question"]},
-            "pattern_rule": {"type": "object", "additionalProperties": False, "required": ["ordered", "slots"],
-                             "properties": {"ordered": {"type": "boolean"},
-                                            "slots": {"type": "array", "minItems": 1, "items": slot}}},
-            "sample": {"type": "string", "minLength": 1},
-        }
-        if zh:
-            props["placeholder_pinyin_pairs"] = pairs
-            props["sample_pinyin_pairs"] = pairs
-        block = {"type": "object", "additionalProperties": False, "required": list(props), "properties": props}
+        block = items["personal_production"]
     return {"type": "object", "additionalProperties": False, "required": ["block"], "properties": {"block": block}}
 
 
@@ -245,15 +229,7 @@ def _assemble(kind: str, raw: Any, point: dict[str, Any], old: Any, *, zh: bool,
         return assemble_common_mistake(raw, zh, loc)
     if kind == "quick_practice":
         return assemble_quick_practice_item(raw, zh, loc)
-    production = {
-        "prompt": loc(raw["prompt"]), "placeholder": raw["placeholder"], "target_form": raw["target_form"],
-        "pattern_rule": {"ordered": raw["pattern_rule"]["ordered"], "slots": [
-            {key: value for key, value in slot.items() if value not in (None, [], "")} for slot in raw["pattern_rule"]["slots"]]},
-        "sample": {"text": raw["sample"]},
-    }
-    if zh:
-        production["placeholder_pinyin"] = pinyin_from_pairs(raw["placeholder_pinyin_pairs"])
-        production["sample"]["pinyin"] = pinyin_from_pairs(raw["sample_pinyin_pairs"])
+    production = assemble_personal_production(raw, zh, loc)
     if isinstance(old, dict) and old.get("placeholder_note"):
         production["placeholder_note"] = old["placeholder_note"]
     return production
