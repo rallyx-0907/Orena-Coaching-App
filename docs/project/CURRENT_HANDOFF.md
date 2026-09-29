@@ -52,7 +52,16 @@ status: `docs/design/canonical-ui/IMPLEMENTATION_MAP.md`.
 
 ## Last verified batch
 
-2026-09-29, `161d917`, local: each Wave B commit was checked on a clean export
+2026-09-29, the D-098 batch (`5d9d64c`..`3f2cc23`), local: every node gate in
+ci.yml (114), the browser ESM graph and the memory validator pass; each learner
+change was checked in the browser on the isolated stack (en/vi/zh, both themes,
+desktop and phone touch; the Settings picker at all four rule-49 sizes). Full
+pytest on a clean export of `3f2cc23` (SQLite, CI backend): `2450 passed, 195 skipped`. The isolated stack
+mounts the checkout read-only, so a real upload cannot be stored there; the
+upload route is covered by `tests/test_media_learner_upload.py` (real WAV,
+ffprobe) instead.
+
+Before it: 2026-09-29, `161d917`, local: each Wave B commit was checked on a clean export
 of HEAD plus the commit (all CI gate commands - 113 at the last, the browser ESM
 graph and the memory/architecture validators pass) and reviewed in the browser
 on the isolated stack (en/vi/zh, both themes, the four rule-49 sizes). Full
@@ -64,18 +73,31 @@ pytest on a clean export (SQLite, CI backend): `2420 passed, 195 skipped`
 Design pinned and governed (D-088 - D-093); foundation at `/next`; agent
 contract v4 (D-095); copy engine fixes; Wave A destinations and Wave B
 workspaces (REVIEWABLE); the Writing request minimum per learning language.
+D-098 (the human's answers, 2026-09-29): Japanese Writing-minimum row
+(`c1393c9`); Writing's countdown while Review is off (`1ac1e6f`); Lesson
+complete draws only server-measured numbers (`6a402af`); the empty address
+opens Welcome for a learner with no profile (`81ae4bb`, the level half is H2
+below); Compare Versions follows the frame (`b221909`); Import > File uploads
+audio/video (`2052cb7`); the support-language picker past four (`3f2cc23`).
+Wave A review items confirmed in HEAD: theme row `b4373e2`, Today greeting
+`755d65b`, word audio 500 `7574765`, essay excerpt `8de1863`. PR #66 was
+reviewed on the PR (2026-09-28, three levels); it awaits the human.
 
 ## IN PROGRESS
 
 - Human review of Wave A and Wave B.
-- Chinese writing evaluator recall: investigated and reported; no change until
-  the human chooses a fix.
+- Chinese writing evaluator recall: causes and fix options in
+  `ZH_WRITING_EVALUATOR_RECALL.md`; no change until the human chooses a fix.
+- `UI_COMPLETION_ROADMAP.md` (PROPOSED): Grammar, the eight Coming-soon
+  screens, cutover preparation and cutover, Admin, the live Orena panel; its
+  decisions H1-H10 wait for the human.
 
 ## PENDING
 
-Human: the 8011 sandbox migration (BLOCKED); the open design questions in
-`UI_BACKEND_GAPS.md` section N and its Wave B sections; whether Japanese gets a
-Writing-minimum row (Japanese is only a support language today).
+Human: the 8011 sandbox migration (BLOCKED); approval of
+`UI_COMPLETION_ROADMAP.md` and its decisions H1-H10 (H1 Grammar Concept frame
+23 or 47; H2 storing the declared level for the entry rule); the Chinese
+evaluator fix; merging PR #66.
 
 ## BLOCKED
 
@@ -105,9 +127,12 @@ human gates. Never touch persistent volumes as cleanup.
 
 ## NEXT EXACT TASK
 
-UI lane: Waves A and B are REVIEWABLE and presented; the two Grammar screens
-after PR #66 is merged and the R5 → Grammar Lab decision is recorded; then the
-cutover (tombstones, legacy redirects, the old UI and its gates replaced).
+UI lane: wait for the human's decision on `UI_COMPLETION_ROADMAP.md`, then follow
+its approved order: the two Grammar screens after PR #66 is merged and the R5 →
+Grammar Lab decision is recorded; the Coming-soon screens; cutover preparation
+(the new UI's indirect imports of old `ui/`, Admin's host, the map's routes);
+then the cutover (tombstones, legacy redirects, the old UI and its gates
+replaced).
 Once every §6.1 surface is built: a one-line purpose per surface id in the copy
 layer (interface, en/vi/zh), published for the intelligence lane (contract v5
 §6.2).
