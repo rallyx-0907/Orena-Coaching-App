@@ -19,6 +19,7 @@ regenerate" action.
 
 from __future__ import annotations
 
+import hashlib
 import re
 import time
 from dataclasses import dataclass
@@ -929,6 +930,7 @@ class Generator:
             point["provenance"]["r5_source"] = {
                 "ids": r5_ids,
                 "content_version": max(record["content_version"] for record in r5_records),
+                "content_hash": hashlib.sha256(r5_source_text(r5_records).encode("utf-8")).hexdigest(),
                 "corrections": data.get("r5_corrections", []),
             }
         if existing.get("blocks"):

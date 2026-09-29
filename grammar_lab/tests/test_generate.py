@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import httpx
@@ -723,7 +724,9 @@ def test_generate_v04_converts_from_r5_and_records_the_source_in_provenance(tmp_
     assert "Giải thích." in user_text and "He go." in user_text  # the R5 lesson reached the model
     assert "r5_corrections" in json.dumps(sent[0]["tools"])       # and it was asked to report corrections
     point = load_point("en", "en.alpha", lab.root)
-    assert point["provenance"]["r5_source"] == {"ids": ["a1-alpha"], "content_version": 2, "corrections": [correction]}
+    r5_source = point["provenance"]["r5_source"]
+    assert re.fullmatch(r"[0-9a-f]{64}", r5_source.pop("content_hash"))  # which R5 text the model was given
+    assert r5_source == {"ids": ["a1-alpha"], "content_version": 2, "corrections": [correction]}
     assert validate_lang("en", lab.root).ok
 
 
