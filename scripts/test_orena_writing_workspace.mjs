@@ -17,6 +17,7 @@ import { readFileSync } from 'node:fs';
 import { copy } from '../static/orena/ui/copy.js';
 import { referenceCopy } from '../static/orena/ui/reference.js';
 import { writingReviewFailure } from '../static/orena/ui/writing-feedback.js';
+import * as browserLimits from '../static/orena/capabilities/writing-limits.js';
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
 const expression = read('static/orena/ui/expression.js');
@@ -113,6 +114,73 @@ for (const name of ['MAX_CHARACTERS', 'MAX_BYTES', 'MAX_LINES']) {
   assert.ok(inJs && inPy, `${name} is stated on both sides`);
   assert.equal(inJs, inPy, `${name} must be the same number in the browser and on the server`);
 }
+
+/* --- The request minimum: one table, per learning language, on both sides --------
+   `tests/fixtures/writing_minimum_cases.json` states it once - the table, the stated
+   default, and the counts that follow from it - and `tests/test_writing_minimum.py` holds
+   the server to it. This holds the browser to the same file, so a learner is never told
+   "write more" by a button the server would have accepted, or let through by one it
+   would refuse. It is a floor for "is this writing at all"; whether an attempt is enough
+   to grade stays the evaluator's (`band_status: insufficient_evidence`). */
+const minimum = JSON.parse(read('tests/fixtures/writing_minimum_cases.json'));
+assert.deepEqual(
+  JSON.parse(JSON.stringify(browserLimits.MINIMUM_BY_LANGUAGE)),
+  minimum.table,
+  'the browser and the server have the same row for every learning language',
+);
+assert.deepEqual(
+  JSON.parse(JSON.stringify(browserLimits.DEFAULT_MINIMUM)),
+  minimum.default,
+  'and the same default for a language with none',
+);
+assert.ok(minimum.cases.length >= 40, 'the shared cases are the whole of the table, not a sample');
+for (const item of minimum.cases) {
+  const label = `${item.language} ${JSON.stringify(item.text)} (${item.note})`;
+  const measured = browserLimits.measureMinimum(item.text, item.language);
+  assert.equal(measured.unit, item.unit, `${label}: counted in ${item.unit}`);
+  assert.equal(measured.count, item.count, `${label}: counts to ${item.count}`);
+  assert.equal(measured.met, item.meets, `${label}: ${item.meets ? 'is' : 'is not'} an attempt`);
+  assert.equal(browserLimits.meetsMinimum(item.text, item.language), item.meets, label);
+}
+assert.ok(
+  !/min_length\s*=\s*10/.test(read('app.py')),
+  'no request model carries a flat ten-character floor: what counts as an attempt depends on the language',
+);
+assert.ok(
+  minimum.cases.some((item) => item.language === 'zh' && item.text === '我是学生。' && item.meets),
+  'the HSK 1 sentence that was refused is in the shared cases, accepted',
+);
+/* The old learner UI (`/`, until the cutover) is the third place a flat ten could live, and the
+   worst: the browser checks a textarea's `minlength` before the form's submit handler runs, so a
+   five-character HSK 1 sentence never reached anything that could count it in the learner's own
+   unit. The box states no floor of its own; the handler asks the shared table before it asks the
+   server, and says what would be enough in the language the learner reads. */
+assert.ok(
+  !/minlength\s*=/i.test(expression),
+  'the old UI textarea carries no minlength: a code-point floor runs before the handler and refuses a whole HSK 1 sentence',
+);
+assert.ok(
+  !/minlength\s*=/i.test(read('static/orena/ui/writing-entry.js')),
+  'nor does the Writing entry',
+);
+const floorGate = expression.indexOf('measureMinimum(box.value, language)');
+const oldSubmit = expression.indexOf("root.querySelector('form').onsubmit");
+assert.ok(
+  oldSubmit !== -1 && floorGate > oldSubmit,
+  'the old UI submit handler measures the draft against the language floor',
+);
+assert.ok(
+  floorGate < expression.indexOf('button.disabled = true;', oldSubmit) &&
+    floorGate < expression.indexOf('api.evaluate(', oldSubmit),
+  'before the action is disabled, the result frame opens, or any request is made',
+);
+for (const ui of ['en', 'zh', 'vi'])
+  for (const key of ['writingTooShortWords', 'writingTooShortHan']) {
+    const said = copy[ui][key];
+    assert.ok(said?.includes('{n}'), `${ui}.${key} says the number the table holds, not a number of its own`);
+    assert.ok(!/\b10\b/.test(said), `${ui}.${key} does not carry the retired flat ten`);
+  }
+assert.equal(new Set(['en', 'zh', 'vi'].map((ui) => copy[ui].writingTooShortHan)).size, 3, 'the Hanzi notice reads differently in each language');
 /* --- Nothing replaces the learner's writing ----------------------------- */
 const submit = expression.slice(expression.indexOf("root.querySelector('form').onsubmit"));
 assert.doesNotMatch(submit, /box\.value = |textarea'\)\.value = /, 'a review never writes into the box');

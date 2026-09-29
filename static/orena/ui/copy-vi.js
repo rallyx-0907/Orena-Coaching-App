@@ -1009,6 +1009,8 @@ export const vi = {
     'Phần này dài hơn mức Orena nhận được trong một lần. Không có gì được thêm vào, và bài bạn viết vẫn nguyên vẹn.',
   writingTooLongPaste:
     'Nội dung dán vào quá dài để thêm ở đây. Bài bạn viết vẫn nguyên vẹn.',
+  writingTooShortWords: 'Viết ít nhất {n} từ để yêu cầu nhận xét.',
+  writingTooShortHan: 'Viết ít nhất {n} chữ Hán để yêu cầu nhận xét.',
   reviewStale:
     'Bạn đã sửa bài này. Nhận xét dưới đây thuộc về bản trước khi sửa.',
   reviewStaleAction: 'Nhận xét bản mới',

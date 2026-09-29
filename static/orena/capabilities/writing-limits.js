@@ -78,3 +78,89 @@ export function editWouldFit(current, replacement, selectionStart, selectionEnd)
     value.slice(0, selectionStart) + String(replacement ?? '') + value.slice(selectionEnd);
   return measureWriting(next);
 }
+
+/* --- The request minimum ----------------------------------------------------
+
+   The other end of the range, and the same table as `writing_coach/writing_limits.py`
+   (`MINIMUM_BY_LANGUAGE`, `DEFAULT_MINIMUM`). It answers "is this an attempt at
+   writing at all?" and nothing more: whether an attempt is enough to grade is the
+   evaluator's own question (`band_status: insufficient_evidence`), and a short
+   attempt still earns its review. So it refuses only what is not writing -
+   nothing, whitespace, punctuation, a stray character.
+
+   Counted in what the learning language is written in, one row per language, so
+   the same number means the same amount of writing. A code point is not that: an
+   HSK 1 sentence, `我是学生。`, is five of them.
+
+     han    Han characters. Ideographic punctuation such as 。 is not one, so
+            `你好。` is two. Stated ranges, not `\p{Script=Han}`, so the server can
+            state the same ones: CJK Unified Ideographs and Extension A, the
+            compatibility ideographs, and Extensions B onward. Radicals are left out.
+     words  Runs of letters and digits, joined by an apostrophe or a hyphen inside
+            a word, that hold at least one letter. A number alone is not a word of
+            writing; punctuation, whitespace and emoji are not words. Normalised
+            first, so a word typed with combining marks is one word, not two.
+
+   `words` counts spaced text: a language written without spaces needs a row of its
+   own before it is taught, since the default would count a sentence as one word.
+
+   This is not the number a learner is shown, and it is not meant to be. The count under a
+   draft (`Intl.Segmenter`, `wordCountOf` in each screen's model) and the stored `word_count`
+   (`writing_unit_count` on the server) answer "how long is this piece?"; this answers "is
+   it writing at all?". They part where a token is not a word of writing: a bare number is a
+   word to both of those and not to this (`3 cats` shows 2 words and counts 1 here), a
+   hyphenated compound is one word here and two to the Segmenter, and for Chinese the shown
+   count is Segmenter words while this counts Han characters. Neither can be reused as it
+   stands - the server's counter reads the request's language from its context, this is
+   pure and is handed one - so the difference is stated rather than hidden, and the cases
+   that pin it are in the shared fixture below.
+
+   `tests/fixtures/writing_minimum_cases.json` states the table and the counts once;
+   the server's tests and `scripts/test_orena_writing_workspace.mjs` both read it, and
+   either side fails when it stops producing them. */
+
+export const MINIMUM_BY_LANGUAGE = Object.freeze({
+  en: Object.freeze({ unit: 'words', minimum: 2 }),
+  zh: Object.freeze({ unit: 'han', minimum: 2 }),
+});
+
+/* What a language with no row of its own is held to. */
+export const DEFAULT_MINIMUM = Object.freeze({ unit: 'words', minimum: 2 });
+
+const HAN = /[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\u{20000}-\u{2fa1f}\u{30000}-\u{323af}]/gu;
+const WORD = /[\p{L}\p{N}]+(?:['\u2019-][\p{L}\p{N}]+)*/gu;
+const LETTER = /\p{L}/u;
+
+export function countHan(text) {
+  return (String(text ?? '').match(HAN) || []).length;
+}
+
+export function countWords(text) {
+  let count = 0;
+  for (const match of String(text ?? '').normalize('NFC').matchAll(WORD)) {
+    if (LETTER.test(match[0])) count += 1;
+  }
+  return count;
+}
+
+const COUNTERS = Object.freeze({ han: countHan, words: countWords });
+
+/* The language a code names, without its region: `zh-CN` and `zh_TW` are `zh`. */
+export function languageKey(code) {
+  return String(code ?? '').trim().toLowerCase().replace(/_/g, '-').split('-')[0];
+}
+
+export function minimumFor(language) {
+  const key = languageKey(language);
+  return Object.prototype.hasOwnProperty.call(MINIMUM_BY_LANGUAGE, key) ? MINIMUM_BY_LANGUAGE[key] : DEFAULT_MINIMUM;
+}
+
+/* What a piece of writing counts to, against the minimum of its language. The shape
+   mirrors the server's `MinimumCheck`. */
+export function measureMinimum(text, language) {
+  const { unit, minimum } = minimumFor(language);
+  const count = COUNTERS[unit](text);
+  return { language: languageKey(language), unit, minimum, count, met: count >= minimum };
+}
+
+export const meetsMinimum = (text, language) => measureMinimum(text, language).met;

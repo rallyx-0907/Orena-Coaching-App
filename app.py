@@ -118,7 +118,9 @@ from writing_coach.writing_limits import (
     MAX_PROMPT_CHARACTERS,
     MAX_REVIEW_BYTES,
     MAX_REVIEW_ITEMS,
+    check_minimum,
     measure_writing,
+    minimum_message,
 )
 from writing_coach.writing_review_identity import (
     identity_of_stored,
@@ -348,9 +350,11 @@ class WritingContextIn(BaseModel):
 class EssayIn(BaseModel):
     # The shared Writing contract (`writing_coach/writing_limits.py`), not what
     # a TEXT column happens to hold. The route measures bytes and lines too,
-    # which a character bound cannot see.
+    # which a character bound cannot see. There is no floor here on purpose: how
+    # little is still an attempt depends on the learning language, which a
+    # field cannot see, so `_guard_writing_minimum` applies it in the route.
     prompt: str = Field(default="", max_length=MAX_PROMPT_CHARACTERS)
-    text: str = Field(min_length=10, max_length=MAX_CHARACTERS)
+    text: str = Field(max_length=MAX_CHARACTERS)
     target_cefr: str | None = Field(default=None, min_length=2, max_length=12)
     writing_mode: str = Field(default="guided", pattern=r"^(guided|journal)$")
     writing_context: WritingContextIn = Field(default_factory=WritingContextIn)
@@ -369,7 +373,9 @@ class TaskGenerateIn(BaseModel):
     word_target: int = Field(default=150, ge=20, le=500)
 
 class ImproveIn(BaseModel):
-    text: str = Field(min_length=10, max_length=20000)
+    # No floor here for the reason `EssayIn.text` gives: the route applies the
+    # learning language's own minimum.
+    text: str = Field(max_length=20000)
     target_cefr: str = Field(default="B2", min_length=2, max_length=12)
     mode: str = Field(default="polish", pattern=r"^(correct|grammar|vocabulary|polish)$")
 
@@ -2019,6 +2025,9 @@ def lookup_dictionary(word: str) -> dict[str, Any]:
 
 @app.post("/api/improve")
 def api_improve(payload: ImproveIn) -> dict[str, Any]:
+    _guard_writing_minimum(
+        payload.text, active_grammar_language_code(), endpoint="/api/improve"
+    )
     try:
         return improve_with_ai(payload)
     except requests.RequestException as exc:
@@ -2328,6 +2337,37 @@ def _guard_writing_size(text: str, *, endpoint: str) -> None:
     )
 
 
+def _guard_writing_minimum(text: str, language: str, *, endpoint: str) -> None:
+    """Refuse text that is not an attempt at writing, before anything is spent on it.
+
+    The other end of `_guard_writing_size`, and the same shape: first, cheap,
+    deterministic, and carrying the measurement rather than the writing. What
+    counts is the learning language's own unit (`writing_limits.MINIMUM_BY_LANGUAGE`),
+    so an HSK 1 sentence of five characters is an attempt and ten spaces are
+    not. A short attempt that passes is judged, and if it is too short to grade
+    the evaluator says so itself (`band_status: insufficient_evidence`); this
+    only refuses what is not writing.
+    """
+    checked = check_minimum(text, language)
+    if checked.met:
+        return
+    logging.getLogger(__name__).info(
+        "writing minimum refused: endpoint=%s language=%s unit=%s count=%d minimum=%d",
+        endpoint,
+        checked.language,
+        checked.unit,
+        checked.count,
+        checked.minimum,
+    )
+    raise orena_http_error(
+        422,
+        "writing_too_short",
+        minimum_message(checked),
+        retryable=False,
+        context=checked.as_context(),
+    )
+
+
 def _bounded_review(result: dict[str, Any]) -> dict[str, Any]:
     """Refuse a provider answer that is not an answer.
 
@@ -2405,6 +2445,7 @@ def api_evaluate(payload: EssayIn) -> dict[str, Any]:
                 "Writing language does not match the selected learning language.",
                 context={"requested_language": requested_language, "active_language": active_language},
             )
+    _guard_writing_minimum(payload.text, active_language, endpoint="/api/evaluate")
     previous: dict[str, Any] | None = None
     series_id: int | None = None
     revision_no = 1
