@@ -1,0 +1,160 @@
+lang	action	r5_id	target	level	note
+en	merge	a2-present-perfect-vs-past-simple	b1-past-simple-vs-present-perfect	B1	trùng: hai bài cùng đối chiếu present perfect / past simple
+en	merge	a1-present-simple-vs-present-continuous	b1-present-simple-vs-continuous-extended	A2	trùng: cùng đối chiếu; gộp thành một bài A2
+en	relevel	b1-present-simple-vs-continuous-extended	-	A2	sau khi gộp bài A1
+en	merge	b1-defining-relative-clauses	a2-who-which-that-relative-clauses	A2	trùng phạm vi (defining who/which/that)
+en	merge	b2-future-continuous	b1-future-continuous	B1	bài trùng hệt tiêu đề ở hai cấp
+en	merge	b1-future-perfect-introduction	b2-future-perfect	B2	bài trùng hệt tiêu đề ở hai cấp
+en	merge	b1-mixed-conditional-introduction	b2-mixed-conditionals	B2	bài trùng ở hai cấp
+en	remove	b2-full-conditional-system	-	-	bài tổng hợp/ôn tập của hệ điều kiện, không phải một điểm
+en	rescope	b1-zero-first-second-conditionals	-	B1	chỉ còn second conditional (zero và first đã có ở A2)
+en	merge	b2-negative-adverbial-inversion	c1-negative-adverbial-inversion	C1	trùng hệt tiêu đề B2/C1; đảo ngữ là C1
+en	merge	b2-conditional-inversion-introduction	c1-conditional-inversion	C1	trùng
+en	merge	c1-it-clefts	b2-cleft-sentences	B2	trùng phạm vi it-cleft
+en	merge	c1-wh-clefts-and-reversed-clefts	b2-pseudo-cleft-sentences	B2	trùng phạm vi wh-cleft
+en	merge	c1-fronting-and-topicalisation	b2-fronting-for-emphasis	C1	trùng phạm vi
+en	merge	b2-impersonal-passive	b2-reporting-passive	B2	"It is said that..." và "He is said to..." cùng một họ
+en	merge	c1-reporting-passives	b2-reporting-passive	B2	trùng hệt tiêu đề ở B2
+en	merge	c2-fused-and-nominal-relatives	c1-fused-relative-clauses	C1	trùng phạm vi
+en	merge	c1-advanced-relative-structures	b2-advanced-relative-clauses	B2	quá rộng, chồng bài B2
+en	merge	b1-generic-reference-and-zero-article	b1-articles-beyond-basics	B1	cùng một chủ đề
+en	merge	b1-obligation-must-have-to-need-to	a2-must-have-to	A2	trùng; phần don't have to nằm ở bài prohibition B1
+en	merge	b2-present-aspect-and-viewpoint	b2-perfect-aspect-in-discourse	B2	ba bài "viewpoint" B2 trừu tượng, chồng bài thì B1
+en	merge	b2-past-aspect-and-narrative-viewpoint	b2-perfect-aspect-in-discourse	B2	như trên
+en	merge	c1-advanced-perfect-aspect	c1-advanced-simple-vs-continuous-aspect	C1	trừu tượng, chồng nhau
+en	merge	c2-advanced-tense-aspect-viewpoint-shifts	c1-lexical-aspect-and-meaning-shifts	C1	trừu tượng, chồng nhau
+en	merge	c1-hedging-academic-claims	c1-hedging-with-modal-and-lexical-devices	C1	trùng phạm vi hedging
+en	merge	c1-complex-noun-phrase-architecture	b2-complex-noun-phrases	B2	trùng phạm vi
+en	merge	c1-ellipsis-and-substitution	b2-ellipsis	B2	trùng phạm vi
+en	merge	c2-academic-vs-business-vs-conversational-grammar	b2-formal-vs-informal-grammar-choices	B2	cùng chủ đề register
+en	merge	c2-register-driven-syntax	c1-register-driven-grammar	C1	cùng chủ đề register
+en	merge	c2-advanced-concession-and-counterargument	c1-advanced-concession	C1	trùng phạm vi
+en	merge	c2-advanced-punctuation-as-syntax	b2-punctuation-with-complex-clauses	B2	trùng phạm vi
+en	merge	c1-old-to-new-information-flow	c1-sentence-rhythm-end-weight-and-end-focus	C1	cùng chủ đề information structure
+en	merge	b2-gerund-infinitive-meaning-contrasts	b1-verb-pattern-meaning-changes-introduction	B1	trùng phạm vi (stop/remember/try + V-ing/to V)
+en	remove	c2-syntactic-variety-without-meaning-drift	-	-	kỹ năng viết/biên tập, không phải điểm ngữ pháp
+en	remove	c2-active-passive-style-transformation	-	-	kỹ năng biên tập
+en	remove	c2-finite-non-finite-transformation	-	-	kỹ năng biên tập
+en	remove	c2-verbal-nominal-transformation	-	-	kỹ năng biên tập
+en	remove	c2-fronting-clefting-transformation	-	-	kỹ năng biên tập
+en	remove	c2-redundancy-reduction	-	-	kỹ năng biên tập
+en	remove	c2-grammar-based-ambiguity-repair	-	-	kỹ năng biên tập
+en	remove	c2-information-packaging-in-long-sentences	-	-	kỹ năng biên tập
+en	split	a1-articles-a-an-the	articles.a_an,articles.the,articles.zero	A1,A1,A2	hai cách dùng khác nhau không gộp một công thức
+en	split	a1-singular-and-plural-nouns	plural_nouns.regular,plural_nouns.irregular	A1,A1	quy tắc và bất quy tắc là hai điểm
+en	split	a1-possessive-adjectives-pronouns-and-possessive-s	possessive_adjectives,possessive_pronouns,possessive_s	A1,A2,A1	ba hình thức khác nhau
+en	split	a1-and-but-or-because-so	conjunctions.and_but_or,conjunctions.because_so	A1,A2	hai nhóm chức năng
+en	split	a2-can-could-be-able-to-basics	can.ability,could.past_ability	A1,A2	can là A1; be able to nằm ở b1-ability-across-time
+en	relevel	a1-much-many-a-lot-of	-	A2	much/many trong câu hỏi, phủ định thường A2
+en	relevel	a1-stative-verbs-introduction	-	A2	đề xuất, cần đối chiếu khung
+en	relevel	a2-object-relative-pronoun-omission	-	B1	bỏ đại từ quan hệ tân ngữ thường B1
+en	relevel	b2-only-phrase-inversion	-	C1	đảo ngữ
+en	relevel	b2-no-sooner-hardly-scarcely	-	C1	đảo ngữ
+en	relevel	a2-past-simple-be	-	A1	was/were nằm ở A1 trong bộ lõi
+en	rescope	b1-so-such-too-enough	-	B1	chỉ còn so/such (too/enough đã ở A2)
+en	rescope	a2-should-ought-to	-	A2	chỉ còn should
+en	rescope	b1-advice-should-ought-to-had-better	-	B1	chỉ còn ought to / had better
+en	rescope	b2-preposition-relative-pronoun	-	B2	chỉ còn dạng trang trọng (to whom); dạng thường ở b1-relative-pronouns-and-prepositions
+en	add	-	would_like	A1	bộ lõi, R5 không có
+en	add	-	adjectives.position	A1	bộ lõi, R5 không có
+en	add	-	past_simple.did_questions	A2	bộ lõi, R5 không có
+en	add	-	time_clauses.basic	A2	when/while/before/after; R5 chỉ có future time clauses (B1)
+en	add	-	verb_object_infinitive	A2	want/tell/ask someone to do
+en	add	-	phrasal_verbs.basic	A2	R5 không có
+en	add	-	phrasal_verbs.separable	B1	R5 không có
+en	add	-	be_used_to	B1	be/get used to (khác used to)
+en	add	-	so_neither_agreement	B1	so do I / neither do I
+en	add	-	make_let_allow	B1	R5 không có
+en	add	-	purpose_so_that	B1	so that / in order to
+en	add	-	adjective_preposition	B1	afraid of, interested in
+en	add	-	discourse_markers	B1	R5 chỉ có ở C1 trở lên
+en	add	-	adjective_order	B1	R5 không có
+en	add	-	it_be_adjective_to	B1	It is easy to...
+en	add	-	gerund_subject	B1	Swimming is fun
+en	add	-	get_passive	B2	R5 không có
+en	add	-	as_if_as_though	B2	R5 không có
+en	add	-	phrasal_verbs.advanced	B2	R5 không có
+zh	remove	zh-hsk1-6-i-t-nh-n-x-ng	-	-	từ vựng (danh sách đại từ), không phải điểm ngữ pháp
+zh	rescope	zh-hsk1-8-s-v-l-ng-t-c-b-n	-	HSK1	chỉ còn lượng từ; số đếm là từ vựng
+zh	split	zh-hsk1-10-v	bu_negation,mei_negation	HSK1,HSK1	不 và 没 là hai điểm
+zh	split	zh-hsk1-11-v	ma_question,ne_question	HSK1,HSK1	吗 và 呢 là hai điểm
+zh	split	zh-hsk1-18-c-b-n	modal.hui,modal.neng_keyi	HSK1,HSK2	会 (HSK1) khác 能/可以 (HSK2)
+zh	split	zh-hsk3-14-reduplication-ng-t-t-nh-t	verb_reduplication,adjective_reduplication	HSK2,HSK3	lặp động từ và lặp tính từ khác cấp
+zh	relevel	zh-hsk2-3-cu-i-c-u-thay-i-tr-ng-th-i	-	HSK1	了2 cấp 1 theo HSK 3.0 (nguồn thứ cấp)
+zh	relevel	zh-hsk3-11-nh-n-m-nh	-	HSK2	是……的 cấp 2 theo HSK 3.0 (nguồn thứ cấp)
+zh	relevel	zh-hsk3-10-topic	-	HSK2	跟……一样 cấp 2 (đề xuất)
+zh	merge	zh-hsk3-8-b-ng-th-i-l-ng	zh-hsk2-12-b-ng-th-i-l-ng-introduction	HSK2	trùng: bổ ngữ thời lượng ở hai cấp
+zh	merge	zh-hsk3-9-b-ng-ng-l-ng	zh-hsk2-13-b-ng-ng-l-ng-introduction	HSK2	trùng: bổ ngữ động lượng ở hai cấp
+zh	merge	zh-hsk4-7-topic	zh-hsk3-4-topic	HSK3	不管/无论……都 trùng 无论……都
+zh	merge	zh-hsk4-8-topic	zh-hsk3-3-topic-69	HSK3	哪怕/即便 là đồng nghĩa với 即使
+zh	merge	zh-hsk5-6-focus-v-i	zh-hsk3-11-nh-n-m-nh	HSK2	是……的 trùng; 连……都 đã ở HSK4
+zh	merge	zh-hsk4-13-ordering	zh-hsk5-14-n-ng-cao-153	HSK5	定语dài ở hai cấp
+zh	merge	zh-hsk6-1-complex-constructions	zh-hsk4-1-v-i-c-u-tr-c-ph-c	HSK4	把 phức ở hai cấp
+zh	merge	zh-hsk6-2-complex-constructions	zh-hsk4-2-n-ng-cao	HSK4	被 phức ở hai cấp
+zh	merge	zh-hsk4-11-ngh-a-m-r-ng	zh-hsk3-10-ngh-a-m-r-ng	HSK3	趋向补语 nghĩa mở rộng ở hai cấp
+zh	merge	zh-hsk5-9-topic-147	zh-hsk4-13-topic	HSK4	对于/关于/随着 trùng
+zh	merge	zh-hsk6-8-contrast	zh-hsk4-13-topic	HSK4	对于/关于 trùng
+zh	merge	zh-hsk6-8-topic	zh-hsk5-7-topic	HSK5	以便/以免 trùng
+zh	merge	zh-hsk4-6-topic-108	zh-hsk3-1-topic	HSK3	不仅……还 trùng 不但……而且
+zh	merge	zh-hsk4-9-topic-111	zh-hsk2-7-topic	HSK2	越是……越 trùng 越……越
+zh	merge	zh-hsk6-1-topic	zh-hsk5-9-topic	HSK5	尽管/固然/即使/哪怕 trùng
+zh	merge	zh-hsk6-2-topic-175	zh-hsk2-4-topic	HSK2	只要/只有/除非 trùng; 倘若/假如/一旦 thành điểm mới
+zh	merge	zh-hsk6-5-topic	zh-hsk5-1-ki-m-ng	HSK5	使/令/让 trùng
+zh	merge	zh-hsk6-6-topic-180	zh-hsk5-11-topic	HSK5	以……为…… trùng hệt
+zh	merge	zh-hsk6-17-reference-chains	zh-hsk5-13-reference	HSK5	trùng
+zh	merge	zh-hsk6-18-topic-comment-in-formal-writing	zh-hsk5-12-topic	HSK5	trùng
+zh	merge	zh-hsk79-7-complex-topic-chains	zh-hsk5-12-topic	HSK5	trùng
+zh	merge	zh-hsk6-4-scope	zh-hsk5-5-scope	HSK5	trùng
+zh	merge	zh-hsk79-4-dense-nominal-structures	zh-hsk5-15-tendencies	HSK5	trùng
+zh	merge	zh-hsk6-15-approximation-and-limitation	zh-hsk5-3-approximate-quantities	HSK5	trùng
+zh	merge	zh-hsk6-9-topic	zh-hsk5-7-topic-145	HSK5	同位 trùng
+zh	merge	zh-hsk6-3-topic	zh-hsk5-2-topic	HSK5	并不/未必 trùng
+zh	merge	zh-hsk6-5-double-negation	zh-hsk6-7-topic	HSK6	phủ định kép trùng
+zh	merge	zh-hsk79-15-rhetorical-questions-and-negation	zh-hsk6-6-rhetorical-questions	HSK6	trùng
+zh	merge	zh-hsk6-3-n-ng-cao	zh-hsk4-15-v-introduction	HSK4	所字 trùng
+zh	merge	zh-hsk79-27-parallelism-and-cadence	zh-hsk6-12-parallel-structure-in-formal-prose	HSK6	trùng
+zh	merge	zh-hsk79-13-comparison-and-analogy	zh-hsk6-14-formal-comparison	HSK6	trùng
+zh	merge	zh-hsk6-23-summary-and-reformulation-structures	zh-hsk79-12-reformulation-and-qualification	HSK7-9	trùng
+zh	merge	zh-hsk6-24-argument-qualification	zh-hsk79-12-reformulation-and-qualification	HSK7-9	trùng
+zh	merge	zh-hsk79-1-advanced-written-aspect-and-viewpoint	zh-hsk6-1-t-ng-t-c-n-ng-cao	HSK6	trùng
+zh	merge	zh-hsk79-2-advanced-modality-and-stance	zh-hsk6-2-topic	HSK6	trùng
+zh	merge	zh-hsk79-9-concessive-rhetoric	zh-hsk79-19-argument-concession-counterclaim	HSK7-9	trùng
+zh	remove	zh-hsk5-11-n-ng-cao	-	-	nhãn loại phức câu, nội dung đã ở các điểm liên từ cụ thể
+zh	remove	zh-hsk5-12-n-ng-cao	-	-	như trên
+zh	remove	zh-hsk5-13-n-ng-cao	-	-	như trên
+zh	remove	zh-hsk5-14-n-ng-cao	-	-	như trên
+zh	remove	zh-hsk5-15-n-ng-cao	-	-	như trên
+zh	remove	zh-hsk5-16-n-ng-cao	-	-	như trên
+zh	remove	zh-hsk6-10-complex-complements	-	-	mơ hồ, nội dung ở các điểm bổ ngữ
+zh	remove	zh-hsk6-11-long-sentence-parsing	-	-	kỹ năng đọc/biên tập
+zh	remove	zh-hsk6-13-compression-and-expansion	-	-	kỹ năng biên tập
+zh	remove	zh-hsk6-16-discourse-connectors-by-relation	-	-	nhãn loại, nội dung ở các điểm liên từ
+zh	remove	zh-hsk6-21-vietnamese-transfer-errors	-	-	không phải điểm; dồn vào trường l1 của common_mistakes từng điểm
+zh	remove	zh-hsk79-30-high-level-integrated-grammar-review	-	-	bài ôn tập
+zh	remove	zh-hsk79-23-translation-sensitive-grammar	-	-	kỹ năng dịch/biên tập
+zh	remove	zh-hsk79-24-precision-editing-of-long-modifiers	-	-	kỹ năng biên tập
+zh	remove	zh-hsk79-25-ambiguity-diagnosis	-	-	kỹ năng biên tập
+zh	remove	zh-hsk79-26-style-transformation	-	-	kỹ năng biên tập
+zh	add	-	modal.xiang_yao	HSK1	bộ lõi, R5 không có
+zh	add	-	tai_le	HSK1	bộ lõi, R5 không có
+zh	add	-	ba_suggestion	HSK1	吧
+zh	add	-	serial_verbs.qu_lai	HSK1	去/来 + nơi + làm gì
+zh	add	-	zenme_question	HSK1	怎么 / 怎么样
+zh	add	-	qing_request	HSK1	请 + V
+zh	add	-	youdian_yidian	HSK2	有点儿 / 一点儿
+zh	add	-	duo_adjective_question	HSK2	多 + tính từ (多大, 多远)
+zh	add	-	shi_bu_shi	HSK2	是不是
+zh	add	-	yao_le	HSK2	要……了 / 快要……了
+zh	add	-	haishi_huozhe	HSK2	还是 / 或者
+zh	add	-	cong_dao	HSK2	从……到……
+zh	add	-	gei_dui	HSK2	给 / 对 + người
+zh	add	-	bie_imperative	HSK2	别 / 不要
+zh	add	-	yijing_haimei	HSK2	已经 / 还没
+zh	add	-	de_di_de	HSK3	的 / 地 / 得
+zh	add	-	gang_gangcai	HSK3	刚 / 刚才
+zh	add	-	jianyu_qing_rang	HSK3	请 / 让 + người + V
+zh	add	-	cunxian_sentence	HSK3	存现句
+zh	add	-	bi_yidian_deduo	HSK3	比……一点儿 / 得多
+zh	add	-	neng_yuan_dei	HSK3	得 (děi)
+zh	add	-	wh_universal	HSK4	疑问代词任指 (谁都, 什么都)
+zh	add	-	jiaru_tangruo	HSK5	倘若 / 假如 / 一旦

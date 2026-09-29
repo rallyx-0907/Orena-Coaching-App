@@ -186,6 +186,35 @@ Mỗi ngôn ngữ đích có một file `inventory/<lang>.yaml`: danh sách ph�
 | Tiếng Trung | 《国际中文教育中文水平等级标准》 phụ lục A, 572 điểm, 9 cấp | Giáo trình hiện dùng trong Orena | Không đưa nội dung Chinese Grammar Wiki vào pipeline: giấy phép cấm dùng thương mại |
 | Tiếng Nhật | Danh mục ngữ pháp JLPT cũ (trước 2010) + syllabus giáo trình | 「日本語教育の参照枠」 (can-do, gắn vào lớp function) | Không có danh mục chính thức hiện hành; không có người bản ngữ nên áp dụng quy trình duyệt zh/ja ở mục 9 |
 
+**Danh mục gốc là R5 (hướng của người, 29/09/2026).** R5 không bị bỏ: nó là **nguyên liệu thô** —
+có nội dung, thiếu cấu trúc để minh hoạ. Việc chính là cấu trúc lại, sửa và bổ sung R5 theo
+`GRAMMAR_CONTENT_CONTRACT.md` v0.4, rồi thay R5 trong app bằng bản mới. Hệ quả cho mục này:
+
+- Danh mục gốc = **mọi bài `kind: lesson` của R5** (EN 228, ZH 197; 35+6 bài `review`/`checkpoint`
+  và 42 bài không phải lesson ở ZH là buổi luyện gồm các bài khác, không phải điểm ngữ pháp, không
+  vào danh mục). "269 / 239" là số dòng của `grammar_curriculum.json`, không phải số điểm.
+  Bộ lõi 99 điểm (`CORE_CATALOG_PROPOSAL.md`) được hợp nhất vào: trùng phạm vi với một bài R5 thì
+  lấy bài R5 làm gốc; bộ lõi thêm điểm R5 không có thì thành mục mới.
+- Người học đi từ A1 đến C2 và HSK 1 đến 9 → danh mục phải phủ **mọi cấp**, không dừng ở A1–A2 /
+  HSK 1–2. Thứ tự sinh theo cấp thấp trước, nhưng đích là toàn bộ.
+- Đối chiếu danh mục với khung chuẩn để tìm điểm **thiếu, trùng, quá rộng, sai cấp**. Kết quả ghi
+  ở `R5_CONVERSION_PLAN.md` và `r5_conversion_map.tsv` (một dòng cho mỗi thay đổi: gộp `merge`,
+  tách `split`, đổi cấp `relevel`, thu hẹp `rescope`, loại `remove`, thêm `add`; bài không có dòng
+  nào là chuyển đổi 1-1).
+- Nguồn khung chuẩn: (a) tiếng Trung — các trang ngữ pháp trong đề cương HSK 3.0 (bản quét ảnh) do
+  **Gemini đọc ảnh** (chỉ các trang đề cương, một model khác model của engine, giữ khoá
+  `gemini-text`), không OCR trên máy; (b) tiếng Anh — *Core Inventory for General English* bản
+  công khai miễn phí; EGP theo điều khoản sử dụng. Không mua sách.
+- Chỉ có một danh mục **đã duyệt** được sinh; người duyệt danh mục thay đổi so với R5 trước khi
+  sinh bất cứ điểm nào.
+
+**Chế độ chuyển đổi (`generate`)**: điểm có `source_refs.r5` liệt kê id bài R5 thì model nhận
+**nội dung bài R5** (xem `pipeline/r5_source.py`) làm đầu vào để cấu trúc lại, sửa lỗi và bổ sung
+theo contract; điểm mới (không có R5) sinh như trước. Provenance ghi id R5 gốc (nguồn của bảng
+chuyển hướng id R5 → id mới, `GRAMMAR_CONTENT_CONTRACT.md` §9, mục `aliases`); khi model nói đã
+sửa một chỗ sai của R5, `verify` để model khác họ xác nhận, và chỗ R5 sai được ghi lại để người
+biết.
+
 **Quy trình dựng danh mục**
 
 1. Nhập nguồn thô vào `inventory/raw/<nguồn>.csv` (tên mục, level, mã). Chỉ nhập metadata, không nhập văn bản giải thích.
@@ -327,6 +356,10 @@ Mỗi giai đoạn chỉ bắt đầu khi giai đoạn trước qua tiêu chí c
 Kiểm tra level từ vựng và dịch ngược có thể để sang giai đoạn 3 nếu cần rút ngắn giai đoạn 1.
 
 ## 8. Kế hoạch tích hợp vào Orena (giai đoạn 4)
+
+**Cập nhật (29/09/2026):** R5 không bị bỏ mà là **nguyên liệu thô** — Grammar Lab cấu trúc lại,
+sửa và bổ sung R5 (§4, chế độ chuyển đổi), rồi thay R5 trong app bằng bản mới phủ A1–C2 / HSK 1–9.
+"Thay thế" ở dưới nghĩa là thay *nội dung và cấu trúc phục vụ*, không phải viết lại từ trống.
 
 **Quyết định của người (28/09/2026, đính chính — xem `PHASE0_DECISIONS.md` §6):** Grammar Lab
 **thay thế** R5, không làm giàu nó. R5 (`writing_coach/languages/{english,chinese}/

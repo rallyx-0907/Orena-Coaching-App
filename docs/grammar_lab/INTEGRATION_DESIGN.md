@@ -105,13 +105,19 @@ Khoá R5: `"{lang}:grammar:v{content_version}:{lesson_id}"`. Đề xuất cho Gr
 không bảng mới, không cột mới. Hoàn thành vẫn không phải thành thạo (giữ
 `completion_is_mastery: false`).
 
-**Không tự di chuyển tiến độ R5.** Id R5 và id Grammar Lab không tương ứng 1-1 (R5 có 508 mục
-tới C2/HSK7-9; bộ lõi mới là A1–A2/HSK1–2 và tách/gộp khác). Hai lựa chọn cho người review:
+**Không tự di chuyển tiến độ R5.** Từ 29/09/2026 danh mục Grammar Lab **xuất phát từ R5**
+(`SPEC.md` §4, chế độ chuyển đổi; `R5_CONVERSION_PLAN.md`): phần lớn bài R5 có một điểm kế thừa
+1-1, số còn lại gộp, tách, đổi cấp hoặc bị loại (`r5_conversion_map.tsv`). Mỗi điểm mới ghi id
+R5 gốc trong provenance (`source_refs.r5`) và trong `aliases` của contract (§9), nên bảng ánh xạ
+id R5 → id mới là **tất định và có sẵn khi danh mục được duyệt**, không phải suy đoán. Hai lựa
+chọn cho người review (tài liệu này vẫn không chọn):
 
 1. Không mang sang: tiến độ R5 ở lại dưới khoá cũ, không hiển thị ở màn mới. Đơn giản, người
    học thấy mất dấu "đã học".
 2. Mang sang khi đọc: dùng `r5_redirects.json` (§5), một điểm mới coi là đã hoàn thành nếu mọi
-   mục R5 trỏ tới nó đã hoàn thành. Không ghi lại dữ liệu cũ, không import lúc khởi động.
+   mục R5 trỏ tới nó đã hoàn thành (điểm gộp: mọi bài nguồn; điểm tách: bài nguồn chung; điểm
+   mới không có R5: chưa hoàn thành). Không ghi lại dữ liệu cũ, không import lúc khởi động. Với
+   danh mục xuất phát từ R5 lựa chọn này khả thi hơn nhiều so với trước.
 
 Đây là quyết định về dữ liệu người học → thuộc hold của `AGENTS.md` §7 và cần **review kiến
 trúc độc lập** trước khi code; tài liệu này không chọn.
@@ -146,7 +152,11 @@ Bài đã chấm trước khi chuyển giữ `grammar_links` với id R5 và `so
 **không sửa dữ liệu đã lưu**. Khi mở link id R5, client gọi redirect: `r5_redirects.json` cho id
 Grammar Lab tương ứng hoặc `null` (mở thư viện). Bảng này sinh từ `source_refs`/`functions.yaml`
 khi danh mục được duyệt, commit cùng bộ xuất bản; nó là cách duy nhất id R5 còn được đọc sau
-khi R5 bị xoá.
+khi R5 bị xoá. Từ hướng chuyển đổi (29/09/2026) nguồn của bảng là provenance `source_refs.r5`
+của từng điểm (= `aliases` của contract §9): id R5 gộp trỏ về điểm đích, id R5 bị tách trỏ về
+điểm chính đã chọn, id R5 bị loại (kỹ năng biên tập, bài ôn tập) là `null`. Bảng phải phủ **mọi
+id R5 có thể còn nằm trong dữ liệu người học** (`r5_conversion_map.tsv` liệt đủ), và id R5 không
+có điểm thay thế phải hiện trong báo cáo chuyển đổi để người duyệt, không bị bỏ âm thầm.
 
 ### 5.3 `patterns.js`
 
@@ -190,12 +200,15 @@ redirect, tiến độ theo lựa chọn ở §4).
 
 ## 7. Rủi ro và điều người cần quyết
 
-1. **Độ phủ.** R5 có 508 mục tới C2 / HSK7-9; bộ lõi đề xuất chỉ A1–A2 / HSK1–2. Sau bước 6
-   người học B1+ không có bài ngữ pháp và `by-error` ít kết quả hơn. Bước 6 phải chờ bộ phủ các
-   cấp mà người học thật đang ở, hoặc người chấp nhận khoảng trống — quyết định sản phẩm.
-2. **Ngôn ngữ giải thích.** Contract hiện chỉ có `vi` (R5 cũng chỉ có `*_vi`). Nhãn UI theo
-   ngôn ngữ người học (D-068), nhưng phần giải thích cho người học L1 khác `vi` là việc sinh
-   thêm locale — không chặn tích hợp, cần quyết khi mở L1 mới.
+1. **Độ phủ.** R5 có 508 dòng (228 bài EN + 197 bài ZH là điểm ngữ pháp; còn lại là bài ôn tập/
+   kiểm tra) tới C2 / HSK7-9. Người học đi từ A1 tới C2 và HSK 1–9, nên **đích là phủ mọi cấp**
+   (quyết định của người 29/09/2026): danh mục xuất phát từ R5 (`R5_CONVERSION_PLAN.md`), bộ lõi
+   99 điểm hợp nhất vào. Bước 6 chỉ chạy khi bộ đã phủ mọi cấp mà R5 đang phủ; sinh theo cấp thấp
+   trước nhưng không cắt chuyển từng phần cấp.
+2. **Ngôn ngữ giải thích** (quyết định của người 29/09/2026): `vi` và `en` sinh cùng lúc cho mọi
+   điểm từ đầu; `zh` để một đợt sau khi nội dung ổn định. Thiếu key thì rơi về `en`, không rơi
+   âm thầm về `vi` (contract "Locale"). Không chặn tích hợp; chi phí sinh `en` tính vào ước tính
+   của `R5_CONVERSION_PLAN.md`.
 3. **Tiến độ R5** (§4): chọn 1 hoặc 2, qua review kiến trúc.
 4. **Engine không chấm được câu Trung ngắn** (422 dưới 10 ký tự) và bỏ sót nhiều lỗi rõ ràng —
    đây là giới hạn chất lượng của verify, không phải của tích hợp, nhưng quyết định bao nhiêu
