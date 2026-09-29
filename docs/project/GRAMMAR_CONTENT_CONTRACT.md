@@ -26,11 +26,11 @@ cần giải thích thêm; prompt story v3 đang tạm dừng.
   chuẩn vẫn là quyết định của người (`UI_BACKEND_GAPS.md` mục 4).
 - **Hợp đồng chỉ mô tả nội dung tác giả.** Trạng thái học viên (đã học, đã lưu, lỗi gần đây,
   gợi ý) không nằm trong đây — app nối vào theo `id` (§9).
-- **Locale.** Mọi field "locale map" là `{"vi": …, "en": …, "zh": …}`. Bản Việt là bản viết đầu
-  (`vi` bắt buộc); `en` là lớp dự phòng đã ghi (D-080) và bắt buộc trước khi một điểm sang
-  `approved`; `zh` tuỳ chọn. Danh sách locale bắt buộc là cấu hình của pipeline
-  (`explain_locales`, hiện `["vi"]` cho đến khi người duyệt lô en/zh); validate `locale.missing`
-  chạy trên **mọi** locale map theo danh sách đó. Thiếu key thì app rơi về `en`, không bao giờ
+- **Locale.** Mọi field "locale map" là `{"vi": …, "en": …, "zh": …}`. **`vi` và `en` được sinh
+  cùng lúc từ đầu cho mọi điểm và đều bắt buộc** (quyết định của người, 29/09/2026; `en` cũng là
+  lớp dự phòng đã ghi, D-080); `zh` là một đợt sau, khi nội dung đã ổn định, và tuỳ chọn cho tới
+  lúc đó. Danh sách locale bắt buộc là cấu hình của pipeline (`explain_locales`, nay
+  `["vi", "en"]`); validate `locale.missing` chạy trên **mọi** locale map theo danh sách đó. Thiếu key thì app rơi về `en`, không bao giờ
   rơi âm thầm về `vi`. Mọi ví dụ bên dưới chỉ ghi `vi` cho gọn.
 - **Chữ Hán là giản thể** (`zh-Hans`), cả nội dung lẫn locale giải thích (`docs/grammar_lab/SPEC.md`
   ở nhánh Grammar Lab); ký tự phồn thể bị validate báo (`zh.traditional_char`).
