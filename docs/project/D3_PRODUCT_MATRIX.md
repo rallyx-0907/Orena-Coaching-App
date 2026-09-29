@@ -68,6 +68,20 @@ Groq). Adding one is a paid-provider human gate.
 
   Per D-101 these are fixed when they block an E2E or give wrong data.
 
+## Updates since the matrix
+
+- **2026-09-30. Reading, Check Understanding: `RUNS_REAL` in EN on the lane runtime.** Content
+  arrived through the new Admin (`b4858d1`):
+  - Project Gutenberg eBook #21, imported as job `889c0ac8`, reviewed and published as article
+    `b483bd10`.
+  - Comprehension set `996f0f65` (4 questions) generated on Gemini and approved.
+  - With `ORENA_READING_PRACTICE_SUBMIT=on` on the bench, a learner answered it in `/next`.
+    Lesson complete showed the server's `correct_count`/`total`.
+  - The evidence record (`/api/reading/practice/evidence`) went from 0 to 1 for the article.
+  - A fresh browser context (no device memory) shows the article in `#/progress?tab=history`.
+
+  ZH still needs the same loop on a ZH article. Content scale is not ready (one article).
+
 ## Decided (D-103, 2026-09-29)
 
 - The retirements are approved: UI and routes only; domain logic and history are kept.
