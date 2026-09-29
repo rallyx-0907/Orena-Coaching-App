@@ -110,7 +110,7 @@
 }
 .s-sit__mic[aria-pressed='true'] {
   background: var(--red);
-  color: var(--accent-ink);
+  color: var(--badge-ink);
 }
 .s-sit__spacer {
   flex: 1;

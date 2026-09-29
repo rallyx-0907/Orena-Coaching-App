@@ -153,6 +153,11 @@ for (const file of files) {
       if (/background:\s*var\(--accent\)\s*;/.test(rule) && /(^|[^-])color:\s*var\(--(accent-ink|badge-ink)\)/.test(rule)) {
         assert.fail(`${file}: white ink on --accent - use --accent-fill (D-093)`);
       }
+      // Nor on a solid semantic fill: white on --red/--green/--amber fails AA in the dark theme,
+      // where --badge-ink is the ink the pairs above hold to AA.
+      if (/background:\s*var\(--(red|green|amber)\)\s*;/.test(rule) && /(^|[^-])color:\s*var\(--accent-ink\)/.test(rule)) {
+        assert.fail(`${file}: white ink on a solid --red/--green/--amber fill - use --badge-ink`);
+      }
     }
   }
   // 6. The new UI does not import the old UI.

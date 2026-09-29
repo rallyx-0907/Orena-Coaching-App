@@ -275,7 +275,7 @@
 }
 .s-conv__mic[aria-pressed='true'] {
   background: var(--red);
-  color: var(--accent-ink);
+  color: var(--badge-ink);
 }
 .s-conv__send {
   border-radius: 16px;
