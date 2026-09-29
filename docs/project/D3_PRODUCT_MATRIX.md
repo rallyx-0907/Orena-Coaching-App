@@ -68,7 +68,19 @@ Groq). Adding one is a paid-provider human gate.
 
   Per D-101 these are fixed when they block an E2E or give wrong data.
 
-## Decisions the human is asked for (one batch)
+## Decided (D-103, 2026-09-29)
+
+- The retirements are approved: UI and routes only; domain logic and history are kept.
+- Dictation stays `MISSING` until the server recomputes the deterministic score before storing it.
+- Book chapters and pasted texts are `N/A_BY_CONTRACT` for comprehension, and get no dead Check
+  Understanding entry.
+- Metrics follow "a real metric or no metric".
+- Speech providers are approved for lane E2E.
+- Curated prompts go into Writing Setup, with the Prompt Bank as their destination.
+- The Chinese evaluator gets a per-pair identity plus a refresh-if-stale on open that keeps
+  history.
+
+## Decisions the human is asked for (one batch) (asked; answered by D-103)
 
 1. **Retirements (`PROPOSE_RETIRE`):**
    - the old `#/continue` room;

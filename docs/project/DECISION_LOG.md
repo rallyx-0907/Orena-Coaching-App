@@ -3540,3 +3540,63 @@ Orena and the cutover stand as D-101 says, except where this entry changes them.
    Orena integration, auth/security or merge readiness.
 9. **Progress.** Progress is counted in finished product flows, not in staging deploys or screens
    rendered.
+
+## D-103 — Answers to the D3 decisions: retirements, Dictation, metrics, speech providers, prompts, the Chinese evaluator
+
+**Date:** 2026-09-29. **Status:** Accepted (explicit human direction, on `D3_PRODUCT_MATRIX.md`).
+
+1. **Retirements approved.** The following retire:
+   - the old `#/continue`;
+   - the old per-skill library rooms;
+   - learner-facing R5 grammar routes and the presentation of R5 `grammar_links`;
+   - the old Growth Summary;
+   - recall modes that have no staging frame.
+
+   Retirement covers obsolete UI and routes only. Reusable domain logic and historical learner
+   data are not deleted. Historical R5 ids stay readable for legacy resolution and redirect through
+   Grammar Lab provenance and aliases once that mapping exists.
+2. **Dictation.** Client-side grading is not `N/A_BY_CONTRACT`. The server is authoritative for
+   persisted Dictation evidence:
+   - The browser may compute the deterministic score at once, for the learner's experience.
+   - Before storing, the server recomputes the score from the learner's answer and the canonical
+     target/line identity, reusing the existing deterministic comparison. No AI is involved.
+   - Until this exists, Dictation's assess and store cells stay `MISSING`.
+3. **Books and pasted texts** are `N/A_BY_CONTRACT` for comprehension assessment in this scope.
+   Approved question sets remain the article assessment contract. A source type with no
+   comprehension contract shows no Check Understanding entry that only reaches an unavailable state.
+4. **Profile and Progress metrics: a real metric or no metric.** An unmeasured value is never shown
+   as 0.
+   - D4 defines and builds only metrics with defensible semantics and real server evidence,
+     deriving from existing records before adding persistence: a real streak, persisted learner
+     goals where they apply, and real activity and progress counts.
+   - Weekly minutes appear only if duration is genuinely measured; otherwise they are hidden.
+   - Achievements, trends and skill percentages have no evidence definition yet, so they are
+     hidden until their contract exists.
+5. **Speech providers approved for lane E2E testing.** This reuses the existing integrations and
+   runtime credentials: Azure Speech Pronunciation Assessment, and the existing ASR provider (Groq
+   where the flow needs it). Only the required speech variables are passed to the lane runtime.
+   The whole `.env` is never copied, printed or committed. The purpose is to prove Shadowing,
+   Pronunciation and Compare end to end.
+6. **Writing prompts.** The curated-prompt capability stays. The old prompt choice moves into the
+   new Writing Setup, and free or custom writing is kept. The existing material is the migration
+   seed, but `content/texts.js` is not the long-term authority: the destination is the Writing
+   Prompt Bank under the content architecture.
+7. **Chinese evaluator.**
+   - The affected review identity is `target_language == zh` and support/explanation language
+     `!= zh`. It is not defined as "non-CJK".
+   - Unrelated pairs stay on the previous effective evaluator identity, so they are not re-graded.
+   - Opening an affected old essay works like this:
+     1. Show the stored review.
+     2. Call an idempotent POST refresh-if-stale.
+     3. The server verifies the pair, the submission identity and the evaluator version.
+     4. If current, it returns the stored review with no provider work.
+     5. If stale, it re-grades exactly that submission once and stores the result against the
+        same learner submission.
+     6. The previous review is kept as immutable history and audit evidence.
+   - No learner revision is created, and nothing claims the learner rewrote the essay. There is no
+     batch re-grade of history.
+   - The live Gemini benchmark v2 is approved with a total ceiling of USD 0.50, and EN and ZH
+     recall are reported separately. Option (4) waits until those numbers are reviewed.
+
+D4 stays one persistence proposal and one independent review before any learner-data migration is
+promoted.
