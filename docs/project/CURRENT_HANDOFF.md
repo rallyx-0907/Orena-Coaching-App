@@ -79,7 +79,7 @@ The D-098 and D-099 items (2026-09-29, `5d9d64c`..`b83142d`); commit list in
 - Chinese evaluator: fix (1) landed (`871e2b9`, contract v2.7) and the benchmark
   measures recall (`fa93601`, v2); the live run that gives (4) its numbers waits
   for the human's go (provider cost).
-- D-101/D-102: D2 done (`ff68f45`), H9 done (`93911f0`), D3 done (`D3_PRODUCT_MATRIX.md`, six decisions asked); D4 in progress.
+- D-101/D-102: D2 (`ff68f45`), H9 (`93911f0`), D3 (`D3_PRODUCT_MATRIX.md`), D-103 recorded; D4 proposal reviewed APPROVE, waiting on the human's H-decisions; E slice 1 (`a069b59`); C: benchmark measured (EN 0.60 / ZH 0.60), per-pair evaluator identity (`c2e4e63`), refresh-if-stale waits for D4.
 
 ## PENDING
 
