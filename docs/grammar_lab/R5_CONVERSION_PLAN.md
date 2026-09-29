@@ -141,3 +141,19 @@ bằng engine" cho tới lần verify sau; không đổi số ước tính.
    nhật map (mục 4), trước khi khoá danh mục.
 4. Gói miễn phí (≈ 20 ngày) hay billing (1–2 ngày, ≈ $9, engine chưa đo).
 5. Ai duyệt ZH, và bao nhiêu điểm mỗi ngày.
+
+## 7. Cập nhật 30/09/2026 (sau quyết định của người ngày 29/09)
+
+- **Đợt "chắc" đã có seed**: `inventory/seeds_en.yaml` (56 điểm EN A1–A2) và `seeds_zh.yaml` (43 điểm ZH HSK 1–2), tức
+  99 điểm là các dòng R5 giữ nguyên, gộp, tách, thu hẹp. Dòng đổi cấp (`relevel`) và dòng thêm (`add`) chờ khoá danh mục,
+  nên `en.past_simple`, `en.can.ability`, `zh.le_change`, `zh.modal.hui`... chưa nằm trong seed.
+- **Quy trình mới bỏ verify bằng engine lúc sinh** (blind-solve tắt mặc định). Engine chỉ chấm `common_mistakes` và
+  `quick_practice` sau review (`engine-grade`): khoảng **11 lượt/điểm** (mẫu A1: 54 lượt cho 5 điểm), không phải 24.
+- **Đính chính đơn giá engine.** Bản trên ghi ≈ $0.0005/lượt; với bảng giá trong `llm_client.py` (Gemini flash-lite
+  $0.30 vào / $2.50 ra mỗi triệu token, ~2 000 vào + 500 ra mỗi lượt) là **≈ $0.0019/lượt**. Chấm engine cho cả 386 điểm
+  ≈ 4 200 lượt ≈ **$8** (chưa đo thực), không phải $4–5.
+- **Sinh** (DeepSeek, `vi` + `en`, có `sub` và `personal_production`): ≈ $0.015/điểm → đợt 99 điểm ≈ $1.5, cả 386 điểm ≈ $6.
+  Ước tính, chưa đo; lệnh `generate` báo chi phí thực và dừng ở `--cost-ceiling-usd`.
+- **Đọc đề cương HSK 3.0**: phụ lục ngữ pháp là **trang 176–260 (85 trang)** của file quét 260 trang (gov.cn, không có lớp chữ),
+  nhiều hơn "vài chục" nên chờ người cho phép trước khi gọi Gemini ảnh. Core Inventory (bản 2011, công khai) đã trích
+  xong: `inventory/raw/core_inventory_en.csv`, 277 dòng mã + bậc, dùng làm `source_anchors` cho điểm EN.
