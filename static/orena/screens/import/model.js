@@ -44,9 +44,8 @@ export function textStats(text) {
    MediaImportCategory, plus the import/status route's own categories) mapped to a copy key -
    never the raw category string, and never a message this UI made up for a category the backend
    did not send. An unrecognised or missing category (a network failure, an aborted request) falls
-   back to one generic key rather than a per-error guess. (The upload route's own categories,
-   media_upload_invalid/media_upload_unavailable, are not listed: the frame draws no File upload
-   step, so this screen never calls that route - see sheet.js's header comment.) */
+   back to one generic key rather than a per-error guess. The upload route's own two categories
+   (writing_coach/media_library_api.py `learner_upload`) are listed too: File posts there (D-098). */
 const ERROR_KEYS = new Set([
   'malformed_url',
   'unsupported_provider',
@@ -57,6 +56,8 @@ const ERROR_KEYS = new Set([
   'unsupported_source_language',
   'invalid_target_language',
   'media_job_unavailable',
+  'media_upload_invalid',
+  'media_upload_unavailable',
 ]);
 
 export function importErrorKey(category) {
@@ -75,6 +76,24 @@ export function urlMediaEntry(url, result) {
     duration_ms: Number.isFinite(asset.duration_ms) ? asset.duration_ms : undefined,
     thumbnail_url: asset.thumbnail_url || '',
     provider: asset.source_provider || '',
+  };
+}
+
+/* An `upload:` membership record (product/memory.js#addMedia's own scheme: "upload:" + the stored
+   media id) from what POST /api/media-learning/upload answered - the stored title, or the file's
+   own name without its extension when the answer carries none. */
+export function uploadMediaEntry(result, filename = '') {
+  const asset = result?.asset || {};
+  const mediaId = String(result?.media_id || '').trim();
+  if (!mediaId) return null;
+  const stem = String(filename).replace(/\.[^.]*$/, '').trim();
+  return {
+    id: `upload:${mediaId}`,
+    title: String(asset.title || stem || mediaId).slice(0, 500),
+    kind: result?.playback?.kind || asset.source_type || '',
+    duration_ms: Number.isFinite(asset.duration_ms) ? asset.duration_ms : undefined,
+    thumbnail_url: asset.thumbnail_url || '',
+    provider: '',
   };
 }
 

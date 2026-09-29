@@ -3,10 +3,9 @@
    sub-lines, the stat chip, the "no percentage" disclosure and every error message are support
    (they explain, rather than name, a control).
 
-   File has no step of its own (the frame draws no `impIsFile` block; its own handler is a toast -
-   see sheet.js's header comment), so `introFile` carries the frame's own real sub-copy for that
-   option ("PDF, EPUB, audio. Not built in this round.") and `fileNotBuilt` is the toast shown on
-   a click, instead of a set of field/button/step labels for a step that does not exist. */
+   File has no step of its own (the frame draws no `impIsFile` block): it opens the device's file
+   picker and then shows the drawn Processing step (D-098). `introFile` says what the upload route
+   takes - audio or video - and nothing about a limit: the route states its own, in its refusal. */
 import { defineCopy } from '../../copy/index.js';
 
 const INTERFACE_KEYS = [
@@ -18,12 +17,13 @@ const INTERFACE_KEYS = [
   'statusImporting',
 ];
 const SUPPORT_KEYS = [
-  'introUrl', 'introText', 'introFile', 'fileNotBuilt', 'tooShort', 'noPercent',
+  'introUrl', 'introText', 'introFile', 'tooShort', 'noPercent',
   'statsWords', 'statsCharacters', 'urlInvalid',
   'error_malformed_url', 'error_unsupported_provider', 'error_media_unavailable',
   'error_provider_timeout', 'error_provider_failure', 'error_malformed_transcript',
   'error_unsupported_source_language', 'error_invalid_target_language',
   'error_media_job_unavailable',
+  'error_media_upload_invalid', 'error_media_upload_unavailable',
   'error_generic',
 ];
 
@@ -41,8 +41,7 @@ export const t = defineCopy('import', {
     statusImporting: 'Importing your media…',
     introUrl: 'YouTube, podcast or audio link → Listening Workspace with a generated transcript.',
     introText: 'Paste text → Reader with lookup, notes and word roles.',
-    introFile: 'PDF, EPUB, audio. Not built in this round.',
-    fileNotBuilt: 'File import isn’t built in this round.',
+    introFile: 'Audio or video from your device.',
     tooShort: 'Paste at least two sentences to import.',
     noPercent: 'No percentage is shown because the pipeline doesn’t report one.',
     statsWords: '{count} words · {sentences} sentences', statsCharacters: '{count} characters · {sentences} sentences',
@@ -56,6 +55,8 @@ export const t = defineCopy('import', {
     error_unsupported_source_language: 'This media’s language isn’t supported yet.',
     error_invalid_target_language: 'Something’s wrong with your learning-language setting.',
     error_media_job_unavailable: 'This import is no longer available. Try again.',
+    error_media_upload_invalid: 'Orena can’t use this file. Choose an audio or video file within the upload limit.',
+    error_media_upload_unavailable: 'This file couldn’t be stored right now. Please try again.',
     error_generic: 'Something went wrong. Please try again.',
   },
   vi: {
@@ -70,8 +71,7 @@ export const t = defineCopy('import', {
     statusImporting: 'Đang nhập media của bạn…',
     introUrl: 'Đường liên kết YouTube, podcast hoặc âm thanh → Không gian Nghe với bản chép lời được tạo tự động.',
     introText: 'Dán văn bản → Đọc với tra cứu, ghi chú và vai trò của từ.',
-    introFile: 'PDF, EPUB, âm thanh. Chưa được xây dựng trong đợt này.',
-    fileNotBuilt: 'Tính năng nhập tệp chưa được xây dựng trong đợt này.',
+    introFile: 'Âm thanh hoặc video trên thiết bị của bạn.',
     tooShort: 'Dán ít nhất hai câu để nhập.',
     noPercent: 'Không hiển thị phần trăm vì hệ thống xử lý không báo cáo con số này.',
     statsWords: '{count} từ · {sentences} câu', statsCharacters: '{count} ký tự · {sentences} câu',
@@ -85,6 +85,8 @@ export const t = defineCopy('import', {
     error_unsupported_source_language: 'Ngôn ngữ của media này chưa được hỗ trợ.',
     error_invalid_target_language: 'Có lỗi với cài đặt ngôn ngữ học của bạn.',
     error_media_job_unavailable: 'Lượt nhập này không còn khả dụng. Hãy thử lại.',
+    error_media_upload_invalid: 'Orena không dùng được tệp này. Hãy chọn một tệp âm thanh hoặc video trong giới hạn tải lên.',
+    error_media_upload_unavailable: 'Hiện chưa lưu được tệp này. Vui lòng thử lại.',
     error_generic: 'Đã có lỗi xảy ra. Vui lòng thử lại.',
   },
   zh: {
@@ -99,8 +101,7 @@ export const t = defineCopy('import', {
     statusImporting: '正在导入你的媒体…',
     introUrl: 'YouTube、播客或音频链接 → 进入听力工作区，并生成转录文本。',
     introText: '粘贴文本 → 进入阅读，附带查词、笔记和词性标注。',
-    introFile: 'PDF、EPUB、音频。本轮尚未支持。',
-    fileNotBuilt: '本轮尚未支持文件导入。',
+    introFile: '你设备上的音频或视频。',
     tooShort: '请粘贴至少两句话再导入。',
     noPercent: '未显示百分比，因为处理流程本身不提供这个数字。',
     statsWords: '{count} 个词 · {sentences} 句', statsCharacters: '{count} 个字 · {sentences} 句',
@@ -114,6 +115,8 @@ export const t = defineCopy('import', {
     error_unsupported_source_language: '暂不支持这段媒体的语言。',
     error_invalid_target_language: '你的学习语言设置出现了问题。',
     error_media_job_unavailable: '此次导入已不可用，请重新导入。',
+    error_media_upload_invalid: 'Orena 无法使用这个文件。请选择上传限制以内的音频或视频文件。',
+    error_media_upload_unavailable: '暂时无法保存这个文件，请重试。',
     error_generic: '出了点问题，请重试。',
   },
 });
