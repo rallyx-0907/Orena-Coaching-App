@@ -128,5 +128,5 @@
     "pattern_rule": {"ordered": true, "slots": [{"role": "marker", "any_of": ["the"]}]},
     "sample": {"text": "The dog is under the table."}
   },
-  "source_anchors": {"status": "unanchored", "items": []}
+  "source_anchors": {"status": "anchored", "items": [{"source": "core_inventory", "code": "135", "level": "A1"}]}
 }

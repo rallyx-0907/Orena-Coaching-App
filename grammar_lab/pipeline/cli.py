@@ -7,6 +7,7 @@ stays a phase-3 stub: it needs a populated inventory, which SPEC §4 defers.
 
 from __future__ import annotations
 
+import contextlib
 import json
 import sys
 import time
@@ -17,6 +18,7 @@ import typer
 from grammar_lab.pipeline.apply_feedback import apply_feedback as run_apply_feedback
 from grammar_lab.pipeline.apply_feedback import dedupe, feedback_stats, parse_files
 from grammar_lab.pipeline.content_store import load_point, load_points, save_point
+from grammar_lab.pipeline import engine_grade
 from grammar_lab.pipeline.evaluator_client import EvaluatorClient
 from grammar_lab.pipeline.export_error_tags import export_error_tags
 from grammar_lab.pipeline.generate import GenerateOutcome, Generator
@@ -112,6 +114,10 @@ def generate(
         help="Only meaningful with --with-story: history | everyday (VOICE.md §7). 'history' is not "
              "wired in yet -- no vetted facts source exists in this repo.",
     ),
+    cost_ceiling_usd: float = typer.Option(
+        1.0, "--cost-ceiling-usd",
+        help="Stop starting new points once this much has been spent this run; the real cost is reported.",
+    ),
     root: Path = typer.Option(LAB_ROOT, "--root"),
 ) -> None:
     """SPEC §5.1: code-generated rule_table + LLM-generated blocks + templated check items."""
@@ -121,6 +127,10 @@ def generate(
     with LLMClient(provider, model, deepseek_thinking=deepseek_thinking) as llm:
         generator = Generator(lang=lang, l1=l1, llm=llm, root=root)
         for point_id in (p.strip() for p in ids.split(",") if p.strip()):
+            spent = sum(o.cost_usd for o in outcomes if o.cost_usd is not None)
+            if spent >= cost_ceiling_usd:
+                outcomes.append(GenerateOutcome(point_id, "skipped_ceiling", reason=f"cost ceiling ${cost_ceiling_usd} reached"))
+                continue
             try:
                 outcomes.append(generator.generate(
                     point_id, regenerate_note=regenerate_note or None, with_story=with_story, story_mode=story_mode
@@ -134,7 +144,10 @@ def generate(
     for outcome in outcomes:
         cost = f"${outcome.cost_usd:.4f}" if outcome.cost_usd is not None else ("cached" if outcome.cached else "n/a")
         typer.echo(f"{outcome.status:16} {outcome.point_id:40} {cost}  {outcome.reason}")
-    typer.echo(f"generate --lang {lang}: {len(outcomes)} point(s), ~${total_cost:.4f} this run")
+    typer.echo(
+        f"generate --lang {lang}: {len(outcomes)} point(s), ${total_cost:.4f} spent this run "
+        f"(ceiling ${cost_ceiling_usd}; cached calls cost nothing)"
+    )
     run_id = new_run_id()
     write_step(root, run_id, "generate", {
         "run_id": run_id, "lang": lang, "provider": provider, "model": model,
@@ -159,7 +172,14 @@ def verify(
              "(AGENTS.md Safety). Point this at a sandbox, e.g. http://localhost:8020 "
              "(grammar_lab/sandbox/).",
     ),
-    blind_provider: str = typer.Option("gemini", "--blind-provider", help="Must differ from generate's --provider."),
+    blind_solve: bool = typer.Option(
+        False, "--blind-solve/--no-blind-solve",
+        help="Also run the checks that need the other-family model (blind-solve, formula coverage, distractor "
+             "plausibility, R5 corrections). Off by default since 2026-09-29.",
+    ),
+    blind_provider: str = typer.Option(
+        "gemini", "--blind-provider", help="Only with --blind-solve; must be another family than generate's provider.",
+    ),
     blind_model: str = typer.Option("gemini-3.5-flash-lite", "--blind-model"),
     evaluator_rate_limit_key: str = typer.Option(
         "gemini", "--evaluator-rate-limit-key",
@@ -186,7 +206,18 @@ def verify(
     results: dict[str, dict] = {}
     # The app grades in its session's language; selecting it per client keeps zh checks graded as zh.
     evaluator = EvaluatorClient(evaluator_url, learning_language=lang, rate_limit_key=evaluator_rate_limit_key or None)
-    with evaluator, LLMClient(blind_provider, blind_model, deepseek_thinking=deepseek_thinking) as blind_solver:
+    if blind_solve:
+        same_family = sorted({
+            point_id for point_id, point in points.items()
+            if str((point.get("provenance") or {}).get("model", "")).split(":")[0] == blind_provider
+        })
+        if same_family:
+            raise typer.BadParameter(
+                f"{blind_provider} generated {', '.join(same_family[:3])}{' ...' if len(same_family) > 3 else ''}; the "
+                "checking model must be another family than the generating one", param_hint="--blind-provider",
+            )
+    blind_context = LLMClient(blind_provider, blind_model, deepseek_thinking=deepseek_thinking) if blind_solve else None
+    with evaluator, (blind_context or contextlib.nullcontext()) as blind_solver:
         for point_id, point in points.items():
             if point_id in dirty_ids:
                 results[point_id] = {"flags": [], "skipped": "validate_failed"}
@@ -213,11 +244,71 @@ def verify(
     run_id = new_run_id()
     write_step(root, run_id, "verify", {
         "run_id": run_id, "lang": lang, "evaluator_url": evaluator_url,
-        "blind_provider": blind_provider, "blind_model": blind_model,
-        "deepseek_thinking": deepseek_thinking if blind_provider == "deepseek" else None,
+        "blind_solve": blind_solve,
+        "blind_provider": blind_provider if blind_solve else None, "blind_model": blind_model if blind_solve else None,
+        "deepseek_thinking": deepseek_thinking if blind_solve and blind_provider == "deepseek" else None,
         "points": results,
     })
     typer.echo(f"verify --lang {lang}: {len(results)} point(s) checked")
+
+
+@app.command("engine-grade")
+def engine_grade_command(
+    lang: str = typer.Option(..., "--lang", help=f"Target language: {', '.join(LANGS)}."),
+    level: str = typer.Option(..., "--level", help="A1, B2, HSK3, ... -- the reviewed level about to go into the app."),
+    evaluator_url: str = typer.Option(
+        ..., "--evaluator-url",
+        help="Base URL of a writing-evaluator sandbox you are allowed to operate (never production).",
+    ),
+    ids: str = typer.Option("", "--ids", help="Only these point ids (default: every point of the level)."),
+    yes: bool = typer.Option(False, "--yes", help="Run the engine calls. Without it: print the estimate and stop."),
+    cost_ceiling_usd: float = typer.Option(2.0, "--cost-ceiling-usd", help="Refuse to run when the estimate exceeds this."),
+    root: Path = typer.Option(LAB_ROOT, "--root"),
+) -> None:
+    """Grade only common_mistakes and quick_practice with the engine, after the estimated cost is shown."""
+    if lang not in LANGS:
+        raise typer.BadParameter(f"expected one of {', '.join(LANGS)}", param_hint="--lang")
+    wanted = level.removeprefix("HSK") if lang == "zh" else level
+    points = {pid: p for pid, p in load_points(lang, root).items() if p["level"]["value"] == wanted}
+    if ids:
+        keep = {p.strip() for p in ids.split(",") if p.strip()}
+        points = {pid: p for pid, p in points.items() if pid in keep}
+    if not points:
+        raise typer.BadParameter(f"no points at level {level}", param_hint="--level")
+    grade_plan = engine_grade.plan(points)
+    cost = f"~${grade_plan.cost_usd:.2f}" if grade_plan.cost_usd is not None else "unknown"
+    typer.echo(
+        f"engine-grade {lang} {level}: {grade_plan.points} point(s), {grade_plan.calls} engine call(s), "
+        f"estimated cost {cost} (about {engine_grade.ENGINE_CALL_TOKENS[0]} tokens in / "
+        f"{engine_grade.ENGINE_CALL_TOKENS[1]} out per call, {engine_grade.ENGINE_MODEL}; not measured)"
+    )
+    if not yes:
+        typer.echo("estimate only; pass --yes to run")
+        return
+    if grade_plan.cost_usd is not None and grade_plan.cost_usd > cost_ceiling_usd:
+        raise typer.BadParameter(
+            f"estimate ${grade_plan.cost_usd:.2f} is over the ceiling ${cost_ceiling_usd}", param_hint="--cost-ceiling-usd",
+        )
+    results: dict[str, dict] = {}
+    with EvaluatorClient(evaluator_url, learning_language=lang, rate_limit_key="gemini") as evaluator:
+        for point_id, point in points.items():
+            report = engine_grade.grade_point(point, evaluator=evaluator)
+            results[point_id] = {
+                "flags": [{"code": f.code, "detail": f.detail} for f in report.flags],
+                "checked_common_mistakes": report.checked_common_mistakes,
+                "checked_quick_practice": report.checked_quick_practice,
+                "unverified": report.unverified,
+            }
+            verdict = "OK" if report.ok else f"{len(report.flags)} flag(s)"
+            if report.unverified:
+                verdict += f", {len(report.unverified)} not verifiable by the engine"
+            typer.echo(f"{point_id:40} {verdict}")
+    run_id = new_run_id()
+    write_step(root, run_id, "verify", {
+        "run_id": run_id, "lang": lang, "evaluator_url": evaluator_url, "blind_solve": False, "scope": "engine-grade",
+        "estimated_calls": grade_plan.calls, "estimated_cost_usd": grade_plan.cost_usd, "points": results,
+    })
+    typer.echo(f"engine-grade --lang {lang}: {len(results)} point(s) graded (run {run_id})")
 
 
 @app.command()

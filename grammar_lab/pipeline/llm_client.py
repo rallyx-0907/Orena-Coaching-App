@@ -159,6 +159,16 @@ class LLMError(RuntimeError):
         self.usage = usage
 
 
+def schema_problems(data: Any, schema: dict[str, Any]) -> list[str]:
+    """Full JSON Schema check of a model answer, right after it comes back (human, 2026-09-29, item 5):
+    provider-side structured output is only a hint (DeepSeek's json_object mode has none), so every
+    answer is checked here before anything is cached or assembled."""
+    from jsonschema import Draft202012Validator
+
+    errors = sorted(Draft202012Validator(schema).iter_errors(data), key=lambda e: list(e.absolute_path))
+    return [f"{'/'.join(str(part) for part in error.absolute_path) or '<root>'}: {error.message[:160]}" for error in errors]
+
+
 def to_gemini_schema(schema: Any) -> Any:
     """Rewrite a draft-2020-12 JSON Schema into Gemini's narrower ``Schema``
     proto dialect (confirmed live 2026-09-28: a full JSON Schema payload is
@@ -287,8 +297,11 @@ class LLMClient:
         temperature: float = 0.0,
         seed: int | None = None,
         max_tokens: int = 4096,
+        check_schema: bool = True,
     ) -> LLMResult:
-        """One JSON object matching ``json_schema``, cached by input hash."""
+        """One JSON object matching ``json_schema``, cached by input hash. The answer is checked against
+        the full schema before it is cached or returned (``check_schema=False`` only for the legacy
+        v0.2/0.3 blocks and story paths, whose recorded answers predate the check)."""
         key = _cache_key(
             provider=self.provider, model=self.model, system=system, user=user,
             schema=json_schema, temperature=temperature, seed=seed,
@@ -315,6 +328,13 @@ class LLMClient:
         else:
             data, usage = self._call_gemini_with_retry(system, user, json_schema, temperature, max_tokens)
 
+        problems = schema_problems(data, json_schema) if check_schema else []
+        if problems:
+            # Not cached: a bad answer must be asked for again. The call was still billed (usage).
+            raise LLMError(
+                f"{self.provider}:{self.model} answered outside the requested schema ({schema_name}): "
+                + "; ".join(problems[:5]), usage=usage,
+            )
         self._write_cache(key, data, usage)
         return LLMResult(data, usage, self.model, self.provider, cached=False)
 

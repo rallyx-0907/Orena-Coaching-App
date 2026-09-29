@@ -714,7 +714,10 @@ class Generator:
         )
         user = f"Write the grammar point {point_id} now, matching the structured output schema."
         note_suffix = f" Admin regenerate note: {regenerate_note}" if regenerate_note else ""
-        result = self.llm.complete(system=system, user=user + note_suffix, json_schema=schema, schema_name="grammar_point_blocks")
+        result = self.llm.complete(
+            system=system, user=user + note_suffix, json_schema=schema, schema_name="grammar_point_blocks",
+            check_schema=False,  # legacy v0.2/0.3 path
+        )
         for example in result.data["examples"]:
             example["seg"] = _normalize_seg(example["seg"])
 
@@ -900,5 +903,5 @@ class Generator:
             cast_list=cast_list,
         )
         user = f"Write the daily-theme story for {existing['id']} now, matching the structured output schema."
-        result = self.llm.complete(system=system, user=user, json_schema=schema, schema_name="story")
+        result = self.llm.complete(system=system, user=user, json_schema=schema, schema_name="story", check_schema=False)
         return result, {"type": "story", "theme": "daily", "mode": mode, **result.data}

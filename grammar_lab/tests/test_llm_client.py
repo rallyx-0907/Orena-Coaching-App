@@ -470,9 +470,20 @@ def test_to_gemini_schema_recurses_into_nested_properties() -> None:
 def test_gemini_call_sends_the_sanitized_schema(tmp_path: Path) -> None:
     calls: list[httpx.Request] = []
     schema = {"type": "object", "additionalProperties": False, "properties": {"a": {"type": ["string", "null"]}}}
-    client(tmp_path, "gemini", _gemini_transport(calls)).complete(system="s", user="u", json_schema=schema)
+    client(tmp_path, "gemini", _gemini_transport(calls)).complete(system="s", user="u", json_schema=schema, check_schema=False)
     sent = json.loads(calls[0].content)
     response_schema = sent["generationConfig"]["responseSchema"]
     assert "additionalProperties" not in response_schema
     assert response_schema["properties"]["a"]["type"] == "string"
     assert response_schema["properties"]["a"]["nullable"] is True
+
+
+def test_an_answer_outside_the_schema_is_rejected_billed_and_not_cached(tmp_path: Path) -> None:
+    schema = {"type": "object", "additionalProperties": False, "required": ["a"], "properties": {"a": {"type": "string"}}}
+    llm = client(tmp_path, "gemini", _gemini_transport([]))  # answers {"greeting": ...}: not the schema
+    with pytest.raises(LLMError) as excinfo:
+        llm.complete(system="s", user="u", json_schema=schema)
+    assert "outside the requested schema" in str(excinfo.value)
+    assert excinfo.value.usage is not None  # the call was billed even though the answer is unusable
+    cache = tmp_path / ".cache"
+    assert not cache.exists() or not list(cache.glob("*"))

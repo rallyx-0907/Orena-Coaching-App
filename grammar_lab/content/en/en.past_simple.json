@@ -162,5 +162,11 @@
     },
     "sample": {"text": "I visited a museum last weekend."}
   },
-  "source_anchors": {"status": "unanchored", "items": []}
+  "source_anchors": {
+    "status": "anchored",
+    "items": [
+      {"source": "core_inventory", "code": "67", "level": "A1"},
+      {"source": "core_inventory", "code": "68", "level": "A1"}
+    ]
+  }
 }

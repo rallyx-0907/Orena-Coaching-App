@@ -220,8 +220,11 @@ def verify_point(
     point: dict[str, Any],
     *,
     evaluator: EvaluatorClient,
-    blind_solver: LLMClient,
+    blind_solver: LLMClient | None = None,
 ) -> VerifyReport:
+    """Every check of SPEC section 5.3. ``blind_solver=None`` (the default since 2026-09-29) skips each
+    check that needs the other-family model: blind-solve of check items and quick-practice, formula
+    coverage, distractor plausibility, R5 corrections and story checks."""
     report = VerifyReport(point_id=point["id"])
     target_cefr = point["level"]["value"] if point["level"]["framework"] == "cefr" else None
 
@@ -267,7 +270,7 @@ def verify_point(
             ))
 
     for index, block in enumerate(point.get("blocks", [])):
-        if block["type"] != "check":
+        if block["type"] != "check" or blind_solver is None:
             continue
         for item_index, item in enumerate(block["items"]):
             report.checked_checks += 1
@@ -294,10 +297,56 @@ def verify_point(
                 ))
 
     for index, block in enumerate(point.get("blocks", [])):
-        if block["type"] == "story":
+        if block["type"] == "story" and blind_solver is not None:
             _verify_story(point, index, block, evaluator=evaluator, blind_solver=blind_solver,
                           target_cefr=target_cefr, report=report)
 
+    verify_common_mistakes(point, evaluator=evaluator, target_cefr=target_cefr, report=report)
+
+    if blind_solver is not None:
+        if "pattern" in point and "header" in point:
+            _verify_formula_coverage(point, blind_solver=blind_solver, report=report)
+        if point.get("quick_practice") and "header" in point:
+            _verify_distractor_plausibility(point, blind_solver=blind_solver, report=report)
+        if ((point.get("provenance") or {}).get("r5_source") or {}).get("corrections"):
+            _verify_r5_corrections(point, blind_solver=blind_solver, report=report)
+
+    for index, item in enumerate(point.get("quick_practice", [])):
+        report.checked_quick_practice += 1
+        label = f"quick_practice[{index}]"
+        _verify_quick_practice_options(item, label, evaluator=evaluator, target_cefr=target_cefr, report=report)
+        if blind_solver is None:
+            continue
+        texts = [option["text"] for option in item["options"]]
+        system = PROMPT_PATH.read_text(encoding="utf-8").format(
+            level_framework=point["level"]["framework"], level_value=point["level"]["value"],
+            target_lang=point["target_lang"], question=item["q"],
+            options="\n".join(f"{i}: {text}" for i, text in enumerate(texts)),
+        )
+        try:
+            result = blind_solver.complete(
+                system=system, user="Answer now.", json_schema=_BLIND_SOLVE_SCHEMA, schema_name="blind_solve",
+            )
+        except LLMError as exc:
+            report.flags.append(VerifyFlag("blind_solve_error", f"{label}: {exc}"))
+            continue
+        answer_index = result.data["answer_index"]
+        if answer_index == -1:
+            report.flags.append(VerifyFlag("blind_solve_ambiguous", f"{label}: blind solver found no single correct option"))
+        elif answer_index != item["answer"]:
+            report.flags.append(VerifyFlag(
+                "blind_solve_wrong",
+                f"{label}: blind solver picked {answer_index} "
+                f"({texts[answer_index] if 0 <= answer_index < len(texts) else '?'}), expected {item['answer']}",
+            ))
+
+    return report
+
+
+def verify_common_mistakes(
+    point: dict[str, Any], *, evaluator: EvaluatorClient, target_cefr: str | None, report: VerifyReport,
+) -> None:
+    """Each ``wrong`` must be caught by the engine under its ``error_tag``; each ``right`` must read clean."""
     for index, item in enumerate(point.get("common_mistakes", [])):
         report.checked_common_mistakes += 1
         label = f"common_mistakes[{index}]"
@@ -323,42 +372,6 @@ def verify_point(
                 f"{label}: engine found errors in the corrected sentence {item['right']!r} "
                 f"({sorted(right_result.categories())})",
             ))
-
-    if "pattern" in point and "header" in point:
-        _verify_formula_coverage(point, blind_solver=blind_solver, report=report)
-    if point.get("quick_practice") and "header" in point:
-        _verify_distractor_plausibility(point, blind_solver=blind_solver, report=report)
-    if ((point.get("provenance") or {}).get("r5_source") or {}).get("corrections"):
-        _verify_r5_corrections(point, blind_solver=blind_solver, report=report)
-
-    for index, item in enumerate(point.get("quick_practice", [])):
-        report.checked_quick_practice += 1
-        label = f"quick_practice[{index}]"
-        _verify_quick_practice_options(item, label, evaluator=evaluator, target_cefr=target_cefr, report=report)
-        texts = [option["text"] for option in item["options"]]
-        system = PROMPT_PATH.read_text(encoding="utf-8").format(
-            level_framework=point["level"]["framework"], level_value=point["level"]["value"],
-            target_lang=point["target_lang"], question=item["q"],
-            options="\n".join(f"{i}: {text}" for i, text in enumerate(texts)),
-        )
-        try:
-            result = blind_solver.complete(
-                system=system, user="Answer now.", json_schema=_BLIND_SOLVE_SCHEMA, schema_name="blind_solve",
-            )
-        except LLMError as exc:
-            report.flags.append(VerifyFlag("blind_solve_error", f"{label}: {exc}"))
-            continue
-        answer_index = result.data["answer_index"]
-        if answer_index == -1:
-            report.flags.append(VerifyFlag("blind_solve_ambiguous", f"{label}: blind solver found no single correct option"))
-        elif answer_index != item["answer"]:
-            report.flags.append(VerifyFlag(
-                "blind_solve_wrong",
-                f"{label}: blind solver picked {answer_index} "
-                f"({texts[answer_index] if 0 <= answer_index < len(texts) else '?'}), expected {item['answer']}",
-            ))
-
-    return report
 
 
 def _formula_text(slots: list[dict[str, Any]]) -> str:

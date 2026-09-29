@@ -35,7 +35,7 @@ CANNED_BLOCKS = {
             "tr": {"vi": "Anh ấy học mỗi ngày."},
         },
     ],
-    "contrasts": [],
+    "contrasts": [{"with": "en.beta", "pairs": [["She works.", "She is working."]], "explain": {"vi": "Thói quen và việc đang xảy ra."}}],
     "pitfalls": [
         {
             "l1": ["vi"],
@@ -149,7 +149,10 @@ CANNED_V04 = {
             "annotation": {"vi": "phủ định: doesn't + V"}, "translation": {"vi": "Anh ấy không thích trà."},
         },
     ],
-    "compare": [],
+    "compare": [{
+        "with": "en.beta", "this_meaning": {"vi": "Thói quen."}, "this_example": "She works in a bank.",
+        "other_meaning": {"vi": "Việc đã xong."}, "other_example": "She worked in a bank.",
+    }],
     "common_mistakes": [
         {
             "wrong": "He go to school.", "right": "He goes to school.",
@@ -207,10 +210,38 @@ CANNED_V04_ZH = {
 }
 
 
+def _one_locale(node):
+    """With a single explanation locale the v0.4 schema asks for plain strings, not {"vi": ...} objects
+    (generate.py files them under the locale); the canned answers below are written as objects."""
+    if isinstance(node, dict):
+        if set(node) == {"vi"}:
+            return node["vi"]
+        return {key: _one_locale(value) for key, value in node.items()}
+    if isinstance(node, list):
+        return [_one_locale(value) for value in node]
+    return node
+
+
+def _answer(payload: dict) -> dict:
+    """What a schema-obeying model would send for ``payload``: plain strings for a single locale, and
+    ``options`` on every formula slot (the schema requires it, [] when the slot is not a choice).
+    Every answer is checked against the real schema now (llm_client.schema_problems)."""
+    def slots(node):
+        if isinstance(node, dict):
+            if {"role", "label"} <= set(node):
+                node = {**node, "options": node.get("options", [])}
+            return {key: slots(value) for key, value in node.items()}
+        if isinstance(node, list):
+            return [slots(value) for value in node]
+        return node
+
+    return slots(_one_locale(payload))
+
+
 def v04_transport(payload: dict) -> httpx.MockTransport:
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(200, json={
-            "content": [{"type": "tool_use", "name": "emit_grammar_point_v04", "input": payload}],
+            "content": [{"type": "tool_use", "name": "emit_grammar_point_v04", "input": _answer(payload)}],
             "usage": {"input_tokens": 500, "output_tokens": 300},
         })
     return httpx.MockTransport(handler)
@@ -227,7 +258,7 @@ def canned_transport() -> httpx.MockTransport:
             })
         if tool_name == "emit_grammar_point_v04":
             return httpx.Response(200, json={
-                "content": [{"type": "tool_use", "name": "emit_grammar_point_v04", "input": CANNED_V04}],
+                "content": [{"type": "tool_use", "name": "emit_grammar_point_v04", "input": _answer(CANNED_V04)}],
                 "usage": {"input_tokens": 500, "output_tokens": 300},
             })
         return httpx.Response(200, json={
@@ -463,7 +494,8 @@ def test_generate_v04_resolves_span_substrings_to_offsets(tmp_path: Path) -> Non
 def test_generate_v04_illustration_follows_point_type_not_the_model(tmp_path: Path) -> None:
     lab = _v04_lab(tmp_path, point_type="other")
     lab.write()
-    make_generator(lab.root, v04_transport(CANNED_V04)).generate("en.alpha")
+    canned = {key: value for key, value in CANNED_V04.items() if key != "morphology"}  # a type-other point asks for none
+    make_generator(lab.root, v04_transport(canned)).generate("en.alpha")
     assert load_point("en", "en.alpha", lab.root)["pattern"]["illustration"] == {"kind": "none"}
 
 
@@ -518,7 +550,7 @@ def test_generate_v04_passes_a_regenerate_note_to_the_model(tmp_path: Path) -> N
     def handler(request: httpx.Request) -> httpx.Response:
         sent.append(json.loads(request.content))
         return httpx.Response(200, json={
-            "content": [{"type": "tool_use", "name": "emit_grammar_point_v04", "input": CANNED_V04}],
+            "content": [{"type": "tool_use", "name": "emit_grammar_point_v04", "input": _answer(CANNED_V04)}],
             "usage": {"input_tokens": 1, "output_tokens": 1},
         })
 
@@ -650,7 +682,7 @@ def _capturing_v04_transport(payload: dict, sent: list[dict]) -> httpx.MockTrans
     def handler(request: httpx.Request) -> httpx.Response:
         sent.append(json.loads(request.content))
         return httpx.Response(200, json={
-            "content": [{"type": "tool_use", "name": "emit_grammar_point_v04", "input": payload}],
+            "content": [{"type": "tool_use", "name": "emit_grammar_point_v04", "input": _answer(payload)}],
             "usage": {"input_tokens": 500, "output_tokens": 300},
         })
     return httpx.MockTransport(handler)

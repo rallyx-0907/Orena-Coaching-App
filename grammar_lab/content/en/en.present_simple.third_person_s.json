@@ -162,5 +162,5 @@
     },
     "sample": {"text": "She works in a bank."}
   },
-  "source_anchors": {"status": "unanchored", "items": []}
+  "source_anchors": {"status": "anchored", "items": [{"source": "core_inventory", "code": "64", "level": "A1"}]}
 }

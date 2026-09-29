@@ -178,5 +178,5 @@
     },
     "sample": {"text": "My brother is taller than me."}
   },
-  "source_anchors": {"status": "unanchored", "items": []}
+  "source_anchors": {"status": "anchored", "items": [{"source": "core_inventory", "code": "149", "level": "A1"}]}
 }

@@ -2,7 +2,7 @@
 
 SPEC has no quota rule of its own -- this is operational: the Grammar Lab
 Gemini key is shared with the Orena Intelligence lane's live traffic and was
-measured at ~25-30 requests/minute before 429s start. Both
+measured at ~25-30 requests/minute on the free tier before 429s start. Both
 ``llm_client.py``'s Gemini calls and ``evaluator_client.py``'s calls into a
 sandbox whose engine is configured for the same Gemini key draw on the same
 quota, so they share one named limiter (looked up by a fixed key such as
@@ -12,15 +12,18 @@ combined would double the real rate against the account.
 
 from __future__ import annotations
 
+import os
 import random
 import threading
 import time
 from dataclasses import dataclass, field
 
-# ~10/min combined budget: comfortably under the measured ~25-30/min ceiling,
-# leaving headroom for the Intelligence lane's own concurrent traffic on the
-# same key.
-GEMINI_MIN_INTERVAL_SECONDS = 6.0
+# Gemini moved to the paid plan (human, 2026-09-29), so the old free-tier ceiling (~25-30/min, kept
+# to ~10/min) no longer applies. The default is one call per second (~60/min, shared by every caller
+# through one named limiter); set GRAMMAR_LAB_GEMINI_MIN_INTERVAL_SECONDS to follow the real quota
+# of the account (e.g. 0.25 for ~240/min). 429 backoff (``backoff_delay``) still protects against a
+# wrong guess, and the cross-lane ``gemini-text`` lock still serialises runs.
+GEMINI_MIN_INTERVAL_SECONDS = float(os.environ.get("GRAMMAR_LAB_GEMINI_MIN_INTERVAL_SECONDS", "1.0"))
 
 
 @dataclass
