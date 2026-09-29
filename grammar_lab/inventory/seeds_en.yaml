@@ -1,0 +1,1204 @@
+# Core batch seeds, English A1-A2 (human, 2026-09-29): the R5 rows whose structure is sure (kept, merged, split, narrowed).
+# Level-changing and new rows wait for the catalogue lock (docs/grammar_lab/R5_CONVERSION_PLAN.md). Read by `seed`.
+- id: en.sentence_word_order
+  level: A1
+  function: fn.sentence_basics
+  point_type: word_order
+  native_title: Complete sentences and basic word order
+  title:
+    vi: Câu hoàn chỉnh và trật tự từ cơ bản
+    en: Complete sentences and basic word order
+  r5:
+  - a1-complete-sentences-and-basic-word-order
+  error_tags:
+  - sentence_structure
+  contrasts: []
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: core
+- id: en.be.present
+  level: A1
+  function: fn.identity_state
+  point_type: other
+  native_title: 'Be: am / is / are'
+  title:
+    vi: 'Động từ be: am / is / are'
+    en: 'Be: am / is / are'
+  r5:
+  - a1-be-am-is-are
+  error_tags:
+  - agreement
+  contrasts:
+  - en.have_got
+  prereqs: []
+  sequence: 1
+  anchors:
+  - source: core_inventory
+    code: '56'
+    level: A1
+  batch: core
+- id: en.pronouns.subject_object
+  level: A1
+  function: fn.pronoun_reference
+  point_type: other
+  native_title: Subject and object pronouns
+  title:
+    vi: Đại từ chủ ngữ và tân ngữ
+    en: Subject and object pronouns
+  r5:
+  - a1-subject-and-object-pronouns
+  error_tags:
+  - word_form
+  contrasts: []
+  prereqs:
+  - en.be.present
+  sequence: 1
+  anchors:
+  - source: core_inventory
+    code: '125'
+    level: A1
+  batch: core
+- id: en.possessive_adjectives
+  level: A1
+  function: fn.possession
+  point_type: other
+  native_title: Possessive adjectives
+  title:
+    vi: Tính từ sở hữu (my, your, his...)
+    en: Possessive adjectives
+  r5:
+  - a1-possessive-adjectives-pronouns-and-possessive-s
+  error_tags:
+  - word_form
+  contrasts:
+  - en.possessive_pronouns
+  - en.possessive_s
+  prereqs:
+  - en.pronouns.subject_object
+  sequence: 1
+  anchors:
+  - source: core_inventory
+    code: '127'
+    level: A1
+  batch: core
+- id: en.possessive_pronouns
+  level: A1
+  function: fn.possession
+  point_type: other
+  native_title: Possessive pronouns
+  title:
+    vi: Đại từ sở hữu (mine, yours...)
+    en: Possessive pronouns
+  r5:
+  - a1-possessive-adjectives-pronouns-and-possessive-s
+  error_tags:
+  - word_form
+  contrasts:
+  - en.possessive_adjectives
+  prereqs:
+  - en.possessive_adjectives
+  sequence: 2
+  anchors:
+  - source: core_inventory
+    code: '129'
+    level: A1
+  batch: core
+- id: en.possessive_s
+  level: A1
+  function: fn.possession
+  point_type: morphology
+  native_title: Possessive 's
+  title:
+    vi: Sở hữu cách 's
+    en: Possessive 's
+  r5:
+  - a1-possessive-adjectives-pronouns-and-possessive-s
+  error_tags:
+  - word_form
+  contrasts:
+  - en.possessive_adjectives
+  prereqs:
+  - en.be.present
+  sequence: 3
+  anchors:
+  - source: core_inventory
+    code: '128'
+    level: A1
+  batch: core
+- id: en.have_got
+  level: A1
+  function: fn.possession
+  point_type: other
+  native_title: Have and have got
+  title:
+    vi: Have và have got
+    en: Have and have got
+  r5:
+  - a1-have-and-have-got
+  error_tags:
+  - agreement
+  contrasts:
+  - en.be.present
+  - en.there_is_are
+  prereqs:
+  - en.pronouns.subject_object
+  sequence: 4
+  anchors:
+  - source: core_inventory
+    code: '57'
+    level: A1
+  batch: core
+- id: en.plural_nouns.regular
+  level: A1
+  function: fn.quantity
+  point_type: morphology
+  native_title: Plural nouns
+  title:
+    vi: Danh từ số nhiều có quy tắc
+    en: Regular plural nouns
+  r5:
+  - a1-singular-and-plural-nouns
+  error_tags:
+  - agreement
+  contrasts:
+  - en.plural_nouns.irregular
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: core
+- id: en.plural_nouns.irregular
+  level: A1
+  function: fn.quantity
+  point_type: other
+  native_title: Irregular plural nouns
+  title:
+    vi: Danh từ số nhiều bất quy tắc
+    en: Irregular plural nouns
+  r5:
+  - a1-singular-and-plural-nouns
+  error_tags:
+  - word_form
+  contrasts:
+  - en.plural_nouns.regular
+  prereqs:
+  - en.plural_nouns.regular
+  sequence: 2
+  anchors: []
+  batch: core
+- id: en.articles.a_an
+  level: A1
+  function: fn.reference
+  point_type: other
+  native_title: 'Indefinite articles: a / an'
+  title:
+    vi: Mạo từ không xác định a / an
+    en: Indefinite articles a / an
+  r5:
+  - a1-articles-a-an-the
+  error_tags:
+  - article
+  contrasts:
+  - en.articles.the
+  - en.articles.zero
+  prereqs: []
+  sequence: 1
+  anchors:
+  - source: core_inventory
+    code: '135'
+    level: A1
+  batch: core
+- id: en.articles.the
+  level: A1
+  function: fn.reference
+  point_type: other
+  native_title: 'The definite article: the'
+  title:
+    vi: Mạo từ xác định the
+    en: The definite article the
+  r5:
+  - a1-articles-a-an-the
+  error_tags:
+  - article
+  contrasts:
+  - en.articles.a_an
+  - en.articles.zero
+  prereqs:
+  - en.articles.a_an
+  sequence: 2
+  anchors:
+  - source: core_inventory
+    code: '135'
+    level: A1
+  batch: core
+- id: en.demonstratives
+  level: A1
+  function: fn.pronoun_reference
+  point_type: other
+  native_title: This / that / these / those
+  title:
+    vi: This / that / these / those
+    en: This / that / these / those
+  r5:
+  - a1-this-that-these-those
+  error_tags:
+  - word_choice
+  contrasts: []
+  prereqs: []
+  sequence: 2
+  anchors:
+  - source: core_inventory
+    code: '146'
+    level: A1
+  batch: core
+- id: en.there_is_are
+  level: A1
+  function: fn.existence
+  point_type: word_order
+  native_title: There is / There are
+  title:
+    vi: There is / There are
+    en: There is / There are
+  r5:
+  - a1-there-is-there-are
+  error_tags:
+  - sentence_structure
+  - agreement
+  contrasts:
+  - en.have_got
+  prereqs:
+  - en.be.present
+  sequence: 1
+  anchors:
+  - source: core_inventory
+    code: '123'
+    level: A1
+  batch: core
+- id: en.imperatives
+  level: A1
+  function: fn.instructions
+  point_type: word_order
+  native_title: Imperatives and let's
+  title:
+    vi: Câu mệnh lệnh và let's
+    en: Imperatives and let's
+  r5:
+  - a1-basic-imperatives-and-let-s
+  error_tags:
+  - sentence_structure
+  contrasts: []
+  prereqs: []
+  sequence: 1
+  anchors:
+  - source: core_inventory
+    code: '58'
+    level: A1
+  batch: core
+- id: en.present_simple.habit
+  level: A1
+  function: fn.habit_fact
+  point_type: tense_aspect
+  native_title: Present simple
+  title:
+    vi: 'Hiện tại đơn: thói quen, sự thật'
+    en: 'Present simple: habits and facts'
+  r5:
+  - a1-present-simple
+  error_tags:
+  - tense
+  contrasts:
+  - en.present_continuous.now
+  - en.present_simple.third_person_s
+  prereqs: []
+  sequence: 1
+  anchors:
+  - source: core_inventory
+    code: '64'
+    level: A1
+  batch: core
+- id: en.present_simple.third_person_s
+  level: A1
+  function: fn.habit_fact
+  point_type: morphology
+  native_title: Third person -s
+  title:
+    vi: Thêm -s / -es với he / she / it
+    en: Third person -s and -es
+  r5:
+  - a1-third-person-s-and-spelling
+  error_tags:
+  - agreement
+  contrasts:
+  - en.present_continuous.now
+  - en.present_simple.habit
+  prereqs:
+  - en.present_simple.habit
+  sequence: 2
+  anchors:
+  - source: core_inventory
+    code: '64'
+    level: A1
+  batch: core
+- id: en.adverbs_of_frequency
+  level: A1
+  function: fn.habit_fact
+  point_type: word_order
+  native_title: Adverbs of frequency
+  title:
+    vi: Trạng từ chỉ tần suất và vị trí của chúng
+    en: Adverbs of frequency and their position
+  r5:
+  - a1-adverbs-of-frequency
+  error_tags:
+  - sentence_structure
+  contrasts: []
+  prereqs:
+  - en.present_simple.habit
+  sequence: 3
+  anchors:
+  - source: core_inventory
+    code: '152'
+    level: A1
+  batch: core
+- id: en.present_continuous.now
+  level: A1
+  function: fn.ongoing_now
+  point_type: tense_aspect
+  native_title: Present continuous
+  title:
+    vi: Hiện tại tiếp diễn (đang)
+    en: 'Present continuous: happening now'
+  r5:
+  - a1-present-continuous
+  error_tags:
+  - tense
+  contrasts:
+  - en.present_simple.habit
+  - en.present_simple.third_person_s
+  prereqs:
+  - en.be.present
+  sequence: 1
+  anchors:
+  - source: core_inventory
+    code: '65'
+    level: A1
+  batch: core
+- id: en.be.questions_short_answers
+  level: A1
+  function: fn.questions
+  point_type: word_order
+  native_title: 'Be: questions and short answers'
+  title:
+    vi: Câu hỏi với be và câu trả lời ngắn
+    en: 'Be: questions and short answers'
+  r5:
+  - a1-be-questions-and-short-answers
+  error_tags:
+  - sentence_structure
+  contrasts:
+  - en.present_simple.do_questions
+  prereqs:
+  - en.be.present
+  sequence: 1
+  anchors:
+  - source: core_inventory
+    code: '56'
+    level: A1
+  - source: core_inventory
+    code: '60'
+    level: A1
+  batch: core
+- id: en.present_simple.do_questions
+  level: A1
+  function: fn.questions
+  point_type: word_order
+  native_title: Do / does questions
+  title:
+    vi: Câu hỏi với do / does
+    en: Do / does questions
+  r5:
+  - a1-do-does-questions
+  error_tags:
+  - sentence_structure
+  contrasts:
+  - en.be.questions_short_answers
+  - en.questions.wh
+  prereqs:
+  - en.present_simple.habit
+  sequence: 2
+  anchors:
+  - source: core_inventory
+    code: '60'
+    level: A1
+  batch: core
+- id: en.questions.wh
+  level: A1
+  function: fn.questions
+  point_type: word_order
+  native_title: Wh-questions
+  title:
+    vi: Câu hỏi Wh-
+    en: Wh-questions
+  r5:
+  - a1-wh-questions
+  error_tags:
+  - sentence_structure
+  contrasts:
+  - en.present_simple.do_questions
+  prereqs:
+  - en.be.questions_short_answers
+  sequence: 3
+  anchors:
+  - source: core_inventory
+    code: '60'
+    level: A1
+  batch: core
+- id: en.countable_uncountable
+  level: A1
+  function: fn.quantity
+  point_type: other
+  native_title: Countable and uncountable nouns
+  title:
+    vi: Danh từ đếm được và không đếm được
+    en: Countable and uncountable nouns
+  r5:
+  - a1-countable-and-uncountable-nouns
+  error_tags:
+  - agreement
+  contrasts:
+  - en.quantifiers.some_any
+  prereqs: []
+  sequence: 3
+  anchors:
+  - source: core_inventory
+    code: '121'
+    level: A1
+  batch: core
+- id: en.quantifiers.some_any
+  level: A1
+  function: fn.quantity
+  point_type: other
+  native_title: Some / any
+  title:
+    vi: Some / any
+    en: Some / any
+  r5:
+  - a1-some-any
+  error_tags:
+  - word_choice
+  contrasts:
+  - en.countable_uncountable
+  - en.indefinite_compounds
+  - en.quantifiers.few_little
+  prereqs:
+  - en.countable_uncountable
+  sequence: 4
+  anchors:
+  - source: core_inventory
+    code: '141'
+    level: A1
+  batch: core
+- id: en.prepositions.place
+  level: A1
+  function: fn.place_time
+  point_type: other
+  native_title: 'Prepositions of place: in / on / at'
+  title:
+    vi: 'Giới từ chỉ nơi chốn: in / on / at'
+    en: Prepositions of place
+  r5:
+  - a1-basic-prepositions-of-place
+  error_tags:
+  - preposition
+  contrasts:
+  - en.prepositions.time
+  prereqs: []
+  sequence: 1
+  anchors:
+  - source: core_inventory
+    code: 133a
+    level: A1
+  batch: core
+- id: en.prepositions.time
+  level: A1
+  function: fn.place_time
+  point_type: other
+  native_title: 'Prepositions of time: at / on / in'
+  title:
+    vi: 'Giới từ chỉ thời gian: at / on / in'
+    en: Prepositions of time
+  r5:
+  - a1-basic-prepositions-of-time
+  error_tags:
+  - preposition
+  contrasts:
+  - en.prepositions.place
+  prereqs: []
+  sequence: 2
+  anchors:
+  - source: core_inventory
+    code: 133a
+    level: A1
+  batch: core
+- id: en.conjunctions.and_but_or
+  level: A1
+  function: fn.linking
+  point_type: other
+  native_title: And / but / or
+  title:
+    vi: And / but / or
+    en: And / but / or
+  r5:
+  - a1-and-but-or-because-so
+  error_tags:
+  - word_choice
+  contrasts:
+  - en.conjunctions.because_so
+  prereqs: []
+  sequence: 1
+  anchors:
+  - source: core_inventory
+    code: '47'
+    level: A1
+  batch: core
+- id: en.articles.zero
+  level: A2
+  function: fn.reference
+  point_type: other
+  native_title: No article
+  title:
+    vi: Không dùng mạo từ
+    en: No article (zero article)
+  r5:
+  - a1-articles-a-an-the
+  error_tags:
+  - article
+  contrasts:
+  - en.articles.a_an
+  - en.articles.the
+  prereqs:
+  - en.articles.the
+  sequence: 1
+  anchors:
+  - source: core_inventory
+    code: '134'
+    level: A2
+  batch: core
+- id: en.conjunctions.because_so
+  level: A2
+  function: fn.linking
+  point_type: other
+  native_title: Because / so
+  title:
+    vi: Because / so
+    en: Because / so
+  r5:
+  - a1-and-but-or-because-so
+  error_tags:
+  - word_choice
+  contrasts:
+  - en.conjunctions.and_but_or
+  - en.infinitive_of_purpose
+  prereqs:
+  - en.conjunctions.and_but_or
+  sequence: 1
+  anchors:
+  - source: core_inventory
+    code: '47'
+    level: A1
+  batch: core
+- id: en.past_simple.regular_ed
+  level: A2
+  function: fn.completed_past
+  point_type: morphology
+  native_title: 'Past simple: regular verbs'
+  title:
+    vi: 'Quá khứ đơn: động từ có quy tắc (-ed)'
+    en: 'Past simple: regular verbs'
+  r5:
+  - a2-past-simple-regular-verbs
+  error_tags:
+  - tense
+  contrasts:
+  - en.past_simple.irregular
+  - en.present_perfect.experience
+  prereqs: []
+  sequence: 1
+  anchors:
+  - source: core_inventory
+    code: '67'
+    level: A1
+  batch: core
+- id: en.past_simple.irregular
+  level: A2
+  function: fn.completed_past
+  point_type: other
+  native_title: 'Past simple: irregular verbs'
+  title:
+    vi: 'Quá khứ đơn: động từ bất quy tắc'
+    en: 'Past simple: irregular verbs'
+  r5:
+  - a2-past-simple-irregular-verbs
+  error_tags:
+  - tense
+  - word_form
+  contrasts:
+  - en.past_simple.regular_ed
+  prereqs:
+  - en.past_simple.regular_ed
+  sequence: 2
+  anchors:
+  - source: core_inventory
+    code: '67'
+    level: A1
+  batch: core
+- id: en.past_continuous
+  level: A2
+  function: fn.past_ongoing
+  point_type: tense_aspect
+  native_title: Past continuous
+  title:
+    vi: Quá khứ tiếp diễn
+    en: Past continuous
+  r5:
+  - a2-past-continuous
+  error_tags:
+  - tense
+  contrasts:
+  - en.past_simple_vs_continuous
+  prereqs:
+  - en.past_simple.regular_ed
+  sequence: 1
+  anchors:
+  - source: core_inventory
+    code: '68'
+    level: A2
+  batch: core
+- id: en.past_simple_vs_continuous
+  level: A2
+  function: fn.past_ongoing
+  point_type: tense_aspect
+  native_title: Past simple vs past continuous
+  title:
+    vi: Quá khứ đơn và quá khứ tiếp diễn
+    en: Past simple vs past continuous
+  r5:
+  - a2-past-simple-vs-past-continuous
+  error_tags:
+  - tense
+  contrasts:
+  - en.past_continuous
+  prereqs:
+  - en.past_continuous
+  sequence: 2
+  anchors:
+  - source: core_inventory
+    code: '68'
+    level: A2
+  batch: core
+- id: en.present_perfect.experience
+  level: A2
+  function: fn.past_experience
+  point_type: tense_aspect
+  native_title: Present perfect for experience
+  title:
+    vi: Hiện tại hoàn thành (trải nghiệm)
+    en: Present perfect for experience
+  r5:
+  - a2-present-perfect-introduction
+  error_tags:
+  - tense
+  - word_choice
+  contrasts:
+  - en.past_simple.regular_ed
+  prereqs:
+  - en.past_simple.irregular
+  sequence: 1
+  anchors:
+  - source: core_inventory
+    code: '81'
+    level: A2
+  batch: core
+- id: en.going_to.plans
+  level: A2
+  function: fn.future_plans
+  point_type: tense_aspect
+  native_title: Be going to
+  title:
+    vi: Be going to (dự định)
+    en: 'Be going to: plans'
+  r5:
+  - a2-going-to
+  error_tags:
+  - tense
+  contrasts:
+  - en.present_continuous.arrangements
+  - en.will.decisions
+  prereqs: []
+  sequence: 1
+  anchors:
+  - source: core_inventory
+    code: '74'
+    level: A1
+  batch: core
+- id: en.will.decisions
+  level: A2
+  function: fn.future_plans
+  point_type: tense_aspect
+  native_title: Will and won't
+  title:
+    vi: Will và won't (quyết định tức thì, dự đoán)
+    en: Will and won't
+  r5:
+  - a2-will-and-won-t
+  error_tags:
+  - tense
+  contrasts:
+  - en.going_to.plans
+  prereqs:
+  - en.going_to.plans
+  sequence: 2
+  anchors:
+  - source: core_inventory
+    code: '76'
+    level: A2
+  batch: core
+- id: en.present_continuous.arrangements
+  level: A2
+  function: fn.future_plans
+  point_type: tense_aspect
+  native_title: Present continuous for future arrangements
+  title:
+    vi: Hiện tại tiếp diễn cho lịch đã hẹn
+    en: Present continuous for arrangements
+  r5:
+  - a2-present-continuous-for-future-arrangements
+  error_tags:
+  - tense
+  contrasts:
+  - en.going_to.plans
+  - en.present_simple.schedules
+  prereqs:
+  - en.present_continuous.now
+  sequence: 3
+  anchors:
+  - source: core_inventory
+    code: '75'
+    level: A2
+  batch: core
+- id: en.present_simple.schedules
+  level: A2
+  function: fn.future_plans
+  point_type: tense_aspect
+  native_title: Present simple for schedules
+  title:
+    vi: Hiện tại đơn cho lịch trình
+    en: Present simple for timetables
+  r5:
+  - a2-present-simple-for-schedules
+  error_tags:
+  - tense
+  contrasts:
+  - en.present_continuous.arrangements
+  prereqs:
+  - en.present_simple.habit
+  sequence: 4
+  anchors: []
+  batch: core
+- id: en.comparatives
+  level: A2
+  function: fn.comparison
+  point_type: morphology
+  native_title: Comparatives
+  title:
+    vi: So sánh hơn
+    en: Comparatives
+  r5:
+  - a2-comparatives
+  error_tags:
+  - word_form
+  - sentence_structure
+  contrasts:
+  - en.as_as
+  - en.superlatives
+  prereqs: []
+  sequence: 1
+  anchors:
+  - source: core_inventory
+    code: '149'
+    level: A1
+  batch: core
+- id: en.superlatives
+  level: A2
+  function: fn.comparison
+  point_type: morphology
+  native_title: Superlatives
+  title:
+    vi: So sánh nhất
+    en: Superlatives
+  r5:
+  - a2-superlatives
+  error_tags:
+  - word_form
+  contrasts:
+  - en.comparatives
+  prereqs:
+  - en.comparatives
+  sequence: 2
+  anchors:
+  - source: core_inventory
+    code: '150'
+    level: A2
+  batch: core
+- id: en.as_as
+  level: A2
+  function: fn.comparison
+  point_type: word_order
+  native_title: As ... as
+  title:
+    vi: 'So sánh bằng: as ... as'
+    en: As ... as
+  r5:
+  - a2-as-as
+  error_tags:
+  - sentence_structure
+  contrasts:
+  - en.comparatives
+  prereqs:
+  - en.comparatives
+  sequence: 3
+  anchors: []
+  batch: core
+- id: en.too_enough
+  level: A2
+  function: fn.degree
+  point_type: word_order
+  native_title: Too / enough
+  title:
+    vi: Too và enough
+    en: Too and enough
+  r5:
+  - a2-too-enough
+  error_tags:
+  - word_choice
+  - sentence_structure
+  contrasts:
+  - en.adverbs.manner_degree
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: core
+- id: en.adjectives_vs_adverbs
+  level: A2
+  function: fn.degree
+  point_type: morphology
+  native_title: Adjectives vs adverbs
+  title:
+    vi: Tính từ và trạng từ
+    en: Adjectives vs adverbs
+  r5:
+  - a2-adjectives-vs-adverbs
+  error_tags:
+  - word_form
+  contrasts:
+  - en.adverbs.manner_degree
+  prereqs: []
+  sequence: 2
+  anchors:
+  - source: core_inventory
+    code: '153'
+    level: A2
+  batch: core
+- id: en.adverbs.manner_degree
+  level: A2
+  function: fn.degree
+  point_type: word_order
+  native_title: Adverbs of manner and degree
+  title:
+    vi: Trạng từ chỉ cách thức và mức độ
+    en: Adverbs of manner and degree
+  r5:
+  - a2-adverbs-of-manner-and-degree
+  error_tags:
+  - word_form
+  contrasts:
+  - en.adjectives_vs_adverbs
+  - en.too_enough
+  prereqs:
+  - en.adjectives_vs_adverbs
+  sequence: 3
+  anchors:
+  - source: core_inventory
+    code: '153'
+    level: A2
+  - source: core_inventory
+    code: '162'
+    level: A2
+  batch: core
+- id: en.modals.must_have_to
+  level: A2
+  function: fn.obligation_advice
+  point_type: other
+  native_title: Must / have to
+  title:
+    vi: Must và have to (bắt buộc)
+    en: Must and have to
+  r5:
+  - a2-must-have-to
+  - b1-obligation-must-have-to-need-to
+  error_tags:
+  - word_choice
+  contrasts:
+  - en.modals.should
+  prereqs: []
+  sequence: 1
+  anchors:
+  - source: core_inventory
+    code: '112'
+    level: A2
+  - source: core_inventory
+    code: '113'
+    level: A2
+  batch: core
+- id: en.modals.should
+  level: A2
+  function: fn.obligation_advice
+  point_type: other
+  native_title: Should
+  title:
+    vi: Should (lời khuyên)
+    en: 'Should: advice'
+  r5:
+  - a2-should-ought-to
+  error_tags:
+  - word_choice
+  contrasts:
+  - en.modals.must_have_to
+  - en.modals.possibility
+  prereqs: []
+  sequence: 2
+  anchors:
+  - source: core_inventory
+    code: '115'
+    level: A2
+  batch: core
+- id: en.modals.possibility
+  level: A2
+  function: fn.possibility
+  point_type: other
+  native_title: May / might / could
+  title:
+    vi: May / might / could (có thể)
+    en: 'May, might and could: possibility'
+  r5:
+  - a2-may-might-could-possibility
+  error_tags:
+  - word_choice
+  contrasts:
+  - en.modals.should
+  prereqs: []
+  sequence: 1
+  anchors:
+  - source: core_inventory
+    code: '107'
+    level: A2
+  batch: core
+- id: en.gerund_after_preference
+  level: A2
+  function: fn.verb_patterns
+  point_type: other
+  native_title: 'Verb + -ing: like, love, hate'
+  title:
+    vi: Động từ + -ing sau like, love, hate
+    en: Like / love / hate + -ing
+  r5:
+  - a2-gerunds-after-preference-verbs
+  error_tags:
+  - word_form
+  contrasts:
+  - en.infinitive_after_want_plan_need
+  prereqs: []
+  sequence: 1
+  anchors:
+  - source: core_inventory
+    code: '86'
+    level: A1
+  batch: core
+- id: en.infinitive_after_want_plan_need
+  level: A2
+  function: fn.verb_patterns
+  point_type: other
+  native_title: Verb + to + infinitive
+  title:
+    vi: Động từ + to V sau want, plan, need
+    en: Want / plan / need + to
+  r5:
+  - a2-infinitive-after-want-plan-need
+  error_tags:
+  - word_form
+  contrasts:
+  - en.gerund_after_preference
+  prereqs: []
+  sequence: 2
+  anchors:
+  - source: core_inventory
+    code: '88'
+    level: A2
+  batch: core
+- id: en.infinitive_of_purpose
+  level: A2
+  function: fn.verb_patterns
+  point_type: other
+  native_title: To + infinitive of purpose
+  title:
+    vi: To + V chỉ mục đích
+    en: To + infinitive of purpose
+  r5:
+  - a2-infinitive-of-purpose
+  error_tags:
+  - word_form
+  contrasts:
+  - en.conjunctions.because_so
+  prereqs:
+  - en.infinitive_after_want_plan_need
+  sequence: 3
+  anchors:
+  - source: core_inventory
+    code: '87'
+    level: A2
+  batch: core
+- id: en.relative_clauses.who_which_that
+  level: A2
+  function: fn.relative
+  point_type: other
+  native_title: 'Relative clauses: who / which / that'
+  title:
+    vi: 'Mệnh đề quan hệ: who / which / that'
+    en: Relative clauses with who, which, that
+  r5:
+  - a2-who-which-that-relative-clauses
+  - b1-defining-relative-clauses
+  error_tags:
+  - word_choice
+  - sentence_structure
+  contrasts: []
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: core
+- id: en.conditional_zero
+  level: A2
+  function: fn.condition_real
+  point_type: tense_aspect
+  native_title: Zero conditional
+  title:
+    vi: Câu điều kiện loại 0
+    en: Zero conditional
+  r5:
+  - a2-zero-conditional
+  error_tags:
+  - tense
+  contrasts:
+  - en.conditional_first
+  prereqs: []
+  sequence: 1
+  anchors:
+  - source: core_inventory
+    code: '90'
+    level: A2
+  batch: core
+- id: en.conditional_first
+  level: A2
+  function: fn.condition_real
+  point_type: tense_aspect
+  native_title: First conditional
+  title:
+    vi: Câu điều kiện loại 1
+    en: First conditional
+  r5:
+  - a2-first-conditional
+  error_tags:
+  - tense
+  contrasts:
+  - en.conditional_zero
+  - en.unless
+  prereqs:
+  - en.conditional_zero
+  sequence: 2
+  anchors:
+  - source: core_inventory
+    code: '90'
+    level: A2
+  batch: core
+- id: en.unless
+  level: A2
+  function: fn.condition_real
+  point_type: other
+  native_title: Unless
+  title:
+    vi: Unless (trừ khi)
+    en: Unless
+  r5:
+  - a2-unless-introduction
+  error_tags:
+  - word_choice
+  contrasts:
+  - en.conditional_first
+  prereqs:
+  - en.conditional_first
+  sequence: 3
+  anchors: []
+  batch: core
+- id: en.indefinite_compounds
+  level: A2
+  function: fn.indefinite_reference
+  point_type: other
+  native_title: Some- / any- / no- / every- compounds
+  title:
+    vi: someone, anything, nobody, everywhere...
+    en: Someone, anything, nobody, everywhere...
+  r5:
+  - a2-some-any-no-every-compounds
+  error_tags:
+  - word_choice
+  contrasts:
+  - en.quantifiers.some_any
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: core
+- id: en.quantifiers.few_little
+  level: A2
+  function: fn.quantity
+  point_type: other
+  native_title: A few / few, a little / little
+  title:
+    vi: A few / few và a little / little
+    en: A few, few, a little, little
+  r5:
+  - a2-a-few-few-and-a-little-little
+  error_tags:
+  - word_choice
+  contrasts:
+  - en.quantifiers.some_any
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: core
+- id: en.indirect_objects
+  level: A2
+  function: fn.sentence_basics
+  point_type: word_order
+  native_title: Indirect objects
+  title:
+    vi: Tân ngữ gián tiếp (give someone something)
+    en: Indirect objects
+  r5:
+  - a2-basic-indirect-objects
+  error_tags:
+  - sentence_structure
+  contrasts: []
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: core

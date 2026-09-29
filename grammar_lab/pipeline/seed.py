@@ -1,0 +1,134 @@
+"""Catalogue seeds -> a point's structural metadata (human, 2026-09-29, items 2-3).
+
+``inventory/seeds_<lang>.yaml`` is the catalogue of what to write: for every point its id, level,
+function, point_type, names, the R5 lesson(s) it converts, contrasts (both ways), prerequisites, engine
+error tags and the reference-framework anchors. ``generate`` starts from it: a point that is not on disk
+yet is created from its seed, and a point that is keeps its content but takes the seed's metadata, so the
+catalogue -- not whatever an earlier draft said -- decides structure. Only content is generated.
+"""
+
+from __future__ import annotations
+
+import time
+from pathlib import Path
+from typing import Any
+
+import yaml
+
+from grammar_lab.pipeline.jsonio import read_json, read_yaml
+from grammar_lab.pipeline.validate import FUNCTIONS_PATH, GRAMMAR_SCHEMA_PATH, LAB_ROOT, LANGS
+
+SEED_KEYS = ("function", "point_type", "prereqs", "contrasts", "error_tags", "sequence")
+
+
+def seeds_path(lang: str, root: Path = LAB_ROOT) -> Path:
+    return root / "inventory" / f"seeds_{lang}.yaml"
+
+
+def load_seeds(lang: str, root: Path = LAB_ROOT) -> list[dict[str, Any]]:
+    path = seeds_path(lang, root)
+    return read_yaml(path) or [] if path.exists() else []
+
+
+def seed_for(lang: str, point_id: str, root: Path = LAB_ROOT) -> dict[str, Any] | None:
+    return next((seed for seed in load_seeds(lang, root) if seed["id"] == point_id), None)
+
+
+def _level(lang: str, value: str, root: Path) -> dict[str, Any]:
+    scale = read_json(root / GRAMMAR_SCHEMA_PATH)["level_scales"][LANGS[lang]]
+    return {"framework": scale["framework"], "value": value, "rank": scale["values"].index(value) + 1}
+
+
+def aliases_for(seeds: list[dict[str, Any]]) -> dict[str, list[str]]:
+    """R5 id -> the one point that owns it as an alias. A merge lists every source R5 lesson on the
+    surviving point; a split gives the R5 id to the first piece only (an R5 id may be an alias of one
+    point), the other pieces keep it in source_refs.r5."""
+    owner: dict[str, str] = {}
+    out: dict[str, list[str]] = {seed["id"]: [] for seed in seeds}
+    for seed in seeds:
+        for r5_id in seed.get("r5", []):
+            if r5_id not in owner:
+                owner[r5_id] = seed["id"]
+                out[seed["id"]].append(r5_id)
+    return out
+
+
+def _anchors(seed: dict[str, Any]) -> dict[str, Any]:
+    items = [{"source": a["source"], "code": str(a["code"]), "level": a["level"]} for a in seed.get("anchors", [])]
+    return {"status": "anchored" if items else "unanchored", "items": items}
+
+
+def apply_seed(existing: dict[str, Any] | None, lang: str, point_id: str, root: Path = LAB_ROOT) -> dict[str, Any] | None:
+    """The point as the seed says it should be, keeping ``existing`` content; ``None`` when there is
+    neither an existing point nor a seed."""
+    seeds = load_seeds(lang, root)
+    seed = next((s for s in seeds if s["id"] == point_id), None)
+    if seed is None:
+        return existing
+    aliases = aliases_for(seeds)[point_id]
+    point: dict[str, Any] = dict(existing) if existing else {
+        "schema_version": "0.4", "id": point_id, "version": 1, "target_lang": LANGS[lang], "status": "draft_ai",
+        "flags": [],
+        "provenance": {
+            "model": "seed", "prompt_version": "seed.v1", "run_id": "seed", "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        },
+        "review": None,
+    }
+    point["schema_version"] = "0.4"
+    point["level"] = _level(lang, str(seed["level"]), root)
+    for key in SEED_KEYS:
+        point[key] = seed[key]
+    point["aliases"] = aliases
+    point["source_refs"] = {"r5": list(seed["r5"])} if seed.get("r5") else {}
+    point["source_anchors"] = _anchors(seed)
+    header = dict(point.get("header") or {})
+    header.update(
+        title=dict(seed["title"]), native_title=seed["native_title"], level=dict(point["level"]),
+    )
+    header.setdefault("summary", dict(seed["title"]))
+    point["header"] = header
+    return point
+
+
+def register_realization(point: dict[str, Any], root: Path = LAB_ROOT) -> bool:
+    """A point that now exists on disk moves from its function's ``planned`` list to ``realizations``
+    (validate: ref.realization_missing). Returns whether functions.yaml changed."""
+    path = root / FUNCTIONS_PATH
+    data = read_yaml(path)
+    function = next((f for f in data["functions"] if f["id"] == point["function"]), None)
+    if function is None:
+        return False
+    lang_key = point["target_lang"]
+    realized = function.setdefault("realizations", {}).setdefault(lang_key, [])
+    changed = False
+    if point["id"] not in realized:
+        realized.append(point["id"])
+        changed = True
+    planned = function.get("planned", {}).get(lang_key, [])
+    if point["id"] in planned:
+        planned.remove(point["id"])
+        changed = True
+    if changed:
+        path.write_text(yaml.safe_dump(data, allow_unicode=True, sort_keys=False, width=120), encoding="utf-8", newline="\n")
+    return changed
+
+
+def check_seeds(lang: str, root: Path = LAB_ROOT) -> list[str]:
+    """Consistency of the whole seed file; returns the problems (empty = fine)."""
+    seeds = load_seeds(lang, root)
+    problems: list[str] = []
+    ids = [s["id"] for s in seeds]
+    for duplicate in sorted({i for i in ids if ids.count(i) > 1}):
+        problems.append(f"duplicate id {duplicate}")
+    known = set(ids)
+    by_id = {s["id"]: s for s in seeds}
+    for seed in seeds:
+        for other in seed["contrasts"]:
+            if other not in known:
+                problems.append(f"{seed['id']}: contrast {other} is not a seed")
+            elif seed["id"] not in by_id[other]["contrasts"]:
+                problems.append(f"{seed['id']}: contrast {other} is not listed both ways")
+        for prereq in seed["prereqs"]:
+            if prereq not in known:
+                problems.append(f"{seed['id']}: prereq {prereq} is not a seed")
+    return problems

@@ -36,6 +36,7 @@ from grammar_lab.pipeline.content_store import (
 )
 from grammar_lab.pipeline.jsonio import read_json
 from grammar_lab.pipeline.llm_client import LLMClient
+from grammar_lab.pipeline.seed import apply_seed, register_realization
 from grammar_lab.pipeline.r5_source import DEFAULT_R5_ROOT, R5SourceError, load_r5, r5_source_text
 from grammar_lab.pipeline.validate import (
     _HAN,
@@ -722,9 +723,11 @@ class Generator:
     ) -> GenerateOutcome:
         if story_mode not in STORY_MODES:
             raise ValueError(f"story_mode must be one of {sorted(STORY_MODES)}, got {story_mode!r}")
-        existing = load_point(self.lang, point_id, self.root)
+        # The catalogue decides structure: a point not on disk starts from its seed, and one that is takes
+        # the seed's metadata (level, function, contrasts, R5 sources, anchors) over its own.
+        existing = apply_seed(load_point(self.lang, point_id, self.root), self.lang, point_id, self.root)
         if existing is None:
-            return GenerateOutcome(point_id, "error", reason="point metadata does not exist yet; seed it from the inventory first")
+            return GenerateOutcome(point_id, "error", reason="no such point on disk and no seed in inventory/seeds_<lang>.yaml")
         if existing["status"] == "approved" and not regenerate_note:
             return GenerateOutcome(point_id, "skipped_approved", reason="pass --regenerate-note to regenerate an approved point")
 
@@ -932,6 +935,7 @@ class Generator:
             point["blocks"] = existing["blocks"]  # only a secondary story can live here on v0.4
         point = {"schema_version": point.pop("schema_version"), **point}
         save_point(self.lang, point, self.root)
+        register_realization(point, self.root)
         return GenerateOutcome(point_id, "written", cost_usd=result.usage.cost_usd(result.model) or None, cached=result.cached)
 
     def _generate_story(self, existing: dict[str, Any], locales: list[str], *, mode: str = "everyday") -> tuple[Any, dict[str, Any]]:

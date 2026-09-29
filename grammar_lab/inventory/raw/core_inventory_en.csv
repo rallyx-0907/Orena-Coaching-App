@@ -1,4 +1,6 @@
 source,code,name,level,page
+core_inventory,46,Discourse markers,A1,22
+core_inventory,47,"Connecting words (and, but, because)",A1,22
 core_inventory,55,Verb forms,A1,22
 core_inventory,56,To be (including questions,A1,22
 core_inventory,57,Have got (British),A1,22
@@ -33,6 +35,7 @@ core_inventory,133a,Prepositions of place,A1,23
 core_inventory,134,Articles,A1,23
 core_inventory,135,"Definite, indefinite",A1,23
 core_inventory,140,Determiners,A1,23
+core_inventory,141,"Basic (e.g. any, some, a lot of)",A1,23
 core_inventory,144,Adjectives,A1,23
 core_inventory,145,Common,A1,23
 core_inventory,146,Demonstrative,A1,23
@@ -59,6 +62,8 @@ core_inventory,192,Holidays,A1,24
 core_inventory,193,Work and jobs,A1,24
 core_inventory,194,Shopping,A1,24
 core_inventory,195,Leisure activities,A1,24
+core_inventory,46,Discourse markers,A2,24
+core_inventory,48,Linkers: sequential – past time,A2,24
 core_inventory,55,Verb forms,A2,24
 core_inventory,58,Imperatives (+/-),A2,24
 core_inventory,59,Questions,A2,25
@@ -105,6 +110,8 @@ core_inventory,133,"Prepositional phrases (place, time",A2,26
 core_inventory,134,Articles,A2,26
 core_inventory,138,With countable and uncountable,A2,26
 core_inventory,140,Determiners,A2,26
+core_inventory,141,"Basic (e.g. any, some, a lot of)",A2,26
+core_inventory,142,"Wider range (e.g. all, none, not (any),",A2,26
 core_inventory,144,Adjectives,A2,26
 core_inventory,146,Demonstrative,A2,26
 core_inventory,147,Ending in ‘-ed’ and ‘-ing’,A2,26
@@ -130,6 +137,10 @@ core_inventory,193,Work and jobs,A2,26
 core_inventory,194,Shopping,A2,26
 core_inventory,195,Leisure activities,A2,26
 core_inventory,196,Education,A2,26
+core_inventory,46,Discourse Markers,B1,27
+core_inventory,48,Linkers: sequential – past time (later),B1,27
+core_inventory,49,Connecting words expressing cause,B1,27
+core_inventory,52,Markers to structure informal spoken,B1,27
 core_inventory,59,Questions,B1,27
 core_inventory,61,Wh-questions in the past,B1,27
 core_inventory,62,Complex question tags,B1,27
@@ -166,6 +177,7 @@ core_inventory,118,Modals: Past,B1,29
 core_inventory,134,Articles,B1,29
 core_inventory,138,With countable and uncountable,B1,29
 core_inventory,140,Determiners,B1,29
+core_inventory,143,"Broad range (e.g. all the, most, both)",B1,29
 core_inventory,144,Adjectives,B1,29
 core_inventory,148,Collocation of adjective,B1,29
 core_inventory,151,Adverbs,B1,29
@@ -188,6 +200,11 @@ core_inventory,197,Film,B1,29
 core_inventory,198,Books and literature,B1,29
 core_inventory,199,"News, lifestyles and current affairs",B1,29
 core_inventory,200,Media,B1,29
+core_inventory,46,Discourse Markers,B2,31
+core_inventory,48,Linkers: sequential – past time,B2,31
+core_inventory,49,Connecting words expressing cause,B2,31
+core_inventory,50,"Linkers: although, in spite of, despite",B2,31
+core_inventory,53,Discourse markers to structure formal,B2,31
 core_inventory,55,Verb forms,B2,31
 core_inventory,67,Simple past (narrative),B2,31
 core_inventory,68,Past continuous (narrative),B2,31
@@ -233,6 +250,9 @@ core_inventory,197,Film,B2,33
 core_inventory,198,Books and literature,B2,33
 core_inventory,199,"News, lifestyles and current affairs",B2,33
 core_inventory,200,Media,B2,33
+core_inventory,46,Discourse Markers,C1,35
+core_inventory,54a,Markers to structure and signpost,C1,35
+core_inventory,54b,Markers to structure and signpost,C1,35
 core_inventory,55,Verb forms,C1,35
 core_inventory,66,"Narrative tenses for experiences,",C1,35
 core_inventory,67,Simple past (narrative),C1,35

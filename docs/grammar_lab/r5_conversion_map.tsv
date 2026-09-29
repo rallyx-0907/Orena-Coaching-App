@@ -42,7 +42,7 @@ en	remove	c2-grammar-based-ambiguity-repair	-	-	kỹ năng biên tập
 en	remove	c2-information-packaging-in-long-sentences	-	-	kỹ năng biên tập
 en	split	a1-articles-a-an-the	articles.a_an,articles.the,articles.zero	A1,A1,A2	hai cách dùng khác nhau không gộp một công thức
 en	split	a1-singular-and-plural-nouns	plural_nouns.regular,plural_nouns.irregular	A1,A1	quy tắc và bất quy tắc là hai điểm
-en	split	a1-possessive-adjectives-pronouns-and-possessive-s	possessive_adjectives,possessive_pronouns,possessive_s	A1,A2,A1	ba hình thức khác nhau
+en	split	a1-possessive-adjectives-pronouns-and-possessive-s	possessive_adjectives,possessive_pronouns,possessive_s	A1,A1,A1	ba hình thức khác nhau; đại từ sở hữu giữ A1 (R5 và Core Inventory 129 đều A1)
 en	split	a1-and-but-or-because-so	conjunctions.and_but_or,conjunctions.because_so	A1,A2	hai nhóm chức năng
 en	split	a2-can-could-be-able-to-basics	can.ability,could.past_ability	A1,A2	can là A1; be able to nằm ở b1-ability-across-time
 en	relevel	a1-much-many-a-lot-of	-	A2	much/many trong câu hỏi, phủ định thường A2

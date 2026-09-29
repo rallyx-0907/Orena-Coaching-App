@@ -1,0 +1,805 @@
+# Core batch seeds, Chinese HSK 1-2 (human, 2026-09-29): the R5 rows whose structure is sure. Read by `seed`.
+- id: zh.svo_basic
+  level: '1'
+  function: fn.sentence_basics
+  point_type: word_order
+  native_title: 主谓宾句
+  title:
+    vi: Câu SVO cơ bản
+    en: Basic subject-verb-object sentences
+  r5:
+  - zh-hsk1-1-svo-c-b-n
+  error_tags:
+  - word_order
+  contrasts: []
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: core
+- id: zh.shi_sentence
+  level: '1'
+  function: fn.identity_state
+  point_type: word_order
+  native_title: “是”字句
+  title:
+    vi: Câu chữ 是
+    en: The 是 sentence
+  r5:
+  - zh-hsk1-2-c-u-nh-danh
+  error_tags:
+  - word_order
+  contrasts:
+  - zh.adjective_predicate
+  prereqs:
+  - zh.svo_basic
+  sequence: 1
+  anchors: []
+  batch: core
+- id: zh.you_sentence
+  level: '1'
+  function: fn.existence
+  point_type: word_order
+  native_title: “有”字句
+  title:
+    vi: 'Câu chữ 有: sở hữu và tồn tại'
+    en: 'The 有 sentence: possession and existence'
+  r5:
+  - zh-hsk1-3-s-h-u-v-t-n-t-i
+  error_tags:
+  - word_order
+  contrasts:
+  - zh.zai_location
+  prereqs:
+  - zh.svo_basic
+  sequence: 1
+  anchors: []
+  batch: core
+- id: zh.zai_location
+  level: '1'
+  function: fn.location
+  point_type: word_order
+  native_title: “在”表示位置
+  title:
+    vi: '在: nói vị trí'
+    en: '在: saying where something is'
+  r5:
+  - zh-hsk1-4-v-tr
+  error_tags:
+  - word_order
+  - particle
+  contrasts:
+  - zh.you_sentence
+  prereqs:
+  - zh.you_sentence
+  sequence: 1
+  anchors: []
+  batch: core
+- id: zh.de_possessive
+  level: '1'
+  function: fn.possession
+  point_type: word_order
+  native_title: “的”表示所属
+  title:
+    vi: '的: sở hữu và bổ nghĩa'
+    en: '的: possession and modification'
+  r5:
+  - zh-hsk1-5-s-h-u-v-b-ngh-a
+  error_tags:
+  - particle
+  contrasts: []
+  prereqs:
+  - zh.shi_sentence
+  sequence: 1
+  anchors: []
+  batch: core
+- id: zh.demonstratives
+  level: '1'
+  function: fn.pronoun_reference
+  point_type: word_order
+  native_title: 指示代词“这/那/哪”
+  title:
+    vi: 这 / 那 / 哪
+    en: 这 / 那 / 哪
+  r5:
+  - zh-hsk1-7-topic
+  error_tags:
+  - measure_word
+  - word_order
+  contrasts:
+  - zh.measure_words.basic
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: core
+- id: zh.measure_words.basic
+  level: '1'
+  function: fn.quantity
+  point_type: word_order
+  native_title: 量词
+  title:
+    vi: Lượng từ cơ bản (个, 本, 口...)
+    en: Basic measure words
+  r5:
+  - zh-hsk1-8-s-v-l-ng-t-c-b-n
+  error_tags:
+  - measure_word
+  contrasts:
+  - zh.demonstratives
+  - zh.liang_er
+  prereqs:
+  - zh.demonstratives
+  sequence: 1
+  anchors: []
+  batch: core
+- id: zh.liang_er
+  level: '1'
+  function: fn.quantity
+  point_type: other
+  native_title: “两”和“二”
+  title:
+    vi: 两 và 二
+    en: 两 and 二
+  r5:
+  - zh-hsk1-9-vs
+  error_tags:
+  - word_choice
+  contrasts:
+  - zh.measure_words.basic
+  prereqs:
+  - zh.measure_words.basic
+  sequence: 2
+  anchors: []
+  batch: core
+- id: zh.bu_negation
+  level: '1'
+  function: fn.negation
+  point_type: word_order
+  native_title: “不”的否定
+  title:
+    vi: Phủ định với 不
+    en: Negation with 不
+  r5:
+  - zh-hsk1-10-v
+  error_tags:
+  - word_order
+  - word_choice
+  contrasts:
+  - zh.mei_negation
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: core
+- id: zh.mei_negation
+  level: '1'
+  function: fn.negation
+  point_type: word_order
+  native_title: “没(有)”的否定
+  title:
+    vi: Phủ định với 没(有)
+    en: Negation with 没(有)
+  r5:
+  - zh-hsk1-10-v
+  error_tags:
+  - aspect
+  - word_choice
+  contrasts:
+  - zh.bu_negation
+  - zh.le_completion
+  prereqs:
+  - zh.bu_negation
+  sequence: 2
+  anchors: []
+  batch: core
+- id: zh.ma_question
+  level: '1'
+  function: fn.questions
+  point_type: word_order
+  native_title: “吗”疑问句
+  title:
+    vi: Câu hỏi với 吗
+    en: Questions with 吗
+  r5:
+  - zh-hsk1-11-v
+  error_tags:
+  - particle
+  contrasts:
+  - zh.ne_question
+  - zh.question_words
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: core
+- id: zh.ne_question
+  level: '1'
+  function: fn.questions
+  point_type: other
+  native_title: “呢”疑问句
+  title:
+    vi: Câu hỏi rút gọn với 呢
+    en: Follow-up questions with 呢
+  r5:
+  - zh-hsk1-11-v
+  error_tags:
+  - particle
+  contrasts:
+  - zh.ma_question
+  prereqs:
+  - zh.ma_question
+  sequence: 2
+  anchors: []
+  batch: core
+- id: zh.question_words
+  level: '1'
+  function: fn.questions
+  point_type: word_order
+  native_title: 疑问代词疑问句
+  title:
+    vi: Từ để hỏi giữ nguyên vị trí
+    en: Question words stay in place
+  r5:
+  - zh-hsk1-12-t-h-i-gi-nguy-n-v-tr
+  error_tags:
+  - word_order
+  contrasts:
+  - zh.affirmative_negative_question
+  - zh.ma_question
+  prereqs: []
+  sequence: 3
+  anchors: []
+  batch: core
+- id: zh.affirmative_negative_question
+  level: '1'
+  function: fn.questions
+  point_type: word_order
+  native_title: 正反疑问句
+  title:
+    vi: Câu hỏi chính-phản (V不V)
+    en: Yes/no questions with V不V
+  r5:
+  - zh-hsk1-13-c-u-h-i-ch-nh-ph-n
+  error_tags:
+  - word_order
+  contrasts:
+  - zh.question_words
+  prereqs:
+  - zh.ma_question
+  sequence: 4
+  anchors: []
+  batch: core
+- id: zh.adjective_predicate
+  level: '1'
+  function: fn.identity_state
+  point_type: word_order
+  native_title: 形容词谓语句
+  title:
+    vi: Câu tính từ và 很
+    en: Adjective predicates and 很
+  r5:
+  - zh-hsk1-14-v-c-u-t-nh-t
+  error_tags:
+  - word_order
+  - redundancy
+  contrasts:
+  - zh.shi_sentence
+  prereqs:
+  - zh.shi_sentence
+  sequence: 2
+  anchors: []
+  batch: core
+- id: zh.zai_progressive
+  level: '1'
+  function: fn.ongoing_now
+  point_type: tense_aspect
+  native_title: “在/正在……呢”
+  title:
+    vi: 在 / 正在 ... 呢 (đang)
+    en: '在 / 正在 ... 呢: in progress'
+  r5:
+  - zh-hsk1-15-topic
+  error_tags:
+  - aspect
+  contrasts:
+  - zh.yibian
+  - zh.zhe_state
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: core
+- id: zh.le_completion
+  level: '1'
+  function: fn.completed_past
+  point_type: tense_aspect
+  native_title: 动态助词“了”
+  title:
+    vi: Trợ từ 了 (hoàn thành)
+    en: 'The particle 了: completed action'
+  r5:
+  - zh-hsk1-16-ho-n-th-nh-c-b-n
+  error_tags:
+  - aspect
+  contrasts:
+  - zh.guo_experience
+  - zh.mei_negation
+  prereqs:
+  - zh.svo_basic
+  sequence: 1
+  anchors: []
+  batch: core
+- id: zh.dates_times
+  level: '1'
+  function: fn.time_expression
+  point_type: word_order
+  native_title: 时间和日期的表达
+  title:
+    vi: Thời gian, ngày giờ
+    en: Dates and times
+  r5:
+  - zh-hsk1-17-th-i-gian-v-ng-y-gi
+  error_tags:
+  - word_order
+  contrasts: []
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: core
+- id: zh.ye_dou
+  level: '1'
+  function: fn.linking
+  point_type: word_order
+  native_title: “也”和“都”
+  title:
+    vi: 也 và 都
+    en: 也 and 都
+  r5:
+  - zh-hsk1-19-v-tr-c-b-n
+  error_tags:
+  - word_order
+  contrasts:
+  - zh.he_conjunction
+  prereqs:
+  - zh.svo_basic
+  sequence: 1
+  anchors: []
+  batch: core
+- id: zh.he_conjunction
+  level: '1'
+  function: fn.linking
+  point_type: other
+  native_title: “和”连接名词
+  title:
+    vi: 和 nối danh từ
+    en: 和 joins nouns
+  r5:
+  - zh-hsk1-20-n-i-danh-t
+  error_tags:
+  - conjunction
+  contrasts:
+  - zh.ye_dou
+  prereqs: []
+  sequence: 2
+  anchors: []
+  batch: core
+- id: zh.guo_experience
+  level: '2'
+  function: fn.past_experience
+  point_type: tense_aspect
+  native_title: 动态助词“过”
+  title:
+    vi: Trợ từ 过 (đã từng)
+    en: 'The particle 过: experience'
+  r5:
+  - zh-hsk2-1-kinh-nghi-m
+  error_tags:
+  - aspect
+  contrasts:
+  - zh.le_completion
+  prereqs:
+  - zh.le_completion
+  sequence: 1
+  anchors: []
+  batch: core
+- id: zh.zhe_state
+  level: '2'
+  function: fn.ongoing_now
+  point_type: tense_aspect
+  native_title: 动态助词“着”
+  title:
+    vi: Trợ từ 着 (trạng thái duy trì)
+    en: 'The particle 着: continuing state'
+  r5:
+  - zh-hsk2-2-tr-ng-th-i-duy-tr
+  error_tags:
+  - aspect
+  contrasts:
+  - zh.zai_progressive
+  prereqs:
+  - zh.zai_progressive
+  sequence: 1
+  anchors: []
+  batch: core
+- id: zh.bi_comparison
+  level: '2'
+  function: fn.comparison
+  point_type: word_order
+  native_title: “比”字句
+  title:
+    vi: So sánh với 比
+    en: Comparison with 比
+  r5:
+  - zh-hsk2-4-so-s-nh
+  error_tags:
+  - word_order
+  contrasts:
+  - zh.meiyou_comparison
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: core
+- id: zh.meiyou_comparison
+  level: '2'
+  function: fn.comparison
+  point_type: word_order
+  native_title: “没有”比较句
+  title:
+    vi: So sánh phủ định với 没有
+    en: Negative comparison with 没有
+  r5:
+  - zh-hsk2-5-so-s-nh-ph-nh
+  error_tags:
+  - word_order
+  contrasts:
+  - zh.bi_comparison
+  prereqs:
+  - zh.bi_comparison
+  sequence: 2
+  anchors: []
+  batch: core
+- id: zh.yuelaiyue
+  level: '2'
+  function: fn.degree
+  point_type: word_order
+  native_title: “越来越”
+  title:
+    vi: 越来越 (ngày càng)
+    en: '越来越: more and more'
+  r5:
+  - zh-hsk2-6-topic
+  error_tags:
+  - word_order
+  contrasts:
+  - zh.yue_yue
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: core
+- id: zh.yue_yue
+  level: '2'
+  function: fn.degree
+  point_type: word_order
+  native_title: “越……越……”
+  title:
+    vi: 越 ... 越 ... (càng ... càng ...)
+    en: '越 ... 越 ...: the more ... the more ...'
+  r5:
+  - zh-hsk2-7-topic
+  - zh-hsk4-9-topic-111
+  error_tags:
+  - word_order
+  contrasts:
+  - zh.yuelaiyue
+  prereqs:
+  - zh.yuelaiyue
+  sequence: 2
+  anchors: []
+  batch: core
+- id: zh.complement.degree_de
+  level: '2'
+  function: fn.action_result
+  point_type: word_order
+  native_title: 程度补语“得”
+  title:
+    vi: Bổ ngữ mức độ với 得
+    en: Degree complement with 得
+  r5:
+  - zh-hsk2-8-b-ng-m-c
+  error_tags:
+  - complement
+  contrasts: []
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: core
+- id: zh.complement.result
+  level: '2'
+  function: fn.action_result
+  point_type: word_order
+  native_title: 结果补语
+  title:
+    vi: Bổ ngữ kết quả (完, 好, 到, 见)
+    en: Result complements
+  r5:
+  - zh-hsk2-9-b-ng-k-t-qu
+  error_tags:
+  - complement
+  contrasts:
+  - zh.complement.direction_simple
+  prereqs: []
+  sequence: 2
+  anchors: []
+  batch: core
+- id: zh.complement.direction_simple
+  level: '2'
+  function: fn.action_result
+  point_type: word_order
+  native_title: 简单趋向补语
+  title:
+    vi: Bổ ngữ xu hướng đơn (来 / 去)
+    en: Simple direction complements
+  r5:
+  - zh-hsk2-10-b-ng-xu-h-ng-n
+  error_tags:
+  - complement
+  contrasts:
+  - zh.complement.result
+  prereqs:
+  - zh.complement.result
+  sequence: 3
+  anchors: []
+  batch: core
+- id: zh.separable_verbs
+  level: '2'
+  function: fn.separable_verbs
+  point_type: word_order
+  native_title: 离合词
+  title:
+    vi: Động từ ly hợp
+    en: Separable verbs
+  r5:
+  - zh-hsk2-11-ng-t-ly-h-p
+  error_tags:
+  - word_order
+  contrasts: []
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: core
+- id: zh.complement.duration
+  level: '2'
+  function: fn.duration_frequency
+  point_type: word_order
+  native_title: 时量补语
+  title:
+    vi: Bổ ngữ thời lượng
+    en: Duration complements
+  r5:
+  - zh-hsk2-12-b-ng-th-i-l-ng-introduction
+  - zh-hsk3-8-b-ng-th-i-l-ng
+  error_tags:
+  - complement
+  contrasts:
+  - zh.complement.frequency
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: core
+- id: zh.complement.frequency
+  level: '2'
+  function: fn.duration_frequency
+  point_type: word_order
+  native_title: 动量补语
+  title:
+    vi: Bổ ngữ động lượng (số lần)
+    en: Frequency complements
+  r5:
+  - zh-hsk2-13-b-ng-ng-l-ng-introduction
+  - zh-hsk3-9-b-ng-ng-l-ng
+  error_tags:
+  - complement
+  contrasts:
+  - zh.complement.duration
+  prereqs:
+  - zh.complement.duration
+  sequence: 2
+  anchors: []
+  batch: core
+- id: zh.yinwei_suoyi
+  level: '2'
+  function: fn.reason_result
+  point_type: other
+  native_title: “因为……所以……”
+  title:
+    vi: 因为 ... 所以 ...
+    en: 因为 ... 所以 ...
+  r5:
+  - zh-hsk2-1-topic
+  error_tags:
+  - conjunction
+  contrasts:
+  - zh.suiran_danshi
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: core
+- id: zh.suiran_danshi
+  level: '2'
+  function: fn.contrast
+  point_type: other
+  native_title: “虽然……但是……”
+  title:
+    vi: 虽然 ... 但是 ...
+    en: 虽然 ... 但是 ...
+  r5:
+  - zh-hsk2-2-topic
+  error_tags:
+  - conjunction
+  contrasts:
+  - zh.yinwei_suoyi
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: core
+- id: zh.ruguo_jiu
+  level: '2'
+  function: fn.condition_real
+  point_type: other
+  native_title: “如果……就……”
+  title:
+    vi: 如果 ... 就 ...
+    en: 如果 ... 就 ...
+  r5:
+  - zh-hsk2-3-topic
+  error_tags:
+  - conjunction
+  contrasts:
+  - zh.zhiyao_jiu
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: core
+- id: zh.zhiyao_jiu
+  level: '2'
+  function: fn.condition_real
+  point_type: other
+  native_title: “只要……就……”
+  title:
+    vi: 只要 ... 就 ...
+    en: 只要 ... 就 ...
+  r5:
+  - zh-hsk2-4-topic
+  - zh-hsk6-2-topic-175
+  error_tags:
+  - conjunction
+  contrasts:
+  - zh.ruguo_jiu
+  - zh.zhiyou_cai
+  prereqs: []
+  sequence: 2
+  anchors: []
+  batch: core
+- id: zh.zhiyou_cai
+  level: '2'
+  function: fn.condition_real
+  point_type: other
+  native_title: “只有……才……”
+  title:
+    vi: 只有 ... 才 ...
+    en: 只有 ... 才 ...
+  r5:
+  - zh-hsk2-5-topic
+  error_tags:
+  - conjunction
+  contrasts:
+  - zh.zhiyao_jiu
+  prereqs:
+  - zh.zhiyao_jiu
+  sequence: 3
+  anchors: []
+  batch: core
+- id: zh.yi_jiu
+  level: '2'
+  function: fn.sequence
+  point_type: word_order
+  native_title: “一……就……”
+  title:
+    vi: 一 ... 就 ...
+    en: 一 ... 就 ...
+  r5:
+  - zh-hsk2-6-topic-47
+  error_tags:
+  - conjunction
+  contrasts:
+  - zh.xian_zai
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: core
+- id: zh.xian_zai
+  level: '2'
+  function: fn.sequence
+  point_type: word_order
+  native_title: “先……再……”
+  title:
+    vi: 先 ... 再 / 然后 ...
+    en: 先 ... 再 ...
+  r5:
+  - zh-hsk2-7-topic-48
+  error_tags:
+  - conjunction
+  contrasts:
+  - zh.yi_jiu
+  prereqs:
+  - zh.yi_jiu
+  sequence: 2
+  anchors: []
+  batch: core
+- id: zh.you_zai
+  level: '2'
+  function: fn.sequence
+  point_type: other
+  native_title: “又”和“再”
+  title:
+    vi: 又 và 再
+    en: 又 and 再
+  r5:
+  - zh-hsk2-8-vs
+  error_tags:
+  - word_choice
+  contrasts:
+  - zh.jiu_cai
+  prereqs: []
+  sequence: 3
+  anchors: []
+  batch: core
+- id: zh.jiu_cai
+  level: '2'
+  function: fn.sequence
+  point_type: other
+  native_title: “就”和“才”
+  title:
+    vi: 就 và 才
+    en: 就 and 才
+  r5:
+  - zh-hsk2-9-vs
+  error_tags:
+  - word_choice
+  contrasts:
+  - zh.you_zai
+  prereqs: []
+  sequence: 4
+  anchors: []
+  batch: core
+- id: zh.chule_yiwai
+  level: '2'
+  function: fn.exclusion
+  point_type: other
+  native_title: “除了……以外……”
+  title:
+    vi: 除了 ... 以外 ...
+    en: 除了 ... 以外 ...
+  r5:
+  - zh-hsk2-10-topic
+  error_tags:
+  - conjunction
+  contrasts: []
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: core
+- id: zh.yibian
+  level: '2'
+  function: fn.sequence
+  point_type: word_order
+  native_title: “一边……一边……”
+  title:
+    vi: 一边 ... 一边 ...
+    en: 一边 ... 一边 ...
+  r5:
+  - zh-hsk2-11-topic
+  error_tags:
+  - conjunction
+  contrasts:
+  - zh.zai_progressive
+  prereqs: []
+  sequence: 5
+  anchors: []
+  batch: core
