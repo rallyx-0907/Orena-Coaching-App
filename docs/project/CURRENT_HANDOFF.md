@@ -28,8 +28,17 @@ status: `docs/design/canonical-ui/IMPLEMENTATION_MAP.md`.
   re-checked in the browser, language layer finished, every API reader checked
   against captured real payloads (`scripts/fixtures/api/`). Reviewable at
   http://127.0.0.1:8021/next (isolated stack) until the 8011 sandbox is migrated.
-- Agent UI side: contract v5 on the mock; hiding Orena's entry points when the
-  agent is absent comes with the Orena panel (Wave B).
+- Wave B workspaces: REVIEWABLE (`161d917`) - reading (Reader, Check,
+  Discussion, Reading Transfer), listening (Workspace, Dictation, Shadowing,
+  React, Respond), speaking (Scripted, Compare, Attempts, Summary, Free Talk,
+  Conversation, Situation), writing (Writing, Compare Versions), review (Review,
+  Feed, From Your Errors), Orena (Home, panel, voice, on the mock), Onboarding
+  and the shared overlays. Each is one commit, independently reviewed and fixed.
+  Routes with no backend are the design's Coming soon screen
+  (IMPLEMENTATION_MAP `coming-soon`). The two Grammar screens wait for the
+  contract below.
+- Agent UI side: contract v5 on the mock; Orena's entry points hide when the
+  agent is absent.
 - Grammar: R5 is being retired (human, 2026-09-28): Grammar Lab becomes the only
   grammar source. The Grammar screens will render `GRAMMAR_CONTENT_CONTRACT.md`
   (drafted by the Grammar Lab lane, reviewed and committed here like
@@ -42,27 +51,30 @@ status: `docs/design/canonical-ui/IMPLEMENTATION_MAP.md`.
 
 ## Last verified batch
 
-2026-09-28, `f13c542`, local: all 85 CI `.mjs` gates, the browser ESM graph
-(189 modules) and the memory/architecture validators pass; Wave A re-checked in
-the browser on the isolated stack (seeded learner; en/vi/zh; both themes;
-1920/1440/1366 and 390/360). Last full pytest: 2026-09-26, PostgreSQL 16,
-`2472 passed, 3 skipped`. No CI pass is claimed. Visual-source gate: PINNED.
+2026-09-29, `161d917`, local: each Wave B commit was checked on a clean export
+of HEAD plus the commit (all CI gate commands - 113 at the last, the browser ESM
+graph and the memory/architecture validators pass) and reviewed in the browser
+on the isolated stack (en/vi/zh, both themes, the four rule-49 sizes). Full
+pytest on a clean export (SQLite, CI backend): `2420 passed, 195 skipped`
+(`51522e4`). No CI pass is claimed. Visual-source gate: PINNED.
 
 ## DONE
 
 Design pinned and governed (D-088 - D-093); foundation at `/next`; agent
-contract v4 (D-095); copy engine fixes; Wave A destinations (REVIEWABLE).
+contract v4 (D-095); copy engine fixes; Wave A destinations and Wave B
+workspaces (REVIEWABLE); the Writing request minimum per learning language.
 
 ## IN PROGRESS
 
-- Human review of Wave A; Wave B starts after it.
+- Human review of Wave A and Wave B.
 - Chinese writing evaluator recall: investigated and reported; no change until
   the human chooses a fix.
 
 ## PENDING
 
 Human: the 8011 sandbox migration (BLOCKED); the open design questions in
-`UI_BACKEND_GAPS.md` section N.
+`UI_BACKEND_GAPS.md` section N and its Wave B sections; whether Japanese gets a
+Writing-minimum row (Japanese is only a support language today).
 
 ## BLOCKED
 
@@ -92,10 +104,9 @@ human gates. Never touch persistent volumes as cleanup.
 
 ## NEXT EXACT TASK
 
-UI lane: Wave A to REVIEWABLE and presented; then Wave B (the reading,
-listening, dictation, speaking, writing and review workspaces, the Orena panel
-on the mock, onboarding); then the cutover (tombstones, legacy redirects, the
-old UI and its gates replaced).
+UI lane: Waves A and B are REVIEWABLE and presented; the two Grammar screens
+after PR #66 is merged and the R5 → Grammar Lab decision is recorded; then the
+cutover (tombstones, legacy redirects, the old UI and its gates replaced).
 Once every §6.1 surface is built: a one-line purpose per surface id in the copy
 layer (interface, en/vi/zh), published for the intelligence lane (contract v5
 §6.2).

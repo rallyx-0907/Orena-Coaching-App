@@ -97,6 +97,18 @@ live in `CURRENT_HANDOFF.md`.
   modules) pass. `test_orena_vocabulary_theme_tokens.mjs`, not run by CI, fails
   identically on a clean `HEAD` (an old-UI gate for a retired vocabulary CSS
   scope; replaced at the cutover, not deleted).
+- Wave B workspaces (`03c8aad` - `161d917`, 2026-09-29, local), one commit per
+  unit: the shared overlays, Check / Discussion / Reading Transfer, Dictation /
+  Shadowing, Free Talk / Conversation / Situation, Scripted Pronunciation /
+  Compare / Attempts / Speaking Summary, Review / Feed / From Your Errors, the
+  Reader, Onboarding, Orena (Home, panel, voice on the mock), Writing / Compare
+  Versions, and Listening / React / Respond. After interrupted parallel runs,
+  each unit ran only its unfinished steps (finish, independent review, fix), at
+  most three agents at a time. Each commit was checked on a clean export of HEAD
+  plus the commit with every CI gate command. Routes with no backend show the
+  design's Coming soon screen. The Grammar screens wait for the grammar content
+  contract. The kit gate now also fails on white ink over a solid
+  red/green/amber fill (`5692aeb`).
 - The isolated verification stack: containers `orena-next-verify-*`,
   127.0.0.1:8021, PostgreSQL on tmpfs, no provider keys, three public-domain
   articles, a learner seeded through the app's endpoints

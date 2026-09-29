@@ -33,15 +33,15 @@ Routes are hash routes of the new entry (`/next#/…` until the cutover, then
 | Toast | `kit/toast.js` | `scripts/test_orena_kit.mjs` | building |
 | Sheet host (desk panel / phone bottom sheet, scrim) | `kit/overlay.js` | `scripts/test_orena_kit.mjs` | building |
 | Filter Sheet | `screens/discover/filter-sheet.js` | | planned |
-| Word Quick Sheet · Sentence Quick Sheet | `screens/quick-sheet/` | | planned |
-| Vocabulary Focus | `screens/listening/vocabulary-focus.js` | | planned |
-| Contextual Orena · Orena Voice | `agent/panel.js`, `agent/voice.js` | `scripts/test_orena_agent.mjs` | planned |
+| Word Quick Sheet · Sentence Quick Sheet | `screens/quick-sheet/` | `scripts/test_orena_screen_quick-sheet.mjs` | reviewable |
+| Vocabulary Focus | `screens/listening/vocab-sheet.js` | `scripts/test_orena_screen_listening.mjs` | reviewable |
+| Contextual Orena · Orena Voice | `screens/orena/panel.js`, `screens/orena/voice.js` | `scripts/test_orena_screen_orena.mjs`, `scripts/test_orena_agent.mjs` | reviewable |
 | Import | `screens/import/` (opened from Discover's "+ Import") | `scripts/test_orena_screen_sheets.mjs` | reviewable |
 | Notifications | `screens/notifications/` (opened from the shell bell, `shell/router.js`) | `scripts/test_orena_screen_sheets.mjs` | reviewable |
 | Stroke Practice | `screens/word/stroke-practice.js` | | planned |
-| Prompt Setup (writing setup) | `screens/writing/setup-sheet.js` | | planned |
-| Mic state | `kit/mic-sheet.js` | | planned |
-| Lesson complete | `kit/lesson-complete.js` | | planned |
+| Prompt Setup (writing setup) | `screens/writing/` (its setup sheet) | `scripts/test_orena_screen_writing.mjs` | reviewable |
+| Mic state | `screens/mic/` | `scripts/test_orena_screen_mic.mjs` | reviewable |
+| Lesson complete | `screens/lesson-complete/` | `scripts/test_orena_screen_lesson-complete.mjs` | reviewable |
 
 ## Screens
 
@@ -60,7 +60,7 @@ shape).
 | 10 | Today | `#/today` | shell | `screens/today/` | reviewable |
 | 04 | Discover | `#/discover` | shell | `screens/discover/` | reviewable |
 | 05 | Content Detail | `#/content/:id` | shell | `screens/content/` | reviewable |
-| 11 | Orena Home | `#/orena` | shell | `agent/home.js` | planned |
+| 11 | Orena Home | `#/orena` | shell | `screens/orena/` | reviewable |
 | 08 | Practice Hub | `#/practice` | shell | `screens/practice/` | reviewable |
 | 09 | Skill Hub | `#/practice/:skill` | shell | `screens/practice/` | reviewable |
 | 12 | My Library | `#/library` | shell | `screens/library/` | reviewable |
@@ -72,38 +72,38 @@ shape).
 | 51 | Coming soon | `#/coming/:key` | shell | `screens/coming/` | reviewable |
 | 26 | Settings | `#/settings` (`?tab=` per Profile's own links) | focus | `screens/settings/` | reviewable |
 | 27 | Search | `#/search` | focus | `screens/search/` | reviewable |
-| 14 | Reader | `#/read/:id` | focus | `screens/reader/` | planned |
-| 20 | Check Understanding | `#/read/:id/check` | focus | `screens/check/` | planned |
-| 40 | Reading Complete | `#/read/:id/done` | focus | `screens/reader/` | planned |
-| 39 | Reading Transfer | `#/read/:id/transfer` | focus | `screens/reading-transfer/` | planned |
-| 46 | Discussion | `#/read/:id/discuss` | focus | `screens/discussion/` | planned |
-| 06 | Listening Workspace | `#/listen/:id` | focus | `screens/listening/` | planned |
-| 07 | Dictation | `#/listen/:id/dictation` | focus | `screens/dictation/` | planned |
-| 28 | Shadowing | `#/listen/:id/shadow` | focus | `screens/shadowing/` | planned |
-| 33 | React / Reuse | `#/listen/:id/react` | focus | `screens/react/` | planned |
-| 45 | Respond to Content | `#/respond/:id` | focus | `screens/respond/` | planned |
-| 15 | Scripted Pronunciation | `#/speak/:id` | focus | `screens/speak/` | planned |
-| 16 | Compare With Model | `#/speak/:id/compare` | focus | `screens/compare/` | planned |
-| 41 | Attempt History | `#/speak/:id/attempts` | focus | `screens/compare/` | planned |
-| 42 | Speaking Summary | `#/speak/summary` | focus | `screens/speak/` | planned |
-| 29 | Free Talk | `#/speak/free` | focus | `screens/free-talk/` | planned |
-| 30 | Conversation | `#/speak/conversation` | focus | `screens/conversation/` | planned |
-| 31 | Situation Reaction | `#/speak/situation` | focus | `screens/situation/` | planned |
-| 32 | Retell | `#/speak/retell/:id` | focus | `screens/retell/` | planned |
-| 43 | Timed Reaction | `#/speak/timed` | focus | `screens/timed-reaction/` | planned |
-| 48 | Mock Interview | `#/speak/interview` | focus | `screens/interview/` | planned |
-| 49 | Sound / Tone | `#/speak/sounds` | focus | `screens/sounds/` | planned |
-| 18 | Writing | `#/write` · `#/write/:id` | focus | `screens/writing/` | planned |
-| 19 | Compare Versions | `#/write/:id/compare` | focus | `screens/writing/` | planned |
-| 37 | Context Rewrite | `#/write/rewrite` | focus | `screens/rewrite/` | planned |
-| 38 | Timed Writing | `#/write/timed` | focus | `screens/timed-writing/` | planned |
-| 13 | Review Session | `#/review` | focus | `screens/review/` | planned |
-| 34 | Timed Recall | `#/review/timed` | focus | `screens/timed-recall/` | planned |
-| 35 | Context Transfer | `#/review/transfer` | focus | `screens/transfer/` | planned |
-| 36 | Vocabulary Daily Feed | `#/feed` | focus | `screens/feed/` | planned |
-| 50 | From Your Errors | `#/errors` | focus | `screens/errors/` | planned |
+| 14 | Reader | `#/read/:id` | focus | `screens/reader/` | reviewable |
+| 20 | Check Understanding | `#/read/:id/check` | focus | `screens/check/` | reviewable |
+| 40 | Reading Complete | `#/read/:id/done` | focus | `screens/reader-complete/` | reviewable |
+| 39 | Reading Transfer | `#/read/:id/transfer` | focus | `screens/reading-transfer/` | reviewable |
+| 46 | Discussion | `#/read/:id/discuss` | focus | `screens/discussion/` | reviewable |
+| 06 | Listening Workspace | `#/listen/:id` | focus | `screens/listening/` | reviewable |
+| 07 | Dictation | `#/listen/:id/dictation` | focus | `screens/dictation/` | reviewable |
+| 28 | Shadowing | `#/listen/:id/shadow` | focus | `screens/shadowing/` | reviewable |
+| 33 | React / Reuse | `#/listen/:id/react` | focus | `screens/react/` | reviewable |
+| 45 | Respond to Content | `#/respond/:id` | focus | `screens/respond/` | reviewable |
+| 15 | Scripted Pronunciation | `#/speak/:id` | focus | `screens/speak/` | reviewable |
+| 16 | Compare With Model | `#/speak/:id/compare` | focus | `screens/compare/` | reviewable |
+| 41 | Attempt History | `#/speak/:id/attempts` | focus | `screens/attempts/` | reviewable |
+| 42 | Speaking Summary | `#/speak/summary` | focus | `screens/speak-summary/` | reviewable |
+| 29 | Free Talk | `#/speak/free` | focus | `screens/free-talk/` | reviewable |
+| 30 | Conversation | `#/speak/conversation` | focus | `screens/conversation/` | reviewable |
+| 31 | Situation Reaction | `#/speak/situation` | focus | `screens/situation/` | reviewable |
+| 32 | Retell | `#/speak/retell/:id` | focus | `screens/coming/` | coming-soon (no backend or content) |
+| 43 | Timed Reaction | `#/speak/timed` | focus | `screens/coming/` | coming-soon (no backend or content) |
+| 48 | Mock Interview | `#/speak/interview` | focus | `screens/coming/` | coming-soon (no backend or content) |
+| 49 | Sound / Tone | `#/speak/sounds` | focus | `screens/coming/` | coming-soon (no backend or content) |
+| 18 | Writing | `#/write` · `#/write/:id` | focus | `screens/writing/` | reviewable |
+| 19 | Compare Versions | `#/write/:id/compare` | focus | `screens/writing-compare/` | reviewable |
+| 37 | Context Rewrite | `#/write/rewrite` | focus | `screens/coming/` | coming-soon (no backend or content) |
+| 38 | Timed Writing | `#/write/timed` | focus | `screens/coming/` | coming-soon (no backend or content) |
+| 13 | Review Session | `#/review` | focus | `screens/review/` | reviewable |
+| 34 | Timed Recall | `#/review/timed` | focus | `screens/coming/` | coming-soon (no backend or content) |
+| 35 | Context Transfer | `#/review/transfer` | focus | `screens/coming/` | coming-soon (no backend or content) |
+| 36 | Vocabulary Daily Feed | `#/feed` | focus | `screens/feed/` | reviewable |
+| 50 | From Your Errors | `#/errors` | focus | `screens/errors/` | reviewable |
 | 23, 47 | Grammar Concept | `#/grammar/:id` | focus | `screens/grammar-concept/` | reviewable (renders R5; to be rebuilt on the grammar content contract) |
-| Onboarding 01–05 | Welcome, Account, Languages, Level, Meet Orena | `#/welcome` | none | `screens/onboarding/` | planned |
+| Onboarding 01–05 | Welcome, Account, Languages, Level, Meet Orena | `#/welcome` | none | `screens/onboarding/` | reviewable |
 
 ## Retired by the cutover
 
