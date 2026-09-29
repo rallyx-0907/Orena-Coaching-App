@@ -663,6 +663,20 @@ fallback in place; these ask which fallback should become the real feature.
    real backend list is about a dozen languages, kept usable today with
    horizontal scroll inside the control (rule 49). Worth a picker/sheet
    instead if the support-language list keeps growing?
+6. **Grammar on Grammar Lab content (2026-09-28, before the content contract's
+   PR).** Reading the pinned design for what the rebuilt Grammar screens need
+   (review checklist kept for the PR review) found four things the design
+   itself does not settle: (a) only the **timeline** illustration is drawn
+   (frame 23); **word_order** and **morphology**, which the human listed, are
+   named in the brief but drawn nowhere, so building them needs a design or an
+   explicit direction (rule 43); (b) the design's own router sends a Chinese
+   learner straight to one fixed concept, so **no Chinese Grammar Library** is
+   drawn; (c) **no Chinese-specific structure** (measure words, 把/被, aspect
+   了/过/着, complements) is drawn on a Grammar screen - "measure word" appears
+   only as a Writing finding; (d) the example highlights and the formula's
+   role colours are **not linked** in the design (two fixed highlight slots),
+   so whether the contract should carry matching roles is a choice. Item 4
+   above (frame 23 or 47) decides which of these fields are required.
 
 # CHỜ NGƯỜI QUYẾT ĐỊNH — sổ đăng ký mở (cập nhật 2026-09-22)
 
