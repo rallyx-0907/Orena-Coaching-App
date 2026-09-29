@@ -79,20 +79,16 @@ The D-098 and D-099 items (2026-09-29, `5d9d64c`..`b83142d`); commit list in
 - Chinese evaluator: fix (1) landed (`871e2b9`, contract v2.7) and the benchmark
   measures recall (`fa93601`, v2); the live run that gives (4) its numbers waits
   for the human's go (provider cost).
-- D-101: one complete staging on :8011 (roadmap accepted); milestone A in progress.
+- D-101/D-102: finish the product on `codex/work`, PR into `main`; D2 in progress.
 
 ## PENDING
 
-Human: running `staging_update.ps1` once milestone A lands (it takes :8011 from 0014 to head; migrations are the human's gate);
+Human: none for :8011 (deferred, D-102);
 PR #67 (`pattern_rule`) and #68 (fixtures) from the Grammar Lab lane.
 
 ## BLOCKED
 
-- The 8011 sandbox refuses to start: its database (named volume
-  `orena-foundation-sandbox-data`, data intact) is at `20260923_0014`, the code
-  expects `20260924_0016`. The human authorised 0015/0016 on it; the harness
-  blocks the agent, so the human runs them (`scripts/start_orena_sandbox.ps1`
-  reports the state).
+- None for the UI lane. (:8011 stays at `20260923_0014`, deployment deferred by D-102.)
 - Every other shared runtime's Reading migration needs explicit human
   authorization.
 
@@ -114,11 +110,11 @@ human gates. Never touch persistent volumes as cleanup.
 
 ## NEXT EXACT TASK
 
-UI lane, per D-101 and `UI_COMPLETION_ROADMAP.md`: A (staging scripts on :8011, the human runs
-`staging_update`), then D2 (P1: shared modules out of `ui/`, gate), then D3 (the matrix, sent once),
-then D4 persistence, E Admin, F Grammar, the `MISSING` cells, G Orena live; cutover only on the
-human's word. C (Chinese evaluator) when Docker is free, after D3, approach reported first.
-Every try-it instruction points at `:8011/next`; :8021 is the lane's bench.
+UI lane, per D-101 as amended by D-102: D2 (shared modules out of `ui/`, gate), D3 (the matrix,
+sent once), D4 (persistence proposal with H2), E Admin, F Grammar, D7 the `MISSING` cells, G Orena,
+integration QA, then the PR `codex/work` -> `main`; :8000 is updated only after the human merges.
+Milestone A is TOOLING_READY / DEPLOYMENT_DEFERRED: :8011 is not run or migrated unless asked.
+QA runs on the lane runtime (:8021 or a local port). C after D3, when Docker is free.
 
 Intelligence lane: D-085 against `AGENT_CONTRACT.md` v5; merge `codex/work` forward; its merged PR
 is what switches `AGENT_LIVE` on :8011 (D-101 G).

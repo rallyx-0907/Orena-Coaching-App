@@ -1,30 +1,32 @@
 # New learner UI: staging to cutover roadmap
 
-**Status: ACCEPTED 2026-09-29 (D-101).** D-101 is the authority. This file tracks its
+**Status: ACCEPTED 2026-09-29 (D-101, amended by D-102).** D-101 and D-102 are the authority. This file tracks its
 milestones and holds what planning found; where the two differ, D-101 wins. The first version
 of this roadmap (a proposal with H1-H10 open) is replaced in full. `ROADMAP.md` is untouched.
 
-## Goal
+## Goal (D-102)
 
-One complete staging on :8011 running the latest `codex/work`: the old UI at `/`, the new UI at
-`/next`, until the human says "cutover". Every existing skill works with real content: the learner
-does the work, it is assessed where the domain defines assessment, the result is stored on the
-server, and progress and history survive a reload or a new login. Staging also includes the Admin
-needed to load that content, and Orena live. Staging complete is not public release: content
-breadth is its own gate (`CONTENT_SCALE_READY`).
+Finish the whole product on `codex/work`, QA it on the lane runtime (:8021 or another local port,
+real backend, PostgreSQL where persistence is the acceptance), then one integration pass and a PR
+`codex/work` -> `main`. After the human merges it, :8000 (the main runtime, its own auth and
+configuration) is updated from `main`, migrations under the human's gate. `/` and :8000 are not
+touched before that. Progress is counted in finished product flows. Staging complete is not public
+release: content breadth is its own gate (`CONTENT_SCALE_READY`).
 
 ## Milestones
 
 | # | Milestone | Status | Done when |
 | --- | --- | --- | --- |
-| A | Staging scripts: `staging_update.ps1`, `staging_backup.ps1`, a durable DB volume | in progress | the human runs `staging_update` and :8011/next serves `codex/work` at the migration head |
-| D2 | P1: shared modules out of `ui/` into `capabilities/` or `kit/`; a gate against `/next` importing `ui/` | planned | the gate is green, both UIs use one module, no behaviour change |
+| A | Staging scripts `staging_update.ps1`, `staging_backup.ps1` (kept) | TOOLING_READY / DEPLOYMENT_DEFERRED (`788a54e`, D-102) | :8011 only if the human asks |
+| D2 | P1: shared modules out of `ui/` into `capabilities/` or `kit/`; a gate against `/next` importing `ui/` | in progress | the gate is green, both UIs use one module, no behaviour change |
 | D3 | The matrix: every skill and flow × content / do / assess / store / come back | planned | sent to the human once |
 | D4 | One persistence proposal (H2 included) → independent review → approval → rehearsed migrations | planned | approved and rehearsed; the human runs the migration |
 | E | Admin in the new UI, on the pinned `Orena Admin.dc.html`, existing logic and APIs | planned | real content is imported, reviewed and published, and a learner learns with it on `/next`; the three access tests pass |
 | F | Grammar frames 44 and 47 on approved Grammar Lab content through Admin | frame built (`b83142d`) | approved points reach both screens by the Admin loop; `pattern_rule` after PR #67 |
 | D7 | Every `MISSING` cell in D3, by reuse | planned | no `MISSING` in a non-deferred row |
-| G | Orena live on :8011 (`AGENT_LIVE`), contract v5 checks, surface purposes | planned | the v5 checks pass on :8011 |
+| G | Orena Intelligence live (`AGENT_LIVE`), contract v5 checks, surface purposes | planned | the v5 checks pass on the lane runtime |
+| QA | Integration QA on the HEAD of `codex/work`, EN and ZH, every non-deferred flow | planned | D3 has no `MISSING`; reload/new-session evidence recorded |
+| PR | `codex/work` -> `main` | planned | the human reviews and merges; then :8000 is updated with migrations under the human's gate |
 | H | Cutover, on the human's word | not started | see D-101 H |
 | C | Chinese evaluator: targeted re-grade, live benchmark (USD 0.50 cap) | waits for Docker to be free, after D3 | the approach is reported before any change; recall numbers reported |
 

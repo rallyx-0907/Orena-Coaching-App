@@ -3480,3 +3480,63 @@ claimed because one item per skill runs.
   a learner wrong data or grading, loses persistence or history, breaks auth/security, an agreed
   accessibility gate or rule 49, or has to be fixed to move old logic into a shared module. Other
   polish goes to a backlog.
+
+## D-102 — The product is finished on codex/work and reaches :8000 through main; :8011 deployment deferred
+
+**Date:** 2026-09-29. **Status:** Accepted (explicit human direction). **Amends** D-101's staging
+and deployment parts (A, and the "staging on :8011" framing). H1-H10, D2-D7, Admin, Grammar,
+Orena and the cutover stand as D-101 says, except where this entry changes them.
+
+**Decision.**
+
+1. **Goal.** The goal is not a separate staging runtime on :8011 kept up through development. The
+   goal is to finish the whole product on `codex/work`, test it fully on a local/lane runtime, and
+   open a PR from `codex/work` into `main`. After the human merges it, the main runtime is :8000,
+   with its existing auth/login and environment configuration. No parallel deployment system is
+   built for the new UI.
+2. **Before the merge.** `/` and the main runtime are not changed by new-UI work. Development and
+   QA of `codex/work` run on the lane's runtime (:8021 or another local port). :8011 is not
+   rebuilt or redeployed after each milestone.
+3. **Milestone A** is `TOOLING_READY / DEPLOYMENT_DEFERRED`. `scripts/staging_update.ps1` and
+   `scripts/staging_backup.ps1` are kept, not deleted. :8011 is not run or migrated unless the
+   human asks separately; D2 does not wait for it.
+4. **Critical path.**
+   1. D2, the shared modules.
+   2. D3, the matrix.
+   3. D4, one persistence proposal including H2.
+   4. E, Admin with real content ingest and publish.
+   5. F, real Grammar.
+   6. D7, every `MISSING` cell.
+   7. G, Orena Intelligence.
+   8. Integration QA on `codex/work`.
+   9. The PR `codex/work` -> `main`.
+   10. After the human merges it, :8000 is updated with migrations under the human's gate.
+   11. The old-UI cutover, only when the human says so.
+
+   C runs after D3, when Docker is free.
+5. **Testing per milestone.**
+   - The relevant automated gates.
+   - A browser test on the lane runtime, against the real backend (no fake data on a critical
+     E2E), with PostgreSQL wherever persistence is part of the acceptance.
+   - The endpoint, storage and reload evidence recorded in D3.
+   - The full Docker suite only at checkpoints that are worth it.
+6. **Integration QA before the PR.** One pass on the HEAD of `codex/work` proves, in EN and ZH, for
+   every non-deferred flow: real content -> learner interaction -> assessment where the domain has
+   it -> server persistence -> reload or a new session -> history and progress still there.
+   - Flows covered: Onboarding/Profile, Reading, Listening, Dictation, Shadowing,
+     Speaking/Pronunciation, Writing, Vocabulary/Review, Grammar, Admin import/review/publish,
+     and Orena contextual text chat.
+   - D3 has no `MISSING`.
+   - Fixture or test data never supports a claim that product E2E is complete.
+7. **Runtime :8000 after the merge.**
+   - Updated from `main` with its existing auth, login and environment configuration, and no
+     parallel secrets.
+   - Migrations stay the human's gate, with a backup first, then a smoke test of login and the
+     key learner E2E.
+   - A migration developed in D4 is rehearsed up/down/up on a throwaway PostgreSQL before the PR,
+     not applied to the main runtime during development.
+8. **Priority.** No deployment infrastructure, UI polish or small fix unless it blocks a D3 E2E,
+   learner correctness, server persistence, the Admin content loop, Grammar production, the
+   Orena integration, auth/security or merge readiness.
+9. **Progress.** Progress is counted in finished product flows, not in staging deploys or screens
+   rendered.

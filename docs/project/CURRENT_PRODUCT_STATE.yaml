@@ -48,9 +48,9 @@
     "status": "human_gate"
   },
   "current_primary_workstream": {
-    "id": "new_learner_ui_staging_d101",
+    "id": "new_learner_ui_product_complete_d102",
     "status": "in_progress",
-    "next_task": "D-101: A staging scripts on :8011 (the human runs staging_update), D2 shared modules out of ui/, D3 skill x step matrix, D4 persistence proposal, E Admin in the new UI, F Grammar on approved content, the MISSING cells, G Orena live on :8011; cutover only on the human's word."
+    "next_task": "D-101/D-102: D2 shared modules out of ui/, D3 matrix, D4 persistence proposal (H2), E Admin, F Grammar, D7 MISSING cells, G Orena, integration QA on codex/work, PR codex/work -> main; :8000 updated only after the human merges. :8011 deployment deferred."
   },
   "design": {
     "web_is_visual_source_of_truth": true,
