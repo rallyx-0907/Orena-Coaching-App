@@ -22,6 +22,31 @@ def contains_cjk(text: str) -> bool:
     return bool(_CJK_RE.search(text or ""))
 
 
+_LETTER_RE = re.compile(r"[^\W\d_]")
+
+
+def support_prose_admits(text: str, *, support_cjk: bool, target_cjk: bool) -> bool:
+    """Whether an explanation is written in the support language's script.
+
+    One rule for every language pair. Prose in a CJK support language may hold
+    CJK. Prose in any other support language may still *quote* the learning
+    language when that language is written in CJK - "dùng lượng từ 本 cho
+    sách" is a Vietnamese explanation of a Chinese error, and it cannot teach
+    the measure word without writing it. What is refused is an explanation
+    that is not support-language prose at all: CJK outweighs the support
+    script's own letters, or the learning language is not written in CJK so
+    there is nothing to quote.
+    """
+    if support_cjk or not contains_cjk(text):
+        return True
+    if not target_cjk:
+        return False
+    value = text or ""
+    cjk = len(_CJK_RE.findall(value))
+    other = sum(1 for char in _LETTER_RE.findall(value) if not _CJK_RE.match(char))
+    return other >= cjk
+
+
 def calculate_weighted_overall(
     result: Mapping[str, Any],
     rubric_weights: Mapping[str, float],
@@ -79,9 +104,10 @@ def normalize_writing_evaluation(
         result["band_confidence"] = round(_normalized_confidence(raw["band_confidence"]), 2)
 
     summary = _bounded_text(raw.get("summary_vi", ""), 4000)
-    result["summary_vi"] = summary if explanation_allow_cjk or not contains_cjk(summary) else ""
-    result["strengths_vi"] = _clean_learner_list(raw.get("strengths_vi", []), allow_cjk=explanation_allow_cjk)
-    result["priorities_vi"] = _clean_learner_list(raw.get("priorities_vi", []), allow_cjk=explanation_allow_cjk)
+    admits = lambda value: support_prose_admits(value, support_cjk=explanation_allow_cjk, target_cjk=allow_cjk)  # noqa: E731
+    result["summary_vi"] = summary if admits(summary) else ""
+    result["strengths_vi"] = _clean_learner_list(raw.get("strengths_vi", []), admits=admits)
+    result["priorities_vi"] = _clean_learner_list(raw.get("priorities_vi", []), admits=admits)
     result["strength_evidence"] = _normalize_strength_evidence(
         raw.get("strength_evidence", []),
         rubric_categories=set(dimension_keys),
@@ -176,14 +202,14 @@ def _clean_learner_list(
     items: Any,
     *,
     limit: int = MAX_LEARNER_LIST_ITEMS,
-    allow_cjk: bool,
+    admits: Callable[[str], bool],
 ) -> list[str]:
     if not isinstance(items, list):
         return []
     output: list[str] = []
     for item in items:
         value = _bounded_text(item, 1000)
-        if value and (allow_cjk or not contains_cjk(value)):
+        if value and admits(value):
             output.append(value)
         if len(output) >= limit:
             break
@@ -214,7 +240,7 @@ def _normalize_strength_evidence(
             continue
         if not fragment or fragment not in learner_text or not explanation:
             continue
-        if not explanation_allow_cjk and contains_cjk(explanation):
+        if not support_prose_admits(explanation, support_cjk=explanation_allow_cjk, target_cjk=allow_cjk):
             continue
         identity = (category, fragment)
         if identity in seen:
@@ -282,7 +308,10 @@ def _normalize_errors(
             or not rule
         ):
             continue
-        if not explanation_allow_cjk and (contains_cjk(explanation) or contains_cjk(rule)):
+        if not (
+            support_prose_admits(explanation, support_cjk=explanation_allow_cjk, target_cjk=allow_cjk)
+            and support_prose_admits(rule, support_cjk=explanation_allow_cjk, target_cjk=allow_cjk)
+        ):
             continue
         if not allow_cjk and contains_cjk(suggestion):
             continue
