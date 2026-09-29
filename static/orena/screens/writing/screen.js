@@ -175,7 +175,9 @@ export default async function mountWriting(element, ctx) {
   function countLabel({ short = false } = {}) {
     const words = wordCountOf(text, language);
     if (language === 'zh') return t.plural('hanziCount', words);
-    return short ? t.plural('wordsOnly', words) : t.plural('wordsChars', words, { chars: charCountOf(text) });
+    if (short) return t.plural('wordsOnly', words);
+    // Each count takes its own plural form: "1 word · 5 characters", never one form for both.
+    return `${t.plural('wordsOnly', words)} · ${t.plural('charsOnly', charCountOf(text))}`;
   }
 
   function metaLine() {
