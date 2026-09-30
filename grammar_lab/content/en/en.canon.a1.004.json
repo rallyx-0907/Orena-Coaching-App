@@ -3,23 +3,26 @@
   "id": "en.canon.a1.004",
   "version": 1,
   "target_lang": "en",
-  "function": "fn.catalog_unclassified",
+  "function": "fn.verb_patterns",
   "level": {
     "framework": "cefr",
     "value": "A1",
     "rank": 1
   },
-  "prereqs": [],
+  "prereqs": [
+    "en.sentence_word_order"
+  ],
   "contrasts": [],
   "error_tags": [
-    "other"
+    "word_form",
+    "sentence_structure"
   ],
   "source_refs": {},
   "point_type": "other",
   "header": {
     "title": {
-      "vi": "Would like",
-      "en": "Would like"
+      "vi": "Would like để nói mong muốn lịch sự",
+      "en": "Would like for polite wants"
     },
     "native_title": "Would like",
     "sub": {
@@ -146,7 +149,7 @@
         "vi": "Trước động từ sau would like cần to.",
         "en": "Before a verb after would like, use to."
       },
-      "error_tag": "other",
+      "error_tag": "word_form",
       "l1": [
         "vi"
       ]
@@ -162,11 +165,11 @@
         },
         {
           "text": "to",
-          "error_tag": "other"
+          "error_tag": "word_form"
         },
         {
           "text": "am",
-          "error_tag": "other"
+          "error_tag": "sentence_structure"
         }
       ],
       "answer": 0,
@@ -184,11 +187,11 @@
         },
         {
           "text": "for",
-          "error_tag": "other"
+          "error_tag": "word_form"
         },
         {
           "text": "is",
-          "error_tag": "other"
+          "error_tag": "sentence_structure"
         }
       ],
       "answer": 0,
@@ -206,11 +209,11 @@
         },
         {
           "text": "are",
-          "error_tag": "other"
+          "error_tag": "sentence_structure"
         },
         {
           "text": "do",
-          "error_tag": "other"
+          "error_tag": "sentence_structure"
         }
       ],
       "answer": 0,
@@ -229,7 +232,7 @@
     "generated_at": "2026-09-30T10:35:00Z"
   },
   "review": null,
-  "sequence": 4,
+  "sequence": 1,
   "source_anchors": {
     "status": "unanchored",
     "items": []
