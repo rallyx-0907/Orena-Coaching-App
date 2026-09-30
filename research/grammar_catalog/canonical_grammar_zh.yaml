@@ -1,16 +1,26 @@
-# Orena canonical Chinese grammar catalog
-# Intentionally empty until GF0025 reference inventory is mapped/clusted into pedagogical Orena points.
+# Chinese canonical grammar catalog — research working manifest
+# This file intentionally points to auditable candidate inputs instead of pretending the catalog is human-locked.
 meta:
-  kind: "canonical_point_catalog"
+  kind: "canonical_point_catalog_working_manifest"
   language: "zh-Hans"
   framework_reference: "GF0025-2021"
+  status: "candidate_graph_complete_human_review_required"
   source_inventory: "source_inventory_zh_gf0025.yaml"
-  status: "mapping_required_before_human_lock"
   source_inventory_count: 572
-  rules:
-    - "Do not generate one Orena lesson per source inventory row."
-    - "Map/cluster source inventory rows to pedagogical Orena points first."
-    - "Reuse R5 content as source material and provenance, not as authority over GF0025 coverage."
-    - "A legacy R5 alias may resolve to only one canonical Orena point."
-    - "Do not invent HSK7 vs HSK8 vs HSK9 source placements; GF0025 supplies one HSK7-9 band."
+  r5_base_candidates_file: "canonical_base_zh_r5_candidate.yaml"
+  r5_base_candidates: 171
+  source_mapping_file: "zh_source_to_canonical_mapping_candidate.yaml"
+  new_cluster_candidates_file: "zh_unmapped_cluster_candidates.yaml"
+  new_cluster_candidates: 159
+  working_review_units: 330
+  notes:
+    - "330 is a review-unit count (171 R5-derived candidates + 159 source-only clusters), not a final lesson count."
+    - "96 source rows currently have high-confidence mapping candidates, 61 medium, 46 low, 369 were grouped into source-only clusters."
+    - "Low/medium mapping edges and every source-only cluster require catalog review."
+    - "GF0025 HSK7-9 remains one official band; separate HSK7/8/9 sequencing is an Orena decision."
+  completion_gate:
+    - "Every one of the 572 source rows has at least one accepted final maps_to edge."
+    - "Every legacy R5 alias redirects to at most one final canonical id."
+    - "All source-only clusters have been accepted, merged, split or explicitly marked out_of_scope with reason."
+    - "Final canonical ids, levels/bands and scopes are human-locked before Grammar Lab generation."
 items: []
