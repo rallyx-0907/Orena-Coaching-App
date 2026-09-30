@@ -214,15 +214,34 @@ def test_review_settings_default_null_clamp_and_survive_other_writes(backend):
     profile = get_learner_profile()
     assert profile["review_new_per_day"] is None and profile["review_limit_per_day"] is None
     assert profile["review_modes"] is None
-    profile = _patch(review_new_per_day=999, review_limit_per_day=1, review_modes={"typing": False, "cloze": True, "speak": True, "flashcard": True})
+    profile = _patch(review_new_per_day=999, review_limit_per_day=1, review_modes={"typing": False, "cloze": True})
     assert profile["review_new_per_day"] == 50
     assert profile["review_limit_per_day"] == 20
-    assert profile["review_modes"] == {"typing": False, "cloze": True}, "unregistered modes must be dropped"
+    assert profile["review_modes"] == {"typing": False, "cloze": True}
     _patch(goal="exam")
     put_learner_profile(LearnerProfileIn(goal="voice"))
     after = get_learner_profile()
     assert (after["review_new_per_day"], after["review_limit_per_day"]) == (50, 20)
     assert after["review_modes"] == {"typing": False, "cloze": True}
+
+
+@pytest.mark.parametrize(
+    "modes",
+    [
+        {"typing": True, "speak": True},
+        {"target": True},
+        {"flashcard": False},
+        {"dictation": "yes"},
+        {"cloze": 1},
+    ],
+)
+def test_a_review_mode_outside_the_canonical_three_is_refused_and_nothing_changes(backend, modes):
+    backend.use(backend.new_user(), "en")
+    _patch(review_modes={"typing": True, "cloze": False, "dictation": True})
+    error = _status(lambda: _patch(review_modes=modes))
+    assert error.status_code == 400
+    assert error.detail["reason"] == "invalid_value" and error.detail["field"] == "review_modes"
+    assert get_learner_profile()["review_modes"] == {"typing": True, "cloze": False, "dictation": True}
 
 
 def test_a_stale_review_write_is_409(backend):

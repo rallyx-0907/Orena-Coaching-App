@@ -128,10 +128,10 @@ const fixture = (name) => JSON.parse(readFileSync(fileURLToPath(new URL(`./fixtu
 /* --- Level: CEFR for English, HSK for Chinese, both real standard frameworks ------------------- */
 {
   assert.equal(levelsFor('en').length, 6);
-  assert.equal(levelsFor('zh').length, 6);
+  assert.equal(levelsFor('zh').length, 7, 'HSK 1-6 and one HSK 7-9 band');
   assert.deepEqual(levelsFor('en').map((l) => l.code), ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']);
-  assert.deepEqual(levelsFor('zh').map((l) => l.code), ['HSK1', 'HSK2', 'HSK3', 'HSK4', 'HSK5', 'HSK6'], "the platform's own codes (GET /api/platform/languages languages[].levels), never the frame's display spacing");
-  assert.deepEqual(levelsFor('zh').map((l) => l.label), ['HSK 1', 'HSK 2', 'HSK 3', 'HSK 4', 'HSK 5', 'HSK 6'], "the cell's label keeps the frame's own spacing");
+  assert.deepEqual(levelsFor('zh').map((l) => l.code), ['HSK1', 'HSK2', 'HSK3', 'HSK4', 'HSK5', 'HSK6', 'HSK7-9'], "the platform's own codes (GET /api/platform/languages languages[].levels), never the frame's display spacing");
+  assert.deepEqual(levelsFor('zh').map((l) => l.label), ['HSK 1', 'HSK 2', 'HSK 3', 'HSK 4', 'HSK 5', 'HSK 6', 'HSK 7–9'], "the cell's label keeps the frame's own spacing");
   assert.equal(levelsFor('fr').length, 6, 'an unknown target falls back to English, never throws or is empty');
 
   /* GET /api/platform/languages `languages[].levels`, the real captured shape - a shorter real
@@ -144,8 +144,9 @@ const fixture = (name) => JSON.parse(readFileSync(fileURLToPath(new URL(`./fixtu
   assert.deepEqual(zhListed, ['HSK1', 'HSK2', 'HSK3'], 'sandbox fixture sanity');
   assert.deepEqual(levelsFor('en', enListed).map((l) => l.code), ['A1', 'A2', 'B1']);
   assert.deepEqual(levelsFor('zh', zhListed).map((l) => l.code), ['HSK1', 'HSK2', 'HSK3']);
-  assert.equal(levelsFor('zh', []).length, 6, 'an empty listing never empties the grid');
-  assert.equal(levelsFor('zh', null).length, 6, 'a missing listing is the same case');
+  assert.equal(levelsFor('zh', []).length, 7, 'an empty listing never empties the grid');
+  assert.equal(levelsFor('zh', null).length, 7, 'a missing listing is the same case');
+  assert.equal(levelsFor('zh').filter((l) => /^HSK[789]$/.test(l.code)).length, 0, 'never three separate HSK 7, 8, 9 cells');
 
   const enGrid = levelsFor('en');
   const zhGrid = levelsFor('zh');
@@ -166,7 +167,8 @@ const fixture = (name) => JSON.parse(readFileSync(fileURLToPath(new URL(`./fixtu
   assert.deepEqual(declaredLevelPatch('HSK3', null, 'zh'), { declared_level: 'HSK3' });
   assert.equal(declaredLevelPatch('HSK3', null, 'en'), null, 'an HSK code is not an English level');
   assert.equal(declaredLevelPatch('B2', null, 'zh'), null, 'a CEFR code is not a Chinese level');
-  assert.equal(declaredLevelPatch('HSK7-9', null, 'zh'), null, 'the frame draws no cell for it; only the platform listing offers it');
+  assert.deepEqual(declaredLevelPatch('HSK7-9', null, 'zh'), { declared_level: 'HSK7-9' }, 'the band has its own cell after HSK 6');
+  assert.equal(declaredLevelPatch('HSK7', null, 'zh'), null, 'no separate HSK 7 code');
   const zhBands = ['HSK1', 'HSK2', 'HSK3', 'HSK4', 'HSK5', 'HSK6', 'HSK7-9'];
   assert.deepEqual(declaredLevelPatch('HSK7-9', zhBands, 'zh'), { declared_level: 'HSK7-9' }, 'one band, as the registry lists it');
   assert.equal(declaredLevelPatch('HSK8', zhBands, 'zh'), null);

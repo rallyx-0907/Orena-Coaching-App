@@ -156,13 +156,15 @@ export const LEVELS = Object.freeze({
   zh: Object.freeze([
     levelEntry('HSK1', 'HSK 1', 'H1'), levelEntry('HSK2', 'HSK 2', 'H2'), levelEntry('HSK3', 'HSK 3', 'H3'),
     levelEntry('HSK4', 'HSK 4', 'H4'), levelEntry('HSK5', 'HSK 5', 'H5'), levelEntry('HSK6', 'HSK 6', 'H6'),
+    // One band after HSK 6, as the server's registry holds it (human decision, 2026-09-30).
+    levelEntry('HSK7-9', 'HSK 7–9', 'H79'),
   ]),
 });
 
 /* The grid for a learning language: the frame's levels the platform lists for it (`listed`, the
-   language's `levels` from GET /api/platform/languages), in the frame's order. A level the platform
-   lists but the frame draws no cell for (HSK7-9) is not offered; when the platform's list cannot be
-   read, or names none of these, the frame's own six stand. */
+   language's `levels` from GET /api/platform/languages), in the frame's order. HSK 7-9 is one cell
+   after HSK 6, never three; when the platform's list cannot be read, or names none of these, the
+   whole table stands. */
 export function levelsFor(language, listed) {
   const table = LEVELS[language === 'zh' ? 'zh' : 'en'];
   const codes = Array.isArray(listed) ? listed.map(String) : [];
@@ -172,9 +174,11 @@ export function levelsFor(language, listed) {
 
 /* The middle of the grid (index 2 of 0-5: B1/HSK 3, the prototype script's own `zh?"HSK 3":"B1"`
    fallback) - never a first/invented pick, the same fallback shape settings/model.js's
-   SESSION_LENGTH_FALLBACK already uses for a value nothing has measured yet. */
+   SESSION_LENGTH_FALLBACK already uses for a value nothing has measured yet. The HSK 7-9 band extends
+   the top of the scale, not its middle, so the middle is taken over the frame's six. */
+const FRAME_CELLS = 6;
 function middleIndex(levels) {
-  return Math.floor((levels.length - 1) / 2);
+  return Math.floor((Math.min(levels.length, FRAME_CELLS) - 1) / 2);
 }
 
 export function defaultLevelCode(levels) {
@@ -190,8 +194,7 @@ export function levelRow(levels, code) {
    three). Only a code the frame draws a cell for, or one the platform lists for the language
    (`listed`, GET /api/platform/languages `languages[].levels`), is ever sent; anything else is null,
    and a failed or skipped save never blocks the flow and never claims a save that did not happen
-   (rule 40). The frame draws no cell for HSK7-9, so the grid does not offer it - whether it should is
-   a design question recorded in docs/project/UI_BACKEND_GAPS.md. */
+   (rule 40). HSK7-9 is offered as one band after HSK 6 (human decision, 2026-09-30). */
 export function declaredLevelPatch(code, listed, language = '') {
   const value = String(code || '');
   if (!value) return null;

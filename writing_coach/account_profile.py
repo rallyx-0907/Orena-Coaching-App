@@ -149,8 +149,9 @@ def result_admissible(captured: Scope, current: Scope) -> bool:
 
 
 # Review settings (D4 I13): per learning language, named columns, NULL = the client defaults.
-# `target` and `cloze` are the modes the design's Review frame draws; `typing`/`dictation` are the
-# keys the Settings screen toggles today. The registry is one place: any other key is dropped.
+# The canonical review modes (human decision, 2026-09-30): `typing` (the Review frame's
+# "Target -> meaning", which the D4 proposal called `target`), `cloze` (the source-aware cue) and
+# `dictation` (the audio word). One name per mode; a write naming any other key is refused.
 REVIEW_MODE_KEYS = ('typing', 'cloze', 'dictation')
 REVIEW_NEW_PER_DAY = (0, 50)
 REVIEW_LIMIT_PER_DAY = (20, 600)
@@ -163,6 +164,20 @@ def clamp_review_number(value: object, bounds: tuple[int, int]) -> int | None:
     if value != value or value in (float('inf'), float('-inf')):
         return None
     return min(bounds[1], max(bounds[0], round(value)))
+
+
+def review_modes_problem(value: object) -> str:
+    """Why a written `review_modes` is refused ('' when it is acceptable): an object whose every
+    key is a canonical mode and every value a boolean. Stored rows are read through
+    `clean_review_modes`; writes are validated here and never silently trimmed."""
+    if not isinstance(value, Mapping):
+        return 'not_an_object'
+    for name, flag in value.items():
+        if name not in REVIEW_MODE_KEYS:
+            return 'unknown_mode'
+        if not isinstance(flag, bool):
+            return 'not_a_boolean'
+    return ''
 
 
 def clean_review_modes(value: object) -> dict[str, bool] | None:

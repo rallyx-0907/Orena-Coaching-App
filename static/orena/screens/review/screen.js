@@ -115,7 +115,7 @@ function hiddenFaceMarkup(card, row, counts, hintOn) {
   const cue = cloze
     ? [t('cueCloze'), sourceKey ? t(sourceKey) : ''].filter(Boolean).join(' · ')
     : [card.ipa, card.pos ? posLabel(card.pos, t).text : ''].filter(Boolean).join(' · ');
-  const hint = hintOn ? hintFor(cloze ? 'cloze' : 'target', card) : '';
+  const hint = hintOn ? hintFor(cloze ? 'cloze' : 'typing', card) : '';
   const promptText = cloze ? cloze.text : card.word;
   const size = promptText.length > 220 ? ' s-review-prompt--longest' : promptText.length > 90 ? ' s-review-prompt--long' : '';
   return html`<button type="button" class="s-review-face s-review-face--hidden" data-card-tap>

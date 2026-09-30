@@ -149,7 +149,9 @@ export function tally(stats, grade) {
    sentence"). A word with no such sentence is asked the first way; nothing is made up for it
    (rule 40), and the choice is the card's, not chance's, so the same card is asked the same way
    twice. */
-export const MODES = Object.freeze(['target', 'cloze']);
+/* Mode names are the canonical review modes the account stores (`typing`, `cloze`; `dictation` is the
+   audio word Settings toggles): the frame's "Target -> meaning" is `typing`. */
+export const MODES = Object.freeze(['typing', 'cloze']);
 
 const HAN = /[㐀-鿿]/;
 const BLANK = '＿';
@@ -197,7 +199,7 @@ export function clozeFor(row) {
 }
 
 export function cardMode(row) {
-  return clozeFor(row) ? 'cloze' : 'target';
+  return clozeFor(row) ? 'cloze' : 'typing';
 }
 
 /* The frame's `rvHint` for a source-aware card: how the answer starts and how long it is, word by

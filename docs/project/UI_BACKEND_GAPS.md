@@ -4458,12 +4458,13 @@ Resolved by the human's D-105 decisions; AD-A, AD-B and AD-H above are closed by
 - **H-19.** Today draws the design's Banner ("Choose level" / dismiss) for an existing profile with no level. The
   action opens the onboarding Level step alone (`#/welcome?step=level`) and returns to Today. Skipping lasts the visit
   (session storage); no dismissed marker is stored, as the proposal requires.
-- **Open for the human: HSK7-9.** The registry lists `HSK7-9` as one band and the server accepts it, but the design's
-  Level step draws six cells, so the grid does not offer a seventh. The data path sends any platform-listed code; the
-  cell is a design decision.
-- **Open for the human: review modes.** The proposal (I13) names `target`/`cloze`; the Settings screen toggles
-  `typing`/`cloze`/`dictation`. The server registry (`account_profile.REVIEW_MODE_KEYS`) holds what Settings toggles
-  today; changing it is one line once Review's mode names are settled.
+- **Decided (human, 2026-09-30): HSK 7-9.** One `HSK 7–9` cell after HSK 6 in the Level step (onboarding and the
+  H-19 level-only step, the only places a level is chosen), code `HSK7-9`; never three HSK 7/8/9 cells. The grid's
+  default stays the middle of the frame's six (HSK 3 / B1).
+- **Decided (human, 2026-09-30): review modes.** Canonical identifiers are `typing`, `cloze`, `dictation`. The
+  proposal's `target` is the Review frame's "Target -> meaning", i.e. `typing`; the Review screen's mode enum now says
+  `typing`. `PATCH /api/learner-profile` refuses (400 `invalid_value`, field `review_modes`) any other key or a
+  non-boolean value instead of dropping it silently.
 - **No weekly-goal control yet.** `weekly_goal_days` is stored and served; the design draws no control to set it in
   Settings or Profile that this slice found. It is not invented (rule 43); slice 7 decides where it is read.
 
@@ -4500,3 +4501,10 @@ Resolved by the human's D-105 decisions; AD-A, AD-B and AD-H above are closed by
   regenerated (H-8, the turn keeps `meaning`/`support` only); History listing typed responses (H-9); spoken Free
   Talk/Situation/React takes as audio-free speaking attempts (needs Progress to skip null pronunciation first); the
   Import sheet has no `url:` text flow; shadowing read-back on open (I16, D7).
+- **Required Speaking follow-up (human, 2026-09-30).** Spoken Free Talk, Situation and React takes stored as typed
+  responses are not the accepted Speaking model: spoken takes belong in speaking attempts. Reopening Shadowing must
+  restore its saved result. Speaking persistence is not complete until both are done.
+- **Grammar quiz progress** waits for the canonical Grammar API after PR #67; no temporary route (human, 2026-09-30).
+- **Lane test residue (:8021, documented, not erased).** The D4 browser pass left the account's stored
+  `learning_language` = `en` (it was empty; the API cannot store empty) and one continuation row for
+  `media:en-science-cosmic-calendar`. Test evidence; the database is not hand-edited to remove it.

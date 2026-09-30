@@ -25,6 +25,7 @@ from writing_coach.account_profile import (
     STORED_SETTINGS,
     clamp_review_number,
     clean_review_modes,
+    review_modes_problem,
     effective_settings,
     patch_profile,
 )
@@ -178,7 +179,7 @@ class ProfilePatchIn(BaseModel):
     # Review settings (I13). Numbers are clamped to the client's bounds; modes keep registered keys.
     review_new_per_day: int | None = None
     review_limit_per_day: int | None = None
-    review_modes: dict[str, bool] | None = None
+    review_modes: dict[str, Any] | None = None
 
 
 _PATCH_STATUS = {"version_conflict": 409, "not_yet_stored": 501}
@@ -199,6 +200,11 @@ def patch_learner_profile(payload: ProfilePatchIn) -> dict[str, Any]:
     if payload.review_limit_per_day is not None:
         review["review_limit_per_day"] = clamp_review_number(payload.review_limit_per_day, REVIEW_LIMIT_PER_DAY)
     if payload.review_modes is not None:
+        if review_modes_problem(payload.review_modes):
+            raise HTTPException(
+                status_code=400,
+                detail={"reason": "invalid_value", "field": "review_modes", "current_version": None},
+            )
         review["review_modes"] = clean_review_modes(payload.review_modes)
     now = datetime.now().astimezone().isoformat(timespec="seconds")
     try:
