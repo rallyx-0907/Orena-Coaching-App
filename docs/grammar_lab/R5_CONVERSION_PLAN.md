@@ -32,12 +32,12 @@ vào danh mục. Cần người xác nhận cách đếm này.
 | **Thêm** (`add`) | 19 | 23 | điểm mà khung chuẩn có và R5 không có (gồm điểm bộ lõi R5 thiếu) |
 | **Tổng điểm sau chuyển đổi** | **215** | **171** | 386 |
 
-Số theo cấp (R5 → sau chuyển đổi):
+Số theo cấp (R5 → sau chuyển đổi). **Bảng EN dưới đây đã được sửa trên nhánh research sau khi thực thi `r5_conversion_map.tsv`; bảng cũ bị lệch 1 điểm ở A1/A2 và B2/C1:**
 
 | EN | A1 | A2 | B1 | B2 | C1 | C2 | Tổng |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | R5 | 25 | 32 | 50 | 51 | 38 | 32 | 228 |
-| Sau | 29 | 39 | 55 | 43 | 31 | 18 | 215 |
+| Sau | 30 | 38 | 55 | 44 | 30 | 18 | 215 |
 
 | ZH | HSK1 | HSK2 | HSK3 | HSK4 | HSK5 | HSK6 | HSK7-9 | Tổng |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
