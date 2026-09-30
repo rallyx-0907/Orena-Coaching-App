@@ -257,3 +257,57 @@ def test_without_the_postgres_runtime_the_route_says_so():
         assert response.status_code == 503 and response.json()["detail"]["category"] == "library_unavailable"
     finally:
         library_api.configure_library(None)
+
+
+# --- a place is never a bookmark (implementation review P1-1) -------------------------------------
+
+
+def test_a_place_never_reads_as_saved_and_keeping_after_a_place_returns_exactly_the_kept_row(env):
+    library = env.repo()
+    library.set_place(kind="reading", source_id="reading:77", place=_place())
+    assert library.lookup(kind="reading", source_ids=("reading:77",)) == [], "opened is not saved"
+    kept = library.keep(kind="reading", source_id="reading:77")
+    found = library.lookup(kind="reading", source_ids=("reading:77",))
+    assert [(row["id"], row["relationship"]) for row in found] == [(kept["id"], "kept")]
+    assert library.list_places()[0]["content_id"] == "reading:77", "the place is still there"
+
+
+def test_where_a_marked_row_and_a_kept_row_share_a_source_the_kept_one_comes_first(env):
+    library = env.repo()
+    library.set_place(kind="reading", source_id="reading:78", place=_place())
+    started = library.keep(kind="reading", source_id="reading:78", relationship="started")
+    library.update(started["id"], expected_version=started["version"], pinned=True)
+    kept = library.keep(kind="reading", source_id="reading:78")
+    rows = library.lookup(kind="reading", source_ids=("reading:78",))
+    assert [row["relationship"] for row in rows] == ["kept", "started"] and rows[0]["id"] == kept["id"]
+
+
+def test_forgetting_a_bookmark_leaves_the_place_and_unmarking_a_read_item_never_destroys_it(env):
+    library = env.repo()
+    library.set_place(kind="reading", source_id="reading:79", place=_place(4, 9))
+    kept = library.keep(kind="reading", source_id="reading:79")
+    assert library.forget(kept["id"]) is True
+    assert library.list_places()[0]["place"]["index"] == 4, "removing the bookmark left the place"
+    started = library.keep(kind="reading", source_id="reading:79", relationship="started")
+    marked = library.update(started["id"], expected_version=started["version"], pinned=True, note="remember")
+    assert marked["pinned"] is True
+    assert len(library.lookup(kind="reading", source_ids=("reading:79",))) == 1, "a marked row is visible"
+    assert library.forget(started["id"]) is True
+    assert library.list_places()[0]["place"]["index"] == 4, "un-marking kept where the learner was"
+    assert library.lookup(kind="reading", source_ids=("reading:79",)) == [], "and it no longer reads as anything saved"
+    assert _row(env, source_id="reading:79", kind="reading") is not None
+
+
+def test_the_items_route_never_returns_a_place_only_row(env):
+    library_api.configure_library(lambda: env.repo())
+    try:
+        app = FastAPI()
+        app.include_router(library_api.router)
+        client = TestClient(app)
+        env.repo().set_place(kind="listening", source_id="media:x1", place=_place())
+        assert client.get("/api/library/items", params={"kind": "listening", "sources": "media:x1"}).json() == {"items": []}
+        client.post("/api/library/items", json={"kind": "listening", "source_id": "media:x1"})
+        items = client.get("/api/library/items", params={"kind": "listening", "sources": "media:x1"}).json()["items"]
+        assert [row["relationship"] for row in items] == ["kept"]
+    finally:
+        library_api.configure_library(None)

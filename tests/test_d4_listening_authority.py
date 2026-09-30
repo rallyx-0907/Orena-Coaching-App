@@ -249,3 +249,27 @@ def test_two_simultaneous_checks_are_both_kept_under_the_row_lock(api):
     assert results == [200, 200]
     final = client.get("/api/listening/progress", params={"asset_id": asset}).json()["items"][0]
     assert final["best_accuracy_percent"] == 100, "the exact answer wins whichever committed last"
+
+
+def test_two_simultaneous_first_checks_of_a_segment_both_succeed_and_keep_the_best(api):
+    """Implementation review P2-1: nothing exists to lock on a first write, so the row is created before it is locked."""
+    client, repository, engine, user = api
+    asset, segment = _lesson("en")
+    target = str(segment.get("spoken_text") or segment["original_text"])
+    results = []
+    barrier = threading.Barrier(4)
+
+    def check(answer):
+        barrier.wait()
+        results.append(_save(client, asset, segment, presentation="checked", last_answer=answer, checked_attempt_count=1).status_code)
+
+    threads = [threading.Thread(target=contextvars.copy_context().run, args=(check, answer))
+               for answer in ("wrong words", target, "still wrong", "nope")]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+    assert results == [200, 200, 200, 200], results
+    final = client.get("/api/listening/progress", params={"asset_id": asset}).json()["items"]
+    assert len(final) == 1 and final[0]["best_accuracy_percent"] == 100 and final[0]["score_source"] == "server"
+    assert final[0]["checked_attempt_count"] >= 1

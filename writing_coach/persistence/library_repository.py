@@ -34,7 +34,7 @@ from collections.abc import Callable
 from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy import Engine, select, update
+from sqlalchemy import Engine, and_, case, not_, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -61,6 +61,18 @@ PLACE_COALESCE_SECONDS = 30
 PLACE_LIST_LIMIT = 50
 # Only content the learner reads, hears or opens as a book has a place.
 PLACE_KINDS = ("reading", "listening", "book")
+
+
+def _place_only():
+    """SQL for a row that exists only to hold the learner's place (D4 I4): a `started` row that is not a word, not
+    marked, not filed and carries no note. It is navigation state, never something the learner saved."""
+    return and_(
+        LibraryItem.relationship_kind == "started",
+        LibraryItem.saved_word_id.is_(None),
+        LibraryItem.pinned_at.is_(None),
+        LibraryItem.state.is_(None),
+        LibraryItem.note == "",
+    )
 
 
 def _aware(value: datetime | None) -> datetime | None:
@@ -178,13 +190,15 @@ class LibraryRepository:
 
         A listing reads its rows from their owners; this says which of them the
         learner has kept, pinned or filed, in one query rather than one per row.
+        A row that only holds the learner's place (D4 I4) is not a saved thing and is
+        never returned, and where several rows name one source the `kept` one comes first.
         """
 
         uid, lang = self._scope()
         with Session(self.engine) as session:
             query = select(LibraryItem).where(
-                LibraryItem.user_id == uid, LibraryItem.language_code == lang
-            )
+                LibraryItem.user_id == uid, LibraryItem.language_code == lang, not_(_place_only())
+            ).order_by(case((LibraryItem.relationship_kind == "kept", 0), else_=1), LibraryItem.created_at, LibraryItem.id)
             if kind:
                 query = query.where(LibraryItem.kind == kind)
             words_by_id: dict[uuid.UUID, str] = {}
@@ -486,6 +500,15 @@ class LibraryRepository:
             item = session.get(LibraryItem, wanted)
             if item is None or item.user_id != uid or item.language_code != lang:
                 return False
+            if item.place is not None and item.saved_word_id is None:
+                # The learner un-marks a thing they were also reading: what they marked goes, the place they
+                # were at stays (D4 I4). The row is then only a place again and reads as nothing saved.
+                item.pinned_at = None
+                item.state = None
+                item.note = ""
+                item.version = item.version + 1
+                item.updated_at = _now()
+                return True
             session.delete(item)
             return True
 

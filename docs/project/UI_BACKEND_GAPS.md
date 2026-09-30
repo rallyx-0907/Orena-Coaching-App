@@ -4508,3 +4508,13 @@ Resolved by the human's D-105 decisions; AD-A, AD-B and AD-H above are closed by
 - **Lane test residue (:8021, documented, not erased).** The D4 browser pass left the account's stored
   `learning_language` = `en` (it was empty; the API cannot store empty) and one continuation row for
   `media:en-science-cosmic-calendar`. Test evidence; the database is not hand-edited to remove it.
+
+### D4 review follow-ups (2026-09-30)
+
+- Saved is the `kept` relationship: opening content writes a place row that never reads as a bookmark (Reader and Content
+  Detail read the `kept` row only).
+- Opening an old Chinese essay draws the stored review at once; a refresh runs in the background and repaints the review.
+- In authentication-disabled development `language.stored` is false until the first settings write creates the local
+  account's row; the entry rule that keys on it therefore asks for Welcome once.
+- Open for the human: per-account caps for place rows, responses, annotations and conversations (P2-4); a streak is per
+  learning language, so a bilingual learner has two (P3-5).

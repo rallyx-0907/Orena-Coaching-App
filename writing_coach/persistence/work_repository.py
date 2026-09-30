@@ -98,7 +98,11 @@ class PostgresWorkRepository:
         payload: dict[str, Any] | None = None,
         lifecycle: str = 'active',
         source: dict[str, str] | None = None,
+        create_guard: Any = None,
     ) -> MutationOutcome:
+        """`create_guard(connection)` runs only when the work does not exist yet, inside the transaction and after
+        the account's stream lock is held, so a per-account bound is checked where no other creation can interleave.
+        It refuses by raising `MutationRefused`."""
         source = source or {}
         validate_kind(kind)
         # Not every mutation domain is a work domain. `provenance` takes a
@@ -131,6 +135,8 @@ class PostgresWorkRepository:
             if row is None:
                 # Nothing there: creating one in the requester's own scope is
                 # exactly what they are allowed to do.
+                if create_guard is not None:
+                    create_guard(connection)
                 return ResourceState(0, False, scope, None)
             owner = Scope(
                 str(row['user_id']),

@@ -460,3 +460,51 @@ def test_the_real_app_serves_the_new_routes_and_the_vocabulary_routes_are_undist
     client = TestClient(app_module.app)
     assert client.get("/api/library/vocabulary/harbour/provenance").status_code == 503
     assert client.get("/api/account-backbone").json() == {"state": "disabled"}
+
+
+# -- a deleted import is erased, not hidden (implementation review P1-2) ---------------------------------
+
+
+def test_deleting_an_import_drops_its_content_from_the_stored_row_and_the_work_is_no_longer_served(pg_engine, backbone):
+    user = _account(pg_engine)
+    client = _client(backbone, user=user)
+    client_id = str(uuid.uuid4())
+    secret = "A private paragraph the learner erased."
+    client.put(f"/api/imports/{client_id}", json={"operationId": op(), "expectedVersion": 0, "form": "text",
+                                                  "title": "Diary", "text": secret})
+    ident = str(stable_uuid("work", str(stable_uuid("user", user)), _incarnation(pg_engine, user), "en", "imported", client_id))
+    assert client.get(f"/api/works/{ident}").json()["work"]["payload"]["text"] == secret
+    operation = op()
+    removed = client.delete(f"/api/imports/{client_id}", params={"operationId": operation, "expectedVersion": 1})
+    assert removed.status_code == 200
+    with pg_engine.connect() as connection:
+        stored = connection.execute(text("SELECT payload::text, lifecycle FROM works WHERE id=:w"), {"w": ident}).one()
+    assert stored[1] == "deleted"
+    for content in (secret, "Diary"):
+        assert content not in stored[0], f"the stored row still holds {content!r}"
+    assert client.get(f"/api/works/{ident}").status_code == 404, "a deleted work is not served"
+    assert client.get("/api/imports").json()["imports"] == [] and client.get(f"/api/imports/{client_id}").status_code == 404
+    assert secret not in repr(client.get("/api/works", params={"kind": "imported"}).json())
+    replay = client.delete(f"/api/imports/{client_id}", params={"operationId": operation, "expectedVersion": 1})
+    assert replay.status_code == 200 and replay.json()["status"] == "replay", "a lost acknowledgment of the delete replays"
+
+
+def test_two_imports_created_at_the_limit_at_once_give_exactly_twenty(pg_engine, backbone):
+    """Implementation review P3-4 / proposal I12: the bound is counted where no other creation can interleave."""
+    client = _client(backbone, user=_account(pg_engine))
+    for number in range(19):
+        assert client.put(f"/api/imports/{uuid.uuid4()}", json={"operationId": op(), "expectedVersion": 0, "form": "text", "title": f"T{number}", "text": "x"}).status_code == 200
+    results = []
+    barrier = threading.Barrier(2)
+
+    def create():
+        barrier.wait()
+        results.append(client.put(f"/api/imports/{uuid.uuid4()}", json={"operationId": op(), "expectedVersion": 0, "form": "text", "title": "T", "text": "x"}).status_code)
+
+    threads = [threading.Thread(target=contextvars.copy_context().run, args=(create,)) for _ in range(2)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+    assert sorted(results) == [200, 422], results
+    assert len(client.get("/api/imports", params={"limit": 50}).json()["imports"]) == 20

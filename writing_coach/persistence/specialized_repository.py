@@ -1559,13 +1559,24 @@ class PostgresSpecializedLearningRepository:
         with Session(self.engine) as s, s.begin():
             if s.get(User, uid) is None:
                 raise RuntimeError("PostgreSQL scope user missing; shadow/import must run first.")
+            # FOR UPDATE locks nothing that does not exist yet, so the row is created first (a no-op when it is
+            # there) and only then locked: two simultaneous first checks of a segment both proceed, one after the
+            # other, and neither loses its score to a unique-key error.
+            from sqlalchemy.dialects.postgresql import insert as pg_insert
+
+            s.execute(
+                pg_insert(ListeningProgress)
+                .values(id=progress_id, user_id=uid, language_code=lang, asset_id=asset_id, segment_id=segment_id,
+                        presentation="prompt", revealed=False, checked_attempt_count=0, best_exact=False, last_answer="",
+                        last_used_hint=False, last_hint_level=0, score_source="client",
+                        updated_at=self._dt(values["updated_at"]))
+                .on_conflict_do_nothing(constraint="uq_listening_progress_scope_segment")
+            )
             row = s.scalar(select(ListeningProgress).where(ListeningProgress.id == progress_id).with_for_update())
-            stored = None
-            if row is not None:
-                stored = {
-                    "best_accuracy_percent": row.best_accuracy_percent, "best_exact": row.best_exact,
-                    "checked_attempt_count": row.checked_attempt_count, "score_source": row.score_source,
-                }
+            stored = {
+                "best_accuracy_percent": row.best_accuracy_percent, "best_exact": row.best_exact,
+                "checked_attempt_count": row.checked_attempt_count, "score_source": row.score_source,
+            }
             evidence = merge_progress(stored, values, values.get("score"))
             fields = {
                 "presentation": values.get("presentation", "prompt"),
@@ -1577,15 +1588,8 @@ class PostgresSpecializedLearningRepository:
                 "updated_at": self._dt(values["updated_at"]),
                 **evidence,
             }
-            if row is None:
-                row = ListeningProgress(
-                    id=progress_id, user_id=uid, language_code=lang,
-                    asset_id=asset_id, segment_id=segment_id, **fields,
-                )
-                s.add(row)
-            else:
-                for key, value in fields.items():
-                    setattr(row, key, value)
+            for key, value in fields.items():
+                setattr(row, key, value)
             s.flush()
             return self._listening_progress_payload(row)
 

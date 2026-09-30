@@ -27,6 +27,8 @@ from writing_coach.persistence.auth_repository import (
 router = APIRouter()
 
 WEEKLY_GOAL_DAYS = (1, 7)
+# The one account of authentication-disabled local development (auth_support keys the request by it).
+LOCAL_ACCOUNT_KEY = "legacy"
 
 _repository: Any = None
 _user_key = current_user_key
@@ -115,8 +117,20 @@ def write_account_settings(changes: dict[str, Any], expected_token: str) -> dict
     """The conditional write; raises the HTTP errors the routes share."""
     if _repository is None:
         raise HTTPException(503, detail={"reason": "account_settings_unavailable"})
+    key = _user_key()
     try:
-        row = _repository.update_account_settings(_user_key(), changes, expected_token)
+        try:
+            row = _repository.update_account_settings(key, changes, expected_token)
+        except AccountRowMissing:
+            # Authentication-disabled local development has one account, "legacy", whose row a PostgreSQL
+            # runtime seeds at start and a test backend never had. Create exactly that row (idempotent, so two
+            # first writers both find it) and write once more; any other missing account stays unavailable.
+            if key != LOCAL_ACCOUNT_KEY:
+                raise
+            _repository.upsert_user(
+                {"sub": LOCAL_ACCOUNT_KEY, "email": "local@localhost.invalid", "name": "Local developer"}, set()
+            )
+            row = _repository.update_account_settings(key, changes, expected_token)
     except SettingsVersionConflict as conflict:
         raise _conflict(conflict.current_token) from conflict
     except AccountRowMissing as missing:

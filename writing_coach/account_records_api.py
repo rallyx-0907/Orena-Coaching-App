@@ -56,12 +56,12 @@ def _work_id(scope: Scope, kind: str, key: str) -> str:
 
 def _commit(scope: Scope, *, kind: str, ident: str, operation_id: str, expected_version: int,
             payload: dict[str, Any], source: dict[str, str], lifecycle: str = 'active',
-            conflict_code: str) -> dict[str, Any]:
+            conflict_code: str, create_guard: Any = None) -> dict[str, Any]:
     references = {'work': ident, 'kind': kind, 'lifecycle': lifecycle, 'source': source}
     outcome = _backbone().work.commit_mutation(
         scope=scope, domain=kind, operation_id=operation_id,
         digest=semantic_digest(kind, references, payload), expected_version=expected_version,
-        work_id=ident, kind=kind, payload=payload, lifecycle=lifecycle, source=source,
+        work_id=ident, kind=kind, payload=payload, lifecycle=lifecycle, source=source, create_guard=create_guard,
     )
     status = outcome.get('status')
     if status in {'committed', 'replay'}:
@@ -199,15 +199,26 @@ def put_import(import_id: str, body: ImportSave) -> dict[str, Any]:
     if body.form == 'url' and not body.url.strip().lower().startswith(('http://', 'https://')):
         raise orena_http_error(422, 'import_url_invalid', 'A link must start with http:// or https://.', retryable=False)
     ident = _work_id(scope, 'imported', client)
-    if body.expectedVersion == 0 and _backbone().work.get_work(scope, ident) is None:
-        active = _backbone().work.list_works(scope, kind='imported', source_kind='imported', limit=work_api.LIST_LIMIT)
-        if len(active) >= MAX_IMPORTS:
-            raise orena_http_error(422, 'import_limit', 'That is as many imports as can be kept.', retryable=False)
+
+    def at_most_the_limit(connection) -> None:
+        # Counted inside the creating transaction, after the account's stream lock: two creations at 19 cannot both pass.
+        from sqlalchemy import text as sql
+        from writing_coach.persistence.mutation_commit import MutationRefused
+
+        held = connection.execute(
+            sql("SELECT count(*) FROM works WHERE incarnation_id = :inc AND language_code = :lang "
+                "AND kind = 'imported' AND lifecycle <> 'deleted'"),
+            {'inc': scope.incarnation, 'lang': scope.language},
+        ).scalar_one()
+        if held >= MAX_IMPORTS:
+            raise MutationRefused('import_limit')
+
     payload = {'id': client, 'form': body.form, 'title': body.title.strip(),
                **({'text': body.text} if body.form == 'text' else {'url': body.url.strip()})}
     return _commit(
         scope, kind='imported', ident=ident, operation_id=body.operationId, expected_version=body.expectedVersion,
         payload=payload, source={'kind': 'imported', 'id': client, 'revision': ''}, conflict_code='import_conflict',
+        create_guard=at_most_the_limit,
     )
 
 
@@ -219,11 +230,14 @@ def delete_import(import_id: str, operationId: str = Query(min_length=8, max_len
     client = _import_uuid(import_id)
     ident = _work_id(scope, 'imported', client)
     row = _backbone().work.get_work(scope, ident)
-    if row is None or row['lifecycle'] == 'deleted':
+    if row is None:
         raise orena_http_error(404, 'import_not_found', 'That import is not kept.', retryable=False)
+    # A tombstone WITHOUT the content: deleting is erasing. Only what says which import this was stays (its id and
+    # form); the title, the text and the link are dropped from the stored row, not merely hidden from the reads.
+    tombstone = {'id': client, 'form': str((row['payload'] or {}).get('form') or 'text')}
     return _commit(
         scope, kind='imported', ident=ident, operation_id=operationId, expected_version=expectedVersion,
-        payload=row['payload'] or {}, source={'kind': 'imported', 'id': client, 'revision': ''},
+        payload=tombstone, source={'kind': 'imported', 'id': client, 'revision': ''},
         lifecycle='deleted', conflict_code='import_conflict',
     )
 

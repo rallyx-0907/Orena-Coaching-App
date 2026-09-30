@@ -420,7 +420,7 @@ class UserIsolationMiddleware(BaseHTTPMiddleware):
         Read only when the session carries no language, and then written into the session, so every
         later request reads the cookie as before. It seeds; it never overrides a session that chose.
         """
-        if request.session.get("language") or not path.startswith("/api/"):
+        if request.session.get("language") or request.session.get("language_checked") or not path.startswith("/api/"):
             return ""
         key = str(request.session.get("user_sub") or "") if AUTH_ENABLED else "legacy"
         if not key:
@@ -431,6 +431,10 @@ class UserIsolationMiddleware(BaseHTTPMiddleware):
             return ""
         if stored:
             request.session["language"] = stored
+        else:
+            # Nothing to seed. Say so in the session, so an account that has never chosen costs one lookup per
+            # session and not one per request (proposal I2: no per-request database read).
+            request.session["language_checked"] = True
         return stored
 
     async def dispatch(self, request: Request, call_next):

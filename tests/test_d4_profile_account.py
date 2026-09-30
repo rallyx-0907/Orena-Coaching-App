@@ -6,6 +6,7 @@ the same cases: SQLite always, PostgreSQL when `ORENA_TEST_POSTGRES_URL` names a
 from __future__ import annotations
 
 import contextvars
+import uuid
 import threading
 
 import pytest
@@ -386,16 +387,22 @@ def test_interface_language_is_reported_by_the_profile_from_the_account_row(back
 
 
 def test_no_account_row_reads_as_not_stored_and_refuses_a_write(tmp_path):
+    """Named contract change (P2-8): the one local account ("legacy") is created on its first write; any other
+    account with no row stays unavailable rather than being invented."""
     from writing_coach.persistence.auth_repository import SQLiteAuthRepository
 
     auth = SQLiteAuthRepository(tmp_path / "a.db")
     auth.initialize(set())
-    account_settings.configure_account_settings(auth, user_key=lambda: "legacy")
+    account_settings.configure_account_settings(auth, user_key=lambda: "stranger")
     app = FastAPI()
     app.include_router(account_settings.router)
     client = TestClient(app)
     assert client.get("/api/account-settings").json()["stored"] is False
     assert client.patch("/api/account-settings", json={"expected_settings_version": "", "weekly_goal_days": 3}).status_code == 503
+    account_settings.configure_account_settings(auth, user_key=lambda: "legacy")
+    assert client.get("/api/account-settings").json()["stored"] is False
+    assert client.patch("/api/account-settings", json={"expected_settings_version": "", "weekly_goal_days": 3}).status_code == 200
+    assert client.get("/api/account-settings").json()["stored"] is True
 
 
 # --- I2: the learning language and the session -------------------------------------------------
@@ -472,3 +479,74 @@ def test_the_real_app_seeds_a_new_session_from_the_account_and_a_chosen_session_
         assert never["stored"] is False and never["active"] == "en"
     finally:
         account_settings.configure_account_settings(previous)
+
+
+def test_an_account_that_never_chose_a_language_costs_one_lookup_per_session_not_one_per_request(backend, monkeypatch):
+    """Implementation review P2-3 / proposal I2: the stored language is read only while a session has none to go on."""
+    import app as app_module
+
+    if backend.auth.get_user("legacy") is None:
+        backend.auth.upsert_user({"sub": "legacy", "email": "local@localhost.invalid", "name": "Local"}, set())
+    previous = account_settings._repository  # noqa: SLF001
+    account_settings.configure_account_settings(backend.auth, user_key=lambda: "legacy")
+    state = backend.auth.get_account_settings("legacy")
+    if state["learning_language"]:
+        backend.auth.update_account_settings("legacy", {"learning_language": ""}, state["settings_version"])
+    calls = []
+    original = account_settings.stored_learning_language
+    monkeypatch.setattr(account_settings, "stored_learning_language", lambda key: calls.append(key) or original(key))
+    try:
+        client = TestClient(app_module.app)
+        for _ in range(5):
+            assert client.get("/api/session/bootstrap").status_code == 200
+        assert len(calls) == 1, calls
+        assert len(calls) == 1 and TestClient(app_module.app).get("/api/session/bootstrap").status_code == 200
+        assert len(calls) == 2, "a new session looks once"
+    finally:
+        account_settings.configure_account_settings(previous)
+
+
+def test_the_local_account_is_created_on_its_first_settings_write_and_two_first_writers_agree(backend):
+    """Implementation review P2-8: authentication-disabled development has one account; a missing row is created, not a 503."""
+    if backend.auth.get_user("legacy-new") is not None:
+        pytest.skip("the row already exists on this shared database")
+    fresh_key = f"local-{uuid.uuid4().hex[:8]}"
+    account_settings.configure_account_settings(backend.auth, user_key=lambda: fresh_key)
+    app = FastAPI()
+    app.include_router(account_settings.router)
+    client = TestClient(app)
+    # any account but the local one stays unavailable rather than being invented
+    assert client.patch("/api/account-settings", json={"expected_settings_version": "", "weekly_goal_days": 3}).status_code == 503
+    assert client.get("/api/account-settings").json()["stored"] is False
+
+    account_settings.LOCAL_ACCOUNT_KEY = fresh_key  # this test's stand-in for the one local account
+    try:
+        results = []
+        barrier = threading.Barrier(2)
+
+        def first_write(days):
+            barrier.wait()
+            results.append(client.patch("/api/account-settings", json={"expected_settings_version": "", "weekly_goal_days": days}).status_code)
+
+        threads = [threading.Thread(target=contextvars.copy_context().run, args=(first_write, d)) for d in (2, 5)]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
+        assert sorted(results) == [200, 409], results
+        assert client.get("/api/account-settings").json()["stored"] is True
+    finally:
+        account_settings.LOCAL_ACCOUNT_KEY = "legacy"
+
+
+def test_two_profile_writes_in_one_second_have_different_versions_so_a_stale_writer_is_refused(backend):
+    """Implementation review P2-2: the profile row's token has microsecond resolution, not one second."""
+    backend.use(backend.new_user(), "en")
+    _patch(goal="work")
+    stale = get_learner_profile()["version"]
+    patch_learner_profile(ProfilePatchIn(expected_version=stale, review_new_per_day=5))
+    middle = get_learner_profile()["version"]
+    assert middle != stale, "a write in the same second moved the token"
+    error = _status(lambda: patch_learner_profile(ProfilePatchIn(expected_version=stale, review_new_per_day=9)))
+    assert error.status_code == 409
+    assert get_learner_profile()["review_new_per_day"] == 5

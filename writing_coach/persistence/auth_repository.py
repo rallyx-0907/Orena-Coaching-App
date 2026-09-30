@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any, Protocol
 
 from sqlalchemy import Engine, func, select, update
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from writing_coach.persistence.config import create_shadow_engine
@@ -240,6 +241,13 @@ class PostgresAuthRepository:
         if not sub or not email:
             raise ValueError("Google account did not provide a valid subject/email.")
         now = datetime.now(timezone.utc)
+        try:
+            return self._upsert_pg(sub, email, name, picture, admin_emails, now)
+        except IntegrityError:
+            # Two first sign-ins of one account raced on the same primary key: the second finds the row the first made.
+            return self._upsert_pg(sub, email, name, picture, admin_emails, now)
+
+    def _upsert_pg(self, sub, email, name, picture, admin_emails, now):
         with Session(self.engine) as session, session.begin():
             uid = self._id(sub)
             row = session.get(User, uid)

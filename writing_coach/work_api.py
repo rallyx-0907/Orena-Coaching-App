@@ -171,7 +171,8 @@ def get_work(work_id: str) -> dict[str, Any]:
     scope = _scope()
     ident = _work_id(work_id)
     row = _backbone.work.get_work(scope, ident)
-    if row is None:
+    if row is None or row['lifecycle'] == 'deleted':
+        # A deleted work is not served, as a deleted draft is not (the learner erased it).
         raise orena_http_error(404, 'work_not_found', 'No such work here.', retryable=False)
     shaped = _shape(row)
     payload = row['payload'] or {}

@@ -109,7 +109,9 @@ export async function loadSaved(kind, doc, memory) {
   const libKind = libraryKindFor(kind);
   if (!libKind) return { saved: memory.value.kept.includes(contentIdFor('text', doc.id)), itemId: '' };
   const result = await api.libraryItems({ kind: libKind, sources: [doc.isBook ? doc.bookId : doc.id] }).catch(() => null);
-  const item = result?.items?.[0];
+  // Saved is the `kept` relationship and nothing else: a row that only holds where the learner was, or a
+  // mark, is not a bookmark (D4 I4).
+  const item = (result?.items || []).find((row) => row?.relationship === 'kept');
   return { saved: Boolean(item), itemId: item?.id || '' };
 }
 

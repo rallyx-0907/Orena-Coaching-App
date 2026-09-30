@@ -206,7 +206,7 @@ def patch_learner_profile(payload: ProfilePatchIn) -> dict[str, Any]:
                 detail={"reason": "invalid_value", "field": "review_modes", "current_version": None},
             )
         review["review_modes"] = clean_review_modes(payload.review_modes)
-    now = datetime.now().astimezone().isoformat(timespec="seconds")
+    now = datetime.now().astimezone().isoformat(timespec="microseconds")
     try:
         if review and not patch:
             # Review settings are not registry settings; the version check still applies.
@@ -261,7 +261,7 @@ def patch_learner_profile(payload: ProfilePatchIn) -> dict[str, Any]:
     return get_learner_profile()
 
 def put_learner_profile(payload: LearnerProfileIn) -> dict[str, Any]:
-    now = datetime.now().astimezone().isoformat(timespec="seconds")
+    now = datetime.now().astimezone().isoformat(timespec="microseconds")
     existing = _repo().get_profile_record()
     created_at = str(existing.get("created_at")) if existing else now
     _repo().upsert_profile_record({

@@ -76,21 +76,22 @@ const intentions = new Map();
    essay asks the server to refresh exactly that review if - and only if - its stored language pair is
    affected; the server keeps the earlier review as history and answers `current` at no cost otherwise.
    Once per essay per visit, only where the pair can be affected, and a refusal or an unavailable
-   provider leaves the review as it was: the learner is never blocked from reading it. */
+   provider leaves the review as it was. It runs in the BACKGROUND: the room draws the stored review at
+   once (a provider call can take a minute) and repaints the review when a refreshed one arrives. */
 const refreshAsked = new Set();
 
+/* Resolves to the server's status ('refreshed', 'current', ...) or '' when nothing was asked or it failed. */
 async function refreshIfStale(id, language) {
-  if (language !== 'zh' || refreshAsked.has(id)) return;
+  if (language !== 'zh' || refreshAsked.has(id)) return '';
   refreshAsked.add(id);
   try {
-    await api.refreshEssayReview(id);
+    return String((await api.refreshEssayReview(id))?.status || '');
   } catch {
-    /* the stored review stands */
+    return ''; /* the stored review stands */
   }
 }
 
-async function fetchEssay(id, language) {
-  await refreshIfStale(id, language);
+async function fetchEssay(id) {
   const [detail, review] = await Promise.all([api.essay(id), api.essayReview(id)]);
   return mapEssay(detail, review);
 }
@@ -105,7 +106,7 @@ export default async function mountWriting(element, ctx) {
 
   const piece = parsePiece(ctx.params?.id);
   if (piece.kind === 'unknown') throw new Error('Writing: not a piece this room knows');
-  const essay0 = piece.kind === 'essay' ? await fetchEssay(piece.id, language) : null;
+  const essay0 = piece.kind === 'essay' ? await fetchEssay(piece.id) : null;
   if (!ctx.isCurrent()) return undefined;
   if (piece.kind === 'essay' && !essay0) throw new Error(`Writing: essay ${piece.id} not found`);
   // A reviewed piece opens on its latest revision: an older number (a series' first essay,
@@ -789,6 +790,23 @@ export default async function mountWriting(element, ctx) {
 
   paintAll();
   enterContinuation();
+
+  if (essay) {
+    const shown = essay.id;
+    void refreshIfStale(shown, language).then(async (status) => {
+      if (status !== 'refreshed' || !ctx.isCurrent() || !essay || essay.id !== shown) return;
+      try {
+        const fresh = await fetchEssay(shown);
+        // Only the review on screen changes; whatever the learner is typing is theirs and stays.
+        if (!ctx.isCurrent() || !essay || essay.id !== shown || !fresh) return;
+        essay = fresh;
+        paintHeader();
+        paintReview();
+      } catch {
+        /* the review already on screen stands */
+      }
+    });
+  }
 
   return () => {
     clearTimeout(refreshTimer);
