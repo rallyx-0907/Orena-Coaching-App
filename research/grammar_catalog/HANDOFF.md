@@ -60,3 +60,15 @@ Catalog research is complete for generation purposes.
 - `CATALOG_LOCK_REPORT.md` records the lock decision and boundaries.
 
 Grammar Lab should now consume these catalogs and stop doing syllabus research.
+
+
+## Final catalog v1 completion
+
+Catalog research v1 is now complete for generation:
+
+- English: `canonical_grammar_en.yaml` — 215 points, status `ready_for_generation`.
+- Chinese: `canonical_grammar_zh.yaml` — 380 points, 572/572 GF0025 source coverage, status `ready_for_generation`.
+- Chinese final coverage map: `zh_source_to_canonical_final.yaml`.
+- Completion audit: `CATALOG_V1_AUDIT.md`.
+
+Grammar Lab may now ingest these catalogs. Generation must not modify syllabus membership or levels; any such change is a catalog-v2 decision.
