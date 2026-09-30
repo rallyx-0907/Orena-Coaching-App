@@ -1,6 +1,7 @@
 # Orena external canonical grammar catalog candidate (English)
-# No live provider calls were used to construct this file.
+# Built from current R5 + current r5_conversion_map.tsv. No live provider calls.
 meta:
+  kind: "canonical_point_candidate"
   language: "en"
   framework: "CEFR-oriented Orena syllabus"
   target_range: "A1-C2"
@@ -14,1829 +15,1312 @@ meta:
     B2: 44
     C1: 30
     C2: 18
+  invariants:
+    - "Every legacy R5 alias resolves to at most one canonical point."
+    - "Split children may share r5_sources provenance, but only one child owns the legacy redirect alias."
+    - "Automatic fuzzy Core Inventory matches are not source anchors and are intentionally omitted."
   source_policy:
     - "R5 supplies Orena's existing lesson/content backbone."
-    - "British Council/EAQUALS Core Inventory is a reference/minimum core for A1-C1, not an exhaustive grammar specification."
-    - "C2 is an Orena internal extension and must not be presented as Core Inventory coverage."
-    - "Core Inventory matches below are machine-suggested candidates and need catalog review before lock."
+    - "British Council/EAQUALS Core Inventory remains an external A1-C1 reference/minimum core."
+    - "Existing manually reviewed anchors remain in grammar_lab/inventory/seeds_en.yaml; this file does not fabricate additional anchors."
+    - "C2 remains an Orena internal extension until separately source-reviewed."
 items:
   - id: "a1-complete-sentences-and-basic-word-order"
     level: "A1"
     title: "Complete sentences and basic word order"
     conversion: "keep"
+    r5_sources:
+      - "a1-complete-sentences-and-basic-word-order"
     r5_aliases:
       - "a1-complete-sentences-and-basic-word-order"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "a1-be-am-is-are"
     level: "A1"
     title: "Be: am/is/are"
     conversion: "keep"
+    r5_sources:
+      - "a1-be-am-is-are"
     r5_aliases:
       - "a1-be-am-is-are"
     conversion_notes: []
-    core_inventory_candidates:
-      - code: "123"
-        name: "There is/there are"
-        level: "A1"
-        page: "23"
-        match_score: 0.500
     catalog_review_required: false
   - id: "a1-subject-and-object-pronouns"
     level: "A1"
     title: "Subject and object pronouns"
     conversion: "keep"
+    r5_sources:
+      - "a1-subject-and-object-pronouns"
     r5_aliases:
       - "a1-subject-and-object-pronouns"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "possessive_adjectives"
     level: "A1"
     title: "Possessive Adjectives"
     conversion: "split"
+    r5_sources:
+      - "a1-possessive-adjectives-pronouns-and-possessive-s"
     r5_aliases:
       - "a1-possessive-adjectives-pronouns-and-possessive-s"
     conversion_notes:
       - "ba hình thức khác nhau; đại từ sở hữu giữ A1 (R5 và Core Inventory 129 đều A1)"
-    core_inventory_candidates:
-      - code: "127"
-        name: "Possessive adjectives"
-        level: "A1"
-        page: "23"
-        match_score: 1.000
-      - code: "128"
-        name: "Possessive ‘s"
-        level: "A1"
-        page: "23"
-        match_score: 0.500
-      - code: "129"
-        name: "Possessive pronouns"
-        level: "A1"
-        page: "23"
-        match_score: 0.500
     catalog_review_required: true
   - id: "possessive_pronouns"
     level: "A1"
     title: "Possessive Pronouns"
     conversion: "split"
-    r5_aliases:
+    r5_sources:
       - "a1-possessive-adjectives-pronouns-and-possessive-s"
+    r5_aliases:
+      []
     conversion_notes:
       - "ba hình thức khác nhau; đại từ sở hữu giữ A1 (R5 và Core Inventory 129 đều A1)"
-    core_inventory_candidates:
-      - code: "129"
-        name: "Possessive pronouns"
-        level: "A1"
-        page: "23"
-        match_score: 1.000
-      - code: "124"
-        name: "Pronouns"
-        level: "A1"
-        page: "23"
-        match_score: 0.500
-      - code: "127"
-        name: "Possessive adjectives"
-        level: "A1"
-        page: "23"
-        match_score: 0.500
     catalog_review_required: true
   - id: "possessive_s"
     level: "A1"
     title: "Possessive S"
     conversion: "split"
-    r5_aliases:
+    r5_sources:
       - "a1-possessive-adjectives-pronouns-and-possessive-s"
+    r5_aliases:
+      []
     conversion_notes:
       - "ba hình thức khác nhau; đại từ sở hữu giữ A1 (R5 và Core Inventory 129 đều A1)"
-    core_inventory_candidates:
-      - code: "128"
-        name: "Possessive ‘s"
-        level: "A1"
-        page: "23"
-        match_score: 1.000
-      - code: "127"
-        name: "Possessive adjectives"
-        level: "A1"
-        page: "23"
-        match_score: 0.500
-      - code: "129"
-        name: "Possessive pronouns"
-        level: "A1"
-        page: "23"
-        match_score: 0.500
     catalog_review_required: true
   - id: "a1-have-and-have-got"
     level: "A1"
     title: "Have and have got"
     conversion: "keep"
+    r5_sources:
+      - "a1-have-and-have-got"
     r5_aliases:
       - "a1-have-and-have-got"
     conversion_notes: []
-    core_inventory_candidates:
-      - code: "57"
-        name: "Have got (British)"
-        level: "A1"
-        page: "22"
-        match_score: 0.667
     catalog_review_required: false
   - id: "plural_nouns.regular"
     level: "A1"
     title: "Plural Nouns Regular"
     conversion: "split"
+    r5_sources:
+      - "a1-singular-and-plural-nouns"
     r5_aliases:
       - "a1-singular-and-plural-nouns"
     conversion_notes:
       - "quy tắc và bất quy tắc là hai điểm"
-    core_inventory_candidates: []
     catalog_review_required: true
   - id: "plural_nouns.irregular"
     level: "A1"
     title: "Plural Nouns Irregular"
     conversion: "split"
-    r5_aliases:
+    r5_sources:
       - "a1-singular-and-plural-nouns"
+    r5_aliases:
+      []
     conversion_notes:
       - "quy tắc và bất quy tắc là hai điểm"
-    core_inventory_candidates: []
     catalog_review_required: true
   - id: "articles.a_an"
     level: "A1"
     title: "Articles A An"
     conversion: "split"
+    r5_sources:
+      - "a1-articles-a-an-the"
     r5_aliases:
       - "a1-articles-a-an-the"
     conversion_notes:
       - "hai cách dùng khác nhau không gộp một công thức"
-    core_inventory_candidates:
-      - code: "134"
-        name: "Articles"
-        level: "A1"
-        page: "23"
-        match_score: 1.000
     catalog_review_required: true
   - id: "articles.the"
     level: "A1"
     title: "Articles The"
     conversion: "split"
-    r5_aliases:
+    r5_sources:
       - "a1-articles-a-an-the"
+    r5_aliases:
+      []
     conversion_notes:
       - "hai cách dùng khác nhau không gộp một công thức"
-    core_inventory_candidates:
-      - code: "134"
-        name: "Articles"
-        level: "A1"
-        page: "23"
-        match_score: 1.000
     catalog_review_required: true
   - id: "a1-this-that-these-those"
     level: "A1"
     title: "This/that/these/those"
     conversion: "keep"
+    r5_sources:
+      - "a1-this-that-these-those"
     r5_aliases:
       - "a1-this-that-these-those"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "a1-there-is-there-are"
     level: "A1"
     title: "There is/there are"
     conversion: "keep"
+    r5_sources:
+      - "a1-there-is-there-are"
     r5_aliases:
       - "a1-there-is-there-are"
     conversion_notes: []
-    core_inventory_candidates:
-      - code: "123"
-        name: "There is/there are"
-        level: "A1"
-        page: "23"
-        match_score: 1.000
     catalog_review_required: false
   - id: "a1-basic-imperatives-and-let-s"
     level: "A1"
     title: "Basic imperatives and let's"
     conversion: "keep"
+    r5_sources:
+      - "a1-basic-imperatives-and-let-s"
     r5_aliases:
       - "a1-basic-imperatives-and-let-s"
     conversion_notes: []
-    core_inventory_candidates:
-      - code: "58"
-        name: "Imperatives (+/-)"
-        level: "A1"
-        page: "23"
-        match_score: 0.500
     catalog_review_required: false
   - id: "a1-present-simple"
     level: "A1"
     title: "Present simple"
     conversion: "keep"
+    r5_sources:
+      - "a1-present-simple"
     r5_aliases:
       - "a1-present-simple"
     conversion_notes: []
-    core_inventory_candidates:
-      - code: "64"
-        name: "Present simple"
-        level: "A1"
-        page: "23"
-        match_score: 1.000
-      - code: "63"
-        name: "Present"
-        level: "A1"
-        page: "23"
-        match_score: 0.500
-      - code: "65"
-        name: "Present continuous"
-        level: "A1"
-        page: "23"
-        match_score: 0.500
     catalog_review_required: false
   - id: "a1-third-person-s-and-spelling"
     level: "A1"
     title: "Third-person -s and spelling"
     conversion: "keep"
+    r5_sources:
+      - "a1-third-person-s-and-spelling"
     r5_aliases:
       - "a1-third-person-s-and-spelling"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "a1-adverbs-of-frequency"
     level: "A1"
     title: "Adverbs of frequency"
     conversion: "keep"
+    r5_sources:
+      - "a1-adverbs-of-frequency"
     r5_aliases:
       - "a1-adverbs-of-frequency"
     conversion_notes: []
-    core_inventory_candidates:
-      - code: "152"
-        name: "Adverbs of frequency"
-        level: "A1"
-        page: "23"
-        match_score: 1.000
-      - code: "151"
-        name: "Adverbs"
-        level: "A1"
-        page: "23"
-        match_score: 0.500
     catalog_review_required: false
   - id: "a1-present-continuous"
     level: "A1"
     title: "Present continuous"
     conversion: "keep"
+    r5_sources:
+      - "a1-present-continuous"
     r5_aliases:
       - "a1-present-continuous"
     conversion_notes: []
-    core_inventory_candidates:
-      - code: "65"
-        name: "Present continuous"
-        level: "A1"
-        page: "23"
-        match_score: 1.000
-      - code: "63"
-        name: "Present"
-        level: "A1"
-        page: "23"
-        match_score: 0.500
-      - code: "64"
-        name: "Present simple"
-        level: "A1"
-        page: "23"
-        match_score: 0.500
     catalog_review_required: false
   - id: "a1-be-questions-and-short-answers"
     level: "A1"
     title: "Be questions and short answers"
     conversion: "keep"
+    r5_sources:
+      - "a1-be-questions-and-short-answers"
     r5_aliases:
       - "a1-be-questions-and-short-answers"
     conversion_notes: []
-    core_inventory_candidates:
-      - code: "56"
-        name: "To be (including questions"
-        level: "A1"
-        page: "22"
-        match_score: 0.500
     catalog_review_required: false
   - id: "a1-do-does-questions"
     level: "A1"
     title: "Do/does questions"
     conversion: "keep"
+    r5_sources:
+      - "a1-do-does-questions"
     r5_aliases:
       - "a1-do-does-questions"
     conversion_notes: []
-    core_inventory_candidates:
-      - code: "59"
-        name: "Questions"
-        level: "A1"
-        page: "23"
-        match_score: 0.500
-      - code: "60"
-        name: "Questions"
-        level: "A1"
-        page: "23"
-        match_score: 0.500
     catalog_review_required: false
   - id: "a1-wh-questions"
     level: "A1"
     title: "Wh-questions"
     conversion: "keep"
+    r5_sources:
+      - "a1-wh-questions"
     r5_aliases:
       - "a1-wh-questions"
     conversion_notes: []
-    core_inventory_candidates:
-      - code: "59"
-        name: "Questions"
-        level: "A1"
-        page: "23"
-        match_score: 0.500
-      - code: "60"
-        name: "Questions"
-        level: "A1"
-        page: "23"
-        match_score: 0.500
     catalog_review_required: false
   - id: "a1-countable-and-uncountable-nouns"
     level: "A1"
     title: "Countable and uncountable nouns"
     conversion: "keep"
+    r5_sources:
+      - "a1-countable-and-uncountable-nouns"
     r5_aliases:
       - "a1-countable-and-uncountable-nouns"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "a1-some-any"
     level: "A1"
     title: "Some/any"
     conversion: "keep"
+    r5_sources:
+      - "a1-some-any"
     r5_aliases:
       - "a1-some-any"
     conversion_notes: []
-    core_inventory_candidates:
-      - code: "141"
-        name: "Basic (e.g. any, some, a lot of)"
-        level: "A1"
-        page: "23"
-        match_score: 0.400
     catalog_review_required: false
   - id: "a1-basic-prepositions-of-place"
     level: "A1"
     title: "Basic prepositions of place"
     conversion: "keep"
+    r5_sources:
+      - "a1-basic-prepositions-of-place"
     r5_aliases:
       - "a1-basic-prepositions-of-place"
     conversion_notes: []
-    core_inventory_candidates:
-      - code: "133a"
-        name: "Prepositions of place"
-        level: "A1"
-        page: "23"
-        match_score: 1.000
-      - code: "130"
-        name: "Prepositions and prepositional"
-        level: "A1"
-        page: "23"
-        match_score: 0.500
-      - code: "131"
-        name: "Prepositions, common"
-        level: "A1"
-        page: "23"
-        match_score: 0.500
     catalog_review_required: false
   - id: "a1-basic-prepositions-of-time"
     level: "A1"
     title: "Basic prepositions of time"
     conversion: "keep"
+    r5_sources:
+      - "a1-basic-prepositions-of-time"
     r5_aliases:
       - "a1-basic-prepositions-of-time"
     conversion_notes: []
-    core_inventory_candidates:
-      - code: "130"
-        name: "Prepositions and prepositional"
-        level: "A1"
-        page: "23"
-        match_score: 0.500
-      - code: "131"
-        name: "Prepositions, common"
-        level: "A1"
-        page: "23"
-        match_score: 0.500
-      - code: "133a"
-        name: "Prepositions of place"
-        level: "A1"
-        page: "23"
-        match_score: 0.500
     catalog_review_required: false
   - id: "conjunctions.and_but_or"
     level: "A1"
     title: "Conjunctions And But Or"
     conversion: "split"
+    r5_sources:
+      - "a1-and-but-or-because-so"
     r5_aliases:
       - "a1-and-but-or-because-so"
     conversion_notes:
       - "hai nhóm chức năng"
-    core_inventory_candidates: []
     catalog_review_required: true
   - id: "a2-past-simple-be"
     level: "A1"
     title: "Past simple: be"
     conversion: "relevel"
+    r5_sources:
+      - "a2-past-simple-be"
     r5_aliases:
       - "a2-past-simple-be"
     conversion_notes:
       - "was/were nằm ở A1 trong bộ lõi"
-    core_inventory_candidates:
-      - code: "68"
-        name: "Past simple (to be)"
-        level: "A1"
-        page: "23"
-        match_score: 1.000
-      - code: "67"
-        name: "Past simple"
-        level: "A1"
-        page: "23"
-        match_score: 0.667
     catalog_review_required: true
   - id: "can.ability"
     level: "A1"
     title: "Can Ability"
     conversion: "split"
+    r5_sources:
+      - "a2-can-could-be-able-to-basics"
     r5_aliases:
       - "a2-can-could-be-able-to-basics"
     conversion_notes:
       - "can là A1; be able to nằm ở b1-ability-across-time"
-    core_inventory_candidates:
-      - code: "104"
-        name: "Can/can’t (ability)"
-        level: "A1"
-        page: "23"
-        match_score: 0.667
     catalog_review_required: true
   - id: "adjectives.position"
     level: "A1"
     title: "Adjectives Position"
     conversion: "add"
+    r5_sources:
+      []
     r5_aliases:
       []
     conversion_notes:
       - "bộ lõi, R5 không có"
-    core_inventory_candidates:
-      - code: "127"
-        name: "Possessive adjectives"
-        level: "A1"
-        page: "23"
-        match_score: 0.500
-      - code: "144"
-        name: "Adjectives"
-        level: "A1"
-        page: "23"
-        match_score: 0.500
     catalog_review_required: true
   - id: "would_like"
     level: "A1"
     title: "Would Like"
     conversion: "add"
+    r5_sources:
+      []
     r5_aliases:
       []
     conversion_notes:
       - "bộ lõi, R5 không có"
-    core_inventory_candidates: []
     catalog_review_required: true
   - id: "articles.zero"
     level: "A2"
     title: "Articles Zero"
     conversion: "split"
-    r5_aliases:
+    r5_sources:
       - "a1-articles-a-an-the"
+    r5_aliases:
+      []
     conversion_notes:
       - "hai cách dùng khác nhau không gộp một công thức"
-    core_inventory_candidates:
-      - code: "134"
-        name: "Articles"
-        level: "A2"
-        page: "26"
-        match_score: 0.500
     catalog_review_required: true
   - id: "a1-stative-verbs-introduction"
     level: "A2"
     title: "Stative verbs: introduction"
     conversion: "relevel"
+    r5_sources:
+      - "a1-stative-verbs-introduction"
     r5_aliases:
       - "a1-stative-verbs-introduction"
     conversion_notes:
       - "đề xuất, cần đối chiếu khung"
-    core_inventory_candidates:
-      - code: "55"
-        name: "Verb forms"
-        level: "A2"
-        page: "24"
-        match_score: 0.500
-      - code: "86b"
-        name: "Verb + -ing/infinitive"
-        level: "A2"
-        page: "25"
-        match_score: 0.500
-      - code: "88"
-        name: "Verb + to + infinitive"
-        level: "A2"
-        page: "25"
-        match_score: 0.500
     catalog_review_required: true
   - id: "a1-much-many-a-lot-of"
     level: "A2"
     title: "Much/many/a lot of"
     conversion: "relevel"
+    r5_sources:
+      - "a1-much-many-a-lot-of"
     r5_aliases:
       - "a1-much-many-a-lot-of"
     conversion_notes:
       - "much/many trong câu hỏi, phủ định thường A2"
-    core_inventory_candidates: []
     catalog_review_required: true
   - id: "conjunctions.because_so"
     level: "A2"
     title: "Conjunctions Because So"
     conversion: "split"
-    r5_aliases:
+    r5_sources:
       - "a1-and-but-or-because-so"
+    r5_aliases:
+      []
     conversion_notes:
       - "hai nhóm chức năng"
-    core_inventory_candidates: []
     catalog_review_required: true
   - id: "a2-past-simple-regular-verbs"
     level: "A2"
     title: "Past simple: regular verbs"
     conversion: "keep"
+    r5_sources:
+      - "a2-past-simple-regular-verbs"
     r5_aliases:
       - "a2-past-simple-regular-verbs"
     conversion_notes: []
-    core_inventory_candidates:
-      - code: "67"
-        name: "Past simple"
-        level: "A2"
-        page: "25"
-        match_score: 0.500
     catalog_review_required: false
   - id: "a2-past-simple-irregular-verbs"
     level: "A2"
     title: "Past simple: irregular verbs"
     conversion: "keep"
+    r5_sources:
+      - "a2-past-simple-irregular-verbs"
     r5_aliases:
       - "a2-past-simple-irregular-verbs"
     conversion_notes: []
-    core_inventory_candidates:
-      - code: "67"
-        name: "Past simple"
-        level: "A2"
-        page: "25"
-        match_score: 0.500
     catalog_review_required: false
   - id: "a2-past-continuous"
     level: "A2"
     title: "Past continuous"
     conversion: "keep"
+    r5_sources:
+      - "a2-past-continuous"
     r5_aliases:
       - "a2-past-continuous"
     conversion_notes: []
-    core_inventory_candidates:
-      - code: "68"
-        name: "Past continuous"
-        level: "A2"
-        page: "25"
-        match_score: 1.000
-      - code: "65"
-        name: "Present continuous"
-        level: "A2"
-        page: "25"
-        match_score: 0.500
-      - code: "66"
-        name: "Past"
-        level: "A2"
-        page: "25"
-        match_score: 0.500
     catalog_review_required: false
   - id: "a2-past-simple-vs-past-continuous"
     level: "A2"
     title: "Past simple vs past continuous"
     conversion: "keep"
+    r5_sources:
+      - "a2-past-simple-vs-past-continuous"
     r5_aliases:
       - "a2-past-simple-vs-past-continuous"
     conversion_notes: []
-    core_inventory_candidates:
-      - code: "67"
-        name: "Past simple"
-        level: "A2"
-        page: "25"
-        match_score: 0.500
-      - code: "68"
-        name: "Past continuous"
-        level: "A2"
-        page: "25"
-        match_score: 0.500
     catalog_review_required: false
   - id: "a2-present-perfect-introduction"
     level: "A2"
     title: "Present perfect: introduction"
     conversion: "keep"
+    r5_sources:
+      - "a2-present-perfect-introduction"
     r5_aliases:
       - "a2-present-perfect-introduction"
     conversion_notes: []
-    core_inventory_candidates:
-      - code: "80"
-        name: "Present Perfect"
-        level: "A2"
-        page: "25"
-        match_score: 1.000
-      - code: "81"
-        name: "Present perfect"
-        level: "A2"
-        page: "25"
-        match_score: 1.000
-      - code: "63"
-        name: "Present"
-        level: "A2"
-        page: "25"
-        match_score: 0.500
     catalog_review_required: false
   - id: "a2-going-to"
     level: "A2"
     title: "Going to"
     conversion: "keep"
+    r5_sources:
+      - "a2-going-to"
     r5_aliases:
       - "a2-going-to"
     conversion_notes: []
-    core_inventory_candidates:
-      - code: "74"
-        name: "Going to"
-        level: "A2"
-        page: "25"
-        match_score: 1.000
     catalog_review_required: false
   - id: "a2-will-and-won-t"
     level: "A2"
     title: "Will and won't"
     conversion: "keep"
+    r5_sources:
+      - "a2-will-and-won-t"
     r5_aliases:
       - "a2-will-and-won-t"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "a2-present-continuous-for-future-arrangements"
     level: "A2"
     title: "Present continuous for future arrangements"
     conversion: "keep"
+    r5_sources:
+      - "a2-present-continuous-for-future-arrangements"
     r5_aliases:
       - "a2-present-continuous-for-future-arrangements"
     conversion_notes: []
-    core_inventory_candidates:
-      - code: "75"
-        name: "Present continuous for the future"
-        level: "A2"
-        page: "25"
-        match_score: 0.750
-      - code: "65"
-        name: "Present continuous"
-        level: "A2"
-        page: "25"
-        match_score: 0.500
     catalog_review_required: false
   - id: "a2-present-simple-for-schedules"
     level: "A2"
     title: "Present simple for schedules"
     conversion: "keep"
+    r5_sources:
+      - "a2-present-simple-for-schedules"
     r5_aliases:
       - "a2-present-simple-for-schedules"
     conversion_notes: []
-    core_inventory_candidates:
-      - code: "64"
-        name: "Present simple"
-        level: "A2"
-        page: "25"
-        match_score: 0.667
     catalog_review_required: false
   - id: "a2-comparatives"
     level: "A2"
     title: "Comparatives"
     conversion: "keep"
+    r5_sources:
+      - "a2-comparatives"
     r5_aliases:
       - "a2-comparatives"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "a2-superlatives"
     level: "A2"
     title: "Superlatives"
     conversion: "keep"
+    r5_sources:
+      - "a2-superlatives"
     r5_aliases:
       - "a2-superlatives"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "a2-as-as"
     level: "A2"
     title: "As...as"
     conversion: "keep"
+    r5_sources:
+      - "a2-as-as"
     r5_aliases:
       - "a2-as-as"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "a2-too-enough"
     level: "A2"
     title: "Too/enough"
     conversion: "keep"
+    r5_sources:
+      - "a2-too-enough"
     r5_aliases:
       - "a2-too-enough"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "a2-adjectives-vs-adverbs"
     level: "A2"
     title: "Adjectives vs adverbs"
     conversion: "keep"
+    r5_sources:
+      - "a2-adjectives-vs-adverbs"
     r5_aliases:
       - "a2-adjectives-vs-adverbs"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "a2-adverbs-of-manner-and-degree"
     level: "A2"
     title: "Adverbs of manner and degree"
     conversion: "keep"
+    r5_sources:
+      - "a2-adverbs-of-manner-and-degree"
     r5_aliases:
       - "a2-adverbs-of-manner-and-degree"
     conversion_notes: []
-    core_inventory_candidates:
-      - code: "153"
-        name: "Simple adverbs of place, manner"
-        level: "A2"
-        page: "26"
-        match_score: 0.500
     catalog_review_required: false
   - id: "could.past_ability"
     level: "A2"
     title: "Could Past Ability"
     conversion: "split"
-    r5_aliases:
+    r5_sources:
       - "a2-can-could-be-able-to-basics"
+    r5_aliases:
+      []
     conversion_notes:
       - "can là A1; be able to nằm ở b1-ability-across-time"
-    core_inventory_candidates: []
     catalog_review_required: true
   - id: "a2-must-have-to"
     level: "A2"
     title: "Must/have to"
     conversion: "merge"
+    r5_sources:
+      - "a2-must-have-to"
+      - "b1-obligation-must-have-to-need-to"
     r5_aliases:
       - "a2-must-have-to"
       - "b1-obligation-must-have-to-need-to"
     conversion_notes:
       - "trùng; phần don't have to nằm ở bài prohibition B1"
-    core_inventory_candidates:
-      - code: "113"
-        name: "Have to"
-        level: "A2"
-        page: "25"
-        match_score: 0.500
-    catalog_review_required: false
+    catalog_review_required: true
   - id: "a2-should-ought-to"
     level: "A2"
     title: "Should/ought to"
     conversion: "rescope"
+    r5_sources:
+      - "a2-should-ought-to"
     r5_aliases:
       - "a2-should-ought-to"
     conversion_notes:
       - "chỉ còn should"
-    core_inventory_candidates:
-      - code: "115"
-        name: "Should"
-        level: "A2"
-        page: "25"
-        match_score: 0.500
     catalog_review_required: true
   - id: "a2-may-might-could-possibility"
     level: "A2"
     title: "May/might/could possibility"
     conversion: "keep"
+    r5_sources:
+      - "a2-may-might-could-possibility"
     r5_aliases:
       - "a2-may-might-could-possibility"
     conversion_notes: []
-    core_inventory_candidates:
-      - code: "107"
-        name: "Might, May"
-        level: "A2"
-        page: "25"
-        match_score: 0.500
     catalog_review_required: false
   - id: "a2-gerunds-after-preference-verbs"
     level: "A2"
     title: "Gerunds after preference verbs"
     conversion: "keep"
+    r5_sources:
+      - "a2-gerunds-after-preference-verbs"
     r5_aliases:
       - "a2-gerunds-after-preference-verbs"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "a2-infinitive-after-want-plan-need"
     level: "A2"
     title: "Infinitive after want/plan/need"
     conversion: "keep"
+    r5_sources:
+      - "a2-infinitive-after-want-plan-need"
     r5_aliases:
       - "a2-infinitive-after-want-plan-need"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "a2-infinitive-of-purpose"
     level: "A2"
     title: "Infinitive of purpose"
     conversion: "keep"
+    r5_sources:
+      - "a2-infinitive-of-purpose"
     r5_aliases:
       - "a2-infinitive-of-purpose"
     conversion_notes: []
-    core_inventory_candidates:
-      - code: "87"
-        name: "To + infinitive (express purpose)"
-        level: "A2"
-        page: "25"
-        match_score: 0.667
-      - code: "84"
-        name: "Gerund and infinitive"
-        level: "A2"
-        page: "25"
-        match_score: 0.500
-      - code: "86b"
-        name: "Verb + -ing/infinitive"
-        level: "A2"
-        page: "25"
-        match_score: 0.500
     catalog_review_required: false
   - id: "a2-who-which-that-relative-clauses"
     level: "A2"
     title: "Who/which/that relative clauses"
     conversion: "merge"
+    r5_sources:
+      - "a2-who-which-that-relative-clauses"
+      - "b1-defining-relative-clauses"
     r5_aliases:
       - "a2-who-which-that-relative-clauses"
       - "b1-defining-relative-clauses"
     conversion_notes:
       - "trùng phạm vi (defining who/which/that)"
-    core_inventory_candidates: []
-    catalog_review_required: false
+    catalog_review_required: true
   - id: "a2-zero-conditional"
     level: "A2"
     title: "Zero conditional"
     conversion: "keep"
+    r5_sources:
+      - "a2-zero-conditional"
     r5_aliases:
       - "a2-zero-conditional"
     conversion_notes: []
-    core_inventory_candidates:
-      - code: "90"
-        name: "Zero and first conditional"
-        level: "A2"
-        page: "25"
-        match_score: 0.667
-      - code: "89"
-        name: "Conditionals"
-        level: "A2"
-        page: "25"
-        match_score: 0.500
     catalog_review_required: false
   - id: "a2-first-conditional"
     level: "A2"
     title: "First conditional"
     conversion: "keep"
+    r5_sources:
+      - "a2-first-conditional"
     r5_aliases:
       - "a2-first-conditional"
     conversion_notes: []
-    core_inventory_candidates:
-      - code: "90"
-        name: "Zero and first conditional"
-        level: "A2"
-        page: "25"
-        match_score: 0.667
-      - code: "89"
-        name: "Conditionals"
-        level: "A2"
-        page: "25"
-        match_score: 0.500
     catalog_review_required: false
   - id: "a2-unless-introduction"
     level: "A2"
     title: "Unless: introduction"
     conversion: "keep"
+    r5_sources:
+      - "a2-unless-introduction"
     r5_aliases:
       - "a2-unless-introduction"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "a2-some-any-no-every-compounds"
     level: "A2"
     title: "Some/any/no/every compounds"
     conversion: "keep"
+    r5_sources:
+      - "a2-some-any-no-every-compounds"
     r5_aliases:
       - "a2-some-any-no-every-compounds"
     conversion_notes: []
-    core_inventory_candidates:
-      - code: "141"
-        name: "Basic (e.g. any, some, a lot of)"
-        level: "A2"
-        page: "26"
-        match_score: 0.400
     catalog_review_required: false
   - id: "a2-a-few-few-and-a-little-little"
     level: "A2"
     title: "A few/few and a little/little"
     conversion: "keep"
+    r5_sources:
+      - "a2-a-few-few-and-a-little-little"
     r5_aliases:
       - "a2-a-few-few-and-a-little-little"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "a2-basic-indirect-objects"
     level: "A2"
     title: "Basic indirect objects"
     conversion: "keep"
+    r5_sources:
+      - "a2-basic-indirect-objects"
     r5_aliases:
       - "a2-basic-indirect-objects"
     conversion_notes: []
-    core_inventory_candidates:
-      - code: "177"
-        name: "Objects and rooms"
-        level: "A2"
-        page: "26"
-        match_score: 0.500
     catalog_review_required: false
   - id: "b1-present-simple-vs-continuous-extended"
     level: "A2"
     title: "Present simple vs continuous: extended"
     conversion: "relevel"
+    r5_sources:
+      - "b1-present-simple-vs-continuous-extended"
+      - "a1-present-simple-vs-present-continuous"
     r5_aliases:
       - "b1-present-simple-vs-continuous-extended"
       - "a1-present-simple-vs-present-continuous"
     conversion_notes:
       - "trùng: cùng đối chiếu; gộp thành một bài A2"
       - "sau khi gộp bài A1"
-    core_inventory_candidates:
-      - code: "64"
-        name: "Present simple"
-        level: "A2"
-        page: "25"
-        match_score: 0.400
-      - code: "65"
-        name: "Present continuous"
-        level: "A2"
-        page: "25"
-        match_score: 0.400
-      - code: "75"
-        name: "Present continuous for the future"
-        level: "A2"
-        page: "25"
-        match_score: 0.400
     catalog_review_required: true
   - id: "past_simple.did_questions"
     level: "A2"
     title: "Past Simple Did Questions"
     conversion: "add"
+    r5_sources:
+      []
     r5_aliases:
       []
     conversion_notes:
       - "bộ lõi, R5 không có"
-    core_inventory_candidates:
-      - code: "61"
-        name: "Wh-questions in the past"
-        level: "A2"
-        page: "25"
-        match_score: 0.500
-      - code: "67"
-        name: "Past simple"
-        level: "A2"
-        page: "25"
-        match_score: 0.500
     catalog_review_required: true
   - id: "phrasal_verbs.basic"
     level: "A2"
     title: "Phrasal Verbs Basic"
     conversion: "add"
+    r5_sources:
+      []
     r5_aliases:
       []
     conversion_notes:
       - "R5 không có"
-    core_inventory_candidates:
-      - code: "94"
-        name: "Phrasal Verbs"
-        level: "A2"
-        page: "25"
-        match_score: 1.000
-      - code: "95"
-        name: "Phrasal verbs, common"
-        level: "A2"
-        page: "25"
-        match_score: 0.667
-      - code: "55"
-        name: "Verb forms"
-        level: "A2"
-        page: "24"
-        match_score: 0.500
     catalog_review_required: true
   - id: "time_clauses.basic"
     level: "A2"
     title: "Time Clauses Basic"
     conversion: "add"
+    r5_sources:
+      []
     r5_aliases:
       []
     conversion_notes:
       - "when/while/before/after; R5 chỉ có future time clauses (B1)"
-    core_inventory_candidates:
-      - code: "132"
-        name: "Prepositions of time: on/at/in"
-        level: "A2"
-        page: "25"
-        match_score: 0.500
     catalog_review_required: true
   - id: "verb_object_infinitive"
     level: "A2"
     title: "Verb Object Infinitive"
     conversion: "add"
+    r5_sources:
+      []
     r5_aliases:
       []
     conversion_notes:
       - "want/tell/ask someone to do"
-    core_inventory_candidates:
-      - code: "86b"
-        name: "Verb + -ing/infinitive"
-        level: "A2"
-        page: "25"
-        match_score: 0.667
-      - code: "88"
-        name: "Verb + to + infinitive"
-        level: "A2"
-        page: "25"
-        match_score: 0.667
     catalog_review_required: true
   - id: "a2-object-relative-pronoun-omission"
     level: "B1"
     title: "Object relative pronoun omission"
     conversion: "relevel"
+    r5_sources:
+      - "a2-object-relative-pronoun-omission"
     r5_aliases:
       - "a2-object-relative-pronoun-omission"
     conversion_notes:
       - "bỏ đại từ quan hệ tân ngữ thường B1"
-    core_inventory_candidates: []
     catalog_review_required: true
   - id: "b1-present-perfect-simple"
     level: "B1"
     title: "Present perfect simple"
     conversion: "keep"
+    r5_sources:
+      - "b1-present-perfect-simple"
     r5_aliases:
       - "b1-present-perfect-simple"
     conversion_notes: []
-    core_inventory_candidates:
-      - code: "82"
-        name: "Present perfect, past simple"
-        level: "B1"
-        page: "28"
-        match_score: 0.750
-      - code: "80"
-        name: "Present Perfect"
-        level: "B1"
-        page: "28"
-        match_score: 0.667
-      - code: "83"
-        name: "Present perfect continuous"
-        level: "B1"
-        page: "28"
-        match_score: 0.667
     catalog_review_required: false
   - id: "b1-present-perfect-continuous"
     level: "B1"
     title: "Present perfect continuous"
     conversion: "keep"
+    r5_sources:
+      - "b1-present-perfect-continuous"
     r5_aliases:
       - "b1-present-perfect-continuous"
     conversion_notes: []
-    core_inventory_candidates:
-      - code: "83"
-        name: "Present perfect continuous"
-        level: "B1"
-        page: "28"
-        match_score: 1.000
-      - code: "80"
-        name: "Present Perfect"
-        level: "B1"
-        page: "28"
-        match_score: 0.667
-      - code: "82"
-        name: "Present perfect, past simple"
-        level: "B1"
-        page: "28"
-        match_score: 0.500
     catalog_review_required: false
   - id: "b1-present-perfect-simple-vs-continuous"
     level: "B1"
     title: "Present perfect simple vs continuous"
     conversion: "keep"
+    r5_sources:
+      - "b1-present-perfect-simple-vs-continuous"
     r5_aliases:
       - "b1-present-perfect-simple-vs-continuous"
     conversion_notes: []
-    core_inventory_candidates:
-      - code: "82"
-        name: "Present perfect, past simple"
-        level: "B1"
-        page: "28"
-        match_score: 0.600
-      - code: "83"
-        name: "Present perfect continuous"
-        level: "B1"
-        page: "28"
-        match_score: 0.600
-      - code: "80"
-        name: "Present Perfect"
-        level: "B1"
-        page: "28"
-        match_score: 0.400
     catalog_review_required: false
   - id: "b1-past-simple-vs-present-perfect"
     level: "B1"
     title: "Past simple vs present perfect"
     conversion: "merge"
+    r5_sources:
+      - "b1-past-simple-vs-present-perfect"
+      - "a2-present-perfect-vs-past-simple"
     r5_aliases:
       - "b1-past-simple-vs-present-perfect"
       - "a2-present-perfect-vs-past-simple"
     conversion_notes:
       - "trùng: hai bài cùng đối chiếu present perfect / past simple"
-    core_inventory_candidates:
-      - code: "82"
-        name: "Present perfect, past simple"
-        level: "B1"
-        page: "28"
-        match_score: 0.800
-      - code: "67"
-        name: "Simple past"
-        level: "B1"
-        page: "28"
-        match_score: 0.400
-      - code: "71"
-        name: "Past perfect"
-        level: "B1"
-        page: "28"
-        match_score: 0.400
-    catalog_review_required: false
+    catalog_review_required: true
   - id: "b1-past-perfect-simple"
     level: "B1"
     title: "Past perfect simple"
     conversion: "keep"
+    r5_sources:
+      - "b1-past-perfect-simple"
     r5_aliases:
       - "b1-past-perfect-simple"
     conversion_notes: []
-    core_inventory_candidates:
-      - code: "82"
-        name: "Present perfect, past simple"
-        level: "B1"
-        page: "28"
-        match_score: 0.750
-      - code: "67"
-        name: "Simple past"
-        level: "B1"
-        page: "28"
-        match_score: 0.667
-      - code: "71"
-        name: "Past perfect"
-        level: "B1"
-        page: "28"
-        match_score: 0.667
     catalog_review_required: false
   - id: "b1-past-perfect-continuous"
     level: "B1"
     title: "Past perfect continuous"
     conversion: "keep"
+    r5_sources:
+      - "b1-past-perfect-continuous"
     r5_aliases:
       - "b1-past-perfect-continuous"
     conversion_notes: []
-    core_inventory_candidates:
-      - code: "68"
-        name: "Past continuous"
-        level: "B1"
-        page: "28"
-        match_score: 0.667
-      - code: "71"
-        name: "Past perfect"
-        level: "B1"
-        page: "28"
-        match_score: 0.667
-      - code: "83"
-        name: "Present perfect continuous"
-        level: "B1"
-        page: "28"
-        match_score: 0.667
     catalog_review_required: false
   - id: "b1-past-narrative-tense-system"
     level: "B1"
     title: "Past narrative tense system"
     conversion: "keep"
+    r5_sources:
+      - "b1-past-narrative-tense-system"
     r5_aliases:
       - "b1-past-narrative-tense-system"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "b1-used-to"
     level: "B1"
     title: "Used to"
     conversion: "keep"
+    r5_sources:
+      - "b1-used-to"
     r5_aliases:
       - "b1-used-to"
     conversion_notes: []
-    core_inventory_candidates:
-      - code: "69"
-        name: "Used to"
-        level: "B1"
-        page: "28"
-        match_score: 1.000
     catalog_review_required: false
   - id: "b1-would-for-past-habits"
     level: "B1"
     title: "Would for past habits"
     conversion: "keep"
+    r5_sources:
+      - "b1-would-for-past-habits"
     r5_aliases:
       - "b1-would-for-past-habits"
     conversion_notes: []
-    core_inventory_candidates:
-      - code: "70"
-        name: "Would expressing habit in the past"
-        level: "B1"
-        page: "28"
-        match_score: 0.750
     catalog_review_required: false
   - id: "b1-future-forms-in-context"
     level: "B1"
     title: "Future forms in context"
     conversion: "keep"
+    r5_sources:
+      - "b1-future-forms-in-context"
     r5_aliases:
       - "b1-future-forms-in-context"
     conversion_notes: []
-    core_inventory_candidates:
-      - code: "73"
-        name: "Future"
-        level: "B1"
-        page: "28"
-        match_score: 0.500
-      - code: "77"
-        name: "Future continuous"
-        level: "B1"
-        page: "28"
-        match_score: 0.500
     catalog_review_required: false
   - id: "b1-future-continuous"
     level: "B1"
     title: "Future continuous"
     conversion: "merge"
+    r5_sources:
+      - "b1-future-continuous"
+      - "b2-future-continuous"
     r5_aliases:
       - "b1-future-continuous"
       - "b2-future-continuous"
     conversion_notes:
       - "bài trùng hệt tiêu đề ở hai cấp"
-    core_inventory_candidates:
-      - code: "77"
-        name: "Future continuous"
-        level: "B1"
-        page: "28"
-        match_score: 1.000
-      - code: "68"
-        name: "Past continuous"
-        level: "B1"
-        page: "28"
-        match_score: 0.500
-      - code: "73"
-        name: "Future"
-        level: "B1"
-        page: "28"
-        match_score: 0.500
-    catalog_review_required: false
+    catalog_review_required: true
   - id: "b1-future-time-clauses"
     level: "B1"
     title: "Future time clauses"
     conversion: "keep"
+    r5_sources:
+      - "b1-future-time-clauses"
     r5_aliases:
       - "b1-future-time-clauses"
     conversion_notes: []
-    core_inventory_candidates:
-      - code: "76"
-        name: "Future time (will & going to)"
-        level: "B1"
-        page: "28"
-        match_score: 0.500
     catalog_review_required: false
   - id: "b1-passive-voice-present-and-past"
     level: "B1"
     title: "Passive voice: present and past"
     conversion: "keep"
+    r5_sources:
+      - "b1-passive-voice-present-and-past"
     r5_aliases:
       - "b1-passive-voice-present-and-past"
     conversion_notes: []
-    core_inventory_candidates:
-      - code: "82"
-        name: "Present perfect, past simple"
-        level: "B1"
-        page: "28"
-        match_score: 0.500
     catalog_review_required: false
   - id: "b1-passive-with-modals"
     level: "B1"
     title: "Passive with modals"
     conversion: "keep"
+    r5_sources:
+      - "b1-passive-with-modals"
     r5_aliases:
       - "b1-passive-with-modals"
     conversion_notes: []
-    core_inventory_candidates:
-      - code: "98"
-        name: "Simple passive"
-        level: "B1"
-        page: "28"
-        match_score: 0.500
-      - code: "106"
-        name: "Modals: Possibility"
-        level: "B1"
-        page: "28"
-        match_score: 0.500
-      - code: "118"
-        name: "Modals: Past"
-        level: "B1"
-        page: "29"
-        match_score: 0.500
     catalog_review_required: false
   - id: "b1-present-perfect-passive"
     level: "B1"
     title: "Present perfect passive"
     conversion: "keep"
+    r5_sources:
+      - "b1-present-perfect-passive"
     r5_aliases:
       - "b1-present-perfect-passive"
     conversion_notes: []
-    core_inventory_candidates:
-      - code: "80"
-        name: "Present Perfect"
-        level: "B1"
-        page: "28"
-        match_score: 0.667
-      - code: "83"
-        name: "Present perfect continuous"
-        level: "B1"
-        page: "28"
-        match_score: 0.667
-      - code: "82"
-        name: "Present perfect, past simple"
-        level: "B1"
-        page: "28"
-        match_score: 0.500
     catalog_review_required: false
   - id: "b1-ability-across-time"
     level: "B1"
     title: "Ability across time"
     conversion: "keep"
+    r5_sources:
+      - "b1-ability-across-time"
     r5_aliases:
       - "b1-ability-across-time"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "b1-prohibition-and-lack-of-necessity"
     level: "B1"
     title: "Prohibition and lack of necessity"
     conversion: "keep"
+    r5_sources:
+      - "b1-prohibition-and-lack-of-necessity"
     r5_aliases:
       - "b1-prohibition-and-lack-of-necessity"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "b1-advice-should-ought-to-had-better"
     level: "B1"
     title: "Advice: should/ought to/had better"
     conversion: "rescope"
+    r5_sources:
+      - "b1-advice-should-ought-to-had-better"
     r5_aliases:
       - "b1-advice-should-ought-to-had-better"
     conversion_notes:
       - "chỉ còn ought to / had better"
-    core_inventory_candidates: []
     catalog_review_required: true
   - id: "b1-deduction-must-might-can-t"
     level: "B1"
     title: "Deduction: must/might/can't"
     conversion: "keep"
+    r5_sources:
+      - "b1-deduction-must-might-can-t"
     r5_aliases:
       - "b1-deduction-must-might-can-t"
     conversion_notes: []
-    core_inventory_candidates:
-      - code: "110"
-        name: "Must/can’t (deduction)"
-        level: "B1"
-        page: "28"
-        match_score: 0.800
     catalog_review_required: false
   - id: "b1-past-modals-should-could-might-have"
     level: "B1"
     title: "Past modals: should/could/might have"
     conversion: "keep"
+    r5_sources:
+      - "b1-past-modals-should-could-might-have"
     r5_aliases:
       - "b1-past-modals-should-could-might-have"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "b1-question-tags"
     level: "B1"
     title: "Question tags"
     conversion: "keep"
+    r5_sources:
+      - "b1-question-tags"
     r5_aliases:
       - "b1-question-tags"
     conversion_notes: []
-    core_inventory_candidates:
-      - code: "62"
-        name: "Complex question tags"
-        level: "B1"
-        page: "27"
-        match_score: 0.667
-      - code: "59"
-        name: "Questions"
-        level: "B1"
-        page: "27"
-        match_score: 0.500
     catalog_review_required: false
   - id: "b1-indirect-questions"
     level: "B1"
     title: "Indirect questions"
     conversion: "keep"
+    r5_sources:
+      - "b1-indirect-questions"
     r5_aliases:
       - "b1-indirect-questions"
     conversion_notes: []
-    core_inventory_candidates:
-      - code: "59"
-        name: "Questions"
-        level: "B1"
-        page: "27"
-        match_score: 0.500
     catalog_review_required: false
   - id: "b1-subject-questions-and-object-questions"
     level: "B1"
     title: "Subject questions and object questions"
     conversion: "keep"
+    r5_sources:
+      - "b1-subject-questions-and-object-questions"
     r5_aliases:
       - "b1-subject-questions-and-object-questions"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "b1-zero-first-second-conditionals"
     level: "B1"
     title: "Zero/first/second conditionals"
     conversion: "rescope"
+    r5_sources:
+      - "b1-zero-first-second-conditionals"
     r5_aliases:
       - "b1-zero-first-second-conditionals"
     conversion_notes:
       - "chỉ còn second conditional (zero và first đã có ở A2)"
-    core_inventory_candidates:
-      - code: "90"
-        name: "Zero and first conditional"
-        level: "B1"
-        page: "28"
-        match_score: 0.750
-      - code: "91"
-        name: "Second and third conditional"
-        level: "B1"
-        page: "28"
-        match_score: 0.500
     catalog_review_required: true
   - id: "b1-third-conditional"
     level: "B1"
     title: "Third conditional"
     conversion: "keep"
+    r5_sources:
+      - "b1-third-conditional"
     r5_aliases:
       - "b1-third-conditional"
     conversion_notes: []
-    core_inventory_candidates:
-      - code: "91"
-        name: "Second and third conditional"
-        level: "B1"
-        page: "28"
-        match_score: 0.667
-      - code: "89"
-        name: "Conditionals"
-        level: "B1"
-        page: "28"
-        match_score: 0.500
     catalog_review_required: false
   - id: "b1-reported-statements"
     level: "B1"
     title: "Reported statements"
     conversion: "keep"
+    r5_sources:
+      - "b1-reported-statements"
     r5_aliases:
       - "b1-reported-statements"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "b1-reported-questions"
     level: "B1"
     title: "Reported questions"
     conversion: "keep"
+    r5_sources:
+      - "b1-reported-questions"
     r5_aliases:
       - "b1-reported-questions"
     conversion_notes: []
-    core_inventory_candidates:
-      - code: "59"
-        name: "Questions"
-        level: "B1"
-        page: "27"
-        match_score: 0.500
     catalog_review_required: false
   - id: "b1-reported-commands-and-requests"
     level: "B1"
     title: "Reported commands and requests"
     conversion: "keep"
+    r5_sources:
+      - "b1-reported-commands-and-requests"
     r5_aliases:
       - "b1-reported-commands-and-requests"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "b1-non-defining-relative-clauses"
     level: "B1"
     title: "Non-defining relative clauses"
     conversion: "keep"
+    r5_sources:
+      - "b1-non-defining-relative-clauses"
     r5_aliases:
       - "b1-non-defining-relative-clauses"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "b1-relative-pronouns-and-prepositions"
     level: "B1"
     title: "Relative pronouns and prepositions"
     conversion: "keep"
+    r5_sources:
+      - "b1-relative-pronouns-and-prepositions"
     r5_aliases:
       - "b1-relative-pronouns-and-prepositions"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "b1-gerund-vs-infinitive-common-patterns"
     level: "B1"
     title: "Gerund vs infinitive: common patterns"
     conversion: "keep"
+    r5_sources:
+      - "b1-gerund-vs-infinitive-common-patterns"
     r5_aliases:
       - "b1-gerund-vs-infinitive-common-patterns"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "b1-verb-pattern-meaning-changes-introduction"
     level: "B1"
     title: "Verb pattern meaning changes: introduction"
     conversion: "merge"
+    r5_sources:
+      - "b1-verb-pattern-meaning-changes-introduction"
+      - "b2-gerund-infinitive-meaning-contrasts"
     r5_aliases:
       - "b1-verb-pattern-meaning-changes-introduction"
       - "b2-gerund-infinitive-meaning-contrasts"
     conversion_notes:
       - "trùng phạm vi (stop/remember/try + V-ing/to V)"
-    core_inventory_candidates: []
-    catalog_review_required: false
+    catalog_review_required: true
   - id: "b1-causative-have-get"
     level: "B1"
     title: "Causative have/get"
     conversion: "keep"
+    r5_sources:
+      - "b1-causative-have-get"
     r5_aliases:
       - "b1-causative-have-get"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "b1-wish-if-only-present"
     level: "B1"
     title: "Wish/if only: present"
     conversion: "keep"
+    r5_sources:
+      - "b1-wish-if-only-present"
     r5_aliases:
       - "b1-wish-if-only-present"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "b1-wish-if-only-past"
     level: "B1"
     title: "Wish/if only: past"
     conversion: "keep"
+    r5_sources:
+      - "b1-wish-if-only-past"
     r5_aliases:
       - "b1-wish-if-only-past"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "b1-although-despite-however"
     level: "B1"
     title: "Although/despite/however"
     conversion: "keep"
+    r5_sources:
+      - "b1-although-despite-however"
     r5_aliases:
       - "b1-although-despite-however"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "b1-reason-result-connectors"
     level: "B1"
     title: "Reason/result connectors"
     conversion: "keep"
+    r5_sources:
+      - "b1-reason-result-connectors"
     r5_aliases:
       - "b1-reason-result-connectors"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "b1-articles-beyond-basics"
     level: "B1"
     title: "Articles beyond basics"
     conversion: "merge"
+    r5_sources:
+      - "b1-articles-beyond-basics"
+      - "b1-generic-reference-and-zero-article"
     r5_aliases:
       - "b1-articles-beyond-basics"
       - "b1-generic-reference-and-zero-article"
     conversion_notes:
       - "cùng một chủ đề"
-    core_inventory_candidates:
-      - code: "134"
-        name: "Articles"
-        level: "B1"
-        page: "29"
-        match_score: 0.500
-    catalog_review_required: false
+    catalog_review_required: true
   - id: "b1-quantifiers-and-distributives"
     level: "B1"
     title: "Quantifiers and distributives"
     conversion: "keep"
+    r5_sources:
+      - "b1-quantifiers-and-distributives"
     r5_aliases:
       - "b1-quantifiers-and-distributives"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "b1-both-either-neither"
     level: "B1"
     title: "Both/either/neither"
     conversion: "keep"
+    r5_sources:
+      - "b1-both-either-neither"
     r5_aliases:
       - "b1-both-either-neither"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "b1-one-ones"
     level: "B1"
     title: "One/ones"
     conversion: "keep"
+    r5_sources:
+      - "b1-one-ones"
     r5_aliases:
       - "b1-one-ones"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "b1-reflexive-pronouns-and-each-other"
     level: "B1"
     title: "Reflexive pronouns and each other"
     conversion: "keep"
+    r5_sources:
+      - "b1-reflexive-pronouns-and-each-other"
     r5_aliases:
       - "b1-reflexive-pronouns-and-each-other"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "b1-so-such-too-enough"
     level: "B1"
     title: "So/such/too/enough"
     conversion: "rescope"
+    r5_sources:
+      - "b1-so-such-too-enough"
     r5_aliases:
       - "b1-so-such-too-enough"
     conversion_notes:
       - "chỉ còn so/such (too/enough đã ở A2)"
-    core_inventory_candidates: []
     catalog_review_required: true
   - id: "b1-comparative-patterns-and-intensifiers"
     level: "B1"
     title: "Comparative patterns and intensifiers"
     conversion: "keep"
+    r5_sources:
+      - "b1-comparative-patterns-and-intensifiers"
     r5_aliases:
       - "b1-comparative-patterns-and-intensifiers"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "adjective_order"
     level: "B1"
     title: "Adjective Order"
     conversion: "add"
+    r5_sources:
+      []
     r5_aliases:
       []
     conversion_notes:
       - "R5 không có"
-    core_inventory_candidates:
-      - code: "148"
-        name: "Collocation of adjective"
-        level: "B1"
-        page: "29"
-        match_score: 0.500
     catalog_review_required: true
   - id: "adjective_preposition"
     level: "B1"
     title: "Adjective Preposition"
     conversion: "add"
+    r5_sources:
+      []
     r5_aliases:
       []
     conversion_notes:
       - "afraid of, interested in"
-    core_inventory_candidates:
-      - code: "148"
-        name: "Collocation of adjective"
-        level: "B1"
-        page: "29"
-        match_score: 0.500
     catalog_review_required: true
   - id: "be_used_to"
     level: "B1"
     title: "Be Used To"
     conversion: "add"
+    r5_sources:
+      []
     r5_aliases:
       []
     conversion_notes:
       - "be/get used to (khác used to)"
-    core_inventory_candidates:
-      - code: "69"
-        name: "Used to"
-        level: "B1"
-        page: "28"
-        match_score: 0.500
     catalog_review_required: true
   - id: "discourse_markers"
     level: "B1"
     title: "Discourse Markers"
     conversion: "add"
+    r5_sources:
+      []
     r5_aliases:
       []
     conversion_notes:
       - "R5 chỉ có ở C1 trở lên"
-    core_inventory_candidates:
-      - code: "46"
-        name: "Discourse Markers"
-        level: "B1"
-        page: "27"
-        match_score: 1.000
     catalog_review_required: true
   - id: "gerund_subject"
     level: "B1"
     title: "Gerund Subject"
     conversion: "add"
+    r5_sources:
+      []
     r5_aliases:
       []
     conversion_notes:
       - "Swimming is fun"
-    core_inventory_candidates: []
     catalog_review_required: true
   - id: "it_be_adjective_to"
     level: "B1"
     title: "It Be Adjective To"
     conversion: "add"
+    r5_sources:
+      []
     r5_aliases:
       []
     conversion_notes:
       - "It is easy to..."
-    core_inventory_candidates: []
     catalog_review_required: true
   - id: "make_let_allow"
     level: "B1"
     title: "Make Let Allow"
     conversion: "add"
+    r5_sources:
+      []
     r5_aliases:
       []
     conversion_notes:
       - "R5 không có"
-    core_inventory_candidates: []
     catalog_review_required: true
   - id: "phrasal_verbs.separable"
     level: "B1"
     title: "Phrasal Verbs Separable"
     conversion: "add"
+    r5_sources:
+      []
     r5_aliases:
       []
     conversion_notes:
       - "R5 không có"
-    core_inventory_candidates:
-      - code: "94"
-        name: "Phrasal Verbs"
-        level: "B1"
-        page: "28"
-        match_score: 0.667
-      - code: "96"
-        name: "Extended phrasal verbs"
-        level: "B1"
-        page: "28"
-        match_score: 0.667
     catalog_review_required: true
   - id: "purpose_so_that"
     level: "B1"
     title: "Purpose So That"
     conversion: "add"
+    r5_sources:
+      []
     r5_aliases:
       []
     conversion_notes:
       - "so that / in order to"
-    core_inventory_candidates: []
     catalog_review_required: true
   - id: "so_neither_agreement"
     level: "B1"
     title: "So Neither Agreement"
     conversion: "add"
+    r5_sources:
+      []
     r5_aliases:
       []
     conversion_notes:
       - "so do I / neither do I"
-    core_inventory_candidates: []
     catalog_review_required: true
   - id: "b2-perfect-aspect-in-discourse"
     level: "B2"
     title: "Perfect aspect in discourse"
     conversion: "merge"
+    r5_sources:
+      - "b2-perfect-aspect-in-discourse"
+      - "b2-present-aspect-and-viewpoint"
+      - "b2-past-aspect-and-narrative-viewpoint"
     r5_aliases:
       - "b2-perfect-aspect-in-discourse"
       - "b2-present-aspect-and-viewpoint"
@@ -1844,226 +1328,171 @@ items:
     conversion_notes:
       - "ba bài \"viewpoint\" B2 trừu tượng, chồng bài thì B1"
       - "như trên"
-    core_inventory_candidates: []
-    catalog_review_required: false
+    catalog_review_required: true
   - id: "b2-future-perfect"
     level: "B2"
     title: "Future perfect"
     conversion: "merge"
+    r5_sources:
+      - "b2-future-perfect"
+      - "b1-future-perfect-introduction"
     r5_aliases:
       - "b2-future-perfect"
       - "b1-future-perfect-introduction"
     conversion_notes:
       - "bài trùng hệt tiêu đề ở hai cấp"
-    core_inventory_candidates:
-      - code: "78"
-        name: "Future perfect"
-        level: "B2"
-        page: "32"
-        match_score: 1.000
-      - code: "79"
-        name: "Future perfect continuous"
-        level: "B2"
-        page: "32"
-        match_score: 0.667
-      - code: "71"
-        name: "Past perfect"
-        level: "B2"
-        page: "32"
-        match_score: 0.500
-    catalog_review_required: false
+    catalog_review_required: true
   - id: "b2-future-perfect-continuous"
     level: "B2"
     title: "Future perfect continuous"
     conversion: "keep"
+    r5_sources:
+      - "b2-future-perfect-continuous"
     r5_aliases:
       - "b2-future-perfect-continuous"
     conversion_notes: []
-    core_inventory_candidates:
-      - code: "79"
-        name: "Future perfect continuous"
-        level: "B2"
-        page: "32"
-        match_score: 1.000
-      - code: "72"
-        name: "Past perfect continuous"
-        level: "B2"
-        page: "32"
-        match_score: 0.667
-      - code: "77"
-        name: "Future continuous (Prediction)"
-        level: "B2"
-        page: "32"
-        match_score: 0.667
     catalog_review_required: false
   - id: "b2-future-in-the-past"
     level: "B2"
     title: "Future in the past"
     conversion: "keep"
+    r5_sources:
+      - "b2-future-in-the-past"
     r5_aliases:
       - "b2-future-in-the-past"
     conversion_notes: []
-    core_inventory_candidates:
-      - code: "71"
-        name: "Past perfect"
-        level: "B2"
-        page: "32"
-        match_score: 0.500
-      - code: "73"
-        name: "Future"
-        level: "B2"
-        page: "32"
-        match_score: 0.500
-      - code: "78"
-        name: "Future perfect"
-        level: "B2"
-        page: "32"
-        match_score: 0.500
     catalog_review_required: false
   - id: "b2-mixed-conditionals"
     level: "B2"
     title: "Mixed conditionals"
     conversion: "merge"
+    r5_sources:
+      - "b2-mixed-conditionals"
+      - "b1-mixed-conditional-introduction"
     r5_aliases:
       - "b2-mixed-conditionals"
       - "b1-mixed-conditional-introduction"
     conversion_notes:
       - "bài trùng ở hai cấp"
-    core_inventory_candidates:
-      - code: "92"
-        name: "Mixed conditionals"
-        level: "B2"
-        page: "32"
-        match_score: 1.000
-      - code: "89"
-        name: "Conditionals"
-        level: "B2"
-        page: "32"
-        match_score: 0.500
-    catalog_review_required: false
+    catalog_review_required: true
   - id: "b2-in-case-provided-as-long-as"
     level: "B2"
     title: "In case/provided/as long as"
     conversion: "keep"
+    r5_sources:
+      - "b2-in-case-provided-as-long-as"
     r5_aliases:
       - "b2-in-case-provided-as-long-as"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "b2-modal-certainty-and-probability"
     level: "B2"
     title: "Modal certainty and probability"
     conversion: "keep"
+    r5_sources:
+      - "b2-modal-certainty-and-probability"
     r5_aliases:
       - "b2-modal-certainty-and-probability"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "b2-past-deduction"
     level: "B2"
     title: "Past deduction"
     conversion: "keep"
+    r5_sources:
+      - "b2-past-deduction"
     r5_aliases:
       - "b2-past-deduction"
     conversion_notes: []
-    core_inventory_candidates:
-      - code: "71"
-        name: "Past perfect"
-        level: "B2"
-        page: "32"
-        match_score: 0.500
     catalog_review_required: false
   - id: "b2-modal-perfect-criticism-and-regret"
     level: "B2"
     title: "Modal perfect criticism and regret"
     conversion: "keep"
+    r5_sources:
+      - "b2-modal-perfect-criticism-and-regret"
     r5_aliases:
       - "b2-modal-perfect-criticism-and-regret"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "b2-needn-t-have-vs-didn-t-need-to"
     level: "B2"
     title: "Needn't have vs didn't need to"
     conversion: "keep"
+    r5_sources:
+      - "b2-needn-t-have-vs-didn-t-need-to"
     r5_aliases:
       - "b2-needn-t-have-vs-didn-t-need-to"
     conversion_notes: []
-    core_inventory_candidates:
-      - code: "120"
-        name: "Modals: can’t have, needn’t have"
-        level: "B2"
-        page: "32"
-        match_score: 0.500
     catalog_review_required: false
   - id: "b2-would-rather-would-prefer-prefer"
     level: "B2"
     title: "Would rather/would prefer/prefer"
     conversion: "keep"
+    r5_sources:
+      - "b2-would-rather-would-prefer-prefer"
     r5_aliases:
       - "b2-would-rather-would-prefer-prefer"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "b2-it-s-time-past-form"
     level: "B2"
     title: "It's time + past form"
     conversion: "keep"
+    r5_sources:
+      - "b2-it-s-time-past-form"
     r5_aliases:
       - "b2-it-s-time-past-form"
     conversion_notes: []
-    core_inventory_candidates:
-      - code: "48"
-        name: "Linkers: sequential – past time"
-        level: "B2"
-        page: "31"
-        match_score: 0.500
     catalog_review_required: false
   - id: "b2-advanced-passive-forms"
     level: "B2"
     title: "Advanced passive forms"
     conversion: "keep"
+    r5_sources:
+      - "b2-advanced-passive-forms"
     r5_aliases:
       - "b2-advanced-passive-forms"
     conversion_notes: []
-    core_inventory_candidates:
-      - code: "99"
-        name: "All passive forms"
-        level: "B2"
-        page: "32"
-        match_score: 0.500
     catalog_review_required: false
   - id: "b2-modal-perfect-passive"
     level: "B2"
     title: "Modal perfect passive"
     conversion: "keep"
+    r5_sources:
+      - "b2-modal-perfect-passive"
     r5_aliases:
       - "b2-modal-perfect-passive"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "b2-two-object-passive"
     level: "B2"
     title: "Two-object passive"
     conversion: "keep"
+    r5_sources:
+      - "b2-two-object-passive"
     r5_aliases:
       - "b2-two-object-passive"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "b2-causative-have-get-extended"
     level: "B2"
     title: "Causative have/get: extended"
     conversion: "keep"
+    r5_sources:
+      - "b2-causative-have-get-extended"
     r5_aliases:
       - "b2-causative-have-get-extended"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "b2-reporting-passive"
     level: "B2"
     title: "Reporting passive"
     conversion: "merge"
+    r5_sources:
+      - "b2-reporting-passive"
+      - "b2-impersonal-passive"
+      - "c1-reporting-passives"
     r5_aliases:
       - "b2-reporting-passive"
       - "b2-impersonal-passive"
@@ -2071,800 +1500,811 @@ items:
     conversion_notes:
       - "\"It is said that...\" và \"He is said to...\" cùng một họ"
       - "trùng hệt tiêu đề ở B2"
-    core_inventory_candidates:
-      - code: "99"
-        name: "All passive forms"
-        level: "B2"
-        page: "32"
-        match_score: 0.500
-    catalog_review_required: false
+    catalog_review_required: true
   - id: "b2-reported-speech-tense-choice"
     level: "B2"
     title: "Reported speech: tense choice"
     conversion: "keep"
+    r5_sources:
+      - "b2-reported-speech-tense-choice"
     r5_aliases:
       - "b2-reported-speech-tense-choice"
     conversion_notes: []
-    core_inventory_candidates:
-      - code: "101"
-        name: "Reported speech (range of tenses)"
-        level: "B2"
-        page: "32"
-        match_score: 0.500
     catalog_review_required: false
   - id: "b2-reporting-verbs-and-patterns"
     level: "B2"
     title: "Reporting verbs and patterns"
     conversion: "keep"
+    r5_sources:
+      - "b2-reporting-verbs-and-patterns"
     r5_aliases:
       - "b2-reporting-verbs-and-patterns"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "b2-advanced-relative-clauses"
     level: "B2"
     title: "Advanced relative clauses"
     conversion: "merge"
+    r5_sources:
+      - "b2-advanced-relative-clauses"
+      - "c1-advanced-relative-structures"
     r5_aliases:
       - "b2-advanced-relative-clauses"
       - "c1-advanced-relative-structures"
     conversion_notes:
       - "quá rộng, chồng bài B2"
-    core_inventory_candidates:
-      - code: "102"
-        name: "Relative clauses"
-        level: "B2"
-        page: "32"
-        match_score: 1.000
-    catalog_review_required: false
+    catalog_review_required: true
   - id: "b2-preposition-relative-pronoun"
     level: "B2"
     title: "Preposition + relative pronoun"
     conversion: "rescope"
+    r5_sources:
+      - "b2-preposition-relative-pronoun"
     r5_aliases:
       - "b2-preposition-relative-pronoun"
     conversion_notes:
       - "chỉ còn dạng trang trọng (to whom); dạng thường ở b1-relative-pronouns-and-prepositions"
-    core_inventory_candidates: []
     catalog_review_required: true
   - id: "b2-quantifier-relative-pronoun"
     level: "B2"
     title: "Quantifier + relative pronoun"
     conversion: "keep"
+    r5_sources:
+      - "b2-quantifier-relative-pronoun"
     r5_aliases:
       - "b2-quantifier-relative-pronoun"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "b2-reduced-relative-clauses"
     level: "B2"
     title: "Reduced relative clauses"
     conversion: "keep"
+    r5_sources:
+      - "b2-reduced-relative-clauses"
     r5_aliases:
       - "b2-reduced-relative-clauses"
     conversion_notes: []
-    core_inventory_candidates:
-      - code: "102"
-        name: "Relative clauses"
-        level: "B2"
-        page: "32"
-        match_score: 0.667
     catalog_review_required: false
   - id: "b2-participle-clauses"
     level: "B2"
     title: "Participle clauses"
     conversion: "keep"
+    r5_sources:
+      - "b2-participle-clauses"
     r5_aliases:
       - "b2-participle-clauses"
     conversion_notes: []
-    core_inventory_candidates:
-      - code: "102"
-        name: "Relative clauses"
-        level: "B2"
-        page: "32"
-        match_score: 0.500
     catalog_review_required: false
   - id: "b2-perfect-participle-clauses"
     level: "B2"
     title: "Perfect participle clauses"
     conversion: "keep"
+    r5_sources:
+      - "b2-perfect-participle-clauses"
     r5_aliases:
       - "b2-perfect-participle-clauses"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "b2-infinitive-clauses"
     level: "B2"
     title: "Infinitive clauses"
     conversion: "keep"
+    r5_sources:
+      - "b2-infinitive-clauses"
     r5_aliases:
       - "b2-infinitive-clauses"
     conversion_notes: []
-    core_inventory_candidates:
-      - code: "102"
-        name: "Relative clauses"
-        level: "B2"
-        page: "32"
-        match_score: 0.500
     catalog_review_required: false
   - id: "b2-gerund-clauses"
     level: "B2"
     title: "Gerund clauses"
     conversion: "keep"
+    r5_sources:
+      - "b2-gerund-clauses"
     r5_aliases:
       - "b2-gerund-clauses"
     conversion_notes: []
-    core_inventory_candidates:
-      - code: "102"
-        name: "Relative clauses"
-        level: "B2"
-        page: "32"
-        match_score: 0.500
     catalog_review_required: false
   - id: "b2-cleft-sentences"
     level: "B2"
     title: "Cleft sentences"
     conversion: "merge"
+    r5_sources:
+      - "b2-cleft-sentences"
+      - "c1-it-clefts"
     r5_aliases:
       - "b2-cleft-sentences"
       - "c1-it-clefts"
     conversion_notes:
       - "trùng phạm vi it-cleft"
-    core_inventory_candidates: []
-    catalog_review_required: false
+    catalog_review_required: true
   - id: "b2-pseudo-cleft-sentences"
     level: "B2"
     title: "Pseudo-cleft sentences"
     conversion: "merge"
+    r5_sources:
+      - "b2-pseudo-cleft-sentences"
+      - "c1-wh-clefts-and-reversed-clefts"
     r5_aliases:
       - "b2-pseudo-cleft-sentences"
       - "c1-wh-clefts-and-reversed-clefts"
     conversion_notes:
       - "trùng phạm vi wh-cleft"
-    core_inventory_candidates: []
-    catalog_review_required: false
+    catalog_review_required: true
   - id: "b2-fronting-for-emphasis"
     level: "B2"
     title: "Fronting for emphasis"
     conversion: "merge"
+    r5_sources:
+      - "b2-fronting-for-emphasis"
+      - "c1-fronting-and-topicalisation"
     r5_aliases:
       - "b2-fronting-for-emphasis"
       - "c1-fronting-and-topicalisation"
     conversion_notes:
       - "trùng phạm vi"
-    core_inventory_candidates: []
-    catalog_review_required: false
+    catalog_review_required: true
   - id: "b2-emphatic-do"
     level: "B2"
     title: "Emphatic do"
     conversion: "keep"
+    r5_sources:
+      - "b2-emphatic-do"
     r5_aliases:
       - "b2-emphatic-do"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "b2-advanced-articles-and-determiners"
     level: "B2"
     title: "Advanced articles and determiners"
     conversion: "keep"
+    r5_sources:
+      - "b2-advanced-articles-and-determiners"
     r5_aliases:
       - "b2-advanced-articles-and-determiners"
     conversion_notes: []
-    core_inventory_candidates:
-      - code: "134"
-        name: "Articles"
-        level: "B2"
-        page: "32"
-        match_score: 0.500
     catalog_review_required: false
   - id: "b2-complex-quantifiers"
     level: "B2"
     title: "Complex quantifiers"
     conversion: "keep"
+    r5_sources:
+      - "b2-complex-quantifiers"
     r5_aliases:
       - "b2-complex-quantifiers"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "b2-reference-and-substitution"
     level: "B2"
     title: "Reference and substitution"
     conversion: "keep"
+    r5_sources:
+      - "b2-reference-and-substitution"
     r5_aliases:
       - "b2-reference-and-substitution"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "b2-ellipsis"
     level: "B2"
     title: "Ellipsis"
     conversion: "merge"
+    r5_sources:
+      - "b2-ellipsis"
+      - "c1-ellipsis-and-substitution"
     r5_aliases:
       - "b2-ellipsis"
       - "c1-ellipsis-and-substitution"
     conversion_notes:
       - "trùng phạm vi"
-    core_inventory_candidates: []
-    catalog_review_required: false
+    catalog_review_required: true
   - id: "b2-nominal-clauses"
     level: "B2"
     title: "Nominal clauses"
     conversion: "keep"
+    r5_sources:
+      - "b2-nominal-clauses"
     r5_aliases:
       - "b2-nominal-clauses"
     conversion_notes: []
-    core_inventory_candidates:
-      - code: "102"
-        name: "Relative clauses"
-        level: "B2"
-        page: "32"
-        match_score: 0.500
     catalog_review_required: false
   - id: "b2-complex-noun-phrases"
     level: "B2"
     title: "Complex noun phrases"
     conversion: "merge"
+    r5_sources:
+      - "b2-complex-noun-phrases"
+      - "c1-complex-noun-phrase-architecture"
     r5_aliases:
       - "b2-complex-noun-phrases"
       - "c1-complex-noun-phrase-architecture"
     conversion_notes:
       - "trùng phạm vi"
-    core_inventory_candidates: []
-    catalog_review_required: false
+    catalog_review_required: true
   - id: "b2-dependent-prepositions"
     level: "B2"
     title: "Dependent prepositions"
     conversion: "keep"
+    r5_sources:
+      - "b2-dependent-prepositions"
     r5_aliases:
       - "b2-dependent-prepositions"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "b2-concession-patterns"
     level: "B2"
     title: "Concession patterns"
     conversion: "keep"
+    r5_sources:
+      - "b2-concession-patterns"
     r5_aliases:
       - "b2-concession-patterns"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "b2-formal-vs-informal-grammar-choices"
     level: "B2"
     title: "Formal vs informal grammar choices"
     conversion: "merge"
+    r5_sources:
+      - "b2-formal-vs-informal-grammar-choices"
+      - "c2-academic-vs-business-vs-conversational-grammar"
     r5_aliases:
       - "b2-formal-vs-informal-grammar-choices"
       - "c2-academic-vs-business-vs-conversational-grammar"
     conversion_notes:
       - "cùng chủ đề register"
-    core_inventory_candidates: []
-    catalog_review_required: false
+    catalog_review_required: true
   - id: "b2-punctuation-with-complex-clauses"
     level: "B2"
     title: "Punctuation with complex clauses"
     conversion: "merge"
+    r5_sources:
+      - "b2-punctuation-with-complex-clauses"
+      - "c2-advanced-punctuation-as-syntax"
     r5_aliases:
       - "b2-punctuation-with-complex-clauses"
       - "c2-advanced-punctuation-as-syntax"
     conversion_notes:
       - "trùng phạm vi"
-    core_inventory_candidates: []
-    catalog_review_required: false
+    catalog_review_required: true
   - id: "as_if_as_though"
     level: "B2"
     title: "As If As Though"
     conversion: "add"
+    r5_sources:
+      []
     r5_aliases:
       []
     conversion_notes:
       - "R5 không có"
-    core_inventory_candidates: []
     catalog_review_required: true
   - id: "get_passive"
     level: "B2"
     title: "Get Passive"
     conversion: "add"
+    r5_sources:
+      []
     r5_aliases:
       []
     conversion_notes:
       - "R5 không có"
-    core_inventory_candidates:
-      - code: "99"
-        name: "All passive forms"
-        level: "B2"
-        page: "32"
-        match_score: 0.500
     catalog_review_required: true
   - id: "phrasal_verbs.advanced"
     level: "B2"
     title: "Phrasal Verbs Advanced"
     conversion: "add"
+    r5_sources:
+      []
     r5_aliases:
       []
     conversion_notes:
       - "R5 không có"
-    core_inventory_candidates:
-      - code: "94"
-        name: "Phrasal Verbs"
-        level: "B2"
-        page: "32"
-        match_score: 1.000
-      - code: "96"
-        name: "Extended phrasal verb"
-        level: "B2"
-        page: "32"
-        match_score: 0.667
-      - code: "55"
-        name: "Verb forms"
-        level: "B2"
-        page: "31"
-        match_score: 0.500
     catalog_review_required: true
   - id: "b2-only-phrase-inversion"
     level: "C1"
     title: "Only-phrase inversion"
     conversion: "relevel"
+    r5_sources:
+      - "b2-only-phrase-inversion"
     r5_aliases:
       - "b2-only-phrase-inversion"
     conversion_notes:
       - "đảo ngữ"
-    core_inventory_candidates: []
     catalog_review_required: true
   - id: "b2-no-sooner-hardly-scarcely"
     level: "C1"
     title: "No sooner/hardly/scarcely"
     conversion: "relevel"
+    r5_sources:
+      - "b2-no-sooner-hardly-scarcely"
     r5_aliases:
       - "b2-no-sooner-hardly-scarcely"
     conversion_notes:
       - "đảo ngữ"
-    core_inventory_candidates: []
     catalog_review_required: true
   - id: "c1-advanced-simple-vs-continuous-aspect"
     level: "C1"
     title: "Advanced simple vs continuous aspect"
     conversion: "merge"
+    r5_sources:
+      - "c1-advanced-simple-vs-continuous-aspect"
+      - "c1-advanced-perfect-aspect"
     r5_aliases:
       - "c1-advanced-simple-vs-continuous-aspect"
       - "c1-advanced-perfect-aspect"
     conversion_notes:
       - "trừu tượng, chồng nhau"
-    core_inventory_candidates: []
-    catalog_review_required: false
+    catalog_review_required: true
   - id: "c1-lexical-aspect-and-meaning-shifts"
     level: "C1"
     title: "Lexical aspect and meaning shifts"
     conversion: "merge"
+    r5_sources:
+      - "c1-lexical-aspect-and-meaning-shifts"
+      - "c2-advanced-tense-aspect-viewpoint-shifts"
     r5_aliases:
       - "c1-lexical-aspect-and-meaning-shifts"
       - "c2-advanced-tense-aspect-viewpoint-shifts"
     conversion_notes:
       - "trừu tượng, chồng nhau"
-    core_inventory_candidates: []
-    catalog_review_required: false
+    catalog_review_required: true
   - id: "c1-historic-present-and-narrative-shifts"
     level: "C1"
     title: "Historic present and narrative shifts"
     conversion: "keep"
+    r5_sources:
+      - "c1-historic-present-and-narrative-shifts"
     r5_aliases:
       - "c1-historic-present-and-narrative-shifts"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "c1-future-in-the-past-systems"
     level: "C1"
     title: "Future-in-the-past systems"
     conversion: "keep"
+    r5_sources:
+      - "c1-future-in-the-past-systems"
     r5_aliases:
       - "c1-future-in-the-past-systems"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "c1-advanced-epistemic-modality"
     level: "C1"
     title: "Advanced epistemic modality"
     conversion: "keep"
+    r5_sources:
+      - "c1-advanced-epistemic-modality"
     r5_aliases:
       - "c1-advanced-epistemic-modality"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "c1-deontic-and-dynamic-modality"
     level: "C1"
     title: "Deontic and dynamic modality"
     conversion: "keep"
+    r5_sources:
+      - "c1-deontic-and-dynamic-modality"
     r5_aliases:
       - "c1-deontic-and-dynamic-modality"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "c1-hedging-with-modal-and-lexical-devices"
     level: "C1"
     title: "Hedging with modal and lexical devices"
     conversion: "merge"
+    r5_sources:
+      - "c1-hedging-with-modal-and-lexical-devices"
+      - "c1-hedging-academic-claims"
     r5_aliases:
       - "c1-hedging-with-modal-and-lexical-devices"
       - "c1-hedging-academic-claims"
     conversion_notes:
       - "trùng phạm vi hedging"
-    core_inventory_candidates: []
-    catalog_review_required: false
+    catalog_review_required: true
   - id: "c1-boosting-and-controlled-certainty"
     level: "C1"
     title: "Boosting and controlled certainty"
     conversion: "keep"
+    r5_sources:
+      - "c1-boosting-and-controlled-certainty"
     r5_aliases:
       - "c1-boosting-and-controlled-certainty"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "c1-negative-adverbial-inversion"
     level: "C1"
     title: "Negative adverbial inversion"
     conversion: "merge"
+    r5_sources:
+      - "c1-negative-adverbial-inversion"
+      - "b2-negative-adverbial-inversion"
     r5_aliases:
       - "c1-negative-adverbial-inversion"
       - "b2-negative-adverbial-inversion"
     conversion_notes:
       - "trùng hệt tiêu đề B2/C1; đảo ngữ là C1"
-    core_inventory_candidates:
-      - code: "159"
-        name: "Inversion (negative adverbials)"
-        level: "C1"
-        page: "36"
-        match_score: 1.000
-    catalog_review_required: false
+    catalog_review_required: true
   - id: "c1-conditional-inversion"
     level: "C1"
     title: "Conditional inversion"
     conversion: "merge"
+    r5_sources:
+      - "c1-conditional-inversion"
+      - "b2-conditional-inversion-introduction"
     r5_aliases:
       - "c1-conditional-inversion"
       - "b2-conditional-inversion-introduction"
     conversion_notes:
       - "trùng"
-    core_inventory_candidates:
-      - code: "89"
-        name: "Conditionals"
-        level: "C1"
-        page: "35"
-        match_score: 0.500
-    catalog_review_required: false
+    catalog_review_required: true
   - id: "c1-so-such-inversion"
     level: "C1"
     title: "So/such inversion"
     conversion: "keep"
+    r5_sources:
+      - "c1-so-such-inversion"
     r5_aliases:
       - "c1-so-such-inversion"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "c1-extraposition-with-anticipatory-it"
     level: "C1"
     title: "Extraposition with anticipatory it"
     conversion: "keep"
+    r5_sources:
+      - "c1-extraposition-with-anticipatory-it"
     r5_aliases:
       - "c1-extraposition-with-anticipatory-it"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "c1-existential-there-with-complex-noun-phrases"
     level: "C1"
     title: "Existential there with complex noun phrases"
     conversion: "keep"
+    r5_sources:
+      - "c1-existential-there-with-complex-noun-phrases"
     r5_aliases:
       - "c1-existential-there-with-complex-noun-phrases"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "c1-nominalisation"
     level: "C1"
     title: "Nominalisation"
     conversion: "keep"
+    r5_sources:
+      - "c1-nominalisation"
     r5_aliases:
       - "c1-nominalisation"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "c1-perfect-infinitives-in-reporting"
     level: "C1"
     title: "Perfect infinitives in reporting"
     conversion: "keep"
+    r5_sources:
+      - "c1-perfect-infinitives-in-reporting"
     r5_aliases:
       - "c1-perfect-infinitives-in-reporting"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "c1-mandative-subjunctive"
     level: "C1"
     title: "Mandative subjunctive"
     conversion: "keep"
+    r5_sources:
+      - "c1-mandative-subjunctive"
     r5_aliases:
       - "c1-mandative-subjunctive"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "c1-were-subjunctive"
     level: "C1"
     title: "Were-subjunctive"
     conversion: "keep"
+    r5_sources:
+      - "c1-were-subjunctive"
     r5_aliases:
       - "c1-were-subjunctive"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "c1-fused-relative-clauses"
     level: "C1"
     title: "Fused relative clauses"
     conversion: "merge"
+    r5_sources:
+      - "c1-fused-relative-clauses"
+      - "c2-fused-and-nominal-relatives"
     r5_aliases:
       - "c1-fused-relative-clauses"
       - "c2-fused-and-nominal-relatives"
     conversion_notes:
       - "trùng phạm vi"
-    core_inventory_candidates: []
-    catalog_review_required: false
+    catalog_review_required: true
   - id: "c1-advanced-non-finite-clauses"
     level: "C1"
     title: "Advanced non-finite clauses"
     conversion: "keep"
+    r5_sources:
+      - "c1-advanced-non-finite-clauses"
     r5_aliases:
       - "c1-advanced-non-finite-clauses"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "c1-perfect-and-passive-non-finites"
     level: "C1"
     title: "Perfect and passive non-finites"
     conversion: "keep"
+    r5_sources:
+      - "c1-perfect-and-passive-non-finites"
     r5_aliases:
       - "c1-perfect-and-passive-non-finites"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "c1-advanced-concession"
     level: "C1"
     title: "Advanced concession"
     conversion: "merge"
+    r5_sources:
+      - "c1-advanced-concession"
+      - "c2-advanced-concession-and-counterargument"
     r5_aliases:
       - "c1-advanced-concession"
       - "c2-advanced-concession-and-counterargument"
     conversion_notes:
       - "trùng phạm vi"
-    core_inventory_candidates: []
-    catalog_review_required: false
+    catalog_review_required: true
   - id: "c1-cause-result-purpose-relations"
     level: "C1"
     title: "Cause/result/purpose relations"
     conversion: "keep"
+    r5_sources:
+      - "c1-cause-result-purpose-relations"
     r5_aliases:
       - "c1-cause-result-purpose-relations"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "c1-discourse-reference"
     level: "C1"
     title: "Discourse reference"
     conversion: "keep"
+    r5_sources:
+      - "c1-discourse-reference"
     r5_aliases:
       - "c1-discourse-reference"
     conversion_notes: []
-    core_inventory_candidates:
-      - code: "46"
-        name: "Discourse Markers"
-        level: "C1"
-        page: "35"
-        match_score: 0.500
     catalog_review_required: false
   - id: "c1-parallelism-and-coordination"
     level: "C1"
     title: "Parallelism and coordination"
     conversion: "keep"
+    r5_sources:
+      - "c1-parallelism-and-coordination"
     r5_aliases:
       - "c1-parallelism-and-coordination"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "c1-qualification-and-limitation"
     level: "C1"
     title: "Qualification and limitation"
     conversion: "keep"
+    r5_sources:
+      - "c1-qualification-and-limitation"
     r5_aliases:
       - "c1-qualification-and-limitation"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "c1-register-driven-grammar"
     level: "C1"
     title: "Register-driven grammar"
     conversion: "merge"
+    r5_sources:
+      - "c1-register-driven-grammar"
+      - "c2-register-driven-syntax"
     r5_aliases:
       - "c1-register-driven-grammar"
       - "c2-register-driven-syntax"
     conversion_notes:
       - "cùng chủ đề register"
-    core_inventory_candidates: []
-    catalog_review_required: false
+    catalog_review_required: true
   - id: "c1-academic-definitions-and-classifications"
     level: "C1"
     title: "Academic definitions and classifications"
     conversion: "keep"
+    r5_sources:
+      - "c1-academic-definitions-and-classifications"
     r5_aliases:
       - "c1-academic-definitions-and-classifications"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: false
   - id: "c1-sentence-rhythm-end-weight-and-end-focus"
     level: "C1"
     title: "Sentence rhythm, end-weight and end-focus"
     conversion: "merge"
+    r5_sources:
+      - "c1-sentence-rhythm-end-weight-and-end-focus"
+      - "c1-old-to-new-information-flow"
     r5_aliases:
       - "c1-sentence-rhythm-end-weight-and-end-focus"
       - "c1-old-to-new-information-flow"
     conversion_notes:
       - "cùng chủ đề information structure"
-    core_inventory_candidates: []
-    catalog_review_required: false
+    catalog_review_required: true
   - id: "c2-layered-modality-and-authorial-voice"
     level: "C2"
     title: "Layered modality and authorial voice"
     conversion: "keep"
+    r5_sources:
+      - "c2-layered-modality-and-authorial-voice"
     r5_aliases:
       - "c2-layered-modality-and-authorial-voice"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: true
   - id: "c2-counterfactual-compression"
     level: "C2"
     title: "Counterfactual compression"
     conversion: "keep"
+    r5_sources:
+      - "c2-counterfactual-compression"
     r5_aliases:
       - "c2-counterfactual-compression"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: true
   - id: "c2-negation-and-quantifier-scope"
     level: "C2"
     title: "Negation and quantifier scope"
     conversion: "keep"
+    r5_sources:
+      - "c2-negation-and-quantifier-scope"
     r5_aliases:
       - "c2-negation-and-quantifier-scope"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: true
   - id: "c2-only-focus-scope"
     level: "C2"
     title: "Only/focus scope"
     conversion: "keep"
+    r5_sources:
+      - "c2-only-focus-scope"
     r5_aliases:
       - "c2-only-focus-scope"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: true
   - id: "c2-ambiguity-from-modifier-attachment"
     level: "C2"
     title: "Ambiguity from modifier attachment"
     conversion: "keep"
+    r5_sources:
+      - "c2-ambiguity-from-modifier-attachment"
     r5_aliases:
       - "c2-ambiguity-from-modifier-attachment"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: true
   - id: "c2-reference-ambiguity"
     level: "C2"
     title: "Reference ambiguity"
     conversion: "keep"
+    r5_sources:
+      - "c2-reference-ambiguity"
     r5_aliases:
       - "c2-reference-ambiguity"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: true
   - id: "c2-deep-clause-embedding"
     level: "C2"
     title: "Deep clause embedding"
     conversion: "keep"
+    r5_sources:
+      - "c2-deep-clause-embedding"
     r5_aliases:
       - "c2-deep-clause-embedding"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: true
   - id: "c2-advanced-apposition"
     level: "C2"
     title: "Advanced apposition"
     conversion: "keep"
+    r5_sources:
+      - "c2-advanced-apposition"
     r5_aliases:
       - "c2-advanced-apposition"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: true
   - id: "c2-parenthetical-grammar"
     level: "C2"
     title: "Parenthetical grammar"
     conversion: "keep"
+    r5_sources:
+      - "c2-parenthetical-grammar"
     r5_aliases:
       - "c2-parenthetical-grammar"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: true
   - id: "c2-heavy-constituent-shift"
     level: "C2"
     title: "Heavy constituent shift"
     conversion: "keep"
+    r5_sources:
+      - "c2-heavy-constituent-shift"
     r5_aliases:
       - "c2-heavy-constituent-shift"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: true
   - id: "c2-advanced-extraposition"
     level: "C2"
     title: "Advanced extraposition"
     conversion: "keep"
+    r5_sources:
+      - "c2-advanced-extraposition"
     r5_aliases:
       - "c2-advanced-extraposition"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: true
   - id: "c2-marked-comparison-structures"
     level: "C2"
     title: "Marked comparison structures"
     conversion: "keep"
+    r5_sources:
+      - "c2-marked-comparison-structures"
     r5_aliases:
       - "c2-marked-comparison-structures"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: true
   - id: "c2-advanced-complement-alternation"
     level: "C2"
     title: "Advanced complement alternation"
     conversion: "keep"
+    r5_sources:
+      - "c2-advanced-complement-alternation"
     r5_aliases:
       - "c2-advanced-complement-alternation"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: true
   - id: "c2-advanced-reporting-and-distancing"
     level: "C2"
     title: "Advanced reporting and distancing"
     conversion: "keep"
+    r5_sources:
+      - "c2-advanced-reporting-and-distancing"
     r5_aliases:
       - "c2-advanced-reporting-and-distancing"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: true
   - id: "c2-cross-sentence-ellipsis"
     level: "C2"
     title: "Cross-sentence ellipsis"
     conversion: "keep"
+    r5_sources:
+      - "c2-cross-sentence-ellipsis"
     r5_aliases:
       - "c2-cross-sentence-ellipsis"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: true
   - id: "c2-discourse-substitution-chains"
     level: "C2"
     title: "Discourse substitution chains"
     conversion: "keep"
+    r5_sources:
+      - "c2-discourse-substitution-chains"
     r5_aliases:
       - "c2-discourse-substitution-chains"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: true
   - id: "c2-lexico-grammar-and-colligation"
     level: "C2"
     title: "Lexico-grammar and colligation"
     conversion: "keep"
+    r5_sources:
+      - "c2-lexico-grammar-and-colligation"
     r5_aliases:
       - "c2-lexico-grammar-and-colligation"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: true
   - id: "c2-metadiscourse-grammar"
     level: "C2"
     title: "Metadiscourse grammar"
     conversion: "keep"
+    r5_sources:
+      - "c2-metadiscourse-grammar"
     r5_aliases:
       - "c2-metadiscourse-grammar"
     conversion_notes: []
-    core_inventory_candidates: []
     catalog_review_required: true
