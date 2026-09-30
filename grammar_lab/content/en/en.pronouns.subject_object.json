@@ -1,0 +1,226 @@
+{
+  "schema_version": "0.4",
+  "id": "en.pronouns.subject_object",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.pronoun_reference",
+  "level": {
+    "framework": "cefr",
+    "value": "A1",
+    "rank": 1
+  },
+  "prereqs": [
+    "en.be.present"
+  ],
+  "contrasts": [],
+  "error_tags": [
+    "word_form"
+  ],
+  "source_refs": {
+    "r5": [
+      "a1-subject-and-object-pronouns"
+    ]
+  },
+  "point_type": "other",
+  "header": {
+    "title": {
+      "vi": "Đại từ chủ ngữ và tân ngữ",
+      "en": "Subject and object pronouns"
+    },
+    "native_title": "Subject and object pronouns",
+    "sub": {
+      "vi": "I/me, he/him...",
+      "en": "I/me, he/him..."
+    },
+    "level": {
+      "framework": "cefr",
+      "value": "A1",
+      "rank": 1
+    },
+    "summary": {
+      "vi": "Đại từ đổi dạng tùy vị trí: dạng chủ ngữ đứng trước động từ, dạng tân ngữ đứng sau động từ hoặc giới từ.",
+      "en": "Pronouns change form by position: subject forms come before verbs, object forms after verbs or prepositions."
+    }
+  },
+  "when_to_use": [
+    {
+      "vi": "Dùng I, you, he, she, it, we, they làm chủ ngữ.",
+      "en": "Use I, you, he, she, it, we, and they as subjects."
+    },
+    {
+      "vi": "Dùng me, you, him, her, it, us, them làm tân ngữ.",
+      "en": "Use me, you, him, her, it, us, and them as objects."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "pronoun",
+        "role": "other",
+        "label": {
+          "vi": "đại từ đúng dạng",
+          "en": "correct pronoun form"
+        }
+      }
+    ],
+    "illustration": {
+      "kind": "none"
+    }
+  },
+  "examples": [
+    {
+      "text": "She knows me.",
+      "form": "affirmative",
+      "spans": [
+        {
+          "start": 0,
+          "end": 3,
+          "role": "other"
+        },
+        {
+          "start": 10,
+          "end": 12,
+          "role": "other"
+        }
+      ],
+      "annotation": {
+        "vi": "She là chủ ngữ; me là tân ngữ.",
+        "en": "She is the subject form; me is the object form."
+      },
+      "translation": {
+        "vi": "She là chủ ngữ; me là tân ngữ.",
+        "en": "She is the subject form; me is the object form."
+      }
+    },
+    {
+      "text": "They live with us.",
+      "form": "affirmative",
+      "spans": [
+        {
+          "start": 0,
+          "end": 4,
+          "role": "other"
+        },
+        {
+          "start": 15,
+          "end": 17,
+          "role": "other"
+        }
+      ],
+      "annotation": {
+        "vi": "Sau with dùng us.",
+        "en": "After with, use us."
+      },
+      "translation": {
+        "vi": "Sau with dùng us.",
+        "en": "After with, use us."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "Me am tired.",
+      "right": "I am tired.",
+      "reason": {
+        "vi": "Đầu câu làm chủ ngữ phải dùng I, không dùng me.",
+        "en": "Use I, not me, as the subject."
+      },
+      "error_tag": "word_form",
+      "l1": [
+        "vi"
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "___ is my sister.",
+      "options": [
+        {
+          "text": "She",
+          "error_tag": null
+        },
+        {
+          "text": "Her",
+          "error_tag": "word_form"
+        },
+        {
+          "text": "Him",
+          "error_tag": "word_form"
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Vị trí chủ ngữ cần She.",
+        "en": "The subject position needs She."
+      }
+    },
+    {
+      "q": "I see ___ every day.",
+      "options": [
+        {
+          "text": "him",
+          "error_tag": null
+        },
+        {
+          "text": "he",
+          "error_tag": "word_form"
+        },
+        {
+          "text": "his",
+          "error_tag": "word_form"
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau see cần him.",
+        "en": "After see, use him."
+      }
+    },
+    {
+      "q": "Come with ___.",
+      "options": [
+        {
+          "text": "us",
+          "error_tag": null
+        },
+        {
+          "text": "we",
+          "error_tag": "word_form"
+        },
+        {
+          "text": "our",
+          "error_tag": "word_form"
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau with cần us.",
+        "en": "After with, use us."
+      }
+    }
+  ],
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "openai:gpt-5.6-sol",
+    "prompt_version": "direct-author.en-a1.v1",
+    "run_id": "chatgpt.en-a1.20260930",
+    "generated_at": "2026-09-30T10:35:00Z"
+  },
+  "review": null,
+  "sequence": 1,
+  "source_anchors": {
+    "status": "anchored",
+    "items": [
+      {
+        "source": "core_inventory",
+        "code": "125",
+        "level": "A1"
+      }
+    ]
+  },
+  "aliases": [
+    "a1-subject-and-object-pronouns"
+  ]
+}

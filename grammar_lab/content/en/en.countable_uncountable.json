@@ -1,0 +1,232 @@
+{
+  "schema_version": "0.4",
+  "id": "en.countable_uncountable",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.quantity",
+  "level": {
+    "framework": "cefr",
+    "value": "A1",
+    "rank": 1
+  },
+  "prereqs": [],
+  "contrasts": [],
+  "error_tags": [
+    "agreement"
+  ],
+  "source_refs": {
+    "r5": [
+      "a1-countable-and-uncountable-nouns"
+    ]
+  },
+  "point_type": "other",
+  "header": {
+    "title": {
+      "vi": "Danh từ đếm được và không đếm được",
+      "en": "Countable and uncountable nouns"
+    },
+    "native_title": "Countable and uncountable nouns",
+    "sub": {
+      "vi": "a book / some water",
+      "en": "a book / some water"
+    },
+    "level": {
+      "framework": "cefr",
+      "value": "A1",
+      "rank": 1
+    },
+    "summary": {
+      "vi": "Danh từ đếm được có thể đếm bằng số và có số nhiều; danh từ không đếm được thường không dùng a/an.",
+      "en": "Countable nouns can be counted and have plural forms; uncountable nouns usually do not take a/an."
+    }
+  },
+  "when_to_use": [
+    {
+      "vi": "Dùng a/an hoặc số với danh từ đếm được.",
+      "en": "Use a/an or numbers with countable nouns."
+    },
+    {
+      "vi": "Dùng some với lượng không xác định của danh từ không đếm được.",
+      "en": "Use some for an unspecified amount of an uncountable noun."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "determiner / quantity",
+        "role": "marker",
+        "label": {
+          "vi": "từ chỉ lượng",
+          "en": "determiner or quantity"
+        }
+      },
+      {
+        "text": "N",
+        "role": "object",
+        "label": {
+          "vi": "danh từ",
+          "en": "noun"
+        }
+      }
+    ],
+    "illustration": {
+      "kind": "none"
+    }
+  },
+  "examples": [
+    {
+      "text": "I have two books.",
+      "form": "affirmative",
+      "spans": [
+        {
+          "start": 7,
+          "end": 10,
+          "role": "marker"
+        },
+        {
+          "start": 11,
+          "end": 16,
+          "role": "object"
+        }
+      ],
+      "annotation": {
+        "vi": "Book là danh từ đếm được.",
+        "en": "Book is countable."
+      },
+      "translation": {
+        "vi": "Book là danh từ đếm được.",
+        "en": "Book is countable."
+      }
+    },
+    {
+      "text": "We need some water.",
+      "form": "affirmative",
+      "spans": [
+        {
+          "start": 8,
+          "end": 12,
+          "role": "marker"
+        },
+        {
+          "start": 13,
+          "end": 18,
+          "role": "object"
+        }
+      ],
+      "annotation": {
+        "vi": "Water là danh từ không đếm được.",
+        "en": "Water is uncountable."
+      },
+      "translation": {
+        "vi": "Water là danh từ không đếm được.",
+        "en": "Water is uncountable."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "I need a water.",
+      "right": "I need some water.",
+      "reason": {
+        "vi": "Water thường không đếm được ở nghĩa này.",
+        "en": "Water is normally uncountable in this meaning."
+      },
+      "error_tag": "agreement",
+      "l1": [
+        "vi"
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "I bought two ___.",
+      "options": [
+        {
+          "text": "apples",
+          "error_tag": null
+        },
+        {
+          "text": "apple",
+          "error_tag": "agreement"
+        },
+        {
+          "text": "rice",
+          "error_tag": "agreement"
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau two cần danh từ đếm được số nhiều.",
+        "en": "After two, use a plural countable noun."
+      }
+    },
+    {
+      "q": "We need some ___.",
+      "options": [
+        {
+          "text": "rice",
+          "error_tag": null
+        },
+        {
+          "text": "rices",
+          "error_tag": "agreement"
+        },
+        {
+          "text": "a rice",
+          "error_tag": "agreement"
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Rice thường không đếm được.",
+        "en": "Rice is normally uncountable."
+      }
+    },
+    {
+      "q": "She has ___ umbrella.",
+      "options": [
+        {
+          "text": "an",
+          "error_tag": null
+        },
+        {
+          "text": "some",
+          "error_tag": "agreement"
+        },
+        {
+          "text": "two",
+          "error_tag": "agreement"
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Umbrella là danh từ đếm được số ít.",
+        "en": "Umbrella is singular countable."
+      }
+    }
+  ],
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "openai:gpt-5.6-sol",
+    "prompt_version": "direct-author.en-a1.v1",
+    "run_id": "chatgpt.en-a1.20260930",
+    "generated_at": "2026-09-30T10:35:00Z"
+  },
+  "review": null,
+  "sequence": 3,
+  "source_anchors": {
+    "status": "anchored",
+    "items": [
+      {
+        "source": "core_inventory",
+        "code": "121",
+        "level": "A1"
+      }
+    ]
+  },
+  "aliases": [
+    "a1-countable-and-uncountable-nouns"
+  ]
+}

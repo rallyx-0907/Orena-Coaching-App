@@ -1,0 +1,222 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.a1.003",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.catalog_unclassified",
+  "level": {
+    "framework": "cefr",
+    "value": "A1",
+    "rank": 1
+  },
+  "prereqs": [
+    "en.be.present"
+  ],
+  "contrasts": [],
+  "error_tags": [
+    "other"
+  ],
+  "source_refs": {},
+  "point_type": "word_order",
+  "header": {
+    "title": {
+      "vi": "Vị trí tính từ",
+      "en": "Adjective position"
+    },
+    "native_title": "Adjective position",
+    "sub": {
+      "vi": "a red car / is red",
+      "en": "a red car / is red"
+    },
+    "level": {
+      "framework": "cefr",
+      "value": "A1",
+      "rank": 1
+    },
+    "summary": {
+      "vi": "Tính từ thường đứng trước danh từ hoặc sau be; tiếng Anh không đặt tính từ sau danh từ theo mẫu thông thường.",
+      "en": "Adjectives usually come before a noun or after be; standard English does not normally place them after the noun."
+    }
+  },
+  "when_to_use": [
+    {
+      "vi": "Đặt tính từ trước danh từ: a small house.",
+      "en": "Put an adjective before a noun: a small house."
+    },
+    {
+      "vi": "Đặt tính từ sau be: The house is small.",
+      "en": "Put an adjective after be: The house is small."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "adjective",
+        "role": "complement",
+        "label": {
+          "vi": "tính từ",
+          "en": "adjective"
+        }
+      },
+      {
+        "text": "N",
+        "role": "object",
+        "label": {
+          "vi": "danh từ",
+          "en": "noun"
+        }
+      }
+    ],
+    "illustration": {
+      "kind": "word_order"
+    }
+  },
+  "examples": [
+    {
+      "text": "She has a red car.",
+      "form": "affirmative",
+      "spans": [
+        {
+          "start": 10,
+          "end": 13,
+          "role": "complement"
+        },
+        {
+          "start": 14,
+          "end": 17,
+          "role": "object"
+        }
+      ],
+      "annotation": {
+        "vi": "Red đứng trước car.",
+        "en": "Red comes before car."
+      },
+      "translation": {
+        "vi": "Red đứng trước car.",
+        "en": "Red comes before car."
+      }
+    },
+    {
+      "text": "It is a small room.",
+      "form": "affirmative",
+      "spans": [
+        {
+          "start": 8,
+          "end": 13,
+          "role": "complement"
+        },
+        {
+          "start": 14,
+          "end": 18,
+          "role": "object"
+        }
+      ],
+      "annotation": {
+        "vi": "Small đứng trước room.",
+        "en": "Small comes before room."
+      },
+      "translation": {
+        "vi": "Small đứng trước room.",
+        "en": "Small comes before room."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "She has a car red.",
+      "right": "She has a red car.",
+      "reason": {
+        "vi": "Trong cụm danh từ cơ bản, tính từ đứng trước danh từ.",
+        "en": "In a basic noun phrase, the adjective comes before the noun."
+      },
+      "error_tag": "other",
+      "l1": [
+        "vi"
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "She has a ___ bag.",
+      "options": [
+        {
+          "text": "blue",
+          "error_tag": null
+        },
+        {
+          "text": "bag blue",
+          "error_tag": "other"
+        },
+        {
+          "text": "is blue",
+          "error_tag": "other"
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Blue đứng trước bag.",
+        "en": "Blue comes before bag."
+      }
+    },
+    {
+      "q": "It is a ___ house.",
+      "options": [
+        {
+          "text": "big",
+          "error_tag": null
+        },
+        {
+          "text": "house big",
+          "error_tag": "other"
+        },
+        {
+          "text": "bigness",
+          "error_tag": "other"
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Big đứng trước house.",
+        "en": "Big comes before house."
+      }
+    },
+    {
+      "q": "He bought a ___ phone.",
+      "options": [
+        {
+          "text": "new",
+          "error_tag": null
+        },
+        {
+          "text": "phone new",
+          "error_tag": "other"
+        },
+        {
+          "text": "newly",
+          "error_tag": "other"
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "New đứng trước phone.",
+        "en": "New comes before phone."
+      }
+    }
+  ],
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "openai:gpt-5.6-sol",
+    "prompt_version": "direct-author.en-a1.v1",
+    "run_id": "chatgpt.en-a1.20260930",
+    "generated_at": "2026-09-30T10:35:00Z"
+  },
+  "review": null,
+  "sequence": 3,
+  "source_anchors": {
+    "status": "unanchored",
+    "items": []
+  },
+  "aliases": []
+}

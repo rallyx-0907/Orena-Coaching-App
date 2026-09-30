@@ -1,0 +1,243 @@
+{
+  "schema_version": "0.4",
+  "id": "en.prepositions.place",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.place_time",
+  "level": {
+    "framework": "cefr",
+    "value": "A1",
+    "rank": 1
+  },
+  "prereqs": [],
+  "contrasts": [],
+  "error_tags": [
+    "preposition"
+  ],
+  "source_refs": {
+    "r5": [
+      "a1-basic-prepositions-of-place"
+    ]
+  },
+  "point_type": "other",
+  "header": {
+    "title": {
+      "vi": "Giới từ chỉ nơi chốn: in / on / at",
+      "en": "Prepositions of place: in / on / at"
+    },
+    "native_title": "Prepositions of place: in / on / at",
+    "sub": {
+      "vi": "trong / trên / tại",
+      "en": "in / on / at"
+    },
+    "level": {
+      "framework": "cefr",
+      "value": "A1",
+      "rank": 1
+    },
+    "summary": {
+      "vi": "In thường chỉ bên trong một không gian, on chỉ trên bề mặt, at chỉ một điểm hoặc địa điểm cụ thể.",
+      "en": "In often means inside an area, on means on a surface, and at points to a specific place or point."
+    }
+  },
+  "when_to_use": [
+    {
+      "vi": "Dùng in với không gian hoặc khu vực.",
+      "en": "Use in with an enclosed space or area."
+    },
+    {
+      "vi": "Dùng on với bề mặt và at với một điểm cụ thể.",
+      "en": "Use on with a surface and at with a specific point."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "in / on / at",
+        "role": "marker",
+        "label": {
+          "vi": "giới từ nơi chốn",
+          "en": "place preposition"
+        },
+        "options": [
+          {
+            "text": "in"
+          },
+          {
+            "text": "on"
+          },
+          {
+            "text": "at"
+          }
+        ]
+      },
+      {
+        "text": "place",
+        "role": "place",
+        "label": {
+          "vi": "nơi chốn",
+          "en": "place"
+        }
+      }
+    ],
+    "illustration": {
+      "kind": "none"
+    }
+  },
+  "examples": [
+    {
+      "text": "The keys are on the table.",
+      "form": "affirmative",
+      "spans": [
+        {
+          "start": 13,
+          "end": 15,
+          "role": "marker"
+        },
+        {
+          "start": 16,
+          "end": 25,
+          "role": "place"
+        }
+      ],
+      "annotation": {
+        "vi": "On dùng với bề mặt bàn.",
+        "en": "On is used with the table surface."
+      },
+      "translation": {
+        "vi": "On dùng với bề mặt bàn.",
+        "en": "On is used with the table surface."
+      }
+    },
+    {
+      "text": "She is at the station.",
+      "form": "affirmative",
+      "spans": [
+        {
+          "start": 7,
+          "end": 9,
+          "role": "marker"
+        },
+        {
+          "start": 10,
+          "end": 21,
+          "role": "place"
+        }
+      ],
+      "annotation": {
+        "vi": "At xem nhà ga như một điểm.",
+        "en": "At treats the station as a point."
+      },
+      "translation": {
+        "vi": "At xem nhà ga như một điểm.",
+        "en": "At treats the station as a point."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "The keys are in the table.",
+      "right": "The keys are on the table.",
+      "reason": {
+        "vi": "Vật nằm trên bề mặt bàn dùng on.",
+        "en": "Use on for something on a table surface."
+      },
+      "error_tag": "preposition",
+      "l1": [
+        "vi"
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "The picture is ___ the wall.",
+      "options": [
+        {
+          "text": "on",
+          "error_tag": null
+        },
+        {
+          "text": "in",
+          "error_tag": "preposition"
+        },
+        {
+          "text": "at",
+          "error_tag": "preposition"
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Bức tranh ở trên bề mặt tường.",
+        "en": "A picture is on the wall surface."
+      }
+    },
+    {
+      "q": "We are ___ the kitchen.",
+      "options": [
+        {
+          "text": "in",
+          "error_tag": null
+        },
+        {
+          "text": "on",
+          "error_tag": "preposition"
+        },
+        {
+          "text": "at",
+          "error_tag": "preposition"
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Ở bên trong bếp dùng in.",
+        "en": "Use in for being inside the kitchen."
+      }
+    },
+    {
+      "q": "Meet me ___ the bus stop.",
+      "options": [
+        {
+          "text": "at",
+          "error_tag": null
+        },
+        {
+          "text": "in",
+          "error_tag": "preposition"
+        },
+        {
+          "text": "on",
+          "error_tag": "preposition"
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Bus stop được xem như một điểm.",
+        "en": "A bus stop is treated as a point."
+      }
+    }
+  ],
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "openai:gpt-5.6-sol",
+    "prompt_version": "direct-author.en-a1.v1",
+    "run_id": "chatgpt.en-a1.20260930",
+    "generated_at": "2026-09-30T10:35:00Z"
+  },
+  "review": null,
+  "sequence": 1,
+  "source_anchors": {
+    "status": "anchored",
+    "items": [
+      {
+        "source": "core_inventory",
+        "code": "133a",
+        "level": "A1"
+      }
+    ]
+  },
+  "aliases": [
+    "a1-basic-prepositions-of-place"
+  ]
+}

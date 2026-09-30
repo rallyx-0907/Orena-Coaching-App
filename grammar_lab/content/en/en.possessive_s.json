@@ -1,0 +1,262 @@
+{
+  "schema_version": "0.4",
+  "id": "en.possessive_s",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.possession",
+  "level": {
+    "framework": "cefr",
+    "value": "A1",
+    "rank": 1
+  },
+  "prereqs": [
+    "en.be.present"
+  ],
+  "contrasts": [],
+  "error_tags": [
+    "word_form"
+  ],
+  "source_refs": {
+    "r5": [
+      "a1-possessive-adjectives-pronouns-and-possessive-s"
+    ]
+  },
+  "point_type": "morphology",
+  "header": {
+    "title": {
+      "vi": "Sở hữu cách 's",
+      "en": "Possessive 's"
+    },
+    "native_title": "Possessive 's",
+    "sub": {
+      "vi": "Lan's book",
+      "en": "Lan's book"
+    },
+    "level": {
+      "framework": "cefr",
+      "value": "A1",
+      "rank": 1
+    },
+    "summary": {
+      "vi": "Thêm 's vào tên hoặc danh từ chỉ người để nói một vật thuộc về người đó.",
+      "en": "Add 's to a name or person noun to show that something belongs to that person."
+    }
+  },
+  "when_to_use": [
+    {
+      "vi": "Dùng với tên người: Mai's phone.",
+      "en": "Use it with names: Mai's phone."
+    },
+    {
+      "vi": "Dùng với danh từ chỉ người số ít: my brother's room.",
+      "en": "Use it with singular person nouns: my brother's room."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "person",
+        "role": "subject",
+        "label": {
+          "vi": "người sở hữu",
+          "en": "owner"
+        }
+      },
+      {
+        "text": "'s",
+        "role": "marker",
+        "label": {
+          "vi": "dấu sở hữu",
+          "en": "possessive marker"
+        }
+      },
+      {
+        "text": "N",
+        "role": "object",
+        "label": {
+          "vi": "vật được sở hữu",
+          "en": "thing owned"
+        }
+      }
+    ],
+    "illustration": {
+      "kind": "morphology",
+      "morphology": [
+        {
+          "base": "Lan",
+          "affix": "'s",
+          "result": "Lan's"
+        },
+        {
+          "base": "my brother",
+          "affix": "'s",
+          "result": "my brother's"
+        }
+      ]
+    }
+  },
+  "examples": [
+    {
+      "text": "Lan's bag is here.",
+      "form": "affirmative",
+      "spans": [
+        {
+          "start": 0,
+          "end": 3,
+          "role": "subject"
+        },
+        {
+          "start": 3,
+          "end": 5,
+          "role": "marker"
+        },
+        {
+          "start": 6,
+          "end": 9,
+          "role": "object"
+        }
+      ],
+      "annotation": {
+        "vi": "Lan's bag nghĩa là chiếc túi của Lan.",
+        "en": "Lan's bag means the bag belonging to Lan."
+      },
+      "translation": {
+        "vi": "Lan's bag nghĩa là chiếc túi của Lan.",
+        "en": "Lan's bag means the bag belonging to Lan."
+      }
+    },
+    {
+      "text": "My brother's room is small.",
+      "form": "affirmative",
+      "spans": [
+        {
+          "start": 0,
+          "end": 10,
+          "role": "subject"
+        },
+        {
+          "start": 10,
+          "end": 12,
+          "role": "marker"
+        },
+        {
+          "start": 13,
+          "end": 17,
+          "role": "object"
+        }
+      ],
+      "annotation": {
+        "vi": "Thêm 's sau người sở hữu.",
+        "en": "Add 's after the owner."
+      },
+      "translation": {
+        "vi": "Thêm 's sau người sở hữu.",
+        "en": "Add 's after the owner."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "The bag of Lan is here.",
+      "right": "Lan's bag is here.",
+      "reason": {
+        "vi": "Với người, 's là cách tự nhiên và gọn ở mức A1.",
+        "en": "For people, 's is the natural compact A1 form."
+      },
+      "error_tag": "word_form",
+      "l1": [
+        "vi"
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "This is ___ bike.",
+      "options": [
+        {
+          "text": "Tom's",
+          "error_tag": null
+        },
+        {
+          "text": "Tom",
+          "error_tag": "word_form"
+        },
+        {
+          "text": "Toms",
+          "error_tag": "word_form"
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Thêm 's sau Tom.",
+        "en": "Add 's after Tom."
+      }
+    },
+    {
+      "q": "My ___ name is Hoa.",
+      "options": [
+        {
+          "text": "sister's",
+          "error_tag": null
+        },
+        {
+          "text": "sister",
+          "error_tag": "word_form"
+        },
+        {
+          "text": "sisters",
+          "error_tag": "word_form"
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Dùng sister's để chỉ sở hữu.",
+        "en": "Use sister's to show possession."
+      }
+    },
+    {
+      "q": "That is ___ desk.",
+      "options": [
+        {
+          "text": "Mr Lee's",
+          "error_tag": null
+        },
+        {
+          "text": "Mr Lee",
+          "error_tag": "word_form"
+        },
+        {
+          "text": "Mr Lees",
+          "error_tag": "word_form"
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Tên người nhận 's.",
+        "en": "A person's name takes 's."
+      }
+    }
+  ],
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "openai:gpt-5.6-sol",
+    "prompt_version": "direct-author.en-a1.v1",
+    "run_id": "chatgpt.en-a1.20260930",
+    "generated_at": "2026-09-30T10:35:00Z"
+  },
+  "review": null,
+  "sequence": 3,
+  "source_anchors": {
+    "status": "anchored",
+    "items": [
+      {
+        "source": "core_inventory",
+        "code": "128",
+        "level": "A1"
+      }
+    ]
+  },
+  "aliases": []
+}

@@ -1,0 +1,278 @@
+{
+  "schema_version": "0.4",
+  "id": "en.questions.wh",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.questions",
+  "level": {
+    "framework": "cefr",
+    "value": "A1",
+    "rank": 1
+  },
+  "prereqs": [
+    "en.present_simple.do_questions"
+  ],
+  "contrasts": [],
+  "error_tags": [
+    "sentence_structure"
+  ],
+  "source_refs": {
+    "r5": [
+      "a1-wh-questions"
+    ]
+  },
+  "point_type": "word_order",
+  "header": {
+    "title": {
+      "vi": "Câu hỏi Wh-",
+      "en": "Wh-questions"
+    },
+    "native_title": "Wh-questions",
+    "sub": {
+      "vi": "what, where, when, who, why, how",
+      "en": "what, where, when, who, why, how"
+    },
+    "level": {
+      "framework": "cefr",
+      "value": "A1",
+      "rank": 1
+    },
+    "summary": {
+      "vi": "Wh-word đứng đầu câu để hỏi thông tin cụ thể, sau đó là cấu trúc câu hỏi phù hợp.",
+      "en": "A Wh-word comes first to ask for specific information, followed by the appropriate question structure."
+    }
+  },
+  "when_to_use": [
+    {
+      "vi": "What hỏi sự vật, where hỏi nơi chốn, when hỏi thời gian, who hỏi người.",
+      "en": "What asks about things, where about places, when about time, and who about people."
+    },
+    {
+      "vi": "Với động từ thường ở hiện tại đơn, dùng Wh + do/does + S + V.",
+      "en": "With ordinary present-simple verbs, use Wh + do/does + subject + base verb."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "Wh-word",
+        "role": "marker",
+        "label": {
+          "vi": "từ để hỏi",
+          "en": "question word"
+        }
+      },
+      {
+        "text": "do / does",
+        "role": "aux",
+        "label": {
+          "vi": "trợ động từ",
+          "en": "auxiliary"
+        },
+        "options": [
+          {
+            "text": "do"
+          },
+          {
+            "text": "does"
+          }
+        ]
+      },
+      {
+        "text": "S",
+        "role": "subject",
+        "label": {
+          "vi": "chủ ngữ",
+          "en": "subject"
+        }
+      },
+      {
+        "text": "V",
+        "role": "verb",
+        "label": {
+          "vi": "động từ nguyên thể",
+          "en": "base verb"
+        }
+      }
+    ],
+    "illustration": {
+      "kind": "word_order"
+    }
+  },
+  "examples": [
+    {
+      "text": "Where do you live?",
+      "form": "affirmative",
+      "spans": [
+        {
+          "start": 0,
+          "end": 5,
+          "role": "marker"
+        },
+        {
+          "start": 6,
+          "end": 8,
+          "role": "aux"
+        },
+        {
+          "start": 9,
+          "end": 12,
+          "role": "subject"
+        },
+        {
+          "start": 13,
+          "end": 17,
+          "role": "verb"
+        }
+      ],
+      "annotation": {
+        "vi": "Where đứng đầu, sau đó do + you + live.",
+        "en": "Where comes first, followed by do + you + live."
+      },
+      "translation": {
+        "vi": "Where đứng đầu, sau đó do + you + live.",
+        "en": "Where comes first, followed by do + you + live."
+      }
+    },
+    {
+      "text": "What does she eat?",
+      "form": "affirmative",
+      "spans": [
+        {
+          "start": 0,
+          "end": 4,
+          "role": "marker"
+        },
+        {
+          "start": 5,
+          "end": 9,
+          "role": "aux"
+        },
+        {
+          "start": 10,
+          "end": 13,
+          "role": "subject"
+        },
+        {
+          "start": 14,
+          "end": 17,
+          "role": "verb"
+        }
+      ],
+      "annotation": {
+        "vi": "Với she dùng does và eat.",
+        "en": "With she, use does and eat."
+      },
+      "translation": {
+        "vi": "Với she dùng does và eat.",
+        "en": "With she, use does and eat."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "Where you live?",
+      "right": "Where do you live?",
+      "reason": {
+        "vi": "Với động từ thường, câu hỏi cần do/does.",
+        "en": "With an ordinary verb, the question needs do/does."
+      },
+      "error_tag": "sentence_structure",
+      "l1": [
+        "vi"
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "___ do you work?",
+      "options": [
+        {
+          "text": "Where",
+          "error_tag": null
+        },
+        {
+          "text": "Does",
+          "error_tag": "sentence_structure"
+        },
+        {
+          "text": "Are",
+          "error_tag": "sentence_structure"
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Cần Where để hỏi nơi chốn.",
+        "en": "Use Where to ask about a place."
+      }
+    },
+    {
+      "q": "What ___ she want?",
+      "options": [
+        {
+          "text": "does",
+          "error_tag": null
+        },
+        {
+          "text": "do",
+          "error_tag": "sentence_structure"
+        },
+        {
+          "text": "is",
+          "error_tag": "sentence_structure"
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "She dùng does.",
+        "en": "She takes does."
+      }
+    },
+    {
+      "q": "When do they ___?",
+      "options": [
+        {
+          "text": "arrive",
+          "error_tag": null
+        },
+        {
+          "text": "arrives",
+          "error_tag": "sentence_structure"
+        },
+        {
+          "text": "arriving",
+          "error_tag": "sentence_structure"
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau do dùng arrive.",
+        "en": "After do, use arrive."
+      }
+    }
+  ],
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "openai:gpt-5.6-sol",
+    "prompt_version": "direct-author.en-a1.v1",
+    "run_id": "chatgpt.en-a1.20260930",
+    "generated_at": "2026-09-30T10:35:00Z"
+  },
+  "review": null,
+  "sequence": 3,
+  "source_anchors": {
+    "status": "anchored",
+    "items": [
+      {
+        "source": "core_inventory",
+        "code": "60",
+        "level": "A1"
+      }
+    ]
+  },
+  "aliases": [
+    "a1-wh-questions"
+  ]
+}

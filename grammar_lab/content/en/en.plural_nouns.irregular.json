@@ -1,0 +1,208 @@
+{
+  "schema_version": "0.4",
+  "id": "en.plural_nouns.irregular",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.quantity",
+  "level": {
+    "framework": "cefr",
+    "value": "A1",
+    "rank": 1
+  },
+  "prereqs": [
+    "en.plural_nouns.regular"
+  ],
+  "contrasts": [],
+  "error_tags": [
+    "word_form"
+  ],
+  "source_refs": {
+    "r5": [
+      "a1-singular-and-plural-nouns"
+    ]
+  },
+  "point_type": "other",
+  "header": {
+    "title": {
+      "vi": "Danh từ số nhiều bất quy tắc",
+      "en": "Irregular plural nouns"
+    },
+    "native_title": "Irregular plural nouns",
+    "sub": {
+      "vi": "man → men, child → children",
+      "en": "man → men, child → children"
+    },
+    "level": {
+      "framework": "cefr",
+      "value": "A1",
+      "rank": 1
+    },
+    "summary": {
+      "vi": "Một số danh từ không tạo số nhiều bằng -s/-es mà đổi dạng và phải học theo từng từ.",
+      "en": "Some nouns do not form the plural with -s/-es; they change form and must be learned individually."
+    }
+  },
+  "when_to_use": [
+    {
+      "vi": "Dùng dạng bất quy tắc khi nói nhiều hơn một: one child, two children.",
+      "en": "Use the irregular plural for more than one: one child, two children."
+    },
+    {
+      "vi": "Các dạng phổ biến gồm man/men, woman/women, child/children, person/people.",
+      "en": "Common forms include man/men, woman/women, child/children, and person/people."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "irregular plural",
+        "role": "other",
+        "label": {
+          "vi": "dạng số nhiều bất quy tắc",
+          "en": "irregular plural form"
+        }
+      }
+    ],
+    "illustration": {
+      "kind": "none"
+    }
+  },
+  "examples": [
+    {
+      "text": "Two children are playing.",
+      "form": "affirmative",
+      "spans": [
+        {
+          "start": 4,
+          "end": 12,
+          "role": "other"
+        }
+      ],
+      "annotation": {
+        "vi": "Child đổi thành children.",
+        "en": "Child changes to children."
+      },
+      "translation": {
+        "vi": "Child đổi thành children.",
+        "en": "Child changes to children."
+      }
+    },
+    {
+      "text": "Three people are waiting.",
+      "form": "affirmative",
+      "spans": [
+        {
+          "start": 6,
+          "end": 12,
+          "role": "other"
+        }
+      ],
+      "annotation": {
+        "vi": "Person thường có số nhiều là people.",
+        "en": "The usual plural of person is people."
+      },
+      "translation": {
+        "vi": "Person thường có số nhiều là people.",
+        "en": "The usual plural of person is people."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "Two childs are here.",
+      "right": "Two children are here.",
+      "reason": {
+        "vi": "Child có số nhiều bất quy tắc children.",
+        "en": "Child has the irregular plural children."
+      },
+      "error_tag": "word_form",
+      "l1": [
+        "vi"
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "Two ___ are in the park.",
+      "options": [
+        {
+          "text": "children",
+          "error_tag": null
+        },
+        {
+          "text": "childs",
+          "error_tag": "word_form"
+        },
+        {
+          "text": "child",
+          "error_tag": "word_form"
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Số nhiều của child là children.",
+        "en": "The plural of child is children."
+      }
+    },
+    {
+      "q": "Three ___ are waiting.",
+      "options": [
+        {
+          "text": "people",
+          "error_tag": null
+        },
+        {
+          "text": "persons",
+          "error_tag": "word_form"
+        },
+        {
+          "text": "person",
+          "error_tag": "word_form"
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Số nhiều thông thường của person là people.",
+        "en": "The ordinary plural of person is people."
+      }
+    },
+    {
+      "q": "Two ___ are talking.",
+      "options": [
+        {
+          "text": "men",
+          "error_tag": null
+        },
+        {
+          "text": "mans",
+          "error_tag": "word_form"
+        },
+        {
+          "text": "man",
+          "error_tag": "word_form"
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Số nhiều của man là men.",
+        "en": "The plural of man is men."
+      }
+    }
+  ],
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "openai:gpt-5.6-sol",
+    "prompt_version": "direct-author.en-a1.v1",
+    "run_id": "chatgpt.en-a1.20260930",
+    "generated_at": "2026-09-30T10:35:00Z"
+  },
+  "review": null,
+  "sequence": 2,
+  "source_anchors": {
+    "status": "unanchored",
+    "items": []
+  },
+  "aliases": []
+}

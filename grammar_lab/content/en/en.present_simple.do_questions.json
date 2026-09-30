@@ -1,0 +1,260 @@
+{
+  "schema_version": "0.4",
+  "id": "en.present_simple.do_questions",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.questions",
+  "level": {
+    "framework": "cefr",
+    "value": "A1",
+    "rank": 1
+  },
+  "prereqs": [
+    "en.present_simple.habit"
+  ],
+  "contrasts": [],
+  "error_tags": [
+    "sentence_structure"
+  ],
+  "source_refs": {
+    "r5": [
+      "a1-do-does-questions"
+    ]
+  },
+  "point_type": "word_order",
+  "header": {
+    "title": {
+      "vi": "Câu hỏi với do / does",
+      "en": "Do / does questions"
+    },
+    "native_title": "Do / does questions",
+    "sub": {
+      "vi": "Do you...? Does she...?",
+      "en": "Do you...? Does she...?"
+    },
+    "level": {
+      "framework": "cefr",
+      "value": "A1",
+      "rank": 1
+    },
+    "summary": {
+      "vi": "Câu hỏi hiện tại đơn với động từ thường dùng do/does trước chủ ngữ; động từ chính dùng dạng nguyên thể.",
+      "en": "Present-simple questions with ordinary verbs use do/does before the subject; the main verb stays in the base form."
+    }
+  },
+  "when_to_use": [
+    {
+      "vi": "Dùng Do với I/you/we/they.",
+      "en": "Use Do with I/you/we/they."
+    },
+    {
+      "vi": "Dùng Does với he/she/it.",
+      "en": "Use Does with he/she/it."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "Do / Does",
+        "role": "aux",
+        "label": {
+          "vi": "trợ động từ",
+          "en": "auxiliary"
+        },
+        "options": [
+          {
+            "text": "Do"
+          },
+          {
+            "text": "Does"
+          }
+        ]
+      },
+      {
+        "text": "S",
+        "role": "subject",
+        "label": {
+          "vi": "chủ ngữ",
+          "en": "subject"
+        }
+      },
+      {
+        "text": "V",
+        "role": "verb",
+        "label": {
+          "vi": "động từ nguyên thể",
+          "en": "base verb"
+        }
+      }
+    ],
+    "illustration": {
+      "kind": "word_order"
+    }
+  },
+  "examples": [
+    {
+      "text": "Do you like coffee?",
+      "form": "affirmative",
+      "spans": [
+        {
+          "start": 0,
+          "end": 2,
+          "role": "aux"
+        },
+        {
+          "start": 3,
+          "end": 6,
+          "role": "subject"
+        },
+        {
+          "start": 7,
+          "end": 11,
+          "role": "verb"
+        }
+      ],
+      "annotation": {
+        "vi": "You dùng Do; động từ giữ dạng like.",
+        "en": "You takes Do; the verb stays like."
+      },
+      "translation": {
+        "vi": "You dùng Do; động từ giữ dạng like.",
+        "en": "You takes Do; the verb stays like."
+      }
+    },
+    {
+      "text": "Does she work here?",
+      "form": "affirmative",
+      "spans": [
+        {
+          "start": 0,
+          "end": 4,
+          "role": "aux"
+        },
+        {
+          "start": 5,
+          "end": 8,
+          "role": "subject"
+        },
+        {
+          "start": 9,
+          "end": 13,
+          "role": "verb"
+        }
+      ],
+      "annotation": {
+        "vi": "She dùng Does; work không thêm -s.",
+        "en": "She takes Does; work does not take -s."
+      },
+      "translation": {
+        "vi": "She dùng Does; work không thêm -s.",
+        "en": "She takes Does; work does not take -s."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "Does she works here?",
+      "right": "Does she work here?",
+      "reason": {
+        "vi": "Khi có does, động từ chính dùng dạng nguyên thể.",
+        "en": "With does, the main verb uses the base form."
+      },
+      "error_tag": "sentence_structure",
+      "l1": [
+        "vi"
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "___ you speak English?",
+      "options": [
+        {
+          "text": "Do",
+          "error_tag": null
+        },
+        {
+          "text": "Does",
+          "error_tag": "sentence_structure"
+        },
+        {
+          "text": "Are",
+          "error_tag": "sentence_structure"
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "You dùng Do.",
+        "en": "You takes Do."
+      }
+    },
+    {
+      "q": "___ he live near here?",
+      "options": [
+        {
+          "text": "Does",
+          "error_tag": null
+        },
+        {
+          "text": "Do",
+          "error_tag": "sentence_structure"
+        },
+        {
+          "text": "Is",
+          "error_tag": "sentence_structure"
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "He dùng Does.",
+        "en": "He takes Does."
+      }
+    },
+    {
+      "q": "Does Mai ___ coffee?",
+      "options": [
+        {
+          "text": "like",
+          "error_tag": null
+        },
+        {
+          "text": "likes",
+          "error_tag": "sentence_structure"
+        },
+        {
+          "text": "liking",
+          "error_tag": "sentence_structure"
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau does dùng like.",
+        "en": "After does, use like."
+      }
+    }
+  ],
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "openai:gpt-5.6-sol",
+    "prompt_version": "direct-author.en-a1.v1",
+    "run_id": "chatgpt.en-a1.20260930",
+    "generated_at": "2026-09-30T10:35:00Z"
+  },
+  "review": null,
+  "sequence": 2,
+  "source_anchors": {
+    "status": "anchored",
+    "items": [
+      {
+        "source": "core_inventory",
+        "code": "60",
+        "level": "A1"
+      }
+    ]
+  },
+  "aliases": [
+    "a1-do-does-questions"
+  ]
+}

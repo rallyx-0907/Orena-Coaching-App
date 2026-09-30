@@ -1,0 +1,242 @@
+{
+  "schema_version": "0.4",
+  "id": "en.quantifiers.some_any",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.quantity",
+  "level": {
+    "framework": "cefr",
+    "value": "A1",
+    "rank": 1
+  },
+  "prereqs": [
+    "en.countable_uncountable"
+  ],
+  "contrasts": [],
+  "error_tags": [
+    "word_choice"
+  ],
+  "source_refs": {
+    "r5": [
+      "a1-some-any"
+    ]
+  },
+  "point_type": "other",
+  "header": {
+    "title": {
+      "vi": "Some / any",
+      "en": "Some / any"
+    },
+    "native_title": "Some / any",
+    "sub": {
+      "vi": "một ít / chút nào",
+      "en": "some / any"
+    },
+    "level": {
+      "framework": "cefr",
+      "value": "A1",
+      "rank": 1
+    },
+    "summary": {
+      "vi": "Some thường dùng trong câu khẳng định; any thường dùng trong câu phủ định và câu hỏi khi nói về số lượng không xác định.",
+      "en": "Some is common in affirmative statements; any is common in negatives and questions for an unspecified quantity."
+    }
+  },
+  "when_to_use": [
+    {
+      "vi": "Dùng some trong câu khẳng định.",
+      "en": "Use some in affirmative statements."
+    },
+    {
+      "vi": "Dùng any trong câu phủ định và nhiều câu hỏi.",
+      "en": "Use any in negatives and many questions."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "some / any",
+        "role": "marker",
+        "label": {
+          "vi": "từ chỉ lượng",
+          "en": "quantifier"
+        },
+        "options": [
+          {
+            "text": "some"
+          },
+          {
+            "text": "any"
+          }
+        ]
+      },
+      {
+        "text": "N",
+        "role": "object",
+        "label": {
+          "vi": "danh từ",
+          "en": "noun"
+        }
+      }
+    ],
+    "illustration": {
+      "kind": "none"
+    }
+  },
+  "examples": [
+    {
+      "text": "I have some friends here.",
+      "form": "affirmative",
+      "spans": [
+        {
+          "start": 7,
+          "end": 11,
+          "role": "marker"
+        },
+        {
+          "start": 12,
+          "end": 19,
+          "role": "object"
+        }
+      ],
+      "annotation": {
+        "vi": "Câu khẳng định thường dùng some.",
+        "en": "Affirmative statements commonly use some."
+      },
+      "translation": {
+        "vi": "Câu khẳng định thường dùng some.",
+        "en": "Affirmative statements commonly use some."
+      }
+    },
+    {
+      "text": "Do you have any water?",
+      "form": "affirmative",
+      "spans": [
+        {
+          "start": 12,
+          "end": 15,
+          "role": "marker"
+        },
+        {
+          "start": 16,
+          "end": 21,
+          "role": "object"
+        }
+      ],
+      "annotation": {
+        "vi": "Câu hỏi trung tính thường dùng any.",
+        "en": "Neutral questions commonly use any."
+      },
+      "translation": {
+        "vi": "Câu hỏi trung tính thường dùng any.",
+        "en": "Neutral questions commonly use any."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "I don't have some money.",
+      "right": "I don't have any money.",
+      "reason": {
+        "vi": "Trong câu phủ định thông thường, dùng any.",
+        "en": "In an ordinary negative statement, use any."
+      },
+      "error_tag": "word_choice",
+      "l1": [
+        "vi"
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "I have ___ free time today.",
+      "options": [
+        {
+          "text": "some",
+          "error_tag": null
+        },
+        {
+          "text": "any",
+          "error_tag": "word_choice"
+        },
+        {
+          "text": "an",
+          "error_tag": "word_choice"
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu khẳng định dùng some.",
+        "en": "Use some in this affirmative statement."
+      }
+    },
+    {
+      "q": "Do you have ___ questions?",
+      "options": [
+        {
+          "text": "any",
+          "error_tag": null
+        },
+        {
+          "text": "some",
+          "error_tag": "word_choice"
+        },
+        {
+          "text": "a",
+          "error_tag": "word_choice"
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu hỏi trung tính dùng any.",
+        "en": "Use any in this neutral question."
+      }
+    },
+    {
+      "q": "We don't have ___ milk.",
+      "options": [
+        {
+          "text": "any",
+          "error_tag": null
+        },
+        {
+          "text": "some",
+          "error_tag": "word_choice"
+        },
+        {
+          "text": "a",
+          "error_tag": "word_choice"
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu phủ định dùng any.",
+        "en": "Use any in this negative statement."
+      }
+    }
+  ],
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "openai:gpt-5.6-sol",
+    "prompt_version": "direct-author.en-a1.v1",
+    "run_id": "chatgpt.en-a1.20260930",
+    "generated_at": "2026-09-30T10:35:00Z"
+  },
+  "review": null,
+  "sequence": 4,
+  "source_anchors": {
+    "status": "anchored",
+    "items": [
+      {
+        "source": "core_inventory",
+        "code": "141",
+        "level": "A1"
+      }
+    ]
+  },
+  "aliases": [
+    "a1-some-any"
+  ]
+}

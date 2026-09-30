@@ -1,0 +1,234 @@
+{
+  "schema_version": "0.4",
+  "id": "en.possessive_adjectives",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.possession",
+  "level": {
+    "framework": "cefr",
+    "value": "A1",
+    "rank": 1
+  },
+  "prereqs": [
+    "en.pronouns.subject_object"
+  ],
+  "contrasts": [],
+  "error_tags": [
+    "word_form"
+  ],
+  "source_refs": {
+    "r5": [
+      "a1-possessive-adjectives-pronouns-and-possessive-s"
+    ]
+  },
+  "point_type": "other",
+  "header": {
+    "title": {
+      "vi": "Tính từ sở hữu",
+      "en": "Possessive adjectives"
+    },
+    "native_title": "Possessive adjectives",
+    "sub": {
+      "vi": "my, your, his...",
+      "en": "my, your, his..."
+    },
+    "level": {
+      "framework": "cefr",
+      "value": "A1",
+      "rank": 1
+    },
+    "summary": {
+      "vi": "My, your, his, her, its, our, their đứng trước danh từ để chỉ người hoặc vật sở hữu nó.",
+      "en": "My, your, his, her, its, our, and their come before a noun to show who it belongs to."
+    }
+  },
+  "when_to_use": [
+    {
+      "vi": "Đặt trước danh từ: my phone, her bag, our house.",
+      "en": "Put them before a noun: my phone, her bag, our house."
+    },
+    {
+      "vi": "Chọn theo người sở hữu, không theo vật được sở hữu.",
+      "en": "Choose the form by the owner, not by the thing owned."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "possessive adjective",
+        "role": "marker",
+        "label": {
+          "vi": "tính từ sở hữu",
+          "en": "possessive adjective"
+        }
+      },
+      {
+        "text": "N",
+        "role": "object",
+        "label": {
+          "vi": "danh từ",
+          "en": "noun"
+        }
+      }
+    ],
+    "illustration": {
+      "kind": "none"
+    }
+  },
+  "examples": [
+    {
+      "text": "This is my phone.",
+      "form": "affirmative",
+      "spans": [
+        {
+          "start": 8,
+          "end": 10,
+          "role": "marker"
+        },
+        {
+          "start": 11,
+          "end": 16,
+          "role": "object"
+        }
+      ],
+      "annotation": {
+        "vi": "My đứng trước phone.",
+        "en": "My comes before phone."
+      },
+      "translation": {
+        "vi": "My đứng trước phone.",
+        "en": "My comes before phone."
+      }
+    },
+    {
+      "text": "Their house is small.",
+      "form": "affirmative",
+      "spans": [
+        {
+          "start": 0,
+          "end": 5,
+          "role": "marker"
+        },
+        {
+          "start": 6,
+          "end": 11,
+          "role": "object"
+        }
+      ],
+      "annotation": {
+        "vi": "Their cho biết ngôi nhà thuộc về họ.",
+        "en": "Their shows that the house belongs to them."
+      },
+      "translation": {
+        "vi": "Their cho biết ngôi nhà thuộc về họ.",
+        "en": "Their shows that the house belongs to them."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "This is me phone.",
+      "right": "This is my phone.",
+      "reason": {
+        "vi": "Trước danh từ cần tính từ sở hữu my.",
+        "en": "Before a noun, use the possessive adjective my."
+      },
+      "error_tag": "word_form",
+      "l1": [
+        "vi"
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "I have a sister. ___ name is Lan.",
+      "options": [
+        {
+          "text": "Her",
+          "error_tag": null
+        },
+        {
+          "text": "She",
+          "error_tag": "word_form"
+        },
+        {
+          "text": "Hers",
+          "error_tag": "word_form"
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Trước name cần Her.",
+        "en": "Before name, use Her."
+      }
+    },
+    {
+      "q": "We live here. This is ___ house.",
+      "options": [
+        {
+          "text": "our",
+          "error_tag": null
+        },
+        {
+          "text": "us",
+          "error_tag": "word_form"
+        },
+        {
+          "text": "ours",
+          "error_tag": "word_form"
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Trước house cần our.",
+        "en": "Before house, use our."
+      }
+    },
+    {
+      "q": "Tom has a bike. ___ bike is blue.",
+      "options": [
+        {
+          "text": "His",
+          "error_tag": null
+        },
+        {
+          "text": "He",
+          "error_tag": "word_form"
+        },
+        {
+          "text": "Him",
+          "error_tag": "word_form"
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Trước bike cần His.",
+        "en": "Before bike, use His."
+      }
+    }
+  ],
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "openai:gpt-5.6-sol",
+    "prompt_version": "direct-author.en-a1.v1",
+    "run_id": "chatgpt.en-a1.20260930",
+    "generated_at": "2026-09-30T10:35:00Z"
+  },
+  "review": null,
+  "sequence": 1,
+  "source_anchors": {
+    "status": "anchored",
+    "items": [
+      {
+        "source": "core_inventory",
+        "code": "127",
+        "level": "A1"
+      }
+    ]
+  },
+  "aliases": [
+    "a1-possessive-adjectives-pronouns-and-possessive-s"
+  ]
+}

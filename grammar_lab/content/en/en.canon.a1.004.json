@@ -1,0 +1,238 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.a1.004",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.catalog_unclassified",
+  "level": {
+    "framework": "cefr",
+    "value": "A1",
+    "rank": 1
+  },
+  "prereqs": [],
+  "contrasts": [],
+  "error_tags": [
+    "other"
+  ],
+  "source_refs": {},
+  "point_type": "other",
+  "header": {
+    "title": {
+      "vi": "Would like",
+      "en": "Would like"
+    },
+    "native_title": "Would like",
+    "sub": {
+      "vi": "muốn một cách lịch sự",
+      "en": "polite wants"
+    },
+    "level": {
+      "framework": "cefr",
+      "value": "A1",
+      "rank": 1
+    },
+    "summary": {
+      "vi": "Would like diễn tả mong muốn theo cách lịch sự; dùng would like + danh từ hoặc would like to + động từ.",
+      "en": "Would like expresses a polite want; use would like + noun or would like to + base verb."
+    }
+  },
+  "when_to_use": [
+    {
+      "vi": "Dùng would like + danh từ khi gọi món hoặc yêu cầu lịch sự.",
+      "en": "Use would like + noun for polite requests or ordering."
+    },
+    {
+      "vi": "Dùng would like to + V để nói muốn làm gì.",
+      "en": "Use would like to + base verb to say what you want to do."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "S",
+        "role": "subject",
+        "label": {
+          "vi": "chủ ngữ",
+          "en": "subject"
+        }
+      },
+      {
+        "text": "would like",
+        "role": "verb",
+        "label": {
+          "vi": "would like",
+          "en": "would like"
+        }
+      },
+      {
+        "text": "N / to V",
+        "role": "object",
+        "label": {
+          "vi": "danh từ hoặc to + động từ",
+          "en": "noun or to + verb"
+        }
+      }
+    ],
+    "illustration": {
+      "kind": "none"
+    }
+  },
+  "examples": [
+    {
+      "text": "I would like a coffee.",
+      "form": "affirmative",
+      "spans": [
+        {
+          "start": 0,
+          "end": 1,
+          "role": "subject"
+        },
+        {
+          "start": 2,
+          "end": 12,
+          "role": "verb"
+        },
+        {
+          "start": 13,
+          "end": 21,
+          "role": "object"
+        }
+      ],
+      "annotation": {
+        "vi": "Would like làm lời muốn lịch sự hơn.",
+        "en": "Would like makes the want more polite."
+      },
+      "translation": {
+        "vi": "Would like làm lời muốn lịch sự hơn.",
+        "en": "Would like makes the want more polite."
+      }
+    },
+    {
+      "text": "We would like to sit here.",
+      "form": "affirmative",
+      "spans": [
+        {
+          "start": 0,
+          "end": 2,
+          "role": "subject"
+        },
+        {
+          "start": 3,
+          "end": 13,
+          "role": "verb"
+        },
+        {
+          "start": 14,
+          "end": 25,
+          "role": "object"
+        }
+      ],
+      "annotation": {
+        "vi": "Would like to + V nói muốn làm một hành động.",
+        "en": "Would like to + verb expresses a desired action."
+      },
+      "translation": {
+        "vi": "Would like to + V nói muốn làm một hành động.",
+        "en": "Would like to + verb expresses a desired action."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "I would like go now.",
+      "right": "I would like to go now.",
+      "reason": {
+        "vi": "Trước động từ sau would like cần to.",
+        "en": "Before a verb after would like, use to."
+      },
+      "error_tag": "other",
+      "l1": [
+        "vi"
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "I'd like ___ tea, please.",
+      "options": [
+        {
+          "text": "some",
+          "error_tag": null
+        },
+        {
+          "text": "to",
+          "error_tag": "other"
+        },
+        {
+          "text": "am",
+          "error_tag": "other"
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Would like có thể đi với cụm danh từ.",
+        "en": "Would like can take a noun phrase."
+      }
+    },
+    {
+      "q": "She would like ___ leave early.",
+      "options": [
+        {
+          "text": "to",
+          "error_tag": null
+        },
+        {
+          "text": "for",
+          "error_tag": "other"
+        },
+        {
+          "text": "is",
+          "error_tag": "other"
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Trước leave dùng to.",
+        "en": "Use to before leave."
+      }
+    },
+    {
+      "q": "We ___ like a table for two.",
+      "options": [
+        {
+          "text": "would",
+          "error_tag": null
+        },
+        {
+          "text": "are",
+          "error_tag": "other"
+        },
+        {
+          "text": "do",
+          "error_tag": "other"
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Cấu trúc lịch sự là would like.",
+        "en": "The polite structure is would like."
+      }
+    }
+  ],
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "openai:gpt-5.6-sol",
+    "prompt_version": "direct-author.en-a1.v1",
+    "run_id": "chatgpt.en-a1.20260930",
+    "generated_at": "2026-09-30T10:35:00Z"
+  },
+  "review": null,
+  "sequence": 4,
+  "source_anchors": {
+    "status": "unanchored",
+    "items": []
+  },
+  "aliases": []
+}

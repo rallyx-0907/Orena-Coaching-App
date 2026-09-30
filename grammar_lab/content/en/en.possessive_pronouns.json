@@ -1,0 +1,214 @@
+{
+  "schema_version": "0.4",
+  "id": "en.possessive_pronouns",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.possession",
+  "level": {
+    "framework": "cefr",
+    "value": "A1",
+    "rank": 1
+  },
+  "prereqs": [
+    "en.possessive_adjectives"
+  ],
+  "contrasts": [],
+  "error_tags": [
+    "word_form"
+  ],
+  "source_refs": {
+    "r5": [
+      "a1-possessive-adjectives-pronouns-and-possessive-s"
+    ]
+  },
+  "point_type": "other",
+  "header": {
+    "title": {
+      "vi": "Đại từ sở hữu",
+      "en": "Possessive pronouns"
+    },
+    "native_title": "Possessive pronouns",
+    "sub": {
+      "vi": "mine, yours, his...",
+      "en": "mine, yours, his..."
+    },
+    "level": {
+      "framework": "cefr",
+      "value": "A1",
+      "rank": 1
+    },
+    "summary": {
+      "vi": "Mine, yours, his, hers, ours, theirs thay cho cả cụm tính từ sở hữu + danh từ để tránh lặp danh từ.",
+      "en": "Mine, yours, his, hers, ours, and theirs replace a possessive adjective plus noun to avoid repetition."
+    }
+  },
+  "when_to_use": [
+    {
+      "vi": "Dùng khi danh từ đã rõ: This book is mine.",
+      "en": "Use them when the noun is already clear: This book is mine."
+    },
+    {
+      "vi": "Không đặt thêm danh từ ngay sau mine/yours/hers/ours/theirs.",
+      "en": "Do not put a noun directly after mine/yours/hers/ours/theirs."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "possessive pronoun",
+        "role": "complement",
+        "label": {
+          "vi": "đại từ sở hữu",
+          "en": "possessive pronoun"
+        }
+      }
+    ],
+    "illustration": {
+      "kind": "none"
+    }
+  },
+  "examples": [
+    {
+      "text": "This bag is mine.",
+      "form": "affirmative",
+      "spans": [
+        {
+          "start": 12,
+          "end": 16,
+          "role": "complement"
+        }
+      ],
+      "annotation": {
+        "vi": "Mine thay cho my bag.",
+        "en": "Mine replaces my bag."
+      },
+      "translation": {
+        "vi": "Mine thay cho my bag.",
+        "en": "Mine replaces my bag."
+      }
+    },
+    {
+      "text": "Those seats are ours.",
+      "form": "affirmative",
+      "spans": [
+        {
+          "start": 16,
+          "end": 20,
+          "role": "complement"
+        }
+      ],
+      "annotation": {
+        "vi": "Ours thay cho our seats.",
+        "en": "Ours replaces our seats."
+      },
+      "translation": {
+        "vi": "Ours thay cho our seats.",
+        "en": "Ours replaces our seats."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "This book is my.",
+      "right": "This book is mine.",
+      "reason": {
+        "vi": "My phải đi với danh từ; đứng một mình cần mine.",
+        "en": "My modifies a noun; use mine when it stands alone."
+      },
+      "error_tag": "word_form",
+      "l1": [
+        "vi"
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "This pen is ___.",
+      "options": [
+        {
+          "text": "mine",
+          "error_tag": null
+        },
+        {
+          "text": "my",
+          "error_tag": "word_form"
+        },
+        {
+          "text": "me",
+          "error_tag": "word_form"
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Đứng một mình sau is cần mine.",
+        "en": "Standing alone after is, use mine."
+      }
+    },
+    {
+      "q": "These keys are ___.",
+      "options": [
+        {
+          "text": "theirs",
+          "error_tag": null
+        },
+        {
+          "text": "their",
+          "error_tag": "word_form"
+        },
+        {
+          "text": "them",
+          "error_tag": "word_form"
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Dùng theirs khi không có danh từ theo sau.",
+        "en": "Use theirs when no noun follows."
+      }
+    },
+    {
+      "q": "Is this coat ___?",
+      "options": [
+        {
+          "text": "yours",
+          "error_tag": null
+        },
+        {
+          "text": "your",
+          "error_tag": "word_form"
+        },
+        {
+          "text": "you",
+          "error_tag": "word_form"
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Không có danh từ theo sau nên dùng yours.",
+        "en": "No noun follows, so use yours."
+      }
+    }
+  ],
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "openai:gpt-5.6-sol",
+    "prompt_version": "direct-author.en-a1.v1",
+    "run_id": "chatgpt.en-a1.20260930",
+    "generated_at": "2026-09-30T10:35:00Z"
+  },
+  "review": null,
+  "sequence": 2,
+  "source_anchors": {
+    "status": "anchored",
+    "items": [
+      {
+        "source": "core_inventory",
+        "code": "129",
+        "level": "A1"
+      }
+    ]
+  },
+  "aliases": []
+}

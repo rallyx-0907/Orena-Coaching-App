@@ -1,0 +1,243 @@
+{
+  "schema_version": "0.4",
+  "id": "en.prepositions.time",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.place_time",
+  "level": {
+    "framework": "cefr",
+    "value": "A1",
+    "rank": 1
+  },
+  "prereqs": [],
+  "contrasts": [],
+  "error_tags": [
+    "preposition"
+  ],
+  "source_refs": {
+    "r5": [
+      "a1-basic-prepositions-of-time"
+    ]
+  },
+  "point_type": "other",
+  "header": {
+    "title": {
+      "vi": "Giới từ chỉ thời gian: at / on / in",
+      "en": "Prepositions of time: at / on / in"
+    },
+    "native_title": "Prepositions of time: at / on / in",
+    "sub": {
+      "vi": "giờ / ngày / khoảng thời gian",
+      "en": "clock / day / period"
+    },
+    "level": {
+      "framework": "cefr",
+      "value": "A1",
+      "rank": 1
+    },
+    "summary": {
+      "vi": "At thường dùng với giờ cụ thể, on với ngày/ngày tháng, in với tháng, năm và khoảng thời gian dài hơn.",
+      "en": "At is common with clock times, on with days and dates, and in with months, years, and longer periods."
+    }
+  },
+  "when_to_use": [
+    {
+      "vi": "Dùng at với giờ.",
+      "en": "Use at with clock times."
+    },
+    {
+      "vi": "Dùng on với ngày và in với tháng/năm.",
+      "en": "Use on with days and in with months/years."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "at / on / in",
+        "role": "marker",
+        "label": {
+          "vi": "giới từ thời gian",
+          "en": "time preposition"
+        },
+        "options": [
+          {
+            "text": "at"
+          },
+          {
+            "text": "on"
+          },
+          {
+            "text": "in"
+          }
+        ]
+      },
+      {
+        "text": "time",
+        "role": "time",
+        "label": {
+          "vi": "mốc thời gian",
+          "en": "time expression"
+        }
+      }
+    ],
+    "illustration": {
+      "kind": "none"
+    }
+  },
+  "examples": [
+    {
+      "text": "The class starts at nine.",
+      "form": "affirmative",
+      "spans": [
+        {
+          "start": 17,
+          "end": 19,
+          "role": "marker"
+        },
+        {
+          "start": 20,
+          "end": 24,
+          "role": "time"
+        }
+      ],
+      "annotation": {
+        "vi": "Giờ cụ thể dùng at.",
+        "en": "Use at with a specific clock time."
+      },
+      "translation": {
+        "vi": "Giờ cụ thể dùng at.",
+        "en": "Use at with a specific clock time."
+      }
+    },
+    {
+      "text": "We meet on Monday.",
+      "form": "affirmative",
+      "spans": [
+        {
+          "start": 8,
+          "end": 10,
+          "role": "marker"
+        },
+        {
+          "start": 11,
+          "end": 17,
+          "role": "time"
+        }
+      ],
+      "annotation": {
+        "vi": "Ngày trong tuần dùng on.",
+        "en": "Use on with a day of the week."
+      },
+      "translation": {
+        "vi": "Ngày trong tuần dùng on.",
+        "en": "Use on with a day of the week."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "I was born on 2000.",
+      "right": "I was born in 2000.",
+      "reason": {
+        "vi": "Năm dùng in, không dùng on.",
+        "en": "Use in with a year, not on."
+      },
+      "error_tag": "preposition",
+      "l1": [
+        "vi"
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "The train leaves ___ 6:30.",
+      "options": [
+        {
+          "text": "at",
+          "error_tag": null
+        },
+        {
+          "text": "on",
+          "error_tag": "preposition"
+        },
+        {
+          "text": "in",
+          "error_tag": "preposition"
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Giờ cụ thể dùng at.",
+        "en": "Use at with a clock time."
+      }
+    },
+    {
+      "q": "We have class ___ Friday.",
+      "options": [
+        {
+          "text": "on",
+          "error_tag": null
+        },
+        {
+          "text": "at",
+          "error_tag": "preposition"
+        },
+        {
+          "text": "in",
+          "error_tag": "preposition"
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Ngày trong tuần dùng on.",
+        "en": "Use on with a day of the week."
+      }
+    },
+    {
+      "q": "My birthday is ___ July.",
+      "options": [
+        {
+          "text": "in",
+          "error_tag": null
+        },
+        {
+          "text": "on",
+          "error_tag": "preposition"
+        },
+        {
+          "text": "at",
+          "error_tag": "preposition"
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Tháng dùng in.",
+        "en": "Use in with a month."
+      }
+    }
+  ],
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "openai:gpt-5.6-sol",
+    "prompt_version": "direct-author.en-a1.v1",
+    "run_id": "chatgpt.en-a1.20260930",
+    "generated_at": "2026-09-30T10:35:00Z"
+  },
+  "review": null,
+  "sequence": 2,
+  "source_anchors": {
+    "status": "anchored",
+    "items": [
+      {
+        "source": "core_inventory",
+        "code": "133a",
+        "level": "A1"
+      }
+    ]
+  },
+  "aliases": [
+    "a1-basic-prepositions-of-time"
+  ]
+}
