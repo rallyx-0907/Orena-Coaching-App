@@ -3692,3 +3692,27 @@ meaningful recall gain without a material clean-case/precision regression.
    gate.
 
 E continues in parallel where it does not depend on D4 schema.
+
+## D-105 — D4 approved for the lane runtime; H-19, H-20; the grammar content path; three Admin answers
+
+**Date:** 2026-09-30. **Status:** Accepted (explicit human direction).
+
+1. **D4 approved on :8021, not :8000.** Migrations 0017-0023 (`migrations/proposed/`,
+   independently reviewed and rehearsed, `9ca6c3f`) may move to `versions/` and be applied to the
+   lane runtime, one revision per invocation after a backup. The implementation follows proposal
+   section 15, and `ORENA_ACCOUNT_BACKBONE` goes on for the lane per D-104 H-11. :8000 is not
+   touched until the merge and its own gates.
+2. **H-19.** An existing learner-language profile with no declared level gets a level prompt the
+   learner can skip. The entry rule stays as D-104 H-1 states it.
+3. **H-20.** Grammar completion and the quiz result are written atomically, in one operation.
+4. **Grammar content path.** Grammar Lab is upstream: an approved export is imported into the
+   database through Admin, reviewed and published there, and learners read it from a published
+   grammar API. Content does not ship as JSON with the source code. The grammar content store and
+   `/api/grammar/v1/*` go through their own proposal and independent architecture review before
+   code.
+5. **Admin.**
+   - (a) Copyright is a hard gate at Publish: an article whose rights do not allow publication
+     cannot be published. This amends the earlier "rights are decision support, never a hard block"
+     wording for Reading.
+   - (b) For vocabulary publication the server is the authority; the UI states the server's rule.
+   - (c) The review queue shows Source, Rights and Target count.
