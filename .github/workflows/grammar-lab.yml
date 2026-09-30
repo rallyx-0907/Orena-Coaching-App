@@ -1,0 +1,28 @@
+name: Grammar Lab CI
+
+on:
+  push:
+    branches:
+      - feature/grammar-lab-pipeline
+    paths:
+      - "grammar_lab/**"
+      - "docs/grammar_lab/**"
+      - ".github/workflows/grammar-lab.yml"
+  pull_request:
+    paths:
+      - "grammar_lab/**"
+      - "docs/grammar_lab/**"
+      - ".github/workflows/grammar-lab.yml"
+
+jobs:
+  grammar-lab:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -e "grammar_lab[dev]"
+      - run: python -m pytest grammar_lab/tests
+      - run: python -m grammar_lab.pipeline.cli import-canonical --check
+      - run: python -m grammar_lab.pipeline.cli corpus-plan --lang all
