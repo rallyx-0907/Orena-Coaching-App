@@ -282,3 +282,74 @@ Protected areas touched: Journey/Review (Review mode rename), Library (`library_
 (`--hero-day-done`). Each change is minimal and covered by a gate that passed on the host. No native (`mobile/`) file,
 no production or preview operation, no secret, and no schema change beyond the already-applied 0017-0023 is in either
 commit. `docs/visual-references/**` untouched.
+
+## Delta check (a13e0a3)
+
+- **Reviewer:** Claude Opus 5.5, independent reviewer subagent, not the implementer. **Date:** 2026-10-01.
+- **Reviewed:** `git show a13e0a3` (20 files) against the findings above. Read-only, static; no Docker or PostgreSQL. The
+  implementer's new results (121/121 node gates; SQLite 2690 passed / 330 skipped; PostgreSQL 3011 passed / 9 skipped) are
+  local execution and were not reproduced by me.
+
+### Verdict: APPROVE WITH CONDITIONS, for enabling `ORENA_ACCOUNT_BACKBONE` on the :8021 lane only
+
+Both P1s are fixed at the root and the regression tests exercise the failure. No new P0/P1 found. Not approved for
+:8000/:8010 (see conditions 4-5).
+
+### P1-1 (place read as saved): fixed
+- `lookup` now excludes place-only rows in SQL (`started`, no word, not pinned, no state, empty note) and orders `kept`
+  first; Reader and Content Detail take only `relationship === 'kept'`; `forget` of a marked `started` row clears the
+  mark and keeps the place. Tests: lookup after a place is `[]`; keep-after-place returns exactly the kept row; forgetting
+  the bookmark leaves the place; un-marking a read item keeps the place; the `/api/library/items` route never returns a
+  place-only row; a node gate pins the client rule.
+- Paths I looked for and did not find: a place-only row is reachable only by its item id, which no listing returns
+  (`list_places` returns content ids), so PATCH/DELETE/collection-add of it is not reachable from the UI; `review_queue`
+  lists pinned rows only; a pinned `started` row is deliberately visible to `lookup` but ignored by the client as a
+  bookmark. Residual P3: the client now treats only `kept` as saved, so a row with relationship `imported` no longer
+  shows as saved in Reader/Content Detail; confirm that is intended.
+
+### P1-2 (deleted import): fixed
+- Delete commits a content-free tombstone (`{id, form}`), `GET /api/works/{id}` is 404 for deleted works, the test reads
+  the stored row (`payload::text`) and asserts neither text nor title remain, and a replay of the delete is idempotent.
+- Other routes serving deleted works: `GET /api/works` and `GET /api/imports` exclude them in SQL; `get_import`,
+  `get_annotations`, `get_response`, `get_conversation`, `get_draft` all 404 on `deleted`; the changes feed and receipts
+  carry ids, versions and kinds, not payloads; a stale write to a deleted import gets the tombstone, not the text.
+  Residual: a conversation's `work_turns` rows outlive a `deleted` conversation (unreachable through any route; relevant
+  to the D-055(b) workflow). **Imports deleted before a13e0a3 still hold their text in `works.payload` on any runtime
+  that ran 5bdd2ab/a4390b5** (the lane holds test data only); the human should know, and a reviewed scrub is preferable
+  to hand-editing.
+
+### P2 fixes
+- **P2-1 dictation:** `INSERT ... ON CONFLICT (uq_listening_progress_scope_segment) DO NOTHING`, then `SELECT ... FOR
+  UPDATE`, then merge. Constraint name matches the model and migration 0003; the row id is a function of the scope tuple,
+  so the primary key cannot conflict without the arbiter also conflicting. Correct.
+- **P2-2:** `timespec="microseconds"` in both PATCH and PUT; token still echoed verbatim and compared by equality. Correct.
+- **P2-3 session flag:** cost fixed (one lookup per session). **New defect, P2:** `language_checked` is set whenever the
+  account had no stored language, and is never cleared. A session opened before the account's first choice (device B,
+  while device A then chooses Chinese) keeps the default `en` for the life of its cookie, although bootstrap already
+  reports `language.stored: true`, so the client sees "stored" with active `en`. The flag therefore can hide a later-stored
+  language. **Fix:** have `api_session_bootstrap` (once per page load) re-seed a session that has no language from the
+  stored value, ignoring the flag, or clear the flag when bootstrap reads a stored value.
+- **P2-4:** the import bound is counted in `create_guard`, which runs inside `load`, i.e. after the account stream lock,
+  only for a creation; a barrier test expects exactly 20. Correct. The other unbounded creators (`started` rows,
+  responses, annotations, conversations) are still uncapped and listed for the human; still a prerequisite for :8000.
+- **P2-5:** the Writing room draws the stored review at once and refreshes a Chinese review in the background, replacing
+  only the review on screen after a `refreshed` status and only if the same essay is still current. Acceptable; it
+  replaces the whole `essay` object, so check in the browser that an in-progress revision text is not reset.
+- **P2-8:** auto-create applies only when the request key equals `"legacy"` and the row is missing; it then calls
+  `upsert_user`, which is idempotent, and a concurrent first sign-in retries once on `IntegrityError`. Outside
+  auth-disabled development it cannot be reached today: in authentication-enabled mode the key is the Google `sub`, and the
+  only requests that run under the default `"legacy"` context are the public paths, none of which call
+  `write_account_settings`. **P3:** the guard is on the key alone; add `not AUTH_ENABLED` so the invariant does not depend
+  on route inventory.
+- **P2-9:** proposal section 17 records the corrections; applied migration files are deliberately not edited, which is
+  acceptable (their docstrings stay stale; section 17 says so).
+
+### Conditions for enabling the flag on :8021
+1. Re-seed on bootstrap (or clear `language_checked`) so a stored language is never hidden from an older session.
+2. Add `not AUTH_ENABLED` to the `"legacy"` auto-create guard.
+3. Report every PostgreSQL-only result as local execution, and check the Writing room in a browser for the in-progress
+   revision case.
+4. Before :8000/:8010: per-account caps for `started` rows, responses, annotations and conversations with a receipt
+   growth owner (P2-4), code and migrations deployed as one unit after a backup (P2-6), and a decision on pre-fix deleted
+   import payloads.
+5. The :8000/:8010 enablement stays a human gate.

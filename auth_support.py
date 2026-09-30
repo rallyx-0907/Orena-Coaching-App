@@ -389,6 +389,14 @@ def api_session_bootstrap(request: Request, response: Response) -> dict[str, Any
         role = str(user.get("role") or "user")
         mode = "google"
 
+    settings = account_settings.read_account_settings()
+    stored_language = str((settings or {}).get("learning_language") or "")
+    if stored_language and not request.session.get("language"):
+        # A session that looked once and found nothing (`language_checked`) must not keep the default after the
+        # account stores a choice elsewhere: bootstrap already reads the stored value, so it seeds the session
+        # here and the flag goes (implementation review delta, P2-3).
+        request.session["language"] = enabled_language(stored_language).code
+        request.session.pop("language_checked", None)
     active = enabled_language(
         request.session.get("language") or current_language_code() or DEFAULT_LANGUAGE
     ).code
@@ -397,7 +405,6 @@ def api_session_bootstrap(request: Request, response: Response) -> dict[str, Any
         for item in all_languages()
         if item.enabled
     ]
-    settings = account_settings.read_account_settings()
     return {
         "version": SESSION_BOOTSTRAP_VERSION,
         "authenticated": True,

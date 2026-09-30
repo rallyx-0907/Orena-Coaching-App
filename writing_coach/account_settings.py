@@ -34,6 +34,13 @@ _repository: Any = None
 _user_key = current_user_key
 
 
+def _auth_enabled() -> bool:
+    """Whether this deployment signs learners in. The local account is created only when it does not."""
+    from writing_coach.core.deployment import resolve_deployment_config
+
+    return bool(resolve_deployment_config().auth_enabled)
+
+
 def configure_account_settings(repository: Any, user_key=current_user_key) -> None:
     global _repository, _user_key
     _repository = repository
@@ -125,7 +132,7 @@ def write_account_settings(changes: dict[str, Any], expected_token: str) -> dict
             # Authentication-disabled local development has one account, "legacy", whose row a PostgreSQL
             # runtime seeds at start and a test backend never had. Create exactly that row (idempotent, so two
             # first writers both find it) and write once more; any other missing account stays unavailable.
-            if key != LOCAL_ACCOUNT_KEY:
+            if _auth_enabled() or key != LOCAL_ACCOUNT_KEY:
                 raise
             _repository.upsert_user(
                 {"sub": LOCAL_ACCOUNT_KEY, "email": "local@localhost.invalid", "name": "Local developer"}, set()

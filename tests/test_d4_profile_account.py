@@ -550,3 +550,43 @@ def test_two_profile_writes_in_one_second_have_different_versions_so_a_stale_wri
     error = _status(lambda: patch_learner_profile(ProfilePatchIn(expected_version=stale, review_new_per_day=9)))
     assert error.status_code == 409
     assert get_learner_profile()["review_new_per_day"] == 5
+
+
+def test_a_session_that_found_no_language_takes_one_the_account_stores_later(backend):
+    """Implementation review delta (P2-3): the once-per-session flag must not hide a later-stored choice."""
+    import app as app_module
+
+    if backend.auth.get_user("legacy") is None:
+        backend.auth.upsert_user({"sub": "legacy", "email": "local@localhost.invalid", "name": "Local"}, set())
+    previous = account_settings._repository  # noqa: SLF001
+    account_settings.configure_account_settings(backend.auth, user_key=lambda: "legacy")
+    state = backend.auth.get_account_settings("legacy")
+    if state["learning_language"]:
+        state = backend.auth.update_account_settings("legacy", {"learning_language": ""}, state["settings_version"])
+    try:
+        client = TestClient(app_module.app)
+        first = client.get("/api/session/bootstrap").json()
+        assert first["language"]["stored"] is False
+        # another device stores a choice while this session holds the "looked, found nothing" flag
+        state = backend.auth.update_account_settings("legacy", {"learning_language": "zh"}, state["settings_version"])
+        later = client.get("/api/session/bootstrap").json()
+        assert later["language"] == {**later["language"], "stored": True, "active": "zh"}
+        assert client.get("/api/platform/languages").json()["active"] == "zh", "the following requests run in the stored language"
+    finally:
+        state = backend.auth.get_account_settings("legacy")
+        backend.auth.update_account_settings("legacy", {"learning_language": ""}, state["settings_version"])
+        account_settings.configure_account_settings(previous)
+
+
+def test_with_sign_in_enabled_the_local_account_key_is_never_created(backend, monkeypatch):
+    """Implementation review delta (P2-8): the local account is created only when the deployment has no sign-in."""
+    fresh_key = f"local-{uuid.uuid4().hex[:8]}"
+    account_settings.configure_account_settings(backend.auth, user_key=lambda: fresh_key)
+    monkeypatch.setattr(account_settings, "LOCAL_ACCOUNT_KEY", fresh_key)
+    monkeypatch.setattr(account_settings, "_auth_enabled", lambda: True)
+    app = FastAPI()
+    app.include_router(account_settings.router)
+    client = TestClient(app)
+    assert client.patch("/api/account-settings", json={"expected_settings_version": "", "weekly_goal_days": 3}).status_code == 503
+    assert backend.auth.get_user(fresh_key) is None
+    assert client.get("/api/account-settings").json()["stored"] is False
