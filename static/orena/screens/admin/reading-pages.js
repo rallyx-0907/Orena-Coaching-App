@@ -11,7 +11,7 @@ import { html, raw } from '../../kit/html.js';
 import { icon } from '../../kit/icons.js';
 import { dateShort, dateTime, num, relative } from '../../capabilities/admin-format.js';
 import {
-  RIGHTS_EDIT, QUEUE_TABS, articleActions, isEditable, levelOptions, publicationBlockers, questionState,
+  RIGHTS_EDIT, QUEUE_TABS, automationChoice, articleActions, isEditable, levelOptions, publicationBlockers, questionState,
   questionsEditable, readingMinutes, setActions, setIsStale, setProgress, tabOf,
 } from '../../capabilities/admin-reading.js';
 import { learnerAddress } from '../../capabilities/admin-reading.js';
@@ -78,6 +78,7 @@ export function overviewPage({ ops, sources, next, failedJobs, t, ui, href }) {
   const nextRows = (next || []).map((item) => ({
     title: item.title || t('rdUntitled'),
     meta: [item.source_name, langName(t, item.language), item.topic, item.level, t('rdMinutes', { n: readingMinutes(item.reading_time_seconds) })].filter(Boolean).join(' · '),
+    pills: [rightsPill(t, item.rights_level)],
     right: t('rdReview'),
     go: href('adminArticle', { id: item.id }),
   }));
@@ -166,12 +167,13 @@ function rightsAdviceKey(blockers) {
 /* The three rights questions as editable choices: the server's held answer unless the operator has
    picked another. An unanswered question is its own choice, because "unknown" is an answer the
    gate treats as a refusal. */
-function rightsEditor(t, state, draft) {
+function rightsEditor(t, state, draft, automation) {
   return RIGHTS_EDIT.map((question) => {
-    const held = state[question.id] === undefined || state[question.id] === 'unknown' ? '' : state[question.id];
+    const held = question.override ? automationChoice(automation) : state[question.id] === undefined || state[question.id] === 'unknown' ? '' : state[question.id];
     const chosen = draft[question.id] !== undefined ? draft[question.id] : held;
-    const options = [['', 'rdAnswerUnknown'], [question.yes, question.yes === 'required' ? 'rdAnswerRequired' : 'rdAnswerAllowed'], [question.no, question.no === 'not_required' ? 'rdAnswerNotRequired' : 'rdAnswerDenied']];
-    return html`<div class="a-field"><div class="a-field__label"><span>${t(`rdQ_${question.id}`)}</span></div><div class="a-seg" role="group" aria-label="${t(`rdQ_${question.id}`)}">${options.map(([id, key]) => html`<button type="button" class="a-seg__option" data-a="rights-pick" data-field="${question.id}" data-value="${id}" aria-pressed="${chosen === id ? 'true' : 'false'}"><span>${t(key)}</span></button>`)}</div></div>`;
+    const defaultLabel = question.override ? t('rdAutoDefault', { value: t(automation?.source_default ? 'rdAnswerAllowed' : 'rdAnswerDenied') }) : null;
+    const options = [['', question.override ? '' : 'rdAnswerUnknown'], [question.yes, question.yes === 'required' ? 'rdAnswerRequired' : 'rdAnswerAllowed'], [question.no, question.no === 'not_required' ? 'rdAnswerNotRequired' : 'rdAnswerDenied']];
+    return html`<div class="a-field"><div class="a-field__label"><span>${t(`rdQ_${question.id}`)}</span></div><div class="a-seg" role="group" aria-label="${t(`rdQ_${question.id}`)}">${options.map(([id, key]) => html`<button type="button" class="a-seg__option" data-a="rights-pick" data-field="${question.id}" data-value="${id}" aria-pressed="${chosen === id ? 'true' : 'false'}"><span>${key === '' ? defaultLabel : t(key)}</span></button>`)}</div></div>`;
   });
 }
 
@@ -300,8 +302,8 @@ export function articlePage({ article, sets, view, t, ui, href, now }) {
       <div class="a-sticky"><div class="a-sticky__text"><div class="a-pills">${pill(status)}${article.status === 'published' ? html`<a class="a-learnerlink" href="${learnerAddress('reading', article.id)}">${t('rdOpenAsLearner')}</a>` : ''}</div><h1 class="a-detail__title">${article.title}</h1></div><div class="a-sticky__acts">${actionButtons.map(button)}</div></div>
       ${view.actionError ? html`<div class="a-error" role="alert">${view.actionError}</div>` : ''}
       ${blockers.length && !isLive ? banner({ tone: 'err', title: t('rdBlockedTitle'), text: t('rdBlockedText'), }) : ''}
-      <div class="a-rights"><div class="a-rights__text"><div class="a-rights__label">${t('rdRights')}</div><div class="a-rights__note">${t(rightsAdviceKey(blockers))}</div>${blockers.length ? html`<ul class="a-rights__list">${blockers.map((blocker) => html`<li>${t(`rdWarn_${blocker.code}`)}</li>`)}</ul>` : ''}${article.rights_review ? html`<div class="a-rights__note">${t('rdRightsAnsweredBy', { who: article.rights_review.actor || '—', when: dateShort(article.rights_review.at, ui) })}</div>` : ''}</div>
-        <div class="a-rights__edit">${rightsEditor(t, state, view.rightsDraft || {})}${view.rightsError ? html`<div class="a-error" role="alert">${view.rightsError}</div>` : ''}<div class="a-actions a-actions--end">${button({ label: view.rightsDirty ? t('rdRightsSave') : t('rdRightsSaved'), kind: 'primary', size: 'sm', a: 'rights-save', disabled: !view.rightsDirty || view.busy })}</div></div></div>
+      <div class="a-rights"><div class="a-rights__text"><div class="a-rights__label">${t('rdRights')}</div><div class="a-rights__note">${t(rightsAdviceKey(blockers))}</div>${blockers.length ? html`<ul class="a-rights__list">${blockers.map((blocker) => html`<li>${t(`rdWarn_${blocker.code}`)}</li>`)}</ul>` : ''}${article.automation ? html`<div class="a-rights__note">${t('rdAutoEffective', { value: t(article.automation.allowed ? 'rdAnswerAllowed' : 'rdAnswerDenied'), origin: t(article.automation.origin === 'article' ? 'rdAutoFromArticle' : 'rdAutoFromSource') })}</div>` : ''}${article.rights_review ? html`<div class="a-rights__note">${t('rdRightsAnsweredBy', { who: article.rights_review.actor || '—', when: dateShort(article.rights_review.at, ui) })}</div>` : ''}</div>
+        <div class="a-rights__edit">${rightsEditor(t, state, view.rightsDraft || {}, article.automation)}${view.rightsError ? html`<div class="a-error" role="alert">${view.rightsError}</div>` : ''}<div class="a-actions a-actions--end">${button({ label: view.rightsDirty ? t('rdRightsSave') : t('rdRightsSaved'), kind: 'primary', size: 'sm', a: 'rights-save', disabled: !view.rightsDirty || view.busy })}</div></div></div>
       ${dupes.length ? banner({ tone: 'warn', title: t('rdDupTitle'), text: t('rdDupText', { sources: dupes.map((copy) => copy.source_name || copy.source_slug || copy.source_id).join(', ') }) }) : ''}
       <div class="a-dtabs">${chipRow({ options: dtabs.map((id) => ({ id, label: id === 'targets' ? `${t('rdDtab_targets')} · ${targets.length}` : t(`rdDtab_${id}`), on: dtab === id })), a: 'dtab' })}</div>
       <div class="a-detail__grid">

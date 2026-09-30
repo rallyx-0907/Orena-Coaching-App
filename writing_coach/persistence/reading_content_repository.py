@@ -200,7 +200,37 @@ RIGHTS_EVENT = "rights_set"
 RIGHTS_QUESTIONS = ("can_republish", "can_adapt", "attribution_required")
 
 
-def overlay_rights(snapshot: Any, decisions: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+def automation_override(decisions: Sequence[Mapping[str, Any]]) -> bool | None:
+    """The article-level automation answer, when a reviewer recorded one.
+
+    A source's `automation_allowed` is a default (D-106 READING-2). The last
+    recorded answer wins, and `None` clears the override back to the default.
+    """
+    override: bool | None = None
+    for answers in decisions:
+        if "automation_allowed" in answers:
+            value = answers["automation_allowed"]
+            override = None if value is None else bool(value)
+    return override
+
+
+def effective_automation(decisions: Sequence[Mapping[str, Any]], source_default: Any) -> dict[str, Any]:
+    """The one computation of an article's automation permission: the article's
+    override when present, else the source default. Every surface that shows or
+    uses it reads this."""
+    override = automation_override(decisions)
+    default = bool(source_default)
+    return {
+        "allowed": default if override is None else override,
+        "override": override,
+        "source_default": default,
+        "origin": "source" if override is None else "article",
+    }
+
+
+def overlay_rights(
+    snapshot: Any, decisions: Sequence[Mapping[str, Any]], source_default: Any = None
+) -> dict[str, Any]:
     """The rights that govern publication: the immutable snapshot, then every
     answer an administrator recorded afterwards, oldest first.
 
@@ -209,6 +239,11 @@ def overlay_rights(snapshot: Any, decisions: Sequence[Mapping[str, Any]]) -> dic
     decision that leaves a question out leaves the earlier answer standing.
     """
     effective = dict(snapshot) if isinstance(snapshot, dict) else {}
+    # Automation is not the snapshot's to answer: it is the source's default
+    # unless the article carries a reviewed override.
+    effective.pop("automation_allowed", None)
+    if source_default is not None:
+        effective["automation_allowed"] = effective_automation(decisions, source_default)["allowed"]
     for answers in decisions:
         for key in (*RIGHTS_QUESTIONS, "license_note"):
             if key in answers:
@@ -745,17 +780,27 @@ class ReadingContentRepository:
             source_item = connection.execute(
                 select(ReadingSourceItem).where(ReadingSourceItem.id == row.source_item_id)
             ).first()
+            source_default = (
+                connection.execute(
+                    select(ReadingSource.automation_allowed).where(
+                        ReadingSource.id == source_item.source_id
+                    )
+                ).scalar()
+                if source_item
+                else None
+            )
             decisions = self._rights_decisions(connection, [row.id]).get(row.id, [])
         article = _article(row)
         article["targets"] = [_target(target) for target in targets]
         article["source"] = _item(source_item) if source_item else None
         article["rights_review"] = None
+        article["automation"] = None
         if article["source"] is not None:
             # `source.rights` stays the snapshot as ingested; the state the gate
             # and the review page read is the snapshot with the recorded answers.
-            effective = overlay_rights(
-                article["source"]["rights"], [entry["answers"] for entry in decisions]
-            )
+            answered = [entry["answers"] for entry in decisions]
+            effective = overlay_rights(article["source"]["rights"], answered, source_default)
+            article["automation"] = effective_automation(answered, source_default)
             article["source"]["rights_state"] = rights_state(effective)
             article["source"]["rights_effective"] = effective
             if decisions:
@@ -809,10 +854,17 @@ class ReadingContentRepository:
             return None
         chosen = {
             key: answers[key]
-            for key in (*RIGHTS_QUESTIONS, "license_note")
+            for key in (*RIGHTS_QUESTIONS, "license_note", "automation_allowed")
             if key in answers
         }
-        before = {key: current["source"]["rights_effective"].get(key) for key in chosen}
+        before = {
+            key: (
+                (current["automation"] or {}).get("override")
+                if key == "automation_allowed"
+                else current["source"]["rights_effective"].get(key)
+            )
+            for key in chosen
+        }
         with self.engine.begin() as connection:
             self._record_event(
                 connection,
@@ -1000,6 +1052,7 @@ class ReadingContentRepository:
             ReadingArticle.created_at,
             ReadingSource.name.label("source_name"),
             ReadingSourceItem.rights_snapshot_json.label("rights_snapshot"),
+            ReadingSource.automation_allowed.label("source_automation"),
             (
                 select(func.count())
                 .select_from(ReadingArticleTarget)
@@ -1035,9 +1088,9 @@ class ReadingContentRepository:
         items = []
         for row in page:
             item = _queue_row(row)
-            effective = overlay_rights(
-                row.rights_snapshot, [entry["answers"] for entry in decisions.get(row.id, [])]
-            )
+            answered = [entry["answers"] for entry in decisions.get(row.id, [])]
+            effective = overlay_rights(row.rights_snapshot, answered, row.source_automation)
+            item["automation_allowed"] = effective_automation(answered, row.source_automation)["allowed"]
             # The one answer the publication gate turns on, in the same three
             # words the review page uses.
             item["rights_level"] = rights_state(effective)["can_republish"]

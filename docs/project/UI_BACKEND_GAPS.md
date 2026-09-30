@@ -4466,3 +4466,18 @@ Resolved by the human's D-105 decisions; AD-A, AD-B and AD-H above are closed by
   today; changing it is one line once Review's mode names are settled.
 - **No weekly-goal control yet.** `weekly_goal_days` is stored and served; the design draws no control to set it in
   Settings or Profile that this slice found. It is not invented (rule 43); slice 7 decides where it is read.
+
+### Admin: Reading overview rights and automation override (D-106, 2026-09-30)
+
+- **READING-1.** The overview's "Next in review" rows draw the same effective rights pill as the Review
+  queue (same `list_queue` item, same `rightsPill`); the rights form is not duplicated there.
+- **READING-2.** `automation_allowed` on a source is a default. `POST .../articles/{id}/rights` also takes
+  `automation_allowed` (`true`/`false` sets the article override, `null` clears it), recorded as a
+  `rights_set` review event and audited; no schema change. One computation, `effective_automation()` in
+  `reading_content_repository.py`: the article override when present, else the source default. It feeds
+  the article payload (`automation`: allowed, override, source_default, origin), `rights_state.automation_allowed`,
+  the queue item (`automation_allowed`), and the publish audit record (`automation`). The review page
+  edits it (source default / Allow / Deny) and states the effective value and its origin.
+- **Open reading of "publish uses the effective value".** Publish records the effective value; it does not
+  refuse on it (manual articles from a source whose default is "no" would otherwise never publish). If
+  the human means a refusal, it is one line in `set_article_status`.

@@ -339,6 +339,9 @@ class ArticleRightsBody(BaseModel):
     can_republish: bool | None = None
     can_adapt: bool | None = None
     attribution_required: bool | None = None
+    # The article-level override of the source's automation default (D-106);
+    # `null` clears the override, and the source default applies again.
+    automation_allowed: bool | None = None
     license_note: str | None = Field(default=None, max_length=1000)
     reason: str = Field(default="", max_length=2000)
 
@@ -783,7 +786,12 @@ def set_article_status(
     audit_payload: dict[str, Any] = {"status": status, "reason": payload.reason.strip()}
     if status == "published":
         # An override is only meaningful beside what it overrode.
-        audit_payload |= {"warnings": warnings}
+        audit_payload |= {
+            "warnings": warnings,
+            # Publish records the article's effective automation permission -
+            # the override when present, else its source's default.
+            "automation": (current.get("automation") or {}),
+        }
     _audit(admin, f"admin.reading_article_{status}", entity_type="reading_article", entity_id=article_id,
            payload=audit_payload)
     if status == "published":

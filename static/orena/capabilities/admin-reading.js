@@ -68,14 +68,23 @@ export const RIGHTS_EDIT = [
   { id: 'can_republish', yes: 'allowed', no: 'denied' },
   { id: 'can_adapt', yes: 'allowed', no: 'denied' },
   { id: 'attribution_required', yes: 'required', no: 'not_required' },
+  /* A source's automation permission is a default; the article may carry a reviewed override (D-106).
+     '' clears the override so the source default applies again. */
+  { id: 'automation_allowed', yes: 'allowed', no: 'denied', override: true },
 ];
 
+/* The article-level override as the editor's choice: '' when the source default applies. */
+export function automationChoice(automation) {
+  if (!automation || automation.override === null || automation.override === undefined) return '';
+  return automation.override ? 'allowed' : 'denied';
+}
+
 /* The state the server holds -> the request body for the rights route: only what changed. */
-export function rightsChanges(state, draft) {
+export function rightsChanges(state, draft, automation = null) {
   const body = {};
   for (const question of RIGHTS_EDIT) {
     if (draft[question.id] === undefined) continue;
-    const held = state?.[question.id] === 'unknown' || state?.[question.id] === undefined ? '' : state[question.id];
+    const held = question.override ? automationChoice(automation) : state?.[question.id] === 'unknown' || state?.[question.id] === undefined ? '' : state[question.id];
     if (draft[question.id] === held) continue;
     body[question.id] = draft[question.id] === question.yes ? true : draft[question.id] === question.no ? false : null;
   }

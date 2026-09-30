@@ -149,6 +149,10 @@ export const en = {
   rdRightsAnsweredBy: 'Last answered by {who} · {when}',
   err_reading_rights_not_cleared: 'The rights do not allow publishing this text. Answer the rights questions first.',
   err_reading_rights_empty: 'Say which rights question you are answering.',
+  rdAutoDefault: 'Source default · {value}',
+  rdAutoEffective: 'Automation: {value} · {origin}',
+  rdAutoFromSource: 'source default',
+  rdAutoFromArticle: 'article override',
 };
 
 export const vi = {
@@ -288,6 +292,10 @@ export const vi = {
   rdRightsAnsweredBy: 'Trả lời gần nhất bởi {who} · {when}',
   err_reading_rights_not_cleared: 'Bản quyền không cho phép xuất bản văn bản này. Hãy trả lời các câu hỏi bản quyền trước.',
   err_reading_rights_empty: 'Hãy nói bạn đang trả lời câu hỏi bản quyền nào.',
+  rdAutoDefault: 'Mặc định của nguồn · {value}',
+  rdAutoEffective: 'Tự động hóa: {value} · {origin}',
+  rdAutoFromSource: 'mặc định của nguồn',
+  rdAutoFromArticle: 'ghi đè theo bài',
 };
 
 export const zh = {
@@ -427,4 +435,8 @@ export const zh = {
   rdRightsAnsweredBy: '最近由 {who} 回答 · {when}',
   err_reading_rights_not_cleared: '版权不允许发布这篇文本。请先回答版权问题。',
   err_reading_rights_empty: '请说明你在回答哪个版权问题。',
+  rdAutoDefault: '来源默认 · {value}',
+  rdAutoEffective: '自动化：{value} · {origin}',
+  rdAutoFromSource: '来源默认',
+  rdAutoFromArticle: '文章级覆盖',
 };

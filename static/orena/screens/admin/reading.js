@@ -206,12 +206,12 @@ export async function mountReading(shell, ctx) {
   });
   host.on('rights-pick', (control, dataset) => {
     view.rightsDraft = { ...(view.rightsDraft || {}), [dataset.field]: dataset.value };
-    view.rightsDirty = Object.keys(rightsChanges(data.article?.source?.rights_state, view.rightsDraft)).length > 0;
+    view.rightsDirty = Object.keys(rightsChanges(data.article?.source?.rights_state, view.rightsDraft, data.article?.automation)).length > 0;
     view.rightsError = '';
     host.paint();
   });
   host.on('rights-save', async () => {
-    const body = rightsChanges(data.article?.source?.rights_state, view.rightsDraft || {});
+    const body = rightsChanges(data.article?.source?.rights_state, view.rightsDraft || {}, data.article?.automation);
     if (!Object.keys(body).length) return;
     view.busy = true;
     view.rightsError = '';

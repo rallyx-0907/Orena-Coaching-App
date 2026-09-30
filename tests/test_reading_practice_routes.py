@@ -289,6 +289,41 @@ def test_the_queue_carries_source_rights_and_target_count(setup):
     assert again[blocked_id]["rights_level"] == "denied"
 
 
+def _rights_post(setup, article_id, body):
+    response = call(setup.app, "POST", f"/api/admin/reading/articles/{article_id}/rights", json=body)
+    assert response.status_code == 200, response.text
+    return response.json()
+
+
+def test_automation_is_the_source_default_until_an_article_override_is_recorded(setup):
+    article_id = _article(setup, rights={"can_republish": True})
+    held = setup.content.get_article(article_id)
+    default = held["automation"]["source_default"]
+    assert held["automation"] == {"allowed": default, "override": None, "source_default": default, "origin": "source"}
+    assert held["source"]["rights_state"]["automation_allowed"] == ("allowed" if default else "denied")
+    flipped = _rights_post(setup, article_id, {"automation_allowed": not default, "reason": "reviewed"})
+    assert flipped["automation"] == {"allowed": not default, "override": not default,
+                                     "source_default": default, "origin": "article"}
+    assert flipped["source"]["rights_state"]["automation_allowed"] == ("denied" if default else "allowed")
+    event = next(item for item in setup.content.list_review_events(article_id) if item["action"] == "rights_set")
+    assert event["changes"]["to"] == {"automation_allowed": not default}
+    assert any(item["action"] == "admin.reading_rights_set" for item in setup.audited)
+    cleared = _rights_post(setup, article_id, {"automation_allowed": None})
+    assert cleared["automation"]["origin"] == "source" and cleared["automation"]["allowed"] == default
+
+
+def test_the_queue_and_publish_use_the_same_effective_automation(setup):
+    article_id = _article(setup, rights={"can_republish": True})
+    default = setup.content.get_article(article_id)["automation"]["source_default"]
+    _rights_post(setup, article_id, {"automation_allowed": not default})
+    item = next(x for x in call(setup.app, "GET", "/api/admin/reading/queue").json()["items"] if x["id"] == article_id)
+    assert item["automation_allowed"] is (not default)
+    _publish(setup, article_id)
+    record = next(x for x in setup.audited if x["action"] == "admin.reading_article_published")
+    assert record["payload"]["automation"]["allowed"] is (not default)
+    assert record["payload"]["automation"]["origin"] == "article"
+
+
 # ---- content type ------------------------------------------------------------------
 
 def test_the_content_type_is_the_learner_facing_kind_only(setup):

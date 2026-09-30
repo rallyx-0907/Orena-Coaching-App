@@ -59,6 +59,7 @@ const target = (id, extra = {}) => ({ id, text: `target ${id}`, canonical_form: 
 const article = (extra = {}) => ({
   id: 'A', title: 'The Tortoise and the Hare', body: 'Slow but steady wins the race.\n\nA second paragraph.', excerpt: '', language: 'en', topic: 'fables', subtopic: '',
   estimated_level: 'B2', estimated_level_confidence: 0.47, reviewed_level: null, effective_level: 'B2', word_count: 134, reading_time_seconds: 45, is_adapted: false,
+  automation: { allowed: false, override: null, source_default: false, origin: 'source' },
   content_kind: 'article', analysis: { sentence_count: 7, average_sentence_length: 19.1, quality_issues: ['too_short'], detected_language: 'en' }, status: 'published', content_revision: 3,
   created_at: NOW, updated_at: NOW, targets: [target('T1'), target('T2', { admin_rejected: true })],
   source: { id: 'SI', source_id: 'S0', canonical_url: '', title: 'The Tortoise', author: 'Aesop', body: 'orig', content_hash: 'abc123abc123abc123', metadata: { input_kind: 'text', source_name: 'Gutenberg', detected_language: 'en', detected_language_confidence: 0.99 },
@@ -105,6 +106,12 @@ assert.deepEqual(reading.publicationAdvice(article({ source: { rights_state: { c
 assert.deepEqual(reading.rightsChanges({ can_republish: 'unknown', attribution_required: 'required' }, { can_republish: 'allowed', attribution_required: 'required' }), { can_republish: true });
 assert.deepEqual(reading.rightsChanges({ can_republish: 'allowed' }, { can_republish: '' }), { can_republish: null });
 assert.deepEqual(reading.rightsChanges({}, { attribution_required: 'not_required', can_adapt: 'denied' }), { attribution_required: false, can_adapt: false });
+/* Automation: the source default unless the article carries an override (D-106). */
+assert.equal(reading.automationChoice({ override: null, source_default: true }), '');
+assert.equal(reading.automationChoice({ override: false }), 'denied');
+assert.deepEqual(reading.rightsChanges({}, { automation_allowed: 'allowed' }, { override: null }), { automation_allowed: true });
+assert.deepEqual(reading.rightsChanges({}, { automation_allowed: '' }, { override: true }), { automation_allowed: null }, 'clearing the override returns to the source default');
+assert.deepEqual(reading.rightsChanges({}, { automation_allowed: 'allowed' }, { override: true }), {}, 'an unchanged answer sends nothing');
 for (const status of ['needs_review', 'ready', 'draft']) assert.ok(reading.articleActions(status).includes('publish'), `${status} offers Publish (the server decides on rights)`);
 assert.deepEqual(reading.articleActions('published'), ['unpublish', 'archive']);
 assert.deepEqual(reading.articleActions('rejected'), ['restore']);
@@ -245,6 +252,10 @@ copyIndex.setLanguages({ ui: 'en', support: 'en' });
   assert.ok(detail.includes(t('rdWarn_rights_not_cleared')), 'the reason is listed');
   assert.match(detail, /data-a="rights-pick"[^>]*data-field="can_republish"[^>]*data-value="allowed"/, 'the admin can answer the rights question');
   assert.match(detail, /data-a="rights-save"/, 'and save the answers');
+  assert.match(detail, /data-a="rights-pick"[^>]*data-field="automation_allowed"/, 'automation has its own override control');
+  assert.ok(detail.includes(t('rdAutoEffective', { value: t('rdAnswerDenied'), origin: t('rdAutoFromSource') })) || detail.includes(t('rdAutoEffective', { value: t('rdAnswerAllowed'), origin: t('rdAutoFromSource') })) || detail.includes(t('rdAutoEffective', { value: t('rdAnswerAllowed'), origin: t('rdAutoFromArticle') })), 'the effective value and where it comes from');
+  const overview = String(rp.overviewPage({ ...c, ops: { articles: {}, queue: {} }, sources: [], next: [{ id: 'A', title: 'Title', language: 'en', topic: 'x', level: 'B2', reading_time_seconds: 60, rights_level: 'denied' }], failedJobs: 0 }).markup);
+  assert.ok(overview.includes(t('rdRightsDeny')), 'Next in review shows the same rights label as the queue');
   const cleared = String(rp.articlePage({ ...c, article: article({ status: 'needs_review' }), sets: [], view }).markup);
   assert.doesNotMatch(cleared, /data-action="publish"[^>]*disabled/, 'cleared rights leave Publish enabled');
   assert.ok(!cleared.includes(t('rdBlockedTitle')), 'no refusal when nothing refuses');
