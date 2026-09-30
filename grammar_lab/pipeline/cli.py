@@ -31,6 +31,7 @@ from grammar_lab.pipeline.review_export import levels_present, review_path, writ
 from grammar_lab.pipeline.route import DEFAULT_THRESHOLD_BY_LANG, apply_route, route_point
 from grammar_lab.pipeline.canonical import catalog_is_current, load_canonical, write_catalog
 from grammar_lab.pipeline.coverage import coverage_report, render_text as render_coverage
+from grammar_lab.pipeline.corpus import normalize_langs, plan_corpus, ready_items, render_text as render_corpus
 from grammar_lab.pipeline.seed import GenerationBlocked, check_generation_gate, select_ids
 from grammar_lab.pipeline.ui_fixtures import fixture_dir, write_fixtures as write_ui_fixtures
 from grammar_lab.pipeline.run_context import new_run_id, resolve_run_id, run_dir, write_step
@@ -116,6 +117,133 @@ def coverage(
         raise typer.BadParameter(f"expected one of {', '.join(LANGS)}", param_hint="--lang")
     report = coverage_report(lang, root)
     typer.echo(json.dumps(report, ensure_ascii=False, indent=2) if as_json else render_coverage(report))
+
+
+@app.command("corpus-plan")
+def corpus_plan_command(
+    lang: str = typer.Option("all", "--lang", help="all | en | zh."),
+    as_json: bool = typer.Option(False, "--json", help="Print the full point-by-point plan as JSON."),
+    root: Path = typer.Option(LAB_ROOT, "--root"),
+) -> None:
+    """Plan a resumable whole-corpus run without bypassing metadata review gates."""
+    try:
+        langs = normalize_langs(lang)
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc), param_hint="--lang") from exc
+    plan = plan_corpus(langs, root)
+    typer.echo(json.dumps(plan, ensure_ascii=False, indent=2) if as_json else render_corpus(plan))
+
+
+@app.command("generate-corpus")
+def generate_corpus_command(
+    lang: str = typer.Option("all", "--lang", help="all | en | zh; all runs EN then ZH in canonical order."),
+    l1: str = typer.Option("vi", "--l1", help="Learner L1 passed to each point generator."),
+    provider: str = typer.Option("anthropic", "--provider", help="anthropic | openai | gemini | groq | deepseek."),
+    model: str = typer.Option("claude-haiku-4-5-20251001", "--model", help="Model id for the selected provider."),
+    deepseek_thinking: str = typer.Option(
+        "off", "--deepseek-thinking", help="Only for DeepSeek: off | low | high."
+    ),
+    with_story: bool = typer.Option(False, "--with-story", help="Also generate the optional story block."),
+    story_mode: str = typer.Option("everyday", "--story-mode", help="Story mode passed to Generator."),
+    cost_ceiling_usd: float = typer.Option(
+        1.0, "--cost-ceiling-usd",
+        help="Global ceiling for this corpus invocation. Re-run to resume from remaining missing points.",
+    ),
+    max_points: int = typer.Option(
+        0, "--max-points",
+        help="Optional bound for one invocation; 0 means every currently ready point until cost ceiling.",
+    ),
+    root: Path = typer.Option(LAB_ROOT, "--root"),
+) -> None:
+    """Generate every currently-ready missing point, resuming safely across EN/ZH.
+
+    Existing content is never regenerated here. Points whose metadata is still
+    default_safe remain blocked and are reported by corpus-plan rather than
+    being generated with placeholder structure.
+    """
+    try:
+        langs = normalize_langs(lang)
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc), param_hint="--lang") from exc
+    if max_points < 0:
+        raise typer.BadParameter("must be >= 0", param_hint="--max-points")
+
+    initial_plan = plan_corpus(langs, root)
+    candidates = ready_items(initial_plan)
+    if max_points:
+        candidates = candidates[:max_points]
+    typer.echo(render_corpus(initial_plan))
+    typer.echo(f"generate-corpus: {len(candidates)} ready point(s) selected for this invocation")
+    if not candidates:
+        return
+
+    outcomes: list[GenerateOutcome] = []
+    generators: dict[str, Generator] = {}
+    with live_lock.hold([provider], cost_ceiling_usd), LLMClient(
+        provider, model, deepseek_thinking=deepseek_thinking
+    ) as llm:
+        for lang_code, _level, point_id in candidates:
+            spent = sum(o.cost_usd for o in outcomes if o.cost_usd is not None)
+            if spent >= cost_ceiling_usd:
+                break
+            try:
+                check_generation_gate(lang_code, [point_id], root)
+                generator = generators.get(lang_code)
+                if generator is None:
+                    generator = Generator(
+                        lang=lang_code, l1=l1, llm=llm, root=root, allow_default_safe=False
+                    )
+                    generators[lang_code] = generator
+                outcomes.append(
+                    generator.generate(
+                        point_id,
+                        with_story=with_story,
+                        story_mode=story_mode,
+                    )
+                )
+            except GenerationBlocked as exc:
+                outcomes.append(GenerateOutcome(point_id, "blocked_metadata", reason=str(exc)))
+            except LLMError as exc:
+                wasted_cost = exc.usage.cost_usd(model) if exc.usage is not None else None
+                outcomes.append(GenerateOutcome(point_id, "error", reason=str(exc), cost_usd=wasted_cost))
+
+    total_cost = sum(o.cost_usd for o in outcomes if o.cost_usd is not None)
+    for outcome in outcomes:
+        cost = "$" + f"{outcome.cost_usd:.4f}" if outcome.cost_usd is not None else (
+            "cached" if outcome.cached else "n/a"
+        )
+        typer.echo(f"{outcome.status:20} {outcome.point_id:48} {cost}  {outcome.reason}")
+    typer.echo(
+        f"generate-corpus: attempted {len(outcomes)}/{len(candidates)} selected point(s), "
+        f"USD {total_cost:.4f} spent (ceiling USD {cost_ceiling_usd}); re-run to resume"
+    )
+
+    run_id = new_run_id()
+    write_step(root, run_id, "generate_corpus", {
+        "run_id": run_id,
+        "langs": list(langs),
+        "provider": provider,
+        "model": model,
+        "deepseek_thinking": deepseek_thinking if provider == "deepseek" else None,
+        "with_story": with_story,
+        "story_mode": story_mode if with_story else None,
+        "cost_ceiling_usd": cost_ceiling_usd,
+        "max_points": max_points,
+        "initial_counts": initial_plan["counts"],
+        "selected": len(candidates),
+        "outcomes": [
+            {
+                "point_id": o.point_id,
+                "status": o.status,
+                "reason": o.reason,
+                "cost_usd": o.cost_usd,
+                "cached": o.cached,
+            }
+            for o in outcomes
+        ],
+    })
+    if any(o.status in {"error", "blocked_metadata"} for o in outcomes):
+        raise typer.Exit(1)
 
 
 @app.command("ui-fixtures")
