@@ -36,3 +36,15 @@ Only then run:
 `generate -> validate -> review-export -> apply-feedback -> engine-grade`.
 
 Any later add/remove/relevel/split/merge is a catalog change and requires an explicit catalog review; it is not a generation-time decision.
+
+
+## Chinese clustering checkpoint
+
+The first full candidate graph is now available:
+
+- `canonical_base_zh_r5_candidate.yaml`: 171 R5-derived base candidates.
+- `zh_source_to_canonical_mapping_candidate.yaml`: all 572 GF0025 rows with high/medium/low/unmapped mapping candidates.
+- `zh_unmapped_cluster_candidates.yaml`: the 369 unmapped rows grouped into 159 review clusters by official taxonomy.
+- `canonical_grammar_zh.yaml`: working manifest only; **330 is a review-unit count, not the final lesson count**.
+
+Do not send this to content generation yet. The next step is catalog review of mapping edges and cluster scope until all 572 rows have accepted final `maps_to` coverage.
