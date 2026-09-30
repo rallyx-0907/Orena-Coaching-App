@@ -48,7 +48,7 @@ def _level_label(record: dict[str, Any]) -> str:
 
 def _status(record: dict[str, Any], generated_ids: set[str]) -> str:
     generated = record["id"] in generated_ids
-    metadata_origin = record.get("catalog", {}).get("metadata_origin", "reviewed_seed")
+    metadata_origin = record.get("catalog", {}).get("metadata_origin", "default_safe")
     reviewed = metadata_origin != "default_safe"
     if generated and reviewed:
         return GENERATED
@@ -84,7 +84,7 @@ def plan_corpus(
                 "id": record["id"],
                 "level": level,
                 "status": status,
-                "metadata_origin": record.get("catalog", {}).get("metadata_origin", "reviewed_seed"),
+                "metadata_origin": record.get("catalog", {}).get("metadata_origin", "default_safe"),
             }
             items.append(item)
             counts[status] += 1
