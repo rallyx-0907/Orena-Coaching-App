@@ -79,7 +79,12 @@ def apply_seed(existing: dict[str, Any] | None, lang: str, point_id: str, root: 
     for key in SEED_KEYS:
         point[key] = seed[key]
     point["aliases"] = aliases
-    point["source_refs"] = {"r5": list(seed["r5"])} if seed.get("r5") else {}
+    source_refs: dict[str, list[str]] = {}
+    if seed.get("r5"):
+        source_refs["r5"] = list(seed["r5"])
+    for source, codes in (seed.get("source_refs") or {}).items():
+        source_refs[source] = list(codes)
+    point["source_refs"] = source_refs
     point["source_anchors"] = _anchors(seed)
     header = dict(point.get("header") or {})
     header.update(
