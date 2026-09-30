@@ -1277,3 +1277,2793 @@
   anchors: []
   batch: core
 
+# Full canonical seed completion (ChatGPT, 2026-09-30). Existing reviewed seeds above are preserved unchanged.
+- id: en.canon.a2.001
+  level: A2
+  function: fn.catalog_unclassified
+  point_type: other
+  native_title: "Stative verbs: introduction"
+  title:
+    vi: "Stative verbs: introduction"
+    en: "Stative verbs: introduction"
+  r5:
+  - "a1-stative-verbs-introduction"
+  error_tags:
+  - other
+  contrasts: []
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.a2.002
+  level: A2
+  function: fn.quantity
+  point_type: other
+  native_title: "Much/many/a lot of"
+  title:
+    vi: "Much/many/a lot of"
+    en: "Much/many/a lot of"
+  r5:
+  - "a1-much-many-a-lot-of"
+  error_tags:
+  - other
+  contrasts: []
+  prereqs:
+  - en.quantifiers.few_little
+  sequence: 5
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.a2.003
+  level: A2
+  function: fn.possibility
+  point_type: tense_aspect
+  native_title: "Could Past Ability"
+  title:
+    vi: "Could Past Ability"
+    en: "Could Past Ability"
+  r5:
+  - "a2-can-could-be-able-to-basics"
+  error_tags:
+  - tense
+  contrasts: []
+  prereqs: []
+  sequence: 2
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.a2.004
+  level: A2
+  function: fn.habit_fact
+  point_type: tense_aspect
+  native_title: "Present simple vs continuous: extended"
+  title:
+    vi: "hiện tại đơn vs continuous: extended"
+    en: "Present simple vs continuous: extended"
+  r5:
+  - "b1-present-simple-vs-continuous-extended"
+  - "a1-present-simple-vs-present-continuous"
+  error_tags:
+  - tense
+  contrasts: []
+  prereqs:
+  - en.present_simple.third_person_s
+  sequence: 4
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.a2.005
+  level: A2
+  function: fn.questions
+  point_type: tense_aspect
+  native_title: "Past Simple Did Questions"
+  title:
+    vi: "quá khứ đơn Did câu hỏi"
+    en: "Past Simple Did Questions"
+  r5: []
+  error_tags:
+  - tense
+  - sentence_structure
+  contrasts: []
+  prereqs:
+  - en.questions.wh
+  sequence: 4
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.a2.006
+  level: A2
+  function: fn.catalog_unclassified
+  point_type: other
+  native_title: "Phrasal Verbs Basic"
+  title:
+    vi: "Phrasal Verbs Basic"
+    en: "Phrasal Verbs Basic"
+  r5: []
+  error_tags:
+  - naturalness
+  contrasts: []
+  prereqs:
+  - en.canon.a2.001
+  sequence: 2
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.a2.007
+  level: A2
+  function: fn.catalog_unclassified
+  point_type: other
+  native_title: "Time Clauses Basic"
+  title:
+    vi: "Time Clauses Basic"
+    en: "Time Clauses Basic"
+  r5: []
+  error_tags:
+  - sentence_structure
+  contrasts: []
+  prereqs:
+  - en.canon.a2.006
+  sequence: 3
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.a2.008
+  level: A2
+  function: fn.verb_patterns
+  point_type: other
+  native_title: "Verb Object Infinitive"
+  title:
+    vi: "Verb Object động từ nguyên mẫu"
+    en: "Verb Object Infinitive"
+  r5: []
+  error_tags:
+  - word_form
+  contrasts: []
+  prereqs:
+  - en.infinitive_of_purpose
+  sequence: 4
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b1.001
+  level: B1
+  function: fn.pronoun_reference
+  point_type: other
+  native_title: "Object relative pronoun omission"
+  title:
+    vi: "Object đại từ quan hệ omission"
+    en: "Object relative pronoun omission"
+  r5:
+  - "a2-object-relative-pronoun-omission"
+  error_tags:
+  - sentence_structure
+  contrasts: []
+  prereqs: []
+  sequence: 3
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b1.002
+  level: B1
+  function: fn.past_experience
+  point_type: tense_aspect
+  native_title: "Present perfect simple"
+  title:
+    vi: "hiện tại hoàn thành simple"
+    en: "Present perfect simple"
+  r5:
+  - "b1-present-perfect-simple"
+  error_tags:
+  - tense
+  contrasts: []
+  prereqs:
+  - en.present_perfect.experience
+  sequence: 2
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b1.003
+  level: B1
+  function: fn.past_experience
+  point_type: tense_aspect
+  native_title: "Present perfect continuous"
+  title:
+    vi: "hiện tại hoàn thành continuous"
+    en: "Present perfect continuous"
+  r5:
+  - "b1-present-perfect-continuous"
+  error_tags:
+  - tense
+  contrasts: []
+  prereqs:
+  - en.canon.b1.002
+  sequence: 3
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b1.004
+  level: B1
+  function: fn.past_experience
+  point_type: tense_aspect
+  native_title: "Present perfect simple vs continuous"
+  title:
+    vi: "hiện tại hoàn thành simple vs continuous"
+    en: "Present perfect simple vs continuous"
+  r5:
+  - "b1-present-perfect-simple-vs-continuous"
+  error_tags:
+  - tense
+  contrasts: []
+  prereqs:
+  - en.canon.b1.003
+  sequence: 4
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b1.005
+  level: B1
+  function: fn.past_ongoing
+  point_type: tense_aspect
+  native_title: "Past simple vs present perfect"
+  title:
+    vi: "quá khứ đơn vs hiện tại hoàn thành"
+    en: "Past simple vs present perfect"
+  r5:
+  - "b1-past-simple-vs-present-perfect"
+  - "a2-present-perfect-vs-past-simple"
+  error_tags:
+  - tense
+  contrasts: []
+  prereqs: []
+  sequence: 3
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b1.006
+  level: B1
+  function: fn.completed_past
+  point_type: tense_aspect
+  native_title: "Past perfect simple"
+  title:
+    vi: "quá khứ hoàn thành simple"
+    en: "Past perfect simple"
+  r5:
+  - "b1-past-perfect-simple"
+  error_tags:
+  - tense
+  contrasts: []
+  prereqs: []
+  sequence: 3
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b1.007
+  level: B1
+  function: fn.completed_past
+  point_type: tense_aspect
+  native_title: "Past perfect continuous"
+  title:
+    vi: "quá khứ hoàn thành continuous"
+    en: "Past perfect continuous"
+  r5:
+  - "b1-past-perfect-continuous"
+  error_tags:
+  - tense
+  contrasts: []
+  prereqs:
+  - en.canon.b1.006
+  sequence: 4
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b1.008
+  level: B1
+  function: fn.completed_past
+  point_type: tense_aspect
+  native_title: "Past narrative tense system"
+  title:
+    vi: "Past narrative tense system"
+    en: "Past narrative tense system"
+  r5:
+  - "b1-past-narrative-tense-system"
+  error_tags:
+  - tense
+  contrasts: []
+  prereqs:
+  - en.past_simple.irregular
+  sequence: 5
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b1.009
+  level: B1
+  function: fn.completed_past
+  point_type: other
+  native_title: "Used to"
+  title:
+    vi: "Used to"
+    en: "Used to"
+  r5:
+  - "b1-used-to"
+  error_tags:
+  - other
+  contrasts: []
+  prereqs: []
+  sequence: 6
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b1.010
+  level: B1
+  function: fn.completed_past
+  point_type: tense_aspect
+  native_title: "Would for past habits"
+  title:
+    vi: "Would for past habits"
+    en: "Would for past habits"
+  r5:
+  - "b1-would-for-past-habits"
+  error_tags:
+  - tense
+  contrasts: []
+  prereqs:
+  - en.canon.b1.008
+  sequence: 7
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b1.011
+  level: B1
+  function: fn.future_plans
+  point_type: tense_aspect
+  native_title: "Future forms in context"
+  title:
+    vi: "các cấu trúc tương lai in context"
+    en: "Future forms in context"
+  r5:
+  - "b1-future-forms-in-context"
+  error_tags:
+  - tense
+  contrasts: []
+  prereqs:
+  - en.present_continuous.arrangements
+  sequence: 5
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b1.012
+  level: B1
+  function: fn.future_plans
+  point_type: tense_aspect
+  native_title: "Future continuous"
+  title:
+    vi: "tương lai tiếp diễn"
+    en: "Future continuous"
+  r5:
+  - "b1-future-continuous"
+  - "b2-future-continuous"
+  error_tags:
+  - tense
+  contrasts: []
+  prereqs:
+  - en.canon.b1.011
+  sequence: 6
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b1.013
+  level: B1
+  function: fn.future_plans
+  point_type: tense_aspect
+  native_title: "Future time clauses"
+  title:
+    vi: "Future time clauses"
+    en: "Future time clauses"
+  r5:
+  - "b1-future-time-clauses"
+  error_tags:
+  - tense
+  - sentence_structure
+  contrasts: []
+  prereqs:
+  - en.canon.b1.012
+  sequence: 7
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b1.014
+  level: B1
+  function: fn.catalog_unclassified
+  point_type: tense_aspect
+  native_title: "Passive voice: present and past"
+  title:
+    vi: "câu bị động: present and past"
+    en: "Passive voice: present and past"
+  r5:
+  - "b1-passive-voice-present-and-past"
+  error_tags:
+  - tense
+  - sentence_structure
+  contrasts: []
+  prereqs: []
+  sequence: 4
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b1.015
+  level: B1
+  function: fn.possibility
+  point_type: other
+  native_title: "Passive with modals"
+  title:
+    vi: "bị động with động từ khuyết thiếu"
+    en: "Passive with modals"
+  r5:
+  - "b1-passive-with-modals"
+  error_tags:
+  - sentence_structure
+  contrasts: []
+  prereqs: []
+  sequence: 3
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b1.016
+  level: B1
+  function: fn.past_experience
+  point_type: tense_aspect
+  native_title: "Present perfect passive"
+  title:
+    vi: "hiện tại hoàn thành bị động"
+    en: "Present perfect passive"
+  r5:
+  - "b1-present-perfect-passive"
+  error_tags:
+  - tense
+  - sentence_structure
+  contrasts: []
+  prereqs:
+  - en.canon.b1.004
+  sequence: 5
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b1.017
+  level: B1
+  function: fn.catalog_unclassified
+  point_type: other
+  native_title: "Ability across time"
+  title:
+    vi: "Ability across time"
+    en: "Ability across time"
+  r5:
+  - "b1-ability-across-time"
+  error_tags:
+  - other
+  contrasts: []
+  prereqs:
+  - en.canon.a2.007
+  sequence: 5
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b1.018
+  level: B1
+  function: fn.catalog_unclassified
+  point_type: other
+  native_title: "Prohibition and lack of necessity"
+  title:
+    vi: "Prohibition and lack of necessity"
+    en: "Prohibition and lack of necessity"
+  r5:
+  - "b1-prohibition-and-lack-of-necessity"
+  error_tags:
+  - other
+  contrasts: []
+  prereqs:
+  - en.canon.b1.017
+  sequence: 6
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b1.019
+  level: B1
+  function: fn.obligation_advice
+  point_type: other
+  native_title: "Advice: should/ought to/had better"
+  title:
+    vi: "Advice: should/ought to/had better"
+    en: "Advice: should/ought to/had better"
+  r5:
+  - "b1-advice-should-ought-to-had-better"
+  error_tags:
+  - other
+  contrasts: []
+  prereqs: []
+  sequence: 3
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b1.020
+  level: B1
+  function: fn.obligation_advice
+  point_type: other
+  native_title: "Deduction: must/might/can't"
+  title:
+    vi: "Deduction: must/might/can't"
+    en: "Deduction: must/might/can't"
+  r5:
+  - "b1-deduction-must-might-can-t"
+  error_tags:
+  - other
+  contrasts: []
+  prereqs:
+  - en.canon.b1.019
+  sequence: 4
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b1.021
+  level: B1
+  function: fn.obligation_advice
+  point_type: tense_aspect
+  native_title: "Past modals: should/could/might have"
+  title:
+    vi: "Past động từ khuyết thiếu: should/could/might have"
+    en: "Past modals: should/could/might have"
+  r5:
+  - "b1-past-modals-should-could-might-have"
+  error_tags:
+  - tense
+  contrasts: []
+  prereqs:
+  - en.modals.should
+  sequence: 5
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b1.022
+  level: B1
+  function: fn.questions
+  point_type: other
+  native_title: "Question tags"
+  title:
+    vi: "câu hỏi tags"
+    en: "Question tags"
+  r5:
+  - "b1-question-tags"
+  error_tags:
+  - sentence_structure
+  contrasts: []
+  prereqs:
+  - en.canon.a2.005
+  sequence: 5
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b1.023
+  level: B1
+  function: fn.questions
+  point_type: other
+  native_title: "Indirect questions"
+  title:
+    vi: "Indirect câu hỏi"
+    en: "Indirect questions"
+  r5:
+  - "b1-indirect-questions"
+  error_tags:
+  - sentence_structure
+  contrasts: []
+  prereqs:
+  - en.canon.b1.022
+  sequence: 6
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b1.024
+  level: B1
+  function: fn.questions
+  point_type: other
+  native_title: "Subject questions and object questions"
+  title:
+    vi: "Subject câu hỏi and object câu hỏi"
+    en: "Subject questions and object questions"
+  r5:
+  - "b1-subject-questions-and-object-questions"
+  error_tags:
+  - sentence_structure
+  contrasts: []
+  prereqs:
+  - en.canon.b1.023
+  sequence: 7
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b1.025
+  level: B1
+  function: fn.condition_real
+  point_type: other
+  native_title: "Zero/first/second conditionals"
+  title:
+    vi: "Zero/first/second câu điều kiện"
+    en: "Zero/first/second conditionals"
+  r5:
+  - "b1-zero-first-second-conditionals"
+  error_tags:
+  - tense
+  contrasts: []
+  prereqs:
+  - en.conditional_first
+  sequence: 4
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b1.026
+  level: B1
+  function: fn.condition_real
+  point_type: other
+  native_title: "Third conditional"
+  title:
+    vi: "Third câu điều kiện"
+    en: "Third conditional"
+  r5:
+  - "b1-third-conditional"
+  error_tags:
+  - tense
+  contrasts: []
+  prereqs:
+  - en.canon.b1.025
+  sequence: 5
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b1.027
+  level: B1
+  function: fn.catalog_unclassified
+  point_type: other
+  native_title: "Reported statements"
+  title:
+    vi: "Reported statements"
+    en: "Reported statements"
+  r5:
+  - "b1-reported-statements"
+  error_tags:
+  - other
+  contrasts: []
+  prereqs: []
+  sequence: 7
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b1.028
+  level: B1
+  function: fn.questions
+  point_type: other
+  native_title: "Reported questions"
+  title:
+    vi: "Reported câu hỏi"
+    en: "Reported questions"
+  r5:
+  - "b1-reported-questions"
+  error_tags:
+  - sentence_structure
+  contrasts: []
+  prereqs: []
+  sequence: 8
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b1.029
+  level: B1
+  function: fn.catalog_unclassified
+  point_type: other
+  native_title: "Reported commands and requests"
+  title:
+    vi: "Reported commands and requests"
+    en: "Reported commands and requests"
+  r5:
+  - "b1-reported-commands-and-requests"
+  error_tags:
+  - other
+  contrasts: []
+  prereqs:
+  - en.canon.b1.027
+  sequence: 8
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b1.030
+  level: B1
+  function: fn.relative
+  point_type: other
+  native_title: "Non-defining relative clauses"
+  title:
+    vi: "Non-defining mệnh đề quan hệ"
+    en: "Non-defining relative clauses"
+  r5:
+  - "b1-non-defining-relative-clauses"
+  error_tags:
+  - sentence_structure
+  contrasts: []
+  prereqs:
+  - en.relative_clauses.who_which_that
+  sequence: 2
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b1.031
+  level: B1
+  function: fn.pronoun_reference
+  point_type: other
+  native_title: "Relative pronouns and prepositions"
+  title:
+    vi: "đại từ quan hệ and giới từ"
+    en: "Relative pronouns and prepositions"
+  r5:
+  - "b1-relative-pronouns-and-prepositions"
+  error_tags:
+  - preposition
+  - sentence_structure
+  contrasts: []
+  prereqs:
+  - en.canon.b1.001
+  sequence: 4
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b1.032
+  level: B1
+  function: fn.verb_patterns
+  point_type: other
+  native_title: "Gerund vs infinitive: common patterns"
+  title:
+    vi: "danh động từ vs động từ nguyên mẫu: common patterns"
+    en: "Gerund vs infinitive: common patterns"
+  r5:
+  - "b1-gerund-vs-infinitive-common-patterns"
+  error_tags:
+  - word_form
+  contrasts: []
+  prereqs:
+  - en.gerund_after_preference
+  sequence: 5
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b1.033
+  level: B1
+  function: fn.verb_patterns
+  point_type: other
+  native_title: "Verb pattern meaning changes: introduction"
+  title:
+    vi: "Verb pattern meaning changes: introduction"
+    en: "Verb pattern meaning changes: introduction"
+  r5:
+  - "b1-verb-pattern-meaning-changes-introduction"
+  - "b2-gerund-infinitive-meaning-contrasts"
+  error_tags:
+  - other
+  contrasts: []
+  prereqs:
+  - en.canon.a1.004
+  sequence: 6
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b1.034
+  level: B1
+  function: fn.catalog_unclassified
+  point_type: other
+  native_title: "Causative have/get"
+  title:
+    vi: "Causative have/get"
+    en: "Causative have/get"
+  r5:
+  - "b1-causative-have-get"
+  error_tags:
+  - other
+  contrasts: []
+  prereqs:
+  - en.canon.b1.018
+  sequence: 9
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b1.035
+  level: B1
+  function: fn.condition_real
+  point_type: tense_aspect
+  native_title: "Wish/if only: present"
+  title:
+    vi: "Wish/if only: present"
+    en: "Wish/if only: present"
+  r5:
+  - "b1-wish-if-only-present"
+  error_tags:
+  - tense
+  contrasts: []
+  prereqs: []
+  sequence: 6
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b1.036
+  level: B1
+  function: fn.condition_real
+  point_type: tense_aspect
+  native_title: "Wish/if only: past"
+  title:
+    vi: "Wish/if only: past"
+    en: "Wish/if only: past"
+  r5:
+  - "b1-wish-if-only-past"
+  error_tags:
+  - tense
+  contrasts: []
+  prereqs: []
+  sequence: 7
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b1.037
+  level: B1
+  function: fn.linking
+  point_type: other
+  native_title: "Although/despite/however"
+  title:
+    vi: "Although/despite/however"
+    en: "Although/despite/however"
+  r5:
+  - "b1-although-despite-however"
+  error_tags:
+  - other
+  contrasts: []
+  prereqs: []
+  sequence: 2
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b1.038
+  level: B1
+  function: fn.linking
+  point_type: other
+  native_title: "Reason/result connectors"
+  title:
+    vi: "Reason/result connectors"
+    en: "Reason/result connectors"
+  r5:
+  - "b1-reason-result-connectors"
+  error_tags:
+  - coherence
+  contrasts: []
+  prereqs:
+  - en.canon.b1.037
+  sequence: 3
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b1.039
+  level: B1
+  function: fn.reference
+  point_type: other
+  native_title: "Articles beyond basics"
+  title:
+    vi: "mạo từ beyond basics"
+    en: "Articles beyond basics"
+  r5:
+  - "b1-articles-beyond-basics"
+  - "b1-generic-reference-and-zero-article"
+  error_tags:
+  - article
+  contrasts: []
+  prereqs:
+  - en.articles.zero
+  sequence: 3
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b1.040
+  level: B1
+  function: fn.quantity
+  point_type: other
+  native_title: "Quantifiers and distributives"
+  title:
+    vi: "từ chỉ lượng and distributives"
+    en: "Quantifiers and distributives"
+  r5:
+  - "b1-quantifiers-and-distributives"
+  error_tags:
+  - other
+  contrasts: []
+  prereqs:
+  - en.canon.a2.002
+  sequence: 6
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b1.041
+  level: B1
+  function: fn.negation
+  point_type: other
+  native_title: "Both/either/neither"
+  title:
+    vi: "Both/either/neither"
+    en: "Both/either/neither"
+  r5:
+  - "b1-both-either-neither"
+  error_tags:
+  - other
+  contrasts: []
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b1.042
+  level: B1
+  function: fn.catalog_unclassified
+  point_type: other
+  native_title: "One/ones"
+  title:
+    vi: "One/ones"
+    en: "One/ones"
+  r5:
+  - "b1-one-ones"
+  error_tags:
+  - other
+  contrasts: []
+  prereqs:
+  - en.canon.b1.034
+  sequence: 10
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b1.043
+  level: B1
+  function: fn.pronoun_reference
+  point_type: other
+  native_title: "Reflexive pronouns and each other"
+  title:
+    vi: "Reflexive đại từ and each other"
+    en: "Reflexive pronouns and each other"
+  r5:
+  - "b1-reflexive-pronouns-and-each-other"
+  error_tags:
+  - other
+  contrasts: []
+  prereqs:
+  - en.pronouns.subject_object
+  sequence: 5
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b1.044
+  level: B1
+  function: fn.degree
+  point_type: other
+  native_title: "So/such/too/enough"
+  title:
+    vi: "So/such/too/enough"
+    en: "So/such/too/enough"
+  r5:
+  - "b1-so-such-too-enough"
+  error_tags:
+  - other
+  contrasts: []
+  prereqs:
+  - en.too_enough
+  sequence: 4
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b1.045
+  level: B1
+  function: fn.comparison
+  point_type: morphology
+  native_title: "Comparative patterns and intensifiers"
+  title:
+    vi: "so sánh hơn patterns and intensifiers"
+    en: "Comparative patterns and intensifiers"
+  r5:
+  - "b1-comparative-patterns-and-intensifiers"
+  error_tags:
+  - word_form
+  contrasts: []
+  prereqs:
+  - en.as_as
+  sequence: 4
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b1.046
+  level: B1
+  function: fn.catalog_unclassified
+  point_type: other
+  native_title: "Adjective Order"
+  title:
+    vi: "tính từ Order"
+    en: "Adjective Order"
+  r5: []
+  error_tags:
+  - other
+  contrasts: []
+  prereqs: []
+  sequence: 11
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b1.047
+  level: B1
+  function: fn.catalog_unclassified
+  point_type: other
+  native_title: "Adjective Preposition"
+  title:
+    vi: "tính từ giới từ"
+    en: "Adjective Preposition"
+  r5: []
+  error_tags:
+  - preposition
+  contrasts: []
+  prereqs: []
+  sequence: 12
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b1.048
+  level: B1
+  function: fn.completed_past
+  point_type: other
+  native_title: "Be Used To"
+  title:
+    vi: "Be Used To"
+    en: "Be Used To"
+  r5: []
+  error_tags:
+  - other
+  contrasts: []
+  prereqs:
+  - en.canon.b1.009
+  sequence: 8
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b1.049
+  level: B1
+  function: fn.linking
+  point_type: other
+  native_title: "Discourse Markers"
+  title:
+    vi: "Discourse Markers"
+    en: "Discourse Markers"
+  r5: []
+  error_tags:
+  - coherence
+  contrasts: []
+  prereqs:
+  - en.canon.b1.038
+  sequence: 4
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b1.050
+  level: B1
+  function: fn.verb_patterns
+  point_type: other
+  native_title: "Gerund Subject"
+  title:
+    vi: "danh động từ Subject"
+    en: "Gerund Subject"
+  r5: []
+  error_tags:
+  - word_form
+  contrasts: []
+  prereqs:
+  - en.canon.b1.032
+  sequence: 7
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b1.051
+  level: B1
+  function: fn.identity_state
+  point_type: other
+  native_title: "It Be Adjective To"
+  title:
+    vi: "It Be tính từ To"
+    en: "It Be Adjective To"
+  r5: []
+  error_tags:
+  - other
+  contrasts: []
+  prereqs: []
+  sequence: 2
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b1.052
+  level: B1
+  function: fn.catalog_unclassified
+  point_type: other
+  native_title: "Make Let Allow"
+  title:
+    vi: "Make Let Allow"
+    en: "Make Let Allow"
+  r5: []
+  error_tags:
+  - other
+  contrasts: []
+  prereqs:
+  - en.canon.b1.042
+  sequence: 13
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b1.053
+  level: B1
+  function: fn.catalog_unclassified
+  point_type: other
+  native_title: "Phrasal Verbs Separable"
+  title:
+    vi: "Phrasal Verbs Separable"
+    en: "Phrasal Verbs Separable"
+  r5: []
+  error_tags:
+  - naturalness
+  contrasts: []
+  prereqs:
+  - en.canon.b1.052
+  sequence: 14
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b1.054
+  level: B1
+  function: fn.degree
+  point_type: other
+  native_title: "Purpose So That"
+  title:
+    vi: "Purpose So That"
+    en: "Purpose So That"
+  r5: []
+  error_tags:
+  - other
+  contrasts: []
+  prereqs:
+  - en.canon.b1.044
+  sequence: 5
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b1.055
+  level: B1
+  function: fn.degree
+  point_type: other
+  native_title: "So Neither Agreement"
+  title:
+    vi: "So Neither Agreement"
+    en: "So Neither Agreement"
+  r5: []
+  error_tags:
+  - agreement
+  contrasts: []
+  prereqs:
+  - en.canon.b1.054
+  sequence: 6
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b2.001
+  level: B2
+  function: fn.catalog_unclassified
+  point_type: tense_aspect
+  native_title: "Perfect aspect in discourse"
+  title:
+    vi: "Perfect aspect in discourse"
+    en: "Perfect aspect in discourse"
+  r5:
+  - "b2-perfect-aspect-in-discourse"
+  - "b2-present-aspect-and-viewpoint"
+  - "b2-past-aspect-and-narrative-viewpoint"
+  error_tags:
+  - tense
+  - coherence
+  contrasts: []
+  prereqs: []
+  sequence: 15
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b2.002
+  level: B2
+  function: fn.future_plans
+  point_type: tense_aspect
+  native_title: "Future perfect"
+  title:
+    vi: "tương lai hoàn thành"
+    en: "Future perfect"
+  r5:
+  - "b2-future-perfect"
+  - "b1-future-perfect-introduction"
+  error_tags:
+  - tense
+  contrasts: []
+  prereqs: []
+  sequence: 8
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b2.003
+  level: B2
+  function: fn.future_plans
+  point_type: tense_aspect
+  native_title: "Future perfect continuous"
+  title:
+    vi: "tương lai hoàn thành continuous"
+    en: "Future perfect continuous"
+  r5:
+  - "b2-future-perfect-continuous"
+  error_tags:
+  - tense
+  contrasts: []
+  prereqs:
+  - en.canon.b2.002
+  sequence: 9
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b2.004
+  level: B2
+  function: fn.future_plans
+  point_type: tense_aspect
+  native_title: "Future in the past"
+  title:
+    vi: "Future in the past"
+    en: "Future in the past"
+  r5:
+  - "b2-future-in-the-past"
+  error_tags:
+  - tense
+  contrasts: []
+  prereqs:
+  - en.canon.b1.013
+  sequence: 10
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b2.005
+  level: B2
+  function: fn.condition_real
+  point_type: other
+  native_title: "Mixed conditionals"
+  title:
+    vi: "Mixed câu điều kiện"
+    en: "Mixed conditionals"
+  r5:
+  - "b2-mixed-conditionals"
+  - "b1-mixed-conditional-introduction"
+  error_tags:
+  - tense
+  contrasts: []
+  prereqs:
+  - en.canon.b1.026
+  sequence: 8
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b2.006
+  level: B2
+  function: fn.condition_real
+  point_type: other
+  native_title: "In case/provided/as long as"
+  title:
+    vi: "In case/provided/as long as"
+    en: "In case/provided/as long as"
+  r5:
+  - "b2-in-case-provided-as-long-as"
+  error_tags:
+  - other
+  contrasts: []
+  prereqs:
+  - en.unless
+  sequence: 9
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b2.007
+  level: B2
+  function: fn.possibility
+  point_type: other
+  native_title: "Modal certainty and probability"
+  title:
+    vi: "động từ khuyết thiếu certainty and probability"
+    en: "Modal certainty and probability"
+  r5:
+  - "b2-modal-certainty-and-probability"
+  error_tags:
+  - other
+  contrasts: []
+  prereqs:
+  - en.modals.possibility
+  sequence: 4
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b2.008
+  level: B2
+  function: fn.possibility
+  point_type: tense_aspect
+  native_title: "Past deduction"
+  title:
+    vi: "Past deduction"
+    en: "Past deduction"
+  r5:
+  - "b2-past-deduction"
+  error_tags:
+  - tense
+  contrasts: []
+  prereqs:
+  - en.canon.a2.003
+  sequence: 5
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b2.009
+  level: B2
+  function: fn.possibility
+  point_type: tense_aspect
+  native_title: "Modal perfect criticism and regret"
+  title:
+    vi: "động từ khuyết thiếu perfect criticism and regret"
+    en: "Modal perfect criticism and regret"
+  r5:
+  - "b2-modal-perfect-criticism-and-regret"
+  error_tags:
+  - tense
+  contrasts: []
+  prereqs: []
+  sequence: 6
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b2.010
+  level: B2
+  function: fn.obligation_advice
+  point_type: other
+  native_title: "Needn't have vs didn't need to"
+  title:
+    vi: "Needn't have vs didn't need to"
+    en: "Needn't have vs didn't need to"
+  r5:
+  - "b2-needn-t-have-vs-didn-t-need-to"
+  error_tags:
+  - other
+  contrasts: []
+  prereqs:
+  - en.canon.b1.020
+  sequence: 6
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b2.011
+  level: B2
+  function: fn.catalog_unclassified
+  point_type: other
+  native_title: "Would rather/would prefer/prefer"
+  title:
+    vi: "Would rather/would prefer/prefer"
+    en: "Would rather/would prefer/prefer"
+  r5:
+  - "b2-would-rather-would-prefer-prefer"
+  error_tags:
+  - other
+  contrasts: []
+  prereqs:
+  - en.canon.b1.053
+  sequence: 16
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b2.012
+  level: B2
+  function: fn.catalog_unclassified
+  point_type: tense_aspect
+  native_title: "It's time + past form"
+  title:
+    vi: "It's time + past form"
+    en: "It's time + past form"
+  r5:
+  - "b2-it-s-time-past-form"
+  error_tags:
+  - tense
+  contrasts: []
+  prereqs: []
+  sequence: 17
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b2.013
+  level: B2
+  function: fn.catalog_unclassified
+  point_type: other
+  native_title: "Advanced passive forms"
+  title:
+    vi: "Advanced bị động forms"
+    en: "Advanced passive forms"
+  r5:
+  - "b2-advanced-passive-forms"
+  error_tags:
+  - sentence_structure
+  contrasts: []
+  prereqs:
+  - en.canon.b1.014
+  sequence: 18
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b2.014
+  level: B2
+  function: fn.possibility
+  point_type: tense_aspect
+  native_title: "Modal perfect passive"
+  title:
+    vi: "động từ khuyết thiếu perfect bị động"
+    en: "Modal perfect passive"
+  r5:
+  - "b2-modal-perfect-passive"
+  error_tags:
+  - tense
+  - sentence_structure
+  contrasts: []
+  prereqs:
+  - en.canon.b2.009
+  sequence: 7
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b2.015
+  level: B2
+  function: fn.catalog_unclassified
+  point_type: other
+  native_title: "Two-object passive"
+  title:
+    vi: "Two-object bị động"
+    en: "Two-object passive"
+  r5:
+  - "b2-two-object-passive"
+  error_tags:
+  - sentence_structure
+  contrasts: []
+  prereqs:
+  - en.canon.b2.013
+  sequence: 19
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b2.016
+  level: B2
+  function: fn.catalog_unclassified
+  point_type: other
+  native_title: "Causative have/get: extended"
+  title:
+    vi: "Causative have/get: extended"
+    en: "Causative have/get: extended"
+  r5:
+  - "b2-causative-have-get-extended"
+  error_tags:
+  - other
+  contrasts: []
+  prereqs:
+  - en.canon.b2.011
+  sequence: 20
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b2.017
+  level: B2
+  function: fn.catalog_unclassified
+  point_type: other
+  native_title: "Reporting passive"
+  title:
+    vi: "Reporting bị động"
+    en: "Reporting passive"
+  r5:
+  - "b2-reporting-passive"
+  - "b2-impersonal-passive"
+  - "c1-reporting-passives"
+  error_tags:
+  - sentence_structure
+  contrasts: []
+  prereqs:
+  - en.canon.b2.015
+  sequence: 21
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b2.018
+  level: B2
+  function: fn.catalog_unclassified
+  point_type: tense_aspect
+  native_title: "Reported speech: tense choice"
+  title:
+    vi: "câu tường thuật: tense choice"
+    en: "Reported speech: tense choice"
+  r5:
+  - "b2-reported-speech-tense-choice"
+  error_tags:
+  - tense
+  - sentence_structure
+  contrasts: []
+  prereqs:
+  - en.canon.b1.029
+  sequence: 22
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b2.019
+  level: B2
+  function: fn.catalog_unclassified
+  point_type: other
+  native_title: "Reporting verbs and patterns"
+  title:
+    vi: "Reporting verbs and patterns"
+    en: "Reporting verbs and patterns"
+  r5:
+  - "b2-reporting-verbs-and-patterns"
+  error_tags:
+  - other
+  contrasts: []
+  prereqs:
+  - en.canon.b2.016
+  sequence: 23
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b2.020
+  level: B2
+  function: fn.relative
+  point_type: other
+  native_title: "Advanced relative clauses"
+  title:
+    vi: "Advanced mệnh đề quan hệ"
+    en: "Advanced relative clauses"
+  r5:
+  - "b2-advanced-relative-clauses"
+  - "c1-advanced-relative-structures"
+  error_tags:
+  - sentence_structure
+  contrasts: []
+  prereqs:
+  - en.canon.b1.030
+  sequence: 3
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b2.021
+  level: B2
+  function: fn.pronoun_reference
+  point_type: other
+  native_title: "Preposition + relative pronoun"
+  title:
+    vi: "giới từ + đại từ quan hệ"
+    en: "Preposition + relative pronoun"
+  r5:
+  - "b2-preposition-relative-pronoun"
+  error_tags:
+  - preposition
+  - sentence_structure
+  contrasts: []
+  prereqs:
+  - en.canon.b1.031
+  sequence: 6
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b2.022
+  level: B2
+  function: fn.pronoun_reference
+  point_type: other
+  native_title: "Quantifier + relative pronoun"
+  title:
+    vi: "từ chỉ lượng + đại từ quan hệ"
+    en: "Quantifier + relative pronoun"
+  r5:
+  - "b2-quantifier-relative-pronoun"
+  error_tags:
+  - sentence_structure
+  contrasts: []
+  prereqs:
+  - en.canon.b2.021
+  sequence: 7
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b2.023
+  level: B2
+  function: fn.relative
+  point_type: other
+  native_title: "Reduced relative clauses"
+  title:
+    vi: "Reduced mệnh đề quan hệ"
+    en: "Reduced relative clauses"
+  r5:
+  - "b2-reduced-relative-clauses"
+  error_tags:
+  - sentence_structure
+  contrasts: []
+  prereqs:
+  - en.canon.b2.020
+  sequence: 4
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b2.024
+  level: B2
+  function: fn.verb_patterns
+  point_type: other
+  native_title: "Participle clauses"
+  title:
+    vi: "phân từ clauses"
+    en: "Participle clauses"
+  r5:
+  - "b2-participle-clauses"
+  error_tags:
+  - sentence_structure
+  - word_form
+  contrasts: []
+  prereqs: []
+  sequence: 8
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b2.025
+  level: B2
+  function: fn.verb_patterns
+  point_type: tense_aspect
+  native_title: "Perfect participle clauses"
+  title:
+    vi: "Perfect phân từ clauses"
+    en: "Perfect participle clauses"
+  r5:
+  - "b2-perfect-participle-clauses"
+  error_tags:
+  - tense
+  - sentence_structure
+  - word_form
+  contrasts: []
+  prereqs: []
+  sequence: 9
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b2.026
+  level: B2
+  function: fn.verb_patterns
+  point_type: other
+  native_title: "Infinitive clauses"
+  title:
+    vi: "động từ nguyên mẫu clauses"
+    en: "Infinitive clauses"
+  r5:
+  - "b2-infinitive-clauses"
+  error_tags:
+  - sentence_structure
+  - word_form
+  contrasts: []
+  prereqs:
+  - en.canon.a2.008
+  sequence: 10
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b2.027
+  level: B2
+  function: fn.verb_patterns
+  point_type: other
+  native_title: "Gerund clauses"
+  title:
+    vi: "danh động từ clauses"
+    en: "Gerund clauses"
+  r5:
+  - "b2-gerund-clauses"
+  error_tags:
+  - sentence_structure
+  - word_form
+  contrasts: []
+  prereqs:
+  - en.canon.b1.050
+  sequence: 11
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b2.028
+  level: B2
+  function: fn.sentence_basics
+  point_type: word_order
+  native_title: "Cleft sentences"
+  title:
+    vi: "câu chẻ"
+    en: "Cleft sentences"
+  r5:
+  - "b2-cleft-sentences"
+  - "c1-it-clefts"
+  error_tags:
+  - sentence_structure
+  contrasts: []
+  prereqs:
+  - en.indirect_objects
+  sequence: 3
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b2.029
+  level: B2
+  function: fn.sentence_basics
+  point_type: word_order
+  native_title: "Pseudo-cleft sentences"
+  title:
+    vi: "Pseudo-câu chẻ"
+    en: "Pseudo-cleft sentences"
+  r5:
+  - "b2-pseudo-cleft-sentences"
+  - "c1-wh-clefts-and-reversed-clefts"
+  error_tags:
+  - sentence_structure
+  contrasts: []
+  prereqs:
+  - en.canon.b2.028
+  sequence: 4
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b2.030
+  level: B2
+  function: fn.sentence_basics
+  point_type: word_order
+  native_title: "Fronting for emphasis"
+  title:
+    vi: "Fronting for nhấn mạnh"
+    en: "Fronting for emphasis"
+  r5:
+  - "b2-fronting-for-emphasis"
+  - "c1-fronting-and-topicalisation"
+  error_tags:
+  - other
+  contrasts: []
+  prereqs:
+  - en.canon.b2.029
+  sequence: 5
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b2.031
+  level: B2
+  function: fn.catalog_unclassified
+  point_type: other
+  native_title: "Emphatic do"
+  title:
+    vi: "Emphatic do"
+    en: "Emphatic do"
+  r5:
+  - "b2-emphatic-do"
+  error_tags:
+  - other
+  contrasts: []
+  prereqs:
+  - en.canon.b2.019
+  sequence: 24
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b2.032
+  level: B2
+  function: fn.reference
+  point_type: other
+  native_title: "Advanced articles and determiners"
+  title:
+    vi: "Advanced mạo từ and từ hạn định"
+    en: "Advanced articles and determiners"
+  r5:
+  - "b2-advanced-articles-and-determiners"
+  error_tags:
+  - article
+  contrasts: []
+  prereqs:
+  - en.canon.b1.039
+  sequence: 4
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b2.033
+  level: B2
+  function: fn.quantity
+  point_type: other
+  native_title: "Complex quantifiers"
+  title:
+    vi: "Complex từ chỉ lượng"
+    en: "Complex quantifiers"
+  r5:
+  - "b2-complex-quantifiers"
+  error_tags:
+  - other
+  contrasts: []
+  prereqs:
+  - en.canon.b1.040
+  sequence: 7
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b2.034
+  level: B2
+  function: fn.catalog_unclassified
+  point_type: other
+  native_title: "Reference and substitution"
+  title:
+    vi: "Reference and substitution"
+    en: "Reference and substitution"
+  r5:
+  - "b2-reference-and-substitution"
+  error_tags:
+  - other
+  contrasts: []
+  prereqs:
+  - en.canon.b2.031
+  sequence: 25
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b2.035
+  level: B2
+  function: fn.catalog_unclassified
+  point_type: other
+  native_title: "Ellipsis"
+  title:
+    vi: "Ellipsis"
+    en: "Ellipsis"
+  r5:
+  - "b2-ellipsis"
+  - "c1-ellipsis-and-substitution"
+  error_tags:
+  - other
+  contrasts: []
+  prereqs:
+  - en.canon.b2.034
+  sequence: 26
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b2.036
+  level: B2
+  function: fn.catalog_unclassified
+  point_type: other
+  native_title: "Nominal clauses"
+  title:
+    vi: "Nominal clauses"
+    en: "Nominal clauses"
+  r5:
+  - "b2-nominal-clauses"
+  error_tags:
+  - sentence_structure
+  contrasts: []
+  prereqs:
+  - en.canon.b2.035
+  sequence: 27
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b2.037
+  level: B2
+  function: fn.catalog_unclassified
+  point_type: other
+  native_title: "Complex noun phrases"
+  title:
+    vi: "Complex noun phrases"
+    en: "Complex noun phrases"
+  r5:
+  - "b2-complex-noun-phrases"
+  - "c1-complex-noun-phrase-architecture"
+  error_tags:
+  - other
+  contrasts: []
+  prereqs: []
+  sequence: 28
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b2.038
+  level: B2
+  function: fn.catalog_unclassified
+  point_type: other
+  native_title: "Dependent prepositions"
+  title:
+    vi: "Dependent giới từ"
+    en: "Dependent prepositions"
+  r5:
+  - "b2-dependent-prepositions"
+  error_tags:
+  - preposition
+  contrasts: []
+  prereqs:
+  - en.canon.b1.047
+  sequence: 29
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b2.039
+  level: B2
+  function: fn.catalog_unclassified
+  point_type: other
+  native_title: "Concession patterns"
+  title:
+    vi: "Concession patterns"
+    en: "Concession patterns"
+  r5:
+  - "b2-concession-patterns"
+  error_tags:
+  - other
+  contrasts: []
+  prereqs:
+  - en.canon.b2.036
+  sequence: 30
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b2.040
+  level: B2
+  function: fn.catalog_unclassified
+  point_type: other
+  native_title: "Formal vs informal grammar choices"
+  title:
+    vi: "trang trọng vs intrang trọng grammar choices"
+    en: "Formal vs informal grammar choices"
+  r5:
+  - "b2-formal-vs-informal-grammar-choices"
+  - "c2-academic-vs-business-vs-conversational-grammar"
+  error_tags:
+  - register
+  contrasts: []
+  prereqs:
+  - en.canon.b2.039
+  sequence: 31
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b2.041
+  level: B2
+  function: fn.catalog_unclassified
+  point_type: other
+  native_title: "Punctuation with complex clauses"
+  title:
+    vi: "Punctuation with complex clauses"
+    en: "Punctuation with complex clauses"
+  r5:
+  - "b2-punctuation-with-complex-clauses"
+  - "c2-advanced-punctuation-as-syntax"
+  error_tags:
+  - sentence_structure
+  contrasts: []
+  prereqs:
+  - en.canon.b2.040
+  sequence: 32
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b2.042
+  level: B2
+  function: fn.catalog_unclassified
+  point_type: other
+  native_title: "As If As Though"
+  title:
+    vi: "As If As Though"
+    en: "As If As Though"
+  r5: []
+  error_tags:
+  - other
+  contrasts: []
+  prereqs:
+  - en.canon.b2.041
+  sequence: 33
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b2.043
+  level: B2
+  function: fn.catalog_unclassified
+  point_type: other
+  native_title: "Get Passive"
+  title:
+    vi: "Get bị động"
+    en: "Get Passive"
+  r5: []
+  error_tags:
+  - sentence_structure
+  contrasts: []
+  prereqs:
+  - en.canon.b2.017
+  sequence: 34
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.b2.044
+  level: B2
+  function: fn.catalog_unclassified
+  point_type: other
+  native_title: "Phrasal Verbs Advanced"
+  title:
+    vi: "Phrasal Verbs Advanced"
+    en: "Phrasal Verbs Advanced"
+  r5: []
+  error_tags:
+  - naturalness
+  contrasts: []
+  prereqs:
+  - en.canon.b2.042
+  sequence: 35
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.c1.001
+  level: C1
+  function: fn.sentence_basics
+  point_type: word_order
+  native_title: "Only-phrase inversion"
+  title:
+    vi: "Only-phrase đảo ngữ"
+    en: "Only-phrase inversion"
+  r5:
+  - "b2-only-phrase-inversion"
+  error_tags:
+  - sentence_structure
+  contrasts: []
+  prereqs:
+  - en.canon.b2.030
+  sequence: 6
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.c1.002
+  level: C1
+  function: fn.negation
+  point_type: other
+  native_title: "No sooner/hardly/scarcely"
+  title:
+    vi: "No sooner/hardly/scarcely"
+    en: "No sooner/hardly/scarcely"
+  r5:
+  - "b2-no-sooner-hardly-scarcely"
+  error_tags:
+  - other
+  contrasts: []
+  prereqs:
+  - en.canon.b1.041
+  sequence: 2
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.c1.003
+  level: C1
+  function: fn.catalog_unclassified
+  point_type: tense_aspect
+  native_title: "Advanced simple vs continuous aspect"
+  title:
+    vi: "Advanced simple vs continuous aspect"
+    en: "Advanced simple vs continuous aspect"
+  r5:
+  - "c1-advanced-simple-vs-continuous-aspect"
+  - "c1-advanced-perfect-aspect"
+  error_tags:
+  - tense
+  contrasts: []
+  prereqs:
+  - en.canon.b2.044
+  sequence: 36
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.c1.004
+  level: C1
+  function: fn.catalog_unclassified
+  point_type: tense_aspect
+  native_title: "Lexical aspect and meaning shifts"
+  title:
+    vi: "Lexical aspect and meaning shifts"
+    en: "Lexical aspect and meaning shifts"
+  r5:
+  - "c1-lexical-aspect-and-meaning-shifts"
+  - "c2-advanced-tense-aspect-viewpoint-shifts"
+  error_tags:
+  - other
+  contrasts: []
+  prereqs:
+  - en.canon.c1.003
+  sequence: 37
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.c1.005
+  level: C1
+  function: fn.catalog_unclassified
+  point_type: tense_aspect
+  native_title: "Historic present and narrative shifts"
+  title:
+    vi: "Historic present and narrative shifts"
+    en: "Historic present and narrative shifts"
+  r5:
+  - "c1-historic-present-and-narrative-shifts"
+  error_tags:
+  - tense
+  contrasts: []
+  prereqs: []
+  sequence: 38
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.c1.006
+  level: C1
+  function: fn.future_plans
+  point_type: tense_aspect
+  native_title: "Future-in-the-past systems"
+  title:
+    vi: "Future-in-the-past systems"
+    en: "Future-in-the-past systems"
+  r5:
+  - "c1-future-in-the-past-systems"
+  error_tags:
+  - tense
+  contrasts: []
+  prereqs:
+  - en.canon.b2.004
+  sequence: 11
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.c1.007
+  level: C1
+  function: fn.possibility
+  point_type: other
+  native_title: "Advanced epistemic modality"
+  title:
+    vi: "Advanced epistemic động từ khuyết thiếuity"
+    en: "Advanced epistemic modality"
+  r5:
+  - "c1-advanced-epistemic-modality"
+  error_tags:
+  - other
+  contrasts: []
+  prereqs:
+  - en.canon.b2.007
+  sequence: 8
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.c1.008
+  level: C1
+  function: fn.possibility
+  point_type: other
+  native_title: "Deontic and dynamic modality"
+  title:
+    vi: "Deontic and dynamic động từ khuyết thiếuity"
+    en: "Deontic and dynamic modality"
+  r5:
+  - "c1-deontic-and-dynamic-modality"
+  error_tags:
+  - other
+  contrasts: []
+  prereqs:
+  - en.canon.c1.007
+  sequence: 9
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.c1.009
+  level: C1
+  function: fn.possibility
+  point_type: other
+  native_title: "Hedging with modal and lexical devices"
+  title:
+    vi: "Hedging with động từ khuyết thiếu and lexical devices"
+    en: "Hedging with modal and lexical devices"
+  r5:
+  - "c1-hedging-with-modal-and-lexical-devices"
+  - "c1-hedging-academic-claims"
+  error_tags:
+  - other
+  contrasts: []
+  prereqs:
+  - en.canon.c1.008
+  sequence: 10
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.c1.010
+  level: C1
+  function: fn.catalog_unclassified
+  point_type: other
+  native_title: "Boosting and controlled certainty"
+  title:
+    vi: "Boosting and controlled certainty"
+    en: "Boosting and controlled certainty"
+  r5:
+  - "c1-boosting-and-controlled-certainty"
+  error_tags:
+  - other
+  contrasts: []
+  prereqs:
+  - en.canon.c1.004
+  sequence: 39
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.c1.011
+  level: C1
+  function: fn.degree
+  point_type: word_order
+  native_title: "Negative adverbial inversion"
+  title:
+    vi: "Negative trạng từial đảo ngữ"
+    en: "Negative adverbial inversion"
+  r5:
+  - "c1-negative-adverbial-inversion"
+  - "b2-negative-adverbial-inversion"
+  error_tags:
+  - sentence_structure
+  contrasts: []
+  prereqs:
+  - en.adverbs.manner_degree
+  sequence: 7
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.c1.012
+  level: C1
+  function: fn.condition_real
+  point_type: word_order
+  native_title: "Conditional inversion"
+  title:
+    vi: "câu điều kiện đảo ngữ"
+    en: "Conditional inversion"
+  r5:
+  - "c1-conditional-inversion"
+  - "b2-conditional-inversion-introduction"
+  error_tags:
+  - tense
+  - sentence_structure
+  contrasts: []
+  prereqs:
+  - en.canon.b2.005
+  sequence: 10
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.c1.013
+  level: C1
+  function: fn.degree
+  point_type: word_order
+  native_title: "So/such inversion"
+  title:
+    vi: "So/such đảo ngữ"
+    en: "So/such inversion"
+  r5:
+  - "c1-so-such-inversion"
+  error_tags:
+  - sentence_structure
+  contrasts: []
+  prereqs:
+  - en.canon.b1.055
+  sequence: 8
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.c1.014
+  level: C1
+  function: fn.catalog_unclassified
+  point_type: other
+  native_title: "Extraposition with anticipatory it"
+  title:
+    vi: "Extraposition with anticipatory it"
+    en: "Extraposition with anticipatory it"
+  r5:
+  - "c1-extraposition-with-anticipatory-it"
+  error_tags:
+  - other
+  contrasts: []
+  prereqs:
+  - en.canon.c1.010
+  sequence: 40
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.c1.015
+  level: C1
+  function: fn.existence
+  point_type: other
+  native_title: "Existential there with complex noun phrases"
+  title:
+    vi: "Existential there with complex noun phrases"
+    en: "Existential there with complex noun phrases"
+  r5:
+  - "c1-existential-there-with-complex-noun-phrases"
+  error_tags:
+  - other
+  contrasts: []
+  prereqs: []
+  sequence: 2
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.c1.016
+  level: C1
+  function: fn.catalog_unclassified
+  point_type: other
+  native_title: "Nominalisation"
+  title:
+    vi: "Nominalisation"
+    en: "Nominalisation"
+  r5:
+  - "c1-nominalisation"
+  error_tags:
+  - other
+  contrasts: []
+  prereqs:
+  - en.canon.c1.014
+  sequence: 41
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.c1.017
+  level: C1
+  function: fn.verb_patterns
+  point_type: tense_aspect
+  native_title: "Perfect infinitives in reporting"
+  title:
+    vi: "Perfect động từ nguyên mẫu in reporting"
+    en: "Perfect infinitives in reporting"
+  r5:
+  - "c1-perfect-infinitives-in-reporting"
+  error_tags:
+  - tense
+  - word_form
+  contrasts: []
+  prereqs:
+  - en.canon.b2.025
+  sequence: 12
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.c1.018
+  level: C1
+  function: fn.catalog_unclassified
+  point_type: other
+  native_title: "Mandative subjunctive"
+  title:
+    vi: "Mandative subjunctive"
+    en: "Mandative subjunctive"
+  r5:
+  - "c1-mandative-subjunctive"
+  error_tags:
+  - other
+  contrasts: []
+  prereqs:
+  - en.canon.c1.016
+  sequence: 42
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.c1.019
+  level: C1
+  function: fn.catalog_unclassified
+  point_type: other
+  native_title: "Were-subjunctive"
+  title:
+    vi: "Were-subjunctive"
+    en: "Were-subjunctive"
+  r5:
+  - "c1-were-subjunctive"
+  error_tags:
+  - other
+  contrasts: []
+  prereqs:
+  - en.canon.c1.018
+  sequence: 43
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.c1.020
+  level: C1
+  function: fn.relative
+  point_type: other
+  native_title: "Fused relative clauses"
+  title:
+    vi: "Fused mệnh đề quan hệ"
+    en: "Fused relative clauses"
+  r5:
+  - "c1-fused-relative-clauses"
+  - "c2-fused-and-nominal-relatives"
+  error_tags:
+  - sentence_structure
+  contrasts: []
+  prereqs:
+  - en.canon.b2.023
+  sequence: 5
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.c1.021
+  level: C1
+  function: fn.catalog_unclassified
+  point_type: other
+  native_title: "Advanced non-finite clauses"
+  title:
+    vi: "Advanced non-finite clauses"
+    en: "Advanced non-finite clauses"
+  r5:
+  - "c1-advanced-non-finite-clauses"
+  error_tags:
+  - sentence_structure
+  contrasts: []
+  prereqs:
+  - en.canon.c1.019
+  sequence: 44
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.c1.022
+  level: C1
+  function: fn.catalog_unclassified
+  point_type: tense_aspect
+  native_title: "Perfect and passive non-finites"
+  title:
+    vi: "Perfect and bị động non-finites"
+    en: "Perfect and passive non-finites"
+  r5:
+  - "c1-perfect-and-passive-non-finites"
+  error_tags:
+  - tense
+  - sentence_structure
+  contrasts: []
+  prereqs:
+  - en.canon.b2.001
+  sequence: 45
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.c1.023
+  level: C1
+  function: fn.catalog_unclassified
+  point_type: other
+  native_title: "Advanced concession"
+  title:
+    vi: "Advanced concession"
+    en: "Advanced concession"
+  r5:
+  - "c1-advanced-concession"
+  - "c2-advanced-concession-and-counterargument"
+  error_tags:
+  - other
+  contrasts: []
+  prereqs:
+  - en.canon.c1.021
+  sequence: 46
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.c1.024
+  level: C1
+  function: fn.catalog_unclassified
+  point_type: other
+  native_title: "Cause/result/purpose relations"
+  title:
+    vi: "Cause/result/purpose relations"
+    en: "Cause/result/purpose relations"
+  r5:
+  - "c1-cause-result-purpose-relations"
+  error_tags:
+  - other
+  contrasts: []
+  prereqs:
+  - en.canon.c1.023
+  sequence: 47
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.c1.025
+  level: C1
+  function: fn.catalog_unclassified
+  point_type: other
+  native_title: "Discourse reference"
+  title:
+    vi: "Discourse reference"
+    en: "Discourse reference"
+  r5:
+  - "c1-discourse-reference"
+  error_tags:
+  - coherence
+  contrasts: []
+  prereqs:
+  - en.canon.c1.024
+  sequence: 48
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.c1.026
+  level: C1
+  function: fn.catalog_unclassified
+  point_type: other
+  native_title: "Parallelism and coordination"
+  title:
+    vi: "Parallelism and coordination"
+    en: "Parallelism and coordination"
+  r5:
+  - "c1-parallelism-and-coordination"
+  error_tags:
+  - other
+  contrasts: []
+  prereqs:
+  - en.canon.c1.025
+  sequence: 49
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.c1.027
+  level: C1
+  function: fn.catalog_unclassified
+  point_type: other
+  native_title: "Qualification and limitation"
+  title:
+    vi: "Qualification and limitation"
+    en: "Qualification and limitation"
+  r5:
+  - "c1-qualification-and-limitation"
+  error_tags:
+  - other
+  contrasts: []
+  prereqs:
+  - en.canon.c1.026
+  sequence: 50
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.c1.028
+  level: C1
+  function: fn.catalog_unclassified
+  point_type: other
+  native_title: "Register-driven grammar"
+  title:
+    vi: "Register-driven grammar"
+    en: "Register-driven grammar"
+  r5:
+  - "c1-register-driven-grammar"
+  - "c2-register-driven-syntax"
+  error_tags:
+  - register
+  contrasts: []
+  prereqs:
+  - en.canon.c1.027
+  sequence: 51
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.c1.029
+  level: C1
+  function: fn.catalog_unclassified
+  point_type: other
+  native_title: "Academic definitions and classifications"
+  title:
+    vi: "Academic definitions and classifications"
+    en: "Academic definitions and classifications"
+  r5:
+  - "c1-academic-definitions-and-classifications"
+  error_tags:
+  - other
+  contrasts: []
+  prereqs:
+  - en.canon.c1.028
+  sequence: 52
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.c1.030
+  level: C1
+  function: fn.catalog_unclassified
+  point_type: other
+  native_title: "Sentence rhythm, end-weight and end-focus"
+  title:
+    vi: "Sentence rhythm, end-weight and end-focus"
+    en: "Sentence rhythm, end-weight and end-focus"
+  r5:
+  - "c1-sentence-rhythm-end-weight-and-end-focus"
+  - "c1-old-to-new-information-flow"
+  error_tags:
+  - sentence_structure
+  contrasts: []
+  prereqs:
+  - en.canon.c1.029
+  sequence: 53
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.c2.001
+  level: C2
+  function: fn.possibility
+  point_type: other
+  native_title: "Layered modality and authorial voice"
+  title:
+    vi: "Layered động từ khuyết thiếuity and authorial voice"
+    en: "Layered modality and authorial voice"
+  r5:
+  - "c2-layered-modality-and-authorial-voice"
+  error_tags:
+  - other
+  contrasts: []
+  prereqs:
+  - en.canon.c1.009
+  sequence: 11
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.c2.002
+  level: C2
+  function: fn.catalog_unclassified
+  point_type: other
+  native_title: "Counterfactual compression"
+  title:
+    vi: "Counterfactual compression"
+    en: "Counterfactual compression"
+  r5:
+  - "c2-counterfactual-compression"
+  error_tags:
+  - other
+  contrasts: []
+  prereqs:
+  - en.canon.c1.030
+  sequence: 54
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.c2.003
+  level: C2
+  function: fn.quantity
+  point_type: other
+  native_title: "Negation and quantifier scope"
+  title:
+    vi: "phủ định and từ chỉ lượng scope"
+    en: "Negation and quantifier scope"
+  r5:
+  - "c2-negation-and-quantifier-scope"
+  error_tags:
+  - other
+  contrasts: []
+  prereqs: []
+  sequence: 8
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.c2.004
+  level: C2
+  function: fn.catalog_unclassified
+  point_type: other
+  native_title: "Only/focus scope"
+  title:
+    vi: "Only/focus scope"
+    en: "Only/focus scope"
+  r5:
+  - "c2-only-focus-scope"
+  error_tags:
+  - other
+  contrasts: []
+  prereqs:
+  - en.canon.c2.002
+  sequence: 55
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.c2.005
+  level: C2
+  function: fn.catalog_unclassified
+  point_type: other
+  native_title: "Ambiguity from modifier attachment"
+  title:
+    vi: "Ambiguity from modifier attachment"
+    en: "Ambiguity from modifier attachment"
+  r5:
+  - "c2-ambiguity-from-modifier-attachment"
+  error_tags:
+  - other
+  contrasts: []
+  prereqs:
+  - en.canon.c2.004
+  sequence: 56
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.c2.006
+  level: C2
+  function: fn.catalog_unclassified
+  point_type: other
+  native_title: "Reference ambiguity"
+  title:
+    vi: "Reference ambiguity"
+    en: "Reference ambiguity"
+  r5:
+  - "c2-reference-ambiguity"
+  error_tags:
+  - other
+  contrasts: []
+  prereqs:
+  - en.canon.c2.005
+  sequence: 57
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.c2.007
+  level: C2
+  function: fn.catalog_unclassified
+  point_type: other
+  native_title: "Deep clause embedding"
+  title:
+    vi: "Deep clause embedding"
+    en: "Deep clause embedding"
+  r5:
+  - "c2-deep-clause-embedding"
+  error_tags:
+  - sentence_structure
+  contrasts: []
+  prereqs:
+  - en.canon.c2.006
+  sequence: 58
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.c2.008
+  level: C2
+  function: fn.catalog_unclassified
+  point_type: other
+  native_title: "Advanced apposition"
+  title:
+    vi: "Advanced apposition"
+    en: "Advanced apposition"
+  r5:
+  - "c2-advanced-apposition"
+  error_tags:
+  - other
+  contrasts: []
+  prereqs:
+  - en.canon.c2.007
+  sequence: 59
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.c2.009
+  level: C2
+  function: fn.catalog_unclassified
+  point_type: other
+  native_title: "Parenthetical grammar"
+  title:
+    vi: "Parenthetical grammar"
+    en: "Parenthetical grammar"
+  r5:
+  - "c2-parenthetical-grammar"
+  error_tags:
+  - other
+  contrasts: []
+  prereqs:
+  - en.canon.c2.008
+  sequence: 60
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.c2.010
+  level: C2
+  function: fn.catalog_unclassified
+  point_type: other
+  native_title: "Heavy constituent shift"
+  title:
+    vi: "Heavy constituent shift"
+    en: "Heavy constituent shift"
+  r5:
+  - "c2-heavy-constituent-shift"
+  error_tags:
+  - other
+  contrasts: []
+  prereqs:
+  - en.canon.c2.009
+  sequence: 61
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.c2.011
+  level: C2
+  function: fn.catalog_unclassified
+  point_type: other
+  native_title: "Advanced extraposition"
+  title:
+    vi: "Advanced extraposition"
+    en: "Advanced extraposition"
+  r5:
+  - "c2-advanced-extraposition"
+  error_tags:
+  - other
+  contrasts: []
+  prereqs:
+  - en.canon.c2.010
+  sequence: 62
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.c2.012
+  level: C2
+  function: fn.comparison
+  point_type: other
+  native_title: "Marked comparison structures"
+  title:
+    vi: "Marked comparison structures"
+    en: "Marked comparison structures"
+  r5:
+  - "c2-marked-comparison-structures"
+  error_tags:
+  - other
+  contrasts: []
+  prereqs: []
+  sequence: 5
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.c2.013
+  level: C2
+  function: fn.catalog_unclassified
+  point_type: other
+  native_title: "Advanced complement alternation"
+  title:
+    vi: "Advanced complement alternation"
+    en: "Advanced complement alternation"
+  r5:
+  - "c2-advanced-complement-alternation"
+  error_tags:
+  - other
+  contrasts: []
+  prereqs:
+  - en.canon.c2.011
+  sequence: 63
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.c2.014
+  level: C2
+  function: fn.catalog_unclassified
+  point_type: other
+  native_title: "Advanced reporting and distancing"
+  title:
+    vi: "Advanced reporting and distancing"
+    en: "Advanced reporting and distancing"
+  r5:
+  - "c2-advanced-reporting-and-distancing"
+  error_tags:
+  - other
+  contrasts: []
+  prereqs:
+  - en.canon.c2.013
+  sequence: 64
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.c2.015
+  level: C2
+  function: fn.catalog_unclassified
+  point_type: other
+  native_title: "Cross-sentence ellipsis"
+  title:
+    vi: "Cross-sentence ellipsis"
+    en: "Cross-sentence ellipsis"
+  r5:
+  - "c2-cross-sentence-ellipsis"
+  error_tags:
+  - sentence_structure
+  contrasts: []
+  prereqs:
+  - en.canon.c2.014
+  sequence: 65
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.c2.016
+  level: C2
+  function: fn.catalog_unclassified
+  point_type: other
+  native_title: "Discourse substitution chains"
+  title:
+    vi: "Discourse substitution chains"
+    en: "Discourse substitution chains"
+  r5:
+  - "c2-discourse-substitution-chains"
+  error_tags:
+  - coherence
+  contrasts: []
+  prereqs:
+  - en.canon.c2.015
+  sequence: 66
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.c2.017
+  level: C2
+  function: fn.catalog_unclassified
+  point_type: other
+  native_title: "Lexico-grammar and colligation"
+  title:
+    vi: "Lexico-grammar and colligation"
+    en: "Lexico-grammar and colligation"
+  r5:
+  - "c2-lexico-grammar-and-colligation"
+  error_tags:
+  - other
+  contrasts: []
+  prereqs:
+  - en.canon.c2.016
+  sequence: 67
+  anchors: []
+  batch: full-seed-2026-09-30
+- id: en.canon.c2.018
+  level: C2
+  function: fn.catalog_unclassified
+  point_type: other
+  native_title: "Metadiscourse grammar"
+  title:
+    vi: "Metadiscourse grammar"
+    en: "Metadiscourse grammar"
+  r5:
+  - "c2-metadiscourse-grammar"
+  error_tags:
+  - coherence
+  contrasts: []
+  prereqs:
+  - en.canon.c2.017
+  sequence: 68
+  anchors: []
+  batch: full-seed-2026-09-30
