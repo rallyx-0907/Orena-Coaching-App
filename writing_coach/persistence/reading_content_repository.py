@@ -34,7 +34,7 @@ import json
 import uuid
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from sqlalchemy import delete, func, insert, select, update
@@ -866,6 +866,19 @@ class ReadingContentRepository:
             for key in chosen
         }
         with self.engine.begin() as connection:
+            # The events are folded oldest first and ties fall back to a random id, so a later
+            # answer recorded in the same instant as an earlier one could lose. Each rights event
+            # is stamped strictly after the article's previous one instead.
+            moment = _now(now)
+            last = connection.execute(
+                select(func.max(ReadingReviewEvent.created_at)).where(
+                    ReadingReviewEvent.article_id == _uuid(article_id),
+                    ReadingReviewEvent.action == RIGHTS_EVENT,
+                )
+            ).scalar()
+            last = _aware(last)
+            if last is not None and moment <= last:
+                moment = last + timedelta(microseconds=1)
             self._record_event(
                 connection,
                 article_id=_uuid(article_id),
@@ -873,7 +886,7 @@ class ReadingContentRepository:
                 action=RIGHTS_EVENT,
                 reason=reason,
                 changes={"from": before, "to": chosen},
-                now=_now(now),
+                now=moment,
             )
         return self.get_article(article_id)
 

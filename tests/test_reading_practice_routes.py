@@ -10,6 +10,7 @@ attempt. English and Chinese take the same routes.
 """
 from __future__ import annotations
 
+from datetime import UTC, datetime
 import asyncio
 import uuid
 from types import SimpleNamespace
@@ -263,6 +264,18 @@ def test_answering_the_rights_questions_clears_the_gate_and_leaves_the_snapshot_
     assert setup.content.get_article(article_id)["source"]["rights_state"]["can_republish"] == "denied"
     call(setup.app, "POST", f"/api/admin/reading/articles/{article_id}/rights", json={"can_republish": None})
     assert setup.content.get_article(article_id)["source"]["rights_state"]["can_republish"] == "unknown"
+
+
+def test_a_later_rights_answer_wins_even_when_recorded_in_the_same_instant(setup):
+    """Events fold oldest first and a tie would fall back to a random id; the write keeps them ordered."""
+    article_id = _article(setup, rights={})
+    instant = datetime(2026, 9, 30, 12, 0, 0, tzinfo=UTC)
+    for answer in (True, False, True, False):
+        setup.content.set_rights(article_id, {"can_republish": answer}, actor="admin", now=instant)
+    assert setup.content.get_article(article_id)["source"]["rights_state"]["can_republish"] == "denied"
+    stamps = [item["created_at"] for item in setup.content.list_review_events(article_id)
+              if item["action"] == "rights_set"]
+    assert len(stamps) == 4 and len(set(stamps)) == 4, "each answer is stamped strictly after the one before"
 
 
 def test_the_rights_route_refuses_an_empty_or_unknown_request(setup):
