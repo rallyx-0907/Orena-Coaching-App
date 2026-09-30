@@ -15,6 +15,7 @@ from typing import Any
 
 import yaml
 
+from grammar_lab.pipeline.canonical import catalog_path
 from grammar_lab.pipeline.jsonio import read_json, read_yaml
 from grammar_lab.pipeline.validate import FUNCTIONS_PATH, GRAMMAR_SCHEMA_PATH, LAB_ROOT, LANGS
 
@@ -28,6 +29,20 @@ def seeds_path(lang: str, root: Path = LAB_ROOT) -> Path:
 def load_seeds(lang: str, root: Path = LAB_ROOT) -> list[dict[str, Any]]:
     path = seeds_path(lang, root)
     return read_yaml(path) or [] if path.exists() else []
+
+
+def load_catalog(lang: str, root: Path = LAB_ROOT) -> list[dict[str, Any]]:
+    """The runtime catalogue: ``inventory/catalog_<lang>.yaml`` (generated from canonical v1 by
+    ``import-canonical``) when it exists, else the hand seeds alone. ``generate`` and ``coverage`` read
+    this; ``check_seeds`` and the reviewed-seed tests keep reading ``load_seeds``."""
+    path = catalog_path(lang, root)
+    return read_yaml(path) or [] if path.exists() else load_seeds(lang, root)
+
+
+def select_ids(lang: str, level: str, root: Path = LAB_ROOT) -> list[str]:
+    """Ids of every catalogue point at ``level`` (``A1``, ``HSK2``, ``2``), in catalogue order."""
+    wanted = level.removeprefix("HSK") if lang == "zh" else level
+    return [seed["id"] for seed in load_catalog(lang, root) if str(seed["level"]) == wanted]
 
 
 def seed_for(lang: str, point_id: str, root: Path = LAB_ROOT) -> dict[str, Any] | None:
@@ -61,11 +76,12 @@ def _anchors(seed: dict[str, Any]) -> dict[str, Any]:
 def apply_seed(existing: dict[str, Any] | None, lang: str, point_id: str, root: Path = LAB_ROOT) -> dict[str, Any] | None:
     """The point as the seed says it should be, keeping ``existing`` content; ``None`` when there is
     neither an existing point nor a seed."""
-    seeds = load_seeds(lang, root)
+    seeds = load_catalog(lang, root)
     seed = next((s for s in seeds if s["id"] == point_id), None)
     if seed is None:
         return existing
-    aliases = aliases_for(seeds)[point_id]
+    # a canonical catalogue record names its aliases; bare seeds derive them (first piece of a split)
+    aliases = seed["aliases"] if "aliases" in seed else aliases_for(seeds)[point_id]
     point: dict[str, Any] = dict(existing) if existing else {
         "schema_version": "0.4", "id": point_id, "version": 1, "target_lang": LANGS[lang], "status": "draft_ai",
         "flags": [],
@@ -79,7 +95,7 @@ def apply_seed(existing: dict[str, Any] | None, lang: str, point_id: str, root: 
     for key in SEED_KEYS:
         point[key] = seed[key]
     point["aliases"] = aliases
-    point["source_refs"] = {"r5": list(seed["r5"])} if seed.get("r5") else {}
+    point["source_refs"] = {key: list(seed[key]) for key in ("r5", "gf0025") if seed.get(key)}
     point["source_anchors"] = _anchors(seed)
     header = dict(point.get("header") or {})
     header.update(

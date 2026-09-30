@@ -41,13 +41,23 @@ python -m grammar_lab.pipeline.cli preview --serve                     # duyệt
 python -m pytest grammar_lab/tests                              # toàn bộ test
 
 # Nội dung theo bậc (quyết định của người, 29-30/09/2026): seed -> sinh -> review ngoài -> áp góp ý -> chấm engine
-python -m grammar_lab.pipeline.cli generate --lang en --level A1 --provider deepseek --model deepseek-flash   --cost-ceiling-usd 1     # điểm lấy từ inventory/seeds_en.yaml; giữ khoá quota của provider, báo chi phí thực
+python -m grammar_lab.pipeline.cli import-canonical            # canonical_v1/{en,zh}.yaml -> inventory/catalog_{en,zh}.yaml (tất định, idempotent; --check để kiểm)
+python -m grammar_lab.pipeline.cli coverage --lang zh            # canonical / generated / validated / approved theo bậc; zh thêm GF0025 572/572
+python -m grammar_lab.pipeline.cli ui-fixtures                   # ghi lại fixtures/ui/ (2 điểm mẫu cho renderer UI)
+python -m grammar_lab.pipeline.cli generate --lang en --level A1 --provider deepseek --model deepseek-flash   --cost-ceiling-usd 1     # điểm lấy từ inventory/catalog_en.yaml (danh mục chuẩn v1, 30 điểm A1); giữ khoá quota của provider, báo chi phí thực
 python -m grammar_lab.pipeline.cli review-export --lang en --level A1   # -> review/en/A1.md cho model ngoài
 python -m grammar_lab.pipeline.cli apply-feedback --lang en --level A1 --files a.jsonl b.jsonl --dry-run
 python -m grammar_lab.pipeline.cli feedback-stats --files a.jsonl b.jsonl   # sai kiến thức / phạm vi / diễn đạt / định dạng
 python -m grammar_lab.pipeline.cli engine-grade --lang en --level A1 --evaluator-url http://localhost:8020  # in ước tính rồi dừng; --yes để chạy
 ```
 
+- **Danh mục chuẩn v1** (`inventory/canonical_v1/`, đã khoá; EN 215, ZH 380, GF0025 572/572) là nguồn duy nhất của
+  *điểm nào tồn tại, ở bậc nào*. `import-canonical` đổi nó thành `inventory/catalog_<lang>.yaml` (file sinh, không sửa tay):
+  membership, bậc, R5 sources/aliases, mã GF0025 và metadata HSK7-9 lấy từ canonical; function, point_type, tên,
+  error_tags, contrasts, prereqs, sequence, anchors lấy từ `seeds_<lang>.yaml` (đã người duyệt) khi trùng id, đánh dấu
+  `catalog.metadata_origin: reviewed_seed`. Điểm chưa có metadata nhận giá trị an toàn mặc định
+  (`fn.catalog_unclassified`, `point_type: other`, `error_tags: [other]`, tên gốc làm chỗ giữ chỗ ở `vi`) đánh dấu
+  `default_safe` -- không phải đã duyệt. Không gọi model. Đổi syllabus = catalog v2, cần review.
 - **Seed** (`inventory/seeds_<lang>.yaml`): danh mục điểm cần viết -- id, bậc, function, loại, tên, bài R5 nguồn,
   contrasts hai chiều, prereqs, nhãn lỗi, neo khung chuẩn. `generate` bắt đầu từ seed: điểm chưa có file được tạo
   từ seed, điểm đã có giữ nội dung nhưng lấy metadata của seed. Chỉ nội dung được sinh.
@@ -101,8 +111,10 @@ tác (vd. `grammar_lab/sandbox/` ở `:8020`).
 | `content/<lang>/<id>.json` | Mỗi grammar point một file, tên file = `id` |
 | `functions/functions.yaml` | Lớp chức năng giao tiếp dùng chung |
 | `cast/cast.yaml` | Cast nhân vật cố định cho block `story` (schema v0.3, `STORY_SPEC.md` §3) |
-| `inventory/<lang>.yaml` | Danh mục chính (giai đoạn 3; hiện là `[]`) |
-| `pipeline/` | CLI và các bước. `coverage.py` còn là stub (cần inventory, giai đoạn 3) |
+| `inventory/<lang>.yaml` | Danh mục chính kiểu SPEC §4 (hiện là `[]`; danh mục chạy thật là `catalog_<lang>.yaml`) |
+| `inventory/canonical_v1/`, `inventory/catalog_<lang>.yaml` | Danh mục chuẩn v1 đã khoá và bản runtime sinh từ nó (`pipeline/canonical.py`) |
+| `fixtures/ui/` | Hai điểm mẫu hoàn chỉnh (EN A1, ZH HSK1) + `index.json` cho renderer UI; xem `fixtures/ui/README.md` |
+| `pipeline/` | CLI và các bước. `coverage.py`: catalog vs nội dung đã sinh/validate/duyệt |
 | `pipeline/preview.py`, `preview/template.html` | Trang preview nội bộ để duyệt nội dung v0.4 (không phải UI người học): `python -m grammar_lab.pipeline.cli preview --serve` → http://127.0.0.1:8031/. `preview/serve.py` (ghi kết quả duyệt ngược vào content/) vẫn là stub giai đoạn 2 |
 | `rules/en_morphology.py` | Bảng biến đổi tất định (SPEC §5.1 bước 1): third person -s, số nhiều, quá khứ, -ing, so sánh |
 | `pipeline/content_store.py` | Đọc/ghi `content/<lang>/` + `cast/cast.yaml` dùng chung giữa generate/verify/route |

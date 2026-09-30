@@ -430,3 +430,9 @@ functions:
   planned:
     zh-Hans:
     - zh.separable_verbs
+- id: fn.catalog_unclassified
+  title:
+    vi: Chưa phân loại chức năng (danh mục chuẩn v1)
+    en: Unclassified function (canonical catalog v1)
+    zh-Hans: 未分类功能（规范目录 v1）
+  realizations: {}

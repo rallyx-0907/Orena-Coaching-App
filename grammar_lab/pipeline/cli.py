@@ -1,8 +1,8 @@
 """Grammar Lab CLI: ``python -m grammar_lab.pipeline.cli <command>``.
 
 Phase 0 ships ``validate`` and ``export-error-tags``. Phase 1 adds
-``generate``, ``verify``, ``route`` and ``report`` (SPEC §7). ``coverage``
-stays a phase-3 stub: it needs a populated inventory, which SPEC §4 defers.
+``generate``, ``verify``, ``route`` and ``report`` (SPEC §7). ``import-canonical`` converts the locked
+canonical catalog v1 into the runtime catalogue and ``coverage`` reports it against the content on disk.
 """
 
 from __future__ import annotations
@@ -29,7 +29,10 @@ from grammar_lab.pipeline.preview import write_preview
 from grammar_lab.pipeline.report_step import build_report, render_html
 from grammar_lab.pipeline.review_export import levels_present, review_path, write_review
 from grammar_lab.pipeline.route import DEFAULT_THRESHOLD_BY_LANG, apply_route, route_point
-from grammar_lab.pipeline.seed import load_seeds
+from grammar_lab.pipeline.canonical import catalog_is_current, load_canonical, write_catalog
+from grammar_lab.pipeline.coverage import coverage_report, render_text as render_coverage
+from grammar_lab.pipeline.seed import select_ids
+from grammar_lab.pipeline.ui_fixtures import fixture_dir, write_fixtures as write_ui_fixtures
 from grammar_lab.pipeline.run_context import new_run_id, resolve_run_id, run_dir, write_step
 from grammar_lab.pipeline.validate import ERROR_TAGS_PATH, LAB_ROOT, LANGS, apply_flags, validate_lang
 from grammar_lab.pipeline.verify import VerifyFlag, VerifyReport, verify_point
@@ -76,6 +79,50 @@ def validate(
         verdict = "OK" if report.ok else f"{len(report.issues)} issue(s)"
         typer.echo(f"validate --lang {lang}: {report.points} point(s), {verdict} in {elapsed:.2f}s")
     raise typer.Exit(0 if report.ok else 1)
+
+
+@app.command("import-canonical")
+def import_canonical(
+    lang: str = typer.Option("", "--lang", help="en | zh (default: both)."),
+    check: bool = typer.Option(False, "--check", help="Write nothing; exit 1 when a catalogue file is stale or missing."),
+    root: Path = typer.Option(LAB_ROOT, "--root"),
+) -> None:
+    """Convert inventory/canonical_v1/ into inventory/catalog_<lang>.yaml, deterministically (idempotent)."""
+    langs = [lang] if lang else ["en", "zh"]
+    for code in langs:
+        if code not in ("en", "zh"):
+            raise typer.BadParameter("expected en or zh", param_hint="--lang")
+    stale = False
+    for code in langs:
+        total = len(load_canonical(code, root)["items"])
+        if check:
+            current = catalog_is_current(code, root)
+            stale = stale or not current
+            typer.echo(f"import-canonical --lang {code}: {total} point(s), {'current' if current else 'STALE'}")
+        else:
+            changed = write_catalog(code, root)
+            typer.echo(f"import-canonical --lang {code}: {total} point(s), {'written' if changed else 'unchanged'}")
+    raise typer.Exit(1 if stale else 0)
+
+
+@app.command()
+def coverage(
+    lang: str = typer.Option(..., "--lang", help=f"Target language: {', '.join(LANGS)}."),
+    as_json: bool = typer.Option(False, "--json", help="Print the report as JSON."),
+    root: Path = typer.Option(LAB_ROOT, "--root"),
+) -> None:
+    """Canonical catalogue vs content on disk: canonical / generated / validated / approved, per level."""
+    if lang not in LANGS:
+        raise typer.BadParameter(f"expected one of {', '.join(LANGS)}", param_hint="--lang")
+    report = coverage_report(lang, root)
+    typer.echo(json.dumps(report, ensure_ascii=False, indent=2) if as_json else render_coverage(report))
+
+
+@app.command("ui-fixtures")
+def ui_fixtures(root: Path = typer.Option(LAB_ROOT, "--root")) -> None:
+    """(Re)write fixtures/ui/: the EN and ZH reference points for the learner UI renderer."""
+    changed = write_ui_fixtures(root)
+    typer.echo(f"ui-fixtures: {'written' if changed else 'unchanged'} in {fixture_dir(root)}")
 
 
 @app.command("export-error-tags")
@@ -129,10 +176,9 @@ def generate(
         raise typer.BadParameter("give exactly one of --ids and --level")
     point_ids = [p.strip() for p in ids.split(",") if p.strip()]
     if level:
-        wanted = level.removeprefix("HSK") if lang == "zh" else level
-        point_ids = [seed["id"] for seed in load_seeds(lang, root) if str(seed["level"]) == wanted]
+        point_ids = select_ids(lang, level, root)
         if not point_ids:
-            raise typer.BadParameter(f"no seeds at level {level}", param_hint="--level")
+            raise typer.BadParameter(f"no catalogue points at level {level}", param_hint="--level")
     outcomes = []
     with live_lock.hold([provider], cost_ceiling_usd), LLMClient(provider, model, deepseek_thinking=deepseek_thinking) as llm:
         generator = Generator(lang=lang, l1=l1, llm=llm, root=root)

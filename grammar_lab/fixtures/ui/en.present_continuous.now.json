@@ -1,0 +1,174 @@
+{
+  "schema_version": "0.4",
+  "id": "en.present_continuous.now",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.ongoing_now",
+  "level": {"framework": "cefr", "value": "A1", "rank": 1},
+  "prereqs": ["en.be.present"],
+  "contrasts": ["en.present_simple.habit", "en.present_simple.third_person_s"],
+  "error_tags": ["tense"],
+  "source_refs": {"r5": ["a1-present-continuous"]},
+  "point_type": "tense_aspect",
+  "header": {
+    "title": {"vi": "Hiện tại tiếp diễn (đang)", "en": "Present continuous: happening now"},
+    "native_title": "Present continuous",
+    "level": {"framework": "cefr", "value": "A1", "rank": 1},
+    "summary": {
+      "vi": "Thì hiện tại tiếp diễn dùng để nói về một hành động đang xảy ra ngay lúc nói.",
+      "en": "Talk about an action that is happening right now."
+    },
+    "sub": {"vi": "đang diễn ra", "en": "happening now"}
+  },
+  "when_to_use": [
+    {"vi": "Hành động đang diễn ra ngay bây giờ, người nói nhìn thấy hoặc biết rõ."},
+    {"vi": "Hành động tạm thời trong giai đoạn hiện tại, không phải thói quen lâu dài."},
+    {"vi": "Dùng với các từ như now, right now, at the moment để nhấn mạnh thời điểm."},
+    {"vi": "Một tình huống đang thay đổi hoặc đang phát triển."}
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ"}},
+      {"text": "am/is/are", "role": "aux", "label": {"vi": "trợ động từ to be"}},
+      {"text": "V-ing", "role": "verb", "label": {"vi": "động từ thêm -ing"}},
+      {"text": "O", "role": "object", "label": {"vi": "tân ngữ"}, "optional": true},
+      {"text": "now", "role": "time", "label": {"vi": "mốc thời gian"}, "optional": true}
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ"}},
+        {"text": "am/is/are", "role": "aux", "label": {"vi": "trợ động từ to be"}},
+        {"text": "not", "role": "particle", "label": {"vi": "phủ định"}},
+        {"text": "V-ing", "role": "verb", "label": {"vi": "động từ thêm -ing"}},
+        {"text": "O", "role": "object", "label": {"vi": "tân ngữ"}, "optional": true}
+      ],
+      "question": [
+        {"text": "Am/Is/Are", "role": "aux", "label": {"vi": "trợ động từ to be"}},
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ"}},
+        {"text": "V-ing", "role": "verb", "label": {"vi": "động từ thêm -ing"}},
+        {"text": "O", "role": "object", "label": {"vi": "tân ngữ"}, "optional": true}
+      ]
+    },
+    "illustration": {"kind": "timeline", "timeline": {"shape": "ongoing_now"}}
+  },
+  "examples": [
+    {
+      "text": "She is reading a book now.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 6, "role": "aux"},
+        {"start": 7, "end": 14, "role": "verb"},
+        {"start": 15, "end": 21, "role": "object"},
+        {"start": 22, "end": 25, "role": "time"}
+      ],
+      "annotation": {"vi": "Hành động đang xảy ra ngay lúc nói."},
+      "translation": {"vi": "Cô ấy đang đọc một cuốn sách ngay bây giờ."}
+    },
+    {
+      "text": "They are not playing football at the moment.",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 5, "end": 8, "role": "aux"},
+        {"start": 9, "end": 12, "role": "particle"},
+        {"start": 13, "end": 20, "role": "verb"},
+        {"start": 21, "end": 29, "role": "object"}
+      ],
+      "annotation": {"vi": "Phủ định: thêm not sau trợ động từ to be."},
+      "translation": {"vi": "Họ không chơi bóng đá vào lúc này."}
+    },
+    {
+      "text": "Are you listening to me?",
+      "form": "question",
+      "spans": [
+        {"start": 0, "end": 3, "role": "aux"},
+        {"start": 4, "end": 7, "role": "subject"},
+        {"start": 8, "end": 17, "role": "verb"},
+        {"start": 21, "end": 23, "role": "object"}
+      ],
+      "annotation": {"vi": "Câu hỏi: đảo trợ động từ to be lên trước chủ ngữ."},
+      "translation": {"vi": "Bạn có đang nghe tôi nói không?"}
+    }
+  ],
+  "compare": [
+    {
+      "with": "en.present_simple.third_person_s",
+      "this_meaning": {"vi": "Hành động đang xảy ra ngay lúc nói, tạm thời."},
+      "this_example": "She is reading a book now.",
+      "other_meaning": {"vi": "Thói quen hoặc sự thật lặp đi lặp lại, không nhất thiết ngay lúc nói."},
+      "other_example": "She reads a book every night."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "wrong": "She reading a book now.",
+      "right": "She is reading a book now.",
+      "reason": {
+        "vi": "Người Việt thường bỏ trợ động từ to be vì trong tiếng Việt không có động từ 'to be' đứng trước động từ chính trong thì hiện tại tiếp diễn."
+      },
+      "error_tag": "tense",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "Look! The baby ___ .",
+      "options": [
+        {"text": "is sleeping", "error_tag": null},
+        {"text": "sleeps", "error_tag": "tense"},
+        {"text": "sleep", "error_tag": "agreement"}
+      ],
+      "answer": 0,
+      "explain": {"vi": "Hành động đang xảy ra ngay lúc nói nên dùng thì hiện tại tiếp diễn: is sleeping."}
+    },
+    {
+      "q": "They ___ TV at the moment.",
+      "options": [
+        {"text": "are watching", "error_tag": null},
+        {"text": "watch", "error_tag": "tense"},
+        {"text": "watches", "error_tag": "agreement"}
+      ],
+      "answer": 0,
+      "explain": {"vi": "Có 'at the moment' chỉ thời điểm đang diễn ra, nên dùng are watching."}
+    },
+    {
+      "q": "___ she cooking dinner now?",
+      "options": [
+        {"text": "Is", "error_tag": null},
+        {"text": "Does", "error_tag": "tense"},
+        {"text": "Are", "error_tag": "agreement"}
+      ],
+      "answer": 0,
+      "explain": {"vi": "Câu hỏi hiện tại tiếp diễn với chủ ngữ số ít 'she' dùng 'Is'."}
+    }
+  ],
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v5",
+    "run_id": "generate.1790589955",
+    "generated_at": "2026-09-28T10:05:55Z"
+  },
+  "review": null,
+  "sequence": 1,
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về việc bạn đang làm lúc này.",
+      "en": "Write a sentence about what you are doing right now."
+    },
+    "placeholder": "I am ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "aux", "any_of": ["am", "is", "are", "'m", "'s", "'re"]},
+        {"role": "verb", "regex": "\\b\\w+ing\\b"}
+      ]
+    },
+    "sample": {"text": "I am cooking dinner now."}
+  },
+  "source_anchors": {"status": "anchored", "items": [{"source": "core_inventory", "code": "65", "level": "A1"}]},
+  "aliases": ["a1-present-continuous"]
+}
