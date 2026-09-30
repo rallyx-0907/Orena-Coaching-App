@@ -1,0 +1,2872 @@
+# Final GF0025 source -> Orena canonical mapping for Chinese catalog v1.
+meta:
+  language: "zh-Hans"
+  catalog_version: 1
+  source_items: 572
+  covered_source_items: 572
+  status: "complete"
+items:
+  - source_id: "gf0025.hsk1.001"
+    official_band: "HSK1"
+    title: "方位名词：上、下、里、外、前、后、左、右、东、南、西、北；上边、下边、里边、外边、前边、后边、左边、右边、东边、南边、西边、北边"
+    maps_to:
+      - "zh.canon.gf.hsk1.A_1_1_1.p1"
+  - source_id: "gf0025.hsk1.002"
+    official_band: "HSK1"
+    title: "能愿动词：会、能"
+    maps_to:
+      - "zh.modal.hui"
+      - "zh.modal.neng_keyi"
+  - source_id: "gf0025.hsk1.003"
+    official_band: "HSK1"
+    title: "能愿动词：想、要"
+    maps_to:
+      - "zh.canon.gf.hsk1.A_1_1_2.p1"
+  - source_id: "gf0025.hsk1.004"
+    official_band: "HSK1"
+    title: "疑问代词：多、多少、几、哪、哪儿、哪里、哪些、什么、谁、怎么"
+    maps_to:
+      - "zh.question_words"
+  - source_id: "gf0025.hsk1.005"
+    official_band: "HSK1"
+    title: "人称代词：我、你、您、他、她、我们、你们、他们、她们"
+    maps_to:
+      - "zh.canon.gf.hsk1.A_1_1_3.p1"
+  - source_id: "gf0025.hsk1.006"
+    official_band: "HSK1"
+    title: "指示代词：这、那、这儿、那儿、这里、那里、这些、那些、别的、有的"
+    maps_to:
+      - "zh.demonstratives"
+  - source_id: "gf0025.hsk1.007"
+    official_band: "HSK1"
+    title: "一、二/两、三、四、五、六、七、八、九、零；十、百；半"
+    maps_to:
+      - "zh.liang_er"
+  - source_id: "gf0025.hsk1.008"
+    official_band: "HSK1"
+    title: "名量词：杯、本、个、家、间、口、块、页"
+    maps_to:
+      - "zh.measure_words.basic"
+  - source_id: "gf0025.hsk1.009"
+    official_band: "HSK1"
+    title: "程度副词：非常、很、太、真、最"
+    maps_to:
+      - "zh.canon.gf.hsk1.A_1_1_6.p1"
+  - source_id: "gf0025.hsk1.010"
+    official_band: "HSK1"
+    title: "范围、协同副词：都、一块儿、一起"
+    maps_to:
+      - "zh.canon.gf.hsk1.A_1_1_6.p1"
+  - source_id: "gf0025.hsk1.011"
+    official_band: "HSK1"
+    title: "时间副词：马上、先、有时、在、正、正在"
+    maps_to:
+      - "zh.zai_progressive"
+  - source_id: "gf0025.hsk1.012"
+    official_band: "HSK1"
+    title: "频率、重复副词：常、常常、再"
+    maps_to:
+      - "zh.canon.gf.hsk1.A_1_1_6.p1"
+  - source_id: "gf0025.hsk1.013"
+    official_band: "HSK1"
+    title: "关联副词：还、也"
+    maps_to:
+      - "zh.canon.gf.hsk1.A_1_1_6.p1"
+  - source_id: "gf0025.hsk1.014"
+    official_band: "HSK1"
+    title: "否定副词：另、不、没、没有"
+    maps_to:
+      - "zh.bu_negation"
+      - "zh.mei_negation"
+  - source_id: "gf0025.hsk1.015"
+    official_band: "HSK1"
+    title: "从"
+    maps_to:
+      - "zh.canon.gf.hsk1.A_1_1_7_1.p1"
+  - source_id: "gf0025.hsk1.016"
+    official_band: "HSK1"
+    title: "在"
+    maps_to:
+      - "zh.zai_location"
+  - source_id: "gf0025.hsk1.017"
+    official_band: "HSK1"
+    title: "跟、和"
+    maps_to:
+      - "candidate.zh.hsk3_10_topic"
+  - source_id: "gf0025.hsk1.018"
+    official_band: "HSK1"
+    title: "比"
+    maps_to:
+      - "zh.canon.gf.hsk1.A_1_1_7_2.p1"
+  - source_id: "gf0025.hsk1.019"
+    official_band: "HSK1"
+    title: "连接词或短语：跟、还是、和"
+    maps_to:
+      - "zh.canon.gf.hsk1.A_1_1_8.p1"
+  - source_id: "gf0025.hsk1.020"
+    official_band: "HSK1"
+    title: "结构助词：的、地"
+    maps_to:
+      - "zh.de_possessive"
+  - source_id: "gf0025.hsk1.021"
+    official_band: "HSK1"
+    title: "动态助词：了"
+    maps_to:
+      - "zh.le_completion"
+  - source_id: "gf0025.hsk1.022"
+    official_band: "HSK1"
+    title: "语气助词：吧、了、吗、呢"
+    maps_to:
+      - "zh.ma_question"
+      - "zh.ne_question"
+  - source_id: "gf0025.hsk1.023"
+    official_band: "HSK1"
+    title: "数量短语"
+    maps_to:
+      - "zh.canon.gf.hsk1.A_1_2_1.p1"
+  - source_id: "gf0025.hsk1.024"
+    official_band: "HSK1"
+    title: "名词、代词或名词性短语作主语"
+    maps_to:
+      - "zh.canon.gf.hsk1.A_1_3_1.p1"
+  - source_id: "gf0025.hsk1.025"
+    official_band: "HSK1"
+    title: "动词或动词性短语、形容词或形容词性短语作谓语"
+    maps_to:
+      - "zh.adjective_predicate"
+  - source_id: "gf0025.hsk1.026"
+    official_band: "HSK1"
+    title: "名词、代词或名词性短语作宾语"
+    maps_to:
+      - "zh.canon.gf.hsk1.A_1_3_3.p1"
+  - source_id: "gf0025.hsk1.027"
+    official_band: "HSK1"
+    title: "名词性词语、形容词性词语、数量短语作定语"
+    maps_to:
+      - "zh.adjective_predicate"
+  - source_id: "gf0025.hsk1.028"
+    official_band: "HSK1"
+    title: "副词、形容词作状语；表示时间、处所的词语作状语"
+    maps_to:
+      - "zh.adjective_predicate"
+  - source_id: "gf0025.hsk1.029"
+    official_band: "HSK1"
+    title: "主谓句1：动词谓语句"
+    maps_to:
+      - "zh.adjective_predicate"
+  - source_id: "gf0025.hsk1.030"
+    official_band: "HSK1"
+    title: "主谓句2：形容词谓语句"
+    maps_to:
+      - "zh.adjective_predicate"
+  - source_id: "gf0025.hsk1.031"
+    official_band: "HSK1"
+    title: "非主谓句"
+    maps_to:
+      - "zh.canon.gf.hsk1.A_1_4_1_1.p1"
+  - source_id: "gf0025.hsk1.032"
+    official_band: "HSK1"
+    title: "陈述句"
+    maps_to:
+      - "zh.canon.gf.hsk1.A_1_4_2.p1"
+  - source_id: "gf0025.hsk1.033"
+    official_band: "HSK1"
+    title: "疑问句"
+    maps_to:
+      - "zh.question_words"
+  - source_id: "gf0025.hsk1.034"
+    official_band: "HSK1"
+    title: "祈使句"
+    maps_to:
+      - "zh.canon.gf.hsk1.A_1_4_2.p1"
+  - source_id: "gf0025.hsk1.035"
+    official_band: "HSK1"
+    title: "感叹句"
+    maps_to:
+      - "zh.canon.gf.hsk1.A_1_4_2.p1"
+  - source_id: "gf0025.hsk1.036"
+    official_band: "HSK1"
+    title: "“是”字句"
+    maps_to:
+      - "zh.shi_sentence"
+  - source_id: "gf0025.hsk1.037"
+    official_band: "HSK1"
+    title: "“有”字句1"
+    maps_to:
+      - "zh.you_sentence"
+  - source_id: "gf0025.hsk1.038"
+    official_band: "HSK1"
+    title: "比较句1"
+    maps_to:
+      - "zh.bi_comparison"
+      - "zh.meiyou_comparison"
+  - source_id: "gf0025.hsk1.039"
+    official_band: "HSK1"
+    title: "并列复句"
+    maps_to:
+      - "zh.canon.gf.hsk1.A_1_4_4.p1"
+  - source_id: "gf0025.hsk1.040"
+    official_band: "HSK1"
+    title: "变化态：用动态助词“了”表示"
+    maps_to:
+      - "zh.le_completion"
+  - source_id: "gf0025.hsk1.041"
+    official_band: "HSK1"
+    title: "完成态：用动态助词“了”表示"
+    maps_to:
+      - "zh.le_completion"
+  - source_id: "gf0025.hsk1.042"
+    official_band: "HSK1"
+    title: "进行态"
+    maps_to:
+      - "zh.zai_progressive"
+  - source_id: "gf0025.hsk1.043"
+    official_band: "HSK1"
+    title: "钱数表示法"
+    maps_to:
+      - "zh.canon.gf.hsk1.A_1_6_1.p1"
+  - source_id: "gf0025.hsk1.044"
+    official_band: "HSK1"
+    title: "时间表示法"
+    maps_to:
+      - "zh.dates_times"
+  - source_id: "gf0025.hsk1.045"
+    official_band: "HSK1"
+    title: "用“吗”提问"
+    maps_to:
+      - "zh.ma_question"
+  - source_id: "gf0025.hsk1.046"
+    official_band: "HSK1"
+    title: "用 \\\"多、多少、几、哪、哪儿、哪里、哪些、什么、谁、怎么”提问"
+    maps_to:
+      - "zh.question_words"
+  - source_id: "gf0025.hsk1.047"
+    official_band: "HSK1"
+    title: "用“还是”提问"
+    maps_to:
+      - "zh.canon.gf.hsk1.A_1_7.p1"
+  - source_id: "gf0025.hsk1.048"
+    official_band: "HSK1"
+    title: "用正反疑问形式提问"
+    maps_to:
+      - "zh.affirmative_negative_question"
+  - source_id: "gf0025.hsk2.001"
+    official_band: "HSK2"
+    title: "能愿动词"
+    maps_to:
+      - "zh.canon.gf.hsk2.A_2_1_1.p1"
+  - source_id: "gf0025.hsk2.002"
+    official_band: "HSK2"
+    title: "能愿动词：该、应该"
+    maps_to:
+      - "zh.canon.gf.hsk2.A_2_1_1.p1"
+  - source_id: "gf0025.hsk2.003"
+    official_band: "HSK2"
+    title: "能愿动词：愿意"
+    maps_to:
+      - "zh.canon.gf.hsk2.A_2_1_1.p1"
+  - source_id: "gf0025.hsk2.004"
+    official_band: "HSK2"
+    title: "动词重叠：AA、A一A、A了A、ABAB"
+    maps_to:
+      - "zh.verb_reduplication"
+  - source_id: "gf0025.hsk2.005"
+    official_band: "HSK2"
+    title: "疑问代词：多久、为什么、怎么样、怎样"
+    maps_to:
+      - "zh.question_words"
+  - source_id: "gf0025.hsk2.006"
+    official_band: "HSK2"
+    title: "人称代词：别人、大家、它、它们、咱、咱们、自己"
+    maps_to:
+      - "zh.canon.gf.hsk2.A_2_1_2.p1"
+  - source_id: "gf0025.hsk2.007"
+    official_band: "HSK2"
+    title: "指示代词：那么、那样、这么、这样"
+    maps_to:
+      - "zh.demonstratives"
+  - source_id: "gf0025.hsk2.008"
+    official_band: "HSK2"
+    title: "形容词重叠：AA、AABB"
+    maps_to:
+      - "zh.canon.gf.hsk2.A_2_1_3.p1"
+  - source_id: "gf0025.hsk2.009"
+    official_band: "HSK2"
+    title: "千、万、亿"
+    maps_to:
+      - "zh.canon.gf.hsk2.A_2_1_4.p1"
+  - source_id: "gf0025.hsk2.010"
+    official_band: "HSK2"
+    title: "名量词：层、封、件、条、位"
+    maps_to:
+      - "zh.measure_words.basic"
+  - source_id: "gf0025.hsk2.011"
+    official_band: "HSK2"
+    title: "动量词：遍、次、场、回、下"
+    maps_to:
+      - "zh.measure_words.basic"
+  - source_id: "gf0025.hsk2.012"
+    official_band: "HSK2"
+    title: "时量词：分钟、年、天、周"
+    maps_to:
+      - "zh.measure_words.basic"
+  - source_id: "gf0025.hsk2.013"
+    official_band: "HSK2"
+    title: "程度副词：多、多么、好、更、十分、特别、挺、有（一）点儿"
+    maps_to:
+      - "zh.canon.gf.hsk2.A_2_1_6.p1"
+  - source_id: "gf0025.hsk2.014"
+    official_band: "HSK2"
+    title: "范围、协同副词：全、一共、只"
+    maps_to:
+      - "zh.canon.gf.hsk2.A_2_1_6.p1"
+  - source_id: "gf0025.hsk2.015"
+    official_band: "HSK2"
+    title: "时间副词：刚、刚刚、还、忽然、一直、已经"
+    maps_to:
+      - "zh.canon.gf.hsk2.A_2_1_6.p1"
+  - source_id: "gf0025.hsk2.016"
+    official_band: "HSK2"
+    title: "频率、重复副词：重新、经常、老、老是、又"
+    maps_to:
+      - "zh.canon.gf.hsk2.A_2_1_6.p1"
+  - source_id: "gf0025.hsk2.017"
+    official_band: "HSK2"
+    title: "关联副词：就"
+    maps_to:
+      - "zh.canon.gf.hsk2.A_2_1_6.p2"
+  - source_id: "gf0025.hsk2.018"
+    official_band: "HSK2"
+    title: "方式副词：故意"
+    maps_to:
+      - "zh.canon.gf.hsk2.A_2_1_6.p2"
+  - source_id: "gf0025.hsk2.019"
+    official_band: "HSK2"
+    title: "情态副词：必须、差不多、好像、一定、也许"
+    maps_to:
+      - "zh.canon.gf.hsk2.A_2_1_6.p2"
+  - source_id: "gf0025.hsk2.020"
+    official_band: "HSK2"
+    title: "语气副词：才、都、就、正好"
+    maps_to:
+      - "zh.canon.gf.hsk2.A_2_1_6.p2"
+  - source_id: "gf0025.hsk2.021"
+    official_band: "HSK2"
+    title: "当"
+    maps_to:
+      - "zh.canon.gf.hsk2.A_2_1_7_1.p1"
+  - source_id: "gf0025.hsk2.022"
+    official_band: "HSK2"
+    title: "往"
+    maps_to:
+      - "zh.canon.gf.hsk2.A_2_1_7_2.p1"
+  - source_id: "gf0025.hsk2.023"
+    official_band: "HSK2"
+    title: "向"
+    maps_to:
+      - "zh.canon.gf.hsk2.A_2_1_7_2.p1"
+  - source_id: "gf0025.hsk2.024"
+    official_band: "HSK2"
+    title: "从"
+    maps_to:
+      - "zh.canon.gf.hsk2.A_2_1_7_2.p1"
+  - source_id: "gf0025.hsk2.025"
+    official_band: "HSK2"
+    title: "对"
+    maps_to:
+      - "zh.guo_experience"
+  - source_id: "gf0025.hsk2.026"
+    official_band: "HSK2"
+    title: "给"
+    maps_to:
+      - "zh.zhe_state"
+  - source_id: "gf0025.hsk2.027"
+    official_band: "HSK2"
+    title: "离"
+    maps_to:
+      - "zh.canon.gf.hsk2.A_2_1_7_3.p1"
+  - source_id: "gf0025.hsk2.028"
+    official_band: "HSK2"
+    title: "为"
+    maps_to:
+      - "zh.canon.gf.hsk2.A_2_1_7_3.p1"
+  - source_id: "gf0025.hsk2.029"
+    official_band: "HSK2"
+    title: "连接词或短语：或、或者"
+    maps_to:
+      - "zh.canon.gf.hsk2.A_2_1_8.p1"
+  - source_id: "gf0025.hsk2.030"
+    official_band: "HSK2"
+    title: "连接分句或句子：不过、但、但是、而且、那、如果、虽然、只要"
+    maps_to:
+      - "zh.suiran_danshi"
+  - source_id: "gf0025.hsk2.031"
+    official_band: "HSK2"
+    title: "结构助词：得"
+    maps_to:
+      - "zh.canon.gf.hsk2.A_2_1_9.p1"
+  - source_id: "gf0025.hsk2.032"
+    official_band: "HSK2"
+    title: "动态助词：过"
+    maps_to:
+      - "zh.guo_experience"
+  - source_id: "gf0025.hsk2.033"
+    official_band: "HSK2"
+    title: "动态助词：着"
+    maps_to:
+      - "zh.zhe_state"
+  - source_id: "gf0025.hsk2.034"
+    official_band: "HSK2"
+    title: "语气助词：啊、吧、的"
+    maps_to:
+      - "zh.canon.gf.hsk2.A_2_1_9.p1"
+  - source_id: "gf0025.hsk2.035"
+    official_band: "HSK2"
+    title: "其他助词：的话、等"
+    maps_to:
+      - "zh.canon.gf.hsk2.A_2_1_9.p1"
+  - source_id: "gf0025.hsk2.036"
+    official_band: "HSK2"
+    title: "喂"
+    maps_to:
+      - "zh.canon.gf.hsk2.A_2_1_10.p1"
+  - source_id: "gf0025.hsk2.037"
+    official_band: "HSK2"
+    title: "基本结构类型"
+    maps_to:
+      - "zh.canon.gf.hsk2.A_2_2_1.p1"
+  - source_id: "gf0025.hsk2.038"
+    official_band: "HSK2"
+    title: "其他结构类型1"
+    maps_to:
+      - "zh.canon.gf.hsk2.A_2_2_1.p1"
+  - source_id: "gf0025.hsk2.039"
+    official_band: "HSK2"
+    title: "名词性短语"
+    maps_to:
+      - "zh.canon.gf.hsk2.A_2_2_2.p1"
+  - source_id: "gf0025.hsk2.040"
+    official_band: "HSK2"
+    title: "动词性短语"
+    maps_to:
+      - "zh.canon.gf.hsk2.A_2_2_2.p1"
+  - source_id: "gf0025.hsk2.041"
+    official_band: "HSK2"
+    title: "形容词性短语"
+    maps_to:
+      - "zh.adjective_predicate"
+  - source_id: "gf0025.hsk2.042"
+    official_band: "HSK2"
+    title: "不一会儿"
+    maps_to:
+      - "zh.canon.gf.hsk2.A_2_2_3_1.p1"
+  - source_id: "gf0025.hsk2.043"
+    official_band: "HSK2"
+    title: "什么的"
+    maps_to:
+      - "zh.canon.gf.hsk2.A_2_2_3_1.p1"
+  - source_id: "gf0025.hsk2.044"
+    official_band: "HSK2"
+    title: "越来越"
+    maps_to:
+      - "zh.yuelaiyue"
+  - source_id: "gf0025.hsk2.045"
+    official_band: "HSK2"
+    title: "还是⋯⋯吧"
+    maps_to:
+      - "zh.canon.gf.hsk2.A_2_3.p1"
+  - source_id: "gf0025.hsk2.046"
+    official_band: "HSK2"
+    title: "又⋯⋯又⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk2.A_2_3.p1"
+  - source_id: "gf0025.hsk2.047"
+    official_band: "HSK2"
+    title: "（在）⋯⋯以前/以后/前/后"
+    maps_to:
+      - "zh.canon.gf.hsk2.A_2_3.p1"
+  - source_id: "gf0025.hsk2.048"
+    official_band: "HSK2"
+    title: "名词、代词、数词或数量短语、名词性短语作谓语"
+    maps_to:
+      - "zh.canon.gf.hsk2.A_2_4_1.p1"
+  - source_id: "gf0025.hsk2.049"
+    official_band: "HSK2"
+    title: "结果补语1：动词+错/懂/干净/好/会/清楚/完"
+    maps_to:
+      - "zh.complement.result"
+  - source_id: "gf0025.hsk2.050"
+    official_band: "HSK2"
+    title: "趋向补语1"
+    maps_to:
+      - "zh.complement.direction_simple"
+  - source_id: "gf0025.hsk2.051"
+    official_band: "HSK2"
+    title: "状态补语1：动词+得+形容词性词语"
+    maps_to:
+      - "zh.adjective_predicate"
+  - source_id: "gf0025.hsk2.052"
+    official_band: "HSK2"
+    title: "数量补语1：动词+动量补语"
+    maps_to:
+      - "zh.complement.frequency"
+  - source_id: "gf0025.hsk2.053"
+    official_band: "HSK2"
+    title: "数量补语2：形容词+数量补语"
+    maps_to:
+      - "zh.adjective_predicate"
+  - source_id: "gf0025.hsk2.054"
+    official_band: "HSK2"
+    title: "主谓句3：名词谓语句"
+    maps_to:
+      - "zh.adjective_predicate"
+  - source_id: "gf0025.hsk2.055"
+    official_band: "HSK2"
+    title: "“有”字句2"
+    maps_to:
+      - "zh.you_sentence"
+  - source_id: "gf0025.hsk2.056"
+    official_band: "HSK2"
+    title: "存现句1：表示存在"
+    maps_to:
+      - "zh.canon.gf.hsk2.A_2_5_2.p1"
+  - source_id: "gf0025.hsk2.057"
+    official_band: "HSK2"
+    title: "连动句1：表示前后动作先后发生"
+    maps_to:
+      - "zh.canon.gf.hsk2.A_2_5_2.p1"
+  - source_id: "gf0025.hsk2.058"
+    official_band: "HSK2"
+    title: "比较句2"
+    maps_to:
+      - "zh.meiyou_comparison"
+  - source_id: "gf0025.hsk2.059"
+    official_band: "HSK2"
+    title: "比较句3"
+    maps_to:
+      - "zh.meiyou_comparison"
+  - source_id: "gf0025.hsk2.060"
+    official_band: "HSK2"
+    title: "“是⋯⋯的”句1：强调时间、地点、方式、动作者"
+    maps_to:
+      - "zh.canon.gf.hsk2.A_2_5_2.p1"
+  - source_id: "gf0025.hsk2.061"
+    official_band: "HSK2"
+    title: "双宾语句"
+    maps_to:
+      - "candidate.zh.hsk5_2_topic_139"
+  - source_id: "gf0025.hsk2.062"
+    official_band: "HSK2"
+    title: "承接复句"
+    maps_to:
+      - "zh.canon.gf.hsk2.A_2_5_3.p1"
+  - source_id: "gf0025.hsk2.063"
+    official_band: "HSK2"
+    title: "递进复句"
+    maps_to:
+      - "zh.canon.gf.hsk2.A_2_5_3.p1"
+  - source_id: "gf0025.hsk2.064"
+    official_band: "HSK2"
+    title: "选择复句"
+    maps_to:
+      - "zh.canon.gf.hsk2.A_2_5_3.p1"
+  - source_id: "gf0025.hsk2.065"
+    official_band: "HSK2"
+    title: "转折复句"
+    maps_to:
+      - "zh.canon.gf.hsk2.A_2_5_3.p1"
+  - source_id: "gf0025.hsk2.066"
+    official_band: "HSK2"
+    title: "假设复句"
+    maps_to:
+      - "zh.canon.gf.hsk2.A_2_5_3.p2"
+  - source_id: "gf0025.hsk2.067"
+    official_band: "HSK2"
+    title: "条件复句：只要⋯⋯，就⋯⋯"
+    maps_to:
+      - "zh.zhiyao_jiu"
+  - source_id: "gf0025.hsk2.068"
+    official_band: "HSK2"
+    title: "因果复句"
+    maps_to:
+      - "zh.canon.gf.hsk2.A_2_5_3.p2"
+  - source_id: "gf0025.hsk2.069"
+    official_band: "HSK2"
+    title: "紧缩复句：一⋯⋯就⋯⋯"
+    maps_to:
+      - "zh.yi_jiu"
+  - source_id: "gf0025.hsk2.070"
+    official_band: "HSK2"
+    title: "持续态：动词+着"
+    maps_to:
+      - "zh.canon.gf.hsk2.A_2_6.p1"
+  - source_id: "gf0025.hsk2.071"
+    official_band: "HSK2"
+    title: "经历态：用动态助词“过”表示"
+    maps_to:
+      - "zh.guo_experience"
+  - source_id: "gf0025.hsk2.072"
+    official_band: "HSK2"
+    title: "序数表示法"
+    maps_to:
+      - "zh.canon.gf.hsk2.A_2_7.p1"
+  - source_id: "gf0025.hsk2.073"
+    official_band: "HSK2"
+    title: "概数表示法1"
+    maps_to:
+      - "zh.canon.gf.hsk2.A_2_7.p1"
+  - source_id: "gf0025.hsk2.074"
+    official_band: "HSK2"
+    title: "用“就”表示强调"
+    maps_to:
+      - "zh.canon.gf.hsk2.A_2_8.p1"
+  - source_id: "gf0025.hsk2.075"
+    official_band: "HSK2"
+    title: "用“好吗、可以吗、行吗、怎么样”提问"
+    maps_to:
+      - "zh.canon.gf.hsk2.A_2_9.p1"
+  - source_id: "gf0025.hsk2.076"
+    official_band: "HSK2"
+    title: "用 \\\"什么时候、什么样、为什么、怎么样、怎样”提问"
+    maps_to:
+      - "zh.canon.gf.hsk2.A_2_9.p1"
+  - source_id: "gf0025.hsk2.077"
+    official_band: "HSK2"
+    title: "用“呢”构成的省略式疑问句“代词/名词+呢？”提问"
+    maps_to:
+      - "zh.question_words"
+  - source_id: "gf0025.hsk2.078"
+    official_band: "HSK2"
+    title: "用“是不是”提问"
+    maps_to:
+      - "zh.canon.gf.hsk2.A_2_9.p1"
+  - source_id: "gf0025.hsk2.079"
+    official_band: "HSK2"
+    title: "用“吧”提问"
+    maps_to:
+      - "zh.canon.gf.hsk2.A_2_9.p1"
+  - source_id: "gf0025.hsk2.080"
+    official_band: "HSK2"
+    title: "该⋯⋯了"
+    maps_to:
+      - "zh.canon.gf.hsk2.A_2_10.p1"
+  - source_id: "gf0025.hsk2.081"
+    official_band: "HSK2"
+    title: "要/快要/就要⋯⋯了"
+    maps_to:
+      - "zh.canon.gf.hsk2.A_2_10.p1"
+  - source_id: "gf0025.hsk3.001"
+    official_band: "HSK3"
+    title: "第-、老-、小-"
+    maps_to:
+      - "zh.canon.gf.hsk3.A_3_1_1.p1"
+  - source_id: "gf0025.hsk3.002"
+    official_band: "HSK3"
+    title: "-儿、一家、-们、-头、-子"
+    maps_to:
+      - "zh.canon.gf.hsk3.A_3_1_2.p1"
+  - source_id: "gf0025.hsk3.003"
+    official_band: "HSK3"
+    title: "能愿动词：敢"
+    maps_to:
+      - "zh.canon.gf.hsk3.A_3_2_1.p1"
+  - source_id: "gf0025.hsk3.004"
+    official_band: "HSK3"
+    title: "能愿动词：需要"
+    maps_to:
+      - "zh.canon.gf.hsk3.A_3_2_1.p1"
+  - source_id: "gf0025.hsk3.005"
+    official_band: "HSK3"
+    title: "动宾式离合词：帮忙、点头、放假、干杯、见面、结婚、看病、睡觉、洗澡、理发、说话"
+    maps_to:
+      - "zh.separable_verbs"
+  - source_id: "gf0025.hsk3.006"
+    official_band: "HSK3"
+    title: "动补式离合词：打开、看见，离开、完成"
+    maps_to:
+      - "zh.separable_verbs"
+  - source_id: "gf0025.hsk3.007"
+    official_band: "HSK3"
+    title: "疑问代词的非疑问用法"
+    maps_to:
+      - "zh.canon.gf.hsk3.A_3_2_2.p1"
+  - source_id: "gf0025.hsk3.008"
+    official_band: "HSK3"
+    title: "指示代词：各、各位、各种、每、任何"
+    maps_to:
+      - "zh.canon.gf.hsk3.A_3_2_2.p1"
+  - source_id: "gf0025.hsk3.009"
+    official_band: "HSK3"
+    title: "名量词：把、行、架、群、束、双、台、张、支、只、种"
+    maps_to:
+      - "zh.measure_words.basic"
+  - source_id: "gf0025.hsk3.010"
+    official_band: "HSK3"
+    title: "动量词：顿、口、眼"
+    maps_to:
+      - "zh.measure_words.basic"
+  - source_id: "gf0025.hsk3.011"
+    official_band: "HSK3"
+    title: "量词重叠：AA"
+    maps_to:
+      - "zh.measure_words.basic"
+  - source_id: "gf0025.hsk3.012"
+    official_band: "HSK3"
+    title: "程度副词：比较、更加，还、相当"
+    maps_to:
+      - "zh.canon.gf.hsk3.A_3_2_4.p1"
+  - source_id: "gf0025.hsk3.013"
+    official_band: "HSK3"
+    title: "范围、协同副词：光、仅、仅仅、就、至少"
+    maps_to:
+      - "zh.canon.gf.hsk3.A_3_2_4.p1"
+  - source_id: "gf0025.hsk3.014"
+    official_band: "HSK3"
+    title: "时间副词：本来、才、曾经、从来、赶紧、赶快、立刻、连忙、始终、已、早已"
+    maps_to:
+      - "zh.canon.gf.hsk3.A_3_2_4.p1"
+  - source_id: "gf0025.hsk3.015"
+    official_band: "HSK3"
+    title: "频率、重复副词：通常、往往、总、总是"
+    maps_to:
+      - "zh.canon.gf.hsk3.A_3_2_4.p1"
+  - source_id: "gf0025.hsk3.016"
+    official_band: "HSK3"
+    title: "关联副词：再"
+    maps_to:
+      - "zh.canon.gf.hsk3.A_3_2_4.p2"
+  - source_id: "gf0025.hsk3.017"
+    official_band: "HSK3"
+    title: "方式副词：互相、尽量、亲自、相互"
+    maps_to:
+      - "zh.canon.gf.hsk3.A_3_2_4.p2"
+  - source_id: "gf0025.hsk3.018"
+    official_band: "HSK3"
+    title: "情态副词：大概、恐怕"
+    maps_to:
+      - "candidate.zh.hsk6_2_topic"
+  - source_id: "gf0025.hsk3.019"
+    official_band: "HSK3"
+    title: "语气副词：白、并、当然、到底、反正、根本、果然、简直、绝对、难道、其实、千万、确实、只好、终于"
+    maps_to:
+      - "zh.canon.gf.hsk3.A_3_2_4.p2"
+  - source_id: "gf0025.hsk3.020"
+    official_band: "HSK3"
+    title: "由"
+    maps_to:
+      - "zh.canon.gf.hsk3.A_3_2_5_1.p1"
+  - source_id: "gf0025.hsk3.021"
+    official_band: "HSK3"
+    title: "自从"
+    maps_to:
+      - "candidate.zh.hsk3_8_topic"
+  - source_id: "gf0025.hsk3.022"
+    official_band: "HSK3"
+    title: "朝"
+    maps_to:
+      - "zh.canon.gf.hsk3.A_3_2_5_2.p1"
+  - source_id: "gf0025.hsk3.023"
+    official_band: "HSK3"
+    title: "为"
+    maps_to:
+      - "zh.canon.gf.hsk3.A_3_2_5_3.p1"
+  - source_id: "gf0025.hsk3.024"
+    official_band: "HSK3"
+    title: "向"
+    maps_to:
+      - "zh.canon.gf.hsk3.A_3_2_5_3.p1"
+  - source_id: "gf0025.hsk3.025"
+    official_band: "HSK3"
+    title: "由于、因为"
+    maps_to:
+      - "candidate.zh.hsk3_6_topic"
+  - source_id: "gf0025.hsk3.026"
+    official_band: "HSK3"
+    title: "为了"
+    maps_to:
+      - "candidate.zh.hsk3_5_topic"
+  - source_id: "gf0025.hsk3.027"
+    official_band: "HSK3"
+    title: "把、被、叫、让"
+    maps_to:
+      - "zh.canon.gf.hsk3.A_3_2_5_5.p1"
+  - source_id: "gf0025.hsk3.028"
+    official_band: "HSK3"
+    title: "除了"
+    maps_to:
+      - "zh.chule_yiwai"
+  - source_id: "gf0025.hsk3.029"
+    official_band: "HSK3"
+    title: "按、按照"
+    maps_to:
+      - "candidate.zh.hsk4_12_topic"
+  - source_id: "gf0025.hsk3.030"
+    official_band: "HSK3"
+    title: "连接分句或句子：并且、不光、不仅、另外、要是、因此、由于、只有"
+    maps_to:
+      - "candidate.zh.hsk3_6_topic"
+  - source_id: "gf0025.hsk3.031"
+    official_band: "HSK3"
+    title: "哈哈"
+    maps_to:
+      - "zh.canon.gf.hsk3.A_3_2_7.p1"
+  - source_id: "gf0025.hsk3.032"
+    official_band: "HSK3"
+    title: "其他结构类型2"
+    maps_to:
+      - "zh.canon.gf.hsk3.A_3_3_1.p1"
+  - source_id: "gf0025.hsk3.033"
+    official_band: "HSK3"
+    title: "数量重叠：数词+量词+数词+量词"
+    maps_to:
+      - "zh.measure_words.basic"
+  - source_id: "gf0025.hsk3.034"
+    official_band: "HSK3"
+    title: "不A不B"
+    maps_to:
+      - "zh.canon.gf.hsk3.A_3_3_2_1.p1"
+  - source_id: "gf0025.hsk3.035"
+    official_band: "HSK3"
+    title: "看起来"
+    maps_to:
+      - "zh.canon.gf.hsk3.A_3_3_2_2.p1"
+  - source_id: "gf0025.hsk3.036"
+    official_band: "HSK3"
+    title: "看上去"
+    maps_to:
+      - "zh.canon.gf.hsk3.A_3_3_2_2.p1"
+  - source_id: "gf0025.hsk3.037"
+    official_band: "HSK3"
+    title: "有的是"
+    maps_to:
+      - "zh.canon.gf.hsk3.A_3_3_2_2.p1"
+  - source_id: "gf0025.hsk3.038"
+    official_band: "HSK3"
+    title: "除了⋯⋯（以外），⋯⋯还/也/都⋯⋯"
+    maps_to:
+      - "zh.chule_yiwai"
+  - source_id: "gf0025.hsk3.039"
+    official_band: "HSK3"
+    title: "从⋯⋯起"
+    maps_to:
+      - "candidate.zh.hsk3_7_topic"
+  - source_id: "gf0025.hsk3.040"
+    official_band: "HSK3"
+    title: "对⋯⋯来说"
+    maps_to:
+      - "candidate.zh.hsk3_9_topic"
+  - source_id: "gf0025.hsk3.041"
+    official_band: "HSK3"
+    title: "一……也/都+不/没⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk3.A_3_4.p1"
+  - source_id: "gf0025.hsk3.042"
+    official_band: "HSK3"
+    title: "越⋯⋯越⋯⋯"
+    maps_to:
+      - "zh.yue_yue"
+  - source_id: "gf0025.hsk3.043"
+    official_band: "HSK3"
+    title: "动词或动词性短语、形容词或形容词性短语作主语"
+    maps_to:
+      - "zh.canon.gf.hsk3.A_3_5_1.p1"
+  - source_id: "gf0025.hsk3.044"
+    official_band: "HSK3"
+    title: "动词或动词性短语、形容词或形容词性短语和主谓短语作宾语"
+    maps_to:
+      - "zh.adjective_predicate"
+  - source_id: "gf0025.hsk3.045"
+    official_band: "HSK3"
+    title: "动词或动词性短语、主谓短语作定语"
+    maps_to:
+      - "zh.canon.gf.hsk3.A_3_5_3.p1"
+  - source_id: "gf0025.hsk3.046"
+    official_band: "HSK3"
+    title: "结果补语2：动词+到/住/走"
+    maps_to:
+      - "zh.complement.result"
+  - source_id: "gf0025.hsk3.047"
+    official_band: "HSK3"
+    title: "趋向补语2"
+    maps_to:
+      - "candidate.zh.hsk3_10_ngh_a_m_r_ng"
+  - source_id: "gf0025.hsk3.048"
+    official_band: "HSK3"
+    title: "可能补语1：动词+得/不+动词/形容词；动词+得/不+了"
+    maps_to:
+      - "zh.canon.gf.hsk3.A_3_5_4.p1"
+  - source_id: "gf0025.hsk3.049"
+    official_band: "HSK3"
+    title: "程度补语1：形容词/心理动词+得很/极了/死了"
+    maps_to:
+      - "zh.complement.degree_de"
+  - source_id: "gf0025.hsk3.050"
+    official_band: "HSK3"
+    title: "数量补语3（动词+动量补语）：宾语和动量补语共现"
+    maps_to:
+      - "zh.complement.frequency"
+  - source_id: "gf0025.hsk3.051"
+    official_band: "HSK3"
+    title: "数量补语4（动词+时量补语）：表示动作持续的时间"
+    maps_to:
+      - "zh.complement.duration"
+  - source_id: "gf0025.hsk3.052"
+    official_band: "HSK3"
+    title: "数量补语5（动词+时量补语）：表示动作结束后到某个时间点的间隔时间"
+    maps_to:
+      - "zh.complement.duration"
+  - source_id: "gf0025.hsk3.053"
+    official_band: "HSK3"
+    title: "主谓句4：主谓谓语句"
+    maps_to:
+      - "zh.canon.gf.hsk3.A_3_6_1.p1"
+  - source_id: "gf0025.hsk3.054"
+    official_band: "HSK3"
+    title: "“把”字句1：表处置"
+    maps_to:
+      - "zh.bi_comparison"
+  - source_id: "gf0025.hsk3.055"
+    official_band: "HSK3"
+    title: "被动句1：主语+被/叫/让+宾语+动词+其他成分"
+    maps_to:
+      - "zh.canon.gf.hsk3.A_3_6_2.p1"
+  - source_id: "gf0025.hsk3.056"
+    official_band: "HSK3"
+    title: "连动句2"
+    maps_to:
+      - "zh.canon.gf.hsk3.A_3_6_2.p1"
+  - source_id: "gf0025.hsk3.057"
+    official_band: "HSK3"
+    title: "兼语句1"
+    maps_to:
+      - "zh.canon.gf.hsk3.A_3_6_2.p1"
+  - source_id: "gf0025.hsk3.058"
+    official_band: "HSK3"
+    title: "比较句4"
+    maps_to:
+      - "zh.meiyou_comparison"
+  - source_id: "gf0025.hsk3.059"
+    official_band: "HSK3"
+    title: "重动词：主语+动词+宾语+动词+补语"
+    maps_to:
+      - "zh.canon.gf.hsk3.A_3_6_2.p1"
+  - source_id: "gf0025.hsk3.060"
+    official_band: "HSK3"
+    title: "（也）⋯⋯，也⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk3.A_3_6_3_1.p1"
+  - source_id: "gf0025.hsk3.061"
+    official_band: "HSK3"
+    title: "一会儿⋯⋯，一会儿⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk3.A_3_6_3_1.p1"
+  - source_id: "gf0025.hsk3.062"
+    official_band: "HSK3"
+    title: "一方面⋯⋯，另一方面⋯⋯"
+    maps_to:
+      - "candidate.zh.hsk4_2_topic"
+  - source_id: "gf0025.hsk3.063"
+    official_band: "HSK3"
+    title: "又⋯⋯，又⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk3.A_3_6_3_1.p1"
+  - source_id: "gf0025.hsk3.064"
+    official_band: "HSK3"
+    title: "首先⋯⋯，然后⋯⋯"
+    maps_to:
+      - "candidate.zh.hsk4_3_topic_104"
+  - source_id: "gf0025.hsk3.065"
+    official_band: "HSK3"
+    title: "⋯⋯，并且⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk3.A_3_6_3_3.p1"
+  - source_id: "gf0025.hsk3.066"
+    official_band: "HSK3"
+    title: "不仅/不光 ，还/而且"
+    maps_to:
+      - "candidate.zh.hsk3_1_topic"
+  - source_id: "gf0025.hsk3.067"
+    official_band: "HSK3"
+    title: "不是，就是⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk3.A_3_6_3_4.p1"
+  - source_id: "gf0025.hsk3.068"
+    official_band: "HSK3"
+    title: "⋯⋯X 是 X，就是/不过⋯⋯"
+    maps_to:
+      - "candidate.zh.hsk4_4_topic_105"
+  - source_id: "gf0025.hsk3.069"
+    official_band: "HSK3"
+    title: "要是⋯⋯，就⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk3.A_3_6_3_6.p1"
+  - source_id: "gf0025.hsk3.070"
+    official_band: "HSK3"
+    title: "只有⋯⋯，才⋯⋯"
+    maps_to:
+      - "zh.zhiyou_cai"
+  - source_id: "gf0025.hsk3.071"
+    official_band: "HSK3"
+    title: "（由于）⋯⋯，所以/因此⋯⋯"
+    maps_to:
+      - "candidate.zh.hsk3_6_topic"
+  - source_id: "gf0025.hsk3.072"
+    official_band: "HSK3"
+    title: "为了⋯⋯，⋯⋯"
+    maps_to:
+      - "candidate.zh.hsk3_5_topic"
+  - source_id: "gf0025.hsk3.073"
+    official_band: "HSK3"
+    title: "⋯⋯了⋯⋯（就）⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk3.A_3_6_3_10.p1"
+  - source_id: "gf0025.hsk3.074"
+    official_band: "HSK3"
+    title: "概数表示法2"
+    maps_to:
+      - "zh.canon.gf.hsk3.A_3_7.p1"
+  - source_id: "gf0025.hsk3.075"
+    official_band: "HSK3"
+    title: "用“一点儿也不⋯⋯”表示强调"
+    maps_to:
+      - "zh.canon.gf.hsk3.A_3_8.p1"
+  - source_id: "gf0025.hsk3.076"
+    official_band: "HSK3"
+    title: "用反问句表示强调"
+    maps_to:
+      - "zh.canon.gf.hsk3.A_3_8.p1"
+  - source_id: "gf0025.hsk3.077"
+    official_band: "HSK3"
+    title: "用“是”强调"
+    maps_to:
+      - "zh.canon.gf.hsk3.A_3_8.p1"
+  - source_id: "gf0025.hsk3.078"
+    official_band: "HSK3"
+    title: "用疑问语调表示疑问"
+    maps_to:
+      - "zh.canon.gf.hsk3.A_3_9.p1"
+  - source_id: "gf0025.hsk3.079"
+    official_band: "HSK3"
+    title: "都⋯⋯了"
+    maps_to:
+      - "zh.canon.gf.hsk3.A_3_10.p1"
+  - source_id: "gf0025.hsk3.080"
+    official_band: "HSK3"
+    title: "X就X（点儿）吧"
+    maps_to:
+      - "zh.canon.gf.hsk3.A_3_10.p1"
+  - source_id: "gf0025.hsk3.081"
+    official_band: "HSK3"
+    title: "X什么（啊）"
+    maps_to:
+      - "zh.canon.gf.hsk3.A_3_10.p1"
+  - source_id: "gf0025.hsk4.001"
+    official_band: "HSK4"
+    title: "能愿动词：得"
+    maps_to:
+      - "zh.canon.gf.hsk4.A_4_1_1.p1"
+  - source_id: "gf0025.hsk4.002"
+    official_band: "HSK4"
+    title: "人称代词：人家"
+    maps_to:
+      - "zh.canon.gf.hsk4.A_4_1_2.p1"
+  - source_id: "gf0025.hsk4.003"
+    official_band: "HSK4"
+    title: "名量词：打、袋、根、卷、棵、批"
+    maps_to:
+      - "zh.measure_words.basic"
+  - source_id: "gf0025.hsk4.004"
+    official_band: "HSK4"
+    title: "借用量词"
+    maps_to:
+      - "zh.measure_words.basic"
+  - source_id: "gf0025.hsk4.005"
+    official_band: "HSK4"
+    title: "程度副词：格外、极、极其"
+    maps_to:
+      - "zh.canon.gf.hsk4.A_4_1_4.p1"
+  - source_id: "gf0025.hsk4.006"
+    official_band: "HSK4"
+    title: "范围、协同副词：共"
+    maps_to:
+      - "zh.canon.gf.hsk4.A_4_1_4.p1"
+  - source_id: "gf0025.hsk4.007"
+    official_band: "HSK4"
+    title: "时间副词：按时、即将、急忙、渐渐、尽快"
+    maps_to:
+      - "zh.canon.gf.hsk4.A_4_1_4.p1"
+  - source_id: "gf0025.hsk4.008"
+    official_band: "HSK4"
+    title: "频率、重复副词：一再、再三"
+    maps_to:
+      - "zh.canon.gf.hsk4.A_4_1_4.p1"
+  - source_id: "gf0025.hsk4.009"
+    official_band: "HSK4"
+    title: "关联副词：却"
+    maps_to:
+      - "zh.canon.gf.hsk4.A_4_1_4.p2"
+  - source_id: "gf0025.hsk4.010"
+    official_band: "HSK4"
+    title: "否定副词：未必"
+    maps_to:
+      - "candidate.zh.hsk5_3_topic"
+  - source_id: "gf0025.hsk4.011"
+    official_band: "HSK4"
+    title: "情态副词：几乎、似乎"
+    maps_to:
+      - "zh.canon.gf.hsk4.A_4_1_4.p2"
+  - source_id: "gf0025.hsk4.012"
+    official_band: "HSK4"
+    title: "语气副词：的确、反而、竟然、究竟"
+    maps_to:
+      - "zh.canon.gf.hsk4.A_4_1_4.p2"
+  - source_id: "gf0025.hsk4.013"
+    official_band: "HSK4"
+    title: "自"
+    maps_to:
+      - "zh.canon.gf.hsk4.A_4_1_5_1.p1"
+  - source_id: "gf0025.hsk4.014"
+    official_band: "HSK4"
+    title: "对于"
+    maps_to:
+      - "candidate.zh.hsk4_13_topic"
+  - source_id: "gf0025.hsk4.015"
+    official_band: "HSK4"
+    title: "关于"
+    maps_to:
+      - "candidate.zh.hsk4_13_topic"
+  - source_id: "gf0025.hsk4.016"
+    official_band: "HSK4"
+    title: "替"
+    maps_to:
+      - "zh.canon.gf.hsk4.A_4_1_5_2.p1"
+  - source_id: "gf0025.hsk4.017"
+    official_band: "HSK4"
+    title: "根据"
+    maps_to:
+      - "candidate.zh.hsk4_12_topic"
+  - source_id: "gf0025.hsk4.018"
+    official_band: "HSK4"
+    title: "作为"
+    maps_to:
+      - "zh.canon.gf.hsk4.A_4_1_5_3.p1"
+  - source_id: "gf0025.hsk4.019"
+    official_band: "HSK4"
+    title: "连接词或词组：并、以及"
+    maps_to:
+      - "zh.canon.gf.hsk4.A_4_1_6.p1"
+  - source_id: "gf0025.hsk4.020"
+    official_band: "HSK4"
+    title: "连接分句或句子：此外、而、而是、既然、可见、甚至、假如、总之"
+    maps_to:
+      - "candidate.zh.hsk4_5_topic"
+  - source_id: "gf0025.hsk4.021"
+    official_band: "HSK4"
+    title: "其他助词：似的"
+    maps_to:
+      - "zh.canon.gf.hsk4.A_4_1_7.p1"
+  - source_id: "gf0025.hsk4.022"
+    official_band: "HSK4"
+    title: "啊"
+    maps_to:
+      - "zh.canon.gf.hsk4.A_4_1_8.p1"
+  - source_id: "gf0025.hsk4.023"
+    official_band: "HSK4"
+    title: "大A大B"
+    maps_to:
+      - "zh.canon.gf.hsk4.A_4_2_1_1.p1"
+  - source_id: "gf0025.hsk4.024"
+    official_band: "HSK4"
+    title: "一A一B"
+    maps_to:
+      - "zh.canon.gf.hsk4.A_4_2_1_1.p1"
+  - source_id: "gf0025.hsk4.025"
+    official_band: "HSK4"
+    title: "看来"
+    maps_to:
+      - "zh.canon.gf.hsk4.A_4_2_1_2.p1"
+  - source_id: "gf0025.hsk4.026"
+    official_band: "HSK4"
+    title: "来得及/来不及"
+    maps_to:
+      - "candidate.zh.hsk4_12_topic_115"
+  - source_id: "gf0025.hsk4.027"
+    official_band: "HSK4"
+    title: "说不定"
+    maps_to:
+      - "zh.canon.gf.hsk4.A_4_2_1_2.p1"
+  - source_id: "gf0025.hsk4.028"
+    official_band: "HSK4"
+    title: "一般来说"
+    maps_to:
+      - "zh.canon.gf.hsk4.A_4_2_1_2.p1"
+  - source_id: "gf0025.hsk4.029"
+    official_band: "HSK4"
+    title: "一+量词+比+一+量词"
+    maps_to:
+      - "zh.measure_words.basic"
+  - source_id: "gf0025.hsk4.030"
+    official_band: "HSK4"
+    title: "（自）⋯⋯以来"
+    maps_to:
+      - "candidate.zh.hsk3_8_topic"
+  - source_id: "gf0025.hsk4.031"
+    official_band: "HSK4"
+    title: "由⋯⋯组成"
+    maps_to:
+      - "candidate.zh.hsk4_14_topic"
+  - source_id: "gf0025.hsk4.032"
+    official_band: "HSK4"
+    title: "在⋯⋯方面"
+    maps_to:
+      - "zh.canon.gf.hsk4.A_4_2_1_2.p1"
+  - source_id: "gf0025.hsk4.033"
+    official_band: "HSK4"
+    title: "在⋯⋯上/下/中"
+    maps_to:
+      - "zh.canon.gf.hsk4.A_4_2_1_2.p2"
+  - source_id: "gf0025.hsk4.034"
+    official_band: "HSK4"
+    title: "主谓短语作主语"
+    maps_to:
+      - "zh.canon.gf.hsk4.A_4_4_1.p1"
+  - source_id: "gf0025.hsk4.035"
+    official_band: "HSK4"
+    title: "受事主语"
+    maps_to:
+      - "zh.canon.gf.hsk4.A_4_4_1.p1"
+  - source_id: "gf0025.hsk4.036"
+    official_band: "HSK4"
+    title: "多项定语"
+    maps_to:
+      - "zh.canon.gf.hsk4.A_4_4_2.p1"
+  - source_id: "gf0025.hsk4.037"
+    official_band: "HSK4"
+    title: "趋向补语3"
+    maps_to:
+      - "candidate.zh.hsk3_10_ngh_a_m_r_ng"
+  - source_id: "gf0025.hsk4.038"
+    official_band: "HSK4"
+    title: "“把”字句2：表处置"
+    maps_to:
+      - "zh.canon.gf.hsk4.A_4_5_1.p1"
+  - source_id: "gf0025.hsk4.039"
+    official_band: "HSK4"
+    title: "被动句2：主语+被+动词+其他成分"
+    maps_to:
+      - "zh.canon.gf.hsk4.A_4_5_1.p1"
+  - source_id: "gf0025.hsk4.040"
+    official_band: "HSK4"
+    title: "存现句2"
+    maps_to:
+      - "zh.canon.gf.hsk4.A_4_5_1.p1"
+  - source_id: "gf0025.hsk4.041"
+    official_band: "HSK4"
+    title: "兼语句2"
+    maps_to:
+      - "zh.canon.gf.hsk4.A_4_5_1.p1"
+  - source_id: "gf0025.hsk4.042"
+    official_band: "HSK4"
+    title: "“是⋯⋯的”句2：强调说话人的看法或态度"
+    maps_to:
+      - "zh.canon.gf.hsk4.A_4_5_1.p2"
+  - source_id: "gf0025.hsk4.043"
+    official_band: "HSK4"
+    title: "不是⋯⋯，而是⋯⋯"
+    maps_to:
+      - "candidate.zh.hsk5_1_topic"
+  - source_id: "gf0025.hsk4.044"
+    official_band: "HSK4"
+    title: "既⋯⋯，又/也⋯⋯"
+    maps_to:
+      - "candidate.zh.hsk3_2_topic"
+  - source_id: "gf0025.hsk4.045"
+    official_band: "HSK4"
+    title: "首先⋯⋯，其次⋯⋯"
+    maps_to:
+      - "candidate.zh.hsk4_3_topic_104"
+  - source_id: "gf0025.hsk4.046"
+    official_band: "HSK4"
+    title: "⋯⋯，于是⋯⋯"
+    maps_to:
+      - "candidate.zh.hsk4_5_topic_106"
+  - source_id: "gf0025.hsk4.047"
+    official_band: "HSK4"
+    title: "⋯⋯，甚至⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk4.A_4_5_2_3.p1"
+  - source_id: "gf0025.hsk4.048"
+    official_band: "HSK4"
+    title: "或者⋯⋯，或者⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk4.A_4_5_2_4.p1"
+  - source_id: "gf0025.hsk4.049"
+    official_band: "HSK4"
+    title: "⋯⋯， 然而⋯⋯"
+    maps_to:
+      - "candidate.zh.hsk4_4_topic_105"
+  - source_id: "gf0025.hsk4.050"
+    official_band: "HSK4"
+    title: "⋯⋯，否则⋯⋯"
+    maps_to:
+      - "candidate.zh.hsk4_6_topic"
+  - source_id: "gf0025.hsk4.051"
+    official_band: "HSK4"
+    title: "假如⋯⋯，（就）⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk4.A_4_5_2_6.p1"
+  - source_id: "gf0025.hsk4.052"
+    official_band: "HSK4"
+    title: "万一⋯⋯，（就）⋯⋯"
+    maps_to:
+      - "zh.yi_jiu"
+  - source_id: "gf0025.hsk4.053"
+    official_band: "HSK4"
+    title: "不管⋯⋯，都/也⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk4.A_4_5_2_7.p1"
+  - source_id: "gf0025.hsk4.054"
+    official_band: "HSK4"
+    title: "无论⋯⋯，都/也⋯⋯"
+    maps_to:
+      - "candidate.zh.hsk3_4_topic"
+  - source_id: "gf0025.hsk4.055"
+    official_band: "HSK4"
+    title: "既然⋯⋯，就⋯⋯"
+    maps_to:
+      - "candidate.zh.hsk4_5_topic"
+  - source_id: "gf0025.hsk4.056"
+    official_band: "HSK4"
+    title: "⋯⋯ ，可见 ⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk4.A_4_5_2_8.p1"
+  - source_id: "gf0025.hsk4.057"
+    official_band: "HSK4"
+    title: "哪怕 ⋯⋯ ，也/还 ⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk4.A_4_5_2_9.p1"
+  - source_id: "gf0025.hsk4.058"
+    official_band: "HSK4"
+    title: "⋯⋯，好⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk4.A_4_5_2_10.p1"
+  - source_id: "gf0025.hsk4.059"
+    official_band: "HSK4"
+    title: "无标记"
+    maps_to:
+      - "zh.canon.gf.hsk4.A_4_5_2_11.p1"
+  - source_id: "gf0025.hsk4.060"
+    official_band: "HSK4"
+    title: "不⋯⋯也⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk4.A_4_5_2_11.p1"
+  - source_id: "gf0025.hsk4.061"
+    official_band: "HSK4"
+    title: "概数表示法3：数词+来+量词"
+    maps_to:
+      - "zh.measure_words.basic"
+  - source_id: "gf0025.hsk4.062"
+    official_band: "HSK4"
+    title: "小数、分数、百分数、倍数的表示法"
+    maps_to:
+      - "zh.canon.gf.hsk4.A_4_6_1.p1"
+  - source_id: "gf0025.hsk4.063"
+    official_band: "HSK4"
+    title: "用反问句表示强调"
+    maps_to:
+      - "zh.canon.gf.hsk4.A_4_7.p1"
+  - source_id: "gf0025.hsk4.064"
+    official_band: "HSK4"
+    title: "用双重否定表示强调"
+    maps_to:
+      - "zh.canon.gf.hsk4.A_4_7.p1"
+  - source_id: "gf0025.hsk4.065"
+    official_band: "HSK4"
+    title: "用“一+量词（+名词）+也（都）/也没（不）⋯⋯”表示强调"
+    maps_to:
+      - "zh.measure_words.basic"
+  - source_id: "gf0025.hsk4.066"
+    official_band: "HSK4"
+    title: "用 \\\"连⋯⋯也/都⋯⋯”表示强调"
+    maps_to:
+      - "candidate.zh.hsk4_3_topic"
+  - source_id: "gf0025.hsk4.067"
+    official_band: "HSK4"
+    title: "不X白不X"
+    maps_to:
+      - "zh.canon.gf.hsk4.A_4_7.p1"
+  - source_id: "gf0025.hsk4.068"
+    official_band: "HSK4"
+    title: "动词+一X是一X"
+    maps_to:
+      - "zh.canon.gf.hsk4.A_4_7.p1"
+  - source_id: "gf0025.hsk4.069"
+    official_band: "HSK4"
+    title: "（没）有什么（好）X的"
+    maps_to:
+      - "zh.canon.gf.hsk4.A_4_7.p2"
+  - source_id: "gf0025.hsk4.070"
+    official_band: "HSK4"
+    title: "X是X，Y是Y"
+    maps_to:
+      - "zh.canon.gf.hsk4.A_4_7.p2"
+  - source_id: "gf0025.hsk4.071"
+    official_band: "HSK4"
+    title: "X也得X，不X也得X"
+    maps_to:
+      - "zh.canon.gf.hsk4.A_4_7.p2"
+  - source_id: "gf0025.hsk4.072"
+    official_band: "HSK4"
+    title: "X就是了"
+    maps_to:
+      - "zh.canon.gf.hsk4.A_4_7.p2"
+  - source_id: "gf0025.hsk4.073"
+    official_band: "HSK4"
+    title: "还X呢"
+    maps_to:
+      - "zh.canon.gf.hsk4.A_4_7.p3"
+  - source_id: "gf0025.hsk4.074"
+    official_band: "HSK4"
+    title: "你X你的吧"
+    maps_to:
+      - "zh.canon.gf.hsk4.A_4_7.p3"
+  - source_id: "gf0025.hsk4.075"
+    official_band: "HSK4"
+    title: "让/叫你X你就X"
+    maps_to:
+      - "zh.canon.gf.hsk4.A_4_7.p3"
+  - source_id: "gf0025.hsk4.076"
+    official_band: "HSK4"
+    title: "说什么/怎么（着）也得X"
+    maps_to:
+      - "zh.canon.gf.hsk4.A_4_7.p3"
+  - source_id: "gf0025.hsk5.001"
+    official_band: "HSK5"
+    title: "指示代词：彼此、如此"
+    maps_to:
+      - "zh.canon.gf.hsk5.A_5_1_1.p1"
+  - source_id: "gf0025.hsk5.002"
+    official_band: "HSK5"
+    title: "名重词：册、朵、幅、届、颗、匹、扇"
+    maps_to:
+      - "zh.canon.gf.hsk5.A_5_1_2.p1"
+  - source_id: "gf0025.hsk5.003"
+    official_band: "HSK5"
+    title: "程度副词：过于、可、稍、稍微、尤其"
+    maps_to:
+      - "zh.canon.gf.hsk5.A_5_1_3.p1"
+  - source_id: "gf0025.hsk5.004"
+    official_band: "HSK5"
+    title: "范围副词：大都"
+    maps_to:
+      - "zh.canon.gf.hsk5.A_5_1_3.p1"
+  - source_id: "gf0025.hsk5.005"
+    official_band: "HSK5"
+    title: "时间副词：不时、将、将要、仍旧、时常、时刻、依旧、一向"
+    maps_to:
+      - "zh.canon.gf.hsk5.A_5_1_3.p1"
+  - source_id: "gf0025.hsk5.006"
+    official_band: "HSK5"
+    title: "频率、重复副词：偶尔、再次"
+    maps_to:
+      - "zh.canon.gf.hsk5.A_5_1_3.p1"
+  - source_id: "gf0025.hsk5.007"
+    official_band: "HSK5"
+    title: "方式副词：偷偷"
+    maps_to:
+      - "zh.canon.gf.hsk5.A_5_1_3.p2"
+  - source_id: "gf0025.hsk5.008"
+    official_band: "HSK5"
+    title: "语气副词：毕竟、不免、差（一）点儿、倒是、干脆、就、居然、可、明明、总算"
+    maps_to:
+      - "zh.canon.gf.hsk5.A_5_1_3.p2"
+  - source_id: "gf0025.hsk5.009"
+    official_band: "HSK5"
+    title: "随着"
+    maps_to:
+      - "candidate.zh.hsk4_10_topic"
+  - source_id: "gf0025.hsk5.010"
+    official_band: "HSK5"
+    title: "将"
+    maps_to:
+      - "zh.canon.gf.hsk5.A_5_1_4_2.p1"
+  - source_id: "gf0025.hsk5.011"
+    official_band: "HSK5"
+    title: "由"
+    maps_to:
+      - "zh.canon.gf.hsk5.A_5_1_4_2.p1"
+  - source_id: "gf0025.hsk5.012"
+    official_band: "HSK5"
+    title: "凭"
+    maps_to:
+      - "zh.canon.gf.hsk5.A_5_1_4_3.p1"
+  - source_id: "gf0025.hsk5.013"
+    official_band: "HSK5"
+    title: "依据"
+    maps_to:
+      - "zh.canon.gf.hsk5.A_5_1_4_3.p1"
+  - source_id: "gf0025.hsk5.014"
+    official_band: "HSK5"
+    title: "依照"
+    maps_to:
+      - "zh.canon.gf.hsk5.A_5_1_4_3.p1"
+  - source_id: "gf0025.hsk5.015"
+    official_band: "HSK5"
+    title: "连接分句或句子：从而、加上、完了、一旦"
+    maps_to:
+      - "candidate.zh.hsk5_8_topic"
+  - source_id: "gf0025.hsk5.016"
+    official_band: "HSK5"
+    title: "其他助词：也好"
+    maps_to:
+      - "zh.canon.gf.hsk5.A_5_1_6.p1"
+  - source_id: "gf0025.hsk5.017"
+    official_band: "HSK5"
+    title: "A来A去"
+    maps_to:
+      - "zh.canon.gf.hsk5.A_5_2_1_1.p1"
+  - source_id: "gf0025.hsk5.018"
+    official_band: "HSK5"
+    title: "A着A着"
+    maps_to:
+      - "zh.canon.gf.hsk5.A_5_2_1_1.p1"
+  - source_id: "gf0025.hsk5.019"
+    official_band: "HSK5"
+    title: "没A没B"
+    maps_to:
+      - "zh.canon.gf.hsk5.A_5_2_1_1.p1"
+  - source_id: "gf0025.hsk5.020"
+    official_band: "HSK5"
+    title: "说A就A"
+    maps_to:
+      - "zh.canon.gf.hsk5.A_5_2_1_1.p1"
+  - source_id: "gf0025.hsk5.021"
+    official_band: "HSK5"
+    title: "有A有B"
+    maps_to:
+      - "zh.canon.gf.hsk5.A_5_2_1_1.p2"
+  - source_id: "gf0025.hsk5.022"
+    official_band: "HSK5"
+    title: "不得了"
+    maps_to:
+      - "candidate.zh.hsk5_6_topic"
+  - source_id: "gf0025.hsk5.023"
+    official_band: "HSK5"
+    title: "不敢当"
+    maps_to:
+      - "zh.canon.gf.hsk5.A_5_2_1_2.p1"
+  - source_id: "gf0025.hsk5.024"
+    official_band: "HSK5"
+    title: "得了"
+    maps_to:
+      - "zh.canon.gf.hsk5.A_5_2_1_2.p1"
+  - source_id: "gf0025.hsk5.025"
+    official_band: "HSK5"
+    title: "用不着"
+    maps_to:
+      - "zh.canon.gf.hsk5.A_5_2_1_2.p1"
+  - source_id: "gf0025.hsk5.026"
+    official_band: "HSK5"
+    title: "从⋯⋯来看"
+    maps_to:
+      - "candidate.zh.hsk6_7_topic_181"
+  - source_id: "gf0025.hsk5.027"
+    official_band: "HSK5"
+    title: "到⋯⋯为止"
+    maps_to:
+      - "zh.canon.gf.hsk5.A_5_3.p1"
+  - source_id: "gf0025.hsk5.028"
+    official_band: "HSK5"
+    title: "够⋯⋯的"
+    maps_to:
+      - "zh.canon.gf.hsk5.A_5_3.p1"
+  - source_id: "gf0025.hsk5.029"
+    official_band: "HSK5"
+    title: "拿⋯⋯来说"
+    maps_to:
+      - "zh.canon.gf.hsk5.A_5_3.p1"
+  - source_id: "gf0025.hsk5.030"
+    official_band: "HSK5"
+    title: "A的A，B的B"
+    maps_to:
+      - "zh.canon.gf.hsk5.A_5_3.p1"
+  - source_id: "gf0025.hsk5.031"
+    official_band: "HSK5"
+    title: "在 …… 看来"
+    maps_to:
+      - "zh.canon.gf.hsk5.A_5_3.p2"
+  - source_id: "gf0025.hsk5.032"
+    official_band: "HSK5"
+    title: "宾语的语义类型1"
+    maps_to:
+      - "zh.canon.gf.hsk5.A_5_4_1.p1"
+  - source_id: "gf0025.hsk5.033"
+    official_band: "HSK5"
+    title: "多项状语"
+    maps_to:
+      - "zh.canon.gf.hsk5.A_5_4_2.p1"
+  - source_id: "gf0025.hsk5.034"
+    official_band: "HSK5"
+    title: "趋向补语 4：表示时间意义（引申用法）"
+    maps_to:
+      - "zh.canon.gf.hsk5.A_5_4_3.p1"
+  - source_id: "gf0025.hsk5.035"
+    official_band: "HSK5"
+    title: "可能补语2：动词+得/不得"
+    maps_to:
+      - "candidate.zh.hsk5_6_topic"
+  - source_id: "gf0025.hsk5.036"
+    official_band: "HSK5"
+    title: "程度补语2"
+    maps_to:
+      - "candidate.zh.hsk4_10_n_ng_cao"
+  - source_id: "gf0025.hsk5.037"
+    official_band: "HSK5"
+    title: "状态补语2：动词/形容词+得+短语"
+    maps_to:
+      - "zh.canon.gf.hsk5.A_5_4_3.p1"
+  - source_id: "gf0025.hsk5.038"
+    official_band: "HSK5"
+    title: "“有”字句3"
+    maps_to:
+      - "zh.you_sentence"
+  - source_id: "gf0025.hsk5.039"
+    official_band: "HSK5"
+    title: "“把”字句3：表处置"
+    maps_to:
+      - "zh.canon.gf.hsk5.A_5_5_1.p1"
+  - source_id: "gf0025.hsk5.040"
+    official_band: "HSK5"
+    title: "被动句3：意念被动句"
+    maps_to:
+      - "zh.canon.gf.hsk5.A_5_5_1.p1"
+  - source_id: "gf0025.hsk5.041"
+    official_band: "HSK5"
+    title: "连动句3：前后两个动词性词语具有因果、转折、条件关系"
+    maps_to:
+      - "zh.canon.gf.hsk5.A_5_5_1.p1"
+  - source_id: "gf0025.hsk5.042"
+    official_band: "HSK5"
+    title: "兼语句3"
+    maps_to:
+      - "zh.canon.gf.hsk5.A_5_5_1.p1"
+  - source_id: "gf0025.hsk5.043"
+    official_band: "HSK5"
+    title: "比较句5"
+    maps_to:
+      - "zh.canon.gf.hsk5.A_5_5_1.p2"
+  - source_id: "gf0025.hsk5.044"
+    official_band: "HSK5"
+    title: "或是⋯⋯，或是⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk5.A_5_5_2_1.p1"
+  - source_id: "gf0025.hsk5.045"
+    official_band: "HSK5"
+    title: "尽管⋯⋯，名声/可是⋯⋯"
+    maps_to:
+      - "candidate.zh.hsk5_9_topic"
+  - source_id: "gf0025.hsk5.046"
+    official_band: "HSK5"
+    title: "一旦⋯⋯，就⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk5.A_5_5_2_3.p1"
+  - source_id: "gf0025.hsk5.047"
+    official_band: "HSK5"
+    title: "要是⋯⋯，（就）⋯⋯，否则⋯⋯"
+    maps_to:
+      - "candidate.zh.hsk4_6_topic"
+  - source_id: "gf0025.hsk5.048"
+    official_band: "HSK5"
+    title: "除非⋯⋯，才⋯⋯"
+    maps_to:
+      - "candidate.zh.hsk4_6_topic"
+  - source_id: "gf0025.hsk5.049"
+    official_band: "HSK5"
+    title: "除非⋯⋯，否则/不然⋯⋯"
+    maps_to:
+      - "candidate.zh.hsk4_6_topic"
+  - source_id: "gf0025.hsk5.050"
+    official_band: "HSK5"
+    title: "⋯⋯，因而⋯⋯"
+    maps_to:
+      - "candidate.zh.hsk4_5_topic_106"
+  - source_id: "gf0025.hsk5.051"
+    official_band: "HSK5"
+    title: "即使⋯⋯，也⋯⋯"
+    maps_to:
+      - "candidate.zh.hsk3_3_topic_69"
+  - source_id: "gf0025.hsk5.052"
+    official_band: "HSK5"
+    title: "⋯⋯，为的是⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk5.A_5_5_2_7.p1"
+  - source_id: "gf0025.hsk5.053"
+    official_band: "HSK5"
+    title: "⋯⋯，以便⋯⋯"
+    maps_to:
+      - "candidate.zh.hsk5_7_topic"
+  - source_id: "gf0025.hsk5.054"
+    official_band: "HSK5"
+    title: "没有⋯⋯就没有⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk5.A_5_5_2_8.p1"
+  - source_id: "gf0025.hsk5.055"
+    official_band: "HSK5"
+    title: "再⋯⋯也⋯⋯"
+    maps_to:
+      - "candidate.zh.hsk4_8_topic_110"
+  - source_id: "gf0025.hsk5.056"
+    official_band: "HSK5"
+    title: "二重复句1：单句+复句；复句+单句"
+    maps_to:
+      - "zh.canon.gf.hsk5.A_5_5_2_9.p1"
+  - source_id: "gf0025.hsk5.057"
+    official_band: "HSK5"
+    title: "用“再也不/没”表示强调"
+    maps_to:
+      - "candidate.zh.hsk4_8_topic_110"
+  - source_id: "gf0025.hsk5.058"
+    official_band: "HSK5"
+    title: "用副词“可”表示强调"
+    maps_to:
+      - "zh.canon.gf.hsk5.A_5_6.p1"
+  - source_id: "gf0025.hsk5.059"
+    official_band: "HSK5"
+    title: "用“怎么都/也+不/没”表示强调"
+    maps_to:
+      - "zh.canon.gf.hsk5.A_5_6.p1"
+  - source_id: "gf0025.hsk5.060"
+    official_band: "HSK5"
+    title: "X也不是，Y也不是"
+    maps_to:
+      - "candidate.zh.hsk5_1_topic"
+  - source_id: "gf0025.hsk5.061"
+    official_band: "HSK5"
+    title: "X也X不得，Y也Y不得"
+    maps_to:
+      - "candidate.zh.hsk5_6_topic"
+  - source_id: "gf0025.hsk5.062"
+    official_band: "HSK5"
+    title: "X是它，Y也是它"
+    maps_to:
+      - "zh.canon.gf.hsk5.A_5_6.p1"
+  - source_id: "gf0025.hsk5.063"
+    official_band: "HSK5"
+    title: "X着也是X着"
+    maps_to:
+      - "zh.canon.gf.hsk5.A_5_6.p1"
+  - source_id: "gf0025.hsk5.064"
+    official_band: "HSK5"
+    title: "X归X，Y归Y"
+    maps_to:
+      - "zh.canon.gf.hsk5.A_5_6.p2"
+  - source_id: "gf0025.hsk5.065"
+    official_band: "HSK5"
+    title: "不管怎样说"
+    maps_to:
+      - "zh.canon.gf.hsk5.A_5_6.p2"
+  - source_id: "gf0025.hsk5.066"
+    official_band: "HSK5"
+    title: "看你X的/瞧他X的"
+    maps_to:
+      - "zh.canon.gf.hsk5.A_5_6.p2"
+  - source_id: "gf0025.hsk5.067"
+    official_band: "HSK5"
+    title: "真有你/他/她的"
+    maps_to:
+      - "zh.canon.gf.hsk5.A_5_6.p2"
+  - source_id: "gf0025.hsk5.068"
+    official_band: "HSK5"
+    title: "X什么X"
+    maps_to:
+      - "zh.canon.gf.hsk5.A_5_6.p3"
+  - source_id: "gf0025.hsk5.069"
+    official_band: "HSK5"
+    title: "什么X不X（的）"
+    maps_to:
+      - "zh.canon.gf.hsk5.A_5_6.p3"
+  - source_id: "gf0025.hsk5.070"
+    official_band: "HSK5"
+    title: "用代词复指"
+    maps_to:
+      - "zh.canon.gf.hsk5.A_5_8.p1"
+  - source_id: "gf0025.hsk5.071"
+    official_band: "HSK5"
+    title: "带省略成分"
+    maps_to:
+      - "zh.canon.gf.hsk5.A_5_8.p1"
+  - source_id: "gf0025.hsk6.001"
+    official_band: "HSK6"
+    title: "超-、多-、反-、无-、亚-、准"
+    maps_to:
+      - "zh.canon.gf.hsk6.A_6_1_1.p1"
+  - source_id: "gf0025.hsk6.002"
+    official_band: "HSK6"
+    title: "-化、-式、-型、-性"
+    maps_to:
+      - "zh.canon.gf.hsk6.A_6_1_2.p1"
+  - source_id: "gf0025.hsk6.003"
+    official_band: "HSK6"
+    title: "指示代词：本、此"
+    maps_to:
+      - "zh.canon.gf.hsk6.A_6_2_1.p1"
+  - source_id: "gf0025.hsk6.004"
+    official_band: "HSK6"
+    title: "名量词：餐、串、滴、副、股、集、枝"
+    maps_to:
+      - "zh.measure_words.basic"
+  - source_id: "gf0025.hsk6.005"
+    official_band: "HSK6"
+    title: "动量词：番、声、趟"
+    maps_to:
+      - "zh.measure_words.basic"
+  - source_id: "gf0025.hsk6.006"
+    official_band: "HSK6"
+    title: "程度副词：特、异常"
+    maps_to:
+      - "zh.canon.gf.hsk6.A_6_2_3.p1"
+  - source_id: "gf0025.hsk6.007"
+    official_band: "HSK6"
+    title: "范围、协同副词：尽、净、一齐、一同"
+    maps_to:
+      - "zh.canon.gf.hsk6.A_6_2_3.p1"
+  - source_id: "gf0025.hsk6.008"
+    official_band: "HSK6"
+    title: "时间副词：时时、一时、早晚"
+    maps_to:
+      - "zh.canon.gf.hsk6.A_6_2_3.p1"
+  - source_id: "gf0025.hsk6.009"
+    official_band: "HSK6"
+    title: "关联副词：便"
+    maps_to:
+      - "zh.canon.gf.hsk6.A_6_2_3.p1"
+  - source_id: "gf0025.hsk6.010"
+    official_band: "HSK6"
+    title: "方式副词：不禁、赶忙、亲眼、特地、特意"
+    maps_to:
+      - "zh.canon.gf.hsk6.A_6_2_3.p2"
+  - source_id: "gf0025.hsk6.011"
+    official_band: "HSK6"
+    title: "情态副词：仿佛"
+    maps_to:
+      - "zh.canon.gf.hsk6.A_6_2_3.p2"
+  - source_id: "gf0025.hsk6.012"
+    official_band: "HSK6"
+    title: "语气副词：才、刚好、偏、恰好"
+    maps_to:
+      - "zh.canon.gf.hsk6.A_6_2_3.p2"
+  - source_id: "gf0025.hsk6.013"
+    official_band: "HSK6"
+    title: "于"
+    maps_to:
+      - "zh.canon.gf.hsk6.A_6_2_4_1.p1"
+  - source_id: "gf0025.hsk6.014"
+    official_band: "HSK6"
+    title: "沿（着）"
+    maps_to:
+      - "zh.canon.gf.hsk6.A_6_2_4_2.p1"
+  - source_id: "gf0025.hsk6.015"
+    official_band: "HSK6"
+    title: "同、与"
+    maps_to:
+      - "zh.canon.gf.hsk6.A_6_2_4_3.p1"
+  - source_id: "gf0025.hsk6.016"
+    official_band: "HSK6"
+    title: "至于"
+    maps_to:
+      - "candidate.zh.hsk6_7_topic_172"
+  - source_id: "gf0025.hsk6.017"
+    official_band: "HSK6"
+    title: "因"
+    maps_to:
+      - "zh.canon.gf.hsk6.A_6_2_4_4.p1"
+  - source_id: "gf0025.hsk6.018"
+    official_band: "HSK6"
+    title: "除"
+    maps_to:
+      - "zh.canon.gf.hsk6.A_6_2_4_5.p1"
+  - source_id: "gf0025.hsk6.019"
+    official_band: "HSK6"
+    title: "据"
+    maps_to:
+      - "zh.canon.gf.hsk6.A_6_2_4_6.p1"
+  - source_id: "gf0025.hsk6.020"
+    official_band: "HSK6"
+    title: "连接词或词组：而、同、与"
+    maps_to:
+      - "zh.canon.gf.hsk6.A_6_2_5.p1"
+  - source_id: "gf0025.hsk6.021"
+    official_band: "HSK6"
+    title: "连接分句或句子：不料、可、若"
+    maps_to:
+      - "zh.canon.gf.hsk6.A_6_2_5.p1"
+  - source_id: "gf0025.hsk6.022"
+    official_band: "HSK6"
+    title: "结构助词：所"
+    maps_to:
+      - "zh.canon.gf.hsk6.A_6_2_6.p1"
+  - source_id: "gf0025.hsk6.023"
+    official_band: "HSK6"
+    title: "语气助词：罢了、啦、嘛"
+    maps_to:
+      - "zh.canon.gf.hsk6.A_6_2_6.p1"
+  - source_id: "gf0025.hsk6.024"
+    official_band: "HSK6"
+    title: "数词+形容词+量词"
+    maps_to:
+      - "zh.measure_words.basic"
+  - source_id: "gf0025.hsk6.025"
+    official_band: "HSK6"
+    title: "或A或B"
+    maps_to:
+      - "zh.canon.gf.hsk6.A_6_3_2_1.p1"
+  - source_id: "gf0025.hsk6.026"
+    official_band: "HSK6"
+    title: "无A无B"
+    maps_to:
+      - "zh.canon.gf.hsk6.A_6_3_2_1.p1"
+  - source_id: "gf0025.hsk6.027"
+    official_band: "HSK6"
+    title: "A这A那"
+    maps_to:
+      - "zh.canon.gf.hsk6.A_6_3_2_1.p1"
+  - source_id: "gf0025.hsk6.028"
+    official_band: "HSK6"
+    title: "左A右B"
+    maps_to:
+      - "zh.canon.gf.hsk6.A_6_3_2_1.p1"
+  - source_id: "gf0025.hsk6.029"
+    official_band: "HSK6"
+    title: "不怎么"
+    maps_to:
+      - "zh.canon.gf.hsk6.A_6_3_2_2.p1"
+  - source_id: "gf0025.hsk6.030"
+    official_band: "HSK6"
+    title: "不怎么样"
+    maps_to:
+      - "zh.canon.gf.hsk6.A_6_3_2_2.p1"
+  - source_id: "gf0025.hsk6.031"
+    official_band: "HSK6"
+    title: "好（不）容易"
+    maps_to:
+      - "zh.canon.gf.hsk6.A_6_3_2_2.p1"
+  - source_id: "gf0025.hsk6.032"
+    official_band: "HSK6"
+    title: "那倒（也）是"
+    maps_to:
+      - "zh.canon.gf.hsk6.A_6_3_2_2.p1"
+  - source_id: "gf0025.hsk6.033"
+    official_band: "HSK6"
+    title: "就是说/这就是说"
+    maps_to:
+      - "zh.canon.gf.hsk6.A_6_3_2_2.p2"
+  - source_id: "gf0025.hsk6.034"
+    official_band: "HSK6"
+    title: "算了"
+    maps_to:
+      - "zh.canon.gf.hsk6.A_6_3_2_2.p2"
+  - source_id: "gf0025.hsk6.035"
+    official_band: "HSK6"
+    title: "A—+量词，B—+量词"
+    maps_to:
+      - "zh.measure_words.basic"
+  - source_id: "gf0025.hsk6.036"
+    official_band: "HSK6"
+    title: "东一A，西一A"
+    maps_to:
+      - "zh.canon.gf.hsk6.A_6_4.p1"
+  - source_id: "gf0025.hsk6.037"
+    official_band: "HSK6"
+    title: "为了⋯⋯而⋯⋯"
+    maps_to:
+      - "candidate.zh.hsk3_5_topic"
+  - source_id: "gf0025.hsk6.038"
+    official_band: "HSK6"
+    title: "宾语的语义类型2"
+    maps_to:
+      - "zh.canon.gf.hsk6.A_6_5_1.p1"
+  - source_id: "gf0025.hsk6.039"
+    official_band: "HSK6"
+    title: "趋向补语5"
+    maps_to:
+      - "zh.canon.gf.hsk6.A_6_5_2.p1"
+  - source_id: "gf0025.hsk6.040"
+    official_band: "HSK6"
+    title: "“把”字句4：表致使"
+    maps_to:
+      - "candidate.zh.hsk6_6_topic"
+  - source_id: "gf0025.hsk6.041"
+    official_band: "HSK6"
+    title: "被动句4：主语+被/叫/让+宾语+给+动词+其他成分"
+    maps_to:
+      - "zh.canon.gf.hsk6.A_6_6_1.p1"
+  - source_id: "gf0025.hsk6.042"
+    official_band: "HSK6"
+    title: "时而⋯⋯，时而⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk6.A_6_6_2_1.p1"
+  - source_id: "gf0025.hsk6.043"
+    official_band: "HSK6"
+    title: "一时⋯⋯一时⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk6.A_6_6_2_1.p1"
+  - source_id: "gf0025.hsk6.044"
+    official_band: "HSK6"
+    title: "⋯⋯便⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk6.A_6_6_2_2.p1"
+  - source_id: "gf0025.hsk6.045"
+    official_band: "HSK6"
+    title: "不但不/不但没有⋯⋯，反而⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk6.A_6_6_2_3.p1"
+  - source_id: "gf0025.hsk6.046"
+    official_band: "HSK6"
+    title: "不是⋯⋯，还/还是⋯⋯"
+    maps_to:
+      - "candidate.zh.hsk5_1_topic"
+  - source_id: "gf0025.hsk6.047"
+    official_band: "HSK6"
+    title: "连⋯⋯也/都⋯⋯，⋯⋯更⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk6.A_6_6_2_3.p1"
+  - source_id: "gf0025.hsk6.048"
+    official_band: "HSK6"
+    title: "要么⋯⋯，要么⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk6.A_6_6_2_4.p1"
+  - source_id: "gf0025.hsk6.049"
+    official_band: "HSK6"
+    title: "虽⋯⋯，但/可/却/也⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk6.A_6_6_2_5.p1"
+  - source_id: "gf0025.hsk6.050"
+    official_band: "HSK6"
+    title: "⋯⋯，要不然/不然⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk6.A_6_6_2_6.p1"
+  - source_id: "gf0025.hsk6.051"
+    official_band: "HSK6"
+    title: "凡是⋯⋯，都⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk6.A_6_6_2_7.p1"
+  - source_id: "gf0025.hsk6.052"
+    official_band: "HSK6"
+    title: "就算/就是⋯⋯也⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk6.A_6_6_2_8.p1"
+  - source_id: "gf0025.hsk6.053"
+    official_band: "HSK6"
+    title: "不⋯⋯不⋯⋯"
+    maps_to:
+      - "candidate.zh.hsk6_7_topic"
+  - source_id: "gf0025.hsk6.054"
+    official_band: "HSK6"
+    title: "二重复句2：复句+复句"
+    maps_to:
+      - "zh.canon.gf.hsk6.A_6_6_2_10.p1"
+  - source_id: "gf0025.hsk6.055"
+    official_band: "HSK6"
+    title: "用“非⋯⋯不可”表示强调"
+    maps_to:
+      - "zh.canon.gf.hsk6.A_6_7.p1"
+  - source_id: "gf0025.hsk6.056"
+    official_band: "HSK6"
+    title: "X到Y头上来了"
+    maps_to:
+      - "zh.canon.gf.hsk6.A_6_8.p1"
+  - source_id: "gf0025.hsk6.057"
+    official_band: "HSK6"
+    title: "X就X吧"
+    maps_to:
+      - "zh.canon.gf.hsk6.A_6_8.p1"
+  - source_id: "gf0025.hsk6.058"
+    official_band: "HSK6"
+    title: "X是X"
+    maps_to:
+      - "zh.canon.gf.hsk6.A_6_8.p1"
+  - source_id: "gf0025.hsk6.059"
+    official_band: "HSK6"
+    title: "不X不⋯⋯，一X⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk6.A_6_8.p1"
+  - source_id: "gf0025.hsk6.060"
+    official_band: "HSK6"
+    title: "好你个X"
+    maps_to:
+      - "zh.canon.gf.hsk6.A_6_8.p2"
+  - source_id: "gf0025.hsk6.061"
+    official_band: "HSK6"
+    title: "动词+什么（就）是什么"
+    maps_to:
+      - "zh.canon.gf.hsk6.A_6_8.p2"
+  - source_id: "gf0025.hsk6.062"
+    official_band: "HSK6"
+    title: "早（也）不X，晚（也）不X"
+    maps_to:
+      - "zh.canon.gf.hsk6.A_6_8.p2"
+  - source_id: "gf0025.hsk6.063"
+    official_band: "HSK6"
+    title: "看/瞧把+宾语（施事）+X得"
+    maps_to:
+      - "zh.canon.gf.hsk6.A_6_8.p2"
+  - source_id: "gf0025.hsk6.064"
+    official_band: "HSK6"
+    title: "放着X不Y"
+    maps_to:
+      - "zh.canon.gf.hsk6.A_6_8.p3"
+  - source_id: "gf0025.hsk6.065"
+    official_band: "HSK6"
+    title: "X来X去，都是/就是⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk6.A_6_8.p3"
+  - source_id: "gf0025.hsk6.066"
+    official_band: "HSK6"
+    title: "X了就X了，（没）有⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk6.A_6_8.p3"
+  - source_id: "gf0025.hsk6.067"
+    official_band: "HSK6"
+    title: "这/那也不X，那/这也不Y"
+    maps_to:
+      - "zh.canon.gf.hsk6.A_6_8.p3"
+  - source_id: "gf0025.hsk7_9.001"
+    official_band: "HSK7-9"
+    title: "能愿动词：需"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_1_1.p1"
+  - source_id: "gf0025.hsk7_9.002"
+    official_band: "HSK7-9"
+    title: "疑问代词：何"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_1_2.p1"
+  - source_id: "gf0025.hsk7_9.003"
+    official_band: "HSK7-9"
+    title: "指示代词：该、另、兹"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_1_2.p1"
+  - source_id: "gf0025.hsk7_9.004"
+    official_band: "HSK7-9"
+    title: "名量词"
+    maps_to:
+      - "zh.measure_words.basic"
+  - source_id: "gf0025.hsk7_9.005"
+    official_band: "HSK7-9"
+    title: "极为"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_1_4_1.p1"
+  - source_id: "gf0025.hsk7_9.006"
+    official_band: "HSK7-9"
+    title: "尽"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_1_4_1.p1"
+  - source_id: "gf0025.hsk7_9.007"
+    official_band: "HSK7-9"
+    title: "蛮"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_1_4_1.p1"
+  - source_id: "gf0025.hsk7_9.008"
+    official_band: "HSK7-9"
+    title: "颇"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_1_4_1.p1"
+  - source_id: "gf0025.hsk7_9.009"
+    official_band: "HSK7-9"
+    title: "稍稍"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_1_4_1.p2"
+  - source_id: "gf0025.hsk7_9.010"
+    official_band: "HSK7-9"
+    title: "尤为"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_1_4_1.p2"
+  - source_id: "gf0025.hsk7_9.011"
+    official_band: "HSK7-9"
+    title: "越发"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_1_4_1.p2"
+  - source_id: "gf0025.hsk7_9.012"
+    official_band: "HSK7-9"
+    title: "凡"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_1_4_2.p1"
+  - source_id: "gf0025.hsk7_9.013"
+    official_band: "HSK7-9"
+    title: "皆"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_1_4_2.p1"
+  - source_id: "gf0025.hsk7_9.014"
+    official_band: "HSK7-9"
+    title: "统统"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_1_4_2.p1"
+  - source_id: "gf0025.hsk7_9.015"
+    official_band: "HSK7-9"
+    title: "唯独"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_1_4_2.p1"
+  - source_id: "gf0025.hsk7_9.016"
+    official_band: "HSK7-9"
+    title: "即"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_1_4_3.p1"
+  - source_id: "gf0025.hsk7_9.017"
+    official_band: "HSK7-9"
+    title: "历来"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_1_4_3.p1"
+  - source_id: "gf0025.hsk7_9.018"
+    official_band: "HSK7-9"
+    title: "尚"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_1_4_3.p1"
+  - source_id: "gf0025.hsk7_9.019"
+    official_band: "HSK7-9"
+    title: "向来"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_1_4_3.p1"
+  - source_id: "gf0025.hsk7_9.020"
+    official_band: "HSK7-9"
+    title: "频频"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_1_4_4.p1"
+  - source_id: "gf0025.hsk7_9.021"
+    official_band: "HSK7-9"
+    title: "再度"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_1_4_4.p1"
+  - source_id: "gf0025.hsk7_9.022"
+    official_band: "HSK7-9"
+    title: "亦"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_1_4_5.p1"
+  - source_id: "gf0025.hsk7_9.023"
+    official_band: "HSK7-9"
+    title: "未"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_1_4_6.p1"
+  - source_id: "gf0025.hsk7_9.024"
+    official_band: "HSK7-9"
+    title: "勿"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_1_4_6.p1"
+  - source_id: "gf0025.hsk7_9.025"
+    official_band: "HSK7-9"
+    title: "不由得"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_1_4_7.p1"
+  - source_id: "gf0025.hsk7_9.026"
+    official_band: "HSK7-9"
+    title: "顺便"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_1_4_7.p1"
+  - source_id: "gf0025.hsk7_9.027"
+    official_band: "HSK7-9"
+    title: "一连"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_1_4_7.p1"
+  - source_id: "gf0025.hsk7_9.028"
+    official_band: "HSK7-9"
+    title: "按说"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_1_4_8.p1"
+  - source_id: "gf0025.hsk7_9.029"
+    official_band: "HSK7-9"
+    title: "必定"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_1_4_9.p1"
+  - source_id: "gf0025.hsk7_9.030"
+    official_band: "HSK7-9"
+    title: "不妨"
+    maps_to:
+      - "candidate.zh.hsk5_5_topic"
+  - source_id: "gf0025.hsk7_9.031"
+    official_band: "HSK7-9"
+    title: "何必"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_1_4_9.p1"
+  - source_id: "gf0025.hsk7_9.032"
+    official_band: "HSK7-9"
+    title: "莫非"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_1_4_9.p1"
+  - source_id: "gf0025.hsk7_9.033"
+    official_band: "HSK7-9"
+    title: "白白"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_1_4_9.p1"
+  - source_id: "gf0025.hsk7_9.034"
+    official_band: "HSK7-9"
+    title: "反倒"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_1_4_9.p2"
+  - source_id: "gf0025.hsk7_9.035"
+    official_band: "HSK7-9"
+    title: "分明"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_1_4_9.p2"
+  - source_id: "gf0025.hsk7_9.036"
+    official_band: "HSK7-9"
+    title: "怪不得"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_1_4_9.p2"
+  - source_id: "gf0025.hsk7_9.037"
+    official_band: "HSK7-9"
+    title: "好在"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_1_4_9.p2"
+  - source_id: "gf0025.hsk7_9.038"
+    official_band: "HSK7-9"
+    title: "乃"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_1_4_9.p3"
+  - source_id: "gf0025.hsk7_9.039"
+    official_band: "HSK7-9"
+    title: "难怪"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_1_4_9.p3"
+  - source_id: "gf0025.hsk7_9.040"
+    official_band: "HSK7-9"
+    title: "偏偏"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_1_4_9.p3"
+  - source_id: "gf0025.hsk7_9.041"
+    official_band: "HSK7-9"
+    title: "索性"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_1_4_9.p3"
+  - source_id: "gf0025.hsk7_9.042"
+    official_band: "HSK7-9"
+    title: "万万"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_1_4_9.p4"
+  - source_id: "gf0025.hsk7_9.043"
+    official_band: "HSK7-9"
+    title: "未免"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_1_4_9.p4"
+  - source_id: "gf0025.hsk7_9.044"
+    official_band: "HSK7-9"
+    title: "无非"
+    maps_to:
+      - "candidate.zh.hsk5_10_topic"
+  - source_id: "gf0025.hsk7_9.045"
+    official_band: "HSK7-9"
+    title: "幸好"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_1_4_9.p4"
+  - source_id: "gf0025.hsk7_9.046"
+    official_band: "HSK7-9"
+    title: "幸亏"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_1_4_9.p4"
+  - source_id: "gf0025.hsk7_9.047"
+    official_band: "HSK7-9"
+    title: "终究"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_1_4_9.p5"
+  - source_id: "gf0025.hsk7_9.048"
+    official_band: "HSK7-9"
+    title: "顺着"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_1_5_1.p1"
+  - source_id: "gf0025.hsk7_9.049"
+    official_band: "HSK7-9"
+    title: "当着"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_1_5_2.p1"
+  - source_id: "gf0025.hsk7_9.050"
+    official_band: "HSK7-9"
+    title: "就5"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_1_5_2.p1"
+  - source_id: "gf0025.hsk7_9.051"
+    official_band: "HSK7-9"
+    title: "趁"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_1_5_3.p1"
+  - source_id: "gf0025.hsk7_9.052"
+    official_band: "HSK7-9"
+    title: "基于"
+    maps_to:
+      - "candidate.zh.hsk5_8_topic_146"
+  - source_id: "gf0025.hsk7_9.053"
+    official_band: "HSK7-9"
+    title: "依"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_1_5_3.p1"
+  - source_id: "gf0025.hsk7_9.054"
+    official_band: "HSK7-9"
+    title: "连接词或词组：及"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_1_6.p1"
+  - source_id: "gf0025.hsk7_9.055"
+    official_band: "HSK7-9"
+    title: "连接分句或句子：继而、要不是"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_1_6.p1"
+  - source_id: "gf0025.hsk7_9.056"
+    official_band: "HSK7-9"
+    title: "之"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_1_7_1.p1"
+  - source_id: "gf0025.hsk7_9.057"
+    official_band: "HSK7-9"
+    title: "而已"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_1_7_2.p1"
+  - source_id: "gf0025.hsk7_9.058"
+    official_band: "HSK7-9"
+    title: "矣"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_1_7_2.p1"
+  - source_id: "gf0025.hsk7_9.059"
+    official_band: "HSK7-9"
+    title: "数词+量词+抽象事物"
+    maps_to:
+      - "zh.measure_words.basic"
+  - source_id: "gf0025.hsk7_9.060"
+    official_band: "HSK7-9"
+    title: "爱A不A"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_2_2_1.p1"
+  - source_id: "gf0025.hsk7_9.061"
+    official_band: "HSK7-9"
+    title: "半A半B"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_2_2_1.p1"
+  - source_id: "gf0025.hsk7_9.062"
+    official_band: "HSK7-9"
+    title: "东A西B"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_2_2_1.p1"
+  - source_id: "gf0025.hsk7_9.063"
+    official_band: "HSK7-9"
+    title: "非A非B"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_2_2_1.p1"
+  - source_id: "gf0025.hsk7_9.064"
+    official_band: "HSK7-9"
+    title: "忽A忽B"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_2_2_1.p2"
+  - source_id: "gf0025.hsk7_9.065"
+    official_band: "HSK7-9"
+    title: "连A带B"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_2_2_1.p2"
+  - source_id: "gf0025.hsk7_9.066"
+    official_band: "HSK7-9"
+    title: "时A时B"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_2_2_1.p2"
+  - source_id: "gf0025.hsk7_9.067"
+    official_band: "HSK7-9"
+    title: "自A自B"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_2_2_1.p2"
+  - source_id: "gf0025.hsk7_9.068"
+    official_band: "HSK7-9"
+    title: "巴不得"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_2_2_2.p1"
+  - source_id: "gf0025.hsk7_9.069"
+    official_band: "HSK7-9"
+    title: "别提了"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_2_2_2.p1"
+  - source_id: "gf0025.hsk7_9.070"
+    official_band: "HSK7-9"
+    title: "除此之外"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_2_2_2.p1"
+  - source_id: "gf0025.hsk7_9.071"
+    official_band: "HSK7-9"
+    title: "归根到底"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_2_2_2.p1"
+  - source_id: "gf0025.hsk7_9.072"
+    official_band: "HSK7-9"
+    title: "可不是"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_2_2_2.p2"
+  - source_id: "gf0025.hsk7_9.073"
+    official_band: "HSK7-9"
+    title: "没说的"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_2_2_2.p2"
+  - source_id: "gf0025.hsk7_9.074"
+    official_band: "HSK7-9"
+    title: "无论如何"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_2_2_2.p2"
+  - source_id: "gf0025.hsk7_9.075"
+    official_band: "HSK7-9"
+    title: "由此可见"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_2_2_2.p2"
+  - source_id: "gf0025.hsk7_9.076"
+    official_band: "HSK7-9"
+    title: "与此同时"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_2_2_2.p3"
+  - source_id: "gf0025.hsk7_9.077"
+    official_band: "HSK7-9"
+    title: "这样一来"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_2_2_2.p3"
+  - source_id: "gf0025.hsk7_9.078"
+    official_band: "HSK7-9"
+    title: "综上所述"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_2_2_2.p3"
+  - source_id: "gf0025.hsk7_9.079"
+    official_band: "HSK7-9"
+    title: "总的来说/总而言之"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_2_2_2.p3"
+  - source_id: "gf0025.hsk7_9.080"
+    official_band: "HSK7-9"
+    title: "不知⋯⋯好"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_3.p1"
+  - source_id: "gf0025.hsk7_9.081"
+    official_band: "HSK7-9"
+    title: "所谓⋯⋯ 就是⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_3.p1"
+  - source_id: "gf0025.hsk7_9.082"
+    official_band: "HSK7-9"
+    title: "无非/不过/只不过/只是⋯⋯ 而已/罢了"
+    maps_to:
+      - "candidate.zh.hsk5_10_topic"
+  - source_id: "gf0025.hsk7_9.083"
+    official_band: "HSK7-9"
+    title: "以⋯⋯ 为⋯⋯"
+    maps_to:
+      - "candidate.zh.hsk5_11_topic"
+  - source_id: "gf0025.hsk7_9.084"
+    official_band: "HSK7-9"
+    title: "因⋯⋯ 而⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_3.p1"
+  - source_id: "gf0025.hsk7_9.085"
+    official_band: "HSK7-9"
+    title: "宾语的语义类型3"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_4_1.p1"
+  - source_id: "gf0025.hsk7_9.086"
+    official_band: "HSK7-9"
+    title: "程度补语3"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_4_2.p1"
+  - source_id: "gf0025.hsk7_9.087"
+    official_band: "HSK7-9"
+    title: "状态补语3：“个”引导的补语"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_4_2.p1"
+  - source_id: "gf0025.hsk7_9.088"
+    official_band: "HSK7-9"
+    title: "“把”字句5：表致使"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_5_1.p1"
+  - source_id: "gf0025.hsk7_9.089"
+    official_band: "HSK7-9"
+    title: "被动句5"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_5_1.p1"
+  - source_id: "gf0025.hsk7_9.090"
+    official_band: "HSK7-9"
+    title: "比较句6"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_5_1.p1"
+  - source_id: "gf0025.hsk7_9.091"
+    official_band: "HSK7-9"
+    title: "一面⋯⋯ ，一面⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_5_2_1.p1"
+  - source_id: "gf0025.hsk7_9.092"
+    official_band: "HSK7-9"
+    title: "⋯⋯ ，此后⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_5_2_2.p1"
+  - source_id: "gf0025.hsk7_9.093"
+    official_band: "HSK7-9"
+    title: "起初⋯⋯ ，⋯⋯ 才⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_5_2_2.p1"
+  - source_id: "gf0025.hsk7_9.094"
+    official_band: "HSK7-9"
+    title: "别说⋯⋯，连⋯⋯ 也/都⋯⋯; 连⋯⋯ 也/都⋯⋯ ，别说⋯⋯; 别说⋯⋯ ，即使⋯⋯即使⋯⋯ 也⋯⋯ ，别说⋯⋯"
+    maps_to:
+      - "candidate.zh.hsk3_3_topic_69"
+  - source_id: "gf0025.hsk7_9.095"
+    official_band: "HSK7-9"
+    title: "⋯⋯，何况⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_5_2_3.p1"
+  - source_id: "gf0025.hsk7_9.096"
+    official_band: "HSK7-9"
+    title: "⋯⋯，进而⋯⋯"
+    maps_to:
+      - "candidate.zh.hsk5_8_topic"
+  - source_id: "gf0025.hsk7_9.097"
+    official_band: "HSK7-9"
+    title: "⋯⋯，况且"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_5_2_3.p1"
+  - source_id: "gf0025.hsk7_9.098"
+    official_band: "HSK7-9"
+    title: "连⋯⋯，更不用说⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_5_2_3.p1"
+  - source_id: "gf0025.hsk7_9.099"
+    official_band: "HSK7-9"
+    title: "⋯⋯ ，乃至⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_5_2_3.p1"
+  - source_id: "gf0025.hsk7_9.100"
+    official_band: "HSK7-9"
+    title: "⋯⋯ ，且⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_5_2_3.p2"
+  - source_id: "gf0025.hsk7_9.101"
+    official_band: "HSK7-9"
+    title: "⋯⋯ ，甚至于⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_5_2_3.p2"
+  - source_id: "gf0025.hsk7_9.102"
+    official_band: "HSK7-9"
+    title: "或⋯⋯ ，或⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_5_2_4.p1"
+  - source_id: "gf0025.hsk7_9.103"
+    official_band: "HSK7-9"
+    title: "宁可/宁愿⋯⋯ ，"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_5_2_4.p1"
+  - source_id: "gf0025.hsk7_9.104"
+    official_band: "HSK7-9"
+    title: "与其⋯⋯ ，不如⋯⋯"
+    maps_to:
+      - "candidate.zh.hsk4_4_topic"
+  - source_id: "gf0025.hsk7_9.105"
+    official_band: "HSK7-9"
+    title: "与其⋯⋯ ，宁可/宁愿⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_5_2_4.p1"
+  - source_id: "gf0025.hsk7_9.106"
+    official_band: "HSK7-9"
+    title: "⋯⋯，而 ⋯⋯（则）⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_5_2_5.p1"
+  - source_id: "gf0025.hsk7_9.107"
+    official_band: "HSK7-9"
+    title: "⋯⋯，⋯⋯倒/反倒⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_5_2_5.p1"
+  - source_id: "gf0025.hsk7_9.108"
+    official_band: "HSK7-9"
+    title: "倘若/若⋯⋯，⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_5_2_6.p1"
+  - source_id: "gf0025.hsk7_9.109"
+    official_band: "HSK7-9"
+    title: "倘若/假设/假使/若⋯⋯ ，就/那（么）⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_5_2_6.p1"
+  - source_id: "gf0025.hsk7_9.110"
+    official_band: "HSK7-9"
+    title: "幸亏⋯⋯ ，要不然/不然/要不/否则⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_5_2_6.p1"
+  - source_id: "gf0025.hsk7_9.111"
+    official_band: "HSK7-9"
+    title: "别管⋯⋯ ，都⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_5_2_7.p1"
+  - source_id: "gf0025.hsk7_9.112"
+    official_band: "HSK7-9"
+    title: "任⋯⋯ ，也⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_5_2_7.p1"
+  - source_id: "gf0025.hsk7_9.113"
+    official_band: "HSK7-9"
+    title: "（因）⋯⋯ ，故⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_5_2_8.p1"
+  - source_id: "gf0025.hsk7_9.114"
+    official_band: "HSK7-9"
+    title: "鉴于⋯⋯ ，⋯⋯"
+    maps_to:
+      - "candidate.zh.hsk5_8_topic_146"
+  - source_id: "gf0025.hsk7_9.115"
+    official_band: "HSK7-9"
+    title: "（由于）⋯⋯ ，以致⋯⋯"
+    maps_to:
+      - "candidate.zh.hsk6_7_topic_172"
+  - source_id: "gf0025.hsk7_9.116"
+    official_band: "HSK7-9"
+    title: "⋯⋯，以至于⋯⋯"
+    maps_to:
+      - "candidate.zh.hsk6_7_topic_172"
+  - source_id: "gf0025.hsk7_9.117"
+    official_band: "HSK7-9"
+    title: "之所以⋯⋯，是因为/是由于⋯⋯"
+    maps_to:
+      - "candidate.zh.hsk4_9_topic"
+  - source_id: "gf0025.hsk7_9.118"
+    official_band: "HSK7-9"
+    title: "固然⋯⋯ ，也⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_5_2_9.p1"
+  - source_id: "gf0025.hsk7_9.119"
+    official_band: "HSK7-9"
+    title: "⋯⋯ 固然⋯⋯ ，但是/可是/不过⋯⋯"
+    maps_to:
+      - "candidate.zh.hsk4_4_topic_105"
+  - source_id: "gf0025.hsk7_9.120"
+    official_band: "HSK7-9"
+    title: "即便⋯⋯ ，也⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_5_2_9.p1"
+  - source_id: "gf0025.hsk7_9.121"
+    official_band: "HSK7-9"
+    title: "虽说⋯⋯ ，但是/可是/不过⋯⋯"
+    maps_to:
+      - "candidate.zh.hsk4_4_topic_105"
+  - source_id: "gf0025.hsk7_9.122"
+    official_band: "HSK7-9"
+    title: "纵然⋯⋯ ，也⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_5_2_9.p1"
+  - source_id: "gf0025.hsk7_9.123"
+    official_band: "HSK7-9"
+    title: "⋯⋯， 以⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_5_2_10.p1"
+  - source_id: "gf0025.hsk7_9.124"
+    official_band: "HSK7-9"
+    title: "⋯⋯，以免/免得⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_5_2_10.p1"
+  - source_id: "gf0025.hsk7_9.125"
+    official_band: "HSK7-9"
+    title: "⋯⋯，也就是说⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_5_2_11.p1"
+  - source_id: "gf0025.hsk7_9.126"
+    official_band: "HSK7-9"
+    title: "（要+）动词+就+动词+个+补语"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_5_2_12.p1"
+  - source_id: "gf0025.hsk7_9.127"
+    official_band: "HSK7-9"
+    title: "动词（+宾语1）+就+动词（+宾语1 ），别⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_5_2_12.p1"
+  - source_id: "gf0025.hsk7_9.128"
+    official_band: "HSK7-9"
+    title: "三重或三重以上的复句"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_5_2_13.p1"
+  - source_id: "gf0025.hsk7_9.129"
+    official_band: "HSK7-9"
+    title: "反问句3：何必/何苦⋯⋯ 呢？"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_6.p1"
+  - source_id: "gf0025.hsk7_9.130"
+    official_band: "HSK7-9"
+    title: "（不过/但/可是 话又说回来，⋯⋯"
+    maps_to:
+      - "candidate.zh.hsk4_4_topic_105"
+  - source_id: "gf0025.hsk7_9.131"
+    official_band: "HSK7-9"
+    title: "X（也）不是，不X也不是"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_7.p1"
+  - source_id: "gf0025.hsk7_9.132"
+    official_band: "HSK7-9"
+    title: "X也好/也罢，Y也好/也罢"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_7.p1"
+  - source_id: "gf0025.hsk7_9.133"
+    official_band: "HSK7-9"
+    title: "X了又Y， Y了又X"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_7.p1"
+  - source_id: "gf0025.hsk7_9.134"
+    official_band: "HSK7-9"
+    title: "X也X不⋯⋯，Y也Y不⋯⋯"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_7.p1"
+  - source_id: "gf0025.hsk7_9.135"
+    official_band: "HSK7-9"
+    title: "别提（有）多X了"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_7.p2"
+  - source_id: "gf0025.hsk7_9.136"
+    official_band: "HSK7-9"
+    title: "不知X的"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_7.p2"
+  - source_id: "gf0025.hsk7_9.137"
+    official_band: "HSK7-9"
+    title: "话（说）是这么说，不过/可/可是⋯⋯"
+    maps_to:
+      - "candidate.zh.hsk4_4_topic_105"
+  - source_id: "gf0025.hsk7_9.138"
+    official_band: "HSK7-9"
+    title: "看/瞧你那（X）样"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_7.p2"
+  - source_id: "gf0025.hsk7_9.139"
+    official_band: "HSK7-9"
+    title: "看在X的面子上"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_7.p2"
+  - source_id: "gf0025.hsk7_9.140"
+    official_band: "HSK7-9"
+    title: "哪有X这么Y的/有X这样Y的吗"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_7.p3"
+  - source_id: "gf0025.hsk7_9.141"
+    official_band: "HSK7-9"
+    title: "什么X的Y的"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_7.p3"
+  - source_id: "gf0025.hsk7_9.142"
+    official_band: "HSK7-9"
+    title: "说到/想到哪儿去了"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_7.p3"
+  - source_id: "gf0025.hsk7_9.143"
+    official_band: "HSK7-9"
+    title: "无所谓X不X"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_7.p3"
+  - source_id: "gf0025.hsk7_9.144"
+    official_band: "HSK7-9"
+    title: "要X有/没X，要Y有/没Y"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_7.p4"
+  - source_id: "gf0025.hsk7_9.145"
+    official_band: "HSK7-9"
+    title: "带关联词语"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_8_1.p1"
+  - source_id: "gf0025.hsk7_9.146"
+    official_band: "HSK7-9"
+    title: "不带关联词语"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_8_1.p1"
+  - source_id: "gf0025.hsk7_9.147"
+    official_band: "HSK7-9"
+    title: "联合关系：并列句群、承接句群、递进句群、选择句群、解说句群、总括句群"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_8_2.p1"
+  - source_id: "gf0025.hsk7_9.148"
+    official_band: "HSK7-9"
+    title: "偏正关系：条件句群、因果句群、目的句群、转折句群、假设句群、让步句群"
+    maps_to:
+      - "zh.canon.gf.hsk7_9.A_7_8_2.p1"
