@@ -1,7 +1,8 @@
-# Core batch seeds, English A1-A2 (human, 2026-09-29): the R5 rows whose structure is sure (kept, merged, split, narrowed).
-# Level-changing and new rows wait for the catalogue lock (docs/grammar_lab/R5_CONVERSION_PLAN.md). Read by `seed`.
+# Full locked catalog seeds. Generated from research/grammar_catalog/canonical_grammar_en.yaml.
+# Existing reviewed seeds are preserved when IDs match; other points receive deterministic structural metadata.
+
 - id: en.sentence_word_order
-  level: A1
+  level: "A1"
   function: fn.sentence_basics
   point_type: word_order
   native_title: Complete sentences and basic word order
@@ -9,7 +10,7 @@
     vi: Câu hoàn chỉnh và trật tự từ cơ bản
     en: Complete sentences and basic word order
   r5:
-  - a1-complete-sentences-and-basic-word-order
+    - "a1-complete-sentences-and-basic-word-order"
   error_tags:
   - sentence_structure
   contrasts: []
@@ -17,8 +18,9 @@
   sequence: 1
   anchors: []
   batch: core
+
 - id: en.be.present
-  level: A1
+  level: "A1"
   function: fn.identity_state
   point_type: other
   native_title: 'Be: am / is / are'
@@ -26,7 +28,7 @@
     vi: 'Động từ be: am / is / are'
     en: 'Be: am / is / are'
   r5:
-  - a1-be-am-is-are
+    - "a1-be-am-is-are"
   error_tags:
   - agreement
   contrasts:
@@ -38,8 +40,9 @@
     code: '56'
     level: A1
   batch: core
+
 - id: en.pronouns.subject_object
-  level: A1
+  level: "A1"
   function: fn.pronoun_reference
   point_type: other
   native_title: Subject and object pronouns
@@ -47,7 +50,7 @@
     vi: Đại từ chủ ngữ và tân ngữ
     en: Subject and object pronouns
   r5:
-  - a1-subject-and-object-pronouns
+    - "a1-subject-and-object-pronouns"
   error_tags:
   - word_form
   contrasts: []
@@ -59,8 +62,9 @@
     code: '125'
     level: A1
   batch: core
+
 - id: en.possessive_adjectives
-  level: A1
+  level: "A1"
   function: fn.possession
   point_type: other
   native_title: Possessive adjectives
@@ -68,7 +72,7 @@
     vi: Tính từ sở hữu (my, your, his...)
     en: Possessive adjectives
   r5:
-  - a1-possessive-adjectives-pronouns-and-possessive-s
+    - "a1-possessive-adjectives-pronouns-and-possessive-s"
   error_tags:
   - word_form
   contrasts:
@@ -82,8 +86,9 @@
     code: '127'
     level: A1
   batch: core
+
 - id: en.possessive_pronouns
-  level: A1
+  level: "A1"
   function: fn.possession
   point_type: other
   native_title: Possessive pronouns
@@ -91,7 +96,7 @@
     vi: Đại từ sở hữu (mine, yours...)
     en: Possessive pronouns
   r5:
-  - a1-possessive-adjectives-pronouns-and-possessive-s
+    - "a1-possessive-adjectives-pronouns-and-possessive-s"
   error_tags:
   - word_form
   contrasts:
@@ -104,8 +109,9 @@
     code: '129'
     level: A1
   batch: core
+
 - id: en.possessive_s
-  level: A1
+  level: "A1"
   function: fn.possession
   point_type: morphology
   native_title: Possessive 's
@@ -113,7 +119,7 @@
     vi: Sở hữu cách 's
     en: Possessive 's
   r5:
-  - a1-possessive-adjectives-pronouns-and-possessive-s
+    - "a1-possessive-adjectives-pronouns-and-possessive-s"
   error_tags:
   - word_form
   contrasts:
@@ -126,8 +132,9 @@
     code: '128'
     level: A1
   batch: core
+
 - id: en.have_got
-  level: A1
+  level: "A1"
   function: fn.possession
   point_type: other
   native_title: Have and have got
@@ -135,7 +142,7 @@
     vi: Have và have got
     en: Have and have got
   r5:
-  - a1-have-and-have-got
+    - "a1-have-and-have-got"
   error_tags:
   - agreement
   contrasts:
@@ -149,8 +156,9 @@
     code: '57'
     level: A1
   batch: core
+
 - id: en.plural_nouns.regular
-  level: A1
+  level: "A1"
   function: fn.quantity
   point_type: morphology
   native_title: Plural nouns
@@ -158,7 +166,7 @@
     vi: Danh từ số nhiều có quy tắc
     en: Regular plural nouns
   r5:
-  - a1-singular-and-plural-nouns
+    - "a1-singular-and-plural-nouns"
   error_tags:
   - agreement
   contrasts:
@@ -167,8 +175,9 @@
   sequence: 1
   anchors: []
   batch: core
+
 - id: en.plural_nouns.irregular
-  level: A1
+  level: "A1"
   function: fn.quantity
   point_type: other
   native_title: Irregular plural nouns
@@ -176,7 +185,7 @@
     vi: Danh từ số nhiều bất quy tắc
     en: Irregular plural nouns
   r5:
-  - a1-singular-and-plural-nouns
+    - "a1-singular-and-plural-nouns"
   error_tags:
   - word_form
   contrasts:
@@ -186,8 +195,9 @@
   sequence: 2
   anchors: []
   batch: core
+
 - id: en.articles.a_an
-  level: A1
+  level: "A1"
   function: fn.reference
   point_type: other
   native_title: 'Indefinite articles: a / an'
@@ -195,7 +205,7 @@
     vi: Mạo từ không xác định a / an
     en: Indefinite articles a / an
   r5:
-  - a1-articles-a-an-the
+    - "a1-articles-a-an-the"
   error_tags:
   - article
   contrasts:
@@ -208,8 +218,9 @@
     code: '135'
     level: A1
   batch: core
+
 - id: en.articles.the
-  level: A1
+  level: "A1"
   function: fn.reference
   point_type: other
   native_title: 'The definite article: the'
@@ -217,7 +228,7 @@
     vi: Mạo từ xác định the
     en: The definite article the
   r5:
-  - a1-articles-a-an-the
+    - "a1-articles-a-an-the"
   error_tags:
   - article
   contrasts:
@@ -231,8 +242,9 @@
     code: '135'
     level: A1
   batch: core
+
 - id: en.demonstratives
-  level: A1
+  level: "A1"
   function: fn.pronoun_reference
   point_type: other
   native_title: This / that / these / those
@@ -240,7 +252,7 @@
     vi: This / that / these / those
     en: This / that / these / those
   r5:
-  - a1-this-that-these-those
+    - "a1-this-that-these-those"
   error_tags:
   - word_choice
   contrasts: []
@@ -251,8 +263,9 @@
     code: '146'
     level: A1
   batch: core
+
 - id: en.there_is_are
-  level: A1
+  level: "A1"
   function: fn.existence
   point_type: word_order
   native_title: There is / There are
@@ -260,7 +273,7 @@
     vi: There is / There are
     en: There is / There are
   r5:
-  - a1-there-is-there-are
+    - "a1-there-is-there-are"
   error_tags:
   - sentence_structure
   - agreement
@@ -274,8 +287,9 @@
     code: '123'
     level: A1
   batch: core
+
 - id: en.imperatives
-  level: A1
+  level: "A1"
   function: fn.instructions
   point_type: word_order
   native_title: Imperatives and let's
@@ -283,7 +297,7 @@
     vi: Câu mệnh lệnh và let's
     en: Imperatives and let's
   r5:
-  - a1-basic-imperatives-and-let-s
+    - "a1-basic-imperatives-and-let-s"
   error_tags:
   - sentence_structure
   contrasts: []
@@ -294,8 +308,9 @@
     code: '58'
     level: A1
   batch: core
+
 - id: en.present_simple.habit
-  level: A1
+  level: "A1"
   function: fn.habit_fact
   point_type: tense_aspect
   native_title: Present simple
@@ -303,7 +318,7 @@
     vi: 'Hiện tại đơn: thói quen, sự thật'
     en: 'Present simple: habits and facts'
   r5:
-  - a1-present-simple
+    - "a1-present-simple"
   error_tags:
   - tense
   contrasts:
@@ -316,8 +331,9 @@
     code: '64'
     level: A1
   batch: core
+
 - id: en.present_simple.third_person_s
-  level: A1
+  level: "A1"
   function: fn.habit_fact
   point_type: morphology
   native_title: Third person -s
@@ -325,7 +341,7 @@
     vi: Thêm -s / -es với he / she / it
     en: Third person -s and -es
   r5:
-  - a1-third-person-s-and-spelling
+    - "a1-third-person-s-and-spelling"
   error_tags:
   - agreement
   contrasts:
@@ -339,8 +355,9 @@
     code: '64'
     level: A1
   batch: core
+
 - id: en.adverbs_of_frequency
-  level: A1
+  level: "A1"
   function: fn.habit_fact
   point_type: word_order
   native_title: Adverbs of frequency
@@ -348,7 +365,7 @@
     vi: Trạng từ chỉ tần suất và vị trí của chúng
     en: Adverbs of frequency and their position
   r5:
-  - a1-adverbs-of-frequency
+    - "a1-adverbs-of-frequency"
   error_tags:
   - sentence_structure
   contrasts: []
@@ -360,8 +377,9 @@
     code: '152'
     level: A1
   batch: core
+
 - id: en.present_continuous.now
-  level: A1
+  level: "A1"
   function: fn.ongoing_now
   point_type: tense_aspect
   native_title: Present continuous
@@ -369,7 +387,7 @@
     vi: Hiện tại tiếp diễn (đang)
     en: 'Present continuous: happening now'
   r5:
-  - a1-present-continuous
+    - "a1-present-continuous"
   error_tags:
   - tense
   contrasts:
@@ -383,8 +401,9 @@
     code: '65'
     level: A1
   batch: core
+
 - id: en.be.questions_short_answers
-  level: A1
+  level: "A1"
   function: fn.questions
   point_type: word_order
   native_title: 'Be: questions and short answers'
@@ -392,7 +411,7 @@
     vi: Câu hỏi với be và câu trả lời ngắn
     en: 'Be: questions and short answers'
   r5:
-  - a1-be-questions-and-short-answers
+    - "a1-be-questions-and-short-answers"
   error_tags:
   - sentence_structure
   contrasts:
@@ -408,8 +427,9 @@
     code: '60'
     level: A1
   batch: core
+
 - id: en.present_simple.do_questions
-  level: A1
+  level: "A1"
   function: fn.questions
   point_type: word_order
   native_title: Do / does questions
@@ -417,7 +437,7 @@
     vi: Câu hỏi với do / does
     en: Do / does questions
   r5:
-  - a1-do-does-questions
+    - "a1-do-does-questions"
   error_tags:
   - sentence_structure
   contrasts:
@@ -431,8 +451,9 @@
     code: '60'
     level: A1
   batch: core
+
 - id: en.questions.wh
-  level: A1
+  level: "A1"
   function: fn.questions
   point_type: word_order
   native_title: Wh-questions
@@ -440,7 +461,7 @@
     vi: Câu hỏi Wh-
     en: Wh-questions
   r5:
-  - a1-wh-questions
+    - "a1-wh-questions"
   error_tags:
   - sentence_structure
   contrasts:
@@ -453,8 +474,9 @@
     code: '60'
     level: A1
   batch: core
+
 - id: en.countable_uncountable
-  level: A1
+  level: "A1"
   function: fn.quantity
   point_type: other
   native_title: Countable and uncountable nouns
@@ -462,7 +484,7 @@
     vi: Danh từ đếm được và không đếm được
     en: Countable and uncountable nouns
   r5:
-  - a1-countable-and-uncountable-nouns
+    - "a1-countable-and-uncountable-nouns"
   error_tags:
   - agreement
   contrasts:
@@ -474,8 +496,9 @@
     code: '121'
     level: A1
   batch: core
+
 - id: en.quantifiers.some_any
-  level: A1
+  level: "A1"
   function: fn.quantity
   point_type: other
   native_title: Some / any
@@ -483,7 +506,7 @@
     vi: Some / any
     en: Some / any
   r5:
-  - a1-some-any
+    - "a1-some-any"
   error_tags:
   - word_choice
   contrasts:
@@ -498,8 +521,9 @@
     code: '141'
     level: A1
   batch: core
+
 - id: en.prepositions.place
-  level: A1
+  level: "A1"
   function: fn.place_time
   point_type: other
   native_title: 'Prepositions of place: in / on / at'
@@ -507,7 +531,7 @@
     vi: 'Giới từ chỉ nơi chốn: in / on / at'
     en: Prepositions of place
   r5:
-  - a1-basic-prepositions-of-place
+    - "a1-basic-prepositions-of-place"
   error_tags:
   - preposition
   contrasts:
@@ -519,8 +543,9 @@
     code: 133a
     level: A1
   batch: core
+
 - id: en.prepositions.time
-  level: A1
+  level: "A1"
   function: fn.place_time
   point_type: other
   native_title: 'Prepositions of time: at / on / in'
@@ -528,7 +553,7 @@
     vi: 'Giới từ chỉ thời gian: at / on / in'
     en: Prepositions of time
   r5:
-  - a1-basic-prepositions-of-time
+    - "a1-basic-prepositions-of-time"
   error_tags:
   - preposition
   contrasts:
@@ -540,8 +565,9 @@
     code: 133a
     level: A1
   batch: core
+
 - id: en.conjunctions.and_but_or
-  level: A1
+  level: "A1"
   function: fn.linking
   point_type: other
   native_title: And / but / or
@@ -549,7 +575,7 @@
     vi: And / but / or
     en: And / but / or
   r5:
-  - a1-and-but-or-because-so
+    - "a1-and-but-or-because-so"
   error_tags:
   - word_choice
   contrasts:
@@ -561,8 +587,81 @@
     code: '47'
     level: A1
   batch: core
+
+- id: en.canon.a1.001
+  level: "A1"
+  function: fn.completed_past
+  point_type: tense_aspect
+  native_title: "Past simple: be"
+  title:
+    vi: "Past simple: be"
+    en: "Past simple: be"
+  r5:
+    - "a2-past-simple-be"
+  error_tags:
+    - tense
+  contrasts: []
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.a1.002
+  level: "A1"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "Can Ability"
+  title:
+    vi: "Can Ability"
+    en: "Can Ability"
+  r5:
+    - "a2-can-could-be-able-to-basics"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 7
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.a1.003
+  level: "A1"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "Adjectives Position"
+  title:
+    vi: "Adjectives Position"
+    en: "Adjectives Position"
+  r5:
+    []
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 8
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.a1.004
+  level: "A1"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "Would Like"
+  title:
+    vi: "Would Like"
+    en: "Would Like"
+  r5:
+    []
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 9
+  anchors: []
+  batch: locked_catalog
+
 - id: en.articles.zero
-  level: A2
+  level: "A2"
   function: fn.reference
   point_type: other
   native_title: No article
@@ -570,7 +669,7 @@
     vi: Không dùng mạo từ
     en: No article (zero article)
   r5:
-  - a1-articles-a-an-the
+    - "a1-articles-a-an-the"
   error_tags:
   - article
   contrasts:
@@ -584,8 +683,45 @@
     code: '134'
     level: A2
   batch: core
+
+- id: en.canon.a2.001
+  level: "A2"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "Stative verbs: introduction"
+  title:
+    vi: "Stative verbs: introduction"
+    en: "Stative verbs: introduction"
+  r5:
+    - "a1-stative-verbs-introduction"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.a2.002
+  level: "A2"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "Much/many/a lot of"
+  title:
+    vi: "Much/many/a lot of"
+    en: "Much/many/a lot of"
+  r5:
+    - "a1-much-many-a-lot-of"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 2
+  anchors: []
+  batch: locked_catalog
+
 - id: en.conjunctions.because_so
-  level: A2
+  level: "A2"
   function: fn.linking
   point_type: other
   native_title: Because / so
@@ -593,7 +729,7 @@
     vi: Because / so
     en: Because / so
   r5:
-  - a1-and-but-or-because-so
+    - "a1-and-but-or-because-so"
   error_tags:
   - word_choice
   contrasts:
@@ -607,8 +743,9 @@
     code: '47'
     level: A1
   batch: core
+
 - id: en.past_simple.regular_ed
-  level: A2
+  level: "A2"
   function: fn.completed_past
   point_type: morphology
   native_title: 'Past simple: regular verbs'
@@ -616,7 +753,7 @@
     vi: 'Quá khứ đơn: động từ có quy tắc (-ed)'
     en: 'Past simple: regular verbs'
   r5:
-  - a2-past-simple-regular-verbs
+    - "a2-past-simple-regular-verbs"
   error_tags:
   - tense
   contrasts:
@@ -629,8 +766,9 @@
     code: '67'
     level: A1
   batch: core
+
 - id: en.past_simple.irregular
-  level: A2
+  level: "A2"
   function: fn.completed_past
   point_type: other
   native_title: 'Past simple: irregular verbs'
@@ -638,7 +776,7 @@
     vi: 'Quá khứ đơn: động từ bất quy tắc'
     en: 'Past simple: irregular verbs'
   r5:
-  - a2-past-simple-irregular-verbs
+    - "a2-past-simple-irregular-verbs"
   error_tags:
   - tense
   - word_form
@@ -652,8 +790,9 @@
     code: '67'
     level: A1
   batch: core
+
 - id: en.past_continuous
-  level: A2
+  level: "A2"
   function: fn.past_ongoing
   point_type: tense_aspect
   native_title: Past continuous
@@ -661,7 +800,7 @@
     vi: Quá khứ tiếp diễn
     en: Past continuous
   r5:
-  - a2-past-continuous
+    - "a2-past-continuous"
   error_tags:
   - tense
   contrasts:
@@ -674,8 +813,9 @@
     code: '68'
     level: A2
   batch: core
+
 - id: en.past_simple_vs_continuous
-  level: A2
+  level: "A2"
   function: fn.past_ongoing
   point_type: tense_aspect
   native_title: Past simple vs past continuous
@@ -683,7 +823,7 @@
     vi: Quá khứ đơn và quá khứ tiếp diễn
     en: Past simple vs past continuous
   r5:
-  - a2-past-simple-vs-past-continuous
+    - "a2-past-simple-vs-past-continuous"
   error_tags:
   - tense
   contrasts:
@@ -696,8 +836,9 @@
     code: '68'
     level: A2
   batch: core
+
 - id: en.present_perfect.experience
-  level: A2
+  level: "A2"
   function: fn.past_experience
   point_type: tense_aspect
   native_title: Present perfect for experience
@@ -705,7 +846,7 @@
     vi: Hiện tại hoàn thành (trải nghiệm)
     en: Present perfect for experience
   r5:
-  - a2-present-perfect-introduction
+    - "a2-present-perfect-introduction"
   error_tags:
   - tense
   - word_choice
@@ -719,8 +860,9 @@
     code: '81'
     level: A2
   batch: core
+
 - id: en.going_to.plans
-  level: A2
+  level: "A2"
   function: fn.future_plans
   point_type: tense_aspect
   native_title: Be going to
@@ -728,7 +870,7 @@
     vi: Be going to (dự định)
     en: 'Be going to: plans'
   r5:
-  - a2-going-to
+    - "a2-going-to"
   error_tags:
   - tense
   contrasts:
@@ -741,8 +883,9 @@
     code: '74'
     level: A1
   batch: core
+
 - id: en.will.decisions
-  level: A2
+  level: "A2"
   function: fn.future_plans
   point_type: tense_aspect
   native_title: Will and won't
@@ -750,7 +893,7 @@
     vi: Will và won't (quyết định tức thì, dự đoán)
     en: Will and won't
   r5:
-  - a2-will-and-won-t
+    - "a2-will-and-won-t"
   error_tags:
   - tense
   contrasts:
@@ -763,8 +906,9 @@
     code: '76'
     level: A2
   batch: core
+
 - id: en.present_continuous.arrangements
-  level: A2
+  level: "A2"
   function: fn.future_plans
   point_type: tense_aspect
   native_title: Present continuous for future arrangements
@@ -772,7 +916,7 @@
     vi: Hiện tại tiếp diễn cho lịch đã hẹn
     en: Present continuous for arrangements
   r5:
-  - a2-present-continuous-for-future-arrangements
+    - "a2-present-continuous-for-future-arrangements"
   error_tags:
   - tense
   contrasts:
@@ -786,8 +930,9 @@
     code: '75'
     level: A2
   batch: core
+
 - id: en.present_simple.schedules
-  level: A2
+  level: "A2"
   function: fn.future_plans
   point_type: tense_aspect
   native_title: Present simple for schedules
@@ -795,7 +940,7 @@
     vi: Hiện tại đơn cho lịch trình
     en: Present simple for timetables
   r5:
-  - a2-present-simple-for-schedules
+    - "a2-present-simple-for-schedules"
   error_tags:
   - tense
   contrasts:
@@ -805,8 +950,9 @@
   sequence: 4
   anchors: []
   batch: core
+
 - id: en.comparatives
-  level: A2
+  level: "A2"
   function: fn.comparison
   point_type: morphology
   native_title: Comparatives
@@ -814,7 +960,7 @@
     vi: So sánh hơn
     en: Comparatives
   r5:
-  - a2-comparatives
+    - "a2-comparatives"
   error_tags:
   - word_form
   - sentence_structure
@@ -828,8 +974,9 @@
     code: '149'
     level: A1
   batch: core
+
 - id: en.superlatives
-  level: A2
+  level: "A2"
   function: fn.comparison
   point_type: morphology
   native_title: Superlatives
@@ -837,7 +984,7 @@
     vi: So sánh nhất
     en: Superlatives
   r5:
-  - a2-superlatives
+    - "a2-superlatives"
   error_tags:
   - word_form
   contrasts:
@@ -850,8 +997,9 @@
     code: '150'
     level: A2
   batch: core
+
 - id: en.as_as
-  level: A2
+  level: "A2"
   function: fn.comparison
   point_type: word_order
   native_title: As ... as
@@ -859,7 +1007,7 @@
     vi: 'So sánh bằng: as ... as'
     en: As ... as
   r5:
-  - a2-as-as
+    - "a2-as-as"
   error_tags:
   - sentence_structure
   contrasts:
@@ -869,8 +1017,9 @@
   sequence: 3
   anchors: []
   batch: core
+
 - id: en.too_enough
-  level: A2
+  level: "A2"
   function: fn.degree
   point_type: word_order
   native_title: Too / enough
@@ -878,7 +1027,7 @@
     vi: Too và enough
     en: Too and enough
   r5:
-  - a2-too-enough
+    - "a2-too-enough"
   error_tags:
   - word_choice
   - sentence_structure
@@ -888,8 +1037,9 @@
   sequence: 1
   anchors: []
   batch: core
+
 - id: en.adjectives_vs_adverbs
-  level: A2
+  level: "A2"
   function: fn.degree
   point_type: morphology
   native_title: Adjectives vs adverbs
@@ -897,7 +1047,7 @@
     vi: Tính từ và trạng từ
     en: Adjectives vs adverbs
   r5:
-  - a2-adjectives-vs-adverbs
+    - "a2-adjectives-vs-adverbs"
   error_tags:
   - word_form
   contrasts:
@@ -909,8 +1059,9 @@
     code: '153'
     level: A2
   batch: core
+
 - id: en.adverbs.manner_degree
-  level: A2
+  level: "A2"
   function: fn.degree
   point_type: word_order
   native_title: Adverbs of manner and degree
@@ -918,7 +1069,7 @@
     vi: Trạng từ chỉ cách thức và mức độ
     en: Adverbs of manner and degree
   r5:
-  - a2-adverbs-of-manner-and-degree
+    - "a2-adverbs-of-manner-and-degree"
   error_tags:
   - word_form
   contrasts:
@@ -935,8 +1086,27 @@
     code: '162'
     level: A2
   batch: core
+
+- id: en.canon.a2.003
+  level: "A2"
+  function: fn.possibility
+  point_type: tense_aspect
+  native_title: "Could Past Ability"
+  title:
+    vi: "Could Past Ability"
+    en: "Could Past Ability"
+  r5:
+    - "a2-can-could-be-able-to-basics"
+  error_tags:
+    - tense
+  contrasts: []
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: locked_catalog
+
 - id: en.modals.must_have_to
-  level: A2
+  level: "A2"
   function: fn.obligation_advice
   point_type: other
   native_title: Must / have to
@@ -944,8 +1114,8 @@
     vi: Must và have to (bắt buộc)
     en: Must and have to
   r5:
-  - a2-must-have-to
-  - b1-obligation-must-have-to-need-to
+    - "a2-must-have-to"
+    - "b1-obligation-must-have-to-need-to"
   error_tags:
   - word_choice
   contrasts:
@@ -960,8 +1130,9 @@
     code: '113'
     level: A2
   batch: core
+
 - id: en.modals.should
-  level: A2
+  level: "A2"
   function: fn.obligation_advice
   point_type: other
   native_title: Should
@@ -969,7 +1140,7 @@
     vi: Should (lời khuyên)
     en: 'Should: advice'
   r5:
-  - a2-should-ought-to
+    - "a2-should-ought-to"
   error_tags:
   - word_choice
   contrasts:
@@ -982,8 +1153,9 @@
     code: '115'
     level: A2
   batch: core
+
 - id: en.modals.possibility
-  level: A2
+  level: "A2"
   function: fn.possibility
   point_type: other
   native_title: May / might / could
@@ -991,7 +1163,7 @@
     vi: May / might / could (có thể)
     en: 'May, might and could: possibility'
   r5:
-  - a2-may-might-could-possibility
+    - "a2-may-might-could-possibility"
   error_tags:
   - word_choice
   contrasts:
@@ -1003,8 +1175,9 @@
     code: '107'
     level: A2
   batch: core
+
 - id: en.gerund_after_preference
-  level: A2
+  level: "A2"
   function: fn.verb_patterns
   point_type: other
   native_title: 'Verb + -ing: like, love, hate'
@@ -1012,7 +1185,7 @@
     vi: Động từ + -ing sau like, love, hate
     en: Like / love / hate + -ing
   r5:
-  - a2-gerunds-after-preference-verbs
+    - "a2-gerunds-after-preference-verbs"
   error_tags:
   - word_form
   contrasts:
@@ -1024,8 +1197,9 @@
     code: '86'
     level: A1
   batch: core
+
 - id: en.infinitive_after_want_plan_need
-  level: A2
+  level: "A2"
   function: fn.verb_patterns
   point_type: other
   native_title: Verb + to + infinitive
@@ -1033,7 +1207,7 @@
     vi: Động từ + to V sau want, plan, need
     en: Want / plan / need + to
   r5:
-  - a2-infinitive-after-want-plan-need
+    - "a2-infinitive-after-want-plan-need"
   error_tags:
   - word_form
   contrasts:
@@ -1045,8 +1219,9 @@
     code: '88'
     level: A2
   batch: core
+
 - id: en.infinitive_of_purpose
-  level: A2
+  level: "A2"
   function: fn.verb_patterns
   point_type: other
   native_title: To + infinitive of purpose
@@ -1054,7 +1229,7 @@
     vi: To + V chỉ mục đích
     en: To + infinitive of purpose
   r5:
-  - a2-infinitive-of-purpose
+    - "a2-infinitive-of-purpose"
   error_tags:
   - word_form
   contrasts:
@@ -1067,8 +1242,9 @@
     code: '87'
     level: A2
   batch: core
+
 - id: en.relative_clauses.who_which_that
-  level: A2
+  level: "A2"
   function: fn.relative
   point_type: other
   native_title: 'Relative clauses: who / which / that'
@@ -1076,8 +1252,8 @@
     vi: 'Mệnh đề quan hệ: who / which / that'
     en: Relative clauses with who, which, that
   r5:
-  - a2-who-which-that-relative-clauses
-  - b1-defining-relative-clauses
+    - "a2-who-which-that-relative-clauses"
+    - "b1-defining-relative-clauses"
   error_tags:
   - word_choice
   - sentence_structure
@@ -1086,8 +1262,9 @@
   sequence: 1
   anchors: []
   batch: core
+
 - id: en.conditional_zero
-  level: A2
+  level: "A2"
   function: fn.condition_real
   point_type: tense_aspect
   native_title: Zero conditional
@@ -1095,7 +1272,7 @@
     vi: Câu điều kiện loại 0
     en: Zero conditional
   r5:
-  - a2-zero-conditional
+    - "a2-zero-conditional"
   error_tags:
   - tense
   contrasts:
@@ -1107,8 +1284,9 @@
     code: '90'
     level: A2
   batch: core
+
 - id: en.conditional_first
-  level: A2
+  level: "A2"
   function: fn.condition_real
   point_type: tense_aspect
   native_title: First conditional
@@ -1116,7 +1294,7 @@
     vi: Câu điều kiện loại 1
     en: First conditional
   r5:
-  - a2-first-conditional
+    - "a2-first-conditional"
   error_tags:
   - tense
   contrasts:
@@ -1130,8 +1308,9 @@
     code: '90'
     level: A2
   batch: core
+
 - id: en.unless
-  level: A2
+  level: "A2"
   function: fn.condition_real
   point_type: other
   native_title: Unless
@@ -1139,7 +1318,7 @@
     vi: Unless (trừ khi)
     en: Unless
   r5:
-  - a2-unless-introduction
+    - "a2-unless-introduction"
   error_tags:
   - word_choice
   contrasts:
@@ -1149,8 +1328,9 @@
   sequence: 3
   anchors: []
   batch: core
+
 - id: en.indefinite_compounds
-  level: A2
+  level: "A2"
   function: fn.indefinite_reference
   point_type: other
   native_title: Some- / any- / no- / every- compounds
@@ -1158,7 +1338,7 @@
     vi: someone, anything, nobody, everywhere...
     en: Someone, anything, nobody, everywhere...
   r5:
-  - a2-some-any-no-every-compounds
+    - "a2-some-any-no-every-compounds"
   error_tags:
   - word_choice
   contrasts:
@@ -1167,8 +1347,9 @@
   sequence: 1
   anchors: []
   batch: core
+
 - id: en.quantifiers.few_little
-  level: A2
+  level: "A2"
   function: fn.quantity
   point_type: other
   native_title: A few / few, a little / little
@@ -1176,7 +1357,7 @@
     vi: A few / few và a little / little
     en: A few, few, a little, little
   r5:
-  - a2-a-few-few-and-a-little-little
+    - "a2-a-few-few-and-a-little-little"
   error_tags:
   - word_choice
   contrasts:
@@ -1185,8 +1366,9 @@
   sequence: 1
   anchors: []
   batch: core
+
 - id: en.indirect_objects
-  level: A2
+  level: "A2"
   function: fn.sentence_basics
   point_type: word_order
   native_title: Indirect objects
@@ -1194,7 +1376,7 @@
     vi: Tân ngữ gián tiếp (give someone something)
     en: Indirect objects
   r5:
-  - a2-basic-indirect-objects
+    - "a2-basic-indirect-objects"
   error_tags:
   - sentence_structure
   contrasts: []
@@ -1202,3 +1384,2767 @@
   sequence: 1
   anchors: []
   batch: core
+
+- id: en.canon.a2.004
+  level: "A2"
+  function: fn.habit_fact
+  point_type: tense_aspect
+  native_title: "Present simple vs continuous: extended"
+  title:
+    vi: "Present simple vs continuous: extended"
+    en: "Present simple vs continuous: extended"
+  r5:
+    - "b1-present-simple-vs-continuous-extended"
+    - "a1-present-simple-vs-present-continuous"
+  error_tags:
+    - tense
+  contrasts: []
+  prereqs: []
+  sequence: 2
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.a2.005
+  level: "A2"
+  function: fn.questions
+  point_type: tense_aspect
+  native_title: "Past Simple Did Questions"
+  title:
+    vi: "Past Simple Did Questions"
+    en: "Past Simple Did Questions"
+  r5:
+    []
+  error_tags:
+    - tense
+  contrasts: []
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.a2.006
+  level: "A2"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "Phrasal Verbs Basic"
+  title:
+    vi: "Phrasal Verbs Basic"
+    en: "Phrasal Verbs Basic"
+  r5:
+    []
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 11
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.a2.007
+  level: "A2"
+  function: fn.linking
+  point_type: other
+  native_title: "Time Clauses Basic"
+  title:
+    vi: "Time Clauses Basic"
+    en: "Time Clauses Basic"
+  r5:
+    []
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 2
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.a2.008
+  level: "A2"
+  function: fn.verb_patterns
+  point_type: other
+  native_title: "Verb Object Infinitive"
+  title:
+    vi: "Verb Object Infinitive"
+    en: "Verb Object Infinitive"
+  r5:
+    []
+  error_tags:
+    - word_form
+  contrasts: []
+  prereqs: []
+  sequence: 3
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b1.001
+  level: "B1"
+  function: fn.pronoun_reference
+  point_type: other
+  native_title: "Object relative pronoun omission"
+  title:
+    vi: "Object relative pronoun omission"
+    en: "Object relative pronoun omission"
+  r5:
+    - "a2-object-relative-pronoun-omission"
+  error_tags:
+    - sentence_structure
+  contrasts: []
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b1.002
+  level: "B1"
+  function: fn.past_experience
+  point_type: tense_aspect
+  native_title: "Present perfect simple"
+  title:
+    vi: "Present perfect simple"
+    en: "Present perfect simple"
+  r5:
+    - "b1-present-perfect-simple"
+  error_tags:
+    - tense
+  contrasts: []
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b1.003
+  level: "B1"
+  function: fn.past_experience
+  point_type: tense_aspect
+  native_title: "Present perfect continuous"
+  title:
+    vi: "Present perfect continuous"
+    en: "Present perfect continuous"
+  r5:
+    - "b1-present-perfect-continuous"
+  error_tags:
+    - tense
+  contrasts: []
+  prereqs: []
+  sequence: 2
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b1.004
+  level: "B1"
+  function: fn.past_experience
+  point_type: tense_aspect
+  native_title: "Present perfect simple vs continuous"
+  title:
+    vi: "Present perfect simple vs continuous"
+    en: "Present perfect simple vs continuous"
+  r5:
+    - "b1-present-perfect-simple-vs-continuous"
+  error_tags:
+    - tense
+  contrasts: []
+  prereqs: []
+  sequence: 3
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b1.005
+  level: "B1"
+  function: fn.completed_past
+  point_type: tense_aspect
+  native_title: "Past simple vs present perfect"
+  title:
+    vi: "Past simple vs present perfect"
+    en: "Past simple vs present perfect"
+  r5:
+    - "b1-past-simple-vs-present-perfect"
+    - "a2-present-perfect-vs-past-simple"
+  error_tags:
+    - tense
+  contrasts: []
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b1.006
+  level: "B1"
+  function: fn.grammar_reference
+  point_type: tense_aspect
+  native_title: "Past perfect simple"
+  title:
+    vi: "Past perfect simple"
+    en: "Past perfect simple"
+  r5:
+    - "b1-past-perfect-simple"
+  error_tags:
+    - tense
+  contrasts: []
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b1.007
+  level: "B1"
+  function: fn.grammar_reference
+  point_type: tense_aspect
+  native_title: "Past perfect continuous"
+  title:
+    vi: "Past perfect continuous"
+    en: "Past perfect continuous"
+  r5:
+    - "b1-past-perfect-continuous"
+  error_tags:
+    - tense
+  contrasts: []
+  prereqs: []
+  sequence: 2
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b1.008
+  level: "B1"
+  function: fn.grammar_reference
+  point_type: tense_aspect
+  native_title: "Past narrative tense system"
+  title:
+    vi: "Past narrative tense system"
+    en: "Past narrative tense system"
+  r5:
+    - "b1-past-narrative-tense-system"
+  error_tags:
+    - tense
+  contrasts: []
+  prereqs: []
+  sequence: 3
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b1.009
+  level: "B1"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "Used to"
+  title:
+    vi: "Used to"
+    en: "Used to"
+  r5:
+    - "b1-used-to"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 4
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b1.010
+  level: "B1"
+  function: fn.habit_fact
+  point_type: tense_aspect
+  native_title: "Would for past habits"
+  title:
+    vi: "Would for past habits"
+    en: "Would for past habits"
+  r5:
+    - "b1-would-for-past-habits"
+  error_tags:
+    - tense
+  contrasts: []
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b1.011
+  level: "B1"
+  function: fn.future_plans
+  point_type: tense_aspect
+  native_title: "Future forms in context"
+  title:
+    vi: "Future forms in context"
+    en: "Future forms in context"
+  r5:
+    - "b1-future-forms-in-context"
+  error_tags:
+    - tense
+  contrasts: []
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b1.012
+  level: "B1"
+  function: fn.future_plans
+  point_type: tense_aspect
+  native_title: "Future continuous"
+  title:
+    vi: "Future continuous"
+    en: "Future continuous"
+  r5:
+    - "b1-future-continuous"
+    - "b2-future-continuous"
+  error_tags:
+    - tense
+  contrasts: []
+  prereqs: []
+  sequence: 2
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b1.013
+  level: "B1"
+  function: fn.future_plans
+  point_type: tense_aspect
+  native_title: "Future time clauses"
+  title:
+    vi: "Future time clauses"
+    en: "Future time clauses"
+  r5:
+    - "b1-future-time-clauses"
+  error_tags:
+    - tense
+  contrasts: []
+  prereqs: []
+  sequence: 3
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b1.014
+  level: "B1"
+  function: fn.grammar_reference
+  point_type: tense_aspect
+  native_title: "Passive voice: present and past"
+  title:
+    vi: "Passive voice: present and past"
+    en: "Passive voice: present and past"
+  r5:
+    - "b1-passive-voice-present-and-past"
+  error_tags:
+    - tense
+  contrasts: []
+  prereqs: []
+  sequence: 5
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b1.015
+  level: "B1"
+  function: fn.grammar_reference
+  point_type: word_order
+  native_title: "Passive with modals"
+  title:
+    vi: "Passive with modals"
+    en: "Passive with modals"
+  r5:
+    - "b1-passive-with-modals"
+  error_tags:
+    - sentence_structure
+  contrasts: []
+  prereqs: []
+  sequence: 6
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b1.016
+  level: "B1"
+  function: fn.past_experience
+  point_type: tense_aspect
+  native_title: "Present perfect passive"
+  title:
+    vi: "Present perfect passive"
+    en: "Present perfect passive"
+  r5:
+    - "b1-present-perfect-passive"
+  error_tags:
+    - tense
+  contrasts: []
+  prereqs: []
+  sequence: 4
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b1.017
+  level: "B1"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "Ability across time"
+  title:
+    vi: "Ability across time"
+    en: "Ability across time"
+  r5:
+    - "b1-ability-across-time"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 7
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b1.018
+  level: "B1"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "Prohibition and lack of necessity"
+  title:
+    vi: "Prohibition and lack of necessity"
+    en: "Prohibition and lack of necessity"
+  r5:
+    - "b1-prohibition-and-lack-of-necessity"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 8
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b1.019
+  level: "B1"
+  function: fn.obligation_advice
+  point_type: other
+  native_title: "Advice: should/ought to/had better"
+  title:
+    vi: "Advice: should/ought to/had better"
+    en: "Advice: should/ought to/had better"
+  r5:
+    - "b1-advice-should-ought-to-had-better"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b1.020
+  level: "B1"
+  function: fn.obligation_advice
+  point_type: other
+  native_title: "Deduction: must/might/can't"
+  title:
+    vi: "Deduction: must/might/can't"
+    en: "Deduction: must/might/can't"
+  r5:
+    - "b1-deduction-must-might-can-t"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 2
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b1.021
+  level: "B1"
+  function: fn.obligation_advice
+  point_type: tense_aspect
+  native_title: "Past modals: should/could/might have"
+  title:
+    vi: "Past modals: should/could/might have"
+    en: "Past modals: should/could/might have"
+  r5:
+    - "b1-past-modals-should-could-might-have"
+  error_tags:
+    - tense
+  contrasts: []
+  prereqs: []
+  sequence: 3
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b1.022
+  level: "B1"
+  function: fn.questions
+  point_type: word_order
+  native_title: "Question tags"
+  title:
+    vi: "Question tags"
+    en: "Question tags"
+  r5:
+    - "b1-question-tags"
+  error_tags:
+    - sentence_structure
+  contrasts: []
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b1.023
+  level: "B1"
+  function: fn.questions
+  point_type: word_order
+  native_title: "Indirect questions"
+  title:
+    vi: "Indirect questions"
+    en: "Indirect questions"
+  r5:
+    - "b1-indirect-questions"
+  error_tags:
+    - sentence_structure
+  contrasts: []
+  prereqs: []
+  sequence: 2
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b1.024
+  level: "B1"
+  function: fn.questions
+  point_type: word_order
+  native_title: "Subject questions and object questions"
+  title:
+    vi: "Subject questions and object questions"
+    en: "Subject questions and object questions"
+  r5:
+    - "b1-subject-questions-and-object-questions"
+  error_tags:
+    - sentence_structure
+  contrasts: []
+  prereqs: []
+  sequence: 3
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b1.025
+  level: "B1"
+  function: fn.condition_real
+  point_type: other
+  native_title: "Zero/first/second conditionals"
+  title:
+    vi: "Zero/first/second conditionals"
+    en: "Zero/first/second conditionals"
+  r5:
+    - "b1-zero-first-second-conditionals"
+  error_tags:
+    - tense
+  contrasts: []
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b1.026
+  level: "B1"
+  function: fn.condition_real
+  point_type: other
+  native_title: "Third conditional"
+  title:
+    vi: "Third conditional"
+    en: "Third conditional"
+  r5:
+    - "b1-third-conditional"
+  error_tags:
+    - tense
+  contrasts: []
+  prereqs: []
+  sequence: 2
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b1.027
+  level: "B1"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "Reported statements"
+  title:
+    vi: "Reported statements"
+    en: "Reported statements"
+  r5:
+    - "b1-reported-statements"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 9
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b1.028
+  level: "B1"
+  function: fn.questions
+  point_type: word_order
+  native_title: "Reported questions"
+  title:
+    vi: "Reported questions"
+    en: "Reported questions"
+  r5:
+    - "b1-reported-questions"
+  error_tags:
+    - sentence_structure
+  contrasts: []
+  prereqs: []
+  sequence: 4
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b1.029
+  level: "B1"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "Reported commands and requests"
+  title:
+    vi: "Reported commands and requests"
+    en: "Reported commands and requests"
+  r5:
+    - "b1-reported-commands-and-requests"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 10
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b1.030
+  level: "B1"
+  function: fn.relative
+  point_type: word_order
+  native_title: "Non-defining relative clauses"
+  title:
+    vi: "Non-defining relative clauses"
+    en: "Non-defining relative clauses"
+  r5:
+    - "b1-non-defining-relative-clauses"
+  error_tags:
+    - sentence_structure
+  contrasts: []
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b1.031
+  level: "B1"
+  function: fn.pronoun_reference
+  point_type: word_order
+  native_title: "Relative pronouns and prepositions"
+  title:
+    vi: "Relative pronouns and prepositions"
+    en: "Relative pronouns and prepositions"
+  r5:
+    - "b1-relative-pronouns-and-prepositions"
+  error_tags:
+    - preposition
+  contrasts: []
+  prereqs: []
+  sequence: 2
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b1.032
+  level: "B1"
+  function: fn.verb_patterns
+  point_type: other
+  native_title: "Gerund vs infinitive: common patterns"
+  title:
+    vi: "Gerund vs infinitive: common patterns"
+    en: "Gerund vs infinitive: common patterns"
+  r5:
+    - "b1-gerund-vs-infinitive-common-patterns"
+  error_tags:
+    - word_form
+  contrasts: []
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b1.033
+  level: "B1"
+  function: fn.verb_patterns
+  point_type: other
+  native_title: "Verb pattern meaning changes: introduction"
+  title:
+    vi: "Verb pattern meaning changes: introduction"
+    en: "Verb pattern meaning changes: introduction"
+  r5:
+    - "b1-verb-pattern-meaning-changes-introduction"
+    - "b2-gerund-infinitive-meaning-contrasts"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 2
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b1.034
+  level: "B1"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "Causative have/get"
+  title:
+    vi: "Causative have/get"
+    en: "Causative have/get"
+  r5:
+    - "b1-causative-have-get"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 11
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b1.035
+  level: "B1"
+  function: fn.grammar_reference
+  point_type: tense_aspect
+  native_title: "Wish/if only: present"
+  title:
+    vi: "Wish/if only: present"
+    en: "Wish/if only: present"
+  r5:
+    - "b1-wish-if-only-present"
+  error_tags:
+    - tense
+  contrasts: []
+  prereqs: []
+  sequence: 12
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b1.036
+  level: "B1"
+  function: fn.grammar_reference
+  point_type: tense_aspect
+  native_title: "Wish/if only: past"
+  title:
+    vi: "Wish/if only: past"
+    en: "Wish/if only: past"
+  r5:
+    - "b1-wish-if-only-past"
+  error_tags:
+    - tense
+  contrasts: []
+  prereqs: []
+  sequence: 13
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b1.037
+  level: "B1"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "Although/despite/however"
+  title:
+    vi: "Although/despite/however"
+    en: "Although/despite/however"
+  r5:
+    - "b1-although-despite-however"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 14
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b1.038
+  level: "B1"
+  function: fn.linking
+  point_type: other
+  native_title: "Reason/result connectors"
+  title:
+    vi: "Reason/result connectors"
+    en: "Reason/result connectors"
+  r5:
+    - "b1-reason-result-connectors"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b1.039
+  level: "B1"
+  function: fn.reference
+  point_type: other
+  native_title: "Articles beyond basics"
+  title:
+    vi: "Articles beyond basics"
+    en: "Articles beyond basics"
+  r5:
+    - "b1-articles-beyond-basics"
+    - "b1-generic-reference-and-zero-article"
+  error_tags:
+    - article
+  contrasts: []
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b1.040
+  level: "B1"
+  function: fn.quantity
+  point_type: other
+  native_title: "Quantifiers and distributives"
+  title:
+    vi: "Quantifiers and distributives"
+    en: "Quantifiers and distributives"
+  r5:
+    - "b1-quantifiers-and-distributives"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b1.041
+  level: "B1"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "Both/either/neither"
+  title:
+    vi: "Both/either/neither"
+    en: "Both/either/neither"
+  r5:
+    - "b1-both-either-neither"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 15
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b1.042
+  level: "B1"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "One/ones"
+  title:
+    vi: "One/ones"
+    en: "One/ones"
+  r5:
+    - "b1-one-ones"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 16
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b1.043
+  level: "B1"
+  function: fn.pronoun_reference
+  point_type: other
+  native_title: "Reflexive pronouns and each other"
+  title:
+    vi: "Reflexive pronouns and each other"
+    en: "Reflexive pronouns and each other"
+  r5:
+    - "b1-reflexive-pronouns-and-each-other"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 3
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b1.044
+  level: "B1"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "So/such/too/enough"
+  title:
+    vi: "So/such/too/enough"
+    en: "So/such/too/enough"
+  r5:
+    - "b1-so-such-too-enough"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 17
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b1.045
+  level: "B1"
+  function: fn.comparison
+  point_type: other
+  native_title: "Comparative patterns and intensifiers"
+  title:
+    vi: "Comparative patterns and intensifiers"
+    en: "Comparative patterns and intensifiers"
+  r5:
+    - "b1-comparative-patterns-and-intensifiers"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b1.046
+  level: "B1"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "Adjective Order"
+  title:
+    vi: "Adjective Order"
+    en: "Adjective Order"
+  r5:
+    []
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 18
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b1.047
+  level: "B1"
+  function: fn.grammar_reference
+  point_type: word_order
+  native_title: "Adjective Preposition"
+  title:
+    vi: "Adjective Preposition"
+    en: "Adjective Preposition"
+  r5:
+    []
+  error_tags:
+    - preposition
+  contrasts: []
+  prereqs: []
+  sequence: 19
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b1.048
+  level: "B1"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "Be Used To"
+  title:
+    vi: "Be Used To"
+    en: "Be Used To"
+  r5:
+    []
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 20
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b1.049
+  level: "B1"
+  function: fn.linking
+  point_type: other
+  native_title: "Discourse Markers"
+  title:
+    vi: "Discourse Markers"
+    en: "Discourse Markers"
+  r5:
+    []
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 2
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b1.050
+  level: "B1"
+  function: fn.verb_patterns
+  point_type: other
+  native_title: "Gerund Subject"
+  title:
+    vi: "Gerund Subject"
+    en: "Gerund Subject"
+  r5:
+    []
+  error_tags:
+    - word_form
+  contrasts: []
+  prereqs: []
+  sequence: 3
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b1.051
+  level: "B1"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "It Be Adjective To"
+  title:
+    vi: "It Be Adjective To"
+    en: "It Be Adjective To"
+  r5:
+    []
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 21
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b1.052
+  level: "B1"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "Make Let Allow"
+  title:
+    vi: "Make Let Allow"
+    en: "Make Let Allow"
+  r5:
+    []
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 22
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b1.053
+  level: "B1"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "Phrasal Verbs Separable"
+  title:
+    vi: "Phrasal Verbs Separable"
+    en: "Phrasal Verbs Separable"
+  r5:
+    []
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 23
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b1.054
+  level: "B1"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "Purpose So That"
+  title:
+    vi: "Purpose So That"
+    en: "Purpose So That"
+  r5:
+    []
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 24
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b1.055
+  level: "B1"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "So Neither Agreement"
+  title:
+    vi: "So Neither Agreement"
+    en: "So Neither Agreement"
+  r5:
+    []
+  error_tags:
+    - agreement
+  contrasts: []
+  prereqs: []
+  sequence: 25
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b2.001
+  level: "B2"
+  function: fn.linking
+  point_type: tense_aspect
+  native_title: "Perfect aspect in discourse"
+  title:
+    vi: "Perfect aspect in discourse"
+    en: "Perfect aspect in discourse"
+  r5:
+    - "b2-perfect-aspect-in-discourse"
+    - "b2-present-aspect-and-viewpoint"
+    - "b2-past-aspect-and-narrative-viewpoint"
+  error_tags:
+    - tense
+  contrasts: []
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b2.002
+  level: "B2"
+  function: fn.future_plans
+  point_type: tense_aspect
+  native_title: "Future perfect"
+  title:
+    vi: "Future perfect"
+    en: "Future perfect"
+  r5:
+    - "b2-future-perfect"
+    - "b1-future-perfect-introduction"
+  error_tags:
+    - tense
+  contrasts: []
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b2.003
+  level: "B2"
+  function: fn.future_plans
+  point_type: tense_aspect
+  native_title: "Future perfect continuous"
+  title:
+    vi: "Future perfect continuous"
+    en: "Future perfect continuous"
+  r5:
+    - "b2-future-perfect-continuous"
+  error_tags:
+    - tense
+  contrasts: []
+  prereqs: []
+  sequence: 2
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b2.004
+  level: "B2"
+  function: fn.future_plans
+  point_type: tense_aspect
+  native_title: "Future in the past"
+  title:
+    vi: "Future in the past"
+    en: "Future in the past"
+  r5:
+    - "b2-future-in-the-past"
+  error_tags:
+    - tense
+  contrasts: []
+  prereqs: []
+  sequence: 3
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b2.005
+  level: "B2"
+  function: fn.condition_real
+  point_type: other
+  native_title: "Mixed conditionals"
+  title:
+    vi: "Mixed conditionals"
+    en: "Mixed conditionals"
+  r5:
+    - "b2-mixed-conditionals"
+    - "b1-mixed-conditional-introduction"
+  error_tags:
+    - tense
+  contrasts: []
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b2.006
+  level: "B2"
+  function: fn.comparison
+  point_type: other
+  native_title: "In case/provided/as long as"
+  title:
+    vi: "In case/provided/as long as"
+    en: "In case/provided/as long as"
+  r5:
+    - "b2-in-case-provided-as-long-as"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b2.007
+  level: "B2"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "Modal certainty and probability"
+  title:
+    vi: "Modal certainty and probability"
+    en: "Modal certainty and probability"
+  r5:
+    - "b2-modal-certainty-and-probability"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b2.008
+  level: "B2"
+  function: fn.possibility
+  point_type: tense_aspect
+  native_title: "Past deduction"
+  title:
+    vi: "Past deduction"
+    en: "Past deduction"
+  r5:
+    - "b2-past-deduction"
+  error_tags:
+    - tense
+  contrasts: []
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b2.009
+  level: "B2"
+  function: fn.grammar_reference
+  point_type: tense_aspect
+  native_title: "Modal perfect criticism and regret"
+  title:
+    vi: "Modal perfect criticism and regret"
+    en: "Modal perfect criticism and regret"
+  r5:
+    - "b2-modal-perfect-criticism-and-regret"
+  error_tags:
+    - tense
+  contrasts: []
+  prereqs: []
+  sequence: 2
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b2.010
+  level: "B2"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "Needn't have vs didn't need to"
+  title:
+    vi: "Needn't have vs didn't need to"
+    en: "Needn't have vs didn't need to"
+  r5:
+    - "b2-needn-t-have-vs-didn-t-need-to"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 3
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b2.011
+  level: "B2"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "Would rather/would prefer/prefer"
+  title:
+    vi: "Would rather/would prefer/prefer"
+    en: "Would rather/would prefer/prefer"
+  r5:
+    - "b2-would-rather-would-prefer-prefer"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 4
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b2.012
+  level: "B2"
+  function: fn.grammar_reference
+  point_type: tense_aspect
+  native_title: "It's time + past form"
+  title:
+    vi: "It's time + past form"
+    en: "It's time + past form"
+  r5:
+    - "b2-it-s-time-past-form"
+  error_tags:
+    - tense
+  contrasts: []
+  prereqs: []
+  sequence: 5
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b2.013
+  level: "B2"
+  function: fn.grammar_reference
+  point_type: word_order
+  native_title: "Advanced passive forms"
+  title:
+    vi: "Advanced passive forms"
+    en: "Advanced passive forms"
+  r5:
+    - "b2-advanced-passive-forms"
+  error_tags:
+    - sentence_structure
+  contrasts: []
+  prereqs: []
+  sequence: 6
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b2.014
+  level: "B2"
+  function: fn.grammar_reference
+  point_type: tense_aspect
+  native_title: "Modal perfect passive"
+  title:
+    vi: "Modal perfect passive"
+    en: "Modal perfect passive"
+  r5:
+    - "b2-modal-perfect-passive"
+  error_tags:
+    - tense
+  contrasts: []
+  prereqs: []
+  sequence: 7
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b2.015
+  level: "B2"
+  function: fn.grammar_reference
+  point_type: word_order
+  native_title: "Two-object passive"
+  title:
+    vi: "Two-object passive"
+    en: "Two-object passive"
+  r5:
+    - "b2-two-object-passive"
+  error_tags:
+    - sentence_structure
+  contrasts: []
+  prereqs: []
+  sequence: 8
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b2.016
+  level: "B2"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "Causative have/get: extended"
+  title:
+    vi: "Causative have/get: extended"
+    en: "Causative have/get: extended"
+  r5:
+    - "b2-causative-have-get-extended"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 9
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b2.017
+  level: "B2"
+  function: fn.grammar_reference
+  point_type: word_order
+  native_title: "Reporting passive"
+  title:
+    vi: "Reporting passive"
+    en: "Reporting passive"
+  r5:
+    - "b2-reporting-passive"
+    - "b2-impersonal-passive"
+    - "c1-reporting-passives"
+  error_tags:
+    - sentence_structure
+  contrasts: []
+  prereqs: []
+  sequence: 10
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b2.018
+  level: "B2"
+  function: fn.grammar_reference
+  point_type: tense_aspect
+  native_title: "Reported speech: tense choice"
+  title:
+    vi: "Reported speech: tense choice"
+    en: "Reported speech: tense choice"
+  r5:
+    - "b2-reported-speech-tense-choice"
+  error_tags:
+    - tense
+  contrasts: []
+  prereqs: []
+  sequence: 11
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b2.019
+  level: "B2"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "Reporting verbs and patterns"
+  title:
+    vi: "Reporting verbs and patterns"
+    en: "Reporting verbs and patterns"
+  r5:
+    - "b2-reporting-verbs-and-patterns"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 12
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b2.020
+  level: "B2"
+  function: fn.relative
+  point_type: word_order
+  native_title: "Advanced relative clauses"
+  title:
+    vi: "Advanced relative clauses"
+    en: "Advanced relative clauses"
+  r5:
+    - "b2-advanced-relative-clauses"
+    - "c1-advanced-relative-structures"
+  error_tags:
+    - sentence_structure
+  contrasts: []
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b2.021
+  level: "B2"
+  function: fn.pronoun_reference
+  point_type: word_order
+  native_title: "Preposition + relative pronoun"
+  title:
+    vi: "Preposition + relative pronoun"
+    en: "Preposition + relative pronoun"
+  r5:
+    - "b2-preposition-relative-pronoun"
+  error_tags:
+    - preposition
+  contrasts: []
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b2.022
+  level: "B2"
+  function: fn.pronoun_reference
+  point_type: other
+  native_title: "Quantifier + relative pronoun"
+  title:
+    vi: "Quantifier + relative pronoun"
+    en: "Quantifier + relative pronoun"
+  r5:
+    - "b2-quantifier-relative-pronoun"
+  error_tags:
+    - sentence_structure
+  contrasts: []
+  prereqs: []
+  sequence: 2
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b2.023
+  level: "B2"
+  function: fn.relative
+  point_type: word_order
+  native_title: "Reduced relative clauses"
+  title:
+    vi: "Reduced relative clauses"
+    en: "Reduced relative clauses"
+  r5:
+    - "b2-reduced-relative-clauses"
+  error_tags:
+    - sentence_structure
+  contrasts: []
+  prereqs: []
+  sequence: 2
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b2.024
+  level: "B2"
+  function: fn.linking
+  point_type: other
+  native_title: "Participle clauses"
+  title:
+    vi: "Participle clauses"
+    en: "Participle clauses"
+  r5:
+    - "b2-participle-clauses"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 2
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b2.025
+  level: "B2"
+  function: fn.linking
+  point_type: tense_aspect
+  native_title: "Perfect participle clauses"
+  title:
+    vi: "Perfect participle clauses"
+    en: "Perfect participle clauses"
+  r5:
+    - "b2-perfect-participle-clauses"
+  error_tags:
+    - tense
+  contrasts: []
+  prereqs: []
+  sequence: 3
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b2.026
+  level: "B2"
+  function: fn.linking
+  point_type: other
+  native_title: "Infinitive clauses"
+  title:
+    vi: "Infinitive clauses"
+    en: "Infinitive clauses"
+  r5:
+    - "b2-infinitive-clauses"
+  error_tags:
+    - word_form
+  contrasts: []
+  prereqs: []
+  sequence: 4
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b2.027
+  level: "B2"
+  function: fn.linking
+  point_type: other
+  native_title: "Gerund clauses"
+  title:
+    vi: "Gerund clauses"
+    en: "Gerund clauses"
+  r5:
+    - "b2-gerund-clauses"
+  error_tags:
+    - word_form
+  contrasts: []
+  prereqs: []
+  sequence: 5
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b2.028
+  level: "B2"
+  function: fn.grammar_reference
+  point_type: word_order
+  native_title: "Cleft sentences"
+  title:
+    vi: "Cleft sentences"
+    en: "Cleft sentences"
+  r5:
+    - "b2-cleft-sentences"
+    - "c1-it-clefts"
+  error_tags:
+    - sentence_structure
+  contrasts: []
+  prereqs: []
+  sequence: 13
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b2.029
+  level: "B2"
+  function: fn.grammar_reference
+  point_type: word_order
+  native_title: "Pseudo-cleft sentences"
+  title:
+    vi: "Pseudo-cleft sentences"
+    en: "Pseudo-cleft sentences"
+  r5:
+    - "b2-pseudo-cleft-sentences"
+    - "c1-wh-clefts-and-reversed-clefts"
+  error_tags:
+    - sentence_structure
+  contrasts: []
+  prereqs: []
+  sequence: 14
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b2.030
+  level: "B2"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "Fronting for emphasis"
+  title:
+    vi: "Fronting for emphasis"
+    en: "Fronting for emphasis"
+  r5:
+    - "b2-fronting-for-emphasis"
+    - "c1-fronting-and-topicalisation"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 15
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b2.031
+  level: "B2"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "Emphatic do"
+  title:
+    vi: "Emphatic do"
+    en: "Emphatic do"
+  r5:
+    - "b2-emphatic-do"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 16
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b2.032
+  level: "B2"
+  function: fn.reference
+  point_type: other
+  native_title: "Advanced articles and determiners"
+  title:
+    vi: "Advanced articles and determiners"
+    en: "Advanced articles and determiners"
+  r5:
+    - "b2-advanced-articles-and-determiners"
+  error_tags:
+    - article
+  contrasts: []
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b2.033
+  level: "B2"
+  function: fn.quantity
+  point_type: other
+  native_title: "Complex quantifiers"
+  title:
+    vi: "Complex quantifiers"
+    en: "Complex quantifiers"
+  r5:
+    - "b2-complex-quantifiers"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b2.034
+  level: "B2"
+  function: fn.reference
+  point_type: other
+  native_title: "Reference and substitution"
+  title:
+    vi: "Reference and substitution"
+    en: "Reference and substitution"
+  r5:
+    - "b2-reference-and-substitution"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 2
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b2.035
+  level: "B2"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "Ellipsis"
+  title:
+    vi: "Ellipsis"
+    en: "Ellipsis"
+  r5:
+    - "b2-ellipsis"
+    - "c1-ellipsis-and-substitution"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 17
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b2.036
+  level: "B2"
+  function: fn.linking
+  point_type: other
+  native_title: "Nominal clauses"
+  title:
+    vi: "Nominal clauses"
+    en: "Nominal clauses"
+  r5:
+    - "b2-nominal-clauses"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 6
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b2.037
+  level: "B2"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "Complex noun phrases"
+  title:
+    vi: "Complex noun phrases"
+    en: "Complex noun phrases"
+  r5:
+    - "b2-complex-noun-phrases"
+    - "c1-complex-noun-phrase-architecture"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 18
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b2.038
+  level: "B2"
+  function: fn.grammar_reference
+  point_type: word_order
+  native_title: "Dependent prepositions"
+  title:
+    vi: "Dependent prepositions"
+    en: "Dependent prepositions"
+  r5:
+    - "b2-dependent-prepositions"
+  error_tags:
+    - preposition
+  contrasts: []
+  prereqs: []
+  sequence: 19
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b2.039
+  level: "B2"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "Concession patterns"
+  title:
+    vi: "Concession patterns"
+    en: "Concession patterns"
+  r5:
+    - "b2-concession-patterns"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 20
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b2.040
+  level: "B2"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "Formal vs informal grammar choices"
+  title:
+    vi: "Formal vs informal grammar choices"
+    en: "Formal vs informal grammar choices"
+  r5:
+    - "b2-formal-vs-informal-grammar-choices"
+    - "c2-academic-vs-business-vs-conversational-grammar"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 21
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b2.041
+  level: "B2"
+  function: fn.linking
+  point_type: other
+  native_title: "Punctuation with complex clauses"
+  title:
+    vi: "Punctuation with complex clauses"
+    en: "Punctuation with complex clauses"
+  r5:
+    - "b2-punctuation-with-complex-clauses"
+    - "c2-advanced-punctuation-as-syntax"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 7
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b2.042
+  level: "B2"
+  function: fn.comparison
+  point_type: other
+  native_title: "As If As Though"
+  title:
+    vi: "As If As Though"
+    en: "As If As Though"
+  r5:
+    []
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 2
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b2.043
+  level: "B2"
+  function: fn.grammar_reference
+  point_type: word_order
+  native_title: "Get Passive"
+  title:
+    vi: "Get Passive"
+    en: "Get Passive"
+  r5:
+    []
+  error_tags:
+    - sentence_structure
+  contrasts: []
+  prereqs: []
+  sequence: 22
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.b2.044
+  level: "B2"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "Phrasal Verbs Advanced"
+  title:
+    vi: "Phrasal Verbs Advanced"
+    en: "Phrasal Verbs Advanced"
+  r5:
+    []
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 23
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.c1.001
+  level: "C1"
+  function: fn.grammar_reference
+  point_type: word_order
+  native_title: "Only-phrase inversion"
+  title:
+    vi: "Only-phrase inversion"
+    en: "Only-phrase inversion"
+  r5:
+    - "b2-only-phrase-inversion"
+  error_tags:
+    - sentence_structure
+  contrasts: []
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.c1.002
+  level: "C1"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "No sooner/hardly/scarcely"
+  title:
+    vi: "No sooner/hardly/scarcely"
+    en: "No sooner/hardly/scarcely"
+  r5:
+    - "b2-no-sooner-hardly-scarcely"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 2
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.c1.003
+  level: "C1"
+  function: fn.grammar_reference
+  point_type: tense_aspect
+  native_title: "Advanced simple vs continuous aspect"
+  title:
+    vi: "Advanced simple vs continuous aspect"
+    en: "Advanced simple vs continuous aspect"
+  r5:
+    - "c1-advanced-simple-vs-continuous-aspect"
+    - "c1-advanced-perfect-aspect"
+  error_tags:
+    - tense
+  contrasts: []
+  prereqs: []
+  sequence: 3
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.c1.004
+  level: "C1"
+  function: fn.grammar_reference
+  point_type: tense_aspect
+  native_title: "Lexical aspect and meaning shifts"
+  title:
+    vi: "Lexical aspect and meaning shifts"
+    en: "Lexical aspect and meaning shifts"
+  r5:
+    - "c1-lexical-aspect-and-meaning-shifts"
+    - "c2-advanced-tense-aspect-viewpoint-shifts"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 4
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.c1.005
+  level: "C1"
+  function: fn.grammar_reference
+  point_type: tense_aspect
+  native_title: "Historic present and narrative shifts"
+  title:
+    vi: "Historic present and narrative shifts"
+    en: "Historic present and narrative shifts"
+  r5:
+    - "c1-historic-present-and-narrative-shifts"
+  error_tags:
+    - tense
+  contrasts: []
+  prereqs: []
+  sequence: 5
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.c1.006
+  level: "C1"
+  function: fn.future_plans
+  point_type: tense_aspect
+  native_title: "Future-in-the-past systems"
+  title:
+    vi: "Future-in-the-past systems"
+    en: "Future-in-the-past systems"
+  r5:
+    - "c1-future-in-the-past-systems"
+  error_tags:
+    - tense
+  contrasts: []
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.c1.007
+  level: "C1"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "Advanced epistemic modality"
+  title:
+    vi: "Advanced epistemic modality"
+    en: "Advanced epistemic modality"
+  r5:
+    - "c1-advanced-epistemic-modality"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 6
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.c1.008
+  level: "C1"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "Deontic and dynamic modality"
+  title:
+    vi: "Deontic and dynamic modality"
+    en: "Deontic and dynamic modality"
+  r5:
+    - "c1-deontic-and-dynamic-modality"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 7
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.c1.009
+  level: "C1"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "Hedging with modal and lexical devices"
+  title:
+    vi: "Hedging with modal and lexical devices"
+    en: "Hedging with modal and lexical devices"
+  r5:
+    - "c1-hedging-with-modal-and-lexical-devices"
+    - "c1-hedging-academic-claims"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 8
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.c1.010
+  level: "C1"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "Boosting and controlled certainty"
+  title:
+    vi: "Boosting and controlled certainty"
+    en: "Boosting and controlled certainty"
+  r5:
+    - "c1-boosting-and-controlled-certainty"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 9
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.c1.011
+  level: "C1"
+  function: fn.negation
+  point_type: word_order
+  native_title: "Negative adverbial inversion"
+  title:
+    vi: "Negative adverbial inversion"
+    en: "Negative adverbial inversion"
+  r5:
+    - "c1-negative-adverbial-inversion"
+    - "b2-negative-adverbial-inversion"
+  error_tags:
+    - sentence_structure
+  contrasts: []
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.c1.012
+  level: "C1"
+  function: fn.condition_real
+  point_type: word_order
+  native_title: "Conditional inversion"
+  title:
+    vi: "Conditional inversion"
+    en: "Conditional inversion"
+  r5:
+    - "c1-conditional-inversion"
+    - "b2-conditional-inversion-introduction"
+  error_tags:
+    - tense
+  contrasts: []
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.c1.013
+  level: "C1"
+  function: fn.grammar_reference
+  point_type: word_order
+  native_title: "So/such inversion"
+  title:
+    vi: "So/such inversion"
+    en: "So/such inversion"
+  r5:
+    - "c1-so-such-inversion"
+  error_tags:
+    - sentence_structure
+  contrasts: []
+  prereqs: []
+  sequence: 10
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.c1.014
+  level: "C1"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "Extraposition with anticipatory it"
+  title:
+    vi: "Extraposition with anticipatory it"
+    en: "Extraposition with anticipatory it"
+  r5:
+    - "c1-extraposition-with-anticipatory-it"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 11
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.c1.015
+  level: "C1"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "Existential there with complex noun phrases"
+  title:
+    vi: "Existential there with complex noun phrases"
+    en: "Existential there with complex noun phrases"
+  r5:
+    - "c1-existential-there-with-complex-noun-phrases"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 12
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.c1.016
+  level: "C1"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "Nominalisation"
+  title:
+    vi: "Nominalisation"
+    en: "Nominalisation"
+  r5:
+    - "c1-nominalisation"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 13
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.c1.017
+  level: "C1"
+  function: fn.verb_patterns
+  point_type: tense_aspect
+  native_title: "Perfect infinitives in reporting"
+  title:
+    vi: "Perfect infinitives in reporting"
+    en: "Perfect infinitives in reporting"
+  r5:
+    - "c1-perfect-infinitives-in-reporting"
+  error_tags:
+    - tense
+  contrasts: []
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.c1.018
+  level: "C1"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "Mandative subjunctive"
+  title:
+    vi: "Mandative subjunctive"
+    en: "Mandative subjunctive"
+  r5:
+    - "c1-mandative-subjunctive"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 14
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.c1.019
+  level: "C1"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "Were-subjunctive"
+  title:
+    vi: "Were-subjunctive"
+    en: "Were-subjunctive"
+  r5:
+    - "c1-were-subjunctive"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 15
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.c1.020
+  level: "C1"
+  function: fn.relative
+  point_type: word_order
+  native_title: "Fused relative clauses"
+  title:
+    vi: "Fused relative clauses"
+    en: "Fused relative clauses"
+  r5:
+    - "c1-fused-relative-clauses"
+    - "c2-fused-and-nominal-relatives"
+  error_tags:
+    - sentence_structure
+  contrasts: []
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.c1.021
+  level: "C1"
+  function: fn.linking
+  point_type: other
+  native_title: "Advanced non-finite clauses"
+  title:
+    vi: "Advanced non-finite clauses"
+    en: "Advanced non-finite clauses"
+  r5:
+    - "c1-advanced-non-finite-clauses"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.c1.022
+  level: "C1"
+  function: fn.grammar_reference
+  point_type: tense_aspect
+  native_title: "Perfect and passive non-finites"
+  title:
+    vi: "Perfect and passive non-finites"
+    en: "Perfect and passive non-finites"
+  r5:
+    - "c1-perfect-and-passive-non-finites"
+  error_tags:
+    - tense
+  contrasts: []
+  prereqs: []
+  sequence: 16
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.c1.023
+  level: "C1"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "Advanced concession"
+  title:
+    vi: "Advanced concession"
+    en: "Advanced concession"
+  r5:
+    - "c1-advanced-concession"
+    - "c2-advanced-concession-and-counterargument"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 17
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.c1.024
+  level: "C1"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "Cause/result/purpose relations"
+  title:
+    vi: "Cause/result/purpose relations"
+    en: "Cause/result/purpose relations"
+  r5:
+    - "c1-cause-result-purpose-relations"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 18
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.c1.025
+  level: "C1"
+  function: fn.reference
+  point_type: other
+  native_title: "Discourse reference"
+  title:
+    vi: "Discourse reference"
+    en: "Discourse reference"
+  r5:
+    - "c1-discourse-reference"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.c1.026
+  level: "C1"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "Parallelism and coordination"
+  title:
+    vi: "Parallelism and coordination"
+    en: "Parallelism and coordination"
+  r5:
+    - "c1-parallelism-and-coordination"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 19
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.c1.027
+  level: "C1"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "Qualification and limitation"
+  title:
+    vi: "Qualification and limitation"
+    en: "Qualification and limitation"
+  r5:
+    - "c1-qualification-and-limitation"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 20
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.c1.028
+  level: "C1"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "Register-driven grammar"
+  title:
+    vi: "Register-driven grammar"
+    en: "Register-driven grammar"
+  r5:
+    - "c1-register-driven-grammar"
+    - "c2-register-driven-syntax"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 21
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.c1.029
+  level: "C1"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "Academic definitions and classifications"
+  title:
+    vi: "Academic definitions and classifications"
+    en: "Academic definitions and classifications"
+  r5:
+    - "c1-academic-definitions-and-classifications"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 22
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.c1.030
+  level: "C1"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "Sentence rhythm, end-weight and end-focus"
+  title:
+    vi: "Sentence rhythm, end-weight and end-focus"
+    en: "Sentence rhythm, end-weight and end-focus"
+  r5:
+    - "c1-sentence-rhythm-end-weight-and-end-focus"
+    - "c1-old-to-new-information-flow"
+  error_tags:
+    - sentence_structure
+  contrasts: []
+  prereqs: []
+  sequence: 23
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.c2.001
+  level: "C2"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "Layered modality and authorial voice"
+  title:
+    vi: "Layered modality and authorial voice"
+    en: "Layered modality and authorial voice"
+  r5:
+    - "c2-layered-modality-and-authorial-voice"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.c2.002
+  level: "C2"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "Counterfactual compression"
+  title:
+    vi: "Counterfactual compression"
+    en: "Counterfactual compression"
+  r5:
+    - "c2-counterfactual-compression"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 2
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.c2.003
+  level: "C2"
+  function: fn.quantity
+  point_type: other
+  native_title: "Negation and quantifier scope"
+  title:
+    vi: "Negation and quantifier scope"
+    en: "Negation and quantifier scope"
+  r5:
+    - "c2-negation-and-quantifier-scope"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.c2.004
+  level: "C2"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "Only/focus scope"
+  title:
+    vi: "Only/focus scope"
+    en: "Only/focus scope"
+  r5:
+    - "c2-only-focus-scope"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 3
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.c2.005
+  level: "C2"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "Ambiguity from modifier attachment"
+  title:
+    vi: "Ambiguity from modifier attachment"
+    en: "Ambiguity from modifier attachment"
+  r5:
+    - "c2-ambiguity-from-modifier-attachment"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 4
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.c2.006
+  level: "C2"
+  function: fn.reference
+  point_type: other
+  native_title: "Reference ambiguity"
+  title:
+    vi: "Reference ambiguity"
+    en: "Reference ambiguity"
+  r5:
+    - "c2-reference-ambiguity"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.c2.007
+  level: "C2"
+  function: fn.linking
+  point_type: other
+  native_title: "Deep clause embedding"
+  title:
+    vi: "Deep clause embedding"
+    en: "Deep clause embedding"
+  r5:
+    - "c2-deep-clause-embedding"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.c2.008
+  level: "C2"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "Advanced apposition"
+  title:
+    vi: "Advanced apposition"
+    en: "Advanced apposition"
+  r5:
+    - "c2-advanced-apposition"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 5
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.c2.009
+  level: "C2"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "Parenthetical grammar"
+  title:
+    vi: "Parenthetical grammar"
+    en: "Parenthetical grammar"
+  r5:
+    - "c2-parenthetical-grammar"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 6
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.c2.010
+  level: "C2"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "Heavy constituent shift"
+  title:
+    vi: "Heavy constituent shift"
+    en: "Heavy constituent shift"
+  r5:
+    - "c2-heavy-constituent-shift"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 7
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.c2.011
+  level: "C2"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "Advanced extraposition"
+  title:
+    vi: "Advanced extraposition"
+    en: "Advanced extraposition"
+  r5:
+    - "c2-advanced-extraposition"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 8
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.c2.012
+  level: "C2"
+  function: fn.comparison
+  point_type: other
+  native_title: "Marked comparison structures"
+  title:
+    vi: "Marked comparison structures"
+    en: "Marked comparison structures"
+  r5:
+    - "c2-marked-comparison-structures"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 1
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.c2.013
+  level: "C2"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "Advanced complement alternation"
+  title:
+    vi: "Advanced complement alternation"
+    en: "Advanced complement alternation"
+  r5:
+    - "c2-advanced-complement-alternation"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 9
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.c2.014
+  level: "C2"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "Advanced reporting and distancing"
+  title:
+    vi: "Advanced reporting and distancing"
+    en: "Advanced reporting and distancing"
+  r5:
+    - "c2-advanced-reporting-and-distancing"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 10
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.c2.015
+  level: "C2"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "Cross-sentence ellipsis"
+  title:
+    vi: "Cross-sentence ellipsis"
+    en: "Cross-sentence ellipsis"
+  r5:
+    - "c2-cross-sentence-ellipsis"
+  error_tags:
+    - sentence_structure
+  contrasts: []
+  prereqs: []
+  sequence: 11
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.c2.016
+  level: "C2"
+  function: fn.linking
+  point_type: other
+  native_title: "Discourse substitution chains"
+  title:
+    vi: "Discourse substitution chains"
+    en: "Discourse substitution chains"
+  r5:
+    - "c2-discourse-substitution-chains"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 2
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.c2.017
+  level: "C2"
+  function: fn.grammar_reference
+  point_type: other
+  native_title: "Lexico-grammar and colligation"
+  title:
+    vi: "Lexico-grammar and colligation"
+    en: "Lexico-grammar and colligation"
+  r5:
+    - "c2-lexico-grammar-and-colligation"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 12
+  anchors: []
+  batch: locked_catalog
+
+- id: en.canon.c2.018
+  level: "C2"
+  function: fn.linking
+  point_type: other
+  native_title: "Metadiscourse grammar"
+  title:
+    vi: "Metadiscourse grammar"
+    en: "Metadiscourse grammar"
+  r5:
+    - "c2-metadiscourse-grammar"
+  error_tags:
+    - other
+  contrasts: []
+  prereqs: []
+  sequence: 3
+  anchors: []
+  batch: locked_catalog
