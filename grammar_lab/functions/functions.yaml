@@ -430,3 +430,11 @@ functions:
   planned:
     zh-Hans:
     - zh.separable_verbs
+
+- id: fn.grammar_reference
+  title:
+    vi: Điểm ngữ pháp theo danh mục chuẩn
+    en: Grammar reference point
+    zh-Hans: 语法项目
+  realizations: {}
+  planned: {}
