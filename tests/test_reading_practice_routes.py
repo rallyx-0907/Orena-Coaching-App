@@ -11,17 +11,18 @@ attempt. English and Chinese take the same routes.
 from __future__ import annotations
 
 import asyncio
+import uuid
 from types import SimpleNamespace
 
 import httpx
 import pytest
 from fastapi import FastAPI, HTTPException
-from sqlalchemy import create_engine, event, func, select
+from sqlalchemy import create_engine, event, func, select, update
 from sqlalchemy.pool import StaticPool
 
 from writing_coach import reading_admin_api as admin_api
 from writing_coach import reading_practice_api as practice_api
-from writing_coach.persistence.models import Base, ReadingAttempt
+from writing_coach.persistence.models import Base, ReadingArticle, ReadingAttempt
 from writing_coach.persistence.reading_content_repository import ReadingContentRepository
 from writing_coach.persistence.reading_evidence_repository import ReadingEvidenceRepository
 from writing_coach.persistence.reading_job_repository import ReadingJobRepository
@@ -151,7 +152,7 @@ def _article(setup, language="en", *, rights=None, level="B1", content_hash=None
         source_id=setup.content.built_in_source_id("manual"), source_native_id="", canonical_url="",
         title="Train", author="", published_at=None, language=language, body=BODIES[language],
         content_hash=content_hash or ((language * 64)[:64] if rights is None else ("f" * 64)), metadata={},
-        rights=rights if rights is not None else {},
+        rights=rights if rights is not None else {"can_republish": True},
     )
     article = setup.content.create_article(
         source_item_id=snapshot["id"], title="The late train", body=BODIES[language], excerpt="",
@@ -193,31 +194,99 @@ def _attempts(setup) -> int:
 
 # ---- rights warnings ------------------------------------------------------------
 
-def test_publishing_over_rights_warnings_is_allowed_and_recorded_beside_them(setup):
-    article_id = _article(setup)
-    published = _publish(setup, article_id)
-    codes = {item["code"] for item in published["publication_warnings"]}
-    assert codes == {"rights_unknown", "attribution_unknown"}
-    assert published["status"] == "published"
-    record = next(item for item in setup.audited if item["action"] == "admin.reading_article_published")
-    assert record["payload"]["override"] is True
-    assert {item["code"] for item in record["payload"]["warnings"]} == codes
-    event = next(item for item in setup.content.list_review_events(article_id) if item["action"] == "published")
-    assert event["changes"]["published_over_warnings"] is True
+def _refused(setup, article_id):
+    response = call(setup.app, "POST", f"/api/admin/reading/articles/{article_id}/status",
+                    json={"status": "published"})
+    assert response.status_code == 409, response.text
+    detail = response.json()["detail"]
+    assert detail["category"] == "reading_rights_not_cleared"
+    return detail
 
 
-def test_a_cleared_article_publishes_with_no_warning(setup):
-    article_id = _article(setup, rights={"can_republish": True, "attribution_required": False})
-    published = _publish(setup, article_id)
-    assert published["publication_warnings"] == []
-    record = next(item for item in setup.audited if item["action"] == "admin.reading_article_published")
-    assert record["payload"]["override"] is False
+def _visible(setup, article_id) -> str:
+    return setup.content.get_article(article_id)["status"]
 
 
-def test_a_refused_permission_is_a_strong_warning_not_a_block(setup):
+def test_an_article_with_no_rights_answers_cannot_be_published(setup):
+    article_id = _article(setup, rights={})
+    detail = _refused(setup, article_id)
+    assert detail["context"]["blockers"] == [{"code": "rights_unknown", "question": "can_republish"}]
+    assert _visible(setup, article_id) != "published"
+    record = next(item for item in setup.audited if item["action"] == "admin.reading_article_publish_refused")
+    assert record["payload"]["blockers"][0]["code"] == "rights_unknown"
+
+
+def test_a_refused_permission_blocks_publication(setup):
     article_id = _article(setup, rights={"can_republish": False, "attribution_required": True})
+    detail = _refused(setup, article_id)
+    assert detail["context"]["blockers"][0]["code"] == "rights_not_cleared"
+    assert _visible(setup, article_id) != "published"
+
+
+def test_a_cleared_article_publishes_and_unknown_attribution_is_only_advice(setup):
+    article_id = _article(setup, rights={"can_republish": True})
     published = _publish(setup, article_id)
-    assert {"code": "rights_not_cleared", "level": "strong"} in published["publication_warnings"]
+    assert {item["code"] for item in published["publication_warnings"]} == {"attribution_unknown"}
+    cleared = _article(setup, rights={"can_republish": True, "attribution_required": False}, content_hash="e" * 64)
+    assert _publish(setup, cleared)["publication_warnings"] == []
+
+
+def test_an_adapted_article_also_needs_the_right_to_adapt(setup):
+    article_id = _article(setup, rights={"can_republish": True, "attribution_required": True})
+    with setup.engine.begin() as connection:
+        connection.execute(update(ReadingArticle).where(ReadingArticle.id == uuid.UUID(article_id))
+                           .values(is_adapted=True))
+    detail = _refused(setup, article_id)
+    assert detail["context"]["blockers"] == [{"code": "adaptation_unknown", "question": "can_adapt"}]
+    answered = call(setup.app, "POST", f"/api/admin/reading/articles/{article_id}/rights",
+                    json={"can_adapt": True})
+    assert answered.status_code == 200
+    assert _publish(setup, article_id)["status"] == "published"
+
+
+def test_answering_the_rights_questions_clears_the_gate_and_leaves_the_snapshot_alone(setup):
+    article_id = _article(setup, rights={})
+    _refused(setup, article_id)
+    answered = call(setup.app, "POST", f"/api/admin/reading/articles/{article_id}/rights",
+                    json={"can_republish": True, "attribution_required": False, "reason": "public domain"})
+    assert answered.status_code == 200, answered.text
+    body = answered.json()
+    assert body["source"]["rights"] == {}, "the snapshot is evidence and is never rewritten"
+    assert body["source"]["rights_state"]["can_republish"] == "allowed"
+    assert body["rights_review"]["count"] == 1
+    assert any(item["action"] == "admin.reading_rights_set" for item in setup.audited)
+    event = next(item for item in setup.content.list_review_events(article_id) if item["action"] == "rights_set")
+    assert event["changes"]["to"] == {"can_republish": True, "attribution_required": False}
+    assert _publish(setup, article_id)["publication_warnings"] == []
+    # A later answer wins, and null returns a question to unanswered.
+    call(setup.app, "POST", f"/api/admin/reading/articles/{article_id}/rights", json={"can_republish": False})
+    assert setup.content.get_article(article_id)["source"]["rights_state"]["can_republish"] == "denied"
+    call(setup.app, "POST", f"/api/admin/reading/articles/{article_id}/rights", json={"can_republish": None})
+    assert setup.content.get_article(article_id)["source"]["rights_state"]["can_republish"] == "unknown"
+
+
+def test_the_rights_route_refuses_an_empty_or_unknown_request(setup):
+    article_id = _article(setup)
+    empty = call(setup.app, "POST", f"/api/admin/reading/articles/{article_id}/rights", json={})
+    assert empty.status_code == 422 and empty.json()["detail"]["category"] == "reading_rights_empty"
+    extra = call(setup.app, "POST", f"/api/admin/reading/articles/{article_id}/rights", json={"status": "x"})
+    assert extra.status_code == 422
+    missing = call(setup.app, "POST", f"/api/admin/reading/articles/{uuid.uuid4()}/rights",
+                   json={"can_republish": True})
+    assert missing.status_code == 404
+
+
+def test_the_queue_carries_source_rights_and_target_count(setup):
+    open_id = _article(setup, rights={"can_republish": True})
+    blocked_id = _article(setup, rights={}, content_hash="d" * 64)
+    items = {item["id"]: item for item in call(setup.app, "GET", "/api/admin/reading/queue").json()["items"]}
+    assert items[open_id]["rights_level"] == "allowed"
+    assert items[blocked_id]["rights_level"] == "unknown"
+    assert items[open_id]["source_name"]
+    assert items[open_id]["target_count"] == 0
+    call(setup.app, "POST", f"/api/admin/reading/articles/{blocked_id}/rights", json={"can_republish": False})
+    again = {item["id"]: item for item in call(setup.app, "GET", "/api/admin/reading/queue").json()["items"]}
+    assert again[blocked_id]["rights_level"] == "denied"
 
 
 # ---- content type ------------------------------------------------------------------

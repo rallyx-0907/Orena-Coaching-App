@@ -1473,6 +1473,19 @@ a.a-btn--primary:hover {
   flex: 1 1 220px;
   min-width: 0;
 }
+.a-rights__list {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.a-rights__edit {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1 1 320px;
+  min-width: 0;
+}
 .a-rights__label {
   font-size: 14px;
   font-weight: 600;

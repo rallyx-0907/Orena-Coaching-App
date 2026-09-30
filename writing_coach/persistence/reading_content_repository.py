@@ -196,6 +196,29 @@ def rights_state(rights: Any) -> dict[str, str]:
     return state
 
 
+RIGHTS_EVENT = "rights_set"
+RIGHTS_QUESTIONS = ("can_republish", "can_adapt", "attribution_required")
+
+
+def overlay_rights(snapshot: Any, decisions: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    """The rights that govern publication: the immutable snapshot, then every
+    answer an administrator recorded afterwards, oldest first.
+
+    The snapshot is never rewritten (the trigger refuses it), so a correction
+    is a review event and the effective answer is the fold of the two. A
+    decision that leaves a question out leaves the earlier answer standing.
+    """
+    effective = dict(snapshot) if isinstance(snapshot, dict) else {}
+    for answers in decisions:
+        for key in (*RIGHTS_QUESTIONS, "license_note"):
+            if key in answers:
+                if answers[key] is None:
+                    effective.pop(key, None)
+                else:
+                    effective[key] = answers[key]
+    return effective
+
+
 def _item(row: Any) -> dict[str, Any]:
     return {
         "id": str(row.id),
@@ -278,6 +301,8 @@ def _queue_row(row: Any) -> dict[str, Any]:
         "reading_time_seconds": row.reading_time_seconds,
         "status": row.status,
         "created_at": _iso(row.created_at),
+        "source_name": getattr(row, "source_name", "") or "",
+        "target_count": int(getattr(row, "target_count", 0) or 0),
     }
 
 
@@ -720,10 +745,85 @@ class ReadingContentRepository:
             source_item = connection.execute(
                 select(ReadingSourceItem).where(ReadingSourceItem.id == row.source_item_id)
             ).first()
+            decisions = self._rights_decisions(connection, [row.id]).get(row.id, [])
         article = _article(row)
         article["targets"] = [_target(target) for target in targets]
         article["source"] = _item(source_item) if source_item else None
+        article["rights_review"] = None
+        if article["source"] is not None:
+            # `source.rights` stays the snapshot as ingested; the state the gate
+            # and the review page read is the snapshot with the recorded answers.
+            effective = overlay_rights(
+                article["source"]["rights"], [entry["answers"] for entry in decisions]
+            )
+            article["source"]["rights_state"] = rights_state(effective)
+            article["source"]["rights_effective"] = effective
+            if decisions:
+                article["rights_review"] = {
+                    "actor": decisions[-1]["actor"],
+                    "at": decisions[-1]["at"],
+                    "count": len(decisions),
+                }
         return article
+
+    def _rights_decisions(
+        self, connection: Any, article_ids: Sequence[Any]
+    ) -> dict[Any, list[dict[str, Any]]]:
+        """Recorded rights answers per article, oldest first."""
+        if not article_ids:
+            return {}
+        rows = connection.execute(
+            select(ReadingReviewEvent)
+            .where(
+                ReadingReviewEvent.article_id.in_(list(article_ids)),
+                ReadingReviewEvent.action == RIGHTS_EVENT,
+            )
+            .order_by(ReadingReviewEvent.created_at, ReadingReviewEvent.id)
+        ).all()
+        found: dict[Any, list[dict[str, Any]]] = {}
+        for event in rows:
+            answers = (event.changes_json or {}).get("to") or {}
+            found.setdefault(event.article_id, []).append(
+                {"answers": dict(answers), "actor": event.actor, "at": _iso(event.created_at)}
+            )
+        return found
+
+    def set_rights(
+        self,
+        article_id: str,
+        answers: Mapping[str, Any],
+        *,
+        actor: str,
+        reason: str = "",
+        now: datetime | None = None,
+    ) -> dict[str, Any] | None:
+        """Record an administrator's answers to the rights questions.
+
+        Append-only: the source snapshot is evidence and stays as ingested, so
+        this writes a review event carrying the before and after, and the
+        effective rights are the snapshot with those events folded over it.
+        A value of `None` clears an earlier answer back to unanswered.
+        """
+        current = self.get_article(article_id)
+        if current is None or current["source"] is None:
+            return None
+        chosen = {
+            key: answers[key]
+            for key in (*RIGHTS_QUESTIONS, "license_note")
+            if key in answers
+        }
+        before = {key: current["source"]["rights_effective"].get(key) for key in chosen}
+        with self.engine.begin() as connection:
+            self._record_event(
+                connection,
+                article_id=_uuid(article_id),
+                actor=actor,
+                action=RIGHTS_EVENT,
+                reason=reason,
+                changes={"from": before, "to": chosen},
+                now=_now(now),
+            )
+        return self.get_article(article_id)
 
     def article_for_source_item(self, source_item_id: str) -> dict[str, Any] | None:
         if _lookup_uuid(source_item_id) is None:
@@ -898,7 +998,22 @@ class ReadingContentRepository:
             ReadingArticle.reading_time_seconds,
             ReadingArticle.status,
             ReadingArticle.created_at,
-        ).where(ReadingArticle.status.in_(tuple(statuses)))
+            ReadingSource.name.label("source_name"),
+            ReadingSourceItem.rights_snapshot_json.label("rights_snapshot"),
+            (
+                select(func.count())
+                .select_from(ReadingArticleTarget)
+                .where(
+                    ReadingArticleTarget.article_id == ReadingArticle.id,
+                    ReadingArticleTarget.admin_rejected.is_(False),
+                )
+                .scalar_subquery()
+            ).label("target_count"),
+        )
+        query = query.join(
+            ReadingSourceItem, ReadingSourceItem.id == ReadingArticle.source_item_id
+        ).join(ReadingSource, ReadingSource.id == ReadingSourceItem.source_id)
+        query = query.where(ReadingArticle.status.in_(tuple(statuses)))
         if cursor:
             after_at, after_id = _decode_cursor(cursor)
             query = query.where(
@@ -910,13 +1025,24 @@ class ReadingContentRepository:
         ).limit(bounded + 1)
         with self.engine.connect() as connection:
             rows = connection.execute(query).all()
-        page = rows[:bounded]
+            page = rows[:bounded]
+            decisions = self._rights_decisions(connection, [row.id for row in page])
         next_cursor = (
             _encode_cursor(_aware(page[-1].created_at), str(page[-1].id))
             if len(rows) > bounded and page
             else None
         )
-        return {"items": [_queue_row(row) for row in page], "next_cursor": next_cursor}
+        items = []
+        for row in page:
+            item = _queue_row(row)
+            effective = overlay_rights(
+                row.rights_snapshot, [entry["answers"] for entry in decisions.get(row.id, [])]
+            )
+            # The one answer the publication gate turns on, in the same three
+            # words the review page uses.
+            item["rights_level"] = rights_state(effective)["can_republish"]
+            items.append(item)
+        return {"items": items, "next_cursor": next_cursor}
 
     def list_published(
         self,

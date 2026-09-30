@@ -6,7 +6,7 @@ import { languages } from '../../copy/index.js';
 import { adminApi } from '../../capabilities/admin-api.js';
 import { watch as watchJob } from '../../capabilities/admin-tray.js';
 import {
-  changeArticle, loadQueue, publicationAdvice, saveArticle, submissionFrom, submissionProblem, submitContent, tabFrom,
+  changeArticle, loadQueue, publicationAdvice, publicationBlockers, rightsChanges, saveArticle, submissionFrom, submissionProblem, submitContent, tabFrom,
 } from '../../capabilities/admin-reading.js';
 import { t } from './copy.js';
 import { createHost } from './host.js';
@@ -141,6 +141,17 @@ export async function mountReading(shell, ctx) {
     try {
       if (action === 'publish') {
         article = article || await api.readingArticle(id);
+        if (publicationBlockers(article).length) {
+          /* Copyright is a hard gate: say why, and take the operator to where the questions are answered. */
+          if (routeId === 'adminArticle') {
+            view.actionError = t('rdBlockedText');
+            host.paint();
+          } else {
+            host.toast(t('rdBlockedToast'));
+            ctx.go(ctx.href('adminArticle', { id }));
+          }
+          return;
+        }
         const advice = publicationAdvice(article);
         if (advice.length) {
           const answer = await host.confirm({
@@ -192,6 +203,30 @@ export async function mountReading(shell, ctx) {
       view.newTarget = { ...view.newTarget, [id.slice(3)]: value };
       if (id === 'nt_text') host.paint();
     }
+  });
+  host.on('rights-pick', (control, dataset) => {
+    view.rightsDraft = { ...(view.rightsDraft || {}), [dataset.field]: dataset.value };
+    view.rightsDirty = Object.keys(rightsChanges(data.article?.source?.rights_state, view.rightsDraft)).length > 0;
+    view.rightsError = '';
+    host.paint();
+  });
+  host.on('rights-save', async () => {
+    const body = rightsChanges(data.article?.source?.rights_state, view.rightsDraft || {});
+    if (!Object.keys(body).length) return;
+    view.busy = true;
+    view.rightsError = '';
+    host.paint();
+    try {
+      data.article = { ...data.article, ...await api.readingSetRights(data.article.id, body) };
+      view.rightsDraft = {};
+      view.rightsDirty = false;
+      view.actionError = '';
+      host.toast(t('rdRightsSavedToast'));
+    } catch (error) {
+      view.rightsError = explain(error);
+    }
+    view.busy = false;
+    host.paint();
   });
   host.on('edit-pick', (control, dataset) => {
     view.edit.reviewed_level = dataset.value;
@@ -326,7 +361,7 @@ export async function mountReading(shell, ctx) {
   host.onFile((id, files) => { view.file = files[0] || null; view.error = ''; host.paint(); });
   host.on('add-another', () => { Object.assign(view, { last: null, url: '', title: '', body: '', file: null, error: '' }); host.paint(); });
   host.on('add-submit', async () => {
-    const submitted = submissionFrom({ mode: view.mode, title: view.title || '', body: view.body || '', url: view.url || '', language: view.language, source: view.source || '', author: view.author || '', sourceUrl: view.sourceUrl || '', rights: view.rights, license: view.license || '' });
+    const submitted = submissionFrom({ mode: view.mode, title: view.title || '', body: view.body || '', url: view.url || '', language: view.language, source: view.source || '', author: view.author || '', sourceUrl: view.sourceUrl || '', rights: view.rights, adapt: view.adapt || '', attribution: view.attribution || '', license: view.license || '' });
     const problem = submissionProblem(submitted, view.file);
     if (problem) { view.error = t(problem); host.paint(); return; }
     view.busy = true;

@@ -123,6 +123,8 @@ MATRIX = {
         f"/api/admin/reading/articles/{ARTICLE}", {"json": {"topic": "environment"}}, {404, 503}),
     ("POST", "/api/admin/reading/articles/{article_id}/status"): (
         f"/api/admin/reading/articles/{ARTICLE}/status", {"json": {"status": "published"}}, {404, 503}),
+    ("POST", "/api/admin/reading/articles/{article_id}/rights"): (
+        f"/api/admin/reading/articles/{ARTICLE}/rights", {"json": {"can_republish": True}}, {404, 503}),
     ("POST", "/api/admin/reading/articles/{article_id}/targets"): (
         f"/api/admin/reading/articles/{ARTICLE}/targets", {"json": {"text": "higher ground"}}, {404, 503}),
     ("POST", "/api/admin/reading/articles/{article_id}/targets/{target_id}"): (
@@ -196,7 +198,7 @@ def _request(app, method: str, path: str, body: dict, who: dict | None) -> httpx
 def test_the_matrix_covers_every_admin_route_the_app_serves():
     routes = _admin_routes()
     assert routes == set(MATRIX), f"unclassified: {sorted(routes - set(MATRIX))}; stale: {sorted(set(MATRIX) - routes)}"
-    assert len(routes) == 60  # six comprehension-set routes (D-082)
+    assert len(routes) == 61  # six comprehension-set routes (D-082), the rights route (D-105)
 
 
 @pytest.mark.parametrize("route", sorted(MATRIX), ids=lambda route: f"{route[0]} {route[1]}")

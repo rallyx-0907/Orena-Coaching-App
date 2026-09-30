@@ -212,14 +212,20 @@ def _published_with_set(run: Run, language: str, nonce: str, index: int, support
                          json={"support_language": support})
         run.check("a candidate gets no comprehension set: publish first",
                   run.category(early) == "reading_article_not_published")
+    if checked:
+        refused = run.call("POST", f"/api/admin/reading/articles/{article_id}/status", expect=409,
+                           json={"status": "published"})
+        run.check("publishing without rights answers is refused (D-105)",
+                  run.category(refused) == "reading_rights_not_cleared")
+    run.call("POST", f"/api/admin/reading/articles/{article_id}/rights",
+             json={"can_republish": True, "attribution_required": False})
     published = run.call("POST", f"/api/admin/reading/articles/{article_id}/status", json={"status": "published"})
     if checked:
-        warnings = {item["code"] for item in published.get("publication_warnings", [])}
-        run.check("publishing without rights answers warns, and publishes", published["status"] == "published"
-                  and {"rights_unknown", "attribution_unknown"} <= warnings, str(sorted(warnings)))
+        run.check("once the rights are answered it publishes", published["status"] == "published"
+                  and published.get("publication_warnings") == [])
         events = run.call("GET", f"/api/admin/reading/articles/{article_id}").get("events") or []
-        run.check("the review trail records the override beside its warnings", any(
-            (item.get("changes") or {}).get("published_over_warnings") for item in events))
+        run.check("the review trail records the rights answer", any(
+            item.get("action") == "rights_set" for item in events))
     created = run.call("POST", f"/api/admin/reading/articles/{article_id}/comprehension-sets", expect=201,
                        json={"support_language": support})
     set_id = created["id"]

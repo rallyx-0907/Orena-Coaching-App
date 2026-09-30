@@ -77,6 +77,7 @@ fixtureFor = (method, url) => {
   if (url === '/api/admin/reading/sources') return ok({ items: [source(), source({ id: 'SRC2', name: 'Draft source', state: 'needs_review' })] });
   if (url === '/api/admin/reading/queue') return ok({ items: [{ id: 'A', title: 'The Tortoise and the Hare', language: 'en', topic: 'fables', level: 'B2', reviewed_level: null, word_count: 134, reading_time_seconds: 45, status: 'needs_review', created_at: NOW }], next_cursor: 'c' });
   if (url === '/api/admin/reading/articles/A' && method === 'GET') return ok(article());
+  if (url === '/api/admin/reading/articles/A/rights' && method === 'POST') return ok(article());
   if (url === '/api/admin/reading/articles/A/comprehension-sets') return ok({ items: [set()] });
   if (url === '/api/admin/reading/comprehension-sets/S') return ok(set());
   if (url === '/api/admin/reading/jobs') return ok({ items: [job(), job({ id: 'J2', status: 'completed', stage: 'done', last_error_code: '', result_article_id: 'A' })], next_cursor: null });
@@ -90,14 +91,21 @@ fixtureFor = (method, url) => {
 };
 
 /* ---- 1. the shared rules ----------------------------------------------------------------------- */
-/* Rights: three answers, advice that never blocks. */
+/* Rights: three answers, and copyright is a hard gate at Publish (D-105). */
 assert.equal(reading.rightsLevel({ can_republish: 'allowed' }), 'allowed');
 assert.equal(reading.rightsLevel({ can_republish: 'denied' }), 'denied');
 assert.equal(reading.rightsLevel({}), 'unknown', 'an unanswered right is unknown, not refused');
 assert.deepEqual(reading.publicationAdvice(article()).map((w) => w.code), []);
-assert.deepEqual(reading.publicationAdvice(article({ source: { rights_state: { can_republish: 'denied' } } })).map((w) => `${w.code}:${w.level}`), ['rights_not_cleared:strong', 'attribution_unknown:warning']);
-assert.deepEqual(reading.publicationAdvice(article({ source: { rights_state: {} }, is_adapted: true })).map((w) => w.code), ['rights_unknown', 'adaptation_unknown', 'attribution_unknown']);
-for (const status of ['needs_review', 'ready', 'draft']) assert.ok(reading.articleActions(status).includes('publish'), `${status} can be published whatever its rights say`);
+assert.deepEqual(reading.publicationBlockers(article()), [], 'allowed republish (not adapted) is not blocked');
+assert.deepEqual(reading.publicationBlockers(article({ source: { rights_state: { can_republish: 'denied' } } })).map((w) => w.code), ['rights_not_cleared']);
+assert.deepEqual(reading.publicationBlockers(article({ source: { rights_state: {} }, is_adapted: true })).map((w) => w.code), ['rights_unknown', 'adaptation_unknown'], 'an unanswered right refuses as a denial does');
+assert.deepEqual(reading.publicationBlockers(article({ source: { rights_state: { can_republish: 'allowed', can_adapt: 'allowed' } }, is_adapted: true })), []);
+assert.deepEqual(reading.publicationAdvice(article({ source: { rights_state: { can_republish: 'denied' } } })).map((w) => `${w.code}:${w.level}`), ['attribution_unknown:warning'], 'attribution is advice, never a block');
+/* The request body for answering rights: only what changed; unanswered is null. */
+assert.deepEqual(reading.rightsChanges({ can_republish: 'unknown', attribution_required: 'required' }, { can_republish: 'allowed', attribution_required: 'required' }), { can_republish: true });
+assert.deepEqual(reading.rightsChanges({ can_republish: 'allowed' }, { can_republish: '' }), { can_republish: null });
+assert.deepEqual(reading.rightsChanges({}, { attribution_required: 'not_required', can_adapt: 'denied' }), { attribution_required: false, can_adapt: false });
+for (const status of ['needs_review', 'ready', 'draft']) assert.ok(reading.articleActions(status).includes('publish'), `${status} offers Publish (the server decides on rights)`);
 assert.deepEqual(reading.articleActions('published'), ['unpublish', 'archive']);
 assert.deepEqual(reading.articleActions('rejected'), ['restore']);
 assert.equal(reading.ARTICLE_ACTION_STATUS.restore, 'needs_review', 'restoring returns to review, never republishes');
@@ -106,7 +114,8 @@ assert.equal(reading.tabFrom('bogus'), 'review');
 /* Submission: an absent answer is absent. */
 const text = reading.submissionFrom({ mode: 'text', title: ' A title ', body: 'Body', language: 'auto', rights: '', source: 'Gutenberg', author: '', sourceUrl: '', license: '' });
 assert.deepEqual(text, { kind: 'text', text: 'Body', title: 'A title', source_name: 'Gutenberg' });
-assert.ok(!('can_republish' in text) && !('language' in text), 'no rights answer and no language are simply not sent');
+assert.ok(!('can_republish' in text) && !('can_adapt' in text) && !('attribution_required' in text) && !('language' in text), 'no rights answer and no language are simply not sent');
+assert.deepEqual(reading.submissionFrom({ mode: 'url', url: 'https://x.org/a', rights: 'allowed', adapt: 'denied', attribution: 'not_required' }), { kind: 'url', url: 'https://x.org/a', can_republish: true, can_adapt: false, attribution_required: false });
 assert.equal(reading.submissionFrom({ mode: 'url', url: ' https://x.org/a ', rights: 'allowed' }).can_republish, true);
 assert.equal(reading.submissionFrom({ mode: 'url', url: 'https://x.org/a', rights: 'denied' }).can_republish, false);
 assert.equal(reading.submissionProblem({ kind: 'url', url: 'nope' }), 'addErrUrl');
@@ -180,7 +189,7 @@ const sourceRow = source();
 for (const ui of ['en', 'vi', 'zh']) {
   copyIndex.setLanguages({ ui, support: 'en' });
   const c = common(ui);
-  const items = [{ id: 'A', title: 'Title', language: 'en', topic: 'fables', level: 'B2', reviewed_level: 'B1', word_count: 134, reading_time_seconds: 45, status: 'needs_review', created_at: NOW }];
+  const items = [{ id: 'A', title: 'Title', language: 'en', topic: 'fables', level: 'B2', reviewed_level: 'B1', word_count: 134, reading_time_seconds: 45, status: 'needs_review', created_at: NOW, source_name: 'Gutenberg', rights_level: 'unknown', target_count: 5 }];
   const pages = [
     rp.overviewPage({ ...c, ops: { articles: { published: 2 }, queue: { failed: 1 } }, sources: [sourceRow], next: items, failedJobs: 1 }),
     ...['review', 'published', 'rejected', 'archived'].map((tab) => rp.queuePage({ ...c, tab, items, next: 'c', counts: { review: 1, published: 1, rejected: 0, archived: 0 }, view })),
@@ -230,9 +239,19 @@ copyIndex.setLanguages({ ui: 'en', support: 'en' });
   /* The behaviours the pages promise. */
   const c = common('en');
   const detail = String(rp.articlePage({ ...c, article: article({ status: 'needs_review', source: { ...article().source, rights_state: { can_republish: 'denied' } } }), sets: [], view }).markup);
-  assert.match(detail, /data-action="article-act"|data-a="article-act"[^>]*data-action="publish"/, 'Publish is offered whatever the rights say');
-  assert.doesNotMatch(detail, /data-action="publish"[^>]*disabled/, 'rights never disable Publish');
+  assert.match(detail, /data-action="publish"[^>]*disabled|disabled[^>]*data-action="publish"/, 'copyright blocks Publish (hard gate)');
   assert.ok(detail.includes(t('rdRightsAdviceDenied')), 'the refusal is said beside the button');
+  assert.ok(detail.includes(t('rdBlockedTitle')) && detail.includes(t('rdBlockedText')), 'the refusal is stated honestly');
+  assert.ok(detail.includes(t('rdWarn_rights_not_cleared')), 'the reason is listed');
+  assert.match(detail, /data-a="rights-pick"[^>]*data-field="can_republish"[^>]*data-value="allowed"/, 'the admin can answer the rights question');
+  assert.match(detail, /data-a="rights-save"/, 'and save the answers');
+  const cleared = String(rp.articlePage({ ...c, article: article({ status: 'needs_review' }), sets: [], view }).markup);
+  assert.doesNotMatch(cleared, /data-action="publish"[^>]*disabled/, 'cleared rights leave Publish enabled');
+  assert.ok(!cleared.includes(t('rdBlockedTitle')), 'no refusal when nothing refuses');
+  const queue = String(rp.queuePage({ ...c, tab: 'review', items: [{ id: 'A', title: 'Title', language: 'en', topic: 'fables', level: 'B2', word_count: 134, reading_time_seconds: 45, status: 'needs_review', created_at: NOW, source_name: 'Gutenberg', rights_level: 'unknown', target_count: 5 }], next: null, counts: null, view }).markup);
+  assert.ok(queue.includes(t('rdColTargets')) && queue.includes(t('rdColRights')), 'the review queue heads Targets and Rights');
+  assert.ok(queue.includes('Gutenberg'), 'the row meta names the source');
+  assert.ok(queue.includes(t('rdRightsUnknown')), 'the row draws the rights pill');
   const onlyPublished = String(rp.articlePage({ ...c, article: article({ status: 'needs_review' }), sets: [], view }).markup);
   assert.match(onlyPublished, /data-a="set-generate"[^>]*disabled/, 'questions are generated for a published article only');
   const approvedSet = String(rp.setPage({ ...c, set: set({ status: 'approved' }), article: article(), view: { busy: false } }).markup);
@@ -283,6 +302,7 @@ fixtureFor = () => ({ body: { ok: true, id: 'J', items: [], results: [{ status: 
   await adminApi.readingSetTransition('S', 'approved');
   await adminApi.readingDiscardSet('S');
   await adminApi.readingAddTarget('A', { text: 'x' });
+  await adminApi.readingSetRights('A', { can_republish: true });
   await adminApi.readingDecideTarget('A', 'T1', true);
   await adminApi.readingReorderTargets('A', ['T1']);
   await adminApi.readingSetSourceState('SRC', 'paused');

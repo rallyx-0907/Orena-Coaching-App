@@ -38,22 +38,48 @@ export function rightsLevel(state) {
   return answer === 'allowed' || answer === 'denied' ? answer : 'unknown';
 }
 
-/* Rights advice for publishing, as the server computes it (reading_admin_api.publication_warnings),
-   so the operator sees before the button what the audit will record beside it. It never stops
-   anything. */
-export function publicationAdvice(article) {
+/* Copyright is a hard gate at Publish (D-105). This is the server's rule
+   (reading_admin_api.publication_blockers) read ahead of the click: publishing needs the right to
+   republish and, for an adapted text, the right to adapt. An unanswered question refuses as
+   surely as a denial. The server still decides; this only says why before asking. */
+export function publicationBlockers(article) {
   const state = article?.source?.rights_state || {};
-  const warnings = [];
+  const blockers = [];
   const republish = state.can_republish || 'unknown';
-  if (republish === 'denied') warnings.push({ code: 'rights_not_cleared', level: 'strong' });
-  else if (republish !== 'allowed') warnings.push({ code: 'rights_unknown', level: 'warning' });
+  if (republish === 'denied') blockers.push({ code: 'rights_not_cleared', question: 'can_republish' });
+  else if (republish !== 'allowed') blockers.push({ code: 'rights_unknown', question: 'can_republish' });
   if (article?.is_adapted) {
     const adapt = state.can_adapt || 'unknown';
-    if (adapt === 'denied') warnings.push({ code: 'adaptation_not_cleared', level: 'strong' });
-    else if (adapt !== 'allowed') warnings.push({ code: 'adaptation_unknown', level: 'warning' });
+    if (adapt === 'denied') blockers.push({ code: 'adaptation_not_cleared', question: 'can_adapt' });
+    else if (adapt !== 'allowed') blockers.push({ code: 'adaptation_unknown', question: 'can_adapt' });
   }
-  if ((state.attribution_required || 'unknown') === 'unknown') warnings.push({ code: 'attribution_unknown', level: 'warning' });
-  return warnings;
+  return blockers;
+}
+
+/* Advice that does not stop publication: attribution is an obligation, not a permission. */
+export function publicationAdvice(article) {
+  const state = article?.source?.rights_state || {};
+  return (state.attribution_required || 'unknown') === 'unknown' ? [{ code: 'attribution_unknown', level: 'warning' }] : [];
+}
+
+/* The rights questions an administrator answers on the review page, with the words each answer
+   takes. An answer of '' is "unanswered". */
+export const RIGHTS_EDIT = [
+  { id: 'can_republish', yes: 'allowed', no: 'denied' },
+  { id: 'can_adapt', yes: 'allowed', no: 'denied' },
+  { id: 'attribution_required', yes: 'required', no: 'not_required' },
+];
+
+/* The state the server holds -> the request body for the rights route: only what changed. */
+export function rightsChanges(state, draft) {
+  const body = {};
+  for (const question of RIGHTS_EDIT) {
+    if (draft[question.id] === undefined) continue;
+    const held = state?.[question.id] === 'unknown' || state?.[question.id] === undefined ? '' : state[question.id];
+    if (draft[question.id] === held) continue;
+    body[question.id] = draft[question.id] === question.yes ? true : draft[question.id] === question.no ? false : null;
+  }
+  return body;
 }
 
 export function levelOptions(language) {
@@ -99,7 +125,7 @@ export function tabOf(status) {
 
 /* What the operator typed becomes the multipart submission the engine takes. An absent answer is
    absent - not a refusal - so a rights question nobody answered arrives as no field at all. */
-export function submissionFrom({ mode, title = '', body = '', url = '', language = '', source = '', author = '', sourceUrl = '', rights = '', license = '' }) {
+export function submissionFrom({ mode, title = '', body = '', url = '', language = '', source = '', author = '', sourceUrl = '', rights = '', adapt = '', attribution = '', license = '' }) {
   const kind = ['url', 'text', 'file'].includes(mode) ? mode : 'text';
   const submitted = { kind };
   if (kind === 'text') Object.assign(submitted, { text: body, title: title.trim() });
@@ -111,6 +137,10 @@ export function submissionFrom({ mode, title = '', body = '', url = '', language
   if (kind === 'text' && sourceUrl.trim()) submitted.url = sourceUrl.trim();
   if (rights === 'allowed') submitted.can_republish = true;
   else if (rights === 'denied') submitted.can_republish = false;
+  if (adapt === 'allowed') submitted.can_adapt = true;
+  else if (adapt === 'denied') submitted.can_adapt = false;
+  if (attribution === 'required') submitted.attribution_required = true;
+  else if (attribution === 'not_required') submitted.attribution_required = false;
   if (license.trim()) submitted.license_note = license.trim();
   return submitted;
 }

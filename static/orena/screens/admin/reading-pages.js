@@ -4,14 +4,14 @@
    view state and the copy function, and returns markup - so scripts/test_orena_screen_admin.mjs
    renders every page from a fixture without a browser.
 
-   What the design draws that the engine cannot answer is left out, not invented (UI_BACKEND_GAPS
-   "Admin: Reading"): the queue list carries no source, rights or target count per row; rights on an
-   article are the evidence captured at ingestion and cannot be changed afterwards. */
+   The queue carries source, rights and target count per row (D-105 c), and copyright is a hard gate
+   at Publish (D-105 a): the review page states the refusal and lets the administrator answer the
+   rights questions, which the server records without rewriting the ingested snapshot. */
 import { html, raw } from '../../kit/html.js';
 import { icon } from '../../kit/icons.js';
 import { dateShort, dateTime, num, relative } from '../../capabilities/admin-format.js';
 import {
-  RIGHTS_QUESTIONS, QUEUE_TABS, articleActions, isEditable, levelOptions, publicationAdvice, questionState,
+  RIGHTS_EDIT, QUEUE_TABS, articleActions, isEditable, levelOptions, publicationBlockers, questionState,
   questionsEditable, readingMinutes, setActions, setIsStale, setProgress, tabOf,
 } from '../../capabilities/admin-reading.js';
 import { learnerAddress } from '../../capabilities/admin-reading.js';
@@ -77,7 +77,7 @@ export function overviewPage({ ops, sources, next, failedJobs, t, ui, href }) {
   ];
   const nextRows = (next || []).map((item) => ({
     title: item.title || t('rdUntitled'),
-    meta: [langName(t, item.language), item.topic, item.level, t('rdMinutes', { n: readingMinutes(item.reading_time_seconds) })].filter(Boolean).join(' · '),
+    meta: [item.source_name, langName(t, item.language), item.topic, item.level, t('rdMinutes', { n: readingMinutes(item.reading_time_seconds) })].filter(Boolean).join(' · '),
     right: t('rdReview'),
     go: href('adminArticle', { id: item.id }),
   }));
@@ -126,13 +126,13 @@ export function queuePage({ tab, items, next, counts, view, t, ui, href, loading
   /* The levels on offer are the ones the list holds (the design offers the learner levels; the engine grades both scales). */
   const order = [...levelOptions('en'), ...levelOptions('zh')];
   const levels = ['all', ...[...new Set((items || []).map((item) => item.level).filter(Boolean))].sort((a, b) => order.indexOf(a) - order.indexOf(b))];
-  const head = { review: ['rdColLevel', 'rdColWords', 'rdColStatus'], published: ['rdColLevel', 'rdColWords', 'rdColAdded'], rejected: ['rdColLevel', 'rdColWords', 'rdColAdded'], archived: ['rdColLevel', 'rdColWords', 'rdColAdded'] }[tab];
+  const head = { review: ['rdColLevel', 'rdColTargets', 'rdColRights'], published: ['rdColLevel', 'rdColWords', 'rdColAdded'], rejected: ['rdColLevel', 'rdColWords', 'rdColAdded'], archived: ['rdColLevel', 'rdColWords', 'rdColAdded'] }[tab];
   const rows = shown.map((item) => {
-    const pillInfo = tab === 'review' ? statusPill(t, item.status) : { label: dateShort(item.created_at, ui), tone: 'mute' };
+    const pillInfo = tab === 'review' ? rightsPill(t, item.rights_level) : { label: dateShort(item.created_at, ui), tone: 'mute' };
     return html`<div class="a-qrow">
-      <button type="button" class="a-qrow__main" data-go="${href('adminArticle', { id: item.id })}"><span class="a-qrow__title">${item.title || t('rdUntitled')}</span><span class="a-qrow__meta">${[langName(t, item.language), item.topic || t('rdNoTopic'), t('rdMinutes', { n: readingMinutes(item.reading_time_seconds) })].join(' · ')}</span></button>
+      <button type="button" class="a-qrow__main" data-go="${href('adminArticle', { id: item.id })}"><span class="a-qrow__title">${item.title || t('rdUntitled')}</span><span class="a-qrow__meta">${[item.source_name, langName(t, item.language), item.topic || t('rdNoTopic'), t('rdMinutes', { n: readingMinutes(item.reading_time_seconds) })].filter(Boolean).join(' · ')}</span></button>
       <span class="a-qrow__c1">${item.level || '—'}${item.reviewed_level ? html`<small>${t('rdReviewedMark')}</small>` : ''}</span>
-      <span class="a-qrow__c2">${num(item.word_count, ui)}</span>
+      <span class="a-qrow__c2">${num(tab === 'review' ? item.target_count : item.word_count, ui)}</span>
       <span class="a-qrow__pill">${pill(pillInfo)}</span>
       <div class="a-qrow__acts">${queueActions(t, item, tab, href).map(button)}</div>
     </div>`;
@@ -157,10 +157,22 @@ export function queuePage({ tab, items, next, counts, view, t, ui, href, loading
 
 /* ---- A17 review detail -------------------------------------------------------------------------- */
 
-function rightsAdviceKey(advice) {
-  if (advice.some((warning) => warning.level === 'strong')) return 'rdRightsAdviceDenied';
-  if (advice.length) return 'rdRightsAdviceUnknown';
+function rightsAdviceKey(blockers) {
+  if (blockers.some((blocker) => blocker.code.endsWith('not_cleared'))) return 'rdRightsAdviceDenied';
+  if (blockers.length) return 'rdRightsAdviceUnknown';
   return 'rdRightsAdviceAllowed';
+}
+
+/* The three rights questions as editable choices: the server's held answer unless the operator has
+   picked another. An unanswered question is its own choice, because "unknown" is an answer the
+   gate treats as a refusal. */
+function rightsEditor(t, state, draft) {
+  return RIGHTS_EDIT.map((question) => {
+    const held = state[question.id] === undefined || state[question.id] === 'unknown' ? '' : state[question.id];
+    const chosen = draft[question.id] !== undefined ? draft[question.id] : held;
+    const options = [['', 'rdAnswerUnknown'], [question.yes, question.yes === 'required' ? 'rdAnswerRequired' : 'rdAnswerAllowed'], [question.no, question.no === 'not_required' ? 'rdAnswerNotRequired' : 'rdAnswerDenied']];
+    return html`<div class="a-field"><div class="a-field__label"><span>${t(`rdQ_${question.id}`)}</span></div><div class="a-seg" role="group" aria-label="${t(`rdQ_${question.id}`)}">${options.map(([id, key]) => html`<button type="button" class="a-seg__option" data-a="rights-pick" data-field="${question.id}" data-value="${id}" aria-pressed="${chosen === id ? 'true' : 'false'}"><span>${t(key)}</span></button>`)}</div></div>`;
+  });
 }
 
 const RIGHT_ANSWER = { allowed: 'rdAnswerAllowed', denied: 'rdAnswerDenied', unknown: 'rdAnswerUnknown', required: 'rdAnswerRequired', not_required: 'rdAnswerNotRequired' };
@@ -186,7 +198,8 @@ function evidenceFields(t, article, ui) {
 export function articlePage({ article, sets, view, t, ui, href, now }) {
   const source = article.source || {};
   const state = source.rights_state || {};
-  const advice = publicationAdvice(article);
+  const blockers = publicationBlockers(article);
+  const isLive = article.status === 'published';
   const editable = isEditable(article.status);
   const actions = articleActions(article.status);
   const status = statusPill(t, article.status);
@@ -195,6 +208,8 @@ export function articlePage({ article, sets, view, t, ui, href, now }) {
   const kinds = ['word', 'phrase', 'collocation', 'grammar'];
   const actionButtons = actions.map((action) => ({
     label: t({ publish: 'rdPublish', unpublish: 'rdUnpublish', reject: 'rdReject', archive: 'rdArchive', restore: 'rdRestoreReview' }[action]),
+    disabled: action === 'publish' && blockers.length > 0,
+    tip: action === 'publish' && blockers.length ? t('rdPublishNeedsRights') : '',
     kind: action === 'publish' ? 'primary' : action === 'reject' || (action === 'archive' && article.status === 'published') ? 'danger' : '',
     a: 'article-act', data: { id: article.id, action },
   }));
@@ -284,10 +299,9 @@ export function articlePage({ article, sets, view, t, ui, href, now }) {
       ${html`<button type="button" class="a-back" data-go="${href('adminQueue', {}, { tab: tabOf(article.status) })}">${raw(icon('chevron-left', { size: 18 }))}${t(TAB_TITLE[tabOf(article.status)][0].replace('rdQTitle', 'rdTab'))}</button>`}
       <div class="a-sticky"><div class="a-sticky__text"><div class="a-pills">${pill(status)}${article.status === 'published' ? html`<a class="a-learnerlink" href="${learnerAddress('reading', article.id)}">${t('rdOpenAsLearner')}</a>` : ''}</div><h1 class="a-detail__title">${article.title}</h1></div><div class="a-sticky__acts">${actionButtons.map(button)}</div></div>
       ${view.actionError ? html`<div class="a-error" role="alert">${view.actionError}</div>` : ''}
-      <div class="a-rights"><div class="a-rights__text"><div class="a-rights__label">${t('rdRights')}</div><div class="a-rights__note">${t(rightsAdviceKey(advice))}</div></div><div class="a-pills">${RIGHTS_QUESTIONS.map((question) => {
-        const answer = state[question] || 'unknown';
-        return pill({ label: t('rdRightsAnswer', { question: t(`rdQ_${question}`), answer: t(RIGHT_ANSWER[answer] || 'rdAnswerUnknown') }), tone: RIGHT_TONE[answer] || 'warn' });
-      })}</div></div>
+      ${blockers.length && !isLive ? banner({ tone: 'err', title: t('rdBlockedTitle'), text: t('rdBlockedText'), }) : ''}
+      <div class="a-rights"><div class="a-rights__text"><div class="a-rights__label">${t('rdRights')}</div><div class="a-rights__note">${t(rightsAdviceKey(blockers))}</div>${blockers.length ? html`<ul class="a-rights__list">${blockers.map((blocker) => html`<li>${t(`rdWarn_${blocker.code}`)}</li>`)}</ul>` : ''}${article.rights_review ? html`<div class="a-rights__note">${t('rdRightsAnsweredBy', { who: article.rights_review.actor || '—', when: dateShort(article.rights_review.at, ui) })}</div>` : ''}</div>
+        <div class="a-rights__edit">${rightsEditor(t, state, view.rightsDraft || {})}${view.rightsError ? html`<div class="a-error" role="alert">${view.rightsError}</div>` : ''}<div class="a-actions a-actions--end">${button({ label: view.rightsDirty ? t('rdRightsSave') : t('rdRightsSaved'), kind: 'primary', size: 'sm', a: 'rights-save', disabled: !view.rightsDirty || view.busy })}</div></div></div>
       ${dupes.length ? banner({ tone: 'warn', title: t('rdDupTitle'), text: t('rdDupText', { sources: dupes.map((copy) => copy.source_name || copy.source_slug || copy.source_id).join(', ') }) }) : ''}
       <div class="a-dtabs">${chipRow({ options: dtabs.map((id) => ({ id, label: id === 'targets' ? `${t('rdDtab_targets')} · ${targets.length}` : t(`rdDtab_${id}`), on: dtab === id })), a: 'dtab' })}</div>
       <div class="a-detail__grid">
@@ -368,6 +382,8 @@ export function addPage({ view, t, href }) {
   const modes = ['url', 'text', 'file'];
   const rights = view.rights || '';
   const risky = rights !== 'allowed';
+  const adapt = view.adapt || '';
+  const attribution = view.attribution || '';
   const fields = [];
   if (mode === 'url') fields.push({ id: 'url', kind: 'text', label: t('addUrl'), span: true, value: view.url || '', placeholder: 'https://…' });
   if (mode === 'text') {
@@ -383,6 +399,8 @@ export function addPage({ view, t, href }) {
   fields.push({ id: 'author', kind: 'text', label: t('rdFieldAuthor'), value: view.author || '' });
   if (mode === 'text') fields.push({ id: 'sourceUrl', kind: 'text', label: t('addSourceUrl'), value: view.sourceUrl || '' });
   fields.push({ id: 'rights', kind: 'seg', label: t('rdRights'), span: true, options: [{ id: '', label: t('addRightsUnknown'), on: rights === '' }, { id: 'allowed', label: t('rdAnswerAllowed'), on: rights === 'allowed' }, { id: 'denied', label: t('rdAnswerDenied'), on: rights === 'denied' }], hint: risky ? t('addRiskNote') : '', hintTone: risky ? 'warn' : '' });
+  fields.push({ id: 'adapt', kind: 'seg', label: t('rdQ_can_adapt'), options: [{ id: '', label: t('addRightsUnknown'), on: adapt === '' }, { id: 'allowed', label: t('rdAnswerAllowed'), on: adapt === 'allowed' }, { id: 'denied', label: t('rdAnswerDenied'), on: adapt === 'denied' }] });
+  fields.push({ id: 'attribution', kind: 'seg', label: t('rdQ_attribution_required'), options: [{ id: '', label: t('addRightsUnknown'), on: attribution === '' }, { id: 'required', label: t('rdAnswerRequired'), on: attribution === 'required' }, { id: 'not_required', label: t('rdAnswerNotRequired'), on: attribution === 'not_required' }] });
   fields.push({ id: 'license', kind: 'text', label: t('addLicense'), span: true, value: view.license || '', placeholder: t('addLicenseHint') });
   const last = view.last;
   return {

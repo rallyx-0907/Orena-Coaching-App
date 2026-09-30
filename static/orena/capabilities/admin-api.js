@@ -96,6 +96,8 @@ export const adminApi = {
   readingArticle: (id) => request(`/api/admin/reading/articles/${encodeURIComponent(id)}`),
   readingEditArticle: (id, body) =>
     request(`/api/admin/reading/articles/${encodeURIComponent(id)}`, json('POST', body)),
+  readingSetRights: (id, body) =>
+    request(`/api/admin/reading/articles/${encodeURIComponent(id)}/rights`, json('POST', body)),
   readingSetStatus: (id, status, reason = '') =>
     request(`/api/admin/reading/articles/${encodeURIComponent(id)}/status`, json('POST', { status, reason })),
   readingDecideTarget: (articleId, targetId, approved) =>

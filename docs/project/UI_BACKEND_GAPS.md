@@ -4418,3 +4418,51 @@ of the old console into `capabilities/admin-reading.js`, `admin-imports.js`, `ad
   14px-padded actions. Browser-checked (desktop 1920x1080 and touch phone 390x844, en/vi/zh, light and
   dark) on 18 addresses: no page scroll or horizontal overflow, no page error; access: 17 addresses x
   desktop and phone for a non-admin, zero admin requests.
+
+### Admin: Reading rights gate and queue (D-105 point 5, 2026-09-30)
+
+Resolved by the human's D-105 decisions; AD-A, AD-B and AD-H above are closed by this section.
+
+- **AD-A closed.** `list_queue` now returns `source_name`, `rights_level` (the effective `can_republish` answer:
+  allowed / denied / unknown) and `target_count` (targets not rejected) per item. The review tab draws
+  Article (source in the meta line) | Level | Targets | Rights, as A16 does.
+- **AD-B closed, and copyright is a hard gate (D-105 a).** `POST /api/admin/reading/articles/{id}/status`
+  refuses `published` with 409 `reading_rights_not_cleared` (context: the blocking questions) unless
+  `can_republish` is allowed, and, for an adapted text, `can_adapt` is allowed. An unanswered question
+  refuses as a denial does. Attribution stays advice (it is an obligation, not a permission) and is
+  recorded beside the decision. A refusal is audited as `admin.reading_article_publish_refused`.
+  New route `POST /api/admin/reading/articles/{id}/rights` (`can_republish`, `can_adapt`,
+  `attribution_required`, `license_note`, `reason`; a field left out is untouched, `null` returns a question to
+  unanswered). The source snapshot is immutable (a PostgreSQL trigger refuses a rewrite), so an answer is
+  appended as a `rights_set` review event and the effective rights are the snapshot with those events
+  folded over it; no schema change. `source.rights` stays as ingested, `source.rights_state` is the
+  effective state, `rights_review` says who answered last. The review page states the refusal, disables
+  Publish, and edits the three questions; the Add form now asks `can_republish`, `can_adapt` and
+  `attribution_required`.
+- **Effect on existing content.** Already-published articles are untouched. An article imported with no
+  rights answers can no longer be published until its questions are answered; the earlier lane-runtime
+  articles published with unknown attribution stay as they are.
+- **AD-H closed (D-105 b).** The vocabulary page states the server's rule only (unattested is the one
+  refusal; rights and completeness warn and are recorded). Nothing in the UI claims a stricter gate: the
+  only disabled state is the missing attestation, which the server also refuses.
+- **Still open.** `automation_allowed` is a source-level question and is not edited per article. The
+  overview's "Next in review" rows show the source in their meta but no rights pill (the shared row list
+  has no pill slot).
+
+### D4 slice 1: account, profile, level (2026-09-30)
+
+- **Stored now.** `declared_level` (per learning language, registry-validated, no English fallback), review settings
+  (`review_new_per_day`, `review_limit_per_day`, `review_modes`), and the account scalars `learning_language`,
+  `interface_language`, `weekly_goal_days` behind one opaque `settings_version` (`GET/PATCH /api/account-settings`).
+  Bootstrap gains `language.stored`. The session is seeded from the stored language only when it has none.
+- **H-19.** Today draws the design's Banner ("Choose level" / dismiss) for an existing profile with no level. The
+  action opens the onboarding Level step alone (`#/welcome?step=level`) and returns to Today. Skipping lasts the visit
+  (session storage); no dismissed marker is stored, as the proposal requires.
+- **Open for the human: HSK7-9.** The registry lists `HSK7-9` as one band and the server accepts it, but the design's
+  Level step draws six cells, so the grid does not offer a seventh. The data path sends any platform-listed code; the
+  cell is a design decision.
+- **Open for the human: review modes.** The proposal (I13) names `target`/`cloze`; the Settings screen toggles
+  `typing`/`cloze`/`dictation`. The server registry (`account_profile.REVIEW_MODE_KEYS`) holds what Settings toggles
+  today; changing it is one line once Review's mode names are settled.
+- **No weekly-goal control yet.** `weekly_goal_days` is stored and served; the design draws no control to set it in
+  Settings or Profile that this slice found. It is not invented (rule 43); slice 7 decides where it is read.
