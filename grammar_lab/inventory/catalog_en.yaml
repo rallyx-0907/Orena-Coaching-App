@@ -835,18 +835,21 @@
     metadata_origin: reviewed_seed
 - id: en.canon.a1.001
   level: A1
-  function: fn.catalog_unclassified
-  point_type: other
+  function: fn.completed_past
+  point_type: tense_aspect
   native_title: 'Past simple: be'
   title:
-    vi: 'Past simple: be'
+    vi: Quá khứ đơn của be
+    en: 'Past simple: be'
   error_tags:
-  - other
+  - tense
+  - agreement
   contrasts: []
-  prereqs: []
+  prereqs:
+  - en.be.present
   sequence: 1
   anchors: []
-  batch: canonical_v1
+  batch: core
   r5:
   - a2-past-simple-be
   aliases:
@@ -860,22 +863,22 @@
     research_candidate_id: a2-past-simple-be
     notes:
     - was/were nằm ở A1 trong bộ lõi
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.a1.002
   level: A1
-  function: fn.catalog_unclassified
+  function: fn.ability
   point_type: other
-  native_title: Can Ability
+  native_title: Can for ability
   title:
-    vi: Can Ability
+    vi: Can để nói khả năng
+    en: Can for ability
   error_tags:
-  - other
+  - word_form
   contrasts: []
   prereqs: []
-  sequence: 2
+  sequence: 1
   anchors: []
-  batch: canonical_v1
+  batch: core
   r5:
   - a2-can-could-be-able-to-basics
   aliases:
@@ -889,22 +892,24 @@
     research_candidate_id: can.ability
     notes:
     - can là A1; be able to nằm ở b1-ability-across-time
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.a1.003
   level: A1
-  function: fn.catalog_unclassified
-  point_type: other
-  native_title: Adjectives Position
+  function: fn.sentence_basics
+  point_type: word_order
+  native_title: Adjective position
   title:
-    vi: Adjectives Position
+    vi: Vị trí của tính từ
+    en: Adjective position
   error_tags:
-  - other
+  - sentence_structure
+  - word_form
   contrasts: []
-  prereqs: []
-  sequence: 3
+  prereqs:
+  - en.be.present
+  sequence: 2
   anchors: []
-  batch: canonical_v1
+  batch: core
   r5: []
   aliases: []
   catalog:
@@ -916,22 +921,24 @@
     research_candidate_id: adjectives.position
     notes:
     - bộ lõi, R5 không có
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.a1.004
   level: A1
-  function: fn.catalog_unclassified
+  function: fn.verb_patterns
   point_type: other
-  native_title: Would Like
+  native_title: Would like
   title:
-    vi: Would Like
+    vi: Would like để nói mong muốn lịch sự
+    en: Would like for polite wants
   error_tags:
-  - other
+  - word_form
+  - sentence_structure
   contrasts: []
-  prereqs: []
-  sequence: 4
+  prereqs:
+  - en.sentence_word_order
+  sequence: 1
   anchors: []
-  batch: canonical_v1
+  batch: core
   r5: []
   aliases: []
   catalog:
@@ -943,8 +950,7 @@
     research_candidate_id: would_like
     notes:
     - bộ lõi, R5 không có
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.articles.zero
   level: A2
   function: fn.reference
