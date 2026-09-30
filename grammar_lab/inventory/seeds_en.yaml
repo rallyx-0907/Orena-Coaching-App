@@ -1309,7 +1309,7 @@
   - other
   contrasts: []
   prereqs:
-  - en.quantifiers.few_little
+  - en.quantifiers.some_any
   sequence: 5
   anchors: []
   batch: full-seed-2026-09-30
@@ -2130,7 +2130,7 @@
   - other
   contrasts: []
   prereqs:
-  - en.canon.a2.002
+  - en.quantifiers.few_little
   sequence: 6
   anchors: []
   batch: full-seed-2026-09-30
