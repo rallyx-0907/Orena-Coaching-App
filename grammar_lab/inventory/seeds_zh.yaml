@@ -817,8 +817,7 @@
   error_tags:
   - other
   contrasts: []
-  prereqs:
-  - zh.zai_location
+  prereqs: []
   sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
@@ -867,8 +866,7 @@
   error_tags:
   - other
   contrasts: []
-  prereqs:
-  - zh.demonstratives
+  prereqs: []
   sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
@@ -884,8 +882,7 @@
   error_tags:
   - other
   contrasts: []
-  prereqs:
-  - zh.complement.duration
+  prereqs: []
   sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
@@ -935,8 +932,7 @@
   error_tags:
   - conjunction
   contrasts: []
-  prereqs:
-  - zh.ye_dou
+  prereqs: []
   sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
@@ -970,7 +966,7 @@
   - word_order
   contrasts: []
   prereqs:
-  - zh.canon.gf.hsk1.a_1_1_3.p1
+  - zh.demonstratives
   sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
@@ -1003,8 +999,7 @@
   error_tags:
   - other
   contrasts: []
-  prereqs:
-  - zh.svo_basic
+  prereqs: []
   sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
@@ -1345,8 +1340,7 @@
   error_tags:
   - other
   contrasts: []
-  prereqs:
-  - zh.you_zai
+  prereqs: []
   sequence: 6
   anchors: []
   batch: full-seed-2026-09-30
@@ -1414,7 +1408,7 @@
   - conjunction
   contrasts: []
   prereqs:
-  - zh.canon.gf.hsk1.a_1_4_4.p1
+  - zh.ye_dou
   sequence: 5
   anchors: []
   batch: full-seed-2026-09-30
@@ -1465,7 +1459,7 @@
   - other
   contrasts: []
   prereqs:
-  - zh.canon.gf.hsk1.a_1_4_2.p1
+  - zh.svo_basic
   sequence: 4
   anchors: []
   batch: full-seed-2026-09-30
@@ -1585,8 +1579,7 @@
   error_tags:
   - conjunction
   contrasts: []
-  prereqs:
-  - zh.yinwei_suoyi
+  prereqs: []
   sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
@@ -1962,7 +1955,7 @@
   - other
   contrasts: []
   prereqs:
-  - zh.canon.gf.hsk1.a_1_1_7_1.p1
+  - zh.zai_location
   sequence: 4
   anchors: []
   batch: full-seed-2026-09-30
@@ -2032,7 +2025,7 @@
   - conjunction
   contrasts: []
   prereqs:
-  - zh.canon.gf.hsk2.a_2_5_3.p2
+  - zh.yinwei_suoyi
   sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
@@ -3840,7 +3833,7 @@
   - other
   contrasts: []
   prereqs:
-  - zh.canon.gf.hsk2.a_2_1_6.p2
+  - zh.you_zai
   sequence: 7
   anchors: []
   batch: full-seed-2026-09-30
@@ -5604,7 +5597,7 @@
   - other
   contrasts: []
   prereqs:
-  - zh.canon.gf.hsk1.a_1_1_6.p1
+  - zh.complement.duration
   sequence: 4
   anchors: []
   batch: full-seed-2026-09-30
