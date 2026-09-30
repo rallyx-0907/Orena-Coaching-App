@@ -15,13 +15,13 @@ throwaway test database by pointing Alembic's `version_locations` at this
 directory. It becomes real by being moved into `versions/` — one `git mv`,
 after the review and authorization its own docstring names.
 
-**One proposal is open: D4, the learner records** (`docs/project/proposals/LEARNER_RECORDS_D4.md`, revision 3, decided
-by D-104). Seven revisions sit here in chain order after `20260924_0016`; they are **not** in `versions/` and nothing
-applies them. Each moves to `versions/` (one `git mv`, in order) only after the PostgreSQL up/down/up rehearsal
-(`scripts/rehearse_learner_records_schema.py`) is recorded and the human authorizes it; production and preview are not
-touched. Below the open table, the history of what passed through here and now lives in `versions/`.
+**No proposal is open.** D4, the learner records (`docs/project/proposals/LEARNER_RECORDS_D4.md`, revision 3, decided by
+D-104), passed its independent review (APPROVE) and rehearsal (53 PASS at 100k rows); the human authorized it for the lane
+runtime :8021 only (D-105). Its seven revisions moved into `versions/` together and were applied to :8021 one revision per
+invocation after a backup (2026-09-30). :8000 is untouched until the merge and its own gates. Below, what D4 added, then
+the earlier history.
 
-| Open proposal | What it adds |
+| D4 revision (now in `versions/`) | What it adds |
 | --- | --- |
 | `20260930_0017_declared_level.py` | `user_language_profiles.declared_level` (H2, merged into D4). |
 | `20260930_0018_account_settings.py` | `users.learning_language`, `interface_language`, `weekly_goal_days`, `settings_updated_at` (the server-owned version token). Own operator step after a backup. |

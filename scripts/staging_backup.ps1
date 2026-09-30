@@ -17,14 +17,20 @@ Output: the backup's path, size, SHA-256 and the schema revision it holds. The
 last line is `BACKUP=<path>` for `staging_update.ps1` to read.
 #>
 param(
-    [string]$OutDir = (Join-Path $env:LOCALAPPDATA 'orena-staging\backups')
+    [string]$OutDir = (Join-Path $env:LOCALAPPDATA 'orena-staging\backups'),
+    # Another non-production PostgreSQL container, e.g. the lane runtime's `orena-next-verify-pg`
+    # before a lane migration (D-105). Production and preview are refused by name.
+    [string]$Postgres = 'orena-foundation-postgres'
 )
 
 # Native commands write progress to stderr; outcomes are checked explicitly.
 $ErrorActionPreference = 'Continue'
 
-$Postgres = 'orena-foundation-postgres'
 $Database = 'postgres'
+if ($Postgres -match '^ai-writing-coach' -or $Postgres -match 'preview') {
+    Write-Host "  $Postgres looks like production or preview; this script does not back those up." -ForegroundColor Red
+    exit 1
+}
 
 function Die($text) { Write-Host "`n  $text" -ForegroundColor Red; exit 1 }
 function Ok($text)  { Write-Host "  $text" -ForegroundColor Green }
