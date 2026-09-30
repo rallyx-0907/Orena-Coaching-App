@@ -43,7 +43,7 @@ python -m pytest grammar_lab/tests                              # toàn bộ tes
 # Nội dung theo bậc (quyết định của người, 29-30/09/2026): seed -> sinh -> review ngoài -> áp góp ý -> chấm engine
 python -m grammar_lab.pipeline.cli import-canonical            # canonical_v1/{en,zh}.yaml -> inventory/catalog_{en,zh}.yaml (tất định, idempotent; --check để kiểm)
 python -m grammar_lab.pipeline.cli coverage --lang zh            # canonical / generated / validated / approved theo bậc; zh thêm GF0025 572/572
-python -m grammar_lab.pipeline.cli ui-fixtures                   # ghi lại fixtures/ui/ (2 điểm mẫu cho renderer UI)
+python -m grammar_lab.pipeline.cli corpus-plan --lang all       # 595 điểm: ready / generated / blocked_metadata / generated_unreviewed_metadata\npython -m grammar_lab.pipeline.cli generate-corpus --lang all --provider deepseek --model deepseek-flash --cost-ceiling-usd 5\n                                                                  # chạy EN -> ZH theo canonical order; bỏ qua file đã có, dừng theo cost rồi chạy lại để resume\npython -m grammar_lab.pipeline.cli ui-fixtures                   # ghi lại fixtures/ui/ (2 điểm mẫu cho renderer UI)
 python -m grammar_lab.pipeline.cli generate --lang en --level A1 --provider deepseek --model deepseek-flash   --cost-ceiling-usd 1     # điểm lấy từ inventory/catalog_en.yaml (danh mục chuẩn v1, 30 điểm A1); giữ khoá quota của provider, báo chi phí thực.
 # generate từ chối (exit 2, trước khoá và trước khi có client) nếu catalog_<lang>.yaml cũ so với canonical_v1, hoặc điểm có metadata default_safe
 # (chưa ai duyệt); --allow-default-safe-metadata là override tường minh cho case thứ hai, không bao giờ vượt qua catalog cũ
@@ -53,7 +53,7 @@ python -m grammar_lab.pipeline.cli feedback-stats --files a.jsonl b.jsonl   # sa
 python -m grammar_lab.pipeline.cli engine-grade --lang en --level A1 --evaluator-url http://localhost:8020  # in ước tính rồi dừng; --yes để chạy
 ```
 
-- **Danh mục chuẩn v1** (`inventory/canonical_v1/`, đã khoá; EN 215, ZH 380, GF0025 572/572) là nguồn duy nhất của
+- **Whole-corpus mode**: `corpus-plan` không coi file đã sinh là đồng nghĩa với metadata đã duyệt. `generate-corpus` chỉ lấy các điểm `ready` (metadata khác `default_safe` và chưa có content), bỏ qua content đã có và fail-closed nếu catalog thay đổi giữa lúc chạy. Điểm `blocked_metadata` phải được author/review metadata trong `seeds_<lang>.yaml`; không dùng `--allow-default-safe-metadata` để lấp corpus hàng loạt.\n- **Danh mục chuẩn v1** (`inventory/canonical_v1/`, đã khoá; EN 215, ZH 380, GF0025 572/572) là nguồn duy nhất của
   *điểm nào tồn tại, ở bậc nào*. `import-canonical` đổi nó thành `inventory/catalog_<lang>.yaml` (file sinh, không sửa tay):
   membership, bậc, R5 sources/aliases, mã GF0025 và metadata HSK7-9 lấy từ canonical; function, point_type, tên,
   error_tags, contrasts, prereqs, sequence, anchors lấy từ `seeds_<lang>.yaml` (đã người duyệt) khi trùng id, đánh dấu
