@@ -1,0 +1,33 @@
+{
+  "description": "Golden vector for export canonical JSON (docs/grammar_lab/INTEGRATION_DESIGN.md section 5). Vietnamese diacritics (NFC), Chinese text and tone-marked pinyin. canonical_json is the exact UTF-8 text that is hashed; sha256 is its lowercase hex digest. A non-Python importer must reproduce both from value.",
+  "value": {
+    "id": "zh.golden_vector",
+    "version": 1,
+    "status": "approved",
+    "target_lang": "zh",
+    "header": {
+      "title": {
+        "vi": "Trợ từ 了 (hoàn thành): hành động đã xong",
+        "en": "The particle 了: completed action",
+        "zh": "动态助词“了”"
+      },
+      "native_title": "动态助词“了”",
+      "native_title_pinyin": ["dòng", "tài", "zhù", "cí", "", "le", ""]
+    },
+    "examples": [
+      {
+        "text": "我昨天买了一本书。",
+        "form": "affirmative",
+        "pinyin": ["wǒ", "zuó", "tiān", "mǎi", "le", "yī", "běn", "shū", ""],
+        "spans": [{"start": 0, "end": 1, "role": "subject"}, {"start": 3, "end": 4, "role": "verb"}],
+        "translation": {"vi": "Hôm qua tôi đã mua một cuốn sách.", "en": "I bought a book yesterday."}
+      }
+    ],
+    "sequence": 3,
+    "optional": true,
+    "note": null,
+    "tags": ["ộ", "ữ", "ư"]
+  },
+  "canonical_json": "{\"examples\":[{\"form\":\"affirmative\",\"pinyin\":[\"wǒ\",\"zuó\",\"tiān\",\"mǎi\",\"le\",\"yī\",\"běn\",\"shū\",\"\"],\"spans\":[{\"end\":1,\"role\":\"subject\",\"start\":0},{\"end\":4,\"role\":\"verb\",\"start\":3}],\"text\":\"我昨天买了一本书。\",\"translation\":{\"en\":\"I bought a book yesterday.\",\"vi\":\"Hôm qua tôi đã mua một cuốn sách.\"}}],\"header\":{\"native_title\":\"动态助词“了”\",\"native_title_pinyin\":[\"dòng\",\"tài\",\"zhù\",\"cí\",\"\",\"le\",\"\"],\"title\":{\"en\":\"The particle 了: completed action\",\"vi\":\"Trợ từ 了 (hoàn thành): hành động đã xong\",\"zh\":\"动态助词“了”\"}},\"id\":\"zh.golden_vector\",\"note\":null,\"optional\":true,\"sequence\":3,\"status\":\"approved\",\"tags\":[\"ộ\",\"ữ\",\"ư\"],\"target_lang\":\"zh\",\"version\":1}",
+  "sha256": "cf92888909aadba47cac25209a173fdf1fa9ee0f66dacd7e425b2326be19ee27"
+}

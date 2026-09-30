@@ -149,8 +149,9 @@ def test_generate_level_option_reads_the_catalog_not_the_old_seed_subset() -> No
     from grammar_lab.pipeline.cli import app
     from typer.testing import CliRunner
 
-    # A1 used to be the 26 hand seeds; it is now all 30 canonical A1 points.
-    assert len(select_ids("en", "A1")) == 30 > len([s for s in load_seeds("en") if s["level"] == "A1"])
+    # A1 is every canonical A1 point (30), whatever share of them has reviewed seeds yet.
+    assert select_ids("en", "A1") == [r["id"] for r in load_catalog("en") if r["level"] == "A1"]
+    assert len(select_ids("en", "A1")) == 30
     result = CliRunner().invoke(app, ["generate", "--lang", "en", "--level", "Z9"])
     assert result.exit_code != 0 and "no catalogue points at level Z9" in result.output
 
@@ -176,8 +177,9 @@ def test_zh_point_carries_its_gf0025_source_refs() -> None:
 def test_coverage_separates_catalog_from_generated_content(tmp_path: Path) -> None:
     report = coverage_report("en")
     assert report["canonical_total"] == 215
-    assert report["generated_total"] == len(load_points("en")) - len(report["content_outside_catalog"]) == 9
-    assert report["missing_content_total"] == 215 - 9 and len(report["missing_content"]) == 206
+    generated = len(load_points("en")) - len(report["content_outside_catalog"])
+    assert report["generated_total"] == generated and 0 < generated < 215  # content on disk grows; the catalogue does not
+    assert report["missing_content_total"] == 215 - generated == len(report["missing_content"])
     assert report["approved_total"] == 0 and report["auto_ok_total"] == 0  # a draft is not approved
     assert report["validated_total"] <= report["generated_total"]
     assert {label: row["canonical"] for label, row in report["per_level"].items()} == EXPECTED_LEVELS["en"]

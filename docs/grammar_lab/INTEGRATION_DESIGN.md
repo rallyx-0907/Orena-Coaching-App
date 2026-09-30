@@ -1,223 +1,150 @@
-# Grammar Lab — thiết kế tích hợp vào app (đề xuất, chưa code)
+# Grammar Lab — tích hợp vào Orena (D-105, export package v1)
 
-28/09/2026 · nhánh `feature/grammar-lab-pipeline` · **để review kiến trúc độc lập** (`AGENTS.md`
-§1 "Architecture review authority"; `SPEC.md` §8). Chưa có dòng code nào theo tài liệu này.
+30/09/2026 · nhánh `feature/grammar-lab-pipeline` · **thay thế bản 28/09** ("bộ đã xuất bản đi cùng mã
+nguồn, nạp lúc khởi động"). D-105.4 và D-106 (`docs/project/DECISION_LOG.md` trên `codex/work`) đã bỏ mô hình
+đó: nội dung **không** đi cùng mã nguồn. Phía app được đặc tả ở `docs/project/proposals/GRAMMAR_CONTENT_STORE.md`
+(rev 2, trên `codex/work`); tài liệu này chỉ đặc tả **phía Grammar Lab** và hợp đồng ở ranh giới. Không có mã
+app, DB hay API nào trong nhánh này.
 
-Tài liệu trả lời bốn câu: nội dung Grammar Lab được **lưu** thế nào trong app, được **phục vụ**
-qua API nào, **thay R5** ở từng chỗ phụ thuộc ra sao, và **thứ tự cắt chuyển** nào an toàn. Dữ
-liệu một điểm là `GRAMMAR_CONTENT_CONTRACT.md` v0.4 (PR vào `codex/work`:
-rallyx-0907/Orena-Coaching-App#66); tài liệu này không đổi contract đó.
+## 1. Luồng duy nhất
 
-## 0. Hiện trạng (đọc từ `origin/codex/work` @ `b55e9d5`, không từ nhánh này)
+```
+Grammar Lab ──export-package──▶ gói đã duyệt ──Admin import──▶ phiên bản nội dung bất biến trong DB
+   ──Admin accept / rights / publish──▶ /api/grammar/v1/* ──▶ màn Grammar hiện có trên /next
+```
 
-`R5_DEPENDENCY_INVENTORY.md` được viết trên base cũ; các dòng dưới đây là bản làm lại trên
-`codex/work`, chỉ về **dữ liệu** (không đọc code giao diện của lane UI ngoài chỗ nó gọi API và
-đọc trường nào — `AGENTS.md` §3).
+- Grammar Lab là **upstream**, nơi duy nhất viết nội dung. Orena không sửa nội dung; sửa = phiên bản mới từ upstream.
+- Gói chỉ chứa điểm `status: approved`. Chỉ người đặt `approved`; pipeline và công cụ xuất không bao giờ đặt.
+- Import, accept, rights và publish là bốn hành động Admin tách biệt, có audit. Publish là hành động tường minh.
+- Quyền (rights) là cổng cứng ở Publish (D-105.5a): chứng nhận theo lô do người ở Admin đưa ra lúc import, **không** do gói
+  khai. Gói chỉ ghi chính sách nguồn (`rights` trong manifest).
+- Không có `cli publish` chép JSON vào `writing_coach/`, không `index.json` đi cùng mã nguồn, không nạp lúc khởi động.
 
-| Chỗ phụ thuộc | Vị trí trên `codex/work` | Phụ thuộc gì |
+## 2. Export profile (ranh giới), khác schema nội bộ
+
+Schema nội bộ của Grammar Lab (`schema/grammar_set.schema.json`) là đa phiên bản (v0.2/0.3/0.4), dùng `zh-Hans`, chỉ bắt
+`en` khi `approved`, và chứa provenance/review/flags trong điểm. Ranh giới với app là một **profile một phiên bản**,
+**suy ra** từ schema nội bộ bằng `pipeline/export_profile.py` và commit ở `schema/export_profile.schema.json`
+(`export-profile --write`):
+
+| | Nội bộ Grammar Lab | Export profile 1 (app) |
 | --- | --- | --- |
-| Nguồn R5 | `writing_coach/languages/{english,chinese}/grammar_curriculum.json` + `grammar_knowledge.json` (en 269 / zh 239), nạp lúc import | — |
-| Registry | `grammar_registry.py:26-108` (`GrammarProvider`, `_REGISTRY`), `runtime.py:78-102` (`active_grammar_*`) | điểm thay nguồn duy nhất |
-| Route thư viện | `app.py:2057-2168`: `GET /api/library/grammar`, `…/{id}`, `…/{id}/reference`, `POST/DELETE …/{id}/complete` | hình dạng R5 (curriculum row + `knowledge.lesson` + `learning_model`) |
-| Route luyện | `app.py:3191-3242` `GET /api/grammar/{id}/practice` | `practice_blueprint`; chỉ `api.js:95-98` gọi, không màn nào |
-| Khoá tiến độ | `app.py:2030-2033` `"{lang}:grammar:v{content_version}:{lesson_id}"` | id + version R5 |
-| `/api/evaluate` | `app.py:2468-2472` → `grammar_links_for_issues(...)` → lưu `module_data["grammar_links"]` (`learning_repository.py:51-55`), đọc lại `row_to_dict` 1105-1109, `writing_contract.py:81-85` `_grammar_ref`, `writing-feedback.js:56` link `#/grammar?id=` | đông cứng id R5 trong bài đã lưu |
-| `writing_grammar_transfer.py` | `CATEGORY_SIGNALS` 11-30, `_haystack` 38-45 (dò chuỗi con trong `lookup_tags`/`aliases`/`title`), output 100-115 | *category* lỗi + chuỗi con, `source: "static-grammar-kb"` |
-| Nhãn lỗi engine | `english/profile.py:26-41`, `chinese/profile.py:26-45`, `runtime.active_error_categories()` | Grammar Lab `error_tags` **chính là** danh sách này (`export_error_tags.py`) |
-| `/next` Grammar | `screens/grammar` gọi `api.grammarLibrary()`; `screens/grammar-concept` gọi `api.grammarLesson(id)`, `api.completeGrammar(id)`, đọc `learning_model.blocks[]` | hình dạng R5 |
-| `/` (UI cũ) | `ui/expression.js:2643,2735` + `content/patterns.js` (6 en + 6 zh, id Concept R5) | hình dạng + id R5 |
-| Orena (agent) | `AGENT_CONTRACT.md` §3 (`selected_item.type = grammar_point`), §6.1 `grammar.point{grammar_id}`, §7 (id đến từ tool read); client `grammar-concept/screen.js:178-231` `askOrena(... content_id: lesson.id)`. **Không có** code agent phía server đọc ngữ pháp | id R5 |
-| Test/CI bám R5 | đếm cứng 269/239 (`test_m4_grammar_concept_specific_content.py`, `test_m4_universal_grammar_full_rollout.py`), tối thiểu (`test_full_grammar_curriculum.py`, `test_chinese_library.py`), hình dạng (`test_static_grammar_knowledge.py`, `test_grammar_storage_namespace.py`, `test_writing_grammar_transfer.py`, `test_writing_evaluation.py` 653/680/836…); `.mjs`: `test_orena_grammar`, `test_orena_extension_patterns` (đọc JSON R5, kiểm id patterns.js), `test_orena_screen_grammar` (fixture R5) — ci.yml 58, 74, 120, 128 | |
+| `target_lang` | `en \| zh-Hans \| ja` | `en \| zh` |
+| khoá locale | `vi en zh-Hans ja` | `vi en zh` |
+| locale bắt buộc | `vi` luôn; `en` khi approved | **`vi` và `en` trong mọi locale map**, placeholder bị cấm |
+| `status` | 5 giá trị | hằng `approved` |
+| phiên bản điểm | 0.2 / 0.3 / 0.4 | một hình dạng (khối v0.4); không `blocks`, `title`, `summary` |
+| thân điểm | gồm `provenance`, `review`, `flags`, `source_anchors`, `schema_version` | **chỉ nội dung tác giả**: các trường đó không bao giờ xuất hiện |
+| đóng | — | `additionalProperties: false` ở mọi object |
 
-## 1. Lưu trữ: bộ nội dung đã xuất bản, chỉ đọc, đi cùng mã nguồn
+- `zh-Hans` ↔ `zh` là **tường minh và có test**: `to_app_point` / `from_app_point` đổi `target_lang` và khoá locale, không
+  thêm chữ nào; nội bộ vẫn giữ `zh-Hans`. Ghi chú trôi dạt: hợp đồng đã merge trên `codex/work` nói `zh`; PR #67 (patch,
+  chưa merge) và mục 10 của đề xuất store nói `zh-Hans` bên trong nội dung. Profile theo bản đã merge; nếu #67 được merge,
+  chỉ đổi `APP_TARGET_LANG`, `APP_LOCALE_KEY` trong `export_profile.py`.
+- **Chống trôi dạt**: test và lệnh xuất so `schema/export_profile.schema.json` đã commit với bản suy ra mới nhất từ schema nội
+  bộ; lệch thì xuất từ chối (`profile.drift`) cho tới khi sinh lại và review profile.
+- `en` không bao giờ được copy từ `vi`: `locale.en_placeholder` chặn một map có `en == vi` mang chữ Latin có dấu. Hai fixture
+  UI (`fixtures/ui/`) có placeholder nên **không** vào được gói production.
+- Nhãn `function` (`functions.json`) cần `vi` và `en` thật; `zh` có thì mang theo.
 
-**Đề xuất:** nội dung ngữ pháp là **nội dung chương trình**, không phải dữ liệu người học — nó
-đi cùng mã nguồn như R5 hôm nay, không vào cơ sở dữ liệu. Nhờ vậy việc này không chạm tới hold
-"learner-data persistence" (`AGENTS.md` §7), trừ tiến độ (§4).
+## 3. Manifest (`package.json`)
 
 ```
-writing_coach/languages/grammar_lab/
-  en/index.json            # manifest + danh sách điểm (nhẹ, cho màn thư viện)
-  en/points/<id>.json      # một điểm, đúng GRAMMAR_CONTENT_CONTRACT v0.4
-  zh/index.json
-  zh/points/<id>.json
-  r5_redirects.json        # id R5 -> id Grammar Lab | null (xem §5)
+export_profile        "grammar-export-profile/1"
+profile_schema_hash   sha256 của schema profile đã dùng (canonical JSON)
+schema_version        "0.4"  (phiên bản nội dung mà profile suy ra từ)
+language              en | zh
+set_version           nhãn lô, vd. 2026-10-01.en.A1
+source_commit         commit Grammar Lab đã xuất; source_dirty (bool)
+exported_at           thời điểm xuất (UTC)
+package_hash          mục 5
+external_references   id điểm ngoài gói mà điểm trong gói tham chiếu (đã duyệt ở Grammar Lab)
+functions             [{id, title:{vi,en,zh?}}]
+points                [{id, version, content_hash, level,
+                        provenance:{reviewer, reviewed_at, review_seconds, run_id, model, prompt_version,
+                                    generated_at, source_refs, source_anchors, r5_source?}}]
+r5_map                [{r5_id, point_id|null, disposition, is_primary}]   mục 4
+validator             {tool, version, passed, codes}   tự khai, không phải bằng chứng an toàn; app kiểm lại sâu
+rights                {source_text_policy: catalogue_codes_only, external_text_included: false,
+                       attestation_required_at_import: true, note}
 ```
 
-- **Chỉ xuất bản điểm đã duyệt.** Grammar Lab thêm lệnh `cli publish --lang <l>`: chép điểm
-  từ `grammar_lab/content/` sang thư mục trên, **chỉ** điểm có `status: approved` (người duyệt;
-  `draft_ai`/`flagged` không bao giờ ra app), validate sạch và verify không còn cờ chưa xử lý.
-  Pipeline không bao giờ tự đặt `approved`.
-- `index.json`: `{schema_version, set_version, language, published_at, source_commit,
-  points: [{id, title, native_title, level, point_type, function, prereqs, contrasts,
-  error_tags, content_hash}]}`. `content_hash` = sha256 của file điểm — để client cache và để
-  biết một điểm đã đổi.
-- **Nạp lúc khởi động, lỗi thì dừng.** Provider đọc và validate toàn bộ bộ đã xuất bản với
-  `grammar_set.schema.json` (bản copy đi cùng bộ) lúc import. Sai schema → app không khởi động
-  (không fallback âm thầm về R5 — cùng tinh thần `AGENTS.md` §10).
-- Không đưa `grammar_lab/pipeline` vào runtime của app: app chỉ đọc JSON đã xuất bản. Pipeline
-  vẫn là công cụ offline.
+Provenance để audit nằm ở manifest, không ở thân điểm. Importer lưu `points[].provenance` cạnh phiên bản và không phục vụ
+nó cho người học. `validator` là một lời khai, không ai dựa vào nó để bảo đảm an toàn.
 
-## 2. Provider
+## 4. R5: một id, đúng một thay thế chính (D-106 2, 4)
 
-`writing_coach/languages/grammar_lab_registry.py` (mới), **song song** với `grammar_registry.py`
-chứ không nhồi vào `GrammarProvider` (hình dạng khác hẳn, trộn hai hình dạng là nguồn lỗi):
+- Mỗi id R5 có **đúng một** điểm chính (primary) hoặc được `dropped`. `aliases` của điểm chứa id R5 **chỉ ở điểm chính**.
+- Mảnh phụ của một phép tách **không** có id đó trong `aliases`; nó ghi quan hệ vào `source_refs.r5_split` (mã nguồn/provenance,
+  không phải alias).
+- `r5_map` là bảng **tường minh** một dòng cho mỗi (id R5, mảnh); app **không bao giờ suy ra** nó từ `aliases` lúc import:
 
-```python
-@dataclass(frozen=True)
-class GrammarLabSet:
-    language: str                     # "en" | "zh"
-    schema_version: str               # "0.4"
-    set_version: str
-    index: tuple[dict, ...]           # index.json points, theo thứ tự cấp độ rồi id
-    by_id: Mapping[str, dict]         # điểm đầy đủ
-    by_error_tag: Mapping[str, tuple[str, ...]]   # nhãn engine -> id điểm
+| `disposition` | Ý nghĩa | Dòng |
+| --- | --- | --- |
+| `replaced` | một id R5 → một điểm | 1 chính |
+| `merged` | nhiều id R5 → một điểm | mỗi id một dòng, cùng điểm, đều chính |
+| `split_primary` | id R5 tách thành mảnh; đây là mảnh chính | 1 chính |
+| `split_secondary` | mảnh khác của cùng id | ≥ 1, không chính |
+| `dropped` | không có thay thế | 1, `point_id: null` |
 
-def grammar_lab_set(language: str) -> GrammarLabSet: ...    # lỗi rõ ràng nếu ngôn ngữ chưa có bộ
-def points_for_error(language, error_tag, *, target_level=None, limit=2) -> list[dict]: ...
+- `build_r5_map` dựng bảng từ danh mục runtime (`r5` = mọi nguồn R5, `aliases` = id mà điểm là chính); id `dropped` lấy từ
+  `r5_conversion_map.tsv` (`action = remove`) qua `--with-dropped`. Gói không được mang nửa phép tách: mọi mảnh của một id R5
+  phải cùng gói (`r5_map.incomplete`).
+- `validate_r5_map` (xuất và kiểm gói cùng chạy): mỗi id có đúng một chính hoặc một `dropped`; không vừa ánh xạ vừa
+  `dropped`; `split_secondary` có `split_primary`; điểm chính liệt id trong `aliases`; mảnh phụ **không** liệt, và có trong
+  `source_refs.r5_split`; không id nào ở `aliases` của hai điểm (`aliases.duplicate`); mọi alias có dòng trong `r5_map`.
+
+## 5. Băm JSON chuẩn (quy phạm; importer phải tái tạo y hệt)
+
+**Dạng chuẩn**: các byte UTF-8 của giá trị, tuần tự hoá với khoá đối tượng **sắp theo điểm mã Unicode** ở mọi cấp, dấu phân cách
+`,` và `:` (không khoảng trắng), **không thoát ASCII** (`ộ` ghi nguyên, không `ộ`), số nguyên là số nguyên (**số thực ở bất kỳ
+đâu là lỗi**, kể cả `1.0`), không NaN/Infinity, **không chuẩn hoá Unicode** (NFC và NFD băm khác nhau).
+
+- `content_hash` = SHA-256 (hex thường) của dạng chuẩn của **thân điểm** (`points/<id>.json`).
+- `package_hash` = SHA-256 của dạng chuẩn của
+  `{export_profile, schema_version, language, functions, points:[{id, version, content_hash}], r5_map}`.
+  `source_commit`, `exported_at`, `set_version`, `validator`, `provenance` là dữ liệu audit, **ngoài** hàm băm: cùng nội dung
+  xuất lại từ commit khác cho cùng `package_hash`, nên import vẫn idempotent.
+- **Golden vector**: `fixtures/export/golden_vector.json` (chữ Việt có dấu, chữ Hán, pinyin có dấu thanh) giữ `value`, đúng
+  chuỗi `canonical_json` được băm và `sha256`
+  (`cf92888909aadba47cac25209a173fdf1fa9ee0f66dacd7e425b2326be19ee27`). Test khoá cả ba; importer chạy cùng vector.
+
+## 6. Lệnh (không gọi provider)
+
+```bash
+python -m grammar_lab.pipeline.cli export-profile [--write]     # suy ra / kiểm schema profile; lệch thì exit 1
+python -m grammar_lab.pipeline.cli export-package --lang en --level A1 --out <thư mục mới> --set-version 2026-10-01.en.A1 \
+    [--zip] [--with-dropped] [--source-commit <sha>] [--allow-dirty]
+python -m grammar_lab.pipeline.cli validate-package <thư mục gói>  # chỉ đọc file của gói
 ```
 
-`runtime.py` thêm `active_grammar_lab_set()` theo ngôn ngữ phiên như các `active_grammar_*`
-hiện có.
+`export-package` gom **mọi** vấn đề và không ghi gì nếu còn một vấn đề (exit 2). Từ chối khi:
 
-## 3. API đọc mới (thêm vào, không sửa route R5)
-
-Tiền tố mới để hai nguồn không lẫn trong giai đoạn chạy song song: `/api/grammar/v1/...`.
-
-| Route | Trả về |
+| Mã | Khi |
 | --- | --- |
-| `GET /api/grammar/v1/points?level=` | `{language, schema_version, set_version, levels: [...], points: [index item + completed]}` — `levels` do server trả (bỏ việc UI viết cứng `LEVEL_NAME_KEY`) |
-| `GET /api/grammar/v1/points/{id}` | `{language, point: <contract v0.4>, completed, content_hash}`; 404 nếu id không có trong bộ của ngôn ngữ phiên |
-| `GET /api/grammar/v1/by-error?error_tag=&level=&limit=` | `{language, error_tag, points: [{grammar_id, title, level, reason}]}` — tra theo nhãn engine (§5) |
-| `POST /api/grammar/v1/points/{id}/complete`, `DELETE …` | như route R5 tương ứng, trên khoá tiến độ mới (§4) |
+| `point.not_approved`, `point.flagged`, `point.no_review` | điểm không `approved`, còn cờ, hoặc thiếu review |
+| `point.no_content`, `point.not_in_catalog` | chọn một điểm chưa có file hoặc ngoài danh mục |
+| `metadata.default_safe` | metadata chưa ai duyệt; **không có override** ở đường xuất |
+| `catalog.stale` | `catalog_<lang>.yaml` cũ hoặc thiếu so với canonical v1 |
+| `profile.drift` | schema profile lệch schema nội bộ |
+| `validate:<mã>`, `profile.schema` | lỗi validate của Grammar Lab trên điểm đã phân giải theo danh mục; vi phạm schema đóng |
+| `locale.missing`, `locale.en_placeholder` | thiếu `vi`/`en` ở bất kỳ locale map, hoặc `en` là bản sao của `vi` |
+| `ref.unresolved`, `contrasts.asymmetric`, `prereqs cycle` | tham chiếu không có trong gói và không phải điểm đã duyệt; bất đối xứng; vòng |
+| `r5_map.*`, `aliases.duplicate` | bảng R5 không hợp lệ (mục 4) |
 
-- Ngôn ngữ = ngôn ngữ phiên (như route R5), id phải mang tiền tố ngôn ngữ đó (`en.`/`zh.`).
-- Response giữ **nguyên** contract v0.4 trong `point` — server không dịch sang hình dạng khác; UI
-  vẽ thẳng contract (đúng lộ trình `CURRENT_HANDOFF`: màn Grammar vẽ `GRAMMAR_CONTENT_CONTRACT.md`).
-- `GET /api/grammar/{id}/practice` (R5, không màn nào gọi) **không** có bản v1: `quick_practice`
-  thay phần luyện có trong điểm; luyện viết tự do sau điểm là tính năng riêng, cần quyết định
-  sản phẩm (§8).
+Sau khi ghi, `validate_package` chạy lại trên chính các file vừa ghi (băm, schema, locale, r5_map, `package_hash`); hỏng thì xoá gói.
+Khi xuất, cấu trúc (function, level, contrasts, prereqs, sequence, aliases, source_refs) lấy từ **danh mục**, không từ bản nháp
+trên đĩa, đúng như `generate`.
 
-## 4. Tiến độ người học — cần review kiến trúc
+## 7. Phía Orena (không làm ở đây)
 
-Khoá R5: `"{lang}:grammar:v{content_version}:{lesson_id}"`. Đề xuất cho Grammar Lab:
-`"{lang}:grammar-lab:v1:{point_id}"` trong **cùng kho tiến độ hiện có** (`_learning_repository`),
-không bảng mới, không cột mới. Hoàn thành vẫn không phải thành thạo (giữ
-`completion_is_mastery: false`).
+Bảng DB, route `/api/admin/grammar/*`, `/api/grammar/v1/*`, tiến độ, đổi seam `/next`, bỏ R5: toàn bộ thuộc
+`GRAMMAR_CONTENT_STORE.md` và lane `codex/work`, qua review kiến trúc độc lập. Việc của Grammar Lab còn lại cho bước 3 trong
+thứ tự cắt chuyển của đề xuất đó: lô đầu tiên có điểm `approved` thật, với `en` thật. Hiện chưa điểm nào `approved`, nên thực tế
+chưa gói nào xuất được; đó là hành vi đúng.
 
-**Không tự di chuyển tiến độ R5.** Từ 29/09/2026 danh mục Grammar Lab **xuất phát từ R5**
-(`SPEC.md` §4, chế độ chuyển đổi; `R5_CONVERSION_PLAN.md`): phần lớn bài R5 có một điểm kế thừa
-1-1, số còn lại gộp, tách, đổi cấp hoặc bị loại (`r5_conversion_map.tsv`). Mỗi điểm mới ghi id
-R5 gốc trong provenance (`source_refs.r5`) và trong `aliases` của contract (§9), nên bảng ánh xạ
-id R5 → id mới là **tất định và có sẵn khi danh mục được duyệt**, không phải suy đoán. Hai lựa
-chọn cho người review (tài liệu này vẫn không chọn):
+## 8. Hiện trạng vs. bản 28/09
 
-1. Không mang sang: tiến độ R5 ở lại dưới khoá cũ, không hiển thị ở màn mới. Đơn giản, người
-   học thấy mất dấu "đã học".
-2. Mang sang khi đọc: dùng `r5_redirects.json` (§5), một điểm mới coi là đã hoàn thành nếu mọi
-   mục R5 trỏ tới nó đã hoàn thành (điểm gộp: mọi bài nguồn; điểm tách: bài nguồn chung; điểm
-   mới không có R5: chưa hoàn thành). Không ghi lại dữ liệu cũ, không import lúc khởi động. Với
-   danh mục xuất phát từ R5 lựa chọn này khả thi hơn nhiều so với trước.
-
-Đây là quyết định về dữ liệu người học → thuộc hold của `AGENTS.md` §7 và cần **review kiến
-trúc độc lập** trước khi code; tài liệu này không chọn.
-
-## 5. Thay R5 ở từng chỗ phụ thuộc
-
-### 5.1 `writing_grammar_transfer` → tra theo `error_tag`
-
-Hôm nay: dò chuỗi con của *category* trong `lookup_tags`/`aliases`/`title` R5. Với Grammar Lab
-không cần đoán: `error_tags` của mỗi điểm **là** nhãn của engine (`export_error_tags.py` sinh từ
-`ERROR_CATEGORIES`), và `issue.category` của `/api/evaluate` cũng là nhãn đó.
-
-`points_for_error(language, category, target_level, limit=2)`:
-
-1. Ứng viên: điểm có `category` trong `error_tags`.
-2. Xếp: khoảng cách cấp độ tới `target_level` (rank trong `level`, thay `_LEVEL_ORDERS` viết
-   cứng), rồi điểm có `common_mistakes` mang đúng nhãn đó, rồi id.
-3. Mỗi điểm chỉ link một lần trong một bài (giữ quy tắc hiện tại).
-
-Output giữ **nguyên** hình dạng link hiện có để `_grammar_ref` và `writing-feedback.js` không
-đổi: `{issue_id, category, grammar_id, title, level, reason, evidence, source: "grammar-lab"}`.
-Nhãn không phải ngữ pháp (`spelling`, `naturalness`, `task`, `register`, `coherence`…) không có
-điểm nào mang → không link, không đoán.
-
-Thay đổi tối thiểu tại `app.py:2468-2472`: gọi `points_for_error` thay cho
-`grammar_links_for_issues` (một chỗ gọi). `writing_grammar_transfer.py` và test của nó bị xoá ở
-bước R5 ra đi (§6 bước 6), không trước.
-
-### 5.2 Link đông cứng trong bài đã lưu
-
-Bài đã chấm trước khi chuyển giữ `grammar_links` với id R5 và `source: "static-grammar-kb"` —
-**không sửa dữ liệu đã lưu**. Khi mở link id R5, client gọi redirect: `r5_redirects.json` cho id
-Grammar Lab tương ứng hoặc `null` (mở thư viện). Bảng này sinh từ `source_refs`/`functions.yaml`
-khi danh mục được duyệt, commit cùng bộ xuất bản; nó là cách duy nhất id R5 còn được đọc sau
-khi R5 bị xoá. Từ hướng chuyển đổi (29/09/2026) nguồn của bảng là provenance `source_refs.r5`
-của từng điểm (= `aliases` của contract §9): id R5 gộp trỏ về điểm đích, id R5 bị tách trỏ về
-điểm chính đã chọn, id R5 bị loại (kỹ năng biên tập, bài ôn tập) là `null`. Bảng phải phủ **mọi
-id R5 có thể còn nằm trong dữ liệu người học** (`r5_conversion_map.tsv` liệt đủ), và id R5 không
-có điểm thay thế phải hiện trong báo cáo chuyển đổi để người duyệt, không bị bỏ âm thầm.
-
-### 5.3 `patterns.js`
-
-Chỉ UI cũ `/` (`ui/expression.js`) và hai gate CI dùng nó; nội dung của nó (dòng công thức,
-`parts`, ghi chú, so sánh) nay nằm trong `pattern`/`compare` của contract. **Không port**: nó ra
-đi cùng UI cũ ở cutover D-091. Cho tới lúc đó R5 còn, nên `test_orena_extension_patterns.mjs`
-vẫn đúng. `patterns.js`, `grammar-shelf.js` (nếu UI mới không còn dùng) và hai gate `.mjs` bị
-xoá trong cùng thay đổi xoá R5.
-
-### 5.4 Orena (agent)
-
-- `AGENT_CONTRACT.md` bump: `grammar.point{grammar_id}` và `selected_item {type: grammar_point,
-  id}` dùng id Grammar Lab (`CURRENT_HANDOFF` đã ghi việc này). Contract do lane `codex/work`
-  sửa, không phải lane Grammar Lab hay lane Intelligence (D-086).
-- Tool đọc ngữ pháp của Orena (khi lane Intelligence viết) đọc qua **provider/API v1** (`points/{id}`,
-  `by-error`), không đọc file — đúng §7 "id đến từ tool read, không từ generation".
-- `evidence.source = grammar.catalog` giữ nguyên tên.
-
-### 5.5 Màn `/next`
-
-Lane UI dựng lại hai màn Grammar trên `/api/grammar/v1/*` sau khi contract được merge (lộ trình
-`CURRENT_HANDOFF`). Fixture `scripts/fixtures/api/library_grammar*.json` được thay bằng fixture
-sinh từ bộ xuất bản thật.
-
-## 6. Thứ tự cắt chuyển
-
-Mọi bước trước bước 6 **chỉ thêm**; R5 và UI cũ chạy nguyên. Mỗi bước có đường lùi riêng.
-
-| # | Bước | Ai | Điều kiện vào | Đường lùi |
-| --- | --- | --- | --- | --- |
-| 0 | Contract merge (#66) + DECISION_LOG "R5 được thay bằng Grammar Lab" | người | review của lane UI | — |
-| 1 | Danh mục bộ lõi duyệt; sinh + verify; người duyệt từng điểm (`approved`) | Grammar Lab + người | bước 0 | không đụng app |
-| 2 | `cli publish`, `grammar_lab_registry.py`, route `/api/grammar/v1/*`, test; CI chạy validate trên bộ xuất bản | lane được giao | **review kiến trúc độc lập** tài liệu này (đặc biệt §4) | gỡ route mới; R5 không đổi |
-| 3 | Màn Grammar `/next` vẽ contract qua v1 | lane UI | bước 2 trên nhánh | `/next` chưa là `/` |
-| 4 | `/api/evaluate` link bằng `points_for_error` cho bài mới; redirect cho id R5; bump `AGENT_CONTRACT` | lane được giao | bước 2; bộ lõi phủ đủ nhãn ngữ pháp của cả hai ngôn ngữ | đổi lại một chỗ gọi (`app.py:2468-2472`) |
-| 5 | Cutover D-091: `/` thành UI mới; `renderGrammar`, `patterns.js` ra đi cùng UI cũ | theo D-091 | bước 3 | theo kế hoạch D-091 |
-| 6 | Xoá R5: route `/api/library/grammar*`, `/api/grammar/{id}/practice`, `grammar_registry` R5, JSON R5, `writing_grammar_transfer.py`, các test/gate bám R5 (§0) | lane được giao, **người cho phép** | bước 4 + 5; **quyết định về độ phủ** (§7) | `git revert` một commit; dữ liệu người học không bị đụng |
-
-Bước 6 là bước duy nhất xoá; nó không đụng dữ liệu người học đã lưu (link đông cứng đọc qua
-redirect, tiến độ theo lựa chọn ở §4).
-
-## 7. Rủi ro và điều người cần quyết
-
-1. **Độ phủ.** R5 có 508 dòng (228 bài EN + 197 bài ZH là điểm ngữ pháp; còn lại là bài ôn tập/
-   kiểm tra) tới C2 / HSK7-9. Người học đi từ A1 tới C2 và HSK 1–9, nên **đích là phủ mọi cấp**
-   (quyết định của người 29/09/2026): danh mục xuất phát từ R5 (`R5_CONVERSION_PLAN.md`), bộ lõi
-   99 điểm hợp nhất vào. Bước 6 chỉ chạy khi bộ đã phủ mọi cấp mà R5 đang phủ; sinh theo cấp thấp
-   trước nhưng không cắt chuyển từng phần cấp.
-2. **Ngôn ngữ giải thích** (quyết định của người 29/09/2026): `vi` và `en` sinh cùng lúc cho mọi
-   điểm từ đầu; `zh` để một đợt sau khi nội dung ổn định. Thiếu key thì rơi về `en`, không rơi
-   âm thầm về `vi` (contract "Locale"). Không chặn tích hợp; chi phí sinh `en` tính vào ước tính
-   của `R5_CONVERSION_PLAN.md`.
-3. **Tiến độ R5** (§4): chọn 1 hoặc 2, qua review kiến trúc.
-4. **Engine không chấm được câu Trung ngắn** (422 dưới 10 ký tự) và bỏ sót nhiều lỗi rõ ràng —
-   đây là giới hạn chất lượng của verify, không phải của tích hợp, nhưng quyết định bao nhiêu
-   điểm đạt `approved`.
-5. **Luyện viết tự do** sau điểm (thay `/api/grammar/{id}/practice`): giữ, bỏ, hay làm lại —
-   quyết định sản phẩm.
-
-## 8. Ngoài phạm vi
-
-Code; sửa `AGENT_CONTRACT.md` (lane `codex/work`); UI (lane UI); schema/migration cơ sở dữ liệu
-(không cần, trừ lựa chọn tiến độ ở §4); `mobile/` (đóng băng, `AGENTS.md` §5 — wiring
-`useGrammar.ts` được cập nhật khi mobile mở lại).
+Bỏ: lưu trữ trong repo, provider nạp lúc khởi động, `cli publish`, `index.json`, `r5_redirects.json` đi cùng mã nguồn. Giữ: hình
+dạng route (`/points`, `/points/{id}`, `/by-error`), ý tưởng chuyển hướng id R5 (nay là `r5_map` trong DB), nguyên tắc "tiến độ
+khoá theo id điểm, không theo version", và "hoàn thành không phải thành thạo". Kiểm kê phụ thuộc R5 vẫn ở `R5_DEPENDENCY_INVENTORY.md`.

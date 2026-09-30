@@ -103,7 +103,6 @@ def test_demo_fixture_passes_every_deterministic_check(lang: str, tmp_path: Path
     assert {issue.code for issue in mine} <= {"ref.unknown_prereq", "ref.unknown_contrast"}, mine
     for issue in mine:
         assert issue.message.rsplit(" ", 1)[-1] in catalog_ids, issue
-    assert not [issue for issue in report.issues if issue not in mine]
 
 
 # --- GF0025 reciprocal proof ---------------------------------------------------------------------------

@@ -44,6 +44,10 @@ python -m pytest grammar_lab/tests                              # toàn bộ tes
 python -m grammar_lab.pipeline.cli import-canonical            # canonical_v1/{en,zh}.yaml -> inventory/catalog_{en,zh}.yaml (tất định, idempotent; --check để kiểm)
 python -m grammar_lab.pipeline.cli coverage --lang zh            # canonical / generated / validated / approved theo bậc; zh thêm GF0025 572/572
 python -m grammar_lab.pipeline.cli corpus-plan --lang all       # 595 điểm: ready / generated / blocked_metadata / generated_unreviewed_metadata\npython -m grammar_lab.pipeline.cli generate-corpus --lang all --provider deepseek --model deepseek-flash --cost-ceiling-usd 5\n                                                                  # chạy EN -> ZH theo canonical order; bỏ qua file đã có, dừng theo cost rồi chạy lại để resume\npython -m grammar_lab.pipeline.cli ui-fixtures                   # ghi lại fixtures/ui/ (2 điểm mẫu cho renderer UI)
+python -m grammar_lab.pipeline.cli export-profile [--write]      # schema profile production (en|zh, vi+en, approved) suy ra từ schema nội bộ; lệch thì exit 1
+python -m grammar_lab.pipeline.cli export-package --lang en --level A1 --out <thư mục mới> --set-version <nhãn> [--zip]   # gói approved cho Admin import (D-105); không gọi provider, fail-closed
+python -m grammar_lab.pipeline.cli validate-package <thư mục gói>
+python -m grammar_lab.pipeline.cli ui-fixtures                   # ghi lại fixtures/ui/ (2 điểm mẫu cho renderer UI)
 python -m grammar_lab.pipeline.cli generate --lang en --level A1 --provider deepseek --model deepseek-flash   --cost-ceiling-usd 1     # điểm lấy từ inventory/catalog_en.yaml (danh mục chuẩn v1, 30 điểm A1); giữ khoá quota của provider, báo chi phí thực.
 # generate từ chối (exit 2, trước khoá và trước khi có client) nếu catalog_<lang>.yaml cũ so với canonical_v1, hoặc điểm có metadata default_safe
 # (chưa ai duyệt); --allow-default-safe-metadata là override tường minh cho case thứ hai, không bao giờ vượt qua catalog cũ
@@ -115,6 +119,8 @@ tác (vd. `grammar_lab/sandbox/` ở `:8020`).
 | `cast/cast.yaml` | Cast nhân vật cố định cho block `story` (schema v0.3, `STORY_SPEC.md` §3) |
 | `inventory/<lang>.yaml` | Danh mục chính kiểu SPEC §4 (hiện là `[]`; danh mục chạy thật là `catalog_<lang>.yaml`) |
 | `inventory/canonical_v1/`, `inventory/catalog_<lang>.yaml` | Danh mục chuẩn v1 đã khoá và bản runtime sinh từ nó (`pipeline/canonical.py`) |
+| `schema/export_profile.schema.json`, `pipeline/export_profile.py`, `export_package.py`, `r5_map.py` | Export package v1: profile production suy ra, băm JSON chuẩn, `r5_map`, gói + validate; xem `docs/grammar_lab/INTEGRATION_DESIGN.md` |
+| `fixtures/export/golden_vector.json` | Golden vector của băm JSON chuẩn (chữ Việt, Hán, pinyin) |
 | `fixtures/ui/` | Hai điểm mẫu hoàn chỉnh (EN A1, ZH HSK1) + `index.json` cho renderer UI; xem `fixtures/ui/README.md` |
 | `pipeline/` | CLI và các bước. `coverage.py`: catalog vs nội dung đã sinh/validate/duyệt |
 | `pipeline/preview.py`, `preview/template.html` | Trang preview nội bộ để duyệt nội dung v0.4 (không phải UI người học): `python -m grammar_lab.pipeline.cli preview --serve` → http://127.0.0.1:8031/. `preview/serve.py` (ghi kết quả duyệt ngược vào content/) vẫn là stub giai đoạn 2 |

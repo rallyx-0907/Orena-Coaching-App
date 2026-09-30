@@ -33,6 +33,12 @@ from grammar_lab.pipeline.canonical import catalog_is_current, load_canonical, w
 from grammar_lab.pipeline.coverage import coverage_report, render_text as render_coverage
 from grammar_lab.pipeline.corpus import normalize_langs, plan_corpus, ready_items, render_text as render_corpus
 from grammar_lab.pipeline.seed import GenerationBlocked, check_generation_gate, select_ids
+from grammar_lab.pipeline.export_package import ExportError, export_package, package_to_zip, validate_package
+from grammar_lab.pipeline.export_profile import (
+    PROFILE_SCHEMA_PATH, derive_profile_schema, load_internal_schema, profile_drift,
+)
+from grammar_lab.pipeline.jsonio import write_json
+from grammar_lab.pipeline.r5_map import load_dropped_r5_ids
 from grammar_lab.pipeline.ui_fixtures import fixture_dir, write_fixtures as write_ui_fixtures
 from grammar_lab.pipeline.run_context import new_run_id, resolve_run_id, run_dir, write_step
 from grammar_lab.pipeline.validate import ERROR_TAGS_PATH, LAB_ROOT, LANGS, apply_flags, validate_lang
@@ -244,6 +250,87 @@ def generate_corpus_command(
     })
     if any(o.status in {"error", "blocked_metadata"} for o in outcomes):
         raise typer.Exit(1)
+
+
+
+@app.command("export-profile")
+def export_profile_command(
+    write: bool = typer.Option(False, "--write", help="Write schema/export_profile.schema.json from the internal schema."),
+    root: Path = typer.Option(LAB_ROOT, "--root"),
+) -> None:
+    """Derive the production export-profile schema; without --write, exit 1 when the committed one has drifted."""
+    if write:
+        write_json(root / PROFILE_SCHEMA_PATH, derive_profile_schema(load_internal_schema(root)))
+        typer.echo(f"wrote {root / PROFILE_SCHEMA_PATH}")
+        raise typer.Exit(0)
+    drift = profile_drift(root)
+    typer.echo(f"export-profile: {drift or 'current'}")
+    raise typer.Exit(1 if drift else 0)
+
+
+def _git(root: Path, *args: str) -> str | None:
+    import subprocess
+
+    try:
+        done = subprocess.run(["git", "-C", str(root), *args], capture_output=True, text=True, check=True, timeout=30)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return done.stdout.strip()
+
+
+@app.command("export-package")
+def export_package_command(
+    lang: str = typer.Option(..., "--lang", help=f"Target language: {', '.join(LANGS)}."),
+    ids: str = typer.Option("", "--ids", help="Comma-separated approved point ids."),
+    level: str = typer.Option("", "--level", help="Instead of --ids: every catalogue point of this level."),
+    out: Path = typer.Option(..., "--out", help="New, empty output directory for the package."),
+    set_version: str = typer.Option(..., "--set-version", help="Label of this batch, e.g. 2026-10-01.en.A1."),
+    zip_it: bool = typer.Option(False, "--zip", help="Also write <out>.zip (deterministic) for the Admin upload."),
+    with_dropped: bool = typer.Option(False, "--with-dropped", help="List the R5 ids the conversion map removes as dropped."),
+    source_commit: str = typer.Option("", "--source-commit", help="Default: git HEAD of the lab checkout."),
+    allow_dirty: bool = typer.Option(False, "--allow-dirty", help="Export from a dirty lab tree (recorded in the manifest)."),
+    root: Path = typer.Option(LAB_ROOT, "--root"),
+) -> None:
+    """Build and validate the approved export package. Calls no provider; fails closed, writing nothing on error."""
+    if lang not in LANGS:
+        raise typer.BadParameter(f"expected one of {', '.join(LANGS)}", param_hint="--lang")
+    if bool(ids) == bool(level):
+        raise typer.BadParameter("give exactly one of --ids and --level")
+    point_ids = [p.strip() for p in ids.split(",") if p.strip()] or select_ids(lang, level, root)
+    commit = source_commit or _git(root, "rev-parse", "HEAD")
+    dirty = bool(_git(root, "status", "--porcelain", "--", "."))
+    if not commit:
+        typer.echo("export blocked: cannot determine the source commit; pass --source-commit", err=True)
+        raise typer.Exit(2)
+    if dirty and not allow_dirty:
+        typer.echo("export blocked: the lab tree has uncommitted changes (commit them, or pass --allow-dirty)", err=True)
+        raise typer.Exit(2)
+    dropped = None
+    if with_dropped:
+        dropped = load_dropped_r5_ids(lang, root.parent / "docs" / "grammar_lab" / "r5_conversion_map.tsv")
+    try:
+        result = export_package(lang, point_ids, root, out, set_version=set_version, source_commit=commit,
+                                source_dirty=dirty, dropped=dropped)
+    except ExportError as exc:
+        for problem in exc.problems:
+            typer.echo(f"export blocked: {problem}", err=True)
+        raise typer.Exit(2) from exc
+    if zip_it:
+        package_to_zip(result.out_dir, out.with_suffix(".zip"))
+    typer.echo(f"export-package --lang {lang}: {len(result.points)} point(s), package_hash {result.package_hash}, {out}")
+
+
+@app.command("validate-package")
+def validate_package_command(
+    path: Path = typer.Argument(..., help="A package directory."),
+    root: Path = typer.Option(LAB_ROOT, "--root"),
+) -> None:
+    """Validate a built package from its files alone. Exit 1 on any problem."""
+    problems = validate_package(path, root)
+    for problem in problems:
+        typer.echo(problem)
+    typer.echo(f"validate-package: {'OK' if not problems else f'{len(problems)} problem(s)'}")
+    raise typer.Exit(1 if problems else 0)
 
 
 @app.command("ui-fixtures")
