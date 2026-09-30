@@ -26,6 +26,23 @@ What it does, in order (each line is a PASS or FAIL row; the exit code is non-ze
    survive, and that the schema after the second upgrade equals the schema after the first.
 7. Races two writers on the `essay_review_history` unique key: one row, one refusal.
 
+Also (delta review of revision 3):
+- **Revisions are applied one per invocation** (`command.upgrade(cfg, <revision>)`), as the operator runbook does
+  (`bootstrap_runtime_schema.py --upgrade --from <rev> --to <rev>`): the chain runs in one transaction, so a single run
+  to head would keep 0018's lock on `users` through 0022's index build. Each invocation is timed; the timing table is
+  printed with the results.
+- `--volume N` seeds N rows into `users`, `user_language_profiles`, `library_items`, `grammar_progress`, `listening_progress`
+  and `essays` (in SQL, before the migrations) so the lock-hold times are those of a table of that size. Use it for the
+  maintenance-window measurement; without it the times only prove the shape.
+- The schema after the downgrade is compared with the schema captured at 0016 (all public tables), not only with the
+  schema after the first upgrade.
+- Old-code inserts (naming none of the new columns) are probed for `users`, `user_language_profiles` and
+  `listening_progress`.
+- The `library_items` place write is probed with the conditional-upsert semantics of the proposal (I4): coalescing
+  within 30 s unless a boundary, `version` and `updated_at` untouched, a concurrent pin PATCH unaffected.
+
+Usage: `rehearse_learner_records_schema.py <URL> [--volume N]`.
+
 The ORM models are intentionally unchanged until the human authorizes the migrations, so there is no ORM-parity step
 here; the implementation adds it (`tests/test_reading_evidence_schema_parity.py` pattern) with the model changes.
 """
@@ -75,7 +92,7 @@ NEW_COLUMNS = [
     ("grammar_progress", "last_quiz_at"),
 ]
 NEW_TABLES = ["essay_review_history"]
-NEW_INDEXES = ["ix_essay_review_history_scope", "ix_library_items_place"]
+NEW_INDEXES = ["ix_essay_review_history_essay", "ix_library_items_place"]
 
 # ---------------------------------------------------------------------------------------------------------------------
 # The guard: this script creates and drops schema, so it must never be pointed at a real runtime.
@@ -144,6 +161,7 @@ def report() -> int:
     for label, ok, detail in results:
         print(f"{label.ljust(width)}  {'PASS' if ok else 'FAIL'}    {detail}")
     failed = [label for label, ok, _ in results if not ok]
+    report_timings()
     print()
     print(f"{len(results) - len(failed)} PASS, {len(failed)} FAIL")
     if failed:
@@ -255,6 +273,131 @@ def schema_signature(engine) -> dict:
     return signature
 
 
+def full_schema_signature(engine) -> dict:
+    """Every public table: columns, indexes, constraints, triggers, plus user functions. Detects a downgrade that
+    altered anything at all, not only the objects the upgrade added."""
+    signature: dict = {}
+    with engine.connect() as conn:
+        tables = conn.execute(
+            text("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY 1")
+        ).scalars().all()
+        for table in tables:
+            signature[f"columns:{table}"] = [
+                tuple(row)
+                for row in conn.execute(
+                    text(
+                        "SELECT column_name, data_type, is_nullable, column_default, character_maximum_length"
+                        " FROM information_schema.columns WHERE table_schema = 'public' AND table_name = :t"
+                        " ORDER BY column_name"
+                    ),
+                    {"t": table},
+                ).all()
+            ]
+            signature[f"indexes:{table}"] = [
+                tuple(row)
+                for row in conn.execute(
+                    text("SELECT indexname, indexdef FROM pg_indexes WHERE schemaname = 'public' AND tablename = :t ORDER BY 1"),
+                    {"t": table},
+                ).all()
+            ]
+            signature[f"constraints:{table}"] = sorted(constraint_defs(engine, table).items())
+            signature[f"triggers:{table}"] = sorted(trigger_names(engine, table))
+        signature["functions"] = sorted(
+            conn.execute(
+                text(
+                    "SELECT p.proname FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace"
+                    " WHERE n.nspname = 'public'"
+                )
+            ).scalars()
+        )
+    return signature
+
+
+def seed_volume(engine, rows: int, now) -> None:
+    """`rows` rows in each hot table, in SQL, at revision 0016 (before any new column exists)."""
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                "INSERT INTO users (id, user_key, email, name, picture, role, created_at)"
+                " SELECT gen_random_uuid(), 'vol-' || g, 'vol-' || g || '@example.test', '', '', 'user', :now"
+                " FROM generate_series(1, :n) g"
+            ),
+            {"n": rows, "now": now},
+        )
+        conn.execute(text("CREATE TEMP TABLE vol_users AS SELECT id, row_number() OVER () AS n FROM users WHERE user_key LIKE 'vol-%'"))
+        conn.execute(
+            text(
+                "INSERT INTO user_language_profiles (id, user_id, language_code, goal, style, pinyin, native_language,"
+                " theme_preset, created_at, updated_at)"
+                " SELECT gen_random_uuid(), id, 'en', 'everyday', 'guided', 'auto', 'vi', 'editorial', :now, :now"
+                " FROM vol_users"
+            ),
+            {"now": now},
+        )
+        conn.execute(
+            text(
+                "INSERT INTO library_items (id, user_id, language_code, kind, saved_word_id, source_id, relationship,"
+                " created_at, updated_at) SELECT gen_random_uuid(), id, 'en', 'reading', NULL, 'vol:' || n, 'started',"
+                " :now, :now FROM vol_users"
+            ),
+            {"now": now},
+        )
+        conn.execute(
+            text(
+                "INSERT INTO grammar_progress (id, user_id, language_code, lesson_id, completed_at)"
+                " SELECT gen_random_uuid(), id, 'en', 'vol.point.' || n, :now FROM vol_users"
+            ),
+            {"now": now},
+        )
+        conn.execute(
+            text(
+                "INSERT INTO listening_progress (id, user_id, language_code, asset_id, segment_id, presentation, revealed,"
+                " checked_attempt_count, best_accuracy_percent, best_exact, last_answer, last_used_hint, last_hint_level,"
+                " updated_at) SELECT gen_random_uuid(), id, 'en', 'vol-asset', 'seg-' || n, 'checked', false, 1, 70,"
+                " false, 'x', false, 0, :now FROM vol_users"
+            ),
+            {"now": now},
+        )
+        conn.execute(
+            text(
+                "INSERT INTO essays (id, user_id, language_code, legacy_id, created_at, prompt, text, word_count,"
+                " target_level, grammar, vocabulary, coherence, task_achievement, naturalness, overall, level_estimate,"
+                " evaluator, summary_vi, strengths, priorities, errors, module_data, strength_evidence)"
+                " SELECT gen_random_uuid(), id, 'en', 1, :now, '', 'volume seed', 2, '', 60, 60, 60, 60, 60, 60, '',"
+                " 'rehearsal', '', '[]', '[]', '[]', '{}', '[]' FROM vol_users"
+            ),
+            {"now": now},
+        )
+        conn.execute(text("DROP TABLE vol_users"))
+
+
+timings: list[tuple[str, str, float]] = []
+
+
+def apply_one_by_one(cfg, revisions, *, direction: str, label: str) -> None:
+    """One `alembic` invocation per revision, timed. The elapsed time is the upper bound of how long the revision's
+    locks were held: it includes the transaction's commit, and the connection setup."""
+    for revision in revisions:
+        started = time.monotonic()
+        if direction == "up":
+            command.upgrade(cfg, revision)
+        else:
+            command.downgrade(cfg, revision)
+        timings.append((label, revision, time.monotonic() - started))
+
+
+def report_timings() -> None:
+    if not timings:
+        return
+    print()
+    print("LOCK-HOLD TIMES (one invocation per revision; the locks are held at most this long)")
+    print(f"{'run'.ljust(24)}  {'revision'.ljust(14)}  seconds")
+    for label, revision, seconds in timings:
+        print(f"{label.ljust(24)}  {revision.ljust(14)}  {seconds:8.3f}")
+    slowest = max(timings, key=lambda item: item[2])
+    print(f"slowest: {slowest[1]} in {slowest[0]}: {slowest[2]:.3f} s")
+
+
 def refuses(engine, label: str, statement: str, params: dict, expect: str) -> None:
     def run() -> str:
         try:
@@ -282,10 +425,21 @@ def accepts(engine, label: str, statement: str, params: dict) -> None:
 # Main
 # ---------------------------------------------------------------------------------------------------------------------
 def main() -> int:
-    if len(sys.argv) != 2:
+    args = sys.argv[1:]
+    volume = 0
+    if "--volume" in args:
+        at = args.index("--volume")
+        try:
+            volume = int(args[at + 1])
+        except (IndexError, ValueError):
+            print("--volume needs a whole number of rows")
+            return 2
+        assert volume >= 0
+        del args[at:at + 2]
+    if len(args) != 1:
         print(__doc__)
         return 2
-    url = sys.argv[1]
+    url = args[0]
     refuse_unless_throwaway(url)
     engine = create_engine(url)
     refuse_unless_empty(engine)
@@ -300,6 +454,10 @@ def main() -> int:
         ScriptDirectory.from_config(alembic_config(url, with_proposed=False)).get_heads() == [BASE]
         or (_ for _ in ()).throw(AssertionError("versions/ has a head other than 0016"))
     ) and "single head 0016")
+
+    baseline_signature = full_schema_signature(engine)
+    record("schema captured at 20260924_0016 (all public tables)", True,
+           f"{len([k for k in baseline_signature if k.startswith('columns:')])} tables")
 
     user_a, user_b = uuid.uuid4(), uuid.uuid4()
     essay_a = uuid.uuid4()
@@ -364,6 +522,10 @@ def main() -> int:
                               "library_items", "essays")
             }
 
+    if volume:
+        started = time.monotonic()
+        seed_volume(engine, volume, now)
+        record(f"volume seed: {volume} rows in each hot table", True, f"{time.monotonic() - started:.1f}s to seed")
     seeded = counts()
     record("rows seeded before the new columns exist", True, str(seeded))
 
@@ -383,8 +545,8 @@ def main() -> int:
     check("proposed revisions form one linear chain after 0016", lambda: (
         _chain_ok(proposed_cfg) or (_ for _ in ()).throw(AssertionError("chain is not 0016 -> 0017 ... -> 0023"))
     ) and "0016 -> 0017 -> ... -> 0023, single head")
-    command.upgrade(proposed_cfg, "head")
-    check("upgraded to head", lambda: (
+    apply_one_by_one(proposed_cfg, NEW_REVISIONS, direction="up", label="first upgrade")
+    check("upgraded to head, one revision per invocation", lambda: (
         current_revision(engine) == HEAD or (_ for _ in ()).throw(AssertionError(current_revision(engine)))
     ) and HEAD)
 
@@ -412,6 +574,10 @@ def main() -> int:
         return "columns, table, indexes, trigger function and check are gone"
 
     check("downgrade removes everything the upgrade added", everything_removed)
+    check("schema after the downgrade equals the schema captured at 20260924_0016", lambda: (
+        full_schema_signature(engine) == baseline_signature
+        or (_ for _ in ()).throw(AssertionError(_signature_diff(baseline_signature, full_schema_signature(engine))))
+    ) and "every public table identical: columns, indexes, constraints, triggers, functions")
     def old_rows_survive() -> str:
         after = counts()
         short = {t: (after[t], n) for t, n in seeded.items() if after[t] < n}
@@ -427,7 +593,7 @@ def main() -> int:
 
     lock_probe(engine, url, proposed_cfg, direction="upgrade", holder_table="users")
 
-    command.upgrade(proposed_cfg, "head")
+    apply_one_by_one(proposed_cfg, NEW_REVISIONS, direction="up", label="second upgrade")
     check("upgraded to head again", lambda: (
         current_revision(engine) == HEAD or (_ for _ in ()).throw(AssertionError(current_revision(engine)))
     ) and HEAD)
@@ -558,7 +724,7 @@ def probe_schema(engine, user_a, user_b, essay_a, now, seeded, counts) -> None:
         assert table_exists(engine, "essay_review_history"), "table missing"
         cols = {
             name: column_info(engine, "essay_review_history", name)
-            for name in ("id", "essay_id", "user_id", "language_code", "superseded_at", "reason",
+            for name in ("id", "essay_id", "superseded_at", "reason",
                          "prior_fingerprint", "prior_contract", "replaced_by_fingerprint", "review")
         }
         assert all(cols.values()), [n for n, v in cols.items() if not v]
@@ -568,10 +734,12 @@ def probe_schema(engine, user_a, user_b, essay_a, now, seeded, counts) -> None:
         defs = constraint_defs(engine, "essay_review_history")
         assert "uq_essay_review_history_prior" in defs and "essay_id, prior_fingerprint" in defs[
             "uq_essay_review_history_prior"], defs
-        assert "ix_essay_review_history_scope" in (index_def(engine, "ix_essay_review_history_scope") or ""), "index"
-        return "10 NOT NULL columns, json review, unique (essay_id, prior_fingerprint), scope index"
+        assert column_info(engine, "essay_review_history", "user_id") is None, "a user_id copy survived"
+        assert column_info(engine, "essay_review_history", "language_code") is None, "a language_code copy survived"
+        assert "essay_id, superseded_at" in (index_def(engine, "ix_essay_review_history_essay") or ""), "index"
+        return "8 NOT NULL columns (no scope copy), json review, unique (essay_id, prior_fingerprint), index (essay_id, superseded_at)"
 
-    check("essay_review_history: shape, unique key and index", history_shape)
+    check("essay_review_history: shape (scope is the essay's), unique key and index", history_shape)
 
     def trigger_present() -> str:
         assert "essay_review_history_immutable" in trigger_names(engine, "essay_review_history"), "trigger missing"
@@ -588,13 +756,13 @@ def probe_schema(engine, user_a, user_b, essay_a, now, seeded, counts) -> None:
 
     history_id = uuid.uuid4()
     insert = (
-        "INSERT INTO essay_review_history (id, essay_id, user_id, language_code, superseded_at, reason,"
+        "INSERT INTO essay_review_history (id, essay_id, superseded_at, reason,"
         " prior_fingerprint, prior_contract, replaced_by_fingerprint, review)"
-        " VALUES (:id, :essay, :user, 'zh', :now, 'evaluator_refresh', :prior, 'writing-evaluation-v2.6', :new,"
+        " VALUES (:id, :essay, :now, 'evaluator_refresh', :prior, 'writing-evaluation-v2.6', :new,"
         " CAST(:review AS json))"
     )
     base = {
-        "essay": essay_a, "user": user_a, "now": now, "new": "n" * 64,
+        "essay": essay_a, "now": now, "new": "n" * 64,
         "review": '{"overall": 70, "errors": []}',
     }
     accepts(engine, "essay_review_history: a prior review is accepted",
@@ -602,7 +770,8 @@ def probe_schema(engine, user_a, user_b, essay_a, now, seeded, counts) -> None:
     refuses(engine, "essay_review_history: the same prior review twice", insert,
             {**base, "id": uuid.uuid4(), "prior": "a" * 64}, "uq_essay_review_history_prior")
     refuses(engine, "essay_review_history: an unknown essay",
-            insert, {**base, "id": uuid.uuid4(), "essay": uuid.uuid4(), "prior": "b" * 64}, "essay_review_history")
+            insert, {**base, "id": uuid.uuid4(), "essay": uuid.uuid4(), "prior": "b" * 64},
+            "essay_review_history_essay_id_fkey")
     refuses(engine, "essay_review_history: an UPDATE is rejected by the trigger",
             "UPDATE essay_review_history SET reason = 'changed' WHERE id = :id", {"id": history_id}, "immutable")
 
@@ -651,19 +820,17 @@ def probe_schema(engine, user_a, user_b, essay_a, now, seeded, counts) -> None:
                 ),
                 {"id": temp_essay, "u": temp_user, "now": now},
             )
-            conn.execute(
-                text(insert), {**base, "id": uuid.uuid4(), "essay": temp_essay, "user": temp_user, "prior": "d" * 64}
-            )
+            conn.execute(text(insert), {**base, "id": uuid.uuid4(), "essay": temp_essay, "prior": "d" * 64})
         with engine.begin() as conn:
             conn.execute(text("DELETE FROM users WHERE id = :id"), {"id": temp_user})
         with engine.connect() as conn:
             left = conn.execute(
-                text("SELECT count(*) FROM essay_review_history WHERE user_id = :id"), {"id": temp_user}
+                text("SELECT count(*) FROM essay_review_history WHERE essay_id = :id"), {"id": temp_essay}
             ).scalar()
         assert left == 0, f"{left} history rows survived the user's deletion"
-        return "deleting the user deleted the history"
+        return "deleting the user deleted its essays and, through them, the history"
 
-    check("essay_review_history: cascade on user delete", cascade_on_user_delete)
+    check("essay_review_history: cascade on user delete (through the essays)", cascade_on_user_delete)
 
     # 0022: library_items
     def place_index() -> str:
@@ -674,20 +841,108 @@ def probe_schema(engine, user_a, user_b, essay_a, now, seeded, counts) -> None:
 
     check("library_items: partial place index", place_index)
 
-    def place_write_leaves_version() -> str:
+    place_upsert = (
+        "INSERT INTO library_items (id, user_id, language_code, kind, saved_word_id, source_id, relationship,"
+        " created_at, updated_at, place, place_at) VALUES (:id, :u, 'en', 'reading', NULL, :s, 'started', :created,"
+        " :created, CAST(:p AS json), :at)"
+        " ON CONFLICT (user_id, language_code, kind, source_id, relationship) WHERE saved_word_id IS NULL"
+        " DO UPDATE SET place = EXCLUDED.place, place_at = EXCLUDED.place_at"
+        " WHERE (CAST(:boundary AS boolean) OR library_items.place_at IS NULL"
+        " OR library_items.place_at <= EXCLUDED.place_at - interval '30 seconds')"
+        " RETURNING version, updated_at, place_at"
+    )
+
+    def place_write_semantics() -> str:
+        """The write I4 specifies: created on first open, coalesced within 30 s unless a boundary, never touching
+        version or updated_at, so a concurrent pin/note PATCH still lands."""
+        from datetime import timedelta
+
+        item_source = f"article:place-{uuid.uuid4()}"
+        t0 = datetime.now(UTC)
+
+        def write(seconds: int, boundary: bool, index: int):
+            with engine.begin() as conn:
+                return conn.execute(
+                    text(place_upsert),
+                    {"id": uuid.uuid4(), "u": user_a, "s": item_source, "created": t0, "at": t0 + timedelta(seconds=seconds),
+                     "p": f'{{"index": {index}, "total": 10}}', "boundary": boundary},
+                ).first()
+
+        first = write(0, False, 1)
+        assert first is not None and first[0] == 1, f"first open did not create the started row: {first}"
+        created_updated_at = first[1]
+        assert write(5, False, 2) is None, "a non-boundary write 5 s later was not coalesced"
+        boundary = write(5, True, 3)
+        assert boundary is not None, "a boundary write was coalesced"
+        later = write(40, False, 4)
+        assert later is not None, "a write 35 s after the last one was coalesced"
         with engine.begin() as conn:
             row = conn.execute(
-                text(
-                    "UPDATE library_items SET place = CAST(:p AS json), place_at = :now"
-                    " WHERE user_id = :u AND source_id = 'article:seed' RETURNING version, updated_at"
-                ),
-                {"p": '{"index": 3, "total": 10, "within": 40}', "now": now, "u": user_a},
-            ).first()
-        assert row is not None, "the seeded started row was not found"
-        assert row[0] == 1, f"version is {row[0]}"
-        return "a place write on the started row leaves version 1 (a plain UPDATE; the app must not bump it either)"
+                text("SELECT version, updated_at, (place->>'index')::int FROM library_items"
+                     " WHERE user_id = :u AND source_id = :s AND relationship = 'started'"),
+                {"u": user_a, "s": item_source},
+            ).one()
+        assert (row[0], row[1], row[2]) == (1, created_updated_at, 4), f"row after the writes: {tuple(row)}"
+        with engine.begin() as conn:
+            pinned = conn.execute(
+                text("UPDATE library_items SET pinned_at = :now, version = version + 1"
+                     " WHERE user_id = :u AND source_id = :s AND relationship = 'started' AND version = 1"),
+                {"now": t0, "u": user_a, "s": item_source},
+            ).rowcount
+        assert pinned == 1, "a pin PATCH with the version it read conflicted after place writes"
+        return ("created; 5 s non-boundary coalesced; boundary and +35 s written; version 1 and updated_at unchanged;"
+                " a pin at version 1 still lands")
 
-    check("library_items: place is writable on the started relationship", place_write_leaves_version)
+    check("library_items: place upsert (coalescing, version untouched, pin unaffected)", place_write_semantics)
+
+    def json_null_is_not_sql_null() -> str:
+        item_source = f"article:jsonnull-{uuid.uuid4()}"
+        with engine.begin() as conn:
+            conn.execute(
+                text(
+                    "INSERT INTO library_items (id, user_id, language_code, kind, saved_word_id, source_id, relationship,"
+                    " created_at, updated_at, place, place_at) VALUES (:id, :u, 'en', 'reading', NULL, :s, 'started',"
+                    " :now, :now, CAST('null' AS json), NULL)"
+                ),
+                {"id": uuid.uuid4(), "u": user_a, "s": item_source, "now": now},
+            )
+            is_set = conn.execute(
+                text("SELECT place IS NOT NULL FROM library_items WHERE source_id = :s"), {"s": item_source}
+            ).scalar()
+            conn.execute(text("DELETE FROM library_items WHERE source_id = :s"), {"s": item_source})
+        assert is_set is True, "a JSON null read as SQL NULL"
+        return ("a JSON null satisfies `place IS NOT NULL` and would enter the partial index: the ORM must declare "
+                "`place` and `review_modes` with none_as_null=True (proposal section 15)")
+
+    check("library_items: JSON null is not SQL NULL (the hazard the ORM must avoid)", json_null_is_not_sql_null)
+
+    # A runtime still at the old code after a rollback inserts without the new columns.
+    def old_code_inserts() -> str:
+        old_user, old_profile = uuid.uuid4(), uuid.uuid4()
+        with engine.begin() as conn:
+            conn.execute(
+                text("INSERT INTO users (id, user_key, email, name, picture, role, created_at)"
+                     " VALUES (:id, :k, :e, '', '', 'user', :now)"),
+                {"id": old_user, "k": f"oldcode-{old_user}", "e": f"{old_user}@example.test", "now": now},
+            )
+            conn.execute(
+                text("INSERT INTO user_language_profiles (id, user_id, language_code, goal, style, pinyin,"
+                     " native_language, theme_preset, created_at, updated_at)"
+                     " VALUES (:id, :u, 'en', 'everyday', 'guided', 'auto', 'vi', 'editorial', :now, :now)"),
+                {"id": old_profile, "u": old_user, "now": now},
+            )
+            user_row = conn.execute(
+                text("SELECT learning_language, interface_language, weekly_goal_days, settings_updated_at"
+                     " FROM users WHERE id = :id"), {"id": old_user}).one()
+            profile_row = conn.execute(
+                text("SELECT declared_level, review_new_per_day, review_limit_per_day, review_modes"
+                     " FROM user_language_profiles WHERE id = :id"), {"id": old_profile}).one()
+            conn.execute(text("DELETE FROM users WHERE id = :id"), {"id": old_user})
+        assert tuple(user_row) == ("", "", None, None), tuple(user_row)
+        assert tuple(profile_row) == ("", None, None, None), tuple(profile_row)
+        return "an old-code insert into users and user_language_profiles succeeds and reads the defaults"
+
+    check("old-code inserts (no new columns) into users and user_language_profiles", old_code_inserts)
 
     # 0023: grammar_progress check
     gp = (
@@ -820,12 +1075,12 @@ def race_history(engine, now) -> None:
                 with engine.begin() as conn:
                     conn.execute(
                         text(
-                            "INSERT INTO essay_review_history (id, essay_id, user_id, language_code, superseded_at,"
+                            "INSERT INTO essay_review_history (id, essay_id, superseded_at,"
                             " reason, prior_fingerprint, prior_contract, replaced_by_fingerprint, review)"
-                            " VALUES (:id, :e, :u, 'zh', :now, 'evaluator_refresh', :p, 'writing-evaluation-v2.6',"
+                            " VALUES (:id, :e, :now, 'evaluator_refresh', :p, 'writing-evaluation-v2.6',"
                             " :n, CAST('{}' AS json))"
                         ),
-                        {"id": uuid.uuid4(), "e": race_essay, "u": race_user, "now": now, "p": "f" * 64, "n": "g" * 64},
+                        {"id": uuid.uuid4(), "e": race_essay, "now": now, "p": "f" * 64, "n": "g" * 64},
                     )
                 result = "inserted"
             except (IntegrityError, DBAPIError) as error:

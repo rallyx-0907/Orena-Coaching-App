@@ -8,9 +8,12 @@ current review; no learner revision is created.
   same prior review is refused, so one prior review is one history row.
 - `review` is the whole prior review (dimension scores, overall, level estimate, evaluator, summary, strengths,
   strength evidence, priorities, errors, grammar links) as JSON.
-- Both foreign keys cascade: deleting an essay (or an account's owner rows) deletes its history. That is
-  intended; the history is the learner's own record of that essay. The D-055(b) workflow still deletes
-  account-keyed rows explicitly because the `users` row survives.
+- **Scope is the parent's.** The table carries no `user_id` or `language_code` of its own (delta review P2-4): a copy
+  could disagree with the essay's, and a composite foreign key would need a new unique key on `essays`. Every read goes
+  through the essay, which is already scope-checked (`get_essay`). The one foreign key cascades: deleting an essay, or
+  the account's essays, deletes its history. That is intended; the history is the learner's own record of that essay.
+  The D-055(b) workflow deletes the account's `essays` explicitly because the `users` row survives, and the history
+  follows them.
 - Immutability. On PostgreSQL a BEFORE UPDATE row trigger rejects any UPDATE (precedent: 20260924_0015's
   reading source snapshot). It is UPDATE only: a DELETE trigger would block the ON DELETE CASCADE above. On any
   other dialect the same rule is a repository invariant (insert and read only) with a test that asserts it.
@@ -72,8 +75,6 @@ def upgrade() -> None:
         "essay_review_history",
         sa.Column("id", sa.Uuid(), primary_key=True),
         sa.Column("essay_id", sa.Uuid(), sa.ForeignKey("essays.id", ondelete="CASCADE"), nullable=False),
-        sa.Column("user_id", sa.Uuid(), sa.ForeignKey("users.id", ondelete="CASCADE"), nullable=False),
-        sa.Column("language_code", sa.String(20), nullable=False),
         sa.Column("superseded_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("reason", sa.String(40), nullable=False),
         sa.Column("prior_fingerprint", sa.String(64), nullable=False),
@@ -83,9 +84,9 @@ def upgrade() -> None:
         sa.UniqueConstraint("essay_id", "prior_fingerprint", name="uq_essay_review_history_prior"),
     )
     op.create_index(
-        "ix_essay_review_history_scope",
+        "ix_essay_review_history_essay",
         "essay_review_history",
-        ["user_id", "language_code", "essay_id", "superseded_at"],
+        ["essay_id", "superseded_at"],
     )
     if op.get_context().dialect.name == "postgresql":
         op.execute(_TRIGGER_FUNCTION)
@@ -98,5 +99,5 @@ def downgrade() -> None:
     if op.get_context().dialect.name == "postgresql":
         op.execute("DROP TRIGGER IF EXISTS essay_review_history_immutable ON essay_review_history")
         op.execute("DROP FUNCTION IF EXISTS essay_review_history_is_immutable()")
-    op.drop_index("ix_essay_review_history_scope", table_name="essay_review_history")
+    op.drop_index("ix_essay_review_history_essay", table_name="essay_review_history")
     op.drop_table("essay_review_history")

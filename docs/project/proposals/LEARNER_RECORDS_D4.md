@@ -1,6 +1,6 @@
 # Proposal (D-101 D4): the learner records D3 found missing on the server
 
-Status: **PROPOSED, revision 3** (2026-09-30, `codex/work` at `aafe968`), matching the human's decisions in
+Status: **PROPOSED, revision 3, with the delta-review changes of section 16** (2026-09-30, `codex/work` at `80a7fb8`), matching the human's decisions in
 **D-104** (`DECISION_LOG.md:3604`; AGENTS §7 is amended accordingly). Revision 2 answered the independent review
 `LEARNER_RECORDS_D4.REVIEW.md` (REQUEST CHANGES at rev 1; the reviewer's APPROVE is recorded at rev 2 in Git); the
 finding-by-finding mapping is section 12 and what D-104 changed is section 14. The proposed migrations now exist as
@@ -133,7 +133,11 @@ last-write-wins by client timestamp and forbids automatic prose merges [V]. The 
   arrival-order last write** (the exception revision 2 proposed is withdrawn). TIMESTAMPTZ has microsecond
   resolution, which avoids the one-second token collisions of the profile row; the residual is two writes committed in
   the same microsecond, which the row lock serialises anyway. Onboarding or Settings that gets a 409 re-reads and
-  re-applies once (H2's precedent).
+  re-applies once (H2's precedent). **The API serves the token as an opaque string** (`settings_version`): the
+  timestamp text exactly as the database renders it, microseconds included, set only by the server. Clients echo it
+  verbatim and never parse it (a JavaScript `Date` truncates to milliseconds, so a client that round-tripped it through
+  `Date` would turn every write into a conflict). The token is shared by the three scalars, so two unrelated scalar
+  edits from stale devices conflict; the 409 re-read-and-reapply covers that. The plan tests it across the API (section 9).
 - **Positions (I4):** single-valued, on `library_items`, updated in place; the newest write wins. The place is
   navigation state and not learning evidence, so it deliberately has no version check (see I4).
 Nothing here defines cross-device sync, cursors, tombstone horizons or receipt compaction (AGENTS §7, ADA §5).
@@ -156,8 +160,8 @@ deployment (ADA §1 `:41-44`; D-055) [V].
   it does **not** fire. The D-055(b) workflow must delete these rows explicitly.
 - **Account-keyed rows** (owner tables keyed by `users.id`, which a re-registered account with a new incarnation
   would otherwise read): `user_language_profiles` (declared level, review settings, goal, style, support language),
-  `grammar_progress`, `listening_progress`, `shadowing_progress`, `speaking_attempts`, `essays` (+ `essay_revisions`,
-  `essay_review_history`), `library_items`, `saved_words`. The workflow must delete these.
+  `grammar_progress`, `listening_progress`, `shadowing_progress`, `speaking_attempts`, `essays` (+ `essay_revisions`), `library_items`, `saved_words`. The workflow must delete these. (`essay_review_history`
+  has no scope columns of its own; it follows the account's `essays` through its cascade, section I19.)
 - **New columns on `users` itself** (`learning_language`, `interface_language`, `weekly_goal_days`) live on the row
   that is kept. The workflow must **reset them to their defaults** (`''`, `''`, `NULL`); nothing else removes them.
   This is the reset D-055(b) must perform for this proposal; without it a re-registered account would inherit the
@@ -439,8 +443,9 @@ Sections repeat only what is not already in section 2.
 - **Store (quiz result, decided: D-104 H-4; Try-it stays in Writing).** Migration **0023** adds `last_quiz_correct`,
   `last_quiz_total` (SMALLINT) and `last_quiz_at` (TIMESTAMPTZ) to `grammar_progress`, all NULL until a result is
   stored, "beside the existing completion state" (`completed_at` stays `NOT NULL`). On PostgreSQL a CHECK keeps the
-  three together and `0 <= correct <= total`, `total >= 1`. A quiz result is written **with** the completion upsert
-  (one row per point per learner); a quiz abandoned before completion is not stored. **Try-it-yourself results belong
+  three together and `0 <= correct <= total`, `total >= 1`. A quiz result is written **with** the completion upsert, one statement in one route (one row per point per learner); a
+  retake updates `last_quiz_*` and **keeps the first `completed_at`**; the stored number is client-reported, labelled so
+  and never read as evidence (`EA:14`); a quiz abandoned before completion is not stored. **Try-it-yourself results belong
   to the Writing/evaluator record (`essays`) and are not duplicated here**: the quiz key ships in the content and is
   graded in the browser, so the stored number is client-reported (the same trade-off as the pre-D-103 Dictation; a
   future Grammar API that holds the published key may regrade). EA §1 Grammar: "canonical Concept ID, actual response
@@ -687,11 +692,18 @@ device; D-101 "Persistence" makes none of them required.
   server "verifies the pair", so they are **not** refreshed (H-15).
 - **Where the previous review is kept (chosen, with the alternative rejected).**
   - **Chosen: one new append-only table `essay_review_history`** (0021): `id`, `essay_id -> essays.id ON DELETE
-    CASCADE`, `user_id -> users.id ON DELETE CASCADE`, `language_code`, `superseded_at`, `reason`
-    (`evaluator_refresh`), `prior_fingerprint`, `prior_contract`, `replaced_by_fingerprint`, `review JSON NOT NULL`
-    (the whole prior review: five dimension scores, overall, level estimate, evaluator, `summary_vi`, strengths,
-    strength evidence, priorities, errors, and the stored `grammar_links`). `UNIQUE (essay_id, prior_fingerprint)`,
-    `INDEX (user_id, language_code, essay_id, superseded_at)`.
+    CASCADE`, `superseded_at`, `reason` (`evaluator_refresh`), `prior_fingerprint`, `prior_contract`,
+    `replaced_by_fingerprint`, `review JSON NOT NULL` (the whole prior review: five dimension scores, overall, level
+    estimate, evaluator, `summary_vi`, strengths, strength evidence, priorities, errors, and the stored
+    `grammar_links`). `UNIQUE (essay_id, prior_fingerprint)`, `INDEX (essay_id, superseded_at)`.
+  - **Parent scope by construction (delta review P2-4: the scope copies are dropped).** Revision 3 copied `user_id` and
+    `language_code` from the essay. A copy can disagree with its parent, ADA §3 asks that a child verify its parent's
+    scope, and a composite foreign key would need a new unique key on `essays`, which this proposal should not add. So
+    the table has **no** `user_id` or `language_code`: every read is `GET /api/essays/{id}/review/history`, which loads
+    the essay first through the scope-checked `get_essay`, then reads its history by `essay_id`. There is nothing to
+    keep equal and nothing for a repository test to bind. The account-wide reads the copies would have served (a list of
+    a learner's refreshes) are not needed by any consumer; if one appears it joins `essays`, whose
+    `ix_essays_user_language_created` already serves the scope.
   - **Immutability (P2-4): a `BEFORE UPDATE` trigger raising an exception, in 0021, on PostgreSQL** (precedent: 0016
     makes the legacy reading archive read-only by trigger). **UPDATE only**: a `DELETE` trigger would block the
     `ON DELETE CASCADE` on essay or account deletion. A learner deleting an essay therefore also deletes its history;
@@ -711,8 +723,9 @@ device; D-101 "Persistence" makes none of them required.
 - **Effects to state.** Progress and `learner_summary` read the essay's *current* review, so an old essay's score can
   change once. `revision_delta` between a refreshed and an unrefreshed neighbour mixes evaluator contracts; the read
   model already refuses a trend across evaluator versions (`learner_summary.py:47-55`).
-- **Deletion/export.** `essay_review_history` is account-keyed: removed with the essay (cascade) and explicitly by
-  the D-055(b) workflow (section 2.6). **Default.** Empty table.
+- **Deletion/export.** `essay_review_history` is keyed through its essay: removed with the essay (cascade) and, because the `users`
+  row survives, with the account's `essays` that the D-055(b) workflow deletes explicitly (section 2.6). **Default.** Empty
+  table.
 - **Tests.** Section 9.
 
 ## 4. Existing accounts: defaults and import (one place)
@@ -734,7 +747,8 @@ device; D-101 "Persistence" makes none of them required.
 
 Head today: `20260924_0016` (repo). Sandbox database is at `20260923_0014` (H2 section 3, `CURRENT_HANDOFF.md`);
 the lane runtime is on PostgreSQL 17 [V per D3]. All revisions are additive, live in `migrations/proposed/` until
-reviewed, rehearsed and authorized, then `git mv`'d to `versions/` one at a time. No startup Alembic (D-002);
+reviewed, rehearsed and authorized, then `git mv`'d to `versions/` one at a time and **applied one revision per
+invocation** (section 5.1). No startup Alembic (D-002);
 only `scripts/bootstrap_runtime_schema.py` applies them. None is added to `GATED_REVISIONS`
 (`bootstrap_runtime_schema.py:62-65`; that set is for non-mechanical revisions like the 0016 cutover).
 
@@ -744,7 +758,7 @@ only `scripts/bootstrap_runtime_schema.py` applies them. None is added to `GATED
 | 0018 | `20260930_0018_account_settings.py` | `users.learning_language`, `users.interface_language` (`NOT NULL DEFAULT ''`), `users.weekly_goal_days` (`SMALLINT NULL`), `users.settings_updated_at` (`TIMESTAMPTZ NULL`, the version token) | `users` is hot: lock_timeout matters most here; own operator step after a backup |
 | 0019 | `20260930_0019_review_settings.py` | `user_language_profiles.review_new_per_day`, `review_limit_per_day`, `review_modes` (nullable) | - |
 | 0020 | `20260930_0020_listening_score_source.py` | `listening_progress.score_source VARCHAR(12) NOT NULL DEFAULT 'client'` | `listening_progress` is written on every check; a constant default is metadata-only |
-| 0021 | `20260930_0021_essay_review_history.py` | **new table** `essay_review_history` (I19): FKs to `essays`/`users` `ON DELETE CASCADE`, `UNIQUE (essay_id, prior_fingerprint)`, one index, PostgreSQL `BEFORE UPDATE` immutability trigger | `CREATE TABLE` locks no existing table |
+| 0021 | `20260930_0021_essay_review_history.py` | **new table** `essay_review_history` (I19): one FK to `essays` `ON DELETE CASCADE` (no scope copies), `UNIQUE (essay_id, prior_fingerprint)`, one index, PostgreSQL `BEFORE UPDATE` immutability trigger | `CREATE TABLE` locks no existing table |
 | 0022 | `20260930_0022_library_items_place.py` (required, D-104 H-12) | `library_items.place JSON NULL`, `library_items.place_at TIMESTAMPTZ NULL`, partial index | `library_items` is written by keeps; nullable columns, no default |
 | 0023 | `20260930_0023_grammar_quiz_result.py` (required, D-104 H-4) | `grammar_progress.last_quiz_correct/total/at` (nullable) + PostgreSQL CHECK `ck_grammar_progress_quiz` | - |
 
@@ -754,7 +768,8 @@ human's authorization (D-104 next steps 2 and 3). No `learning_days` table is pr
 
 Rules for every revision:
 - `upgrade()` and `downgrade()` first run `SET LOCAL lock_timeout = '5s'` **guarded by dialect**:
-  `if op.get_bind().dialect.name == "postgresql": op.execute("SET LOCAL lock_timeout = '5s'")`. (H2 wrote it
+  `if op.get_context().dialect.name == "postgresql": op.execute("SET LOCAL lock_timeout = '5s'")` (`get_context`, not
+  `get_bind`, so an offline SQL-rendering run works, as in `20260924_0015`). (H2 wrote it
   unguarded; the guard is added so a hermetic SQLite migration test does not fail. [V: 0017's text in
   `DECLARED_LEVEL_STORAGE.md:96-99`.])
 - `op.add_column` with a constant `server_default` (metadata-only on PG 11+; runtime is PG 17). Nullable columns
@@ -783,6 +798,42 @@ attempts; listening language check and server-side Dictation scoring (`writing_c
 `GET /api/learner-activity`; `POST /api/essays/{id}/review/refresh` and `GET .../review/history`;
 pair-aware `effective_contract_version`; flag in `compose.yaml`.
 
+### 5.1 Applying the revisions: one per invocation, 0018 alone after a backup (delta review P2-1)
+
+`migrations/env.py` runs an `alembic` invocation in **one transaction** (`begin_transaction()`, lines 28, 39, 53), and
+`SET LOCAL lock_timeout` and every `ACCESS EXCLUSIVE` lock last until it commits. Applying 0017 to 0023 with one
+`--upgrade` would therefore keep 0018's lock on `users` (written on every sign-in) through 0022's index build on
+`library_items` and 0023's CHECK validation on `grammar_progress`, so logins would queue for the whole run. So:
+- Each revision is its **own** invocation of `bootstrap_runtime_schema.py --upgrade --from <rev> --to <rev> --confirm`
+  (`--to` exists since `788a54e`; `--plan` lists what is pending). The rehearsal script applies them the same way and
+  records the order.
+- **0018 is applied alone, immediately after a fresh `scripts/runtime_backup.py` backup**, because `users` is the hot,
+  account-critical table; 0017 and 0019 to 0023 follow, one invocation each, with the smoke test of login between 0018
+  and the rest.
+- The staging/lane runbook (D-102 point 7: backup, migration gate, smoke) says the same: it names the seven
+  invocations in order and does not offer a single `--upgrade` to head for this set. Reviewed and authorized first,
+  then applied; a failed revision (`lock_timeout` 55P03) leaves the database at the previous revision and is retried.
+
+### 5.2 Maintenance window for :8000 (delta review P2-2)
+
+`lock_timeout` bounds how long a revision *waits* for a lock, not how long a *granted* lock is held, and the rehearsal
+with two or three rows proves the shape only. The window is therefore set from the **measured** hold times of
+`scripts/rehearse_learner_records_schema.py --volume N` (the lead runs it at the size of :8000's tables and again at
+the ~100,000-account target, N of about 100,000 and 3,000,000), which prints the seconds each revision's invocation
+took (an upper bound of its lock hold). The rule, fixed now and filled with the measured numbers before the first
+`git mv`:
+- **Expected shape [I], to be replaced by the measurement:** 0017, 0018, 0019, 0020, 0022's column adds and 0021's
+  `CREATE TABLE` are metadata-only (well under a second); 0022's `CREATE INDEX` scans `library_items` under a `SHARE`
+  lock (blocks writes to it, and so keeps/pins, for the scan); 0023's `ADD CONSTRAINT ... CHECK` scans
+  `grammar_progress` under `ACCESS EXCLUSIVE`.
+- **Window = the slowest measured revision x 3, and never less than 15 minutes for the whole sequence including the
+  backup and the smoke of login and the key learner E2E** (D-102 point 7). It is announced as a maintenance window; the
+  human's migration gate, backup and smoke are unchanged.
+- **If 0022 or 0023 measures over 10 s at the target volume,** that revision changes before promotion: `CREATE INDEX
+  CONCURRENTLY` in an autocommit block for 0022, and `ADD CONSTRAINT ... NOT VALID` then a separate `VALIDATE
+  CONSTRAINT` for 0023. That is a migration change and returns to the reviewer.
+- Measured values (2026-09-30, `--volume 100000`, postgres:17, one invocation per revision): every revision held its locks under 0.33 s; slowest 0020 at 0.321 s (`LEARNER_RECORDS_D4.REHEARSAL.md` run 3). The window rule gives the 15-minute floor. A run at the full target volume (about 3M rows) is still worth recording before :8000.
+
 ## 6. Rehearsal (D-102 point 7; ADA §6 step 3)
 
 Run by the lead with `scripts/rehearse_learner_records_schema.py <throwaway URL>`: it refuses a URL that is not clearly
@@ -793,6 +844,17 @@ table, constraint, index and trigger; proves `lock_timeout` by holding a lock on
 upgrade (SQLSTATE 55P03 after about 5 s, nothing half-applied); runs up -> down to 0016 -> up and compares the two
 schemas; races two writers on the history key; prints a PASS/FAIL table and exits non-zero on any FAIL. The steps below
 state the intent it implements.
+
+Hardening after the delta review (P2-2 and the probe list): `--volume N` seeds N rows in each hot table before the
+migrations and the timing table is printed (5.2); revisions are applied one per invocation (5.1); the unknown-essay
+probe asserts the foreign-key constraint name (`essay_review_history_essay_id_fkey`); the `library_items` place probe
+exercises the conditional upsert of I4 (coalesced within 30 s unless a boundary, `version` and `updated_at`
+untouched, a concurrent pin at version 1 still lands) instead of a plain UPDATE, and a further probe shows a JSON
+`null` satisfies `place IS NOT NULL` (the hazard behind `none_as_null`, section 15); the schema after the downgrade is
+compared with the schema captured at `20260924_0016` (all public tables); and old-code inserts naming none of the new
+columns are probed for `users`, `user_language_profiles` and `listening_progress`. The 48 PASS in
+`LEARNER_RECORDS_D4.REHEARSAL.md` is the run of revision 3 before these changes and before 0021 lost its scope columns; it
+is re-run and re-recorded.
 
 On a throwaway PostgreSQL 17 (`docker run` with a random port and no shared volume), never a shared runtime or
 volume; heavy Docker work does not overlap another lane's (D-101 working rules). CI has no PostgreSQL service
@@ -860,10 +922,18 @@ with the same `operationId` returns the same result):
   SQLite plain insert or `DO NOTHING` with a rowcount check).
 - **I2:** POST language then a fresh session (new cookie jar) for the same account reads the stored language;
   a session that already chose keeps its own; `''` yields `stored:false` and Welcome; two accounts do not leak.
-- **I3, I3b:** the `settings_updated_at` update: a `NULL` token writes and sets a server time; the same stale token ->
+- **I3, I3b (API level, delta review P2-5):** the response carries `settings_version` as an opaque string; a request
+  that echoes it verbatim succeeds and returns a new one; a request that echoes a stale one (another writer moved it) gets
+  409 `version_conflict` with the current string; a value that was parsed and re-serialised by a client (milliseconds only)
+  is refused as stale; the client never sends a timestamp of its own that the server accepts.
+- **I3, I3b (SQL level):** the `settings_updated_at` update: a `NULL` token writes and sets a server time; the same stale token ->
   409 with the current token; a client-supplied timestamp is ignored; two concurrent writers with one token give one
   200 and one 409; the three scalars share one token.
 - **I13:** patch, read-back, clamp, PUT does not erase, stale `expected_updated_at` -> 409, `NULL` defaults.
+- **I4 (JSON null versus SQL NULL, delta review P2-3):** a real-repository test writes a place, clears it and asserts
+  the column is SQL `NULL` (`place IS NULL`, absent from `ix_library_items_place`), that `place` is never the JSON
+  literal `null`, and does the same for `review_modes`; it fails if either column is declared without
+  `none_as_null=True`.
 - **I4:** PUT place then GET on a new session returns it; the list is ordered by `place_at` and bounded; a place write
   leaves `library_items.version` and `updated_at` unchanged and never makes a concurrent pin/note PATCH conflict; the
   30 s coalescing answers `coalesced` without an UPDATE; finished/cleared round-trip; `text:`/`url:`/`book:` ids
@@ -891,6 +961,9 @@ with the same `operationId` returns the same result):
   count is never lowered and rises by at most 1 per write; `revealed` writes change no score; a `client` row is
   superseded by the first verified check; answer too long -> 422; canonical line unresolvable -> 404; the `.mjs`
   gate runs the JS evaluator on the same vectors.
+- **I19 (history scope):** the history is only reachable through `GET /api/essays/{id}/review/history`, which refuses another
+  account's or another language's essay (404) before reading; the table has no `user_id`/`language_code`, and a test asserts
+  the repository exposes no method that reads history without an essay id.
 - **I19 (additions):** a refresh after the learner changed their support language still uses the **stored** pair and
   stores under it; a refresh where the provider path yields `fallback-demo` (`ALLOW_FALLBACK` on) writes nothing and
   leaves the real review; two concurrent refreshes in one process give one history row; the row-lock method returns
@@ -913,7 +986,7 @@ with the same `operationId` returns the same result):
 - **Deletion enumeration (P1-1):** a test lists every table and column this proposal touches and fails if one is
   missing from the D-055(b) enumeration: the **`users` columns to reset** (`learning_language`, `interface_language`,
   `weekly_goal_days`), and the rows to delete in `user_language_profiles`, `grammar_progress`, `listening_progress`,
-  `shadowing_progress`, `speaking_attempts`, `essays`, `essay_review_history`, `library_items` (incl. `place`),
+  `shadowing_progress`, `speaking_attempts`, `essays` (and through them `essay_review_history`), `library_items` (incl. `place`),
   `saved_words`, and the incarnation-keyed `works`, `work_turns`, `mutation_receipts`, `change_records`,
   `language_provenance`. The D-055 gate test that no runtime path deletes stays.
 - **Generic work route (P1-5):** `PUT /api/works/{id}` with kind `annotation`, `imported` is
@@ -941,10 +1014,22 @@ unless the Agent Contract changes); H-13 the two D3 corrections stand.
 - **H-9** Whether Progress > History lists typed Free Talk/Situation/React responses.
 - **H-16** Whether the Profile weekly-goal bar is drawn when no target is set.
 - **H-19 (new, from D-104 H-1)** What opens the level question for a language whose profile row exists with
-  `declared_level = ''`: D-104 keys Welcome on a missing profile row only, while H2's proposal opened Welcome on a row
-  without a level. Section 14 records the reading taken and asks for confirmation.
-- **H-20 (new, from D-104 H-4)** Whether a grammar quiz result is stored only when the learner completes the point
-  (this proposal's reading, because `completed_at` is `NOT NULL`) or also for an abandoned quiz.
+  `declared_level = ''`. D-104 keys Welcome on a missing profile row only, while H2's proposal opened Welcome on a row
+  without a level. **Proposed answer (the reviewer's recommendation, for the human to accept or change; not decided
+  here):** keep the literal rule for entry routing (a missing row opens setup, nothing is replayed); verify that the
+  onboarding flow writes the profile row only at its final step, or only after the level answer (a `GET` does not create
+  a row, but any PATCH or PUT of another field does, so an earlier step or an abandoned onboarding can leave
+  `declared_level = ''` for good); and ask for a level for an existing row with `''` through a **non-blocking,
+  dismissible prompt** on Profile or Today, not a forced route. A forced route would need a stored "dismissed" marker,
+  which is another persistence decision this proposal does not have and should not invent. `entryRoute` and Today treat
+  `''` as "not declared".
+- **H-20 (new, from D-104 H-4)** Whether a grammar quiz result is stored only when the learner completes the point.
+  **Proposed answer (the reviewer's recommendation; not decided here): accept this proposal's reading,** because
+  `completed_at` is the owner table's `NOT NULL` completion fact and relaxing it would change what a `grammar_progress`
+  row means for R5 history and the alias reads; a quiz abandoned before completion is not a result. Conditions, now in
+  I11 and section 9: (a) the completion write and the quiz fields are one upsert in one route; (b) a retake updates
+  `last_quiz_*` and keeps the first `completed_at`; (c) the number is browser-graded, labelled client-reported and never
+  read as evidence (`EA:14`); (d) the future route validates the published point id before accepting anything (D-104).
 
 ## 11. Consumers: which D7 change uses which item
 
@@ -1022,20 +1107,30 @@ _Revision 2 wording. Where D-104 later chose differently (I4 Design A is dropped
 | Migrations | Numbered and described | Written as real revision files `20260930_0017`-`0023` in `migrations/proposed/`; rehearsal script written |
 
 **Open by this revision, not decided by D-104:** H-19 (what asks for the level when a profile row exists with an empty
-level) and H-20 (quiz stored only with completion). I took the literal D-104 reading in both cases and marked them.
+level) and H-20 (quiz stored only with completion). I took the literal D-104 reading in both cases; the reviewer's
+recommendations are recorded in section 10 as **proposed answers for the human**, not as decisions.
 
 ## 15. Model and code changes the implementation makes after authorization
 
 None of these is in this change: the ORM models and application code stay as they are so that runtimes whose schema is
 at `20260924_0016` keep working. After the human authorizes the migrations (and only then):
 - `writing_coach/persistence/models.py`: `User` (4 columns), `UserLanguageProfile` (1 + 3), `ListeningProgress`
-  (`score_source`), `LibraryItem` (`place`, `place_at`, the partial index), `GrammarProgress` (3 columns, no CHECK in
-  the ORM on SQLite), and a new `EssayReviewHistory`; SQLite `initialize()` mirrors (guarded `ALTER TABLE`, and
+  (`score_source`), `LibraryItem` (`place`, `place_at`, the partial index), `GrammarProgress` (3 columns **and the CHECK
+  `ck_grammar_progress_quiz` declared in the ORM `__table_args__`**, so the PostgreSQL schema-parity test
+  (`tests/test_reading_evidence_schema_parity.py` pattern) passes; a fresh `create_all` can create it, while the SQLite
+  `initialize()` `ALTER` path cannot add a CHECK to an existing table, so there it is a repository invariant), and a new
+  `EssayReviewHistory` (no scope columns); SQLite `initialize()` mirrors (guarded `ALTER TABLE`, and
   `CREATE TABLE IF NOT EXISTS essay_review_history`). Head-sensitive tests move to `20260930_0023`
   (`tests/test_adaptive_reading_schema.py`, `tests/test_reading_canonical_cutover_scripts.py`).
+- **JSON columns (delta review P2-3):** `LibraryItem.place` and `UserLanguageProfile.review_modes` are declared
+  `JSON(none_as_null=True)`. A SQLAlchemy `JSON` column persists Python `None` as the JSON literal `null`, which satisfies
+  `place IS NOT NULL` and would enter the partial index (the rehearsal shows the hazard on raw SQL); with
+  `none_as_null=True` `None` is SQL `NULL`. A real-repository test writes and clears a place and asserts SQL `NULL`
+  (section 9). `EssayReviewHistory.review` is `NOT NULL` and never `None`.
 - `account_profile.py` / `becoming_memory.py`: `declared_level` and the review settings `stored=True`; the H2 conditional
   write with `expected_updated_at` and its creation-race handling (N1); an account-level settings path on `users` with
-  the `settings_updated_at` conditional update; `interface_language` moves to `users`.
+  the `settings_updated_at` conditional update, serving the token as the opaque string `settings_version` and never
+  parsing a client's; `interface_language` moves to `users`.
 - `core/platform_api.py`, `auth_support.py`: learning-language seeding into the session and `language.stored` on
   bootstrap.
 - `library_api.py` and the library repository: `PUT/GET /api/continue` writing `place`/`place_at` without touching
@@ -1045,7 +1140,21 @@ at `20260924_0016` keep working. After the human authorizes the migrations (and 
 - `listening_api.py` and the specialized repository: language and asset check, server-side Dictation scoring
   (`writing_coach/dictation_evaluator.py`, golden vectors), `score_source`.
 - `app.py`, `writing_review_identity.py`, the specialized repository: the refresh contract of I19
-  (`refresh_essay_review`, row lock, provider-only `evaluate`, the `becoming_linguistics` key-level merge).
+  (`refresh_essay_review`, row lock, provider-only `evaluate`, the `becoming_linguistics` key-level merge); the history
+  read is by essay id only, after the scope-checked essay load.
 - `speech_api.py`: `since` on the attempts list; the grammar progress route (when the Grammar API exists);
   `GET /api/learner-activity`; `compose.yaml` passes `ORENA_ACCOUNT_BACKBONE` with default `off`.
 - Front end (D7): the consumers in section 11.
+
+## 16. Delta-review response (`LEARNER_RECORDS_D4.REVIEW.md`, "Delta review of revision 3", APPROVE with six P2s)
+
+| Finding | Resolution |
+| --- | --- |
+| P2-1 one transaction, locks accumulate | Section 5.1 and `migrations/proposed/README.md`: each revision is its own `bootstrap_runtime_schema.py --upgrade --from <rev> --to <rev>` invocation; 0018 alone after a fresh backup; the staging/lane runbook says the same; the rehearsal applies them one by one |
+| P2-2 rehearsal proves shape, not scale | Rehearsal script `--volume N` and a per-revision timing table; section 5.2 fixes the maintenance-window rule from the measured numbers (pending the lead's run) and the `CONCURRENTLY` / `NOT VALID` fallback |
+| P2-3 JSON null vs SQL NULL | Section 15: `place` and `review_modes` declared `JSON(none_as_null=True)`; section 9: a real-repository test of write, clear and index membership; the rehearsal shows the hazard on raw SQL |
+| P2-4 child scope on the history table | Chosen: **drop `user_id` and `language_code`** (migration 0021 edited, rehearsal updated). Justification in I19: a copy can disagree with its parent, a composite FK needs a new key on `essays`, every read already goes through the scope-checked essay, and no consumer needs an account-wide history list |
+| P2-5 opaque settings token | Section 2.4: served as the opaque string `settings_version`, server-set, echoed verbatim, never parsed; section 9: API-level stale-token tests |
+| P2-6 drafting | Section 5 uses `op.get_context()`; section 15: the ORM declares the 0023 CHECK, SQLite `initialize()` cannot add it |
+| Probes | FK constraint name asserted; the place probe runs the conditional upsert of I4 (coalescing, version and `updated_at` untouched, pin unaffected); the downgrade schema is compared with the schema captured at 0016; old-code inserts into `users` and `user_language_profiles`; a JSON-null hazard probe |
+| H-19, H-20 | Section 10 records the reviewer's recommendations as **proposed answers for the human**; nothing is decided here |
