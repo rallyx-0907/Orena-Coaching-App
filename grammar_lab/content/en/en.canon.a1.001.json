@@ -14,7 +14,8 @@
   ],
   "contrasts": [],
   "error_tags": [
-    "other"
+    "tense",
+    "agreement"
   ],
   "source_refs": {
     "r5": [
@@ -163,7 +164,7 @@
         "vi": "We đi với were.",
         "en": "We takes were."
       },
-      "error_tag": "other",
+      "error_tag": "agreement",
       "l1": [
         "vi"
       ]
@@ -179,11 +180,11 @@
         },
         {
           "text": "were",
-          "error_tag": "other"
+          "error_tag": "agreement"
         },
         {
           "text": "is",
-          "error_tag": "other"
+          "error_tag": "tense"
         }
       ],
       "answer": 0,
@@ -201,11 +202,11 @@
         },
         {
           "text": "was",
-          "error_tag": "other"
+          "error_tag": "agreement"
         },
         {
           "text": "are",
-          "error_tag": "other"
+          "error_tag": "tense"
         }
       ],
       "answer": 0,
@@ -223,11 +224,11 @@
         },
         {
           "text": "were",
-          "error_tag": "other"
+          "error_tag": "agreement"
         },
         {
           "text": "am",
-          "error_tag": "other"
+          "error_tag": "tense"
         }
       ],
       "answer": 0,
