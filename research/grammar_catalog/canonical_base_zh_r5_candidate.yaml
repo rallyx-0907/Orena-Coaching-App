@@ -1,0 +1,1866 @@
+# Chinese canonical base candidates derived from current R5 + current conversion map.
+# This is not the final GF0025-complete catalog.
+meta:
+  kind: "r5_conversion_base_candidate"
+  language: "zh-Hans"
+  status: "mapping_input_not_human_locked"
+  candidate_points: 171
+  legacy_r5_lessons: 197
+  rules:
+    - "r5_sources are provenance/content sources."
+    - "r5_aliases are legacy redirects and are unique: one legacy id -> at most one candidate point."
+    - "These 171 points do not prove GF0025 coverage; use zh_source_to_canonical_mapping_candidate.yaml."
+items:
+  - candidate_id: "candidate.zh.hsk2_3_cu_i_c_u_thay_i_tr_ng_th_i"
+    level: "1"
+    title: "了 cuối câu: thay đổi trạng thái"
+    conversion: "relevel"
+    r5_sources:
+      - "zh-hsk2-3-cu-i-c-u-thay-i-tr-ng-th-i"
+    r5_aliases:
+      - "zh-hsk2-3-cu-i-c-u-thay-i-tr-ng-th-i"
+    notes:
+      - "了2 cấp 1 theo HSK 3.0 (nguồn thứ cấp)"
+    catalog_review_required: true
+  - candidate_id: "zh.adjective_predicate"
+    level: "1"
+    title: "形容词谓语句"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk1-14-v-c-u-t-nh-t"
+    r5_aliases:
+      - "zh-hsk1-14-v-c-u-t-nh-t"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "zh.affirmative_negative_question"
+    level: "1"
+    title: "正反疑问句"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk1-13-c-u-h-i-ch-nh-ph-n"
+    r5_aliases:
+      - "zh-hsk1-13-c-u-h-i-ch-nh-ph-n"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "zh.ba_suggestion"
+    level: "1"
+    title: "ba_suggestion"
+    conversion: "add"
+    r5_sources:
+      []
+    r5_aliases:
+      []
+    notes:
+      - "吧"
+    catalog_review_required: true
+  - candidate_id: "zh.bu_negation"
+    level: "1"
+    title: "“不”的否定"
+    conversion: "split"
+    r5_sources:
+      - "zh-hsk1-10-v"
+    r5_aliases:
+      - "zh-hsk1-10-v"
+    notes:
+      - "不 và 没 là hai điểm"
+    catalog_review_required: true
+  - candidate_id: "zh.dates_times"
+    level: "1"
+    title: "时间和日期的表达"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk1-17-th-i-gian-v-ng-y-gi"
+    r5_aliases:
+      - "zh-hsk1-17-th-i-gian-v-ng-y-gi"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "zh.de_possessive"
+    level: "1"
+    title: "“的”表示所属"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk1-5-s-h-u-v-b-ngh-a"
+    r5_aliases:
+      - "zh-hsk1-5-s-h-u-v-b-ngh-a"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "zh.demonstratives"
+    level: "1"
+    title: "指示代词“这/那/哪”"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk1-7-topic"
+    r5_aliases:
+      - "zh-hsk1-7-topic"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "zh.he_conjunction"
+    level: "1"
+    title: "“和”连接名词"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk1-20-n-i-danh-t"
+    r5_aliases:
+      - "zh-hsk1-20-n-i-danh-t"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "zh.le_completion"
+    level: "1"
+    title: "动态助词“了”"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk1-16-ho-n-th-nh-c-b-n"
+    r5_aliases:
+      - "zh-hsk1-16-ho-n-th-nh-c-b-n"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "zh.liang_er"
+    level: "1"
+    title: "“两”和“二”"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk1-9-vs"
+    r5_aliases:
+      - "zh-hsk1-9-vs"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "zh.ma_question"
+    level: "1"
+    title: "“吗”疑问句"
+    conversion: "split"
+    r5_sources:
+      - "zh-hsk1-11-v"
+    r5_aliases:
+      - "zh-hsk1-11-v"
+    notes:
+      - "吗 và 呢 là hai điểm"
+    catalog_review_required: true
+  - candidate_id: "zh.measure_words.basic"
+    level: "1"
+    title: "量词"
+    conversion: "rescope"
+    r5_sources:
+      - "zh-hsk1-8-s-v-l-ng-t-c-b-n"
+    r5_aliases:
+      - "zh-hsk1-8-s-v-l-ng-t-c-b-n"
+    notes:
+      - "chỉ còn lượng từ; số đếm là từ vựng"
+    catalog_review_required: true
+  - candidate_id: "zh.mei_negation"
+    level: "1"
+    title: "“没(有)”的否定"
+    conversion: "split"
+    r5_sources:
+      - "zh-hsk1-10-v"
+    r5_aliases:
+      []
+    notes:
+      - "不 và 没 là hai điểm"
+    catalog_review_required: true
+  - candidate_id: "zh.modal.hui"
+    level: "1"
+    title: "modal.hui"
+    conversion: "split"
+    r5_sources:
+      - "zh-hsk1-18-c-b-n"
+    r5_aliases:
+      - "zh-hsk1-18-c-b-n"
+    notes:
+      - "会 (HSK1) khác 能/可以 (HSK2)"
+    catalog_review_required: true
+  - candidate_id: "zh.modal.xiang_yao"
+    level: "1"
+    title: "modal.xiang_yao"
+    conversion: "add"
+    r5_sources:
+      []
+    r5_aliases:
+      []
+    notes:
+      - "bộ lõi, R5 không có"
+    catalog_review_required: true
+  - candidate_id: "zh.ne_question"
+    level: "1"
+    title: "“呢”疑问句"
+    conversion: "split"
+    r5_sources:
+      - "zh-hsk1-11-v"
+    r5_aliases:
+      []
+    notes:
+      - "吗 và 呢 là hai điểm"
+    catalog_review_required: true
+  - candidate_id: "zh.qing_request"
+    level: "1"
+    title: "qing_request"
+    conversion: "add"
+    r5_sources:
+      []
+    r5_aliases:
+      []
+    notes:
+      - "请 + V"
+    catalog_review_required: true
+  - candidate_id: "zh.question_words"
+    level: "1"
+    title: "疑问代词疑问句"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk1-12-t-h-i-gi-nguy-n-v-tr"
+    r5_aliases:
+      - "zh-hsk1-12-t-h-i-gi-nguy-n-v-tr"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "zh.serial_verbs.qu_lai"
+    level: "1"
+    title: "serial_verbs.qu_lai"
+    conversion: "add"
+    r5_sources:
+      []
+    r5_aliases:
+      []
+    notes:
+      - "去/来 + nơi + làm gì"
+    catalog_review_required: true
+  - candidate_id: "zh.shi_sentence"
+    level: "1"
+    title: "“是”字句"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk1-2-c-u-nh-danh"
+    r5_aliases:
+      - "zh-hsk1-2-c-u-nh-danh"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "zh.svo_basic"
+    level: "1"
+    title: "主谓宾句"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk1-1-svo-c-b-n"
+    r5_aliases:
+      - "zh-hsk1-1-svo-c-b-n"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "zh.tai_le"
+    level: "1"
+    title: "tai_le"
+    conversion: "add"
+    r5_sources:
+      []
+    r5_aliases:
+      []
+    notes:
+      - "bộ lõi, R5 không có"
+    catalog_review_required: true
+  - candidate_id: "zh.ye_dou"
+    level: "1"
+    title: "“也”和“都”"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk1-19-v-tr-c-b-n"
+    r5_aliases:
+      - "zh-hsk1-19-v-tr-c-b-n"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "zh.you_sentence"
+    level: "1"
+    title: "“有”字句"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk1-3-s-h-u-v-t-n-t-i"
+    r5_aliases:
+      - "zh-hsk1-3-s-h-u-v-t-n-t-i"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "zh.zai_location"
+    level: "1"
+    title: "“在”表示位置"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk1-4-v-tr"
+    r5_aliases:
+      - "zh-hsk1-4-v-tr"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "zh.zai_progressive"
+    level: "1"
+    title: "“在/正在……呢”"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk1-15-topic"
+    r5_aliases:
+      - "zh-hsk1-15-topic"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "zh.zenme_question"
+    level: "1"
+    title: "zenme_question"
+    conversion: "add"
+    r5_sources:
+      []
+    r5_aliases:
+      []
+    notes:
+      - "怎么 / 怎么样"
+    catalog_review_required: true
+  - candidate_id: "candidate.zh.hsk3_10_topic"
+    level: "2"
+    title: "跟/和...一样"
+    conversion: "relevel"
+    r5_sources:
+      - "zh-hsk3-10-topic"
+    r5_aliases:
+      - "zh-hsk3-10-topic"
+    notes:
+      - "跟……一样 cấp 2 (đề xuất)"
+    catalog_review_required: true
+  - candidate_id: "candidate.zh.hsk3_11_nh_n_m_nh"
+    level: "2"
+    title: "是...的 nhấn mạnh"
+    conversion: "merge"
+    r5_sources:
+      - "zh-hsk3-11-nh-n-m-nh"
+      - "zh-hsk5-6-focus-v-i"
+    r5_aliases:
+      - "zh-hsk3-11-nh-n-m-nh"
+      - "zh-hsk5-6-focus-v-i"
+    notes:
+      - "是……的 cấp 2 theo HSK 3.0 (nguồn thứ cấp)"
+      - "是……的 trùng; 连……都 đã ở HSK4"
+    catalog_review_required: true
+  - candidate_id: "zh.bi_comparison"
+    level: "2"
+    title: "“比”字句"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk2-4-so-s-nh"
+    r5_aliases:
+      - "zh-hsk2-4-so-s-nh"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "zh.bie_imperative"
+    level: "2"
+    title: "bie_imperative"
+    conversion: "add"
+    r5_sources:
+      []
+    r5_aliases:
+      []
+    notes:
+      - "别 / 不要"
+    catalog_review_required: true
+  - candidate_id: "zh.chule_yiwai"
+    level: "2"
+    title: "“除了……以外……”"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk2-10-topic"
+    r5_aliases:
+      - "zh-hsk2-10-topic"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "zh.complement.degree_de"
+    level: "2"
+    title: "程度补语“得”"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk2-8-b-ng-m-c"
+    r5_aliases:
+      - "zh-hsk2-8-b-ng-m-c"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "zh.complement.direction_simple"
+    level: "2"
+    title: "简单趋向补语"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk2-10-b-ng-xu-h-ng-n"
+    r5_aliases:
+      - "zh-hsk2-10-b-ng-xu-h-ng-n"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "zh.complement.duration"
+    level: "2"
+    title: "时量补语"
+    conversion: "merge"
+    r5_sources:
+      - "zh-hsk2-12-b-ng-th-i-l-ng-introduction"
+      - "zh-hsk3-8-b-ng-th-i-l-ng"
+    r5_aliases:
+      - "zh-hsk2-12-b-ng-th-i-l-ng-introduction"
+      - "zh-hsk3-8-b-ng-th-i-l-ng"
+    notes:
+      - "trùng: bổ ngữ thời lượng ở hai cấp"
+    catalog_review_required: true
+  - candidate_id: "zh.complement.frequency"
+    level: "2"
+    title: "动量补语"
+    conversion: "merge"
+    r5_sources:
+      - "zh-hsk2-13-b-ng-ng-l-ng-introduction"
+      - "zh-hsk3-9-b-ng-ng-l-ng"
+    r5_aliases:
+      - "zh-hsk2-13-b-ng-ng-l-ng-introduction"
+      - "zh-hsk3-9-b-ng-ng-l-ng"
+    notes:
+      - "trùng: bổ ngữ động lượng ở hai cấp"
+    catalog_review_required: true
+  - candidate_id: "zh.complement.result"
+    level: "2"
+    title: "结果补语"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk2-9-b-ng-k-t-qu"
+    r5_aliases:
+      - "zh-hsk2-9-b-ng-k-t-qu"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "zh.cong_dao"
+    level: "2"
+    title: "cong_dao"
+    conversion: "add"
+    r5_sources:
+      []
+    r5_aliases:
+      []
+    notes:
+      - "从……到……"
+    catalog_review_required: true
+  - candidate_id: "zh.duo_adjective_question"
+    level: "2"
+    title: "duo_adjective_question"
+    conversion: "add"
+    r5_sources:
+      []
+    r5_aliases:
+      []
+    notes:
+      - "多 + tính từ (多大, 多远)"
+    catalog_review_required: true
+  - candidate_id: "zh.gei_dui"
+    level: "2"
+    title: "gei_dui"
+    conversion: "add"
+    r5_sources:
+      []
+    r5_aliases:
+      []
+    notes:
+      - "给 / 对 + người"
+    catalog_review_required: true
+  - candidate_id: "zh.guo_experience"
+    level: "2"
+    title: "动态助词“过”"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk2-1-kinh-nghi-m"
+    r5_aliases:
+      - "zh-hsk2-1-kinh-nghi-m"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "zh.haishi_huozhe"
+    level: "2"
+    title: "haishi_huozhe"
+    conversion: "add"
+    r5_sources:
+      []
+    r5_aliases:
+      []
+    notes:
+      - "还是 / 或者"
+    catalog_review_required: true
+  - candidate_id: "zh.jiu_cai"
+    level: "2"
+    title: "“就”和“才”"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk2-9-vs"
+    r5_aliases:
+      - "zh-hsk2-9-vs"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "zh.meiyou_comparison"
+    level: "2"
+    title: "“没有”比较句"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk2-5-so-s-nh-ph-nh"
+    r5_aliases:
+      - "zh-hsk2-5-so-s-nh-ph-nh"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "zh.modal.neng_keyi"
+    level: "2"
+    title: "modal.neng_keyi"
+    conversion: "split"
+    r5_sources:
+      - "zh-hsk1-18-c-b-n"
+    r5_aliases:
+      []
+    notes:
+      - "会 (HSK1) khác 能/可以 (HSK2)"
+    catalog_review_required: true
+  - candidate_id: "zh.ruguo_jiu"
+    level: "2"
+    title: "“如果……就……”"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk2-3-topic"
+    r5_aliases:
+      - "zh-hsk2-3-topic"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "zh.separable_verbs"
+    level: "2"
+    title: "离合词"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk2-11-ng-t-ly-h-p"
+    r5_aliases:
+      - "zh-hsk2-11-ng-t-ly-h-p"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "zh.shi_bu_shi"
+    level: "2"
+    title: "shi_bu_shi"
+    conversion: "add"
+    r5_sources:
+      []
+    r5_aliases:
+      []
+    notes:
+      - "是不是"
+    catalog_review_required: true
+  - candidate_id: "zh.suiran_danshi"
+    level: "2"
+    title: "“虽然……但是……”"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk2-2-topic"
+    r5_aliases:
+      - "zh-hsk2-2-topic"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "zh.verb_reduplication"
+    level: "2"
+    title: "verb_reduplication"
+    conversion: "split"
+    r5_sources:
+      - "zh-hsk3-14-reduplication-ng-t-t-nh-t"
+    r5_aliases:
+      - "zh-hsk3-14-reduplication-ng-t-t-nh-t"
+    notes:
+      - "lặp động từ và lặp tính từ khác cấp"
+    catalog_review_required: true
+  - candidate_id: "zh.xian_zai"
+    level: "2"
+    title: "“先……再……”"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk2-7-topic-48"
+    r5_aliases:
+      - "zh-hsk2-7-topic-48"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "zh.yao_le"
+    level: "2"
+    title: "yao_le"
+    conversion: "add"
+    r5_sources:
+      []
+    r5_aliases:
+      []
+    notes:
+      - "要……了 / 快要……了"
+    catalog_review_required: true
+  - candidate_id: "zh.yi_jiu"
+    level: "2"
+    title: "“一……就……”"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk2-6-topic-47"
+    r5_aliases:
+      - "zh-hsk2-6-topic-47"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "zh.yibian"
+    level: "2"
+    title: "“一边……一边……”"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk2-11-topic"
+    r5_aliases:
+      - "zh-hsk2-11-topic"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "zh.yijing_haimei"
+    level: "2"
+    title: "yijing_haimei"
+    conversion: "add"
+    r5_sources:
+      []
+    r5_aliases:
+      []
+    notes:
+      - "已经 / 还没"
+    catalog_review_required: true
+  - candidate_id: "zh.yinwei_suoyi"
+    level: "2"
+    title: "“因为……所以……”"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk2-1-topic"
+    r5_aliases:
+      - "zh-hsk2-1-topic"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "zh.you_zai"
+    level: "2"
+    title: "“又”和“再”"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk2-8-vs"
+    r5_aliases:
+      - "zh-hsk2-8-vs"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "zh.youdian_yidian"
+    level: "2"
+    title: "youdian_yidian"
+    conversion: "add"
+    r5_sources:
+      []
+    r5_aliases:
+      []
+    notes:
+      - "有点儿 / 一点儿"
+    catalog_review_required: true
+  - candidate_id: "zh.yue_yue"
+    level: "2"
+    title: "“越……越……”"
+    conversion: "merge"
+    r5_sources:
+      - "zh-hsk2-7-topic"
+      - "zh-hsk4-9-topic-111"
+    r5_aliases:
+      - "zh-hsk2-7-topic"
+      - "zh-hsk4-9-topic-111"
+    notes:
+      - "越是……越 trùng 越……越"
+    catalog_review_required: true
+  - candidate_id: "zh.yuelaiyue"
+    level: "2"
+    title: "“越来越”"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk2-6-topic"
+    r5_aliases:
+      - "zh-hsk2-6-topic"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "zh.zhe_state"
+    level: "2"
+    title: "动态助词“着”"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk2-2-tr-ng-th-i-duy-tr"
+    r5_aliases:
+      - "zh-hsk2-2-tr-ng-th-i-duy-tr"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "zh.zhiyao_jiu"
+    level: "2"
+    title: "“只要……就……”"
+    conversion: "merge"
+    r5_sources:
+      - "zh-hsk2-4-topic"
+      - "zh-hsk6-2-topic-175"
+    r5_aliases:
+      - "zh-hsk2-4-topic"
+      - "zh-hsk6-2-topic-175"
+    notes:
+      - "只要/只有/除非 trùng; 倘若/假如/一旦 thành điểm mới"
+    catalog_review_required: true
+  - candidate_id: "zh.zhiyou_cai"
+    level: "2"
+    title: "“只有……才……”"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk2-5-topic"
+    r5_aliases:
+      - "zh-hsk2-5-topic"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk3_1_n_n_t_ng"
+    level: "3"
+    title: "把字句: nền tảng"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk3-1-n-n-t-ng"
+    r5_aliases:
+      - "zh-hsk3-1-n-n-t-ng"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk3_1_topic"
+    level: "3"
+    title: "不但...而且..."
+    conversion: "merge"
+    r5_sources:
+      - "zh-hsk3-1-topic"
+      - "zh-hsk4-6-topic-108"
+    r5_aliases:
+      - "zh-hsk3-1-topic"
+      - "zh-hsk4-6-topic-108"
+    notes:
+      - "不仅……还 trùng 不但……而且"
+    catalog_review_required: true
+  - candidate_id: "candidate.zh.hsk3_10_ngh_a_m_r_ng"
+    level: "3"
+    title: "趋向补语 nghĩa mở rộng"
+    conversion: "merge"
+    r5_sources:
+      - "zh-hsk3-10-ngh-a-m-r-ng"
+      - "zh-hsk4-11-ngh-a-m-r-ng"
+    r5_aliases:
+      - "zh-hsk3-10-ngh-a-m-r-ng"
+      - "zh-hsk4-11-ngh-a-m-r-ng"
+    notes:
+      - "趋向补语 nghĩa mở rộng ở hai cấp"
+    catalog_review_required: true
+  - candidate_id: "candidate.zh.hsk3_12_topic_comment_introduction"
+    level: "3"
+    title: "Topic-comment introduction"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk3-12-topic-comment-introduction"
+    r5_aliases:
+      - "zh-hsk3-12-topic-comment-introduction"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk3_13_nh_ng_d_i_v_i"
+    level: "3"
+    title: "Định ngữ dài với 的"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk3-13-nh-ng-d-i-v-i"
+    r5_aliases:
+      - "zh-hsk3-13-nh-ng-d-i-v-i"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk3_2_b_ng_k_t_qu"
+    level: "3"
+    title: "把 + bổ ngữ kết quả"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk3-2-b-ng-k-t-qu"
+    r5_aliases:
+      - "zh-hsk3-2-b-ng-k-t-qu"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk3_2_topic"
+    level: "3"
+    title: "既...又..."
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk3-2-topic"
+    r5_aliases:
+      - "zh-hsk3-2-topic"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk3_3_topic"
+    level: "3"
+    title: "把 + 在/给/成"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk3-3-topic"
+    r5_aliases:
+      - "zh-hsk3-3-topic"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk3_3_topic_69"
+    level: "3"
+    title: "即使...也..."
+    conversion: "merge"
+    r5_sources:
+      - "zh-hsk3-3-topic-69"
+      - "zh-hsk4-8-topic"
+    r5_aliases:
+      - "zh-hsk3-3-topic-69"
+      - "zh-hsk4-8-topic"
+    notes:
+      - "哪怕/即便 là đồng nghĩa với 即使"
+    catalog_review_required: true
+  - candidate_id: "candidate.zh.hsk3_4_n_n_t_ng"
+    level: "3"
+    title: "被字句: nền tảng"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk3-4-n-n-t-ng"
+    r5_aliases:
+      - "zh-hsk3-4-n-n-t-ng"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk3_4_topic"
+    level: "3"
+    title: "无论...都..."
+    conversion: "merge"
+    r5_sources:
+      - "zh-hsk3-4-topic"
+      - "zh-hsk4-7-topic"
+    r5_aliases:
+      - "zh-hsk3-4-topic"
+      - "zh-hsk4-7-topic"
+    notes:
+      - "不管/无论……都 trùng 无论……都"
+    catalog_review_required: true
+  - candidate_id: "candidate.zh.hsk3_5_topic"
+    level: "3"
+    title: "为了"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk3-5-topic"
+    r5_aliases:
+      - "zh-hsk3-5-topic"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk3_5_v_i_chi_u"
+    level: "3"
+    title: "把 và 被 đối chiếu"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk3-5-v-i-chi-u"
+    r5_aliases:
+      - "zh-hsk3-5-v-i-chi-u"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk3_6_b_ng_xu_h_ng_k_p"
+    level: "3"
+    title: "Bổ ngữ xu hướng kép"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk3-6-b-ng-xu-h-ng-k-p"
+    r5_aliases:
+      - "zh-hsk3-6-b-ng-xu-h-ng-k-p"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk3_6_topic"
+    level: "3"
+    title: "由于...因此..."
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk3-6-topic"
+    r5_aliases:
+      - "zh-hsk3-6-topic"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk3_7_b_ng_kh_n_ng"
+    level: "3"
+    title: "Bổ ngữ khả năng"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk3-7-b-ng-kh-n-ng"
+    r5_aliases:
+      - "zh-hsk3-7-b-ng-kh-n-ng"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk3_7_topic"
+    level: "3"
+    title: "从...起"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk3-7-topic"
+    r5_aliases:
+      - "zh-hsk3-7-topic"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk3_8_topic"
+    level: "3"
+    title: "自从...以来"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk3-8-topic"
+    r5_aliases:
+      - "zh-hsk3-8-topic"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk3_9_topic"
+    level: "3"
+    title: "对...来说"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk3-9-topic"
+    r5_aliases:
+      - "zh-hsk3-9-topic"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "zh.adjective_reduplication"
+    level: "3"
+    title: "adjective_reduplication"
+    conversion: "split"
+    r5_sources:
+      - "zh-hsk3-14-reduplication-ng-t-t-nh-t"
+    r5_aliases:
+      []
+    notes:
+      - "lặp động từ và lặp tính từ khác cấp"
+    catalog_review_required: true
+  - candidate_id: "zh.bi_yidian_deduo"
+    level: "3"
+    title: "bi_yidian_deduo"
+    conversion: "add"
+    r5_sources:
+      []
+    r5_aliases:
+      []
+    notes:
+      - "比……一点儿 / 得多"
+    catalog_review_required: true
+  - candidate_id: "zh.cunxian_sentence"
+    level: "3"
+    title: "cunxian_sentence"
+    conversion: "add"
+    r5_sources:
+      []
+    r5_aliases:
+      []
+    notes:
+      - "存现句"
+    catalog_review_required: true
+  - candidate_id: "zh.de_di_de"
+    level: "3"
+    title: "de_di_de"
+    conversion: "add"
+    r5_sources:
+      []
+    r5_aliases:
+      []
+    notes:
+      - "的 / 地 / 得"
+    catalog_review_required: true
+  - candidate_id: "zh.gang_gangcai"
+    level: "3"
+    title: "gang_gangcai"
+    conversion: "add"
+    r5_sources:
+      []
+    r5_aliases:
+      []
+    notes:
+      - "刚 / 刚才"
+    catalog_review_required: true
+  - candidate_id: "zh.jianyu_qing_rang"
+    level: "3"
+    title: "jianyu_qing_rang"
+    conversion: "add"
+    r5_sources:
+      []
+    r5_aliases:
+      []
+    notes:
+      - "请 / 让 + người + V"
+    catalog_review_required: true
+  - candidate_id: "zh.neng_yuan_dei"
+    level: "3"
+    title: "neng_yuan_dei"
+    conversion: "add"
+    r5_sources:
+      []
+    r5_aliases:
+      []
+    notes:
+      - "得 (děi)"
+    catalog_review_required: true
+  - candidate_id: "candidate.zh.hsk4_1_v_i_c_u_tr_c_ph_c"
+    level: "4"
+    title: "把 với cấu trúc phức"
+    conversion: "merge"
+    r5_sources:
+      - "zh-hsk4-1-v-i-c-u-tr-c-ph-c"
+      - "zh-hsk6-1-complex-constructions"
+    r5_aliases:
+      - "zh-hsk4-1-v-i-c-u-tr-c-ph-c"
+      - "zh-hsk6-1-complex-constructions"
+    notes:
+      - "把 phức ở hai cấp"
+    catalog_review_required: true
+  - candidate_id: "candidate.zh.hsk4_1_v_v"
+    level: "4"
+    title: "V着V着..."
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk4-1-v-v"
+    r5_aliases:
+      - "zh-hsk4-1-v-v"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk4_10_n_ng_cao"
+    level: "4"
+    title: "程度补语 nâng cao"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk4-10-n-ng-cao"
+    r5_aliases:
+      - "zh-hsk4-10-n-ng-cao"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk4_10_topic"
+    level: "4"
+    title: "随着..."
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk4-10-topic"
+    r5_aliases:
+      - "zh-hsk4-10-topic"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk4_11_topic"
+    level: "4"
+    title: "通过..."
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk4-11-topic"
+    r5_aliases:
+      - "zh-hsk4-11-topic"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk4_12_topic"
+    level: "4"
+    title: "按照/根据..."
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk4-12-topic"
+    r5_aliases:
+      - "zh-hsk4-12-topic"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk4_12_topic_115"
+    level: "4"
+    title: "来得及/来不及"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk4-12-topic-115"
+    r5_aliases:
+      - "zh-hsk4-12-topic-115"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk4_13_topic"
+    level: "4"
+    title: "对于/关于..."
+    conversion: "merge"
+    r5_sources:
+      - "zh-hsk4-13-topic"
+      - "zh-hsk5-9-topic-147"
+      - "zh-hsk6-8-contrast"
+    r5_aliases:
+      - "zh-hsk4-13-topic"
+      - "zh-hsk5-9-topic-147"
+      - "zh-hsk6-8-contrast"
+    notes:
+      - "对于/关于/随着 trùng"
+      - "对于/关于 trùng"
+    catalog_review_required: true
+  - candidate_id: "candidate.zh.hsk4_14_topic"
+    level: "4"
+    title: "由...组成 / 由...负责"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk4-14-topic"
+    r5_aliases:
+      - "zh-hsk4-14-topic"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk4_15_v_introduction"
+    level: "4"
+    title: "所 + V: introduction"
+    conversion: "merge"
+    r5_sources:
+      - "zh-hsk4-15-v-introduction"
+      - "zh-hsk6-3-n-ng-cao"
+    r5_aliases:
+      - "zh-hsk4-15-v-introduction"
+      - "zh-hsk6-3-n-ng-cao"
+    notes:
+      - "所字 trùng"
+    catalog_review_required: true
+  - candidate_id: "candidate.zh.hsk4_2_n_ng_cao"
+    level: "4"
+    title: "被 nâng cao"
+    conversion: "merge"
+    r5_sources:
+      - "zh-hsk4-2-n-ng-cao"
+      - "zh-hsk6-2-complex-constructions"
+    r5_aliases:
+      - "zh-hsk4-2-n-ng-cao"
+      - "zh-hsk6-2-complex-constructions"
+    notes:
+      - "被 phức ở hai cấp"
+    catalog_review_required: true
+  - candidate_id: "candidate.zh.hsk4_2_topic"
+    level: "4"
+    title: "一方面...另一方面..."
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk4-2-topic"
+    r5_aliases:
+      - "zh-hsk4-2-topic"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk4_3_topic"
+    level: "4"
+    title: "连...都/也..."
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk4-3-topic"
+    r5_aliases:
+      - "zh-hsk4-3-topic"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk4_3_topic_104"
+    level: "4"
+    title: "首先/其次/此外/最后"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk4-3-topic-104"
+    r5_aliases:
+      - "zh-hsk4-3-topic-104"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk4_4_topic"
+    level: "4"
+    title: "与其...不如..."
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk4-4-topic"
+    r5_aliases:
+      - "zh-hsk4-4-topic"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk4_4_topic_105"
+    level: "4"
+    title: "然而/不过/可是"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk4-4-topic-105"
+    r5_aliases:
+      - "zh-hsk4-4-topic-105"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk4_5_topic"
+    level: "4"
+    title: "既然...就..."
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk4-5-topic"
+    r5_aliases:
+      - "zh-hsk4-5-topic"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk4_5_topic_106"
+    level: "4"
+    title: "因此/因而/于是"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk4-5-topic-106"
+    r5_aliases:
+      - "zh-hsk4-5-topic-106"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk4_6_topic"
+    level: "4"
+    title: "除非...否则..."
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk4-6-topic"
+    r5_aliases:
+      - "zh-hsk4-6-topic"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk4_7_topic_109"
+    level: "4"
+    title: "宁可...也不..."
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk4-7-topic-109"
+    r5_aliases:
+      - "zh-hsk4-7-topic-109"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk4_8_topic_110"
+    level: "4"
+    title: "再...也..."
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk4-8-topic-110"
+    r5_aliases:
+      - "zh-hsk4-8-topic-110"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk4_9_topic"
+    level: "4"
+    title: "之所以...是因为..."
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk4-9-topic"
+    r5_aliases:
+      - "zh-hsk4-9-topic"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "zh.wh_universal"
+    level: "4"
+    title: "wh_universal"
+    conversion: "add"
+    r5_sources:
+      []
+    r5_aliases:
+      []
+    notes:
+      - "疑问代词任指 (谁都, 什么都)"
+    catalog_review_required: true
+  - candidate_id: "candidate.zh.hsk5_1_ki_m_ng"
+    level: "5"
+    title: "使/令/让 + kiêm ngữ"
+    conversion: "merge"
+    r5_sources:
+      - "zh-hsk5-1-ki-m-ng"
+      - "zh-hsk6-5-topic"
+    r5_aliases:
+      - "zh-hsk5-1-ki-m-ng"
+      - "zh-hsk6-5-topic"
+    notes:
+      - "使/令/让 trùng"
+    catalog_review_required: true
+  - candidate_id: "candidate.zh.hsk5_1_topic"
+    level: "5"
+    title: "不是...而是..."
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk5-1-topic"
+    r5_aliases:
+      - "zh-hsk5-1-topic"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk5_10_topic"
+    level: "5"
+    title: "无非/不过是"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk5-10-topic"
+    r5_aliases:
+      - "zh-hsk5-10-topic"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk5_10_topic_148"
+    level: "5"
+    title: "之中/之内/之上/之下"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk5-10-topic-148"
+    r5_aliases:
+      - "zh-hsk5-10-topic-148"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk5_11_topic"
+    level: "5"
+    title: "以...为..."
+    conversion: "merge"
+    r5_sources:
+      - "zh-hsk5-11-topic"
+      - "zh-hsk6-6-topic-180"
+    r5_aliases:
+      - "zh-hsk5-11-topic"
+      - "zh-hsk6-6-topic-180"
+    notes:
+      - "以……为…… trùng hệt"
+    catalog_review_required: true
+  - candidate_id: "candidate.zh.hsk5_12_topic"
+    level: "5"
+    title: "话题链与省略"
+    conversion: "merge"
+    r5_sources:
+      - "zh-hsk5-12-topic"
+      - "zh-hsk6-18-topic-comment-in-formal-writing"
+      - "zh-hsk79-7-complex-topic-chains"
+    r5_aliases:
+      - "zh-hsk5-12-topic"
+      - "zh-hsk6-18-topic-comment-in-formal-writing"
+      - "zh-hsk79-7-complex-topic-chains"
+    notes:
+      - "trùng"
+      - "trùng"
+    catalog_review_required: true
+  - candidate_id: "candidate.zh.hsk5_13_reference"
+    level: "5"
+    title: "其/该/此/上述 reference"
+    conversion: "merge"
+    r5_sources:
+      - "zh-hsk5-13-reference"
+      - "zh-hsk6-17-reference-chains"
+    r5_aliases:
+      - "zh-hsk5-13-reference"
+      - "zh-hsk6-17-reference-chains"
+    notes:
+      - "trùng"
+    catalog_review_required: true
+  - candidate_id: "candidate.zh.hsk5_14_n_ng_cao_153"
+    level: "5"
+    title: "长定语 nâng cao"
+    conversion: "merge"
+    r5_sources:
+      - "zh-hsk5-14-n-ng-cao-153"
+      - "zh-hsk4-13-ordering"
+    r5_aliases:
+      - "zh-hsk5-14-n-ng-cao-153"
+      - "zh-hsk4-13-ordering"
+    notes:
+      - "定语dài ở hai cấp"
+    catalog_review_required: true
+  - candidate_id: "candidate.zh.hsk5_15_tendencies"
+    level: "5"
+    title: "名词化 tendencies"
+    conversion: "merge"
+    r5_sources:
+      - "zh-hsk5-15-tendencies"
+      - "zh-hsk79-4-dense-nominal-structures"
+    r5_aliases:
+      - "zh-hsk5-15-tendencies"
+      - "zh-hsk79-4-dense-nominal-structures"
+    notes:
+      - "trùng"
+    catalog_review_required: true
+  - candidate_id: "candidate.zh.hsk5_17_introduction"
+    level: "5"
+    title: "紧缩复句 introduction"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk5-17-introduction"
+    r5_aliases:
+      - "zh-hsk5-17-introduction"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk5_2_topic"
+    level: "5"
+    title: "并非/并不是"
+    conversion: "merge"
+    r5_sources:
+      - "zh-hsk5-2-topic"
+      - "zh-hsk6-3-topic"
+    r5_aliases:
+      - "zh-hsk5-2-topic"
+      - "zh-hsk6-3-topic"
+    notes:
+      - "并不/未必 trùng"
+    catalog_review_required: true
+  - candidate_id: "candidate.zh.hsk5_2_topic_139"
+    level: "5"
+    title: "双宾语"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk5-2-topic-139"
+    r5_aliases:
+      - "zh-hsk5-2-topic-139"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk5_3_approximate_quantities"
+    level: "5"
+    title: "Approximate quantities"
+    conversion: "merge"
+    r5_sources:
+      - "zh-hsk5-3-approximate-quantities"
+      - "zh-hsk6-15-approximation-and-limitation"
+    r5_aliases:
+      - "zh-hsk5-3-approximate-quantities"
+      - "zh-hsk6-15-approximation-and-limitation"
+    notes:
+      - "trùng"
+    catalog_review_required: true
+  - candidate_id: "candidate.zh.hsk5_3_topic"
+    level: "5"
+    title: "未必/不见得"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk5-3-topic"
+    r5_aliases:
+      - "zh-hsk5-3-topic"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk5_4_topic"
+    level: "5"
+    title: "难免/免不了"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk5-4-topic"
+    r5_aliases:
+      - "zh-hsk5-4-topic"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk5_4_topic_141"
+    level: "5"
+    title: "倍数和比例"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk5-4-topic-141"
+    r5_aliases:
+      - "zh-hsk5-4-topic-141"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk5_5_scope"
+    level: "5"
+    title: "仅/只/光/单 scope"
+    conversion: "merge"
+    r5_sources:
+      - "zh-hsk5-5-scope"
+      - "zh-hsk6-4-scope"
+    r5_aliases:
+      - "zh-hsk5-5-scope"
+      - "zh-hsk6-4-scope"
+    notes:
+      - "trùng"
+    catalog_review_required: true
+  - candidate_id: "candidate.zh.hsk5_5_topic"
+    level: "5"
+    title: "不妨/何不"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk5-5-topic"
+    r5_aliases:
+      - "zh-hsk5-5-topic"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk5_6_topic"
+    level: "5"
+    title: "务必/切勿/不得"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk5-6-topic"
+    r5_aliases:
+      - "zh-hsk5-6-topic"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk5_7_topic"
+    level: "5"
+    title: "以便/以免"
+    conversion: "merge"
+    r5_sources:
+      - "zh-hsk5-7-topic"
+      - "zh-hsk6-8-topic"
+    r5_aliases:
+      - "zh-hsk5-7-topic"
+      - "zh-hsk6-8-topic"
+    notes:
+      - "以便/以免 trùng"
+    catalog_review_required: true
+  - candidate_id: "candidate.zh.hsk5_7_topic_145"
+    level: "5"
+    title: "同位与解释"
+    conversion: "merge"
+    r5_sources:
+      - "zh-hsk5-7-topic-145"
+      - "zh-hsk6-9-topic"
+    r5_aliases:
+      - "zh-hsk5-7-topic-145"
+      - "zh-hsk6-9-topic"
+    notes:
+      - "同位 trùng"
+    catalog_review_required: true
+  - candidate_id: "candidate.zh.hsk5_8_topic"
+    level: "5"
+    title: "从而/进而"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk5-8-topic"
+    r5_aliases:
+      - "zh-hsk5-8-topic"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk5_8_topic_146"
+    level: "5"
+    title: "鉴于/基于/针对"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk5-8-topic-146"
+    r5_aliases:
+      - "zh-hsk5-8-topic-146"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk5_9_topic"
+    level: "5"
+    title: "尽管/固然"
+    conversion: "merge"
+    r5_sources:
+      - "zh-hsk5-9-topic"
+      - "zh-hsk6-1-topic"
+    r5_aliases:
+      - "zh-hsk5-9-topic"
+      - "zh-hsk6-1-topic"
+    notes:
+      - "尽管/固然/即使/哪怕 trùng"
+    catalog_review_required: true
+  - candidate_id: "zh.jiaru_tangruo"
+    level: "5"
+    title: "jiaru_tangruo"
+    conversion: "add"
+    r5_sources:
+      []
+    r5_aliases:
+      []
+    notes:
+      - "倘若 / 假如 / 一旦"
+    catalog_review_required: true
+  - candidate_id: "candidate.zh.hsk6_1_t_ng_t_c_n_ng_cao"
+    level: "6"
+    title: "了/过/着 tương tác nâng cao"
+    conversion: "merge"
+    r5_sources:
+      - "zh-hsk6-1-t-ng-t-c-n-ng-cao"
+      - "zh-hsk79-1-advanced-written-aspect-and-viewpoint"
+    r5_aliases:
+      - "zh-hsk6-1-t-ng-t-c-n-ng-cao"
+      - "zh-hsk79-1-advanced-written-aspect-and-viewpoint"
+    notes:
+      - "trùng"
+    catalog_review_required: true
+  - candidate_id: "candidate.zh.hsk6_12_parallel_structure_in_formal_prose"
+    level: "6"
+    title: "Parallel structure in formal prose"
+    conversion: "merge"
+    r5_sources:
+      - "zh-hsk6-12-parallel-structure-in-formal-prose"
+      - "zh-hsk79-27-parallelism-and-cadence"
+    r5_aliases:
+      - "zh-hsk6-12-parallel-structure-in-formal-prose"
+      - "zh-hsk79-27-parallelism-and-cadence"
+    notes:
+      - "trùng"
+    catalog_review_required: true
+  - candidate_id: "candidate.zh.hsk6_14_formal_comparison"
+    level: "6"
+    title: "Formal comparison"
+    conversion: "merge"
+    r5_sources:
+      - "zh-hsk6-14-formal-comparison"
+      - "zh-hsk79-13-comparison-and-analogy"
+    r5_aliases:
+      - "zh-hsk6-14-formal-comparison"
+      - "zh-hsk79-13-comparison-and-analogy"
+    notes:
+      - "trùng"
+    catalog_review_required: true
+  - candidate_id: "candidate.zh.hsk6_19_sentence_final_particles_in_advanced_use"
+    level: "6"
+    title: "Sentence-final particles in advanced use"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk6-19-sentence-final-particles-in-advanced-use"
+    r5_aliases:
+      - "zh-hsk6-19-sentence-final-particles-in-advanced-use"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk6_2_topic"
+    level: "6"
+    title: "恐怕/大概/显然/据说"
+    conversion: "merge"
+    r5_sources:
+      - "zh-hsk6-2-topic"
+      - "zh-hsk79-2-advanced-modality-and-stance"
+    r5_aliases:
+      - "zh-hsk6-2-topic"
+      - "zh-hsk79-2-advanced-modality-and-stance"
+    notes:
+      - "trùng"
+    catalog_review_required: true
+  - candidate_id: "candidate.zh.hsk6_20_register_control"
+    level: "6"
+    title: "Register control"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk6-20-register-control"
+    r5_aliases:
+      - "zh-hsk6-20-register-control"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk6_22_punctuation_and_clause_grammar"
+    level: "6"
+    title: "Punctuation and clause grammar"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk6-22-punctuation-and-clause-grammar"
+    r5_aliases:
+      - "zh-hsk6-22-punctuation-and-clause-grammar"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk6_3_agent_source"
+    level: "6"
+    title: "由 + agent/source"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk6-3-agent-source"
+    r5_aliases:
+      - "zh-hsk6-3-agent-source"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk6_4_patterns"
+    level: "6"
+    title: "者 patterns"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk6-4-patterns"
+    r5_aliases:
+      - "zh-hsk6-4-patterns"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk6_4_topic"
+    level: "6"
+    title: "为...所..."
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk6-4-topic"
+    r5_aliases:
+      - "zh-hsk6-4-topic"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk6_5_patterns"
+    level: "6"
+    title: "之 patterns"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk6-5-patterns"
+    r5_aliases:
+      - "zh-hsk6-5-patterns"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk6_6_rhetorical_questions"
+    level: "6"
+    title: "难道/岂/何尝 rhetorical questions"
+    conversion: "merge"
+    r5_sources:
+      - "zh-hsk6-6-rhetorical-questions"
+      - "zh-hsk79-15-rhetorical-questions-and-negation"
+    r5_aliases:
+      - "zh-hsk6-6-rhetorical-questions"
+      - "zh-hsk79-15-rhetorical-questions-and-negation"
+    notes:
+      - "trùng"
+    catalog_review_required: true
+  - candidate_id: "candidate.zh.hsk6_6_topic"
+    level: "6"
+    title: "导致/致使"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk6-6-topic"
+    r5_aliases:
+      - "zh-hsk6-6-topic"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk6_7_topic"
+    level: "6"
+    title: "不得不/不能不/未尝不/无不"
+    conversion: "merge"
+    r5_sources:
+      - "zh-hsk6-7-topic"
+      - "zh-hsk6-5-double-negation"
+    r5_aliases:
+      - "zh-hsk6-7-topic"
+      - "zh-hsk6-5-double-negation"
+    notes:
+      - "phủ định kép trùng"
+    catalog_review_required: true
+  - candidate_id: "candidate.zh.hsk6_7_topic_172"
+    level: "6"
+    title: "以致/以至于"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk6-7-topic-172"
+    r5_aliases:
+      - "zh-hsk6-7-topic-172"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk6_7_topic_181"
+    level: "6"
+    title: "就...而言 / 从...来看"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk6-7-topic-181"
+    r5_aliases:
+      - "zh-hsk6-7-topic-181"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk79_10_conditional_rhetoric"
+    level: "7-9"
+    title: "Conditional rhetoric"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk79-10-conditional-rhetoric"
+    r5_aliases:
+      - "zh-hsk79-10-conditional-rhetoric"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk79_11_cause_vs_evidence_distinction"
+    level: "7-9"
+    title: "Cause vs evidence distinction"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk79-11-cause-vs-evidence-distinction"
+    r5_aliases:
+      - "zh-hsk79-11-cause-vs-evidence-distinction"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk79_12_reformulation_and_qualification"
+    level: "7-9"
+    title: "Reformulation and qualification"
+    conversion: "merge"
+    r5_sources:
+      - "zh-hsk79-12-reformulation-and-qualification"
+      - "zh-hsk6-23-summary-and-reformulation-structures"
+      - "zh-hsk6-24-argument-qualification"
+    r5_aliases:
+      - "zh-hsk79-12-reformulation-and-qualification"
+      - "zh-hsk6-23-summary-and-reformulation-structures"
+      - "zh-hsk6-24-argument-qualification"
+    notes:
+      - "trùng"
+      - "trùng"
+    catalog_review_required: true
+  - candidate_id: "candidate.zh.hsk79_14_productive_four_character_grammar_patterns"
+    level: "7-9"
+    title: "Productive four-character grammar patterns"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk79-14-productive-four-character-grammar-patterns"
+    r5_aliases:
+      - "zh-hsk79-14-productive-four-character-grammar-patterns"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk79_16_information_structure_and_emphasis"
+    level: "7-9"
+    title: "Information structure and emphasis"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk79-16-information-structure-and-emphasis"
+    r5_aliases:
+      - "zh-hsk79-16-information-structure-and-emphasis"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk79_17_ellipsis_and_recoverability"
+    level: "7-9"
+    title: "Ellipsis and recoverability"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk79-17-ellipsis-and-recoverability"
+    r5_aliases:
+      - "zh-hsk79-17-ellipsis-and-recoverability"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk79_18_academic_definition_and_classification"
+    level: "7-9"
+    title: "Academic definition and classification"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk79-18-academic-definition-and-classification"
+    r5_aliases:
+      - "zh-hsk79-18-academic-definition-and-classification"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk79_19_argument_concession_counterclaim"
+    level: "7-9"
+    title: "Argument concession-counterclaim"
+    conversion: "merge"
+    r5_sources:
+      - "zh-hsk79-19-argument-concession-counterclaim"
+      - "zh-hsk79-9-concessive-rhetoric"
+    r5_aliases:
+      - "zh-hsk79-19-argument-concession-counterclaim"
+      - "zh-hsk79-9-concessive-rhetoric"
+    notes:
+      - "trùng"
+    catalog_review_required: true
+  - candidate_id: "candidate.zh.hsk79_20_reporting_and_attribution"
+    level: "7-9"
+    title: "Reporting and attribution"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk79-20-reporting-and-attribution"
+    r5_aliases:
+      - "zh-hsk79-20-reporting-and-attribution"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk79_21_legal_administrative_register_patterns"
+    level: "7-9"
+    title: "Legal/administrative register patterns"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk79-21-legal-administrative-register-patterns"
+    r5_aliases:
+      - "zh-hsk79-21-legal-administrative-register-patterns"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk79_22_literary_descriptive_syntax"
+    level: "7-9"
+    title: "Literary descriptive syntax"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk79-22-literary-descriptive-syntax"
+    r5_aliases:
+      - "zh-hsk79-22-literary-descriptive-syntax"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk79_28_advanced_connector_economy"
+    level: "7-9"
+    title: "Advanced connector economy"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk79-28-advanced-connector-economy"
+    r5_aliases:
+      - "zh-hsk79-28-advanced-connector-economy"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk79_29_metadiscourse_grammar"
+    level: "7-9"
+    title: "Metadiscourse grammar"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk79-29-metadiscourse-grammar"
+    r5_aliases:
+      - "zh-hsk79-29-metadiscourse-grammar"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk79_3_negative_raising_and_scope"
+    level: "7-9"
+    title: "Negative raising and scope"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk79-3-negative-raising-and-scope"
+    r5_aliases:
+      - "zh-hsk79-3-negative-raising-and-scope"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk79_5_in_modern_formal_prose"
+    level: "7-9"
+    title: "于/以/为/所/者/之 in modern formal prose"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk79-5-in-modern-formal-prose"
+    r5_aliases:
+      - "zh-hsk79-5-in-modern-formal-prose"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk79_6_advanced_passive_causative_alternation"
+    level: "7-9"
+    title: "Advanced passive/causative alternation"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk79-6-advanced-passive-causative-alternation"
+    r5_aliases:
+      - "zh-hsk79-6-advanced-passive-causative-alternation"
+    notes: []
+    catalog_review_required: false
+  - candidate_id: "candidate.zh.hsk79_8_long_sentence_architecture"
+    level: "7-9"
+    title: "Long sentence architecture"
+    conversion: "keep"
+    r5_sources:
+      - "zh-hsk79-8-long-sentence-architecture"
+    r5_aliases:
+      - "zh-hsk79-8-long-sentence-architecture"
+    notes: []
+    catalog_review_required: false
