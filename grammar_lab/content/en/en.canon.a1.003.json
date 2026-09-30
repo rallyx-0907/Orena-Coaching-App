@@ -3,7 +3,7 @@
   "id": "en.canon.a1.003",
   "version": 1,
   "target_lang": "en",
-  "function": "fn.catalog_unclassified",
+  "function": "fn.sentence_basics",
   "level": {
     "framework": "cefr",
     "value": "A1",
@@ -14,13 +14,14 @@
   ],
   "contrasts": [],
   "error_tags": [
-    "other"
+    "sentence_structure",
+    "word_form"
   ],
   "source_refs": {},
   "point_type": "word_order",
   "header": {
     "title": {
-      "vi": "Vị trí tính từ",
+      "vi": "Vị trí của tính từ",
       "en": "Adjective position"
     },
     "native_title": "Adjective position",
@@ -130,7 +131,7 @@
         "vi": "Trong cụm danh từ cơ bản, tính từ đứng trước danh từ.",
         "en": "In a basic noun phrase, the adjective comes before the noun."
       },
-      "error_tag": "other",
+      "error_tag": "sentence_structure",
       "l1": [
         "vi"
       ]
@@ -146,11 +147,11 @@
         },
         {
           "text": "bag blue",
-          "error_tag": "other"
+          "error_tag": "sentence_structure"
         },
         {
           "text": "is blue",
-          "error_tag": "other"
+          "error_tag": "sentence_structure"
         }
       ],
       "answer": 0,
@@ -168,11 +169,11 @@
         },
         {
           "text": "house big",
-          "error_tag": "other"
+          "error_tag": "sentence_structure"
         },
         {
           "text": "bigness",
-          "error_tag": "other"
+          "error_tag": "word_form"
         }
       ],
       "answer": 0,
@@ -190,11 +191,11 @@
         },
         {
           "text": "phone new",
-          "error_tag": "other"
+          "error_tag": "sentence_structure"
         },
         {
           "text": "newly",
-          "error_tag": "other"
+          "error_tag": "word_form"
         }
       ],
       "answer": 0,
@@ -213,7 +214,7 @@
     "generated_at": "2026-09-30T10:35:00Z"
   },
   "review": null,
-  "sequence": 3,
+  "sequence": 2,
   "source_anchors": {
     "status": "unanchored",
     "items": []
