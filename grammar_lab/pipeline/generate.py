@@ -37,7 +37,7 @@ from grammar_lab.pipeline.content_store import (
 )
 from grammar_lab.pipeline.jsonio import read_json
 from grammar_lab.pipeline.llm_client import LLMClient
-from grammar_lab.pipeline.seed import apply_seed, register_realization
+from grammar_lab.pipeline.seed import apply_seed, register_realization, seed_for
 from grammar_lab.pipeline.r5_source import DEFAULT_R5_ROOT, R5SourceError, load_r5, r5_source_text
 from grammar_lab.pipeline.validate import (
     _HAN,
@@ -866,7 +866,15 @@ class Generator:
             r5_instruction=_R5_INSTRUCTION if r5_records else "",
             num_examples=V04_EXAMPLES,
         )
+        seed = seed_for(self.lang, point_id, self.root) or {}
+        source_scope = list(seed.get("source_scope") or [])
         user = f"Write the grammar point {point_id} now, matching the structured output schema."
+        if source_scope:
+            user += (
+                "\n\nAuthoritative catalogue scope for this point. These are inventory labels, not prose to copy. "
+                "Cover every listed item, do not add a different grammar target, and keep the point at the locked level:\n- "
+                + "\n- ".join(source_scope)
+            )
         if regenerate_note:
             user += f" Admin regenerate note: {regenerate_note}"
         if r5_records:
