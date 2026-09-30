@@ -15,6 +15,7 @@ converts it, deterministically and idempotently, into the seed-schema records ``
 
 from __future__ import annotations
 
+from functools import cache
 from pathlib import Path
 from typing import Any
 
@@ -122,32 +123,47 @@ def write_catalog(lang: str, root: Path = LAB_ROOT) -> bool:
     return True
 
 
-def catalog_is_current(lang: str, root: Path = LAB_ROOT) -> bool:
+def _mtimes(lang: str, root: Path) -> tuple[int, ...]:
+    paths = (catalog_path(lang, root), canonical_dir(root) / f"{lang}.yaml", root / "inventory" / f"seeds_{lang}.yaml")
+    return tuple(path.stat().st_mtime_ns if path.exists() else -1 for path in paths)
+
+
+@cache
+def _is_current(lang: str, root: Path, mtimes: tuple[int, ...]) -> bool:  # noqa: ARG001 -- mtimes is the cache key
     path = catalog_path(lang, root)
     return path.exists() and path.read_text(encoding="utf-8") == render_catalog(build_catalog(lang, root))
 
 
-def zh_source_coverage(root: Path = LAB_ROOT) -> dict[str, Any]:
-    """Catalog-layer proof that every GF0025 source row lands on a canonical point.
+def catalog_is_current(lang: str, root: Path = LAB_ROOT) -> bool:
+    """Whether ``catalog_<lang>.yaml`` is byte-for-byte what the importer would write now. Cached on the
+    three files it depends on, so a batch of generate calls checks once, and an edit is seen at once."""
+    return _is_current(lang, root, _mtimes(lang, root))
 
-    A row counts as covered only when the source map names a point that exists and that point lists the
-    row back in ``source_items`` -- the map and the catalogue must agree, not merely both exist.
+
+def zh_source_coverage(root: Path = LAB_ROOT) -> dict[str, Any]:
+    """Catalog-layer proof that every GF0025 source row lands on canonical points, in both directions.
+
+    A row counts as covered only when the set of points the source map names for it *equals* the set of
+    canonical points that list the row in ``source_items``. A map that names fewer points than the
+    catalogue claims (or more) is a mismatch, not coverage, and so is a point citing a row the map never
+    mentions (``orphan_citations``).
     """
     directory = canonical_dir(root)
     source_ids = [row["source_id"] for row in read_yaml(directory / "zh_gf0025_source.yaml")["items"]]
-    source_map = {row["source_id"]: row["maps_to"] for row in read_yaml(directory / "zh_source_map.yaml")["items"]}
+    source_map = {row["source_id"]: set(row["maps_to"]) for row in read_yaml(directory / "zh_source_map.yaml")["items"]}
     listed: dict[str, set[str]] = {}
     for item in load_canonical("zh", root)["items"]:
         for source_id in item.get("source_items", []):
             listed.setdefault(source_id, set()).add(item["id"])
-    covered = [
-        source_id for source_id in source_ids
-        if source_map.get(source_id) and set(source_map[source_id]) <= listed.get(source_id, set())
-    ]
+    covered = [sid for sid in source_ids if source_map.get(sid) and source_map[sid] == listed.get(sid)]
     return {
         "total": len(source_ids),
         "covered": len(covered),
         "missing": sorted(set(source_ids) - set(covered)),
+        "reciprocal_mismatches": sorted(
+            sid for sid in source_ids if source_map.get(sid) and listed.get(sid) and source_map[sid] != listed[sid]
+        ),
         "unknown_sources_in_map": sorted(set(source_map) - set(source_ids)),
+        "orphan_citations": sorted(set(listed) - set(source_map)),
         "duplicate_source_ids": len(source_ids) - len(set(source_ids)),
     }

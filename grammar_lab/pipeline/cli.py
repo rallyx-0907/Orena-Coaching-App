@@ -31,7 +31,7 @@ from grammar_lab.pipeline.review_export import levels_present, review_path, writ
 from grammar_lab.pipeline.route import DEFAULT_THRESHOLD_BY_LANG, apply_route, route_point
 from grammar_lab.pipeline.canonical import catalog_is_current, load_canonical, write_catalog
 from grammar_lab.pipeline.coverage import coverage_report, render_text as render_coverage
-from grammar_lab.pipeline.seed import select_ids
+from grammar_lab.pipeline.seed import GenerationBlocked, check_generation_gate, select_ids
 from grammar_lab.pipeline.ui_fixtures import fixture_dir, write_fixtures as write_ui_fixtures
 from grammar_lab.pipeline.run_context import new_run_id, resolve_run_id, run_dir, write_step
 from grammar_lab.pipeline.validate import ERROR_TAGS_PATH, LAB_ROOT, LANGS, apply_flags, validate_lang
@@ -167,6 +167,10 @@ def generate(
         1.0, "--cost-ceiling-usd",
         help="Stop starting new points once this much has been spent this run; the real cost is reported.",
     ),
+    allow_default_safe_metadata: bool = typer.Option(
+        False, "--allow-default-safe-metadata",
+        help="Generate on points whose metadata is a default_safe placeholder (never reviewed). Off by default.",
+    ),
     root: Path = typer.Option(LAB_ROOT, "--root"),
 ) -> None:
     """SPEC §5.1: code-generated rule_table + LLM-generated blocks + templated check items."""
@@ -179,9 +183,14 @@ def generate(
         point_ids = select_ids(lang, level, root)
         if not point_ids:
             raise typer.BadParameter(f"no catalogue points at level {level}", param_hint="--level")
+    try:  # before the lock and before any client exists: nothing can be spent on a catalogue we do not trust
+        check_generation_gate(lang, point_ids, root, allow_default_safe=allow_default_safe_metadata)
+    except GenerationBlocked as exc:
+        typer.echo(f"generate blocked: {exc}", err=True)
+        raise typer.Exit(2) from exc
     outcomes = []
     with live_lock.hold([provider], cost_ceiling_usd), LLMClient(provider, model, deepseek_thinking=deepseek_thinking) as llm:
-        generator = Generator(lang=lang, l1=l1, llm=llm, root=root)
+        generator = Generator(lang=lang, l1=l1, llm=llm, root=root, allow_default_safe=allow_default_safe_metadata)
         for point_id in point_ids:
             spent = sum(o.cost_usd for o in outcomes if o.cost_usd is not None)
             if spent >= cost_ceiling_usd:

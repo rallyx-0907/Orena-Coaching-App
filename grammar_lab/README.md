@@ -44,7 +44,9 @@ python -m pytest grammar_lab/tests                              # toàn bộ tes
 python -m grammar_lab.pipeline.cli import-canonical            # canonical_v1/{en,zh}.yaml -> inventory/catalog_{en,zh}.yaml (tất định, idempotent; --check để kiểm)
 python -m grammar_lab.pipeline.cli coverage --lang zh            # canonical / generated / validated / approved theo bậc; zh thêm GF0025 572/572
 python -m grammar_lab.pipeline.cli ui-fixtures                   # ghi lại fixtures/ui/ (2 điểm mẫu cho renderer UI)
-python -m grammar_lab.pipeline.cli generate --lang en --level A1 --provider deepseek --model deepseek-flash   --cost-ceiling-usd 1     # điểm lấy từ inventory/catalog_en.yaml (danh mục chuẩn v1, 30 điểm A1); giữ khoá quota của provider, báo chi phí thực
+python -m grammar_lab.pipeline.cli generate --lang en --level A1 --provider deepseek --model deepseek-flash   --cost-ceiling-usd 1     # điểm lấy từ inventory/catalog_en.yaml (danh mục chuẩn v1, 30 điểm A1); giữ khoá quota của provider, báo chi phí thực.
+# generate từ chối (exit 2, trước khoá và trước khi có client) nếu catalog_<lang>.yaml cũ so với canonical_v1, hoặc điểm có metadata default_safe
+# (chưa ai duyệt); --allow-default-safe-metadata là override tường minh cho case thứ hai, không bao giờ vượt qua catalog cũ
 python -m grammar_lab.pipeline.cli review-export --lang en --level A1   # -> review/en/A1.md cho model ngoài
 python -m grammar_lab.pipeline.cli apply-feedback --lang en --level A1 --files a.jsonl b.jsonl --dry-run
 python -m grammar_lab.pipeline.cli feedback-stats --files a.jsonl b.jsonl   # sai kiến thức / phạm vi / diễn đạt / định dạng

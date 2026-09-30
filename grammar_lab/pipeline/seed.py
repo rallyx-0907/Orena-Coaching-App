@@ -15,7 +15,7 @@ from typing import Any
 
 import yaml
 
-from grammar_lab.pipeline.canonical import catalog_path
+from grammar_lab.pipeline.canonical import canonical_dir, catalog_is_current, catalog_path
 from grammar_lab.pipeline.jsonio import read_json, read_yaml
 from grammar_lab.pipeline.validate import FUNCTIONS_PATH, GRAMMAR_SCHEMA_PATH, LAB_ROOT, LANGS
 
@@ -37,6 +37,38 @@ def load_catalog(lang: str, root: Path = LAB_ROOT) -> list[dict[str, Any]]:
     this; ``check_seeds`` and the reviewed-seed tests keep reading ``load_seeds``."""
     path = catalog_path(lang, root)
     return read_yaml(path) or [] if path.exists() else load_seeds(lang, root)
+
+
+class GenerationBlocked(RuntimeError):
+    """Raised before any provider call when the catalogue cannot be trusted for generation."""
+
+
+def check_generation_gate(
+    lang: str, point_ids: list[str], root: Path = LAB_ROOT, *, allow_default_safe: bool = False
+) -> None:
+    """Fail closed before a provider is touched.
+
+    1. When the lab has a canonical v1 catalogue, the generated runtime catalogue must be current with it
+       (a missing or stale ``catalog_<lang>.yaml`` blocks; run ``import-canonical``).
+    2. A point whose metadata is ``default_safe`` (never human-reviewed) is not generated unless the caller
+       passes the explicit override: its function, point_type, error_tags, contrasts and prereqs are
+       placeholders, and generating on them would bake those placeholders into content.
+    """
+    if (canonical_dir(root) / f"{lang}.yaml").exists() and not catalog_is_current(lang, root):
+        raise GenerationBlocked(
+            f"inventory/catalog_{lang}.yaml is missing or stale against canonical_v1; run "
+            f"`python -m grammar_lab.pipeline.cli import-canonical --lang {lang}` first"
+        )
+    if allow_default_safe:
+        return
+    by_id = {record["id"]: record for record in load_catalog(lang, root)}
+    unreviewed = [pid for pid in point_ids if by_id.get(pid, {}).get("catalog", {}).get("metadata_origin") == "default_safe"]
+    if unreviewed:
+        shown = ", ".join(unreviewed[:5]) + (f" (+{len(unreviewed) - 5} more)" if len(unreviewed) > 5 else "")
+        raise GenerationBlocked(
+            f"{len(unreviewed)} point(s) have default_safe metadata, not reviewed: {shown}. Review their metadata "
+            "into seeds_<lang>.yaml, or pass --allow-default-safe-metadata to generate on placeholders knowingly"
+        )
 
 
 def select_ids(lang: str, level: str, root: Path = LAB_ROOT) -> list[str]:

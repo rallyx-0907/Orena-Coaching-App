@@ -37,7 +37,7 @@ from grammar_lab.pipeline.content_store import (
 )
 from grammar_lab.pipeline.jsonio import read_json
 from grammar_lab.pipeline.llm_client import LLMClient
-from grammar_lab.pipeline.seed import apply_seed, register_realization
+from grammar_lab.pipeline.seed import apply_seed, check_generation_gate, register_realization
 from grammar_lab.pipeline.r5_source import DEFAULT_R5_ROOT, R5SourceError, load_r5, r5_source_text
 from grammar_lab.pipeline.validate import (
     _HAN,
@@ -718,12 +718,15 @@ class Generator:
     root: Path = LAB_ROOT
     num_examples: int = 2
     r5_root: Path | None = None  # the app's grammar data (r5_source.DEFAULT_R5_ROOT when None)
+    allow_default_safe: bool = False  # explicit override for points whose metadata was never reviewed
 
     def generate(
         self, point_id: str, *, regenerate_note: str | None = None, with_story: bool = False, story_mode: str = "everyday"
     ) -> GenerateOutcome:
         if story_mode not in STORY_MODES:
             raise ValueError(f"story_mode must be one of {sorted(STORY_MODES)}, got {story_mode!r}")
+        # Fail closed before any provider call: stale catalogue or unreviewed (default_safe) metadata.
+        check_generation_gate(self.lang, [point_id], self.root, allow_default_safe=self.allow_default_safe)
         # The catalogue decides structure: a point not on disk starts from its seed, and one that is takes
         # the seed's metadata (level, function, contrasts, R5 sources, anchors) over its own.
         existing = apply_seed(load_point(self.lang, point_id, self.root), self.lang, point_id, self.root)

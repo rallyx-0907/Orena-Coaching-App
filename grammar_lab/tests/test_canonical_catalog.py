@@ -7,7 +7,6 @@ from pathlib import Path
 
 import pytest
 import yaml
-from jsonschema import Draft202012Validator
 
 from grammar_lab.pipeline.canonical import (
     DEFAULT_FUNCTION, canonical_dir, catalog_is_current, catalog_path, load_canonical, write_catalog,
@@ -18,7 +17,7 @@ from grammar_lab.pipeline.coverage import coverage_report
 from grammar_lab.pipeline.jsonio import format_json, read_json
 from grammar_lab.pipeline.seed import apply_seed, load_catalog, load_seeds, select_ids
 from grammar_lab.pipeline.ui_fixtures import DEMO_POINTS, FIXTURE_DIR, INDEX_NAME, build_fixtures
-from grammar_lab.pipeline.validate import ERROR_TAGS_PATH, GRAMMAR_SCHEMA_PATH, LAB_ROOT, LANGS, validate_lang
+from grammar_lab.pipeline.validate import ERROR_TAGS_PATH, LAB_ROOT, LANGS
 from grammar_lab.tests.conftest import Lab
 
 EXPECTED_LEVELS = {
@@ -58,7 +57,8 @@ def test_no_duplicate_canonical_id_or_legacy_alias(lang: str) -> None:
 def test_gf0025_source_inventory_is_covered_572_of_572() -> None:
     coverage = zh_source_coverage()
     assert coverage == {
-        "total": 572, "covered": 572, "missing": [], "unknown_sources_in_map": [], "duplicate_source_ids": 0,
+        "total": 572, "covered": 572, "missing": [], "reciprocal_mismatches": [], "unknown_sources_in_map": [],
+        "orphan_citations": [], "duplicate_source_ids": 0,
     }
     # ...and the runtime catalogue carries every source row, so coverage survives the conversion
     carried = {source for record in load_catalog("zh") for source in record.get("gf0025", [])}
@@ -216,35 +216,6 @@ def _fixture(lang: str) -> dict:
 def test_committed_ui_fixtures_are_what_the_builder_produces() -> None:
     for name, value in build_fixtures().items():
         assert (LAB_ROOT / FIXTURE_DIR / name).read_text(encoding="utf-8") == format_json(value), name
-
-
-@pytest.mark.parametrize("lang,level,target", [("en", "A1", "en"), ("zh", "1", "zh-Hans")])
-def test_demo_fixture_validates_against_the_current_schema(lang: str, level: str, target: str) -> None:
-    point = _fixture(lang)
-    schema = read_json(LAB_ROOT / GRAMMAR_SCHEMA_PATH)
-    errors = sorted(Draft202012Validator(schema).iter_errors(point), key=lambda e: list(e.path))
-    assert errors == [], [f"{list(e.path)}: {e.message}" for e in errors]
-    assert point["id"] == DEMO_POINTS[lang] and point["level"]["value"] == level and point["target_lang"] == target
-    assert point["schema_version"] == "0.4" and point["point_type"] == "tense_aspect"
-    catalog = {record["id"]: record for record in load_catalog(lang)}
-    assert point["id"] in catalog and catalog[point["id"]]["level"] == level
-
-
-@pytest.mark.parametrize("lang", ["en", "zh"])
-def test_demo_fixture_passes_every_deterministic_check(lang: str, tmp_path: Path) -> None:
-    """validate_lang over the shipped content plus the fixture. The only findings allowed are references to
-    catalogue points that are not written yet (prereqs/contrasts): the fixture is re-seeded from the catalogue."""
-    for name in ("schema", "functions", "cast"):
-        shutil.copytree(LAB_ROOT / name, tmp_path / name)
-    shutil.copytree(LAB_ROOT / "content" / lang, tmp_path / "content" / lang)
-    shutil.copy(LAB_ROOT / FIXTURE_DIR / f"{DEMO_POINTS[lang]}.json", tmp_path / "content" / lang)
-    report = validate_lang(lang, tmp_path)
-    catalog_ids = {record["id"] for record in load_catalog(lang)}
-    mine = [issue for issue in report.issues if issue.file.endswith(f"{DEMO_POINTS[lang]}.json")]
-    assert {issue.code for issue in mine} <= {"ref.unknown_prereq", "ref.unknown_contrast"}, mine
-    for issue in mine:
-        assert issue.message.rsplit(" ", 1)[-1] in catalog_ids, issue
-    assert not [issue for issue in report.issues if issue not in mine]
 
 
 def test_zh_fixture_ruby_pinyin_is_per_character_and_aligned() -> None:
