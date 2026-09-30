@@ -15,8 +15,6 @@ functions:
     ja:
     - ja.masu_form.present
     en:
-    - en.present_simple.habit
-    - en.adverbs_of_frequency
 - id: fn.existence
   title:
     vi: Nói cái gì đó có ở đâu
@@ -31,7 +29,6 @@ functions:
   planned:
     zh-Hans:
     - zh.you_existence
-    - zh.you_sentence
     ja:
     - ja.aru_iru
 - id: fn.quantity
@@ -62,15 +59,9 @@ functions:
   planned:
     zh-Hans:
     - zh.measure_words
-    - zh.measure_words.basic
-    - zh.liang_er
     ja:
     - ja.counters
     en:
-    - en.plural_nouns.irregular
-    - en.countable_uncountable
-    - en.quantifiers.some_any
-    - en.quantifiers.few_little
 - id: fn.reference
   title:
     vi: Chỉ định người/vật (đã biết hay chưa)
@@ -89,7 +80,6 @@ functions:
     ja:
     - ja.wa_ga
     en:
-    - en.articles.zero
 - id: fn.ongoing_now
   title:
     vi: Việc đang diễn ra
@@ -111,8 +101,6 @@ functions:
     - zh.canon.gf.hsk7_9.a_7_1_5_2.p1
   planned:
     zh-Hans:
-    - zh.zai_progressive
-    - zh.zhe_state
     ja:
     - ja.te_iru.progressive
 - id: fn.completed_past
@@ -138,8 +126,6 @@ functions:
     ja:
     - ja.ta_form
     en:
-    - en.past_simple.regular_ed
-    - en.past_simple.irregular
 - id: fn.past_experience
   title:
     vi: Trải nghiệm đã từng
@@ -176,13 +162,9 @@ functions:
     - zh.canon.gf.hsk5.a_5_5_1.p2
   planned:
     zh-Hans:
-    - zh.bi_comparison
-    - zh.meiyou_comparison
     ja:
     - ja.yori_comparison
     en:
-    - en.superlatives
-    - en.as_as
 - id: fn.condition_real
   title:
     vi: Điều kiện có thể xảy ra
@@ -209,14 +191,9 @@ functions:
     - zh.canon.gf.hsk7_9.a_7_5_2_7.p1
   planned:
     zh-Hans:
-    - zh.ruguo_jiu
-    - zh.zhiyao_jiu
-    - zh.zhiyou_cai
     ja:
     - ja.tara_ba
     en:
-    - en.conditional_zero
-    - en.unless
 - id: fn.object_disposal
   title:
     vi: Nhấn mạnh kết quả xử lý một vật cụ thể
@@ -266,10 +243,7 @@ functions:
     - zh.canon.gf.hsk7_9.a_7_4_1.p1
   planned:
     en:
-    - en.sentence_word_order
-    - en.indirect_objects
     zh-Hans:
-    - zh.svo_basic
 - id: fn.identity_state
   title:
     vi: Nói ai, cái gì, ở trạng thái nào
@@ -284,10 +258,7 @@ functions:
     - zh.adjective_predicate
   planned:
     en:
-    - en.be.present
     zh-Hans:
-    - zh.shi_sentence
-    - zh.adjective_predicate
 - id: fn.pronoun_reference
   title:
     vi: Nhắc tới người, vật bằng đại từ
@@ -314,10 +285,7 @@ functions:
     - zh.canon.gf.hsk6.a_6_2_1.p1
   planned:
     en:
-    - en.pronouns.subject_object
-    - en.demonstratives
     zh-Hans:
-    - zh.demonstratives
 - id: fn.possession
   title:
     vi: Nói về sự sở hữu
@@ -333,12 +301,7 @@ functions:
     - zh.de_possessive
   planned:
     en:
-    - en.possessive_adjectives
-    - en.possessive_pronouns
-    - en.possessive_s
-    - en.have_got
     zh-Hans:
-    - zh.de_possessive
 - id: fn.instructions
   title:
     vi: Ra lệnh, chỉ dẫn
@@ -349,7 +312,6 @@ functions:
     - en.imperatives
   planned:
     en:
-    - en.imperatives
 - id: fn.questions
   title:
     vi: Đặt câu hỏi
@@ -380,14 +342,7 @@ functions:
     - zh.canon.gf.hsk7_9.a_7_6.p1
   planned:
     en:
-    - en.be.questions_short_answers
-    - en.present_simple.do_questions
-    - en.questions.wh
     zh-Hans:
-    - zh.ma_question
-    - zh.ne_question
-    - zh.question_words
-    - zh.affirmative_negative_question
 - id: fn.place_time
   title:
     vi: Nói về nơi chốn và thời gian
@@ -399,8 +354,6 @@ functions:
     - en.prepositions.time
   planned:
     en:
-    - en.prepositions.place
-    - en.prepositions.time
 - id: fn.linking
   title:
     vi: Nối ý
@@ -456,11 +409,7 @@ functions:
     - zh.canon.gf.hsk7_9.a_7_5_2_13.p1
   planned:
     en:
-    - en.conjunctions.and_but_or
-    - en.conjunctions.because_so
     zh-Hans:
-    - zh.ye_dou
-    - zh.he_conjunction
 - id: fn.past_ongoing
   title:
     vi: Việc đang diễn ra trong quá khứ
@@ -473,8 +422,6 @@ functions:
     - en.canon.b1.005
   planned:
     en:
-    - en.past_continuous
-    - en.past_simple_vs_continuous
 - id: fn.future_plans
   title:
     vi: Kế hoạch và dự đoán tương lai
@@ -495,10 +442,6 @@ functions:
     - en.canon.c1.006
   planned:
     en:
-    - en.going_to.plans
-    - en.will.decisions
-    - en.present_continuous.arrangements
-    - en.present_simple.schedules
 - id: fn.degree
   title:
     vi: Mức độ và cách thức
@@ -523,12 +466,7 @@ functions:
     - zh.canon.gf.hsk7_9.a_7_4_2.p1
   planned:
     en:
-    - en.too_enough
-    - en.adjectives_vs_adverbs
-    - en.adverbs.manner_degree
     zh-Hans:
-    - zh.yuelaiyue
-    - zh.yue_yue
 - id: fn.obligation_advice
   title:
     vi: Nghĩa vụ và lời khuyên
@@ -544,8 +482,6 @@ functions:
     - en.canon.b2.010
   planned:
     en:
-    - en.modals.must_have_to
-    - en.modals.should
 - id: fn.possibility
   title:
     vi: Khả năng có thể xảy ra
@@ -567,7 +503,6 @@ functions:
     - en.canon.c2.001
   planned:
     en:
-    - en.modals.possibility
 - id: fn.verb_patterns
   title:
     vi: Động từ đi với -ing hoặc to V
@@ -590,9 +525,6 @@ functions:
     - en.canon.c1.017
   planned:
     en:
-    - en.gerund_after_preference
-    - en.infinitive_after_want_plan_need
-    - en.infinitive_of_purpose
 - id: fn.relative
   title:
     vi: Nối thêm thông tin về người, vật
@@ -607,7 +539,6 @@ functions:
     - en.canon.c1.020
   planned:
     en:
-    - en.relative_clauses.who_which_that
 - id: fn.indefinite_reference
   title:
     vi: Nói chung chung, không nêu cụ thể
@@ -618,7 +549,6 @@ functions:
     - en.indefinite_compounds
   planned:
     en:
-    - en.indefinite_compounds
 - id: fn.negation
   title:
     vi: Phủ định
@@ -652,8 +582,6 @@ functions:
     - zh.canon.gf.hsk7_9.a_7_7.p4
   planned:
     zh-Hans:
-    - zh.bu_negation
-    - zh.mei_negation
 - id: fn.location
   title:
     vi: Nói vị trí
@@ -669,7 +597,6 @@ functions:
     - zh.canon.gf.hsk6.a_6_2_4_1.p1
   planned:
     zh-Hans:
-    - zh.zai_location
 - id: fn.time_expression
   title:
     vi: Nói về thời gian
@@ -688,7 +615,6 @@ functions:
     - zh.canon.gf.hsk7_9.a_7_1_4_3.p1
   planned:
     zh-Hans:
-    - zh.dates_times
 - id: fn.action_result
   title:
     vi: Kết quả và cách thức của hành động
@@ -703,9 +629,6 @@ functions:
     - zh.canon.gf.hsk6.a_6_5_2.p1
   planned:
     zh-Hans:
-    - zh.complement.degree_de
-    - zh.complement.result
-    - zh.complement.direction_simple
 - id: fn.duration_frequency
   title:
     vi: Thời lượng và số lần
@@ -719,8 +642,6 @@ functions:
     - zh.canon.gf.hsk7_9.a_7_1_4_4.p1
   planned:
     zh-Hans:
-    - zh.complement.duration
-    - zh.complement.frequency
 - id: fn.reason_result
   title:
     vi: Nguyên nhân và kết quả
@@ -737,7 +658,6 @@ functions:
     - zh.canon.gf.hsk7_9.a_7_8_2.p1
   planned:
     zh-Hans:
-    - zh.yinwei_suoyi
 - id: fn.contrast
   title:
     vi: Nêu điều đối lập
@@ -751,7 +671,6 @@ functions:
     - zh.canon.gf.hsk7_9.a_7_5_2_5.p1
   planned:
     zh-Hans:
-    - zh.suiran_danshi
 - id: fn.sequence
   title:
     vi: Trình tự và đồng thời
@@ -770,11 +689,6 @@ functions:
     - zh.canon.gf.hsk7_9.a_7_2_2_2.p3
   planned:
     zh-Hans:
-    - zh.yi_jiu
-    - zh.xian_zai
-    - zh.you_zai
-    - zh.jiu_cai
-    - zh.yibian
 - id: fn.exclusion
   title:
     vi: Loại trừ
@@ -786,7 +700,6 @@ functions:
     - zh.canon.gf.hsk6.a_6_2_4_5.p1
   planned:
     zh-Hans:
-    - zh.chule_yiwai
 - id: fn.separable_verbs
   title:
     vi: Động từ ly hợp
@@ -797,7 +710,6 @@ functions:
     - zh.separable_verbs
   planned:
     zh-Hans:
-    - zh.separable_verbs
 - id: fn.catalog_unclassified
   title:
     vi: Chưa phân loại chức năng (danh mục chuẩn v1)
