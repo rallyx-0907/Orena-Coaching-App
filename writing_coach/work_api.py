@@ -43,7 +43,7 @@ from writing_coach.core.request_context import current_language_code, current_us
 from writing_coach.persistence.ids import stable_uuid
 from writing_coach.persistence.work_repository import semantic_digest
 from writing_coach.reference_backbone import Scope
-from writing_coach.work_contract import LIFECYCLE, WORK_KINDS
+from writing_coach.work_contract import GENERIC_WORK_KINDS, LIFECYCLE
 
 router = APIRouter(prefix='/api', tags=['work'])
 
@@ -144,19 +144,131 @@ def work_changes(after: int = Query(0, ge=0), limit: int = Query(CHANGES_LIMIT, 
     }
 
 
+LIST_LIMIT = 50
+
+
+@router.get('/works')
+def list_works(
+    kind: str = Query('', max_length=40),
+    source_kind: str = Query('', max_length=40),
+    limit: int = Query(20, ge=1, le=LIST_LIMIT),
+) -> dict[str, Any]:
+    """The most recent works of this account and language, newest change first (proposal 2.3).
+
+    The change stream is for sync, not for "the 20 most recent". Bounded to 50, scope-checked, never a
+    deleted work.
+    """
+    scope = _scope()
+    rows = _backbone.work.list_works(scope, kind=kind, source_kind=source_kind, limit=limit)
+    return {'works': [
+        {**_shape(row), 'kind': row['kind'], 'source': {'kind': row['source_kind'], 'id': row['source_id']}}
+        for row in rows
+    ]}
+
+
 @router.get('/works/{work_id}')
 def get_work(work_id: str) -> dict[str, Any]:
     scope = _scope()
-    row = _backbone.work.get_work(scope, _work_id(work_id))
+    ident = _work_id(work_id)
+    row = _backbone.work.get_work(scope, ident)
     if row is None:
         raise orena_http_error(404, 'work_not_found', 'No such work here.', retryable=False)
-    return {'work': _shape(row)}
+    shaped = _shape(row)
+    payload = row['payload'] or {}
+    if isinstance(payload, dict) and 'situation' in payload and 'ended' in payload:
+        # A conversation: its ordered, immutable turns and the head an append must name.
+        turns = _backbone.work.list_turns(scope, ident)
+        return {'work': shaped, 'turns': turns, 'head': len(turns)}
+    return {'work': shaped}
+
+
+# --- Conversation turns (D4 I6) -----------------------------------------------------------------------
+#
+# A conversation is a work of kind `conversation` with ordered, immutable turns. The work id is derived
+# from the account and the client's conversation key like a draft's, so a re-open finds the same row.
+
+class TurnAppend(BaseModel):
+    operationId: str = Field(min_length=8, max_length=120)
+    expectedHead: int = Field(ge=0, le=24)
+    id: str = Field(min_length=1, max_length=80)
+    role: str = Field(pattern=r'^(learner|partner)$')
+    text: str = Field(min_length=1, max_length=2400)
+    replyTo: str | None = Field(default=None, max_length=80)
+    origin: str = Field(default='', max_length=40)
+    meaning: str = Field(default='', max_length=2400)
+    support: str = Field(default='', max_length=32)
+    # Only read when the conversation is created (expectedHead 0).
+    title: str = Field(default='', max_length=240)
+    situation: str = Field(default='', max_length=1200)
+    ended: bool = False
+
+
+def _conversation_key(key: str) -> str:
+    if not key or len(key) > 200 or any(ord(ch) < 32 for ch in key):
+        raise orena_http_error(422, 'conversation_key_invalid', 'Not a conversation this room knows.', retryable=False)
+    return key
+
+
+def _conversation_work_id(scope: Scope, key: str) -> str:
+    return str(stable_uuid('work', scope.account, scope.incarnation, scope.language, 'conversation', key))
+
+
+@router.get('/conversations/{key}')
+def get_conversation(key: str) -> dict[str, Any]:
+    key = _conversation_key(key)
+    scope = _scope()
+    ident = _conversation_work_id(scope, key)
+    row = _backbone.work.get_work(scope, ident)
+    if row is None or row['lifecycle'] == 'deleted':
+        raise orena_http_error(404, 'conversation_not_found', 'No conversation kept for this key.', retryable=False)
+    turns = _backbone.work.list_turns(scope, ident)
+    payload = row['payload'] or {}
+    return {'conversation': {
+        'key': key, 'title': str(payload.get('title', '')), 'situation': str(payload.get('situation', '')),
+        'ended': bool(payload.get('ended')), 'turns': turns, 'head': len(turns),
+    }}
+
+
+@router.post('/conversations/{key}/turns')
+def append_conversation_turn(key: str, body: TurnAppend) -> dict[str, Any]:
+    """Append one turn at the head the writer saw. A retry returns the same turn; a head that moved is a
+    409 with the server's head and nothing written (ADA section 4)."""
+    key = _conversation_key(key)
+    scope = _scope()
+    ident = _conversation_work_id(scope, key)
+    turn = {'id': body.id, 'text': body.text, 'origin': body.origin, 'reply_to': body.replyTo,
+            'meaning': body.meaning, 'support': body.support}
+    references = {'work': ident, 'kind': 'conversation', 'head': body.expectedHead, 'role': body.role,
+                  'id': body.id, 'replyTo': body.replyTo}
+    outcome = _backbone.work.append_turn(
+        scope=scope, work_id=ident, operation_id=body.operationId,
+        digest=semantic_digest('conversation.turn', references,
+                               {'turn': turn, 'title': body.title, 'situation': body.situation, 'ended': body.ended}),
+        expected_head=body.expectedHead, role=body.role, turn=turn,
+        header={'title': body.title, 'situation': body.situation}, ended=body.ended,
+    )
+    status = outcome.get('status')
+    if status in {'committed', 'replay'}:
+        head = int(outcome.get('version') or 0)
+        stored = next((item for item in _backbone.work.list_turns(scope, ident) if item['ordinal'] == head), None)
+        return {'status': status, 'head': head, 'turn': stored}
+    if status == 'conflict':
+        raise orena_http_error(
+            409, 'turn_conflict', 'This conversation moved on since you read it.', retryable=False,
+            context={'serverHead': outcome.get('server_head')},
+        )
+    reason = str(outcome.get('reason') or 'rejected')
+    if reason == 'scope_denied':
+        raise orena_http_error(404, 'conversation_not_found', 'No such conversation here.', retryable=False)
+    raise orena_http_error(422, reason, 'This turn was not accepted.', retryable=False)
 
 
 @router.put('/works/{work_id}')
 def put_work(work_id: str, body: WorkMutation) -> dict[str, Any]:
     ident = _work_id(work_id)
-    if body.kind not in WORK_KINDS:
+    # `annotation` and `imported` are reachable only through their dedicated routes, which define the
+    # deterministic id, the bounds and the private-content rules a generic writer would bypass.
+    if body.kind not in GENERIC_WORK_KINDS:
         raise orena_http_error(422, 'work_kind_invalid', 'Unknown kind of work.', retryable=False)
     if body.lifecycle not in LIFECYCLE:
         raise orena_http_error(422, 'lifecycle_invalid', 'Unknown lifecycle.', retryable=False)
@@ -202,11 +314,18 @@ DRAFT_TEXT_LIMIT = 12_000
 DRAFT_TASK_LIMIT = 240
 
 
+class PromptRef(BaseModel):
+    source: str = Field(min_length=1, max_length=40, pattern=r'^[a-z][a-z0-9._-]*$')
+    id: str = Field(min_length=1, max_length=120)
+
+
 class DraftSave(BaseModel):
     operationId: str = Field(min_length=8, max_length=120)
     expectedVersion: int = Field(ge=0)
     text: str = Field(default='', max_length=DRAFT_TEXT_LIMIT)
     task: str = Field(default='', max_length=DRAFT_TASK_LIMIT)
+    # Which curated prompt this piece answers (D-103.6): a reference into the Prompt Bank, never its text.
+    promptRef: 'PromptRef | None' = None
 
 
 def _draft_key(key: str) -> str:
@@ -227,8 +346,11 @@ def get_draft(key: str) -> dict[str, Any]:
     if row is None or row['lifecycle'] == 'deleted':
         raise orena_http_error(404, 'draft_not_found', 'No draft kept for this piece.', retryable=False)
     payload = row['payload'] or {}
+    ref = payload.get('promptRef')
     return {'draft': {'text': str(payload.get('text', '')), 'task': str(payload.get('task', '')),
-                      'version': int(row['version'])}}
+                      'version': int(row['version']),
+                      **({'promptRef': {'source': str(ref.get('source', '')), 'id': str(ref.get('id', ''))}}
+                         if isinstance(ref, dict) else {})}}
 
 
 @router.put('/drafts/{key}')
@@ -237,6 +359,8 @@ def put_draft(key: str, body: DraftSave) -> dict[str, Any]:
     scope = _scope()
     ident = _draft_work_id(scope, key)
     payload = {'text': body.text, 'task': body.task}
+    if body.promptRef is not None:
+        payload['promptRef'] = {'source': body.promptRef.source, 'id': body.promptRef.id}
     source = {'kind': 'item', 'id': key, 'revision': ''}
     references = {'work': ident, 'kind': 'draft', 'lifecycle': 'active', 'source': source}
     outcome = _backbone.work.commit_mutation(

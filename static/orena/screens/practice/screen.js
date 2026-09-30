@@ -104,7 +104,7 @@ function continueRowMarkup(row, language) {
     sub: continueSub(row),
     trailing: html`<span class="s-practice-pill">${t('continueCta')}</span>`,
     className: 's-practice-continue-row',
-    dataset: { go: href(row.routeId, row.params) },
+    dataset: { go: href(row.routeId, row.params, row.query) },
   });
 }
 

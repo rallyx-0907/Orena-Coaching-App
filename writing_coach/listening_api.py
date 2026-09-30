@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Literal, Mapping
 
@@ -9,6 +10,7 @@ from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from writing_coach.core.errors import orena_http_error
+from writing_coach.dictation_evaluator import ListeningPracticeError, evaluate_listening_reconstruction
 from writing_coach.core.request_context import current_language_code
 from writing_coach.listening_catalog import (
     catalog_lesson,
@@ -571,6 +573,56 @@ def open_listening_library_lesson(
     return response
 
 
+@dataclass(frozen=True)
+class ProgressLine:
+    """The canonical line a stored (asset, segment) pair points at: its language and Dictation target."""
+
+    language: str
+    text: str
+
+
+def _language_family(code: str) -> str:
+    return str(code or "").strip().casefold().replace("_", "-").split("-")[0]
+
+
+def resolve_progress_line(asset_id: str, segment_id: str) -> ProgressLine | None:
+    """Resolve a progress pair in what the app actually serves, or nothing (fail closed).
+
+    A curated lesson claims a segment only inside its excerpt (the same rule the collection resolver
+    uses); a learner's own imported media is looked up in the shared library by its id. Dictation's
+    target is `spoken_text || original_text`, exactly what the browser grades against.
+    """
+    for lesson in catalog_lessons():
+        if lesson.source.source_media_id != asset_id:
+            continue
+        for item in lesson.source.segments:
+            if str(item.get("segment_id")) != segment_id:
+                continue
+            if int(item["start_ms"]) >= lesson.excerpt_start_ms and int(item["end_ms"]) <= lesson.excerpt_end_ms:
+                text = str(item.get("spoken_text") or item.get("original_text") or "")
+                return ProgressLine(lesson.source.language, text)
+    entry = stored_media_entry(asset_id)
+    payload = ((entry.lesson or {}).get("payload") if entry is not None and entry.lesson else None) or {}
+    if isinstance(payload, Mapping):
+        language = str((payload.get("asset") or {}).get("source_language") or getattr(entry, "language", "") or "")
+        for segment in (payload.get("transcript") or {}).get("segments") or []:
+            if str(segment.get("segment_id")) == segment_id:
+                return ProgressLine(language, str(segment.get("original_text") or ""))
+    return None
+
+
+def _require_progress_line(asset_id: str, segment_id: str) -> ProgressLine:
+    """404 for an asset nothing serves, 422 for one in another language than the learner's scope (I16)."""
+    line = resolve_progress_line(asset_id, segment_id)
+    if line is None:
+        raise orena_http_error(404, "asset_not_found", "No Listening line is served for this asset and segment.")
+    if _language_family(line.language) != _language_family(current_language_code()):
+        raise orena_http_error(
+            422, "asset_language_mismatch", "This Listening line is not in the language you are learning."
+        )
+    return line
+
+
 @router.get("/progress")
 def list_listening_progress(
     asset_id: str = Query(..., min_length=1, max_length=255),
@@ -596,6 +648,19 @@ def save_listening_progress(payload: ListeningProgressIn) -> dict[str, Any]:
     # The flag is the level: the two can never disagree.
     values["last_used_hint"] = values["last_hint_level"] > 0
     values["updated_at"] = datetime.now(timezone.utc).isoformat()
+    line = _require_progress_line(values["asset_id"], values["segment_id"])
+    # The stored score is the server's (D-103.2): the browser's best_* fields stay in the body for the
+    # frozen clients and are ignored. Only a checked answer is scored; every other write moves no score.
+    values["score"] = None
+    if values["presentation"] == "checked" and values["last_answer"].strip():
+        try:
+            values["score"] = evaluate_listening_reconstruction(
+                source_language=_language_family(line.language),
+                expected=line.text,
+                answer=values["last_answer"],
+            )
+        except ListeningPracticeError as exc:
+            raise orena_http_error(422, exc.code, str(exc)) from exc
     try:
         item = repository.save_listening_progress_record(values)
     except (RuntimeError, ValueError) as exc:
@@ -623,6 +688,7 @@ def save_shadowing_progress(payload: ShadowingProgressIn) -> dict[str, Any]:
     values["asset_id"] = _clean_identity(values["asset_id"], "asset_id")
     values["segment_id"] = _clean_identity(values["segment_id"], "segment_id")
     values["updated_at"] = datetime.now(timezone.utc).isoformat()
+    _require_progress_line(values["asset_id"], values["segment_id"])
     try:
         item = repository.save_shadowing_progress_record(values)
     except (RuntimeError, ValueError) as exc:

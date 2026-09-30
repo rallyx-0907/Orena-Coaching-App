@@ -165,6 +165,21 @@ export function mapContinuationEntry(entry, t) {
       routeQuery: {},
     };
   }
+  if (/^conversation:[\w-]+$/.test(id)) {
+    return {
+      source: 'continue',
+      id,
+      kind: t('kindContinue'),
+      title: entry.title || '',
+      meta: entry.context || '',
+      tag: null,
+      durationLabel: '',
+      image: '',
+      routeId: 'conv',
+      routeParams: {},
+      routeQuery: { id },
+    };
+  }
   if (id.startsWith('grammar:')) {
     const conceptId = id.slice('grammar:'.length);
     if (!conceptId) return null;
@@ -307,13 +322,20 @@ const WEEK_DAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
    exactly the text either side of where the count goes, in every language, with nothing new to
    translate. `n` is always 0 (rule 40 - no cross-activity streak; the Writing-only one on
    /api/dashboard must not be reused as this one). */
-export function buildStreak(t) {
+/* The streak is REAL (D4 I14, D-104 H-5): GET /api/learner-activity derives it from server records - an
+   essay version, a speaking attempt, a Reading attempt - by the learner's own calendar day; a page visit
+   never counts. `activity` is that answer, or null when it could not be read (then there is no streak to
+   show, and the card says nothing rather than 0 days). The week strip marks the days the server says
+   were active, Monday first. */
+export function buildStreak(t, activity = null) {
   const [before, after] = t('dayStreak').split('{n}');
+  const week = Array.isArray(activity?.week?.days) ? activity.week.days : [];
   return {
-    n: 0,
+    known: Boolean(activity?.streak),
+    n: Math.max(0, Number(activity?.streak?.days) || 0),
     before: before || '',
     after: after || '',
-    days: WEEK_DAYS.map((key) => ({ key, letter: t(`weekday_${key}`), done: false })),
+    days: WEEK_DAYS.map((key, index) => ({ key, letter: t(`weekday_${key}`), done: Boolean(week[index]?.active) })),
   };
 }
 
@@ -365,4 +387,12 @@ export function buildGreeting(date, t) {
 export function buildHeadSubtitle({ recommendedCount = 0, forYouCount = 0 } = {}, t) {
   if (!recommendedCount) return '';
   return t.plural(forYouCount > 0 ? 'subtitleBoth' : 'subtitleOnly', recommendedCount);
+}
+
+/* The level prompt (D-105 H-19): a profile that exists for this learning language and declares no
+   level. A missing profile is Welcome's business (entryRoute), and an unreadable one (null) is not
+   "no level". Skipping it is per visit: a stored "dismissed" marker would be a persistence decision
+   nobody has made, so nothing is written to the account. */
+export function needsLevelPrompt(profile) {
+  return Boolean(profile && profile.exists === true && !String(profile.declared_level || '').trim());
 }

@@ -31,9 +31,10 @@ import { languages } from '../../copy/index.js';
 import { shellCopy as ts } from '../../copy/shell.js';
 import { createLocalAudioRecorder } from '../../capabilities/audio-recorder.js';
 import { logSpeakingTask } from '../../product/speaking-session.js';
+import { appendConversationTurn, loadConversation } from '../../product/account-records.js';
 import { micGate, openMicState } from '../mic/sheet.js';
 import {
-  conversation, learnerTurn, partnerTurn, pendingTurn, conversationRequest, MAX_CONVERSATION_TURNS,
+  conversation, learnerTurn, partnerTurn, pendingTurn, conversationRequest, restoreConversation, MAX_CONVERSATION_TURNS,
 } from '../../product/conversation.js';
 import { t } from './copy.js';
 import { situations, turnSituation, learnerTurnCount, fixesOf, strengthsOf } from './model.js';
@@ -72,6 +73,25 @@ export default async function conversationScreen(element, ctx) {
     if (!convo) return;
     memory.conversation(convo);
     memory.enter({ id: convo.id, title: convo.title, intent: 'speaking', excerpt: convo.situation });
+  }
+
+  /* Each turn is also written to the account as it happens, in order (D4 I6): a failed write changes
+     nothing the learner sees, because the device already holds the conversation. */
+  function keepTurn(turn) {
+    if (!convo || !turn) return;
+    void appendConversationTurn(convo.id, turn, { title: convo.title, situation: convo.situation });
+  }
+
+  /* `?id=conversation:...` opens a conversation the learner left, from this device or from the account
+     (a new device), and carries on where it stopped. Anything that does not restore cleanly opens the
+     scenario picker, as before. */
+  async function resume(id) {
+    const local = memory.value.conversations?.[id];
+    const raw = local || (await loadConversation(id, language));
+    if (!alive()) return null;
+    const restored = raw ? restoreConversation(raw, language) : null;
+    if (restored && !local) memory.conversation(restored);
+    return restored;
   }
 
   const isOver = () => Boolean(convo) && (convo.ended || convo.turns.length >= MAX_CONVERSATION_TURNS);
@@ -240,6 +260,7 @@ export default async function conversationScreen(element, ctx) {
     convo = learnerTurn(convo, { id: crypto.randomUUID(), text, origin });
     recordedThisTurn = false;
     remember();
+    keepTurn(convo.turns.at(-1));
     await requestReply();
   }
 
@@ -255,6 +276,7 @@ export default async function conversationScreen(element, ctx) {
       if (!alive()) return;
       convo = partnerTurn(convo, reply);
       remember();
+      keepTurn(convo.turns.at(-1));
     } catch {
       // still pending; the retry control resends it.
     } finally {
@@ -339,7 +361,9 @@ export default async function conversationScreen(element, ctx) {
     paint();
   }
 
-  paint();
+  const wanted = ctx.query?.get?.('id') || '';
+  if (wanted) convo = await resume(wanted);
+  paint({ scroll: 'bottom' });
 
   return () => {
     disposed = true;

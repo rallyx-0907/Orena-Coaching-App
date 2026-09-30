@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 import {
   STEP_COUNT, STEPS, clampStep, stepDots,
   identityOf, targetOptions, targetLabel, endonym, supportOptions, INTERFACE_LOCALES, INTERFACE_ENDONYMS, interfaceOptions,
-  LEVELS, levelsFor, defaultLevelCode, levelRow, DECLARED_LEVEL_ALLOWED, declaredLevelPatch, greetingParams, languageName,
+  LEVELS, levelsFor, defaultLevelCode, levelRow, declaredLevelPatch, greetingParams, languageName,
 } from '../static/orena/screens/onboarding/model.js';
 // NOTE (Wave B fix pass, 2026-09-29): levelsFor/defaultLevelCode/levelRow now take the platform's
 // own level codes (no display spacing) and operate on the resolved grid (an array), not a language
@@ -158,19 +158,18 @@ const fixture = (name) => JSON.parse(readFileSync(fileURLToPath(new URL(`./fixtu
   assert.equal(levelRow(zhGrid, 'HSK5').code, 'HSK5');
   assert.equal(levelRow(zhGrid, 'HSK5').label, 'HSK 5');
 
-  /* Backend truth (writing_coach/account_profile.py): declared_level is `stored=False` and its
-     `allowed` tuple is CEFR-only - no HSK code is representable even once storage lands. This gate
-     documents that fact against the model so a future backend change is what has to update it, not
-     silent drift (docs/project/UI_BACKEND_GAPS.md SH-2). */
-  const CEFR_ALLOWED = new Set(['', 'A1', 'A2', 'B1', 'B2', 'C1', 'C2']);
-  for (const row of enGrid) assert.ok(CEFR_ALLOWED.has(row.code), `${row.code} is in the backend's allowed set today`);
-  for (const row of zhGrid) assert.ok(!CEFR_ALLOWED.has(row.code), `${row.code} (HSK) is NOT in the backend's declared_level allowed set today - SH-2`);
-
-  /* declaredLevelPatch: only ever a CEFR code - an HSK pick is never sent at all (it would 400
-     every time even once storage lands, since the field cannot represent it - independent review
-     #6). This is the fix, pinned as a regression test. */
+  /* Named contract change (D4 I1, migration 0017): the learner's pick is stored as `declared_level`,
+     validated by the server against the scope language's own registry list, so an HSK code is sent
+     like a CEFR one - and HSK7-9 is one band, sent when the platform lists it. Nothing the platform
+     does not list for the language, and no unknown string, is ever sent. */
   assert.deepEqual(declaredLevelPatch('B1'), { declared_level: 'B1' });
-  assert.equal(declaredLevelPatch('HSK3'), null, 'an HSK code is never sent - the field is CEFR-only');
+  assert.deepEqual(declaredLevelPatch('HSK3', null, 'zh'), { declared_level: 'HSK3' });
+  assert.equal(declaredLevelPatch('HSK3', null, 'en'), null, 'an HSK code is not an English level');
+  assert.equal(declaredLevelPatch('B2', null, 'zh'), null, 'a CEFR code is not a Chinese level');
+  assert.equal(declaredLevelPatch('HSK7-9', null, 'zh'), null, 'the frame draws no cell for it; only the platform listing offers it');
+  const zhBands = ['HSK1', 'HSK2', 'HSK3', 'HSK4', 'HSK5', 'HSK6', 'HSK7-9'];
+  assert.deepEqual(declaredLevelPatch('HSK7-9', zhBands, 'zh'), { declared_level: 'HSK7-9' }, 'one band, as the registry lists it');
+  assert.equal(declaredLevelPatch('HSK8', zhBands, 'zh'), null);
   assert.equal(declaredLevelPatch(''), null);
   assert.equal(declaredLevelPatch('nonsense'), null);
 }

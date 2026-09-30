@@ -387,7 +387,13 @@ export default async function mountDictation(element, ctx) {
     }
     try {
       const saved = await api.saveListeningProgress(outgoing);
-      if (saved?.item) byId.set(seg.id, saved.item);
+      if (saved?.item) {
+        // The stored score is the server's (D-103.2): once acknowledged it replaces the browser's own
+        // instant mark, which was only ever feedback.
+        byId.set(seg.id, saved.item);
+        localById.delete(seg.id);
+        paintHead();
+      }
     } catch {
       toast(t('saveFailed'));
     }

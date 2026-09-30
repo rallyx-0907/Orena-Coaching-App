@@ -127,7 +127,7 @@ class EffectiveSettings(unittest.TestCase):
         self.assertEqual(effective['goal']['source'], 'saved')
 
     def test_a_declared_level_is_a_goal_and_never_reports_itself_as_measured(self):
-        effective = effective_settings({'declared_level': 'B2'}, version=2)
+        effective = effective_settings({'declared_level': 'B2'}, version=2, allowed_levels=('', 'A1', 'B2'))
         self.assertEqual(effective['declared_level']['value'], 'B2')
         self.assertIn(effective['declared_level']['source'], {'saved', 'default'})
 
@@ -161,20 +161,36 @@ class SettingsWithoutStorageAreHonestAboutIt(unittest.TestCase):
     available behaviours, so the refusal says which problem it is.
     """
 
-    def test_a_setting_with_no_column_is_marked_unstored(self):
-        self.assertNotIn('declared_level', STORED_SETTINGS)
-        self.assertNotIn('interface_language', STORED_SETTINGS)
+    def test_declared_level_and_interface_language_are_stored_by_D4(self):
+        # Named contract change (D4, migrations 0017/0018): the two settings that had no column
+        # now have one, so they are stored. interface_language lives on the account row and is
+        # written by its own route, never by the per-language profile PATCH.
+        self.assertIn('declared_level', STORED_SETTINGS)
+        self.assertIn('interface_language', STORED_SETTINGS)
 
     def test_the_settings_that_do_have_columns_are_still_writable(self):
         for name in ('goal', 'style', 'pinyin', 'support_language'):
             self.assertIn(name, STORED_SETTINGS)
 
-    def test_patching_an_unstored_setting_is_refused_as_such(self):
+    def test_the_interface_language_cannot_be_written_through_the_profile_patch(self):
         with self.assertRaises(PatchRejected) as caught:
-            patch_profile({'goal': 'exam'}, {'declared_level': 'B2'},
+            patch_profile({'goal': 'exam'}, {'interface_language': 'vi'},
                           expected_version=1, current_version=1)
-        self.assertEqual(caught.exception.reason, 'not_yet_stored')
-        self.assertEqual(caught.exception.field, 'declared_level')
+        self.assertEqual(caught.exception.reason, 'wrong_scope')
+        self.assertEqual(caught.exception.field, 'interface_language')
+
+    def test_a_declared_level_is_validated_against_the_levels_the_caller_supplies(self):
+        merged, _ = patch_profile({}, {'declared_level': 'HSK7-9'}, expected_version=1,
+                                  current_version=1, allowed_levels=('', 'HSK6', 'HSK7-9'))
+        self.assertEqual(merged['declared_level'], 'HSK7-9')
+        for levels in (None, ('',), ('', 'A1', 'B2')):
+            with self.assertRaises(PatchRejected) as caught:
+                patch_profile({}, {'declared_level': 'HSK7-9'}, expected_version=1,
+                              current_version=1, allowed_levels=levels)
+            self.assertEqual(caught.exception.reason, 'invalid_value')
+        cleared, _ = patch_profile({'declared_level': 'B2'}, {'declared_level': ''},
+                                   expected_version=1, current_version=1)
+        self.assertEqual(cleared['declared_level'], '')
 
     def test_an_unstored_setting_still_reads_as_a_declared_default(self):
         # The learner is told what it currently is, which is "not set", rather
@@ -200,7 +216,6 @@ class SettingsWithoutStorageAreHonestAboutIt(unittest.TestCase):
             )
             self.assertEqual(effective['interface_language']['value'], code)
             self.assertNotEqual(effective['support_language']['value'], code)
-        self.assertNotIn('interface_language', STORED_SETTINGS)
 
 
 class PatchCannotSilentlyErase(unittest.TestCase):

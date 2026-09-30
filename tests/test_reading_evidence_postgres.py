@@ -82,7 +82,7 @@ def _database():
         cfg.set_main_option("script_location", str(ROOT / "migrations"))
         cfg.set_main_option("path_separator", "os")
         cfg.set_main_option("sqlalchemy.url", _schema_url(schema).replace("%", "%%"))
-        command.upgrade(cfg, "20260924_0016")
+        command.upgrade(cfg, "head")  # the live head: the ORM writes the D4 columns (0017-0023)
         engine = create_engine(_schema_url(schema), future=True, pool_size=20, max_overflow=10)
         try:
             yield engine

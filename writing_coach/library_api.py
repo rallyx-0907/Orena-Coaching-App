@@ -12,8 +12,9 @@ say so, not silently drop the pin.
 """
 from __future__ import annotations
 
+import re
 from collections.abc import Callable
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import APIRouter, Query
 from pydantic import BaseModel, Field
@@ -183,3 +184,77 @@ def library_collection_add(collection_id: str, payload: CollectionItemIn) -> dic
 )
 def library_collection_remove(collection_id: str, item_id: str) -> dict[str, Any]:
     return {"removed": _library().remove_from_collection(collection_id, item_id)}
+
+
+# --- Where the learner is (D4 I4; D-104 H-12, Design B) --------------------------------------
+#
+# Navigation and progress state on the `started` relationship of a content item, NOT learning
+# evidence: an unfinished thread is a recommendation, and reading time proves nothing (EA section 1).
+# Written in place, newest write wins, no version check: a place write never touches `version`, so it
+# cannot make a pin or a note conflict.
+
+continue_router = APIRouter(prefix="/api/continue", tags=["library"])
+
+PLACE_INTENT = re.compile(r"^[a-z][a-z0-9._-]{0,39}$")
+
+
+class PlaceIn(BaseModel):
+    """`readPlace` on the server: a position that cannot be true is refused, not stored."""
+
+    model_config = {"extra": "forbid"}
+
+    index: int | None = Field(default=None, ge=1, le=100000)
+    total: int | None = Field(default=None, ge=1, le=100000)
+    within: float | None = Field(default=None, ge=0, le=100)
+    finished: bool = False
+    cleared: bool = False
+    title: str = Field(default="", max_length=240)
+    intent: str | None = Field(default=None, max_length=40)
+    # Where inside the piece the reader was (a sentence id) and what it belongs to (a book's title):
+    # both bounded, both optional, neither guessed.
+    segment: str = Field(default="", max_length=255)
+    context: str = Field(default="", max_length=240)
+
+
+class ContinueIn(BaseModel):
+    kind: Literal["reading", "listening", "book"]
+    place: PlaceIn | None = None
+
+
+def _clean_place(place: PlaceIn) -> dict[str, Any]:
+    if place.intent is not None and not PLACE_INTENT.match(place.intent):
+        raise orena_http_error(422, "place_invalid", "That place is not valid.")
+    if not place.cleared:
+        if place.index is None or place.total is None or place.index > place.total:
+            raise orena_http_error(422, "place_invalid", "That place is not valid.")
+    clean: dict[str, Any] = {
+        "finished": bool(place.finished),
+        "cleared": bool(place.cleared),
+        "title": place.title,
+        "intent": place.intent,
+        "segment": place.segment,
+        "context": place.context,
+    }
+    if place.index is not None:
+        clean["index"] = place.index
+        clean["total"] = place.total
+    if place.within is not None:
+        clean["within"] = max(0, min(100, round(place.within)))
+    return clean
+
+
+@continue_router.put("/{content_id:path}", name="orena_continue_put")
+def continue_put(content_id: str, payload: ContinueIn) -> dict[str, Any]:
+    source_id = content_id.strip()
+    if not source_id or len(source_id) > 255:
+        raise orena_http_error(422, "place_invalid", "That content id is not valid.")
+    place = _clean_place(payload.place) if payload.place is not None else None
+    try:
+        return _library().set_place(kind=payload.kind, source_id=source_id, place=place)
+    except LibraryConflict as error:
+        raise _refuse(error) from error
+
+
+@continue_router.get("", name="orena_continue_list")
+def continue_list(limit: int = Query(20, ge=1, le=50)) -> dict[str, Any]:
+    return {"items": _library().list_places(limit=limit)}

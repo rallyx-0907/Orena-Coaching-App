@@ -12,6 +12,9 @@ import { shellCopy } from '../../copy/shell.js';
 import { chooseInterface, languages as copyLanguages, setSupportFromProfile } from '../../copy/index.js';
 import { updateContext, refreshCounts } from '../../shell/context.js';
 import { learnerMemory } from '../../product/memory.js';
+import { selectLearningLanguage } from '../../product/account-settings.js';
+import { syncContinuation } from '../../product/continue-sync.js';
+import { pullImports } from '../../product/account-records.js';
 import { learningLanguage } from '../../product/languages.js';
 import { t } from './copy.js';
 import {
@@ -92,8 +95,9 @@ export default async function onboardingScreen(element, ctx) {
   const memoryStorage = localStore();
   const context = ctx.context;
 
+  const levelOnly = ctx.query?.get?.('step') === 'level';
   const state = {
-    step: readStep(stepStorage),
+    step: levelOnly ? STEPS.indexOf('level') : readStep(stepStorage),
     level: readLevel(stepStorage),
     languagesData: null,
     busy: '',
@@ -323,7 +327,7 @@ export default async function onboardingScreen(element, ctx) {
     state.busy = 'target';
     render();
     try {
-      await api.setLanguage(code);
+      await selectLearningLanguage(code);
     } catch {
       state.busy = '';
       toast(t('saveError'));
@@ -336,6 +340,8 @@ export default async function onboardingScreen(element, ctx) {
     const nextLanguage = learningLanguage(code);
     const memory = learnerMemory(memoryStorage || undefined, context.owner, nextLanguage);
     const profile = await api.learnerProfile().catch(() => null);
+    await syncContinuation(memory).catch(() => false);
+    memory.mergeImports(await pullImports(nextLanguage).catch(() => []));
     updateContext({ language: nextLanguage, memory, ...(profile ? { profile, level: String(profile.declared_level || '').trim() } : {}) });
     if (profile) setSupportFromProfile(profile);
     refreshCounts().catch(() => {});
@@ -386,25 +392,31 @@ export default async function onboardingScreen(element, ctx) {
     const code = levelRow(levelGrid(), state.level).code;
     state.level = code;
     writeSession(stepStorage, LEVEL_KEY, code);
-    const patch = declaredLevelPatch(code);
+    const listed = state.languagesData?.languages?.find?.((item) => item?.code === context.language)?.levels;
+    const patch = declaredLevelPatch(code, listed, context.language);
     if (patch) {
       state.busy = 'level';
       render();
       try {
-        updateContext({ profile: await patchProfile(patch) });
+        const next = await patchProfile(patch);
+        updateContext({ profile: next, level: String(next?.declared_level || '').trim() });
       } catch {
-        // declared_level is not yet a stored setting (writing_coach/account_profile.py,
-        // docs/project/UI_BACKEND_GAPS.md SH-2) - the backend answers "not yet stored". That is the
-        // documented shape, not a defect to show the learner, and the flow never blocks on it (rule
-        // 40). An HSK pick is not sent at all: the field is CEFR-only (declaredLevelPatch).
+        // The level did not save. The flow never blocks on it and never claims it did (rule 40):
+        // the shell's level below stays what the server holds, and Today offers the level again.
       }
     }
-    // The pick still sets the shell's in-memory `level` (real state from this visit, used by the top
-    // pill) without pretending `profile` changed - a reload shows whatever the backend holds.
-    updateContext({ level: code });
     if (!ctx.isCurrent()) return;
     state.busy = '';
+    if (levelOnly) return leaveLevelOnly();
     setStep(state.step + 1);
+  }
+
+  /* The level question opened from Today's prompt (H-19): the same Level step, nothing replayed. It
+     ends back at Today, and Back leaves without saving. */
+  function leaveLevelOnly() {
+    writeSession(stepStorage, STEP_KEY, 0);
+    writeSession(stepStorage, LEVEL_KEY, '');
+    ctx.go(ctx.href('today'));
   }
 
   function finish() {
@@ -422,7 +434,7 @@ export default async function onboardingScreen(element, ctx) {
     if (!target) return;
     carry = { selector: focusSelector(target), top: scrollRegion()?.scrollTop ?? 0, at: Date.now() };
     const action = target.dataset.action;
-    if (action === 'back') return setStep(state.step - 1);
+    if (action === 'back') return levelOnly ? leaveLevelOnly() : setStep(state.step - 1);
     if (action === 'welcome-next') return setStep(1);
     if (action === 'account-next') return setStep(2);
     if (action === 'lang-next') return setStep(3);

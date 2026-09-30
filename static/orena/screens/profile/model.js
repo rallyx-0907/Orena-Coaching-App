@@ -9,15 +9,16 @@
      account_state(): a real plan record, never a mock).
    - name/initial/picture/level/isAdmin/profile.goal come from the shell context (already read
      once at boot from /api/me and /api/learner-profile).
-   - dayStreak, weekMinutes and the weekly-goal count have no backend measure anywhere in this
-     codebase (no daily/weekly time aggregate, no streak table - confirmed against
-     writing_coach/learner_summary.py, whose own achievements object is
-     `{status:'unavailable', reason:'no_approved_policy'}` and whose GROWTH_UNAVAILABLE table
-     lists every domain as not yet comparable). Rule 40: each renders 0, never a sample figure.
-     `weeklyGoalTarget` (5) is the design's own fixed segment count, not a measurement - a
-     configurable weekly-goal feature does not exist yet (recorded as a backend gap). */
+   - the streak and the week's active days are REAL (D4 I14, D-104 H-5): GET /api/learner-activity
+     derives them from server records (essays, speaking attempts, Reading attempts), with no table.
+     A page visit never counts.
+   - "a real metric or no metric" (D-103.4): minutes studied and a daily-goal ring have no measure
+     anywhere in this codebase (nothing records duration), so they are not drawn at all - not drawn
+     as 0. The weekly-goal bar is drawn only against the target the learner has set
+     (`users.weekly_goal_days`); with none set there is nothing to measure against. */
 import { rankSummary } from '../../product/rank.js';
 
+// The design's own segment count, kept for the record: the bar is drawn against the learner's target now.
 export const WEEKLY_GOAL_TARGET = 5;
 
 const GOAL_KEYS = Object.freeze({
@@ -68,11 +69,12 @@ export function buildProfileModel({ context, vocabulary, commerce } = {}) {
     goalKey: goalCopyKey(context?.profile?.goal),
     due,
     savedCount: Math.max(0, Number(rank.saved) || 0),
-    // Rule 40 - no backend measures these; they are 0, not a sample figure.
-    dayStreak: 0,
-    weekMinutes: 0,
-    weeklyGoalDone: 0,
-    weeklyGoalTarget: WEEKLY_GOAL_TARGET,
+    // Derived from server records (learner_activity.py); absent activity is 0 days, which is what it is.
+    dayStreak: Math.max(0, Number(context?.activity?.streak?.days) || 0),
+    weekDays: Array.isArray(context?.activity?.week?.days) ? context.activity.week.days.map((day) => Boolean(day?.active)) : [],
+    // The learner's own target only; the design's five segments are a drawing, not a goal.
+    weeklyGoalTarget: Math.max(0, Number(context?.activity?.week?.goal_days) || 0),
+    weeklyGoalDone: Math.max(0, Number(context?.activity?.week?.done_days) || 0),
     isAdmin: Boolean(context?.isAdmin),
   };
 }

@@ -248,13 +248,42 @@ export function loadNotes(storage, owner, key) {
   return Array.isArray(list) ? list : [];
 }
 
-export function addNote(storage, owner, key, { type, text: body }) {
+/* The account keeps at most 120 notes of 600 characters per text (D4 I10). */
+export const MAX_NOTES_PER_TEXT = 120;
+
+/* Every note made in one text, flat, each with the sentence key it belongs to - the shape the account
+   keeps. A note made before this field existed has no text and stays on the device only. */
+export function notesForContent(storage, owner, contentId) {
+  if (!contentId) return [];
+  const store = readStore(storage, owner);
+  return Object.entries(store).flatMap(([key, list]) => (Array.isArray(list) ? list : [])
+    .filter((note) => note?.content === contentId)
+    .map((note) => ({ id: String(note.id), key, type: note.type, text: note.text, at: note.at || '' })));
+}
+
+/* The account's notes for a text merged into this device's (a union by id). Returns how many arrived. */
+export function mergeNotes(storage, owner, contentId, incoming) {
+  const store = readStore(storage, owner);
+  const known = new Set(Object.values(store).flat().filter(Boolean).map((note) => note.id));
+  let arrived = 0;
+  for (const note of Array.isArray(incoming) ? incoming : []) {
+    if (!note?.id || !note.key || known.has(note.id) || !NOTE_TYPES.includes(note.type)) continue;
+    const list = Array.isArray(store[note.key]) ? store[note.key] : [];
+    store[note.key] = [...list, { id: note.id, type: note.type, text: text(note.text).slice(0, 600), at: note.at || '', content: contentId }];
+    arrived += 1;
+  }
+  if (arrived) writeStore(storage, owner, store);
+  return arrived;
+}
+
+export function addNote(storage, owner, key, { type, text: body, content = '' }) {
   const kind = NOTE_TYPES.includes(type) ? type : 'factual';
   const value = text(body).slice(0, 600);
   if (!value) return null;
   const store = readStore(storage, owner);
   const list = Array.isArray(store[key]) ? store[key] : [];
-  const note = { id: `${Date.now()}:${Math.random().toString(36).slice(2, 8)}`, type: kind, text: value, at: new Date().toISOString() };
+  if (content && notesForContent(storage, owner, content).length >= MAX_NOTES_PER_TEXT) return null;
+  const note = { id: `${Date.now()}:${Math.random().toString(36).slice(2, 8)}`, type: kind, text: value, at: new Date().toISOString(), ...(content ? { content } : {}) };
   store[key] = [...list, note];
   writeStore(storage, owner, store);
   return note;

@@ -185,17 +185,19 @@ export function levelRow(levels, code) {
   return levels.find((entry) => entry.code === code) || levels[middleIndex(levels)];
 }
 
-/* The backend's `declared_level` Setting (writing_coach/account_profile.py) is `stored=False`
-   (an Architecture hold, AGENTS.md §7 - "Do not make new persistence, schema or account-sync
-   decisions for learner-owned data") and its `allowed` tuple is CEFR-only (`'', 'A1'..'C2'`): no
-   HSK code is a valid value even once storage lands. So only a CEFR pick is ever sent - it answers
-   501 ("not_yet_stored") until storage exists and starts working the day it does - and an HSK pick
-   is never sent, since the field cannot represent it. A failed or skipped save never blocks the flow
-   and never claims a save that did not happen (rule 40). See docs/project/UI_BACKEND_GAPS.md SH-2. */
-export const DECLARED_LEVEL_ALLOWED = Object.freeze(['A1', 'A2', 'B1', 'B2', 'C1', 'C2']);
-
-export function declaredLevelPatch(code) {
-  return DECLARED_LEVEL_ALLOWED.includes(code) ? { declared_level: code } : null;
+/* The learner's pick is stored as `declared_level` (D4 I1, migration 0017): the code of the scope
+   language's own list, validated by the server against the language registry (HSK7-9 is one band, not
+   three). Only a code the frame draws a cell for, or one the platform lists for the language
+   (`listed`, GET /api/platform/languages `languages[].levels`), is ever sent; anything else is null,
+   and a failed or skipped save never blocks the flow and never claims a save that did not happen
+   (rule 40). The frame draws no cell for HSK7-9, so the grid does not offer it - whether it should is
+   a design question recorded in docs/project/UI_BACKEND_GAPS.md. */
+export function declaredLevelPatch(code, listed, language = '') {
+  const value = String(code || '');
+  if (!value) return null;
+  const framed = LEVELS[language === 'zh' ? 'zh' : 'en'].map((entry) => entry.code);
+  const offered = Array.isArray(listed) && listed.length ? listed.map(String) : framed;
+  return offered.includes(value) ? { declared_level: value } : null;
 }
 
 /* ---- 05 Meet Orena: a template greeting from real, already-known state - no AI call, no chat --- */

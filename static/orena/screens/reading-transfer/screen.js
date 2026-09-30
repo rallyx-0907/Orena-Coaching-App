@@ -31,6 +31,7 @@ import { api } from '../../infrastructure/api.js';
 import { createLocalAudioRecorder, localAudioRecordingSupported } from '../../capabilities/audio-recorder.js';
 import { parseContentId } from '../content/model.js';
 import { micGate, openMicState } from '../mic/sheet.js';
+import { saveResponse } from '../../product/account-records.js';
 import { t } from './copy.js';
 import {
   READABLE_KINDS, COACH_LIMITS, MODES, paragraphsOf, workableSentences, nextIndex, canMoveOn, canCheck, coachRequest, mapCoaching,
@@ -354,6 +355,8 @@ export default async function mountReadingTransfer(element, ctx) {
       const raw = await api.spokenResponseCoaching(coachRequest({ answer, mode, sentence: sentences[index], language, support }));
       if (!ctx.isCurrent() || mine !== attempt) return;
       result = mapCoaching(raw);
+      // Learner work, not evidence (D-104 H-3): what was written and the coaching, never a score (D4 I9).
+      void saveResponse({ kind: 'transfer', source: { kind: 'text', id: String(ctx.params?.id || '') }, mode, answer, coaching: raw, sentenceRef: String(index) });
       phase = 'result';
       checking = false;
       paint({ focus: true });

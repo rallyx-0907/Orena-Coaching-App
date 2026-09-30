@@ -72,7 +72,25 @@ const HOLE = '';
    from a new draft to the piece its first review becomes. */
 const intentions = new Map();
 
-async function fetchEssay(id) {
+/* An old Chinese review may have been written under an earlier evaluator contract (D-103.7). Opening the
+   essay asks the server to refresh exactly that review if - and only if - its stored language pair is
+   affected; the server keeps the earlier review as history and answers `current` at no cost otherwise.
+   Once per essay per visit, only where the pair can be affected, and a refusal or an unavailable
+   provider leaves the review as it was: the learner is never blocked from reading it. */
+const refreshAsked = new Set();
+
+async function refreshIfStale(id, language) {
+  if (language !== 'zh' || refreshAsked.has(id)) return;
+  refreshAsked.add(id);
+  try {
+    await api.refreshEssayReview(id);
+  } catch {
+    /* the stored review stands */
+  }
+}
+
+async function fetchEssay(id, language) {
+  await refreshIfStale(id, language);
   const [detail, review] = await Promise.all([api.essay(id), api.essayReview(id)]);
   return mapEssay(detail, review);
 }
@@ -87,7 +105,7 @@ export default async function mountWriting(element, ctx) {
 
   const piece = parsePiece(ctx.params?.id);
   if (piece.kind === 'unknown') throw new Error('Writing: not a piece this room knows');
-  const essay0 = piece.kind === 'essay' ? await fetchEssay(piece.id) : null;
+  const essay0 = piece.kind === 'essay' ? await fetchEssay(piece.id, language) : null;
   if (!ctx.isCurrent()) return undefined;
   if (piece.kind === 'essay' && !essay0) throw new Error(`Writing: essay ${piece.id} not found`);
   // A reviewed piece opens on its latest revision: an older number (a series' first essay,

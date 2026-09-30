@@ -22,6 +22,7 @@ import { languages } from '../../copy/index.js';
 import { shellCopy as ts } from '../../copy/shell.js';
 import { createLocalAudioRecorder } from '../../capabilities/audio-recorder.js';
 import { logSpeakingTask } from '../../product/speaking-session.js';
+import { saveResponse } from '../../product/account-records.js';
 import { micGate, openMicState } from '../mic/sheet.js';
 import { t } from './copy.js';
 import { scenarios, progressLabel, naturalAlternative } from './model.js';
@@ -199,6 +200,8 @@ export default async function situation(element, ctx) {
       errorText = t('serviceError');
     }
     state = 'result';
+    // The answer is the learner's own work, kept with the account when it keeps work (D4 I8).
+    void saveResponse({ kind: 'situation', source: { kind: 'invitation', id: current()?.key || 'open' }, mode: 'situation', answer, coaching });
     paint();
   }
 

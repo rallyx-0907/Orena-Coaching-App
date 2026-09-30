@@ -133,7 +133,12 @@ assert.equal(pickMeaning([], 'en'), '', 'no meanings at all is empty, not invent
   assert.equal(grammar.routeId, 'gconcept');
   assert.deepEqual(grammar.routeParams, { id: 'present-perfect' });
 
-  for (const id of ['conversation:abc', 'voice:cafe', 'expression:1', 'essay:1', 'url:https://x', 'upload:1'])
+  // Named contract change (D4 I6): a conversation the learner left now opens in the Conversation room by id.
+  const talk = mapContinuationEntry({ id: 'conversation:abc-1', title: 'Ordering coffee' }, t);
+  assert.equal(talk.routeId, 'conv');
+  assert.deepEqual(talk.routeQuery, { id: 'conversation:abc-1' });
+
+  for (const id of ['voice:cafe', 'expression:1', 'essay:1', 'url:https://x', 'upload:1'])
     assert.equal(mapContinuationEntry({ id, title: 'x' }, t), null, `${id}: no confirmed new-shell route yet, left out rather than guessed`);
   assert.equal(mapContinuationEntry({ id: 'media:', title: 'x' }, t), null, 'an empty lesson id after the prefix is not a link either');
 }
@@ -194,6 +199,7 @@ assert.deepEqual(usedRecommendationIds([{ id: 'a' }, { id: 'b' }, { id: null }])
   assert.deepEqual(rings.map((r) => r.name), ['Reading', 'Listening', 'Speaking'], 'the bare name is kept too, for the ring\'s title tooltip');
 
   const streak = buildStreak(t);
+  assert.equal(streak.known, false, 'no activity read: there is no streak to show, not 0 days');
   assert.equal(streak.n, 0, 'no cross-activity streak exists (only the Writing-only one on /api/dashboard, which this screen must not reuse)');
   assert.equal(streak.days.length, 7);
   assert.ok(streak.days.every((day) => day.done === false));
@@ -203,6 +209,16 @@ assert.deepEqual(usedRecommendationIds([{ id: 'a' }, { id: 'b' }, { id: null }])
   assert.equal(streak.before, '');
   assert.equal(streak.after, ' day streak');
   assert.equal(`${streak.before}${streak.n}${streak.after}`, '0 day streak', 'reassembled, it reads exactly like the un-split translation');
+
+  // The streak is real (D4 I14): the days the server says were active, Monday first, and never a visit.
+  const real = buildStreak(t, {
+    streak: { days: 2, active_today: true },
+    week: { days: [false, false, false, true, true, false, false].map((active) => ({ active })) },
+  });
+  assert.equal(real.known, true);
+  assert.equal(real.n, 2);
+  assert.deepEqual(real.days.map((day) => day.done), [false, false, false, true, true, false, false]);
+  assert.equal(`${real.before}${real.n}${real.after}`, '2 day streak');
 
   const level = buildLevel(t);
   assert.equal(level.pct, 0);
@@ -297,6 +313,15 @@ assert.deepEqual(usedRecommendationIds([{ id: 'a' }, { id: 'b' }, { id: null }])
   // itself never depends on whether a name exists, which is what makes "no name -> the greeting
   // without one" true by construction rather than by a second branch to keep in sync.
   assert.equal(buildGreeting.length, 2, 'buildGreeting(date, t) takes no name parameter');
+}
+
+/* The skippable level prompt (D-105 H-19): only a profile that exists and declares no level. */
+{
+  const { needsLevelPrompt } = await import('../static/orena/screens/today/model.js');
+  assert.equal(needsLevelPrompt({ exists: true, declared_level: '' }), true);
+  assert.equal(needsLevelPrompt({ exists: true, declared_level: 'HSK4' }), false);
+  assert.equal(needsLevelPrompt({ exists: false, declared_level: '' }), false, 'a missing profile is Welcome, not a prompt');
+  assert.equal(needsLevelPrompt(null), false, 'an unreadable profile is not a missing level');
 }
 
 console.log('Orena Today: recommendation pool, continuation mapping, For-you rail, the rule-40 zero-fallback (goal ring, streak, level) and the real-data header greeting/subtitle all hold: PASS');

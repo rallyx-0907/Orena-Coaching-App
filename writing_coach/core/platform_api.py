@@ -3,6 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 
+from writing_coach import account_settings
 from writing_coach.core.language_registry import (
     DEFAULT_LANGUAGE,
     all_languages,
@@ -18,6 +19,9 @@ router = APIRouter()
 
 class LanguageSelectIn(BaseModel):
     language: str = Field(min_length=2, max_length=12)
+    # The opaque token the client read from /api/account-settings (D-104 H-17). Absent: the session
+    # still switches, and the stored choice is written only if the account never chose one.
+    settings_version: str | None = Field(default=None, max_length=64)
 
 
 @router.get("/api/platform/languages")
@@ -39,8 +43,25 @@ def api_platform_language(payload: LanguageSelectIn, request: Request) -> dict[s
     code = payload.language.strip().casefold()
     if not is_enabled(code):
         raise HTTPException(409, f"Language module '{code}' is not enabled yet.")
+    stored, token = False, ""
+    row = account_settings.read_account_settings()
+    if row is not None:
+        token = row["settings_version"]
+        if payload.settings_version is not None:
+            # A stale token is a 409 and the session is left as it was: the client re-reads and
+            # re-applies once. The stored value and the session change together or not at all.
+            written = account_settings.write_account_settings(
+                {"learning_language": code}, payload.settings_version
+            )
+            stored, token = True, written["settings_version"]
+        elif not row["learning_language"] and not token:
+            try:
+                written = account_settings.write_account_settings({"learning_language": code}, "")
+                stored, token = True, written["settings_version"]
+            except HTTPException:
+                stored = False
     request.session["language"] = code
-    return {"ok": True, "active": code}
+    return {"ok": True, "active": code, "stored": stored, "settings_version": token}
 
 
 @router.get("/api/platform/skills")

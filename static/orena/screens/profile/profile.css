@@ -161,6 +161,11 @@ button.s-profile-tile:hover {
   font-size: 11px;
   font-weight: 600;
 }
+.s-profile-day--done {
+  background: var(--hero-day-done);
+  color: var(--hero-cta-fill-ink);
+  opacity: 1;
+}
 
 /* ---- Identity + stats row ---- */
 .s-profile-columns {
@@ -266,7 +271,7 @@ button.s-profile-tile:hover {
 
 .s-profile-stats__grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
 }
 .s-profile-stat {

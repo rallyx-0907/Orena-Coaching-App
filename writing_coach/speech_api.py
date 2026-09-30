@@ -2,14 +2,14 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import json
 import logging
 import math
 import time
-from typing import Any
+from typing import Annotated, Any
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, Query, UploadFile
 from pydantic import BaseModel
 
 from writing_coach.core.errors import orena_http_error
@@ -39,6 +39,8 @@ from writing_coach.speaking_evaluator import (
 
 
 logger = logging.getLogger(__name__)
+SINCE_MAX_DAYS = 7
+
 router = APIRouter(prefix="/api/speech", tags=["speech"])
 _speech_asr_provider: SpeechAsrProvider | None = None
 _speech_pronunciation_provider: SpeechPronunciationProvider | None = None
@@ -439,7 +441,11 @@ def list_speaking_attempts(
     limit: int = 20,
     asset_id: str | None = None,
     segment_id: str | None = None,
+    since: Annotated[str | None, Query(max_length=40)] = None,
 ) -> dict[str, Any]:
+    """The learner's speaking attempts, newest first. `since` (an ISO instant) makes "this session" a
+    window the server keeps rather than a list the browser holds (D4 I7): it is clamped to the last
+    seven days and never to the future, and an unreadable value is refused."""
     if _speaking_attempt_repository is None:
         raise orena_http_error(
             503,
@@ -447,15 +453,25 @@ def list_speaking_attempts(
             "Speaking history is not configured on this environment.",
         )
     bounded_limit = max(1, min(int(limit), 100))
+    window_start = None
+    if since:
+        try:
+            parsed = datetime.fromisoformat(since.replace("Z", "+00:00"))
+        except ValueError:
+            raise orena_http_error(422, "since_invalid", "since must be an ISO date and time.") from None
+        parsed = parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
+        now = datetime.now(timezone.utc)
+        window_start = min(now, max(parsed, now - timedelta(days=SINCE_MAX_DAYS)))
     scoped_asset = asset_id.strip() if isinstance(asset_id, str) and asset_id.strip() else None
     scoped_segment = segment_id.strip() if isinstance(segment_id, str) and segment_id.strip() else None
-    if scoped_asset is None and scoped_segment is None:
+    if scoped_asset is None and scoped_segment is None and window_start is None:
         items = _speaking_attempt_repository.list_speaking_attempt_records(bounded_limit)
     else:
         items = _speaking_attempt_repository.list_speaking_attempt_records(
             bounded_limit,
             asset_id=scoped_asset,
             segment_id=scoped_segment,
+            **({"since": window_start} if window_start is not None else {}),
         )
     return {
         "items": items,

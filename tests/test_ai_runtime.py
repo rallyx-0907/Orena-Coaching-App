@@ -179,6 +179,10 @@ class SpecializedRepository:
     def update_essay_module_data(self, essay_id: int, value: dict[str, Any]) -> None:
         self.module_data = value
 
+    def merge_essay_module_data(self, essay_id: int, key: str, value: Any) -> bool:
+        self.module_data = {**getattr(self, "module_data", {}), key: value}
+        return True
+
 
 ARTICLES = {
     "en": {"title": "Rain", "body": "The river rose overnight.", "language": "en", "effective_level": "B1"},

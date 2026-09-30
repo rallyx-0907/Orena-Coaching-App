@@ -10,7 +10,10 @@
    misapplied, when the text has since changed. Bounded: never more than MAX_PER_TEXT entries for
    one text, MAX_TEXTS texts. */
 
-export const MAX_PER_TEXT = 300;
+/* The bounds follow the server's (D4 I10): at most 80 highlights of 400 characters per text, so a
+   device never holds what the account would refuse. */
+export const MAX_PER_TEXT = 80;
+export const MAX_SENTENCE_CHARS = 400;
 export const MAX_TEXTS = 60;
 
 const squash = (value) => String(value ?? '').replace(/\s+/g, ' ').trim();
@@ -64,10 +67,26 @@ export function toggleHighlight(storage, owner, contentId, { segment, sentence }
   const exists = list.some((item) => highlightKey(item.segment, item.sentence) === key);
   const next = exists
     ? list.filter((item) => highlightKey(item.segment, item.sentence) !== key)
-    : [...list, { id: `${Date.now()}:${Math.random().toString(36).slice(2, 8)}`, segment: String(segment || ''), sentence: text.slice(0, 1200), at: new Date().toISOString() }].slice(-MAX_PER_TEXT);
+    : [...list, { id: `${Date.now()}:${Math.random().toString(36).slice(2, 8)}`, segment: String(segment || ''), sentence: text.slice(0, MAX_SENTENCE_CHARS), at: new Date().toISOString() }].slice(-MAX_PER_TEXT);
   // Oldest texts fall off first so one device never grows without bound.
   const rest = Object.entries(store).filter(([id]) => id !== contentId);
   const kept = Object.fromEntries([...rest.slice(-(MAX_TEXTS - 1)), [contentId, next]]);
   writeStore(storage, owner, kept);
   return { on: !exists, list: next };
+}
+
+/* The account's highlights for a text merged into this device's (a union by id; the device's own come
+   first). Returns the text's list after the merge. */
+export function mergeHighlights(storage, owner, contentId, incoming) {
+  const store = readStore(storage, owner);
+  const list = loadHighlights(storage, owner, contentId);
+  const known = new Set(list.map((item) => item.id));
+  const extra = (Array.isArray(incoming) ? incoming : []).filter(
+    (item) => item && item.id && !known.has(item.id) && typeof item.segment === 'string' && typeof item.sentence === 'string',
+  );
+  if (!extra.length || !contentId) return list;
+  const next = [...list, ...extra].slice(-MAX_PER_TEXT);
+  const rest = Object.entries(store).filter(([id]) => id !== contentId);
+  writeStore(storage, owner, Object.fromEntries([...rest.slice(-(MAX_TEXTS - 1)), [contentId, next]]));
+  return next;
 }

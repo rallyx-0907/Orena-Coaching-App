@@ -25,6 +25,7 @@ from writing_coach.core.request_context import LANGUAGE_CODE_CTX, USER_KEY_CTX, 
 from writing_coach.core.storage import resolve_language_db_path
 from writing_coach.core.language_registry import DEFAULT_LANGUAGE, all_languages, enabled_language
 from writing_coach.core.deployment import DeploymentConfig, resolve_deployment_config
+from writing_coach import account_settings
 from writing_coach.persistence.auth_repository import AuthRepository
 
 ROOT = Path(__file__).resolve().parent
@@ -396,19 +397,47 @@ def api_session_bootstrap(request: Request, response: Response) -> dict[str, Any
         for item in all_languages()
         if item.enabled
     ]
+    settings = account_settings.read_account_settings()
     return {
         "version": SESSION_BOOTSTRAP_VERSION,
         "authenticated": True,
         "mode": mode,
         "user": {"role": role, "is_admin": role == "admin"},
-        "language": {"active": active, "options": options},
+        # `stored`: the account has chosen a learning language (so a new session keeps it). False
+        # means never chosen, and the entry rule opens Welcome rather than assuming the default.
+        "language": {
+            "active": active,
+            "options": options,
+            "stored": bool(settings and settings["learning_language"]),
+        },
     }
 
 class UserIsolationMiddleware(BaseHTTPMiddleware):
+    @staticmethod
+    def _seeded_language(request: Request, path: str) -> str:
+        """The account's stored learning language, for a session that has none (D4 I2).
+
+        Read only when the session carries no language, and then written into the session, so every
+        later request reads the cookie as before. It seeds; it never overrides a session that chose.
+        """
+        if request.session.get("language") or not path.startswith("/api/"):
+            return ""
+        key = str(request.session.get("user_sub") or "") if AUTH_ENABLED else "legacy"
+        if not key:
+            return ""
+        try:
+            stored = account_settings.stored_learning_language(key)
+        except Exception:  # an unreadable account row must not take the request down
+            return ""
+        if stored:
+            request.session["language"] = stored
+        return stored
+
     async def dispatch(self, request: Request, call_next):
         path = request.url.path
+        seeded = self._seeded_language(request, path)
         requested_language = enabled_language(
-            request.session.get("language") or DEFAULT_LANGUAGE
+            request.session.get("language") or seeded or DEFAULT_LANGUAGE
         ).code
 
         public = (

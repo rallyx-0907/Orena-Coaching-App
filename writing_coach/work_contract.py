@@ -18,11 +18,17 @@ from collections.abc import Sequence
 # strings rather than becoming database ENUMs. Strings so that registering a
 # new kind or domain is a code change and not a migration; registries plus
 # strict validation so that "string" does not quietly mean "anything".
-WORK_KINDS = ('draft', 'response', 'conversation')
+WORK_KINDS = ('draft', 'response', 'conversation', 'annotation', 'imported')
+
+# The kinds the generic `PUT /api/works/{id}` accepts: the ones that existed before D4. `annotation`
+# and `imported` (D4 I10, I12; D-104 H-18) are reachable only through their dedicated routes, which
+# define the deterministic id, the payload bounds and the private-content rules a generic writer
+# would bypass (proposal section 13.3).
+GENERIC_WORK_KINDS = ('draft', 'response', 'conversation')
 
 # Everything that mutates through the receipt and change-stream contract. This
 # is what may appear in `mutation_receipts.domain`.
-MUTATION_DOMAINS = ('draft', 'response', 'conversation', 'provenance')
+MUTATION_DOMAINS = ('draft', 'response', 'conversation', 'annotation', 'imported', 'provenance')
 
 # The narrower set the work repository owns. `provenance` mutates like anything
 # else - a sequence, a receipt, a change record - but it is not a kind of work,

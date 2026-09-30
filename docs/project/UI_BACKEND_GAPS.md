@@ -4481,3 +4481,22 @@ Resolved by the human's D-105 decisions; AD-A, AD-B and AD-H above are closed by
 - **Open reading of "publish uses the effective value".** Publish records the effective value; it does not
   refuse on it (manual articles from a source whose default is "no" would otherwise never publish). If
   the human means a refusal, it is one line in `set_article_status`.
+
+### D4 slices 2-7: what changed for the UI and what is still open (2026-09-30)
+
+- **Streak (I14, H-5).** `GET /api/learner-activity?tz=&days=` derives the streak and the ISO week's active days from
+  essays, speaking attempts and Reading attempts, by the learner's own calendar day; no table; a visit never counts.
+  Dictation, Shadowing and vocabulary review are listed as `pending` (they keep only a last-update time). Profile
+  and Today draw it; the daily-goal ring, the minutes tile and stat, Today's goal ring, skill rings and level card
+  are **not drawn** (D-103.4), and Profile's weekly bar is drawn only against a target the learner set. No design
+  control sets that target yet (`weekly_goal_days` is stored and served). H-16 stays open.
+- **New token.** `--hero-day-done` (#A99BFF), the design's active-day colour on Profile's hero strip.
+- **Dictation (I18).** The stored score is the server's; the screen replaces its instant mark with the acknowledged item.
+- **Continue (I4).** Today, Discover, Content, Practice, Listening and Reader read the merged list (server places first,
+  device entries the server lacks). A conversation entry now opens the Conversation room by id.
+- **Backbone-dependent (I5, I6, I8-I10, I12).** Written only while `/api/account-backbone` is `active`. Not driven in a
+  browser yet, because the backbone is off on the lane: the lead's flag flip is the gate.
+- **Still open, no storage decision missing.** Register/target length (H-7); conversation coaching in the turn vs
+  regenerated (H-8, the turn keeps `meaning`/`support` only); History listing typed responses (H-9); spoken Free
+  Talk/Situation/React takes as audio-free speaking attempts (needs Progress to skip null pronunciation first); the
+  Import sheet has no `url:` text flow; shadowing read-back on open (I16, D7).
