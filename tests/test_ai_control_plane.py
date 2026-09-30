@@ -772,6 +772,39 @@ def test_gemini_live_discovery_uses_configured_openai_compatible_models_api(
     }
 
 
+def test_gemini_openai_compatible_catalog_resource_names_are_read_as_model_ids(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The live compatible endpoint answers with "models/<id>"; every model was filtered out."""
+    monkeypatch.setenv("TEST_GEMINI_KEY", "credential-present")
+    provider = OpenAICompatibleProvider(
+        provider_id="gemini",
+        name="Gemini API",
+        api_key_env="TEST_GEMINI_KEY",
+        base_url_env="TEST_GEMINI_URL",
+        default_base_url="https://generativelanguage.googleapis.com/v1beta/openai",
+        models_env="TEST_GEMINI_MODELS",
+        model_filter="gemini-text",
+    )
+
+    def get(url: str, **kwargs: Any) -> ProviderResponse:
+        return ProviderResponse(
+            {
+                "data": [
+                    {"id": "models/gemini-2.5-flash"},
+                    {"id": "models/gemini-3.1-flash-lite"},
+                    {"id": "models/gemini-2.5-flash-preview-tts"},
+                    {"id": "models/text-embedding-004"},
+                ]
+            }
+        )
+
+    monkeypatch.setattr(requests, "get", get)
+
+    assert provider.discover_models_live() == ["gemini-2.5-flash", "gemini-3.1-flash-lite"]
+    assert provider.list_models() == ["gemini-2.5-flash", "gemini-3.1-flash-lite"]
+
+
 def test_gemini_live_discovery_falls_back_to_native_catalog(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

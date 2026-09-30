@@ -121,8 +121,37 @@ jobs:
           node scripts/test_orena_screen_search.mjs
           node scripts/test_orena_screen_progress.mjs
           node scripts/test_orena_screen_profile.mjs
+          node scripts/test_orena_screen_admin.mjs
+          node scripts/test_orena_screen_admin_areas.mjs
           node scripts/test_orena_screen_settings.mjs
           node scripts/test_orena_screen_sheets.mjs
+          node scripts/test_orena_screen_quick-sheet.mjs
+          node scripts/test_orena_screen_mic.mjs
+          node scripts/test_orena_screen_lesson-complete.mjs
+          node scripts/test_orena_screen_check.mjs
+          node scripts/test_orena_screen_discussion.mjs
+          node scripts/test_orena_screen_reading-transfer.mjs
+          node scripts/test_orena_screen_dictation.mjs
+          node scripts/test_orena_screen_shadowing.mjs
+          node scripts/test_orena_screen_free-talk.mjs
+          node scripts/test_orena_screen_conversation.mjs
+          node scripts/test_orena_screen_situation.mjs
+          node scripts/test_orena_screen_speak.mjs
+          node scripts/test_orena_screen_compare.mjs
+          node scripts/test_orena_screen_attempts.mjs
+          node scripts/test_orena_screen_speak-summary.mjs
+          node scripts/test_orena_screen_review.mjs
+          node scripts/test_orena_screen_feed.mjs
+          node scripts/test_orena_screen_errors.mjs
+          node scripts/test_orena_screen_reader.mjs
+          node scripts/test_orena_screen_reader-complete.mjs
+          node scripts/test_orena_screen_onboarding.mjs
+          node scripts/test_orena_screen_orena.mjs
+          node scripts/test_orena_screen_writing.mjs
+          node scripts/test_orena_screen_writing-compare.mjs
+          node scripts/test_orena_screen_listening.mjs
+          node scripts/test_orena_screen_react.mjs
+          node scripts/test_orena_screen_respond.mjs
           node scripts/test_orena_agent.mjs
           node scripts/test_orena_surfaces.mjs
       - run: python -m pytest -q test_app.py tests

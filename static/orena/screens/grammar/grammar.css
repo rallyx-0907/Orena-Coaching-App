@@ -42,7 +42,8 @@
 }
 
 /* The concept card's level tile (frame 44 §1.2: 44x44, radius 12, solid fill, white bold glyph -
-   the "solid hex fill" the frame draws is the design's own --skill-grammar hue, rule 32). */
+   the "solid hex fill" the frame draws is the design's own --skill-grammar hue, rule 32). It holds
+   the level value: "B1", or "HSK3" for an HSK 3.0 level (contract §0). */
 .s-grammar__tile {
   width: 44px;
   height: 44px;
@@ -55,19 +56,6 @@
   font-size: 15px;
   font-weight: 700;
   flex: none;
-}
-
-/* Trailing status (frame 44 §1.2: "font-size:12px;font-weight:600;color:{{gi.tagColor}}" - plain
-   coloured text, no chip background). Two real states exist in the API (`completed`); the mock's
-   four (Open/In progress/New/Unlocks at C1) do not - see model.js's header comment. */
-.s-grammar__tag {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--muted);
-  flex: none;
-}
-.s-grammar__tag--done {
-  color: var(--green);
 }
 
 /* Header back button (rule 42): frame 44 draws border-radius:12px / 19x19 icon, identical to

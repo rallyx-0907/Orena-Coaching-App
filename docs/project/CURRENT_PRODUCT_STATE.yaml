@@ -38,27 +38,28 @@
   ],
   "active_branch_or_lane": {
     "expected_development_branch": "codex/work",
-    "lane": "unified_baseline"
+    "lane": "unified_baseline_and_ui_lane"
   },
-  "last_verified_application_commit": "5e3d53aa1ff6442ccf8ae0c21f84d9221116c339",
-  "last_verified_batch": "admin_canonical_reading_speaking_unified_local_verification",
+  "last_verified_application_commit": "161d9175795d7c6bc798c8078fefdb4528aa5efc",
+  "last_verified_batch": "new_learner_ui_wave_a_destinations_and_wave_b_workspaces_local_verification",
   "current_program_stage": {
     "id": "R21",
     "name": "Mobile Release Readiness",
     "status": "human_gate"
   },
   "current_primary_workstream": {
-    "id": "orena_intelligence_lane",
-    "status": "pending",
-    "next_task": "Create or fast-forward feature/orena-intelligence from the latest codex/work unified baseline and implement Agent Intelligence there under D-085. Keep orchestration above existing domain services; expose only explicit allowlisted capabilities; do not redesign learner UI or duplicate domain engines. Shared-runtime migrations, production and provider activation remain human gates."
+    "id": "new_learner_ui_product_complete_d102",
+    "status": "in_progress",
+    "next_task": "D-101/D-102: D2 shared modules out of ui/, D3 matrix, D4 persistence proposal (H2), E Admin, F Grammar, D7 MISSING cells, G Orena, integration QA on codex/work, PR codex/work -> main; :8000 updated only after the human merges. :8011 deployment deferred."
   },
   "design": {
     "web_is_visual_source_of_truth": true,
     "native_strategy": "full_native_port",
     "native_may_redesign_product": false,
-    "visual_authority": "canonical_ui_baseline_d066",
+    "visual_authority": "canonical_ui_design_d088",
     "themes": [
-      "dark_glass"
+      "light",
+      "dark"
     ]
   },
   "languages": {
@@ -193,7 +194,6 @@
   ],
   "current_p0": [],
   "current_p1": [
-    "platform_admin_host_remains_a_human_hold",
     "grammar_breadth_remains_a_human_review_question",
     "cross_device_continuity_design_specified_schema_and_sync_activation_gated",
     "startup_auto_alembic_conflicts_with_D002_requires_explicit_operator_migration",
@@ -202,8 +202,10 @@
     "shared_reading_library_epub_pipeline_ships_without_rights_gate_per_d056_sandbox_only",
     "historical_non_ci_matrices_reference_removed_wrappers_or_frozen_native",
     "art_bible_rules_written_real_book_cover_and_audio_artwork_assets_still_absent",
-    "canonical_ui_migration_in_progress_d065_compositions_remain_in_code_until_each_surface_migrates_dark_glass_foundation_landed",
-    "canonical_ui_baseline_incomplete_for_profile_my_content_admin_onboarding_loading_empty_error_modal_and_tablet"
+    "new_learner_ui_d088_at_next_until_the_d091_cutover_old_ui_at_root_is_replaced_not_preserved",
+    "grammar_screens_wait_for_the_grammar_content_contract_r5_is_being_retired",
+    "eight_design_screens_are_coming_soon_until_a_backend_exists",
+    "platform_admin_moves_into_the_new_ui_d101_old_admin_untouched_until_cutover"
   ],
-  "last_verified_at": "2026-09-26"
+  "last_verified_at": "2026-09-29"
 }

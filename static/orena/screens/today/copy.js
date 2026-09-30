@@ -10,6 +10,9 @@ const INTERFACE_KEYS = [
   'kindRead', 'kindListen', 'kindSpeak', 'kindWord', 'kindContinue', 'kindReview',
   'skillReading', 'skillListening', 'skillSpeaking',
   'weekday_mon', 'weekday_tue', 'weekday_wed', 'weekday_thu', 'weekday_fri', 'weekday_sat', 'weekday_sun',
+  /* The header's time-of-day greeting (buildGreeting, model.js) - the page's own heading text,
+     chrome like every other title on this screen, never the learner's own explanation of anything. */
+  'greetingMorning', 'greetingAfternoon', 'greetingEvening',
 ];
 
 const SUPPORT_KEYS = [
@@ -20,6 +23,9 @@ const SUPPORT_KEYS = [
      explanation of the suggestion, not a control label, so it is support-layer like the goal
      ring's own evidence sentence above. */
   'reviewReason',
+  /* The header subtitle (buildHeadSubtitle, model.js) - it explains what the real state of the
+     page below actually holds, exactly like the evidence sentence above; never a control label. */
+  'subtitleBoth', 'subtitleOnly',
 ];
 
 export const t = defineCopy('today', {
@@ -40,6 +46,11 @@ export const t = defineCopy('today', {
     activity_patterns_marked_complete_one: '{n} grammar point completed', activity_patterns_marked_complete_other: '{n} grammar points completed',
     activity_phrases_kept_one: '{n} phrase kept', activity_phrases_kept_other: '{n} phrases kept',
     reviewReason_one: '{n} word due for review', reviewReason_other: '{n} words due for review',
+    greetingMorning: 'Good morning', greetingAfternoon: 'Good afternoon', greetingEvening: 'Good evening',
+    subtitleBoth_one: '{n} thing worth doing today, then something to enjoy.',
+    subtitleBoth_other: '{n} things worth doing today, then something to enjoy.',
+    subtitleOnly_one: '{n} thing worth doing today.',
+    subtitleOnly_other: '{n} things worth doing today.',
   },
   vi: {
     recommendedTitle: 'Đề xuất cho hôm nay', anotherAction: 'Đề xuất khác', forYouTitle: 'Dành cho bạn',
@@ -57,6 +68,9 @@ export const t = defineCopy('today', {
     activity_patterns_marked_complete_other: '{n} điểm ngữ pháp đã hoàn thành',
     activity_phrases_kept_other: '{n} cụm từ đã lưu',
     reviewReason_other: '{n} từ cần ôn tập',
+    greetingMorning: 'Chào buổi sáng', greetingAfternoon: 'Chào buổi chiều', greetingEvening: 'Chào buổi tối',
+    subtitleBoth_other: 'Có {n} việc đáng làm hôm nay, rồi đến điều gì đó để thư giãn.',
+    subtitleOnly_other: 'Có {n} việc đáng làm hôm nay.',
   },
   zh: {
     recommendedTitle: '今天推荐', anotherAction: '换一个', forYouTitle: '为你推荐',
@@ -74,5 +88,8 @@ export const t = defineCopy('today', {
     activity_patterns_marked_complete_other: '{n} 个已完成的语法点',
     activity_phrases_kept_other: '{n} 个已保存的短语',
     reviewReason_other: '{n} 个词需要复习',
+    greetingMorning: '早上好', greetingAfternoon: '下午好', greetingEvening: '晚上好',
+    subtitleBoth_other: '今天有 {n} 件值得做的事，之后还有内容可以放松享受。',
+    subtitleOnly_other: '今天有 {n} 件值得做的事。',
   },
 });

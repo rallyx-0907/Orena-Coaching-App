@@ -1,0 +1,341 @@
+/* Check Understanding (design route `checku`, frame 20, D-091). A learning workspace (rule 49).
+
+   Fix (independent review, 2026-09-28): the header comment used to claim "`.o-main`'s own scroll
+   (inherited) is enough" - imprecise; a focus route's `.o-main` has `overflow:hidden`
+   (shell/shell.css:362), not a scroll mechanism, so unbounded content would have been clipped, not
+   scrolled, with no way to reach the question's own Next/See-results control. The backend places
+   no character cap on `prompt`/`options[]`/`explanation`/`evidence_text` (reading_evidence_
+   repository.py - only a 2-6 item count on `options`), so a real multi-sentence question with long
+   options and a long evidence/explanation pair can plausibly exceed 360x740/390x844. `.o-screen`
+   itself carries no height rule (shell.css:366, entrance animation only), so it is given real
+   height before `.s-check__card` can bound and scroll its own content - but only once this screen
+   has mounted (`:has`, the way the Orena home does): an element still empty while the set loads,
+   or left empty by a load that failed, must take no room, or the router's loading skeleton and
+   load error (appended after it) are pushed out of the viewport. */
+.o-screen:has(> .s-check) {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.s-check {
+  max-width: 680px;
+  margin: 0 auto;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding-top: 14px;
+}
+
+.s-check__head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.s-check__head-body {
+  flex: 1;
+  min-width: 0;
+}
+.s-check__title {
+  font-size: 16px;
+  font-weight: 600;
+}
+.s-check__meta {
+  font-size: 13px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.s-check__bar {
+  height: 4px;
+  border-radius: 99px;
+  background: var(--surface2);
+  flex: none;
+}
+.s-check__bar > span {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  background: var(--accent);
+}
+
+.s-check__card {
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow: auto;
+  animation: rise 0.25s ease;
+  border-radius: 24px;
+  background: var(--surface);
+  padding: 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  box-shadow: var(--sh1);
+}
+
+.s-check__type {
+  align-self: flex-start;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 11px;
+  border-radius: 6px;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+.s-check__question {
+  font-size: 21px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.s-check__options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.s-check__option {
+  padding: 15px 18px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 15.5px;
+  text-align: left;
+  line-height: 1.4;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.s-check__option[aria-disabled='true'] {
+  cursor: default;
+}
+.s-check__mark {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  flex: none;
+  background: transparent;
+  color: var(--muted);
+}
+
+.s-check__verdict {
+  padding: 18px;
+  border-radius: 16px;
+  background: var(--surface2);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  animation: rise 0.2s ease;
+}
+.s-check__verdict-line {
+  font-size: 13px;
+  font-weight: 600;
+}
+.s-check__evidence-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.s-check__evidence {
+  font-size: 15.5px;
+  line-height: 1.55;
+  font-style: italic;
+}
+.s-check__explain {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+/* The frame's action row (Show in text / Next) is the verdict's last line. On a tall verdict inside
+   the scrolling card it sticks to the card's bottom edge (rule 49: the primary action is never
+   scrolled out of the viewport). The padding and matching negative margins keep the row's laid-out
+   position exactly the frame's (`margin-top: 4px`, flush with the verdict's own padding) and give
+   the stuck row an opaque ground the text can scroll under. */
+.s-check__verdict-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  display: flex;
+  gap: 10px;
+  margin: -4px 0 -14px;
+  padding: 8px 0 14px;
+  background: var(--surface2);
+}
+.s-check__show {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+}
+.s-check__spacer {
+  flex: 1;
+}
+.s-check__next {
+  padding: 11px 20px;
+  border-radius: 12px;
+  border: 0;
+  background: var(--accent-fill);
+  color: var(--accent-ink);
+  font-size: 14px;
+  font-weight: 600;
+  transition: background 0.15s, transform 0.15s;
+  min-height: 44px;
+}
+.s-check__next:hover {
+  background: var(--accent-fill-hover);
+}
+.s-check__next:active {
+  background: var(--accent-fill-press);
+  transform: scale(0.97);
+}
+
+/* Done/results card - the "celebration tint card" primitive (E3 shared with Reading Complete /
+   Lesson Complete): tint2 background, two translucent decorative circles. */
+.s-check__done {
+  flex: 0 1 auto;
+  min-height: 0;
+  border-radius: 24px;
+  background: var(--tint2);
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  position: relative;
+  /* Clips the two decorative circles at the card's edge; a card taller than the viewport scrolls
+     in itself (rule 49) rather than pushing its buttons out of it. */
+  overflow-x: hidden;
+  overflow-y: auto;
+  animation: rise 0.25s ease;
+}
+.s-check__blob {
+  position: absolute;
+  border-radius: 999px;
+  pointer-events: none;
+}
+/* Fix (independent review, 2026-09-28): the frame draws two distinct literals -
+   rgba(255,255,255,.22) for the larger top-right circle, .14 for the smaller bottom-left one -
+   not the same token twice with an opacity override. `--deco-strong` (tokens.css:154) is already a
+   pixel-exact match for the larger blob (its own comment names this same "celebration card"
+   decorative-circle use); `--toast-chip` already matches the smaller one exactly on its own, so the
+   `opacity:.65` multiplier that made it 35% too faint is dropped, not replaced. */
+.s-check__blob--a {
+  right: -50px;
+  top: -60px;
+  width: 180px;
+  height: 180px;
+  background: var(--deco-strong);
+}
+.s-check__blob--b {
+  left: -40px;
+  bottom: -70px;
+  width: 140px;
+  height: 140px;
+  background: var(--toast-chip);
+}
+.s-check__result-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  position: relative;
+}
+.s-check__score {
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  position: relative;
+}
+.s-check__chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  position: relative;
+}
+.s-check__chip {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 11px;
+  border-radius: 7px;
+  background: var(--green-soft);
+  color: var(--green);
+}
+.s-check__chip--bad {
+  background: var(--red-soft);
+  color: var(--red);
+}
+.s-check__cta {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  position: relative;
+}
+.s-check__continue {
+  height: 48px;
+  padding: 0 22px;
+  border-radius: 14px;
+  border: 0;
+  background: var(--accent-fill);
+  color: var(--accent-ink);
+  font-weight: 600;
+  font-size: 16px;
+  transition: background 0.15s, transform 0.15s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+.s-check__continue:hover {
+  background: var(--accent-fill-hover);
+}
+.s-check__continue:active {
+  background: var(--accent-fill-press);
+  transform: scale(0.97);
+}
+.s-check__deeper {
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+  position: relative;
+}
+.s-check__deeper-head {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.s-check__deeper-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.s-check__deeper-chip {
+  padding: 11px 15px;
+  border-radius: 12px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  min-height: 44px;
+}
+
+.s-check__empty {
+  margin-top: 8px;
+}

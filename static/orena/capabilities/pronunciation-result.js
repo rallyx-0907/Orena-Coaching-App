@@ -119,6 +119,15 @@ export function pronunciationView(result, { language = 'en', readings = [], mode
       syllables: (word.syllables || []).filter((unit) => String(unit?.syllable || '').trim()).map((unit) => ({ label: String(unit.syllable).trim(), score: isNumber(unit.accuracy_score) ? Math.round(unit.accuracy_score) : null })),
       toneTarget: syllables.map(toneOf).filter((tone) => tone != null),
       toneActual: [],
+      // Where the word sits in the take, straight from the provider - `timingDelta()` above
+      // already reads the same two fields for the whole-line pace figure; a caller wanting one
+      // word's own span (Compare With Model's "hear just this word", a tone/pitch slice) used to
+      // have to patch this back on after the fact (screens/speak's own `onTake` did, until this
+      // fix) even though the raw values were sitting right here. `offsetKnown` is false for a word
+      // the provider did not time (inserted words carry none; `unscripted` mode may not either).
+      offsetMs: isNumber(word.offset_ms) ? Math.round(word.offset_ms) : null,
+      durationMs: isNumber(word.duration_ms) ? Math.round(word.duration_ms) : null,
+      offsetKnown: isNumber(word.offset_ms) && isNumber(word.duration_ms),
     };
   });
   return {

@@ -1,0 +1,503 @@
+/* Scripted Pronunciation (frame 15), measured against the pinned design. A focus route: `.o-main`
+   has overflow:hidden, so `.s-speak-root` fills the column and only `.s-speak-scroll` scrolls
+   (rule 49). Device difference is spacing only - the frame itself draws no device-specific
+   layout for this screen (SCRATCH/inventory/D5-speaking.md §3: "nothing in this screen's own
+   markup changes shape between data-device=desktop and data-device=mobile"). Colours are tokens
+   only. */
+
+.s-speak-root {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  max-width: 760px;
+  margin: 0 auto;
+  width: 100%;
+  min-height: 0;
+  padding-top: 14px;
+}
+
+.s-speak-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--muted);
+}
+
+.s-speak-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-bottom: 20px;
+  flex: none;
+}
+.s-speak-title-block {
+  flex: 1;
+  min-width: 0;
+}
+.s-speak-title {
+  font-size: 16px;
+  font-weight: 600;
+}
+.s-speak-sub {
+  font-size: 13px;
+  color: var(--muted);
+}
+/* The frame wraps a long subtitle onto a second line; a third line is never worth the viewport
+   (rule 49), so it is cut there. */
+.s-speak-sub {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+.s-speak-compare {
+  flex: none;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.s-speak-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding-bottom: 24px;
+}
+
+.s-speak-card {
+  flex: none;
+  border-radius: 24px;
+  background: var(--surface);
+  box-shadow: var(--sh1);
+  padding: 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  animation: rise 0.3s ease;
+}
+
+.s-speak-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.s-speak-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.s-speak-token {
+  border: 0;
+  padding: 0 5px;
+  border-radius: 6px;
+  font: inherit;
+  background: transparent;
+  color: var(--text);
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+}
+.s-speak-token--active {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+.s-speak-token:not([data-token]),
+.s-speak-token[data-token=''] {
+  cursor: default;
+}
+.s-speak-reading {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.s-speak-tip {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--surface2);
+}
+.s-speak-tip__text {
+  font-size: 14px;
+  line-height: 1.5;
+}
+.s-speak-tip__word {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 500;
+  color: var(--red);
+}
+.s-speak-tip__actions {
+  display: flex;
+  gap: 8px;
+}
+.s-speak-btn {
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 0;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.s-speak-btn--outline {
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--text);
+}
+
+.s-speak-detail {
+  padding: 18px;
+  border-radius: 16px;
+  background: var(--surface2);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  animation: rise 0.2s ease;
+}
+.s-speak-detail__head {
+  display: flex;
+  justify-content: space-between;
+}
+.s-speak-detail__word {
+  font-size: 17px;
+  font-weight: 700;
+}
+.s-speak-detail__score {
+  font-size: 14px;
+  font-weight: 600;
+}
+.s-speak-detail__reading {
+  font-size: 14px;
+  color: var(--muted);
+}
+.s-speak-detail__issue {
+  font-size: 15px;
+  line-height: 1.5;
+}
+.s-speak-detail__actions {
+  display: flex;
+  gap: 10px;
+}
+.s-speak-mini {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.s-speak-mini--ghost {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  gap: normal;
+}
+
+.s-speak-recorder {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+.s-speak-side {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  border-radius: 16px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 600;
+  min-height: 44px;
+}
+.s-speak-side[disabled] {
+  opacity: 0.5;
+}
+.s-speak-spacer {
+  flex: 1;
+}
+.s-speak-mid {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.s-speak-pill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px 8px 8px;
+  border-radius: 999px;
+}
+.s-speak-pill i {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: currentColor;
+  margin-left: 6px;
+}
+.s-speak-pill b {
+  font-size: 14px;
+  font-weight: 600;
+}
+.s-speak-pill span {
+  font-size: 13px;
+  opacity: 0.8;
+}
+.s-speak-mic {
+  width: 72px;
+  height: 72px;
+  border-radius: 999px;
+  border: 0;
+  background: var(--accent-fill);
+  color: var(--accent-ink);
+  font-size: 24px;
+  box-shadow: var(--mark-glow-bar);
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.s-speak-mic:hover {
+  background: var(--accent-fill-hover);
+}
+.s-speak-mic[aria-pressed='true'] {
+  background: var(--red);
+  box-shadow: 0 0 0 10px var(--red-soft);
+}
+.s-speak-mic__stop {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: var(--accent-ink);
+}
+.s-speak-caption {
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 600;
+  min-height: 1.3em;
+}
+
+.s-speak-wave {
+  display: flex;
+  gap: 4px;
+  height: 34px;
+  align-items: center;
+  opacity: 0.2;
+}
+.s-speak-wave--on {
+  opacity: 1;
+}
+.s-speak-wave i {
+  flex: 1;
+  border-radius: 2px;
+  background: var(--accent);
+}
+.s-speak-wave--rec i {
+  background: var(--red);
+}
+.s-speak-wave--on:not(.s-speak-wave--rec) i {
+  animation: pulse 0.9s ease-in-out infinite;
+}
+
+.s-speak-processing {
+  font-size: 14px;
+  color: var(--muted);
+  animation: pulse 1s infinite;
+}
+
+/* ---- Result card ---- */
+.s-speak-result {
+  flex: none;
+  border-radius: 24px;
+  background: var(--surface);
+  box-shadow: var(--sh1);
+  padding: 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  animation: rise 0.25s ease;
+}
+.s-speak-result__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.s-speak-result__who {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.s-speak-ring {
+  width: 76px;
+  height: 76px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+.s-speak-ring__disc {
+  width: 62px;
+  height: 62px;
+  border-radius: 999px;
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.s-speak-ring__disc b {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
+}
+.s-speak-ring__disc span {
+  font-size: 10px;
+  color: var(--text3);
+  margin-top: 2px;
+}
+.s-speak-result__attempt {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.s-speak-result__verdict {
+  font-size: 20px;
+  font-weight: 600;
+  margin-top: 2px;
+}
+.s-speak-badge {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 11px;
+  border-radius: 6px;
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+.s-speak-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.s-speak-metric {
+  padding: 14px;
+  border-radius: 16px;
+  background: var(--surface2);
+}
+.s-speak-metric__row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--muted);
+}
+.s-speak-metric__row b {
+  color: var(--text);
+}
+.s-speak-metric__track {
+  height: 6px;
+  border-radius: 99px;
+  background: var(--border);
+  margin-top: 8px;
+}
+.s-speak-metric__track i {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+}
+
+.s-speak-asr {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.s-speak-asr i {
+  color: var(--text);
+}
+
+.s-speak-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.s-speak-primary {
+  padding: 13px 18px;
+  border-radius: 16px;
+  border: 0;
+  background: var(--accent-fill);
+  color: var(--accent-ink);
+  font-size: 14px;
+  font-weight: 600;
+  transition:
+    background 0.15s,
+    transform 0.15s;
+  min-height: 44px;
+}
+.s-speak-primary:hover {
+  background: var(--accent-fill-hover);
+}
+.s-speak-primary:active {
+  background: var(--accent-fill-press);
+  transform: scale(0.97);
+}
+.s-speak-secondary {
+  padding: 13px 18px;
+  border-radius: 14px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  min-height: 44px;
+}
+.s-speak-ai {
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 12px;
+  border: 1px solid var(--ai-line);
+  background: var(--ai-soft);
+  color: var(--ai-ink);
+  font-size: 14px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+/* The frame keeps its three metric cells side by side on the phone too (D5 §3), where a cell is
+   about 64px of content wide and "Completeness" alone is wider than that - its label ran into the
+   value beside it. On the phone the same cells stack, one per row, each exactly as drawn
+   (UI_BACKEND_GAPS N-6: recompose where the frame's own phone layout does not fit). */
+:root[data-device='mobile'] .s-speak-metrics {
+  grid-template-columns: 1fr;
+  gap: 8px;
+}

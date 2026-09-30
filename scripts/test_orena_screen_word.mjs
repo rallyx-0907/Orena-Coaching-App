@@ -174,6 +174,23 @@ const restore = restorePayload({ word: 'buffer', phonetic: '/ˈbʌfər/', part_o
 assert.equal(restore.word, 'buffer');
 assert.equal(restore.review_stage, 2);
 assert.ok(!('source_essay_id' in restore), 'a null field is left out, not sent as null');
+// Undo keeps the schedule and the catalogue identity (mirrors quick-sheet's wordRestorePayload).
+const scheduled = restorePayload({ word: 'buffer', review_stage: 2, next_review_at: '2026-10-01T00:00:00Z', entry_identity_key: 'en:buffer:noun', entry_id: 'e-1', reading_key: 'buffer' });
+assert.equal(scheduled.next_review_at, '2026-10-01T00:00:00Z', 'the due date survives an undo');
+assert.equal(scheduled.entry_identity_key, 'en:buffer:noun');
+assert.equal(scheduled.entry_id, 'e-1');
+assert.equal(scheduled.reading_key, 'buffer');
+assert.ok(!('phonetic' in scheduled), 'a field the item never carried is left out, not sent as an empty string');
+// Every field POST /api/library/vocabulary/restore accepts is carried when the item has it.
+{
+  const { readFileSync: readSource } = await import('node:fs');
+  const python = readSource(new URL('../writing_coach/becoming_library.py', import.meta.url), 'utf8');
+  const block = python.slice(python.indexOf('class RestoreVocabularyIn'), python.indexOf('\ndef ', python.indexOf('class RestoreVocabularyIn')));
+  const fields = [...block.matchAll(/^ {4}(\w+): (?:str|int)/gm)].map((m) => m[1]);
+  assert.ok(fields.length >= 18, `RestoreVocabularyIn's fields are read (${fields.length})`);
+  const full = restorePayload(Object.fromEntries(fields.map((f) => [f, f === 'word' ? 'buffer' : /stage|recalls|count|essay_id/.test(f) ? 1 : 'x'])));
+  assert.deepEqual(Object.keys(full).sort(), [...fields].sort(), 'restorePayload carries every field RestoreVocabularyIn accepts');
+}
 const save = savePayload({ word: 'buffer', ipa: '/ˈbʌfər/', pos: 'noun', meaning: 'extra room kept in reserve', support: 'khoảng đệm' });
 assert.equal(save.source_kind, 'dictionary');
 assert.equal(save.definition, 'extra room kept in reserve');

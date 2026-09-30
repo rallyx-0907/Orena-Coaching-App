@@ -454,7 +454,13 @@ class OpenAICompatibleProvider:
                 model.rsplit("/", 1)[-1]
                 for model in _model_catalog(envelope, container_key="models", model_key="name")
             ]
-        return _model_catalog(envelope, container_key="data", model_key="id")
+        models = _model_catalog(envelope, container_key="data", model_key="id")
+        if self.model_filter == "gemini-text":
+            # Gemini's OpenAI-compatible catalogue answers with resource names
+            # ("models/gemini-2.5-flash"); the chat endpoint and the filter take
+            # the bare model id, the same one the native catalogue yields.
+            return [model.rsplit("/", 1)[-1] for model in models]
+        return models
 
     def _accept_model(self, model: str) -> bool:
         if not model:

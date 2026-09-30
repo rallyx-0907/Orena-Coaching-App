@@ -11,7 +11,6 @@ import { langSpan } from '../../kit/lang.js';
 import { useStyles } from '../../kit/styles.js';
 import { api } from '../../infrastructure/api.js';
 import { languages } from '../../copy/index.js';
-import { shellCopy } from '../../copy/shell.js';
 import { t } from './copy.js';
 import {
   buildRecommendationPool,
@@ -22,6 +21,8 @@ import {
   buildStreak,
   buildLevel,
   todayDateLabel,
+  buildGreeting,
+  buildHeadSubtitle,
 } from './model.js';
 
 export default async function mountToday(element, ctx) {
@@ -85,13 +86,24 @@ export default async function mountToday(element, ctx) {
   }
 
   function headMarkup() {
+    const now = new Date();
     const name = String(state.name || '').trim();
+    // Real state only (human review item): the greeting reads the device's own local clock
+    // (model.js's buildGreeting/greetingPeriod - hour boundaries defined and documented there),
+    // the name is the learner's real profile name this screen already reads above, and the
+    // subtitle names the real size of the "Recommended for today" pool and the "For you" rail
+    // built further down - never the frame's fixed "Two things worth doing today..." (rule 40,
+    // D-068). No name -> no eyebrow line, just the plain greeting; no recommendations -> no
+    // subtitle line at all, an honest silence rather than an invented one.
+    const greeting = buildGreeting(now, t);
+    const subtitle = buildHeadSubtitle({ recommendedCount: pool.length, forYouCount: forYou.length }, t);
     return html`<div class="s-today-head">
       <div class="s-today-head__col">
         ${name ? html`<div class="s-today-eyebrow">${name},</div>` : ''}
-        <h1 class="s-today-h1">${shellCopy('today')}</h1>
+        <h1 class="s-today-h1">${greeting}</h1>
+        ${subtitle ? html`<p class="s-today-sub">${subtitle}</p>` : ''}
       </div>
-      <span class="s-today-date">${todayDateLabel(new Date(), languages().ui)}</span>
+      <span class="s-today-date">${todayDateLabel(now, languages().ui)}</span>
     </div>`;
   }
 

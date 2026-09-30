@@ -1,0 +1,23 @@
+{
+  "id": "speak:demo-cafe-order",
+  "source": "speaking",
+  "practice_type": "sentences",
+  "title": "Order at a café",
+  "language": "en",
+  "level": "A2",
+  "line_count": 1,
+  "duration_ms": null,
+  "artwork": "speaking",
+  "thumbnail_url": null,
+  "lines": [
+    {
+      "line_id": "1",
+      "text": "Could I get a coffee, please?",
+      "reading": "",
+      "translations": {
+        "vi": "Tôi có thể lấy một ly cà phê được không?",
+        "zh": "我可以要一杯咖啡吗？"
+      }
+    }
+  ]
+}

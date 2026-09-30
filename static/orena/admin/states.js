@@ -1,6 +1,6 @@
 /* The five states every Admin view owes, from the canonical design.
 
-   `Orena-Admin-Control-Center.dc.html` study 01 settles these for the whole
+   `superseded/7a5604ca/Orena-Admin-Control-Center.dc.html` study 01 settles these for the whole
    surface, and they are not decoration - each one answers a different question
    an operator is actually asking:
 

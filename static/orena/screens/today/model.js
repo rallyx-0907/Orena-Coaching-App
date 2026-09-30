@@ -330,3 +330,39 @@ export function todayDateLabel(date, locale) {
     return new Intl.DateTimeFormat('en', { weekday: 'short', month: 'short', day: 'numeric' }).format(date);
   }
 }
+
+/* --- header: greeting from the device's own real clock -------------------- */
+
+/* Design Contract rule 40: never an invented clock - the caller always hands in its own real
+   `new Date()` (screen.js), so this stays a pure, gate-testable projection of the device's local
+   time (`Date#getHours()` already reads local, not UTC - exactly "the device's local time").
+   Three bands, fixed here so they can be asserted and documented rather than eyeballed:
+     05:00-11:59  morning
+     12:00-17:59  afternoon
+     18:00-04:59  evening
+   The frame draws exactly three greeting states (Good morning/afternoon/evening - never a fourth
+   "good night" one), so the evening band absorbs the remaining night hours rather than inventing
+   a state the source does not draw. */
+export function greetingPeriod(hour) {
+  if (hour >= 5 && hour < 12) return 'morning';
+  if (hour >= 12 && hour < 18) return 'afternoon';
+  return 'evening';
+}
+
+export function buildGreeting(date, t) {
+  const period = greetingPeriod(date.getHours());
+  return t(`greeting${period.charAt(0).toUpperCase()}${period.slice(1)}`);
+}
+
+/* --- header: the subtitle, from the real state of the page below it ------- */
+
+/* Rule 40: the frame's fixed "Two things worth doing today, then something to enjoy." is sample
+   content (D-068), never data. The real referents already exist on this same page - the size of
+   the "Recommended for today" pool this render actually built, and whether the "For you" rail
+   below it holds anything - so the sentence is built from those two counts instead. Nothing
+   recommended at all is an honest silence (no line), never a fabricated one; the "then something
+   to enjoy" clause is added only when the For-you rail genuinely has something for it to name. */
+export function buildHeadSubtitle({ recommendedCount = 0, forYouCount = 0 } = {}, t) {
+  if (!recommendedCount) return '';
+  return t.plural(forYouCount > 0 ? 'subtitleBoth' : 'subtitleOnly', recommendedCount);
+}

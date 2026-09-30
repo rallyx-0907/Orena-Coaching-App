@@ -12,7 +12,9 @@
    - `lesson`   a content route that shows the design's loading skeleton while it loads.
    - `intent`   the AGENT_CONTRACT §6.1 id that opens it, when there is one.
    - `bare`     drawn with no rail, top bar, phone header or bar at all: onboarding, whose frames
-                (Onboarding.dc.html) are a separate full-window flow. */
+                (Onboarding.dc.html) are a separate full-window flow.
+   - `admin`    a Platform Admin place (Orena-Admin.dc.html): drawn `bare` (no learner frame) with the
+                Admin's own shell, and only for an admin. `design` is the Admin state script's route key. */
 
 export const PRIMARY = Object.freeze(['today', 'discover', 'orena', 'practice', 'library', 'progress']);
 
@@ -52,27 +54,82 @@ export const ROUTES = Object.freeze([
   { id: 'freetalk', path: 'free-talk', design: 'freetalk', screen: 'free-talk', focus: true, crumb: 'freeTalk', lesson: true, intent: 'speaking.free_talk' },
   { id: 'conv', path: 'conversation', design: 'conv', screen: 'conversation', focus: true, crumb: 'conversation', lesson: true },
   { id: 'situation', path: 'situation', design: 'situation', screen: 'situation', focus: true, crumb: 'situationReaction', lesson: true },
-  { id: 'retell', path: 'retell/:id', design: 'retell', screen: 'retell', focus: true, crumb: 'retell', lesson: true },
-  { id: 'timedreact', path: 'timed-reaction', design: 'timedreact', screen: 'timed-reaction', focus: true, crumb: 'timedReaction', lesson: true },
-  { id: 'mock', path: 'interview', design: 'mock', screen: 'interview', focus: true, crumb: 'mockInterview', lesson: true },
-  { id: 'sound', path: 'sounds', design: 'sound', screen: 'sounds', focus: true, crumb: 'soundTone', lesson: true },
+  { id: 'retell', path: 'retell/:id', design: 'retell', screen: 'retell', focus: true, crumb: 'retell', lesson: true , deferred: true },
+  { id: 'timedreact', path: 'timed-reaction', design: 'timedreact', screen: 'timed-reaction', focus: true, crumb: 'timedReaction', lesson: true , deferred: true },
+  { id: 'mock', path: 'interview', design: 'mock', screen: 'interview', focus: true, crumb: 'mockInterview', lesson: true , deferred: true },
+  { id: 'sound', path: 'sounds', design: 'sound', screen: 'sounds', focus: true, crumb: 'soundTone', lesson: true , deferred: true },
   { id: 'writing', path: 'write', design: 'writing', screen: 'writing', focus: true, crumb: 'writing', lesson: true, intent: 'writing.workspace' },
   { id: 'writingDraft', path: 'write/:id', design: 'writing', screen: 'writing', focus: true, crumb: 'writing', lesson: true, intent: 'writing.review' },
   { id: 'wrcompare', path: 'write/:id/compare', design: 'wrcompare', screen: 'writing-compare', focus: true, crumb: 'compareVersions', intent: 'writing.revision' },
-  { id: 'rewrite', path: 'rewrite', design: 'rewrite', screen: 'rewrite', focus: true, crumb: 'contextRewrite', lesson: true },
-  { id: 'timedwr', path: 'timed-writing', design: 'timedwr', screen: 'timed-writing', focus: true, crumb: 'timedWriting', lesson: true },
+  { id: 'rewrite', path: 'rewrite', design: 'rewrite', screen: 'rewrite', focus: true, crumb: 'contextRewrite', lesson: true , deferred: true },
+  { id: 'timedwr', path: 'timed-writing', design: 'timedwr', screen: 'timed-writing', focus: true, crumb: 'timedWriting', lesson: true , deferred: true },
   { id: 'review', path: 'review', design: 'review', screen: 'review', focus: true, crumb: 'review', lesson: true, intent: 'vocabulary.review_due' },
-  { id: 'timed', path: 'timed-recall', design: 'timed', screen: 'timed-recall', focus: true, crumb: 'timedRecall', lesson: true },
-  { id: 'transfer', path: 'transfer', design: 'transfer', screen: 'transfer', focus: true, crumb: 'contextTransfer', lesson: true },
+  { id: 'timed', path: 'timed-recall', design: 'timed', screen: 'timed-recall', focus: true, crumb: 'timedRecall', lesson: true , deferred: true },
+  { id: 'transfer', path: 'transfer', design: 'transfer', screen: 'transfer', focus: true, crumb: 'contextTransfer', lesson: true , deferred: true },
   { id: 'feed', path: 'feed', design: 'feed', screen: 'feed', focus: true, crumb: 'dailyFeed', lesson: true },
   { id: 'errfix', path: 'from-your-errors', design: 'errfix', screen: 'errors', focus: true, crumb: 'fromYourErrors', lesson: true },
   { id: 'gconcept', path: 'grammar/:id', design: 'gconcept', screen: 'grammar-concept', focus: true, crumb: 'grammar', lesson: true, intent: 'grammar.point' },
 
   // First run: Onboarding.dc.html, its own full-window flow.
   { id: 'welcome', path: 'welcome', design: 'onboarding', screen: 'onboarding', focus: false, bare: true, crumb: 'welcome' },
+
+  // Platform Admin (D-101 E): Orena-Admin.dc.html, its own shell (rail, header, phone switcher)
+  // instead of the learner's, so `bare` here means "no learner frame". Only for an admin; anyone
+  // else meets the design's No access frame and no admin request is made (screens/admin).
+  { id: 'admin', path: 'admin', design: 'admin', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
+  { id: 'adminAi', path: 'admin/ai', design: 'ai', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
+  { id: 'adminProvider', path: 'admin/ai/provider/:id', design: 'aiprov', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
+  { id: 'adminProviderKey', path: 'admin/ai/provider/:id/key', design: 'aiconf', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
+  { id: 'adminCapability', path: 'admin/ai/capability/:id', design: 'aicap', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
+  { id: 'adminContent', path: 'admin/content', design: 'content', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
+  { id: 'adminBooks', path: 'admin/content/books', design: 'books', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
+  { id: 'adminBook', path: 'admin/content/books/:id', design: 'book', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
+  { id: 'adminMedia', path: 'admin/content/media', design: 'media', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
+  { id: 'adminMediaItem', path: 'admin/content/media/:id', design: 'mediaItem', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
+  { id: 'adminVocab', path: 'admin/content/vocabulary', design: 'vocab', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
+  { id: 'adminCollection', path: 'admin/content/vocabulary/:id', design: 'vocabItem', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
+  { id: 'adminReading', path: 'admin/reading', design: 'reading', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
+  { id: 'adminQueue', path: 'admin/reading/queue', design: 'queue', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
+  { id: 'adminArticle', path: 'admin/reading/article/:id', design: 'detail', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
+  { id: 'adminSet', path: 'admin/reading/set/:id', design: 'cset', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
+  { id: 'adminAdd', path: 'admin/reading/add', design: 'add', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
+  { id: 'adminSources', path: 'admin/reading/sources', design: 'sources', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
+  { id: 'adminSource', path: 'admin/reading/source/:id', design: 'source', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
+  { id: 'adminImports', path: 'admin/imports', design: 'imports', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
+  { id: 'adminImportBooks', path: 'admin/imports/books', design: 'impBooks', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
+  { id: 'adminImportMedia', path: 'admin/imports/media', design: 'impMedia', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
+  { id: 'adminImportVocab', path: 'admin/imports/vocabulary', design: 'impVocab', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
+  { id: 'adminImportSource', path: 'admin/imports/sources', design: 'impSources', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
+  { id: 'adminJobs', path: 'admin/imports/jobs', design: 'jobs', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
+  { id: 'adminJob', path: 'admin/imports/jobs/:id', design: 'job', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
+  { id: 'adminHistory', path: 'admin/imports/history', design: 'history', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
 ]);
 
+/* An address inside Platform Admin. main.js asks this for a signed-in account that is not an admin,
+   so it can show the No access frame in place of the internal-review notice. */
+export function isAdminHash(hash = '') {
+  return /^#\/?admin(?:[/?]|$)/.test(String(hash));
+}
+
 export const DEFAULT_ROUTE = 'today';
+
+/* The eight Coming-soon screens are not in this release (D-101 H9): their routes stay (an old link
+   still lands on the design's Coming soon screen), but no entry to them is drawn anywhere. */
+export function isDeferred(routeId) {
+  return Boolean(byId(routeId)?.deferred);
+}
+
+/* Where the empty address opens (D-098): Welcome for a learner the backend has no profile for, or
+   whose profile names no learning language; Today otherwise. Only what the server answered decides
+   it - a profile that could not be read (null) is not "no profile", and opens Today. The declared
+   level is not read: the backend does not store one (`writing_coach/account_profile.py`,
+   `declared_level` is `stored=False`), so requiring it would send every learner to Welcome on every
+   visit - left to the human (UI_BACKEND_GAPS, "Entry routing and the declared level"). */
+export function entryRoute({ profile, activeLanguage } = {}) {
+  if (profile && profile.exists === false) return 'welcome';
+  if (profile && !String(profile.language || activeLanguage || '').trim()) return 'welcome';
+  return DEFAULT_ROUTE;
+}
 
 const compiled = ROUTES.map((route) => {
   const names = [];

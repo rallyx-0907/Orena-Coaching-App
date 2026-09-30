@@ -15,8 +15,32 @@ throwaway test database by pointing Alembic's `version_locations` at this
 directory. It becomes real by being moved into `versions/` — one `git mv`,
 after the review and authorization its own docstring names.
 
-**No proposal is open.** The table is the history of what passed through here
-and now lives in `versions/`.
+**No proposal is open.** D4, the learner records (`docs/project/proposals/LEARNER_RECORDS_D4.md`, revision 3, decided by
+D-104), passed its independent review (APPROVE) and rehearsal (53 PASS at 100k rows); the human authorized it for the lane
+runtime :8021 only (D-105). Its seven revisions moved into `versions/` together and were applied to :8021 one revision per
+invocation after a backup (2026-09-30). :8000 is untouched until the merge and its own gates. Below, what D4 added, then
+the earlier history.
+
+| D4 revision (now in `versions/`) | What it adds |
+| --- | --- |
+| `20260930_0017_declared_level.py` | `user_language_profiles.declared_level` (H2, merged into D4). |
+| `20260930_0018_account_settings.py` | `users.learning_language`, `interface_language`, `weekly_goal_days`, `settings_updated_at` (the server-owned version token). Own operator step after a backup. |
+| `20260930_0019_review_settings.py` | Review new-per-day, limit-per-day and modes on `user_language_profiles`. |
+| `20260930_0020_listening_score_source.py` | `listening_progress.score_source` (`client` for every existing row; the server recomputes Dictation scores). |
+| `20260930_0021_essay_review_history.py` | New table `essay_review_history` (immutable prior reviews; scope is the essay's, no `user_id`/`language_code` copies) with a PostgreSQL `BEFORE UPDATE` trigger. |
+| `20260930_0022_library_items_place.py` | `library_items.place`, `place_at` and a partial index (continuation). |
+| `20260930_0023_grammar_quiz_result.py` | `grammar_progress.last_quiz_correct`, `last_quiz_total`, `last_quiz_at` and a PostgreSQL CHECK. |
+
+**Apply one revision per invocation.** `migrations/env.py` runs an invocation in one transaction, so its locks last to the
+commit; a single `--upgrade` to head would hold 0018's lock on `users` through 0022's index build and 0023's CHECK scan.
+The operator applies `bootstrap_runtime_schema.py --upgrade --from <rev> --to <rev> --confirm` seven times, in order, and
+**0018 alone, immediately after a fresh backup** (`users` is written on every sign-in). The maintenance window for :8000 is
+set from the measured per-revision lock-hold times of `scripts/rehearse_learner_records_schema.py --volume N`
+(proposal section 5.2).
+
+The ORM models and application code do not change until authorization (the proposal lists the changes, section 15), so
+a runtime at `20260924_0016` keeps working.
+
 
 | Proposal | Outcome |
 | --- | --- |

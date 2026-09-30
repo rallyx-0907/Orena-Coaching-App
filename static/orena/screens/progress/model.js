@@ -92,13 +92,17 @@ const roundOrNull = (value) => (Number.isFinite(Number(value)) ? Math.round(Numb
    are essay-grounded, so both file under domain "writing" - the mislabel this fixes is filing
    `outcomes` as dictation/listening (see the module doc comment).
 
-   `e.text` is never read here: GET /api/essays is the LIST route, and app.py's row_to_dict()
-   unconditionally pops `text` in its non-detail branch (the only branch this route ever takes) -
-   confirmed against writing_coach/persistence/learning_repository.py's _essay_payload(), which
-   proves the field exists on the raw row and is stripped only at this route's serialization step.
-   Only GET /api/essays/{id} (detail=True) carries it, and fetching that per row would mean one
-   request per essay just to fill a list. responseText is the honest empty for essay rows, same as
-   the outcomes rows two lines below already are - never a guess at text this endpoint can't send. */
+   `e.excerpt` (N-36 point 1, resolved): GET /api/essays is the LIST route, and app.py's
+   row_to_dict() used to pop `text` in its non-detail branch with nothing put in its place, so a
+   list row carried a title only. row_to_dict()'s non-detail branch now derives a short, bounded
+   `excerpt` from the stored text at serialization time (never the full text - only
+   GET /api/essays/{id}, detail=True, carries that) and this is the one place this screen reads it.
+   `e.language_code` is the essay's own per-row language field (present on the list item too,
+   confirmed against the captured fixture) - used to mark this text's `lang` (kit/lang.js), rather
+   than the screen's generic active learning language, since a kept essay could in principle predate
+   a learner's current language, the same reasoning Word Detail's saved-word fallback already
+   documents. Practice-outcome rows have no comparable text source (GET /api/practice-outcomes
+   carries no excerpt-worthy field) and keep the honest empty (rule 40). */
 export function buildWritingEvidence(essays, outcomes) {
   const fromEssays = (Array.isArray(essays) ? essays : []).map((e) => ({
     id: `essay:${e.id}`,
@@ -107,7 +111,8 @@ export function buildWritingEvidence(essays, outcomes) {
     kind: 'essay',
     essayId: e.id,
     sourceText: clip(firstLine(e.prompt)),
-    responseText: '',
+    responseText: e.excerpt || '',
+    responseLanguage: e.language_code || '',
     score: roundOrNull(e.overall),
   }));
   const fromOutcomes = (Array.isArray(outcomes) ? outcomes : []).map((o) => ({
@@ -118,6 +123,7 @@ export function buildWritingEvidence(essays, outcomes) {
     essayId: o.essay_id,
     sourceText: clip(o.grammar_title || o.focus_label || ''),
     responseText: '',
+    responseLanguage: '',
     score: roundOrNull(o.overall),
   }));
   return [...fromEssays, ...fromOutcomes];

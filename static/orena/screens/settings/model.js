@@ -7,6 +7,7 @@
    effect for is never wired to pretend, and never removed either (rule 43) - it is drawn, with its
    control inert. Every disabled row here is named in the report and in
    docs/project/UI_BACKEND_GAPS.md, not silently decided. */
+import { INTERFACE_ENDONYMS, INTERFACE_LOCALES, interfaceLanguageOptions as sharedInterfaceLanguageOptions } from '../../kit/lang.js';
 
 export const TABS = Object.freeze(['languages', 'learning', 'review', 'notifications', 'plan']);
 
@@ -17,9 +18,10 @@ export function tabFromQuery(raw) {
 
 /* A language's own endonym, invariant across every interface language - the same choice
    static/orena/app.js's own preferences dialog already makes (INTERFACE_NAMES), so a learner who
-   cannot yet read English still recognises "English" as the option that means English. */
-export const INTERFACE_ENDONYMS = Object.freeze({ en: 'English', vi: 'Tiếng Việt', zh: '中文' });
-export const INTERFACE_LOCALES = Object.freeze(['en', 'vi', 'zh']);
+   cannot yet read English still recognises "English" as the option that means English. Shared with
+   Onboarding's own Languages step (kit/lang.js), which draws the identical picker, so the two
+   screens cannot independently diverge on it. */
+export { INTERFACE_ENDONYMS, INTERFACE_LOCALES };
 
 /* Target language: the two enabled learning languages the platform actually has
    (GET /api/platform/languages `languages[]`), each labelled with the interface's own translated
@@ -42,8 +44,16 @@ export function supportLanguageOptions(supportLanguages) {
     .map((item) => ({ code: item.code, label: item.label }));
 }
 
+/* The frame draws the support language as a segmented control, which holds a short list. Past
+   this many options it becomes a picker - a button that opens a sheet of rows (D-098). */
+export const SEGMENTED_MAX_OPTIONS = 4;
+
+export function usesPicker(row) {
+  return row?.id === 'support' && Array.isArray(row.options) && row.options.length > SEGMENTED_MAX_OPTIONS;
+}
+
 export function interfaceLanguageOptions(locales = INTERFACE_LOCALES) {
-  return locales.map((code) => ({ code, label: INTERFACE_ENDONYMS[code] || code }));
+  return sharedInterfaceLanguageOptions(locales);
 }
 
 /* A quota bar's fill: 0 whenever the limit is not a real positive number (rule 40 - a metric with
@@ -64,8 +74,25 @@ export function languageRows({ languages, supportLanguages, targetCode, supportC
   ];
 }
 
-export function learningRows({ sizeBucket, autoscroll, meaning }) {
+/* Appearance (D-067 review item): Light / Dark / System, System the default (D-089). The design
+   draws no appearance/theme group anywhere in Settings (docs/design/canonical-ui, frame 26 - every
+   row across all five tabs is accounted for in the inventory and none is a theme control), so this
+   row goes in the most fitting existing group rather than inventing one: Learning is the only tab
+   that already holds a pure, device-only *display* preference with no language and no account
+   effect - Reader text size - the same shape Appearance is. It leads the tab, since it is the most
+   general of the group (it affects the whole app, not only the Reader). `theme` is already
+   normalized by kit/device.js's `appearance()` (light/dark/system, an invalid value read back as
+   system) - `appearanceValue` here is a second, independent fallback so this pure module never
+   trusts its caller and never throws on an unexpected value either (the same defensive shape
+   `sizeBucketOf` already gives Reader text size). */
+const APPEARANCE_VALUES = Object.freeze(['light', 'dark', 'system']);
+function appearanceValue(value) {
+  return APPEARANCE_VALUES.includes(value) ? value : 'system';
+}
+
+export function learningRows({ sizeBucket, autoscroll, meaning, theme }) {
   return [
+    { id: 'theme', kind: 'choice', options: APPEARANCE_VALUES, value: appearanceValue(theme), disabled: false },
     { id: 'readerSize', kind: 'choice', options: ['S', 'M', 'L'], value: sizeBucket, disabled: false },
     { id: 'autoscroll', kind: 'toggle', value: Boolean(autoscroll), disabled: false },
     { id: 'meaning', kind: 'toggle', value: Boolean(meaning), disabled: false },

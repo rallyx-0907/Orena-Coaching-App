@@ -53,7 +53,7 @@ export function createSpeakingTake({
   let disposed = false;
   let startedAt = 0;
   let take = null; // { blob, url, ms }
-  const state = { phase: TAKE.IDLE, result: null, error: null, kept: null, reference: '' };
+  const state = { phase: TAKE.IDLE, result: null, error: null, kept: null, attemptId: '', reference: '' };
 
   const emit = () => {
     if (!disposed) onChange({ ...state, take: take ? { url: take.url, ms: take.ms } : null, elapsedMs: elapsedMs() });
@@ -122,7 +122,7 @@ export function createSpeakingTake({
   async function assess(reference, mine = ++generation) {
     if (!take) return;
     const line = String(reference || '').trim();
-    set({ phase: TAKE.PROCESSING, error: null, result: null, kept: null, reference: line });
+    set({ phase: TAKE.PROCESSING, error: null, result: null, kept: null, attemptId: '', reference: line });
     try {
       const result = await api.assessPronunciation(take.blob, language, line);
       if (disposed || mine !== generation) return;
@@ -148,7 +148,7 @@ export function createSpeakingTake({
         transcript_text: heard,
         pronunciation: result,
       });
-      await api.saveSpeakingAttempt({
+      const saved = await api.saveSpeakingAttempt({
         language,
         take_id: `${keep.segmentId}:${mine}:${now()}`,
         asset_id: keep.assetId || '',
@@ -157,7 +157,9 @@ export function createSpeakingTake({
         transcript_text: heard,
         evaluation,
       });
-      if (mine === generation) set({ kept: true });
+      // The id of the audio-free record the server stored (`POST /api/speech/attempts` answers
+      // `{ item: { id, ... } }`): what Ask Orena names as `attempt_id` (AGENT_CONTRACT §3).
+      if (mine === generation) set({ kept: true, attemptId: String(saved?.item?.id || '') });
     } catch {
       if (mine === generation) set({ kept: false });
     }

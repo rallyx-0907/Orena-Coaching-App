@@ -1,83 +1,69 @@
-/* Pure data shaping for the Grammar Library (frame 44, route "grammarlib"). No DOM, no fetch: a
-   node gate (scripts/test_orena_screen_grammar.mjs) exercises this directly.
+/* Pure data shaping for the Grammar Library (frame 44, route "grammarlib") on the grammar content
+   contract's catalogue projection (docs/project/GRAMMAR_CONTENT_CONTRACT.md §9; D-100). No DOM,
+   no fetch: scripts/test_orena_screen_grammar.mjs exercises this against a contract-shaped,
+   test-only fixture.
 
-   The frame's own mock draws four fixed groups ("from your recent errors" / "at your level" /
-   "saved concepts" / "recommended next") - sample content, not a data contract (D-068). The real
-   backend (GET /api/library/grammar) has no per-learner "recent errors" feed, no saved-concept
-   list and no recommendation ranking (Design Contract rule 40: nothing here invents one). What it
-   does have, and what this groups by, is each lesson's own `level` and `module`/`category` - the
-   same fields product/grammar-shelf.js's grammarFamilies() already groups on for the old UI. This
-   keeps the frame's drawn shape (a heading, a real hint, a grid of tappable concept cards) while
-   sourcing every group from a field the API actually returns. Recorded as a backend gap in
-   SCRATCH/reports/grammar.md, not resolved by inventing the mock's other three groups. */
-import { grammarShelf, grammarFamilies } from '../../product/grammar-shelf.js';
+   What each card draws, from which field (frame 44's concept card):
+   - title   `header.native_title` (+ `native_title_pinyin` for Chinese), never `header.title`
+             (contract §1): the point's name in the language being learned;
+   - note    `header.title` in the support language - the gloss §1 names for "dòng phụ";
+   - tile    the level value (`level.value`, CEFR A1-C2 or HSK 1-9).
+   Groups are one per level, in `level.rank` order; inside a group the rows keep the feeder's
+   `function`, `sequence` order, and the hint counts the group's `function` values (§9: "đếm và
+   nhóm theo function trong mỗi level là việc của UI").
 
-/* languages-4 (2) / finding B.2: `level_names[level]` (writing_coach/languages/grammar_registry.py
-   `GrammarProvider.level_names`) is the backend's own English label ("Foundation", "Upper-
-   intermediate", …) for a closed, small value space - exactly nine distinct labels across both
-   providers, the English track's six (A1-C2) and the Chinese/HSK track's seven (HSK1-7-9), each
-   provider reusing the same English word for the levels that mean the same standing. Closed enough
-   to map the level *code* (not the backend's own English text, which is not itself translated) to
-   real interface copy in en/vi/zh (grammar/copy.js) - this frontend cannot change backend code, so
-   the mapping lives here, keyed by the one stable thing both providers already return: `library.
-   levels`, the same array `level` itself comes from. A level code this table does not recognise
-   (a future provider) falls back to the raw code rather than guessing a label. */
-const LEVEL_NAME_KEY = Object.freeze({
-  A1: 'levelFoundation', A2: 'levelCore', B1: 'levelIntermediate', B2: 'levelUpperIntermediate',
-  C1: 'levelAdvanced', C2: 'levelMastery',
-  HSK1: 'levelFoundation', HSK2: 'levelBasic', HSK3: 'levelLowerIntermediate', HSK4: 'levelIntermediate',
-  HSK5: 'levelUpperIntermediate', HSK6: 'levelAdvanced', 'HSK7-9': 'levelAdvancedMastery',
-});
+   Not drawn, because the content does not carry it (§9: learner state is joined by id and has no
+   source yet): the frame's four sample groups (recent errors, at your level, saved, recommended)
+   and the per-card status tag. Recorded in docs/project/UI_BACKEND_GAPS.md, not invented. */
+import { contractText, levelCode, sortCatalog } from '../../product/grammar-source.js';
 
-export function levelName(level, t) {
-  const key = LEVEL_NAME_KEY[level];
-  return key ? t(key) : String(level || '');
+/* Level names (interface copy, grammar/copy.js). CEFR by its six levels; HSK 3.0 by its three
+   bands (初等 1-3, 中等 4-6, 高等 7-9), the level number itself staying in the heading. */
+const CEFR_KEY = Object.freeze({ A1: 'cefrA1', A2: 'cefrA2', B1: 'cefrB1', B2: 'cefrB2', C1: 'cefrC1', C2: 'cefrC2' });
+
+export function levelNameKey(level) {
+  if (level?.framework === 'hsk3') {
+    const n = Number(level.value);
+    if (!Number.isInteger(n) || n < 1 || n > 9) return '';
+    return n <= 3 ? 'hskBand1' : n <= 6 ? 'hskBand2' : 'hskBand3';
+  }
+  if (level?.framework === 'cefr') return CEFR_KEY[String(level.value || '').toUpperCase()] || '';
+  return '';
 }
 
-/* One row per level the API lists, in the order it lists them (curriculum order, A1..C2), each
-   with the concepts of that level as the group's grid. A level with no concepts (should not
-   happen against a real catalogue) is left out rather than drawn empty. */
-export function buildLibraryGroups(library, support = 'en', t) {
-  const lessons = Array.isArray(library?.lessons) ? library.lessons : [];
-  const levels = Array.isArray(library?.levels) ? library.levels : [];
-  const items = grammarShelf({ lessons }, [], support);
+/* "B1 · Intermediate", "HSK 3 · Elementary" - an unknown level shows its bare code, never a guessed
+   name. */
+export function levelHeading(level, t) {
+  const code = levelCode(level);
+  const key = levelNameKey(level);
+  return key ? t('levelHeading', { code, name: t(key) }) : code;
+}
+
+/* The 44x44 tile's text: the level value, "B1" or "HSK3" (the frame's tile holds a short code). */
+export function levelTile(level) {
+  return levelCode(level).replace(/\s+/g, '');
+}
+
+export function buildLibraryGroups(rows, support = 'en', t = (key) => key) {
+  const list = Array.isArray(rows) ? sortCatalog(rows) : [];
   const groups = [];
-  for (const level of levels) {
-    const levelItems = items.filter((item) => item.level === level);
-    if (!levelItems.length) continue;
-    const rollup = grammarFamilies(levelItems)[0];
-    const completed = levelItems.filter((item) => item.completed).length;
-    groups.push({
-      level,
-      levelName: levelName(level, t),
-      // languages-4 (1) / finding A: whether this group's own lesson titles are genuine
-      // target-language content this build can honestly mark with `lang`. The English track's
-      // titles are real English at every level (docs/project/UI_BACKEND_GAPS.md N-33, spot-checked
-      // against writing_coach/languages/english/grammar_curriculum.json); the Chinese/HSK track's
-      // titles are a content gap - authored in Vietnamese only, not Chinese, with no locale-map
-      // shape to select from (N-33) - so marking them `lang="zh"` would misrepresent Vietnamese
-      // text as Chinese. `library.levels` (and so every group built from it) is scoped to one
-      // provider per response - never a mix - so this is decided once per group, not per item.
-      titleLang: level.startsWith('HSK') ? '' : 'en',
-      topics: rollup?.families?.length || 0,
-      total: levelItems.length,
-      completed,
-      items: levelItems.map((item) => ({
-        id: item.id,
-        title: item.title,
-        level: item.level,
-        note: item.heading || item.line || item.module || item.category || '',
-        completed: Boolean(item.completed),
-      })),
+  for (const row of list) {
+    const header = row.header || row;
+    const key = `${row.level?.framework || ''}:${row.level?.value ?? ''}`;
+    let group = groups.find((entry) => entry.key === key);
+    if (!group) {
+      group = { key, level: row.level, heading: levelHeading(row.level, t), functions: new Set(), items: [] };
+      groups.push(group);
+    }
+    if (row.function) group.functions.add(row.function);
+    group.items.push({
+      id: String(row.id),
+      title: String(header.native_title || ''),
+      titlePinyin: Array.isArray(header.native_title_pinyin) ? header.native_title_pinyin : null,
+      lang: String(row.id).startsWith('zh.') ? 'zh' : 'en',
+      note: contractText(header.title, support),
+      tile: levelTile(row.level),
     });
   }
-  return groups;
-}
-
-/* Every lesson dropped by grammarShelf (kind === 'review', or no line at all) - so a caller can
-   report real coverage instead of a silently smaller total (rule 40). */
-export function droppedCount(library) {
-  const lessons = Array.isArray(library?.lessons) ? library.lessons : [];
-  const kept = new Set(grammarShelf({ lessons }, [], 'en').map((item) => item.id));
-  return lessons.filter((lesson) => !kept.has(String(lesson.id))).length;
+  return groups.map(({ functions, ...group }) => ({ ...group, topics: functions.size }));
 }

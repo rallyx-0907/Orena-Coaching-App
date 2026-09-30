@@ -291,19 +291,32 @@ def test_a_body_larger_than_writing_is_refused_before_it_is_parsed(review) -> No
 
 
 def test_writing_at_the_limit_is_accepted(review) -> None:
-    """The bound is a bound, not a margin: what fits must work."""
+    """The bound is a bound, not a margin: what fits must work.
+
+    Writing, not one unbroken run of letters: a single twelve-thousand-letter
+    "word" is not an attempt at writing and the request minimum refuses it. This
+    is exactly the ceiling, in words.
+    """
     client, evaluator = review
-    at_the_limit = "a" * MAX_CHARACTERS
+    at_the_limit = "word " * (MAX_CHARACTERS // len("word "))
+    assert len(at_the_limit) == MAX_CHARACTERS
     answer = _ask(client, text=at_the_limit)
     assert answer.status_code == 200
     assert len(evaluator.calls) == 1
 
 
-def test_multibyte_writing_is_measured_by_what_it_is_not_by_its_bytes(review) -> None:
-    """A Chinese essay is not three times shorter than an English one."""
+def test_multibyte_writing_is_measured_by_what_it_is_not_by_its_bytes(
+    review, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A Chinese essay is not three times shorter than an English one.
+
+    Asked as what it is - a Chinese essay, by a learner of Chinese - so it is
+    counted in Han characters like any other, not as one very long English word.
+    """
     client, evaluator = review
+    monkeypatch.setattr(app_module, "active_grammar_language_code", lambda: "zh")
     chinese = "漢" * (MAX_CHARACTERS // 2)
     assert len(chinese.encode("utf-8")) > MAX_CHARACTERS
-    answer = _ask(client, text=chinese)
+    answer = _ask(client, text=chinese, learning_language="zh")
     assert answer.status_code == 200, "half the character bound fits, whatever it costs in bytes"
     assert len(evaluator.calls) == 1

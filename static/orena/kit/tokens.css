@@ -153,4 +153,44 @@
   --sh-hero: 0 18px 40px rgba(60, 40, 140, .28);
   --deco-strong: rgba(255, 255, 255, .22);
   --deco-soft: rgba(255, 255, 255, .16);
+
+  /* Orena's own theme-independent literals (11-Orena-Home, 55-Contextual-Orena, 56-Orena-Voice;
+     D1 "Orena Home" §6, E5 "Contextual Orena"/"Orena Voice" §6-7; orena-script.js's voiceDot/
+     voiceMainBg/voiceSpeakBg maps) - moved out of screens/orena/orena.css under the same D-091
+     pattern above, each value measured against the pinned source, not invented:
+     - --sh-composer: the gradient-ring composer card's own shadow (D1 §6, "box-shadow:0 10px
+       30px rgba(122,92,246,.14)").
+     - --mark-glow-hero: Orena Home's 56px header mark glow (D1 §6, "box-shadow:0 8px 20px
+       rgba(122,92,246,.35)").
+     - --voice-dot-idle/listening/thinking/speaking: the phase dot on the inline voice row and
+       the voice screen (orena-script.js voiceDot map, exact per-phase hex).
+     - --voice-main / --voice-main-listening / --voice-main-shadow: the main mic/stop button
+       (voiceMainBg: the brand gradient idle/thinking/speaking, red while listening) and its own
+       shadow (E5 §7.2, "box-shadow:0 10px 30px rgba(122,92,246,.4)").
+     - --voice-bg / --voice-ink / --voice-ink-soft / --voice-mute / --voice-mute-soft /
+       --voice-line / --voice-line-soft / --voice-fill / --voice-fill-faint / --voice-fill-on /
+       --voice-glow / --voice-glow-strong: frame 56, which the source renders identically
+       regardless of body[data-theme] (E5 §7.2 - confirmed against the frame's own literal
+       styles, not the themed tokens); --voice-fill-on is voiceSpeakBg's "reply on" literal. */
+  --sh-composer: 0 10px 30px rgba(122, 92, 246, .14);
+  --mark-glow-hero: 0 8px 20px rgba(122, 92, 246, .35);
+  --voice-dot-idle: #7cffb2;
+  --voice-dot-listening: #6fd6ff;
+  --voice-dot-thinking: #ff7ad9;
+  --voice-dot-speaking: #b98cff;
+  --voice-main: linear-gradient(135deg, #7a5cf6, #ff7ad9);
+  --voice-main-listening: #e5484d;
+  --voice-main-shadow: 0 10px 30px rgba(122, 92, 246, .4);
+  --voice-bg: radial-gradient(120% 80% at 50% 30%, #221a4a 0%, #120e26 55%, #0b0918 100%);
+  --voice-ink: #f4f2fa;
+  --voice-ink-soft: #d9d4ea;
+  --voice-mute: #b9b3cc;
+  --voice-mute-soft: #8f88a8;
+  --voice-line: rgba(255, 255, 255, .14);
+  --voice-line-soft: rgba(255, 255, 255, .08);
+  --voice-fill: rgba(255, 255, 255, .06);
+  --voice-fill-faint: rgba(255, 255, 255, .05);
+  --voice-fill-on: rgba(255, 255, 255, .08);
+  --voice-glow: rgba(111, 214, 255, .12);
+  --voice-glow-strong: rgba(111, 214, 255, .4);
 }

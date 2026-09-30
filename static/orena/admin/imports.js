@@ -10,67 +10,19 @@
    collection as a whole. Book and media attempts are recorded server-side, so
    history lists failures too, with the stage where each one stopped. */
 import { adminApi } from './api.js';
+import {
+  HISTORY_PAGE, VOCABULARY_FIELDS, PRIMARY_FIELDS, MEDIA_LEVELS, runQueue, bookOutcome, mediaOutcome,
+  defaultCollectionTitle, slugFor, vocabularyProblems, vocabularyMetadata,
+} from '../capabilities/admin-imports.js';
 import { addForms, jobRows, submissionFrom } from './reading.js';
 import { watch as watchJob } from './tray.js';
 import { emptyBlock, errorBlock, failureDetail, gapNote, loadingBlock } from './states.js';
 import { bytes, chip, dateTime, duration, esc, fill, languageName, notice, num, pager, panel, relative, select, table } from './format.js';
 import { safeExternal } from '../ui/html.js';
 
-export const HISTORY_PAGE = 20;
-export const VOCABULARY_FIELDS = [
-  'term', 'short_meaning', 'reading', 'pronunciation', 'part_of_speech', 'example', 'level',
-  'detailed_definition', 'usage', 'framework', 'topic', 'meaning_language', 'target_language', 'orthography', 'sense_key',
-];
-const PRIMARY_FIELDS = 7;
-/* The level scales the media library accepts per learning language
-   (media_library_store.validate_entry); any other value is refused there. */
-export const MEDIA_LEVELS = {
-  en: ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'],
-  zh: ['HSK1', 'HSK2', 'HSK3', 'HSK4', 'HSK5', 'HSK6', 'HSK7-9'],
-};
-
-/* Run `worker` over `items` one at a time. Each item moves queued ->
-   processing -> its outcome, and a thrown error is that item's failure, never
-   the queue's. */
-export async function runQueue(items, worker, onUpdate = () => {}) {
-  for (const item of items) item.state = 'queued';
-  onUpdate(items);
-  for (const item of items) {
-    item.state = 'processing';
-    onUpdate(items);
-    try {
-      Object.assign(item, await worker(item));
-    } catch (error) {
-      Object.assign(item, { state: 'failed', code: error?.category || 'unknown', message: error?.message || '' });
-    }
-    onUpdate(items);
-  }
-  return items;
-}
-
-export function bookOutcome(row) {
-  if (row?.status === 'ok') return { state: 'published', title: row.title, chapters: row.chapter_count, contentId: row.book_id };
-  if (row?.status === 'duplicate') return { state: 'duplicate', title: row.title, contentId: row.book_id };
-  return { state: 'failed', code: row?.category || 'unknown', stage: row?.stage || 'parse' };
-}
-
-export function mediaOutcome(row) {
-  // The server keys an uploaded file by its content: the same bytes again are
-  // the item already in the library, not a failure and not a second copy.
-  if (row?.status === 'duplicate') return { state: 'duplicate', contentId: row.media_id };
-  if (row?.status === 'ok') {
-    return { state: 'published', contentId: row.media_id, has_transcript: row.has_transcript ?? null, segment_count: row.segment_count ?? null };
-  }
-  /* The importer's stable category, so the console says it in the operator's
-     language instead of quoting an English sentence back at them. The server's
-     `detail` stays as the fallback for a category this build does not know. */
-  return {
-    state: 'failed',
-    code: row?.category || 'source',
-    stage: 'source',
-    message: row?.detail || '',
-  };
-}
+/* The rules of the importers - the queue, the outcomes, the vocabulary fields, the level scales, the
+   source slug - live in capabilities/admin-imports.js, shared with the new UI's Admin (D-101 E). */
+export { HISTORY_PAGE, VOCABULARY_FIELDS, MEDIA_LEVELS, runQueue, bookOutcome, mediaOutcome, defaultCollectionTitle, slugFor };
 
 /* A known failure has words in both languages; otherwise the server's own
    detail is shown, marked as quoted where the interface is not English. */
@@ -80,21 +32,8 @@ export function failureText(item, t) {
   return [stage, reason].filter(Boolean).join(t.pairSep);
 }
 
-export function defaultCollectionTitle(filename) {
-  const stem = String(filename || '').replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim();
-  return stem ? stem[0].toLocaleUpperCase() + stem.slice(1) : '';
-}
-
-export function validateVocabulary({ files = [], previews = [], mappings = {}, metadata = {} }, t) {
-  const errors = [];
-  if (!files.length) errors.push(t.validationFiles);
-  if (!String(metadata.title || '').trim()) errors.push(t.validationTitle);
-  for (const preview of previews) {
-    if (preview.error) continue;
-    if (!mappings[preview.filename]?.term) errors.push(fill(t.validationTerm, { file: preview.filename }));
-  }
-  if (metadata.publish && !metadata.attested) errors.push(t.validationAttest);
-  return errors;
+export function validateVocabulary(state, t) {
+  return vocabularyProblems(state).map((problem) => (problem.file ? fill(t[problem.key], { file: problem.file }) : t[problem.key]));
 }
 
 function queueTable(items, t, ui, describe) {
@@ -126,19 +65,6 @@ function fileControl({ label, accept, count, disabled }, t, ui) {
 /* Every kind of content Orena holds, in the order an operator meets them:
    the three that are read, then the words, then where content comes from. */
 export const FLOWS = ['reading', 'books', 'media', 'vocabulary', 'sources'];
-
-/* The engine keys a source by slug, and an operator types a name. One is
-   derived from the other rather than asked for twice. */
-export function slugFor(name) {
-  const base = String(name || '')
-    .normalize('NFKD')
-    .replace(/[̀-ͯ]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 120);
-  return base || `source-${Date.now().toString(36)}`;
-}
 
 export function chooserView(flow, t) {
   return `<div class="ac-chooser" role="group" aria-label="${esc(t.newImport)}">${FLOWS
@@ -534,19 +460,7 @@ export async function renderImports(container, env) {
     paintFlow();
     const meta = vocabulary.metadata;
     try {
-      vocabulary.results = await api.vocabularyImport(vocabulary.files, {
-        title: meta.title.trim(),
-        language_code: meta.language,
-        meaning_language: meta.meaning_language,
-        framework: meta.framework,
-        level: meta.level,
-        topic: meta.topic,
-        collection_id: meta.collection_id,
-        rights_status: meta.rights_status,
-        completeness: meta.completeness,
-        publish: meta.publish,
-        publication_attested: meta.publish && meta.attested,
-      }, vocabulary.mappings);
+      vocabulary.results = await api.vocabularyImport(vocabulary.files, vocabularyMetadata(meta), vocabulary.mappings);
     } catch (error) {
       vocabulary.errors = [error?.message || t.loadFailed];
     }

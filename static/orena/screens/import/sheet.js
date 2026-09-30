@@ -6,11 +6,10 @@
    - url   -> capabilities/media-acquisition.js#acquireMedia (POST /api/media-learning/import, then
              /import/status while the backend's own job is resumable), then Listening.
 
-   File is not a third path: the frame draws no `impIsFile` step at all - its own onClick handler
-   (`impPickText` in orena-script.js) is a toast, "Text and File import are not built in this
-   round," while it stays on the type picker. This build matches that exactly (rule 43/44: an
-   offered control must work as the source defines it, and nothing the source does not draw is
-   built) - clicking File toasts and the type step stays open; there is no upload flow here.
+   - file  -> the device's file picker, then POST /api/media-learning/upload (D-098: the human wired
+             File to that route, with the types and size limit it already enforces), then
+             Listening. The frame draws no File step of its own, so none is added: the picker is
+             the device's, and the wait is the drawn Processing step.
 
    The frame's own "Preview" step (I3b) has no cheap counterpart on the backend - the only way to
    learn a URL's title/thumbnail/duration is to run the same acquisition the "Processing" step runs -
@@ -29,7 +28,7 @@ import { api } from '../../infrastructure/api.js';
 import { acquireMedia } from '../../capabilities/media-acquisition.js';
 import { isSupportedMediaUrl } from '../../product/media-url.js';
 import { t } from './copy.js';
-import { textStats, importErrorKey, urlMediaEntry } from './model.js';
+import { textStats, importErrorKey, urlMediaEntry, uploadMediaEntry } from './model.js';
 
 const STEP_LABEL = { type: 'stepType', text: 'stepText', url: 'stepUrl', processing: 'stepProcessing' };
 
@@ -55,6 +54,9 @@ export async function openImport(ctx = {}) {
     textError: '',
     processError: '',
     busy: false,
+    source: 'url',
+    file: null,
+    fileRefused: false,
   };
 
   function go(step) {
@@ -79,6 +81,7 @@ export async function openImport(ctx = {}) {
         <div class="s-import__option-title">${t('optionFileTitle')}</div>
         <div class="s-import__option-sub">${t('introFile')}</div>
       </button>
+      <input type="file" accept="audio/*,video/*" data-file hidden>
     `;
   }
 
@@ -119,9 +122,10 @@ export async function openImport(ctx = {}) {
       return html`
         <div class="s-import__error">${state.processError}</div>
         <div class="s-import__footer">
-          <button type="button" class="o-btn o-btn--secondary o-btn--sm" data-back="url">${s('back')}</button>
+          <button type="button" class="o-btn o-btn--secondary o-btn--sm" data-back="${state.source === 'file' ? 'type' : 'url'}">${s('back')}</button>
           <button type="button" class="o-btn o-btn--primary s-import__cta" data-retry>${s('retry')}</button>
         </div>
+        ${state.source === 'file' ? html`<input type="file" accept="audio/*,video/*" data-file hidden>` : ''}
       `;
     }
     return html`
@@ -160,9 +164,14 @@ export async function openImport(ctx = {}) {
   function bind() {
     sheetEl.querySelector('[data-pick="url"]')?.addEventListener('click', () => go('url'));
     sheetEl.querySelector('[data-pick="text"]')?.addEventListener('click', () => go('text'));
-    // The frame draws no File step at all (no `impIsFile` block) - its own handler for this button
-    // is a toast, and the type step stays open. This build matches that exactly (rule 44).
-    sheetEl.querySelector('[data-pick="file"]')?.addEventListener('click', () => toast(t('fileNotBuilt'), { iconName: 'circle-alert' }));
+    /* A refused file is chosen again (Retry opens the picker); a file the server could not store is
+       sent again as it is. */
+    const fileInput = sheetEl.querySelector('[data-file]');
+    sheetEl.querySelector('[data-pick="file"]')?.addEventListener('click', () => fileInput?.click());
+    fileInput?.addEventListener('change', () => {
+      const [file] = fileInput.files || [];
+      if (file) submitFile(file);
+    });
     sheetEl.querySelectorAll('[data-back]').forEach((btn) => btn.addEventListener('click', () => go(btn.dataset.back)));
 
     if (state.step === 'text') {
@@ -187,7 +196,11 @@ export async function openImport(ctx = {}) {
       sheetEl.querySelector('[data-submit="url"]')?.addEventListener('click', submitUrl);
     }
     if (state.step === 'processing' && state.processError) {
-      sheetEl.querySelector('[data-retry]')?.addEventListener('click', submitUrl);
+      sheetEl.querySelector('[data-retry]')?.addEventListener('click', () => {
+        if (state.source !== 'file') submitUrl();
+        else if (state.fileRefused) fileInput?.click();
+        else submitFile(state.file);
+      });
     }
   }
 
@@ -218,8 +231,43 @@ export async function openImport(ctx = {}) {
     }
   }
 
+  /* The route answers with the stored entry's learner payload and its `media_id`; a refusal carries
+     its own category (media_upload_invalid: not audio/video, empty or over the route's limit;
+     media_upload_unavailable: storage failed), each said in the learner's language. */
+  async function submitFile(file) {
+    if (state.busy || !file) return;
+    state.busy = true;
+    state.source = 'file';
+    state.file = file;
+    state.fileRefused = false;
+    state.step = 'processing';
+    state.processError = '';
+    paint();
+    try {
+      const result = await api.mediaUpload(file, context.language);
+      if (!alive) return;
+      state.busy = false;
+      const entry = uploadMediaEntry(result, file.name);
+      if (!entry) {
+        state.processError = t('error_generic');
+        paint();
+        return;
+      }
+      memory?.addMedia?.(entry);
+      sheetHandle?.close();
+      navigate('listening', { id: result.media_id });
+    } catch (error) {
+      if (!alive) return;
+      state.busy = false;
+      state.fileRefused = error?.category === 'media_upload_invalid';
+      state.processError = t(importErrorKey(error?.category));
+      paint();
+    }
+  }
+
   async function submitUrl() {
     if (state.busy) return;
+    state.source = 'url';
     if (!isSupportedMediaUrl(state.url.trim())) {
       state.urlError = t('urlInvalid');
       paint();

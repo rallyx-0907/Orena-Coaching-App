@@ -1,0 +1,657 @@
+/* Listening Workspace (design route `listening`, frame 06, D-091, D-088). A focus workspace
+   (Design Contract rules 47/49): the Follow / Active / Shadowing switch, a real player, a synced
+   transcript, the selected-line actions (Active mode) or the "now playing" card (Follow), and an
+   in-place end-of-media summary. See SCRATCH/reports/listening.md for the measurement diff, the
+   rule-49 recomposition (N-6) and every backend gap.
+
+   What the frame's script does, restated over the real player and transcript:
+   - Follow: a tap on a line seeks there and plays on. Active: a tap selects the line and plays it
+     to its end; the selected line's actions appear. "Work on this line" and the Active switch both
+     select the line being played; Follow clears the selection. Shadowing leaves the room.
+   - "Line" back restarts the current line after its first second, else goes back one; Line forward
+     goes on; Replay plays the selected (or current) line to its end; the speed cycles 1x, 0.75x,
+     0.5x, 1.25x.
+   - Word highlight marks the word being spoken - the asset's own word timing when it has some that
+     reconciles with the line, otherwise the segment-timing estimate the control's "est." admits. */
+import { html, mount, raw } from '../../kit/html.js';
+import { icon } from '../../kit/icons.js';
+import { markGlyph } from '../../kit/brand.js';
+import { useStyles } from '../../kit/styles.js';
+import { langAttr } from '../../kit/lang.js';
+import { toast } from '../../kit/toast.js';
+import { api } from '../../infrastructure/api.js';
+import { languages } from '../../copy/index.js';
+import { shellCopy as s } from '../../copy/shell.js';
+import { askOrena } from '../../shell/agent-bridge.js';
+import { registerActionHandler } from '../../agent/dispatcher.js';
+import {
+  connectMediaPlayer, disconnectMediaPlayer, mediaPlayer, playbackAvailable, posterUrl,
+  replaySegment, seekPlayback, togglePlayback, setPlaybackRate,
+} from '../../capabilities/media-player.js';
+import { activeCanonicalSegment } from '../../capabilities/transcript-timeline.js';
+import { readStage, writeStage, transcriptDefaults } from '../../product/transcript-stage.js';
+import { encounter } from '../../product/encounter.js';
+import { openWordSheet } from '../quick-sheet/sheet.js';
+import { openVocabFocus } from './vocab-sheet.js';
+import { t } from './copy.js';
+import {
+  nextSpeed, speedLabel, contentIdFor, mmss, minutesFrom, metaLine, mapLesson,
+  wordTokens, hanTokens, currentTokenIndex, rowTone, modeHintKey, selectionAfterModeChange,
+  previousIndex, nextIndex, vocabularyForSegment, placeFor, dictationLinesCompleted,
+  pickNextRecommendation, progressPercent, msAtSeekFraction, timeLabel, reachedEnd, listenedMinutesLabel,
+  phraseSaveable, phraseSavePayload, phraseSaved,
+} from './model.js';
+
+export default async function listening(element, ctx) {
+  await useStyles('screens/listening/listening.css');
+  const c = ctx.context;
+  const support = languages().support;
+  const lessonId = ctx.params.id;
+
+  const payload = await api.listeningLibraryLesson(lessonId, support);
+  if (!ctx.isCurrent()) return undefined;
+
+  const lesson = mapLesson(payload);
+  const language = lesson.language;
+  const enc = encounter(payload, support);
+  const segments = enc.segments;
+  const routeId = lesson.lessonId || lessonId;
+  const contentId = contentIdFor(routeId);
+  const place = placeFor(c.memory?.value?.continuation, contentId);
+  const playbackOk = playbackAvailable(lesson.playback);
+  const clipEndMs = lesson.excerptEndMs || (lesson.excerptStartMs + (lesson.durationMs || 0));
+  const hasMeanings = () => segments.some((seg) => enc.meaning(seg.segment_id));
+  const showMeaningToggle = support !== language || hasMeanings();
+  const durationMinutes = minutesFrom(lesson.durationMs);
+  const isZh = language === 'zh';
+
+  /* Real, but not blocking: the end-of-media stats and next-recommendation only need to be true
+     by the time the clip actually ends. */
+  let nextRec = null;
+  let savedBaseline = null;
+  let dictProgressItems = [];
+  const sideLoads = Promise.allSettled([
+    api.listeningLibrary(c.language).then((res) => { nextRec = pickNextRecommendation(res?.items, lesson.lessonId, lesson.topic); }),
+    api.libraryVocabularySummary().then((res) => { savedBaseline = Number(res?.summary?.saved) || 0; }),
+    lesson.mediaObjectId ? api.listeningProgress(lesson.mediaObjectId).then((res) => { dictProgressItems = res?.items || []; }) : Promise.resolve(),
+  ]);
+
+  /* The learner's transcript defaults are the device keys Settings writes (product/transcript-
+     stage.js): auto-scroll and meaning under the transcript. Word highlight is kept beside them. */
+  const stageRaw = readStage();
+  const defaults = transcriptDefaults(stageRaw);
+  let mode = 'follow';
+  let speed = 1;
+  let showTrans = defaults.meaning;
+  let autoScroll = defaults.autoscroll;
+  let wordHighlight = stageRaw.wordhl !== false;
+  let moreOpen = false;
+  let selectedId = null;
+  let currentId = segments.some((seg) => seg.segment_id === place.segmentId) ? place.segmentId : (segments[0]?.segment_id || null);
+  let playing = false;
+  let bounded = false; // a line is being played to its end; reaching the clip's end then is not "media completed"
+  let timeMs = lesson.excerptStartMs;
+  let ended = false;
+  let playedMs = 0;
+  let lastTickAt = null;
+  let rememberedId = '';
+  let lastActiveIndex = -2; // which segment the clock last said we are in (-1: between lines)
+  let seekingTo = null; // a line the learner just asked for: the clock is ignored until it gets there
+  const savedPhrases = new Set(); // segment texts known to be saved this session
+  const tokenCache = new Map();
+
+  const segOf = (id) => segments.find((seg) => seg.segment_id === id) || null;
+  const indexOf = (id) => segments.findIndex((seg) => seg.segment_id === id);
+
+  function tokensOf(seg) {
+    if (!tokenCache.has(seg.segment_id)) {
+      tokenCache.set(seg.segment_id, isZh ? hanTokens(seg.original_text, lesson.pinyinChars[seg.segment_id]) : wordTokens(seg.original_text));
+    }
+    return tokenCache.get(seg.segment_id);
+  }
+
+  function saveStage() {
+    writeStage({ ...readStage(), autoscroll: autoScroll, meaning: showTrans, wordhl: wordHighlight });
+  }
+
+  function rememberPlace(force = false) {
+    if (!force && currentId === rememberedId) return;
+    rememberedId = currentId;
+    try {
+      c.memory?.enter({ id: contentId, title: lesson.title, segment: currentId || '', intent: null });
+    } catch {
+      /* Device memory unavailable (private window): the session still works, it just does not
+         resume next time. */
+    }
+  }
+
+  const kindLabel = lesson.playbackKind === 'audio' ? t('typeAudio') : t('typeVideo');
+  element.classList.add('s-listening');
+  mount(
+    element,
+    html`<div class="s-listening__head">
+      <button type="button" class="o-iconbtn o-iconbtn--back" data-back aria-label="${s('back')}">${raw(icon('arrow-left', { size: 21 }))}</button>
+      <div class="s-listening__titles">
+        <div class="s-listening__title" lang="${langAttr(language)}">${lesson.title}</div>
+        <div class="s-listening__meta">${metaLine([kindLabel, lesson.levelText, durationMinutes != null ? `${durationMinutes} ${t.plural('minutesLabel', durationMinutes)}` : ''])}</div>
+      </div>
+      <div class="s-listening__modes" data-modes role="group"></div>
+    </div>
+    <div class="s-listening__body">
+      <div class="s-listening__media">
+        <div class="s-listening__player${lesson.posterUrl ? '' : ' is-bare'}" data-player>
+          ${lesson.posterUrl ? html`<img src="${posterUrl(lesson.posterUrl)}" alt="">` : ''}
+          ${playbackOk ? raw(mediaPlayer(lesson.playback, lesson.title, {
+            startMs: lesson.excerptStartMs, endMs: lesson.excerptEndMs, poster: lesson.posterUrl, controls: false,
+          })) : html`<div class="s-listening__unavailable">${t('playbackUnavailable')}</div>`}
+          ${playbackOk ? html`<button type="button" class="s-listening__playbtn" data-play aria-label="${t('playPause')}">${raw(icon('play', { size: 24 }))}</button>
+          <div class="s-listening__time" data-time></div>` : ''}
+        </div>
+        ${playbackOk ? html`<div class="s-listening__seek" data-seek role="slider" aria-label="${t('playPause')}"><div class="s-listening__seek-fill" data-seek-fill></div></div>` : ''}
+        <div class="s-listening__controls" data-controls></div>
+        <div class="s-listening__slot" data-selected-slot></div>
+      </div>
+      <div class="s-listening__transcript">
+        <div class="s-listening__transcript-head"><span class="s-listening__transcript-title">${t('transcript')}</span><span class="s-listening__transcript-hint" data-hint></span></div>
+        <div class="s-listening__transcript-body" data-scroll-region data-rows></div>
+      </div>
+    </div>
+    <div class="s-listening__slot" data-end-slot></div>`,
+  );
+
+  const playerEl = element.querySelector('[data-player]');
+  const timeEl = element.querySelector('[data-time]');
+  const seekFillEl = element.querySelector('[data-seek-fill]');
+  const rowsEl = element.querySelector('[data-rows]');
+  const selectedSlot = element.querySelector('[data-selected-slot]');
+  const endSlot = element.querySelector('[data-end-slot]');
+
+  element.querySelector('[data-back]').addEventListener('click', () => ctx.back());
+
+  /* ---------------------------------------------------------------- modes ---- */
+  function modesMarkup() {
+    const list = [
+      { id: 'follow', label: t('modeFollow'), on: lesson.modes.follow },
+      { id: 'active', label: t('modeActive'), on: lesson.modes.active },
+      { id: 'shadow', label: t('modeShadowing'), on: lesson.modes.shadowing },
+    ].filter((m) => m.on);
+    if (list.length < 2) return html``;
+    return html`${list.map((item) => html`<button type="button" class="s-listening__mode" data-mode="${item.id}" aria-pressed="${item.id === 'shadow' ? 'false' : String(mode === item.id)}">${item.label}</button>`)}`;
+  }
+  function paintModes() {
+    const holder = element.querySelector('[data-modes]');
+    mount(holder, modesMarkup());
+    holder.querySelectorAll('[data-mode]').forEach((button) => button.addEventListener('click', () => onMode(button.dataset.mode)));
+    mount(element.querySelector('[data-hint]'), html`${t(modeHintKey(mode))}`);
+  }
+  function onMode(id) {
+    if (id === 'shadow') {
+      ctx.go(ctx.href('shadow', { id: routeId }, { seg: selectedId || currentId || '' }));
+      return;
+    }
+    mode = id;
+    selectedId = selectionAfterModeChange(id, currentId);
+    bounded = false;
+    paintModes();
+    paintRows();
+    paintSelected();
+  }
+
+  /* ---------------------------------------------------------------- player ---- */
+  function paintTime() {
+    if (timeEl) timeEl.textContent = timeLabel(timeMs, lesson.excerptStartMs, clipEndMs);
+    if (seekFillEl) seekFillEl.style.width = `${progressPercent(timeMs, lesson.excerptStartMs, clipEndMs)}%`;
+    const glyph = element.querySelector('[data-play]');
+    if (glyph) mount(glyph, raw(icon(playing ? 'pause' : 'play', { size: 24 })));
+  }
+
+  function onMediaTime(event) {
+    const detail = event.detail || {};
+    const now = Number(detail.time_ms);
+    if (Number.isFinite(now)) {
+      if (playing && lastTickAt != null) playedMs += Math.max(0, now - lastTickAt);
+      timeMs = now;
+      lastTickAt = now;
+    }
+    playing = detail.player_state === 1;
+    if (!playing) lastTickAt = null;
+    paintTime();
+    if (seekingTo) {
+      const target = segOf(seekingTo.id);
+      const arrived = target && timeMs >= target.start_ms - 200 && timeMs <= target.end_ms + 200;
+      if (arrived || Date.now() - seekingTo.at > 1500) seekingTo = null;
+    }
+    if (!seekingTo) {
+      const found = activeCanonicalSegment(segments, timeMs);
+      const foundIndex = found ? indexOf(found.segment_id) : -1;
+      if (foundIndex !== lastActiveIndex) {
+        lastActiveIndex = foundIndex;
+        if (found) currentId = found.segment_id;
+        paintRows();
+        paintNowPlaying();
+        rememberPlace();
+        if (autoScroll) scrollRowIntoView(currentId);
+      }
+    }
+    paintWordHighlight();
+    if (!ended && !bounded && !playing && reachedEnd(timeMs, clipEndMs)) {
+      ended = true;
+      showEnded();
+    }
+  }
+  if (playbackOk) {
+    playerEl.addEventListener('orena:media-time', onMediaTime);
+    connectMediaPlayer(playerEl, lesson.playback);
+    playerEl.querySelector('[data-play]')?.addEventListener('click', () => {
+      bounded = false;
+      togglePlayback(playerEl, lesson.playback);
+    });
+    element.querySelector('[data-seek]')?.addEventListener('click', (event) => {
+      const rect = event.currentTarget.getBoundingClientRect();
+      const fraction = (event.clientX - rect.left) / rect.width;
+      bounded = false;
+      seekPlayback(playerEl, lesson.playback, msAtSeekFraction(fraction, lesson.excerptStartMs, clipEndMs));
+    });
+  }
+
+  /* Keep a row in view inside the transcript's own region (never scrolling the page). */
+  function scrollRowIntoView(id) {
+    const row = rowsEl?.querySelector(`[data-seg="${CSS.escape(id)}"]`);
+    if (!row) return;
+    const top = row.offsetTop - rowsEl.offsetTop;
+    const bottom = top + row.offsetHeight;
+    if (top < rowsEl.scrollTop) rowsEl.scrollTop = Math.max(0, top - 8);
+    else if (bottom > rowsEl.scrollTop + rowsEl.clientHeight) rowsEl.scrollTop = bottom - rowsEl.clientHeight + 8;
+  }
+
+  /* The frame's `playSeg`: from the line's start to its end, then stop. */
+  function playLine(id) {
+    const seg = segOf(id);
+    if (!seg || !playbackOk) return;
+    bounded = true;
+    ended = false;
+    currentId = id;
+    seekingTo = { id, at: Date.now() };
+    replaySegment(playerEl, lesson.playback, seg.start_ms, seg.end_ms, speed);
+    paintRows();
+    paintNowPlaying();
+  }
+
+  /* ---------------------------------------------------------------- controls row ---- */
+  function pill({ id, label, iconName, iconAfter = false, pressed = null, variant = '', title = '', aria = '' }) {
+    const glyph = iconName ? raw(icon(iconName, { size: iconName === 'play' ? 14 : 15 })) : '';
+    return html`<button type="button" class="s-listening__pill${variant ? ` s-listening__pill--${variant}` : ''}" data-act="${id}"${pressed != null ? raw(` aria-pressed="${String(pressed)}"`) : ''}${title ? raw(` title="${title.replace(/"/g, '&quot;')}"`) : ''}${aria ? raw(` aria-label="${aria.replace(/"/g, '&quot;')}"`) : ''}>${iconAfter ? html`${label}${glyph}` : html`${glyph}${label}`}</button>`;
+  }
+
+  function toggles(prefix) {
+    return html`${pill({ id: 'auto', label: t('autoScroll'), pressed: autoScroll, variant: 'toggle' })}${pill({ id: 'wordhl', label: t('wordHighlight'), pressed: wordHighlight, variant: 'toggle', title: t('wordHighlightHint') })}`;
+  }
+
+  function controlsMarkup() {
+    const labelSpan = (text) => html`<span class="s-listening__pill--label">${text}</span>`;
+    return html`
+      ${playbackOk ? pill({ id: 'prev', label: labelSpan(t('line')), iconName: 'skip-back', aria: t('prevLine'), title: t('prevLine') }) : ''}
+      ${playbackOk ? pill({ id: 'replay', label: t('replay'), iconName: 'rotate-ccw', variant: 'primary', aria: t('replayLine'), title: t('replayLine') }) : ''}
+      ${playbackOk ? pill({ id: 'next', label: labelSpan(t('line')), iconName: 'skip-forward', iconAfter: true, aria: t('nextLine'), title: t('nextLine') }) : ''}
+      ${playbackOk ? pill({ id: 'speed', label: speedLabel(speed), variant: 'speed' }) : ''}
+      <span class="s-listening__spacer"></span>
+      ${showMeaningToggle ? html`<button type="button" class="s-listening__pill s-listening__pill--toggle" data-act="trans" aria-pressed="${String(showTrans)}"><span class="s-listening__trans-code">${support}</span><span class="s-listening__trans-label">${t('meaning')}</span></button>` : ''}
+      <button type="button" class="s-listening__more" data-act="more" aria-pressed="${String(moreOpen)}" aria-label="${t('more')}" title="${t('more')}"><span class="s-listening__more-glyph">${raw(icon('ellipsis', { size: 18 }))}</span></button>
+      <span class="s-listening__secondary">${toggles()}</span>
+      ${moreOpen ? html`<div class="s-listening__drawer"><div class="s-listening__drawer-row">${toggles()}</div></div>` : ''}
+    `;
+  }
+
+  function paintControls() {
+    const holder = element.querySelector('[data-controls]');
+    mount(holder, controlsMarkup());
+    holder.querySelectorAll('[data-act]').forEach((button) => button.addEventListener('click', () => onControl(button.dataset.act)));
+  }
+
+  function onControl(action) {
+    const at = indexOf(currentId);
+    if (action === 'prev') {
+      const target = segments[previousIndex(segments, at, timeMs)];
+      if (target) playLine(target.segment_id);
+      return;
+    }
+    if (action === 'next') {
+      const target = segments[nextIndex(segments, at)];
+      if (target) playLine(target.segment_id);
+      return;
+    }
+    if (action === 'replay') return playLine(selectedId || currentId);
+    if (action === 'speed') {
+      speed = nextSpeed(speed);
+      if (playbackOk) setPlaybackRate(playerEl, lesson.playback, speed);
+      paintControls();
+      return;
+    }
+    if (action === 'trans') {
+      showTrans = !showTrans;
+      saveStage();
+      if (showTrans && !hasMeanings()) toast(t('meaningUnavailable'));
+      paintControls();
+      paintRows();
+      paintNowPlaying();
+      return;
+    }
+    if (action === 'more') { moreOpen = !moreOpen; paintControls(); return; }
+    if (action === 'auto') { autoScroll = !autoScroll; saveStage(); paintControls(); return; }
+    if (action === 'wordhl') { wordHighlight = !wordHighlight; saveStage(); paintControls(); paintWordHighlight(); }
+  }
+
+  /* ---------------------------------------------------------------- transcript ---- */
+  function rowTextMarkup(seg) {
+    const tokens = tokensOf(seg);
+    return html`${tokens.map((token, index) => {
+      if (!token.core) return html`<span>${token.text}</span>`;
+      if (isZh && token.pinyin !== undefined && /\p{Script=Han}/u.test(token.core)) {
+        return html`<span class="s-listening__word s-listening__word--tap s-listening__han" data-word="${token.core}" data-seg="${seg.segment_id}" data-tok="${index}">${token.pinyin ? html`<span class="s-listening__han-py" data-py="1">${token.pinyin}</span>` : ''}<span class="s-listening__han-hz" data-hz="1" lang="zh">${token.text}</span></span>`;
+      }
+      return html`<span class="s-listening__word s-listening__word--tap" data-word="${token.core}" data-seg="${seg.segment_id}" data-tok="${index}" lang="${langAttr(language)}">${token.text}</span>`;
+    })}`;
+  }
+
+  function rowsMarkup() {
+    return segments.map((seg) => {
+      const tone = rowTone({ isCurrent: seg.segment_id === currentId, isSelected: seg.segment_id === selectedId, endMs: seg.end_ms, timeMs });
+      const meaning = showTrans ? enc.meaning(seg.segment_id) : '';
+      const playingRow = seg.segment_id === currentId;
+      return html`<button type="button" class="s-listening__row is-${tone}${playingRow ? ' is-playing' : ''}" data-seg="${seg.segment_id}">
+        <span class="s-listening__row-time">${mmss(seg.start_ms) ?? ''}</span>
+        <span class="s-listening__row-main">
+          <span class="s-listening__row-text" data-zhf="${isZh ? '1' : '0'}" data-text>${rowTextMarkup(seg)}</span>
+          ${meaning ? html`<span class="s-listening__row-vi" style="display:block">${meaning}</span>` : ''}
+        </span>
+      </button>`;
+    });
+  }
+
+  function paintRows() {
+    const keep = rowsEl.scrollTop;
+    mount(rowsEl, html`${rowsMarkup()}`);
+    rowsEl.scrollTop = keep;
+    paintWordHighlight();
+  }
+
+  rowsEl.addEventListener('click', (event) => {
+    const wordEl = event.target.closest('[data-word]');
+    if (wordEl) {
+      event.stopPropagation();
+      onWordTap(wordEl.dataset.word, wordEl.dataset.seg);
+      return;
+    }
+    const rowEl = event.target.closest('[data-seg]');
+    if (rowEl) onRowTap(rowEl.dataset.seg);
+  });
+
+  /* The word being spoken, marked on the current row only. */
+  let markedEl = null;
+  function paintWordHighlight() {
+    if (markedEl) { markedEl.classList.remove('is-word-current'); markedEl = null; }
+    if (!wordHighlight || !playing) return;
+    const seg = segOf(currentId);
+    if (!seg) return;
+    const at = currentTokenIndex(seg, tokensOf(seg), timeMs);
+    if (at < 0) return;
+    const row = rowsEl.querySelector(`[data-seg="${CSS.escape(seg.segment_id)}"]`);
+    const el = row?.querySelector(`[data-tok="${at}"]`);
+    if (el) { el.classList.add('is-word-current'); markedEl = el; }
+  }
+
+  function onRowTap(id) {
+    const seg = segOf(id);
+    if (!seg) return;
+    if (mode === 'active') {
+      selectedId = id;
+      playLine(id);
+      paintSelected();
+      rememberPlace(true);
+      return;
+    }
+    // Follow: seek there and play on.
+    bounded = false;
+    ended = false;
+    currentId = id;
+    seekingTo = { id, at: Date.now() };
+    if (playbackOk) replaySegment(playerEl, lesson.playback, seg.start_ms, null, speed);
+    paintRows();
+    paintNowPlaying();
+    rememberPlace(true);
+  }
+
+  function onWordTap(word, segId) {
+    const seg = segOf(segId);
+    if (playing && playbackOk) togglePlayback(playerEl, lesson.playback);
+    openWordSheet(ctx, {
+      word,
+      lang: language,
+      sentence: seg?.original_text || '',
+      source: { kind: 'listening', content_id: routeId, segment: segId, title: lesson.title },
+    });
+  }
+
+  /* ---------------------------------------------------------------- selected / now playing ---- */
+  function phraseLabelFor(seg) {
+    return savedPhrases.has(seg.original_text) ? t('phraseSaved') : t('savePhrase');
+  }
+
+  function selectedMarkup(seg) {
+    const meaning = enc.meaning(seg.segment_id);
+    const saved = savedPhrases.has(seg.original_text);
+    return html`<div class="s-listening__selected">
+      <div class="s-listening__selected-head">
+        <span class="s-listening__selected-label">${t('selectedSegment', { time: mmss(seg.start_ms) ?? '' })}</span>
+        <button type="button" class="s-listening__selected-close" data-act="clear" aria-label="${s('close')}">${raw(icon('x', { size: 17 }))}</button>
+      </div>
+      <div class="s-listening__selected-scroll" data-scroll-region>
+        <div class="s-listening__selected-text" lang="${langAttr(language)}">${seg.original_text}</div>
+        ${meaning ? html`<div class="s-listening__selected-vi">${meaning}</div>` : ''}
+      </div>
+      <div class="s-listening__selected-actions" data-scroll-region>
+        ${playbackOk ? pill({ id: 'play-seg', label: t('playSegment'), iconName: 'play', variant: 'primary' }) : ''}
+        <button type="button" class="s-listening__pill${saved ? ' s-listening__pill--saved' : ''}" data-act="save-phrase" aria-pressed="${String(saved)}">${phraseLabelFor(seg)}</button>
+        ${pill({ id: 'vocab', label: t('vocabularyFocus') })}
+        ${lesson.modes.dictation ? pill({ id: 'dictation', label: s('dictation') }) : ''}
+        <button type="button" class="s-listening__pill--ai" data-act="explain">${markGlyph({ size: 20, symbol: 'ol-intel-still' })}${t('explain')}</button>
+        ${lesson.modes.shadowing ? pill({ id: 'shadowing', label: s('shadowing') }) : ''}
+        ${pill({ id: 'react', label: s('reactReuse') })}
+      </div>
+    </div>`;
+  }
+
+  function nowPlayingMarkup(cur) {
+    const meaning = showTrans ? enc.meaning(cur.segment_id) : '';
+    return html`<div class="s-listening__nowplaying">
+      <div class="s-listening__nowplaying-head">
+        <span class="s-listening__nowplaying-label">${t('nowPlaying', { time: mmss(cur.start_ms) ?? '' })}</span>
+        <button type="button" class="s-listening__nowplaying-pick" data-act="pick">${t('workOnThisLine')}</button>
+      </div>
+      <div class="s-listening__nowplaying-text" lang="${langAttr(language)}">${cur.original_text}</div>
+      ${meaning ? html`<div class="s-listening__nowplaying-vi">${meaning}</div>` : ''}
+    </div>`;
+  }
+
+  /* The frame shows one or the other: the selected line's actions in Active mode once a line is
+     selected, the "now playing" card otherwise (which the phone does not draw). */
+  function paintSelected() {
+    const sel = mode === 'active' ? segOf(selectedId) : null;
+    const cur = sel ? null : segOf(currentId);
+    mount(selectedSlot, sel ? selectedMarkup(sel) : cur ? nowPlayingMarkup(cur) : html``);
+    selectedSlot.querySelectorAll('[data-act]').forEach((button) => button.addEventListener('click', () => onSelectedAction(button.dataset.act)));
+    if (sel) refreshPhraseState(sel);
+  }
+  function paintNowPlaying() {
+    if (mode === 'active' && segOf(selectedId)) return;
+    paintSelected();
+  }
+
+  /* Whether the selected line is already saved as a phrase (a vocabulary entry named by its
+     text), asked of the real library once per line. */
+  const phraseChecked = new Set();
+  async function refreshPhraseState(seg) {
+    if (phraseChecked.has(seg.original_text) || !phraseSaveable(seg.original_text)) return;
+    phraseChecked.add(seg.original_text);
+    try {
+      const res = await api.libraryVocabulary({ query: seg.original_text, limit: 5 });
+      if (!ctx.isCurrent()) return;
+      if (phraseSaved(res?.items, seg.original_text)) {
+        savedPhrases.add(seg.original_text);
+        if (selectedId === seg.segment_id) paintSelected();
+      }
+    } catch {
+      phraseChecked.delete(seg.original_text);
+    }
+  }
+
+  async function togglePhrase(seg) {
+    const text = seg.original_text;
+    if (!phraseSaveable(text)) { toast(t('phraseTooLong')); return; }
+    try {
+      if (savedPhrases.has(text)) {
+        await api.deleteLibraryVocabulary(text);
+        savedPhrases.delete(text);
+        toast(t('removedToast'));
+      } else {
+        await api.saveLibraryVocabulary(phraseSavePayload(text, { meaning: enc.meaning(seg.segment_id) || '' }));
+        savedPhrases.add(text);
+        toast(t('phraseSaved'));
+      }
+    } catch {
+      if (ctx.isCurrent()) toast(t('saveFailed'));
+      return;
+    }
+    if (ctx.isCurrent() && selectedId === seg.segment_id) paintSelected();
+  }
+
+  function onSelectedAction(action) {
+    if (action === 'pick') {
+      mode = 'active';
+      selectedId = currentId;
+      bounded = false;
+      paintModes();
+      paintRows();
+      paintSelected();
+      return;
+    }
+    const id = selectedId || currentId;
+    const seg = segOf(id);
+    if (action === 'clear') { selectedId = null; paintRows(); paintSelected(); return; }
+    if (!seg) return;
+    if (action === 'play-seg') return playLine(id);
+    if (action === 'save-phrase') return togglePhrase(seg);
+    if (action === 'vocab') {
+      if (playing && playbackOk) togglePlayback(playerEl, lesson.playback);
+      openVocabFocus(ctx, {
+        label: t('segmentLabel', { n: indexOf(id) + 1, time: mmss(seg.start_ms) ?? '' }),
+        terms: vocabularyForSegment(lesson.vocabulary, seg.original_text),
+        lang: language,
+        support,
+        context: seg.original_text,
+        onPlay: () => playLine(id),
+      });
+      return;
+    }
+    if (action === 'dictation') return ctx.go(ctx.href('dictation', { id: routeId }, { seg: id }));
+    if (action === 'explain') {
+      askOrena({
+        surface: 'listening.workspace',
+        activity_type: 'listening',
+        content_id: routeId,
+        selected_item: { type: 'sentence', id, text: seg.original_text, lang: language },
+      });
+      return;
+    }
+    if (action === 'shadowing') return ctx.go(ctx.href('shadow', { id: routeId }, { seg: id }));
+    if (action === 'react') return ctx.go(ctx.href('react', { id: routeId }, { seg: id }));
+  }
+
+  /* ---------------------------------------------------------------- end of media ---- */
+  async function showEnded() {
+    await sideLoads;
+    if (!ctx.isCurrent()) return;
+    const savedNow = await api.libraryVocabularySummary().then((res) => Number(res?.summary?.saved) || 0).catch(() => savedBaseline ?? 0);
+    if (!ctx.isCurrent()) return;
+    const savedDelta = savedBaseline != null ? Math.max(0, savedNow - savedBaseline) : 0;
+    const dictCount = dictationLinesCompleted(dictProgressItems);
+    const listened = listenedMinutesLabel(playedMs);
+    const nextMinutes = nextRec?.minutes != null ? `${nextRec.minutes} ${t.plural('minutesLabel', nextRec.minutes)}` : '';
+    mount(
+      endSlot,
+      html`<div class="s-listening__end" role="dialog" aria-label="${t('mediaCompleted')}">
+        <div class="s-listening__end-card">
+          <div class="s-listening__end-eyebrow">${t('mediaCompleted')}</div>
+          <div class="s-listening__end-title" lang="${langAttr(language)}">${lesson.title}</div>
+          <div class="s-listening__end-stats">
+            <div class="s-listening__end-tile"><div class="s-listening__end-value">${savedDelta}</div><div class="s-listening__end-label">${t.plural('itemsSavedLabel', savedDelta)}</div></div>
+            <div class="s-listening__end-tile"><div class="s-listening__end-value">${dictCount}</div><div class="s-listening__end-label">${t.plural('dictationLinesLabel', dictCount)}</div></div>
+            <div class="s-listening__end-tile"><div class="s-listening__end-value">${listened || '0:00'}</div><div class="s-listening__end-label">${t('listened')}</div></div>
+          </div>
+          <button type="button" class="o-btn o-btn--secondary o-btn--block s-listening__end-respond" data-act="respond">${t('writeResponse')}</button>
+          ${nextRec ? html`<button type="button" class="s-listening__end-next" data-act="next">
+            <span class="s-listening__end-next-thumb" style="${nextRec.posterUrl ? `background-image:url('${posterUrl(nextRec.posterUrl)}')` : ''}"></span>
+            <span class="s-listening__end-next-body">
+              <span class="s-listening__end-next-eyebrow">${nextRec.topic ? t('nextBecause', { topic: String(nextRec.topic).replace(/-/g, ' ') }) : t('nextPlain')}</span>
+              <span class="s-listening__end-next-title">${metaLine([nextRec.title, nextMinutes])}</span>
+            </span>
+            ${raw(icon('chevron-right', { size: 20 }))}
+          </button>` : ''}
+          <div class="s-listening__end-actions">
+            <button type="button" class="o-btn o-btn--secondary" data-act="replay-all">${t('replayAll')}</button>
+            ${lesson.modes.dictation ? html`<button type="button" class="o-btn o-btn--secondary" data-act="dictation-all">${s('dictation')}</button>` : ''}
+            <button type="button" class="o-btn o-btn--secondary" data-act="saved">${t('reviewSaved')}</button>
+            <button type="button" class="o-btn o-btn--primary" data-act="discover">${s('discover')}</button>
+          </div>
+        </div>
+      </div>`,
+    );
+    endSlot.querySelectorAll('[data-act]').forEach((button) => button.addEventListener('click', () => onEndAction(button.dataset.act)));
+    endSlot.querySelector('[data-act="replay-all"]')?.focus();
+  }
+
+  function hideEnded() {
+    ended = false;
+    mount(endSlot, html``);
+  }
+
+  function onEndAction(action) {
+    if (action === 'respond') return ctx.go(ctx.href('respond', { id: contentId }));
+    if (action === 'next' && nextRec) return ctx.go(ctx.href('content', { id: contentIdFor(nextRec.lessonId) }));
+    if (action === 'replay-all') {
+      hideEnded();
+      bounded = false;
+      if (playbackOk) replaySegment(playerEl, lesson.playback, lesson.excerptStartMs, null, speed);
+      return;
+    }
+    if (action === 'dictation-all') return ctx.go(ctx.href('dictation', { id: routeId }));
+    if (action === 'saved') return ctx.go(ctx.href('library'));
+    if (action === 'discover') return ctx.go(ctx.href('discover'));
+  }
+
+  paintModes();
+  paintTime();
+  paintControls();
+  paintRows();
+  paintSelected();
+  rememberPlace(true);
+  scrollRowIntoView(currentId);
+
+  /* AGENT_CONTRACT.md §7: `play_model` = "play reference audio" - here, the selected (or
+     current) transcript line. Listening has no learner take of its own (`play_user`/
+     `say_again`/`compare_with_model` do not apply: there is nothing to compare or re-record). */
+  const releasePlayModel = registerActionHandler('play_model', () => {
+    const id = (mode === 'active' && selectedId) || currentId;
+    if (!id || !playbackOk) return { ok: false, reason: 'not_available' };
+    playLine(id);
+    return { ok: true };
+  });
+
+  return () => {
+    releasePlayModel();
+    if (playbackOk) {
+      playerEl.removeEventListener('orena:media-time', onMediaTime);
+      disconnectMediaPlayer(playerEl);
+    }
+  };
+}

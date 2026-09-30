@@ -26,11 +26,26 @@ Three bounds, because one does not catch the others:
 Nothing here truncates. Learner writing is the learner's; an over-long piece is
 refused with its measurement so the learner knows by how much, and what they
 wrote is still theirs.
+
+The other end of the range is here too, and it is a different kind of bound:
+the request minimum. It answers "is this an attempt at writing at all?" - not
+"is this enough to grade?", which is the evaluator's own question
+(`band_status: insufficient_evidence`) and is left there. It refuses only what
+is not writing: nothing, whitespace, punctuation, a stray character. A minimum
+of code points cannot say that fairly, because a code point is a different
+amount of writing in every script - `我是学生。` is a complete HSK 1 sentence and
+five of them - so the minimum is a count of what each learning language writes
+in, one row per language, and a language without a row is counted by the
+stated default rather than refused a review.
 """
 
 from __future__ import annotations
 
+import re
+import unicodedata
+from collections.abc import Mapping
 from dataclasses import dataclass
+from types import MappingProxyType
 
 # The contract the whole product shares. `static/orena/capabilities/writing-limits.js`
 # carries the same numbers for the browser, and a gate fails if the two drift.
@@ -116,3 +131,177 @@ def measure_writing(text: str) -> Measurement:
 
 def fits(text: str) -> bool:
     return measure_writing(text).within_limits
+
+
+# --- The request minimum -------------------------------------------------
+#
+# Not "is this enough to grade" - the evaluator answers that itself, with
+# `band_status: insufficient_evidence`, and a short attempt still earns its
+# review. Only "is this writing at all". Counted in what the learning language
+# is written in, so the same number means the same amount of writing.
+#
+#   han    Han characters. Ideographic punctuation such as 。 is not one, so
+#          `你好。` is two. The ranges are stated, not read from a Unicode
+#          property, so the browser can state the same ones: CJK Unified
+#          Ideographs and Extension A, the compatibility ideographs, and the
+#          supplementary-plane Extensions B onward. Radicals are not a
+#          character anyone writes and are left out.
+#   kana_han  What Japanese is written in: the Han characters above, the
+#          iteration mark 々, hiragana, katakana (with the long-vowel mark ー)
+#          and halfwidth katakana. Japanese punctuation such as 。 and the
+#          middle dot ・ are not characters of writing, and neither are the
+#          voicing marks, which belong to the kana before them.
+#   words  Runs of letters and digits, joined by an apostrophe or a hyphen
+#          inside a word, that hold at least one letter. A number alone is not
+#          a word of writing, and punctuation, whitespace and emoji are not
+#          words. The text is normalised first, so a Vietnamese or accented
+#          word typed with combining marks is one word, not two.
+#
+# `words` counts spaced text. A language written without spaces must have a row
+# of its own before the product teaches it - the default would count a whole
+# sentence as one word - and `tests/test_writing_minimum.py` fails until a
+# language the product teaches has one.
+#
+# These are not the numbers a learner is shown, and are not meant to be. The
+# count under a draft (`Intl.Segmenter` in the browser) and the stored
+# `word_count` (`languages.runtime.writing_unit_count`) answer "how long is this
+# piece?"; this answers "is it writing at all?". They part where a token is not
+# a word of writing: a bare number is a word to both of those and not to this
+# (`3 cats` shows 2 words and counts 1 here), a hyphenated compound is one word
+# here and two to the Segmenter, and for Chinese the shown count is Segmenter
+# words while this counts Han characters. Neither can be reused as it stands -
+# `writing_unit_count` reads the request's language from a context variable,
+# and this is pure and is handed the language - so the difference is stated
+# rather than hidden, and the shared fixture pins it.
+#
+# The browser carries the same table in `static/orena/capabilities/writing-limits.js`.
+# `tests/fixtures/writing_minimum_cases.json` states the table and the counts
+# once, and both sides are tested against it.
+
+_HAN = re.compile(
+    "[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\U00020000-\U0002fa1f\U00030000-\U000323af]"
+)
+_KANA_HAN = re.compile(
+    "[\u3005\u3041-\u3096\u309d-\u309f\u30a1-\u30fa\u30fc-\u30ff\u31f0-\u31ff\uff66-\uff9d"
+    "\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\U00020000-\U0002fa1f\U00030000-\U000323af]"
+)
+_WORD = re.compile(r"[^\W_]+(?:['\u2019-][^\W_]+)*")
+
+
+def count_han(text: str) -> int:
+    """Han characters in the text: what a Chinese learner has written."""
+    return len(_HAN.findall(text if isinstance(text, str) else str(text or "")))
+
+
+def count_kana_han(text: str) -> int:
+    """Kana and Han characters in the text: what a Japanese learner has written."""
+    return len(_KANA_HAN.findall(text if isinstance(text, str) else str(text or "")))
+
+
+def count_words(text: str) -> int:
+    """Words in the text: what an English learner has written."""
+    value = unicodedata.normalize("NFC", text if isinstance(text, str) else str(text or ""))
+    return sum(
+        1 for match in _WORD.finditer(value) if any(char.isalpha() for char in match.group())
+    )
+
+
+_COUNTERS = MappingProxyType(
+    {"han": count_han, "kana_han": count_kana_han, "words": count_words}
+)
+_UNIT_NOUNS = MappingProxyType(
+    {
+        "han": ("Chinese character", "Chinese characters"),
+        "kana_han": ("Japanese character", "Japanese characters"),
+        "words": ("word", "words"),
+    }
+)
+
+
+@dataclass(frozen=True)
+class MinimumRule:
+    """The least writing that is an attempt, and the unit it is counted in."""
+
+    unit: str
+    minimum: int
+
+    def __post_init__(self) -> None:
+        if self.unit not in _COUNTERS:
+            raise ValueError(f"unknown Writing minimum unit: {self.unit!r}")
+        if self.minimum < 1:
+            raise ValueError("a Writing minimum of nothing is no minimum")
+
+
+# One row per language the product teaches to write in, keyed the way the rest
+# of Writing keys a language. English is counted in words, Chinese in Han
+# characters, Japanese in kana and Han characters (D-098); the values are the smallest that still refuse a stray character
+# and admit a real greeting: `你好。` and `Hi Bob.` are both attempts.
+MINIMUM_BY_LANGUAGE: Mapping[str, MinimumRule] = MappingProxyType(
+    {
+        "en": MinimumRule(unit="words", minimum=2),
+        "zh": MinimumRule(unit="han", minimum=2),
+        "ja": MinimumRule(unit="kana_han", minimum=2),
+    }
+)
+
+# What a language with no row of its own is held to.
+DEFAULT_MINIMUM = MinimumRule(unit="words", minimum=2)
+
+
+def language_key(code: str | None) -> str:
+    """The language a code names, without its region: `zh-CN` and `zh_TW` are `zh`."""
+    return str(code or "").strip().casefold().replace("_", "-").split("-", 1)[0]
+
+
+def minimum_rule(language: str | None) -> MinimumRule:
+    return MINIMUM_BY_LANGUAGE.get(language_key(language), DEFAULT_MINIMUM)
+
+
+@dataclass(frozen=True)
+class MinimumCheck:
+    """What a piece of writing counts to, against the minimum of its language.
+
+    Like `Measurement`: measured, never modified, and it carries everything a
+    refusal needs without the text.
+    """
+
+    language: str
+    unit: str
+    minimum: int
+    count: int
+
+    @property
+    def met(self) -> bool:
+        return self.count >= self.minimum
+
+    def as_context(self) -> dict[str, int | str]:
+        """Operational metadata for an error or a log line - never the text."""
+        return {
+            "limit": "minimum",
+            "language": self.language,
+            "unit": self.unit,
+            "minimum": self.minimum,
+            "count": self.count,
+        }
+
+
+def check_minimum(text: str, language: str | None) -> MinimumCheck:
+    """Count the text in its language's unit. Pure: the caller names the language."""
+    rule = minimum_rule(language)
+    return MinimumCheck(
+        language=language_key(language),
+        unit=rule.unit,
+        minimum=rule.minimum,
+        count=_COUNTERS[rule.unit](text),
+    )
+
+
+def meets_minimum(text: str, language: str | None) -> bool:
+    return check_minimum(text, language).met
+
+
+def minimum_message(check: MinimumCheck) -> str:
+    """The refusal in plain English, saying what would be enough."""
+    singular, plural = _UNIT_NOUNS[check.unit]
+    noun = singular if check.minimum == 1 else plural
+    return f"This is too short to review. Write at least {check.minimum} {noun}."

@@ -1,0 +1,70 @@
+{
+  "previous": {
+    "version": 1,
+    "wordCount": 42,
+    "text": "Last weekend I go to the beach with my family. We was very happy because the weather were nice. I like swim in the sea and eat fresh seafood. In the evening, we watched the sunset together, it was a wonderful memory."
+  },
+  "current": {
+    "version": 2,
+    "wordCount": 42,
+    "text": "Last weekend I went to the beach with my family. We were very happy because the weather was nice. I like swim in the sea and eat fresh seafood. In the evening, we watched the sunset together, it was a wonderful memory."
+  },
+  "fixed": [
+    {
+      "title": "Last weekend I go to the beach with my family.",
+      "kind": "grammar",
+      "detail": "Last weekend I go to the beach with my family. → Last weekend I went to the beach with my family."
+    },
+    {
+      "title": "We was very happy because the weather were nice.",
+      "kind": "grammar",
+      "detail": "We was very happy because the weather were nice. → We were very happy because the weather was nice."
+    }
+  ],
+  "remaining": [
+    {
+      "title": "I like swim in the sea",
+      "kind": "grammar",
+      "detail": "I like swimming in the sea - Bạn đã quên sử dụng động từ đúng dạng và thiếu giới từ 'in' trong câu. Câu nên là 'I like swimming in the sea'."
+    },
+    {
+      "title": "In the evening, we watched the sunset together, it was a wonderful memory.",
+      "kind": "punctuation",
+      "detail": "In the evening, we watched the sunset together. It was a wonderful memory. - Bạn đã quên sử dụng dấu chấm phẩy hoặc dấu chấm để tách hai câu. Câu nên là 'In the evening, we watched the sunset together. It was a wonderful memory.'"
+    },
+    {
+      "title": "I like swim in the sea",
+      "kind": "grammar",
+      "detail": "I like swimming in the sea - Bạn đã sử dụng động từ 'like' nhưng chưa kết hợp đúng với động từ 'swim' ở dạng đúng. Câu nên là 'I like swimming in the sea'."
+    }
+  ],
+  "added": [
+    {
+      "title": "I like eat fresh seafood",
+      "kind": "grammar",
+      "detail": "I like eating fresh seafood - Bạn đã sử dụng động từ 'like' nhưng chưa kết hợp đúng với động từ 'eat' ở dạng đúng. Câu nên là 'I like eating fresh seafood'."
+    }
+  ],
+  "dimensionDeltas": [
+    {
+      "name": "naturalness",
+      "from": 50,
+      "to": 60
+    },
+    {
+      "name": "grammar",
+      "from": 55,
+      "to": 65
+    },
+    {
+      "name": "vocabulary",
+      "from": 50,
+      "to": 60
+    },
+    {
+      "name": "coherence",
+      "from": 50,
+      "to": 65
+    }
+  ]
+}

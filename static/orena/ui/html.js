@@ -1,16 +1,6 @@
-export function esc(value = '') {
-  return String(value).replace(
-    /[&<>"']/g,
-    (char) =>
-      ({
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#039;',
-      })[char],
-  );
-}
+/* One escaper for both UIs (D-101 D2): the old UI re-exports the kit's, which escapes the same
+   five characters to the same entities. */
+export { esc } from '../kit/html.js';
 export function safeExternal(value) {
   try {
     const url = new URL(value);

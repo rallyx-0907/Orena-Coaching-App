@@ -2539,7 +2539,8 @@ actually have. The lane's migration chain was rebased onto the merged head
 
 **What this decision does not authorize.** It is not authorization for the
 reverse merge. `admin/control-center` is still not merged into `codex/work` or
-`main`, and nothing here changes `AGENTS.md` §3's rule that the two
+`main` *(as of 2026-09-27; overtaken by PR #63, which merged it into
+`codex/work` at `9c0fe31` - see D-085 and D-099)*, and nothing here changes `AGENTS.md` §3's rule that the two
 implementations stay independent: a future sync in either direction is its own
 human instruction, recorded on its own.
 
@@ -3219,3 +3220,499 @@ The UI's side ships with it: `static/orena/agent/contract.js` (version 4, the ta
 The UI's side ships with the version: the address validation, note and request field, the mock's S14/S15 and reworded S2/S5 in vi/en/zh, the surfaces copy and its generated file, and their gates.
 
 **Amends:** D-092 (§3, §5.4, §7, §10, §12). D-092, D-094 and D-095 otherwise stand. A client that declares `contract_version` ≤ 4 gets the defaults.
+
+## D-097 — The learner can choose the theme in Settings (amends D-089)
+
+**Date:** 2026-09-28. **Status:** Accepted (explicit human direction, a Wave A review item).
+
+**Context.** D-089 ships the design's light and dark themes following the operating system, with the Reader's light/dark button as the only in-product switch, and added no Settings row because the design draws none. Reviewing Wave A, the human asked for the choice Light / Dark / System in Settings.
+
+**Decision.** Settings offers Light, Dark and System (the Learning tab, drawn with the design's own choice-row control). System is the default and follows the operating system live, as D-089 says. The choice is a device preference in the browser, like the interface language, never account data; it is applied before first paint, at once when changed, and an unknown stored value reads as System. The Reader's light/dark button, when built, sets the same preference. Colour keeps its one owner and AA holds in both themes.
+
+**Amends:** D-089 point 2 ("No Settings row is added"). D-089 otherwise stands; DESIGN_CONTRACT rule 30 says the same.
+
+## D-098 — Answers to the new UI's open design questions and the Wave B review decisions
+
+**Date:** 2026-09-29. **Status:** Accepted (explicit human direction).
+
+**Context.** `UI_BACKEND_GAPS.md` section N, "Open design questions", and the Wave B hand-off left choices only the human could make. The human answered them in one message.
+
+**Decision.**
+
+1. **Today** keeps what the pinned frame draws: no review-reminder pill (brief part D) and no practice shortcuts (part G).
+2. **Import, File** is wired to `POST /api/media-learning/upload` with the file types and size limit that endpoint already enforces; the UI states no limit of its own.
+3. **Settings, support language** stays the frame's segmented control while the list has at most 4 languages, and becomes a picker, built from the kit's existing sheet and row components, when it has more.
+4. **Grammar on Grammar Lab content** (question 6): the UI lane may build the word_order and morphology illustrations, a Chinese Grammar Library, Chinese-specific structures, and role colours linking a formula to its examples, using only the kit's existing tokens and components and modelled on the timeline component. No new visual language. The human reviews these by eye. Frame 23 or 47 (question 4) is answered separately.
+5. **Japanese** gets a Writing-minimum row, counted in characters as for Chinese.
+6. **Writing, Get feedback disabled:** one line says why, with a countdown of the words or characters still missing (interface layer, vi/en/zh).
+7. **Lesson complete** shows only numbers the backend actually measured (for example correct / total); a tile with no measured number is hidden. No invented numbers.
+8. **Onboarding** keeps the learner's self-chosen level; a placement check is deferred.
+9. **Entry routing:** `/next` opens `#/welcome` when the profile has no learning language or no level, and Today otherwise. No new stored field.
+10. **Compare Versions** follows the frame exactly.
+11. **Lane:** `codex/work` is the UI lane (D-066) whichever agent works it, Claude included.
+
+**Consequences.** Each Wave B item is its own commit. The Grammar authorisation takes effect when the Grammar screens are rebuilt on the grammar content contract.
+
+## D-099 — Admin keeps its own address through the cutover; Grammar Concept is frame 47; the declared level goes to review
+
+**Date:** 2026-09-29. **Status:** Accepted (explicit human direction).
+
+**Context.** Planning the cutover (`UI_COMPLETION_ROADMAP.md`) found that the admin console,
+merged into `codex/work` by PR #63 (D-085), would lose its host when `/` becomes the new UI, while
+AGENTS section 7 and D-081 still described Admin as inert and unmerged. D-098 left the declared
+level out of the entry rule because the backend does not store it.
+
+**Decision.**
+
+1. **Admin through the cutover.** The old admin console keeps running at an address of its own
+   until the Admin wave, built on the pinned `Orena Admin.dc.html`, replaces it. The cutover does
+   not wait for the Admin wave. `Orena Admin.dc.html` is pinned from the Claude Design project like
+   the other design files. AGENTS section 7 says this; D-081's "not merged" is marked as overtaken.
+2. **Before the cutover** the shared code the new UI still reaches in old `ui/` moves into
+   `capabilities/` (roadmap step 3).
+3. **H1:** frame 47 is the canonical Grammar Concept frame; frame 23 is not built. The timeline,
+   word_order and morphology illustrations are built from the kit, as D-098 point 4 authorised.
+4. **H2, the declared level.** The entry rule keeps its learning-language half now. Storing the
+   declared level per learning language (CEFR for en, HSK 1-9 for zh, room for ja) follows the
+   AGENTS section 7 process: a proposal after `ORENA_ACCOUNT_DATA_ARCHITECTURE.md`, an independent
+   architecture review, human approval, then code, migration and tests. The human runs the
+   migration on the sandbox; production is not touched. When it lands, `#/welcome` opens when there
+   is no learning language or no level for it.
+5. **Chinese Writing evaluator** (`ZH_WRITING_EVALUATOR_RECALL.md`): fix (1) with a zh+vi test now,
+   benchmark (5) in parallel, prompt (4) only after (5) has measured, no deterministic detector
+   (6), the token budget (7) only if truncation is measured.
+
+**Amends:** D-081 (its "not merged" statement, as a matter of fact), AGENTS section 7's Platform
+Admin hold. *Point 1 (an address of its own) is replaced by D-101 H8.* D-098 point 9 stands; its level half waits for point 4 here.
+
+## D-100 — Grammar Lab replaces R5 as Orena's grammar source
+
+**Date:** 2026-09-29. **Status:** Accepted (explicit human direction; PR #66 merged at `f86a2bf`).
+
+**Context.** On 2026-09-28 the human began retiring R5 Grammar: Grammar Lab becomes the only
+grammar source. The Grammar Lab lane drafted `docs/project/GRAMMAR_CONTENT_CONTRACT.md` (schema
+v0.4). The UI lane reviewed it against the two Grammar screens, and the lane revised it
+(`e293feb`, `4992cec`). The human merged it by PR #66.
+
+**Decision.**
+
+1. **Source.** Grammar content comes from Grammar Lab, in the shape of
+   `GRAMMAR_CONTENT_CONTRACT.md`. R5 is no longer a grammar source: no new R5-specific rendering,
+   content or contract work. The two Grammar screens are rebuilt on the contract: Grammar Library
+   (frame 44) and Grammar Concept (frame 47, canonical per D-099).
+2. **Order.** The UI lane builds the two screens' frame on the merged contract now and connects
+   them to real data when the lane's fixture of 13 sample points arrives (Grammar Lab PR B). The
+   lane's contract patch (PR A) fixes the five inconsistencies the UI lane listed and adds the
+   "Try it yourself" recognition rule.
+3. **Try it yourself** is drawn as frame 47 draws it. Until the contract carries a rule for
+   recognising the target pattern, the screen never concludes "you used the pattern": a clean
+   sentence is not evidence of use.
+4. **API.** `/api/grammar/v1/*` is not built as part of this decision. It goes through its own
+   architecture review. Until then the screens read fixtures, not a new route.
+5. **What stays.** R5 code, Concept IDs and their gates remain until the rebuilt screens replace
+   what reads them. Removing them is its own step, with a `LEGACY_TOMBSTONES.md` entry written on
+   the human's instruction. AGENTS section 6 still lists "R5 Grammar contracts and Concept IDs" as
+   protected until then. AGENT_CONTRACT section 6.1's `grammar.point{grammar_id}` moves to Grammar
+   Lab ids in a contract bump.
+
+**Supersedes:** R5 Grammar as the grammar authority (the R5 entries this log accepted stand as
+history). Amends nothing else.
+
+## D-101 — One complete staging on :8011 before the cutover; H1-H10 decided
+
+**Date:** 2026-09-29. **Status:** Accepted (explicit human direction). **Replaces** the order,
+the H1-H10 answers and the completion/cutover plans in the first version of
+`UI_COMPLETION_ROADMAP.md`, and D-099 point 1 (Admin at an address of its own). It does not
+override the Product Constitution, the Account Data Architecture, the Content Architecture, the
+Agent Contract, auth and security rules or the architecture invariants, except where this entry
+says so. Older documents that contradict it are updated to match.
+
+**Goal.** One complete staging on :8011 running the latest `codex/work`: the old UI at `/` and
+the new UI at `/next` until the human says "cutover". It holds the full learner UI for every
+existing skill, the Admin needed to load real content, and Orena text chat with the intelligence
+lane integrated. Complete means, for every existing skill (Reading, Listening, Dictation,
+Shadowing, Speaking, Pronunciation, Writing, Vocabulary/Review, Grammar, Onboarding/Profile,
+Orena): real content, the learner does the work, it is assessed where the domain contract defines
+assessment, the result is stored on the server, and progress and history are still there after a
+reload or a new login. No mock data on the :8011 critical path; learner progress is not
+device-only.
+
+**Principle.** Change what exists; do not build a parallel one. Before a screen, flow or
+function, find its old-UI and current-Admin implementation, move logic, API calls and state
+handling into shared modules and reuse them; rebuild only the presentation to the new design.
+New code only where nothing can be reused, with the reason in the commit. Backend: reuse
+services; add only what does not exist. The cutover deletes only old shells that have a
+replacement.
+
+**A. Staging.**
+- :8011 always runs the latest `codex/work`.
+- Its database sits on a durable volume of its own, apart from production and preview. Never
+  `down -v`.
+- `scripts/staging_backup.ps1` takes a `pg_dump` in one command.
+- `scripts/staging_update.ps1` is run by the human, because migrations are the human's gate.
+  - It fails closed on: a dirty tree, a branch other than `codex/work`, a pull that is not a
+    fast-forward, a failed build, or a migration state it cannot read.
+  - It prints the current revision and the pending list, and asks to confirm.
+  - It backs up before migrating; a failed backup stops it.
+  - It migrates, restarts, checks health, and prints the running SHA, the DB head and
+    `:8011/next`.
+  - Its first run takes :8011 from `20260923_0014` to the latest head.
+- :8021 is the lane's own bench. Every try-it instruction to the human points at `:8011/next`.
+
+**H1-H10.**
+- H1: frame 47 is Grammar Concept.
+- H2: `declared_level` is stored on the server. Architecture approved, with these conditions:
+  - Meaning: the learner's self-declared current level, never measured or inferred;
+    `account_profile.py` and the account data architecture are corrected to say so.
+  - Existing accounts: option A. A learner who already has a learning language sees only
+    Welcome's level step, not the whole onboarding.
+  - Never inferred from old writing, history, evaluator output or evidence.
+  - HSK 7-9 is one learner-facing band: no HSK7/HSK8/HSK9 choices. Finer curriculum metadata
+    stays in the content domain and is never used to infer `declared_level`.
+  - A throwaway-PostgreSQL up/down/up rehearsal, run when no lane is doing heavy Docker work.
+  - The migration moves to `versions/` only with the human's permission.
+  - `#/welcome` opens when there is no learning language, or no level for it.
+- H3-H7: deferred, together with the eight Coming-soon screens and E1, until after staging.
+- H8: the old console does not move to an address of its own. The existing Admin moves into the
+  new UI (E). Until the cutover, the old UI's `/` and `/#/admin` stay untouched.
+- H9: the eight Coming-soon screens are not in staging, and every entry to them in `/next` is
+  hidden.
+- H10: Admin on the pinned `Orena Admin.dc.html` starts now (E), not after the cutover.
+
+**C. Chinese evaluator.**
+- `EVALUATOR_CONTRACT_VERSION` v2.7 must not re-grade every stored review of every language.
+  Only reviews that may be affected (Chinese writing with a non-Chinese explanation language) are
+  re-graded, and only when the learner opens one. The approach is reported before the change.
+- Benchmark v2 may run live with Gemini on the isolated stack, capped at USD 0.50 in total. Recall
+  is reported for en and zh, and option (4) is decided on those numbers.
+- C does not interrupt A -> D2 -> D3, and runs when Docker is free.
+
+**D. Order.**
+1. The staging scripts.
+2. P1: every module `/next` loads from `ui/` moves to `capabilities/` or `kit/`, both UIs point
+   at the one module, and a gate forbids `/next` from importing `ui/`. No behaviour change.
+3. The D3 matrix, sent to the human once:
+   - A summary row per skill, and a sub-row per flow present in staging.
+   - Five steps per row: content / do / assess / store / come back.
+   - Each cell is one of `RUNS_REAL`, `MISSING`, `N/A_BY_CONTRACT` (with evidence) or
+     `PROPOSE_RETIRE` (needs approval).
+   - A "reusable from the old UI / Admin" column.
+   - `FUNCTIONAL_E2E_READY` and `CONTENT_SCALE_READY` recorded separately.
+   - The open old flows: `url:` content, `#/language`/recall, `#/continue`, per-skill
+     libraries, Growth summary, R5 ids.
+4. One persistence proposal covering every storage gap, grammar progress included, merged with H2
+   where sensible. One independent review, then human approval; migrations go through the
+   rehearsal.
+5. Admin.
+6. Grammar.
+7. Every `MISSING` cell, by reuse.
+8. Orena.
+9. The cutover, on the human's word.
+
+A skill is complete only when every one of its non-deferred rows is.
+
+**Persistence.** Server storage is required for learner-owned state that has learning meaning or
+must survive across devices or sessions: progress, attempt/result, score/evidence, review
+schedule, completion/history, declared level, and whatever D3 confirms as a learner record. Pure
+presentation state (theme, text size, an open sheet, hover, a transient interaction) need not be
+stored on the server. State that matters but is device-only is `MISSING` in D3 and goes into the
+D4 proposal; no ad-hoc tables.
+
+**E. Admin.**
+- The existing Admin (`static/orena/admin/*`, PR #63) moves into the new UI on the kit, adjusted
+  to the pinned `Orena Admin.dc.html`. Logic, APIs and `require_admin` stay unchanged; only the
+  presentation and the old CSS variables are replaced. There is no second admin backend.
+- Staging scope: shell, auth and No access, AI & Models, Reading pipeline, Imports, and Content
+  (review and publish, including the Grammar Lab package import per `INTEGRATION_DESIGN.md`).
+  Overview, Operations, Users and the Practice generator come later.
+- Access is tested three ways:
+  - the Profile entry shows only for an admin;
+  - a normal account opening the address directly sees No access and loads no data;
+  - admin APIs refuse at the server.
+- Acceptance is one real loop: import real content, review it, publish it, and a learner opens it
+  on `/next` and learns with it. The grammar package goes through the same loop.
+
+**F. Grammar.**
+- Frames 44 and 47 are built on the merged contract: the frame now, real data when Grammar Lab
+  exports the core pack.
+- Only approved content is shown, arriving by Grammar Lab validate/verify/review -> approved
+  export -> Admin import/review/publish -> learner grammar source.
+  - Never read drafts from `grammar_lab/content/`.
+  - Never publish `draft_ai` fixtures; PR #68 is not production content.
+- A level with no content shows "being completed". No R5.
+- An old R5 id redirects through the R5 id that Grammar Lab records in each point's provenance.
+- Try it yourself uses the contract's `pattern_rule` once PR #67 is merged. Before that it never
+  concludes the pattern was used.
+
+**G. Orena.**
+- The panel stays on the mock until the intelligence lane's PR is merged.
+- Then `AGENT_LIVE` is switched on, on :8011 only, and checked in full against contract v5:
+  - a capabilities 404 hides Orena;
+  - SSE turns;
+  - 409 `target_language_mismatch`;
+  - 429 with `Retry-After`;
+  - `context.address`;
+  - actions are only offered;
+  - the opening turn comes from real data.
+- Each surface in staging gets a one-line purpose in en/vi/zh.
+- Staging is complete only once `AGENT_LIVE` runs on :8011.
+
+**H. Cutover, only on the human's word.**
+- Entry: the human approves staging, D3 has no `MISSING`, AA holds in both themes, rule 49 holds
+  at four sizes, the full gate is green, and CI has run on the PR.
+- One PR with three commits: move the code; put the new UI at `/` with redirects and new gates;
+  remove the old shells with tombstones.
+- Tagged so one revert undoes it. No schema change in it, no force-push. `main` is the human's.
+
+**Staging complete is not public release.** EN and ZH need enough real content for the required
+E2E runs; content breadth for a beta is a separate gate. "Product content complete" is never
+claimed because one item per skill runs.
+
+**Working rules.**
+- Each milestone ends with one line: "run staging_update, open :8011/next, press X". One batch of
+  questions per milestone; stop only when truly blocked.
+- One independent reviewer per milestone, more only where learner data or security is touched.
+- At most three parallel agents. Commit and push per item. Long command output goes to files;
+  report summaries only.
+- Heavy Docker work (full suite, builds, migration rehearsal) never overlaps another lane's heavy
+  Docker work.
+- From A to G, no standalone polish task. The exceptions are a problem that blocks a D3 E2E, gives
+  a learner wrong data or grading, loses persistence or history, breaks auth/security, an agreed
+  accessibility gate or rule 49, or has to be fixed to move old logic into a shared module. Other
+  polish goes to a backlog.
+
+## D-102 — The product is finished on codex/work and reaches :8000 through main; :8011 deployment deferred
+
+**Date:** 2026-09-29. **Status:** Accepted (explicit human direction). **Amends** D-101's staging
+and deployment parts (A, and the "staging on :8011" framing). H1-H10, D2-D7, Admin, Grammar,
+Orena and the cutover stand as D-101 says, except where this entry changes them.
+
+**Decision.**
+
+1. **Goal.** The goal is not a separate staging runtime on :8011 kept up through development. The
+   goal is to finish the whole product on `codex/work`, test it fully on a local/lane runtime, and
+   open a PR from `codex/work` into `main`. After the human merges it, the main runtime is :8000,
+   with its existing auth/login and environment configuration. No parallel deployment system is
+   built for the new UI.
+2. **Before the merge.** `/` and the main runtime are not changed by new-UI work. Development and
+   QA of `codex/work` run on the lane's runtime (:8021 or another local port). :8011 is not
+   rebuilt or redeployed after each milestone.
+3. **Milestone A** is `TOOLING_READY / DEPLOYMENT_DEFERRED`. `scripts/staging_update.ps1` and
+   `scripts/staging_backup.ps1` are kept, not deleted. :8011 is not run or migrated unless the
+   human asks separately; D2 does not wait for it.
+4. **Critical path.**
+   1. D2, the shared modules.
+   2. D3, the matrix.
+   3. D4, one persistence proposal including H2.
+   4. E, Admin with real content ingest and publish.
+   5. F, real Grammar.
+   6. D7, every `MISSING` cell.
+   7. G, Orena Intelligence.
+   8. Integration QA on `codex/work`.
+   9. The PR `codex/work` -> `main`.
+   10. After the human merges it, :8000 is updated with migrations under the human's gate.
+   11. The old-UI cutover, only when the human says so.
+
+   C runs after D3, when Docker is free.
+5. **Testing per milestone.**
+   - The relevant automated gates.
+   - A browser test on the lane runtime, against the real backend (no fake data on a critical
+     E2E), with PostgreSQL wherever persistence is part of the acceptance.
+   - The endpoint, storage and reload evidence recorded in D3.
+   - The full Docker suite only at checkpoints that are worth it.
+6. **Integration QA before the PR.** One pass on the HEAD of `codex/work` proves, in EN and ZH, for
+   every non-deferred flow: real content -> learner interaction -> assessment where the domain has
+   it -> server persistence -> reload or a new session -> history and progress still there.
+   - Flows covered: Onboarding/Profile, Reading, Listening, Dictation, Shadowing,
+     Speaking/Pronunciation, Writing, Vocabulary/Review, Grammar, Admin import/review/publish,
+     and Orena contextual text chat.
+   - D3 has no `MISSING`.
+   - Fixture or test data never supports a claim that product E2E is complete.
+7. **Runtime :8000 after the merge.**
+   - Updated from `main` with its existing auth, login and environment configuration, and no
+     parallel secrets.
+   - Migrations stay the human's gate, with a backup first, then a smoke test of login and the
+     key learner E2E.
+   - A migration developed in D4 is rehearsed up/down/up on a throwaway PostgreSQL before the PR,
+     not applied to the main runtime during development.
+8. **Priority.** No deployment infrastructure, UI polish or small fix unless it blocks a D3 E2E,
+   learner correctness, server persistence, the Admin content loop, Grammar production, the
+   Orena integration, auth/security or merge readiness.
+9. **Progress.** Progress is counted in finished product flows, not in staging deploys or screens
+   rendered.
+
+## D-103 — Answers to the D3 decisions: retirements, Dictation, metrics, speech providers, prompts, the Chinese evaluator
+
+**Date:** 2026-09-29. **Status:** Accepted (explicit human direction, on `D3_PRODUCT_MATRIX.md`).
+
+1. **Retirements approved.** The following retire:
+   - the old `#/continue`;
+   - the old per-skill library rooms;
+   - learner-facing R5 grammar routes and the presentation of R5 `grammar_links`;
+   - the old Growth Summary;
+   - recall modes that have no staging frame.
+
+   Retirement covers obsolete UI and routes only. Reusable domain logic and historical learner
+   data are not deleted. Historical R5 ids stay readable for legacy resolution and redirect through
+   Grammar Lab provenance and aliases once that mapping exists.
+2. **Dictation.** Client-side grading is not `N/A_BY_CONTRACT`. The server is authoritative for
+   persisted Dictation evidence:
+   - The browser may compute the deterministic score at once, for the learner's experience.
+   - Before storing, the server recomputes the score from the learner's answer and the canonical
+     target/line identity, reusing the existing deterministic comparison. No AI is involved.
+   - Until this exists, Dictation's assess and store cells stay `MISSING`.
+3. **Books and pasted texts** are `N/A_BY_CONTRACT` for comprehension assessment in this scope.
+   Approved question sets remain the article assessment contract. A source type with no
+   comprehension contract shows no Check Understanding entry that only reaches an unavailable state.
+4. **Profile and Progress metrics: a real metric or no metric.** An unmeasured value is never shown
+   as 0.
+   - D4 defines and builds only metrics with defensible semantics and real server evidence,
+     deriving from existing records before adding persistence: a real streak, persisted learner
+     goals where they apply, and real activity and progress counts.
+   - Weekly minutes appear only if duration is genuinely measured; otherwise they are hidden.
+   - Achievements, trends and skill percentages have no evidence definition yet, so they are
+     hidden until their contract exists.
+5. **Speech providers approved for lane E2E testing.** This reuses the existing integrations and
+   runtime credentials: Azure Speech Pronunciation Assessment, and the existing ASR provider (Groq
+   where the flow needs it). Only the required speech variables are passed to the lane runtime.
+   The whole `.env` is never copied, printed or committed. The purpose is to prove Shadowing,
+   Pronunciation and Compare end to end.
+6. **Writing prompts.** The curated-prompt capability stays. The old prompt choice moves into the
+   new Writing Setup, and free or custom writing is kept. The existing material is the migration
+   seed, but `content/texts.js` is not the long-term authority: the destination is the Writing
+   Prompt Bank under the content architecture.
+7. **Chinese evaluator.**
+   - The affected review identity is `target_language == zh` and support/explanation language
+     `!= zh`. It is not defined as "non-CJK".
+   - Unrelated pairs stay on the previous effective evaluator identity, so they are not re-graded.
+   - Opening an affected old essay works like this:
+     1. Show the stored review.
+     2. Call an idempotent POST refresh-if-stale.
+     3. The server verifies the pair, the submission identity and the evaluator version.
+     4. If current, it returns the stored review with no provider work.
+     5. If stale, it re-grades exactly that submission once and stores the result against the
+        same learner submission.
+     6. The previous review is kept as immutable history and audit evidence.
+   - No learner revision is created, and nothing claims the learner rewrote the essay. There is no
+     batch re-grade of history.
+   - The live Gemini benchmark v2 is approved with a total ceiling of USD 0.50, and EN and ZH
+     recall are reported separately. Option (4) waits until those numbers are reviewed.
+
+D4 stays one persistence proposal and one independent review before any learner-data migration is
+promoted.
+
+## D-104 — The D4 decisions, the Admin answers and the evaluator option (4)
+
+**Date:** 2026-09-30. **Status:** Accepted (explicit human direction, on
+`proposals/LEARNER_RECORDS_D4.md` rev 2 and the Admin slice 1 report).
+
+**D4 (learner records).**
+- **H-18, approved.** AGENTS section 7 is amended: these learner-owned records live on the server:
+  - drafts;
+  - conversations;
+  - continuation/place;
+  - notes, highlights and annotations;
+  - learner-imported private content;
+  - the provenance needed to keep where learner content and actions came from.
+
+  Still deferred: the general multi-device sync protocol, receipt compaction, the account-deletion
+  runtime, the export format, and Orena conversation/history persistence (unless the Agent
+  Contract changes it).
+
+  Storage ownership:
+  - `users`: `learning_language`, `interface_language`, `weekly_goal_days`,
+    `settings_updated_at`.
+  - `user_language_profiles`: `declared_level`, review settings, and settings that belong to one
+    learning language.
+
+  There is no generic account-settings table.
+- **H-12: Design B.** Continuation/place lives on `library_items`. It is navigation and progress
+  state, not learning evidence. `works` continuation with high-volume receipts is not used.
+  Migration 0022 is part of D4.
+- **H-17: versioned account settings.**
+  - `users.settings_updated_at` carries a server-owned conditional (expected-version) update for
+    account scalar settings.
+  - There is no blind arrival-order last-write-wins, and a client timestamp never resolves a
+    conflict.
+  - Migration 0018 includes the column.
+- **H-11: backbone approved.**
+  - `ORENA_ACCOUNT_BACKBONE` is enabled on the lane runtime once the D4 migrations have passed a
+    PostgreSQL up/down/up rehearsal and have been applied to that lane.
+  - Its default stays off. :8000 is enabled only after the merge, a backup, the migration human
+    gate and smoke verification.
+- **H-6: no bulk device migration.**
+  - There is no "bring this device's work into your account" flow and no silent bulk upload.
+  - Legacy device values stay readable where a compatibility path already reads them.
+  - New learner state from the finished `/next` flows uses the server. Existing draft sync may
+    remain.
+- **H-1, approved.** Welcome/setup is required once per learning language whose learner-language
+  profile does not exist yet, without replaying the whole onboarding.
+- **H-5: a real streak.**
+  - No new streak table; it is derived from meaningful, timestamped server-side learning activity.
+    Page visits do not count.
+  - It is not permanently limited to Reading/Writing/Speaking: every staging skill with equally
+    valid server-side completed activity counts, using the domain records available after D4/D7.
+- **H-4: quiz result stored.** Grammar progress keeps `last_quiz_correct`, `last_quiz_total` and
+  `last_quiz_at` beside the existing completion state.
+  - Try-it-yourself results belong to the Writing/evaluator record and are not duplicated.
+  - Migration 0023 is part of D4.
+  - A future Grammar API validates the published point before accepting progress; R5 is not
+    revived as learner authority.
+- **H-14, approved.** Legacy Dictation numbers that were not server-verified are superseded by the
+  learner's next server-verified result, never rewritten as if verified.
+- **H-15, approved.** An old Chinese essay is not refreshed when its stored review identity does
+  not prove the original language pair; that identity is never inferred from the current
+  profile.
+- **H-3, approved.** Reading Transfer is stored as learner work/response, not mastery evidence.
+
+**Admin.**
+- **AD-6.** The warning is compact operational status, shown only while it is true: "Saved ·
+  learner evaluator still uses legacy routing." It is removed when learner evaluation consumes
+  the configured route. Save never pretends to change runtime behaviour.
+- **AD-7, approved.** Provider tiles use the shared accent/status tokens; no provider-brand colours.
+- **AD-8.** Back to Orena is added: the Admin utility action on desktop, and a compact back action
+  in the Admin header on phone.
+- **AD-1/AD-2.**
+  - Credentials stay write-only, and no last-four characters are stored or shown.
+  - Allowed provider metadata: configured / not configured, credential updated timestamp, last
+    provider test, latency, last success/failure, and last error where available.
+  - Existing audit/test records are reused. No new provider-test-history store is built for the
+    UI.
+
+**Chinese evaluator option (4).** Not activated. Measured recall is EN 0.60 and ZH 0.60, which
+shows no Chinese-specific deficit and does not show that broadening the prompt helps without
+more false positives. The v2.7 fixes stay. Option (4) needs comparative benchmark evidence of a
+meaningful recall gain without a material clean-case/precision regression.
+
+**Next.**
+1. The D4 proposal and the proposed migrations follow these choices: 0018 carries
+   `settings_updated_at`, and 0022 and 0023 are required.
+2. The PostgreSQL throwaway up/down/up rehearsal runs.
+3. The migrations are not moved to `versions/` or applied to :8000 without the existing human
+   gate.
+
+E continues in parallel where it does not depend on D4 schema.
+
+## D-105 — D4 approved for the lane runtime; H-19, H-20; the grammar content path; three Admin answers
+
+**Date:** 2026-09-30. **Status:** Accepted (explicit human direction).
+
+1. **D4 approved on :8021, not :8000.** Migrations 0017-0023 (`migrations/proposed/`,
+   independently reviewed and rehearsed, `9ca6c3f`) may move to `versions/` and be applied to the
+   lane runtime, one revision per invocation after a backup. The implementation follows proposal
+   section 15, and `ORENA_ACCOUNT_BACKBONE` goes on for the lane per D-104 H-11. :8000 is not
+   touched until the merge and its own gates.
+2. **H-19.** An existing learner-language profile with no declared level gets a level prompt the
+   learner can skip. The entry rule stays as D-104 H-1 states it.
+3. **H-20.** Grammar completion and the quiz result are written atomically, in one operation.
+4. **Grammar content path.** Grammar Lab is upstream: an approved export is imported into the
+   database through Admin, reviewed and published there, and learners read it from a published
+   grammar API. Content does not ship as JSON with the source code. The grammar content store and
+   `/api/grammar/v1/*` go through their own proposal and independent architecture review before
+   code.
+5. **Admin.**
+   - (a) Copyright is a hard gate at Publish: an article whose rights do not allow publication
+     cannot be published. This amends the earlier "rights are decision support, never a hard block"
+     wording for Reading.
+   - (b) For vocabulary publication the server is the authority; the UI states the server's rule.
+   - (c) The review queue shows Source, Rights and Target count.

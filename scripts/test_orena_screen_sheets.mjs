@@ -3,7 +3,8 @@
    route correctly is left out rather than guessed). Imports only the *-free modules, never sheet.js
    (which touches the DOM/overlay layer) or copy.js (covered by scripts/test_orena_copy.mjs). */
 import assert from 'node:assert/strict';
-import { textStats, countSentences, importErrorKey, urlMediaEntry } from '../static/orena/screens/import/model.js';
+import { textStats, countSentences, importErrorKey, urlMediaEntry, uploadMediaEntry } from '../static/orena/screens/import/model.js';
+import { uploadMediaId } from '../static/orena/screens/content/model.js';
 import { continuationRoute, notificationRows } from '../static/orena/screens/notifications/model.js';
 import { isSupportedMediaUrl } from '../static/orena/product/media-url.js';
 
@@ -41,7 +42,17 @@ assert.equal(importErrorKey('something_the_backend_never_sent'), 'error_generic'
 assert.equal(importErrorKey(undefined), 'error_generic');
 // The upload route's own categories are not mapped: the frame draws no File upload step (no
 // `impIsFile` block; its own handler is a toast), so this screen never reaches that route.
-assert.equal(importErrorKey('media_upload_invalid'), 'error_generic', 'the File step is not built - no upload category is recognised');
+assert.equal(importErrorKey('media_upload_invalid'), 'error_media_upload_invalid', 'File posts to the upload route (D-098): its refusal is said, not generic');
+assert.equal(importErrorKey('media_upload_unavailable'), 'error_media_upload_unavailable');
+assert.deepEqual(
+  uploadMediaEntry({ media_id: 'upload-abc', asset: { title: 'My clip', duration_ms: 61000 }, playback: { kind: 'audio' } }, 'clip.mp3'),
+  { id: 'upload:upload-abc', title: 'My clip', kind: 'audio', duration_ms: 61000, thumbnail_url: '', provider: '' },
+  "an upload is filed under memory.addMedia's own upload: scheme, from the route's answer",
+);
+assert.equal(uploadMediaEntry({ media_id: 'upload-abc', asset: {} }, 'Lecture 3.mp4').title, 'Lecture 3', 'no stored title: the file name without its extension');
+assert.equal(uploadMediaEntry({ asset: { title: 'x' } }, 'a.mp3'), null, 'no media id: nothing is filed');
+assert.equal(uploadMediaId('upload:upload-abc'), 'upload-abc', 'Content opens an uploaded file by its bare media id');
+assert.equal(uploadMediaId('upload-abc'), 'upload-abc');
 
 // ---- import/model.js: membership records only from fields the response actually returned ----
 const urlEntry = urlMediaEntry('https://youtu.be/abcdefghijk', {

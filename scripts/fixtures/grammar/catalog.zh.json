@@ -1,0 +1,33 @@
+[
+  {
+    "_fixture": "TEST-ONLY - the catalogue projection (docs/project/GRAMMAR_CONTENT_CONTRACT.md §9) of the fixture points in points/. Not learner content, never shipped.",
+    "id": "zh.ba_sentence",
+    "header": {
+      "native_title": "把字句",
+      "native_title_pinyin": ["bǎ", "zì", "jù"],
+      "title": {"vi": "Câu chữ 把", "en": "The 把 sentence"},
+      "sub": {"vi": "xử lý tân ngữ", "en": "acting on an object"}
+    },
+    "level": {"framework": "hsk3", "value": 3, "rank": 3},
+    "function": "fn.act_on_object",
+    "sequence": 1,
+    "point_type": "word_order",
+    "error_tags": ["ba_sentence"],
+    "aliases": []
+  },
+  {
+    "id": "zh.guo_experience",
+    "header": {
+      "native_title": "过",
+      "native_title_pinyin": ["guo"],
+      "title": {"vi": "过 chỉ trải nghiệm", "en": "过 for experience"},
+      "sub": {"vi": "trải nghiệm", "en": "experience"}
+    },
+    "level": {"framework": "hsk3", "value": 2, "rank": 2},
+    "function": "fn.talk_about_experience",
+    "sequence": 1,
+    "point_type": "tense_aspect",
+    "error_tags": ["negation"],
+    "aliases": []
+  }
+]

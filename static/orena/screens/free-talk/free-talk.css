@@ -1,0 +1,396 @@
+/* Frame 29 "Free Talk" (pinned design, focus route 'freetalk'), every value below read from the
+   frame's own inline styles (SCRATCH/design-full/frames/29-Free-Talk.html) and re-measured against
+   the running frame: the "Signature A" header (40x40 back button, radius 14, 16/600 title, 13px
+   step line), the 720px column with a 20px gap and 14px top padding, Card-24 (padding 26, radius
+   24), the 40-bar recording wave, the 72px stop button and the 3-tile result grid.
+
+   Design Contract rule 49: this route is a learning workspace, so `.o-main` never scrolls; the
+   root fills the column and only `.s-ft__body` (the card that can grow long) scrolls, inside its
+   own `data-scroll-region`. */
+.s-ft {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 720px;
+  width: 100%;
+  margin: 0 auto;
+  padding-top: 14px;
+  /* The frame's own <main> keeps 32px under its content; the shell drops it for a workspace. */
+  padding-bottom: 32px;
+}
+
+/* ---- Header (Signature A) ---- */
+.s-ft__head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.s-ft__headcol {
+  flex: 1;
+  min-width: 0;
+}
+.s-ft__title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: normal;
+  letter-spacing: normal;
+}
+.s-ft__sub {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* The scroll region is padded and pulled back out so the card's own shadow is not clipped. */
+.s-ft__body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  margin: -6px -16px 0;
+  padding: 6px 16px 16px;
+}
+.s-ft__body--fit {
+  overflow: hidden;
+}
+.s-ft__card {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---- Setup ---- */
+.s-ft__setup {
+  padding: 26px;
+  gap: 20px;
+}
+.s-ft__label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.s-ft__label + * {
+  margin-top: 8px;
+}
+.s-ft__input {
+  width: 100%;
+  height: 46px;
+  padding: 0 18px;
+  border-radius: 14px;
+  border: 1.5px solid transparent;
+  background: var(--surface2);
+  color: var(--text);
+  font-size: 16px;
+  outline: 0;
+}
+.s-ft__input:focus,
+.s-ft__textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--ring);
+}
+.s-ft__pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.s-ft__input + .s-ft__pills {
+  margin-top: 8px;
+}
+.s-ft__suggest {
+  padding: 9px 13px;
+  border-radius: 999px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+}
+.s-ft__durations {
+  display: flex;
+  gap: 10px;
+}
+/* The frame's own chip() pair: an active pill is accent on accent-soft with a tint2 ring, an
+   inactive one muted on surface with border2 (kit's .o-chip carries the Filter sheet's values). */
+.s-ft__duration {
+  padding: 11px 18px;
+  border-radius: 999px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 600;
+}
+.s-ft__duration[aria-pressed='true'] {
+  border-color: var(--tint2);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.s-ft__phrase {
+  padding: 9px 13px;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font-size: 13.5px;
+  font-weight: 600;
+}
+.s-ft__start {
+  padding: 18px;
+  border-radius: 16px;
+  font-size: 16px;
+}
+
+/* ---- Recording ---- */
+.s-ft__record {
+  padding: 28px;
+  gap: 22px;
+  align-items: center;
+  text-align: center;
+}
+.s-ft__recap-label {
+  font-size: 13px;
+  color: var(--muted);
+}
+.s-ft__recap {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.s-ft__clock {
+  font-size: 56px;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
+.s-ft__wave {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  height: 40px;
+}
+.s-ft__wave i {
+  flex: 1;
+  border-radius: 2px;
+  background: var(--red);
+  animation: pulse 0.9s ease-in-out infinite;
+}
+.s-ft__micon {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--red);
+}
+.s-ft__stopwrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.s-ft__stop {
+  width: 72px;
+  height: 72px;
+  border-radius: 999px;
+  border: 0;
+  background: var(--red);
+  box-shadow: 0 0 0 10px var(--red-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.s-ft__stop i {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: var(--accent-ink);
+}
+.s-ft__stop-caption {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.s-ft__working {
+  margin: 0;
+  font-size: 15px;
+  color: var(--muted);
+  padding: 24px 0;
+}
+
+/* ---- Transcript ---- */
+.s-ft__review {
+  padding: 26px;
+  gap: 14px;
+}
+.s-ft__review-title {
+  font-size: 15px;
+  font-weight: 600;
+}
+.s-ft__textarea {
+  width: 100%;
+  resize: vertical;
+  border-radius: 16px;
+  border: 1.5px solid transparent;
+  background: var(--surface2);
+  color: var(--text);
+  font-size: 16px;
+  line-height: 1.6;
+  padding: 18px;
+  outline: 0;
+  font-family: inherit;
+}
+.s-ft__review-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+.s-ft__again,
+.s-ft__talk-again {
+  padding: 13px 18px;
+  border-radius: 14px;
+}
+.s-ft__feedback {
+  padding: 13px 22px;
+  border-radius: 16px;
+  font-size: 15px;
+}
+
+/* ---- Result ---- */
+.s-ft__result {
+  flex: 0 1 auto;
+  min-height: 0;
+  padding: 26px;
+  gap: 20px;
+  animation: rise 0.25s ease;
+}
+/* The long feedback (strengths, fixes, the line to retry) is the one region that scrolls; the
+   headline, the three stats and the action bar keep their place (rule 49). Padded and pulled back
+   out so the fix cards' own shadows are not clipped. */
+.s-ft__scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin: -6px -14px -12px;
+  padding: 6px 14px 12px;
+}
+.s-ft__scroll > * {
+  flex: none;
+}
+.s-ft__headline {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+.s-ft__stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.s-ft__stat {
+  padding: 14px;
+  border-radius: 16px;
+  background: var(--surface2);
+}
+.s-ft__stat-label {
+  display: block;
+  font-size: 13px;
+  color: var(--muted);
+}
+.s-ft__stat-value {
+  display: block;
+  font-size: 22px;
+  font-weight: 600;
+}
+.s-ft__stat-unit {
+  font-size: 13px;
+  color: var(--muted);
+}
+.s-ft__section-title {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.s-ft__section-title--good {
+  color: var(--green);
+}
+.s-ft__section-title--bad {
+  color: var(--red);
+}
+.s-ft__strength {
+  margin: 0 0 6px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--green-soft);
+  font-size: 14.5px;
+  line-height: 1.5;
+}
+.s-ft__fix {
+  padding: 12px 14px;
+  border-radius: 14px;
+  margin-bottom: 6px;
+}
+.s-ft__fix-change {
+  font-size: 14.5px;
+}
+.s-ft__fix-change s {
+  color: var(--red);
+}
+.s-ft__fix-why {
+  margin-top: 2px;
+  font-size: 13.5px;
+  color: var(--muted);
+}
+.s-ft__muted {
+  margin: 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+.s-ft__retry {
+  margin: 0;
+  padding: 14px 18px;
+  border-radius: 14px;
+  background: var(--accent-soft);
+  font-size: 15px;
+  line-height: 1.5;
+}
+.s-ft__retry b {
+  color: var(--accent-text);
+}
+.s-ft__error {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--red);
+}
+.s-ft__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.s-ft__ask {
+  height: 40px;
+  min-height: 0;
+  padding: 0 16px;
+  border-radius: 12px;
+  gap: 8px;
+  border: 1px solid var(--ai-line);
+  background: var(--ai-soft);
+  color: var(--ai-ink);
+}
+.s-ft__ask svg {
+  margin: -2px 0;
+}
+.s-ft__spacer {
+  flex: 1;
+}
+.s-ft__finish {
+  padding: 13px 20px;
+  border-radius: 16px;
+}

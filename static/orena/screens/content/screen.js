@@ -18,6 +18,7 @@ import { t } from './copy.js';
 import {
   parseContentId,
   contentIdFor,
+  uploadMediaId,
   minutesFrom,
   metaLine,
   libraryKindFor,
@@ -45,7 +46,7 @@ async function loadDetail(kind, id, ctx) {
   if (kind === 'article') return normalizeArticle(await api.readingArticle(id));
   if (kind === 'book') return normalizeBook(await api.libraryBook(id));
   if (kind === 'media') return normalizeMedia(await api.listeningLibraryLesson(id, ''));
-  if (kind === 'upload') return normalizeMedia(await api.mediaMy(id));
+  if (kind === 'upload') return normalizeMedia(await api.mediaMy(uploadMediaId(id)));
   // text: a learner's own import, device memory only (product/memory.js) - never the network.
   const record = ctx.context.memory.value.imports.find((item) => item.id === contentIdFor('text', id));
   if (!record) throw new Error('This text is not on this device.');
@@ -151,7 +152,7 @@ export default async function content(element, ctx) {
   const primaryLabel = destination === 'listening'
     ? (place.started ? t('continueListening') : t('listen'))
     : (place.started ? t('continueReading') : t('startReading'));
-  const primaryHref = destination === 'listening' ? ctx.href('listening', { id }) : ctx.href('reader', { id: contentId });
+  const primaryHref = destination === 'listening' ? ctx.href('listening', { id: kind === 'upload' ? uploadMediaId(id) : id }) : ctx.href('reader', { id: contentId });
   const isMedia = Boolean(detail.segments && detail.segments.length);
   const transcriptLabel = isMedia
     ? (detail.transcriptOrigin === 'provider_caption' ? t.plural('captions', detail.segments.length) : t.plural('generated', detail.segments.length))

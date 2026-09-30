@@ -14,7 +14,7 @@ import json
 
 import pytest
 
-from writing_coach.book_asset_store import FilesystemBookAssetStore
+from writing_coach.book_asset_store import AssetNotFound, FilesystemBookAssetStore
 from writing_coach.word_audio import (
     CommonsVoice,
     KokoroVoice,
@@ -172,6 +172,37 @@ def test_the_second_voice_speaks_only_when_the_first_has_nothing(library):
     )
     assert found is not None and found.media_type == "audio/wav"
     assert len(silent.asked) == 1 and len(fallback.asked) == 1
+
+
+class _ReadOnlyStore:
+    """A store whose reads behave normally but whose writes always fail, like
+    a filesystem mounted read-only (the isolated review/verify container)."""
+
+    def get(self, key):
+        raise AssetNotFound(key)
+
+    def put(self, key, data):
+        raise OSError(30, "Read-only file system")
+
+    def exists(self, key):
+        return False
+
+    def delete(self, key):
+        return None
+
+
+def test_a_storage_write_failure_is_no_audio_not_a_crash():
+    """A voice found a real clip, but the cache could not keep it. The route
+    must still answer `available: false` - never let a store-level OSError
+    (read-only mount, full disk, permission slip) escape as an unhandled 500."""
+
+    voice = CountingVoice()
+    shelf = WordAudioLibrary(_ReadOnlyStore(), (voice,))
+    found = shelf.pronounce(
+        identity_key=EN_IDENTITY, term="harbour", language="en", reading="", single_reading=True
+    )
+    assert found is None
+    assert len(voice.asked) == 1, "the voice was asked; only the cache write failed"
 
 
 def test_when_no_voice_has_it_there_is_no_audio_rather_than_some_audio(library):

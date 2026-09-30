@@ -12,16 +12,25 @@
    difference is the `units` adapter, and it is the whole difference.
 
    Nothing here runs on its own. A lookup, a translation, a tokenisation and an
-   explanation each happen because the learner asked for one. */
-import { focusRegion } from './html.js';
-import { createQuickSheet } from './quick-sheet.js';
+   explanation each happen because the learner asked for one.
+
+   Moved from `static/orena/ui/lexical.js` to `static/orena/capabilities/lexical.js`
+   (Wave B, shared-overlays pass): a capability, not old presentation - but the
+   old Reader/Listening rooms it serves (`ui/reader.js`, `ui/encounter.js`) are
+   unchanged and still the ones that mount it, so its old dependency on the old
+   UI's own `ui/quick-sheet.js`/`ui/html.js`/`ui/reading-room.js` moves with it
+   unchanged; this is a location change only, never a rewrite onto the new
+   `screens/quick-sheet/` overlay, which is for the new UI's own screens. */
+import { focusRegion } from '../ui/html.js';
+import { createQuickSheet } from '../ui/quick-sheet.js';
 import {
   EXPLAIN_LIMITS,
   LOOKUP_LIMITS,
   TRANSLATE_LIMITS,
   selectionKind,
   sentenceAround,
-} from './reading-room.js';
+} from '../ui/reading-room.js';
+import { plainWordAt } from '../product/word-span.js';
 
 // What the shared tagger accepts in one request (media_interaction.MediaAnnotateIn).
 const ANNOTATE_LIMIT = 1200;
@@ -53,23 +62,6 @@ function offsetAt(unit, x, y) {
     node = walker.nextNode();
   }
   return null;
-}
-
-/* Without the tagger: a run of letters for an alphabet, and one character for a
-   script written without spaces. Deliberately the smallest honest unit -
-   guessing a longer Chinese word here would hand the lookup something the
-   learner did not point at. */
-export function plainWordAt(text, offset) {
-  const at = Math.min(Math.max(0, offset), Math.max(0, text.length - 1));
-  if (!/[\p{L}\p{N}]/u.test(text[at] || '')) return null;
-  if (/[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u.test(text[at]))
-    return { start: at, end: at + 1 };
-  let start = at;
-  let end = at + 1;
-  const wordish = /[\p{L}\p{M}\p{N}'’-]/u;
-  while (start > 0 && wordish.test(text[start - 1])) start -= 1;
-  while (end < text.length && wordish.test(text[end])) end += 1;
-  return { start, end };
 }
 
 function selectRange(unit, start, end) {

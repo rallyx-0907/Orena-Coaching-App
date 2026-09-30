@@ -1,0 +1,31 @@
+[
+  {
+    "_fixture": "TEST-ONLY - the catalogue projection (docs/project/GRAMMAR_CONTENT_CONTRACT.md §9) of the fixture points in points/. Not learner content, never shipped.",
+    "id": "en.present_perfect_experience",
+    "header": {
+      "native_title": "Present perfect",
+      "title": {"vi": "Hiện tại hoàn thành (trải nghiệm)", "en": "Present perfect (experience)"},
+      "sub": {"vi": "trải nghiệm", "en": "experience"}
+    },
+    "level": {"framework": "cefr", "value": "A2", "rank": 2},
+    "function": "fn.talk_about_experience",
+    "sequence": 1,
+    "point_type": "tense_aspect",
+    "error_tags": ["tense", "word_form"],
+    "aliases": ["test-r5-present-perfect"]
+  },
+  {
+    "id": "en.plural_nouns",
+    "header": {
+      "native_title": "Plural nouns",
+      "title": {"vi": "Danh từ số nhiều", "en": "Plural nouns"},
+      "sub": {"vi": "thêm -s/-es", "en": "adding -s/-es"}
+    },
+    "level": {"framework": "cefr", "value": "A1", "rank": 1},
+    "function": "fn.count_things",
+    "sequence": 1,
+    "point_type": "morphology",
+    "error_tags": ["plural"],
+    "aliases": []
+  }
+]

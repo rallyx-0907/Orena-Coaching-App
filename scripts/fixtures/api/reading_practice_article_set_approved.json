@@ -1,0 +1,61 @@
+{
+  "_note": "Built from the serializer, not captured (scripts/fixtures/api/README.md): this sandbox has no article with an approved comprehension set (reading_practice_article_set.json is the real 404 this build actually answers for every article). Field-for-field from writing_coach/persistence/reading_evidence_repository.py's _set_payload()/_question_payload()(with_answer=False)/served_set(), the GET /api/reading/practice/articles/{id} response shape when a set does exist.",
+  "set": {
+    "id": "8f6a8f8e-2222-4d1a-9d5b-111122223333",
+    "article_id": "cdd1266f-a23e-427e-9d5f-5b5b79415b7e",
+    "language_code": "en",
+    "support_language": "vi",
+    "status": "approved",
+    "generator_version": "v1",
+    "model": "gemini-3.5-flash-lite",
+    "reviewed_by": null,
+    "reviewed_at": "2026-09-20T10:00:00+00:00",
+    "created_at": "2026-09-19T09:00:00+00:00",
+    "questions": [
+      {
+        "id": "q1-main-idea",
+        "rank": 0,
+        "question_type": "main_idea",
+        "prompt": "What is the fox's attitude toward the grapes by the end of the story?",
+        "options": [
+          "She decides the grapes were never worth wanting.",
+          "She resolves to try again tomorrow.",
+          "She asks another animal to help her reach them.",
+          "She admits the grapes are out of reach and leaves happily."
+        ]
+      },
+      {
+        "id": "q2-inference",
+        "rank": 1,
+        "question_type": "inference",
+        "prompt": "What does the fox's remark about the grapes being \"sour\" suggest about her real feelings?",
+        "options": [
+          "She is hiding her disappointment.",
+          "She genuinely dislikes sour fruit.",
+          "She is certain the grapes are unripe.",
+          "She is joking with the other animals."
+        ]
+      },
+      {
+        "id": "q3-vocabulary",
+        "rank": 2,
+        "question_type": "vocabulary_in_context",
+        "prompt": "In this sentence, what does \"famished\" mean: \"A famished fox saw some clusters of ripe black grapes\"?",
+        "options": [
+          "Very hungry",
+          "Very tired",
+          "Very fast",
+          "Very old"
+        ]
+      }
+    ],
+    "article": {
+      "id": "cdd1266f-a23e-427e-9d5f-5b5b79415b7e",
+      "title": "The Fox and the Grapes",
+      "level": "B2",
+      "content_kind": "story"
+    }
+  },
+  "submit_enabled": true,
+  "support_language": "vi"
+}

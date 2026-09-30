@@ -23,11 +23,13 @@ import {
   assert.equal(tints.size, 6, 'each skill gets its own hue token');
 }
 
-// --- Speak: six bare modes always, three content-gated modes only when the library has one ----
+// --- Speak: three bare modes always, two content-gated modes when the library has one ----------
+// D-101 H9 (named contract change): Timed Reaction, Mock Interview, Sound/Tone and Retell are deferred
+// with the Coming-soon screens, so no entry to them is offered.
 {
   const bare = speakModes([]);
-  assert.equal(bare.length, 6, 'no speaking-library items yet -> only the six parameterless modes (SP-1, not a bug)');
-  assert.deepEqual(bare.map((m) => m.key), ['freetalk', 'conv', 'situation', 'timedreact', 'mock', 'sound']);
+  assert.equal(bare.length, 3, 'no speaking-library items yet -> only the three parameterless modes in this release (SP-1, H9)');
+  assert.deepEqual(bare.map((m) => m.key), ['freetalk', 'conv', 'situation']);
   for (const m of bare) assert.equal(m.params, undefined, 'a parameterless route carries no params object');
 
   const withItems = speakModes([
@@ -36,23 +38,22 @@ import {
     { id: 22, practice_type: 'retell', level: 'A2' },
     { id: 33, practice_type: 'sentences', level: 'C1' }, // a later duplicate type must not replace the first
   ]);
-  assert.equal(withItems.length, 9, 'all three content-gated modes appear once the library has a matching item each');
+  assert.equal(withItems.length, 5, 'the two content-gated modes in this release appear once the library has a matching item each');
   const speak = withItems.find((m) => m.key === 'speak');
   assert.deepEqual(speak.params, { id: 11 }, 'the first sentences item wins, not a later duplicate');
   assert.equal(speak.level, 'B1');
   const shadow = withItems.find((m) => m.key === 'shadow');
   assert.deepEqual(shadow.params, { id: '77' }, 'a clip id is unwrapped from its media: prefix for the shadow route');
-  const retell = withItems.find((m) => m.key === 'retell');
-  assert.deepEqual(retell.params, { id: 22 });
+  assert.equal(withItems.find((m) => m.key === 'retell'), undefined, 'Retell is deferred (H9) even when the library has an item');
 
   assert.deepEqual(speakModes(), speakModes([]), 'a missing list behaves like an empty one');
   assert.deepEqual(speakModes(null), speakModes([]), 'a non-array list behaves like an empty one, never a crash');
 }
 
-// --- Write: three fixed, parameterless modes ---------------------------------------------------
+// --- Write: Writing only in this release (Context Rewrite, Timed Writing deferred, H9) ------------
 {
   const modes = writeModes();
-  assert.deepEqual(modes.map((m) => m.key), ['writing', 'rewrite', 'timedwr']);
+  assert.deepEqual(modes.map((m) => m.key), ['writing']);
   for (const m of modes) assert.equal(m.params, undefined);
 }
 
@@ -63,7 +64,7 @@ import {
   assert.equal(vocabularyModes(-4).find((m) => m.key === 'review').due, 0, 'a negative count floors at 0 rather than showing nonsense');
   assert.equal(vocabularyModes(undefined).find((m) => m.key === 'review').due, 0, 'a missing count is the rule-40 zero, not an absent field');
   assert.equal(vocabularyModes('not-a-number').find((m) => m.key === 'review').due, 0);
-  assert.deepEqual(vocabularyModes().map((m) => m.key), ['review', 'timed', 'transfer', 'feed']);
+  assert.deepEqual(vocabularyModes().map((m) => m.key), ['review', 'feed'], 'Timed Recall and Context Transfer are deferred (H9)');
 }
 
 // --- Listen: two content-gated modes, one per available_modes value ----------------------------

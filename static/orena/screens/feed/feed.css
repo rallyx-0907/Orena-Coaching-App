@@ -1,0 +1,302 @@
+/* Vocabulary Daily Feed (frame 36), measured against the pinned design (D7/E4 §3). A learning
+   workspace (Design Contract rule 49): `.o-main` stops scrolling as a page; the card rail is the
+   long content, scrolling horizontally only inside itself (`data-scroll-region`) - the exact
+   "bleeds to the viewport edge then re-pads" pattern the frame draws. No `max-width` on the root
+   (unlike every sibling frame - E4 §3.2, deliberate). Colours are tokens only. */
+.s-feed-root {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding-top: 14px;
+  /* A workspace's column has no bottom padding of its own (shell.css, data-focus). */
+  padding-bottom: 32px;
+  animation: rise 0.3s ease;
+}
+
+.s-feed-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.s-feed-head__title {
+  flex: 1;
+  min-width: 0;
+}
+.s-feed-head__name {
+  font-size: 16px;
+  font-weight: 600;
+}
+.s-feed-head__sub {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.s-feed-rail {
+  /* Content-high like the frame's rail: the cards are 420px (shorter only when the window is, see
+     `.s-feed-card`). */
+  flex: none;
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  margin: 0 calc(var(--pad) * -1);
+  padding: 4px var(--pad) 12px;
+  scroll-snap-type: x mandatory;
+  align-items: flex-start;
+}
+
+.s-feed-card {
+  flex: none;
+  width: min(300px, 78vw);
+  /* 420px in the frame; a window shorter than the rail plus the header gives the cards what is left
+     (the 200px is the header, the column's gaps and its padding). */
+  height: min(420px, calc(100dvh - 200px));
+  min-height: 220px;
+  scroll-snap-align: center;
+  padding: 22px;
+  border-radius: 24px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+}
+.s-feed-card.is-flipped {
+  border-color: var(--accent);
+}
+
+.s-feed-face {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.s-feed-face--front {
+  justify-content: flex-start;
+}
+/* The flipped card is the frame's inner panel: 18px radius, 16px inset, on the card's surface. */
+.s-feed-face--back {
+  overflow: auto;
+  padding: 16px;
+  border-radius: 18px;
+  background: var(--surface);
+  gap: 16px;
+}
+
+.s-feed-card__word {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.s-feed-card__word--big {
+  font-size: 32px;
+}
+.s-feed-card__reading {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13.5px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+.s-feed-mastery {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  flex: none;
+}
+.s-feed-mastery__stage {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.s-feed-art {
+  flex: 1;
+  min-height: 0;
+  border-radius: 18px;
+  overflow: hidden;
+}
+.s-feed-card__meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.s-feed-card__ipa {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.s-feed-front-actions {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.s-feed-pill {
+  height: 38px;
+  padding: 0 14px;
+  border-radius: 12px;
+  background: var(--surface2);
+  color: var(--text);
+  border: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  flex: none;
+  justify-content: center;
+}
+.s-feed-save {
+  flex: 1;
+  height: 38px;
+  border-radius: 12px;
+  border: 0;
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.s-feed-detail {
+  flex: none;
+  height: 38px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border2);
+  background: transparent;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+}
+
+.s-feed-face--front .s-feed-card__top {
+  gap: 10px;
+}
+.s-feed-card__top {
+  flex: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+.s-feed-card__meta .o-tag {
+  height: 22px;
+  padding: 0 8px;
+  display: flex;
+  align-items: center;
+}
+.s-feed-card__footer {
+  flex: none;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+.s-feed-card__footer .s-feed-mastery {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+.s-feed-card__footer .s-feed-mastery__stage {
+  font-size: 14px;
+  color: var(--text);
+}
+.s-feed-card__id {
+  min-width: 0;
+}
+.s-feed-card__id .s-feed-card__meta {
+  margin-top: 8px;
+}
+.s-feed-card__actions {
+  display: flex;
+  gap: 8px;
+  flex: none;
+}
+.s-feed-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  border: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.s-feed-icon--play {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.s-feed-card__meaning {
+  font-size: 16px;
+  line-height: 1.5;
+  flex: none;
+}
+.s-feed-card__example {
+  font-family: Literata, 'Noto Serif SC', Georgia, serif;
+  font-size: 17px;
+  line-height: 1.7;
+  color: var(--muted);
+  flex: none;
+}
+.s-feed-card__hit {
+  background: var(--amber-soft);
+  border-radius: 4px;
+  padding: 0 2px;
+  font-weight: 600;
+}
+/* The Word Card's Hanzi block: label, one tile per character (the vendored stroke pack, drawn
+   finished), then the practice button - the frame's 12px/600 caps label and 76px tiles. */
+.s-feed-strokes {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+.s-feed-strokes__label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.s-feed-strokes__tiles {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.s-feed-strokes__tile {
+  width: 76px;
+  height: 76px;
+  border-radius: 12px;
+  background: var(--surface2);
+  color: var(--text);
+  display: block;
+}
+.s-feed-strokes__tile svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.s-feed-strokes__tile .stroke-glyph__on {
+  fill: currentColor;
+}
+.s-feed-strokes-btn {
+  align-self: flex-start;
+  flex: none;
+  height: 38px;
+  padding: 0 14px;
+  border-radius: 12px;
+  font-size: 13.5px;
+}

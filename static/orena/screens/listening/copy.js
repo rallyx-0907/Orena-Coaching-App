@@ -1,0 +1,110 @@
+/* Listening Workspace copy (frame 06 + Vocabulary Focus frame 54, D-091, Design Contract rule
+   50). Titles/labels already in copy/shell.js (`listening`, `dictation`, `shadowing`,
+   `reactReuse`, `respondToContent`, `discover`, `back`, `close`) are reused from there, not
+   duplicated here.
+
+   Rule-50 review of the frame's own words (SCRATCH/reports/listening.md): every string below is
+   a label, a state or a consequence the learner needs. The mode line beside "Transcript" is kept
+   because it says what a tap does, which differs between Follow and Active (seek and play vs.
+   select). The frame's `title` on "Word highlight" ("Word timing is estimated from segment
+   timing") is kept as the control's accessible description: the "est." qualifier is a provenance
+   disclosure, not decoration.
+
+   `itemsSavedLabel`/`dictationLinesLabel` are the end-of-media stat tiles' own small label under a
+   separately-drawn number (D4 §2: "value + label"), so the count is never duplicated inside the
+   label string itself. */
+import { defineCopy } from '../../copy/index.js';
+
+const layers = {
+  modeFollow: 'interface', modeActive: 'interface', modeShadowing: 'interface',
+  hintFollow: 'support', hintActive: 'support',
+  line: 'interface', replay: 'interface', meaning: 'interface', playPause: 'interface',
+  prevLine: 'interface', nextLine: 'interface', replayLine: 'interface',
+  autoScroll: 'interface', wordHighlight: 'interface', wordHighlightHint: 'support', more: 'interface',
+  selectedSegment: 'interface', playSegment: 'interface', savePhrase: 'interface', phraseSaved: 'interface',
+  vocabularyFocus: 'interface', explain: 'interface', nowPlaying: 'interface', workOnThisLine: 'interface',
+  transcript: 'interface', mediaCompleted: 'interface',
+  itemsSavedLabel: 'interface', dictationLinesLabel: 'interface', minutesLabel: 'interface',
+  listened: 'interface', writeResponse: 'interface', reviewSaved: 'interface', replayAll: 'interface',
+  nextBecause: 'support', nextPlain: 'interface', noFocusTerms: 'support', hearInContext: 'interface', save: 'interface', saved: 'interface',
+  segmentLabel: 'interface', playbackUnavailable: 'support', removedToast: 'interface',
+  typeVideo: 'interface', typeAudio: 'interface',
+  meaningUnavailable: 'support', phraseTooLong: 'support', saveFailed: 'support',
+};
+
+export const t = defineCopy('listening', {
+  layers,
+  en: {
+    modeFollow: 'Follow', modeActive: 'Active', modeShadowing: 'Shadowing',
+    hintFollow: 'Follow · tap a line to seek and play', hintActive: 'Active · tap a line to select it',
+    line: 'Line', replay: 'Replay', meaning: 'meaning', playPause: 'Play or pause',
+    prevLine: 'Previous line', nextLine: 'Next line', replayLine: 'Replay line',
+    autoScroll: 'Auto-scroll', wordHighlight: 'Word highlight · est.',
+    wordHighlightHint: 'Word timing is estimated from segment timing.', more: 'More options',
+    selectedSegment: 'Selected segment · {time}', playSegment: 'Play segment',
+    savePhrase: 'Save phrase', phraseSaved: 'Phrase saved ✓', vocabularyFocus: 'Vocabulary Focus',
+    explain: 'Explain', nowPlaying: 'Now playing · {time}', workOnThisLine: 'Work on this line', transcript: 'Transcript',
+    mediaCompleted: 'Media completed',
+    itemsSavedLabel_one: 'item saved', itemsSavedLabel_other: 'items saved',
+    dictationLinesLabel_one: 'dictation line', dictationLinesLabel_other: 'dictation lines',
+    minutesLabel_one: 'min', minutesLabel_other: 'min',
+    listened: 'listened', writeResponse: 'Write a response', reviewSaved: 'Review saved', replayAll: 'Replay',
+    nextBecause: 'Next · because you finished a {topic} lesson', nextPlain: 'Next',
+    noFocusTerms: 'No focus terms prepared for this segment.', hearInContext: 'Hear in context',
+    save: 'Save', saved: 'Saved ✓', segmentLabel: 'Segment {n} · {time}',
+    playbackUnavailable: 'Playback is unavailable for this source.',
+    removedToast: 'Removed from My Library',
+    typeVideo: 'Video', typeAudio: 'Audio',
+    meaningUnavailable: "Meaning isn't available for this lesson yet.",
+    phraseTooLong: 'This line is too long to save as a phrase.',
+    saveFailed: "Couldn't save this. Try again.",
+  },
+  vi: {
+    modeFollow: 'Theo dõi', modeActive: 'Chủ động', modeShadowing: 'Nói đuổi',
+    hintFollow: 'Theo dõi · chạm một câu để tua và phát', hintActive: 'Chủ động · chạm một câu để chọn',
+    line: 'Câu', replay: 'Phát lại', meaning: 'nghĩa', playPause: 'Phát hoặc tạm dừng',
+    prevLine: 'Câu trước', nextLine: 'Câu sau', replayLine: 'Phát lại câu',
+    autoScroll: 'Tự cuộn', wordHighlight: 'Tô từ · ước tính',
+    wordHighlightHint: 'Thời điểm của từ là ước tính từ thời điểm của cả câu.', more: 'Thêm tùy chọn',
+    selectedSegment: 'Câu đã chọn · {time}', playSegment: 'Phát câu này',
+    savePhrase: 'Lưu cụm từ', phraseSaved: 'Đã lưu cụm từ ✓', vocabularyFocus: 'Từ vựng trọng tâm',
+    explain: 'Giải thích', nowPlaying: 'Đang phát · {time}', workOnThisLine: 'Luyện câu này', transcript: 'Bản ghi',
+    mediaCompleted: 'Đã nghe xong',
+    itemsSavedLabel_other: 'mục đã lưu', dictationLinesLabel_other: 'câu chép chính tả',
+    minutesLabel_other: 'phút',
+    listened: 'đã nghe', writeResponse: 'Viết phản hồi', reviewSaved: 'Ôn mục đã lưu', replayAll: 'Nghe lại',
+    nextBecause: 'Tiếp theo · vì bạn vừa học xong một bài về {topic}', nextPlain: 'Tiếp theo',
+    noFocusTerms: 'Câu này chưa có từ vựng trọng tâm.', hearInContext: 'Nghe trong ngữ cảnh',
+    save: 'Lưu', saved: 'Đã lưu ✓', segmentLabel: 'Câu {n} · {time}',
+    playbackUnavailable: 'Nguồn phát này hiện không dùng được.',
+    removedToast: 'Đã xoá khỏi Thư viện của tôi',
+    typeVideo: 'Video', typeAudio: 'Âm thanh',
+    meaningUnavailable: 'Bài này chưa có phần nghĩa.',
+    phraseTooLong: 'Câu này quá dài để lưu thành cụm từ.',
+    saveFailed: 'Chưa lưu được. Hãy thử lại.',
+  },
+  zh: {
+    modeFollow: '跟随', modeActive: '主动', modeShadowing: '跟读',
+    hintFollow: '跟随 · 点按一句即可跳转并播放', hintActive: '主动 · 点按一句即可选中',
+    line: '句子', replay: '重播', meaning: '释义', playPause: '播放或暂停',
+    prevLine: '上一句', nextLine: '下一句', replayLine: '重播这一句',
+    autoScroll: '自动滚动', wordHighlight: '单词高亮 · 估计',
+    wordHighlightHint: '单词时间点是根据整句时间估算的。', more: '更多选项',
+    selectedSegment: '所选句子 · {time}', playSegment: '播放该句',
+    savePhrase: '保存短语', phraseSaved: '已保存短语 ✓', vocabularyFocus: '重点词汇',
+    explain: '解释', nowPlaying: '正在播放 · {time}', workOnThisLine: '练习这句', transcript: '文字稿',
+    mediaCompleted: '已完成收听',
+    itemsSavedLabel_other: '项已保存', dictationLinesLabel_other: '条听写句子',
+    minutesLabel_other: '分钟',
+    listened: '已收听', writeResponse: '写一段回应', reviewSaved: '复习已保存', replayAll: '重新播放',
+    nextBecause: '下一个 · 因为你刚完成一个关于{topic}的内容', nextPlain: '下一个',
+    noFocusTerms: '这句还没有准备重点词汇。', hearInContext: '在语境中听',
+    save: '保存', saved: '已保存 ✓', segmentLabel: '第 {n} 句 · {time}',
+    playbackUnavailable: '此来源暂时无法播放。',
+    removedToast: '已从我的库中移除',
+    typeVideo: '视频', typeAudio: '音频',
+    meaningUnavailable: '这个内容暂时没有释义。',
+    phraseTooLong: '这一句太长，无法保存为短语。',
+    saveFailed: '保存失败，请重试。',
+  },
+});

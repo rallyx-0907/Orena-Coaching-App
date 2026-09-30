@@ -1,0 +1,121 @@
+{
+  "source_language": "zh",
+  "text": "我冒了严寒，回到相隔二千余里，别了二十余年的故乡去。",
+  "annotations": [
+    {
+      "fragment": "我",
+      "start": 0,
+      "end": 1,
+      "pos": "pronoun",
+      "pronunciation": "wǒ",
+      "lemma": "我"
+    },
+    {
+      "fragment": "冒",
+      "start": 1,
+      "end": 2,
+      "pos": "verb",
+      "pronunciation": "mào",
+      "lemma": "冒"
+    },
+    {
+      "fragment": "了",
+      "start": 2,
+      "end": 3,
+      "pos": "particle",
+      "pronunciation": "le",
+      "lemma": "了"
+    },
+    {
+      "fragment": "严寒",
+      "start": 3,
+      "end": 5,
+      "pos": "adjective",
+      "pronunciation": "yán hán",
+      "lemma": "严寒"
+    },
+    {
+      "fragment": "回到",
+      "start": 6,
+      "end": 8,
+      "pos": "verb",
+      "pronunciation": "huí dào",
+      "lemma": "回到"
+    },
+    {
+      "fragment": "相隔",
+      "start": 8,
+      "end": 10,
+      "pos": "verb",
+      "pronunciation": "xiāng gé",
+      "lemma": "相隔"
+    },
+    {
+      "fragment": "二千余",
+      "start": 10,
+      "end": 13,
+      "pos": "numeral",
+      "pronunciation": "èr qiān yú",
+      "lemma": "二千余"
+    },
+    {
+      "fragment": "里",
+      "start": 13,
+      "end": 14,
+      "pos": "other",
+      "pronunciation": "lǐ",
+      "lemma": "里"
+    },
+    {
+      "fragment": "别",
+      "start": 15,
+      "end": 16,
+      "pos": "adverb",
+      "pronunciation": "bié",
+      "lemma": "别"
+    },
+    {
+      "fragment": "了",
+      "start": 16,
+      "end": 17,
+      "pos": "particle",
+      "pronunciation": "le",
+      "lemma": "了"
+    },
+    {
+      "fragment": "二十余年",
+      "start": 17,
+      "end": 21,
+      "pos": "numeral",
+      "pronunciation": "èr shí yú nián",
+      "lemma": "二十余年"
+    },
+    {
+      "fragment": "的",
+      "start": 21,
+      "end": 22,
+      "pos": "particle",
+      "pronunciation": "de",
+      "lemma": "的"
+    },
+    {
+      "fragment": "故乡",
+      "start": 22,
+      "end": 24,
+      "pos": "noun",
+      "pronunciation": "gù xiāng",
+      "lemma": "故乡"
+    },
+    {
+      "fragment": "去",
+      "start": 24,
+      "end": 25,
+      "pos": "verb",
+      "pronunciation": "qù",
+      "lemma": "去"
+    }
+  ],
+  "reading_aid": "pinyin",
+  "annotation_version": 1,
+  "claim": "interactive_transcript_learning_aid"
+}

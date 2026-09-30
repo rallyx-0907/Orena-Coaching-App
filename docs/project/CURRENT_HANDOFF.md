@@ -10,7 +10,8 @@ approval, or production readiness.
 
 ## Current branch / lane
 
-`codex/work` is the baseline and the UI lane. `feature/orena-intelligence`
+`codex/work` is the baseline and the UI lane. It is the UI lane (D-066, D-098)
+whichever agent works it: a Claude session continues here, not on `claude/<task>`. `feature/orena-intelligence`
 builds Agent Intelligence (D-085) against `AGENT_CONTRACT.md` v5 (D-092, D-094,
 D-095, D-096), which is edited only on `codex/work`. Verified history:
 `PROJECT_STATE.md` "New learner UI migration".
@@ -28,46 +29,66 @@ status: `docs/design/canonical-ui/IMPLEMENTATION_MAP.md`.
   re-checked in the browser, language layer finished, every API reader checked
   against captured real payloads (`scripts/fixtures/api/`). Reviewable at
   http://127.0.0.1:8021/next (isolated stack) until the 8011 sandbox is migrated.
-- Agent UI side: contract v5 on the mock; hiding Orena's entry points when the
-  agent is absent comes with the Orena panel (Wave B).
-- Grammar: R5 is being retired (human, 2026-09-28): Grammar Lab becomes the only
-  grammar source. The Grammar screens will render `GRAMMAR_CONTENT_CONTRACT.md`
-  (drafted by the Grammar Lab lane, reviewed and committed here like
-  AGENT_CONTRACT.md); no further R5-specific rendering. DECISION_LOG entry when
-  that contract lands; `grammar.point{grammar_id}` (AGENT_CONTRACT §6.1) moves
-  to its ids in a contract bump.
+- Wave B workspaces: REVIEWABLE (`161d917`) - reading (Reader, Check,
+  Discussion, Reading Transfer), listening (Workspace, Dictation, Shadowing,
+  React, Respond), speaking (Scripted, Compare, Attempts, Summary, Free Talk,
+  Conversation, Situation), writing (Writing, Compare Versions), review (Review,
+  Feed, From Your Errors), Orena (Home, panel, voice, on the mock), Onboarding
+  and the shared overlays. Each is one commit, independently reviewed and fixed.
+  Routes with no backend are the design's Coming soon screen
+  (IMPLEMENTATION_MAP `coming-soon`). The two Grammar screens wait for the
+  contract below.
+- Agent UI side: contract v5 on the mock; Orena's entry points hide when the
+  agent is absent.
+- Grammar: Grammar Lab replaces R5 (D-100; PR #66 merged at `f86a2bf`). The two
+  Grammar screens (frames 44 and 47) are built on the merged contract (`b83142d`,
+  status building: no content until the lane's 13-point fixture, its PR B, is
+  placed behind `product/grammar-source.js`; open items G-1..G-9 in
+  UI_BACKEND_GAPS); its PR A
+  patches the contract and adds the "Try it yourself" rule, and until then the
+  card never concludes the pattern was used. `/api/grammar/v1/*` waits for its
+  own architecture review.
 
 ## Last verified batch
 
-2026-09-28, `f13c542`, local: all 85 CI `.mjs` gates, the browser ESM graph
-(189 modules) and the memory/architecture validators pass; Wave A re-checked in
-the browser on the isolated stack (seeded learner; en/vi/zh; both themes;
-1920/1440/1366 and 390/360). Last full pytest: 2026-09-26, PostgreSQL 16,
-`2472 passed, 3 skipped`. No CI pass is claimed. Visual-source gate: PINNED.
+2026-09-29, the D-098 batch (`5d9d64c`..`3f2cc23`), local: every node gate in
+ci.yml (114), the browser ESM graph and the memory validator pass; each learner
+change was checked in the browser on the isolated stack (en/vi/zh, both themes,
+desktop and phone touch; the Settings picker at all four rule-49 sizes). Full
+pytest on a clean export of `3f2cc23` (SQLite, CI backend): `2450 passed, 195 skipped`. The isolated stack
+mounts the checkout read-only, so a real upload cannot be stored there; the
+upload route is covered by `tests/test_media_learner_upload.py` (real WAV,
+ffprobe) instead.
 
 ## DONE
 
 Design pinned and governed (D-088 - D-093); foundation at `/next`; agent
-contract v4 (D-095); copy engine fixes; Wave A destinations (REVIEWABLE).
+contract v4 (D-095); copy engine fixes; Wave A destinations and Wave B
+workspaces (REVIEWABLE); the Writing request minimum per learning language.
+The D-098 and D-099 items (2026-09-29, `5d9d64c`..`b83142d`); commit list in
+`PROJECT_STATE.md` "New learner UI migration".
 
 ## IN PROGRESS
 
-- Human review of Wave A; Wave B starts after it.
-- Chinese writing evaluator recall: investigated and reported; no change until
-  the human chooses a fix.
+- Human review of Wave A and Wave B.
+- Chinese writing evaluator recall: causes and fix options in
+  `ZH_WRITING_EVALUATOR_RECALL.md`; no change until the human chooses a fix.
+- H2, the declared level: `proposals/DECLARED_LEVEL_STORAGE.md`, independently
+  reviewed (APPROVE at `6c0db16`, review in the same folder); waits for the
+  human's approval and three confirmations. No code or migration yet.
+- Chinese evaluator: fix (1) landed (`871e2b9`, contract v2.7) and the benchmark
+  measures recall (`fa93601`, v2); the live run that gives (4) its numbers waits
+  for the human's go (provider cost).
+- D-101..D-104: D2, H9, D3 done; D4 migrations 0017-0023 in `migrations/proposed/`, independently reviewed (APPROVE) and rehearsed (53 PASS at 100k rows, `9ca6c3f`): waiting for the human's `git mv` authorization, H-19, H-20; Admin slices 1-2 in `/next` (`a069b59`, `b4858d1`), Reading loop real in EN (`21584d6`); Grammar content path conflict (INTEGRATION_DESIGN vs D-101 F) with the human.
 
 ## PENDING
 
-Human: the 8011 sandbox migration (BLOCKED); the open design questions in
-`UI_BACKEND_GAPS.md` section N.
+Human: none for :8011 (deferred, D-102);
+PR #67 (`pattern_rule`) and #68 (fixtures) from the Grammar Lab lane.
 
 ## BLOCKED
 
-- The 8011 sandbox refuses to start: its database (named volume
-  `orena-foundation-sandbox-data`, data intact) is at `20260923_0014`, the code
-  expects `20260924_0016`. The human authorised 0015/0016 on it; the harness
-  blocks the agent, so the human runs them (`scripts/start_orena_sandbox.ps1`
-  reports the state).
+- None for the UI lane. (:8011 stays at `20260923_0014`, deployment deferred by D-102.)
 - Every other shared runtime's Reading migration needs explicit human
   authorization.
 
@@ -93,17 +114,14 @@ See `AGENT_SPEC.md` §0 (D-085).
 
 ## NEXT EXACT TASK
 
-UI lane: Wave A to REVIEWABLE and presented; then Wave B (the reading,
-listening, dictation, speaking, writing and review workspaces, the Orena panel
-on the mock, onboarding); then the cutover (tombstones, legacy redirects, the
-old UI and its gates replaced).
-Once every §6.1 surface is built: a one-line purpose per surface id in the copy
-layer (interface, en/vi/zh), published for the intelligence lane (contract v5
-§6.2).
+UI lane, per D-101 as amended by D-102: D2 (shared modules out of `ui/`, gate), D3 (the matrix,
+sent once), D4 (persistence proposal with H2), E Admin, F Grammar, D7 the `MISSING` cells, G Orena,
+integration QA, then the PR `codex/work` -> `main`; :8000 is updated only after the human merges.
+Milestone A is TOOLING_READY / DEPLOYMENT_DEFERRED: :8011 is not run or migrated unless asked.
+QA runs on the lane runtime (:8021 or a local port). C after D3, when Docker is free.
 
-Intelligence lane: D-085 against `AGENT_CONTRACT.md` v5; merging `codex/work`
-forward brings the version bump its contract test checks, the `address` note
-and `context.address`, the S5/S2 wording and `copy/surfaces.json` (§6.2).
+Intelligence lane: D-085 against `AGENT_CONTRACT.md` v5; merge `codex/work` forward; its merged PR
+is what switches `AGENT_LIVE` on :8011 (D-101 G).
 
 ## Grammar Lab (merged from `feature/grammar-lab`)
 

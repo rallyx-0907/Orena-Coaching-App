@@ -136,7 +136,9 @@ function addressed(request, template, extra = {}) {
   });
   if (contractLang !== 'en') return text;
   if (!resolved.user || resolved.user === 'you') return text;
-  return `${capitalizeTerm(resolved.user)}, ${text.charAt(0).toLowerCase()}${text.slice(1)}`;
+  // The vocative leads the sentence, so its own first word drops to lower case - except the pronoun "I".
+  const rest = /^I(?=[\s'’])/.test(text) ? text : `${text.charAt(0).toLowerCase()}${text.slice(1)}`;
+  return `${capitalizeTerm(resolved.user)}, ${rest}`;
 }
 
 /* A canonical pair to demonstrate setting the address (S14), one per support language - what a real

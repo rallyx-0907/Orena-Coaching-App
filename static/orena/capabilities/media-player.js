@@ -1,4 +1,4 @@
-import {esc} from '../ui/html.js';
+import {esc} from '../kit/html.js';
 
 const YOUTUBE_EMBED_ORIGIN='https://www.youtube-nocookie.com';
 const YOUTUBE_EMBED_PATH=/^\/embed\/[A-Za-z0-9_-]{11}$/;

@@ -99,37 +99,47 @@ import { withinWindow, sortByRecency, dayBucket, groupByDay } from '../static/or
    mislabel: GET /api/practice-outcomes is grammar re-practice on an essay, confirmed against
    writing_coach/becoming_outcomes.py, never listening) ---- */
 {
-  const essays = [{ id: 9, created_at: '2026-09-20T10:00:00Z', prompt: 'Describe your ideal weekend\nmore', text: 'Some long essay text that should be clipped eventually for the row.', overall: 82.4 }];
+  const essays = [{ id: 9, created_at: '2026-09-20T10:00:00Z', prompt: 'Describe your ideal weekend\nmore', excerpt: 'Some long essay excerpt that the list route derived for the row.', language_code: 'en', overall: 82.4 }];
   const outcomes = [{ essay_id: 9, created_at: '2026-09-21T10:00:00Z', grammar_title: 'Present perfect', overall: 70 }];
   const writing = buildWritingEvidence(essays, outcomes);
   assert.equal(writing.length, 2);
   assert.ok(writing.every((w) => w.domain === 'writing'), 'practice-outcomes never mislabelled as dictation/listening');
   assert.equal(writing[0].sourceText, 'Describe your ideal weekend', 'first line only, clipped');
   assert.equal(writing[0].score, 82, 'overall rounded, not truncated to an int by chance');
+  assert.equal(writing[0].responseText, 'Some long essay excerpt that the list route derived for the row.', 'the list route\'s own `excerpt` field (N-36 point 1) reaches the row, not a guess');
+  assert.equal(writing[0].responseLanguage, 'en', 'the essay\'s own `language_code` reaches the row, for kit/lang.js to mark');
   assert.equal(writing[1].kind, 'practice');
+  assert.equal(writing[1].responseText, '', 'GET /api/practice-outcomes carries no excerpt-worthy field - honest blank, not a guess');
   assert.equal(buildWritingEvidence(null, null).length, 0, 'a failed read is an empty list, not a crash');
 }
 
-// ---- Field-shape gate: GET /api/essays is the LIST route, and app.py's row_to_dict() pops
-// `text` unconditionally in its non-detail branch (the only branch this route ever takes) -
-// confirmed against writing_coach/persistence/learning_repository.py's _essay_payload(), which
-// proves `text` exists on the raw row and is stripped only at this route's serialization step.
+// ---- Field-shape gate: GET /api/essays is the LIST route. app.py's row_to_dict() still pops
+// `text` unconditionally in its non-detail branch (only GET /api/essays/{id}, detail=True,
+// carries the full text) but now derives a short, bounded `excerpt` from it at serialization time
+// (N-36 point 1, docs/project/UI_BACKEND_GAPS.md, resolved) - confirmed against
+// writing_coach/persistence/learning_repository.py's _essay_payload(), which proves `text` exists
+// on the raw row and is stripped, replaced by `excerpt`, only at this route's serialization step.
 // This sandbox cannot capture a non-empty GET /api/essays (essays.json is `[]` - creating one
 // needs the AI evaluator, which fails closed here; see fixtures/api/README.md "Not captured"), so
 // fixtures/api/progress_essays_list.json is a synthetic fixture built field-for-field from
-// row_to_dict's non-detail branch / _essay_payload(): every key that route actually returns,
-// none of the keys it strips (no `text`, no `summary_vi`, no `*_json`).
+// row_to_dict's non-detail branch / _essay_payload(): every key that route actually returns
+// (including the new `excerpt`), none of the keys it strips (no `text`, no `summary_vi`, no
+// `*_json`).
 {
   const { readFileSync } = await import('node:fs');
   const realEssays = JSON.parse(readFileSync(new URL('./fixtures/api/progress_essays_list.json', import.meta.url)));
   assert.ok(!Object.prototype.hasOwnProperty.call(realEssays[0], 'text'), 'fixture matches the real list route: GET /api/essays never sends a `text` key');
+  assert.ok(Object.prototype.hasOwnProperty.call(realEssays[0], 'excerpt'), 'fixture matches the real list route: GET /api/essays now sends a bounded `excerpt` key');
+  assert.notEqual(realEssays[0].excerpt, '', 'the excerpt is real derived text, not an empty placeholder');
   const writing = buildWritingEvidence(realEssays, []);
   assert.equal(writing.length, 1);
   assert.equal(writing[0].sourceText, 'Describe a challenge you overcame', 'the real `prompt` field still reaches the row title');
   assert.equal(writing[0].score, 78, 'the real `overall` field still reaches the row score');
-  assert.equal(writing[0].responseText, '', 'GET /api/essays never returns `text` on this route - the row is an honest blank, never `undefined`-as-a-guess');
+  assert.equal(writing[0].responseText, realEssays[0].excerpt, 'the row reads the list route\'s own excerpt field, verbatim');
+  assert.equal(writing[0].responseLanguage, realEssays[0].language_code, 'the row reads the essay\'s own per-item language field, verbatim');
   const modelSrc = readFileSync(new URL('../static/orena/screens/progress/model.js', import.meta.url), 'utf8');
-  assert.doesNotMatch(modelSrc, /clip\(e\.text\)/, 'buildWritingEvidence must not read `e.text` - the list route this screen calls never returns it (row_to_dict\'s non-detail branch pops it; only GET /api/essays/{id} carries it)');
+  assert.doesNotMatch(modelSrc, /clip\(e\.text\)|e\.text\b/, 'buildWritingEvidence must not read `e.text` - the list route this screen calls never returns it (row_to_dict\'s non-detail branch pops it; only GET /api/essays/{id} carries it) - it reads `e.excerpt` instead');
+  assert.match(modelSrc, /e\.excerpt/, 'buildWritingEvidence reads the list route\'s own excerpt field');
 }
 
 {
@@ -186,6 +196,7 @@ import { withinWindow, sortByRecency, dayBucket, groupByDay } from '../static/or
   assert.match(screenSrc, /import\s*\{\s*langSpan\s*\}\s*from\s*'\.\.\/\.\.\/kit\/lang\.js'/, 'imports the shared lang helper from kit/lang.js');
   assert.match(screenSrc, /langSpan\(sourceText,\s*sourceLang\)/, 'Evidence rows wrap the real source text with its own language');
   assert.match(screenSrc, /langSpan\(title,\s*titleLang\)/, 'History rows wrap the real title text with its own language');
+  assert.match(screenSrc, /responseLang\s*=\s*item\.responseLanguage\s*\|\|\s*language/, 'the writing Evidence row marks its excerpt from the essay\'s own language field (N-36 point 1), falling back to the active learning language only when the essay carries none');
 }
 
 console.log('PASS Progress screen: rule-40 zero fallbacks, real rank/skills mapping, evidence/history grouping — screens/progress/model.js + product/activity-log.js');

@@ -17,8 +17,45 @@
    `POST /api/dictionary/word-detail` answer falls back to the identical Han-range check
    (writing_coach/word_detail.py `script_of`) to tell a Chinese headword from an English one - this
    module's helpers are still used to turn that script into the `lang` attribute value itself, so
-   the ad-hoc `? 'zh' : ''` string this build used to repeat per screen lives in one place. */
+   the ad-hoc `? 'zh' : ''` string this build used to repeat per screen lives in one place.
+
+   A second, related concern lives here too: naming the interface language itself. Settings'
+   Languages tab and Onboarding's Languages step both draw a three-way interface-language picker
+   (English/Tiếng Việt/中文, each in its own script so a learner who cannot yet read a given
+   interface language still recognises it - the same choice static/orena/app.js's own preferences
+   dialog already makes) and both label a target-learning-language option with its own native name
+   appended only when that differs from the translated label (English's native name repeats its
+   translated name; Chinese's does not) - the guard against doubling to "中文 · 中文" once a name is
+   already in its own script. Two independent screen units each built this once and each had to fix
+   the same doubling bug separately (independent review, Wave B) - `INTERFACE_LOCALES`/
+   `INTERFACE_ENDONYMS`/`interfaceLanguageOptions`/`appendNativeName` below are the one shared
+   implementation both screens' own model.js now import, so a future fix cannot diverge a third
+   time. Pure data, no DOM, importable from a model.js's own Node gate with no window/document stub -
+   same purity contract as knownLang/langAttr/langSpan above. */
 import { html } from './html.js';
+
+/* The three interface locales this build supports (copy/index.js's own LOCALES, identical - kept
+   here too since a model.js file stays DOM-free and copy/index.js is not: it reads
+   window.localStorage/navigator and writes document.documentElement.lang at import time, which
+   would break a model.js's own no-stub Node gate). */
+export const INTERFACE_LOCALES = Object.freeze(['en', 'vi', 'zh']);
+
+/* A locale's own endonym - invariant across which interface language is currently active. */
+export const INTERFACE_ENDONYMS = Object.freeze({ en: 'English', vi: 'Tiếng Việt', zh: '中文' });
+
+/* The interface-language picker's options: every supported locale, named in itself. `selected` is
+   left for the caller to overlay when it wants one (Onboarding marks the active pick inline;
+   Settings computes its own `selected` downstream against the row's live value), so this stays the
+   one shared shape both draw from rather than two screens each deciding it separately. */
+export function interfaceLanguageOptions(locales = INTERFACE_LOCALES) {
+  return locales.map((code) => ({ code, label: INTERFACE_ENDONYMS[code] || code }));
+}
+
+/* The doubling guard: append a language's own native name to its translated label only when the
+   two differ, so a name already in its own script ("中文") is never repeated ("中文 · 中文"). */
+export function appendNativeName(translated, nativeName) {
+  return nativeName && nativeName !== translated ? `${translated} · ${nativeName}` : translated;
+}
 
 /* Every language code this build's UI ever needs to stamp on learner-facing text: the three
    interface locales (copy/index.js LOCALES) plus 'zh', the one learning language that is not also

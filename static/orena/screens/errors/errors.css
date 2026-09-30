@@ -1,0 +1,300 @@
+/* From Your Errors (frame 50), measured against the pinned design (E4 §6). A learning workspace
+   (Design Contract rule 49): one drill card at a time, its body the scroll region so a long
+   sentence or explanation scrolls inside the card while the buttons stay in view. This frame's own
+   back button (40x40, radius 12, icon 19), title (17px) and 5px progress bar are drawn as the frame
+   draws them - they differ from its sibling drill frames (E4 §6 flags it), and the difference is
+   recorded in the surface report rather than chosen away. Colours are tokens only. */
+.s-errors-root {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 680px;
+  width: 100%;
+  margin: 0 auto;
+  padding-top: 20px;
+  /* A workspace's column has no bottom padding of its own (shell.css, data-focus). */
+  padding-bottom: 32px;
+  animation: rise 0.3s ease;
+  overflow: hidden;
+}
+
+.s-errors-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.s-errors-back {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border-radius: 12px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.s-errors-head__title {
+  flex: 1;
+  min-width: 0;
+}
+.s-errors-head__name {
+  font-size: 17px;
+  font-weight: 600;
+}
+.s-errors-head__sub {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.s-errors-bar {
+  flex: none;
+  height: 5px;
+  border-radius: 99px;
+  background: var(--surface2);
+}
+.s-errors-bar span {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  background: var(--accent);
+  transition: width 0.25s ease;
+}
+
+/* ---- The card (an item to edit, and its result) ---- */
+.s-errors-card {
+  flex: 0 1 auto;
+  min-height: 0;
+  border-radius: 24px;
+  background: var(--surface);
+  box-shadow: var(--sh1);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.s-errors-card__body {
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.s-errors-card__head {
+  flex: none;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.s-errors-pattern-pill {
+  /* 28px in the frame; a long pattern name wraps and the pill grows with it. */
+  min-height: 28px;
+  padding: 4px 12px;
+  line-height: 1.3;
+  border-radius: 999px;
+  background: var(--red-soft);
+  color: var(--red);
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+}
+.s-errors-source {
+  font-size: 12px;
+  color: var(--muted);
+}
+.s-errors-instruction {
+  flex: none;
+  font-size: 14px;
+  color: var(--muted);
+}
+.s-errors-input {
+  flex: none;
+  width: 100%;
+  min-height: 0;
+  max-height: 45vh;
+  resize: vertical;
+  border-radius: 16px;
+  border: 1.5px solid transparent;
+  background: var(--surface2);
+  color: var(--text);
+  padding: 16px;
+  font-size: 18px;
+  line-height: 1.6;
+  font-family: inherit;
+  outline: 0;
+}
+.s-errors-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--ring);
+}
+
+/* ---- Buttons ---- */
+.s-errors-actions {
+  flex: none;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.s-errors-spacer {
+  flex: 1;
+}
+.s-errors-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background 0.15s;
+}
+.s-errors-btn--secondary {
+  height: 44px;
+  padding: 0 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--text);
+}
+.s-errors-btn--primary {
+  height: 48px;
+  padding: 0 20px;
+  border-radius: 14px;
+  border: 0;
+  background: var(--accent-fill);
+  color: var(--accent-ink);
+  font-size: 15px;
+}
+.s-errors-btn--primary:hover {
+  background: var(--accent-fill-hover);
+}
+
+/* ---- Result ---- */
+.s-errors-result {
+  flex: none;
+  padding: 14px 16px;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  animation: rise 0.2s ease;
+}
+.s-errors-result--green {
+  background: var(--green-soft);
+}
+.s-errors-result--amber {
+  background: var(--amber-soft);
+}
+.s-errors-result--red {
+  background: var(--red-soft);
+}
+.s-errors-result__label {
+  font-size: 16px;
+  font-weight: 700;
+}
+.s-errors-result--green .s-errors-result__label {
+  color: var(--green);
+}
+.s-errors-result--amber .s-errors-result__label {
+  color: var(--amber);
+}
+.s-errors-result--red .s-errors-result__label {
+  color: var(--red);
+}
+.s-errors-result__bad {
+  font-size: 14px;
+  line-height: 1.55;
+}
+.s-errors-result__bad s {
+  color: var(--red);
+}
+.s-errors-result__good {
+  font-size: 15px;
+  line-height: 1.55;
+  font-weight: 600;
+}
+.s-errors-result__why {
+  font-size: 13.5px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+/* ---- Drill complete ---- */
+.s-errors-done {
+  flex: 0 1 auto;
+  min-height: 0;
+  border-radius: 24px;
+  background: var(--surface);
+  box-shadow: var(--sh1);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.s-errors-eyebrow {
+  flex: none;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.s-errors-score {
+  flex: none;
+  font-size: 22px;
+  font-weight: 700;
+}
+.s-errors-rows {
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.s-errors-row {
+  flex: none;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: var(--surface2);
+}
+.s-errors-row__dot {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  color: var(--badge-ink);
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+.s-errors-row__dot--green {
+  background: var(--green);
+}
+.s-errors-row__dot--amber {
+  background: var(--amber);
+}
+.s-errors-row__dot--red {
+  background: var(--red);
+}
+.s-errors-row__pattern {
+  font-size: 14px;
+  flex: 1;
+  min-width: 0;
+}
+.s-errors-row__state {
+  font-size: 12px;
+  color: var(--muted);
+}

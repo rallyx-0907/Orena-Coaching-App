@@ -5,7 +5,7 @@ import { defineCopy } from './index.js';
 const KEYS = [
   'mainNavigation', 'skipToContent',
   'today', 'discover', 'orena', 'practiceHub', 'practiceShort', 'myLibrary', 'libraryShort', 'progress', 'profile',
-  'askOrena', 'askAnything', 'talkToOrena', 'search', 'notifications', 'back', 'retry', 'close', 'undo', 'dismiss',
+  'askOrena', 'askOrenaSub', 'askAnything', 'talkToOrena', 'search', 'notifications', 'back', 'retry', 'close', 'undo', 'dismiss',
   'loadingLesson', 'errorLesson', 'errorStory', 'errorOffline', 'errorServer', 'comingSoon',
   'limited', 'account', 'cantOpen', 'offlineTitle',
   'lang_en', 'lang_zh', 'learningLabel',
@@ -14,7 +14,7 @@ const KEYS = [
   'conversation', 'situationReaction', 'retell', 'reactReuse', 'timedRecall', 'contextTransfer', 'dailyFeed',
   'contextRewrite', 'timedWriting', 'readingTransfer', 'readingComplete', 'attemptHistory', 'speakingSummary',
   'timedReaction', 'respondToContent', 'discussion', 'mockInterview', 'soundTone', 'fromYourErrors',
-  'welcome',
+  'welcome', 'admin',
 ];
 
 export const shellCopy = defineCopy('shell', {
@@ -23,7 +23,7 @@ export const shellCopy = defineCopy('shell', {
     mainNavigation: 'Main', skipToContent: 'Skip to content',
     today: 'Today', discover: 'Discover', orena: 'Orena', practiceHub: 'Practice Hub', practiceShort: 'Practice',
     myLibrary: 'My Library', libraryShort: 'Library', progress: 'Progress', profile: 'Profile',
-    askOrena: 'Ask Orena', askAnything: 'Ask anything…', talkToOrena: 'Talk to Orena', search: 'Search',
+    askOrena: 'Ask Orena', askOrenaSub: 'Your study companion', askAnything: 'Ask anything…', talkToOrena: 'Talk to Orena', search: 'Search',
     notifications: 'Notifications', back: 'Back', retry: 'Retry', close: 'Close', undo: 'Undo', dismiss: 'Dismiss',
     loadingLesson: 'Preparing your lesson', errorLesson: 'Couldn’t load this lesson', errorStory: 'Couldn’t load this story',
     errorOffline: 'Check your connection and try again.', errorServer: 'The server didn’t respond. Nothing was lost.',
@@ -40,13 +40,13 @@ export const shellCopy = defineCopy('shell', {
     timedWriting: 'Timed Writing', readingTransfer: 'Reading Transfer', readingComplete: 'Reading complete',
     attemptHistory: 'Attempt history', speakingSummary: 'Speaking summary', timedReaction: 'Timed Reaction',
     respondToContent: 'Respond to content', discussion: 'Discussion', mockInterview: 'Mock Interview',
-    soundTone: 'Sound / Tone', fromYourErrors: 'From your errors', welcome: 'Welcome',
+    soundTone: 'Sound / Tone', fromYourErrors: 'From your errors', welcome: 'Welcome', admin: 'Platform admin',
   },
   vi: {
     mainNavigation: 'Điều hướng chính', skipToContent: 'Đến nội dung',
     today: 'Hôm nay', discover: 'Khám phá', orena: 'Orena', practiceHub: 'Luyện tập', practiceShort: 'Luyện tập',
     myLibrary: 'Thư viện của tôi', libraryShort: 'Thư viện', progress: 'Tiến độ', profile: 'Hồ sơ',
-    askOrena: 'Hỏi Orena', askAnything: 'Hỏi bất cứ điều gì…', talkToOrena: 'Nói với Orena', search: 'Tìm kiếm',
+    askOrena: 'Hỏi Orena', askOrenaSub: 'Bạn đồng hành học tập', askAnything: 'Hỏi bất cứ điều gì…', talkToOrena: 'Nói với Orena', search: 'Tìm kiếm',
     notifications: 'Thông báo', back: 'Quay lại', retry: 'Thử lại', close: 'Đóng', undo: 'Hoàn tác', dismiss: 'Bỏ qua',
     loadingLesson: 'Đang chuẩn bị bài học', errorLesson: 'Không tải được bài học này', errorStory: 'Không tải được bài đọc này',
     errorOffline: 'Kiểm tra kết nối rồi thử lại.', errorServer: 'Máy chủ không phản hồi. Không có gì bị mất.',
@@ -63,13 +63,13 @@ export const shellCopy = defineCopy('shell', {
     timedWriting: 'Viết có giờ', readingTransfer: 'Vận dụng bài đọc', readingComplete: 'Đọc xong',
     attemptHistory: 'Các lần thử', speakingSummary: 'Tổng kết buổi nói', timedReaction: 'Phản xạ có giờ',
     respondToContent: 'Phản hồi nội dung', discussion: 'Thảo luận', mockInterview: 'Phỏng vấn thử',
-    soundTone: 'Âm và thanh điệu', fromYourErrors: 'Từ lỗi của bạn', welcome: 'Chào mừng',
+    soundTone: 'Âm và thanh điệu', fromYourErrors: 'Từ lỗi của bạn', welcome: 'Chào mừng', admin: 'Quản trị nền tảng',
   },
   zh: {
     mainNavigation: '主导航', skipToContent: '跳至内容',
     today: '今天', discover: '发现', orena: 'Orena', practiceHub: '练习中心', practiceShort: '练习',
     myLibrary: '我的书库', libraryShort: '书库', progress: '进度', profile: '个人',
-    askOrena: '问 Orena', askAnything: '随便问…', talkToOrena: '和 Orena 说话', search: '搜索',
+    askOrena: '问 Orena', askOrenaSub: '你的学习伙伴', askAnything: '随便问…', talkToOrena: '和 Orena 说话', search: '搜索',
     notifications: '通知', back: '返回', retry: '重试', close: '关闭', undo: '撤销', dismiss: '忽略',
     loadingLesson: '正在准备课程', errorLesson: '无法加载这节课', errorStory: '无法加载这篇文章',
     errorOffline: '请检查网络后重试。', errorServer: '服务器没有响应。内容没有丢失。',
@@ -86,6 +86,6 @@ export const shellCopy = defineCopy('shell', {
     timedWriting: '限时写作', readingTransfer: '阅读迁移', readingComplete: '读完了',
     attemptHistory: '尝试记录', speakingSummary: '口语总结', timedReaction: '限时反应',
     respondToContent: '回应内容', discussion: '讨论', mockInterview: '模拟面试',
-    soundTone: '音与声调', fromYourErrors: '从错误中练', welcome: '欢迎',
+    soundTone: '音与声调', fromYourErrors: '从错误中练', welcome: '欢迎', admin: '平台管理',
   },
 });

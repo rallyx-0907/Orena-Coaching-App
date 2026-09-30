@@ -132,6 +132,35 @@ assert.equal(open.trigger, 'open');
 assert.ok(!('message' in open), 'an opening turn has no message');
 assert.ok(!('session_id' in open) && !('coach_notes' in open), 'absent fields are omitted');
 
+// 5b. The real seam Home and the Contextual panel both build their requests through
+// (screens/orena/dispatcher-setup.js#requestLanguages), fed with the real copy/index.js#languages()
+// object, not a hand-shaped stand-in. copy/index.js#languages() returns `{ui, support}` - it has no
+// `interface`/`target` field - so passing it into buildRequest directly silently defaulted both to
+// English on every Home/Contextual-panel turn (independent review P1, 2026-09-29). Only what
+// copy/index.js and shell/context.js read at import/call time is stubbed; nothing else in this
+// DOM-free gate needs it.
+{
+  globalThis.window = { localStorage: { getItem: () => null, setItem: () => {}, removeItem: () => {} } };
+  Object.defineProperty(globalThis, 'navigator', { value: { languages: ['en-US'], language: 'en-US' }, configurable: true });
+  globalThis.document = { documentElement: { lang: 'en', dataset: {} } };
+  const { setLanguages: setCopyLanguages } = await import('../static/orena/copy/index.js');
+  const { updateContext } = await import('../static/orena/shell/context.js');
+  const { requestLanguages } = await import('../static/orena/screens/orena/dispatcher-setup.js');
+  setCopyLanguages({ ui: 'vi', support: 'vi' });
+  updateContext({ language: 'zh' });
+  const seam = buildRequest({ message: 'x', context: {}, languages: requestLanguages() });
+  assert.deepEqual(
+    { interface: seam.context.locale.interface, support: seam.context.locale.support, target: seam.context.locale.target },
+    { interface: 'vi', support: 'vi', target: 'zh-CN' },
+    'the real copy/index.js#languages() -> requestLanguages() -> buildRequest seam lands the learner\'s real interface/support/target, never a silent English default',
+  );
+  setCopyLanguages({ ui: 'en', support: 'en' });
+  updateContext({ language: 'en' });
+  delete globalThis.window;
+  delete globalThis.document;
+  delete globalThis.navigator;
+}
+
 // 6. The reducer folds a stream into what the panel draws.
 const session = createSession({ log: () => {} });
 session.learner('Tại sao tôi sai từ này?');
@@ -144,9 +173,47 @@ assert.deepEqual(reply.actions.map((a) => a.type), ['play_model', 'say_again']);
 assert.ok(reply.done && !session.state().thinking && !session.state().tool);
 session.apply({ event: 'not_an_event', data: {} });
 
+// 6b. The learner's own stop and retry (§2.1 429 "the learner may cancel the wait"; §4.1 `retry`):
+//     a cancel ends the thinking and hands the question back unsent for a reason that is not a
+//     changed language; a retry removes the reply that errored and keeps the learner's message.
+{
+  const cancelled = createSession({ log: () => {} });
+  cancelled.learner('Ôn từ đến hạn');
+  cancelled.apply({ event: 'wait', data: { seconds: 3 } });
+  assert.equal(cancelled.state().waiting, 3);
+  cancelled.cancel();
+  const state = cancelled.state();
+  assert.ok(!state.thinking && state.waiting === null && state.tool === null, 'nothing is pending after a cancel');
+  assert.equal(state.unsent, 'Ôn từ đến hạn');
+  assert.equal(state.unsentWhy, 'cancel');
+  assert.equal(state.messages.length, 0, 'the unanswered question is not left in the thread');
+  const mismatched = createSession({ log: () => {} });
+  mismatched.learner('hello');
+  mismatched.apply({ event: 'language_mismatch', data: {} });
+  assert.equal(mismatched.state().unsentWhy, 'language', 'a changed learning language is told apart from a cancel');
+  const errored = createSession({ log: () => {} });
+  errored.learner('hello');
+  errored.apply({ event: 'error', data: { class: 'provider_unavailable', message: 'busy', fallback: 'retry' } });
+  assert.equal(errored.state().messages.at(-1).error.fallback, 'retry');
+  errored.retry();
+  assert.deepEqual(errored.state().messages.map((m) => m.role), ['learner'], 'the errored reply goes, the learner message stays');
+  assert.ok(errored.state().thinking);
+}
+
 // 7. The dispatcher: fixed risks, unsupported ignored, CONFIRM confirmed, one language.
+//    It calls the app's own infrastructure/api.js: every method it names must be exported there (a
+//    hand-written fake once agreed with names the app never had, and every save-word action threw).
+const dispatcherSource = fs.readFileSync('static/orena/agent/dispatcher.js', 'utf8');
+const apiSource = fs.readFileSync('static/orena/infrastructure/api.js', 'utf8');
+const apiMethods = new Set([...apiSource.matchAll(/^ {2}(\w+):/gm)].map((m) => m[1]));
+const usedMethods = [...new Set([...dispatcherSource.matchAll(/(?<![\w.])api\.(\w+)\(/g)].map((m) => m[1]))];
+assert.ok(usedMethods.length >= 5, 'the dispatcher calls the api');
+for (const name of usedMethods) assert.ok(apiMethods.has(name), `dispatcher calls api.${name}, which infrastructure/api.js does not export`);
 const calls = [];
-const fakeApi = { saveWord: async (w) => calls.push(['save', w]), deleteWord: async (w) => calls.push(['delete', w]) };
+const fakeApi = Object.fromEntries(usedMethods.map((name) => [name, async (...args) => {
+  calls.push([name, ...args]);
+  return name === 'libraryKeep' ? { item: { id: 'it1' } } : {};
+}]));
 let confirmAnswer = false;
 const dispatcher = createDispatcher({ api: fakeApi, go: (h) => calls.push(['go', h]), learningLanguage: () => 'zh', confirm: async () => confirmAnswer, log: () => {} });
 assert.deepEqual((await dispatcher.run({ type: 'rm_rf', payload: {} })).reason, 'unknown_type');
@@ -158,7 +225,20 @@ confirmAnswer = true;
 assert.equal((await dispatcher.run({ type: 'unsave_word', payload: { text: '我', lang: 'zh-CN' } })).ok, true);
 assert.equal((await dispatcher.run({ type: 'navigate', payload: { intent: 'grammar.point' } })).reason, 'unknown_intent', 'a missing parameter is refused');
 assert.equal((await dispatcher.run({ type: 'navigate', payload: { intent: 'grammar.point', grammar_id: 'g1' } })).ok, true);
-assert.deepEqual(calls, [['save', '我'], ['delete', '我'], ['go', '#/grammar/g1']]);
+assert.deepEqual(calls, [['saveLibraryVocabulary', { word: '我' }], ['deleteLibraryVocabulary', '我'], ['go', '#/grammar/g1']], 'a saved word is POST /api/library/vocabulary { word }, a removed one DELETE');
+// A call that throws is a failed action, not an unhandled rejection.
+const failing = createDispatcher({ api: { saveLibraryVocabulary: async () => { throw new Error('offline'); } }, go: () => {}, learningLanguage: () => 'zh', confirm: async () => true, log: () => {} });
+assert.deepEqual(await failing.run({ type: 'save_word', payload: { text: '我', lang: 'zh-CN' } }), { ok: false, reason: 'failed' });
+// Filing (§7): the add-to sheet is the way when the agent names no target; a named deck or library set files it.
+const filing = createDispatcher({ api: fakeApi, go: () => {}, learningLanguage: () => 'zh', confirm: async () => true, log: () => {}, canPickCollection: () => true });
+assert.ok(filing.supported().includes('add_word_to_collection'));
+calls.length = 0;
+assert.equal((await filing.run({ type: 'add_word_to_collection', payload: { text: '我', lang: 'zh-CN', target: { system: 'deck', id: 'd1' } } })).ok, true);
+assert.deepEqual(calls, [['saveLibraryVocabulary', { word: '我' }], ['vocabularyDeckAdd', 'd1', '我']]);
+calls.length = 0;
+assert.equal((await filing.run({ type: 'add_word_to_collection', payload: { text: '我', lang: 'zh-CN', target: { system: 'library', id: 'c1' } } })).ok, true);
+assert.deepEqual(calls, [['saveLibraryVocabulary', { word: '我' }], ['libraryKeep', { kind: 'word', word: '我' }], ['libraryCollectionAdd', 'c1', 'it1']]);
+assert.equal((await filing.run({ type: 'add_word_to_collection', payload: { text: '我', lang: 'zh-CN', target: { system: 'cloud', id: 'x' } } })).reason, 'bad_target');
 const release = registerActionHandler('play_model', async () => ({ ok: true }));
 assert.ok(dispatcher.supported().includes('play_model'), 'a mounted workspace offers its action');
 release();
@@ -482,6 +562,10 @@ assert.ok(!s15Events.some((e) => e.event === 'memory_update'), 'S15 sets nothing
 const s15Text = s15Events.find((e) => e.event === 'segment_end').data.text;
 assert.ok(s15Text.startsWith('Chị là Orena'), '§12 S15: fixed copy, in the address the request carries');
 assert.ok(s15Text.includes('em'), "§12 S15: the request's own address is applied, not a default");
+
+// English never swaps "I"/"you"; a name adds a vocative, and the pronoun "I" keeps its capital after it.
+const englishRequest = buildRequest({ message: 'who are you', context: { surface: 'home' }, languages: { interface: 'en', support: 'en', target: 'en' }, address: { user: 'Minh', lang: 'en' } });
+assert.equal(STREAMS.S15(englishRequest).find(([event]) => event === 'segment_end')[1].text, "Minh, I'm Orena, your AI learning assistant.", 'a vocative does not lower the pronoun I');
 
 // §5.6 "Applied only when address.lang equals context.locale.support": the mock stands in for the
 // server side too (§11), so a hand-built request whose context.address is for a different language

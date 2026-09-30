@@ -17,7 +17,7 @@ import { mount } from '../kit/html.js';
 import { closeSheet } from '../kit/overlay.js';
 import { loadingMarkup, errorMarkup } from '../kit/states.js';
 import { shellCopy as t } from '../copy/shell.js';
-import { PRIMARY, DEFAULT_ROUTE, match, href, byId } from './routes.js';
+import { PRIMARY, DEFAULT_ROUTE, entryRoute, match, href, byId } from './routes.js';
 import { SCREENS } from './screens.js';
 
 const CRUMB_PRIMARY = ['today', 'discover', 'orena', 'practice', 'library', 'profile'];
@@ -104,6 +104,11 @@ export function createRouter({ frame, getContext }) {
   }
 
   async function render() {
+    /* The empty address is an entry, not a place: it opens where `entryRoute` says (D-098). */
+    if (!String(location.hash).replace(/^#\/?/, '').split('?')[0].replace(/\/+$/, '')) {
+      go(href(entryRoute(getContext())), { replace: true });
+      return;
+    }
     const found = match(location.hash);
     if (!found) {
       go(href(DEFAULT_ROUTE), { replace: true });

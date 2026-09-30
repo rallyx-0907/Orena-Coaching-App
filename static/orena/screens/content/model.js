@@ -181,3 +181,11 @@ export function pickRelated(items, { excludeId, map, limit = 3 }) {
   }
   return out;
 }
+
+/* The stored media id inside a content route's `upload` id. Discover and Search open a device
+   media import as "upload:" + its memory id, and an uploaded file's memory id is itself
+   "upload:<media id>" - the media API wants the bare id. */
+export function uploadMediaId(id) {
+  const value = String(id || '');
+  return value.startsWith('upload:') ? value.slice(7) : value;
+}

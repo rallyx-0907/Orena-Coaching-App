@@ -1,0 +1,26 @@
+{
+  "source_language": "en",
+  "target_language": "vi",
+  "transcript": "A hungry fox saw some black grapes on a vine.",
+  "situation": "The learner was asked to say the idea of the source sentence again in their own words.\nSource sentence: A famished fox saw some clusters of ripe black grapes hanging from a trellised vine.",
+  "carried": [
+    {
+      "quote": "A hungry fox",
+      "why": "This part clearly identifies the animal and its state, which is key to the original sentence."
+    },
+    {
+      "quote": "saw some black grapes",
+      "why": "This matches the main action and object in the source sentence."
+    },
+    {
+      "quote": "on a vine",
+      "why": "This gives the location, which is important for context."
+    }
+  ],
+  "landed_differently": [],
+  "another_way": "A very hungry fox saw some black grapes hanging from a vine.",
+  "next_attempt": "Try to include the detail about the grapes being ripe and in clusters, and mention that they were hanging from a trellised vine.",
+  "say_again": "A hungry fox saw some black grapes on a vine.",
+  "available": true,
+  "claim": "spoken_response_coaching_from_transcript"
+}

@@ -11,6 +11,7 @@ import { api } from '../../infrastructure/api.js';
 import { shellCopy as sc } from '../../copy/shell.js';
 import { languages } from '../../copy/index.js';
 import { t } from './copy.js';
+import { isDeferred } from '../../shell/routes.js';
 import {
   contentRows, languageRows, collectionsAndDecks, dueStats, dueListRows,
 } from './model.js';
@@ -99,6 +100,10 @@ function kindFallbackLabel(key) {
    this screen's own copy. The due count feeding two of the four descriptions is real
    (`dueStats`); `dur` is not carried - see copy.js. */
 function activeCards(stats) {
+  return activeCardList(stats).filter((card) => !isDeferred(card.route)); // D-101 H9
+}
+
+function activeCardList(stats) {
   return [
     { key: 'due', stage: t('stageRecall'), title: t('activeDueTitle'), desc: t.plural('activeDueDesc', stats.dueCount), route: 'review' },
     { key: 'transfer', stage: t('stageUse'), title: sc('contextTransfer'), desc: t('activeTransferDesc'), route: 'transfer' },

@@ -13,6 +13,8 @@ import { loadBrand } from './kit/brand.js';
 import { setOverlayLayer } from './kit/overlay.js';
 import { setToastLayer } from './kit/toast.js';
 import { bannerMarkup } from './kit/states.js';
+import { useStyles } from './kit/styles.js';
+import { isAdminHash } from './shell/routes.js';
 import { drawFrame } from './shell/frame.js';
 import { createRouter } from './shell/router.js';
 import { context, loadContext, onContext } from './shell/context.js';
@@ -57,6 +59,15 @@ async function boot() {
     return;
   }
   if (!learner.isAdmin) {
+    /* An account that is not an admin, at an admin address: the design's No access frame, drawn
+       before any admin request exists. Anywhere else the internal-review notice stands. */
+    if (isAdminHash(location.hash)) {
+      await brand;
+      await useStyles('screens/admin/admin.css');
+      const { renderNoAccess } = await import('./screens/admin/no-access.js');
+      renderNoAccess(app, { email: learner.user?.email, name: learner.name, backHref: '/next' });
+      return;
+    }
     mount(app, html`<div class="o-error"><div class="o-error__card"><div class="o-error__text">${t('limited')}</div><a class="o-btn o-btn--secondary o-btn--sm" href="/account">${t('account')}</a></div></div>`);
     return;
   }

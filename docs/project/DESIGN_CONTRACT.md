@@ -53,8 +53,9 @@ the design project `e6dc1cb2-72d0-40b4-a916-5dcd47e17cc0` in Claude Design,
   design; a rule that conflicts with it is void, not "balanced" against it -
   except rules 49 and 50, which the human reaffirmed for the new design: where
   a frame breaks them, the surface is recomposed and the deviation recorded.
-- Platform Admin keeps `screens/Orena-Admin-Control-Center.dc.html` (project
-  7a5604ca) until the human opens Admin (D-088 point 6).
+- Platform Admin's authority is `screens/Orena-Admin.dc.html` from the same
+  project (pinned 2026-09-29, D-099); the Control Center of project 7a5604ca is
+  superseded (D-088 point 6 fulfilled).
 
 ## What "the same as the design" means (D-067)
 
@@ -181,8 +182,9 @@ the design project `e6dc1cb2-72d0-40b4-a916-5dcd47e17cc0` in Claude Design,
 ## The design's visual rules (D-088, D-089)
 
 30. **One system, two themes.** The design's light and dark token sets, both
-    shipped, following the operating system (D-089); the Reader's light/dark
-    button is the one in-product switch and is a device preference. Colour
+    shipped, following the operating system by default (D-089). The learner can
+    choose Light, Dark or System in Settings (D-097), and the Reader's light/dark
+    button sets the same device preference. Colour
     values live only in the new UI's token file (`static/orena/kit/tokens.css`;
     the old `theme.css` serves only the old UI until the cutover, D-091), taken
     from the design exactly except the AA adjustments of D-093; no component

@@ -1,0 +1,171 @@
+{
+  "id": 1,
+  "created_at": "2026-09-29T03:23:36+07:00",
+  "prompt": "写一写你昨天做了什么",
+  "text": "昨天我去了公园，天气很好。我和朋友们一起玩了很多游戏，我们都很开心。我把作业做完了在回家。",
+  "word_count": 40,
+  "target_cefr": "",
+  "grammar": 58.0,
+  "vocabulary": 60.0,
+  "coherence": 65.0,
+  "task_achievement": 62.0,
+  "naturalness": 57.0,
+  "overall": 60.5,
+  "cefr_estimate": "HSK3",
+  "evaluator": "captured:fixed-answer",
+  "summary_vi": "Bài viết rõ ràng, dùng đúng nhiều mẫu câu cơ bản; cần chú ý trật tự các hành động nối tiếp nhau.",
+  "series_id": 1,
+  "revision_no": 1,
+  "parent_id": null,
+  "language_code": "en",
+  "target_level": "",
+  "level_estimate": "HSK3",
+  "review_kept_at": null,
+  "strengths_vi": [
+    "Bạn kể được các hoạt động trong ngày một cách mạch lạc."
+  ],
+  "strength_evidence": [
+    {
+      "id": "strength-1",
+      "category": "coherence",
+      "fragment": "我们都很开心",
+      "quote": "我们都很开心",
+      "span": {
+        "start": 27,
+        "end": 33
+      },
+      "explanation_vi": "Câu kết ngắn gọn, tự nhiên và nêu đúng cảm xúc.",
+      "confidence": 0.9
+    }
+  ],
+  "priorities_vi": [],
+  "errors": [
+    {
+      "id": "issue-a7e56225dfd10ec4",
+      "category": "conjunction",
+      "fragment": "做完了在回家",
+      "quote": "做完了在回家",
+      "span": {
+        "start": 38,
+        "end": 44
+      },
+      "anchored": true,
+      "explanation_vi": "Để nói làm xong việc này rồi mới làm việc kia, cần dùng liên từ chỉ trình tự, không dùng giới từ chỉ nơi chốn.",
+      "suggestion": "做完了再回家",
+      "mini_rule_vi": "Làm xong việc thứ nhất rồi mới làm việc thứ hai: dùng từ chỉ trình tự nối hai hành động.",
+      "example": "吃完饭再去看电影。",
+      "confidence": 0.9
+    }
+  ],
+  "module_data": {
+    "practice": null,
+    "grammar_links": [
+      {
+        "issue_id": "issue-a7e56225dfd10ec4",
+        "category": "conjunction",
+        "grammar_id": "zh-hsk4-5-topic-106",
+        "title": "因此/因而/于是",
+        "level": "HSK4",
+        "reason": "Writing finding category: conjunction",
+        "evidence": "做完了在回家",
+        "source": "static-grammar-kb"
+      },
+      {
+        "issue_id": "issue-a7e56225dfd10ec4",
+        "category": "conjunction",
+        "grammar_id": "zh-hsk4-progress-check",
+        "title": "HSK4 Progress Check",
+        "level": "HSK4",
+        "reason": "Writing finding category: conjunction",
+        "evidence": "做完了在回家",
+        "source": "static-grammar-kb"
+      }
+    ],
+    "review": {
+      "contract": "writing-evaluation-v2.6",
+      "learning_language": "zh",
+      "support_language": "vi",
+      "target_level": "",
+      "text_hash": "c0e1bdbdd7e352463195d44e67cfc4c3bd73a0b6c311e33014443383fd1e1573",
+      "prompt_hash": "d2fd46efd843b379f13c56e0d6cf93944208b656cfa0ec7a6a80d0ababe86471",
+      "fingerprint": "fd86001393ad77d332c5a6d640bec64a720af6918a6b6ac9351cd3ff9b4d2016"
+    }
+  },
+  "practice_context": null,
+  "grammar_links": [
+    {
+      "issue_id": "issue-a7e56225dfd10ec4",
+      "category": "conjunction",
+      "grammar_id": "zh-hsk4-5-topic-106",
+      "title": "因此/因而/于是",
+      "level": "HSK4",
+      "reason": "Writing finding category: conjunction",
+      "evidence": "做完了在回家",
+      "source": "static-grammar-kb"
+    },
+    {
+      "issue_id": "issue-a7e56225dfd10ec4",
+      "category": "conjunction",
+      "grammar_id": "zh-hsk4-progress-check",
+      "title": "HSK4 Progress Check",
+      "level": "HSK4",
+      "reason": "Writing finding category: conjunction",
+      "evidence": "做完了在回家",
+      "source": "static-grammar-kb"
+    }
+  ],
+  "schema_version": "writing-evaluation-v2",
+  "text_hash": "d5a0b604ad52f905245845c361374e4fe26e218f0ef258d54a807f3972d4b77d",
+  "summary": {
+    "headline": "Bạn kể được các hoạt động trong ngày một cách mạch lạc.",
+    "interpretation": "Bài viết rõ ràng, dùng đúng nhiều mẫu câu cơ bản; cần chú ý trật tự các hành động nối tiếp nhau."
+  },
+  "dimensions": {
+    "grammar": 58.0,
+    "vocabulary": 60.0,
+    "coherence": 65.0,
+    "task_achievement": 62.0,
+    "naturalness": 57.0
+  },
+  "issues": [
+    {
+      "id": "issue-a7e56225dfd10ec4",
+      "category": "conjunction",
+      "priority": "high",
+      "span": {
+        "start": 38,
+        "end": 44
+      },
+      "quote": "做完了在回家",
+      "why": "Để nói làm xong việc này rồi mới làm việc kia, cần dùng liên từ chỉ trình tự, không dùng giới từ chỉ nơi chốn.",
+      "how": "Làm xong việc thứ nhất rồi mới làm việc thứ hai: dùng từ chỉ trình tự nối hai hành động.",
+      "suggestion": "做完了再回家",
+      "examples": [
+        "吃完饭再去看电影。"
+      ]
+    }
+  ],
+  "strengths": [
+    {
+      "id": "strength-1",
+      "category": "coherence",
+      "span": {
+        "start": 27,
+        "end": 33
+      },
+      "quote": "我们都很开心",
+      "why": "Câu kết ngắn gọn, tự nhiên và nêu đúng cảm xúc."
+    }
+  ],
+  "next_actions": [],
+  "revisions": [
+    {
+      "id": 1,
+      "revision_no": 1,
+      "overall": 60.5,
+      "created_at": "2026-09-29T03:23:36+07:00"
+    }
+  ],
+  "delta": {},
+  "app_cefr": "HSK4"
+}

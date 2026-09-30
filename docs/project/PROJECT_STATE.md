@@ -57,6 +57,16 @@ operational state.
 
 ## New learner UI migration (D-088 - D-095)
 
+- 2026-09-29, Wave B verification: `161d917`, local: each Wave B commit was checked on a clean export of HEAD plus the commit (all CI gate commands - 113 at the last, the browser ESM graph and the memory/architecture validators pass) and reviewed in the browser on the isolated stack (en/vi/zh, both themes, the four rule-49 sizes). Full pytest on a clean export (SQLite, CI backend): `2420 passed, 195 skipped` (`51522e4`). No CI pass is claimed. Visual-source gate: PINNED.
+- 2026-09-29, D-098: Japanese Writing-minimum row `c1393c9`; Writing countdown `1ac1e6f`; Lesson
+  complete from server-measured numbers `6a402af`; empty address to Welcome without a profile
+  `81ae4bb`; Compare Versions as the frame `b221909`; Import > File `2052cb7`; support-language
+  picker `3f2cc23`; draft count plurals `30c3d88`. Wave A review items in HEAD: `b4373e2`,
+  `755d65b`, `7574765`, `8de1863`.
+- 2026-09-29, D-099/D-100: Admin governance and map routes `e6c702a`; roadmap `ecec28a`; Orena
+  Admin pinned `16c1713`+`89ab6e1`; Chinese evaluator fix `871e2b9`; benchmark v2 `fa93601`;
+  R5 -> Grammar Lab `6c0db16`; H2 proposal and review `3b23c4b`; Grammar screens `b83142d`.
+
 Verified state of the migration on `codex/work`; the current step and next task
 live in `CURRENT_HANDOFF.md`.
 
@@ -97,6 +107,18 @@ live in `CURRENT_HANDOFF.md`.
   modules) pass. `test_orena_vocabulary_theme_tokens.mjs`, not run by CI, fails
   identically on a clean `HEAD` (an old-UI gate for a retired vocabulary CSS
   scope; replaced at the cutover, not deleted).
+- Wave B workspaces (`03c8aad` - `161d917`, 2026-09-29, local), one commit per
+  unit: the shared overlays, Check / Discussion / Reading Transfer, Dictation /
+  Shadowing, Free Talk / Conversation / Situation, Scripted Pronunciation /
+  Compare / Attempts / Speaking Summary, Review / Feed / From Your Errors, the
+  Reader, Onboarding, Orena (Home, panel, voice on the mock), Writing / Compare
+  Versions, and Listening / React / Respond. After interrupted parallel runs,
+  each unit ran only its unfinished steps (finish, independent review, fix), at
+  most three agents at a time. Each commit was checked on a clean export of HEAD
+  plus the commit with every CI gate command. Routes with no backend show the
+  design's Coming soon screen. The Grammar screens wait for the grammar content
+  contract. The kit gate now also fails on white ink over a solid
+  red/green/amber fill (`5692aeb`).
 - The isolated verification stack: containers `orena-next-verify-*`,
   127.0.0.1:8021, PostgreSQL on tmpfs, no provider keys, three public-domain
   articles, a learner seeded through the app's endpoints
