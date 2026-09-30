@@ -5,7 +5,7 @@ meta:
   language: "en"
   framework: "CEFR-oriented Orena syllabus"
   target_range: "A1-C2"
-  status: "candidate_for_human_lock"
+  status: "locked_for_generation"
   source_r5_lessons: 228
   canonical_candidate_count: 215
   counts_by_level:
@@ -19,11 +19,13 @@ meta:
     - "Every legacy R5 alias resolves to at most one canonical point."
     - "Split children may share r5_sources provenance, but only one child owns the legacy redirect alias."
     - "Automatic fuzzy Core Inventory matches are not source anchors and are intentionally omitted."
+  lock_basis: "user explicitly delegated completion; conversion map reviewed and accepted for Orena generation"
+  authority_scope: "Orena A1-C2 grammar syllabus; not a claim that CEFR defines an exhaustive official grammar list."
   source_policy:
     - "R5 supplies Orena's existing lesson/content backbone."
     - "British Council/EAQUALS Core Inventory remains an external A1-C1 reference/minimum core."
     - "Existing manually reviewed anchors remain in grammar_lab/inventory/seeds_en.yaml; this file does not fabricate additional anchors."
-    - "C2 remains an Orena internal extension until separately source-reviewed."
+    - "C2 is locked as an Orena internal extension; it is not presented as British Council/EAQUALS Core Inventory coverage."
 items:
   - id: "a1-complete-sentences-and-basic-word-order"
     level: "A1"
@@ -65,7 +67,7 @@ items:
       - "a1-possessive-adjectives-pronouns-and-possessive-s"
     conversion_notes:
       - "ba hình thức khác nhau; đại từ sở hữu giữ A1 (R5 và Core Inventory 129 đều A1)"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "possessive_pronouns"
     level: "A1"
     title: "Possessive Pronouns"
@@ -76,7 +78,7 @@ items:
       []
     conversion_notes:
       - "ba hình thức khác nhau; đại từ sở hữu giữ A1 (R5 và Core Inventory 129 đều A1)"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "possessive_s"
     level: "A1"
     title: "Possessive S"
@@ -87,7 +89,7 @@ items:
       []
     conversion_notes:
       - "ba hình thức khác nhau; đại từ sở hữu giữ A1 (R5 và Core Inventory 129 đều A1)"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "a1-have-and-have-got"
     level: "A1"
     title: "Have and have got"
@@ -108,7 +110,7 @@ items:
       - "a1-singular-and-plural-nouns"
     conversion_notes:
       - "quy tắc và bất quy tắc là hai điểm"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "plural_nouns.irregular"
     level: "A1"
     title: "Plural Nouns Irregular"
@@ -119,7 +121,7 @@ items:
       []
     conversion_notes:
       - "quy tắc và bất quy tắc là hai điểm"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "articles.a_an"
     level: "A1"
     title: "Articles A An"
@@ -130,7 +132,7 @@ items:
       - "a1-articles-a-an-the"
     conversion_notes:
       - "hai cách dùng khác nhau không gộp một công thức"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "articles.the"
     level: "A1"
     title: "Articles The"
@@ -141,7 +143,7 @@ items:
       []
     conversion_notes:
       - "hai cách dùng khác nhau không gộp một công thức"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "a1-this-that-these-those"
     level: "A1"
     title: "This/that/these/those"
@@ -292,7 +294,7 @@ items:
       - "a1-and-but-or-because-so"
     conversion_notes:
       - "hai nhóm chức năng"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "a2-past-simple-be"
     level: "A1"
     title: "Past simple: be"
@@ -303,7 +305,7 @@ items:
       - "a2-past-simple-be"
     conversion_notes:
       - "was/were nằm ở A1 trong bộ lõi"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "can.ability"
     level: "A1"
     title: "Can Ability"
@@ -314,7 +316,7 @@ items:
       - "a2-can-could-be-able-to-basics"
     conversion_notes:
       - "can là A1; be able to nằm ở b1-ability-across-time"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "adjectives.position"
     level: "A1"
     title: "Adjectives Position"
@@ -325,7 +327,7 @@ items:
       []
     conversion_notes:
       - "bộ lõi, R5 không có"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "would_like"
     level: "A1"
     title: "Would Like"
@@ -336,7 +338,7 @@ items:
       []
     conversion_notes:
       - "bộ lõi, R5 không có"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "articles.zero"
     level: "A2"
     title: "Articles Zero"
@@ -347,7 +349,7 @@ items:
       []
     conversion_notes:
       - "hai cách dùng khác nhau không gộp một công thức"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "a1-stative-verbs-introduction"
     level: "A2"
     title: "Stative verbs: introduction"
@@ -358,7 +360,7 @@ items:
       - "a1-stative-verbs-introduction"
     conversion_notes:
       - "đề xuất, cần đối chiếu khung"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "a1-much-many-a-lot-of"
     level: "A2"
     title: "Much/many/a lot of"
@@ -369,7 +371,7 @@ items:
       - "a1-much-many-a-lot-of"
     conversion_notes:
       - "much/many trong câu hỏi, phủ định thường A2"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "conjunctions.because_so"
     level: "A2"
     title: "Conjunctions Because So"
@@ -380,7 +382,7 @@ items:
       []
     conversion_notes:
       - "hai nhóm chức năng"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "a2-past-simple-regular-verbs"
     level: "A2"
     title: "Past simple: regular verbs"
@@ -541,7 +543,7 @@ items:
       []
     conversion_notes:
       - "can là A1; be able to nằm ở b1-ability-across-time"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "a2-must-have-to"
     level: "A2"
     title: "Must/have to"
@@ -554,7 +556,7 @@ items:
       - "b1-obligation-must-have-to-need-to"
     conversion_notes:
       - "trùng; phần don't have to nằm ở bài prohibition B1"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "a2-should-ought-to"
     level: "A2"
     title: "Should/ought to"
@@ -565,7 +567,7 @@ items:
       - "a2-should-ought-to"
     conversion_notes:
       - "chỉ còn should"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "a2-may-might-could-possibility"
     level: "A2"
     title: "May/might/could possibility"
@@ -618,7 +620,7 @@ items:
       - "b1-defining-relative-clauses"
     conversion_notes:
       - "trùng phạm vi (defining who/which/that)"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "a2-zero-conditional"
     level: "A2"
     title: "Zero conditional"
@@ -692,7 +694,7 @@ items:
     conversion_notes:
       - "trùng: cùng đối chiếu; gộp thành một bài A2"
       - "sau khi gộp bài A1"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "past_simple.did_questions"
     level: "A2"
     title: "Past Simple Did Questions"
@@ -703,7 +705,7 @@ items:
       []
     conversion_notes:
       - "bộ lõi, R5 không có"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "phrasal_verbs.basic"
     level: "A2"
     title: "Phrasal Verbs Basic"
@@ -714,7 +716,7 @@ items:
       []
     conversion_notes:
       - "R5 không có"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "time_clauses.basic"
     level: "A2"
     title: "Time Clauses Basic"
@@ -725,7 +727,7 @@ items:
       []
     conversion_notes:
       - "when/while/before/after; R5 chỉ có future time clauses (B1)"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "verb_object_infinitive"
     level: "A2"
     title: "Verb Object Infinitive"
@@ -736,7 +738,7 @@ items:
       []
     conversion_notes:
       - "want/tell/ask someone to do"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "a2-object-relative-pronoun-omission"
     level: "B1"
     title: "Object relative pronoun omission"
@@ -747,7 +749,7 @@ items:
       - "a2-object-relative-pronoun-omission"
     conversion_notes:
       - "bỏ đại từ quan hệ tân ngữ thường B1"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "b1-present-perfect-simple"
     level: "B1"
     title: "Present perfect simple"
@@ -790,7 +792,7 @@ items:
       - "a2-present-perfect-vs-past-simple"
     conversion_notes:
       - "trùng: hai bài cùng đối chiếu present perfect / past simple"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "b1-past-perfect-simple"
     level: "B1"
     title: "Past perfect simple"
@@ -863,7 +865,7 @@ items:
       - "b2-future-continuous"
     conversion_notes:
       - "bài trùng hệt tiêu đề ở hai cấp"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "b1-future-time-clauses"
     level: "B1"
     title: "Future time clauses"
@@ -934,7 +936,7 @@ items:
       - "b1-advice-should-ought-to-had-better"
     conversion_notes:
       - "chỉ còn ought to / had better"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "b1-deduction-must-might-can-t"
     level: "B1"
     title: "Deduction: must/might/can't"
@@ -995,7 +997,7 @@ items:
       - "b1-zero-first-second-conditionals"
     conversion_notes:
       - "chỉ còn second conditional (zero và first đã có ở A2)"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "b1-third-conditional"
     level: "B1"
     title: "Third conditional"
@@ -1078,7 +1080,7 @@ items:
       - "b2-gerund-infinitive-meaning-contrasts"
     conversion_notes:
       - "trùng phạm vi (stop/remember/try + V-ing/to V)"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "b1-causative-have-get"
     level: "B1"
     title: "Causative have/get"
@@ -1141,7 +1143,7 @@ items:
       - "b1-generic-reference-and-zero-article"
     conversion_notes:
       - "cùng một chủ đề"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "b1-quantifiers-and-distributives"
     level: "B1"
     title: "Quantifiers and distributives"
@@ -1192,7 +1194,7 @@ items:
       - "b1-so-such-too-enough"
     conversion_notes:
       - "chỉ còn so/such (too/enough đã ở A2)"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "b1-comparative-patterns-and-intensifiers"
     level: "B1"
     title: "Comparative patterns and intensifiers"
@@ -1213,7 +1215,7 @@ items:
       []
     conversion_notes:
       - "R5 không có"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "adjective_preposition"
     level: "B1"
     title: "Adjective Preposition"
@@ -1224,7 +1226,7 @@ items:
       []
     conversion_notes:
       - "afraid of, interested in"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "be_used_to"
     level: "B1"
     title: "Be Used To"
@@ -1235,7 +1237,7 @@ items:
       []
     conversion_notes:
       - "be/get used to (khác used to)"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "discourse_markers"
     level: "B1"
     title: "Discourse Markers"
@@ -1246,7 +1248,7 @@ items:
       []
     conversion_notes:
       - "R5 chỉ có ở C1 trở lên"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "gerund_subject"
     level: "B1"
     title: "Gerund Subject"
@@ -1257,7 +1259,7 @@ items:
       []
     conversion_notes:
       - "Swimming is fun"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "it_be_adjective_to"
     level: "B1"
     title: "It Be Adjective To"
@@ -1268,7 +1270,7 @@ items:
       []
     conversion_notes:
       - "It is easy to..."
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "make_let_allow"
     level: "B1"
     title: "Make Let Allow"
@@ -1279,7 +1281,7 @@ items:
       []
     conversion_notes:
       - "R5 không có"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "phrasal_verbs.separable"
     level: "B1"
     title: "Phrasal Verbs Separable"
@@ -1290,7 +1292,7 @@ items:
       []
     conversion_notes:
       - "R5 không có"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "purpose_so_that"
     level: "B1"
     title: "Purpose So That"
@@ -1301,7 +1303,7 @@ items:
       []
     conversion_notes:
       - "so that / in order to"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "so_neither_agreement"
     level: "B1"
     title: "So Neither Agreement"
@@ -1312,7 +1314,7 @@ items:
       []
     conversion_notes:
       - "so do I / neither do I"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "b2-perfect-aspect-in-discourse"
     level: "B2"
     title: "Perfect aspect in discourse"
@@ -1328,7 +1330,7 @@ items:
     conversion_notes:
       - "ba bài \"viewpoint\" B2 trừu tượng, chồng bài thì B1"
       - "như trên"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "b2-future-perfect"
     level: "B2"
     title: "Future perfect"
@@ -1341,7 +1343,7 @@ items:
       - "b1-future-perfect-introduction"
     conversion_notes:
       - "bài trùng hệt tiêu đề ở hai cấp"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "b2-future-perfect-continuous"
     level: "B2"
     title: "Future perfect continuous"
@@ -1374,7 +1376,7 @@ items:
       - "b1-mixed-conditional-introduction"
     conversion_notes:
       - "bài trùng ở hai cấp"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "b2-in-case-provided-as-long-as"
     level: "B2"
     title: "In case/provided/as long as"
@@ -1500,7 +1502,7 @@ items:
     conversion_notes:
       - "\"It is said that...\" và \"He is said to...\" cùng một họ"
       - "trùng hệt tiêu đề ở B2"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "b2-reported-speech-tense-choice"
     level: "B2"
     title: "Reported speech: tense choice"
@@ -1533,7 +1535,7 @@ items:
       - "c1-advanced-relative-structures"
     conversion_notes:
       - "quá rộng, chồng bài B2"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "b2-preposition-relative-pronoun"
     level: "B2"
     title: "Preposition + relative pronoun"
@@ -1544,7 +1546,7 @@ items:
       - "b2-preposition-relative-pronoun"
     conversion_notes:
       - "chỉ còn dạng trang trọng (to whom); dạng thường ở b1-relative-pronouns-and-prepositions"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "b2-quantifier-relative-pronoun"
     level: "B2"
     title: "Quantifier + relative pronoun"
@@ -1617,7 +1619,7 @@ items:
       - "c1-it-clefts"
     conversion_notes:
       - "trùng phạm vi it-cleft"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "b2-pseudo-cleft-sentences"
     level: "B2"
     title: "Pseudo-cleft sentences"
@@ -1630,7 +1632,7 @@ items:
       - "c1-wh-clefts-and-reversed-clefts"
     conversion_notes:
       - "trùng phạm vi wh-cleft"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "b2-fronting-for-emphasis"
     level: "B2"
     title: "Fronting for emphasis"
@@ -1643,7 +1645,7 @@ items:
       - "c1-fronting-and-topicalisation"
     conversion_notes:
       - "trùng phạm vi"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "b2-emphatic-do"
     level: "B2"
     title: "Emphatic do"
@@ -1696,7 +1698,7 @@ items:
       - "c1-ellipsis-and-substitution"
     conversion_notes:
       - "trùng phạm vi"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "b2-nominal-clauses"
     level: "B2"
     title: "Nominal clauses"
@@ -1719,7 +1721,7 @@ items:
       - "c1-complex-noun-phrase-architecture"
     conversion_notes:
       - "trùng phạm vi"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "b2-dependent-prepositions"
     level: "B2"
     title: "Dependent prepositions"
@@ -1752,7 +1754,7 @@ items:
       - "c2-academic-vs-business-vs-conversational-grammar"
     conversion_notes:
       - "cùng chủ đề register"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "b2-punctuation-with-complex-clauses"
     level: "B2"
     title: "Punctuation with complex clauses"
@@ -1765,7 +1767,7 @@ items:
       - "c2-advanced-punctuation-as-syntax"
     conversion_notes:
       - "trùng phạm vi"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "as_if_as_though"
     level: "B2"
     title: "As If As Though"
@@ -1776,7 +1778,7 @@ items:
       []
     conversion_notes:
       - "R5 không có"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "get_passive"
     level: "B2"
     title: "Get Passive"
@@ -1787,7 +1789,7 @@ items:
       []
     conversion_notes:
       - "R5 không có"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "phrasal_verbs.advanced"
     level: "B2"
     title: "Phrasal Verbs Advanced"
@@ -1798,7 +1800,7 @@ items:
       []
     conversion_notes:
       - "R5 không có"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "b2-only-phrase-inversion"
     level: "C1"
     title: "Only-phrase inversion"
@@ -1809,7 +1811,7 @@ items:
       - "b2-only-phrase-inversion"
     conversion_notes:
       - "đảo ngữ"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "b2-no-sooner-hardly-scarcely"
     level: "C1"
     title: "No sooner/hardly/scarcely"
@@ -1820,7 +1822,7 @@ items:
       - "b2-no-sooner-hardly-scarcely"
     conversion_notes:
       - "đảo ngữ"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "c1-advanced-simple-vs-continuous-aspect"
     level: "C1"
     title: "Advanced simple vs continuous aspect"
@@ -1833,7 +1835,7 @@ items:
       - "c1-advanced-perfect-aspect"
     conversion_notes:
       - "trừu tượng, chồng nhau"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "c1-lexical-aspect-and-meaning-shifts"
     level: "C1"
     title: "Lexical aspect and meaning shifts"
@@ -1846,7 +1848,7 @@ items:
       - "c2-advanced-tense-aspect-viewpoint-shifts"
     conversion_notes:
       - "trừu tượng, chồng nhau"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "c1-historic-present-and-narrative-shifts"
     level: "C1"
     title: "Historic present and narrative shifts"
@@ -1899,7 +1901,7 @@ items:
       - "c1-hedging-academic-claims"
     conversion_notes:
       - "trùng phạm vi hedging"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "c1-boosting-and-controlled-certainty"
     level: "C1"
     title: "Boosting and controlled certainty"
@@ -1922,7 +1924,7 @@ items:
       - "b2-negative-adverbial-inversion"
     conversion_notes:
       - "trùng hệt tiêu đề B2/C1; đảo ngữ là C1"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "c1-conditional-inversion"
     level: "C1"
     title: "Conditional inversion"
@@ -1935,7 +1937,7 @@ items:
       - "b2-conditional-inversion-introduction"
     conversion_notes:
       - "trùng"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "c1-so-such-inversion"
     level: "C1"
     title: "So/such inversion"
@@ -2018,7 +2020,7 @@ items:
       - "c2-fused-and-nominal-relatives"
     conversion_notes:
       - "trùng phạm vi"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "c1-advanced-non-finite-clauses"
     level: "C1"
     title: "Advanced non-finite clauses"
@@ -2051,7 +2053,7 @@ items:
       - "c2-advanced-concession-and-counterargument"
     conversion_notes:
       - "trùng phạm vi"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "c1-cause-result-purpose-relations"
     level: "C1"
     title: "Cause/result/purpose relations"
@@ -2104,7 +2106,7 @@ items:
       - "c2-register-driven-syntax"
     conversion_notes:
       - "cùng chủ đề register"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "c1-academic-definitions-and-classifications"
     level: "C1"
     title: "Academic definitions and classifications"
@@ -2127,7 +2129,7 @@ items:
       - "c1-old-to-new-information-flow"
     conversion_notes:
       - "cùng chủ đề information structure"
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "c2-layered-modality-and-authorial-voice"
     level: "C2"
     title: "Layered modality and authorial voice"
@@ -2137,7 +2139,7 @@ items:
     r5_aliases:
       - "c2-layered-modality-and-authorial-voice"
     conversion_notes: []
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "c2-counterfactual-compression"
     level: "C2"
     title: "Counterfactual compression"
@@ -2147,7 +2149,7 @@ items:
     r5_aliases:
       - "c2-counterfactual-compression"
     conversion_notes: []
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "c2-negation-and-quantifier-scope"
     level: "C2"
     title: "Negation and quantifier scope"
@@ -2157,7 +2159,7 @@ items:
     r5_aliases:
       - "c2-negation-and-quantifier-scope"
     conversion_notes: []
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "c2-only-focus-scope"
     level: "C2"
     title: "Only/focus scope"
@@ -2167,7 +2169,7 @@ items:
     r5_aliases:
       - "c2-only-focus-scope"
     conversion_notes: []
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "c2-ambiguity-from-modifier-attachment"
     level: "C2"
     title: "Ambiguity from modifier attachment"
@@ -2177,7 +2179,7 @@ items:
     r5_aliases:
       - "c2-ambiguity-from-modifier-attachment"
     conversion_notes: []
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "c2-reference-ambiguity"
     level: "C2"
     title: "Reference ambiguity"
@@ -2187,7 +2189,7 @@ items:
     r5_aliases:
       - "c2-reference-ambiguity"
     conversion_notes: []
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "c2-deep-clause-embedding"
     level: "C2"
     title: "Deep clause embedding"
@@ -2197,7 +2199,7 @@ items:
     r5_aliases:
       - "c2-deep-clause-embedding"
     conversion_notes: []
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "c2-advanced-apposition"
     level: "C2"
     title: "Advanced apposition"
@@ -2207,7 +2209,7 @@ items:
     r5_aliases:
       - "c2-advanced-apposition"
     conversion_notes: []
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "c2-parenthetical-grammar"
     level: "C2"
     title: "Parenthetical grammar"
@@ -2217,7 +2219,7 @@ items:
     r5_aliases:
       - "c2-parenthetical-grammar"
     conversion_notes: []
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "c2-heavy-constituent-shift"
     level: "C2"
     title: "Heavy constituent shift"
@@ -2227,7 +2229,7 @@ items:
     r5_aliases:
       - "c2-heavy-constituent-shift"
     conversion_notes: []
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "c2-advanced-extraposition"
     level: "C2"
     title: "Advanced extraposition"
@@ -2237,7 +2239,7 @@ items:
     r5_aliases:
       - "c2-advanced-extraposition"
     conversion_notes: []
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "c2-marked-comparison-structures"
     level: "C2"
     title: "Marked comparison structures"
@@ -2247,7 +2249,7 @@ items:
     r5_aliases:
       - "c2-marked-comparison-structures"
     conversion_notes: []
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "c2-advanced-complement-alternation"
     level: "C2"
     title: "Advanced complement alternation"
@@ -2257,7 +2259,7 @@ items:
     r5_aliases:
       - "c2-advanced-complement-alternation"
     conversion_notes: []
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "c2-advanced-reporting-and-distancing"
     level: "C2"
     title: "Advanced reporting and distancing"
@@ -2267,7 +2269,7 @@ items:
     r5_aliases:
       - "c2-advanced-reporting-and-distancing"
     conversion_notes: []
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "c2-cross-sentence-ellipsis"
     level: "C2"
     title: "Cross-sentence ellipsis"
@@ -2277,7 +2279,7 @@ items:
     r5_aliases:
       - "c2-cross-sentence-ellipsis"
     conversion_notes: []
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "c2-discourse-substitution-chains"
     level: "C2"
     title: "Discourse substitution chains"
@@ -2287,7 +2289,7 @@ items:
     r5_aliases:
       - "c2-discourse-substitution-chains"
     conversion_notes: []
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "c2-lexico-grammar-and-colligation"
     level: "C2"
     title: "Lexico-grammar and colligation"
@@ -2297,7 +2299,7 @@ items:
     r5_aliases:
       - "c2-lexico-grammar-and-colligation"
     conversion_notes: []
-    catalog_review_required: true
+    catalog_review_required: false
   - id: "c2-metadiscourse-grammar"
     level: "C2"
     title: "Metadiscourse grammar"
@@ -2307,4 +2309,4 @@ items:
     r5_aliases:
       - "c2-metadiscourse-grammar"
     conversion_notes: []
-    catalog_review_required: true
+    catalog_review_required: false
