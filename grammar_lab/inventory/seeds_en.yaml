@@ -1225,7 +1225,7 @@
   batch: core
 - id: en.canon.a1.002
   level: A1
-  function: fn.ability
+  function: fn.possibility
   point_type: other
   native_title: Can for ability
   title:
