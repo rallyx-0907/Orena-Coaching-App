@@ -48,3 +48,15 @@ The first full candidate graph is now available:
 - `canonical_grammar_zh.yaml`: working manifest only; **330 is a review-unit count, not the final lesson count**.
 
 Do not send this to content generation yet. The next step is catalog review of mapping edges and cluster scope until all 572 rows have accepted final `maps_to` coverage.
+
+
+## FINAL LOCK
+
+Catalog research is complete for generation purposes.
+
+- EN: `canonical_grammar_en.yaml` = 215 points, A1-C2, `locked_for_generation`.
+- ZH: `canonical_grammar_zh.yaml` = 416 final points, HSK1-HSK9 internal sequence, `locked_for_generation`.
+- ZH official coverage: `zh_source_coverage_locked.yaml` = 572/572 GF0025 rows mapped.
+- `CATALOG_LOCK_REPORT.md` records the lock decision and boundaries.
+
+Grammar Lab should now consume these catalogs and stop doing syllabus research.
