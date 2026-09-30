@@ -3,7 +3,7 @@
   "id": "en.canon.a1.002",
   "version": 1,
   "target_lang": "en",
-  "function": "fn.catalog_unclassified",
+  "function": "fn.ability",
   "level": {
     "framework": "cefr",
     "value": "A1",
@@ -12,7 +12,7 @@
   "prereqs": [],
   "contrasts": [],
   "error_tags": [
-    "other"
+    "word_form"
   ],
   "source_refs": {
     "r5": [
@@ -150,7 +150,7 @@
         "vi": "Sau can dùng động từ nguyên thể không có to.",
         "en": "After can, use the base verb without to."
       },
-      "error_tag": "other",
+      "error_tag": "word_form",
       "l1": [
         "vi"
       ]
@@ -166,11 +166,11 @@
         },
         {
           "text": "to speak",
-          "error_tag": "other"
+          "error_tag": "word_form"
         },
         {
           "text": "speaks",
-          "error_tag": "other"
+          "error_tag": "word_form"
         }
       ],
       "answer": 0,
@@ -188,11 +188,11 @@
         },
         {
           "text": "cans",
-          "error_tag": "other"
+          "error_tag": "word_form"
         },
         {
           "text": "is can",
-          "error_tag": "other"
+          "error_tag": "word_form"
         }
       ],
       "answer": 0,
@@ -210,11 +210,11 @@
         },
         {
           "text": "drives",
-          "error_tag": "other"
+          "error_tag": "word_form"
         },
         {
           "text": "driving",
-          "error_tag": "other"
+          "error_tag": "word_form"
         }
       ],
       "answer": 0,
@@ -233,7 +233,7 @@
     "generated_at": "2026-09-30T10:35:00Z"
   },
   "review": null,
-  "sequence": 2,
+  "sequence": 1,
   "source_anchors": {
     "status": "unanchored",
     "items": []
