@@ -105,21 +105,14 @@ def test_reviewed_seed_metadata_is_preserved_where_ids_overlap(lang: str) -> Non
 
 
 @pytest.mark.parametrize("lang", ["en", "zh"])
-def test_points_without_reviewed_metadata_are_marked_default_safe(lang: str) -> None:
-    seeded = {seed["id"] for seed in load_seeds(lang)}
-    tags = set(read_json(LAB_ROOT / ERROR_TAGS_PATH)["languages"][LANGS[lang]]["tags"])
-    functions = {function["id"] for function in load_functions()["functions"]}
-    defaults = [record for record in load_catalog(lang) if record["id"] not in seeded]
-    assert len(defaults) == EXPECTED_TOTAL[lang] - len(seeded)
-    sequences: dict[str, list[int]] = {}
-    for record in defaults:
-        assert record["catalog"]["metadata_origin"] == "default_safe"
-        assert record["function"] == DEFAULT_FUNCTION and DEFAULT_FUNCTION in functions
-        assert record["point_type"] == "other" and record["contrasts"] == [] and record["prereqs"] == []
-        assert record["anchors"] == [] and set(record["error_tags"]) <= tags and record["error_tags"]
-        sequences.setdefault(record["level"], []).append(record["sequence"])
-    for level, values in sequences.items():
-        assert values == list(range(1, len(values) + 1)), level
+def test_full_canonical_catalog_has_reviewed_metadata_only(lang: str) -> None:
+    seeds = load_seeds(lang)
+    records = load_catalog(lang)
+    assert len(seeds) == EXPECTED_TOTAL[lang]
+    assert {seed["id"] for seed in seeds} == {record["id"] for record in records}
+    defaults = [record["id"] for record in records if record["catalog"]["metadata_origin"] == "default_safe"]
+    assert defaults == [], f"{lang} still has default-safe canonical metadata: {defaults[:10]}"
+    assert all(record["catalog"]["metadata_origin"] == "reviewed_seed" for record in records)
 
 
 @pytest.mark.parametrize("lang", ["en", "zh"])
