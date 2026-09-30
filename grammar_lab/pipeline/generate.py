@@ -445,6 +445,18 @@ character in context: 了 is `le` after a verb, 过 is `guo` as an aspect marker
 """
 
 
+def _catalogue_scope_suffix(seed: dict[str, Any]) -> str:
+    """Locked catalogue labels that constrain generation without becoming learner copy."""
+    source_scope = list(seed.get("source_scope") or [])
+    if not source_scope:
+        return ""
+    return (
+        "\n\nAuthoritative catalogue scope for this point. These are inventory labels, not prose to copy. "
+        "Cover every listed item, do not add a different grammar target, and keep the point at the locked level:\n- "
+        + "\n- ".join(source_scope)
+    )
+
+
 def _header_metadata(existing: dict[str, Any], locales: list[str]) -> dict[str, Any]:
     """title/native_title/level: structural metadata, carried over, never generated. A point
     still on the first v0.4 shape keeps them in a top-level title instead of a header."""
@@ -867,14 +879,8 @@ class Generator:
             num_examples=V04_EXAMPLES,
         )
         seed = seed_for(self.lang, point_id, self.root) or {}
-        source_scope = list(seed.get("source_scope") or [])
         user = f"Write the grammar point {point_id} now, matching the structured output schema."
-        if source_scope:
-            user += (
-                "\n\nAuthoritative catalogue scope for this point. These are inventory labels, not prose to copy. "
-                "Cover every listed item, do not add a different grammar target, and keep the point at the locked level:\n- "
-                + "\n- ".join(source_scope)
-            )
+        user += _catalogue_scope_suffix(seed)
         if regenerate_note:
             user += f" Admin regenerate note: {regenerate_note}"
         if r5_records:
