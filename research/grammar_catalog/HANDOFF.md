@@ -1,30 +1,38 @@
 # External canonical grammar catalog handoff
 
-This research branch exists so Grammar Lab does not spend provider time researching the syllabus.
-No Gemini, DeepSeek, evaluator or paid API call was used to create these catalogs.
+This research branch separates syllabus/reference research from `feature/grammar-lab-pipeline`.
+No Gemini, DeepSeek, evaluator or paid API call is required for the source-catalog work here.
 
-## Chinese source catalog
+## Chinese: reference inventory first, canonical points second
 
-- File: `canonical_grammar_zh.yaml`
-- Complete GF0025-2021 Appendix A inventory: **572 points**.
+- `source_inventory_zh_gf0025.yaml` is the complete **572-row GF0025-2021 Appendix A reference inventory**.
+- It is **not** a 572-lesson Orena curriculum.
 - Count gate: HSK1 48 / HSK2 81 / HSK3 81 / HSK4 76 / HSK5 71 / HSK6 67 / HSK7-9 148.
-- The official standard groups advanced grammar as **7-9 together**. Any later split into 7 vs 8 vs 9 is an Orena sequencing decision, not a source claim.
-- R5 aliases are left blank rather than guessed.
+- The transcription defect at item 四54 was corrected to `无论⋯⋯，都/也⋯⋯` after checking the official syllabus text.
+- `canonical_grammar_zh.yaml` is intentionally not populated yet. The next research step is mapping/clustering the 572 reference rows plus R5 source material into pedagogical Orena grammar points.
+- GF0025 publishes the advanced band as HSK7-9. A later split into HSK7/8/9 is Orena sequencing, not a source claim.
 
-## English candidate catalog
+## English: canonical candidate cleaned
 
-- File: `canonical_grammar_en.yaml`
-- Starts from 228 R5 lessons and applies the current `r5_conversion_map.tsv`.
-- Result: **215 points**: A1 30 / A2 38 / B1 55 / B2 44 / C1 30 / C2 18.
-- Core Inventory candidates are advisory only. The Core Inventory itself describes a minimum core and covers A1-C1, not an exhaustive A1-C2 grammar syllabus.
-- Human review is still required for add/relevel/split/rescope items and for C2 source authority before EN is declared locked.
+- `canonical_grammar_en.yaml` is the current **215-point** candidate obtained by executing the current conversion map over 228 R5 lessons.
+- Executed counts are A1 30 / A2 38 / B1 55 / B2 44 / C1 30 / C2 18. The older count table in R5_CONVERSION_PLAN.md was stale and is corrected on this research branch.
+- `r5_sources` means provenance/source material.
+- `r5_aliases` means legacy redirect compatibility and is strictly one legacy id -> one canonical point.
+- On a split, every child may cite the same `r5_sources`, but only the first designated child owns the legacy alias.
+- No fuzzy Core Inventory matches are promoted to anchors. Manually reviewed anchors already present in `grammar_lab/inventory/seeds_en.yaml` remain the trusted anchors.
+- All non-`keep` conversion decisions plus C2 still require one catalog review before EN can be human-locked.
 
-## What Grammar Lab should do with this
+## Grammar Lab boundary
 
-After human catalog lock:
+Grammar Lab must not research or redefine the syllabus while generating content.
 
-1. Convert these files into Grammar Lab's inventory/seed schema.
-2. Do **not** research the syllabus again during generation.
-3. Do **not** add/remove/relevel points without a catalog decision.
-4. Reuse R5 content where an alias/mapping exists; absence of R5 content never removes a canonical source point.
-5. Then run the content factory: generate -> validate -> review-export -> apply-feedback -> engine-grade.
+Before generation:
+1. Human-lock the EN canonical catalog.
+2. Build and human-lock the ZH canonical point mapping from the GF0025 reference inventory.
+3. Convert the locked canonical catalogs into Grammar Lab inventory/seed schema.
+
+Only then run:
+
+`generate -> validate -> review-export -> apply-feedback -> engine-grade`.
+
+Any later add/remove/relevel/split/merge is a catalog change and requires an explicit catalog review; it is not a generation-time decision.
