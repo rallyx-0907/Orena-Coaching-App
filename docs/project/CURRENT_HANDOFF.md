@@ -79,7 +79,7 @@ The D-098 and D-099 items (2026-09-29, `5d9d64c`..`b83142d`); commit list in
 - Chinese evaluator: fix (1) landed (`871e2b9`, contract v2.7) and the benchmark
   measures recall (`fa93601`, v2); the live run that gives (4) its numbers waits
   for the human's go (provider cost).
-- D-101/D-102: D2 (`ff68f45`), H9 (`93911f0`), D3 (`D3_PRODUCT_MATRIX.md`), D-103 recorded; D4 proposal reviewed APPROVE, waiting on the human's H-decisions; E slice 1 (`a069b59`); C: benchmark measured (EN 0.60 / ZH 0.60), per-pair evaluator identity (`c2e4e63`), refresh-if-stale waits for D4.
+- D-101..D-104: D2, H9, D3 done; D4 migrations 0017-0023 in `migrations/proposed/`, independently reviewed (APPROVE) and rehearsed (53 PASS at 100k rows, `9ca6c3f`): waiting for the human's `git mv` authorization, H-19, H-20; Admin slices 1-2 in `/next` (`a069b59`, `b4858d1`), Reading loop real in EN (`21584d6`); Grammar content path conflict (INTEGRATION_DESIGN vs D-101 F) with the human.
 
 ## PENDING
 
