@@ -770,7 +770,18 @@ class _Validation:
             for index, other in enumerate(point["contrasts"]):
                 if other not in self.points:
                     continue
-                counterpart = self.catalog_records.get(other, self.points[other][1])
+                if self.catalog_records:
+                    # In a real corpus the runtime catalog is the structural
+                    # authority. Legacy on-disk points outside canonical_v1
+                    # remain readable but do not impose reciprocal edges on
+                    # the canonical graph.
+                    if pid not in self.catalog_records or other not in self.catalog_records:
+                        continue
+                    counterpart = self.catalog_records[other]
+                else:
+                    # Tiny validator fixtures have no runtime catalog; retain
+                    # the original direct-content symmetry contract.
+                    counterpart = self.points[other][1]
                 if pid not in counterpart["contrasts"]:
                     self.issue(file, f"contrasts[{index}]", "contrasts.asymmetric",
                                f"{pid} lists {other} but {other} does not list {pid}")
