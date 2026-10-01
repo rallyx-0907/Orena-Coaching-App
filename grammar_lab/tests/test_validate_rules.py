@@ -215,7 +215,7 @@ CASES = [
     fail("example.span_slot_mismatch", "the formula lists the slots the other way round", lambda lab: (
         point := _with_v04(alpha(lab)), point["pattern"]["formula"].reverse())),
     ok("example.slot_uncovered", "every required slot has a span", lambda lab: _with_v04(alpha(lab))),
-    fail("example.slot_uncovered", "two marker slots, one marker span", lambda lab: (
+    ok("example.slot_uncovered", "repeated roles are ambiguous without slot ids", lambda lab: (
         point := _with_v04(alpha(lab)),
         point["pattern"]["formula"].insert(0, _slot("about", "marker", "từ chỉ số lượng thứ hai")))),
     ok("anchors.missing", "unanchored is a valid answer", lambda lab: _with_v04(alpha(lab))),
