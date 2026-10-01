@@ -444,13 +444,11 @@ _ILLUSTRATION_INSTRUCTIONS = {
 _PINYIN_INSTRUCTION = """
 ## Pinyin (zh-Hans)
 
-Every Chinese string you write -- each formula slot's `text`, each example's `text`, each common
-mistake's `wrong` and `right`, each comparison example, each quick-practice question and option,
-each morphology `base`/`affix`/`result`, and the point's `native_title` -- gets its pinyin as `[character, syllable]` pairs: one pair per
-character, in order, with the **tone mark** on the syllable (`wǒ`, `bǎ`, `shū`; neutral tone
-unmarked: `le`, `men`). Never tone numbers (`wo3`). A character that is not a Han character
-(punctuation, a Latin letter, a space, `+`) still gets its own pair, with syllable `""`. Read each
-character in context: 了 is `le` after a verb, 过 is `guo` as an aspect marker.
+Pinyin alignment is a code responsibility. You may omit every `*_pinyin_pairs` field.
+Only provide a pair when a context-sensitive/polyphonic Han reading should override the
+deterministic baseline (for example `["行", "háng"]` in 银行). An override is one Han
+character plus one tone-marked syllable. Never provide pinyin pairs for punctuation, Latin
+text, spaces, or the `___` blank.
 """
 
 
