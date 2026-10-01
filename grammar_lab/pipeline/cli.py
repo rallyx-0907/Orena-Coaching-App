@@ -40,7 +40,7 @@ from grammar_lab.pipeline.export_profile import (
 )
 from grammar_lab.pipeline.jsonio import write_json
 from grammar_lab.pipeline.r5_map import load_dropped_r5_ids
-from grammar_lab.pipeline.ui_fixtures import fixture_dir, write_fixtures as write_ui_fixtures
+from grammar_lab.pipeline.ui_fixtures import DEMO_POINTS, fixture_dir, write_fixtures as write_ui_fixtures
 from grammar_lab.pipeline.run_context import new_run_id, resolve_run_id, run_dir, write_step
 from grammar_lab.pipeline.validate import ERROR_TAGS_PATH, LAB_ROOT, LANGS, apply_flags, validate_generated_point, validate_lang
 from grammar_lab.pipeline.verify import VerifyFlag, VerifyReport, verify_point
@@ -331,6 +331,11 @@ def generate_corpus_command(
         f"generate-corpus: attempted {len(outcomes)}/{len(candidates)} selected point(s), "
         f"USD {total_cost:.4f} spent (soft ceiling USD {cost_ceiling_usd}, workers {workers}); re-run to resume"
     )
+
+    demo_ids = set(DEMO_POINTS.values())
+    if any(o.status == "written" and o.point_id in demo_ids for o in outcomes):
+        changed = write_ui_fixtures(root)
+        typer.echo(f"generate-corpus: UI fixtures {'refreshed' if changed else 'already current'}")
 
     run_id = new_run_id()
     write_step(root, run_id, "generate_corpus", {
