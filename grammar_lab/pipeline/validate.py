@@ -1049,6 +1049,55 @@ def _zh_hans_texts(point: dict[str, Any], target_is_zh: bool) -> Iterator[tuple[
             yield f"{path}.{ZH_HANS}", mapping[ZH_HANS]
 
 
+def validate_generated_point(
+    lang: str, point: dict[str, Any], root: Path = LAB_ROOT,
+) -> list[Issue]:
+    """Validate one generated candidate before it is written to the corpus.
+
+    This runs the same per-point semantic rules as validate_lang but treats
+    every canonical catalog id as a known reference, because a resumable corpus
+    may legitimately point at a canonical contrast/prerequisite whose content
+    file has not been generated yet. Cross-point/global checks (contrast
+    symmetry, cycles, function-registry completeness) remain the responsibility
+    of the full-corpus validator.
+
+    ref.realization_missing is intentionally ignored here: a brand-new
+    candidate is moved from planned to realizations only after this local gate
+    passes.
+    """
+    validation = _Validation(lang, root)
+    validation.load_manifest()
+    validation.load_functions()
+    validation.load_cast()
+    validation.load_error_tags()
+    validation.load_points()
+
+    file = f"content/{lang}/{point['id']}.json"
+    # Ignore schema-load issues from an older on-disk version of the same
+    # point; this helper judges the candidate object passed by the generator.
+    validation.report.issues = [issue for issue in validation.report.issues if issue.file != file]
+
+    catalog_path = root / "inventory" / f"catalog_{lang}.yaml"
+    if catalog_path.exists():
+        try:
+            catalog = read_yaml(catalog_path) or []
+        except (yaml.YAMLError, UnicodeDecodeError):
+            catalog = []
+        for record in catalog:
+            if isinstance(record, dict) and isinstance(record.get("id"), str):
+                validation.known_ids.add(record["id"])
+
+    validation.known_ids.add(point["id"])
+    validation.points[point["id"]] = (file, point)
+    if validation.schema_check(file, point, _validator(validation.schema)):
+        validation.check_point(file, point)
+
+    return [
+        issue
+        for issue in validation.report.issues_for(file)
+        if issue.code != "ref.realization_missing"
+    ]
+
 def validate_lang(lang: str, root: Path = LAB_ROOT) -> Report:
     return _Validation(lang, root).run()
 
