@@ -663,6 +663,71 @@ def _slots(raw: list[dict[str, Any]], zh: bool, locales: list[str]) -> list[dict
     return out
 
 
+
+_ABSTRACT_SLOT_TEXT = {
+    "s", "s1", "s2", "subject", "v", "v1", "v2", "v3", "verb", "n", "np", "noun",
+    "adj", "adjective", "adv", "adverb", "o", "object", "do", "io", "complement",
+    "time", "place", "clause", "clause 1", "clause 2", "main clause", "subordinate clause",
+    "head noun", "summary noun", "heavy np/clause", "parenthetical", "result",
+    "主语", "小主语", "谓语", "动词", "名词", "形容词", "宾语", "宾语1", "宾语2",
+    "代词", "数词", "结果", "分句", "分句1", "分句2", "句子一", "句子二", "复句",
+    "形容词/动词短语", "名词/形容词",
+}
+
+
+def _literal_slot_candidates(slot: dict[str, Any]) -> list[str]:
+    """Surface forms safe to recover from an example without linguistic guessing."""
+    raw = [option["text"] for option in slot.get("options", [])]
+    text = str(slot.get("text", "")).strip()
+    if text and text.casefold() not in _ABSTRACT_SLOT_TEXT:
+        raw.append(text)
+    out: list[str] = []
+    for value in raw:
+        # Formula cards often write alternatives with / or Chinese enumeration punctuation.
+        for part in re.split(r"\s*(?:/|｜|、)\s*", value):
+            part = part.strip()
+            if not part or part.casefold() in _ABSTRACT_SLOT_TEXT:
+                continue
+            # Meta variables embedded in a form are not literal surface candidates.
+            if re.search(r"\b(?:S\d*|V\d*|N|NP|Adj|Adv|Clause\d*)\b", part):
+                continue
+            if part not in out:
+                out.append(part)
+    return sorted(out, key=len, reverse=True)
+
+
+def complete_literal_example_spans(examples: list[dict[str, Any]], pattern: dict[str, Any]) -> None:
+    """Recover a missing role only when the formula itself supplies a literal surface form.
+
+    Example: formula aux 'have/has' + sentence 'She has finished.' can safely recover
+    'has'. Abstract S/V/N slots are never guessed.
+    """
+    variants = pattern.get("variants", {})
+    for example in examples:
+        formula = pattern["formula"] if example["form"] == "affirmative" else variants.get(example["form"])
+        if not formula:
+            continue
+        present_roles = {span["role"] for span in example["spans"]}
+        occupied = [(span["start"], span["end"]) for span in example["spans"]]
+        for slot in formula:
+            role = slot["role"]
+            if slot.get("optional") or role in present_roles:
+                continue
+            for candidate in _literal_slot_candidates(slot):
+                start = example["text"].find(candidate)
+                while start >= 0:
+                    end = start + len(candidate)
+                    if all(end <= a or start >= b for a, b in occupied):
+                        example["spans"].append({"start": start, "end": end, "role": role})
+                        occupied.append((start, end))
+                        present_roles.add(role)
+                        break
+                    start = example["text"].find(candidate, start + 1)
+                if role in present_roles:
+                    break
+        example["spans"].sort(key=lambda item: item["start"])
+
+
 def sanitize_example_spans(examples: list[dict[str, Any]], pattern: dict[str, Any]) -> None:
     """Drop visual spans whose role is not part of the selected formula.
 
@@ -1016,6 +1081,7 @@ class Generator:
 
             examples = [assemble_example(raw, zh, loc) for raw in data["examples"]]
             sanitize_example_spans(examples, pattern)
+            complete_literal_example_spans(examples, pattern)
             compare = [assemble_compare_item(item, zh, loc) for item in data["compare"]]
             quick_practice = [assemble_quick_practice_item(item, zh, loc) for item in data["quick_practice"]]
             mistakes = [assemble_common_mistake(raw, zh, loc) for raw in data["common_mistakes"]]
