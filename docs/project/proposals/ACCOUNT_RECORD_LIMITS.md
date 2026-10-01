@@ -735,7 +735,7 @@ human approval -> rehearsal on a throwaway PostgreSQL -> the human applies; the 
   are not sufficient. **Gate:** before enabling beyond :8021, personal media entries leave `index.json` (PostgreSQL, a schema
   decision reserved by AGENTS section 7, through the proposal -> independent architecture review -> human approval ->
   rehearsal process, owner the Principal Architect with the media owner) **or, at minimum,** the store refuses to write after a
-  failed read. Recorded here, not decided.
+  failed read. Recorded here, not decided. **Correction (2026-10-01):** only uploads and admin imports create index entries (a learner's link import does not), so the growth is about 680 k personal entries a year, about 1.4 GB of JSON, not the 2.3 M entries counted above; the conclusion stands. The move is proposed in `MEDIA_METADATA_POSTGRES.md` (D-108.5).
 - **G2 (restated in rev 5, review P2-9): a GATE for enabling anything beyond :8021.** `GET /api/imports` is bounded at 50
   (`work_api.LIST_LIMIT`) and the device keeps 100 media records, so a new device sees at most the 50 newest imports of an
   account although the pool admits 1,250: **from the 51st import, "opens on a new device" is silently false.** Until the list
