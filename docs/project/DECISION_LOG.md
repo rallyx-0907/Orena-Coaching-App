@@ -3783,3 +3783,24 @@ learner landing is invented.
 6. **Merge.** `codex/work` may be merged forward into `feature/orena-intelligence` and reconciled and
    tested there. Intelligence is not merged back into `codex/work`, and `codex/work` is not merged into
    `main`, until Intelligence tests/E2E and an independent review pass on this D4 baseline.
+
+## D-108 — Delete import with Undo; what a deletion keeps; verified scores only; no local-only import under sync; media metadata in PostgreSQL
+
+**Date:** 2026-10-01. **Status:** Accepted (explicit human direction).
+
+1. **Undo, not a confirmation.** "Delete from Orena" takes effect with an Undo, never a confirmation modal.
+2. **After an import is deleted:**
+   - the source content is gone;
+   - notes and highlights attached directly to that source are no longer served;
+   - learner history (Dictation, Shadowing, progress) is kept;
+   - saved words are kept, with their source marked deleted/unavailable;
+   - a stored excerpt is never used to reconstruct the deleted content.
+3. **Unverified dictation scores are hidden entirely.** Only a server-verified score may be used or repeated
+   by the Agent.
+4. **No local-only import while account sync is on.** An import the account does not accept is not kept on
+   the device as a substitute.
+5. **Media metadata authority.** Long term, media metadata uses PostgreSQL as its authority; the shared
+   media file (`index.json`) is not a writable source of truth.
+6. **Import listing paginates.** It is never silently limited to 50.
+7. **Separate quotas** for text imports, media item count and uploaded-media bytes (confirms D-107.3).
+8. **Merges.** Intelligence is not merged into `codex/work`, and `codex/work` is not merged into `main`, yet.
