@@ -597,6 +597,33 @@ def test_generate_v04_zh_turns_pinyin_pairs_into_per_character_pinyin(tmp_path: 
     assert report.ok, report.issues
 
 
+def test_generate_v04_zh_normalizes_spaces_in_target_text_before_pinyin(tmp_path: Path) -> None:
+    lab = _v04_lab(tmp_path, "zh", point_type="tense_aspect")
+    lab.write()
+    canned = copy.deepcopy(CANNED_V04_ZH)
+    canned["examples"][0]["text"] = "我们 吃了饭。"
+    canned["examples"][0]["spans"][0]["text"] = "我们"
+    canned["examples"][0].pop("pinyin_pairs", None)
+    llm = LLMClient("anthropic", "claude-haiku-4-5-20251001", api_key="test", cache_dir=lab.root / ".cache",
+                     transport=v04_transport(canned))
+    outcome = Generator(lang="zh", l1="vi", llm=llm, root=lab.root).generate("zh.le_completion")
+    assert outcome.status == "written", outcome.reason
+    point = load_point("zh", "zh.le_completion", lab.root)
+    assert point["examples"][0]["text"] == "我们吃了饭。"
+    assert len(point["examples"][0]["pinyin"]) == len(point["examples"][0]["text"])
+
+
+def test_generate_v04_drops_extra_visual_span_roles_but_keeps_required_role_failures(tmp_path: Path) -> None:
+    lab = _v04_lab(tmp_path)
+    lab.write()
+    canned = copy.deepcopy(CANNED_V04)
+    canned["examples"][0]["spans"].append({"text": "bank", "role": "place"})
+    outcome = make_generator(lab.root, v04_transport(canned)).generate("en.alpha")
+    assert outcome.status == "written", outcome.reason
+    point = load_point("en", "en.alpha", lab.root)
+    assert "place" not in {span["role"] for span in point["examples"][0]["spans"]}
+
+
 def test_generate_v04_zh_removes_spaces_the_model_puts_around_the_blank(tmp_path: Path) -> None:
     # DeepSeek wrote every zh question of the first v0.4 run as "他 ___ 吃过越南菜。".
     lab = _v04_lab(tmp_path, "zh", point_type="tense_aspect")
