@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import re
 from pathlib import Path
 
@@ -497,6 +498,52 @@ def test_generate_v04_writes_header_and_the_fixed_content_blocks(tmp_path: Path)
     report = validate_lang("en", lab.root)
     assert report.ok, report.issues
 
+
+def test_generate_v04_retries_semantic_validation_with_feedback(tmp_path: Path) -> None:
+    lab = _v04_lab(tmp_path)
+    lab.write()
+    bad = copy.deepcopy(CANNED_V04)
+    bad["personal_production"]["pattern_rule"]["slots"][0]["regex"] = r"\bNEVER\b"
+    calls: list[dict] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        sent = json.loads(request.content)
+        calls.append(sent)
+        payload = bad if len(calls) == 1 else CANNED_V04
+        return httpx.Response(200, json={
+            "content": [{"type": "tool_use", "name": sent["tool_choice"]["name"], "input": _answer(payload)}],
+            "usage": {"input_tokens": 500, "output_tokens": 300},
+        })
+
+    outcome = make_generator(lab.root, httpx.MockTransport(handler)).generate("en.alpha")
+    assert outcome.status == "written", outcome.reason
+    assert len(calls) == 2
+    assert "failed deterministic validation" in calls[1]["messages"][0]["content"]
+    assert validate_lang("en", lab.root).ok
+
+
+def test_generate_v04_does_not_persist_after_three_semantic_failures(tmp_path: Path) -> None:
+    lab = _v04_lab(tmp_path)
+    lab.write()
+    path = lab.root / "content" / "en" / "en.alpha.json"
+    before = path.read_text(encoding="utf-8")
+    bad = copy.deepcopy(CANNED_V04)
+    bad["personal_production"]["pattern_rule"]["slots"][0]["regex"] = r"\bNEVER\b"
+    calls: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(request)
+        sent = json.loads(request.content)
+        return httpx.Response(200, json={
+            "content": [{"type": "tool_use", "name": sent["tool_choice"]["name"], "input": _answer(bad)}],
+            "usage": {"input_tokens": 500, "output_tokens": 300},
+        })
+
+    outcome = make_generator(lab.root, httpx.MockTransport(handler)).generate("en.alpha")
+    assert outcome.status == "error"
+    assert "semantic validation failed after 3 attempts" in outcome.reason
+    assert len(calls) == 3
+    assert path.read_text(encoding="utf-8") == before
 
 def test_generate_v04_resolves_span_substrings_to_offsets(tmp_path: Path) -> None:
     lab = _v04_lab(tmp_path)
