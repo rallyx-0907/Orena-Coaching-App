@@ -28,7 +28,7 @@ from urllib.parse import urlsplit
 from writing_coach.book_asset_store import BookAssetStore
 from writing_coach.media_api import serialize_media_acquisition
 from writing_coach.media_ingestion import MediaAcquisition, MediaIngestionService
-from writing_coach.media_library_store import MediaLibraryEntry, MediaLibraryStore
+from writing_coach.media_library_store import OWNER_FIELD, MediaLibraryEntry, MediaLibraryStore, owner_token
 from writing_coach.media_safe_fetch import UnsafeMediaFetch, download_bounded, validate_public_http_url
 from writing_coach.media_thumbnail import (
     TempMediaFile,
@@ -351,8 +351,11 @@ class MediaSourceImporter:
         imported_by: str,
         library: str = "shared",
         title: str = "",
+        owner_key: str = "",
     ) -> MediaLibraryEntry:
         """Store an audio/video file Orena is given, with its own thumbnail."""
+        if library == "personal" and not owner_key:
+            raise ValueError("a personal file needs its owner")
         probe = probe_media(path)
         token = uuid.uuid4().hex
         suffix = _safe_suffix(filename)
@@ -372,7 +375,11 @@ class MediaSourceImporter:
             language=language,
             level="",
             creator="",
-            source=_source("upload", "", imported_by, kind="upload"),
+            source={
+                **_source("upload", "", imported_by, kind="upload"),
+                # A personal file is its creator's: recorded as a digest of the account key.
+                **({OWNER_FIELD: owner_token(owner_key)} if library == "personal" and owner_key else {}),
+            },
             library=library,
             created_at=_now(),
             lesson=None,

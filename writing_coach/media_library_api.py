@@ -31,7 +31,8 @@ from pydantic import BaseModel, Field
 
 from writing_coach.book_asset_store import AssetNotFound, BookAssetStore, InvalidAssetKey
 from writing_coach.core.errors import orena_http_error
-from writing_coach.media_library_store import MediaLibraryEntry
+from writing_coach.media_library_store import MediaLibraryEntry, visible_to
+from writing_coach.core.request_context import current_language_code, current_user_key
 from writing_coach.media_source_import import MediaSourceImporter, UnsafeMediaFetch
 from writing_coach.media_thumbnail import MAX_UPLOAD_BYTES, TempMediaFile
 
@@ -130,7 +131,17 @@ def stored_media_file(key: str, variant: str = "") -> Any:
     """
     from fastapi.responses import Response
 
-    _, asset_store, _ = _installed()
+    store, asset_store, _ = _installed()
+    # A personal file's bytes (and its thumbnail) are as private as its entry.
+    segments = key.split("/")
+    private = False
+    if len(segments) >= 3 and segments[0] == "media":
+        personal = store.get(f"upload-{segments[1]}")
+        if personal is not None and not visible_to(
+            personal, user_key=current_user_key(), language=current_language_code()
+        ):
+            raise orena_http_error(404, "media_asset_not_found", "This media file is not available.")
+        private = personal is not None and personal.library == "personal"
     try:
         payload = asset_store.get(key)
     except (AssetNotFound, InvalidAssetKey):
@@ -141,7 +152,7 @@ def stored_media_file(key: str, variant: str = "") -> Any:
     return Response(
         content=payload,
         media_type=content_type,
-        headers={"Cache-Control": "public, max-age=31536000, immutable"},
+        headers={"Cache-Control": "private, max-age=3600" if private else "public, max-age=31536000, immutable"},
     )
 
 
@@ -153,8 +164,10 @@ def open_my_media(media_id: str) -> dict[str, Any]:
     here, because a learner does not care which shelf a file came from — the
     catalogue stays the same shape either way.
     """
-    store, _, _ = _installed()
-    entry = store.get(media_id.strip())
+    _installed()
+    # find_entry answers None for a personal file that is another account's or
+    # another learning language's: the same 404 as an identity nothing holds.
+    entry = find_entry(media_id.strip())
     if entry is None:
         raise orena_http_error(404, "media_not_found", "This media is not available.")
     if _learner_payload is None:
@@ -315,6 +328,7 @@ async def learner_upload(
                 imported_by="learner",
                 library="personal",
                 title=title.strip(),
+                owner_key=current_user_key(),
             )
     except UnsafeMediaFetch as exc:
         raise orena_http_error(422, "media_upload_invalid", str(exc)) from exc
@@ -381,7 +395,10 @@ def find_entry(media_id: str) -> MediaLibraryEntry | None:
     cleaned = str(media_id or "").strip()
     if not cleaned or "/" in cleaned:
         return None
-    return _store.get(cleaned)
+    entry = _store.get(cleaned)
+    if entry is None or not visible_to(entry, user_key=current_user_key(), language=current_language_code()):
+        return None
+    return entry
 
 
 def entry_lesson_id(entry: MediaLibraryEntry) -> str:

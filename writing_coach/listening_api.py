@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field
 
 from writing_coach.core.errors import orena_http_error
 from writing_coach.dictation_evaluator import ListeningPracticeError, evaluate_listening_reconstruction
-from writing_coach.core.request_context import current_language_code
+from writing_coach.core.request_context import current_language_code, current_user_key
 from writing_coach.listening_catalog import (
     catalog_lesson,
     catalog_lessons,
@@ -20,7 +20,7 @@ from writing_coach.listening_catalog import (
     lesson_metadata,
     translated_media_object,
 )
-from writing_coach.media_library_store import MediaLibraryEntry, MediaLibraryStore
+from writing_coach.media_library_store import MediaLibraryEntry, MediaLibraryStore, visible_to
 from writing_coach.media_source_import import (
     PROVIDER_LABELS,
     playback_for,
@@ -120,7 +120,14 @@ def stored_media_entry(media_id: str) -> MediaLibraryEntry | None:
     if not cleaned:
         return None
     try:
-        return _media_store.get(cleaned)
+        entry = _media_store.get(cleaned)
+        # A personal import is its owner's, in its own learning language: anyone
+        # else gets what an unknown id gets.
+        if entry is not None and not visible_to(
+            entry, user_key=current_user_key(), language=current_language_code()
+        ):
+            return None
+        return entry
     except Exception:  # a broken index must not take the library down with it
         return None
 

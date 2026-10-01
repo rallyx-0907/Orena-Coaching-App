@@ -82,6 +82,40 @@ def _mapping(value: object, name: str) -> Mapping[str, str]:
     return value
 
 
+# A personal entry belongs to the account and learning language that created it.
+# The owner is recorded in the entry's provenance (`source["owner"]`) as a digest
+# of the stable account key, so the index never holds an email address. An entry
+# written before ownership existed has no owner: it is treated as the single
+# local account's (the key the application uses with sign-in disabled, "legacy")
+# and is refused to every signed-in account - fail closed where an owner cannot
+# be proven.
+OWNER_FIELD = "owner"
+LEGACY_OWNER_KEY = "legacy"
+
+
+def owner_token(user_key: str) -> str:
+    return hashlib.sha256(f"orena-media-owner:{user_key}".encode("utf-8")).hexdigest()[:32]
+
+
+def visible_to(entry: MediaLibraryEntry, *, user_key: str, language: str) -> bool:
+    """Whether this learner, in this learning language, may read the entry at all.
+
+    Shared media is everyone's. A personal entry is its owner's, in the language
+    it was imported for. Callers answer 404 (never 403) when this is false, so a
+    refusal does not reveal that the identity exists.
+    """
+    if entry.library != "personal":
+        return True
+    owner = entry.source.get(OWNER_FIELD, "")
+    expected = owner_token(user_key)
+    if owner:
+        if owner != expected:
+            return False
+    elif expected != owner_token(LEGACY_OWNER_KEY):
+        return False
+    return entry.language == language
+
+
 def validate_entry(entry: MediaLibraryEntry) -> MediaLibraryEntry:
     """Keep corrupt rows from becoming a browse-time learner failure."""
     for name in ("media_id", "provider", "provider_media_id"):
