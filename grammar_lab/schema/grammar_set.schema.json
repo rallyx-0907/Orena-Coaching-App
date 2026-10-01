@@ -71,6 +71,10 @@
         "prompt_version": {"type": "string", "minLength": 1},
         "run_id": {"type": "string", "minLength": 1},
         "generated_at": {"$ref": "#/$defs/timestamp"},
+        "metadata_stale": {
+          "description": "True when catalog metadata that feeds the generation prompt changed after this draft was generated. Corpus normalization must regenerate it before treating the draft as current.",
+          "type": "boolean"
+        },
         "migrated_from": {
           "type": "object",
           "additionalProperties": false,
