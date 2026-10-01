@@ -207,6 +207,17 @@ def test_generation_provenance_marks_only_the_exact_v04_recipe_as_normalized() -
     )
 
 
+def test_metadata_stale_provenance_marker_is_schema_valid() -> None:
+    from grammar_lab.pipeline.content_store import load_points
+    from grammar_lab.pipeline.validate import Draft202012Validator, GRAMMAR_SCHEMA_PATH, LAB_ROOT
+    from grammar_lab.pipeline.jsonio import read_json
+
+    point = dict(next(iter(load_points("en").values())))
+    point["provenance"] = {**point["provenance"], "metadata_stale": True}
+    schema = read_json(LAB_ROOT / GRAMMAR_SCHEMA_PATH)
+    errors = list(Draft202012Validator(schema).iter_errors(point))
+    assert errors == [], [error.message for error in errors]
+
 def test_generate_level_option_reads_the_catalog_not_the_old_seed_subset() -> None:
     from grammar_lab.pipeline.cli import app
     from typer.testing import CliRunner
