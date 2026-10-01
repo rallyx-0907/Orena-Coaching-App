@@ -42,7 +42,7 @@ from grammar_lab.pipeline.jsonio import write_json
 from grammar_lab.pipeline.r5_map import load_dropped_r5_ids
 from grammar_lab.pipeline.ui_fixtures import fixture_dir, write_fixtures as write_ui_fixtures
 from grammar_lab.pipeline.run_context import new_run_id, resolve_run_id, run_dir, write_step
-from grammar_lab.pipeline.validate import ERROR_TAGS_PATH, LAB_ROOT, LANGS, apply_flags, validate_lang
+from grammar_lab.pipeline.validate import ERROR_TAGS_PATH, LAB_ROOT, LANGS, apply_flags, validate_generated_point, validate_lang
 from grammar_lab.pipeline.verify import VerifyFlag, VerifyReport, verify_point
 
 app = typer.Typer(add_completion=False, no_args_is_help=True, help="Orena Grammar Lab pipeline.")
@@ -207,6 +207,7 @@ def generate_corpus_command(
             if matches_generation_provenance(
                 point, provider=provider, model=model, prompt_version=PROMPT_VERSION_V04
             )
+            and not validate_generated_point(lang_code, point, root)
         }
         before = len(candidates)
         candidates = [item for item in candidates if item[2] not in already_normalized]
