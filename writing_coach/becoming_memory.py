@@ -205,7 +205,12 @@ def patch_learner_profile(payload: ProfilePatchIn) -> dict[str, Any]:
                 status_code=400,
                 detail={"reason": "invalid_value", "field": "review_modes", "current_version": None},
             )
-        review["review_modes"] = clean_review_modes(payload.review_modes)
+        # MERGED into what is stored: a device that toggles one mode sends that mode only, and the others keep their
+        # stored values (a stale or first write must never overwrite them with defaults).
+        review["review_modes"] = {
+            **(clean_review_modes((row or {}).get("review_modes")) or {}),
+            **(clean_review_modes(payload.review_modes) or {}),
+        } or None
     now = datetime.now().astimezone().isoformat(timespec="microseconds")
     try:
         if review and not patch:

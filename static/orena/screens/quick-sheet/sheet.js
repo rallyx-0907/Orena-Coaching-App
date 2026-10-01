@@ -49,6 +49,7 @@ import {
   deleteNote,
 } from './model.js';
 import { pullIntoDevice, scheduleAnnotationPush, noteRemoved } from '../reader/annotations-sync.js';
+import { keepProvenance } from '../../product/account-records.js';
 
 let audio = null;
 function playUrl(url) {
@@ -243,6 +244,8 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
         }, undoLabel: s('undo') } : {});
       } else {
         const saved = await api.saveLibraryVocabulary(wordSavePayload(card, sentence, source));
+        // Where the word was met goes to the account beside the word itself (D4 I12d).
+        void keepProvenance({ term: card.word, source, sentence });
         item = saved?.item || item;
         detail = detail ? { ...detail, saved: true } : detail;
         card = mapWordCard(card.word, { detail, item });
@@ -454,6 +457,7 @@ export async function openSentenceSheet(ctx = {}, { sentence, lang, context = ''
         await api.deleteLibraryVocabulary(item.term);
       } else {
         await api.saveLibraryVocabulary(vocabSavePayload(item.term, item.meaning, target, source));
+        void keepProvenance({ term: item.term, source, sentence: target });
       }
       item.saved = !item.saved;
       paint();

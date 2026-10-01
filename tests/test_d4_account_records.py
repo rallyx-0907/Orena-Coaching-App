@@ -119,6 +119,65 @@ def test_the_generic_route_refuses_the_kinds_that_have_dedicated_routes(pg_engin
     assert accepted.status_code == 200
 
 
+def test_the_generic_route_never_creates_a_work_that_is_already_deleted(pg_engine, backbone):
+    """Create-as-deleted, repeated, left a row per call while the live count never rose (limits review P1-1)."""
+    client = _client(backbone, user=_account(pg_engine))
+    for kind in ("response", "conversation", "draft"):
+        ident = uuid.uuid4()
+        refused = client.put(f"/api/works/{ident}", json={"operationId": op(), "expectedVersion": 0, "kind": kind, "lifecycle": "deleted", "payload": {"a": 1}})
+        assert refused.status_code == 422 and refused.json()["detail"]["category"] == "lifecycle_invalid", kind
+        assert client.get(f"/api/works/{ident}").status_code == 404, "nothing was written"
+    assert client.get("/api/works", params={"limit": 50}).json()["works"] == []
+    # A removal is still a later write against a version that exists.
+    ident = uuid.uuid4()
+    assert client.put(f"/api/works/{ident}", json={"operationId": op(), "expectedVersion": 0, "kind": "response", "payload": {"a": 1}}).status_code == 200
+    assert client.put(f"/api/works/{ident}", json={"operationId": op(), "expectedVersion": 1, "kind": "response", "lifecycle": "deleted", "payload": {"a": 1}}).status_code == 200
+
+
+def test_create_delete_create_stops_at_the_import_tombstone_bound(pg_engine, backbone, monkeypatch):
+    """The live cap of 20 never tripped for a loop that deletes each import; the total of import rows is bounded too."""
+    monkeypatch.setenv("ORENA_LIMIT_IMPORT_TOMBSTONES", "52")
+    client = _client(backbone, user=_account(pg_engine))
+    made = 0
+    for _ in range(60):
+        ident = uuid.uuid4()
+        put = client.put(f"/api/imports/{ident}", json={"operationId": op(), "expectedVersion": 0, "form": "text", "title": "T", "text": "x"})
+        if put.status_code != 200:
+            assert put.status_code == 422 and put.json()["detail"]["category"] == "import_limit", put.text
+            break
+        made += 1
+        assert client.delete(f"/api/imports/{ident}", params={"operationId": op(), "expectedVersion": 1}).status_code == 200
+    assert made == 52, "the loop stops at the tombstone bound, with a live count of zero"
+    # Another account, and another language of the same account, are not touched by this one's bound.
+    other = _client(backbone, user=_account(pg_engine))
+    assert other.put(f"/api/imports/{uuid.uuid4()}", json={"operationId": op(), "expectedVersion": 0, "form": "text", "title": "T", "text": "x"}).status_code == 200
+
+
+def test_the_import_tombstone_bound_refuses_a_bad_configuration(monkeypatch):
+    for bad in ("many", "51", "-3"):
+        monkeypatch.setenv("ORENA_LIMIT_IMPORT_TOMBSTONES", bad)
+        with pytest.raises(RuntimeError):
+            account_records_api._import_row_bound()
+    monkeypatch.delenv("ORENA_LIMIT_IMPORT_TOMBSTONES")
+    assert account_records_api._import_row_bound() == 360
+
+
+def test_imported_media_is_kept_with_the_account_and_listed_on_a_new_device_by_language(pg_engine, backbone):
+    user = _account(pg_engine)
+    client = _client(backbone, user=user)
+    link, file_ = str(uuid.uuid4()), str(uuid.uuid4())
+    assert client.put(f"/api/imports/{link}", json={"operationId": op(), "expectedVersion": 0, "form": "url", "title": "A talk", "url": "https://example.test/v",
+                                                      "kind": "video", "durationMs": 61000, "thumbnailUrl": "https://example.test/t.jpg", "provider": "example"}).status_code == 200
+    assert client.put(f"/api/imports/{file_}", json={"operationId": op(), "expectedVersion": 0, "form": "upload", "title": "My file", "mediaId": "stored-123",
+                                                       "kind": "audio", "thumbnailUrl": "http://insecure.test/t.jpg"}).status_code == 200
+    assert client.put(f"/api/imports/{uuid.uuid4()}", json={"operationId": op(), "expectedVersion": 0, "form": "upload", "title": "x"}).status_code == 422
+    listed = {item["id"]: item for item in _client(backbone, user=user).get("/api/imports").json()["imports"]}
+    assert listed[f"url:{link}"]["url"] == "https://example.test/v" and listed[f"url:{link}"]["durationMs"] == 61000
+    assert listed[f"url:{link}"]["thumbnailUrl"] == "https://example.test/t.jpg" and listed[f"url:{link}"]["provider"] == "example"
+    assert listed[f"upload:{file_}"]["mediaId"] == "stored-123" and listed[f"upload:{file_}"]["thumbnailUrl"] == "", "only an https thumbnail is kept"
+    assert _client(backbone, user=user, language="zh").get("/api/imports").json()["imports"] == []
+
+
 def test_the_works_list_is_bounded_newest_first_and_scoped(pg_engine, backbone):
     user = _account(pg_engine)
     client = _client(backbone, user=user)
@@ -300,7 +359,9 @@ def test_annotation_bounds_are_enforced_and_clearing_is_a_flag_not_a_deletion(pg
     assert cleared.status_code == 200
     read = client.get("/api/annotations/reading:2").json()["annotation"]
     assert read["cleared"] is True and read["highlights"] == [] and read["notes"] == []
-    assert _annotate(client, "reading:2", 2, [H1]).status_code == 200, "a cleared record is written again, not resurrected"
+    # Named contract change (tombstones): an id that was cleared is remembered and never comes back; a NEW item is fine.
+    assert _annotate(client, "reading:2", 2, [H1]).status_code == 422, "a cleared id is not resurrected"
+    assert _annotate(client, "reading:2", 2, [{**H1, "id": "fresh-after-clear"}]).status_code == 200, "a cleared record is written again with new items"
 
 
 def test_annotations_are_private_to_the_account_and_language(pg_engine, backbone):
@@ -508,3 +569,67 @@ def test_two_imports_created_at_the_limit_at_once_give_exactly_twenty(pg_engine,
         thread.join()
     assert sorted(results) == [200, 422], results
     assert len(client.get("/api/imports", params={"limit": 50}).json()["imports"]) == 20
+
+
+# -- a removal holds across devices (runtime acceptance item 3) ------------------------------------------------
+
+
+def _hl(name):
+    return {"id": name, "segment": f"p{name}", "sentence": f"Sentence {name}.", "at": ""}
+
+
+def test_a_removed_note_or_highlight_is_remembered_by_the_server_and_cannot_come_back(pg_engine, backbone):
+    client = _client(backbone, user=_account(pg_engine))
+    note = {"id": "n1", "key": "k", "type": "question", "text": "Why?", "at": ""}
+    assert _annotate(client, "reading:t1", 0, [_hl("h1"), _hl("h2")], [note]).status_code == 200
+    assert client.get("/api/annotations/reading:t1").json()["annotation"]["tombstones"] == []
+    assert _annotate(client, "reading:t1", 1, [_hl("h1")], []).status_code == 200
+    current = client.get("/api/annotations/reading:t1").json()["annotation"]
+    assert sorted(current["tombstones"]) == ["h2", "n1"] and current["version"] == 2
+    back = _annotate(client, "reading:t1", 2, [_hl("h1"), _hl("h2")], [])
+    assert back.status_code == 422 and back.json()["detail"]["category"] == "annotation_tombstoned"
+    assert back.json()["detail"]["context"]["ids"] == ["h2"]
+    assert [h["id"] for h in client.get("/api/annotations/reading:t1").json()["annotation"]["highlights"]] == ["h1"]
+    assert _annotate(client, "reading:t1", 2, [_hl("h1"), _hl("h3")], []).status_code == 200, "a NEW item is fine"
+
+
+def test_an_older_device_cannot_write_over_a_removal_it_has_not_seen(pg_engine, backbone):
+    user = _account(pg_engine)
+    one, two = _client(backbone, user=user), _client(backbone, user=user)
+    _annotate(one, "reading:t2", 0, [_hl("h1"), _hl("h2")])
+    _annotate(one, "reading:t2", 1, [_hl("h1")])  # device one removed h2
+    stale = _annotate(two, "reading:t2", 1, [_hl("h1"), _hl("h2"), _hl("h3")])  # device two still holds h2 at version 1
+    assert stale.status_code == 409
+    server = stale.json()["detail"]["context"]["serverPayload"]
+    assert server["tombstones"] == ["h2"] and [h["id"] for h in server["highlights"]] == ["h1"], "nothing was merged"
+    merged = _annotate(two, "reading:t2", 2, [_hl("h1"), _hl("h3")])
+    assert merged.status_code == 200
+    assert {h["id"] for h in one.get("/api/annotations/reading:t2").json()["annotation"]["highlights"]} == {"h1", "h3"}
+
+
+def test_clearing_remembers_everything_it_removed_and_a_replayed_removal_is_not_undone(pg_engine, backbone):
+    client = _client(backbone, user=_account(pg_engine))
+    _annotate(client, "reading:t3", 0, [_hl("h1"), _hl("h2")], [{"id": "n1", "key": "k", "type": "factual", "text": "x", "at": ""}])
+    operation = op()
+    body = {"operationId": operation, "expectedVersion": 1, "highlights": [_hl("h1")], "notes": []}
+    assert client.put("/api/annotations/reading:t3", json=body).json()["status"] == "committed"
+    _annotate(client, "reading:t3", 2, [_hl("h1"), _hl("h4")])
+    replay = client.put("/api/annotations/reading:t3", json=body)
+    assert replay.status_code == 200 and replay.json()["status"] == "replay", "a lost acknowledgment still replays"
+    cleared = _annotate(client, "reading:t3", 3, cleared=True)
+    assert cleared.status_code == 200
+    read = client.get("/api/annotations/reading:t3").json()["annotation"]
+    assert read["cleared"] is True and set(read["tombstones"]) == {"h1", "h2", "h4", "n1"}
+
+
+def test_the_tombstone_list_is_bounded_and_keeps_the_newest(pg_engine, backbone, monkeypatch):
+    monkeypatch.setattr(account_records_api, "MAX_TOMBSTONES", 3)
+    client = _client(backbone, user=_account(pg_engine))
+    items = [_hl(f"h{n}") for n in range(6)]
+    _annotate(client, "reading:t4", 0, items)
+    version = 1
+    for _ in range(5):
+        items = items[1:]
+        assert _annotate(client, "reading:t4", version, items).status_code == 200
+        version += 1
+    assert client.get("/api/annotations/reading:t4").json()["annotation"]["tombstones"] == ["h2", "h3", "h4"]

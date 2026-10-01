@@ -590,3 +590,17 @@ def test_with_sign_in_enabled_the_local_account_key_is_never_created(backend, mo
     assert client.patch("/api/account-settings", json={"expected_settings_version": "", "weekly_goal_days": 3}).status_code == 503
     assert backend.auth.get_user(fresh_key) is None
     assert client.get("/api/account-settings").json()["stored"] is False
+
+
+def test_a_review_mode_patch_changes_only_the_modes_it_names(backend):
+    """Runtime acceptance item 4: a partial map merges into the stored one; it never resets the others."""
+    backend.use(backend.new_user(), "en")
+    _patch(goal="work")
+    _patch(review_modes={"typing": True, "cloze": False, "dictation": True})
+    assert _patch(review_modes={"dictation": False})["review_modes"] == {"typing": True, "cloze": False, "dictation": False}
+    assert _patch(review_modes={"cloze": True})["review_modes"] == {"typing": True, "cloze": True, "dictation": False}
+    assert get_learner_profile()["review_new_per_day"] is None, "a mode toggle writes no default limits"
+    fresh = backend.new_user()
+    backend.use(fresh, "zh")
+    _patch(goal="work")
+    assert _patch(review_modes={"cloze": False})["review_modes"] == {"cloze": False}, "only the toggled key is stored; the rest read as defaults"

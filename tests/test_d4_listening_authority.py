@@ -20,7 +20,7 @@ from writing_coach import listening_api
 from writing_coach.core.request_context import LANGUAGE_CODE_CTX, USER_KEY_CTX
 from writing_coach.listening_catalog import catalog_lessons
 from writing_coach.listening_progress_policy import merge_progress
-from writing_coach.media_library_store import MediaLibraryEntry
+from writing_coach.media_library_store import OWNER_FIELD, MediaLibraryEntry, owner_token
 from writing_coach.persistence.auth_repository import PostgresAuthRepository
 from writing_coach.persistence.specialized_repository import PostgresSpecializedLearningRepository
 
@@ -85,13 +85,14 @@ class MemoryMediaStore:
         return self.entries.get(media_id)
 
 
-def _own_media(media_id, language, text_):
+def _own_media(media_id, language, text_, owner):
+    # Personal media is owned by the account that uploaded it (39b9f12); an owner-less entry is the local account's only.
     return MediaLibraryEntry(
         media_id=media_id, media_type="audio", provider="upload", provider_media_id=media_id,
         canonical_url="", playback={"provider": "upload", "kind": "audio", "url": "/x"}, title="Mine",
         thumbnail={"kind": "none", "ref": ""}, duration_ms=5000, language=language, level="", creator="",
         source={"provider": "upload", "type": "audio", "provenance_url": "", "license": "own",
-                "review_status": "own", "imported_by": "learner"},
+                "review_status": "own", "imported_by": "learner", OWNER_FIELD: owner_token(owner)},
         library="personal", created_at="2026-09-30T00:00:00+00:00",
         lesson={"payload": {"asset": {"asset_id": media_id, "source_language": language},
                             "transcript": {"segments": [{"segment_id": "s1", "order": 0, "start_ms": 0,
@@ -108,7 +109,7 @@ def api(pg_engine):
     user_token = USER_KEY_CTX.set(user)
     language_token = LANGUAGE_CODE_CTX.set("en")
     listening_api.configure_listening_progress(repository)
-    listening_api.configure_listening_media_library(MemoryMediaStore([_own_media("upload-abc", "en", "Hello there my friend")]))
+    listening_api.configure_listening_media_library(MemoryMediaStore([_own_media("upload-abc", "en", "Hello there my friend", user)]))
     app = FastAPI()
     app.include_router(listening_api.router)
     yield TestClient(app), repository, pg_engine, user

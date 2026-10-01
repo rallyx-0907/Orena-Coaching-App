@@ -90,3 +90,16 @@ export function mergeHighlights(storage, owner, contentId, incoming) {
   writeStore(storage, owner, Object.fromEntries([...rest.slice(-(MAX_TEXTS - 1)), [contentId, next]]));
   return next;
 }
+
+/* The text's highlights replaced by exactly this set (the account's merged answer after a conflict, or the account's
+   removals applied): a highlight the account no longer holds must leave this device too. */
+export function setHighlights(storage, owner, contentId, list) {
+  if (!contentId) return [];
+  const store = readStore(storage, owner);
+  const next = (Array.isArray(list) ? list : [])
+    .filter((item) => item && item.id && typeof item.segment === 'string' && typeof item.sentence === 'string')
+    .slice(-MAX_PER_TEXT);
+  const rest = Object.entries(store).filter(([id]) => id !== contentId);
+  writeStore(storage, owner, Object.fromEntries([...rest.slice(-(MAX_TEXTS - 1)), [contentId, next]]));
+  return next;
+}

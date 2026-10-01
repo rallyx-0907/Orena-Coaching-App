@@ -40,11 +40,17 @@ export function forgetRecordState() {
   convoHeads.clear();
   convoQueues.clear();
   importVersions.clear();
+  mediaRecords.clear();
 }
 
 export function noteRemoved(contentId, id) {
   if (!removed.has(contentId)) removed.set(contentId, new Set());
   removed.get(contentId).add(id);
+}
+
+/* The ids this device removed in this visit and has not yet seen the server acknowledge. */
+export function removedIds(contentId) {
+  return new Set(removed.get(contentId) || []);
 }
 
 const byId = (list) => new Map((Array.isArray(list) ? list : []).map((item) => [item.id, item]));
@@ -78,8 +84,12 @@ export async function pullAnnotations(contentId) {
   }
 }
 
-/* Write this device's set for one text. On a 409 the sets are unioned by id and written once more. */
-export async function pushAnnotations(contentId, { highlights, notes }) {
+/* Write this device's set for one text against the version this device read. A 409 means another device moved
+   first: the server's set is re-read and merged - its items, plus this device's own NEW items - never an item
+   the server remembers as removed (its tombstones) nor one this learner just removed, and the write is made
+   once more against the fresh version. `onMerged(set)` hands the merged set back so the device's own store is
+   brought in line (a removal made elsewhere must leave this device too). */
+export async function pushAnnotations(contentId, { highlights, notes }, { onMerged } = {}) {
   if (!contentId || !(await recordsActive())) return false;
   let mine = { highlights: boundHighlights(highlights || []), notes: boundNotes(notes || []) };
   for (let attempt = 0; attempt < 2; attempt += 1) {
@@ -87,16 +97,18 @@ export async function pushAnnotations(contentId, { highlights, notes }) {
     try {
       const saved = await apiRef.saveAnnotations(contentId, { operationId: operationId(), expectedVersion: versions.get(contentId) ?? 0, ...mine });
       versions.set(contentId, saved.version);
+      removed.delete(contentId); // the server has the removals now, as tombstones
       return true;
     } catch (error) {
-      if (error?.status !== 409) return false;
+      if (error?.status !== 409 && error?.status !== 422) return false;
       const server = await pullAnnotations(contentId);
       if (!server) return false;
-      const gone = removed.get(contentId) || new Set();
+      const gone = new Set([...(removed.get(contentId) || []), ...(server.tombstones || [])]);
       mine = {
-        highlights: boundHighlights(unionById(mine.highlights, server.highlights, gone)),
-        notes: boundNotes(unionById(mine.notes, server.notes, gone)),
+        highlights: boundHighlights(unionById(server.highlights, mine.highlights, gone)),
+        notes: boundNotes(unionById(server.notes, mine.notes, gone)),
       };
+      onMerged?.(mine, server);
     }
   }
   return false;
@@ -152,48 +164,98 @@ export async function loadConversation(key, language) {
 
 const importVersions = new Map(); // import uuid -> the version the server holds
 
-const importUuid = (id) => String(id || '').replace(/^(text|url):/, '');
+const importUuid = (id) => String(id || '').replace(/^(text|url|upload):/, '');
 
-/* A text the learner just imported goes to the account; the id is the one the device already made. */
+/* A media import's membership id is `url:<the link>` or `upload:<the stored media id>`, not a UUID, so its record id
+   is minted when it is kept (a removed import is a terminal tombstone: the same link can be kept again later under a
+   new record). This device learns which record(s) hold a membership id when it keeps one or reads the account's list;
+   two devices that kept the same link both leave a record, and removing the membership removes every one of them. */
+const isMedia = (id) => /^(url|upload):/.test(String(id || ''));
+const mediaRecords = new Map(); // membership id -> record uuids the account holds for it
+
+/* The body that keeps a media import: the reference the Listening room opens and the display fields of its card. */
+function mediaBody(item) {
+  const upload = String(item.id).startsWith('upload:');
+  const reference = String(item.id).replace(/^(url|upload):/, '');
+  return {
+    form: upload ? 'upload' : 'url',
+    title: String(item.title || reference).slice(0, 240),
+    text: '',
+    url: upload ? '' : reference,
+    mediaId: upload ? reference : '',
+    kind: String(item.kind || '').slice(0, 40),
+    durationMs: Number.isFinite(item.duration_ms) ? Math.max(0, Math.round(item.duration_ms)) : null,
+    thumbnailUrl: String(item.thumbnail_url || '').slice(0, 600),
+    provider: String(item.provider || '').slice(0, 40),
+  };
+}
+
+/* A text or media import the learner just made goes to the account; a text keeps the id the device already made. */
 export async function pushImport(item) {
   if (!item?.id || !(await recordsActive())) return false;
-  const ident = importUuid(item.id);
+  const media = isMedia(item.id);
+  if (media && mediaRecords.get(item.id)?.size) return true; // already kept; opening it again is not a second import
+  const ident = media ? crypto.randomUUID() : importUuid(item.id);
   try {
-    const saved = await apiRef.saveImport(ident, {
-      operationId: operationId(), expectedVersion: 0, form: item.kind === 'url' ? 'url' : 'text',
+    const body = media ? mediaBody(item) : {
+      form: item.kind === 'url' ? 'url' : 'text',
       title: String(item.title || '').slice(0, 240), text: item.kind === 'url' ? '' : String(item.text || ''), url: item.kind === 'url' ? String(item.url || '') : '',
-    });
+    };
+    const saved = await apiRef.saveImport(ident, { operationId: operationId(), expectedVersion: 0, ...body });
     importVersions.set(ident, saved.version);
+    if (media) mediaRecords.set(item.id, new Set([ident]));
     return true;
   } catch {
     return false;
   }
 }
 
-/* The learner's imports the account holds, as the device's own shape (so a new device opens them). */
+/* The learner's imports the account holds, as the device's own shapes (so a new device opens and lists them): a text
+   as an import, a pasted link or an uploaded file as a media membership. */
 export async function pullImports(language) {
   if (!(await recordsActive())) return [];
   try {
     const { imports } = await apiRef.imports();
-    return imports.filter((item) => item.form === 'text').map((item) => {
+    const out = [];
+    for (const item of imports) {
       importVersions.set(importUuid(item.id), item.version);
-      return { id: item.id, title: item.title, text: item.text, language, origin: 'imported', kind: 'text' };
-    });
+      if (item.form === 'text') {
+        out.push({ id: item.id, title: item.title, text: item.text, language, origin: 'imported', kind: 'text' });
+      } else if (item.form === 'url' || item.form === 'upload') {
+        const reference = item.form === 'upload' ? item.mediaId : item.url;
+        if (!reference) continue;
+        const memoryId = `${item.form}:${reference}`;
+        mediaRecords.set(memoryId, (mediaRecords.get(memoryId) || new Set()).add(importUuid(item.id)));
+        if (out.some((entry) => entry.id === memoryId)) continue;
+        out.push({
+          id: memoryId, title: item.title, kind: item.kind || '', language, origin: 'imported',
+          duration_ms: Number.isFinite(item.durationMs) ? item.durationMs : undefined,
+          ...(item.thumbnailUrl ? { thumbnail_url: item.thumbnailUrl } : {}), ...(item.provider ? { provider: item.provider } : {}),
+        });
+      }
+    }
+    return out;
   } catch {
     return [];
   }
 }
 
 export async function removeImport(id) {
-  const ident = importUuid(id);
-  if (!importVersions.has(ident) || !(await recordsActive())) return false;
-  try {
-    await apiRef.deleteImport(ident, operationId(), importVersions.get(ident));
-    importVersions.delete(ident);
-    return true;
-  } catch {
-    return false;
+  const idents = isMedia(id) ? [...(mediaRecords.get(id) || [])] : [importUuid(id)];
+  const held = idents.filter((ident) => importVersions.has(ident));
+  if (!held.length || !(await recordsActive())) return false;
+  let removed = false;
+  for (const ident of held) {
+    try {
+      await apiRef.deleteImport(ident, operationId(), importVersions.get(ident));
+      importVersions.delete(ident);
+      removed = true;
+    } catch {
+      /* a record that could not be removed stays; the next list read shows it again */
+    }
   }
+  if (removed && isMedia(id)) mediaRecords.delete(id);
+  return removed;
 }
 
 /* ---------------------------------------------------------------------------- responses ---- */
@@ -241,10 +303,29 @@ export async function attachProvenance(entry) {
   try {
     await apiRef.attachProvenance(word, {
       operationId: operationId(), reason: entry.why, focus: String(entry.context || '').slice(0, 1200),
-      sourceKind: origin ? String(entry.why).replace(/^from_/, '') || 'origin' : '', sourceId: origin.slice(0, 200),
+      sourceKind: origin ? String(entry.kind || String(entry.why).replace(/^from_/, '') || 'origin').slice(0, 40) : '',
+      sourceId: origin.slice(0, 200),
     });
     return true;
   } catch {
     return false;
   }
+}
+
+const REASON_OF_SOURCE = Object.freeze({
+  reading: 'from_reading', listening: 'from_listening', writing: 'from_writing', speaking: 'from_speaking', grammar: 'from_grammar',
+});
+
+/* A word was just kept from somewhere (the /next word or sentence sheet): record WHERE - which content, which
+   sentence - so a new device can still take the learner back to it. The word is already saved (its own route);
+   a word the account does not hold answers 404 and the keep stands without provenance. `source` is the sheet's
+   own `{kind, content_id}`; the sentence is the context the word was met in. */
+export function keepProvenance({ term, source, sentence }) {
+  return attachProvenance({
+    term,
+    why: REASON_OF_SOURCE[String(source?.kind || '')] || 'looked_up',
+    origin: source?.content_id || '',
+    kind: source?.kind || '',
+    context: sentence || '',
+  });
 }

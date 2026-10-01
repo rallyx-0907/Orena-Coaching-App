@@ -57,12 +57,17 @@ export async function reconcileInterface(account, deviceChoice) {
 
 /* Review settings live on the per-language profile row, written against the profile's version
    (H2's conditional write): a 409 re-reads the profile and re-applies once. */
-export async function saveReviewSettings(review, profileVersion, onProfile) {
-  const body = {
-    review_new_per_day: review.newPerDay,
-    review_limit_per_day: review.limitPerDay,
-    review_modes: Object.fromEntries(['typing', 'cloze', 'dictation'].filter((name) => typeof review.modes?.[name] === 'boolean').map((name) => [name, review.modes[name]])),
-  };
+export async function saveReviewSettings(change, profileVersion, onProfile) {
+  // ONLY what the learner changed is sent (a toggled mode, a changed limit): the server merges it into what it
+  // stores, so a device that has not read the server yet, or that is stale, can never write its defaults or
+  // another device's older view over a value the learner did not touch. A 409 re-reads the profile and re-applies
+  // the same change to the fresh one.
+  const body = {};
+  if (Number.isFinite(change?.newPerDay)) body.review_new_per_day = change.newPerDay;
+  if (Number.isFinite(change?.limitPerDay)) body.review_limit_per_day = change.limitPerDay;
+  const modes = Object.fromEntries(['typing', 'cloze', 'dictation'].filter((name) => typeof change?.modes?.[name] === 'boolean').map((name) => [name, change.modes[name]]));
+  if (Object.keys(modes).length) body.review_modes = modes;
+  if (!Object.keys(body).length) return null;
   let version = profileVersion ?? '';
   for (let attempt = 0; ; attempt += 1) {
     try {

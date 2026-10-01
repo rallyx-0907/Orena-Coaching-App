@@ -261,6 +261,23 @@ export function notesForContent(storage, owner, contentId) {
     .map((note) => ({ id: String(note.id), key, type: note.type, text: note.text, at: note.at || '' })));
 }
 
+/* The text's notes replaced by exactly this set: every note made in this text is dropped first, then the set is
+   written back under its sentence keys. A note the account no longer holds leaves this device too. */
+export function setNotesForContent(storage, owner, contentId, incoming) {
+  if (!contentId) return;
+  const store = readStore(storage, owner);
+  for (const key of Object.keys(store)) {
+    if (Array.isArray(store[key])) store[key] = store[key].filter((note) => note?.content !== contentId);
+  }
+  for (const note of Array.isArray(incoming) ? incoming : []) {
+    if (!note?.id || !note.key || !NOTE_TYPES.includes(note.type)) continue;
+    const list = Array.isArray(store[note.key]) ? store[note.key] : [];
+    store[note.key] = [...list, { id: note.id, type: note.type, text: text(note.text).slice(0, 600), at: note.at || '', content: contentId }];
+  }
+  for (const key of Object.keys(store)) if (Array.isArray(store[key]) && !store[key].length) delete store[key];
+  writeStore(storage, owner, store);
+}
+
 /* The account's notes for a text merged into this device's (a union by id). Returns how many arrived. */
 export function mergeNotes(storage, owner, contentId, incoming) {
   const store = readStore(storage, owner);

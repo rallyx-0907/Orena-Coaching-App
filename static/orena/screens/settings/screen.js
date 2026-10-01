@@ -27,12 +27,8 @@ import { toast } from '../../kit/toast.js';
 import { api } from '../../infrastructure/api.js';
 import { shellCopy } from '../../copy/shell.js';
 import { chooseInterface, languages as copyLanguages, setSupportFromProfile } from '../../copy/index.js';
-import { updateContext, refreshCounts } from '../../shell/context.js';
-import { learnerMemory } from '../../product/memory.js';
+import { adoptLearningLanguage, updateContext } from '../../shell/context.js';
 import { saveAccountSettings, saveReviewSettings, selectLearningLanguage } from '../../product/account-settings.js';
-import { syncContinuation } from '../../product/continue-sync.js';
-import { pullImports } from '../../product/account-records.js';
-import { learningLanguage } from '../../product/languages.js';
 import { readReaderSettings, writeReaderSettings, sizeBucketOf, SIZE_BUCKETS } from '../../product/reader-settings.js';
 import { readStage, writeStage, transcriptDefaults } from '../../product/transcript-stage.js';
 import { readReviewSettings } from '../../product/recall-modes.js';
@@ -253,13 +249,10 @@ export default async function settingsScreen(element, ctx) {
       toast(t('saveError'));
       return;
     }
+    // The shell's language-scoped state (profile and its version, review settings, places, imports) is the new
+    // language's before the tab repaints - even when this screen was left meanwhile.
+    await adoptLearningLanguage(code, storage || undefined);
     if (!ctx.isCurrent()) return;
-    const nextLanguage = learningLanguage(code);
-    const memory = learnerMemory(storage, context.owner, nextLanguage);
-    await syncContinuation(memory).catch(() => false);
-    memory.mergeImports(await pullImports(nextLanguage).catch(() => []));
-    updateContext({ language: nextLanguage, memory });
-    refreshCounts().catch(() => {});
     paintTab();
   }
 
@@ -343,7 +336,7 @@ export default async function settingsScreen(element, ctx) {
     memory.setReview(next);
     paintTab();
     // The server keeps review settings per learning language; the device copy above already applied.
-    saveReviewSettings(next, ctx.context.profile?.version, (profile) => updateContext({ profile })).catch(() => {});
+    saveReviewSettings({ modes: { [field]: next.modes[field] } }, ctx.context.profile?.version, (profile) => updateContext({ profile })).catch(() => {});
   }
 
   function onMicToggle() {

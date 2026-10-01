@@ -14,6 +14,7 @@ again - a client action, never a server merge of prose.
 """
 from __future__ import annotations
 
+import os
 import uuid
 from typing import Any
 
@@ -33,8 +34,32 @@ MAX_HIGHLIGHTS = 80
 MAX_HIGHLIGHT_CHARS = 400
 MAX_NOTES = 120
 MAX_NOTE_CHARS = 600
+# Ids of removed highlights and notes the server remembers, newest last (D4 I10). Ids are minted once by the
+# device that made the item, so a removed id can never legitimately come back: a write that carries one is refused.
+MAX_TOMBSTONES = 500
 NOTE_TYPES = ('factual', 'reflection', 'question')
 MAX_IMPORTS = 20
+# Deleted imports are tombstones that are never removed, so "create, delete, create" would grow rows without bound
+# while the live count stays under MAX_IMPORTS. The total of an account's import rows, live and deleted, is bounded
+# separately (operator configuration, never a learner-facing number; limits review P1-1).
+IMPORT_TOMBSTONES_FLOOR = 52
+IMPORT_TOMBSTONES_DEFAULT = 360
+
+
+def _import_row_bound() -> int:
+    raw = os.environ.get('ORENA_LIMIT_IMPORT_TOMBSTONES', '').strip()
+    if not raw:
+        return IMPORT_TOMBSTONES_DEFAULT
+    try:
+        value = int(raw)
+    except ValueError:
+        raise RuntimeError('ORENA_LIMIT_IMPORT_TOMBSTONES must be an integer.') from None
+    if value < IMPORT_TOMBSTONES_FLOOR:
+        raise RuntimeError(f'ORENA_LIMIT_IMPORT_TOMBSTONES must be at least {IMPORT_TOMBSTONES_FLOOR}.')
+    return value
+
+
+_import_row_bound()  # a misconfiguration refuses at startup, not at the first import
 MAX_IMPORT_TEXT_CHARS = 12_000
 MAX_IMPORT_URL_CHARS = 2_048
 MAX_RESPONSE_ANSWER_CHARS = 4_000
@@ -56,11 +81,13 @@ def _work_id(scope: Scope, kind: str, key: str) -> str:
 
 def _commit(scope: Scope, *, kind: str, ident: str, operation_id: str, expected_version: int,
             payload: dict[str, Any], source: dict[str, str], lifecycle: str = 'active',
-            conflict_code: str, create_guard: Any = None) -> dict[str, Any]:
+            conflict_code: str, create_guard: Any = None, digest_payload: Any = None) -> dict[str, Any]:
     references = {'work': ident, 'kind': kind, 'lifecycle': lifecycle, 'source': source}
+    # The digest guards an operation id against reuse with different INPUT; it is computed over what the client
+    # sent (`digest_payload`), not over anything the server derived, so a replay digests the same.
     outcome = _backbone().work.commit_mutation(
         scope=scope, domain=kind, operation_id=operation_id,
-        digest=semantic_digest(kind, references, payload), expected_version=expected_version,
+        digest=semantic_digest(kind, references, payload if digest_payload is None else digest_payload), expected_version=expected_version,
         work_id=ident, kind=kind, payload=payload, lifecycle=lifecycle, source=source, create_guard=create_guard,
     )
     status = outcome.get('status')
@@ -113,7 +140,12 @@ class AnnotationSave(BaseModel):
 def _annotation_shape(row: dict[str, Any]) -> dict[str, Any]:
     payload = row['payload'] or {}
     return {'highlights': list(payload.get('highlights') or []), 'notes': list(payload.get('notes') or []),
+            'tombstones': list(payload.get('tombstones') or []),
             'cleared': bool(payload.get('cleared')), 'version': int(row['version'])}
+
+
+def _item_ids(payload: dict[str, Any]) -> list[str]:
+    return [str(item.get('id')) for key in ('highlights', 'notes') for item in (payload.get(key) or []) if item.get('id')]
 
 
 @router.get('/annotations/{content_id:path}')
@@ -132,13 +164,30 @@ def put_annotations(content_id: str, body: AnnotationSave) -> dict[str, Any]:
     ids = [item.id for item in body.highlights] + [item.id for item in body.notes]
     if len(set(ids)) != len(ids):
         raise orena_http_error(422, 'annotation_duplicate_id', 'Each highlight and note has its own id.', retryable=False)
-    payload = ({'cleared': True} if body.cleared else {
+    request = ({'cleared': True} if body.cleared else {
         'highlights': [item.model_dump() for item in body.highlights],
         'notes': [item.model_dump() for item in body.notes],
     })
+    ident = _work_id(scope, 'annotation', content_id)
+    payload = dict(request)
+    current = _backbone().work.get_work(scope, ident)
+    if current is not None and int(current['version']) == body.expectedVersion:
+        # The writer read exactly the version that stands, so what it dropped it removed on purpose: remember the
+        # ids, and refuse a write that brings a remembered one back. (A writer on an older version gets the
+        # version conflict from the commit below and re-reads; it never gets here.)
+        previous = current['payload'] or {}
+        remembered = [str(i) for i in previous.get('tombstones') or []]
+        bringing_back = set(remembered) & set(ids)
+        if bringing_back:
+            raise orena_http_error(422, 'annotation_tombstoned', 'That was removed on another device.', retryable=False,
+                                   context={'ids': sorted(bringing_back)})
+        removed_now = [i for i in _item_ids(previous) if i not in set(ids)]
+        payload['tombstones'] = (remembered + removed_now)[-MAX_TOMBSTONES:]
+    elif current is not None:
+        payload['tombstones'] = [str(i) for i in (current['payload'] or {}).get('tombstones') or []]
     return _commit(
-        scope, kind='annotation', ident=_work_id(scope, 'annotation', content_id), operation_id=body.operationId,
-        expected_version=body.expectedVersion, payload=payload,
+        scope, kind='annotation', ident=ident, operation_id=body.operationId,
+        expected_version=body.expectedVersion, payload=payload, digest_payload=request,
         source={'kind': 'content', 'id': content_id, 'revision': ''}, conflict_code='annotation_conflict',
     )
 
@@ -152,10 +201,18 @@ def put_annotations(content_id: str, body: AnnotationSave) -> dict[str, Any]:
 class ImportSave(BaseModel):
     operationId: str = Field(min_length=8, max_length=120)
     expectedVersion: int = Field(ge=0)
-    form: str = Field(pattern=r'^(text|url)$')
+    form: str = Field(pattern=r'^(text|url|upload)$')
     title: str = Field(min_length=1, max_length=240)
     text: str = Field(default='', max_length=MAX_IMPORT_TEXT_CHARS)
     url: str = Field(default='', max_length=MAX_IMPORT_URL_CHARS)
+    # A media import (a pasted link or an uploaded file) is kept as the reference the Listening room opens plus the
+    # few display fields its library card needs - never the media bytes or a transcript. `upload` names the stored
+    # media by `mediaId`; `url` keeps the link.
+    mediaId: str = Field(default='', max_length=200)
+    kind: str = Field(default='', max_length=40)
+    durationMs: int | None = Field(default=None, ge=0, le=10**9)
+    thumbnailUrl: str = Field(default='', max_length=600)
+    provider: str = Field(default='', max_length=40)
 
 
 def _import_uuid(value: str) -> str:
@@ -169,9 +226,14 @@ def _import_shape(row: dict[str, Any]) -> dict[str, Any]:
     payload = row['payload'] or {}
     form = str(payload.get('form') or 'text')
     client = str(payload.get('id') or '')
-    return {'id': f'{form}:{client}', 'form': form, 'title': str(payload.get('title') or ''),
-            'text': str(payload.get('text') or ''), 'url': str(payload.get('url') or ''),
-            'version': int(row['version'])}
+    shape = {'id': f'{form}:{client}', 'form': form, 'title': str(payload.get('title') or ''),
+             'text': str(payload.get('text') or ''), 'url': str(payload.get('url') or ''),
+             'version': int(row['version'])}
+    if form in {'url', 'upload'}:
+        shape.update({'mediaId': str(payload.get('mediaId') or ''), 'kind': str(payload.get('kind') or ''),
+                      'durationMs': payload.get('durationMs'), 'thumbnailUrl': str(payload.get('thumbnailUrl') or ''),
+                      'provider': str(payload.get('provider') or '')})
+    return shape
 
 
 @router.get('/imports')
@@ -205,16 +267,32 @@ def put_import(import_id: str, body: ImportSave) -> dict[str, Any]:
         from sqlalchemy import text as sql
         from writing_coach.persistence.mutation_commit import MutationRefused
 
-        held = connection.execute(
-            sql("SELECT count(*) FROM works WHERE incarnation_id = :inc AND language_code = :lang "
-                "AND kind = 'imported' AND lifecycle <> 'deleted'"),
+        live, total = connection.execute(
+            sql("SELECT count(*) FILTER (WHERE lifecycle <> 'deleted'), count(*) FROM works "
+                "WHERE incarnation_id = :inc AND language_code = :lang AND kind = 'imported'"),
             {'inc': scope.incarnation, 'lang': scope.language},
-        ).scalar_one()
-        if held >= MAX_IMPORTS:
+        ).one()
+        if live >= MAX_IMPORTS or total >= _import_row_bound():
             raise MutationRefused('import_limit')
 
-    payload = {'id': client, 'form': body.form, 'title': body.title.strip(),
-               **({'text': body.text} if body.form == 'text' else {'url': body.url.strip()})}
+    if body.form == 'upload' and not body.mediaId.strip():
+        raise orena_http_error(422, 'import_media_invalid', 'An uploaded file needs its stored media id.', retryable=False)
+    payload = {'id': client, 'form': body.form, 'title': body.title.strip()}
+    if body.form == 'text':
+        payload['text'] = body.text
+    else:
+        payload['url'] = body.url.strip()
+        if body.form == 'upload':
+            payload['mediaId'] = body.mediaId.strip()
+        payload['kind'] = body.kind.strip()
+        if body.durationMs is not None:
+            payload['durationMs'] = body.durationMs
+        # The same rule the device applies: only an https thumbnail without credentials is kept.
+        thumbnail = body.thumbnailUrl.strip()
+        if thumbnail.startswith('https://') and '@' not in thumbnail:
+            payload['thumbnailUrl'] = thumbnail
+        if body.provider.strip():
+            payload['provider'] = body.provider.strip()
     return _commit(
         scope, kind='imported', ident=ident, operation_id=body.operationId, expected_version=body.expectedVersion,
         payload=payload, source={'kind': 'imported', 'id': client, 'revision': ''}, conflict_code='import_conflict',

@@ -273,6 +273,11 @@ def put_work(work_id: str, body: WorkMutation) -> dict[str, Any]:
         raise orena_http_error(422, 'work_kind_invalid', 'Unknown kind of work.', retryable=False)
     if body.lifecycle not in LIFECYCLE:
         raise orena_http_error(422, 'lifecycle_invalid', 'Unknown lifecycle.', retryable=False)
+    # A work is never born deleted: "create already-deleted, repeat" would leave a row, a receipt and a change record
+    # per call while the live count (which excludes deleted rows) never rises. A removal is a later write against
+    # a version that exists.
+    if body.lifecycle == 'deleted' and body.expectedVersion == 0:
+        raise orena_http_error(422, 'lifecycle_invalid', 'A work cannot be created already deleted.', retryable=False)
     if len(json.dumps(body.payload, ensure_ascii=False)) > MAX_PAYLOAD_CHARS:
         raise orena_http_error(413, 'work_too_large', 'This work is too large to keep.', retryable=False)
     scope = _scope()

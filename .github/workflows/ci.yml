@@ -62,6 +62,8 @@ jobs:
           node scripts/test_orena_account_settings.mjs
           node scripts/test_orena_continue_sync.mjs
           node scripts/test_orena_saved_state.mjs
+          node scripts/test_orena_language_switch.mjs
+          node scripts/test_orena_annotations_sync.mjs
           node scripts/test_orena_account_records.mjs
           node scripts/test_dictation_golden.mjs
           node scripts/test_orena_growth_summary.mjs

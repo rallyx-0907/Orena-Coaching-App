@@ -10,12 +10,8 @@ import { api } from '../../infrastructure/api.js';
 import { toast } from '../../kit/toast.js';
 import { shellCopy } from '../../copy/shell.js';
 import { chooseInterface, languages as copyLanguages, setSupportFromProfile } from '../../copy/index.js';
-import { updateContext, refreshCounts } from '../../shell/context.js';
-import { learnerMemory } from '../../product/memory.js';
+import { adoptLearningLanguage, updateContext } from '../../shell/context.js';
 import { selectLearningLanguage } from '../../product/account-settings.js';
-import { syncContinuation } from '../../product/continue-sync.js';
-import { pullImports } from '../../product/account-records.js';
-import { learningLanguage } from '../../product/languages.js';
 import { t } from './copy.js';
 import {
   STEP_COUNT, STEPS, clampStep, stepDots,
@@ -337,14 +333,7 @@ export default async function onboardingScreen(element, ctx) {
     /* The profile is per learning language: the support language, the declared level and its
        version the shell holds are the previous language's until read again. The context is the
        shell's, so it is brought up to date even if the screen was left meanwhile. */
-    const nextLanguage = learningLanguage(code);
-    const memory = learnerMemory(memoryStorage || undefined, context.owner, nextLanguage);
-    const profile = await api.learnerProfile().catch(() => null);
-    await syncContinuation(memory).catch(() => false);
-    memory.mergeImports(await pullImports(nextLanguage).catch(() => []));
-    updateContext({ language: nextLanguage, memory, ...(profile ? { profile, level: String(profile.declared_level || '').trim() } : {}) });
-    if (profile) setSupportFromProfile(profile);
-    refreshCounts().catch(() => {});
+    await adoptLearningLanguage(code, memoryStorage || undefined);
     if (!ctx.isCurrent()) return;
     state.busy = '';
     state.level = '';

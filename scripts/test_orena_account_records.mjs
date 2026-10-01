@@ -33,7 +33,8 @@ const stub = {
   imports: async () => ({
     imports: [
       { id: 'text:11111111-1111-4111-8111-111111111111', form: 'text', title: 'Mine', text: 'body', url: '', version: 3 },
-      { id: 'url:x', form: 'url', title: 'v', text: '', url: 'https://x.test', version: 1 },
+      { id: 'url:44444444-4444-4444-8444-444444444444', form: 'url', title: 'v', text: '', url: 'https://x.test/v', mediaId: '', kind: 'video', durationMs: 5000, thumbnailUrl: 'https://x.test/t.jpg', provider: 'x', version: 1 },
+      { id: 'upload:55555555-5555-4555-8555-555555555555', form: 'upload', title: 'f', text: '', url: '', mediaId: 'stored-9', kind: 'audio', durationMs: null, thumbnailUrl: '', provider: '', version: 2 },
     ],
   }),
   deleteImport: async (id, op, version) => { calls.push(['delete', id, version]); return {}; },
@@ -124,10 +125,39 @@ fresh();
 assert.equal(await records.pushImport({ id: 'text:22222222-2222-4222-8222-222222222222', title: 'T', text: 'Body', kind: 'text' }), true);
 assert.equal(calls[0][1], '22222222-2222-4222-8222-222222222222');
 const pulled = await records.pullImports('en');
-assert.deepEqual(pulled.map((item) => item.id), ['text:11111111-1111-4111-8111-111111111111'], 'only texts; a url import is media, not a reader text');
+/* Named contract change: a url import is now a media membership the account keeps (it used to be ignored here). */
+assert.deepEqual(pulled.map((item) => item.id), ['text:11111111-1111-4111-8111-111111111111', 'url:https://x.test/v', 'upload:stored-9'], 'texts as imports, links and files as media memberships in the own id scheme of the device');
+assert.deepEqual(pulled[1], { id: 'url:https://x.test/v', title: 'v', kind: 'video', language: 'en', origin: 'imported', duration_ms: 5000, thumbnail_url: 'https://x.test/t.jpg', provider: 'x' });
+assert.equal(pulled[2].duration_ms, undefined);
 assert.equal(await records.removeImport('text:11111111-1111-4111-8111-111111111111'), true);
 assert.equal(calls.at(-1)[2], 3, 'the delete carries the version the account holds');
 assert.equal(await records.removeImport('text:33333333-3333-4333-8333-333333333333'), false, 'an import the account never held is not deleted there');
+
+/* A media import (pasted link / uploaded file) goes to the account under a record id minted when it is kept. */
+fresh();
+const linkItem = { id: 'url:https://x.test/v', title: 'v', kind: 'video', duration_ms: 5000.4, thumbnail_url: 'https://x.test/t.jpg', provider: 'x' };
+assert.equal(await records.pushImport(linkItem), true);
+const [, linkUuid, linkBody] = calls[0];
+assert.match(linkUuid, /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+assert.deepEqual(linkBody, { operationId: linkBody.operationId, expectedVersion: 0, form: 'url', title: 'v', text: '', url: 'https://x.test/v', mediaId: '', kind: 'video', durationMs: 5000, thumbnailUrl: 'https://x.test/t.jpg', provider: 'x' });
+assert.equal(await records.pushImport(linkItem), true);
+assert.equal(calls.length, 1, 'opening an import again is not a second import');
+assert.equal(await records.pushImport({ id: 'upload:stored-9', title: 'f', kind: 'audio' }), true);
+assert.equal(calls[1][2].form, 'upload');
+assert.equal(calls[1][2].mediaId, 'stored-9');
+assert.equal(calls[1][2].durationMs, null);
+assert.equal(await records.removeImport('upload:stored-9'), true, 'a media import is removed from the account by the record this device kept');
+assert.equal(calls.at(-1)[1], calls[1][1]);
+assert.equal(await records.pushImport({ id: 'upload:stored-9', title: 'f', kind: 'audio' }), true);
+assert.notEqual(calls.at(-1)[1], calls[1][1], 'a removed membership can be kept again - under a new record, not the terminal one');
+/* Two devices that kept the same link leave two records; removing the membership removes both. */
+fresh();
+await records.pullImports('en');
+assert.equal(await records.removeImport('url:https://x.test/v'), true);
+assert.deepEqual(calls.filter((call) => call[0] === 'delete').map((call) => call[1]), ['44444444-4444-4444-8444-444444444444']);
+fresh('disabled');
+assert.equal(await records.pushImport(linkItem), false);
+assert.deepEqual(calls, [], 'nothing is sent while the deployment does not keep records');
 
 /* A response is learner work with a bounded summary, never a score. */
 fresh();
@@ -148,5 +178,18 @@ fresh();
 assert.equal(await records.attachProvenance({ term: 'harbour', why: 'from_reading', origin: 'reading:14', context: 'the harbour lights' }), true);
 assert.deepEqual([calls[0][1], calls[0][2].reason, calls[0][2].sourceKind, calls[0][2].sourceId], ['harbour', 'from_reading', 'reading', 'reading:14']);
 assert.equal(await records.attachProvenance({ term: 'harbour', why: 'because' }), false);
+
+/* Keeping a word from a sheet records where it was met: the content, the kind and the sentence. */
+fresh();
+assert.equal(await records.keepProvenance({ term: 'boards', source: { kind: 'reading', content_id: 'article:734b' }, sentence: 'Workers replaced the boards.' }), true);
+assert.deepEqual([calls[0][1], calls[0][2].reason, calls[0][2].sourceKind, calls[0][2].sourceId, calls[0][2].focus],
+  ['boards', 'from_reading', 'reading', 'article:734b', 'Workers replaced the boards.']);
+fresh();
+await records.keepProvenance({ term: 'lantern', source: { kind: 'dictionary' }, sentence: 'x' });
+assert.equal(calls[0][2].reason, 'looked_up', 'a source with no provenance reason is a look-up');
+assert.equal(calls[0][2].sourceKind, '', 'and with no content there is no source to name');
+fresh('disabled');
+assert.equal(await records.keepProvenance({ term: 'boards', source: { kind: 'reading', content_id: 'a' }, sentence: 's' }), false);
+assert.deepEqual(calls, [], 'nothing is sent while the deployment does not keep work with the account');
 
 console.log('Account records client: inactive deployments write nothing, notes union once, removals stay removed, bounds, ordered turns, imports, responses, provenance: PASS');

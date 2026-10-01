@@ -4530,8 +4530,34 @@ Resolved by the human's D-105 decisions; AD-A, AD-B and AD-H above are closed by
   (the "Preparing transcript" copy belongs to the Import sheet's processing step). Human decision: a drawn source-only state.
 - **Not drawn: unmeasured length.** A provider that reports no length shows the elapsed time without a total; the clip end
   is the last transcript line when there is one.
-- **Open (D4).** The import membership (`mediaImports`) is still device-only: a new device opens a known `url:`/`upload:`
-  route from the server, but Discover > Imported does not list the item there. A personal upload is resolvable by its
+- **Done (D4 runtime acceptance).** The import membership (`mediaImports`) is kept with the account through `/api/imports`
+  (forms `url` and `upload`, a record id minted when kept; removing removes every record of that link or file) and a new device lists it, per learning language. A personal upload is resolvable by its
   unguessable `media_id` only; the server does not check account or language on that read (listing is device-scoped per
   language). A `url:` item is re-acquired from its provider on every open (the Import sheet already did one), so it depends
   on the provider answering; Dictation, Shadowing and React for a `url:` item are not offered (no stored lesson id).
+
+### D4 runtime acceptance, human-directed fixes (2026-10-01)
+
+- **Removals hold across devices.** The account remembers up to 500 removed annotation ids per text (newest kept); a stale
+  device loses them on open and cannot write them back (422 `annotation_tombstoned`, or a re-read and merge on 409). This also
+  closes the quick-tap race (a highlight removed inside the push delay is not brought back by a pull). Consequence: an id
+  that was cleared or removed is never reusable; ids are minted once, so no learner action meets it.
+- **Review settings follow the language.** A partial review PATCH merges into the stored modes; the toggle sends only the mode
+  it changed; switching the learning language brings the new language's profile, version and review settings over before the
+  repaint (`adoptLearningLanguage`).
+- **Kept words remember where they came from.** A word or phrase saved from the new sheets writes a provenance occurrence
+  (source kind and id, sentence). The Listening vocabulary-sheet and phrase save paths belong to the parallel Listening work
+  and are not wired yet.
+- **Deleted legacy imports scrubbed (human-approved).** `scripts/scrub_deleted_imports.py` (dry run by default, idempotent,
+  counts only). On :8021 it found 2 deleted imports, both already tombstoned: 0 scrubbed (backup taken first). Left untouched
+  and reported: 2 saved place rows still name a deleted import; annotations and responses of a deleted import keep their
+  excerpts (deleting an import does not delete what the learner wrote about it).
+- **Import rows are bounded.** Live imports stay at 20; all import rows including tombstones are bounded by
+  `ORENA_LIMIT_IMPORT_TOMBSTONES` (default 360, floor 52, refused at startup below it). A work cannot be created already
+  deleted on the generic route. Imports (text, link, file) share this bound.
+- **P3 follow-ups, not done:**
+  - The Conversation End state is not persisted (it is rebuilt from the turns).
+  - A stale cached deleted import can still be opened from a device that has not refreshed its list until it syncs.
+  - Draft conflicts: `onElsewhere` is a no-op while `draft-sync.js` documents a chooser; no chooser is drawn.
+  - The mic-blocked Free Talk copy is incorrect for a browser that blocks the mic by policy.
+  - `media_thumbnail.py:32` hardcodes `_TEMP_ROOT` (an environment-specific path); belongs to the media agent.

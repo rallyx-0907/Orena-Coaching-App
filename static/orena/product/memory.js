@@ -114,7 +114,7 @@ export function learnerMemory(storage, owner, language) {
             x.origin === 'imported' &&
             x.language === language &&
             typeof x.id === 'string' &&
-            x.id.startsWith('url:') &&
+            (x.id.startsWith('url:') || x.id.startsWith('upload:')) &&
             typeof x.title === 'string',
         )
         .slice(0, 100);
@@ -385,10 +385,14 @@ export function learnerMemory(storage, owner, language) {
     /* The account's imports merged into this device's list (a cache refresh: it sends nothing). The
        device's own come first; the cap is the same 20 the server keeps. */
     mergeImports(list) {
+      const items = Array.isArray(list) ? list : [];
       const known = new Set(value.imports.map((x) => x.id));
-      const extra = (Array.isArray(list) ? list : []).filter((x) => x?.id && !known.has(x.id));
-      if (!extra.length) return false;
+      const extra = items.filter((x) => x?.id && !/^(url|upload):/.test(x.id) && !known.has(x.id));
+      const knownMedia = new Set(value.mediaImports.map((x) => x.id));
+      const media = items.filter((x) => x?.id && /^(url|upload):/.test(x.id) && x.title && !knownMedia.has(x.id));
+      if (!extra.length && !media.length) return false;
       value.imports = [...value.imports, ...extra].slice(0, 20);
+      value.mediaImports = [...value.mediaImports, ...media.map((x) => ({ ...x, language, origin: 'imported' }))].slice(0, 100);
       return save();
     },
     /* A media membership record. Two kinds of id are accepted, and they mean
@@ -423,7 +427,9 @@ export function learnerMemory(storage, owner, language) {
         item,
         ...value.mediaImports.filter((x) => x.id !== id),
       ].slice(0, 100);
-      return save();
+      save();
+      placeSink?.addImport?.(item);
+      return true;
     },
     remove(id) {
       value.imports = value.imports.filter((x) => x.id !== id);

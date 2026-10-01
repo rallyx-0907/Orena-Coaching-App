@@ -90,12 +90,7 @@ export async function loadContext(storage = window.localStorage) {
   await syncContinuation(state.memory).catch(() => false);
   // Imports the account holds appear on this device too (a device value the server lacks stays, H-6).
   state.memory.mergeImports(await pullImports(state.language).catch(() => []));
-  // The server's review settings are the truth when it holds any; the device copy is the cache.
-  const review = reviewFromProfile(profile);
-  if (review && state.memory) {
-    const held = state.memory.value?.reviewSettings || {};
-    state.memory.setReview({ ...held, ...review, modes: { ...held.modes, ...review.modes } });
-  }
+  applyServerReview(state.memory, profile);
   // The interface language is the account's, with the device as the first-paint cache.
   let deviceInterface = '';
   try {
@@ -110,6 +105,39 @@ export async function loadContext(storage = window.localStorage) {
   state.ready = true;
   emit();
   return context();
+}
+
+/* The server's review settings are the truth when it holds any; the device copy is only the cache. A value the
+   server does not hold yet stays as the device has it, and nothing here writes to the server. */
+function applyServerReview(memory, profile) {
+  const review = reviewFromProfile(profile);
+  if (!review || !memory) return;
+  const held = memory.value?.reviewSettings || {};
+  memory.setReview({ ...held, ...review, modes: { ...held.modes, ...review.modes } });
+}
+
+/* The learner's learning language just changed (the server has already switched the session). Everything that is
+   scoped to a language is brought over BEFORE the shell repaints: the profile - so its version, its declared
+   level, its support language and its stored review settings are the new language's, not the old one's - the
+   continuation places, the imports, and the device copy of the review settings, overlaid with the server's. A
+   control that is painted afterwards reads the new language's values, and its first write is made against the
+   new language's profile version. */
+export async function adoptLearningLanguage(code, storage = window.localStorage) {
+  const next = learningLanguage(code);
+  const memory = learnerMemory(storage, state.owner, next);
+  const [profile] = await Promise.all([
+    read('/api/learner-profile').catch(() => null),
+    syncContinuation(memory).catch(() => false),
+    pullImports(next).then((items) => memory.mergeImports(items)).catch(() => false),
+  ]);
+  applyServerReview(memory, profile);
+  updateContext({
+    language: next,
+    memory,
+    ...(profile ? { profile, level: String(profile.declared_level || '').trim(), pinyin: profile.pinyin !== 'off' } : {}),
+  });
+  if (profile) setSupportFromProfile(profile);
+  refreshCounts().catch(() => {});
 }
 
 function applyLearningLanguage() {

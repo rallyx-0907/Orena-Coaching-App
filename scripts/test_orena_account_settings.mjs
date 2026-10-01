@@ -63,9 +63,15 @@ assert.equal(reviewFromProfile({ review_new_per_day: null, review_limit_per_day:
 assert.deepEqual(reviewFromProfile({ review_new_per_day: 5, review_limit_per_day: null, review_modes: { cloze: false } }), { newPerDay: 5, modes: { cloze: false } });
 reset({ status: 409, body: {} }, { status: 200, body: { version: 'p2' } }, { status: 200, body: { version: 'p3' } });
 const seen = [];
-await saveReviewSettings({ newPerDay: 5, limitPerDay: 100, modes: { typing: true, cloze: false, speak: true, listen_choose: true } }, 'p1', (profile) => seen.push(profile.version));
-assert.deepEqual(calls[0].body.review_modes, { typing: true, cloze: false }, 'unregistered modes never leave the device');
+await saveReviewSettings({ modes: { cloze: false, speak: true, listen_choose: true } }, 'p1', (profile) => seen.push(profile.version));
+// Named contract change (runtime acceptance item 4): only the toggled mode is sent, never the device's whole view or defaults.
+assert.deepEqual(calls[0].body, { expected_version: 'p1', review_modes: { cloze: false } }, 'unregistered modes never leave the device, and nothing the learner did not touch is sent');
+assert.equal('review_new_per_day' in calls[0].body, false, 'no default limits are written by a toggle');
 assert.equal(calls[2].body.expected_version, 'p2');
+assert.deepEqual(calls[2].body.review_modes, { cloze: false }, 'a stale write re-applies the same single change to the fresh profile');
 assert.deepEqual(seen, ['p2', 'p3']);
+reset();
+assert.equal(await saveReviewSettings({ modes: { speak: true } }, 'p1'), null, 'a change with nothing registered sends nothing');
+assert.equal(calls.length, 0);
 
 console.log('Account settings client: token echo, one retry on 409, no-row account, interface reconcile and review settings: PASS');
