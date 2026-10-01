@@ -16,6 +16,7 @@ from grammar_lab.pipeline.generate import (
     _normalize_seg,
     _story_generation_schema,
     build_rule_table,
+    complete_literal_example_spans,
     pinyin_from_pairs,
     resolve_spans,
     semantic_repair_hints,
@@ -622,6 +623,22 @@ def test_generate_v04_zh_normalizes_spaces_in_target_text_before_pinyin(tmp_path
     point = load_point("zh", "zh.le_completion", lab.root)
     assert point["examples"][0]["text"] == "我们吃了饭。"
     assert len(point["examples"][0]["pinyin"]) == len(point["examples"][0]["text"])
+
+
+def test_complete_literal_example_spans_only_recovers_formula_literals() -> None:
+    pattern = {"formula": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ"}},
+        {"text": "have/has", "role": "aux", "label": {"vi": "trợ động từ"}},
+        {"text": "V3", "role": "verb", "label": {"vi": "phân từ"}},
+    ]}
+    examples = [{"text": "She has finished.", "form": "affirmative", "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 8, "end": 16, "role": "verb"},
+    ]}]
+    complete_literal_example_spans(examples, pattern)
+    spans = {(examples[0]["text"][x["start"]:x["end"]], x["role"]) for x in examples[0]["spans"]}
+    assert ("has", "aux") in spans
+    assert len([x for x in examples[0]["spans"] if x["role"] == "subject"]) == 1
 
 
 def test_generate_v04_drops_extra_visual_span_roles_but_keeps_required_role_failures(tmp_path: Path) -> None:
