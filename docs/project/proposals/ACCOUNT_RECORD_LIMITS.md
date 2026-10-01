@@ -1,9 +1,10 @@
 # Proposal: server-side safety limits and retention/rejection behaviour for account records
 
-Status: **PROPOSED, revision 2** (2026-10-01). Revision 1 (`codex/work` at `8481e33`) was independently reviewed in
+Status: **APPROVED WITH CONDITIONS (review re-check 2026-10-01); implementation not started.** Revision 3 (2026-10-01); revisions 1-2 below. Revision 1 (`codex/work` at `8481e33`) was independently reviewed in
 `ACCOUNT_RECORD_LIMITS_REVIEW.md`: REQUEST CHANGES (P1 1, P2 4, P3 5, conditions C1-C5). Revision 2 answers every finding;
 the mapping is the final section, "Rev 2 changes". Document only: no code, schema, migration, Docker or runtime is
-changed by this file. Not approved.
+changed by this file. The re-check ("Re-check (rev 2)" in the review) approves rev 2 with conditions; rev 3 applies them (section
+"Rev 3 changes"). Enabling the backbone on :8000/:8010 remains a separate human gate.
 
 Human instruction (verbatim): "Before enabling the backbone beyond `:8021`, propose configurable server-side safety
 limits and retention/rejection behavior for: reading positions, typed responses, notes, conversations. Do not invent
@@ -79,7 +80,7 @@ a learner; derivations in sections 2 and 4):
 | Turns per conversation (existing) | `ORENA_LIMIT_CONVERSATION_TURNS` | 24 | per conversation | 422 `turn_limit` (exists today) |
 | Record **stored** bytes (`works.payload` as stored, tombstones included) | `ORENA_LIMIT_RECORD_BYTES` | 134,217,728 (128 MiB) | per (account, language) | **reject** new row, or a growth past 32 KB: 422 `record_bytes_limit` |
 | Drafts (rev 2) | `ORENA_LIMIT_DRAFTS` | 2,500 | per (account, language) | **reject** new key: 422 `draft_limit` |
-| Deleted imports (tombstones; the only kind with a delete route) | `ORENA_LIMIT_IMPORT_TOMBSTONES` | 200 | per (account, language) | **reject** a new import: 422 `import_limit` |
+| Deleted imports (tombstones; the only kind with a delete route) | `ORENA_LIMIT_IMPORT_TOMBSTONES` | 360 | per (account, language) | **reject** a new import: 422 `import_limit` |
 | Mutations per minute | `ORENA_LIMIT_WRITES_PER_MINUTE` | 240 | per account | 429 `write_rate_limited`, retryable |
 | Mutations per hour | `ORENA_LIMIT_WRITES_PER_HOUR` | 3,600 | per account | 429 `write_rate_limited`, retryable |
 | Place writes per minute | `ORENA_LIMIT_PLACE_WRITES_PER_MINUTE` | 120 | per account, per process | 429 `write_rate_limited` |
@@ -178,7 +179,7 @@ here.
 **3.2 One module, one validation.** A new `writing_coach/account_limits.py` (implementation, after approval) reads each
 `ORENA_LIMIT_*` variable once at startup, through the same `os.getenv` convention the repository already uses, and fails
 startup on a non-integer, a non-positive value, or a value **below a floor** (the heavy 1-year volume: places 1,095,
-responses 3,650, annotated texts 365, conversations 365, bytes 16 MiB, writes per minute 60, writes per hour 600). A floor
+responses 3,650, annotated texts 365, conversations 365, bytes 16 MiB, writes per minute 60, writes per hour 600, import tombstones 52, drafts 365). A floor
 stops a misconfiguration from becoming a quota. There is no value that means "unlimited" (a very large integer does) and no
 per-account override in this proposal. `compose.yaml` passes the variables through with the defaults, like
 `ORENA_ACCOUNT_BACKBONE: ${ORENA_ACCOUNT_BACKBONE:-off}`.
@@ -214,9 +215,11 @@ budget includes tombstones. Per kind:
   equals "live rows" and nothing can be recycled.
 - `imported` is the one kind with a delete route, and delete-and-recreate is legitimate. The live bound stays 20
   (`account_records_api.py:40`), and the guard must count **live** rows against 20 **and total rows (live + tombstones)**
-  against a separate larger bound, `ORENA_LIMIT_IMPORT_TOMBSTONES` = **200**: heavy import use is of the order of one a week
-  (52 a year, [A] unmeasured), 156 in three years x 1.25 = about 200. Beyond it a new import is refused with the existing
-  422 `import_limit`. A tombstone carries no text (`delete_import`), so 200 of them are small; the rail stops the loop, it
+  against a separate larger bound, `ORENA_LIMIT_IMPORT_TOMBSTONES` = **360** (floor **52**, the heavy 1-year volume): heavy import use is of the order of one a
+  week (52 a year, [A] unmeasured), 156 in three years x 2.3 (A7, learner-authored) = about 360. It is a **lifetime** count
+  per (account, language): tombstones are terminal and cannot be recycled, so only a reviewed tombstone-retention decision
+  (reserved with deletion and export) could ever reclaim it; at the heavy rate it is reached in about 7 years. Beyond it a new import is refused with the existing
+  422 `import_limit`. A tombstone carries no text (`delete_import`), so 360 of them are small; the rail stops the loop, it
   does not bound bytes.
 - **Existing defect, fix in code now, independent of this proposal's other rails:** the shipped import guard counts only
   `lifecycle <> 'deleted'`, so create / delete / create is unbounded today against the live 20-import cap. It should be
@@ -227,11 +230,13 @@ budget includes tombstones. Per kind:
 `response` and `conversation`: `GENERIC_WORK_KINDS` (`work_contract.py:27`) becomes empty for writes and the route answers
 422 `work_kind_invalid`, the answer it already gives `annotation` and `imported`. Each has a dedicated route that derives a
 deterministic id from account, incarnation, language and key. No client uses the generic writer, so the only breakage is
-tests (`tests/test_work_api.py`), which move to the dedicated routes. The reads stay. This removes the client-UUID creator
+tests (`tests/test_work_api.py`), which move to the dedicated routes (**the implementation commit lists each `tests/test_work_api.py` assertion that moves, so none is dropped**, review P3-8). The reads stay. This removes the client-UUID creator
 for all three kinds, **drafts included**, and `MAX_PAYLOAD_CHARS` (`work_api.py:56`) then bounds nothing writable. Drafts
 still need a count rail, because `PUT /api/drafts/{key}` creates a row per key (<= 200): `ORENA_LIMIT_DRAFTS` = **2,500**
 per (account, language), derived under A7 as heavy about one piece a day = 365 a year, 1,095 in three years, x 2.3 (A3, [A]
-unmeasured); rejected with 422 `draft_limit`, never evicted (it is the learner's text). Drafts are a fifth guarded kind in
+unmeasured); rejected with 422 `draft_limit`, never evicted (it is the learner's text). **The draft sender treats 422 `draft_limit` as
+terminal for that piece** (review P3-7): it stops sending, does not retry on later autosave pauses, and keeps saying "on this
+device" (`draft-sync.js` catch); only a retryable 429 is retried. Drafts are a fifth guarded kind in
 the shared helper.
 
 **3.4 Scope.** Counts are per (incarnation, language), the same scope as the import bound and as every `works` row
@@ -489,8 +494,9 @@ request and rewrites a payload. So a rate rail is required, and for the same rea
 and `ORENA_LIMIT_WRITES_PER_HOUR` = **3,600**, evaluated in the same transaction, after the stream lock and the receipt
 lookup, skipped on a replay. No schema and no counter table, and **an O(1) lookup, not a walk** (review P2-2, C3):
 sequences are gap-free per incarnation (allocated from `account_streams.next_sequence` under the lock and rolled back with
-the transaction, `mutation_commit.py:106-112,187-194`) and the head `H` is already read. The mutation about to take
-sequence `H` is the 240th in the last minute if the change record at sequence `H - 240` is under 60 seconds old:
+the transaction, `mutation_commit.py:106-112,187-194`) and the head `H` is already read. The record at sequence `H - 240` is the
+first of the 240 previous mutations, so if it is under 60 seconds old, 240 mutations have already landed in the last
+minute and the **new one would be the 241st, which is refused** (the 240th is admitted):
 `SELECT created_at FROM change_records WHERE incarnation_id = :inc AND sequence = :h_minus_n`, a probe of the unique index
 `uq_change_record_sequence (incarnation_id, sequence)` plus one heap fetch, once per rail (two probes per mutation). The
 walk of rev 1 (`OFFSET 239`) is dropped: it fetched the heap for every skipped row. **Fallback only if a later compaction
@@ -576,6 +582,8 @@ stream lock, `pg_column_size`, TOAST, races and concurrency in the rows above is
 | F2 / C2 | the generic `PUT /api/works/{id}` answers 422 `work_kind_invalid` for `draft`, `response`, `conversation`; the dedicated routes still work; the draft rail refuses the 2,501st key |
 | F6 / C1 | a create-then-delete loop on the import route stops at the tombstone bound; creation with `lifecycle: deleted` is refused for every non-import kind; the 20-live-import behaviour is otherwise unchanged. **This test and its fix land first, alone.** |
 | Eviction race (P2-3) | a place PUT interleaved with the eviction of its row answers `written`, never a 500; the eviction statement does not delete a row that became saved between select and delete |
+| Rate boundary (P3-6) | exactly 240 mutations in 60 s are admitted; the **241st** is 429; likewise 3,600 admitted and the 3,601st refused in the hour |
+| Draft terminal (P3-7) | after a 422 `draft_limit` the draft sender stops for that piece: no retry on later autosave pauses, state stays "on this device"; a 429 (retryable) is retried on the next pause |
 | 429 mapping (P2-2) | `_commit`, `put_work`, `put_draft`, turn append and `/api/continue` each return 429 with `rail` and `retryAfterSeconds` and no other rail's numbers |
 | Rate lookup (P2-2) | the guard issues point probes at `H - 240` and `H - 3600` (assert the SQL, not a walk); a gap at `H - N` reads as under the rail |
 | Stored vs logical (P2-4) | a compressible payload counts as its `pg_column_size`; the budget test uses incompressible text so compression does not defeat it |
@@ -676,7 +684,7 @@ volume.
 
 | Finding / condition | Edit |
 | --- | --- |
-| **P1-1 / C1** delete bypasses every count | New F6 (Summary); 3.3 aggregate counts all rows incl. tombstones; new 3.3a (no `deleted` on creation for kinds without a delete route; imports: live 20 plus `ORENA_LIMIT_IMPORT_TOMBSTONES` = 200 with derivation); states that the **live 20-import cap already has this defect, to be fixed in code first and alone**; byte budget includes tombstones; defaults table; test row F6 |
+| **P1-1 / C1** delete bypasses every count | New F6 (Summary); 3.3 aggregate counts all rows incl. tombstones; new 3.3a (no `deleted` on creation for kinds without a delete route; imports: live 20 plus `ORENA_LIMIT_IMPORT_TOMBSTONES` (200 in rev 2, 360 from rev 3) with derivation); states that the **live 20-import cap already has this defect, to be fixed in code first and alone**; byte budget includes tombstones; defaults table; test row F6 |
 | **P2-1 / C2** `draft` uncapped via the generic route | F2 reworded; new 3.3b closes the generic writer for `draft`/`response`/`conversation` (no client uses it; tests move) and adds `ORENA_LIMIT_DRAFTS` = 2,500 with derivation; section 8 drops drafts; test row F2 |
 | **P2-2 / C3** rate lookup not O(1); 429 mapping | Section 6 rewritten: point probe at `head - N` on `uq_change_record_sequence`, gap fallback, compaction floor; 3.5 adds the explicit per-route 429 branch (`_commit`, `put_work`, `put_draft`, turn append, `/api/continue`); test rows |
 | **P2-3 / C4** eviction DELETE vs place UPDATE race | 4.1 Concurrency paragraph: single re-checked DELETE; vanished row in `set_place` takes the insert branch and answers `written`; test row |
@@ -691,3 +699,18 @@ volume.
 
 Not changed: the defaults for places, responses, annotated texts, conversations and bytes; evict-versus-reject; the
 receipts section (still reserved, option A, Principal Architect as owner); the no-schema conclusion.
+
+---
+
+## Rev 3 changes (answering "Re-check (rev 2)", APPROVE WITH CONDITIONS)
+
+| Item | Edit |
+| --- | --- |
+| **P2-5** import tombstone default | `ORENA_LIMIT_IMPORT_TOMBSTONES` raised 200 -> **360** (156 in three years x 2.3, A7), floor **52** (heavy 1-year volume) added to 3.2; stated as a lifetime count reclaimable only by a reviewed retention decision; defaults table and 3.3a updated |
+| **P3-6** off-by-one | Section 6: the record at `H - 240` is the first of the 240 previous mutations, so the new mutation is the **241st** and is refused; boundary test row added (240 admitted, 241st refused; 3,600 / 3,601st) |
+| **P3-7** draft_limit retry | 3.3b: the draft sender treats 422 `draft_limit` as terminal for that piece (no retry per autosave pause, stays "on this device"); test row added |
+| **P3-8** moved assertions | 3.3b: the implementation commit lists every `tests/test_work_api.py` assertion that moves to a dedicated route |
+| Status | Header: APPROVED WITH CONDITIONS (review re-check 2026-10-01); implementation not started |
+
+Re-check conditions 1-3 stand: the import-tombstone fix lands first and alone with the create/delete/create test; the draft
+cadence is measured on the lane before the rate defaults are fixed; PostgreSQL-only results are labelled local execution.
