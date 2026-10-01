@@ -197,9 +197,7 @@ functions:
     - en.canon.b1.026
     - en.canon.b1.035
     - en.canon.b1.036
-    - en.canon.b2.005
     - en.canon.b2.006
-    - en.canon.c1.012
     zh-Hans:
     - zh.ruguo_jiu
     - zh.zhiyao_jiu
@@ -586,7 +584,6 @@ functions:
     - en.canon.b2.025
     - en.canon.b2.026
     - en.canon.b2.027
-    - en.canon.c1.017
     zh-Hans: []
     ja: []
 - id: fn.relative
@@ -821,6 +818,60 @@ functions:
     zh-Hans:
     - zh.separable_verbs
     ja: []
+- id: fn.aspect_viewpoint
+  title:
+    vi: Thể và góc nhìn thời gian
+    en: Aspect and temporal viewpoint
+    zh-Hans: 体与时间视角
+  realizations:
+    en: []
+    zh-Hans: []
+    ja: []
+  planned:
+    en:
+    - en.canon.b2.001
+    - en.canon.c1.003
+    - en.canon.c1.004
+    - en.canon.c1.005
+    zh-Hans: []
+    ja: []
+- id: fn.hypothetical_counterfactual
+  title:
+    vi: Giả định và phản thực
+    en: Hypothetical and counterfactual meaning
+    zh-Hans: 假设与反事实
+  realizations:
+    en: []
+    zh-Hans: []
+    ja: []
+  planned:
+    en:
+    - en.canon.b2.005
+    - en.canon.c1.012
+    - en.canon.c1.019
+    - en.canon.c2.002
+    zh-Hans: []
+    ja: []
+- id: fn.reporting
+  title:
+    vi: Tường thuật lời nói và lập trường
+    en: Reporting speech and stance
+    zh-Hans: 转述与立场表达
+  realizations:
+    en: []
+    zh-Hans: []
+    ja: []
+  planned:
+    en:
+    - en.canon.b1.027
+    - en.canon.b1.029
+    - en.canon.b2.017
+    - en.canon.b2.018
+    - en.canon.b2.019
+    - en.canon.c1.017
+    - en.canon.c2.014
+    zh-Hans: []
+    ja: []
 - id: fn.catalog_unclassified
   title:
     vi: Chưa phân loại chức năng (danh mục chuẩn v1)
@@ -838,23 +889,17 @@ functions:
     - en.canon.b1.014
     - en.canon.b1.017
     - en.canon.b1.018
-    - en.canon.b1.027
-    - en.canon.b1.029
     - en.canon.b1.034
     - en.canon.b1.042
     - en.canon.b1.046
     - en.canon.b1.047
     - en.canon.b1.052
     - en.canon.b1.053
-    - en.canon.b2.001
     - en.canon.b2.011
     - en.canon.b2.012
     - en.canon.b2.013
     - en.canon.b2.015
     - en.canon.b2.016
-    - en.canon.b2.017
-    - en.canon.b2.018
-    - en.canon.b2.019
     - en.canon.b2.031
     - en.canon.b2.034
     - en.canon.b2.035
@@ -867,14 +912,10 @@ functions:
     - en.canon.b2.042
     - en.canon.b2.043
     - en.canon.b2.044
-    - en.canon.c1.003
-    - en.canon.c1.004
-    - en.canon.c1.005
     - en.canon.c1.010
     - en.canon.c1.014
     - en.canon.c1.016
     - en.canon.c1.018
-    - en.canon.c1.019
     - en.canon.c1.021
     - en.canon.c1.022
     - en.canon.c1.023
@@ -885,7 +926,6 @@ functions:
     - en.canon.c1.028
     - en.canon.c1.029
     - en.canon.c1.030
-    - en.canon.c2.002
     - en.canon.c2.004
     - en.canon.c2.005
     - en.canon.c2.006
@@ -895,7 +935,6 @@ functions:
     - en.canon.c2.010
     - en.canon.c2.011
     - en.canon.c2.013
-    - en.canon.c2.014
     - en.canon.c2.015
     - en.canon.c2.016
     - en.canon.c2.017
