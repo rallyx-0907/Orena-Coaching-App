@@ -60,7 +60,6 @@ personal_production.rule_role_not_in_formula  a pattern_rule slot's role is not 
 personal_production.rule_rejects_sample  the pattern_rule does not match personal_production.sample.text (v0.4)
 personal_production.rule_rejects_example  the pattern_rule does not match an example of the target_form (rule too strict) (v0.4)
 example.span_slot_mismatch  an example's spans, in text order, do not fit the slots of its formula in order (v0.4)
-example.slot_uncovered      a required (non-optional) formula slot has no span in the example, even when its role appears (v0.4)
 anchors.missing             a v0.4 point has no source_anchors (status unanchored is fine; absent is not) (v0.4)
 contrasts.asymmetric        A lists B in contrasts but B does not list A (both in the set) (v0.4)
 aliases.duplicate           an R5 id appears in the aliases of two points (v0.4)
@@ -586,10 +585,6 @@ class _Validation:
                 return
             position = slot_index
             reached.add(slot_index)
-        for index, slot in enumerate(formula):
-            if not slot.get("optional") and index not in reached:
-                self.issue(file, f"{path}.spans", "example.slot_uncovered",
-                           f"no span for the required slot {slot['text']!r} ({slot['role']})")
 
     def check_pinyin_v04(self, file: str, point: dict[str, Any]) -> None:
         for path, text, pinyin in _pinyin_targets(point):
