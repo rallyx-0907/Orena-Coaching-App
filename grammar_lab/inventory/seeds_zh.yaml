@@ -823,7 +823,7 @@
   batch: full-seed-2026-09-30
 - id: zh.modal.hui
   level: '1'
-  function: fn.catalog_unclassified
+  function: fn.possibility
   point_type: other
   native_title: "能愿动词：会、能"
   title:
@@ -840,7 +840,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk1.a_1_1_2.p1
   level: '1'
-  function: fn.catalog_unclassified
+  function: fn.future_plans
   point_type: other
   native_title: "能愿动词：想、要"
   title:
@@ -905,7 +905,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk1.a_1_1_7_2.p1
   level: '1'
-  function: fn.catalog_unclassified
+  function: fn.comparison
   point_type: other
   native_title: "比"
   title:
@@ -1039,7 +1039,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk1.a_1_6_1.p1
   level: '1'
-  function: fn.catalog_unclassified
+  function: fn.quantity
   point_type: other
   native_title: "钱数表示法"
   title:
@@ -1072,9 +1072,9 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk2_3_cu_i_c_u_thay_i_tr_ng_th_i
   level: '1'
-  function: fn.catalog_unclassified
+  function: fn.completed_past
   point_type: other
-  native_title: "了 cuối câu: thay đổi trạng thái"
+  native_title: "句末“了”：状态变化"
   title:
     vi: "Ngữ pháp tiếng Trung: 了 cuối câu: thay đổi trạng thái"
     en: "Chinese grammar: 了 cuối câu: thay đổi trạng thái"
@@ -1090,9 +1090,9 @@
   batch: full-seed-2026-09-30
 - id: zh.ba_suggestion
   level: '1'
-  function: fn.catalog_unclassified
+  function: fn.obligation_advice
   point_type: other
-  native_title: "ba_suggestion"
+  native_title: "“吧”表示建议"
   title:
     vi: "Ngữ pháp tiếng Trung: ba_suggestion"
     en: "Chinese grammar: ba_suggestion"
@@ -1107,9 +1107,9 @@
   batch: full-seed-2026-09-30
 - id: zh.modal.xiang_yao
   level: '1'
-  function: fn.catalog_unclassified
+  function: fn.future_plans
   point_type: other
-  native_title: "modal.xiang_yao"
+  native_title: "能愿动词“想/要”"
   title:
     vi: "Ngữ pháp tiếng Trung: modal.xiang_yao"
     en: "Chinese grammar: modal.xiang_yao"
@@ -1124,9 +1124,9 @@
   batch: full-seed-2026-09-30
 - id: zh.qing_request
   level: '1'
-  function: fn.catalog_unclassified
+  function: fn.instructions
   point_type: other
-  native_title: "qing_request"
+  native_title: "“请”表示请求"
   title:
     vi: "Ngữ pháp tiếng Trung: qing_request"
     en: "Chinese grammar: qing_request"
@@ -1141,9 +1141,9 @@
   batch: full-seed-2026-09-30
 - id: zh.serial_verbs.qu_lai
   level: '1'
-  function: fn.catalog_unclassified
+  function: fn.sequence
   point_type: other
-  native_title: "serial_verbs.qu_lai"
+  native_title: "连动句“去/来 + 动词”"
   title:
     vi: "Ngữ pháp tiếng Trung: serial_verbs.qu_lai"
     en: "Chinese grammar: serial_verbs.qu_lai"
@@ -1158,9 +1158,9 @@
   batch: full-seed-2026-09-30
 - id: zh.tai_le
   level: '1'
-  function: fn.catalog_unclassified
+  function: fn.degree
   point_type: other
-  native_title: "tai_le"
+  native_title: "“太……了”"
   title:
     vi: "Ngữ pháp tiếng Trung: tai_le"
     en: "Chinese grammar: tai_le"
@@ -1175,9 +1175,9 @@
   batch: full-seed-2026-09-30
 - id: zh.zenme_question
   level: '1'
-  function: fn.catalog_unclassified
+  function: fn.questions
   point_type: other
-  native_title: "zenme_question"
+  native_title: "“怎么”疑问句"
   title:
     vi: "Ngữ pháp tiếng Trung: zenme_question"
     en: "Chinese grammar: zenme_question"
@@ -1191,7 +1191,7 @@
   batch: full-seed-2026-09-30
 - id: zh.modal.neng_keyi
   level: '2'
-  function: fn.catalog_unclassified
+  function: fn.possibility
   point_type: other
   native_title: "能愿动词：会、能"
   title:
@@ -1209,7 +1209,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk3_10_topic
   level: '2'
-  function: fn.catalog_unclassified
+  function: fn.comparison
   point_type: other
   native_title: "跟、和"
   title:
@@ -1227,7 +1227,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk2.a_2_1_1.p1
   level: '2'
-  function: fn.catalog_unclassified
+  function: fn.obligation_advice
   point_type: other
   native_title: "能愿动词"
   title:
@@ -1279,7 +1279,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk2.a_2_1_3.p1
   level: '2'
-  function: fn.catalog_unclassified
+  function: fn.degree
   point_type: morphology
   native_title: "形容词重叠：AA、AABB"
   title:
@@ -1363,7 +1363,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk2.a_2_1_7_2.p1
   level: '2'
-  function: fn.catalog_unclassified
+  function: fn.location
   point_type: other
   native_title: "往"
   title:
@@ -1380,7 +1380,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk2.a_2_1_7_3.p1
   level: '2'
-  function: fn.catalog_unclassified
+  function: fn.location
   point_type: other
   native_title: "离"
   title:
@@ -1414,7 +1414,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk2.a_2_1_9.p1
   level: '2'
-  function: fn.catalog_unclassified
+  function: fn.action_result
   point_type: other
   native_title: "结构助词：得"
   title:
@@ -1431,7 +1431,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk2.a_2_1_10.p1
   level: '2'
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
   native_title: "喂"
   title:
@@ -1465,7 +1465,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk2.a_2_2_2.p1
   level: '2'
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
   native_title: "名词性短语"
   title:
@@ -1482,7 +1482,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk2.a_2_2_3_1.p1
   level: '2'
-  function: fn.catalog_unclassified
+  function: fn.time_expression
   point_type: other
   native_title: "不一会儿"
   title:
@@ -1499,7 +1499,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk2.a_2_3.p1
   level: '2'
-  function: fn.catalog_unclassified
+  function: fn.obligation_advice
   point_type: other
   native_title: "还是⋯⋯吧"
   title:
@@ -1602,7 +1602,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk2.a_2_7.p1
   level: '2'
-  function: fn.catalog_unclassified
+  function: fn.quantity
   point_type: other
   native_title: "序数表示法"
   title:
@@ -1619,7 +1619,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk2.a_2_8.p1
   level: '2'
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
   native_title: "用“就”表示强调"
   title:
@@ -1653,7 +1653,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk2.a_2_10.p1
   level: '2'
-  function: fn.catalog_unclassified
+  function: fn.future_plans
   point_type: other
   native_title: "该⋯⋯了"
   title:
@@ -1671,9 +1671,9 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk3_11_nh_n_m_nh
   level: '2'
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
-  native_title: "是...的 nhấn mạnh"
+  native_title: "“是……的”强调结构"
   title:
     vi: "Ngữ pháp tiếng Trung: 是...的 nhấn mạnh"
     en: "Chinese grammar: 是...的 nhấn mạnh"
@@ -1690,9 +1690,9 @@
   batch: full-seed-2026-09-30
 - id: zh.bie_imperative
   level: '2'
-  function: fn.catalog_unclassified
+  function: fn.instructions
   point_type: other
-  native_title: "bie_imperative"
+  native_title: "“别”祈使句"
   title:
     vi: "Ngữ pháp tiếng Trung: bie_imperative"
     en: "Chinese grammar: bie_imperative"
@@ -1707,9 +1707,9 @@
   batch: full-seed-2026-09-30
 - id: zh.cong_dao
   level: '2'
-  function: fn.catalog_unclassified
+  function: fn.time_expression
   point_type: other
-  native_title: "cong_dao"
+  native_title: "“从……到……”"
   title:
     vi: "Ngữ pháp tiếng Trung: cong_dao"
     en: "Chinese grammar: cong_dao"
@@ -1724,9 +1724,9 @@
   batch: full-seed-2026-09-30
 - id: zh.duo_adjective_question
   level: '2'
-  function: fn.catalog_unclassified
+  function: fn.questions
   point_type: other
-  native_title: "duo_adjective_question"
+  native_title: "“多 + 形容词”疑问句"
   title:
     vi: "Ngữ pháp tiếng Trung: duo_adjective_question"
     en: "Chinese grammar: duo_adjective_question"
@@ -1741,9 +1741,9 @@
   batch: full-seed-2026-09-30
 - id: zh.gei_dui
   level: '2'
-  function: fn.catalog_unclassified
+  function: fn.location
   point_type: other
-  native_title: "gei_dui"
+  native_title: "介词“给/对”"
   title:
     vi: "Ngữ pháp tiếng Trung: gei_dui"
     en: "Chinese grammar: gei_dui"
@@ -1758,9 +1758,9 @@
   batch: full-seed-2026-09-30
 - id: zh.haishi_huozhe
   level: '2'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
-  native_title: "haishi_huozhe"
+  native_title: "“还是/或者”"
   title:
     vi: "Ngữ pháp tiếng Trung: haishi_huozhe"
     en: "Chinese grammar: haishi_huozhe"
@@ -1775,9 +1775,9 @@
   batch: full-seed-2026-09-30
 - id: zh.shi_bu_shi
   level: '2'
-  function: fn.catalog_unclassified
+  function: fn.questions
   point_type: other
-  native_title: "shi_bu_shi"
+  native_title: "“是不是”正反问句"
   title:
     vi: "Ngữ pháp tiếng Trung: shi_bu_shi"
     en: "Chinese grammar: shi_bu_shi"
@@ -1792,9 +1792,9 @@
   batch: full-seed-2026-09-30
 - id: zh.yao_le
   level: '2'
-  function: fn.catalog_unclassified
+  function: fn.future_plans
   point_type: other
-  native_title: "yao_le"
+  native_title: "“要……了”"
   title:
     vi: "Ngữ pháp tiếng Trung: yao_le"
     en: "Chinese grammar: yao_le"
@@ -1809,9 +1809,9 @@
   batch: full-seed-2026-09-30
 - id: zh.yijing_haimei
   level: '2'
-  function: fn.catalog_unclassified
+  function: fn.time_expression
   point_type: other
-  native_title: "yijing_haimei"
+  native_title: "“已经……还没……”"
   title:
     vi: "Ngữ pháp tiếng Trung: yijing_haimei"
     en: "Chinese grammar: yijing_haimei"
@@ -1826,9 +1826,9 @@
   batch: full-seed-2026-09-30
 - id: zh.youdian_yidian
   level: '2'
-  function: fn.catalog_unclassified
+  function: fn.degree
   point_type: other
-  native_title: "youdian_yidian"
+  native_title: "“有点儿/一点儿”"
   title:
     vi: "Ngữ pháp tiếng Trung: youdian_yidian"
     en: "Chinese grammar: youdian_yidian"
@@ -1843,7 +1843,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk3.a_3_1_1.p1
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
   native_title: "第-、老-、小-"
   title:
@@ -1860,7 +1860,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk3.a_3_1_2.p1
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
   native_title: "-儿、一家、-们、-头、-子"
   title:
@@ -1877,7 +1877,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk3.a_3_2_1.p1
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.future_plans
   point_type: other
   native_title: "能愿动词：敢"
   title:
@@ -1927,7 +1927,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk3.a_3_2_4.p2
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.questions
   point_type: other
   native_title: "关联副词：再"
   title:
@@ -1961,7 +1961,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk3_8_topic
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.location
   point_type: other
   native_title: "自从"
   title:
@@ -1979,7 +1979,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk3.a_3_2_5_2.p1
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.location
   point_type: other
   native_title: "朝"
   title:
@@ -1996,7 +1996,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk3.a_3_2_5_3.p1
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.location
   point_type: other
   native_title: "为"
   title:
@@ -2031,7 +2031,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk3_5_topic
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.reason_result
   point_type: other
   native_title: "为了"
   title:
@@ -2065,7 +2065,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk3.a_3_2_7.p1
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
   native_title: "哈哈"
   title:
@@ -2115,7 +2115,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk3.a_3_3_2_2.p1
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
   native_title: "看起来"
   title:
@@ -2132,7 +2132,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk3_7_topic
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.time_expression
   point_type: other
   native_title: "从⋯⋯起"
   title:
@@ -2150,7 +2150,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk3_9_topic
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
   native_title: "对⋯⋯来说"
   title:
@@ -2202,7 +2202,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk3.a_3_5_3.p1
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.relative
   point_type: other
   native_title: "动词或动词性短语、主谓短语作定语"
   title:
@@ -2238,7 +2238,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk3.a_3_5_4.p1
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.possibility
   point_type: other
   native_title: "可能补语1：动词+得/不+动词/形容词；动词+得/不+了"
   title:
@@ -2325,7 +2325,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk3_1_topic
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
   native_title: "不仅/不光 ，还/而且"
   title:
@@ -2396,7 +2396,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk3.a_3_7.p1
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.quantity
   point_type: other
   native_title: "概数表示法2"
   title:
@@ -2447,7 +2447,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk3.a_3_10.p1
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.time_expression
   point_type: other
   native_title: "都⋯⋯了"
   title:
@@ -2465,7 +2465,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk3_2_topic
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
   native_title: "既⋯⋯，又/也⋯⋯"
   title:
@@ -2483,7 +2483,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk3_4_topic
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.condition_real
   point_type: other
   native_title: "无论⋯⋯，都/也⋯⋯"
   title:
@@ -2502,7 +2502,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk3_3_topic_69
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.contrast
   point_type: other
   native_title: "即使⋯⋯，也⋯⋯"
   title:
@@ -2523,7 +2523,7 @@
   level: '3'
   function: fn.object_disposal
   point_type: word_order
-  native_title: "把字句: nền tảng"
+  native_title: "把字句基础"
   title:
     vi: "Ngữ pháp tiếng Trung: 把字句: nền tảng"
     en: "Chinese grammar: 把字句: nền tảng"
@@ -2540,9 +2540,9 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk3_12_topic_comment_introduction
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
-  native_title: "Topic-comment introduction"
+  native_title: "话题—说明结构入门"
   title:
     vi: "Ngữ pháp tiếng Trung: Topic-comment introduction"
     en: "Chinese grammar: Topic-comment introduction"
@@ -2558,9 +2558,9 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk3_13_nh_ng_d_i_v_i
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.relative
   point_type: other
-  native_title: "Định ngữ dài với 的"
+  native_title: "“的”长定语"
   title:
     vi: "Ngữ pháp tiếng Trung: Định ngữ dài với 的"
     en: "Chinese grammar: Định ngữ dài với 的"
@@ -2578,7 +2578,7 @@
   level: '3'
   function: fn.object_disposal
   point_type: other
-  native_title: "把 + bổ ngữ kết quả"
+  native_title: "把字句 + 结果补语"
   title:
     vi: "Ngữ pháp tiếng Trung: 把 + bổ ngữ kết quả"
     en: "Chinese grammar: 把 + bổ ngữ kết quả"
@@ -2612,9 +2612,9 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk3_4_n_n_t_ng
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.verb_patterns
   point_type: word_order
-  native_title: "被字句: nền tảng"
+  native_title: "被字句基础"
   title:
     vi: "Ngữ pháp tiếng Trung: 被字句: nền tảng"
     en: "Chinese grammar: 被字句: nền tảng"
@@ -2633,7 +2633,7 @@
   level: '3'
   function: fn.object_disposal
   point_type: other
-  native_title: "把 và 被 đối chiếu"
+  native_title: "把字句与被字句对比"
   title:
     vi: "Ngữ pháp tiếng Trung: 把 và 被 đối chiếu"
     en: "Chinese grammar: 把 và 被 đối chiếu"
@@ -2649,9 +2649,9 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk3_6_b_ng_xu_h_ng_k_p
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.action_result
   point_type: other
-  native_title: "Bổ ngữ xu hướng kép"
+  native_title: "复合趋向补语"
   title:
     vi: "Ngữ pháp tiếng Trung: Bổ ngữ xu hướng kép"
     en: "Chinese grammar: Bổ ngữ xu hướng kép"
@@ -2667,9 +2667,9 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk3_7_b_ng_kh_n_ng
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.possibility
   point_type: other
-  native_title: "Bổ ngữ khả năng"
+  native_title: "可能补语"
   title:
     vi: "Ngữ pháp tiếng Trung: Bổ ngữ khả năng"
     en: "Chinese grammar: Bổ ngữ khả năng"
@@ -2685,9 +2685,9 @@
   batch: full-seed-2026-09-30
 - id: zh.adjective_reduplication
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.degree
   point_type: other
-  native_title: "adjective_reduplication"
+  native_title: "形容词重叠"
   title:
     vi: "Ngữ pháp tiếng Trung: adjective_reduplication"
     en: "Chinese grammar: adjective_reduplication"
@@ -2702,9 +2702,9 @@
   batch: full-seed-2026-09-30
 - id: zh.bi_yidian_deduo
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.comparison
   point_type: other
-  native_title: "bi_yidian_deduo"
+  native_title: "比较句 + 一点儿/得多"
   title:
     vi: "Ngữ pháp tiếng Trung: bi_yidian_deduo"
     en: "Chinese grammar: bi_yidian_deduo"
@@ -2719,9 +2719,9 @@
   batch: full-seed-2026-09-30
 - id: zh.cunxian_sentence
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.existence
   point_type: other
-  native_title: "cunxian_sentence"
+  native_title: "存现句"
   title:
     vi: "Ngữ pháp tiếng Trung: cunxian_sentence"
     en: "Chinese grammar: cunxian_sentence"
@@ -2736,9 +2736,9 @@
   batch: full-seed-2026-09-30
 - id: zh.de_di_de
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
-  native_title: "de_di_de"
+  native_title: "的/地/得"
   title:
     vi: "Ngữ pháp tiếng Trung: de_di_de"
     en: "Chinese grammar: de_di_de"
@@ -2753,9 +2753,9 @@
   batch: full-seed-2026-09-30
 - id: zh.gang_gangcai
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.time_expression
   point_type: other
-  native_title: "gang_gangcai"
+  native_title: "刚/刚才"
   title:
     vi: "Ngữ pháp tiếng Trung: gang_gangcai"
     en: "Chinese grammar: gang_gangcai"
@@ -2770,9 +2770,9 @@
   batch: full-seed-2026-09-30
 - id: zh.jianyu_qing_rang
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.verb_patterns
   point_type: other
-  native_title: "jianyu_qing_rang"
+  native_title: "兼语句“请/让”"
   title:
     vi: "Ngữ pháp tiếng Trung: jianyu_qing_rang"
     en: "Chinese grammar: jianyu_qing_rang"
@@ -2787,9 +2787,9 @@
   batch: full-seed-2026-09-30
 - id: zh.neng_yuan_dei
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.obligation_advice
   point_type: other
-  native_title: "neng_yuan_dei"
+  native_title: "能愿动词“得”"
   title:
     vi: "Ngữ pháp tiếng Trung: neng_yuan_dei"
     en: "Chinese grammar: neng_yuan_dei"
@@ -2804,7 +2804,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk4_12_topic
   level: '4'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
   native_title: "按、按照"
   title:
@@ -2822,7 +2822,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk4_2_topic
   level: '4'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
   native_title: "一方面⋯⋯，另一方面⋯⋯"
   title:
@@ -2840,7 +2840,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk4_3_topic_104
   level: '4'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
   native_title: "首先⋯⋯，然后⋯⋯"
   title:
@@ -2858,7 +2858,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk4_4_topic_105
   level: '4'
-  function: fn.catalog_unclassified
+  function: fn.contrast
   point_type: other
   native_title: "⋯⋯X 是 X，就是/不过⋯⋯"
   title:
@@ -2877,7 +2877,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk4.a_4_1_1.p1
   level: '4'
-  function: fn.catalog_unclassified
+  function: fn.obligation_advice
   point_type: other
   native_title: "能愿动词：得"
   title:
@@ -2928,7 +2928,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk4.a_4_1_4.p2
   level: '4'
-  function: fn.catalog_unclassified
+  function: fn.contrast
   point_type: other
   native_title: "关联副词：却"
   title:
@@ -2962,7 +2962,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk4_13_topic
   level: '4'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
   native_title: "对于"
   title:
@@ -2982,7 +2982,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk4.a_4_1_5_2.p1
   level: '4'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
   native_title: "替"
   title:
@@ -2999,7 +2999,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk4.a_4_1_5_3.p1
   level: '4'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
   native_title: "作为"
   title:
@@ -3051,7 +3051,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk4.a_4_1_7.p1
   level: '4'
-  function: fn.catalog_unclassified
+  function: fn.comparison
   point_type: other
   native_title: "其他助词：似的"
   title:
@@ -3068,7 +3068,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk4.a_4_1_8.p1
   level: '4'
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
   native_title: "啊"
   title:
@@ -3085,7 +3085,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk4.a_4_2_1_1.p1
   level: '4'
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
   native_title: "大A大B"
   title:
@@ -3102,7 +3102,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk4.a_4_2_1_2.p1
   level: '4'
-  function: fn.catalog_unclassified
+  function: fn.possibility
   point_type: other
   native_title: "看来"
   title:
@@ -3119,7 +3119,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk4_12_topic_115
   level: '4'
-  function: fn.catalog_unclassified
+  function: fn.possibility
   point_type: other
   native_title: "来得及/来不及"
   title:
@@ -3137,7 +3137,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk4_14_topic
   level: '4'
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
   native_title: "由⋯⋯组成"
   title:
@@ -3155,7 +3155,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk4.a_4_2_1_2.p2
   level: '4'
-  function: fn.catalog_unclassified
+  function: fn.location
   point_type: other
   native_title: "在⋯⋯上/下/中"
   title:
@@ -3189,7 +3189,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk4.a_4_4_2.p1
   level: '4'
-  function: fn.catalog_unclassified
+  function: fn.relative
   point_type: other
   native_title: "多项定语"
   title:
@@ -3223,7 +3223,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk4.a_4_5_1.p2
   level: '4'
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
   native_title: "“是⋯⋯的”句2：强调说话人的看法或态度"
   title:
@@ -3240,7 +3240,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk4_5_topic_106
   level: '4'
-  function: fn.catalog_unclassified
+  function: fn.reason_result
   point_type: other
   native_title: "⋯⋯，于是⋯⋯"
   title:
@@ -3292,7 +3292,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk4_6_topic
   level: '4'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
   native_title: "⋯⋯，否则⋯⋯"
   title:
@@ -3413,7 +3413,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk4.a_4_6_1.p1
   level: '4'
-  function: fn.catalog_unclassified
+  function: fn.quantity
   point_type: other
   native_title: "小数、分数、百分数、倍数的表示法"
   title:
@@ -3447,7 +3447,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk4_3_topic
   level: '4'
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
   native_title: "用 \\\\\"连⋯⋯也/都⋯⋯”表示强调"
   title:
@@ -3553,7 +3553,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk4_4_topic
   level: '4'
-  function: fn.catalog_unclassified
+  function: fn.contrast
   point_type: other
   native_title: "与其⋯⋯ ，不如⋯⋯"
   title:
@@ -3591,7 +3591,7 @@
   level: '4'
   function: fn.object_disposal
   point_type: other
-  native_title: "把 với cấu trúc phức"
+  native_title: "复杂把字句"
   title:
     vi: "Ngữ pháp tiếng Trung: 把 với cấu trúc phức"
     en: "Chinese grammar: 把 với cấu trúc phức"
@@ -3626,7 +3626,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk4_11_topic
   level: '4'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
   native_title: "通过..."
   title:
@@ -3644,9 +3644,9 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk4_15_v_introduction
   level: '4'
-  function: fn.catalog_unclassified
+  function: fn.relative
   point_type: other
-  native_title: "所 + V: introduction"
+  native_title: "“所 + V”结构入门"
   title:
     vi: "Ngữ pháp tiếng Trung: 所 + V: introduction"
     en: "Chinese grammar: 所 + V: introduction"
@@ -3663,9 +3663,9 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk4_2_n_ng_cao
   level: '4'
-  function: fn.catalog_unclassified
+  function: fn.verb_patterns
   point_type: other
-  native_title: "被 nâng cao"
+  native_title: "高级被字句"
   title:
     vi: "Ngữ pháp tiếng Trung: 被 nâng cao"
     en: "Chinese grammar: 被 nâng cao"
@@ -3682,7 +3682,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk4_7_topic_109
   level: '4'
-  function: fn.catalog_unclassified
+  function: fn.contrast
   point_type: other
   native_title: "宁可...也不..."
   title:
@@ -3700,9 +3700,9 @@
   batch: full-seed-2026-09-30
 - id: zh.wh_universal
   level: '4'
-  function: fn.catalog_unclassified
+  function: fn.questions
   point_type: other
-  native_title: "wh_universal"
+  native_title: "疑问代词任指用法"
   title:
     vi: "Ngữ pháp tiếng Trung: wh_universal"
     en: "Chinese grammar: wh_universal"
@@ -3753,7 +3753,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk5_1_topic
   level: '5'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
   native_title: "不是⋯⋯，而是⋯⋯"
   title:
@@ -3839,7 +3839,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk5.a_5_1_4_2.p1
   level: '5'
-  function: fn.catalog_unclassified
+  function: fn.object_disposal
   point_type: other
   native_title: "将"
   title:
@@ -3856,7 +3856,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk5.a_5_1_4_3.p1
   level: '5'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
   native_title: "凭"
   title:
@@ -3891,7 +3891,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk5.a_5_1_6.p1
   level: '5'
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
   native_title: "其他助词：也好"
   title:
@@ -3925,7 +3925,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk5.a_5_2_1_1.p2
   level: '5'
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
   native_title: "有A有B"
   title:
@@ -3942,7 +3942,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk5_6_topic
   level: '5'
-  function: fn.catalog_unclassified
+  function: fn.possibility
   point_type: other
   native_title: "不得了"
   title:
@@ -3978,7 +3978,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk5.a_5_3.p1
   level: '5'
-  function: fn.catalog_unclassified
+  function: fn.time_expression
   point_type: other
   native_title: "到⋯⋯为止"
   title:
@@ -3996,7 +3996,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk5.a_5_3.p2
   level: '5'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
   native_title: "在 …… 看来"
   title:
@@ -4031,7 +4031,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk5.a_5_4_2.p1
   level: '5'
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
   native_title: "多项状语"
   title:
@@ -4117,7 +4117,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk5_9_topic
   level: '5'
-  function: fn.catalog_unclassified
+  function: fn.contrast
   point_type: other
   native_title: "尽管⋯⋯，名声/可是⋯⋯"
   title:
@@ -4171,7 +4171,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk5_7_topic
   level: '5'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
   native_title: "⋯⋯，以便⋯⋯"
   title:
@@ -4241,7 +4241,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk5.a_5_6.p2
   level: '5'
-  function: fn.catalog_unclassified
+  function: fn.condition_real
   point_type: other
   native_title: "X归X，Y归Y"
   title:
@@ -4292,7 +4292,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk5_5_topic
   level: '5'
-  function: fn.catalog_unclassified
+  function: fn.obligation_advice
   point_type: other
   native_title: "不妨"
   title:
@@ -4310,7 +4310,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk5_10_topic
   level: '5'
-  function: fn.catalog_unclassified
+  function: fn.contrast
   point_type: other
   native_title: "无非"
   title:
@@ -4328,7 +4328,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk5_8_topic_146
   level: '5'
-  function: fn.catalog_unclassified
+  function: fn.reason_result
   point_type: other
   native_title: "基于"
   title:
@@ -4346,7 +4346,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk5_11_topic
   level: '5'
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
   native_title: "以⋯⋯ 为⋯⋯"
   title:
@@ -4365,9 +4365,9 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk5_1_ki_m_ng
   level: '5'
-  function: fn.catalog_unclassified
+  function: fn.verb_patterns
   point_type: other
-  native_title: "使/令/让 + kiêm ngữ"
+  native_title: "“使/令/让”兼语句"
   title:
     vi: "Ngữ pháp tiếng Trung: 使/令/让 + kiêm ngữ"
     en: "Chinese grammar: 使/令/让 + kiêm ngữ"
@@ -4384,7 +4384,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk5_10_topic_148
   level: '5'
-  function: fn.catalog_unclassified
+  function: fn.location
   point_type: other
   native_title: "之中/之内/之上/之下"
   title:
@@ -4402,7 +4402,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk5_12_topic
   level: '5'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
   native_title: "话题链与省略"
   title:
@@ -4422,9 +4422,9 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk5_13_reference
   level: '5'
-  function: fn.catalog_unclassified
+  function: fn.pronoun_reference
   point_type: other
-  native_title: "其/该/此/上述 reference"
+  native_title: "“其/该/此/上述”的指代"
   title:
     vi: "Ngữ pháp tiếng Trung: 其/该/此/上述 reference"
     en: "Chinese grammar: 其/该/此/上述 reference"
@@ -4441,9 +4441,9 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk5_14_n_ng_cao_153
   level: '5'
-  function: fn.catalog_unclassified
+  function: fn.relative
   point_type: other
-  native_title: "长定语 nâng cao"
+  native_title: "高级长定语"
   title:
     vi: "Định ngữ: 长定语 nâng cao"
     en: "Attributives: 长定语 nâng cao"
@@ -4460,9 +4460,9 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk5_15_tendencies
   level: '5'
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
-  native_title: "名词化 tendencies"
+  native_title: "名词化倾向"
   title:
     vi: "Danh từ: 名词化 tendencies"
     en: "Nouns: 名词化 tendencies"
@@ -4481,7 +4481,7 @@
   level: '5'
   function: fn.linking
   point_type: other
-  native_title: "紧缩复句 introduction"
+  native_title: "紧缩复句入门"
   title:
     vi: "Câu phức: 紧缩复句 introduction"
     en: "Complex sentences: 紧缩复句 introduction"
@@ -4497,7 +4497,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk5_2_topic
   level: '5'
-  function: fn.catalog_unclassified
+  function: fn.negation
   point_type: other
   native_title: "并非/并不是"
   title:
@@ -4516,9 +4516,9 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk5_3_approximate_quantities
   level: '5'
-  function: fn.catalog_unclassified
+  function: fn.quantity
   point_type: other
-  native_title: "Approximate quantities"
+  native_title: "概数表达"
   title:
     vi: "Ngữ pháp tiếng Trung: Approximate quantities"
     en: "Chinese grammar: Approximate quantities"
@@ -4535,7 +4535,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk5_4_topic
   level: '5'
-  function: fn.catalog_unclassified
+  function: fn.possibility
   point_type: other
   native_title: "难免/免不了"
   title:
@@ -4553,7 +4553,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk5_4_topic_141
   level: '5'
-  function: fn.catalog_unclassified
+  function: fn.quantity
   point_type: other
   native_title: "倍数和比例"
   title:
@@ -4571,9 +4571,9 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk5_5_scope
   level: '5'
-  function: fn.catalog_unclassified
+  function: fn.exclusion
   point_type: other
-  native_title: "仅/只/光/单 scope"
+  native_title: "“仅/只/光/单”的范围"
   title:
     vi: "Ngữ pháp tiếng Trung: 仅/只/光/单 scope"
     en: "Chinese grammar: 仅/只/光/单 scope"
@@ -4590,7 +4590,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk5_7_topic_145
   level: '5'
-  function: fn.catalog_unclassified
+  function: fn.relative
   point_type: other
   native_title: "同位与解释"
   title:
@@ -4609,9 +4609,9 @@
   batch: full-seed-2026-09-30
 - id: zh.jiaru_tangruo
   level: '5'
-  function: fn.catalog_unclassified
+  function: fn.condition_real
   point_type: other
-  native_title: "jiaru_tangruo"
+  native_title: "“假如/倘若”条件句"
   title:
     vi: "Ngữ pháp tiếng Trung: jiaru_tangruo"
     en: "Chinese grammar: jiaru_tangruo"
@@ -4626,7 +4626,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk6_2_topic
   level: '6'
-  function: fn.catalog_unclassified
+  function: fn.possibility
   point_type: other
   native_title: "情态副词：大概、恐怕"
   title:
@@ -4645,7 +4645,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk6_7_topic_181
   level: '6'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
   native_title: "从⋯⋯来看"
   title:
@@ -4663,7 +4663,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk6.a_6_1_1.p1
   level: '6'
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
   native_title: "超-、多-、反-、无-、亚-、准"
   title:
@@ -4680,7 +4680,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk6.a_6_1_2.p1
   level: '6'
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
   native_title: "-化、-式、-型、-性"
   title:
@@ -4731,7 +4731,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk6.a_6_2_3.p2
   level: '6'
-  function: fn.catalog_unclassified
+  function: fn.degree
   point_type: other
   native_title: "方式副词：不禁、赶忙、亲眼、特地、特意"
   title:
@@ -4782,7 +4782,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk6.a_6_2_4_3.p1
   level: '6'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
   native_title: "同、与"
   title:
@@ -4799,7 +4799,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk6_7_topic_172
   level: '6'
-  function: fn.catalog_unclassified
+  function: fn.reason_result
   point_type: other
   native_title: "至于"
   title:
@@ -4817,7 +4817,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk6.a_6_2_4_4.p1
   level: '6'
-  function: fn.catalog_unclassified
+  function: fn.reason_result
   point_type: other
   native_title: "因"
   title:
@@ -4851,7 +4851,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk6.a_6_2_4_6.p1
   level: '6'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
   native_title: "据"
   title:
@@ -4885,7 +4885,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk6.a_6_2_6.p1
   level: '6'
-  function: fn.catalog_unclassified
+  function: fn.relative
   point_type: other
   native_title: "结构助词：所"
   title:
@@ -4902,7 +4902,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk6.a_6_3_2_1.p1
   level: '6'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
   native_title: "或A或B"
   title:
@@ -4919,7 +4919,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk6.a_6_3_2_2.p1
   level: '6'
-  function: fn.catalog_unclassified
+  function: fn.questions
   point_type: other
   native_title: "不怎么"
   title:
@@ -4936,7 +4936,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk6.a_6_3_2_2.p2
   level: '6'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
   native_title: "就是说/这就是说"
   title:
@@ -4953,7 +4953,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk6.a_6_4.p1
   level: '6'
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
   native_title: "东一A，西一A"
   title:
@@ -5176,7 +5176,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk6_7_topic
   level: '6'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
   native_title: "不⋯⋯不⋯⋯"
   title:
@@ -5212,7 +5212,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk6.a_6_7.p1
   level: '6'
-  function: fn.catalog_unclassified
+  function: fn.obligation_advice
   point_type: other
   native_title: "用“非⋯⋯不可”表示强调"
   title:
@@ -5286,7 +5286,7 @@
   level: '6'
   function: fn.ongoing_now
   point_type: other
-  native_title: "了/过/着 tương tác nâng cao"
+  native_title: "“了/过/着”的高级互动"
   title:
     vi: "Ngữ pháp tiếng Trung: 了/过/着 tương tác nâng cao"
     en: "Chinese grammar: 了/过/着 tương tác nâng cao"
@@ -5303,9 +5303,9 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk6_12_parallel_structure_in_formal_prose
   level: '6'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
-  native_title: "Parallel structure in formal prose"
+  native_title: "正式语体中的平行结构"
   title:
     vi: "Ngữ pháp tiếng Trung: Parallel structure in formal prose"
     en: "Chinese grammar: Parallel structure in formal prose"
@@ -5322,9 +5322,9 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk6_14_formal_comparison
   level: '6'
-  function: fn.catalog_unclassified
+  function: fn.comparison
   point_type: other
-  native_title: "Formal comparison"
+  native_title: "正式语体中的比较"
   title:
     vi: "Ngữ pháp tiếng Trung: Formal comparison"
     en: "Chinese grammar: Formal comparison"
@@ -5340,9 +5340,9 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk6_19_sentence_final_particles_in_advanced_use
   level: '6'
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
-  native_title: "Sentence-final particles in advanced use"
+  native_title: "句末语气词的高级用法"
   title:
     vi: "Ngữ pháp tiếng Trung: Sentence-final particles in advanced use"
     en: "Chinese grammar: Sentence-final particles in advanced use"
@@ -5357,9 +5357,9 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk6_20_register_control
   level: '6'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
-  native_title: "Register control"
+  native_title: "语体控制"
   title:
     vi: "Ngữ pháp tiếng Trung: Register control"
     en: "Chinese grammar: Register control"
@@ -5375,9 +5375,9 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk6_22_punctuation_and_clause_grammar
   level: '6'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
-  native_title: "Punctuation and clause grammar"
+  native_title: "标点与分句语法"
   title:
     vi: "Ngữ pháp tiếng Trung: Punctuation and clause grammar"
     en: "Chinese grammar: Punctuation and clause grammar"
@@ -5393,9 +5393,9 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk6_3_agent_source
   level: '6'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
-  native_title: "由 + agent/source"
+  native_title: "“由”表示施事或来源"
   title:
     vi: "Ngữ pháp tiếng Trung: 由 + agent/source"
     en: "Chinese grammar: 由 + agent/source"
@@ -5411,9 +5411,9 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk6_4_patterns
   level: '6'
-  function: fn.catalog_unclassified
+  function: fn.reference
   point_type: other
-  native_title: "者 patterns"
+  native_title: "“者”字结构"
   title:
     vi: "Ngữ pháp tiếng Trung: 者 patterns"
     en: "Chinese grammar: 者 patterns"
@@ -5429,7 +5429,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk6_4_topic
   level: '6'
-  function: fn.catalog_unclassified
+  function: fn.verb_patterns
   point_type: other
   native_title: "为...所..."
   title:
@@ -5447,9 +5447,9 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk6_5_patterns
   level: '6'
-  function: fn.catalog_unclassified
+  function: fn.reference
   point_type: other
-  native_title: "之 patterns"
+  native_title: "“之”字结构"
   title:
     vi: "Ngữ pháp tiếng Trung: 之 patterns"
     en: "Chinese grammar: 之 patterns"
@@ -5465,9 +5465,9 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk6_6_rhetorical_questions
   level: '6'
-  function: fn.catalog_unclassified
+  function: fn.questions
   point_type: other
-  native_title: "难道/岂/何尝 rhetorical questions"
+  native_title: "“难道/岂/何尝”反问句"
   title:
     vi: "Ngữ pháp tiếng Trung: 难道/岂/何尝 rhetorical questions"
     en: "Chinese grammar: 难道/岂/何尝 rhetorical questions"
@@ -5484,7 +5484,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk7_9.a_7_1_1.p1
   level: '7'
-  function: fn.catalog_unclassified
+  function: fn.possibility
   point_type: other
   native_title: "能愿动词：需"
   title:
@@ -5552,7 +5552,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk7_9.a_7_1_4_2.p1
   level: '7'
-  function: fn.catalog_unclassified
+  function: fn.quantity
   point_type: other
   native_title: "凡"
   title:
@@ -5603,7 +5603,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk7_9.a_7_1_4_5.p1
   level: '7'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
   native_title: "亦"
   title:
@@ -5637,7 +5637,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk7_9.a_7_1_4_7.p1
   level: '7'
-  function: fn.catalog_unclassified
+  function: fn.verb_patterns
   point_type: other
   native_title: "不由得"
   title:
@@ -5654,7 +5654,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk7_9.a_7_1_4_8.p1
   level: '7'
-  function: fn.catalog_unclassified
+  function: fn.possibility
   point_type: other
   native_title: "按说"
   title:
@@ -5671,7 +5671,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk7_9.a_7_1_4_9.p1
   level: '7'
-  function: fn.catalog_unclassified
+  function: fn.questions
   point_type: other
   native_title: "必定"
   title:
@@ -5688,7 +5688,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk7_9.a_7_1_4_9.p2
   level: '7'
-  function: fn.catalog_unclassified
+  function: fn.contrast
   point_type: other
   native_title: "反倒"
   title:
@@ -5705,7 +5705,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk7_9.a_7_1_4_9.p3
   level: '7'
-  function: fn.catalog_unclassified
+  function: fn.reason_result
   point_type: other
   native_title: "乃"
   title:
@@ -5722,7 +5722,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk7_9.a_7_1_4_9.p4
   level: '7'
-  function: fn.catalog_unclassified
+  function: fn.degree
   point_type: other
   native_title: "万万"
   title:
@@ -5739,7 +5739,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk7_9.a_7_1_4_9.p5
   level: '7'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
   native_title: "终究"
   title:
@@ -5790,7 +5790,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk7_9.a_7_1_5_3.p1
   level: '7'
-  function: fn.catalog_unclassified
+  function: fn.time_expression
   point_type: other
   native_title: "趁"
   title:
@@ -5824,7 +5824,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk7_9.a_7_1_7_1.p1
   level: '7'
-  function: fn.catalog_unclassified
+  function: fn.reference
   point_type: other
   native_title: "之"
   title:
@@ -5841,7 +5841,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk7_9.a_7_1_7_2.p1
   level: '7'
-  function: fn.catalog_unclassified
+  function: fn.exclusion
   point_type: other
   native_title: "而已"
   title:
@@ -5875,7 +5875,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk7_9.a_7_2_2_1.p2
   level: '8'
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
   native_title: "忽A忽B"
   title:
@@ -5892,7 +5892,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk7_9.a_7_2_2_2.p1
   level: '8'
-  function: fn.catalog_unclassified
+  function: fn.future_plans
   point_type: other
   native_title: "巴不得"
   title:
@@ -5943,7 +5943,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk7_9.a_7_3.p1
   level: '8'
-  function: fn.catalog_unclassified
+  function: fn.questions
   point_type: other
   native_title: "不知⋯⋯好"
   title:
@@ -6290,7 +6290,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk7_9.a_7_7.p2
   level: '9'
-  function: fn.catalog_unclassified
+  function: fn.degree
   point_type: other
   native_title: "别提（有）多X了"
   title:
@@ -6343,7 +6343,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk7_9.a_7_8_1.p1
   level: '9'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
   native_title: "带关联词语"
   title:
@@ -6377,9 +6377,9 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk79_10_conditional_rhetoric
   level: '9'
-  function: fn.catalog_unclassified
+  function: fn.condition_real
   point_type: other
-  native_title: "Conditional rhetoric"
+  native_title: "条件句的修辞用法"
   title:
     vi: "Ngữ pháp tiếng Trung: Conditional rhetoric"
     en: "Chinese grammar: Conditional rhetoric"
@@ -6394,9 +6394,9 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk79_11_cause_vs_evidence_distinction
   level: '9'
-  function: fn.catalog_unclassified
+  function: fn.reason_result
   point_type: other
-  native_title: "Cause vs evidence distinction"
+  native_title: "原因与证据的区分"
   title:
     vi: "Ngữ pháp tiếng Trung: Cause vs evidence distinction"
     en: "Chinese grammar: Cause vs evidence distinction"
@@ -6412,9 +6412,9 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk79_12_reformulation_and_qualification
   level: '9'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
-  native_title: "Reformulation and qualification"
+  native_title: "改述与限定"
   title:
     vi: "Ngữ pháp tiếng Trung: Reformulation and qualification"
     en: "Chinese grammar: Reformulation and qualification"
@@ -6432,9 +6432,9 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk79_14_productive_four_character_grammar_patterns
   level: '9'
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
-  native_title: "Productive four-character grammar patterns"
+  native_title: "四字格语法结构"
   title:
     vi: "Ngữ pháp tiếng Trung: Productive four-character grammar patterns"
     en: "Chinese grammar: Productive four-character grammar patterns"
@@ -6450,9 +6450,9 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk79_16_information_structure_and_emphasis
   level: '9'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
-  native_title: "Information structure and emphasis"
+  native_title: "信息结构与强调"
   title:
     vi: "Ngữ pháp tiếng Trung: Information structure and emphasis"
     en: "Chinese grammar: Information structure and emphasis"
@@ -6468,9 +6468,9 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk79_17_ellipsis_and_recoverability
   level: '9'
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
-  native_title: "Ellipsis and recoverability"
+  native_title: "省略与可恢复性"
   title:
     vi: "Ngữ pháp tiếng Trung: Ellipsis and recoverability"
     en: "Chinese grammar: Ellipsis and recoverability"
@@ -6486,9 +6486,9 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk79_18_academic_definition_and_classification
   level: '9'
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
-  native_title: "Academic definition and classification"
+  native_title: "学术定义与分类"
   title:
     vi: "Ngữ pháp tiếng Trung: Academic definition and classification"
     en: "Chinese grammar: Academic definition and classification"
@@ -6504,9 +6504,9 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk79_19_argument_concession_counterclaim
   level: '9'
-  function: fn.catalog_unclassified
+  function: fn.contrast
   point_type: other
-  native_title: "Argument concession-counterclaim"
+  native_title: "论证中的让步与反驳"
   title:
     vi: "Ngữ pháp tiếng Trung: Argument concession-counterclaim"
     en: "Chinese grammar: Argument concession-counterclaim"
@@ -6523,9 +6523,9 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk79_20_reporting_and_attribution
   level: '9'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
-  native_title: "Reporting and attribution"
+  native_title: "引述与归因"
   title:
     vi: "Ngữ pháp tiếng Trung: Reporting and attribution"
     en: "Chinese grammar: Reporting and attribution"
@@ -6541,9 +6541,9 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk79_21_legal_administrative_register_patterns
   level: '9'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
-  native_title: "Legal/administrative register patterns"
+  native_title: "法律与行政语体结构"
   title:
     vi: "Ngữ pháp tiếng Trung: Legal/administrative register patterns"
     en: "Chinese grammar: Legal/administrative register patterns"
@@ -6559,9 +6559,9 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk79_22_literary_descriptive_syntax
   level: '9'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
-  native_title: "Literary descriptive syntax"
+  native_title: "文学描写句法"
   title:
     vi: "Ngữ pháp tiếng Trung: Literary descriptive syntax"
     en: "Chinese grammar: Literary descriptive syntax"
@@ -6577,9 +6577,9 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk79_28_advanced_connector_economy
   level: '9'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
-  native_title: "Advanced connector economy"
+  native_title: "高级连接词的精简用法"
   title:
     vi: "Ngữ pháp tiếng Trung: Advanced connector economy"
     en: "Chinese grammar: Advanced connector economy"
@@ -6595,9 +6595,9 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk79_29_metadiscourse_grammar
   level: '9'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
-  native_title: "Metadiscourse grammar"
+  native_title: "元话语语法"
   title:
     vi: "Ngữ pháp tiếng Trung: Metadiscourse grammar"
     en: "Chinese grammar: Metadiscourse grammar"
@@ -6613,9 +6613,9 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk79_3_negative_raising_and_scope
   level: '9'
-  function: fn.catalog_unclassified
+  function: fn.negation
   point_type: other
-  native_title: "Negative raising and scope"
+  native_title: "否定提升与否定范围"
   title:
     vi: "Ngữ pháp tiếng Trung: Negative raising and scope"
     en: "Chinese grammar: Negative raising and scope"
@@ -6631,9 +6631,9 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk79_5_in_modern_formal_prose
   level: '9'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
-  native_title: "于/以/为/所/者/之 in modern formal prose"
+  native_title: "“于/以/为/所/者/之”的现代正式书面语用法"
   title:
     vi: "Ngữ pháp tiếng Trung: 于/以/为/所/者/之 in modern formal prose"
     en: "Chinese grammar: 于/以/为/所/者/之 in modern formal prose"
@@ -6649,9 +6649,9 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk79_6_advanced_passive_causative_alternation
   level: '9'
-  function: fn.catalog_unclassified
+  function: fn.verb_patterns
   point_type: other
-  native_title: "Advanced passive/causative alternation"
+  native_title: "高级被动与使役交替"
   title:
     vi: "Ngữ pháp tiếng Trung: Advanced passive/causative alternation"
     en: "Chinese grammar: Advanced passive/causative alternation"
@@ -6666,9 +6666,9 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk79_8_long_sentence_architecture
   level: '9'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
-  native_title: "Long sentence architecture"
+  native_title: "长句结构"
   title:
     vi: "Ngữ pháp tiếng Trung: Long sentence architecture"
     en: "Chinese grammar: Long sentence architecture"
