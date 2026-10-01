@@ -120,6 +120,7 @@ def matches_generation_provenance(
         point.get("schema_version") == "0.4"
         and provenance.get("model") == f"{provider}:{model}"
         and provenance.get("prompt_version") == prompt_version
+        and not provenance.get("metadata_stale", False)
     )
 
 
