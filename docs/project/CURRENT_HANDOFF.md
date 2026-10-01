@@ -29,6 +29,9 @@ status: `docs/design/canonical-ui/IMPLEMENTATION_MAP.md`.
   re-checked in the browser, language layer finished, every API reader checked
   against captured real payloads (`scripts/fixtures/api/`). Reviewable at
   http://127.0.0.1:8021/next (isolated stack) until the 8011 sandbox is migrated.
+- Lane runtime :8021 (D-111.7, durable QA store): `orena-next-verify-web` and `-worker` share the named
+  volume `orena-next-verify-media` at `/lanedata` (media, reading assets, word audio/deep roots); `/rundata` is
+  tmpfs for SQLite scratch only; `ORENA_ACCOUNT_BACKBONE=on` here only. Recreate copies env by name only.
 - Wave B workspaces: REVIEWABLE (`161d917`) - reading (Reader, Check,
   Discussion, Reading Transfer), listening (Workspace, Dictation, Shadowing,
   React, Respond), speaking (Scripted, Compare, Attempts, Summary, Free Talk,
