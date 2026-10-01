@@ -3,7 +3,7 @@
   "id": "en.canon.a1.002",
   "version": 1,
   "target_lang": "en",
-  "function": "fn.ability",
+  "function": "fn.possibility",
   "level": {
     "framework": "cefr",
     "value": "A1",
