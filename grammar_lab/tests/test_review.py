@@ -26,7 +26,7 @@ from grammar_lab.pipeline.validate import LAB_ROOT, validate_lang
 @pytest.fixture
 def lab_copy(tmp_path: Path) -> Path:
     """A private copy of the committed Grammar Lab tree, so feedback can rewrite points."""
-    for name in ("content", "schema", "functions", "cast"):
+    for name in ("content", "schema", "functions", "cast", "inventory"):
         shutil.copytree(LAB_ROOT / name, tmp_path / name)
     return tmp_path
 
