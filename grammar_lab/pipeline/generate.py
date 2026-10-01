@@ -715,7 +715,7 @@ def complete_literal_example_spans(examples: list[dict[str, Any]], pattern: dict
                 continue
             for candidate in _literal_slot_candidates(slot):
                 if re.search(r"[A-Za-z]", candidate):
-                    matches = list(re.finditer(r"(?<!\\w)" + re.escape(candidate) + r"(?!\\w)", example["text"], re.IGNORECASE))
+                    matches = list(re.finditer(r"(?<!\w)" + re.escape(candidate) + r"(?!\w)", example["text"], re.IGNORECASE))
                     starts = [match.start() for match in matches]
                 else:
                     starts = []
