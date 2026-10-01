@@ -42,6 +42,11 @@ FEED_RULE = "dev/visual/reference harness input only; never a learner production
 def to_codex_export(point: dict[str, Any]) -> tuple[dict[str, Any], list[str]]:
     """The point as codex/work reads it, plus the locale-map paths whose ``en`` is a copy of ``vi``."""
     out = copy.deepcopy(point)
+    # metadata_stale is a Grammar Lab resume marker, not learner/UI content.
+    # Reference fixtures stay stable while the source draft is queued for
+    # regeneration after curriculum metadata changes.
+    if isinstance(out.get("provenance"), dict):
+        out["provenance"].pop("metadata_stale", None)
     placeholders: list[str] = []
     for path, mapping in _locale_maps(out):
         for internal, codex in CODEX_LOCALE_KEY.items():
