@@ -191,9 +191,12 @@ function mediaBody(item) {
 }
 
 /* A text or media import the learner just made goes to the account; a text keeps the id the device already made. */
-export async function pushImport(item) {
+export async function pushImport(item, { fresh = false } = {}) {
   if (!item?.id || !(await recordsActive())) return false;
   const media = isMedia(item.id);
+  // What this page remembered of an earlier record for the same link (kept, since deleted - here or elsewhere) says
+  // nothing about a NEW import of it.
+  if (media && fresh) mediaRecords.delete(item.id);
   if (media && mediaRecords.get(item.id)?.size) return true; // already kept; opening it again is not a second import
   const ident = media ? crypto.randomUUID() : importUuid(item.id);
   try {
@@ -224,14 +227,38 @@ export async function importRef(memoryId) {
    as an import, a pasted link or an uploaded file as a media membership - and which of this device's imports the
    account says were deleted (`deletedIds`, membership ids; `localMediaIds` are the device's own link and file ids,
    matched by their reference). An id the account still holds live is never reported deleted. */
+/* Every page of the account's imports and tombstones - never silently limited: it pages until the server says there
+   is no next page for either list. */
+async function readAllImports() {
+  const imports = [];
+  const deleted = [];
+  let highWater = 0;
+  let cursor = null;
+  let deletedCursor = null;
+  let include = 'both';
+  for (let page = 0; page < 400; page += 1) {
+    const body = await apiRef.imports({ cursor, deletedCursor, include });
+    imports.push(...(body.imports || []));
+    deleted.push(...(body.deleted || []));
+    highWater = Math.max(highWater, Number(body.highWater) || 0);
+    cursor = body.nextCursor ?? null;
+    deletedCursor = body.nextDeletedCursor ?? null;
+    if (cursor == null && deletedCursor == null) return { imports, deleted, highWater };
+    include = cursor != null && deletedCursor != null ? 'both' : cursor != null ? 'imports' : 'deleted';
+  }
+  throw new Error('The import listing did not end.');
+}
+
 export async function pullImportState(language, localMediaIds = []) {
-  if (!(await recordsActive())) return { items: [], deletedIds: [], records: {} };
+  if (!(await recordsActive())) return { ok: false, items: [], deletedIds: [], records: {}, sequences: {}, highWater: 0 };
   try {
-    const { imports, deleted = [] } = await apiRef.imports();
+    const { imports, deleted, highWater } = await readAllImports();
     const out = [];
     const records = {}; // membership id -> the live account record ids behind it
+    const sequences = {}; // record id -> its change sequence
     for (const item of imports) {
       importVersions.set(importUuid(item.id), item.version);
+      sequences[importUuid(item.id)] = Number.isFinite(item.sequence) ? item.sequence : Infinity;
       if (item.form === 'text') {
         out.push({ id: item.id, title: item.title, text: item.text, language, origin: 'imported', kind: 'text' });
         records[item.id] = [importUuid(item.id)];
@@ -256,14 +283,26 @@ export async function pullImportState(language, localMediaIds = []) {
       if (live.has(id) || !refs.size) continue;
       if (refs.has(await importRef(id))) deletedIds.push(id);
     }
-    return { items: out, deletedIds, records };
+    return { ok: true, items: out, deletedIds, records, sequences, highWater };
   } catch {
-    return { items: [], deletedIds: [], records: {} };
+    return { ok: false, items: [], deletedIds: [], records: {}, sequences: {}, highWater: 0 };
   }
 }
 
 export async function pullImports(language) {
   return (await pullImportState(language)).items;
+}
+
+/* Confirm the stored copy of an uploaded file is gone (or was never this learner's): true on success or a 404, false
+   when it could not be reached or the library could not be trusted (503) - the caller tries again at the next sync. */
+export async function settleMedia(id) {
+  if (!String(id).startsWith('upload:')) return true;
+  try {
+    await apiRef.deleteMyMedia(String(id).slice(7));
+    return true;
+  } catch (error) {
+    return error?.status === 404;
+  }
 }
 
 /* The account record ids this device holds for a membership id right now (what a deletion here may delete). */

@@ -13,7 +13,7 @@ from pathlib import Path
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from sqlalchemy import inspect, text
+from sqlalchemy import bindparam, inspect, text
 
 from test_d4_account_records import _account, _client, op  # noqa: F401  (shared helpers)
 from writing_coach import media_library_api
@@ -318,3 +318,213 @@ def test_the_media_route_does_not_take_a_file_another_live_import_still_names(pg
     lone = seed("2b" * 16, owner=user)
     assert media_client.delete(f"/api/media/my/{lone}").json() == {"deleted": True}
     assert store.get(lone) is None
+
+
+# --- delta check 02511cc: ordering for a re-import, a bounded sweep, an honest 503 --------------------------
+
+
+def test_the_list_orders_records_so_a_device_can_tell_a_later_reimport_from_the_one_it_deleted(pg_engine, backbone):
+    client = _client(backbone, user=_account(pg_engine))
+    first, second = str(uuid.uuid4()), str(uuid.uuid4())
+    assert _put(client, first, form="url", title="A", url="https://example.test/same").status_code == 200
+    before = client.get("/api/imports").json()
+    mark = before["highWater"]
+    item = before["imports"][0]
+    assert item["sequence"] >= 1 and mark >= item["sequence"], "the mark covers every record the device has just read"
+    assert _delete(client, first).status_code == 200
+    assert _put(client, second, form="url", title="A again", url="https://example.test/same").status_code == 200
+    after = client.get("/api/imports").json()
+    (reimport,) = after["imports"]
+    assert reimport["sequence"] > mark, "a record kept after the device's last read is newer than its mark"
+    assert after["highWater"] >= reimport["sequence"]
+    assert any(entry["id"] == f"url:{first}" for entry in after["deleted"])
+
+
+def test_a_list_read_finishes_only_a_few_owed_file_removals(pg_engine, backbone, media, monkeypatch):
+    store, assets, seed = media
+    user = _account(pg_engine)
+    client = _client(backbone, user=user)
+    real = assets.delete_prefix
+    monkeypatch.setattr(assets, "delete_prefix", lambda prefix: (_ for _ in ()).throw(OSError("down")))
+    idents = []
+    for number in range(7):
+        media_id = seed(f"{number:x}" * 32, owner=user)
+        ident = str(uuid.uuid4())
+        idents.append(ident)
+        assert _put(client, ident, form="upload", title=f"f{number}", mediaId=media_id).status_code == 200
+        assert _delete(client, ident).json()["mediaDeleted"] is False
+    monkeypatch.setattr(assets, "delete_prefix", real)
+
+    def pending():
+        with pg_engine.connect() as connection:
+            return connection.execute(text("SELECT count(*) FROM works WHERE kind = 'imported' AND lifecycle = 'deleted' AND payload->>'mediaPending' IS NOT NULL AND source_id IN :ids").bindparams(bindparam("ids", expanding=True)), {"ids": idents}).scalar_one()
+
+    assert pending() == 7
+    client.get("/api/imports")
+    assert pending() == 2, "one read finishes at most five"
+    client.get("/api/imports")
+    assert pending() == 0
+
+
+def test_the_media_route_answers_503_not_404_for_an_index_it_cannot_trust(media, monkeypatch, tmp_path):
+    store, assets, seed = media
+    monkeypatch.setattr(media_library_api, "current_user_key", lambda: "alice")
+    monkeypatch.setattr(media_library_api, "current_language_code", lambda: "en")
+    mine = seed("9" * 32, owner="alice")
+    (tmp_path / "library" / "index.json").write_text("{corrupt", encoding="utf-8")
+    app = FastAPI()
+    app.include_router(media_library_api.router)
+    refused = TestClient(app).delete(f"/api/media/my/{mine}")
+    assert refused.status_code == 503 and refused.json()["detail"]["category"] == "media_index_unavailable"
+    assert assets.exists(f"media/{'9' * 32}/original.wav"), "nothing was touched"
+
+
+# --- D-108: what a deletion keeps, and a listing that is never silently limited -------------------------
+
+
+def _save_word_from(engine, user, word, fragment):
+    from datetime import UTC, datetime
+
+    from sqlalchemy.orm import Session
+
+    from writing_coach.persistence.ids import stable_uuid
+    from writing_coach.persistence.models import SavedWord
+
+    now = datetime.now(UTC)
+    with Session(engine) as session, session.begin():
+        session.add(SavedWord(
+            id=uuid.uuid4(), user_id=stable_uuid("user", user), language_code="en", word=word, normalized_word=word.casefold(),
+            phonetic="", part_of_speech="", definition="", translation_vi="", added_at=now, source_fragment=fragment,
+            source_kind="reading", focus_note="", review_stage=0, successful_recalls=0, lapse_count=0, next_review_at=now,
+            updated_at=now, entry_identity_key="", reading_key=""))
+
+
+def _fragment(engine, user, word):
+    from writing_coach.persistence.ids import stable_uuid
+
+    with engine.connect() as connection:
+        return connection.execute(text("SELECT source_fragment FROM saved_words WHERE user_id = :u AND normalized_word = :w"),
+                                  {"u": stable_uuid("user", user), "w": word.casefold()}).scalar()
+
+
+def test_deleting_a_text_import_stops_serving_its_notes_and_hides_the_excerpts_of_kept_words(pg_engine, backbone):
+    user = _account(pg_engine)
+    client = _client(backbone, user=user)
+    ident = str(uuid.uuid4())
+    content = f"text:{ident}"
+    sentence = "The harbour lights glowed at dusk."
+    assert _put(client, ident, form="text", title="Diary", text=sentence).status_code == 200
+    saved = client.put(f"/api/annotations/{content}", json={"operationId": op(), "expectedVersion": 0, "cleared": False,
+                       "highlights": [{"id": "h1", "segment": "p0", "sentence": sentence, "at": ""}], "notes": []})
+    assert saved.status_code == 200
+    _save_word_from(pg_engine, user, "harbour", sentence)
+    _save_word_from(pg_engine, user, "unrelated", "from somewhere else")
+    kept = client.post("/api/library/vocabulary/harbour/provenance", json={
+        "operationId": op(), "reason": "from_reading", "sourceKind": "reading", "sourceId": content, "focus": sentence})
+    assert kept.status_code == 200
+    other = client.post("/api/library/vocabulary/unrelated/provenance", json={
+        "operationId": op(), "reason": "from_reading", "sourceKind": "reading", "sourceId": "article:abc", "focus": "from somewhere else"})
+    assert other.status_code == 200
+    assert client.get(f"/api/annotations/{content}").status_code == 200
+    assert _delete(client, ident).status_code == 200
+    # notes and highlights of the deleted source are no longer served, and cannot be written back
+    assert client.get(f"/api/annotations/{content}").status_code == 404
+    revive = client.put(f"/api/annotations/{content}", json={"operationId": op(), "expectedVersion": 1, "cleared": False, "highlights": [], "notes": []})
+    assert revive.status_code == 404
+    # the saved word is kept; its source is unavailable and no excerpt of the deleted text comes back
+    (occurrence,) = client.get("/api/library/vocabulary/harbour/provenance").json()["occurrences"]
+    assert occurrence["availability"] == "unavailable" and occurrence["focus"] == ""
+    assert occurrence["source"]["id"] == content, "the source is still named, as unavailable"
+    assert not _fragment(pg_engine, user, "harbour"), "the stored sentence of the word is gone from its row"
+    # a word met somewhere else keeps its sentence and its source
+    (kept_other,) = client.get("/api/library/vocabulary/unrelated/provenance").json()["occurrences"]
+    assert kept_other["focus"] == "from somewhere else" and kept_other["availability"] != "unavailable"
+    assert _fragment(pg_engine, user, "unrelated") == "from somewhere else"
+
+
+def test_a_deleted_upload_marks_the_sources_of_kept_words_unavailable_whatever_form_they_were_stored_in(pg_engine, backbone, media):
+    store, assets, seed = media
+    user = _account(pg_engine)
+    media_id = seed("7c" * 16, owner=user)
+    client = _client(backbone, user=user)
+    ident = str(uuid.uuid4())
+    assert _put(client, ident, form="upload", title="My file", mediaId=media_id).status_code == 200
+    for word, source in (("anchor", f"media:{media_id}"), ("beacon", media_id)):
+        _save_word_from(pg_engine, user, word, "heard in the file")
+        assert client.post(f"/api/library/vocabulary/{word}/provenance", json={
+            "operationId": op(), "reason": "from_listening", "sourceKind": "listening", "sourceId": source, "focus": "heard in the file"}).status_code == 200
+    assert _delete(client, ident).status_code == 200
+    for word in ("anchor", "beacon"):
+        (occurrence,) = client.get(f"/api/library/vocabulary/{word}/provenance").json()["occurrences"]
+        assert occurrence["availability"] == "unavailable" and occurrence["focus"] == "", word
+
+
+def test_a_source_deleted_before_this_change_is_still_reported_unavailable_without_its_excerpt(pg_engine, backbone):
+    user = _account(pg_engine)
+    client = _client(backbone, user=user)
+    ident = str(uuid.uuid4())
+    content = f"text:{ident}"
+    assert _put(client, ident, form="text", title="Diary", text="x").status_code == 200
+    _save_word_from(pg_engine, user, "lantern", "a lamp in the window")
+    assert client.post("/api/library/vocabulary/lantern/provenance", json={
+        "operationId": op(), "reason": "from_reading", "sourceKind": "reading", "sourceId": content, "focus": "a lamp in the window"}).status_code == 200
+    assert _delete(client, ident).status_code == 200
+    with pg_engine.begin() as connection:  # put the excerpt back as an older deletion would have left it
+        connection.execute(text("UPDATE language_provenance SET focus = 'a lamp in the window', availability = 'unknown' WHERE source_id = :s"), {"s": content})
+    (occurrence,) = client.get("/api/library/vocabulary/lantern/provenance").json()["occurrences"]
+    assert occurrence["availability"] == "unavailable" and occurrence["focus"] == "", "the read masks it as well"
+
+
+def test_a_kept_again_link_is_available_again(pg_engine, backbone):
+    user = _account(pg_engine)
+    client = _client(backbone, user=user)
+    first, second = str(uuid.uuid4()), str(uuid.uuid4())
+    link = "https://example.test/clip"
+    assert _put(client, first, form="url", title="Clip", url=link).status_code == 200
+    _save_word_from(pg_engine, user, "ripple", "a ripple on the water")
+    assert client.post("/api/library/vocabulary/ripple/provenance", json={
+        "operationId": op(), "reason": "from_listening", "sourceKind": "listening", "sourceId": f"url:{link}", "focus": "a ripple on the water"}).status_code == 200
+    assert _delete(client, first).status_code == 200
+    assert _put(client, second, form="url", title="Clip again", url=link).status_code == 200
+    with pg_engine.begin() as connection:
+        connection.execute(text("UPDATE language_provenance SET focus = 'a ripple on the water', availability = 'unknown'"))
+    (occurrence,) = client.get("/api/library/vocabulary/ripple/provenance").json()["occurrences"]
+    assert occurrence["availability"] != "unavailable" and occurrence["focus"] == "a ripple on the water"
+
+
+def test_the_listing_pages_and_is_never_silently_limited(pg_engine, backbone, monkeypatch):
+    from writing_coach import account_records_api
+
+    monkeypatch.setattr(account_records_api, "MAX_IMPORTS", 200)
+    client = _client(backbone, user=_account(pg_engine))
+    live, gone = [], []
+    for number in range(63):
+        ident = str(uuid.uuid4())
+        assert _put(client, ident, form="url", title=f"L{number}", url=f"https://example.test/{number}").status_code == 200
+        live.append(f"url:{ident}")
+    for _ in range(17):
+        ident = str(uuid.uuid4())
+        assert _put(client, ident, form="text", title="T", text="x").status_code == 200
+        assert _delete(client, ident).status_code == 200
+        gone.append(f"text:{ident}")
+    first = client.get("/api/imports").json()
+    assert first["nextCursor"] is not None and len(first["imports"]) == 50, "the first page says there is more"
+    seen_live, seen_gone, cursor, deleted_cursor, pages = [], [], None, None, 0
+    while True:
+        params = {"limit": 50, "deletedLimit": 6, "include": "both" if cursor is not None and deleted_cursor is not None or pages == 0 else ("imports" if cursor is not None else "deleted")}
+        if cursor is not None:
+            params["cursor"] = cursor
+        if deleted_cursor is not None:
+            params["deletedCursor"] = deleted_cursor
+        page = client.get("/api/imports", params=params).json()
+        pages += 1
+        seen_live += [item["id"] for item in page["imports"]]
+        seen_gone += [item["id"] for item in page["deleted"]]
+        assert page["highWater"] >= max([item["sequence"] for item in page["imports"]] or [0])
+        cursor, deleted_cursor = page["nextCursor"], page["nextDeletedCursor"]
+        if cursor is None and deleted_cursor is None:
+            break
+        assert pages < 20
+    assert sorted(seen_live) == sorted(live) and len(set(seen_live)) == 63, "every import arrives, once"
+    assert sorted(seen_gone) == sorted(gone) and len(set(seen_gone)) == 17, "every tombstone arrives, once"
+    assert pages >= 3

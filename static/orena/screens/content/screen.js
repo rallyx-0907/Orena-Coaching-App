@@ -14,7 +14,7 @@ import { moreButton, moreMenu } from '../../kit/overflow.js';
 import { toast } from '../../kit/toast.js';
 import { shellCopy } from '../../copy/shell.js';
 import { syncImports } from '../../shell/context.js';
-import { deleteOwnImport } from '../../product/import-delete.js';
+import { deleteWithUndo } from '../../product/import-undo.js';
 import { importMemberId, isRemovedContent } from '../../product/import-removed.js';
 import { useStyles } from '../../kit/styles.js';
 import { heroMedia, listRow, rowThumb } from '../../kit/components.js';
@@ -280,11 +280,9 @@ export default async function content(element, ctx) {
       });
       menuSlot.querySelector('[data-menu-item="delete"]')?.addEventListener('click', async () => {
         state.menu = false;
-        // Gone from this device at once; the account's deletion (tombstone, stored file) follows.
-        const deleting = deleteOwnImport(ctx.context.memory, memberId);
-        toast(t('deletedFromOrena'), { iconName: 'check' });
+        // Hidden at once with the design's toast and its Undo; the deletion is committed when that window ends.
+        deleteWithUndo(ctx.context.memory, memberId, { toast, text: t('deletedFromOrena'), undoLabel: shellCopy('undo') });
         ctx.go(ctx.href('library'));
-        await deleting;
       });
     };
     drawMenu();

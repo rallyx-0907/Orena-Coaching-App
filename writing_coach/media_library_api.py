@@ -236,6 +236,9 @@ def delete_my_media(media_id: str) -> dict[str, Any]:
     _installed()
     store, _, _ = _installed()
     entry = store.get(media_id.strip())
+    if entry is None and getattr(store, "last_read_issue", "") in {"index_corrupt", "index_unreadable"}:
+        # An index that cannot be trusted is not "not found": the caller must retry, not conclude it is gone.
+        raise orena_http_error(503, "media_index_unavailable", "The media library is not available right now.", retryable=True)
     if entry is None or not visible_to(entry, user_key=current_user_key(), language=current_language_code()):
         raise orena_http_error(404, "media_not_found", "This media is not available.")
     from writing_coach.account_records_api import media_still_named

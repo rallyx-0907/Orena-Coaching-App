@@ -4625,3 +4625,16 @@ Resolved by the human's D-105 decisions; AD-A, AD-B and AD-H above are closed by
   fingerprint), P3-2 (receipts keep a content-derived digest until account deletion), P3-3 (tombstones made before
   `f8f5c91` have no `ref`), P3-5 (the Reader keeps its own overflow styles), P3-6 (an upload whose index write is refused
   leaves its files) and P3-8 (the server `kept` mark of a deleted import).
+
+- **Delta check 02511cc.** A deletion made before the device's first list read of a session (offline at load, a failed
+  first sync) is no longer reverted. A text import's own record is always owed; for a link or file, `GET /api/imports`
+  now returns each record's change `sequence` and a `highWater` position, the device keeps the position of its last
+  successful read, and at the next sync a live record made at or before the position at which it deleted is the one it
+  deleted (resent), while a later one is another device's re-import (the import is the learner's again). A failed list
+  read learns, settles and reinstates nothing. Reinstating keeps an older record's unconfirmed delete owed. An uploaded
+  file's stored copy is retried until confirmed; `DELETE /api/media/my/{id}` answers 503 (not 404) for an index it cannot
+  trust. A list read finishes at most five owed file removals. Limitation: a device that has never completed a list
+  read has no position, so a record that exists only on the account is treated as a re-import. Left for the limits
+  implementation: the 2,500 deleted-list cap should be derived from the configured text and media pool totals (360 +
+  2,500), and the full list wants an ETag or a `since` (up to about 375 KB per sync); a missing `index.json` with files on
+  disk is still read as a fresh start (P3-3).

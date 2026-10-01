@@ -518,7 +518,9 @@ export const api={
     headers:JSON_HEADERS,
     body:JSON.stringify(body),
   }),
-  imports:()=>request('/api/imports?limit=50'),
+  /* One page of the learner's imports and of the deleted ones' tombstones (cursor = change sequence of the last row
+     of the page before; `include` asks only for the list that still has pages). Callers page until both cursors end. */
+  imports:({cursor=null,deletedCursor=null,include='both'}={})=>request(`/api/imports?limit=50&include=${include}${cursor!=null?`&cursor=${cursor}`:''}${deletedCursor!=null?`&deletedCursor=${deletedCursor}`:''}`),
   saveImport:(id,body)=>request(`/api/imports/${encodeURIComponent(id)}`,{
     method:'PUT',
     headers:JSON_HEADERS,

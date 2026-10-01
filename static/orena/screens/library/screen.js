@@ -12,7 +12,7 @@ import { shellCopy as sc } from '../../copy/shell.js';
 import { moreButton, moreMenu } from '../../kit/overflow.js';
 import { toast } from '../../kit/toast.js';
 import { syncImports } from '../../shell/context.js';
-import { deleteOwnImport } from '../../product/import-delete.js';
+import { deleteWithUndo, onImportsChanged } from '../../product/import-undo.js';
 import { languages } from '../../copy/index.js';
 import { t } from './copy.js';
 import { isDeferred } from '../../shell/routes.js';
@@ -251,11 +251,9 @@ export default async function library(element, ctx) {
     element.querySelector('[data-menu-item="delete"]')?.addEventListener('click', async () => {
       const id = menuFor;
       menuFor = '';
-      // Gone from this device at once; the account's deletion (tombstone, stored file) follows.
-      const deleting = deleteOwnImport(ctx.context.memory, id);
+      // Hidden at once with the design's toast and its Undo; the deletion is committed when that window ends.
+      deleteWithUndo(ctx.context.memory, id, { toast, text: t('deletedFromOrena'), undoLabel: sc('undo') });
       paint();
-      toast(t('deletedFromOrena'), { iconName: 'check' });
-      await deleting;
     });
     /* `#/collection/:id` (route `collection`) is a different, third backend concept - a curated
        vocabulary pack (concept A, C6 §2.1), fetched via GET /api/vocabulary/library/collections/{id};
@@ -291,4 +289,9 @@ export default async function library(element, ctx) {
   }
 
   paint();
+  // An Undo (or the end of a window) elsewhere repaints the list while this room is the current one.
+  const stopListening = onImportsChanged(() => {
+    if (ctx.isCurrent && !ctx.isCurrent()) stopListening();
+    else paint();
+  });
 }
