@@ -205,7 +205,9 @@ class _Validation:
         self.cast: set[str] | None = None  # story.characters are only checked against a valid cast file
         self.engine_tags: set[str] | None = None
         self.points: dict[str, tuple[str, dict[str, Any]]] = {}  # id -> (file, point) for schema-valid points
-        self.known_ids: set[str] = set()  # every ID seen, even in schema-invalid files
+        self.known_ids: set[str] = set()  # IDs with content files; functions.realizations must resolve here
+        self.reference_ids: set[str] = set()  # content IDs plus canonical catalog IDs for prereq/contrast refs
+        self.catalog_records: dict[str, dict[str, Any]] = {}
 
     # -- helpers -------------------------------------------------------------------------
     def issue(self, file: str, path: str, code: str, message: str) -> None:
@@ -305,6 +307,27 @@ class _Validation:
                 continue
             self.points[point_id] = (file, point)
 
+    def load_catalog_references(self) -> None:
+        """Load runtime-catalog IDs as valid structural references.
+
+        During resumable corpus generation, a point may legitimately contrast
+        with or depend on a canonical point whose content file has not been
+        generated yet. functions.realizations still uses known_ids (actual
+        files); only prereq/contrast reference checks use this wider set.
+        """
+        self.reference_ids = set(self.known_ids)
+        path = self.root / "inventory" / f"catalog_{self.lang}.yaml"
+        if not path.exists():
+            return
+        try:
+            records = read_yaml(path) or []
+        except (yaml.YAMLError, UnicodeDecodeError):
+            return
+        for record in records:
+            if isinstance(record, dict) and isinstance(record.get("id"), str):
+                self.catalog_records[record["id"]] = record
+                self.reference_ids.add(record["id"])
+
     # -- per-point rules -----------------------------------------------------------------
     def check_point(self, file: str, point: dict[str, Any]) -> None:
         self.check_level(file, point)
@@ -366,16 +389,21 @@ class _Validation:
             elif point["id"] not in function["realizations"].get(self.target_lang, []):
                 self.issue(file, "function", "ref.realization_missing",
                            f"{point['function']} does not list {point['id']} in realizations.{self.target_lang}")
+        references = self.reference_ids or self.known_ids
         for index, prereq in enumerate(point["prereqs"]):
-            if prereq not in self.known_ids:
+            if prereq not in references:
                 self.issue(file, f"prereqs[{index}]", "ref.unknown_prereq", f"unknown grammar point {prereq}")
-            elif prereq in self.points:
-                prereq_level = self.points[prereq][1]["level"]["value"]
-                if self.scale.index(prereq_level) > self.scale.index(point["level"]["value"]):
+            else:
+                prereq_level = None
+                if prereq in self.points:
+                    prereq_level = self.points[prereq][1]["level"]["value"]
+                elif prereq in self.catalog_records:
+                    prereq_level = self.catalog_records[prereq]["level"]
+                if prereq_level is not None and self.scale.index(prereq_level) > self.scale.index(point["level"]["value"]):
                     self.issue(file, f"prereqs[{index}]", "ref.prereq_level",
                                f"prereq {prereq} is {prereq_level}, above {point['level']['value']}")
         for index, other in enumerate(point["contrasts"]):
-            if other not in self.known_ids:
+            if other not in references:
                 self.issue(file, f"contrasts[{index}]", "ref.unknown_contrast", f"unknown grammar point {other}")
 
     def check_error_tags(self, file: str, point: dict[str, Any]) -> None:
@@ -429,7 +457,7 @@ class _Validation:
 
     def check_contrast(self, file: str, path: str, block: dict[str, Any], point: dict[str, Any]) -> None:
         other = block["with"]
-        if other not in self.known_ids:
+        if other not in (self.reference_ids or self.known_ids):
             self.issue(file, f"{path}.with", "ref.unknown_contrast", f"unknown grammar point {other}")
         if other not in point["contrasts"]:
             self.issue(file, f"{path}.with", "ref.contrast_block_unlisted", f"{other} is not listed in contrasts")
@@ -571,7 +599,7 @@ class _Validation:
         for index, item in enumerate(point["compare"]):
             path = f"compare[{index}]"
             other = item["with"]
-            if other not in self.known_ids:
+            if other not in (self.reference_ids or self.known_ids):
                 self.issue(file, f"{path}.with", "ref.unknown_contrast", f"unknown grammar point {other}")
             if other not in point["contrasts"]:
                 self.issue(file, f"{path}.with", "ref.contrast_block_unlisted", f"{other} is not listed in contrasts")
@@ -740,7 +768,10 @@ class _Validation:
     def check_contrasts_symmetric(self) -> None:
         for pid, (file, point) in sorted(self.points.items()):
             for index, other in enumerate(point["contrasts"]):
-                if other in self.points and pid not in self.points[other][1]["contrasts"]:
+                if other not in self.points:
+                    continue
+                counterpart = self.catalog_records.get(other, self.points[other][1])
+                if pid not in counterpart["contrasts"]:
                     self.issue(file, f"contrasts[{index}]", "contrasts.asymmetric",
                                f"{pid} lists {other} but {other} does not list {pid}")
 
@@ -797,6 +828,7 @@ class _Validation:
         self.load_cast()
         self.load_error_tags()
         self.load_points()
+        self.load_catalog_references()
         for file, point in self.points.values():
             self.check_point(file, point)
         self.check_prereq_cycles()
@@ -1086,15 +1118,19 @@ def validate_generated_point(
         for record in catalog:
             if isinstance(record, dict) and isinstance(record.get("id"), str):
                 validation.known_ids.add(record["id"])
+                validation.reference_ids.add(record["id"])
 
     # Legacy on-disk points outside canonical_v1 are still valid references.
     content_dir = root / "content" / lang
     if content_dir.exists():
-        validation.known_ids.update(
+        disk_ids = {
             path.stem for path in content_dir.glob("*.json") if not path.name.startswith("_")
-        )
+        }
+        validation.known_ids.update(disk_ids)
+        validation.reference_ids.update(disk_ids)
 
     validation.known_ids.add(point["id"])
+    validation.reference_ids.add(point["id"])
     validation.points[point["id"]] = (file, point)
     if validation.schema_check(file, point, _validator(validation.schema)):
         validation.check_point(file, point)
