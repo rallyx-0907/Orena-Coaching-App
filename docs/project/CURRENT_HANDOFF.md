@@ -2,11 +2,11 @@
 
 ## Governance
 
-Purpose: current execution state only. Change when the active lane, verified
-batch, gates or next task changes. Do not store secrets, product philosophy or
-unverified claims. Product intent and technical authority follow
-`PROJECT_MEMORY.md`; local verification does not imply CI pass, human product
-approval, or production readiness.
+Purpose: execution state. Change when lane/batch/gates/task changes.
+Do not store secrets/philosophy/unverified claims. Authority: `PROJECT_MEMORY.md`.
+Local checks are not CI/product approval.
+
+Product completion is judged against the full new Orena UI/spec capability and flow inventory, not only currently implemented backend features or the next active slices.
 
 ## Current branch / lane
 
