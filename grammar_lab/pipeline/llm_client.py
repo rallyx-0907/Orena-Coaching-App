@@ -338,6 +338,27 @@ class LLMClient:
         self._write_cache(key, data, usage)
         return LLMResult(data, usage, self.model, self.provider, cached=False)
 
+    def invalidate_cache(
+        self, *, system: str, user: str, json_schema: dict[str, Any],
+        temperature: float = 0.0, seed: int | None = None,
+    ) -> bool:
+        """Forget one cached completion after downstream semantic rejection.
+
+        complete() can only enforce the provider/JSON schema. A later domain
+        validator may discover that a schema-valid answer is unusable. In that
+        case the bad completion must not become a permanent replay on the next
+        repair or resumed corpus run.
+        """
+        key = _cache_key(
+            provider=self.provider, model=self.model, system=system, user=user,
+            schema=json_schema, temperature=temperature, seed=seed,
+        )
+        path = self._cache_path(key)
+        if not path.exists():
+            return False
+        path.unlink()
+        return True
+
     # -- providers ---------------------------------------------------------------------
 
     def _call_anthropic(
