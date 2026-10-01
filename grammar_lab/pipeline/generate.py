@@ -784,6 +784,54 @@ def _build_check_items(examples: list[dict[str, Any]], rule_table: dict[str, Any
     return items
 
 
+def semantic_repair_hints(issues: list[Any]) -> str:
+    """Focused instructions for recurrent deterministic failure families.
+
+    The validator remains authoritative; these hints only stop the provider
+    from re-creating the same structural mistake on all three attempts.
+    """
+    codes = {issue.code for issue in issues}
+    hints: list[str] = []
+    if codes & {
+        "example.formula_role_missing", "example.span_slot_mismatch",
+        "example.span_role_not_in_formula", "example.form_without_variant",
+    }:
+        hints.append(
+            "Formula/examples: keep one concrete skeleton per form. Collapse alternative surface forms "
+            "into one slot's options instead of sequential required slots; mark a slot optional only when "
+            "a valid sentence can omit it. Rewrite spans as exact substrings using only roles present in "
+            "that selected formula. Do not highlight extra time/place/complement material unless the formula names it."
+        )
+    if codes & {"formula.slot_has_joiner", "formula.option_duplicate"}:
+        hints.append(
+            "Formula slots: never put '+' inside a slot. Split sequential parts into slots; put true alternatives "
+            "in distinct options of one slot and remove duplicate options."
+        )
+    if any(code.startswith("personal_production.") for code in codes):
+        hints.append(
+            "Personal production: teach one representative route only. Make pattern_rule match the sample and at "
+            "least one target-form example. Use exact surface markers/auxiliaries in any_of or one permissive regex; "
+            "each rule slot must end with exactly one non-empty matcher."
+        )
+    if codes & {"zh.pinyin_invalid", "zh.whitespace"}:
+        hints.append(
+            "Chinese formatting: write normal unspaced Chinese. Omit pinyin-pair fields unless a polyphonic Han "
+            "character truly needs a contextual override; code supplies routine pinyin and alignment."
+        )
+    if any(code.startswith("quick_practice.") for code in codes):
+        hints.append(
+            "Quick practice: each q has exactly one ___; the indexed correct option is grammatical and untagged; "
+            "every distractor is a real grammar error with a valid evaluator tag, never a spelling invention."
+        )
+    if any(code.startswith("common_mistake.") or code.startswith("error_tag.common_mistake") for code in codes):
+        hints.append(
+            "Common mistakes: wrong and right must differ by the named grammar mechanism, with an error_tag listed "
+            "for this point; do not use a typo as the mistake."
+        )
+    return "\n".join(f"REPAIR RULE: {hint}" for hint in hints)
+
+
+
 @dataclass
 class Generator:
     lang: str
@@ -1071,10 +1119,12 @@ class Generator:
             last_problem = "; ".join(
                 f"{issue.code} at {issue.path}: {issue.message}" for issue in issues[:8]
             )
+            focused_hints = semantic_repair_hints(issues)
             repair_context = (
                 "\n".join(
                     f"- {issue.code} at {issue.path}: {issue.message}" for issue in issues[:8]
                 )
+                + (("\n\n" + focused_hints) if focused_hints else "")
                 + "\n\nPrevious candidate JSON (repair this candidate; preserve the parts not implicated by the errors):\n"
                 + json.dumps(result.data, ensure_ascii=False, separators=(",", ":"))
             )
