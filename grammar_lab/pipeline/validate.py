@@ -1067,15 +1067,15 @@ def validate_generated_point(
     """
     validation = _Validation(lang, root)
     validation.load_manifest()
-    validation.load_functions()
+    # Deliberately do not load functions or the other point files here. Corpus
+    # workers run concurrently and functions.yaml/content files are being
+    # advanced by sibling workers. Structural function/prerequisite/contrast
+    # integrity is already gated by the frozen catalog; this local gate is for
+    # the candidate's own schema and semantic content.
     validation.load_cast()
     validation.load_error_tags()
-    validation.load_points()
 
     file = f"content/{lang}/{point['id']}.json"
-    # Ignore schema-load issues from an older on-disk version of the same
-    # point; this helper judges the candidate object passed by the generator.
-    validation.report.issues = [issue for issue in validation.report.issues if issue.file != file]
 
     catalog_path = root / "inventory" / f"catalog_{lang}.yaml"
     if catalog_path.exists():
@@ -1086,6 +1086,13 @@ def validate_generated_point(
         for record in catalog:
             if isinstance(record, dict) and isinstance(record.get("id"), str):
                 validation.known_ids.add(record["id"])
+
+    # Legacy on-disk points outside canonical_v1 are still valid references.
+    content_dir = root / "content" / lang
+    if content_dir.exists():
+        validation.known_ids.update(
+            path.stem for path in content_dir.glob("*.json") if not path.name.startswith("_")
+        )
 
     validation.known_ids.add(point["id"])
     validation.points[point["id"]] = (file, point)
