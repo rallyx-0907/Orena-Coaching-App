@@ -1653,7 +1653,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.b1.014
   level: B1
-  function: fn.verb_patterns
+  function: fn.voice_causative
   point_type: tense_aspect
   native_title: "Passive voice: present and past"
   title:
@@ -1988,7 +1988,7 @@
   contrasts: []
   prereqs:
   - en.gerund_after_preference
-  sequence: 2
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.033
@@ -2007,12 +2007,12 @@
   contrasts: []
   prereqs:
   - en.canon.a1.004
-  sequence: 3
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.034
   level: B1
-  function: fn.verb_patterns
+  function: fn.voice_causative
   point_type: other
   native_title: "Causative have/get"
   title:
@@ -2025,7 +2025,7 @@
   contrasts: []
   prereqs:
   - en.canon.b1.018
-  sequence: 4
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.035
@@ -2252,7 +2252,7 @@
   - preposition
   contrasts: []
   prereqs: []
-  sequence: 5
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.048
@@ -2303,7 +2303,7 @@
   contrasts: []
   prereqs:
   - en.canon.b1.032
-  sequence: 6
+  sequence: 4
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.051
@@ -2336,7 +2336,7 @@
   contrasts: []
   prereqs:
   - en.canon.b1.042
-  sequence: 7
+  sequence: 5
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.053
@@ -2353,7 +2353,7 @@
   contrasts: []
   prereqs:
   - en.canon.b1.052
-  sequence: 8
+  sequence: 6
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.054
@@ -2609,7 +2609,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.b2.013
   level: B2
-  function: fn.verb_patterns
+  function: fn.voice_causative
   point_type: other
   native_title: "Advanced passive forms"
   title:
@@ -2622,7 +2622,7 @@
   contrasts: []
   prereqs:
   - en.canon.b1.014
-  sequence: 2
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.014
@@ -2646,7 +2646,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.b2.015
   level: B2
-  function: fn.verb_patterns
+  function: fn.voice_causative
   point_type: other
   native_title: "Two-object passive"
   title:
@@ -2659,12 +2659,12 @@
   contrasts: []
   prereqs:
   - en.canon.b2.013
-  sequence: 3
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.016
   level: B2
-  function: fn.verb_patterns
+  function: fn.voice_causative
   point_type: other
   native_title: "Causative have/get: extended"
   title:
@@ -2677,7 +2677,7 @@
   contrasts: []
   prereqs:
   - en.canon.b2.011
-  sequence: 4
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.017
@@ -2826,7 +2826,7 @@
   - word_form
   contrasts: []
   prereqs: []
-  sequence: 5
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.025
@@ -2845,7 +2845,7 @@
   - word_form
   contrasts: []
   prereqs: []
-  sequence: 6
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.026
@@ -2864,7 +2864,7 @@
   contrasts: []
   prereqs:
   - en.canon.a2.008
-  sequence: 7
+  sequence: 4
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.027
@@ -2883,12 +2883,12 @@
   contrasts: []
   prereqs:
   - en.canon.b1.050
-  sequence: 8
+  sequence: 5
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.028
   level: B2
-  function: fn.sentence_basics
+  function: fn.information_structure
   point_type: word_order
   native_title: "Cleft sentences"
   title:
@@ -2907,7 +2907,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.b2.029
   level: B2
-  function: fn.sentence_basics
+  function: fn.information_structure
   point_type: word_order
   native_title: "Pseudo-cleft sentences"
   title:
@@ -2926,7 +2926,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.b2.030
   level: B2
-  function: fn.sentence_basics
+  function: fn.information_structure
   point_type: word_order
   native_title: "Fronting for emphasis"
   title:
@@ -2945,7 +2945,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.b2.031
   level: B2
-  function: fn.sentence_basics
+  function: fn.information_structure
   point_type: other
   native_title: "Emphatic do"
   title:
@@ -3031,7 +3031,7 @@
   contrasts: []
   prereqs:
   - en.canon.b2.034
-  sequence: 5
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.036
@@ -3049,7 +3049,7 @@
   contrasts: []
   prereqs:
   - en.canon.b2.035
-  sequence: 6
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.037
@@ -3085,7 +3085,7 @@
   contrasts: []
   prereqs:
   - en.canon.b1.047
-  sequence: 9
+  sequence: 6
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.039
@@ -3108,7 +3108,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.b2.040
   level: B2
-  function: fn.linking
+  function: fn.register_style
   point_type: other
   native_title: "Formal vs informal grammar choices"
   title:
@@ -3141,7 +3141,7 @@
   contrasts: []
   prereqs:
   - en.canon.b2.040
-  sequence: 2
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.042
@@ -3163,7 +3163,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.b2.043
   level: B2
-  function: fn.verb_patterns
+  function: fn.voice_causative
   point_type: other
   native_title: "Get Passive"
   title:
@@ -3175,7 +3175,7 @@
   contrasts: []
   prereqs:
   - en.canon.b2.017
-  sequence: 10
+  sequence: 4
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.044
@@ -3192,12 +3192,12 @@
   contrasts: []
   prereqs:
   - en.canon.b2.042
-  sequence: 11
+  sequence: 7
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c1.001
   level: C1
-  function: fn.sentence_basics
+  function: fn.information_structure
   point_type: word_order
   native_title: "Only-phrase inversion"
   title:
@@ -3379,7 +3379,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.c1.011
   level: C1
-  function: fn.degree
+  function: fn.information_structure
   point_type: word_order
   native_title: "Negative adverbial inversion"
   title:
@@ -3393,7 +3393,7 @@
   contrasts: []
   prereqs:
   - en.adverbs.manner_degree
-  sequence: 1
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c1.012
@@ -3418,7 +3418,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.c1.013
   level: C1
-  function: fn.degree
+  function: fn.information_structure
   point_type: word_order
   native_title: "So/such inversion"
   title:
@@ -3431,12 +3431,12 @@
   contrasts: []
   prereqs:
   - en.canon.b1.055
-  sequence: 2
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c1.014
   level: C1
-  function: fn.sentence_basics
+  function: fn.information_structure
   point_type: other
   native_title: "Extraposition with anticipatory it"
   title:
@@ -3449,7 +3449,7 @@
   contrasts: []
   prereqs:
   - en.canon.c1.010
-  sequence: 2
+  sequence: 4
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c1.015
@@ -3484,7 +3484,7 @@
   contrasts: []
   prereqs:
   - en.canon.c1.014
-  sequence: 3
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c1.017
@@ -3691,7 +3691,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.c1.028
   level: C1
-  function: fn.linking
+  function: fn.register_style
   point_type: other
   native_title: "Register-driven grammar"
   title:
@@ -3705,7 +3705,7 @@
   contrasts: []
   prereqs:
   - en.canon.c1.027
-  sequence: 2
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c1.029
@@ -3723,12 +3723,12 @@
   contrasts: []
   prereqs:
   - en.canon.c1.028
-  sequence: 4
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c1.030
   level: C1
-  function: fn.sentence_basics
+  function: fn.information_structure
   point_type: other
   native_title: "Sentence rhythm, end-weight and end-focus"
   title:
@@ -3800,7 +3800,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.c2.004
   level: C2
-  function: fn.exclusion
+  function: fn.information_structure
   point_type: other
   native_title: "Only/focus scope"
   title:
@@ -3908,7 +3908,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.c2.010
   level: C2
-  function: fn.sentence_basics
+  function: fn.information_structure
   point_type: other
   native_title: "Heavy constituent shift"
   title:
@@ -3921,12 +3921,12 @@
   contrasts: []
   prereqs:
   - en.canon.c2.009
-  sequence: 3
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c2.011
   level: C2
-  function: fn.sentence_basics
+  function: fn.information_structure
   point_type: other
   native_title: "Advanced extraposition"
   title:
@@ -3939,7 +3939,7 @@
   contrasts: []
   prereqs:
   - en.canon.c2.010
-  sequence: 4
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c2.012
@@ -3997,7 +3997,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.c2.015
   level: C2
-  function: fn.sentence_basics
+  function: fn.information_structure
   point_type: other
   native_title: "Cross-sentence ellipsis"
   title:
@@ -4010,7 +4010,7 @@
   contrasts: []
   prereqs:
   - en.canon.c2.014
-  sequence: 5
+  sequence: 4
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c2.016
@@ -4051,7 +4051,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.c2.018
   level: C2
-  function: fn.linking
+  function: fn.register_style
   point_type: other
   native_title: "Metadiscourse grammar"
   title:
