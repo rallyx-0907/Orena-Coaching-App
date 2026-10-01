@@ -110,6 +110,7 @@ functions:
     zh-Hans: 过去已完成的动作
   realizations:
     en:
+    - en.past_simple
     - en.past_simple.regular_ed
     - en.past_simple.irregular
     - en.canon.a1.001
@@ -201,6 +202,7 @@ functions:
     en: Stressing the result of handling an object
   realizations:
     zh-Hans:
+    - zh.ba_construction
     - zh.canon.gf.hsk3.a_3_2_5_5.p1
     - zh.canon.r5.hsk3_1_n_n_t_ng
     - zh.canon.r5.hsk3_2_b_ng_k_t_qu
