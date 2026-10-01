@@ -167,8 +167,26 @@ def sync_seed_metadata(root: Path = LAB_ROOT, *, check: bool = False) -> dict[st
         for point_id, point in existing_by_lang[lang].items():
             if point_id not in catalog_ids[lang]:
                 continue
+            def prompt_input_snapshot(value: dict[str, Any]) -> dict[str, Any]:
+                header = value.get("header") or {}
+                return {
+                    "function": value.get("function"),
+                    "level": value.get("level"),
+                    "point_type": value.get("point_type"),
+                    "title": header.get("title"),
+                    "native_title": header.get("native_title"),
+                    "contrasts": value.get("contrasts", []),
+                    "error_tags": value.get("error_tags", []),
+                    "source_refs": value.get("source_refs", {}),
+                }
+
+            before_prompt_inputs = prompt_input_snapshot(point)
             seeded = apply_seed(point, lang, point_id, root)
             if seeded is not None:
+                if prompt_input_snapshot(seeded) != before_prompt_inputs:
+                    provenance = dict(seeded.get("provenance") or {})
+                    provenance["metadata_stale"] = True
+                    seeded["provenance"] = provenance
                 # Metadata can invalidate small derived/body-adjacent fields without
                 # requiring a paid regeneration. Seed contrasts are authoritative,
                 # so drop stale comparison cards that point outside the new set.
