@@ -544,31 +544,44 @@ def unspaced_pairs(pairs: list[list[str]]) -> list[list[str]]:
 
 
 def zh_unspaced(text: str) -> str:
-    """Chinese is written without spaces; DeepSeek put one on each side of every quick-practice
-    blank in the first zh v0.4 run. Only the question is repaired here (its pinyin pairs lose the
-    pairs of the spaces via unspaced_pairs); a spaced example would misalign its pinyin, so validate
-    (zh.whitespace) reports that one."""
+    """Remove spaces touching Han text or the cloze blank.
+
+    Pinyin is now derived after text normalization, so this is safe for every
+    target-language field, not only quick-practice questions.
+    """
     return _ZH_SPACE_RUN.sub("", text)
 
 
+def target_text(text: str, zh: bool) -> str:
+    return zh_unspaced(text) if zh else text
+
+
 def assemble_example(raw: dict[str, Any], zh: bool, loc: Any) -> dict[str, Any]:
-    """Model output -> the stored example: substring spans become offsets, pinyin pairs a list."""
+    """Model output -> stored example, with target text normalized before offsets/pinyin."""
+    text = target_text(raw["text"], zh)
+    spans = [
+        {**span, "text": target_text(span["text"], zh)}
+        for span in raw["spans"]
+    ]
     example = {
-        "text": raw["text"], "form": raw["form"], "spans": resolve_spans(raw["text"], raw["spans"]),
+        "text": text, "form": raw["form"], "spans": resolve_spans(text, spans),
         "annotation": loc(raw["annotation"]), "translation": loc(raw["translation"]),
     }
     if zh:
-        example["pinyin"] = pinyin_from_pairs(raw["text"], raw.get("pinyin_pairs"))
+        example["pinyin"] = pinyin_from_pairs(text, raw.get("pinyin_pairs"))
     return example
 
 
 def assemble_compare_item(item: dict[str, Any], zh: bool, loc: Any) -> dict[str, Any]:
-    entry = {key: item[key] for key in ("with", "this_example", "other_example")} | {
+    entry = {
+        "with": item["with"],
+        "this_example": target_text(item["this_example"], zh),
+        "other_example": target_text(item["other_example"], zh),
         "this_meaning": loc(item["this_meaning"]), "other_meaning": loc(item["other_meaning"]),
     }
     if zh:
-        entry["this_example_pinyin"] = pinyin_from_pairs(item["this_example"], item.get("this_example_pinyin_pairs"))
-        entry["other_example_pinyin"] = pinyin_from_pairs(item["other_example"], item.get("other_example_pinyin_pairs"))
+        entry["this_example_pinyin"] = pinyin_from_pairs(entry["this_example"], item.get("this_example_pinyin_pairs"))
+        entry["other_example_pinyin"] = pinyin_from_pairs(entry["other_example"], item.get("other_example_pinyin_pairs"))
     return entry
 
 
@@ -576,8 +589,8 @@ def assemble_quick_practice_item(item: dict[str, Any], zh: bool, loc: Any) -> di
     entry = {
         "q": zh_unspaced(item["q"]) if zh else item["q"],
         "options": [
-            {"text": option["text"], "error_tag": option["error_tag"],
-             **({"pinyin": pinyin_from_pairs(option["text"], option.get("pinyin_pairs"))} if zh else {})}
+            {"text": target_text(option["text"], zh), "error_tag": option["error_tag"],
+             **({"pinyin": pinyin_from_pairs(target_text(option["text"], zh), option.get("pinyin_pairs"))} if zh else {})}
             for option in item["options"]
         ],
         "answer": item["answer"], "explain": loc(item["explain"]),
@@ -588,11 +601,13 @@ def assemble_quick_practice_item(item: dict[str, Any], zh: bool, loc: Any) -> di
 
 
 def assemble_common_mistake(raw: dict[str, Any], zh: bool, loc: Any) -> dict[str, Any]:
-    mistake = {key: raw[key] for key in ("wrong", "right", "reason", "error_tag", "l1")}
+    mistake = {key: raw[key] for key in ("reason", "error_tag", "l1")}
+    mistake["wrong"] = target_text(raw["wrong"], zh)
+    mistake["right"] = target_text(raw["right"], zh)
     mistake["reason"] = loc(mistake["reason"])
     if zh:
-        mistake["wrong_pinyin"] = pinyin_from_pairs(raw["wrong"], raw.get("wrong_pinyin_pairs"))
-        mistake["right_pinyin"] = pinyin_from_pairs(raw["right"], raw.get("right_pinyin_pairs"))
+        mistake["wrong_pinyin"] = pinyin_from_pairs(mistake["wrong"], raw.get("wrong_pinyin_pairs"))
+        mistake["right_pinyin"] = pinyin_from_pairs(mistake["right"], raw.get("right_pinyin_pairs"))
     return mistake
 
 
@@ -603,21 +618,21 @@ def assemble_personal_production(raw: dict[str, Any], zh: bool, loc: Any) -> dic
     for slot in raw["pattern_rule"]["slots"]:
         slots.append({key: value for key, value in slot.items() if value not in (None, "", [])})
     block: dict[str, Any] = {
-        "prompt": loc(raw["prompt"]), "placeholder": raw["placeholder"], "target_form": raw["target_form"],
+        "prompt": loc(raw["prompt"]), "placeholder": target_text(raw["placeholder"], zh), "target_form": raw["target_form"],
         "pattern_rule": {"ordered": raw["pattern_rule"]["ordered"], "slots": slots},
-        "sample": {"text": raw["sample"]},
+        "sample": {"text": target_text(raw["sample"], zh)},
     }
     if zh:
-        block["placeholder_pinyin"] = pinyin_from_pairs(raw["placeholder"], raw.get("placeholder_pinyin_pairs"))
-        block["sample"]["pinyin"] = pinyin_from_pairs(raw["sample"], raw.get("sample_pinyin_pairs"))
+        block["placeholder_pinyin"] = pinyin_from_pairs(block["placeholder"], raw.get("placeholder_pinyin_pairs"))
+        block["sample"]["pinyin"] = pinyin_from_pairs(block["sample"]["text"], raw.get("sample_pinyin_pairs"))
     return block
 
 
 def assemble_morphology_row(raw: dict[str, Any], zh: bool) -> dict[str, Any]:
-    row = {key: raw[key] for key in ("base", "affix", "result")}
+    row = {key: target_text(raw[key], zh) for key in ("base", "affix", "result")}
     if zh:
         for key in ("base", "affix", "result"):
-            row[f"{key}_pinyin"] = pinyin_from_pairs(raw[key], raw.get(f"{key}_pinyin_pairs"))
+            row[f"{key}_pinyin"] = pinyin_from_pairs(row[key], raw.get(f"{key}_pinyin_pairs"))
     return row
 
 
@@ -633,19 +648,35 @@ def _as_locale_map(value: Any, locales: list[str]) -> Any:
 def _slots(raw: list[dict[str, Any]], zh: bool, locales: list[str]) -> list[dict[str, Any]]:
     out = []
     for slot in raw:
-        item: dict[str, Any] = {"text": slot["text"], "role": slot["role"], "label": _as_locale_map(slot["label"], locales)}
+        item: dict[str, Any] = {"text": target_text(slot["text"], zh), "role": slot["role"], "label": _as_locale_map(slot["label"], locales)}
         if slot.get("optional"):
             item["optional"] = True
         options = [
-            {"text": option["text"], **({"pinyin": pinyin_from_pairs(option["text"], option.get("pinyin_pairs"))} if zh else {})}
+            {"text": target_text(option["text"], zh), **({"pinyin": pinyin_from_pairs(target_text(option["text"], zh), option.get("pinyin_pairs"))} if zh else {})}
             for option in slot.get("options") or []
         ]
         if len(options) >= 2:  # one "option" is not a choice; the slot text already says it
             item["options"] = options
         if zh:
-            item["pinyin"] = pinyin_from_pairs(slot["text"], slot.get("pinyin_pairs"))
+            item["pinyin"] = pinyin_from_pairs(item["text"], slot.get("pinyin_pairs"))
         out.append(item)
     return out
+
+
+def sanitize_example_spans(examples: list[dict[str, Any]], pattern: dict[str, Any]) -> None:
+    """Drop visual spans whose role is not part of the selected formula.
+
+    Such spans are harmless model over-highlighting, not a grammar error. Missing
+    required roles still fail validation and trigger semantic repair.
+    """
+    variants = pattern.get("variants", {})
+    for example in examples:
+        formula = pattern["formula"] if example["form"] == "affirmative" else variants.get(example["form"])
+        if not formula:
+            continue
+        allowed = {slot["role"] for slot in formula}
+        example["spans"] = [span for span in example["spans"] if span["role"] in allowed]
+
 
 
 def _story_generation_schema(*, locales: list[str], error_tags: list[str], cast_names: list[str]) -> dict[str, Any]:
@@ -936,6 +967,7 @@ class Generator:
             pattern["illustration"] = illustration
 
             examples = [assemble_example(raw, zh, loc) for raw in data["examples"]]
+            sanitize_example_spans(examples, pattern)
             compare = [assemble_compare_item(item, zh, loc) for item in data["compare"]]
             quick_practice = [assemble_quick_practice_item(item, zh, loc) for item in data["quick_practice"]]
             mistakes = [assemble_common_mistake(raw, zh, loc) for raw in data["common_mistakes"]]
