@@ -20,6 +20,7 @@ regenerate" action.
 from __future__ import annotations
 
 import hashlib
+import json
 import re
 import time
 from dataclasses import dataclass
@@ -51,7 +52,7 @@ from grammar_lab.rules import en_morphology
 
 PROMPT_VERSION = "generate_point.v1"
 PROMPT_PATH = LAB_ROOT / "prompts" / "generate_point.md"
-PROMPT_VERSION_V04 = "generate_point_v04.v10"
+PROMPT_VERSION_V04 = "generate_point_v04.v11"
 PROMPT_PATH_V04 = LAB_ROOT / "prompts" / "generate_point_v04.md"
 V04_SEMANTIC_ATTEMPTS = 3
 STORY_PROMPT_VERSION = "generate_story.v2"
@@ -998,8 +999,12 @@ class Generator:
             last_problem = "; ".join(
                 f"{issue.code} at {issue.path}: {issue.message}" for issue in issues[:8]
             )
-            repair_context = "\n".join(
-                f"- {issue.code} at {issue.path}: {issue.message}" for issue in issues[:8]
+            repair_context = (
+                "\n".join(
+                    f"- {issue.code} at {issue.path}: {issue.message}" for issue in issues[:8]
+                )
+                + "\n\nPrevious candidate JSON (repair this candidate; preserve the parts not implicated by the errors):\n"
+                + json.dumps(result.data, ensure_ascii=False, separators=(",", ":"))
             )
 
         return GenerateOutcome(
