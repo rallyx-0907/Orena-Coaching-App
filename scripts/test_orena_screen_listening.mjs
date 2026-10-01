@@ -256,4 +256,59 @@ assert.equal(listenedMinutesLabel(0), '0:00', 'a real zero-length session is a r
 assert.equal(listenedMinutesLabel(-1), null);
 assert.equal(listenedMinutesLabel(NaN), null);
 
+/* --- imported media opens through the same room (product/media-source.js) --- */
+{
+  const { mediaRef, openMedia } = await import('../static/orena/product/media-source.js');
+  const { primaryLanguage } = await import('../static/orena/screens/listening/model.js');
+  assert.deepEqual(mediaRef('url:https://www.youtube.com/watch?v=abc'), { kind: 'url', value: 'https://www.youtube.com/watch?v=abc' });
+  assert.deepEqual(mediaRef('upload:upload-1f'), { kind: 'upload', value: 'upload-1f' });
+  assert.deepEqual(mediaRef('upload-1f'), { kind: 'lesson', value: 'upload-1f' }, 'a bare stored media id resolves through the library route');
+  assert.deepEqual(mediaRef('en-science-cosmic-calendar'), { kind: 'lesson', value: 'en-science-cosmic-calendar' });
+
+  const calls = [];
+  const acquired = { asset: { asset_id: 'youtube:abc', title: 'Clip', source_language: 'en-GB', duration_ms: 61000, thumbnail_url: 'https://img/x.jpg' }, playback: { kind: 'youtube', url: 'https://www.youtube.com/embed/abc' }, transcript: { segments: [] }, translations: [] };
+  const api = {
+    importMedia: async (body) => { calls.push(['import', body.source_url, body.target_language]); return acquired; },
+    mediaImportStatus: async () => { throw new Error('not resumable'); },
+    mediaMy: async (id) => { calls.push(['my', id]); return { asset: { asset_id: id }, playback: { kind: 'audio' } }; },
+    listeningLibraryLesson: async (id, support) => { calls.push(['lesson', id, support]); return { asset: { asset_id: id } }; },
+  };
+  const storage = { getItem: () => null, setItem() {}, removeItem() {} };
+  globalThis.localStorage = storage;
+  assert.equal(await openMedia('url:https://youtu.be/abc', { api, support: 'vi', language: 'en' }), acquired);
+  await openMedia('upload:upload-1f', { api, support: 'vi', language: 'en' });
+  await openMedia('upload-1f', { api, support: 'vi', language: 'en' });
+  await openMedia('en-x', { api, support: 'vi', language: 'en' });
+  assert.deepEqual(calls, [
+    ['import', 'https://youtu.be/abc', 'vi'],
+    ['my', 'upload-1f'],
+    ['lesson', 'upload-1f', 'vi'],
+    ['lesson', 'en-x', 'vi'],
+  ]);
+  await assert.rejects(() => openMedia('url:', { api }), /No media id/);
+
+  /* A provider acquisition has no catalog: the room maps from the asset, the poster falls back to
+     the asset's thumbnail, and the provider's regional tag does not decide the language. */
+  const mapped = mapLesson(acquired);
+  assert.equal(mapped.language, 'en');
+  assert.equal(mapped.title, 'Clip');
+  assert.equal(mapped.posterUrl, 'https://img/x.jpg');
+  assert.equal(mapped.durationMs, 61000);
+  const unmeasured = mapLesson({ ...acquired, asset: { ...acquired.asset, duration_ms: null }, transcript: { segments: [{ segment_id: 'a', start_ms: 1200, end_ms: 3360 }, { segment_id: 'b', start_ms: 16881, end_ms: 18881 }] } });
+  assert.equal(unmeasured.durationMs, null, 'rule 40: a length the provider did not report is not "0 min"');
+  assert.equal(minutesFrom(unmeasured.durationMs), null);
+  assert.equal(unmeasured.excerptEndMs, 18881, 'the clip of a provider source ends where its last line does');
+  assert.equal(mapLesson({ ...acquired, asset: { ...acquired.asset, duration_ms: null } }).excerptEndMs, null, 'no transcript, no length: no invented end');
+  assert.equal(mapped.modes.follow, true);
+  assert.equal(mapped.modes.dictation, false, 'no catalog modes: only Follow, nothing invented');
+  assert.equal(timeLabel(3000, 0, 0), '0:03', 'no measured length: the elapsed time stands alone, never "/ 0:00"');
+  assert.equal(timeLabel(3000, 0, null), '0:03');
+  assert.equal(reachedEnd(0, 0), false, 'an unmeasured end is not an end: the end-of-media card must not open at once');
+  assert.equal(reachedEnd(0, null), false);
+  assert.equal(mapLesson({ asset: { source_language: 'und', title: 'x' } }, { fallbackLanguage: 'zh' }).language, 'zh', 'a provider that cannot tell the language leaves it to the learner own');
+  assert.equal(primaryLanguage('zh-CN'), 'zh');
+  assert.equal(primaryLanguage('zh'), 'zh');
+  assert.equal(primaryLanguage(''), 'en');
+}
+
 console.log('test_orena_screen_listening.mjs: Listening Workspace data mapping - real GET /api/listening/library/{id} captures (en+zh), rule 40 throughout: PASS');

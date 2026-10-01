@@ -23,6 +23,7 @@ import { useStyles } from '../../kit/styles.js';
 import { toast } from '../../kit/toast.js';
 import { langAttr } from '../../kit/lang.js';
 import { shellCopy as s } from '../../copy/shell.js';
+import { languages } from '../../copy/index.js';
 import { href } from '../../shell/routes.js';
 import { api } from '../../infrastructure/api.js';
 import { acquireMedia } from '../../capabilities/media-acquisition.js';
@@ -281,7 +282,9 @@ export async function openImport(ctx = {}) {
       const result = await acquireMedia({
         api,
         url: state.url.trim(),
-        target: context.language,
+        // The translation target is the learner's support language, the same target Listening
+        // re-acquires it with (product/media-source.js); the learning language only keys the job.
+        target: languages().support,
         owner: context.owner || 'local',
         language: context.language,
         alive: () => alive,

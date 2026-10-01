@@ -54,11 +54,31 @@ export function metaLine(parts, sep = ' · ') {
   return parts.filter((part) => part != null && part !== '').join(sep);
 }
 
+/* A provider's regional tag ("en-GB", "zh-CN") is provenance, not identity: the room compares the
+   language against "zh", so only the primary subtag counts (an acquisition payload, unlike a stored
+   catalog entry, carries the provider's tag). A provider that could not tell ("und") leaves the
+   choice to the caller's fallback - the learner's own learning language - rather than a guess. */
+export function primaryLanguage(tag, fallback = 'en') {
+  const primary = String(tag || '').trim().toLowerCase().split(/[-_]/)[0];
+  return !primary || primary === 'und' ? fallback : primary;
+}
+
+function finiteOrNull(value) {
+  if (value == null || value === '') return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
+function lastSegmentEnd(payload) {
+  const segments = payload?.transcript?.segments;
+  return finiteOrNull(Array.isArray(segments) && segments.length ? segments[segments.length - 1]?.end_ms : null);
+}
+
 /* Every element the workspace draws from the real payload, in one place, except the transcript
    segments themselves - `product/encounter.js#encounter()` already owns that shape (current/
    select/follow/meaning), reused as-is rather than a second parallel mapping. Nothing here invents
    a field: an absent value stays null/empty and the caller renders rule 40's zero/omitted shape. */
-export function mapLesson(payload, { levelLabel = (lv) => lv } = {}) {
+export function mapLesson(payload, { levelLabel = (lv) => lv, fallbackLanguage = 'en' } = {}) {
   const catalog = payload?.catalog || {};
   const asset = payload?.asset || {};
   const modes = Array.isArray(catalog.available_modes) ? catalog.available_modes : [];
@@ -66,14 +86,16 @@ export function mapLesson(payload, { levelLabel = (lv) => lv } = {}) {
     lessonId: catalog.lesson_id || '',
     mediaObjectId: catalog.media_object_id || asset.asset_id || '',
     title: catalog.title || asset.title || '',
-    language: catalog.language || asset.source_language || 'en',
+    language: primaryLanguage(catalog.language || asset.source_language, fallbackLanguage),
     topic: catalog.topic || '',
     level: catalog.level || '',
     levelText: catalog.level ? levelLabel(catalog.level) : '',
-    durationMs: Number.isFinite(Number(catalog.duration_ms ?? asset.duration_ms)) ? Number(catalog.duration_ms ?? asset.duration_ms) : null,
-    excerptStartMs: Number.isFinite(Number(catalog.excerpt_start_ms)) ? Number(catalog.excerpt_start_ms) : 0,
-    excerptEndMs: Number.isFinite(Number(catalog.excerpt_end_ms)) ? Number(catalog.excerpt_end_ms) : null,
-    posterUrl: catalog.poster_url || '',
+    // Number(null) is 0: an unmeasured length (a provider that reports none) stays null, never "0 min".
+    durationMs: finiteOrNull(catalog.duration_ms ?? asset.duration_ms),
+    excerptStartMs: finiteOrNull(catalog.excerpt_start_ms) ?? 0,
+    // An acquisition carries no excerpt: its clip ends where its last spoken line does.
+    excerptEndMs: finiteOrNull(catalog.excerpt_end_ms) ?? lastSegmentEnd(payload),
+    posterUrl: catalog.poster_url || asset.thumbnail_url || '',
     playback: payload?.playback || null,
     playbackKind: payload?.playback?.kind || '',
     vocabulary: Array.isArray(catalog.vocabulary) ? catalog.vocabulary : [],
@@ -337,9 +359,12 @@ export function msAtSeekFraction(fraction, startMs, endMs) {
 
 export function timeLabel(timeMs, startMs, endMs) {
   const elapsed = mmss(Math.max(0, Number(timeMs) - (Number(startMs) || 0)));
-  const total = mmss((Number(endMs) || 0) - (Number(startMs) || 0));
-  if (elapsed == null || total == null) return '';
-  return `${elapsed} / ${total}`;
+  if (elapsed == null) return '';
+  // A source whose length nobody measured (a provider that reports none, no transcript) has no
+  // total to draw: the elapsed time stands alone rather than "/ 0:00" (rule 40).
+  if (!Number.isFinite(Number(endMs)) || Number(endMs) <= (Number(startMs) || 0)) return elapsed;
+  const total = mmss(Number(endMs) - (Number(startMs) || 0));
+  return total == null ? elapsed : `${elapsed} / ${total}`;
 }
 
 /* Whether the clip has been heard out: within one clock tick (media-player.js polls at 125ms) of
@@ -347,7 +372,8 @@ export function timeLabel(timeMs, startMs, endMs) {
 export function reachedEnd(timeMs, endMs) {
   const end = Number(endMs);
   const at = Number(timeMs);
-  return Number.isFinite(end) && Number.isFinite(at) && at >= end - 300;
+  // An unknown end (0) is not an end: a source of unmeasured length is never "heard out" on open.
+  return Number.isFinite(end) && end > 0 && Number.isFinite(at) && at >= end - 300;
 }
 
 /* real per-session listened time: the caller sums wall-clock deltas while `player_state===1`

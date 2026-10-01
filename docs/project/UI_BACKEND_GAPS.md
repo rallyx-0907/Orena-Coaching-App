@@ -4518,3 +4518,20 @@ Resolved by the human's D-105 decisions; AD-A, AD-B and AD-H above are closed by
   account's row; the entry rule that keys on it therefore asks for Welcome once.
 - Open for the human: per-account caps for place rows, responses, annotations and conversations (P2-4); a streak is per
   learning language, so a bilingual learner has two (P3-5).
+
+### Imported media opens in Listening (D4 runtime acceptance 1, 2026-10-01)
+
+- **Fix.** `product/media-source.js` resolves a media id the way the old Encounter did: `url:<link>` is re-acquired
+  (`capabilities/media-acquisition.js`), `upload:<id>` is read by identity (`GET /api/media/my/<id>`), any other id is a
+  curated or stored lesson (`GET /api/listening/library/<id>`, which also answers a bare personal `media_id`). Listening,
+  Content Detail and Respond use it. No backend change.
+- **Not drawn: a source with no transcript.** An uploaded file, or a link whose provider returns no captions, opens the
+  player with an empty transcript region and no explanation, because the design draws no source-only state for Listening
+  (the "Preparing transcript" copy belongs to the Import sheet's processing step). Human decision: a drawn source-only state.
+- **Not drawn: unmeasured length.** A provider that reports no length shows the elapsed time without a total; the clip end
+  is the last transcript line when there is one.
+- **Open (D4).** The import membership (`mediaImports`) is still device-only: a new device opens a known `url:`/`upload:`
+  route from the server, but Discover > Imported does not list the item there. A personal upload is resolvable by its
+  unguessable `media_id` only; the server does not check account or language on that read (listing is device-scoped per
+  language). A `url:` item is re-acquired from its provider on every open (the Import sheet already did one), so it depends
+  on the provider answering; Dictation, Shadowing and React for a `url:` item are not offered (no stored lesson id).
