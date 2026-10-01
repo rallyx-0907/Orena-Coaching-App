@@ -168,6 +168,22 @@ def sync_seed_metadata(root: Path = LAB_ROOT, *, check: bool = False) -> dict[st
             if point_id not in catalog_ids[lang]:
                 continue
             seeded = apply_seed(point, lang, point_id, root)
+            if seeded is not None:
+                # Metadata can invalidate small derived/body-adjacent fields without
+                # requiring a paid regeneration. Seed contrasts are authoritative,
+                # so drop stale comparison cards that point outside the new set.
+                if "compare" in seeded:
+                    allowed = set(seeded.get("contrasts", []))
+                    seeded["compare"] = [
+                        item for item in seeded["compare"]
+                        if item.get("with") in allowed
+                    ]
+                # native_title is seed metadata, while its per-character pinyin is
+                # deterministic display data. Keep them in lockstep on zh sync.
+                if lang == "zh" and "header" in seeded:
+                    from grammar_lab.pipeline.generate import pinyin_from_pairs
+                    native = seeded["header"]["native_title"]
+                    seeded["header"]["native_title_pinyin"] = pinyin_from_pairs(native)
             if seeded is not None and seeded != point:
                 changed_points.append(point_id)
                 if not check:
