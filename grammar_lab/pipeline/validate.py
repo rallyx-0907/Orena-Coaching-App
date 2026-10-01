@@ -560,8 +560,15 @@ class _Validation:
                 role_problems += 1
                 self.issue(file, f"{path}.spans", "example.span_role_not_in_formula",
                            f"span role {role!r} is not a role of the {example['form']} formula")
-            if not role_problems:  # the slot-by-slot walk only adds what the role check cannot see
-                self.check_span_slots_v04(file, path, example, formula)
+            if not role_problems:
+                roles = [slot["role"] for slot in formula]
+                # Stored spans identify a role, not a formula-slot id. When a
+                # formula repeats a role (S...S, V...V, alternative markers),
+                # assigning one span to one of those same-role slots is
+                # inherently ambiguous in schema 0.4. Keep strict slot-order
+                # validation only where roles uniquely identify slots.
+                if len(roles) == len(set(roles)):
+                    self.check_span_slots_v04(file, path, example, formula)
 
     def check_span_slots_v04(self, file: str, path: str, example: dict[str, Any], formula: list[dict[str, Any]]) -> None:
         """Span by slot, not only by role: walk the spans in text order and give each the first slot of its
@@ -714,14 +721,28 @@ class _Validation:
             else:
                 matchers.append(slot["any_of"])
         zh = self.target_lang == ZH_HANS
-        texts = [(f"{base}.sample.text", production["sample"]["text"], "personal_production.rule_rejects_sample")]
-        texts += [
-            (f"examples[{index}].text", example["text"], "personal_production.rule_rejects_example")
-            for index, example in enumerate(point["examples"]) if example["form"] == production["target_form"]
+        sample_text = production["sample"]["text"]
+        if not pattern_rule_matches(rule["ordered"], matchers, sample_text, zh):
+            self.issue(
+                file, f"{base}.sample.text", "personal_production.rule_rejects_sample",
+                f"the pattern_rule does not match {sample_text!r}",
+            )
+
+        target_examples = [
+            (index, example["text"])
+            for index, example in enumerate(point["examples"])
+            if example["form"] == production["target_form"]
         ]
-        for path, text, code in texts:
-            if not pattern_rule_matches(rule["ordered"], matchers, text, zh):
-                self.issue(file, path, code, f"the pattern_rule does not match {text!r}")
+        if target_examples and not any(
+            pattern_rule_matches(rule["ordered"], matchers, text, zh)
+            for _, text in target_examples
+        ):
+            index, text = target_examples[0]
+            self.issue(
+                file, f"examples[{index}].text", "personal_production.rule_rejects_example",
+                "the pattern_rule does not match any example of the target_form "
+                f"(first checked: {text!r})",
+            )
 
     def check_locales(
         self, file: str, path: str, mapping: dict[str, str], required: tuple[str, ...] = REQUIRED_LOCALES
