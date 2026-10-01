@@ -1,10 +1,13 @@
 # Proposal: server-side safety limits and retention/rejection behaviour for account records
 
-Status: **APPROVED WITH CONDITIONS (review re-check 2026-10-01); implementation not started.** Revision 3 (2026-10-01); revisions 1-2 below. Revision 1 (`codex/work` at `8481e33`) was independently reviewed in
+Status: **PROPOSED, revision 4 (2026-10-01), pending independent re-check.** Rev 3 had been APPROVED WITH CONDITIONS by the
+re-check of rev 2; rev 4 changes the proposal (human decision **D-107**, `DECISION_LOG.md`: separate media-import limits, an
+uploaded-media byte limit, and the rule that a quota-refused import is never shown as saved) and replaces the draft assumption
+with a measurement, so the approval does not carry over until the re-check. Implementation not started. Revision 1 (`codex/work` at `8481e33`) was independently reviewed in
 `ACCOUNT_RECORD_LIMITS_REVIEW.md`: REQUEST CHANGES (P1 1, P2 4, P3 5, conditions C1-C5). Revision 2 answers every finding;
 the mapping is the final section, "Rev 2 changes". Document only: no code, schema, migration, Docker or runtime is
 changed by this file. The re-check ("Re-check (rev 2)" in the review) approves rev 2 with conditions; rev 3 applies them (section
-"Rev 3 changes"). Enabling the backbone on :8000/:8010 remains a separate human gate.
+"Rev 3 changes"); rev 4 is "Rev 4 changes". Enabling the backbone on :8000/:8010 remains a separate human gate.
 
 Human instruction (verbatim): "Before enabling the backbone beyond `:8021`, propose configurable server-side safety
 limits and retention/rejection behavior for: reading positions, typed responses, notes, conversations. Do not invent
@@ -80,14 +83,19 @@ a learner; derivations in sections 2 and 4):
 | Turns per conversation (existing) | `ORENA_LIMIT_CONVERSATION_TURNS` | 24 | per conversation | 422 `turn_limit` (exists today) |
 | Record **stored** bytes (`works.payload` as stored, tombstones included) | `ORENA_LIMIT_RECORD_BYTES` | 134,217,728 (128 MiB) | per (account, language) | **reject** new row, or a growth past 32 KB: 422 `record_bytes_limit` |
 | Drafts (rev 2) | `ORENA_LIMIT_DRAFTS` | 2,500 | per (account, language) | **reject** new key: 422 `draft_limit` |
-| Deleted imports (tombstones; the only kind with a delete route) | `ORENA_LIMIT_IMPORT_TOMBSTONES` | 360 | per (account, language) | **reject** a new import: 422 `import_limit` |
-| Mutations per minute | `ORENA_LIMIT_WRITES_PER_MINUTE` | 240 | per account | 429 `write_rate_limited`, retryable |
+| **Text-import pool**: live (existing) / total with tombstones | (code constant `MAX_IMPORTS`) / `ORENA_LIMIT_IMPORT_TOMBSTONES` | 20 / 360 | per (account, language) | **reject** a new text import: 422 `import_limit` |
+| **Media-import pool** (rev 4, D-107): live items, URL/YouTube and uploads share it | `ORENA_LIMIT_MEDIA_IMPORTS` | 1,250 | per (account, language) | **reject** a new media import: 422 `media_import_limit` |
+| Media-import pool, total with tombstones | `ORENA_LIMIT_MEDIA_IMPORTS_TOTAL` | 2,500 | per (account, language) | **reject**: 422 `media_import_limit` |
+| **Uploaded-media storage bytes** (original + thumbnail, live uploads only) | `ORENA_LIMIT_MEDIA_UPLOAD_BYTES` | 10 GiB (10,737,418,240) | **per account, all languages** | **reject** the upload: 422 `media_bytes_limit`; nothing stored |
+| Uploads per hour | `ORENA_LIMIT_UPLOADS_PER_HOUR` | 30 | per account | 429 `write_rate_limited`, retryable |
+| Mutations per minute | `ORENA_LIMIT_WRITES_PER_MINUTE` | **120** (rev 4; was 240) | per account | 429 `write_rate_limited`, retryable |
 | Mutations per hour | `ORENA_LIMIT_WRITES_PER_HOUR` | 3,600 | per account | 429 `write_rate_limited`, retryable |
 | Place writes per minute | `ORENA_LIMIT_PLACE_WRITES_PER_MINUTE` | 120 | per account, per process | 429 `write_rate_limited` |
 | Place minimum interval, same row | `ORENA_PLACE_MIN_INTERVAL_SECONDS` | 1 | per row | answered `coalesced` (existing status), no error |
 
-**Receipts and change records** (section 5): the growth is the real scale problem (about **212 GB/year** of receipts and
-change records at the 100k-account target under the stated assumptions, of which autosave drafts are about 70%).
+**Receipts and change records** (section 5): the growth is the real scale problem (about **244 GB/year** of receipts and
+change records at the 100k-account target under the stated assumptions, of which autosave drafts are about 76%, using the
+rev 4 measured cadence).
 This proposal names an **owner** (the Principal Architect role, AGENTS section 1) and lays out options, but **proposes no
 deletion**. Until a versioned policy exists nothing is purged (ADA section 5: "missing policy disables destructive purge").
 
@@ -98,9 +106,10 @@ deletion**. Until a versioned policy exists nothing is purged (ADA section 5: "m
 ### 2.1 Assumptions [A]
 
 The repository holds no usage telemetry, so these are assumptions, stated so a reviewer can change them and re-run the
-arithmetic (appendix A). **A2-A5 and every size in section 2.2 are UNMEASURED.** Nothing below is a measurement and the
-defaults are not to be read as one. Rev 2 makes measuring the draft cadence on the lane a precondition of fixing the rate
-defaults (section 9, rollout step 0) and records that in `CURRENT_HANDOFF.md` (review C5).
+arithmetic (appendix A). **A2-A4, A5's session length and frequency, A10-A12 and every size in section 2.2 are UNMEASURED.** A5's *cadence* (saves per
+active writing minute) was **measured on the lane in rev 4** (section 2.4). Nothing else below is a measurement and the defaults
+are not to be read as one. Rev 2 made measuring the draft cadence on the lane a precondition of fixing the rate defaults
+(section 9, rollout step 0); rev 4 does it and records the result in section 2.4.
 
 | # | Assumption | Basis |
 | --- | --- | --- |
@@ -108,7 +117,10 @@ defaults (section 9, rollout step 0) and records that in `CURRENT_HANDOFF.md` (r
 | A2 | Of the DAU, **25% heavy** (5,000) and 75% typical (15,000). Non-daily accounts add a tail that is **not** estimated, so totals are a floor | **[A], unmeasured** |
 | A3 | Heavy learner: 2 sessions/day, 365 days/year. Typical: 1 session/day, 208 days/year (4 days a week) | **[A], unmeasured** |
 | A4 | Per session, heavy / typical: 1.5 / 1.0 new content opened (reading positions); 5 / 3 typed takes; 0.5 / 0.3 annotated texts at 9 / 5 pushes each; 0.5 conversations at 16 / 10 turns | **[A], unmeasured**; Free Talk and Reading Transfer produce a take each (`free-talk/screen.js`, `saveResponse`); conversations are scenario-shaped (I6) |
-| A5 | Autosave drafts: 90 saves per writing session (15 minutes at about 6 saves a minute; a save follows a 1.2 s pause, `draft-sync.js:127`); heavy 1 session/day, typical 60/year | **[A], unmeasured**; the debounce only bounds it to about 50 a minute. To be measured on the lane before the rate defaults are fixed |
+| A5 | Autosave drafts: **cadence measured** (section 2.4): 9.0 saves per active writing minute for heavy (the measured mix of ordinary, fast and pathological typing) and 3.7 for typical (ordinary typing); a 15-minute writing session; heavy 1 session/day (365/year), typical 60/year | cadence **[M] measured on the lane with scripted typing**, not by real learners; session length and frequency **[A], unmeasured** |
+| A10 | Media imports (rev 4): heavy 100 uploads and 260 URL/YouTube imports a year; typical 12 and 24 | **[A], unmeasured** |
+| A11 | Upload size: mean 15 MiB, median 10 MiB, p95 60 MiB, hard cap 64 MiB; thumbnail about 40 KB (video frame) to 100 KB (embedded audio artwork); index metadata about 1.5 KB plus about 2.5 KB per minute of transcript | cap **[V]** (`MAX_UPLOAD_BYTES = 64 * 1024 * 1024`, `media_thumbnail.py:31`); the rest **[A], unmeasured**. 128 kbps audio is about 1 MB a minute, so 64 MiB is about 70 minutes of audio; 720p video at 2.5 Mbps is about 19 MB a minute, so the cap is about 3-4 minutes of it |
+| A12 | A heavy sitting imports at most 10 files | **[A], unmeasured** |
 | A6 | A learner works mostly in one learning language, so per-(account, language) limits are sized against one language's volume | [A]; conservative |
 | A7 | "Heavy 3-year volume" is the yardstick for default sizing: evictable derived state gets >= 1.5x it, learner-authored records >= 2x it | design rule of this proposal |
 | A8 | A heavy learner's typical row: response answer about 150 characters and compact coaching about 800 (`compactCoaching` caps at 4,000, `account-records.js`); annotation text 6 highlights + 3 notes (2,436 characters measured); conversation turn about 0.5 KB of content | [A] / measured for the annotation |
@@ -143,10 +155,10 @@ Per account per year. Mutations are what write receipts and change records (0.65
 | Annotated texts (rows) / pushes (mutations) | 365 / 3,285 | 62 / 312 |
 | Conversations (rows) / turns (mutations and `work_turns` rows) | 365 / 5,840 | 104 / 1,040 |
 | **Mutations, the four kinds** | **12,775** | **1,976** |
-| Autosave drafts (mutations), A5 | 32,850 | 5,400 |
-| **Mutations, all** | **45,625** | **7,376** |
+| Autosave drafts (mutations), A5 measured cadence | 49,275 | 3,330 |
+| **Mutations, all** | **62,050** | **5,306** |
 | Storage, the four kinds (rows + their receipts/change records) | 19.4 MB | 3.3 MB |
-| Storage, all mutations' receipts/change records | 29.3 MB | 4.7 MB |
+| Storage, all mutations' receipts/change records | 39.8 MB | 3.4 MB |
 
 At the target, 5,000 heavy + 15,000 typical accounts, **per year**:
 
@@ -155,17 +167,49 @@ At the target, 5,000 heavy + 15,000 typical accounts, **per year**:
 | `library_items` place rows | 8.6 M (5.7 GB) | same |
 | `works` rows (responses 27.6 M, annotated texts 2.8 M, conversations 3.4 M) | 33.8 M | same |
 | `work_turns` rows | 44.8 M | same |
-| Mutations | 93.5 M | **338.8 M** |
-| Receipt + change-record rows | 187 M | **678 M** |
-| Receipts + change records, storage | 58 GB | **212 GB** |
-| All storage (content + receipts + change records) | 139.5 GB | **about 293 GB** |
-| Average mutation rate | 3.0 / s | 10.7 / s (peak of the order of 100 / s across all accounts; per account the stream lock serialises, `mutation_commit.py:106-112`) |
+| Mutations | 93.5 M | **389.8 M** |
+| Receipt + change-record rows | 187 M | **780 M** |
+| Receipts + change records, storage | 58 GB | **244 GB** |
+| All storage (content + receipts + change records) | 139.5 GB | **about 326 GB** |
+| Average mutation rate | 3.0 / s | 12.4 / s (peak of the order of 100 / s across all accounts; per account the stream lock serialises, `mutation_commit.py:106-112`) |
 
 Reading of the table: **the receipt and change-record tables, not the learner's words, are the growth**: 42% of the
-four-kind storage and 72% once autosave is counted. That is why section 5 exists. A heavy learner's own words are about
+four-kind storage and 75% once autosave is counted. That is why section 5 exists. A heavy learner's own words are about
 11 MB a year.
 
 ---
+
+### 2.4 Measurement: the autosave cadence on the lane (rev 4; rollout step 0 for drafts)
+
+Run on the lane runtime `http://127.0.0.1:8021/next` (backbone `active`), 2026-10-01, with Playwright driving the Writing room
+(`#/write`, draft key `expression:free`, the same `draftSync` path as every Writing and free-expression draft) and typing in real
+time at human cadences; the network log counted every non-GET `/api` request. No source was edited, no Docker command other than
+`docker ps`; learning language `en` and interface `vi` verified afterwards. Raw data and the scripts are in the author's
+scratchpad (`autosave_measure.md`, `cadence.cjs`, `cadence2.cjs`); the numbers are reproduced here.
+
+| Session | Typing model | Active min | Keystrokes | Saves | **Saves per active minute** | Max in any minute | Gap between saves, min / median |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| A ordinary | about 40 wpm, phrases of 3-8 words, 1.5-5 s thinking, a 10-20 s stop every 5th phrase | 6.26 | 853 | 23 | **3.7** | 5 | 6.9 / 14.8 s |
+| B fast | about 70 wpm, phrases of 1-3 words, 1.3-3 s pauses | 3.03 | 476 | 37 | **12.2** | 13 | 2.3 / 4.4 s |
+| C pathological | a 1.3-1.5 s pause after every word | 2.03 | 304 | 42 | **20.7** | 21 | 1.7 / 2.8 s |
+| All | the mix above | 11.3 | 1,633 | 102 | **9.0** | 21 | |
+
+- All 102 mutation requests were `PUT /api/drafts/expression%3Afree`, all HTTP 200; no other mutation request, no 409, no 429.
+- **Mutations per active writing minute: 3.7 (ordinary), 12.2 (fast), 20.7 (pathological, the observed ceiling), 9.0 (mix).**
+  A5 had assumed 6; ordinary typing is 1.6x below it, fast 2x above. The hard ceiling is one save per about 2.9 s (1.2 s debounce
+  plus the pause the typist must leave plus the round trip), so the theoretical single-device maximum is about 46 a minute; it
+  was not approached because typing resets the timer.
+- **Notes and highlights** (the real debounced `annotations-sync.js` path, with a synthetic highlight every 3-9 s for 3.12
+  minutes, not the Reader UI): 29 changes produced 29 `PUT /api/annotations/...`, i.e. **9.3 pushes per minute**, one per
+  change whenever changes are more than 1.2 s apart.
+- **Other rooms**: the conversation composer does not autosave (one `POST /turns` per sent turn, `account-records.js`
+  `appendConversationTurn`); typed responses are one `PUT` per take; both are bounded by human turn-taking and were not driven.
+- **Limits of the measurement.** Scripted typing at assumed speeds on one device, 11 minutes, not real learners, not a whole
+  session; it supports the cadence per active minute, not A2-A4 or the session length. Test data left on the lane: the draft
+  `expression:free` and the annotation `qa-cadence-text` (29 highlights).
+
+**Consequence for the model.** Heavy drafts per year = 9.0 x 15 minutes x 365 = 49,275; typical = 3.7 x 15 x 60 = 3,330 (was
+32,850 and 5,400). Drafts are 296 M of the 390 M mutations a year (76%).
 
 ## 3. Cross-cutting design
 
@@ -179,7 +223,7 @@ here.
 **3.2 One module, one validation.** A new `writing_coach/account_limits.py` (implementation, after approval) reads each
 `ORENA_LIMIT_*` variable once at startup, through the same `os.getenv` convention the repository already uses, and fails
 startup on a non-integer, a non-positive value, or a value **below a floor** (the heavy 1-year volume: places 1,095,
-responses 3,650, annotated texts 365, conversations 365, bytes 16 MiB, writes per minute 60, writes per hour 600, import tombstones 52, drafts 365). A floor
+responses 3,650, annotated texts 365, conversations 365, bytes 16 MiB, writes per minute 60, writes per hour 600, import tombstones 52, drafts 365, media imports 360, media upload bytes 1.5 GiB, uploads per hour 10). A floor
 stops a misconfiguration from becoming a quota. There is no value that means "unlimited" (a very large integer does) and no
 per-account override in this proposal. `compose.yaml` passes the variables through with the defaults, like
 `ORENA_ACCOUNT_BACKBONE: ${ORENA_ACCOUNT_BACKBONE:-off}`.
@@ -221,6 +265,8 @@ budget includes tombstones. Per kind:
   (reserved with deletion and export) could ever reclaim it; at the heavy rate it is reached in about 7 years. Beyond it a new import is refused with the existing
   422 `import_limit`. A tombstone carries no text (`delete_import`), so 360 of them are small; the rail stops the loop, it
   does not bound bytes.
+- **Rev 4 (D-107): the two pools.** The tombstone rule above is the *text-import pool*'s. Media imports have a pool of their own
+  (4.5) with its own live and total bounds, so a URL, YouTube or uploaded import never consumes the 20 / 360 of the text pool.
 - **Existing defect, fix in code now, independent of this proposal's other rails:** the shipped import guard counts only
   `lifecycle <> 'deleted'`, so create / delete / create is unbounded today against the live 20-import cap. It should be
   fixed and tested (section 9) before :8021 holds anything but test data, and it needs only the tombstone bound as new
@@ -435,6 +481,90 @@ cap. A conversation at its turn cap answers 422 `turn_limit` as it does today. N
 success", `account-records.js:118-121,136-138`) and the device keeps the whole conversation, so the room is unaffected. No
 new UI; `UI_BACKEND_GAPS.md` entry as above.
 
+### 4.5 Media imports: a pool of their own (rev 4, D-107)
+
+**Decision this implements.** D-107 point 3: media imports use a pool separate from text imports; three rails: the text-import
+limits, a media-import item count shared by URL/YouTube and uploads, and an uploaded-media storage-byte limit; defaults from
+measurements and storage estimates; an import that cannot sync because of a quota is never shown as saved to the account.
+
+**What exists [V].**
+- Text imports are `works` kind `imported`, form `text`, <= 12,000 characters, 20 live (`account_records_api.py:40-43,221-248`).
+  Form `url` (<= 2,048) stores a reference only. A tombstone drops title, text and link.
+- A media import on the device is a `mediaImports` record, `url:<link>` or `upload:<id>`, capped at 100 on the device
+  (`memory.js` `addMedia`, `slice(0, 100)`), pushed best effort through `placeSink.addImport` -> `pushImport`
+  (`account-records.js`). `pushImport` maps `item.kind === 'url' ? 'url' : 'text'`, i.e. today a media record that is not
+  a `url` item is sent as an empty text and refused (`import_text_empty`); that path is under uncommitted edits by another
+  session and is **not** designed here beyond the target below.
+- An upload is `POST /api/media-learning/upload` (`import/sheet.js`; `media_library_api.py`), streamed with
+  `MAX_UPLOAD_BYTES = 64 MiB` enforced per chunk (`_stream_upload`, `:351-372`), stored by `import_upload`
+  (`media_source_import.py:344-378`): the original at `media/<token>/original<ext>` in the asset store, a thumbnail at
+  `media/<token>/thumbnail.jpg` (a 640 px video frame, or the audio file's embedded artwork, which the code does not cap), and an
+  entry in the media library. **No per-account count and no per-account byte limit exist.**
+- **The media library is one `index.json`** (`FileMediaLibraryStore`, `media_library_store.py:177-230`) holding every entry of
+  every account, rewritten whole, with an integrity hash over all entries, on every write. See gap G1.
+
+**Failure modes.** A loop of uploads fills the asset store (64 MiB a request; at the 120/min rail, 7.5 GiB a minute without a
+byte rail); a loop of URL imports adds index entries and works rows; create-delete-create repeats either.
+
+**Arithmetic (A10-A12, all unmeasured except the 64 MiB cap).**
+
+| | Heavy | Typical |
+| --- | --- | --- |
+| Uploads a year | 100 | 12 |
+| URL/YouTube imports a year | 260 | 24 |
+| Media items a year (the shared count) | **360** | **36** |
+| Upload bytes a year (15 MiB mean + about 0.07 MiB thumbnail) | **1.47 GiB** | **0.18 GiB** |
+| Index entries (about 2 KB without transcript) | 0.7 MB | 0.07 MB |
+
+- **Count.** Heavy 3-year volume 1,080 items; x 2.3 (A7) = 2,484, so the **total with tombstones is 2,500**. The **live** bound
+  is **1,250**: 1.16x the heavy 3-year volume with not one deletion. (The text pool's 20 live is a product bound; its 360 total
+  is the same A7 derivation from 52 imports a year.)
+- **Bytes.** Heavy 3-year volume 4.4 GiB; x 2.3 = 10.1, so **10 GiB per account**. It counts the **live** uploads' original and
+  thumbnail; a tombstone carries no bytes (D-107 point 2 deletes the owned files). It is per account across languages, not per
+  language: bytes are a storage cost, not a language-scoped record, and a bilingual learner should not get two ceilings of the
+  most expensive resource. Floors: 1.5 GiB (heavy 1-year volume).
+- **Rate.** `ORENA_LIMIT_UPLOADS_PER_HOUR` = **30**: a heavy sitting imports at most 10 files (A12), x 3. At 30 x 64 MiB the
+  ceiling per account is 1.9 GiB an hour.
+- **Aggregate at the target**, expected use and no deletions: 5,000 x 1.47 GiB + 15,000 x 0.18 GiB = **about 9.7 TiB of uploaded
+  media a year**, about 29 TiB in three. The *worst case* of every account at its cap (100,000 x 10 GiB = 1 PiB) is not the
+  planning number. **The capacity of the asset store (today a filesystem store, `FilesystemBookAssetStore`, with an S3-compatible
+  backend named as a future seam) is an infrastructure and cost decision for the human**; the byte rail is the per-account
+  bound inside it, and a lower value (for instance 2 GiB) is a configuration change, not a code change. Whether a lower value is
+  a product allowance is not decided here and is not shown to learners.
+
+**Proposed.**
+- The pool is chosen by the record's `form`: `text` -> text pool; `url` and `upload` -> media pool. (`ImportSave.form` gains
+  `upload` in the implementation; today `form: url` is used for media links, so no article-URL form is affected unless one is
+  added; question Q13.)
+- `ORENA_LIMIT_MEDIA_IMPORTS` = **1,250** live and `ORENA_LIMIT_MEDIA_IMPORTS_TOTAL` = **2,500** per (account, language), counted in
+  the shared create guard (3.3) with the same all-rows aggregate; reject with 422 `media_import_limit`.
+- `ORENA_LIMIT_MEDIA_UPLOAD_BYTES` = **10 GiB** per account. Enforcement: the upload route streams the file (the existing
+  64 MiB chunk check), then commits the account's import record inside `commit_mutation` with a `create_guard` that sums the
+  live upload rows' recorded bytes (the payload records `bytes` and the asset key) and refuses when the sum plus the new file
+  exceeds the limit. A refusal deletes the just-stored files and the library entry before answering 422 `media_bytes_limit`.
+  The check is therefore after the stream, so a burst of concurrent uploads can overshoot by up to 64 MiB each; the uploads-per-hour
+  rail and the stream lock bound it. Files orphaned by a crash between the store and the commit need a sweeper (code, not
+  designed here).
+- Each pool has its own tombstone bound (text 360 total, media 2,500 total). Deleting a media import removes the record's
+  files (D-107 point 2), so its bytes leave the live sum; a failed file removal is retried, and until removed the bytes are
+  still on disk but no longer in the account's sum (an operator-visible leak, logged).
+
+**At the limit: reject, never evict, and never show it as saved (D-107 point 3).** A learner's import is theirs; nothing is
+removed to make room. The rule: **an import the account refused for quota is never presented as saved to the account.** Two
+cases:
+1. *Upload* (the upload route is the creator): a refusal stores nothing, and nothing is added to the device library. The sheet
+   already reports upload failures by category in the learner's language (`import/sheet.js:236-263`: `media_upload_invalid`,
+   `media_upload_unavailable`); a refused upload is one more category through the same pattern. **No copy for it is drawn in the
+   design: that copy (en, vi, zh) is a design gap for the human** (`CLAUDE.md` rule 7), recorded in `UI_BACKEND_GAPS.md` when the
+   code lands.
+2. *URL/YouTube and text imports*: today the device record is created first and the account push is best effort and silent, so a
+   quota refusal would leave a device-only item that looks like every other. Recommended: **account first, device second** while
+   the backbone is `active` (the import is added to the device library only after the account accepted it, or when the backbone
+   is `disabled`, where nothing claims an account copy), and a refusal is shown through the same sheet error pattern. If the
+   human prefers to keep a **local-only fallback**, the learner must be told explicitly that the item is on this device only;
+   **no drawn pattern exists for that on an import** (the only one is the Writing draft's "on this device" status,
+   `draft-sync.js`), so this too is a design gap for the human and not something to invent.
+
 ---
 
 ## 5. Receipts and change records: the growth, and who owns it
@@ -449,8 +579,8 @@ own transaction (`mutation_commit.py:196-225`). Nothing deletes from either (no 
 sequence)` was created for it ("Compaction reads oldest-first", `0005:126-132`), and `uq_change_record_sequence` orders the
 stream. The change feed `GET /api/works/changes` (`work_api.py:127`) has **no client** (tests only).
 
-**5.2 Growth (section 2.3).** 93.5 M mutations a year from the four kinds, **338.8 M** with autosave drafts (A5):
-receipts 144 GB, change records 68 GB, **212 GB a year** at the target, for ever.
+**5.2 Growth (section 2.3).** 93.5 M mutations a year from the four kinds, **389.8 M** with autosave drafts (A5, measured
+cadence): receipts 165 GB, change records 79 GB, **244 GB a year** at the target, for ever.
 
 **5.3 What must be kept.**
 - *Receipts*: deduplication of every operation that can still be retried. ADA section 5: "never forget a receipt and then
@@ -470,16 +600,16 @@ receipts 144 GB, change records 68 GB, **212 GB a year** at the target, for ever
 
 | Option | Effect | Needs |
 | --- | --- | --- |
-| **A. Keep everything for now** | 212 GB/year, 678 M rows/year; a few years of runway on one PostgreSQL instance | nothing; revisit at a fixed trigger (for instance receipts > 100 M rows or 100 GB) |
-| **B. Receipt time window W** | steady-state receipts: W = 30 d 11.8 GB, 90 d 35.4 GB, 180 d 70.9 GB (vs 144 GB a year) | an expiry epoch for operation ids (client contract or schema), a policy value **supplied by the human**, an operator job under a human gate |
-| **C. Keep-latest-per-object change records** | about 34 M rows a year (the number of `works` created), 6.8 GB, instead of 339 M | sync protocol: sequence gaps legal, consumers re-read an object by id; reserved |
+| **A. Keep everything for now** | 244 GB/year, 780 M rows/year; a few years of runway on one PostgreSQL instance | nothing; revisit at a fixed trigger (for instance receipts > 100 M rows or 100 GB) |
+| **B. Receipt time window W** | steady-state receipts: W = 30 d 13.6 GB, 90 d 40.8 GB, 180 d 81.6 GB (vs 165 GB a year) | an expiry epoch for operation ids (client contract or schema), a policy value **supplied by the human**, an operator job under a human gate |
+| **C. Keep-latest-per-object change records** | about 34 M rows a year (the number of `works` created), 6.8 GB, instead of 390 M | sync protocol: sequence gaps legal, consumers re-read an object by id; reserved |
 | **D. Partition `mutation_receipts`/`change_records` by month and detach old partitions to cold storage** | removes growth from the hot table without deleting; dedup for old ops then needs the archive or an epoch | schema decision (section 7), reserved |
 
 **Recommendation (non-binding).** A for the lane and for :8021; the limits of section 4 and the rate rail of section 6 cap
 what one account can add to the stream; **the receipt-growth owner is the Principal Architect role** (AGENTS section 1),
 who defines the versioned retention policy and horizon (ADA section 5); the operator executes it under the human gate; the
 trigger above goes in `CURRENT_HANDOFF.md`. The IMPLEMENTATION_REVIEW P2-4 condition asks for an owner, not for compaction,
-before :8000. Autosave (A5) should be **measured** on the lane first, because it is about 70% of the mutations and is the
+before :8000. Autosave is **76% of the mutations** (measured cadence, 2.4) and is the
 cheapest to reduce at the client (the serialised sender in `draft-sync.js:147-200` already keeps one request in flight).
 
 ---
@@ -490,13 +620,13 @@ Counts bound *how much is kept*; they do not bound *how often a row is rewritten
 document or one draft with a new operation id creates no new row and passes every count, yet adds 0.65 KB of receipts per
 request and rewrites a payload. So a rate rail is required, and for the same reason it must **not** reuse the counts.
 
-**Stream mutations** (everything through `commit_mutation`): per **account**, `ORENA_LIMIT_WRITES_PER_MINUTE` = **240**
+**Stream mutations** (everything through `commit_mutation`): per **account**, `ORENA_LIMIT_WRITES_PER_MINUTE` = **120**
 and `ORENA_LIMIT_WRITES_PER_HOUR` = **3,600**, evaluated in the same transaction, after the stream lock and the receipt
 lookup, skipped on a replay. No schema and no counter table, and **an O(1) lookup, not a walk** (review P2-2, C3):
 sequences are gap-free per incarnation (allocated from `account_streams.next_sequence` under the lock and rolled back with
-the transaction, `mutation_commit.py:106-112,187-194`) and the head `H` is already read. The record at sequence `H - 240` is the
-first of the 240 previous mutations, so if it is under 60 seconds old, 240 mutations have already landed in the last
-minute and the **new one would be the 241st, which is refused** (the 240th is admitted):
+the transaction, `mutation_commit.py:106-112,187-194`) and the head `H` is already read. The record at sequence `H - 120` is the
+first of the 120 previous mutations, so if it is under 60 seconds old, 120 mutations have already landed in the last
+minute and the **new one would be the 121st, which is refused** (the 120th is admitted):
 `SELECT created_at FROM change_records WHERE incarnation_id = :inc AND sequence = :h_minus_n`, a probe of the unique index
 `uq_change_record_sequence (incarnation_id, sequence)` plus one heap fetch, once per rail (two probes per mutation). The
 walk of rev 1 (`OFFSET 239`) is dropped: it fetched the heap for every skipped row. **Fallback only if a later compaction
@@ -505,14 +635,16 @@ compaction must then keep a floor of the newest 3,600 change records per account
 `write_rate_limited`**, `retryable: true`, `context: {rail, retryAfterSeconds}`, raised through the explicit per-route
 branch of section 3.5.
 
-**Why these numbers.** Legitimate ceilings (one device): annotation push <= 1 per 1.2 s quiet; draft save <= 1 per 1.2 s
-pause (`draft-sync.js:127`), realistically about 6 a minute and at most about 50; conversation turn <= about 12 a minute;
-response <= about 4 a minute. The highest sustained legitimate rate is therefore about **50 a minute, about 3,000 an hour**
-(an hour of continuous drafting at A5's cadence of about 6 a minute is about 360). **240 a minute is about 5x the single-device ceiling and
-3,600 an hour (1 a second) is 1.2x the absolute ceiling of 50 a minute held for a full hour and 10x A5's drafting cadence**; a runaway at 10 requests a second is held to
-1 a second, a 10x reduction, and to at most 86,400 a day per account, against 7,376 (typical) to 45,625 (heavy) legitimate
-a year. The hour rail is deliberately close to the ceiling because drafts are chatty; if measurement (A5) shows more
-headroom is needed, raise the hour, not the minute.
+**Why these numbers (re-derived in rev 4 from the measured cadence, 2.4).** Measured single-device ceilings: drafts 20.7 saves a
+minute at the pathological worst (1,242 an hour if sustained), 12.2 for a fast typist; notes 9.3 a minute; conversation turn
+about 12 a minute and response about 4 a minute by human turn-taking [A]. The theoretical maximum of the draft path is one save
+per about 1.3 s, **about 46 a minute**. A learner can have two devices open, so the minute rail is sized as **two devices at the
+theoretical maximum plus 30% headroom: 2 x 46 x 1.3 = 120 a minute** (rev 3's 240 was sized against an unmeasured cadence; it is
+now 5.8x the worst measured single-device minute and 2.6x the theoretical one-device maximum). The hour rail keeps **3,600**: it
+is 2.9x the worst measured single-device hour (1,242), 1.4x two devices doing that for a whole hour (2,484), and 1 a second; the
+average heavy learner needs 62,050 mutations a year, about 7 a day. A runaway at 10 requests a second is held to 1 a second, a
+10x reduction, and to at most 86,400 a day per account. If the lane or production telemetry shows more headroom is needed, raise
+the hour, not the minute.
 
 **Place writes** take no stream lock and write no change record, so the query above cannot see them. Two complementary
 rails (4.1): the per-row interval (exact, from the row's own `place_at`) and the in-process per-account bucket
@@ -550,7 +682,16 @@ human approval -> rehearsal on a throwaway PostgreSQL -> the human applies; the 
 
 ---
 
-## 8. Adjacent creators this proposal does not size
+## 8. Adjacent creators this proposal does not size, and gaps
+
+- **G1 (rev 4). The media library cannot hold the target in its present form.** One `index.json` for all accounts, rewritten whole
+  with a whole-file integrity hash on every write, grows by about 2.3 M entries a year at the target (A10; 360 x 5,000 + 36 x
+  15,000), about 4.7 GB of JSON a year before transcripts. Per-account limits bound one account, not this file. Moving personal
+  media entries into PostgreSQL is a schema decision reserved by AGENTS section 7 (and the asset store's capacity is the human's,
+  4.5); it is recorded here, not decided, and should go to the architect with the next media round.
+- **G2 (rev 4).** `GET /api/imports` lists at most 50 (`work_api.LIST_LIMIT`) and the device keeps 100 media records, so a live
+  media pool of 1,250 is more than any surface shows; a paged list is a follow-up.
+
 
 Found while tracing; each is the same kind of unbounded creator and each is left to a follow-up so that no number here is
 invented without a volume basis:
@@ -582,10 +723,10 @@ stream lock, `pg_column_size`, TOAST, races and concurrency in the rows above is
 | F2 / C2 | the generic `PUT /api/works/{id}` answers 422 `work_kind_invalid` for `draft`, `response`, `conversation`; the dedicated routes still work; the draft rail refuses the 2,501st key |
 | F6 / C1 | a create-then-delete loop on the import route stops at the tombstone bound; creation with `lifecycle: deleted` is refused for every non-import kind; the 20-live-import behaviour is otherwise unchanged. **This test and its fix land first, alone.** |
 | Eviction race (P2-3) | a place PUT interleaved with the eviction of its row answers `written`, never a 500; the eviction statement does not delete a row that became saved between select and delete |
-| Rate boundary (P3-6) | exactly 240 mutations in 60 s are admitted; the **241st** is 429; likewise 3,600 admitted and the 3,601st refused in the hour |
+| Rate boundary (P3-6) | exactly 120 mutations in 60 s are admitted; the **121st** is 429; likewise 3,600 admitted and the 3,601st refused in the hour |
 | Draft terminal (P3-7) | after a 422 `draft_limit` the draft sender stops for that piece: no retry on later autosave pauses, state stays "on this device"; a 429 (retryable) is retried on the next pause |
 | 429 mapping (P2-2) | `_commit`, `put_work`, `put_draft`, turn append and `/api/continue` each return 429 with `rail` and `retryAfterSeconds` and no other rail's numbers |
-| Rate lookup (P2-2) | the guard issues point probes at `H - 240` and `H - 3600` (assert the SQL, not a walk); a gap at `H - N` reads as under the rail |
+| Rate lookup (P2-2) | the guard issues point probes at `H - 120` and `H - 3600` (assert the SQL, not a walk); a gap at `H - N` reads as under the rail |
 | Stored vs logical (P2-4) | a compressible payload counts as its `pg_column_size`; the budget test uses incompressible text so compression does not defeat it |
 | F1 | `PUT /api/continue/{id}` with `place: null` on an absent row inserts nothing |
 | Place eviction | at 5,000, the next insert evicts the 100 oldest place-only rows; kept, pinned, noted, stated and **filed** rows are never deleted; saved rows lose only `place`; the written status is `written` |
@@ -595,14 +736,18 @@ stream lock, `pg_column_size`, TOAST, races and concurrency in the rows above is
 | Config | non-integer, zero, negative and below-floor values fail startup with the variable named; defaults load |
 | Client | node gates: a 422 or 429 leaves `saveResponse`, `pushAnnotations`, `appendConversationTurn` and `sendPlace` silent, never sets the draft state to `account`, and the draft sender still says "on this device" on a 429 (`draft-sync.js` catch) |
 | Size at cap | extend `scripts/rehearse_learner_records_schema.py --volume` (or a sibling) to load one account to every cap and record guard latency, `pg_total_relation_size` per table (replacing section 2.2), and the TOAST behaviour of `pg_column_size` |
+| Media pool (rev 4) | text and media imports do not consume each other's bounds (20 text imports leave room for media, and conversely); the media live, total and tombstone bounds each refuse with `media_import_limit`; create-delete-create on the media pool stops at the total |
+| Upload bytes (rev 4) | the upload that would cross 10 GiB (set small in the test) is refused with `media_bytes_limit`, its files and library entry are removed, nothing is added to the device library; deleting an upload frees its bytes; concurrent uploads overshoot by no more than one file each |
+| Not shown as saved (D-107.3) | a refused import leaves no device-library item while the backbone is `active`; with the backbone `disabled` behaviour is unchanged; node gate on the sheet error category |
+| Rate re-derivation | 120 admitted and the 121st refused per minute; 3,600 / 3,601st per hour; uploads 30 / 31st per hour |
 | Regression | the existing bounds (20 imports, 24 turns, annotation and response field maxima, `work_too_large`) unchanged |
 
 **Rollout.**
-0. **Precondition (review P3-5, C5):** measure the draft cadence (and whatever of A2-A4 can be observed) on the lane before
-   the rate defaults are fixed: log mutations per account per minute and hour from `change_records` on :8021 for a fixed
-   period and compare with A5. If the measured maximum approaches 3,600 an hour, raise the hour rail, not the minute.
-   Record in `CURRENT_HANDOFF.md` that A2-A5 and section 2.2 are unmeasured, that the rate numbers are provisional until
-   then, and the per-process place-bucket note.
+0. **Precondition (review P3-5, C5), draft cadence DONE in rev 4 (2.4)**: scripted typing on :8021 measured 3.7-20.7
+   saves per active minute. What remains is observation on real use: log mutations per account per minute and hour from
+   `change_records` on :8021 for a fixed period and compare with 2.4 and with the A2-A4 shape. If the observed maximum
+   approaches 3,600 an hour, raise the hour rail, not the minute. Record in `CURRENT_HANDOFF.md` that A2-A4, A10-A12 and
+   section 2.2 are unmeasured, that the rate numbers rest on a scripted measurement, and the per-process place-bucket note.
 0a. Fix the existing import tombstone defect (3.3a) first and alone.
 1. Independent review of this document (AGENTS section 1). Nothing else is implemented before it.
 2. Implement in the lane `codex/work`, limits **on by default** (they are rails, not features), one commit per rail.
@@ -618,7 +763,7 @@ stream lock, `pg_column_size`, TOAST, races and concurrency in the rows above is
 
 Rev 2: the reviewer's answers to the twelve questions (`ACCOUNT_RECORD_LIMITS_REVIEW.md`) are adopted as written: sizing rule kept
 and labelled an assumption; per (account, language); evict places; creation plus growth is enough for the byte rail and
-counters (S2) are deferred; 422 with `<kind>_limit`, 429 for rate, no 507; cleared annotations count; 240/min kept, raise the
+counters (S2) are deferred; 422 with `<kind>_limit`, 429 for rate, no 507; cleared annotations count; 240/min adopted then (120/min from rev 4), raise the
 hour first if needed; in-process place bucket accepted; Principal Architect owns receipts with option A and a written trigger
 (receipts above 100 M rows or 100 GB, or one year from first production enablement, whichever first, in
 `CURRENT_HANDOFF.md`); the digest in a deleted import's receipt is learner-derived data, covered by the D-055(b) enumeration
@@ -637,7 +782,7 @@ leaves open are Q7 (hour rail, pending measurement) and Q9 (the trigger value, f
    client ignores the difference today.
 6. **Annotation cleared rows.** A cleared document stays a row and counts. Acceptable, or exclude `cleared` rows from the
    count (a JSON predicate on a non-indexed column, evaluated only on creation)?
-7. **Rate rail numbers.** 240 a minute and 3,600 an hour are sized against A5, which is a guess. Is the hour rail too tight
+7. **Rate rail numbers.** (Rev 4: now 120 a minute and 3,600 an hour, re-derived from the measured cadence, section 2.4.) Rev 3 sized 240 and 3,600 against A5, which was a guess. Is the hour rail too tight
    for a long writing session? The draft cadence should be measured on the lane before this is fixed.
 8. **Place bucket in process.** Is an approximate per-process bucket acceptable for a navigation write, given one uvicorn
    process today and a possible Redis or database counter later?
@@ -648,6 +793,12 @@ leaves open are Q7 (hour rail, pending measurement) and Q9 (the trigger value, f
     each row to its maximum. Is that residual acceptable given the rate rail?
 11. **Adjacent creators (section 8).** Include library rows, collections and provenance in this round, or keep the round to
     the four kinds the human named?
+13. **Pools (rev 4).** Is `form` the right discriminator, and is a URL import of an article (if one is added) text or media?
+14. **Byte default.** Is 10 GiB (A7 on the heavy 3-year volume) acceptable as a safety rail, with the asset-store capacity and any
+    lower product allowance left to the human? Should it be per language instead of per account?
+15. **Account first, device second** for URL/YouTube and text imports (recommended), or keep a local-only fallback with an
+    explicit label (a design gap)?
+16. **G1.** Who takes the media index move to PostgreSQL, and before or after :8000?
 12. **Learner surface.** Confirm that no notice is drawn for a rail (4.2-4.4) and that recording the gap in
     `UI_BACKEND_GAPS.md` is the right outlet.
 
@@ -659,18 +810,18 @@ The figures in sections 2-5 come from the following model; the profile dictionar
 
 ```python
 KB = 1024
-RC, WK = 0.65, 0.30                      # receipt+change per mutation, works row overhead (KB)
+RC, WK = 0.657, 0.30                      # receipt+change per mutation, works row overhead (KB)
 PLACE, RESP, ANN, TURN, HDR = 0.70, 1.05, 2.4, 0.68, 0.7   # KB per place row / response payload / annotation payload / turn / conversation header
 P = {  # n accounts, active days, sessions/day, places, responses, annotated texts, pushes, conversations, turns, draft saves/yr
-  "heavy":   dict(n=5000,  days=365, sess=2, place=1.5, resp=5, annot=0.5, pushes=9, conv=0.5, turns=16, drafts=365 * 90),
-  "typical": dict(n=15000, days=208, sess=1, place=1.0, resp=3, annot=0.3, pushes=5, conv=0.5, turns=10, drafts=60 * 90),
+  "heavy":   dict(n=5000,  days=365, sess=2, place=1.5, resp=5, annot=0.5, pushes=9, conv=0.5, turns=16, drafts=9.0 * 15 * 365),
+  "typical": dict(n=15000, days=208, sess=1, place=1.0, resp=3, annot=0.3, pushes=5, conv=0.5, turns=10, drafts=3.7 * 15 * 60),
 }
 for p in P.values():
     s = p["days"] * p["sess"]
     p["mut4"] = s * p["resp"] + s * p["annot"] * p["pushes"] + s * p["conv"] * p["turns"]
     p["mutall"] = p["mut4"] + p["drafts"]
-print(sum(p["n"] * p["mutall"] for p in P.values()) / 1e6)        # 338.8 (M mutations a year)
-print(sum(p["n"] * p["mutall"] for p in P.values()) * RC / KB**2) # 212 (GB of receipts + change records)
+print(sum(p["n"] * p["mutall"] for p in P.values()) / 1e6)        # 389.8 (M mutations a year; 338.8 in rev 3 with the unmeasured A5)
+print(sum(p["n"] * p["mutall"] for p in P.values()) * RC / KB**2) # 244 (GB of receipts + change records)
 ```
 
 Sizes measured rather than estimated: annotation payloads (2,436 characters typical; 191,307 worst without and 233,323
@@ -714,3 +865,19 @@ receipts section (still reserved, option A, Principal Architect as owner); the n
 
 Re-check conditions 1-3 stand: the import-tombstone fix lands first and alone with the create/delete/create test; the draft
 cadence is measured on the lane before the rate defaults are fixed; PostgreSQL-only results are labelled local execution.
+
+---
+
+## Rev 4 changes (human decision D-107 and the autosave measurement)
+
+| Item | Edit |
+| --- | --- |
+| Status | Back to PROPOSED, revision 4, pending independent re-check; rev 3's approval does not carry over |
+| Rollout step 0: measure the draft cadence (D-107 point 5) | New 2.4: scripted typing on :8021, 102 saves in 11.3 active minutes; **3.7 / 12.2 / 20.7 saves per active minute** (ordinary / fast / pathological), 9.0 mixed; notes 9.3 pushes a minute; other rooms by code. A5 replaced (cadence measured, session length still unmeasured); A2-A4 stay UNMEASURED |
+| Volumes | 2.3, 5.2, options table, summary and appendix recomputed: drafts 49,275 (heavy) and 3,330 (typical) a year; 389.8 M mutations, 780 M rows, 244 GB of receipts and change records, about 326 GB in all; drafts 76% |
+| Rate defaults re-derived | Minute rail 240 -> **120** (2 devices x theoretical 46 a minute x 1.3); hour rail kept at 3,600 (2.9x the worst measured hour); rate-boundary tests now 120 / 121st |
+| D-107.3 media pool | New 4.5 and defaults rows: media live 1,250 / total 2,500 per (account, language); uploaded bytes 10 GiB per account; uploads 30 an hour; text pool unchanged (20 live / 360 total); tombstone bound per pool; derivations from A10-A12 and `MAX_UPLOAD_BYTES` (64 MiB) |
+| D-107.3 "never shown as saved" | 4.5: uploads store nothing and add nothing to the device on refusal; account first, device second for URL/text imports; a local-only fallback needs an explicit label and **no drawn pattern exists: design gap for the human**; new-category copy is also a gap |
+| D-107.2 deletion | 4.5: deleting a media import removes its files, frees its bytes, keeps a tombstone counted against the pool's total |
+| New findings | G1 (media library is one `index.json` for all accounts), G2 (listing shows 50, device keeps 100), `pushImport` maps non-`url` media as empty text (other session's edit) |
+| Questions | Q13-Q16 added |
