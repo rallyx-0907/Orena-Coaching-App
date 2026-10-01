@@ -11,7 +11,7 @@ from grammar_lab.pipeline.cli import app
 from grammar_lab.pipeline.content_store import load_points
 from grammar_lab.pipeline.evaluator_client import EvaluatorError, EvaluatorResult
 from grammar_lab.pipeline.validate import LAB_ROOT
-from grammar_lab.pipeline.verify import verify_point
+from grammar_lab.pipeline.verify import _flatten_example_texts, verify_point
 
 
 class FakeEvaluator:
@@ -52,7 +52,8 @@ def test_grade_point_calls_the_engine_only_for_mistakes_and_quick_practice() -> 
 def test_verify_without_a_blind_solver_needs_no_second_model() -> None:
     point = load_points("en", LAB_ROOT)["en.there_is_are"]
     report = verify_point(point, evaluator=FakeEvaluator())  # type: ignore[arg-type]
-    assert report.checked_examples == len(point["examples"]) and report.checked_quick_practice == 3
+    assert report.checked_examples == len(_flatten_example_texts(point))
+    assert report.checked_quick_practice == len(point["quick_practice"])
     assert not any(flag.code.startswith("blind_solve") for flag in report.flags)
 
 
