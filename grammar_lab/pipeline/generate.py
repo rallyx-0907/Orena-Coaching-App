@@ -714,15 +714,22 @@ def complete_literal_example_spans(examples: list[dict[str, Any]], pattern: dict
             if slot.get("optional") or role in present_roles:
                 continue
             for candidate in _literal_slot_candidates(slot):
-                start = example["text"].find(candidate)
-                while start >= 0:
+                if re.search(r"[A-Za-z]", candidate):
+                    matches = list(re.finditer(r"(?<!\\w)" + re.escape(candidate) + r"(?!\\w)", example["text"], re.IGNORECASE))
+                    starts = [match.start() for match in matches]
+                else:
+                    starts = []
+                    start = example["text"].find(candidate)
+                    while start >= 0:
+                        starts.append(start)
+                        start = example["text"].find(candidate, start + 1)
+                for start in starts:
                     end = start + len(candidate)
                     if all(end <= a or start >= b for a, b in occupied):
                         example["spans"].append({"start": start, "end": end, "role": role})
                         occupied.append((start, end))
                         present_roles.add(role)
                         break
-                    start = example["text"].find(candidate, start + 1)
                 if role in present_roles:
                     break
         example["spans"].sort(key=lambda item: item["start"])
