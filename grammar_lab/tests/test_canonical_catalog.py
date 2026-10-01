@@ -187,7 +187,7 @@ def test_generation_provenance_marks_only_the_exact_v04_recipe_as_normalized() -
         point,
         provider="deepseek",
         model="deepseek-flash",
-        prompt_version="generate_point_v04.v11",
+        prompt_version="generate_point_v04.v10",
     )
     assert not matches_generation_provenance(
         {**point, "schema_version": "0.3"},
