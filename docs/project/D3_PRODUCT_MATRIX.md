@@ -82,6 +82,30 @@ Groq). Adding one is a paid-provider human gate.
 
   ZH still needs the same loop on a ZH article. Content scale is not ready (one article).
 
+- **2026-10-01 (D-109 audit, `4ccacda`, :8021, `PRODUCT_COMPLETION_PLAN.md`). Cells whose evidence changed:**
+  - Reading, Check Understanding: `RUNS_REAL` in **ZH** as well as EN (article `da68bb88`, 3/3, attempt 200, listed in
+    Progress History in a fresh context). The Admin loop (ingest, publish, generate, approve) ran for both languages.
+  - Reading position / "continue where you left off": `RUNS_REAL` (`PUT /api/continue/article:{id}`, Today reads
+    `GET /api/continue`); was device-only.
+  - Reading from a book: **`MISSING` on the lane stack** - chapter `GET` returns 503
+    `reading_library_chapter_unavailable` (it returned 200 on 2026-09-29). Cause not yet isolated (G-11).
+  - Writing, unsubmitted draft: `RUNS_REAL` (`PUT /api/drafts/expression:free` 200 with the backbone on); the chip still
+    says "Saved on this device". Writing ZH: `RUNS_REAL` (94 Hanzi, 88/100, one issue).
+  - Speaking, Situation: `RUNS_REAL` for the store (`PUT /api/responses/situation:...` 200); Scripted ZH with a microphone:
+    `RUNS_REAL` (Azure `measured`, attempt stored). **Attempt History and Speaking Summary stay `MISSING`**: a fresh context
+    shows 0 attempts / 0 tasks while `GET /api/speech/attempts` holds the record.
+  - Vocabulary, Collections: `RUNS_REAL` once published through Admin (EN and ZH). The collection's whole-set "Save" is a
+    toast and "Start review" is empty until words are saved one by one - `MISSING` (whole-collection add).
+  - Word from Reading -> Vocabulary with provenance: `RUNS_REAL` EN and ZH (`POST /api/library/vocabulary` and
+    `.../provenance` 200).
+  - Listening, imported media (YouTube, upload): `MISSING` end to end - published with `segment_count 0`; no ASR or
+    transcript editor in the content path although `POST /api/speech/transcribe` transcribes the same audio.
+  - Progress Overview skills, Rank, From Your Errors: still `MISSING` - they show "-", "no milestones" and "no recent
+    errors" after a session that wrote 14 reviewed essays and a graded reading set; Progress History and Evidence are
+    `RUNS_REAL`.
+  - Grammar: unchanged (`MISSING`, both languages); PR #67 and #68 still OPEN.
+  - Speech providers (D-103): configured on the bench; Groq transcription and Azure pronunciation `RUNS_REAL` in EN and ZH.
+
 ## Decided (D-103, 2026-09-29)
 
 - The retirements are approved: UI and routes only; domain logic and history are kept.
