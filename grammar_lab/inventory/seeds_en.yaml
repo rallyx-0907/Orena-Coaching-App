@@ -1886,7 +1886,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.b1.027
   level: B1
-  function: fn.sentence_basics
+  function: fn.reporting
   point_type: other
   native_title: "Reported statements"
   title:
@@ -1920,7 +1920,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.b1.029
   level: B1
-  function: fn.instructions
+  function: fn.reporting
   point_type: other
   native_title: "Reported commands and requests"
   title:
@@ -1933,7 +1933,7 @@
   contrasts: []
   prereqs:
   - en.canon.b1.027
-  sequence: 1
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.030
@@ -2236,7 +2236,7 @@
   - other
   contrasts: []
   prereqs: []
-  sequence: 2
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.047
@@ -2392,7 +2392,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.b2.001
   level: B2
-  function: fn.past_experience
+  function: fn.aspect_viewpoint
   point_type: tense_aspect
   native_title: "Perfect aspect in discourse"
   title:
@@ -2466,7 +2466,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.b2.005
   level: B2
-  function: fn.condition_real
+  function: fn.hypothetical_counterfactual
   point_type: other
   native_title: "Mixed conditionals"
   title:
@@ -2498,7 +2498,7 @@
   contrasts: []
   prereqs:
   - en.unless
-  sequence: 2
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.007
@@ -2682,7 +2682,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.b2.017
   level: B2
-  function: fn.verb_patterns
+  function: fn.reporting
   point_type: other
   native_title: "Reporting passive"
   title:
@@ -2697,12 +2697,12 @@
   contrasts: []
   prereqs:
   - en.canon.b2.015
-  sequence: 5
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.018
   level: B2
-  function: fn.sentence_basics
+  function: fn.reporting
   point_type: tense_aspect
   native_title: "Reported speech: tense choice"
   title:
@@ -2716,12 +2716,12 @@
   contrasts: []
   prereqs:
   - en.canon.b1.029
-  sequence: 1
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.019
   level: B2
-  function: fn.verb_patterns
+  function: fn.reporting
   point_type: other
   native_title: "Reporting verbs and patterns"
   title:
@@ -2734,7 +2734,7 @@
   contrasts: []
   prereqs:
   - en.canon.b2.016
-  sequence: 6
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.020
@@ -2826,7 +2826,7 @@
   - word_form
   contrasts: []
   prereqs: []
-  sequence: 7
+  sequence: 5
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.025
@@ -2845,7 +2845,7 @@
   - word_form
   contrasts: []
   prereqs: []
-  sequence: 8
+  sequence: 6
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.026
@@ -2864,7 +2864,7 @@
   contrasts: []
   prereqs:
   - en.canon.a2.008
-  sequence: 9
+  sequence: 7
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.027
@@ -2883,7 +2883,7 @@
   contrasts: []
   prereqs:
   - en.canon.b1.050
-  sequence: 10
+  sequence: 8
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.028
@@ -2902,7 +2902,7 @@
   contrasts: []
   prereqs:
   - en.indirect_objects
-  sequence: 2
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.029
@@ -2921,7 +2921,7 @@
   contrasts: []
   prereqs:
   - en.canon.b2.028
-  sequence: 3
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.030
@@ -2940,7 +2940,7 @@
   contrasts: []
   prereqs:
   - en.canon.b2.029
-  sequence: 4
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.031
@@ -2958,7 +2958,7 @@
   contrasts: []
   prereqs:
   - en.canon.b2.019
-  sequence: 5
+  sequence: 4
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.032
@@ -3031,7 +3031,7 @@
   contrasts: []
   prereqs:
   - en.canon.b2.034
-  sequence: 6
+  sequence: 5
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.036
@@ -3049,7 +3049,7 @@
   contrasts: []
   prereqs:
   - en.canon.b2.035
-  sequence: 7
+  sequence: 6
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.037
@@ -3085,7 +3085,7 @@
   contrasts: []
   prereqs:
   - en.canon.b1.047
-  sequence: 11
+  sequence: 9
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.039
@@ -3175,7 +3175,7 @@
   contrasts: []
   prereqs:
   - en.canon.b2.017
-  sequence: 12
+  sequence: 10
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.044
@@ -3192,7 +3192,7 @@
   contrasts: []
   prereqs:
   - en.canon.b2.042
-  sequence: 13
+  sequence: 11
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c1.001
@@ -3233,7 +3233,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.c1.003
   level: C1
-  function: fn.ongoing_now
+  function: fn.aspect_viewpoint
   point_type: tense_aspect
   native_title: "Advanced simple vs continuous aspect"
   title:
@@ -3252,7 +3252,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.c1.004
   level: C1
-  function: fn.verb_patterns
+  function: fn.aspect_viewpoint
   point_type: tense_aspect
   native_title: "Lexical aspect and meaning shifts"
   title:
@@ -3266,12 +3266,12 @@
   contrasts: []
   prereqs:
   - en.canon.c1.003
-  sequence: 1
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c1.005
   level: C1
-  function: fn.completed_past
+  function: fn.aspect_viewpoint
   point_type: tense_aspect
   native_title: "Historic present and narrative shifts"
   title:
@@ -3283,7 +3283,7 @@
   - tense
   contrasts: []
   prereqs: []
-  sequence: 1
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c1.006
@@ -3398,7 +3398,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.c1.012
   level: C1
-  function: fn.condition_real
+  function: fn.hypothetical_counterfactual
   point_type: word_order
   native_title: "Conditional inversion"
   title:
@@ -3489,7 +3489,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.c1.017
   level: C1
-  function: fn.verb_patterns
+  function: fn.reporting
   point_type: tense_aspect
   native_title: "Perfect infinitives in reporting"
   title:
@@ -3503,7 +3503,7 @@
   contrasts: []
   prereqs:
   - en.canon.b2.025
-  sequence: 2
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c1.018
@@ -3521,12 +3521,12 @@
   contrasts: []
   prereqs:
   - en.canon.c1.016
-  sequence: 3
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c1.019
   level: C1
-  function: fn.condition_real
+  function: fn.hypothetical_counterfactual
   point_type: other
   native_title: "Were-subjunctive"
   title:
@@ -3576,7 +3576,7 @@
   contrasts: []
   prereqs:
   - en.canon.c1.019
-  sequence: 4
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c1.022
@@ -3595,7 +3595,7 @@
   contrasts: []
   prereqs:
   - en.canon.b2.001
-  sequence: 5
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c1.023
@@ -3765,7 +3765,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.c2.002
   level: C2
-  function: fn.condition_real
+  function: fn.hypothetical_counterfactual
   point_type: other
   native_title: "Counterfactual compression"
   title:
@@ -3979,7 +3979,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.c2.014
   level: C2
-  function: fn.linking
+  function: fn.reporting
   point_type: other
   native_title: "Advanced reporting and distancing"
   title:
@@ -4064,6 +4064,6 @@
   contrasts: []
   prereqs:
   - en.canon.c2.017
-  sequence: 2
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
