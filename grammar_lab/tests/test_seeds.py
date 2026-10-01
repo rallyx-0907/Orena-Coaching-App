@@ -13,7 +13,7 @@ from grammar_lab.pipeline.generate import Generator
 from grammar_lab.pipeline.jsonio import read_json
 from grammar_lab.pipeline.llm_client import LLMClient
 from grammar_lab.pipeline.r5_source import load_r5
-from grammar_lab.pipeline.seed import aliases_for, apply_seed, check_seeds, load_seeds, register_realization
+from grammar_lab.pipeline.seed import audit_seed_semantics, aliases_for, apply_seed, check_seeds, load_seeds, register_realization
 from grammar_lab.pipeline.validate import ERROR_TAGS_PATH, GRAMMAR_SCHEMA_PATH, LAB_ROOT, LANGS, validate_lang
 from grammar_lab.tests.conftest import Lab
 from grammar_lab.tests.test_generate import CANNED_V04, v04_transport
@@ -102,6 +102,26 @@ def test_points_already_on_disk_agree_with_their_seed(lang: str) -> None:
         assert point["function"] == seeds[point_id]["function"], point_id
         if point_id not in RELEVELED:
             assert point["level"]["value"] == str(seeds[point_id]["level"]), point_id
+
+
+def test_semantic_seed_audit_reports_unclassified_and_placeholder_titles(tmp_path: Path) -> None:
+    lab = Lab(tmp_path, "zh")
+    lab.write()
+    inventory = lab.root / "inventory"
+    inventory.mkdir(parents=True, exist_ok=True)
+    seeds = [
+        {"id": "zh.good", "level": "1", "function": "fn.alpha", "point_type": "other", "native_title": "把字句", "title": {"vi": "Câu chữ 把", "en": "Ba construction"}, "r5": [], "error_tags": ["other"], "contrasts": [], "prereqs": [], "sequence": 1, "anchors": []},
+        {"id": "zh.bad", "level": "1", "function": "fn.catalog_unclassified", "point_type": "other", "native_title": "ba_suggestion", "title": {"vi": "x", "en": "x"}, "r5": [], "error_tags": ["other"], "contrasts": [], "prereqs": [], "sequence": 2, "anchors": []},
+        {"id": "zh.mixed", "level": "1", "function": "fn.alpha", "point_type": "other", "native_title": "把 với bổ ngữ", "title": {"vi": "x", "en": "x"}, "r5": [], "error_tags": ["other"], "contrasts": [], "prereqs": [], "sequence": 3, "anchors": []},
+    ]
+    (inventory / "seeds_zh.yaml").write_text(yaml.safe_dump(seeds, allow_unicode=True, sort_keys=False), encoding="utf-8")
+    findings = audit_seed_semantics("zh", lab.root)
+    by_id = {}
+    for finding in findings:
+        by_id.setdefault(finding["id"], set()).add(finding["code"])
+    assert "zh.good" not in by_id
+    assert {"function.unclassified", "native_title.placeholder", "native_title.non_zh"} <= by_id["zh.bad"]
+    assert "native_title.mixed_language" in by_id["zh.mixed"]
 
 
 def test_a_seed_carries_the_r5_sources_and_anchors_into_the_point() -> None:
