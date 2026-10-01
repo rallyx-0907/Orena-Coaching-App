@@ -146,6 +146,27 @@ def generation_items(
     return out
 
 
+def stratified_items(
+    items: list[tuple[str, str, str]], per_level: int,
+) -> list[tuple[str, str, str]]:
+    """Take the first N candidates from every (language, level) group.
+
+    Unlike --max-points on canonical order, this gives a smoke run real
+    coverage across A1-C2 and HSK1-HSK9 instead of over-sampling A1 English.
+    Input order is preserved.
+    """
+    if per_level <= 0:
+        return list(items)
+    counts: Counter[tuple[str, str]] = Counter()
+    out: list[tuple[str, str, str]] = []
+    for item in items:
+        key = (item[0], item[1])
+        if counts[key] >= per_level:
+            continue
+        counts[key] += 1
+        out.append(item)
+    return out
+
 def ready_items(plan: dict[str, Any]) -> list[tuple[str, str, str]]:
     """Backward-compatible selector for missing reviewed points only."""
     return generation_items(plan)
