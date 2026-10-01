@@ -155,3 +155,54 @@ knows the true ceiling.
 - C5. State in the document and in `CURRENT_HANDOFF.md` that A2-A5 and §2.2 are unmeasured and that the draft cadence
   must be measured on the lane before the rate defaults are fixed; PostgreSQL-only tests are local execution.
 - Not a condition: the P3 items. Enabling the backbone on :8000/:8010 remains a separate human gate.
+
+## Re-check (rev 2)
+
+- **Reviewer:** Claude Opus 5.5, independent reviewer subagent, not the author. **Date:** 2026-10-01.
+- **Reviewed:** `ACCOUNT_RECORD_LIMITS.md` rev 2 at `40396ae` (diff against `a9dc2a9`, section "Rev 2 changes"). Document
+  review only; I also confirmed by search that no `static/orena` code calls `/api/works` (only two test files do).
+
+### Verdict: APPROVE WITH CONDITIONS
+
+Rev 2 closes C1-C5 and every P2/P3 of the first review. One new P2 (the import-tombstone default) and three P3 wording
+points remain; none needs another full review.
+
+| Item | Result |
+| --- | --- |
+| P1-1 / C1 delete bypass | **Closed.** The aggregate counts all rows (live and total, tombstones in the byte budget); creation with `lifecycle: deleted` is refused for `response`, `conversation`, `annotation`, `draft` (none has a delete route, clearing is `{cleared:true}`); imports keep 20 live plus a separate tombstone bound. The proposal also correctly records that the shipped import guard has the same defect today and must be fixed in code first and alone, with a test. |
+| P2-1 / C2 generic route | **Closed, better than asked.** The generic writer is closed for `draft`/`response`/`conversation` (422 `work_kind_invalid`), so there is no client-UUID creator left; `MAX_PAYLOAD_CHARS` then bounds nothing writable. Verified no client uses it. Drafts get `ORENA_LIMIT_DRAFTS` = 2,500 (heavy 1,095 in three years x 2.3, consistent with A7), reject-not-evict. |
+| P2-2 / C3 rate lookup, 429 | **Closed.** Point probe at sequence `H - N` on `uq_change_record_sequence` (sequences are gap-free per incarnation and `H` is already read); gap reads as under the rail; compaction floor stated; explicit 429 branch in `_commit`, `put_work`, `put_draft`, turn append and `/api/continue`, tested. |
+| P2-3 eviction race | **Closed.** Single `DELETE ... WHERE id IN (...)` re-checking the place-only predicate and membership in the statement; a vanished row in `set_place` takes the insert branch and answers `written`; interleaving test listed. |
+| P2-4 stored size, `work_turns` | **Closed.** Stated as a stored-size budget; `work_turns` excluded with the reason; honest per-language ceiling (about 1 GB plus the stream, times enabled languages). |
+| C5 unmeasured inputs | **Closed.** A2-A5 and §2.2 labelled UNMEASURED; rollout step 0 makes the lane measurement a precondition of fixing the rate defaults and records it in `CURRENT_HANDOFF.md`; PostgreSQL-only proofs labelled local execution. |
+| P3-1..P3-5 | **All adopted** (finished flag, languages multiply the ceiling, per-process bucket note, 429 context names only its own rail, hour-rail precondition). |
+| Q1-Q12 | Adopted as answered; Q7 (hour rail) and Q9 (trigger value) correctly left open for measurement and the human. |
+| Receipts / reserved items | Unchanged and correct: option A, Principal Architect as owner, no deletion, compaction/cursors/horizon still reserved (AGENTS §7). |
+
+### New findings
+
+- **P2-5. Import tombstone bound is derived with a 1.25x margin, not the A7 rule, and is a lifetime ceiling.**
+  `ORENA_LIMIT_IMPORT_TOMBSTONES` = 200 counts *total* import rows (live plus deleted) per (account, language) for ever,
+  because tombstones are terminal and cannot be recycled. At the document's own heavy figure (52 imports a year) that is
+  reached in about 3.8 years, and a refused import then silently stays device-only. Imports are learner-authored, so A7
+  says at least 2x the heavy 3-year volume (156 x 2.3 = about 360). **Required:** set the default to about 360 (and the
+  floor to the heavy 1-year volume, 52), or state why imports are exempt from A7. Note it is a lifetime count, so only a
+  reviewed tombstone-retention decision (reserved with deletion/export) could ever reclaim it.
+- **P3-6.** The rate probe text says the mutation about to take sequence `H` is "the 240th" if `H - 240` is under 60 s old; that
+  record is the first of the 240 *previous* mutations, so the new one is the 241st. Harmless (the rail trips one request
+  earlier or later), but fix the wording and the test boundary so the 241st-in-60s test in §9 matches.
+- **P3-7.** Specify that the draft sender treats 422 `draft_limit` as terminal for that piece (no retry loop on every
+  autosave pause) and keeps saying "on this device"; the test row only covers 429.
+- **P3-8.** Closing the generic writer is a behaviour change for `tests/test_work_api.py`; list in the implementation commit
+  which assertions move to the dedicated routes so none is dropped.
+
+### Conditions (to start implementation; each is small)
+
+1. Land the import-tombstone fix first and alone, with the create/delete/create test (as the document already says), using
+   the P2-5 default.
+2. Apply P2-5, P3-6, P3-7 and P3-8 in the implementation or a one-line text edit.
+3. Measure the draft cadence on the lane (rollout step 0) before the rate defaults are fixed; label PostgreSQL-only results
+   as local execution.
+
+Enabling the backbone on :8000/:8010 remains a separate human gate; this proposal, once implemented and independently code
+reviewed, removes the P2-4 caps condition.
