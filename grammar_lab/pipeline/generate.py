@@ -46,6 +46,7 @@ from grammar_lab.pipeline.validate import (
     ILLUSTRATION_FOR_POINT_TYPE,
     QUICK_PRACTICE_BLANK,
     ZH_HANS,
+    _PINYIN_SYLLABLE,
     validate_generated_point,
 )
 from grammar_lab.rules import en_morphology
@@ -231,16 +232,15 @@ def _item_schemas_v04(*, locales: list[str], l1s: list[str], error_tags: list[st
     common mistake, quick-practice item). Shared by full generation and by block-level regeneration
     (apply_feedback.py), so both ask for, and assemble, exactly the same shapes."""
     locale_map = {"type": "string", "minLength": 1} if len(locales) == 1 else _locale_map_schema(locales)
-    pinyin_pairs = {
-        "type": "array",
-        "items": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"type": "string"}},
-    }
+    # Pinyin is derived deterministically in code. The model may still provide
+    # character/syllable hints for contextual polyphonic readings, but malformed
+    # hints must never make an otherwise valid grammar point fail generation.
+    pinyin_pairs = {"type": "array", "items": {}}
 
     def with_pinyin(schema: dict[str, Any], *fields: str) -> dict[str, Any]:
         if zh:
             for name in fields:
                 schema["properties"][name] = pinyin_pairs
-                schema["required"].append(name)
         return schema
 
     slot_option = with_pinyin({
@@ -398,7 +398,11 @@ def _generation_schema_v04(*, locales: list[str], l1s: list[str], error_tags: li
                 },
             },
         }
-    return {"type": "object", "additionalProperties": False, "required": list(properties), "properties": properties}
+    required = [
+        name for name in properties
+        if not (zh and name == "native_title_pinyin_pairs")
+    ]
+    return {"type": "object", "additionalProperties": False, "required": required, "properties": properties}
 
 
 # Conversion mode (human, 2026-09-28): R5 is raw material, not discarded.
@@ -492,10 +496,46 @@ def resolve_spans(text: str, spans: list[dict[str, Any]]) -> list[dict[str, Any]
     return sorted(placed, key=lambda s: s["start"])
 
 
-def pinyin_from_pairs(pairs: list[list[str]]) -> list[str]:
-    """[[character, syllable], ...] -> [syllable, ...]; a multi-character pair is kept as one
-    entry so validate reports the misalignment instead of generate guessing a split."""
-    return [syllable for _, syllable in pairs]
+def pinyin_from_pairs(text: str, pairs: list[Any] | None = None) -> list[str]:
+    """Return exactly one pinyin entry per character of text.
+
+    pypinyin supplies the deterministic baseline. Model-provided pairs are only
+    accepted as contextual overrides when they align to the same Han character
+    and already carry a validator-legal tone-marked syllable. Punctuation,
+    Latin text, spaces and blanks always map to an empty string.
+    """
+    fallback = lazy_pinyin(
+        text,
+        style=Style.TONE,
+        neutral_tone_with_five=False,
+        errors=lambda chars: ["" for _ in chars],
+        strict=False,
+    )
+    if len(fallback) != len(text):
+        fallback = ["" for _ in text]
+
+    out = [
+        syllable if _HAN.fullmatch(char) and _PINYIN_SYLLABLE.fullmatch(str(syllable).casefold()) else ""
+        for char, syllable in zip(text, fallback, strict=True)
+    ]
+
+    cursor = 0
+    for pair in pairs or []:
+        if not isinstance(pair, (list, tuple)) or len(pair) < 2:
+            continue
+        char, syllable = str(pair[0]), str(pair[1])
+        if len(char) != 1:
+            continue
+        pos = text.find(char, cursor)
+        if pos < 0:
+            continue
+        cursor = pos + 1
+        if _HAN.fullmatch(char):
+            if _PINYIN_SYLLABLE.fullmatch(syllable.casefold()):
+                out[pos] = syllable
+        else:
+            out[pos] = ""
+    return out
 
 
 def unspaced_pairs(pairs: list[list[str]]) -> list[list[str]]:
@@ -518,7 +558,7 @@ def assemble_example(raw: dict[str, Any], zh: bool, loc: Any) -> dict[str, Any]:
         "annotation": loc(raw["annotation"]), "translation": loc(raw["translation"]),
     }
     if zh:
-        example["pinyin"] = pinyin_from_pairs(raw["pinyin_pairs"])
+        example["pinyin"] = pinyin_from_pairs(raw["text"], raw.get("pinyin_pairs"))
     return example
 
 
@@ -527,8 +567,8 @@ def assemble_compare_item(item: dict[str, Any], zh: bool, loc: Any) -> dict[str,
         "this_meaning": loc(item["this_meaning"]), "other_meaning": loc(item["other_meaning"]),
     }
     if zh:
-        entry["this_example_pinyin"] = pinyin_from_pairs(item["this_example_pinyin_pairs"])
-        entry["other_example_pinyin"] = pinyin_from_pairs(item["other_example_pinyin_pairs"])
+        entry["this_example_pinyin"] = pinyin_from_pairs(item["this_example"], item.get("this_example_pinyin_pairs"))
+        entry["other_example_pinyin"] = pinyin_from_pairs(item["other_example"], item.get("other_example_pinyin_pairs"))
     return entry
 
 
@@ -537,13 +577,13 @@ def assemble_quick_practice_item(item: dict[str, Any], zh: bool, loc: Any) -> di
         "q": zh_unspaced(item["q"]) if zh else item["q"],
         "options": [
             {"text": option["text"], "error_tag": option["error_tag"],
-             **({"pinyin": pinyin_from_pairs(option["pinyin_pairs"])} if zh else {})}
+             **({"pinyin": pinyin_from_pairs(option["text"], option.get("pinyin_pairs"))} if zh else {})}
             for option in item["options"]
         ],
         "answer": item["answer"], "explain": loc(item["explain"]),
     }
     if zh:
-        entry["q_pinyin"] = pinyin_from_pairs(unspaced_pairs(item["q_pinyin_pairs"]))
+        entry["q_pinyin"] = pinyin_from_pairs(entry["q"], unspaced_pairs(item.get("q_pinyin_pairs") or []))
     return entry
 
 
@@ -551,8 +591,8 @@ def assemble_common_mistake(raw: dict[str, Any], zh: bool, loc: Any) -> dict[str
     mistake = {key: raw[key] for key in ("wrong", "right", "reason", "error_tag", "l1")}
     mistake["reason"] = loc(mistake["reason"])
     if zh:
-        mistake["wrong_pinyin"] = pinyin_from_pairs(raw["wrong_pinyin_pairs"])
-        mistake["right_pinyin"] = pinyin_from_pairs(raw["right_pinyin_pairs"])
+        mistake["wrong_pinyin"] = pinyin_from_pairs(raw["wrong"], raw.get("wrong_pinyin_pairs"))
+        mistake["right_pinyin"] = pinyin_from_pairs(raw["right"], raw.get("right_pinyin_pairs"))
     return mistake
 
 
@@ -568,8 +608,8 @@ def assemble_personal_production(raw: dict[str, Any], zh: bool, loc: Any) -> dic
         "sample": {"text": raw["sample"]},
     }
     if zh:
-        block["placeholder_pinyin"] = pinyin_from_pairs(raw["placeholder_pinyin_pairs"])
-        block["sample"]["pinyin"] = pinyin_from_pairs(raw["sample_pinyin_pairs"])
+        block["placeholder_pinyin"] = pinyin_from_pairs(raw["placeholder"], raw.get("placeholder_pinyin_pairs"))
+        block["sample"]["pinyin"] = pinyin_from_pairs(raw["sample"], raw.get("sample_pinyin_pairs"))
     return block
 
 
@@ -577,7 +617,7 @@ def assemble_morphology_row(raw: dict[str, Any], zh: bool) -> dict[str, Any]:
     row = {key: raw[key] for key in ("base", "affix", "result")}
     if zh:
         for key in ("base", "affix", "result"):
-            row[f"{key}_pinyin"] = pinyin_from_pairs(raw[f"{key}_pinyin_pairs"])
+            row[f"{key}_pinyin"] = pinyin_from_pairs(raw[key], raw.get(f"{key}_pinyin_pairs"))
     return row
 
 
@@ -597,13 +637,13 @@ def _slots(raw: list[dict[str, Any]], zh: bool, locales: list[str]) -> list[dict
         if slot.get("optional"):
             item["optional"] = True
         options = [
-            {"text": option["text"], **({"pinyin": pinyin_from_pairs(option["pinyin_pairs"])} if zh else {})}
+            {"text": option["text"], **({"pinyin": pinyin_from_pairs(option["text"], option.get("pinyin_pairs"))} if zh else {})}
             for option in slot.get("options") or []
         ]
         if len(options) >= 2:  # one "option" is not a choice; the slot text already says it
             item["options"] = options
         if zh:
-            item["pinyin"] = pinyin_from_pairs(slot["pinyin_pairs"])
+            item["pinyin"] = pinyin_from_pairs(slot["text"], slot.get("pinyin_pairs"))
         out.append(item)
     return out
 
@@ -911,7 +951,7 @@ class Generator:
                 "header": {
                     **header, "summary": loc(data["summary"]),
                     "sub": loc(data["sub"]),
-                    **({"native_title_pinyin": pinyin_from_pairs(data["native_title_pinyin_pairs"])} if zh else {}),
+                    **({"native_title_pinyin": pinyin_from_pairs(header["native_title"], data.get("native_title_pinyin_pairs"))} if zh else {}),
                 },
                 "when_to_use": [loc(item) for item in data["when_to_use"]],
                 "pattern": pattern,
