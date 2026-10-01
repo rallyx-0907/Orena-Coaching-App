@@ -211,15 +211,22 @@ def generate_corpus_command(
 
     outcomes: list[GenerateOutcome] = []
 
-    def run_one(lang_code: str, point_id: str, generators: dict[str, Generator]) -> GenerateOutcome:
+    def run_one(lang_code: str, point_id: str) -> GenerateOutcome:
         try:
             check_generation_gate(lang_code, [point_id], root)
-            return generators[lang_code].generate(
-                point_id,
-                regenerate_note=regenerate_note or None,
-                with_story=with_story,
-                story_mode=story_mode,
-            )
+            # One client per in-flight point: no HTTP client or response state is
+            # shared across worker threads. The provider quota lock is held by
+            # the outer corpus run, and the LLM cache remains content-addressed.
+            with LLMClient(provider, model, deepseek_thinking=deepseek_thinking) as llm:
+                generator = Generator(
+                    lang=lang_code, l1=l1, llm=llm, root=root, allow_default_safe=False
+                )
+                return generator.generate(
+                    point_id,
+                    regenerate_note=regenerate_note or None,
+                    with_story=with_story,
+                    story_mode=story_mode,
+                )
         except GenerationBlocked as exc:
             return GenerateOutcome(point_id, "blocked_metadata", reason=str(exc))
         except LLMError as exc:
@@ -228,13 +235,9 @@ def generate_corpus_command(
         except Exception as exc:
             return GenerateOutcome(point_id, "error", reason=f"{type(exc).__name__}: {exc}")
 
-    with live_lock.hold([provider], cost_ceiling_usd), LLMClient(
-        provider, model, deepseek_thinking=deepseek_thinking
-    ) as llm, ThreadPoolExecutor(max_workers=workers, thread_name_prefix="grammar-generate") as pool:
-        generators = {
-            lang_code: Generator(lang=lang_code, l1=l1, llm=llm, root=root, allow_default_safe=False)
-            for lang_code in langs
-        }
+    with live_lock.hold([provider], cost_ceiling_usd), ThreadPoolExecutor(
+        max_workers=workers, thread_name_prefix="grammar-generate"
+    ) as pool:
         cursor = 0
         while cursor < len(candidates):
             spent = sum(o.cost_usd for o in outcomes if o.cost_usd is not None)
@@ -244,7 +247,7 @@ def generate_corpus_command(
             batch = candidates[cursor:cursor + workers]
             batch_outcomes: list[GenerateOutcome | None] = [None] * len(batch)
             future_to_index = {
-                pool.submit(run_one, lang_code, point_id, generators): index
+                pool.submit(run_one, lang_code, point_id): index
                 for index, (lang_code, _level, point_id) in enumerate(batch)
             }
             for future in as_completed(future_to_index):
