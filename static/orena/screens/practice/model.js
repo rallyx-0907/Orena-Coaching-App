@@ -223,6 +223,11 @@ export function continuationTarget(item) {
     if (!gid) return null;
     return { kind: 'grammar', routeId: 'gconcept', params: { id: gid } };
   }
+  // A conversation the learner left (kept with the account when the deployment keeps work there,
+  // D4 I6): the Conversation room opens it by id and carries on where it stopped.
+  if (/^conversation:[\w-]+$/.test(id)) {
+    return { kind: 'speak', routeId: 'conv', query: { id } };
+  }
   if (id.startsWith('media:')) {
     const mediaId = id.slice('media:'.length);
     if (!mediaId) return null;
@@ -233,10 +238,10 @@ export function continuationTarget(item) {
   return null;
 }
 
-const KIND_ICON = { write: 'pen-line', listen: 'headphones', grammar: 'languages' };
+const KIND_ICON = { write: 'pen-line', listen: 'headphones', grammar: 'languages', speak: 'mic' };
 /* Reuses SKILL_TINT's own per-skill hues (now that SKILL_TINT carries a `listen` entry too) -
    never a second literal for the same token. */
-const KIND_TINT = { write: SKILL_TINT.write, listen: SKILL_TINT.listen, grammar: SKILL_TINT.grammar };
+const KIND_TINT = { write: SKILL_TINT.write, listen: SKILL_TINT.listen, grammar: SKILL_TINT.grammar, speak: SKILL_TINT.speak };
 
 /* Up to `limit` continuation rows (most-recent-first, memory.js's own order), each carrying enough
    to draw a row and to link to a real route. `place` (product/memory.js readPlace) is the only
@@ -256,6 +261,7 @@ export function continuationRows(continuation = [], { limit = 5 } = {}) {
       tint: KIND_TINT[target.kind] || 'var(--accent-fill)',
       routeId: target.routeId,
       params: target.params,
+      query: target.query,
       place: item.place || null,
       context: String(item.context || ''),
     });

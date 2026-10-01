@@ -11,6 +11,9 @@ services:
       OLLAMA_TIMEOUT: ${OLLAMA_TIMEOUT:-180}
       WRITING_DB: /data/writing.db
       ALLOW_FALLBACK: ${ALLOW_FALLBACK:-false}
+      # Account work (drafts, conversations, notes, private imports) kept with the account. Off unless an
+      # operator turns it on, after the D4 migrations and the human's gate (D-104 H-11).
+      ORENA_ACCOUNT_BACKBONE: ${ORENA_ACCOUNT_BACKBONE:-off}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
       APP_ENV: ${APP_ENV:-development}

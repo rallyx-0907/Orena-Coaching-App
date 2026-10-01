@@ -46,6 +46,14 @@ function readPlace(place) {
   return { index, total, within: Math.max(0, Math.min(100, Math.round(within))) };
 }
 
+/* Where a record is also sent: a visit (product/continue-sync.js), an import, a kept word's origin
+   (product/account-records.js). Set once by the shell; absent in tests and before boot, and then the
+   device is the only holder, as it always was. Every method is optional and best effort. */
+let placeSink = null;
+export function setPlaceSink(sink) {
+  placeSink = sink && typeof sink.enter === 'function' ? sink : null;
+}
+
 export function learnerMemory(storage, owner, language) {
   const key = `orena.encounters.v1:${encodeURIComponent(owner)}:${language}`;
   let available = true,
@@ -106,7 +114,7 @@ export function learnerMemory(storage, owner, language) {
             x.origin === 'imported' &&
             x.language === language &&
             typeof x.id === 'string' &&
-            x.id.startsWith('url:') &&
+            (x.id.startsWith('url:') || x.id.startsWith('upload:')) &&
             typeof x.title === 'string',
         )
         .slice(0, 100);
@@ -216,13 +224,16 @@ export function learnerMemory(storage, owner, language) {
         !KEEP_REASONS.includes(entry.why)
       )
         return false;
+      const record = keptRecord(term, { ...entry, at: new Date().toISOString() });
       value.keptLanguage = Object.fromEntries(
         [
           ...Object.entries(value.keptLanguage).filter(([k]) => k !== term),
-          [term, keptRecord(term, { ...entry, at: new Date().toISOString() })],
+          [term, record],
         ].slice(-200),
       );
-      return save();
+      const saved = save();
+      placeSink?.keepLanguage?.(record);
+      return saved;
     },
     /* One settings sheet, written whole: the sheet reads what is there, changes
        one thing and hands the lot back, so a half-written patch cannot leave
@@ -295,6 +306,13 @@ export function learnerMemory(storage, owner, language) {
         },
         ...value.continuation.filter((x) => x.id !== id),
       ].slice(0, 20);
+      placeSink?.enter(value.continuation[0]);
+      return save();
+    },
+    /* The server's places merged with the device's own (product/continue-sync.js). This is a cache
+       refresh: it neither sends anything nor reorders what a visit just wrote. */
+    replaceContinuation(list) {
+      value.continuation = (Array.isArray(list) ? list : []).slice(0, 20);
       return save();
     },
     write(id, text, field = 'expressions') {
@@ -361,7 +379,21 @@ export function learnerMemory(storage, owner, language) {
       };
       value.imports.unshift(item);
       save();
+      placeSink?.addImport?.(item);
       return item;
+    },
+    /* The account's imports merged into this device's list (a cache refresh: it sends nothing). The
+       device's own come first; the cap is the same 20 the server keeps. */
+    mergeImports(list) {
+      const items = Array.isArray(list) ? list : [];
+      const known = new Set(value.imports.map((x) => x.id));
+      const extra = items.filter((x) => x?.id && !/^(url|upload):/.test(x.id) && !known.has(x.id));
+      const knownMedia = new Set(value.mediaImports.map((x) => x.id));
+      const media = items.filter((x) => x?.id && /^(url|upload):/.test(x.id) && x.title && !knownMedia.has(x.id));
+      if (!extra.length && !media.length) return false;
+      value.imports = [...value.imports, ...extra].slice(0, 20);
+      value.mediaImports = [...value.mediaImports, ...media.map((x) => ({ ...x, language, origin: 'imported' }))].slice(0, 100);
+      return save();
     },
     /* A media membership record. Two kinds of id are accepted, and they mean
        different things: `url:` is a source the learner pasted and Orena can
@@ -395,13 +427,17 @@ export function learnerMemory(storage, owner, language) {
         item,
         ...value.mediaImports.filter((x) => x.id !== id),
       ].slice(0, 100);
-      return save();
+      save();
+      placeSink?.addImport?.(item);
+      return true;
     },
     remove(id) {
       value.imports = value.imports.filter((x) => x.id !== id);
       value.mediaImports = value.mediaImports.filter((x) => x.id !== id);
       value.kept = value.kept.filter((x) => x !== id);
       value.continuation = value.continuation.filter((x) => x.id !== id);
+      placeSink?.clear(id);
+      placeSink?.removeImport?.(id);
       delete value.expressions[id];
       delete value.revisions[id];
       save();

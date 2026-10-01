@@ -27,9 +27,8 @@ import { toast } from '../../kit/toast.js';
 import { api } from '../../infrastructure/api.js';
 import { shellCopy } from '../../copy/shell.js';
 import { chooseInterface, languages as copyLanguages, setSupportFromProfile } from '../../copy/index.js';
-import { updateContext, refreshCounts } from '../../shell/context.js';
-import { learnerMemory } from '../../product/memory.js';
-import { learningLanguage } from '../../product/languages.js';
+import { adoptLearningLanguage, updateContext } from '../../shell/context.js';
+import { saveAccountSettings, saveReviewSettings, selectLearningLanguage } from '../../product/account-settings.js';
 import { readReaderSettings, writeReaderSettings, sizeBucketOf, SIZE_BUCKETS } from '../../product/reader-settings.js';
 import { readStage, writeStage, transcriptDefaults } from '../../product/transcript-stage.js';
 import { readReviewSettings } from '../../product/recall-modes.js';
@@ -245,16 +244,15 @@ export default async function settingsScreen(element, ctx) {
     const context = ctx.context;
     if (!code || code === context.language) return;
     try {
-      await api.setLanguage(code);
+      await selectLearningLanguage(code);
     } catch {
       toast(t('saveError'));
       return;
     }
+    // The shell's language-scoped state (profile and its version, review settings, places, imports) is the new
+    // language's before the tab repaints - even when this screen was left meanwhile.
+    await adoptLearningLanguage(code, storage || undefined);
     if (!ctx.isCurrent()) return;
-    const nextLanguage = learningLanguage(code);
-    const memory = learnerMemory(storage, context.owner, nextLanguage);
-    updateContext({ language: nextLanguage, memory });
-    refreshCounts().catch(() => {});
     paintTab();
   }
 
@@ -290,6 +288,9 @@ export default async function settingsScreen(element, ctx) {
     // re-runs the router, which remounts this screen fresh in the new interface language - no
     // local repaint needed or safe to race against that remount.
     chooseInterface(code);
+    // The account keeps it too (a new device starts in it); the device value stays the first-paint
+    // cache, so a save that fails changes nothing the learner can see.
+    saveAccountSettings({ interface_language: code }).catch(() => {});
   }
 
   function onReaderSizePick(size) {
@@ -331,8 +332,11 @@ export default async function settingsScreen(element, ctx) {
     const memory = ctx.context.memory;
     if (!memory) return;
     const current = readReviewSettings(memory.value?.reviewSettings);
-    memory.setReview({ ...current, modes: { ...current.modes, [field]: !current.modes[field] } });
+    const next = { ...current, modes: { ...current.modes, [field]: !current.modes[field] } };
+    memory.setReview(next);
     paintTab();
+    // The server keeps review settings per learning language; the device copy above already applied.
+    saveReviewSettings({ modes: { [field]: next.modes[field] } }, ctx.context.profile?.version, (profile) => updateContext({ profile })).catch(() => {});
   }
 
   function onMicToggle() {

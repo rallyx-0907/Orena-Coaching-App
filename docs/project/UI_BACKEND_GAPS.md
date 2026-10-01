@@ -4484,3 +4484,176 @@ the record of why. I-16's read-by-id is still missing (N-9).
 | I-23 | Identity answers (spec ┬º35)                                                                    | **Resolved in Slice 1c:** `RuleDecisionProvider` recognises a message that is wholly a who-are-you or which-model question (EN, VI with or without diacritics, ZH; `agent/identity.py`) and the turn answers it from support-layer copy before any model is asked; the answer is Orena and names no provider. Anything else still reaches the model, which is instructed to answer as Orena. The voice session's instructions (┬º33) get the same when voice is built.                                                                                                                                                                                                                                                |
 | I-24 | Rate limit per learner (spec ┬º22)                                                              | **Resolved in Slice 1c, in process:** a sliding window per authenticated learner, 12 turns and 60 capability reads a minute (`AgentLimits`), 429 `rate_limited` with `Retry-After` before anything runs. Each worker counts its own; a limit shared across workers, and any limit per IP at the edge, are deployment decisions for activation. Contract v4 (D-095, on `codex/work`) names 404, 409, 422 and 429 in ┬º2.1; this lane serves them as written.                                                                                                                                                                                                                                                           |
 | I-25 | Capability status                                                                               | Active: `vocabulary.words`, `review.due`, `writing.review` (Slice 1c); `grammar.point`, `speaking.pronunciation.line`, `speaking.free_talk`, `listening.dictation`, `reading.passage` (Slice 2); `coaching.next_steps` (Slice 3) - every tool they name runs, and on PostgreSQL each reads only the learner's own records in their language. The active entries list only the tools that exist: `get_grammar_mistakes_summary`, `get_listening_mistakes`, `get_reading_mistakes` and `get_word_context_in_reading` stay the gaps of I-A. `speaking.pronunciation.tone` and `.stress` stay `pending`: nothing measures tone or per-word stress (D-084). Home, library, progress and agent memory wait for their tools. |
+
+### Admin: Reading rights gate and queue (D-105 point 5, 2026-09-30)
+
+Resolved by the human's D-105 decisions; AD-A, AD-B and AD-H above are closed by this section.
+
+- **AD-A closed.** `list_queue` now returns `source_name`, `rights_level` (the effective `can_republish` answer:
+  allowed / denied / unknown) and `target_count` (targets not rejected) per item. The review tab draws
+  Article (source in the meta line) | Level | Targets | Rights, as A16 does.
+- **AD-B closed, and copyright is a hard gate (D-105 a).** `POST /api/admin/reading/articles/{id}/status`
+  refuses `published` with 409 `reading_rights_not_cleared` (context: the blocking questions) unless
+  `can_republish` is allowed, and, for an adapted text, `can_adapt` is allowed. An unanswered question
+  refuses as a denial does. Attribution stays advice (it is an obligation, not a permission) and is
+  recorded beside the decision. A refusal is audited as `admin.reading_article_publish_refused`.
+  New route `POST /api/admin/reading/articles/{id}/rights` (`can_republish`, `can_adapt`,
+  `attribution_required`, `license_note`, `reason`; a field left out is untouched, `null` returns a question to
+  unanswered). The source snapshot is immutable (a PostgreSQL trigger refuses a rewrite), so an answer is
+  appended as a `rights_set` review event and the effective rights are the snapshot with those events
+  folded over it; no schema change. `source.rights` stays as ingested, `source.rights_state` is the
+  effective state, `rights_review` says who answered last. The review page states the refusal, disables
+  Publish, and edits the three questions; the Add form now asks `can_republish`, `can_adapt` and
+  `attribution_required`.
+- **Effect on existing content.** Already-published articles are untouched. An article imported with no
+  rights answers can no longer be published until its questions are answered; the earlier lane-runtime
+  articles published with unknown attribution stay as they are.
+- **AD-H closed (D-105 b).** The vocabulary page states the server's rule only (unattested is the one
+  refusal; rights and completeness warn and are recorded). Nothing in the UI claims a stricter gate: the
+  only disabled state is the missing attestation, which the server also refuses.
+- **Still open.** `automation_allowed` is a source-level question and is not edited per article. The
+  overview's "Next in review" rows show the source in their meta but no rights pill (the shared row list
+  has no pill slot).
+
+### D4 slice 1: account, profile, level (2026-09-30)
+
+- **Stored now.** `declared_level` (per learning language, registry-validated, no English fallback), review settings
+  (`review_new_per_day`, `review_limit_per_day`, `review_modes`), and the account scalars `learning_language`,
+  `interface_language`, `weekly_goal_days` behind one opaque `settings_version` (`GET/PATCH /api/account-settings`).
+  Bootstrap gains `language.stored`. The session is seeded from the stored language only when it has none.
+- **H-19.** Today draws the design's Banner ("Choose level" / dismiss) for an existing profile with no level. The
+  action opens the onboarding Level step alone (`#/welcome?step=level`) and returns to Today. Skipping lasts the visit
+  (session storage); no dismissed marker is stored, as the proposal requires.
+- **Decided (human, 2026-09-30): HSK 7-9.** One `HSK 7–9` cell after HSK 6 in the Level step (onboarding and the
+  H-19 level-only step, the only places a level is chosen), code `HSK7-9`; never three HSK 7/8/9 cells. The grid's
+  default stays the middle of the frame's six (HSK 3 / B1).
+- **Decided (human, 2026-09-30): review modes.** Canonical identifiers are `typing`, `cloze`, `dictation`. The
+  proposal's `target` is the Review frame's "Target -> meaning", i.e. `typing`; the Review screen's mode enum now says
+  `typing`. `PATCH /api/learner-profile` refuses (400 `invalid_value`, field `review_modes`) any other key or a
+  non-boolean value instead of dropping it silently.
+- **No weekly-goal control yet.** `weekly_goal_days` is stored and served; the design draws no control to set it in
+  Settings or Profile that this slice found. It is not invented (rule 43); slice 7 decides where it is read.
+
+### Admin: Reading overview rights and automation override (D-106, 2026-09-30)
+
+- **READING-1.** The overview's "Next in review" rows draw the same effective rights pill as the Review
+  queue (same `list_queue` item, same `rightsPill`); the rights form is not duplicated there.
+- **READING-2.** `automation_allowed` on a source is a default. `POST .../articles/{id}/rights` also takes
+  `automation_allowed` (`true`/`false` sets the article override, `null` clears it), recorded as a
+  `rights_set` review event and audited; no schema change. One computation, `effective_automation()` in
+  `reading_content_repository.py`: the article override when present, else the source default. It feeds
+  the article payload (`automation`: allowed, override, source_default, origin), `rights_state.automation_allowed`,
+  the queue item (`automation_allowed`), and the publish audit record (`automation`). The review page
+  edits it (source default / Allow / Deny) and states the effective value and its origin.
+- **Open reading of "publish uses the effective value".** Publish records the effective value; it does not
+  refuse on it (manual articles from a source whose default is "no" would otherwise never publish). If
+  the human means a refusal, it is one line in `set_article_status`.
+
+### D4 slices 2-7: what changed for the UI and what is still open (2026-09-30)
+
+- **Streak (I14, H-5).** `GET /api/learner-activity?tz=&days=` derives the streak and the ISO week's active days from
+  essays, speaking attempts and Reading attempts, by the learner's own calendar day; no table; a visit never counts.
+  Dictation, Shadowing and vocabulary review are listed as `pending` (they keep only a last-update time). Profile
+  and Today draw it; the daily-goal ring, the minutes tile and stat, Today's goal ring, skill rings and level card
+  are **not drawn** (D-103.4), and Profile's weekly bar is drawn only against a target the learner set. No design
+  control sets that target yet (`weekly_goal_days` is stored and served). H-16 stays open.
+- **New token.** `--hero-day-done` (#A99BFF), the design's active-day colour on Profile's hero strip.
+- **Dictation (I18).** The stored score is the server's; the screen replaces its instant mark with the acknowledged item.
+- **Continue (I4).** Today, Discover, Content, Practice, Listening and Reader read the merged list (server places first,
+  device entries the server lacks). A conversation entry now opens the Conversation room by id.
+- **Backbone-dependent (I5, I6, I8-I10, I12).** Written only while `/api/account-backbone` is `active`. Not driven in a
+  browser yet, because the backbone is off on the lane: the lead's flag flip is the gate.
+- **Still open, no storage decision missing.** Register/target length (H-7); conversation coaching in the turn vs
+  regenerated (H-8, the turn keeps `meaning`/`support` only); History listing typed responses (H-9); spoken Free
+  Talk/Situation/React takes as audio-free speaking attempts (needs Progress to skip null pronunciation first); the
+  Import sheet has no `url:` text flow; shadowing read-back on open (I16, D7).
+- **Required Speaking follow-up (human, 2026-09-30).** Spoken Free Talk, Situation and React takes stored as typed
+  responses are not the accepted Speaking model: spoken takes belong in speaking attempts. Reopening Shadowing must
+  restore its saved result. Speaking persistence is not complete until both are done.
+- **Grammar quiz progress** waits for the canonical Grammar API after PR #67; no temporary route (human, 2026-09-30).
+- **Lane test residue (:8021, documented, not erased).** The D4 browser pass left the account's stored
+  `learning_language` = `en` (it was empty; the API cannot store empty) and one continuation row for
+  `media:en-science-cosmic-calendar`. Test evidence; the database is not hand-edited to remove it.
+
+### D4 review follow-ups (2026-09-30)
+
+- Saved is the `kept` relationship: opening content writes a place row that never reads as a bookmark (Reader and Content
+  Detail read the `kept` row only).
+- Opening an old Chinese essay draws the stored review at once; a refresh runs in the background and repaints the review.
+- In authentication-disabled development `language.stored` is false until the first settings write creates the local
+  account's row; the entry rule that keys on it therefore asks for Welcome once.
+- Open for the human: per-account caps for place rows, responses, annotations and conversations (P2-4); a streak is per
+  learning language, so a bilingual learner has two (P3-5).
+
+### Imported media opens in Listening (D4 runtime acceptance 1, 2026-10-01)
+
+- **Fix.** `product/media-source.js` resolves a media id the way the old Encounter did: `url:<link>` is re-acquired
+  (`capabilities/media-acquisition.js`), `upload:<id>` is read by identity (`GET /api/media/my/<id>`), any other id is a
+  curated or stored lesson (`GET /api/listening/library/<id>`, which also answers a bare personal `media_id`). Listening,
+  Content Detail and Respond use it. No backend change.
+- **Not drawn: a source with no transcript.** An uploaded file, or a link whose provider returns no captions, opens the
+  player with an empty transcript region and no explanation, because the design draws no source-only state for Listening
+  (the "Preparing transcript" copy belongs to the Import sheet's processing step). Human decision: a drawn source-only state.
+- **Not drawn: unmeasured length.** A provider that reports no length shows the elapsed time without a total; the clip end
+  is the last transcript line when there is one.
+- **Done (D4 runtime acceptance).** The import membership (`mediaImports`) is kept with the account through `/api/imports`
+  (forms `url` and `upload`, a record id minted when kept; removing removes every record of that link or file) and a new device lists it, per learning language. A personal upload is resolvable by its
+  unguessable `media_id` only; the server does not check account or language on that read (listing is device-scoped per
+  language). A `url:` item is re-acquired from its provider on every open (the Import sheet already did one), so it depends
+  on the provider answering; Dictation, Shadowing and React for a `url:` item are not offered (no stored lesson id).
+
+### D4 runtime acceptance, human-directed fixes (2026-10-01)
+
+- **Removals hold across devices.** The account remembers up to 500 removed annotation ids per text (newest kept); a stale
+  device loses them on open and cannot write them back (422 `annotation_tombstoned`, or a re-read and merge on 409). This also
+  closes the quick-tap race (a highlight removed inside the push delay is not brought back by a pull). Consequence: an id
+  that was cleared or removed is never reusable; ids are minted once, so no learner action meets it.
+- **Review settings follow the language.** A partial review PATCH merges into the stored modes; the toggle sends only the mode
+  it changed; switching the learning language brings the new language's profile, version and review settings over before the
+  repaint (`adoptLearningLanguage`).
+- **Kept words remember where they came from.** A word or phrase saved from the new sheets writes a provenance occurrence
+  (source kind and id, sentence). The Listening vocabulary-sheet and phrase save paths belong to the parallel Listening work
+  and are not wired yet.
+- **Deleted legacy imports scrubbed (human-approved).** `scripts/scrub_deleted_imports.py` (dry run by default, idempotent,
+  counts only). On :8021 it found 2 deleted imports, both already tombstoned: 0 scrubbed (backup taken first). Left untouched
+  and reported: 2 saved place rows still name a deleted import; annotations and responses of a deleted import keep their
+  excerpts (deleting an import does not delete what the learner wrote about it).
+- **Import rows are bounded.** Live imports stay at 20; all import rows including tombstones are bounded by
+  `ORENA_LIMIT_IMPORT_TOMBSTONES` (default 360, floor 52, refused at startup below it). A work cannot be created already
+  deleted on the generic route. Imports (text, link, file) share this bound.
+- **P3 follow-ups, not done:**
+  - The Conversation End state is not persisted (it is rebuilt from the turns).
+  - A stale cached deleted import can still be opened from a device that has not refreshed its list until it syncs.
+  - Draft conflicts: `onElsewhere` is a no-op while `draft-sync.js` documents a chooser; no chooser is drawn.
+  - The mic-blocked Free Talk copy is incorrect for a browser that blocks the mic by policy.
+  - `media_thumbnail.py:32` hardcodes `_TEMP_ROOT` (an environment-specific path); belongs to the media agent.
+
+### D4 delta review conditions (2026-10-01, review of 8c84100 / 39b9f12 / 9a7b190)
+
+- **Decision for the human: media-import bound (review P2-1).** URL and upload media imports share the import
+  bounds derived for text imports (20 live, 360 total incl. tombstones, `ORENA_LIMIT_IMPORT_TOMBSTONES`). At the
+  bound a media import stays on the device only. Whether media imports count per form or the shared rails are
+  confirmed is a learner-facing limit nobody has chosen; not decided by an agent.
+- **Before :8000: deleting an upload import leaves the personal media (review P2-2).** The original file,
+  thumbnail, transcript and store entry stay in the media library and no learner route deletes them. The file-based
+  media store (`MEDIA_LIBRARY_ROOT`, `MEDIA_LIBRARY_ASSET_ROOT`) must join the D-055(b) deletion enumeration
+  (`writing_coach/persistence/deletion_enumeration.py` lists database tables only today).
+- **Owner-less personal uploads (review condition 3).** :8021 runs without sign-in (bootstrap `mode: local`). It
+  holds 11 personal uploads, 8 created before 39b9f12 with no owner; all are lane test data and stay visible to the
+  local account only. On a signed-in deployment such uploads are refused to every account (fail closed); none are
+  known outside the lane.
+- **P3 from the review, follow-ups:** the `upload` import form stores an unvalidated `url`; the scrub script's
+  backup precondition is documentation only and `--url` takes a connection string on the command line; an empty
+  `review_modes` map no longer resets modes; an annotation tombstone is forgotten after 500 further removals in one
+  text (a long-offline device could then re-add it); keeping a word from Listening (vocab sheet, phrase save) does not
+  yet record provenance.
+- PostgreSQL-only test results in this work are local execution, not CI evidence (CI has no PostgreSQL service).
+
+### D4 flag-on QA round 2 (2026-10-01, :8021 at 9a7b190)
+
+- **Decision for the human: removing an imported item.** The server deletes an import (`DELETE /api/imports/{id}`,
+  content-free tombstone), but the design draws no remove/delete action for imported content in Discover, Content
+  Detail or My Library (its only "Removed from My Library" is for saved words and phrases). Not invented (rule 43);
+  where removal lives is the human's call.
+- **P3 (new): a device left open keeps drawing a highlight another device removed until it reloads.** The server and
+  the device store are correct; only the open page is stale.

@@ -31,6 +31,7 @@ import {
 import { activeCanonicalSegment } from '../../capabilities/transcript-timeline.js';
 import { readStage, writeStage, transcriptDefaults } from '../../product/transcript-stage.js';
 import { encounter } from '../../product/encounter.js';
+import { openMedia } from '../../product/media-source.js';
 import { openWordSheet } from '../quick-sheet/sheet.js';
 import { openVocabFocus } from './vocab-sheet.js';
 import { t } from './copy.js';
@@ -48,10 +49,15 @@ export default async function listening(element, ctx) {
   const support = languages().support;
   const lessonId = ctx.params.id;
 
-  const payload = await api.listeningLibraryLesson(lessonId, support);
+  /* A curated lesson, a stored upload or a pasted link: one resolver, one payload shape
+     (product/media-source.js). A source with no transcript still opens and plays. */
+  const payload = await openMedia(lessonId, {
+    api, support, language: c.language, owner: c.owner || 'local', alive: () => ctx.isCurrent(),
+  });
   if (!ctx.isCurrent()) return undefined;
+  if (!payload?.asset || !payload.playback) throw new Error('This media is unavailable.');
 
-  const lesson = mapLesson(payload);
+  const lesson = mapLesson(payload, { fallbackLanguage: c.language });
   const language = lesson.language;
   const enc = encounter(payload, support);
   const segments = enc.segments;

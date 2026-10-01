@@ -150,6 +150,8 @@
   --hero-cta-ink: #C9BFFF;
   --hero-cta-fill: #fff;
   --hero-cta-fill-ink: #1A1433;
+  /* A day the learner was active, on Profile's hero streak strip (25-Profile-Today-s-progress.html, #A99BFF). */
+  --hero-day-done: #A99BFF;
   --sh-hero: 0 18px 40px rgba(60, 40, 140, .28);
   --deco-strong: rgba(255, 255, 255, .22);
   --deco-soft: rgba(255, 255, 255, .16);

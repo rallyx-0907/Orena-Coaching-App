@@ -24,6 +24,7 @@ import { shellCopy as ts } from '../../copy/shell.js';
 import { askOrena } from '../../shell/agent-bridge.js';
 import { createLocalAudioRecorder } from '../../capabilities/audio-recorder.js';
 import { logSpeakingTask } from '../../product/speaking-session.js';
+import { saveResponse } from '../../product/account-records.js';
 import { micGate, openMicState } from '../mic/sheet.js';
 import { t } from './copy.js';
 import {
@@ -320,6 +321,8 @@ export default async function freeTalk(element, ctx) {
       coaching = result?.available ? result : null;
       errorText = result?.available ? '' : t('serviceError');
       state = 'result';
+      // The take is the learner's own work, kept with the account when it keeps work (D4 I8).
+      void saveResponse({ kind: 'freetalk', source: { kind: 'invitation', id: topicText.trim().toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '-').slice(0, 60) || 'open' }, mode: 'free_talk', answer: heard, coaching });
       paint();
     } catch {
       if (!alive()) return;

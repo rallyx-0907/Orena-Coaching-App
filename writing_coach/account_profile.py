@@ -54,13 +54,21 @@ class Setting:
     # declared here so a surface can read and override them; what they cannot
     # do is be saved and quietly dropped on the way to the repository.
     stored: bool = True
+    # True when the allowed set depends on the request's learning language and is supplied by the
+    # caller from the language registry (declared_level). It fails closed: with no set supplied only
+    # '' is allowed, and there is never an English fallback.
+    dynamic: bool = False
+    # True when the value lives on the account row (`users`), not on the per-language profile row.
+    account_scoped: bool = False
 
-    def allows(self, value: object) -> bool:
+    def allows(self, value: object, *, levels: tuple[str, ...] | None = None) -> bool:
         # Emptiness is the setting's own business: "no declared level yet" is a
         # real answer, while an empty support language is not one. The allowed
         # set or the validator decides, not a blanket rule here.
         if not isinstance(value, str):
             return False
+        if self.dynamic:
+            return value == '' or value in (levels or ())
         if self.allowed is not None:
             return value in self.allowed
         return bool(self.validator and self.validator(value))
@@ -78,8 +86,10 @@ ACCOUNT_SETTINGS: dict[str, Setting] = {
     ),
     # The interface languages Orena is written in (static/orena/ui/copy.js, supportedLocales).
     # Independent of the support language (D-079); still not stored - its column is a gated migration.
+    # D4 I3: stored on the account row (`users.interface_language`), written through the account
+    # settings route with its own version token, never through the per-language profile PATCH.
     'interface_language': Setting(
-        'interface_language', 'en', allowed=('en', 'zh', 'vi'), stored=False
+        'interface_language', 'en', allowed=('en', 'zh', 'vi'), account_scoped=True
     ),
 }
 
@@ -89,11 +99,10 @@ LANGUAGE_SETTINGS: dict[str, Setting] = {
     'goal': Setting('goal', 'everyday', allowed=('everyday', 'work', 'exam', 'voice')),
     'style': Setting('style', 'guided', allowed=('guided', 'examples', 'concise', 'deep')),
     'pinyin': Setting('pinyin', 'auto', allowed=('auto', 'on', 'off')),
-    # A declared level is what the learner is aiming at. It is never written by
-    # a projection and never reported as measured proficiency.
-    'declared_level': Setting(
-        'declared_level', '', allowed=('', 'A1', 'A2', 'B1', 'B2', 'C1', 'C2'), stored=False
-    ),
+    # The learner's self-declared current level for this learning language (D4 I1). Never written
+    # by a projection and never reported as measured proficiency. The allowed set is the language
+    # registry's list for the scope language, supplied by the caller (fails closed).
+    'declared_level': Setting('declared_level', '', dynamic=True),
 }
 
 SUPPORTED_SETTINGS: dict[str, Setting] = {**ACCOUNT_SETTINGS, **LANGUAGE_SETTINGS}
@@ -139,11 +148,52 @@ def result_admissible(captured: Scope, current: Scope) -> bool:
     return captured == current
 
 
+# Review settings (D4 I13): per learning language, named columns, NULL = the client defaults.
+# The canonical review modes (human decision, 2026-09-30): `typing` (the Review frame's
+# "Target -> meaning", which the D4 proposal called `target`), `cloze` (the source-aware cue) and
+# `dictation` (the audio word). One name per mode; a write naming any other key is refused.
+REVIEW_MODE_KEYS = ('typing', 'cloze', 'dictation')
+REVIEW_NEW_PER_DAY = (0, 50)
+REVIEW_LIMIT_PER_DAY = (20, 600)
+
+
+def clamp_review_number(value: object, bounds: tuple[int, int]) -> int | None:
+    """A review limit clamped to the bounds the client uses, or None when it is not a number."""
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return None
+    if value != value or value in (float('inf'), float('-inf')):
+        return None
+    return min(bounds[1], max(bounds[0], round(value)))
+
+
+def review_modes_problem(value: object) -> str:
+    """Why a written `review_modes` is refused ('' when it is acceptable): an object whose every
+    key is a canonical mode and every value a boolean. Stored rows are read through
+    `clean_review_modes`; writes are validated here and never silently trimmed."""
+    if not isinstance(value, Mapping):
+        return 'not_an_object'
+    for name, flag in value.items():
+        if name not in REVIEW_MODE_KEYS:
+            return 'unknown_mode'
+        if not isinstance(flag, bool):
+            return 'not_a_boolean'
+    return ''
+
+
+def clean_review_modes(value: object) -> dict[str, bool] | None:
+    """Only registered mode keys with boolean values survive; nothing left means NULL (defaults)."""
+    if not isinstance(value, Mapping):
+        return None
+    kept = {name: value[name] for name in REVIEW_MODE_KEYS if isinstance(value.get(name), bool)}
+    return kept or None
+
+
 def effective_settings(
     saved: Mapping[str, object],
     *,
     version: int,
     overrides: Mapping[str, object] | None = None,
+    allowed_levels: tuple[str, ...] | None = None,
 ) -> dict[str, dict[str, object]]:
     """Every supported setting as `{value, source, version}`.
 
@@ -156,14 +206,14 @@ def effective_settings(
     overrides = overrides or {}
     effective: dict[str, dict[str, object]] = {}
     for name, setting in SUPPORTED_SETTINGS.items():
-        if setting.allows(overrides.get(name)):
+        if setting.allows(overrides.get(name), levels=allowed_levels):
             effective[name] = {
                 'value': overrides[name],
                 'source': SOURCE_SESSION,
                 'version': version,
             }
             continue
-        if setting.allows(saved.get(name)):
+        if setting.allows(saved.get(name), levels=allowed_levels):
             effective[name] = {
                 'value': saved[name],
                 'source': SOURCE_SAVED,
@@ -199,6 +249,7 @@ def patch_profile(
     expected_version: object,
     current_version: object,
     next_version: object = None,
+    allowed_levels: tuple[str, ...] | None = None,
 ) -> tuple[dict[str, object], object]:
     """Merge named fields onto the saved profile, or refuse and change nothing.
 
@@ -219,7 +270,10 @@ def patch_profile(
         setting = SUPPORTED_SETTINGS.get(name)
         if setting is None:
             raise PatchRejected('unsupported_field', current_version=current_version, field=name)
-        if not setting.allows(value):
+        if setting.account_scoped:
+            # It has its own route and its own version token; a profile PATCH cannot carry it.
+            raise PatchRejected('wrong_scope', current_version=current_version, field=name)
+        if not setting.allows(value, levels=allowed_levels):
             raise PatchRejected('invalid_value', current_version=current_version, field=name)
         if not setting.stored:
             raise PatchRejected('not_yet_stored', current_version=current_version, field=name)

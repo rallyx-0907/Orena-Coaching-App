@@ -5,15 +5,27 @@ from collections import defaultdict
 from datetime import datetime
 from typing import Any
 
+from fastapi import HTTPException
 from pydantic import BaseModel, Field
 
+from writing_coach import account_settings
+from writing_coach.core import language_registry
+from writing_coach.core.request_context import current_language_code
 from writing_coach.languages.runtime import active_profile
-from writing_coach.persistence.specialized_repository import SpecializedLearningRepository
+from writing_coach.persistence.specialized_repository import (
+    ProfileVersionConflict,
+    SpecializedLearningRepository,
+)
 from writing_coach.core.support_languages import resolve_support_language
 from writing_coach.account_profile import (
     LANGUAGE_SETTINGS,
     PatchRejected,
+    REVIEW_LIMIT_PER_DAY,
+    REVIEW_NEW_PER_DAY,
     STORED_SETTINGS,
+    clamp_review_number,
+    clean_review_modes,
+    review_modes_problem,
     effective_settings,
     patch_profile,
 )
@@ -91,13 +103,43 @@ def _profile_version(row: dict[str, Any] | None) -> str:
     return str((row or {}).get("updated_at") or "")
 
 
+def allowed_levels() -> tuple[str, ...]:
+    """'' plus the level codes of the request's learning language, from the language registry.
+
+    Keyed by the scope language (the key the repository writes under), never by `active_profile()`,
+    which resolves every non-Chinese code to English. It fails closed: an unknown language or one
+    with no levels accepts only '' - there is no English fallback (H2 review P1-2).
+    """
+    profile = language_registry.language(current_language_code())
+    return ("",) + tuple(getattr(profile, "levels", ()) or ())
+
+
+def _review_payload(row: dict[str, Any] | None) -> dict[str, Any]:
+    """Stored review settings, clamped on read; None means 'not set, use the defaults'."""
+    row = row or {}
+    return {
+        "review_new_per_day": clamp_review_number(row.get("review_new_per_day"), REVIEW_NEW_PER_DAY),
+        "review_limit_per_day": clamp_review_number(row.get("review_limit_per_day"), REVIEW_LIMIT_PER_DAY),
+        "review_modes": clean_review_modes(row.get("review_modes")),
+    }
+
+
 def _profile_payload(row: dict[str, Any] | None, overrides: dict[str, Any] | None = None) -> dict[str, Any]:
     version = _profile_version(row)
-    settings = effective_settings(_saved_settings(row), version=version, overrides=overrides)
+    account = account_settings.read_account_settings()
+    saved = _saved_settings(row)
+    if account and account["interface_language"]:
+        saved["interface_language"] = account["interface_language"]
+    settings = effective_settings(
+        saved, version=version, overrides=overrides, allowed_levels=allowed_levels()
+    )
+    if account:
+        settings["interface_language"]["version"] = account["settings_version"]
     flat = {name: settings[name]["value"] for name in LANGUAGE_SETTINGS}
     return {
         "exists": bool(row),
-        "language": active_profile().code,
+        "language": current_language_code(),
+        **_review_payload(row),
         **flat,
         "native_language": str((row or {}).get("native_language") or ""),
         # The resolved SUPPORT language, so every client reads one answer
@@ -134,6 +176,10 @@ class ProfilePatchIn(BaseModel):
     declared_level: str | None = None
     interface_language: str | None = None
     theme_preset: str | None = None
+    # Review settings (I13). Numbers are clamped to the client's bounds; modes keep registered keys.
+    review_new_per_day: int | None = None
+    review_limit_per_day: int | None = None
+    review_modes: dict[str, Any] | None = None
 
 
 _PATCH_STATUS = {"version_conflict": 409, "not_yet_stored": 501}
@@ -141,23 +187,46 @@ _PATCH_STATUS = {"version_conflict": 409, "not_yet_stored": 501}
 
 def patch_learner_profile(payload: ProfilePatchIn) -> dict[str, Any]:
     """Change the named settings, or change nothing and say why."""
-    from fastapi import HTTPException
-
     row = _repo().get_profile_record()
+    review_names = ("review_new_per_day", "review_limit_per_day", "review_modes")
     patch = {
         name: value
-        for name, value in payload.model_dump(exclude={"expected_version"}).items()
+        for name, value in payload.model_dump(exclude={"expected_version", *review_names}).items()
         if value is not None
     }
-    now = datetime.now().astimezone().isoformat(timespec="seconds")
+    review: dict[str, Any] = {}
+    if payload.review_new_per_day is not None:
+        review["review_new_per_day"] = clamp_review_number(payload.review_new_per_day, REVIEW_NEW_PER_DAY)
+    if payload.review_limit_per_day is not None:
+        review["review_limit_per_day"] = clamp_review_number(payload.review_limit_per_day, REVIEW_LIMIT_PER_DAY)
+    if payload.review_modes is not None:
+        if review_modes_problem(payload.review_modes):
+            raise HTTPException(
+                status_code=400,
+                detail={"reason": "invalid_value", "field": "review_modes", "current_version": None},
+            )
+        # MERGED into what is stored: a device that toggles one mode sends that mode only, and the others keep their
+        # stored values (a stale or first write must never overwrite them with defaults).
+        review["review_modes"] = {
+            **(clean_review_modes((row or {}).get("review_modes")) or {}),
+            **(clean_review_modes(payload.review_modes) or {}),
+        } or None
+    now = datetime.now().astimezone().isoformat(timespec="microseconds")
     try:
-        merged, version = patch_profile(
-            _saved_settings(row),
-            patch,
-            expected_version=payload.expected_version,
-            current_version=_profile_version(row),
-            next_version=now,
-        )
+        if review and not patch:
+            # Review settings are not registry settings; the version check still applies.
+            if payload.expected_version != _profile_version(row):
+                raise PatchRejected("version_conflict", current_version=_profile_version(row))
+            merged, version = _saved_settings(row), now
+        else:
+            merged, version = patch_profile(
+                _saved_settings(row),
+                patch,
+                expected_version=payload.expected_version,
+                current_version=_profile_version(row),
+                next_version=now,
+                allowed_levels=allowed_levels(),
+            )
     except PatchRejected as rejected:
         raise HTTPException(
             status_code=_PATCH_STATUS.get(rejected.reason, 400),
@@ -167,7 +236,7 @@ def patch_learner_profile(payload: ProfilePatchIn) -> dict[str, Any]:
                 "current_version": rejected.current_version,
             },
         ) from rejected
-    _repo().upsert_profile_record({
+    values: dict[str, Any] = {
         "goal": merged.get("goal", LANGUAGE_SETTINGS["goal"].default),
         "style": merged.get("style", LANGUAGE_SETTINGS["style"].default),
         "pinyin": merged.get("pinyin", LANGUAGE_SETTINGS["pinyin"].default),
@@ -176,11 +245,28 @@ def patch_learner_profile(payload: ProfilePatchIn) -> dict[str, Any]:
         "theme_preset": str((row or {}).get("theme_preset") or "editorial"),
         "created_at": str((row or {}).get("created_at") or now),
         "updated_at": version,
-    })
+        **review,
+    }
+    if "declared_level" in patch:
+        values["declared_level"] = patch["declared_level"]
+    try:
+        # Conditional on the version the writer read: two writers holding one token give one 200
+        # and one 409, and a concurrent creation is a conflict, not an overwrite (H2 review N1).
+        _repo().upsert_profile_record(values, expected_updated_at=payload.expected_version)
+    except ProfileVersionConflict as conflict:
+        latest = _repo().get_profile_record()
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "reason": "version_conflict",
+                "field": "",
+                "current_version": _profile_version(latest),
+            },
+        ) from conflict
     return get_learner_profile()
 
 def put_learner_profile(payload: LearnerProfileIn) -> dict[str, Any]:
-    now = datetime.now().astimezone().isoformat(timespec="seconds")
+    now = datetime.now().astimezone().isoformat(timespec="microseconds")
     existing = _repo().get_profile_record()
     created_at = str(existing.get("created_at")) if existing else now
     _repo().upsert_profile_record({

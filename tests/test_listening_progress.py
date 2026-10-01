@@ -3,7 +3,9 @@ from __future__ import annotations
 import pytest
 from fastapi import HTTPException
 
+from writing_coach import listening_api
 from writing_coach.listening_api import (
+    ProgressLine,
     ListeningProgressIn,
     ShadowingProgressIn,
     configure_listening_progress,
@@ -12,6 +14,16 @@ from writing_coach.listening_api import (
     save_listening_progress,
     save_shadowing_progress,
 )
+
+
+@pytest.fixture(autouse=True)
+def _served_assets(monkeypatch):
+    """Named contract change (D4 I16): a save now fails closed for an asset nothing serves, so these
+    route-shape tests name the lines their fake assets stand for. The resolver itself is proved on the
+    real catalogue in tests/test_d4_listening_authority.py."""
+    lines = {"asset-en": ProgressLine("en", "x"), "asset-zh": ProgressLine("zh", "这是共享的原文字幕。")}
+    monkeypatch.setattr(listening_api, "resolve_progress_line", lambda asset, segment: lines.get(asset))
+    monkeypatch.setattr(listening_api, "current_language_code", lambda: "en")
 
 
 def test_list_route_is_learner_scoped_and_asset_bounded() -> None:
@@ -33,7 +45,8 @@ def test_list_route_is_learner_scoped_and_asset_bounded() -> None:
         configure_listening_progress(None)
 
 
-def test_save_route_forwards_only_bounded_audio_free_progress() -> None:
+def test_save_route_forwards_only_bounded_audio_free_progress(monkeypatch) -> None:
+    monkeypatch.setattr(listening_api, "current_language_code", lambda: "zh")
     class FakeRepository:
         def __init__(self) -> None:
             self.values = None
@@ -79,7 +92,7 @@ def test_the_last_attempts_hint_is_a_fact_about_the_attempt_and_nothing_more() -
         ))
         assert repository.values["last_hint_level"] == 2
         assert repository.values["last_used_hint"] is True, "a hint level above zero is a hint used"
-        assert repository.values["best_accuracy_percent"] == 80, "the score is what the evaluator said"
+        assert repository.values["score"]["accuracy_percent"] == 100, "the score is the server's evaluation, not the client's 80"
         save_listening_progress(ListeningProgressIn(asset_id="asset-en", segment_id="segment-1"))
         assert repository.values["last_used_hint"] is False and repository.values["last_hint_level"] == 0
         # A client cannot say a hint was used at level zero: the flag is the level.

@@ -147,10 +147,9 @@ def linguistic_annotations_for_essay(essay_id: int) -> dict[str, Any]:
         "generated_at": _now(),
     }
 
-    current = _repo().get_linguistic_essay(essay_id)
-    if current:
-        module_data = _safe_module_data(current["module_data_json"]); module_data[CACHE_KEY] = cache_payload
-        _repo().update_essay_module_data(essay_id, module_data)
+    # A key-level merge under the essay's row lock: a review refresh and this cache write must not
+    # erase each other (D4 I19), which the read-modify-write of the whole bag could.
+    _repo().merge_essay_module_data(essay_id, CACHE_KEY, cache_payload)
 
 
     return _public_payload(

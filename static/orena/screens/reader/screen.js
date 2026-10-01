@@ -38,6 +38,7 @@ import { loadNotes, noteKeyFor, noteTypeColorKey } from '../quick-sheet/model.js
 import { t } from './copy.js';
 import { mountReaderLexical } from './lexical.js';
 import { loadHighlights, isHighlighted, toggleHighlight } from './highlights.js';
+import { pullIntoDevice, scheduleAnnotationPush, noteRemoved } from './annotations-sync.js';
 import { loadReadable, realContentIdOf, loadHasQuiz, loadSaved, loadSavedFromText } from './source.js';
 import {
   parseContentId,
@@ -630,7 +631,9 @@ export default async function mountReader(element, ctx) {
     const s = sentenceBySeg.get(selected.seg);
     if (!s) return;
     const result = toggleHighlight(storage, owner, contentId, { segment: s.seg, sentence: s.text });
+    if (!result.on) for (const gone of highlights) if (!result.list.some((item) => item.id === gone.id)) noteRemoved(contentId, gone.id);
     highlights = result.list;
+    scheduleAnnotationPush(storage, owner, contentId);
     try {
       window.getSelection?.()?.removeAllRanges();
     } catch {
@@ -990,6 +993,15 @@ export default async function mountReader(element, ctx) {
     paintTop();
     paintBody();
   });
+
+  // The notes and highlights the account holds for this text arrive on this device too (D4 I10).
+  pullIntoDevice(storage, owner, contentId)
+    .then((changed) => {
+      if (!changed || !alive) return;
+      highlights = loadHighlights(storage, owner, contentId);
+      paintBody();
+    })
+    .catch(() => {});
 
   return () => {
     alive = false;

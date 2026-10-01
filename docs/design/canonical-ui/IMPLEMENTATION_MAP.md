@@ -132,8 +132,8 @@ drawn. The old console stays at `/#/admin` until the cutover.
 | A11 Media, A12 Media detail | Media, reprocess, lifecycle | `#/admin/content/media`, `#/admin/content/media/:id` | Admin's own | `content-pages.js` `mediaPage` | same | building |
 | A13 Vocabulary, A14 Vocabulary detail | Collections, publish admission | `#/admin/content/vocabulary`, `#/admin/content/vocabulary/:id` | Admin's own | `content-pages.js` `collectionPage` | same | building |
 | A15 Reading overview | Reading | `#/admin/reading` | Admin's own | `screens/admin/reading-pages.js` `overviewPage`, `reading.js` | same | building |
-| A16 Reading queue | Review queue, Published, Rejected, Archived | `#/admin/reading/queue` | Admin's own | `reading-pages.js` `queuePage` | same | building |
-| A17 Reading review detail | Article, targets, original, evidence, sets | `#/admin/reading/article/:id` | Admin's own | `reading-pages.js` `articlePage` | same | building |
+| A16 Reading queue | Review queue (Article, Level, Targets, Rights; source in the row meta - D-105), Published, Rejected, Archived | `#/admin/reading/queue` | Admin's own | `reading-pages.js` `queuePage` | same | building |
+| A17 Reading review detail | Article, targets, original, evidence, sets; rights editor and the hard copyright gate at Publish (D-105) | `#/admin/reading/article/:id` | Admin's own | `reading-pages.js` `articlePage` | same | building |
 | Comprehension set review | Question review, set lifecycle | `#/admin/reading/set/:id` | Admin's own | `reading-pages.js` `setPage` | same | building |
 | A21 Add reading content | URL / text / file, rights, progress tray | `#/admin/reading/add` | Admin's own | `reading-pages.js` `addPage`; `screens/admin/tray.js` | same | building |
 | A22 Reading sources, A23 Source detail | Sources | `#/admin/reading/sources`, `#/admin/reading/source/:id` | Admin's own | `reading-pages.js` `sourcesPage`/`sourcePage` | same | building |

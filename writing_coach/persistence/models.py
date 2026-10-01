@@ -13,6 +13,7 @@ from sqlalchemy import (
     ForeignKeyConstraint,
     Index,
     Integer,
+    SmallInteger,
     String,
     Text,
     UniqueConstraint,
@@ -40,6 +41,20 @@ class User(Base):
     role: Mapped[str] = mapped_column(String(40), default="user", nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     last_login: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # D4 (migration 0018; D-104 H-18, H-17). Account-wide choices live on the account row, which
+    # survives account deletion, so the deletion workflow RESETS these (proposal 2.6).
+    # '' = never chosen. `settings_updated_at` is the version token of the three scalars: set only
+    # by the server, served to clients as the opaque string `settings_version`.
+    learning_language: Mapped[str] = mapped_column(
+        String(20), default="", server_default="", nullable=False
+    )
+    interface_language: Mapped[str] = mapped_column(
+        String(8), default="", server_default="", nullable=False
+    )
+    weekly_goal_days: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    settings_updated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
 
 class UserLanguageProfile(Base):
@@ -60,6 +75,16 @@ class UserLanguageProfile(Base):
     theme_preset: Mapped[str] = mapped_column(String(40), default="editorial", nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    # D4 (migration 0017): the learner's self-declared level for THIS learning language; '' = not
+    # declared. Validated against the language registry in the application, never inferred.
+    declared_level: Mapped[str] = mapped_column(
+        String(20), default="", server_default="", nullable=False
+    )
+    # D4 (migration 0019): review limits and modes, NULL = the client's defaults. `none_as_null`:
+    # Python None must be SQL NULL, not the JSON literal (delta review P2-3).
+    review_new_per_day: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    review_limit_per_day: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    review_modes: Mapped[dict | None] = mapped_column(JSON(none_as_null=True), nullable=True)
 
 
 class Essay(Base):
@@ -101,6 +126,32 @@ class Essay(Base):
     review_kept_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+
+
+class EssayReviewHistory(Base):
+    """The review an essay had before an evaluator refresh replaced it (D4 I19; D-103.7).
+
+    Append-only: a PostgreSQL trigger refuses any UPDATE (0021), and the repository exposes insert
+    and read only. It has NO scope columns of its own: it hangs off its essay, every read loads the
+    scope-checked essay first, and a learner deleting the essay deletes its history (ON DELETE CASCADE).
+    """
+
+    __tablename__ = "essay_review_history"
+    __table_args__ = (
+        UniqueConstraint("essay_id", "prior_fingerprint", name="uq_essay_review_history_prior"),
+        Index("ix_essay_review_history_essay", "essay_id", "superseded_at"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
+    essay_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("essays.id", ondelete="CASCADE"), nullable=False
+    )
+    superseded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    reason: Mapped[str] = mapped_column(String(40), nullable=False)
+    prior_fingerprint: Mapped[str] = mapped_column(String(64), nullable=False)
+    prior_contract: Mapped[str] = mapped_column(String(40), nullable=False)
+    replaced_by_fingerprint: Mapped[str] = mapped_column(String(64), nullable=False)
+    review: Mapped[dict] = mapped_column(JSON, nullable=False)
 
 
 class EssayRevision(Base):
@@ -215,6 +266,14 @@ class GrammarProgress(Base):
     __tablename__ = "grammar_progress"
     __table_args__ = (
         UniqueConstraint("user_id", "language_code", "lesson_id", name="uq_grammar_progress_scope"),
+        # D4 I11 (migration 0023): the three quiz columns are all NULL or all set, with a sane range.
+        # Declared here so a fresh create_all and the schema-parity test agree with the migration.
+        CheckConstraint(
+            "(last_quiz_total IS NULL AND last_quiz_correct IS NULL AND last_quiz_at IS NULL)"
+            " OR (last_quiz_total IS NOT NULL AND last_quiz_correct IS NOT NULL AND last_quiz_at IS NOT NULL"
+            " AND last_quiz_total >= 1 AND last_quiz_correct >= 0 AND last_quiz_correct <= last_quiz_total)",
+            name="ck_grammar_progress_quiz",
+        ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
@@ -224,6 +283,12 @@ class GrammarProgress(Base):
     language_code: Mapped[str] = mapped_column(String(20), nullable=False)
     lesson_id: Mapped[str] = mapped_column(String(255), nullable=False)
     completed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    # D4 I11 (migration 0023; D-104 H-4, D-105 H-20): the last quiz result, stored WITH the completion
+    # in one upsert. Client-reported, labelled so, never read as evidence. `completed_at` keeps the
+    # first completion; a retake only moves these.
+    last_quiz_correct: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    last_quiz_total: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    last_quiz_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
 class LegacyReadingSession(Base):
@@ -308,6 +373,9 @@ class ListeningProgress(Base):
     # attempt, like last_answer; no scoring rule is inferred from it (D-068, DC-5).
     last_used_hint: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false(), nullable=False)
     last_hint_level: Mapped[int] = mapped_column(Integer, default=0, server_default="0", nullable=False)
+    # D4 (migration 0020; D-103.2, D-104 H-14): where the best score came from. 'client' rows are the
+    # historical, unverifiable numbers; the next verified check supersedes them. Never rewritten.
+    score_source: Mapped[str] = mapped_column(String(12), default="client", server_default="client", nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
 
@@ -628,6 +696,16 @@ class LibraryItem(Base):
             sqlite_where=text("saved_word_id IS NULL"),
         ),
         Index("ix_library_items_shelf", "user_id", "language_code", "kind", "updated_at"),
+        # D4 I4 (migration 0022): the learner's saved places, newest first. Partial, so a row that
+        # never had a place costs nothing.
+        Index(
+            "ix_library_items_place",
+            "user_id",
+            "language_code",
+            "place_at",
+            postgresql_where=text("place IS NOT NULL"),
+            sqlite_where=text("place IS NOT NULL"),
+        ),
         Index(
             "ix_library_items_pinned",
             "user_id",
@@ -659,6 +737,12 @@ class LibraryItem(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    # D4 I4 (migration 0022; D-104 H-12, Design B): where the learner is in this content. Navigation
+    # state, not evidence: written in place without touching `version` or `updated_at`, so a place
+    # write can never make a pin or note PATCH conflict. `none_as_null`: None is SQL NULL, never the
+    # JSON literal `null` (which would satisfy the partial index's `place IS NOT NULL`).
+    place: Mapped[dict | None] = mapped_column(JSON(none_as_null=True), nullable=True)
+    place_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
 # The covers a learner may choose for a study set. Names, not colours:

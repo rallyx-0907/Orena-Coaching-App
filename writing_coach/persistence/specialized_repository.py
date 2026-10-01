@@ -9,14 +9,17 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any, Callable, Protocol
 
-from sqlalchemy import Engine, func, select
+from sqlalchemy import Engine, func, select, update
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from writing_coach.core.request_context import current_language_code, current_user_key
+from writing_coach.listening_progress_policy import merge_progress
 from writing_coach.persistence.config import create_shadow_engine
 from writing_coach.persistence.ids import stable_uuid
 from writing_coach.persistence.models import (
     Essay,
+    EssayReviewHistory,
     EssayRevision,
     ReadingAttempt,
     ListeningProgress,
@@ -66,6 +69,18 @@ def _sentences_from(rows: list[dict[str, Any]], word: str, limit: int) -> list[d
             if len(out) >= limit:
                 return out
     return out
+
+
+def _json_or_none(value: Any) -> Any:
+    """A stored JSON text (SQLite) or an already-decoded value (PostgreSQL) as a value, or None."""
+    if value is None or value == "":
+        return None
+    if isinstance(value, (dict, list)):
+        return value
+    try:
+        return json.loads(value)
+    except (TypeError, ValueError):
+        return None
 
 
 def _hint_level(values: dict[str, Any]) -> int:
@@ -190,9 +205,25 @@ def _library_limit(limit: int) -> int:
     return max(1, min(value, LIBRARY_PAGE_MAX))
 
 
+class ProfileVersionConflict(Exception):
+    """A conditional profile write lost: the row moved (or appeared) since the writer read it."""
+
+
+# The D4 profile columns a caller may leave out of `values`. When the key is absent the stored value
+# is preserved (the frozen native PUT never names them); when present it is written.
+PROFILE_OPTIONAL_FIELDS = (
+    "declared_level",
+    "review_new_per_day",
+    "review_limit_per_day",
+    "review_modes",
+)
+
+
 class SpecializedLearningRepository(Protocol):
     def get_profile_record(self) -> dict[str, Any] | None: ...
-    def upsert_profile_record(self, values: dict[str, Any]) -> None: ...
+    def upsert_profile_record(
+        self, values: dict[str, Any], *, expected_updated_at: str | None = None
+    ) -> None: ...
     def memory_essay_rows(self) -> list[dict[str, Any]]: ...
     def get_outcome_essay(self, essay_id: int) -> dict[str, Any] | None: ...
     def list_outcome_essays(self, limit: int) -> list[dict[str, Any]]: ...
@@ -224,11 +255,27 @@ class SpecializedLearningRepository(Protocol):
     def save_shadowing_progress_record(self, values: dict[str, Any]) -> dict[str, Any]: ...
     def list_shadowing_progress_records(self, asset_id: str) -> list[dict[str, Any]]: ...
     def create_speaking_attempt_record(self, values: dict[str, Any]) -> dict[str, Any]: ...
-    def list_speaking_attempt_records(self, limit: int = 50, *, asset_id: str | None = None, segment_id: str | None = None) -> list[dict[str, Any]]: ...
+    def list_speaking_attempt_records(self, limit: int = 50, *, asset_id: str | None = None, segment_id: str | None = None, since: datetime | None = None) -> list[dict[str, Any]]: ...
     def speaking_progress(self) -> dict[str, Any]: ...
+    def activity_timestamps(self, since: datetime) -> dict[str, list[datetime]]: ...
     def get_linguistic_essay(self, essay_id: int) -> dict[str, Any] | None: ...
     def update_essay_module_data(self, essay_id: int, module_data: dict[str, Any]) -> bool: ...
+    def merge_essay_module_data(self, essay_id: int, key: str, value: Any) -> bool: ...
+    def refresh_essay_review(
+        self,
+        essay_id: int,
+        expected_prior_fingerprint: str,
+        new_review: dict[str, Any],
+        new_identity: dict[str, str],
+        superseded_at: str,
+    ) -> dict[str, Any]: ...
+    def list_essay_review_history(self, essay_id: int) -> list[dict[str, Any]]: ...
     def list_product_activity_events(self, since: datetime) -> list[dict[str, Any]]: ...
+
+
+REFRESH_REASON = "evaluator_refresh"
+# The scored and written parts of a review that a refresh replaces and the history keeps whole.
+REVIEW_SCORE_FIELDS = ("grammar", "vocabulary", "coherence", "task_achievement", "naturalness", "overall")
 
 
 class SQLiteSpecializedLearningRepository:
@@ -307,6 +354,15 @@ class SQLiteSpecializedLearningRepository:
                     "ALTER TABLE learner_profile "
                     "ADD COLUMN theme_preset TEXT NOT NULL DEFAULT 'editorial'"
                 )
+            # D4 (migrations 0017 and 0019 on PostgreSQL): test-backend parity only.
+            for column, ddl in (
+                ("declared_level", "TEXT NOT NULL DEFAULT ''"),
+                ("review_new_per_day", "INTEGER"),
+                ("review_limit_per_day", "INTEGER"),
+                ("review_modes", "TEXT"),
+            ):
+                if column not in profile_columns:
+                    conn.execute(f"ALTER TABLE learner_profile ADD COLUMN {column} {ddl}")
 
             conn.execute(
                 """
@@ -373,6 +429,28 @@ class SQLiteSpecializedLearningRepository:
                 " ON vocabulary_learning(review_stage)"
             )
 
+            # D4 I19 (migration 0021 on PostgreSQL): the immutable review history. Test backend parity;
+            # SQLite has no trigger and this class exposes insert and read only.
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS essay_review_history (
+                    id TEXT PRIMARY KEY,
+                    essay_id INTEGER NOT NULL REFERENCES essays(id) ON DELETE CASCADE,
+                    superseded_at TEXT NOT NULL,
+                    reason TEXT NOT NULL,
+                    prior_fingerprint TEXT NOT NULL,
+                    prior_contract TEXT NOT NULL,
+                    replaced_by_fingerprint TEXT NOT NULL,
+                    review TEXT NOT NULL,
+                    UNIQUE (essay_id, prior_fingerprint)
+                )
+                """
+            )
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS ix_essay_review_history_essay"
+                " ON essay_review_history(essay_id, superseded_at)"
+            )
+
             # No reading tables: the generated-passage flow is retired (D-082),
             # and canonical Reading evidence lives only in the PostgreSQL
             # runtime. A local database that still has the old tables keeps
@@ -402,25 +480,67 @@ class SQLiteSpecializedLearningRepository:
         try:
             with self._db() as conn:
                 row = conn.execute(
-                    "SELECT goal, style, pinyin, native_language, theme_preset, created_at, updated_at FROM learner_profile WHERE id=1"
+                    "SELECT goal, style, pinyin, native_language, theme_preset, created_at, updated_at,"
+                    " declared_level, review_new_per_day, review_limit_per_day, review_modes"
+                    " FROM learner_profile WHERE id=1"
                 ).fetchone()
         except sqlite3.Error:
             return None
-        return self._dict(row)
+        record = self._dict(row)
+        if record is not None:
+            record["review_modes"] = _json_or_none(record.get("review_modes"))
+        return record
 
-    def upsert_profile_record(self, values: dict[str, Any]) -> None:
+    def upsert_profile_record(
+        self, values: dict[str, Any], *, expected_updated_at: str | None = None
+    ) -> None:
+        """Write the profile. `expected_updated_at=None` is the unconditional whole write (PUT).
+
+        A string is a conditional write: '' means "the row must not exist yet" (a plain INSERT, so a
+        concurrent creation is a conflict rather than a silent overwrite); a token means
+        `UPDATE ... WHERE updated_at = :expected` and zero rows is a conflict (H2 review N1).
+        """
+        optional = {name: values[name] for name in PROFILE_OPTIONAL_FIELDS if name in values}
+        if optional.get("review_modes") is not None:
+            optional["review_modes"] = json.dumps(optional["review_modes"], sort_keys=True)
         with self._db() as conn:
             existing = conn.execute("SELECT created_at FROM learner_profile WHERE id=1").fetchone()
             created_at = str(existing["created_at"]) if existing else values["created_at"]
+            base = (values["goal"], values["style"], values["pinyin"], values["native_language"],
+                    values["theme_preset"])
+            columns = ["id", "goal", "style", "pinyin", "native_language", "theme_preset",
+                       "created_at", "updated_at", *optional]
+            if expected_updated_at is not None and not expected_updated_at:
+                try:
+                    conn.execute(
+                        f"INSERT INTO learner_profile({','.join(columns)}) "
+                        f"VALUES({','.join('?' * len(columns))})",
+                        (1, *base, created_at, values["updated_at"], *optional.values()),
+                    )
+                except sqlite3.IntegrityError as exc:
+                    raise ProfileVersionConflict("profile created concurrently") from exc
+                conn.commit()
+                return
+            if expected_updated_at:
+                assignments = ", ".join(
+                    ["goal=?", "style=?", "pinyin=?", "native_language=?", "theme_preset=?",
+                     "updated_at=?", *[f"{name}=?" for name in optional]]
+                )
+                cursor = conn.execute(
+                    f"UPDATE learner_profile SET {assignments} WHERE id=1 AND updated_at=?",
+                    (*base, values["updated_at"], *optional.values(), expected_updated_at),
+                )
+                conn.commit()
+                if cursor.rowcount != 1:
+                    raise ProfileVersionConflict("profile changed since it was read")
+                return
+            updates = ["goal=excluded.goal", "style=excluded.style", "pinyin=excluded.pinyin",
+                       "native_language=excluded.native_language", "theme_preset=excluded.theme_preset",
+                       "updated_at=excluded.updated_at", *[f"{n}=excluded.{n}" for n in optional]]
             conn.execute(
-                """INSERT INTO learner_profile(id,goal,style,pinyin,native_language,theme_preset,created_at,updated_at)
-                   VALUES(1,?,?,?,?,?,?,?)
-                   ON CONFLICT(id) DO UPDATE SET
-                     goal=excluded.goal, style=excluded.style, pinyin=excluded.pinyin,
-                     native_language=excluded.native_language, theme_preset=excluded.theme_preset,
-                     updated_at=excluded.updated_at""",
-                (values["goal"], values["style"], values["pinyin"], values["native_language"],
-                 values["theme_preset"], created_at, values["updated_at"]),
+                f"INSERT INTO learner_profile({','.join(columns)}) VALUES({','.join('?' * len(columns))}) "
+                f"ON CONFLICT(id) DO UPDATE SET {', '.join(updates)}",
+                (1, *base, created_at, values["updated_at"], *optional.values()),
             )
             conn.commit()
 
@@ -870,8 +990,30 @@ class SQLiteSpecializedLearningRepository:
     def create_speaking_attempt_record(self, values: dict[str, Any]) -> dict[str, Any]:
         raise RuntimeError("Durable Speaking attempts require the PostgreSQL runtime.")
 
-    def list_speaking_attempt_records(self, limit: int = 50, *, asset_id: str | None = None, segment_id: str | None = None) -> list[dict[str, Any]]:
+    def list_speaking_attempt_records(self, limit: int = 50, *, asset_id: str | None = None, segment_id: str | None = None, since: datetime | None = None) -> list[dict[str, Any]]:
         raise RuntimeError("Durable Speaking attempts require the PostgreSQL runtime.")
+
+    def activity_timestamps(self, since: datetime) -> dict[str, list[datetime]]:
+        """The instants of this learner's completed, server-written records (D4 I14).
+
+        The hermetic backend only holds essays; Speaking and Reading evidence live in the PostgreSQL
+        runtime, so their sources are empty here rather than absent.
+        """
+        found: list[datetime] = []
+        try:
+            with self._db() as conn:
+                rows = conn.execute("SELECT created_at FROM essays").fetchall()
+        except sqlite3.Error:
+            rows = []
+        for row in rows:
+            try:
+                parsed = datetime.fromisoformat(str(row["created_at"]).replace("Z", "+00:00"))
+            except ValueError:
+                continue
+            parsed = parsed if parsed.tzinfo else parsed.astimezone()
+            if parsed >= since:
+                found.append(parsed)
+        return {"essays": found, "speaking_attempts": [], "reading_attempts": []}
 
     def speaking_progress(self) -> dict[str, Any]:
         raise RuntimeError("Durable Speaking attempts require the PostgreSQL runtime.")
@@ -886,6 +1028,105 @@ class SQLiteSpecializedLearningRepository:
             cur=conn.execute("UPDATE essays SET module_data_json=? WHERE id=?",(json.dumps(module_data,ensure_ascii=False),essay_id))
             conn.commit()
         return cur.rowcount > 0
+
+    def merge_essay_module_data(self, essay_id: int, key: str, value: Any) -> bool:
+        """Set ONE key of the essay's metadata bag, under the write lock, leaving every other key alone.
+
+        The whole-dict write above lets two writers erase each other (a review refresh and a
+        linguistic cache write); this reads and writes inside one `BEGIN IMMEDIATE`.
+        """
+        with self._db() as conn:
+            conn.execute("BEGIN IMMEDIATE")
+            row = conn.execute("SELECT module_data_json FROM essays WHERE id=?", (essay_id,)).fetchone()
+            if row is None:
+                conn.rollback()
+                return False
+            bag = _json_or_none(row["module_data_json"])
+            bag = dict(bag) if isinstance(bag, dict) else {}
+            bag[key] = value
+            conn.execute("UPDATE essays SET module_data_json=? WHERE id=?", (json.dumps(bag, ensure_ascii=False), essay_id))
+            conn.commit()
+        return True
+
+    def refresh_essay_review(
+        self,
+        essay_id: int,
+        expected_prior_fingerprint: str,
+        new_review: dict[str, Any],
+        new_identity: dict[str, str],
+        superseded_at: str,
+    ) -> dict[str, Any]:
+        """Replace an essay's current review with a new one and keep the old as immutable history.
+
+        One transaction under `BEGIN IMMEDIATE` (SQLite's write lock is the row lock here): the stored
+        fingerprint is re-checked, and if it is no longer `expected_prior_fingerprint` another writer
+        got there first and this result is discarded (`already_current`). The metadata bag is merged by
+        key, so `practice`, `grammar_links` and `prompt_ref` survive.
+        """
+        with self._db() as conn:
+            conn.execute("BEGIN IMMEDIATE")
+            row = conn.execute("SELECT * FROM essays WHERE id=?", (essay_id,)).fetchone()
+            if row is None:
+                conn.rollback()
+                return {"status": "not_found", "history_id": None}
+            bag = _json_or_none(row["module_data_json"])
+            bag = dict(bag) if isinstance(bag, dict) else {}
+            identity = bag.get("review") if isinstance(bag.get("review"), dict) else {}
+            prior = str(identity.get("fingerprint") or "")
+            if not prior or prior != expected_prior_fingerprint or prior == new_identity.get("fingerprint"):
+                conn.rollback()
+                return {"status": "already_current", "history_id": None}
+            snapshot = {
+                **{name: row[name] for name in REVIEW_SCORE_FIELDS},
+                "level_estimate": row["level_estimate"] or row["cefr_estimate"],
+                "evaluator": row["evaluator"],
+                "summary_vi": row["summary_vi"],
+                "strengths": _json_or_none(row["strengths_json"]) or [],
+                "strength_evidence": _json_or_none(row["strength_evidence_json"]) or [],
+                "priorities": _json_or_none(row["priorities_json"]) or [],
+                "errors": _json_or_none(row["errors_json"]) or [],
+                "grammar_links": bag.get("grammar_links") if isinstance(bag.get("grammar_links"), list) else [],
+                "identity": identity,
+            }
+            history_id = str(uuid.uuid4())
+            try:
+                conn.execute(
+                    "INSERT INTO essay_review_history(id, essay_id, superseded_at, reason, prior_fingerprint,"
+                    " prior_contract, replaced_by_fingerprint, review) VALUES (?,?,?,?,?,?,?,?)",
+                    (history_id, essay_id, superseded_at, REFRESH_REASON, prior, str(identity.get("contract") or ""),
+                     str(new_identity["fingerprint"]), json.dumps(snapshot, ensure_ascii=False)),
+                )
+            except sqlite3.IntegrityError:
+                conn.rollback()
+                return {"status": "already_current", "history_id": None}
+            bag["review"] = dict(new_identity)
+            conn.execute(
+                "UPDATE essays SET grammar=?, vocabulary=?, coherence=?, task_achievement=?, naturalness=?, overall=?,"
+                " cefr_estimate=?, level_estimate=?, evaluator=?, summary_vi=?, strengths_json=?, strength_evidence_json=?,"
+                " priorities_json=?, errors_json=?, module_data_json=? WHERE id=?",
+                (*[new_review[name] for name in REVIEW_SCORE_FIELDS], new_review["cefr_estimate"], new_review["cefr_estimate"],
+                 new_review["evaluator"], new_review["summary_vi"],
+                 json.dumps(new_review["strengths"], ensure_ascii=False),
+                 json.dumps(new_review["strength_evidence"], ensure_ascii=False),
+                 json.dumps(new_review["priorities"], ensure_ascii=False),
+                 json.dumps(new_review["errors"], ensure_ascii=False),
+                 json.dumps(bag, ensure_ascii=False), essay_id),
+            )
+            conn.commit()
+        return {"status": "refreshed", "history_id": history_id}
+
+    def list_essay_review_history(self, essay_id: int) -> list[dict[str, Any]]:
+        """The essay's review history, newest first. The caller has already loaded the scope-checked essay."""
+        with self._db() as conn:
+            rows = conn.execute(
+                "SELECT id, superseded_at, reason, prior_fingerprint, prior_contract, replaced_by_fingerprint, review"
+                " FROM essay_review_history WHERE essay_id=? ORDER BY superseded_at DESC, rowid DESC", (essay_id,),
+            ).fetchall()
+        return [
+            {**{key: row[key] for key in ("id", "superseded_at", "reason", "prior_fingerprint", "prior_contract", "replaced_by_fingerprint")},
+             "review": _json_or_none(row["review"]) or {}}
+            for row in rows
+        ]
 
     def list_product_activity_events(self, since: datetime) -> list[dict[str, Any]]:
         raise RuntimeError("Product activity analytics requires the PostgreSQL runtime.")
@@ -952,19 +1193,40 @@ class PostgresSpecializedLearningRepository:
             r=s.scalar(select(UserLanguageProfile).where(UserLanguageProfile.user_id==uid,UserLanguageProfile.language_code==lang))
             if r is None: return None
             return {"goal":r.goal,"style":r.style,"pinyin":r.pinyin,"native_language":r.native_language,"theme_preset":r.theme_preset,
-                    "created_at":self._iso(r.created_at),"updated_at":self._iso(r.updated_at)}
+                    "created_at":self._iso(r.created_at),"updated_at":self._iso(r.updated_at),
+                    "declared_level":r.declared_level or "","review_new_per_day":r.review_new_per_day,
+                    "review_limit_per_day":r.review_limit_per_day,"review_modes":_json_or_none(r.review_modes)}
 
-    def upsert_profile_record(self, values: dict[str, Any]) -> None:
+    def upsert_profile_record(self, values: dict[str, Any], *, expected_updated_at: str | None = None) -> None:
+        """See the SQLite twin: None is the unconditional PUT, '' creates, a token updates conditionally (H2 N1)."""
         uid,lang=self._scope(); pid=stable_uuid("profile",self._key(),lang)
-        with Session(self.engine) as s, s.begin():
-            if s.get(User,uid) is None: raise RuntimeError("PostgreSQL scope user missing; shadow/import must run first.")
-            r=s.get(UserLanguageProfile,pid)
-            if r is None:
-                s.add(UserLanguageProfile(id=pid,user_id=uid,language_code=lang,goal=values["goal"],style=values["style"],pinyin=values["pinyin"],
-                                          native_language=values["native_language"],theme_preset=values["theme_preset"],created_at=self._dt(values["created_at"]),updated_at=self._dt(values["updated_at"])))
-            else:
-                r.goal=values["goal"]; r.style=values["style"]; r.pinyin=values["pinyin"]; r.native_language=values["native_language"]
-                r.theme_preset=values["theme_preset"]; r.updated_at=self._dt(values["updated_at"])
+        optional={name:values[name] for name in PROFILE_OPTIONAL_FIELDS if name in values}
+        fixed=dict(goal=values["goal"],style=values["style"],pinyin=values["pinyin"],
+                   native_language=values["native_language"],theme_preset=values["theme_preset"])
+        updated=self._dt(values["updated_at"])
+        try:
+            with Session(self.engine) as s, s.begin():
+                if s.get(User,uid) is None: raise RuntimeError("PostgreSQL scope user missing; shadow/import must run first.")
+                if expected_updated_at is None:
+                    r=s.get(UserLanguageProfile,pid)
+                    if r is None:
+                        s.add(UserLanguageProfile(id=pid,user_id=uid,language_code=lang,created_at=self._dt(values["created_at"]),updated_at=updated,**fixed,**optional))
+                    else:
+                        for k,v in {**fixed,**optional}.items(): setattr(r,k,v)
+                        r.updated_at=updated
+                    return
+                if not expected_updated_at:
+                    # Creation: a plain INSERT; the unique key turns a concurrent creation into IntegrityError.
+                    s.add(UserLanguageProfile(id=pid,user_id=uid,language_code=lang,created_at=self._dt(values["created_at"]),updated_at=updated,**fixed,**optional))
+                    s.flush()
+                    return
+                result=s.execute(update(UserLanguageProfile)
+                                 .where(UserLanguageProfile.id==pid,UserLanguageProfile.updated_at==self._dt(expected_updated_at))
+                                 .values(**fixed,**optional,updated_at=updated)
+                                 .execution_options(synchronize_session=False))
+                if result.rowcount!=1: raise ProfileVersionConflict("profile changed since it was read")
+        except IntegrityError as exc:
+            raise ProfileVersionConflict("profile created concurrently") from exc
 
     def _essay_rows(self, *, desc: bool=False) -> list[dict[str, Any]]:
         uid,lang=self._scope(); order=Essay.legacy_id.desc() if desc else Essay.legacy_id.asc()
@@ -1282,10 +1544,14 @@ class PostgresSpecializedLearningRepository:
             "last_answer": row.last_answer,
             "last_used_hint": bool(row.last_used_hint),
             "last_hint_level": int(row.last_hint_level or 0),
+            "score_source": row.score_source or "client",
             "updated_at": self._iso(row.updated_at),
         }
 
     def save_listening_progress_record(self, values: dict[str, Any]) -> dict[str, Any]:
+        """Store one Dictation write. The evidence fields are the SERVER's (`merge_progress`), applied
+        under a row lock so two simultaneous checks cannot lose one; `values["score"]` is the route's
+        server-side evaluation of a checked answer, absent for every other write."""
         uid, lang = self._scope()
         asset_id = str(values["asset_id"])
         segment_id = str(values["segment_id"])
@@ -1293,28 +1559,37 @@ class PostgresSpecializedLearningRepository:
         with Session(self.engine) as s, s.begin():
             if s.get(User, uid) is None:
                 raise RuntimeError("PostgreSQL scope user missing; shadow/import must run first.")
-            row = s.get(ListeningProgress, progress_id)
+            # FOR UPDATE locks nothing that does not exist yet, so the row is created first (a no-op when it is
+            # there) and only then locked: two simultaneous first checks of a segment both proceed, one after the
+            # other, and neither loses its score to a unique-key error.
+            from sqlalchemy.dialects.postgresql import insert as pg_insert
+
+            s.execute(
+                pg_insert(ListeningProgress)
+                .values(id=progress_id, user_id=uid, language_code=lang, asset_id=asset_id, segment_id=segment_id,
+                        presentation="prompt", revealed=False, checked_attempt_count=0, best_exact=False, last_answer="",
+                        last_used_hint=False, last_hint_level=0, score_source="client",
+                        updated_at=self._dt(values["updated_at"]))
+                .on_conflict_do_nothing(constraint="uq_listening_progress_scope_segment")
+            )
+            row = s.scalar(select(ListeningProgress).where(ListeningProgress.id == progress_id).with_for_update())
+            stored = {
+                "best_accuracy_percent": row.best_accuracy_percent, "best_exact": row.best_exact,
+                "checked_attempt_count": row.checked_attempt_count, "score_source": row.score_source,
+            }
+            evidence = merge_progress(stored, values, values.get("score"))
             fields = {
                 "presentation": values.get("presentation", "prompt"),
                 "revealed": bool(values.get("revealed", False)),
-                "checked_attempt_count": int(values.get("checked_attempt_count", 0)),
-                "best_accuracy_percent": values.get("best_accuracy_percent"),
-                "best_exact": bool(values.get("best_exact", False)),
                 "last_answer": str(values.get("last_answer", "")),
                 # The flag is the level, never a second opinion about it.
                 "last_used_hint": _hint_level(values) > 0,
                 "last_hint_level": _hint_level(values),
                 "updated_at": self._dt(values["updated_at"]),
+                **evidence,
             }
-            if row is None:
-                row = ListeningProgress(
-                    id=progress_id, user_id=uid, language_code=lang,
-                    asset_id=asset_id, segment_id=segment_id, **fields,
-                )
-                s.add(row)
-            else:
-                for key, value in fields.items():
-                    setattr(row, key, value)
+            for key, value in fields.items():
+                setattr(row, key, value)
             s.flush()
             return self._listening_progress_payload(row)
 
@@ -1439,10 +1714,12 @@ class PostgresSpecializedLearningRepository:
             s.flush()
             return self._speaking_payload(row)
 
-    def list_speaking_attempt_records(self, limit: int = 50, *, asset_id: str | None = None, segment_id: str | None = None) -> list[dict[str, Any]]:
+    def list_speaking_attempt_records(self, limit: int = 50, *, asset_id: str | None = None, segment_id: str | None = None, since: datetime | None = None) -> list[dict[str, Any]]:
         uid, lang = self._scope()
         with Session(self.engine) as s:
             filters = [SpeakingAttempt.user_id == uid, SpeakingAttempt.language_code == lang]
+            if since is not None:
+                filters.append(SpeakingAttempt.created_at >= since)
             if asset_id is not None:
                 filters.append(SpeakingAttempt.asset_id == asset_id)
             if segment_id is not None:
@@ -1454,6 +1731,25 @@ class PostgresSpecializedLearningRepository:
                 .limit(max(1, min(int(limit), 100)))
             ).all()
             return [self._speaking_payload(row) for row in rows]
+
+    def activity_timestamps(self, since: datetime) -> dict[str, list[datetime]]:
+        """The instants of this learner's completed, server-written records in this language (D4 I14).
+
+        Each row is one submitted piece of evidence with a creation time that no later write changes:
+        an essay version, a speaking attempt, a Reading attempt.
+        """
+        uid, lang = self._scope()
+        with Session(self.engine) as s:
+            def instants(column, user, language):
+                return [self._dt(value) for value in s.scalars(
+                    select(column).where(user == uid, language == lang, column >= since)
+                ).all()]
+
+            return {
+                "essays": instants(Essay.created_at, Essay.user_id, Essay.language_code),
+                "speaking_attempts": instants(SpeakingAttempt.created_at, SpeakingAttempt.user_id, SpeakingAttempt.language_code),
+                "reading_attempts": instants(ReadingAttempt.created_at, ReadingAttempt.user_id, ReadingAttempt.language_code),
+            }
 
     def speaking_progress(self) -> dict[str, Any]:
         items = self.list_speaking_attempt_records(100)
@@ -1481,6 +1777,58 @@ class PostgresSpecializedLearningRepository:
             e=s.scalar(select(Essay).where(Essay.user_id==uid,Essay.language_code==lang,Essay.legacy_id==essay_id))
             if e is None: return False
             e.module_data=module_data; return True
+
+    def merge_essay_module_data(self, essay_id: int, key: str, value: Any) -> bool:
+        """Set ONE key of the essay's metadata bag under the row lock, leaving every other key alone."""
+        uid,lang=self._scope()
+        with Session(self.engine) as s, s.begin():
+            e=s.scalar(select(Essay).where(Essay.user_id==uid,Essay.language_code==lang,Essay.legacy_id==essay_id).with_for_update())
+            if e is None: return False
+            bag=dict(e.module_data or {}); bag[key]=value; e.module_data=bag; return True
+
+    def refresh_essay_review(self, essay_id: int, expected_prior_fingerprint: str, new_review: dict[str, Any],
+                             new_identity: dict[str, str], superseded_at: str) -> dict[str, Any]:
+        """See the SQLite twin. The row lock is `SELECT ... FOR UPDATE`; the history key is UNIQUE (essay, prior)
+        so a second process that lost the race is refused by the database as well as by the re-check."""
+        uid,lang=self._scope()
+        try:
+            with Session(self.engine) as s, s.begin():
+                e=s.scalar(select(Essay).where(Essay.user_id==uid,Essay.language_code==lang,Essay.legacy_id==essay_id).with_for_update())
+                if e is None: return {"status":"not_found","history_id":None}
+                bag=dict(e.module_data or {})
+                identity=bag.get("review") if isinstance(bag.get("review"),dict) else {}
+                prior=str(identity.get("fingerprint") or "")
+                if not prior or prior!=expected_prior_fingerprint or prior==new_identity.get("fingerprint"):
+                    return {"status":"already_current","history_id":None}
+                snapshot={**{name:getattr(e,name) for name in REVIEW_SCORE_FIELDS},
+                          "level_estimate":e.level_estimate,"evaluator":e.evaluator,"summary_vi":e.summary_vi,
+                          "strengths":list(e.strengths or []),"strength_evidence":list(e.strength_evidence or []),
+                          "priorities":list(e.priorities or []),"errors":list(e.errors or []),
+                          "grammar_links":bag.get("grammar_links") if isinstance(bag.get("grammar_links"),list) else [],
+                          "identity":identity}
+                history_id=uuid.uuid4()
+                s.add(EssayReviewHistory(id=history_id,essay_id=e.id,superseded_at=self._dt(superseded_at),reason=REFRESH_REASON,
+                                         prior_fingerprint=prior,prior_contract=str(identity.get("contract") or ""),
+                                         replaced_by_fingerprint=str(new_identity["fingerprint"]),review=snapshot))
+                s.flush()
+                for name in REVIEW_SCORE_FIELDS: setattr(e,name,new_review[name])
+                e.level_estimate=new_review["cefr_estimate"]; e.evaluator=new_review["evaluator"]; e.summary_vi=new_review["summary_vi"]
+                e.strengths=list(new_review["strengths"]); e.strength_evidence=list(new_review["strength_evidence"])
+                e.priorities=list(new_review["priorities"]); e.errors=list(new_review["errors"])
+                bag["review"]=dict(new_identity); e.module_data=bag
+                return {"status":"refreshed","history_id":str(history_id)}
+        except IntegrityError:
+            return {"status":"already_current","history_id":None}
+
+    def list_essay_review_history(self, essay_id: int) -> list[dict[str, Any]]:
+        """History of one essay, resolved through the scope-checked essay: another account's or language's id reads nothing."""
+        uid,lang=self._scope()
+        with Session(self.engine) as s:
+            e=s.scalar(select(Essay).where(Essay.user_id==uid,Essay.language_code==lang,Essay.legacy_id==essay_id))
+            if e is None: return []
+            rows=s.scalars(select(EssayReviewHistory).where(EssayReviewHistory.essay_id==e.id).order_by(EssayReviewHistory.superseded_at.desc())).all()
+            return [{"id":str(r.id),"superseded_at":self._iso(r.superseded_at),"reason":r.reason,"prior_fingerprint":r.prior_fingerprint,
+                     "prior_contract":r.prior_contract,"replaced_by_fingerprint":r.replaced_by_fingerprint,"review":dict(r.review or {})} for r in rows]
 
     def list_product_activity_events(self, since: datetime) -> list[dict[str, Any]]:
         """Read aggregate inputs across learners without selecting raw content."""

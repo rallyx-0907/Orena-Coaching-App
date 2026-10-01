@@ -14,6 +14,8 @@ import { useStyles } from '../../kit/styles.js';
 import { heroMedia, listRow, rowThumb } from '../../kit/components.js';
 import { langSpan, langAttr } from '../../kit/lang.js';
 import { api } from '../../infrastructure/api.js';
+import { languages } from '../../copy/index.js';
+import { openMedia } from '../../product/media-source.js';
 import { t } from './copy.js';
 import {
   parseContentId,
@@ -45,8 +47,15 @@ function minutesLabel(minutes) {
 async function loadDetail(kind, id, ctx) {
   if (kind === 'article') return normalizeArticle(await api.readingArticle(id));
   if (kind === 'book') return normalizeBook(await api.libraryBook(id));
-  if (kind === 'media') return normalizeMedia(await api.listeningLibraryLesson(id, ''));
-  if (kind === 'upload') return normalizeMedia(await api.mediaMy(uploadMediaId(id)));
+  /* A lesson, a stored upload or a pasted link open through the one media resolver. A learner's
+     own link is prefixed "url:" inside the upload id; a stored upload is "upload:<id>" or bare. */
+  if (kind === 'media' || kind === 'upload') {
+    const payload = await openMedia(kind === 'upload' && !id.startsWith('url:') ? `upload:${uploadMediaId(id)}` : id, {
+      api, support: languages().support, language: ctx.context.language, owner: ctx.context.owner || 'local',
+    });
+    if (!payload?.asset) throw new Error('This media is unavailable.');
+    return normalizeMedia(payload);
+  }
   // text: a learner's own import, device memory only (product/memory.js) - never the network.
   const record = ctx.context.memory.value.imports.find((item) => item.id === contentIdFor('text', id));
   if (!record) throw new Error('This text is not on this device.');
@@ -71,7 +80,8 @@ async function loadHasPractice(kind, id) {
 async function loadSaved(libKind, sourceId, contentId, memory) {
   if (!libKind) return { saved: memory.value.kept.includes(contentId), itemId: '' };
   const result = await api.libraryItems({ kind: libKind, sources: [sourceId] }).catch(() => null);
-  const item = result?.items?.[0];
+  // Saved is the `kept` relationship and nothing else (D4 I4).
+  const item = (result?.items || []).find((row) => row?.relationship === 'kept');
   return { saved: Boolean(item), itemId: item?.id || '' };
 }
 

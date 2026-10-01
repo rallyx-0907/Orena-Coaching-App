@@ -34,7 +34,7 @@ from collections.abc import Callable
 from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy import Engine, select
+from sqlalchemy import Engine, and_, case, not_, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -53,6 +53,39 @@ from writing_coach.persistence.models import (
 # A learner's own set is small by design, and the room draws it as a list.
 COLLECTION_LIMIT = 200
 ITEM_LOOKUP_LIMIT = 200
+
+
+# A place write under this old that crosses no boundary is answered `coalesced` without an UPDATE, so
+# scrolling a page is not a write per event (proposal I4). Volume is in-place updates, never new rows.
+PLACE_COALESCE_SECONDS = 30
+PLACE_LIST_LIMIT = 50
+# Only content the learner reads, hears or opens as a book has a place.
+PLACE_KINDS = ("reading", "listening", "book")
+
+
+def _place_only():
+    """SQL for a row that exists only to hold the learner's place (D4 I4): a `started` row that is not a word, not
+    marked, not filed and carries no note. It is navigation state, never something the learner saved."""
+    return and_(
+        LibraryItem.relationship_kind == "started",
+        LibraryItem.saved_word_id.is_(None),
+        LibraryItem.pinned_at.is_(None),
+        LibraryItem.state.is_(None),
+        LibraryItem.note == "",
+    )
+
+
+def _aware(value: datetime | None) -> datetime | None:
+    if value is None:
+        return None
+    return value if value.tzinfo else value.replace(tzinfo=UTC)
+
+
+def _crosses_a_boundary(stored: dict[str, Any], new: dict[str, Any]) -> bool:
+    """Whether a new place is more than the reader moving within the same paragraph and chapter."""
+    return any(stored.get(key) != new.get(key) for key in new if key != "within") or any(
+        key not in new for key in stored if key != "within"
+    )
 
 
 class LibraryConflict(RuntimeError):
@@ -157,13 +190,15 @@ class LibraryRepository:
 
         A listing reads its rows from their owners; this says which of them the
         learner has kept, pinned or filed, in one query rather than one per row.
+        A row that only holds the learner's place (D4 I4) is not a saved thing and is
+        never returned, and where several rows name one source the `kept` one comes first.
         """
 
         uid, lang = self._scope()
         with Session(self.engine) as session:
             query = select(LibraryItem).where(
-                LibraryItem.user_id == uid, LibraryItem.language_code == lang
-            )
+                LibraryItem.user_id == uid, LibraryItem.language_code == lang, not_(_place_only())
+            ).order_by(case((LibraryItem.relationship_kind == "kept", 0), else_=1), LibraryItem.created_at, LibraryItem.id)
             if kind:
                 query = query.where(LibraryItem.kind == kind)
             words_by_id: dict[uuid.UUID, str] = {}
@@ -239,6 +274,93 @@ class LibraryRepository:
             "first_due_word": due.word if due is not None else "",
             "total": len(entries) + int(due_count),
         }
+
+    # --- places (D4 I4) ----------------------------------------------------
+
+    @staticmethod
+    def _place_dict(item: LibraryItem) -> dict[str, Any]:
+        return {
+            "content_id": item.source_id,
+            "kind": item.kind,
+            "place": dict(item.place or {}),
+            "place_at": _iso(_aware(item.place_at)),
+        }
+
+    def set_place(self, *, kind: str, source_id: str, place: dict[str, Any] | None) -> dict[str, Any]:
+        """Record where the learner is in one piece of content, in place, newest write wins.
+
+        One row per (learner, language, kind, content id) on the `started` relationship, created on
+        first open. `version` and `updated_at` are never touched, so a concurrent pin/note PATCH at
+        the version it read still lands. `place=None` unsets the place (SQL NULL); "clear" as the
+        learner means it is a place carrying `cleared: true`, which keeps the relationship.
+        """
+        if kind not in PLACE_KINDS or not str(source_id or "").strip():
+            raise LibraryConflict("kind_mismatch")
+        uid, lang = self._scope()
+        moment = _now()
+        for attempt in (0, 1):
+            with Session(self.engine) as session, session.begin():
+                item = session.scalar(
+                    select(LibraryItem).where(
+                        LibraryItem.user_id == uid,
+                        LibraryItem.language_code == lang,
+                        LibraryItem.kind == kind,
+                        LibraryItem.source_id == source_id,
+                        LibraryItem.relationship_kind == "started",
+                    )
+                )
+                if item is None:
+                    item = LibraryItem(
+                        id=uuid.uuid4(), user_id=uid, language_code=lang, kind=kind, saved_word_id=None,
+                        source_id=source_id, relationship_kind="started", state=None, pinned_at=None,
+                        note="", created_at=moment, updated_at=moment, version=1,
+                        place=place, place_at=moment if place is not None else None,
+                    )
+                    session.add(item)
+                    try:
+                        session.flush()
+                    except IntegrityError:
+                        session.rollback()
+                        if attempt == 0:
+                            continue  # lost the creation race; the winner's row is updated below
+                        raise LibraryConflict("version_conflict") from None
+                    return {"status": "written", **self._place_dict(item)}
+                stored_at = _aware(item.place_at)
+                if (
+                    place is not None
+                    and item.place
+                    and stored_at is not None
+                    and (moment - stored_at).total_seconds() < PLACE_COALESCE_SECONDS
+                    and not _crosses_a_boundary(dict(item.place), place)
+                ):
+                    return {"status": "coalesced", **self._place_dict(item)}
+                session.execute(
+                    update(LibraryItem)
+                    .where(LibraryItem.id == item.id)
+                    .values(place=place, place_at=moment if place is not None else None)
+                    .execution_options(synchronize_session=False)
+                )
+                session.expire(item)
+                return {"status": "written", **self._place_dict(session.get(LibraryItem, item.id))}
+        raise LibraryConflict("version_conflict")
+
+    def list_places(self, *, limit: int = 20) -> list[dict[str, Any]]:
+        """The learner's places, newest first, without the ones they cleared."""
+        uid, lang = self._scope()
+        bound = max(1, min(int(limit), PLACE_LIST_LIMIT))
+        with Session(self.engine) as session:
+            rows = session.scalars(
+                select(LibraryItem)
+                .where(
+                    LibraryItem.user_id == uid,
+                    LibraryItem.language_code == lang,
+                    LibraryItem.place.is_not(None),
+                    LibraryItem.kind.in_(PLACE_KINDS),
+                )
+                .order_by(LibraryItem.place_at.desc())
+                .limit(PLACE_LIST_LIMIT * 4)
+            ).all()
+            return [self._place_dict(row) for row in rows if not (row.place or {}).get("cleared")][:bound]
 
     # --- writing ----------------------------------------------------------
 
@@ -378,6 +500,15 @@ class LibraryRepository:
             item = session.get(LibraryItem, wanted)
             if item is None or item.user_id != uid or item.language_code != lang:
                 return False
+            if item.place is not None and item.saved_word_id is None:
+                # The learner un-marks a thing they were also reading: what they marked goes, the place they
+                # were at stays (D4 I4). The row is then only a place again and reads as nothing saved.
+                item.pinned_at = None
+                item.state = None
+                item.note = ""
+                item.version = item.version + 1
+                item.updated_at = _now()
+                return True
             session.delete(item)
             return True
 

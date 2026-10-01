@@ -114,16 +114,16 @@ assert.equal(unsaved.hasMeaning, false, 'nothing to backfill from once the item 
 
 /* --- The two ways a card asks (frame 13's rvMode): only a sentence the learner really met the word
    in makes a source-aware card, and nothing is made up for a word that has none (rule 40) --- */
-assert.deepEqual([...MODES], ['target', 'cloze']);
+assert.deepEqual([...MODES], ['typing', 'cloze'], 'the canonical review mode names, one per mode');
 const met = { word: 'hectic', source_kind: 'reading', source_fragment: 'My mornings are always hectic before the train leaves.' };
 assert.equal(cardMode(met), 'cloze');
 assert.equal(clozeFor(met).text, 'My mornings are always ＿＿＿＿＿＿ before the train leaves.', 'the blank is as wide as what it hides');
 assert.equal(clozeFor(met).hits, 1);
 assert.deepEqual(clozeFor(met).parts.map((part) => part.blank), [false, true, false], 'text, blank, text - so a screen can keep a blank whole');
 assert.equal(clozeFor(met).parts.map((part) => part.value).join(''), clozeFor(met).text, 'the parts are the sentence');
-assert.equal(cardMode({ word: 'hectic', source_fragment: '' }), 'target', 'no sentence, no cloze');
-assert.equal(cardMode({ word: 'hectic', source_fragment: 'Nothing to see here.' }), 'target', 'a fragment that does not contain the word is not a cloze');
-assert.equal(cardMode({ word: 'hectic' }), 'target');
+assert.equal(cardMode({ word: 'hectic', source_fragment: '' }), 'typing', 'no sentence, no cloze');
+assert.equal(cardMode({ word: 'hectic', source_fragment: 'Nothing to see here.' }), 'typing', 'a fragment that does not contain the word is not a cloze');
+assert.equal(cardMode({ word: 'hectic' }), 'typing');
 assert.equal(clozeFor({ word: 'cat', source_fragment: 'The concatenation of category.' }), null, 'a word inside another word is not an occurrence');
 const twice = clozeFor({ word: 'go', source_fragment: 'Go now, then go again.' });
 assert.equal(twice.hits, 2, 'every occurrence goes - one left in turns recall into reading');
@@ -142,8 +142,8 @@ assert.equal(hintMask('look after'), 'l___ a____', 'word by word');
 assert.equal(hintMask('生活'), '生_');
 assert.equal(hintMask(''), '');
 assert.equal(hintFor('cloze', { word: 'hectic', support: 'bận rộn' }), 'h_____');
-assert.equal(hintFor('target', { word: 'hectic', support: 'bận rộn' }), 'bận rộn', "the learner's own-language gloss (the frame's rvG.vi)");
-assert.equal(hintFor('target', { word: 'hectic', support: '' }), '', 'no gloss, no hint - never an invented one');
+assert.equal(hintFor('typing', { word: 'hectic', support: 'bận rộn' }), 'bận rộn', "the learner's own-language gloss (the frame's rvG.vi)");
+assert.equal(hintFor('typing', { word: 'hectic', support: '' }), '', 'no gloss, no hint - never an invented one');
 
 assert.equal(sourceLabelKey('reading'), 'sourceReading');
 assert.equal(sourceLabelKey('feedback'), 'sourceFeedback');

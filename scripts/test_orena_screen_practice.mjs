@@ -152,6 +152,9 @@ import {
   );
   assert.equal(continuationTarget({ id: 'media:' }), null);
 
+  // Named contract change (D4 I6): a conversation the learner left opens in the Conversation room by id.
+  assert.deepEqual(continuationTarget({ id: 'conversation:abc-1', intent: 'speaking' }), { kind: 'speak', routeId: 'conv', query: { id: 'conversation:abc-1' } });
+
   // Kinds this hub genuinely cannot resume yet - left out, not guessed at (rule 40).
   assert.equal(continuationTarget({ id: 'url:abc', intent: 'speaking' }), null, 'a spoken conversation has no confirmed id-contract with an unbuilt new-UI screen');
   assert.equal(continuationTarget({ id: 'some-reading-id' }), null, 'a bare reading id is not resolvable to a real reader route from this data alone');

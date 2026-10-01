@@ -22,6 +22,7 @@
    screens/content/model.js's own scheme). One id shape: the kind prefix says which source it is. */
 import { html, mount } from '../../kit/html.js';
 import { useStyles } from '../../kit/styles.js';
+import { openMedia } from '../../product/media-source.js';
 import { langAttr } from '../../kit/lang.js';
 import { pageHeader } from '../../kit/components.js';
 import { toast } from '../../kit/toast.js';
@@ -50,7 +51,7 @@ function joinParagraphs(raw) {
 async function loadSource(parsed, ctx, support) {
   const { kind, id, chapterId } = parsed;
   if (kind === 'media' || kind === 'upload') {
-    const payload = await api.listeningLibraryLesson(id, support);
+    const payload = await openMedia(id, { api, support, language: ctx.context.language, owner: ctx.context.owner || 'local' });
     const catalog = payload?.catalog || {};
     return {
       variant: 'media',

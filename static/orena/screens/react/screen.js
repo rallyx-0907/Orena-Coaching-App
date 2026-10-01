@@ -26,6 +26,7 @@ import {
 import { createLocalAudioRecorder, localAudioRecordingSupported } from '../../capabilities/audio-recorder.js';
 import { registerActionHandler } from '../../agent/dispatcher.js';
 import { micGate, openMicState } from '../mic/sheet.js';
+import { saveResponse } from '../../product/account-records.js';
 import { t } from './copy.js';
 import { usefulPhrase, buildUnderstandCheck, mapCoaching, phraseReused, waveBars, promptKey } from './model.js';
 
@@ -326,6 +327,8 @@ export default async function reactReuse(element, ctx) {
       const res = await api.spokenResponseCoaching({ transcript: text, source_language: language, target_language: support, situation: promptText() });
       if (!ctx.isCurrent()) return;
       result = mapCoaching(res);
+      // The answer is the learner's own work, kept with the account when it keeps work (D4 I8).
+      void saveResponse({ kind: 'react', source: { kind: 'media', id: lessonId }, mode: 'react', answer: text, coaching: res, sentenceRef: seg.segment_id });
     } catch {
       if (!ctx.isCurrent()) return;
       result = null;

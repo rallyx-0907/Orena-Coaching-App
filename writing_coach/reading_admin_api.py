@@ -182,31 +182,46 @@ def _category(exc: HTTPException) -> str:
     return str(detail.get("category") or "")
 
 
-def publication_warnings(article: Mapping[str, Any]) -> list[dict[str, str]]:
-    """Rights advice for publishing a Reading article, in the vocabulary
-    console's weights. None of it stops anything (D-082): the administrator
-    decides, and the decision is audited beside the warnings that were showing.
+def publication_blockers(article: Mapping[str, Any]) -> list[dict[str, str]]:
+    """Why an article may not be published, from its effective rights.
 
-    Read from the snapshot's rights answers - the evidence captured at
-    ingestion, and what the review pane already shows.
+    Copyright is a hard gate (D-105): publishing needs the right to republish
+    the text, and, for an adapted text, the right to adapt it. An answer of
+    "denied" and an answer nobody gave both refuse - not knowing whether Orena
+    may republish something is not permission to.
+
+    Read from the source snapshot with the administrator's recorded answers
+    folded over it (`rights_state`), so answering the questions on the review
+    page is what clears the gate.
     """
     source = article.get("source") or {}
     state = source.get("rights_state") or {}
-    warnings: list[dict[str, str]] = []
+    blockers: list[dict[str, str]] = []
     republish = state.get("can_republish", "unknown")
     if republish == "denied":
-        warnings.append({"code": "rights_not_cleared", "level": "strong"})
+        blockers.append({"code": "rights_not_cleared", "question": "can_republish"})
     elif republish != "allowed":
-        warnings.append({"code": "rights_unknown", "level": "warning"})
+        blockers.append({"code": "rights_unknown", "question": "can_republish"})
     if article.get("is_adapted"):
         adapt = state.get("can_adapt", "unknown")
         if adapt == "denied":
-            warnings.append({"code": "adaptation_not_cleared", "level": "strong"})
+            blockers.append({"code": "adaptation_not_cleared", "question": "can_adapt"})
         elif adapt != "allowed":
-            warnings.append({"code": "adaptation_unknown", "level": "warning"})
+            blockers.append({"code": "adaptation_unknown", "question": "can_adapt"})
+    return blockers
+
+
+def publication_warnings(article: Mapping[str, Any]) -> list[dict[str, str]]:
+    """Advice that does not stop publication, recorded beside the decision.
+
+    Attribution is an obligation to honour, not a permission to hold, so an
+    unanswered attribution question is advice rather than a refusal.
+    """
+    source = article.get("source") or {}
+    state = source.get("rights_state") or {}
     if state.get("attribution_required", "unknown") == "unknown":
-        warnings.append({"code": "attribution_unknown", "level": "warning"})
-    return warnings
+        return [{"code": "attribution_unknown", "level": "warning"}]
+    return []
 
 
 def _actor(admin: Mapping[str, Any]) -> str:
@@ -312,6 +327,22 @@ class ArticleStatusBody(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     status: str
+    reason: str = Field(default="", max_length=2000)
+
+
+class ArticleRightsBody(BaseModel):
+    """The rights questions, answered after import. A field left out is left
+    alone; a field sent as `null` returns that question to unanswered."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    can_republish: bool | None = None
+    can_adapt: bool | None = None
+    attribution_required: bool | None = None
+    # The article-level override of the source's automation default (D-106);
+    # `null` clears the override, and the source default applies again.
+    automation_allowed: bool | None = None
+    license_note: str | None = Field(default=None, max_length=1000)
     reason: str = Field(default="", max_length=2000)
 
 
@@ -669,6 +700,40 @@ def edit_article(
     return article
 
 
+@router.post("/articles/{article_id}/rights")
+def set_article_rights(
+    request: Request, response: Response, article_id: str, payload: ArticleRightsBody
+) -> dict[str, Any]:
+    """Answer an article's rights questions after import.
+
+    The source snapshot is evidence and is never rewritten; the answers are
+    recorded as a review event and read over the snapshot, so what the gate
+    saw is always recoverable.
+    """
+    admin = _admin(request)
+    _same_origin(request)
+    _no_store(response)
+    supplied = payload.model_fields_set - {"reason"}
+    if not supplied:
+        raise orena_http_error(422, "reading_rights_empty", "Say which rights question you are answering.")
+    answers: dict[str, Any] = {}
+    for key in supplied:
+        value = getattr(payload, key)
+        if key == "license_note" and isinstance(value, str):
+            value = value.strip() or None
+        answers[key] = value
+    article = _guarded(
+        lambda: _content().set_rights(
+            article_id, answers, actor=_actor(admin), reason=payload.reason.strip()
+        )
+    )
+    if article is None:
+        raise orena_http_error(404, "reading_article_not_found", "That article is not in the catalog.")
+    _audit(admin, "admin.reading_rights_set", entity_type="reading_article", entity_id=article_id,
+           payload={"answers": answers})
+    return article
+
+
 @router.post("/articles/{article_id}/status")
 def set_article_status(
     request: Request, response: Response, article_id: str, payload: ArticleStatusBody
@@ -693,6 +758,23 @@ def set_article_status(
         current = _guarded(lambda: _content().get_article(article_id))
         if current is None:
             raise orena_http_error(404, "reading_article_not_found", "That article is not in the catalog.")
+        blockers = publication_blockers(current)
+        if blockers:
+            _audit(
+                admin,
+                "admin.reading_article_publish_refused",
+                entity_type="reading_article",
+                entity_id=article_id,
+                payload={"blockers": blockers},
+            )
+            raise orena_http_error(
+                409,
+                "reading_rights_not_cleared",
+                "Publishing needs the right to republish this text"
+                + (" and to adapt it" if current.get("is_adapted") else "")
+                + ". Answer the rights questions first.",
+                context={"blockers": blockers},
+            )
         warnings = publication_warnings(current)
     article = _guarded(
         lambda: _content().set_status(
@@ -704,7 +786,12 @@ def set_article_status(
     audit_payload: dict[str, Any] = {"status": status, "reason": payload.reason.strip()}
     if status == "published":
         # An override is only meaningful beside what it overrode.
-        audit_payload |= {"warnings": warnings, "override": bool(warnings)}
+        audit_payload |= {
+            "warnings": warnings,
+            # Publish records the article's effective automation permission -
+            # the override when present, else its source's default.
+            "automation": (current.get("automation") or {}),
+        }
     _audit(admin, f"admin.reading_article_{status}", entity_type="reading_article", entity_id=article_id,
            payload=audit_payload)
     if status == "published":

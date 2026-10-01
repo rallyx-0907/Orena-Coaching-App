@@ -11,7 +11,7 @@ import assert from 'node:assert/strict';
 import { buildProfileModel, profileActions, goalCopyKey, weekdayAbbrevs, WEEKLY_GOAL_TARGET } from '../static/orena/screens/profile/model.js';
 import { __internal } from '../static/orena/screens/profile/screen.js';
 
-const { dueTileValue, actionSub, streakDaysTileValue, weekMinutesTileValue, dailyGoalTileMarkup, heroMarkup } = __internal;
+const { dueTileValue, actionSub, streakDaysTileValue, heroMarkup, identityMarkup, statsMarkup } = __internal;
 
 // 1. No backend read at all: every measured field is 0/false/empty, never a sample figure -
 // this is the literal rule-40 contract, held here so it cannot regress into demo data.
@@ -19,10 +19,11 @@ const { dueTileValue, actionSub, streakDaysTileValue, weekMinutesTileValue, dail
   const model = buildProfileModel({ context: {}, vocabulary: null, commerce: null });
   assert.equal(model.due, 0);
   assert.equal(model.savedCount, 0);
-  assert.equal(model.dayStreak, 0, 'day streak has no backend measure anywhere in this codebase');
-  assert.equal(model.weekMinutes, 0, 'weekly minutes have no backend aggregate');
+  assert.equal(model.dayStreak, 0, 'no activity read means no streak, not a sample figure');
+  assert.equal('weekMinutes' in model, false, 'nothing measures minutes, so the field does not exist');
+  assert.deepEqual(model.weekDays, []);
   assert.equal(model.weeklyGoalDone, 0);
-  assert.equal(model.weeklyGoalTarget, WEEKLY_GOAL_TARGET);
+  assert.equal(model.weeklyGoalTarget, 0, 'no target set: the five design segments are a drawing, not a goal');
   assert.equal(model.rankKnown, false);
   assert.equal(model.rankName, '');
   assert.equal(model.planKnown, false);
@@ -123,43 +124,44 @@ const { dueTileValue, actionSub, streakDaysTileValue, weekMinutesTileValue, dail
   assert.equal(actionSub({ id: 'signout' }), '');
 }
 
-// 9. streakDaysTileValue/weekMinutesTileValue: read the value passed in (model.dayStreak /
-// model.weekMinutes), not a frozen literal - English singular/plural picked correctly, matching
-// dueTileValue's own *None/*One/*Many pattern. Always 0 today (rule 40), but the function itself
-// does not assume that - it is a real formatter, not a hardcoded string, per the review's finding
-// that the hero tile text was previously disconnected from the model.
+// 9. The streak is REAL (D4 I14): the model reads GET /api/learner-activity through the shell context, the tile
+// formats it with the *None/*One/*Many pattern, and the strip marks the days the server says were active.
 {
   assert.equal(streakDaysTileValue(0), '0 days');
   assert.equal(streakDaysTileValue(1), '1 day');
   assert.equal(streakDaysTileValue(4), '4 days');
-  assert.equal(weekMinutesTileValue(0), '0 min');
-  assert.equal(weekMinutesTileValue(1), '1 min');
-  assert.equal(weekMinutesTileValue(45), '45 min');
+  const activity = {
+    streak: { days: 3, active_today: true },
+    week: { days: [true, true, true, false, false, false, false].map((active) => ({ active })), done_days: 3, goal_days: 4 },
+  };
+  const model = buildProfileModel({ context: { activity }, vocabulary: null, commerce: null });
+  assert.equal(model.dayStreak, 3);
+  assert.deepEqual(model.weekDays, [true, true, true, false, false, false, false]);
+  assert.equal(model.weeklyGoalTarget, 4);
+  assert.equal(model.weeklyGoalDone, 3);
+  const markup = String(heroMarkup(model, { href: (id) => `#/${id}` }));
+  assert.equal((markup.match(/s-profile-day--done/g) || []).length, 3, 'exactly the active days are marked');
+  assert.equal((markup.match(/class="s-profile-day(?:"|\s)/g) || []).length, 7, 'the week strip has seven cells');
 }
 
-// 10. dailyGoalTileMarkup: the 4th hero tile renders a real progressRing() (kit/components.js's
-// primitive named for this exact tile) at its honest zero - percent 0 (an empty dasharray, never a
-// fabricated fill), a real "0" in the ring's center, and the design's own "Daily goal" label - not
-// omitted, per the review's P1 finding.
-{
-  const markup = String(dailyGoalTileMarkup());
-  assert.match(markup, /class="c-ring"/, 'uses kit/components.js\'s shared progressRing(), not a bespoke ring');
-  assert.match(markup, /stroke-dasharray="0 100"/, 'the ring is drawn at a real, honest 0% - never a fabricated fill');
-  assert.match(markup, /s-profile-daily__min">0</, 'the ring center shows the real, honest 0');
-  assert.match(markup, />Daily goal</, "the design's own tile label is kept, not dropped");
-  assert.match(markup, />Not tracked yet</, 'the value line is an honest zero-state, not a fabricated "0 / 15 min" against a fictional goal');
-}
-
-// 11. heroMarkup: the hero grid draws all 4 tiles the design's own frame draws (Daily goal, Streak,
-// Due review, This week) - the review's P1 finding was that only 3 rendered.
+// 10. A real metric or no metric (D-103.4): nothing measures minutes, so there is no minutes tile, no daily-goal
+// ring and no minutes stat - not drawn as 0. The weekly bar is drawn only against a target the learner set.
 {
   const ctx = { href: (id) => `#/${id}` };
-  const model = buildProfileModel({ context: {}, vocabulary: null, commerce: null });
-  const markup = String(heroMarkup(model, ctx));
-  // Anchored so "s-profile-tile__label"/"__value"/"__head"/"__cta" (sub-parts of a tile, not a
-  // tile itself) never count - only class="s-profile-tile" or class="s-profile-tile <modifier>".
-  const tileCount = (markup.match(/class="s-profile-tile(?:"|\s)/g) || []).length;
-  assert.equal(tileCount, 4, 'the hero grid must draw all 4 tiles the design frame draws, not 3');
+  const bare = buildProfileModel({ context: {}, vocabulary: null, commerce: null });
+  const hero = String(heroMarkup(bare, ctx));
+  assert.doesNotMatch(hero, /Daily goal|c-ring|This week|min</, 'no daily-goal ring and no minutes tile');
+  const tileCount = (hero.match(/class="s-profile-tile(?:"|\s)/g) || []).length;
+  assert.equal(tileCount, 2, 'the hero draws the streak and the due review, the two things that are measured');
+  assert.doesNotMatch(String(statsMarkup(bare)), /week|min</i, 'no minutes stat');
+  assert.doesNotMatch(String(identityMarkup(bare)), /s-profile-weekly/, 'no target, no weekly bar');
+  const goal = buildProfileModel({ context: { activity: { streak: { days: 0 }, week: { days: [], done_days: 2, goal_days: 5 } } } });
+  const identity = String(identityMarkup(goal));
+  assert.equal((identity.match(/s-profile-weekly__bar(?:"|\s)/g) || []).length, 5, 'one segment per day of the learner target');
+  assert.equal((identity.match(/s-profile-weekly__bar--filled/g) || []).length, 2);
+  assert.match(identity, /2 \/ 5/);
+  const done = buildProfileModel({ context: { activity: { streak: { days: 0 }, week: { days: [], done_days: 7, goal_days: 3 } } } });
+  assert.match(String(identityMarkup(done)), /3 \/ 3/, 'the count never runs past the target');
 }
 
-console.log('Orena profile screen: model.js rule-40 fallbacks, real-data passthrough, goal mapping, weekday locales, admin-gated actions, due-tile phrasing, action-row sub-labels, hero streak/week-minutes tile values, Daily-goal tile at its honest zero: PASS');
+console.log('Orena profile screen: model.js fallbacks, real-data passthrough, real streak and week strip, no unmeasured tiles, goal bar only against a set target, admin-gated actions, due-tile phrasing, action-row sub-labels: PASS');

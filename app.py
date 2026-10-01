@@ -86,7 +86,7 @@ from writing_coach.speech_api import (
 )
 from writing_coach.media_interaction import contextual_router as contextual_dictionary_router
 from writing_coach.collection_api import configure_collection, runtime_owners, router as collection_router
-from writing_coach.library_api import configure_library, router as library_router
+from writing_coach.library_api import configure_library, continue_router, router as library_router
 from writing_coach.word_audio import WordAudioLibrary, default_voices
 from writing_coach.word_audio_api import configure_word_audio, router as word_audio_router
 from writing_coach.word_deep import configure_word_deep, router as word_deep_router
@@ -126,6 +126,7 @@ from writing_coach.writing_review_identity import (
     identity_of_stored,
     review_identity,
     same_review,
+    v27_affects,
 )
 from writing_coach.core.platform_api import router as platform_router
 from writing_coach.core.language_registry import is_enabled
@@ -166,6 +167,10 @@ from writing_coach.persistence.learning_repository import (
     SQLiteLearningCacheRepository,
     SQLiteLearningRepository,
 )
+from writing_coach.account_records_api import router as account_records_router
+from writing_coach.learner_activity import configure_learner_activity, router as learner_activity_router
+from writing_coach.work_api import PromptRef
+from writing_coach.account_settings import configure_account_settings, router as account_settings_router
 from writing_coach.becoming_memory import (LearnerProfileIn, ProfilePatchIn, configure_becoming_memory, get_learner_profile, get_learning_memory, get_review_cue, patch_learner_profile, put_learner_profile)
 from writing_coach.becoming_practice import PracticeNextIn, build_practice_recommendation, personalize_generated_task
 from writing_coach.becoming_outcomes import PracticeContextIn, configure_becoming_outcomes, get_practice_outcome, list_practice_outcomes
@@ -361,6 +366,8 @@ class EssayIn(BaseModel):
     parent_essay_id: int | None = Field(default=None, ge=1)
     practice_context: PracticeContextIn | None = None
     learning_language: str | None = Field(default=None, min_length=2, max_length=8)
+    # Which curated prompt this piece answers (D-103.6): a reference into the Prompt Bank, never its text.
+    prompt_ref: PromptRef | None = None
 
 
 class TaskGenerateIn(BaseModel):
@@ -399,6 +406,7 @@ _persistence_runtime = build_runtime(
     backend=os.getenv("PERSISTENCE_BACKEND", "postgresql"),
 )
 configure_auth_repository(_persistence_runtime.auth_repository)
+configure_account_settings(_persistence_runtime.auth_repository)
 configure_platform_repository(_persistence_runtime.platform_repository)
 configure_product_repository(_persistence_runtime.product_repository)
 
@@ -638,6 +646,7 @@ configure_library(
     else None
 )
 app.include_router(library_router)
+app.include_router(continue_router)
 # The learner's own study sets - Vocabulary's, not My Library's (2026-09-23).
 # The tables are proposed and unapplied, so `available()` is False and every
 # route answers 503 rather than falling back to another domain's tables.
@@ -793,6 +802,10 @@ def _backbone_tables():
 
 configure_work(build_backbone(_persistence_runtime.engine, _backbone_tables()))
 app.include_router(work_router)
+app.include_router(account_records_router)
+app.include_router(learner_activity_router)
+configure_learner_activity(lambda since: _specialized_learning_repository.activity_timestamps(since))
+app.include_router(account_settings_router)
 install_platform_ai(app, require_admin)
 configure_becoming_memory(_specialized_learning_repository)
 configure_becoming_outcomes(_specialized_learning_repository)
@@ -1015,9 +1028,11 @@ def _resolved_writing_support_language() -> tuple[str, str]:
     assert definition is not None
     return code, definition.translation_label
 
-def evaluate_with_ai(payload: EssayIn) -> dict[str, Any]:
+def evaluate_with_ai(payload: EssayIn, *, support: tuple[str, str] | None = None) -> dict[str, Any]:
+    """`support` is (code, name) of the explanation language. Given, it is used as it stands: a refresh
+    of a stored review passes the STORED pair and never the current profile's (D-103.7)."""
     target_level = validate_target_level(payload.target_cefr)
-    support_code, support_name = _resolved_writing_support_language()
+    support_code, support_name = support if support is not None else _resolved_writing_support_language()
     free_writing_context = (
         "(Free Chinese writing — evaluate clarity, language control and naturalness.)"
         if is_chinese()
@@ -1137,13 +1152,22 @@ def heuristic_fallback(payload: EssayIn) -> dict[str, Any]:
     return validate_result({**raw, "__learner_text": text, "__support_language": support_code})
 
 
-def evaluate(payload: EssayIn) -> tuple[dict[str, Any], str]:
+def evaluate(
+    payload: EssayIn,
+    *,
+    support: tuple[str, str] | None = None,
+    allow_fallback: bool | None = None,
+) -> tuple[dict[str, Any], str]:
+    """Run the evaluator. `allow_fallback=False` (the refresh) forbids the local heuristic outright, so a
+    provider failure can never be stored as a review; None keeps the deployment's `ALLOW_FALLBACK`."""
+    fallback_allowed = ALLOW_FALLBACK if allow_fallback is None else allow_fallback
     try:
-        result = evaluate_with_ai(payload)
+        # The stored pair is passed only by a refresh; an ordinary review resolves it from the profile.
+        result = evaluate_with_ai(payload, **({"support": support} if support is not None else {}))
         evaluator = f"{result.pop('_ai_provider', 'ai')}:{result.pop('_ai_model', 'model')}"
         return result, evaluator
     except AIProviderUnavailable as exc:
-        if ALLOW_FALLBACK:
+        if fallback_allowed:
             return heuristic_fallback(payload), "fallback-demo"
         raise orena_http_error(
             503,
@@ -1151,7 +1175,7 @@ def evaluate(payload: EssayIn) -> tuple[dict[str, Any], str]:
             "AI evaluation is temporarily unavailable. Please try again.",
         ) from exc
     except AIProviderError as exc:
-        if ALLOW_FALLBACK:
+        if fallback_allowed:
             return heuristic_fallback(payload), "fallback-demo"
         raise orena_http_error(
             502,
@@ -2637,6 +2661,9 @@ def _run_review(
         "parent_id": payload.parent_essay_id,
         "practice_context": practice_context,
         "grammar_links": result["grammar_links"],
+        "prompt_ref": (
+            {"source": payload.prompt_ref.source, "id": payload.prompt_ref.id} if payload.prompt_ref else None
+        ),
         # The identity of the review travels with the review, in the per-essay
         # metadata both backends already persist - so no column and no
         # migration, and it reaches the client through the same payload.
@@ -2709,6 +2736,104 @@ def essay_review(essay_id: int) -> dict[str, Any]:
     """The review in the Writing room's canonical shape (WritingReview)."""
     detail = essay_detail(essay_id)
     return {**project_writing_review(detail), "id": detail["id"], "parentId": detail.get("parent_id")}
+
+
+def _primary_subtag(code: Any) -> str:
+    return str(code or "").strip().casefold().replace("_", "-").split("-", 1)[0]
+
+
+def _refresh_answer(essay_id: int, status: str) -> dict[str, Any]:
+    """The stored review as it now stands, and what the refresh did about it."""
+    return {"status": status, "id": essay_id, "review": essay_review(essay_id)}
+
+
+@app.post("/api/essays/{essay_id}/review/refresh")
+def essay_review_refresh(essay_id: int) -> dict[str, Any]:
+    """Re-grade ONE stored essay under the current evaluator contract, keeping the old review as history.
+
+    D-103.7, D4 I19. Idempotent, no body. Only the STORED pair is used (the essay's own text, prompt and
+    target level; the learning and support languages of its stored review identity), never the current
+    profile's, and only a real provider result is stored: a failure or a fallback writes nothing.
+    Statuses: `refreshed`; `current` (unaffected pair, already on the current contract, or another writer
+    got there first); `unverifiable` (no stored pair, so nothing is inferred - D-104 H-15); `unavailable`
+    (the provider gave nothing usable; retryable).
+    """
+    row = _learning_repository.get_essay(essay_id)
+    if not row:
+        raise HTTPException(404, "Essay not found")
+    detail = row_to_dict(row, detail=True)
+    stored = identity_of_stored(detail.get("module_data"))
+    learning, support_code = stored.get("learning_language", ""), stored.get("support_language", "")
+    prior = stored.get("fingerprint", "")
+    if (
+        not prior
+        or not learning
+        or not support_code
+        or _primary_subtag(learning) != _primary_subtag(active_grammar_language_code())
+    ):
+        return _refresh_answer(essay_id, "unverifiable")
+    if not v27_affects(learning, support_code):
+        return _refresh_answer(essay_id, "current")
+    definition = support_language(support_code)
+    if definition is None:
+        # An explanation language this build cannot name is a pair it cannot verify: nothing is guessed.
+        return _refresh_answer(essay_id, "unverifiable")
+    new_identity = review_identity(
+        text=str(detail.get("text") or ""),
+        learning_language=learning,
+        support_language=support_code,
+        target_level=str(detail.get("target_cefr") or ""),
+        prompt=str(detail.get("prompt") or ""),
+    )
+    if same_review(new_identity, stored):
+        return _refresh_answer(essay_id, "current")
+    with _review_gate(f"refresh:{essay_id}:{prior}"):
+        fresh = _learning_repository.get_essay(essay_id)
+        if not fresh or identity_of_stored(row_to_dict(fresh, detail=True).get("module_data")).get("fingerprint") != prior:
+            return _refresh_answer(essay_id, "current")
+        try:
+            result, evaluator = evaluate(
+                EssayIn(
+                    text=str(detail.get("text") or ""),
+                    prompt=str(detail.get("prompt") or ""),
+                    target_cefr=(str(detail.get("target_cefr") or "") or None),
+                ),
+                support=(support_code, definition.translation_label),
+                allow_fallback=False,
+            )
+            if evaluator == "fallback-demo":
+                raise RuntimeError("a fallback evaluation is never stored")
+            result = _bounded_review(result)
+        except Exception:  # noqa: BLE001 - a refresh that cannot be earned writes nothing and can be retried
+            logging.getLogger(__name__).warning("essay review refresh unavailable", exc_info=True)
+            return _refresh_answer(essay_id, "unavailable")
+        outcome = _specialized_learning_repository.refresh_essay_review(
+            essay_id,
+            prior,
+            {
+                **{name: result[name] for name in ("grammar", "vocabulary", "coherence", "task_achievement", "naturalness")},
+                "overall": weighted_overall(result),
+                "cefr_estimate": result["cefr_estimate"],
+                "evaluator": evaluator,
+                "summary_vi": result["summary_vi"],
+                "strengths": result["strengths_vi"],
+                "strength_evidence": result["strength_evidence"],
+                "priorities": result["priorities_vi"],
+                "errors": result["errors"],
+            },
+            new_identity,
+            datetime.now().astimezone().isoformat(timespec="seconds"),
+        )
+    return _refresh_answer(essay_id, "refreshed" if outcome["status"] == "refreshed" else "current")
+
+
+@app.get("/api/essays/{essay_id}/review/history")
+def essay_review_history(essay_id: int) -> dict[str, Any]:
+    """The reviews this essay had before an evaluator refresh, newest first. Read-only audit evidence;
+    the scope-checked essay is loaded first, so another account's or language's id is a 404."""
+    if not _learning_repository.get_essay(essay_id):
+        raise HTTPException(404, "Essay not found")
+    return {"items": _specialized_learning_repository.list_essay_review_history(essay_id)}
 
 
 @app.get("/api/essays/{essay_id}/revision")

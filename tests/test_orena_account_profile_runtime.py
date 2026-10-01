@@ -26,9 +26,10 @@ class FakeProfileRepository:
     def get_profile_record(self):
         return dict(self.record) if self.record else None
 
-    def upsert_profile_record(self, values):
+    def upsert_profile_record(self, values, *, expected_updated_at=None):
+        # Merge semantics, like the real repositories: a key the caller left out keeps its value.
         self.writes.append(dict(values))
-        self.record = dict(values)
+        self.record = {**(self.record or {}), **values}
 
 
 SAVED = {

@@ -1158,3 +1158,45 @@ at `20260924_0016` keep working. After the human authorizes the migrations (and 
 | P2-6 drafting | Section 5 uses `op.get_context()`; section 15: the ORM declares the 0023 CHECK, SQLite `initialize()` cannot add it |
 | Probes | FK constraint name asserted; the place probe runs the conditional upsert of I4 (coalescing, version and `updated_at` untouched, pin unaffected); the downgrade schema is compared with the schema captured at 0016; old-code inserts into `users` and `user_language_profiles`; a JSON-null hazard probe |
 | H-19, H-20 | Section 10 records the reviewer's recommendations as **proposed answers for the human**; nothing is decided here |
+
+## 17. Corrections recorded after the implementation review (2026-09-30, `LEARNER_RECORDS_D4_IMPLEMENTATION_REVIEW.md`)
+
+The migrations 0017-0023 are applied revisions in `migrations/versions/`; their files are not edited. Where a docstring
+there still reads "PROPOSAL ... lives in `migrations/proposed/`" or names review modes `target`/`cloze`, **this section
+is the correction**: the files are the applied revisions, and the modes are `typing`/`cloze`/`dictation` (below).
+
+Deviations from the sections above, accepted by the review and by the human where noted:
+
+- **I4 place payload** is `{index, total, within, finished, cleared, title, intent, segment, context}`; `segment`
+  (at most 255) and `context` (at most 240) are bounded strings the Reader and the shelf need to restore a position. The
+  request model refuses any other key.
+- **I4 saved-ness.** A row that exists only to hold a place (a `started` row that is not a word, not marked, not filed,
+  no note) is never returned by the library lookup and never counts as a bookmark; where several rows name one source the
+  `kept` row comes first. Forgetting a marked row that also holds a place clears the mark and keeps the place. Consumers
+  read saved-ness as the `kept` relationship.
+- **I6 turn content.** `work_turns.content` holds the turn as JSON `{id, text, origin, reply_to, meaning, support}`; the
+  order and role stay in the constrained columns. Coaching is not stored (H-8 stays open).
+- **I13 modes.** The canonical keys are `typing`, `cloze`, `dictation` (D-104 follow-up, `a4390b5`); an unknown key or a
+  non-boolean is refused with 400 `invalid_value`, not dropped. Stored `review_modes` replaces the map wholesale (the
+  client always sends all three).
+- **I1 levels.** `HSK7-9` is one band in the registry and one cell after HSK 6.
+- **I12 deletion.** Deleting a private import commits a tombstone without title, text or link, and a deleted work is not
+  served by `GET /api/works/{id}`.
+- **I2 / P2-3.** An account that never chose a language costs one settings lookup per session (a session flag), not one
+  per request.
+- **Profile token.** The profile row's version is a microsecond server-clock ISO string (opaque to clients), not a
+  one-second stamp.
+- **Authentication-disabled development.** The one local account (`legacy`) has its `users` row created by the first
+  settings write; any other account without a row stays 503 `account_settings_unavailable`.
+- **Dictation first write.** The row is created (`INSERT ... ON CONFLICT DO NOTHING`) and then locked, so two first checks
+  of a segment both succeed.
+
+Held for the human (not decided by an agent): per-account caps for `started` place rows, responses, annotations and
+conversations, and a compaction owner for the receipt stream (P2-4; the only bounds the proposal states are the 20
+imports, the annotation sizes and the 24-turn conversation, which are enforced).
+
+Deployment. Code and migrations 0017-0023 are one deployment unit: the ORM selects the new columns, so this code on a
+database still at `20260924_0016` fails at sign-in. Order: backup, 0017 to 0023 one invocation each (0018 alone), then
+the code. The PostgreSQL-only proofs (settings token race, turn and dictation races, the history trigger, ORM/migration
+parity, `none_as_null`) run only with `ORENA_TEST_POSTGRES_URL`; CI has no PostgreSQL service, so they are local
+execution, not CI evidence, until a PostgreSQL job is added.

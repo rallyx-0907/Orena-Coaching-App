@@ -13,6 +13,8 @@ const INTERFACE_KEYS = [
   /* The header's time-of-day greeting (buildGreeting, model.js) - the page's own heading text,
      chrome like every other title on this screen, never the learner's own explanation of anything. */
   'greetingMorning', 'greetingAfternoon', 'greetingEvening',
+  /* The skippable level prompt (D-105 H-19): a Banner (the design's frame) for a profile with no level. */
+  'levelPromptTitle', 'levelPromptText', 'levelPromptAction',
 ];
 
 const SUPPORT_KEYS = [
@@ -47,6 +49,7 @@ export const t = defineCopy('today', {
     activity_phrases_kept_one: '{n} phrase kept', activity_phrases_kept_other: '{n} phrases kept',
     reviewReason_one: '{n} word due for review', reviewReason_other: '{n} words due for review',
     greetingMorning: 'Good morning', greetingAfternoon: 'Good afternoon', greetingEvening: 'Good evening',
+    levelPromptTitle: 'What is your level?', levelPromptText: 'Tell Orena where you are, or skip it for now.', levelPromptAction: 'Choose level',
     subtitleBoth_one: '{n} thing worth doing today, then something to enjoy.',
     subtitleBoth_other: '{n} things worth doing today, then something to enjoy.',
     subtitleOnly_one: '{n} thing worth doing today.',
@@ -69,6 +72,7 @@ export const t = defineCopy('today', {
     activity_phrases_kept_other: '{n} cụm từ đã lưu',
     reviewReason_other: '{n} từ cần ôn tập',
     greetingMorning: 'Chào buổi sáng', greetingAfternoon: 'Chào buổi chiều', greetingEvening: 'Chào buổi tối',
+    levelPromptTitle: 'Trình độ của bạn là gì?', levelPromptText: 'Cho Orena biết bạn đang ở đâu, hoặc bỏ qua lúc này.', levelPromptAction: 'Chọn trình độ',
     subtitleBoth_other: 'Có {n} việc đáng làm hôm nay, rồi đến điều gì đó để thư giãn.',
     subtitleOnly_other: 'Có {n} việc đáng làm hôm nay.',
   },
@@ -89,6 +93,7 @@ export const t = defineCopy('today', {
     activity_phrases_kept_other: '{n} 个已保存的短语',
     reviewReason_other: '{n} 个词需要复习',
     greetingMorning: '早上好', greetingAfternoon: '下午好', greetingEvening: '晚上好',
+    levelPromptTitle: '你的水平是？', levelPromptText: '告诉 Orena 你现在的水平，或者先跳过。', levelPromptAction: '选择水平',
     subtitleBoth_other: '今天有 {n} 件值得做的事，之后还有内容可以放松享受。',
     subtitleOnly_other: '今天有 {n} 件值得做的事。',
   },

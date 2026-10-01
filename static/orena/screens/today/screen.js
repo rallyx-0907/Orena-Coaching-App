@@ -6,24 +6,34 @@
    - not the Writing-only streak of /api/dashboard. */
 import { html, mount, raw } from '../../kit/html.js';
 import { icon } from '../../kit/icons.js';
-import { mediaCard, sectionHead, progressRing } from '../../kit/components.js';
+import { mediaCard, sectionHead } from '../../kit/components.js';
 import { langSpan } from '../../kit/lang.js';
 import { useStyles } from '../../kit/styles.js';
 import { api } from '../../infrastructure/api.js';
 import { languages } from '../../copy/index.js';
+import { bannerMarkup } from '../../kit/states.js';
+import { shellCopy } from '../../copy/shell.js';
 import { t } from './copy.js';
 import {
   buildRecommendationPool,
   buildForYou,
   usedRecommendationIds,
-  buildGoalSummary,
-  buildSkillRings,
   buildStreak,
-  buildLevel,
   todayDateLabel,
   buildGreeting,
   buildHeadSubtitle,
+  needsLevelPrompt,
 } from './model.js';
+
+const PROMPT_SKIPPED = 'orena.today.levelPromptSkipped';
+
+function promptSkipped(language) {
+  try {
+    return window.sessionStorage.getItem(PROMPT_SKIPPED) === language;
+  } catch {
+    return false;
+  }
+}
 
 export default async function mountToday(element, ctx) {
   await useStyles('screens/today/today.css');
@@ -32,12 +42,11 @@ export default async function mountToday(element, ctx) {
   const level = state.profile?.declared_level || '';
   const supportLang = languages().support;
 
-  const [readingResult, listeningResult, speakingResult, feedResult, summaryResult, reviewResult] = await Promise.allSettled([
+  const [readingResult, listeningResult, speakingResult, feedResult, reviewResult] = await Promise.allSettled([
     api.readingPracticeNext(),
     api.listeningLibrary(language),
     api.speakingLibrary(language),
     api.dailyVocabularyFeed(language, level || undefined),
-    api.learnerSummary('7d'),
     api.libraryReviewQueue(),
   ]);
 
@@ -45,7 +54,6 @@ export default async function mountToday(element, ctx) {
   const listeningItems = listeningResult.status === 'fulfilled' ? listeningResult.value?.items || [] : [];
   const speakingItems = speakingResult.status === 'fulfilled' ? speakingResult.value?.items || [] : [];
   const feedItems = feedResult.status === 'fulfilled' ? feedResult.value?.items || [] : [];
-  const summary = summaryResult.status === 'fulfilled' ? summaryResult.value : null;
   // Same source My Library's own Due-Review tab reads (screens/library/screen.js): {due_count,
   // first_due_word}. A rejected/aborted call is a rule-40 empty queue, never an invented one.
   const review = reviewResult.status === 'fulfilled' ? reviewResult.value : { due_count: 0, first_due_word: '' };
@@ -66,10 +74,9 @@ export default async function mountToday(element, ctx) {
     t,
   );
 
-  const goal = buildGoalSummary(summary || {}, t);
-  const skills = buildSkillRings(t);
-  const streak = buildStreak(t);
-  const lvl = buildLevel(t);
+  // A real metric or no metric (D-103.4): the goal ring, the skill rings and the level card have no
+  // measure behind them, so they are not drawn. The streak is measured, so it is.
+  const streak = buildStreak(t, state.activity);
 
   let heroIndex = 0;
 
@@ -108,35 +115,8 @@ export default async function mountToday(element, ctx) {
   }
 
   function progressMarkup() {
-    return html`<div class="s-today-progress">
-      <div class="s-today-goal">
-        ${progressRing({
-          percent: goal.pct,
-          size: 112,
-          radius: 50,
-          stroke: 12,
-          center: html`<span class="s-today-goal-pct">${goal.pct}<span>%</span></span><span class="s-today-goal-caption">${t('ofGoalLabel')}</span>`,
-        })}
-        <div class="s-today-goal-body">
-          <div class="s-today-goal-label">${goal.label}</div>
-          <div class="s-today-skills">
-            ${skills.map(
-              (skill) => html`<div class="s-today-skill" title="${skill.label}">
-                ${progressRing({
-                  percent: skill.percent,
-                  size: 44,
-                  radius: 19,
-                  stroke: 4,
-                  color: skill.color,
-                  center: html`<span style="color:${skill.color};display:flex">${raw(icon(skill.icon, { size: 22 }))}</span>`,
-                })}
-                <span class="s-today-skill-label">${skill.label}</span>
-              </div>`,
-            )}
-          </div>
-          <div class="s-today-goal-sub">${goal.sub}</div>
-        </div>
-      </div>
+    if (!streak.known) return '';
+    return html`<div class="s-today-progress s-today-progress--solo">
       <div class="s-today-side">
         <div class="s-today-streak">
           <div class="s-today-streak-head">
@@ -150,14 +130,6 @@ export default async function mountToday(element, ctx) {
                 <span class="s-today-day-letter">${day.letter}</span>
               </div>`,
             )}
-          </div>
-        </div>
-        <div class="s-today-level">
-          <span class="s-today-level-badge">${lvl.badge}</span>
-          <div class="s-today-level-body">
-            <div class="s-today-level-row"><b>${lvl.name}</b><span>${lvl.xp}</span></div>
-            <div class="s-today-level-track"><span style="width:${lvl.pct}%"></span></div>
-            <div class="s-today-level-next">${lvl.next}</div>
           </div>
         </div>
       </div>
@@ -219,16 +191,37 @@ export default async function mountToday(element, ctx) {
     </div>`;
   }
 
+  function levelPromptMarkup() {
+    if (!needsLevelPrompt(state.profile) || promptSkipped(language)) return '';
+    return bannerMarkup({
+      kind: 'info',
+      title: t('levelPromptTitle'),
+      text: t('levelPromptText'),
+      actionLabel: t('levelPromptAction'),
+      dismissLabel: shellCopy('dismiss'),
+    });
+  }
+
   function paint() {
     mount(
       element,
       html`<div class="s-today">
+        ${levelPromptMarkup()}
         ${headMarkup()}
         ${progressMarkup()}
         ${recommendedMarkup()}
         ${forYouMarkup()}
       </div>`,
     );
+    element.querySelector('[data-banner-action]')?.addEventListener('click', () => ctx.go(ctx.href('welcome', {}, { step: 'level' })));
+    element.querySelector('[data-banner-close]')?.addEventListener('click', () => {
+      try {
+        window.sessionStorage.setItem(PROMPT_SKIPPED, language);
+      } catch {
+        /* skipped for this paint only */
+      }
+      paint();
+    });
     element.querySelector('[data-another]')?.addEventListener('click', () => {
       heroIndex += 1;
       paint();

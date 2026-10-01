@@ -36,7 +36,7 @@
    a "0 / 15 min" figure against a target that does not really exist (N-25). */
 import { html, mount, raw, cls } from '../../kit/html.js';
 import { icon } from '../../kit/icons.js';
-import { progressRing, listRow } from '../../kit/components.js';
+import { listRow } from '../../kit/components.js';
 import { useStyles } from '../../kit/styles.js';
 import { api } from '../../infrastructure/api.js';
 import { shellCopy } from '../../copy/shell.js';
@@ -74,36 +74,6 @@ function streakDaysTileValue(dayStreak) {
   if (dayStreak === 0) return t('streakDaysValueNone');
   return t(dayStreak === 1 ? 'streakDaysValueOne' : 'streakDaysValueMany', { n: dayStreak });
 }
-function weekMinutesTileValue(weekMinutes) {
-  if (weekMinutes === 0) return t('weekMinutesValueNone');
-  return t(weekMinutes === 1 ? 'weekMinutesValueOne' : 'weekMinutesValueMany', { n: weekMinutes });
-}
-
-/* The 4th hero tile ("Daily goal", E1 frame 25 §2.1: a 60x60 ring around a 46px disc + label/value)
-   - kept at its honest rule-40 zero via kit/components.js's progressRing(), the primitive built for
-   exactly this tile, instead of omitted (see the top-of-file comment for why). The ring's own
-   center shows the real, honest "0" (no per-day study-time aggregate exists, same as the digit a
-   real measure of 0 would show); the value line reads the same "not tracked yet" text Today's own
-   goal ring already uses, rather than a fabricated "0 / 15 min" against a target with no backend
-   standing. */
-function dailyGoalTileMarkup() {
-  return html`<div class="s-profile-tile s-profile-daily">
-    ${progressRing({
-      percent: 0,
-      size: 60,
-      radius: 26,
-      stroke: 7,
-      color: 'var(--toast-ink)',
-      trackColor: 'var(--toast-chip)',
-      center: html`<span class="s-profile-daily__min">0</span>`,
-    })}
-    <div class="s-profile-daily__body">
-      <span class="s-profile-tile__label">${t('dailyGoalLabel')}</span>
-      <span class="s-profile-tile__value">${t('dailyGoalNotTracked')}</span>
-    </div>
-  </div>`;
-}
-
 function heroMarkup(model, ctx) {
   return html`<div class="s-profile-hero">
     <div class="s-profile-hero__top">
@@ -116,23 +86,18 @@ function heroMarkup(model, ctx) {
       </button>
     </div>
     <div class="s-profile-hero__grid">
-      ${dailyGoalTileMarkup()}
       <div class="s-profile-tile s-profile-streak">
         <div class="s-profile-tile__head">
           <span class="s-profile-tile__label">${t('streakLabel')}</span>
           <span class="s-profile-tile__value">${streakDaysTileValue(model.dayStreak)}</span>
         </div>
-        <div class="s-profile-streak__days">${weekdayAbbrevs(t('weekdays')).map((day) => html`<span class="s-profile-day">${day}</span>`)}</div>
+        <div class="s-profile-streak__days">${weekdayAbbrevs(t('weekdays')).map((day, index) => html`<span class="${cls('s-profile-day', model.weekDays[index] && 's-profile-day--done')}">${day}</span>`)}</div>
       </div>
       <button type="button" class="s-profile-tile" data-go="${ctx.href('review')}">
         <span class="s-profile-tile__label">${t('dueLabel')}</span>
         <span class="s-profile-tile__value">${dueTileValue(model.due)}</span>
         <span class="s-profile-tile__cta">${t('startReview')}${raw(icon('arrow-right', { size: 14 }))}</span>
       </button>
-      <div class="s-profile-tile">
-        <span class="s-profile-tile__label">${t('weekLabel')}</span>
-        <span class="s-profile-tile__value">${weekMinutesTileValue(model.weekMinutes)}</span>
-      </div>
     </div>
   </div>`;
 }
@@ -155,13 +120,13 @@ function identityMarkup(model) {
         <div class="s-profile-goal">${t('goalPrefix')} · <b>${t(model.goalKey)}</b></div>
       </div>
     </div>
-    <div class="s-profile-weekly">
+    ${model.weeklyGoalTarget > 0 ? html`<div class="s-profile-weekly">
       <div class="s-profile-weekly__head">
         <strong>${t('weeklyGoalTitle', { n: model.weeklyGoalTarget })}</strong>
-        <span>${model.weeklyGoalDone} / ${model.weeklyGoalTarget}</span>
+        <span>${Math.min(model.weeklyGoalDone, model.weeklyGoalTarget)} / ${model.weeklyGoalTarget}</span>
       </div>
       <div class="s-profile-weekly__bars">${bars}</div>
-    </div>
+    </div>` : ''}
   </div>`;
 }
 
@@ -177,11 +142,6 @@ function statsMarkup(model) {
         <span class="s-profile-stat__icon" style="color:var(--skill-vocab)">${raw(icon('case-lower', { size: 20 }))}</span>
         <span class="s-profile-stat__value">${model.savedCount}</span>
         <span class="s-profile-stat__label">${t('savedItemsStatLabel')}</span>
-      </div>
-      <div class="s-profile-stat">
-        <span class="s-profile-stat__icon" style="color:var(--accent)">${raw(icon('clock', { size: 20 }))}</span>
-        <span class="s-profile-stat__value">${weekMinutesTileValue(model.weekMinutes)}</span>
-        <span class="s-profile-stat__label">${t('weekLabel')}</span>
       </div>
     </div>
   </div>`;
@@ -282,5 +242,5 @@ export default async function profile(element, ctx) {
 // rule-40 zero fallback in the rendered text, the weekly-goal bar count, the weekday strip length.
 export const __internal = {
   avatarMarkup, heroMarkup, identityMarkup, statsMarkup, actionRow, dueTileValue, actionSub, WEEKLY_GOAL_TARGET,
-  streakDaysTileValue, weekMinutesTileValue, dailyGoalTileMarkup, actionHref,
+  streakDaysTileValue, actionHref,
 };

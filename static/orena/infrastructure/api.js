@@ -65,10 +65,20 @@ export const api={
   health:()=>request('/api/health'),
   languages:()=>request('/api/platform/languages'),
   skills:()=>request('/api/platform/skills'),
-  setLanguage:(language)=>request('/api/platform/language',{
+  /* `settingsVersion` is the opaque token read from accountSettings(), echoed verbatim (D-104 H-17).
+     Omitted, the session still switches and the account stores only a first-ever choice. */
+  setLanguage:(language,settingsVersion)=>request('/api/platform/language',{
     method:'POST',
     headers:JSON_HEADERS,
-    body:JSON.stringify({language}),
+    body:JSON.stringify(settingsVersion==null?{language}:{language,settings_version:settingsVersion}),
+  }),
+  accountSettings:()=>request('/api/account-settings'),
+  /* Account-wide choices (learning language, interface language, weekly goal), versioned by
+     `expected_settings_version`, the opaque string the server last served. */
+  patchAccountSettings:(payload)=>request('/api/account-settings',{
+    method:'PATCH',
+    headers:JSON_HEADERS,
+    body:JSON.stringify(payload),
   }),
   dashboard:()=>request('/api/dashboard'),
   learnerProfile:()=>request('/api/learner-profile'),
@@ -460,6 +470,9 @@ export const api={
   essay:(id)=>request(`/api/essays/${encodeURIComponent(id)}`),
   /* The review and the revision in the Writing room's canonical shapes (D-066). */
   essayReview:(id)=>request(`/api/essays/${encodeURIComponent(id)}/review`),
+  /* Re-grade one old essay under the current evaluator contract if its stored pair is affected
+     (D-103.7). The server decides; an essay that is current costs no provider call. */
+  refreshEssayReview:(id)=>request(`/api/essays/${encodeURIComponent(id)}/review/refresh`,{method:'POST'}),
   essayRevision:(id)=>request(`/api/essays/${encodeURIComponent(id)}/revision`),
   linguisticAnnotations:(id)=>request(`/api/essays/${encodeURIComponent(id)}/linguistic-annotations`,{
     method:'POST',
@@ -489,7 +502,41 @@ export const api={
     headers:JSON_HEADERS,
     body:JSON.stringify(body),
   }),
+  // Records kept with the account while the backbone is active (D4): conversation turns, notes and
+  // highlights, private imports, typed and Reading Transfer responses, and where a kept word was met.
+  conversationRecord:(key)=>request(`/api/conversations/${encodeURIComponent(key)}`),
+  appendConversationTurn:(key,body)=>request(`/api/conversations/${encodeURIComponent(key)}/turns`,{
+    method:'POST',
+    headers:JSON_HEADERS,
+    body:JSON.stringify(body),
+  }),
+  annotations:(contentId)=>request(`/api/annotations/${encodeURIComponent(contentId)}`),
+  saveAnnotations:(contentId,body)=>request(`/api/annotations/${encodeURIComponent(contentId)}`,{
+    method:'PUT',
+    headers:JSON_HEADERS,
+    body:JSON.stringify(body),
+  }),
+  imports:()=>request('/api/imports?limit=50'),
+  saveImport:(id,body)=>request(`/api/imports/${encodeURIComponent(id)}`,{
+    method:'PUT',
+    headers:JSON_HEADERS,
+    body:JSON.stringify(body),
+  }),
+  deleteImport:(id,operationId,expectedVersion)=>request(`/api/imports/${encodeURIComponent(id)}?operationId=${encodeURIComponent(operationId)}&expectedVersion=${encodeURIComponent(expectedVersion)}`,{method:'DELETE'}),
+  saveResponse:(key,body)=>request(`/api/responses/${encodeURIComponent(key)}`,{
+    method:'PUT',
+    headers:JSON_HEADERS,
+    body:JSON.stringify(body),
+  }),
+  attachProvenance:(word,body)=>request(`/api/library/vocabulary/${encodeURIComponent(word)}/provenance`,{
+    method:'POST',
+    headers:JSON_HEADERS,
+    body:JSON.stringify(body),
+  }),
   // A read-only glance at the learner's own recorded evidence (I6). `window`
   // is one of 7d/30d/90d/all; the caller decides which, this never guesses.
+  // The streak and this week's active days, derived from server records (D4 I14). `tz` is the learner's own
+  // IANA timezone: a day is a calendar day in it.
+  learnerActivity:(tz)=>request(`/api/learner-activity?tz=${encodeURIComponent(tz||'UTC')}`),
   learnerSummary:(window)=>request(`/api/learner-summary?window=${encodeURIComponent(window)}`),
 };

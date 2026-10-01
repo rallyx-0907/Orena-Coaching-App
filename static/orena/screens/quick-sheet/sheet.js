@@ -48,6 +48,8 @@ import {
   addNote,
   deleteNote,
 } from './model.js';
+import { pullIntoDevice, scheduleAnnotationPush, noteRemoved } from '../reader/annotations-sync.js';
+import { keepProvenance } from '../../product/account-records.js';
 
 let audio = null;
 function playUrl(url) {
@@ -242,6 +244,8 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
         }, undoLabel: s('undo') } : {});
       } else {
         const saved = await api.saveLibraryVocabulary(wordSavePayload(card, sentence, source));
+        // Where the word was met goes to the account beside the word itself (D4 I12d).
+        void keepProvenance({ term: card.word, source, sentence });
         item = saved?.item || item;
         detail = detail ? { ...detail, saved: true } : detail;
         card = mapWordCard(card.word, { detail, item });
@@ -424,6 +428,10 @@ export async function openSentenceSheet(ctx = {}, { sentence, lang, context = ''
       sheetEl.querySelectorAll('[data-note-delete]').forEach((button) => button.addEventListener('click', () => {
         if (!storage) return;
         deleteNote(storage, owner, key, button.dataset.noteDelete);
+        if (source?.content_id) {
+          noteRemoved(source.content_id, button.dataset.noteDelete);
+          scheduleAnnotationPush(storage, owner, source.content_id);
+        }
         paint();
         onNote?.();
       }));
@@ -432,8 +440,9 @@ export async function openSentenceSheet(ctx = {}, { sentence, lang, context = ''
 
   function submitNote() {
     if (!storage || !noteDraft.trim()) return;
-    const note = addNote(storage, owner, key, { type: noteType, text: noteDraft });
+    const note = addNote(storage, owner, key, { type: noteType, text: noteDraft, content: source?.content_id || '' });
     if (!note) return;
+    if (source?.content_id) scheduleAnnotationPush(storage, owner, source.content_id);
     noteDraft = '';
     paint();
     toast(t('savedToast'));
@@ -448,6 +457,7 @@ export async function openSentenceSheet(ctx = {}, { sentence, lang, context = ''
         await api.deleteLibraryVocabulary(item.term);
       } else {
         await api.saveLibraryVocabulary(vocabSavePayload(item.term, item.meaning, target, source));
+        void keepProvenance({ term: item.term, source, sentence: target });
       }
       item.saved = !item.saved;
       paint();
@@ -465,6 +475,12 @@ export async function openSentenceSheet(ctx = {}, { sentence, lang, context = ''
         sheetEl = element;
         paint();
         onOpen?.();
+        // Notes the account holds for this text arrive on this device too (D4 I10).
+        if (source?.content_id) {
+          pullIntoDevice(storage, owner, source.content_id)
+            .then((changed) => { if (changed && alive) paint(); })
+            .catch(() => {});
+        }
         (async () => {
           const ctxText = context || target;
           let response = null;

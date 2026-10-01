@@ -3716,3 +3716,38 @@ E continues in parallel where it does not depend on D4 schema.
      wording for Reading.
    - (b) For vocabulary publication the server is the authority; the UI states the server's rule.
    - (c) The review queue shows Source, Rights and Target count.
+
+## D-106 — Reading rights in the overview, article-level automation override, the grammar store decisions
+
+**Date:** 2026-09-30. **Status:** Accepted (explicit human direction).
+
+**Reading.**
+1. **READING-1.** "Next in review" shows a compact effective Rights status that agrees with the
+   Review queue. The full rights form is not duplicated there.
+2. **READING-2.** A source's `automation_allowed` is a default, not the only authority. An article
+   may carry a reviewed override. The effective value is the article override when present,
+   otherwise the source default. Publish uses the article's effective value, and overrides are
+   audited.
+
+**Grammar content store** (`proposals/GRAMMAR_CONTENT_STORE.md` rev 2, section 17):
+1. The model is approved: content in the DB, immutable versions, authored only upstream, publish
+   an explicit act.
+2. Approved: an explicit `r5_map`; the canonical JSON/hash rule; an R5 alias sits on the primary
+   point only, and split secondaries use `source_refs`.
+3. Batch atomicity is approved as proposed.
+4. A merged R5 point is complete only when **all** aliased R5 lessons are complete.
+5. No reviewer separation for now. Import, accept, rights and publish stay four separately
+   audited acts.
+6. The hard rights gate is approved.
+7. Publish is refused while a published reference would dangle.
+8. `jsonschema` is used, with a derived single-version export-profile schema from the merged
+   Grammar contract. The current multi-version upstream schema is not vendored verbatim.
+   Upstream-drift and golden-vector tests are added.
+9. The progress endpoint `PUT /api/grammar/v1/progress/{id}` and manifest-only retention are
+   approved.
+10. Re-importing an already rejected content hash is refused; upstream must change the content.
+    Grammar-store implementation waits for the required merged contract (PR #67).
+
+The reviewer's N-1..N-6 are carried into implementation without reopening these decisions. For
+unavailable or dropped Grammar responses the learner UI uses the existing not-found shape; no new
+learner landing is invented.

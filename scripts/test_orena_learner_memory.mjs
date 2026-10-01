@@ -265,6 +265,26 @@ assert.ok(
   'provenance is captured from the surface that owns the selection',
 );
 
+/* An imported media membership of either kind survives a reload: `url:` and `upload:` (addMedia accepts both). */
+{
+  const reloadBox = (() => { const d = {}; return { getItem: (k) => d[k] ?? null, setItem: (k, v) => { d[k] = String(v); }, removeItem: (k) => { delete d[k]; } }; })();
+  const first = learnerMemory(reloadBox, 'owner-m', 'en');
+  assert.ok(first.addMedia({ id: 'url:abc', title: 'A pasted link', kind: 'video' }));
+  assert.ok(first.addMedia({ id: 'upload:def', title: 'An uploaded file', kind: 'audio' }));
+  const again = learnerMemory(reloadBox, 'owner-m', 'en');
+  assert.deepEqual(again.value.mediaImports.map((x) => x.id).sort(), ['upload:def', 'url:abc'], 'an upload: membership is not dropped on reload');
+  assert.deepEqual(learnerMemory(reloadBox, 'owner-m', 'zh').value.mediaImports, [], 'still language-isolated');
+  /* The account's media imports reach a device that never had them, in the device's own list, and survive a reload. */
+  const sent = [];
+  const newDevice = (() => { const d = {}; return { getItem: (k) => d[k] ?? null, setItem: (k, v) => { d[k] = String(v); }, removeItem: (k) => { delete d[k]; } }; })();
+  const fresh = learnerMemory(newDevice, 'owner-m', 'en');
+  assert.equal(fresh.mergeImports([{ id: 'url:https://x.test/v', title: 'v', kind: 'video' }, { id: 'upload:stored-9', title: 'f', kind: 'audio' }, { id: 'text:t1', title: 'T', text: 'b', kind: 'text', language: 'en', origin: 'imported' }]), true);
+  assert.deepEqual(learnerMemory(newDevice, 'owner-m', 'en').value.mediaImports.map((x) => x.id), ['url:https://x.test/v', 'upload:stored-9']);
+  assert.equal(learnerMemory(newDevice, 'owner-m', 'en').value.imports.length, 1);
+  assert.equal(fresh.mergeImports([{ id: 'url:https://x.test/v', title: 'v' }]), false, 'a repeat changes nothing');
+  void sent;
+}
+
 console.log(
   'Learner memory, provenance, the route back, recall that fits its origin, and inquiry that keeps it: PASS',
 );
