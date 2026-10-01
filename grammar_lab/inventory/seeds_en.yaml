@@ -1280,7 +1280,7 @@
 # Full canonical seed completion (ChatGPT, 2026-09-30). Existing reviewed seeds above are preserved unchanged.
 - id: en.canon.a2.001
   level: A2
-  function: fn.catalog_unclassified
+  function: fn.identity_state
   point_type: other
   native_title: "Stative verbs: introduction"
   title:
@@ -1369,7 +1369,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.a2.006
   level: A2
-  function: fn.catalog_unclassified
+  function: fn.verb_patterns
   point_type: other
   native_title: "Phrasal Verbs Basic"
   title:
@@ -1386,7 +1386,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.a2.007
   level: A2
-  function: fn.catalog_unclassified
+  function: fn.sequence
   point_type: other
   native_title: "Time Clauses Basic"
   title:
@@ -1653,7 +1653,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.b1.014
   level: B1
-  function: fn.catalog_unclassified
+  function: fn.verb_patterns
   point_type: tense_aspect
   native_title: "Passive voice: present and past"
   title:
@@ -1707,7 +1707,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.b1.017
   level: B1
-  function: fn.catalog_unclassified
+  function: fn.possibility
   point_type: other
   native_title: "Ability across time"
   title:
@@ -1725,7 +1725,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.b1.018
   level: B1
-  function: fn.catalog_unclassified
+  function: fn.obligation_advice
   point_type: other
   native_title: "Prohibition and lack of necessity"
   title:
@@ -1886,7 +1886,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.b1.027
   level: B1
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
   native_title: "Reported statements"
   title:
@@ -1920,7 +1920,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.b1.029
   level: B1
-  function: fn.catalog_unclassified
+  function: fn.instructions
   point_type: other
   native_title: "Reported commands and requests"
   title:
@@ -2012,7 +2012,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.b1.034
   level: B1
-  function: fn.catalog_unclassified
+  function: fn.verb_patterns
   point_type: other
   native_title: "Causative have/get"
   title:
@@ -2153,7 +2153,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.b1.042
   level: B1
-  function: fn.catalog_unclassified
+  function: fn.reference
   point_type: other
   native_title: "One/ones"
   title:
@@ -2225,7 +2225,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.b1.046
   level: B1
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
   native_title: "Adjective Order"
   title:
@@ -2241,7 +2241,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.b1.047
   level: B1
-  function: fn.catalog_unclassified
+  function: fn.verb_patterns
   point_type: other
   native_title: "Adjective Preposition"
   title:
@@ -2324,7 +2324,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.b1.052
   level: B1
-  function: fn.catalog_unclassified
+  function: fn.verb_patterns
   point_type: other
   native_title: "Make Let Allow"
   title:
@@ -2341,7 +2341,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.b1.053
   level: B1
-  function: fn.catalog_unclassified
+  function: fn.verb_patterns
   point_type: other
   native_title: "Phrasal Verbs Separable"
   title:
@@ -2392,7 +2392,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.b2.001
   level: B2
-  function: fn.catalog_unclassified
+  function: fn.past_experience
   point_type: tense_aspect
   native_title: "Perfect aspect in discourse"
   title:
@@ -2574,7 +2574,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.b2.011
   level: B2
-  function: fn.catalog_unclassified
+  function: fn.verb_patterns
   point_type: other
   native_title: "Would rather/would prefer/prefer"
   title:
@@ -2592,7 +2592,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.b2.012
   level: B2
-  function: fn.catalog_unclassified
+  function: fn.time_expression
   point_type: tense_aspect
   native_title: "It's time + past form"
   title:
@@ -2609,7 +2609,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.b2.013
   level: B2
-  function: fn.catalog_unclassified
+  function: fn.verb_patterns
   point_type: other
   native_title: "Advanced passive forms"
   title:
@@ -2646,7 +2646,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.b2.015
   level: B2
-  function: fn.catalog_unclassified
+  function: fn.verb_patterns
   point_type: other
   native_title: "Two-object passive"
   title:
@@ -2664,7 +2664,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.b2.016
   level: B2
-  function: fn.catalog_unclassified
+  function: fn.verb_patterns
   point_type: other
   native_title: "Causative have/get: extended"
   title:
@@ -2682,7 +2682,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.b2.017
   level: B2
-  function: fn.catalog_unclassified
+  function: fn.verb_patterns
   point_type: other
   native_title: "Reporting passive"
   title:
@@ -2702,7 +2702,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.b2.018
   level: B2
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: tense_aspect
   native_title: "Reported speech: tense choice"
   title:
@@ -2721,7 +2721,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.b2.019
   level: B2
-  function: fn.catalog_unclassified
+  function: fn.verb_patterns
   point_type: other
   native_title: "Reporting verbs and patterns"
   title:
@@ -2945,7 +2945,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.b2.031
   level: B2
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
   native_title: "Emphatic do"
   title:
@@ -2999,7 +2999,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.b2.034
   level: B2
-  function: fn.catalog_unclassified
+  function: fn.reference
   point_type: other
   native_title: "Reference and substitution"
   title:
@@ -3017,7 +3017,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.b2.035
   level: B2
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
   native_title: "Ellipsis"
   title:
@@ -3036,7 +3036,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.b2.036
   level: B2
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
   native_title: "Nominal clauses"
   title:
@@ -3054,7 +3054,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.b2.037
   level: B2
-  function: fn.catalog_unclassified
+  function: fn.relative
   point_type: other
   native_title: "Complex noun phrases"
   title:
@@ -3072,7 +3072,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.b2.038
   level: B2
-  function: fn.catalog_unclassified
+  function: fn.verb_patterns
   point_type: other
   native_title: "Dependent prepositions"
   title:
@@ -3090,7 +3090,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.b2.039
   level: B2
-  function: fn.catalog_unclassified
+  function: fn.contrast
   point_type: other
   native_title: "Concession patterns"
   title:
@@ -3108,7 +3108,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.b2.040
   level: B2
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
   native_title: "Formal vs informal grammar choices"
   title:
@@ -3127,7 +3127,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.b2.041
   level: B2
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
   native_title: "Punctuation with complex clauses"
   title:
@@ -3146,7 +3146,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.b2.042
   level: B2
-  function: fn.catalog_unclassified
+  function: fn.comparison
   point_type: other
   native_title: "As If As Though"
   title:
@@ -3163,7 +3163,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.b2.043
   level: B2
-  function: fn.catalog_unclassified
+  function: fn.verb_patterns
   point_type: other
   native_title: "Get Passive"
   title:
@@ -3180,7 +3180,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.b2.044
   level: B2
-  function: fn.catalog_unclassified
+  function: fn.verb_patterns
   point_type: other
   native_title: "Phrasal Verbs Advanced"
   title:
@@ -3233,7 +3233,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.c1.003
   level: C1
-  function: fn.catalog_unclassified
+  function: fn.ongoing_now
   point_type: tense_aspect
   native_title: "Advanced simple vs continuous aspect"
   title:
@@ -3252,7 +3252,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.c1.004
   level: C1
-  function: fn.catalog_unclassified
+  function: fn.verb_patterns
   point_type: tense_aspect
   native_title: "Lexical aspect and meaning shifts"
   title:
@@ -3271,7 +3271,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.c1.005
   level: C1
-  function: fn.catalog_unclassified
+  function: fn.completed_past
   point_type: tense_aspect
   native_title: "Historic present and narrative shifts"
   title:
@@ -3361,7 +3361,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.c1.010
   level: C1
-  function: fn.catalog_unclassified
+  function: fn.possibility
   point_type: other
   native_title: "Boosting and controlled certainty"
   title:
@@ -3436,7 +3436,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.c1.014
   level: C1
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
   native_title: "Extraposition with anticipatory it"
   title:
@@ -3471,7 +3471,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.c1.016
   level: C1
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
   native_title: "Nominalisation"
   title:
@@ -3508,7 +3508,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.c1.018
   level: C1
-  function: fn.catalog_unclassified
+  function: fn.verb_patterns
   point_type: other
   native_title: "Mandative subjunctive"
   title:
@@ -3526,7 +3526,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.c1.019
   level: C1
-  function: fn.catalog_unclassified
+  function: fn.condition_real
   point_type: other
   native_title: "Were-subjunctive"
   title:
@@ -3563,7 +3563,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.c1.021
   level: C1
-  function: fn.catalog_unclassified
+  function: fn.verb_patterns
   point_type: other
   native_title: "Advanced non-finite clauses"
   title:
@@ -3581,7 +3581,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.c1.022
   level: C1
-  function: fn.catalog_unclassified
+  function: fn.verb_patterns
   point_type: tense_aspect
   native_title: "Perfect and passive non-finites"
   title:
@@ -3600,7 +3600,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.c1.023
   level: C1
-  function: fn.catalog_unclassified
+  function: fn.contrast
   point_type: other
   native_title: "Advanced concession"
   title:
@@ -3619,7 +3619,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.c1.024
   level: C1
-  function: fn.catalog_unclassified
+  function: fn.reason_result
   point_type: other
   native_title: "Cause/result/purpose relations"
   title:
@@ -3637,7 +3637,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.c1.025
   level: C1
-  function: fn.catalog_unclassified
+  function: fn.reference
   point_type: other
   native_title: "Discourse reference"
   title:
@@ -3655,7 +3655,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.c1.026
   level: C1
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
   native_title: "Parallelism and coordination"
   title:
@@ -3673,7 +3673,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.c1.027
   level: C1
-  function: fn.catalog_unclassified
+  function: fn.exclusion
   point_type: other
   native_title: "Qualification and limitation"
   title:
@@ -3691,7 +3691,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.c1.028
   level: C1
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
   native_title: "Register-driven grammar"
   title:
@@ -3710,7 +3710,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.c1.029
   level: C1
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
   native_title: "Academic definitions and classifications"
   title:
@@ -3728,7 +3728,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.c1.030
   level: C1
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
   native_title: "Sentence rhythm, end-weight and end-focus"
   title:
@@ -3765,7 +3765,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.c2.002
   level: C2
-  function: fn.catalog_unclassified
+  function: fn.condition_real
   point_type: other
   native_title: "Counterfactual compression"
   title:
@@ -3800,7 +3800,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.c2.004
   level: C2
-  function: fn.catalog_unclassified
+  function: fn.exclusion
   point_type: other
   native_title: "Only/focus scope"
   title:
@@ -3818,7 +3818,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.c2.005
   level: C2
-  function: fn.catalog_unclassified
+  function: fn.relative
   point_type: other
   native_title: "Ambiguity from modifier attachment"
   title:
@@ -3836,7 +3836,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.c2.006
   level: C2
-  function: fn.catalog_unclassified
+  function: fn.reference
   point_type: other
   native_title: "Reference ambiguity"
   title:
@@ -3854,7 +3854,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.c2.007
   level: C2
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
   native_title: "Deep clause embedding"
   title:
@@ -3872,7 +3872,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.c2.008
   level: C2
-  function: fn.catalog_unclassified
+  function: fn.relative
   point_type: other
   native_title: "Advanced apposition"
   title:
@@ -3890,7 +3890,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.c2.009
   level: C2
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
   native_title: "Parenthetical grammar"
   title:
@@ -3908,7 +3908,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.c2.010
   level: C2
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
   native_title: "Heavy constituent shift"
   title:
@@ -3926,7 +3926,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.c2.011
   level: C2
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
   native_title: "Advanced extraposition"
   title:
@@ -3961,7 +3961,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.c2.013
   level: C2
-  function: fn.catalog_unclassified
+  function: fn.verb_patterns
   point_type: other
   native_title: "Advanced complement alternation"
   title:
@@ -3979,7 +3979,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.c2.014
   level: C2
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
   native_title: "Advanced reporting and distancing"
   title:
@@ -3997,7 +3997,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.c2.015
   level: C2
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
   native_title: "Cross-sentence ellipsis"
   title:
@@ -4015,7 +4015,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.c2.016
   level: C2
-  function: fn.catalog_unclassified
+  function: fn.reference
   point_type: other
   native_title: "Discourse substitution chains"
   title:
@@ -4033,7 +4033,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.c2.017
   level: C2
-  function: fn.catalog_unclassified
+  function: fn.verb_patterns
   point_type: other
   native_title: "Lexico-grammar and colligation"
   title:
@@ -4051,7 +4051,7 @@
   batch: full-seed-2026-09-30
 - id: en.canon.c2.018
   level: C2
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
   native_title: "Metadiscourse grammar"
   title:
