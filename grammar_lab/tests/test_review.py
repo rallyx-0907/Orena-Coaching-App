@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 import shutil
 from pathlib import Path
 
@@ -16,7 +17,7 @@ from grammar_lab.pipeline.apply_feedback import (
     feedback_stats,
     parse_files,
 )
-from grammar_lab.pipeline.content_store import load_point
+from grammar_lab.pipeline.content_store import load_point, load_points
 from grammar_lab.pipeline.llm_client import LLMClient
 from grammar_lab.pipeline.review_export import build_review, write_review
 from grammar_lab.pipeline.validate import LAB_ROOT, validate_lang
@@ -46,11 +47,13 @@ def test_export_lists_every_point_of_the_level_in_numbered_sections(tmp_path: Pa
     text = path.read_text(encoding="utf-8")
     for point_id in ("en.articles.a_an", "en.plural_nouns.regular", "en.there_is_are"):
         assert f"### {point_id}" in text
-    assert "## Phần 1 / 1" in text
-    assert "Số điểm: **5**" in text and "ký tự" in text  # count and size estimate at the top
-    assert '"id": "...", "block": "..."' in text  # the JSONL contract
-    assert "article" in text  # the engine's label list is there
-    assert "bắt đầu lượt 2" in text and "tiếp tục" in text  # stop-and-continue protocol
+    count = sum(1 for point in load_points("en").values() if point["level"]["value"] == "A1")
+    sections = max(1, math.ceil(count / 10))
+    assert f"## Phần 1 / {sections}" in text
+    assert f"Số điểm: **{count}**" in text and "ký tự" in text
+    assert '"id": "...", "block": "..."' in text
+    assert "article" in text
+    assert "bắt đầu lượt 2" in text and "tiếp tục" in text
 
 
 def test_export_cuts_a_big_level_into_sections_of_ten(lab_copy: Path) -> None:
@@ -58,6 +61,7 @@ def test_export_cuts_a_big_level_into_sections_of_ten(lab_copy: Path) -> None:
 
     source = load_point("en", "en.articles.a_an", lab_copy)
     functions_path = lab_copy / "functions" / "functions.yaml"
+    baseline = sum(1 for point in load_points("en", lab_copy).values() if point["level"]["value"] == "A1")
     for index in range(24):
         clone = copy.deepcopy(source)
         clone["id"] = f"en.clone_{index:02d}"
@@ -65,8 +69,10 @@ def test_export_cuts_a_big_level_into_sections_of_ten(lab_copy: Path) -> None:
         (lab_copy / "content" / "en" / f"{clone['id']}.json").write_text(json.dumps(clone), encoding="utf-8")
     assert functions_path.exists()
     text = build_review("en", "A1", lab_copy)
-    assert "Số điểm: **29**" in text
-    assert "## Phần 3 / 3" in text and "## Phần 4" not in text
+    total = baseline + 24
+    sections = math.ceil(total / 10)
+    assert f"Số điểm: **{total}**" in text
+    assert f"## Phần {sections} / {sections}" in text and f"## Phần {sections + 1}" not in text
 
 
 def test_zh_export_shows_pinyin_after_each_character(tmp_path: Path) -> None:
