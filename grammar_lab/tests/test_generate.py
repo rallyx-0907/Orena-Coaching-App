@@ -18,6 +18,7 @@ from grammar_lab.pipeline.generate import (
     build_rule_table,
     pinyin_from_pairs,
     resolve_spans,
+    semantic_repair_hints,
 )
 from grammar_lab.pipeline.llm_client import LLMClient
 from grammar_lab.pipeline.validate import validate_lang
@@ -550,6 +551,16 @@ def test_generate_v04_does_not_persist_after_three_semantic_failures(tmp_path: P
     assert second.status == "error"
     assert len(calls) == 6  # semantic-invalid cache entries were evicted, so retry is genuinely fresh
     assert path.read_text(encoding="utf-8") == before
+
+def test_semantic_repair_hints_are_targeted_by_failure_family() -> None:
+    class I:
+        def __init__(self, code: str) -> None:
+            self.code = code
+    text = semantic_repair_hints([I("example.formula_role_missing"), I("personal_production.rule_rejects_sample")])
+    assert "Collapse alternative surface forms" in text
+    assert "one representative route" in text
+    assert "pinyin" not in text.lower()
+
 
 def test_generate_v04_resolves_span_substrings_to_offsets(tmp_path: Path) -> None:
     lab = _v04_lab(tmp_path)
