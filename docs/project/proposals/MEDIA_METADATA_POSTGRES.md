@@ -1,7 +1,10 @@
 # Proposal (D-108.5): media metadata moves to PostgreSQL as its authority
 
-Status: **PROPOSED, revision 1** (2026-10-01, `codex/work` at `0f14ed7`). Document only: no code, schema, migration,
-Docker or runtime is changed by this file. Not reviewed, not approved.
+Status: **APPROVED WITH CONDITIONS (review 2026-10-01); rehearsal and human decisions pending.** Revision 2 (2026-10-01) applies the
+review's conditions (section "Rev 2 changes"); rev 1 was at `codex/work` `0f14ed7`. Document only: no code, schema, migration,
+Docker or runtime is changed by this file. **The PostgreSQL rehearsal (section 12, runs 1-6) must be recorded before the migration
+moves from `migrations/proposed/` to `versions/`, and applying it to any runtime stays the human's gate.** Nothing here enables
+the account backbone beyond :8021.
 
 Origin: human decision **D-108 point 5** (`DECISION_LOG.md`): "Long term, media metadata uses PostgreSQL as its authority;
 the shared media file (`index.json`) is not a writable source of truth." It is also gate **G1** of
@@ -37,11 +40,12 @@ dual-write. **The asset bytes do not move**: originals, thumbnails and other fil
 | --- | --- |
 | Where is the authority after cutover? | PostgreSQL `media_entries` (+ `media_entry_payloads`). `index.json` becomes a read-only archive that the application never reads or writes |
 | Do the files move? | No. `MEDIA_LIBRARY_ASSET_ROOT` and `FilesystemBookAssetStore` are unchanged |
-| Schema | **One Alembic revision (`0024`, additive: two tables, indexes, CHECKs)**; no change to an existing table; downgrade drops only the two tables (rehearsal only) |
-| Data move | An operator script (`scripts/import_media_index.py`), dry-run by default, idempotent, verifying, run once under a human gate; **not** at startup, **not** in the Alembic revision |
-| Rollback | Inside the maintenance window: re-point the old code at the archived file. After writes resumed: restore the pre-cutover backup (never downgrade); post-cutover personal uploads are then orphan files, reported by the reconciler |
-| Quota | `SELECT sum(stored_bytes)` over a partial index by owner, in the creating transaction under an advisory lock (D-107.3 / D-108.7 uploaded-media bytes) |
-| Open for the human | Q1-Q8 (section 13): unique `lesson_id`, owner column choice, orphan policy, window length |
+| Schema | **One Alembic revision (`0024`, additive: two tables, indexes, CHECKs)** plus the ORM mirror in `models.py`; no change to an existing table; downgrade drops only the two tables (rehearsal only) |
+| Data move | An operator script (`scripts/import_media_index.py`), dry-run by default, **refuses `--apply` unless the table is empty**, verifying, run once under a human gate; `--verify-only` for later checks; **not** at startup, **not** in the Alembic revision |
+| Rollback | Inside the window (before writes resume): re-deploy the old code on the restored archive. After writes resumed: a **forward fix**, as D4; a restore is an authorized incident operation that loses everything written since the backup, not a routine option |
+| Quota | `SELECT sum(stored_bytes)` over a covering partial index by owner, in the creating transaction under an advisory lock (D-107.3 / D-108.7 uploaded-media bytes) |
+| Backend choice | by `PERSISTENCE_BACKEND` only (sqlite = the hermetic test backend keeps the file store; PostgreSQL never does), never by a connection failure |
+| For the human | Q4 (legacy-owner rows) and Q7 (maintenance window and the archive's retention period), to be recorded in the Decision Log (section 13); the technical questions are answered by the review and adopted |
 
 ---
 
@@ -166,19 +170,23 @@ replace `validate_entry`'s database-expressible rules, no change to any existing
 | `thumbnail_kind` | `VARCHAR(12)` | no | CHECK in (`provider-url`,`asset`,`none`) |
 | `thumbnail_ref` | `TEXT` | no, default `''` | CHECK `(thumbnail_kind = 'none') = (thumbnail_ref = '')` |
 | `source` | `JSONB` | no | provenance map, kept verbatim (the six required keys; `owner` for personal) |
-| `owner_token` | `VARCHAR(32)` | yes | the digest, **explicit**; CHECK `library = 'shared' OR owner_token IS NOT NULL`; CHECK `source->>'owner' IS NULL OR source->>'owner' = owner_token` (one value, two spellings, never disagreeing) |
+| `owner_token` | `VARCHAR(32)` | yes | the digest, **explicit**; CHECK `(library = 'personal') = (owner_token IS NOT NULL)` (a personal row has an owner and a shared row cannot carry one); CHECK `source->>'owner' IS NULL OR source->>'owner' = owner_token` (one value, two spellings, never disagreeing) |
 | `lesson_id` | `VARCHAR(256)` | yes | extracted from `lesson.lesson_id` (R6 lookup) |
 | `topic` | `VARCHAR(64)` | no, default `''` | extracted from `lesson.topic` (Listening filter) |
 | `tags` | `JSONB` | no, default `[]` | extracted array of strings; CHECK `jsonb_typeof = 'array'` |
 | `has_lesson` | `BOOLEAN` | no, default false | `lesson is not None` |
 | `segment_count` | `INTEGER` | no, default 0 | transcript segments, so R9/R10 need not load the payload |
 | `stored_bytes` | `BIGINT` | yes | **new, server-measured**: original + thumbnail for `provider='upload'` rows; NULL for provider-hosted/direct rows. CHECK `stored_bytes IS NULL OR stored_bytes >= 0` |
-| `created_at` | `TIMESTAMPTZ` | no | from the entry's ISO string |
+| `created_at` | `TIMESTAMPTZ` | no | from the entry's ISO string; **set on insert only and immutable on conflict** (a re-import must not move a row and break keyset paging) |
 | `updated_at` | `TIMESTAMPTZ` | no | server-set on every write (new; was not in the file) |
-| `version` | `INTEGER` | no, default 1 | CHECK >= 1; incremented by writes that change the entry (optimistic check for the admin reprocess/status race) |
 
-`library='personal'` further requires `provider = 'upload'` today (the only writer); not a DB CHECK, so a future personal
-provider is a code change (registry), as `works.kind` is.
+**CHECK `library <> 'personal' OR provider = 'upload'`** (the only personal writer today; a future personal provider is a
+reviewed migration). This makes the quota predicate `library = 'personal' AND owner_token = :t` sufficient, so the sum needs no
+`provider` filter and the covering index below can be index-only. **No `version` column** (review Q5): `set_status` and `upsert`
+ignore it today and nothing passes an expected version; `updated_at` is enough, and an optimistic counter is added when a
+caller needs one. The repository **upsert never changes `library` or `owner_token` of an existing row** (`ON CONFLICT (media_id)
+DO UPDATE ... WHERE media_entries.library = EXCLUDED.library AND media_entries.owner_token IS NOT DISTINCT FROM
+EXCLUDED.owner_token`; a mismatch is a refusal, not an update).
 
 ### 3.2 `media_entry_payloads` (1:1, only when `lesson is not None`)
 
@@ -227,8 +235,9 @@ D-055(b)). Whether to add a nullable `user_id` for new rows is Q2.
 | R1, R2, R3, R7, R10-R14 `get(media_id)` | primary key | point probe; R2 now costs one probe per image request |
 | R4, R5 shared browse by language, published, newest first, filter level/topic/tag | `ix_media_entries_browse (library, language, status, created_at DESC, media_id DESC)` | range scan, keyset-pageable; level/topic/tag filtered in SQL over the range (a shared library is thousands of rows; no GIN on `tags` proposed) |
 | R8, R9 operator listing, all languages and statuses | `ix_media_entries_library_created (library, created_at DESC, media_id DESC)` | keyset-pageable |
-| R6 `resolve_by_lesson_id` (today a scan) | `ix_media_entries_lesson_id (lesson_id) WHERE lesson_id IS NOT NULL` | point probe; **unique if the data allows** (Q1) |
-| R15, quota sum, a learner's own uploads | `ix_media_entries_owner (owner_token, language, created_at DESC, media_id DESC) INCLUDE (stored_bytes) WHERE library = 'personal'` | index-only sum by owner (all languages: `owner_token` prefix); per-language listing |
+| R6 `resolve_by_lesson_id` (today a scan) | `ix_media_entries_lesson_id (lesson_id) WHERE library = 'shared' AND lesson_id IS NOT NULL` | point probe; **UNIQUE if the import report shows no duplicate** (review Q1), so "first match wins" cannot return and an admin import that would shadow a lesson id reports a conflict; if duplicates exist, non-unique with the tie-break "newest published shared" |
+| R15, quota sum, a learner's own uploads | `ix_media_entries_owner (owner_token, language, created_at DESC, media_id DESC) INCLUDE (stored_bytes) WHERE library = 'personal'` | the sum's predicate (`library = 'personal' AND owner_token = :t`) and column (`stored_bytes`) are both in the index, so with a current visibility map the scan is index-only (review P2-1; the rehearsal measures the real plan and the heap-fetch cost if the map is stale); per-language listing; **all-language owner paging orders by `(language, created_at, media_id)` to match the index** |
+| R8/R9 with a language but no status | `ix_media_entries_library_created` with a filter | the browse index orders `status` before `created_at`, so it cannot serve that order; a filtered scan of an admin-sized library is fine |
 | Orphan reconciliation (section 9.4) | `ix_media_entries_owner` + `created_at` | read-only operator query |
 | Counts by library/status (admin) | `ix_media_entries_library_created` | |
 
@@ -244,20 +253,35 @@ the ~20 call sites above keep working, plus:
 - `list_page(library, language, status, after, limit)` and `list_owned_page(owner_token, language, after, limit)`: **keyset
   pagination** on `(created_at, media_id)`, `limit <= 50` default 24; admin listings page the same way (R8/R9 lose the
   unpaged `list`).
-- `set_status(media_id, status)`: a single `UPDATE ... SET status, updated_at, version = version + 1 WHERE media_id AND
-  library = 'shared'`. **R11 stops being a read-modify-write of the whole entry**; the lesson, the owner and the other fields
+- `set_status(media_id, status)`: a single `UPDATE ... SET status, updated_at WHERE media_id AND library = 'shared'`. **R11 stops being a read-modify-write of the whole entry**; the lesson, the owner and the other fields
   cannot be overwritten by a stale copy.
-- `upsert(entry)`: `INSERT ... ON CONFLICT (media_id) DO UPDATE` in one transaction that also writes/clears the payload row,
-  the extracted columns and `updated_at`. Idempotent for the admin re-import (R12) and the direct-URL token id.
+- `get(media_id, with_payload=False)`: **head-only by default** (review P3-3). R2 needs only existence and visibility, so each
+  image request must not join or detoast up to 150 KB of payload; only `resolve_learner_payload` and the admin reads that need the
+  transcript ask for it.
+- `upsert(entry)`: `INSERT ... ON CONFLICT (media_id) DO UPDATE` (with the `library`/`owner_token` guard of 3.1; `created_at` never
+  updated) in one transaction that also writes/clears the payload row, the extracted columns and `updated_at`. Idempotent for the admin re-import (R12) and the direct-URL token id.
 - `sum_upload_bytes(owner_token)` and `insert_personal(entry, byte_limit)`: see section 8.
 - `delete(media_id)`: `DELETE` (the payload row cascades). Order of operations in `_remove_personal_entry` is **unchanged**
   (files first, row last), so a failed file removal leaves the row and its bytes in the sum.
-- Errors: a database error raises `MediaStoreUnavailable` (replaces `MediaIndexUnavailable`/`last_read_issue`); routes keep
-  their 503 `media_library_unavailable` mappings; readers keep today's degradation (R3 returns not found, R4 returns `[]`,
-  logged) so a PostgreSQL outage cannot raise an unhandled 500 in a learner room. This is an availability behaviour, not a
-  fallback to another authority: nothing reads `index.json` instead.
+- Errors (review P3-5, P3-9): a database error raises `MediaStoreUnavailable` (replaces `MediaIndexUnavailable`/`last_read_issue`).
+  **The delete, sweep and quota paths always raise it**, distinct from "not found" (as the file store's fail-closed fix did), so
+  nothing is concluded gone or accepted on a database error. The learner browse routes answer **503 `media_library_unavailable`**
+  on an outage rather than an empty library (an empty shared library with no signal is the silent degradation this proposal
+  avoids elsewhere); Listening's curated catalog still opens, and readiness exposes the state. The two readers that today swallow
+  every exception (R3 `stored_media_entry`, R4 `_shared_entries`) keep returning not-found/`[]` for a single item or a mixed
+  listing but **log and report** it. None of this reads `index.json`.
+- **Backend selection (review P2-4).** `app.py` chooses the implementation by `PERSISTENCE_BACKEND` and nothing else: with
+  `sqlite` (the hermetic CI/test backend only, as everywhere else) it keeps constructing `FileMediaLibraryStore`; with PostgreSQL
+  it constructs `PostgresMediaLibraryRepository` and **never** the file store. A connection failure never changes the choice.
+  Consequence, stated honestly: the repository uses JSONB, a regex CHECK and advisory locks that SQLite lacks, so the media
+  contract parity, concurrency, `EXPLAIN` and import proofs are **PostgreSQL-only and local execution, not CI evidence**.
+- **ORM mirror.** `models.py` gains `MediaEntry` and `MediaEntryPayload` classes that declare every column, CHECK, index and FK
+  of `0024` (D4's rule: the ORM and the migration agree), with a **schema-parity test** that compares the migration's schema with
+  `Base.metadata` on PostgreSQL (the D4 parity proof).
 - `visible_to` stays a pure function in code, applied after `get`; the SQL layer additionally offers an owner-scoped `get` so
   R2 can refuse in one probe. The 404-never-403 rule is unchanged.
+- Opaque cursors carry **position only** (`(language,) created_at, media_id`); owner, library and language come from the request,
+  never from the cursor (review P3-4).
 - The per-process lock (`_WRITERS`) is deleted with the file store's write path; concurrency is the database's: row-level for
   upsert/status, an advisory lock keyed by `owner_token` for the quota (section 8).
 
@@ -271,27 +295,37 @@ against both implementations until cutover), is not constructed by `app.py` afte
 Not Alembic data migration, not at startup (invariants). An operator script, `scripts/import_media_index.py`, run once under a
 human gate after the schema revision is applied.
 
-1. **Preconditions**: a fresh backup of PostgreSQL and a copy of `index.json` (and its size, SHA-256 and entry count recorded);
-   the application is stopped or has `media` writes disabled (the maintenance window, section 10); schema `0024` is the head.
-2. **Read and validate**: parse `index.json`, recompute the integrity hash, run `validate_entry` on every entry. **Any
-   failure aborts before anything is written** (the file is evidence; it is never repaired).
-3. **Map** each entry to rows: scalar columns; `thumbnail` -> `thumbnail_kind/ref`; `source`, `playback` verbatim;
-   `owner_token` = `source.owner` for personal rows, and for a personal row **without** an owner the explicit
-   `owner_token('legacy')` (the implicit rule made explicit; the count of such rows is reported); lesson -> extracted columns +
-   payload row; `segment_count` from the payload; `created_at` parsed; `updated_at = created_at`, `version = 1`.
-4. **Measure bytes**: for each `provider='upload'` row, `stored_bytes` = the sizes of `media/<provider_media_id>/original*` and
-   the thumbnail asset, read from the asset store (a `stat`, never the bytes). A missing asset sets `stored_bytes` NULL and is
-   listed in the report (the entry is still imported; nothing is deleted).
-5. **Write**: batches of 1,000 in transactions, `INSERT ... ON CONFLICT (media_id) DO NOTHING`. **Idempotent**: a second run
-   inserts nothing. If a row already exists and differs from the file's entry, the script **reports a conflict and does not
-   overwrite** (the database is the authority once written).
-6. **Verify** (the script's exit code depends on it): (a) row count == entry count, and per `(library, language, status)`;
-   (b) every row, read back through the repository, equals the file's entry field for field (a canonical-JSON comparison of
-   the reconstructed entries, ordered by id) and its SHA-256 equals the file's `entries` canonical hash; (c) every personal
-   row has `owner_token`; (d) `lesson_id` uniqueness report (Q1); (e) asset existence for every `thumbnail.ref` and every
-   playback path under `/api/media/files/`; (f) the report (counts, legacy-owner rows, missing assets, conflicts, bytes by
-   library) is written to a file for the Decision Log entry.
-7. **Dry-run is the default**; `--apply` writes. A dry-run touches nothing but its report.
+1. **Preconditions**: a fresh backup of PostgreSQL and a copy of `index.json`; the application confirmed **stopped (no listener)**;
+   schema `0024` is the head. The script records, at its start, the file's **size and SHA-256** and entry count.
+2. **Refuse to re-run (review P2-2).** `--apply` **refuses unless `media_entries` is empty** (and the single-use marker, below, is
+   absent). After cutover, learners delete uploads and the archive still holds them: an `ON CONFLICT DO NOTHING` re-run would
+   re-insert every deleted personal entry (metadata of content the learner erased, with `stored_bytes` for files that no longer
+   exist, counted against their quota). When the import succeeds it writes a single-use marker (the file's SHA-256, the report
+   hash and a timestamp) in the report directory and refuses a second `--apply` even on an emptied table without an explicit
+   human flag. **`--verify-only`** compares the database with the archive without writing, for any later check.
+3. **Read and validate**: parse `index.json`, recompute the integrity hash, run `validate_entry` on every entry, and additionally
+   (review P3-1): validate the length of every field that maps to a bounded column (`media_id`, `provider*` 256, `language` 20,
+   `level` 16, `topic` 64) and assert that `lesson` has **no keys beyond `lesson_id`, `topic`, `tags`, `payload`** (anything else
+   would be lost by the reconstruct). **Any failure aborts before anything is written** (the file is evidence; it is never repaired).
+4. **Map** each entry to rows: scalar columns; `thumbnail` -> `thumbnail_kind/ref`; `source`, `playback` verbatim; `owner_token` =
+   `source.owner` for personal rows, and for a personal row **without** an owner the explicit `owner_token('legacy')` (the
+   implicit rule made explicit; the count is reported; see Q4); lesson -> extracted columns + payload row; `segment_count` from the
+   payload; `created_at` parsed; `updated_at = created_at`.
+5. **Measure bytes (review P3-8)**: for each `provider='upload'` row, `stored_bytes` = the sizes of the original and the thumbnail,
+   read with a **`stat`-style size lookup on the asset store** (a new `size(key)` method on `BookAssetStore`; `get` would read the
+   bytes), taking the original's key from `playback.url` (`/api/media/files/<key>`; the suffix is otherwise unknown). A missing
+   asset sets `stored_bytes` NULL and is listed in the report (the entry is still imported; nothing is deleted).
+6. **Write**: batches of 1,000 in transactions, `INSERT ... ON CONFLICT (media_id) DO NOTHING`, then **`ANALYZE media_entries,
+   media_entry_payloads`** (the first plans at volume must not be made on default statistics). If a row already exists and differs
+   from the file's entry the script reports a conflict and does not overwrite.
+7. **Verify** (the exit code depends on it): (a) row count == entry count, per `(library, language, status)`; (b) every row read back
+   through the repository equals the file's entry field for field, and the canonical-JSON SHA-256 of the reconstructed entries
+   equals the file's `entries` hash; (c) every personal row has `owner_token`; (d) the **`lesson_id` duplicate report** (decides
+   unique vs non-unique, Q1); (e) asset existence for every `thumbnail.ref` and every playback path under `/api/media/files/`;
+   (f) the **file's size and SHA-256 are unchanged** since step 1 (a concurrent writer to `index.json` aborts the run, review P3-7);
+   (g) the report (counts, legacy-owner rows, missing assets, conflicts, bytes by library) is written to a file for the
+   Decision Log.
+8. **Dry-run is the default**; `--apply` writes. A dry-run touches nothing but its report.
 
 No dual-write: the script is the only writer besides the new repository, and it runs while the application is not writing.
 
@@ -301,32 +335,42 @@ No dual-write: the script is the only writer besides the new repository, and it 
 
 | Step | Action | Gate |
 | --- | --- | --- |
-| 0 | Review approved; human authorizes the `git mv` of the migration from `migrations/proposed/` to `versions/` | human |
+| 0 | Review approved; **the rehearsal (section 12, runs 1-6) is recorded in `MEDIA_METADATA_POSTGRES.REHEARSAL.md`**; the human authorizes the `git mv` of the migration from `migrations/proposed/` to `versions/` | human |
 | 1 | Backup (database + `index.json` + a note of the asset root) | human |
 | 2 | Apply `0024` with `scripts/bootstrap_runtime_schema.py` (one invocation; additive; sub-second expected, section 12) | human |
-| 3 | Maintenance window opens: the app is stopped (the sandbox is one container) | human |
-| 4 | `import_media_index.py` dry-run, then `--apply`, then the verification report is attached to the Decision Log | human |
-| 5 | Deploy the code that constructs `PostgresMediaLibraryRepository` instead of `FileMediaLibraryStore`; `index.json` is renamed `index.json.pre-postgres` (an archive: read-only, never read by the app) | human |
+| 3 | Maintenance window opens: the app is stopped and **confirmed stopped (no listener on the port)** before anything else runs | human |
+| 4 | `import_media_index.py` dry-run, then `--apply`, then `--verify-only`; the verification report (with the archive's SHA-256) is attached to the Decision Log | human |
+| 5 | **Re-check the file's size and SHA-256 equal those recorded at the import's start; abort if not.** Rename `index.json` to `index.json.pre-postgres` (an archive: read-only, never read by the app) and deploy the code that constructs `PostgresMediaLibraryRepository` | human |
 | 6 | Smoke: shared browse, a shared item opens, a learner upload + its thumbnail + delete, admin status change, admin import, the account-deletion remover on a test account | agent, reported |
-| 7 | Window closes | human |
+| 7 | Window closes; the archive scrub and its retention clock start (section 7.1) | human |
 
 **Read path** after cutover: every R-row of 2.4 goes to the repository. **Write path**: W1-W3 and the quota insert go to the
 repository only. **There is never a moment with two authorities**: before step 5 the old code runs and the new tables are
-empty/ignored; after step 5 the new code runs and the file is an archive. A rolled-back deployment (step 5 reverted) would
-resume the old code on the **archived** file, so any entry written after step 5 is not in it (section 7).
+empty/ignored; after step 5 the new code runs and the file is an archive.
 
 ---
 
-## 7. Rollback
+## 7. Rollback, and the archive
 
-- **Before step 5** (schema applied, import done, code not deployed): nothing depends on the new tables; `downgrade()` drops the
-  two tables (rehearsal only, as D4: it drops data).
-- **Inside the window after step 5** (before writes resumed): re-deploy the previous code and restore `index.json` from its
-  archive name; the new tables are left in place, unread.
-- **After writes resumed**: **restore the pre-cutover backup**, never downgrade. Entries (personal uploads, admin imports)
-  created since cutover are then missing from the restored file; their asset files remain on the asset store as orphans, listed
-  by the reconciler (9.4). A reverse export from PostgreSQL to a new `index.json` is **not proposed** (it would be the
-  reverse sync the invariants forbid); if the human wants one it is its own reviewed decision.
+**7.0 Rollback (review P2-3).**
+- **Before step 5** (schema applied, import done, code not deployed): nothing depends on the new tables; `downgrade()` drops the two
+  tables (rehearsal only; it drops data, as D4's).
+- **Inside the window after step 5, before writes resume**: re-deploy the previous code and rename `index.json.pre-postgres` back to
+  `index.json` (the rename in step 5 is the undo; the operator who ran step 5 performs it); the new tables are left in place,
+  unread. This is the cheap safety net, together with the rehearsal.
+- **After writes resumed: a forward fix**, as for D4 (never a downgrade). A **restore of the step-1 backup is an authorized incident
+  operation**, not a routine rollback: the backup was taken before `0024`, so restoring it removes the schema **and every learner
+  record written since cutover** (works, drafts, imports, progress, not only media). It needs its own explicit human
+  authorization and names that loss. A reverse export from PostgreSQL to a new `index.json` is **not proposed** (it would be the
+  reverse sync the invariants forbid).
+
+**7.1 The archive (review P2-5). For the human to decide and record in the Decision Log (Q7).** `index.json.pre-postgres` keeps every
+personal entry's title, language, provenance and owner digest after learners delete their uploads or their account, and the
+deletion enumeration cannot reach a file archive. Proposed, in this order: (1) after the verification is signed off, **scrub the
+personal entries from the archive copy** (keep the shared entries, the only ones worth keeping), recording the scrubbed file's
+hash; (2) **delete the archive after a fixed period, proposed 30 days** after sign-off; (3) record both the scrub and the period
+in the Decision Log. The same principle as the deleted-import scrub of D-108.2. The period is a human call; 30 days is a proposal,
+not a decision.
 
 ---
 
@@ -337,22 +381,26 @@ thumbnail, live uploads only). With this schema:
 
 - **The size is on the entry**, server-measured at upload (`stored_bytes`, set by `import_upload` from the streamed byte count
   and the thumbnail it wrote), never taken from the client. The client's import record (`works`, form `upload`, `mediaId`) names
-  the entry; the account-record guard resolves the entry, checks `owner_token` and uses **its** `stored_bytes` (the earlier
-  review's P3-2).
-- **Sum by account**: `SELECT coalesce(sum(stored_bytes), 0) FROM media_entries WHERE library = 'personal' AND owner_token =
-  :t AND provider = 'upload'`, an index-only scan of `ix_media_entries_owner` (the `INCLUDE (stored_bytes)` column), O(that
-  account's uploads), independent of the total.
+  the entry; the account-record guard resolves the entry, checks `owner_token` and uses **its** `stored_bytes`.
+- **Sum by account**: `SELECT coalesce(sum(stored_bytes), 0) FROM media_entries WHERE library = 'personal' AND owner_token = :t`
+  (the `provider = 'upload'` predicate is implied by the CHECK of 3.1), a covering scan of `ix_media_entries_owner`, O(that
+  account's uploads) (hundreds), independent of the total.
 - **Atomic quota check**: `insert_personal(entry, byte_limit)` runs in one transaction: `pg_advisory_xact_lock(hashtextextended
   (owner_token, 0))`, the sum, the comparison `sum + entry.stored_bytes <= limit`, the insert. Two concurrent uploads of one
-  account cannot both pass; uploads of different accounts do not contend. A refusal rolls back and the importer deletes the
-  files it just stored (the order in `ACCOUNT_RECORD_LIMITS.md` 4.5, stage 2).
-- **Removal-pending bytes stay counted without any extra field**: the row is deleted last (section 4), so a file removal that
-  failed leaves the row and its `stored_bytes` in the sum until the retry succeeds (the earlier review's P3-5).
+  account cannot both pass; uploads of different accounts do not contend. The lock is separate from the account stream lock; the
+  media transaction does not touch `works`, and the later account-record commit is a different transaction, so there is no lock
+  ordering problem.
+- **Compensation (review, quota remark a).** An upload that passes the byte rail can still fail the count rail in the account-record
+  commit. The compensation is **one retried routine**: delete the files, then the entry, with the same marker semantics as
+  `mediaPending` (a recorded intent that is finished by a replay or a sweep, files first, row last), so a crash leaves a
+  reconcilable orphan, never a leak. The same routine is the stage-2 refusal cleanup of `ACCOUNT_RECORD_LIMITS.md` 4.5.
+- **Removal-pending bytes stay counted without any extra field**: the row is deleted last (section 4), so a failed file removal
+  leaves the row and its `stored_bytes` in the sum until the retry succeeds.
 - The **pre-check** (stage 1: declared `Content-Length` against `limit - sum`) is the same sum without the lock.
 - The **uploads-per-hour** rail counts from the account's import records in `works`, as specified there; this schema does not
   change it.
-- **Orphans**: an entry whose upload never got an account import record (a crash between the media write and the record) is
-  counted in the sum. Its detection is a read-only operator query (9.4), not an automatic deletion.
+- **Orphans** (an entry whose upload never got an account import record) count in the sum until the report-only reconciler (9.4)
+  and a human act. Stated, accepted by the review.
 
 ---
 
@@ -372,7 +420,11 @@ field reports the database state (`ok` / `unavailable`) instead of the file's. T
 `library='personal'` and the account's `owner_token`, in every language) and `media_entry_payloads` by cascade; the **file half
 stays** in `FILE_STORES` (the asset bytes under `media/<token>/`), with `delete_all_owned_media` now iterating
 `list_owned_page(owner_token)` instead of scanning every account's entries. No runtime deletion path exists yet (D-055); this
-proposal adds none. The enumeration test (D4 section 9 pattern) is updated to assert both halves.
+proposal adds none. The enumeration test (D4 section 9 pattern) is updated to assert both halves, with a **new category** for token-keyed tables
+(`OWNER_TOKEN_KEYED_TABLES`; the existing test requires every `ACCOUNT_KEYED_TABLES` entry to have a `user_id`, which
+`media_entries` does not). **Re-registration (review P3-6):** `owner_token` is derived from the account key, which survives
+re-registration (the `users` row is kept), so an uploaded file of a deleted account would reappear to a re-registered account
+unless the D-055(b) workflow deleted it first; the workflow must run before re-registration and a test says so.
 
 **9.4 Reconciler (read-only).** An operator query lists (a) personal entries older than N hours with no live import record
 (`works` kind `imported`, form `upload`, `mediaId`) and (b) asset prefixes under `media/` with no entry. It reports; deletion of
@@ -409,6 +461,16 @@ proofs are local execution, not CI evidence** (`ORENA_TEST_POSTGRES_URL`; CI has
 | Pagination | keyset cursor is stable under concurrent inserts, no duplicates or gaps across pages, page size bounds |
 | Admin | the console routes of R9-R13 return the same JSON as before for a fixture library (golden comparison) |
 | Deletion enumeration | `media_entries` and `media_entry_payloads` are in the enumeration; both halves asserted |
+| Import re-run (P2-2) | after cutover and a learner deleting an upload, a second `--apply` is refused, inserts nothing, and `--verify-only` reports the difference without writing; the single-use marker is honoured |
+| Concurrent writer (P3-7) | a changed `index.json` size/SHA-256 between the import's start and end (or before step 5) aborts |
+| Database errors (P3-5, P3-9) | the delete, sweep and quota paths raise on a database error (never "not found", never accepted); learner browse answers 503 on an outage; R3/R4 degrade and log |
+| Head-only `get` (P3-3) | `get` without payload does not read `media_entry_payloads` (assert the query); the payload is read only when asked |
+| Re-registration (P3-6) | a re-registered account does not see a deleted account's uploads once the workflow ran; the enumeration test covers `OWNER_TOKEN_KEYED_TABLES` |
+| Backend selection (P2-4) | `PERSISTENCE_BACKEND=sqlite` constructs the file store, PostgreSQL never does, and a PostgreSQL connection failure does not change the choice |
+| Schema parity (ORM mirror) | `Base.metadata` for `MediaEntry`/`MediaEntryPayload` equals the migrated schema (columns, CHECKs, indexes, FK) on PostgreSQL |
+| Head-sensitive tests | tests that pin the migration head move to `0024` in the same commit as the revision (`tests/test_adaptive_reading_schema.py`, the cutover/bootstrap script tests) |
+| Upsert guard (P3-2) | an upsert cannot change `library` or `owner_token` of an existing row and does not change `created_at` |
+| Covering sum (P2-1) | the owner sum is index-only on a vacuumed table (`EXPLAIN (ANALYZE)`), and the heap-fetch cost on a stale visibility map is recorded |
 | Regression | existing media/Listening/admin tests unchanged and green; the fail-closed bad-index tests are replaced by the database-unavailable equivalents |
 
 ---
@@ -427,34 +489,39 @@ recorded in `MEDIA_METADATA_POSTGRES.REHEARSAL.md`.
 | 3 | `--volume 2000000`: about three years of personal uploads at the target | the same at the planning volume; table and index sizes (`pg_total_relation_size`) replace the estimates of 3.3; owner-sum latency for a heavy owner (about 100 uploads a year, 300 in three) and for a synthetic 10,000-row owner |
 | 4 | import tool at volume | `import_media_index.py` against a generated `index.json` of 100 k and of 2 M entries: wall time (the maintenance-window input), memory, idempotent second run, verification pass; a corrupt file aborts with zero rows |
 | 5 | probes | CHECK refusals; owner/`source.owner` agreement; advisory-lock quota race at the edge (8 workers); keyset paging under concurrent insert; JSONB round-trip equality of `playback`, `source`, `tags` and a 150 KB payload; non-ASCII titles (Chinese), emoji, NUL rejection behaviour of JSONB documented |
+| 5b | planner and locks | `ANALYZE` after every bulk load; p95 of the heavy-owner sum including the heap-fetch cost if the index is not covering; the advisory lock under 8 workers; JSONB behaviour for NUL, very large payloads and key order |
 | 6 | old-code compatibility | the previous release's `users`/`works` inserts and reads work on the `0024` schema (the revision touches no existing table) |
 
 Pass criteria: every probe passes, every revision invocation under the D4 window rule (15 minutes floor; expected seconds), every
-query in 3.5 index-served at 2 M rows, the import verification exact. A run at the full target volume is recorded before :8000.
+query in 3.5 index-served at 2 M rows, the import verification exact. A run at the full target volume is recorded before :8000. **The rehearsal (runs 1-6) is recorded in
+`MEDIA_METADATA_POSTGRES.REHEARSAL.md` before the migration moves to `versions/`**, as for D4; applying it stays the human's gate.
 
 ---
 
-## 13. Questions for the reviewer and the human
+## 13. Questions: answered by the review, and what remains for the human
 
-1. **`lesson_id` uniqueness.** `resolve_by_lesson_id` assumes one entry per `lesson_id` (first match wins). Make
-   `ix_media_entries_lesson_id` **unique** if the import report shows no duplicates; otherwise define the tie-break (newest
-   published shared). Which?
-2. **Owner column.** Keep `owner_token` (digest of the account key) as the only owner column, or add a nullable `user_id` for new
-   rows (requires the request's `users.id`, which the importer has) to make the D-055(b) deletion a plain SQL delete? Both can be
-   done; the second is extra schema.
-3. **Orphan policy.** The reconciler only reports (9.4). Should a personal entry with no import record after N hours be
-   auto-deleted (files first), or stay a human-gated cleanup?
-4. **Legacy owner rows.** Rows with no `source.owner` become `owner_token('legacy')`, visible to the single local account only
-   and refused to signed-in accounts (today's rule). Confirm, or delete them in the import (they are lane-era test data)?
-5. **`updated_at` and `version`** are new fields the file never had. Is `version` (an optimistic counter for admin status and
-   reprocess) wanted now, or is `updated_at` enough?
-6. **Shared and personal in one table** (a `library` discriminator) or two tables? One table matches the current model and the
-   one resolver (R1); two would separate admin content from learner records and make the account-deletion enumeration cleaner.
-7. **Window and archive.** Is a stop-the-app maintenance window acceptable for the lane, and how long is `index.json.pre-postgres`
-   kept (it holds no secrets; it holds titles and provenance, personal rows included)?
-8. **Order with the limits.** `ACCOUNT_RECORD_LIMITS.md` makes this a gate for anything beyond :8021 (G1) and its byte rail depends
-   on `stored_bytes`. Implement this before the byte rail, in the same milestone, or after with an interim sum scan of the file?
-   (Recommended: before, so the rail never ships on the file.)
+**Adopted from the review (technical).**
+1. **`lesson_id`** (Q1): decide on the import report; if no duplicates, a partial **unique** index on shared rows
+   (`WHERE library = 'shared' AND lesson_id IS NOT NULL`); otherwise non-unique with the tie-break "newest published shared".
+2. **Owner column** (Q2): keep `owner_token` only; a nullable `user_id` would give two mechanisms and could not cover legacy rows.
+3. **Orphans** (Q3): report only; a human-gated cleanup; no automatic deletion of a learner's file on a timer.
+5. **`updated_at` and `version`** (Q5): keep `updated_at`; drop `version` until a caller passes an expected version.
+6. **One table or two** (Q6): one table with the `library` discriminator and the stricter CHECKs of 3.1.
+8. **Order with the limits** (Q8): this lands **before** the byte rail, so the rail ships on `stored_bytes`, never on a file scan;
+   it removes `ACCOUNT_RECORD_LIMITS.md` gate G1.
+
+**For the human (to be decided and recorded in the Decision Log).**
+4. **Legacy-owner rows** (Q4). Personal rows with no `source.owner` become the explicit `owner_token('legacy')`, visible to the
+   single local account only and refused to signed-in accounts (today's rule). The reviewer suggests importing them faithfully and
+   reporting the count; deleting them in the import is a destructive data decision. Confirm: import under the explicit legacy
+   token (proposed), or delete them (lane-era test data)?
+7. **Maintenance window and archive retention** (Q7 / review P2-5). (a) Is a stop-the-app maintenance window acceptable on the
+   lane? (b) How long is `index.json.pre-postgres` kept? Proposed: scrub the personal entries from the archive after the
+   verification is signed off, then delete the archive after **30 days**; record both in the Decision Log. The period is yours to
+   set.
+9. **Rehearsal and apply gate.** The PostgreSQL rehearsal must be recorded before the migration moves to `versions/`, and applying
+   `0024` to any runtime stays your gate (unchanged from D4). Confirm the sequencing: rehearsal -> your `git mv` authorization ->
+   backup -> apply -> window -> import -> cutover.
 
 ---
 
@@ -465,3 +532,29 @@ HEAD `0f14ed7`. `media_library_store.py` (281 lines): `FileMediaLibraryStore._re
 `listening_api.py:113-130,436-460`. `admin_console_api.py:292-306,560-575,790-800,1150-1187,1325-1335`.
 `media_source_import.py:285-300,344-390`. `persistence/deletion_enumeration.py:44-52`. `app.py:598-610,780`. `persistence/` has no
 media table today; migrations end at `20260930_0023`.
+
+---
+
+## Rev 2 changes (answering `MEDIA_METADATA_POSTGRES_REVIEW.md`, APPROVE WITH CONDITIONS)
+
+| Finding / condition | Edit |
+| --- | --- |
+| **P2-1** quota sum not index-only | 3.1: CHECK `library <> 'personal' OR provider = 'upload'`, so the sum predicate is `library = 'personal' AND owner_token = :t`; 3.5 and 8: the covering index contains the predicate and `stored_bytes`; rehearsal measures the real plan and the stale-visibility-map cost; test row |
+| **P2-2** import re-run resurrects deleted uploads | Section 5: `--apply` refuses unless the table is empty, single-use marker, `--verify-only`, archive SHA-256 recorded; test row |
+| **P2-3** rollback by restore is disproportionate | Section 7.0: forward fix after writes resume; a restore is an authorized incident operation naming its loss; the window rollback is the cheap net; who restores `index.json` named; cutover gates (app confirmed stopped, hash re-check before the rename) |
+| **P2-4** backend selection | Section 4: by `PERSISTENCE_BACKEND` only, never by a connection failure; PostgreSQL-only proofs are local execution, not CI evidence; test row |
+| **P2-5** the archive outlives deletion | Section 7.1: scrub personal entries after sign-off, delete after a fixed period (30 days proposed), recorded in the Decision Log; **marked for the human (Q7)** |
+| P3-1 converse owner CHECK, import length and `lesson` key-set validation | 3.1 CHECK `(library = 'personal') = (owner_token IS NOT NULL)`; section 5 step 3 |
+| P3-2 `created_at` immutable; upsert must not flip `library`/`owner_token` | 3.1 and section 4; test row |
+| P3-3 head-only `get` | Section 4 `get(media_id, with_payload=False)`; test row |
+| P3-4 cursor order and position-only cursors | 3.5 (all-language owner paging by `(language, created_at, media_id)`); section 4 |
+| P3-5 database errors raise in delete/sweep/quota | Section 4; test row |
+| P3-6 re-registration and token-keyed enumeration | 9.3 (`OWNER_TOKEN_KEYED_TABLES`, workflow before re-registration); test row |
+| P3-7 concurrent writer to `index.json` | Section 5 step 1/7(f), section 6 step 5; test row |
+| P3-8 asset `stat`/size, key from `playback.url`, `ANALYZE` | Section 5 steps 5-6; rehearsal 5b |
+| P3-9 learner browse 503 on outage | Section 4 errors |
+| Quota remark (a) compensation routine | Section 8 |
+| Conditions 2 (ORM mirror, schema parity, head-sensitive tests) | Section 4 (ORM mirror) and section 11 rows |
+| Condition 3 (rehearsal recorded before `versions/`; apply stays the human's gate) | Status header, section 6 step 0, section 12, Q9 |
+| Q1, Q2, Q3, Q5, Q6, Q8 | Adopted (section 13); the lesson-id index, `version` removal and sequencing are reflected in 3.1, 3.5 and section 13 |
+| Q4, Q7 | Marked **for the human** (section 13), with the reviewer's suggestion and the proposed 30-day archive period |
