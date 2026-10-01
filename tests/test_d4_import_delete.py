@@ -224,10 +224,97 @@ def test_a_corrupt_media_index_refuses_writes_and_deletes_instead_of_rewriting_f
     with pytest.raises(MediaIndexUnavailable):
         store.delete(mine)
     assert index.read_bytes() == before, "nothing was rewritten: the other accounts' entries are recoverable"
-    # a learner's delete through the media API changes nothing either (it cannot find the entry in an untrusted index)
-    assert media_library_api.delete_owned_media(mine, user_key="alice", language="en") is False
+    # a learner's delete through the media API refuses too (an untrusted index is not "not found")
+    with pytest.raises(MediaIndexUnavailable):
+        media_library_api.delete_owned_media(mine, user_key="alice", language="en")
     assert assets.exists(f"media/{'c' * 32}/original.wav") and assets.exists(f"media/{'d' * 32}/original.wav")
     # an index that does not exist yet is a fresh start, not corruption
     fresh = FileMediaLibraryStore(tmp_path / "other")
     fresh.upsert(_entry("f" * 32, owner="alice"))
     assert fresh.get("upload-" + "f" * 32) is not None
+
+
+# --- review f8f5c91: recoverable, complete, never taking another device's file ---------------------------
+
+
+def test_a_failed_file_removal_leaves_the_entry_and_a_marker_and_a_retry_completes_it(pg_engine, backbone, media, monkeypatch):
+    store, assets, seed = media
+    user = _account(pg_engine)
+    token = "e" * 32
+    media_id = seed(token, owner=user)
+    client = _client(backbone, user=user)
+    ident = str(uuid.uuid4())
+    assert _put(client, ident, form="upload", title="My file", mediaId=media_id).status_code == 200
+    real = assets.delete_prefix
+
+    def failing(prefix):
+        raise OSError("disk went away")
+
+    monkeypatch.setattr(assets, "delete_prefix", failing)
+    first = _delete(client, ident)
+    assert first.status_code == 200 and first.json()["mediaDeleted"] is False
+    assert store.get(media_id) is not None, "the index entry stays, so the bytes are never orphaned"
+    assert _row(pg_engine, ident)["payload"].get("mediaPending") == media_id, "the tombstone keeps the opaque id until the files are gone"
+    monkeypatch.setattr(assets, "delete_prefix", real)
+    retry = _delete(client, ident, version=1)  # a retry, even with a stale version and a new operation id
+    assert retry.status_code == 200 and retry.json()["mediaDeleted"] is True
+    assert store.get(media_id) is None and not assets.exists(f"media/{token}/original.wav")
+    assert "mediaPending" not in _row(pg_engine, ident)["payload"], "the marker clears once the files are confirmed gone"
+
+
+def test_a_later_list_read_completes_a_removal_that_could_not_be_done(pg_engine, backbone, media, tmp_path):
+    store, assets, seed = media
+    user = _account(pg_engine)
+    token = "f" * 32
+    media_id = seed(token, owner=user)
+    client = _client(backbone, user=user)
+    ident = str(uuid.uuid4())
+    assert _put(client, ident, form="upload", title="My file", mediaId=media_id).status_code == 200
+    index = tmp_path / "library" / "index.json"
+    good = index.read_bytes()
+    index.write_text("{corrupt", encoding="utf-8")  # the index cannot be trusted: the delete must refuse, touching nothing
+    done = _delete(client, ident)
+    assert done.status_code == 200 and done.json()["mediaDeleted"] is False
+    assert assets.exists(f"media/{token}/original.wav"), "no file was touched while the index was untrusted"
+    assert _row(pg_engine, ident)["payload"].get("mediaPending") == media_id
+    index.write_bytes(good)  # repaired
+    client.get("/api/imports")  # the sweep
+    assert store.get(media_id) is None and not assets.exists(f"media/{token}/original.wav")
+    assert "mediaPending" not in _row(pg_engine, ident)["payload"]
+
+
+def test_the_deleted_list_is_complete_not_the_newest_fifty(pg_engine, backbone):
+    client = _client(backbone, user=_account(pg_engine))
+    ids = []
+    for _ in range(60):
+        ident = str(uuid.uuid4())
+        assert _put(client, ident, form="text", title="T", text="x").status_code == 200
+        assert _delete(client, ident).status_code == 200
+        ids.append(f"text:{ident}")
+    listed = client.get("/api/imports").json()["deleted"]
+    assert {item["id"] for item in listed} == set(ids), "a device that was away learns every deletion it holds"
+
+
+def test_the_media_route_does_not_take_a_file_another_live_import_still_names(pg_engine, backbone, media, monkeypatch):
+    store, assets, seed = media
+    user = _account(pg_engine)
+    media_id = seed("1a" * 16, owner=user)
+    monkeypatch.setattr(media_library_api, "current_user_key", lambda: user)
+    monkeypatch.setattr(media_library_api, "current_language_code", lambda: "en")
+    client = _client(backbone, user=user)  # also configures the account identity the route consults
+    ident = str(uuid.uuid4())
+    assert _put(client, ident, form="upload", title="On the laptop", mediaId=media_id).status_code == 200
+    app = FastAPI()
+    app.include_router(media_library_api.router)
+    media_client = TestClient(app)
+    from writing_coach import work_api
+
+    work_api.configure_work(backbone, user_key=lambda: user, language=lambda: "en")
+    kept = media_client.delete(f"/api/media/my/{media_id}")
+    assert kept.status_code == 200 and kept.json() == {"deleted": False, "inUse": True}
+    assert store.get(media_id) is not None
+    assert _delete(client, ident).json()["mediaDeleted"] is True  # the last live import takes it
+    # a device-only upload (no account record names it) is deleted by the route
+    lone = seed("2b" * 16, owner=user)
+    assert media_client.delete(f"/api/media/my/{lone}").json() == {"deleted": True}
+    assert store.get(lone) is None

@@ -12,9 +12,11 @@ globalThis.window = { localStorage: null, addEventListener() {}, matchMedia: () 
 
 const calls = [];
 let account = { imports: [], deleted: [] };
+let failDeletes = false;
 globalThis.fetch = async (url, options = {}) => {
   const method = options.method || 'GET';
   if (method !== 'GET') calls.push([method, url]);
+  if (failDeletes && method === 'DELETE') return { ok: false, status: 500, headers: { get: () => 'application/json' }, json: async () => ({ detail: { category: 'unavailable' } }) };
   const body = url.includes('/api/account-backbone') ? { state: 'active' }
     : url.includes('/api/imports') ? (method === 'DELETE' ? {} : account)
     : {};
@@ -25,13 +27,14 @@ const store = () => {
   return { getItem: (key) => data[key] ?? null, setItem: (key, value) => { data[key] = String(value); }, removeItem: (key) => { delete data[key]; } };
 };
 
-const { learnerMemory } = await import('../static/orena/product/memory.js');
-const { isImportRemoved, isRemovedContent, importMemberId, setRemovedImports } = await import('../static/orena/product/import-removed.js');
+const { learnerMemory, setPlaceSink } = await import('../static/orena/product/memory.js');
+const { isImportRemoved, isRemovedContent, importMemberId, setRemovedImports, activateRemovedScope } = await import('../static/orena/product/import-removed.js');
 const { openMedia } = await import('../static/orena/product/media-source.js');
 const records = await import('../static/orena/product/account-records.js');
 const shell = await import('../static/orena/shell/context.js');
 const { deleteOwnImport } = await import('../static/orena/product/import-delete.js');
 
+setPlaceSink({ enter() {}, clear() {}, removeImport: (id) => records.removeImport(id), recordsFor: (id) => records.recordsFor(id) });
 const ref = (form, reference) => crypto.createHash('sha256').update(`orena.import-ref:${form}:${reference}`).digest('hex');
 const LINK = 'url:https://example.test/v';
 const FILE = 'upload:upload-abc';
@@ -54,6 +57,7 @@ assert.equal(await records.importRef(TEXT), '', 'a text is matched by its own id
   calls.length = 0;
   const box = store();
   const memory = learnerMemory(box, 'me', 'en');
+  activateRemovedScope(memory.scope);
   memory.value.imports.push({ id: TEXT, title: 'T', text: 'body', language: 'en', origin: 'imported', kind: 'text' });
   memory.addMedia({ id: LINK, title: 'A link', kind: 'video' });
   memory.addMedia({ id: FILE, title: 'A file', kind: 'audio' });
@@ -91,6 +95,7 @@ assert.equal(await records.importRef(TEXT), '', 'a text is matched by its own id
   calls.length = 0;
   records.forgetRecordState();
   const memory = learnerMemory(store(), 'me', 'en');
+  activateRemovedScope(memory.scope);
   memory.value.imports.push({ id: TEXT, title: 'T', text: 'body', language: 'en', origin: 'imported', kind: 'text' });
   memory.addMedia({ id: LINK, title: 'A link', kind: 'video' });
   memory.addMedia({ id: FILE, title: 'A file', kind: 'audio' });
@@ -111,20 +116,78 @@ assert.equal(await records.importRef(TEXT), '', 'a text is matched by its own id
   assert.deepEqual(calls.filter((call) => call[0] === 'DELETE'), [], 'learning of a deletion sends nothing');
 }
 
-/* 6. A deletion this device made that the account has not heard yet is sent again at the next sync. */
+/* 6. A deletion this device made that the account has not heard yet is sent again - for the records this device
+   deleted, by record id and version. */
+const LINK_RECORD = '44444444-4444-4444-8444-444444444444';
+const linkItem = (record, version) => ({ id: `url:${record}`, form: 'url', title: 'A link', text: '', url: 'https://example.test/v', mediaId: '', kind: 'video', version });
 {
   calls.length = 0;
   records.forgetRecordState();
   const memory = learnerMemory(store(), 'me', 'en');
-  memory.applyDeletions([LINK]); // known deleted here, offline when it happened
-  account = {
-    imports: [{ id: 'url:44444444-4444-4444-8444-444444444444', form: 'url', title: 'A link', text: '', url: 'https://example.test/v', mediaId: '', kind: 'video', version: 3 }],
-    deleted: [],
-  };
+  activateRemovedScope(memory.scope);
+  account = { imports: [linkItem(LINK_RECORD, 3)], deleted: [] };
+  await shell.syncImports(memory, 'en'); // the device learns the record and its version
+  assert.deepEqual(memory.value.mediaImports.map((item) => item.id), [LINK]);
+  failDeletes = true; // offline: the delete cannot reach the account
+  await deleteOwnImport(memory, LINK);
+  failDeletes = false;
+  assert.deepEqual(memory.owedRecords(LINK), [LINK_RECORD], 'the device remembers exactly which record it deleted');
+  calls.length = 0;
   await shell.syncImports(memory, 'en');
   await new Promise((resolve) => setTimeout(resolve, 20));
   assert.deepEqual(memory.value.mediaImports, [], 'the account still holding it does not bring it back');
-  assert.equal(calls.filter((call) => call[0] === 'DELETE').length, 1, 'the unfinished deletion is sent again');
+  const resent = calls.filter((call) => call[0] === 'DELETE').map((call) => call[1]);
+  assert.equal(resent.length, 1, 'the unfinished deletion is sent again');
+  assert.ok(resent[0].startsWith(`/api/imports/${LINK_RECORD}?`) && resent[0].endsWith('expectedVersion=3'), 'for that record, at that version');
+  account = { imports: [], deleted: [{ id: `url:${LINK_RECORD}`, ref: ref('url', 'https://example.test/v') }] };
+  await shell.syncImports(memory, 'en');
+  assert.deepEqual(memory.owedRecords(LINK), [], 'once the account no longer holds the record, nothing is owed');
+}
+
+/* 7. Another device kept the same link again after this one deleted it: a new record. This device must neither delete
+   it nor hide it for ever. */
+{
+  calls.length = 0;
+  records.forgetRecordState();
+  const memory = learnerMemory(store(), 'me', 'en');
+  activateRemovedScope(memory.scope);
+  account = { imports: [linkItem(LINK_RECORD, 3)], deleted: [] };
+  await shell.syncImports(memory, 'en');
+  failDeletes = true;
+  await deleteOwnImport(memory, LINK);
+  failDeletes = false;
+  const REIMPORT = '77777777-7777-4777-8777-777777777777';
+  account = { imports: [linkItem(LINK_RECORD, 3), linkItem(REIMPORT, 1)], deleted: [] };
+  calls.length = 0;
+  await shell.syncImports(memory, 'en');
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  const sent = calls.filter((call) => call[0] === 'DELETE').map((call) => call[1]);
+  assert.equal(sent.length, 1);
+  assert.ok(sent[0].includes(LINK_RECORD) && !sent[0].includes(REIMPORT), 'only the record this device deleted is deleted again');
+  assert.equal(memory.isRemoved(LINK), false, 'the later re-import clears the removed marker of the device');
+  assert.deepEqual(memory.value.mediaImports.map((item) => item.id), [LINK], 'and the re-import is listed here');
+}
+
+/* 8. An upload that never reached the account is still deleted from the server's store. */
+{
+  calls.length = 0;
+  records.forgetRecordState();
+  const memory = learnerMemory(store(), 'me', 'en');
+  activateRemovedScope(memory.scope);
+  await deleteOwnImport(memory, 'upload:upload-lonely');
+  assert.deepEqual(calls.filter((call) => call[0] === 'DELETE').map((call) => call[1]), ['/api/media/my/upload-lonely']);
+}
+
+/* 9. Removed sets are per owner and language: building the memory of another language does not replace the room's. */
+{
+  const en = learnerMemory(store(), 'me', 'en');
+  activateRemovedScope(en.scope);
+  en.applyDeletions([LINK]);
+  const zh = learnerMemory(store(), 'me', 'zh');
+  assert.equal(isImportRemoved(LINK), true, 'constructing the zh memory did not clear the set of the en room');
+  activateRemovedScope(zh.scope);
+  assert.equal(isImportRemoved(LINK), false, 'the zh room has its own');
+  activateRemovedScope(en.scope);
 }
 
 console.log('Import deletion: gone from the device at once, never re-added, learned from the account, never opened, retried: PASS');

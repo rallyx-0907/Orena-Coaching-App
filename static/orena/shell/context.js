@@ -15,7 +15,8 @@ import { chooseInterface, setSupportFromProfile } from '../copy/index.js';
 import { INTERFACE_KEY } from '../product/languages.js';
 import { reconcileInterface, reviewFromProfile } from '../product/account-settings.js';
 import { clearPlace, sendPlace, syncContinuation } from '../product/continue-sync.js';
-import { attachProvenance, pullImportState, pushImport, removeImport } from '../product/account-records.js';
+import { attachProvenance, pullImportState, pushImport, recordsFor, removeImport } from '../product/account-records.js';
+import { activateRemovedScope } from '../product/import-removed.js';
 
 const listeners = new Set();
 const control = new AbortController();
@@ -84,8 +85,9 @@ export async function loadContext(storage = window.localStorage) {
   state.level = String(profile?.declared_level || '').trim();
   state.pinyin = profile?.pinyin !== 'off';
   state.due = Number.isFinite(Number(vocabulary?.summary?.due)) ? Math.max(0, Number(vocabulary.summary.due)) : 0;
-  setPlaceSink({ enter: sendPlace, clear: clearPlace, addImport: pushImport, removeImport, keepLanguage: attachProvenance });
+  setPlaceSink({ enter: sendPlace, clear: clearPlace, addImport: pushImport, removeImport, recordsFor, keepLanguage: attachProvenance });
   state.memory = learnerMemory(storage, state.owner, state.language);
+  activateRemovedScope(state.memory.scope);
   // The server's places, when it holds any; a failed read leaves the device list as it is.
   await syncContinuation(state.memory).catch(() => false);
   // Imports the account holds appear on this device too (a device value the server lacks stays, H-6).
@@ -123,9 +125,19 @@ function applyServerReview(memory, profile) {
 export async function syncImports(memory, language) {
   if (!memory) return false;
   const local = (memory.value?.mediaImports || []).map((item) => item.id);
-  const { items, deletedIds } = await pullImportState(language, local);
+  const { items, deletedIds, records = {} } = await pullImportState(language, local);
   const dropped = memory.applyDeletions(deletedIds);
-  for (const item of items) if (memory.isRemoved?.(item.id)) void removeImport(item.id);
+  for (const item of items) {
+    if (!memory.isRemoved?.(item.id)) continue;
+    const live = records[item.id] || [];
+    const owed = memory.owedRecords?.(item.id) || [];
+    // A record this device did not delete is another device's later re-import: the import is the learner's again.
+    if (live.some((uuid) => !owed.includes(uuid))) memory.reinstate?.(item.id);
+    // Only the records this device deleted are sent the delete again.
+    const mine = live.filter((uuid) => owed.includes(uuid));
+    if (mine.length) void removeImport(item.id, { uuids: mine });
+  }
+  memory.pruneOwed?.(records);
   return memory.mergeImports(items) || dropped;
 }
 
@@ -144,6 +156,7 @@ export async function adoptLearningLanguage(code, storage = window.localStorage)
     syncImports(memory, next).catch(() => false),
   ]);
   applyServerReview(memory, profile);
+  activateRemovedScope(memory.scope);
   updateContext({
     language: next,
     memory,

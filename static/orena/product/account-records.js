@@ -225,19 +225,22 @@ export async function importRef(memoryId) {
    account says were deleted (`deletedIds`, membership ids; `localMediaIds` are the device's own link and file ids,
    matched by their reference). An id the account still holds live is never reported deleted. */
 export async function pullImportState(language, localMediaIds = []) {
-  if (!(await recordsActive())) return { items: [], deletedIds: [] };
+  if (!(await recordsActive())) return { items: [], deletedIds: [], records: {} };
   try {
     const { imports, deleted = [] } = await apiRef.imports();
     const out = [];
+    const records = {}; // membership id -> the live account record ids behind it
     for (const item of imports) {
       importVersions.set(importUuid(item.id), item.version);
       if (item.form === 'text') {
         out.push({ id: item.id, title: item.title, text: item.text, language, origin: 'imported', kind: 'text' });
+        records[item.id] = [importUuid(item.id)];
       } else if (item.form === 'url' || item.form === 'upload') {
         const reference = item.form === 'upload' ? item.mediaId : item.url;
         if (!reference) continue;
         const memoryId = `${item.form}:${reference}`;
         mediaRecords.set(memoryId, (mediaRecords.get(memoryId) || new Set()).add(importUuid(item.id)));
+        (records[memoryId] ||= []).push(importUuid(item.id));
         if (out.some((entry) => entry.id === memoryId)) continue;
         out.push({
           id: memoryId, title: item.title, kind: item.kind || '', language, origin: 'imported',
@@ -253,9 +256,9 @@ export async function pullImportState(language, localMediaIds = []) {
       if (live.has(id) || !refs.size) continue;
       if (refs.has(await importRef(id))) deletedIds.push(id);
     }
-    return { items: out, deletedIds };
+    return { items: out, deletedIds, records };
   } catch {
-    return { items: [], deletedIds: [] };
+    return { items: [], deletedIds: [], records: {} };
   }
 }
 
@@ -263,21 +266,37 @@ export async function pullImports(language) {
   return (await pullImportState(language)).items;
 }
 
-export async function removeImport(id) {
+/* The account record ids this device holds for a membership id right now (what a deletion here may delete). */
+export function recordsFor(id) {
   const idents = isMedia(id) ? [...(mediaRecords.get(id) || [])] : [importUuid(id)];
-  const held = idents.filter((ident) => importVersions.has(ident));
+  return idents.filter((ident) => importVersions.has(ident));
+}
+
+/* Delete an import from the account. `uuids` limits it to those record ids (the resend of an earlier deletion: only
+   records this device deleted, never a record another device made since). An uploaded file this device holds no
+   account record for - it never synced - is still deleted from the server's store (owner-scoped, idempotent). */
+export async function removeImport(id, { uuids = null } = {}) {
+  const held = recordsFor(id).filter((ident) => !uuids || uuids.includes(ident));
+  if (!uuids && String(id).startsWith('upload:') && !held.length) {
+    try {
+      await apiRef.deleteMyMedia(String(id).slice(7));
+    } catch {
+      /* not ours, already gone, or unreachable: nothing further to do from here */
+    }
+  }
   if (!held.length || !(await recordsActive())) return false;
   let removed = false;
   for (const ident of held) {
     try {
       await apiRef.deleteImport(ident, operationId(), importVersions.get(ident));
       importVersions.delete(ident);
+      mediaRecords.get(id)?.delete(ident);
       removed = true;
     } catch {
-      /* a record that could not be removed stays; the next list read shows it again */
+      /* a record that could not be removed stays; the next sync sends it again */
     }
   }
-  if (removed && isMedia(id)) mediaRecords.delete(id);
+  if (isMedia(id) && !mediaRecords.get(id)?.size) mediaRecords.delete(id);
   return removed;
 }
 

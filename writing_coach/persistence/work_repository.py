@@ -229,6 +229,7 @@ class TurnRefused(Exception):
 MAX_CONVERSATION_TURNS = 24
 MAX_TURN_CHARS = 2400
 WORKS_LIST_LIMIT = 50
+DELETED_WORKS_LIST_LIMIT = 2_500  # tombstones carry no content; a device must be able to learn every one
 
 
 def _turn_of(row: dict[str, Any]) -> dict[str, Any]:
@@ -254,7 +255,7 @@ def _list_works(self, scope: Scope, *, kind: str = '', source_kind: str = '', li
     `ix_works_scope_sequence (incarnation_id, language_code, updated_sequence, id)` serves the range; `kind`
     narrows after it, which is fine at a learner's scale.
     """
-    bound = max(1, min(int(limit), WORKS_LIST_LIMIT))
+    bound = max(1, min(int(limit), DELETED_WORKS_LIST_LIMIT if deleted else WORKS_LIST_LIMIT))
     clauses = ['incarnation_id = :inc', 'language_code = :lang', "lifecycle = 'deleted'" if deleted else "lifecycle <> 'deleted'"]
     params: dict[str, Any] = {'inc': scope.incarnation, 'lang': scope.language, 'limit': bound}
     if kind:

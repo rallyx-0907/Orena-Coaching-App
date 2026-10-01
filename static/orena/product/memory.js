@@ -64,6 +64,9 @@ export function learnerMemory(storage, owner, language) {
       /* Imports this device knows were deleted (membership ids, never content): they are not listed, not
          re-added by a sync and not opened (product/import-removed.js). Bounded like the account's own. */
       removedImports: [],
+      /* For each deleted import, the account RECORD ids this device knew when it deleted (and the account may still
+         hold): only those are ever sent a delete again. A record another device made later is never touched. */
+      removedRecords: {},
       kept: [],
       continuation: [],
       expressions: {},
@@ -109,6 +112,12 @@ export function learnerMemory(storage, owner, language) {
       value.removedImports = (Array.isArray(parsed.removedImports) ? parsed.removedImports : [])
         .filter((x) => typeof x === 'string' && x.length <= 2100)
         .slice(-400);
+      value.removedRecords = Object.fromEntries(
+        Object.entries(parsed.removedRecords && typeof parsed.removedRecords === 'object' ? parsed.removedRecords : {})
+          .filter(([id, list]) => /^(text|url|upload):/.test(id) && Array.isArray(list))
+          .slice(-400)
+          .map(([id, list]) => [id, list.filter((x) => typeof x === 'string').slice(0, 20)]),
+      );
       value.kept = (Array.isArray(parsed.kept) ? parsed.kept : [])
         .filter((x) => typeof x === 'string')
         .slice(0, 100);
@@ -197,11 +206,12 @@ export function learnerMemory(storage, owner, language) {
   } catch {
     available = false;
   }
-  setRemovedImports(value.removedImports);
+  const scopeKey = `${owner}:${language}`;
+  setRemovedImports(value.removedImports, scopeKey);
   const isImportId = (id) => /^(text|url|upload):/.test(String(id || ''));
   const markRemoved = (id) => {
     value.removedImports = [...value.removedImports.filter((x) => x !== id), id].slice(-400);
-    setRemovedImports(value.removedImports);
+    setRemovedImports(value.removedImports, scopeKey);
   };
   const save = () => {
     try {
@@ -439,6 +449,36 @@ export function learnerMemory(storage, owner, language) {
     isRemoved(id) {
       return value.removedImports.includes(id);
     },
+    /* The account record ids this device owes a delete for (it deleted them, the account may still hold them). */
+    owedRecords(id) {
+      return value.removedRecords[id] || [];
+    },
+    /* The same import was kept again by another device after this one deleted it: it is the learner's again
+       here, and nothing is sent about it. */
+    reinstate(id) {
+      if (!value.removedImports.includes(id)) return false;
+      value.removedImports = value.removedImports.filter((x) => x !== id);
+      delete value.removedRecords[id];
+      setRemovedImports(value.removedImports, scopeKey);
+      save();
+      return true;
+    },
+    /* Forget owed deletes the account no longer holds: `live` maps a membership id to its live record ids. */
+    pruneOwed(live) {
+      let changed = false;
+      for (const [id, owed] of Object.entries(value.removedRecords)) {
+        const kept = owed.filter((uuid) => (live?.[id] || []).includes(uuid));
+        if (kept.length === owed.length) continue;
+        changed = true;
+        if (kept.length) value.removedRecords[id] = kept;
+        else delete value.removedRecords[id];
+      }
+      if (changed) save();
+      return changed;
+    },
+    get scope() {
+      return scopeKey;
+    },
     /* A media membership record. Two kinds of id are accepted, and they mean
        different things: `url:` is a source the learner pasted and Orena can
        re-acquire from the provider, `upload:` is a file whose bytes Orena
@@ -455,7 +495,8 @@ export function learnerMemory(storage, owner, language) {
       // Importing it again is a new decision: the earlier deletion no longer applies on this device.
       if (value.removedImports.includes(id)) {
         value.removedImports = value.removedImports.filter((x) => x !== id);
-        setRemovedImports(value.removedImports);
+        delete value.removedRecords[id];
+        setRemovedImports(value.removedImports, scopeKey);
       }
       const item = {
         id,
@@ -481,7 +522,12 @@ export function learnerMemory(storage, owner, language) {
       return true;
     },
     remove(id) {
-      if (isImportId(id)) markRemoved(id);
+      if (isImportId(id)) {
+        markRemoved(id);
+        // The account records this device holds for it right now: the only ones it may ever delete again.
+        const owed = (placeSink?.recordsFor?.(id) || []).map(String).slice(0, 20);
+        if (owed.length) value.removedRecords[id] = owed;
+      }
       value.imports = value.imports.filter((x) => x.id !== id);
       value.mediaImports = value.mediaImports.filter((x) => x.id !== id);
       value.kept = value.kept.filter((x) => x !== id);

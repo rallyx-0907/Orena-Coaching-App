@@ -42,6 +42,7 @@ MAX_TOMBSTONES = 500
 NOTE_TYPES = ('factual', 'reflection', 'question')
 _logger = logging.getLogger(__name__)
 MAX_IMPORTS = 20
+DELETED_LIST_LIMIT = 2_500  # every tombstone, so a device that was away learns every deletion it holds
 # Deleted imports are tombstones that are never removed, so "create, delete, create" would grow rows without bound
 # while the live count stays under MAX_IMPORTS. The total of an account's import rows, live and deleted, is bounded
 # separately (operator configuration, never a learner-facing number; limits review P1-1).
@@ -252,7 +253,11 @@ def list_imports(limit: int = Query(20, ge=1, le=work_api.LIST_LIMIT)) -> dict[s
     rows = _backbone().work.list_works(scope, kind='imported', source_kind='imported', limit=limit)
     # What was removed, content-free: `id` (form:record) and `ref` (see import_ref), so a device that still holds
     # the item can drop it and never open it again. Bounded by the tombstone bound.
-    gone = _backbone().work.list_works(scope, kind='imported', source_kind='imported', limit=work_api.LIST_LIMIT, deleted=True)
+    gone = _backbone().work.list_works(scope, kind='imported', source_kind='imported', limit=DELETED_LIST_LIMIT, deleted=True)
+    for row in gone:
+        if (row['payload'] or {}).get('mediaPending'):
+            # A file removal an earlier deletion could not finish is completed on a later read.
+            _finish_pending_media(scope, str(row['id']), row)
     return {'imports': [_import_shape(row) for row in rows],
             'deleted': [{'id': f"{(row['payload'] or {}).get('form') or 'text'}:{(row['payload'] or {}).get('id') or ''}",
                          'ref': str((row['payload'] or {}).get('ref') or '')} for row in gone]}
@@ -329,6 +334,53 @@ def _other_live_import_names(scope: Scope, media_id: str) -> bool:
     return found > 0
 
 
+def media_still_named(media_id: str) -> bool:
+    """Whether a LIVE upload import of the current account still names this stored media (False when the account
+    records are not kept at all: nothing can name it then). Used by the media delete route, so a file one device
+    deletes is not taken from another device's import of the same file."""
+    try:
+        scope = work_api._scope()  # noqa: SLF001
+    except Exception:  # noqa: BLE001 - records disabled or unavailable: no import names it
+        return False
+    return _other_live_import_names(scope, media_id)
+
+
+def _finish_pending_media(scope: Scope, ident: str, row: dict[str, Any]) -> bool | None:
+    """Complete the file removal an upload import's deletion owes, and only then clear its marker.
+
+    The tombstone keeps the opaque stored-media id as `mediaPending` until the files are confirmed gone, so a replay,
+    a repeated delete or a later list read can finish a removal that failed or was interrupted (files first, index
+    entry last - nothing is left orphaned). The files stay while another live import of the account names them.
+    Returns True/False for "removed"/"not removed", None when nothing was owed."""
+    held = row['payload'] or {}
+    media_id = str(held.get('mediaPending') or '')
+    if not media_id:
+        return None
+    done = False
+    removed = False
+    if _other_live_import_names(scope, media_id):
+        done = True  # the last live import will remove it; nothing is owed by this one
+    else:
+        try:
+            from writing_coach import media_library_api
+
+            removed = media_library_api.delete_owned_media(media_id, user_key=work_api._user_key(), language=scope.language)  # noqa: SLF001
+            done = True  # removed, or never ours / already gone: nothing further is owed
+        except Exception as exc:  # noqa: BLE001 - keep the marker; a retry completes it
+            _logger.warning('uploaded media could not be removed after an import was deleted: %s', type(exc).__name__)
+    if done:
+        cleared = {key: value for key, value in held.items() if key != 'mediaPending'}
+        try:
+            _commit(
+                scope, kind='imported', ident=ident, operation_id=f'sweep-{uuid.uuid4()}', expected_version=int(row['version']),
+                payload=cleared, source={'kind': 'imported', 'id': str(held.get('id') or ''), 'revision': ''},
+                lifecycle='deleted', conflict_code='import_conflict',
+            )
+        except Exception:  # noqa: BLE001 - a moved version means someone else already finished
+            pass
+    return removed if done else False
+
+
 @router.delete('/imports/{import_id}')
 def delete_import(import_id: str, operationId: str = Query(min_length=8, max_length=120),
                   expectedVersion: int = Query(ge=1)) -> dict[str, Any]:
@@ -339,14 +391,19 @@ def delete_import(import_id: str, operationId: str = Query(min_length=8, max_len
     row = _backbone().work.get_work(scope, ident)
     if row is None:
         raise orena_http_error(404, 'import_not_found', 'That import is not kept.', retryable=False)
+    if row['lifecycle'] == 'deleted':
+        # Already deleted (a retry, or a second device): nothing to commit; finish any file removal still owed.
+        return {'status': 'replay', 'version': int(row['version']), 'mediaDeleted': _finish_pending_media(scope, ident, row)}
     # A tombstone WITHOUT the content: deleting is erasing. Only what says which import this was stays (its id and
-    # form); the title, the text and the link are dropped from the stored row, not merely hidden from the reads.
+    # form, a hash reference, and for an upload the opaque stored-media id until its files are confirmed gone); the
+    # title, the text and the link are dropped from the stored row, not merely hidden from the reads.
     held = row['payload'] or {}
     form = str(held.get('form') or 'text')
     media_id = str(held.get('mediaId') or '') if form == 'upload' else ''
     tombstone = {'id': client, 'form': form}
     if form == 'upload' and media_id:
         tombstone['ref'] = import_ref('upload', media_id)
+        tombstone['mediaPending'] = media_id
     elif form == 'url' and held.get('url'):
         tombstone['ref'] = import_ref('url', str(held['url']))
     outcome = _commit(
@@ -354,19 +411,12 @@ def delete_import(import_id: str, operationId: str = Query(min_length=8, max_len
         payload=tombstone, source={'kind': 'imported', 'id': client, 'revision': ''},
         lifecycle='deleted', conflict_code='import_conflict',
     )
-    # An uploaded file is Orena's own copy and goes with the import: its bytes, thumbnail and index entry, deleted
-    # only for its owner in this language. A link import never touches the external source - only Orena's record.
     media_deleted = None
-    if media_id and _other_live_import_names(scope, media_id):
-        media_deleted = False  # another live import of this account still uses the file: it stays until the last goes
-    elif media_id:
-        try:
-            from writing_coach import media_library_api
-
-            media_deleted = media_library_api.delete_owned_media(media_id, user_key=work_api._user_key(), language=scope.language)  # noqa: SLF001
-        except Exception as exc:  # noqa: BLE001 - the import is already gone; report the files honestly
-            _logger.warning('uploaded media could not be removed after an import was deleted: %s', type(exc).__name__)
-            media_deleted = False
+    if media_id:
+        fresh = _backbone().work.get_work(scope, ident)
+        media_deleted = _finish_pending_media(scope, ident, fresh) if fresh else False
+        if media_deleted and _other_live_import_names(scope, media_id):
+            media_deleted = False  # kept: another live import still uses the file
     return {**outcome, 'mediaDeleted': media_deleted}
 
 

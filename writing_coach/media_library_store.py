@@ -258,6 +258,11 @@ class FileMediaLibraryStore:
             raise MediaIndexUnavailable(self.last_read_issue)
         return entries
 
+    def assert_writable(self) -> None:
+        """Raise MediaIndexUnavailable when a write or delete would be refused (corrupt or unreadable index)."""
+        with self._writer:
+            self._read_for_write()
+
     def upsert(self, entry: MediaLibraryEntry) -> MediaLibraryEntry:
         validate_entry(entry)
         with self._writer:

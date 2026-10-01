@@ -31,7 +31,7 @@ from pydantic import BaseModel, Field
 
 from writing_coach.book_asset_store import AssetNotFound, BookAssetStore, InvalidAssetKey
 from writing_coach.core.errors import orena_http_error
-from writing_coach.media_library_store import OWNER_FIELD, MediaLibraryEntry, owner_token, visible_to
+from writing_coach.media_library_store import OWNER_FIELD, MediaIndexUnavailable, MediaLibraryEntry, owner_token, visible_to
 from writing_coach.core.request_context import current_language_code, current_user_key
 from writing_coach.media_source_import import MediaSourceImporter, UnsafeMediaFetch
 from writing_coach.media_thumbnail import MAX_UPLOAD_BYTES, TempMediaFile
@@ -186,6 +186,9 @@ def delete_owned_media(media_id: str, *, user_key: str, language: str) -> bool:
     touched: only what Orena stored is removed."""
     store, asset_store, _ = _installed()
     entry = store.get(media_id.strip())
+    if entry is None and getattr(store, "last_read_issue", "") in {"index_corrupt", "index_unreadable"}:
+        # "Not found" in an index that cannot be trusted is not an answer: refuse, so nothing is treated as done.
+        raise MediaIndexUnavailable(store.last_read_issue)
     if entry is None or entry.library != "personal" or entry.provider != "upload":
         return False
     if not visible_to(entry, user_key=user_key, language=language):
@@ -194,9 +197,12 @@ def delete_owned_media(media_id: str, *, user_key: str, language: str) -> bool:
 
 
 def _remove_personal_entry(store: Any, asset_store: BookAssetStore, entry: MediaLibraryEntry) -> bool:
-    # The index entry goes first: an index that cannot be trusted refuses the delete (MediaIndexUnavailable) before any
-    # file is touched, so a refusal leaves the learner's upload whole.
-    removed = store.delete(entry.media_id)
+    # Order: an index that cannot be trusted refuses first (nothing is touched); then the files; the index entry goes
+    # last. A failure part-way leaves the entry in place, so the removal can be retried and finished - bytes are never
+    # left without an index record that could find them.
+    assert_writable = getattr(store, "assert_writable", None)
+    if assert_writable is not None:
+        assert_writable()
     prefix = f"media/{entry.provider_media_id}"
     keys: list[str] = []
     thumbnail = entry.thumbnail or {}
@@ -209,7 +215,7 @@ def _remove_personal_entry(store: Any, asset_store: BookAssetStore, entry: Media
     except (InvalidAssetKey, OSError):
         _logger.warning("owned media files could not all be removed for %s", entry.media_id)
         raise
-    return removed
+    return store.delete(entry.media_id)
 
 
 def delete_all_owned_media(user_key: str) -> int:
@@ -228,6 +234,15 @@ def delete_all_owned_media(user_key: str) -> int:
 @router.delete("/my/{media_id}")
 def delete_my_media(media_id: str) -> dict[str, Any]:
     _installed()
+    store, _, _ = _installed()
+    entry = store.get(media_id.strip())
+    if entry is None or not visible_to(entry, user_key=current_user_key(), language=current_language_code()):
+        raise orena_http_error(404, "media_not_found", "This media is not available.")
+    from writing_coach.account_records_api import media_still_named
+
+    if media_still_named(entry.media_id):
+        # Another live import of this account still uses the file: it goes with the last one, not before.
+        return {"deleted": False, "inUse": True}
     if not delete_owned_media(media_id, user_key=current_user_key(), language=current_language_code()):
         raise orena_http_error(404, "media_not_found", "This media is not available.")
     return {"deleted": True}

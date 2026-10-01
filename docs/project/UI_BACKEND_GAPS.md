@@ -4614,3 +4614,14 @@ Resolved by the human's D-105 decisions; AD-A, AD-B and AD-H above are closed by
   erased. A link that cannot be re-acquired from its provider opens the load-error room, which offers no "⋯" - such an item
   can be deleted from My Library. Account-level removal of all media files on account deletion has its remover
   (`delete_all_owned_media`) but no workflow calls it yet (D-055).
+
+- **Review f8f5c91 fixes.** A file removal that fails is retryable: the tombstone keeps the opaque stored-media id as
+  `mediaPending` until the files are confirmed gone (files first, index entry last), and a repeated delete, a replay or
+  the next `GET /api/imports` finishes it. `GET /api/imports` returns every tombstone (up to 2,500), not the newest 50.
+  A device resends a deletion only for the account record ids it deleted (by record id and version); a record another
+  device made later is never deleted and clears the device's removed marker. An upload that never synced is deleted from
+  the server store too (owner-scoped; it stays while another live import of the account names it). The removed set is per
+  owner and language. Still open: P2-5 (derived records) goes to the human; P3-1 (a link `ref` is a guessable
+  fingerprint), P3-2 (receipts keep a content-derived digest until account deletion), P3-3 (tombstones made before
+  `f8f5c91` have no `ref`), P3-5 (the Reader keeps its own overflow styles), P3-6 (an upload whose index write is refused
+  leaves its files) and P3-8 (the server `kept` mark of a deleted import).

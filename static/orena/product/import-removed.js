@@ -4,14 +4,29 @@
    (product/memory.js) keeps this set; every room that could open an import by id asks it, so no room needs to
    know how the deletion was learned. The ids are membership ids (`text:<id>`, `url:<link>`, `upload:<media id>`),
    never content. */
-let removed = new Set();
+const scopes = new Map(); // "owner:language" -> Set of membership ids
+let active = '';
 
-export function setRemovedImports(ids) {
-  removed = new Set(Array.isArray(ids) ? ids.map(String) : []);
+/* The set a learner memory keeps for ITS owner and language. The memory registers it under its scope; the shell
+   makes one scope active (activateRemovedScope) when that memory becomes the room's. Another language's memory being
+   built (a language switch) therefore never replaces the active room's set. Called with no scope, the one default
+   scope is used and made active (tests, tools). */
+export function setRemovedImports(ids, scope = '') {
+  scopes.set(scope, new Set(Array.isArray(ids) ? ids.map(String) : []));
+  if (!scope || !scopes.has(active)) active = scope;
+}
+
+export function activateRemovedScope(scope) {
+  if (!scopes.has(scope)) scopes.set(scope, new Set());
+  active = scope;
+}
+
+function removedSet() {
+  return scopes.get(active) || new Set();
 }
 
 export function isImportRemoved(id) {
-  return removed.has(String(id || ''));
+  return removedSet().has(String(id || ''));
 }
 
 /* The error a room sees when it is asked to open one: the same 404 an unknown media id gets. */
@@ -38,7 +53,7 @@ export function importMemberId(contentId) {
 /* Whether a route/content/media id names an import this device knows was deleted. */
 export function isRemovedContent(contentId) {
   const member = importMemberId(contentId);
-  if (member && removed.has(member)) return true;
+  if (member && removedSet().has(member)) return true;
   // A stored upload is opened by its bare media id too.
-  return /^upload-/.test(String(contentId || '')) && removed.has(`upload:${contentId}`);
+  return /^upload-/.test(String(contentId || '')) && removedSet().has(`upload:${contentId}`);
 }
