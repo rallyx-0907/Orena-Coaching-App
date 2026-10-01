@@ -563,3 +563,79 @@ recoverability and convergence at the edges; they are small.
 2. P2-2 and P2-3 (tombstone list completeness; pending-delete by record uuid) before multi-device use beyond the lane.
 3. P2-5: a recorded human decision on derived records of a deleted import.
 4. P3-3, P3-6 and the others as follow-ups. Enabling beyond :8021 remains the D-107.5 gate.
+
+## Delta check (02511cc)
+
+- **Reviewer:** Claude Opus 5.5, independent reviewer subagent, not the implementer. **Date:** 2026-10-01.
+- **Reviewed:** `git show 02511cc` (12 files) against my review of `f8f5c91` and ACCOUNT_RECORD_LIMITS rev 5. Read-only
+  and static; the implementer's results (PostgreSQL 3053, SQLite 2709, 124/124 node gates; five server tests that fail
+  against the previous Python) are local execution and were not reproduced by me.
+
+### Verdict: APPROVE WITH CONDITIONS (for :8021; the condition is one new P2)
+
+P2-1, P2-2, P2-4 and P3-4 are fixed at the root. P2-3 is fixed for the case it targeted (another device's re-import is
+neither deleted nor hidden), but the new bookkeeping introduces one new P2: a deletion made before the device knows the
+account's record ids is silently lost and the item comes back.
+
+### Verified closed
+- **P2-1.** The tombstone keeps the opaque stored-media id as `mediaPending` (never exposed in the list) until the files are
+  confirmed gone. A repeated DELETE (even with a stale version and a new operation id), a replay of an already-deleted
+  import, and every `GET /api/imports` complete a removal that failed. Order is now: index trusted (`assert_writable`),
+  files, then the index entry last, so a failure leaves the entry and the bytes findable and retryable. An untrusted
+  index raises `MediaIndexUnavailable` even when the entry reads as "not found", so nothing is treated as done and the
+  marker stays. The marker is cleared by a normal commit on the deleted work (the test reads the stored row and asserts
+  it). I checked the three feared cases:
+  - *A later different import's file is never deleted.* `mediaPending` holds the id the deleted import named; the file is
+    removed only when no live import of the account (any language) names it, otherwise the marker is cleared with nothing
+    removed and the last live import takes the file. Ids are unique per upload.
+  - *A GET cannot touch another account or language.* The sweep walks only the requester's own scope's tombstones and calls
+    `delete_owned_media` with the requester's key and the scope language, which requires `visible_to` (owner token and
+    language). A client-supplied `mediaId` naming someone else's or a shared file is simply not removed and the marker is
+    cleared.
+  - *Concurrent deletes of two records naming one file* cannot leave it behind or delete it under a live record: each
+    checks after its own commit.
+- **P2-2.** Every tombstone is returned (cap 2,500, listing 60 tombstones is tested), and the list exposes only `id` and
+  `ref`.
+- **P2-4.** For an `upload:` membership with no account record the client calls the owner-scoped
+  `DELETE /api/media/my/{id}`; the route answers 404 for anything not the caller's (owner and language), returns
+  `{deleted:false, inUse:true}` while a live import of the account (any language) still names the file, and otherwise
+  removes it. The in-use guard is the last-live-reference rule on the media side.
+- **P3-4.** The removed set is a map keyed by owner and language; constructing another language's memory no longer replaces
+  the active room's set, and the shell activates the scope when it adopts a memory (`loadContext`,
+  `adoptLearningLanguage`; onboarding and Settings use the latter).
+
+### New and remaining findings
+- **P2-6. A deletion made before the device knows the account's record ids is lost and the item is reinstated.**
+  `memory.remove` records as "owed" only the records `recordsFor` knows, which come from the last successful list read in
+  this page session (`importVersions`/`mediaRecords`). If the learner deletes while that read has not happened (offline at
+  load, a failed first sync), `owed` is empty and no server delete is sent (`removeImport` requires a known version). At the
+  next sync the account still holds the record, and `syncImports` decides that any live record not in `owed` is "another
+  device's later re-import" and **reinstates** the import: the learner's deletion silently reverts, on this device and on
+  the account. For a text import the record id equals the membership id, so even the id is known but is not recorded.
+  **Required:** record the text record id as owed regardless of version knowledge; for media, either defer ("deleted, record
+  ids unknown") and reconcile using a server-side ordering marker (return each live record's change `sequence` and a
+  high-water mark; a record newer than the device's last successful sync is a re-import, an older one is the deleted one),
+  never a bare "not in owed" test. Add a test for delete-before-first-list.
+- **P3-1.** The 2,500 deleted-list cap is a constant. ACCOUNT_RECORD_LIMITS rev 5 bounds import rows per (account,
+  language) at 360 (text pool total) plus 2,500 (media pool total) = 2,860, both configurable, so in an extreme account the
+  tombstones can exceed the cap and the oldest are not returned. Derive the cap from the two configured totals, and add
+  an ETag or `since` because the full list is fetched on every screen that syncs imports (up to about 375 KB).
+- **P3-2.** A GET now writes (sweep) and, per pending tombstone, parses the whole media index (G1). Bound the sweep to a few
+  rows per read, or run it from the delete route and a periodic job only.
+- **P3-3.** `DELETE /api/media/my/{id}` answers 404 when the index is untrusted (it uses a plain `get`), and the client
+  ignores the failure, so a device-only upload is then never retried; answer 503 for an untrusted index. A missing
+  `index.json` (`index_missing`) reads as a fresh start, so a removal there counts as done and clears the marker while the
+  files may still be on disk; treat a missing index as untrusted when files exist.
+- **P3-4.** `reinstate` deletes the device's owed record list even when the same sync still owes the delete of the older
+  record (it is sent, fire and forget); if that send fails the older record stays live for ever behind the same
+  membership id. Keep the owed list until the account confirms.
+
+### Do these recreate a deleted record?
+No server path does: a tombstone is terminal, `delete_import` on a deleted work only completes file removal, a new import is
+always a new record id, and the sweep only clears a marker. The only resurrection is the client-side one in P2-6.
+
+### Conditions
+1. P2-6 (lost deletion before the first list) before multi-device acceptance of delete.
+2. P3-1 and P3-3 with the limits implementation; P3-2 and P3-4 as follow-ups.
+3. P2-5 of the earlier review (derived records of a deleted import) stays the human's decision. Enabling beyond :8021
+   remains the D-107.5 gate.
