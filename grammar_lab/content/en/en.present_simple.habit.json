@@ -10,7 +10,9 @@
     "rank": 1
   },
   "prereqs": [],
-  "contrasts": [],
+  "contrasts": [
+    "en.present_continuous.now"
+  ],
   "error_tags": [
     "tense"
   ],
