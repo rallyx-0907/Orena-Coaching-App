@@ -22,7 +22,7 @@ from grammar_lab.pipeline.content_store import load_point, load_points, save_poi
 from grammar_lab.pipeline import engine_grade, live_lock
 from grammar_lab.pipeline.evaluator_client import EvaluatorClient
 from grammar_lab.pipeline.export_error_tags import export_error_tags
-from grammar_lab.pipeline.generate import GenerateOutcome, Generator
+from grammar_lab.pipeline.generate import GenerateOutcome, Generator, PROMPT_VERSION_V04
 from grammar_lab.pipeline.llm_client import LLMClient, LLMError
 from grammar_lab.pipeline.preview import DEFAULT_OUT_DIR as DEFAULT_PREVIEW_DIR
 from grammar_lab.pipeline.preview import serve as serve_preview
@@ -32,7 +32,7 @@ from grammar_lab.pipeline.review_export import levels_present, review_path, writ
 from grammar_lab.pipeline.route import DEFAULT_THRESHOLD_BY_LANG, apply_route, route_point
 from grammar_lab.pipeline.canonical import catalog_is_current, load_canonical, write_catalog
 from grammar_lab.pipeline.coverage import coverage_report, render_text as render_coverage
-from grammar_lab.pipeline.corpus import generation_items, normalize_langs, plan_corpus, render_text as render_corpus
+from grammar_lab.pipeline.corpus import generation_items, matches_generation_provenance, normalize_langs, plan_corpus, render_text as render_corpus
 from grammar_lab.pipeline.seed import GenerationBlocked, check_generation_gate, select_ids
 from grammar_lab.pipeline.export_package import ExportError, export_package, package_to_zip, validate_package
 from grammar_lab.pipeline.export_profile import (
@@ -198,12 +198,26 @@ def generate_corpus_command(
 
     initial_plan = plan_corpus(langs, root)
     candidates = generation_items(initial_plan, include_generated=regenerate_existing)
+    normalized_skipped = 0
+    if regenerate_existing and not regenerate_note:
+        already_normalized = {
+            point_id
+            for lang_code in langs
+            for point_id, point in load_points(lang_code, root).items()
+            if matches_generation_provenance(
+                point, provider=provider, model=model, prompt_version=PROMPT_VERSION_V04
+            )
+        }
+        before = len(candidates)
+        candidates = [item for item in candidates if item[2] not in already_normalized]
+        normalized_skipped = before - len(candidates)
     if max_points:
         candidates = candidates[:max_points]
     typer.echo(render_corpus(initial_plan))
-    mode = "ready + generated" if regenerate_existing else "ready"
+    mode = "ready + generated needing normalization" if regenerate_existing else "ready"
     typer.echo(
         f"generate-corpus: {len(candidates)} {mode} point(s) selected; "
+        f"{normalized_skipped} already normalized skipped; "
         f"workers={workers}, provider={provider}, model={model}"
     )
     if not candidates:
@@ -291,6 +305,7 @@ def generate_corpus_command(
         "workers": workers,
         "regenerate_existing": regenerate_existing,
         "regenerate_note": bool(regenerate_note),
+        "already_normalized_skipped": normalized_skipped,
         "initial_counts": initial_plan["counts"],
         "selected": len(candidates),
         "outcomes": [
