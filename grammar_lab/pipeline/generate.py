@@ -950,7 +950,8 @@ class Generator:
             attempt_user = user
             if repair_context:
                 attempt_user += (
-                    "\n\nThe previous full JSON candidate failed deterministic validation. "
+                    f"\n\nRepair attempt {attempt}/{V04_SEMANTIC_ATTEMPTS}. "
+                    "The previous full JSON candidate failed deterministic validation. "
                     "Return a fresh complete JSON object that fixes every issue below without changing the requested grammar scope:\n"
                     + repair_context
                 )
