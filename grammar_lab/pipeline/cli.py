@@ -8,6 +8,7 @@ canonical catalog v1 into the runtime catalogue and ``coverage`` reports it agai
 from __future__ import annotations
 
 import contextlib
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import json
 import sys
 import time
@@ -31,7 +32,7 @@ from grammar_lab.pipeline.review_export import levels_present, review_path, writ
 from grammar_lab.pipeline.route import DEFAULT_THRESHOLD_BY_LANG, apply_route, route_point
 from grammar_lab.pipeline.canonical import catalog_is_current, load_canonical, write_catalog
 from grammar_lab.pipeline.coverage import coverage_report, render_text as render_coverage
-from grammar_lab.pipeline.corpus import normalize_langs, plan_corpus, ready_items, render_text as render_corpus
+from grammar_lab.pipeline.corpus import generation_items, normalize_langs, plan_corpus, render_text as render_corpus
 from grammar_lab.pipeline.seed import GenerationBlocked, check_generation_gate, select_ids
 from grammar_lab.pipeline.export_package import ExportError, export_package, package_to_zip, validate_package
 from grammar_lab.pipeline.export_profile import (
@@ -153,19 +154,38 @@ def generate_corpus_command(
     story_mode: str = typer.Option("everyday", "--story-mode", help="Story mode passed to Generator."),
     cost_ceiling_usd: float = typer.Option(
         1.0, "--cost-ceiling-usd",
-        help="Global ceiling for this corpus invocation. Re-run to resume from remaining missing points.",
+        help=(
+            "Global soft ceiling for this corpus invocation. Parallel workers already started in the same "
+            "batch are allowed to finish, so a run may exceed the ceiling by at most one batch."
+        ),
     ),
     max_points: int = typer.Option(
         0, "--max-points",
-        help="Optional bound for one invocation; 0 means every currently ready point until cost ceiling.",
+        help="Optional bound for one invocation; 0 means every selected point until cost ceiling.",
+    ),
+    workers: int = typer.Option(
+        5, "--workers",
+        help="Concurrent LLM calls. Default 5; use 1 for the old serial behavior. Allowed range: 1-16.",
+    ),
+    regenerate_existing: bool = typer.Option(
+        False, "--regenerate-existing",
+        help="Also regenerate existing reviewed content so the final corpus passes through one prompt/schema pipeline.",
+    ),
+    regenerate_note: str = typer.Option(
+        "", "--regenerate-note",
+        help="Required only if --regenerate-existing reaches approved points; drafts do not need a note.",
     ),
     root: Path = typer.Option(LAB_ROOT, "--root"),
 ) -> None:
-    """Generate every currently-ready missing point, resuming safely across EN/ZH.
+    """Generate a resumable corpus in bounded parallel batches.
 
-    Existing content is never regenerated here. Points whose metadata is still
-    default_safe remain blocked and are reported by corpus-plan rather than
-    being generated with placeholder structure.
+    By default only missing ready points are selected. --regenerate-existing
+    also includes already-generated reviewed points, which is the final
+    595-point normalization pass. Default-safe metadata is never bypassed.
+
+    Calls run in batches of --workers. The next batch starts only after the
+    previous one finishes, keeping cost accounting bounded while hiding most
+    provider latency.
     """
     try:
         langs = normalize_langs(lang)
@@ -173,45 +193,75 @@ def generate_corpus_command(
         raise typer.BadParameter(str(exc), param_hint="--lang") from exc
     if max_points < 0:
         raise typer.BadParameter("must be >= 0", param_hint="--max-points")
+    if workers < 1 or workers > 16:
+        raise typer.BadParameter("must be between 1 and 16", param_hint="--workers")
 
     initial_plan = plan_corpus(langs, root)
-    candidates = ready_items(initial_plan)
+    candidates = generation_items(initial_plan, include_generated=regenerate_existing)
     if max_points:
         candidates = candidates[:max_points]
     typer.echo(render_corpus(initial_plan))
-    typer.echo(f"generate-corpus: {len(candidates)} ready point(s) selected for this invocation")
+    mode = "ready + generated" if regenerate_existing else "ready"
+    typer.echo(
+        f"generate-corpus: {len(candidates)} {mode} point(s) selected; "
+        f"workers={workers}, provider={provider}, model={model}"
+    )
     if not candidates:
         return
 
     outcomes: list[GenerateOutcome] = []
-    generators: dict[str, Generator] = {}
+
+    def run_one(lang_code: str, point_id: str, generators: dict[str, Generator]) -> GenerateOutcome:
+        try:
+            check_generation_gate(lang_code, [point_id], root)
+            return generators[lang_code].generate(
+                point_id,
+                regenerate_note=regenerate_note or None,
+                with_story=with_story,
+                story_mode=story_mode,
+            )
+        except GenerationBlocked as exc:
+            return GenerateOutcome(point_id, "blocked_metadata", reason=str(exc))
+        except LLMError as exc:
+            wasted_cost = exc.usage.cost_usd(model) if exc.usage is not None else None
+            return GenerateOutcome(point_id, "error", reason=str(exc), cost_usd=wasted_cost)
+        except Exception as exc:
+            return GenerateOutcome(point_id, "error", reason=f"{type(exc).__name__}: {exc}")
+
     with live_lock.hold([provider], cost_ceiling_usd), LLMClient(
         provider, model, deepseek_thinking=deepseek_thinking
-    ) as llm:
-        for lang_code, _level, point_id in candidates:
+    ) as llm, ThreadPoolExecutor(max_workers=workers, thread_name_prefix="grammar-generate") as pool:
+        generators = {
+            lang_code: Generator(lang=lang_code, l1=l1, llm=llm, root=root, allow_default_safe=False)
+            for lang_code in langs
+        }
+        cursor = 0
+        while cursor < len(candidates):
             spent = sum(o.cost_usd for o in outcomes if o.cost_usd is not None)
             if spent >= cost_ceiling_usd:
                 break
-            try:
-                check_generation_gate(lang_code, [point_id], root)
-                generator = generators.get(lang_code)
-                if generator is None:
-                    generator = Generator(
-                        lang=lang_code, l1=l1, llm=llm, root=root, allow_default_safe=False
-                    )
-                    generators[lang_code] = generator
-                outcomes.append(
-                    generator.generate(
-                        point_id,
-                        with_story=with_story,
-                        story_mode=story_mode,
-                    )
-                )
-            except GenerationBlocked as exc:
-                outcomes.append(GenerateOutcome(point_id, "blocked_metadata", reason=str(exc)))
-            except LLMError as exc:
-                wasted_cost = exc.usage.cost_usd(model) if exc.usage is not None else None
-                outcomes.append(GenerateOutcome(point_id, "error", reason=str(exc), cost_usd=wasted_cost))
+
+            batch = candidates[cursor:cursor + workers]
+            batch_outcomes: list[GenerateOutcome | None] = [None] * len(batch)
+            future_to_index = {
+                pool.submit(run_one, lang_code, point_id, generators): index
+                for index, (lang_code, _level, point_id) in enumerate(batch)
+            }
+            for future in as_completed(future_to_index):
+                index = future_to_index[future]
+                batch_outcomes[index] = future.result()
+            outcomes.extend(outcome for outcome in batch_outcomes if outcome is not None)
+            cursor += len(batch)
+
+            batch_spent = sum(
+                outcome.cost_usd for outcome in batch_outcomes
+                if outcome is not None and outcome.cost_usd is not None
+            )
+            total_spent = sum(o.cost_usd for o in outcomes if o.cost_usd is not None)
+            typer.echo(
+                f"generate-corpus: batch {cursor - len(batch) + 1}-{cursor}/{len(candidates)} finished; "
+                f"batch USD {batch_spent:.4f}, total USD {total_spent:.4f}"
+            )
 
     total_cost = sum(o.cost_usd for o in outcomes if o.cost_usd is not None)
     for outcome in outcomes:
@@ -221,7 +271,7 @@ def generate_corpus_command(
         typer.echo(f"{outcome.status:20} {outcome.point_id:48} {cost}  {outcome.reason}")
     typer.echo(
         f"generate-corpus: attempted {len(outcomes)}/{len(candidates)} selected point(s), "
-        f"USD {total_cost:.4f} spent (ceiling USD {cost_ceiling_usd}); re-run to resume"
+        f"USD {total_cost:.4f} spent (soft ceiling USD {cost_ceiling_usd}, workers {workers}); re-run to resume"
     )
 
     run_id = new_run_id()
@@ -235,6 +285,9 @@ def generate_corpus_command(
         "story_mode": story_mode if with_story else None,
         "cost_ceiling_usd": cost_ceiling_usd,
         "max_points": max_points,
+        "workers": workers,
+        "regenerate_existing": regenerate_existing,
+        "regenerate_note": bool(regenerate_note),
         "initial_counts": initial_plan["counts"],
         "selected": len(candidates),
         "outcomes": [
@@ -250,7 +303,6 @@ def generate_corpus_command(
     })
     if any(o.status in {"error", "blocked_metadata"} for o in outcomes):
         raise typer.Exit(1)
-
 
 
 @app.command("export-profile")
