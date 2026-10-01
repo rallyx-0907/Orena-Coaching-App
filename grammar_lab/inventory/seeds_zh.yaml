@@ -2612,7 +2612,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk3_4_n_n_t_ng
   level: '3'
-  function: fn.verb_patterns
+  function: fn.voice_causative
   point_type: word_order
   native_title: "被字句基础"
   title:
@@ -2782,7 +2782,7 @@
   contrasts: []
   prereqs:
   - zh.gang_gangcai
-  sequence: 2
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: zh.neng_yuan_dei
@@ -3663,7 +3663,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk4_2_n_ng_cao
   level: '4'
-  function: fn.verb_patterns
+  function: fn.voice_causative
   point_type: other
   native_title: "高级被字句"
   title:
@@ -3942,7 +3942,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk5_6_topic
   level: '5'
-  function: fn.possibility
+  function: fn.degree
   point_type: other
   native_title: "不得了"
   title:
@@ -4310,7 +4310,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk5_10_topic
   level: '5'
-  function: fn.contrast
+  function: fn.exclusion
   point_type: other
   native_title: "无非"
   title:
@@ -4323,7 +4323,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk5_5_topic
-  sequence: 2
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk5_8_topic_146
@@ -4402,7 +4402,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk5_12_topic
   level: '5'
-  function: fn.linking
+  function: fn.information_structure
   point_type: other
   native_title: "话题链与省略"
   title:
@@ -4417,7 +4417,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk5_10_topic_148
-  sequence: 8
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk5_13_reference
@@ -4492,7 +4492,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk5.a_5_5_2_7.p1
-  sequence: 9
+  sequence: 8
   anchors: []
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk5_2_topic
@@ -4548,7 +4548,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk5_3_approximate_quantities
-  sequence: 2
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk5_4_topic_141
@@ -4585,7 +4585,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk5_4_topic_141
-  sequence: 1
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk5_7_topic_145
@@ -4799,7 +4799,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk6_7_topic_172
   level: '6'
-  function: fn.reason_result
+  function: fn.information_structure
   point_type: other
   native_title: "至于"
   title:
@@ -4829,7 +4829,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk6_7_topic_172
-  sequence: 2
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk6.a_6_2_4_5.p1
@@ -5176,7 +5176,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk6_7_topic
   level: '6'
-  function: fn.linking
+  function: fn.negation
   point_type: other
   native_title: "不⋯⋯不⋯⋯"
   title:
@@ -5190,7 +5190,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk6.a_6_4.p1
-  sequence: 12
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk6.a_6_6_2_10.p1
@@ -5242,7 +5242,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk6.a_6_6_2_3.p1
-  sequence: 2
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk6.a_6_8.p2
@@ -5279,12 +5279,12 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk6.a_6_8.p1
-  sequence: 3
+  sequence: 4
   anchors: []
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk6_1_t_ng_t_c_n_ng_cao
   level: '6'
-  function: fn.ongoing_now
+  function: fn.aspect_viewpoint
   point_type: other
   native_title: "“了/过/着”的高级互动"
   title:
@@ -5298,7 +5298,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk6.a_6_2_4_2.p1
-  sequence: 2
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk6_12_parallel_structure_in_formal_prose
@@ -5317,7 +5317,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk6.a_6_7.p1
-  sequence: 13
+  sequence: 12
   anchors: []
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk6_14_formal_comparison
@@ -5357,7 +5357,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk6_20_register_control
   level: '6'
-  function: fn.linking
+  function: fn.register_style
   point_type: other
   native_title: "语体控制"
   title:
@@ -5370,7 +5370,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk6_12_parallel_structure_in_formal_prose
-  sequence: 14
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk6_22_punctuation_and_clause_grammar
@@ -5388,12 +5388,12 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk6_20_register_control
-  sequence: 15
+  sequence: 13
   anchors: []
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk6_3_agent_source
   level: '6'
-  function: fn.linking
+  function: fn.voice_causative
   point_type: other
   native_title: "“由”表示施事或来源"
   title:
@@ -5406,7 +5406,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk6_22_punctuation_and_clause_grammar
-  sequence: 16
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk6_4_patterns
@@ -5671,7 +5671,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk7_9.a_7_1_4_9.p1
   level: '7'
-  function: fn.questions
+  function: fn.possibility
   point_type: other
   native_title: "必定"
   title:
@@ -5683,7 +5683,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk7_9.a_7_1_4_8.p1
-  sequence: 2
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk7_9.a_7_1_4_9.p2
@@ -5756,7 +5756,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk7_9.a_7_1_5_1.p1
   level: '7'
-  function: fn.ongoing_now
+  function: fn.location
   point_type: other
   native_title: "顺着"
   title:
@@ -5773,7 +5773,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk7_9.a_7_1_5_2.p1
   level: '7'
-  function: fn.ongoing_now
+  function: fn.location
   point_type: other
   native_title: "当着"
   title:
@@ -6115,7 +6115,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk7_9.a_7_5_2_6.p1
   level: '8'
-  function: fn.linking
+  function: fn.hypothetical_counterfactual
   point_type: other
   native_title: "倘若/若⋯⋯，⋯⋯"
   title:
@@ -6127,12 +6127,12 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk7_9.a_7_5_2_4.p1
-  sequence: 6
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk7_9.a_7_5_2_7.p1
   level: '8'
-  function: fn.condition_real
+  function: fn.contrast
   point_type: other
   native_title: "别管⋯⋯ ，都⋯⋯"
   title:
@@ -6144,7 +6144,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk6.a_6_6_2_7.p1
-  sequence: 1
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk7_9.a_7_5_2_8.p1
@@ -6178,7 +6178,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk7_9.a_7_5_2_6.p1
-  sequence: 7
+  sequence: 6
   anchors: []
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk7_9.a_7_5_2_10.p1
@@ -6196,7 +6196,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk7_9.a_7_5_2_9.p1
-  sequence: 8
+  sequence: 7
   anchors: []
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk7_9.a_7_5_2_11.p1
@@ -6213,7 +6213,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk7_9.a_7_5_2_10.p1
-  sequence: 9
+  sequence: 8
   anchors: []
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk7_9.a_7_5_2_12.p1
@@ -6232,7 +6232,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk7_9.a_7_5_2_11.p1
-  sequence: 10
+  sequence: 9
   anchors: []
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk7_9.a_7_5_2_13.p1
@@ -6250,7 +6250,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk7_9.a_7_5_2_12.p1
-  sequence: 11
+  sequence: 10
   anchors: []
   batch: full-seed-2026-09-30
 - id: zh.canon.gf.hsk7_9.a_7_6.p1
@@ -6377,7 +6377,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk79_10_conditional_rhetoric
   level: '9'
-  function: fn.condition_real
+  function: fn.hypothetical_counterfactual
   point_type: other
   native_title: "条件句的修辞用法"
   title:
@@ -6450,7 +6450,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk79_16_information_structure_and_emphasis
   level: '9'
-  function: fn.linking
+  function: fn.information_structure
   point_type: other
   native_title: "信息结构与强调"
   title:
@@ -6463,12 +6463,12 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk79_14_productive_four_character_grammar_patterns
-  sequence: 3
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk79_17_ellipsis_and_recoverability
   level: '9'
-  function: fn.sentence_basics
+  function: fn.information_structure
   point_type: other
   native_title: "省略与可恢复性"
   title:
@@ -6499,7 +6499,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk79_17_ellipsis_and_recoverability
-  sequence: 3
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk79_19_argument_concession_counterclaim
@@ -6523,7 +6523,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk79_20_reporting_and_attribution
   level: '9'
-  function: fn.linking
+  function: fn.reporting
   point_type: other
   native_title: "引述与归因"
   title:
@@ -6536,12 +6536,12 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk79_19_argument_concession_counterclaim
-  sequence: 4
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk79_21_legal_administrative_register_patterns
   level: '9'
-  function: fn.linking
+  function: fn.register_style
   point_type: other
   native_title: "法律与行政语体结构"
   title:
@@ -6554,12 +6554,12 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk79_20_reporting_and_attribution
-  sequence: 5
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk79_22_literary_descriptive_syntax
   level: '9'
-  function: fn.linking
+  function: fn.register_style
   point_type: other
   native_title: "文学描写句法"
   title:
@@ -6572,7 +6572,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk79_21_legal_administrative_register_patterns
-  sequence: 6
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk79_28_advanced_connector_economy
@@ -6590,12 +6590,12 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk79_22_literary_descriptive_syntax
-  sequence: 7
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk79_29_metadiscourse_grammar
   level: '9'
-  function: fn.linking
+  function: fn.register_style
   point_type: other
   native_title: "元话语语法"
   title:
@@ -6608,7 +6608,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk79_28_advanced_connector_economy
-  sequence: 8
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk79_3_negative_raising_and_scope
@@ -6631,7 +6631,7 @@
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk79_5_in_modern_formal_prose
   level: '9'
-  function: fn.linking
+  function: fn.register_style
   point_type: other
   native_title: "“于/以/为/所/者/之”的现代正式书面语用法"
   title:
@@ -6644,12 +6644,12 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk79_3_negative_raising_and_scope
-  sequence: 9
+  sequence: 4
   anchors: []
   batch: full-seed-2026-09-30
 - id: zh.canon.r5.hsk79_6_advanced_passive_causative_alternation
   level: '9'
-  function: fn.verb_patterns
+  function: fn.voice_causative
   point_type: other
   native_title: "高级被动与使役交替"
   title:
@@ -6679,6 +6679,6 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk79_5_in_modern_formal_prose
-  sequence: 10
+  sequence: 4
   anchors: []
   batch: full-seed-2026-09-30
