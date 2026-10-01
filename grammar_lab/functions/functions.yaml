@@ -14,7 +14,7 @@ functions:
   planned:
     ja:
     - ja.masu_form.present
-    en:
+    en: []
 - id: fn.existence
   title:
     vi: Nói cái gì đó có ở đâu
@@ -61,7 +61,7 @@ functions:
     - zh.measure_words
     ja:
     - ja.counters
-    en:
+    en: []
 - id: fn.reference
   title:
     vi: Chỉ định người/vật (đã biết hay chưa)
@@ -79,7 +79,7 @@ functions:
     - zh.zhe_na_measure
     ja:
     - ja.wa_ga
-    en:
+    en: []
 - id: fn.ongoing_now
   title:
     vi: Việc đang diễn ra
@@ -100,7 +100,7 @@ functions:
     - zh.canon.gf.hsk7_9.a_7_1_5_1.p1
     - zh.canon.gf.hsk7_9.a_7_1_5_2.p1
   planned:
-    zh-Hans:
+    zh-Hans: []
     ja:
     - ja.te_iru.progressive
 - id: fn.completed_past
@@ -125,7 +125,7 @@ functions:
   planned:
     ja:
     - ja.ta_form
-    en:
+    en: []
 - id: fn.past_experience
   title:
     vi: Trải nghiệm đã từng
@@ -161,10 +161,10 @@ functions:
     - zh.canon.gf.hsk3.a_3_2_4.p1
     - zh.canon.gf.hsk5.a_5_5_1.p2
   planned:
-    zh-Hans:
+    zh-Hans: []
     ja:
     - ja.yori_comparison
-    en:
+    en: []
 - id: fn.condition_real
   title:
     vi: Điều kiện có thể xảy ra
@@ -190,10 +190,10 @@ functions:
     - zh.canon.gf.hsk6.a_6_6_2_7.p1
     - zh.canon.gf.hsk7_9.a_7_5_2_7.p1
   planned:
-    zh-Hans:
+    zh-Hans: []
     ja:
     - ja.tara_ba
-    en:
+    en: []
 - id: fn.object_disposal
   title:
     vi: Nhấn mạnh kết quả xử lý một vật cụ thể
@@ -242,8 +242,8 @@ functions:
     - zh.canon.gf.hsk6.a_6_6_1.p1
     - zh.canon.gf.hsk7_9.a_7_4_1.p1
   planned:
-    en:
-    zh-Hans:
+    en: []
+    zh-Hans: []
 - id: fn.identity_state
   title:
     vi: Nói ai, cái gì, ở trạng thái nào
@@ -257,8 +257,8 @@ functions:
     - zh.shi_sentence
     - zh.adjective_predicate
   planned:
-    en:
-    zh-Hans:
+    en: []
+    zh-Hans: []
 - id: fn.pronoun_reference
   title:
     vi: Nhắc tới người, vật bằng đại từ
@@ -284,8 +284,8 @@ functions:
     - zh.canon.gf.hsk5.a_5_8.p1
     - zh.canon.gf.hsk6.a_6_2_1.p1
   planned:
-    en:
-    zh-Hans:
+    en: []
+    zh-Hans: []
 - id: fn.possession
   title:
     vi: Nói về sự sở hữu
@@ -300,8 +300,8 @@ functions:
     zh-Hans:
     - zh.de_possessive
   planned:
-    en:
-    zh-Hans:
+    en: []
+    zh-Hans: []
 - id: fn.instructions
   title:
     vi: Ra lệnh, chỉ dẫn
@@ -311,7 +311,7 @@ functions:
     en:
     - en.imperatives
   planned:
-    en:
+    en: []
 - id: fn.questions
   title:
     vi: Đặt câu hỏi
@@ -341,8 +341,8 @@ functions:
     - zh.canon.gf.hsk7_9.a_7_1_2.p1
     - zh.canon.gf.hsk7_9.a_7_6.p1
   planned:
-    en:
-    zh-Hans:
+    en: []
+    zh-Hans: []
 - id: fn.place_time
   title:
     vi: Nói về nơi chốn và thời gian
@@ -353,7 +353,7 @@ functions:
     - en.prepositions.place
     - en.prepositions.time
   planned:
-    en:
+    en: []
 - id: fn.linking
   title:
     vi: Nối ý
@@ -408,8 +408,8 @@ functions:
     - zh.canon.gf.hsk7_9.a_7_5_2_12.p1
     - zh.canon.gf.hsk7_9.a_7_5_2_13.p1
   planned:
-    en:
-    zh-Hans:
+    en: []
+    zh-Hans: []
 - id: fn.past_ongoing
   title:
     vi: Việc đang diễn ra trong quá khứ
@@ -421,7 +421,7 @@ functions:
     - en.past_simple_vs_continuous
     - en.canon.b1.005
   planned:
-    en:
+    en: []
 - id: fn.future_plans
   title:
     vi: Kế hoạch và dự đoán tương lai
@@ -441,7 +441,7 @@ functions:
     - en.canon.b2.004
     - en.canon.c1.006
   planned:
-    en:
+    en: []
 - id: fn.degree
   title:
     vi: Mức độ và cách thức
@@ -465,8 +465,8 @@ functions:
     - zh.canon.gf.hsk7_9.a_7_1_4_1.p2
     - zh.canon.gf.hsk7_9.a_7_4_2.p1
   planned:
-    en:
-    zh-Hans:
+    en: []
+    zh-Hans: []
 - id: fn.obligation_advice
   title:
     vi: Nghĩa vụ và lời khuyên
@@ -481,7 +481,7 @@ functions:
     - en.canon.b1.021
     - en.canon.b2.010
   planned:
-    en:
+    en: []
 - id: fn.possibility
   title:
     vi: Khả năng có thể xảy ra
@@ -502,7 +502,7 @@ functions:
     - en.canon.c1.009
     - en.canon.c2.001
   planned:
-    en:
+    en: []
 - id: fn.verb_patterns
   title:
     vi: Động từ đi với -ing hoặc to V
@@ -524,7 +524,7 @@ functions:
     - en.canon.b2.027
     - en.canon.c1.017
   planned:
-    en:
+    en: []
 - id: fn.relative
   title:
     vi: Nối thêm thông tin về người, vật
@@ -538,7 +538,7 @@ functions:
     - en.canon.b2.023
     - en.canon.c1.020
   planned:
-    en:
+    en: []
 - id: fn.indefinite_reference
   title:
     vi: Nói chung chung, không nêu cụ thể
@@ -548,7 +548,7 @@ functions:
     en:
     - en.indefinite_compounds
   planned:
-    en:
+    en: []
 - id: fn.negation
   title:
     vi: Phủ định
@@ -581,7 +581,7 @@ functions:
     - zh.canon.gf.hsk7_9.a_7_7.p3
     - zh.canon.gf.hsk7_9.a_7_7.p4
   planned:
-    zh-Hans:
+    zh-Hans: []
 - id: fn.location
   title:
     vi: Nói vị trí
@@ -596,7 +596,7 @@ functions:
     - zh.canon.gf.hsk4.a_4_1_5_1.p1
     - zh.canon.gf.hsk6.a_6_2_4_1.p1
   planned:
-    zh-Hans:
+    zh-Hans: []
 - id: fn.time_expression
   title:
     vi: Nói về thời gian
@@ -614,7 +614,7 @@ functions:
     - zh.canon.gf.hsk6.a_6_2_3.p1
     - zh.canon.gf.hsk7_9.a_7_1_4_3.p1
   planned:
-    zh-Hans:
+    zh-Hans: []
 - id: fn.action_result
   title:
     vi: Kết quả và cách thức của hành động
@@ -628,7 +628,7 @@ functions:
     - zh.canon.r5.hsk3_10_ngh_a_m_r_ng
     - zh.canon.gf.hsk6.a_6_5_2.p1
   planned:
-    zh-Hans:
+    zh-Hans: []
 - id: fn.duration_frequency
   title:
     vi: Thời lượng và số lần
@@ -641,7 +641,7 @@ functions:
     - zh.canon.gf.hsk1.a_1_1_6.p1
     - zh.canon.gf.hsk7_9.a_7_1_4_4.p1
   planned:
-    zh-Hans:
+    zh-Hans: []
 - id: fn.reason_result
   title:
     vi: Nguyên nhân và kết quả
@@ -657,7 +657,7 @@ functions:
     - zh.canon.gf.hsk7_9.a_7_5_2_8.p1
     - zh.canon.gf.hsk7_9.a_7_8_2.p1
   planned:
-    zh-Hans:
+    zh-Hans: []
 - id: fn.contrast
   title:
     vi: Nêu điều đối lập
@@ -670,7 +670,7 @@ functions:
     - zh.canon.gf.hsk6.a_6_6_2_5.p1
     - zh.canon.gf.hsk7_9.a_7_5_2_5.p1
   planned:
-    zh-Hans:
+    zh-Hans: []
 - id: fn.sequence
   title:
     vi: Trình tự và đồng thời
@@ -688,7 +688,7 @@ functions:
     - zh.canon.gf.hsk5.a_5_5_2_3.p1
     - zh.canon.gf.hsk7_9.a_7_2_2_2.p3
   planned:
-    zh-Hans:
+    zh-Hans: []
 - id: fn.exclusion
   title:
     vi: Loại trừ
@@ -699,7 +699,7 @@ functions:
     - zh.chule_yiwai
     - zh.canon.gf.hsk6.a_6_2_4_5.p1
   planned:
-    zh-Hans:
+    zh-Hans: []
 - id: fn.separable_verbs
   title:
     vi: Động từ ly hợp
@@ -709,7 +709,7 @@ functions:
     zh-Hans:
     - zh.separable_verbs
   planned:
-    zh-Hans:
+    zh-Hans: []
 - id: fn.catalog_unclassified
   title:
     vi: Chưa phân loại chức năng (danh mục chuẩn v1)
