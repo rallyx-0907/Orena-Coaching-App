@@ -545,6 +545,11 @@ def test_generate_v04_does_not_persist_after_three_semantic_failures(tmp_path: P
     assert len(calls) == 3
     assert path.read_text(encoding="utf-8") == before
 
+    second = make_generator(lab.root, httpx.MockTransport(handler)).generate("en.alpha")
+    assert second.status == "error"
+    assert len(calls) == 6  # semantic-invalid cache entries were evicted, so retry is genuinely fresh
+    assert path.read_text(encoding="utf-8") == before
+
 def test_generate_v04_resolves_span_substrings_to_offsets(tmp_path: Path) -> None:
     lab = _v04_lab(tmp_path)
     lab.write()
