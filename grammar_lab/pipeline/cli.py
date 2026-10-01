@@ -96,6 +96,9 @@ def sync_metadata_command(
 ) -> None:
     """Apply seed metadata to existing content and rebuild function planned/realized lists."""
     result = sync_seed_metadata(root, check=check)
+    if not check:
+        fixture_changed = write_ui_fixtures(root)
+        typer.echo(f"sync-metadata: UI fixtures {'refreshed' if fixture_changed else 'current'}")
     typer.echo(
         f"sync-metadata: changed points {result['changed_point_count']}, "
         f"function registry {'stale' if result['registry_changed'] else 'current'}"
