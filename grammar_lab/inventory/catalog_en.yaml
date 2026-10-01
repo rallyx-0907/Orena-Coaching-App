@@ -866,7 +866,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.a1.002
   level: A1
-  function: fn.ability
+  function: fn.possibility
   point_type: other
   native_title: Can for ability
   title:
@@ -992,13 +992,14 @@
   native_title: 'Stative verbs: introduction'
   title:
     vi: 'Stative verbs: introduction'
+    en: 'Stative verbs: introduction'
   error_tags:
   - other
   contrasts: []
   prereqs: []
   sequence: 1
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - a1-stative-verbs-introduction
   aliases:
@@ -1012,22 +1013,23 @@
     research_candidate_id: a1-stative-verbs-introduction
     notes:
     - đề xuất, cần đối chiếu khung
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.a2.002
   level: A2
-  function: fn.catalog_unclassified
+  function: fn.quantity
   point_type: other
   native_title: Much/many/a lot of
   title:
     vi: Much/many/a lot of
+    en: Much/many/a lot of
   error_tags:
   - other
   contrasts: []
-  prereqs: []
+  prereqs:
+  - en.quantifiers.some_any
   sequence: 2
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - a1-much-many-a-lot-of
   aliases:
@@ -1041,8 +1043,7 @@
     research_candidate_id: a1-much-many-a-lot-of
     notes:
     - much/many trong câu hỏi, phủ định thường A2
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.conjunctions.because_so
   level: A2
   function: fn.linking
@@ -1557,18 +1558,19 @@
     metadata_origin: reviewed_seed
 - id: en.canon.a2.003
   level: A2
-  function: fn.catalog_unclassified
-  point_type: other
+  function: fn.possibility
+  point_type: tense_aspect
   native_title: Could Past Ability
   title:
     vi: Could Past Ability
+    en: Could Past Ability
   error_tags:
-  - other
+  - tense
   contrasts: []
   prereqs: []
-  sequence: 3
+  sequence: 2
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - a2-can-could-be-able-to-basics
   aliases: []
@@ -1581,8 +1583,7 @@
     research_candidate_id: could.past_ability
     notes:
     - can là A1; be able to nằm ở b1-ability-across-time
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.modals.must_have_to
   level: A2
   function: fn.obligation_advice
@@ -1990,18 +1991,20 @@
     metadata_origin: reviewed_seed
 - id: en.canon.a2.004
   level: A2
-  function: fn.catalog_unclassified
-  point_type: other
+  function: fn.habit_fact
+  point_type: tense_aspect
   native_title: 'Present simple vs continuous: extended'
   title:
-    vi: 'Present simple vs continuous: extended'
+    vi: 'hiện tại đơn vs continuous: extended'
+    en: 'Present simple vs continuous: extended'
   error_tags:
-  - other
+  - tense
   contrasts: []
-  prereqs: []
-  sequence: 4
+  prereqs:
+  - en.present_simple.third_person_s
+  sequence: 1
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b1-present-simple-vs-continuous-extended
   - a1-present-simple-vs-present-continuous
@@ -2018,22 +2021,24 @@
     notes:
     - 'trùng: cùng đối chiếu; gộp thành một bài A2'
     - sau khi gộp bài A1
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.a2.005
   level: A2
-  function: fn.catalog_unclassified
-  point_type: other
+  function: fn.questions
+  point_type: tense_aspect
   native_title: Past Simple Did Questions
   title:
-    vi: Past Simple Did Questions
+    vi: quá khứ đơn Did câu hỏi
+    en: Past Simple Did Questions
   error_tags:
-  - other
+  - tense
+  - sentence_structure
   contrasts: []
-  prereqs: []
-  sequence: 5
+  prereqs:
+  - en.questions.wh
+  sequence: 1
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5: []
   aliases: []
   catalog:
@@ -2045,8 +2050,7 @@
     research_candidate_id: past_simple.did_questions
     notes:
     - bộ lõi, R5 không có
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.a2.006
   level: A2
   function: fn.catalog_unclassified
@@ -2054,13 +2058,15 @@
   native_title: Phrasal Verbs Basic
   title:
     vi: Phrasal Verbs Basic
+    en: Phrasal Verbs Basic
   error_tags:
-  - other
+  - naturalness
   contrasts: []
-  prereqs: []
-  sequence: 6
+  prereqs:
+  - en.canon.a2.001
+  sequence: 2
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5: []
   aliases: []
   catalog:
@@ -2072,8 +2078,7 @@
     research_candidate_id: phrasal_verbs.basic
     notes:
     - R5 không có
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.a2.007
   level: A2
   function: fn.catalog_unclassified
@@ -2081,13 +2086,15 @@
   native_title: Time Clauses Basic
   title:
     vi: Time Clauses Basic
+    en: Time Clauses Basic
   error_tags:
-  - other
+  - sentence_structure
   contrasts: []
-  prereqs: []
-  sequence: 7
+  prereqs:
+  - en.canon.a2.006
+  sequence: 3
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5: []
   aliases: []
   catalog:
@@ -2099,22 +2106,23 @@
     research_candidate_id: time_clauses.basic
     notes:
     - when/while/before/after; R5 chỉ có future time clauses (B1)
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.a2.008
   level: A2
-  function: fn.catalog_unclassified
+  function: fn.verb_patterns
   point_type: other
   native_title: Verb Object Infinitive
   title:
-    vi: Verb Object Infinitive
+    vi: Verb Object động từ nguyên mẫu
+    en: Verb Object Infinitive
   error_tags:
-  - other
+  - word_form
   contrasts: []
-  prereqs: []
-  sequence: 8
+  prereqs:
+  - en.infinitive_of_purpose
+  sequence: 4
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5: []
   aliases: []
   catalog:
@@ -2126,22 +2134,22 @@
     research_candidate_id: verb_object_infinitive
     notes:
     - want/tell/ask someone to do
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b1.001
   level: B1
-  function: fn.catalog_unclassified
+  function: fn.pronoun_reference
   point_type: other
   native_title: Object relative pronoun omission
   title:
-    vi: Object relative pronoun omission
+    vi: Object đại từ quan hệ omission
+    en: Object relative pronoun omission
   error_tags:
-  - other
+  - sentence_structure
   contrasts: []
   prereqs: []
   sequence: 1
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - a2-object-relative-pronoun-omission
   aliases:
@@ -2155,22 +2163,23 @@
     research_candidate_id: a2-object-relative-pronoun-omission
     notes:
     - bỏ đại từ quan hệ tân ngữ thường B1
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b1.002
   level: B1
-  function: fn.catalog_unclassified
-  point_type: other
+  function: fn.past_experience
+  point_type: tense_aspect
   native_title: Present perfect simple
   title:
-    vi: Present perfect simple
+    vi: hiện tại hoàn thành simple
+    en: Present perfect simple
   error_tags:
-  - other
+  - tense
   contrasts: []
-  prereqs: []
-  sequence: 2
+  prereqs:
+  - en.present_perfect.experience
+  sequence: 1
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b1-present-perfect-simple
   aliases:
@@ -2182,22 +2191,23 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b1-present-perfect-simple
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b1.003
   level: B1
-  function: fn.catalog_unclassified
-  point_type: other
+  function: fn.past_experience
+  point_type: tense_aspect
   native_title: Present perfect continuous
   title:
-    vi: Present perfect continuous
+    vi: hiện tại hoàn thành continuous
+    en: Present perfect continuous
   error_tags:
-  - other
+  - tense
   contrasts: []
-  prereqs: []
-  sequence: 3
+  prereqs:
+  - en.canon.b1.002
+  sequence: 2
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b1-present-perfect-continuous
   aliases:
@@ -2209,22 +2219,23 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b1-present-perfect-continuous
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b1.004
   level: B1
-  function: fn.catalog_unclassified
-  point_type: other
+  function: fn.past_experience
+  point_type: tense_aspect
   native_title: Present perfect simple vs continuous
   title:
-    vi: Present perfect simple vs continuous
+    vi: hiện tại hoàn thành simple vs continuous
+    en: Present perfect simple vs continuous
   error_tags:
-  - other
+  - tense
   contrasts: []
-  prereqs: []
-  sequence: 4
+  prereqs:
+  - en.canon.b1.003
+  sequence: 3
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b1-present-perfect-simple-vs-continuous
   aliases:
@@ -2236,22 +2247,22 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b1-present-perfect-simple-vs-continuous
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b1.005
   level: B1
-  function: fn.catalog_unclassified
-  point_type: other
+  function: fn.past_ongoing
+  point_type: tense_aspect
   native_title: Past simple vs present perfect
   title:
-    vi: Past simple vs present perfect
+    vi: quá khứ đơn vs hiện tại hoàn thành
+    en: Past simple vs present perfect
   error_tags:
-  - other
+  - tense
   contrasts: []
   prereqs: []
-  sequence: 5
+  sequence: 1
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b1-past-simple-vs-present-perfect
   - a2-present-perfect-vs-past-simple
@@ -2267,22 +2278,22 @@
     research_candidate_id: b1-past-simple-vs-present-perfect
     notes:
     - 'trùng: hai bài cùng đối chiếu present perfect / past simple'
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b1.006
   level: B1
-  function: fn.catalog_unclassified
-  point_type: other
+  function: fn.completed_past
+  point_type: tense_aspect
   native_title: Past perfect simple
   title:
-    vi: Past perfect simple
+    vi: quá khứ hoàn thành simple
+    en: Past perfect simple
   error_tags:
-  - other
+  - tense
   contrasts: []
   prereqs: []
-  sequence: 6
+  sequence: 1
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b1-past-perfect-simple
   aliases:
@@ -2294,22 +2305,23 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b1-past-perfect-simple
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b1.007
   level: B1
-  function: fn.catalog_unclassified
-  point_type: other
+  function: fn.completed_past
+  point_type: tense_aspect
   native_title: Past perfect continuous
   title:
-    vi: Past perfect continuous
+    vi: quá khứ hoàn thành continuous
+    en: Past perfect continuous
   error_tags:
-  - other
+  - tense
   contrasts: []
-  prereqs: []
-  sequence: 7
+  prereqs:
+  - en.canon.b1.006
+  sequence: 2
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b1-past-perfect-continuous
   aliases:
@@ -2321,22 +2333,23 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b1-past-perfect-continuous
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b1.008
   level: B1
-  function: fn.catalog_unclassified
-  point_type: other
+  function: fn.completed_past
+  point_type: tense_aspect
   native_title: Past narrative tense system
   title:
     vi: Past narrative tense system
+    en: Past narrative tense system
   error_tags:
-  - other
+  - tense
   contrasts: []
-  prereqs: []
-  sequence: 8
+  prereqs:
+  - en.past_simple.irregular
+  sequence: 3
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b1-past-narrative-tense-system
   aliases:
@@ -2348,22 +2361,22 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b1-past-narrative-tense-system
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b1.009
   level: B1
-  function: fn.catalog_unclassified
+  function: fn.completed_past
   point_type: other
   native_title: Used to
   title:
     vi: Used to
+    en: Used to
   error_tags:
   - other
   contrasts: []
   prereqs: []
-  sequence: 9
+  sequence: 4
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b1-used-to
   aliases:
@@ -2375,22 +2388,23 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b1-used-to
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b1.010
   level: B1
-  function: fn.catalog_unclassified
-  point_type: other
+  function: fn.completed_past
+  point_type: tense_aspect
   native_title: Would for past habits
   title:
     vi: Would for past habits
+    en: Would for past habits
   error_tags:
-  - other
+  - tense
   contrasts: []
-  prereqs: []
-  sequence: 10
+  prereqs:
+  - en.canon.b1.008
+  sequence: 5
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b1-would-for-past-habits
   aliases:
@@ -2402,22 +2416,23 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b1-would-for-past-habits
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b1.011
   level: B1
-  function: fn.catalog_unclassified
-  point_type: other
+  function: fn.future_plans
+  point_type: tense_aspect
   native_title: Future forms in context
   title:
-    vi: Future forms in context
+    vi: các cấu trúc tương lai in context
+    en: Future forms in context
   error_tags:
-  - other
+  - tense
   contrasts: []
-  prereqs: []
-  sequence: 11
+  prereqs:
+  - en.present_continuous.arrangements
+  sequence: 1
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b1-future-forms-in-context
   aliases:
@@ -2429,22 +2444,23 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b1-future-forms-in-context
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b1.012
   level: B1
-  function: fn.catalog_unclassified
-  point_type: other
+  function: fn.future_plans
+  point_type: tense_aspect
   native_title: Future continuous
   title:
-    vi: Future continuous
+    vi: tương lai tiếp diễn
+    en: Future continuous
   error_tags:
-  - other
+  - tense
   contrasts: []
-  prereqs: []
-  sequence: 12
+  prereqs:
+  - en.canon.b1.011
+  sequence: 2
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b1-future-continuous
   - b2-future-continuous
@@ -2460,22 +2476,24 @@
     research_candidate_id: b1-future-continuous
     notes:
     - bài trùng hệt tiêu đề ở hai cấp
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b1.013
   level: B1
-  function: fn.catalog_unclassified
-  point_type: other
+  function: fn.future_plans
+  point_type: tense_aspect
   native_title: Future time clauses
   title:
     vi: Future time clauses
+    en: Future time clauses
   error_tags:
-  - other
+  - tense
+  - sentence_structure
   contrasts: []
-  prereqs: []
-  sequence: 13
+  prereqs:
+  - en.canon.b1.012
+  sequence: 3
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b1-future-time-clauses
   aliases:
@@ -2487,22 +2505,23 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b1-future-time-clauses
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b1.014
   level: B1
   function: fn.catalog_unclassified
-  point_type: other
+  point_type: tense_aspect
   native_title: 'Passive voice: present and past'
   title:
-    vi: 'Passive voice: present and past'
+    vi: 'câu bị động: present and past'
+    en: 'Passive voice: present and past'
   error_tags:
-  - other
+  - tense
+  - sentence_structure
   contrasts: []
   prereqs: []
-  sequence: 14
+  sequence: 1
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b1-passive-voice-present-and-past
   aliases:
@@ -2514,22 +2533,22 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b1-passive-voice-present-and-past
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b1.015
   level: B1
-  function: fn.catalog_unclassified
+  function: fn.possibility
   point_type: other
   native_title: Passive with modals
   title:
-    vi: Passive with modals
+    vi: bị động with động từ khuyết thiếu
+    en: Passive with modals
   error_tags:
-  - other
+  - sentence_structure
   contrasts: []
   prereqs: []
-  sequence: 15
+  sequence: 1
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b1-passive-with-modals
   aliases:
@@ -2541,22 +2560,24 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b1-passive-with-modals
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b1.016
   level: B1
-  function: fn.catalog_unclassified
-  point_type: other
+  function: fn.past_experience
+  point_type: tense_aspect
   native_title: Present perfect passive
   title:
-    vi: Present perfect passive
+    vi: hiện tại hoàn thành bị động
+    en: Present perfect passive
   error_tags:
-  - other
+  - tense
+  - sentence_structure
   contrasts: []
-  prereqs: []
-  sequence: 16
+  prereqs:
+  - en.canon.b1.004
+  sequence: 4
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b1-present-perfect-passive
   aliases:
@@ -2568,8 +2589,7 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b1-present-perfect-passive
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b1.017
   level: B1
   function: fn.catalog_unclassified
@@ -2577,13 +2597,15 @@
   native_title: Ability across time
   title:
     vi: Ability across time
+    en: Ability across time
   error_tags:
   - other
   contrasts: []
-  prereqs: []
-  sequence: 17
+  prereqs:
+  - en.canon.a2.007
+  sequence: 2
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b1-ability-across-time
   aliases:
@@ -2595,8 +2617,7 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b1-ability-across-time
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b1.018
   level: B1
   function: fn.catalog_unclassified
@@ -2604,13 +2625,15 @@
   native_title: Prohibition and lack of necessity
   title:
     vi: Prohibition and lack of necessity
+    en: Prohibition and lack of necessity
   error_tags:
   - other
   contrasts: []
-  prereqs: []
-  sequence: 18
+  prereqs:
+  - en.canon.b1.017
+  sequence: 3
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b1-prohibition-and-lack-of-necessity
   aliases:
@@ -2622,22 +2645,22 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b1-prohibition-and-lack-of-necessity
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b1.019
   level: B1
-  function: fn.catalog_unclassified
+  function: fn.obligation_advice
   point_type: other
   native_title: 'Advice: should/ought to/had better'
   title:
     vi: 'Advice: should/ought to/had better'
+    en: 'Advice: should/ought to/had better'
   error_tags:
   - other
   contrasts: []
   prereqs: []
-  sequence: 19
+  sequence: 1
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b1-advice-should-ought-to-had-better
   aliases:
@@ -2651,22 +2674,23 @@
     research_candidate_id: b1-advice-should-ought-to-had-better
     notes:
     - chỉ còn ought to / had better
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b1.020
   level: B1
-  function: fn.catalog_unclassified
+  function: fn.obligation_advice
   point_type: other
   native_title: 'Deduction: must/might/can''t'
   title:
     vi: 'Deduction: must/might/can''t'
+    en: 'Deduction: must/might/can''t'
   error_tags:
   - other
   contrasts: []
-  prereqs: []
-  sequence: 20
+  prereqs:
+  - en.canon.b1.019
+  sequence: 2
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b1-deduction-must-might-can-t
   aliases:
@@ -2678,22 +2702,23 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b1-deduction-must-might-can-t
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b1.021
   level: B1
-  function: fn.catalog_unclassified
-  point_type: other
+  function: fn.obligation_advice
+  point_type: tense_aspect
   native_title: 'Past modals: should/could/might have'
   title:
-    vi: 'Past modals: should/could/might have'
+    vi: 'Past động từ khuyết thiếu: should/could/might have'
+    en: 'Past modals: should/could/might have'
   error_tags:
-  - other
+  - tense
   contrasts: []
-  prereqs: []
-  sequence: 21
+  prereqs:
+  - en.modals.should
+  sequence: 3
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b1-past-modals-should-could-might-have
   aliases:
@@ -2705,22 +2730,23 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b1-past-modals-should-could-might-have
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b1.022
   level: B1
-  function: fn.catalog_unclassified
+  function: fn.questions
   point_type: other
   native_title: Question tags
   title:
-    vi: Question tags
+    vi: câu hỏi tags
+    en: Question tags
   error_tags:
-  - other
+  - sentence_structure
   contrasts: []
-  prereqs: []
-  sequence: 22
+  prereqs:
+  - en.canon.a2.005
+  sequence: 1
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b1-question-tags
   aliases:
@@ -2732,22 +2758,23 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b1-question-tags
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b1.023
   level: B1
-  function: fn.catalog_unclassified
+  function: fn.questions
   point_type: other
   native_title: Indirect questions
   title:
-    vi: Indirect questions
+    vi: Indirect câu hỏi
+    en: Indirect questions
   error_tags:
-  - other
+  - sentence_structure
   contrasts: []
-  prereqs: []
-  sequence: 23
+  prereqs:
+  - en.canon.b1.022
+  sequence: 2
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b1-indirect-questions
   aliases:
@@ -2759,22 +2786,23 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b1-indirect-questions
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b1.024
   level: B1
-  function: fn.catalog_unclassified
+  function: fn.questions
   point_type: other
   native_title: Subject questions and object questions
   title:
-    vi: Subject questions and object questions
+    vi: Subject câu hỏi and object câu hỏi
+    en: Subject questions and object questions
   error_tags:
-  - other
+  - sentence_structure
   contrasts: []
-  prereqs: []
-  sequence: 24
+  prereqs:
+  - en.canon.b1.023
+  sequence: 3
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b1-subject-questions-and-object-questions
   aliases:
@@ -2786,22 +2814,23 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b1-subject-questions-and-object-questions
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b1.025
   level: B1
-  function: fn.catalog_unclassified
+  function: fn.condition_real
   point_type: other
   native_title: Zero/first/second conditionals
   title:
-    vi: Zero/first/second conditionals
+    vi: Zero/first/second câu điều kiện
+    en: Zero/first/second conditionals
   error_tags:
-  - other
+  - tense
   contrasts: []
-  prereqs: []
-  sequence: 25
+  prereqs:
+  - en.conditional_first
+  sequence: 1
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b1-zero-first-second-conditionals
   aliases:
@@ -2815,22 +2844,23 @@
     research_candidate_id: b1-zero-first-second-conditionals
     notes:
     - chỉ còn second conditional (zero và first đã có ở A2)
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b1.026
   level: B1
-  function: fn.catalog_unclassified
+  function: fn.condition_real
   point_type: other
   native_title: Third conditional
   title:
-    vi: Third conditional
+    vi: Third câu điều kiện
+    en: Third conditional
   error_tags:
-  - other
+  - tense
   contrasts: []
-  prereqs: []
-  sequence: 26
+  prereqs:
+  - en.canon.b1.025
+  sequence: 2
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b1-third-conditional
   aliases:
@@ -2842,8 +2872,7 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b1-third-conditional
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b1.027
   level: B1
   function: fn.catalog_unclassified
@@ -2851,13 +2880,14 @@
   native_title: Reported statements
   title:
     vi: Reported statements
+    en: Reported statements
   error_tags:
   - other
   contrasts: []
   prereqs: []
-  sequence: 27
+  sequence: 4
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b1-reported-statements
   aliases:
@@ -2869,22 +2899,22 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b1-reported-statements
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b1.028
   level: B1
-  function: fn.catalog_unclassified
+  function: fn.questions
   point_type: other
   native_title: Reported questions
   title:
-    vi: Reported questions
+    vi: Reported câu hỏi
+    en: Reported questions
   error_tags:
-  - other
+  - sentence_structure
   contrasts: []
   prereqs: []
-  sequence: 28
+  sequence: 4
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b1-reported-questions
   aliases:
@@ -2896,8 +2926,7 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b1-reported-questions
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b1.029
   level: B1
   function: fn.catalog_unclassified
@@ -2905,13 +2934,15 @@
   native_title: Reported commands and requests
   title:
     vi: Reported commands and requests
+    en: Reported commands and requests
   error_tags:
   - other
   contrasts: []
-  prereqs: []
-  sequence: 29
+  prereqs:
+  - en.canon.b1.027
+  sequence: 5
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b1-reported-commands-and-requests
   aliases:
@@ -2923,22 +2954,23 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b1-reported-commands-and-requests
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b1.030
   level: B1
-  function: fn.catalog_unclassified
+  function: fn.relative
   point_type: other
   native_title: Non-defining relative clauses
   title:
-    vi: Non-defining relative clauses
+    vi: Non-defining mệnh đề quan hệ
+    en: Non-defining relative clauses
   error_tags:
-  - other
+  - sentence_structure
   contrasts: []
-  prereqs: []
-  sequence: 30
+  prereqs:
+  - en.relative_clauses.who_which_that
+  sequence: 1
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b1-non-defining-relative-clauses
   aliases:
@@ -2950,22 +2982,24 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b1-non-defining-relative-clauses
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b1.031
   level: B1
-  function: fn.catalog_unclassified
+  function: fn.pronoun_reference
   point_type: other
   native_title: Relative pronouns and prepositions
   title:
-    vi: Relative pronouns and prepositions
+    vi: đại từ quan hệ and giới từ
+    en: Relative pronouns and prepositions
   error_tags:
-  - other
+  - preposition
+  - sentence_structure
   contrasts: []
-  prereqs: []
-  sequence: 31
+  prereqs:
+  - en.canon.b1.001
+  sequence: 2
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b1-relative-pronouns-and-prepositions
   aliases:
@@ -2977,22 +3011,23 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b1-relative-pronouns-and-prepositions
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b1.032
   level: B1
-  function: fn.catalog_unclassified
+  function: fn.verb_patterns
   point_type: other
   native_title: 'Gerund vs infinitive: common patterns'
   title:
-    vi: 'Gerund vs infinitive: common patterns'
+    vi: 'danh động từ vs động từ nguyên mẫu: common patterns'
+    en: 'Gerund vs infinitive: common patterns'
   error_tags:
-  - other
+  - word_form
   contrasts: []
-  prereqs: []
-  sequence: 32
+  prereqs:
+  - en.gerund_after_preference
+  sequence: 1
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b1-gerund-vs-infinitive-common-patterns
   aliases:
@@ -3004,22 +3039,23 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b1-gerund-vs-infinitive-common-patterns
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b1.033
   level: B1
-  function: fn.catalog_unclassified
+  function: fn.verb_patterns
   point_type: other
   native_title: 'Verb pattern meaning changes: introduction'
   title:
     vi: 'Verb pattern meaning changes: introduction'
+    en: 'Verb pattern meaning changes: introduction'
   error_tags:
   - other
   contrasts: []
-  prereqs: []
-  sequence: 33
+  prereqs:
+  - en.canon.a1.004
+  sequence: 2
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b1-verb-pattern-meaning-changes-introduction
   - b2-gerund-infinitive-meaning-contrasts
@@ -3035,8 +3071,7 @@
     research_candidate_id: b1-verb-pattern-meaning-changes-introduction
     notes:
     - trùng phạm vi (stop/remember/try + V-ing/to V)
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b1.034
   level: B1
   function: fn.catalog_unclassified
@@ -3044,13 +3079,15 @@
   native_title: Causative have/get
   title:
     vi: Causative have/get
+    en: Causative have/get
   error_tags:
   - other
   contrasts: []
-  prereqs: []
-  sequence: 34
+  prereqs:
+  - en.canon.b1.018
+  sequence: 6
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b1-causative-have-get
   aliases:
@@ -3062,22 +3099,22 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b1-causative-have-get
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b1.035
   level: B1
-  function: fn.catalog_unclassified
-  point_type: other
+  function: fn.condition_real
+  point_type: tense_aspect
   native_title: 'Wish/if only: present'
   title:
     vi: 'Wish/if only: present'
+    en: 'Wish/if only: present'
   error_tags:
-  - other
+  - tense
   contrasts: []
   prereqs: []
-  sequence: 35
+  sequence: 3
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b1-wish-if-only-present
   aliases:
@@ -3089,22 +3126,22 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b1-wish-if-only-present
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b1.036
   level: B1
-  function: fn.catalog_unclassified
-  point_type: other
+  function: fn.condition_real
+  point_type: tense_aspect
   native_title: 'Wish/if only: past'
   title:
     vi: 'Wish/if only: past'
+    en: 'Wish/if only: past'
   error_tags:
-  - other
+  - tense
   contrasts: []
   prereqs: []
-  sequence: 36
+  sequence: 4
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b1-wish-if-only-past
   aliases:
@@ -3116,22 +3153,22 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b1-wish-if-only-past
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b1.037
   level: B1
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
   native_title: Although/despite/however
   title:
     vi: Although/despite/however
+    en: Although/despite/however
   error_tags:
   - other
   contrasts: []
   prereqs: []
-  sequence: 37
+  sequence: 1
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b1-although-despite-however
   aliases:
@@ -3143,22 +3180,23 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b1-although-despite-however
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b1.038
   level: B1
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
   native_title: Reason/result connectors
   title:
     vi: Reason/result connectors
+    en: Reason/result connectors
   error_tags:
-  - other
+  - coherence
   contrasts: []
-  prereqs: []
-  sequence: 38
+  prereqs:
+  - en.canon.b1.037
+  sequence: 2
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b1-reason-result-connectors
   aliases:
@@ -3170,22 +3208,23 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b1-reason-result-connectors
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b1.039
   level: B1
-  function: fn.catalog_unclassified
+  function: fn.reference
   point_type: other
   native_title: Articles beyond basics
   title:
-    vi: Articles beyond basics
+    vi: mạo từ beyond basics
+    en: Articles beyond basics
   error_tags:
-  - other
+  - article
   contrasts: []
-  prereqs: []
-  sequence: 39
+  prereqs:
+  - en.articles.zero
+  sequence: 1
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b1-articles-beyond-basics
   - b1-generic-reference-and-zero-article
@@ -3201,22 +3240,23 @@
     research_candidate_id: b1-articles-beyond-basics
     notes:
     - cùng một chủ đề
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b1.040
   level: B1
-  function: fn.catalog_unclassified
+  function: fn.quantity
   point_type: other
   native_title: Quantifiers and distributives
   title:
-    vi: Quantifiers and distributives
+    vi: từ chỉ lượng and distributives
+    en: Quantifiers and distributives
   error_tags:
   - other
   contrasts: []
-  prereqs: []
-  sequence: 40
+  prereqs:
+  - en.quantifiers.few_little
+  sequence: 1
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b1-quantifiers-and-distributives
   aliases:
@@ -3228,22 +3268,22 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b1-quantifiers-and-distributives
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b1.041
   level: B1
-  function: fn.catalog_unclassified
+  function: fn.negation
   point_type: other
   native_title: Both/either/neither
   title:
     vi: Both/either/neither
+    en: Both/either/neither
   error_tags:
   - other
   contrasts: []
   prereqs: []
-  sequence: 41
+  sequence: 1
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b1-both-either-neither
   aliases:
@@ -3255,8 +3295,7 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b1-both-either-neither
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b1.042
   level: B1
   function: fn.catalog_unclassified
@@ -3264,13 +3303,15 @@
   native_title: One/ones
   title:
     vi: One/ones
+    en: One/ones
   error_tags:
   - other
   contrasts: []
-  prereqs: []
-  sequence: 42
+  prereqs:
+  - en.canon.b1.034
+  sequence: 7
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b1-one-ones
   aliases:
@@ -3282,22 +3323,23 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b1-one-ones
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b1.043
   level: B1
-  function: fn.catalog_unclassified
+  function: fn.pronoun_reference
   point_type: other
   native_title: Reflexive pronouns and each other
   title:
-    vi: Reflexive pronouns and each other
+    vi: Reflexive đại từ and each other
+    en: Reflexive pronouns and each other
   error_tags:
   - other
   contrasts: []
-  prereqs: []
-  sequence: 43
+  prereqs:
+  - en.pronouns.subject_object
+  sequence: 3
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b1-reflexive-pronouns-and-each-other
   aliases:
@@ -3309,22 +3351,23 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b1-reflexive-pronouns-and-each-other
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b1.044
   level: B1
-  function: fn.catalog_unclassified
+  function: fn.degree
   point_type: other
   native_title: So/such/too/enough
   title:
     vi: So/such/too/enough
+    en: So/such/too/enough
   error_tags:
   - other
   contrasts: []
-  prereqs: []
-  sequence: 44
+  prereqs:
+  - en.too_enough
+  sequence: 1
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b1-so-such-too-enough
   aliases:
@@ -3338,22 +3381,23 @@
     research_candidate_id: b1-so-such-too-enough
     notes:
     - chỉ còn so/such (too/enough đã ở A2)
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b1.045
   level: B1
-  function: fn.catalog_unclassified
-  point_type: other
+  function: fn.comparison
+  point_type: morphology
   native_title: Comparative patterns and intensifiers
   title:
-    vi: Comparative patterns and intensifiers
+    vi: so sánh hơn patterns and intensifiers
+    en: Comparative patterns and intensifiers
   error_tags:
-  - other
+  - word_form
   contrasts: []
-  prereqs: []
-  sequence: 45
+  prereqs:
+  - en.as_as
+  sequence: 1
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b1-comparative-patterns-and-intensifiers
   aliases:
@@ -3365,22 +3409,22 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b1-comparative-patterns-and-intensifiers
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b1.046
   level: B1
   function: fn.catalog_unclassified
   point_type: other
   native_title: Adjective Order
   title:
-    vi: Adjective Order
+    vi: tính từ Order
+    en: Adjective Order
   error_tags:
   - other
   contrasts: []
   prereqs: []
-  sequence: 46
+  sequence: 8
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5: []
   aliases: []
   catalog:
@@ -3392,22 +3436,22 @@
     research_candidate_id: adjective_order
     notes:
     - R5 không có
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b1.047
   level: B1
   function: fn.catalog_unclassified
   point_type: other
   native_title: Adjective Preposition
   title:
-    vi: Adjective Preposition
+    vi: tính từ giới từ
+    en: Adjective Preposition
   error_tags:
-  - other
+  - preposition
   contrasts: []
   prereqs: []
-  sequence: 47
+  sequence: 9
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5: []
   aliases: []
   catalog:
@@ -3419,22 +3463,23 @@
     research_candidate_id: adjective_preposition
     notes:
     - afraid of, interested in
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b1.048
   level: B1
-  function: fn.catalog_unclassified
+  function: fn.completed_past
   point_type: other
   native_title: Be Used To
   title:
     vi: Be Used To
+    en: Be Used To
   error_tags:
   - other
   contrasts: []
-  prereqs: []
-  sequence: 48
+  prereqs:
+  - en.canon.b1.009
+  sequence: 6
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5: []
   aliases: []
   catalog:
@@ -3446,22 +3491,23 @@
     research_candidate_id: be_used_to
     notes:
     - be/get used to (khác used to)
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b1.049
   level: B1
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
   native_title: Discourse Markers
   title:
     vi: Discourse Markers
+    en: Discourse Markers
   error_tags:
-  - other
+  - coherence
   contrasts: []
-  prereqs: []
-  sequence: 49
+  prereqs:
+  - en.canon.b1.038
+  sequence: 3
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5: []
   aliases: []
   catalog:
@@ -3473,22 +3519,23 @@
     research_candidate_id: discourse_markers
     notes:
     - R5 chỉ có ở C1 trở lên
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b1.050
   level: B1
-  function: fn.catalog_unclassified
+  function: fn.verb_patterns
   point_type: other
   native_title: Gerund Subject
   title:
-    vi: Gerund Subject
+    vi: danh động từ Subject
+    en: Gerund Subject
   error_tags:
-  - other
+  - word_form
   contrasts: []
-  prereqs: []
-  sequence: 50
+  prereqs:
+  - en.canon.b1.032
+  sequence: 3
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5: []
   aliases: []
   catalog:
@@ -3500,22 +3547,22 @@
     research_candidate_id: gerund_subject
     notes:
     - Swimming is fun
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b1.051
   level: B1
-  function: fn.catalog_unclassified
+  function: fn.identity_state
   point_type: other
   native_title: It Be Adjective To
   title:
-    vi: It Be Adjective To
+    vi: It Be tính từ To
+    en: It Be Adjective To
   error_tags:
   - other
   contrasts: []
   prereqs: []
-  sequence: 51
+  sequence: 1
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5: []
   aliases: []
   catalog:
@@ -3527,8 +3574,7 @@
     research_candidate_id: it_be_adjective_to
     notes:
     - It is easy to...
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b1.052
   level: B1
   function: fn.catalog_unclassified
@@ -3536,13 +3582,15 @@
   native_title: Make Let Allow
   title:
     vi: Make Let Allow
+    en: Make Let Allow
   error_tags:
   - other
   contrasts: []
-  prereqs: []
-  sequence: 52
+  prereqs:
+  - en.canon.b1.042
+  sequence: 10
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5: []
   aliases: []
   catalog:
@@ -3554,8 +3602,7 @@
     research_candidate_id: make_let_allow
     notes:
     - R5 không có
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b1.053
   level: B1
   function: fn.catalog_unclassified
@@ -3563,13 +3610,15 @@
   native_title: Phrasal Verbs Separable
   title:
     vi: Phrasal Verbs Separable
+    en: Phrasal Verbs Separable
   error_tags:
-  - other
+  - naturalness
   contrasts: []
-  prereqs: []
-  sequence: 53
+  prereqs:
+  - en.canon.b1.052
+  sequence: 11
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5: []
   aliases: []
   catalog:
@@ -3581,22 +3630,23 @@
     research_candidate_id: phrasal_verbs.separable
     notes:
     - R5 không có
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b1.054
   level: B1
-  function: fn.catalog_unclassified
+  function: fn.degree
   point_type: other
   native_title: Purpose So That
   title:
     vi: Purpose So That
+    en: Purpose So That
   error_tags:
   - other
   contrasts: []
-  prereqs: []
-  sequence: 54
+  prereqs:
+  - en.canon.b1.044
+  sequence: 2
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5: []
   aliases: []
   catalog:
@@ -3608,22 +3658,23 @@
     research_candidate_id: purpose_so_that
     notes:
     - so that / in order to
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b1.055
   level: B1
-  function: fn.catalog_unclassified
+  function: fn.degree
   point_type: other
   native_title: So Neither Agreement
   title:
     vi: So Neither Agreement
+    en: So Neither Agreement
   error_tags:
-  - other
+  - agreement
   contrasts: []
-  prereqs: []
-  sequence: 55
+  prereqs:
+  - en.canon.b1.054
+  sequence: 3
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5: []
   aliases: []
   catalog:
@@ -3635,22 +3686,23 @@
     research_candidate_id: so_neither_agreement
     notes:
     - so do I / neither do I
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b2.001
   level: B2
   function: fn.catalog_unclassified
-  point_type: other
+  point_type: tense_aspect
   native_title: Perfect aspect in discourse
   title:
     vi: Perfect aspect in discourse
+    en: Perfect aspect in discourse
   error_tags:
-  - other
+  - tense
+  - coherence
   contrasts: []
   prereqs: []
   sequence: 1
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b2-perfect-aspect-in-discourse
   - b2-present-aspect-and-viewpoint
@@ -3669,22 +3721,22 @@
     notes:
     - ba bài \
     - như trên
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b2.002
   level: B2
-  function: fn.catalog_unclassified
-  point_type: other
+  function: fn.future_plans
+  point_type: tense_aspect
   native_title: Future perfect
   title:
-    vi: Future perfect
+    vi: tương lai hoàn thành
+    en: Future perfect
   error_tags:
-  - other
+  - tense
   contrasts: []
   prereqs: []
-  sequence: 2
+  sequence: 1
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b2-future-perfect
   - b1-future-perfect-introduction
@@ -3700,22 +3752,23 @@
     research_candidate_id: b2-future-perfect
     notes:
     - bài trùng hệt tiêu đề ở hai cấp
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b2.003
   level: B2
-  function: fn.catalog_unclassified
-  point_type: other
+  function: fn.future_plans
+  point_type: tense_aspect
   native_title: Future perfect continuous
   title:
-    vi: Future perfect continuous
+    vi: tương lai hoàn thành continuous
+    en: Future perfect continuous
   error_tags:
-  - other
+  - tense
   contrasts: []
-  prereqs: []
-  sequence: 3
+  prereqs:
+  - en.canon.b2.002
+  sequence: 2
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b2-future-perfect-continuous
   aliases:
@@ -3727,22 +3780,23 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b2-future-perfect-continuous
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b2.004
   level: B2
-  function: fn.catalog_unclassified
-  point_type: other
+  function: fn.future_plans
+  point_type: tense_aspect
   native_title: Future in the past
   title:
     vi: Future in the past
+    en: Future in the past
   error_tags:
-  - other
+  - tense
   contrasts: []
-  prereqs: []
-  sequence: 4
+  prereqs:
+  - en.canon.b1.013
+  sequence: 3
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b2-future-in-the-past
   aliases:
@@ -3754,22 +3808,23 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b2-future-in-the-past
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b2.005
   level: B2
-  function: fn.catalog_unclassified
+  function: fn.condition_real
   point_type: other
   native_title: Mixed conditionals
   title:
-    vi: Mixed conditionals
+    vi: Mixed câu điều kiện
+    en: Mixed conditionals
   error_tags:
-  - other
+  - tense
   contrasts: []
-  prereqs: []
-  sequence: 5
+  prereqs:
+  - en.canon.b1.026
+  sequence: 1
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b2-mixed-conditionals
   - b1-mixed-conditional-introduction
@@ -3785,22 +3840,23 @@
     research_candidate_id: b2-mixed-conditionals
     notes:
     - bài trùng ở hai cấp
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b2.006
   level: B2
-  function: fn.catalog_unclassified
+  function: fn.condition_real
   point_type: other
   native_title: In case/provided/as long as
   title:
     vi: In case/provided/as long as
+    en: In case/provided/as long as
   error_tags:
   - other
   contrasts: []
-  prereqs: []
-  sequence: 6
+  prereqs:
+  - en.unless
+  sequence: 2
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b2-in-case-provided-as-long-as
   aliases:
@@ -3812,22 +3868,23 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b2-in-case-provided-as-long-as
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b2.007
   level: B2
-  function: fn.catalog_unclassified
+  function: fn.possibility
   point_type: other
   native_title: Modal certainty and probability
   title:
-    vi: Modal certainty and probability
+    vi: động từ khuyết thiếu certainty and probability
+    en: Modal certainty and probability
   error_tags:
   - other
   contrasts: []
-  prereqs: []
-  sequence: 7
+  prereqs:
+  - en.modals.possibility
+  sequence: 1
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b2-modal-certainty-and-probability
   aliases:
@@ -3839,22 +3896,23 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b2-modal-certainty-and-probability
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b2.008
   level: B2
-  function: fn.catalog_unclassified
-  point_type: other
+  function: fn.possibility
+  point_type: tense_aspect
   native_title: Past deduction
   title:
     vi: Past deduction
+    en: Past deduction
   error_tags:
-  - other
+  - tense
   contrasts: []
-  prereqs: []
-  sequence: 8
+  prereqs:
+  - en.canon.a2.003
+  sequence: 2
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b2-past-deduction
   aliases:
@@ -3866,22 +3924,22 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b2-past-deduction
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b2.009
   level: B2
-  function: fn.catalog_unclassified
-  point_type: other
+  function: fn.possibility
+  point_type: tense_aspect
   native_title: Modal perfect criticism and regret
   title:
-    vi: Modal perfect criticism and regret
+    vi: động từ khuyết thiếu perfect criticism and regret
+    en: Modal perfect criticism and regret
   error_tags:
-  - other
+  - tense
   contrasts: []
   prereqs: []
-  sequence: 9
+  sequence: 3
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b2-modal-perfect-criticism-and-regret
   aliases:
@@ -3893,22 +3951,23 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b2-modal-perfect-criticism-and-regret
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b2.010
   level: B2
-  function: fn.catalog_unclassified
+  function: fn.obligation_advice
   point_type: other
   native_title: Needn't have vs didn't need to
   title:
     vi: Needn't have vs didn't need to
+    en: Needn't have vs didn't need to
   error_tags:
   - other
   contrasts: []
-  prereqs: []
-  sequence: 10
+  prereqs:
+  - en.canon.b1.020
+  sequence: 1
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b2-needn-t-have-vs-didn-t-need-to
   aliases:
@@ -3920,8 +3979,7 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b2-needn-t-have-vs-didn-t-need-to
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b2.011
   level: B2
   function: fn.catalog_unclassified
@@ -3929,13 +3987,15 @@
   native_title: Would rather/would prefer/prefer
   title:
     vi: Would rather/would prefer/prefer
+    en: Would rather/would prefer/prefer
   error_tags:
   - other
   contrasts: []
-  prereqs: []
-  sequence: 11
+  prereqs:
+  - en.canon.b1.053
+  sequence: 2
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b2-would-rather-would-prefer-prefer
   aliases:
@@ -3947,22 +4007,22 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b2-would-rather-would-prefer-prefer
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b2.012
   level: B2
   function: fn.catalog_unclassified
-  point_type: other
+  point_type: tense_aspect
   native_title: It's time + past form
   title:
     vi: It's time + past form
+    en: It's time + past form
   error_tags:
-  - other
+  - tense
   contrasts: []
   prereqs: []
-  sequence: 12
+  sequence: 3
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b2-it-s-time-past-form
   aliases:
@@ -3974,22 +4034,23 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b2-it-s-time-past-form
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b2.013
   level: B2
   function: fn.catalog_unclassified
   point_type: other
   native_title: Advanced passive forms
   title:
-    vi: Advanced passive forms
+    vi: Advanced bị động forms
+    en: Advanced passive forms
   error_tags:
-  - other
+  - sentence_structure
   contrasts: []
-  prereqs: []
-  sequence: 13
+  prereqs:
+  - en.canon.b1.014
+  sequence: 4
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b2-advanced-passive-forms
   aliases:
@@ -4001,22 +4062,24 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b2-advanced-passive-forms
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b2.014
   level: B2
-  function: fn.catalog_unclassified
-  point_type: other
+  function: fn.possibility
+  point_type: tense_aspect
   native_title: Modal perfect passive
   title:
-    vi: Modal perfect passive
+    vi: động từ khuyết thiếu perfect bị động
+    en: Modal perfect passive
   error_tags:
-  - other
+  - tense
+  - sentence_structure
   contrasts: []
-  prereqs: []
-  sequence: 14
+  prereqs:
+  - en.canon.b2.009
+  sequence: 4
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b2-modal-perfect-passive
   aliases:
@@ -4028,22 +4091,23 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b2-modal-perfect-passive
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b2.015
   level: B2
   function: fn.catalog_unclassified
   point_type: other
   native_title: Two-object passive
   title:
-    vi: Two-object passive
+    vi: Two-object bị động
+    en: Two-object passive
   error_tags:
-  - other
+  - sentence_structure
   contrasts: []
-  prereqs: []
-  sequence: 15
+  prereqs:
+  - en.canon.b2.013
+  sequence: 5
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b2-two-object-passive
   aliases:
@@ -4055,8 +4119,7 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b2-two-object-passive
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b2.016
   level: B2
   function: fn.catalog_unclassified
@@ -4064,13 +4127,15 @@
   native_title: 'Causative have/get: extended'
   title:
     vi: 'Causative have/get: extended'
+    en: 'Causative have/get: extended'
   error_tags:
   - other
   contrasts: []
-  prereqs: []
-  sequence: 16
+  prereqs:
+  - en.canon.b2.011
+  sequence: 6
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b2-causative-have-get-extended
   aliases:
@@ -4082,22 +4147,23 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b2-causative-have-get-extended
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b2.017
   level: B2
   function: fn.catalog_unclassified
   point_type: other
   native_title: Reporting passive
   title:
-    vi: Reporting passive
+    vi: Reporting bị động
+    en: Reporting passive
   error_tags:
-  - other
+  - sentence_structure
   contrasts: []
-  prereqs: []
-  sequence: 17
+  prereqs:
+  - en.canon.b2.015
+  sequence: 7
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b2-reporting-passive
   - b2-impersonal-passive
@@ -4116,22 +4182,24 @@
     notes:
     - \
     - trùng hệt tiêu đề ở B2
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b2.018
   level: B2
   function: fn.catalog_unclassified
-  point_type: other
+  point_type: tense_aspect
   native_title: 'Reported speech: tense choice'
   title:
-    vi: 'Reported speech: tense choice'
+    vi: 'câu tường thuật: tense choice'
+    en: 'Reported speech: tense choice'
   error_tags:
-  - other
+  - tense
+  - sentence_structure
   contrasts: []
-  prereqs: []
-  sequence: 18
+  prereqs:
+  - en.canon.b1.029
+  sequence: 8
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b2-reported-speech-tense-choice
   aliases:
@@ -4143,8 +4211,7 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b2-reported-speech-tense-choice
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b2.019
   level: B2
   function: fn.catalog_unclassified
@@ -4152,13 +4219,15 @@
   native_title: Reporting verbs and patterns
   title:
     vi: Reporting verbs and patterns
+    en: Reporting verbs and patterns
   error_tags:
   - other
   contrasts: []
-  prereqs: []
-  sequence: 19
+  prereqs:
+  - en.canon.b2.016
+  sequence: 9
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b2-reporting-verbs-and-patterns
   aliases:
@@ -4170,22 +4239,23 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b2-reporting-verbs-and-patterns
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b2.020
   level: B2
-  function: fn.catalog_unclassified
+  function: fn.relative
   point_type: other
   native_title: Advanced relative clauses
   title:
-    vi: Advanced relative clauses
+    vi: Advanced mệnh đề quan hệ
+    en: Advanced relative clauses
   error_tags:
-  - other
+  - sentence_structure
   contrasts: []
-  prereqs: []
-  sequence: 20
+  prereqs:
+  - en.canon.b1.030
+  sequence: 1
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b2-advanced-relative-clauses
   - c1-advanced-relative-structures
@@ -4201,22 +4271,24 @@
     research_candidate_id: b2-advanced-relative-clauses
     notes:
     - quá rộng, chồng bài B2
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b2.021
   level: B2
-  function: fn.catalog_unclassified
+  function: fn.pronoun_reference
   point_type: other
   native_title: Preposition + relative pronoun
   title:
-    vi: Preposition + relative pronoun
+    vi: giới từ + đại từ quan hệ
+    en: Preposition + relative pronoun
   error_tags:
-  - other
+  - preposition
+  - sentence_structure
   contrasts: []
-  prereqs: []
-  sequence: 21
+  prereqs:
+  - en.canon.b1.031
+  sequence: 1
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b2-preposition-relative-pronoun
   aliases:
@@ -4230,22 +4302,23 @@
     research_candidate_id: b2-preposition-relative-pronoun
     notes:
     - chỉ còn dạng trang trọng (to whom); dạng thường ở b1-relative-pronouns-and-prepositions
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b2.022
   level: B2
-  function: fn.catalog_unclassified
+  function: fn.pronoun_reference
   point_type: other
   native_title: Quantifier + relative pronoun
   title:
-    vi: Quantifier + relative pronoun
+    vi: từ chỉ lượng + đại từ quan hệ
+    en: Quantifier + relative pronoun
   error_tags:
-  - other
+  - sentence_structure
   contrasts: []
-  prereqs: []
-  sequence: 22
+  prereqs:
+  - en.canon.b2.021
+  sequence: 2
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b2-quantifier-relative-pronoun
   aliases:
@@ -4257,22 +4330,23 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b2-quantifier-relative-pronoun
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b2.023
   level: B2
-  function: fn.catalog_unclassified
+  function: fn.relative
   point_type: other
   native_title: Reduced relative clauses
   title:
-    vi: Reduced relative clauses
+    vi: Reduced mệnh đề quan hệ
+    en: Reduced relative clauses
   error_tags:
-  - other
+  - sentence_structure
   contrasts: []
-  prereqs: []
-  sequence: 23
+  prereqs:
+  - en.canon.b2.020
+  sequence: 2
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b2-reduced-relative-clauses
   aliases:
@@ -4284,22 +4358,23 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b2-reduced-relative-clauses
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b2.024
   level: B2
-  function: fn.catalog_unclassified
+  function: fn.verb_patterns
   point_type: other
   native_title: Participle clauses
   title:
-    vi: Participle clauses
+    vi: phân từ clauses
+    en: Participle clauses
   error_tags:
-  - other
+  - sentence_structure
+  - word_form
   contrasts: []
   prereqs: []
-  sequence: 24
+  sequence: 1
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b2-participle-clauses
   aliases:
@@ -4311,22 +4386,24 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b2-participle-clauses
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b2.025
   level: B2
-  function: fn.catalog_unclassified
-  point_type: other
+  function: fn.verb_patterns
+  point_type: tense_aspect
   native_title: Perfect participle clauses
   title:
-    vi: Perfect participle clauses
+    vi: Perfect phân từ clauses
+    en: Perfect participle clauses
   error_tags:
-  - other
+  - tense
+  - sentence_structure
+  - word_form
   contrasts: []
   prereqs: []
-  sequence: 25
+  sequence: 2
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b2-perfect-participle-clauses
   aliases:
@@ -4338,22 +4415,24 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b2-perfect-participle-clauses
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b2.026
   level: B2
-  function: fn.catalog_unclassified
+  function: fn.verb_patterns
   point_type: other
   native_title: Infinitive clauses
   title:
-    vi: Infinitive clauses
+    vi: động từ nguyên mẫu clauses
+    en: Infinitive clauses
   error_tags:
-  - other
+  - sentence_structure
+  - word_form
   contrasts: []
-  prereqs: []
-  sequence: 26
+  prereqs:
+  - en.canon.a2.008
+  sequence: 3
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b2-infinitive-clauses
   aliases:
@@ -4365,22 +4444,24 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b2-infinitive-clauses
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b2.027
   level: B2
-  function: fn.catalog_unclassified
+  function: fn.verb_patterns
   point_type: other
   native_title: Gerund clauses
   title:
-    vi: Gerund clauses
+    vi: danh động từ clauses
+    en: Gerund clauses
   error_tags:
-  - other
+  - sentence_structure
+  - word_form
   contrasts: []
-  prereqs: []
-  sequence: 27
+  prereqs:
+  - en.canon.b1.050
+  sequence: 4
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b2-gerund-clauses
   aliases:
@@ -4392,22 +4473,23 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b2-gerund-clauses
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b2.028
   level: B2
-  function: fn.catalog_unclassified
-  point_type: other
+  function: fn.sentence_basics
+  point_type: word_order
   native_title: Cleft sentences
   title:
-    vi: Cleft sentences
+    vi: câu chẻ
+    en: Cleft sentences
   error_tags:
-  - other
+  - sentence_structure
   contrasts: []
-  prereqs: []
-  sequence: 28
+  prereqs:
+  - en.indirect_objects
+  sequence: 1
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b2-cleft-sentences
   - c1-it-clefts
@@ -4423,22 +4505,23 @@
     research_candidate_id: b2-cleft-sentences
     notes:
     - trùng phạm vi it-cleft
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b2.029
   level: B2
-  function: fn.catalog_unclassified
-  point_type: other
+  function: fn.sentence_basics
+  point_type: word_order
   native_title: Pseudo-cleft sentences
   title:
-    vi: Pseudo-cleft sentences
+    vi: Pseudo-câu chẻ
+    en: Pseudo-cleft sentences
   error_tags:
-  - other
+  - sentence_structure
   contrasts: []
-  prereqs: []
-  sequence: 29
+  prereqs:
+  - en.canon.b2.028
+  sequence: 2
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b2-pseudo-cleft-sentences
   - c1-wh-clefts-and-reversed-clefts
@@ -4454,22 +4537,23 @@
     research_candidate_id: b2-pseudo-cleft-sentences
     notes:
     - trùng phạm vi wh-cleft
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b2.030
   level: B2
-  function: fn.catalog_unclassified
-  point_type: other
+  function: fn.sentence_basics
+  point_type: word_order
   native_title: Fronting for emphasis
   title:
-    vi: Fronting for emphasis
+    vi: Fronting for nhấn mạnh
+    en: Fronting for emphasis
   error_tags:
   - other
   contrasts: []
-  prereqs: []
-  sequence: 30
+  prereqs:
+  - en.canon.b2.029
+  sequence: 3
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b2-fronting-for-emphasis
   - c1-fronting-and-topicalisation
@@ -4485,8 +4569,7 @@
     research_candidate_id: b2-fronting-for-emphasis
     notes:
     - trùng phạm vi
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b2.031
   level: B2
   function: fn.catalog_unclassified
@@ -4494,13 +4577,15 @@
   native_title: Emphatic do
   title:
     vi: Emphatic do
+    en: Emphatic do
   error_tags:
   - other
   contrasts: []
-  prereqs: []
-  sequence: 31
+  prereqs:
+  - en.canon.b2.019
+  sequence: 10
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b2-emphatic-do
   aliases:
@@ -4512,22 +4597,23 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b2-emphatic-do
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b2.032
   level: B2
-  function: fn.catalog_unclassified
+  function: fn.reference
   point_type: other
   native_title: Advanced articles and determiners
   title:
-    vi: Advanced articles and determiners
+    vi: Advanced mạo từ and từ hạn định
+    en: Advanced articles and determiners
   error_tags:
-  - other
+  - article
   contrasts: []
-  prereqs: []
-  sequence: 32
+  prereqs:
+  - en.canon.b1.039
+  sequence: 1
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b2-advanced-articles-and-determiners
   aliases:
@@ -4539,22 +4625,23 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b2-advanced-articles-and-determiners
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b2.033
   level: B2
-  function: fn.catalog_unclassified
+  function: fn.quantity
   point_type: other
   native_title: Complex quantifiers
   title:
-    vi: Complex quantifiers
+    vi: Complex từ chỉ lượng
+    en: Complex quantifiers
   error_tags:
   - other
   contrasts: []
-  prereqs: []
-  sequence: 33
+  prereqs:
+  - en.canon.b1.040
+  sequence: 1
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b2-complex-quantifiers
   aliases:
@@ -4566,8 +4653,7 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b2-complex-quantifiers
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b2.034
   level: B2
   function: fn.catalog_unclassified
@@ -4575,13 +4661,15 @@
   native_title: Reference and substitution
   title:
     vi: Reference and substitution
+    en: Reference and substitution
   error_tags:
   - other
   contrasts: []
-  prereqs: []
-  sequence: 34
+  prereqs:
+  - en.canon.b2.031
+  sequence: 11
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b2-reference-and-substitution
   aliases:
@@ -4593,8 +4681,7 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b2-reference-and-substitution
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b2.035
   level: B2
   function: fn.catalog_unclassified
@@ -4602,13 +4689,15 @@
   native_title: Ellipsis
   title:
     vi: Ellipsis
+    en: Ellipsis
   error_tags:
   - other
   contrasts: []
-  prereqs: []
-  sequence: 35
+  prereqs:
+  - en.canon.b2.034
+  sequence: 12
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b2-ellipsis
   - c1-ellipsis-and-substitution
@@ -4624,8 +4713,7 @@
     research_candidate_id: b2-ellipsis
     notes:
     - trùng phạm vi
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b2.036
   level: B2
   function: fn.catalog_unclassified
@@ -4633,13 +4721,15 @@
   native_title: Nominal clauses
   title:
     vi: Nominal clauses
+    en: Nominal clauses
   error_tags:
-  - other
+  - sentence_structure
   contrasts: []
-  prereqs: []
-  sequence: 36
+  prereqs:
+  - en.canon.b2.035
+  sequence: 13
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b2-nominal-clauses
   aliases:
@@ -4651,8 +4741,7 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b2-nominal-clauses
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b2.037
   level: B2
   function: fn.catalog_unclassified
@@ -4660,13 +4749,14 @@
   native_title: Complex noun phrases
   title:
     vi: Complex noun phrases
+    en: Complex noun phrases
   error_tags:
   - other
   contrasts: []
   prereqs: []
-  sequence: 37
+  sequence: 14
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b2-complex-noun-phrases
   - c1-complex-noun-phrase-architecture
@@ -4682,22 +4772,23 @@
     research_candidate_id: b2-complex-noun-phrases
     notes:
     - trùng phạm vi
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b2.038
   level: B2
   function: fn.catalog_unclassified
   point_type: other
   native_title: Dependent prepositions
   title:
-    vi: Dependent prepositions
+    vi: Dependent giới từ
+    en: Dependent prepositions
   error_tags:
-  - other
+  - preposition
   contrasts: []
-  prereqs: []
-  sequence: 38
+  prereqs:
+  - en.canon.b1.047
+  sequence: 15
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b2-dependent-prepositions
   aliases:
@@ -4709,8 +4800,7 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b2-dependent-prepositions
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b2.039
   level: B2
   function: fn.catalog_unclassified
@@ -4718,13 +4808,15 @@
   native_title: Concession patterns
   title:
     vi: Concession patterns
+    en: Concession patterns
   error_tags:
   - other
   contrasts: []
-  prereqs: []
-  sequence: 39
+  prereqs:
+  - en.canon.b2.036
+  sequence: 16
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b2-concession-patterns
   aliases:
@@ -4736,22 +4828,23 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: b2-concession-patterns
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b2.040
   level: B2
   function: fn.catalog_unclassified
   point_type: other
   native_title: Formal vs informal grammar choices
   title:
-    vi: Formal vs informal grammar choices
+    vi: trang trọng vs intrang trọng grammar choices
+    en: Formal vs informal grammar choices
   error_tags:
-  - other
+  - register
   contrasts: []
-  prereqs: []
-  sequence: 40
+  prereqs:
+  - en.canon.b2.039
+  sequence: 17
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b2-formal-vs-informal-grammar-choices
   - c2-academic-vs-business-vs-conversational-grammar
@@ -4767,8 +4860,7 @@
     research_candidate_id: b2-formal-vs-informal-grammar-choices
     notes:
     - cùng chủ đề register
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b2.041
   level: B2
   function: fn.catalog_unclassified
@@ -4776,13 +4868,15 @@
   native_title: Punctuation with complex clauses
   title:
     vi: Punctuation with complex clauses
+    en: Punctuation with complex clauses
   error_tags:
-  - other
+  - sentence_structure
   contrasts: []
-  prereqs: []
-  sequence: 41
+  prereqs:
+  - en.canon.b2.040
+  sequence: 18
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b2-punctuation-with-complex-clauses
   - c2-advanced-punctuation-as-syntax
@@ -4798,8 +4892,7 @@
     research_candidate_id: b2-punctuation-with-complex-clauses
     notes:
     - trùng phạm vi
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b2.042
   level: B2
   function: fn.catalog_unclassified
@@ -4807,13 +4900,15 @@
   native_title: As If As Though
   title:
     vi: As If As Though
+    en: As If As Though
   error_tags:
   - other
   contrasts: []
-  prereqs: []
-  sequence: 42
+  prereqs:
+  - en.canon.b2.041
+  sequence: 19
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5: []
   aliases: []
   catalog:
@@ -4825,22 +4920,23 @@
     research_candidate_id: as_if_as_though
     notes:
     - R5 không có
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b2.043
   level: B2
   function: fn.catalog_unclassified
   point_type: other
   native_title: Get Passive
   title:
-    vi: Get Passive
+    vi: Get bị động
+    en: Get Passive
   error_tags:
-  - other
+  - sentence_structure
   contrasts: []
-  prereqs: []
-  sequence: 43
+  prereqs:
+  - en.canon.b2.017
+  sequence: 20
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5: []
   aliases: []
   catalog:
@@ -4852,8 +4948,7 @@
     research_candidate_id: get_passive
     notes:
     - R5 không có
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.b2.044
   level: B2
   function: fn.catalog_unclassified
@@ -4861,13 +4956,15 @@
   native_title: Phrasal Verbs Advanced
   title:
     vi: Phrasal Verbs Advanced
+    en: Phrasal Verbs Advanced
   error_tags:
-  - other
+  - naturalness
   contrasts: []
-  prereqs: []
-  sequence: 44
+  prereqs:
+  - en.canon.b2.042
+  sequence: 21
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5: []
   aliases: []
   catalog:
@@ -4879,22 +4976,23 @@
     research_candidate_id: phrasal_verbs.advanced
     notes:
     - R5 không có
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.c1.001
   level: C1
-  function: fn.catalog_unclassified
-  point_type: other
+  function: fn.sentence_basics
+  point_type: word_order
   native_title: Only-phrase inversion
   title:
-    vi: Only-phrase inversion
+    vi: Only-phrase đảo ngữ
+    en: Only-phrase inversion
   error_tags:
-  - other
+  - sentence_structure
   contrasts: []
-  prereqs: []
+  prereqs:
+  - en.canon.b2.030
   sequence: 1
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b2-only-phrase-inversion
   aliases:
@@ -4908,22 +5006,23 @@
     research_candidate_id: b2-only-phrase-inversion
     notes:
     - đảo ngữ
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.c1.002
   level: C1
-  function: fn.catalog_unclassified
+  function: fn.negation
   point_type: other
   native_title: No sooner/hardly/scarcely
   title:
     vi: No sooner/hardly/scarcely
+    en: No sooner/hardly/scarcely
   error_tags:
   - other
   contrasts: []
-  prereqs: []
-  sequence: 2
+  prereqs:
+  - en.canon.b1.041
+  sequence: 1
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - b2-no-sooner-hardly-scarcely
   aliases:
@@ -4937,22 +5036,23 @@
     research_candidate_id: b2-no-sooner-hardly-scarcely
     notes:
     - đảo ngữ
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.c1.003
   level: C1
   function: fn.catalog_unclassified
-  point_type: other
+  point_type: tense_aspect
   native_title: Advanced simple vs continuous aspect
   title:
     vi: Advanced simple vs continuous aspect
+    en: Advanced simple vs continuous aspect
   error_tags:
-  - other
+  - tense
   contrasts: []
-  prereqs: []
-  sequence: 3
+  prereqs:
+  - en.canon.b2.044
+  sequence: 1
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - c1-advanced-simple-vs-continuous-aspect
   - c1-advanced-perfect-aspect
@@ -4968,22 +5068,23 @@
     research_candidate_id: c1-advanced-simple-vs-continuous-aspect
     notes:
     - trừu tượng, chồng nhau
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.c1.004
   level: C1
   function: fn.catalog_unclassified
-  point_type: other
+  point_type: tense_aspect
   native_title: Lexical aspect and meaning shifts
   title:
     vi: Lexical aspect and meaning shifts
+    en: Lexical aspect and meaning shifts
   error_tags:
   - other
   contrasts: []
-  prereqs: []
-  sequence: 4
+  prereqs:
+  - en.canon.c1.003
+  sequence: 2
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - c1-lexical-aspect-and-meaning-shifts
   - c2-advanced-tense-aspect-viewpoint-shifts
@@ -4999,22 +5100,22 @@
     research_candidate_id: c1-lexical-aspect-and-meaning-shifts
     notes:
     - trừu tượng, chồng nhau
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.c1.005
   level: C1
   function: fn.catalog_unclassified
-  point_type: other
+  point_type: tense_aspect
   native_title: Historic present and narrative shifts
   title:
     vi: Historic present and narrative shifts
+    en: Historic present and narrative shifts
   error_tags:
-  - other
+  - tense
   contrasts: []
   prereqs: []
-  sequence: 5
+  sequence: 3
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - c1-historic-present-and-narrative-shifts
   aliases:
@@ -5026,22 +5127,23 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: c1-historic-present-and-narrative-shifts
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.c1.006
   level: C1
-  function: fn.catalog_unclassified
-  point_type: other
+  function: fn.future_plans
+  point_type: tense_aspect
   native_title: Future-in-the-past systems
   title:
     vi: Future-in-the-past systems
+    en: Future-in-the-past systems
   error_tags:
-  - other
+  - tense
   contrasts: []
-  prereqs: []
-  sequence: 6
+  prereqs:
+  - en.canon.b2.004
+  sequence: 1
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - c1-future-in-the-past-systems
   aliases:
@@ -5053,22 +5155,23 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: c1-future-in-the-past-systems
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.c1.007
   level: C1
-  function: fn.catalog_unclassified
+  function: fn.possibility
   point_type: other
   native_title: Advanced epistemic modality
   title:
-    vi: Advanced epistemic modality
+    vi: Advanced epistemic động từ khuyết thiếuity
+    en: Advanced epistemic modality
   error_tags:
   - other
   contrasts: []
-  prereqs: []
-  sequence: 7
+  prereqs:
+  - en.canon.b2.007
+  sequence: 1
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - c1-advanced-epistemic-modality
   aliases:
@@ -5080,22 +5183,23 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: c1-advanced-epistemic-modality
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.c1.008
   level: C1
-  function: fn.catalog_unclassified
+  function: fn.possibility
   point_type: other
   native_title: Deontic and dynamic modality
   title:
-    vi: Deontic and dynamic modality
+    vi: Deontic and dynamic động từ khuyết thiếuity
+    en: Deontic and dynamic modality
   error_tags:
   - other
   contrasts: []
-  prereqs: []
-  sequence: 8
+  prereqs:
+  - en.canon.c1.007
+  sequence: 2
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - c1-deontic-and-dynamic-modality
   aliases:
@@ -5107,22 +5211,23 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: c1-deontic-and-dynamic-modality
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.c1.009
   level: C1
-  function: fn.catalog_unclassified
+  function: fn.possibility
   point_type: other
   native_title: Hedging with modal and lexical devices
   title:
-    vi: Hedging with modal and lexical devices
+    vi: Hedging with động từ khuyết thiếu and lexical devices
+    en: Hedging with modal and lexical devices
   error_tags:
   - other
   contrasts: []
-  prereqs: []
-  sequence: 9
+  prereqs:
+  - en.canon.c1.008
+  sequence: 3
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - c1-hedging-with-modal-and-lexical-devices
   - c1-hedging-academic-claims
@@ -5138,8 +5243,7 @@
     research_candidate_id: c1-hedging-with-modal-and-lexical-devices
     notes:
     - trùng phạm vi hedging
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.c1.010
   level: C1
   function: fn.catalog_unclassified
@@ -5147,13 +5251,15 @@
   native_title: Boosting and controlled certainty
   title:
     vi: Boosting and controlled certainty
+    en: Boosting and controlled certainty
   error_tags:
   - other
   contrasts: []
-  prereqs: []
-  sequence: 10
+  prereqs:
+  - en.canon.c1.004
+  sequence: 4
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - c1-boosting-and-controlled-certainty
   aliases:
@@ -5165,22 +5271,23 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: c1-boosting-and-controlled-certainty
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.c1.011
   level: C1
-  function: fn.catalog_unclassified
-  point_type: other
+  function: fn.degree
+  point_type: word_order
   native_title: Negative adverbial inversion
   title:
-    vi: Negative adverbial inversion
+    vi: Negative trạng từial đảo ngữ
+    en: Negative adverbial inversion
   error_tags:
-  - other
+  - sentence_structure
   contrasts: []
-  prereqs: []
-  sequence: 11
+  prereqs:
+  - en.adverbs.manner_degree
+  sequence: 1
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - c1-negative-adverbial-inversion
   - b2-negative-adverbial-inversion
@@ -5196,22 +5303,24 @@
     research_candidate_id: c1-negative-adverbial-inversion
     notes:
     - trùng hệt tiêu đề B2/C1; đảo ngữ là C1
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.c1.012
   level: C1
-  function: fn.catalog_unclassified
-  point_type: other
+  function: fn.condition_real
+  point_type: word_order
   native_title: Conditional inversion
   title:
-    vi: Conditional inversion
+    vi: câu điều kiện đảo ngữ
+    en: Conditional inversion
   error_tags:
-  - other
+  - tense
+  - sentence_structure
   contrasts: []
-  prereqs: []
-  sequence: 12
+  prereqs:
+  - en.canon.b2.005
+  sequence: 1
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - c1-conditional-inversion
   - b2-conditional-inversion-introduction
@@ -5227,22 +5336,23 @@
     research_candidate_id: c1-conditional-inversion
     notes:
     - trùng
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.c1.013
   level: C1
-  function: fn.catalog_unclassified
-  point_type: other
+  function: fn.degree
+  point_type: word_order
   native_title: So/such inversion
   title:
-    vi: So/such inversion
+    vi: So/such đảo ngữ
+    en: So/such inversion
   error_tags:
-  - other
+  - sentence_structure
   contrasts: []
-  prereqs: []
-  sequence: 13
+  prereqs:
+  - en.canon.b1.055
+  sequence: 2
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - c1-so-such-inversion
   aliases:
@@ -5254,8 +5364,7 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: c1-so-such-inversion
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.c1.014
   level: C1
   function: fn.catalog_unclassified
@@ -5263,13 +5372,15 @@
   native_title: Extraposition with anticipatory it
   title:
     vi: Extraposition with anticipatory it
+    en: Extraposition with anticipatory it
   error_tags:
   - other
   contrasts: []
-  prereqs: []
-  sequence: 14
+  prereqs:
+  - en.canon.c1.010
+  sequence: 5
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - c1-extraposition-with-anticipatory-it
   aliases:
@@ -5281,22 +5392,22 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: c1-extraposition-with-anticipatory-it
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.c1.015
   level: C1
-  function: fn.catalog_unclassified
+  function: fn.existence
   point_type: other
   native_title: Existential there with complex noun phrases
   title:
     vi: Existential there with complex noun phrases
+    en: Existential there with complex noun phrases
   error_tags:
   - other
   contrasts: []
   prereqs: []
-  sequence: 15
+  sequence: 1
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - c1-existential-there-with-complex-noun-phrases
   aliases:
@@ -5308,8 +5419,7 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: c1-existential-there-with-complex-noun-phrases
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.c1.016
   level: C1
   function: fn.catalog_unclassified
@@ -5317,13 +5427,15 @@
   native_title: Nominalisation
   title:
     vi: Nominalisation
+    en: Nominalisation
   error_tags:
   - other
   contrasts: []
-  prereqs: []
-  sequence: 16
+  prereqs:
+  - en.canon.c1.014
+  sequence: 6
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - c1-nominalisation
   aliases:
@@ -5335,22 +5447,24 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: c1-nominalisation
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.c1.017
   level: C1
-  function: fn.catalog_unclassified
-  point_type: other
+  function: fn.verb_patterns
+  point_type: tense_aspect
   native_title: Perfect infinitives in reporting
   title:
-    vi: Perfect infinitives in reporting
+    vi: Perfect động từ nguyên mẫu in reporting
+    en: Perfect infinitives in reporting
   error_tags:
-  - other
+  - tense
+  - word_form
   contrasts: []
-  prereqs: []
-  sequence: 17
+  prereqs:
+  - en.canon.b2.025
+  sequence: 1
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - c1-perfect-infinitives-in-reporting
   aliases:
@@ -5362,8 +5476,7 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: c1-perfect-infinitives-in-reporting
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.c1.018
   level: C1
   function: fn.catalog_unclassified
@@ -5371,13 +5484,15 @@
   native_title: Mandative subjunctive
   title:
     vi: Mandative subjunctive
+    en: Mandative subjunctive
   error_tags:
   - other
   contrasts: []
-  prereqs: []
-  sequence: 18
+  prereqs:
+  - en.canon.c1.016
+  sequence: 7
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - c1-mandative-subjunctive
   aliases:
@@ -5389,8 +5504,7 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: c1-mandative-subjunctive
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.c1.019
   level: C1
   function: fn.catalog_unclassified
@@ -5398,13 +5512,15 @@
   native_title: Were-subjunctive
   title:
     vi: Were-subjunctive
+    en: Were-subjunctive
   error_tags:
   - other
   contrasts: []
-  prereqs: []
-  sequence: 19
+  prereqs:
+  - en.canon.c1.018
+  sequence: 8
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - c1-were-subjunctive
   aliases:
@@ -5416,22 +5532,23 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: c1-were-subjunctive
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.c1.020
   level: C1
-  function: fn.catalog_unclassified
+  function: fn.relative
   point_type: other
   native_title: Fused relative clauses
   title:
-    vi: Fused relative clauses
+    vi: Fused mệnh đề quan hệ
+    en: Fused relative clauses
   error_tags:
-  - other
+  - sentence_structure
   contrasts: []
-  prereqs: []
-  sequence: 20
+  prereqs:
+  - en.canon.b2.023
+  sequence: 1
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - c1-fused-relative-clauses
   - c2-fused-and-nominal-relatives
@@ -5447,8 +5564,7 @@
     research_candidate_id: c1-fused-relative-clauses
     notes:
     - trùng phạm vi
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.c1.021
   level: C1
   function: fn.catalog_unclassified
@@ -5456,13 +5572,15 @@
   native_title: Advanced non-finite clauses
   title:
     vi: Advanced non-finite clauses
+    en: Advanced non-finite clauses
   error_tags:
-  - other
+  - sentence_structure
   contrasts: []
-  prereqs: []
-  sequence: 21
+  prereqs:
+  - en.canon.c1.019
+  sequence: 9
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - c1-advanced-non-finite-clauses
   aliases:
@@ -5474,22 +5592,24 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: c1-advanced-non-finite-clauses
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.c1.022
   level: C1
   function: fn.catalog_unclassified
-  point_type: other
+  point_type: tense_aspect
   native_title: Perfect and passive non-finites
   title:
-    vi: Perfect and passive non-finites
+    vi: Perfect and bị động non-finites
+    en: Perfect and passive non-finites
   error_tags:
-  - other
+  - tense
+  - sentence_structure
   contrasts: []
-  prereqs: []
-  sequence: 22
+  prereqs:
+  - en.canon.b2.001
+  sequence: 10
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - c1-perfect-and-passive-non-finites
   aliases:
@@ -5501,8 +5621,7 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: c1-perfect-and-passive-non-finites
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.c1.023
   level: C1
   function: fn.catalog_unclassified
@@ -5510,13 +5629,15 @@
   native_title: Advanced concession
   title:
     vi: Advanced concession
+    en: Advanced concession
   error_tags:
   - other
   contrasts: []
-  prereqs: []
-  sequence: 23
+  prereqs:
+  - en.canon.c1.021
+  sequence: 11
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - c1-advanced-concession
   - c2-advanced-concession-and-counterargument
@@ -5532,8 +5653,7 @@
     research_candidate_id: c1-advanced-concession
     notes:
     - trùng phạm vi
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.c1.024
   level: C1
   function: fn.catalog_unclassified
@@ -5541,13 +5661,15 @@
   native_title: Cause/result/purpose relations
   title:
     vi: Cause/result/purpose relations
+    en: Cause/result/purpose relations
   error_tags:
   - other
   contrasts: []
-  prereqs: []
-  sequence: 24
+  prereqs:
+  - en.canon.c1.023
+  sequence: 12
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - c1-cause-result-purpose-relations
   aliases:
@@ -5559,8 +5681,7 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: c1-cause-result-purpose-relations
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.c1.025
   level: C1
   function: fn.catalog_unclassified
@@ -5568,13 +5689,15 @@
   native_title: Discourse reference
   title:
     vi: Discourse reference
+    en: Discourse reference
   error_tags:
-  - other
+  - coherence
   contrasts: []
-  prereqs: []
-  sequence: 25
+  prereqs:
+  - en.canon.c1.024
+  sequence: 13
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - c1-discourse-reference
   aliases:
@@ -5586,8 +5709,7 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: c1-discourse-reference
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.c1.026
   level: C1
   function: fn.catalog_unclassified
@@ -5595,13 +5717,15 @@
   native_title: Parallelism and coordination
   title:
     vi: Parallelism and coordination
+    en: Parallelism and coordination
   error_tags:
   - other
   contrasts: []
-  prereqs: []
-  sequence: 26
+  prereqs:
+  - en.canon.c1.025
+  sequence: 14
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - c1-parallelism-and-coordination
   aliases:
@@ -5613,8 +5737,7 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: c1-parallelism-and-coordination
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.c1.027
   level: C1
   function: fn.catalog_unclassified
@@ -5622,13 +5745,15 @@
   native_title: Qualification and limitation
   title:
     vi: Qualification and limitation
+    en: Qualification and limitation
   error_tags:
   - other
   contrasts: []
-  prereqs: []
-  sequence: 27
+  prereqs:
+  - en.canon.c1.026
+  sequence: 15
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - c1-qualification-and-limitation
   aliases:
@@ -5640,8 +5765,7 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: c1-qualification-and-limitation
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.c1.028
   level: C1
   function: fn.catalog_unclassified
@@ -5649,13 +5773,15 @@
   native_title: Register-driven grammar
   title:
     vi: Register-driven grammar
+    en: Register-driven grammar
   error_tags:
-  - other
+  - register
   contrasts: []
-  prereqs: []
-  sequence: 28
+  prereqs:
+  - en.canon.c1.027
+  sequence: 16
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - c1-register-driven-grammar
   - c2-register-driven-syntax
@@ -5671,8 +5797,7 @@
     research_candidate_id: c1-register-driven-grammar
     notes:
     - cùng chủ đề register
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.c1.029
   level: C1
   function: fn.catalog_unclassified
@@ -5680,13 +5805,15 @@
   native_title: Academic definitions and classifications
   title:
     vi: Academic definitions and classifications
+    en: Academic definitions and classifications
   error_tags:
   - other
   contrasts: []
-  prereqs: []
-  sequence: 29
+  prereqs:
+  - en.canon.c1.028
+  sequence: 17
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - c1-academic-definitions-and-classifications
   aliases:
@@ -5698,8 +5825,7 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: c1-academic-definitions-and-classifications
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.c1.030
   level: C1
   function: fn.catalog_unclassified
@@ -5707,13 +5833,15 @@
   native_title: Sentence rhythm, end-weight and end-focus
   title:
     vi: Sentence rhythm, end-weight and end-focus
+    en: Sentence rhythm, end-weight and end-focus
   error_tags:
-  - other
+  - sentence_structure
   contrasts: []
-  prereqs: []
-  sequence: 30
+  prereqs:
+  - en.canon.c1.029
+  sequence: 18
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - c1-sentence-rhythm-end-weight-and-end-focus
   - c1-old-to-new-information-flow
@@ -5729,22 +5857,23 @@
     research_candidate_id: c1-sentence-rhythm-end-weight-and-end-focus
     notes:
     - cùng chủ đề information structure
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.c2.001
   level: C2
-  function: fn.catalog_unclassified
+  function: fn.possibility
   point_type: other
   native_title: Layered modality and authorial voice
   title:
-    vi: Layered modality and authorial voice
+    vi: Layered động từ khuyết thiếuity and authorial voice
+    en: Layered modality and authorial voice
   error_tags:
   - other
   contrasts: []
-  prereqs: []
+  prereqs:
+  - en.canon.c1.009
   sequence: 1
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - c2-layered-modality-and-authorial-voice
   aliases:
@@ -5756,8 +5885,7 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: c2-layered-modality-and-authorial-voice
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.c2.002
   level: C2
   function: fn.catalog_unclassified
@@ -5765,13 +5893,15 @@
   native_title: Counterfactual compression
   title:
     vi: Counterfactual compression
+    en: Counterfactual compression
   error_tags:
   - other
   contrasts: []
-  prereqs: []
-  sequence: 2
+  prereqs:
+  - en.canon.c1.030
+  sequence: 1
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - c2-counterfactual-compression
   aliases:
@@ -5783,22 +5913,22 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: c2-counterfactual-compression
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.c2.003
   level: C2
-  function: fn.catalog_unclassified
+  function: fn.quantity
   point_type: other
   native_title: Negation and quantifier scope
   title:
-    vi: Negation and quantifier scope
+    vi: phủ định and từ chỉ lượng scope
+    en: Negation and quantifier scope
   error_tags:
   - other
   contrasts: []
   prereqs: []
-  sequence: 3
+  sequence: 1
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - c2-negation-and-quantifier-scope
   aliases:
@@ -5810,8 +5940,7 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: c2-negation-and-quantifier-scope
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.c2.004
   level: C2
   function: fn.catalog_unclassified
@@ -5819,13 +5948,15 @@
   native_title: Only/focus scope
   title:
     vi: Only/focus scope
+    en: Only/focus scope
   error_tags:
   - other
   contrasts: []
-  prereqs: []
-  sequence: 4
+  prereqs:
+  - en.canon.c2.002
+  sequence: 2
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - c2-only-focus-scope
   aliases:
@@ -5837,8 +5968,7 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: c2-only-focus-scope
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.c2.005
   level: C2
   function: fn.catalog_unclassified
@@ -5846,13 +5976,15 @@
   native_title: Ambiguity from modifier attachment
   title:
     vi: Ambiguity from modifier attachment
+    en: Ambiguity from modifier attachment
   error_tags:
   - other
   contrasts: []
-  prereqs: []
-  sequence: 5
+  prereqs:
+  - en.canon.c2.004
+  sequence: 3
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - c2-ambiguity-from-modifier-attachment
   aliases:
@@ -5864,8 +5996,7 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: c2-ambiguity-from-modifier-attachment
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.c2.006
   level: C2
   function: fn.catalog_unclassified
@@ -5873,13 +6004,15 @@
   native_title: Reference ambiguity
   title:
     vi: Reference ambiguity
+    en: Reference ambiguity
   error_tags:
   - other
   contrasts: []
-  prereqs: []
-  sequence: 6
+  prereqs:
+  - en.canon.c2.005
+  sequence: 4
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - c2-reference-ambiguity
   aliases:
@@ -5891,8 +6024,7 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: c2-reference-ambiguity
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.c2.007
   level: C2
   function: fn.catalog_unclassified
@@ -5900,13 +6032,15 @@
   native_title: Deep clause embedding
   title:
     vi: Deep clause embedding
+    en: Deep clause embedding
   error_tags:
-  - other
+  - sentence_structure
   contrasts: []
-  prereqs: []
-  sequence: 7
+  prereqs:
+  - en.canon.c2.006
+  sequence: 5
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - c2-deep-clause-embedding
   aliases:
@@ -5918,8 +6052,7 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: c2-deep-clause-embedding
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.c2.008
   level: C2
   function: fn.catalog_unclassified
@@ -5927,13 +6060,15 @@
   native_title: Advanced apposition
   title:
     vi: Advanced apposition
+    en: Advanced apposition
   error_tags:
   - other
   contrasts: []
-  prereqs: []
-  sequence: 8
+  prereqs:
+  - en.canon.c2.007
+  sequence: 6
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - c2-advanced-apposition
   aliases:
@@ -5945,8 +6080,7 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: c2-advanced-apposition
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.c2.009
   level: C2
   function: fn.catalog_unclassified
@@ -5954,13 +6088,15 @@
   native_title: Parenthetical grammar
   title:
     vi: Parenthetical grammar
+    en: Parenthetical grammar
   error_tags:
   - other
   contrasts: []
-  prereqs: []
-  sequence: 9
+  prereqs:
+  - en.canon.c2.008
+  sequence: 7
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - c2-parenthetical-grammar
   aliases:
@@ -5972,8 +6108,7 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: c2-parenthetical-grammar
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.c2.010
   level: C2
   function: fn.catalog_unclassified
@@ -5981,13 +6116,15 @@
   native_title: Heavy constituent shift
   title:
     vi: Heavy constituent shift
+    en: Heavy constituent shift
   error_tags:
   - other
   contrasts: []
-  prereqs: []
-  sequence: 10
+  prereqs:
+  - en.canon.c2.009
+  sequence: 8
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - c2-heavy-constituent-shift
   aliases:
@@ -5999,8 +6136,7 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: c2-heavy-constituent-shift
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.c2.011
   level: C2
   function: fn.catalog_unclassified
@@ -6008,13 +6144,15 @@
   native_title: Advanced extraposition
   title:
     vi: Advanced extraposition
+    en: Advanced extraposition
   error_tags:
   - other
   contrasts: []
-  prereqs: []
-  sequence: 11
+  prereqs:
+  - en.canon.c2.010
+  sequence: 9
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - c2-advanced-extraposition
   aliases:
@@ -6026,22 +6164,22 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: c2-advanced-extraposition
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.c2.012
   level: C2
-  function: fn.catalog_unclassified
+  function: fn.comparison
   point_type: other
   native_title: Marked comparison structures
   title:
     vi: Marked comparison structures
+    en: Marked comparison structures
   error_tags:
   - other
   contrasts: []
   prereqs: []
-  sequence: 12
+  sequence: 1
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - c2-marked-comparison-structures
   aliases:
@@ -6053,8 +6191,7 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: c2-marked-comparison-structures
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.c2.013
   level: C2
   function: fn.catalog_unclassified
@@ -6062,13 +6199,15 @@
   native_title: Advanced complement alternation
   title:
     vi: Advanced complement alternation
+    en: Advanced complement alternation
   error_tags:
   - other
   contrasts: []
-  prereqs: []
-  sequence: 13
+  prereqs:
+  - en.canon.c2.011
+  sequence: 10
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - c2-advanced-complement-alternation
   aliases:
@@ -6080,8 +6219,7 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: c2-advanced-complement-alternation
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.c2.014
   level: C2
   function: fn.catalog_unclassified
@@ -6089,13 +6227,15 @@
   native_title: Advanced reporting and distancing
   title:
     vi: Advanced reporting and distancing
+    en: Advanced reporting and distancing
   error_tags:
   - other
   contrasts: []
-  prereqs: []
-  sequence: 14
+  prereqs:
+  - en.canon.c2.013
+  sequence: 11
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - c2-advanced-reporting-and-distancing
   aliases:
@@ -6107,8 +6247,7 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: c2-advanced-reporting-and-distancing
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.c2.015
   level: C2
   function: fn.catalog_unclassified
@@ -6116,13 +6255,15 @@
   native_title: Cross-sentence ellipsis
   title:
     vi: Cross-sentence ellipsis
+    en: Cross-sentence ellipsis
   error_tags:
-  - other
+  - sentence_structure
   contrasts: []
-  prereqs: []
-  sequence: 15
+  prereqs:
+  - en.canon.c2.014
+  sequence: 12
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - c2-cross-sentence-ellipsis
   aliases:
@@ -6134,8 +6275,7 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: c2-cross-sentence-ellipsis
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.c2.016
   level: C2
   function: fn.catalog_unclassified
@@ -6143,13 +6283,15 @@
   native_title: Discourse substitution chains
   title:
     vi: Discourse substitution chains
+    en: Discourse substitution chains
   error_tags:
-  - other
+  - coherence
   contrasts: []
-  prereqs: []
-  sequence: 16
+  prereqs:
+  - en.canon.c2.015
+  sequence: 13
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - c2-discourse-substitution-chains
   aliases:
@@ -6161,8 +6303,7 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: c2-discourse-substitution-chains
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.c2.017
   level: C2
   function: fn.catalog_unclassified
@@ -6170,13 +6311,15 @@
   native_title: Lexico-grammar and colligation
   title:
     vi: Lexico-grammar and colligation
+    en: Lexico-grammar and colligation
   error_tags:
   - other
   contrasts: []
-  prereqs: []
-  sequence: 17
+  prereqs:
+  - en.canon.c2.016
+  sequence: 14
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - c2-lexico-grammar-and-colligation
   aliases:
@@ -6188,8 +6331,7 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: c2-lexico-grammar-and-colligation
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
 - id: en.canon.c2.018
   level: C2
   function: fn.catalog_unclassified
@@ -6197,13 +6339,15 @@
   native_title: Metadiscourse grammar
   title:
     vi: Metadiscourse grammar
+    en: Metadiscourse grammar
   error_tags:
-  - other
+  - coherence
   contrasts: []
-  prereqs: []
-  sequence: 18
+  prereqs:
+  - en.canon.c2.017
+  sequence: 15
   anchors: []
-  batch: canonical_v1
+  batch: full-seed-2026-09-30
   r5:
   - c2-metadiscourse-grammar
   aliases:
@@ -6215,5 +6359,4 @@
     origin: r5_reused
     conversion: keep
     research_candidate_id: c2-metadiscourse-grammar
-    metadata_origin: default_safe
-    title_origin: canonical_title_untranslated
+    metadata_origin: reviewed_seed
