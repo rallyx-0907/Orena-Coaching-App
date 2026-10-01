@@ -16,6 +16,7 @@ from grammar_lab.pipeline.generate import (
     _normalize_seg,
     _story_generation_schema,
     build_rule_table,
+    pinyin_from_pairs,
     resolve_spans,
 )
 from grammar_lab.pipeline.llm_client import LLMClient
@@ -567,6 +568,16 @@ def test_generate_v04_illustration_follows_point_type_not_the_model(tmp_path: Pa
     canned = {key: value for key, value in CANNED_V04.items() if key != "morphology"}  # a type-other point asks for none
     make_generator(lab.root, v04_transport(canned)).generate("en.alpha")
     assert load_point("en", "en.alpha", lab.root)["pattern"]["illustration"] == {"kind": "none"}
+
+
+def test_pinyin_alignment_is_code_derived_and_model_hints_only_override_valid_han() -> None:
+    # Missing punctuation/blanks are filled deterministically; a valid contextual
+    # polyphonic reading from the model can still override pypinyin.
+    assert pinyin_from_pairs("我___吃饭。", [["我", "wǒ"], ["_", "bad"], ["吃", "chī"], ["饭", "fàn"]]) == [
+        "wǒ", "", "", "", "chī", "fàn", ""
+    ]
+    bank = pinyin_from_pairs("银行", [["行", "háng"]])
+    assert bank == ["yín", "háng"]
 
 
 def test_generate_v04_zh_turns_pinyin_pairs_into_per_character_pinyin(tmp_path: Path) -> None:
