@@ -106,6 +106,23 @@ def plan_corpus(
     }
 
 
+def matches_generation_provenance(
+    point: dict[str, Any], *, provider: str, model: str, prompt_version: str,
+) -> bool:
+    """Whether an existing v0.4 draft already came from this exact corpus recipe.
+
+    Used by final-corpus normalization so a resumed run does not pay to
+    regenerate points that were already written by the same provider/model
+    and prompt version.
+    """
+    provenance = point.get("provenance") or {}
+    return (
+        point.get("schema_version") == "0.4"
+        and provenance.get("model") == f"{provider}:{model}"
+        and provenance.get("prompt_version") == prompt_version
+    )
+
+
 def generation_items(
     plan: dict[str, Any], *, include_generated: bool = False,
 ) -> list[tuple[str, str, str]]:
