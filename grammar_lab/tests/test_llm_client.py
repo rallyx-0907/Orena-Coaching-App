@@ -341,6 +341,16 @@ def test_deepseek_cost_uses_the_pricing_table(tmp_path: Path) -> None:
     assert cost is not None and cost > 0
 
 
+def test_invalidating_one_cached_completion_forces_a_fresh_request(tmp_path: Path) -> None:
+    calls: list[httpx.Request] = []
+    c = client(tmp_path, "deepseek", _deepseek_transport(calls))
+    kwargs = {"system": "s", "user": "u", "json_schema": SCHEMA}
+    first = c.complete(**kwargs)
+    assert first.cached is False and len(calls) == 1
+    assert c.invalidate_cache(**kwargs) is True
+    second = c.complete(**kwargs)
+    assert second.cached is False and len(calls) == 2
+
 def test_second_call_with_same_input_is_cached_and_makes_no_request(tmp_path: Path) -> None:
     calls: list[httpx.Request] = []
     c = client(tmp_path, "anthropic", _anthropic_transport(calls))
