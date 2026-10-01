@@ -36,7 +36,7 @@ from grammar_lab.pipeline.content_store import (
     save_point,
 )
 from grammar_lab.pipeline.jsonio import read_json
-from grammar_lab.pipeline.llm_client import LLMClient
+from grammar_lab.pipeline.llm_client import LLMClient, LLMError
 from grammar_lab.pipeline.seed import apply_seed, check_generation_gate, register_realization
 from grammar_lab.pipeline.r5_source import DEFAULT_R5_ROOT, R5SourceError, load_r5, r5_source_text
 from grammar_lab.pipeline.validate import (
@@ -45,6 +45,7 @@ from grammar_lab.pipeline.validate import (
     ILLUSTRATION_FOR_POINT_TYPE,
     QUICK_PRACTICE_BLANK,
     ZH_HANS,
+    validate_generated_point,
 )
 from grammar_lab.rules import en_morphology
 
@@ -52,6 +53,7 @@ PROMPT_VERSION = "generate_point.v1"
 PROMPT_PATH = LAB_ROOT / "prompts" / "generate_point.md"
 PROMPT_VERSION_V04 = "generate_point_v04.v10"
 PROMPT_PATH_V04 = LAB_ROOT / "prompts" / "generate_point_v04.md"
+V04_SEMANTIC_ATTEMPTS = 3
 STORY_PROMPT_VERSION = "generate_story.v2"
 # grammar_set.schema.json's story_mode allows "history" too (VOICE.md), but generate.py
 # does not offer it yet: a "history" story may only state a fact from a vetted source, and
@@ -874,74 +876,133 @@ class Generator:
             user += f" Admin regenerate note: {regenerate_note}"
         if r5_records:
             user += "\n\nR5 source lesson(s) for this point (restructure, correct, complete):\n" + r5_source_text(r5_records)
-        result = self.llm.complete(
-            system=system, user=user, json_schema=schema, schema_name="grammar_point_v04", max_tokens=V04_MAX_TOKENS,
-        )
-        data = result.data
+        def assemble(result: Any) -> dict[str, Any]:
+            data = result.data
 
-        illustration: dict[str, Any] = {"kind": ILLUSTRATION_FOR_POINT_TYPE[point_type]}
-        if point_type == "tense_aspect":
-            illustration["timeline"] = {"shape": data["timeline_shape"]}
-        elif point_type == "morphology":
-            illustration["morphology"] = [assemble_morphology_row(raw, zh) for raw in data["morphology"]]
-        def loc(value: Any) -> Any:
-            return _as_locale_map(value, locales)
+            illustration: dict[str, Any] = {"kind": ILLUSTRATION_FOR_POINT_TYPE[point_type]}
+            if point_type == "tense_aspect":
+                illustration["timeline"] = {"shape": data["timeline_shape"]}
+            elif point_type == "morphology":
+                illustration["morphology"] = [assemble_morphology_row(raw, zh) for raw in data["morphology"]]
 
-        pattern: dict[str, Any] = {"formula": _slots(data["formula"], zh, locales)}
-        variants = {name: _slots(data[name], zh, locales) for name in ("negative", "question") if data.get(name)}
-        if variants:
-            pattern["variants"] = variants
-        pattern["illustration"] = illustration
+            def loc(value: Any) -> Any:
+                return _as_locale_map(value, locales)
 
-        examples = [assemble_example(raw, zh, loc) for raw in data["examples"]]
-        compare = [assemble_compare_item(item, zh, loc) for item in data["compare"]]
-        quick_practice = [assemble_quick_practice_item(item, zh, loc) for item in data["quick_practice"]]
-        mistakes = [assemble_common_mistake(raw, zh, loc) for raw in data["common_mistakes"]]
+            pattern: dict[str, Any] = {"formula": _slots(data["formula"], zh, locales)}
+            variants = {name: _slots(data[name], zh, locales) for name in ("negative", "question") if data.get(name)}
+            if variants:
+                pattern["variants"] = variants
+            pattern["illustration"] = illustration
 
-        point = {
-            **{key: existing[key] for key in (
-                "id", "version", "target_lang", "function", "level", "prereqs", "contrasts", "error_tags", "source_refs",
-            )},
-            "schema_version": "0.4",
-            "point_type": point_type,
-            # structural metadata and the fields generate does not write yet: carried over, never dropped
-            **{key: existing[key] for key in ("sequence", "aliases") if key in existing},
-            "source_anchors": existing.get("source_anchors") or {"status": "unanchored", "items": []},
-            "header": {
-                **header, "summary": loc(data["summary"]),
-                "sub": loc(data["sub"]),
-                **({"native_title_pinyin": pinyin_from_pairs(data["native_title_pinyin_pairs"])} if zh else {}),
-            },
-            "when_to_use": [loc(item) for item in data["when_to_use"]],
-            "pattern": pattern,
-            "examples": examples,
-            "compare": compare,
-            "common_mistakes": mistakes,
-            "quick_practice": quick_practice,
-            "personal_production": assemble_personal_production(data["personal_production"], zh, loc),
-            "status": "draft_ai",
-            "flags": [],
-            "provenance": {
-                "model": f"{result.provider}:{result.model}",
-                "prompt_version": PROMPT_VERSION_V04,
-                "run_id": f"generate.{int(time.time())}",
-                "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-            },
-            "review": None,
-        }
-        if r5_records:
-            point["provenance"]["r5_source"] = {
-                "ids": r5_ids,
-                "content_version": max(record["content_version"] for record in r5_records),
-                "content_hash": hashlib.sha256(r5_source_text(r5_records).encode("utf-8")).hexdigest(),
-                "corrections": data.get("r5_corrections", []),
+            examples = [assemble_example(raw, zh, loc) for raw in data["examples"]]
+            compare = [assemble_compare_item(item, zh, loc) for item in data["compare"]]
+            quick_practice = [assemble_quick_practice_item(item, zh, loc) for item in data["quick_practice"]]
+            mistakes = [assemble_common_mistake(raw, zh, loc) for raw in data["common_mistakes"]]
+
+            point = {
+                **{key: existing[key] for key in (
+                    "id", "version", "target_lang", "function", "level", "prereqs", "contrasts", "error_tags", "source_refs",
+                )},
+                "schema_version": "0.4",
+                "point_type": point_type,
+                **{key: existing[key] for key in ("sequence", "aliases") if key in existing},
+                "source_anchors": existing.get("source_anchors") or {"status": "unanchored", "items": []},
+                "header": {
+                    **header, "summary": loc(data["summary"]),
+                    "sub": loc(data["sub"]),
+                    **({"native_title_pinyin": pinyin_from_pairs(data["native_title_pinyin_pairs"])} if zh else {}),
+                },
+                "when_to_use": [loc(item) for item in data["when_to_use"]],
+                "pattern": pattern,
+                "examples": examples,
+                "compare": compare,
+                "common_mistakes": mistakes,
+                "quick_practice": quick_practice,
+                "personal_production": assemble_personal_production(data["personal_production"], zh, loc),
+                "status": "draft_ai",
+                "flags": [],
+                "provenance": {
+                    "model": f"{result.provider}:{result.model}",
+                    "prompt_version": PROMPT_VERSION_V04,
+                    "run_id": f"generate.{int(time.time())}",
+                    "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                },
+                "review": None,
             }
-        if existing.get("blocks"):
-            point["blocks"] = existing["blocks"]  # only a secondary story can live here on v0.4
-        point = {"schema_version": point.pop("schema_version"), **point}
-        save_point(self.lang, point, self.root)
-        register_realization(point, self.root)
-        return GenerateOutcome(point_id, "written", cost_usd=result.usage.cost_usd(result.model) or None, cached=result.cached)
+            if r5_records:
+                point["provenance"]["r5_source"] = {
+                    "ids": r5_ids,
+                    "content_version": max(record["content_version"] for record in r5_records),
+                    "content_hash": hashlib.sha256(r5_source_text(r5_records).encode("utf-8")).hexdigest(),
+                    "corrections": data.get("r5_corrections", []),
+                }
+            if existing.get("blocks"):
+                point["blocks"] = existing["blocks"]
+            return {"schema_version": point.pop("schema_version"), **point}
+
+        total_cost = 0.0
+        cost_known = True
+        all_cached = True
+        repair_context = ""
+        last_problem = ""
+
+        for attempt in range(1, V04_SEMANTIC_ATTEMPTS + 1):
+            attempt_user = user
+            if repair_context:
+                attempt_user += (
+                    "\n\nThe previous full JSON candidate failed deterministic validation. "
+                    "Return a fresh complete JSON object that fixes every issue below without changing the requested grammar scope:\n"
+                    + repair_context
+                )
+            try:
+                result = self.llm.complete(
+                    system=system, user=attempt_user, json_schema=schema,
+                    schema_name="grammar_point_v04", max_tokens=V04_MAX_TOKENS,
+                )
+            except LLMError as exc:
+                if exc.usage is None or attempt >= V04_SEMANTIC_ATTEMPTS:
+                    raise
+                attempt_cost = exc.usage.cost_usd(self.llm.model)
+                if attempt_cost is None:
+                    cost_known = False
+                else:
+                    total_cost += attempt_cost
+                all_cached = False
+                last_problem = str(exc)
+                repair_context = "Provider/schema failure: " + str(exc)[:1200]
+                continue
+
+            attempt_cost = result.usage.cost_usd(result.model)
+            if attempt_cost is None:
+                cost_known = False
+            else:
+                total_cost += attempt_cost
+            all_cached = all_cached and result.cached
+
+            point = assemble(result)
+            issues = validate_generated_point(self.lang, point, self.root)
+            if not issues:
+                save_point(self.lang, point, self.root)
+                register_realization(point, self.root)
+                return GenerateOutcome(
+                    point_id, "written",
+                    cost_usd=(total_cost if cost_known and total_cost else None),
+                    cached=all_cached,
+                )
+
+            last_problem = "; ".join(
+                f"{issue.code} at {issue.path}: {issue.message}" for issue in issues[:8]
+            )
+            repair_context = "\n".join(
+                f"- {issue.code} at {issue.path}: {issue.message}" for issue in issues[:8]
+            )
+
+        return GenerateOutcome(
+            point_id, "error",
+            reason=f"semantic validation failed after {V04_SEMANTIC_ATTEMPTS} attempts: {last_problem}",
+            cost_usd=(total_cost if cost_known and total_cost else None),
+            cached=all_cached,
+        )
 
     def _generate_story(self, existing: dict[str, Any], locales: list[str], *, mode: str = "everyday") -> tuple[Any, dict[str, Any]]:
         """STORY_SPEC.md + VOICE.md: a dedicated call for the point's daily-theme story block."""
