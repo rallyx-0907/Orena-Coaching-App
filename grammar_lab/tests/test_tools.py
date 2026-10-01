@@ -10,6 +10,7 @@ import pytest
 from typer.testing import CliRunner
 
 from grammar_lab.pipeline.cli import app
+from grammar_lab.pipeline.content_store import load_points
 from grammar_lab.pipeline.jsonio import format_json, read_json
 from grammar_lab.pipeline.validate import apply_flags, validate_lang
 from grammar_lab.pipeline.zh_script import traditional_chars
@@ -35,7 +36,7 @@ def test_traditional_chars(text: str, expected: list[str]) -> None:
 def test_cli_validate_committed_content_exits_zero() -> None:
     result = runner.invoke(app, ["validate", "--lang", "en"])
     assert result.exit_code == 0, result.output
-    assert "10 point(s), OK" in result.output  # much_many is replaced by the R5-based split (2026-09-30)
+    assert f"{len(load_points('en'))} point(s), OK" in result.output
 
 
 def test_cli_validate_reports_issues_and_exits_one(lab: Lab) -> None:
