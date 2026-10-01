@@ -9,6 +9,7 @@ import pytest
 import yaml
 from jsonschema import Draft202012Validator
 
+from grammar_lab.pipeline.content_store import load_points
 from grammar_lab.pipeline.export_error_tags import ExportError, build_error_tags, read_constant
 from grammar_lab.pipeline.jsonio import read_json, write_json
 from grammar_lab.pipeline.migrate_sample_v01 import SAMPLE, migrate
@@ -61,10 +62,10 @@ def test_bridge_is_not_a_storable_block() -> None:
     assert "bridge" not in SCHEMA["$defs"]["block"]["properties"]["type"]["enum"]
 
 
-@pytest.mark.parametrize(("lang", "points"), [("en", 10), ("zh", 3)])
-def test_committed_sample_validates_clean(lang: str, points: int) -> None:
+@pytest.mark.parametrize("lang", ["en", "zh"])
+def test_committed_content_validates_clean(lang: str) -> None:
     report = validate_lang(lang, LAB_ROOT)
-    assert report.points == points
+    assert report.points == len(load_points(lang))
     assert report.ok, [issue.to_dict() for issue in report.issues]
 
 
