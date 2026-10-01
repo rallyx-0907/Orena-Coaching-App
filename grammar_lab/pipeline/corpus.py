@@ -106,14 +106,31 @@ def plan_corpus(
     }
 
 
-def ready_items(plan: dict[str, Any]) -> list[tuple[str, str, str]]:
-    """Return (lang, level, id) for all currently generatable missing points."""
+def generation_items(
+    plan: dict[str, Any], *, include_generated: bool = False,
+) -> list[tuple[str, str, str]]:
+    """Return (lang, level, id) in canonical order for a corpus generation run.
+
+    The default keeps the historical resumable behavior: only missing ready
+    points are selected. include_generated=True also selects points that
+    already have reviewed content so a final corpus pass can regenerate every
+    draft through the same prompt/schema pipeline. Blocked/default-safe points
+    are never selected here.
+    """
+    statuses = {READY}
+    if include_generated:
+        statuses.add(GENERATED)
     out: list[tuple[str, str, str]] = []
     for lang, report in plan["languages"].items():
         for item in report["items"]:
-            if item["status"] == READY:
+            if item["status"] in statuses:
                 out.append((lang, item["level"], item["id"]))
     return out
+
+
+def ready_items(plan: dict[str, Any]) -> list[tuple[str, str, str]]:
+    """Backward-compatible selector for missing reviewed points only."""
+    return generation_items(plan)
 
 
 def render_text(plan: dict[str, Any]) -> str:
