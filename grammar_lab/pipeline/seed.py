@@ -10,6 +10,7 @@ catalogue -- not whatever an earlier draft said -- decides structure. Only conte
 from __future__ import annotations
 
 import time
+import threading
 from pathlib import Path
 from typing import Any
 
@@ -20,6 +21,7 @@ from grammar_lab.pipeline.jsonio import read_json, read_yaml
 from grammar_lab.pipeline.validate import FUNCTIONS_PATH, GRAMMAR_SCHEMA_PATH, LAB_ROOT, LANGS
 
 SEED_KEYS = ("function", "point_type", "prereqs", "contrasts", "error_tags", "sequence")
+_FUNCTIONS_WRITE_LOCK = threading.Lock()
 
 
 def seeds_path(lang: str, root: Path = LAB_ROOT) -> Path:
@@ -139,27 +141,35 @@ def apply_seed(existing: dict[str, Any] | None, lang: str, point_id: str, root: 
 
 
 def register_realization(point: dict[str, Any], root: Path = LAB_ROOT) -> bool:
-    """A point that now exists on disk moves from its function's ``planned`` list to ``realizations``
-    (validate: ref.realization_missing). Returns whether functions.yaml changed."""
-    path = root / FUNCTIONS_PATH
-    data = read_yaml(path)
-    function = next((f for f in data["functions"] if f["id"] == point["function"]), None)
-    if function is None:
-        return False
-    lang_key = point["target_lang"]
-    realized = function.setdefault("realizations", {}).setdefault(lang_key, [])
-    changed = False
-    if point["id"] not in realized:
-        realized.append(point["id"])
-        changed = True
-    planned = function.get("planned", {}).get(lang_key, [])
-    if point["id"] in planned:
-        planned.remove(point["id"])
-        changed = True
-    if changed:
-        path.write_text(yaml.safe_dump(data, allow_unicode=True, sort_keys=False, width=120), encoding="utf-8", newline="\n")
-    return changed
+    """Move a generated point into its function realization list safely.
 
+    Parallel corpus generation can finish several points at once. The registry
+    is one shared YAML file, so serialize the full read/modify/write transaction
+    to prevent one worker from overwriting another worker's update.
+    """
+    with _FUNCTIONS_WRITE_LOCK:
+        path = root / FUNCTIONS_PATH
+        data = read_yaml(path)
+        function = next((f for f in data["functions"] if f["id"] == point["function"]), None)
+        if function is None:
+            return False
+        lang_key = point["target_lang"]
+        realized = function.setdefault("realizations", {}).setdefault(lang_key, [])
+        changed = False
+        if point["id"] not in realized:
+            realized.append(point["id"])
+            changed = True
+        planned = function.get("planned", {}).get(lang_key, [])
+        if point["id"] in planned:
+            planned.remove(point["id"])
+            changed = True
+        if changed:
+            path.write_text(
+                yaml.safe_dump(data, allow_unicode=True, sort_keys=False, width=120),
+                encoding="utf-8",
+                newline="\n",
+            )
+        return changed
 
 def check_seeds(lang: str, root: Path = LAB_ROOT) -> list[str]:
     """Consistency of the whole seed file; returns the problems (empty = fine)."""
