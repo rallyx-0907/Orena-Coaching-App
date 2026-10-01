@@ -4561,3 +4561,24 @@ Resolved by the human's D-105 decisions; AD-A, AD-B and AD-H above are closed by
   - Draft conflicts: `onElsewhere` is a no-op while `draft-sync.js` documents a chooser; no chooser is drawn.
   - The mic-blocked Free Talk copy is incorrect for a browser that blocks the mic by policy.
   - `media_thumbnail.py:32` hardcodes `_TEMP_ROOT` (an environment-specific path); belongs to the media agent.
+
+### D4 delta review conditions (2026-10-01, review of 8c84100 / 39b9f12 / 9a7b190)
+
+- **Decision for the human: media-import bound (review P2-1).** URL and upload media imports share the import
+  bounds derived for text imports (20 live, 360 total incl. tombstones, `ORENA_LIMIT_IMPORT_TOMBSTONES`). At the
+  bound a media import stays on the device only. Whether media imports count per form or the shared rails are
+  confirmed is a learner-facing limit nobody has chosen; not decided by an agent.
+- **Before :8000: deleting an upload import leaves the personal media (review P2-2).** The original file,
+  thumbnail, transcript and store entry stay in the media library and no learner route deletes them. The file-based
+  media store (`MEDIA_LIBRARY_ROOT`, `MEDIA_LIBRARY_ASSET_ROOT`) must join the D-055(b) deletion enumeration
+  (`writing_coach/persistence/deletion_enumeration.py` lists database tables only today).
+- **Owner-less personal uploads (review condition 3).** :8021 runs without sign-in (bootstrap `mode: local`). It
+  holds 11 personal uploads, 8 created before 39b9f12 with no owner; all are lane test data and stay visible to the
+  local account only. On a signed-in deployment such uploads are refused to every account (fail closed); none are
+  known outside the lane.
+- **P3 from the review, follow-ups:** the `upload` import form stores an unvalidated `url`; the scrub script's
+  backup precondition is documentation only and `--url` takes a connection string on the command line; an empty
+  `review_modes` map no longer resets modes; an annotation tombstone is forgotten after 500 further removals in one
+  text (a long-offline device could then re-add it); keeping a word from Listening (vocab sheet, phrase save) does not
+  yet record provenance.
+- PostgreSQL-only test results in this work are local execution, not CI evidence (CI has no PostgreSQL service).
