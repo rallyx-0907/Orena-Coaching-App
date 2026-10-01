@@ -452,3 +452,114 @@ toggled mode is sent, that no default limits leave the device and that a stale w
 2. Record P2-2 and the media store in the D-055(b) enumeration and as a before-:8000 item.
 3. Confirm the count of owner-less personal uploads and the lane's sign-in mode (P3-5).
 4. Report PostgreSQL-only results as local execution; :8000/:8010 stay a human gate with the earlier prerequisites.
+
+## Review (f8f5c91)
+
+- **Reviewer:** Claude Opus 5.5, independent reviewer subagent, not the implementer. **Date:** 2026-10-01.
+- **Reviewed:** `git show f8f5c91` (33 files) against D-107 points 2 and 4. Read-only and static; no Docker or
+  PostgreSQL. The implementer's results (SQLite 2709, PostgreSQL 3049, 124/124 node gates) are local execution and were
+  not reproduced by me.
+
+### Verdict: APPROVE WITH CONDITIONS (acceptable on :8021; the conditions are prerequisites for anything beyond it)
+
+No P0 or P1. The lifecycle is well built: the tombstone is content-free, recreate and revive are refused by the terminal
+`deleted` state, owner and language gate every file deletion, the last-live-reference rule is correct under concurrency,
+an untrusted media index refuses writes, and a link import never touches its external source. Five P2s concern
+recoverability and convergence at the edges; they are small.
+
+### What I verified
+- **Tombstone and audit metadata.** Delete commits `{id, form, ref}` (nothing else) and the scrub script now writes the same
+  shape. For an upload, `ref` is SHA-256 of the form and a random media id: it reveals nothing and cannot be guessed. For
+  a link, `ref` is SHA-256 of the form and the link: a link is a low-entropy value, so anyone with database access can
+  test whether a known URL was imported (P3-1). That is not content, but it is a fingerprint, and it is needed so a device
+  can match its local `url:<link>` to the tombstone. Receipts and change records keep ids, versions, timestamps and
+  `request_digest`, a SHA-256 over the original create request: that digest is derived from the text, title and link of
+  the deleted import (a guess can be confirmed; long text cannot be recovered). It is already deleted by the D-055(b)
+  enumeration; record that it is retained until then (P3-2). No plaintext content survives in the row, receipts or
+  change records.
+- **Recreate and revive.** A write to a deleted work is refused by the existing terminal lifecycle; a re-import mints a
+  new record id, so a stale device cannot revive an old one, and the server never reuses an id.
+- **File deletion.** `delete_owned_media` requires an entry with `library == personal`, `provider == upload`, and
+  `visible_to` (owner token and language); a client-supplied `mediaId` naming another account's, another language's,
+  shared or provider media changes nothing. `DELETE /api/media/my/{id}` answers 404 for all of those. The files removed are
+  `media/<provider_media_id>/` (the token the server generated; `provider_media_id` is a required, non-empty field) and
+  the thumbnail the entry names, validated by the asset store. The last-live-reference check runs after the tombstone
+  commits and counts live upload imports of the account in any language, so two concurrent deletes cannot both keep
+  the file and cannot delete it while another live import names it. A link import deletes only its record.
+- **`delete_all_owned_media`.** Matches every personal upload of one account in all languages by owner token, and
+  `deletion_enumeration.FILE_STORES` names the store and both removers. No workflow calls it yet, correctly (D-055).
+- **Index fail-closed.** `upsert` and `delete` raise `MediaIndexUnavailable` on a corrupt or unreadable index; reads
+  still answer not found. This closes the empty-map rewrite I recorded as G1.
+- **Cached copies.** `openMedia` (the one resolver), Content Detail, My Library, Discover and the shell sync all consult
+  the removed set (`product/import-removed.js`) and refuse with the same 404 an unknown id gets; `mergeImports` never
+  re-adds a removed id; a delete made offline is recorded on the device and resent at the next sync.
+- **Listening provenance.** Keeping a word or phrase from Listening now records kind `listening`, id `media:<id>`, the
+  segment in `source.revision` (<= 120 characters) and the sentence; ids longer than 200 characters are dropped rather
+  than cut. `POST /api/library/vocabulary` accepts `listening`, `writing`, `speaking` as `source_kind` (the column is a
+  plain 40-character string with no CHECK; the named contract change in `test_becoming_library_source_kind.py` is
+  legitimate). Provenance rows are read through the account and language scoped routes, so a `media:upload-<token>` id
+  stored by one learner is never visible to another, and opening it still goes through `visible_to` (404 for others).
+- **`kit/overflow`.** Two new files, no existing shared code changed; the 34 px control, radius 10, 32 px pill actions and
+  trailing close mirror the Reader's `rdMore` and menu rows, and the gap that the design draws a "⋯" only in the Reader is
+  recorded. Minimal and additive. P3-5 notes the Reader still carries its own copy of the same styles.
+
+### Findings
+- **P2-1. A failed file removal cannot be retried.** `delete_import` commits the tombstone first and then removes files from
+  the id read *before* the commit. If removal fails or `MediaIndexUnavailable` is raised, the route returns
+  `mediaDeleted: false` and the import is gone, but on any retry or replay the stored payload is the tombstone, which no
+  longer holds `mediaId`, so the files are unreachable. Worse, `_remove_personal_entry` removes the index entry first: if
+  the file removal then fails, the entry is gone and the bytes are orphaned with no index record, and
+  `DELETE /api/media/my/{id}` now answers 404. The learner believes the upload was deleted (D-107.2). **Required:** make
+  removal retryable: keep the media id in the tombstone until removal is confirmed (or write a pending-removal marker) and
+  re-run it on replay and from a sweeper; or order the work files first, index second, after a cheap check that the index
+  is writable. Log and surface `mediaDeleted: false` to the client for a retry.
+- **P2-2. The deleted list covers only the 50 newest tombstones.** `GET /api/imports` returns `deleted` through
+  `list_works(..., limit=LIST_LIMIT)` (the 50 cap). A device that has been away while more than 50 later deletions were made
+  never learns of the older ones and keeps and opens a cached copy, which D-107.2 forbids. The pool bounds are 360 and
+  2,500 total. **Required:** return all tombstones (ids and refs are about 150 bytes each, at most the total bound), or a
+  cursor with a `since`; and a stale device with a gap should reconcile by comparing its whole local set to the list.
+- **P2-3. A stale device can delete another device's legitimate re-import.** The offline-resend rule in `syncImports` is
+  "for every live account item whose id this device has marked removed, send the delete". If device A deleted
+  `url:<link>` and device B later re-imported the same link (a new record), A's next sync sees the live record with the
+  same membership id, treats it as its own pending deletion and deletes the new record; `mergeImports` also hides the
+  re-import on A for ever. **Required:** resend only the record uuids this device knew when it deleted (track pending
+  deletes by record uuid with their versions), and let a new live record with a version greater than the deletion clear the
+  device's removed marker for that id.
+- **P2-4. Device-only uploads are never deleted from the server.** `removeImport` returns false when the device holds no
+  account record for the membership, and then nothing calls `DELETE /api/media/my/{id}`; the file, thumbnail and index entry
+  of an upload that never synced (backbone disabled, or the push failed) stay for ever after the learner "deletes" it.
+  **Required:** for an `upload:` membership, always call the owner-scoped media delete (idempotent, 404 for others) in
+  addition to the record delete.
+- **P2-5. Derived content of a deleted import is left, and part of it is a copy of the import.** The commit records
+  that notes and highlights on a deleted text stay in the device store and the account's annotations row, and that
+  dictation and shadowing history for an upload is not erased. D-107.2 requires removal of the import from the library, a
+  tombstone, no resurrection, deletion of owned media, and "only integrity/audit metadata" kept *of the import*; it does
+  not name derived learner records, and recording the gap is therefore correct, not a defect. But some of what is left is
+  a verbatim copy of the deleted import: a highlight's `sentence` (<= 400 characters of the text), the `focus` sentence of a
+  word provenance, a dictation `last_answer` typed from the upload's transcript, and the annotations row is still readable
+  through `GET /api/annotations/<content id>`. After P1-2 of the first review ("deleted means erased") this is
+  inconsistent. **Required (human decision, recorded):** either erase highlight excerpts, provenance focus sentences and
+  progress answers that were taken from the deleted import (keeping learner-written notes), or state in D-107 that derived
+  learner records outlive the import. The `GET` route should at least 404 for annotations of a deleted import.
+
+### P3 findings
+- **P3-1.** A link's `ref` is a guessable fingerprint (above); acceptable, document it. Using a per-incarnation salt returned
+  in the list would stop precomputed tables but not a targeted guess.
+- **P3-2.** Receipts keep a content-derived digest until account deletion; record this retention.
+- **P3-3.** Tombstones made before `f8f5c91` (and already scrubbed) carry no `ref`; a device cannot match them, so a link or
+  file deleted earlier stays on devices that held it. Lane only (two such imports); note it.
+- **P3-4.** `import-removed.js` keeps one module-level set replaced whenever any `learnerMemory` is constructed (for example
+  for another language); the active room's set can be overwritten. Key the set by owner and language.
+- **P3-5.** The Reader still has its own copy of the overflow styles; migrate it to `kit/overflow` so the pattern has one owner.
+- **P3-6.** The upload route stores the original and thumbnail before the index write; with `MediaIndexUnavailable` the
+  request fails with 500 and the files are orphaned. Delete them on failure and answer 503.
+- **P3-7.** The delete acts on tap with no confirmation and no undo, and an uploaded file's deletion is irreversible. The
+  design draws neither; it is correctly recorded for the human (a drawn confirmation or an Undo window).
+- **P3-8.** The library "kept" mark on the server (`library_items`, relationship `kept`) for a deleted import is not removed
+  with it; it holds no content, but the item can show as saved.
+
+### Conditions
+1. P2-1 (retryable file removal) and P2-4 (device-only uploads) before the delete flow is relied on beyond :8021.
+2. P2-2 and P2-3 (tombstone list completeness; pending-delete by record uuid) before multi-device use beyond the lane.
+3. P2-5: a recorded human decision on derived records of a deleted import.
+4. P3-3, P3-6 and the others as follow-ups. Enabling beyond :8021 remains the D-107.5 gate.
