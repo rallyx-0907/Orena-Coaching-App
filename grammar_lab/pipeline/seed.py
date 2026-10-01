@@ -9,6 +9,7 @@ catalogue -- not whatever an earlier draft said -- decides structure. Only conte
 
 from __future__ import annotations
 
+import re
 import time
 import threading
 from pathlib import Path
@@ -170,6 +171,37 @@ def register_realization(point: dict[str, Any], root: Path = LAB_ROOT) -> bool:
                 newline="\n",
             )
         return changed
+
+_HAN_TITLE = re.compile(r"[㐀-䶿一-鿿豈-﫿]")
+_LOWER_WORD = re.compile(r"[a-zà-ỹ]{3,}", re.IGNORECASE)
+
+
+def audit_seed_semantics(lang: str, root: Path = LAB_ROOT) -> list[dict[str, str]]:
+    """Obvious semantic-review debt that structural seed checks cannot prove.
+
+    This intentionally reports rather than auto-fixes: function assignment and
+    native teaching titles are curriculum decisions. The audit catches the
+    heuristic placeholders that must not be mistaken for reviewed production
+    metadata merely because their ids/counts/prerequisites are structurally valid.
+    """
+    issues: list[dict[str, str]] = []
+    for seed in load_seeds(lang, root):
+        point_id = seed["id"]
+        function = str(seed.get("function", ""))
+        native = str(seed.get("native_title", "")).strip()
+        if function == "fn.catalog_unclassified":
+            issues.append({"id": point_id, "code": "function.unclassified", "value": function})
+        if not native:
+            issues.append({"id": point_id, "code": "native_title.missing", "value": native})
+            continue
+        if "_" in native:
+            issues.append({"id": point_id, "code": "native_title.placeholder", "value": native})
+        if lang == "zh":
+            if not _HAN_TITLE.search(native):
+                issues.append({"id": point_id, "code": "native_title.non_zh", "value": native})
+            elif _LOWER_WORD.search(native):
+                issues.append({"id": point_id, "code": "native_title.mixed_language", "value": native})
+    return issues
 
 def check_seeds(lang: str, root: Path = LAB_ROOT) -> list[str]:
     """Consistency of the whole seed file; returns the problems (empty = fine)."""
