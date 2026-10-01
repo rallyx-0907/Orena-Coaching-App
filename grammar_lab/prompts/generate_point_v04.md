@@ -1,4 +1,4 @@
-# Prompt: generate_point_v04 (v10)
+# Prompt: generate_point_v04 (v11-compatible)
 
 Versioned prompt for one grammar point under schema v0.4 (GRAMMAR_CONTENT_CONTRACT.md).
 `generate.py` fills the placeholders below and sends the result as the `system` message; the
@@ -22,6 +22,10 @@ its corrections to R5 in `r5_corrections` (human, 2026-09-28: R5 is raw material
 v10 (2026-09-30): the contract patch -- `sub` (the short third cell of the header) and `personal_production`
 (the "Try it yourself" card with its deterministic pattern_rule) are written by the model; the role list gains
 `classifier` (Chinese measure words); explanations come in `vi` and `en` together.
+
+v11-compatible hardening: semantic repair sees the rejected candidate; repeated-role formula slots are
+validated at role level because v0.4 has no slot id; personal production demonstrates one usable route;
+routine Chinese pinyin alignment is derived in code, with model pairs only as optional polyphonic hints.
 
 ---
 
