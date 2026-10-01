@@ -185,7 +185,7 @@ def test_orm_mirror_equals_the_migrated_schema(media_engine):
         for column in table.c:
             assert column.nullable == live[column.name]["nullable"], (table.name, column.name)
             kind = str(live[column.name]["type"]).upper()
-            orm_kind = str(column.type.dialect_impl(media_engine.dialect)).upper() if hasattr(column.type, "dialect_impl") else str(column.type).upper()
+            orm_kind = column.type.compile(dialect=media_engine.dialect).upper()  # the DDL PostgreSQL would get
             assert orm_kind.split("(")[0].split()[0][:4] == kind.split("(")[0].split()[0][:4], (table.name, column.name, orm_kind, kind)
             if getattr(column.type, "length", None) and hasattr(live[column.name]["type"], "length"):
                 assert column.type.length == live[column.name]["type"].length, (table.name, column.name)

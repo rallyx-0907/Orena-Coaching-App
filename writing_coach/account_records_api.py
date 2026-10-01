@@ -414,15 +414,26 @@ def _deleted_source_filter(scope: Scope):
 
 
 def _text_import_deleted(scope: Scope, content_id: str) -> bool:
-    """Whether a content id names a text import this account has deleted (its notes and highlights are not served)."""
+    """Whether a content id names an import this account has deleted - a text (`text:<id>`) or a link or file under any
+    of the forms a room files notes by (`url:<link>`, `upload:<id>`, `media:<id>`, `upload-<token>`). Its notes and
+    highlights are not served."""
     value = str(content_id or '')
-    if not value.startswith('text:'):
-        return False
-    row = _backbone().work.get_work(scope, _work_id(scope, 'imported', value[5:]))
-    return row is not None and row['lifecycle'] == 'deleted'
+    if value.startswith('text:'):
+        row = _backbone().work.get_work(scope, _work_id(scope, 'imported', value[5:]))
+        return row is not None and row['lifecycle'] == 'deleted'
+    if value.startswith(('url:', 'upload:', 'media:', 'upload-')):
+        return _deleted_source_filter(scope)(value)
+    return False
 
 
-def _erase_derived_of_import(scope: Scope, form: str, client: str, reference: str) -> dict[str, int]:
+def _normalized(value: str) -> str:
+    return ' '.join(str(value or '').casefold().split())
+
+
+MIN_FRAGMENT_CHARS = 12  # a shorter stored sentence is too generic to be told from another source's
+
+
+def _erase_derived_of_import(scope: Scope, form: str, client: str, reference: str, text_body: str = '') -> dict[str, int]:
     """What a deleted import must not leave behind as a copy of itself (D-108): the notes and highlights written on it,
     and the stored sentence of every kept word that was met in it. The words, their review history and the learner's
     Dictation / Shadowing progress are kept; a kept word's source is marked unavailable (provenance reads say so).
@@ -433,15 +444,35 @@ def _erase_derived_of_import(scope: Scope, form: str, client: str, reference: st
     base = f'text:{client}' if form == 'text' else (reference if form == 'upload' else f'url:{reference}')
     sources = [base] + ([] if form == 'text' else [f'media:{base}', f'upload:{base}'])
     sources = sorted(set(sources))
-    if form == 'text':
-        row = _backbone().work.get_work(scope, _work_id(scope, 'annotation', f'text:{client}'))
-        if row is not None and row['lifecycle'] != 'deleted':
-            _commit(
-                scope, kind='annotation', ident=str(row['id']), operation_id=f'erase-{uuid.uuid4()}',
-                expected_version=int(row['version']), payload={}, source={'kind': 'content', 'id': f'text:{client}', 'revision': ''},
-                lifecycle='deleted', conflict_code='annotation_conflict',
-            )
-            counts['annotations'] = 1
+    # Notes and highlights filed under the import, under whatever content id the room used for it.
+    with _backbone().work._engine.connect() as connection:  # noqa: SLF001
+        owned = connection.execute(
+            sql("SELECT id, version, source_id FROM works WHERE incarnation_id = :inc AND language_code = :lang "
+                "AND kind = 'annotation' AND lifecycle <> 'deleted' AND source_id IN :sources")
+            .bindparams(bindparam('sources', expanding=True)),
+            {'inc': scope.incarnation, 'lang': scope.language, 'sources': sources},
+        ).mappings().all()
+    for row in owned:
+        _commit(
+            scope, kind='annotation', ident=str(row['id']), operation_id=f'erase-{uuid.uuid4()}',
+            expected_version=int(row['version']), payload={}, source={'kind': 'content', 'id': str(row['source_id']), 'revision': ''},
+            lifecycle='deleted', conflict_code='annotation_conflict',
+        )
+        counts['annotations'] += 1
+    # Every kept word whose stored sentence occurs in the deleted TEXT loses it, whatever its provenance (a word kept
+    # before provenance existed, or whose attach failed, still carries the sentence): many such sentences together would
+    # rebuild the text.
+    body = _normalized(text_body)
+    if body:
+        with _backbone().work._engine.begin() as connection:  # noqa: SLF001
+            kept = connection.execute(
+                sql("SELECT id, source_fragment FROM saved_words WHERE user_id = :user AND language_code = :lang AND source_fragment <> ''"),
+                {'user': scope.account, 'lang': scope.language}).mappings().all()
+            for word in kept:
+                fragment = _normalized(word['source_fragment'])
+                if len(fragment) >= MIN_FRAGMENT_CHARS and fragment in body:
+                    connection.execute(sql("UPDATE saved_words SET source_fragment = '' WHERE id = :id"), {'id': word['id']})
+                    counts['words'] += 1
     if not sources:
         return counts
     with _backbone().work._engine.begin() as connection:  # noqa: SLF001
@@ -459,7 +490,10 @@ def _erase_derived_of_import(scope: Scope, form: str, client: str, reference: st
                 sql('SELECT source_fragment FROM saved_words WHERE id = :id AND user_id = :user'),
                 {'id': row['saved_word_id'], 'user': scope.account}).scalar()
             fragment = str(fragment or '')
-            if fragment and focus and (fragment.casefold() in focus.casefold() or focus.casefold() in fragment.casefold()):
+            others = connection.execute(
+                sql("SELECT count(*) FROM language_provenance WHERE saved_word_id = :id AND availability <> 'unavailable' AND id <> :occ"),
+                {'id': row['saved_word_id'], 'occ': row['id']}).scalar_one()
+            if fragment and (not others or (focus and (fragment.casefold() in focus.casefold() or focus.casefold() in fragment.casefold()))):
                 connection.execute(sql("UPDATE saved_words SET source_fragment = '' WHERE id = :id AND user_id = :user"),
                                    {'id': row['saved_word_id'], 'user': scope.account})
                 counts['words'] += 1
@@ -546,7 +580,7 @@ def delete_import(import_id: str, operationId: str = Query(min_length=8, max_len
         lifecycle='deleted', conflict_code='import_conflict',
     )
     try:
-        _erase_derived_of_import(scope, form_of, client, reference)
+        _erase_derived_of_import(scope, form_of, client, reference, str((row['payload'] or {}).get('text') or '') if form_of == 'text' else '')
     except Exception as exc:  # noqa: BLE001 - the import is gone; reads still mask a deleted source
         _logger.warning('derived records of a deleted import could not be erased: %s', type(exc).__name__)
     media_deleted = None

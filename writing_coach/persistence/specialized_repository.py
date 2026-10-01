@@ -9,7 +9,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any, Callable, Protocol
 
-from sqlalchemy import Engine, func, select, update
+from sqlalchemy import Engine, func, inspect, select, text, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -1398,15 +1398,28 @@ class PostgresSpecializedLearningRepository:
             next_cursor = _library_cursor(wanted_order, fingerprint, sort_value, last.word)
         return {"rows": payloads, "next_cursor": next_cursor, "total": total}
 
+    def _served_fragment(self, s: Session, r: SavedWord) -> str:
+        """The sentence a kept word may serve. It is withheld (empty) when EVERY place the word was met is a deleted
+        import (provenance `unavailable`): a stored excerpt is never used to bring deleted content back (D-108.2). One
+        choke point for every reader - library list and detail, word cards, collection snippet, review cloze, word
+        deep dive (which therefore never sends it to the AI provider)."""
+        fragment = r.source_fragment
+        if not fragment:
+            return fragment
+        if not hasattr(self, "_provenance_table"):
+            self._provenance_table = inspect(self.engine).has_table("language_provenance")
+        if not self._provenance_table:
+            return fragment
+        gone = s.execute(
+            text("SELECT 1 FROM language_provenance WHERE saved_word_id = :id AND availability = 'unavailable' "
+                 "AND NOT EXISTS (SELECT 1 FROM language_provenance WHERE saved_word_id = :id AND availability <> 'unavailable') LIMIT 1"),
+            {"id": r.id},
+        ).first()
+        return "" if gone else fragment
+
     def _saved_payload(self,r: SavedWord) -> dict[str,Any]:
-        source_legacy=None
-        if r.source_essay_id:
-            with Session(self.engine) as s:
-                e=s.get(Essay,r.source_essay_id); source_legacy=e.legacy_id if e else None
-        return {"word":r.word,"phonetic":r.phonetic,"part_of_speech":r.part_of_speech,"definition":r.definition,"translation_vi":r.translation_vi,
-                "added_at":self._iso(r.added_at),"source_essay_id":source_legacy,"source_fragment":r.source_fragment,"source_kind":r.source_kind,
-                "focus_note":r.focus_note,"review_stage":r.review_stage,"successful_recalls":r.successful_recalls,"lapse_count":r.lapse_count,
-                "last_reviewed_at":self._iso(r.last_reviewed_at),"next_review_at":self._iso(r.next_review_at)}
+        with Session(self.engine) as s:
+            return self._saved_payload_from_session(s, r)
 
     def _saved(self,s: Session,word: str) -> SavedWord | None:
         uid,lang=self._scope(); return s.scalar(select(SavedWord).where(SavedWord.user_id==uid,SavedWord.language_code==lang,SavedWord.normalized_word==word.casefold()))
@@ -1456,7 +1469,7 @@ class PostgresSpecializedLearningRepository:
         if r.source_essay_id:
             e=s.get(Essay,r.source_essay_id); source_legacy=e.legacy_id if e else None
         return {"word":r.word,"phonetic":r.phonetic,"part_of_speech":r.part_of_speech,"definition":r.definition,"translation_vi":r.translation_vi,
-                "added_at":self._iso(r.added_at),"source_essay_id":source_legacy,"source_fragment":r.source_fragment,"source_kind":r.source_kind,"focus_note":r.focus_note,
+                "added_at":self._iso(r.added_at),"source_essay_id":source_legacy,"source_fragment":self._served_fragment(s,r),"source_kind":r.source_kind,"focus_note":r.focus_note,
                 "review_stage":r.review_stage,"successful_recalls":r.successful_recalls,"lapse_count":r.lapse_count,"last_reviewed_at":self._iso(r.last_reviewed_at),
                 "next_review_at":self._iso(r.next_review_at),
                 "entry_identity_key":r.entry_identity_key,"reading_key":r.reading_key}

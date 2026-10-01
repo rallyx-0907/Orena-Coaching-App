@@ -4638,3 +4638,26 @@ Resolved by the human's D-105 decisions; AD-A, AD-B and AD-H above are closed by
   implementation: the 2,500 deleted-list cap should be derived from the configured text and media pool totals (360 +
   2,500), and the full list wants an ETag or a `since` (up to about 375 KB per sync); a missing `index.json` with files on
   disk is still read as a fresh start (P3-3).
+
+- **Review 94da741 (D-109): blocking items closed.** (B-1) Deleting a text import erases, from the account's kept words in
+  that language, every stored sentence that occurs in the deleted text (case and spacing ignored, 12 characters or
+  more), whatever the word's provenance; the repository serves no sentence for a word whose only places are deleted
+  imports (`PostgresSpecializedLearningRepository._served_fragment`), which every reader of a kept word goes through
+  (library list and detail, word cards, collection snippet, review cloze, word deep dive - so a deleted import's
+  sentence is never sent to the AI provider). A sentence shorter than 12 characters is not guessed at. (B-2) Notes and
+  highlights filed under a link or file import's content id (`url:`, `upload:`, `media:`, `upload-<token>`) get the same
+  404 on read and write and are erased at delete time.
+- **Follow-ups recorded, not done (D-109):**
+  - Two tabs of one browser can commit each other's open Undo window (the device store is last-writer-wins).
+  - `pagehide` is not fired when a mobile tab is merely backgrounded; the staged deletion is then committed at the next
+    load.
+  - `highWater` should come from the first page of a multi-page read (a record created mid-read can advance the mark
+    past one the device has not seen; benign today).
+  - A narrow in-flight race: deleting within a network round trip of importing, before the push response records the new
+    record id, can leave that record un-owed.
+  - `language_provenance` is updated in place at delete time (it is an event table); note it in the schema docs.
+  - The erase counts are logged only; there is no operator report of what a deletion removed.
+  - The Intelligence agent tools (`/api/agent/*`, owned by that lane) must apply the same deleted-source mask when
+    `codex/work` is merged forward, and `AGENT_CONTRACT` evidence excerpts must not carry a deleted source's sentence.
+  - Words kept from a deleted import before this change keep their stored sentence unless a provenance row marks them
+    (lane-only residue).

@@ -528,3 +528,94 @@ def test_the_listing_pages_and_is_never_silently_limited(pg_engine, backbone, mo
     assert sorted(seen_live) == sorted(live) and len(set(seen_live)) == 63, "every import arrives, once"
     assert sorted(seen_gone) == sorted(gone) and len(set(seen_gone)) == 17, "every tombstone arrives, once"
     assert pages >= 3
+
+
+# --- review 94da741 (D-108.2 on every read path) --------------------------------------------------------------
+
+
+def _repository(engine, user):
+    from writing_coach.persistence.specialized_repository import PostgresSpecializedLearningRepository
+
+    return PostgresSpecializedLearningRepository(engine, user_key_provider=lambda: user, language_provider=lambda: "en")
+
+
+def _served_fragments(engine, user, word):
+    """The sentence of one kept word as every repository read serves it (list, the library page and one word)."""
+    repo = _repository(engine, user)
+    listed = next(item for item in repo.list_library_records() if item["word"] == word)
+    one = repo.get_library_progress(word)
+    # the rows word cards, the collection and the word deep dive (which sends the sentence to the AI provider as context)
+    # are built from
+    rows = repo.list_saved_rows((word,))
+    paged = repo.list_library_page(limit=50, search=word)["rows"]
+    served = {listed["source_fragment"]} | {row.get("source_fragment", "") for row in rows} | {row.get("source_fragment", "") for row in paged}
+    if one and "source_fragment" in one:
+        served.add(one["source_fragment"])
+    assert rows and paged, 'the word is on every read'
+    return served
+
+
+def test_a_word_kept_without_provenance_from_a_deleted_text_serves_no_sentence_on_any_read(pg_engine, backbone):
+    user = _account(pg_engine)
+    client = _client(backbone, user=user)
+    ident = str(uuid.uuid4())
+    body = "The harbour lights glowed at dusk. Boats rocked slowly in the bay.   And the gulls went quiet."
+    assert _put(client, ident, form="text", title="Diary", text=body).status_code == 200
+    # kept with no provenance at all (before provenance existed, or its attach failed), spacing and case different
+    _save_word_from(pg_engine, user, "harbour", "the HARBOUR lights  glowed at dusk.")
+    _save_word_from(pg_engine, user, "gulls", "And the gulls went quiet.")
+    _save_word_from(pg_engine, user, "bay", "in the bay")  # too short to be told from another source's: kept
+    _save_word_from(pg_engine, user, "elsewhere", "A sentence from a different article entirely.")
+    assert _served_fragments(pg_engine, user, "harbour") == {"the HARBOUR lights  glowed at dusk."}
+    assert _delete(client, ident).status_code == 200
+    for word in ("harbour", "gulls"):
+        assert _served_fragments(pg_engine, user, word) == {""}, f"{word}: no sentence of the deleted text on any read"
+        assert not _fragment(pg_engine, user, word), "and none is left in the row"
+    assert _served_fragments(pg_engine, user, "elsewhere") == {"A sentence from a different article entirely."}
+    assert _served_fragments(pg_engine, user, "bay") == {"in the bay"}, "a sentence too short to be told apart is not guessed at"
+    assert {item["word"] for item in _repository(pg_engine, user).list_library_records()} >= {"harbour", "gulls", "bay", "elsewhere"}, "the words are kept"
+
+
+def test_every_read_withholds_the_sentence_when_all_sources_of_a_word_are_deleted_imports(pg_engine, backbone):
+    user = _account(pg_engine)
+    client = _client(backbone, user=user)
+    _save_word_from(pg_engine, user, "anchor", "heard in the old file")
+    _save_word_from(pg_engine, user, "beacon", "heard in the old file and in a lesson")
+    for word in ("anchor", "beacon"):
+        assert client.post(f"/api/library/vocabulary/{word}/provenance", json={
+            "operationId": op(), "reason": "from_listening", "sourceKind": "listening", "sourceId": "media:upload-" + "d" * 32, "focus": "heard"}).status_code == 200
+    assert client.post("/api/library/vocabulary/beacon/provenance", json={
+        "operationId": op(), "reason": "from_listening", "sourceKind": "listening", "sourceId": "media:en-science-cosmic-calendar", "focus": "heard"}).status_code == 200
+    with pg_engine.begin() as connection:  # the file's deletion, as an older version left it (the sentence still stored)
+        connection.execute(text("UPDATE language_provenance SET availability = 'unavailable' WHERE source_id = :s"), {"s": "media:upload-" + "d" * 32})
+    assert _served_fragments(pg_engine, user, "anchor") == {""}, "its only source is deleted"
+    assert _served_fragments(pg_engine, user, "beacon") == {"heard in the old file and in a lesson"}, "another live source keeps it"
+
+
+def test_notes_on_a_deleted_link_or_file_are_no_longer_served_and_are_erased(pg_engine, backbone, media):
+    store, assets, seed = media
+    user = _account(pg_engine)
+    client = _client(backbone, user=user)
+    link, link_id, file_id = f"https://example.test/{uuid.uuid4().hex}", str(uuid.uuid4()), str(uuid.uuid4())
+    media_id = seed(uuid.uuid4().hex, owner=user)  # unique ids: the test database is shared between runs
+    assert _put(client, link_id, form="url", title="Clip", url=link).status_code == 200
+    assert _put(client, file_id, form="upload", title="File", mediaId=media_id).status_code == 200
+    note = {"id": "n1", "key": "k", "type": "question", "text": "what does this mean", "at": ""}
+    filed = [f"url:{link}", f"upload:url:{link}", f"media:{media_id}", f"upload:{media_id}", media_id]
+    for content in filed:
+        saved = client.put(f"/api/annotations/{content}", json={"operationId": op(), "expectedVersion": 0, "cleared": False,
+                           "highlights": [{"id": "h1", "segment": "p0", "sentence": "a stored sentence", "at": ""}], "notes": [note]})
+        assert saved.status_code == 200, content
+        assert client.get(f"/api/annotations/{content}").status_code == 200
+    other = client.put("/api/annotations/media:en-science-cosmic-calendar", json={"operationId": op(), "expectedVersion": 0, "cleared": False, "highlights": [], "notes": [note]})
+    assert other.status_code == 200
+    assert _delete(client, link_id).status_code == 200
+    assert _delete(client, file_id).status_code == 200
+    for content in filed:
+        assert client.get(f"/api/annotations/{content}").status_code == 404, f"{content}: not served"
+        revive = client.put(f"/api/annotations/{content}", json={"operationId": op(), "expectedVersion": 1, "cleared": False, "highlights": [], "notes": []})
+        assert revive.status_code == 404, f"{content}: cannot be written back"
+    assert client.get("/api/annotations/media:en-science-cosmic-calendar").status_code == 200, "a lesson that is not an import is untouched"
+    with pg_engine.connect() as connection:
+        left = connection.execute(text("SELECT count(*) FROM works WHERE kind = 'annotation' AND lifecycle <> 'deleted' AND source_id = ANY(:ids)"), {"ids": filed}).scalar_one()
+    assert left == 0, "the rows are erased, not only hidden"
