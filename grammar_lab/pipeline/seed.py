@@ -18,7 +18,7 @@ from typing import Any
 import yaml
 
 from grammar_lab.pipeline.canonical import canonical_dir, catalog_is_current, catalog_path
-from grammar_lab.pipeline.jsonio import read_json, read_yaml
+from grammar_lab.pipeline.jsonio import read_json, read_yaml, write_json
 from grammar_lab.pipeline.validate import FUNCTIONS_PATH, GRAMMAR_SCHEMA_PATH, LAB_ROOT, LANGS
 
 SEED_KEYS = ("function", "point_type", "prereqs", "contrasts", "error_tags", "sequence")
@@ -140,6 +140,75 @@ def apply_seed(existing: dict[str, Any] | None, lang: str, point_id: str, root: 
     point["header"] = header
     return point
 
+
+def sync_seed_metadata(root: Path = LAB_ROOT, *, check: bool = False) -> dict[str, Any]:
+    """Apply current catalog metadata to existing content and rebuild function membership.
+
+    Content bodies and generation provenance are preserved. This is the cheap path
+    after curriculum metadata changes: no LLM call is needed merely to rename a
+    title, change a function group, or update structural seed fields.
+    """
+    from grammar_lab.pipeline.canonical import write_catalog
+    from grammar_lab.pipeline.content_store import load_points, point_path
+
+    for lang in ("en", "zh"):
+        if not check:
+            write_catalog(lang, root)
+
+    catalogs = {lang: load_catalog(lang, root) for lang in ("en", "zh")}
+    catalog_ids = {lang: {row["id"] for row in rows} for lang, rows in catalogs.items()}
+    changed_points: list[str] = []
+    existing_by_lang = {lang: load_points(lang, root) for lang in ("en", "zh")}
+    for lang in ("en", "zh"):
+        for point_id, point in existing_by_lang[lang].items():
+            if point_id not in catalog_ids[lang]:
+                continue
+            seeded = apply_seed(point, lang, point_id, root)
+            if seeded is not None and seeded != point:
+                changed_points.append(point_id)
+                if not check:
+                    write_json(point_path(lang, point_id, root), seeded)
+
+    functions_path = root / FUNCTIONS_PATH
+    functions_data = read_yaml(functions_path)
+    canonical_all = catalog_ids["en"] | catalog_ids["zh"]
+    desired: dict[tuple[str, str, str], list[str]] = {}
+    for function in functions_data["functions"]:
+        fid = function["id"]
+        for section in ("realizations", "planned"):
+            for lang_key in ("en", "zh-Hans"):
+                current = list(function.get(section, {}).get(lang_key, []))
+                desired[(fid, section, lang_key)] = [pid for pid in current if pid not in canonical_all]
+
+    for lang, lang_key in (("en", "en"), ("zh", "zh-Hans")):
+        existing_ids = set(existing_by_lang[lang])
+        for row in catalogs[lang]:
+            section = "realizations" if row["id"] in existing_ids else "planned"
+            desired.setdefault((row["function"], section, lang_key), []).append(row["id"])
+
+    registry_changed = False
+    for function in functions_data["functions"]:
+        fid = function["id"]
+        for section in ("realizations", "planned"):
+            table = function.setdefault(section, {})
+            for lang_key in ("en", "zh-Hans"):
+                wanted = desired.get((fid, section, lang_key), [])
+                if table.get(lang_key, []) != wanted:
+                    registry_changed = True
+                    if not check:
+                        table[lang_key] = wanted
+
+    if registry_changed and not check:
+        functions_path.write_text(
+            yaml.safe_dump(functions_data, allow_unicode=True, sort_keys=False, width=120),
+            encoding="utf-8", newline="\n",
+        )
+    return {
+        "changed_points": changed_points,
+        "changed_point_count": len(changed_points),
+        "registry_changed": registry_changed,
+        "ok": not changed_points and not registry_changed,
+    }
 
 def register_realization(point: dict[str, Any], root: Path = LAB_ROOT) -> bool:
     """Move a generated point into its function realization list safely.
