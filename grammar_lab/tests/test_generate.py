@@ -625,6 +625,18 @@ def test_generate_v04_zh_normalizes_spaces_in_target_text_before_pinyin(tmp_path
     assert len(point["examples"][0]["pinyin"]) == len(point["examples"][0]["text"])
 
 
+def test_literal_span_recovery_does_not_match_inside_larger_latin_word() -> None:
+    pattern = {"formula": [
+        {"text": "be", "role": "aux", "label": {"vi": "trợ động từ"}},
+        {"text": "V", "role": "verb", "label": {"vi": "động từ"}},
+    ]}
+    examples = [{"text": "Because things change.", "form": "affirmative", "spans": [
+        {"start": 15, "end": 21, "role": "verb"},
+    ]}]
+    complete_literal_example_spans(examples, pattern)
+    assert not any(span["role"] == "aux" for span in examples[0]["spans"])
+
+
 def test_complete_literal_example_spans_only_recovers_formula_literals() -> None:
     pattern = {"formula": [
         {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ"}},
