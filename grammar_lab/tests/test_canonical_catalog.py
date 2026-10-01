@@ -168,20 +168,20 @@ def test_generation_provenance_marks_only_the_exact_v04_recipe_as_normalized() -
         "schema_version": "0.4",
         "provenance": {
             "model": "deepseek:deepseek-flash",
-            "prompt_version": "generate_point_v04.v10",
+            "prompt_version": "generate_point_v04.v11",
         },
     }
     assert matches_generation_provenance(
         point,
         provider="deepseek",
         model="deepseek-flash",
-        prompt_version="generate_point_v04.v10",
+        prompt_version="generate_point_v04.v11",
     )
     assert not matches_generation_provenance(
         point,
         provider="deepseek",
         model="deepseek-v4-pro",
-        prompt_version="generate_point_v04.v10",
+        prompt_version="generate_point_v04.v11",
     )
     assert not matches_generation_provenance(
         point,
@@ -193,7 +193,7 @@ def test_generation_provenance_marks_only_the_exact_v04_recipe_as_normalized() -
         {**point, "schema_version": "0.3"},
         provider="deepseek",
         model="deepseek-flash",
-        prompt_version="generate_point_v04.v10",
+        prompt_version="generate_point_v04.v11",
     )
 
 
