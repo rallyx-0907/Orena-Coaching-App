@@ -243,10 +243,11 @@ def test_cli_generate_is_blocked_before_the_provider_lock_and_client(tmp_path: P
     assert override.exit_code == 2 and "stale" in override.output
 
 
-def test_the_real_catalog_is_current_and_its_default_safe_points_are_gated() -> None:
-    seeded = {seed["id"] for seed in load_seeds("zh")}
-    hsk1 = select_ids("zh", "HSK1")
-    assert [pid for pid in hsk1 if pid not in seeded], "HSK1 has default_safe points, so a plain batch must be refused"
-    with pytest.raises(GenerationBlocked, match="default_safe"):
-        check_generation_gate("zh", hsk1)
-    check_generation_gate("zh", sorted(seeded))  # reviewed seeds alone pass on the current catalogue
+def test_the_real_catalog_has_full_reviewed_metadata_and_passes_generation_gate() -> None:
+    for lang in ("en", "zh"):
+        records = load_catalog(lang)
+        seeded = {seed["id"] for seed in load_seeds(lang)}
+        assert len(records) == len(seeded)
+        assert {record["id"] for record in records} == seeded
+        assert all(record["catalog"]["metadata_origin"] == "reviewed_seed" for record in records)
+        check_generation_gate(lang, [record["id"] for record in records])
