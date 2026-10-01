@@ -3804,3 +3804,33 @@ learner landing is invented.
 6. **Import listing paginates.** It is never silently limited to 50.
 7. **Separate quotas** for text imports, media item count and uploaded-media bytes (confirms D-107.3).
 8. **Merges.** Intelligence is not merged into `codex/work`, and `codex/work` is not merged into `main`, yet.
+
+## D-109 — The completion target is a complete, usable product, not deeper infrastructure hardening
+
+**Date:** 2026-10-01. **Status:** Accepted (explicit human direction).
+
+Orena is product-complete only when the content/admin side and the learner side exist as one connected
+system, in English and Chinese as equivalent products.
+
+1. **Content / Admin.** Books and reading content, listening media (audio, video, YouTube), vocabulary
+   collections, Grammar (canonical catalog -> generation -> validation -> review -> publish -> learner runtime)
+   and practice material generated from published content all enter, are processed, reviewed when needed,
+   published and reach learners without code changes. AI-generated content flows automatically where
+   confidence is sufficient; human review only where needed. Failed jobs are visible and recoverable. Admin can
+   see what is unpublished, invalid, waiting for review, failed or live. The learner library feels populated,
+   not like demo cards.
+2. **Learner.** Complete loops for Listening, Speaking, Reading, Writing, Vocabulary/Recall and Grammar, and one
+   Progress/Continue state across skills, with no unfinished system boundaries in a normal session.
+3. **Connected system.** Words met in Reading/Listening feed Vocabulary and review; grammar weaknesses seen in
+   Writing/Speaking connect to Grammar; imported content serves several activities; progress and attempts
+   persist across sessions; Orena Agent understands current content, language and meaningful history.
+4. **Orena Agent** is complete when it enhances the finished learning system inside each skill without a
+   competing source of truth.
+5. **English / Chinese** stay equivalent: same layouts and journeys, with Chinese-specific mechanics (characters,
+   pinyin, classifiers, particles) where needed.
+6. **Definition of done.** Learner: discover content, learn, practise, get useful feedback, save state, return,
+   continue, see progress. Admin: introduce or generate content, validate/review where needed, publish, and see
+   it usable by learners without editing code. Passing tests alone is not completion.
+7. **Priority.** Infrastructure hardening, rare races, migration polish and unusual multi-device edge cases are
+   secondary unless they cause data loss, a security/ownership problem, failure of a normal learning journey or
+   failure of the content publishing journey.
