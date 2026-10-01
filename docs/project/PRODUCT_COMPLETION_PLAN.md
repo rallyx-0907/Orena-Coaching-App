@@ -14,6 +14,34 @@ D-109 definition of done, used as the yardstick: **Learner** - discover content,
 state, return, continue, see progress. **Admin** - introduce or generate content, validate/review where needed, publish,
 and see it usable by learners without editing code.
 
+## Decisions applied (D-110, D-111, 2026-10-02) - read before section 3
+
+D-110 is the final target and the source of truth for planning; D-111 answers every question in section 5.
+The slice order below supersedes section 3's order where they differ.
+
+- **Running now:** S4 Progress tells the truth; S8a Books open (chapter 503 is a normal bug, the lane store must
+  be durable, D-111.7); S2 media becomes a lesson (captions first, ASR fallback within the cap, never published
+  without a usable transcript, D-111.3).
+- **Next, in order:**
+  1. Archive test leftovers from the learner library (D-111.8), keeping one failed-job example in Admin.
+  2. **Admin Overview** now (D-111.5): live / review / invalid / failed / processing, then the D-110.3 control
+     center (usage, engagement, learner activity, progress, content usage, operational health).
+  3. **Grammar:** independent review of PR #67/#68, merge into `codex/work` when reviews and gates pass
+     (D-111.4), then the approved Grammar Store/API (GRAMMAR_CONTENT_STORE.md rev 2) and the generation/
+     validation pipeline from the canonical HSK/GF catalog for ZH; old R5 lessons stay retired (reference only).
+  4. **Reading at volume (S1):** auto-publish = rights cleared at source policy + deterministic schema/semantic/
+     content validators pass; question sets auto-approve when grounding/answer/duplicate validators pass; else
+     review (D-111.1). ZH segmentation and level estimation fixed.
+  5. **Vocabulary collections usable (S3)** and **practice follows publishing (S7)**.
+  6. **Library bootstrap to the D-111.2 target** per language: 30 Reading + 20 Listening + 10 Vocabulary
+     collections with a sensible level/topic spread, plus books/long-form, grammar curriculum and practice
+     (D-110.2), from public-domain/owned/licensed/permitted sources only; unknown rights are never published.
+  7. **ZH books (S8b).**
+  8. **Agent:** provider gate opens once core content journeys + Progress/return work (D-111.9); Grammar-specific
+     capability after the Grammar API/content.
+- **Budget on :8021 (D-111.6):** AI enrichment <= $10/batch, speech recognition <= $5/batch, all automatic
+  processing <= $25/day, enforced in code; no unlimited background spend.
+
 ## 0. What the bench is, and what it is not
 
 - The EN learner library on :8021 is mostly QA debris. Counted honestly (published, learner-visible):
