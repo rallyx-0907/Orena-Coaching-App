@@ -151,15 +151,19 @@ def sync_seed_metadata(root: Path = LAB_ROOT, *, check: bool = False) -> dict[st
     from grammar_lab.pipeline.canonical import write_catalog
     from grammar_lab.pipeline.content_store import load_points, point_path
 
-    for lang in ("en", "zh"):
-        if not check:
+    active_langs = [
+        lang for lang in ("en", "zh")
+        if seeds_path(lang, root).exists() or (canonical_dir(root) / f"{lang}.yaml").exists()
+    ]
+    for lang in active_langs:
+        if not check and (canonical_dir(root) / f"{lang}.yaml").exists():
             write_catalog(lang, root)
 
-    catalogs = {lang: load_catalog(lang, root) for lang in ("en", "zh")}
+    catalogs = {lang: load_catalog(lang, root) for lang in active_langs}
     catalog_ids = {lang: {row["id"] for row in rows} for lang, rows in catalogs.items()}
     changed_points: list[str] = []
-    existing_by_lang = {lang: load_points(lang, root) for lang in ("en", "zh")}
-    for lang in ("en", "zh"):
+    existing_by_lang = {lang: load_points(lang, root) for lang in active_langs}
+    for lang in active_langs:
         for point_id, point in existing_by_lang[lang].items():
             if point_id not in catalog_ids[lang]:
                 continue
@@ -171,7 +175,7 @@ def sync_seed_metadata(root: Path = LAB_ROOT, *, check: bool = False) -> dict[st
 
     functions_path = root / FUNCTIONS_PATH
     functions_data = read_yaml(functions_path)
-    canonical_all = catalog_ids["en"] | catalog_ids["zh"]
+    canonical_all: set[str] = set().union(*catalog_ids.values()) if catalog_ids else set()
     desired: dict[tuple[str, str, str], list[str]] = {}
     for function in functions_data["functions"]:
         fid = function["id"]
@@ -181,6 +185,8 @@ def sync_seed_metadata(root: Path = LAB_ROOT, *, check: bool = False) -> dict[st
                 desired[(fid, section, lang_key)] = [pid for pid in current if pid not in canonical_all]
 
     for lang, lang_key in (("en", "en"), ("zh", "zh-Hans")):
+        if lang not in catalogs:
+            continue
         existing_ids = set(existing_by_lang[lang])
         for row in catalogs[lang]:
             section = "realizations" if row["id"] in existing_ids else "planned"
