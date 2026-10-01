@@ -27,6 +27,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from pypinyin import Style, lazy_pinyin
+
 from grammar_lab.pipeline.content_store import (
     LAB_ROOT,
     load_cast,
