@@ -12,6 +12,7 @@ from grammar_lab.pipeline.corpus import (
     normalize_langs,
     plan_corpus,
     ready_items,
+    stratified_items,
 )
 
 
@@ -53,3 +54,22 @@ def test_plan_corpus_separates_resume_and_metadata_states(tmp_path):
 def test_normalize_langs_preserves_corpus_order():
     assert normalize_langs("all") == ("en", "zh")
     assert normalize_langs("zh") == ("zh",)
+
+
+def test_stratified_items_samples_each_language_level():
+    items = [
+        ("en", "A1", "en.a1.1"),
+        ("en", "A1", "en.a1.2"),
+        ("en", "B2", "en.b2.1"),
+        ("zh", "HSK1", "zh.h1.1"),
+        ("zh", "HSK1", "zh.h1.2"),
+        ("zh", "HSK9", "zh.h9.1"),
+    ]
+    assert stratified_items(items, 1) == [
+        ("en", "A1", "en.a1.1"),
+        ("en", "B2", "en.b2.1"),
+        ("zh", "HSK1", "zh.h1.1"),
+        ("zh", "HSK9", "zh.h9.1"),
+    ]
+    assert stratified_items(items, 2) == items
+    assert stratified_items(items, 0) == items
