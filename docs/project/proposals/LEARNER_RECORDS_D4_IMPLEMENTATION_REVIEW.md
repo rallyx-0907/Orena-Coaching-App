@@ -734,3 +734,63 @@ of media content ids, and erase them at delete time.
 ### Conditions
 1. B-1 and B-2 before the delete flow is called complete for D-108.2.
 2. The follow-ups recorded; enabling beyond :8021 remains the D-107.5 gate.
+
+## Delta check (3247d02)
+
+- **Reviewer:** Claude Opus 5.5, independent reviewer subagent, not the implementer. **Date:** 2026-10-01.
+- **Reviewed:** `git show 3247d02` (5 files) against B-1 and B-2 of my review of `94da741`. Graded under D-109 (block only on
+  data loss, security/ownership, failed normal journey or publishing journey). Read-only and static; the implementer's
+  results (PostgreSQL 3080, SQLite 2719, 124/124 node gates, three fail-before tests) are local execution and were not
+  reproduced.
+
+### Verdict: APPROVE (B-1 and B-2 are closed; nothing blocks under D-109; follow-ups below)
+
+### B-1: closed at the root
+- **One choke point.** `_served_fragment` withholds a kept word's sentence when every provenance row of the word is
+  `unavailable` (at least one exists, none live). It is applied in `_saved_payload_from_session`, which every PostgreSQL
+  producer of a saved-word row goes through: the paged library list, word detail, `list_saved_rows`, and `_saved_payload`.
+  I searched for other readers of the column: the cards (`vocabulary_cards`), the collection snippet and `sourceFragment`
+  (`collection_query`), the review cloze and the library list consume those rows; the word deep dive reads
+  `list_saved_rows` (masked), so the fragment is **not** sent to the AI provider for a withheld word. The only
+  remaining raw selectors are the SQLite twin (test backend) and `learning_repository.list_saved_words`, which does not
+  return the column. No export route and no `/api/agent` route exists on `codex/work`.
+- **Delete time.** For a text import the route now holds the text and erases, for the account and language, every kept word
+  fragment of 12 or more normalized characters that occurs in it, whatever its provenance. That covers the
+  provenance-less words I flagged. The provenance-linked branch now also erases when the deleted import was the word's only
+  live source, not only when the stored focus overlaps.
+- **Words stay**, with definition, history and review state; only the sentence goes.
+
+### B-2: closed at the root
+`_text_import_deleted` now covers `url:`, `upload:`, `media:` and `upload-` ids by the same tombstone and hash-reference filter
+used for provenance, so a read or write of notes under any of the forms a room files them by answers 404, and
+delete time tombstones every annotation row whose `source_id` is one of the import's forms. Non-import lessons are untouched.
+The Listening room files notes by the bare media id (`url:<link>` or `upload-<token>`), which is covered. A link kept again
+is live again and serves normally.
+
+### Can the 12-character erase destroy another live source's sentence?
+Yes, in one non-blocking way. Erase-by-occurrence matches on text only: a word kept from a **live** article or lesson whose
+stored sentence also occurs verbatim in the deleted import (for example the learner pasted the same article) loses its
+example sentence when the import is deleted. The word, its definition and its review history stay, the sentence is
+derived data, and the learner can re-keep it, so this is not data loss and does not block. **Follow-up:** in the occurrence
+branch skip words that still have a live provenance row (the provenance branch already counts `others`). The 12-character
+floor keeps very short, generic sentences from being treated as copies; a shorter stored sentence of a deleted text is not
+erased by occurrence (it cannot rebuild the text).
+
+### Follow-ups (not blocking)
+- **Deleted before this change.** Provenance rows of imports deleted before `94da741` keep `availability = 'unknown'`;
+  the provenance route masks them dynamically, but `_served_fragment` reads the stored column, so a word whose only
+  provenance points at such an import still serves its sentence. A provenance-less word kept from a text deleted before this
+  change cannot be matched (the text is gone). Both affect only lane test data; backfill `availability` from the tombstones
+  in `scrub_deleted_imports.py` before any wider deployment.
+- **Notes on a link kept again.** The erase tombstones the annotation row (terminal), so after the learner re-imports the
+  same link or file id, notes for that content id can never be saved to the account again (the commit is refused and the
+  client keeps them on the device only). Erase to an empty active payload, relying on the deleted-source filter for the 404
+  while the import is deleted, so the id stays usable. A short-lived journey bug, small fix.
+- `_deleted_source_filter` reads every import row of the account on each annotation read or write for these ids; fine at
+  today's pool sizes, cache or index it before the media pool grows.
+- The SQLite test twin does not mask fragments (test backend only).
+- Agent tools (Intelligence lane): apply the same withheld-fragment rule when that lane merges forward; none exists on
+  `codex/work`.
+
+### Conditions
+None blocking. The D-107.5 gate beyond :8021 remains the human's.

@@ -4661,3 +4661,16 @@ Resolved by the human's D-105 decisions; AD-A, AD-B and AD-H above are closed by
     `codex/work` is merged forward, and `AGENT_CONTRACT` evidence excerpts must not carry a deleted source's sentence.
   - Words kept from a deleted import before this change keep their stored sentence unless a provenance row marks them
     (lane-only residue).
+
+### Delete-import follow-ups after the 3247d02 delta check (APPROVE, 2026-10-01; secondary under D-109)
+
+- The 12-character erase can remove a saved word's example sentence that also occurs verbatim in a live
+  source; skip words that still have a live provenance row.
+- Imports deleted before 94da741 keep provenance `availability = 'unknown'`, so such words still serve their
+  sentence (lane data only); backfill with the scrub script before any wider deployment.
+- After a link/file is re-imported, its notes cannot be kept with the account again (the erase tombstones the
+  annotation row terminally); erase to an empty active payload instead.
+- `_deleted_source_filter` reads every import row per annotation read/write for media ids; cache or index it
+  before the media pool grows.
+- The SQLite test twin does not mask fragments (test backend only); Intelligence agent tools must apply the
+  same deleted-source rule when that lane next merges forward.
