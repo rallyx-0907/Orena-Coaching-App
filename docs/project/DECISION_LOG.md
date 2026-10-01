@@ -3834,3 +3834,36 @@ system, in English and Chinese as equivalent products.
 7. **Priority.** Infrastructure hardening, rare races, migration polish and unusual multi-device edge cases are
    secondary unless they cause data loss, a security/ownership problem, failure of a normal learning journey or
    failure of the content publishing journey.
+
+## D-110 — The final target of Orena (source of truth for current and future planning)
+
+**Date:** 2026-10-02. **Status:** Accepted (explicit human direction). Extends D-109.
+
+Orena reaches a complete language-learning product with real content, usable immediately, before it goes public.
+
+1. **Learner product.** Today / Discover / My Library are the main entrances. Content is the centre; Reading,
+   Listening, Speaking, Writing, Vocabulary and Grammar are capabilities around content, not separate modules.
+   A learner can discover content -> learn -> practise -> get feedback -> save progress -> return and continue ->
+   see progress. Reading, Listening, Speaking, Writing, Vocabulary/Recall, Grammar, Continue and Progress each
+   have a working E2E journey. History, Speaking Summary, Overview, Rank, From Your Errors and every progress
+   surface reflect server data and are never empty when data exists. Books, articles, media and imported
+   content open and can be studied normally. Media used as a lesson has a usable transcript. Grammar has a real
+   store, API and content for EN and ZH. Orena Agent understands the current learning context and supports the
+   finished learning system.
+2. **Library before public.** Orena does not go public with a demo or thin library. EN and ZH each have reading
+   content, listening/media, books/long-form, vocabulary collections, a grammar curriculum and practice
+   material, across several levels, topics and content types. Discover and Library feel like a real world of
+   content.
+3. **Admin is Orena's control center.** It shows usage, engagement, learner activity, progress, content usage
+   and operational health; what is live, in review, invalid, processing or failed; manages Books, Reading,
+   Media, Vocabulary, Grammar and Practice; supports the content lifecycle from source/import/generation to
+   publish/archive; supports growing the library after public; adding and managing content needs no code change.
+4. **Content supply.** source/import/generation -> processing/enrichment -> validation -> review when needed ->
+   publish -> learner use. Content that meets the quality and rights gates may flow through automatically;
+   content that fails a quality or rights gate goes to review.
+5. **Product-complete means:** real content to learn at once; no main journey ends on an empty screen or an
+   unconnected capability; EN and ZH are both real products; Admin can operate and grow content; the library is
+   thick before public; normal-journey defects such as Books 503, media without a transcript, progress empty
+   despite server data, and Grammar without a runtime no longer exist.
+6. **Priority.** Rare edge cases, migration polish and infrastructure hardening do not decide completion unless
+   they cause data loss, a security/ownership issue, or break a normal learner or Admin journey.
