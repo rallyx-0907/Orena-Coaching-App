@@ -3751,3 +3751,35 @@ E continues in parallel where it does not depend on D4 schema.
 The reviewer's N-1..N-6 are carried into implementation without reopening these decisions. For
 unavailable or dropped Grammar responses the learner UI uses the existing not-found shape; no new
 learner landing is invented.
+
+## D-107 — D4 accepted on the lane runtime; delete-import UX; separate media-import limits; merge forward to Intelligence
+
+**Date:** 2026-10-01. **Status:** Accepted (explicit human direction).
+
+1. **D4 lane acceptance is PASS** on :8021 (flag-on browser QA round 2 at `9a7b190`, all six flows). The
+   D4 account backbone is the accepted development baseline. `ORENA_ACCOUNT_BACKBONE` is not enabled
+   beyond :8021.
+2. **Deleting an import.** Canonical place: My Library -> imported item -> overflow menu ->
+   "Delete from Orena"; the same action in the imported item's Content Detail overflow menu. No
+   destructive delete directly on Discover. Deletion removes the import from the learner's library,
+   propagates a tombstone across devices, prevents a stale device from resurrecting it, deletes owned
+   uploaded media files, keeps only integrity/audit metadata, and never touches the learner's
+   original external source. A device that has learned of the deletion stops opening a stale cached
+   copy (promoted from P3 to production P2).
+3. **Media-import limits.** Media imports use a pool separate from text imports; text, URL and upload
+   imports do not all consume the `20 live / 360 total` text-import limits. Three rails: text-import
+   limits, a media-import item count (URL/YouTube and uploads share it), and an uploaded-media
+   storage-byte limit. Defaults are proposed from the limits proposal's measurements and storage
+   estimates, not chosen arbitrarily. An import that cannot sync because of a quota is never shown as
+   saved to the account; if local-only fallback remains, that state is shown to the learner explicitly.
+4. **Follow-up priorities.** Production P2: a cached deleted import usable after the deletion has
+   synchronized; Listening saved-word provenance missing (must converge with Reading provenance).
+   P3 stays: Conversation End state, draft conflict chooser, mic-blocked Free Talk copy, an open page
+   showing a removed highlight until reload, the hard-coded media thumbnail temp path.
+5. **Rollout gate beyond :8021.** The limits implementation completed and approved after measuring
+   draft autosave behaviour; delete-import UI and lifecycle implemented; uploaded-import deletion
+   removes owned media files; code and migrations 0017-0023 deployed together after a backup; the
+   relevant acceptance checks rerun.
+6. **Merge.** `codex/work` may be merged forward into `feature/orena-intelligence` and reconciled and
+   tested there. Intelligence is not merged back into `codex/work`, and `codex/work` is not merged into
+   `main`, until Intelligence tests/E2E and an independent review pass on this D4 baseline.
