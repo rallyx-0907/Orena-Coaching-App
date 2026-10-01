@@ -195,6 +195,16 @@ def test_generation_provenance_marks_only_the_exact_v04_recipe_as_normalized() -
         model="deepseek-flash",
         prompt_version="generate_point_v04.v11",
     )
+    stale = {
+        **point,
+        "provenance": {**point["provenance"], "metadata_stale": True},
+    }
+    assert not matches_generation_provenance(
+        stale,
+        provider="deepseek",
+        model="deepseek-flash",
+        prompt_version="generate_point_v04.v11",
+    )
 
 
 def test_generate_level_option_reads_the_catalog_not_the_old_seed_subset() -> None:
