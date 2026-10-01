@@ -173,7 +173,7 @@ def register_realization(point: dict[str, Any], root: Path = LAB_ROOT) -> bool:
         return changed
 
 _HAN_TITLE = re.compile(r"[㐀-䶿一-鿿豈-﫿]")
-_LOWER_WORD = re.compile(r"[a-zà-ỹ]{3,}", re.IGNORECASE)
+_LOWER_WORD = re.compile(r"[a-zà-ỹ]{3,}")
 
 
 def audit_seed_semantics(lang: str, root: Path = LAB_ROOT) -> list[dict[str, str]]:
