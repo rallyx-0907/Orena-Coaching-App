@@ -33,7 +33,7 @@ from grammar_lab.pipeline.route import DEFAULT_THRESHOLD_BY_LANG, apply_route, r
 from grammar_lab.pipeline.canonical import catalog_is_current, load_canonical, write_catalog
 from grammar_lab.pipeline.coverage import coverage_report, render_text as render_coverage
 from grammar_lab.pipeline.corpus import generation_items, matches_generation_provenance, normalize_langs, plan_corpus, render_text as render_corpus
-from grammar_lab.pipeline.seed import GenerationBlocked, audit_seed_semantics, check_generation_gate, select_ids
+from grammar_lab.pipeline.seed import GenerationBlocked, audit_seed_semantics, check_generation_gate, select_ids, sync_seed_metadata
 from grammar_lab.pipeline.export_package import ExportError, export_package, package_to_zip, validate_package
 from grammar_lab.pipeline.export_profile import (
     PROFILE_SCHEMA_PATH, derive_profile_schema, load_internal_schema, profile_drift,
@@ -88,6 +88,19 @@ def validate(
         typer.echo(f"validate --lang {lang}: {report.points} point(s), {verdict} in {elapsed:.2f}s")
     raise typer.Exit(0 if report.ok else 1)
 
+
+@app.command("sync-metadata")
+def sync_metadata_command(
+    check: bool = typer.Option(False, "--check", help="Write nothing; exit 1 when content/function metadata is stale."),
+    root: Path = typer.Option(LAB_ROOT, "--root"),
+) -> None:
+    """Apply seed metadata to existing content and rebuild function planned/realized lists."""
+    result = sync_seed_metadata(root, check=check)
+    typer.echo(
+        f"sync-metadata: changed points {result['changed_point_count']}, "
+        f"function registry {'stale' if result['registry_changed'] else 'current'}"
+    )
+    raise typer.Exit(0 if (result["ok"] or not check) else 1)
 
 @app.command("seed-audit")
 def seed_audit_command(
