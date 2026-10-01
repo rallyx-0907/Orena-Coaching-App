@@ -10,11 +10,15 @@ functions:
     - en.present_simple.habit
     - en.present_simple.third_person_s
     - en.adverbs_of_frequency
-    - en.canon.a2.004
+    zh-Hans: []
   planned:
     ja:
     - ja.masu_form.present
     en: []
+  planned:
+    en:
+    - en.canon.a2.004
+    zh-Hans: []
 - id: fn.existence
   title:
     vi: Nói cái gì đó có ở đâu
@@ -23,14 +27,17 @@ functions:
   realizations:
     en:
     - en.there_is_are
-    - en.canon.c1.015
-    zh-Hans:
-    - zh.you_sentence
+    zh-Hans: []
   planned:
     zh-Hans:
     - zh.you_existence
     ja:
     - ja.aru_iru
+  planned:
+    en:
+    - en.canon.c1.015
+    zh-Hans:
+    - zh.you_sentence
 - id: fn.quantity
   title:
     vi: Số lượng, số nhiều
@@ -42,6 +49,15 @@ functions:
     - en.plural_nouns.irregular
     - en.countable_uncountable
     - en.quantifiers.some_any
+    zh-Hans: []
+  planned:
+    zh-Hans:
+    - zh.measure_words
+    ja:
+    - ja.counters
+    en: []
+  planned:
+    en:
     - en.quantifiers.few_little
     - en.canon.a2.002
     - en.canon.b1.040
@@ -56,12 +72,6 @@ functions:
     - zh.canon.gf.hsk5.a_5_1_2.p1
     - zh.canon.gf.hsk5.a_5_5_2_9.p1
     - zh.canon.gf.hsk6.a_6_6_2_10.p1
-  planned:
-    zh-Hans:
-    - zh.measure_words
-    ja:
-    - ja.counters
-    en: []
 - id: fn.reference
   title:
     vi: Chỉ định người/vật (đã biết hay chưa)
@@ -71,15 +81,19 @@ functions:
     en:
     - en.articles.a_an
     - en.articles.the
-    - en.articles.zero
-    - en.canon.b1.039
-    - en.canon.b2.032
+    zh-Hans: []
   planned:
     zh-Hans:
     - zh.zhe_na_measure
     ja:
     - ja.wa_ga
     en: []
+  planned:
+    en:
+    - en.articles.zero
+    - en.canon.b1.039
+    - en.canon.b2.032
+    zh-Hans: []
 - id: fn.ongoing_now
   title:
     vi: Việc đang diễn ra
@@ -88,6 +102,13 @@ functions:
   realizations:
     en:
     - en.present_continuous.now
+    zh-Hans: []
+  planned:
+    zh-Hans: []
+    ja:
+    - ja.te_iru.progressive
+  planned:
+    en: []
     zh-Hans:
     - zh.zai_progressive
     - zh.zhe_state
@@ -99,10 +120,6 @@ functions:
     - zh.canon.r5.hsk6_1_t_ng_t_c_n_ng_cao
     - zh.canon.gf.hsk7_9.a_7_1_5_1.p1
     - zh.canon.gf.hsk7_9.a_7_1_5_2.p1
-  planned:
-    zh-Hans: []
-    ja:
-    - ja.te_iru.progressive
 - id: fn.completed_past
   title:
     vi: Việc đã xong trong quá khứ
@@ -111,9 +128,17 @@ functions:
   realizations:
     en:
     - en.past_simple
+    - en.canon.a1.001
+    zh-Hans:
+    - zh.le_completion
+  planned:
+    ja:
+    - ja.ta_form
+    en: []
+  planned:
+    en:
     - en.past_simple.regular_ed
     - en.past_simple.irregular
-    - en.canon.a1.001
     - en.canon.b1.006
     - en.canon.b1.007
     - en.canon.b1.008
@@ -121,12 +146,7 @@ functions:
     - en.canon.b1.010
     - en.canon.b1.048
     zh-Hans:
-    - zh.le_completion
     - zh.verb_reduplication
-  planned:
-    ja:
-    - ja.ta_form
-    en: []
 - id: fn.past_experience
   title:
     vi: Trải nghiệm đã từng
@@ -135,15 +155,18 @@ functions:
   realizations:
     en:
     - en.present_perfect.experience
-    - en.canon.b1.002
-    - en.canon.b1.003
-    - en.canon.b1.004
-    - en.canon.b1.016
     zh-Hans:
     - zh.guo_experience
   planned:
     ja:
     - ja.ta_koto_ga_aru
+  planned:
+    en:
+    - en.canon.b1.002
+    - en.canon.b1.003
+    - en.canon.b1.004
+    - en.canon.b1.016
+    zh-Hans: []
 - id: fn.comparison
   title:
     vi: So sánh hơn
@@ -152,6 +175,14 @@ functions:
   realizations:
     en:
     - en.comparatives
+    zh-Hans: []
+  planned:
+    zh-Hans: []
+    ja:
+    - ja.yori_comparison
+    en: []
+  planned:
+    en:
     - en.superlatives
     - en.as_as
     - en.canon.b1.045
@@ -161,11 +192,6 @@ functions:
     - zh.meiyou_comparison
     - zh.canon.gf.hsk3.a_3_2_4.p1
     - zh.canon.gf.hsk5.a_5_5_1.p2
-  planned:
-    zh-Hans: []
-    ja:
-    - ja.yori_comparison
-    en: []
 - id: fn.condition_real
   title:
     vi: Điều kiện có thể xảy ra
@@ -173,8 +199,16 @@ functions:
     zh-Hans: 可能发生的条件
   realizations:
     en:
-    - en.conditional_zero
     - en.conditional_first
+    zh-Hans: []
+  planned:
+    zh-Hans: []
+    ja:
+    - ja.tara_ba
+    en: []
+  planned:
+    en:
+    - en.conditional_zero
     - en.unless
     - en.canon.b1.025
     - en.canon.b1.026
@@ -190,11 +224,6 @@ functions:
     - zh.canon.gf.hsk4.a_4_5_2_7.p1
     - zh.canon.gf.hsk6.a_6_6_2_7.p1
     - zh.canon.gf.hsk7_9.a_7_5_2_7.p1
-  planned:
-    zh-Hans: []
-    ja:
-    - ja.tara_ba
-    en: []
 - id: fn.object_disposal
   title:
     vi: Nhấn mạnh kết quả xử lý một vật cụ thể
@@ -214,6 +243,24 @@ functions:
     - zh.canon.r5.hsk6_6_topic
     - zh.canon.gf.hsk6.a_6_8.p2
     - zh.canon.gf.hsk7_9.a_7_5_1.p1
+  realizations:
+    en: []
+    zh-Hans:
+    - zh.ba_construction
+  planned:
+    en: []
+    zh-Hans:
+    - zh.canon.gf.hsk3.a_3_2_5_5.p1
+    - zh.canon.r5.hsk3_1_n_n_t_ng
+    - zh.canon.r5.hsk3_2_b_ng_k_t_qu
+    - zh.canon.r5.hsk3_3_topic
+    - zh.canon.r5.hsk3_5_v_i_chi_u
+    - zh.canon.gf.hsk4.a_4_5_1.p1
+    - zh.canon.r5.hsk4_1_v_i_c_u_tr_c_ph_c
+    - zh.canon.gf.hsk5.a_5_5_1.p1
+    - zh.canon.r5.hsk6_6_topic
+    - zh.canon.gf.hsk6.a_6_8.p2
+    - zh.canon.gf.hsk7_9.a_7_5_1.p1
 - id: fn.sentence_basics
   title:
     vi: Xây dựng câu cơ bản
@@ -222,8 +269,14 @@ functions:
   realizations:
     en:
     - en.sentence_word_order
-    - en.indirect_objects
     - en.canon.a1.003
+    zh-Hans: []
+  planned:
+    en: []
+    zh-Hans: []
+  planned:
+    en:
+    - en.indirect_objects
     - en.canon.b2.028
     - en.canon.b2.029
     - en.canon.b2.030
@@ -243,9 +296,6 @@ functions:
     - zh.canon.gf.hsk6.a_6_5_1.p1
     - zh.canon.gf.hsk6.a_6_6_1.p1
     - zh.canon.gf.hsk7_9.a_7_4_1.p1
-  planned:
-    en: []
-    zh-Hans: []
 - id: fn.identity_state
   title:
     vi: Nói ai, cái gì, ở trạng thái nào
@@ -254,13 +304,16 @@ functions:
   realizations:
     en:
     - en.be.present
+    zh-Hans: []
+  planned:
+    en: []
+    zh-Hans: []
+  planned:
+    en:
     - en.canon.b1.051
     zh-Hans:
     - zh.shi_sentence
     - zh.adjective_predicate
-  planned:
-    en: []
-    zh-Hans: []
 - id: fn.pronoun_reference
   title:
     vi: Nhắc tới người, vật bằng đại từ
@@ -270,6 +323,12 @@ functions:
     en:
     - en.pronouns.subject_object
     - en.demonstratives
+    zh-Hans: []
+  planned:
+    en: []
+    zh-Hans: []
+  planned:
+    en:
     - en.canon.b1.001
     - en.canon.b1.031
     - en.canon.b1.043
@@ -285,9 +344,6 @@ functions:
     - zh.canon.gf.hsk5.a_5_1_1.p1
     - zh.canon.gf.hsk5.a_5_8.p1
     - zh.canon.gf.hsk6.a_6_2_1.p1
-  planned:
-    en: []
-    zh-Hans: []
 - id: fn.possession
   title:
     vi: Nói về sự sở hữu
@@ -299,11 +355,14 @@ functions:
     - en.possessive_pronouns
     - en.possessive_s
     - en.have_got
-    zh-Hans:
-    - zh.de_possessive
+    zh-Hans: []
   planned:
     en: []
     zh-Hans: []
+  planned:
+    en: []
+    zh-Hans:
+    - zh.de_possessive
 - id: fn.instructions
   title:
     vi: Ra lệnh, chỉ dẫn
@@ -312,8 +371,12 @@ functions:
   realizations:
     en:
     - en.imperatives
+    zh-Hans: []
   planned:
     en: []
+  planned:
+    en: []
+    zh-Hans: []
 - id: fn.questions
   title:
     vi: Đặt câu hỏi
@@ -324,6 +387,12 @@ functions:
     - en.be.questions_short_answers
     - en.present_simple.do_questions
     - en.questions.wh
+    zh-Hans: []
+  planned:
+    en: []
+    zh-Hans: []
+  planned:
+    en:
     - en.canon.a2.005
     - en.canon.b1.022
     - en.canon.b1.023
@@ -342,9 +411,6 @@ functions:
     - zh.canon.gf.hsk4.a_4_7.p3
     - zh.canon.gf.hsk7_9.a_7_1_2.p1
     - zh.canon.gf.hsk7_9.a_7_6.p1
-  planned:
-    en: []
-    zh-Hans: []
 - id: fn.place_time
   title:
     vi: Nói về nơi chốn và thời gian
@@ -354,8 +420,12 @@ functions:
     en:
     - en.prepositions.place
     - en.prepositions.time
+    zh-Hans: []
   planned:
     en: []
+  planned:
+    en: []
+    zh-Hans: []
 - id: fn.linking
   title:
     vi: Nối ý
@@ -364,6 +434,12 @@ functions:
   realizations:
     en:
     - en.conjunctions.and_but_or
+    zh-Hans: []
+  planned:
+    en: []
+    zh-Hans: []
+  planned:
+    en:
     - en.conjunctions.because_so
     - en.canon.b1.037
     - en.canon.b1.038
@@ -409,27 +485,33 @@ functions:
     - zh.canon.gf.hsk7_9.a_7_5_2_11.p1
     - zh.canon.gf.hsk7_9.a_7_5_2_12.p1
     - zh.canon.gf.hsk7_9.a_7_5_2_13.p1
-  planned:
-    en: []
-    zh-Hans: []
 - id: fn.past_ongoing
   title:
     vi: Việc đang diễn ra trong quá khứ
     en: Actions in progress in the past
     zh-Hans: 过去正在进行的动作
   realizations:
+    en: []
+    zh-Hans: []
+  planned:
+    en: []
+  planned:
     en:
     - en.past_continuous
     - en.past_simple_vs_continuous
     - en.canon.b1.005
-  planned:
-    en: []
+    zh-Hans: []
 - id: fn.future_plans
   title:
     vi: Kế hoạch và dự đoán tương lai
     en: Plans and predictions
     zh-Hans: 计划和预测
   realizations:
+    en: []
+    zh-Hans: []
+  planned:
+    en: []
+  planned:
     en:
     - en.going_to.plans
     - en.will.decisions
@@ -442,14 +524,19 @@ functions:
     - en.canon.b2.003
     - en.canon.b2.004
     - en.canon.c1.006
-  planned:
-    en: []
+    zh-Hans: []
 - id: fn.degree
   title:
     vi: Mức độ và cách thức
     en: Degree and manner
     zh-Hans: 程度和方式
   realizations:
+    en: []
+    zh-Hans: []
+  planned:
+    en: []
+    zh-Hans: []
+  planned:
     en:
     - en.too_enough
     - en.adjectives_vs_adverbs
@@ -466,15 +553,17 @@ functions:
     - zh.canon.gf.hsk7_9.a_7_1_4_1.p1
     - zh.canon.gf.hsk7_9.a_7_1_4_1.p2
     - zh.canon.gf.hsk7_9.a_7_4_2.p1
-  planned:
-    en: []
-    zh-Hans: []
 - id: fn.obligation_advice
   title:
     vi: Nghĩa vụ và lời khuyên
     en: Obligation and advice
     zh-Hans: 义务和建议
   realizations:
+    en: []
+    zh-Hans: []
+  planned:
+    en: []
+  planned:
     en:
     - en.modals.must_have_to
     - en.modals.should
@@ -482,8 +571,7 @@ functions:
     - en.canon.b1.020
     - en.canon.b1.021
     - en.canon.b2.010
-  planned:
-    en: []
+    zh-Hans: []
 - id: fn.possibility
   title:
     vi: Khả năng có thể xảy ra
@@ -491,8 +579,13 @@ functions:
     zh-Hans: 可能性
   realizations:
     en:
-    - en.modals.possibility
     - en.canon.a1.002
+    zh-Hans: []
+  planned:
+    en: []
+  planned:
+    en:
+    - en.modals.possibility
     - en.canon.a2.003
     - en.canon.b1.015
     - en.canon.b2.007
@@ -503,8 +596,7 @@ functions:
     - en.canon.c1.008
     - en.canon.c1.009
     - en.canon.c2.001
-  planned:
-    en: []
+    zh-Hans: []
 - id: fn.verb_patterns
   title:
     vi: Động từ đi với -ing hoặc to V
@@ -512,10 +604,15 @@ functions:
     zh-Hans: 动词后的结构
   realizations:
     en:
+    - en.canon.a1.004
+    zh-Hans: []
+  planned:
+    en: []
+  planned:
+    en:
     - en.gerund_after_preference
     - en.infinitive_after_want_plan_need
     - en.infinitive_of_purpose
-    - en.canon.a1.004
     - en.canon.a2.008
     - en.canon.b1.032
     - en.canon.b1.033
@@ -525,38 +622,50 @@ functions:
     - en.canon.b2.026
     - en.canon.b2.027
     - en.canon.c1.017
-  planned:
-    en: []
+    zh-Hans: []
 - id: fn.relative
   title:
     vi: Nối thêm thông tin về người, vật
     en: Adding information about a noun
     zh-Hans: 补充说明名词
   realizations:
+    en: []
+    zh-Hans: []
+  planned:
+    en: []
+  planned:
     en:
     - en.relative_clauses.who_which_that
     - en.canon.b1.030
     - en.canon.b2.020
     - en.canon.b2.023
     - en.canon.c1.020
-  planned:
-    en: []
+    zh-Hans: []
 - id: fn.indefinite_reference
   title:
     vi: Nói chung chung, không nêu cụ thể
     en: Referring without being specific
     zh-Hans: 泛指
   realizations:
-    en:
-    - en.indefinite_compounds
+    en: []
+    zh-Hans: []
   planned:
     en: []
+  planned:
+    en:
+    - en.indefinite_compounds
+    zh-Hans: []
 - id: fn.negation
   title:
     vi: Phủ định
     en: Negation
     zh-Hans: 否定
   realizations:
+    en: []
+    zh-Hans: []
+  planned:
+    zh-Hans: []
+  planned:
     en:
     - en.canon.b1.041
     - en.canon.c1.002
@@ -582,14 +691,18 @@ functions:
     - zh.canon.gf.hsk7_9.a_7_7.p1
     - zh.canon.gf.hsk7_9.a_7_7.p3
     - zh.canon.gf.hsk7_9.a_7_7.p4
-  planned:
-    zh-Hans: []
 - id: fn.location
   title:
     vi: Nói vị trí
     en: Saying where something is
     zh-Hans: 表达位置
   realizations:
+    en: []
+    zh-Hans: []
+  planned:
+    zh-Hans: []
+  planned:
+    en: []
     zh-Hans:
     - zh.zai_location
     - zh.canon.gf.hsk1.a_1_1_1.p1
@@ -597,14 +710,18 @@ functions:
     - zh.canon.gf.hsk3.a_3_2_5_1.p1
     - zh.canon.gf.hsk4.a_4_1_5_1.p1
     - zh.canon.gf.hsk6.a_6_2_4_1.p1
-  planned:
-    zh-Hans: []
 - id: fn.time_expression
   title:
     vi: Nói về thời gian
     en: Telling the time and date
     zh-Hans: 表达时间和日期
   realizations:
+    en: []
+    zh-Hans: []
+  planned:
+    zh-Hans: []
+  planned:
+    en: []
     zh-Hans:
     - zh.dates_times
     - zh.canon.gf.hsk2.a_2_1_6.p1
@@ -615,41 +732,53 @@ functions:
     - zh.canon.gf.hsk5.a_5_4_3.p1
     - zh.canon.gf.hsk6.a_6_2_3.p1
     - zh.canon.gf.hsk7_9.a_7_1_4_3.p1
-  planned:
-    zh-Hans: []
 - id: fn.action_result
   title:
     vi: Kết quả và cách thức của hành động
     en: Result and manner of an action
     zh-Hans: 动作的结果和方式
   realizations:
+    en: []
+    zh-Hans: []
+  planned:
+    zh-Hans: []
+  planned:
+    en: []
     zh-Hans:
     - zh.complement.degree_de
     - zh.complement.result
     - zh.complement.direction_simple
     - zh.canon.r5.hsk3_10_ngh_a_m_r_ng
     - zh.canon.gf.hsk6.a_6_5_2.p1
-  planned:
-    zh-Hans: []
 - id: fn.duration_frequency
   title:
     vi: Thời lượng và số lần
     en: Duration and frequency
     zh-Hans: 时间长度和次数
   realizations:
+    en: []
+    zh-Hans: []
+  planned:
+    zh-Hans: []
+  planned:
+    en: []
     zh-Hans:
     - zh.complement.duration
     - zh.complement.frequency
     - zh.canon.gf.hsk1.a_1_1_6.p1
     - zh.canon.gf.hsk7_9.a_7_1_4_4.p1
-  planned:
-    zh-Hans: []
 - id: fn.reason_result
   title:
     vi: Nguyên nhân và kết quả
     en: Cause and result
     zh-Hans: 原因和结果
   realizations:
+    en: []
+    zh-Hans: []
+  planned:
+    zh-Hans: []
+  planned:
+    en: []
     zh-Hans:
     - zh.yinwei_suoyi
     - zh.canon.gf.hsk2.a_2_5_3.p2
@@ -658,27 +787,35 @@ functions:
     - zh.canon.r5.hsk4_9_topic
     - zh.canon.gf.hsk7_9.a_7_5_2_8.p1
     - zh.canon.gf.hsk7_9.a_7_8_2.p1
-  planned:
-    zh-Hans: []
 - id: fn.contrast
   title:
     vi: Nêu điều đối lập
     en: Contrast
     zh-Hans: 表示转折
   realizations:
+    en: []
+    zh-Hans: []
+  planned:
+    zh-Hans: []
+  planned:
+    en: []
     zh-Hans:
     - zh.suiran_danshi
     - zh.canon.gf.hsk2.a_2_5_3.p1
     - zh.canon.gf.hsk6.a_6_6_2_5.p1
     - zh.canon.gf.hsk7_9.a_7_5_2_5.p1
-  planned:
-    zh-Hans: []
 - id: fn.sequence
   title:
     vi: Trình tự và đồng thời
     en: Sequence and simultaneity
     zh-Hans: 先后和同时
   realizations:
+    en: []
+    zh-Hans: []
+  planned:
+    zh-Hans: []
+  planned:
+    en: []
     zh-Hans:
     - zh.yi_jiu
     - zh.xian_zai
@@ -689,35 +826,300 @@ functions:
     - zh.canon.gf.hsk5.a_5_1_3.p2
     - zh.canon.gf.hsk5.a_5_5_2_3.p1
     - zh.canon.gf.hsk7_9.a_7_2_2_2.p3
-  planned:
-    zh-Hans: []
 - id: fn.exclusion
   title:
     vi: Loại trừ
     en: Excluding
     zh-Hans: 表示排除
   realizations:
+    en: []
+    zh-Hans: []
+  planned:
+    zh-Hans: []
+  planned:
+    en: []
     zh-Hans:
     - zh.chule_yiwai
     - zh.canon.gf.hsk6.a_6_2_4_5.p1
-  planned:
-    zh-Hans: []
 - id: fn.separable_verbs
   title:
     vi: Động từ ly hợp
     en: Separable verbs
     zh-Hans: 离合词
   realizations:
-    zh-Hans:
-    - zh.separable_verbs
+    en: []
+    zh-Hans: []
   planned:
     zh-Hans: []
+  planned:
+    en: []
+    zh-Hans:
+    - zh.separable_verbs
 - id: fn.catalog_unclassified
   title:
     vi: Chưa phân loại chức năng (danh mục chuẩn v1)
     en: Unclassified function (canonical catalog v1)
     zh-Hans: 未分类功能（规范目录 v1）
   realizations:
+    en:
+    - en.canon.a2.001
+    - en.canon.a2.006
+    - en.canon.a2.007
+    - en.canon.b1.014
+    - en.canon.b1.017
+    - en.canon.b1.018
+    - en.canon.b1.027
+    - en.canon.b1.029
+    - en.canon.b1.034
+    - en.canon.b1.042
+    - en.canon.b1.046
+    - en.canon.b1.047
+    - en.canon.b1.052
+    - en.canon.b1.053
+    - en.canon.b2.001
+    - en.canon.b2.011
+    - en.canon.b2.012
+    - en.canon.b2.013
+    - en.canon.b2.015
+    - en.canon.b2.016
+    - en.canon.b2.017
+    - en.canon.b2.018
+    - en.canon.b2.019
+    - en.canon.b2.031
+    - en.canon.b2.034
+    - en.canon.b2.035
+    - en.canon.b2.036
+    - en.canon.b2.037
+    - en.canon.b2.038
+    - en.canon.b2.039
+    - en.canon.b2.040
+    - en.canon.b2.041
+    - en.canon.b2.042
+    - en.canon.b2.043
+    - en.canon.b2.044
+    - en.canon.c1.003
+    - en.canon.c1.004
+    - en.canon.c1.005
+    - en.canon.c1.010
+    - en.canon.c1.014
+    - en.canon.c1.016
+    - en.canon.c1.018
+    - en.canon.c1.019
+    - en.canon.c1.021
+    - en.canon.c1.022
+    - en.canon.c1.023
+    - en.canon.c1.024
+    - en.canon.c1.025
+    - en.canon.c1.026
+    - en.canon.c1.027
+    - en.canon.c1.028
+    - en.canon.c1.029
+    - en.canon.c1.030
+    - en.canon.c2.002
+    - en.canon.c2.004
+    - en.canon.c2.005
+    - en.canon.c2.006
+    - en.canon.c2.007
+    - en.canon.c2.008
+    - en.canon.c2.009
+    - en.canon.c2.010
+    - en.canon.c2.011
+    - en.canon.c2.013
+    - en.canon.c2.014
+    - en.canon.c2.015
+    - en.canon.c2.016
+    - en.canon.c2.017
+    - en.canon.c2.018
+    zh-Hans:
+    - zh.modal.hui
+    - zh.canon.gf.hsk1.a_1_1_2.p1
+    - zh.canon.gf.hsk1.a_1_1_7_2.p1
+    - zh.canon.gf.hsk1.a_1_6_1.p1
+    - zh.canon.r5.hsk2_3_cu_i_c_u_thay_i_tr_ng_th_i
+    - zh.ba_suggestion
+    - zh.modal.xiang_yao
+    - zh.qing_request
+    - zh.serial_verbs.qu_lai
+    - zh.tai_le
+    - zh.zenme_question
+    - zh.modal.neng_keyi
+    - zh.canon.r5.hsk3_10_topic
+    - zh.canon.gf.hsk2.a_2_1_1.p1
+    - zh.canon.gf.hsk2.a_2_1_3.p1
+    - zh.canon.gf.hsk2.a_2_1_7_2.p1
+    - zh.canon.gf.hsk2.a_2_1_7_3.p1
+    - zh.canon.gf.hsk2.a_2_1_9.p1
+    - zh.canon.gf.hsk2.a_2_1_10.p1
+    - zh.canon.gf.hsk2.a_2_2_2.p1
+    - zh.canon.gf.hsk2.a_2_2_3_1.p1
+    - zh.canon.gf.hsk2.a_2_3.p1
+    - zh.canon.gf.hsk2.a_2_7.p1
+    - zh.canon.gf.hsk2.a_2_8.p1
+    - zh.canon.gf.hsk2.a_2_10.p1
+    - zh.canon.r5.hsk3_11_nh_n_m_nh
+    - zh.bie_imperative
+    - zh.cong_dao
+    - zh.duo_adjective_question
+    - zh.gei_dui
+    - zh.haishi_huozhe
+    - zh.shi_bu_shi
+    - zh.yao_le
+    - zh.yijing_haimei
+    - zh.youdian_yidian
+    - zh.canon.gf.hsk3.a_3_1_1.p1
+    - zh.canon.gf.hsk3.a_3_1_2.p1
+    - zh.canon.gf.hsk3.a_3_2_1.p1
+    - zh.canon.gf.hsk3.a_3_2_4.p2
+    - zh.canon.r5.hsk3_8_topic
+    - zh.canon.gf.hsk3.a_3_2_5_2.p1
+    - zh.canon.gf.hsk3.a_3_2_5_3.p1
+    - zh.canon.r5.hsk3_5_topic
+    - zh.canon.gf.hsk3.a_3_2_7.p1
+    - zh.canon.gf.hsk3.a_3_3_2_2.p1
+    - zh.canon.r5.hsk3_7_topic
+    - zh.canon.r5.hsk3_9_topic
+    - zh.canon.gf.hsk3.a_3_5_3.p1
+    - zh.canon.gf.hsk3.a_3_5_4.p1
+    - zh.canon.r5.hsk3_1_topic
+    - zh.canon.gf.hsk3.a_3_7.p1
+    - zh.canon.gf.hsk3.a_3_10.p1
+    - zh.canon.r5.hsk3_2_topic
+    - zh.canon.r5.hsk3_4_topic
+    - zh.canon.r5.hsk3_3_topic_69
+    - zh.canon.r5.hsk3_12_topic_comment_introduction
+    - zh.canon.r5.hsk3_13_nh_ng_d_i_v_i
+    - zh.canon.r5.hsk3_4_n_n_t_ng
+    - zh.canon.r5.hsk3_6_b_ng_xu_h_ng_k_p
+    - zh.canon.r5.hsk3_7_b_ng_kh_n_ng
+    - zh.adjective_reduplication
+    - zh.bi_yidian_deduo
+    - zh.cunxian_sentence
+    - zh.de_di_de
+    - zh.gang_gangcai
+    - zh.jianyu_qing_rang
+    - zh.neng_yuan_dei
+    - zh.canon.r5.hsk4_12_topic
+    - zh.canon.r5.hsk4_2_topic
+    - zh.canon.r5.hsk4_3_topic_104
+    - zh.canon.r5.hsk4_4_topic_105
+    - zh.canon.gf.hsk4.a_4_1_1.p1
+    - zh.canon.gf.hsk4.a_4_1_4.p2
+    - zh.canon.r5.hsk4_13_topic
+    - zh.canon.gf.hsk4.a_4_1_5_2.p1
+    - zh.canon.gf.hsk4.a_4_1_5_3.p1
+    - zh.canon.gf.hsk4.a_4_1_7.p1
+    - zh.canon.gf.hsk4.a_4_1_8.p1
+    - zh.canon.gf.hsk4.a_4_2_1_1.p1
+    - zh.canon.gf.hsk4.a_4_2_1_2.p1
+    - zh.canon.r5.hsk4_12_topic_115
+    - zh.canon.r5.hsk4_14_topic
+    - zh.canon.gf.hsk4.a_4_2_1_2.p2
+    - zh.canon.gf.hsk4.a_4_4_2.p1
+    - zh.canon.gf.hsk4.a_4_5_1.p2
+    - zh.canon.r5.hsk4_5_topic_106
+    - zh.canon.r5.hsk4_6_topic
+    - zh.canon.gf.hsk4.a_4_6_1.p1
+    - zh.canon.r5.hsk4_3_topic
+    - zh.canon.r5.hsk4_4_topic
+    - zh.canon.r5.hsk4_11_topic
+    - zh.canon.r5.hsk4_15_v_introduction
+    - zh.canon.r5.hsk4_2_n_ng_cao
+    - zh.canon.r5.hsk4_7_topic_109
+    - zh.wh_universal
+    - zh.canon.r5.hsk5_1_topic
+    - zh.canon.gf.hsk5.a_5_1_4_2.p1
+    - zh.canon.gf.hsk5.a_5_1_4_3.p1
+    - zh.canon.gf.hsk5.a_5_1_6.p1
+    - zh.canon.gf.hsk5.a_5_2_1_1.p2
+    - zh.canon.r5.hsk5_6_topic
+    - zh.canon.gf.hsk5.a_5_3.p1
+    - zh.canon.gf.hsk5.a_5_3.p2
+    - zh.canon.gf.hsk5.a_5_4_2.p1
+    - zh.canon.r5.hsk5_9_topic
+    - zh.canon.r5.hsk5_7_topic
+    - zh.canon.gf.hsk5.a_5_6.p2
+    - zh.canon.r5.hsk5_5_topic
+    - zh.canon.r5.hsk5_10_topic
+    - zh.canon.r5.hsk5_8_topic_146
+    - zh.canon.r5.hsk5_11_topic
+    - zh.canon.r5.hsk5_1_ki_m_ng
+    - zh.canon.r5.hsk5_10_topic_148
+    - zh.canon.r5.hsk5_12_topic
+    - zh.canon.r5.hsk5_13_reference
+    - zh.canon.r5.hsk5_14_n_ng_cao_153
+    - zh.canon.r5.hsk5_15_tendencies
+    - zh.canon.r5.hsk5_2_topic
+    - zh.canon.r5.hsk5_3_approximate_quantities
+    - zh.canon.r5.hsk5_4_topic
+    - zh.canon.r5.hsk5_4_topic_141
+    - zh.canon.r5.hsk5_5_scope
+    - zh.canon.r5.hsk5_7_topic_145
+    - zh.jiaru_tangruo
+    - zh.canon.r5.hsk6_2_topic
+    - zh.canon.r5.hsk6_7_topic_181
+    - zh.canon.gf.hsk6.a_6_1_1.p1
+    - zh.canon.gf.hsk6.a_6_1_2.p1
+    - zh.canon.gf.hsk6.a_6_2_3.p2
+    - zh.canon.gf.hsk6.a_6_2_4_3.p1
+    - zh.canon.r5.hsk6_7_topic_172
+    - zh.canon.gf.hsk6.a_6_2_4_4.p1
+    - zh.canon.gf.hsk6.a_6_2_4_6.p1
+    - zh.canon.gf.hsk6.a_6_2_6.p1
+    - zh.canon.gf.hsk6.a_6_3_2_1.p1
+    - zh.canon.gf.hsk6.a_6_3_2_2.p1
+    - zh.canon.gf.hsk6.a_6_3_2_2.p2
+    - zh.canon.gf.hsk6.a_6_4.p1
+    - zh.canon.r5.hsk6_7_topic
+    - zh.canon.gf.hsk6.a_6_7.p1
+    - zh.canon.r5.hsk6_12_parallel_structure_in_formal_prose
+    - zh.canon.r5.hsk6_14_formal_comparison
+    - zh.canon.r5.hsk6_19_sentence_final_particles_in_advanced_use
+    - zh.canon.r5.hsk6_20_register_control
+    - zh.canon.r5.hsk6_22_punctuation_and_clause_grammar
+    - zh.canon.r5.hsk6_3_agent_source
+    - zh.canon.r5.hsk6_4_patterns
+    - zh.canon.r5.hsk6_4_topic
+    - zh.canon.r5.hsk6_5_patterns
+    - zh.canon.r5.hsk6_6_rhetorical_questions
+    - zh.canon.gf.hsk7_9.a_7_1_1.p1
+    - zh.canon.gf.hsk7_9.a_7_1_4_2.p1
+    - zh.canon.gf.hsk7_9.a_7_1_4_5.p1
+    - zh.canon.gf.hsk7_9.a_7_1_4_7.p1
+    - zh.canon.gf.hsk7_9.a_7_1_4_8.p1
+    - zh.canon.gf.hsk7_9.a_7_1_4_9.p1
+    - zh.canon.gf.hsk7_9.a_7_1_4_9.p2
+    - zh.canon.gf.hsk7_9.a_7_1_4_9.p3
+    - zh.canon.gf.hsk7_9.a_7_1_4_9.p4
+    - zh.canon.gf.hsk7_9.a_7_1_4_9.p5
+    - zh.canon.gf.hsk7_9.a_7_1_5_3.p1
+    - zh.canon.gf.hsk7_9.a_7_1_7_1.p1
+    - zh.canon.gf.hsk7_9.a_7_1_7_2.p1
+    - zh.canon.gf.hsk7_9.a_7_2_2_1.p2
+    - zh.canon.gf.hsk7_9.a_7_2_2_2.p1
+    - zh.canon.gf.hsk7_9.a_7_3.p1
+    - zh.canon.gf.hsk7_9.a_7_7.p2
+    - zh.canon.gf.hsk7_9.a_7_8_1.p1
+    - zh.canon.r5.hsk79_10_conditional_rhetoric
+    - zh.canon.r5.hsk79_11_cause_vs_evidence_distinction
+    - zh.canon.r5.hsk79_12_reformulation_and_qualification
+    - zh.canon.r5.hsk79_14_productive_four_character_grammar_patterns
+    - zh.canon.r5.hsk79_16_information_structure_and_emphasis
+    - zh.canon.r5.hsk79_17_ellipsis_and_recoverability
+    - zh.canon.r5.hsk79_18_academic_definition_and_classification
+    - zh.canon.r5.hsk79_19_argument_concession_counterclaim
+    - zh.canon.r5.hsk79_20_reporting_and_attribution
+    - zh.canon.r5.hsk79_21_legal_administrative_register_patterns
+    - zh.canon.r5.hsk79_22_literary_descriptive_syntax
+    - zh.canon.r5.hsk79_28_advanced_connector_economy
+    - zh.canon.r5.hsk79_29_metadiscourse_grammar
+    - zh.canon.r5.hsk79_3_negative_raising_and_scope
+    - zh.canon.r5.hsk79_5_in_modern_formal_prose
+    - zh.canon.r5.hsk79_6_advanced_passive_causative_alternation
+    - zh.canon.r5.hsk79_8_long_sentence_architecture
+  realizations:
+    en: []
+    zh-Hans: []
+  planned:
     en:
     - en.canon.a2.001
     - en.canon.a2.006
