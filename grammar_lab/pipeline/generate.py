@@ -991,6 +991,10 @@ class Generator:
                     cached=all_cached,
                 )
 
+            # The provider/JSON schema accepted this response, so complete()
+            # cached it. Domain-semantic rejection makes that cache entry unsafe:
+            # evict it so a resumed run gets a genuinely fresh chance.
+            self.llm.invalidate_cache(system=system, user=attempt_user, json_schema=schema)
             last_problem = "; ".join(
                 f"{issue.code} at {issue.path}: {issue.message}" for issue in issues[:8]
             )
