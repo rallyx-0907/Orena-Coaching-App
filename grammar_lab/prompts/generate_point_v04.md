@@ -83,7 +83,12 @@ Output one JSON object matching the schema you were given -- no commentary outsi
    merge two slots into one span (`is not` is the verb `is` plus the negator `not` if the
    formula has both), and never leave a slot of the sentence's formula without its span. Give
    each span as the exact substring of `text` (the code finds it, searching after the previous
-   span); list them in sentence order. `annotation` is a
+   span); list them in sentence order. **Formula and example must agree at surface-token granularity.**
+   If an example uses a contraction such as `don't` / `doesn't` / `isn't`, prefer one auxiliary
+   slot whose `text`/options include that contraction; do not define separate `do` + `not` slots
+   and then give only one `don't` span. Before returning JSON, audit every example: for its selected
+   form, every non-optional formula slot must have its own exact-substring span, including repeated
+   roles (two auxiliary slots require two separate spans). `annotation` is a
    short note on what the highlighted part does (e.g. "bắt đầu trong quá khứ → vẫn đúng bây
    giờ"), `translation` a natural translation.
 6. **compare**: one entry per id listed above under "compare required" (none if none).
@@ -114,10 +119,14 @@ Output one JSON object matching the schema you were given -- no commentary outsi
    (skip a role any sentence has, like `subject` -- pick the ones that carry the point: the auxiliary and
    the participle, the particle, the marker). Each slot has its `role` and exactly one matcher: `any_of`
    (a list of the exact words or characters, with contractions) OR `regex` (a case-insensitive regular
-   expression, for forms a list cannot cover -- the participle, `-ing`). Fill the matcher you do not use
-   with an empty list / empty string. `ordered: true` when the roles must appear in that order. Two
-   checks run on it: the rule must match your `sample`, and it must match every `affirmative` example
-   you wrote -- so do not make it stricter than the pattern is.
+   expression, for productive forms a list cannot cover -- e.g. `-ing`, regular plurals, possessive `'s`).
+   Fill the matcher you do not use with an empty list / empty string. `ordered: true` when the roles must
+   appear in that order. **Build the rule from the actual surface forms in your own target-form examples,
+   not from an abstract formula label.** A regex must match ordinary words inside a full sentence; do not
+   anchor it to the whole sentence unless that is truly intended. Before returning JSON, mentally run the
+   rule against (a) `sample` and (b) every example whose `form == target_form`. All of them must match.
+   If they do not, widen/correct the matcher or choose a better evidence role. The validator checks exactly
+   those sentences, so never return a rule that rejects your own sample/examples.
 {pinyin_instruction}
 {r5_instruction}
 ## Rules
