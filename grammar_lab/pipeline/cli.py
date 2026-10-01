@@ -32,7 +32,7 @@ from grammar_lab.pipeline.review_export import levels_present, review_path, writ
 from grammar_lab.pipeline.route import DEFAULT_THRESHOLD_BY_LANG, apply_route, route_point
 from grammar_lab.pipeline.canonical import catalog_is_current, load_canonical, write_catalog
 from grammar_lab.pipeline.coverage import coverage_report, render_text as render_coverage
-from grammar_lab.pipeline.corpus import generation_items, matches_generation_provenance, normalize_langs, plan_corpus, render_text as render_corpus
+from grammar_lab.pipeline.corpus import generation_items, matches_generation_provenance, normalize_langs, plan_corpus, render_text as render_corpus, stratified_items
 from grammar_lab.pipeline.seed import GenerationBlocked, audit_seed_semantics, check_generation_gate, select_ids, sync_seed_metadata
 from grammar_lab.pipeline.export_package import ExportError, export_package, package_to_zip, validate_package
 from grammar_lab.pipeline.export_profile import (
@@ -206,6 +206,10 @@ def generate_corpus_command(
         0, "--max-points",
         help="Optional bound for one invocation; 0 means every selected point until cost ceiling.",
     ),
+    sample_per_level: int = typer.Option(
+        0, "--sample-per-level",
+        help="Smoke mode: take the first N selected candidates from every language/level group; 0 disables.",
+    ),
     workers: int = typer.Option(
         5, "--workers",
         help="Concurrent LLM calls. Default 5; use 1 for the old serial behavior. Allowed range: 1-16.",
@@ -236,6 +240,8 @@ def generate_corpus_command(
         raise typer.BadParameter(str(exc), param_hint="--lang") from exc
     if max_points < 0:
         raise typer.BadParameter("must be >= 0", param_hint="--max-points")
+    if sample_per_level < 0:
+        raise typer.BadParameter("must be >= 0", param_hint="--sample-per-level")
     if workers < 1 or workers > 16:
         raise typer.BadParameter("must be between 1 and 16", param_hint="--workers")
 
@@ -255,6 +261,8 @@ def generate_corpus_command(
         before = len(candidates)
         candidates = [item for item in candidates if item[2] not in already_normalized]
         normalized_skipped = before - len(candidates)
+    if sample_per_level:
+        candidates = stratified_items(candidates, sample_per_level)
     if max_points:
         candidates = candidates[:max_points]
     typer.echo(render_corpus(initial_plan))
@@ -351,6 +359,7 @@ def generate_corpus_command(
         "story_mode": story_mode if with_story else None,
         "cost_ceiling_usd": cost_ceiling_usd,
         "max_points": max_points,
+        "sample_per_level": sample_per_level,
         "workers": workers,
         "regenerate_existing": regenerate_existing,
         "regenerate_note": bool(regenerate_note),
