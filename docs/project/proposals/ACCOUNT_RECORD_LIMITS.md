@@ -1,7 +1,9 @@
 # Proposal: server-side safety limits and retention/rejection behaviour for account records
 
-Status: **PROPOSED, revision 1** (2026-10-01, `codex/work` at `8481e33`). Document only: no code, schema, migration, Docker
-or runtime is changed by this file. Not reviewed, not approved.
+Status: **PROPOSED, revision 2** (2026-10-01). Revision 1 (`codex/work` at `8481e33`) was independently reviewed in
+`ACCOUNT_RECORD_LIMITS_REVIEW.md`: REQUEST CHANGES (P1 1, P2 4, P3 5, conditions C1-C5). Revision 2 answers every finding;
+the mapping is the final section, "Rev 2 changes". Document only: no code, schema, migration, Docker or runtime is
+changed by this file. Not approved.
 
 Human instruction (verbatim): "Before enabling the backbone beyond `:8021`, propose configurable server-side safety
 limits and retention/rejection behavior for: reading positions, typed responses, notes, conversations. Do not invent
@@ -46,8 +48,8 @@ routes (`grep` for rate limiting in `writing_coach/` finds only AI-provider tele
   `place IS NULL`, so it is invisible to the partial index `ix_library_items_place` and to any cap counted on it. A cap
   must count `started` rows, not rows with a place, and a null place on an absent row should insert nothing.
 - **F2.** The generic `PUT /api/works/{id}` (`work_api.py:268`) still accepts kinds `draft`, `response`, `conversation`
-  (`work_contract.py:27`) under **client-minted UUIDs**, bypassing the deterministic-key routes. Any per-kind guard must also
-  run there.
+  (`work_contract.py:27`) under **client-minted UUIDs**, bypassing the deterministic-key routes. No client calls it (no
+  `api/works/` writer in `static/orena`); only tests do. Rev 2 **refuses those kinds on it** (section 3.3b) rather than guarding them.
 - **F3.** `MAX_PAYLOAD_CHARS = 200_000` (`work_api.py:56`) is checked only on the generic route (`:276`). The dedicated
   routes rely on Pydantic bounds. The annotation worst case is **191,307 characters** (measured with the field maxima:
   80 highlights x {id 80, segment 255, sentence 400, at 40} + 120 notes x {id 80, key 255, text 600, at 40}), not the
@@ -56,6 +58,12 @@ routes (`grep` for rate limiting in `writing_coach/` finds only AI-provider tele
   text is Chinese. Not dangerous; the proposal text should be corrected.
 - **F4.** Draft autosave is a receipt producer the four named kinds are dwarfed by (section 2.3). It is outside the four
   kinds, but it shares the stream and therefore the rate rail.
+- **F6 (rev 2, review P1-1). Delete bypasses every count, and the live 20-import cap already has this defect.** Counting
+  `lifecycle <> 'deleted'` (the shipped `at_most_the_limit`, `account_records_api.py:230-241`, and rev 1's aggregate) lets a
+  loop create, mark deleted, repeat: a tombstone is terminal and ids are not reused, so every cycle leaves a row, a receipt
+  and a change record while the counted total never rises. Generic `PUT /api/works/{id}` accepts `lifecycle: deleted`
+  (`work_api.py:274-285`) and a creation may start deleted; the import route allows create, delete, create.
+  **This is an existing defect in code, to be fixed independently of the rest of this proposal** (section 3.3a).
 - **F5.** The eviction predicate `_place_only()` (`library_repository.py:66-76`) says "not filed" in its docstring but does not
   check collection membership. An eviction built on it must add `NOT EXISTS (library_collection_members ...)`.
 
@@ -69,7 +77,9 @@ a learner; derivations in sections 2 and 4):
 | Annotated texts (notes + highlights documents) | `ORENA_LIMIT_ANNOTATED_TEXTS` | 2,500 | per (account, language) | **reject** new text: 422 `annotation_limit`; existing texts still update |
 | Conversations | `ORENA_LIMIT_CONVERSATIONS` | 2,500 | per (account, language) | **reject** new conversation: 422 `conversation_limit` |
 | Turns per conversation (existing) | `ORENA_LIMIT_CONVERSATION_TURNS` | 24 | per conversation | 422 `turn_limit` (exists today) |
-| Record payload bytes (`works.payload`) | `ORENA_LIMIT_RECORD_BYTES` | 134,217,728 (128 MiB) | per (account, language) | **reject** new row, or a growth past 32 KB: 422 `record_bytes_limit` |
+| Record **stored** bytes (`works.payload` as stored, tombstones included) | `ORENA_LIMIT_RECORD_BYTES` | 134,217,728 (128 MiB) | per (account, language) | **reject** new row, or a growth past 32 KB: 422 `record_bytes_limit` |
+| Drafts (rev 2) | `ORENA_LIMIT_DRAFTS` | 2,500 | per (account, language) | **reject** new key: 422 `draft_limit` |
+| Deleted imports (tombstones; the only kind with a delete route) | `ORENA_LIMIT_IMPORT_TOMBSTONES` | 200 | per (account, language) | **reject** a new import: 422 `import_limit` |
 | Mutations per minute | `ORENA_LIMIT_WRITES_PER_MINUTE` | 240 | per account | 429 `write_rate_limited`, retryable |
 | Mutations per hour | `ORENA_LIMIT_WRITES_PER_HOUR` | 3,600 | per account | 429 `write_rate_limited`, retryable |
 | Place writes per minute | `ORENA_LIMIT_PLACE_WRITES_PER_MINUTE` | 120 | per account, per process | 429 `write_rate_limited` |
@@ -87,15 +97,17 @@ deletion**. Until a versioned policy exists nothing is purged (ADA section 5: "m
 ### 2.1 Assumptions [A]
 
 The repository holds no usage telemetry, so these are assumptions, stated so a reviewer can change them and re-run the
-arithmetic (appendix A).
+arithmetic (appendix A). **A2-A5 and every size in section 2.2 are UNMEASURED.** Nothing below is a measurement and the
+defaults are not to be read as one. Rev 2 makes measuring the draft cadence on the lane a precondition of fixing the rate
+defaults (section 9, rollout step 0) and records that in `CURRENT_HANDOFF.md` (review C5).
 
 | # | Assumption | Basis |
 | --- | --- | --- |
 | A1 | 100,000 accounts; 20,000 daily-active | target scale, AGENTS section 7; 20,000 DAU is the figure `LEARNER_RECORDS_D4.md` I4 already uses |
-| A2 | Of the DAU, **25% heavy** (5,000) and 75% typical (15,000). Non-daily accounts add a tail that is **not** estimated, so totals are a floor | [A] |
-| A3 | Heavy learner: 2 sessions/day, 365 days/year. Typical: 1 session/day, 208 days/year (4 days a week) | [A] |
-| A4 | Per session, heavy / typical: 1.5 / 1.0 new content opened (reading positions); 5 / 3 typed takes; 0.5 / 0.3 annotated texts at 9 / 5 pushes each; 0.5 conversations at 16 / 10 turns | [A]; Free Talk and Reading Transfer produce a take each (`free-talk/screen.js`, `saveResponse`); conversations are scenario-shaped (I6) |
-| A5 | Autosave drafts: 90 saves per writing session (15 minutes at about 6 saves a minute; a save follows a 1.2 s pause, `draft-sync.js:127`); heavy 1 session/day, typical 60/year | **[A], unmeasured**; the debounce only bounds it to about 50 a minute |
+| A2 | Of the DAU, **25% heavy** (5,000) and 75% typical (15,000). Non-daily accounts add a tail that is **not** estimated, so totals are a floor | **[A], unmeasured** |
+| A3 | Heavy learner: 2 sessions/day, 365 days/year. Typical: 1 session/day, 208 days/year (4 days a week) | **[A], unmeasured** |
+| A4 | Per session, heavy / typical: 1.5 / 1.0 new content opened (reading positions); 5 / 3 typed takes; 0.5 / 0.3 annotated texts at 9 / 5 pushes each; 0.5 conversations at 16 / 10 turns | **[A], unmeasured**; Free Talk and Reading Transfer produce a take each (`free-talk/screen.js`, `saveResponse`); conversations are scenario-shaped (I6) |
+| A5 | Autosave drafts: 90 saves per writing session (15 minutes at about 6 saves a minute; a save follows a 1.2 s pause, `draft-sync.js:127`); heavy 1 session/day, typical 60/year | **[A], unmeasured**; the debounce only bounds it to about 50 a minute. To be measured on the lane before the rate defaults are fixed |
 | A6 | A learner works mostly in one learning language, so per-(account, language) limits are sized against one language's volume | [A]; conservative |
 | A7 | "Heavy 3-year volume" is the yardstick for default sizing: evictable derived state gets >= 1.5x it, learner-authored records >= 2x it | design rule of this proposal |
 | A8 | A heavy learner's typical row: response answer about 150 characters and compact coaching about 800 (`compactCoaching` caps at 4,000, `account-records.js`); annotation text 6 highlights + 3 notes (2,436 characters measured); conversation turn about 0.5 KB of content | [A] / measured for the annotation |
@@ -179,11 +191,14 @@ bound (`account_records_api.py:230-248`, `work_repository.py:103-105,138-139`): 
 
 - `create_guard` is passed by **every** creator, including `put_response`, the generic `PUT /api/works/{id}` (F2) and the
   conversation's first turn (`_append_turn.load`, `work_repository.py:322-323`). One helper runs a single aggregate,
-  `SELECT kind, count(*), coalesce(sum(pg_column_size(payload)), 0) FROM works WHERE incarnation_id = :inc AND language_code
-  = :lang AND lifecycle <> 'deleted' GROUP BY kind`, and compares each kind to its limit. It uses `ix_works_scope_sequence`
+  `SELECT kind, count(*) FILTER (WHERE lifecycle <> 'deleted') AS live, count(*) AS total, coalesce(sum(pg_column_size(payload)), 0)
+  FROM works WHERE incarnation_id = :inc AND language_code = :lang GROUP BY kind` (**all rows, tombstones included**, review
+  P1-1), and compares each kind to its limit. It uses `ix_works_scope_sequence`
   for the range and reads the heap for `kind`; for the heaviest account at cap (about 30,000 rows) that is one scan of about
   10-20 ms [I], paid only on **creation**, which is 0.1 a second at the target. `pg_column_size` of a TOASTed value reads the
-  pointer, not the value.
+  pointer, not the value. **It is therefore the stored (possibly compressed) size**, not the logical size (review P2-4):
+  prose compresses about 2-3x, so the 128 MiB budget is a *stored-size* budget and admits more logical bytes than its
+  number. It is a rail; the true ceiling is stated in 4.3.
 - A **replay never hits a guard.** A retry of a committed creation finds the row, so `load` does not call `create_guard`
   (`work_repository.py:135-140`), and the receipt lookup precedes the decision (`mutation_commit.py:132-140,171-179`). The
   rate rail (section 6) must be evaluated after the receipt lookup and skipped on a receipt match, for the same reason.
@@ -191,13 +206,48 @@ bound (`account_records_api.py:230-248`, `work_repository.py:103-105,138-139`): 
   larger than the old, the same aggregate runs with the delta. Typical payloads are 1-3 KB, so the aggregate almost never
   runs on an update.
 
+**3.3a Tombstones count (review P1-1, C1).** Row-count rails count every row of a kind whatever its lifecycle, and the byte
+budget includes tombstones. Per kind:
+- `response`, `conversation`, `annotation` and `draft` have **no delete route** (clearing an annotation is `{cleared: true}`
+  on the same row; the others are never deleted). Creation with `lifecycle = 'deleted'` is **refused** (422
+  `lifecycle_invalid`) on every path; the dedicated routes already write only `active`. With deletion impossible, "all rows"
+  equals "live rows" and nothing can be recycled.
+- `imported` is the one kind with a delete route, and delete-and-recreate is legitimate. The live bound stays 20
+  (`account_records_api.py:40`), and the guard must count **live** rows against 20 **and total rows (live + tombstones)**
+  against a separate larger bound, `ORENA_LIMIT_IMPORT_TOMBSTONES` = **200**: heavy import use is of the order of one a week
+  (52 a year, [A] unmeasured), 156 in three years x 1.25 = about 200. Beyond it a new import is refused with the existing
+  422 `import_limit`. A tombstone carries no text (`delete_import`), so 200 of them are small; the rail stops the loop, it
+  does not bound bytes.
+- **Existing defect, fix in code now, independent of this proposal's other rails:** the shipped import guard counts only
+  `lifecycle <> 'deleted'`, so create / delete / create is unbounded today against the live 20-import cap. It should be
+  fixed and tested (section 9) before :8021 holds anything but test data, and it needs only the tombstone bound as new
+  configuration.
+
+**3.3b The generic route is closed, not guarded (review P2-1, C2).** `PUT /api/works/{id}` stops accepting `draft`,
+`response` and `conversation`: `GENERIC_WORK_KINDS` (`work_contract.py:27`) becomes empty for writes and the route answers
+422 `work_kind_invalid`, the answer it already gives `annotation` and `imported`. Each has a dedicated route that derives a
+deterministic id from account, incarnation, language and key. No client uses the generic writer, so the only breakage is
+tests (`tests/test_work_api.py`), which move to the dedicated routes. The reads stay. This removes the client-UUID creator
+for all three kinds, **drafts included**, and `MAX_PAYLOAD_CHARS` (`work_api.py:56`) then bounds nothing writable. Drafts
+still need a count rail, because `PUT /api/drafts/{key}` creates a row per key (<= 200): `ORENA_LIMIT_DRAFTS` = **2,500**
+per (account, language), derived under A7 as heavy about one piece a day = 365 a year, 1,095 in three years, x 2.3 (A3, [A]
+unmeasured); rejected with 422 `draft_limit`, never evicted (it is the learner's text). Drafts are a fifth guarded kind in
+the shared helper.
+
 **3.4 Scope.** Counts are per (incarnation, language), the same scope as the import bound and as every `works` row
 (`work_repository.py:256-257`). Library rows (`library_items`) are per (user, language). Switching language does not reset a
-limit and does not share one. A re-registered account (new incarnation) starts at zero, as its data does.
+limit and does not share one, so **the account-wide ceiling is the per-language ceiling times the number of enabled
+languages** (review P3-2): two languages (en, zh) double every figure in 4.1-4.4, three triple it. The sizing in section 2 is
+per language on purpose (A6). A re-registered account (new incarnation) starts at zero, as its data does.
 
 **3.5 Error contract.** Stable machine codes in `detail.category`, `retryable: false` for counts, `true` for rate; a
-`context` of `{limit: N}` only (no learner data, no other account). HTTP: 422 for a count or byte limit (the status
-`import_limit` already answers, `tests/test_d4_account_records.py:367`), 429 for rate, 413 `work_too_large` unchanged. The
+`context` of `{limit: N}` only (no learner data, no other account). A 429 carries `retryAfterSeconds` and the **name of the
+rail that fired, and no counts or limits of any other rail** (review P3-4), so the response is not a probing oracle for the
+others. HTTP: 422 for a count or byte limit (the status
+`import_limit` already answers, `tests/test_d4_account_records.py:367`), 429 for rate, 413 `work_too_large` unchanged. **The 429 needs an explicit branch in every route** (review P2-2): `_commit` (`account_records_api.py`), `put_work`
+(`work_api.py`), `put_draft`, and `append_conversation_turn` each map every `rejected` outcome to 422 today. A `rate_limited`
+reason must be tested for before that line and raised as `orena_http_error(429, 'write_rate_limited', ..., retryable=True,
+context={'rail': ..., 'retryAfterSeconds': ...})`; `/api/continue` raises it from its own bucket. The
 human-readable `message` is the envelope's existing English developer string ("This change was not accepted."); no new
 learner copy is written.
 
@@ -253,6 +303,19 @@ ascending. "Place-only" is `_place_only()` **plus** `NOT EXISTS (SELECT 1 FROM l
 library_items.id)` (F5). A row that is kept, marked, noted, given a state, or filed is **never deleted**; if the oldest rows
 are all saved (a pathological account), clear their `place` and `place_at` instead (the `forget` precedent,
 `library_repository.py:489-511`). The response is the ordinary `written`. No error code exists for this rail.
+
+**Concurrency (review P2-3).** Place writes take no stream lock, so two creators at the cap may both evict and both insert;
+the overshoot is bounded by the number of concurrent creators and is harmless. The eviction is one statement,
+`DELETE FROM library_items WHERE id IN (<ids>) AND <place-only predicate> AND NOT EXISTS (<membership>)`, re-checking the
+predicate in the statement itself so a row saved between the select and the delete survives. A concurrent
+`PUT /api/continue` for a row that has just been evicted must not fail: `set_place` does `session.get(...)` after its UPDATE
+and calls `_place_dict` on the result (`library_repository.py` around `:341-345`), which is `None` for a deleted row (a 500).
+The update path therefore treats a vanished row (zero rows updated, or a `None` re-read) as an absent row, takes the insert
+branch and answers `written`. A test forces the interleaving (section 9).
+
+**Recorded consequence (review P3-1).** Eviction deletes the oldest place rows, including ones carrying `finished` (Reading
+Complete's "Finished"). Acceptable for navigation state, and written down so that a five-year account that no longer shows
+an old text as finished is not read as a defect.
 
 **What the client shows.** Nothing new. `sendPlace` and `clearPlace` swallow every failure (`continue-sync.js:69,79`), the
 device still holds its continuation list of 20, and no surface claims a place is saved. A 429 from the place bucket is the
@@ -313,8 +376,16 @@ pushes each = 3,285 mutations; typical 62 documents, 312 pushes. Typical documen
 
 **Byte budget derivation.** Heavy `works.payload` per year: responses 3,650 x 1.05 KB = 3.7 MB, annotations 365 x 2.4 KB =
 0.9 MB, conversation headers 365 x 0.4 KB = 0.15 MB, drafts about 0.6 MB [A] = **5.3 MB a year, 26.6 MB in five years**.
-**128 MiB = 4.8x that.** Conversation turn content lives in `work_turns` and is not in this budget; it is bounded by
-conversations x 24 x the per-turn cap instead (4.4).
+**128 MiB = 4.8x that.** It is a **stored-size** budget (`pg_column_size`, section 3.3: compressed, so it admits roughly 2-3x
+its number in logical prose bytes) and it includes tombstones. **`work_turns` content is not in it** (the table has no
+account-scoped index and the content is a plain `text` column, so summing it is a scan, not a probe).
+
+**True ceiling per (account, language), all rails at their defaults, hostile content** (review P2-4): `works.payload` stops at
+128 MiB stored in total (responses alone could otherwise reach 25,000 x 24 KB = 600 MB logical); conversation turns up to
+2,500 x 24 turns x 14.6 KB = about **0.9 GB, outside the budget**; places 5,000 x 3 KB = 15 MB; receipts and change records at
+0.65 KB per mutation, bounded by the rate rail rather than a count. The operator-facing ceiling is therefore **about 1 GB of
+content plus the stream, per language**, times the enabled languages (3.4). Closing the turns half exactly needs counters
+(S2), which the review judges not worth a schema decision before :8000.
 
 **Proposed.** `ORENA_LIMIT_ANNOTATED_TEXTS` = **2,500** per (account, language), via `create_guard` on
 `put_annotations`; `ORENA_LIMIT_RECORD_BYTES` as in 4.2, checked on creation and on growth past 32 KB. A `cleared`
@@ -416,13 +487,17 @@ request and rewrites a payload. So a rate rail is required, and for the same rea
 
 **Stream mutations** (everything through `commit_mutation`): per **account**, `ORENA_LIMIT_WRITES_PER_MINUTE` = **240**
 and `ORENA_LIMIT_WRITES_PER_HOUR` = **3,600**, evaluated in the same transaction, after the stream lock and the receipt
-lookup, skipped on a replay. No schema and no counter table: the account's recent mutations are its newest `change_records`,
-read through the existing unique index `(incarnation_id, sequence)`:
-`SELECT created_at FROM change_records WHERE incarnation_id = :inc ORDER BY sequence DESC OFFSET 239 LIMIT 1`; if that time
-is within 60 seconds, 240 mutations landed in the last minute. The hour check is the same with `OFFSET 3599`. Cost: one
-index walk of at most 3,600 entries per mutation, about 1 ms [I], about 0.014 cores at the average 10.7 mutations/s of the
-all-mutations volume. A later compaction must keep at least the newest 3,600 change records per account. The refusal is
-**429 `write_rate_limited`**, `retryable: true`, `context: {retryAfterSeconds}`.
+lookup, skipped on a replay. No schema and no counter table, and **an O(1) lookup, not a walk** (review P2-2, C3):
+sequences are gap-free per incarnation (allocated from `account_streams.next_sequence` under the lock and rolled back with
+the transaction, `mutation_commit.py:106-112,187-194`) and the head `H` is already read. The mutation about to take
+sequence `H` is the 240th in the last minute if the change record at sequence `H - 240` is under 60 seconds old:
+`SELECT created_at FROM change_records WHERE incarnation_id = :inc AND sequence = :h_minus_n`, a probe of the unique index
+`uq_change_record_sequence (incarnation_id, sequence)` plus one heap fetch, once per rail (two probes per mutation). The
+walk of rev 1 (`OFFSET 239`) is dropped: it fetched the heap for every skipped row. **Fallback only if a later compaction
+creates gaps** (reserved, section 5): a missing sequence at `H - N` reads as "not enough history", i.e. under the rail, and
+compaction must then keep a floor of the newest 3,600 change records per account. The refusal is **429
+`write_rate_limited`**, `retryable: true`, `context: {rail, retryAfterSeconds}`, raised through the explicit per-route
+branch of section 3.5.
 
 **Why these numbers.** Legitimate ceilings (one device): annotation push <= 1 per 1.2 s quiet; draft save <= 1 per 1.2 s
 pause (`draft-sync.js:127`), realistically about 6 a minute and at most about 50; conversation turn <= about 12 a minute;
@@ -437,6 +512,9 @@ headroom is needed, raise the hour, not the minute.
 rails (4.1): the per-row interval (exact, from the row's own `place_at`) and the in-process per-account bucket
 (approximate). A per-account place counter table would make the second exact; it is a schema decision (section 7) not
 justified by a rail whose purpose is to stop a loop.
+
+The place bucket is per process, so with N workers the ceiling is N x 120 (review P3-3); a change of worker count is
+recorded as a deployment note in `CURRENT_HANDOFF.md`.
 
 **What this does not defend against.** Many accounts. Per-account rails cannot stop an actor who creates accounts; that is
 sign-up abuse control (Cloudflare, OAuth, the human gates in AGENTS section 10) and out of scope here.
@@ -477,8 +555,7 @@ invented without a volume basis:
 - **Collections**: `COLLECTION_LIMIT = 200` (`library_repository.py:54`) limits a *read*, not creation (`:545-562`).
 - **Kept-word provenance** (`POST /api/library/vocabulary/{word}/provenance`, `account_records_api.py`): a
   `language_provenance` row and a receipt per operation, `focus` <= 1,200; no count.
-- **Drafts** (`PUT /api/drafts/{key}`, `work_api.py:357`): a row per key <= 200; bounded per row at 12,000 characters; the
-  dominant receipt producer (A5). They pass through the rate rail.
+- **Drafts** are no longer adjacent: a guarded kind (3.3b), and they pass through the rate rail.
 - **Speech attempts** (`speaking_attempts`): bounded by the speech domain, not by this proposal.
 
 ---
@@ -486,8 +563,9 @@ invented without a volume basis:
 ## 9. Test plan
 
 Unit and API tests with the limits set small through the environment (the module reads them once, so the test sets them
-before import or uses a config seam), then the full suite. PostgreSQL-only proofs are **local execution** and must say so
-(`ORENA_TEST_POSTGRES_URL`; CI has no PostgreSQL service, IMPLEMENTATION_REVIEW P2-7).
+before import or uses a config seam), then the full suite. **PostgreSQL-only proofs are LOCAL EXECUTION, not CI evidence**, and the completion report must say so
+(`ORENA_TEST_POSTGRES_URL`; CI has no PostgreSQL service, IMPLEMENTATION_REVIEW P2-7). Everything that touches `FOR UPDATE`, the
+stream lock, `pg_column_size`, TOAST, races and concurrency in the rows above is in that class (review C5).
 
 | Area | Test |
 | --- | --- |
@@ -495,7 +573,12 @@ before import or uses a config seam), then the full suite. PostgreSQL-only proof
 | Race | N+1 concurrent creations at N-1 admit exactly one (mirror the import barrier test, `tests/test_d4_account_records.py` near `:367`) |
 | Replay | a committed creation retried at the limit answers `replay`, not a refusal; an update of an existing row at the limit succeeds |
 | Scope | another language and another account are unaffected; a re-registered account starts at zero |
-| F2 | the generic `PUT /api/works/{id}` is refused for kinds `response` and `conversation` at the limit |
+| F2 / C2 | the generic `PUT /api/works/{id}` answers 422 `work_kind_invalid` for `draft`, `response`, `conversation`; the dedicated routes still work; the draft rail refuses the 2,501st key |
+| F6 / C1 | a create-then-delete loop on the import route stops at the tombstone bound; creation with `lifecycle: deleted` is refused for every non-import kind; the 20-live-import behaviour is otherwise unchanged. **This test and its fix land first, alone.** |
+| Eviction race (P2-3) | a place PUT interleaved with the eviction of its row answers `written`, never a 500; the eviction statement does not delete a row that became saved between select and delete |
+| 429 mapping (P2-2) | `_commit`, `put_work`, `put_draft`, turn append and `/api/continue` each return 429 with `rail` and `retryAfterSeconds` and no other rail's numbers |
+| Rate lookup (P2-2) | the guard issues point probes at `H - 240` and `H - 3600` (assert the SQL, not a walk); a gap at `H - N` reads as under the rail |
+| Stored vs logical (P2-4) | a compressible payload counts as its `pg_column_size`; the budget test uses incompressible text so compression does not defeat it |
 | F1 | `PUT /api/continue/{id}` with `place: null` on an absent row inserts nothing |
 | Place eviction | at 5,000, the next insert evicts the 100 oldest place-only rows; kept, pinned, noted, stated and **filed** rows are never deleted; saved rows lose only `place`; the written status is `written` |
 | Place rate | same-row writes under 1 s answer `coalesced`; the per-account bucket returns 429 after 120 in a minute, recovers after it |
@@ -507,7 +590,13 @@ before import or uses a config seam), then the full suite. PostgreSQL-only proof
 | Regression | the existing bounds (20 imports, 24 turns, annotation and response field maxima, `work_too_large`) unchanged |
 
 **Rollout.**
-1. Independent review of this document (AGENTS section 1). Nothing is implemented before it.
+0. **Precondition (review P3-5, C5):** measure the draft cadence (and whatever of A2-A4 can be observed) on the lane before
+   the rate defaults are fixed: log mutations per account per minute and hour from `change_records` on :8021 for a fixed
+   period and compare with A5. If the measured maximum approaches 3,600 an hour, raise the hour rail, not the minute.
+   Record in `CURRENT_HANDOFF.md` that A2-A5 and section 2.2 are unmeasured, that the rate numbers are provisional until
+   then, and the per-process place-bucket note.
+0a. Fix the existing import tombstone defect (3.3a) first and alone.
+1. Independent review of this document (AGENTS section 1). Nothing else is implemented before it.
 2. Implement in the lane `codex/work`, limits **on by default** (they are rails, not features), one commit per rail.
 3. Run the section 9 tests on the lane sandbox with low limits and again with the defaults; record local-execution
    evidence; add the PostgreSQL service job when CI gets one.
@@ -518,6 +607,16 @@ before import or uses a config seam), then the full suite. PostgreSQL-only proof
 ---
 
 ## 10. Questions for the reviewer
+
+Rev 2: the reviewer's answers to the twelve questions (`ACCOUNT_RECORD_LIMITS_REVIEW.md`) are adopted as written: sizing rule kept
+and labelled an assumption; per (account, language); evict places; creation plus growth is enough for the byte rail and
+counters (S2) are deferred; 422 with `<kind>_limit`, 429 for rate, no 507; cleared annotations count; 240/min kept, raise the
+hour first if needed; in-process place bucket accepted; Principal Architect owns receipts with option A and a written trigger
+(receipts above 100 M rows or 100 GB, or one year from first production enablement, whichever first, in
+`CURRENT_HANDOFF.md`); the digest in a deleted import's receipt is learner-derived data, covered by the D-055(b) enumeration
+of `mutation_receipts`; residual accepted once F6 is closed; this round is the four kinds plus drafts, with library rows,
+collections and provenance next; no learner notice. Questions 1-12 below are kept for the record; the ones rev 2 still
+leaves open are Q7 (hour rail, pending measurement) and Q9 (the trigger value, for the human).
 
 1. **Sizing rule (A7).** Is "evictable state >= 1.5x, learner-authored >= 2x the heavy 3-year volume" the right yardstick,
    and is the heavy profile (A3-A5) plausible? The defaults move linearly with it; appendix A reruns it.
@@ -570,3 +669,25 @@ Sizes measured rather than estimated: annotation payloads (2,436 characters typi
 with tombstones; about 441 KB in UTF-8 with Chinese text) come from `json.dumps` over payloads built with the field maxima in
 `account_records_api.py:94-106`. Everything marked [I] in section 2.2 is to be replaced by `pg_total_relation_size` at
 volume.
+
+---
+
+## Rev 2 changes (answering `ACCOUNT_RECORD_LIMITS_REVIEW.md`)
+
+| Finding / condition | Edit |
+| --- | --- |
+| **P1-1 / C1** delete bypasses every count | New F6 (Summary); 3.3 aggregate counts all rows incl. tombstones; new 3.3a (no `deleted` on creation for kinds without a delete route; imports: live 20 plus `ORENA_LIMIT_IMPORT_TOMBSTONES` = 200 with derivation); states that the **live 20-import cap already has this defect, to be fixed in code first and alone**; byte budget includes tombstones; defaults table; test row F6 |
+| **P2-1 / C2** `draft` uncapped via the generic route | F2 reworded; new 3.3b closes the generic writer for `draft`/`response`/`conversation` (no client uses it; tests move) and adds `ORENA_LIMIT_DRAFTS` = 2,500 with derivation; section 8 drops drafts; test row F2 |
+| **P2-2 / C3** rate lookup not O(1); 429 mapping | Section 6 rewritten: point probe at `head - N` on `uq_change_record_sequence`, gap fallback, compaction floor; 3.5 adds the explicit per-route 429 branch (`_commit`, `put_work`, `put_draft`, turn append, `/api/continue`); test rows |
+| **P2-3 / C4** eviction DELETE vs place UPDATE race | 4.1 Concurrency paragraph: single re-checked DELETE; vanished row in `set_place` takes the insert branch and answers `written`; test row |
+| **P2-4 / C4** stored vs logical size; `work_turns` | 3.3 and 4.3: budget is a stored-size (`pg_column_size`) budget; `work_turns` excluded and why; true per-language ceiling (about 1 GB plus the stream) stated |
+| **C5** unmeasured inputs; PG-only tests | A2-A5 and 2.2 labelled UNMEASURED; rollout step 0 (measure draft cadence on the lane before fixing rate defaults, record in `CURRENT_HANDOFF.md`); PostgreSQL-only proofs labelled local execution in section 9 |
+| P3-1 eviction deletes `finished` | 4.1 recorded consequence |
+| P3-2 languages multiply the ceiling | 3.4 states the account-wide ceiling as per-language x enabled languages |
+| P3-3 place bucket per process | Section 6 note; deployment note in `CURRENT_HANDOFF.md` (rollout step 0) |
+| P3-4 probing oracle | 3.5: 429 `context` names only the fired rail |
+| P3-5 hour rail precondition | Rollout step 0 makes measurement a precondition, raise the hour not the minute |
+| Reviewer's answers Q1-Q12 | Adopted; recorded at the head of section 10 |
+
+Not changed: the defaults for places, responses, annotated texts, conversations and bytes; evict-versus-reject; the
+receipts section (still reserved, option A, Principal Architect as owner); the no-schema conclusion.
