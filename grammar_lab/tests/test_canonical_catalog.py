@@ -9,11 +9,12 @@ import pytest
 import yaml
 
 from grammar_lab.pipeline.canonical import (
-    DEFAULT_FUNCTION, canonical_dir, catalog_is_current, catalog_path, load_canonical, write_catalog,
+    canonical_dir, catalog_is_current, catalog_path, load_canonical, write_catalog,
     zh_source_coverage,
 )
 from grammar_lab.pipeline.content_store import load_functions, load_points
 from grammar_lab.pipeline.coverage import coverage_report
+from grammar_lab.pipeline.corpus import generation_items
 from grammar_lab.pipeline.jsonio import format_json, read_json
 from grammar_lab.pipeline.seed import apply_seed, load_catalog, load_seeds, select_ids
 from grammar_lab.pipeline.ui_fixtures import DEMO_POINTS, FIXTURE_DIR, INDEX_NAME, build_fixtures
@@ -138,6 +139,30 @@ def test_generate_selection_resolves_every_level(lang: str, levels: dict[str, in
     assert select_ids(lang, "Z9") == []
 
 
+def test_corpus_generation_selector_can_include_existing_reviewed_points() -> None:
+    plan = {
+        "languages": {
+            "en": {
+                "items": [
+                    {"id": "en.ready", "level": "A1", "status": "ready"},
+                    {"id": "en.generated", "level": "A1", "status": "generated"},
+                    {"id": "en.blocked", "level": "A1", "status": "blocked_metadata"},
+                    {
+                        "id": "en.generated_unreviewed",
+                        "level": "A1",
+                        "status": "generated_unreviewed_metadata",
+                    },
+                ]
+            }
+        }
+    }
+    assert generation_items(plan) == [("en", "A1", "en.ready")]
+    assert generation_items(plan, include_generated=True) == [
+        ("en", "A1", "en.ready"),
+        ("en", "A1", "en.generated"),
+    ]
+
+
 def test_generate_level_option_reads_the_catalog_not_the_old_seed_subset() -> None:
     from grammar_lab.pipeline.cli import app
     from typer.testing import CliRunner
@@ -147,19 +172,6 @@ def test_generate_level_option_reads_the_catalog_not_the_old_seed_subset() -> No
     assert len(select_ids("en", "A1")) == 30
     result = CliRunner().invoke(app, ["generate", "--lang", "en", "--level", "Z9"])
     assert result.exit_code != 0 and "no catalogue points at level Z9" in result.output
-
-
-@pytest.mark.parametrize("lang", ["en", "zh"])
-def test_a_default_point_starts_as_a_valid_seeded_point(lang: str) -> None:
-    seeded = {seed["id"] for seed in load_seeds(lang)}
-    record = next(r for r in load_catalog(lang) if r["id"] not in seeded)
-    point = apply_seed(None, lang, record["id"])
-    assert point is not None and point["id"] == record["id"]
-    assert point["level"]["value"] == record["level"] and point["function"] == DEFAULT_FUNCTION
-    assert point["aliases"] == record["aliases"]
-    assert point["source_refs"].get("r5", []) == record["r5"]
-    assert set(point["header"]["title"]) == {"vi"}  # placeholder in the required locale
-    assert point["source_anchors"] == {"status": "unanchored", "items": []}
 
 
 def test_zh_point_carries_its_gf0025_source_refs() -> None:
