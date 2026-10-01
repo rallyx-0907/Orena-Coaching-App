@@ -33,7 +33,7 @@ from grammar_lab.pipeline.route import DEFAULT_THRESHOLD_BY_LANG, apply_route, r
 from grammar_lab.pipeline.canonical import catalog_is_current, load_canonical, write_catalog
 from grammar_lab.pipeline.coverage import coverage_report, render_text as render_coverage
 from grammar_lab.pipeline.corpus import generation_items, matches_generation_provenance, normalize_langs, plan_corpus, render_text as render_corpus
-from grammar_lab.pipeline.seed import GenerationBlocked, check_generation_gate, select_ids
+from grammar_lab.pipeline.seed import GenerationBlocked, audit_seed_semantics, check_generation_gate, select_ids
 from grammar_lab.pipeline.export_package import ExportError, export_package, package_to_zip, validate_package
 from grammar_lab.pipeline.export_profile import (
     PROFILE_SCHEMA_PATH, derive_profile_schema, load_internal_schema, profile_drift,
@@ -88,6 +88,33 @@ def validate(
         typer.echo(f"validate --lang {lang}: {report.points} point(s), {verdict} in {elapsed:.2f}s")
     raise typer.Exit(0 if report.ok else 1)
 
+
+@app.command("seed-audit")
+def seed_audit_command(
+    lang: str = typer.Option("all", "--lang", help="all | en | zh."),
+    as_json: bool = typer.Option(False, "--json", help="Print machine-readable findings."),
+    root: Path = typer.Option(LAB_ROOT, "--root"),
+) -> None:
+    """Report obvious semantic-review debt in seed metadata. Exit 1 when found."""
+    try:
+        langs = normalize_langs(lang)
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc), param_hint="--lang") from exc
+    findings: list[dict[str, str]] = []
+    for code in langs:
+        for finding in audit_seed_semantics(code, root):
+            findings.append({"lang": code, **finding})
+    if as_json:
+        typer.echo(json.dumps(findings, ensure_ascii=False, indent=2))
+    else:
+        counts: dict[tuple[str, str], int] = {}
+        for finding in findings:
+            key = (finding["lang"], finding["code"])
+            counts[key] = counts.get(key, 0) + 1
+        for (code, issue), count in sorted(counts.items()):
+            typer.echo(f"{code}: {issue}: {count}")
+        typer.echo(f"seed-audit: {len(findings)} finding(s)")
+    raise typer.Exit(1 if findings else 0)
 
 @app.command("import-canonical")
 def import_canonical(
