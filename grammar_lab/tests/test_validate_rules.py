@@ -614,3 +614,17 @@ def test_every_documented_rule_has_a_passing_and_a_failing_case() -> None:
     assert documented, "rule table missing from validate.__doc__"
     assert documented <= failing, sorted(documented - failing)
     assert documented <= passing, sorted(documented - passing)
+
+
+def test_partial_corpus_accepts_canonical_reference_without_content_file(tmp_path: Path) -> None:
+    lab = Lab(tmp_path, "en")
+    lab.points["en.beta"]["contrasts"].append("en.gamma")
+    lab.write()
+    inventory = lab.root / "inventory"
+    inventory.mkdir(parents=True, exist_ok=True)
+    (inventory / "catalog_en.yaml").write_text(
+        "- id: en.gamma\n  level: A2\n  contrasts:\n  - en.beta\n",
+        encoding="utf-8",
+    )
+    report = lab.validate()
+    assert report.ok, report.issues
