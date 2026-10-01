@@ -1,0 +1,437 @@
+{
+  "schema_version": "0.4",
+  "id": "en.present_perfect.experience",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.past_experience",
+  "level": {
+    "framework": "cefr",
+    "value": "A2",
+    "rank": 2
+  },
+  "prereqs": [
+    "en.past_simple"
+  ],
+  "contrasts": [
+    "en.past_simple"
+  ],
+  "error_tags": [
+    "tense",
+    "word_choice"
+  ],
+  "source_refs": {},
+  "point_type": "tense_aspect",
+  "header": {
+    "title": {
+      "vi": "Hiện tại hoàn thành (trải nghiệm)",
+      "en": "Present perfect for experience"
+    },
+    "native_title": "Present perfect for experience",
+    "level": {
+      "framework": "cefr",
+      "value": "A2",
+      "rank": 2
+    },
+    "summary": {
+      "vi": "Thì hiện tại hoàn thành dùng để nói về một trải nghiệm trong quá khứ mà không nêu rõ thời điểm, và trải nghiệm đó vẫn còn liên quan đến hiện tại.",
+      "en": "Say what you have done in your life, without saying when."
+    },
+    "sub": {
+      "vi": "trải nghiệm",
+      "en": "experience"
+    }
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn kể rằng mình đã từng (hoặc chưa từng) làm gì đó trong đời, không quan trọng lúc nào."
+    },
+    {
+      "vi": "Khi bạn hỏi ai đó về kinh nghiệm của họ, ví dụ trong một cuộc phỏng vấn hoặc lần đầu gặp."
+    },
+    {
+      "vi": "Khi bạn dùng các từ như ever, never, before, already để nói về trải nghiệm."
+    },
+    {
+      "vi": "Khi bạn muốn nhấn mạnh kết quả hoặc ảnh hưởng của trải nghiệm đó ở hiện tại."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "S",
+        "role": "subject",
+        "label": {
+          "vi": "chủ ngữ"
+        }
+      },
+      {
+        "text": "have/has",
+        "role": "aux",
+        "label": {
+          "vi": "trợ động từ"
+        }
+      },
+      {
+        "text": "V3",
+        "role": "verb",
+        "label": {
+          "vi": "quá khứ phân từ"
+        }
+      },
+      {
+        "text": "O",
+        "role": "object",
+        "label": {
+          "vi": "tân ngữ"
+        },
+        "optional": true
+      },
+      {
+        "text": "before",
+        "role": "time",
+        "label": {
+          "vi": "trạng ngữ thời gian"
+        },
+        "optional": true
+      }
+    ],
+    "variants": {
+      "negative": [
+        {
+          "text": "S",
+          "role": "subject",
+          "label": {
+            "vi": "chủ ngữ"
+          }
+        },
+        {
+          "text": "have/has",
+          "role": "aux",
+          "label": {
+            "vi": "trợ động từ"
+          }
+        },
+        {
+          "text": "not",
+          "role": "particle",
+          "label": {
+            "vi": "phủ định"
+          }
+        },
+        {
+          "text": "V3",
+          "role": "verb",
+          "label": {
+            "vi": "quá khứ phân từ"
+          }
+        },
+        {
+          "text": "O",
+          "role": "object",
+          "label": {
+            "vi": "tân ngữ"
+          },
+          "optional": true
+        },
+        {
+          "text": "before",
+          "role": "time",
+          "label": {
+            "vi": "trạng ngữ thời gian"
+          },
+          "optional": true
+        }
+      ],
+      "question": [
+        {
+          "text": "Have/Has",
+          "role": "aux",
+          "label": {
+            "vi": "trợ động từ"
+          }
+        },
+        {
+          "text": "S",
+          "role": "subject",
+          "label": {
+            "vi": "chủ ngữ"
+          }
+        },
+        {
+          "text": "ever",
+          "role": "time",
+          "label": {
+            "vi": "trạng ngữ thời gian"
+          },
+          "optional": true
+        },
+        {
+          "text": "V3",
+          "role": "verb",
+          "label": {
+            "vi": "quá khứ phân từ"
+          }
+        },
+        {
+          "text": "O",
+          "role": "object",
+          "label": {
+            "vi": "tân ngữ"
+          },
+          "optional": true
+        }
+      ]
+    },
+    "illustration": {
+      "kind": "timeline",
+      "timeline": {
+        "shape": "unspecified_past"
+      }
+    }
+  },
+  "examples": [
+    {
+      "text": "I have visited Japan twice.",
+      "form": "affirmative",
+      "spans": [
+        {
+          "start": 0,
+          "end": 1,
+          "role": "subject"
+        },
+        {
+          "start": 2,
+          "end": 6,
+          "role": "aux"
+        },
+        {
+          "start": 7,
+          "end": 14,
+          "role": "verb"
+        },
+        {
+          "start": 15,
+          "end": 20,
+          "role": "object"
+        }
+      ],
+      "annotation": {
+        "vi": "Trải nghiệm đã xảy ra trong quá khứ, không nêu thời điểm cụ thể."
+      },
+      "translation": {
+        "vi": "Tôi đã từng đến Nhật Bản hai lần."
+      }
+    },
+    {
+      "text": "She has never eaten sushi before.",
+      "form": "negative",
+      "spans": [
+        {
+          "start": 0,
+          "end": 3,
+          "role": "subject"
+        },
+        {
+          "start": 4,
+          "end": 7,
+          "role": "aux"
+        },
+        {
+          "start": 8,
+          "end": 13,
+          "role": "particle"
+        },
+        {
+          "start": 14,
+          "end": 19,
+          "role": "verb"
+        },
+        {
+          "start": 20,
+          "end": 25,
+          "role": "object"
+        },
+        {
+          "start": 26,
+          "end": 32,
+          "role": "time"
+        }
+      ],
+      "annotation": {
+        "vi": "Chưa từng có trải nghiệm này tính đến hiện tại."
+      },
+      "translation": {
+        "vi": "Cô ấy chưa từng ăn sushi bao giờ."
+      }
+    },
+    {
+      "text": "Have you ever been to Paris?",
+      "form": "question",
+      "spans": [
+        {
+          "start": 0,
+          "end": 4,
+          "role": "aux"
+        },
+        {
+          "start": 5,
+          "end": 8,
+          "role": "subject"
+        },
+        {
+          "start": 9,
+          "end": 13,
+          "role": "time"
+        },
+        {
+          "start": 14,
+          "end": 18,
+          "role": "verb"
+        },
+        {
+          "start": 19,
+          "end": 27,
+          "role": "object"
+        }
+      ],
+      "annotation": {
+        "vi": "Hỏi xem ai đó đã từng có trải nghiệm này chưa, không quan tâm thời điểm."
+      },
+      "translation": {
+        "vi": "Bạn đã từng đến Paris chưa?"
+      }
+    }
+  ],
+  "compare": [
+    {
+      "with": "en.past_simple",
+      "this_meaning": {
+        "vi": "Nói về trải nghiệm trong quá khứ, không xác định thời gian cụ thể, và trải nghiệm đó còn liên quan đến hiện tại."
+      },
+      "this_example": "I have visited Japan.",
+      "other_meaning": {
+        "vi": "Nói về một hành động đã kết thúc tại một thời điểm cụ thể trong quá khứ."
+      },
+      "other_example": "I visited Japan last year."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "wrong": "I have visited Japan last year.",
+      "right": "I visited Japan last year.",
+      "reason": {
+        "vi": "Khi có thời gian cụ thể trong quá khứ (last year), phải dùng thì quá khứ đơn, không dùng hiện tại hoàn thành."
+      },
+      "error_tag": "tense",
+      "l1": [
+        "vi"
+      ]
+    },
+    {
+      "wrong": "I have ever been to Paris.",
+      "right": "I have been to Paris.",
+      "reason": {
+        "vi": "Ever thường dùng trong câu hỏi và câu phủ định, không dùng trong câu khẳng định."
+      },
+      "error_tag": "word_choice",
+      "l1": [
+        "vi"
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "I ___ never eaten Thai food.",
+      "options": [
+        {
+          "text": "have",
+          "error_tag": null
+        },
+        {
+          "text": "has",
+          "error_tag": "agreement"
+        },
+        {
+          "text": "am",
+          "error_tag": "tense"
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Chủ ngữ 'I' đi với 'have', không dùng 'has' hay 'am'."
+      }
+    },
+    {
+      "q": "She has ___ to Spain three times.",
+      "options": [
+        {
+          "text": "been",
+          "error_tag": null
+        },
+        {
+          "text": "went",
+          "error_tag": "tense"
+        },
+        {
+          "text": "go",
+          "error_tag": "word_form"
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 'has' cần quá khứ phân từ 'been', không dùng 'went' hay 'go'."
+      }
+    },
+    {
+      "q": "___ you ever seen a ghost?",
+      "options": [
+        {
+          "text": "Have",
+          "error_tag": null
+        },
+        {
+          "text": "Has",
+          "error_tag": "agreement"
+        },
+        {
+          "text": "Do",
+          "error_tag": "tense"
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu hỏi với 'you' dùng 'Have', không dùng 'Has' hay 'Do'."
+      }
+    }
+  ],
+  "status": "draft_ai",
+  "sequence": 1,
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về nơi bạn đã từng đến.",
+      "en": "Write a sentence about a place you have been to."
+    },
+    "placeholder": "I have been to ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {
+          "role": "aux",
+          "any_of": [
+            "have",
+            "has",
+            "'ve"
+          ]
+        },
+        {
+          "role": "verb",
+          "regex": "\\b(?:been|gone|seen|eaten|visited|tried|done|met|read|\\w+ed)\\b"
+        }
+      ]
+    },
+    "sample": {
+      "text": "I have been to Da Nang twice."
+    }
+  }
+}

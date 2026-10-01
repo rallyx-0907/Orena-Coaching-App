@@ -1,0 +1,624 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.ba_construction",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.object_disposal",
+  "level": {
+    "framework": "hsk3",
+    "value": "3",
+    "rank": 3
+  },
+  "prereqs": [
+    "zh.le_completion"
+  ],
+  "contrasts": [],
+  "error_tags": [
+    "ba_sentence"
+  ],
+  "source_refs": {},
+  "point_type": "word_order",
+  "header": {
+    "title": {
+      "vi": "Câu chữ 把",
+      "en": "The 把 sentence"
+    },
+    "native_title": "把字句",
+    "level": {
+      "framework": "hsk3",
+      "value": "3",
+      "rank": 3
+    },
+    "summary": {
+      "vi": "Câu chữ 把 dùng để nhấn mạnh việc xử lý một vật cụ thể và kết quả của việc đó, với vật bị xử lý đứng ngay sau 把.",
+      "en": "把 puts the object before the verb to stress what was done to it and the result."
+    },
+    "sub": {
+      "vi": "kết quả xử lý",
+      "en": "handling an object"
+    },
+    "native_title_pinyin": [
+      "bǎ",
+      "zì",
+      "jù"
+    ]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói rõ mình đã làm gì với một vật cụ thể và kết quả ra sao."
+    },
+    {
+      "vi": "Khi vật bị xử lý là một đối tượng xác định, không phải chung chung."
+    },
+    {
+      "vi": "Khi câu có kết quả hoặc thay đổi rõ ràng ở cuối, như 完, 好, 在, 到."
+    },
+    {
+      "vi": "Khi muốn tránh cách nói chỉ nêu hành động mà không cho biết kết quả."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {
+          "vi": "chủ ngữ"
+        },
+        "pinyin": [
+          "zhǔ",
+          "yǔ"
+        ]
+      },
+      {
+        "text": "把",
+        "role": "marker",
+        "label": {
+          "vi": "trợ từ 把"
+        },
+        "pinyin": [
+          "bǎ"
+        ]
+      },
+      {
+        "text": "宾语",
+        "role": "object",
+        "label": {
+          "vi": "tân ngữ"
+        },
+        "pinyin": [
+          "bīn",
+          "yǔ"
+        ]
+      },
+      {
+        "text": "动词",
+        "role": "verb",
+        "label": {
+          "vi": "động từ"
+        },
+        "pinyin": [
+          "dòng",
+          "cí"
+        ]
+      },
+      {
+        "text": "补语",
+        "role": "complement",
+        "label": {
+          "vi": "bổ ngữ"
+        },
+        "pinyin": [
+          "bǔ",
+          "yǔ"
+        ]
+      }
+    ],
+    "variants": {
+      "negative": [
+        {
+          "text": "主语",
+          "role": "subject",
+          "label": {
+            "vi": "chủ ngữ"
+          },
+          "pinyin": [
+            "zhǔ",
+            "yǔ"
+          ]
+        },
+        {
+          "text": "没有",
+          "role": "aux",
+          "label": {
+            "vi": "phủ định"
+          },
+          "pinyin": [
+            "méi",
+            "yǒu"
+          ]
+        },
+        {
+          "text": "把",
+          "role": "marker",
+          "label": {
+            "vi": "trợ từ 把"
+          },
+          "pinyin": [
+            "bǎ"
+          ]
+        },
+        {
+          "text": "宾语",
+          "role": "object",
+          "label": {
+            "vi": "tân ngữ"
+          },
+          "pinyin": [
+            "bīn",
+            "yǔ"
+          ]
+        },
+        {
+          "text": "动词",
+          "role": "verb",
+          "label": {
+            "vi": "động từ"
+          },
+          "pinyin": [
+            "dòng",
+            "cí"
+          ]
+        },
+        {
+          "text": "补语",
+          "role": "complement",
+          "label": {
+            "vi": "bổ ngữ"
+          },
+          "pinyin": [
+            "bǔ",
+            "yǔ"
+          ]
+        }
+      ],
+      "question": [
+        {
+          "text": "主语",
+          "role": "subject",
+          "label": {
+            "vi": "chủ ngữ"
+          },
+          "pinyin": [
+            "zhǔ",
+            "yǔ"
+          ]
+        },
+        {
+          "text": "把",
+          "role": "marker",
+          "label": {
+            "vi": "trợ từ 把"
+          },
+          "pinyin": [
+            "bǎ"
+          ]
+        },
+        {
+          "text": "宾语",
+          "role": "object",
+          "label": {
+            "vi": "tân ngữ"
+          },
+          "pinyin": [
+            "bīn",
+            "yǔ"
+          ]
+        },
+        {
+          "text": "动词",
+          "role": "verb",
+          "label": {
+            "vi": "động từ"
+          },
+          "pinyin": [
+            "dòng",
+            "cí"
+          ]
+        },
+        {
+          "text": "补语",
+          "role": "complement",
+          "label": {
+            "vi": "bổ ngữ"
+          },
+          "pinyin": [
+            "bǔ",
+            "yǔ"
+          ]
+        },
+        {
+          "text": "了吗",
+          "role": "particle",
+          "label": {
+            "vi": "trợ từ nghi vấn"
+          },
+          "pinyin": [
+            "le",
+            "ma"
+          ]
+        }
+      ]
+    },
+    "illustration": {
+      "kind": "word_order"
+    }
+  },
+  "examples": [
+    {
+      "text": "我把书放在桌子上了。",
+      "form": "affirmative",
+      "spans": [
+        {
+          "start": 0,
+          "end": 1,
+          "role": "subject"
+        },
+        {
+          "start": 1,
+          "end": 2,
+          "role": "marker"
+        },
+        {
+          "start": 2,
+          "end": 3,
+          "role": "object"
+        },
+        {
+          "start": 3,
+          "end": 4,
+          "role": "verb"
+        },
+        {
+          "start": 4,
+          "end": 9,
+          "role": "complement"
+        }
+      ],
+      "annotation": {
+        "vi": "Câu nói rõ đã xử lý quyển sách và kết quả là nó nằm trên bàn."
+      },
+      "translation": {
+        "vi": "Tôi đã đặt quyển sách lên bàn rồi."
+      },
+      "pinyin": [
+        "wǒ",
+        "bǎ",
+        "shū",
+        "fàng",
+        "zài",
+        "zhuō",
+        "zi",
+        "shàng",
+        "le",
+        ""
+      ]
+    },
+    {
+      "text": "他没有把作业做完。",
+      "form": "negative",
+      "spans": [
+        {
+          "start": 0,
+          "end": 1,
+          "role": "subject"
+        },
+        {
+          "start": 1,
+          "end": 3,
+          "role": "aux"
+        },
+        {
+          "start": 3,
+          "end": 4,
+          "role": "marker"
+        },
+        {
+          "start": 4,
+          "end": 6,
+          "role": "object"
+        },
+        {
+          "start": 6,
+          "end": 7,
+          "role": "verb"
+        },
+        {
+          "start": 7,
+          "end": 8,
+          "role": "complement"
+        }
+      ],
+      "annotation": {
+        "vi": "Phủ định đặt trước 把, cho biết việc xử lý bài tập chưa đạt kết quả hoàn thành."
+      },
+      "translation": {
+        "vi": "Anh ấy chưa làm xong bài tập."
+      },
+      "pinyin": [
+        "tā",
+        "méi",
+        "yǒu",
+        "bǎ",
+        "zuò",
+        "yè",
+        "zuò",
+        "wán",
+        ""
+      ]
+    },
+    {
+      "text": "你把窗户关好了吗？",
+      "form": "question",
+      "spans": [
+        {
+          "start": 0,
+          "end": 1,
+          "role": "subject"
+        },
+        {
+          "start": 1,
+          "end": 2,
+          "role": "marker"
+        },
+        {
+          "start": 2,
+          "end": 4,
+          "role": "object"
+        },
+        {
+          "start": 4,
+          "end": 5,
+          "role": "verb"
+        },
+        {
+          "start": 5,
+          "end": 6,
+          "role": "complement"
+        },
+        {
+          "start": 6,
+          "end": 8,
+          "role": "particle"
+        }
+      ],
+      "annotation": {
+        "vi": "Câu hỏi có 吗 ở cuối, hỏi xem việc đóng cửa sổ đã xong chưa."
+      },
+      "translation": {
+        "vi": "Bạn đã đóng cửa sổ lại chưa?"
+      },
+      "pinyin": [
+        "nǐ",
+        "bǎ",
+        "chuāng",
+        "hu",
+        "guān",
+        "hǎo",
+        "le",
+        "ma",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "我放书在桌子上了。",
+      "right": "我把书放在桌子上了。",
+      "reason": {
+        "vi": "Người Việt thường đặt tân ngữ ngay sau động từ theo thói quen tiếng Việt, nhưng câu chữ 把 bắt buộc phải có 把 đứng trước tân ngữ để nhấn mạnh việc xử lý."
+      },
+      "error_tag": "ba_sentence",
+      "l1": [
+        "vi"
+      ],
+      "wrong_pinyin": [
+        "wǒ",
+        "fàng",
+        "shū",
+        "zài",
+        "zhuō",
+        "zi",
+        "shàng",
+        "le",
+        ""
+      ],
+      "right_pinyin": [
+        "wǒ",
+        "bǎ",
+        "shū",
+        "fàng",
+        "zài",
+        "zhuō",
+        "zi",
+        "shàng",
+        "le",
+        ""
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "请___窗户关好。",
+      "options": [
+        {
+          "text": "把",
+          "error_tag": null,
+          "pinyin": [
+            "bǎ"
+          ]
+        },
+        {
+          "text": "被",
+          "error_tag": "bei_sentence",
+          "pinyin": [
+            "bèi"
+          ]
+        },
+        {
+          "text": "在",
+          "error_tag": "word_choice",
+          "pinyin": [
+            "zài"
+          ]
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu chữ 把 dùng 把 trước tân ngữ để nhấn mạnh việc xử lý; 被 là câu bị động, 在 không phù hợp ở vị trí này."
+      },
+      "q_pinyin": [
+        "qǐng",
+        "",
+        "",
+        "",
+        "chuāng",
+        "hù",
+        "guān",
+        "hǎo",
+        ""
+      ]
+    },
+    {
+      "q": "我___书放在桌子上了。",
+      "options": [
+        {
+          "text": "把",
+          "error_tag": null,
+          "pinyin": [
+            "bǎ"
+          ]
+        },
+        {
+          "text": "被",
+          "error_tag": "bei_sentence",
+          "pinyin": [
+            "bèi"
+          ]
+        },
+        {
+          "text": "给",
+          "error_tag": "word_choice",
+          "pinyin": [
+            "gěi"
+          ]
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Chủ ngữ 我 thực hiện hành động lên 书, nên dùng 把; 被 dùng khi chủ ngữ bị tác động, 给 không đúng ngữ pháp ở đây."
+      },
+      "q_pinyin": [
+        "wǒ",
+        "",
+        "",
+        "",
+        "shū",
+        "fàng",
+        "zài",
+        "zhuō",
+        "zi",
+        "shàng",
+        "le",
+        ""
+      ]
+    },
+    {
+      "q": "他___作业做完了。",
+      "options": [
+        {
+          "text": "把",
+          "error_tag": null,
+          "pinyin": [
+            "bǎ"
+          ]
+        },
+        {
+          "text": "被",
+          "error_tag": "bei_sentence",
+          "pinyin": [
+            "bèi"
+          ]
+        },
+        {
+          "text": "对",
+          "error_tag": "word_choice",
+          "pinyin": [
+            "duì"
+          ]
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu chữ 把 cần 把 trước tân ngữ 作业 để nêu kết quả xử lý; 被 sai hướng tác động, 对 không dùng trong cấu trúc này."
+      },
+      "q_pinyin": [
+        "tā",
+        "",
+        "",
+        "",
+        "zuò",
+        "yè",
+        "zuò",
+        "wán",
+        "le",
+        ""
+      ]
+    }
+  ],
+  "status": "draft_ai",
+  "sequence": 1,
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu nói bạn đã làm gì với một vật và kết quả ra sao (dùng 把).",
+      "en": "Write a sentence about what you did to something and the result (use 把)."
+    },
+    "placeholder": "我把……",
+    "placeholder_pinyin": [
+      "wǒ",
+      "bǎ",
+      "",
+      ""
+    ],
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {
+          "role": "marker",
+          "any_of": [
+            "把"
+          ]
+        },
+        {
+          "role": "complement",
+          "regex": "[完好在到给成]"
+        }
+      ]
+    },
+    "sample": {
+      "text": "我把作业做完了。",
+      "pinyin": [
+        "wǒ",
+        "bǎ",
+        "zuò",
+        "yè",
+        "zuò",
+        "wán",
+        "le",
+        ""
+      ]
+    }
+  }
+}

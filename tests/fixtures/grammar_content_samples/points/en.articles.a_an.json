@@ -1,0 +1,283 @@
+{
+  "schema_version": "0.4",
+  "id": "en.articles.a_an",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.reference",
+  "level": {
+    "framework": "cefr",
+    "value": "A1",
+    "rank": 1
+  },
+  "prereqs": [
+    "en.plural_nouns.regular"
+  ],
+  "contrasts": [
+    "en.articles.the"
+  ],
+  "error_tags": [
+    "article"
+  ],
+  "source_refs": {},
+  "point_type": "other",
+  "header": {
+    "title": {
+      "vi": "Mạo từ không xác định a/an",
+      "en": "Indefinite articles a / an"
+    },
+    "native_title": "Indefinite articles: a / an",
+    "level": {
+      "framework": "cefr",
+      "value": "A1",
+      "rank": 1
+    },
+    "summary": {
+      "vi": "Mạo từ không xác định a/an đứng trước danh từ đếm được số ít khi người nói không xác định rõ đối tượng cụ thể.",
+      "en": "Use a or an before a singular countable noun when the listener does not know which one."
+    },
+    "sub": {
+      "vi": "không xác định",
+      "en": "indefinite"
+    }
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi nhắc đến một người hay vật lần đầu, người nghe chưa biết chính xác là ai hay cái gì."
+    },
+    {
+      "vi": "Khi nói về một người hay vật thuộc một nhóm chung, không phải một cá thể cụ thể."
+    },
+    {
+      "vi": "Khi nói về nghề nghiệp hoặc vai trò của một người."
+    },
+    {
+      "vi": "Khi dùng trong câu cảm thán với danh từ đếm được số ít."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "a/an",
+        "role": "marker",
+        "label": {
+          "vi": "mạo từ không xác định"
+        },
+        "options": [
+          {
+            "text": "a"
+          },
+          {
+            "text": "an"
+          }
+        ]
+      },
+      {
+        "text": "adj",
+        "role": "complement",
+        "label": {
+          "vi": "tính từ bổ nghĩa"
+        },
+        "optional": true
+      },
+      {
+        "text": "N",
+        "role": "object",
+        "label": {
+          "vi": "danh từ đếm được số ít"
+        }
+      }
+    ],
+    "illustration": {
+      "kind": "none"
+    }
+  },
+  "examples": [
+    {
+      "text": "I have a dog.",
+      "form": "affirmative",
+      "spans": [
+        {
+          "start": 3,
+          "end": 4,
+          "role": "marker"
+        },
+        {
+          "start": 9,
+          "end": 12,
+          "role": "object"
+        }
+      ],
+      "annotation": {
+        "vi": "a đứng trước danh từ đếm được số ít bắt đầu bằng phụ âm."
+      },
+      "translation": {
+        "vi": "Tôi có một con chó."
+      }
+    },
+    {
+      "text": "She is an engineer.",
+      "form": "affirmative",
+      "spans": [
+        {
+          "start": 7,
+          "end": 9,
+          "role": "marker"
+        },
+        {
+          "start": 10,
+          "end": 18,
+          "role": "object"
+        }
+      ],
+      "annotation": {
+        "vi": "an đứng trước danh từ bắt đầu bằng nguyên âm."
+      },
+      "translation": {
+        "vi": "Cô ấy là một kỹ sư."
+      }
+    },
+    {
+      "text": "He bought a new car.",
+      "form": "affirmative",
+      "spans": [
+        {
+          "start": 10,
+          "end": 11,
+          "role": "marker"
+        },
+        {
+          "start": 12,
+          "end": 15,
+          "role": "complement"
+        },
+        {
+          "start": 16,
+          "end": 19,
+          "role": "object"
+        }
+      ],
+      "annotation": {
+        "vi": "a đứng trước tính từ bổ nghĩa cho danh từ đếm được số ít."
+      },
+      "translation": {
+        "vi": "Anh ấy đã mua một chiếc xe hơi mới."
+      }
+    }
+  ],
+  "compare": [
+    {
+      "with": "en.articles.the",
+      "this_meaning": {
+        "vi": "Dùng khi người nghe chưa biết hoặc không cần xác định rõ đối tượng cụ thể."
+      },
+      "this_example": "I saw a cat in the garden.",
+      "other_meaning": {
+        "vi": "Dùng khi cả người nói và người nghe đều đã biết đối tượng cụ thể được nhắc đến."
+      },
+      "other_example": "The cat is sleeping on the sofa."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "wrong": "I have dog.",
+      "right": "I have a dog.",
+      "reason": {
+        "vi": "Tiếng Việt không có mạo từ, nên người học thường bỏ a/an trước danh từ đếm được số ít."
+      },
+      "error_tag": "article",
+      "l1": [
+        "vi"
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "She wants to buy ___ umbrella.",
+      "options": [
+        {
+          "text": "an",
+          "error_tag": null
+        },
+        {
+          "text": "a",
+          "error_tag": "article"
+        },
+        {
+          "text": "the",
+          "error_tag": "article"
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Umbrella bắt đầu bằng nguyên âm /ʌ/, nên dùng an."
+      }
+    },
+    {
+      "q": "He is ___ teacher.",
+      "options": [
+        {
+          "text": "a",
+          "error_tag": null
+        },
+        {
+          "text": "an",
+          "error_tag": "article"
+        },
+        {
+          "text": "the",
+          "error_tag": "article"
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Teacher bắt đầu bằng phụ âm /t/, nên dùng a."
+      }
+    },
+    {
+      "q": "I need ___ new phone.",
+      "options": [
+        {
+          "text": "a",
+          "error_tag": null
+        },
+        {
+          "text": "an",
+          "error_tag": "article"
+        },
+        {
+          "text": "the",
+          "error_tag": "article"
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "New bắt đầu bằng phụ âm /n/, nên dùng a."
+      }
+    }
+  ],
+  "status": "draft_ai",
+  "sequence": 1,
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một thứ bạn có hoặc thấy (dùng a hoặc an).",
+      "en": "Write a sentence about something you have or see (use a or an)."
+    },
+    "placeholder": "I have a ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {
+          "role": "marker",
+          "any_of": [
+            "a",
+            "an"
+          ]
+        }
+      ]
+    },
+    "sample": {
+      "text": "I have an orange."
+    }
+  }
+}
