@@ -14,6 +14,8 @@ again - a client action, never a server merge of prose.
 """
 from __future__ import annotations
 
+import hashlib
+import logging
 import os
 import uuid
 from typing import Any
@@ -38,6 +40,7 @@ MAX_NOTE_CHARS = 600
 # device that made the item, so a removed id can never legitimately come back: a write that carries one is refused.
 MAX_TOMBSTONES = 500
 NOTE_TYPES = ('factual', 'reflection', 'question')
+_logger = logging.getLogger(__name__)
 MAX_IMPORTS = 20
 # Deleted imports are tombstones that are never removed, so "create, delete, create" would grow rows without bound
 # while the live count stays under MAX_IMPORTS. The total of an account's import rows, live and deleted, is bounded
@@ -215,6 +218,13 @@ class ImportSave(BaseModel):
     provider: str = Field(default='', max_length=40)
 
 
+def import_ref(form: str, reference: str) -> str:
+    """A content-free reference to a media import's membership id (`url:<link>` or `upload:<media id>`): what a
+    tombstone keeps so a device can tell WHICH of its imports was deleted without the link or the file being
+    stored. A text import's membership id is its record id, so it needs none."""
+    return hashlib.sha256(f'orena.import-ref:{form}:{reference}'.encode()).hexdigest()
+
+
 def _import_uuid(value: str) -> str:
     try:
         return str(uuid.UUID(value))
@@ -240,7 +250,12 @@ def _import_shape(row: dict[str, Any]) -> dict[str, Any]:
 def list_imports(limit: int = Query(20, ge=1, le=work_api.LIST_LIMIT)) -> dict[str, Any]:
     scope = work_api._scope()  # noqa: SLF001
     rows = _backbone().work.list_works(scope, kind='imported', source_kind='imported', limit=limit)
-    return {'imports': [_import_shape(row) for row in rows]}
+    # What was removed, content-free: `id` (form:record) and `ref` (see import_ref), so a device that still holds
+    # the item can drop it and never open it again. Bounded by the tombstone bound.
+    gone = _backbone().work.list_works(scope, kind='imported', source_kind='imported', limit=work_api.LIST_LIMIT, deleted=True)
+    return {'imports': [_import_shape(row) for row in rows],
+            'deleted': [{'id': f"{(row['payload'] or {}).get('form') or 'text'}:{(row['payload'] or {}).get('id') or ''}",
+                         'ref': str((row['payload'] or {}).get('ref') or '')} for row in gone]}
 
 
 @router.get('/imports/{import_id}')
@@ -300,6 +315,20 @@ def put_import(import_id: str, body: ImportSave) -> dict[str, Any]:
     )
 
 
+def _other_live_import_names(scope: Scope, media_id: str) -> bool:
+    """Whether a live import of this account (any language) still names the stored media. Two records can name the
+    same file (two devices kept it); the files go with the LAST one."""
+    from sqlalchemy import text as sql
+
+    with _backbone().work._engine.connect() as connection:  # noqa: SLF001
+        found = connection.execute(
+            sql("SELECT count(*) FROM works WHERE incarnation_id = :inc AND kind = 'imported' AND lifecycle <> 'deleted' "
+                "AND payload->>'form' = 'upload' AND payload->>'mediaId' = :media"),
+            {'inc': scope.incarnation, 'media': media_id},
+        ).scalar_one()
+    return found > 0
+
+
 @router.delete('/imports/{import_id}')
 def delete_import(import_id: str, operationId: str = Query(min_length=8, max_length=120),
                   expectedVersion: int = Query(ge=1)) -> dict[str, Any]:
@@ -312,12 +341,33 @@ def delete_import(import_id: str, operationId: str = Query(min_length=8, max_len
         raise orena_http_error(404, 'import_not_found', 'That import is not kept.', retryable=False)
     # A tombstone WITHOUT the content: deleting is erasing. Only what says which import this was stays (its id and
     # form); the title, the text and the link are dropped from the stored row, not merely hidden from the reads.
-    tombstone = {'id': client, 'form': str((row['payload'] or {}).get('form') or 'text')}
-    return _commit(
+    held = row['payload'] or {}
+    form = str(held.get('form') or 'text')
+    media_id = str(held.get('mediaId') or '') if form == 'upload' else ''
+    tombstone = {'id': client, 'form': form}
+    if form == 'upload' and media_id:
+        tombstone['ref'] = import_ref('upload', media_id)
+    elif form == 'url' and held.get('url'):
+        tombstone['ref'] = import_ref('url', str(held['url']))
+    outcome = _commit(
         scope, kind='imported', ident=ident, operation_id=operationId, expected_version=expectedVersion,
         payload=tombstone, source={'kind': 'imported', 'id': client, 'revision': ''},
         lifecycle='deleted', conflict_code='import_conflict',
     )
+    # An uploaded file is Orena's own copy and goes with the import: its bytes, thumbnail and index entry, deleted
+    # only for its owner in this language. A link import never touches the external source - only Orena's record.
+    media_deleted = None
+    if media_id and _other_live_import_names(scope, media_id):
+        media_deleted = False  # another live import of this account still uses the file: it stays until the last goes
+    elif media_id:
+        try:
+            from writing_coach import media_library_api
+
+            media_deleted = media_library_api.delete_owned_media(media_id, user_key=work_api._user_key(), language=scope.language)  # noqa: SLF001
+        except Exception as exc:  # noqa: BLE001 - the import is already gone; report the files honestly
+            _logger.warning('uploaded media could not be removed after an import was deleted: %s', type(exc).__name__)
+            media_deleted = False
+    return {**outcome, 'mediaDeleted': media_deleted}
 
 
 # --- Typed responses and Reading Transfer (I8, I9) --------------------------------------------------

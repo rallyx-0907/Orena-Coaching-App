@@ -78,6 +78,29 @@
   flex: none;
 }
 
+/* A learner's own import: the row card holds the open button and the design's "⋯" (kit/overflow.css); its
+   menu row opens beneath. */
+.s-library-content-own {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.s-library-content-row--own {
+  padding: 0 14px 0 0;
+}
+.s-library-content-row__main {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  gap: 18px;
+  align-items: center;
+  padding: 14px 0 14px 14px;
+  background: none;
+  color: inherit;
+  text-align: left;
+}
+
 /* ---- Saved-Language tab: a compact row per saved word/phrase ---- */
 .s-library-lang-list {
   display: flex;

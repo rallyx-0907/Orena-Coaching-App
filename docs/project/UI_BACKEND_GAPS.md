@@ -4591,3 +4591,26 @@ Resolved by the human's D-105 decisions; AD-A, AD-B and AD-H above are closed by
   where removal lives is the human's call.
 - **P3 (new): a device left open keeps drawing a highlight another device removed until it reloads.** The server and
   the device store are correct; only the open page is stale.
+
+### Delete an import (D-107, 2026-10-01)
+
+- **Where.** My Library > Saved content lists the learner's own imports (text, link, file) first, each with the design's
+  "⋯" and its menu row (frame 14's overflow pattern, `kit/overflow.js`); the same "⋯" is in the import's Content Detail.
+  Both hold one action, "Delete from Orena" (en/vi/zh). Discover offers none. A result toast ("Deleted from Orena") uses
+  the design's toast.
+- **Not drawn, recorded for the human.** The pinned design draws a "⋯" only in the Reader, and draws no "⋯" in My Library or
+  Content Detail; it draws no destructive item style and **no confirmation** for any destructive action (the only
+  deletion it shows, "Delete audio", answers with a toast "Audio deletion would be confirmed here"). None is invented:
+  the action runs on the tap, in the neutral pill style, with no confirmation and no undo. A deletion of an uploaded file
+  cannot be undone. Human decision: a drawn confirmation (or an Undo window) for a destructive delete.
+- **Lifecycle.** The account keeps a content-free tombstone (id, form, and for a link or file a hash reference); an
+  uploaded file's original, thumbnail and index entry are deleted for their owner in this language only (404
+  otherwise); a link's external source is never touched. A deleted id is never reused or revived by a stale write. A
+  device that learns of the deletion (every sync, and when My Library, Discover or Content Detail opens) drops it and
+  never opens it again; a deletion made while offline is sent again at the next sync. The earlier P3 "stale cached
+  deleted import" is closed. The file store is in the D-055(b) enumeration (`FILE_STORES`).
+- **Left.** Notes and highlights the learner wrote on a deleted text stay in the device store and the account's
+  annotations row (unreachable, but not erased); a deleted upload's per-take history (dictation/shadowing progress) is not
+  erased. A link that cannot be re-acquired from its provider opens the load-error room, which offers no "⋯" - such an item
+  can be deleted from My Library. Account-level removal of all media files on account deletion has its remover
+  (`delete_all_owned_media`) but no workflow calls it yet (D-055).

@@ -16,6 +16,7 @@ import { langAttr } from '../../kit/lang.js';
 import { toast } from '../../kit/toast.js';
 import { api } from '../../infrastructure/api.js';
 import { shellCopy as s } from '../../copy/shell.js';
+import { keepProvenance } from '../../product/account-records.js';
 import { t } from './copy.js';
 import { lookupContext } from './model.js';
 
@@ -34,7 +35,7 @@ async function resolveTerm(term, { lang, support, context }) {
   };
 }
 
-export async function openVocabFocus(ctx, { label, terms, lang, support, context, onPlay }) {
+export async function openVocabFocus(ctx, { label, terms, lang, support, context, onPlay, source = null }) {
   const words = [...new Set((terms || []).filter(Boolean))];
   let rows = words.map((word) => ({ word, reading: '', meaning: '', saved: false }));
   let alive = true;
@@ -89,10 +90,12 @@ export async function openVocabFocus(ctx, { label, terms, lang, support, context
           word: row.word,
           phonetic: row.reading,
           definition: row.meaning,
-          source_kind: 'manual',
+          source_kind: 'listening',
           source_fragment: (context || '').slice(0, 1200),
         });
         row.saved = true;
+        // Where the word was met - the same record a Reading keep writes (product/account-records.js).
+        if (source) void keepProvenance({ term: row.word, source, sentence: context });
         toast(t('saved'));
       }
       paint();

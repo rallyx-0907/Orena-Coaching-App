@@ -15,7 +15,7 @@ import { chooseInterface, setSupportFromProfile } from '../copy/index.js';
 import { INTERFACE_KEY } from '../product/languages.js';
 import { reconcileInterface, reviewFromProfile } from '../product/account-settings.js';
 import { clearPlace, sendPlace, syncContinuation } from '../product/continue-sync.js';
-import { attachProvenance, pullImports, pushImport, removeImport } from '../product/account-records.js';
+import { attachProvenance, pullImportState, pushImport, removeImport } from '../product/account-records.js';
 
 const listeners = new Set();
 const control = new AbortController();
@@ -89,7 +89,7 @@ export async function loadContext(storage = window.localStorage) {
   // The server's places, when it holds any; a failed read leaves the device list as it is.
   await syncContinuation(state.memory).catch(() => false);
   // Imports the account holds appear on this device too (a device value the server lacks stays, H-6).
-  state.memory.mergeImports(await pullImports(state.language).catch(() => []));
+  await syncImports(state.memory, state.language);
   applyServerReview(state.memory, profile);
   // The interface language is the account's, with the device as the first-paint cache.
   let deviceInterface = '';
@@ -116,6 +116,19 @@ function applyServerReview(memory, profile) {
   memory.setReview({ ...held, ...review, modes: { ...held.modes, ...review.modes } });
 }
 
+/* The account's imports into this device (a cache refresh): what the account holds arrives, what it says was
+   deleted leaves and stays gone, and a deletion this device made that the account has not heard yet is sent
+   again. Every screen that lists or opens imports calls this first, so a device that has learned of a deletion
+   never shows or opens a stale copy (D-107). Returns whether the device's lists changed. */
+export async function syncImports(memory, language) {
+  if (!memory) return false;
+  const local = (memory.value?.mediaImports || []).map((item) => item.id);
+  const { items, deletedIds } = await pullImportState(language, local);
+  const dropped = memory.applyDeletions(deletedIds);
+  for (const item of items) if (memory.isRemoved?.(item.id)) void removeImport(item.id);
+  return memory.mergeImports(items) || dropped;
+}
+
 /* The learner's learning language just changed (the server has already switched the session). Everything that is
    scoped to a language is brought over BEFORE the shell repaints: the profile - so its version, its declared
    level, its support language and its stored review settings are the new language's, not the old one's - the
@@ -128,7 +141,7 @@ export async function adoptLearningLanguage(code, storage = window.localStorage)
   const [profile] = await Promise.all([
     read('/api/learner-profile').catch(() => null),
     syncContinuation(memory).catch(() => false),
-    pullImports(next).then((items) => memory.mergeImports(items)).catch(() => false),
+    syncImports(memory, next).catch(() => false),
   ]);
   applyServerReview(memory, profile);
   updateContext({

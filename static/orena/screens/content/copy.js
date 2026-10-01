@@ -10,6 +10,7 @@ const KEYS = [
   'save', 'saved', 'practiceThisText', 'transcript',
   'generated', 'captions', 'minutes',
   'related', 'resume', 'progressPercent',
+  'more', 'deleteFromOrena', 'deletedFromOrena',
 ];
 
 export const t = defineCopy('content', {
@@ -24,6 +25,7 @@ export const t = defineCopy('content', {
     captions_one: 'Captions · {n} segment', captions_other: 'Captions · {n} segments',
     minutes: '{n} min',
     related: 'Related', resume: 'Resume', progressPercent: '{pct}% complete',
+    more: 'More', deleteFromOrena: 'Delete from Orena', deletedFromOrena: 'Deleted from Orena',
   },
   vi: {
     back: '← Quay lại',
@@ -35,6 +37,7 @@ export const t = defineCopy('content', {
     captions_other: 'Phụ đề · {n} đoạn',
     minutes: '{n} phút',
     related: 'Liên quan', resume: 'Tiếp tục', progressPercent: 'Hoàn thành {pct}%',
+    more: 'Thêm', deleteFromOrena: 'Xoá khỏi Orena', deletedFromOrena: 'Đã xoá khỏi Orena',
   },
   zh: {
     back: '← 返回',
@@ -46,5 +49,6 @@ export const t = defineCopy('content', {
     captions_other: '字幕 · {n} 段',
     minutes: '{n} 分钟',
     related: '相关内容', resume: '继续', progressPercent: '已完成 {pct}%',
+    more: '更多', deleteFromOrena: '从 Orena 删除', deletedFromOrena: '已从 Orena 删除',
   },
 });

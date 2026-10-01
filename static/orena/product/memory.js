@@ -1,6 +1,7 @@
 // Content relationships and unfinished work, scoped to an authenticated owner.
 // Practice evidence remains in the existing PostgreSQL-backed capability APIs.
 const volatile = new Map();
+import { setRemovedImports } from './import-removed.js';
 import { restoreConversation } from './conversation.js';
 import { practiceIntentions } from './intent.js';
 import { readReviewSettings } from './recall-modes.js';
@@ -60,6 +61,9 @@ export function learnerMemory(storage, owner, language) {
     value = {
       imports: [],
       mediaImports: [],
+      /* Imports this device knows were deleted (membership ids, never content): they are not listed, not
+         re-added by a sync and not opened (product/import-removed.js). Bounded like the account's own. */
+      removedImports: [],
       kept: [],
       continuation: [],
       expressions: {},
@@ -102,6 +106,9 @@ export function learnerMemory(storage, owner, language) {
             x.text.length <= 12000,
         )
         .slice(0, 20);
+      value.removedImports = (Array.isArray(parsed.removedImports) ? parsed.removedImports : [])
+        .filter((x) => typeof x === 'string' && x.length <= 2100)
+        .slice(-400);
       value.kept = (Array.isArray(parsed.kept) ? parsed.kept : [])
         .filter((x) => typeof x === 'string')
         .slice(0, 100);
@@ -190,6 +197,12 @@ export function learnerMemory(storage, owner, language) {
   } catch {
     available = false;
   }
+  setRemovedImports(value.removedImports);
+  const isImportId = (id) => /^(text|url|upload):/.test(String(id || ''));
+  const markRemoved = (id) => {
+    value.removedImports = [...value.removedImports.filter((x) => x !== id), id].slice(-400);
+    setRemovedImports(value.removedImports);
+  };
   const save = () => {
     try {
       storage.setItem(key, JSON.stringify(value));
@@ -385,7 +398,8 @@ export function learnerMemory(storage, owner, language) {
     /* The account's imports merged into this device's list (a cache refresh: it sends nothing). The
        device's own come first; the cap is the same 20 the server keeps. */
     mergeImports(list) {
-      const items = Array.isArray(list) ? list : [];
+      const gone = new Set(value.removedImports);
+      const items = (Array.isArray(list) ? list : []).filter((x) => !gone.has(x?.id));
       const known = new Set(value.imports.map((x) => x.id));
       const extra = items.filter((x) => x?.id && !/^(url|upload):/.test(x.id) && !known.has(x.id));
       const knownMedia = new Set(value.mediaImports.map((x) => x.id));
@@ -394,6 +408,36 @@ export function learnerMemory(storage, owner, language) {
       value.imports = [...value.imports, ...extra].slice(0, 20);
       value.mediaImports = [...value.mediaImports, ...media.map((x) => ({ ...x, language, origin: 'imported' }))].slice(0, 100);
       return save();
+    },
+    /* Imports the account says were deleted (elsewhere, or here and not yet confirmed): leave this device -
+       the lists, the saved place, the kept mark, anything written against them - and stay gone (a sync never
+       brings them back, no room opens them). Returns whether anything changed. */
+    applyDeletions(ids) {
+      let changed = false;
+      for (const id of Array.isArray(ids) ? ids : []) {
+        if (!isImportId(id)) continue;
+        if (!value.removedImports.includes(id)) {
+          markRemoved(id);
+          changed = true;
+        }
+        const held = value.imports.length + value.mediaImports.length + value.kept.length + value.continuation.length
+          + (id in value.expressions ? 1 : 0) + (id in value.revisions ? 1 : 0) + (id in value.answers ? 1 : 0);
+        value.imports = value.imports.filter((x) => x.id !== id);
+        value.mediaImports = value.mediaImports.filter((x) => x.id !== id);
+        value.kept = value.kept.filter((x) => x !== id);
+        value.continuation = value.continuation.filter((x) => x.id !== id);
+        delete value.expressions[id];
+        delete value.revisions[id];
+        delete value.answers[id];
+        const after = value.imports.length + value.mediaImports.length + value.kept.length + value.continuation.length
+          + (id in value.expressions ? 1 : 0) + (id in value.revisions ? 1 : 0) + (id in value.answers ? 1 : 0);
+        if (after !== held) changed = true;
+      }
+      if (changed) save();
+      return changed;
+    },
+    isRemoved(id) {
+      return value.removedImports.includes(id);
     },
     /* A media membership record. Two kinds of id are accepted, and they mean
        different things: `url:` is a source the learner pasted and Orena can
@@ -408,6 +452,11 @@ export function learnerMemory(storage, owner, language) {
     addMedia({ id, title, kind, duration_ms, thumbnail_url, provider }) {
       const own = id.startsWith('url:') || id.startsWith('upload:');
       if (!own || !title) return false;
+      // Importing it again is a new decision: the earlier deletion no longer applies on this device.
+      if (value.removedImports.includes(id)) {
+        value.removedImports = value.removedImports.filter((x) => x !== id);
+        setRemovedImports(value.removedImports);
+      }
       const item = {
         id,
         title: String(title).slice(0, 500),
@@ -432,15 +481,18 @@ export function learnerMemory(storage, owner, language) {
       return true;
     },
     remove(id) {
+      if (isImportId(id)) markRemoved(id);
       value.imports = value.imports.filter((x) => x.id !== id);
       value.mediaImports = value.mediaImports.filter((x) => x.id !== id);
       value.kept = value.kept.filter((x) => x !== id);
       value.continuation = value.continuation.filter((x) => x.id !== id);
       placeSink?.clear(id);
-      placeSink?.removeImport?.(id);
+      const accountDeletion = placeSink?.removeImport?.(id);
       delete value.expressions[id];
       delete value.revisions[id];
+      delete value.answers[id];
       save();
+      return Promise.resolve(accountDeletion).catch(() => false);
     },
   };
 }

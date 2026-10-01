@@ -497,6 +497,27 @@ def test_where_a_word_was_met_is_kept_and_read_back_and_a_retry_replays(pg_engin
     assert len(read) == 2 and read[0]["reason"] == "from_reading" and read[0]["source"]["id"] == "reading:14"
 
 
+def test_a_word_kept_from_reading_and_from_listening_shows_both_occurrences_scoped_to_the_account(pg_engine, backbone):
+    owner = _account(pg_engine)
+    stranger = _account(pg_engine)
+    _save_word(pg_engine, owner, "galaxy")
+    _save_word(pg_engine, stranger, "galaxy")
+    client = _client(backbone, user=owner)
+    reading = {"operationId": op(), "reason": "from_reading", "sourceKind": "reading", "sourceId": "article:734b", "focus": "A galaxy turns."}
+    listening = {"operationId": op(), "reason": "from_listening", "sourceKind": "listening", "sourceId": "media:upload-abc123",
+                 "sourceRevision": "seg-0003", "focus": "A galaxy is a city of stars."}
+    assert client.post("/api/library/vocabulary/galaxy/provenance", json=reading).status_code == 200
+    assert client.post("/api/library/vocabulary/galaxy/provenance", json=listening).status_code == 200
+    read = _client(backbone, user=owner).get("/api/library/vocabulary/galaxy/provenance").json()["occurrences"]
+    assert [row["source"]["kind"] for row in read] == ["reading", "listening"]
+    assert read[1]["source"] == {"kind": "listening", "id": "media:upload-abc123", "revision": "seg-0003"}
+    assert read[1]["focus"] == "A galaxy is a city of stars."
+    # Another account's own keep of the same word never sees the owner's personal media id.
+    assert _client(backbone, user=stranger).get("/api/library/vocabulary/galaxy/provenance").json()["occurrences"] == []
+    # And another learning language of the owner does not read it either.
+    assert _client(backbone, user=owner, language="zh").get("/api/library/vocabulary/galaxy/provenance").status_code == 404
+
+
 def test_provenance_refuses_other_accounts_words_unknown_words_and_unknown_reasons(pg_engine, backbone):
     owner = _account(pg_engine)
     _save_word(pg_engine, owner, "lantern")

@@ -63,6 +63,11 @@ class MediaLibraryEntry:
     status: str = "published"
 
 
+class MediaIndexUnavailable(RuntimeError):
+    """The index exists but cannot be trusted (corrupt or unreadable). Reads answer "not found"; a write or a delete
+    refuses, because rewriting from an empty map would erase every other account's entries."""
+
+
 class MediaLibraryStore(Protocol):
     def list(self, *, language: str | None = None) -> list[MediaLibraryEntry]: ...
     def get(self, media_id: str) -> MediaLibraryEntry | None: ...
@@ -246,17 +251,24 @@ class FileMediaLibraryStore:
     def get(self, media_id: str) -> MediaLibraryEntry | None:
         return self._read().get(media_id)
 
+    def _read_for_write(self) -> dict[str, MediaLibraryEntry]:
+        """The index to modify. A missing index is a fresh start; a corrupt or unreadable one is refused (fail closed)."""
+        entries = self._read()
+        if self.last_read_issue in {"index_corrupt", "index_unreadable"}:
+            raise MediaIndexUnavailable(self.last_read_issue)
+        return entries
+
     def upsert(self, entry: MediaLibraryEntry) -> MediaLibraryEntry:
         validate_entry(entry)
         with self._writer:
-            entries = self._read()
+            entries = self._read_for_write()
             entries[entry.media_id] = entry
             self._write(entries)
         return entry
 
     def delete(self, media_id: str) -> bool:
         with self._writer:
-            entries = self._read()
+            entries = self._read_for_write()
             if media_id not in entries:
                 return False
             del entries[media_id]

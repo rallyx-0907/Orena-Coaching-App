@@ -14,6 +14,7 @@
    All three answer the one acquisition payload shape (asset / playback / transcript / translations),
    so the room that renders it does not care which it was. */
 import { acquireMedia } from '../capabilities/media-acquisition.js';
+import { isRemovedContent, removedImportError } from './import-removed.js';
 
 export function mediaRef(id) {
   const value = String(id || '');
@@ -28,6 +29,8 @@ export function mediaRef(id) {
 export async function openMedia(id, { api, support = '', language = '', owner = 'local', alive = () => true, onProgress = () => {} } = {}) {
   const ref = mediaRef(id);
   if (!ref.value) throw new Error('No media id');
+  // A deleted import is never re-acquired or re-read from a stale route (D-107).
+  if (isRemovedContent(id)) throw removedImportError();
   if (ref.kind === 'url') {
     return acquireMedia({ api, url: ref.value, target: support, owner, language, alive, onProgress });
   }

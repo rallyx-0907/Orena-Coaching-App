@@ -55,6 +55,8 @@ class BookAssetStore(Protocol):
 
     def delete(self, key: str) -> None: ...
 
+    def delete_prefix(self, prefix: str) -> int: ...
+
 
 class FilesystemBookAssetStore:
     """Local/dev/sandbox `BookAssetStore`. One file per key under `root`.
@@ -103,3 +105,25 @@ class FilesystemBookAssetStore:
     def delete(self, key: str) -> None:
         path = self._path_for(key)
         path.unlink(missing_ok=True)
+
+    def delete_prefix(self, prefix: str) -> int:
+        """Remove every file stored under `prefix/` and return how many went. Idempotent; the prefix is validated
+        like a key, so it can never name anything outside the root."""
+        directory = self._path_for(prefix)
+        if not directory.is_dir():
+            return 0
+        removed = 0
+        for path in sorted(directory.rglob('*'), reverse=True):
+            if path.is_file():
+                path.unlink(missing_ok=True)
+                removed += 1
+            elif path.is_dir():
+                try:
+                    path.rmdir()
+                except OSError:
+                    pass
+        try:
+            directory.rmdir()
+        except OSError:
+            pass
+        return removed

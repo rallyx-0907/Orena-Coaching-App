@@ -188,6 +188,22 @@ fresh();
 await records.keepProvenance({ term: 'lantern', source: { kind: 'dictionary' }, sentence: 'x' });
 assert.equal(calls[0][2].reason, 'looked_up', 'a source with no provenance reason is a look-up');
 assert.equal(calls[0][2].sourceKind, '', 'and with no content there is no source to name');
+/* Listening keeps use the one helper: kind listening, the media id as `media:<id>` (lesson, url: or
+   stored upload), the segment as the record's locator, and the transcript sentence. */
+for (const [id, expected] of [['en-science-cosmic-calendar', 'media:en-science-cosmic-calendar'], ['upload-abc123', 'media:upload-abc123'], ['url:https://youtu.be/x', 'media:url:https://youtu.be/x'], ['media:already', 'media:already']]) {
+  fresh();
+  assert.equal(await records.keepProvenance({ term: 'galaxy', source: { kind: 'listening', content_id: id, segment: 'seg-0003' }, sentence: 'A galaxy is a city of stars.' }), true);
+  assert.deepEqual([calls[0][2].reason, calls[0][2].sourceKind, calls[0][2].sourceId, calls[0][2].sourceRevision, calls[0][2].focus],
+    ['from_listening', 'listening', expected, 'seg-0003', 'A galaxy is a city of stars.']);
+}
+fresh();
+await records.keepProvenance({ term: 'boards', source: { kind: 'reading', content_id: 'article:734b', segment: 'ignored' }, sentence: 's' });
+assert.equal(calls[0][2].sourceRevision, '', 'Reading records no locator: the two kinds differ only in what they name');
+assert.equal(calls[0][2].reason, 'from_reading');
+fresh();
+await records.keepProvenance({ term: 'galaxy', source: { kind: 'listening', content_id: `url:https://example.com/${'a'.repeat(300)}`, segment: 's1' }, sentence: 'x' });
+assert.deepEqual([calls[0][2].sourceKind, calls[0][2].sourceId, calls[0][2].sourceRevision], ['', '', ''], 'an id longer than the record holds is never cut into another id: the occurrence keeps its sentence only');
+
 fresh('disabled');
 assert.equal(await records.keepProvenance({ term: 'boards', source: { kind: 'reading', content_id: 'a' }, sentence: 's' }), false);
 assert.deepEqual(calls, [], 'nothing is sent while the deployment does not keep work with the account');
