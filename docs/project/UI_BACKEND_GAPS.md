@@ -4582,3 +4582,12 @@ Resolved by the human's D-105 decisions; AD-A, AD-B and AD-H above are closed by
   text (a long-offline device could then re-add it); keeping a word from Listening (vocab sheet, phrase save) does not
   yet record provenance.
 - PostgreSQL-only test results in this work are local execution, not CI evidence (CI has no PostgreSQL service).
+
+### D4 flag-on QA round 2 (2026-10-01, :8021 at 9a7b190)
+
+- **Decision for the human: removing an imported item.** The server deletes an import (`DELETE /api/imports/{id}`,
+  content-free tombstone), but the design draws no remove/delete action for imported content in Discover, Content
+  Detail or My Library (its only "Removed from My Library" is for saved words and phrases). Not invented (rule 43);
+  where removal lives is the human's call.
+- **P3 (new): a device left open keeps drawing a highlight another device removed until it reloads.** The server and
+  the device store are correct; only the open page is stale.

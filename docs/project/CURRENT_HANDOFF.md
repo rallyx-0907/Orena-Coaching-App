@@ -79,7 +79,7 @@ The D-098 and D-099 items (2026-09-29, `5d9d64c`..`b83142d`); commit list in
 - Chinese evaluator: fix (1) landed (`871e2b9`, contract v2.7) and the benchmark
   measures recall (`fa93601`, v2); the live run that gives (4) its numbers waits
   for the human's go (provider cost).
-- D-101..D-104: D2, H9, D3 done; D4 migrations 0017-0023 in `migrations/proposed/`, independently reviewed (APPROVE) and rehearsed (53 PASS at 100k rows, `9ca6c3f`): waiting for the human's `git mv` authorization, H-19, H-20; Admin slices 1-2 in `/next` (`a069b59`, `b4858d1`), Reading loop real in EN (`21584d6`); Grammar content path conflict (INTEGRATION_DESIGN vs D-101 F) with the human.
+- D4 (D-104/D-105): code and migrations 0017-0023 on `codex/work`, applied to :8021 only; independently reviewed (LEARNER_RECORDS_D4_IMPLEMENTATION_REVIEW.md: delta APPROVE WITH CONDITIONS, `f30044a`). `ORENA_ACCOUNT_BACKBONE` on at :8021 only; flag-on browser QA round 2 at `9a7b190`: all six flows PASS. Open for the human: delete for an imported text (design draws none), media-import bound. Before :8000: ACCOUNT_RECORD_LIMITS rev 3 (approved with conditions, not built), upload media deletion (D-055(b)), code+schema one deployment unit. Admin slices 1-4 in /next; Grammar store waits for PR #67.
 
 ## PENDING
 
