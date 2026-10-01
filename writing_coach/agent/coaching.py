@@ -46,6 +46,7 @@ from writing_coach.agent.skill_tools import (
     SpeakingAttempts,
     _empty,
     flagged,
+    server_scored,
 )
 from writing_coach.agent.tools import AgentTool, LearnerScope, ToolEvidence, ToolPermission, ToolResult
 
@@ -219,7 +220,9 @@ def weaknesses(
         worked = [row for row in listening if int(row.get("checked_attempt_count") or 0) or row.get("revealed")]
         found["listening"] = {
             "lines_worked_on": len(worked),
-            "not_yet_exact": sum(1 for row in worked if not row.get("best_exact")),
+            # Only a server-scored line can be "not yet exact"; a client-sourced one (pre-D4) is counted apart.
+            "not_yet_exact": sum(1 for row in worked if server_scored(row) and not row.get("best_exact")),
+            "score_not_verified": sum(1 for row in worked if not server_scored(row)),
             "answer_revealed": sum(1 for row in worked if row.get("revealed")),
         } if worked else []  # fmt: skip
     if reading is None:

@@ -90,15 +90,16 @@ def test_weaknesses_are_counts_of_what_recurs_and_unread_is_null():
         history={"items": [{"category": "tense", "total": 3, "newer": 1}, {"category": "article", "total": 1}]},
         attempts=[_attempt(("是", "Mispronunciation"), ("我", "None")), _attempt(("是", "Mispronunciation")),
                   _attempt(("学", "Omission"))],
-        listening=[{"checked_attempt_count": 2, "best_exact": False, "revealed": True},
-                   {"checked_attempt_count": 1, "best_exact": True, "revealed": False}],
+        listening=[{"checked_attempt_count": 2, "best_exact": False, "revealed": True, "score_source": "server"},
+                   {"checked_attempt_count": 1, "best_exact": True, "revealed": False, "score_source": "server"},
+                   {"checked_attempt_count": 3, "best_exact": False, "revealed": False, "score_source": "client"}],
         reading=None,
         vocabulary=[{"word": "机会", "lapse_count": 3}, {"word": "学习", "lapse_count": 1}],
         interface="vi",
     )  # fmt: skip
     assert found["writing"] == [{"category": "Thì", "times": 3, "recent_times": 1}]  # "article" once is not recurring
     assert found["speaking"] == [{"word": "是", "times_flagged": 2, "most_often": "Phát âm sai"}]
-    assert found["listening"] == {"lines_worked_on": 2, "not_yet_exact": 1, "answer_revealed": 1}
+    assert found["listening"] == {"lines_worked_on": 3, "not_yet_exact": 1, "score_not_verified": 1, "answer_revealed": 1}
     assert found["reading"] is None  # not read here: unknown, never "no weakness"
     assert found["vocabulary"] == [{"word": "机会", "times_forgotten": 3}]
     assert found["grammar"] is None  # no mistake store: not measured, not guessed

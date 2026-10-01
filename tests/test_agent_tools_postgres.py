@@ -215,18 +215,42 @@ def test_listening_progress_is_read_by_the_lessons_media_asset(engine, app_modul
     if lesson is None:
         pytest.skip("no published Chinese listening lesson in the catalogue")
     metadata = app_module._agent_listening_lesson(lesson.lesson_id)
+    from writing_coach.dictation_evaluator import evaluate_listening_reconstruction
+
+    # The stored score is the server's (D-103.2): the client's best_* fields are ignored on a write, so the exact
+    # result is produced the way the route produces it - the server evaluator on the line's own text, passed as
+    # `score`, which the repository's policy (`merge_progress`) stores with score_source "server".
+    if not metadata["spoken_text_by_segment"]:
+        pytest.skip("the Chinese lesson has no spoken text")
+    segment_id, line_text = next(iter(metadata["spoken_text_by_segment"].items()))
+    score = evaluate_listening_reconstruction(source_language="zh", expected=line_text, answer=line_text)
+    assert score["exact"] is True
     with learner_context(ZH):
-        specialized.save_listening_progress_record(
+        saved = specialized.save_listening_progress_record(
             {
-                "asset_id": metadata["media_object_id"], "segment_id": "s1", "presentation": "checked",
+                "asset_id": metadata["media_object_id"], "segment_id": segment_id, "presentation": "checked",
+                "revealed": False, "checked_attempt_count": 1, "last_answer": line_text, "score": score,
+                "updated_at": "2026-09-28T08:00:00+00:00",
+            }
+        )  # fmt: skip
+        assert saved["score_source"] == "server" and saved["best_exact"] is True
+        # a line that only carries the client's number (what every pre-D4 row is): stored unverified, never exact
+        legacy = specialized.save_listening_progress_record(
+            {
+                "asset_id": metadata["media_object_id"], "segment_id": "legacy-line", "presentation": "checked",
                 "revealed": False, "checked_attempt_count": 2, "best_accuracy_percent": 100.0, "best_exact": True,
                 "last_answer": "", "updated_at": "2026-09-28T08:00:00+00:00",
             }
         )  # fmt: skip
+        assert legacy["score_source"] == "client" and legacy["best_exact"] is False
         context = tools.invoke("get_current_listening_context", ZH, {"content_id": lesson.lesson_id})
         attempt = tools.invoke("get_listening_attempt", ZH, {"content_id": lesson.lesson_id})
     assert context.data["found"] and context.data["title"]
-    assert attempt.count == 1 and attempt.data["exact_count"] == 1
+    assert attempt.count == 2 and attempt.data["exact_count"] == 1  # read from the stored row, as before
+    assert attempt.data["unverified_count"] == 1
+    by_line = {line["item_id"]: line for line in attempt.data["lines"]}
+    assert by_line[segment_id]["verified"] is True and by_line[segment_id]["exact"] is True
+    assert by_line["legacy-line"]["verified"] is False and by_line["legacy-line"]["exact"] is None
     with learner_context(OTHER_ZH):
         assert tools.invoke("get_listening_attempt", OTHER_ZH, {"content_id": lesson.lesson_id}).count == 0
 

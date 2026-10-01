@@ -74,6 +74,19 @@ def flagged(word: Mapping[str, Any]) -> bool:
     return str(word.get("error_type") or "").strip().casefold() not in ("", "none")
 
 
+def server_scored(row: Mapping[str, Any]) -> bool:
+    """A dictation score the server computed (D-103.2). A pre-D4 row, or one that does not say, is the client's
+    own number: unverified (D-104 H-14), so it is never stated as a result. Mirrors the repository's default."""
+
+    return str(row.get("score_source") or "client") == "server"
+
+
+UNVERIFIED_NOTE = (
+    "A line with verified false has no score the server could check (written before server scoring): its "
+    "accuracy and exact are null. Do not say the learner got it right or wrong; say it is not verified."
+)
+
+
 def _score(value: object) -> float | None:
     return round(float(value), 1) if isinstance(value, (int, float)) and not isinstance(value, bool) else None
 
@@ -315,8 +328,9 @@ def _listening_attempt(read: ListeningLesson, progress: ListeningProgress) -> Ca
             {
                 "item_id": str(row.get("segment_id")),
                 "checked": int(row.get("checked_attempt_count") or 0),
-                "best_accuracy": _score(row.get("best_accuracy_percent")),
-                "exact": bool(row.get("best_exact")),
+                "verified": server_scored(row),
+                "best_accuracy": _score(row.get("best_accuracy_percent")) if server_scored(row) else None,
+                "exact": bool(row.get("best_exact")) if server_scored(row) else None,
                 "revealed": bool(row.get("revealed")),
                 "hint_level": int(row.get("last_hint_level") or 0),
             }
@@ -331,7 +345,9 @@ def _listening_attempt(read: ListeningLesson, progress: ListeningProgress) -> Ca
                     "found": True,
                     "content_id": args.content_id,
                     "lines": kept,
-                    "exact_count": sum(line["exact"] for line in lines),
+                    "exact_count": sum(line["exact"] is True for line in lines),
+                    "unverified_count": sum(not line["verified"] for line in lines),
+                    **({"note": UNVERIFIED_NOTE} if not all(line["verified"] for line in lines) else {}),
                     "revealed_count": sum(line["revealed"] for line in lines),
                 },
                 evidence=tuple(

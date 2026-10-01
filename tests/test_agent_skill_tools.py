@@ -92,9 +92,9 @@ def test_a_listening_lesson_and_the_learners_dictation_on_it():
         seen.append(asset_id)
         return [
             {"segment_id": "s1", "checked_attempt_count": 2, "best_accuracy_percent": 100, "best_exact": True,
-             "revealed": False, "last_hint_level": 0},
+             "score_source": "server", "revealed": False, "last_hint_level": 0},
             {"segment_id": "s2", "checked_attempt_count": 3, "best_accuracy_percent": 62.5, "best_exact": False,
-             "revealed": True, "last_hint_level": 2},
+             "score_source": "server", "revealed": True, "last_hint_level": 2},
         ]  # fmt: skip
 
     reads = {"listening_lesson": lambda i: LESSON if i == "zh-lesson-1" else None, "listening_progress": progress}
@@ -106,6 +106,39 @@ def test_a_listening_lesson_and_the_learners_dictation_on_it():
     assert attempt.evidence[1].ref == {"content_id": "zh-lesson-1", "item_id": "s2"}
     # a lesson of the other language is not the learner's to read here
     assert tools(**reads).invoke("get_current_listening_context", EN, {"content_id": "zh-lesson-1"}).data == {"found": False}
+
+
+def test_a_client_sourced_dictation_score_is_never_stated_as_a_result():
+    """H-14: a row written before server scoring (or one that does not say) carries the client's own number."""
+
+    rows = [
+        {"segment_id": "s1", "checked_attempt_count": 2, "best_accuracy_percent": 100, "best_exact": True,
+         "score_source": "client", "revealed": False, "last_hint_level": 0},
+        {"segment_id": "s2", "checked_attempt_count": 1, "best_accuracy_percent": 100, "best_exact": True,
+         "revealed": False, "last_hint_level": 0},  # no source named: the repository's default is "client"
+        {"segment_id": "s3", "checked_attempt_count": 1, "best_accuracy_percent": 80, "best_exact": False,
+         "score_source": "server", "revealed": False, "last_hint_level": 0},
+    ]  # fmt: skip
+    reads = {"listening_lesson": lambda i: LESSON, "listening_progress": lambda asset: rows}
+    attempt = tools(**reads).invoke("get_listening_attempt", ZH, {"content_id": "zh-lesson-1"})
+    by_line = {line["item_id"]: line for line in attempt.data["lines"]}
+    for unverified in ("s1", "s2"):
+        assert by_line[unverified]["verified"] is False
+        assert by_line[unverified]["best_accuracy"] is None and by_line[unverified]["exact"] is None
+    assert by_line["s3"] == {"item_id": "s3", "checked": 1, "verified": True, "best_accuracy": 80.0, "exact": False,
+                             "revealed": False, "hint_level": 0}  # fmt: skip
+    assert attempt.data["exact_count"] == 0 and attempt.data["unverified_count"] == 2 and "note" in attempt.data
+    for item in attempt.evidence:  # the evidence the answer may cite carries no unverified number either
+        if item.ref["item_id"] in ("s1", "s2"):
+            assert item.excerpt["best_accuracy"] is None and item.excerpt["exact"] is None
+
+
+def test_an_all_verified_dictation_read_carries_no_unverified_note():
+    rows = [{"segment_id": "s1", "checked_attempt_count": 1, "best_accuracy_percent": 100, "best_exact": True,
+             "score_source": "server", "revealed": False, "last_hint_level": 0}]  # fmt: skip
+    reads = {"listening_lesson": lambda i: LESSON, "listening_progress": lambda asset: rows}
+    data = tools(**reads).invoke("get_listening_attempt", ZH, {"content_id": "zh-lesson-1"}).data
+    assert data["exact_count"] == 1 and data["unverified_count"] == 0 and "note" not in data
 
 
 ARTICLE = {
