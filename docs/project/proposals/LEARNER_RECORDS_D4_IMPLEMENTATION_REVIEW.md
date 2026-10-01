@@ -353,3 +353,102 @@ Both P1s are fixed at the root and the regression tests exercise the failure. No
    growth owner (P2-4), code and migrations deployed as one unit after a backup (P2-6), and a decision on pre-fix deleted
    import payloads.
 5. The :8000/:8010 enablement stays a human gate.
+
+## Delta review (8c84100, 39b9f12, 9a7b190)
+
+- **Reviewer:** Claude Opus 5.5, independent reviewer subagent, not the implementer. **Date:** 2026-10-01.
+- **Reviewed:** `git show` of the three commits and the code they call. Read-only and static; no Docker or PostgreSQL.
+  The implementer's results (PostgreSQL 3036 passed / 9 skipped; SQLite 2703 / 342; 123/123 node gates) are local
+  execution and were not reproduced by me.
+
+### Verdict: APPROVE WITH CONDITIONS, for D4 runtime acceptance on :8021
+
+No P0 or P1. Isolation holds on every new read and write, tombstones prevent resurrection under concurrency (with one
+documented bound), the review-mode merge never drops server data or writes device defaults, and the import bound matches
+ACCOUNT_RECORD_LIMITS rev 3 C1. Two P2s and five P3s below; the conditions are decisions and records, not code
+blockers.
+
+### Isolation (account and language)
+- **Personal media (39b9f12).** One rule, `visible_to`: shared for everyone; a personal entry only for the account whose
+  `owner_token` (SHA-256 of the account key) it carries and only in its own language; refusals are 404. It is applied at
+  every learner path that resolves a media id: `stored_media_entry` (listening library, dictation/shadowing progress
+  resolution, `stored_media_payload`), `find_entry` (`/api/media/my/{id}`, library payloads), and the file route, which
+  maps `media/<token>/...` (original and thumbnail) to the `upload-<token>` entry before serving and sends
+  `Cache-Control: private` for personal files. The learner listings (`_shared_entries`, the library browse) list
+  `library == "shared"` only, so personal entries are never enumerated. Only `learner_upload` creates personal entries, and
+  it now refuses a personal file without an owner. Owner-less legacy uploads are visible to the local `legacy` account
+  only (fail closed). The owner token is an unsalted hash of a non-secret account key; it grants nothing (access is
+  decided by the server comparing the requester's own key).
+- **Media import records (9a7b190).** Stored as `works` kind `imported`, forms `url`/`upload`, so they inherit the account,
+  incarnation and language scope of every import route; `mediaId` is only a reference, and opening it goes through
+  `visible_to`, so referencing someone else's upload yields 404, not content.
+- **Provenance, review settings, language adoption.** Provenance still resolves the saved word by (account, language);
+  `adoptLearningLanguage` reloads profile, places, imports and review overlay for the new language before repaint (no
+  cross-language write: each write goes through the scoped route).
+
+### Tombstones
+- The pre-check reads the current version and applies tombstones only when the writer's `expectedVersion` equals it; the
+  commit is version-conditional, so a writer that loses a race gets 409 and never lands stale tombstones; a replay finds
+  its receipt first. A write at the current version that brings back a remembered id is 422 `annotation_tombstoned`;
+  `cleared` records all previous ids as tombstones; the client re-reads on 409/422 and re-merges server-first, excluding
+  tombstones and locally removed ids, then calls `onMerged` so the device store drops removals made elsewhere. The merge
+  never drops a server item (it unions server-first and removes only ids the learner removed or the server remembers).
+- **Eviction of the oldest tombstone (cap 500).** The newest 500 ids are kept, so after more than 500 further removals in
+  one text the oldest removed id is forgotten and a device that still holds it could write it back. This needs over 500
+  removals in a single text (a text holds at most 80 highlights and 120 notes) and a long-offline device; P3-1, record it
+  as the accepted bound.
+
+### Review-mode merge
+Server-side merge of stored and patched modes over validated keys; the toggle sends only the changed key; limits are sent
+only when changed; a stale write is re-applied once to the fresh profile. Nothing writes defaults. Residual P3-4: an empty
+map no longer resets modes to defaults (it merges to nothing), and a single mode cannot be reset to "unset"; acceptable.
+
+### Import bound (matches ACCOUNT_RECORD_LIMITS rev 3 C1)
+`create_guard` counts live and total import rows in the creating transaction: live < 20 and total < 360
+(`ORENA_LIMIT_IMPORT_TOMBSTONES`, floor 52, invalid values refuse startup); creating a work already `deleted` is 422
+`lifecycle_invalid`; replays never meet the guard. Matches rev 3.
+
+### Scrub script
+Dry run by default; one transaction; touches only rows with `kind = 'imported' AND lifecycle = 'deleted'` whose payload has
+keys beyond `{id, form}`; rewrites the payload to exactly `{id, form}` and keeps version, sequence and timestamps;
+idempotent (a clean row is skipped); prints counts only; reports derived records and receipt columns without changing
+them. Safe. P3-3: the backup precondition is documentation only and `--url` puts a connection string on the command line;
+add a required `--confirm-backup` flag and prefer the environment variable.
+
+### Client-supplied media fields
+`thumbnailUrl` is kept only if it starts with `https://` and contains no `@`; the server never fetches it, so there is no
+SSRF; it is rendered as an image source, so there is no script injection or redirect; the only effect is a third-party
+image request when the learner's own card is drawn. `url` for form `url` is `http(s)` checked and, when the Listening room
+re-acquires it, goes through the existing safe-fetch (`validate_public_http_url`). `kind`, `provider`, `title` are bounded
+free text rendered escaped. P3-2: for form `upload` the server stores whatever `url` the client sends, unvalidated (the
+client sends an empty string); drop it or validate it, and check that `mediaId` is a stored media the account can see at
+import time.
+
+### Findings
+- **P2-1. Media imports share the 20-live / 360-total import bound without a volume basis, and failure is silent.** The
+  bound was derived for texts at about 52 a year. Pasted links and uploads are likely more frequent; every keep after a
+  removal mints a new record, so churn consumes tombstone slots; the 21st live import (links, uploads and texts together)
+  is refused and stays on the device only, with no drawn surface. In effect this is a small learner-facing limit that the
+  human did not choose. **Required (decision):** either count per form with a derivation, or confirm in writing that 20
+  live and 360 lifetime are the intended rails for all forms; record it in `UI_BACKEND_GAPS.md`.
+- **P2-2. Deleting an upload import leaves the personal media itself.** The delete tombstones the account record, but the
+  stored original, thumbnail, transcript and library entry stay in the media store (the store has a `delete` method but no
+  learner route calls it). The learner's "delete" does not erase the file. **Required (before :8000):** a learner delete of a
+  personal media entry (store entry, original, thumbnail) when its import is deleted, or an explicit decision that it
+  stays; include the media store in the D-055(b) enumeration either way, since it is outside the database.
+- **P3-1..P3-5:** tombstone bound; `upload` `url`; scrub flags; mode reset; and owner-less legacy uploads become invisible
+  to their signed-in owners (confirm how many exist on :8021 and that the lane's sign-in mode is as expected).
+
+### Named contract changes in tests (checked)
+`test_d4_listening_authority.py` stamps the upload's owner (legitimate: owner-less personal media is now the local
+account's only); `test_d4_account_records.py` changes "a cleared record is written again" to 422 for the cleared id plus 200
+for a new id (legitimate and stronger: the tombstone contract); `test_orena_account_settings.mjs` now asserts only the
+toggled mode is sent, that no default limits leave the device and that a stale write re-applies the same single change
+(legitimate and stronger); `test_d4_profile_account.py` adds the partial-merge test; the learner-memory gate adds the
+`upload:` reload and language-isolation cases. No assertion was weakened.
+
+### Conditions for :8021 runtime acceptance
+1. Decide and record the media-import bound (P2-1).
+2. Record P2-2 and the media store in the D-055(b) enumeration and as a before-:8000 item.
+3. Confirm the count of owner-less personal uploads and the lane's sign-in mode (P3-5).
+4. Report PostgreSQL-only results as local execution; :8000/:8010 stay a human gate with the earlier prerequisites.
