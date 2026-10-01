@@ -3867,3 +3867,36 @@ Orena reaches a complete language-learning product with real content, usable imm
    despite server data, and Grammar without a runtime no longer exist.
 6. **Priority.** Rare edge cases, migration polish and infrastructure hardening do not decide completion unless
    they cause data loss, a security/ownership issue, or break a normal learner or Admin journey.
+
+## D-111 — Auto-publish rule, library sources, media transcripts, Grammar build, Admin Overview, lane budget, durable lane store, leftovers, Agent gate
+
+**Date:** 2026-10-02. **Status:** Accepted (explicit human direction). Answers the D-109 audit questions.
+
+1. **Auto-publish.** Yes, without self-declared AI confidence. Content auto-publishes when its rights are cleared
+   and the deterministic schema, semantic and content validators all pass. Question sets auto-approve when the
+   grounding, answer and duplicate validators pass. Any failure, or unknown rights -> review queue.
+2. **Library sources.** Public domain, owned, licensed, explicit permission, and sources/APIs with clear usage
+   rights. Learner-imported private content never becomes public catalog. Bootstrap target per language:
+   30 Reading + 20 Listening + 10 Vocabulary collections, with a sensible level/topic spread. Rights are decided
+   at source policy where possible; texts from an already-cleared source are not re-approved one by one.
+   Unknown rights -> not published.
+3. **YouTube / media.** Public captions first; when missing or not good enough, speech recognition on the audio.
+   Paid fallback allowed within the spending cap. Media is not published as learning content without a usable
+   transcript; it stays draft/processing until it has one.
+4. **Grammar.** The Grammar Store/API architecture is approved to build. PR #67/#68 may merge when their current
+   reviews/gates pass; no parallel Grammar system. Chinese comes from the canonical HSK/GF catalog through the
+   generation/validation pipeline, not hand-written point by point. The old 269 EN / 239 ZH lessons stay retired
+   from the learner UI, usable only as reference/migration source.
+5. **Admin Overview: build now.** The Admin Content Engine is core product and must show live / review / invalid /
+   failed / processing.
+6. **Lane spending cap (:8021).** AI enrichment at most $10 per batch, speech recognition at most $5 per batch,
+   all automatic processing at most $25 per day. No unlimited background spend. Production budget is set after
+   real usage.
+7. **:8021 file store** is durable development/QA storage and must survive normal restart/recreate; it is not the
+   long-term production authority. The Books chapter 503 is a normal product bug to fix.
+8. **Test leftovers.** Archive the 18 Bridge articles, the 14 review test items, the tone/clip imports and other
+   test content from the learner-facing library. Keep evidence in QA reports; one failed-job example may stay in
+   Admin for Operations testing.
+9. **Agent.** Grammar does not block the whole Agent. The provider gate can open once the core content journeys
+   and Progress/return state work correctly. Grammar-specific Agent capability turns on after the Grammar
+   API/content is ready.
