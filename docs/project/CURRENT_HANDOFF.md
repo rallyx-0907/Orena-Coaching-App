@@ -10,8 +10,7 @@ approval, or production readiness.
 
 ## Current branch / lane
 
-`codex/work` is the baseline and the UI lane. It is the UI lane (D-066, D-098)
-whichever agent works it: a Claude session continues here, not on `claude/<task>`. `feature/orena-intelligence`
+`codex/work` is the baseline/UI lane (D-066, D-098) for either agent. `feature/orena-intelligence`
 builds Agent Intelligence (D-085) against `AGENT_CONTRACT.md` v5 (D-092, D-094,
 D-095, D-096), which is edited only on `codex/work`. Verified history:
 `PROJECT_STATE.md` "New learner UI migration".
@@ -32,15 +31,9 @@ status: `docs/design/canonical-ui/IMPLEMENTATION_MAP.md`.
 - Lane runtime :8021 (D-111.7, durable QA store): `orena-next-verify-web` and `-worker` share the named
   volume `orena-next-verify-media` at `/lanedata` (media, reading assets, word audio/deep roots); `/rundata` is
   tmpfs for SQLite scratch only; `ORENA_ACCOUNT_BACKBONE=on` here only. Recreate copies env by name only.
-- Wave B workspaces: REVIEWABLE (`161d917`) - reading (Reader, Check,
-  Discussion, Reading Transfer), listening (Workspace, Dictation, Shadowing,
-  React, Respond), speaking (Scripted, Compare, Attempts, Summary, Free Talk,
-  Conversation, Situation), writing (Writing, Compare Versions), review (Review,
-  Feed, From Your Errors), Orena (Home, panel, voice, on the mock), Onboarding
-  and the shared overlays. Each is one commit, independently reviewed and fixed.
-  Routes with no backend are the design's Coming soon screen
-  (IMPLEMENTATION_MAP `coming-soon`). The two Grammar screens wait for the
-  contract below.
+- Wave B workspaces: REVIEWABLE (`161d917`), independently reviewed/fixed;
+  route inventory in `IMPLEMENTATION_MAP.md`. Backend-less routes remain Coming
+  soon; Orena uses the mock and Grammar waits for its canonical runtime.
 - Agent UI side: contract v5 on the mock; Orena's entry points hide when the
   agent is absent.
 - Grammar: Grammar Lab replaces R5 (D-100; PR #66 merged at `f86a2bf`). The two
@@ -73,6 +66,12 @@ The D-098 and D-099 items (2026-09-29, `5d9d64c`..`b83142d`); commit list in
 
 ## IN PROGRESS
 
+- Product completion (D-110/D-111): `PRODUCT_COMPLETION_PLAN.md` owns the audit
+  and slice order. At `88b1c81`, S4 Progress, S8a Books and S2 media have partial
+  uncommitted work, not yet verified or REVIEWABLE.
+- Books storage is resolved by the shared :8021 volume, without a code change.
+  Old Alice assets are lost. Real rights-cleared EN/ZH book reimports still need
+  chapter, lookup/save, notes, restart and cross-device resume verification.
 - Human review of Wave A and Wave B.
 - Chinese writing evaluator recall: causes and fix options in
   `ZH_WRITING_EVALUATOR_RECALL.md`; no change until the human chooses a fix.
@@ -87,7 +86,9 @@ The D-098 and D-099 items (2026-09-29, `5d9d64c`..`b83142d`); commit list in
 ## PENDING
 
 Human: none for :8011 (deferred, D-102);
-PR #67 (`pattern_rule`) and #68 (fixtures) from the Grammar Lab lane.
+Independent review/gates for PR #67 (`pattern_rule`) and #68 (fixtures) from
+the Grammar Lab lane, then the approved canonical Grammar Store/API (D-111.4).
+Architecture approval is not evidence that the runtime already exists.
 
 ## BLOCKED
 
@@ -113,20 +114,31 @@ human gates. Never touch persistent volumes as cleanup.
 
 ## NEXT EXACT TASK
 
-UI lane, per D-101 as amended by D-102: D2 (shared modules out of `ui/`, gate), D3 (the matrix,
-sent once), D4 (persistence proposal with H2), E Admin, F Grammar, D7 the `MISSING` cells, G Orena,
-integration QA, then the PR `codex/work` -> `main`; :8000 is updated only after the human merges.
-Milestone A is TOOLING_READY / DEPLOYMENT_DEFERRED: :8011 is not run or migrated unless asked.
-QA runs on the lane runtime (:8021 or a local port). C after D3, when Docker is free.
+Resume S4 Progress from the working tree: verify History, Speaking
+Attempts/Summary, Overview, Rank and From Your Errors against server records,
+EN/ZH and a fresh browser; checkpoint for human review. Activity counts do not
+prove scores/mastery/ranks/awards. Finish S8a Books and S2 media as bounded
+reviewable slices; no usable transcript means draft/processing, captions first,
+ASR fallback within D-111.6 caps.
+
+Then follow `PRODUCT_COMPLETION_PLAN.md` "Decisions applied": QA archive,
+Admin Overview, canonical Grammar, validated Reading supply, Vocabulary/practice,
+EN/ZH library bootstrap and ZH books. Agent remains gated; Grammar-specific
+capability needs its runtime, but Grammar does not block the whole Agent.
+
+D-110/D-111 supersede the older execution order. Edge hardening is secondary
+unless data loss, security/ownership or normal journeys are affected. Local-only
+imports are incomplete with account sync active. Client Dictation scores are
+unverified. Preserve appropriate deleted-import history without source/annotations.
+
+QA: :8021, exclusive Docker use. :8011 deferred; :8000 human-gated. No auto-merge
+to main; tests/records alone do not prove public readiness.
 
 Intelligence lane: D-085 against `AGENT_CONTRACT.md` v5; merge `codex/work` forward; its merged PR
 is what switches `AGENT_LIVE` on :8011 (D-101 G).
 
 ## Grammar Lab (merged from `feature/grammar-lab`)
 
-Phase 0 of `docs/grammar_lab/SPEC.md`: an isolated, offline, file-based content
-pipeline in `grammar_lab/` (own `pyproject.toml`, own tests) and
-`docs/grammar_lab/`. It does not import app code, the app does not import it,
-and app CI does not collect its tests; no app code, router, engine, migration or
-runtime is involved. NEXT: human review of `docs/grammar_lab/PHASE0_DECISIONS.md`
-(including how lab point IDs join the R5 Concept IDs, SPEC §8); phase 1 waits.
+Offline Phase 0: `docs/grammar_lab/SPEC.md`, `grammar_lab/` (separate tests).
+NEXT (D-111.4): review PR #67/#68/gates, build the approved Store/API and canonical
+HSK/GF-based ZH generation/validation. Legacy R5 is reference, never a fallback.

@@ -37,6 +37,13 @@ require approval and must remain consistent with `PROJECT_STATE.md` and
 
 ## Program status
 
+Current execution priority is PRODUCT COMPLETION under D-109/D-110/D-111.
+`PRODUCT_COMPLETION_PLAN.md` "Decisions applied" and `CURRENT_HANDOFF.md`
+supersede earlier slice ordering. The stage ledger below records historical
+acceptance and release gates; it does not establish that today's EN/ZH content
+library or normal learner/Admin journeys are complete. Non-blocking infrastructure
+hardening is secondary to those journeys. Native remains frozen.
+
 | Stage | Scope                                          | Status                                            |
 | ----- | ---------------------------------------------- | ------------------------------------------------- |
 | R0    | Product Release Architecture                   | CLOSED                                            |

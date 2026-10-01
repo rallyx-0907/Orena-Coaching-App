@@ -2,9 +2,35 @@
 
 Branch: `codex/work`
 
-CURRENT_MILESTONE: ORENA_WEB_GOLDEN_STAR_V1
+CURRENT_MILESTONE: ORENA_PRODUCT_COMPLETION_D110_D111
 
 STATUS: IMPLEMENTING
+
+Current target and execution order: D-110/D-111 in
+`docs/project/DECISION_LOG.md`, `docs/project/PRODUCT_COMPLETION_PLAN.md` and
+`docs/project/CURRENT_HANDOFF.md`. Today / Discover / My Library lead into
+content and its learning capabilities. Admin is the operational control center;
+substantial validated EN/ZH libraries are required before public release.
+
+Current completion audit: Reading, transcript-backed Listening, Writing,
+Vocabulary/Recall, Reading-to-saved-word-to-Review, vocabulary import and failed
+Admin job retry work end to end. Remaining gaps include thin content supply,
+ZH article targets/levels, transcript-less imports, truthful server-backed
+Progress and Speaking history/summary, canonical Grammar runtime, Admin Overview
+and Agent integration. The Books storage root cause is resolved on :8021 with
+the shared durable volume; lost Alice assets require reimport. New real EN/ZH
+books and restart/cross-device learner journeys still need verification.
+
+WEB_REVIEW_TARGET: http://127.0.0.1:8021/next
+
+No product-completion, public-release or fresh application-test PASS is claimed.
+Uncommitted completion work must be verified and checkpointed per slice.
+Rare infrastructure edge cases are secondary unless they threaten data,
+ownership/security or a normal learner/Admin journey.
+
+The Golden Star narrative and runtime/test figures below are historical
+execution evidence. They do not define the current milestone, review runtime,
+Grammar fallback, sync status or completion order.
 
 The three findings from the earlier capability-direction review are closed in
 `docs/project/GOLDEN_STAR_COMPLETION.md`. Golden Star remains IMPLEMENTING.

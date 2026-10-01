@@ -48,9 +48,9 @@
     "status": "human_gate"
   },
   "current_primary_workstream": {
-    "id": "new_learner_ui_product_complete_d102",
+    "id": "orena_product_completion_d110_d111",
     "status": "in_progress",
-    "next_task": "D-101/D-102: D2 shared modules out of ui/, D3 matrix, D4 persistence proposal (H2), E Admin, F Grammar, D7 MISSING cells, G Orena, integration QA on codex/work, PR codex/work -> main; :8000 updated only after the human merges. :8011 deployment deferred."
+    "next_task": "D-110/D-111: finish partial S4 truthful server-backed Progress, S8a durable real EN/ZH Books and S2 transcript-backed media as reviewable slices; then QA archive, Admin Overview, canonical Grammar review/Store/API, validated EN/ZH Reading supply, Vocabulary/practice and substantial library bootstrap. PRODUCT_COMPLETION_PLAN.md owns the order. Non-blocking infrastructure hardening is secondary. QA on :8021 only; Agent and public release remain gated; :8011 deployment deferred."
   },
   "design": {
     "web_is_visual_source_of_truth": true,
@@ -194,7 +194,7 @@
   ],
   "current_p0": [],
   "current_p1": [
-    "grammar_breadth_remains_a_human_review_question",
+    "canonical_grammar_store_api_approved_d111_runtime_and_en_zh_content_not_yet_reviewable",
     "cross_device_continuity_design_specified_schema_and_sync_activation_gated",
     "startup_auto_alembic_conflicts_with_D002_requires_explicit_operator_migration",
     "reading_library_breadth_requires_rights_decisions_per_text",

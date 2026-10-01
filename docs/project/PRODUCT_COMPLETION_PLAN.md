@@ -22,6 +22,12 @@ The slice order below supersedes section 3's order where they differ.
 - **Running now:** S4 Progress tells the truth; S8a Books open (chapter 503 is a normal bug, the lane store must
   be durable, D-111.7); S2 media becomes a lesson (captions first, ASR fallback within the cap, never published
   without a usable transcript, D-111.3).
+- **Books storage update (2026-10-02, `88b1c81`):** web and worker share
+  `orena-next-verify-media` at `/lanedata`; the ephemeral-storage root cause is
+  resolved without an application-code change. The old Alice EPUB was lost and
+  cannot be recovered. S8a still needs real rights-cleared book imports and
+  learner/restart/resume verification; the older audit's missing chapter assets
+  are historical evidence, not a reason to reopen the resolved storage fix.
 - **Next, in order:**
   1. Archive test leftovers from the learner library (D-111.8), keeping one failed-job example in Admin.
   2. **Admin Overview** now (D-111.5): live / review / invalid / failed / processing, then the D-110.3 control
