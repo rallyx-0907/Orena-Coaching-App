@@ -1310,7 +1310,7 @@
   contrasts: []
   prereqs:
   - en.quantifiers.some_any
-  sequence: 5
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.a2.003
@@ -1346,7 +1346,7 @@
   contrasts: []
   prereqs:
   - en.present_simple.third_person_s
-  sequence: 4
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.a2.005
@@ -1364,7 +1364,7 @@
   contrasts: []
   prereqs:
   - en.questions.wh
-  sequence: 4
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.a2.006
@@ -1432,7 +1432,7 @@
   - sentence_structure
   contrasts: []
   prereqs: []
-  sequence: 3
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.002
@@ -1450,7 +1450,7 @@
   contrasts: []
   prereqs:
   - en.present_perfect.experience
-  sequence: 2
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.003
@@ -1468,7 +1468,7 @@
   contrasts: []
   prereqs:
   - en.canon.b1.002
-  sequence: 3
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.004
@@ -1486,7 +1486,7 @@
   contrasts: []
   prereqs:
   - en.canon.b1.003
-  sequence: 4
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.005
@@ -1504,7 +1504,7 @@
   - tense
   contrasts: []
   prereqs: []
-  sequence: 3
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.006
@@ -1521,7 +1521,7 @@
   - tense
   contrasts: []
   prereqs: []
-  sequence: 3
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.007
@@ -1539,7 +1539,7 @@
   contrasts: []
   prereqs:
   - en.canon.b1.006
-  sequence: 4
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.008
@@ -1557,7 +1557,7 @@
   contrasts: []
   prereqs:
   - en.past_simple.irregular
-  sequence: 5
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.009
@@ -1574,7 +1574,7 @@
   - other
   contrasts: []
   prereqs: []
-  sequence: 6
+  sequence: 4
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.010
@@ -1592,7 +1592,7 @@
   contrasts: []
   prereqs:
   - en.canon.b1.008
-  sequence: 7
+  sequence: 5
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.011
@@ -1610,7 +1610,7 @@
   contrasts: []
   prereqs:
   - en.present_continuous.arrangements
-  sequence: 5
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.012
@@ -1629,7 +1629,7 @@
   contrasts: []
   prereqs:
   - en.canon.b1.011
-  sequence: 6
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.013
@@ -1648,7 +1648,7 @@
   contrasts: []
   prereqs:
   - en.canon.b1.012
-  sequence: 7
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.014
@@ -1666,7 +1666,7 @@
   - sentence_structure
   contrasts: []
   prereqs: []
-  sequence: 4
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.015
@@ -1683,7 +1683,7 @@
   - sentence_structure
   contrasts: []
   prereqs: []
-  sequence: 3
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.016
@@ -1702,7 +1702,7 @@
   contrasts: []
   prereqs:
   - en.canon.b1.004
-  sequence: 5
+  sequence: 4
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.017
@@ -1720,7 +1720,7 @@
   contrasts: []
   prereqs:
   - en.canon.a2.007
-  sequence: 5
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.018
@@ -1738,7 +1738,7 @@
   contrasts: []
   prereqs:
   - en.canon.b1.017
-  sequence: 6
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.019
@@ -1755,7 +1755,7 @@
   - other
   contrasts: []
   prereqs: []
-  sequence: 3
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.020
@@ -1773,7 +1773,7 @@
   contrasts: []
   prereqs:
   - en.canon.b1.019
-  sequence: 4
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.021
@@ -1791,7 +1791,7 @@
   contrasts: []
   prereqs:
   - en.modals.should
-  sequence: 5
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.022
@@ -1809,7 +1809,7 @@
   contrasts: []
   prereqs:
   - en.canon.a2.005
-  sequence: 5
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.023
@@ -1827,7 +1827,7 @@
   contrasts: []
   prereqs:
   - en.canon.b1.022
-  sequence: 6
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.024
@@ -1845,7 +1845,7 @@
   contrasts: []
   prereqs:
   - en.canon.b1.023
-  sequence: 7
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.025
@@ -1863,7 +1863,7 @@
   contrasts: []
   prereqs:
   - en.conditional_first
-  sequence: 4
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.026
@@ -1881,7 +1881,7 @@
   contrasts: []
   prereqs:
   - en.canon.b1.025
-  sequence: 5
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.027
@@ -1898,7 +1898,7 @@
   - other
   contrasts: []
   prereqs: []
-  sequence: 7
+  sequence: 4
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.028
@@ -1915,7 +1915,7 @@
   - sentence_structure
   contrasts: []
   prereqs: []
-  sequence: 8
+  sequence: 4
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.029
@@ -1933,7 +1933,7 @@
   contrasts: []
   prereqs:
   - en.canon.b1.027
-  sequence: 8
+  sequence: 5
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.030
@@ -1951,7 +1951,7 @@
   contrasts: []
   prereqs:
   - en.relative_clauses.who_which_that
-  sequence: 2
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.031
@@ -1970,7 +1970,7 @@
   contrasts: []
   prereqs:
   - en.canon.b1.001
-  sequence: 4
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.032
@@ -1988,7 +1988,7 @@
   contrasts: []
   prereqs:
   - en.gerund_after_preference
-  sequence: 5
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.033
@@ -2007,7 +2007,7 @@
   contrasts: []
   prereqs:
   - en.canon.a1.004
-  sequence: 6
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.034
@@ -2025,7 +2025,7 @@
   contrasts: []
   prereqs:
   - en.canon.b1.018
-  sequence: 9
+  sequence: 6
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.035
@@ -2042,7 +2042,7 @@
   - tense
   contrasts: []
   prereqs: []
-  sequence: 6
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.036
@@ -2059,7 +2059,7 @@
   - tense
   contrasts: []
   prereqs: []
-  sequence: 7
+  sequence: 4
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.037
@@ -2076,7 +2076,7 @@
   - other
   contrasts: []
   prereqs: []
-  sequence: 2
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.038
@@ -2094,7 +2094,7 @@
   contrasts: []
   prereqs:
   - en.canon.b1.037
-  sequence: 3
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.039
@@ -2113,7 +2113,7 @@
   contrasts: []
   prereqs:
   - en.articles.zero
-  sequence: 3
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.040
@@ -2131,7 +2131,7 @@
   contrasts: []
   prereqs:
   - en.quantifiers.few_little
-  sequence: 6
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.041
@@ -2166,7 +2166,7 @@
   contrasts: []
   prereqs:
   - en.canon.b1.034
-  sequence: 10
+  sequence: 7
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.043
@@ -2184,7 +2184,7 @@
   contrasts: []
   prereqs:
   - en.pronouns.subject_object
-  sequence: 5
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.044
@@ -2202,7 +2202,7 @@
   contrasts: []
   prereqs:
   - en.too_enough
-  sequence: 4
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.045
@@ -2220,7 +2220,7 @@
   contrasts: []
   prereqs:
   - en.as_as
-  sequence: 4
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.046
@@ -2236,7 +2236,7 @@
   - other
   contrasts: []
   prereqs: []
-  sequence: 11
+  sequence: 8
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.047
@@ -2252,7 +2252,7 @@
   - preposition
   contrasts: []
   prereqs: []
-  sequence: 12
+  sequence: 9
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.048
@@ -2269,7 +2269,7 @@
   contrasts: []
   prereqs:
   - en.canon.b1.009
-  sequence: 8
+  sequence: 6
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.049
@@ -2286,7 +2286,7 @@
   contrasts: []
   prereqs:
   - en.canon.b1.038
-  sequence: 4
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.050
@@ -2303,7 +2303,7 @@
   contrasts: []
   prereqs:
   - en.canon.b1.032
-  sequence: 7
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.051
@@ -2319,7 +2319,7 @@
   - other
   contrasts: []
   prereqs: []
-  sequence: 2
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.052
@@ -2336,7 +2336,7 @@
   contrasts: []
   prereqs:
   - en.canon.b1.042
-  sequence: 13
+  sequence: 10
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.053
@@ -2353,7 +2353,7 @@
   contrasts: []
   prereqs:
   - en.canon.b1.052
-  sequence: 14
+  sequence: 11
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.054
@@ -2370,7 +2370,7 @@
   contrasts: []
   prereqs:
   - en.canon.b1.044
-  sequence: 5
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b1.055
@@ -2387,7 +2387,7 @@
   contrasts: []
   prereqs:
   - en.canon.b1.054
-  sequence: 6
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.001
@@ -2407,7 +2407,7 @@
   - coherence
   contrasts: []
   prereqs: []
-  sequence: 15
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.002
@@ -2425,7 +2425,7 @@
   - tense
   contrasts: []
   prereqs: []
-  sequence: 8
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.003
@@ -2443,7 +2443,7 @@
   contrasts: []
   prereqs:
   - en.canon.b2.002
-  sequence: 9
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.004
@@ -2461,7 +2461,7 @@
   contrasts: []
   prereqs:
   - en.canon.b1.013
-  sequence: 10
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.005
@@ -2480,7 +2480,7 @@
   contrasts: []
   prereqs:
   - en.canon.b1.026
-  sequence: 8
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.006
@@ -2498,7 +2498,7 @@
   contrasts: []
   prereqs:
   - en.unless
-  sequence: 9
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.007
@@ -2516,7 +2516,7 @@
   contrasts: []
   prereqs:
   - en.modals.possibility
-  sequence: 4
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.008
@@ -2534,7 +2534,7 @@
   contrasts: []
   prereqs:
   - en.canon.a2.003
-  sequence: 5
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.009
@@ -2551,7 +2551,7 @@
   - tense
   contrasts: []
   prereqs: []
-  sequence: 6
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.010
@@ -2569,7 +2569,7 @@
   contrasts: []
   prereqs:
   - en.canon.b1.020
-  sequence: 6
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.011
@@ -2587,7 +2587,7 @@
   contrasts: []
   prereqs:
   - en.canon.b1.053
-  sequence: 16
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.012
@@ -2604,7 +2604,7 @@
   - tense
   contrasts: []
   prereqs: []
-  sequence: 17
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.013
@@ -2622,7 +2622,7 @@
   contrasts: []
   prereqs:
   - en.canon.b1.014
-  sequence: 18
+  sequence: 4
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.014
@@ -2641,7 +2641,7 @@
   contrasts: []
   prereqs:
   - en.canon.b2.009
-  sequence: 7
+  sequence: 4
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.015
@@ -2659,7 +2659,7 @@
   contrasts: []
   prereqs:
   - en.canon.b2.013
-  sequence: 19
+  sequence: 5
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.016
@@ -2677,7 +2677,7 @@
   contrasts: []
   prereqs:
   - en.canon.b2.011
-  sequence: 20
+  sequence: 6
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.017
@@ -2697,7 +2697,7 @@
   contrasts: []
   prereqs:
   - en.canon.b2.015
-  sequence: 21
+  sequence: 7
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.018
@@ -2716,7 +2716,7 @@
   contrasts: []
   prereqs:
   - en.canon.b1.029
-  sequence: 22
+  sequence: 8
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.019
@@ -2734,7 +2734,7 @@
   contrasts: []
   prereqs:
   - en.canon.b2.016
-  sequence: 23
+  sequence: 9
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.020
@@ -2753,7 +2753,7 @@
   contrasts: []
   prereqs:
   - en.canon.b1.030
-  sequence: 3
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.021
@@ -2772,7 +2772,7 @@
   contrasts: []
   prereqs:
   - en.canon.b1.031
-  sequence: 6
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.022
@@ -2790,7 +2790,7 @@
   contrasts: []
   prereqs:
   - en.canon.b2.021
-  sequence: 7
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.023
@@ -2808,7 +2808,7 @@
   contrasts: []
   prereqs:
   - en.canon.b2.020
-  sequence: 4
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.024
@@ -2826,7 +2826,7 @@
   - word_form
   contrasts: []
   prereqs: []
-  sequence: 8
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.025
@@ -2845,7 +2845,7 @@
   - word_form
   contrasts: []
   prereqs: []
-  sequence: 9
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.026
@@ -2864,7 +2864,7 @@
   contrasts: []
   prereqs:
   - en.canon.a2.008
-  sequence: 10
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.027
@@ -2883,7 +2883,7 @@
   contrasts: []
   prereqs:
   - en.canon.b1.050
-  sequence: 11
+  sequence: 4
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.028
@@ -2902,7 +2902,7 @@
   contrasts: []
   prereqs:
   - en.indirect_objects
-  sequence: 3
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.029
@@ -2921,7 +2921,7 @@
   contrasts: []
   prereqs:
   - en.canon.b2.028
-  sequence: 4
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.030
@@ -2940,7 +2940,7 @@
   contrasts: []
   prereqs:
   - en.canon.b2.029
-  sequence: 5
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.031
@@ -2958,7 +2958,7 @@
   contrasts: []
   prereqs:
   - en.canon.b2.019
-  sequence: 24
+  sequence: 10
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.032
@@ -2976,7 +2976,7 @@
   contrasts: []
   prereqs:
   - en.canon.b1.039
-  sequence: 4
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.033
@@ -2994,7 +2994,7 @@
   contrasts: []
   prereqs:
   - en.canon.b1.040
-  sequence: 7
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.034
@@ -3012,7 +3012,7 @@
   contrasts: []
   prereqs:
   - en.canon.b2.031
-  sequence: 25
+  sequence: 11
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.035
@@ -3031,7 +3031,7 @@
   contrasts: []
   prereqs:
   - en.canon.b2.034
-  sequence: 26
+  sequence: 12
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.036
@@ -3049,7 +3049,7 @@
   contrasts: []
   prereqs:
   - en.canon.b2.035
-  sequence: 27
+  sequence: 13
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.037
@@ -3067,7 +3067,7 @@
   - other
   contrasts: []
   prereqs: []
-  sequence: 28
+  sequence: 14
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.038
@@ -3085,7 +3085,7 @@
   contrasts: []
   prereqs:
   - en.canon.b1.047
-  sequence: 29
+  sequence: 15
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.039
@@ -3103,7 +3103,7 @@
   contrasts: []
   prereqs:
   - en.canon.b2.036
-  sequence: 30
+  sequence: 16
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.040
@@ -3122,7 +3122,7 @@
   contrasts: []
   prereqs:
   - en.canon.b2.039
-  sequence: 31
+  sequence: 17
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.041
@@ -3141,7 +3141,7 @@
   contrasts: []
   prereqs:
   - en.canon.b2.040
-  sequence: 32
+  sequence: 18
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.042
@@ -3158,7 +3158,7 @@
   contrasts: []
   prereqs:
   - en.canon.b2.041
-  sequence: 33
+  sequence: 19
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.043
@@ -3175,7 +3175,7 @@
   contrasts: []
   prereqs:
   - en.canon.b2.017
-  sequence: 34
+  sequence: 20
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.b2.044
@@ -3192,7 +3192,7 @@
   contrasts: []
   prereqs:
   - en.canon.b2.042
-  sequence: 35
+  sequence: 21
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c1.001
@@ -3210,7 +3210,7 @@
   contrasts: []
   prereqs:
   - en.canon.b2.030
-  sequence: 6
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c1.002
@@ -3228,7 +3228,7 @@
   contrasts: []
   prereqs:
   - en.canon.b1.041
-  sequence: 2
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c1.003
@@ -3247,7 +3247,7 @@
   contrasts: []
   prereqs:
   - en.canon.b2.044
-  sequence: 36
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c1.004
@@ -3266,7 +3266,7 @@
   contrasts: []
   prereqs:
   - en.canon.c1.003
-  sequence: 37
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c1.005
@@ -3283,7 +3283,7 @@
   - tense
   contrasts: []
   prereqs: []
-  sequence: 38
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c1.006
@@ -3301,7 +3301,7 @@
   contrasts: []
   prereqs:
   - en.canon.b2.004
-  sequence: 11
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c1.007
@@ -3319,7 +3319,7 @@
   contrasts: []
   prereqs:
   - en.canon.b2.007
-  sequence: 8
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c1.008
@@ -3337,7 +3337,7 @@
   contrasts: []
   prereqs:
   - en.canon.c1.007
-  sequence: 9
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c1.009
@@ -3356,7 +3356,7 @@
   contrasts: []
   prereqs:
   - en.canon.c1.008
-  sequence: 10
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c1.010
@@ -3374,7 +3374,7 @@
   contrasts: []
   prereqs:
   - en.canon.c1.004
-  sequence: 39
+  sequence: 4
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c1.011
@@ -3393,7 +3393,7 @@
   contrasts: []
   prereqs:
   - en.adverbs.manner_degree
-  sequence: 7
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c1.012
@@ -3413,7 +3413,7 @@
   contrasts: []
   prereqs:
   - en.canon.b2.005
-  sequence: 10
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c1.013
@@ -3431,7 +3431,7 @@
   contrasts: []
   prereqs:
   - en.canon.b1.055
-  sequence: 8
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c1.014
@@ -3449,7 +3449,7 @@
   contrasts: []
   prereqs:
   - en.canon.c1.010
-  sequence: 40
+  sequence: 5
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c1.015
@@ -3466,7 +3466,7 @@
   - other
   contrasts: []
   prereqs: []
-  sequence: 2
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c1.016
@@ -3484,7 +3484,7 @@
   contrasts: []
   prereqs:
   - en.canon.c1.014
-  sequence: 41
+  sequence: 6
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c1.017
@@ -3503,7 +3503,7 @@
   contrasts: []
   prereqs:
   - en.canon.b2.025
-  sequence: 12
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c1.018
@@ -3521,7 +3521,7 @@
   contrasts: []
   prereqs:
   - en.canon.c1.016
-  sequence: 42
+  sequence: 7
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c1.019
@@ -3539,7 +3539,7 @@
   contrasts: []
   prereqs:
   - en.canon.c1.018
-  sequence: 43
+  sequence: 8
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c1.020
@@ -3558,7 +3558,7 @@
   contrasts: []
   prereqs:
   - en.canon.b2.023
-  sequence: 5
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c1.021
@@ -3576,7 +3576,7 @@
   contrasts: []
   prereqs:
   - en.canon.c1.019
-  sequence: 44
+  sequence: 9
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c1.022
@@ -3595,7 +3595,7 @@
   contrasts: []
   prereqs:
   - en.canon.b2.001
-  sequence: 45
+  sequence: 10
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c1.023
@@ -3614,7 +3614,7 @@
   contrasts: []
   prereqs:
   - en.canon.c1.021
-  sequence: 46
+  sequence: 11
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c1.024
@@ -3632,7 +3632,7 @@
   contrasts: []
   prereqs:
   - en.canon.c1.023
-  sequence: 47
+  sequence: 12
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c1.025
@@ -3650,7 +3650,7 @@
   contrasts: []
   prereqs:
   - en.canon.c1.024
-  sequence: 48
+  sequence: 13
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c1.026
@@ -3668,7 +3668,7 @@
   contrasts: []
   prereqs:
   - en.canon.c1.025
-  sequence: 49
+  sequence: 14
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c1.027
@@ -3686,7 +3686,7 @@
   contrasts: []
   prereqs:
   - en.canon.c1.026
-  sequence: 50
+  sequence: 15
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c1.028
@@ -3705,7 +3705,7 @@
   contrasts: []
   prereqs:
   - en.canon.c1.027
-  sequence: 51
+  sequence: 16
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c1.029
@@ -3723,7 +3723,7 @@
   contrasts: []
   prereqs:
   - en.canon.c1.028
-  sequence: 52
+  sequence: 17
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c1.030
@@ -3742,7 +3742,7 @@
   contrasts: []
   prereqs:
   - en.canon.c1.029
-  sequence: 53
+  sequence: 18
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c2.001
@@ -3760,7 +3760,7 @@
   contrasts: []
   prereqs:
   - en.canon.c1.009
-  sequence: 11
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c2.002
@@ -3778,7 +3778,7 @@
   contrasts: []
   prereqs:
   - en.canon.c1.030
-  sequence: 54
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c2.003
@@ -3795,7 +3795,7 @@
   - other
   contrasts: []
   prereqs: []
-  sequence: 8
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c2.004
@@ -3813,7 +3813,7 @@
   contrasts: []
   prereqs:
   - en.canon.c2.002
-  sequence: 55
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c2.005
@@ -3831,7 +3831,7 @@
   contrasts: []
   prereqs:
   - en.canon.c2.004
-  sequence: 56
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c2.006
@@ -3849,7 +3849,7 @@
   contrasts: []
   prereqs:
   - en.canon.c2.005
-  sequence: 57
+  sequence: 4
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c2.007
@@ -3867,7 +3867,7 @@
   contrasts: []
   prereqs:
   - en.canon.c2.006
-  sequence: 58
+  sequence: 5
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c2.008
@@ -3885,7 +3885,7 @@
   contrasts: []
   prereqs:
   - en.canon.c2.007
-  sequence: 59
+  sequence: 6
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c2.009
@@ -3903,7 +3903,7 @@
   contrasts: []
   prereqs:
   - en.canon.c2.008
-  sequence: 60
+  sequence: 7
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c2.010
@@ -3921,7 +3921,7 @@
   contrasts: []
   prereqs:
   - en.canon.c2.009
-  sequence: 61
+  sequence: 8
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c2.011
@@ -3939,7 +3939,7 @@
   contrasts: []
   prereqs:
   - en.canon.c2.010
-  sequence: 62
+  sequence: 9
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c2.012
@@ -3956,7 +3956,7 @@
   - other
   contrasts: []
   prereqs: []
-  sequence: 5
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c2.013
@@ -3974,7 +3974,7 @@
   contrasts: []
   prereqs:
   - en.canon.c2.011
-  sequence: 63
+  sequence: 10
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c2.014
@@ -3992,7 +3992,7 @@
   contrasts: []
   prereqs:
   - en.canon.c2.013
-  sequence: 64
+  sequence: 11
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c2.015
@@ -4010,7 +4010,7 @@
   contrasts: []
   prereqs:
   - en.canon.c2.014
-  sequence: 65
+  sequence: 12
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c2.016
@@ -4028,7 +4028,7 @@
   contrasts: []
   prereqs:
   - en.canon.c2.015
-  sequence: 66
+  sequence: 13
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c2.017
@@ -4046,7 +4046,7 @@
   contrasts: []
   prereqs:
   - en.canon.c2.016
-  sequence: 67
+  sequence: 14
   anchors: []
   batch: full-seed-2026-09-30
 - id: en.canon.c2.018
@@ -4064,6 +4064,6 @@
   contrasts: []
   prereqs:
   - en.canon.c2.017
-  sequence: 68
+  sequence: 15
   anchors: []
   batch: full-seed-2026-09-30
