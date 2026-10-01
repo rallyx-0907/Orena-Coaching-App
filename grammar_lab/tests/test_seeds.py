@@ -55,6 +55,22 @@ def test_every_seed_points_at_things_that_exist(lang: str) -> None:
 
 
 @pytest.mark.parametrize("lang", ["en", "zh"])
+def test_each_seed_has_exactly_one_function_owner(lang: str) -> None:
+    lang_key = LANGS[lang]
+    functions = load_functions()["functions"]
+    owners: dict[str, list[str]] = {}
+    for function in functions:
+        for section in ("realizations", "planned"):
+            for point_id in function.get(section, {}).get(lang_key, []):
+                owners.setdefault(point_id, []).append(function["id"])
+    for seed in load_seeds(lang):
+        assert owners.get(seed["id"]) == [seed["function"]], (
+            seed["id"], seed["function"], owners.get(seed["id"], [])
+        )
+
+
+
+@pytest.mark.parametrize("lang", ["en", "zh"])
 def test_prereqs_never_point_up_and_sequence_is_unique_per_group(lang: str) -> None:
     seeds = load_seeds(lang)
     by_id = {s["id"]: s for s in seeds}
