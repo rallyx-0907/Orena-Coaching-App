@@ -639,3 +639,98 @@ always a new record id, and the sweep only clears a marker. The only resurrectio
 2. P3-1 and P3-3 with the limits implementation; P3-2 and P3-4 as follow-ups.
 3. P2-5 of the earlier review (derived records of a deleted import) stays the human's decision. Enabling beyond :8021
    remains the D-107.5 gate.
+
+## Review (94da741)
+
+- **Reviewer:** Claude Opus 5.5, independent reviewer subagent, not the implementer. **Date:** 2026-10-01.
+- **Reviewed:** `git show 94da741` against my Delta check (02511cc) P2-6 and P3s and D-108. Graded under D-109: a finding
+  blocks only if it causes data loss, a security or ownership problem, or fails a normal learning or publishing journey;
+  everything else is a follow-up. Read-only, static; the implementer's results (PostgreSQL 3061, SQLite 2710, 124/124 node
+  gates) are local execution and were not reproduced. The uncommitted media-metadata rehearsal work is out of scope.
+
+### Verdict: APPROVE WITH CONDITIONS (one blocking condition: D-108.2 is not met on every read path)
+
+Undo, the debt and sequence reconciliation, same-session re-import and pagination are sound. The one blocking issue is
+that a deleted import's text can still be served through the kept-words read paths.
+
+### Reconciliation (P2-6 of the 02511cc check): fixed
+A deletion now keeps a persisted debt `{owed record ids, list position (mark), media}`. At sync a live record is the
+device's to delete if it was owed (a text's own record is always owed) or has a change sequence at or before the mark;
+a record after the mark is another device's re-import and is reinstated, never deleted, and the debt's mark does not
+move. The delete-before-first-list case I raised is covered for text always, and for media through the persisted mark.
+- *Can a genuine deletion still revert?* Only by a narrow race: the learner deletes within a network round trip of
+  importing, before the push response records the new record id, so the record has a sequence after the mark and is
+  not owed. With the 4 s Undo window this essentially cannot occur. Follow-up.
+- *Can another device's re-import be deleted?* No, except that a later deletion of the same link also removes a re-import
+  that existed (sequence at or before the mark) but that this device had not yet read; "the last action wins" is
+  acceptable.
+- *Stated limitation (a device that never completed a list read).* Acceptable: such a device can only hold imports it
+  created itself, and those records are known by id; a device upgraded from the old client reads the list on load before
+  the learner can delete. Not a defect; keep the test.
+- *Same-session re-import.* `fresh` clears the remembered record set so a new record is pushed; the old debt stays owed for
+  the old record only; a second delete rebuilds the debt from the new record and the mark still catches the old one.
+  Correct.
+- *Follow-up:* take `highWater` from the first page of a multi-page read (a record created mid-read can advance the mark
+  past a record the device has not seen); the effect is benign today.
+
+### Undo: sound
+The import is hidden and fully snapshotted (list position, place, kept mark, answers) and nothing is sent or erased until
+the window ends; the design's own toast carries Undo for its 4 s; a second delete commits the first; `pagehide` commits
+(the debt is saved synchronously, so a cancelled request is resent at the next sync); a staged deletion left by a closed
+page is committed on the next load (no Undo after a reload); a sync inside the window skips the staged id (no
+reinstate, no re-add, no send), and no server revival exists because nothing is sent before commit. Follow-ups:
+two tabs of one browser can commit each other's open window (the shared store is last-writer-wins), and `pagehide` is not
+fired when a mobile tab is merely backgrounded (the commit then happens at the next load).
+
+### Pagination: sound
+`GET /api/imports` pages both lists by change sequence (`updated_sequence` is unique per account), newest first, limit
+at most 50 (and 500 for tombstones), `nextCursor`/`nextDeletedCursor` null on the last page, the client asks only for the
+list that still has pages and fails the whole read (nothing partially applied) if it does not end within 400 pages.
+Cursor is stable under new inserts (they land above it); a record updated mid-read is seen on the next sync.
+
+### D-108.2: what is erased, and what is not
+Correct: the annotation row of a deleted **text** import is tombstoned with an empty payload and `GET`/`PUT` answer 404;
+provenance rows naming a deleted import (text id, `media:`/`upload:`/`url:` forms) get `focus = ''` and
+`availability = 'unavailable'`, and the provenance read masks earlier deletions without any stored sentence; history
+(Dictation, Shadowing, progress) is untouched; a link kept again is available again; the media route answers 503 for an
+untrusted index.
+
+**Blocking (B-1). A stored excerpt of a deleted import is still served by the kept-words reads.** The saved word stores
+the sentence it was met in (`saved_words.source_fragment`) and has no link to its source; the only link is a provenance
+row. The erase at delete time clears `source_fragment` only when a provenance row for that import exists **and** its stored
+`focus` overlaps the fragment, and the read-time masking exists only in `GET .../provenance`. Every other reader of the
+fragment is unmasked:
+- the library vocabulary list and word detail (`becoming_library._row_to_item` returns `source_fragment`),
+- the word cards' source encounters (`vocabulary_cards._source_encounters`),
+- the collection snippet and `detail.sourceFragment` (`collection_query`),
+- the review cloze built from the fragment, and the word deep dive, which sends the fragment to the AI provider as context
+  (`word_deep`).
+Words kept before provenance existed, or whose provenance attach failed silently (it is best effort), or whose focus text
+differs from the fragment, keep verbatim sentences of the deleted text; many such sentences together reconstruct it.
+That is an ownership/deletion promise the human made explicit (D-108.2: "a stored excerpt is never used to reconstruct the
+deleted content") and a privacy failure for erased learner content, so it blocks.
+**Required (small):** (1) at delete time for a **text** import the route holds the text: erase the account's
+`saved_words.source_fragment` values that occur in it (normalized whitespace and case), whatever their provenance; (2) for
+media imports, mask by provenance as now; (3) apply the same deleted-source mask at the read of the fragment in the
+library list/detail, cards and collection (through the provenance source id), and do not pass a masked fragment to
+word deep dive; (4) test: a word kept without provenance from a text, then the text deleted, shows no sentence on any
+of those reads.
+
+**Blocking (B-2, small). Notes and highlights on a deleted media import are still served.** The 404/erase covers content
+ids starting `text:` only. Quick Sheet notes made in Listening are filed under the room's content id (the media id forms
+`media:`, `upload:`, `url:`); after deleting a link or an upload import those annotation rows remain readable by `GET
+/api/annotations/<id>`. D-108.2 says notes and highlights attached to the source are no longer served, for any import.
+**Required:** apply the same deleted check (via the tombstone refs already used for provenance) to annotation reads and writes
+of media content ids, and erase them at delete time.
+
+### Follow-ups (not blocking under D-109)
+- Two-tab Undo interference; `pagehide` on mobile backgrounding; `highWater` snapshot; the in-flight push race.
+- `language_provenance` is updated in place at delete (an event table); acceptable, note it in the schema docs.
+- Erase counts are logged only; no operator report of what a deletion removed.
+- Agent tools: no `/api/agent/*` route exists on `codex/work` (the Intelligence lane owns it); its reads of learner records
+  must apply the same deleted-source mask when the lane merges forward, and `AGENT_CONTRACT` evidence excerpts must not carry
+  a deleted source's sentence. No export route exists.
+
+### Conditions
+1. B-1 and B-2 before the delete flow is called complete for D-108.2.
+2. The follow-ups recorded; enabling beyond :8021 remains the D-107.5 gate.
