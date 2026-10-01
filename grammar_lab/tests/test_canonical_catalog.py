@@ -14,7 +14,7 @@ from grammar_lab.pipeline.canonical import (
 )
 from grammar_lab.pipeline.content_store import load_functions, load_points
 from grammar_lab.pipeline.coverage import coverage_report
-from grammar_lab.pipeline.corpus import generation_items
+from grammar_lab.pipeline.corpus import generation_items, matches_generation_provenance
 from grammar_lab.pipeline.jsonio import format_json, read_json
 from grammar_lab.pipeline.seed import apply_seed, load_catalog, load_seeds, select_ids
 from grammar_lab.pipeline.ui_fixtures import DEMO_POINTS, FIXTURE_DIR, INDEX_NAME, build_fixtures
@@ -161,6 +161,40 @@ def test_corpus_generation_selector_can_include_existing_reviewed_points() -> No
         ("en", "A1", "en.ready"),
         ("en", "A1", "en.generated"),
     ]
+
+
+def test_generation_provenance_marks_only_the_exact_v04_recipe_as_normalized() -> None:
+    point = {
+        "schema_version": "0.4",
+        "provenance": {
+            "model": "deepseek:deepseek-flash",
+            "prompt_version": "generate_point_v04.v10",
+        },
+    }
+    assert matches_generation_provenance(
+        point,
+        provider="deepseek",
+        model="deepseek-flash",
+        prompt_version="generate_point_v04.v10",
+    )
+    assert not matches_generation_provenance(
+        point,
+        provider="deepseek",
+        model="deepseek-v4-pro",
+        prompt_version="generate_point_v04.v10",
+    )
+    assert not matches_generation_provenance(
+        point,
+        provider="deepseek",
+        model="deepseek-flash",
+        prompt_version="generate_point_v04.v11",
+    )
+    assert not matches_generation_provenance(
+        {**point, "schema_version": "0.3"},
+        provider="deepseek",
+        model="deepseek-flash",
+        prompt_version="generate_point_v04.v10",
+    )
 
 
 def test_generate_level_option_reads_the_catalog_not_the_old_seed_subset() -> None:
