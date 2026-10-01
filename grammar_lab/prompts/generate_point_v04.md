@@ -74,21 +74,19 @@ Output one JSON object matching the schema you were given -- no commentary outsi
 5. **examples**: exactly {num_examples} clean, natural sentences in {target_lang} at this
    level. `form` says which formula the sentence follows (`affirmative`, or `negative`/`question`
    when you gave that variant -- use at least one of those if you gave any). `spans` marks
-   **every** part of the sentence that realises a slot of **that example's formula**, each with
-   that slot's `role` -- the auxiliary as well as the main verb, the time phrase as well as the
-   particle. Two checks run on this: every non-optional slot of that formula has a span, and
-   no span has a role that formula does not contain. So do not highlight words that are not a
-   slot (a place or time phrase that the formula does not name); if such a phrase matters to
-   the point, add it to the formula as an `optional` slot instead. One span per slot: never
-   merge two slots into one span (`is not` is the verb `is` plus the negator `not` if the
-   formula has both), and never leave a slot of the sentence's formula without its span. Give
-   each span as the exact substring of `text` (the code finds it, searching after the previous
-   span); list them in sentence order. **Formula and example must agree at surface-token granularity.**
-   If an example uses a contraction such as `don't` / `doesn't` / `isn't`, prefer one auxiliary
-   slot whose `text`/options include that contraction; do not define separate `do` + `not` slots
-   and then give only one `don't` span. Before returning JSON, audit every example: for its selected
-   form, every non-optional formula slot must have its own exact-substring span, including repeated
-   roles (two auxiliary slots require two separate spans). `annotation` is a
+   the concrete parts of the sentence that realise the formula, using the same `role` values.
+   Every required **role** in the selected formula must be represented, and no span may use a
+   role absent from that formula. When a formula has repeated roles (for example S ... S or
+   V ... V), schema v0.4 has no slot id, so do not invent a one-to-one slot identity; give the
+   natural concrete spans in sentence order and let the role-level validator handle the
+   ambiguity. Prefer a single slot with `options` for alternatives rather than several
+   sequential required slots: e.g. one quantifier slot with options `few/a few/little/a little`,
+   not four required quantifier slots; one connector slot with alternative forms, not every
+   connector as a required step. Do not highlight words whose role the formula does not name.
+   Give each span as the exact substring of `text`; the code resolves it to offsets.
+   If an example uses a contraction such as `don't` / `doesn't` / `isn't`, prefer one
+   auxiliary slot whose text/options include that surface form rather than splitting a
+   contraction into artificial pieces. `annotation` is a
    short note on what the highlighted part does (e.g. "bắt đầu trong quá khứ → vẫn đúng bây
    giờ"), `translation` a natural translation.
 6. **compare**: one entry per id listed above under "compare required" (none if none).
@@ -121,12 +119,12 @@ Output one JSON object matching the schema you were given -- no commentary outsi
    (a list of the exact words or characters, with contractions) OR `regex` (a case-insensitive regular
    expression, for productive forms a list cannot cover -- e.g. `-ing`, regular plurals, possessive `'s`).
    Fill the matcher you do not use with an empty list / empty string. `ordered: true` when the roles must
-   appear in that order. **Build the rule from the actual surface forms in your own target-form examples,
-   not from an abstract formula label.** A regex must match ordinary words inside a full sentence; do not
-   anchor it to the whole sentence unless that is truly intended. Before returning JSON, mentally run the
-   rule against (a) `sample` and (b) every example whose `form == target_form`. All of them must match.
-   If they do not, widen/correct the matcher or choose a better evidence role. The validator checks exactly
-   those sentences, so never return a rule that rejects your own sample/examples.
+   appear in that order. **Build the rule from the actual surface forms in the sample and one representative
+   target-form example, not from an abstract formula label.** A complex grammar point may contain several
+   legitimate surface variants; this one production card teaches one usable route, not every variant in
+   the lesson. A regex must match ordinary words inside a full sentence; do not anchor it to the whole
+   sentence unless that is truly intended. Before returning JSON, check that the rule matches (a) `sample`
+   and (b) at least one example whose `form == target_form`.
 {pinyin_instruction}
 {r5_instruction}
 ## Rules
