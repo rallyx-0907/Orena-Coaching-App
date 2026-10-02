@@ -43,9 +43,9 @@
   "last_verified_application_commit": "161d9175795d7c6bc798c8078fefdb4528aa5efc",
   "last_verified_batch": "new_learner_ui_wave_a_destinations_and_wave_b_workspaces_local_verification",
   "current_program_stage": {
-    "id": "R21",
-    "name": "Mobile Release Readiness",
-    "status": "human_gate"
+    "id": "ORENA_PRODUCT_COMPLETION",
+    "name": "Coherent content-first web product completion",
+    "status": "in_progress"
   },
   "current_primary_workstream": {
     "id": "orena_product_completion_d110_d111",

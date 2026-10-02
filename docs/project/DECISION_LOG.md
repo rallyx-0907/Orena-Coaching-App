@@ -3914,3 +3914,17 @@ of completed personalization. Desktop/mobile and EN/ZH browser journeys are requ
 slice. A substantial real validated EN/ZH content library is required before public release.
 Truthful Progress → Books learner verification → transcript-backed Media remain the next slices,
 not the complete program. Paid-provider/public-deployment gates are unchanged.
+
+## D-113 — Reconcile current execution authority with Product Completion
+
+2026-10-02, explicit human instruction. ROADMAP owns the current coherent content-first
+Product Completion program; R21/mobile-first execution and separate Writing → Speaking →
+Reading → Listening public-release sequencing are historical, explicitly superseded as current
+instructions. Native remains frozen. Preserve historical decisions and evidence unchanged.
+The Product North Star, content model and pinned UI/Design Contract keep their existing domains;
+PROJECT_MEMORY routes precedence, machine state records verified truth, handoff active position,
+and ORENA_STATUS capability state. No additional product-authority document is created.
+Public readiness requires the new UI as the actual product, full connected learner/Admin journeys,
+integrated Intelligence + Agent, truthful evidence and substantial real EN/ZH content. Individual
+skill/backend/test completion is insufficient. D-110–D-112 decisions remain settled. Continue
+valid unfinished implementation immediately after reconciliation, using actual browser evidence.

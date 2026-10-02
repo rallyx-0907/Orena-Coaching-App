@@ -94,7 +94,7 @@
       "additionalProperties": false,
       "required": ["id", "name", "status"],
       "properties": {
-        "id": {"type": "string", "pattern": "^(R|M)[0-9]+$"},
+        "id": {"type": "string", "pattern": "^(ORENA_PRODUCT_COMPLETION|(R|M)[0-9]+)$", "description": "Current Product Completion program or a numbered historical stage."},
         "name": {"type": "string", "minLength": 1},
         "status": {"enum": ["closed", "complete_local_acceptance", "in_progress", "human_gate", "planned", "blocked"]}
       }

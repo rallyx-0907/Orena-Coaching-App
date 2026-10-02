@@ -2,13 +2,14 @@
 
 Branch: `codex/work`
 
-CURRENT_MILESTONE: ORENA_PRODUCT_COMPLETION_D110_D111
+CURRENT_MILESTONE: ORENA_PRODUCT_COMPLETION
 
 STATUS: IMPLEMENTING
 
-Current target and execution order: D-110/D-111/D-112 in
-`docs/project/DECISION_LOG.md`, `docs/project/PRODUCT_COMPLETION_PLAN.md` and
-`docs/project/CURRENT_HANDOFF.md`. Today / Discover / My Library lead into
+Current execution program: `docs/project/ROADMAP.md` (D-110–D-113);
+`PRODUCT_COMPLETION_PLAN.md` supplies audit/slice detail and `CURRENT_HANDOFF.md`
+the active position. Historical R21 and separate skill-release sequencing are superseded.
+Today / Discover / Orena / Practice Hub / My Library / Progress lead into
 content and its learning capabilities. Admin is the operational control center;
 substantial validated EN/ZH libraries are required before public release.
 

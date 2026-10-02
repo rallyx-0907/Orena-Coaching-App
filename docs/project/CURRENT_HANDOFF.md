@@ -2,11 +2,12 @@
 
 ## Governance
 
-Purpose: execution state. Change when lane/batch/gates/task changes.
-Do not store secrets/philosophy/unverified claims. Authority: `PROJECT_MEMORY.md`.
-Local checks are not CI/product approval.
+Purpose: execution position. Change when work/gates change. Do not store secrets or unverified claims.
+Authority: `PROJECT_MEMORY.md`. Local checks are not CI/product approval.
 
 Product completion is judged against the full new Orena UI/spec capability and flow inventory, not only currently implemented backend features or the next active slices.
+
+Current program: `ROADMAP.md` (D-113). R21/mobile and separate skill releases are historical.
 
 ## Current branch / lane
 
@@ -24,10 +25,9 @@ The intelligence lane integrates against `/next`. Frame → route → code →
 status: `docs/design/canonical-ui/IMPLEMENTATION_MAP.md`.
 
 - Foundation: REVIEWABLE.
-- Wave A destinations: REVIEWABLE (`f13c542`) - built, reviewed, integrated,
-  re-checked in the browser, language layer finished, every API reader checked
-  against captured real payloads (`scripts/fixtures/api/`). Reviewable at
-  http://127.0.0.1:8021/next (isolated stack) until the 8011 sandbox is migrated.
+- Wave A: REVIEWABLE (`f13c542`); browser/language/API checks against
+  real payloads (`scripts/fixtures/api/`). Review URL:
+  http://127.0.0.1:8021/next (isolated stack).
 - Lane runtime :8021 (D-111.7, durable QA store): `orena-next-verify-web` and `-worker` share the named
   volume `orena-next-verify-media` at `/lanedata` (media, reading assets, word audio/deep roots); `/rundata` is
   tmpfs for SQLite scratch only; `ORENA_ACCOUNT_BACKBONE=on` here only. Recreate copies env by name only.
@@ -120,7 +120,7 @@ prove scores/mastery/ranks/awards. Finish S8a Books and S2 media as bounded
 reviewable slices; no usable transcript means draft/processing, captions first,
 ASR fallback within D-111.6 caps.
 
-Then follow `PRODUCT_COMPLETION_PLAN.md` "Decisions applied": QA archive,
+Then follow `ROADMAP.md` (slice details: `PRODUCT_COMPLETION_PLAN.md`): QA archive,
 Admin Overview, canonical Grammar, validated Reading supply, Vocabulary/practice,
 EN/ZH library bootstrap and ZH books. Agent remains gated; Grammar-specific
 capability needs its runtime, but Grammar does not block the whole Agent.

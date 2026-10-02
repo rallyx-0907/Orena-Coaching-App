@@ -37,9 +37,44 @@ require approval and must remain consistent with `PROJECT_STATE.md` and
 
 ## Program status
 
-Current execution priority is PRODUCT COMPLETION under D-109/D-110/D-111.
-`PRODUCT_COMPLETION_PLAN.md` "Decisions applied" and `CURRENT_HANDOFF.md`
-supersede earlier slice ordering. The stage ledger below records historical
+Current execution program is PRODUCT COMPLETION under D-109–D-113. This Roadmap
+owns sequencing; `PRODUCT_COMPLETION_PLAN.md` supplies audit evidence and bounded
+slice detail, not a competing product authority. `CURRENT_HANDOFF.md` locates active work.
+
+Public readiness requires the approved new UI as the actual learner product;
+Today / Discover / Orena / Practice Hub / My Library / Progress connect content,
+Reading / Listening / Speaking / Writing / Vocabulary / Grammar and learner evidence.
+Individual skill implementation or backend/test status does not establish readiness.
+
+Current sequence:
+
+1. Finish truthful Progress browser/fidelity checks over the reviewed S4 implementation.
+2. Verify real EN/ZH Books: discover/open/read, lookup/save, notes, reload, normal restart and account continuation.
+3. Finish transcript-backed Media imports through the actual Listening, Dictation and Shadowing journeys.
+4. Reconcile every remaining canonical screen/element/action/state/transition against real implementation:
+   connected learner capabilities, Profile/settings/imports, Intelligence + Agent, and Admin Overview,
+   Content, Imports, Operations, AI & Models and Users. Complete gaps as browser-visible slices.
+5. Populate a substantial validated real EN/ZH content world across levels/topics/types; validate whole learner
+   and Admin journeys before the new-UI cutover and public-release human gates.
+
+Intelligence reconciliation/integration is part of this program, using existing account/language-scoped
+learner authority and grounded evidence for recommendations, weaknesses, explanations and next actions.
+Agent is its contextual interface. No invented history, scores, timing, weakness or personalization;
+deleted source excerpts must not be reconstructed. Missing support is explicitly general/unavailable.
+EN/ZH and applicable desktop/mobile browser journeys, state transitions and persistence are required.
+Non-blocking hardening is secondary unless it affects data safety, ownership/security, normal learner/Admin
+operations or required continuity. Native remains frozen; `/next` is the current implementation location,
+not a permanent second product. The old `/` remains only until the governed single cutover.
+
+Settled decisions: rights-cleared deterministic-valid content may auto-publish; unclear rights never publish;
+usable transcripts are required for learner media, captions first then ASR fallback; canonical Grammar
+pipeline → Store/API → learner runtime, never legacy fallback; Admin Overview is required; demo pollution
+may be archived; core Agent need not await every Grammar item, while Grammar-specific intelligence needs
+the canonical runtime; local-only state is incomplete where account continuity is expected.
+
+## Historical stage ledger — not current execution instructions
+
+The stage ledger below records historical
 acceptance and release gates; it does not establish that today's EN/ZH content
 library or normal learner/Admin journeys are complete. Non-blocking infrastructure
 hardening is secondary to those journeys. Native remains frozen.
@@ -84,13 +119,13 @@ R2 production activation is an independent human gate and should be completed
 before it is required for public runtime behavior, but it must not block
 non-production product development.
 
-The next autonomous implementation path after the locally complete R12–R18
-foundations is:
+The historical autonomous implementation path after the locally complete R12–R18
+foundations was (superseded by D-113; native is frozen):
 
 `R19 Mobile Foundation → R20 Mobile Learning Parity → R21 Mobile Release Readiness`
 
 R8/R11 public-promotion decisions and R2 production activation remain deferred
-human gates and must not block R19/R20 non-production mobile implementation.
+historical human gates. They do not authorize current mobile implementation or separate skill releases.
 
 ## R0 — Product Release Architecture
 
