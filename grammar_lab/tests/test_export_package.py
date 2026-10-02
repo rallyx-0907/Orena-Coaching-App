@@ -169,9 +169,16 @@ def test_zh_hans_internal_to_zh_app_round_trip() -> None:
 
 def test_to_app_point_never_adds_text() -> None:
     internal = read_json(LAB_ROOT / "content" / "en" / "en.present_continuous.now.json")
+    # Contract test, not a fixture-state test: force one missing locale even after the real content is fully bilingual.
+    missing_path, missing_map = next((path, mapping) for path, mapping in iter_locale_maps(internal) if "vi" in mapping)
+    missing_map.pop("en", None)
+    before = copy.deepcopy(internal)
+
     body = to_app_point(internal)
-    assert sum(1 for _, m in iter_locale_maps(body) if "en" not in m) > 0  # the gap is reported, not filled
-    assert locale_problems(body)
+    body_maps = dict(iter_locale_maps(body))
+    assert "en" not in body_maps[missing_path]  # the gap is reported, never filled by the production transform
+    assert any(problem == f"{missing_path}: locale.missing en" for problem in locale_problems(body))
+    assert internal == before  # conversion is non-mutating
 
 
 # --- canonical JSON and the golden vector ------------------------------------------------------------
@@ -393,9 +400,11 @@ def test_placeholder_en_is_refused(en_lab: Path) -> None:
     _edit(en_lab, "en", "alpha", copy_vi_into_en)
     text = "\n".join(_refused(en_lab, "locale.en_placeholder", "when_to_use[0]"))
     assert "en.alpha" in text
-    # the two reference fixtures are exactly this case and never pass a production export
+
+    # Keep the placeholder detector covered without assuming the committed reference fixture must still contain one.
     fixture = read_json(LAB_ROOT / "fixtures" / "ui" / "en.present_continuous.now.json")
-    assert locale_problems(fixture)
+    fixture["when_to_use"][0]["en"] = fixture["when_to_use"][0]["vi"]
+    assert any("locale.en_placeholder" in problem for problem in locale_problems(fixture))
 
 
 def test_missing_required_locale_is_refused(en_lab: Path) -> None:
