@@ -19,8 +19,10 @@ Admin job retry work end to end. Remaining gaps include thin content supply,
 ZH article targets/levels, transcript-less imports, full Progress fidelity and
 Intelligence recommendations, canonical Grammar runtime, Admin Overview
 and Agent integration. The Books storage root cause is resolved on :8021 with
-the shared durable volume; lost Alice assets require reimport. New real EN/ZH
-books and restart/cross-device learner journeys still need verification.
+the shared durable volume. S8a (`b7380b1`, 2026-10-02) corrects EPUB chapter/body
+admission, EN/ZH reading-unit counts and Admin-to-learner routing. Actual book
+import/open/save/note journeys and remaining continuity/fidelity gates are recorded
+in `docs/reviews/S8_BOOKS_BROWSER_CHECKPOINT.md`; full Books completion remains open.
 
 S4 (2026-10-02): Progress/History, Speaking Attempts/Summary and Writing-derived
 From Your Errors now use real server records at `/next` on :8021. Reading/media

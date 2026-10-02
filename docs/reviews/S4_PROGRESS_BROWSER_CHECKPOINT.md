@@ -58,6 +58,11 @@ checked in dark mode. Time is unmeasured: no replacement activity chart is inven
 source recheck (connector unavailable), measured full frame comparison, physical phone touch and light-theme browser
 verification. Old `/` UI remains until the existing authorized cutover. **Full fidelity gate is not claimed PASS.**
 
+Authority clarification during D-113 reconciliation: DESIGN_CONTRACT allows the byte-for-byte pinned
+`Orena.dc.html` to be read directly (the full file exceeds DesignSync's read limit). An unavailable connector
+is therefore not a fidelity blocker for the unchanged pin. The measured comparison and remaining browser
+checks above are still open; this clarification does not claim they passed.
+
 No new schema, persistence authority, migration, runtime restart, volume change, version bump, deployment or
 production operation. Protected changes: intentional Progress/History, shared speaking take/session namespace and
 recorder correlation; existing account/language scope reused. EPUB/media unfinished files are preserved outside this slice.

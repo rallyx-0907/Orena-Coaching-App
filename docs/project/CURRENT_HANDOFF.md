@@ -63,14 +63,14 @@ The D-098 and D-099 items (2026-09-29, `5d9d64c`..`b83142d`); commit list in
 
 ## IN PROGRESS
 
-- Product completion (D-110/D-111): `PRODUCT_COMPLETION_PLAN.md` owns the audit
-  and slice order. S4 (`a15d3c2`) has testable server-backed Progress/Attempts/Summary/
+- Product completion (D-110–D-113): `ROADMAP.md` owns order; `PRODUCT_COMPLETION_PLAN.md` supplies
+  audit/slice detail. S4 (`a15d3c2`) has testable server-backed Progress/Attempts/Summary/
   Errors; evidence and remaining fidelity gates: `docs/reviews/S4_PROGRESS_BROWSER_CHECKPOINT.md`.
-  S8a Books/S2 media unfinished code remains preserved. Full UI/spec + Intelligence
-  reconciliation/integration (D-112) remain completion scope; S4 is not full completion.
-- Books storage is resolved by the shared :8021 volume, without a code change.
-  Old Alice assets are lost. Real rights-cleared EN/ZH book reimports still need
-  chapter, lookup/save, notes, restart and cross-device resume verification.
+  S2 media work is preserved. Full UI/spec + Intelligence (D-112) remain required.
+- Books storage: resolved by shared :8021 volume; old Alice assets lost.
+  S8a (`b7380b1`): EPUB body/count and Admin learner-link fixes; local Python
+  2726 pass/370 skip, independent code APPROVE. Browser evidence: `S8_BOOKS_BROWSER_CHECKPOINT.md`.
+  Finish EN/ZH continuity/fidelity; no full Books completion claim.
 - Human review of Wave A and Wave B.
 - Chinese writing evaluator recall: causes and fix options in
   `ZH_WRITING_EVALUATOR_RECALL.md`; no change until the human chooses a fix.
@@ -113,12 +113,10 @@ human gates. Never touch persistent volumes as cleanup.
 
 ## NEXT EXACT TASK
 
-Resume S4 Progress from the working tree: verify History, Speaking
-Attempts/Summary, Overview, Rank and From Your Errors against server records,
-EN/ZH and a fresh browser; checkpoint for human review. Activity counts do not
-prove scores/mastery/ranks/awards. Finish S8a Books and S2 media as bounded
-reviewable slices; no usable transcript means draft/processing, captions first,
-ASR fallback within D-111.6 caps.
+Finish S8a Books continuity/fidelity from `b7380b1` and its browser checkpoint;
+keep S4's full fidelity gate open. Then complete S2 transcript-backed Listening
+as a browser-visible slice: draft/processing without a usable transcript,
+captions first, ASR fallback within D-111.6 caps. Activity counts do not prove mastery.
 
 Then follow `ROADMAP.md` (slice details: `PRODUCT_COMPLETION_PLAN.md`): QA archive,
 Admin Overview, canonical Grammar, validated Reading supply, Vocabulary/practice,

@@ -40,8 +40,8 @@
     "expected_development_branch": "codex/work",
     "lane": "unified_baseline_and_ui_lane"
   },
-  "last_verified_application_commit": "161d9175795d7c6bc798c8078fefdb4528aa5efc",
-  "last_verified_batch": "new_learner_ui_wave_a_destinations_and_wave_b_workspaces_local_verification",
+  "last_verified_application_commit": "b7380b1e2c83a06e35343f5ec6e26704c922f63d",
+  "last_verified_batch": "books_epub_body_counts_admin_learner_handoff_local_python_gate_and_browser_checkpoint",
   "current_program_stage": {
     "id": "ORENA_PRODUCT_COMPLETION",
     "name": "Coherent content-first web product completion",
@@ -50,7 +50,7 @@
   "current_primary_workstream": {
     "id": "orena_product_completion_d110_d111",
     "status": "in_progress",
-    "next_task": "D-110/D-111/D-112: S4 server-backed Progress/Attempts/Summary/Errors is browser-testable; finish fidelity verification before REVIEWABLE (S4_PROGRESS_BROWSER_CHECKPOINT.md). Preserve unfinished Books/media code; next S8a real EN/ZH Books learner verification, S2 transcript-backed Media. Full new UI/spec inventory, integrated Intelligence reconciliation/evidence/routing, Admin control center, canonical Grammar runtime and substantial validated EN/ZH library remain completion scope. PRODUCT_COMPLETION_PLAN.md owns order. QA :8021 only; public/provider activation gates remain; :8011 deferred."
+    "next_task": "D-110–D-113: ROADMAP.md owns Product Completion order; PRODUCT_COMPLETION_PLAN.md supplies audit/slice detail. S4 server-backed Progress is browser-testable, fidelity still open. S8a Books now has corrected EPUB body/count admission and Admin-to-learner routing; finish EN/ZH reload/restart/account-continuation and fidelity evidence before REVIEWABLE. Preserve unfinished S2 transcript-backed Media code. Full canonical UI inventory, integrated Intelligence/Agent evidence and routing, Admin control center, Grammar runtime and substantial validated EN/ZH content remain required. QA :8021 only; public/provider activation gates remain; :8011 deferred."
   },
   "design": {
     "web_is_visual_source_of_truth": true,

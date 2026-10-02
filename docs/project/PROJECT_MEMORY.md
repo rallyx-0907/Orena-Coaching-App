@@ -74,15 +74,20 @@ Product intent precedence:
 explicit current human instruction
 → docs/product/ORENA_PRODUCT_CONSTITUTION.md
 → docs/product/ORENA_CONTENT_ARCHITECTURE.md
-→ canonical UI + DESIGN_CONTRACT for presentation, interaction and learner-facing data
 → assets/brand/orena/ for brand / mascot / visual identity work
 → accepted DECISION_LOG entries
 → docs/project/PRODUCT_CONSTITUTION.md for non-superseded compatibility invariants
-→ DESIGN_CONTRACT and LEGACY_TOMBSTONES
+→ LEGACY_TOMBSTONES
 → CURRENT_PRODUCT_STATE
 → CURRENT_HANDOFF
 → implementation
 ```
+
+For presentation, interaction and learner-facing data, the domain-specific chain is:
+explicit current human instruction → pinned canonical UI → DESIGN_CONTRACT →
+Product Constitution → Content Architecture → verified current state → implementation.
+The UI defines how the approved product is presented; it does not replace the product
+North Star or content model.
 
 Implementation fact precedence:
 

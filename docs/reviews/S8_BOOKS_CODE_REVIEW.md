@@ -7,7 +7,8 @@ read-only code review and makes no runtime, browser, or test-pass claim.
 **Reviewer:** `/root/review_progress` (independent code reviewer)  
 **Branch:** `codex/work`  
 **Base:** `af9f8bb5d2cbea7ed6986211ad864798c2f6241a`  
-**Reviewed state:** dirty diff against that HEAD, inspected 2026-10-02.
+**Reviewed commit:** `b7380b1e2c83a06e35343f5ec6e26704c922f63d`
+**Reviewed diff:** `af9f8bb5d2cbea7ed6986211ad864798c2f6241a..b7380b1e2c83a06e35343f5ec6e26704c922f63d`, inspected 2026-10-02. The committed five implementation/test files match the previously reviewed diff. The only implementation change since that review is extracting the title/author normalization lambda into `_metadata_identity`; the verdict and P2 finding are unchanged.
 
 ## Strengths
 
@@ -84,20 +85,16 @@ browser-verified here.
 - **`CURRENT_HANDOFF.md`:** unchanged in observed status.
 - **Decision Log:** unchanged in observed status.
 - **Concurrent excluded work:** dirty media backend files and their tests were
-  not inspected or judged. `docs/project/PROJECT_MEMORY.md` was also dirty but
-  outside this review scope.
+  not inspected or judged. `docs/project/PROJECT_MEMORY.md` and
+  `docs/reviews/evidence/s8-books-2026-10-02/` were outside this review scope.
 
-Exact `git status --short` observed after inspection:
+Exact `git status --short` observed after this review-record update:
 
 ```text
  M docs/project/PROJECT_MEMORY.md
- M scripts/test_orena_screen_admin_areas.mjs
- M static/orena/capabilities/admin-reading.js
- M tests/test_epub_import.py
- M writing_coach/epub_import.py
+ M docs/reviews/S8_BOOKS_CODE_REVIEW.md
  M writing_coach/media_library_store.py
-?? docs/reviews/S8_BOOKS_CODE_REVIEW.md
-?? tests/test_epub_import_zh_word_count.py
+?? docs/reviews/evidence/s8-books-2026-10-02/
 ?? writing_coach/media_segmentation.py
 ?? writing_coach/media_spend.py
 ?? writing_coach/media_transcript_pipeline.py
