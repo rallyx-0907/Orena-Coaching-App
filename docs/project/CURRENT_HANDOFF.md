@@ -43,6 +43,9 @@ status: `docs/design/canonical-ui/IMPLEMENTATION_MAP.md`.
 
 ## Last verified batch
 
+EPUB fix (`7fab9d7`): valid ZIP directories accepted; reported Alchemist imports
+in Admin (2 chapters/42,990 words). Local59/Ruff/review pass: EPUB_DIRECTORY_IMPORT_FIX.md.
+
 S6 (`71ddcd4`): REVIEWABLE. EN/ZH rights review -> Publish -> Listening with VI
 meanings; reload/restart, withdrawal/Archive/Restore, 390x844 verified. Atomic
 rights gates and held-transcript resolver fixed. Local Python260, Ruff/Node/ESM,
@@ -51,9 +54,7 @@ independent review pass. QA archived. Evidence: S6_ADMIN_MEDIA_BROWSER_CHECKPOIN
 S2 corrections (`637d0b2`, D-116): EN/ZH desktop/390x844, ZH 89/89 VI meanings
 after reload/restart, Dictation/Shadowing return, playback chrome, word audio and
 directional strokes verified on :8021. Orena AI copy supersedes paid-resource wording.
-Local Python2744/370skip before audio delta, final focused50; Node122/123
-inherited Word date failure. Ruff/ESM/review pass: S2_MEDIA_BASIC_BROWSER_CHECKPOINT.md.
-No synthetic timing/levels; derived meanings durable. Next basic gap: Admin.
+Prior tests/timing/level limitations: S2_MEDIA_BASIC_BROWSER_CHECKPOINT.md.
 
 ## DONE
 

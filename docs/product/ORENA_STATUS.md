@@ -31,6 +31,12 @@ Evidence: `docs/reviews/S6_ADMIN_MEDIA_BROWSER_CHECKPOINT.md`. Admin import queu
 still needs actual preparation stages/progress and refreshed completion state;
 Overview/Users/Operations remain the next basic control-center gaps.
 
+Reported EPUB import correction (`7fab9d7`): explicit ZIP directories no longer
+fail as unsafe paths. The actual Alchemist file imports and opens in Admin with
+two source chapters/42,990 words. Local EPUB/API59 tests and Ruff pass;
+independent security review APPROVE. Evidence: `docs/reviews/EPUB_DIRECTORY_IMPORT_FIX.md`.
+Existing Books status and Admin execution order remain unchanged.
+
 S4 (2026-10-02): Progress/History, Speaking Attempts/Summary and Writing-derived
 From Your Errors now use real server records at `/next` on :8021. Reading/media
 return links work; unverifiable scores remain unavailable; local speaking state

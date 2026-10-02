@@ -40,8 +40,8 @@
     "expected_development_branch": "codex/work",
     "lane": "unified_baseline_and_ui_lane"
   },
-  "last_verified_application_commit": "71ddcd480ee97f170fc1a2f135351aa19b980b0b",
-  "last_verified_batch": "s6_admin_media_rights_publish_en_zh_browser_vi_meanings_reload_restart_mobile_260_focused_python_review_approve",
+  "last_verified_application_commit": "7fab9d72953226032abc5205eb06d553a4fdd617",
+  "last_verified_batch": "epub_valid_zip_directory_fix_actual_alchemist_admin_import_browser_59_local_tests_ruff_independent_review",
   "current_program_stage": {
     "id": "ORENA_PRODUCT_COMPLETION",
     "name": "Coherent content-first web product completion",
