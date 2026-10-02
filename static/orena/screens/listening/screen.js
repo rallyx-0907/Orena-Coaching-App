@@ -49,6 +49,7 @@ export default async function listening(element, ctx) {
   const c = ctx.context;
   const support = languages().support;
   const lessonId = ctx.params.id;
+  ctx.setLoadingLabel?.(`${t('preparingMeaning')}${support !== c.language ? ` ${t('aiMeaningNotice')}` : ''}`);
 
   /* A curated lesson, a stored upload or a pasted link: one resolver, one payload shape
      (product/media-source.js). A source with no transcript still opens and plays. */
@@ -361,7 +362,10 @@ export default async function listening(element, ctx) {
   }
 
   function rowsMarkup() {
-    if (!segments.length) return html`<div class="s-listening__unavailable">${t(transcriptState(payload) === 'processing' ? 'transcriptProcessing' : 'transcriptUnavailable')} <button type="button" class="o-btn o-btn--secondary o-btn--sm" data-refresh>${t('refreshStatus')}</button></div>`;
+    if (!segments.length) {
+      const processing = transcriptState(payload) === 'processing';
+      return html`<div class="s-listening__transcript-state" role="status">${processing ? html`<span class="o-spinner" aria-hidden="true"></span>` : ''}${t(processing && payload.processing?.stage === 'transcribe' ? 'aiTranscript' : processing ? 'transcriptProcessing' : 'transcriptUnavailable')} <button type="button" class="o-btn o-btn--secondary o-btn--sm" data-refresh>${t('refreshStatus')}</button></div>`;
+    }
     return segments.map((seg) => {
       const tone = rowTone({ isCurrent: seg.segment_id === currentId, isSelected: seg.segment_id === selectedId, endMs: seg.end_ms, timeMs });
       const meaning = showTrans ? enc.meaning(seg.segment_id) : '';
@@ -649,6 +653,28 @@ export default async function listening(element, ctx) {
   rememberPlace(true);
   scrollRowIntoView(currentId);
 
+  // A stored import can finish after the Import sheet's polling window.
+  // Re-enter the same workspace when it changes; keep manual refresh available
+  // if a status request fails, and never poll after the learner leaves.
+  let processingTimer = null;
+  if (transcriptState(payload) === 'processing' && payload.asset?.asset_id) {
+    const refreshProcessing = async () => {
+      if (!ctx.isCurrent()) return;
+      try {
+        const updated = await api.mediaMy(payload.asset.asset_id);
+        if (!ctx.isCurrent()) return;
+        if (updated?.asset?.processing_state !== 'processing') {
+          ctx.go(ctx.href('listening', { id: lessonId }));
+          return;
+        }
+        payload.processing = updated.processing;
+        paintRows();
+      } catch { /* The explicit refresh action remains available. */ }
+      if (ctx.isCurrent()) processingTimer = setTimeout(refreshProcessing, 3000);
+    };
+    processingTimer = setTimeout(refreshProcessing, 3000);
+  }
+
   /* AGENT_CONTRACT.md §7: `play_model` = "play reference audio" - here, the selected (or
      current) transcript line. Listening has no learner take of its own (`play_user`/
      `say_again`/`compare_with_model` do not apply: there is nothing to compare or re-record). */
@@ -660,6 +686,7 @@ export default async function listening(element, ctx) {
   });
 
   return () => {
+    clearTimeout(processingTimer);
     releasePlayModel();
     if (playbackOk) {
       playerEl.removeEventListener('orena:media-time', onMediaTime);

@@ -61,3 +61,39 @@ Local focused regression with the updated dependency: 29 tests passed
 (YouTube resolver, Media pipeline integration, Media import reasons).
 Screenshot: `evidence/s2-media-basic-2026-10-02/youtube-B0p5SdkBydU-fixed.jpg`.
 This fixes the reported import blocker; it does not expand S2 completion claims.
+
+## Core support meaning and processing UI correction (2026-10-02)
+
+Human clarified that support-language translation is core Listening and requested
+visible processing/resource disclosure. This supersedes treating the failed VI
+translation above as an acceptable completed slice.
+
+Groq returned `json_validate_failed` for the real long-ID transcript. Three-line
+requests worked. Translation now uses bounded completion-aware splitting and
+request-local handles for long provenance IDs, mapping every output back to its
+canonical segment. Invalid, missing and duplicate results are rejected; bounded
+smaller requests may recover, without another provider or fabricated meanings.
+
+Real browser evidence on :8021: the exact B0p5SdkBydU video displayed Vietnamese
+meanings under transcript rows and in Now playing. Reload retained them. A second
+real Import displayed the paid speech-recognition notice from the `transcribe`
+stage, then opened a processing Listening workspace and transitioned to the
+translated transcript automatically. The 390x844 viewport showed video, controls
+and translated transcript with its own scroll region. Desktop unavailable-state
+bounds measured contained within the Transcript panel, not over the player.
+Processing uses the existing spinner/status UI; Listening's load state explains
+support meaning preparation and conditional paid processing. Failed jobs do not
+claim active AI work. No fake percentage or completed translation is shown.
+
+Screenshots: `youtube-B0p5SdkBydU-translated.jpg`,
+`youtube-support-meaning-reload.jpg`, `youtube-paid-processing.jpg`,
+`transcript-state-fixed.jpg`, `transcript-processing-phone.jpg` in the existing
+evidence folder. The phone artifact captured the completed translated state.
+
+Local focused tests: 66 passed (provider, bounds, identity, Media meanings/cache,
+shared Reading translator); Ruff passed. Copy EN/VI/ZH, Listening workspace,
+Media readiness and browser ESM331 passed. EN/VI desktop/phone runtime was
+verified in this correction; prior ZH browser evidence remains unchanged.
+An initial diagnostic was rejected by automatic approval review; after proving
+the container's internal port maps only to :8021 and the public-video translation
+scope, the same diagnostic was authorized. No rejected action was bypassed.

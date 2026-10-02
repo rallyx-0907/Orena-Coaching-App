@@ -16,6 +16,7 @@
 import { defineCopy } from '../../copy/index.js';
 
 const layers = {
+  preparingMeaning: 'support', aiTranscript: 'support', aiMeaningNotice: 'support',
   refreshStatus: 'interface', generatedTranscript: 'support', transcriptProcessing: 'support', transcriptUnavailable: 'support',
   modeFollow: 'interface', modeActive: 'interface', modeShadowing: 'interface',
   hintFollow: 'support', hintActive: 'support',
@@ -36,6 +37,9 @@ const layers = {
 export const t = defineCopy('listening', {
   layers,
   en: {
+    preparingMeaning: 'Preparing transcript and support-language translation…',
+    aiTranscript: 'No usable source transcript. Orena AI is creating one using a paid speech-recognition service.',
+    aiMeaningNotice: 'If a paid AI service is needed to generate translation, this uses Orena processing resources.',
     refreshStatus: 'Refresh status', generatedTranscript: 'Automatic transcript',
     transcriptProcessing: 'Preparing transcript.', transcriptUnavailable: 'No usable transcript yet. Listening practice is unavailable.',
     modeFollow: 'Follow', modeActive: 'Active', modeShadowing: 'Shadowing',
@@ -63,6 +67,9 @@ export const t = defineCopy('listening', {
     saveFailed: "Couldn't save this. Try again.",
   },
   vi: {
+    preparingMeaning: 'Đang chuẩn bị bản ghi và bản dịch theo ngôn ngữ hỗ trợ…',
+    aiTranscript: 'Chưa có bản ghi nguồn dùng được. AI của Orena đang tạo bản ghi bằng dịch vụ nhận dạng giọng nói trả phí.',
+    aiMeaningNotice: 'Nếu cần dịch vụ AI trả phí để tạo bản dịch, tác vụ này sẽ dùng tài nguyên xử lý của Orena.',
     refreshStatus: 'Cập nhật trạng thái', generatedTranscript: 'Bản ghi tự động',
     transcriptProcessing: 'Đang chuẩn bị bản ghi.', transcriptUnavailable: 'Chưa có bản ghi dùng được. Chưa thể luyện nghe.',
     modeFollow: 'Theo dõi', modeActive: 'Chủ động', modeShadowing: 'Nói đuổi',
@@ -89,6 +96,9 @@ export const t = defineCopy('listening', {
     saveFailed: 'Chưa lưu được. Hãy thử lại.',
   },
   zh: {
+    preparingMeaning: '正在准备文字稿和辅助语言译文…',
+    aiTranscript: '暂无可用的原始文字稿。Orena AI 正在使用付费语音识别服务生成文字稿。',
+    aiMeaningNotice: '如果生成译文需要付费 AI 服务，此操作将消耗 Orena 的处理资源。',
     refreshStatus: '刷新状态', generatedTranscript: '自动转写',
     transcriptProcessing: '正在准备文字稿。', transcriptUnavailable: '暂无可用文字稿，暂时无法练习听力。',
     modeFollow: '跟随', modeActive: '主动', modeShadowing: '跟读',

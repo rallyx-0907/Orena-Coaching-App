@@ -143,12 +143,13 @@ export function createRouter({ frame, getContext }) {
     main.replaceChildren(element);
 
     let skeleton = 0;
+    let loadingLabel = t('loadingLesson');
     if (route.lesson) {
       skeleton = setTimeout(() => {
         if (mine !== generation) return;
         const holder = document.createElement('div');
         holder.dataset.state = 'loading';
-        mount(holder, loadingMarkup(t('loadingLesson')));
+        mount(holder, loadingMarkup(loadingLabel));
         main.append(holder);
       }, 150);
     }
@@ -163,6 +164,7 @@ export function createRouter({ frame, getContext }) {
       back,
       href,
       setCrumb,
+      setLoadingLabel: (label) => { loadingLabel = String(label); },
       replace: (target) => go(target, { replace: true }),
       isCurrent: () => mine === generation,
     };

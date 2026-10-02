@@ -49,6 +49,12 @@ class _RequestTooLarge(Exception):
     """The provider refused this request for its size, not its timing."""
 
 
+@dataclass(frozen=True)
+class _TranslationLine:
+    segment_id: str
+    original_text: str
+
+
 def _is_request_too_large(response: object) -> bool:
     """Whether a 413 is a sizing refusal, read from structured JSON fields.
 
@@ -325,6 +331,13 @@ class GroqTranslationProvider:
         depth: int,
     ) -> dict[str, str]:
         try:
+            # Long canonical IDs must also fit in the JSON completion. Leave
+            # room for translated text and JSON rather than spending the whole
+            # budget echoing provenance IDs. Split before a predictably large
+            # generation, using the same bounded recovery as provider refusals.
+            output_chars = sum(len(s.segment_id) + 2 * len(s.original_text) + 64 for s in segments)
+            if len(segments) > 1 and output_chars > 2 * self._max_completion_tokens:
+                raise _RequestTooLarge()
             return self._request_batch(source_language, target_language, segments)
         except _RequestTooLarge:
             if len(segments) < 2 or depth >= MAX_TRANSLATION_SPLIT_DEPTH:
@@ -346,6 +359,15 @@ class GroqTranslationProvider:
         segments: TranslationBatch,
     ) -> dict[str, str]:
 
+        # Canonical provenance IDs contain hashes. Echoing those in every JSON
+        # row wastes generation capacity; short request-local handles retain
+        # exact identity while keeping the provider response bounded.
+        compact = any(len(segment.segment_id) > 64 for segment in segments)
+        wire_segments = tuple(
+            _TranslationLine(f"line-{index:06d}", segment.original_text) if compact else segment
+            for index, segment in enumerate(segments)
+        )
+        canonical_ids = {wire.segment_id: original.segment_id for wire, original in zip(wire_segments, segments, strict=True)}
         body = {
             "model": self._model,
             "messages": [
@@ -358,7 +380,7 @@ class GroqTranslationProvider:
                         "Translate meaning, not word by word. Never add commentary."
                     ),
                 },
-                {"role": "user", "content": self._prompt(source_language, target_language, segments)},
+                {"role": "user", "content": self._prompt(source_language, target_language, wire_segments)},
             ],
             "stream": False,
             "temperature": 0.0,
@@ -384,8 +406,19 @@ class GroqTranslationProvider:
             }
             if response.status_code == 413 and _is_request_too_large(response):
                 raise _RequestTooLarge()
+            if response.status_code == 400:
+                try:
+                    error = response.json().get("error", {})
+                except (ValueError, AttributeError):
+                    error = {}
+                # A structured JSON-generation failure can be caused by the
+                # completion budget. Retry smaller batches, never another engine.
+                if isinstance(error, dict) and error.get("code") == "json_validate_failed":
+                    raise _RequestTooLarge()
             response.raise_for_status()
             envelope = response.json()
+            if envelope["choices"][0].get("finish_reason") == "length":
+                raise _RequestTooLarge()
             content = envelope["choices"][0]["message"]["content"]
             data = json.loads(content)
         except _RequestTooLarge:
@@ -395,13 +428,13 @@ class GroqTranslationProvider:
 
         items = data.get("translations") if isinstance(data, dict) else None
         if not isinstance(items, list):
-            raise TranslationProviderError("Groq translation returned invalid data.")
+            raise _RequestTooLarge()
 
-        wanted = {segment.segment_id for segment in segments}
+        wanted = set(canonical_ids)
         translated: dict[str, str] = {}
         for item in items:
             if not isinstance(item, dict):
-                raise TranslationProviderError("Groq translation returned invalid data.")
+                raise _RequestTooLarge()
             segment_id = item.get("segment_id")
             meaning = item.get("translated_meaning")
             if (
@@ -411,9 +444,11 @@ class GroqTranslationProvider:
                 or not isinstance(meaning, str)
                 or not meaning.strip()
             ):
-                raise TranslationProviderError("Groq translation returned invalid data.")
+                raise _RequestTooLarge()
             translated[segment_id] = meaning.strip()
-        return translated
+        if set(translated) != wanted:
+            raise _RequestTooLarge()
+        return {canonical_ids[key]: value for key, value in translated.items()}
 
 
 class MediaTranslationService:

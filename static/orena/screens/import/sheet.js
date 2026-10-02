@@ -55,6 +55,7 @@ export async function openImport(ctx = {}) {
     textError: '',
     processError: '',
     busy: false,
+    processing: null,
     source: 'url',
     file: null,
     fileRefused: false,
@@ -134,7 +135,7 @@ export async function openImport(ctx = {}) {
         <span class="o-spinner" aria-hidden="true"></span>
         <div class="s-import__stage-label">${t('statusImporting')}</div>
       </div>
-      <div class="s-import__note">${t('noPercent')}</div>
+      <div class="s-import__note" role="status">${t(state.processing?.stage === 'transcribe' ? 'aiTranscript' : state.processing?.stage === 'translate' ? 'aiTranslation' : 'noPercent')}</div>
     `;
   }
 
@@ -242,11 +243,14 @@ export async function openImport(ctx = {}) {
     state.file = file;
     state.fileRefused = false;
     state.step = 'processing';
+    state.processing = null;
     state.processError = '';
     paint();
     try {
       let result = await api.mediaUpload(file, context.language);
       for (let attempt = 0; alive && result?.asset?.processing_state === 'processing' && attempt < 60; attempt++) {
+        state.processing = result.processing;
+        paint();
         await new Promise(resolve => setTimeout(resolve, 1000));
         if (!alive) return;
         const mediaId = result.media_id;
@@ -282,6 +286,7 @@ export async function openImport(ctx = {}) {
     }
     state.busy = true;
     state.step = 'processing';
+    state.processing = null;
     state.processError = '';
     paint();
     try {
@@ -294,7 +299,7 @@ export async function openImport(ctx = {}) {
         owner: context.owner || 'local',
         language: context.language,
         alive: () => alive,
-        onProgress: () => { if (alive) paint(); },
+        onProgress: (result) => { state.processing = result?.processing; if (alive) paint(); },
       });
       if (!alive) return;
       state.busy = false;

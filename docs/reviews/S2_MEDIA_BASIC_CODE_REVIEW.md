@@ -23,3 +23,13 @@ The reviewed flow uses provider captions first, then ASR fallback, and only publ
 The reviewer ran no tests, Docker commands, or browser sessions. The implementation owner reports final local evidence for the reviewed commit: pytest `2738 passed, 370 skipped`; ESM graph `331` passed; Ruff on the Media files passed. The Node gates reported `122/123`, with the remaining failure identified as the inherited Word date assertion. These are local results, not CI evidence. Browser evidence was present under `docs/reviews/evidence/s2-media-basic-2026-10-02/`; it was not used as a substitute for direct browser verification by this reviewer.
 
 The implementation owner remains responsible for recording final gate output, runtime/provider limitations, exact Git status, and any milestone browser evidence in the completion report.
+
+## Support meaning / processing follow-up review (2026-10-02)
+
+Independent reviewer: `/root/review_media_basic` (code-review role), base `eea4d06`,
+scoped working diff checkpointed by the following translation/UI commit.
+Reviewed bounded splitting, protocol inputs, canonical-ID mapping, processing
+poll/teardown and truthful EN/VI/ZH resource notices. Initial P1 inaccurate paid
+claim and P2 paid translation-stage copy were corrected and re-reviewed.
+Final verdict: no remaining P0/P1/P2 in scope. Reviewer ran no Docker or browser
+operations; runtime and local gate evidence remain the implementer's observations.
