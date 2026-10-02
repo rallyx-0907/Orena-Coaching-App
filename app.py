@@ -601,15 +601,27 @@ _media_library_asset_root = Path(
 )
 _media_library_store = FileMediaLibraryStore(_media_library_root)
 _media_library_assets = FilesystemBookAssetStore(_media_library_asset_root)
+from writing_coach.media_spend import SpendLedger
+from writing_coach.media_transcript_pipeline import MediaPipeline
+from writing_coach.media_providers.youtube_audio import download_audio
+
+_media_pipeline = MediaPipeline(
+    ledger=SpendLedger(_media_library_root / "processing-spend.json"),
+    asr=_speech_asr_provider,
+    ingestion=_media_ingestion_service,
+    youtube_audio=download_audio,
+    workers=1,
+)
 configure_media_library(
     _media_library_store,
     _media_library_assets,
-    MediaSourceImporter(_media_ingestion_service, _media_library_store, _media_library_assets),
+    MediaSourceImporter(_media_ingestion_service, _media_library_store, _media_library_assets, pipeline=_media_pipeline),
     admin_guard=require_admin,
     language_supported=is_enabled,
 )
 configure_media_library_payload(stored_media_payload)
 configure_listening_media_library(_media_library_store)
+_media_pipeline.recover(_media_library_store, _media_library_assets)
 app.include_router(media_library_router)
 app.include_router(media_library_upload_router)
 # Canonical Reading evidence (D-075): the one Reading read contract every

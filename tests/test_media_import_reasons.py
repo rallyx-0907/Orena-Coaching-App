@@ -38,6 +38,8 @@ class _Store:
 def _importer(store, acquire):
     importer = MediaSourceImporter.__new__(MediaSourceImporter)
     importer._store = store
+    importer.pipeline = None
+    importer.prepare = lambda entry, **kwargs: store.upsert(entry)
     importer._ingestion = None
     importer._asset_store = None
     importer._from_url = acquire

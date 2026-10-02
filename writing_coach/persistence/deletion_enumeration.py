@@ -44,7 +44,7 @@ INCARNATION_KEYED_TABLES = (
 FILE_STORES = (
     {
         "name": "media_library",  # data/media_library/index.json (MEDIA_LIBRARY_ROOT) and the asset files it points at
-        "owned": "entries with library='personal' and provider='upload' whose source.owner == owner_token(user_key), "
+        "owned": "entries with library='personal' and provider in ('upload', 'youtube') whose source.owner == owner_token(user_key), "
                  "in every learning language; their files under media/<provider_media_id>/ (original, thumbnail)",
         "remove_one": "writing_coach.media_library_api.delete_owned_media",
         "remove_account": "writing_coach.media_library_api.delete_all_owned_media",

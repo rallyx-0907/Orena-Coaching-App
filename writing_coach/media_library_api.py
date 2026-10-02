@@ -24,7 +24,8 @@ from __future__ import annotations
 import logging
 import mimetypes
 from pathlib import Path
-from typing import Any, Callable, Mapping
+from collections.abc import Callable, Mapping
+from typing import Any
 
 from fastapi import APIRouter, File, Form, Request, UploadFile
 from pydantic import BaseModel, Field
@@ -33,7 +34,7 @@ from writing_coach.book_asset_store import AssetNotFound, BookAssetStore, Invali
 from writing_coach.core.errors import orena_http_error
 from writing_coach.media_library_store import OWNER_FIELD, MediaIndexUnavailable, MediaLibraryEntry, owner_token, visible_to
 from writing_coach.core.request_context import current_language_code, current_user_key
-from writing_coach.media_source_import import MediaSourceImporter, UnsafeMediaFetch
+from writing_coach.media_source_import import MediaSourceImporter, UnsafeMediaFetch, UnsupportedMediaAddress
 from writing_coach.media_thumbnail import MAX_UPLOAD_BYTES, TempMediaFile
 
 router = APIRouter(prefix="/api/media", tags=["media-library"])
@@ -113,11 +114,33 @@ class MediaImportItemIn(BaseModel):
     tags: list[str] = Field(default_factory=list, max_length=20)
     media_id: str | None = Field(default=None, max_length=255)
     thumbnail_url: str | None = Field(default=None, max_length=1024)
+    rights_cleared: bool | None = None
 
 
 class MediaImportIn(BaseModel):
     language: str = Field(default="en", max_length=16)
     items: list[MediaImportItemIn] = Field(default_factory=list, max_length=MAX_IMPORT_URLS)
+
+
+class LearnerSourceIn(BaseModel):
+    source_url: str = Field(min_length=1, max_length=2048)
+    target_language: str = Field(default="", max_length=32)
+
+
+@media_learning_router.post("/source")
+def learner_source(payload: LearnerSourceIn) -> dict[str, Any]:
+    _, _, importer = _installed()
+    from writing_coach.media_ingestion import MediaImportError
+    try:
+        entry = importer.import_personal_url(payload.source_url, language=current_language_code(), owner_key=current_user_key())
+    except MediaImportError as exc:
+        raise orena_http_error(422, exc.category.value, exc.learner_message) from exc
+    except (UnsafeMediaFetch, UnsupportedMediaAddress, ValueError):
+        raise orena_http_error(422, "media_unavailable", "This source could not be imported.")
+    result = _learner_payload(entry.media_id, payload.target_language) if _learner_payload else None
+    if result is None:
+        raise orena_http_error(503, "media_upload_unavailable", "This source is not available right now.")
+    return {**result, "media_id": entry.media_id}
 
 
 @router.get("/files/{key:path}")
@@ -189,7 +212,7 @@ def delete_owned_media(media_id: str, *, user_key: str, language: str) -> bool:
     if entry is None and getattr(store, "last_read_issue", "") in {"index_corrupt", "index_unreadable"}:
         # "Not found" in an index that cannot be trusted is not an answer: refuse, so nothing is treated as done.
         raise MediaIndexUnavailable(store.last_read_issue)
-    if entry is None or entry.library != "personal" or entry.provider != "upload":
+    if entry is None or entry.library != "personal" or entry.provider not in {"upload", "youtube"}:
         return False
     if not visible_to(entry, user_key=user_key, language=language):
         return False
@@ -203,6 +226,8 @@ def _remove_personal_entry(store: Any, asset_store: BookAssetStore, entry: Media
     assert_writable = getattr(store, "assert_writable", None)
     if assert_writable is not None:
         assert_writable()
+    if entry.provider == "youtube":
+        return store.delete(entry.media_id)
     prefix = f"media/{entry.provider_media_id}"
     keys: list[str] = []
     thumbnail = entry.thumbnail or {}
@@ -225,7 +250,7 @@ def delete_all_owned_media(user_key: str) -> int:
     expected = owner_token(user_key)
     removed = 0
     for entry in store.list(library="personal", status=None):
-        if entry.provider == "upload" and entry.source.get(OWNER_FIELD, "") == expected:
+        if entry.provider in {"upload", "youtube"} and entry.source.get(OWNER_FIELD, "") == expected:
             if _remove_personal_entry(store, asset_store, entry):
                 removed += 1
     return removed
@@ -343,17 +368,24 @@ def admin_import(request: Request, payload: MediaImportIn) -> dict[str, Any]:
     return {"items": rows, "summary": _summary(rows)}
 
 
+def new_transcript_batch() -> str:
+    _, _, importer = _installed()
+    return importer.pipeline.new_batch() if importer.pipeline is not None else ""
+
+
 @router.post("/admin/upload")
 async def admin_upload(
     request: Request,
     file: list[UploadFile] = File(default=[]),
     language: str = Form(default="en"),
+    batch_id: str = Form(default="", max_length=80),
 ) -> dict[str, Any]:
     """Import audio/video files an operator holds, into the shared library."""
     user = _require_admin(request)
     _, _, importer = _installed()
     selected = _require_language(language)
     imported_by = str(user.get("email") or user.get("name") or "admin")[:120]
+    batch_id = batch_id if isinstance(batch_id, str) and batch_id else new_transcript_batch()
     rows: list[dict[str, Any]] = []
     for upload in file or []:
         filename = Path(str(upload.filename or "upload")).name or "upload"
@@ -361,7 +393,7 @@ async def admin_upload(
             with TempMediaFile(suffix=Path(filename).suffix or ".bin") as temp:
                 await _stream_upload(upload, temp.path)
                 entry = importer.import_upload(
-                    temp.path, filename=filename, language=selected, imported_by=imported_by, library="shared"
+                    temp.path, filename=filename, language=selected, imported_by=imported_by, library="shared", batch_id=batch_id
                 )
             rows.append({"url": filename, "status": "ok", "detail": "Imported.", "media_id": entry.media_id, "lesson_id": ""})
         except UnsafeMediaFetch as exc:
@@ -456,6 +488,11 @@ def media_library_installed() -> bool:
     return _store is not None and _asset_store is not None and _importer is not None
 
 
+def retry_transcript(media_id: str) -> bool:
+    store, assets, importer = _installed()
+    return bool(importer.pipeline and importer.pipeline.retry(store, assets, media_id))
+
+
 # ---------------------------------------------------------------------------
 # Resolution: one stored entry → the payload the encounter already renders
 # ---------------------------------------------------------------------------
@@ -487,7 +524,7 @@ def browse_item(entry: MediaLibraryEntry) -> dict[str, Any]:
     the detail view. `id` is the encounter locator, so an imported item opens
     through exactly the route a curated lesson opens through.
     """
-    from writing_coach.media_source_import import playback_for, public_thumbnail_url, source_label
+    from writing_coach.media_source_import import public_thumbnail_url, source_label
 
     thumbnail = public_thumbnail_url(entry)
     return {
@@ -519,9 +556,11 @@ def shared_browse_items(language: str) -> list[dict[str, Any]]:
     selected = str(language or "").strip().casefold()
     if not selected:
         return []
+    from writing_coach.media_transcript_pipeline import usable_transcript
     return [
         browse_item(entry)
         for entry in _store.list(language=selected, library="shared")
+        if usable_transcript(entry)[0]
     ]
 
 

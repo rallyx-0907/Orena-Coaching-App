@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
-from typing import Any, Literal, Mapping
+from datetime import UTC, datetime
+from collections.abc import Mapping
+from typing import Any, Literal
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Query
 from pydantic import BaseModel, Field
 
 from writing_coach.core.errors import orena_http_error
@@ -146,8 +147,10 @@ def stored_media_payload(media_id: str, target_language: str = "") -> dict[str, 
         return None
     target = resolve_support_language(get_learner_profile().get("native_language"), target_language)
     stored = (entry.lesson or {}).get("payload") if entry.lesson else None
-    if isinstance(stored, Mapping):
+    processing = dict(entry.processing or {})
+    if isinstance(stored, Mapping) and processing.get("state", "ready") == "ready":
         response = _stored_acquisition_response(entry, stored)
+        response["processing"] = processing
         media_object = _media_object_from_stored(stored, entry)
         meanings_outcome = resolve_segment_meanings(
             asset_id=str(stored.get("asset", {}).get("asset_id") or entry.media_id),
@@ -196,6 +199,7 @@ def stored_media_payload(media_id: str, target_language: str = "") -> dict[str, 
         "translation": {"status": "unavailable", "target_language": target, "source": None, "failure_kind": None},
     }
     response["catalog"] = stored_media_metadata(entry)
+    response["processing"] = processing
     return response
 
 
@@ -237,9 +241,9 @@ def _stored_asset(entry: MediaLibraryEntry) -> dict[str, Any]:
         "source_type": entry.source.get("type", "imported-media"),
         "title": entry.title,
         "source_language": entry.language,
-        "processing_state": MediaProcessingState.READY.value,
+        "processing_state": ("processing" if entry.status == "processing" else "failed") if entry.processing and entry.processing.get("state") != "ready" else MediaProcessingState.READY.value,
         "duration_ms": entry.duration_ms or None,
-        "transcript_available": entry.lesson is not None,
+        "transcript_available": bool(entry.lesson) and (not entry.processing or entry.processing.get("state") == "ready"),
         "translation_available": False,
         "thumbnail_url": public_thumbnail_url(entry),
     }
@@ -267,15 +271,15 @@ def stored_media_metadata(entry: MediaLibraryEntry) -> dict[str, Any]:
         "duration_ms": entry.duration_ms,
         "excerpt_start_ms": int((segments[0] or {}).get("start_ms") or 0) if segments else 0,
         "excerpt_end_ms": int((segments[-1] or {}).get("end_ms") or entry.duration_ms) if segments else entry.duration_ms,
-        "available_modes": ["listen"] if segments else [],
+        "available_modes": ["listen", "active", "dictation", "shadowing"] if segments else [],
         "content_tags": list(lesson.get("tags") or []),
         "vocabulary": [],
         "speech_speed": None,
         "artwork": str(lesson.get("topic") or "listen"),
         "poster_url": public_thumbnail_url(entry),
         "playback_kind": playback_for(entry)["kind"],
-        "published_state": "published",
-        "curation_state": "reviewed",
+        "published_state": entry.status,
+        "curation_state": str(lesson.get("curation") or "reviewed"),
         "is_development_candidate": False,
         "is_shared_import": entry.library == "shared",
         "media_type": entry.media_type,
@@ -450,10 +454,12 @@ def _shared_entries(
     level_key = (level or "").strip().casefold()
     topic_key = (topic or "").strip().casefold()
     tag_key = (tag or "").strip().casefold()
+    from writing_coach.media_transcript_pipeline import usable_transcript
     return [
         entry
         for entry in entries
         if entry.library == "shared"
+        and usable_transcript(entry)[0]
         and (not level_key or entry.level.casefold() == level_key)
         and (not topic_key or str((entry.lesson or {}).get("topic") or "").casefold() == topic_key)
         and (not tag_key or tag_key in {str(item).casefold() for item in (entry.lesson or {}).get("tags", [])})
@@ -654,7 +660,7 @@ def save_listening_progress(payload: ListeningProgressIn) -> dict[str, Any]:
         values["presentation"] = "revealed"
     # The flag is the level: the two can never disagree.
     values["last_used_hint"] = values["last_hint_level"] > 0
-    values["updated_at"] = datetime.now(timezone.utc).isoformat()
+    values["updated_at"] = datetime.now(UTC).isoformat()
     line = _require_progress_line(values["asset_id"], values["segment_id"])
     # The stored score is the server's (D-103.2): the browser's best_* fields stay in the body for the
     # frozen clients and are ignored. Only a checked answer is scored; every other write moves no score.
@@ -694,7 +700,7 @@ def save_shadowing_progress(payload: ShadowingProgressIn) -> dict[str, Any]:
     values = payload.model_dump() if hasattr(payload, "model_dump") else payload.dict()
     values["asset_id"] = _clean_identity(values["asset_id"], "asset_id")
     values["segment_id"] = _clean_identity(values["segment_id"], "segment_id")
-    values["updated_at"] = datetime.now(timezone.utc).isoformat()
+    values["updated_at"] = datetime.now(UTC).isoformat()
     _require_progress_line(values["asset_id"], values["segment_id"])
     try:
         item = repository.save_shadowing_progress_record(values)

@@ -1,0 +1,25 @@
+# S2 Media / Listening Basic Code Review
+
+**Verdict: APPROVE — code review scope.**
+
+**Reviewer:** independent Codex reviewer (`/root/review_media_basic`)
+**Reviewed base:** `933377473ac84bbe7f8372431fcb13e1c40eef4d`
+**Reviewed subject:** the final dirty Media/Listening diff in `codex/work`, after the ownership, publication, and archive/reprocess corrections. The implementation changes were not committed at review time.
+**Scope:** normal browser-usable Media/Listening paths for EN and ZH; ownership and deletion, transcript admission, rights, spending caps, publication state, and shared/personal access. This is not a fidelity or release-readiness verdict.
+
+## Findings
+
+No unresolved P0 or P1 code-review findings remain in the reviewed scope.
+
+The reviewed flow uses provider captions first, then ASR fallback, and only publishes shared media after deterministic transcript validation and cleared rights. Unknown rights and unusable transcripts remain held. Personal stored media is owner- and language-scoped; direct media imports are stored under the owner-managed asset path, and owned YouTube references are removed through the media deletion enumeration. Shared learner reads require published status. Processing completion uses atomic update-if-present writes so deletion cannot be undone by an in-flight job, and archive cancellation prevents stale processing from republishing content. Admin publication rechecks transcript validity and rights.
+
+## Non-blocking follow-up
+
+- The Admin UI does not yet expose a source-specific rights decision for uploaded files. Those imports remain in review unless a configured source policy clears them; this is safe and truthful, and can be handled in the next Admin content-control slice.
+- A learner whose private transcript job fails can refresh its status or re-import the source. The current UI does not offer an owner-scoped retry of the same private media record.
+
+## Validation boundary
+
+The reviewer ran no tests, Docker commands, or browser sessions. The implementation owner reported that 35 focused tests passed before the final archive tweak; the canonical local gate was still running at the time of review. No CI or product-review PASS is claimed here. Browser evidence was present under `docs/reviews/evidence/s2-media-basic-2026-10-02/`; it was not used as a substitute for direct browser verification by this reviewer.
+
+The implementation owner remains responsible for recording final gate output, runtime/provider limitations, exact Git status, and any milestone browser evidence in the completion report.

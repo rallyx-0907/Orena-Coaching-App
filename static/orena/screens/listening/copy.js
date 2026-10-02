@@ -16,6 +16,7 @@
 import { defineCopy } from '../../copy/index.js';
 
 const layers = {
+  refreshStatus: 'interface', generatedTranscript: 'support', transcriptProcessing: 'support', transcriptUnavailable: 'support',
   modeFollow: 'interface', modeActive: 'interface', modeShadowing: 'interface',
   hintFollow: 'support', hintActive: 'support',
   line: 'interface', replay: 'interface', meaning: 'interface', playPause: 'interface',
@@ -35,6 +36,8 @@ const layers = {
 export const t = defineCopy('listening', {
   layers,
   en: {
+    refreshStatus: 'Refresh status', generatedTranscript: 'Automatic transcript',
+    transcriptProcessing: 'Preparing transcript.', transcriptUnavailable: 'No usable transcript yet. Listening practice is unavailable.',
     modeFollow: 'Follow', modeActive: 'Active', modeShadowing: 'Shadowing',
     hintFollow: 'Follow · tap a line to seek and play', hintActive: 'Active · tap a line to select it',
     line: 'Line', replay: 'Replay', meaning: 'meaning', playPause: 'Play or pause',
@@ -60,6 +63,8 @@ export const t = defineCopy('listening', {
     saveFailed: "Couldn't save this. Try again.",
   },
   vi: {
+    refreshStatus: 'Cập nhật trạng thái', generatedTranscript: 'Bản ghi tự động',
+    transcriptProcessing: 'Đang chuẩn bị bản ghi.', transcriptUnavailable: 'Chưa có bản ghi dùng được. Chưa thể luyện nghe.',
     modeFollow: 'Theo dõi', modeActive: 'Chủ động', modeShadowing: 'Nói đuổi',
     hintFollow: 'Theo dõi · chạm một câu để tua và phát', hintActive: 'Chủ động · chạm một câu để chọn',
     line: 'Câu', replay: 'Phát lại', meaning: 'nghĩa', playPause: 'Phát hoặc tạm dừng',
@@ -84,6 +89,8 @@ export const t = defineCopy('listening', {
     saveFailed: 'Chưa lưu được. Hãy thử lại.',
   },
   zh: {
+    refreshStatus: '刷新状态', generatedTranscript: '自动转写',
+    transcriptProcessing: '正在准备文字稿。', transcriptUnavailable: '暂无可用文字稿，暂时无法练习听力。',
     modeFollow: '跟随', modeActive: '主动', modeShadowing: '跟读',
     hintFollow: '跟随 · 点按一句即可跳转并播放', hintActive: '主动 · 点按一句即可选中',
     line: '句子', replay: '重播', meaning: '释义', playPause: '播放或暂停',

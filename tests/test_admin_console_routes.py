@@ -98,8 +98,9 @@ def setup(tmp_path):
         playback={"provider": "youtube", "kind": "embed", "url": "https://www.youtube-nocookie.com/embed/abcdefghijk"},
         title="Station announcements", thumbnail={"kind": "none", "ref": ""}, duration_ms=42000, language="zh", level="",
         creator="", source={"provider": "youtube", "type": "admin-import", "provenance_url": "https://www.youtube.com/watch?v=abcdefghijk",
-                            "license": "x", "review_status": "checked", "imported_by": "admin@example.com"},
-        library="shared", created_at=(NOW - timedelta(days=1)).isoformat(), lesson=None,
+                            "license": "x", "rights": "cleared", "review_status": "checked", "imported_by": "admin@example.com"},
+        library="shared", created_at=(NOW - timedelta(days=1)).isoformat(),
+        lesson=None,
     ))
     vocabulary, reading = VocabularyRepo(), ReadingRepo()
     console.configure_admin_console(
@@ -242,6 +243,11 @@ def test_media_can_be_taken_back_and_put_out_again(setup):
     listed = call(setup["app"], "GET", "/api/admin/console/content?kind=media").json()
     assert [item["status"] for item in listed["items"] if item["id"] == "youtube-abcdefghijk"] == ["unpublished"]
 
+    # A missing transcript is never publishable, even after an operator unpublishes it.
+    refused = call(setup["app"], "POST", path, json={"status": "published"})
+    assert refused.status_code == 409
+    from dataclasses import replace
+    store.upsert(replace(kept, lesson={"payload": {"transcript": {"segments": [{"start_ms": 0, "end_ms": 42000, "original_text": "各位旅客请注意，开往北京的列车马上到站，请准备上车。"}]}}}))
     back = call(setup["app"], "POST", path, json={"status": "published"})
     assert back.status_code == 200 and back.json()["record"]["status"] == "published"
     assert [item.media_id for item in store.list(language="zh")] == ["youtube-abcdefghijk"]

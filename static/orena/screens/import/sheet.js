@@ -245,7 +245,13 @@ export async function openImport(ctx = {}) {
     state.processError = '';
     paint();
     try {
-      const result = await api.mediaUpload(file, context.language);
+      let result = await api.mediaUpload(file, context.language);
+      for (let attempt = 0; alive && result?.asset?.processing_state === 'processing' && attempt < 60; attempt++) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        if (!alive) return;
+        const mediaId = result.media_id;
+        result = { ...await api.mediaMy(mediaId), media_id: mediaId };
+      }
       if (!alive) return;
       state.busy = false;
       const entry = uploadMediaEntry(result, file.name);
@@ -297,7 +303,7 @@ export async function openImport(ctx = {}) {
         paint();
         return;
       }
-      const entry = urlMediaEntry(state.url.trim(), result);
+      const entry = result.media_id ? uploadMediaEntry(result) : urlMediaEntry(state.url.trim(), result);
       memory?.addMedia?.(entry);
       sheetHandle?.close();
       navigate('listening', { id: entry.id });

@@ -41,7 +41,7 @@ import {
   wordTokens, hanTokens, currentTokenIndex, rowTone, modeHintKey, selectionAfterModeChange,
   previousIndex, nextIndex, vocabularyForSegment, placeFor, dictationLinesCompleted,
   pickNextRecommendation, progressPercent, msAtSeekFraction, timeLabel, reachedEnd, listenedMinutesLabel,
-  phraseSaveable, phraseSavePayload, phraseSaved,
+  phraseSaveable, phraseSavePayload, phraseSaved, transcriptState,
 } from './model.js';
 
 export default async function listening(element, ctx) {
@@ -140,7 +140,7 @@ export default async function listening(element, ctx) {
       <button type="button" class="o-iconbtn o-iconbtn--back" data-back aria-label="${s('back')}">${raw(icon('arrow-left', { size: 21 }))}</button>
       <div class="s-listening__titles">
         <div class="s-listening__title" lang="${langAttr(language)}">${lesson.title}</div>
-        <div class="s-listening__meta">${metaLine([kindLabel, lesson.levelText, durationMinutes != null ? `${durationMinutes} ${t.plural('minutesLabel', durationMinutes)}` : ''])}</div>
+        <div class="s-listening__meta">${metaLine([kindLabel, payload.transcript_origin === 'generated_asr' ? t('generatedTranscript') : '', lesson.levelText, durationMinutes != null ? `${durationMinutes} ${t.plural('minutesLabel', durationMinutes)}` : ''])}</div>
       </div>
       <div class="s-listening__modes" data-modes role="group"></div>
     </div>
@@ -361,6 +361,7 @@ export default async function listening(element, ctx) {
   }
 
   function rowsMarkup() {
+    if (!segments.length) return html`<div class="s-listening__unavailable">${t(transcriptState(payload) === 'processing' ? 'transcriptProcessing' : 'transcriptUnavailable')} <button type="button" class="o-btn o-btn--secondary o-btn--sm" data-refresh>${t('refreshStatus')}</button></div>`;
     return segments.map((seg) => {
       const tone = rowTone({ isCurrent: seg.segment_id === currentId, isSelected: seg.segment_id === selectedId, endMs: seg.end_ms, timeMs });
       const meaning = showTrans ? enc.meaning(seg.segment_id) : '';
@@ -378,6 +379,7 @@ export default async function listening(element, ctx) {
   function paintRows() {
     const keep = rowsEl.scrollTop;
     mount(rowsEl, html`${rowsMarkup()}`);
+    rowsEl.querySelector('[data-refresh]')?.addEventListener('click', () => window.location.reload());
     rowsEl.scrollTop = keep;
     paintWordHighlight();
   }

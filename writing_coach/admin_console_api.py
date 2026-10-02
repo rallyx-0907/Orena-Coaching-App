@@ -1152,8 +1152,22 @@ def set_media_status(media_id: str, payload: MediaStatusIn, request: Request, re
     if entry is None or entry.library != "shared":
         raise orena_http_error(404, "content_not_found", "This media is not in the shared library.")
     previous = getattr(entry, "status", "published")
+    if wanted == "published" and previous == "archived" and entry.processing and entry.processing.get("state") == "cancelled":
+        wanted = "review"
+    if wanted == "published":
+        from writing_coach.media_transcript_pipeline import usable_transcript
+        valid, reason = usable_transcript(entry)
+        if entry.processing and entry.processing.get("state") not in {"ready", "held"}:
+            raise orena_http_error(409, "media_transcript_required", "Transcript processing must finish before publishing.")
+        if not valid:
+            raise orena_http_error(409, "media_transcript_required", "A usable transcript is required before publishing.")
+        if entry.source.get("rights") != "cleared":
+            raise orena_http_error(409, "media_rights_required", "Source rights must be cleared before publishing.")
     if previous != wanted:
-        store.upsert(replace(entry, status=wanted))
+        processing = dict(entry.processing or {})
+        if wanted == "archived" and processing.get("state") in {"queued", "running"}:
+            processing.update(state="cancelled", reason="archived")
+        store.upsert(replace(entry, status=wanted, processing=processing or None))
     _audit(admin, "admin.content.status", entity_type="media", entity_id=media_id,
            payload={"from": previous, "to": wanted, "outcome": "unchanged" if previous == wanted else "ok"})
     refreshed = store.get(media_id)
@@ -1169,6 +1183,11 @@ def reprocess_media(media_id: str, request: Request, response: Response) -> dict
     entry = store.get(media_id) if store is not None else None
     if entry is None or entry.library != "shared":
         raise orena_http_error(404, "content_not_found", "This media is not in the shared library.")
+    if media_library_api.retry_transcript(media_id):
+        refreshed = store.get(media_id)
+        _audit(admin, "admin.content.reprocess", entity_type="media", entity_id=media_id,
+               payload={"outcome": "queued"})
+        return {"item": {"status": "ok", "media_id": media_id}, "record": media_record(refreshed)}
     if not entry.canonical_url or entry.provider not in {"youtube", "direct"}:
         raise orena_http_error(409, "media_reprocess_unsupported", "Only media imported from a URL can be read again.")
     lesson = entry.lesson if isinstance(entry.lesson, Mapping) else {}
@@ -1264,6 +1283,7 @@ async def import_media_upload(
     _same_origin(request)
     _no_store(response)
     selected = language.strip().casefold()
+    batch_id = media_library_api.new_transcript_batch()
     rows: list[dict[str, Any]] = []
     for upload in file or []:
         digest = await _upload_digest(upload)
@@ -1274,7 +1294,7 @@ async def import_media_upload(
                        "detail": "This file is already in the library.", "media_id": existing, "lesson_id": ""}
             else:
                 try:
-                    result = await media_library_api.admin_upload(request, [upload], language)
+                    result = await media_library_api.admin_upload(request, [upload], language, batch_id)
                 except HTTPException as exc:
                     category = _error_category(exc, "media_import_unavailable")
                     _receipt(admin, "media", {"source": upload.filename or "upload", "language": selected,

@@ -11,6 +11,11 @@
    pure functions over the real transcript - not its prototype timers or canned data. */
 import { wordSpans, activeWordIndex } from '../../capabilities/word-timeline.js';
 
+export function transcriptState(payload) {
+  if (payload?.transcript?.segments?.length) return 'ready';
+  return payload?.asset?.processing_state === 'processing' ? 'processing' : 'unavailable';
+}
+
 /* The design's own cycle: 1x -> 0.75x -> 0.5x -> 1.25x -> 1x. */
 export const SPEEDS = Object.freeze([1, 0.75, 0.5, 1.25]);
 
