@@ -2,10 +2,11 @@
 
 **Verdict: APPROVE for the reviewed code diff.** No unresolved P0 or P1 code finding remains in this review scope. This verdict does not establish the learner-facing fidelity gate or product approval. S4 remains `IMPLEMENTING`; it is not `REVIEWABLE` based on this review.
 
-**Reviewer:** `/root/review_progress` (independent code reviewer)  
-**Branch:** `codex/work`  
-**Base commit:** `50751946c6389bd483718be3584eb7c4a072309f`  
-**Reviewed commit:** `a15d3c2d2346051b933ee95a32b3764137d8d01e`  
+- **Reviewer:** `/root/review_progress` (independent code reviewer)
+- **Branch:** `codex/work`
+- **Base commit:** `50751946c6389bd483718be3584eb7c4a072309f`
+- **Reviewed commit:** `a15d3c2d2346051b933ee95a32b3764137d8d01e`
+
 **Reviewed diff:** `50751946c6389bd483718be3584eb7c4a072309f..a15d3c2d2346051b933ee95a32b3764137d8d01e`. The committed 23-file S4 diff matches the implementation and follow-up fixes reviewed in the working tree: account/language isolation, server-verified Speaking facts, source routing, repeated attempts, and truthful unavailable states.
 
 ## Review findings
