@@ -143,7 +143,7 @@ assert.equal(reading.questionsEditable(at('needs_review')), true);
 assert.deepEqual(reading.setProgress(set()), { total: 2, approved: 1, rejected: 0, undecided: 1 });
 assert.equal(reading.setIsStale(at('needs_review', { anchored: false })), true);
 assert.equal(reading.learnerAddress('reading', 'abc'), '#/content/article%3Aabc');
-assert.equal(reading.learnerAddress('book', 'b1', 'c1'), '#/content/book%3Ab1%2Fc1');
+assert.equal(reading.learnerAddress('book', 'b1', 'c1'), '#/content/book%3Ab1%3Ac1');
 assert.equal(match(reading.learnerAddress('reading', 'abc')).route.id, 'content', 'the learner link is an address the new UI serves');
 /* Imports. */
 assert.deepEqual(imports.vocabularyProblems({ files: [], metadata: {} }).map((p) => p.key), ['validationFiles', 'validationTitle']);
@@ -165,7 +165,11 @@ assert.equal(content.COLLECTION_STATES.restore, 'unpublished', 'restoring never 
 assert.equal(content.canPublish({ attested: false }), false);
 assert.deepEqual(content.publishChecks({ rights: 'licensed', completeness: 'complete', attested: true }).map((c) => c.pass), [true, true, true]);
 assert.equal(content.publishChecks({ rights: 'restricted', completeness: 'partial', attested: false })[0].level, 'strong');
-assert.equal(content.learnerLink(record('book'), { book: { chapters: [{ id: 'C1' }] } }), '#/content/book%3AB%2FC1');
+const bookLearnerLink = content.learnerLink(record('book'), { book: { chapters: [{ id: 'C1' }] } });
+const { parseContentId } = await import('../static/orena/screens/content/model.js');
+assert.deepEqual(parseContentId(decodeURIComponent(bookLearnerLink.slice('#/content/'.length))),
+  { kind: 'book', id: 'B', chapterId: 'C1' }, 'Admin book link must resolve through the actual learner route parser');
+assert.equal(bookLearnerLink, '#/content/book%3AB%3AC1');
 assert.equal(content.learnerLink(record('media', { status: 'archived' }), {}), '', 'an unpublished item has no learner link');
 /* Tray: the memory and the clock. */
 tray.clear();

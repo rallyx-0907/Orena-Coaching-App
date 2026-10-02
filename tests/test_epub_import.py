@@ -412,3 +412,33 @@ def test_missing_optional_metadata_never_fails_the_import():
     assert book.language is None
     assert book.description == ""
     assert book.cover is None
+
+
+def test_publisher_boilerplate_does_not_remove_the_final_chapter():
+    chapter = _xhtml(
+        '<div class="pg-boilerplate" id="pg-header"><p>Publisher notice.</p></div>'
+        '<h2>The final chapter</h2><p>The story ends here.</p>'
+        '<div class="pg-boilerplate" id="pg-footer">'
+        '<h2>THE FULL PROJECT GUTENBERG™ LICENSE</h2><p>Project Gutenberg License</p></div>'
+    )
+    license_only = _xhtml(
+        '<div class="pg-boilerplate" id="pg-footer">'
+        '<h2>THE FULL PROJECT GUTENBERG™ LICENSE</h2><p>License terms.</p></div>'
+    )
+    book = parse_epub(_build_epub(chap1=chapter, chap2=license_only))
+    assert len(book.chapters) == 1
+    assert book.chapters[0].title == "The final chapter"
+    assert book.chapters[0].paragraphs == ("The story ends here.",)
+
+
+def test_mentioning_a_license_in_body_text_is_not_back_matter():
+    chapter = _xhtml('<h2>Publishing</h2><p>We discussed the Project Gutenberg License.</p>')
+    book = parse_epub(_build_epub(chap1=chapter, chap2=_xhtml('<p>Another chapter.</p>')))
+    assert len(book.chapters) == 2
+
+
+def test_short_metadata_title_and_author_page_is_not_a_chapter():
+    title_page = _xhtml('<h1>A Book</h1><h2>by An Author</h2><p>Contents</p>')
+    body = _xhtml('<h2>First chapter</h2><p>The story begins.</p>')
+    book = parse_epub(_build_epub(chap1=title_page, chap2=body))
+    assert [chapter.title for chapter in book.chapters] == ["First chapter"]

@@ -217,7 +217,7 @@ export function setIsStale(set) {
 
 /* Where a learner opens content in the new UI: the same address the Discover cards use. */
 export function learnerAddress(kind, id, chapterId = '') {
-  const suffix = kind === 'book' && chapterId ? `/${chapterId}` : '';
+  const suffix = kind === 'book' && chapterId ? `:${chapterId}` : '';
   /* The learner UI files a Reading article under `article:` (screens/content/model.js). */
   const filed = kind === 'reading' ? 'article' : kind;
   return `#/content/${encodeURIComponent(`${filed}:${id}${suffix}`)}`;
