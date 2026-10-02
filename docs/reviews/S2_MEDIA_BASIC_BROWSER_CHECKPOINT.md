@@ -39,3 +39,25 @@ No schema/migration, production activation, credential change or volume deletion
 No live microphone assessment verified; that existing provider/permission-dependent path is not presented as a scored result. Private failed imports can refresh/re-import; same-record learner retry is a follow-up. Shared upload rights editing is the next Admin content-control gap: unknown rights remain held, never blanket-published. Generic podcast/direct-audio URL admission in the current Import UI remains constrained by its existing YouTube-only URL validator; File import is usable for those media.
 
 Next major basic product gap: Admin control-center content lifecycle, especially source-scoped rights/review/publish controls. Preserve accepted Books/Progress. Do not deepen Listening fidelity/cross-device/rare-edge/performance while major app coverage remains missing.
+
+## YouTube import regression correction (2026-10-02)
+
+User-reported URL `https://www.youtube.com/watch?v=B0p5SdkBydU` reproduced
+`audio_unavailable`: yt-dlp 2026.07.04 extracted audio URLs that returned HTTP 403,
+including with provider headers. Updating the pinned dependency to 2026.08.19
+allowed the existing guarded downloader to retrieve 5,166,354 bytes without
+changing URL/security gates. The same version was installed in the authorized
+:8021 web container and it was restarted; future image builds use requirements.txt.
+
+Real browser journey: Discover > Import > URL / Media > Import & process >
+Listening processing > Refresh status > automatic timed transcript. The exact
+video played past 0:22 and the selected transcript line followed playback.
+Stored source: `source-76c2b30dbf6340f3bebc6af32ef3ca1f`. This EN video used ASR;
+VI translation failed and remains unavailable, not fabricated. No new ZH/mobile
+verification is claimed for this dependency correction; preceding S2 evidence
+remains unchanged. Existing failed imports require re-import, not an implied retry.
+
+Local focused regression with the updated dependency: 29 tests passed
+(YouTube resolver, Media pipeline integration, Media import reasons).
+Screenshot: `evidence/s2-media-basic-2026-10-02/youtube-B0p5SdkBydU-fixed.jpg`.
+This fixes the reported import blocker; it does not expand S2 completion claims.
