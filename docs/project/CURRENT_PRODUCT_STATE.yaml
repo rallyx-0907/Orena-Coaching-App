@@ -50,7 +50,7 @@
   "current_primary_workstream": {
     "id": "orena_product_completion_d110_d111",
     "status": "in_progress",
-    "next_task": "D-114 basic whole-app coverage first. S6 Admin media rights review/publish REVIEWABLE at 71ddcd4: EN/ZH browser Content -> Listening with VI meanings, withdrawal/archive/restore and 390x844 form verified; local focused Python260 and independent review pass. QA fixtures archived. Present this checkpoint before the next major slice: Admin import preparation stages/progress refresh and Overview/Users/Operations basic control-center journeys, then canonical Grammar and integrated Intelligence/Agent. Preserve accepted Books/Progress and S2 Listening corrections; no full-app re-audit or deeper Listening hardening. Full product is not public ready. QA :8021 only; existing gates remain."
+    "next_task": "D-114 basic whole-app coverage first. Admin remains insufficient to configure/operate the app (human report, 2026-10-02): key entry/test/save unaccepted; :8021 encryption master key absent, AI_RUNTIME_MODE legacy, text capability pickers present but Speech/Speaking not routable. Existing Fernet/Admin/origin/no-secret responses verified with209 local tests; cloud-key transport still allows HTTP and needs HTTPS enforcement. Next: secure browser key test/save and actual EN/ZH per-capability provider/model application, import stages/progress refresh, Overview/Users/Operations, then canonical Grammar and integrated Intelligence/Agent. Preserve S6 media rights/publish, accepted Books/Progress and S2 Listening; no full-app re-audit. Full product is not public ready. QA :8021 only; provider/routing activation gates remain."
   },
   "design": {
     "web_is_visual_source_of_truth": true,

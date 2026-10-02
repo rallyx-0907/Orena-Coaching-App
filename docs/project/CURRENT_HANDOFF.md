@@ -32,14 +32,9 @@ status: `docs/design/canonical-ui/IMPLEMENTATION_MAP.md`.
   Orena uses the mock; Grammar waits for its canonical runtime.
 - Agent UI side: contract v5 on the mock; Orena's entry points hide when the
   agent is absent.
-- Grammar: Grammar Lab replaces R5 (D-100; PR #66 merged at `f86a2bf`). The two
-  Grammar screens (frames 44 and 47) are built on the merged contract (`b83142d`,
-  status building: no content until the lane's 13-point fixture, its PR B, is
-  placed behind `product/grammar-source.js`; open items G-1..G-9 in
-  UI_BACKEND_GAPS); its PR A
-  patches the contract and adds the "Try it yourself" rule, and until then the
-  card never concludes the pattern was used. `/api/grammar/v1/*` waits for its
-  own architecture review.
+- Grammar Lab replaces R5 (D-100, PR#66 `f86a2bf`); screens44/47 (`b83142d`)
+  wait for canonical fixtures behind grammar-source.js. G-1..G-9: UI_BACKEND_GAPS.
+  No false pattern-used claim. Store/API waits for architecture review.
 
 ## Last verified batch
 
@@ -115,6 +110,11 @@ deployment, destructive lifecycle, and new learner-owned persistence remain
 human gates. Never touch persistent volumes as cleanup.
 
 ## NEXT EXACT TASK
+
+Admin configuration is incomplete: key entry/test/save is not accepted; :8021
+lacks AI_PROVIDER_SECRETS_KEY and uses legacy AI routing. Model pickers exist
+but Speech/Speaking is not routable. Verify actual EN/ZH capability use; enforce
+HTTPS for cloud-key transport. Security mechanisms/test209: ORENA_STATUS.md.
 
 Current phase: basic functional coverage first (human instruction, 2026-10-02).
 Preserve accepted Books/Progress; do not reopen them or restart a full-app audit.

@@ -51,6 +51,10 @@ Current sequence:
 1. Preserve accepted Progress and Books work; do not reopen them for non-blocking completeness or fidelity.
 2. Finish preserved Listening/Media to basic browser-usable coverage: imports, usable transcripts, core line actions, Dictation, Shadowing and truthful unavailable states in EN/ZH.
 3. Once Listening is basically usable, move to the next major basic gap: Admin control-center coverage, then canonical Grammar runtime and integrated Intelligence/Agent as their reviewed contracts permit.
+   Admin is not complete until entered keys can be securely tested/saved and
+   provider/model routing for each supported capability is verified in real
+   EN/ZH app requests. Current key-test and skill-model configuration gaps remain
+   open; backend encryption or a saved route alone does not close them.
 4. Reconcile every remaining canonical screen/element/action/state/transition against real implementation:
    connected learner capabilities, Profile/settings/imports, Intelligence + Agent, and Admin Overview,
    Content, Imports, Operations, AI & Models and Users. Complete gaps as browser-visible slices.

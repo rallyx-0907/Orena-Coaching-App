@@ -37,6 +37,32 @@ two source chapters/42,990 words. Local EPUB/API59 tests and Ruff pass;
 independent security review APPROVE. Evidence: `docs/reviews/EPUB_DIRECTORY_IMPORT_FIX.md`.
 Existing Books status and Admin execution order remain unchanged.
 
+Admin configuration is NOT product-complete (human report + bounded verification,
+2026-10-02). The app cannot yet be operated/configured end to end from Admin.
+Key entry/test/save remains an open browser acceptance gap; :8021 has no
+`AI_PROVIDER_SECRETS_KEY`, so UI-managed encrypted credential storage is not
+configured. The new key form couples verification to Save/Save & test; a passing
+catalog test alone is not a completed key-management journey.
+
+Per-capability model pickers exist for some text capabilities, but :8021 uses
+`AI_RUNTIME_MODE=legacy`; its browser explicitly says the learner evaluator still
+uses legacy routing. Speech recognition, pronunciation and speaking evaluation
+are not routable yet. Selecting/saving a model is not proof that a real skill
+request uses it. Required: configure -> test -> save -> reload -> real EN/ZH
+capability request with truthful provider/model evidence and failure handling.
+
+API-key security check: existing backend encrypts stored credentials with Fernet,
+requires an Admin and same-origin credential mutations, returns status rather
+than secret values, and records non-secret audit facts. UI uses a password field
+and does not persist draft keys to browser storage. Existing global validation
+handler removes rejected input values. Local focused credentials/Admin security
+and authorization tests: 209 passed, two deprecation warnings. Live entered-key
+acceptance, key rotation/recovery and complete secret-leak coverage are NOT
+verified. Provider endpoints still accept remote HTTP and adapters send the key
+in auth headers; cloud credential transport must enforce HTTPS before acceptance.
+No real key was entered, changed or printed; routing/provider activation was not
+changed. Evidence: `docs/reviews/evidence/admin-ai-check/legacy-routing.png`.
+
 S4 (2026-10-02): Progress/History, Speaking Attempts/Summary and Writing-derived
 From Your Errors now use real server records at `/next` on :8021. Reading/media
 return links work; unverifiable scores remain unavailable; local speaking state
