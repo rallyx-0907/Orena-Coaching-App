@@ -13,16 +13,13 @@ Today / Discover / Orena / Practice Hub / My Library / Progress lead into
 content and its learning capabilities. Admin is the operational control center;
 substantial validated EN/ZH libraries are required before public release.
 
-Current completion audit: Reading, transcript-backed Listening, Writing,
-Vocabulary/Recall, Reading-to-saved-word-to-Review, vocabulary import and failed
-Admin job retry work end to end. Remaining gaps include thin content supply,
-ZH article targets/levels, transcript-less imports, full Progress fidelity and
-Intelligence recommendations, canonical Grammar runtime, Admin Overview
-and Agent integration. The Books storage root cause is resolved on :8021 with
-the shared durable volume. S8a (`b7380b1`, 2026-10-02) corrects EPUB chapter/body
-admission, EN/ZH reading-unit counts and Admin-to-learner routing. Actual book
-import/open/save/note journeys and remaining continuity/fidelity gates are recorded
-in `docs/reviews/S8_BOOKS_BROWSER_CHECKPOINT.md`; full Books completion remains open.
+Current phase: basic functional coverage of the whole approved learner/Admin app first
+(human instruction, 2026-10-02). Preserve accepted Books and Progress; their historical
+continuity/fidelity limitations do not reopen them as the active slice. No full-app re-audit.
+S2 Listening/Media basic coverage is REVIEWABLE (`c315bd2`); next is Admin control-center basic coverage,
+then canonical Grammar and integrated Intelligence/Agent under existing review gates.
+Deep fidelity, cross-device completeness, edge cases and performance follow basic coverage.
+Books evidence remains in `docs/reviews/S8_BOOKS_BROWSER_CHECKPOINT.md` unchanged.
 
 S4 (2026-10-02): Progress/History, Speaking Attempts/Summary and Writing-derived
 From Your Errors now use real server records at `/next` on :8021. Reading/media
@@ -36,7 +33,9 @@ reconciliation, evidence, recommendations and action routing remain required.
 
 WEB_REVIEW_TARGET: http://127.0.0.1:8021/next
 
-No product-completion, public-release or fresh application-test PASS is claimed.
+S2 evidence: `docs/reviews/S2_MEDIA_BASIC_BROWSER_CHECKPOINT.md`; local Python 2738 pass/370 skip.
+Real EN/ZH import/transcript journeys and YouTube playback work; live microphone assessment and live Agent are not claimed.
+No whole-product-completion, public-release or CI PASS is claimed.
 Uncommitted completion work must be verified and checkpointed per slice.
 Rare infrastructure edge cases are secondary unless they threaten data,
 ownership/security or a normal learner/Admin journey.

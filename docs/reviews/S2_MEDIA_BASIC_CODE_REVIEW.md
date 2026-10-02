@@ -4,7 +4,7 @@
 
 **Reviewer:** independent Codex reviewer (`/root/review_media_basic`)
 **Reviewed base:** `933377473ac84bbe7f8372431fcb13e1c40eef4d`
-**Reviewed subject:** the final dirty Media/Listening diff in `codex/work`, after the ownership, publication, and archive/reprocess corrections. The implementation changes were not committed at review time.
+**Reviewed subject:** `c315bd2e0b72e86501a2bcd85afe00bfe5c0e2b2` on `codex/work`, containing the reviewed Media/Listening diff after the ownership, publication, and archive/reprocess corrections.
 **Scope:** normal browser-usable Media/Listening paths for EN and ZH; ownership and deletion, transcript admission, rights, spending caps, publication state, and shared/personal access. This is not a fidelity or release-readiness verdict.
 
 ## Findings
@@ -20,6 +20,6 @@ The reviewed flow uses provider captions first, then ASR fallback, and only publ
 
 ## Validation boundary
 
-The reviewer ran no tests, Docker commands, or browser sessions. The implementation owner reported that 35 focused tests passed before the final archive tweak; the canonical local gate was still running at the time of review. No CI or product-review PASS is claimed here. Browser evidence was present under `docs/reviews/evidence/s2-media-basic-2026-10-02/`; it was not used as a substitute for direct browser verification by this reviewer.
+The reviewer ran no tests, Docker commands, or browser sessions. The implementation owner reports final local evidence for the reviewed commit: pytest `2738 passed, 370 skipped`; ESM graph `331` passed; Ruff on the Media files passed. The Node gates reported `122/123`, with the remaining failure identified as the inherited Word date assertion. These are local results, not CI evidence. Browser evidence was present under `docs/reviews/evidence/s2-media-basic-2026-10-02/`; it was not used as a substitute for direct browser verification by this reviewer.
 
 The implementation owner remains responsible for recording final gate output, runtime/provider limitations, exact Git status, and any milestone browser evidence in the completion report.

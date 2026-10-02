@@ -48,9 +48,9 @@ Individual skill implementation or backend/test status does not establish readin
 
 Current sequence:
 
-1. Finish truthful Progress browser/fidelity checks over the reviewed S4 implementation.
-2. Verify real EN/ZH Books: discover/open/read, lookup/save, notes, reload, normal restart and account continuation.
-3. Finish transcript-backed Media imports through the actual Listening, Dictation and Shadowing journeys.
+1. Preserve accepted Progress and Books work; do not reopen them for non-blocking completeness or fidelity.
+2. Finish preserved Listening/Media to basic browser-usable coverage: imports, usable transcripts, core line actions, Dictation, Shadowing and truthful unavailable states in EN/ZH.
+3. Once Listening is basically usable, move to the next major basic gap: Admin control-center coverage, then canonical Grammar runtime and integrated Intelligence/Agent as their reviewed contracts permit.
 4. Reconcile every remaining canonical screen/element/action/state/transition against real implementation:
    connected learner capabilities, Profile/settings/imports, Intelligence + Agent, and Admin Overview,
    Content, Imports, Operations, AI & Models and Users. Complete gaps as browser-visible slices.
@@ -65,6 +65,12 @@ EN/ZH and applicable desktop/mobile browser journeys, state transitions and pers
 Non-blocking hardening is secondary unless it affects data safety, ownership/security, normal learner/Admin
 operations or required continuity. Native remains frozen; `/next` is the current implementation location,
 not a permanent second product. The old `/` remains only until the governed single cutover.
+
+Current phase (explicit human instruction, 2026-10-02): complete basic functional coverage of the
+whole approved learner/Admin UI first. Deep fidelity, cross-device completeness, edge cases,
+performance and infrastructure refinement follow that coverage; they do not keep an already
+basically usable slice active. Historical Books/Progress review limitations remain evidence,
+not instructions to reopen those accepted slices. No fresh full-app audit is required to resume.
 
 Settled decisions: rights-cleared deterministic-valid content may auto-publish; unclear rights never publish;
 usable transcripts are required for learner media, captions first then ASR fallback; canonical Grammar

@@ -40,8 +40,8 @@
     "expected_development_branch": "codex/work",
     "lane": "unified_baseline_and_ui_lane"
   },
-  "last_verified_application_commit": "b7380b1e2c83a06e35343f5ec6e26704c922f63d",
-  "last_verified_batch": "books_epub_body_counts_admin_learner_handoff_local_python_gate_and_browser_checkpoint",
+  "last_verified_application_commit": "c315bd2e0b72e86501a2bcd85afe00bfe5c0e2b2",
+  "last_verified_batch": "s2_media_basic_en_zh_import_asr_listening_dictation_context_browser_and_local_gate",
   "current_program_stage": {
     "id": "ORENA_PRODUCT_COMPLETION",
     "name": "Coherent content-first web product completion",
@@ -50,7 +50,7 @@
   "current_primary_workstream": {
     "id": "orena_product_completion_d110_d111",
     "status": "in_progress",
-    "next_task": "D-110–D-113: ROADMAP.md owns Product Completion order; PRODUCT_COMPLETION_PLAN.md supplies audit/slice detail. S4 server-backed Progress is browser-testable, fidelity still open. S8a Books now has corrected EPUB body/count admission and Admin-to-learner routing; finish EN/ZH reload/restart/account-continuation and fidelity evidence before REVIEWABLE. Preserve unfinished S2 transcript-backed Media code. Full canonical UI inventory, integrated Intelligence/Agent evidence and routing, Admin control center, Grammar runtime and substantial validated EN/ZH content remain required. QA :8021 only; public/provider activation gates remain; :8011 deferred."
+    "next_task": "D-114 basic whole-app coverage first. S2 Media basic browser checkpoint REVIEWABLE at c315bd2: EN/ZH file imports and YouTube ASR-backed Listening, Dictation/Shadowing entry, saved phrase/context, EN phone and reload. Do not deepen/reopen accepted Books or Progress. Next major basic gap: Admin control-center content review/rights/publish, then canonical Grammar and integrated Intelligence/Agent. Full product is not public ready. QA :8021 only; existing gates remain."
   },
   "design": {
     "web_is_visual_source_of_truth": true,

@@ -24,10 +24,7 @@ calls `/api/agent/*` until the human says the intelligence lane is integrated.
 The intelligence lane integrates against `/next`. Frame → route → code →
 status: `docs/design/canonical-ui/IMPLEMENTATION_MAP.md`.
 
-- Foundation: REVIEWABLE.
-- Wave A: REVIEWABLE (`f13c542`); browser/language/API checks against
-  real payloads (`scripts/fixtures/api/`). Review URL:
-  http://127.0.0.1:8021/next (isolated stack).
+- Foundation and Wave A/B: REVIEWABLE; route/evidence inventory in IMPLEMENTATION_MAP.md.
 - Lane runtime :8021 (D-111.7, durable QA store): `orena-next-verify-web` and `-worker` share the named
   volume `orena-next-verify-media` at `/lanedata` (media, reading assets, word audio/deep roots); `/rundata` is
   tmpfs for SQLite scratch only; `ORENA_ACCOUNT_BACKBONE=on` here only. Recreate copies env by name only.
@@ -47,11 +44,11 @@ status: `docs/design/canonical-ui/IMPLEMENTATION_MAP.md`.
 
 ## Last verified batch
 
-2026-09-29 D-098 (`5d9d64c`..`3f2cc23`): local 114 Node gates, ESM graph/memory
-PASS; EN/VI/ZH, themes and desktop/phone verified. Clean-export pytest:
-`2450 passed, 195 skipped` (SQLite test backend). Detailed evidence:
-`PROJECT_STATE.md` "New learner UI migration". Current S4 checks have an inherited
-Word-detail date failure; see `S4_PROGRESS_BROWSER_CHECKPOINT.md`.
+S2 basic Media (`c315bd2`, 2026-10-02): REVIEWABLE. Real EN/ZH File import,
+ASR transcript/meanings, ZH Dictation/Shadowing entry, phrase/context and EN phone/reload;
+YouTube import/player reached Media completed. Evidence: S2_MEDIA_BASIC_BROWSER_CHECKPOINT.md.
+Local pytest 2738 pass/370 skip; Node 122/123 (inherited Word date assertion), ESM331,
+memory/architecture/contracts and Media Ruff PASS. Independent code review APPROVE.
 
 ## DONE
 
@@ -113,10 +110,12 @@ human gates. Never touch persistent volumes as cleanup.
 
 ## NEXT EXACT TASK
 
-Finish S8a Books continuity/fidelity from `b7380b1` and its browser checkpoint;
-keep S4's full fidelity gate open. Then complete S2 transcript-backed Listening
-as a browser-visible slice: draft/processing without a usable transcript,
-captions first, ASR fallback within D-111.6 caps. Activity counts do not prove mastery.
+Current phase: basic functional coverage first (human instruction, 2026-10-02).
+Preserve accepted Books/Progress; do not reopen them or restart a full-app audit.
+S2 basic Listening is REVIEWABLE; stop deepening it. Next: Admin control-center
+content review/rights/publish gaps, then canonical Grammar/Intelligence.
+Deep fidelity/cross-device/edge/performance work follows whole-app basic coverage.
+Captions first; ASR within D-111.6 caps. Activity counts do not prove mastery.
 
 Then follow `ROADMAP.md` (slice details: `PRODUCT_COMPLETION_PLAN.md`): QA archive,
 Admin Overview, canonical Grammar, validated Reading supply, Vocabulary/practice,

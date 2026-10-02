@@ -3928,3 +3928,15 @@ Public readiness requires the new UI as the actual product, full connected learn
 integrated Intelligence + Agent, truthful evidence and substantial real EN/ZH content. Individual
 skill/backend/test completion is insufficient. D-110–D-112 decisions remain settled. Continue
 valid unfinished implementation immediately after reconciliation, using actual browser evidence.
+
+
+## D-114 - Basic whole-product coverage before deep refinement
+
+2026-10-02, explicit human instruction. Continue preserved Listening/Media on codex/work;
+do not reopen accepted Books/Progress or restart a full-app audit. Complete normal
+browser-usable EN/ZH Listening with real imports/transcripts and its existing connected
+practice/context paths, truthful unavailable states, then move to the next major basic gap.
+Complete basic functional coverage of the full approved learner/Admin UI before deep
+fidelity, cross-device completeness, edge cases, performance or infrastructure refinement.
+Data safety, ownership/security and normal journey blockers still take priority. This
+supersedes stale NEXT instructions to deepen Books/Progress, without rewriting their evidence.
