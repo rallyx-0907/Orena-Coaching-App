@@ -37,7 +37,16 @@ S2 evidence: `docs/reviews/S2_MEDIA_BASIC_BROWSER_CHECKPOINT.md`; local Python 2
 Reported YouTube B0p5SdkBydU blocker corrected (`eea4d06`, `eb8aa31`): real import,
 transcript, playback and VI support meanings on :8021; desktop/390x844, reload/restart
 and automatic processing completion verified. Processing/resource states are visible.
-Support meaning is core Listening (D-115); local 66 tests/Ruff and review passed.
+Support meaning is core Listening (D-115). D-116 corrections (`637d0b2`) retain
+89/89 VI meanings on the reported ZH source through reload/restart and connected
+rooms; EN/ZH desktop/phone, player chrome, lookup audio and stroke direction verified.
+Import shows actual stages/progress and Orena AI copy without paid-resource wording.
+Dictionary-first lookup and durable derived cache avoid repeated preparation;
+long selected text/actions wrap within the viewport. No synthetic word highlight:
+old sources without real word timestamps disable it. Levels are reviewed,
+explicitly source-declared, or honestly unassessed. Full Python before final audio
+delta: 2744 pass/370 skip; final focused 50 pass. Node 122/123 with inherited Word
+date fixture failure reproduced on clean HEAD; independent review no P0/P1/P2.
 Failed earlier imports need re-import; prior unavailable-translation observation is superseded.
 Real EN/ZH import/transcript journeys and YouTube playback work; live microphone assessment and live Agent are not claimed.
 No whole-product-completion, public-release or CI PASS is claimed.

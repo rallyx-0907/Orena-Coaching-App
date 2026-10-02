@@ -44,11 +44,14 @@ status: `docs/design/canonical-ui/IMPLEMENTATION_MAP.md`.
 
 ## Last verified batch
 
-S2 follow-up (`eb8aa31`, D-115): B0p5SdkBydU imports, plays and shows VI meanings;
-desktop/390x844, reload/restart and automatic processing transition verified on :8021.
-Transcript state stays in its panel; real ASR stage discloses paid resources.
-Local 66 tests, Ruff/copy/Listening/ESM pass; independent review no open findings.
-Evidence: S2_MEDIA_BASIC_BROWSER_CHECKPOINT.md. Next basic gap remains Admin.
+S2 corrections (`637d0b2`, D-116): EN/ZH desktop/390x844, ZH 89/89 VI meanings
+after reload/restart, Dictation/Shadowing return, playback chrome, word audio and
+directional strokes verified on :8021. Orena AI copy supersedes paid-resource wording.
+Local full Python 2744 pass/370 skip before final audio delta; final focused 50 pass.
+Node 122/123: inherited date-dependent Word failure reproduced on clean HEAD.
+Ruff/ESM and independent review pass. Evidence: S2_MEDIA_BASIC_BROWSER_CHECKPOINT.md.
+Old media without real word timing disables word highlight; undeclared levels stay
+unassessed. Derived meaning cache is durable; next basic gap remains Admin.
 
 S2 (`c315bd2`): REVIEWABLE. EN/ZH import/ASR/meanings, practice/context,
 phone/reload and YouTube completed: S2_MEDIA_BASIC_BROWSER_CHECKPOINT.md.
