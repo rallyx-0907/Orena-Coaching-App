@@ -16,6 +16,31 @@ and see it usable by learners without editing code.
 
 ## Decisions applied (D-110, D-111, 2026-10-02) - read before section 3
 
+D-112: completion is judged against the full pinned UI/spec inventory: Today, Discover, Orena Agent/Intelligence,
+Practice Hub, My Library, Progress, Active Reading/Reading Practice, Listening/Media/Dictation/Shadowing,
+Speaking, Writing, Vocabulary/Recall, Grammar, Books, imports, Profile/language/settings and Admin
+Overview/Content/Imports/Operations/AI & Models/Users. Every important element, action, state and transition
+needs a browser-testable path or an explicit truthful unavailable state. Backend support alone is insufficient.
+Orena Intelligence and its existing reconciliation work are integrated completion scope: existing learner authority,
+account/language-scoped evidence, recommendations, WHY/HOW, weakness-based practice and action/source routing
+must be verified in final learner flows. Agent is its conversational interface, not another learner-data authority.
+No invented history/scores/weaknesses/personalization or reconstruction of deleted source excerpts. Public readiness
+also requires a substantial validated real EN/ZH library. S4, Books and Media are next slices, not the whole target.
+
+### S4 implementation checkpoint — 2026-10-02
+
+Browser-testable at :8021 `/next#/progress`, `/next#/speak-summary`, `/next#/from-your-errors` and
+Speaking Attempt History. Real server activity, verified latest checks/reviews, bounded count labels, vocabulary
+rank, audio-free server attempts and Writing-derived correction drills are connected. Reading UUID and media
+asset-to-lesson return links were repaired in browser QA. Client Dictation scores and stub Speaking scores are
+not quoted; server score provenance overrides local take facts. Local takes/session ledgers use existing account/
+language scope. Request failures show errors; deleted essay details are skipped without reconstructing excerpts.
+Trends, unmeasured KU stages, dated Recall history, awards and personalized next steps remain explicitly unavailable.
+EN/ZH browser paths and phone-width layouts were checked; local Node gates: 123/124 pass, inherited date-sensitive
+Word-detail failure reproduced on clean HEAD. This is **IMPLEMENTING**, not full fidelity/CI/product approval:
+live design-source access, physical touch/light-theme browser checks and broader Intelligence integration remain open.
+Evidence: `docs/reviews/S4_PROGRESS_BROWSER_CHECKPOINT.md`. Unfinished Books/media changes are preserved.
+
 D-110 is the final target and the source of truth for planning; D-111 answers every question in section 5.
 The slice order below supersedes section 3's order where they differ.
 

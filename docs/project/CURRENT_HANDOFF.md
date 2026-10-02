@@ -47,14 +47,11 @@ status: `docs/design/canonical-ui/IMPLEMENTATION_MAP.md`.
 
 ## Last verified batch
 
-2026-09-29, the D-098 batch (`5d9d64c`..`3f2cc23`), local: every node gate in
-ci.yml (114), the browser ESM graph and the memory validator pass; each learner
-change was checked in the browser on the isolated stack (en/vi/zh, both themes,
-desktop and phone touch; the Settings picker at all four rule-49 sizes). Full
-pytest on a clean export of `3f2cc23` (SQLite, CI backend): `2450 passed, 195 skipped`. The isolated stack
-mounts the checkout read-only, so a real upload cannot be stored there; the
-upload route is covered by `tests/test_media_learner_upload.py` (real WAV,
-ffprobe) instead.
+2026-09-29 D-098 (`5d9d64c`..`3f2cc23`): local 114 Node gates, ESM graph/memory
+PASS; EN/VI/ZH, themes and desktop/phone verified. Clean-export pytest:
+`2450 passed, 195 skipped` (SQLite test backend). Detailed evidence:
+`PROJECT_STATE.md` "New learner UI migration". Current S4 checks have an inherited
+Word-detail date failure; see `S4_PROGRESS_BROWSER_CHECKPOINT.md`.
 
 ## DONE
 
@@ -67,8 +64,10 @@ The D-098 and D-099 items (2026-09-29, `5d9d64c`..`b83142d`); commit list in
 ## IN PROGRESS
 
 - Product completion (D-110/D-111): `PRODUCT_COMPLETION_PLAN.md` owns the audit
-  and slice order. At `88b1c81`, S4 Progress, S8a Books and S2 media have partial
-  uncommitted work, not yet verified or REVIEWABLE.
+  and slice order. S4 (`a15d3c2`) has testable server-backed Progress/Attempts/Summary/
+  Errors; evidence and remaining fidelity gates: `docs/reviews/S4_PROGRESS_BROWSER_CHECKPOINT.md`.
+  S8a Books/S2 media unfinished code remains preserved. Full UI/spec + Intelligence
+  reconciliation/integration (D-112) remain completion scope; S4 is not full completion.
 - Books storage is resolved by the shared :8021 volume, without a code change.
   Old Alice assets are lost. Real rights-cleared EN/ZH book reimports still need
   chapter, lookup/save, notes, restart and cross-device resume verification.

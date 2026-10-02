@@ -50,7 +50,7 @@
   "current_primary_workstream": {
     "id": "orena_product_completion_d110_d111",
     "status": "in_progress",
-    "next_task": "D-110/D-111: finish partial S4 truthful server-backed Progress, S8a durable real EN/ZH Books and S2 transcript-backed media as reviewable slices; then QA archive, Admin Overview, canonical Grammar review/Store/API, validated EN/ZH Reading supply, Vocabulary/practice and substantial library bootstrap. PRODUCT_COMPLETION_PLAN.md owns the order. Non-blocking infrastructure hardening is secondary. QA on :8021 only; Agent and public release remain gated; :8011 deployment deferred."
+    "next_task": "D-110/D-111/D-112: S4 server-backed Progress/Attempts/Summary/Errors is browser-testable; finish fidelity verification before REVIEWABLE (S4_PROGRESS_BROWSER_CHECKPOINT.md). Preserve unfinished Books/media code; next S8a real EN/ZH Books learner verification, S2 transcript-backed Media. Full new UI/spec inventory, integrated Intelligence reconciliation/evidence/routing, Admin control center, canonical Grammar runtime and substantial validated EN/ZH library remain completion scope. PRODUCT_COMPLETION_PLAN.md owns order. QA :8021 only; public/provider activation gates remain; :8011 deferred."
   },
   "design": {
     "web_is_visual_source_of_truth": true,

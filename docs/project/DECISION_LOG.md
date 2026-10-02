@@ -3900,3 +3900,17 @@ Orena reaches a complete language-learning product with real content, usable imm
 9. **Agent.** Grammar does not block the whole Agent. The provider gate can open once the core content journeys
    and Progress/return state work correctly. Grammar-specific Agent capability turns on after the Grammar
    API/content is ready.
+## D-112 — Product completion requires the full UI/flow inventory and integrated Intelligence
+
+2026-10-02, explicit human instruction. The accepted handoff is preparation, not delivery.
+Every important element/action/state/transition in the current new Orena learner and Admin spec
+must work in the browser or show an explicitly truthful unavailable state. Completion includes
+Orena Intelligence, its existing reconciliation work, and Orena Agent together: real learner
+context/evidence, recommendations, Today/Practice routing, From Your Errors, targeted practice,
+WHY/HOW and Progress/contextual explanations. They reuse existing learner-data authority;
+account/language scope and deleted-source boundaries hold. No invented learner history, scores,
+weaknesses or fake personalization. General/unavailable states are honest fallbacks, not evidence
+of completed personalization. Desktop/mobile and EN/ZH browser journeys are required after each
+slice. A substantial real validated EN/ZH content library is required before public release.
+Truthful Progress → Books learner verification → transcript-backed Media remain the next slices,
+not the complete program. Paid-provider/public-deployment gates are unchanged.

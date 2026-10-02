@@ -6,7 +6,7 @@ CURRENT_MILESTONE: ORENA_PRODUCT_COMPLETION_D110_D111
 
 STATUS: IMPLEMENTING
 
-Current target and execution order: D-110/D-111 in
+Current target and execution order: D-110/D-111/D-112 in
 `docs/project/DECISION_LOG.md`, `docs/project/PRODUCT_COMPLETION_PLAN.md` and
 `docs/project/CURRENT_HANDOFF.md`. Today / Discover / My Library lead into
 content and its learning capabilities. Admin is the operational control center;
@@ -15,11 +15,21 @@ substantial validated EN/ZH libraries are required before public release.
 Current completion audit: Reading, transcript-backed Listening, Writing,
 Vocabulary/Recall, Reading-to-saved-word-to-Review, vocabulary import and failed
 Admin job retry work end to end. Remaining gaps include thin content supply,
-ZH article targets/levels, transcript-less imports, truthful server-backed
-Progress and Speaking history/summary, canonical Grammar runtime, Admin Overview
+ZH article targets/levels, transcript-less imports, full Progress fidelity and
+Intelligence recommendations, canonical Grammar runtime, Admin Overview
 and Agent integration. The Books storage root cause is resolved on :8021 with
 the shared durable volume; lost Alice assets require reimport. New real EN/ZH
 books and restart/cross-device learner journeys still need verification.
+
+S4 (2026-10-02): Progress/History, Speaking Attempts/Summary and Writing-derived
+From Your Errors now use real server records at `/next` on :8021. Reading/media
+return links work; unverifiable scores remain unavailable; local speaking state
+uses existing account/language scope. EN/ZH browser journeys and phone viewport
+checks are recorded in `docs/reviews/S4_PROGRESS_BROWSER_CHECKPOINT.md`.
+Independent code review passed; full fidelity gate remains open, so S4 stays
+IMPLEMENTING. This is a visibly testable slice, not Product Completion.
+The complete current UI/spec inventory and integrated Intelligence/Agent
+reconciliation, evidence, recommendations and action routing remain required.
 
 WEB_REVIEW_TARGET: http://127.0.0.1:8021/next
 
