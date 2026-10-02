@@ -391,7 +391,7 @@ class MediaPipeline:
         personal = entry.library == "personal"
         try:
             entry = self._write_processing(store, entry, state=STATE_RUNNING, stage=STAGE_FETCH, reason="", detail="", batch_id=batch_id, status="processing")
-            lines, origin, cost, asr_seconds, detected = self._transcript(store, assets, entry, batch_id, candidate)
+            lines, origin, cost, asr_seconds, detected, words = self._transcript(store, assets, entry, batch_id, candidate)
         except PipelineStop as stop:
             self._hold_failed(store, media_id, stop)
             return
@@ -405,11 +405,11 @@ class MediaPipeline:
         public_checks = [{"id": check["id"], "pass": bool(check["pass"])} for check in checks]
         if reason:
             # A transcript was made and it is not usable. Keep what was made so an operator can see it; do not publish.
-            entry = self._store_lesson(store, entry, lines, origin, duration, status="review")
+            entry = self._store_lesson(store, entry, lines, origin, duration, status="review", words=words)
             self._write_processing(store, entry, state=STATE_FAILED, stage=STAGE_SEGMENT, reason=reason,
                                    detail="", checks=public_checks, origin=origin, cost_usd=round(cost, 6), asr_seconds=round(asr_seconds, 1))
             return
-        entry = self._store_lesson(store, entry, lines, origin, duration, status="processing")
+        entry = self._store_lesson(store, entry, lines, origin, duration, status="processing", words=words)
         translation = self._translate(store, entry, batch_id, personal)
         entry = store.get(media_id) or entry
         rights = str(entry.source.get("rights") or RIGHTS_UNKNOWN)
@@ -428,9 +428,9 @@ class MediaPipeline:
             return
         self._write_processing(store, entry, state=STATE_FAILED, reason=stop.code, detail=stop.detail, status="review")
 
-    def _store_lesson(self, store: Any, entry: MediaLibraryEntry, lines: list[Cue], origin: str, duration: int, *, status: str) -> MediaLibraryEntry:
+    def _store_lesson(self, store: Any, entry: MediaLibraryEntry, lines: list[Cue], origin: str, duration: int, *, status: str, words: list[SpeechAsrWord] | None = None) -> MediaLibraryEntry:
         transcript = build_transcript(entry.media_id, entry.language, lines)
-        payload = lesson_payload(entry, transcript, origin, duration)
+        payload = lesson_payload(entry, transcript, origin, duration, words=words)
         existing = dict(entry.lesson or {})
         lesson = {
             **{key: value for key, value in existing.items() if key != "payload"},
@@ -454,7 +454,7 @@ class MediaPipeline:
 
     def _transcript(
         self, store: Any, assets: BookAssetStore, entry: MediaLibraryEntry, batch_id: str, candidate: Candidate | None
-    ) -> tuple[list[Cue], str, float, float, str]:
+    ) -> tuple[list[Cue], str, float, float, str, list[SpeechAsrWord]]:
         language = entry.language
         cues: list[Cue] = []
         detected = ""
@@ -464,12 +464,12 @@ class MediaPipeline:
                 lines = segment_lines(cues, language)
                 duration = int(entry.duration_ms or 0)
                 if not first_failure(validate_lines(lines, language=language, duration_ms=duration)):
-                    return lines, ORIGIN_CAPTION, 0.0, 0.0, ""
+                    return lines, ORIGIN_CAPTION, 0.0, 0.0, "", []
                 # Captions that are not good enough fall through to the audio (D-111 item 3).
         self._write_processing(store, entry, state=STATE_RUNNING, stage=STAGE_TRANSCRIBE)
         raw, words, detected, cost, seconds = self._speech(store, assets, entry, batch_id)
         lines = segment_lines(raw, language)
-        return lines, ORIGIN_ASR, cost, seconds, detected
+        return lines, ORIGIN_ASR, cost, seconds, detected, words
 
     def _captions(self, entry: MediaLibraryEntry) -> list[Cue]:
         if self._ingestion is None or not entry.canonical_url:
@@ -612,7 +612,7 @@ def _clamped(lines: list[Cue], duration_ms: int) -> list[Cue]:
     return [line for line in clipped if line.end_ms > line.start_ms]
 
 
-def lesson_payload(entry: MediaLibraryEntry, transcript: MediaTranscript, origin: str, duration_ms: int) -> dict[str, Any]:
+def lesson_payload(entry: MediaLibraryEntry, transcript: MediaTranscript, origin: str, duration_ms: int, *, words: list[SpeechAsrWord] | None = None) -> dict[str, Any]:
     """The stored acquisition payload the Listening room already reads, built from the pipeline's transcript."""
     return {
         "asset": {
@@ -639,7 +639,11 @@ def lesson_payload(entry: MediaLibraryEntry, transcript: MediaTranscript, origin
                     "start_ms": segment.start_ms,
                     "end_ms": segment.end_ms,
                     "original_text": segment.original_text,
-                    "words": [],
+                    "words": [
+                        {"text": word.word, "start_ms": word.start_ms, "end_ms": word.end_ms}
+                        for word in words or ()
+                        if word.start_ms >= segment.start_ms and word.end_ms <= segment.end_ms
+                    ],
                 }
                 for segment in transcript.segments
             ],

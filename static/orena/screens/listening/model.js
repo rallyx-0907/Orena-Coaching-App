@@ -95,6 +95,7 @@ export function mapLesson(payload, { levelLabel = (lv) => lv, fallbackLanguage =
     topic: catalog.topic || '',
     level: catalog.level || '',
     levelText: catalog.level ? levelLabel(catalog.level) : '',
+    sourceLevel: catalog.source_declared_level || '',
     // Number(null) is 0: an unmeasured length (a provider that reports none) stays null, never "0 min".
     durationMs: finiteOrNull(catalog.duration_ms ?? asset.duration_ms),
     excerptStartMs: finiteOrNull(catalog.excerpt_start_ms) ?? 0,
@@ -210,8 +211,18 @@ export function currentTokenIndex(segment, tokens, timeMs) {
     const span = spans[word];
     return tokens.findIndex((token) => span.start < token.end && span.end > token.start);
   }
-  return estimatedTokenIndex(tokens, (at - start) / (end - start));
+  return -1; // Segment timing cannot establish which word is being spoken.
 }
+
+export function currentTokenIndices(segment, tokens, timeMs) {
+  const spans = wordSpans(segment);
+  const index = activeWordIndex(spans, timeMs);
+  if (index < 0 || timeMs < segment.start_ms || timeMs >= segment.end_ms) return [];
+  const span = spans[index];
+  return tokens.flatMap((token, at) => span.start < token.end && span.end > token.start ? [at] : []);
+}
+
+export function hasWordTiming(segment) { return Boolean(wordSpans(segment)); }
 
 /* ---- Rows and modes ---------------------------------------------------------------------- */
 

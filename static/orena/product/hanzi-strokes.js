@@ -28,11 +28,13 @@ function escapeAttr(value) {
    in full, and the rest of it faint (or absent when `faint` is false). The
    pack's glyph box has y running upward, so every renderer flips it once -
    without the transform the character renders upside down. */
-export function glyphSvg(character, { upto = 0, size = 1024, faint = true, className = '' } = {}) {
+export function glyphSvg(character, { upto = 0, size = 1024, faint = true, className = '', animate = false } = {}) {
   const paths = character?.stroke_paths || [];
   const drawn = paths
     .map((path, at) =>
-      at < upto
+      animate && at === upto && character?.medians?.[at]?.length
+        ? `<defs><mask id="stroke-watch-${at}" maskUnits="userSpaceOnUse" x="0" y="-200" width="1024" height="1400"><path d="${character.medians[at].map(([x,y], index) => `${index ? 'L' : 'M'}${Number(x)} ${Number(y)}`).join(' ')}" fill="none" stroke="white" stroke-width="200" stroke-linecap="round" stroke-linejoin="round" pathLength="1" class="stroke-glyph__reveal"></path></mask></defs>${faint ? `<path d="${escapeAttr(path)}" class="stroke-glyph__off"></path>` : ''}<path d="${escapeAttr(path)}" class="stroke-glyph__on" mask="url(#stroke-watch-${at})"></path>`
+        : at < upto
         ? `<path d="${escapeAttr(path)}" class="stroke-glyph__on"></path>`
         : faint
           ? `<path d="${escapeAttr(path)}" class="stroke-glyph__off"></path>`

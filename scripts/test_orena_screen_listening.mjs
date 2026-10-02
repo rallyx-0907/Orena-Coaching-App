@@ -125,8 +125,8 @@ assert.equal(metaLine([null, undefined]), '');
   assert.equal(estimatedTokenIndex(tokens, 5), 2, 'clamped');
   assert.equal(estimatedTokenIndex([], 0.5), -1);
   const seg = { start_ms: 1000, end_ms: 5000, original_text: 'aa bbbb cc' };
-  assert.equal(currentTokenIndex(seg, tokens, 1000), 0);
-  assert.equal(currentTokenIndex(seg, tokens, 3400), 1);
+  assert.equal(currentTokenIndex(seg, tokens, 1000), -1, 'segment timing does not prove word timing');
+  assert.equal(currentTokenIndex(seg, tokens, 3400), -1);
   assert.equal(currentTokenIndex(seg, tokens, 999), -1, 'outside the segment nothing is marked');
   assert.equal(currentTokenIndex(seg, tokens, 5000), -1);
   const timed = { ...seg, words: [
@@ -136,7 +136,7 @@ assert.equal(metaLine([null, undefined]), '');
   assert.equal(currentTokenIndex(timed, tokens, 1550), -1, 'a real pause between words is not the previous word continuing');
   assert.equal(currentTokenIndex(timed, tokens, 4500), 2);
   const mismatched = { ...seg, words: [{ text: 'zz', start_ms: 1000, end_ms: 2000 }] };
-  assert.equal(currentTokenIndex(mismatched, tokens, 1200), 0, 'timing that does not reconcile with the line is ignored wholesale - the estimate stands');
+  assert.equal(currentTokenIndex(mismatched, tokens, 1200), -1, 'mismatched timing must never invent a word position');
 }
 
 /* --- the frame's mode, row and line-step rules --- */

@@ -14,7 +14,7 @@ const INTERFACE_KEYS = [
   'fieldTitleLabel', 'fieldTitlePlaceholder', 'fieldTextLabel', 'fieldTextPlaceholder',
   'fieldUrlLabel', 'fieldUrlPlaceholder',
   'importToReader', 'importAndProcess',
-  'statusImporting',
+  'statusImporting', 'stage_fetch', 'stage_transcribe', 'stage_segment', 'stage_translate', 'stage_ready',
 ];
 const SUPPORT_KEYS = [
   'aiTranscript', 'aiTranslation',
@@ -31,7 +31,12 @@ const SUPPORT_KEYS = [
 export const t = defineCopy('import', {
   layers: Object.fromEntries([...INTERFACE_KEYS.map((k) => [k, 'interface']), ...SUPPORT_KEYS.map((k) => [k, 'support'])]),
   en: {
-    aiTranscript: 'No usable source transcript. Orena AI is creating one using a paid speech-recognition service.',
+    stage_fetch: 'Fetching media',
+    stage_transcribe: 'Preparing transcript',
+    stage_segment: 'Preparing learning lines',
+    stage_translate: 'Preparing translation',
+    stage_ready: 'Ready',
+    aiTranscript: 'No usable source transcript. Orena AI is preparing the transcript.',
     aiTranslation: 'Orena is preparing support-language translation.',
     title: 'Import',
     stepType: 'Step 1 · What are you importing?', stepText: 'Step 2 · Text', stepUrl: 'Step 2 · URL or media',
@@ -63,7 +68,12 @@ export const t = defineCopy('import', {
     error_generic: 'Something went wrong. Please try again.',
   },
   vi: {
-    aiTranscript: 'Chưa có bản ghi nguồn dùng được. AI của Orena đang tạo bản ghi bằng dịch vụ nhận dạng giọng nói trả phí.',
+    stage_fetch: 'Đang lấy media',
+    stage_transcribe: 'Đang xử lý bản ghi',
+    stage_segment: 'Đang chuẩn bị câu học',
+    stage_translate: 'Đang chuẩn bị bản dịch',
+    stage_ready: 'Sẵn sàng',
+    aiTranscript: 'Chưa có bản ghi nguồn dùng được. AI của Orena đang xử lý bản ghi.',
     aiTranslation: 'Orena đang chuẩn bị bản dịch theo ngôn ngữ hỗ trợ.',
     title: 'Nhập nội dung',
     stepType: 'Bước 1 · Bạn muốn nhập gì?', stepText: 'Bước 2 · Văn bản', stepUrl: 'Bước 2 · Đường liên kết hoặc media',
@@ -95,7 +105,12 @@ export const t = defineCopy('import', {
     error_generic: 'Đã có lỗi xảy ra. Vui lòng thử lại.',
   },
   zh: {
-    aiTranscript: '暂无可用的原始文字稿。Orena AI 正在使用付费语音识别服务生成文字稿。',
+    stage_fetch: '正在获取媒体',
+    stage_transcribe: '正在处理文字稿',
+    stage_segment: '正在整理学习句子',
+    stage_translate: '正在准备译文',
+    stage_ready: '已准备好',
+    aiTranscript: '暂无可用的原始文字稿。Orena AI 正在处理文字稿。',
     aiTranslation: 'Orena 正在准备辅助语言译文。',
     title: '导入',
     stepType: '第 1 步 · 你要导入什么？', stepText: '第 2 步 · 文本', stepUrl: '第 2 步 · 链接或媒体',

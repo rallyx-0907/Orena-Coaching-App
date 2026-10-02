@@ -51,7 +51,7 @@ export default async function mountScriptedPronunciation(element, ctx) {
   mount(element, html`<div class="s-speak-loading">${raw(icon('mic', { size: 22 }))}</div>`);
   element.classList.add('s-speak-root');
 
-  const source = await loadSpeakingSource(ctx.params.id, { api, support, language, segmentId });
+  const source = await loadSpeakingSource(ctx.params.id, { api, support, language, owner: ctx.context.owner || 'local', segmentId });
   if (!ctx.isCurrent()) return undefined;
   ctx.setCrumb(source.title);
   ctx.context?.memory?.enter?.({ id: source.sourceId, title: source.title, intent: 'speaking', segment: source.line.lineId, excerpt: source.line.text });

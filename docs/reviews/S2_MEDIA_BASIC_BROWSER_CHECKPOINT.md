@@ -1,5 +1,29 @@
 # S2 Listening / Media basic browser checkpoint
 
+## Reported corrections — 2026-10-02 (D-116)
+
+MILESTONE=S2_MEDIA_CORRECTIONS STATUS=REVIEWABLE COMMIT=recorded in CURRENT_PRODUCT_STATE.yaml
+WEB_URL=http://127.0.0.1:8021/next
+WEB_ROUTE=#/listen/upload%3Asource-e6d16be65134460e9cfbe6f3b0921483
+HOW_TO_REACH_IT=My Library > imported media > Listening > Active > Dictation / Shadowing / word lookup
+EN_PARITY=real B0p5SdkBydU transcript and VI meanings on desktop and 390x844
+ZH_PARITY=reported source has 89/89 VI meanings; desktop and 390x844 verified
+CROSS_CAPABILITY_STATUS=owner/language/support-scoped ready media reused by Listening, Dictation, Shadowing, React and speaking source consumers; contextual Agent remains gated
+
+WHAT_CHANGED=Idle play/time chrome hides while playing; Listening disables provider controls. Import uses actual processing stages/progress and says Orena AI without paid-resource wording (supersedes D-115 presentation only). Shared loading uses an indeterminate bar when no measured completion exists; DESIGN_CONTRACT records the global convention. Partial translation batches remain cached; retries request missing meanings only. Stored media receives the selected support language. Derived translation/dictionary cache now uses existing durable media storage, not /rundata; PostgreSQL learner authority is unchanged. Five-minute session reuse avoids repeated preparation across connected rooms, while deletion checks also cover joined in-flight callers.
+
+Lookup paints deterministic dictionary content first, with an explicit loading state beforehand and non-destructive contextual enrichment. Chinese stroke previews and animated median-path direction work. Encounter pronunciation resolves a validated term/explicit reading without creating a catalogue identity. Browser 好 / hǎo played actual Commons audio (currentTime 1.04, readyState 4, error null), with CC BY attribution. Stroke Watch showed a directional path animation.
+
+Fixed-speed word highlighting is removed. New ASR results retain genuine word timestamps; existing reported imports have none and the control is truthfully disabled. Imports display reviewed level if present, otherwise explicitly source-declared HSK/CEFR or unassessed; no automatic validated level assessment is claimed. Chinese long lines override the old shared nowrap selector. Phone Active shows the full sentence/VI meaning and wrapped actions: page width=scrollWidth=390, height=scrollHeight=844, action bottom=660. Transcript scrolling stays within its viewport panel. EN phone also displays full selected text/meaning without page overflow.
+
+ACTUAL_BROWSER_EVIDENCE=Exact ZH source retained 89 meanings after reload and sandbox web restart; Dictation/Shadowing return retained meanings. Playing idle: chrome false, play/time opacity 0, embed controls=0. EN transcript and VI meaning verified on desktop/phone. Chinese target language restored and viewport override reset.
+
+Screenshots: [ZH phone](evidence/s2-media-corrections-2026-10-02/zh-phone-active.jpg), [playback](evidence/s2-media-corrections-2026-10-02/zh-playing.jpg), [lookup/audio/strokes](evidence/s2-media-corrections-2026-10-02/zh-lookup-audio-strokes.jpg), [EN translated](evidence/s2-media-corrections-2026-10-02/en-translated.jpg), [EN phone](evidence/s2-media-corrections-2026-10-02/en-phone-active.jpg).
+
+TESTS=Local full Python suite before final pronunciation delta: 2744 passed / 370 skipped. Final audio/detail delta: 50 passed; Media/meaning/pipeline/detail batch: 71 passed. Ruff and relevant Listening/Quick Sheet/Dictation/Shadowing/stroke/session/copy/ESM gates passed. CI-listed Node gates: 122/123; Word line 110 is date-dependent on 2026-10-02 and fails identically on a clean HEAD archive. No assertion weakened; no CI PASS claimed.
+
+WHAT_THE_HUMAN_SHOULD_REVIEW=Player chrome, import progress, dictionary loading/meaning, pronunciation/stroke direction, line wrapping, persistent VI meanings and room return. Remaining basic limitations: old media needs actual word timing before per-word highlight; undeclared levels stay unassessed; private failed jobs still require re-import. Next major basic gap: Admin content lifecycle, then canonical Grammar and integrated Intelligence/Agent. No public readiness/human approval claimed. Earlier dated evidence below remains historical.
+
 2026-10-02. Scope: basic product coverage in the approved /next UI, not technical perfection or public readiness.
 
 MILESTONE=S2_MEDIA_BASIC STATUS=REVIEWABLE COMMIT=see current verified application commit

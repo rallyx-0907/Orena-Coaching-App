@@ -24,6 +24,7 @@
    caller names one (`segmentId`, a `?segment=` query on the route): the frame's own "segment 8" is
    a line somebody chose, and a link that knows the segment can say so. */
 import { readingsFor } from '../capabilities/dictation-result.js';
+import { openMedia } from './media-source.js';
 
 /* The segment a route names (`?segment=`), or none: the first line of the source. */
 export function segmentOf(query) {
@@ -113,16 +114,16 @@ export function sourceFromLesson(lessonId, payload, segmentId = '') {
    belongs to (`media_object_id`), and that lesson is the source - so the attempt's own row opens
    the same room (and the same takes) as every other entry point. Looked up before asking for the
    id as a lesson, so a media object id never costs a failed request. */
-async function lessonFor(rawId, { api, support, language }) {
+async function lessonFor(rawId, { api, support, language, owner }) {
   const library = await api.listeningLibrary(language || '').catch(() => null);
   const match = (library?.items || []).find((item) => item.media_object_id === rawId);
   const lessonId = match?.lesson_id || rawId;
-  return { lessonId, payload: await api.listeningLibraryLesson(lessonId, support) };
+  return { lessonId, payload: await openMedia(lessonId, {api, support, language, owner}) };
 }
 
 /* Loads and resolves one `id` into a source, or throws (the router's own lesson-load error, Back
    / Retry, is what every one of these four screens wants for "this line is unavailable"). */
-export async function loadSpeakingSource(id, { api, support, language, segmentId = '' }) {
+export async function loadSpeakingSource(id, { api, support, language, owner = 'local', segmentId = '' }) {
   const parsed = parseSpeakingId(id);
   if (parsed.kind === 'speak') {
     const item = await api.speakingItem(parsed.rawId);
@@ -130,7 +131,7 @@ export async function loadSpeakingSource(id, { api, support, language, segmentId
     if (!source || (language && item.language !== language)) throw new Error('speaking_item_unavailable');
     return source;
   }
-  const { lessonId, payload } = parsed.unprefixed ? await lessonFor(parsed.rawId, { api, support, language }) : { lessonId: parsed.rawId, payload: await api.listeningLibraryLesson(parsed.rawId, support) };
+  const { lessonId, payload } = parsed.unprefixed ? await lessonFor(parsed.rawId, { api, support, language, owner }) : { lessonId: parsed.rawId, payload: await openMedia(parsed.rawId, {api, support, language, owner}) };
   const source = sourceFromLesson(lessonId, payload, segmentId);
   if (!source || (language && source.language && source.language !== language)) throw new Error('speaking_lesson_unavailable');
   return source;

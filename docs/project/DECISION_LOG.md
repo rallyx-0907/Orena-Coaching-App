@@ -3951,3 +3951,15 @@ paid service is required, disclose Orena's AI processing and resource use.
 Disclosures must reflect real processing stages/provenance; cached/editorial,
 same-language and local-provider paths must not falsely claim a paid API action.
 Orena Agent/Intelligence activation and existing provider/budget gates remain unchanged.
+
+## D-116 - Listening correction and application-wide truthful loading
+
+2026-10-02, explicit human correction. Supersedes D-115's user-visible paid-service
+disclosure wording only: say Orena AI is processing; never mention paid APIs in
+the learner wait screen. Provider/budget gates remain in force. Apply visible
+loading and a progress bar across the app for waits beyond 2-3 seconds; known
+stages show actual step progress, unknown duration stays indeterminate, never
+invented percent/time. Dictionary meaning, pronunciation and Chinese stroke
+support belong to lookup. Word highlighting requires genuine word timestamps;
+segment timing is not word evidence. Practice handoffs reuse scoped media and
+support meaning, and long learning text must fit/wrap within its workspace.

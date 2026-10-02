@@ -381,3 +381,9 @@
    260px desktop / 200px mobile) is a caller-supplied `height`; kit/html.js's px() passes a string
    through unchanged, so a screen calls heroMedia({ height: 'var(--hero-h)', ... }) and the
    existing device variable (kit/device.css) does the rest - no new device var needed here. */
+/* Unknown duration is indeterminate; never manufacture a completion percentage. */
+.o-loading__progress { width: 100%; height: 6px; margin-top: 16px; accent-color: var(--accent); }
+/* The mask follows the vendored median from the actual start to the end of a stroke. */
+.stroke-glyph__reveal { stroke-dasharray: 1; stroke-dashoffset: 1; animation: stroke-reveal .7s linear forwards; }
+@keyframes stroke-reveal { to { stroke-dashoffset: 0; } }
+@media (prefers-reduced-motion: reduce) { .stroke-glyph__reveal { animation-duration: .01s; } }

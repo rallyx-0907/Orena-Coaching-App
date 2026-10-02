@@ -50,13 +50,19 @@ import {
 } from './model.js';
 import { pullIntoDevice, scheduleAnnotationPush, noteRemoved } from '../reader/annotations-sync.js';
 import { keepProvenance } from '../../product/account-records.js';
+import { glyphSvg } from '../../product/hanzi-strokes.js';
 
 let audio = null;
-function playUrl(url) {
+function playUrl(url, button = null) {
   try {
     audio?.pause();
+    audio?.remove();
     audio = new Audio(url);
-    audio.play().catch(() => {});
+    audio.hidden = true;
+    button?.closest('[role="dialog"]')?.append(audio);
+    audio.addEventListener('playing', () => button?.setAttribute('aria-pressed', 'true'));
+    audio.addEventListener('ended', () => button?.setAttribute('aria-pressed', 'false'));
+    audio.play().catch(() => toast(t('noAudioSource')));
   } catch {
     /* A device that cannot play audio just does not play it. */
   }
@@ -105,6 +111,10 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
   let item = null;
   let card = mapWordCard(target, {});
   let busy = false;
+  let loading = true;
+  let strokes = null;
+  let audioBusy = false;
+  let audioAttribution = '';
 
   function posMarkup() {
     const label = posLabel(card.pos, t);
@@ -123,6 +133,7 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
     if (card.script !== 'hanzi') return '';
     return html`<div class="s-qs__stroke">
       <div class="s-qs__eyebrow">${t('strokeOrder')}</div>
+      ${strokes?.characters?.map(character => html`<span class="s-qs__stroke-preview">${raw(glyphSvg(character, {upto: character.stroke_count}))}</span>`) || ''}
       <button type="button" class="o-btn o-btn--secondary o-btn--sm" data-practise-strokes>${raw(icon('pencil', { size: 16 }))} ${t('practiseStrokes')}</button>
     </div>`;
   }
@@ -144,7 +155,7 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
           ${metaMarkup()}
         </div>
         <div class="s-qs__icons">
-          <button type="button" class="s-qs__iconbtn" data-play aria-label="${t('playWord')}">${raw(icon('volume-2', { size: 19 }))}</button>
+          <button type="button" class="s-qs__iconbtn" data-play aria-label="${t('playWord')}" aria-busy="${audioBusy}"${audioBusy ? raw(' disabled') : ''}>${audioBusy ? html`<span class="o-spinner"></span>` : raw(icon('volume-2', { size: 19 }))}</button>
           <button type="button" class="s-qs__iconbtn" data-save style="background:${card.savedBg};color:${card.savedColor}" aria-label="${t(card.saved ? 'unsaveWord' : 'saveWord')}">${raw(icon('bookmark-check', { size: 19 }))}</button>
         </div>
       </div>
@@ -169,6 +180,7 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
         <div class="s-qs__eyebrow">${t('meaningHere')}</div>
         <div class="s-qs__meaning">${t('meaningNotPrepared')}</div>
       </div>
+      ${strokeMarkup()}
       ${sentence ? html`<div class="s-qs__source"><div class="s-qs__eyebrow">${sourceLabel()}</div><div class="s-qs__source-text" lang="${langAttr(lang)}">${sentence}</div></div>` : ''}
       <div class="s-qs__notice">${t('noGlossNotice')}</div>
     `;
@@ -183,9 +195,11 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
 
   function bodyMarkup() {
     return html`
-      ${card.hasContent ? contentMarkup() : fallbackMarkup()}
+      ${loading ? html`<div class="s-qs__word" lang="${langAttr(lang)}">${target}</div><div role="status"><span class="o-spinner"></span> ${t('lookupLoading')}</div><progress class="o-loading__progress" aria-label="${t('lookupLoading')}"></progress>` : card.hasContent ? contentMarkup() : fallbackMarkup()}
+      ${audioBusy ? html`<progress class="o-loading__progress" aria-label="${t('playWord')}"></progress>` : ''}
+      ${audioAttribution ? html`<div class="s-qs__notice">${audioAttribution}</div>` : ''}
       <div class="s-qs__actions">
-        <button type="button" class="o-btn o-btn--primary s-qs__grow" data-save-cta>${t('saveWordCta')}</button>
+        <button type="button" class="o-btn o-btn--primary s-qs__grow" data-save-cta${loading ? raw(' disabled') : ''}>${t('saveWordCta')}</button>
         <button type="button" class="s-qs__ask s-qs__grow" data-ask>${raw(icon('audio-lines', { size: 20 }))} ${t('askDeeper')}</button>
       </div>
       <button type="button" class="s-qs__why" data-why>${t('whyHere')} — <span class="s-qs__why-text">${card.whyHere || t('whyHereFallback')}</span></button>
@@ -210,9 +224,23 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
 
   function bind() {
     sheetEl.querySelector('[data-sheet-close]')?.addEventListener('click', () => handle.close());
-    sheetEl.querySelector('[data-play]')?.addEventListener('click', () => {
-      if (card.audioUrl) playUrl(card.audioUrl);
-      else toast(t('noAudioSource'));
+    sheetEl.querySelector('[data-play]')?.addEventListener('click', async () => {
+      if (card.audioUrl) playUrl(card.audioUrl, sheetEl.querySelector('[data-play]'));
+      else {
+        if (audioBusy) return;
+        audioBusy = true;
+        paint();
+        try {
+          const result = await api.wordAudio(target, card.reading, true);
+          if (!alive) return;
+          audioBusy = false;
+          audioAttribution = result?.available ? String(result.attribution || '') : '';
+          paint();
+          if (result?.available && result.url) playUrl(result.url, sheetEl.querySelector('[data-play]'));
+          else toast(t('noAudioSource'));
+        } catch { if (alive) toast(t('noAudioSource')); }
+        finally { if (audioBusy) { audioBusy = false; if (alive) paint(); } }
+      }
     });
     sheetEl.querySelector('[data-save]')?.addEventListener('click', toggleSave);
     sheetEl.querySelector('[data-save-cta]')?.addEventListener('click', toggleSave);
@@ -285,18 +313,35 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
         sheetEl = element;
         paint();
         onOpen?.();
+        if (card.script === 'hanzi') {
+          api.chineseStrokeOrder(target).then(result => {
+            if (!alive) return;
+            strokes = result;
+            paint();
+          }).catch(() => {});
+        }
         (async () => {
           const ctxText = contextFor(target, context || sentence);
           try {
-            detail = await api.wordDetail({ depth: 'sheet', text: target, context: ctxText, source_language: lang, target_language: support });
+            detail = await api.wordDetail({ depth: 'sheet', contextual: false, text: target, context: ctxText, source_language: lang, target_language: support });
           } catch {
             detail = null;
           }
           if (!alive) return;
-          if (detail?.saved) item = await fetchSavedItem(target);
-          if (!alive) return;
+          loading = false;
           card = mapWordCard(target, { detail, item });
           paint();
+          api.wordDetail({depth: 'sheet', text: target, context: ctxText, source_language: lang, target_language: support}).then(enriched => {
+            if (!alive) return;
+            const next = mapWordCard(target, {detail: enriched, item});
+            if (next.hasContent) { detail = enriched; card = next; paint(); }
+          }).catch(() => {});
+          if (detail?.saved) {
+            item = await fetchSavedItem(target);
+            if (!alive) return;
+            card = mapWordCard(target, { detail, item });
+            paint();
+          }
         })();
         return () => {
           alive = false;

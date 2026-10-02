@@ -274,6 +274,17 @@ word-level pinyin, coaching quality on correct sentences, classifier/particle pr
 
 ## 7. Method notes
 
+### Active Listening corrections (2026-10-02)
+
+Continue the preserved Listening implementation; do not reopen Books or a full-app audit.
+1. Preserve support-language meanings and reuse scoped server payloads across Listening,
+   Dictation and Shadowing; verify reload and return navigation on the reported Chinese source.
+2. Correct player chrome, honest word timing, viewport wrapping and imported level presentation.
+3. Make lookup loading explicit, connect pronunciation and stroke data, animate actual stroke paths.
+4. Standardize visible waiting/progress based on real stages; say Orena AI, without pricing copy.
+5. Verify the reported journeys in the browser (EN/ZH and phone), then checkpoint current truth.
+This is an implementation checklist under the existing authorities, not a new product authority.
+
 - Admin writes need an `Origin` header equal to the host (the console sends it); a bare `curl` gets `admin_origin_required`.
 - Shell-passed Chinese text was mangled on this Windows host; Chinese form fields must be sent from UTF-8 files. Findings
   about ZH above come from correct UTF-8 submissions.

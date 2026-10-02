@@ -27,7 +27,7 @@ from pathlib import Path
 from collections.abc import Callable, Mapping
 from typing import Any
 
-from fastapi import APIRouter, File, Form, Request, UploadFile
+from fastapi import APIRouter, File, Form, Query, Request, UploadFile
 from pydantic import BaseModel, Field
 
 from writing_coach.book_asset_store import AssetNotFound, BookAssetStore, InvalidAssetKey
@@ -180,7 +180,7 @@ def stored_media_file(key: str, variant: str = "") -> Any:
 
 
 @router.get("/my/{media_id}")
-def open_my_media(media_id: str) -> dict[str, Any]:
+def open_my_media(media_id: str, target_language: str = Query(default="", max_length=32)) -> dict[str, Any]:
     """Resolve one stored media identity into the learner-facing payload.
 
     Both a learner's own upload and an admin-imported shared source resolve
@@ -195,7 +195,7 @@ def open_my_media(media_id: str) -> dict[str, Any]:
         raise orena_http_error(404, "media_not_found", "This media is not available.")
     if _learner_payload is None:
         raise orena_http_error(503, "media_library_unavailable", "The Media Library is not configured for this environment.")
-    payload = _learner_payload(entry.media_id, "")
+    payload = _learner_payload(entry.media_id, target_language)
     if payload is None:
         raise orena_http_error(404, "media_not_found", "This media is not available.")
     return payload

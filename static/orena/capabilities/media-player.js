@@ -382,7 +382,9 @@ export function mediaPlayer(playback,title,{startMs=0,endMs=null,poster='',contr
     const art=posterUrl(poster);
     return `<video id="orenaMedia" src="${esc(adapter.url)}"${art?` poster="${esc(art)}"`:''} title="${esc(title||'Lesson video')}" aria-label="${esc(title||'Lesson video')}" preload="metadata" playsinline${controls?' controls':''} ${bounds}></video>`;
   }
-  return `<iframe id="orenaMedia" src="${esc(adapter.url)}" title="${esc(title||'Lesson video')}" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin" ${bounds}></iframe>`;
+  const embed = new URL(adapter.url);
+  embed.searchParams.set('controls', controls ? '1' : '0');
+  return `<iframe id="orenaMedia" src="${esc(embed.href)}" title="${esc(title||'Lesson video')}" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin" ${bounds}></iframe>`;
 }
 
 export function segmentPlaybackDelayMs(startMs,endMs,rate=1){

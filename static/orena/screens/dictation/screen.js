@@ -38,6 +38,7 @@ import {
 } from '../../capabilities/media-player.js';
 import { dictationEvidence, recoverListeningEvidence } from '../../product/evidence.js';
 import { t } from './copy.js';
+import { openMedia } from '../../product/media-source.js';
 import {
   mapLesson,
   startIndex,
@@ -71,7 +72,7 @@ function waveMarkup(seed) {
 export default async function mountDictation(element, ctx) {
   const support = languages().support;
   const lessonId = String(ctx.params?.id || '').trim();
-  const [payload] = await Promise.all([api.listeningLibraryLesson(lessonId, support), useStyles('screens/dictation/dictation.css')]);
+  const [payload] = await Promise.all([openMedia(lessonId, {api, support, language: ctx.context.language, owner: ctx.context.owner || 'local', alive: () => ctx.isCurrent()}), useStyles('screens/dictation/dictation.css')]);
   if (!ctx.isCurrent()) return undefined;
 
   const lesson = mapLesson(payload);

@@ -16,6 +16,19 @@
 import { acquireMedia } from '../capabilities/media-acquisition.js';
 import { isRemovedContent, removedImportError } from './import-removed.js';
 
+// Session-only projections of server records, never a learner-data authority.
+// Sharing a ready response avoids repeating translation on each workspace handoff.
+const sessions = new Map();
+const SESSION_TTL_MS = 5 * 60 * 1000;
+const sessionKey = (id, {owner = 'local', language = '', support = ''}) =>
+  JSON.stringify([owner, language, support, mediaRef(id).value]);
+export function rememberMedia(id, options, payload) {
+  if (payload?.transcript?.segments?.length && payload?.asset?.processing_state !== 'processing') {
+    sessions.set(sessionKey(id, options), {promise: Promise.resolve(payload), expires: Date.now() + SESSION_TTL_MS});
+    while (sessions.size > 24) sessions.delete(sessions.keys().next().value);
+  }
+}
+
 export function mediaRef(id) {
   const value = String(id || '');
   if (value.startsWith('url:')) return { kind: 'url', value: value.slice(4) };
@@ -34,6 +47,25 @@ export async function openMedia(id, { api, support = '', language = '', owner = 
   if (ref.kind === 'url') {
     return acquireMedia({ api, url: ref.value, target: support, owner, language, alive, onProgress });
   }
-  if (ref.kind === 'upload') return api.mediaMy(ref.value);
-  return api.listeningLibraryLesson(ref.value, support);
+  const options = {owner, language, support};
+  const key = sessionKey(id, options);
+  const cached = sessions.get(key);
+  if (cached && cached.expires > Date.now()) {
+    const payload = await cached.promise;
+    if (isRemovedContent(id)) throw removedImportError();
+    return payload;
+  }
+  const pending = Promise.resolve().then(() => ref.kind === 'upload'
+    ? api.mediaMy(ref.value, support) : api.listeningLibraryLesson(ref.value, support));
+  sessions.set(key, {promise: pending, expires: Date.now() + SESSION_TTL_MS});
+  try {
+    const payload = await pending;
+    if (isRemovedContent(id)) throw removedImportError();
+    if (!payload?.transcript?.segments?.length || payload?.asset?.processing_state === 'processing') sessions.delete(key);
+    else rememberMedia(id, options, payload);
+    return payload;
+  } catch (error) {
+    sessions.delete(key);
+    throw error;
+  }
 }

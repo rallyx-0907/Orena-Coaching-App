@@ -48,6 +48,21 @@ def test_prepared_import_has_the_same_learning_modes_as_a_curated_transcript():
     assert {"listen", "active", "dictation", "shadowing"} <= set(stored_media_metadata(entry)["available_modes"])
 
 
+def test_generated_lesson_keeps_provider_word_timestamps():
+    from tests.test_media_lifecycle import _entry
+    from writing_coach.media_transcript_pipeline import build_transcript, lesson_payload
+    from writing_coach.media_segmentation import Cue
+    from writing_coach.speech_asr import SpeechAsrWord
+    entry = _entry()
+    transcript = build_transcript(entry.media_id, "en", [Cue(0, 4000, "Hello there.")])
+    payload = lesson_payload(entry, transcript, "generated_asr", 4000,
+                             words=[SpeechAsrWord("Hello", 100, 600), SpeechAsrWord("there", 800, 1400)])
+    assert payload["transcript"]["segments"][0]["words"] == [
+        {"text": "Hello", "start_ms": 100, "end_ms": 600},
+        {"text": "there", "start_ms": 800, "end_ms": 1400},
+    ]
+
+
 @pytest.mark.parametrize("language,text", [("en", "Every morning I walk to the market. The vegetables are fresh."), ("zh", "每天早上我都去附近的市场买菜。阿姨总是很热情。")])
 def test_real_pipeline_builds_private_timed_lesson_from_asr(tmp_path, monkeypatch, language, text):
     from writing_coach import media_thumbnail

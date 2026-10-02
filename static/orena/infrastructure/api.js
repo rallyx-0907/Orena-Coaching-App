@@ -191,8 +191,8 @@ export const api={
   /* How a word sounds, at the reading it was kept at. The answer says what
      it may be played under - the licence and who recorded it - because that
      is the condition a Commons clip is available on at all. */
-  wordAudio:(word,reading='')=>retryOnce(
-    ()=>request(`/api/library/vocabulary/${encodeURIComponent(word)}/audio${reading?`?reading=${encodeURIComponent(reading)}`:''}`),
+  wordAudio:(word,reading='',lookup=false)=>retryOnce(
+    ()=>request(`/api/library/vocabulary/${encodeURIComponent(word)}/audio?reading=${encodeURIComponent(reading)}${lookup?'&lookup=true':''}`),
     isTransientRequestError,
   ),
   /* The learner's own study sets. A Deck is Vocabulary's - a set to review
@@ -377,7 +377,7 @@ export const api={
   // administrator's import or a learner's own file - into the same acquisition
   // payload `/import` answers with, so the encounter has one shape to render.
   // The admin routes are admin-gated server-side, not here.
-  mediaMy:(mediaId)=>request(`/api/media/my/${encodeURIComponent(mediaId)}`),
+  mediaMy:(mediaId,support='')=>request(`/api/media/my/${encodeURIComponent(mediaId)}${support?`?target_language=${encodeURIComponent(support)}`:''}`),
   prepareMedia:(payload)=>request('/api/media-learning/source',{method:'POST',headers:JSON_HEADERS,body:JSON.stringify(payload)}),
   /* The owner-scoped delete of a learner's own stored upload (404 for anything else); idempotent. */
   deleteMyMedia:(mediaId)=>request(`/api/media/my/${encodeURIComponent(mediaId)}`,{method:'DELETE'}),

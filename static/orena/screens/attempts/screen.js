@@ -28,7 +28,7 @@ export default async function mountAttemptHistory(element, ctx) {
   mount(element, html`<div class="s-attempts-loading">${raw(icon('clock', { size: 22 }))}</div>`);
   element.classList.add('s-attempts-root');
 
-  const source = await loadSpeakingSource(ctx.params.id, { api, support, language, segmentId });
+  const source = await loadSpeakingSource(ctx.params.id, { api, support, language, owner: ctx.context.owner || 'local', segmentId });
   if (!ctx.isCurrent()) return undefined;
   ctx.setCrumb(t('title'));
 

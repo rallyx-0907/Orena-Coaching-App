@@ -4,6 +4,15 @@
 import { html, raw } from './html.js';
 import { icon } from './icons.js';
 
+export function processingProgressMarkup(stage, labels) {
+  const steps = ['fetch', 'transcribe', 'segment', 'translate', 'ready'];
+  const index = steps.indexOf(stage);
+  return html`<div class="o-processing" role="status" aria-live="polite">
+    ${index < 0 ? '' : html`<div>${index + 1} / ${steps.length} · ${labels[stage]}</div>`}
+    <progress class="o-loading__progress" max="${steps.length}"${index < 0 ? '' : raw(` value="${index}"`)} aria-label="${index < 0 ? labels.fetch : labels[stage]}"></progress>
+  </div>`;
+}
+
 /* Frame "Loading": a skeleton of the room, a spinner and one status line. */
 export function loadingMarkup(label) {
   return html`<div class="o-loading" role="status" aria-live="polite"><div class="o-loading__inner">
@@ -11,6 +20,7 @@ export function loadingMarkup(label) {
     <div class="o-loading__hero"></div>
     <div class="o-bone" style="height:12px;width:100%"></div><div class="o-bone" style="height:12px;width:86%"></div><div class="o-bone" style="height:12px;width:64%"></div>
     <div class="o-loading__status"><span class="o-spinner"></span><div>${label}</div></div>
+    <progress class="o-loading__progress" aria-label="${label}"></progress>
   </div></div>`;
 }
 

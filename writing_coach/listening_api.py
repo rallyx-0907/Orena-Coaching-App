@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from collections.abc import Mapping
 from typing import Any, Literal
+import re
 
 from fastapi import APIRouter, Query
 from pydantic import BaseModel, Field
@@ -40,7 +41,7 @@ from writing_coach.media_learning import (
     SegmentTranslation,
     TranscriptSegment,
 )
-from writing_coach.media_translation import MediaTranslationStatus
+from writing_coach.media_translation import MediaTranslationStatus, build_translation_batches
 from writing_coach.media_api import media_translation_service
 from writing_coach.media_api import serialize_media_acquisition
 from writing_coach.media_ingestion import MediaAcquisition
@@ -255,6 +256,12 @@ def stored_media_metadata(entry: MediaLibraryEntry) -> dict[str, Any]:
     payload = lesson.get("payload") or {}
     transcript = payload.get("transcript") or {}
     segments = transcript.get("segments") or []
+    # A source declaration is not a reviewed/estimated learner level.
+    pattern = r"\bHSK\s*([1-6])(?:\s*[-–—]\s*([1-6]))?\b" if entry.language == "zh" else r"\bCEFR\s*([ABC][12])\b"
+    declared = re.search(pattern, entry.title, re.IGNORECASE)
+    source_level = ""
+    if declared:
+        source_level = (f"HSK {declared[1]}" + (f"–{declared[2]}" if declared[2] else "")) if entry.language == "zh" else declared[1].upper()
     return {
         "lesson_id": entry.media_id,
         "media_object_id": entry.media_id,
@@ -264,6 +271,7 @@ def stored_media_metadata(entry: MediaLibraryEntry) -> dict[str, Any]:
         "topic": str(lesson.get("topic") or ""),
         "subtopics": [],
         "level": entry.level,
+        "source_declared_level": source_level,
         "estimated_level": entry.level,
         "reviewed_level": entry.level or None,
         "level_source": "editorial-review" if entry.level else "not-estimated",
@@ -492,18 +500,26 @@ def _curated_translator(media_object: Any):
         return None
 
     def translate(segments: Any, target_language: str) -> dict[str, str]:
-        partial = MediaLearningObject(
-            asset=media_object.asset,
-            transcript=MediaTranscript(
-                media_object.asset.asset_id,
-                media_object.asset.source_language,
-                tuple(segments),
-            ),
-        )
-        result = service.translate(partial, target_language)
-        if result.status is not MediaTranslationStatus.READY:
+        batches = build_translation_batches(tuple(segments))
+        if batches is None:
             return {}
-        return {item.segment_id: item.translated_meaning for item in result.media_object.translations}
+        generated: dict[str, str] = {}
+        for batch in batches:
+            partial = MediaLearningObject(
+                asset=media_object.asset,
+                transcript=MediaTranscript(
+                    media_object.asset.asset_id,
+                    media_object.asset.source_language,
+                    tuple(batch),
+                ),
+            )
+            result = service.translate(partial, target_language)
+            if result.status is not MediaTranslationStatus.READY:
+                break
+            generated.update({item.segment_id: item.translated_meaning for item in result.media_object.translations})
+        # Preserve completed batches in the persistent segment cache even if
+        # a later provider request fails. The next open retries only missing lines.
+        return generated
 
     return translate
 

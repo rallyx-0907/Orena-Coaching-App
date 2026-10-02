@@ -10,7 +10,7 @@ export async function acquireMedia({api,url,target,owner,language,alive=()=>true
       await new Promise(resolve=>setTimeout(resolve,1000));
       if(!alive())return null;
       const mediaId=prepared.media_id;
-      prepared={...await api.mediaMy(mediaId),media_id:mediaId};
+      prepared={...await api.mediaMy(mediaId,target),media_id:mediaId};
     }
     return prepared;
   }

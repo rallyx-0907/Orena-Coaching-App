@@ -426,7 +426,20 @@ if _persistence_runtime.backend == "postgresql" and not AUTH_ENABLED:
         )
 
 _learning_repository = _persistence_runtime.learning_repository
-_learning_cache = SQLiteLearningCacheRepository(lambda: SQLiteLearningRepository(lambda: current_db_path(DB_PATH).with_name("learning_cache.db")).connect())
+def _learning_cache_path() -> Path:
+    # Derived dictionary/translation data only. Keep it with configured durable
+    # media rather than a per-container scratch DB, so reloads/restarts do not
+    # repeat provider work. PostgreSQL still owns all learner records.
+    configured = os.getenv("LEARNING_CACHE_DB", "").strip()
+    media_root = os.getenv("MEDIA_LIBRARY_ROOT", "").strip()
+    if configured:
+        return Path(configured)
+    if media_root:
+        return Path(media_root) / "learning_cache.db"
+    return current_db_path(DB_PATH).with_name("learning_cache.db")
+
+
+_learning_cache = SQLiteLearningCacheRepository(lambda: SQLiteLearningRepository(_learning_cache_path).connect())
 _specialized_learning_repository = _persistence_runtime.specialized_learning_repository
 
 

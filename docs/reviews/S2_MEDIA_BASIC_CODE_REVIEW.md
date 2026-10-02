@@ -1,5 +1,13 @@
 # S2 Media / Listening Basic Code Review
 
+## Reported correction review — 2026-10-02
+
+Reviewer: independent Codex `/root/review_media_basic`, code-review role.
+Reviewed base: `4742bef2e1fc4bcb5c14116fe8cbc56ed034b8db` plus the scoped working diff checkpointed in CURRENT_PRODUCT_STATE.yaml.
+Scope: media reuse/deletion scope, support-language cache and partial batches, real word timing, player chrome, loading/copy, dictionary-first Quick Sheet, stroke direction, wrapping, and final encountered-word audio delta.
+Initial P1 joined-cache deletion race was corrected and covered by a regression test; P2 freshness was bounded to five minutes. Final verdict: no actionable P0/P1/P2 in scope, including the subsequent pronunciation delta. Derived audio keys do not create learner or catalogue authority; Chinese lookup requires an explicit reading. Future reference-audio cache quota is non-blocking follow-up, not this basic slice.
+Reviewer ran no Docker/tests/browser; implementer evidence is in S2_MEDIA_BASIC_BROWSER_CHECKPOINT.md. This is independent code review, not human product approval or public-readiness approval. Historical reviews follow.
+
 **Verdict: APPROVE — code review scope.**
 
 **Reviewer:** independent Codex reviewer (`/root/review_media_basic`)

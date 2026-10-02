@@ -63,7 +63,7 @@ export default async function mountCompareWithModel(element, ctx) {
   mount(element, html`<div class="s-compare-loading">${raw(icon('mic', { size: 22 }))}</div>`);
   element.classList.add('s-compare-root');
 
-  const source = await loadSpeakingSource(ctx.params.id, { api, support, language, segmentId });
+  const source = await loadSpeakingSource(ctx.params.id, { api, support, language, owner: ctx.context.owner || 'local', segmentId });
   if (!ctx.isCurrent()) return undefined;
   ctx.setCrumb(t('title'));
 

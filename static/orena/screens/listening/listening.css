@@ -118,6 +118,9 @@
   background: var(--toast-bg);
 }
 .s-listening__player.is-bare { background: var(--art-placeholder); }
+.s-listening__player.is-playing:not(.show-chrome) .s-listening__playbtn:not(:focus-visible),
+.s-listening__player.is-playing:not(.show-chrome) .s-listening__time { opacity: 0; }
+.s-listening__playbtn, .s-listening__time { transition: opacity .18s; }
 .s-listening__player video,
 .s-listening__player iframe,
 .s-listening__player audio,
@@ -473,6 +476,8 @@
 .is-current .s-listening__row-time,
 .is-selected .s-listening__row-time { color: var(--accent); }
 .s-listening__row-main { flex: 1; min-width: 0; }
+.s-listening__row-main, .s-listening__row-text { overflow-wrap: anywhere; max-width: 100%; }
+.s-listening__row-text > * { max-width: 100%; min-width: 0; }
 .s-listening__row-text {
   font-size: 16px;
   line-height: 1.6;
@@ -497,6 +502,15 @@
   color: var(--accent-ink);
 }
 .s-listening__row-text[data-zhf="1"] { font-family: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif; gap: 0; }
+/* The shared Hanzi ruby selector treats this whole line as one unbreakable
+   word. This workspace owns line wrapping; each Hanzi keeps its own reading. */
+:root[data-tl='zh'] .s-listening__row-text[data-zhf] {
+  display: flex;
+  flex-wrap: wrap;
+  white-space: normal;
+  margin-bottom: 0;
+}
+.s-listening__row-text .s-listening__han { flex: none; }
 .s-listening__han {
   display: inline-flex;
   flex-direction: column;
@@ -532,22 +546,17 @@
 :root[data-device="mobile"] .s-listening__selected-text {
   font-size: 15.5px;
   line-height: 1.4;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  display: block;
+  overflow-wrap: anywhere;
 }
 :root[data-device="mobile"] .s-listening__selected-vi {
   font-size: 13.5px;
   line-height: 1.4;
-  display: -webkit-box;
-  -webkit-line-clamp: 1;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  display: block;
+  overflow-wrap: anywhere;
 }
 :root[data-device="mobile"] .s-listening__selected-actions {
-  flex-wrap: nowrap;
-  overflow-x: auto;
+  flex-wrap: wrap;
   margin-top: 0;
   padding-bottom: 2px;
   scrollbar-width: none;

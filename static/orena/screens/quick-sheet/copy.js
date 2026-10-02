@@ -8,7 +8,7 @@
 import { defineCopy } from '../../copy/index.js';
 
 const INTERFACE_KEYS = [
-  'labelWord', 'labelSentence',
+  'labelWord', 'labelSentence', 'lookupLoading',
   'playWord', 'saveWord', 'unsaveWord',
   'posUnknown', 'strokeOrder', 'practiseStrokes',
   'saveWordCta', 'askDeeper', 'whyHere', 'fullWordDetail',
@@ -35,6 +35,7 @@ const SUPPORT_KEYS = [
 export const t = defineCopy('quick-sheet', {
   layers: Object.fromEntries([...INTERFACE_KEYS.map((k) => [k, 'interface']), ...SUPPORT_KEYS.map((k) => [k, 'support'])]),
   en: {
+    lookupLoading: 'Looking up this word…',
     labelWord: 'Quick Sheet · word', labelSentence: 'Quick Sheet · sentence',
     playWord: 'Play pronunciation', saveWord: 'Save word', unsaveWord: 'Unsave word',
     posUnknown: 'Word', strokeOrder: 'Stroke order', practiseStrokes: 'Practise strokes',
@@ -67,6 +68,7 @@ export const t = defineCopy('quick-sheet', {
     strokeTryAgain: 'Wrong direction — try again', strokeComplete: 'All strokes done',
   },
   vi: {
+    lookupLoading: 'Đang tra nghĩa của từ…',
     labelWord: 'Bảng nhanh · từ', labelSentence: 'Bảng nhanh · câu',
     playWord: 'Phát âm', saveWord: 'Lưu từ', unsaveWord: 'Bỏ lưu từ',
     posUnknown: 'Từ', strokeOrder: 'Thứ tự nét', practiseStrokes: 'Luyện viết nét',
@@ -99,6 +101,7 @@ export const t = defineCopy('quick-sheet', {
     strokeTryAgain: 'Sai hướng — thử lại', strokeComplete: 'Đã viết đủ các nét',
   },
   zh: {
+    lookupLoading: '正在查询词义…',
     labelWord: '速览卡 · 词', labelSentence: '速览卡 · 句子',
     playWord: '播放发音', saveWord: '收藏这个词', unsaveWord: '取消收藏',
     posUnknown: '词', strokeOrder: '笔顺', practiseStrokes: '练习笔顺',

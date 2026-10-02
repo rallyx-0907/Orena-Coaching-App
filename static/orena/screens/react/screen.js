@@ -28,6 +28,7 @@ import { registerActionHandler } from '../../agent/dispatcher.js';
 import { micGate, openMicState } from '../mic/sheet.js';
 import { saveResponse } from '../../product/account-records.js';
 import { t } from './copy.js';
+import { openMedia } from '../../product/media-source.js';
 import { usefulPhrase, buildUnderstandCheck, mapCoaching, phraseReused, waveBars, promptKey } from './model.js';
 
 const STEPS = ['stepListen', 'stepUnderstand', 'stepReveal', 'stepContext', 'stepResult'];
@@ -39,7 +40,7 @@ export default async function reactReuse(element, ctx) {
   const lessonId = ctx.params.id;
   const requestedSegment = ctx.query.get('seg') || '';
 
-  const payload = await api.listeningLibraryLesson(lessonId, support);
+  const payload = await openMedia(lessonId, {api, support, language: ctx.context.language, owner: ctx.context.owner || 'local', alive: () => ctx.isCurrent()});
   if (!ctx.isCurrent()) return undefined;
   const catalog = payload?.catalog || {};
   const title = catalog.title || payload?.asset?.title || '';

@@ -332,6 +332,13 @@ in addition to `docs/project/REVIEW_POLICY.md`:
 
 ## Native (frozen)
 
+Loading across the app (human correction, 2026-10-02): waits beyond 2-3 seconds
+show a visible loading state and progress bar. Known processing stages show
+the actual current step and completed steps; unknown duration stays indeterminate.
+Never invent percent completion or remaining time. Preserve already loaded learning
+content during enrichment and reuse scoped resources across practice handoffs.
+AI processing copy says Orena AI is processing, without pricing/resource-cost wording.
+
 Native mobile is frozen (D-046, 2026-09-06). When it thaws, it ports the
 approved web behaviour and the same design; it is not a redesign, a reduced
 feature set, a WebView shell or an Expo/Material reinterpretation, and it keeps

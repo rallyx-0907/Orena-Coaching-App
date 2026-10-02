@@ -55,5 +55,5 @@ export function isRemovedContent(contentId) {
   const member = importMemberId(contentId);
   if (member && removedSet().has(member)) return true;
   // A stored upload is opened by its bare media id too.
-  return /^upload-/.test(String(contentId || '')) && removedSet().has(`upload:${contentId}`);
+  return removedSet().has(`upload:${contentId}`);
 }

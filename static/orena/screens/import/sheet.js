@@ -19,6 +19,7 @@
 import { openSheet, fillSheet } from '../../kit/overlay.js';
 import { html, raw } from '../../kit/html.js';
 import { icon } from '../../kit/icons.js';
+import { processingProgressMarkup } from '../../kit/states.js';
 import { useStyles } from '../../kit/styles.js';
 import { toast } from '../../kit/toast.js';
 import { langAttr } from '../../kit/lang.js';
@@ -136,6 +137,7 @@ export async function openImport(ctx = {}) {
         <div class="s-import__stage-label">${t('statusImporting')}</div>
       </div>
       <div class="s-import__note" role="status">${t(state.processing?.stage === 'transcribe' ? 'aiTranscript' : state.processing?.stage === 'translate' ? 'aiTranslation' : 'noPercent')}</div>
+      ${processingProgressMarkup(state.processing?.stage, Object.fromEntries(['fetch','transcribe','segment','translate','ready'].map(stage => [stage,t(`stage_${stage}`)])))}
     `;
   }
 
@@ -238,6 +240,7 @@ export async function openImport(ctx = {}) {
      media_upload_unavailable: storage failed), each said in the learner's language. */
   async function submitFile(file) {
     if (state.busy || !file) return;
+    const support = languages().support;
     state.busy = true;
     state.source = 'file';
     state.file = file;
@@ -254,7 +257,7 @@ export async function openImport(ctx = {}) {
         await new Promise(resolve => setTimeout(resolve, 1000));
         if (!alive) return;
         const mediaId = result.media_id;
-        result = { ...await api.mediaMy(mediaId), media_id: mediaId };
+        result = { ...await api.mediaMy(mediaId, support), media_id: mediaId };
       }
       if (!alive) return;
       state.busy = false;

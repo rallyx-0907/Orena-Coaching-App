@@ -196,6 +196,7 @@ class WordDetailIn(BaseModel):
     # "sheet" is the first layer: a short gloss, answered at once. "full" is the
     # explanation behind "why here?", asked for only when the learner opens it.
     depth: Literal["sheet", "full"] = "full"
+    contextual: bool = True
 
     text: str = Field(min_length=1, max_length=80)
     context: str = Field(min_length=1, max_length=1200)
@@ -332,7 +333,9 @@ def word_detail(payload: WordDetailIn) -> dict[str, Any]:
             "available": bool(answer),
             "claim": "word_detail_answer" if answer else "word_detail_unavailable",
         }
-    if payload.depth == "sheet":
+    if not payload.contextual:
+        explanation = None
+    elif payload.depth == "sheet":
         explanation = _gloss(text, context, source, payload.target_language)
     else:
         explanation = _explain(text, context, source, payload.target_language, "")
