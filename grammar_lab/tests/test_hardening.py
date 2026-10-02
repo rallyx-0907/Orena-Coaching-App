@@ -72,9 +72,11 @@ def test_every_locale_map_of_the_export_carries_the_locales_codex_requires(lang:
     export = _fixture(lang)
     assert CODEX_REQUIRED_LOCALES == ("vi", "en")
     assert locale_gaps(export) == []
-    # drift guard: the lab's own form still lacks en where the source never had it, and the index says where
-    internal = from_codex_export(export, _placeholders(lang))
-    assert sorted(locale_gaps(internal)) == sorted(_placeholders(lang)) and _placeholders(lang)
+    # Drift guard: placeholder metadata must exactly describe gaps restored in the Grammar Lab form.
+    # An empty list is valid once the real source content has genuine English in every locale map.
+    placeholders = _placeholders(lang)
+    internal = from_codex_export(export, placeholders)
+    assert sorted(locale_gaps(internal)) == sorted(placeholders)
 
 
 def test_reference_fixtures_stay_draft_ai_and_are_not_a_production_feed() -> None:
@@ -83,9 +85,12 @@ def test_reference_fixtures_stay_draft_ai_and_are_not_a_production_feed() -> Non
     for entry in index["fixtures"]:
         point = read_json(LAB_ROOT / FIXTURE_DIR / entry["file"])
         assert point["status"] == entry["status"] == "draft_ai" and point["review"] is None
-        assert entry["production_ready"] is False  # placeholders present and not approved
-        assert entry["en_placeholder_paths"], "production_ready must stay False while en is a copy of vi"
-        assert read_json(LAB_ROOT / entry["content_source"])["status"] == "draft_ai"  # source not promoted either
+        assert entry["production_ready"] is False  # draft_ai alone is sufficient to keep this out of production
+        assert isinstance(entry["en_placeholder_paths"], list)
+        source = read_json(LAB_ROOT / entry["content_source"])
+        assert source["status"] == "draft_ai"  # source not promoted either
+        # The index describes current source gaps truthfully; it need not stay non-empty forever.
+        assert sorted(entry["en_placeholder_paths"]) == sorted(locale_gaps(source))
 
 
 @pytest.mark.parametrize("lang", ["en", "zh"])
