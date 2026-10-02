@@ -28,6 +28,7 @@ The implementation owner remains responsible for recording final gate output, ru
 
 Independent reviewer: `/root/review_media_basic` (code-review role), base `eea4d06`,
 scoped working diff checkpointed by the following translation/UI commit.
+Reviewed implementation checkpoint: `eb8aa317f16d5cc66f4d87271d35d2d829050056`.
 Reviewed bounded splitting, protocol inputs, canonical-ID mapping, processing
 poll/teardown and truthful EN/VI/ZH resource notices. Initial P1 inaccurate paid
 claim and P2 paid translation-stage copy were corrected and re-reviewed.

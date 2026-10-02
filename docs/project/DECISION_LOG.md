@@ -3940,3 +3940,14 @@ Complete basic functional coverage of the full approved learner/Admin UI before 
 fidelity, cross-device completeness, edge cases, performance or infrastructure refinement.
 Data safety, ownership/security and normal journey blockers still take priority. This
 supersedes stale NEXT instructions to deepen Books/Progress, without rewriting their evidence.
+
+## D-115 - Listening support meaning and visible AI processing
+
+2026-10-02, explicit human instruction following the B0p5SdkBydU import report.
+Support-language translation is a core Listening journey, not optional enrichment
+that can be declared complete while missing. A wait exceeding 2-3 seconds needs
+a visible processing state. When source transcript/translation is absent and a
+paid service is required, disclose Orena's AI processing and resource use.
+Disclosures must reflect real processing stages/provenance; cached/editorial,
+same-language and local-provider paths must not falsely claim a paid API action.
+Orena Agent/Intelligence activation and existing provider/budget gates remain unchanged.

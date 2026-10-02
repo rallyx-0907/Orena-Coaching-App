@@ -44,11 +44,16 @@ status: `docs/design/canonical-ui/IMPLEMENTATION_MAP.md`.
 
 ## Last verified batch
 
-S2 basic Media (`c315bd2`, 2026-10-02): REVIEWABLE. Real EN/ZH File import,
-ASR transcript/meanings, ZH Dictation/Shadowing entry, phrase/context and EN phone/reload;
-YouTube import/player reached Media completed. Evidence: S2_MEDIA_BASIC_BROWSER_CHECKPOINT.md.
-Local pytest 2738 pass/370 skip; Node 122/123 (inherited Word date assertion), ESM331,
-memory/architecture/contracts and Media Ruff PASS. Independent code review APPROVE.
+S2 follow-up (`eb8aa31`, D-115): B0p5SdkBydU imports, plays and shows VI meanings;
+desktop/390x844, reload/restart and automatic processing transition verified on :8021.
+Transcript state stays in its panel; real ASR stage discloses paid resources.
+Local 66 tests, Ruff/copy/Listening/ESM pass; independent review no open findings.
+Evidence: S2_MEDIA_BASIC_BROWSER_CHECKPOINT.md. Next basic gap remains Admin.
+
+S2 (`c315bd2`): REVIEWABLE. EN/ZH import/ASR/meanings, practice/context,
+phone/reload and YouTube completed: S2_MEDIA_BASIC_BROWSER_CHECKPOINT.md.
+Local pytest 2738/370 skip; Node122/123 inherited date failure, ESM331;
+memory/architecture/contracts/Ruff PASS. Independent code review APPROVE.
 
 ## DONE
 
@@ -117,15 +122,8 @@ content review/rights/publish gaps, then canonical Grammar/Intelligence.
 Deep fidelity/cross-device/edge/performance work follows whole-app basic coverage.
 Captions first; ASR within D-111.6 caps. Activity counts do not prove mastery.
 
-Then follow `ROADMAP.md` (slice details: `PRODUCT_COMPLETION_PLAN.md`): QA archive,
-Admin Overview, canonical Grammar, validated Reading supply, Vocabulary/practice,
-EN/ZH library bootstrap and ZH books. Agent remains gated; Grammar-specific
-capability needs its runtime, but Grammar does not block the whole Agent.
-
-D-110/D-111 supersede the older execution order. Edge hardening is secondary
-unless data loss, security/ownership or normal journeys are affected. Local-only
-imports are incomplete with account sync active. Client Dictation scores are
-unverified. Preserve appropriate deleted-import history without source/annotations.
+Follow `ROADMAP.md` and D-110..D-114 for remaining coverage, evidence and gates.
+Agent remains gated; Grammar-specific capability needs its canonical runtime.
 
 QA: :8021, exclusive Docker use. :8011 deferred; :8000 human-gated. No auto-merge
 to main; tests/records alone do not prove public readiness.

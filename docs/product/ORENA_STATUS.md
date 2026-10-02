@@ -34,6 +34,11 @@ reconciliation, evidence, recommendations and action routing remain required.
 WEB_REVIEW_TARGET: http://127.0.0.1:8021/next
 
 S2 evidence: `docs/reviews/S2_MEDIA_BASIC_BROWSER_CHECKPOINT.md`; local Python 2738 pass/370 skip.
+Reported YouTube B0p5SdkBydU blocker corrected (`eea4d06`, `eb8aa31`): real import,
+transcript, playback and VI support meanings on :8021; desktop/390x844, reload/restart
+and automatic processing completion verified. Processing/resource states are visible.
+Support meaning is core Listening (D-115); local 66 tests/Ruff and review passed.
+Failed earlier imports need re-import; prior unavailable-translation observation is superseded.
 Real EN/ZH import/transcript journeys and YouTube playback work; live microphone assessment and live Agent are not claimed.
 No whole-product-completion, public-release or CI PASS is claimed.
 Uncommitted completion work must be verified and checkpointed per slice.

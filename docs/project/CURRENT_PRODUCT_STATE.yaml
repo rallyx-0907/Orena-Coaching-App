@@ -40,8 +40,8 @@
     "expected_development_branch": "codex/work",
     "lane": "unified_baseline_and_ui_lane"
   },
-  "last_verified_application_commit": "c315bd2e0b72e86501a2bcd85afe00bfe5c0e2b2",
-  "last_verified_batch": "s2_media_basic_en_zh_import_asr_listening_dictation_context_browser_and_local_gate",
+  "last_verified_application_commit": "eb8aa317f16d5cc66f4d87271d35d2d829050056",
+  "last_verified_batch": "s2_support_meaning_processing_desktop_phone_reload_restart_browser_66_tests_review",
   "current_program_stage": {
     "id": "ORENA_PRODUCT_COMPLETION",
     "name": "Coherent content-first web product completion",
