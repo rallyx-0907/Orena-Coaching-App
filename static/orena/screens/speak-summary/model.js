@@ -10,13 +10,35 @@
    here rather than invented (rule 40) and recorded as backend/product gaps in this wave's report,
    not resolved by a guess. */
 
-/* One row per logged task, oldest first (the order the session happened in). */
-export function tasksFor(session) {
-  return session.map((entry) => ({
-    kind: entry.kind,
-    note: (entry.facts || []).map((fact) => `${fact.label} ${fact.value}`).join(' · '),
-    at: entry.at,
-  }));
+/* The tasks of this speaking session, oldest first: what this tab logged (`product/speaking-session.js`) AND what the
+   account holds for the last seven days (`product/speaking-history.js#loadAttemptsSince`) - so the summary comes back in a fresh
+   browser. Each server attempt is a Scripted Pronunciation task; its facts
+   are only the VERIFIED accuracy and fluency (an unverified attempt is still a task done, with no figure). A tab entry
+   for the same task is the same task: a server attempt with the same persisted ID as a logged entry is not listed twice. */
+export function tasksFor(session, serverRows = [], labels = { accuracy: 'Accuracy', fluency: 'Fluency' }) {
+  const sameAttempt = (entry, row) => (entry.attemptId && String(entry.attemptId) === row.id) || (entry.takeRef && entry.takeRef === row.takeId);
+  const factsFor = row => row?.verified ? [
+    ...(row.accuracy != null ? [{ label: labels.accuracy, value: row.accuracy }] : []),
+    ...(row.fluency != null ? [{ label: labels.fluency, value: row.fluency }] : []),
+  ] : [];
+  const ledger = (session || []).map((entry) => {
+    const facts = factsFor((serverRows || []).find(row => sameAttempt(entry, row)));
+    return {
+      kind: entry.kind,
+      note: facts.map((fact) => `${fact.label} ${fact.value}`).join(' · '),
+      facts,
+      at: entry.at,
+      attemptId: entry.attemptId,
+      takeRef: entry.takeRef,
+    };
+  });
+  const fromServer = (serverRows || [])
+    .filter((row) => !ledger.some((entry) => sameAttempt(entry, row)))
+    .map((row) => {
+      const facts = factsFor(row);
+      return { kind: 'scripted_pronunciation', note: facts.map((fact) => `${fact.label} ${fact.value}`).join(' · '), facts, at: row.at };
+    });
+  return [...ledger, ...fromServer].sort((a, b) => (a.at || 0) - (b.at || 0));
 }
 
 /* The one real "worth mentioning" number: the lowest measured fact across the whole session,
@@ -24,9 +46,9 @@ export function tasksFor(session) {
    forced "you're doing great" filler either). `threshold` is the same "weak" band
    `screens/speak/model.js#bandOf` already uses (<70), so this reads the same way that band does
    everywhere else in the room. */
-export function keyImprovement(session, threshold = 70) {
+export function keyImprovement(tasks, threshold = 70) {
   let worst = null;
-  for (const entry of session) {
+  for (const entry of tasks) {
     for (const fact of entry.facts || []) {
       if (typeof fact.value === 'number' && (!worst || fact.value < worst.value)) worst = fact;
     }

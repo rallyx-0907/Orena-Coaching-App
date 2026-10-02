@@ -75,6 +75,48 @@ export function buildDrillItems(outcomes, issuesByEssay) {
   return items;
 }
 
+/* The learner's own reviewed writing: the issues of their recent essays (`GET /api/essays/{id}` detail), each with the
+   real quote, the real suggestion and the real "why" the review gave. A review that found issues is a source of
+   drills whether or not the learner then ran a targeted practice (`/api/practice-outcomes` only lists those) - a
+   learner who reviewed a draft with three fixes is not told there are no recent errors. An issue with no suggestion,
+   or whose suggestion is the quote itself, has nothing to grade against and is never turned into a drill. `labelOf`
+   turns an issue's category into the words of the interface; `languageOf` marks the sentence's language. */
+export function buildEssayDrillItems(essays, { labelOf = (category) => category, limit = 12 } = {}) {
+  const items = [];
+  for (const essay of Array.isArray(essays) ? essays : []) {
+    for (const issue of Array.isArray(essay?.issues) ? essay.issues : []) {
+      const bad = text(issue?.quote);
+      const good = text(issue?.suggestion);
+      if (!bad || !good || good === bad) continue;
+      items.push({
+        essayId: Number(essay.id),
+        pattern: text(labelOf(text(issue?.category))) || text(issue?.category),
+        createdAt: text(essay.created_at),
+        bad,
+        good,
+        why: text(issue?.why),
+        language: text(essay.language_code),
+      });
+      if (items.length >= limit) return items;
+    }
+  }
+  return items;
+}
+
+/* Drills from targeted practice and from reviews, once each (the same sentence of the same essay is one drill). */
+export function mergeDrillItems(fromOutcomes, fromEssays, limit = 12) {
+  const seen = new Set();
+  const out = [];
+  for (const item of [...fromOutcomes, ...fromEssays]) {
+    const key = `${item.essayId}|${normalize(item.bad)}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(item);
+    if (out.length >= limit) break;
+  }
+  return out;
+}
+
 /* Forgiving of case, spacing and punctuation - in any script (a Chinese "，。" is punctuation too) -
    and never of the words themselves. */
 function normalize(value) {

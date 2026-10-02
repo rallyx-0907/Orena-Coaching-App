@@ -12,7 +12,7 @@ const TAKES = [
 ];
 
 /* --- empty: no seed rows, ever --- */
-assert.deepEqual(statsFor([]), { count: 0, best: 0, delta: null });
+assert.deepEqual(statsFor([]), { count: 0, best: null, delta: null }, 'no attempt, no best (never a zero without a source)');
 assert.deepEqual(rowsFor([]), []);
 assert.equal(deltaLabel(null), '—', 'nothing to change from reads as the dash');
 
@@ -69,6 +69,42 @@ assert.deepEqual(chronological(TAKES).map((x) => x.id), ['a', 'b', 'c']);
   // No `currentRef` given: nothing is marked current, never a guessed "first row" default.
   const rows = rowsFor(TAKES);
   assert.ok(rows.every((r) => r.isCurrent === false));
+}
+
+/* --- D-110: the account's attempts (product/speaking-history.js), only a server-verified score is shown --- */
+{
+  const { attemptRow, mergeAttempts } = await import('../static/orena/product/speaking-history.js');
+  const server = (id, at, pronunciation, provenance, accuracy = 80) => ({
+    id, take_id: `t-${id}`, created_at: new Date(at).toISOString(), asset_id: 'asset', segment_id: 'asset:000', language: 'en',
+    transcript_text: 'hello', dimensions: { pronunciation, fluency: 75 },
+    provenance: { pronunciation: provenance, fluency: provenance },
+    evidence: { pronunciation: { score_kind: 'measured', accuracy_score: accuracy } },
+  });
+  const verified = attemptRow(server('v', 5000, 84.4, 'azure', 86.2));
+  assert.equal(verified.verified, true);
+  assert.deepEqual([verified.overall, verified.accuracy, verified.fluency], [84, 86, 75]);
+  const stub = attemptRow(server('s', 4000, 84, 'stub-for-verification'));
+  assert.equal(stub.verified, false);
+  assert.deepEqual([stub.overall, stub.accuracy, stub.fluency], [null, null, null], 'an unverified attempt is listed, never scored');
+  const notMeasured = attemptRow({ ...server('n', 3000, 70, 'azure'), evidence: { pronunciation: { score_kind: 'unmeasured' } } });
+  assert.equal(notMeasured.overall, null);
+  // a fresh browser has no take of its own: the account's attempts are the history
+  const history = mergeAttempts([], [verified, stub]);
+  assert.deepEqual(history.map((row) => row.id), ['v', 's']);
+  const stats = statsFor(history);
+  assert.deepEqual([stats.count, stats.best, stats.delta], [2, 84, null], 'the unverified one counts as an attempt but takes no part in best or change');
+  const rows = rowsFor(history);
+  assert.equal(rows.find((row) => row.id === 's').overall, null);
+  assert.equal(rows.find((row) => row.id === 's').tileColor, 'var(--muted)', 'no band colour without a score');
+  assert.equal(rows.find((row) => row.id === 'v').server, true);
+  // a take this tab made is also stored on the server a moment later: listed once, the tab's richer copy standing
+  const tab = [{ id: 'take-1', attemptId: 'v', at: 5200, overall: 90, accuracy: 90, fluency: 80 }];
+  assert.deepEqual(mergeAttempts(tab, [verified]).map((row) => row.id), ['take-1']);
+  assert.equal(mergeAttempts(tab, [verified])[0].overall, 84, 'server verified score takes precedence over local score');
+  assert.equal(mergeAttempts([{ ...tab[0], attemptId: 's' }], [stub])[0].overall, null, 'a local score cannot override server stub provenance');
+  assert.equal(mergeAttempts(tab, [])[0].overall, null, 'without server verification a local recording remains unscored in History');
+  assert.equal(mergeAttempts([{ ...tab[0], attemptId: 'another' }], [verified]).length, 2, 'two quick takes must not be collapsed by their timestamps');
+  assert.equal(mergeAttempts(tab, [attemptRow(server('later', 500000, 70, 'azure'))]).length, 2, 'a different attempt is another row');
 }
 
 console.log('test_orena_screen_attempts.mjs: Attempt History data mapping - rule 40 throughout (no seed rows, no guessed fluency): PASS');

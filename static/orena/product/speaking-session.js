@@ -9,10 +9,18 @@
 
 const KEY = 'orena.speaking.session.v1';
 const MAX_ENTRIES = 50;
+let activeScope = '';
+
+// Use the existing account/language identity; the ledger remains tab-only.
+// Unscoped older entries cannot establish ownership and are never read.
+export function setSpeakingSessionScope(scope) {
+  activeScope = String(scope || '');
+}
 
 function read() {
   try {
-    const parsed = JSON.parse(window.sessionStorage.getItem(KEY) || '[]');
+    if (!activeScope) return [];
+    const parsed = JSON.parse(window.sessionStorage.getItem(`${KEY}:${activeScope}`) || '[]');
     return Array.isArray(parsed) ? parsed : [];
   } catch {
     return [];
@@ -21,7 +29,7 @@ function read() {
 
 function write(list) {
   try {
-    window.sessionStorage.setItem(KEY, JSON.stringify(list.slice(-MAX_ENTRIES)));
+    if (activeScope) window.sessionStorage.setItem(`${KEY}:${activeScope}`, JSON.stringify(list.slice(-MAX_ENTRIES)));
   } catch {
     /* A browser that refuses storage just does not remember this session's tasks. */
   }
@@ -30,9 +38,14 @@ function write(list) {
 /* `kind`: a stable key a caller's copy.js turns into a label (never display text itself).
    `facts`: [{ label, value }] - the same rule-40 shape `screens/lesson-complete/sheet.js`'s
    `openLessonComplete` already takes: only real, measured facts. */
-export function logSpeakingTask({ kind, contentId = '', facts = [] }) {
+export function logSpeakingTask({ kind, contentId = '', takeRef = '', facts = [] }) {
   if (!kind) return;
-  write([...read(), { kind, contentId, facts, at: Date.now() }]);
+  write([...read(), { kind, contentId, takeRef, facts, at: Date.now() }]);
+}
+
+export function noteSpeakingTaskAttempt(takeRef, attemptId) {
+  if (!takeRef || !attemptId) return;
+  write(read().map((entry) => entry.takeRef === takeRef ? { ...entry, attemptId: String(attemptId) } : entry));
 }
 
 export function readSpeakingSession() {

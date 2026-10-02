@@ -13,7 +13,7 @@
 import { html, mount, raw } from '../../kit/html.js';
 import { icon } from '../../kit/icons.js';
 import { useStyles } from '../../kit/styles.js';
-import { emptyMarkup } from '../../kit/states.js';
+import { emptyMarkup, errorMarkup } from '../../kit/states.js';
 import { listRow, segmentedControl } from '../../kit/components.js';
 import { langSpan } from '../../kit/lang.js';
 import { shellCopy } from '../../copy/shell.js';
@@ -26,6 +26,7 @@ import {
   tabFromQuery,
   buildSkillRows,
   buildKuStages,
+  storyFacts,
   buildRank,
   buildWritingEvidence,
   buildReadingEvidence,
@@ -34,6 +35,7 @@ import {
   mergeEvidence,
   filterEvidence,
   historyGroups,
+  resolveMediaEvidence,
 } from './model.js';
 
 const TAB_COPY_KEY = { Overview: 'tabOverview', Trends: 'tabTrends', KU: 'tabKU', Evidence: 'tabEvidence', Rank: 'tabRank', History: 'tabHistory' };
@@ -65,46 +67,55 @@ export default async function progressScreen(element, ctx) {
   await useStyles('screens/progress/progress.css');
   const context = ctx.context;
   const state = { tab: tabFromQuery(ctx.query.get('tab')), range: '30d', evFilter: 'All' };
-  const cache = { summaries: new Map(), evidence: null, evidenceAll: null, rank: null };
+  const cache = { summaries: new Map(), evidence: null, evidenceAll: null, rank: null, activity: null };
 
   function getSummary(range) {
-    if (!cache.summaries.has(range)) cache.summaries.set(range, api.learnerSummary(range).catch(() => null));
+    if (!cache.summaries.has(range)) cache.summaries.set(range, api.learnerSummary(range));
     return cache.summaries.get(range);
   }
   function getEvidenceAllSummary() {
-    if (!cache.evidenceAll) cache.evidenceAll = api.learnerSummary('all').catch(() => null);
+    if (!cache.evidenceAll) cache.evidenceAll = api.learnerSummary('all');
     return cache.evidenceAll;
   }
   function getEvidenceSources() {
     if (!cache.evidence) {
       cache.evidence = Promise.all([
-        api.essays().catch(() => null),
-        api.practiceOutcomes(30).then((r) => r?.items || null).catch(() => null),
-        api.readingEvidence(30).then((r) => r?.items || null).catch(() => null),
-        api.speakingAttempts(30).then((r) => r?.items || null).catch(() => null),
-      ]).then(([essays, outcomes, reading, speaking]) => ({ essays, outcomes, reading, speaking }));
+        api.essays(),
+        api.practiceOutcomes(30).then((r) => r?.items || []),
+        api.readingEvidence(30).then((r) => r?.items || []),
+        api.speakingAttempts(100).then((r) => r?.items || []),
+        api.listeningLibrary(context.language),
+      ]).then(([essays, outcomes, reading, speaking, library]) => ({ essays, outcomes, reading, speaking, library }));
     }
     return cache.evidence;
   }
+  function getActivity() {
+    if (!cache.activity) {
+      const zone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+      cache.activity = api.learnerActivity(zone);
+    }
+    return cache.activity;
+  }
   function getRank() {
-    if (!cache.rank) cache.rank = api.libraryVocabularySummary().catch(() => null);
+    if (!cache.rank) cache.rank = api.libraryVocabularySummary();
     return cache.rank;
   }
 
   async function evidenceItems() {
-    const [{ essays, outcomes, reading, speaking }, summary] = await Promise.all([getEvidenceSources(), getEvidenceAllSummary()]);
-    return mergeEvidence({
+    const [{ essays, outcomes, reading, speaking, library }, summary] = await Promise.all([getEvidenceSources(), getEvidenceAllSummary()]);
+    return resolveMediaEvidence(mergeEvidence({
       writing: buildWritingEvidence(essays, outcomes),
       reading: buildReadingEvidence(reading),
       speaking: buildSpeakingEvidence(speaking),
       listening: buildListeningEvidence(summary),
-    });
+    }), library);
   }
 
   function openRoute(item) {
     if (item.domain === 'writing' && item.essayId != null) return ctx.href('writingDraft', { id: item.essayId });
-    if (item.domain === 'reading' && item.articleId) return ctx.href('reader', { id: item.articleId });
-    if (item.domain === 'speaking' && item.assetId) return ctx.href('speak', { id: item.assetId });
+    if (item.domain === 'reading' && item.articleId) return ctx.href('reader', { id: item.articleId.startsWith('article:') ? item.articleId : `article:${item.articleId}` });
+    if (item.domain === 'speaking' && item.lessonId) return ctx.href('attempts', { id: `media:${item.lessonId}` }, item.segmentId ? { segment: item.segmentId } : {});
+    if (item.domain === 'listening' && item.lessonId) return ctx.href('dictation', { id: item.lessonId }, item.segmentId ? { segment: item.segmentId } : {});
     return '';
   }
 
@@ -157,7 +168,8 @@ export default async function progressScreen(element, ctx) {
     }
     const lead = html`<span class="s-progress-ev__lead"><span class="s-progress-ev__date">${formatDate(item.at)}</span>${skillChip(item.domain)}</span>`;
     const trailing = resultText ? html`<span class="s-progress-ev__result" style="color:${resultColor}">${resultText}</span>` : null;
-    const rowMarkup = listRow({ tag: href ? 'button' : 'div', variant: 'outline', radius: 16, pad: '14px 18px', leading: lead, title: langSpan(sourceText, sourceLang), sub: responseText ? langSpan(responseText, responseLang) : '', trailing, dataset: href ? { go: href } : {} });
+    const sub = html`${responseText ? langSpan(responseText, responseLang) : ''}${!href ? html`<span> · ${t('sourceUnavailable')}</span>` : ''}`;
+    const rowMarkup = listRow({ tag: href ? 'button' : 'div', variant: 'outline', radius: 16, pad: '14px 18px', leading: lead, title: langSpan(sourceText, sourceLang), sub, trailing, dataset: href ? { go: href } : {} });
     return rowMarkup;
   }
 
@@ -184,39 +196,46 @@ export default async function progressScreen(element, ctx) {
       meta = item.score != null ? String(item.score) : '';
     }
     const lead = html`<span class="s-progress-hi__lead"><span class="s-progress-hi__time">${formatTime(item.at)}</span><span class="o-tag">${t(kindKey)}</span></span>`;
-    return listRow({ tag: href ? 'button' : 'div', variant: 'outline', radius: 14, pad: '13px 18px', leading: lead, title: langSpan(title, titleLang), trailing: meta ? html`<span class="o-muted" style="font-size:13px">${meta}</span>` : null, dataset: href ? { go: href } : {} });
+    return listRow({ tag: href ? 'button' : 'div', variant: 'outline', radius: 14, pad: '13px 18px', leading: lead, title: langSpan(title, titleLang), sub: !href ? t('sourceUnavailable') : '', trailing: meta ? html`<span class="o-muted" style="font-size:13px">${meta}</span>` : null, dataset: href ? { go: href } : {} });
   }
 
   async function renderOverview() {
-    const [summary, rankPayload] = await Promise.all([getSummary(state.range), getRank()]);
-    const skills = buildSkillRows(summary);
+    const [summary, rankPayload, activity, sources] = await Promise.all([getSummary(state.range), getRank(), getActivity(), getEvidenceSources()]);
+    const days = state.range === '7d' ? 7 : state.range === '30d' ? 30 : 90;
+    const speaking = days == null ? sources.speaking : sources.speaking.filter(row => Date.parse(row.created_at) >= Date.now() - days * 86400000);
+    const skills = buildSkillRows(summary, speaking);
     const rank = buildRank(rankSummary(rankPayload));
+    const facts = storyFacts(activity, skills);
     const hero = html`<div class="s-progress-hero">
       ${segmentedControl({ variant: 'hero', equalWidth: true, name: 'range', options: RANGES.map((r) => ({ value: r, label: t(RANGE_COPY_KEY[r]), selected: r === state.range })) })}
       <div class="o-muted" style="font-size:13px">${t('timeUnmeasured')}</div>
     </div>`;
     const level = context.level ? html`<span><b>${context.level}</b>${rank.known && rank.rankName ? html` · ${rank.rankName}` : ''}</span>` : '';
+    const stats = [
+      facts.streak != null ? html`<span><b>${facts.streak}</b> ${t('streakSuffix')}</span>` : '',
+      level,
+    ].filter(Boolean);
     const story = html`<div class="s-progress-story">
       <div class="s-progress-story__eyebrow">${t('storyEyebrow')}</div>
-      <div class="s-progress-story__empty">${t('storyEmpty')}</div>
-      ${level ? html`<div class="s-progress-story__stats">${level}</div>` : ''}
+      ${stats.length ? '' : html`<div class="s-progress-story__empty">${t('storyEmpty')}</div>`}
+      ${stats.length ? html`<div class="s-progress-story__stats">${stats}</div>` : ''}
     </div>`;
     const skillsCard = html`<div class="s-progress-card">
       <div class="s-progress-card__title">${t('skillsTitle')}</div>
       ${skills.map((row) => html`<button type="button" class="s-progress-skill" data-action="skill-open" data-domain="${row.domain}">
         <span class="s-progress-skill__label">${t(`skill_${row.key}`)}</span>
-        <span class="o-progress s-progress-skill__track"><span style="width:0%"></span></span>
-        <span class="s-progress-skill__delta" aria-label="${t('notMeasured')}">—</span>
+        <span class="o-progress s-progress-skill__track"><span style="width:${row.pct}%"></span></span>
+        <span class="s-progress-skill__delta" ${row.score == null ? raw(`aria-label="${t('notMeasured')}"`) : ''}>${row.score != null ? row.score : '—'}</span>
       </button>`)}
     </div>`;
-    const ku = buildKuStages();
-    const kuMax = Math.max(...ku.map((s) => s.count), 1);
+    const ku = buildKuStages(summary);
+    const kuMax = Math.max(...ku.map((s) => s.count ?? 0), 1);
     const kuCard = html`<div class="s-progress-card">
       <div class="s-progress-card__head"><div class="s-progress-card__title">${t('tabKU')}</div><button type="button" class="s-progress-card__link" data-action="goto-tab" data-tab="KU">${t('kuDetails')}${raw(icon('chevron-right', { size: 16 }))}</button></div>
       <div class="s-progress-ku-mini">
         ${ku.map((stage) => html`<button type="button" class="s-progress-ku-mini__col" data-action="goto-tab" data-tab="Evidence">
-          <b>${stage.count}</b>
-          <span class="s-progress-ku-mini__bar" style="background:${KU_COLOR[stage.key]};height:${Math.max(8, (stage.count / kuMax) * 60)}px"></span>
+          <b>${stage.countLabel ?? '—'}</b>
+          <span class="s-progress-ku-mini__bar" style="background:${KU_COLOR[stage.key]};height:${Math.max(8, ((stage.count ?? 0) / kuMax) * 60)}px"></span>
           <span class="s-progress-ku-mini__label">${t(KU_LABEL_KEY[stage.key])}</span>
         </button>`)}
       </div>
@@ -229,14 +248,14 @@ export default async function progressScreen(element, ctx) {
   }
 
   function renderTrends() {
-    return html`<div class="s-progress-card">${emptyMarkup({ text: t('storyEmpty'), iconName: 'zap' })}</div>`;
+    return html`<div class="s-progress-card">${emptyMarkup({ text: t('trendsUnavailable'), iconName: 'zap' })}</div>`;
   }
 
-  function renderKU() {
-    const ku = buildKuStages();
+  async function renderKU() {
+    const ku = buildKuStages(await getSummary(state.range));
     const rows = ku.map((stage) => listRow({
       variant: 'shadow', radius: 18, pad: '18px 20px', chevron: true,
-      leading: html`<span class="s-progress-ku-badge" style="background:${KU_COLOR[stage.key]}">${stage.count}</span>`,
+      leading: html`<span class="s-progress-ku-badge" style="background:${KU_COLOR[stage.key]}">${stage.countLabel ?? '—'}</span>`,
       title: t(KU_LABEL_KEY[stage.key]),
       sub: t(KU_DESC_KEY[stage.key]),
       dataset: { action: 'goto-tab', tab: 'Evidence' },
@@ -249,7 +268,7 @@ export default async function progressScreen(element, ctx) {
     const filters = EV_FILTERS.map((f) => html`<button type="button" class="o-chip s-progress-filter" aria-pressed="${f === state.evFilter ? 'true' : 'false'}" data-action="set-filter" data-filter="${f}">${t(EV_FILTER_COPY_KEY[f])}</button>`);
     const body = items.length
       ? html`<div class="s-progress-list">${items.map((item) => evidenceRowMarkup(item))}</div>`
-      : emptyMarkup({ text: t('evidenceEmpty'), iconName: 'inbox' });
+      : emptyMarkup({ text: t(state.evFilter === 'review' ? 'reviewHistoryUnavailable' : 'evidenceEmpty'), iconName: 'inbox' });
     return html`<div class="s-progress-filters">${filters}</div>${body}`;
   }
 
@@ -292,13 +311,26 @@ export default async function progressScreen(element, ctx) {
     );
   }
 
+  let paintGeneration = 0;
   async function paintTab() {
+    const generation = ++paintGeneration;
     const content = element.querySelector('[data-content]');
     if (!content) return;
-    const result = RENDER[state.tab]();
-    const markup = result && typeof result.then === 'function' ? await result : result;
-    if (!ctx.isCurrent() || !element.isConnected) return;
-    mount(content, markup);
+    const tab = state.tab;
+    try {
+      const markup = await RENDER[tab]();
+      if (!ctx.isCurrent() || !element.isConnected || generation !== paintGeneration) return;
+      mount(content, markup);
+    } catch (error) {
+      if (!ctx.isCurrent() || !element.isConnected || generation !== paintGeneration || error?.name === 'AbortError') return;
+      mount(content, errorMarkup({ title: shellCopy('cantOpen'), text: shellCopy('errorServer'), backLabel: shellCopy('back'), retryLabel: shellCopy('retry') }));
+      content.querySelector('[data-error-back]').addEventListener('click', () => ctx.back());
+      content.querySelector('[data-error-retry]').addEventListener('click', () => {
+        cache.summaries.clear();
+        cache.evidence = cache.evidenceAll = cache.rank = cache.activity = null;
+        void paintTab();
+      });
+    }
   }
 
   function repaintTabsBar() {

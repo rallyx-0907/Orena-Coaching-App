@@ -450,10 +450,11 @@ export const api={
     headers:JSON_HEADERS,
     body:JSON.stringify(payload||{}),
   }),
-  speakingAttempts:(limit=20,assetId='',segmentId='')=>{
+  speakingAttempts:(limit=20,assetId='',segmentId='',since='')=>{
     const params=new URLSearchParams({limit:String(limit)});
     if(assetId)params.set('asset_id',String(assetId));
     if(segmentId)params.set('segment_id',String(segmentId));
+    if(since)params.set('since',String(since));
     return request(`/api/speech/attempts?${params.toString()}`);
   },
   listeningProgress:(assetId)=>request(`/api/listening/progress?asset_id=${encodeURIComponent(assetId||'')}`),

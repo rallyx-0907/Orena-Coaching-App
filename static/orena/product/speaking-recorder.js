@@ -14,7 +14,7 @@ import { createLocalAudioRecorder } from '../capabilities/audio-recorder.js';
 import { watchMicrophone } from '../capabilities/mic-readiness.js';
 import { pronunciationView } from '../capabilities/pronunciation-result.js';
 import { recordTake, noteAttemptId } from './take-store.js';
-import { logSpeakingTask } from './speaking-session.js';
+import { logSpeakingTask, noteSpeakingTaskAttempt } from './speaking-session.js';
 
 export { TAKE, MAX_TAKE_MS };
 
@@ -104,13 +104,16 @@ export function createSpeakingRecorder({
         const saved = await record(key, { blob: take.takeBlob, ms: take.takeMs, view });
         if (disposed) return;
         latest = { take_ref: saved.take_ref, list: saved.list, view };
-        logSpeakingTask({ kind, contentId: source.sourceId, facts: facts(view) });
+        logSpeakingTask({ kind, contentId: source.sourceId, takeRef: saved.take_ref, facts: facts(view) });
       } else {
         latest = { take_ref: '', list: latest?.list || [], view };
       }
     }
     // The record the server keeps for this take lands a moment after the result does.
-    if (next.attemptId && latest?.take_ref) noteAttemptId(latest.take_ref, next.attemptId);
+    if (next.attemptId && latest?.take_ref) {
+      noteAttemptId(latest.take_ref, next.attemptId);
+      noteSpeakingTaskAttempt(latest.take_ref, next.attemptId);
+    }
     if (next.phase === TAKE.RECORDING && previous !== TAKE.RECORDING) startListening();
     if (next.phase !== TAKE.RECORDING && previous === TAKE.RECORDING) stopListening();
     if (next.phase === TAKE.ERROR && next.error && next.error.kind !== 'aborted' && !wasError) on.failure?.(next.error);

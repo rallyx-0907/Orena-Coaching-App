@@ -11,6 +11,9 @@ import {
   SKILL_ROWS,
   buildSkillRows,
   buildKuStages,
+  latestMeasure,
+  weekStrip,
+  storyFacts,
   KU_STAGE_KEYS,
   buildRank,
   buildWritingEvidence,
@@ -20,8 +23,26 @@ import {
   mergeEvidence,
   filterEvidence,
   historyGroups,
+  resolveMediaEvidence,
 } from '../static/orena/screens/progress/model.js';
+
+{
+  const history = [{ domain: 'listening', assetId: 'asset-a', segmentId: 'asset-a:000' }, { domain: 'speaking', assetId: 'deleted' }];
+  const resolved = resolveMediaEvidence(history, { items: [{ media_object_id: 'asset-a', lesson_id: 'lesson-a' }] });
+  assert.equal(resolved[0].lessonId, 'lesson-a', 'source routes use the live catalogue lesson identity');
+  assert.equal(resolved[1].lessonId, null, 'missing sources are not reconstructed from history');
+}
 import { withinWindow, sortByRecency, dayBucket, groupByDay } from '../static/orena/product/activity-log.js';
+
+{
+  const attempts = [
+    { created_at: '2026-10-01T12:00:00Z', evidence: { pronunciation: { score_kind: 'measured' } }, provenance: { pronunciation: 'stub-for-verification' }, dimensions: { pronunciation: 99 } },
+    { created_at: '2026-09-29T12:00:00Z', evidence: { pronunciation: { score_kind: 'measured' } }, provenance: { pronunciation: 'provider' }, dimensions: { pronunciation: 71 } },
+  ];
+  assert.equal(buildSkillRows({ domains: { speaking: {} } }, attempts).find(r => r.key === 'speaking').score, 71,
+    'a bounded summary must not hide an older verified server attempt');
+  assert.equal(buildKuStages({ domains: { language: { activity: { countKind: 'at_least' }, observations: [{ measure: 'successful_recalls_all_time', value: 526 }] } } }).find(r => r.key === 'recalled').countLabel, '526+');
+}
 
 /* ---- tabFromQuery: Profile's own `?tab=history` link (screens/profile/screen.js
    `actionHref`) must land on the matching tab, case-insensitively, the same convention
@@ -56,7 +77,7 @@ import { withinWindow, sortByRecency, dayBucket, groupByDay } from '../static/or
   assert.equal(grouped[0].items.length, 2);
 }
 
-/* ---- Skills: rule 40 - real activity count, zero percentage/delta always ---- */
+/* ---- Skills: the real recorded activity and the latest VERIFIED measure; no trend, no invented figure (D-103.4, D-108.3) ---- */
 {
   assert.equal(SKILL_ROWS.length, 5, 'exactly the five skills the design draws');
   const summary = { domains: { listening: { activity: { count: 3, undated: 1 } }, writing: { activity: { count: 0, undated: 0 } } } };
@@ -67,20 +88,58 @@ import { withinWindow, sortByRecency, dayBucket, groupByDay } from '../static/or
   assert.equal(listening.hasActivity, true);
   assert.equal(writing.hasActivity, false);
   for (const row of rows) {
-    assert.equal(row.pct, 0, `${row.key}: no proficiency percentage is measured, so 0`);
+    assert.equal(row.score, null, `${row.key}: nothing verified recorded, so no figure`);
+    assert.equal(row.pct, 0);
     assert.equal(row.delta, null, `${row.key}: no trend delta is measured`);
   }
   const empty = buildSkillRows(null);
-  assert.equal(empty.length, 5, 'a failed read still renders all five rows at zero, never fewer');
+  assert.equal(empty.length, 5, 'a failed read still renders all five rows, never fewer');
   assert.ok(empty.every((r) => r.activityCount === 0));
 }
+{
+  // The latest verified measure per domain, from what the server holds (a real learner-summary shape).
+  const obs = (measure, value, extra = {}) => ({ measure, value, synthetic: false, assisted: null, ...extra });
+  const summary = {
+    domains: {
+      writing: { activity: { count: 28 }, observations: [obs('overall', 69.2), obs('overall', 41.8)] },
+      reading: { activity: { count: 2 }, observations: [obs('comprehension_matched', { correct: 1, total: 4 }), obs('comprehension_matched', { correct: 4, total: 4 })] },
+      listening: { activity: { count: 5 }, observations: [obs('dictation_best_match', 55, { assisted: true }), obs('dictation_best_match', 100, { assisted: false })] },
+      speaking: { activity: { count: 50 }, observations: [obs('speaking_dimensions', { pronunciation: 84, fluency: 80 }, { producer: { pronunciation: 'stub-for-verification' } }), obs('speaking_dimensions', { pronunciation: 71, fluency: 82 }, { producer: { pronunciation: 'azure' } })] },
+      language: { activity: { count: 200 }, observations: [obs('successful_recalls_all_time', 526)] },
+    },
+  };
+  const rows = Object.fromEntries(buildSkillRows(summary).map((row) => [row.key, row]));
+  assert.equal(rows.writing.score, 69, 'the newest scored review');
+  assert.equal(rows.reading.score, 25, 'the newest check, correct over total');
+  assert.equal(rows.listening.score, null, 'client-reported Dictation matches are activity, not verified scores');
+  assert.equal(rows.speaking.score, 71, 'a stub take is not a measure: the newest one the provider measured');
+  assert.equal(rows.vocabulary.score, null, 'no per-skill score exists for vocabulary');
+  assert.equal(rows.vocabulary.activityCount, 200);
+  const bounded = buildSkillRows({ domains: { speaking: { activity: { count: 50, countKind: 'at_least' } } } });
+  assert.equal(bounded.find((row) => row.key === 'speaking').countLabel, '50+', 'a bounded scan is never presented as an exact total');
+  assert.equal(rows.writing.pct, 69);
+  assert.equal(latestMeasure('writing', [{ measure: 'overall', value: 90, synthetic: true }]), null, 'a synthetic observation is never shown');
+  assert.equal(latestMeasure('reading', [{ measure: 'comprehension_matched', value: { correct: 0, total: 0 } }]), null);
+  assert.equal(latestMeasure('speaking', [{ measure: 'speaking_dimensions', value: { pronunciation: 80 }, producer: {} }]), null, 'no producer, no verification');
+  const ku = buildKuStages(summary);
+  assert.equal(ku.find((s) => s.key === 'recalled').count, 526, 'the one recorded source: successful recalls');
+  assert.ok(ku.filter((s) => s.key !== 'recalled').every((s) => s.count === null), 'the rest have no owner: a dash, not a zero');
+}
+{
+  const week = weekStrip({ week: { days: [{ date: '2026-09-28', active: true, future: false }, { date: '2026-10-02', active: false, future: true }], done_days: 1 } });
+  assert.deepEqual(week, [{ date: '2026-09-28', active: true, future: false }, { date: '2026-10-02', active: false, future: true }]);
+  assert.deepEqual(weekStrip(null), []);
+  const facts = storyFacts({ streak: { days: 3 }, week: { done_days: 2 } }, [{ key: 'writing', hasActivity: true, activityCount: 28 }, { key: 'reading', hasActivity: false, activityCount: 0 }]);
+  assert.deepEqual(facts, { streak: 3, activeDays: 2, counts: [{ key: 'writing', count: 28 }] });
+  assert.deepEqual(storyFacts(null, []), { streak: null, activeDays: null, counts: [] }, 'nothing recorded: nothing claimed');
+}
 
-/* ---- Knowing -> Using: no owner computes any stage; always zero, fixed order ---- */
+/* ---- Knowing -> Using: only Recalled has a recorded source; fixed order ---- */
 {
   assert.deepEqual(KU_STAGE_KEYS, ['recognized', 'recalled', 'used', 'transferred', 'fastRetrieval']);
   const stages = buildKuStages();
   assert.equal(stages.length, 5);
-  assert.ok(stages.every((s) => s.count === 0), 'every stage is the rule-40 zero, none invented');
+  assert.ok(stages.every((s) => s.count === null), 'with no summary no stage has a figure');
 }
 
 /* ---- Rank: real ladder position and "words to next rank", never a fabricated gem count ---- */
@@ -150,9 +209,15 @@ import { withinWindow, sortByRecency, dayBucket, groupByDay } from '../static/or
 }
 
 {
-  const speaking = [{ id: 1, created_at: '2026-09-18T00:00:00Z', transcript_text: 'the tram stop', dimensions: { pronunciation: 81.2 }, asset_id: 'asset-1' }, { id: 2, created_at: '2026-09-18T00:00:00Z', transcript_text: '', dimensions: {} }];
+  const measured = { score_kind: 'measured', accuracy_score: 80 };
+  const speaking = [
+    { id: 1, created_at: '2026-09-18T00:00:00Z', transcript_text: 'the tram stop', dimensions: { pronunciation: 81.2 }, provenance: { pronunciation: 'azure' }, evidence: { pronunciation: measured }, asset_id: 'asset-1' },
+    { id: 2, created_at: '2026-09-18T00:00:00Z', transcript_text: '', dimensions: {} },
+    { id: 3, created_at: '2026-09-18T00:00:00Z', transcript_text: 'stub', dimensions: { pronunciation: 84 }, provenance: { pronunciation: 'stub-for-verification' }, evidence: { pronunciation: measured } },
+  ];
   const items = buildSpeakingEvidence(speaking);
   assert.equal(items[0].score, 81);
+  assert.equal(items[2].score, null, 'a stub-measured attempt is listed with no figure (D-108.3)');
   assert.equal(items[1].score, null, 'an unmeasured dimension is null, never a fabricated number');
 }
 
@@ -161,6 +226,9 @@ import { withinWindow, sortByRecency, dayBucket, groupByDay } from '../static/or
   const items = buildListeningEvidence(summary);
   assert.equal(items.length, 1);
   assert.equal(items[0].assisted, true);
+  assert.equal(items[0].score, null, 'the retained client-reported match must never be quoted as a real score');
+  assert.equal(items[0].assetId, 'x');
+  assert.equal(items[0].segmentId, '1');
   assert.equal(buildListeningEvidence(null).length, 0);
 }
 

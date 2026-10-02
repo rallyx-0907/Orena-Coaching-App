@@ -15,12 +15,13 @@ export function chronological(takes) {
    "+" only when positive - a real regression still reads as a bare negative number, not hidden.
    With fewer than two attempts there is nothing to change from, and the frame reads "—". */
 export function statsFor(takes) {
-  if (!takes.length) return { count: 0, best: 0, delta: null };
+  if (!takes.length) return { count: 0, best: null, delta: null };
   const ordered = chronological(takes);
-  if (ordered.length < 2) return { count: 1, best: ordered[0].overall ?? 0, delta: null };
-  const best = Math.max(...ordered.map((item) => item.overall ?? 0));
-  const delta = (ordered[ordered.length - 1].overall ?? 0) - (ordered[0].overall ?? 0);
-  return { count: ordered.length, best, delta };
+  // Only an attempt with a verified score counts for "best" and "change" (an unverified one is listed, never scored).
+  const scored = ordered.filter((item) => item.overall != null);
+  const best = scored.length ? Math.max(...scored.map((item) => item.overall)) : null;
+  if (scored.length < 2) return { count: ordered.length, best, delta: null };
+  return { count: ordered.length, best, delta: scored[scored.length - 1].overall - scored[0].overall };
 }
 
 export function deltaLabel(delta) {
@@ -33,13 +34,15 @@ export function deltaLabel(delta) {
    same attempt every Speaking screen calls best (`product/take-store.js#bestTake`: the highest
    overall score, the newest of equals) and only when there is more than one attempt to be best
    of. A number a reopened attempt did not keep (D-076) is unknown, never the overall score
-   standing in for it. */
+   standing in for it. Server attempts (product/speaking-history.js) carry only a verified score or none. */
 export function rowsFor(takes, currentRef = '') {
   const ordered = chronological(takes);
-  const best = takes.length > 1 ? bestTake(takes) : null;
+  const scoredTakes = takes.filter((item) => item.overall != null);
+  const best = scoredTakes.length > 1 ? bestTake(scoredTakes) : null;
   return ordered.map((item, at) => {
-    const overall = item.overall ?? 0;
-    const tone = bandTokens(overall);
+    const overall = item.overall ?? null;
+    // No verified score: no number and no band colour (a neutral tile), never a zero.
+    const tone = overall == null ? { bg: 'var(--surface2)', ink: 'var(--muted)' } : bandTokens(overall);
     return {
       id: item.id,
       n: at + 1,
@@ -47,6 +50,7 @@ export function rowsFor(takes, currentRef = '') {
       tileBg: tone.bg,
       tileColor: tone.ink,
       isBest: Boolean(best) && item.id === best.id,
+      server: Boolean(item.server),
       isCurrent: Boolean(currentRef) && item.id === currentRef,
       at: item.at,
       accuracy: item.accuracy ?? null,

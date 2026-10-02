@@ -8,6 +8,8 @@ import {
   essayIdsOf,
   matchIssue,
   buildDrillItems,
+  buildEssayDrillItems,
+  mergeDrillItems,
   isCorrect,
   initialResults,
   recordCheck,
@@ -91,5 +93,35 @@ assert.deepEqual(summaryRows(items2, results2), [
   { pattern: 'Articles', state: 'keep' },
   { pattern: 'Word choice', state: 'keep' },
 ], 'one row per sentence in the order asked (two of the same pattern stay two rows), asked-for or unanswered is "keep practising"');
+
+/* --- D-110: a review with fixes is a source of drills even when no targeted practice was run on it --- */
+{
+  const essays = [
+    { id: 41, created_at: '2026-10-01T16:16:02+00:00', language_code: 'en', issues: [
+      { category: 'word_form', quote: 'many peoples', suggestion: 'many people', why: 'people is already plural' },
+      { category: 'tense', quote: 'I make soup', suggestion: 'I made soup', why: 'past story' },
+      { category: 'article', quote: 'a cat', suggestion: 'a cat', why: 'nothing to fix' },
+      { category: 'article', quote: 'the dog', suggestion: '', why: 'no correction given' },
+    ] },
+    { id: 40, created_at: '2026-09-29T00:00:00+00:00', language_code: 'en', issues: [] },
+  ];
+  const items = buildEssayDrillItems(essays, { labelOf: (category) => ({ word_form: 'Word form', tense: 'Verb tense' }[category]) });
+  assert.deepEqual(items.map((item) => [item.essayId, item.pattern, item.bad, item.good]), [
+    [41, 'Word form', 'many peoples', 'many people'],
+    [41, 'Verb tense', 'I make soup', 'I made soup'],
+  ], 'only issues with a real, different suggestion become drills');
+  assert.equal(items[0].why, 'people is already plural');
+  assert.deepEqual(buildEssayDrillItems([], {}), []);
+  assert.deepEqual(buildEssayDrillItems(null), []);
+  assert.equal(buildEssayDrillItems(essays, { limit: 1 }).length, 1);
+  // a category the interface has no words for is shown as the category itself, never blank
+  assert.equal(buildEssayDrillItems([{ id: 1, issues: [{ category: 'collocation', quote: 'a', suggestion: 'b' }] }])[0].pattern, 'collocation');
+  // the same sentence of the same essay is one drill, whichever source found it
+  const practice = [{ essayId: 41, pattern: 'Word form', createdAt: '', bad: 'Many peoples!', good: 'many people', why: '' }];
+  const merged = mergeDrillItems(practice, items);
+  assert.equal(merged.length, 2);
+  assert.equal(merged[0].pattern, 'Word form');
+  assert.equal(mergeDrillItems([], items, 1).length, 1);
+}
 
 console.log('test_orena_screen_errors.mjs: From Your Errors data mapping - real practice-outcome + essay-issue join, rule 40 throughout: PASS');

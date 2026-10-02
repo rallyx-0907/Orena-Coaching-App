@@ -7,6 +7,8 @@ import { html, mount, raw } from '../../kit/html.js';
 import { icon } from '../../kit/icons.js';
 import { useStyles } from '../../kit/styles.js';
 import { readSpeakingSession } from '../../product/speaking-session.js';
+import { loadAttemptsSince } from '../../product/speaking-history.js';
+import { api } from '../../infrastructure/api.js';
 import { shellCopy } from '../../copy/shell.js';
 import { t } from './copy.js';
 import { tasksFor, keyImprovement } from './model.js';
@@ -24,9 +26,13 @@ export default async function mountSpeakingSummary(element, ctx) {
   await useStyles('screens/speak-summary/speak-summary.css');
   element.classList.add('s-spsummary-root');
 
-  const session = readSpeakingSession();
-  const tasks = tasksFor(session);
-  const improvement = keyImprovement(session);
+  /* A returning learner sees the recent account record, not an empty new-tab session. */
+  const since = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const server = await loadAttemptsSince(api, new Date(since).toISOString());
+  if (!ctx.isCurrent()) return undefined;
+  if (server === null) throw new Error('speaking_history_unavailable');
+  const tasks = tasksFor(readSpeakingSession().filter((entry) => entry.at >= since), server || [], { accuracy: t('metricAccuracy'), fluency: t('metricFluency') });
+  const improvement = keyImprovement(tasks);
 
   mount(
     element,
@@ -35,14 +41,14 @@ export default async function mountSpeakingSummary(element, ctx) {
         <span class="s-spsummary-hero__glow" aria-hidden="true"></span>
         <div class="s-spsummary-icon">${raw(icon('mic', { size: 28 }))}</div>
         <div class="s-spsummary-eyebrow">${t('eyebrow')}</div>
-        <div class="s-spsummary-count">${tasks.length}<span> ${t('tasksSuffix')}</span></div>
+        <div class="s-spsummary-count">${tasks.length}${server.length >= 100 ? '+' : ''}<span> ${t('tasksSuffix')}</span></div>
         ${tasks.length ? html`<div class="s-spsummary-evidence">${t('recordedInProgress')}</div>` : ''}
       </div>
       <div class="s-spsummary-card">
         <div class="s-spsummary-label">${t('tasksCompleted')}</div>
         ${
           tasks.length
-            ? html`<div class="s-spsummary-tasks">${tasks.map(
+            ? html`<div class="s-spsummary-tasks" data-scroll-region>${tasks.map(
                 (task) => html`<div class="s-spsummary-task">
               <span class="s-spsummary-check">${raw(icon('check', { size: 14 }))}</span>
               <span class="s-spsummary-task__body"><span class="s-spsummary-task__label">${TASK_LABEL[task.kind] ? TASK_LABEL[task.kind]() : task.kind}</span>${task.note ? html`<span class="s-spsummary-task__note">${task.note}</span>` : ''}</span>

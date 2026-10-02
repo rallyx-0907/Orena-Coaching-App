@@ -13,7 +13,8 @@ import { shellCopy } from '../../copy/shell.js';
 import { languages } from '../../copy/index.js';
 import { api } from '../../infrastructure/api.js';
 import { loadSpeakingSource, segmentOf } from '../../product/speaking-source.js';
-import { lineKey, listTakes, keepRecent } from '../../product/take-store.js';
+import { lineKey, listTakes, keepRecent, attemptIdOf } from '../../product/take-store.js';
+import { loadLineAttempts, mergeAttempts } from '../../product/speaking-history.js';
 import { t } from './copy.js';
 import { statsFor, deltaLabel, rowsFor } from './model.js';
 
@@ -32,17 +33,24 @@ export default async function mountAttemptHistory(element, ctx) {
   ctx.setCrumb(t('title'));
 
   const key = lineKey(source.sourceId, source.line.lineId);
-  const takes = await listTakes(key);
+  /* This tab's takes AND what the account holds for this line (a fresh browser has no take of its own, the server
+     still has every attempt): one list, never only the tab's. */
+  const [tabTakes, serverRows] = await Promise.all([
+    listTakes(key),
+    loadLineAttempts(api, { assetId: source.assetId, segmentId: source.line.lineId }),
+  ]);
   if (!ctx.isCurrent()) return undefined;
+  if (serverRows === null) throw new Error('speaking_history_unavailable');
+  const takes = mergeAttempts(tabTakes.map((take) => ({ ...take, attemptId: attemptIdOf(take.id) })), serverRows);
 
   const currentRef = ctx.query.get('attempt') || '';
   const stats = statsFor(takes);
+  const countLabel = `${stats.count}${serverRows.length >= 50 ? '+' : ''}`;
   const rows = rowsFor(takes, currentRef);
 
   function rowMarkup(row) {
     const when = new Date(row.at).toLocaleString(languages().ui, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-    return html`<button type="button" class="s-attempts-row" data-open="${row.id}">
-      <span class="s-attempts-tile" style="background:${row.tileBg};color:${row.tileColor}">${row.overall}</span>
+    const inner = html`<span class="s-attempts-tile" style="background:${row.tileBg};color:${row.tileColor}">${row.overall ?? '—'}</span>
       <span class="s-attempts-body">
         <span class="s-attempts-title">
           <span>${t('attemptLabel', { n: row.n })}</span>
@@ -50,9 +58,10 @@ export default async function mountAttemptHistory(element, ctx) {
           ${row.isCurrent ? html`<span class="s-attempts-badge s-attempts-badge--current">${t('currentBadge')}</span>` : ''}
         </span>
         <span class="s-attempts-meta">${t('metaLine', { when, acc: row.accuracy ?? '—', flu: row.hasFluency ? row.fluency : '—' })}</span>
-      </span>
-      <span class="s-attempts-chevron">${raw(icon('chevron-right', { size: 18 }))}</span>
-    </button>`;
+      </span>`;
+    // An attempt only the account remembers has no recording to compare (audio is never kept): listed, not opened.
+    if (row.server) return html`<div class="s-attempts-row s-attempts-row--kept">${inner}</div>`;
+    return html`<button type="button" class="s-attempts-row" data-open="${row.id}">${inner}<span class="s-attempts-chevron">${raw(icon('chevron-right', { size: 18 }))}</span></button>`;
   }
 
   mount(
@@ -60,11 +69,12 @@ export default async function mountAttemptHistory(element, ctx) {
     html`${pageHeader({ back: { label: shellCopy('back'), dataset: { back: '1' } }, title: t('title'), meta: langSpan(source.title, source.language), compact: true })}
     <div class="s-attempts-scroll" data-scroll-region>
       <div class="s-attempts-stats">
-        <div class="s-attempts-stat"><div class="s-attempts-stat__label">${t('statAttempts')}</div><div class="s-attempts-stat__value">${stats.count}</div></div>
-        <div class="s-attempts-stat"><div class="s-attempts-stat__label">${t('statBest')}</div><div class="s-attempts-stat__value" style="color:var(--green)">${stats.best}</div></div>
+        <div class="s-attempts-stat"><div class="s-attempts-stat__label">${t('statAttempts')}</div><div class="s-attempts-stat__value">${countLabel}</div></div>
+        <div class="s-attempts-stat"><div class="s-attempts-stat__label">${t('statBest')}</div><div class="s-attempts-stat__value" style="color:var(--green)">${stats.best ?? '—'}</div></div>
         <div class="s-attempts-stat"><div class="s-attempts-stat__label">${t('statChange')}</div><div class="s-attempts-stat__value" style="color:var(--accent)">${deltaLabel(stats.delta)}</div></div>
       </div>
       <div class="s-attempts-rows">${rows.map(rowMarkup)}</div>
+      <p class="s-attempts-note">${t('historyScope')}</p>
       <p class="s-attempts-note">${t(keepRecent.value ? 'privacyNoteKept' : 'privacyNoteSession')}</p>
     </div>`,
   );

@@ -18,9 +18,9 @@ import {
 } from '../static/orena/screens/speak/model.js';
 import { parseSpeakingId, segmentOf, sourceFromCatalogItem, sourceFromLesson, loadSpeakingSource } from '../static/orena/product/speaking-source.js';
 import { pronunciationView } from '../static/orena/capabilities/pronunciation-result.js';
-import { recordTake, richView, viewOfTake, noteAttemptId, attemptIdOf, lineKey, listTakes } from '../static/orena/product/take-store.js';
+import { recordTake, richView, viewOfTake, noteAttemptId, attemptIdOf, lineKey, listTakes, setTakeStoreScope } from '../static/orena/product/take-store.js';
 import { createSpeakingRecorder, TAKE } from '../static/orena/product/speaking-recorder.js';
-import { readSpeakingSession } from '../static/orena/product/speaking-session.js';
+import { readSpeakingSession, setSpeakingSessionScope } from '../static/orena/product/speaking-session.js';
 
 function fixture(name) {
   return JSON.parse(readFileSync(new URL(`./fixtures/api/${name}`, import.meta.url)));
@@ -283,6 +283,18 @@ assert.equal(segmentOf(null), '');
 
 /* --- The recorder: a finished take becomes ONE attempt (the take emits its result twice) --- */
 {
+  setTakeStoreScope('account-a:en');
+  const key = lineKey('media:shared', 'line');
+  await recordTake(key, { blob: null, ms: 1500, view });
+  setTakeStoreScope('account-b:en');
+  assert.deepEqual(await listTakes(lineKey('media:shared', 'line')), [], 'another account cannot read retained takes');
+  setTakeStoreScope('account-a:zh');
+  assert.deepEqual(await listTakes(lineKey('media:shared', 'line')), [], 'another learning language has its own takes');
+  setTakeStoreScope('account-a:en');
+  assert.equal((await listTakes(lineKey('media:shared', 'line'))).length, 1);
+  setTakeStoreScope('');
+}
+{
   const store = new Map();
   globalThis.window = { sessionStorage: { getItem: (k) => store.get(k) ?? null, setItem: (k, v) => store.set(k, v) } };
   let clock = 0;
@@ -294,6 +306,7 @@ assert.equal(segmentOf(null), '');
   };
   const fakeRecorder = { start: async () => true, stop: async () => ({ blob: new Blob(['x'.repeat(4000)]), url: 'blob:r' }), cleanup() {}, discard() {}, snapshot: () => ({}) };
   const source = sourceFromLesson('rec-lesson', fixture('listening_library_lesson.en.json'));
+  setSpeakingSessionScope('test-account:en');
   const key = lineKey(source.sourceId, source.line.lineId);
   const seen = [];
   const failures = [];
@@ -313,6 +326,7 @@ assert.equal(segmentOf(null), '');
   const takes = await listTakes(key);
   assert.equal(takes.length, 1, 'one recording, one attempt - not two');
   assert.equal(readSpeakingSession().filter((entry) => entry.contentId === source.sourceId).length, 1, 'and one task in the session ledger');
+  assert.equal(readSpeakingSession().find((entry) => entry.contentId === source.sourceId).attemptId, 'server-attempt-1', 'the ledger joins the server by identity');
   const finished = seen.at(-1).latest;
   assert.equal(finished.list.length, 1);
   assert.equal(finished.view.overall, 82);

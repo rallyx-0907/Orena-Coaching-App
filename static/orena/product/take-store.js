@@ -16,6 +16,10 @@
 import { createAttemptStore, indexedDbAttempts, bestOf, MAX_PER_LINE } from '../capabilities/speaking-attempts.js';
 
 let store = null;
+let activeScope = '';
+export function setTakeStoreScope(scope) {
+  activeScope = String(scope || '');
+}
 const rich = new Map(); // take_ref -> the full pronunciationView() result, this tab only
 const attemptIds = new Map(); // take_ref -> the id of the audio-free record the server stored for it
 
@@ -25,7 +29,7 @@ function attempts() {
 }
 
 export function lineKey(sourceId, lineId) {
-  return `${sourceId}#${lineId}`;
+  return `${activeScope ? `${activeScope}:` : ''}${sourceId}#${lineId}`;
 }
 
 function mintTakeRef(key) {
