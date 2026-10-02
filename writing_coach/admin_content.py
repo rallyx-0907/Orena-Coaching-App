@@ -102,6 +102,13 @@ def media_record(entry: Any) -> dict[str, Any]:
     segments = _segments(entry)
     lesson = entry.lesson if isinstance(entry.lesson, Mapping) else {}
     reprocessable = entry.provider == "upload" or (bool(entry.canonical_url) and entry.provider in _REPROCESSABLE_PROVIDERS)
+    actions = _media_actions(getattr(entry, "status", "published"), reprocessable)
+    if entry.status == "unpublished":
+        actions.remove("republish")
+    if entry.status in {"review", "unpublished"} and entry.source.get("rights") == "cleared":
+        from writing_coach.media_transcript_pipeline import usable_transcript
+        if (entry.processing or {}).get("state", "ready") in {"ready", "held"} and usable_transcript(entry)[0]:
+            actions.append("republish" if entry.status == "unpublished" else "publish")
     return {
         "kind": "media",
         "id": entry.media_id,
@@ -124,7 +131,7 @@ def media_record(entry: Any) -> dict[str, Any]:
         },
         "issues": [] if segments else ["transcript_missing"],
         "processing": dict(getattr(entry, "processing", None) or {}),
-        "actions": _media_actions(getattr(entry, "status", "published"), reprocessable),
+        "actions": actions,
     }
 
 

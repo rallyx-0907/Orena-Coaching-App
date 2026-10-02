@@ -41,7 +41,7 @@ export async function mountContent(shell, ctx) {
     switch (routeId) {
       case 'adminBooks': case 'adminMedia': case 'adminVocab': return { ...listPage({ ...base, kind, data: data.list, loading: view.loading }), filterValue: view.q };
       case 'adminBook': return bookPage({ ...base, detail: data.detail });
-      case 'adminMediaItem': return mediaPage({ ...base, detail: data.detail });
+      case 'adminMediaItem': return mediaPage({ ...base, detail: data.detail, form: data.form });
       case 'adminCollection': return collectionPage({ ...base, detail: data.detail, form: data.form });
       default: return homePage({ ...base, counts: data.counts });
     }
@@ -62,6 +62,7 @@ export async function mountContent(shell, ctx) {
         data.detail = await api.contentDetail(kind, ctx.params.id);
         const admission = data.detail.admission || {};
         if (kind === 'vocabulary') data.form = { rights: admission.rights_status || '', completeness: admission.completeness || 'unknown', attested: false };
+        if (kind === 'media') data.form = { rights: data.detail.source?.rights || 'unknown', license: data.detail.source?.license || '', attested: false };
       } else {
         data.counts = await contentCounts(api);
       }
@@ -86,11 +87,14 @@ export async function mountContent(shell, ctx) {
   });
 
   host.on('lifecycle', async (control, dataset) => {
+    if (view.busy) return;
     const intent = dataset.intent;
     const [title, body, danger] = CONFIRM[intent];
-    const answer = await host.confirm({ title: t(title), body: t(body), cancel: t('actCancel'), confirm: t(`ctAct_${intent}`), danger });
+    const answer = await host.confirm({ title: t(kind === 'media' && intent === 'publish' ? 'ctMediaPublishTitle' : title), body: t(kind === 'media' && intent === 'publish' ? 'ctMediaPublishBody' : body), cancel: t('actCancel'), confirm: t(`ctAct_${intent}`), danger });
     if (!answer.confirmed) return;
     view.error = '';
+    view.busy = true;
+    host.paint();
     try {
       await applyLifecycle(api, kind, ctx.params.id, intent);
       host.toast(t(DONE[intent]));
@@ -98,6 +102,22 @@ export async function mountContent(shell, ctx) {
     } catch (error) {
       view.error = explain(error);
     }
+    view.busy = false;
+    host.paint();
+  });
+
+  host.on('media-rights-save', async () => {
+    if (view.busy) return;
+    view.busy = true;
+    view.error = '';
+    host.paint();
+    try {
+      await api.reviewMediaRights(ctx.params.id, { rights: data.form.rights, license: data.form.license, attested: data.form.attested });
+      data.detail = await api.contentDetail(kind, ctx.params.id);
+      data.form.attested = false;
+      host.toast(t('ctRightsSaved'));
+    } catch (error) { view.error = explain(error); }
+    view.busy = false;
     host.paint();
   });
 

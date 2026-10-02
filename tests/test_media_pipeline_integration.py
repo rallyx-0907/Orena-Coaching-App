@@ -48,6 +48,23 @@ def test_prepared_import_has_the_same_learning_modes_as_a_curated_transcript():
     assert {"listen", "active", "dictation", "shadowing"} <= set(stored_media_metadata(entry)["available_modes"])
 
 
+@pytest.mark.parametrize("language,text", [("en", "Today we are walking through the city."), ("zh", "每天早上我都去附近的市场买菜。")])
+def test_manually_published_held_transcript_opens_for_learner(monkeypatch, language, text):
+    from dataclasses import replace
+    from tests.test_media_lifecycle import _entry
+    from writing_coach import listening_api
+    from writing_coach.media_transcript_pipeline import build_transcript, lesson_payload
+    from writing_coach.media_segmentation import Cue
+    entry = replace(_entry(), language=language, status="published", processing={"state": "held"})
+    transcript = build_transcript(entry.media_id, language, [Cue(0, 4000, text)])
+    entry = replace(entry, lesson={"payload": lesson_payload(entry, transcript, "generated_asr", 4000)})
+    monkeypatch.setattr(listening_api, "stored_media_entry", lambda _id: entry)
+    monkeypatch.setattr(listening_api, "get_learner_profile", lambda: {"native_language": language})
+    result = listening_api.stored_media_payload(entry.media_id, language)
+    assert result["transcript"]["segments"][0]["original_text"] == text
+    assert result["asset"]["transcript_available"] is True
+
+
 def test_generated_lesson_keeps_provider_word_timestamps():
     from tests.test_media_lifecycle import _entry
     from writing_coach.media_transcript_pipeline import build_transcript, lesson_payload

@@ -354,8 +354,15 @@ class MediaPipeline:
             if fields.get("state") == STATE_RUNNING and processing.get("state") != STATE_RUNNING:
                 processing["attempts"] = int(processing.get("attempts") or 0) + 1
             processing.update(fields)
+            target_status = status
+            if status == "published" and fresh.library == "shared":
+                rights = str(fresh.source.get("rights") or RIGHTS_UNKNOWN)
+                processing["rights"] = rights
+                if rights != RIGHTS_CLEARED:
+                    target_status = "review"
+                    processing.update(state=STATE_HELD, reason="rights_unknown", auto_published=False)
             processing["updated_at"] = _now()
-            return replace(fresh, processing=processing, **({"status": status} if status else {}))
+            return replace(fresh, processing=processing, **({"status": target_status} if target_status else {}))
         updated = store.update_if_present(entry.media_id, change)
         if updated is None:
             raise PipelineStop("cancelled")

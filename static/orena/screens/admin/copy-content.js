@@ -2,6 +2,12 @@
    Admin's one copy table (copy.js). */
 
 export const en = {
+  ctStatusReview: 'Needs review', ctStatusProcessing: 'Processing', ctFilter_review: 'Needs review', ctFilter_processing: 'Processing',
+  ctRightsSave: 'Save rights review', ctRightsSaved: 'Rights review saved',
+  ctMediaRightsHelp: 'Clear rights only with a license or permission note. Unknown or denied rights cannot publish; withdrawing clearance removes live media from learners.',
+  ctMediaRights_unknown: 'Unknown', ctMediaRights_cleared: 'Cleared', ctMediaRights_denied: 'Denied',
+  ctMediaAttest: 'I confirm this license or permission allows Orena to publish this media',
+  ctMediaPublishTitle: 'Publish this media?', ctMediaPublishBody: 'Learners will be able to open its transcript-backed Listening experience. Transcript quality and cleared rights are checked again.',
   ctTitle: 'Content', ctSub: 'Everything learners can open: reading, books, media and vocabulary.',
   ctPublished: 'published', ctInReview: 'in review', ctToReview: '{n} to review', ctReadingMeta: 'Articles, review queue, sources',
   ctBooks: 'Books', ctBooksUnit: 'books', ctBooksMeta: 'Chapters and reading progress', ctMedia: 'Media', ctMediaUnit: 'items', ctMediaMeta: 'Video and audio with transcripts',
@@ -43,6 +49,12 @@ export const en = {
 };
 
 export const vi = {
+  ctStatusReview: 'Cần duyệt', ctStatusProcessing: 'Đang xử lý', ctFilter_review: 'Cần duyệt', ctFilter_processing: 'Đang xử lý',
+  ctRightsSave: 'Lưu duyệt quyền sử dụng', ctRightsSaved: 'Đã lưu duyệt quyền sử dụng',
+  ctMediaRightsHelp: 'Chỉ xác nhận quyền khi có giấy phép hoặc ghi chú cho phép. Quyền chưa rõ hoặc bị từ chối không được xuất bản; rút xác nhận sẽ gỡ nội dung khỏi người học.',
+  ctMediaRights_unknown: 'Chưa rõ', ctMediaRights_cleared: 'Đã xác nhận', ctMediaRights_denied: 'Không cho phép',
+  ctMediaAttest: 'Tôi xác nhận giấy phép hoặc sự cho phép này cho phép Orena xuất bản nội dung',
+  ctMediaPublishTitle: 'Xuất bản nội dung này?', ctMediaPublishBody: 'Người học có thể mở luồng Listening kèm bản chép lời. Chất lượng bản chép lời và quyền sử dụng được kiểm tra lại.',
   ctTitle: 'Nội dung', ctSub: 'Mọi thứ người học có thể mở: bài đọc, sách, phương tiện và từ vựng.',
   ctPublished: 'đã xuất bản', ctInReview: 'đang duyệt', ctToReview: '{n} cần duyệt', ctReadingMeta: 'Bài viết, hàng chờ duyệt, nguồn',
   ctBooks: 'Sách', ctBooksUnit: 'sách', ctBooksMeta: 'Chương và tiến độ đọc', ctMedia: 'Phương tiện', ctMediaUnit: 'mục', ctMediaMeta: 'Video và âm thanh có bản chép lời',
@@ -84,6 +96,12 @@ export const vi = {
 };
 
 export const zh = {
+  ctStatusReview: '待审核', ctStatusProcessing: '处理中', ctFilter_review: '待审核', ctFilter_processing: '处理中',
+  ctRightsSave: '保存授权审核', ctRightsSaved: '已保存授权审核',
+  ctMediaRightsHelp: '仅在有许可或授权说明时确认授权。授权不明或被拒绝的内容不可发布；撤回授权会将内容从学习者界面下架。',
+  ctMediaRights_unknown: '不明', ctMediaRights_cleared: '已确认', ctMediaRights_denied: '不允许',
+  ctMediaAttest: '我确认此许可或授权允许 Orena 发布该媒体',
+  ctMediaPublishTitle: '发布此媒体？', ctMediaPublishBody: '学习者将能进入带文本的听力学习。系统会再次检查文本质量和授权。',
   ctTitle: '内容', ctSub: '学习者能打开的一切：阅读、书籍、媒体和词汇。',
   ctPublished: '已发布', ctInReview: '审核中', ctToReview: '{n} 项待审', ctReadingMeta: '文章、审核队列、来源',
   ctBooks: '书籍', ctBooksUnit: '本书', ctBooksMeta: '章节与阅读进度', ctMedia: '媒体', ctMediaUnit: '项', ctMediaMeta: '带文字稿的视频和音频',

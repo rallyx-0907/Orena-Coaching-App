@@ -140,6 +140,62 @@ def call(app, method, path, admin=True, origin="http://testserver", **kwargs):
 READ_ROUTES = ["/overview", "/users/summary", "/users", "/content", "/imports/history", "/runtime"]
 
 
+def test_media_rights_review_is_scoped_attested_and_does_not_bypass_transcript(setup):
+    from dataclasses import replace
+    entry = setup["store"].get("youtube-abcdefghijk")
+    assert entry is not None
+    setup["store"].upsert(replace(entry, status="review", source={**entry.source, "rights": "unknown"}))
+    path = "/api/admin/console/content/media/youtube-abcdefghijk/rights"
+    body = {"rights": "cleared", "license": "Creator permission for Orena", "attested": True}
+    assert call(setup["app"], "POST", path, admin=False, json=body).status_code == 403
+    assert call(setup["app"], "POST", path, origin=None, json=body).status_code == 403
+    assert call(setup["app"], "POST", path, json={**body, "attested": False}).status_code == 422
+    assert call(setup["app"], "POST", path, json={**body, "license": ""}).status_code == 422
+    assert call(setup["app"], "POST", path, json=body).status_code == 200
+    current = setup["store"].get(entry.media_id)
+    assert current.source["rights"] == "cleared" and current.status == "review"
+    status_path = path.removesuffix("rights") + "status"
+    assert call(setup["app"], "POST", status_path, json={"status": "published"}).status_code == 409
+    setup["store"].upsert(replace(current, status="published"))
+    assert call(setup["app"], "POST", path, json={"rights": "unknown", "license": "", "attested": False}).status_code == 200
+    current = setup["store"].get(entry.media_id)
+    assert current.status == "unpublished" and current.lesson == entry.lesson
+    setup["store"].upsert(replace(current, status="processing", processing={"state": "running"}, source={**current.source, "rights": "cleared"}))
+    assert call(setup["app"], "POST", path, json=body).status_code == 409
+    assert call(setup["app"], "POST", path, json={"rights": "denied", "license": "Permission withdrawn", "attested": False}).status_code == 200
+    current = setup["store"].get(entry.media_id)
+    assert current.source["rights"] == "denied" and current.processing["state"] == "running"
+    assert "republish" not in call(setup["app"], "POST", path, json={"rights": "unknown", "license": "", "attested": False}).json()["record"]["actions"]
+    from writing_coach.media_transcript_pipeline import MediaPipeline
+    pipeline = MediaPipeline.__new__(MediaPipeline)
+    finished = pipeline._write_processing(setup["store"], entry, status="published", state="ready", auto_published=True, rights="cleared")
+    assert finished.status == "review" and finished.processing["auto_published"] is False
+    assert finished.processing["rights"] == "unknown"
+    setup["store"].upsert(replace(current, library="personal"))
+    assert call(setup["app"], "POST", path, json=body).status_code == 404
+
+
+def test_media_publish_rechecks_latest_rights_inside_store_transaction(setup, monkeypatch):
+    from dataclasses import replace
+    store = setup["store"]
+    entry = store.get("youtube-abcdefghijk")
+    entry = replace(entry, status="review", lesson={"payload": {"transcript": {"segments": [
+        {"start_ms": 0, "end_ms": 42000, "original_text": "各位旅客请注意，开往北京的列车马上到站，请准备上车。"}
+    ]}}})
+    store.upsert(entry)
+    original_get = store.get
+
+    def concurrent_withdrawal(identifier):
+        stale = original_get(identifier)
+        store.upsert(replace(stale, source={**stale.source, "rights": "unknown"}))
+        return stale
+
+    monkeypatch.setattr(store, "get", concurrent_withdrawal)
+    result = call(setup["app"], "POST", "/api/admin/console/content/media/youtube-abcdefghijk/status", json={"status": "published"})
+    assert result.status_code == 409
+    assert original_get(entry.media_id).status == "review"
+
+
 def test_every_console_route_requires_an_administrator(setup):
     for path in READ_ROUTES:
         assert call(setup["app"], "GET", f"/api/admin/console{path}", admin=False).status_code == 403, path
@@ -231,6 +287,11 @@ def test_media_can_be_taken_back_and_put_out_again(setup):
     """The lifecycle an operator actually needs, and no destruction in it."""
     path = "/api/admin/console/content/media/youtube-abcdefghijk/status"
     store = setup["store"]
+    from dataclasses import replace
+    existing = store.get("youtube-abcdefghijk")
+    store.upsert(replace(existing, lesson={"payload": {"transcript": {"segments": [
+        {"start_ms": 0, "end_ms": 42000, "original_text": "各位旅客请注意，开往北京的列车马上到站，请准备上车。"}
+    ]}}}))
     off = call(setup["app"], "POST", path, json={"status": "unpublished"})
     assert off.status_code == 200 and off.json()["record"]["status"] == "unpublished"
     assert "republish" in off.json()["record"]["actions"]
@@ -244,6 +305,7 @@ def test_media_can_be_taken_back_and_put_out_again(setup):
     assert [item["status"] for item in listed["items"] if item["id"] == "youtube-abcdefghijk"] == ["unpublished"]
 
     # A missing transcript is never publishable, even after an operator unpublishes it.
+    store.upsert(replace(kept, lesson={}))
     refused = call(setup["app"], "POST", path, json={"status": "published"})
     assert refused.status_code == 409
     from dataclasses import replace

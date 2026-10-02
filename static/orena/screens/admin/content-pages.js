@@ -15,6 +15,7 @@ import { block, button, chipRow, formBlock, kv, pageHead, pill, rowList, stateBl
 
 const STATUS_PILL = {
   published: ['ctStatusPublished', 'ok'], draft: ['ctStatusDraft', 'mute'], unpublished: ['ctStatusUnpublished', 'mute'], archived: ['ctStatusArchived', 'mute'],
+  review: ['ctStatusReview', 'info'], processing: ['ctStatusProcessing', 'info'],
 };
 const statusPill = (t, record) => {
   const [label, tone] = STATUS_PILL[record.status] || ['ctStatusDraft', 'mute'];
@@ -59,7 +60,7 @@ function recordMeta(t, ui, record) {
 
 export function listPage({ kind, data, view, t, ui, href, loading }) {
   const spec = LIST[kind];
-  const filters = ['all', 'published', 'draft', 'archived', 'issues'];
+  const filters = kind === 'media' ? ['all', 'published', 'review', 'processing', 'archived', 'issues'] : ['all', 'published', 'draft', 'archived', 'issues'];
   const items = data?.items || [];
   const total = data?.total ?? items.length;
   return {
@@ -118,7 +119,7 @@ export function bookPage({ detail, view, t, ui, href }) {
   };
 }
 
-export function mediaPage({ detail, view, t, ui, href }) {
+export function mediaPage({ detail, view, t, ui, href, form = {} }) {
   const record = detail.record;
   const facts = record.facts || {};
   const source = detail.source || {};
@@ -130,7 +131,7 @@ export function mediaPage({ detail, view, t, ui, href }) {
     title: t('ctTitle'),
     crumb: record.title,
     markup: html`<section class="a-page" data-screen-label="A12 Media detail">
-      ${pageHead({ back: { href: href('adminMedia'), label: t('ctMedia') }, title: record.title, sub: record.subtitle || '', pills: [statusPill(t, record), missing ? { label: t('ctTranscriptMissing'), tone: 'warn' } : { label: t('ctTranscriptReady'), tone: 'ok' }], actions: lifecycleButtons(t, record, 'media').filter((action) => action.data.intent !== 'reprocess') })}
+      ${pageHead({ back: { href: href('adminMedia'), label: t('ctMedia') }, title: record.title, sub: record.subtitle || '', pills: [statusPill(t, record), missing ? { label: t('ctTranscriptMissing'), tone: 'warn' } : { label: t('ctTranscriptReady'), tone: 'ok' }], actions: lifecycleButtons(t, record, 'media').filter((action) => action.data.intent !== 'reprocess').map((action) => ({ ...action, disabled: view.busy })) })}
       ${view.error ? html`<div class="a-error" role="alert">${view.error}</div>` : ''}
       ${missing ? html`<div class="a-banner" data-tone="warn"><div class="a-banner__text"><div class="a-banner__title">${t('ctMissingTitle')}</div><div class="a-banner__body">${t('ctMissingText')}</div></div></div>` : ''}
       <div class="a-blocks">
@@ -145,6 +146,11 @@ export function mediaPage({ detail, view, t, ui, href }) {
           { key: t('ctFactLicense'), value: source.license || '—' },
         ]) })}
         ${block({ title: t('ctLearnerView'), body: html`${link ? html`<a class="a-btn a-btn--md" href="${link}">${t('ctOpenAsLearner')}</a>` : html`<div class="a-hint">${t('ctNotLive')}</div>`}<div class="a-hint">${t('ctPlaysGap')}</div>` })}
+        ${record.origin === 'imported' ? formBlock({ span: true, title: t('ctRightsOrigin'), sub: t('ctMediaRightsHelp'), fields: [
+          { id: 'rights', kind: 'seg', label: t('ctRightsStatus'), span: true, options: ['unknown', 'cleared', 'denied'].map((id) => ({ id, label: t(`ctMediaRights_${id}`), on: (form.rights || source.rights || 'unknown') === id })) },
+          { id: 'license', label: t('ctFactLicense'), value: form.license ?? source.license ?? '', span: true },
+          { id: 'attested', kind: 'toggle', label: t('ctConfirmation'), toggleLabel: t('ctMediaAttest'), on: Boolean(form.attested), span: true },
+        ], actions: [{ label: t('ctRightsSave'), a: 'media-rights-save', kind: 'primary', disabled: view.busy || (form.rights === 'cleared' && (['queued', 'running'].includes(record.processing?.state) || !form.attested || !String(form.license || '').trim())) }] }) : ''}
         ${formBlock({ span: true, title: t('ctReprocess'), sub: t('ctReprocessSub'), fields: [
           { id: 'reprocessOpt', kind: 'seg', label: t('ctRedo'), span: true, hint: t('ctRedoGap'), options: [
             { id: 'all', label: t('ctRedoAll'), sub: t('ctRedoAllSub'), on: true },

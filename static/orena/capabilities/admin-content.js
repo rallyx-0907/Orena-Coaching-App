@@ -15,7 +15,7 @@ export const RIGHTS = ['public_domain', 'licensed', 'creator_authorized', 'inter
 export const COMPLETENESS = ['complete', 'partial', 'unknown'];
 
 /* Which state each lifecycle intent asks the server for. */
-export const MEDIA_STATES = { unpublish: 'unpublished', archive: 'archived', republish: 'published', restore: 'published' };
+export const MEDIA_STATES = { publish: 'published', unpublish: 'unpublished', archive: 'archived', republish: 'published', restore: 'unpublished' };
 /* A collection's flow, as the human settled it. Restore goes to `unpublished` and never to
    `published`: coming back from archived returns it to the shelf, and putting it in front of
    learners again is a separate decision. */

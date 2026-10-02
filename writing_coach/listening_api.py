@@ -149,7 +149,7 @@ def stored_media_payload(media_id: str, target_language: str = "") -> dict[str, 
     target = resolve_support_language(get_learner_profile().get("native_language"), target_language)
     stored = (entry.lesson or {}).get("payload") if entry.lesson else None
     processing = dict(entry.processing or {})
-    if isinstance(stored, Mapping) and processing.get("state", "ready") == "ready":
+    if isinstance(stored, Mapping) and processing.get("state", "ready") in {"ready", "held"}:
         response = _stored_acquisition_response(entry, stored)
         response["processing"] = processing
         media_object = _media_object_from_stored(stored, entry)
@@ -244,7 +244,7 @@ def _stored_asset(entry: MediaLibraryEntry) -> dict[str, Any]:
         "source_language": entry.language,
         "processing_state": ("processing" if entry.status == "processing" else "failed") if entry.processing and entry.processing.get("state") != "ready" else MediaProcessingState.READY.value,
         "duration_ms": entry.duration_ms or None,
-        "transcript_available": bool(entry.lesson) and (not entry.processing or entry.processing.get("state") == "ready"),
+        "transcript_available": bool(entry.lesson) and (not entry.processing or entry.processing.get("state") in {"ready", "held"}),
         "translation_available": False,
         "thumbnail_url": public_thumbnail_url(entry),
     }
