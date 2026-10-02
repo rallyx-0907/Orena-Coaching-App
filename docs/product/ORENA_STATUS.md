@@ -21,6 +21,16 @@ then canonical Grammar and integrated Intelligence/Agent under existing review g
 Deep fidelity, cross-device completeness, edge cases and performance follow basic coverage.
 Books evidence remains in `docs/reviews/S8_BOOKS_BROWSER_CHECKPOINT.md` unchanged.
 
+S6 Admin media rights review/publication is REVIEWABLE (`71ddcd4`): EN/ZH upload,
+attested rights review, publish and learner Content -> Listening with transcript
+and VI meanings verified on :8021. Withdrawal unpublishes; Restore does not
+auto-publish. Completed held transcripts now resolve for learners. Desktop and
+390x844 form verified; QA fixtures archived. Local focused Python 260 pass,
+Ruff/Node/ESM pass; independent review APPROVE, not human approval or CI PASS.
+Evidence: `docs/reviews/S6_ADMIN_MEDIA_BROWSER_CHECKPOINT.md`. Admin import queue
+still needs actual preparation stages/progress and refreshed completion state;
+Overview/Users/Operations remain the next basic control-center gaps.
+
 S4 (2026-10-02): Progress/History, Speaking Attempts/Summary and Writing-derived
 From Your Errors now use real server records at `/next` on :8021. Reading/media
 return links work; unverifiable scores remain unavailable; local speaking state

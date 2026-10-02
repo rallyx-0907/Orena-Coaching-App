@@ -40,8 +40,8 @@
     "expected_development_branch": "codex/work",
     "lane": "unified_baseline_and_ui_lane"
   },
-  "last_verified_application_commit": "637d0b2abe95614fa3780be36a847f975f5a91fa",
-  "last_verified_batch": "s2_reported_corrections_en_zh_browser_89_meanings_reload_restart_audio_strokes_2744_python_before_audio_delta_50_final_review",
+  "last_verified_application_commit": "71ddcd480ee97f170fc1a2f135351aa19b980b0b",
+  "last_verified_batch": "s6_admin_media_rights_publish_en_zh_browser_vi_meanings_reload_restart_mobile_260_focused_python_review_approve",
   "current_program_stage": {
     "id": "ORENA_PRODUCT_COMPLETION",
     "name": "Coherent content-first web product completion",
@@ -50,7 +50,7 @@
   "current_primary_workstream": {
     "id": "orena_product_completion_d110_d111",
     "status": "in_progress",
-    "next_task": "D-114 basic whole-app coverage first. S2 reported corrections REVIEWABLE at 637d0b2 (D-116): EN/ZH browser, durable VI meanings, connected room reuse, lookup audio/stroke direction, player chrome and phone wrapping. Old media without actual word timing disables word highlight; undeclared levels stay unassessed. Present checkpoint before next major slice: Admin content review/rights/publish, then canonical Grammar and integrated Intelligence/Agent. Preserve accepted Books/Progress; no full-app re-audit. Full product is not public ready. QA :8021 only; existing gates remain."
+    "next_task": "D-114 basic whole-app coverage first. S6 Admin media rights review/publish REVIEWABLE at 71ddcd4: EN/ZH browser Content -> Listening with VI meanings, withdrawal/archive/restore and 390x844 form verified; local focused Python260 and independent review pass. QA fixtures archived. Present this checkpoint before the next major slice: Admin import preparation stages/progress refresh and Overview/Users/Operations basic control-center journeys, then canonical Grammar and integrated Intelligence/Agent. Preserve accepted Books/Progress and S2 Listening corrections; no full-app re-audit or deeper Listening hardening. Full product is not public ready. QA :8021 only; existing gates remain."
   },
   "design": {
     "web_is_visual_source_of_truth": true,

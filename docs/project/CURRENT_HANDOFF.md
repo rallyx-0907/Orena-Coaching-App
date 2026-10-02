@@ -24,13 +24,12 @@ calls `/api/agent/*` until the human says the intelligence lane is integrated.
 The intelligence lane integrates against `/next`. Frame → route → code →
 status: `docs/design/canonical-ui/IMPLEMENTATION_MAP.md`.
 
-- Foundation and Wave A/B: REVIEWABLE; route/evidence inventory in IMPLEMENTATION_MAP.md.
+- Foundation/Wave A/B: REVIEWABLE; inventory in IMPLEMENTATION_MAP.md.
 - Lane runtime :8021 (D-111.7, durable QA store): `orena-next-verify-web` and `-worker` share the named
   volume `orena-next-verify-media` at `/lanedata` (media, reading assets, word audio/deep roots); `/rundata` is
   tmpfs for SQLite scratch only; `ORENA_ACCOUNT_BACKBONE=on` here only. Recreate copies env by name only.
-- Wave B workspaces: REVIEWABLE (`161d917`), independently reviewed/fixed;
-  route inventory in `IMPLEMENTATION_MAP.md`. Backend-less routes remain Coming
-  soon; Orena uses the mock and Grammar waits for its canonical runtime.
+- Wave B (`161d917`): REVIEWABLE; backend-less routes stay Coming soon,
+  Orena uses the mock; Grammar waits for its canonical runtime.
 - Agent UI side: contract v5 on the mock; Orena's entry points hide when the
   agent is absent.
 - Grammar: Grammar Lab replaces R5 (D-100; PR #66 merged at `f86a2bf`). The two
@@ -44,19 +43,17 @@ status: `docs/design/canonical-ui/IMPLEMENTATION_MAP.md`.
 
 ## Last verified batch
 
+S6 (`71ddcd4`): REVIEWABLE. EN/ZH rights review -> Publish -> Listening with VI
+meanings; reload/restart, withdrawal/Archive/Restore, 390x844 verified. Atomic
+rights gates and held-transcript resolver fixed. Local Python260, Ruff/Node/ESM,
+independent review pass. QA archived. Evidence: S6_ADMIN_MEDIA_BROWSER_CHECKPOINT.md.
+
 S2 corrections (`637d0b2`, D-116): EN/ZH desktop/390x844, ZH 89/89 VI meanings
 after reload/restart, Dictation/Shadowing return, playback chrome, word audio and
 directional strokes verified on :8021. Orena AI copy supersedes paid-resource wording.
-Local full Python 2744 pass/370 skip before final audio delta; final focused 50 pass.
-Node 122/123: inherited date-dependent Word failure reproduced on clean HEAD.
-Ruff/ESM and independent review pass. Evidence: S2_MEDIA_BASIC_BROWSER_CHECKPOINT.md.
-Old media without real word timing disables word highlight; undeclared levels stay
-unassessed. Derived meaning cache is durable; next basic gap remains Admin.
-
-S2 (`c315bd2`): REVIEWABLE. EN/ZH import/ASR/meanings, practice/context,
-phone/reload and YouTube completed: S2_MEDIA_BASIC_BROWSER_CHECKPOINT.md.
-Local pytest 2738/370 skip; Node122/123 inherited date failure, ESM331;
-memory/architecture/contracts/Ruff PASS. Independent code review APPROVE.
+Local Python2744/370skip before audio delta, final focused50; Node122/123
+inherited Word date failure. Ruff/ESM/review pass: S2_MEDIA_BASIC_BROWSER_CHECKPOINT.md.
+No synthetic timing/levels; derived meanings durable. Next basic gap: Admin.
 
 ## DONE
 
@@ -76,7 +73,7 @@ The D-098 and D-099 items (2026-09-29, `5d9d64c`..`b83142d`); commit list in
   S8a (`b7380b1`): EPUB body/count and Admin learner-link fixes; local Python
   2726 pass/370 skip, independent code APPROVE. Browser evidence: `S8_BOOKS_BROWSER_CHECKPOINT.md`.
   Finish EN/ZH continuity/fidelity; no full Books completion claim.
-- Human review of Wave A and Wave B.
+- Human review: Wave A/B.
 - Chinese writing evaluator recall: causes and fix options in
   `ZH_WRITING_EVALUATOR_RECALL.md`; no change until the human chooses a fix.
 - H2, the declared level: `proposals/DECLARED_LEVEL_STORAGE.md`, independently
@@ -120,8 +117,10 @@ human gates. Never touch persistent volumes as cleanup.
 
 Current phase: basic functional coverage first (human instruction, 2026-10-02).
 Preserve accepted Books/Progress; do not reopen them or restart a full-app audit.
-S2 basic Listening is REVIEWABLE; stop deepening it. Next: Admin control-center
-content review/rights/publish gaps, then canonical Grammar/Intelligence.
+S2 basic Listening and S6 Admin media rights/publish are REVIEWABLE; stop deepening
+those bounded paths. Next: Admin import processing/progress refresh and
+Overview/Users/Operations basic control-center journeys, then canonical
+Grammar/Intelligence. Preserve the S6 review checkpoint before a new major slice.
 Deep fidelity/cross-device/edge/performance work follows whole-app basic coverage.
 Captions first; ASR within D-111.6 caps. Activity counts do not prove mastery.
 
