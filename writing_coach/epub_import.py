@@ -212,7 +212,11 @@ def _safe_member_name(name: str) -> str:
     if normalized.startswith("/") or posixpath.isabs(normalized):
         raise EpubImportError("unsafe_archive_entry", name)
     parts = normalized.split("/")
-    if any(part in ("", "..") for part in parts if part != normalized.rstrip("/")) or ".." in parts:
+    # ZIP directories conventionally end in one slash. Only that final empty
+    # component is valid; empty interior components and traversal stay unsafe.
+    if normalized.endswith("/"):
+        parts = parts[:-1]
+    if any(part in ("", "..") for part in parts):
         raise EpubImportError("unsafe_archive_entry", name)
     return normalized
 

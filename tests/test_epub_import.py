@@ -84,6 +84,23 @@ def test_valid_epub_parses_title_author_language_and_chapters():
     assert book.cover is None
 
 
+@pytest.mark.parametrize("language", ["en", "zh"])
+def test_epub_allows_explicit_zip_directory_entries(language):
+    book = parse_epub(_build_epub(opf=_opf(language=language), extra_files={
+        "META-INF/": b"", "OEBPS/": b"", "OEBPS/images/": b"",
+    }))
+    assert book.language == language
+    assert len(book.chapters) == 2
+    assert book.chapters[0].paragraphs == ("First paragraph.", "Second paragraph.")
+
+
+@pytest.mark.parametrize("name", ["../", "OEBPS/../", "/META-INF/", "OEBPS//images/", "OEBPS/../../outside/"])
+def test_epub_rejects_unsafe_directory_entries(name):
+    with pytest.raises(EpubImportError) as excinfo:
+        parse_epub(_build_epub(extra_files={name: b""}))
+    assert excinfo.value.category == "unsafe_archive_entry"
+
+
 def test_cover_image_is_extracted_when_manifest_declares_one():
     cover_bytes = b"\xff\xd8\xff\xe0fakejpegbytes"
     opf = _opf(
