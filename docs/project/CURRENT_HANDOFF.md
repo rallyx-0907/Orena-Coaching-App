@@ -35,6 +35,12 @@ Frame/route/code/status: `docs/design/canonical-ui/IMPLEMENTATION_MAP.md`.
 
 ## Last verified batch
 
+Content readiness (D-121): preparation at admission; learning reads saved artifacts
+and plays original segments. ZH affected import's Listening/Shadowing/Hear/reopen:
+zero preparation routes. EN/VI, viewport controls and independent code review pass.
+Exact local gates/limits: `docs/reviews/CONTENT_READINESS_BROWSER_CHECKPOINT.md`.
+Next: human review, then Product Completion. :8021 restart only; no schema/production.
+
 Admin REVIEWABLE: six areas, sandbox routing, imports/EN/ZH lookup (`2931823`);
 Azure/Skin (`7857d43`) local125/Node/review pass. Azure browser evidence/limits:
 AZURE_VISUAL_SKIN_BROWSER_CHECKPOINT.md. Existing EPUB evidence unchanged.
@@ -108,21 +114,15 @@ human gates. Never touch persistent volumes as cleanup.
 
 ## NEXT EXACT TASK
 
-Admin/Azure REVIEWABLE: preserve `2931823` / `7857d43` and the evidence above.
-OpenAI operator acceptance remains. Visual Skin owns treatment; screen pins own
-composition; approved brand unchanged.
+Preserve Admin/Azure (`2931823`/`7857d43`); OpenAI operator acceptance remains.
 
 Current phase: basic functional coverage first (human instruction, 2026-10-02).
 Preserve accepted Books/Progress; do not reopen them or restart a full-app audit.
 S2 basic Listening and S6 Admin media rights/publish are REVIEWABLE; stop deepening
-those paths. My Library accepted. D-119: Shadowing/Pronunciation share Compare;
-media picker, sentence picker, support meanings, Listen return. ZH video7 lines,
-line2 return22s and desktop/390x844 verified. Local Node/ESM gates pass.
-EN6 lines/IPA/7s, YouTube4 lines verified. Prior EN86/ZH75 retained.
-YouTube NkYwdZhkHF0: original audio + measured word reference now work; line2/3
-browser verified. Private review/embed admission and missing JS runtime fixed.
-Only original video voice (D-120); fresh take pending. Model pitch limited.
-Evidence: COMPARE_MODEL_BROWSER_CHECKPOINT.md.
+those paths. My Library accepted. D-119 shared Compare and D-121 readiness repair:
+review the bounded correction above, then resume basic coverage. Prior EN86/ZH75
+assessment retained; fresh take/full fidelity and optional model pitch remain open.
+Historical evidence: COMPARE_MODEL_BROWSER_CHECKPOINT.md.
 Preserve S6/control plane. Azure review passes; mobile unverified.
 Basic coverage first; ASR within D-111.6 caps.
 

@@ -19,6 +19,13 @@
 }
 
 .s-compare-source { flex: 0 0 auto; margin-bottom: 14px; min-width: 0; }
+.s-compare-body { display: contents; }
+.s-compare-scroll--record { overflow: hidden; }
+.s-compare-scroll--record > .s-compare-record { flex: 1; min-height: 0; }
+.s-compare-record__content { min-height: 64px; overflow-y: auto; }
+.s-compare-scroll--record .s-compare-record__content { flex: 1; }
+.s-compare-record__top, .s-compare-recrow { flex-shrink: 0; }
+.s-compare-scroll--record .s-compare-recrow { flex-wrap: nowrap; }
 .s-compare-source__title { color: var(--muted); font-size: 13px; margin-bottom: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .s-compare-source__actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; min-width: 0; }
 .s-compare-source__actions > .s-compare-ghost { flex: 0 0 auto; padding: 0 14px; }

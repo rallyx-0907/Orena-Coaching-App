@@ -59,6 +59,40 @@ without misattributing or unnecessarily erasing that response.
 
 ## 3. Expensive operation contract
 
+### Content materialization boundary (D-121)
+
+Content admission owns reusable source work. The canonical content-readiness
+contract is `ORENA_CONTENT_ARCHITECTURE.md` §7.1; retain the existing Shared Media
+Learning objects and existing artifact/cache owners, never a Speaking ingestion
+model. Learning APIs are reads of admitted artifacts, not implicit execution APIs.
+
+Use `(content identity, source revision/snapshot, derivative kind, relevant
+language/configuration)` as the result identity. Prerequisite materialization is
+idempotent: check durable results before reserving/dispatching; concurrent consumers
+join the same operation, and uncertain provider outcomes follow §3 rather than
+blind resubmission. Persist successful batches so a retry does not rebill them.
+No in-memory/session TTL or change of capability creates a new source operation.
+
+Preparation records which capabilities and language layers have ready prerequisites.
+Transcript/segment/playback and configured meanings/readings are reusable source
+artifacts. Optional source measurement is not a prerequisite of hearing/imitating
+an original segment; detailed comparison may only claim measurements that exist.
+If canonical seek/playback suffices, no extraction or TTS is required. When a
+separate segment artifact is genuinely necessary, preparation owns its bounded
+creation and persistence before that capability is offered.
+
+Invalidate only affected derivatives on a relevant source/configuration revision;
+rebuild through the content boundary once. Keep an unavailable capability outside
+the learning workspace, with preparation/recovery at the import/content boundary.
+Keep access, rights, revocation and deletion checks on every artifact read.
+Deterministic compatibility projections for previously admitted content cannot
+dispatch a provider or silently mark missing source measurements ready.
+
+New learner recordings, submitted responses and explicit Agent/context questions
+remain independently metered learner operations. These do not authorize source
+reprocessing. This rule adds no automatic provider activation, schema migration,
+source retention permission or competing job framework.
+
 The AI platform retains provider selection/configuration, domain services retain
 input validation and output interpretation. Deterministic workloads stay local.
 No silent paid fallback, provider substitution or runtime activation.

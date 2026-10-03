@@ -323,7 +323,7 @@ def test_model_reference_uses_canonical_word_times_without_provider_assessment(c
 
 
 @pytest.mark.parametrize("alphabet, expected_ipa", [("IPA", "/seɪ/"), ("SAPI", None)])
-def test_model_reference_calls_configured_provider_once_and_rechecks_source(client, monkeypatch, tmp_path, alphabet, expected_ipa):
+def test_model_reference_reads_prepared_artifact_without_provider_and_rechecks_source(client, monkeypatch, tmp_path, alphabet, expected_ipa):
     from types import SimpleNamespace
 
     from writing_coach import media_library_api, speech_api
@@ -376,15 +376,24 @@ def test_model_reference_calls_configured_provider_once_and_rechecks_source(clie
 
     monkeypatch.setattr(speech_api, "_assess", assess)
     first = client.post("/api/speaking/model-reference/upload-owned/owned-line", json={"reference_text": "attacker text"})
+    assert first.json()["reference_available"] is False
+    fingerprint = first.json()["source_fingerprint"]
+    expected_word = {"text": "Say", "offset_ms": 100, "duration_ms": 250, "error_type": "None"}
+    if expected_ipa:
+        expected_word["ipa"] = expected_ipa
+    assets.put(f"speaking/reference/{fingerprint}.json", json.dumps({
+        "model_audio_available": True, "reference_available": True,
+        "score_kind": "measured", "source_fingerprint": fingerprint,
+        "words": [expected_word],
+    }).encode())
     second = client.post("/api/speaking/model-reference/upload-owned/owned-line")
 
     assert first.status_code == second.status_code == 200
     expected_word = {"text": "Say", "offset_ms": 100, "duration_ms": 250, "error_type": "None"}
     if expected_ipa:
         expected_word["ipa"] = expected_ipa
-    assert first.json()["words"] == [expected_word]
-    assert len(calls) == 1
-    assert calls[0][2:] == ("en", "Say this.", False)
+    assert second.json()["words"] == [expected_word]
+    assert calls == [], "reference reads never execute a paid source assessment"
     assert not ({"pron_score", "accuracy_score", "fluency_score"} & set(first.json()))
 
     reads_before_revocation = len(assets.reads)
@@ -400,7 +409,7 @@ def test_model_reference_calls_configured_provider_once_and_rechecks_source(clie
     ("NEEDS_REVIEW", "personal", "processing", "Say this sentence aloud.", False),
     ("NEEDS_REVIEW", "personal", "ready", "", False),
 ])
-def test_youtube_reference_audio_uses_bounded_ephemeral_cache_and_rechecks_access(client, monkeypatch, tmp_path, lesson_status, library, processing, text, allowed):
+def test_youtube_reference_read_never_reacquires_source_and_rechecks_access(client, monkeypatch, tmp_path, lesson_status, library, processing, text, allowed):
     from writing_coach import media_library_api
     from writing_coach.media_library_store import MediaLibraryEntry
     from writing_coach.media_providers import youtube_audio
@@ -449,24 +458,9 @@ def test_youtube_reference_audio_uses_bounded_ephemeral_cache_and_rechecks_acces
         return
     second = client.get("/api/speaking/model-audio/youtube-abcd1234567/line")
 
-    assert first.status_code == second.status_code == 200
-    assert len(downloads) == 1
-    assert downloads[0] == (entry.canonical_url, 17)
-    assert list(tmp_path.glob("youtube-*.src")), "prepared source audio stays in the ephemeral model cache"
-    assert assets.items == {}, "source audio must not be written to durable media storage"
-    assert assets.reads == [], "source audio must not be read from durable media storage"
-    import os
-    import time
-
-    cached_audio = next(tmp_path.glob("youtube-*.src"))
-    expired_at = time.time() - speaking_library._YOUTUBE_SOURCE_CACHE_TTL_SECONDS - 1
-    os.utime(cached_audio, (expired_at, expired_at))
-    assert client.get("/api/speaking/model-audio/youtube-abcd1234567/line").status_code == 200
-    assert len(downloads) == 2, "expired source audio is prepared again through the bounded resolver"
-    monkeypatch.setattr(media_library_api, "find_entry", lambda _media_id: None)
-    assert client.get("/api/speaking/model-audio/youtube-abcd1234567/line").status_code == 404
-    assert len(downloads) == 2, "revoked access must be rejected before ephemeral cache reuse"
-
+    assert first.status_code == second.status_code == 502
+    assert downloads == [], "use admitted canonical YouTube playback, never reacquire on read"
+    assert assets.items == {}
 
 def test_youtube_audio_rejects_non_youtube_source_and_long_reference_line(client, monkeypatch, tmp_path):
     from dataclasses import replace

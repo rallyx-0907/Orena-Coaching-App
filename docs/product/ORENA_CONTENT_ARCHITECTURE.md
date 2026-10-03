@@ -467,6 +467,42 @@ definition of Listening itself.
 
 ---
 
+## 7.1 Content readiness and reusable source artifacts (D-121)
+
+**Import/preparation happens at the content boundary. Learning happens after
+readiness.** This applies to curated and imported media and to every supported
+capability consuming the same Shared Media Learning object.
+
+Admission materializes and persists the prerequisites of the capabilities the
+item actually offers: canonical identity and source revision/snapshot, transcript
+and segment timing, original playback/seek information, configured support-language
+meanings and readings, and required source-derived learning metadata. A separate
+segment audio artifact is required only when canonical playback cannot serve the
+learning interaction; it is prepared once before admission, never on Shadowing
+entry. Missing optional measured word timing/pitch is unavailable, never invented.
+An item cannot advertise a capability whose required artifacts are not ready.
+
+The reusable identity is **content identity + source revision + derivative kind
++ relevant language/configuration**. Compute a required derivative once, persist
+the result through its existing owner/storage abstraction, and reuse it across
+Listening, Dictation, Shadowing/Pronunciation, Respond/Writing, contextual
+vocabulary/grammar and later returns. UI locale changes alone do not invalidate
+source artifacts. Relevant revision/configuration changes invalidate and rebuild
+once through content preparation, never through each consuming workspace.
+
+Navigation, refreshing, switching capabilities and reopening tomorrow are reads;
+they do not dispatch ingestion, ASR, translation, TTS or paid source assessment.
+Source execution must deduplicate concurrent/retried work under the execution
+contract; a browser cache is an optimization, never the durability guarantee.
+Do not eagerly call every provider for every import. Only prerequisites required
+by offered capabilities and configured language layers are materialized.
+
+For media Shadowing, Hear model plays the original selected canonical media
+segment. It never synthesizes text as a replacement voice. Learner-specific
+work remains distinct: a new recording, submitted writing response or explicit
+Agent/context question may legitimately execute its own assessment/feedback/model
+request. Merely opening its source does not.
+
 # 8. Speaking content — the Speaking Library
 
 Speaking is not just Listening reused. It should contain its own learning

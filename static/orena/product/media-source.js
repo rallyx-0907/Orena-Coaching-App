@@ -2,9 +2,8 @@
    Detail, Respond). The same three sources the old Encounter opened (ui/encounter.js), so an
    imported item opens through the canonical flow instead of being assumed a curated lesson:
 
-   - `url:<link>`      a source the learner pasted: re-acquired from its provider
-                       (capabilities/media-acquisition.js -> POST /api/media-learning/import, then
-                       /import/status while the backend's own job is resumable);
+   - `url:<link>`      a saved source reference: read its already prepared personal
+                       record (GET /api/media/source), never acquire from a workspace;
    - `upload:<id>`     a file the learner uploaded, Orena's own stored content: resolved by identity
                        (GET /api/media/my/<id>), with no provider and possibly no transcript;
    - anything else     a curated or shared lesson id (GET /api/listening/library/<id>). A bare
@@ -13,11 +12,10 @@
 
    All three answer the one acquisition payload shape (asset / playback / transcript / translations),
    so the room that renders it does not care which it was. */
-import { acquireMedia } from '../capabilities/media-acquisition.js';
 import { isRemovedContent, removedImportError } from './import-removed.js';
 
 // Session-only projections of server records, never a learner-data authority.
-// Sharing a ready response avoids repeating translation on each workspace handoff.
+// Sharing a ready response avoids transport reads, never substitutes for durable artifacts.
 const sessions = new Map();
 const SESSION_TTL_MS = 5 * 60 * 1000;
 const sessionKey = (id, {owner = 'local', language = '', support = ''}) =>
@@ -36,16 +34,17 @@ export function mediaRef(id) {
   return { kind: 'lesson', value };
 }
 
-/* `support` is the learner's support language: the target a provider source's meanings are
-   translated into. `language` is the learning language: it keys the resumable-job handle with the
-   owner, so the same link in another language never resumes the wrong job. */
+/* Support and learning language select persisted projections, never processing jobs. */
 export async function openMedia(id, { api, support = '', language = '', owner = 'local', alive = () => true, onProgress = () => {} } = {}) {
   const ref = mediaRef(id);
   if (!ref.value) throw new Error('No media id');
   // A deleted import is never re-acquired or re-read from a stale route (D-107).
   if (isRemovedContent(id)) throw removedImportError();
   if (ref.kind === 'url') {
-    return acquireMedia({ api, url: ref.value, target: support, owner, language, alive, onProgress });
+    // Old saved URL memberships are references, never new import instructions.
+    const payload=await api.mediaSource(ref.value,support);
+    if (isRemovedContent(id)) throw removedImportError();
+    return payload;
   }
   const options = {owner, language, support};
   const key = sessionKey(id, options);

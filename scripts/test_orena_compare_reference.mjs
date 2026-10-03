@@ -30,24 +30,19 @@ const api={
 };
 const options={api,support:'vi',fetchImpl:async()=>({ok:true,blob:async()=>new Blob(['real source'])}),
   decode:async()=>({duration:1.4}),analyse:()=>({duration:1.4,contour:[]})};
-const prepared=await loadComparisonReference(source,options);
-assert.equal(prepared.words.length,5);
-assert.equal(prepared.readings.year,'/jɪr/');
-assert.equal(readingFor('and',prepared,'en',9),'/ənd/','IPA from the source reference stays tied to its word position');
-assert.equal(lookups,3,'look up unique words, not each repeat');
-assert.equal(assessments,1);assert.equal(saves,0);
 const canonical={...source,line:{...source.line,wordTimings:modelWords}};
-await loadComparisonReference(canonical,options);
-assert.equal(assessments,1,'canonical model word intervals avoid paid re-analysis');
-const rejected=await loadComparisonReference(source,{...options,api:{...api,speakingModelReference:async()=>({score_kind:'synthetic_demo',words:[]})}});
-assert.equal(rejected.words.length,0,'demo measurements never become model evidence');
-assert.equal(rejected.alignmentState,'unavailable');
-const chinese=await loadComparisonReference({language:'zh',hasModelAudio:false,line:{text:'银行行走'}},{api:{
-  annotateMediaText:async()=>({text:'银行行走',annotations:[{start:0,end:2,pronunciation:'yín háng'},{start:2,end:4,pronunciation:'xíng zǒu'}]}),
-  wordDetail:async()=>{throw Error('position readings should avoid extra dictionary requests');},
-}});
+const prepared=await loadComparisonReference(canonical,options);
+assert.equal(prepared.words.length,5);
+assert.equal(lookups,0,'opening a line does not recreate dictionary derivatives');
+assert.equal(assessments,0,'canonical source words require no paid assessment');
+assert.equal(saves,0);
+const missing=await loadComparisonReference(source,options);
+assert.equal(missing.words.length,0,'missing optional source timing does not trigger generation');
+assert.equal(missing.alignmentState,'unavailable');
+assert.equal(assessments,0);
+const chinese=await loadComparisonReference({language:'zh',hasModelAudio:false,line:{text:'银行行走',reading:'yín háng xíng zǒu'}},options);
 assert.equal(readingFor('行',chinese,'zh',1),'háng');
-assert.equal(readingFor('行',chinese,'zh',2),'xíng','heteronyms follow their actual phrase position');
+assert.equal(readingFor('行',chinese,'zh',2),'xíng','heteronyms follow persisted phrase positions');
 setRemovedImports([], 'tester:en');
 await comparisonReference(source,{...options,owner:'tester'});
 setRemovedImports(['upload:a'], 'tester:en');

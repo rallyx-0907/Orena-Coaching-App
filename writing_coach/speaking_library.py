@@ -283,7 +283,7 @@ def _youtube_source_file(
     expected_video_id: str = "",
     access_check: Any = None,
 ) -> Path:
-    """Prepare bounded YouTube audio in the existing ephemeral model cache."""
+    """Read a previously prepared compatibility cache; never acquire a source."""
     from writing_coach.media_providers.youtube import parse_youtube_video_id, recognizes_youtube_url
     from writing_coach.media_ingestion import ProviderUrlMalformed
 
@@ -299,43 +299,10 @@ def _youtube_source_file(
     target = _MODEL_CACHE / f"youtube-{identity}.src"
     if access_check is not None:
         access_check()
-    with _MODEL_LOCK:
-        _prune_youtube_source_cache()
-        if target.is_file():
-            target_stat = target.stat()
-            if time.time() - target_stat.st_mtime > _YOUTUBE_SOURCE_CACHE_TTL_SECONDS:
-                target.unlink(missing_ok=True)
-            elif target_stat.st_size > _MAX_SOURCE_BYTES:
-                target.unlink(missing_ok=True)
-                raise ModelAudioUnavailable("prepared source audio is unavailable")
-        if not target.is_file():
-            from writing_coach.media_providers.youtube_audio import download_audio
-            from writing_coach.media_transcript_pipeline import PipelineStop, _env_int
-            from writing_coach.media_timing import MediaAudioResolutionFailed
-            from yt_dlp.utils import DownloadError
-
-            max_seconds = _env_int("MEDIA_ASR_MAX_SECONDS", 5400)
-            try:
-                with tempfile.TemporaryDirectory(prefix="orena-speaking-source-") as work:
-                    downloaded = download_audio(source_url, Path(work), max_seconds=max_seconds)
-                    if not downloaded.is_file() or downloaded.stat().st_size > _MAX_SOURCE_BYTES:
-                        raise ModelAudioUnavailable("bounded source audio preparation failed")
-                    data = downloaded.read_bytes()
-            except (PipelineStop, MediaAudioResolutionFailed, DownloadError, OSError, UnsafeMediaFetch, ValueError) as exc:
-                raise ModelAudioUnavailable("bounded source audio preparation failed") from exc
-            if not data or len(data) > _MAX_SOURCE_BYTES:
-                raise ModelAudioUnavailable("bounded source audio preparation failed")
-            if access_check is not None:
-                access_check()
-            _MODEL_CACHE.mkdir(parents=True, exist_ok=True)
-            partial = target.with_suffix(".part")
-            try:
-                partial.write_bytes(data)
-                partial.replace(target)
-            except OSError as exc:
-                partial.unlink(missing_ok=True)
-                raise ModelAudioUnavailable("prepared source audio could not be cached") from exc
-            _prune_youtube_source_cache(preserve=target)
+    # This compatibility read never downloads. The canonical YouTube player is
+    # the model in learning workspaces; source acquisition belongs to import.
+    if not target.is_file() or target.stat().st_size > _MAX_SOURCE_BYTES:
+        raise ModelAudioUnavailable("use canonical source playback")
     if access_check is not None:
         access_check()
     return target
@@ -708,8 +675,6 @@ def read_model_reference(lesson_id: str, segment_id: str) -> dict[str, Any]:
             "words": canonical,
         }
 
-    from types import SimpleNamespace
-
     from writing_coach import speech_api
 
     try:
@@ -728,7 +693,6 @@ def read_model_reference(lesson_id: str, segment_id: str) -> dict[str, Any]:
     if len(line.reference_text) > min(_MAX_REFERENCE_CHARS, provider_limit):
         raise orena_http_error(422, "speaking_reference_invalid", "This model line is too long to align.")
 
-    phoneme_alphabet = _provider_phoneme_alphabet(provider, line.language)
     provider_config = _provider_cache_identity(provider, line.language)
     fingerprint = hashlib.sha256(
         f"{audio_digest}\0{line.reference_text}\0{line.language}\0{provider_config}".encode()
@@ -740,71 +704,18 @@ def read_model_reference(lesson_id: str, segment_id: str) -> dict[str, Any]:
         _recheck_model_line(line, lesson_id, segment_id)
         return cached
 
-    try:
-        result = speech_api._assess(
-            provider,
-            audio,
-            SimpleNamespace(filename="model.webm", content_type="audio/webm"),
-            line.language,
-            line.reference_text,
-            False,
-        )
-    except Exception:
-        _recheck_model_line(line, lesson_id, segment_id)
-        raise
-    _recheck_model_line(line, lesson_id, segment_id)
-    if str(getattr(result, "score_kind", "")).casefold() != "measured":
-        raise orena_http_error(503, "pronunciation_unconfigured", "Measured pronunciation timing is not available.")
-    words: list[dict[str, Any]] = []
-    for word in getattr(result, "words", ()):
-        text = str(getattr(word, "word", "") or "").strip()
-        error_type = str(getattr(word, "error_type", "None") or "None")[:60]
-        offset_ms = getattr(word, "offset_ms", None)
-        duration_ms = getattr(word, "duration_ms", None)
-        if error_type.casefold() == "insertion":
-            continue
-        if (
-            not text
-            or not isinstance(offset_ms, int)
-            or isinstance(offset_ms, bool)
-            or not isinstance(duration_ms, int)
-            or isinstance(duration_ms, bool)
-            or offset_ms < 0
-            or duration_ms <= 0
-            or offset_ms + duration_ms > _MAX_REFERENCE_MS + 500
-        ):
-            continue
-        projected_word = {
-            "text": text[:120],
-            "offset_ms": offset_ms,
-            "duration_ms": duration_ms,
-            "error_type": error_type,
-        }
-        if phoneme_alphabet == "IPA":
-            phoneme_values = [
-                str(getattr(phoneme, "phoneme", "") or "").strip()
-                for phoneme in getattr(word, "phonemes", ())
-            ]
-            phoneme_values = [value for value in phoneme_values if value]
-            if phoneme_values:
-                projected_word["ipa"] = f"/{''.join(phoneme_values)}/"
-        words.append(projected_word)
-    if not words:
-        raise orena_http_error(503, "pronunciation_provider_malformed", "Measured word timing is unavailable.", retryable=True)
-    body = {
+    # Learning consumes admitted reference artifacts. A cache miss cannot turn
+    # this source read into a new paid pronunciation assessment. Canonical
+    # transcript words above remain usable without optional provider alignment.
+    return {
         "model_audio_available": True,
-        "reference_available": True,
-        "score_kind": "measured",
+        "reference_available": False,
+        "score_kind": "unavailable",
         "source_fingerprint": fingerprint,
-        "words": words,
+        "words": [],
     }
-    _recheck_model_line(line, lesson_id, segment_id)
-    try:
-        _write_reference_cache(asset_store, cache_key, body)
-    except OSError as exc:
-        raise orena_http_error(503, "speaking_reference_cache_unavailable", "Model timing is not ready.", retryable=True) from exc
-    _recheck_model_line(line, lesson_id, segment_id)
-    return body
+
+
 
 
 def model_line_audio(lesson_id: str, segment_id: str) -> bytes:

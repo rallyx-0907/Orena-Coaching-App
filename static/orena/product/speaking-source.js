@@ -8,9 +8,9 @@
      not a bug (`writing_coach/speaking_library.py#SpeakingLine` carries text/reading/translations,
      never audio).
    - `media:<lessonId>` - any usable transcript-backed Listening source
-     (`GET /api/listening/library/{lessonId}`); its own clip is the model, cut and served
-     same-origin (`/api/speaking/model-audio/{lessonId}/{segmentId}`) so the browser can measure
-     its own waveform/pitch (`capabilities/audio-analysis.js`) rather than trust a synthesized one.
+     (`GET /api/listening/library/{lessonId}`); its canonical playback and segment
+     bounds are the model. Prepared word measurements are optional; entering
+     Speaking never extracts, downloads or assesses the source (D-121).
    - a bare id with neither prefix - Progress's own speaking-evidence rows link here with a bare
      Listening asset id (`screens/progress/screen.js#openRoute`, `ctx.href('speak', { id:
      item.assetId })`), not the `speak:`/`media:` convention every other entry point
@@ -69,9 +69,9 @@ export function sourceFromCatalogItem(item, support) {
    said; otherwise no reading, never somebody else's. */
 function lineReading(segment, spokenText, catalog) {
   const whole = catalog.pinyin_by_segment?.[segment.segment_id] || '';
-  if (whole && spokenText === segment.original_text) return whole;
   const chars = readingsFor(spokenText, segment.original_text, catalog.pinyin_chars_by_segment?.[segment.segment_id]);
   if (chars.length) return chars.map((item) => item?.pinyin || '').join(' ');
+  if (whole && spokenText === segment.original_text) return whole;
   return '';
 }
 
@@ -96,12 +96,14 @@ export function sourceFromLesson(lessonId, payload, segmentId = '', support = ''
     assetId: asset.asset_id || '',
     lines: segments.map((item,index)=>({lineId:item.segment_id,ordinal:index+1,text:catalog.spoken_text_by_segment?.[item.segment_id] || item.original_text || ''})),
     hasModelAudio: playbackAvailable(payload?.playback),
+    playback: payload.playback,
     modelAudioUrl: (lineId) => `/api/speaking/model-audio/${encodeURIComponent(lessonId)}/${encodeURIComponent(lineId)}`,
     line: {
       lineId: segment.segment_id,
       ordinal: at + 1,
       text: spokenText,
       reading: lineReading(segment, spokenText, catalog),
+      positionReadings: spokenText === segment.original_text ? catalog.readings_by_segment?.[segment.segment_id] || [] : [],
       // Use Listening's support-language encounter translations; never guess a meaning.
       meaning: encounter(payload, support).meaning(segment.segment_id) || '',
       startMs: segment.start_ms,
@@ -138,6 +140,6 @@ export async function loadSpeakingSource(id, { api, support, language, owner = '
   }
   const { lessonId, payload } = parsed.unprefixed ? await lessonFor(parsed.rawId, { api, support, language, owner }) : { lessonId: parsed.rawId, payload: await openMedia(parsed.rawId, {api, support, language, owner}) };
   const source = sourceFromLesson(lessonId, payload, segmentId, support);
-  if (!source || (language && source.language && source.language !== language)) throw new Error('speaking_lesson_unavailable');
+  if (!source || !source.hasModelAudio || (language && source.language && source.language !== language)) throw new Error('speaking_lesson_unavailable');
   return source;
 }

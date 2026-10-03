@@ -106,16 +106,25 @@ Discover's Listen/Watch tab. ZH real video (7 segments), second-line selection,
 return to Listening at22s and desktop/390x844 entry browser verified; EN video6
 lines, IPA and line2 return7s verified. EN/ZH mapping gates pass locally.
 New recording through the merged entry remains to
-verify; previous real EN/ZH assessments are preserved evidence. This video serves
-model audio200 but model-reference422: word alignment unavailable/retry shown.
+verify; previous real EN/ZH assessments are preserved evidence.
 YouTube import (Me at the zoo,4 lines) also browser-opens the shared recorder;
 regional language tags and supported embeds share Listening's validated gates.
-Current correction (2026-10-03): imported YouTube NkYwdZhkHF0 now prepares original
-audio and measured word alignment; line2/3 browser-ready with pinyin/support meaning.
+Current correction (2026-10-04, D-121): imported YouTube NkYwdZhkHF0 reuses canonical
+original segment playback in Compare and Scripted Pronunciation. Workspace entry
+does not extract/download/assess source audio or translate missing source meanings.
+Configured translation and language readings are materialized at content preparation;
+legacy IPA reuses persisted dictionary facts only, and missing optional readings,
+measured word intervals/model contour remain unavailable without workspace work.
+ZH Listening -> Shadowing line2 -> Hear -> leave/reopen/reload/restart verified;
+source-preparation routes zero, Pinyin/meaning and segment identity preserved.
+EN canonical VIDEO playback and Vietnamese interface verified. At390x844, Hear
+and Record stay visible, long text/meaning scroll inside the card.
 Private ready transcripts awaiting public rights review no longer fail Speaking;
 YouTube embed audio admission and absent JS runtime corrected. Image definition includes Node24
 and bundled yt-dlp EJS. Only original video voice is permitted (D-120).
-Local37 Python tests and Compare/copy/media-speaking gates pass. No fresh take claimed.
+Bounded local checks and independent code review pass; full-suite inherited failures
+and exact evidence are recorded in CONTENT_READINESS_BROWSER_CHECKPOINT.md.
+No fresh learner assessment or whole-product fidelity/completion claim.
 Prior take 83/history is historical after sandbox QA database loss. Evidence:
 `docs/reviews/COMPARE_MODEL_BROWSER_CHECKPOINT.md` and the prior Library checkpoint.
 

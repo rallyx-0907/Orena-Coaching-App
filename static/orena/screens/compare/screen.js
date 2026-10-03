@@ -13,13 +13,13 @@
 import { html, mount, raw, cls } from '../../kit/html.js';
 import { icon } from '../../kit/icons.js';
 import { useStyles } from '../../kit/styles.js';
-import { loadingMarkup } from '../../kit/states.js';
 import { langAttr } from '../../kit/lang.js';
 import { toast } from '../../kit/toast.js';
 import { shellCopy } from '../../copy/shell.js';
 import { languages } from '../../copy/index.js';
 import { api } from '../../infrastructure/api.js';
 import { registerActionHandler } from '../../agent/dispatcher.js';
+import { originalSegmentPlayer } from '../../product/original-segment-player.js';
 import { loadSpeakingSource, segmentOf } from '../../product/speaking-source.js';
 import { lineUnits } from '../../product/speaking-line.js';
 import { comparisonReference, decorateComparison, pairWord, pairedTiming, readingFor } from '../../product/compare-reference.js';
@@ -55,11 +55,12 @@ function errorLabel(errorType) {
 
 export default async function mountCompareWithModel(element, ctx) {
   await useStyles('screens/compare/compare.css');
+  await useStyles('capabilities/original-segment-player.css');
   const language = ctx.context?.language || 'en';
   const { ui, support } = languages();
   const segmentId = segmentOf(ctx.query);
 
-  mount(element, loadingMarkup(shellCopy('loadingLesson')));
+  mount(element, '');
   element.classList.add('s-compare-root');
 
   const source = await loadSpeakingSource(ctx.params.id, { api, support, language, owner: ctx.context.owner || 'local', segmentId });
@@ -73,6 +74,10 @@ export default async function mountCompareWithModel(element, ctx) {
   const key = lineKey(source.sourceId, source.line.lineId);
   let takes = await listTakes(key);
   if (!ctx.isCurrent()) return undefined;
+  mount(element,'');
+  const renderRoot=document.createElement('div');
+  renderRoot.className='s-compare-body';
+  element.append(renderRoot);
 
   const requested = ctx.query.get('attempt');
   let selectedId = takes.some((item) => item.id === requested) ? requested : takes[0]?.id || '';
@@ -92,46 +97,19 @@ export default async function mountCompareWithModel(element, ctx) {
   let tileWidth = Math.max(1, element.clientWidth - 48);
   let sizing = null;
   let reference = null;
-  let showReferenceWait = false;
-  let referenceTimer = 0;
+  const originalPlayer = originalSegmentPlayer(source);
+
 
   const q = (selector) => element.querySelector(selector);
   const takeOf = (id) => takes.find((item) => item.id === id) || null;
   const selectedTake = () => takeOf(selectedId);
   const viewNow = () => decorateComparison(viewOfTake(selectedTake()), source, reference);
   const modelWordFor = (word) => pairWord(source.line.text, viewNow()?.words || [], word?.index, reference?.words || [], language);
-  const referencePending = () => !reference || ['readingState','audioState','alignmentState'].some(key=>reference[key]==='processing');
-
-  async function prepareReference(fresh = false) {
-    clearTimeout(referenceTimer);
-    if (fresh) reference=null;
-    referenceTimer=setTimeout(()=>{if(ctx.isCurrent()){showReferenceWait=true;paint();}},2300);
-    let value;
-    try {
-      value=await comparisonReference(source,{api,support,owner:ctx.context.owner || 'local',fresh,
-        onUpdate(next){if(ctx.isCurrent()){reference=next;paint();}},
-      });
-    } catch(error) {
-      clearTimeout(referenceTimer);
-      if (!ctx.isCurrent()) return;
-      if (error.status === 404) { ctx.go(ctx.href('library')); return; }
-      value={readings:{},positionReadings:[],words:[],model:null,readingState:'unavailable',audioState:'unavailable',alignmentState:'unavailable'};
-    }
-    clearTimeout(referenceTimer);
-    if(ctx.isCurrent()){reference=value;showReferenceWait=false;paint();}
+  async function readReference() {
+    reference=await comparisonReference(source,{owner:ctx.context.owner || 'local',support});
+    if(ctx.isCurrent()) paint();
   }
 
-  function referenceStatusMarkup() {
-    if (referencePending()) {
-      if (!showReferenceWait) return '';
-      const states=['readingState','audioState','alignmentState'];
-      const done=states.filter(key=>reference && reference[key]!=='processing').length;
-      const label=t(!reference || reference.audioState==='processing'?'referenceAudio':reference.alignmentState==='processing'?'referenceAlignment':'referenceReading');
-      return html`<div class="o-processing s-compare-reference" role="status" aria-live="polite"><span>${label}</span><progress class="o-loading__progress" max="3" value="${done}" aria-label="${label}"></progress></div>`;
-    }
-    if (source.hasModelAudio && reference?.alignmentState==='unavailable') return html`<div class="s-compare-error">${t('referenceFailed')} <button type="button" class="s-compare-ghost" data-reference-retry data-fk="reference-retry">${t('retryReference')}</button></div>`;
-    return '';
-  }
   const openWord = () => {
     const view = viewNow();
     if (playWord != null && view?.words?.[playWord]) return playWord;
@@ -216,6 +194,7 @@ export default async function mountCompareWithModel(element, ctx) {
 
   /* ---- Playback ---- */
   function stopPlay() {
+    originalPlayer?.stop();
     finishAudio?.();
     finishAudio=null;
     playToken++;
@@ -256,7 +235,7 @@ export default async function mountCompareWithModel(element, ctx) {
     });
   }
   const playModelLine = (token) => {
-    if (source.hasModelAudio) return playFile(source.modelAudioUrl(source.line.lineId), token);
+    if (source.hasModelAudio && alive(token)) return originalPlayer.play({speed});
     toast(t('modelUnavailable'));
     return Promise.resolve();
   };
@@ -288,7 +267,7 @@ export default async function mountCompareWithModel(element, ctx) {
           playWord = word.index;
           paint();
           const modelWord = modelWordFor(word);
-          if (modelWord) await playFile(source.modelAudioUrl(source.line.lineId), token, wordSpan(modelWord));
+          if (modelWord) await originalPlayer.play({...wordSpan(modelWord),speed});
           if (word.offsetKnown) await playFile(take.url, token, wordSpan(word));
         }
       }
@@ -313,7 +292,7 @@ export default async function mountCompareWithModel(element, ctx) {
   function hearWordModel(word) {
     stopPlay();
     const modelWord = modelWordFor(word);
-    if (modelWord) void playFile(source.modelAudioUrl(source.line.lineId), playToken, wordSpan(modelWord));
+    if (modelWord) void originalPlayer.play({...wordSpan(modelWord),speed});
     else toast(t('modelWordUnavailable'));
   }
 
@@ -377,9 +356,10 @@ export default async function mountCompareWithModel(element, ctx) {
           <button type="button" class="s-compare-speed" data-fk="speed" data-speed>${t('speedUnit', { n: speed })}</button>
         </div>
       </div>
-      <div class="s-compare-tokens">${tokensMarkup()}</div>
+      <div class="s-compare-record__content"><div class="s-compare-tokens">${tokensMarkup()}</div>
       ${support !== language ? html`<p class="s-compare-note" lang="${langAttr(support)}">${source.line.meaning || t('meaningUnavailable')}</p>` : ''}
       ${source.hasModelAudio ? '' : html`<p class="s-compare-note">${t('modelUnavailable')}</p>`}
+      </div>
       <div class="s-compare-recrow">
         <button type="button" class="s-compare-mic${recording ? ' is-rec' : ''}" data-fk="mic" data-mic aria-pressed="${recording}" aria-label="${recording ? t('stop') : t('record')}"${processing ? raw(' disabled') : ''} style="${recording ? `box-shadow:0 0 0 ${Math.round(4 + Math.max(...rec.levels, 0) * 18)}px var(--ring),var(--sh2)` : ''}">${recording ? html`<span class="s-compare-mic__stop"></span>` : raw(icon('mic', { size: 28 }))}</button>
         <div class="s-compare-recrow__status">
@@ -614,8 +594,9 @@ export default async function mountCompareWithModel(element, ctx) {
     const result = Boolean(take && view?.measured);
     const showRecord = !result || recording || processing || Boolean(errorText);
 
+    originalPlayer?.park(element);
     mount(
-      element,
+      renderRoot,
       html`<div class="s-compare-header">
         <button type="button" class="o-iconbtn o-iconbtn--back" data-back aria-label="${shellCopy('back')}">${raw(icon('arrow-left', { size: 21 }))}</button>
         <div class="s-compare-title-block"><div class="s-compare-title">${source.lessonId ? t('practiceTitle') : t('title')}</div><div class="s-compare-note">${t('subtitle')}</div></div>
@@ -623,8 +604,8 @@ export default async function mountCompareWithModel(element, ctx) {
         <button type="button" class="s-compare-history" data-attempts>${t('attemptHistory')}</button>
       </div>
       ${sourceNavigation()}
-      <div class="s-compare-scroll" data-scroll-region>
-        ${referenceStatusMarkup()}
+      <div class="s-compare-scroll${showRecord ? ' s-compare-scroll--record' : ''}" data-scroll-region>
+        ${source.playback?.kind === 'embed' ? html`<div data-original-player></div>` : ''}
         ${showRecord ? recordCard() : ''}
         ${errorText ? html`<div class="s-compare-error"><b>${t('errorTitle')}</b> ${errorText}</div>` : ''}
         ${result ? summaryMarkup(view, take) : ''}
@@ -632,6 +613,10 @@ export default async function mountCompareWithModel(element, ctx) {
       </div>
       ${result ? barMarkup() : ''}`,
     );
+    if (originalPlayer) {
+      if(source.playback.kind === 'embed') originalPlayer.attach(q('[data-original-player]'));
+      else originalPlayer.attach(element);
+    }
     bind();
     const region = q('[data-scroll-region]');
     if (region) region.scrollTop = scrollTop;
@@ -675,7 +660,6 @@ export default async function mountCompareWithModel(element, ctx) {
     q('[data-source-select]')?.addEventListener('change',event=>goLine(event.target.value));
     q('[data-listen-source]')?.addEventListener('click',()=>ctx.go(ctx.href('listening',{id:source.lessonId},lineQuery)));
     q('[data-choose-media]')?.addEventListener('click',()=>ctx.go(ctx.href('discover',{}, {tab:'listen'})));
-    q('[data-reference-retry]')?.addEventListener('click',()=>void prepareReference(true));
     q('[data-back]').addEventListener('click', () => ctx.back());
     q('[data-attempts]').addEventListener('click', () => ctx.go(ctx.href('attempts', { id: ctx.params.id }, { ...lineQuery, attempt: selectedId })));
     element.querySelectorAll('[data-select]').forEach((button) => button.addEventListener('click', () => select(button.dataset.select)));
@@ -730,7 +714,7 @@ export default async function mountCompareWithModel(element, ctx) {
   });
   sizing.observe(element);
   sizing.observe(q('[data-scroll-region]'));
-  void prepareReference();
+  void readReference();
 
   const releasers = [
     registerActionHandler('play_model', () => {
@@ -761,7 +745,7 @@ export default async function mountCompareWithModel(element, ctx) {
   ];
 
   return () => {
-    clearTimeout(referenceTimer);
+    originalPlayer?.dispose();
     sizing.disconnect();
     releasers.forEach((release) => release());
     recorder.dispose();

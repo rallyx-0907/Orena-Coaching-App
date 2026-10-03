@@ -4008,3 +4008,21 @@ Visual Skin EN/ZH owns treatment, approved brand remains unchanged.
 the original video voice. Do not replace an unusable source excerpt with generated
 speech or present synthetic timing/pitch as original evidence. A line that cannot
 be prepared has a truthful learner-facing state and another-line/retry action.
+
+## D-121 - Content readiness precedes learning; reusable source work is materialized once
+
+2026-10-03, explicit human instruction repairing the imported-media Shadowing
+regression. Import/preparation happens at the content boundary; learning happens
+after readiness. Required source artifacts use stable content/revision/kind/
+language/config identity and existing storage/execution owners, are materialized
+once and reused across capabilities and returns. Navigation cannot acquire,
+transcribe, translate, synthesize or assess the source again. No blanket provider
+fan-out during import. Canonical original segment playback is Shadowing's model;
+separate segment audio is prepared only when genuinely required, before admission.
+New learner recordings/responses/questions remain legitimate new compute.
+
+Content Architecture §7.1 and Content Execution Architecture §3 own the contract;
+Design Contract carries only the workspace consequence. Shared Media Learning
+remains the media owner. This supersedes D-120's source-preparation retry inside
+learning, while preserving its original-voice rule, rights/access gates and truthful
+unavailable optional measurements. It authorizes no new schema or retention policy.

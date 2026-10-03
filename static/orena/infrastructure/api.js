@@ -379,6 +379,7 @@ export const api={
   // The admin routes are admin-gated server-side, not here.
   mediaMy:(mediaId,support='')=>request(`/api/media/my/${encodeURIComponent(mediaId)}${support?`?target_language=${encodeURIComponent(support)}`:''}`),
   prepareMedia:(payload)=>request('/api/media-learning/source',{method:'POST',headers:JSON_HEADERS,body:JSON.stringify(payload)}),
+  mediaSource:(url,target)=>request(`/api/media/source?source_url=${encodeURIComponent(url)}&target_language=${encodeURIComponent(target||'')}`),
   /* The owner-scoped delete of a learner's own stored upload (404 for anything else); idempotent. */
   deleteMyMedia:(mediaId)=>request(`/api/media/my/${encodeURIComponent(mediaId)}`,{method:'DELETE'}),
   mediaUpload:(file,language)=>{

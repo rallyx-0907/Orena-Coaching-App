@@ -286,6 +286,12 @@ the design project `e6dc1cb2-72d0-40b4-a916-5dcd47e17cc0` in Claude Design,
 
 ## The learner language contract
 
+**Content readiness (D-121).** Learning workspaces never expose source-preparation
+or provider/job progress UI for already-admitted content. Preparation belongs to
+import/content readiness; required learning controls are usable on entry. An
+unready capability stays outside the workspace. Learner recording/submission
+assessment retains its own action-specific processing state.
+
 Orena has three language layers, and none is inferred from another (D-079;
 `docs/product/ORENA_LANGUAGE_COHERENCE.md` owns the full contract).
 

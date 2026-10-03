@@ -97,6 +97,7 @@ from writing_coach.listening_api import (
     configure_listening_progress,
     configure_listening_translation_cache,
     stored_media_payload,
+    prepare_media_meanings,
     router as listening_progress_router,
 )
 from writing_coach.media_library_api import (
@@ -623,6 +624,8 @@ _media_pipeline = MediaPipeline(
     asr=_speech_asr_provider,
     ingestion=_media_ingestion_service,
     youtube_audio=download_audio,
+    meanings=prepare_media_meanings,
+    english_reading=lambda word: lookup_dictionary(word, language="en", allow_ai=False, persist=False).get("phonetic", ""),
     workers=1,
 )
 configure_media_library(
@@ -1985,7 +1988,7 @@ def chinese_dictionary_ai(word: str) -> dict[str, Any]:
     return result
 
 
-def lookup_dictionary(word: str) -> dict[str, Any]:
+def lookup_dictionary(word: str, *, language: str | None = None, allow_ai: bool = True, persist: bool = True) -> dict[str, Any]:
     clean = normalise_lookup_word(word)
     cache_key = clean.casefold()
 
@@ -2002,7 +2005,7 @@ def lookup_dictionary(word: str) -> dict[str, Any]:
 
     payload = None
 
-    if is_chinese():
+    if language == "zh" or (language is None and is_chinese()):
         try:
             payload = chinese_dictionary_ai(clean)
             payload["cached"] = False
@@ -2062,6 +2065,8 @@ def lookup_dictionary(word: str) -> dict[str, Any]:
             payload = None
 
         if payload is None:
+            if not allow_ai:
+                return {"phonetic": ""}
             try:
                 payload = dictionary_ai_fallback(clean)
                 payload["cached"] = False
@@ -2071,11 +2076,12 @@ def lookup_dictionary(word: str) -> dict[str, Any]:
                     "Dictionary service is unavailable and AI fallback failed.",
                 ) from exc
 
-    _learning_cache.put_dictionary(
-        cache_key,
-        payload,
-        datetime.now().astimezone().isoformat(timespec="seconds"),
-    )
+    if persist:
+        _learning_cache.put_dictionary(
+            cache_key,
+            payload,
+            datetime.now().astimezone().isoformat(timespec="seconds"),
+        )
 
     return payload
 

@@ -16,7 +16,7 @@ checks in `media_segmentation`. Where the transcript comes from, in order:
 The transcript is then cut into lesson lines (`segment_lines`), checked, built
 into the one stored-lesson payload the Listening room already reads, given
 meaning in the configured support languages through the same cached translation
-path a learner's open uses, and decided:
+cache that learner reads consume without a provider, and decided:
 
 * a learner's own import is theirs alone, so it simply becomes usable;
 * a shared item publishes by itself only when its rights are cleared for
@@ -276,6 +276,7 @@ class MediaPipeline:
         ingestion: Any = None,
         youtube_audio: Callable[..., Path] | None = None,
         meanings: Callable[[MediaLibraryEntry, str], Any] | None = None,
+        english_reading: Callable[[str], str] | None = None,
         workers: int | None = None,
         translation_sink: Callable[[Callable[[str, Any], None]], Any] | None = None,
     ) -> None:
@@ -284,6 +285,7 @@ class MediaPipeline:
         self._ingestion = ingestion
         self._youtube_audio = youtube_audio
         self._meanings = meanings
+        self._english_reading = english_reading
         self._translation_sink = translation_sink
         self._pool = ThreadPoolExecutor(max_workers=workers or _env_int("MEDIA_PIPELINE_WORKERS", 2), thread_name_prefix="media-pipeline")
         self._inflight: set[str] = set()
@@ -437,7 +439,7 @@ class MediaPipeline:
 
     def _store_lesson(self, store: Any, entry: MediaLibraryEntry, lines: list[Cue], origin: str, duration: int, *, status: str, words: list[SpeechAsrWord] | None = None) -> MediaLibraryEntry:
         transcript = build_transcript(entry.media_id, entry.language, lines)
-        payload = lesson_payload(entry, transcript, origin, duration, words=words)
+        payload = lesson_payload(entry, transcript, origin, duration, words=words, english_reading=self._english_reading)
         existing = dict(entry.lesson or {})
         lesson = {
             **{key: value for key, value in existing.items() if key != "payload"},
@@ -563,8 +565,8 @@ class MediaPipeline:
     # -- meaning --------------------------------------------------------------------------
 
     def _translate(self, store: Any, entry: MediaLibraryEntry, batch_id: str, personal: bool) -> str:
-        """Warm the support-language meanings the learner's open would otherwise generate. Never blocks the lesson."""
-        languages = [] if personal else [item.strip().casefold() for item in os.getenv("MEDIA_PRETRANSLATE_LANGUAGES", "vi").split(",") if item.strip()]
+        """Materialize configured optional meanings before admission; workspace reads never generate them."""
+        languages = [item.strip().casefold() for item in os.getenv("MEDIA_PRETRANSLATE_LANGUAGES", "vi").split(",") if item.strip()]
         languages = [item for item in languages if item != primary_language(entry.language)]
         if not languages or self._meanings is None:
             return "deferred"
@@ -619,8 +621,29 @@ def _clamped(lines: list[Cue], duration_ms: int) -> list[Cue]:
     return [line for line in clipped if line.end_ms > line.start_ms]
 
 
-def lesson_payload(entry: MediaLibraryEntry, transcript: MediaTranscript, origin: str, duration_ms: int, *, words: list[SpeechAsrWord] | None = None) -> dict[str, Any]:
+def lesson_payload(entry: MediaLibraryEntry, transcript: MediaTranscript, origin: str, duration_ms: int, *, words: list[SpeechAsrWord] | None = None, english_reading: Callable[[str], str] | None = None) -> dict[str, Any]:
     """The stored acquisition payload the Listening room already reads, built from the pipeline's transcript."""
+    from writing_coach.media_meaning import pinyin_for_segments
+    from writing_coach.pinyin_alignment import align_readings
+
+    pinyin = dict(pinyin_for_segments(transcript.segments)) if primary_language(entry.language) == "zh" else {}
+    readings = {}
+    if primary_language(entry.language) == "en" and english_reading:
+        import re
+
+        vocabulary = {}
+        for segment in transcript.segments:
+            projected = []
+            for match in re.finditer(r"[^\W_]+(?:['’-][^\W_]+)*", segment.original_text):
+                key = match.group().casefold()
+                if key not in vocabulary:
+                    try:
+                        vocabulary[key] = english_reading(match.group()) or ""
+                    except Exception:
+                        vocabulary[key] = ""
+                if vocabulary[key]:
+                    projected.append({"text": match.group(), "start": match.start(), "end": match.end(), "reading": vocabulary[key]})
+            readings[segment.segment_id] = projected
     return {
         "asset": {
             "asset_id": entry.media_id,
@@ -657,4 +680,9 @@ def lesson_payload(entry: MediaLibraryEntry, transcript: MediaTranscript, origin
         },
         "transcript_origin": origin,
         "translations": [],
+        "catalog": {
+            "readings_by_segment": readings,
+            "pinyin_by_segment": pinyin,
+            "pinyin_chars_by_segment": align_readings(transcript.segments, pinyin) if pinyin else {},
+        },
     }

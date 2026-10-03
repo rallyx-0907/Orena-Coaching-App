@@ -7,6 +7,7 @@ from datetime import UTC, datetime
 from collections.abc import Mapping
 from typing import Any, Literal
 import re
+import json
 
 from fastapi import APIRouter, Query
 from pydantic import BaseModel, Field
@@ -151,6 +152,7 @@ def stored_media_payload(media_id: str, target_language: str = "") -> dict[str, 
     processing = dict(entry.processing or {})
     if isinstance(stored, Mapping) and processing.get("state", "ready") in {"ready", "held"}:
         response = _stored_acquisition_response(entry, stored)
+        response["catalog"]["readings_by_segment"] = (stored.get("catalog") or {}).get("readings_by_segment") or {}
         response["processing"] = processing
         media_object = _media_object_from_stored(stored, entry)
         meanings_outcome = resolve_segment_meanings(
@@ -160,7 +162,7 @@ def stored_media_payload(media_id: str, target_language: str = "") -> dict[str, 
             source_language=media_object.asset.source_language,
             preauthored=media_object.translations,
             cache=_translation_cache,
-            translate=_curated_translator(media_object),
+            translate=None,
             provider_model=_translation_provider_model(),
         )
         if meanings_outcome.meanings:
@@ -184,10 +186,16 @@ def stored_media_payload(media_id: str, target_language: str = "") -> dict[str, 
             },
             "failure_kind": meanings_outcome.failure_kind,
         }
-        pinyin = dict(pinyin_for_segments(media_object.transcript.segments)) if media_object.transcript else {}
+        # New prepared lessons own their reading artifact. Old admitted lessons
+        # retain the deterministic compatibility projection, with no provider.
+        pinyin = dict((stored.get("catalog") or {}).get("pinyin_by_segment") or {})
+        if not pinyin and media_object.transcript:
+            pinyin = dict(pinyin_for_segments(media_object.transcript.segments))
         if media_object.asset.source_language.strip().casefold().startswith("zh") and pinyin:
             response["catalog"]["pinyin_by_segment"] = pinyin
-            response["catalog"]["pinyin_chars_by_segment"] = align_readings(media_object.transcript.segments, pinyin)
+            response["catalog"]["pinyin_chars_by_segment"] = (stored.get("catalog") or {}).get("pinyin_chars_by_segment") or align_readings(media_object.transcript.segments, pinyin)
+        elif media_object.asset.source_language.strip().casefold().startswith("en") and not response["catalog"].get("readings_by_segment"):
+            response["catalog"]["readings_by_segment"] = _cached_source_readings(media_object.transcript.segments)
         return response
     # No transcript: an imported file or a direct media URL. The learner gets
     # the player and the truth, which is the same 'source only' room a
@@ -484,6 +492,29 @@ def configure_listening_translation_cache(cache: Any) -> None:
     _translation_cache = cache
 
 
+def _cached_source_readings(segments: Any) -> dict[str, Any]:
+    """Legacy IPA from persisted dictionary facts only; never a provider lookup."""
+    dictionary = getattr(_translation_cache, "get_dictionary", None)
+    if not dictionary:
+        return {}
+    facts = {}
+    positions = {}
+    for segment in segments or ():
+        projected = []
+        for match in re.finditer(r"[^\W_]+(?:['’-][^\W_]+)*", segment.original_text):
+            key = match.group().casefold()
+            if key not in facts:
+                try:
+                    row = dictionary(key)
+                    facts[key] = str(json.loads(row["payload_json"]).get("phonetic") or "") if row else ""
+                except Exception:  # optional persisted fact; failure must not acquire a replacement
+                    facts[key] = ""
+            if facts[key]:
+                projected.append({"text": match.group(), "start": match.start(), "end": match.end(), "reading": facts[key]})
+        positions[segment.segment_id] = projected
+    return positions
+
+
 def _translation_provider_model() -> str:
     """Identity of whatever will translate, so a provider change misses the cache."""
 
@@ -524,6 +555,27 @@ def _curated_translator(media_object: Any):
     return translate
 
 
+def prepare_media_meanings(entry: MediaLibraryEntry, target_language: str):
+    """Materialize at the content boundary; learner GETs only read these rows.
+
+    The existing persisted cache owns revision/language/provider identity. Never
+    pay for a result when this runtime cannot persist it for the next capability.
+    This function needs no learner request context and is called by preparation.
+    """
+    stored = (entry.lesson or {}).get("payload") or {}
+    media_object = _media_object_from_stored(stored, entry)
+    return resolve_segment_meanings(
+        asset_id=media_object.asset.asset_id,
+        segments=media_object.transcript.segments if media_object.transcript else (),
+        support_language=target_language,
+        source_language=media_object.asset.source_language,
+        preauthored=media_object.translations,
+        cache=_translation_cache,
+        translate=_curated_translator(media_object) if _translation_cache is not None else None,
+        provider_model=_translation_provider_model(),
+    )
+
+
 @router.get("/library/{lesson_id}")
 def open_listening_library_lesson(
     lesson_id: str,
@@ -562,7 +614,7 @@ def open_listening_library_lesson(
         source_language=media_object.asset.source_language,
         preauthored=media_object.translations,
         cache=_translation_cache,
-        translate=_curated_translator(media_object),
+        translate=None,
         provider_model=_translation_provider_model(),
     )
     if outcome.meanings:
@@ -598,6 +650,8 @@ def open_listening_library_lesson(
     metadata["pinyin_by_segment"] = pinyin
     # One reading under each character, where the line and its reading agree (DC-3).
     metadata["pinyin_chars_by_segment"] = align_readings(segments, pinyin)
+    if media_object.asset.source_language.strip().casefold().startswith("en"):
+        metadata["readings_by_segment"] = _cached_source_readings(segments)
     response["catalog"] = metadata
     return response
 

@@ -269,7 +269,8 @@ assert.equal(listenedMinutesLabel(NaN), null);
   const calls = [];
   const acquired = { asset: { asset_id: 'youtube:abc', title: 'Clip', source_language: 'en-GB', duration_ms: 61000, thumbnail_url: 'https://img/x.jpg' }, playback: { kind: 'youtube', url: 'https://www.youtube.com/embed/abc' }, transcript: { segments: [] }, translations: [] };
   const api = {
-    importMedia: async (body) => { calls.push(['import', body.source_url, body.target_language]); return acquired; },
+    importMedia: async () => { throw new Error('a lesson open cannot import'); },
+    mediaSource: async (url, target) => { calls.push(['source-read', url, target]); return acquired; },
     mediaImportStatus: async () => { throw new Error('not resumable'); },
     mediaMy: async (id) => { calls.push(['my', id]); return { asset: { asset_id: id }, playback: { kind: 'audio' } }; },
     listeningLibraryLesson: async (id, support) => { calls.push(['lesson', id, support]); return { asset: { asset_id: id } }; },
@@ -281,7 +282,7 @@ assert.equal(listenedMinutesLabel(NaN), null);
   await openMedia('upload-1f', { api, support: 'vi', language: 'en' });
   await openMedia('en-x', { api, support: 'vi', language: 'en' });
   assert.deepEqual(calls, [
-    ['import', 'https://youtu.be/abc', 'vi'],
+    ['source-read', 'https://youtu.be/abc', 'vi'],
     ['my', 'upload-1f'],
     ['lesson', 'upload-1f', 'vi'],
     ['lesson', 'en-x', 'vi'],

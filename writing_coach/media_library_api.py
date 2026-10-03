@@ -127,6 +127,34 @@ class LearnerSourceIn(BaseModel):
     target_language: str = Field(default="", max_length=32)
 
 
+@router.get("/source")
+def read_prepared_source(
+    source_url: str = Query(min_length=1, max_length=2048),
+    target_language: str = Query(default="", max_length=32),
+) -> dict[str, Any]:
+    """Resolve an old URL membership without acquiring or processing its source."""
+    store, _, _ = _installed()
+    from writing_coach.media_providers.youtube import parse_youtube_video_id, recognizes_youtube_url
+    from writing_coach.media_ingestion import ProviderUrlMalformed
+
+    video_id = ""
+    if recognizes_youtube_url(source_url):
+        try:
+            video_id = parse_youtube_video_id(source_url)
+        except (ProviderUrlMalformed, ValueError):
+            raise orena_http_error(404, "media_not_found", "This media is not available.") from None
+    for entry in store.list(library="personal", status=None, language=current_language_code()):
+        same_source = (entry.provider == "youtube" and entry.provider_media_id == video_id) if video_id else entry.canonical_url == source_url
+        if not same_source or not visible_to(entry, user_key=current_user_key(), language=current_language_code()):
+            continue
+        if (entry.processing or {}).get("state") not in {None, "ready"}:
+            continue
+        payload = _learner_payload(entry.media_id, target_language) if _learner_payload else None
+        if payload is not None:
+            return {**payload, "media_id": entry.media_id}
+    raise orena_http_error(404, "media_not_found", "This media is not available.")
+
+
 @media_learning_router.post("/source")
 def learner_source(payload: LearnerSourceIn) -> dict[str, Any]:
     _, _, importer = _installed()

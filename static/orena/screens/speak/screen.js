@@ -22,6 +22,8 @@ import { api } from '../../infrastructure/api.js';
 import { askOrena } from '../../shell/agent-bridge.js';
 import { registerActionHandler } from '../../agent/dispatcher.js';
 import { loadSpeakingSource, segmentOf } from '../../product/speaking-source.js';
+import { originalSegmentPlayer } from '../../product/original-segment-player.js';
+import { pairWord } from '../../product/compare-reference.js';
 import { pronunciationView } from '../../capabilities/pronunciation-result.js';
 import { createSpeakingRecorder, TAKE, MAX_TAKE_MS } from '../../product/speaking-recorder.js';
 import { lineKey, listTakes, viewOfTake, bestTake, attemptIdOf } from '../../product/take-store.js';
@@ -43,6 +45,7 @@ function errorLabel(errorType) {
 
 export default async function mountScriptedPronunciation(element, ctx) {
   await useStyles('screens/speak/speak.css');
+  await useStyles('capabilities/original-segment-player.css');
   const language = ctx.context?.language || 'en';
   const support = languages().support;
   const segmentId = segmentOf(ctx.query);
@@ -60,6 +63,11 @@ export default async function mountScriptedPronunciation(element, ctx) {
   const key = lineKey(source.sourceId, source.line.lineId);
   let takes = await listTakes(key);
   if (!ctx.isCurrent()) return undefined;
+  mount(element, '');
+  const renderRoot = document.createElement('div');
+  renderRoot.style.display = 'contents';
+  element.append(renderRoot);
+  const originalPlayer = originalSegmentPlayer(source);
 
   /* Coming back to a line that already has attempts shows the newest one again, as it was: the
      full assessment when this tab still holds it, the smaller shape a reopened attempt has
@@ -69,7 +77,6 @@ export default async function mountScriptedPronunciation(element, ctx) {
   let rec = { phase: TAKE.IDLE, error: null, levels: new Array(WAVE_BARS).fill(0), elapsedMs: 0 }; // what the recorder last said
   let tokenSel = null; // index of a tapped word, once a result exists
   let playing = null; // 'model' | 'mine' | null
-  let modelAudio = null;
   let takeAudio = null;
 
   const q = (selector) => element.querySelector(selector);
@@ -141,9 +148,8 @@ export default async function mountScriptedPronunciation(element, ctx) {
   }
 
   function stopPlayback() {
-    modelAudio?.pause();
+    originalPlayer?.stop();
     takeAudio?.pause();
-    modelAudio = null;
     takeAudio = null;
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) window.speechSynthesis.cancel();
     playing = null;
@@ -172,6 +178,7 @@ export default async function mountScriptedPronunciation(element, ctx) {
     if (ctx.isCurrent()) paint();
   }
   function playModel() {
+    if (source.lessonId && !source.hasModelAudio) return;
     if (playing === 'model') {
       stopPlayback();
       paint();
@@ -180,19 +187,26 @@ export default async function mountScriptedPronunciation(element, ctx) {
     stopPlayback();
     playing = 'model';
     if (source.hasModelAudio) {
-      modelAudio = new Audio(source.modelAudioUrl(source.line.lineId));
-      modelAudio.addEventListener('ended', () => ended('model'), { once: true });
-      modelAudio.addEventListener('error', () => ended('model'), { once: true });
-      modelAudio.play().catch(() => ended('model'));
-    } else {
+      originalPlayer?.play().then(() => ended('model'));
+    } else if (!source.lessonId) {
       speak(source.line.text, () => ended('model'));
     }
     paint();
   }
-  function playModelWord(word) {
+  function playModelWord(index) {
+    if (source.lessonId && !source.hasModelAudio) return;
+    if (source.hasModelAudio) {
+      const word = pairWord(source.line.text, view.words, index, source.line.wordTimings, source.language);
+      if (!word) return;
+      stopPlayback();
+      playing = 'model';
+      originalPlayer.play({from:word.offsetMs/1000,to:(word.offsetMs+word.durationMs)/1000}).then(() => ended('model'));
+      paint();
+      return;
+    }
     stopPlayback();
     playing = 'model';
-    speak(word, () => ended('model'));
+    speak(view.words[index]?.text || '', () => ended('model'));
     paint();
   }
   function playMine() {
@@ -235,7 +249,7 @@ export default async function mountScriptedPronunciation(element, ctx) {
       ${detail.pinyin ? html`<div class="s-speak-detail__reading">${t('expectedReading', { reading: detail.pinyin })}</div>` : ''}
       <div class="s-speak-detail__issue">${label}${detail.weakest ? ` · ${t('weakestOf', { u: detail.weakest.label, n: detail.weakest.score })}` : ''}</div>
       <div class="s-speak-detail__actions">
-        <button type="button" class="s-speak-mini" data-word-model="${detail.index}">${filled('play', 14)}${t('modelWord')}</button>
+        <button type="button" class="s-speak-mini" data-word-model="${detail.index}"${source.hasModelAudio && !pairWord(source.line.text,view.words,detail.index,source.line.wordTimings,source.language) ? raw(' disabled') : ''}>${filled('play', 14)}${t('modelWord')}</button>
         <button type="button" class="s-speak-mini s-speak-mini--ghost" data-close-detail>${t('close')}</button>
       </div>
     </div>`;
@@ -305,8 +319,9 @@ export default async function mountScriptedPronunciation(element, ctx) {
     const bars = recording ? liveWave(rec.levels) : restingWave();
     const tail = [t('segmentN', { n: source.line.ordinal }), source.level].filter(Boolean).join(' · ');
 
+    originalPlayer?.park(element);
     mount(
-      element,
+      renderRoot,
       html`<div class="s-speak-header">
         <button type="button" class="o-iconbtn o-iconbtn--back" data-back aria-label="${shellCopy('back')}">${raw(icon('arrow-left', { size: 21 }))}</button>
         <div class="s-speak-title-block">
@@ -316,6 +331,7 @@ export default async function mountScriptedPronunciation(element, ctx) {
         ${takes.length ? html`<button type="button" class="s-speak-compare" data-go-compare>${t('compare')}</button>` : ''}
       </div>
       <div class="s-speak-scroll" data-scroll-region>
+        ${source.playback?.kind === 'embed' ? html`<div data-original-player></div>` : ''}
         <div class="s-speak-card">
           <div class="s-speak-label">${t('targetSentence')}</div>
           <div class="s-speak-line" lang="${langAttr(language)}">${tokenMarkup(shown)}</div>
@@ -339,6 +355,8 @@ export default async function mountScriptedPronunciation(element, ctx) {
         ${resultMarkup()}
       </div>`,
     );
+    if (originalPlayer) originalPlayer.attach(source.playback.kind === 'embed' ? q('[data-original-player]') : element);
+    if (source.lessonId && !source.hasModelAudio) element.querySelectorAll('[data-play-model],[data-word-model]').forEach(button => { button.disabled = true; });
     bind();
     const region = q('[data-scroll-region]');
     if (region) region.scrollTop = scrollTop;
@@ -375,7 +393,7 @@ export default async function mountScriptedPronunciation(element, ctx) {
       tokenSel = null;
       paint();
     });
-    q('[data-word-model]')?.addEventListener('click', () => playModelWord(view.words[Number(q('[data-word-model]').dataset.wordModel)]?.text || ''));
+    q('[data-word-model]')?.addEventListener('click', () => playModelWord(Number(q('[data-word-model]').dataset.wordModel)));
   }
 
   paint();
@@ -389,6 +407,7 @@ export default async function mountScriptedPronunciation(element, ctx) {
   };
   const releasers = [
     registerActionHandler('play_model', () => {
+      if (source.lessonId && !source.hasModelAudio) return { ok: false, reason: 'unavailable' };
       playModel();
       return { ok: true };
     }),
@@ -418,5 +437,6 @@ export default async function mountScriptedPronunciation(element, ctx) {
     releasers.forEach((release) => release());
     recorder.dispose();
     stopPlayback();
+    originalPlayer?.dispose();
   };
 }
