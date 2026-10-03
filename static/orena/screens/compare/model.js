@@ -41,6 +41,10 @@ export function headlineKey(score) {
    otherwise the score band frame 15 uses for a word (85 / 65), and a word the provider flagged is
    never better than 'weak'. A word reopened from an older attempt has no score (D-076), only the
    provider's flag. */
+export function pronunciationStatusKey(detail) {
+  return detail.status === 'unclear' ? 'valueUnclear' : detail.status === 'ok' ? 'valuePassed' : 'valueNotPassed';
+}
+
 export function wordStatus(word) {
   if (!word) return 'ok';
   if (String(word.errorType || '').toLowerCase() === 'omission') return 'unclear';

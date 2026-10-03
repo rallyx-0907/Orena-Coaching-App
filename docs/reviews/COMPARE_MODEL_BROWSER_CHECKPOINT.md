@@ -2,6 +2,28 @@
 
 ## Current browser checkpoint — fresh result after authorized QA recovery
 
+Fresh Chinese acceptance follow-up: user recorded directly. Real Azure 75/100,
+Accuracy84/Fluency69/Completeness83, 14.3 s speech, 23 provider words. Pinyin,
+learner contours and timing rendered; first 这 has You0.00–0.30s versus
+Model0.00–0.25s. History in a separate fresh tab shows 18:13 Speaking75 and
+opens `zh-daily-what-is-this` / `commons-zh-lesson-7-dialogue-1:000`.
+Evidence: `evidence/compare-zh-real-result-2026-10-03.png`.
+Browser control works again; earlier extension block below is historical.
+Model pitch is unavailable across the two inspected word pages on this source.
+Read-only ffmpeg/YIN probe of the public cached model source at half-second
+intervals found periodicity minima mostly above0.3, versus the extractor's0.15
+threshold (one probe0.174). This supports a source-confidence limitation, not a
+learner weakness; it does not establish a complete acoustic root cause.
+Model timing and source audio remain available. Improving source-pitch extraction
+is deferred under the human's instruction to note difficult pitch limitations.
+
+The real result exposed contradictory pronunciation labels on word这: provider
+ErrorTypeNone was shown as Passed while the approved score status67 was Not passed.
+Panel and Details now share one status projection, retaining actual phoneme/error
+evidence separately. RED/GREEN verdict regression and Compare gates pass locally.
+The live rich-result tab has not been reloaded, so this correction still needs a
+fresh-take browser check; no claim that the existing loaded tab was hot-patched.
+
 Follow-up: Back recovery fixed with the existing account-backed media continuation:
 Compare records `speaking_compare` plus canonical segment; Today and Practice Hub
 resolve that to the real Compare route. Scripted Speaking resumes its same segment.

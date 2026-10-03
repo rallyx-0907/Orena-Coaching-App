@@ -31,7 +31,7 @@ import { micStateFor } from '../speak/model.js';
 import { openMicState, micGate } from '../mic/sheet.js';
 import { t } from './copy.js';
 import {
-  ringColor, scoreLabelKey, headlineKey, wordStatus, statusTone, tileMinWidth, wordDetailFor, defaultWordIndex,
+  ringColor, scoreLabelKey, headlineKey, wordStatus, pronunciationStatusKey, statusTone, tileMinWidth, wordDetailFor, defaultWordIndex,
   chipsFor, metricLineFor, axisFor, CHART, chartLines, hasVoice, wordPitchLines, wordPages, PLAYBACK_MODES, nextSpeed, playPlan, pillsFor, toneKey,
 } from './model.js';
 
@@ -489,9 +489,8 @@ export default async function mountCompareWithModel(element, ctx) {
       </div>`;
     }
     if (tab === 'pron') {
-      const bad = detail.status === 'unclear';
       const ok = detail.status === 'ok';
-      const title = bad ? t('pronNotRecognised') : ok ? t('pronRecognised') : errorLabel(detail.errorType);
+      const title = t(pronunciationStatusKey(detail));
       const ink = ok ? 'var(--green)' : 'var(--red)';
       const heard = viewNow()?.heard;
       return html`<div class="s-compare-panel">
@@ -529,7 +528,7 @@ export default async function mountCompareWithModel(element, ctx) {
     const rows = [
       ...(language === 'zh' && detail.toneTarget != null ? [{ label: t('rowTone'), value: `${detail.toneTarget} · ${t(toneKey(detail.toneTarget))}`, ink: 'var(--text)', kind: '' }] : []),
       ...(detail.offsetKnown ? [{ label: t('rowStart'), value: `${seconds(detail.offsetMs)} s`, ink: 'var(--text)', kind: '' }, { label: t('rowLength'), value: `${seconds(detail.durationMs)} s`, ink: 'var(--text)', kind: '' }] : []),
-      { label: t('rowPron'), value: detail.status === 'unclear' ? t('valueUnclear') : detail.status === 'ok' ? t('valuePassed') : t('valueNotPassed'), ink: detail.status === 'ok' ? 'var(--green)' : 'var(--red)', kind: detail.status === 'ok' ? 'ok' : 'bad' },
+      { label: t('rowPron'), value: t(pronunciationStatusKey(detail)), ink: detail.status === 'ok' ? 'var(--green)' : 'var(--red)', kind: detail.status === 'ok' ? 'ok' : 'bad' },
     ];
     return html`<div class="s-compare-card s-compare-detail">
       <div class="s-compare-detail__a">

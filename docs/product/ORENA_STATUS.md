@@ -96,7 +96,9 @@ Model-to-You playback transitions exercised, desktop/390x844. Some words have no
 measurable pitch and remain honestly unavailable (not a pronunciation verdict).
 Back/Continue resumes the same Compare sentence via Today/Practice Hub; clip-backed
 Pronunciation is now reachable. Server History and ZH pinyin/recorder verified.
-Fresh ZH assessment/theme checks remain; Brave extension update blocks UI control.
+Fresh ZH take75, learner pitch/timing and server History verified. Model pitch on
+this ZH source remains honestly unavailable; extraction refinement deferred.
+Contradictory verdict labels corrected locally; fresh UI/theme checks remain.
 Prior take 83/history is historical after sandbox QA database loss. Evidence:
 `docs/reviews/COMPARE_MODEL_BROWSER_CHECKPOINT.md` and the prior Library checkpoint.
 
