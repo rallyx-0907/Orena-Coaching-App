@@ -118,17 +118,18 @@ S2 basic Listening and S6 Admin media rights/publish are REVIEWABLE; stop deepen
 those paths. My Library accepted. D-119: Shadowing/Pronunciation share Compare;
 media picker, sentence picker, support meanings, Listen return. ZH video7 lines,
 line2 return22s and desktop/390x844 verified. Local Node/ESM gates pass.
-EN6 lines/IPA/7s, YouTube4 lines verified. Prior EN86/ZH75; fresh merged take pending.
-Video model-reference422 unavailable/retry; audio200. Model pitch limited.
-QA recovery/storage is recorded above; old take83 is historical.
+EN6 lines/IPA/7s, YouTube4 lines verified. Prior EN86/ZH75 retained.
+YouTube NkYwdZhkHF0: original audio + measured word reference now work; line2/3
+browser verified. Private review/embed admission and missing JS runtime fixed.
+Only original video voice (D-120); fresh take pending. Model pitch limited.
 Evidence: COMPARE_MODEL_BROWSER_CHECKPOINT.md.
-Preserve S6/control plane. Azure local125/Node/review pass; mobile unverified.
-Deep hardening follows basic app coverage. Captions first; ASR within D-111.6 caps.
+Preserve S6/control plane. Azure review passes; mobile unverified.
+Basic coverage first; ASR within D-111.6 caps.
 
 Follow `ROADMAP.md` and D-110..D-114 for remaining coverage, evidence and gates.
 Agent remains gated; Grammar-specific capability needs its canonical runtime.
 
-QA: :8021, exclusive Docker use. :8011 deferred; :8000 human-gated. No auto-merge
+QA: :8021 only. :8011 deferred; :8000 human-gated. No auto-merge
 to main; tests/records alone do not prove public readiness.
 
 Intelligence lane: D-085 against `AGENT_CONTRACT.md` v5; merge `codex/work` forward; its merged PR

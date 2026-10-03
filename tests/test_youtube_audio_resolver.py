@@ -16,7 +16,7 @@ class FakeYdl:
         self.info = info
         self.calls: list[tuple[str, bool]] = []
 
-    def __enter__(self) -> "FakeYdl":
+    def __enter__(self) -> FakeYdl:
         return self
 
     def __exit__(self, *_args: object) -> None:
@@ -52,6 +52,7 @@ def test_resolver_returns_https_audio_without_downloading_media() -> None:
     assert result.url.startswith("https://audio.googlevideo.example.test/")
     assert captured["options"]["skip_download"] is True
     assert captured["options"]["noplaylist"] is True
+    assert captured["options"]["js_runtimes"] == {"node": {}}
     assert captured["ydl"].calls == [
         ("https://youtu.be/dQw4w9WgXcQ", False)
     ]

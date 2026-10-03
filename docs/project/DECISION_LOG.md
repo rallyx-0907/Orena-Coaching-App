@@ -4001,3 +4001,10 @@ Old Shadowing/Pronunciation links preserve the chosen segment and use this runti
 Listening return preserves that segment. Unsupported transcript, timing or pitch
 remains truthful. Composition reuses canonical Pronunciation/Compare components;
 Visual Skin EN/ZH owns treatment, approved brand remains unchanged.
+
+## D-120 - Original media voice remains the pronunciation model
+
+2026-10-03, explicit human decision: media Shadowing / Pronunciation uses only
+the original video voice. Do not replace an unusable source excerpt with generated
+speech or present synthetic timing/pitch as original evidence. A line that cannot
+be prepared has a truthful learner-facing state and another-line/retry action.

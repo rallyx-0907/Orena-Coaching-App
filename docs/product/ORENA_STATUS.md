@@ -110,6 +110,12 @@ verify; previous real EN/ZH assessments are preserved evidence. This video serve
 model audio200 but model-reference422: word alignment unavailable/retry shown.
 YouTube import (Me at the zoo,4 lines) also browser-opens the shared recorder;
 regional language tags and supported embeds share Listening's validated gates.
+Current correction (2026-10-03): imported YouTube NkYwdZhkHF0 now prepares original
+audio and measured word alignment; line2/3 browser-ready with pinyin/support meaning.
+Private ready transcripts awaiting public rights review no longer fail Speaking;
+YouTube embed audio admission and absent JS runtime corrected. Image definition includes Node24
+and bundled yt-dlp EJS. Only original video voice is permitted (D-120).
+Local37 Python tests and Compare/copy/media-speaking gates pass. No fresh take claimed.
 Prior take 83/history is historical after sandbox QA database loss. Evidence:
 `docs/reviews/COMPARE_MODEL_BROWSER_CHECKPOINT.md` and the prior Library checkpoint.
 

@@ -393,7 +393,14 @@ def test_model_reference_calls_configured_provider_once_and_rechecks_source(clie
     assert len(assets.reads) == reads_before_revocation
 
 
-def test_youtube_reference_audio_uses_bounded_ephemeral_cache_and_rechecks_access(client, monkeypatch, tmp_path):
+@pytest.mark.parametrize("lesson_status,library,processing,text,allowed", [
+    ("PUBLISHED", "personal", "ready", "Say this sentence aloud.", True),
+    ("NEEDS_REVIEW", "personal", "ready", "Say this sentence aloud.", True),
+    ("NEEDS_REVIEW", "shared", "ready", "Say this sentence aloud.", False),
+    ("NEEDS_REVIEW", "personal", "processing", "Say this sentence aloud.", False),
+    ("NEEDS_REVIEW", "personal", "ready", "", False),
+])
+def test_youtube_reference_audio_uses_bounded_ephemeral_cache_and_rechecks_access(client, monkeypatch, tmp_path, lesson_status, library, processing, text, allowed):
     from writing_coach import media_library_api
     from writing_coach.media_library_store import MediaLibraryEntry
     from writing_coach.media_providers import youtube_audio
@@ -404,19 +411,20 @@ def test_youtube_reference_audio_uses_bounded_ephemeral_cache_and_rechecks_acces
         provider="youtube",
         provider_media_id="abcd1234567",
         canonical_url="https://www.youtube.com/watch?v=abcd1234567",
-        playback={"provider": "youtube", "kind": "video", "url": "https://www.youtube.com/embed/abcd1234567"},
+        playback={"provider": "youtube", "kind": "embed", "url": "https://www.youtube-nocookie.com/embed/abcd1234567"},
         title="Published clip",
         thumbnail={"kind": "none", "ref": ""},
-        duration_ms=4000,
+        duration_ms=1000,
         language="en",
         level="",
         creator="",
         source={"owner": ""},
-        library="shared",
+        library=library,
         created_at="2026-10-03T00:00:00+00:00",
-        lesson={"status": "PUBLISHED", "payload": {
+        processing={"state": processing},
+        lesson={"status": lesson_status, "payload": {
             "asset": {"source_language": "en"},
-            "transcript": {"segments": [{"segment_id": "line", "start_ms": 0, "end_ms": 1000, "original_text": "Say this."}]},
+            "transcript": {"segments": [{"segment_id": "line", "start_ms": 0, "end_ms": 1000, "original_text": text}]},
         }},
     )
     assets = _MemoryAssets()
@@ -435,6 +443,10 @@ def test_youtube_reference_audio_uses_bounded_ephemeral_cache_and_rechecks_acces
 
     monkeypatch.setattr(youtube_audio, "download_audio", download)
     first = client.get("/api/speaking/model-audio/youtube-abcd1234567/line")
+    if not allowed:
+        assert first.status_code == 404
+        assert downloads == [], "unusable or shared review content must be rejected before fetching"
+        return
     second = client.get("/api/speaking/model-audio/youtube-abcd1234567/line")
 
     assert first.status_code == second.status_code == 200

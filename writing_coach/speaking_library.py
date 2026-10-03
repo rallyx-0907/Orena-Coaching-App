@@ -373,10 +373,12 @@ def _stored_source_file(entry: Any, *, access_check: Any = None) -> Path:
     url = str(playback.get("url") or "")
     parsed = urlsplit(url)
     prefix = "/api/media/files/"
-    if playback.get("kind") != entry.media_type:
-        raise ModelAudioUnavailable("stored model audio is unavailable")
     if playback.get("provider") != "orena":
-        if entry.provider == "youtube":
+        if (
+            entry.provider == "youtube"
+            and playback.get("provider") == "youtube"
+            and playback.get("kind") in {"embed", "video"}
+        ):
             return _youtube_source_file(
                 entry.canonical_url,
                 entry.media_id,
@@ -384,6 +386,8 @@ def _stored_source_file(entry: Any, *, access_check: Any = None) -> Path:
                 access_check=access_check,
             )
         raise ModelAudioUnavailable("stored model audio has no approved local asset")
+    if playback.get("kind") != entry.media_type:
+        raise ModelAudioUnavailable("stored model audio is unavailable")
     if not parsed.path.startswith(prefix) or parsed.query or parsed.fragment:
         raise ModelAudioUnavailable("stored model audio has no approved local asset")
     key = parsed.path[len(prefix):]
@@ -413,8 +417,21 @@ def _stored_segment(entry: Any, segment_id: str) -> tuple[Mapping[str, Any], int
     ):
         raise LookupError(segment_id)
     lesson = entry.lesson
-    if not isinstance(lesson, Mapping) or str(lesson.get("status", "PUBLISHED")).upper() != "PUBLISHED":
+    if not isinstance(lesson, Mapping):
         raise LookupError(segment_id)
+    if str(lesson.get("status", "PUBLISHED")).upper() != "PUBLISHED":
+        # Rights review holds public publication, not the owner's ready private
+        # learning flow. Reuse the deterministic admission gate; find_entry has
+        # already checked ownership, language and visibility on every access.
+        from writing_coach.media_transcript_pipeline import usable_transcript
+
+        if not (
+            entry.library == "personal"
+            and str(lesson.get("status", "")).upper() == "NEEDS_REVIEW"
+            and (entry.processing or {}).get("state") == "ready"
+            and usable_transcript(entry)[0]
+        ):
+            raise LookupError(segment_id)
     payload = lesson.get("payload")
     if not isinstance(payload, Mapping):
         raise LookupError(segment_id)

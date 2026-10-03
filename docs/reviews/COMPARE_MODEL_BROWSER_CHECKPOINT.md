@@ -2,6 +2,29 @@
 
 ## Current browser checkpoint — fresh result after authorized QA recovery
 
+### Original YouTube model preparation correction — 2026-10-03
+
+User's video NkYwdZhkHF0 (26 lines), line2: browser preparation completes and the
+technical unavailable banner disappears; pinyin and support meaning remain. Hear
+model action exercised, Next to line3 and Previous to line2 remain browser-ready.
+Runtime model-reference returns model_audio_available=true, reference_available=true,
+score_kind=measured with actual word offsets/durations (first word40/110ms).
+Original audio downloaded through the unchanged bounded SSRF-safe fetch boundary.
+Roots: private ready NEEDS_REVIEW wrongly rejected; YouTube embed wrongly rejected;
+sandbox yt-dlp older than requirements and missing JavaScript challenge runtime.
+Image definition includes Node24 and bundled yt-dlp EJS; sandbox dependencies
+were provisioned and verified, but a full image rebuild is not claimed.
+No TTS/generated model fallback.
+Unusable lines retain a truthful choose-another-line/retry state in EN/VI/ZH.
+Local37 Python tests include shared/nonready/invalid transcript refusal; Compare,
+copy and unified media-speaking Node gates pass. Fresh learner recording/comparison
+is still not claimed. Earlier Wikipedia NoSpeech evidence below is source-specific.
+Evidence: `evidence/original-youtube-model-ready-2026-10-03.png`.
+Independent reviewer `/root/review_original_media_model_fix` reviewed the scoped
+working diff against HEAD56e217f5dd1999e0c141b8410e0d4c3b7e60752f: APPROVE,
+no P0/P1. This is code review, not human product approval; runtime evidence above
+was gathered by the implementer. Architecture/memory and334-module ESM validators pass.
+
 ### D-119 shared media practice entry
 
 Shadowing and Pronunciation now route to the same recorder/Compare, with a real
