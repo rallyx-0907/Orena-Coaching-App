@@ -1,4 +1,4 @@
-# Prompt: generate_point_v04 (v11-compatible)
+# Prompt: generate_point_v04 (v12)
 
 Versioned prompt for one grammar point under schema v0.4 (GRAMMAR_CONTENT_CONTRACT.md).
 `generate.py` fills the placeholders below and sends the result as the `system` message; the
@@ -26,6 +26,10 @@ v10 (2026-09-30): the contract patch -- `sub` (the short third cell of the heade
 v11-compatible hardening: semantic repair sees the rejected candidate; repeated-role formula slots are
 validated at role level because v0.4 has no slot id; personal production demonstrates one usable route;
 routine Chinese pinyin alignment is derived in code, with model pairs only as optional polyphonic hints.
+
+v12: bounds personal-production rules for weak-schema providers. A rule has at most four slots and an
+`any_of` has at most eight literals. Open-class vocabulary is never enumerated; the rule matches only
+grammar-bearing markers/forms. Formula/example instructions also require a left-to-right role-order self-check.
 
 ---
 
@@ -80,7 +84,10 @@ Output one JSON object matching the schema you were given -- no commentary outsi
    when you gave that variant -- use at least one of those if you gave any). `spans` marks
    the concrete parts of the sentence that realise the formula, using the same `role` values.
    Every required **role** in the selected formula must be represented, and no span may use a
-   role absent from that formula. When a formula has repeated roles (for example S ... S or
+   role absent from that formula. **Before returning JSON, simulate the highlighted spans from left to
+   right against that example's selected formula. The span roles must occur in the same order as the
+   formula roles; if they do not, rewrite the formula or the example rather than returning the mismatch.**
+   When a formula has repeated roles (for example S ... S or
    V ... V), schema v0.4 has no slot id, so do not invent a one-to-one slot identity; give the
    natural concrete spans in sentence order and let the role-level validator handle the
    ambiguity. Prefer a single slot with `options` for alternatives rather than several
@@ -117,13 +124,18 @@ Output one JSON object matching the schema you were given -- no commentary outsi
    `我去过……`). `target_form`: which formula the sentence follows (usually `affirmative`).
    `sample`: one clean model sentence in {target_lang} that follows that formula.
    **pattern_rule** is how code decides, without any model, whether a learner's sentence really used the
-   pattern: `slots` lists the roles of the `target_form` formula whose presence proves the pattern is used
+   pattern. Use **1-4 rule slots total**. `slots` lists the roles of the `target_form` formula whose presence proves the pattern is used
    (skip a role any sentence has, like `subject` -- pick the ones that carry the point: the auxiliary and
    the participle, the particle, the marker). Each slot has its `role` and exactly one matcher: `any_of`
    (a list of the exact words or characters, with contractions) OR `regex` (a case-insensitive regular
    expression, for productive forms a list cannot cover -- e.g. `-ing`, regular plurals, possessive `'s`).
-   Fill the matcher you do not use with an empty list / empty string. `ordered: true` when the roles must
-   appear in that order. **Build the rule from the actual surface forms in the sample and one representative
+   Fill the matcher you do not use with an empty list / empty string. An `any_of` list has **at most 8 literals**
+   and is only for a small closed grammar set (for example `am/is/are`, `have/has`, `了/过`).
+   **Never enumerate open-class vocabulary** such as ordinary verbs, nouns, adjectives, adverbs, topics,
+   objects, places, or example words. If the grammar-bearing form is productive, use one focused regex on
+   that grammar-bearing role (for example an `-ing` or `-ly` form); if a role carries no grammar signal,
+   leave that role out of the rule instead of listing vocabulary.
+   `ordered: true` when the roles must appear in that order. **Build the rule from the actual surface forms in the sample and one representative
    target-form example, not from an abstract formula label.** A complex grammar point may contain several
    legitimate surface variants; this one production card teaches one usable route, not every variant in
    the lesson. A regex must match ordinary words inside a full sentence; do not anchor it to the whole
