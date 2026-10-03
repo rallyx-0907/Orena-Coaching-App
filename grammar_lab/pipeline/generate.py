@@ -49,6 +49,7 @@ from grammar_lab.pipeline.validate import (
     QUICK_PRACTICE_BLANK,
     ZH_HANS,
     _PINYIN_SYLLABLE,
+    pattern_rule_matches,
     validate_generated_point,
 )
 from grammar_lab.rules import en_morphology
@@ -762,6 +763,169 @@ def sanitize_example_spans(examples: list[dict[str, Any]], pattern: dict[str, An
 
 
 
+
+def align_formula_order_from_examples(examples: list[dict[str, Any]], pattern: dict[str, Any]) -> None:
+    """Repair only an unambiguous presentation-order mismatch.
+
+    For a form whose formula roles are unique, if every example of that form
+    contains every formula role exactly once and they all agree on one span
+    order, reorder the formula slots to that order. This does not invent roles,
+    spans or surface forms; it only makes the formula card agree with the
+    examples the same candidate already supplied.
+    """
+    formulas: dict[str, list[dict[str, Any]]] = {"affirmative": pattern["formula"]}
+    formulas.update(pattern.get("variants", {}))
+    for form, formula in formulas.items():
+        roles = [slot["role"] for slot in formula]
+        if len(roles) != len(set(roles)):
+            continue
+        candidates: list[list[str]] = []
+        for example in examples:
+            if example["form"] != form:
+                continue
+            ordered = [span["role"] for span in sorted(example["spans"], key=lambda item: item["start"])]
+            if len(ordered) != len(set(ordered)) or set(ordered) != set(roles):
+                candidates = []
+                break
+            candidates.append(ordered)
+        if not candidates or any(order != candidates[0] for order in candidates[1:]):
+            continue
+        if candidates[0] == roles:
+            continue
+        by_role = {slot["role"]: slot for slot in formula}
+        formula[:] = [by_role[role] for role in candidates[0]]
+
+
+_EN_CONTRACTION_PATTERNS: dict[str, re.Pattern[str]] = {
+    "am": re.compile(r"\b[\w]+['’]m\b", re.IGNORECASE),
+    "are": re.compile(r"\b[\w]+['’]re\b", re.IGNORECASE),
+    "is": re.compile(r"\b[\w]+['’]s\b", re.IGNORECASE),
+    "has": re.compile(r"\b[\w]+['’]s\b", re.IGNORECASE),
+    "have": re.compile(r"\b[\w]+['’]ve\b", re.IGNORECASE),
+    "will": re.compile(r"\b[\w]+['’]ll\b", re.IGNORECASE),
+    "would": re.compile(r"\b[\w]+['’]d\b", re.IGNORECASE),
+    "had": re.compile(r"\b[\w]+['’]d\b", re.IGNORECASE),
+}
+
+
+def _stored_rule_matcher(slot: dict[str, Any]) -> Any | None:
+    if "regex" in slot:
+        try:
+            return re.compile(slot["regex"], re.IGNORECASE)
+        except re.error:
+            return None
+    values = slot.get("any_of")
+    return values if isinstance(values, list) and values else None
+
+
+def _slot_matches_text(slot: dict[str, Any], text: str, zh: bool) -> bool:
+    matcher = _stored_rule_matcher(slot)
+    return matcher is not None and pattern_rule_matches(False, [matcher], text, zh)
+
+
+def _expand_observed_contractions(slot: dict[str, Any], texts: list[str], zh: bool) -> dict[str, Any]:
+    """Add only contraction tokens actually present in this candidate's sample/examples."""
+    if zh or "any_of" not in slot:
+        return slot
+    values = list(slot.get("any_of") or [])
+    seen = {value.casefold().replace("\u2019", "'") for value in values}
+    for literal in list(values):
+        pattern = _EN_CONTRACTION_PATTERNS.get(literal.casefold())
+        if pattern is None:
+            continue
+        for text in texts:
+            for match in pattern.finditer(text):
+                token = match.group(0).replace("\u2019", "'")
+                key = token.casefold()
+                if key not in seen and len(values) < PERSONAL_PRODUCTION_MAX_ANY_OF:
+                    values.append(token)
+                    seen.add(key)
+    return {**slot, "any_of": values}
+
+
+def repair_personal_production_rule(
+    production: dict[str, Any], pattern: dict[str, Any], examples: list[dict[str, Any]], zh: bool,
+) -> None:
+    """Make a model-authored production rule self-consistent without inventing grammar.
+
+    The model remains responsible for the rule. Code may add contraction spellings
+    observed in its own sample/examples, drop constraints that match neither the
+    sample nor one representative target-form example, or fall back to literal
+    grammar slots already present in the formula. If no safe anchor exists the
+    rule is left to fail deterministic validation.
+    """
+    formula = pattern["formula"] if production["target_form"] == "affirmative" else (
+        pattern.get("variants", {}).get(production["target_form"])
+    )
+    if not formula:
+        return
+    formula_roles = {slot["role"] for slot in formula}
+    sample = production["sample"]["text"]
+    target_examples = [
+        example["text"] for example in examples if example["form"] == production["target_form"]
+    ]
+    if not target_examples:
+        return
+    texts = [sample, *target_examples]
+
+    raw_slots = [
+        _expand_observed_contractions(slot, texts, zh)
+        for slot in production["pattern_rule"]["slots"]
+        if slot.get("role") in formula_roles and _stored_rule_matcher(slot) is not None
+    ]
+    ordered = production["pattern_rule"]["ordered"]
+
+    def rule_matches(slots: list[dict[str, Any]]) -> bool:
+        matchers = [_stored_rule_matcher(slot) for slot in slots]
+        if not slots or any(matcher is None for matcher in matchers):
+            return False
+        return pattern_rule_matches(ordered, matchers, sample, zh) and any(
+            pattern_rule_matches(ordered, matchers, text, zh) for text in target_examples
+        )
+
+    if rule_matches(raw_slots):
+        production["pattern_rule"]["slots"] = raw_slots
+        return
+
+    # Pick one representative example, then retain only constraints supported
+    # by both it and the sample. Subject/time/place anchors are not grammar
+    # evidence by themselves and are never the sole repair fallback.
+    best: list[dict[str, Any]] = []
+    for example_text in target_examples:
+        supported = [
+            slot for slot in raw_slots
+            if _slot_matches_text(slot, sample, zh) and _slot_matches_text(slot, example_text, zh)
+        ]
+        if len(supported) > len(best):
+            best = supported
+    informative = [slot for slot in best if slot["role"] not in {"subject", "time", "place"}]
+    if rule_matches(informative):
+        production["pattern_rule"]["slots"] = informative
+        return
+
+    # Last safe fallback: literal forms already encoded in the selected
+    # formula (auxiliaries, markers, particles, fixed connectors, etc.).
+    for example_text in target_examples:
+        derived: list[dict[str, Any]] = []
+        for formula_slot in formula:
+            if formula_slot["role"] in {"subject", "time", "place"}:
+                continue
+            candidates = _literal_slot_candidates(formula_slot)[:PERSONAL_PRODUCTION_MAX_ANY_OF]
+            if not candidates:
+                continue
+            candidate_slot = _expand_observed_contractions(
+                {"role": formula_slot["role"], "any_of": candidates},
+                [sample, example_text],
+                zh,
+            )
+            if _slot_matches_text(candidate_slot, sample, zh) and _slot_matches_text(candidate_slot, example_text, zh):
+                derived.append(candidate_slot)
+            if len(derived) >= PERSONAL_PRODUCTION_MAX_SLOTS:
+                break
+        if rule_matches(derived):
+            production["pattern_rule"]["slots"] = derived
+            return
+
 def _story_generation_schema(*, locales: list[str], error_tags: list[str], cast_names: list[str]) -> dict[str, Any]:
     """STORY_SPEC.md §2: the LLM writes everything except ``type``/``theme`` (code sets
     those). One alternative per error_tag, same bounded-count pattern as pitfalls."""
@@ -1105,9 +1269,12 @@ class Generator:
             examples = [assemble_example(raw, zh, loc) for raw in data["examples"]]
             sanitize_example_spans(examples, pattern)
             complete_literal_example_spans(examples, pattern)
+            align_formula_order_from_examples(examples, pattern)
             compare = [assemble_compare_item(item, zh, loc) for item in data["compare"]]
             quick_practice = [assemble_quick_practice_item(item, zh, loc) for item in data["quick_practice"]]
             mistakes = [assemble_common_mistake(raw, zh, loc) for raw in data["common_mistakes"]]
+            personal_production = assemble_personal_production(data["personal_production"], zh, loc)
+            repair_personal_production_rule(personal_production, pattern, examples, zh)
 
             point = {
                 **{key: existing[key] for key in (
@@ -1128,7 +1295,7 @@ class Generator:
                 "compare": compare,
                 "common_mistakes": mistakes,
                 "quick_practice": quick_practice,
-                "personal_production": assemble_personal_production(data["personal_production"], zh, loc),
+                "personal_production": personal_production,
                 "status": "draft_ai",
                 "flags": [],
                 "provenance": {
