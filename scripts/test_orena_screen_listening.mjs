@@ -57,7 +57,7 @@ assert.equal(metaLine([null, undefined]), '');
   assert.equal(lesson.excerptStartMs, 1000);
   assert.equal(lesson.excerptEndMs, 47000);
   assert.deepEqual(lesson.vocabulary, ['galaxy', 'solar system', 'extinct']);
-  assert.deepEqual(lesson.modes, { follow: true, active: true, shadowing: false, dictation: true });
+  assert.deepEqual(lesson.modes, { follow: true, active: true, shadowing: true, dictation: true });
   assert.equal(lesson.playbackKind, 'video');
 }
 

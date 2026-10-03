@@ -10,6 +10,9 @@
    frame (`orena-script.js`: `segs`, `prevLine`, `cycleSpeed`, `modes`, `modeHint`), restated as
    pure functions over the real transcript - not its prototype timers or canned data. */
 import { wordSpans, activeWordIndex } from '../../capabilities/word-timeline.js';
+import { primaryLanguage } from '../../kit/lang.js';
+import { playbackAvailable } from '../../capabilities/media-player.js';
+export { primaryLanguage } from '../../kit/lang.js';
 
 export function transcriptState(payload) {
   if (payload?.transcript?.segments?.length) return 'ready';
@@ -63,10 +66,6 @@ export function metaLine(parts, sep = ' · ') {
    language against "zh", so only the primary subtag counts (an acquisition payload, unlike a stored
    catalog entry, carries the provider's tag). A provider that could not tell ("und") leaves the
    choice to the caller's fallback - the learner's own learning language - rather than a guess. */
-export function primaryLanguage(tag, fallback = 'en') {
-  const primary = String(tag || '').trim().toLowerCase().split(/[-_]/)[0];
-  return !primary || primary === 'und' ? fallback : primary;
-}
 
 function finiteOrNull(value) {
   if (value == null || value === '') return null;
@@ -109,7 +108,7 @@ export function mapLesson(payload, { levelLabel = (lv) => lv, fallbackLanguage =
     modes: {
       follow: true, // Follow always exists - it is the room's own default state, not a catalogue gate.
       active: modes.includes('active'),
-      shadowing: modes.includes('shadowing'),
+      shadowing: transcriptState(payload) === 'ready' && playbackAvailable(payload?.playback),
       dictation: modes.includes('dictation'),
     },
     rights: catalog.source || null,

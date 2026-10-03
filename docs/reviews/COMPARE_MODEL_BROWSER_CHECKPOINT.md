@@ -2,6 +2,45 @@
 
 ## Current browser checkpoint — fresh result after authorized QA recovery
 
+### D-119 shared media practice entry
+
+Shadowing and Pronunciation now route to the same recorder/Compare, with a real
+segment picker, previous/next, Listen return and Choose media. Content Detail and
+Listening provide the two media paths. Discover opens its Listen/Watch tab.
+Browser :8021: ZH video `zh-technology-search-wikipedia` exposes7 transcript
+segments; selected second sentence and its support meaning/pinyin; returned to
+Listening with segment `commons-zh-wikipedia-tutorial-1:001`, Now playing22s.
+An initial return reset to the first segment; corrected player initialization
+to use the requested segment start, then reload verified22s. Desktop1910x855 and
+phone390x844 render the picker and Record; phone has no horizontal overflow.
+Evidence: `evidence/media-shadowing-unified-2026-10-03.png` and
+`evidence/media-shadowing-mobile-2026-10-03.png`.
+Model-audioGET200, model-referencePOST422 on this source: UI truthfully says
+model word timing unavailable with retry; it does not claim an existing assessment.
+EN browser: `en-science-cosmic-calendar` exposes6 lines and actual IPA; selected
+line2 then returned to Listening at7s. Target was restored to Chinese after this
+test. Evidence: `evidence/media-shadowing-en-2026-10-03.png`.
+Fresh recording/scoring through these merged links is not claimed yet. Earlier
+real EN86/ZH75 scoring verifies the reused runtime.
+Local gates: media-speaking EN/ZH, Content, Listening, Speak, Compare, verdict,
+resume, shell, copy, foundation and browser ESM pass. No CI/public-ready claim.
+Independent reviewer `/root/review_unified_media_practice` found regional provider
+tags could pass Listening but fail Speaking. RED/GREEN EN-GB/zh-CN regression now
+passes using the same primary-language helper; scope checks remain in place.
+The same reviewer caught YouTube's `embed` kind excluded from practice. Both
+gates now reuse validated `playbackAvailable`; supported YouTube and unsafe embed
+RED/GREEN tests pass. Browser-imported `Me at the zoo` now exposes Shadowing,
+opens shared recorder with4 selectable transcript lines and Hear model enabled.
+Model word timing remained unavailable; no invented IPA/timing for missing words.
+Evidence: `evidence/media-shadowing-youtube-2026-10-03.png`.
+Reviewer rechecked both corrections: no remaining Important scoped finding.
+Design provenance: canonical Content05/Listening06/Pronunciation15/Compare16;
+explicit D-119 overrides old Shadowing28 interaction; Visual Skin EN/ZH treatment
+and existing semantic tokens/brand reused. New picker is an adaptation, not a
+claim that the original prototype contains this newly requested interaction.
+
+### Earlier real assessment evidence
+
 Fresh Chinese acceptance follow-up: user recorded directly. Real Azure 75/100,
 Accuracy84/Fluency69/Completeness83, 14.3 s speech, 23 provider words. Pinyin,
 learner contours and timing rendered; first 这 has You0.00–0.30s versus

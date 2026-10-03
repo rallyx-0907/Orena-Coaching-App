@@ -96,16 +96,18 @@ export default async function listening(element, ctx) {
   let wordHighlight = stageRaw.wordhl !== false;
   let moreOpen = false;
   let selectedId = null;
-  let currentId = segments.some((seg) => seg.segment_id === place.segmentId) ? place.segmentId : (segments[0]?.segment_id || null);
+  const explicitSegment = ctx.query.get('segment') || ctx.query.get('seg');
+  const requestedSegment = explicitSegment || place.segmentId;
+  let currentId = segments.some((seg) => seg.segment_id === requestedSegment) ? requestedSegment : (segments[0]?.segment_id || null);
   let playing = false;
   let bounded = false; // a line is being played to its end; reaching the clip's end then is not "media completed"
-  let timeMs = lesson.excerptStartMs;
+  let timeMs = explicitSegment ? (segments.find(seg=>seg.segment_id===currentId)?.start_ms ?? lesson.excerptStartMs) : lesson.excerptStartMs;
   let ended = false;
   let playedMs = 0;
   let lastTickAt = null;
   let rememberedId = '';
   let lastActiveIndex = -2; // which segment the clock last said we are in (-1: between lines)
-  let seekingTo = null; // a line the learner just asked for: the clock is ignored until it gets there
+  let seekingTo = explicitSegment ? {id:currentId,at:Date.now()} : null;
   const savedPhrases = new Set(); // segment texts known to be saved this session
   const tokenCache = new Map();
 
@@ -151,7 +153,7 @@ export default async function listening(element, ctx) {
         <div class="s-listening__player${lesson.posterUrl ? '' : ' is-bare'}" data-player>
           ${lesson.posterUrl ? html`<img src="${posterUrl(lesson.posterUrl)}" alt="">` : ''}
           ${playbackOk ? raw(mediaPlayer(lesson.playback, lesson.title, {
-            startMs: lesson.excerptStartMs, endMs: lesson.excerptEndMs, poster: lesson.posterUrl, controls: false,
+            startMs: timeMs, endMs: lesson.excerptEndMs, poster: lesson.posterUrl, controls: false,
           })) : html`<div class="s-listening__unavailable">${t('playbackUnavailable')}</div>`}
           ${playbackOk ? html`<button type="button" class="s-listening__playbtn" data-play aria-label="${t('playPause')}">${raw(icon('play', { size: 24 }))}</button>
           <div class="s-listening__time" data-time></div>` : ''}
@@ -180,12 +182,10 @@ export default async function listening(element, ctx) {
   /* ---------------------------------------------------------------- modes ---- */
   function modesMarkup() {
     const list = [
-      { id: 'follow', label: t('modeFollow'), on: lesson.modes.follow },
-      { id: 'active', label: t('modeActive'), on: lesson.modes.active },
+      { id: 'follow', label: s('listening'), on: true },
       { id: 'shadow', label: t('modeShadowing'), on: lesson.modes.shadowing },
-    ].filter((m) => m.on);
-    if (list.length < 2) return html``;
-    return html`${list.map((item) => html`<button type="button" class="s-listening__mode" data-mode="${item.id}" aria-pressed="${item.id === 'shadow' ? 'false' : String(mode === item.id)}">${item.label}</button>`)}`;
+    ];
+    return html`${list.map((item) => html`<button type="button" class="s-listening__mode" data-mode="${item.id}" ${item.on ? '' : raw('disabled')} title="${item.on ? '' : t('transcriptUnavailable')}" aria-pressed="${item.id === 'shadow' ? 'false' : 'true'}">${item.label}</button>`)}`;
   }
   function paintModes() {
     const holder = element.querySelector('[data-modes]');
@@ -263,6 +263,7 @@ export default async function listening(element, ctx) {
   if (playbackOk) {
     playerEl.addEventListener('orena:media-time', onMediaTime);
     connectMediaPlayer(playerEl, lesson.playback);
+    if (explicitSegment) seekPlayback(playerEl, lesson.playback, timeMs);
     playerEl.querySelector('[data-play]')?.addEventListener('click', () => {
       bounded = false;
       togglePlayback(playerEl, lesson.playback);

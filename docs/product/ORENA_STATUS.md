@@ -99,6 +99,17 @@ Pronunciation is now reachable. Server History and ZH pinyin/recorder verified.
 Fresh ZH take75, learner pitch/timing and server History verified. Model pitch on
 this ZH source remains honestly unavailable; extraction refinement deferred.
 Contradictory verdict labels corrected locally; fresh UI/theme checks remain.
+Human D-119 merges media Shadowing / Pronunciation into the shared recorder/Compare.
+Content Detail and Listening offer Listen / Shadowing; any usable media transcript
+provides a segment picker, previous/next and support meaning. Choose media opens
+Discover's Listen/Watch tab. ZH real video (7 segments), second-line selection,
+return to Listening at22s and desktop/390x844 entry browser verified; EN video6
+lines, IPA and line2 return7s verified. EN/ZH mapping gates pass locally.
+New recording through the merged entry remains to
+verify; previous real EN/ZH assessments are preserved evidence. This video serves
+model audio200 but model-reference422: word alignment unavailable/retry shown.
+YouTube import (Me at the zoo,4 lines) also browser-opens the shared recorder;
+regional language tags and supported embeds share Listening's validated gates.
 Prior take 83/history is historical after sandbox QA database loss. Evidence:
 `docs/reviews/COMPARE_MODEL_BROWSER_CHECKPOINT.md` and the prior Library checkpoint.
 

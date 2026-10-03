@@ -3989,3 +3989,15 @@ screen-specific canonical prototypes retain composition/layout/interaction.
 ZH keeps product parity with its typography/content treatment. Outdated skin
 logos, marks, icons and artwork are excluded; approved brand assets always win.
 Update the existing Design Contract, never a competing authority document.
+
+## D-119 - One media Shadowing / Pronunciation learning flow
+
+2026-10-03, explicit human instruction supersedes the separate simultaneous
+Shadowing interaction: usable transcript-backed video/media offers Listen and
+Shadowing / Pronunciation. Practice selects a real segment, hears its source
+model, records, receives assessment, compares and retries in one shared runtime.
+It is not restricted to a seeded sentence or separate Speaking catalogue.
+Old Shadowing/Pronunciation links preserve the chosen segment and use this runtime;
+Listening return preserves that segment. Unsupported transcript, timing or pitch
+remains truthful. Composition reuses canonical Pronunciation/Compare components;
+Visual Skin EN/ZH owns treatment, approved brand remains unchanged.

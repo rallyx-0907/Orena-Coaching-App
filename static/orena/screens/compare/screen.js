@@ -58,14 +58,15 @@ export default async function mountCompareWithModel(element, ctx) {
   const language = ctx.context?.language || 'en';
   const { ui, support } = languages();
   const segmentId = segmentOf(ctx.query);
-  const lineQuery = segmentId ? { segment: segmentId } : {};
 
   mount(element, loadingMarkup(shellCopy('loadingLesson')));
   element.classList.add('s-compare-root');
 
   const source = await loadSpeakingSource(ctx.params.id, { api, support, language, owner: ctx.context.owner || 'local', segmentId });
   if (!ctx.isCurrent()) return undefined;
-  ctx.setCrumb(t('title'));
+  const lineQuery = { segment:source.line.lineId };
+  const lines = source.lines || [];
+  ctx.setCrumb(source.lessonId ? t('practiceTitle') : t('title'));
   ctx.context?.memory?.enter?.({id:source.sourceId, title:source.title,
     intent:'speaking_compare', segment:source.line.lineId});
 
@@ -340,6 +341,25 @@ export default async function mountCompareWithModel(element, ctx) {
     });
   }
 
+  function sourceNavigation() {
+    if (!source.lessonId) return '';
+    const at = lines.findIndex(line=>line.lineId===source.line.lineId);
+    const busy = [TAKE.RECORDING,TAKE.PROCESSING].includes(rec.phase);
+    return html`<div class="s-compare-source">
+      <div class="s-compare-source__title" lang="${langAttr(language)}">${source.title}</div>
+      <div class="s-compare-source__actions">
+        <button type="button" class="s-compare-ghost" data-listen-source ${busy ? raw('disabled') : ''}>${t('listenSource')}</button>
+        <button type="button" class="s-compare-ghost" data-choose-media ${busy ? raw('disabled') : ''}>${t('chooseMedia')}</button>
+        <button type="button" class="o-iconbtn" data-source-line="${lines[at-1]?.lineId || ''}" aria-label="${t('previousLine')}" ${busy || at<=0 ? raw('disabled') : ''}>${raw(icon('chevron-left',{size:18}))}</button>
+        <select class="s-compare-source__select" aria-label="${t('chooseLine')}" data-source-select ${busy ? raw('disabled') : ''}>
+          ${lines.map(line=>html`<option value="${line.lineId}" ${line.lineId===source.line.lineId ? raw('selected') : ''}>${line.ordinal}. ${line.text}</option>`)}
+        </select>
+        <button type="button" class="o-iconbtn" data-source-line="${lines[at+1]?.lineId || ''}" aria-label="${t('nextLine')}" ${busy || at>=lines.length-1 ? raw('disabled') : ''}>${raw(icon('chevron-right',{size:18}))}</button>
+        <span class="s-compare-note">${t('linePosition',{n:at+1,total:lines.length})}</span>
+      </div>
+    </div>`;
+  }
+
   function liveLine() {
     const points = rec.levels.map((level, at) => `${(at * (300 / 39)).toFixed(1)},${(30 - Math.min(1, level) * 26).toFixed(1)}`).join(' ');
     return points;
@@ -358,6 +378,7 @@ export default async function mountCompareWithModel(element, ctx) {
         </div>
       </div>
       <div class="s-compare-tokens">${tokensMarkup()}</div>
+      ${support !== language ? html`<p class="s-compare-note" lang="${langAttr(support)}">${source.line.meaning || t('meaningUnavailable')}</p>` : ''}
       ${source.hasModelAudio ? '' : html`<p class="s-compare-note">${t('modelUnavailable')}</p>`}
       <div class="s-compare-recrow">
         <button type="button" class="s-compare-mic${recording ? ' is-rec' : ''}" data-fk="mic" data-mic aria-pressed="${recording}" aria-label="${recording ? t('stop') : t('record')}"${processing ? raw(' disabled') : ''} style="${recording ? `box-shadow:0 0 0 ${Math.round(4 + Math.max(...rec.levels, 0) * 18)}px var(--ring),var(--sh2)` : ''}">${recording ? html`<span class="s-compare-mic__stop"></span>` : raw(icon('mic', { size: 28 }))}</button>
@@ -597,10 +618,11 @@ export default async function mountCompareWithModel(element, ctx) {
       element,
       html`<div class="s-compare-header">
         <button type="button" class="o-iconbtn o-iconbtn--back" data-back aria-label="${shellCopy('back')}">${raw(icon('arrow-left', { size: 21 }))}</button>
-        <div class="s-compare-title-block"><div class="s-compare-title">${t('title')}</div><div class="s-compare-note">${t('subtitle')}</div></div>
+        <div class="s-compare-title-block"><div class="s-compare-title">${source.lessonId ? t('practiceTitle') : t('title')}</div><div class="s-compare-note">${t('subtitle')}</div></div>
         ${takes.length ? pillsMarkup() : ''}
         <button type="button" class="s-compare-history" data-attempts>${t('attemptHistory')}</button>
       </div>
+      ${sourceNavigation()}
       <div class="s-compare-scroll" data-scroll-region>
         ${referenceStatusMarkup()}
         ${showRecord ? recordCard() : ''}
@@ -644,6 +666,15 @@ export default async function mountCompareWithModel(element, ctx) {
   }
 
   function bind() {
+    const goLine = id => {
+      if (!id || recorder.busy) return;
+      stopPlay();
+      ctx.go(ctx.href('compare',{id:source.sourceId},{segment:id}));
+    };
+    element.querySelectorAll('[data-source-line]').forEach(button=>button.addEventListener('click',()=>goLine(button.dataset.sourceLine)));
+    q('[data-source-select]')?.addEventListener('change',event=>goLine(event.target.value));
+    q('[data-listen-source]')?.addEventListener('click',()=>ctx.go(ctx.href('listening',{id:source.lessonId},lineQuery)));
+    q('[data-choose-media]')?.addEventListener('click',()=>ctx.go(ctx.href('discover',{}, {tab:'listen'})));
     q('[data-reference-retry]')?.addEventListener('click',()=>void prepareReference(true));
     q('[data-back]').addEventListener('click', () => ctx.back());
     q('[data-attempts]').addEventListener('click', () => ctx.go(ctx.href('attempts', { id: ctx.params.id }, { ...lineQuery, attempt: selectedId })));

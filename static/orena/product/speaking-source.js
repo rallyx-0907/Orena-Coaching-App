@@ -7,7 +7,7 @@
      ships empty by default (UI_BACKEND_GAPS SP-1) and has no recorded model line at all - real,
      not a bug (`writing_coach/speaking_library.py#SpeakingLine` carries text/reading/translations,
      never audio).
-   - `media:<lessonId>` - a Listening lesson whose `available_modes` includes `shadowing`
+   - `media:<lessonId>` - any usable transcript-backed Listening source
      (`GET /api/listening/library/{lessonId}`); its own clip is the model, cut and served
      same-origin (`/api/speaking/model-audio/{lessonId}/{segmentId}`) so the browser can measure
      its own waveform/pitch (`capabilities/audio-analysis.js`) rather than trust a synthesized one.
@@ -18,18 +18,18 @@
      inconsistency in that link, recorded in this wave's report; it is read here as "a lesson, or
      the media object one was recorded against" (`lessonFor` below) so the link still opens.
 
-   None of these four screens draws a way to move to a second line inside the room (confirmed
-   against the source, SCRATCH/inventory/D5-speaking.md - Scripted Pronunciation and Compare With
-   Model both list no "next line" control). The line is the first of a multi-line item unless the
-   caller names one (`segmentId`, a `?segment=` query on the route): the frame's own "segment 8" is
-   a line somebody chose, and a link that knows the segment can say so. */
+   Media Shadowing and Pronunciation share Compare, with an explicit segment picker and
+   exact-line links back to Listening. An unnamed source starts at its first usable line. */
 import { readingsFor } from '../capabilities/dictation-result.js';
 import { openMedia } from './media-source.js';
 import { wordSpans } from '../capabilities/word-timeline.js';
+import { encounter } from './encounter.js';
+import { primaryLanguage } from '../kit/lang.js';
+import { playbackAvailable } from '../capabilities/media-player.js';
 
 /* The segment a route names (`?segment=`), or none: the first line of the source. */
 export function segmentOf(query) {
-  return String(query?.get?.('segment') || '');
+  return String(query?.get?.('segment') || query?.get?.('seg') || '');
 }
 
 export function parseSpeakingId(id) {
@@ -79,32 +79,31 @@ function lineReading(segment, spokenText, catalog) {
    against `scripts/fixtures/api/listening_library_lesson.en.json`, not assumed): the spoken text
    of a segment is `catalog.spoken_text_by_segment[segment_id]`, never a `segment.spoken_text`
    field, which this payload does not carry. */
-export function sourceFromLesson(lessonId, payload, segmentId = '') {
+export function sourceFromLesson(lessonId, payload, segmentId = '', support = '') {
   const catalog = payload?.catalog || {};
   const asset = payload?.asset || {};
   const segments = payload?.transcript?.segments || [];
-  const at = Math.max(0, segments.findIndex((item) => item.segment_id === segmentId));
+  const at = segmentId ? segments.findIndex((item) => item.segment_id === segmentId) : 0;
   const segment = segments[at];
   if (!segment) return null;
   const spokenText = catalog.spoken_text_by_segment?.[segment.segment_id] || segment.original_text || '';
-  const kind = payload?.playback?.kind;
   return {
     sourceId: `media:${lessonId}`,
     lessonId,
     title: asset.title || catalog.title || '',
     level: catalog.reviewed_level || catalog.level || '',
-    language: asset.source_language || catalog.language || '',
+    language: primaryLanguage(asset.source_language, primaryLanguage(catalog.language, '')),
     assetId: asset.asset_id || '',
-    hasModelAudio: kind === 'audio' || kind === 'video' || kind === 'youtube',
+    lines: segments.map((item,index)=>({lineId:item.segment_id,ordinal:index+1,text:catalog.spoken_text_by_segment?.[item.segment_id] || item.original_text || ''})),
+    hasModelAudio: playbackAvailable(payload?.playback),
     modelAudioUrl: (lineId) => `/api/speaking/model-audio/${encodeURIComponent(lessonId)}/${encodeURIComponent(lineId)}`,
     line: {
       lineId: segment.segment_id,
       ordinal: at + 1,
       text: spokenText,
       reading: lineReading(segment, spokenText, catalog),
-      // No per-segment translation is surfaced in this payload for a shadow-model line (only a
-      // whole-asset `translations`/`translation` block) - left empty rather than guessed (rule 40).
-      meaning: '',
+      // Use Listening's support-language encounter translations; never guess a meaning.
+      meaning: encounter(payload, support).meaning(segment.segment_id) || '',
       startMs: segment.start_ms,
       endMs: segment.end_ms,
       wordTimings: spokenText === segment.original_text ? (wordSpans(segment) || []).map(span=>({
@@ -138,7 +137,7 @@ export async function loadSpeakingSource(id, { api, support, language, owner = '
     return source;
   }
   const { lessonId, payload } = parsed.unprefixed ? await lessonFor(parsed.rawId, { api, support, language, owner }) : { lessonId: parsed.rawId, payload: await openMedia(parsed.rawId, {api, support, language, owner}) };
-  const source = sourceFromLesson(lessonId, payload, segmentId);
+  const source = sourceFromLesson(lessonId, payload, segmentId, support);
   if (!source || (language && source.language && source.language !== language)) throw new Error('speaking_lesson_unavailable');
   return source;
 }

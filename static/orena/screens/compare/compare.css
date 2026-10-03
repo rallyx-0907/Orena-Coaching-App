@@ -17,6 +17,22 @@
   container-type: inline-size;
   container-name: cmp;
 }
+
+.s-compare-source { flex: 0 0 auto; margin-bottom: 14px; min-width: 0; }
+.s-compare-source__title { color: var(--muted); font-size: 13px; margin-bottom: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.s-compare-source__actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; min-width: 0; }
+.s-compare-source__actions > .s-compare-ghost { flex: 0 0 auto; padding: 0 14px; }
+.s-compare-source__select { flex: 1 1 160px; width: 0; min-width: 100px; max-width: 100%; height: 40px; padding: 0 10px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface2); color: var(--text); font: inherit; font-size: 13px; }
+@media (max-width: 600px) {
+  .s-compare-source__select { flex-basis: 120px; }
+  .s-compare-source__actions > .s-compare-note { flex-basis: 100%; }
+  .s-compare-root .s-compare-header { gap: 8px; padding-bottom: 12px; }
+  .s-compare-root .s-compare-history { height: 32px; font-size: 12px; padding: 0 10px; }
+  .s-compare-root .s-compare-record { padding: 16px; gap: 12px; }
+  .s-compare-root .s-compare-token__word:lang(zh) { font-size: 26px; }
+  .s-compare-root .s-compare-error { padding: 10px 12px; font-size: 13px; }
+  .s-compare-root .s-compare-scroll { gap: 12px; }
+}
 .s-compare-loading {
   display: flex;
   align-items: center;

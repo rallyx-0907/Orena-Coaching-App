@@ -40,7 +40,7 @@ export default async function discover(element, ctx) {
   const memory = learner.memory;
   const continuation = memory?.value?.continuation || [];
 
-  const state = { tab: 'all', query: '', filters: emptyFilters(), entries: [], loading: true, failed: false };
+  const state = { tab: TABS.includes(ctx.query.get('tab')) ? ctx.query.get('tab') : 'all', query: '', filters: emptyFilters(), entries: [], loading: true, failed: false };
   let sheetHandle = null;
 
   mount(

@@ -2,9 +2,8 @@
    content kind Discover/Today/My Library/Search link into: an article, a shared-library book (or
    one of its chapters), a Listening lesson (curated or admin-imported), a learner's own uploaded
    media, or a learner's own imported text. Its primary action hands off to the Reader or the
-   Listening workspace; neither is built yet, so that hand-off lands on the design's own Coming
-   soon screen through the router's normal fallback (shell/screens.js has no entry for either),
-   exactly as the brief asks - this screen does not special-case that.
+   Listening workspace. Usable transcript-backed media also opens the shared
+   Shadowing / Pronunciation recorder (D-119), with Listening's playback gate.
 
    Not drawn here (rule 43/44): no chapter list (the frame draws none - a book's chapters are the
    Reader's own concern, per the frame), no bulk actions, no toast on Save (the frame changes only
@@ -22,6 +21,7 @@ import { langSpan, langAttr } from '../../kit/lang.js';
 import { api } from '../../infrastructure/api.js';
 import { languages } from '../../copy/index.js';
 import { openMedia } from '../../product/media-source.js';
+import { mapLesson } from '../listening/model.js';
 import { t } from './copy.js';
 import {
   parseContentId,
@@ -62,7 +62,7 @@ async function loadDetail(kind, id, ctx) {
       api, support: languages().support, language: ctx.context.language, owner: ctx.context.owner || 'local',
     });
     if (!payload?.asset) throw new Error('This media is unavailable.');
-    return normalizeMedia(payload);
+    return { ...normalizeMedia(payload), canShadow: mapLesson(payload).modes.shadowing };
   }
   // text: a learner's own import, device memory only (product/memory.js) - never the network.
   const record = ctx.context.memory.value.imports.find((item) => item.id === contentIdFor('text', id));
@@ -204,6 +204,7 @@ export default async function content(element, ctx) {
             : ''}
           <div class="s-content__actions">
             <a class="o-btn o-btn--primary s-content__primary" href="${primaryHref}">${primaryLabel}</a>
+            ${destination === 'listening' && detail.canShadow ? html`<a class="s-content__secondary" href="${ctx.href('shadow', { id: kind === 'upload' ? uploadMediaId(id) : id })}">${shellCopy('shadowing')}</a>` : ''}
             ${hasPractice ? html`<a class="s-content__ai" href="${ctx.href('checku', { id: contentId })}">${t('practiceThisText')}</a>` : ''}
             <button type="button" class="s-content__secondary" data-save aria-pressed="${state.saved ? 'true' : 'false'}">${state.saved ? t('saved') : t('save')}</button>
             ${own ? html`<span data-more-slot>${moreButton({ label: t('more'), open: false, dataset: memberId })}</span>` : ''}

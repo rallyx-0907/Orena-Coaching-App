@@ -79,10 +79,10 @@ shape).
 | 46 | Discussion | `#/read/:id/discuss` | focus | `screens/discussion/` | reviewable |
 | 06 | Listening Workspace | `#/listen/:id` | focus | `screens/listening/` | reviewable |
 | 07 | Dictation | `#/listen/:id/dictation` | focus | `screens/dictation/` | reviewable |
-| 28 | Shadowing | `#/listen/:id/shadow` | focus | `screens/shadowing/` | reviewable |
+| 28 | Shadowing / Pronunciation (D-119) | `#/listen/:id/shadow` | focus | `screens/compare/` | reviewable; shared recorder |
 | 33 | React / Reuse | `#/listen/:id/react` | focus | `screens/react/` | reviewable |
 | 45 | Respond to Content | `#/respond/:id` | focus | `screens/respond/` | reviewable |
-| 15 | Scripted Pronunciation | `#/speak/:id` | focus | `screens/speak/` | reviewable |
+| 15 | Scripted Pronunciation (D-119) | `#/speak/:id` | focus | `screens/compare/` | reviewable; shared recorder |
 | 16 | Compare With Model | `#/speak/:id/compare` | focus | `screens/compare/` | reviewable |
 | 41 | Attempt History | `#/speak/:id/attempts` | focus | `screens/attempts/` | reviewable |
 | 42 | Speaking Summary | `#/speak-summary` | focus | `screens/speak-summary/` | reviewable |

@@ -4,6 +4,7 @@
 import { defineCopy } from '../../copy/index.js';
 
 const LAYERS = {
+  practiceTitle:'interface', chooseMedia:'interface', listenSource:'interface', chooseLine:'interface', previousLine:'interface', nextLine:'interface', linePosition:'interface', meaningUnavailable:'support',
   retryReference:'interface',
   referenceAudio:'support', referenceReading:'support', referenceAlignment:'support', referenceFailed:'support',
   readySub:'support', recordingSub:'support', assessingSub:'support', readingUnavailable:'support',
@@ -46,8 +47,9 @@ const LAYERS = {
 export const t = defineCopy('compare', {
   layers: LAYERS,
   en: {
+    practiceTitle:'Shadowing / Pronunciation', chooseMedia:'Choose media', listenSource:'Listen', chooseLine:'Choose a line', previousLine:'Previous line', nextLine:'Next line', linePosition:'Line {n} / {total}', meaningUnavailable:'Support meaning is not available yet.',
     retryReference:'Retry model preparation',
-    referenceAudio:'Preparing the model audio…', referenceReading:'Preparing pronunciation…', referenceAlignment:'Orena AI is finding the model’s word timing…', referenceFailed:'The model comparison could not be prepared. Your assessment is still available.',
+    referenceAudio:'Preparing the model audio…', referenceReading:'Preparing pronunciation…', referenceAlignment:'Orena AI is finding the model’s word timing…', referenceFailed:'Model word timing is unavailable. You can still listen and record.',
     readySub:'Tap the mic, read the line, then press Stop.', recordingSub:'{s} s · Press Stop when you finish.', assessingSub:'Orena AI is assessing your recording.', readingUnavailable:'Pronunciation unavailable',
     timingCompared:'Timing starts at the first spoken word in each recording.', timingLonger:'Your word is {s} s longer than the model.', timingShorter:'Your word is {s} s shorter than the model.', timingSame:'Your word has the same measured duration as the model.',
     subtitle: 'Where your timing and sounds diverge from the model',
@@ -96,8 +98,9 @@ export const t = defineCopy('compare', {
     privacyNote: 'Pitch and timing are measured in your browser, from the model recording and your own take. Word scores come from the pronunciation assessment. A pitch line that could not be measured is left blank rather than guessed.',
   },
   vi: {
+    practiceTitle:'Shadowing / Phát âm', chooseMedia:'Chọn media', listenSource:'Nghe', chooseLine:'Chọn câu', previousLine:'Câu trước', nextLine:'Câu tiếp', linePosition:'Câu {n} / {total}', meaningUnavailable:'Chưa có nghĩa theo ngôn ngữ hỗ trợ.',
     retryReference:'Chuẩn bị lại bản mẫu',
-    referenceAudio:'Đang chuẩn bị audio mẫu…', referenceReading:'Đang chuẩn bị phiên âm…', referenceAlignment:'AI của Orena đang xác định thời gian từng từ của bản mẫu…', referenceFailed:'Chưa chuẩn bị được phần so sánh với mẫu. Kết quả đánh giá của bạn vẫn còn.',
+    referenceAudio:'Đang chuẩn bị audio mẫu…', referenceReading:'Đang chuẩn bị phiên âm…', referenceAlignment:'AI của Orena đang xác định thời gian từng từ của bản mẫu…', referenceFailed:'Chưa có thời gian từng từ của bản mẫu. Bạn vẫn có thể nghe và ghi âm.',
     readySub:'Bấm micro, đọc câu rồi bấm Dừng.', recordingSub:'{s} giây · Bấm Dừng khi đọc xong.', assessingSub:'AI của Orena đang đánh giá bản ghi của bạn.', readingUnavailable:'Chưa có phiên âm',
     timingCompared:'Thời gian bắt đầu từ từ đầu tiên được nói trong mỗi bản ghi.', timingLonger:'Bạn nói từ này dài hơn mẫu {s} giây.', timingShorter:'Bạn nói từ này ngắn hơn mẫu {s} giây.', timingSame:'Từ này có cùng thời lượng đo được ở hai bản ghi.',
     subtitle: 'So sánh thời gian và âm của bạn với mẫu',
@@ -146,8 +149,9 @@ export const t = defineCopy('compare', {
     privacyNote: 'Cao độ và thời gian được đo ngay trên trình duyệt của bạn, từ bản ghi mẫu và lần thử của bạn. Điểm từng từ đến từ bước chấm phát âm. Đường cao độ không đo được sẽ để trống thay vì đoán.',
   },
   zh: {
+    practiceTitle:'跟读 / 发音', chooseMedia:'选择媒体', listenSource:'听', chooseLine:'选择句子', previousLine:'上一句', nextLine:'下一句', linePosition:'第 {n} / {total} 句', meaningUnavailable:'暂无辅助语言释义。',
     retryReference:'重新准备示范',
-    referenceAudio:'正在准备示范音频…', referenceReading:'正在准备注音…', referenceAlignment:'Orena AI 正在确定示范的逐词时间…', referenceFailed:'暂时无法准备示范对比，你的评估结果仍可查看。',
+    referenceAudio:'正在准备示范音频…', referenceReading:'正在准备注音…', referenceAlignment:'Orena AI 正在确定示范的逐词时间…', referenceFailed:'暂时没有示范的逐词时间，仍可听示范并录音。',
     readySub:'点击麦克风，朗读句子，然后按停止。', recordingSub:'{s} 秒 · 读完后按停止。', assessingSub:'Orena AI 正在评估你的录音。', readingUnavailable:'暂无注音',
     timingCompared:'每段录音的时间均从第一个发音词开始计算。', timingLonger:'这个词比示范长 {s} 秒。', timingShorter:'这个词比示范短 {s} 秒。', timingSame:'这个词在两段录音中的实测时长相同。',
     subtitle: '比较你的节奏和发音与示范的差异',

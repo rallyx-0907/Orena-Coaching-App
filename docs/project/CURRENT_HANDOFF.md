@@ -115,12 +115,13 @@ composition; approved brand unchanged.
 Current phase: basic functional coverage first (human instruction, 2026-10-02).
 Preserve accepted Books/Progress; do not reopen them or restart a full-app audit.
 S2 basic Listening and S6 Admin media rights/publish are REVIEWABLE; stop deepening
-those paths. My Library accepted. Compare local70/Node pass; EN take86 IPA/plots/timing,
-mobile, server History, ZH pinyin and Back/Continue exact sentence browser verified.
-ZH take75/History verified; Model pitch limited. Verdict fix needs UI check.
-PG tmpfs lost QA state. Human-authorized recovery: orena-next-verify-postgres volume,
-reviewed schema0023, old PG preserved; web runs, worker stopped. Old QA records not restored.
-Prior take83 is historical; COMPARE_MODEL_BROWSER_CHECKPOINT.md holds evidence.
+those paths. My Library accepted. D-119: Shadowing/Pronunciation share Compare;
+media picker, sentence picker, support meanings, Listen return. ZH video7 lines,
+line2 return22s and desktop/390x844 verified. Local Node/ESM gates pass.
+EN6 lines/IPA/7s, YouTube4 lines verified. Prior EN86/ZH75; fresh merged take pending.
+Video model-reference422 unavailable/retry; audio200. Model pitch limited.
+QA recovery/storage is recorded above; old take83 is historical.
+Evidence: COMPARE_MODEL_BROWSER_CHECKPOINT.md.
 Preserve S6/control plane. Azure local125/Node/review pass; mobile unverified.
 Deep hardening follows basic app coverage. Captions first; ASR within D-111.6 caps.
 

@@ -207,8 +207,8 @@ assert.equal(segmentOf(null), '');
     assert.equal(named.line.lineId, later.segment_id);
     assert.equal(named.line.ordinal, 3);
   }
-  // A segment that does not exist falls back to the first line rather than to nothing.
-  assert.equal(sourceFromLesson('en-science-cosmic-calendar', payload, 'no-such-segment').line.lineId, segment.segment_id);
+  // A missing named segment must not silently open a different sentence.
+  assert.equal(sourceFromLesson('en-science-cosmic-calendar', payload, 'no-such-segment'), null);
 }
 
 /* --- loadSpeakingSource: a fake api, both id shapes, and the language gate --- */
