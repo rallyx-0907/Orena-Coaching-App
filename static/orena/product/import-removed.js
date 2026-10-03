@@ -6,6 +6,12 @@
    never content. */
 const scopes = new Map(); // "owner:language" -> Set of membership ids
 let active = '';
+const listeners = new Set();
+export function onRemovedImports(listener) {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+function notify() { for (const listener of listeners) listener(active, removedSet()); }
 
 /* The set a learner memory keeps for ITS owner and language. The memory registers it under its scope; the shell
    makes one scope active (activateRemovedScope) when that memory becomes the room's. Another language's memory being
@@ -14,11 +20,13 @@ let active = '';
 export function setRemovedImports(ids, scope = '') {
   scopes.set(scope, new Set(Array.isArray(ids) ? ids.map(String) : []));
   if (!scope || !scopes.has(active)) active = scope;
+  if (scope === active) notify();
 }
 
 export function activateRemovedScope(scope) {
   if (!scopes.has(scope)) scopes.set(scope, new Set());
   active = scope;
+  notify();
 }
 
 function removedSet() {

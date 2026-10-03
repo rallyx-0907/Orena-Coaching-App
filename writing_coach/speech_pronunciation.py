@@ -10,7 +10,8 @@ import subprocess
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Protocol
+from collections.abc import Callable
+from typing import Any, Protocol
 
 import requests
 from fastapi import HTTPException
@@ -250,7 +251,7 @@ class AzureSpeechPronunciationProvider:
         return self._max_reference_chars
 
     @classmethod
-    def from_env(cls) -> "AzureSpeechPronunciationProvider | None":
+    def from_env(cls) -> AzureSpeechPronunciationProvider | None:
         api_key = os.getenv("AZURE_SPEECH_KEY", "").strip()
         region = os.getenv("AZURE_SPEECH_REGION", "").strip()
         from writing_coach.ai.platform import _stored_provider_credentials
@@ -285,6 +286,11 @@ class AzureSpeechPronunciationProvider:
             return self._zh_locale
         raise SpeechPronunciationMalformed()
 
+    def phoneme_alphabet(self, language: str) -> str:
+        """IPA is supported for en-US; Chinese retains its SAPI labels."""
+        locale = self._locale(language).casefold()
+        return "IPA" if locale == "en-us" else "SAPI" if locale == "zh-cn" else ""
+
     def assess_bytes(
         self,
         audio_bytes: bytes,
@@ -318,6 +324,9 @@ class AzureSpeechPronunciationProvider:
             # Miscues need a reference to be measured against.
             "EnableMiscue": not unscripted,
         }
+        alphabet = self.phoneme_alphabet(language)
+        if alphabet:
+            config["PhonemeAlphabet"] = alphabet
         if not unscripted:
             config["ReferenceText"] = reference
         if locale.casefold() == "en-us" and self._enable_prosody:

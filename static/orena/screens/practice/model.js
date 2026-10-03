@@ -16,6 +16,7 @@
    library or the Reading queue is temporarily empty, that skill's section simply does not render
    that visit, the same way the design's own Continue section disappears when it is empty. */
 import { isDeferred } from '../../shell/routes.js';
+import { speakingResumeTarget } from '../../product/speaking-resume.js';
 
 /* Every mode maps to a real shell/routes.js entry; its label is that route's own crumb, already
    translated in copy/shell.js (shellCopy) - this file only decides *which* routes belong to which
@@ -98,7 +99,7 @@ export function speakModes(items = []) {
     { key: 'mock', routeId: 'mock' },
     { key: 'sound', routeId: 'sound' },
   ];
-  const sentence = firstOfType(list, 'sentences');
+  const sentence = firstOfType(list, 'sentences') || firstOfType(list, 'clip');
   if (sentence) modes.push({ key: 'speak', routeId: 'speak', params: { id: sentence.id }, level: sentence.level || '' });
   const clip = firstOfType(list, 'clip');
   if (clip) modes.push({ key: 'shadow', routeId: 'shadow', params: { id: String(clip.id).replace(/^media:/, '') }, level: clip.level || '' });
@@ -213,6 +214,8 @@ export function buildSkillSections(data = {}) {
    out rather than guessed at (rule 40) - it is still there next time the learner opens the room
    that owns it, just not resumable from this hub. */
 export function continuationTarget(item) {
+  const speaking = speakingResumeTarget(item);
+  if (speaking) return speaking;
   const id = String(item?.id || '');
   const intent = item?.intent || null;
   if (/^(expression|essay):/.test(id) || intent === 'writing') {

@@ -37,12 +37,13 @@ class FakeSession:
         return FakeResponse(self.payload)
 
 
-def make_provider(payload, *, enable_prosody=False):
+def make_provider(payload, *, enable_prosody=False, en_locale="en-US"):
     session = FakeSession(payload)
     provider = AzureSpeechPronunciationProvider(
         "secret",
         "eastus",
         enable_prosody=enable_prosody,
+        en_locale=en_locale,
         session=session,
         normalizer=lambda data, **_: b"RIFFxxxxWAVE" + data,
     )
@@ -86,6 +87,8 @@ def test_direct_rest_shape_and_en_us_prosody():
     config = json.loads(base64.b64decode(call["headers"]["Pronunciation-Assessment"]))
     assert config["ReferenceText"] == "Good morning."
     assert config["Granularity"] == "Phoneme"
+    assert config["PhonemeAlphabet"] == "IPA"
+    assert provider.phoneme_alphabet('en') == 'IPA'
 
 
 def test_nested_shape_and_zh_locale():
@@ -126,6 +129,9 @@ def test_nested_shape_and_zh_locale():
     assert result.words[0].accuracy_score == 84.0
     _, call = session.calls[0]
     assert "EnableProsodyAssessment" not in call["headers"]
+    config = json.loads(base64.b64decode(call["headers"]["Pronunciation-Assessment"]))
+    assert config["PhonemeAlphabet"] == "SAPI"
+    assert provider.phoneme_alphabet('zh') == 'SAPI'
 
 
 def test_reference_is_bounded():
@@ -138,6 +144,14 @@ def test_reference_is_bounded():
             language="en",
             reference_text="x" * 1201,
         )
+
+
+def test_locale_without_named_phonemes_omits_alphabet_request():
+    provider, session = make_provider({"NBest": [{"PronScore": 50}]}, en_locale="en-GB")
+    provider.assess_bytes(b"webm", filename="take.webm", content_type="audio/webm", language="en", reference_text="Good morning.")
+    config = json.loads(base64.b64decode(session.calls[0][1]["headers"]["Pronunciation-Assessment"]))
+    assert provider.phoneme_alphabet("en") == ""
+    assert "PhonemeAlphabet" not in config
 
 
 def test_demo_provider_returns_explicit_synthetic_provenance():

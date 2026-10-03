@@ -25,6 +25,7 @@
    a line somebody chose, and a link that knows the segment can say so. */
 import { readingsFor } from '../capabilities/dictation-result.js';
 import { openMedia } from './media-source.js';
+import { wordSpans } from '../capabilities/word-timeline.js';
 
 /* The segment a route names (`?segment=`), or none: the first line of the source. */
 export function segmentOf(query) {
@@ -89,11 +90,12 @@ export function sourceFromLesson(lessonId, payload, segmentId = '') {
   const kind = payload?.playback?.kind;
   return {
     sourceId: `media:${lessonId}`,
+    lessonId,
     title: asset.title || catalog.title || '',
     level: catalog.reviewed_level || catalog.level || '',
     language: asset.source_language || catalog.language || '',
     assetId: asset.asset_id || '',
-    hasModelAudio: kind === 'audio' || kind === 'video',
+    hasModelAudio: kind === 'audio' || kind === 'video' || kind === 'youtube',
     modelAudioUrl: (lineId) => `/api/speaking/model-audio/${encodeURIComponent(lessonId)}/${encodeURIComponent(lineId)}`,
     line: {
       lineId: segment.segment_id,
@@ -105,6 +107,10 @@ export function sourceFromLesson(lessonId, payload, segmentId = '') {
       meaning: '',
       startMs: segment.start_ms,
       endMs: segment.end_ms,
+      wordTimings: spokenText === segment.original_text ? (wordSpans(segment) || []).map(span=>({
+        text:spokenText.slice(span.start,span.end),offsetKnown:true,
+        offsetMs:span.start_ms-segment.start_ms,durationMs:span.end_ms-span.start_ms,
+      })).filter(word=>word.offsetMs>=0) : [],
     },
   };
 }

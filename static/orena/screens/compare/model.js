@@ -78,7 +78,8 @@ export function wordDetailFor(view, index) {
   return {
     index,
     text: word.text,
-    pinyin: word.pinyin,
+      pinyin: word.pinyin,
+      reading: word.reading || word.pinyin || '',
     score: word.score,
     scoreKnown: word.scoreKnown !== false,
     flagged: word.flagged,
@@ -151,17 +152,17 @@ export const CHART = Object.freeze({ width: 272, height: 90, x: 40, y: 20, range
    {t, st}). `from`/`to` (seconds) scope it to a word's window; without them, the whole take.
    `width` is the plot's own width: the word detail's chart is the component's 272, the whole-line
    chart in the summary card is wider. */
-export function chartLines(points, { from = 0, to = null, width = CHART.width } = {}) {
+export function chartLines(points, { from = 0, to = null, width = CHART.width, range = CHART.range } = {}) {
   if (!points?.length) return [];
   const end = to ?? points[points.length - 1].t;
-  return contourPolylines(points, { width, height: CHART.height, range: CHART.range, from, to: end, span: end });
+  return contourPolylines(points, { width, height: CHART.height, range, from, to: end, span: end });
 }
 
-export function wordPitchLines(analysis, word) {
+export function wordPitchLines(analysis, word, options = {}) {
   if (!word?.offsetKnown || !hasVoice(analysis)) return [];
   const from = Math.max(0, word.offsetMs / 1000);
   const to = from + word.durationMs / 1000;
-  return to > from ? chartLines(analysis.contour, { from, to, width: 100 }) : [];
+  return to > from ? chartLines(analysis.contour, { from, to, width: 100, ...options }) : [];
 }
 
 /* Keep the prototype's word tiles inside the viewport. Pages use the measured

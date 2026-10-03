@@ -41,7 +41,7 @@
     "lane": "unified_baseline_and_ui_lane"
   },
   "last_verified_application_commit": "7857d4353be106e1ced97de8ea84a27804b1defb",
-  "last_verified_batch": "azure_admin_runtime_visual_skin_browser_125_local_tests_independent_review",
+  "last_verified_batch": "compare_reference_local70_real_en86_desktop_mobile",
   "current_program_stage": {
     "id": "ORENA_PRODUCT_COMPLETION",
     "name": "Coherent content-first web product completion",
@@ -50,7 +50,7 @@
   "current_primary_workstream": {
     "id": "orena_product_completion_d110_d111",
     "status": "in_progress",
-    "next_task": "My Library accepted by human 2026-10-03; preserve its verified correction. Active Speaking Compare prototype correction: paired word plots/detail/playback browser exercised with real EN Azure take 83 and server History at :8021 desktop/390x844. Evidence COMPARE_MODEL_BROWSER_CHECKPOINT.md; final sizing/focus changes locally checked, fresh-browser/ZH acceptance remains. Model word timing unavailable, never fabricated. Azure/Admin/Books/Progress/S2/S6 preserved; no full-app audit or deep hardening. Canonical Grammar/Intelligence remain subsequent basic gaps."
+    "next_task": "My Library accepted; preserve existing product work. Active Compare source-word timing, real Model/You pitch, IPA/pinyin and word playback implemented; local70 Python tests and Node/copy/ESM checks pass. EN user take86 verifies all16 IPA, real paired pitch, timing, pronunciation, playback transitions and desktop/390x844. Back/Continue exact sentence and server History browser verified; ZH Pronunciation/pinyin/tones/punctuation verified. Fresh ZH assessment, skin variants and PG restart remain. Brave extension requires update, blocking browser control; test target scope currentlyZH (originalEN). :8021 PG tmpfs was found empty on2026-10-03; human authorized recovery. Old PG container preserved as orena-next-verify-pg-ephemeral-20261003; new PG uses orena-next-verify-postgres volume, explicitly bootstrapped reviewed head20260930_0023; web runs, worker stays stopped. Old QA records were not restored; earlier83 History evidence is historical. Preserve fresh user recording; update browser extension then finish remaining Speaking acceptance and continue next basic gaps without full-app audit."
   },
   "design": {
     "web_is_visual_source_of_truth": true,
@@ -207,5 +207,5 @@
     "eight_design_screens_are_coming_soon_until_a_backend_exists",
     "platform_admin_moves_into_the_new_ui_d101_old_admin_untouched_until_cutover"
   ],
-  "last_verified_at": "2026-09-29"
+  "last_verified_at": "2026-10-03"
 }

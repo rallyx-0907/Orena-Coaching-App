@@ -1,15 +1,13 @@
-/* Compare With Model's own words (D-079, rules 9, 26, 50). Rule 50 drops: the wrapper's own
-   subtitle "Where your timing and sounds diverge from the model" (a restated-the-obvious
-   subheading, D5's own copy audit flags it for removal), "Tap a word for details · open Timing to
-   compare rhythm" (an obvious-control explanation), and the record card's own second lines
-   ("Hear the model first if you like, then tap the mic and read the sentence once." and its
-   siblings) - each explains a control the card already draws. The bottom methodology paragraph is
-   kept, rewritten to what this build really does (a substantive disclosure, not a slogan - D5's
-   verdict). Nothing here describes the audio in words (D-076): the tips the design's script writes
-   ("let your voice fall...") have no measured source and are not built. */
+/* Compare-With-Model.dc.html copy: preserve the approved frame labels and status.
+   Phonetics, timing and curves come from dictionary/source/recording evidence.
+   Unsupported coaching claims remain unavailable rather than invented. */
 import { defineCopy } from '../../copy/index.js';
 
 const LAYERS = {
+  retryReference:'interface',
+  referenceAudio:'support', referenceReading:'support', referenceAlignment:'support', referenceFailed:'support',
+  readySub:'support', recordingSub:'support', assessingSub:'support', readingUnavailable:'support',
+  timingCompared:'support', timingLonger:'support', timingShorter:'support', timingSame:'support',
   subtitle: 'interface', wordRange: 'interface', previousWords: 'interface', nextWords: 'interface',
   pitchUnavailable: 'support', modelWordUnavailable: 'support',
   title: 'interface', attemptHistory: 'interface', attemptN: 'interface',
@@ -48,6 +46,10 @@ const LAYERS = {
 export const t = defineCopy('compare', {
   layers: LAYERS,
   en: {
+    retryReference:'Retry model preparation',
+    referenceAudio:'Preparing the model audio…', referenceReading:'Preparing pronunciation…', referenceAlignment:'Orena AI is finding the model’s word timing…', referenceFailed:'The model comparison could not be prepared. Your assessment is still available.',
+    readySub:'Tap the mic, read the line, then press Stop.', recordingSub:'{s} s · Press Stop when you finish.', assessingSub:'Orena AI is assessing your recording.', readingUnavailable:'Pronunciation unavailable',
+    timingCompared:'Timing starts at the first spoken word in each recording.', timingLonger:'Your word is {s} s longer than the model.', timingShorter:'Your word is {s} s shorter than the model.', timingSame:'Your word has the same measured duration as the model.',
     subtitle: 'Where your timing and sounds diverge from the model',
     wordRange: '{from}–{to} / {total}', previousWords: 'Previous words', nextWords: 'Next words',
     pitchUnavailable: 'Pitch unavailable', modelWordUnavailable: 'Model word timing is unavailable.',
@@ -94,6 +96,10 @@ export const t = defineCopy('compare', {
     privacyNote: 'Pitch and timing are measured in your browser, from the model recording and your own take. Word scores come from the pronunciation assessment. A pitch line that could not be measured is left blank rather than guessed.',
   },
   vi: {
+    retryReference:'Chuẩn bị lại bản mẫu',
+    referenceAudio:'Đang chuẩn bị audio mẫu…', referenceReading:'Đang chuẩn bị phiên âm…', referenceAlignment:'AI của Orena đang xác định thời gian từng từ của bản mẫu…', referenceFailed:'Chưa chuẩn bị được phần so sánh với mẫu. Kết quả đánh giá của bạn vẫn còn.',
+    readySub:'Bấm micro, đọc câu rồi bấm Dừng.', recordingSub:'{s} giây · Bấm Dừng khi đọc xong.', assessingSub:'AI của Orena đang đánh giá bản ghi của bạn.', readingUnavailable:'Chưa có phiên âm',
+    timingCompared:'Thời gian bắt đầu từ từ đầu tiên được nói trong mỗi bản ghi.', timingLonger:'Bạn nói từ này dài hơn mẫu {s} giây.', timingShorter:'Bạn nói từ này ngắn hơn mẫu {s} giây.', timingSame:'Từ này có cùng thời lượng đo được ở hai bản ghi.',
     subtitle: 'So sánh thời gian và âm của bạn với mẫu',
     wordRange: '{from}–{to} / {total}', previousWords: 'Các từ trước', nextWords: 'Các từ tiếp',
     pitchUnavailable: 'Chưa có cao độ', modelWordUnavailable: 'Chưa có thời gian từng từ của bản mẫu.',
@@ -140,6 +146,10 @@ export const t = defineCopy('compare', {
     privacyNote: 'Cao độ và thời gian được đo ngay trên trình duyệt của bạn, từ bản ghi mẫu và lần thử của bạn. Điểm từng từ đến từ bước chấm phát âm. Đường cao độ không đo được sẽ để trống thay vì đoán.',
   },
   zh: {
+    retryReference:'重新准备示范',
+    referenceAudio:'正在准备示范音频…', referenceReading:'正在准备注音…', referenceAlignment:'Orena AI 正在确定示范的逐词时间…', referenceFailed:'暂时无法准备示范对比，你的评估结果仍可查看。',
+    readySub:'点击麦克风，朗读句子，然后按停止。', recordingSub:'{s} 秒 · 读完后按停止。', assessingSub:'Orena AI 正在评估你的录音。', readingUnavailable:'暂无注音',
+    timingCompared:'每段录音的时间均从第一个发音词开始计算。', timingLonger:'这个词比示范长 {s} 秒。', timingShorter:'这个词比示范短 {s} 秒。', timingSame:'这个词在两段录音中的实测时长相同。',
     subtitle: '比较你的节奏和发音与示范的差异',
     wordRange: '{from}–{to} / {total}', previousWords: '上一组词', nextWords: '下一组词',
     pitchUnavailable: '暂无音高数据', modelWordUnavailable: '暂无示范逐词时间数据。',

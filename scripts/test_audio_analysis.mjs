@@ -2,9 +2,14 @@
    frequency, a rising sweep must rise, silence must be unvoiced, and the drawing must break at
    silence rather than connect across it. */
 import assert from 'node:assert/strict';
-import { waveformBars, pitchTrack, contour, contourPolylines, analyse } from '../static/orena/capabilities/audio-analysis.js';
+import { waveformBars, pitchTrack, contour, contourPolylines, analyse, decodeAudio } from '../static/orena/capabilities/audio-analysis.js';
 
 const rate = 16000;
+await decodeAudio(new ArrayBuffer(2),{AudioContextCtor:class {
+  constructor(options){assert.equal(options.sampleRate,16000,'decode at speech rate instead of hardware rate for bounded analysis');}
+  async decodeAudioData(){return {length:2,numberOfChannels:1,sampleRate:16000,duration:2/16000,getChannelData:()=>new Float32Array(2)};}
+  async close(){}
+}});
 const tone = (hz, seconds, amplitude = 0.5) => Float32Array.from({ length: rate * seconds }, (_, i) => amplitude * Math.sin((2 * Math.PI * hz * i) / rate));
 const concat = (...parts) => {
   const out = new Float32Array(parts.reduce((n, p) => n + p.length, 0));

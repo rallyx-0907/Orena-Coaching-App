@@ -143,7 +143,7 @@ export async function decodeAudio(input, { AudioContextCtor = globalThis.AudioCo
       : typeof input === 'string'
         ? await (await fetchImpl(input, { credentials: 'same-origin' })).arrayBuffer()
         : await input.arrayBuffer();
-  const context = new AudioContextCtor();
+  const context = new AudioContextCtor({ sampleRate: 16000 });
   try {
     const audio = await context.decodeAudioData(buffer.slice(0));
     const mono = new Float32Array(audio.length);

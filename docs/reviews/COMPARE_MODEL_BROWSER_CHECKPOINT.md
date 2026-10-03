@@ -1,5 +1,76 @@
 # Compare With Model correction — 2026-10-03
 
+## Current browser checkpoint — fresh result after authorized QA recovery
+
+Follow-up: Back recovery fixed with the existing account-backed media continuation:
+Compare records `speaking_compare` plus canonical segment; Today and Practice Hub
+resolve that to the real Compare route. Scripted Speaking resumes its same segment.
+Practice Hub now offers Pronunciation for real transcript-backed clips, preserving
+the preferred authored-sentence source when available. No new schema or learner-data
+authority. Browser verified Back → Today → Continue and Hub → Compare, exact
+`segment=commons-royalsociety-cosmic-calendar:000`; Hub visibly labels Compare.
+Evidence: `evidence/speaking-resume-hub-2026-10-03.png`.
+
+Fresh server History shows two real 86 results, at 17:44 and 17:50; selecting the
+latest opens the correct media/segment Attempt History, count2/best86/change0.
+Audio-free server history is distinct from tab-only recording retention (D-076).
+Chinese Hub → Pronunciation opens `zh-daily-what-is-this`; Compare preparation
+renders all pinyin with contextual `bù`/`bú` and tone tokens. Punctuation loss in
+Compare's recorder was corrected; browser verified the full Chinese sentence.
+No fresh Chinese learner assessment claimed. Brave extension then required an
+update, blocking further browser control; original profile was EN, current test
+scope ZH. The human's EN result tab was never reloaded or navigated.
+
+Deferred pitch limitation: the existing YIN measurement requires a periodic signal
+within 70–450 Hz, 40 ms analysis windows, and rejects voiced runs shorter than
+60 ms; contour rendering also breaks silence and sudden jumps. Short/quiet/noisy
+or predominantly unvoiced word spans can legitimately have no drawable contour.
+This is not a pronunciation failure. Do not relax evidence gates or manufacture
+curves to fill the missing tiles. Improving extraction/confidence is deferred;
+actual timing, word/phoneme scores and playback remain usable independently.
+No acoustic diagnosis of this user's individual missing frames is claimed.
+
+2026-10-03: user recorded directly in the fresh Compare tab. Azure result: 86,
+Accuracy 85, Fluency 100, Completeness 81, 5 seconds speech. All 16 source IPA
+readings render. Selecting `starting` shows genuine paired Model/You pitch;
+Timing shows Model 1.24–1.77 s and You 0.94–1.45 s, 0.02 s shorter. Pronunciation
+shows actual Azure phonemes/scores (including ŋ 17), not a synthetic curve.
+Some short words lack measurable pitch: explicit unavailable state remains.
+Model → You Play visibly changes to Stop then returns to Play without browser
+errors. Hear yours exercised; acoustic output was not independently listened to.
+390×844 uses two paged tiles, no document horizontal overflow, persistent playback
+and retry controls; long details occupy the existing named internal scroll region.
+Screenshots: `evidence/compare-real-pitch-2026-10-03.png`,
+`evidence/compare-real-mobile-2026-10-03.png`.
+
+Local scoped Python: 70 passed, 2 dependency deprecation warnings; Ruff passed.
+Previously run Node reference/audio/Compare/Speaking/memory/copy/ESM/foundation gates
+passed, including fresh Speaking-resume/Practice/Today/Continue gates. No CI or
+full-product completion claimed. Fresh ZH assessment, skin variants and durable
+PostgreSQL restart verification remain open; extension update blocks UI control.
+
+QA recovery: old PostgreSQL used tmpfs and was empty after restart. Human explicitly
+authorized a new durable `orena-next-verify-postgres` volume and reviewed schema
+`20260930_0023`; old container preserved, web :8021 runs, worker stays stopped.
+No old QA records recovered, no :8000 changes, no automatic schema startup/import.
+Earlier take83/history below is historical evidence, not the current database.
+
+## Implementation follow-up plan (human: finish form and function against the design)
+
+1. Connect deterministic IPA/pinyin readings to record tokens, word tiles and
+   selected Word Detail, without contextual generation or fabricated phonetics.
+2. Analyse the real source clip using the existing pronunciation provider to
+   obtain word boundaries only when canonical boundaries are absent. Keep this
+   reference analysis separate from learner attempts and scoped to source/account.
+3. Match model/learner words by their character ranges in the same reference,
+   including repeats and multi-character ZH words. Overlay measured pitch,
+   show both timing rows and play the actual model word clip.
+4. Correct source-audio resolution for supported imports using existing access
+   and language/publication guards. Never serve cached deleted/private sources.
+5. Verify actual EN/ZH browser journeys, phonetics, paired plots/timing,
+   recording, tabs, word playback, history return, desktop/mobile and themes;
+   compare the pinned screen and both Visual Skin references before completion.
+
 MILESTONE=Speaking Compare prototype correction
 STATUS=IMPLEMENTING (browser review checkpoint; remaining acceptance below)
 COMMIT=the Git commit containing this checkpoint

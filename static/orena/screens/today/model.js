@@ -9,6 +9,8 @@
    gap is recorded in docs/project/UI_BACKEND_GAPS.md and in SCRATCH/reports/today.md, not resolved
    by inventing a number. */
 
+import { speakingResumeTarget } from '../../product/speaking-resume.js';
+
 export const RECOMMEND_LIMIT = 3;
 export const FOR_YOU_LIMIT = 12;
 
@@ -146,6 +148,12 @@ export function buildRecommendationPool({ reading, listening = [], speaking = []
    does not draw; the "unfinished work" fact is carried in the card's meta text instead. */
 export function mapContinuationEntry(entry, t) {
   const id = String(entry?.id || '');
+  const speaking = speakingResumeTarget(entry);
+  if (speaking) return {
+    source:'continue', id, kind:t('kindContinue'), title:entry.title || '',
+    meta:entry.context || '', tag:null, durationLabel:'', image:'',
+    routeId:speaking.routeId, routeParams:speaking.params, routeQuery:speaking.query,
+  };
   if (id.startsWith('media:')) {
     const lessonId = id.slice('media:'.length);
     if (!lessonId) return null;

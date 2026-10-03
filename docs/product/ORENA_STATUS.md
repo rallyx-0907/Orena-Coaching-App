@@ -90,9 +90,14 @@ Back/reload retain the selected tab. Desktop and 390x844 :8021 browser verified;
 collections/decks detail remains truthfully unavailable. Speaking basic completion
 is now active by human priority: shared loading and unsupported Fluency display
 corrected. My Library accepted by the human. Compare UI correction is IMPLEMENTING:
-paired word plots, Word Detail tabs and playback match the pinned component; real EN
-Azure take 83 and server History exercised on desktop/390x844. Model word intervals
-remain unavailable; final sizing/focus patch and live ZH acceptance remain. Evidence:
+source-word timing, IPA/pinyin and real paired plots are implemented. Fresh EN Azure
+take 86 shows IPA, Model/You pitch and measured timing; pronunciation details and
+Model-to-You playback transitions exercised, desktop/390x844. Some words have no
+measurable pitch and remain honestly unavailable (not a pronunciation verdict).
+Back/Continue resumes the same Compare sentence via Today/Practice Hub; clip-backed
+Pronunciation is now reachable. Server History and ZH pinyin/recorder verified.
+Fresh ZH assessment/theme checks remain; Brave extension update blocks UI control.
+Prior take 83/history is historical after sandbox QA database loss. Evidence:
 `docs/reviews/COMPARE_MODEL_BROWSER_CHECKPOINT.md` and the prior Library checkpoint.
 
 WEB_REVIEW_TARGET: http://127.0.0.1:8021/next

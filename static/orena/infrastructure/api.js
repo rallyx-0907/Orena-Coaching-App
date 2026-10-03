@@ -417,6 +417,7 @@ export const api={
   // invited to record, so the room can be honest up front instead of after a
   // take they already made.
   speechStatus:()=>request('/api/speech/status'),
+  speakingModelReference:(lessonId,segmentId)=>request(`/api/speaking/model-reference/${encodeURIComponent(lessonId)}/${encodeURIComponent(segmentId)}`,{method:'POST'}),
   transcribeSpeech:(blob,language,filename='recording.webm')=>{
     const form=new FormData();
     form.append('file',blob,filename);

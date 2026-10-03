@@ -21,9 +21,10 @@ Agent stays on the contract mock until Intelligence integration is authorized.
 Frame/route/code/status: `docs/design/canonical-ui/IMPLEMENTATION_MAP.md`.
 
 - Foundation/Wave A/B: REVIEWABLE; inventory in IMPLEMENTATION_MAP.md.
-- Lane runtime :8021 (D-111.7, durable QA store): `orena-next-verify-web` and `-worker` share the named
-  volume `orena-next-verify-media` at `/lanedata` (media, reading assets, word audio/deep roots); `/rundata` is
-  tmpfs for SQLite scratch only; `ORENA_ACCOUNT_BACKBONE=on` here only. Recreate copies env by name only.
+- QA :8021: web uses durable PG volume `orena-next-verify-postgres` (schema0023); old
+  ephemeral PG retained, old QA records lost. Media volume `orena-next-verify-media` at
+  `/lanedata`; `/rundata` SQLite scratch only. Worker stopped. `ORENA_ACCOUNT_BACKBONE=on`
+  here only. Recreate copies env by name only. Recovery authorized 2026-10-03.
 - Wave B (`161d917`): REVIEWABLE; backend-less routes stay Coming soon,
   Orena uses the mock; Grammar waits for its canonical runtime.
 - Agent UI side: contract v5 on the mock; Orena's entry points hide when the
@@ -114,12 +115,14 @@ composition; approved brand unchanged.
 Current phase: basic functional coverage first (human instruction, 2026-10-02).
 Preserve accepted Books/Progress; do not reopen them or restart a full-app audit.
 S2 basic Listening and S6 Admin media rights/publish are REVIEWABLE; stop deepening
-those paths. My Library accepted (2026-10-03). Speaking Compare UI is active: real EN
-Azure take 83, tabs/paging/playback/History and 390x844 exercised on :8021. Final sizing/focus
-correction and ZH need fresh browser acceptance; COMPARE_MODEL_BROWSER_CHECKPOINT.md.
-Preserve the completed control plane and S6 checkpoint. Current Azure local125/Node/review pass; mobile unverified.
-Deep fidelity/cross-device/edge/performance work follows whole-app basic coverage.
-Captions first; ASR within D-111.6 caps. Activity counts do not prove mastery.
+those paths. My Library accepted. Compare local70/Node pass; EN take86 IPA/plots/timing,
+mobile, server History, ZH pinyin and Back/Continue exact sentence browser verified.
+Fresh ZH assessment/themes open; Brave extension update blocks UI control.
+PG tmpfs lost QA state. Human-authorized recovery: orena-next-verify-postgres volume,
+reviewed schema0023, old PG preserved; web runs, worker stopped. Old QA records not restored.
+Prior take83 is historical; COMPARE_MODEL_BROWSER_CHECKPOINT.md records current evidence.
+Preserve S6/control plane. Azure local125/Node/review pass; mobile unverified.
+Deep hardening follows basic app coverage. Captions first; ASR within D-111.6 caps.
 
 Follow `ROADMAP.md` and D-110..D-114 for remaining coverage, evidence and gates.
 Agent remains gated; Grammar-specific capability needs its canonical runtime.
