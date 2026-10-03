@@ -157,6 +157,28 @@ export function chartLines(points, { from = 0, to = null, width = CHART.width } 
   return contourPolylines(points, { width, height: CHART.height, range: CHART.range, from, to: end, span: end });
 }
 
+export function wordPitchLines(analysis, word) {
+  if (!word?.offsetKnown || !hasVoice(analysis)) return [];
+  const from = Math.max(0, word.offsetMs / 1000);
+  const to = from + word.durationMs / 1000;
+  return to > from ? chartLines(analysis.contour, { from, to, width: 100 }) : [];
+}
+
+/* Keep the prototype's word tiles inside the viewport. Pages use the measured
+   tile geometry, and every word stays reachable without horizontal scrolling. */
+export function wordPages(words, width, language) {
+  const pages = [];
+  let page = [], used = 0;
+  for (const word of words || []) {
+    const size = Math.min(Math.max(1, width), tileMinWidth(word.text, language));
+    if (page.length && used + 6 + size > width) { pages.push(page); page = []; used = 0; }
+    used += (page.length ? 6 : 0) + size;
+    page.push(word);
+  }
+  if (page.length) pages.push(page);
+  return pages;
+}
+
 /* Whether a contour has any voiced frame at all: a take of silence draws no line, and says so. */
 export const hasVoice = (analysis) => Boolean(analysis?.contour?.some((point) => point.st != null));
 

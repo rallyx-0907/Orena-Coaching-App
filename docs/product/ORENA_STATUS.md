@@ -89,8 +89,11 @@ block lines rather than overflowing inline spans. Saved words open Word Detail;
 Back/reload retain the selected tab. Desktop and 390x844 :8021 browser verified; learner
 collections/decks detail remains truthfully unavailable. Speaking basic completion
 is now active by human priority: shared loading and unsupported Fluency display
-corrected; live microphone/provider acceptance still pending browser mic permission.
-Evidence: `docs/reviews/LIBRARY_SPEAKING_BROWSER_CHECKPOINT.md`.
+corrected. My Library accepted by the human. Compare UI correction is IMPLEMENTING:
+paired word plots, Word Detail tabs and playback match the pinned component; real EN
+Azure take 83 and server History exercised on desktop/390x844. Model word intervals
+remain unavailable; final sizing/focus patch and live ZH acceptance remain. Evidence:
+`docs/reviews/COMPARE_MODEL_BROWSER_CHECKPOINT.md` and the prior Library checkpoint.
 
 WEB_REVIEW_TARGET: http://127.0.0.1:8021/next
 

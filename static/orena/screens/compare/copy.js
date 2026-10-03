@@ -10,6 +10,8 @@
 import { defineCopy } from '../../copy/index.js';
 
 const LAYERS = {
+  subtitle: 'interface', wordRange: 'interface', previousWords: 'interface', nextWords: 'interface',
+  pitchUnavailable: 'support', modelWordUnavailable: 'support',
   title: 'interface', attemptHistory: 'interface', attemptN: 'interface',
   hearModel: 'interface', speedUnit: 'interface',
   readyTitle: 'interface', listeningTitle: 'interface', assessingTitle: 'support',
@@ -46,6 +48,9 @@ const LAYERS = {
 export const t = defineCopy('compare', {
   layers: LAYERS,
   en: {
+    subtitle: 'Where your timing and sounds diverge from the model',
+    wordRange: '{from}–{to} / {total}', previousWords: 'Previous words', nextWords: 'Next words',
+    pitchUnavailable: 'Pitch unavailable', modelWordUnavailable: 'Model word timing is unavailable.',
     title: 'Compare with model', attemptHistory: 'Attempt history', attemptN: 'Attempt {n}',
     hearModel: 'Hear model', speedUnit: '{n}×',
     readyTitle: 'Ready when you are', listeningTitle: 'Listening… speak now', assessingTitle: 'Assessing pronunciation…',
@@ -89,6 +94,9 @@ export const t = defineCopy('compare', {
     privacyNote: 'Pitch and timing are measured in your browser, from the model recording and your own take. Word scores come from the pronunciation assessment. A pitch line that could not be measured is left blank rather than guessed.',
   },
   vi: {
+    subtitle: 'So sánh thời gian và âm của bạn với mẫu',
+    wordRange: '{from}–{to} / {total}', previousWords: 'Các từ trước', nextWords: 'Các từ tiếp',
+    pitchUnavailable: 'Chưa có cao độ', modelWordUnavailable: 'Chưa có thời gian từng từ của bản mẫu.',
     title: 'So với mẫu', attemptHistory: 'Các lần thử', attemptN: 'Lần {n}',
     hearModel: 'Nghe mẫu', speedUnit: '{n}×',
     readyTitle: 'Sẵn sàng khi bạn muốn', listeningTitle: 'Đang nghe… hãy nói', assessingTitle: 'Đang chấm phát âm…',
@@ -132,6 +140,9 @@ export const t = defineCopy('compare', {
     privacyNote: 'Cao độ và thời gian được đo ngay trên trình duyệt của bạn, từ bản ghi mẫu và lần thử của bạn. Điểm từng từ đến từ bước chấm phát âm. Đường cao độ không đo được sẽ để trống thay vì đoán.',
   },
   zh: {
+    subtitle: '比较你的节奏和发音与示范的差异',
+    wordRange: '{from}–{to} / {total}', previousWords: '上一组词', nextWords: '下一组词',
+    pitchUnavailable: '暂无音高数据', modelWordUnavailable: '暂无示范逐词时间数据。',
     title: '与示范对比', attemptHistory: '尝试记录', attemptN: '第 {n} 次',
     hearModel: '听示范', speedUnit: '{n}×',
     readyTitle: '准备好就开始', listeningTitle: '正在聆听…请开口', assessingTitle: '正在评估发音…',

@@ -4,6 +4,16 @@
    pitch pipeline (`capabilities/audio-analysis.js`) fed a synthetic tone - a measurement of a
    signal made here, never a canned contour. */
 import assert from 'node:assert/strict';
+import { wordPitchLines, wordPages } from '../static/orena/screens/compare/model.js';
+
+// Pitch is scoped to the provider's real word interval, never apportioned by word length.
+const pitch = { contour: [{ t: 0, st: 1 }, { t: .2, st: 2 }, { t: .4, st: 3 }, { t: .6, st: 4 }] };
+assert.deepEqual(wordPitchLines(pitch, { offsetKnown: false }), []);
+assert.deepEqual(wordPitchLines(null, { offsetKnown: true, offsetMs: 100, durationMs: 300 }), []);
+assert.ok(wordPitchLines(pitch, { offsetKnown: true, offsetMs: 100, durationMs: 300 }).length);
+const pageWords = ['one', 'two', 'three', 'four', 'five'].map((text, index) => ({text, index}));
+assert.deepEqual(wordPages(pageWords, 250, 'en').map(page => page.map(word => word.index)), [[0,1],[2,3],[4]]);
+assert.deepEqual(wordPages(pageWords, 80, 'zh').map(page => page.length), [1,1,1,1,1]);
 import {
   ringColor, scoreLabelKey, headlineKey, wordStatus, statusTone, tileMinWidth, wordDetailFor, defaultWordIndex,
   chipsFor, metricLineFor, axisFor, CHART, chartLines, hasVoice, wordBands, PLAYBACK_MODES, PLAYBACK_SPEEDS, nextSpeed, playPlan, pillsFor, toneKey,

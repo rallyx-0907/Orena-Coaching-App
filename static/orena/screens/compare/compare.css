@@ -31,10 +31,12 @@
   gap: 14px;
   padding-bottom: 20px;
   flex: none;
+  flex-wrap: wrap;
 }
 .s-compare-title-block {
   flex: 1;
   min-width: 0;
+  flex-basis: 240px;
 }
 .s-compare-title {
   font-size: 16px;
@@ -438,8 +440,6 @@
 }
 
 .s-compare-tiles {
-  overflow-x: auto;
-  scrollbar-width: thin;
   margin: 0 -4px;
   padding: 4px;
 }
@@ -448,6 +448,7 @@
   gap: 6px;
 }
 .s-compare-tile {
+  min-width: 0;
   flex: 1 1 0;
   padding: 14px 8px 8px;
   border-radius: 18px;
@@ -463,7 +464,7 @@
   font-size: 19px;
   line-height: 1.2;
   font-weight: 700;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 .s-compare-tile__word:lang(zh) {
   font-size: 26px;
@@ -481,6 +482,34 @@
   font-size: 12px;
   color: var(--muted);
 }
+
+/* Compare-With-Model.dc.html: paired Model/You mini plots inside each tile.
+   Missing word timing is a neutral unavailable slot, never a made-up curve. */
+.s-compare-tile__pair {
+  width: 100%;
+  margin-top: 10px;
+  border-radius: 12px;
+  background: var(--surface);
+  display: grid;
+  grid-template-columns: 1fr 1px 1fr;
+  padding: 10px 0 12px;
+}
+.s-compare-tile__voice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 0 6px;
+  min-width: 0;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.s-compare-tile__voice svg { width: 100%; height: 46px; display: block; }
+.s-compare-tile__divider { background: var(--border); }
+.s-compare-tile__missing { height: 46px; display: flex; align-items: center; font-weight: 400; }
+.s-compare-wordnav { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 6px; font-size: 12px; color: var(--muted); }
+.s-compare-wordnav .o-iconbtn { width: 32px; height: 32px; }
 
 /* ---- Word detail ---- */
 .s-compare-detail {

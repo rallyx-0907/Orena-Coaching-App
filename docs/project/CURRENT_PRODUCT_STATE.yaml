@@ -50,7 +50,7 @@
   "current_primary_workstream": {
     "id": "orena_product_completion_d110_d111",
     "status": "in_progress",
-    "next_task": "Human priority 2026-10-03: My Library overlap/interaction correction then basic Speaking. Library Saved content/language bounded text, Word Detail, tab return/reload browser verified at :8021 desktop/390x844; evidence LIBRARY_SPEAKING_BROWSER_CHECKPOINT.md. Speaking source entry/Free Talk setup visible; shared loading and unsupported Fluency corrected, live microphone/provider journey awaiting browser mic permission. Azure 7857d43 preserved; OpenAI operator acceptance remains. Preserve Books/Progress/S2/S6; no full-app audit or deep hardening. Canonical Grammar/Intelligence remain subsequent basic gaps."
+    "next_task": "My Library accepted by human 2026-10-03; preserve its verified correction. Active Speaking Compare prototype correction: paired word plots/detail/playback browser exercised with real EN Azure take 83 and server History at :8021 desktop/390x844. Evidence COMPARE_MODEL_BROWSER_CHECKPOINT.md; final sizing/focus changes locally checked, fresh-browser/ZH acceptance remains. Model word timing unavailable, never fabricated. Azure/Admin/Books/Progress/S2/S6 preserved; no full-app audit or deep hardening. Canonical Grammar/Intelligence remain subsequent basic gaps."
   },
   "design": {
     "web_is_visual_source_of_truth": true,

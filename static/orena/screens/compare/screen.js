@@ -7,10 +7,9 @@
    prototype's own from-scratch `acf()`/synthesized model contour, SCRATCH/inventory/
    C5-listening-dictation-speaking.md §5).
 
-   What the frame draws and this build leaves out, for want of a measurement (rule 40), is listed in
-   the wave report: a word-level model/you pitch comparison and timing (no provider measures the
-   model recording's own words, so the model line is drawn whole, beside the learner's), and the
-   frame's written coaching tips (D-076: nothing here describes the audio in words). */
+   Paired word plots follow the approved frame. Learner plots use measured audio and provider
+   word intervals; model word plots/timing stay unavailable until source word intervals exist.
+   Prototype demonstration contours and coaching claims are never substituted for evidence. */
 import { html, mount, raw, cls } from '../../kit/html.js';
 import { icon } from '../../kit/icons.js';
 import { useStyles } from '../../kit/styles.js';
@@ -32,7 +31,7 @@ import { openMicState, micGate } from '../mic/sheet.js';
 import { t } from './copy.js';
 import {
   ringColor, scoreLabelKey, headlineKey, wordStatus, statusTone, tileMinWidth, wordDetailFor, defaultWordIndex,
-  chipsFor, metricLineFor, axisFor, CHART, chartLines, hasVoice, wordBands, PLAYBACK_MODES, nextSpeed, playPlan, pillsFor, toneKey,
+  chipsFor, metricLineFor, axisFor, CHART, chartLines, hasVoice, wordPitchLines, wordPages, PLAYBACK_MODES, nextSpeed, playPlan, pillsFor, toneKey,
 } from './model.js';
 
 const filled = (name, size) => raw(icon(name, { size }).replace('fill="none"', 'fill="currentColor"'));
@@ -44,7 +43,6 @@ const ERROR_KEY = {
   microphone: 'errMic', unsupported: 'errMic', recording_failed: 'errMic', too_long: 'errTooLong', audio_unsupported: 'errAudio', line_invalid: 'errLine',
 };
 const seconds = (ms) => (ms / 1000).toFixed(2);
-const WIDE = 680; // the whole-line chart's plot width, in its own viewBox units
 
 /* The provider's own miscue verdict on a word, translated - a type this copy table has no key for
    still reads as "not passed" rather than the raw provider string. */
@@ -81,12 +79,13 @@ export default async function mountCompareWithModel(element, ctx) {
   let errorText = '';
   let rec = { phase: TAKE.IDLE, levels: new Array(40).fill(0), elapsedMs: 0 };
   const contours = new Map(); // take id -> { you } once measured
-  let modelContour = null; // { model } once measured, for the whole line
   let playing = false;
   let playWord = null; // the word being played in "Word by word"
   let playToken = 0;
   let audioEl = null;
   let revealSelection = true; // the first paint, and every change of attempt, brings the selection into view
+  let tileWidth = Math.max(1, element.clientWidth - 48);
+  let sizing = null;
 
   const q = (selector) => element.querySelector(selector);
   const takeOf = (id) => takes.find((item) => item.id === id) || null;
@@ -169,11 +168,6 @@ export default async function mountCompareWithModel(element, ctx) {
       contours.set(id, 'loading');
       const you = take?.blob ? await decodeAudio(take.blob).then((decoded) => analyse(decoded)).catch(() => null) : null;
       contours.set(id, { you });
-    }
-    if (source.hasModelAudio && !modelContour) {
-      modelContour = 'loading';
-      const model = await decodeAudio(source.modelAudioUrl(source.line.lineId)).then((decoded) => analyse(decoded)).catch(() => null);
-      modelContour = { model };
     }
     if (ctx.isCurrent() && selectedId === id) paint();
   }
@@ -352,29 +346,26 @@ export default async function mountCompareWithModel(element, ctx) {
     </svg>`;
   }
 
-  function summaryChart(view, take) {
-    const you = contours.get(take.id);
-    const model = modelContour;
-    if (!you || you === 'loading' || (source.hasModelAudio && (!model || model === 'loading'))) return html`<div class="s-compare-chart s-compare-chart--wait s-compare-chart--wide"></div>`;
-    const youOk = hasVoice(you.you);
-    const modelOk = source.hasModelAudio && hasVoice(model?.model);
-    const bands = youOk ? wordBands(view, you.you.duration) : [];
-    return html`${chartMarkup({ width: WIDE, model: modelOk ? chartLines(model.model.contour, { to: model.model.duration, width: WIDE }) : [], you: youOk ? chartLines(you.you.contour, { to: you.you.duration, width: WIDE }) : [], bands })}
-      ${!modelOk ? html`<p class="s-compare-note">${t(source.hasModelAudio ? 'modelNotMeasured' : 'modelUnavailable')}</p>` : ''}
-      ${!youOk ? html`<p class="s-compare-note">${t('yourLineUnavailable')}</p>` : ''}`;
+  function miniPitch(lines, who, reason) {
+    return html`<span class="s-compare-tile__voice"><span>${t(who)}</span>${lines.length
+      ? html`<svg viewBox="0 0 100 90" preserveAspectRatio="none" aria-hidden="true">${lines.map(points => html`<polyline points="${points}" fill="none" stroke="var(--green)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"></polyline>`)}</svg>`
+      : html`<span class="s-compare-tile__missing" title="${reason}" aria-label="${reason}">—</span>`}</span>`;
   }
 
-  function tilesMarkup(view) {
-    const min = view.words.reduce((sum, word) => sum + tileMinWidth(word.text, language), 0) + 6 * (view.words.length - 1);
-    return html`<div class="s-compare-tiles"><div class="s-compare-tiles__row" style="min-width:${min}px">${view.words.map((word) => {
+  function tilesMarkup(view, take) {
+    const pages = wordPages(view.words, tileWidth, language);
+    const pageAt = Math.max(0, pages.findIndex(page => page.some(word => word.index === (playWord ?? openWord()))));
+    const page = pages[pageAt] || [];
+    const analysis = contours.get(take.id);
+    return html`<div class="s-compare-tiles"><div class="s-compare-tiles__row">${page.map((word) => {
       const status = wordStatus(word);
       const tone = statusTone(status);
       const on = openWord() === word.index || playWord === word.index;
       const ring = on ? `inset 0 0 0 2px ${playWord === word.index ? 'var(--accent)' : tone.stroke}` : 'none';
       const bg = status === 'ok' && on ? 'var(--green-soft)' : tone.bg;
       const sub = language === 'zh' && word.pinyin ? word.pinyin : word.scoreKnown === false ? '' : String(word.score);
-      return html`<button type="button" class="s-compare-tile" data-word="${word.index}" data-fk="word-${word.index}" aria-pressed="${openWord() === word.index}" style="min-width:${tileMinWidth(word.text, language)}px;background:${bg};box-shadow:${ring}"><span class="s-compare-tile__word" lang="${langAttr(language)}" style="color:${tone.ink}">${word.text}</span><span class="s-compare-tile__sub" style="color:${tone.sub}">${sub || raw('&nbsp;')}</span></button>`;
-    })}</div></div>`;
+      return html`<button type="button" class="s-compare-tile" data-word="${word.index}" data-fk="word-${word.index}" aria-pressed="${openWord() === word.index}" style="min-width:${Math.min(tileWidth, tileMinWidth(word.text, language))}px;flex-grow:${Math.max(1, word.durationMs || 0)};background:${bg};box-shadow:${ring}"><span class="s-compare-tile__word" lang="${langAttr(language)}" style="color:${tone.ink}">${word.text}</span><span class="s-compare-tile__sub" style="color:${tone.sub}">${sub || raw('&nbsp;')}</span><span class="s-compare-tile__pair">${miniPitch([], 'legendModel', t('modelWordUnavailable'))}<span class="s-compare-tile__divider"></span>${miniPitch(wordPitchLines(analysis?.you, word), 'legendYou', t('pitchUnavailable'))}</span></button>`;
+    })}</div>${pages.length > 1 ? html`<div class="s-compare-wordnav"><button type="button" class="o-iconbtn" data-word="${pages[pageAt - 1]?.[0]?.index ?? 0}" data-fk="previous-words" aria-label="${t('previousWords')}"${pageAt === 0 ? raw(' disabled') : ''}>${raw(icon('chevron-left', {size:18}))}</button><span>${t('wordRange', {from:page[0].index + 1, to:page.at(-1).index + 1, total:view.words.length})}</span><button type="button" class="o-iconbtn" data-word="${pages[pageAt + 1]?.[0]?.index ?? 0}" data-fk="next-words" aria-label="${t('nextWords')}"${pageAt === pages.length - 1 ? raw(' disabled') : ''}>${raw(icon('chevron-right', {size:18}))}</button></div>` : ''}</div>`;
   }
 
   function ringMarkup(score) {
@@ -411,8 +402,7 @@ export default async function mountCompareWithModel(element, ctx) {
           <span><i class="s-compare-swatch s-compare-swatch--bad"></i>${t('legendNeedsWork')}</span>
         </div>
       </div>
-      ${summaryChart(view, take)}
-      ${view.words.length ? tilesMarkup(view) : ''}
+      ${view.words.length ? tilesMarkup(view, take) : ''}
       ${axis ? html`<div class="s-compare-axis">${t('axisRight', { model: axis.modelS, you: axis.youS })}</div>` : ''}
     </div>`;
   }
@@ -435,8 +425,9 @@ export default async function mountCompareWithModel(element, ctx) {
       const end = (detail.offsetMs + detail.durationMs) / 1000;
       const left = total > 0 ? Math.min(100, (start / total) * 100) : 0;
       const width = total > 0 ? Math.max(1, Math.min(100 - left, ((end - start) / total) * 100)) : 0;
-      return html`<div class="s-compare-panel">
-        <div class="s-compare-panel__title">${t('timingTitle', { word: detail.text })}</div>
+        return html`<div class="s-compare-panel">
+          <div class="s-compare-panel__title">${t('timingTitle', { word: detail.text })}</div>
+          <div class="s-compare-timing"><span class="s-compare-timing__who">${t('legendModel')}</span><div class="s-compare-timing__track" aria-label="${t('modelWordUnavailable')}"></div></div>
         ${
           detail.offsetKnown
             ? html`<div class="s-compare-timing"><span class="s-compare-timing__who" style="color:var(--green)">${t('legendYou')}</span><div class="s-compare-timing__track"><span style="left:${left.toFixed(1)}%;width:${width.toFixed(1)}%;background:var(--green)"></span></div>
@@ -468,7 +459,8 @@ export default async function mountCompareWithModel(element, ctx) {
     return html`<div class="s-compare-panel">
       <div class="s-compare-panel__title">${toneTitle ? t('toneTitle', { word: detail.text, pinyin: detail.pinyin, n: detail.toneTarget, name: t(toneKey(detail.toneTarget)) }) : t('pitchTitle', { word: detail.text })}</div>
       ${wordChart(detail, take)}
-      <div class="s-compare-legend"><span><i style="background:var(--green)"></i>${t('legendYou')}</span></div>
+      <div class="s-compare-legend"><span><i style="background:var(--accent)"></i>${t('legendModel')} · —</span><span><i style="background:var(--green)"></i>${t('legendYou')}</span></div>
+      <p class="s-compare-note">${t('modelWordUnavailable')}</p>
     </div>`;
   }
 
@@ -519,7 +511,7 @@ export default async function mountCompareWithModel(element, ctx) {
 
   function barMarkup() {
     return html`<div class="s-compare-bar">
-      <button type="button" class="s-compare-bar__play" data-fk="play" data-play><span class="s-compare-bar__disc">${playing ? filled('pause', 14) : filled('play', 14)}</span><span data-pb-label>${playing ? t('stop') : t('play')}</span></button>
+      <button type="button" class="s-compare-bar__play" data-fk="play" data-play aria-label="${playing ? t('stop') : t('play')}"><span class="s-compare-bar__disc">${playing ? filled('pause', 14) : filled('play', 14)}</span><span data-pb-label>${playing ? t('stop') : t('play')}</span></button>
       <div class="s-compare-bar__modes" data-pb-modes>${PLAYBACK_MODES.map((m) => html`<button type="button" class="${cls('s-compare-bar__mode', mode === m && 's-compare-bar__mode--on')}" data-mode="${m}" data-fk="mode-${m}" aria-pressed="${mode === m}">${t(MODE_KEY[m])}</button>`)}</div>
       <button type="button" class="s-compare-bar__speed" data-fk="speed-bar" data-speed><span data-pb-label class="s-compare-muted">${t('speed')} </span>${t('speedUnit', { n: speed })}</button>
       <button type="button" class="s-compare-bar__again" data-fk="again" data-again>${raw(icon('rotate-cw', { size: 18, stroke: 2.2 }))}${t('tryAgain')}</button>
@@ -550,16 +542,15 @@ export default async function mountCompareWithModel(element, ctx) {
       element,
       html`<div class="s-compare-header">
         <button type="button" class="o-iconbtn o-iconbtn--back" data-back aria-label="${shellCopy('back')}">${raw(icon('arrow-left', { size: 21 }))}</button>
-        <div class="s-compare-title-block"><div class="s-compare-title">${t('title')}</div></div>
+        <div class="s-compare-title-block"><div class="s-compare-title">${t('title')}</div><div class="s-compare-note">${t('subtitle')}</div></div>
+        ${takes.length ? pillsMarkup() : ''}
         <button type="button" class="s-compare-history" data-attempts>${t('attemptHistory')}</button>
       </div>
       <div class="s-compare-scroll" data-scroll-region>
-        ${takes.length ? pillsMarkup() : ''}
         ${showRecord ? recordCard() : ''}
         ${errorText ? html`<div class="s-compare-error"><b>${t('errorTitle')}</b> ${errorText}</div>` : ''}
         ${result ? summaryMarkup(view, take) : ''}
         ${result && view.words.length ? detailMarkup(view, take) : ''}
-        <p class="s-compare-privacy">${t('privacyNote')}</p>
       </div>
       ${result ? barMarkup() : ''}`,
     );
@@ -576,7 +567,16 @@ export default async function mountCompareWithModel(element, ctx) {
       reveal(pills, pills?.querySelector('.s-compare-pill--active'));
       reveal(tiles, tiles?.querySelector('[aria-pressed="true"]'));
     }
-    if (focusKey) q(`[data-fk="${focusKey}"]`)?.focus({ preventScroll: true });
+    if (focusKey) {
+      const target = q(`[data-fk="${focusKey}"]`);
+      const pagingEnd = target?.disabled && ['previous-words', 'next-words'].includes(focusKey);
+      (pagingEnd ? q('.s-compare-tile[aria-pressed="true"]') : target)?.focus({ preventScroll: true });
+    }
+    if (sizing) {
+      sizing.disconnect();
+      sizing.observe(element);
+      sizing.observe(q('[data-scroll-region]'));
+    }
   }
 
   /* Scrolls a horizontal strip so one child is inside it (the strip only - never the page). */
@@ -633,6 +633,14 @@ export default async function mountCompareWithModel(element, ctx) {
   wordSel = takes.length ? defaultWordIndex(viewNow()) : null;
   paint();
   if (selectedId) void measure(selectedId);
+  sizing = new ResizeObserver(() => {
+    const measured = Math.max(1, q('.s-compare-tiles__row')?.clientWidth || element.clientWidth - 48);
+    if (Math.abs(measured - tileWidth) < 1 || !ctx.isCurrent()) return;
+    tileWidth = measured;
+    paint();
+  });
+  sizing.observe(element);
+  sizing.observe(q('[data-scroll-region]'));
 
   const releasers = [
     registerActionHandler('play_model', () => {
@@ -662,6 +670,7 @@ export default async function mountCompareWithModel(element, ctx) {
   ];
 
   return () => {
+    sizing.disconnect();
     releasers.forEach((release) => release());
     recorder.dispose();
     stopPlay();

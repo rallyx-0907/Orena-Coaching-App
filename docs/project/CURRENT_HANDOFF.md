@@ -114,9 +114,9 @@ composition; approved brand unchanged.
 Current phase: basic functional coverage first (human instruction, 2026-10-02).
 Preserve accepted Books/Progress; do not reopen them or restart a full-app audit.
 S2 basic Listening and S6 Admin media rights/publish are REVIEWABLE; stop deepening
-those paths. Human priority (2026-10-03): fix My Library overlap/interaction, then Speaking.
-Library text bounds, Word Detail and tab return/reload verified at :8021 desktop/390x844.
-Speaking basic completion active; live mic/provider acceptance awaits browser mic permission.
+those paths. My Library accepted (2026-10-03). Speaking Compare UI is active: real EN
+Azure take 83, tabs/paging/playback/History and 390x844 exercised on :8021. Final sizing/focus
+correction and ZH need fresh browser acceptance; COMPARE_MODEL_BROWSER_CHECKPOINT.md.
 Preserve the completed control plane and S6 checkpoint. Current Azure local125/Node/review pass; mobile unverified.
 Deep fidelity/cross-device/edge/performance work follows whole-app basic coverage.
 Captions first; ASR within D-111.6 caps. Activity counts do not prove mastery.
