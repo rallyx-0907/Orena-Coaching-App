@@ -116,12 +116,25 @@ def _utc_now_iso() -> str:
 
 def _pid_alive(pid: int) -> bool:
     if sys.platform == "win32":
+        # OpenProcess succeeding only means the process object still exists. A
+        # terminated Windows process can remain openable while another handle
+        # to that object is still held (for example briefly after Popen.wait()).
+        # Query its exit code and only treat STILL_ACTIVE as a live holder.
         process_query_limited_information = 0x1000
-        handle = ctypes.windll.kernel32.OpenProcess(process_query_limited_information, False, pid)
-        if handle:
-            ctypes.windll.kernel32.CloseHandle(handle)
-            return True
-        return False
+        still_active = 259
+        kernel32 = ctypes.windll.kernel32
+        handle = kernel32.OpenProcess(process_query_limited_information, False, pid)
+        if not handle:
+            return False
+        try:
+            exit_code = ctypes.c_ulong()
+            if not kernel32.GetExitCodeProcess(handle, ctypes.byref(exit_code)):
+                # Fail closed: if Windows let us open the process but its state
+                # cannot be queried, do not delete a possibly-live lock.
+                return True
+            return exit_code.value == still_active
+        finally:
+            kernel32.CloseHandle(handle)
     try:
         os.kill(pid, 0)
     except ProcessLookupError:
