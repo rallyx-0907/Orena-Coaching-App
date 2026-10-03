@@ -90,9 +90,10 @@ function appearanceValue(value) {
   return APPEARANCE_VALUES.includes(value) ? value : 'system';
 }
 
-export function learningRows({ sizeBucket, autoscroll, meaning, theme }) {
+export function learningRows({ sizeBucket, autoscroll, meaning, theme, palette }) {
   return [
     { id: 'theme', kind: 'choice', options: APPEARANCE_VALUES, value: appearanceValue(theme), disabled: false },
+    { id: 'palette', kind: 'choice', options: ['indigo', 'orchid', 'blue', 'rose'], value: ['indigo', 'orchid', 'blue', 'rose'].includes(palette) ? palette : 'indigo', disabled: false },
     { id: 'readerSize', kind: 'choice', options: ['S', 'M', 'L'], value: sizeBucket, disabled: false },
     { id: 'autoscroll', kind: 'toggle', value: Boolean(autoscroll), disabled: false },
     { id: 'meaning', kind: 'toggle', value: Boolean(meaning), disabled: false },

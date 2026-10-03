@@ -13,6 +13,14 @@ record a `SYNC_<date>.md`, recompute `PINS.tsv`, and update
 
 Pinned revision: **`1790473816124946`**, 2026-09-27 (`SYNC_2026-09-27.md`).
 
+Human-approved visual supplements (2026-10-03): `screens/Orena Visual Skin EN.html`
+(the supplied “Orena Visual Skin (2).html” export) and `screens/Orena Visual Skin ZH.html`.
+These original exports define visual language and accent/light-dark treatment;
+screen-specific pins still define composition and interaction. They are separate
+human-supplied supplements, not a new revision of the Claude Design screen pin.
+Their outdated brand assets are excluded: current approved `assets/brand/orena/`
+wins. See `DESIGN_CONTRACT.md` for the authority split.
+
 ## What is here
 
 | Path | What it is |

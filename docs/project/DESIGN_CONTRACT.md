@@ -1,5 +1,20 @@
 # Orena Design Contract
 
+## Visual Skin authority (2026-10-03)
+
+Explicit human direction adds `docs/design/canonical-ui/screens/Orena Visual Skin EN.html`
+(the supplied “Orena Visual Skin (2).html” export) and `Orena Visual Skin ZH.html`
+as visual-language authority. Screen-specific canonical prototypes still own
+composition, layout and interaction; these two skins own palette/accent variants,
+light/dark mappings, surfaces, contrast, typography, spacing and component treatment.
+They do not create a second product design for Chinese. Reuse EN/ZH interaction
+and layout, applying the ZH typography/content treatment where appropriate.
+The skins contain outdated brand artwork: current approved `assets/brand/orena/`
+always wins for logos, marks, icons and artwork. Never copy those obsolete assets.
+Compare changed UI against both its screen prototype and the relevant skin before
+claiming visual completion. The shared token file remains the single colour owner;
+measured accessibility corrections remain documented rather than weakening gates.
+
 ## Governance
 
 **Purpose:** say how the learner-facing UI is built and judged, so that what

@@ -106,7 +106,11 @@ import { sizeBucketOf, READER_SIZE, READER_DEFAULTS } from '../static/orena/prod
 {
   const rows = learningRows({ sizeBucket: 'L', autoscroll: false, meaning: true, theme: 'dark' });
   const byId = Object.fromEntries(rows.map((r) => [r.id, r]));
-  assert.deepEqual(rows.map((r) => r.id), ['theme', 'readerSize', 'autoscroll', 'meaning', 'wordHighlight', 'autoplay'], 'Appearance leads Learning (D-067): the only other pure device-display preference in Settings');
+  assert.deepEqual(rows.map((r) => r.id), ['theme', 'palette', 'readerSize', 'autoscroll', 'meaning', 'wordHighlight', 'autoplay'], 'Appearance and the approved Visual Skin accent lead device display preferences');
+  assert.equal(byId.palette.value, 'indigo');
+  assert.deepEqual(byId.palette.options, ['indigo', 'orchid', 'blue', 'rose']);
+  assert.equal(learningRows({ palette: 'rose' }).find((r) => r.id === 'palette').value, 'rose');
+  assert.equal(learningRows({ palette: 'invalid' }).find((r) => r.id === 'palette').value, 'indigo');
   assert.equal(byId.theme.value, 'dark');
   assert.equal(byId.theme.disabled, false, 'a real, working control - never a backend gap');
   assert.deepEqual(byId.theme.options, ['light', 'dark', 'system']);
@@ -193,7 +197,7 @@ import { sizeBucketOf, READER_SIZE, READER_DEFAULTS } from '../static/orena/prod
     plan: { plan: null, features: {}, micOn: false, micState: 'prompt' },
   };
   assert.equal(rowsForTab('languages', inputs).length, 3);
-  assert.equal(rowsForTab('learning', inputs).length, 6);
+  assert.equal(rowsForTab('learning', inputs).length, 7);
   assert.equal(rowsForTab('review', inputs).length, 4);
   assert.equal(rowsForTab('notifications', inputs).length, 4);
   assert.equal(rowsForTab('plan', inputs).length, 7);
@@ -233,7 +237,16 @@ import { sizeBucketOf, READER_SIZE, READER_DEFAULTS } from '../static/orena/prod
   };
   globalThis.document = { documentElement: { dataset: {} } };
 
-  const { appearance, setAppearance, APPEARANCE_KEY, APPEARANCES } = await import('../static/orena/kit/device.js');
+  const { appearance, setAppearance, APPEARANCE_KEY, APPEARANCES, palette, setPalette, PALETTE_KEY, PALETTES } = await import('../static/orena/kit/device.js');
+  assert.deepEqual(PALETTES, ['indigo', 'orchid', 'blue', 'rose']);
+  for (const value of PALETTES) {
+    setPalette(value);
+    assert.equal(palette(), value);
+    assert.equal(globalThis.document.documentElement.dataset.palette, value);
+    assert.equal(globalThis.window.localStorage.getItem(PALETTE_KEY), value);
+  }
+  setPalette('invalid');
+  assert.equal(palette(), 'indigo');
 
   assert.deepEqual(APPEARANCES, ['light', 'dark', 'system'], 'the canonical three-value list device.js exports and this gate now exercises');
 

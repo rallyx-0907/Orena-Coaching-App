@@ -40,12 +40,12 @@ export function controlPage(route, data, { href, filters = {}, offset = 0 } = {}
   if (route === 'adminOverview') {
     sub = t('opOverviewSub');
     const d = data.overview || {};
-    body = html`${metrics([
+    body = html`<div class="a-overview-metrics">${metrics([
       { label: t('opActive'), value: d.activity?.available ? value(d.activity.active_7d) : t('opUnavailable') },
       { label: t('opNew'), value: d.accounts?.available ? value(d.accounts.new_7d) : t('opUnavailable') },
       { label: t('opPublished'), value: value(d.content?.published) },
       { label: t('opTotal'), value: d.accounts?.available ? value(d.accounts.total) : t('opUnavailable') },
-    ])}${section('opAttention', attention(d.attention, href))}${section('opRuntime', kv([
+    ], { columns: 4 })}</div>${section('opAttention', attention(d.attention, href))}${section('opRuntime', kv([
       { key: t('opMode'), value: value(d.ai?.runtime_mode) },
     ]))}${section('opDomains', d.activity?.available ? rows((d.activity.domains || []).map((domain) => ({ title: key(domain.domain), right: value(domain.events), meta: t('opCount') }))) : t('opUnavailable'))}
     ${section('opDaily', d.activity?.available ? rows((d.activity.daily || []).slice(-7).map((day) => ({ title: day.date, right: value(day.learners), meta: t('opActiveFilter') }))) : t('opUnavailable'))}`;

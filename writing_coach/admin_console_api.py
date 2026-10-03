@@ -965,7 +965,7 @@ def runtime(request: Request, response: Response) -> dict[str, Any]:
             "activation": "human_gated",
             "health_rules": _health_rules(),
         },
-        "services": [{"id": key, **value} for key, value in _state.runtime_services.items()],
+        "services": [{"id": key, **value} for key, value in facts.get("services", _state.runtime_services).items()],
         # Imports run inside the request that starts them; there is no queue.
         "background_jobs": "none",
         # Plans exist in the product model but billing is not enabled anywhere

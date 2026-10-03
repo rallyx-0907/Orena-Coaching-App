@@ -567,7 +567,7 @@ app.include_router(contextual_dictionary_router)
 app.include_router(word_detail_router)
 app.include_router(reading_translation_router)
 configure_speech_asr(_speech_asr_provider)
-configure_speech_pronunciation(build_speech_pronunciation_provider())
+configure_speech_pronunciation(build_speech_pronunciation_provider(), resolver=build_speech_pronunciation_provider)
 configure_speaking_attempt_repository(
     _specialized_learning_repository
     if _persistence_runtime.backend == "postgresql"
@@ -812,6 +812,13 @@ def configure_admin_console_from_runtime() -> None:
             transcript_fallback=_media_fallback_mode,
         ),
         runtime_facts=lambda: {
+            "services": describe_runtime_services(
+                media_translation=(_media_translation_provider_id, _media_translation_provider),
+                reading_translation=(_reading_translation_provider_id, _reading_translation_provider),
+                speech_recognition=_speech_asr_provider,
+                pronunciation=build_speech_pronunciation_provider(),
+                transcript_fallback=_media_fallback_mode,
+            ),
             "schema": schema_facts(engine),
             "account_backbone": _backbone_state(
                 present=_backbone_schema_present(_backbone_tables()), asked=_backbone_requested()

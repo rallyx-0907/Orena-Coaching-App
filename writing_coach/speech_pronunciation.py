@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any, Callable, Protocol
 
 import requests
+from fastapi import HTTPException
 
 
 class SpeechPronunciationError(Exception):
@@ -252,6 +253,16 @@ class AzureSpeechPronunciationProvider:
     def from_env(cls) -> "AzureSpeechPronunciationProvider | None":
         api_key = os.getenv("AZURE_SPEECH_KEY", "").strip()
         region = os.getenv("AZURE_SPEECH_REGION", "").strip()
+        from writing_coach.ai.platform import _stored_provider_credentials
+        from writing_coach.ai.azure import speech_region
+        try:
+            stored = _stored_provider_credentials('azure-speech')
+        except HTTPException:
+            # An unreadable encrypted credential disables assessment, not app startup.
+            return None
+        if stored:
+            api_key = stored['api_key']
+            region = speech_region(stored['base_url'])
         if not api_key or not region:
             return None
         return cls(
@@ -580,6 +591,11 @@ def build_speech_pronunciation_provider() -> SpeechPronunciationProvider | None:
     azure_ready = bool(
         os.getenv("AZURE_SPEECH_KEY", "").strip() and os.getenv("AZURE_SPEECH_REGION", "").strip()
     )
+    from writing_coach.ai.platform import _stored_provider_credentials
+    try:
+        azure_ready = azure_ready or bool(_stored_provider_credentials('azure-speech'))
+    except HTTPException:
+        return None
     mode = configured or ("azure" if azure_ready else "none")
 
     if mode in {"", "none", "off", "disabled"}:

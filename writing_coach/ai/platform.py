@@ -134,6 +134,8 @@ def providers() -> dict[str, Any]:
 
 
 _PROVIDER_CONFIG_META: dict[str, dict[str, str | None]] = {
+    'azure-openai': {'endpoint_env': 'AZURE_OPENAI_BASE_URL', 'credential_env': 'AZURE_OPENAI_API_KEY', 'model_env': None, 'models_env': 'AZURE_OPENAI_DEPLOYMENTS'},
+    'azure-speech': {'endpoint_env': 'AZURE_SPEECH_REGION', 'credential_env': 'AZURE_SPEECH_KEY', 'model_env': None, 'models_env': None},
     "ollama": {
         "endpoint_env": "OLLAMA_URL",
         "credential_env": None,
@@ -561,6 +563,7 @@ def _provider_credential_values(
     payload: ProviderCredentialIn,
     *,
     require_models: bool = True,
+    test_current: bool = False,
 ) -> dict[str, Any]:
     item = providers().get(provider_id)
     if item is None:
@@ -568,6 +571,10 @@ def _provider_credential_values(
     existing = _stored_provider_credentials(provider_id)
     supplied_key = payload.api_key.get_secret_value().strip() if payload.api_key is not None else ""
     api_key = supplied_key or str(existing.get("api_key") or "").strip()
+    # Test the current environment credential without returning or copying it
+    # into the store. A changed endpoint must never receive that credential.
+    if test_current and not api_key and not payload.base_url:
+        api_key = str(getattr(item, 'api_key', '') or '').strip()
     # Operators sometimes paste the value copied from an HTTP example as
     # ``Bearer <key>``. The provider adapters add the authentication scheme
     # themselves, so retain only the credential material before sending or
@@ -586,12 +593,23 @@ def _provider_credential_values(
         raise HTTPException(400, "Provider endpoint must be a valid URL without embedded credentials.")
     if (item.secret_mode == "server-managed" or api_key) and parsed.scheme != "https":
         raise HTTPException(400, "Provider credentials require an HTTPS endpoint.")
+    if provider_id == 'azure-speech':
+        from writing_coach.ai.azure import speech_region
+        try:
+            speech_region(base_url)
+        except ValueError as exc:
+            raise HTTPException(400, str(exc)) from exc
+    if provider_id == 'azure-openai' and (not parsed.hostname or not parsed.hostname.endswith(('.openai.azure.com', '.services.ai.azure.com')) or parsed.path.rstrip('/') != '/openai/v1' or parsed.query or parsed.fragment or parsed.port):
+        raise HTTPException(400, 'Use the Azure resource HTTPS /openai/v1 endpoint.')
     models = sorted({str(model).strip() for model in payload.models if str(model).strip()})
     if any(len(model) > 160 or any(ord(char) < 32 for char in model) for model in models):
         raise HTTPException(400, "Model names must be readable values of 160 characters or fewer.")
     if len(models) > 100:
         raise HTTPException(400, "A provider can have at most 100 configured models.")
-    default_model = payload.default_model.strip()
+    default_model = payload.default_model.strip() or (str(getattr(item, 'default_model', '') or '') if test_current else '')
+    if provider_id == 'azure-speech':
+        models = ['pronunciation-assessment']
+        default_model = models[0]
     if any(ord(char) < 32 for char in default_model):
         raise HTTPException(400, "The default model name is invalid.")
     if default_model and default_model not in models and require_models:
@@ -616,6 +634,15 @@ def _credential_test(provider_id: str, values: dict[str, Any]) -> list[str]:
     if item is None:
         raise HTTPException(404, "Unknown AI provider.")
     try:
+        if provider_id == 'azure-openai':
+            deployment = values.get('default_model')
+            if not deployment:
+                raise HTTPException(400, 'Enter your Azure OpenAI deployment name.')
+            result = item.generate_json_once(messages=[{'role': 'user', 'content': 'Return {"ok":true}.'}],
+                schema={'type': 'object'}, model=deployment, max_output_tokens=64, temperature=0)
+            if result.data.get('ok') is not True:
+                raise AIProviderResponseInvalid('Azure deployment test returned an invalid result.')
+            return [deployment]
         return item.discover_models_live()
     except (AIProviderNotConfigured, AIProviderUnavailable, AIProviderError, AIProviderResponseInvalid) as exc:
         # Provider adapters deliberately expose only sanitized failure classes
@@ -672,7 +699,7 @@ def admin_ai_provider_credential_test(
     _same_origin(request)
     provider_id = provider_id.strip().casefold()
     try:
-        values = _provider_credential_values(provider_id, payload, require_models=False)
+        values = _provider_credential_values(provider_id, payload, require_models=False, test_current=True)
         response.headers["Cache-Control"] = "no-store"
         models = _credential_test(provider_id, values)
     except HTTPException as exc:
@@ -780,6 +807,8 @@ def admin_ai_config_update(payload: AIConfigIn, request: Request) -> dict[str, A
             raise HTTPException(400, "Unknown AI provider.")
         if not item.configured:
             raise HTTPException(409, f"{item.name} is not configured on the server.")
+        if provider_id == 'azure-speech':
+            raise HTTPException(400, 'Azure Speech cannot be selected as a text model.')
 
         models = item.list_models()
         if models and model not in models:
@@ -817,6 +846,13 @@ def admin_ai_test(payload: AIConfigIn, request: Request) -> dict[str, Any]:
         _record_admin_event(admin, "admin.ai.selection.test", entity_type="ai_selection", entity_id="learner_default",
                             payload={**target, "outcome": "refused", "status": 409})
         raise HTTPException(409, f"{item.name} is not configured.")
+    if provider_id == 'azure-speech':
+        started = perf_counter()
+        try:
+            item.discover_models_live()
+        except (AIProviderNotConfigured, AIProviderUnavailable, AIProviderError, AIProviderResponseInvalid) as exc:
+            raise HTTPException(502, f"Provider connection validation failed: {exc}") from exc
+        return {'ok': True, 'provider': provider_id, 'model': item.default_model, 'latency_ms': int((perf_counter() - started) * 1000)}
 
     schema = {
         "type": "object",

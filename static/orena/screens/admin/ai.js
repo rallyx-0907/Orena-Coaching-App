@@ -234,6 +234,7 @@ export async function mountAi(shell, ctx) {
     if (!input) return;
     if (input.dataset.aInput === 'key') view.form.key = input.value;
     if (input.dataset.aInput === 'endpoint') view.form.endpoint = input.value;
+    if (input.dataset.aInput === 'model') view.form.model = input.value;
     if (view.form.error) {
       view.form.error = '';
       input.classList.remove('a-input--invalid');

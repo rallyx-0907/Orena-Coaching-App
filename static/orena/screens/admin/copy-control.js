@@ -1,4 +1,6 @@
 export const en = {
+  azureDeploymentHint: 'Use the HTTPS resource endpoint ending in /openai/v1 and your deployment name, not the underlying model name.',
+  azureSpeechHint: 'Azure Speech regional endpoint · pronunciation assessment for EN/ZH',
   impMediaProcessing: 'Orena AI is processing this media', impMediaStage_fetch: 'Reading source', impMediaStage_transcribe: 'Preparing transcript', impMediaStage_segment: 'Preparing learning lines', impMediaStage_translate: 'Preparing support meanings', impMediaStage_ready: 'Ready for review',
   navOverview: 'Overview', navUsers: 'Users', navOperations: 'Operations',
   opOverviewSub: 'Learner activity, content and issues that need action.',
@@ -25,6 +27,8 @@ export const en = {
   opQueued: 'Queued', opRunning: 'Running', opFailed: 'Failed', opCompleted: 'Completed', opHeartbeat: 'Last heartbeat', opDaily: 'Daily activity', opDomains: 'Activity by domain', opConfigured: 'Configured', opNotConfigured: 'Not configured',
 };
 export const vi = {
+  azureDeploymentHint: 'Dùng endpoint HTTPS kết thúc bằng /openai/v1 và tên deployment trong Azure, không phải tên model gốc.',
+  azureSpeechHint: 'Endpoint theo region của Azure Speech · đánh giá phát âm EN/ZH',
   impMediaProcessing: 'AI của Orena đang xử lý media', impMediaStage_fetch: 'Đọc nguồn', impMediaStage_transcribe: 'Chuẩn bị bản ghi', impMediaStage_segment: 'Chuẩn bị câu học', impMediaStage_translate: 'Chuẩn bị nghĩa hỗ trợ', impMediaStage_ready: 'Sẵn sàng để duyệt',
   navOverview: 'Tổng quan', navUsers: 'Người dùng', navOperations: 'Vận hành',
   opOverviewSub: 'Hoạt động học, nội dung và vấn đề cần xử lý.',
@@ -51,6 +55,8 @@ export const vi = {
   opQueued: 'Đang chờ', opRunning: 'Đang chạy', opFailed: 'Thất bại', opCompleted: 'Hoàn tất', opHeartbeat: 'Heartbeat gần nhất', opDaily: 'Hoạt động mỗi ngày', opDomains: 'Hoạt động theo kỹ năng', opConfigured: 'Đã cấu hình', opNotConfigured: 'Chưa cấu hình',
 };
 export const zh = {
+  azureDeploymentHint: '使用以 /openai/v1 结尾的 HTTPS 资源端点和 Azure 部署名称，而不是基础模型名称。',
+  azureSpeechHint: 'Azure Speech 区域端点 · 英语/中文发音评估',
   impMediaProcessing: 'Orena AI 正在处理媒体', impMediaStage_fetch: '读取来源', impMediaStage_transcribe: '准备文字稿', impMediaStage_segment: '准备学习句段', impMediaStage_translate: '准备辅助译文', impMediaStage_ready: '可以审核了',
   navOverview: '概览', navUsers: '用户', navOperations: '运维',
   opOverviewSub: '学习活动、内容以及需要处理的问题。',

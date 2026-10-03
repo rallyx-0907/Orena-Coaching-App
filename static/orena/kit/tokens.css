@@ -11,7 +11,7 @@
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --page: linear-gradient(160deg, #0B0B12, #16122A);
+  --page: linear-gradient(160deg, #0B0B12 0%, #121022 50%, #1A1020 100%);
   --bg: #0E0E16;
   --surface: #171722;
   --surface2: #1E1E2B;
@@ -44,8 +44,8 @@
   --red: #FF6B70;
   --red-soft: #331719;
   --ai: linear-gradient(135deg, #7B6CFF 0%, #B06CF7 55%, #F58AAE 100%);
-  --ai-soft: #231D40;
-  --ai-ink: #C3B3FF;
+  --ai-soft: #221D3D;
+  --ai-ink: #B9A6FF;
   --ai-line: #3A2F6B;
   --scrim: rgba(0, 0, 0, .6);
   --sh1: 0 1px 2px rgba(0, 0, 0, .3);
@@ -96,6 +96,40 @@
   --sh3: 0 24px 64px rgba(40, 36, 110, .20);
   --shadow: 0 24px 64px rgba(40, 36, 110, .20);
 }
+
+/* Visual Skin EN/ZH Board accent options. Semantic statuses, skill hues and brand
+   artwork do not follow the selected accent. Indigo retains measured AA fixes. */
+:root[data-palette="orchid"] { --palette-base: #7B4FD8; }
+:root[data-palette="blue"] { --palette-base: #2F6FEB; }
+:root[data-palette="rose"] { --palette-base: #D9487A; }
+:root[data-palette]:not([data-palette="indigo"])[data-theme="light"] {
+  --accent: var(--palette-base);
+  --accent-hover: color-mix(in oklch, var(--palette-base), black 10%);
+  --accent-press: color-mix(in oklch, var(--palette-base), black 22%);
+  --accent-text: var(--accent-hover);
+  --accent-soft: color-mix(in oklch, var(--palette-base) 10%, #FFFFFF);
+  --tint2: color-mix(in oklch, var(--palette-base) 22%, #FFFFFF);
+  --ring: color-mix(in oklch, var(--palette-base) 26%, transparent);
+  /* Small white labels require the darker action step for AA. */
+  --accent-fill: var(--accent-hover);
+  --accent-fill-hover: var(--accent-press);
+  --accent-fill-press: var(--accent-press);
+}
+:root[data-palette]:not([data-palette="indigo"])[data-theme="dark"] {
+  --accent: color-mix(in oklch, var(--palette-base), white 18%);
+  --accent-hover: color-mix(in oklch, var(--palette-base), white 28%);
+  --accent-press: color-mix(in oklch, var(--palette-base), white 8%);
+  --accent-text: var(--accent-hover);
+  --accent-soft: color-mix(in oklch, var(--palette-base) 22%, #171722);
+  --tint2: color-mix(in oklch, var(--palette-base) 38%, #171722);
+  --ring: color-mix(in oklch, var(--palette-base) 45%, transparent);
+  --accent-fill: color-mix(in oklch, var(--palette-base), black 10%);
+  --accent-fill-hover: color-mix(in oklch, var(--palette-base), black 22%);
+  --accent-fill-press: var(--accent-fill-hover);
+}
+/* Blue/rose source swatches need the darker step when used as small text. */
+:root[data-palette="blue"][data-theme="light"],
+:root[data-palette="rose"][data-theme="light"] { --accent: var(--accent-hover); }
 
 /* Theme-independent hues the design sets on body: tone marks for Chinese (1-4), and the skill
    hues that colour skill icons and small markers only (rule 32). */

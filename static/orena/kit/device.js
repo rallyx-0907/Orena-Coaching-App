@@ -11,6 +11,17 @@
    rather than thrown on. */
 
 export const APPEARANCE_KEY = 'orena.appearance';
+export const PALETTE_KEY = 'orena.palette';
+export const PALETTES = Object.freeze(['indigo', 'orchid', 'blue', 'rose']);
+export function palette() {
+  try { const value = window.localStorage.getItem(PALETTE_KEY); return PALETTES.includes(value) ? value : 'indigo'; }
+  catch { return 'indigo'; }
+}
+export function setPalette(value) {
+  const next = PALETTES.includes(value) ? value : 'indigo';
+  try { window.localStorage.setItem(PALETTE_KEY, next); } catch {}
+  root.dataset.palette = next;
+}
 export const PHONE_QUERY = '(max-width: 899px)';
 export const APPEARANCES = Object.freeze(['light', 'dark', 'system']);
 
@@ -43,6 +54,7 @@ function paint(chosen) {
 }
 
 function apply() {
+  root.dataset.palette = palette();
   paint(normalize(stored()));
 }
 
