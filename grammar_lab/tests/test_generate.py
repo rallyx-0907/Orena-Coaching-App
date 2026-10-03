@@ -872,6 +872,43 @@ def test_repair_personal_production_rule_uses_formula_literal_anchor_for_going_t
     assert any(slot["role"] == "marker" and "going to" in slot["any_of"] for slot in slots)
 
 
+
+def test_complete_literal_example_spans_recovers_contraction_suffix() -> None:
+    pattern = {"formula": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ"}},
+        {"text": "n't", "role": "particle", "label": {"vi": "phủ định"}},
+    ]}
+    examples = [{"text": "It isn't ready.", "form": "affirmative", "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+    ]}]
+    complete_literal_example_spans(examples, pattern)
+    text = examples[0]["text"]
+    spans = {(text[s["start"]:s["end"]], s["role"]) for s in examples[0]["spans"]}
+    assert ("n't", "particle") in spans
+
+
+def test_repair_personal_production_compacts_oversized_any_of_to_observed_forms() -> None:
+    pattern = {"formula": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ"}},
+        {"text": "V", "role": "verb", "label": {"vi": "động từ"}},
+        {"text": "IO", "role": "object", "label": {"vi": "tân ngữ gián tiếp"}},
+    ]}
+    examples = [{"text": "I sent my sister a message.", "form": "affirmative", "spans": []}]
+    production = {
+        "target_form": "affirmative",
+        "pattern_rule": {"ordered": True, "slots": [{
+            "role": "verb",
+            "any_of": ["give", "gives", "gave", "send", "sends", "sent", "buy", "buys", "bought",
+                       "show", "shows", "showed", "tell", "tells", "told", "make", "makes", "made"],
+        }]},
+        "sample": {"text": "I gave my friend a book."},
+    }
+    repair_personal_production_rule(production, pattern, examples, False)
+    slot = production["pattern_rule"]["slots"][0]
+    assert slot["any_of"] == ["gave", "sent"]
+    assert len(slot["any_of"]) <= PERSONAL_PRODUCTION_MAX_ANY_OF
+
+
 def test_generate_v04_rejects_with_story(tmp_path: Path) -> None:
     lab = _v04_lab(tmp_path)
     lab.write()
