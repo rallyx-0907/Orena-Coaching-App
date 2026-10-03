@@ -138,12 +138,12 @@ functions:
     - en.canon.b1.009
     - en.canon.b1.007
     - en.canon.b1.008
+    - en.canon.b1.010
     zh-Hans:
     - zh.le_completion
     ja: []
   planned:
     en:
-    - en.canon.b1.010
     - en.canon.b1.048
     zh-Hans:
     - zh.canon.r5.hsk2_3_cu_i_c_u_thay_i_tr_ng_th_i
@@ -161,12 +161,12 @@ functions:
     - en.canon.b1.002
     - en.canon.b1.003
     - en.canon.b1.016
+    - en.canon.b1.004
     zh-Hans:
     - zh.guo_experience
     ja: []
   planned:
-    en:
-    - en.canon.b1.004
+    en: []
     zh-Hans: []
     ja:
     - ja.ta_koto_ga_aru
@@ -209,15 +209,15 @@ functions:
     - en.conditional_first
     - en.unless
     - en.conditional_zero
+    - en.canon.b1.026
+    - en.canon.b1.025
+    - en.canon.b1.035
     zh-Hans:
     - zh.canon.gf.hsk4.a_4_5_2_7.p1
     - zh.canon.gf.hsk6.a_6_6_2_7.p1
     ja: []
   planned:
     en:
-    - en.canon.b1.025
-    - en.canon.b1.026
-    - en.canon.b1.035
     - en.canon.b1.036
     - en.canon.b2.006
     zh-Hans:
@@ -348,6 +348,7 @@ functions:
     - en.canon.b1.001
     - en.canon.b1.043
     - en.canon.b2.021
+    - en.canon.b1.031
     zh-Hans:
     - zh.demonstratives
     - zh.canon.gf.hsk1.a_1_3_1.p1
@@ -357,7 +358,6 @@ functions:
     ja: []
   planned:
     en:
-    - en.canon.b1.031
     - en.canon.b2.022
     zh-Hans:
     - zh.canon.gf.hsk1.a_1_1_3.p1
@@ -554,11 +554,11 @@ functions:
     en:
     - en.canon.b1.005
     - en.past_simple_vs_continuous
+    - en.past_continuous
     zh-Hans: []
     ja: []
   planned:
-    en:
-    - en.past_continuous
+    en: []
     zh-Hans: []
     ja: []
 - id: fn.future_plans
@@ -573,17 +573,17 @@ functions:
     - en.canon.b2.004
     - en.canon.c1.006
     - en.will.decisions
+    - en.present_continuous.arrangements
+    - en.going_to.plans
+    - en.canon.b1.012
+    - en.canon.b1.013
+    - en.canon.b1.011
     zh-Hans:
     - zh.canon.gf.hsk1.a_1_1_2.p1
     - zh.canon.gf.hsk7_9.a_7_2_2_2.p1
     ja: []
   planned:
     en:
-    - en.going_to.plans
-    - en.present_continuous.arrangements
-    - en.canon.b1.011
-    - en.canon.b1.012
-    - en.canon.b1.013
     - en.canon.b2.002
     zh-Hans:
     - zh.modal.xiang_yao
@@ -637,6 +637,7 @@ functions:
     - en.canon.b1.020
     - en.canon.b2.010
     - en.canon.b1.019
+    - en.canon.b1.021
     zh-Hans:
     - zh.canon.gf.hsk2.a_2_1_1.p1
     - zh.canon.gf.hsk2.a_2_3.p1
@@ -644,8 +645,7 @@ functions:
     - zh.canon.gf.hsk6.a_6_7.p1
     ja: []
   planned:
-    en:
-    - en.canon.b1.021
+    en: []
     zh-Hans:
     - zh.ba_suggestion
     - zh.neng_yuan_dei
@@ -739,13 +739,13 @@ functions:
     en:
     - en.canon.c2.008
     - en.relative_clauses.who_which_that
+    - en.canon.b1.030
     zh-Hans:
     - zh.canon.gf.hsk3.a_3_5_3.p1
     - zh.canon.gf.hsk6.a_6_2_6.p1
     ja: []
   planned:
     en:
-    - en.canon.b1.030
     - en.canon.b2.020
     - en.canon.b2.023
     - en.canon.b2.037
@@ -1117,11 +1117,11 @@ functions:
     en:
     - en.canon.b2.016
     - en.canon.b1.014
+    - en.canon.b1.034
     zh-Hans: []
     ja: []
   planned:
     en:
-    - en.canon.b1.034
     - en.canon.b2.013
     - en.canon.b2.015
     - en.canon.b2.043

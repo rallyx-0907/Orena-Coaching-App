@@ -1,0 +1,230 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b1.034",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.voice_causative",
+  "level": {"framework": "cefr", "value": "B1", "rank": 3},
+  "prereqs": ["en.canon.b1.018"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["b1-causative-have-get"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": ["b1-causative-have-get"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Causative have/get", "en": "Causative have/get"},
+    "native_title": "Causative have/get",
+    "level": {"framework": "cefr", "value": "B1", "rank": 3},
+    "summary": {
+      "vi": "Cấu trúc causative have/get dùng khi bạn sắp xếp để người khác làm một việc gì đó cho mình, hoặc khi một việc không mong muốn xảy đến với đồ vật của mình.",
+      "en": "The causative have/get is used when you arrange for someone else to do something for you, or when something unwanted happens to your belongings."
+    },
+    "sub": {"vi": "nhờ người khác làm", "en": "arranging services"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn trả tiền hoặc nhờ ai đó làm một dịch vụ cho mình, ví dụ sửa xe, cắt tóc, giặt quần áo.",
+      "en": "When you pay or arrange for someone to do a service for you, such as repairing a car, cutting hair, or cleaning clothes."
+    },
+    {
+      "vi": "Khi bạn muốn nói một việc không may xảy ra với đồ vật của mình, ví dụ bị mất ví, bị trộm xe đạp.",
+      "en": "When you want to say that something unfortunate happened to your belongings, such as having your wallet lost or your bike stolen."
+    },
+    {
+      "vi": "Khi bạn muốn nhấn mạnh kết quả hoặc dịch vụ, không nhấn mạnh ai là người trực tiếp làm.",
+      "en": "When you want to focus on the result or the service, not on who actually did the work."
+    },
+    {
+      "vi": "Khi dùng get thay cho have trong văn nói hoặc tình huống thân mật hơn.",
+      "en": "When you use get instead of have in spoken or more informal situations."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {
+        "text": "have/has",
+        "role": "aux",
+        "label": {"vi": "trợ động từ have/has", "en": "auxiliary have/has"},
+        "options": [{"text": "have"}, {"text": "has"}]
+      },
+      {"text": "O", "role": "object", "label": {"vi": "tân ngữ", "en": "object"}},
+      {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}}
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "don't/doesn't",
+          "role": "aux",
+          "label": {"vi": "trợ động từ phủ định", "en": "negative auxiliary"},
+          "options": [{"text": "don't"}, {"text": "doesn't"}]
+        },
+        {
+          "text": "have/get",
+          "role": "verb",
+          "label": {"vi": "động từ causative", "en": "causative verb"},
+          "options": [{"text": "have"}, {"text": "get"}]
+        },
+        {"text": "O", "role": "object", "label": {"vi": "tân ngữ", "en": "object"}},
+        {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}}
+      ],
+      "question": [
+        {
+          "text": "Do/Does",
+          "role": "aux",
+          "label": {"vi": "trợ động từ nghi vấn", "en": "question auxiliary"},
+          "options": [{"text": "Do"}, {"text": "Does"}]
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "have/get",
+          "role": "verb",
+          "label": {"vi": "động từ causative", "en": "causative verb"},
+          "options": [{"text": "have"}, {"text": "get"}]
+        },
+        {"text": "O", "role": "object", "label": {"vi": "tân ngữ", "en": "object"}},
+        {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}}
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "I'm having my laptop repaired tomorrow.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 10, "role": "aux"},
+        {"start": 11, "end": 20, "role": "object"},
+        {"start": 21, "end": 29, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Tôi sắp xếp để người khác sửa laptop vào ngày mai.",
+        "en": "I have arranged for someone to repair my laptop tomorrow."
+      },
+      "translation": {"vi": "Ngày mai tôi đem laptop đi sửa.", "en": "I'm having my laptop repaired tomorrow."}
+    },
+    {
+      "text": "She has got her hair cut.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 11, "role": "aux"},
+        {"start": 12, "end": 20, "role": "object"},
+        {"start": 21, "end": 24, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Cô ấy đã đi cắt tóc (nhờ người khác cắt).",
+        "en": "She arranged for someone to cut her hair."
+      },
+      "translation": {"vi": "Cô ấy đã đi cắt tóc.", "en": "She has got her hair cut."}
+    },
+    {
+      "text": "He has had his bike stolen.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 3, "end": 10, "role": "aux"},
+        {"start": 11, "end": 19, "role": "object"},
+        {"start": 20, "end": 26, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Xe đạp của anh ấy bị trộm (việc không mong muốn xảy đến).",
+        "en": "His bike was stolen (an unfortunate experience)."
+      },
+      "translation": {"vi": "Xe đạp của anh ấy đã bị trộm.", "en": "He has had his bike stolen."}
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Câu sai dùng had + past participle như thì quá khứ hoàn thành, thiếu tân ngữ chỉ vật được sửa. Cấu trúc causative cần có tân ngữ đứng giữa have và quá khứ phân từ.",
+        "en": "The wrong sentence uses had + past participle like the past perfect and misses the object that receives the action. The causative needs an object between have and the past participle."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "I had repaired my phone at the shop.",
+      "right": "I had my phone repaired at the shop."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "I ___ my car serviced last month.",
+      "options": [{"text": "had", "error_tag": null}, {"text": "have", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Dùng had vì sự việc đã xảy ra trong quá khứ (last month).",
+        "en": "Use had because the event happened in the past (last month)."
+      }
+    },
+    {
+      "q": "She got her nails ___ yesterday.",
+      "options": [{"text": "done", "error_tag": null}, {"text": "did", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau get + tân ngữ cần quá khứ phân từ done, không dùng did.",
+        "en": "After get + object, use the past participle done, not did."
+      }
+    },
+    {
+      "q": "We ___ have the windows cleaned until next week.",
+      "options": [{"text": "won't", "error_tag": null}, {"text": "don't", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Dùng won't để nói việc chưa xảy ra tính đến tuần sau, phù hợp với until next week.",
+        "en": "Use won't to say it will not happen before next week, which fits until next week."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về việc bạn đã nhờ ai đó làm cho mình, dùng have/get + tân ngữ + quá khứ phân từ.",
+      "en": "Write a sentence about something you arranged for someone to do for you, using have/get + object + past participle."
+    },
+    "placeholder": "I had my ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "aux", "any_of": ["had", "have", "has", "got", "get", "gets"]},
+        {"role": "verb", "regex": "\\b\\w+(ed|en|t|ne|wn|rn|ld|lt|pt|ft|st|ut|ought|aught)\\b"}
+      ]
+    },
+    "sample": {"text": "I had my hair cut last weekend."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791001056",
+    "generated_at": "2026-10-03T04:17:36Z",
+    "r5_source": {
+      "ids": ["b1-causative-have-get"],
+      "content_version": 2,
+      "content_hash": "2d81cd0e0f768df0d0825f40056f450f21cccc86c96fc3dac9517695223e31d3",
+      "corrections": [
+        {
+          "r5_id": "b1-causative-have-get",
+          "issue": "R5 example 'He had his bike stolen' is correct but the lesson did not explain that this is an unfortunate experience, not an arranged service.",
+          "fix": "Added a when_to_use condition and an example annotation clarifying the unfortunate experience meaning."
+        },
+        {
+          "r5_id": "b1-causative-have-get",
+          "issue": "R5 mistake 'She got cut her hair' is a word-order error, but the lesson did not give a clear rule about object position.",
+          "fix": "Added a common mistake entry showing the correct order get + object + past participle and explaining the missing object."
+        },
+        {
+          "r5_id": "b1-causative-have-get",
+          "issue": "R5 did not include negative or question forms of the causative.",
+          "fix": "Added negative and question formula variants with examples and quick practice."
+        }
+      ]
+    }
+  },
+  "review": null
+}

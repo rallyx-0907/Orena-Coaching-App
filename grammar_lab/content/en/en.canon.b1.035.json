@@ -1,0 +1,237 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b1.035",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.condition_real",
+  "level": {"framework": "cefr", "value": "B1", "rank": 3},
+  "prereqs": [],
+  "contrasts": [],
+  "error_tags": ["tense"],
+  "source_refs": {"r5": ["b1-wish-if-only-present"]},
+  "point_type": "tense_aspect",
+  "sequence": 3,
+  "aliases": ["b1-wish-if-only-present"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Wish/if only: present", "en": "Wish/if only: present"},
+    "native_title": "Wish/if only: present",
+    "level": {"framework": "cefr", "value": "B1", "rank": 3},
+    "summary": {
+      "vi": "Cấu trúc wish/if only + quá khứ đơn dùng để diễn tả mong muốn về một tình huống hiện tại không có thật hoặc khác với thực tế.",
+      "en": "The structure wish/if only + past simple expresses a wish about a present situation that is unreal or different from reality."
+    },
+    "sub": {"vi": "mong ước hiện tại", "en": "present wishes"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn bày tỏ điều ước về một tình huống hiện tại mà bạn biết là không đúng hoặc không thể xảy ra.",
+      "en": "When you want to express a wish about a present situation that you know is not true or cannot happen."
+    },
+    {
+      "vi": "Khi bạn hối tiếc về một tình trạng hiện tại và muốn nó khác đi.",
+      "en": "When you regret a present state and want it to be different."
+    },
+    {
+      "vi": "Khi bạn dùng if only để nhấn mạnh mong muốn, thường trong câu cảm thán.",
+      "en": "When you use if only to emphasise a wish, often in an exclamation."
+    },
+    {
+      "vi": "Khi bạn muốn ai đó hoặc điều gì đó thay đổi hành vi hoặc tình huống, dùng wish + would + động từ nguyên thể.",
+      "en": "When you want someone or something to change behaviour or a situation, use wish + would + base verb."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {
+        "text": "wish/if only",
+        "role": "marker",
+        "label": {"vi": "dấu hiệu mong ước", "en": "wish marker"},
+        "options": [{"text": "wish"}, {"text": "if only"}]
+      },
+      {
+        "text": "S",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ mệnh đề sau", "en": "second subject"}
+      },
+      {"text": "V-ed", "role": "verb", "label": {"vi": "quá khứ đơn", "en": "past simple"}},
+      {
+        "text": "complement",
+        "role": "complement",
+        "label": {"vi": "bổ ngữ", "en": "complement"},
+        "optional": true
+      }
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "wish/if only",
+          "role": "marker",
+          "label": {"vi": "dấu hiệu mong ước", "en": "wish marker"},
+          "options": [{"text": "wish"}, {"text": "if only"}]
+        },
+        {
+          "text": "S",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ mệnh đề sau", "en": "second subject"}
+        },
+        {
+          "text": "didn't",
+          "role": "aux",
+          "label": {"vi": "trợ động từ phủ định", "en": "negative auxiliary"}
+        },
+        {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên thể", "en": "base verb"}},
+        {
+          "text": "complement",
+          "role": "complement",
+          "label": {"vi": "bổ ngữ", "en": "complement"},
+          "optional": true
+        }
+      ]
+    },
+    "illustration": {"kind": "timeline", "timeline": {"shape": "future_condition"}}
+  },
+  "examples": [
+    {
+      "text": "I wish I lived closer to work.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 2, "end": 6, "role": "marker"},
+        {"start": 7, "end": 8, "role": "subject"},
+        {"start": 9, "end": 14, "role": "verb"},
+        {"start": 15, "end": 29, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "mong ước hiện tại không có thật: thực tế sống xa chỗ làm.",
+        "en": "unreal present wish: in reality, I live far from work."
+      },
+      "translation": {"vi": "Tôi ước tôi sống gần chỗ làm hơn.", "en": "I wish I lived closer to work."}
+    },
+    {
+      "text": "If only I knew the answer.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 7, "role": "marker"},
+        {"start": 8, "end": 9, "role": "subject"},
+        {"start": 10, "end": 14, "role": "verb"},
+        {"start": 15, "end": 25, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "if only nhấn mạnh mong ước; dùng quá khứ đơn cho hiện tại không thật.",
+        "en": "if only emphasises the wish; past simple for unreal present."
+      },
+      "translation": {"vi": "Giá mà tôi biết câu trả lời.", "en": "If only I knew the answer."}
+    },
+    {
+      "text": "She wishes she were more confident.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 10, "role": "marker"},
+        {"start": 11, "end": 14, "role": "subject"},
+        {"start": 15, "end": 19, "role": "verb"},
+        {"start": 20, "end": 34, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "were dùng cho mọi chủ ngữ trong văn phong trang trọng; diễn tả hiện tại không thật.",
+        "en": "were is used for all subjects in formal style; expresses unreal present."
+      },
+      "translation": {"vi": "Cô ấy ước mình tự tin hơn.", "en": "She wishes she were more confident."}
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học dùng will cho mong ước hiện tại, nhưng wish/if only + quá khứ đơn mới diễn tả hiện tại không thật.",
+        "en": "Learners use will for a present wish, but wish/if only + past simple expresses an unreal present."
+      },
+      "error_tag": "tense",
+      "l1": ["vi"],
+      "wrong": "I wish I will have more time.",
+      "right": "I wish I had more time."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "I wish I ___ more free time.",
+      "options": [{"text": "had", "error_tag": null}, {"text": "have", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "wish + quá khứ đơn diễn tả mong ước hiện tại không thật; 'have' là hiện tại đơn, không phù hợp.",
+        "en": "wish + past simple expresses an unreal present wish; 'have' is present simple and does not fit."
+      }
+    },
+    {
+      "q": "If only she ___ how to solve this problem.",
+      "options": [{"text": "knew", "error_tag": null}, {"text": "knows", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "if only + quá khứ đơn cho hiện tại không thật; 'knows' là hiện tại đơn, không đúng.",
+        "en": "if only + past simple for unreal present; 'knows' is present simple and incorrect."
+      }
+    },
+    {
+      "q": "He wishes he ___ taller.",
+      "options": [{"text": "were", "error_tag": null}, {"text": "is", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "wish + were cho hiện tại không thật; 'is' là hiện tại đơn, không phù hợp.",
+        "en": "wish + were for unreal present; 'is' is present simple and does not fit."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu ước về bản thân ở hiện tại, dùng wish hoặc if only + quá khứ đơn.",
+      "en": "Write a wish about yourself in the present, using wish or if only + past simple."
+    },
+    "placeholder": "I wish I ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "marker", "any_of": ["wish", "wishes", "if only"]},
+        {
+          "role": "verb",
+          "regex": "\\b(?:lived|knew|had|were|was|did|went|spoke|owned|worked|studied|played|liked|loved|needed|wanted|felt|saw|heard|thought|took|made|said|told|asked|answered|helped|tried|used|found|gave|left|came|became|began|brought|bought|caught|chose|drove|ate|fell|felt|fought|flew|forgot|got|grew|held|kept|lost|met|paid|put|read|ran|said|saw|sold|sent|showed|sang|sat|slept|spoke|spent|stood|swam|took|taught|told|thought|understood|wore|won|wrote)\\b"
+        }
+      ]
+    },
+    "sample": {"text": "I wish I had more free time."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791001050",
+    "generated_at": "2026-10-03T04:17:30Z",
+    "r5_source": {
+      "ids": ["b1-wish-if-only-present"],
+      "content_version": 2,
+      "content_hash": "d2a7069ac2532ac3486e1d768be41efb01d55ca895217b7153fe1dba82565d90",
+      "corrections": [
+        {
+          "r5_id": "b1-wish-if-only-present",
+          "issue": "R5 includes 'wish + would' as part of the same point, but the target point is specifically 'Wish/if only: present' with past simple for unreal present.",
+          "fix": "Removed 'wish + would' from the formula and examples; kept only wish/if only + past simple for present unreal."
+        },
+        {
+          "r5_id": "b1-wish-if-only-present",
+          "issue": "R5 example 'I wish it would stop raining' illustrates a different structure (wish + would) not covered by the present unreal formula.",
+          "fix": "Replaced with 'She wishes she were more confident' to stay within the target structure."
+        },
+        {
+          "r5_id": "b1-wish-if-only-present",
+          "issue": "R5 mistake 'I wish I will have more time' is correct as a mistake, but the explanation could be clearer about tense.",
+          "fix": "Kept the mistake and clarified the reason: wish/if only + past simple for unreal present, not will."
+        }
+      ]
+    }
+  },
+  "review": null
+}

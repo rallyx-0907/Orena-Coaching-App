@@ -1,0 +1,311 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b1.026",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.condition_real",
+  "level": {"framework": "cefr", "value": "B1", "rank": 3},
+  "prereqs": ["en.canon.b1.025"],
+  "contrasts": [],
+  "error_tags": ["tense"],
+  "source_refs": {"r5": ["b1-third-conditional"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": ["b1-third-conditional"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Third câu điều kiện", "en": "Third conditional"},
+    "native_title": "Third conditional",
+    "level": {"framework": "cefr", "value": "B1", "rank": 3},
+    "summary": {
+      "vi": "Câu điều kiện loại ba diễn tả một điều kiện không có thật trong quá khứ và kết quả tưởng tượng của nó.",
+      "en": "The third conditional describes an unreal past condition and its imagined past result."
+    },
+    "sub": {"vi": "quá khứ không thật", "en": "unreal past"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn hối tiếc hoặc tưởng tượng một hành động trong quá khứ đã không xảy ra.",
+      "en": "When you regret or imagine a past action that did not happen."
+    },
+    {
+      "vi": "Khi bạn muốn nói kết quả quá khứ sẽ khác nếu điều kiện đã khác.",
+      "en": "When you want to say a past result would have been different if the condition had been different."
+    },
+    {
+      "vi": "Khi bạn kể lại một tình huống đã qua và suy đoán điều gì đã có thể xảy ra.",
+      "en": "When you look back on a past situation and speculate about what could have happened."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "If",
+        "role": "marker",
+        "label": {"vi": "từ nối điều kiện", "en": "condition marker"}
+      },
+      {
+        "text": "S",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ mệnh đề if", "en": "if-clause subject"}
+      },
+      {
+        "text": "had",
+        "role": "aux",
+        "label": {"vi": "trợ động từ quá khứ hoàn thành", "en": "past perfect auxiliary"}
+      },
+      {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}},
+      {
+        "text": "S",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ mệnh đề chính", "en": "main-clause subject"}
+      },
+      {
+        "text": "would/could/might",
+        "role": "aux",
+        "label": {"vi": "trợ động từ tình thái", "en": "modal auxiliary"},
+        "options": [{"text": "would"}, {"text": "could"}, {"text": "might"}]
+      },
+      {
+        "text": "have",
+        "role": "aux",
+        "label": {"vi": "trợ động từ hoàn thành", "en": "perfect auxiliary"}
+      },
+      {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}}
+    ],
+    "variants": {
+      "negative": [
+        {
+          "text": "If",
+          "role": "marker",
+          "label": {"vi": "từ nối điều kiện", "en": "condition marker"}
+        },
+        {
+          "text": "S",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ mệnh đề if", "en": "if-clause subject"}
+        },
+        {
+          "text": "hadn't",
+          "role": "aux",
+          "label": {"vi": "trợ động từ phủ định", "en": "negative past perfect auxiliary"}
+        },
+        {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}},
+        {
+          "text": "S",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ mệnh đề chính", "en": "main-clause subject"}
+        },
+        {
+          "text": "would/could/might",
+          "role": "aux",
+          "label": {"vi": "trợ động từ tình thái", "en": "modal auxiliary"},
+          "options": [{"text": "would"}, {"text": "could"}, {"text": "might"}]
+        },
+        {
+          "text": "not have",
+          "role": "aux",
+          "label": {"vi": "phủ định hoàn thành", "en": "negative perfect"}
+        },
+        {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}}
+      ],
+      "question": [
+        {
+          "text": "If",
+          "role": "marker",
+          "label": {"vi": "từ nối điều kiện", "en": "condition marker"}
+        },
+        {
+          "text": "S",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ mệnh đề if", "en": "if-clause subject"}
+        },
+        {
+          "text": "had",
+          "role": "aux",
+          "label": {"vi": "trợ động từ quá khứ hoàn thành", "en": "past perfect auxiliary"}
+        },
+        {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}},
+        {
+          "text": "would/could/might",
+          "role": "aux",
+          "label": {"vi": "trợ động từ tình thái", "en": "modal auxiliary"},
+          "options": [{"text": "would"}, {"text": "could"}, {"text": "might"}]
+        },
+        {
+          "text": "S",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ mệnh đề chính", "en": "main-clause subject"}
+        },
+        {
+          "text": "have",
+          "role": "aux",
+          "label": {"vi": "trợ động từ hoàn thành", "en": "perfect auxiliary"}
+        },
+        {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}}
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "If I had known, I would have called you.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "marker"},
+        {"start": 3, "end": 4, "role": "subject"},
+        {"start": 5, "end": 8, "role": "aux"},
+        {"start": 9, "end": 14, "role": "verb"},
+        {"start": 16, "end": 17, "role": "subject"},
+        {"start": 18, "end": 23, "role": "aux"},
+        {"start": 24, "end": 28, "role": "aux"},
+        {"start": 29, "end": 35, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Điều kiện không có thật trong quá khứ: tôi đã không biết, nên tôi đã không gọi.",
+        "en": "Unreal past condition: I did not know, so I did not call."
+      },
+      "translation": {
+        "vi": "Nếu tôi biết lúc đó, tôi đã gọi cho bạn.",
+        "en": "If I had known, I would have called you."
+      }
+    },
+    {
+      "text": "She would have passed if she had studied more.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 9, "role": "aux"},
+        {"start": 10, "end": 14, "role": "aux"},
+        {"start": 15, "end": 21, "role": "verb"},
+        {"start": 22, "end": 24, "role": "marker"},
+        {"start": 25, "end": 28, "role": "subject"},
+        {"start": 29, "end": 32, "role": "aux"},
+        {"start": 33, "end": 40, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Kết quả tưởng tượng trong quá khứ: cô ấy đã không học nhiều, nên đã không đỗ.",
+        "en": "Imagined past result: she did not study more, so she did not pass."
+      },
+      "translation": {
+        "vi": "Cô ấy đã đỗ nếu cô ấy học nhiều hơn.",
+        "en": "She would have passed if she had studied more."
+      }
+    },
+    {
+      "text": "If we had taken a taxi, we might have arrived on time.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "marker"},
+        {"start": 3, "end": 5, "role": "subject"},
+        {"start": 6, "end": 9, "role": "aux"},
+        {"start": 10, "end": 15, "role": "verb"},
+        {"start": 24, "end": 26, "role": "subject"},
+        {"start": 27, "end": 32, "role": "aux"},
+        {"start": 33, "end": 37, "role": "aux"},
+        {"start": 38, "end": 45, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Điều kiện không có thật trong quá khứ: chúng tôi đã không đi taxi, nên có lẽ đã không đến đúng giờ.",
+        "en": "Unreal past condition: we did not take a taxi, so we possibly did not arrive on time."
+      },
+      "translation": {
+        "vi": "Nếu chúng tôi đi taxi, có lẽ chúng tôi đã đến đúng giờ.",
+        "en": "If we had taken a taxi, we might have arrived on time."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Trong mệnh đề if của câu điều kiện loại ba, tiếng Anh dùng quá khứ hoàn thành (had + V3), không dùng would have.",
+        "en": "In the if-clause of a third conditional, English uses the past perfect (had + V3), not would have."
+      },
+      "error_tag": "tense",
+      "l1": ["vi"],
+      "wrong": "If I would have known, I would have called.",
+      "right": "If I had known, I would have called."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "If I ___ known, I would have called you.",
+      "options": [{"text": "had", "error_tag": null}, {"text": "would have", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Mệnh đề if của câu điều kiện loại ba dùng had + V3, không dùng would have.",
+        "en": "The if-clause of a third conditional uses had + V3, not would have."
+      }
+    },
+    {
+      "q": "She would have passed if she ___ more.",
+      "options": [{"text": "had studied", "error_tag": null}, {"text": "studied", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Điều kiện không có thật trong quá khứ cần quá khứ hoàn thành: had studied.",
+        "en": "An unreal past condition needs the past perfect: had studied."
+      }
+    },
+    {
+      "q": "If we had taken a taxi, we ___ on time.",
+      "options": [
+        {"text": "might have arrived", "error_tag": null},
+        {"text": "might arrive", "error_tag": "tense"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Kết quả tưởng tượng trong quá khứ dùng might have + V3, không dùng might + V nguyên thể.",
+        "en": "An imagined past result uses might have + V3, not might + base verb."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một việc trong quá khứ bạn đã không làm, và kết quả tưởng tượng của nó. Dùng If + had + V3, ... would have + V3.",
+      "en": "Write a sentence about something you did not do in the past and its imagined result. Use If + had + V3, ... would have + V3."
+    },
+    "placeholder": "If I had ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "marker", "any_of": ["if"]},
+        {"role": "aux", "any_of": ["had"]},
+        {"role": "aux", "any_of": ["would have", "could have", "might have"]}
+      ]
+    },
+    "sample": {"text": "If I had left earlier, I would have caught the train."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791000989",
+    "generated_at": "2026-10-03T04:16:29Z",
+    "r5_source": {
+      "ids": ["b1-third-conditional"],
+      "content_version": 2,
+      "content_hash": "2a9de8ec71512602ce1caf8f552fbf275ebbf12d46f75fff2182ea120fb4beb0",
+      "corrections": [
+        {
+          "r5_id": "b1-third-conditional",
+          "issue": "R5 example 'She would have passed if she had studied more' is correct, but the lesson did not include a negative or question form.",
+          "fix": "Added negative and question formula variants and kept the example set affirmative."
+        },
+        {
+          "r5_id": "b1-third-conditional",
+          "issue": "R5 mistake 'If she had went earlier, she would have seen him' was listed but not used in the final common_mistakes because the required error tag was tense and the main L1 error is would have in the if-clause.",
+          "fix": "Used the required tense mistake 'If I would have known, I would have called.' and corrected it to 'If I had known, I would have called.'"
+        },
+        {
+          "r5_id": "b1-third-conditional",
+          "issue": "R5 did not provide a structured formula with roles, spans, or a personal production rule.",
+          "fix": "Added abstract formula slots, example spans, and a bounded pattern_rule for personal production."
+        }
+      ]
+    }
+  },
+  "review": null
+}

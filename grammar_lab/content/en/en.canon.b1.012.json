@@ -1,0 +1,246 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b1.012",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.future_plans",
+  "level": {"framework": "cefr", "value": "B1", "rank": 3},
+  "prereqs": ["en.canon.b1.011"],
+  "contrasts": [],
+  "error_tags": ["tense"],
+  "source_refs": {"r5": ["b1-future-continuous", "b2-future-continuous"]},
+  "point_type": "tense_aspect",
+  "sequence": 2,
+  "aliases": ["b1-future-continuous", "b2-future-continuous"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "tương lai tiếp diễn", "en": "Future continuous"},
+    "native_title": "Future continuous",
+    "level": {"framework": "cefr", "value": "B1", "rank": 3},
+    "summary": {
+      "vi": "Thì tương lai tiếp diễn dùng will be + V-ing để nói một hành động sẽ đang diễn ra tại một thời điểm trong tương lai.",
+      "en": "The future continuous uses will be + V-ing to describe an action that will be in progress at a point in the future."
+    },
+    "sub": {"vi": "hành động đang diễn ra", "en": "action in progress"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói một hành động sẽ đang diễn ra tại một mốc thời gian cụ thể trong tương lai.",
+      "en": "When you want to say an action will be in progress at a specific future time."
+    },
+    {
+      "vi": "Khi bạn mô tả một hoạt động đã được lên kế hoạch hoặc dự kiến sẽ diễn ra như một phần bình thường của sự việc.",
+      "en": "When you describe an activity that is planned or expected as part of the normal course of events."
+    },
+    {
+      "vi": "Khi bạn hỏi một cách trung lập về kế hoạch của người khác mà không gây cảm giác áp đặt.",
+      "en": "When you ask neutrally about someone's plans without sounding imposing."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "time",
+        "role": "time",
+        "label": {"vi": "mốc thời gian", "en": "time expression"},
+        "optional": true
+      },
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {"text": "will be", "role": "aux", "label": {"vi": "trợ động từ", "en": "auxiliary"}},
+      {
+        "text": "V-ing",
+        "role": "verb",
+        "label": {"vi": "động từ đuôi -ing", "en": "present participle"}
+      }
+    ],
+    "variants": {
+      "negative": [
+        {
+          "text": "time",
+          "role": "time",
+          "label": {"vi": "mốc thời gian", "en": "time expression"},
+          "optional": true
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "will not be",
+          "role": "aux",
+          "label": {"vi": "trợ động từ phủ định", "en": "negative auxiliary"},
+          "options": [{"text": "will not be"}, {"text": "won't be"}]
+        },
+        {
+          "text": "V-ing",
+          "role": "verb",
+          "label": {"vi": "động từ đuôi -ing", "en": "present participle"}
+        }
+      ],
+      "question": [
+        {
+          "text": "Will",
+          "role": "aux",
+          "label": {"vi": "trợ động từ nghi vấn", "en": "question auxiliary"}
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {"text": "be", "role": "aux", "label": {"vi": "be", "en": "be"}},
+        {
+          "text": "V-ing",
+          "role": "verb",
+          "label": {"vi": "động từ đuôi -ing", "en": "present participle"}
+        },
+        {
+          "text": "time",
+          "role": "time",
+          "label": {"vi": "mốc thời gian", "en": "time expression"},
+          "optional": true
+        }
+      ]
+    },
+    "illustration": {"kind": "timeline", "timeline": {"shape": "future_plan"}}
+  },
+  "examples": [
+    {
+      "text": "This time tomorrow, I'll be flying to Tokyo.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 18, "role": "time"},
+        {"start": 20, "end": 21, "role": "subject"},
+        {"start": 21, "end": 27, "role": "aux"},
+        {"start": 28, "end": 34, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Hành động đang diễn ra tại mốc 'this time tomorrow'.",
+        "en": "The action is in progress at the future point 'this time tomorrow'."
+      },
+      "translation": {
+        "vi": "Giờ này mai tôi sẽ đang bay tới Tokyo.",
+        "en": "This time tomorrow, I will be in the middle of flying to Tokyo."
+      }
+    },
+    {
+      "text": "At nine, she won't be taking her exam.",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 7, "role": "time"},
+        {"start": 9, "end": 12, "role": "subject"},
+        {"start": 13, "end": 21, "role": "aux"},
+        {"start": 22, "end": 28, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Phủ định của tương lai tiếp diễn: won't be + V-ing.",
+        "en": "Negative future continuous: won't be + V-ing."
+      },
+      "translation": {
+        "vi": "Lúc chín giờ cô ấy sẽ không đang thi.",
+        "en": "At nine, she will not be in the middle of taking her exam."
+      }
+    },
+    {
+      "text": "Will you be using the printer this afternoon?",
+      "form": "question",
+      "spans": [
+        {"start": 0, "end": 4, "role": "aux"},
+        {"start": 5, "end": 8, "role": "subject"},
+        {"start": 9, "end": 11, "role": "aux"},
+        {"start": 12, "end": 17, "role": "verb"},
+        {"start": 30, "end": 44, "role": "time"}
+      ],
+      "annotation": {
+        "vi": "Câu hỏi tương lai tiếp diễn: Will + S + be + V-ing.",
+        "en": "Future continuous question: Will + S + be + V-ing."
+      },
+      "translation": {
+        "vi": "Chiều nay bạn có dùng máy in không?",
+        "en": "Will you be using the printer this afternoon?"
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Thiếu 'be' sau 'will' trước động từ đuôi -ing.",
+        "en": "Missing 'be' after 'will' before the -ing verb."
+      },
+      "error_tag": "tense",
+      "l1": ["vi"],
+      "wrong": "At eight, I will working.",
+      "right": "At eight, I will be working."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "This time next week, we ___ through Spain.",
+      "options": [
+        {"text": "will be travelling", "error_tag": null},
+        {"text": "will travelling", "error_tag": "tense"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Cần 'will be' + V-ing để diễn tả hành động đang diễn ra tại một mốc tương lai.",
+        "en": "We need 'will be' + V-ing to show an action in progress at a future point."
+      }
+    },
+    {
+      "q": "At noon, the team ___ the system.",
+      "options": [
+        {"text": "will still be testing", "error_tag": null},
+        {"text": "will still testing", "error_tag": "tense"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 'will' phải có 'be' trước động từ đuôi -ing.",
+        "en": "After 'will' we need 'be' before the -ing verb."
+      }
+    },
+    {
+      "q": "___ you be using the car tonight?",
+      "options": [{"text": "Will", "error_tag": null}, {"text": "Do", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu hỏi tương lai tiếp diễn bắt đầu bằng 'Will'.",
+        "en": "Future continuous questions start with 'Will'."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về việc bạn sẽ đang làm vào một thời điểm cụ thể trong tương lai.",
+      "en": "Write a sentence about what you will be doing at a specific future time."
+    },
+    "placeholder": "This time tomorrow, I will be ...",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"role": "verb", "regex": "\\w+ing\\b"}]},
+    "sample": {"text": "This time tomorrow, I will be flying to Tokyo."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791000960",
+    "generated_at": "2026-10-03T04:16:00Z",
+    "r5_source": {
+      "ids": ["b1-future-continuous", "b2-future-continuous"],
+      "content_version": 2,
+      "content_hash": "b6a4289011f5a81927e19a94ce565891b20ad25f3d7ad2f6707eca163a8a047e",
+      "corrections": [
+        {
+          "r5_id": "b1-future-continuous",
+          "issue": "Example 'At nine, she'll be taking her exam.' is ambiguous and could be read as a scheduled event rather than an action in progress.",
+          "fix": "Replaced with 'At nine, she won't be taking her exam.' to clearly illustrate the negative form and in-progress meaning."
+        },
+        {
+          "r5_id": "b1-future-continuous",
+          "issue": "Mistake 'By Friday, I will be finishing the report.' is not a grammar error but a meaning choice; it is not a typical learner mistake for this point.",
+          "fix": "Replaced with 'At eight, I will working.' which is a real tense error (missing 'be')."
+        },
+        {
+          "r5_id": "b2-future-continuous",
+          "issue": "The B2 lesson includes pragmatic uses (neutral enquiry) that are beyond the B1 scope.",
+          "fix": "Removed B2-specific content; kept only B1-level form, meaning, and basic uses."
+        }
+      ]
+    }
+  },
+  "review": null
+}

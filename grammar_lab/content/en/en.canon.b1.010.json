@@ -1,0 +1,227 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b1.010",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.completed_past",
+  "level": {"framework": "cefr", "value": "B1", "rank": 3},
+  "prereqs": ["en.canon.b1.008"],
+  "contrasts": [],
+  "error_tags": ["tense"],
+  "source_refs": {"r5": ["b1-would-for-past-habits"]},
+  "point_type": "tense_aspect",
+  "sequence": 5,
+  "aliases": ["b1-would-for-past-habits"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Would for past habits", "en": "Would for past habits"},
+    "native_title": "Would for past habits",
+    "level": {"framework": "cefr", "value": "B1", "rank": 3},
+    "summary": {
+      "vi": "Would + động từ nguyên mẫu diễn tả những hành động lặp đi lặp lại trong quá khứ, thường dùng khi kể chuyện sau khi đã nêu bối cảnh thời gian.",
+      "en": "Would + base verb describes repeated actions in the past, typically used in narratives after a past time frame has been established."
+    },
+    "sub": {"vi": "thói quen quá khứ", "en": "past habits"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Kể lại một chuỗi hành động lặp đi lặp lại trong quá khứ, sau khi đã nói rõ bối cảnh thời gian.",
+      "en": "Recounting a series of repeated actions in the past, after a past time frame has already been established."
+    },
+    {
+      "vi": "Hồi tưởng về thói quen cũ của bản thân hoặc người khác trong một giai đoạn đã qua.",
+      "en": "Reminiscing about old habits of yourself or others during a finished period."
+    },
+    {
+      "vi": "Kể chuyện hoặc viết hồi ký, nơi nhiều hành động thường xuyên được liệt kê nối tiếp nhau.",
+      "en": "Telling a story or writing a memoir where several habitual actions are listed one after another."
+    },
+    {
+      "vi": "Phân biệt với 'used to' khi muốn nhấn mạnh sắc thái hồi tưởng, hoài niệm hơn là chỉ nêu sự thật quá khứ.",
+      "en": "Distinguishing from 'used to' when you want a nostalgic, storytelling tone rather than a plain past fact."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "time",
+        "role": "time",
+        "label": {"vi": "cụm thời gian", "en": "time phrase"},
+        "optional": true
+      },
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {"text": "would", "role": "aux", "label": {"vi": "trợ động từ", "en": "auxiliary"}},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên mẫu", "en": "base verb"}}
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "would not",
+          "role": "aux",
+          "label": {"vi": "trợ động từ phủ định", "en": "negative auxiliary"},
+          "options": [{"text": "would not"}, {"text": "wouldn't"}]
+        },
+        {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên mẫu", "en": "base verb"}}
+      ],
+      "question": [
+        {"text": "Would", "role": "aux", "label": {"vi": "trợ động từ", "en": "auxiliary"}},
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên mẫu", "en": "base verb"}}
+      ]
+    },
+    "illustration": {"kind": "timeline", "timeline": {"shape": "habit"}}
+  },
+  "examples": [
+    {
+      "text": "Every evening, my grandfather would tell us stories.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 13, "role": "time"},
+        {"start": 15, "end": 29, "role": "subject"},
+        {"start": 30, "end": 35, "role": "aux"},
+        {"start": 36, "end": 40, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Hành động lặp lại mỗi tối trong quá khứ, sau khi bối cảnh thời gian đã rõ.",
+        "en": "A repeated action each evening in the past, once the time frame is clear."
+      },
+      "translation": {
+        "vi": "Mỗi tối, ông tôi thường kể cho chúng tôi nghe chuyện.",
+        "en": "Every evening, my grandfather would tell us stories."
+      }
+    },
+    {
+      "text": "In summer, we would spend hours outside.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 9, "role": "time"},
+        {"start": 11, "end": 13, "role": "subject"},
+        {"start": 14, "end": 19, "role": "aux"},
+        {"start": 20, "end": 25, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Thói quen lặp lại vào mùa hè trong quá khứ.",
+        "en": "A repeated habit in summer during a past period."
+      },
+      "translation": {
+        "vi": "Vào mùa hè, chúng tôi thường ở ngoài hàng giờ.",
+        "en": "In summer, we would spend hours outside."
+      }
+    },
+    {
+      "text": "When I lived there, I would visit that café every week.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 18, "role": "time"},
+        {"start": 20, "end": 21, "role": "subject"},
+        {"start": 22, "end": 27, "role": "aux"},
+        {"start": 28, "end": 33, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Bối cảnh quá khứ 'When I lived there' làm rõ đây là thói quen, không phải điều kiện.",
+        "en": "The past frame 'When I lived there' makes clear this is a habit, not a conditional."
+      },
+      "translation": {
+        "vi": "Khi tôi sống ở đó, tôi thường ghé quán cà phê đó mỗi tuần.",
+        "en": "When I lived there, I would visit that café every week."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Would không dùng cho trạng thái tĩnh (stative) trong quá khứ; 'be shy' là trạng thái nên cần 'used to'.",
+        "en": "Would is not used for past states; 'be shy' is a state, so 'used to' is required."
+      },
+      "error_tag": "tense",
+      "l1": ["vi"],
+      "wrong": "When I was young, I would be shy.",
+      "right": "When I was young, I used to be shy."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "When we were children, we ___ play in the street every afternoon.",
+      "options": [
+        {"text": "would", "error_tag": null},
+        {"text": "will", "error_tag": "tense"},
+        {"text": "are", "error_tag": "tense"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Bối cảnh quá khứ 'When we were children' + hành động lặp lại → dùng 'would + V'.",
+        "en": "The past frame 'When we were children' plus a repeated action calls for 'would + V'."
+      }
+    },
+    {
+      "q": "My grandmother ___ us stories before bed when we stayed with her.",
+      "options": [
+        {"text": "would tell", "error_tag": null},
+        {"text": "would told", "error_tag": "word_form"},
+        {"text": "will tell", "error_tag": "tense"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 'would' phải là động từ nguyên mẫu 'tell', không chia quá khứ.",
+        "en": "After 'would' the verb must be the base form 'tell', not a past form."
+      }
+    },
+    {
+      "q": "He ___ smoke, but he stopped ten years ago.",
+      "options": [{"text": "would", "error_tag": null}, {"text": "will", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Thói quen lặp lại trong quá khứ với bối cảnh 'stopped ten years ago' → 'would smoke'.",
+        "en": "A repeated past habit with the frame 'stopped ten years ago' takes 'would smoke'."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu kể về thói quen lặp lại của bạn trong quá khứ, dùng 'would + động từ nguyên mẫu' và nêu rõ bối cảnh thời gian.",
+      "en": "Write one sentence about a repeated habit you had in the past, using 'would + base verb' and making the past time frame clear."
+    },
+    "placeholder": "When I was a child, I would ...",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"role": "aux", "any_of": ["would", "wouldn't", "would not"]}]},
+    "sample": {"text": "When I was a child, I would visit my grandparents every Sunday."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791000974",
+    "generated_at": "2026-10-03T04:16:14Z",
+    "r5_source": {
+      "ids": ["b1-would-for-past-habits"],
+      "content_version": 2,
+      "content_hash": "a6bc349447a495f2b60d60eb348ddbe5eb588fb149f2d80a9ddd0044472d8c60",
+      "corrections": [
+        {
+          "r5_id": "b1-would-for-past-habits",
+          "issue": "R5 example 'I used to be shy, but I would talk a lot with close friends.' mixes 'used to' and 'would' in one sentence without a clear past-habit frame for the 'would' clause, which can confuse learners about when 'would' is allowed.",
+          "fix": "Replaced with a clean example that establishes the past frame first: 'When I lived there, I would visit that café every week.'"
+        },
+        {
+          "r5_id": "b1-would-for-past-habits",
+          "issue": "R5 mistake 'I would visit that café.' is presented as wrong only because it lacks a past frame, but the corrected version adds both a frame and 'every week', making the original error unclear.",
+          "fix": "Kept the frame-based correction but clarified in the reason that 'would' for past habits needs an established past time frame to avoid being read as a conditional."
+        },
+        {
+          "r5_id": "b1-would-for-past-habits",
+          "issue": "R5 did not include a negative or question form, though the point has distinct negative ('would not / wouldn't') and question ('Would + S + V') forms.",
+          "fix": "Added negative and question formula variants with options and labels."
+        },
+        {
+          "r5_id": "b1-would-for-past-habits",
+          "issue": "R5 guided practice included a production prompt with answer 'Answers vary.' and no concrete model, which does not show a usable route.",
+          "fix": "Added a personal_production card with a concrete prompt, placeholder, sample, and a deterministic pattern_rule matching 'would + base verb'."
+        }
+      ]
+    }
+  },
+  "review": null
+}

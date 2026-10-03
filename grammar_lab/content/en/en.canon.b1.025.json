@@ -1,0 +1,257 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b1.025",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.condition_real",
+  "level": {"framework": "cefr", "value": "B1", "rank": 3},
+  "prereqs": ["en.conditional_first"],
+  "contrasts": [],
+  "error_tags": ["tense"],
+  "source_refs": {"r5": ["b1-zero-first-second-conditionals"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["b1-zero-first-second-conditionals"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Zero/first/second câu điều kiện", "en": "Zero/first/second conditionals"},
+    "native_title": "Zero/first/second conditionals",
+    "level": {"framework": "cefr", "value": "B1", "rank": 3},
+    "summary": {
+      "vi": "Câu điều kiện loại 0, 1 và 2 diễn tả quan hệ luôn đúng, khả năng thật trong tương lai và tình huống giả định ở hiện tại hoặc tương lai.",
+      "en": "Zero, first and second conditionals express general truths, real future possibilities, and hypothetical present or future situations."
+    },
+    "sub": {"vi": "điều kiện thật và giả định", "en": "real and unreal conditions"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Dùng câu điều kiện loại 0 khi nói về quy luật, thói quen hoặc kết quả luôn đúng: If you heat ice, it melts.",
+      "en": "Use the zero conditional for rules, habits or results that are always true: If you heat ice, it melts."
+    },
+    {
+      "vi": "Dùng câu điều kiện loại 1 khi nói về một khả năng thật trong tương lai: If it rains tomorrow, we will stay home.",
+      "en": "Use the first conditional for a real future possibility: If it rains tomorrow, we will stay home."
+    },
+    {
+      "vi": "Dùng câu điều kiện loại 2 khi nói về một tình huống không có thật hoặc khó xảy ra ở hiện tại/tương lai: If I had more time, I would learn another language.",
+      "en": "Use the second conditional for an unreal or unlikely present or future situation: If I had more time, I would learn another language."
+    },
+    {
+      "vi": "Cả ba loại đều có thể đảo mệnh đề: mệnh đề if có thể đứng trước hoặc sau mệnh đề chính.",
+      "en": "All three types allow the clauses to be reversed: the if-clause can come before or after the main clause."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "if",
+        "role": "marker",
+        "label": {"vi": "từ nối điều kiện", "en": "conditional marker"}
+      },
+      {
+        "text": "S",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ mệnh đề if", "en": "if-clause subject"}
+      },
+      {"text": "V", "role": "verb", "label": {"vi": "động từ hiện tại", "en": "present verb"}},
+      {
+        "text": "S",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ mệnh đề chính", "en": "main-clause subject"}
+      },
+      {"text": "V", "role": "verb", "label": {"vi": "động từ hiện tại", "en": "present verb"}}
+    ],
+    "variants": {
+      "negative": [
+        {
+          "text": "if",
+          "role": "marker",
+          "label": {"vi": "từ nối điều kiện", "en": "conditional marker"}
+        },
+        {
+          "text": "S",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ mệnh đề if", "en": "if-clause subject"}
+        },
+        {
+          "text": "do/does not",
+          "role": "aux",
+          "label": {"vi": "trợ động từ phủ định", "en": "negative auxiliary"},
+          "options": [{"text": "do not"}, {"text": "does not"}]
+        },
+        {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên thể", "en": "base verb"}},
+        {
+          "text": "S",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ mệnh đề chính", "en": "main-clause subject"}
+        },
+        {"text": "V", "role": "verb", "label": {"vi": "động từ hiện tại", "en": "present verb"}}
+      ],
+      "question": [
+        {
+          "text": "if",
+          "role": "marker",
+          "label": {"vi": "từ nối điều kiện", "en": "conditional marker"}
+        },
+        {
+          "text": "S",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ mệnh đề if", "en": "if-clause subject"}
+        },
+        {"text": "V", "role": "verb", "label": {"vi": "động từ hiện tại", "en": "present verb"}},
+        {
+          "text": "do/does",
+          "role": "aux",
+          "label": {"vi": "trợ động từ nghi vấn", "en": "question auxiliary"},
+          "options": [{"text": "do"}, {"text": "does"}]
+        },
+        {
+          "text": "S",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ mệnh đề chính", "en": "main-clause subject"}
+        },
+        {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên thể", "en": "base verb"}}
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "If you heat ice, it melts.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "marker"},
+        {"start": 3, "end": 6, "role": "subject"},
+        {"start": 7, "end": 11, "role": "verb"},
+        {"start": 17, "end": 19, "role": "subject"},
+        {"start": 20, "end": 25, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Loại 0: sự thật hiển nhiên, cả hai mệnh đề dùng thì hiện tại.",
+        "en": "Zero conditional: a general truth, both clauses in the present."
+      },
+      "translation": {"vi": "Nếu bạn đun nóng đá, nó tan chảy.", "en": "If you heat ice, it melts."}
+    },
+    {
+      "text": "If it rains tomorrow, we will stay home.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "marker"},
+        {"start": 3, "end": 5, "role": "subject"},
+        {"start": 6, "end": 11, "role": "verb"},
+        {"start": 22, "end": 24, "role": "subject"},
+        {"start": 25, "end": 34, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Loại 1: khả năng thật trong tương lai, mệnh đề if dùng hiện tại, mệnh đề chính dùng will.",
+        "en": "First conditional: a real future possibility, present in the if-clause and will in the main clause."
+      },
+      "translation": {
+        "vi": "Nếu mai trời mưa, chúng tôi sẽ ở nhà.",
+        "en": "If it rains tomorrow, we will stay home."
+      }
+    },
+    {
+      "text": "If I had more time, I would learn another language.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "marker"},
+        {"start": 3, "end": 4, "role": "subject"},
+        {"start": 5, "end": 8, "role": "verb"},
+        {"start": 20, "end": 21, "role": "subject"},
+        {"start": 22, "end": 33, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Loại 2: tình huống giả định ở hiện tại, mệnh đề if dùng quá khứ đơn, mệnh đề chính dùng would.",
+        "en": "Second conditional: a hypothetical present situation, past simple in the if-clause and would in the main clause."
+      },
+      "translation": {
+        "vi": "Nếu tôi có nhiều thời gian hơn, tôi sẽ học một ngôn ngữ khác.",
+        "en": "If I had more time, I would learn another language."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Trong câu điều kiện loại 1, mệnh đề if dùng thì hiện tại đơn, không dùng will.",
+        "en": "In the first conditional, the if-clause uses the present simple, not will."
+      },
+      "error_tag": "tense",
+      "l1": ["vi"],
+      "wrong": "If it will rain, we will stay home.",
+      "right": "If it rains, we will stay home."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "If you ___ water to 100 degrees, it boils.",
+      "options": [{"text": "heat", "error_tag": null}, {"text": "will heat", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Loại 0 dùng thì hiện tại đơn ở cả hai mệnh đề.",
+        "en": "The zero conditional uses the present simple in both clauses."
+      }
+    },
+    {
+      "q": "If it ___ tomorrow, we will cancel the trip.",
+      "options": [{"text": "rains", "error_tag": null}, {"text": "will rain", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Loại 1 dùng thì hiện tại đơn trong mệnh đề if, không dùng will.",
+        "en": "The first conditional uses the present simple in the if-clause, not will."
+      }
+    },
+    {
+      "q": "If I ___ more money, I would travel around the world.",
+      "options": [{"text": "had", "error_tag": null}, {"text": "have", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Loại 2 dùng quá khứ đơn trong mệnh đề if để diễn tả tình huống giả định.",
+        "en": "The second conditional uses the past simple in the if-clause for a hypothetical situation."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về thói quen của bạn, dùng câu điều kiện loại 0.",
+      "en": "Write one sentence about a habit of yours, using the zero conditional."
+    },
+    "placeholder": "If I ...",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"role": "marker", "any_of": ["if"]}]},
+    "sample": {"text": "If I skip breakfast, I get hungry."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791001036",
+    "generated_at": "2026-10-03T04:17:16Z",
+    "r5_source": {
+      "ids": ["b1-zero-first-second-conditionals"],
+      "content_version": 2,
+      "content_hash": "00bf33aed6e40b0fb9c90551dd8cbce372bd7279d4172d556cb917408be7d161",
+      "corrections": [
+        {
+          "r5_id": "b1-zero-first-second-conditionals",
+          "issue": "R5 gộp cả ba loại điều kiện vào một bài nhưng không cung cấp công thức riêng cho từng loại, khiến người học khó phân biệt.",
+          "fix": "Tách công thức riêng cho từng loại: loại 0 (if + present, present), loại 1 (if + present, will + base), loại 2 (if + past, would + base)."
+        },
+        {
+          "r5_id": "b1-zero-first-second-conditionals",
+          "issue": "R5 không có ví dụ nào cho dạng phủ định hoặc nghi vấn của câu điều kiện.",
+          "fix": "Bổ sung dạng phủ định và nghi vấn cho cả ba loại điều kiện."
+        },
+        {
+          "r5_id": "b1-zero-first-second-conditionals",
+          "issue": "R5 liệt kê lỗi 'If I would know the answer, I would tell you' nhưng không giải thích rõ cơ chế lỗi.",
+          "fix": "Giải thích rõ: mệnh đề if của loại 2 dùng quá khứ đơn, không dùng would."
+        }
+      ]
+    }
+  },
+  "review": null
+}

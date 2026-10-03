@@ -1,0 +1,222 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b1.021",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.obligation_advice",
+  "level": {"framework": "cefr", "value": "B1", "rank": 3},
+  "prereqs": ["en.modals.should"],
+  "contrasts": [],
+  "error_tags": ["tense"],
+  "source_refs": {"r5": ["b1-past-modals-should-could-might-have"]},
+  "point_type": "tense_aspect",
+  "sequence": 4,
+  "aliases": ["b1-past-modals-should-could-might-have"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {
+      "vi": "Past động từ khuyết thiếu: should/could/might have",
+      "en": "Past modals: should/could/might have"
+    },
+    "native_title": "Past modals: should/could/might have",
+    "level": {"framework": "cefr", "value": "B1", "rank": 3},
+    "summary": {
+      "vi": "Cấu trúc should/could/might + have + quá khứ phân từ dùng để nói về những việc đã không xảy ra trong quá khứ: lời khuyên hối tiếc, khả năng chưa được thực hiện, hoặc phỏng đoán không chắc chắn.",
+      "en": "The pattern should/could/might + have + past participle talks about the past: regret or criticism, an unrealised possibility, or an uncertain guess."
+    },
+    "sub": {"vi": "quá khứ không thực", "en": "unreal past"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn hối tiếc hoặc phê bình một việc đã không làm trong quá khứ: should have + V3.",
+      "en": "When you regret or criticise something that was not done in the past: should have + V3."
+    },
+    {
+      "vi": "Khi bạn nói về một khả năng đã có nhưng không được thực hiện: could have + V3.",
+      "en": "When you talk about a possibility that existed but was not used: could have + V3."
+    },
+    {
+      "vi": "Khi bạn phỏng đoán điều gì đó có thể đã xảy ra nhưng không chắc: might have + V3.",
+      "en": "When you guess that something possibly happened but you are not sure: might have + V3."
+    },
+    {
+      "vi": "Khi bạn muốn phủ nhận một việc đã làm hoặc một khả năng: shouldn't have, couldn't have, might not have + V3.",
+      "en": "When you deny a past action or possibility: shouldn't have, couldn't have, might not have + V3."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {
+        "text": "should/could/might",
+        "role": "aux",
+        "label": {"vi": "động từ khuyết thiếu", "en": "modal verb"},
+        "options": [{"text": "should"}, {"text": "could"}, {"text": "might"}]
+      },
+      {"text": "have", "role": "aux", "label": {"vi": "trợ động từ", "en": "auxiliary"}},
+      {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}}
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "shouldn't/couldn't/might not",
+          "role": "aux",
+          "label": {"vi": "động từ khuyết thiếu phủ định", "en": "negative modal"},
+          "options": [{"text": "shouldn't"}, {"text": "couldn't"}, {"text": "might not"}]
+        },
+        {"text": "have", "role": "aux", "label": {"vi": "trợ động từ", "en": "auxiliary"}},
+        {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}}
+      ],
+      "question": [
+        {
+          "text": "Should/Could/Might",
+          "role": "aux",
+          "label": {"vi": "động từ khuyết thiếu", "en": "modal verb"},
+          "options": [{"text": "Should"}, {"text": "Could"}, {"text": "Might"}]
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {"text": "have", "role": "aux", "label": {"vi": "trợ động từ", "en": "auxiliary"}},
+        {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}}
+      ]
+    },
+    "illustration": {"kind": "timeline", "timeline": {"shape": "point_past"}}
+  },
+  "examples": [
+    {
+      "text": "You should have told me earlier.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 10, "role": "aux"},
+        {"start": 11, "end": 15, "role": "aux"},
+        {"start": 16, "end": 20, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Lời khuyên hối tiếc: việc tốt hơn đã không được làm trong quá khứ.",
+        "en": "Regret or criticism: a better action was not taken in the past."
+      },
+      "translation": {"vi": "Bạn lẽ ra nên nói với tôi sớm hơn.", "en": "You should have told me earlier."}
+    },
+    {
+      "text": "We could have taken a taxi.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 3, "end": 8, "role": "aux"},
+        {"start": 9, "end": 13, "role": "aux"},
+        {"start": 14, "end": 19, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Khả năng đã có nhưng không được thực hiện: đi taxi là một lựa chọn nhưng đã không làm.",
+        "en": "An unrealised possibility: taking a taxi was an option but was not used."
+      },
+      "translation": {"vi": "Lẽ ra chúng tôi đã có thể đi taxi.", "en": "We could have taken a taxi."}
+    },
+    {
+      "text": "She might have forgotten the meeting.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 9, "role": "aux"},
+        {"start": 10, "end": 14, "role": "aux"},
+        {"start": 15, "end": 24, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Phỏng đoán không chắc chắn về một việc có thể đã xảy ra trong quá khứ.",
+        "en": "An uncertain guess about something that possibly happened in the past."
+      },
+      "translation": {"vi": "Có lẽ cô ấy đã quên cuộc họp.", "en": "She might have forgotten the meeting."}
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Sau have phải dùng quá khứ phân từ (V3), không dùng quá khứ đơn. Người học Việt thường chọn dạng quá khứ đơn vì nghĩ đến thời quá khứ.",
+        "en": "After have you need the past participle (V3), not the past simple. Vietnamese learners often choose the past simple because they are thinking of past time."
+      },
+      "error_tag": "tense",
+      "l1": ["vi"],
+      "wrong": "You should have went home.",
+      "right": "You should have gone home."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "I ___ have studied harder for the exam.",
+      "options": [{"text": "should", "error_tag": null}, {"text": "should have", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "should + have + V3 diễn tả lời khuyên hối tiếc về quá khứ. Chọn 'should' vì đã có 'have' trong câu.",
+        "en": "should + have + V3 expresses regret about the past. Choose 'should' because 'have' is already in the sentence."
+      }
+    },
+    {
+      "q": "She might ___ forgotten her keys.",
+      "options": [{"text": "have", "error_tag": null}, {"text": "has", "error_tag": "agreement"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau động từ khuyết thiếu might luôn dùng have, không chia theo chủ ngữ.",
+        "en": "After the modal might, always use have; it does not change with the subject."
+      }
+    },
+    {
+      "q": "We ___ have taken the earlier train, but we missed it.",
+      "options": [{"text": "could", "error_tag": null}, {"text": "could have", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "could + have + V3 nói về một khả năng trong quá khứ đã không xảy ra. Chọn 'could' vì 'have' đã có sẵn.",
+        "en": "could + have + V3 talks about a past possibility that did not happen. Choose 'could' because 'have' is already there."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về điều bạn lẽ ra nên làm hoặc đã có thể làm trong quá khứ, dùng should/could/might + have + V3.",
+      "en": "Write one sentence about something you should have done or could have done in the past, using should/could/might + have + V3."
+    },
+    "placeholder": "I should have ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "aux", "any_of": ["should", "could", "might"]},
+        {"role": "aux", "any_of": ["have"]},
+        {"role": "verb", "regex": "\\b\\w+(?:ed|en|ne|wn|t|d|g|k|m|p|r|s|y)\\b"}
+      ]
+    },
+    "sample": {"text": "I should have called my mother yesterday."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791000987",
+    "generated_at": "2026-10-03T04:16:27Z",
+    "r5_source": {
+      "ids": ["b1-past-modals-should-could-might-have"],
+      "content_version": 2,
+      "content_hash": "7db765956b11ec897a975ae10e62f5abfbec5854100b5e4327c2f700f8d7ca76",
+      "corrections": [
+        {
+          "r5_id": "b1-past-modals-should-could-might-have",
+          "issue": "R5 example 'She might have forgotten the meeting.' is correct, but the R5 mistake 'He might has forgotten.' is not a typical Vietnamese learner error for this point; the more common error is using past simple after have.",
+          "fix": "Replaced the mistake with 'You should have went home.' → 'You should have gone home.' and explained the V3 requirement."
+        },
+        {
+          "r5_id": "b1-past-modals-should-could-might-have",
+          "issue": "R5 did not provide a clear formula or negative/question forms.",
+          "fix": "Added formula, negative, and question patterns with abstract slots and options."
+        },
+        {
+          "r5_id": "b1-past-modals-should-could-might-have",
+          "issue": "R5 examples lacked translations and annotations for the highlighted parts.",
+          "fix": "Added translations and annotations for each example."
+        }
+      ]
+    }
+  },
+  "review": null
+}

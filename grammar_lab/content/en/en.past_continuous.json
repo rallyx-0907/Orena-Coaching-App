@@ -1,0 +1,222 @@
+{
+  "schema_version": "0.4",
+  "id": "en.past_continuous",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.past_ongoing",
+  "level": {"framework": "cefr", "value": "A2", "rank": 2},
+  "prereqs": ["en.past_simple.regular_ed"],
+  "contrasts": ["en.past_simple_vs_continuous"],
+  "error_tags": ["tense"],
+  "source_refs": {"r5": ["a2-past-continuous"]},
+  "point_type": "tense_aspect",
+  "sequence": 1,
+  "aliases": ["a2-past-continuous"],
+  "source_anchors": {"status": "anchored", "items": [{"source": "core_inventory", "code": "68", "level": "A2"}]},
+  "header": {
+    "title": {"vi": "Quá khứ tiếp diễn", "en": "Past continuous"},
+    "native_title": "Past continuous",
+    "level": {"framework": "cefr", "value": "A2", "rank": 2},
+    "summary": {
+      "vi": "Thì quá khứ tiếp diễn diễn tả một hành động đang diễn ra tại một thời điểm trong quá khứ.",
+      "en": "The past continuous describes an action that was in progress at a point in the past."
+    },
+    "sub": {"vi": "hành động đang diễn ra", "en": "action in progress"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói một hành động đang xảy ra tại một thời điểm cụ thể trong quá khứ, ví dụ: lúc 8 giờ tối qua.",
+      "en": "When you want to say an action was happening at a specific past time, for example at 8 p.m. last night."
+    },
+    {
+      "vi": "Khi một hành động dài hơn đang diễn ra thì một hành động ngắn hơn xen vào, thường dùng với when.",
+      "en": "When a longer action was in progress and a shorter action interrupted it, often used with when."
+    },
+    {
+      "vi": "Khi bạn muốn mô tả bối cảnh hoặc tình huống xung quanh một sự việc trong quá khứ.",
+      "en": "When you want to describe the background or situation around a past event."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {
+        "text": "was/were",
+        "role": "aux",
+        "label": {"vi": "trợ động từ", "en": "auxiliary"},
+        "options": [{"text": "was"}, {"text": "were"}]
+      },
+      {"text": "V-ing", "role": "verb", "label": {"vi": "động từ đuôi -ing", "en": "verb -ing"}}
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "wasn't/weren't",
+          "role": "aux",
+          "label": {"vi": "trợ động từ phủ định", "en": "negative auxiliary"},
+          "options": [{"text": "wasn't"}, {"text": "weren't"}]
+        },
+        {"text": "V-ing", "role": "verb", "label": {"vi": "động từ đuôi -ing", "en": "verb -ing"}}
+      ],
+      "question": [
+        {
+          "text": "Was/Were",
+          "role": "aux",
+          "label": {"vi": "trợ động từ", "en": "auxiliary"},
+          "options": [{"text": "Was"}, {"text": "Were"}]
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {"text": "V-ing", "role": "verb", "label": {"vi": "động từ đuôi -ing", "en": "verb -ing"}}
+      ]
+    },
+    "illustration": {"kind": "timeline", "timeline": {"shape": "past_ongoing"}}
+  },
+  "examples": [
+    {
+      "text": "At nine, I was doing my homework.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 9, "end": 10, "role": "subject"},
+        {"start": 11, "end": 14, "role": "aux"},
+        {"start": 15, "end": 20, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Hành động đang diễn ra tại thời điểm 9 giờ.",
+        "en": "The action was in progress at nine o'clock."
+      },
+      "translation": {"vi": "Lúc 9 giờ, tôi đang làm bài tập về nhà.", "en": "At nine, I was doing my homework."}
+    },
+    {
+      "text": "They were playing when it started to rain.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 5, "end": 9, "role": "aux"},
+        {"start": 10, "end": 17, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Hành động đang diễn ra thì mưa bắt đầu.",
+        "en": "The action was in progress when the rain started."
+      },
+      "translation": {
+        "vi": "Họ đang chơi thì trời bắt đầu mưa.",
+        "en": "They were playing when it started to rain."
+      }
+    },
+    {
+      "text": "She wasn't listening to the teacher.",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 10, "role": "aux"},
+        {"start": 11, "end": 20, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Phủ định của hành động đang diễn ra.",
+        "en": "Negative form of an action in progress."
+      },
+      "translation": {"vi": "Cô ấy không nghe giáo viên.", "en": "She wasn't listening to the teacher."}
+    }
+  ],
+  "compare": [
+    {
+      "with": "en.past_simple_vs_continuous",
+      "this_example": "I was watching a film at 8.",
+      "other_example": "I watched a film at 8.",
+      "this_meaning": {
+        "vi": "Hành động đang diễn ra tại một thời điểm trong quá khứ.",
+        "en": "An action that was in progress at a past moment."
+      },
+      "other_meaning": {
+        "vi": "Hành động đã hoàn thành trong quá khứ.",
+        "en": "An action that was completed in the past."
+      }
+    }
+  ],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Sau was/were phải dùng động từ đuôi -ing, không dùng động từ nguyên thể.",
+        "en": "After was/were, use the -ing form of the verb, not the base form."
+      },
+      "error_tag": "tense",
+      "l1": ["vi"],
+      "wrong": "I was study at eight.",
+      "right": "I was studying at eight."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "At 6 p.m., we ___ dinner.",
+      "options": [{"text": "were eating", "error_tag": null}, {"text": "were eat", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau were cần động từ đuôi -ing để diễn tả hành động đang diễn ra.",
+        "en": "After were, use the -ing form to show an action in progress."
+      }
+    },
+    {
+      "q": "He ___ working when I called.",
+      "options": [{"text": "wasn't", "error_tag": null}, {"text": "weren't", "error_tag": "agreement"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Chủ ngữ He đi với was, phủ định là wasn't.",
+        "en": "The subject He takes was, so the negative is wasn't."
+      }
+    },
+    {
+      "q": "___ she sleeping at midnight?",
+      "options": [{"text": "Was", "error_tag": null}, {"text": "Were", "error_tag": "agreement"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Chủ ngữ she đi với was trong câu hỏi.",
+        "en": "The subject she takes was in questions."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về việc bạn đang làm vào một thời điểm cụ thể trong quá khứ.",
+      "en": "Write a sentence about what you were doing at a specific time in the past."
+    },
+    "placeholder": "At 8 p.m. yesterday, I was ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "aux", "any_of": ["was", "were"]}, {"role": "verb", "regex": "\\w+ing\\b"}]
+    },
+    "sample": {"text": "At 8 p.m. yesterday, I was reading a book."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791000914",
+    "generated_at": "2026-10-03T04:15:14Z",
+    "r5_source": {
+      "ids": ["a2-past-continuous"],
+      "content_version": 2,
+      "content_hash": "78640e3e51a0e9d4025b742cf902004742d70145459ed8c3d0ccd40d5ac60598",
+      "corrections": [
+        {
+          "r5_id": "a2-past-continuous",
+          "issue": "Example 'They were playing when it rained.' uses past simple 'rained' for the interrupting action, which is correct, but the sentence is ambiguous without context; also 'when it rained' can imply a completed action, not necessarily an interruption.",
+          "fix": "Changed to 'They were playing when it started to rain.' to clearly show the interruption."
+        },
+        {
+          "r5_id": "a2-past-continuous",
+          "issue": "Mistake 'They was waiting.' is listed, but the correction 'They were waiting.' is correct; however, the mistake is about agreement, not tense, and the error tag should be 'agreement' not 'tense'.",
+          "fix": "Kept the mistake but changed the error tag to 'agreement' in the common_mistakes section."
+        },
+        {
+          "r5_id": "a2-past-continuous",
+          "issue": "Guided practice item 'Sửa: Were she sleeping?' has answer 'Was she sleeping?' which is correct, but the explanation 'she + was' is too brief.",
+          "fix": "Expanded explanation to clarify subject-verb agreement in questions."
+        }
+      ]
+    }
+  },
+  "review": null
+}

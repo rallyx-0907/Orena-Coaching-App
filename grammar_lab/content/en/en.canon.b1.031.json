@@ -1,0 +1,220 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b1.031",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.pronoun_reference",
+  "level": {"framework": "cefr", "value": "B1", "rank": 3},
+  "prereqs": ["en.canon.b1.001"],
+  "contrasts": [],
+  "error_tags": ["preposition", "sentence_structure"],
+  "source_refs": {"r5": ["b1-relative-pronouns-and-prepositions"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": ["b1-relative-pronouns-and-prepositions"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "đại từ quan hệ and giới từ", "en": "Relative pronouns and prepositions"},
+    "native_title": "Relative pronouns and prepositions",
+    "level": {"framework": "cefr", "value": "B1", "rank": 3},
+    "summary": {
+      "vi": "Chủ điểm này dạy cách đặt giới từ trong mệnh đề quan hệ: giới từ có thể đứng cuối câu (thông thường) hoặc đứng trước whom/which (trang trọng).",
+      "en": "This point teaches where the preposition goes in a relative clause: it can stay at the end (common) or move before whom/which (formal)."
+    },
+    "sub": {"vi": "giới từ trong mệnh đề quan hệ", "en": "prepositions in relative clauses"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói về người hoặc vật mà hành động có giới từ đi kèm (talk to, work for, worry about).",
+      "en": "When you talk about a person or thing and the verb or adjective takes a preposition (talk to, work for, worry about)."
+    },
+    {
+      "vi": "Trong văn nói hoặc viết thân mật, giới từ thường đứng cuối mệnh đề quan hệ.",
+      "en": "In speech or informal writing, the preposition usually stays at the end of the relative clause."
+    },
+    {
+      "vi": "Trong văn viết trang trọng, giới từ đứng trước whom (người) hoặc which (vật).",
+      "en": "In formal writing, the preposition comes before whom (people) or which (things)."
+    },
+    {
+      "vi": "Khi đại từ quan hệ là tân ngữ của giới từ, bạn có thể bỏ nó trong lối nói thông thường, nhưng không bỏ sau giới từ đứng trước.",
+      "en": "When the relative pronoun is the object of the preposition, you can leave it out in the common pattern, but not after a fronted preposition."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "N",
+        "role": "object",
+        "label": {"vi": "danh từ chỉ người/vật", "en": "noun (person/thing)"}
+      },
+      {
+        "text": "who/that/which",
+        "role": "marker",
+        "label": {"vi": "đại từ quan hệ", "en": "relative pronoun"},
+        "optional": true,
+        "options": [{"text": "who"}, {"text": "that"}, {"text": "which"}]
+      },
+      {
+        "text": "S",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ mệnh đề quan hệ", "en": "clause subject"}
+      },
+      {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}},
+      {"text": "preposition", "role": "marker", "label": {"vi": "giới từ", "en": "preposition"}}
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "That's the person I was talking to.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 7, "end": 17, "role": "object"},
+        {"start": 18, "end": 19, "role": "subject"},
+        {"start": 20, "end": 31, "role": "verb"},
+        {"start": 32, "end": 34, "role": "marker"}
+      ],
+      "annotation": {
+        "vi": "Giới từ 'to' đứng cuối mệnh đề quan hệ; đại từ quan hệ đã được lược bỏ.",
+        "en": "The preposition 'to' stays at the end of the relative clause; the relative pronoun is left out."
+      },
+      "translation": {"vi": "Đó là người tôi đang nói chuyện cùng.", "en": "That's the person I was talking to."}
+    },
+    {
+      "text": "The company for which she works is expanding.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 11, "role": "object"},
+        {"start": 12, "end": 15, "role": "marker"},
+        {"start": 16, "end": 21, "role": "marker"},
+        {"start": 22, "end": 25, "role": "subject"},
+        {"start": 26, "end": 31, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Giới từ 'for' đứng trước 'which' trong văn viết trang trọng.",
+        "en": "The preposition 'for' comes before 'which' in formal writing."
+      },
+      "translation": {
+        "vi": "Công ty cô ấy làm đang mở rộng.",
+        "en": "The company for which she works is expanding."
+      }
+    },
+    {
+      "text": "This is the issue we were worried about.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 8, "end": 17, "role": "object"},
+        {"start": 18, "end": 20, "role": "subject"},
+        {"start": 21, "end": 33, "role": "verb"},
+        {"start": 34, "end": 39, "role": "marker"}
+      ],
+      "annotation": {
+        "vi": "Giới từ 'about' đứng cuối mệnh đề quan hệ; đại từ quan hệ đã được lược bỏ.",
+        "en": "The preposition 'about' stays at the end of the relative clause; the relative pronoun is left out."
+      },
+      "translation": {"vi": "Đây là vấn đề chúng tôi lo.", "en": "This is the issue we were worried about."}
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Sau giới từ đứng trước, chỉ dùng whom (người) hoặc which (vật), không dùng that.",
+        "en": "After a fronted preposition, use whom (people) or which (things), never that."
+      },
+      "error_tag": "preposition",
+      "l1": ["vi"],
+      "wrong": "The person to that I spoke was helpful.",
+      "right": "The person to whom I spoke was helpful."
+    },
+    {
+      "reason": {
+        "vi": "Khi giới từ đứng trước, phải có đại từ quan hệ theo sau; không được để giới từ đứng một mình trước chủ ngữ.",
+        "en": "When the preposition is fronted, a relative pronoun must follow it; the preposition cannot stand alone before the subject."
+      },
+      "error_tag": "sentence_structure",
+      "l1": ["vi"],
+      "wrong": "The company for I work is large.",
+      "right": "The company for which I work is large."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "That's the colleague ___ I share an office with.",
+      "options": [{"text": "who", "error_tag": null}, {"text": "which", "error_tag": "word_choice"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Dùng 'who' cho người; giới từ 'with' đứng cuối câu.",
+        "en": "Use 'who' for a person; the preposition 'with' stays at the end."
+      }
+    },
+    {
+      "q": "The report ___ which we referred was published last week.",
+      "options": [{"text": "to", "error_tag": null}, {"text": "for", "error_tag": "preposition"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Cụm đúng là 'refer to', nên giới từ đứng trước 'which' phải là 'to'.",
+        "en": "The correct phrase is 'refer to', so the fronted preposition before 'which' must be 'to'."
+      }
+    },
+    {
+      "q": "The friend ___ whom I travelled lives abroad.",
+      "options": [{"text": "with", "error_tag": null}, {"text": "to", "error_tag": "preposition"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Cụm đúng là 'travel with someone', nên giới từ đứng trước 'whom' là 'with'.",
+        "en": "The correct phrase is 'travel with someone', so the fronted preposition before 'whom' is 'with'."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một người hoặc vật mà bạn có liên hệ, dùng giới từ ở cuối mệnh đề quan hệ.",
+      "en": "Write one sentence about a person or thing you have a connection with, using a preposition at the end of the relative clause."
+    },
+    "placeholder": "The person I ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "marker", "any_of": ["to", "with", "for", "about", "at", "in", "on", "from"]}]
+    },
+    "sample": {"text": "The person I work with is very kind."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791001049",
+    "generated_at": "2026-10-03T04:17:29Z",
+    "r5_source": {
+      "ids": ["b1-relative-pronouns-and-prepositions"],
+      "content_version": 2,
+      "content_hash": "fa28b0e437bfdbef6a9e675e5022867b8c3629294cabd3f2de5dcfb38ce58d99",
+      "corrections": [
+        {
+          "r5_id": "b1-relative-pronouns-and-prepositions",
+          "issue": "R5 example 'The friend with whom I travelled lives abroad.' is grammatical but the lesson did not show the common stranding pattern for the same meaning.",
+          "fix": "Added a parallel common-pattern example 'That's the person I was talking to.' and kept the formal pattern in a separate example."
+        },
+        {
+          "r5_id": "b1-relative-pronouns-and-prepositions",
+          "issue": "R5 mistake 'The company for I work is large.' was listed without explaining that a relative pronoun is required after a fronted preposition.",
+          "fix": "Rewrote the reason to state that a fronted preposition must be followed by whom/which, and kept the corrected sentence."
+        },
+        {
+          "r5_id": "b1-relative-pronouns-and-prepositions",
+          "issue": "R5 did not include a formula or span-level breakdown for the two patterns.",
+          "fix": "Added an abstract formula with slots for noun, relative pronoun, clause subject, verb and preposition, and marked spans in all examples."
+        },
+        {
+          "r5_id": "b1-relative-pronouns-and-prepositions",
+          "issue": "R5 guided practice asked learners to 'identify the target structure' without a clear answer key for the production task.",
+          "fix": "Replaced with three cloze questions that test preposition choice and relative pronoun choice, each with a tagged distractor."
+        }
+      ]
+    }
+  },
+  "review": null
+}

@@ -1,0 +1,222 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b1.030",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.relative",
+  "level": {"framework": "cefr", "value": "B1", "rank": 3},
+  "prereqs": ["en.relative_clauses.who_which_that"],
+  "contrasts": [],
+  "error_tags": ["sentence_structure"],
+  "source_refs": {"r5": ["b1-non-defining-relative-clauses"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["b1-non-defining-relative-clauses"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Non-defining mệnh đề quan hệ", "en": "Non-defining relative clauses"},
+    "native_title": "Non-defining relative clauses",
+    "level": {"framework": "cefr", "value": "B1", "rank": 3},
+    "summary": {
+      "vi": "Mệnh đề quan hệ không xác định thêm thông tin phụ về một danh từ đã được xác định rõ, và được tách bằng dấu phẩy.",
+      "en": "A non-defining relative clause adds extra information about a noun that is already identified, and it is separated by commas."
+    },
+    "sub": {"vi": "thông tin phụ", "en": "extra information"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi danh từ đã rõ với người nghe (tên riêng, my, this, hoặc đã nhắc trước đó) và bạn muốn thêm thông tin phụ.",
+      "en": "When the noun is already clear to the listener (a name, my, this, or already mentioned) and you want to add extra information."
+    },
+    {
+      "vi": "Khi có thể bỏ mệnh đề mà câu vẫn xác định đúng người hoặc vật.",
+      "en": "When you can remove the clause and the sentence still identifies the same person or thing."
+    },
+    {
+      "vi": "Khi muốn bình luận về cả một sự việc vừa nêu, dùng which.",
+      "en": "When you want to comment on a whole situation just mentioned, using which."
+    },
+    {
+      "vi": "Khi viết trang trọng hoặc học thuật, không dùng that trong mệnh đề loại này.",
+      "en": "In formal or academic writing, do not use that in this type of clause."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "N",
+        "role": "subject",
+        "label": {"vi": "danh từ đã xác định", "en": "already identified noun"}
+      },
+      {
+        "text": "who/which/whose",
+        "role": "marker",
+        "label": {"vi": "đại từ quan hệ", "en": "relative pronoun"},
+        "options": [{"text": "who"}, {"text": "which"}, {"text": "whose"}]
+      },
+      {
+        "text": "S",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ của mệnh đề", "en": "clause subject"}
+      },
+      {"text": "V", "role": "verb", "label": {"vi": "động từ của mệnh đề", "en": "clause verb"}},
+      {
+        "text": "O/C",
+        "role": "complement",
+        "label": {"vi": "tân ngữ/bổ ngữ", "en": "object/complement"},
+        "optional": true
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "My aunt, who lives in Hue, is a doctor.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 7, "role": "subject"},
+        {"start": 9, "end": 12, "role": "marker"},
+        {"start": 13, "end": 18, "role": "verb"},
+        {"start": 19, "end": 25, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "who thay cho my aunt; mệnh đề thêm thông tin phụ, có thể bỏ.",
+        "en": "who refers to my aunt; the clause adds extra information and can be removed."
+      },
+      "translation": {
+        "vi": "Dì tôi, người sống ở Huế, là bác sĩ.",
+        "en": "My aunt, who lives in Hue, is a doctor."
+      }
+    },
+    {
+      "text": "This laptop, which I bought last year, still works well.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 11, "role": "subject"},
+        {"start": 13, "end": 18, "role": "marker"},
+        {"start": 19, "end": 20, "role": "subject"},
+        {"start": 21, "end": 27, "role": "verb"},
+        {"start": 28, "end": 37, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "which thay cho this laptop; mệnh đề không xác định danh từ.",
+        "en": "which refers to this laptop; the clause does not define the noun."
+      },
+      "translation": {
+        "vi": "Laptop này, tôi mua năm ngoái, vẫn tốt.",
+        "en": "This laptop, which I bought last year, still works well."
+      }
+    },
+    {
+      "text": "Mr Lee, whose office is upstairs, can help you.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 6, "role": "subject"},
+        {"start": 8, "end": 13, "role": "marker"},
+        {"start": 14, "end": 20, "role": "subject"},
+        {"start": 21, "end": 23, "role": "verb"},
+        {"start": 24, "end": 32, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "whose chỉ sở hữu; mệnh đề thêm thông tin phụ về Mr Lee.",
+        "en": "whose shows possession; the clause adds extra information about Mr Lee."
+      },
+      "translation": {
+        "vi": "Ông Lee, có văn phòng tầng trên, có thể giúp.",
+        "en": "Mr Lee, whose office is upstairs, can help you."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Trong mệnh đề quan hệ không xác định, không dùng that; phải dùng which cho vật.",
+        "en": "In a non-defining relative clause, that is not used; use which for things."
+      },
+      "error_tag": "sentence_structure",
+      "l1": ["vi"],
+      "wrong": "My car, that is ten years old, still runs well.",
+      "right": "My car, which is ten years old, still runs well."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "My brother, ___ lives in Da Nang, is visiting us.",
+      "options": [{"text": "who", "error_tag": null}, {"text": "that", "error_tag": "sentence_structure"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Dùng who cho người trong mệnh đề không xác định; không dùng that.",
+        "en": "Use who for people in a non-defining clause; that is not used."
+      }
+    },
+    {
+      "q": "This book, ___ I read last month, was excellent.",
+      "options": [{"text": "which", "error_tag": null}, {"text": "that", "error_tag": "sentence_structure"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Dùng which cho vật trong mệnh đề không xác định; không dùng that.",
+        "en": "Use which for things in a non-defining clause; that is not used."
+      }
+    },
+    {
+      "q": "My sister, ___ I visited yesterday, is a doctor.",
+      "options": [{"text": "whom", "error_tag": null}, {"text": "that", "error_tag": "sentence_structure"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Dùng whom cho tân ngữ chỉ người trong mệnh đề không xác định; không dùng that.",
+        "en": "Use whom for a person object in a non-defining clause; that is not used."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một người bạn hoặc thành viên gia đình, thêm thông tin phụ bằng mệnh đề quan hệ không xác định.",
+      "en": "Write a sentence about a friend or family member, adding extra information with a non-defining relative clause."
+    },
+    "placeholder": "My friend, who ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "marker", "any_of": ["who", "which", "whose"]},
+        {
+          "role": "verb",
+          "regex": "\\b(is|are|was|were|has|have|had|lives|lived|works|worked|likes|liked|bought|made|wrote|read|visited|knows|knew)\\b"
+        }
+      ]
+    },
+    "sample": {"text": "My friend, who lives in Hanoi, is a teacher."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791001056",
+    "generated_at": "2026-10-03T04:17:36Z",
+    "r5_source": {
+      "ids": ["b1-non-defining-relative-clauses"],
+      "content_version": 2,
+      "content_hash": "35618380bcc6b122926c8cca129b0c91cd3ddafd9a69e34f5a6f60aa1aedc1b9",
+      "corrections": [
+        {
+          "r5_id": "b1-non-defining-relative-clauses",
+          "issue": "R5 rule 'noun, who/which/whose + clause, ...' is too vague and does not show the full clause structure or the optional object/complement.",
+          "fix": "Wrote a formula with slots N, who/which/whose, S, V, and optional O/C, and added examples with spans."
+        },
+        {
+          "r5_id": "b1-non-defining-relative-clauses",
+          "issue": "R5 example 'We missed the bus, which made us late.' uses which to refer to a whole clause, which is a different pattern from the main point and may confuse B1 learners.",
+          "fix": "Replaced with three clear examples where the relative pronoun refers to a noun: My aunt, who lives in Hue, is a doctor; This laptop, which I bought last year, still works well; Mr Lee, whose office is upstairs, can help you."
+        },
+        {
+          "r5_id": "b1-non-defining-relative-clauses",
+          "issue": "R5 mistake 'My aunt, I visited yesterday, is a doctor.' omits the relative pronoun, but the correction 'whom/who' is not explained clearly for B1 learners.",
+          "fix": "Kept the common mistake about that vs which, which is more frequent for Vietnamese learners, and explained the rule clearly."
+        }
+      ]
+    }
+  },
+  "review": null
+}
