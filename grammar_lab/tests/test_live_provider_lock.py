@@ -236,6 +236,60 @@ def test_release_leaves_another_lanes_lock_untouched(tmp_path: Path) -> None:
     assert path.exists()
 
 
+def test_windows_pid_alive_checks_exit_code_not_only_open_process(monkeypatch: pytest.MonkeyPatch) -> None:
+    class Kernel32:
+        def __init__(self, exit_code: int) -> None:
+            self.exit_code = exit_code
+            self.closed: list[int] = []
+
+        def OpenProcess(self, access: int, inherit: bool, pid: int) -> int:
+            assert access == 0x1000 and inherit is False and pid == 4242
+            return 123
+
+        def GetExitCodeProcess(self, handle: int, out) -> int:
+            assert handle == 123
+            out._obj.value = self.exit_code
+            return 1
+
+        def CloseHandle(self, handle: int) -> None:
+            self.closed.append(handle)
+
+    class Windll:
+        def __init__(self, kernel32: Kernel32) -> None:
+            self.kernel32 = kernel32
+
+    monkeypatch.setattr(module.sys, "platform", "win32")
+
+    dead = Kernel32(0)
+    monkeypatch.setattr(module.ctypes, "windll", Windll(dead), raising=False)
+    assert module._pid_alive(4242) is False
+    assert dead.closed == [123]
+
+    live = Kernel32(259)
+    monkeypatch.setattr(module.ctypes, "windll", Windll(live), raising=False)
+    assert module._pid_alive(4242) is True
+    assert live.closed == [123]
+
+
+def test_windows_pid_alive_fails_closed_when_exit_state_cannot_be_queried(monkeypatch: pytest.MonkeyPatch) -> None:
+    class Kernel32:
+        def OpenProcess(self, access: int, inherit: bool, pid: int) -> int:
+            return 123
+
+        def GetExitCodeProcess(self, handle: int, out) -> int:
+            return 0
+
+        def CloseHandle(self, handle: int) -> None:
+            pass
+
+    class Windll:
+        kernel32 = Kernel32()
+
+    monkeypatch.setattr(module.sys, "platform", "win32")
+    monkeypatch.setattr(module.ctypes, "windll", Windll(), raising=False)
+    assert module._pid_alive(4242) is True
+
+
 def test_pid_alive_is_true_for_the_current_process() -> None:
     assert module._pid_alive(os.getpid()) is True
 
