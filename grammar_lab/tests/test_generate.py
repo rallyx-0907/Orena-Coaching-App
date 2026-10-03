@@ -11,6 +11,9 @@ import json
 from grammar_lab.pipeline.content_store import load_point
 from grammar_lab.pipeline.generate import (
     Generator,
+    PERSONAL_PRODUCTION_MAX_ANY_OF,
+    PERSONAL_PRODUCTION_MAX_SLOTS,
+    PROMPT_PATH_V04,
     _build_check_items,
     _generation_schema_v04,
     _normalize_seg,
@@ -560,6 +563,9 @@ def test_semantic_repair_hints_are_targeted_by_failure_family() -> None:
     text = semantic_repair_hints([I("example.formula_role_missing"), I("personal_production.rule_rejects_sample")])
     assert "Collapse alternative surface forms" in text
     assert "one representative route" in text
+    assert "at most 4" in text and "at most 8" in text
+    assert "Never enumerate open-class vocabulary" in text
+    assert "left-to-right" in text
     assert "pinyin" not in text.lower()
 
 
@@ -758,6 +764,24 @@ def test_generation_schema_v04_asks_only_for_the_illustration_data_the_point_typ
     assert morph["summary"] == {"type": "string", "minLength": 1}
     two = _generation_schema_v04(point_type="other", **{**common, "locales": ["vi", "en"]})["properties"]
     assert two["summary"]["type"] == "object"
+
+
+def test_generation_schema_v04_bounds_personal_production_rule_size() -> None:
+    schema = _generation_schema_v04(
+        locales=["vi"], l1s=["vi"], error_tags=["agreement"], engine_tags=["agreement"],
+        contrast_with=[], point_type="other", zh=False,
+    )
+    rule = schema["properties"]["personal_production"]["properties"]["pattern_rule"]["properties"]
+    assert rule["slots"]["maxItems"] == PERSONAL_PRODUCTION_MAX_SLOTS == 4
+    assert rule["slots"]["items"]["properties"]["any_of"]["maxItems"] == PERSONAL_PRODUCTION_MAX_ANY_OF == 8
+
+
+def test_v04_prompt_forbids_open_class_vocabulary_enumeration() -> None:
+    prompt = PROMPT_PATH_V04.read_text(encoding="utf-8")
+    assert "Never enumerate open-class vocabulary" in prompt
+    assert "1-4 rule slots total" in prompt
+    assert "at most 8 literals" in prompt
+    assert "simulate the highlighted spans from left to" in prompt
 
 
 def test_generate_v04_rejects_with_story(tmp_path: Path) -> None:
