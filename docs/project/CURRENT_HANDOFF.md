@@ -34,9 +34,9 @@ Frame/route/code/status: `docs/design/canonical-ui/IMPLEMENTATION_MAP.md`.
 
 ## Last verified batch
 
-Admin (`2931823`): REVIEWABLE; six areas, sandbox capability routing, EN/ZH lookup,
-URL import -> processing -> 75-segment rights-held detail. Python278/Node/review pass.
-Evidence/mobile limit: ADMIN_BASIC_CONTROL_BROWSER_CHECKPOINT.md. EPUB evidence unchanged.
+Admin REVIEWABLE: six areas, sandbox routing, imports/EN/ZH lookup (`2931823`);
+Azure/Skin (`7857d43`) local125/Node/review pass. Azure browser evidence/limits:
+AZURE_VISUAL_SKIN_BROWSER_CHECKPOINT.md. Existing EPUB evidence unchanged.
 
 S6 (`71ddcd4`): REVIEWABLE. EN/ZH rights review -> Publish -> Listening with VI
 meanings; reload/restart, withdrawal/Archive/Restore, 390x844 verified. Atomic
@@ -110,14 +110,15 @@ human gates. Never touch persistent volumes as cleanup.
 Admin REVIEWABLE: existing credentials/pickers preserved; :8021 key provisioned,
 seven text configs initialized preserving Writing, static8 PASS, sandbox capability
 routing on. Cloud-key HTTPS enforced. Six areas and import processing connected.
-Azure Speech runtime exists but key/region remain environment-only: Admin configuration
-is a genuine basic gap. Speech capability routing is separate; public activation stays gated.
+Azure Speech/OpenAI REVIEWABLE (`7857d43`): Admin credentials/runtime connected; live Speech auth passed.
+OpenAI operator credential/deployment acceptance remains. Evidence: AZURE_VISUAL_SKIN_BROWSER_CHECKPOINT.md.
+Visual Skin EN/ZH owns palette/theme; screen pins own composition; brand unchanged.
 
 Current phase: basic functional coverage first (human instruction, 2026-10-02).
 Preserve accepted Books/Progress; do not reopen them or restart a full-app audit.
 S2 basic Listening and S6 Admin media rights/publish are REVIEWABLE; stop deepening
-those bounded paths. Next: Azure Admin/runtime configuration and new-page mobile acceptance; then canonical
-Grammar/Intelligence; do not rebuild the completed control plane. Preserve the S6 review checkpoint before a new major slice.
+those paths. Next: bounded Azure operator/mobile acceptance, then canonical Grammar/Intelligence.
+Preserve the completed control plane and S6 checkpoint. Current Azure local125/Node/review pass; mobile unverified.
 Deep fidelity/cross-device/edge/performance work follows whole-app basic coverage.
 Captions first; ASR within D-111.6 caps. Activity counts do not prove mastery.
 

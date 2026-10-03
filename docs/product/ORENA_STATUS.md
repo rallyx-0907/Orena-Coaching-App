@@ -65,11 +65,14 @@ and is truthfully unavailable; existing service status is reported separately.
 Outstanding browser acceptance and bounded limitations are recorded in
 `docs/reviews/ADMIN_BASIC_CONTROL_BROWSER_CHECKPOINT.md`.
 
-Azure correction (2026-10-03): Azure Speech pronunciation runtime already exists
-(`speech_pronunciation.py`, installed by `app.py`), but reads key/region from
-environment and has no connected Admin credential/configuration journey. This
-is a genuine basic operator configuration gap, distinct from reserved Speech
-capability routing. It must not disappear behind the generic unavailable label.
+Azure correction was resolved to REVIEWABLE by `7857d43`: Speech and OpenAI now
+reuse encrypted Admin credentials/test/removal. Saved Speech feeds the existing
+EN/ZH pronunciation adapter dynamically; OpenAI uses operator deployments for
+supported structured-text routes. Reserved speech routing remains separate.
+Browser Speech authentication passed; OpenAI is honestly unconfigured and still
+needs operator credential/deployment acceptance. Visual Skin EN/ZH authority,
+four accents and light/dark treatment are connected without changing approved
+brand assets. Evidence/limits: `docs/reviews/AZURE_VISUAL_SKIN_BROWSER_CHECKPOINT.md`.
 
 S4 (2026-10-02): Progress/History, Speaking Attempts/Summary and Writing-derived
 From Your Errors now use real server records at `/next` on :8021. Reading/media

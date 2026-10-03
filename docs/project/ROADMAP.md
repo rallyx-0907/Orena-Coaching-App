@@ -57,6 +57,10 @@ Current sequence:
    routing; Overview/Users/Operations and import stage refresh are REVIEWABLE.
    Finish bounded browser acceptance of supported operational journeys, then move
    on. Unsupported speech routing is explicitly unavailable, not a working picker.
+   Azure Speech/OpenAI Admin integration is REVIEWABLE (`7857d43`): existing
+   pronunciation runtime and structured-text deployments are connected; live
+   OpenAI operator acceptance remains open. Visual Skin EN/ZH supplements own
+   palette/theme treatment, screen pins retain composition/interaction authority.
    Production/public activation remains a human gate; it does not block this
    authorized nonpublic Product Completion runtime. Evidence: ADMIN_BASIC_CONTROL_BROWSER_CHECKPOINT.md.
 4. Reconcile every remaining canonical screen/element/action/state/transition against real implementation:

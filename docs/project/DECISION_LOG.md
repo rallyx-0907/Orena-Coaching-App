@@ -3975,3 +3975,17 @@ journeys. This does not authorize production/public routing or credential exposu
 Admin completion requires actual operator journeys in all six approved areas;
 unsupported controls must be unavailable. Stop deepening basic-complete areas
 and return to the remaining basic app gaps; hardening follows broad coverage.
+
+## D-118 - Azure Admin scope and approved Visual Skin supplements
+
+2026-10-03, explicit human direction: complete both Azure Speech and Azure
+OpenAI configuration/runtime using existing Admin security and supported domain
+adapters. This does not activate production/public routing or reserved speech
+capability pickers.
+
+The supplied Visual Skin EN (requested as “Orena Visual Skin (2).html”) and ZH
+exports own visual language, palette/accent and light/dark treatment. Existing
+screen-specific canonical prototypes retain composition/layout/interaction.
+ZH keeps product parity with its typography/content treatment. Outdated skin
+logos, marks, icons and artwork are excluded; approved brand assets always win.
+Update the existing Design Contract, never a competing authority document.
