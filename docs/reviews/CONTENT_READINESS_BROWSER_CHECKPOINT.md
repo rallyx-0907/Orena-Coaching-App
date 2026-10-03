@@ -83,6 +83,10 @@ evidence and recorder regression tests remain the evidence for that boundary.
   tree. Word-detail due-date fixture fails on clean HEAD too. Writing workspace's
   numbered-rule assertion fails only with the user's pre-existing Design Contract
   formatting/renumbering edit; that edit is excluded from this checkpoint.
+  The exact committed implementation was archived and all Node gates rerun:
+  **125 passed,1 failed** (the same inherited Word-detail due-date fixture).
+  Writing workspace passes in that clean checkpoint, confirming partial staging
+  excluded the unrelated numbered-rule edit.
 - Readiness/Compare reference/media Speaking/Compare/Scripted Pronunciation/Listening
   mapping/removal/foundation and browser ESM gates PASS; ESM **335 modules linked**.
 - Project-memory and architecture validators PASS; architecture version1.4.0.
@@ -135,3 +139,52 @@ ZH_PARITY=actual affected imported YouTube, Pinyin/meaning/selected line/reopen 
 CROSS_CAPABILITY_STATUS=shared read boundary for Listening/Dictation/Shadowing/Respond; contextual requests remain learner actions
 WHAT_CHANGED=content materialization before readiness; navigation reads; original segment playback
 WHAT_THE_HUMAN_SHOULD_REVIEW=Hear model immediately; switch back and forth at line2; leave/reopen; long line on phone; optional measurements truthfully absent
+
+## Git checkpoint and exact change inventory
+
+COMMIT=3aa577b73b743568ede2645dbc9402ccc344cc08
+
+Exact-commit independent code review: Codex (GPT-6), `/root/readiness_review`,
+**APPROVE** for the SHA above on `codex/work`; no P0/P1. This is code review,
+not human product approval or production activation.
+
+Implementation checkpoint files:
+
+```text
+.github/workflows/ci.yml
+app.py
+docs/product/ORENA_CONTENT_ARCHITECTURE.md
+docs/product/ORENA_CONTENT_EXECUTION_ARCHITECTURE.md
+docs/product/ORENA_STATUS.md
+docs/project/CURRENT_HANDOFF.md
+docs/project/CURRENT_PRODUCT_STATE.yaml
+docs/project/DECISION_LOG.md
+docs/project/DESIGN_CONTRACT.md (D-121 paragraph only)
+docs/project/plans/CONTENT_READINESS_REPAIR.md
+docs/reviews/CONTENT_READINESS_BROWSER_CHECKPOINT.md
+scripts/test_orena_compare_reference.mjs
+scripts/test_orena_content_readiness.mjs
+scripts/test_orena_screen_listening.mjs
+static/orena/capabilities/original-segment-player.css
+static/orena/infrastructure/api.js
+static/orena/product/compare-reference.js
+static/orena/product/media-source.js
+static/orena/product/original-segment-player.js
+static/orena/product/speaking-source.js
+static/orena/screens/compare/compare.css
+static/orena/screens/compare/screen.js
+static/orena/screens/speak/screen.js
+tests/test_content_readiness_navigation.py
+tests/test_speaking_library.py
+writing_coach/listening_api.py
+writing_coach/media_library_api.py
+writing_coach/media_transcript_pipeline.py
+writing_coach/speaking_library.py
+```
+
+Documentation follow-up records this reviewed SHA and sets
+CURRENT_PRODUCT_STATE.last_verified_application_commit to it. No subsequent code
+change. Git status after the implementation checkpoint and final documentation
+checkpoint: ` M docs/project/DESIGN_CONTRACT.md`; no staged code, no other edits.
+This is the pre-existing user edit, preserved, not discarded or committed.
+No push/merge to main.
