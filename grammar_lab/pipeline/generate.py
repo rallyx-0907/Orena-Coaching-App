@@ -55,9 +55,11 @@ from grammar_lab.rules import en_morphology
 
 PROMPT_VERSION = "generate_point.v1"
 PROMPT_PATH = LAB_ROOT / "prompts" / "generate_point.md"
-PROMPT_VERSION_V04 = "generate_point_v04.v11"
+PROMPT_VERSION_V04 = "generate_point_v04.v12"
 PROMPT_PATH_V04 = LAB_ROOT / "prompts" / "generate_point_v04.md"
 V04_SEMANTIC_ATTEMPTS = 3
+PERSONAL_PRODUCTION_MAX_SLOTS = 4
+PERSONAL_PRODUCTION_MAX_ANY_OF = 8
 STORY_PROMPT_VERSION = "generate_story.v2"
 # grammar_set.schema.json's story_mode allows "history" too (VOICE.md), but generate.py
 # does not offer it yet: a "history" story may only state a fact from a vetted source, and
@@ -312,7 +314,10 @@ def _item_schemas_v04(*, locales: list[str], l1s: list[str], error_tags: list[st
         "properties": {
             "role": {"enum": _PATTERN_ROLES},
             # exactly one of the two is filled: the other is an empty list / empty string
-            "any_of": {"type": "array", "items": {"type": "string", "minLength": 1}},
+            "any_of": {
+                "type": "array", "maxItems": PERSONAL_PRODUCTION_MAX_ANY_OF,
+                "items": {"type": "string", "minLength": 1},
+            },
             "regex": {"type": "string"},
         },
     }
@@ -325,7 +330,13 @@ def _item_schemas_v04(*, locales: list[str], l1s: list[str], error_tags: list[st
             "target_form": {"enum": ["affirmative", "negative", "question"]},
             "pattern_rule": {
                 "type": "object", "additionalProperties": False, "required": ["ordered", "slots"],
-                "properties": {"ordered": {"type": "boolean"}, "slots": {"type": "array", "minItems": 1, "items": rule_slot}},
+                "properties": {
+                    "ordered": {"type": "boolean"},
+                    "slots": {
+                        "type": "array", "minItems": 1, "maxItems": PERSONAL_PRODUCTION_MAX_SLOTS,
+                        "items": rule_slot,
+                    },
+                },
             },
             "sample": {"type": "string", "minLength": 1},
         },
@@ -872,7 +883,9 @@ def semantic_repair_hints(issues: list[Any]) -> str:
             "Formula/examples: keep one concrete skeleton per form. Collapse alternative surface forms "
             "into one slot's options instead of sequential required slots; mark a slot optional only when "
             "a valid sentence can omit it. Rewrite spans as exact substrings using only roles present in "
-            "that selected formula. Do not highlight extra time/place/complement material unless the formula names it."
+            "that selected formula. Before returning, walk each example left-to-right against its selected "
+            "formula and make the role order agree exactly. Do not highlight extra time/place/complement "
+            "material unless the formula names it."
         )
     if codes & {"formula.slot_has_joiner", "formula.option_duplicate"}:
         hints.append(
@@ -881,8 +894,11 @@ def semantic_repair_hints(issues: list[Any]) -> str:
         )
     if any(code.startswith("personal_production.") for code in codes):
         hints.append(
-            "Personal production: teach one representative route only. Make pattern_rule match the sample and at "
-            "least one target-form example. Use exact surface markers/auxiliaries in any_of or one permissive regex; "
+            f"Personal production: teach one representative route only. Use at most {PERSONAL_PRODUCTION_MAX_SLOTS} "
+            f"rule slots and at most {PERSONAL_PRODUCTION_MAX_ANY_OF} literals in any any_of list. Never enumerate "
+            "open-class vocabulary (ordinary verbs, nouns, adjectives, topics) in any_of. Match only the "
+            "grammar-bearing form: use a short closed any_of for markers/auxiliaries/particles, or a focused regex "
+            "for a productive form. Make pattern_rule match the sample and at least one target-form example; "
             "each rule slot must end with exactly one non-empty matcher."
         )
     if codes & {"zh.pinyin_invalid", "zh.whitespace"}:
