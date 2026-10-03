@@ -3963,3 +3963,15 @@ invented percent/time. Dictionary meaning, pronunciation and Chinese stroke
 support belong to lookup. Word highlighting requires genuine word timestamps;
 segment timing is not word evidence. Practice handoffs reuse scoped media and
 support meaning, and long learning text must fit/wrap within its workspace.
+
+## D-117 - Admin reconciliation under nonpublic Product Completion
+
+2026-10-03, explicit human instruction. Preserve completed admin/control-center
+credential security and capability configuration. Missing sandbox encryption key
+is provisioning; LEGACY is deferred activation, not missing UI implementation.
+Reevaluate historical activation holds against operating the current nonpublic
+Product Completion runtime; they must not automatically obstruct supported Admin
+journeys. This does not authorize production/public routing or credential exposure.
+Admin completion requires actual operator journeys in all six approved areas;
+unsupported controls must be unavailable. Stop deepening basic-complete areas
+and return to the remaining basic app gaps; hardening follows broad coverage.

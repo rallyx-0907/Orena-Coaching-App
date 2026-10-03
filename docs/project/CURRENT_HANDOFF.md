@@ -16,13 +16,9 @@ builds Agent Intelligence (D-085) against `AGENT_CONTRACT.md` v5 (D-092, D-094,
 D-095, D-096), which is edited only on `codex/work`. Verified history:
 `PROJECT_STATE.md` "New learner UI migration".
 
-New learner UI (D-088 - D-091): the pinned design is built at `/next` and
-replaces the old UI at `/` in one cutover. Between slices `/` is the old UI,
-unchanged; `/next` holds the built surfaces; both share one domain layer; no
-learner-data schema changes; the agent runs on the contract mock and nothing
-calls `/api/agent/*` until the human says the intelligence lane is integrated.
-The intelligence lane integrates against `/next`. Frame → route → code →
-status: `docs/design/canonical-ui/IMPLEMENTATION_MAP.md`.
+New UI (D-088..D-091): `/next` replaces `/` in one cutover; both share domains.
+Agent stays on the contract mock until Intelligence integration is authorized.
+Frame/route/code/status: `docs/design/canonical-ui/IMPLEMENTATION_MAP.md`.
 
 - Foundation/Wave A/B: REVIEWABLE; inventory in IMPLEMENTATION_MAP.md.
 - Lane runtime :8021 (D-111.7, durable QA store): `orena-next-verify-web` and `-worker` share the named
@@ -38,8 +34,9 @@ status: `docs/design/canonical-ui/IMPLEMENTATION_MAP.md`.
 
 ## Last verified batch
 
-EPUB fix (`7fab9d7`): valid ZIP directories accepted; reported Alchemist imports
-in Admin (2 chapters/42,990 words). Local59/Ruff/review pass: EPUB_DIRECTORY_IMPORT_FIX.md.
+Admin (`2931823`): REVIEWABLE; six areas, sandbox capability routing, EN/ZH lookup,
+URL import -> processing -> 75-segment rights-held detail. Python278/Node/review pass.
+Evidence/mobile limit: ADMIN_BASIC_CONTROL_BROWSER_CHECKPOINT.md. EPUB evidence unchanged.
 
 S6 (`71ddcd4`): REVIEWABLE. EN/ZH rights review -> Publish -> Listening with VI
 meanings; reload/restart, withdrawal/Archive/Restore, 390x844 verified. Atomic
@@ -56,8 +53,7 @@ Prior tests/timing/level limitations: S2_MEDIA_BASIC_BROWSER_CHECKPOINT.md.
 Design pinned and governed (D-088 - D-093); foundation at `/next`; agent
 contract v4 (D-095); copy engine fixes; Wave A destinations and Wave B
 workspaces (REVIEWABLE); the Writing request minimum per learning language.
-The D-098 and D-099 items (2026-09-29, `5d9d64c`..`b83142d`); commit list in
-`PROJECT_STATE.md` "New learner UI migration".
+Historical D-098/D-099 commits: `PROJECT_STATE.md` "New learner UI migration".
 
 ## IN PROGRESS
 
@@ -111,17 +107,16 @@ human gates. Never touch persistent volumes as cleanup.
 
 ## NEXT EXACT TASK
 
-Admin configuration is incomplete: key entry/test/save is not accepted; :8021
-lacks AI_PROVIDER_SECRETS_KEY and uses legacy AI routing. Model pickers exist
-but Speech/Speaking is not routable. Verify actual EN/ZH capability use; enforce
-HTTPS for cloud-key transport. Security mechanisms/test209: ORENA_STATUS.md.
+Admin REVIEWABLE: existing credentials/pickers preserved; :8021 key provisioned,
+seven text configs initialized preserving Writing, static8 PASS, sandbox capability
+routing on. Cloud-key HTTPS enforced. Six areas and import processing connected.
+Speech routing reserved/unavailable; public activation remains gated. Evidence above.
 
 Current phase: basic functional coverage first (human instruction, 2026-10-02).
 Preserve accepted Books/Progress; do not reopen them or restart a full-app audit.
 S2 basic Listening and S6 Admin media rights/publish are REVIEWABLE; stop deepening
-those bounded paths. Next: Admin import processing/progress refresh and
-Overview/Users/Operations basic control-center journeys, then canonical
-Grammar/Intelligence. Preserve the S6 review checkpoint before a new major slice.
+those bounded paths. Remaining Admin browser acceptance is mobile for the new pages; then canonical
+Grammar/Intelligence; do not rebuild the completed control plane. Preserve the S6 review checkpoint before a new major slice.
 Deep fidelity/cross-device/edge/performance work follows whole-app basic coverage.
 Captions first; ASR within D-111.6 caps. Activity counts do not prove mastery.
 

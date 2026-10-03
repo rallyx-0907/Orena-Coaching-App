@@ -51,10 +51,14 @@ Current sequence:
 1. Preserve accepted Progress and Books work; do not reopen them for non-blocking completeness or fidelity.
 2. Finish preserved Listening/Media to basic browser-usable coverage: imports, usable transcripts, core line actions, Dictation, Shadowing and truthful unavailable states in EN/ZH.
 3. Once Listening is basically usable, move to the next major basic gap: Admin control-center coverage, then canonical Grammar runtime and integrated Intelligence/Agent as their reviewed contracts permit.
-   Admin is not complete until entered keys can be securely tested/saved and
-   provider/model routing for each supported capability is verified in real
-   EN/ZH app requests. Current key-test and skill-model configuration gaps remain
-   open; backend encryption or a saved route alone does not close them.
+   Admin reconciliation preserves the completed credential and capability control
+   plane. Missing sandbox master key and deferred LEGACY activation are runtime
+   configuration issues, not missing implementation. :8021 now uses capability
+   routing; Overview/Users/Operations and import stage refresh are REVIEWABLE.
+   Finish bounded browser acceptance of supported operational journeys, then move
+   on. Unsupported speech routing is explicitly unavailable, not a working picker.
+   Production/public activation remains a human gate; it does not block this
+   authorized nonpublic Product Completion runtime. Evidence: ADMIN_BASIC_CONTROL_BROWSER_CHECKPOINT.md.
 4. Reconcile every remaining canonical screen/element/action/state/transition against real implementation:
    connected learner capabilities, Profile/settings/imports, Intelligence + Agent, and Admin Overview,
    Content, Imports, Operations, AI & Models and Users. Complete gaps as browser-visible slices.

@@ -28,8 +28,8 @@ auto-publish. Completed held transcripts now resolve for learners. Desktop and
 390x844 form verified; QA fixtures archived. Local focused Python 260 pass,
 Ruff/Node/ESM pass; independent review APPROVE, not human approval or CI PASS.
 Evidence: `docs/reviews/S6_ADMIN_MEDIA_BROWSER_CHECKPOINT.md`. Admin import queue
-still needs actual preparation stages/progress and refreshed completion state;
-Overview/Users/Operations remain the next basic control-center gaps.
+now refreshes actual preparation stages/progress; Overview/Users/Operations
+are connected in the current reconciliation below.
 
 Reported EPUB import correction (`7fab9d7`): explicit ZIP directories no longer
 fail as unsafe paths. The actual Alchemist file imports and opens in Admin with
@@ -37,31 +37,33 @@ two source chapters/42,990 words. Local EPUB/API59 tests and Ruff pass;
 independent security review APPROVE. Evidence: `docs/reviews/EPUB_DIRECTORY_IMPORT_FIX.md`.
 Existing Books status and Admin execution order remain unchanged.
 
-Admin configuration is NOT product-complete (human report + bounded verification,
-2026-10-02). The app cannot yet be operated/configured end to end from Admin.
-Key entry/test/save remains an open browser acceptance gap; :8021 has no
-`AI_PROVIDER_SECRETS_KEY`, so UI-managed encrypted credential storage is not
-configured. The new key form couples verification to Save/Save & test; a passing
-catalog test alone is not a completed key-management journey.
+Admin control-center reconciliation (2026-10-03) is REVIEWABLE at :8021.
+Preserved the previously completed encrypted credential storage, connection test,
+masked state/removal and provider/model capability configuration. Missing
+AI_PROVIDER_SECRETS_KEY was a sandbox provisioning regression, now repaired;
+LEGACY was deferred R2 activation, not missing configuration implementation.
+The existing reviewed migration populated seven missing text configurations,
+preserving Writing. Static8 activation readiness passed; capability routing is
+enabled on :8021 only. Production/public activation remains human-gated.
 
-Per-capability model pickers exist for some text capabilities, but :8021 uses
-`AI_RUNTIME_MODE=legacy`; its browser explicitly says the learner evaluator still
-uses legacy routing. Speech recognition, pronunciation and speaking evaluation
-are not routable yet. Selecting/saving a model is not proof that a real skill
-request uses it. Required: configure -> test -> save -> reload -> real EN/ZH
-capability request with truthful provider/model evidence and failure handling.
+The new UI now connects Overview, Users and Operations to existing Admin APIs,
+including masked account details, real runtime/service health, recent AI telemetry,
+workers, source polling and issue-to-action links. Imports/media detail refresh
+actual transcript processing stages and preserve published/review/archive state.
+Unknown duration stays indeterminate. Cloud credentials now require HTTPS;
+credential-free local Ollama HTTP remains supported. Gemini/DeepSeek request
+adapters omit unsupported seed fields without adding retries or failover.
 
-API-key security check: existing backend encrypts stored credentials with Fernet,
-requires an Admin and same-origin credential mutations, returns status rather
-than secret values, and records non-secret audit facts. UI uses a password field
-and does not persist draft keys to browser storage. Existing global validation
-handler removes rejected input values. Local focused credentials/Admin security
-and authorization tests: 209 passed, two deprecation warnings. Live entered-key
-acceptance, key rotation/recovery and complete secret-leak coverage are NOT
-verified. Provider endpoints still accept remote HTTP and adapters send the key
-in auth headers; cloud credential transport must enforce HTTPS before acceptance.
-No real key was entered, changed or printed; routing/provider activation was not
-changed. Evidence: `docs/reviews/evidence/admin-ai-check/legacy-routing.png`.
+Browser evidence: Overview desktop, Users and account language profiles,
+Operations showing PostgreSQL/configured credential store/capability routing,
+dictionary primary test, model Save/reload/request routing, and real EN/ZH lookup with VI meaning.
+Local focused Python 278 pass; Admin/copy/ESM gates pass; independent review
+APPROVE. This is not CI PASS or human product approval. New credential entry
+was not performed by the agent; prior credential implementation remains valid.
+Speech recognition/pronunciation/Speaking capability routing remains reserved
+and is truthfully unavailable; existing service status is reported separately.
+Outstanding browser acceptance and bounded limitations are recorded in
+`docs/reviews/ADMIN_BASIC_CONTROL_BROWSER_CHECKPOINT.md`.
 
 S4 (2026-10-02): Progress/History, Speaking Attempts/Summary and Writing-derived
 From Your Errors now use real server records at `/next` on :8021. Reading/media

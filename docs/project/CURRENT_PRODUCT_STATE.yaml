@@ -40,8 +40,8 @@
     "expected_development_branch": "codex/work",
     "lane": "unified_baseline_and_ui_lane"
   },
-  "last_verified_application_commit": "7fab9d72953226032abc5205eb06d553a4fdd617",
-  "last_verified_batch": "epub_valid_zip_directory_fix_actual_alchemist_admin_import_browser_59_local_tests_ruff_independent_review",
+  "last_verified_application_commit": "2931823dca94cf5b9a7885a2dcf1b4292872c869",
+  "last_verified_batch": "admin_control_center_reconciliation_browser_runtime_capability_provisioning_278_local_tests_independent_review",
   "current_program_stage": {
     "id": "ORENA_PRODUCT_COMPLETION",
     "name": "Coherent content-first web product completion",
@@ -50,7 +50,7 @@
   "current_primary_workstream": {
     "id": "orena_product_completion_d110_d111",
     "status": "in_progress",
-    "next_task": "D-114 basic whole-app coverage first. Admin remains insufficient to configure/operate the app (human report, 2026-10-02): key entry/test/save unaccepted; :8021 encryption master key absent, AI_RUNTIME_MODE legacy, text capability pickers present but Speech/Speaking not routable. Existing Fernet/Admin/origin/no-secret responses verified with209 local tests; cloud-key transport still allows HTTP and needs HTTPS enforcement. Next: secure browser key test/save and actual EN/ZH per-capability provider/model application, import stages/progress refresh, Overview/Users/Operations, then canonical Grammar and integrated Intelligence/Agent. Preserve S6 media rights/publish, accepted Books/Progress and S2 Listening; no full-app re-audit. Full product is not public ready. QA :8021 only; provider/routing activation gates remain."
+    "next_task": "D-114 basic whole-app coverage first. Admin reconciliation REVIEWABLE: preserve completed encrypted credential/test/masked/removal and capability picker flow. :8021 master key provisioning repaired, reviewed missing text configs initialized preserving Writing, static8 PASS and capability runtime activated on this nonpublic sandbox only. Overview/Users/Operations and actual media import processing refresh connected; cloud credentials require HTTPS. Browser Overview desktop/mobile, Users, Operations, primary probe and real ZH lookup verified; finish remaining bounded browser acceptance before claiming basic-complete. Speech capability routing is reserved/unavailable, service status separate. Next canonical Grammar and integrated Intelligence/Agent. Preserve accepted Books/Progress/S2/S6; no full-app audit. Production/public activation remains gated."
   },
   "design": {
     "web_is_visual_source_of_truth": true,

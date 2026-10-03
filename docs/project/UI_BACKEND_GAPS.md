@@ -4246,6 +4246,18 @@ backend cannot yet serve:
   themes, at 1920x1080, 1366x768, 390x844 and 360x740 (touch): no page scroll or horizontal
   overflow on the Concept (the card column scrolls in its own region), no shell on it, no page error.
 
+## Current Admin reconciliation — 2026-10-03
+
+The dated slice records below remain historical evidence. Their staging-only
+exclusion of Overview/Users/Operations and AD-G's missing media processing stages
+are superseded: these now use the existing Admin APIs in `/next`, and media import
+and detail refresh actual processing stages/outcomes. Encrypted credential flow
+and capability configuration were already implemented, not rebuilt. Sandbox
+provisioning and deferred routing activation are repaired on :8021 only (D-117).
+Current acceptance/limits: `docs/reviews/ADMIN_BASIC_CONTROL_BROWSER_CHECKPOINT.md`.
+Speech capability routing and Practice generation remain explicitly unavailable;
+canonical Grammar needs its supported runtime. Public activation stays gated.
+
 ## Platform Admin in the new UI: shell, No access, AI & Models (`Orena-Admin.dc.html` A2-A5, D-101 E slice 1), 2026-09-30
 
 Built on the existing Admin backend and its client, moved to shared modules the old console also
