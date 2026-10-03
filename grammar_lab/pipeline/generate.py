@@ -24,7 +24,7 @@ import hashlib
 import json
 import re
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any
 
@@ -42,6 +42,12 @@ from grammar_lab.pipeline.content_store import (
 from grammar_lab.pipeline.jsonio import read_json
 from grammar_lab.pipeline.llm_client import LLMClient, LLMError
 from grammar_lab.pipeline.seed import apply_seed, check_generation_gate, register_realization
+from grammar_lab.pipeline.semantic_repair import (
+    TARGETED_REPAIR_ATTEMPTS,
+    apply_patch as apply_semantic_patch,
+    can_target_repair,
+    request_patch as request_semantic_patch,
+)
 from grammar_lab.pipeline.r5_source import DEFAULT_R5_ROOT, R5SourceError, load_r5, r5_source_text
 from grammar_lab.pipeline.validate import (
     _HAN,
@@ -1420,6 +1426,59 @@ class Generator:
             # cached it. Domain-semantic rejection makes that cache entry unsafe:
             # evict it so a resumed run gets a genuinely fresh chance.
             self.llm.invalidate_cache(system=system, user=attempt_user, json_schema=provider_schema)
+
+            # Most live failures at B2/C1/C2 are confined to formula ordering,
+            # example spans and the deterministic production rule. Repair that
+            # small surface first instead of paying for a fresh full lesson.
+            if can_target_repair(issues):
+                repair_data = result.data
+                repair_issues = issues
+                for _repair_attempt in range(TARGETED_REPAIR_ATTEMPTS):
+                    try:
+                        patch_result = request_semantic_patch(
+                            self.llm,
+                            point_id=point_id,
+                            target_lang=existing["target_lang"],
+                            data=repair_data,
+                            issues=repair_issues,
+                        )
+                    except LLMError as exc:
+                        if exc.usage is not None:
+                            patch_cost = exc.usage.cost_usd(self.llm.model)
+                            if patch_cost is None:
+                                cost_known = False
+                            else:
+                                total_cost += patch_cost
+                        all_cached = False
+                        break
+
+                    patch_cost = patch_result.usage.cost_usd(patch_result.model)
+                    if patch_cost is None:
+                        cost_known = False
+                    else:
+                        total_cost += patch_cost
+                    all_cached = all_cached and patch_result.cached
+
+                    try:
+                        repair_data = apply_semantic_patch(repair_data, patch_result.data)
+                    except ValueError:
+                        break
+
+                    repaired_result = replace(result, data=repair_data)
+                    repaired_point = assemble(repaired_result)
+                    repair_issues = validate_generated_point(self.lang, repaired_point, self.root)
+                    if not repair_issues:
+                        save_point(self.lang, repaired_point, self.root)
+                        register_realization(repaired_point, self.root)
+                        return GenerateOutcome(
+                            point_id, "written",
+                            cost_usd=(total_cost if cost_known and total_cost else None),
+                            cached=all_cached,
+                        )
+
+                result = replace(result, data=repair_data)
+                issues = repair_issues
+
             last_problem = "; ".join(
                 f"{issue.code} at {issue.path}: {issue.message}" for issue in issues[:8]
             )
