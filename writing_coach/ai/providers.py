@@ -360,6 +360,7 @@ class OpenAICompatibleProvider:
         models_env: str,
         default_models: tuple[str, ...] = (),
         model_filter: str = "",
+        supports_seed: bool = True,
         credential_override: dict[str, Any] | None = None,
     ) -> None:
         credential_override = credential_override or {}
@@ -379,6 +380,7 @@ class OpenAICompatibleProvider:
         self.default_models = list(default_models)
         self.default_model_override = str(credential_override.get("default_model") or "").strip()
         self.model_filter = model_filter
+        self.supports_seed = supports_seed
         self.timeout = int(os.getenv("CLOUD_AI_TIMEOUT", "180"))
         self._last_rate_limit = _normalized_rate_limit_headers(None)
 
@@ -583,7 +585,7 @@ class OpenAICompatibleProvider:
             "response_format": {"type": "json_object"},
             "temperature": temperature,
         }
-        if seed is not None:
+        if seed is not None and self.supports_seed:
             body["seed"] = seed
 
         try:
@@ -644,7 +646,7 @@ class OpenAICompatibleProvider:
             "response_format": {"type": "json_object"},
             "temperature": temperature,
         }
-        if seed is not None:
+        if seed is not None and self.supports_seed:
             body["seed"] = seed
         try:
             envelope = self._post_chat(body)
@@ -687,6 +689,7 @@ def build_providers(provider_credentials: dict[str, dict[str, Any]] | None = Non
         "deepseek": OpenAICompatibleProvider(
             provider_id="deepseek",
             name="DeepSeek API",
+            supports_seed=False,
             api_key_env="DEEPSEEK_API_KEY",
             base_url_env="DEEPSEEK_BASE_URL",
             default_base_url="https://api.deepseek.com",
@@ -717,6 +720,9 @@ def build_providers(provider_credentials: dict[str, dict[str, Any]] | None = Non
             models_env="GEMINI_MODELS",
             default_models=(),
             model_filter="gemini-text",
+            # Gemini's OpenAI compatibility transport does not accept seed.
+            # Adapt the first request rather than relying on a legacy retry.
+            supports_seed=False,
             credential_override=provider_credentials.get("gemini"),
         ),
     }

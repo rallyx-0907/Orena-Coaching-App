@@ -4,10 +4,11 @@
 
    Left out rather than invented (UI_BACKEND_GAPS "Admin: Content"): a book's opening text (the detail
    carries chapter titles only), per-item reader and play counts (the design's "readers", "plays"), a
-   media item's pipeline steps (the server keeps a transcript state, not the stages), and the Practice
-   generator (no backend). Vocabulary publishing follows the server: rights and completeness warn and
+   and the Practice generator (no backend). Media preparation uses the server's actual processing
+   stage. Vocabulary publishing follows the server: rights and completeness warn and
    are recorded, the attestation is the one thing it will not go without. */
 import { html, raw } from '../../kit/html.js';
+import { processingProgressMarkup } from '../../kit/states.js';
 import { icon } from '../../kit/icons.js';
 import { dateShort, dateTime, latency, num } from '../../capabilities/admin-format.js';
 import { COMPLETENESS, KIND_TILE, PAGE_SIZE, RIGHTS, learnerLink, lifecycleIntents, publishChecks } from '../../capabilities/admin-content.js';
@@ -133,7 +134,8 @@ export function mediaPage({ detail, view, t, ui, href, form = {} }) {
     markup: html`<section class="a-page" data-screen-label="A12 Media detail">
       ${pageHead({ back: { href: href('adminMedia'), label: t('ctMedia') }, title: record.title, sub: record.subtitle || '', pills: [statusPill(t, record), missing ? { label: t('ctTranscriptMissing'), tone: 'warn' } : { label: t('ctTranscriptReady'), tone: 'ok' }], actions: lifecycleButtons(t, record, 'media').filter((action) => action.data.intent !== 'reprocess').map((action) => ({ ...action, disabled: view.busy })) })}
       ${view.error ? html`<div class="a-error" role="alert">${view.error}</div>` : ''}
-      ${missing ? html`<div class="a-banner" data-tone="warn"><div class="a-banner__text"><div class="a-banner__title">${t('ctMissingTitle')}</div><div class="a-banner__body">${t('ctMissingText')}</div></div></div>` : ''}
+      ${['queued', 'running'].includes(record.processing?.state) ? banner({ tone: 'info', title: t('impMediaProcessing'), text: t.has(`impMediaStage_${record.processing.stage}`) ? t(`impMediaStage_${record.processing.stage}`) : t('ctStatusProcessing') }) : missing ? html`<div class="a-banner" data-tone="warn"><div class="a-banner__text"><div class="a-banner__title">${t('ctMissingTitle')}</div><div class="a-banner__body">${t('ctMissingText')}</div></div></div>` : ''}
+      ${['queued', 'running'].includes(record.processing?.state) ? processingProgressMarkup(record.processing.stage, Object.fromEntries(['fetch', 'transcribe', 'segment', 'translate', 'ready'].map((stage) => [stage, t(`impMediaStage_${stage}`)]))) : ''}
       <div class="a-blocks">
         ${block({ title: t('ctDetails'), body: kv([
           { key: t('ctFactSource'), value: source.url || t('ctUpload'), mono: Boolean(source.url) },

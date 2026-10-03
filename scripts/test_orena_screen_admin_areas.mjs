@@ -73,6 +73,12 @@ const source = (extra = {}) => ({ id: 'SRC', slug: 'gutenberg', name: 'Gutenberg
 const job = (extra = {}) => ({ id: 'J', job_type: 'ingest_text', status: 'failed', stage: 'fetching', attempt: 1, max_attempts: 3, last_error_code: 'fetch_failed', last_error: 'boom', result_kind: '', result_article_id: '', submitted_by: 'admin', created_at: NOW, finished_at: null, ...extra });
 
 fixtureFor = (method, url) => {
+  if (url === '/api/admin/console/overview') return ok({ accounts: { available: true, total: 1 }, activity: { available: true, active_7d: 1 }, content: { published: 2 }, attention: [] });
+  if (url === '/api/admin/console/users/summary') return ok({ available: true, accounts: { available: true, total: 1 }, activity: { available: true, active_7d: 1 } });
+  if (url === '/api/admin/console/users') return ok({ available: true, items: [{ id: 'U', display_name: 'Test user', email_masked: 'u***@example.org', languages: ['en', 'zh'] }], total: 1 });
+  if (url === '/api/admin/console/users/U') return ok({ available: true, id: 'U', display_name: 'Test user', profiles: [], activity: [] });
+  if (url === '/api/admin/console/runtime') return ok({ ai: { learner_runtime_mode: 'legacy', credential_store: 'configured' }, stores: {} });
+  if (url === '/api/admin/ai/operations') return ok({ has_data: false, recent: [], by_capability: [] });
   const ok = (body) => ({ body });
   if (url === '/api/admin/reading/operations') return ok({ queue: { failed: 1, completed: 2 }, articles: { published: 1, needs_review: 1, rejected: 1, archived: 1 }, published: 1, recent: [] });
   if (url === '/api/admin/reading/sources') return ok({ items: [source(), source({ id: 'SRC2', name: 'Draft source', state: 'needs_review' })] });
@@ -283,7 +289,7 @@ const guarded = [...matrix.matchAll(/\("(GET|POST|PUT|DELETE)", "(\/api\/[^"]+)"
 assert.ok(guarded.length > 40);
 const isGuarded = (request) => guarded.some((g) => g.method === request.method && g.pattern.test(request.path));
 const screen = (await import('../static/orena/screens/admin/screen.js')).default;
-const paramsFor = { adminArticle: 'A', adminSet: 'S', adminSource: 'SRC', adminBook: 'B', adminMediaItem: 'M', adminCollection: 'V', adminJob: 'J' };
+const paramsFor = { adminUser: 'U', adminArticle: 'A', adminSet: 'S', adminSource: 'SRC', adminBook: 'B', adminMediaItem: 'M', adminCollection: 'V', adminJob: 'J' };
 for (const routeId of model.ADMIN_ROUTE_IDS.filter((id) => id !== 'admin' && model.areaOf(id) !== 'ai')) {
   requests.length = 0;
   const element = new Fake();

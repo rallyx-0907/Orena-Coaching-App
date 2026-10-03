@@ -8,7 +8,7 @@ import { adminApi } from '../../capabilities/admin-api.js';
 import { watch as watchJob } from '../../capabilities/admin-tray.js';
 import {
   MEDIA_LEVELS, checkMediaUrls, defaultCollectionTitle, importBooks, importMedia, importVocabulary, loadHistory, loadJobs,
-  previewVocabulary, sourceBody, vocabularyProblems,
+  previewVocabulary, sourceBody, vocabularyProblems, mediaProcessingOutcome,
 } from '../../capabilities/admin-imports.js';
 import { t } from './copy.js';
 import { createHost } from './host.js';
@@ -36,6 +36,23 @@ export async function mountImports(shell, ctx) {
     history: { kind: 'all', status: ctx.query.get('status') === 'failed' ? 'failed' : 'all', offset: 0 },
   };
   const data = { recent: { book: 0, media: 0, vocabulary: 0, total: 0 }, failedJobs: 0, jobs: [], cursor: null, job: null, history: null };
+  let mediaTimer = 0;
+  async function refreshMedia() {
+    clearTimeout(mediaTimer);
+    const entries = view.media.items.filter((item) => item.contentId && item.state !== 'failed');
+    await Promise.all(entries.map(async (item) => {
+      try {
+        const detail = await api.contentDetail('media', item.contentId);
+        if (host.alive() && view.media.items.includes(item)) Object.assign(item, mediaProcessingOutcome(detail));
+      } catch {
+        // Retain the last known state on a transient read failure; the content
+        // detail remains reachable and a pending item will be checked again.
+      }
+    }));
+    if (!host.alive()) return;
+    host.paint();
+    if (view.media.items.some((item) => item.contentId && item.state === 'processing')) mediaTimer = setTimeout(refreshMedia, 2500);
+  }
 
   function build() {
     const base = { t, ui: ui(), href: ctx.href };
@@ -148,7 +165,8 @@ export async function mountImports(shell, ctx) {
     host.paint();
     await importMedia(api, view.media.items, view.media.language, () => host.paint());
     view.media.running = false;
-    host.paint();
+    for (const item of view.media.items) if (item.contentId && item.state !== 'failed') item.state = 'processing';
+    await refreshMedia();
   });
 
   /* ---- vocabulary ---- */
@@ -253,5 +271,5 @@ export async function mountImports(shell, ctx) {
   } else {
     load();
   }
-  return () => host.cleanup();
+  return () => { clearTimeout(mediaTimer); host.cleanup(); };
 }

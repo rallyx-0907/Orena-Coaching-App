@@ -19,6 +19,19 @@ from writing_coach.persistence.platform_repository import SQLitePlatformReposito
 import writing_coach.ai.platform as platform_module
 
 
+@pytest.mark.parametrize("mode,uses_config", [("legacy", False), ("capability", True)])
+def test_admin_config_reports_actual_runtime_routing(monkeypatch, mode, uses_config):
+    monkeypatch.setenv("AI_RUNTIME_MODE", mode)
+    monkeypatch.setattr(platform_module, "_require_admin", lambda request: {"google_sub": "admin"})
+    monkeypatch.setattr(platform_module, "_installed_platform_repository", lambda: object())
+    monkeypatch.setattr(platform_module, "AIControlPlane", lambda repository: SimpleNamespace(
+        inspect=lambda: {"policy": {"learner_runtime_uses_capability_config": False}},
+    ))
+    data = platform_module.admin_ai_config(Request({"type": "http", "headers": []}))
+    assert data["learner_runtime"]["mode"] == mode
+    assert data["policy"]["learner_runtime_uses_capability_config"] is uses_config
+
+
 def test_provider_credential_round_trip_is_encrypted(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv(MASTER_KEY_ENV, Fernet.generate_key().decode("ascii"))
     secret = "token-" + secrets.token_urlsafe(12)
@@ -170,6 +183,30 @@ def test_connection_test_discovers_models_without_manual_model_values(
         "models": ["gemini-2.5-flash"],
         "secret_saved": False,
     }
+
+
+@pytest.mark.parametrize("endpoint", ["http://provider.example/v1", "http://127.0.0.1:9000/v1"])
+def test_cloud_provider_credentials_require_https(monkeypatch, endpoint):
+    from fastapi import HTTPException
+    provider = SimpleNamespace(id="gemini", secret_mode="server-managed", base_url=endpoint)
+    monkeypatch.setattr(platform_module, "_platform_repository", None)
+    monkeypatch.setattr(platform_module, "providers", lambda: {"gemini": provider})
+    with pytest.raises(HTTPException) as error:
+        platform_module._provider_credential_values("gemini", platform_module.ProviderCredentialIn(
+            api_key="synthetic-qa-key", base_url=endpoint), require_models=False)
+    assert error.value.status_code == 400
+    assert "HTTPS" in error.value.detail
+
+
+def test_local_provider_without_credentials_can_use_http(monkeypatch):
+    provider = SimpleNamespace(id="ollama", secret_mode="none", base_url="http://127.0.0.1:11434")
+    monkeypatch.setattr(platform_module, "_platform_repository", None)
+    monkeypatch.setattr(platform_module, "providers", lambda: {"ollama": provider})
+    values = platform_module._provider_credential_values(
+        "ollama", platform_module.ProviderCredentialIn(), require_models=False,
+    )
+    assert values["base_url"] == "http://127.0.0.1:11434"
+    assert values["api_key"] == ""
 
 
 def test_provider_credential_values_normalizes_a_pasted_bearer_prefix(

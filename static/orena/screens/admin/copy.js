@@ -12,6 +12,7 @@ import { defineCopy } from '../../copy/index.js';
 import * as reading from './copy-reading.js';
 import * as imports from './copy-imports.js';
 import * as content from './copy-content.js';
+import * as control from './copy-control.js';
 
 const en = {
   // Shell
@@ -659,9 +660,9 @@ const zh = {
 /* The Reading, Imports and Content areas keep their words in their own files and share this one
    table, so the copy gate reads every Admin key once. */
 const packs = {
-  en: { ...en, ...reading.en, ...imports.en, ...content.en },
-  vi: { ...vi, ...reading.vi, ...imports.vi, ...content.vi },
-  zh: { ...zh, ...reading.zh, ...imports.zh, ...content.zh },
+  en: { ...en, ...reading.en, ...imports.en, ...content.en, ...control.en },
+  vi: { ...vi, ...reading.vi, ...imports.vi, ...content.vi, ...control.vi },
+  zh: { ...zh, ...reading.zh, ...imports.zh, ...content.zh, ...control.zh },
 };
 
 /* A key with a plural suffix is declared once, by its bare name (copy/index.js `plural`). */

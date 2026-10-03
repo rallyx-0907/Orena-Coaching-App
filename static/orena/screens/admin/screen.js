@@ -4,7 +4,7 @@
 
    - not an admin: the design's No access frame, in place of the whole Admin; no admin request is made;
    - an admin: the shell (rail, header, phone chips) and the area's page. #/admin alone opens the first
-     area the staging draws (AI & Models).
+     area of the control center (Overview).
 
    The server refuses non-admins on every admin route by itself (tests/test_admin_authorization_matrix.py);
    this is the client keeping its side, so a normal account never even asks. */
@@ -15,6 +15,9 @@ import { drawAdminShell } from './frame.js';
 import { mountTray } from './tray.js';
 
 const AREA_PAGES = {
+  overview: () => import('./control.js').then((module) => module.mountControl),
+  users: () => import('./control.js').then((module) => module.mountControl),
+  operations: () => import('./control.js').then((module) => module.mountControl),
   ai: () => import('./ai.js').then((module) => module.mountAi),
   content: (routeId) => (READING_ROUTES.has(routeId)
     ? import('./reading.js').then((module) => module.mountReading)
@@ -32,7 +35,7 @@ export default async function admin(element, ctx) {
     return undefined;
   }
   if (ctx.route.id === 'admin') {
-    ctx.replace(ctx.href('adminAi'));
+    ctx.replace(ctx.href('adminOverview'));
     return undefined;
   }
   const area = areaOf(ctx.route.id);

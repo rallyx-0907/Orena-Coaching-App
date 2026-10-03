@@ -77,6 +77,15 @@ export const ROUTES = Object.freeze([
   // instead of the learner's, so `bare` here means "no learner frame". Only for an admin; anyone
   // else meets the design's No access frame and no admin request is made (screens/admin).
   { id: 'admin', path: 'admin', design: 'admin', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
+  ...[
+    ['adminOverview', 'admin/overview', 'overview'],
+    ['adminUsers', 'admin/users', 'users'],
+    ['adminUser', 'admin/users/:id', 'user'],
+    ['adminOperations', 'admin/operations', 'ops'],
+    ['adminWorkers', 'admin/operations/workers', 'workers'],
+    ['adminPolling', 'admin/operations/polling', 'polling'],
+    ['adminErrors', 'admin/operations/errors', 'errors'],
+  ].map(([id, path, design]) => ({ id, path, design, screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' })),
   { id: 'adminAi', path: 'admin/ai', design: 'ai', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
   { id: 'adminProvider', path: 'admin/ai/provider/:id', design: 'aiprov', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
   { id: 'adminProviderKey', path: 'admin/ai/provider/:id/key', design: 'aiconf', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },

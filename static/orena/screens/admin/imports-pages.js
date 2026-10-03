@@ -6,6 +6,7 @@
    (the design marks it Future: each domain keeps its own history), a job's title and source (the
    job list carries neither), the design's sample-file shortcuts. */
 import { html, raw } from '../../kit/html.js';
+import { loadingMarkup, processingProgressMarkup } from '../../kit/states.js';
 import { icon } from '../../kit/icons.js';
 import { bytes, dateTime, latency, num, relative } from '../../capabilities/admin-format.js';
 import { HISTORY_PAGE, MEDIA_LEVELS, PRIMARY_FIELDS, RIGHTS_STATUSES, VOCABULARY_FIELDS } from '../../capabilities/admin-imports.js';
@@ -15,6 +16,8 @@ import { banner, block, button, chipRow, formBlock, futureCard, kv, metrics, pag
 const OUTCOME = {
   to_import: ['impQueued', 'mute'], queued: ['impQueued', 'mute'], processing: ['impRunning', 'info'], ready: ['impReady', 'info'],
   published: ['impDone', 'ok'], duplicate: ['impDuplicate', 'mute'], failed: ['impFailed', 'err'],
+  review: ['ctStatusReview', 'info'], unpublished: ['ctStatusUnpublished', 'mute'],
+  archived: ['impArchived', 'mute'],
 };
 const outcome = (t, state) => { const [label, tone] = OUTCOME[state] || OUTCOME.queued; return { label: t(label), tone }; };
 
@@ -91,6 +94,8 @@ export function booksPage({ books, t, ui, href }) {
 function mediaMeta(t, ui, item) {
   if (item.state === 'failed') return failureText(t, item);
   const parts = [item.source_label, item.duration_ms ? latency(item.duration_ms, ui) : ''];
+  if (item.state === 'processing') parts.push(t('impMediaProcessing'), t.has(`impMediaStage_${item.stage}`) ? t(`impMediaStage_${item.stage}`) : '');
+  if (['review', 'unpublished'].includes(item.state)) parts.push(item.has_transcript ? t('ctTranscriptReady') : t('impNoTranscript'));
   if (item.state === 'published') parts.push(item.has_transcript === false ? t('impNoTranscript') : item.segment_count > 0 ? t('impLines', { n: num(item.segment_count, ui) }) : '');
   else if (item.state === 'ready') parts.push(item.has_transcript ? t('impTranscriptAtImport') : t('impNoTranscript'));
   if (item.state === 'duplicate') parts.push(t('impMediaDuplicate'));
@@ -100,7 +105,7 @@ function mediaMeta(t, ui, item) {
 export function mediaPage({ media, t, ui, href }) {
   const tab = media.tab || 'url';
   const importable = media.items.filter((item) => item.state === 'ready' || (item.file && item.state === 'to_import')).length;
-  const done = media.items.length && media.items.every((item) => ['published', 'duplicate', 'failed'].includes(item.state));
+  const done = media.items.length && media.items.every((item) => ['published', 'duplicate', 'failed', 'review', 'unpublished', 'archived'].includes(item.state));
   const entries = media.items.map((item, index) => ({ item, index })).filter(({ item }) => (tab === 'file' ? item.file : !item.file));
   const fields = tab === 'url'
     ? [{ id: 'urls', kind: 'area', label: t('impMediaUrls'), span: true, rows: 3, value: media.urls || '', placeholder: 'https://…' }]
@@ -109,10 +114,11 @@ export function mediaPage({ media, t, ui, href }) {
   const rowsBlock = entries.length ? block({ span: true, title: t('impQueue'), body: rowList(entries.map(({ item, index }) => ({
     title: item.title || item.name || item.url,
     meta: mediaMeta(t, ui, item),
+    detail: item.state === 'processing' ? processingProgressMarkup(item.stage, Object.fromEntries(['fetch', 'transcribe', 'segment', 'translate', 'ready'].map((stage) => [stage, t(`impMediaStage_${stage}`)]))) : '',
     pills: [outcome(t, item.state)],
     actions: [
       ...(item.state === 'ready' && !media.running ? [{ label: item.level ? t('impLevelValue', { level: item.level }) : t('impLevelNone'), size: 'xs', a: 'media-level', data: { index } }] : []),
-      ...(item.contentId && item.state !== 'failed' ? [{ label: t('impOpen'), size: 'xs', a: 'go', data: { to: href('adminMediaItem', { id: item.contentId }) } }] : []),
+      ...(item.contentId ? [{ label: t('impOpen'), size: 'xs', a: 'go', data: { to: href('adminMediaItem', { id: item.contentId }) } }] : []),
       ...(!media.running && ['ready', 'to_import', 'failed'].includes(item.state) ? [{ label: t('impRemove'), size: 'xs', a: 'media-remove', data: { index } }] : []),
     ],
   }))) }) : '';
@@ -123,9 +129,10 @@ export function mediaPage({ media, t, ui, href }) {
       ${tabs([{ id: 'url', label: t('impFromUrl'), selected: tab === 'url' }, { id: 'file', label: t('impUploadFile'), selected: tab === 'file' }])}
       <div class="a-blocks">
         ${formBlock({ span: true, fields, actions: tab === 'url' ? [{ label: media.checking ? t('impChecking') : t('impPreview'), kind: 'primary', a: 'media-check', disabled: media.checking || media.running || !String(media.urls || '').trim() }] : [] })}
+        ${media.checking || media.running ? loadingMarkup(t(media.checking ? 'impChecking' : 'impImporting')) : ''}
         ${rowsBlock}
         ${entries.length ? formBlock({ span: true, fields: [], actions: [{ label: media.running ? t('impImporting') : t('impImportN', { n: importable }), kind: 'primary', a: 'media-import', disabled: !importable || media.running }] }) : ''}
-        ${done ? stateBlock({ span: true, kind: 'ok', heading: t('impDoneSummary', { ok: media.items.filter((item) => item.state === 'published').length, total: media.items.length }), actions: [{ label: t('impViewMedia'), kind: 'primary', size: 'sm', a: 'go', data: { to: href('adminMedia') } }] }) : ''}
+        ${done ? stateBlock({ span: true, kind: 'ok', heading: t('impDoneSummary', { ok: media.items.filter((item) => ['published', 'review', 'unpublished', 'archived'].includes(item.state)).length, total: media.items.length }), actions: [{ label: t('impViewMedia'), kind: 'primary', size: 'sm', a: 'go', data: { to: href('adminMedia') } }] }) : ''}
       </div>
     </section>`,
   };

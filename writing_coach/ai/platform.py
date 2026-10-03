@@ -511,7 +511,9 @@ def _legacy_config_payload() -> dict[str, Any]:
 def admin_ai_config(request: Request) -> dict[str, Any]:
     _require_admin(request)
     result = AIControlPlane(_installed_platform_repository()).inspect()
-    result["learner_runtime"] = {"mode": runtime_mode().value}
+    mode = runtime_mode()
+    result["learner_runtime"] = {"mode": mode.value}
+    result["policy"]["learner_runtime_uses_capability_config"] = mode is AIRuntimeMode.CAPABILITY
     return result
 
 
@@ -582,6 +584,8 @@ def _provider_credential_values(
     parsed = urlsplit(base_url)
     if parsed.username or parsed.password or parsed.scheme not in {"http", "https"} or not parsed.netloc:
         raise HTTPException(400, "Provider endpoint must be a valid URL without embedded credentials.")
+    if (item.secret_mode == "server-managed" or api_key) and parsed.scheme != "https":
+        raise HTTPException(400, "Provider credentials require an HTTPS endpoint.")
     models = sorted({str(model).strip() for model in payload.models if str(model).strip()})
     if any(len(model) > 160 or any(ord(char) < 32 for char in model) for model in models):
         raise HTTPException(400, "Model names must be readable values of 160 characters or fewer.")

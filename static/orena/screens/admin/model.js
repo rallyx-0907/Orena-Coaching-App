@@ -7,17 +7,23 @@
    client never asks the server for admin data. The server refuses non-admins on its own
    (tests/test_admin_authorization_matrix.py); this is the client keeping its side of that. */
 
-/* The areas the staging draws (D-101 E: shell, AI & Models, Content with its Reading pipeline, and
-   Imports). Overview, Users and Operations are out of the staging scope and are not drawn; the
-   Practice generator has no backend. Reading lives inside Content, as the design draws it. */
+/* The six operator areas of the approved Admin product. The former staging-only
+   subset is superseded by basic Product Completion; all use the existing backend.
+   Reading remains inside Content. The Practice generator has no backend. */
 export const AREAS = Object.freeze([
+  { id: 'overview', route: 'adminOverview', label: 'navOverview' },
   { id: 'ai', route: 'adminAi', label: 'navAi' },
+  { id: 'users', route: 'adminUsers', label: 'navUsers' },
   { id: 'content', route: 'adminContent', label: 'navContent' },
   { id: 'imports', route: 'adminImports', label: 'navImports' },
+  { id: 'operations', route: 'adminOperations', label: 'navOperations' },
 ]);
 
 /* Which area each admin route belongs to, and the module that draws it. */
 const ROUTES_OF = {
+  overview: ['adminOverview'],
+  users: ['adminUsers', 'adminUser'],
+  operations: ['adminOperations', 'adminWorkers', 'adminPolling', 'adminErrors'],
   ai: ['adminAi', 'adminProvider', 'adminProviderKey', 'adminCapability'],
   content: ['adminContent', 'adminBooks', 'adminBook', 'adminMedia', 'adminMediaItem', 'adminVocab', 'adminCollection',
     'adminReading', 'adminQueue', 'adminArticle', 'adminSet', 'adminAdd', 'adminSources', 'adminSource'],
@@ -25,7 +31,7 @@ const ROUTES_OF = {
 };
 
 export function areaOf(routeId) {
-  if (routeId === 'admin') return 'ai';
+  if (routeId === 'admin') return 'overview';
   return Object.keys(ROUTES_OF).find((area) => ROUTES_OF[area].includes(routeId)) || '';
 }
 

@@ -62,6 +62,19 @@ export function mediaOutcome(row) {
   return { state: 'failed', code: row?.category || 'source', stage: 'source', message: row?.detail || '' };
 }
 
+/* An accepted import is not a finished lesson. Reconcile with the same content
+   record the operator opens, including asynchronous transcript processing. */
+export function mediaProcessingOutcome(detail) {
+  const record = detail.record || {};
+  const processing = record.processing || {};
+  const segment_count = detail.transcript?.segment_count;
+  const state = ['queued', 'running'].includes(processing.state) ? 'processing'
+    : processing.state === 'failed' ? 'failed'
+      : ['published', 'review', 'archived', 'unpublished'].includes(record.status) ? record.status : 'unpublished';
+  return { state, stage: processing.stage || '', code: processing.reason || '',
+    message: processing.detail || '', processing, has_transcript: segment_count > 0, segment_count };
+}
+
 export function defaultCollectionTitle(filename) {
   const stem = String(filename || '').replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim();
   return stem ? stem[0].toLocaleUpperCase() + stem.slice(1) : '';

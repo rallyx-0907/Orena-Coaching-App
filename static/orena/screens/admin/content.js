@@ -49,6 +49,23 @@ export async function mountContent(shell, ctx) {
   host.setBuilder(build, { filter: ['adminBooks', 'adminMedia', 'adminVocab'].includes(routeId) });
 
   const filters = () => ({ kind, q: view.q, status: view.status === 'all' ? '' : view.status, offset: 0 });
+  let processingTimer = 0;
+  function watchProcessing() {
+    clearTimeout(processingTimer);
+    if (kind !== 'media' || !['queued', 'running'].includes(data.detail?.record?.processing?.state)) return;
+    processingTimer = setTimeout(async () => {
+      if (!host.alive()) return;
+      if (!view.busy) {
+        try {
+          const detail = await api.contentDetail('media', ctx.params.id);
+          if (!host.alive()) return;
+          data.detail = detail;
+          host.paint();
+        } catch { /* Retain the last confirmed state; next read may recover. */ }
+      }
+      watchProcessing();
+    }, 2500);
+  }
 
   async function load({ append = false } = {}) {
     view.loading = true;
@@ -73,6 +90,7 @@ export async function mountContent(shell, ctx) {
     if (!host.alive()) return;
     view.loading = false;
     host.paint();
+    watchProcessing();
   }
 
   host.on('go', (control, dataset) => ctx.go(dataset.to));
@@ -99,6 +117,7 @@ export async function mountContent(shell, ctx) {
       await applyLifecycle(api, kind, ctx.params.id, intent);
       host.toast(t(DONE[intent]));
       data.detail = await api.contentDetail(kind, ctx.params.id);
+      watchProcessing();
     } catch (error) {
       view.error = explain(error);
     }
@@ -140,5 +159,5 @@ export async function mountContent(shell, ctx) {
   });
 
   load();
-  return () => { clearTimeout(timer); host.cleanup(); };
+  return () => { clearTimeout(timer); clearTimeout(processingTimer); host.cleanup(); };
 }
