@@ -110,12 +110,13 @@ human gates. Never touch persistent volumes as cleanup.
 Admin REVIEWABLE: existing credentials/pickers preserved; :8021 key provisioned,
 seven text configs initialized preserving Writing, static8 PASS, sandbox capability
 routing on. Cloud-key HTTPS enforced. Six areas and import processing connected.
-Speech routing reserved/unavailable; public activation remains gated. Evidence above.
+Azure Speech runtime exists but key/region remain environment-only: Admin configuration
+is a genuine basic gap. Speech capability routing is separate; public activation stays gated.
 
 Current phase: basic functional coverage first (human instruction, 2026-10-02).
 Preserve accepted Books/Progress; do not reopen them or restart a full-app audit.
 S2 basic Listening and S6 Admin media rights/publish are REVIEWABLE; stop deepening
-those bounded paths. Remaining Admin browser acceptance is mobile for the new pages; then canonical
+those bounded paths. Next: Azure Admin/runtime configuration and new-page mobile acceptance; then canonical
 Grammar/Intelligence; do not rebuild the completed control plane. Preserve the S6 review checkpoint before a new major slice.
 Deep fidelity/cross-device/edge/performance work follows whole-app basic coverage.
 Captions first; ASR within D-111.6 caps. Activity counts do not prove mastery.

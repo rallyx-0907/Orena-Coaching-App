@@ -88,6 +88,10 @@ Screenshots: [Overview](evidence/admin-basic/overview-desktop.png),
 
 ## Remaining acceptance and truthful limits
 
+- Correction after the human Azure report: the existing Azure Speech adapter is
+  installed in the learner runtime but configured through environment key/region
+  only. A connected Admin configuration journey is a genuine remaining basic gap;
+  it is separate from the reserved Speech capability routing entries.
 - Live asynchronous Admin import refresh through preparation and rights review is
   verified above. Existing S6 rights/publish/EN/ZH opening/archive evidence remains valid.
 - Mobile verification of these new control pages is not claimed: the browser

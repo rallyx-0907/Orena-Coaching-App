@@ -65,6 +65,12 @@ and is truthfully unavailable; existing service status is reported separately.
 Outstanding browser acceptance and bounded limitations are recorded in
 `docs/reviews/ADMIN_BASIC_CONTROL_BROWSER_CHECKPOINT.md`.
 
+Azure correction (2026-10-03): Azure Speech pronunciation runtime already exists
+(`speech_pronunciation.py`, installed by `app.py`), but reads key/region from
+environment and has no connected Admin credential/configuration journey. This
+is a genuine basic operator configuration gap, distinct from reserved Speech
+capability routing. It must not disappear behind the generic unavailable label.
+
 S4 (2026-10-02): Progress/History, Speaking Attempts/Summary and Writing-derived
 From Your Errors now use real server records at `/next` on :8021. Reading/media
 return links work; unverifiable scores remain unavailable; local speaking state
