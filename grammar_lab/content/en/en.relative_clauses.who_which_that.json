@@ -1,0 +1,222 @@
+{
+  "schema_version": "0.4",
+  "id": "en.relative_clauses.who_which_that",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.relative",
+  "level": {"framework": "cefr", "value": "A2", "rank": 2},
+  "prereqs": [],
+  "contrasts": [],
+  "error_tags": ["word_choice", "sentence_structure"],
+  "source_refs": {"r5": ["a2-who-which-that-relative-clauses", "b1-defining-relative-clauses"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["a2-who-which-that-relative-clauses", "b1-defining-relative-clauses"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Mệnh đề quan hệ: who / which / that", "en": "Relative clauses with who, which, that"},
+    "native_title": "Relative clauses: who / which / that",
+    "level": {"framework": "cefr", "value": "A2", "rank": 2},
+    "summary": {
+      "vi": "Mệnh đề quan hệ xác định dùng who, which hoặc that để thêm thông tin cần thiết nhằm xác định rõ người hoặc vật được nói đến.",
+      "en": "A defining relative clause uses who, which or that to add the information needed to identify the person or thing you are talking about."
+    },
+    "sub": {"vi": "xác định người / vật", "en": "identifying people / things"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi danh từ đứng trước là người và bạn cần nói rõ đó là ai: dùng who hoặc that.",
+      "en": "When the noun before the clause is a person and you need to say which person: use who or that."
+    },
+    {
+      "vi": "Khi danh từ đứng trước là vật, con vật hoặc sự việc: dùng which hoặc that.",
+      "en": "When the noun before the clause is a thing, an animal or an idea: use which or that."
+    },
+    {
+      "vi": "Khi thông tin trong mệnh đề là cần thiết để người nghe biết bạn đang nói về ai hoặc cái gì, không dùng dấu phẩy.",
+      "en": "When the information in the clause is necessary for the listener to know who or what you mean, do not use commas."
+    },
+    {
+      "vi": "Khi muốn nói một câu dài hơn thay vì hai câu ngắn có cùng danh từ lặp lại.",
+      "en": "When you want one longer sentence instead of two short sentences that repeat the same noun."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "N",
+        "role": "object",
+        "label": {"vi": "danh từ đứng trước", "en": "noun before the clause"}
+      },
+      {
+        "text": "who/which/that",
+        "role": "connector",
+        "label": {"vi": "đại từ quan hệ", "en": "relative pronoun"},
+        "options": [{"text": "who"}, {"text": "which"}, {"text": "that"}]
+      },
+      {
+        "text": "V",
+        "role": "verb",
+        "label": {"vi": "động từ của mệnh đề", "en": "verb of the clause"}
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "The woman who teaches us is Canadian.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 9, "role": "object"},
+        {"start": 10, "end": 13, "role": "connector"},
+        {"start": 14, "end": 21, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "who thay cho 'the woman' và giới thiệu thông tin xác định người đó.",
+        "en": "who replaces 'the woman' and introduces the information that identifies her."
+      },
+      "translation": {
+        "vi": "Người phụ nữ dạy chúng tôi là người Canada.",
+        "en": "The woman who teaches us is Canadian."
+      }
+    },
+    {
+      "text": "I bought a phone that has a good camera.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 9, "end": 16, "role": "object"},
+        {"start": 17, "end": 21, "role": "connector"},
+        {"start": 22, "end": 25, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "that thay cho 'a phone' và cho biết chiếc điện thoại nào.",
+        "en": "that replaces 'a phone' and tells you which phone."
+      },
+      "translation": {
+        "vi": "Tôi mua một chiếc điện thoại có camera tốt.",
+        "en": "I bought a phone that has a good camera."
+      }
+    },
+    {
+      "text": "The book which is on the desk is mine.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 8, "role": "object"},
+        {"start": 9, "end": 14, "role": "connector"},
+        {"start": 15, "end": 17, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "which thay cho 'the book' và xác định quyển sách nào.",
+        "en": "which replaces 'the book' and identifies which book."
+      },
+      "translation": {"vi": "Quyển sách ở trên bàn là của tôi.", "en": "The book which is on the desk is mine."}
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học dịch từ tiếng Việt nên dùng 'which' cho mọi danh từ; nhưng 'which' chỉ dùng cho vật, còn người phải dùng 'who' hoặc 'that'.",
+        "en": "The learner translates from Vietnamese and uses 'which' for every noun; but 'which' is only for things, while people take 'who' or 'that'."
+      },
+      "error_tag": "word_choice",
+      "l1": ["vi"],
+      "wrong": "The girl which sits there is my sister.",
+      "right": "The girl who sits there is my sister."
+    },
+    {
+      "reason": {
+        "vi": "Tiếng Việt có thể nối hai mệnh đề mà không cần từ nối, nhưng tiếng Anh cần đại từ quan hệ làm chủ ngữ cho mệnh đề quan hệ.",
+        "en": "Vietnamese can join two clauses without a connector, but English needs a relative pronoun as the subject of the relative clause."
+      },
+      "error_tag": "sentence_structure",
+      "l1": ["vi"],
+      "wrong": "The man lives next door is a doctor.",
+      "right": "The man who lives next door is a doctor."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "The teacher ___ helped me is very kind.",
+      "options": [{"text": "who", "error_tag": null}, {"text": "which", "error_tag": "word_choice"}],
+      "answer": 0,
+      "explain": {
+        "vi": "'The teacher' là người nên dùng 'who' (hoặc 'that'), không dùng 'which'.",
+        "en": "'The teacher' is a person, so use 'who' (or 'that'), not 'which'."
+      }
+    },
+    {
+      "q": "I have an app ___ helps me learn English.",
+      "options": [{"text": "which", "error_tag": null}, {"text": "who", "error_tag": "word_choice"}],
+      "answer": 0,
+      "explain": {
+        "vi": "'An app' là vật nên dùng 'which' (hoặc 'that'), không dùng 'who'.",
+        "en": "'An app' is a thing, so use 'which' (or 'that'), not 'who'."
+      }
+    },
+    {
+      "q": "The boy ___ is wearing red is my brother.",
+      "options": [{"text": "who", "error_tag": null}, {"text": "which", "error_tag": "word_choice"}],
+      "answer": 0,
+      "explain": {
+        "vi": "'The boy' là người nên dùng 'who' (hoặc 'that'), không dùng 'which'.",
+        "en": "'The boy' is a person, so use 'who' (or 'that'), not 'which'."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một người hoặc một vật quan trọng với bạn, dùng who, which hoặc that.",
+      "en": "Write one sentence about a person or thing that is important to you, using who, which or that."
+    },
+    "placeholder": "I have a friend who ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "connector", "any_of": ["who", "which", "that"]},
+        {
+          "role": "verb",
+          "regex": "\\b(is|are|was|were|has|have|had|teaches|teach|helps|help|speaks|speak|lives|live|works|work|likes|like|wants|want|needs|need|knows|know|bought|buy|made|make|wrote|write|plays|play|studies|study|goes|go|comes|come|sits|sit|wears|wear|wore|called|call|rang|ring|met|meet|closed|close|passed|pass|apologised|apologized)\\b"
+        }
+      ]
+    },
+    "sample": {"text": "I have a friend who speaks three languages."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790999093",
+    "generated_at": "2026-10-03T03:44:53Z",
+    "r5_source": {
+      "ids": ["a2-who-which-that-relative-clauses", "b1-defining-relative-clauses"],
+      "content_version": 2,
+      "content_hash": "c9b1151ff9ec58bf4cccbd8bf1e0a7e4fc3af654b8770d94b48be60f0f3546a2",
+      "corrections": [
+        {
+          "r5_id": "a2-who-which-that-relative-clauses",
+          "issue": "The R5 lesson lists 'The book which is on the desk is mine' as an example but does not show the formula or mark the relative clause parts.",
+          "fix": "Added the formula N + who/which/that + V and marked the noun, connector and verb in each example."
+        },
+        {
+          "r5_id": "a2-who-which-that-relative-clauses",
+          "issue": "The R5 mistake 'The phone who is on the table is mine' is correct as a mistake, but the explanation says only 'Thing dùng which/that' without naming the mechanism.",
+          "fix": "Kept the mistake and wrote the reason: Vietnamese learners may use 'who' for things because Vietnamese does not mark person/thing on the relative word."
+        },
+        {
+          "r5_id": "b1-defining-relative-clauses",
+          "issue": "The R5 lesson includes 'whose' and 'where' and object-relative omission, which are outside this A2 point's scope.",
+          "fix": "Removed 'whose', 'where' and object-relative omission; kept only who/which/that for people and things."
+        },
+        {
+          "r5_id": "b1-defining-relative-clauses",
+          "issue": "The R5 example 'The book, that I need, is expensive' is used as a mistake, but the explanation mixes two problems (comma use and 'that' in non-defining clauses) and is confusing at A2.",
+          "fix": "Replaced it with the A2-level mistake 'The man lives next door is a doctor' and explained the missing subject relative pronoun."
+        }
+      ]
+    }
+  },
+  "review": null
+}

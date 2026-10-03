@@ -1,0 +1,272 @@
+{
+  "schema_version": "0.4",
+  "id": "en.too_enough",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.degree",
+  "level": {"framework": "cefr", "value": "A2", "rank": 2},
+  "prereqs": [],
+  "contrasts": ["en.adverbs.manner_degree"],
+  "error_tags": ["word_choice", "sentence_structure"],
+  "source_refs": {"r5": ["a2-too-enough"]},
+  "point_type": "word_order",
+  "sequence": 1,
+  "aliases": ["a2-too-enough"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Too và enough", "en": "Too and enough"},
+    "native_title": "Too / enough",
+    "level": {"framework": "cefr", "value": "A2", "rank": 2},
+    "summary": {
+      "vi": "Cấu trúc too và enough dùng để nói mức độ vượt ngưỡng hoặc đủ ngưỡng để làm gì đó.",
+      "en": "The structures with too and enough express a degree that is above or sufficient for a limit or purpose."
+    },
+    "sub": {"vi": "mức độ và ngưỡng", "en": "degree and limit"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi một tính từ hoặc trạng từ vượt quá mức cho phép, gây khó khăn hoặc không thể làm gì.",
+      "en": "When an adjective or adverb is above the acceptable level, causing difficulty or making something impossible."
+    },
+    {
+      "vi": "Khi một tính từ hoặc trạng từ đạt mức cần thiết để làm gì đó.",
+      "en": "When an adjective or adverb reaches the level needed to do something."
+    },
+    {
+      "vi": "Khi một danh từ có đủ số lượng hoặc khối lượng cần thiết.",
+      "en": "When a noun has a sufficient amount or quantity."
+    },
+    {
+      "vi": "Khi muốn nêu kết quả hoặc mục đích bằng to-infinitive sau too hoặc enough.",
+      "en": "When you want to state the result or purpose with a to-infinitive after too or enough."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {
+        "text": "be",
+        "role": "verb",
+        "label": {"vi": "động từ liên kết", "en": "linking verb"},
+        "options": [{"text": "is"}, {"text": "are"}, {"text": "am"}]
+      },
+      {"text": "too", "role": "marker", "label": {"vi": "quá mức", "en": "too"}},
+      {
+        "text": "adj/adv",
+        "role": "complement",
+        "label": {"vi": "tính từ/trạng từ", "en": "adjective/adverb"}
+      },
+      {
+        "text": "to V",
+        "role": "complement",
+        "label": {"vi": "động từ nguyên thể có to", "en": "to-infinitive"},
+        "optional": true
+      }
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "be",
+          "role": "verb",
+          "label": {"vi": "động từ liên kết", "en": "linking verb"},
+          "options": [{"text": "is"}, {"text": "are"}, {"text": "am"}]
+        },
+        {"text": "not", "role": "marker", "label": {"vi": "phủ định", "en": "negative marker"}},
+        {
+          "text": "adj/adv",
+          "role": "complement",
+          "label": {"vi": "tính từ/trạng từ", "en": "adjective/adverb"}
+        },
+        {"text": "enough", "role": "marker", "label": {"vi": "đủ", "en": "enough"}},
+        {
+          "text": "to V",
+          "role": "complement",
+          "label": {"vi": "động từ nguyên thể có to", "en": "to-infinitive"},
+          "optional": true
+        }
+      ],
+      "question": [
+        {
+          "text": "be",
+          "role": "verb",
+          "label": {"vi": "động từ liên kết", "en": "linking verb"},
+          "options": [{"text": "Is"}, {"text": "Are"}, {"text": "Am"}]
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {"text": "too", "role": "marker", "label": {"vi": "quá mức", "en": "too"}},
+        {
+          "text": "adj/adv",
+          "role": "complement",
+          "label": {"vi": "tính từ/trạng từ", "en": "adjective/adverb"}
+        },
+        {
+          "text": "to V",
+          "role": "complement",
+          "label": {"vi": "động từ nguyên thể có to", "en": "to-infinitive"},
+          "optional": true
+        }
+      ]
+    },
+    "illustration": {"kind": "word_order"}
+  },
+  "examples": [
+    {
+      "text": "This bag is too heavy to carry.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 8, "role": "subject"},
+        {"start": 9, "end": 11, "role": "verb"},
+        {"start": 12, "end": 15, "role": "marker"},
+        {"start": 16, "end": 21, "role": "complement"},
+        {"start": 22, "end": 30, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "too + tính từ diễn tả mức quá cao, khiến việc mang trở nên bất khả thi.",
+        "en": "too + adjective expresses an excessive degree that makes carrying impossible."
+      },
+      "translation": {"vi": "Túi này quá nặng để mang.", "en": "This bag is too heavy to carry."}
+    },
+    {
+      "text": "She is old enough to travel alone.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 6, "role": "verb"},
+        {"start": 7, "end": 10, "role": "complement"},
+        {"start": 11, "end": 17, "role": "marker"},
+        {"start": 18, "end": 33, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "tính từ + enough diễn tả mức đủ để làm gì đó.",
+        "en": "adjective + enough expresses a sufficient degree to do something."
+      },
+      "translation": {"vi": "Cô ấy đủ tuổi để đi du lịch một mình.", "en": "She is old enough to travel alone."}
+    },
+    {
+      "text": "The room isn't warm enough to sleep in.",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 8, "role": "subject"},
+        {"start": 9, "end": 14, "role": "verb"},
+        {"start": 15, "end": 19, "role": "complement"},
+        {"start": 20, "end": 26, "role": "marker"},
+        {"start": 27, "end": 38, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "tính từ + enough trong câu phủ định nói mức chưa đủ để làm gì.",
+        "en": "adjective + enough in a negative sentence says the level is not sufficient to do something."
+      },
+      "translation": {"vi": "Phòng chưa đủ ấm để ngủ.", "en": "The room isn't warm enough to sleep in."}
+    }
+  ],
+  "compare": [
+    {
+      "with": "en.adverbs.manner_degree",
+      "this_example": "The coffee is too hot to drink.",
+      "other_example": "The coffee is very hot.",
+      "this_meaning": {
+        "vi": "too và enough diễn tả mức độ vượt ngưỡng hoặc đủ ngưỡng để làm gì đó.",
+        "en": "too and enough express a degree above or sufficient for a limit or purpose."
+      },
+      "other_meaning": {
+        "vi": "trạng từ chỉ mức độ như very chỉ mức độ cao nhưng không hàm ý vượt ngưỡng hay đủ ngưỡng.",
+        "en": "manner/degree adverbs like very express a high degree but do not imply exceeding or meeting a limit."
+      }
+    }
+  ],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "enough đứng sau tính từ, không đứng trước.",
+        "en": "enough comes after an adjective, not before it."
+      },
+      "error_tag": "word_choice",
+      "l1": ["vi"],
+      "wrong": "The box is enough light to lift.",
+      "right": "The box is light enough to lift."
+    },
+    {
+      "reason": {
+        "vi": "enough đứng trước danh từ, không đứng sau.",
+        "en": "enough comes before a noun, not after it."
+      },
+      "error_tag": "sentence_structure",
+      "l1": ["vi"],
+      "wrong": "I have money enough.",
+      "right": "I have enough money."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "The coffee is ___ hot to drink.",
+      "options": [{"text": "too", "error_tag": null}, {"text": "enough", "error_tag": "word_choice"}],
+      "answer": 0,
+      "explain": {
+        "vi": "too + tính từ diễn tả mức quá cao, không thể uống được.",
+        "en": "too + adjective expresses an excessive degree that makes drinking impossible."
+      }
+    },
+    {
+      "q": "She is tall ___ to reach the shelf.",
+      "options": [{"text": "enough", "error_tag": null}, {"text": "too", "error_tag": "word_choice"}],
+      "answer": 0,
+      "explain": {
+        "vi": "tính từ + enough diễn tả mức đủ để làm gì đó.",
+        "en": "adjective + enough expresses a sufficient degree to do something."
+      }
+    },
+    {
+      "q": "We have ___ time to finish.",
+      "options": [{"text": "enough", "error_tag": null}, {"text": "too", "error_tag": "word_choice"}],
+      "answer": 0,
+      "explain": {
+        "vi": "enough đứng trước danh từ để nói số lượng đủ.",
+        "en": "enough before a noun expresses a sufficient quantity."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về bản thân dùng cấu trúc too + tính từ + to V.",
+      "en": "Write a sentence about yourself using too + adjective + to V."
+    },
+    "placeholder": "I am too ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "marker", "any_of": ["too"]},
+        {"role": "complement", "regex": "\\b\\w+\\b"},
+        {"role": "complement", "regex": "\\bto\\s+\\w+\\b"}
+      ]
+    },
+    "sample": {"text": "I am too tired to cook dinner."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790999013",
+    "generated_at": "2026-10-03T03:43:33Z",
+    "r5_source": {
+      "ids": ["a2-too-enough"],
+      "content_version": 2,
+      "content_hash": "771480b2f66d8a2caa2307e38bf6061fb7e8d2748d507368dac18ad77405d059",
+      "corrections": [
+        {
+          "r5_id": "a2-too-enough",
+          "issue": "R5 examples include 'The room is warm enough.' which is correct but does not show the to-infinitive pattern; the lesson needs a clear example of adjective + enough + to V.",
+          "fix": "Added 'She is old enough to travel alone.' as an example to illustrate the to-infinitive use."
+        },
+        {
+          "r5_id": "a2-too-enough",
+          "issue": "R5 mistakes include 'The box is enough light to lift.' and 'I have money enough.' which are correct as mistakes, but the lesson also needs a mistake for too/enough confusion.",
+          "fix": "Added a common mistake where learners use 'enough' instead of 'too' in a context of excess, e.g., 'The coffee is enough hot to drink.' corrected to 'The coffee is too hot to drink.'"
+        }
+      ]
+    }
+  },
+  "review": null
+}

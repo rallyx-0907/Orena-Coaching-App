@@ -1,0 +1,256 @@
+{
+  "schema_version": "0.4",
+  "id": "en.gerund_after_preference",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.verb_patterns",
+  "level": {"framework": "cefr", "value": "A2", "rank": 2},
+  "prereqs": [],
+  "contrasts": ["en.infinitive_after_want_plan_need"],
+  "error_tags": ["word_form"],
+  "source_refs": {"r5": ["a2-gerunds-after-preference-verbs"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["a2-gerunds-after-preference-verbs"],
+  "source_anchors": {"status": "anchored", "items": [{"source": "core_inventory", "code": "86", "level": "A1"}]},
+  "header": {
+    "title": {"vi": "Động từ + -ing sau like, love, hate", "en": "Like / love / hate + -ing"},
+    "native_title": "Verb + -ing: like, love, hate",
+    "level": {"framework": "cefr", "value": "A2", "rank": 2},
+    "summary": {
+      "vi": "Sau các động từ chỉ sở thích như like, love, hate và enjoy, ta dùng động từ thêm -ing để nói về hoạt động mình thích hay không thích.",
+      "en": "After preference verbs like like, love, hate and enjoy, we use the -ing form of a verb to talk about activities we like or dislike."
+    },
+    "sub": {"vi": "sở thích với V-ing", "en": "preference + V-ing"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi nói mình thích, yêu, ghét hoặc tận hưởng một hoạt động nói chung, không phải một lần cụ thể.",
+      "en": "When you say you like, love, hate or enjoy an activity in general, not one specific time."
+    },
+    {
+      "vi": "Khi động từ đứng trước là like, love, hate hoặc enjoy và theo sau là một hành động.",
+      "en": "When the verb before is like, love, hate or enjoy and an action follows it."
+    },
+    {
+      "vi": "Khi muốn hỏi về sở thích của người khác với câu hỏi Yes/No.",
+      "en": "When you ask about someone's preferences in a Yes/No question."
+    },
+    {
+      "vi": "Khi muốn nói mình không thích làm gì bằng câu phủ định.",
+      "en": "When you say you do not like doing something in a negative sentence."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {
+        "text": "like/love/hate/enjoy",
+        "role": "verb",
+        "label": {"vi": "động từ chỉ sở thích", "en": "preference verb"},
+        "options": [{"text": "like"}, {"text": "love"}, {"text": "hate"}, {"text": "enjoy"}]
+      },
+      {"text": "V-ing", "role": "verb", "label": {"vi": "động từ thêm -ing", "en": "-ing verb"}},
+      {"text": "O", "role": "object", "label": {"vi": "tân ngữ", "en": "object"}, "optional": true}
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "do/does not",
+          "role": "aux",
+          "label": {"vi": "trợ động từ phủ định", "en": "negative auxiliary"},
+          "options": [{"text": "do not"}, {"text": "does not"}, {"text": "don't"}, {"text": "doesn't"}]
+        },
+        {
+          "text": "like/love/hate/enjoy",
+          "role": "verb",
+          "label": {"vi": "động từ chỉ sở thích", "en": "preference verb"},
+          "options": [{"text": "like"}, {"text": "love"}, {"text": "hate"}, {"text": "enjoy"}]
+        },
+        {"text": "V-ing", "role": "verb", "label": {"vi": "động từ thêm -ing", "en": "-ing verb"}},
+        {
+          "text": "O",
+          "role": "object",
+          "label": {"vi": "tân ngữ", "en": "object"},
+          "optional": true
+        }
+      ],
+      "question": [
+        {
+          "text": "Do/Does",
+          "role": "aux",
+          "label": {"vi": "trợ động từ nghi vấn", "en": "question auxiliary"},
+          "options": [{"text": "Do"}, {"text": "Does"}]
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "like/love/hate/enjoy",
+          "role": "verb",
+          "label": {"vi": "động từ chỉ sở thích", "en": "preference verb"},
+          "options": [{"text": "like"}, {"text": "love"}, {"text": "hate"}, {"text": "enjoy"}]
+        },
+        {"text": "V-ing", "role": "verb", "label": {"vi": "động từ thêm -ing", "en": "-ing verb"}},
+        {
+          "text": "O",
+          "role": "object",
+          "label": {"vi": "tân ngữ", "en": "object"},
+          "optional": true
+        }
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "I enjoy learning languages.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 2, "end": 7, "role": "verb"},
+        {"start": 8, "end": 16, "role": "verb"},
+        {"start": 17, "end": 26, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "enjoy + V-ing: hoạt động 'learning languages' là việc tôi thích.",
+        "en": "enjoy + V-ing: the activity 'learning languages' is what I like."
+      },
+      "translation": {"vi": "Tôi thích học ngôn ngữ.", "en": "I enjoy learning languages."}
+    },
+    {
+      "text": "She loves taking photos.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 9, "role": "verb"},
+        {"start": 10, "end": 16, "role": "verb"},
+        {"start": 17, "end": 23, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "love + V-ing: hoạt động 'taking photos' là sở thích của cô ấy.",
+        "en": "love + V-ing: the activity 'taking photos' is her preference."
+      },
+      "translation": {"vi": "Cô ấy thích chụp ảnh.", "en": "She loves taking photos."}
+    },
+    {
+      "text": "They hate waiting in long lines.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 5, "end": 9, "role": "verb"},
+        {"start": 10, "end": 17, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "hate + V-ing: hoạt động 'waiting in long lines' là việc họ ghét.",
+        "en": "hate + V-ing: the activity 'waiting in long lines' is what they hate."
+      },
+      "translation": {"vi": "Họ ghét xếp hàng lâu.", "en": "They hate waiting in long lines."}
+    }
+  ],
+  "compare": [
+    {
+      "with": "en.infinitive_after_want_plan_need",
+      "this_example": "I like reading before bed.",
+      "other_example": "I want to read that book this weekend.",
+      "this_meaning": {
+        "vi": "like/love/hate/enjoy + V-ing nói về một hoạt động mình thích hay không thích nói chung.",
+        "en": "like/love/hate/enjoy + V-ing talks about an activity you like or dislike in general."
+      },
+      "other_meaning": {
+        "vi": "want/plan/need + to-V nói về mong muốn, dự định hoặc nhu cầu làm một việc cụ thể.",
+        "en": "want/plan/need + to-V talks about a desire, plan or need to do a specific thing."
+      }
+    }
+  ],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Sau like/love/hate/enjoy, động từ phải ở dạng V-ing, không dùng động từ nguyên thể.",
+        "en": "After like/love/hate/enjoy, the verb must be in the -ing form, not the base form."
+      },
+      "error_tag": "word_form",
+      "l1": ["vi"],
+      "wrong": "She likes play tennis.",
+      "right": "She likes playing tennis."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "I enjoy ___ books in the evening.",
+      "options": [{"text": "reading", "error_tag": null}, {"text": "read", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau enjoy, ta dùng V-ing: enjoy reading.",
+        "en": "After enjoy, we use the -ing form: enjoy reading."
+      }
+    },
+    {
+      "q": "She loves ___ to music.",
+      "options": [{"text": "listening", "error_tag": null}, {"text": "listen", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau love, ta dùng V-ing: loves listening.",
+        "en": "After love, we use the -ing form: loves listening."
+      }
+    },
+    {
+      "q": "They hate ___ in long lines.",
+      "options": [{"text": "waiting", "error_tag": null}, {"text": "wait", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau hate, ta dùng V-ing: hate waiting.",
+        "en": "After hate, we use the -ing form: hate waiting."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về hoạt động bạn thích hoặc không thích, dùng like/love/hate/enjoy + V-ing.",
+      "en": "Write one sentence about an activity you like or dislike, using like/love/hate/enjoy + V-ing."
+    },
+    "placeholder": "I enjoy ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {
+          "role": "verb",
+          "any_of": ["like", "likes", "love", "loves", "hate", "hates", "enjoy", "enjoys"]
+        },
+        {"role": "verb", "regex": "\\b\\w+ing\\b"}
+      ]
+    },
+    "sample": {"text": "I enjoy reading before bed."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790999006",
+    "generated_at": "2026-10-03T03:43:26Z",
+    "r5_source": {
+      "ids": ["a2-gerunds-after-preference-verbs"],
+      "content_version": 2,
+      "content_hash": "aea5a49734134bb46acb843934e6cfdcbb308ab1b57dc61a818d58fcc765f94d",
+      "corrections": [
+        {
+          "r5_id": "a2-gerunds-after-preference-verbs",
+          "issue": "R5's example 'Do you like cooking?' is a question, but the lesson's formula and examples only show affirmative patterns; the question form is not taught.",
+          "fix": "Added a question formula and kept the example set to affirmative sentences; the question form is now available in the formula section."
+        },
+        {
+          "r5_id": "a2-gerunds-after-preference-verbs",
+          "issue": "R5's mistake 'She likes play tennis.' is listed, but the correction 'She likes playing tennis.' is not clearly explained as a word-form error.",
+          "fix": "Kept the mistake and added a clear reason: after like/love/hate/enjoy, the verb must be in the -ing form, not the base form."
+        },
+        {
+          "r5_id": "a2-gerunds-after-preference-verbs",
+          "issue": "R5's guided practice includes a transform task 'She likes to dance → V-ing pattern', but the lesson does not explain that like + to-V is also possible with a different meaning.",
+          "fix": "Removed the transform task and added a comparison with 'want/plan/need + to-V' to clarify the difference between preference and desire."
+        }
+      ]
+    }
+  },
+  "review": null
+}

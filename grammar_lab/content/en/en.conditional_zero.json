@@ -1,0 +1,254 @@
+{
+  "schema_version": "0.4",
+  "id": "en.conditional_zero",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.condition_real",
+  "level": {"framework": "cefr", "value": "A2", "rank": 2},
+  "prereqs": [],
+  "contrasts": ["en.conditional_first"],
+  "error_tags": ["tense"],
+  "source_refs": {"r5": ["a2-zero-conditional"]},
+  "point_type": "tense_aspect",
+  "sequence": 1,
+  "aliases": ["a2-zero-conditional"],
+  "source_anchors": {"status": "anchored", "items": [{"source": "core_inventory", "code": "90", "level": "A2"}]},
+  "header": {
+    "title": {"vi": "Câu điều kiện loại 0", "en": "Zero conditional"},
+    "native_title": "Zero conditional",
+    "level": {"framework": "cefr", "value": "A2", "rank": 2},
+    "summary": {
+      "vi": "Câu điều kiện loại 0 diễn tả một kết quả luôn đúng hoặc thường xảy ra khi một điều kiện chung được đáp ứng.",
+      "en": "The zero conditional describes a result that always happens or usually happens when a general condition is met."
+    },
+    "sub": {"vi": "sự thật hiển nhiên", "en": "general truths"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi nói về một sự thật khoa học hoặc quy luật tự nhiên: nước sôi ở 100°C.",
+      "en": "When stating a scientific fact or natural law: water boils at 100°C."
+    },
+    {
+      "vi": "Khi mô tả thói quen hoặc phản ứng thường ngày: nếu tôi ngủ muộn, tôi thấy mệt.",
+      "en": "When describing a habit or everyday reaction: if I sleep late, I feel tired."
+    },
+    {
+      "vi": "Khi đưa ra hướng dẫn hoặc quy tắc chung: nếu bạn nhấn nút này, máy sẽ dừng.",
+      "en": "When giving instructions or general rules: if you press this button, the machine stops."
+    },
+    {
+      "vi": "Khi kết quả là điều chắc chắn xảy ra mỗi lần điều kiện được đáp ứng, không phải dự đoán tương lai.",
+      "en": "When the result is certain to happen every time the condition is met, not a future prediction."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "If",
+        "role": "marker",
+        "label": {"vi": "từ nối điều kiện", "en": "condition marker"}
+      },
+      {
+        "text": "S",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ mệnh đề điều kiện", "en": "subject of condition clause"}
+      },
+      {
+        "text": "V",
+        "role": "verb",
+        "label": {"vi": "động từ hiện tại đơn", "en": "present simple verb"}
+      },
+      {
+        "text": "S",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ mệnh đề kết quả", "en": "subject of result clause"}
+      },
+      {
+        "text": "V",
+        "role": "verb",
+        "label": {"vi": "động từ hiện tại đơn", "en": "present simple verb"}
+      }
+    ],
+    "variants": {
+      "negative": [
+        {
+          "text": "If",
+          "role": "marker",
+          "label": {"vi": "từ nối điều kiện", "en": "condition marker"}
+        },
+        {
+          "text": "S",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ mệnh đề điều kiện", "en": "subject of condition clause"}
+        },
+        {
+          "text": "don't/doesn't",
+          "role": "aux",
+          "label": {"vi": "trợ động từ phủ định", "en": "negative auxiliary"},
+          "options": [{"text": "don't"}, {"text": "doesn't"}]
+        },
+        {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên thể", "en": "base verb"}},
+        {
+          "text": "S",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ mệnh đề kết quả", "en": "subject of result clause"}
+        },
+        {
+          "text": "V",
+          "role": "verb",
+          "label": {"vi": "động từ hiện tại đơn", "en": "present simple verb"}
+        }
+      ]
+    },
+    "illustration": {"kind": "timeline", "timeline": {"shape": "habit"}}
+  },
+  "examples": [
+    {
+      "text": "If you heat water, it boils.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "marker"},
+        {"start": 3, "end": 6, "role": "subject"},
+        {"start": 7, "end": 11, "role": "verb"},
+        {"start": 19, "end": 21, "role": "subject"},
+        {"start": 22, "end": 27, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Điều kiện chung 'đun nước' luôn dẫn đến kết quả 'sôi'.",
+        "en": "The general condition 'heat water' always leads to the result 'boils'."
+      },
+      "translation": {"vi": "Nếu bạn đun nước, nó sôi.", "en": "If you heat water, it boils."}
+    },
+    {
+      "text": "If I sleep late, I feel tired.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "marker"},
+        {"start": 3, "end": 4, "role": "subject"},
+        {"start": 5, "end": 10, "role": "verb"},
+        {"start": 17, "end": 18, "role": "subject"},
+        {"start": 19, "end": 23, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Thói quen cá nhân: ngủ muộn thường làm tôi mệt.",
+        "en": "Personal habit: sleeping late usually makes me tired."
+      },
+      "translation": {"vi": "Nếu tôi ngủ muộn, tôi thấy mệt.", "en": "If I sleep late, I feel tired."}
+    },
+    {
+      "text": "Plants die if they don't get water.",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 6, "role": "subject"},
+        {"start": 7, "end": 10, "role": "verb"},
+        {"start": 11, "end": 13, "role": "marker"},
+        {"start": 14, "end": 18, "role": "subject"},
+        {"start": 19, "end": 24, "role": "aux"},
+        {"start": 25, "end": 28, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Điều kiện phủ định 'không được tưới nước' dẫn đến kết quả 'chết'.",
+        "en": "The negative condition 'don't get water' leads to the result 'die'."
+      },
+      "translation": {
+        "vi": "Cây chết nếu chúng không được tưới nước.",
+        "en": "Plants die if they don't get water."
+      }
+    }
+  ],
+  "compare": [
+    {
+      "with": "en.conditional_first",
+      "this_example": "If you heat ice, it melts.",
+      "other_example": "If it rains tomorrow, we will stay home.",
+      "this_meaning": {
+        "vi": "Điều kiện loại 0 nói về kết quả luôn đúng hoặc thường xảy ra khi điều kiện chung được đáp ứng.",
+        "en": "The zero conditional talks about a result that always or usually happens when a general condition is met."
+      },
+      "other_meaning": {
+        "vi": "Điều kiện loại 1 nói về một khả năng trong tương lai cụ thể.",
+        "en": "The first conditional talks about a specific future possibility."
+      }
+    }
+  ],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học dùng 'will' vì nghĩ đến kết quả tương lai, nhưng câu điều kiện loại 0 diễn tả quy luật chung nên cả hai mệnh đề dùng hiện tại đơn.",
+        "en": "Learners use 'will' because they think of a future result, but the zero conditional states a general rule, so both clauses use the present simple."
+      },
+      "error_tag": "tense",
+      "l1": ["vi"],
+      "wrong": "If you heat ice, it will melt.",
+      "right": "If you heat ice, it melts."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "If you mix red and blue, you ___ purple.",
+      "options": [{"text": "get", "error_tag": null}, {"text": "will get", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Đây là quy luật chung (trộn màu), nên dùng hiện tại đơn ở cả hai mệnh đề.",
+        "en": "This is a general rule (mixing colours), so use the present simple in both clauses."
+      }
+    },
+    {
+      "q": "If it ___ , the ground gets wet.",
+      "options": [{"text": "rains", "error_tag": null}, {"text": "will rain", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Mệnh đề điều kiện trong câu điều kiện loại 0 dùng hiện tại đơn, không dùng 'will'.",
+        "en": "The condition clause in the zero conditional uses the present simple, not 'will'."
+      }
+    },
+    {
+      "q": "If people don't eat, they ___ hungry.",
+      "options": [{"text": "get", "error_tag": null}, {"text": "will get", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Kết quả luôn đúng khi điều kiện được đáp ứng, nên dùng hiện tại đơn.",
+        "en": "The result is always true when the condition is met, so use the present simple."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về thói quen hoặc sự thật của bạn, dùng 'If ... , ...' với thì hiện tại đơn ở cả hai mệnh đề.",
+      "en": "Write one sentence about your habit or a fact, using 'If ..., ...' with the present simple in both clauses."
+    },
+    "placeholder": "If I ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "marker", "any_of": ["if"]}, {"role": "verb", "regex": "\\b\\w+\\b"}]
+    },
+    "sample": {"text": "If I drink coffee, I feel awake."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790999078",
+    "generated_at": "2026-10-03T03:44:38Z",
+    "r5_source": {
+      "ids": ["a2-zero-conditional"],
+      "content_version": 2,
+      "content_hash": "4ca63818dc35f705bc22105103b8af37613f0deea7666f1d2adadb619021c467",
+      "corrections": [
+        {
+          "r5_id": "a2-zero-conditional",
+          "issue": "R5 example 'If you mix blue and yellow, you get green.' uses 'blue and yellow' which is less precise than 'red and blue' for the colour mixing fact.",
+          "fix": "Replaced with 'If you mix red and blue, you get purple.' in quick practice to keep the fact accurate and level-appropriate."
+        },
+        {
+          "r5_id": "a2-zero-conditional",
+          "issue": "R5 mistake 'If I am hungry, I will usually eat fruit.' was listed as a mistake, but the corrected version 'If I am hungry, I usually eat fruit.' is correct; the mistake itself is valid but the explanation could be clearer.",
+          "fix": "Kept the mistake concept but rewrote the reason to explicitly state that 'will' is not used for general rules, and used a clearer example in common_mistakes."
+        }
+      ]
+    }
+  },
+  "review": null
+}

@@ -1,0 +1,274 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b1.007",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.completed_past",
+  "level": {"framework": "cefr", "value": "B1", "rank": 3},
+  "prereqs": ["en.canon.b1.006"],
+  "contrasts": [],
+  "error_tags": ["tense"],
+  "source_refs": {"r5": ["b1-past-perfect-continuous"]},
+  "point_type": "tense_aspect",
+  "sequence": 2,
+  "aliases": ["b1-past-perfect-continuous"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "quá khứ hoàn thành continuous", "en": "Past perfect continuous"},
+    "native_title": "Past perfect continuous",
+    "level": {"framework": "cefr", "value": "B1", "rank": 3},
+    "summary": {
+      "vi": "Thì quá khứ hoàn thành tiếp diễn dùng had been + V-ing để nói một hành động đã đang kéo dài trước một mốc hoặc sự việc khác trong quá khứ.",
+      "en": "The past perfect continuous uses had been + V-ing to describe an activity that was ongoing before another past point or event."
+    },
+    "sub": {"vi": "hành động kéo dài trước quá khứ", "en": "ongoing before past"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nhấn mạnh thời lượng của một hành động tính đến một mốc trong quá khứ, thường với for hoặc since.",
+      "en": "When you want to emphasise how long an activity had continued up to a past point, often with for or since."
+    },
+    {
+      "vi": "Khi một hành động đang tiếp diễn thì một sự việc khác trong quá khứ xen vào hoặc xảy ra sau đó.",
+      "en": "When an activity was in progress and another past event interrupted it or happened later."
+    },
+    {
+      "vi": "Khi bạn giải thích nguyên nhân hoặc kết quả trong quá khứ bằng một quá trình xảy ra trước đó.",
+      "en": "When you explain a past result or situation by referring to an earlier ongoing process."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {"text": "had been", "role": "aux", "label": {"vi": "trợ động từ", "en": "auxiliary"}},
+      {
+        "text": "V-ing",
+        "role": "verb",
+        "label": {"vi": "động từ đuôi -ing", "en": "present participle"}
+      },
+      {
+        "text": "for/since",
+        "role": "marker",
+        "label": {"vi": "giới từ thời lượng", "en": "duration marker"},
+        "optional": true,
+        "options": [{"text": "for"}, {"text": "since"}]
+      },
+      {
+        "text": "time",
+        "role": "time",
+        "label": {"vi": "mốc thời gian", "en": "time reference"},
+        "optional": true
+      }
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "had not been",
+          "role": "aux",
+          "label": {"vi": "trợ động từ phủ định", "en": "negative auxiliary"},
+          "options": [{"text": "had not been"}, {"text": "hadn't been"}]
+        },
+        {
+          "text": "V-ing",
+          "role": "verb",
+          "label": {"vi": "động từ đuôi -ing", "en": "present participle"}
+        },
+        {
+          "text": "for/since",
+          "role": "marker",
+          "label": {"vi": "giới từ thời lượng", "en": "duration marker"},
+          "optional": true,
+          "options": [{"text": "for"}, {"text": "since"}]
+        },
+        {
+          "text": "time",
+          "role": "time",
+          "label": {"vi": "mốc thời gian", "en": "time reference"},
+          "optional": true
+        }
+      ],
+      "question": [
+        {
+          "text": "Had",
+          "role": "aux",
+          "label": {"vi": "trợ động từ đảo lên đầu", "en": "fronted auxiliary"}
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {"text": "been", "role": "aux", "label": {"vi": "trợ động từ been", "en": "been"}},
+        {
+          "text": "V-ing",
+          "role": "verb",
+          "label": {"vi": "động từ đuôi -ing", "en": "present participle"}
+        },
+        {
+          "text": "for/since",
+          "role": "marker",
+          "label": {"vi": "giới từ thời lượng", "en": "duration marker"},
+          "optional": true,
+          "options": [{"text": "for"}, {"text": "since"}]
+        },
+        {
+          "text": "time",
+          "role": "time",
+          "label": {"vi": "mốc thời gian", "en": "time reference"},
+          "optional": true
+        }
+      ]
+    },
+    "illustration": {"kind": "timeline", "timeline": {"shape": "past_ongoing"}}
+  },
+  "examples": [
+    {
+      "text": "She had been studying for hours before the exam started.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 12, "role": "aux"},
+        {"start": 13, "end": 21, "role": "verb"},
+        {"start": 22, "end": 31, "role": "marker"},
+        {"start": 32, "end": 55, "role": "time"}
+      ],
+      "annotation": {
+        "vi": "hành động học đã kéo dài nhiều giờ trước khi kỳ thi bắt đầu",
+        "en": "the studying continued for hours before the exam began"
+      },
+      "translation": {
+        "vi": "Cô ấy đã học nhiều giờ trước khi kỳ thi bắt đầu.",
+        "en": "She had been studying for hours before the exam started."
+      }
+    },
+    {
+      "text": "The road was wet because it had been raining.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 25, "end": 27, "role": "subject"},
+        {"start": 28, "end": 36, "role": "aux"},
+        {"start": 37, "end": 44, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "mưa là quá trình xảy ra trước, giải thích vì sao đường ướt",
+        "en": "the rain was an earlier ongoing process that explains the wet road"
+      },
+      "translation": {
+        "vi": "Đường ướt vì trước đó trời đã mưa.",
+        "en": "The road was wet because it had been raining."
+      }
+    },
+    {
+      "text": "They hadn't been waiting long when the bus arrived.",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 5, "end": 16, "role": "aux"},
+        {"start": 17, "end": 24, "role": "verb"},
+        {"start": 30, "end": 50, "role": "time"}
+      ],
+      "annotation": {
+        "vi": "hành động chờ đã không kéo dài lâu tính đến lúc xe buýt đến",
+        "en": "the waiting had not continued long up to the moment the bus came"
+      },
+      "translation": {
+        "vi": "Họ đã không chờ lâu khi xe buýt đến.",
+        "en": "They hadn't been waiting long when the bus arrived."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "know là động từ trạng thái, không dùng ở dạng tiếp diễn; phải dùng quá khứ hoàn thành đơn.",
+        "en": "know is a stative verb and is not used in the continuous form; the past perfect simple is required."
+      },
+      "error_tag": "tense",
+      "l1": ["vi"],
+      "wrong": "She had been knowing him for years.",
+      "right": "She had known him for years."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "He was tired because he ___ all night.",
+      "options": [
+        {"text": "had been working", "error_tag": null},
+        {"text": "had worked", "error_tag": "tense"},
+        {"text": "was working", "error_tag": "tense"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Hành động làm việc kéo dài suốt đêm trước khi anh ấy mệt, nên dùng had been working.",
+        "en": "The working continued all night before he was tired, so had been working is correct."
+      }
+    },
+    {
+      "q": "They ___ for the train for twenty minutes when it was cancelled.",
+      "options": [
+        {"text": "had been waiting", "error_tag": null},
+        {"text": "had waited", "error_tag": "tense"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Nhấn mạnh thời lượng chờ đợi trước khi chuyến tàu bị hủy, nên dùng had been waiting.",
+        "en": "The duration of waiting before the cancellation is emphasised, so had been waiting is correct."
+      }
+    },
+    {
+      "q": "___ she been studying English before she moved to London?",
+      "options": [
+        {"text": "Had", "error_tag": null},
+        {"text": "Has", "error_tag": "tense"},
+        {"text": "Did", "error_tag": "tense"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu hỏi của quá khứ hoàn thành tiếp diễn bắt đầu bằng Had, không dùng Has hay Did.",
+        "en": "Past perfect continuous questions begin with Had, not Has or Did."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về việc bạn đã làm gì trong một khoảng thời gian trước một sự việc trong quá khứ.",
+      "en": "Write a sentence about what you had been doing for a period before a past event."
+    },
+    "placeholder": "I had been ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "aux", "any_of": ["had been"]}, {"role": "verb", "regex": "\\b\\w+ing\\b"}]
+    },
+    "sample": {"text": "I had been working there for two years before I changed jobs."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790999109",
+    "generated_at": "2026-10-03T03:45:09Z",
+    "r5_source": {
+      "ids": ["b1-past-perfect-continuous"],
+      "content_version": 2,
+      "content_hash": "58d635366c4884df9bb31fcbd2b8477ea3bd5eea40ff947d79c2e9dec9a05761",
+      "corrections": [
+        {
+          "r5_id": "b1-past-perfect-continuous",
+          "issue": "R5 example 'They had been waiting since noon.' lacks a clear past reference point, so the past perfect continuous is not fully justified.",
+          "fix": "Replaced with 'They hadn't been waiting long when the bus arrived.' to include a past reference and a negative form."
+        },
+        {
+          "r5_id": "b1-past-perfect-continuous",
+          "issue": "R5 mistake 'I had been working yesterday.' is not a typical Vietnamese learner error for this point and the correction 'I was working yesterday.' changes the intended meaning rather than fixing a form error.",
+          "fix": "Replaced with the stative-verb error 'She had been knowing him for years.' corrected to 'She had known him for years.'"
+        },
+        {
+          "r5_id": "b1-past-perfect-continuous",
+          "issue": "R5 did not provide a structured formula, negative, question, or quick practice items.",
+          "fix": "Added formula, negative, question, and three quick practice questions with tagged distractors."
+        }
+      ]
+    }
+  },
+  "review": null
+}

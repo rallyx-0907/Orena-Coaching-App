@@ -1,0 +1,219 @@
+{
+  "schema_version": "0.4",
+  "id": "en.quantifiers.few_little",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.quantity",
+  "level": {"framework": "cefr", "value": "A2", "rank": 2},
+  "prereqs": [],
+  "contrasts": ["en.quantifiers.some_any"],
+  "error_tags": ["word_choice"],
+  "source_refs": {"r5": ["a2-a-few-few-and-a-little-little"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["a2-a-few-few-and-a-little-little"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "A few / few và a little / little", "en": "A few, few, a little, little"},
+    "native_title": "A few / few, a little / little",
+    "level": {"framework": "cefr", "value": "A2", "rank": 2},
+    "summary": {
+      "vi": "Phân biệt a few/few với danh từ đếm được số nhiều và a little/little với danh từ không đếm được, đồng thời phân biệt sắc thái có một ít (a few/a little) và rất ít, gần như không đủ (few/little).",
+      "en": "Distinguish a few/few with plural countable nouns from a little/little with uncountable nouns, and distinguish the meaning 'some, a small amount' (a few/a little) from 'not enough, almost none' (few/little)."
+    },
+    "sub": {"vi": "lượng nhỏ và sắc thái", "en": "small quantity and stance"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói có một lượng nhỏ của một thứ đếm được số nhiều, dùng a few: a few friends, a few books.",
+      "en": "When you want to say there is a small number of a plural countable thing, use a few: a few friends, a few books."
+    },
+    {
+      "vi": "Khi bạn muốn nói có một lượng nhỏ của một thứ không đếm được, dùng a little: a little water, a little time.",
+      "en": "When you want to say there is a small amount of an uncountable thing, use a little: a little water, a little time."
+    },
+    {
+      "vi": "Khi bạn muốn nhấn mạnh rằng số lượng rất ít, gần như không đủ, dùng few với danh từ đếm được số nhiều và little với danh từ không đếm được.",
+      "en": "When you want to stress that the number or amount is very small, almost not enough, use few with plural countable nouns and little with uncountable nouns."
+    },
+    {
+      "vi": "Khi câu cần phân biệt giữa 'có một chút' (tích cực hoặc trung tính) và 'hầu như không có' (tiêu cực), hãy chọn có hoặc không có mạo từ a.",
+      "en": "When a sentence needs to show the difference between 'there is some' (positive or neutral) and 'there is almost none' (negative), choose whether to include the article a."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}},
+      {
+        "text": "a few/few/a little/little",
+        "role": "other",
+        "label": {"vi": "lượng từ", "en": "quantifier"},
+        "options": [{"text": "a few"}, {"text": "few"}, {"text": "a little"}, {"text": "little"}]
+      },
+      {"text": "N", "role": "object", "label": {"vi": "danh từ", "en": "noun"}}
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "I have a few questions about the homework.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 2, "end": 6, "role": "verb"},
+        {"start": 7, "end": 12, "role": "other"},
+        {"start": 13, "end": 22, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "a few + danh từ đếm được số nhiều: có một vài câu hỏi, nghĩa trung tính hoặc tích cực.",
+        "en": "a few + plural countable noun: there are some questions, neutral or positive."
+      },
+      "translation": {
+        "vi": "Tôi có vài câu hỏi về bài tập về nhà.",
+        "en": "I have a few questions about the homework."
+      }
+    },
+    {
+      "text": "We have little time before the train leaves.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 3, "end": 7, "role": "verb"},
+        {"start": 8, "end": 14, "role": "other"},
+        {"start": 15, "end": 19, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "little + danh từ không đếm được: rất ít thời gian, gần như không đủ.",
+        "en": "little + uncountable noun: very little time, almost not enough."
+      },
+      "translation": {
+        "vi": "Chúng tôi có rất ít thời gian trước khi tàu rời đi.",
+        "en": "We have little time before the train leaves."
+      }
+    },
+    {
+      "text": "She added a little sugar to the tea.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 9, "role": "verb"},
+        {"start": 10, "end": 18, "role": "other"},
+        {"start": 19, "end": 24, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "a little + danh từ không đếm được: một lượng nhỏ đường, nghĩa tích cực hoặc trung tính.",
+        "en": "a little + uncountable noun: a small amount of sugar, positive or neutral."
+      },
+      "translation": {"vi": "Cô ấy thêm một ít đường vào trà.", "en": "She added a little sugar to the tea."}
+    }
+  ],
+  "compare": [
+    {
+      "with": "en.quantifiers.some_any",
+      "this_example": "I have a few friends in this city.",
+      "other_example": "I have some friends in this city.",
+      "this_meaning": {
+        "vi": "a few/a little nhấn mạnh số lượng nhỏ, và few/little nhấn mạnh sự thiếu hụt; chúng thường đứng trước danh từ trong câu khẳng định.",
+        "en": "a few/a little focus on a small quantity, and few/little focus on a lack; they usually come before a noun in affirmative sentences."
+      },
+      "other_meaning": {
+        "vi": "some/any nói về một lượng không xác định, không nhấn mạnh là ít hay thiếu; some thường dùng trong câu khẳng định, any trong câu phủ định và câu hỏi.",
+        "en": "some/any talk about an unspecified amount, without stressing smallness or lack; some is common in affirmative sentences, any in negatives and questions."
+      }
+    }
+  ],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "water là danh từ không đếm được, nên không dùng a few (vốn đi với danh từ đếm được số nhiều); phải dùng a little.",
+        "en": "water is uncountable, so a few (which goes with plural countable nouns) is wrong; use a little."
+      },
+      "error_tag": "word_choice",
+      "l1": ["vi"],
+      "wrong": "I need a few water.",
+      "right": "I need a little water."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "I have ___ books to return to the library.",
+      "options": [{"text": "a few", "error_tag": null}, {"text": "a little", "error_tag": "word_choice"}],
+      "answer": 0,
+      "explain": {
+        "vi": "books là danh từ đếm được số nhiều, nên dùng a few; a little chỉ đi với danh từ không đếm được.",
+        "en": "books is a plural countable noun, so use a few; a little only goes with uncountable nouns."
+      }
+    },
+    {
+      "q": "We have ___ time, so we must hurry.",
+      "options": [{"text": "little", "error_tag": null}, {"text": "few", "error_tag": "word_choice"}],
+      "answer": 0,
+      "explain": {
+        "vi": "time là danh từ không đếm được, nên dùng little; few đi với danh từ đếm được số nhiều.",
+        "en": "time is uncountable, so use little; few goes with plural countable nouns."
+      }
+    },
+    {
+      "q": "There are ___ students in the classroom today.",
+      "options": [{"text": "few", "error_tag": null}, {"text": "little", "error_tag": "word_choice"}],
+      "answer": 0,
+      "explain": {
+        "vi": "students là danh từ đếm được số nhiều, nên dùng few; little đi với danh từ không đếm được.",
+        "en": "students is a plural countable noun, so use few; little goes with uncountable nouns."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về những thứ bạn có với số lượng nhỏ, dùng a few hoặc a little.",
+      "en": "Write one sentence about things you have in a small quantity, using a few or a little."
+    },
+    "placeholder": "I have ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "verb", "any_of": ["have", "has", "need", "want", "buy", "add"]},
+        {"role": "other", "any_of": ["a few", "a little"]}
+      ]
+    },
+    "sample": {"text": "I have a few friends in this city."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790999078",
+    "generated_at": "2026-10-03T03:44:38Z",
+    "r5_source": {
+      "ids": ["a2-a-few-few-and-a-little-little"],
+      "content_version": 2,
+      "content_hash": "f8c52bb10bfdd819751efd2a58a3094ebc9f928299320ee7a2925f81b51438f3",
+      "corrections": [
+        {
+          "r5_id": "a2-a-few-few-and-a-little-little",
+          "issue": "R5's example 'We have little time, so hurry.' is grammatically incomplete: 'so hurry' lacks a subject and reads as an imperative fragment.",
+          "fix": "Wrote 'We have little time before the train leaves.' as a complete, natural A2 sentence."
+        },
+        {
+          "r5_id": "a2-a-few-few-and-a-little-little",
+          "issue": "R5's example 'Add a little sugar.' is an imperative and does not show the full subject + verb + quantifier + noun pattern needed for this point's formula.",
+          "fix": "Wrote 'She added a little sugar to the tea.' to show the full pattern."
+        },
+        {
+          "r5_id": "a2-a-few-few-and-a-little-little",
+          "issue": "R5's example 'Few students knew the answer.' is correct but the lesson did not include a clear affirmative example with 'few' plus a plural countable noun in the formula.",
+          "fix": "Kept the meaning in the explanation and used 'There are few students in the classroom today.' in quick practice to show 'few' with a plural countable noun."
+        },
+        {
+          "r5_id": "a2-a-few-few-and-a-little-little",
+          "issue": "R5's mistake 'We have few time.' was listed, but the lesson did not clearly separate the two error types (a few + uncountable, few + uncountable).",
+          "fix": "Kept one representative mistake 'I need a few water.' and added a clear reason about countability; the other mistake is covered by the same rule."
+        }
+      ]
+    }
+  },
+  "review": null
+}

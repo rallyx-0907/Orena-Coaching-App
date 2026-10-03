@@ -1,0 +1,287 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b1.003",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.past_experience",
+  "level": {"framework": "cefr", "value": "B1", "rank": 3},
+  "prereqs": ["en.canon.b1.002"],
+  "contrasts": [],
+  "error_tags": ["tense"],
+  "source_refs": {"r5": ["b1-present-perfect-continuous"]},
+  "point_type": "tense_aspect",
+  "sequence": 2,
+  "aliases": ["b1-present-perfect-continuous"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "hiện tại hoàn thành continuous", "en": "Present perfect continuous"},
+    "native_title": "Present perfect continuous",
+    "level": {"framework": "cefr", "value": "B1", "rank": 3},
+    "summary": {
+      "vi": "Thì hiện tại hoàn thành tiếp diễn dùng have/has been + V-ing để nói một hoạt động bắt đầu trước hiện tại và còn tiếp tục hoặc vừa mới kết thúc, để lại kết quả ở hiện tại.",
+      "en": "The present perfect continuous uses have/has been + V-ing to talk about an activity that started before now and is still continuing or has just stopped, with a result in the present."
+    },
+    "sub": {"vi": "hoạt động kéo dài", "en": "ongoing activity"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi hoạt động bắt đầu trong quá khứ và vẫn đang tiếp diễn ở hiện tại, thường có for + khoảng thời gian hoặc since + mốc bắt đầu.",
+      "en": "When an activity started in the past and is still going on now, often with for + a length of time or since + a starting point."
+    },
+    {
+      "vi": "Khi bạn muốn nhấn mạnh quá trình hoặc thời gian kéo dài, không phải số lượng đã hoàn thành.",
+      "en": "When you want to emphasise the process or the length of time, not the amount completed."
+    },
+    {
+      "vi": "Khi một hoạt động vừa mới dừng lại và bạn thấy kết quả rõ ràng ở hiện tại.",
+      "en": "When an activity has just stopped and you can see a clear result in the present."
+    },
+    {
+      "vi": "Khi hỏi hoặc trả lời về thời gian ai đó đã dành cho một việc gì đó.",
+      "en": "When asking or answering how long someone has spent doing something."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {
+        "text": "have/has",
+        "role": "aux",
+        "label": {"vi": "trợ động từ", "en": "auxiliary"},
+        "options": [{"text": "have"}, {"text": "has"}]
+      },
+      {"text": "been", "role": "aux", "label": {"vi": "been", "en": "been"}},
+      {"text": "V-ing", "role": "verb", "label": {"vi": "động từ đuôi -ing", "en": "verb + -ing"}},
+      {
+        "text": "for/since",
+        "role": "marker",
+        "label": {
+          "vi": "for + khoảng thời gian / since + mốc bắt đầu",
+          "en": "for + duration / since + starting point"
+        },
+        "optional": true,
+        "options": [{"text": "for"}, {"text": "since"}]
+      },
+      {"text": "time", "role": "time", "label": {"vi": "thời gian", "en": "time"}, "optional": true}
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "have/has not",
+          "role": "aux",
+          "label": {"vi": "trợ động từ phủ định", "en": "negative auxiliary"},
+          "options": [{"text": "have not"}, {"text": "has not"}, {"text": "haven't"}, {"text": "hasn't"}]
+        },
+        {"text": "been", "role": "aux", "label": {"vi": "been", "en": "been"}},
+        {"text": "V-ing", "role": "verb", "label": {"vi": "động từ đuôi -ing", "en": "verb + -ing"}},
+        {
+          "text": "for/since",
+          "role": "marker",
+          "label": {
+            "vi": "for + khoảng thời gian / since + mốc bắt đầu",
+            "en": "for + duration / since + starting point"
+          },
+          "optional": true,
+          "options": [{"text": "for"}, {"text": "since"}]
+        },
+        {
+          "text": "time",
+          "role": "time",
+          "label": {"vi": "thời gian", "en": "time"},
+          "optional": true
+        }
+      ],
+      "question": [
+        {
+          "text": "have/has",
+          "role": "aux",
+          "label": {"vi": "trợ động từ", "en": "auxiliary"},
+          "options": [{"text": "have"}, {"text": "has"}]
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {"text": "been", "role": "aux", "label": {"vi": "been", "en": "been"}},
+        {"text": "V-ing", "role": "verb", "label": {"vi": "động từ đuôi -ing", "en": "verb + -ing"}},
+        {
+          "text": "for/since",
+          "role": "marker",
+          "label": {
+            "vi": "for + khoảng thời gian / since + mốc bắt đầu",
+            "en": "for + duration / since + starting point"
+          },
+          "optional": true,
+          "options": [{"text": "for"}, {"text": "since"}]
+        },
+        {
+          "text": "time",
+          "role": "time",
+          "label": {"vi": "thời gian", "en": "time"},
+          "optional": true
+        }
+      ]
+    },
+    "illustration": {"kind": "timeline", "timeline": {"shape": "ongoing_now"}}
+  },
+  "examples": [
+    {
+      "text": "I have been working since eight.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 2, "end": 6, "role": "aux"},
+        {"start": 7, "end": 11, "role": "aux"},
+        {"start": 12, "end": 19, "role": "verb"},
+        {"start": 20, "end": 25, "role": "marker"},
+        {"start": 26, "end": 31, "role": "time"}
+      ],
+      "annotation": {
+        "vi": "Hoạt động bắt đầu lúc tám giờ và vẫn đang tiếp diễn.",
+        "en": "The activity started at eight and is still going on."
+      },
+      "translation": {"vi": "Tôi đã làm việc từ tám giờ.", "en": "I have been working since eight."}
+    },
+    {
+      "text": "She has been learning Spanish for six months.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 7, "role": "aux"},
+        {"start": 8, "end": 12, "role": "aux"},
+        {"start": 13, "end": 21, "role": "verb"},
+        {"start": 30, "end": 33, "role": "marker"},
+        {"start": 34, "end": 44, "role": "time"}
+      ],
+      "annotation": {
+        "vi": "Quá trình học kéo dài sáu tháng và vẫn tiếp tục.",
+        "en": "The learning process has lasted six months and is still continuing."
+      },
+      "translation": {
+        "vi": "Cô ấy học tiếng Tây Ban Nha sáu tháng nay.",
+        "en": "She has been learning Spanish for six months."
+      }
+    },
+    {
+      "text": "It has been raining all morning.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 3, "end": 6, "role": "aux"},
+        {"start": 7, "end": 11, "role": "aux"},
+        {"start": 12, "end": 19, "role": "verb"},
+        {"start": 20, "end": 31, "role": "time"}
+      ],
+      "annotation": {
+        "vi": "Trời mưa suốt buổi sáng và có thể vẫn đang mưa hoặc vừa mới tạnh.",
+        "en": "It has rained all morning and may still be raining or has just stopped."
+      },
+      "translation": {"vi": "Trời mưa suốt sáng.", "en": "It has been raining all morning."}
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Sau been phải dùng động từ đuôi -ing, không dùng động từ nguyên mẫu.",
+        "en": "After been you need the -ing form of the verb, not the base form."
+      },
+      "error_tag": "tense",
+      "l1": ["vi"],
+      "wrong": "I have been wait for an hour.",
+      "right": "I have been waiting for an hour."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "I ___ for the bus for twenty minutes.",
+      "options": [
+        {"text": "have been waiting", "error_tag": null},
+        {"text": "have been wait", "error_tag": "tense"},
+        {"text": "have waited", "error_tag": "tense"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Hoạt động chờ bắt đầu trước hiện tại và vẫn tiếp diễn, nên dùng have been + V-ing.",
+        "en": "The waiting started before now and is still going on, so use have been + V-ing."
+      }
+    },
+    {
+      "q": "She ___ in this company since 2020.",
+      "options": [
+        {"text": "has been working", "error_tag": null},
+        {"text": "has working", "error_tag": "tense"},
+        {"text": "have been working", "error_tag": "agreement"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Chủ ngữ she đi với has, và sau been dùng V-ing.",
+        "en": "The subject she takes has, and after been you use the -ing form."
+      }
+    },
+    {
+      "q": "How long ___ you been studying English?",
+      "options": [
+        {"text": "have", "error_tag": null},
+        {"text": "has", "error_tag": "agreement"},
+        {"text": "are", "error_tag": "tense"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu hỏi hiện tại hoàn thành tiếp diễn dùng have/has + S + been + V-ing; với you dùng have.",
+        "en": "Present perfect continuous questions use have/has + S + been + V-ing; with you we use have."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một việc bạn đã làm liên tục trong một khoảng thời gian và vẫn đang làm hoặc vừa mới dừng.",
+      "en": "Write one sentence about something you have been doing for a period of time and are still doing or have just stopped."
+    },
+    "placeholder": "I have been ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "aux", "any_of": ["have", "has", "'ve", "'s"]},
+        {"role": "aux", "any_of": ["been"]},
+        {"role": "verb", "regex": "\\b\\w+ing\\b"}
+      ]
+    },
+    "sample": {"text": "I have been learning English for three years."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790999111",
+    "generated_at": "2026-10-03T03:45:11Z",
+    "r5_source": {
+      "ids": ["b1-present-perfect-continuous"],
+      "content_version": 2,
+      "content_hash": "1b9f5026eebbbd85fef0174ef9d0afb0580b3fabb4b8ddc4011f83d3a9f41306",
+      "corrections": [
+        {
+          "r5_id": "b1-present-perfect-continuous",
+          "issue": "R5's example 'I've been working since eight.' is fine, but the lesson did not give a structured formula with slots, negative and question forms, or spans.",
+          "fix": "Added a full formula with subject, have/has, been, V-ing, for/since and time slots, plus negative and question variants and span-marked examples."
+        },
+        {
+          "r5_id": "b1-present-perfect-continuous",
+          "issue": "R5's mistake 'She has been knowing him since 2020.' is a stative-verb error, but the required error tag for this point is tense, and the lesson needed a mistake that fits the tag.",
+          "fix": "Replaced it with 'I have been wait for an hour.' → 'I have been waiting for an hour.', tagged tense, which is the core form error for this point."
+        },
+        {
+          "r5_id": "b1-present-perfect-continuous",
+          "issue": "R5's guided practice had no quick cloze check with tagged distractors.",
+          "fix": "Added three quick-practice questions with real learner errors tagged tense or agreement."
+        },
+        {
+          "r5_id": "b1-present-perfect-continuous",
+          "issue": "R5's explanation was a generic statement about choosing forms, not a clear rule for this point.",
+          "fix": "Wrote a direct summary and when-to-use conditions in vi and en, and added a personal production card with a deterministic pattern rule."
+        }
+      ]
+    }
+  },
+  "review": null
+}
