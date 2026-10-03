@@ -1,0 +1,209 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b1.054",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.degree",
+  "level": {"framework": "cefr", "value": "B1", "rank": 3},
+  "prereqs": ["en.canon.b1.044"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Purpose So That", "en": "Purpose So That"},
+    "native_title": "Purpose So That",
+    "level": {"framework": "cefr", "value": "B1", "rank": 3},
+    "summary": {
+      "vi": "Cấu trúc 'so that' nối một hành động với mục đích của nó, theo sau là một mệnh đề với 'can', 'could' hoặc 'will'.",
+      "en": "The structure 'so that' links an action to its purpose, followed by a clause with 'can', 'could' or 'will'."
+    },
+    "sub": {"vi": "mục đích", "en": "purpose"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói lý do hoặc mục đích của một hành động, không chỉ kết quả của nó.",
+      "en": "When you want to state the reason or purpose of an action, not just its result."
+    },
+    {
+      "vi": "Khi mệnh đề mục đích có một chủ ngữ khác với mệnh đề chính.",
+      "en": "When the purpose clause has a different subject from the main clause."
+    },
+    {
+      "vi": "Khi bạn muốn diễn đạt mục đích trong quá khứ, dùng 'could' hoặc 'would' sau 'so that'.",
+      "en": "When you want to express a past purpose, use 'could' or 'would' after 'so that'."
+    },
+    {
+      "vi": "Khi bạn muốn nói mục đích ở hiện tại hoặc tương lai, dùng 'can' hoặc 'will' sau 'so that'.",
+      "en": "When you want to express a present or future purpose, use 'can' or 'will' after 'so that'."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}},
+      {"text": "O", "role": "object", "label": {"vi": "tân ngữ", "en": "object"}},
+      {
+        "text": "so that",
+        "role": "connector",
+        "label": {"vi": "liên từ mục đích", "en": "purpose connector"}
+      },
+      {
+        "text": "S",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ mệnh đề mục đích", "en": "purpose clause subject"}
+      },
+      {
+        "text": "can/could/will/would",
+        "role": "aux",
+        "label": {"vi": "trợ động từ tình thái", "en": "modal auxiliary"},
+        "options": [{"text": "can"}, {"text": "could"}, {"text": "will"}, {"text": "would"}]
+      },
+      {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên thể", "en": "base verb"}}
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "I turned down the music so that my neighbour could sleep.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 2, "end": 13, "role": "verb"},
+        {"start": 14, "end": 23, "role": "object"},
+        {"start": 24, "end": 31, "role": "connector"},
+        {"start": 32, "end": 44, "role": "subject"},
+        {"start": 45, "end": 50, "role": "aux"},
+        {"start": 51, "end": 56, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "'so that' nối hành động 'turned down the music' với mục đích 'my neighbour could sleep'.",
+        "en": "'so that' links the action 'turned down the music' to the purpose 'my neighbour could sleep'."
+      },
+      "translation": {
+        "vi": "Tôi vặn nhỏ nhạc để hàng xóm có thể ngủ.",
+        "en": "I turned down the music so that my neighbour could sleep."
+      }
+    },
+    {
+      "text": "She speaks slowly so that everyone can understand her.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 10, "role": "verb"},
+        {"start": 11, "end": 17, "role": "object"},
+        {"start": 18, "end": 25, "role": "connector"},
+        {"start": 26, "end": 34, "role": "subject"},
+        {"start": 35, "end": 38, "role": "aux"},
+        {"start": 39, "end": 49, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Mệnh đề mục đích dùng 'can' vì mục đích là ở hiện tại.",
+        "en": "The purpose clause uses 'can' because the purpose is in the present."
+      },
+      "translation": {
+        "vi": "Cô ấy nói chậm để mọi người có thể hiểu cô ấy.",
+        "en": "She speaks slowly so that everyone can understand her."
+      }
+    },
+    {
+      "text": "We will leave early so that we will not miss the train.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 3, "end": 13, "role": "verb"},
+        {"start": 14, "end": 19, "role": "object"},
+        {"start": 20, "end": 27, "role": "connector"},
+        {"start": 28, "end": 30, "role": "subject"},
+        {"start": 31, "end": 35, "role": "aux"},
+        {"start": 36, "end": 44, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Mệnh đề mục đích dùng 'will' cho một mục đích trong tương lai.",
+        "en": "The purpose clause uses 'will' for a future purpose."
+      },
+      "translation": {
+        "vi": "Chúng tôi sẽ rời đi sớm để không bị lỡ tàu.",
+        "en": "We will leave early so that we will not miss the train."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người Việt thường dùng thì hiện tại đơn trong mệnh đề mục đích, nhưng tiếng Anh cần một trợ động từ tình thái như 'can' sau 'so that'.",
+        "en": "Vietnamese speakers often use the simple present in the purpose clause, but English requires a modal auxiliary like 'can' after 'so that'."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "I study hard so that I pass the exam.",
+      "right": "I study hard so that I can pass the exam."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "He whispered so that the baby ___ sleep.",
+      "options": [
+        {"text": "could", "error_tag": null},
+        {"text": "can", "error_tag": "tense"},
+        {"text": "sleeps", "error_tag": "agreement"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Mệnh đề mục đích trong quá khứ cần 'could' + động từ nguyên thể.",
+        "en": "A past purpose clause needs 'could' + base verb."
+      }
+    },
+    {
+      "q": "I will write it down so that I ___ forget.",
+      "options": [{"text": "won't", "error_tag": null}, {"text": "don't", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Mệnh đề mục đích phủ định dùng 'will not' hoặc 'won't' + động từ nguyên thể.",
+        "en": "A negative purpose clause uses 'will not' or 'won't' + base verb."
+      }
+    },
+    {
+      "q": "She turned off her phone so that it ___ ring during the meeting.",
+      "options": [
+        {"text": "wouldn't", "error_tag": null},
+        {"text": "didn't", "error_tag": "tense"},
+        {"text": "won't", "error_tag": "tense"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Mệnh đề mục đích phủ định trong quá khứ dùng 'would not' hoặc 'wouldn't' + động từ nguyên thể.",
+        "en": "A negative past purpose clause uses 'would not' or 'wouldn't' + base verb."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về việc bạn làm gì đó để giúp ai đó, dùng 'so that'.",
+      "en": "Write a sentence about something you do to help someone, using 'so that'."
+    },
+    "placeholder": "I ... so that ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "connector", "any_of": ["so that"]},
+        {"role": "aux", "any_of": ["can", "could", "will"]}
+      ]
+    },
+    "sample": {"text": "I spoke clearly so that everyone could hear me."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791001547",
+    "generated_at": "2026-10-03T04:25:47Z"
+  },
+  "review": null
+}

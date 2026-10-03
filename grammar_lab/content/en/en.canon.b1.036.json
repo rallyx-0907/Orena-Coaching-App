@@ -1,0 +1,228 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b1.036",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.condition_real",
+  "level": {"framework": "cefr", "value": "B1", "rank": 3},
+  "prereqs": [],
+  "contrasts": [],
+  "error_tags": ["tense"],
+  "source_refs": {"r5": ["b1-wish-if-only-past"]},
+  "point_type": "tense_aspect",
+  "sequence": 4,
+  "aliases": ["b1-wish-if-only-past"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Wish/if only: past", "en": "Wish/if only: past"},
+    "native_title": "Wish/if only: past",
+    "level": {"framework": "cefr", "value": "B1", "rank": 3},
+    "summary": {
+      "vi": "Cấu trúc wish/if only + quá khứ hoàn thành dùng để diễn tả sự hối tiếc hoặc mong muốn một sự việc trong quá khứ đã diễn ra khác đi.",
+      "en": "The structure wish/if only + past perfect expresses regret or a wish that a past event had happened differently."
+    },
+    "sub": {"vi": "hối tiếc quá khứ", "en": "past regret"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn hối tiếc về một hành động hoặc quyết định trong quá khứ mà bạn không thể thay đổi.",
+      "en": "When you regret an action or decision in the past that you cannot change."
+    },
+    {
+      "vi": "Khi bạn muốn bày tỏ rằng một tình huống trong quá khứ đã không xảy ra như bạn mong muốn.",
+      "en": "When you want to express that a past situation did not happen as you wished."
+    },
+    {
+      "vi": "Khi bạn muốn nhấn mạnh cảm xúc tiếc nuối mạnh hơn bằng cách dùng 'if only' thay vì 'wish'.",
+      "en": "When you want to emphasize a stronger feeling of regret by using 'if only' instead of 'wish'."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {
+        "text": "wish/if only",
+        "role": "marker",
+        "label": {"vi": "dấu hiệu ước muốn", "en": "wish marker"},
+        "options": [{"text": "wish"}, {"text": "if only"}]
+      },
+      {
+        "text": "S",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ mệnh đề sau", "en": "second subject"}
+      },
+      {
+        "text": "had",
+        "role": "aux",
+        "label": {"vi": "trợ động từ quá khứ hoàn thành", "en": "past perfect auxiliary"}
+      },
+      {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}}
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "wish/if only",
+          "role": "marker",
+          "label": {"vi": "dấu hiệu ước muốn", "en": "wish marker"},
+          "options": [{"text": "wish"}, {"text": "if only"}]
+        },
+        {
+          "text": "S",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ mệnh đề sau", "en": "second subject"}
+        },
+        {
+          "text": "hadn't",
+          "role": "aux",
+          "label": {"vi": "trợ động từ phủ định", "en": "negative auxiliary"},
+          "options": [{"text": "hadn't"}, {"text": "had not"}]
+        },
+        {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}}
+      ]
+    },
+    "illustration": {"kind": "timeline", "timeline": {"shape": "point_past"}}
+  },
+  "examples": [
+    {
+      "text": "I wish I had taken your advice.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 2, "end": 6, "role": "marker"},
+        {"start": 7, "end": 8, "role": "subject"},
+        {"start": 9, "end": 12, "role": "aux"},
+        {"start": 13, "end": 18, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Hối tiếc vì đã không nghe lời khuyên trong quá khứ.",
+        "en": "Regret about not taking advice in the past."
+      },
+      "translation": {"vi": "Tôi ước mình đã nghe lời khuyên của bạn.", "en": "I wish I had taken your advice."}
+    },
+    {
+      "text": "If only we hadn't missed the train.",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 7, "role": "marker"},
+        {"start": 8, "end": 10, "role": "subject"},
+        {"start": 11, "end": 17, "role": "aux"},
+        {"start": 18, "end": 24, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Nhấn mạnh sự tiếc nuối vì đã lỡ chuyến tàu.",
+        "en": "Emphasizes regret about missing the train."
+      },
+      "translation": {"vi": "Giá như chúng ta không lỡ chuyến tàu.", "en": "If only we hadn't missed the train."}
+    },
+    {
+      "text": "She wishes she had studied harder.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 10, "role": "marker"},
+        {"start": 11, "end": 14, "role": "subject"},
+        {"start": 15, "end": 18, "role": "aux"},
+        {"start": 19, "end": 26, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Cô ấy hối tiếc vì đã không học chăm chỉ hơn trong quá khứ.",
+        "en": "She regrets not studying harder in the past."
+      },
+      "translation": {"vi": "Cô ấy ước mình đã học chăm chỉ hơn.", "en": "She wishes she had studied harder."}
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Khi hối tiếc về một sự việc đã hoàn tất trong quá khứ, phải dùng quá khứ hoàn thành (had + V3), không dùng quá khứ đơn.",
+        "en": "When regretting a completed past event, you must use the past perfect (had + V3), not the simple past."
+      },
+      "error_tag": "tense",
+      "l1": ["vi"],
+      "wrong": "I wish I took your advice yesterday.",
+      "right": "I wish I had taken your advice yesterday."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "I wish I ___ your advice yesterday.",
+      "options": [{"text": "had taken", "error_tag": null}, {"text": "took", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Hối tiếc về một sự việc đã hoàn tất trong quá khứ cần quá khứ hoàn thành: had taken.",
+        "en": "Regret about a completed past event needs the past perfect: had taken."
+      }
+    },
+    {
+      "q": "If only we ___ the train yesterday.",
+      "options": [{"text": "hadn't missed", "error_tag": null}, {"text": "didn't miss", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Với 'if only' diễn tả tiếc nuối quá khứ, dùng hadn't + V3.",
+        "en": "With 'if only' for past regret, use hadn't + V3."
+      }
+    },
+    {
+      "q": "She wishes she ___ harder for the exam last year.",
+      "options": [{"text": "had studied", "error_tag": null}, {"text": "studied", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Sự việc đã xảy ra trong quá khứ và không thể thay đổi, nên dùng had studied.",
+        "en": "The event happened in the past and cannot be changed, so use had studied."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về điều bạn hối tiếc trong quá khứ, dùng 'I wish I had...'.",
+      "en": "Write a sentence about something you regret from the past, using 'I wish I had...'."
+    },
+    "placeholder": "I wish I had ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "marker", "any_of": ["wish", "wishes"]},
+        {"role": "aux", "any_of": ["had"]},
+        {
+          "role": "verb",
+          "regex": "\\b\\w+(ed|en|ne|wn|ught|aid|elt|ept|ade|one|ung|old|ound|ought)\\b"
+        }
+      ]
+    },
+    "sample": {"text": "I wish I had studied harder for my final exam."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791001532",
+    "generated_at": "2026-10-03T04:25:32Z",
+    "r5_source": {
+      "ids": ["b1-wish-if-only-past"],
+      "content_version": 2,
+      "content_hash": "27b11b2686fc4e4e3bb5469885e19cdc728e6c14420b339e64ab2b36b742e21e",
+      "corrections": [
+        {
+          "r5_id": "b1-wish-if-only-past",
+          "issue": "R5 dùng 'wish/if only + subject + had + past participle' nhưng không nêu rõ 'if only' có thể đứng đầu câu mà không cần chủ ngữ thứ hai lặp lại.",
+          "fix": "Đã thêm ví dụ 'If only we hadn't missed the train.' và ghi chú rằng 'if only' có thể mở đầu câu."
+        },
+        {
+          "r5_id": "b1-wish-if-only-past",
+          "issue": "R5 liệt kê 'could have + participle' như một quy tắc riêng nhưng không đưa vào ví dụ hay bài tập.",
+          "fix": "Đã lược bỏ khỏi phần quy tắc chính vì nằm ngoài phạm vi cốt lõi của chủ điểm này; chỉ giữ dạng had + V3."
+        },
+        {
+          "r5_id": "b1-wish-if-only-past",
+          "issue": "R5 có lỗi 'If only I would have known' nhưng không giải thích rõ cơ chế sai.",
+          "fix": "Đã thay bằng lỗi điển hình hơn cho người Việt: dùng quá khứ đơn thay vì quá khứ hoàn thành, kèm giải thích cơ chế."
+        }
+      ]
+    }
+  },
+  "review": null
+}

@@ -1,0 +1,307 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b2.005",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.hypothetical_counterfactual",
+  "level": {"framework": "cefr", "value": "B2", "rank": 4},
+  "prereqs": ["en.canon.b1.026"],
+  "contrasts": [],
+  "error_tags": ["tense"],
+  "source_refs": {"r5": ["b2-mixed-conditionals", "b1-mixed-conditional-introduction"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["b2-mixed-conditionals", "b1-mixed-conditional-introduction"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Mixed câu điều kiện", "en": "Mixed conditionals"},
+    "native_title": "Mixed conditionals",
+    "level": {"framework": "cefr", "value": "B2", "rank": 4},
+    "summary": {
+      "vi": "Câu điều kiện hỗn hợp nối một điều kiện giả định ở một thời điểm với kết quả ở một thời điểm khác, thường là điều kiện quá khứ dẫn đến kết quả hiện tại hoặc điều kiện hiện tại dẫn đến kết quả quá khứ.",
+      "en": "Mixed conditionals link a hypothetical condition in one time frame with a result in another, most often a past condition with a present result or a present condition with a past result."
+    },
+    "sub": {"vi": "điều kiện hỗn hợp", "en": "mixed conditionals"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi nguyên nhân đã xảy ra hoặc không xảy ra trong quá khứ nhưng kết quả vẫn còn ảnh hưởng đến hiện tại.",
+      "en": "When a cause did or did not happen in the past but its result still affects the present."
+    },
+    {
+      "vi": "Khi một đặc điểm hoặc tình trạng hiện tại giải thích cho một kết quả đã xảy ra trong quá khứ.",
+      "en": "When a present trait or situation explains a result that already happened in the past."
+    },
+    {
+      "vi": "Khi bạn muốn nhấn mạnh sự khác biệt giữa thời gian của điều kiện và thời gian của kết quả.",
+      "en": "When you want to highlight the contrast between the time of the condition and the time of the result."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "If",
+        "role": "marker",
+        "label": {"vi": "từ nối điều kiện", "en": "conditional marker"}
+      },
+      {
+        "text": "S",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ mệnh đề if", "en": "if-clause subject"}
+      },
+      {
+        "text": "had",
+        "role": "aux",
+        "label": {"vi": "trợ động từ quá khứ hoàn thành", "en": "past perfect auxiliary"}
+      },
+      {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}},
+      {
+        "text": "S",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ mệnh đề chính", "en": "main-clause subject"}
+      },
+      {"text": "would", "role": "aux", "label": {"vi": "trợ động từ", "en": "modal auxiliary"}},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên mẫu", "en": "base verb"}},
+      {
+        "text": "now",
+        "role": "time",
+        "label": {"vi": "mốc thời gian hiện tại", "en": "present time marker"},
+        "optional": true
+      }
+    ],
+    "variants": {
+      "negative": [
+        {
+          "text": "If",
+          "role": "marker",
+          "label": {"vi": "từ nối điều kiện", "en": "conditional marker"}
+        },
+        {
+          "text": "S",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ mệnh đề if", "en": "if-clause subject"}
+        },
+        {
+          "text": "hadn't",
+          "role": "aux",
+          "label": {"vi": "trợ động từ quá khứ hoàn thành phủ định", "en": "negative past perfect auxiliary"}
+        },
+        {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}},
+        {
+          "text": "S",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ mệnh đề chính", "en": "main-clause subject"}
+        },
+        {
+          "text": "wouldn't",
+          "role": "aux",
+          "label": {"vi": "trợ động từ phủ định", "en": "negative modal auxiliary"}
+        },
+        {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên mẫu", "en": "base verb"}},
+        {
+          "text": "now",
+          "role": "time",
+          "label": {"vi": "mốc thời gian hiện tại", "en": "present time marker"},
+          "optional": true
+        }
+      ],
+      "question": [
+        {
+          "text": "If",
+          "role": "marker",
+          "label": {"vi": "từ nối điều kiện", "en": "conditional marker"}
+        },
+        {
+          "text": "S",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ mệnh đề if", "en": "if-clause subject"}
+        },
+        {
+          "text": "had",
+          "role": "aux",
+          "label": {"vi": "trợ động từ quá khứ hoàn thành", "en": "past perfect auxiliary"}
+        },
+        {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}},
+        {"text": "would", "role": "aux", "label": {"vi": "trợ động từ", "en": "modal auxiliary"}},
+        {
+          "text": "S",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ mệnh đề chính", "en": "main-clause subject"}
+        },
+        {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên mẫu", "en": "base verb"}},
+        {
+          "text": "now",
+          "role": "time",
+          "label": {"vi": "mốc thời gian hiện tại", "en": "present time marker"},
+          "optional": true
+        }
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "If she had taken the course, she would have a better job now.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "marker"},
+        {"start": 3, "end": 6, "role": "subject"},
+        {"start": 7, "end": 10, "role": "aux"},
+        {"start": 11, "end": 16, "role": "verb"},
+        {"start": 29, "end": 32, "role": "subject"},
+        {"start": 33, "end": 38, "role": "aux"},
+        {"start": 39, "end": 43, "role": "verb"},
+        {"start": 57, "end": 60, "role": "time"}
+      ],
+      "annotation": {
+        "vi": "Điều kiện quá khứ không có thật dẫn đến kết quả hiện tại.",
+        "en": "An unreal past condition leads to a present result."
+      },
+      "translation": {
+        "vi": "Nếu cô ấy đã tham gia khóa học đó, bây giờ cô ấy đã có một công việc tốt hơn.",
+        "en": "If she had taken the course, she would have a better job now."
+      }
+    },
+    {
+      "text": "If I hadn't stayed up so late, I wouldn't be tired now.",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "marker"},
+        {"start": 3, "end": 4, "role": "subject"},
+        {"start": 5, "end": 11, "role": "aux"},
+        {"start": 12, "end": 18, "role": "verb"},
+        {"start": 31, "end": 32, "role": "subject"},
+        {"start": 33, "end": 41, "role": "aux"},
+        {"start": 42, "end": 44, "role": "verb"},
+        {"start": 51, "end": 54, "role": "time"}
+      ],
+      "annotation": {
+        "vi": "Điều kiện quá khứ phủ định dẫn đến kết quả hiện tại phủ định.",
+        "en": "A negative past condition leads to a negative present result."
+      },
+      "translation": {
+        "vi": "Nếu tôi đã không thức khuya đến vậy, bây giờ tôi đã không mệt.",
+        "en": "If I hadn't stayed up so late, I wouldn't be tired now."
+      }
+    },
+    {
+      "text": "If he were more careful, he wouldn't have broken the device.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "marker"},
+        {"start": 3, "end": 5, "role": "subject"},
+        {"start": 6, "end": 10, "role": "verb"},
+        {"start": 25, "end": 27, "role": "subject"},
+        {"start": 28, "end": 36, "role": "aux"},
+        {"start": 37, "end": 48, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Điều kiện hiện tại không có thật dẫn đến kết quả quá khứ.",
+        "en": "An unreal present condition leads to a past result."
+      },
+      "translation": {
+        "vi": "Nếu anh ấy cẩn thận hơn, anh ấy đã không làm hỏng thiết bị.",
+        "en": "If he were more careful, he wouldn't have broken the device."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Với kết quả hiện tại là một trạng thái, tiếng Anh dùng be a doctor, không dùng have a doctor.",
+        "en": "For a present state result, English uses be a doctor, not have a doctor."
+      },
+      "error_tag": "tense",
+      "l1": ["vi"],
+      "wrong": "If I had studied medicine, I would have a doctor now.",
+      "right": "If I had studied medicine, I would be a doctor now."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "If I ___ more organised, I wouldn't have missed the deadline.",
+      "options": [{"text": "were", "error_tag": null}, {"text": "had been", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Điều kiện hiện tại không có thật dẫn đến kết quả quá khứ: If + past simple, would have + V3.",
+        "en": "An unreal present condition leads to a past result: If + past simple, would have + V3."
+      }
+    },
+    {
+      "q": "If she had taken the course, she ___ a better job now.",
+      "options": [{"text": "would have", "error_tag": null}, {"text": "would have had", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Điều kiện quá khứ dẫn đến kết quả hiện tại: If + past perfect, would + V.",
+        "en": "A past condition leads to a present result: If + past perfect, would + V."
+      }
+    },
+    {
+      "q": "If they had saved more, they ___ the trip now.",
+      "options": [
+        {"text": "could afford", "error_tag": null},
+        {"text": "could have afforded", "error_tag": "tense"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Kết quả hiện tại dùng could + V, không dùng could have + V3.",
+        "en": "A present result uses could + V, not could have + V3."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một điều trong quá khứ đã ảnh hưởng đến tình trạng hiện tại của bạn.",
+      "en": "Write a sentence about something in the past that affects your present situation."
+    },
+    "placeholder": "If I had ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "marker", "any_of": ["if"]},
+        {"role": "aux", "any_of": ["had"]},
+        {"role": "verb", "regex": "\\b\\w+(ed|en|wn|ne|nt|de|t)\\b"},
+        {"role": "aux", "any_of": ["would", "wouldn't"]}
+      ]
+    },
+    "sample": {"text": "If I had saved more money, I would travel more now."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791001592",
+    "generated_at": "2026-10-03T04:26:32Z",
+    "r5_source": {
+      "ids": ["b2-mixed-conditionals", "b1-mixed-conditional-introduction"],
+      "content_version": 2,
+      "content_hash": "cf6936e3f79db58b53b202b56237e0da71bce6f924d51866b66c8af1e95ec250",
+      "corrections": [
+        {
+          "r5_id": "b2-mixed-conditionals",
+          "issue": "Example 'If they had moved earlier, their children would attend this school now.' is acceptable but the R5 lesson did not include a clear present-result marker like 'now' in every past→present example, making the time contrast less explicit.",
+          "fix": "Added 'now' to the past→present examples and ensured the formula includes an optional present time marker."
+        },
+        {
+          "r5_id": "b2-mixed-conditionals",
+          "issue": "The mistake 'If I were more careful yesterday, I wouldn't break it.' mixes a present condition with a past result but the correction 'If I were more careful, I wouldn't have broken it yesterday.' is correct; however, the R5 explanation did not clearly state that the past result requires 'would have + V3'.",
+          "fix": "Clarified in the common mistakes and quick practice that a past result requires 'would have + V3' and a present result uses 'would + V'."
+        },
+        {
+          "r5_id": "b1-mixed-conditional-introduction",
+          "issue": "The rule 'Present unreal condition → past result có thể dùng If + past simple, would have + participle trong một số contexts.' is vague and does not specify that the past result must be a completed action.",
+          "fix": "Specified that the present condition is an unreal present state or trait and the past result is a completed action, as shown in the example 'If he were more careful, he wouldn't have broken the device.'"
+        },
+        {
+          "r5_id": "b1-mixed-conditional-introduction",
+          "issue": "The mistake 'If I studied medicine years ago, I would be a doctor now.' is corrected to 'If I had studied medicine, I would be a doctor now.' but the R5 explanation did not explain why the past perfect is needed.",
+          "fix": "Added an explanation that a counterfactual completed past condition requires the past perfect, not the past simple."
+        }
+      ]
+    }
+  },
+  "review": null
+}

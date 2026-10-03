@@ -1,0 +1,211 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b1.038",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.linking",
+  "level": {"framework": "cefr", "value": "B1", "rank": 3},
+  "prereqs": ["en.canon.b1.037"],
+  "contrasts": [],
+  "error_tags": ["coherence"],
+  "source_refs": {"r5": ["b1-reason-result-connectors"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": ["b1-reason-result-connectors"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Reason/result connectors", "en": "Reason/result connectors"},
+    "native_title": "Reason/result connectors",
+    "level": {"framework": "cefr", "value": "B1", "rank": 3},
+    "summary": {
+      "vi": "Các từ nối này liên kết nguyên nhân với kết quả, và hình thức của chúng phụ thuộc vào việc theo sau là một mệnh đề hay một cụm danh từ.",
+      "en": "These connectors link a reason to a result, and their form depends on whether they are followed by a clause or a noun phrase."
+    },
+    "sub": {"vi": "nguyên nhân / kết quả", "en": "reason / result"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nêu lý do cho một hành động hoặc tình huống, dùng because, since hoặc as trước một mệnh đề.",
+      "en": "When you want to give the reason for an action or situation, use because, since or as before a clause."
+    },
+    {
+      "vi": "Khi lý do là một cụm danh từ, dùng because of hoặc due to.",
+      "en": "When the reason is a noun phrase, use because of or due to."
+    },
+    {
+      "vi": "Khi bạn muốn nêu kết quả ngay sau nguyên nhân trong cùng một câu, dùng so.",
+      "en": "When you want to state the result straight after the cause in the same sentence, use so."
+    },
+    {
+      "vi": "Khi bạn muốn nêu kết quả như một bước tiếp theo trong văn viết, dùng therefore hoặc as a result với dấu câu phù hợp.",
+      "en": "When you want to present the result as a next step in writing, use therefore or as a result with suitable punctuation."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}},
+      {
+        "text": "because/since/as",
+        "role": "connector",
+        "label": {"vi": "từ nối nguyên nhân", "en": "reason connector"},
+        "options": [{"text": "because"}, {"text": "since"}, {"text": "as"}]
+      },
+      {
+        "text": "S",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ mệnh đề lý do", "en": "reason-clause subject"}
+      },
+      {
+        "text": "V",
+        "role": "verb",
+        "label": {"vi": "động từ mệnh đề lý do", "en": "reason-clause verb"}
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "We stayed home because it was raining.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 3, "end": 9, "role": "verb"},
+        {"start": 15, "end": 22, "role": "connector"},
+        {"start": 23, "end": 25, "role": "subject"},
+        {"start": 26, "end": 37, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "because đứng trước một mệnh đề đầy đủ (it was raining).",
+        "en": "because is followed by a full clause (it was raining)."
+      },
+      "translation": {"vi": "Chúng tôi ở nhà vì trời đang mưa.", "en": "We stayed home because it was raining."}
+    },
+    {
+      "text": "The match was cancelled because of the weather.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 9, "role": "subject"},
+        {"start": 10, "end": 23, "role": "verb"},
+        {"start": 24, "end": 34, "role": "connector"}
+      ],
+      "annotation": {
+        "vi": "because of đứng trước một cụm danh từ (the weather), không phải mệnh đề.",
+        "en": "because of is followed by a noun phrase (the weather), not a clause."
+      },
+      "translation": {
+        "vi": "Trận đấu bị hủy vì thời tiết.",
+        "en": "The match was cancelled because of the weather."
+      }
+    },
+    {
+      "text": "The bus was late, so I took a taxi.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 7, "role": "subject"},
+        {"start": 8, "end": 11, "role": "verb"},
+        {"start": 18, "end": 20, "role": "connector"},
+        {"start": 21, "end": 22, "role": "subject"},
+        {"start": 23, "end": 27, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "so nối nguyên nhân (xe buýt trễ) với kết quả (tôi đi taxi) trong cùng một câu.",
+        "en": "so links the cause (the bus was late) to the result (I took a taxi) in one sentence."
+      },
+      "translation": {"vi": "Xe buýt trễ nên tôi đi taxi.", "en": "The bus was late, so I took a taxi."}
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "because of cần một cụm danh từ, không phải một mệnh đề có chủ ngữ và động từ.",
+        "en": "because of needs a noun phrase, not a clause with a subject and verb."
+      },
+      "error_tag": "coherence",
+      "l1": ["vi"],
+      "wrong": "Because of it was raining, we stayed home.",
+      "right": "Because it was raining, we stayed home."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "We stayed home ___ it was raining.",
+      "options": [{"text": "because", "error_tag": null}, {"text": "because of", "error_tag": "coherence"}],
+      "answer": 0,
+      "explain": {
+        "vi": "because đứng trước một mệnh đề (it was raining). because of cần cụm danh từ.",
+        "en": "because is followed by a clause (it was raining). because of needs a noun phrase."
+      }
+    },
+    {
+      "q": "The match was cancelled ___ the weather.",
+      "options": [{"text": "because of", "error_tag": null}, {"text": "because", "error_tag": "coherence"}],
+      "answer": 0,
+      "explain": {
+        "vi": "because of đứng trước cụm danh từ (the weather). because cần một mệnh đề.",
+        "en": "because of is followed by a noun phrase (the weather). because needs a clause."
+      }
+    },
+    {
+      "q": "The bus was late, ___ I took a taxi.",
+      "options": [{"text": "so", "error_tag": null}, {"text": "because", "error_tag": "coherence"}],
+      "answer": 0,
+      "explain": {
+        "vi": "so nối nguyên nhân với kết quả trong cùng một câu. because sẽ đảo ngược quan hệ nguyên nhân – kết quả.",
+        "en": "so links a cause to a result in one sentence. because would reverse the cause–result relation."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về lý do bạn ở nhà hoặc đi muộn, dùng because + mệnh đề.",
+      "en": "Write one sentence about why you stayed home or were late, using because + a clause."
+    },
+    "placeholder": "I stayed home because ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "connector", "any_of": ["because"]},
+        {"role": "subject", "regex": "\\b(I|you|he|she|it|we|they)\\b"},
+        {
+          "role": "verb",
+          "regex": "\\b(am|is|are|was|were|have|has|had|do|does|did|can|could|will|would|may|might|must|should|[a-z]+ed|[a-z]+s)\\b"
+        }
+      ]
+    },
+    "sample": {"text": "I stayed home because it was raining."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791001512",
+    "generated_at": "2026-10-03T04:25:12Z",
+    "r5_source": {
+      "ids": ["b1-reason-result-connectors"],
+      "content_version": 2,
+      "content_hash": "2c502b04b909645e7eff22e3dfe91d92cc2f05f554b3756c0819575b44a9a4a0",
+      "corrections": [
+        {
+          "r5_id": "b1-reason-result-connectors",
+          "issue": "The R5 lesson lists 'because of' and 'due to' as interchangeable, but 'due to' is more formal and often follows the verb 'be' (The delay was due to the weather), so it is not a direct swap in all positions.",
+          "fix": "The lesson now teaches 'because of' as the main noun-phrase connector and does not present 'due to' as a simple alternative in the formula."
+        },
+        {
+          "r5_id": "b1-reason-result-connectors",
+          "issue": "The R5 mistake 'The road was closed, therefore we turned back' is labelled as needing 'stronger punctuation', but the real problem is that 'therefore' is a conjunctive adverb and cannot join two independent clauses with only a comma.",
+          "fix": "The common_mistakes section now uses the clearer 'because of + clause' error, and the punctuation rule for 'therefore' is stated in when_to_use."
+        },
+        {
+          "r5_id": "b1-reason-result-connectors",
+          "issue": "The R5 example 'Demand increased. As a result, prices rose.' is two sentences, which is fine, but the lesson did not show the single-sentence pattern with 'so' clearly enough for B1 production.",
+          "fix": "The examples now include 'The bus was late, so I took a taxi.' to show the cause–result link inside one sentence."
+        }
+      ]
+    }
+  },
+  "review": null
+}

@@ -1,0 +1,201 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b2.006",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.condition_real",
+  "level": {"framework": "cefr", "value": "B2", "rank": 4},
+  "prereqs": ["en.unless"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["b2-in-case-provided-as-long-as"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["b2-in-case-provided-as-long-as"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "In case/provided/as long as", "en": "In case/provided/as long as"},
+    "native_title": "In case/provided/as long as",
+    "level": {"framework": "cefr", "value": "B2", "rank": 4},
+    "summary": {
+      "vi": "Cấu trúc này dùng để diễn tả một biện pháp phòng ngừa (in case) hoặc một điều kiện cần thiết (provided/providing that, as long as).",
+      "en": "This structure expresses a precaution (in case) or a necessary condition (provided/providing that, as long as)."
+    },
+    "sub": {"vi": "phòng ngừa và điều kiện", "en": "precaution and condition"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Dùng 'in case + mệnh đề' khi bạn làm điều gì đó để phòng một tình huống có thể xảy ra trong tương lai.",
+      "en": "Use 'in case + clause' when you do something as a precaution against a possible future situation."
+    },
+    {
+      "vi": "Dùng 'provided/providing (that) + mệnh đề' hoặc 'as long as + mệnh đề' để đặt ra điều kiện cho một hành động hoặc sự cho phép.",
+      "en": "Use 'provided/providing (that) + clause' or 'as long as + clause' to set a condition for an action or permission."
+    },
+    {
+      "vi": "Dùng 'as long as' để nói về điều kiện, nhưng cũng có thể dùng để nói về thời gian (miễn là trong suốt khoảng thời gian đó).",
+      "en": "Use 'as long as' for conditions, but it can also mean duration (for the whole time that)."
+    },
+    {
+      "vi": "Dùng 'in case of + danh từ' để nói về một tình huống khẩn cấp hoặc sự cố cụ thể.",
+      "en": "Use 'in case of + noun' for emergencies or specific incidents."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}},
+      {
+        "text": "in case",
+        "role": "marker",
+        "label": {"vi": "dấu hiệu phòng ngừa", "en": "precaution marker"}
+      },
+      {
+        "text": "S",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ mệnh đề sau", "en": "clause subject"}
+      },
+      {"text": "V", "role": "verb", "label": {"vi": "động từ mệnh đề sau", "en": "clause verb"}}
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "Take a charger in case your battery runs low.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "verb"},
+        {"start": 15, "end": 22, "role": "marker"},
+        {"start": 23, "end": 35, "role": "subject"},
+        {"start": 36, "end": 44, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Hành động phòng ngừa: mang sạc để đề phòng pin yếu.",
+        "en": "Precaution: take a charger to prepare for a possible low battery."
+      },
+      "translation": {"vi": "Mang sạc phòng khi pin yếu.", "en": "Take a charger in case your battery runs low."}
+    },
+    {
+      "text": "You can borrow the car provided that you drive carefully.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 14, "role": "verb"},
+        {"start": 23, "end": 36, "role": "marker"},
+        {"start": 37, "end": 40, "role": "subject"},
+        {"start": 41, "end": 46, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Điều kiện: chỉ cho mượn xe nếu lái cẩn thận.",
+        "en": "Condition: permission is given only if you drive carefully."
+      },
+      "translation": {
+        "vi": "Bạn có thể mượn xe với điều kiện lái cẩn thận.",
+        "en": "You can borrow the car provided that you drive carefully."
+      }
+    },
+    {
+      "text": "I'll support the plan as long as costs stay within budget.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 12, "role": "verb"},
+        {"start": 22, "end": 32, "role": "marker"},
+        {"start": 33, "end": 38, "role": "subject"},
+        {"start": 39, "end": 43, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Điều kiện: ủng hộ với điều kiện chi phí không vượt ngân sách.",
+        "en": "Condition: support is given on condition that costs do not exceed the budget."
+      },
+      "translation": {
+        "vi": "Tôi ủng hộ kế hoạch miễn là chi phí nằm trong ngân sách.",
+        "en": "I'll support the plan as long as costs stay within budget."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Sau 'in case' không dùng 'will' cho tương lai; dùng hiện tại đơn để nói về khả năng trong tương lai.",
+        "en": "After 'in case', do not use 'will' for future; use the present simple to talk about a future possibility."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "Take an umbrella in case it will rain.",
+      "right": "Take an umbrella in case it rains."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "Take a map ___ you get lost.",
+      "options": [{"text": "in case", "error_tag": null}, {"text": "if", "error_tag": "word_choice"}],
+      "answer": 0,
+      "explain": {
+        "vi": "'In case' diễn tả phòng ngừa; 'if' diễn tả điều kiện đơn thuần.",
+        "en": "'In case' expresses precaution; 'if' expresses a simple condition."
+      }
+    },
+    {
+      "q": "You can go out ___ you finish your homework.",
+      "options": [
+        {"text": "provided that", "error_tag": null},
+        {"text": "in case", "error_tag": "word_choice"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "'Provided that' đặt điều kiện; 'in case' là phòng ngừa.",
+        "en": "'Provided that' sets a condition; 'in case' is a precaution."
+      }
+    },
+    {
+      "q": "I'll lend you the money ___ you pay me back next week.",
+      "options": [{"text": "as long as", "error_tag": null}, {"text": "in case", "error_tag": "word_choice"}],
+      "answer": 0,
+      "explain": {
+        "vi": "'As long as' đặt điều kiện; 'in case' không phù hợp về nghĩa.",
+        "en": "'As long as' sets a condition; 'in case' does not fit the meaning."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về việc bạn làm gì đó để phòng một tình huống có thể xảy ra, dùng 'in case'.",
+      "en": "Write a sentence about doing something as a precaution against a possible situation, using 'in case'."
+    },
+    "placeholder": "I always ... in case ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "marker", "any_of": ["in case"]}, {"role": "verb", "regex": "\\b\\w+\\b"}]
+    },
+    "sample": {"text": "I always carry an umbrella in case it rains."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791001577",
+    "generated_at": "2026-10-03T04:26:17Z",
+    "r5_source": {
+      "ids": ["b2-in-case-provided-as-long-as"],
+      "content_version": 2,
+      "content_hash": "fa77b8d593c9254a6eb66f92c77b39746e46a436ee1270aaf8dc8edaa6446ca0",
+      "corrections": [
+        {
+          "r5_id": "b2-in-case-provided-as-long-as",
+          "issue": "The R5 lesson includes 'In case of fire, use the stairs.' as an example, but this is a different structure ('in case of + noun') and not the target 'in case + clause'.",
+          "fix": "Removed this example from the main examples and added a note in when_to_use about 'in case of + noun' as a separate structure."
+        },
+        {
+          "r5_id": "b2-in-case-provided-as-long-as",
+          "issue": "The R5 lesson's mistake 'I'll lend it to you in case you return it tomorrow.' is a meaning error, but the correction uses 'as long as' which is correct; however, the explanation could be clearer.",
+          "fix": "Kept the mistake but clarified the reason: 'in case' is for precaution, not condition; 'as long as' is for condition."
+        }
+      ]
+    }
+  },
+  "review": null
+}

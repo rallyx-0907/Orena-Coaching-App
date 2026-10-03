@@ -139,12 +139,12 @@ functions:
     - en.canon.b1.007
     - en.canon.b1.008
     - en.canon.b1.010
+    - en.canon.b1.048
     zh-Hans:
     - zh.le_completion
     ja: []
   planned:
-    en:
-    - en.canon.b1.048
+    en: []
     zh-Hans:
     - zh.canon.r5.hsk2_3_cu_i_c_u_thay_i_tr_ng_th_i
     - zh.verb_reduplication
@@ -181,6 +181,7 @@ functions:
     - en.superlatives
     - en.as_as
     - en.canon.b2.042
+    - en.canon.b1.045
     zh-Hans:
     - zh.canon.gf.hsk1.a_1_1_7_2.p1
     - zh.canon.r5.hsk3_10_topic
@@ -189,7 +190,6 @@ functions:
     ja: []
   planned:
     en:
-    - en.canon.b1.045
     - en.canon.c2.012
     zh-Hans:
     - zh.bi_comparison
@@ -212,14 +212,14 @@ functions:
     - en.canon.b1.026
     - en.canon.b1.025
     - en.canon.b1.035
+    - en.canon.b1.036
+    - en.canon.b2.006
     zh-Hans:
     - zh.canon.gf.hsk4.a_4_5_2_7.p1
     - zh.canon.gf.hsk6.a_6_6_2_7.p1
     ja: []
   planned:
-    en:
-    - en.canon.b1.036
-    - en.canon.b2.006
+    en: []
     zh-Hans:
     - zh.zhiyao_jiu
     - zh.zhiyou_cai
@@ -413,6 +413,7 @@ functions:
     - en.canon.a2.005
     - en.canon.b1.023
     - en.canon.b1.028
+    - en.canon.b1.024
     zh-Hans:
     - zh.canon.gf.hsk1.a_1_7.p1
     - zh.affirmative_negative_question
@@ -427,7 +428,6 @@ functions:
   planned:
     en:
     - en.canon.b1.022
-    - en.canon.b1.024
     zh-Hans:
     - zh.question_words
     - zh.ma_question
@@ -466,6 +466,8 @@ functions:
     - en.conjunctions.and_but_or
     - en.canon.b1.049
     - en.conjunctions.because_so
+    - en.canon.b1.038
+    - en.canon.b1.037
     zh-Hans:
     - zh.canon.gf.hsk1.a_1_1_8.p1
     - zh.canon.gf.hsk2.a_2_1_8.p1
@@ -499,8 +501,6 @@ functions:
     ja: []
   planned:
     en:
-    - en.canon.b1.037
-    - en.canon.b1.038
     - en.canon.b2.041
     - en.canon.c1.026
     zh-Hans:
@@ -578,13 +578,13 @@ functions:
     - en.canon.b1.012
     - en.canon.b1.013
     - en.canon.b1.011
+    - en.canon.b2.002
     zh-Hans:
     - zh.canon.gf.hsk1.a_1_1_2.p1
     - zh.canon.gf.hsk7_9.a_7_2_2_2.p1
     ja: []
   planned:
-    en:
-    - en.canon.b2.002
+    en: []
     zh-Hans:
     - zh.modal.xiang_yao
     - zh.canon.gf.hsk2.a_2_10.p1
@@ -603,6 +603,7 @@ functions:
     - en.too_enough
     - en.adjectives_vs_adverbs
     - en.adverbs.manner_degree
+    - en.canon.b1.054
     zh-Hans:
     - zh.canon.gf.hsk6.a_6_2_3.p2
     - zh.canon.gf.hsk7_9.a_7_1_4_1.p1
@@ -610,8 +611,7 @@ functions:
     - zh.canon.gf.hsk7_9.a_7_1_4_9.p4
     ja: []
   planned:
-    en:
-    - en.canon.b1.054
+    en: []
     zh-Hans:
     - zh.tai_le
     - zh.canon.gf.hsk2.a_2_1_3.p1
@@ -666,6 +666,8 @@ functions:
     - en.canon.c1.007
     - en.canon.c1.008
     - en.canon.b1.015
+    - en.canon.b2.008
+    - en.canon.b2.009
     zh-Hans:
     - zh.canon.gf.hsk3.a_3_5_4.p1
     - zh.canon.r5.hsk3_7_b_ng_kh_n_ng
@@ -676,8 +678,6 @@ functions:
     ja: []
   planned:
     en:
-    - en.canon.b2.008
-    - en.canon.b2.009
     - en.canon.b2.014
     - en.canon.c1.009
     - en.canon.c1.010
@@ -708,13 +708,13 @@ functions:
     - en.canon.b2.025
     - en.canon.b2.044
     - en.gerund_after_preference
+    - en.canon.b1.032
+    - en.canon.b1.053
     zh-Hans:
     - zh.canon.gf.hsk7_9.a_7_1_4_7.p1
     ja: []
   planned:
     en:
-    - en.canon.b1.032
-    - en.canon.b1.053
     - en.canon.b2.011
     - en.canon.b2.024
     - en.canon.b2.026
@@ -764,12 +764,12 @@ functions:
     en: Referring without being specific
     zh-Hans: 泛指
   realizations:
-    en: []
+    en:
+    - en.indefinite_compounds
     zh-Hans: []
     ja: []
   planned:
-    en:
-    - en.indefinite_compounds
+    en: []
     zh-Hans: []
     ja: []
 - id: fn.negation
@@ -780,6 +780,7 @@ functions:
   realizations:
     en:
     - en.canon.c1.002
+    - en.canon.b1.041
     zh-Hans:
     - zh.canon.gf.hsk3.a_3_3_2_1.p1
     - zh.canon.r5.hsk4_8_topic_110
@@ -793,8 +794,7 @@ functions:
     - zh.canon.gf.hsk7_9.a_7_7.p4
     ja: []
   planned:
-    en:
-    - en.canon.b1.041
+    en: []
     zh-Hans:
     - zh.bu_negation
     - zh.mei_negation
@@ -1026,12 +1026,12 @@ functions:
     en: Aspect and temporal viewpoint
     zh-Hans: 体与时间视角
   realizations:
-    en: []
+    en:
+    - en.canon.b2.001
     zh-Hans: []
     ja: []
   planned:
     en:
-    - en.canon.b2.001
     - en.canon.c1.003
     - en.canon.c1.004
     - en.canon.c1.005
@@ -1046,12 +1046,12 @@ functions:
   realizations:
     en:
     - en.canon.c2.002
+    - en.canon.b2.005
     zh-Hans:
     - zh.canon.r5.hsk79_10_conditional_rhetoric
     ja: []
   planned:
     en:
-    - en.canon.b2.005
     - en.canon.c1.012
     - en.canon.c1.019
     zh-Hans:

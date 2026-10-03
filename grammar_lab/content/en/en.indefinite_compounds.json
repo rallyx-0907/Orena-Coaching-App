@@ -1,0 +1,227 @@
+{
+  "schema_version": "0.4",
+  "id": "en.indefinite_compounds",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.indefinite_reference",
+  "level": {"framework": "cefr", "value": "A2", "rank": 2},
+  "prereqs": [],
+  "contrasts": ["en.quantifiers.some_any"],
+  "error_tags": ["word_choice"],
+  "source_refs": {"r5": ["a2-some-any-no-every-compounds"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["a2-some-any-no-every-compounds"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {
+      "vi": "someone, anything, nobody, everywhere...",
+      "en": "Someone, anything, nobody, everywhere..."
+    },
+    "native_title": "Some- / any- / no- / every- compounds",
+    "level": {"framework": "cefr", "value": "A2", "rank": 2},
+    "summary": {
+      "vi": "Các từ ghép với some-, any-, no- và every- dùng để nói về người, vật hoặc nơi chốn mà không cần nêu cụ thể.",
+      "en": "Compounds with some-, any-, no- and every- let you talk about a person, thing or place without naming it exactly."
+    },
+    "sub": {"vi": "đại từ bất định", "en": "indefinite compounds"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn không biết hoặc không cần nói chính xác là ai, cái gì hay ở đâu.",
+      "en": "When you do not know, or do not need to say, exactly who, what or where."
+    },
+    {
+      "vi": "Khi câu đã có phủ định (not, never) thì dùng any-, không dùng no-.",
+      "en": "When the sentence is already negative (not, never), use any-, not no-."
+    },
+    {
+      "vi": "Khi muốn nói 'tất cả' trong một nhóm, dùng every-.",
+      "en": "When you mean 'all of them' in a group, use every-."
+    },
+    {
+      "vi": "Khi chủ ngữ là everyone, someone, nobody... thì động từ chia số ít.",
+      "en": "When the subject is everyone, someone, nobody..., the verb is singular."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "some-/any-/no-/every-",
+        "role": "other",
+        "label": {"vi": "tiền tố", "en": "prefix"},
+        "options": [{"text": "some-"}, {"text": "any-"}, {"text": "no-"}, {"text": "every-"}]
+      },
+      {
+        "text": "-one/-body/-thing/-where",
+        "role": "other",
+        "label": {"vi": "gốc từ", "en": "base"},
+        "options": [{"text": "-one"}, {"text": "-body"}, {"text": "-thing"}, {"text": "-where"}]
+      },
+      {"text": "V", "role": "verb", "label": {"vi": "động từ (số ít)", "en": "verb (singular)"}}
+    ],
+    "variants": {
+      "negative": [
+        {
+          "text": "not",
+          "role": "aux",
+          "label": {"vi": "trợ động từ phủ định", "en": "negative auxiliary"}
+        },
+        {"text": "any-", "role": "other", "label": {"vi": "tiền tố any-", "en": "any- prefix"}},
+        {
+          "text": "-one/-body/-thing/-where",
+          "role": "other",
+          "label": {"vi": "gốc từ", "en": "base"},
+          "options": [{"text": "-one"}, {"text": "-body"}, {"text": "-thing"}, {"text": "-where"}]
+        },
+        {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}}
+      ],
+      "question": [
+        {"text": "any-", "role": "other", "label": {"vi": "tiền tố any-", "en": "any- prefix"}},
+        {
+          "text": "-one/-body/-thing/-where",
+          "role": "other",
+          "label": {"vi": "gốc từ", "en": "base"},
+          "options": [{"text": "-one"}, {"text": "-body"}, {"text": "-thing"}, {"text": "-where"}]
+        },
+        {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}}
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "Someone is waiting outside.",
+      "form": "affirmative",
+      "spans": [{"start": 0, "end": 7, "role": "other"}, {"start": 8, "end": 18, "role": "verb"}],
+      "annotation": {
+        "vi": "some- + -one: một người không xác định, động từ số ít.",
+        "en": "some- + -one: an unnamed person, singular verb."
+      },
+      "translation": {"vi": "Có ai đó đang đợi bên ngoài.", "en": "Someone is waiting outside."}
+    },
+    {
+      "text": "I can't find anything.",
+      "form": "negative",
+      "spans": [
+        {"start": 2, "end": 7, "role": "aux"},
+        {"start": 8, "end": 12, "role": "verb"},
+        {"start": 13, "end": 21, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Câu đã phủ định bằng can't nên dùng any-, không dùng no-.",
+        "en": "The sentence is already negative with can't, so use any-, not no-."
+      },
+      "translation": {"vi": "Tôi không tìm thấy gì cả.", "en": "I can't find anything."}
+    },
+    {
+      "text": "Did anyone call me?",
+      "form": "question",
+      "spans": [{"start": 4, "end": 10, "role": "other"}, {"start": 11, "end": 15, "role": "verb"}],
+      "annotation": {"vi": "Câu hỏi trung tính dùng any-.", "en": "A neutral question uses any-."},
+      "translation": {"vi": "Có ai gọi cho tôi không?", "en": "Did anyone call me?"}
+    }
+  ],
+  "compare": [
+    {
+      "with": "en.quantifiers.some_any",
+      "this_example": "I need something to eat.",
+      "other_example": "I need some water.",
+      "this_meaning": {
+        "vi": "some-/any- tạo thành đại từ bất định chỉ người, vật, nơi chốn (someone, anything, somewhere...).",
+        "en": "some-/any- form indefinite pronouns for people, things and places (someone, anything, somewhere...)."
+      },
+      "other_meaning": {
+        "vi": "some/any đứng trước danh từ để nói số lượng không xác định (some water, any questions).",
+        "en": "some/any stand before a noun to talk about an unspecified amount (some water, any questions)."
+      }
+    }
+  ],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "nothing đã mang nghĩa phủ định, nên không dùng thêm don't. Tiếng Việt nói 'không biết gì' với hai lần phủ định, nhưng tiếng Anh chỉ dùng một.",
+        "en": "nothing is already negative, so don't cannot be added. Vietnamese allows double negation ('không biết gì'), but English does not."
+      },
+      "error_tag": "word_choice",
+      "l1": ["vi"],
+      "wrong": "I don't know nothing.",
+      "right": "I don't know anything."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "Did ___ call me?",
+      "options": [{"text": "anyone", "error_tag": null}, {"text": "someone", "error_tag": "word_choice"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu hỏi trung tính dùng any-, không dùng some-.",
+        "en": "A neutral question uses any-, not some-."
+      }
+    },
+    {
+      "q": "The box is empty. There is ___ in it.",
+      "options": [{"text": "nothing", "error_tag": null}, {"text": "anything", "error_tag": "word_choice"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu khẳng định với 'empty' cần no- (nothing), không dùng any-.",
+        "en": "An affirmative sentence with 'empty' needs no- (nothing), not any-."
+      }
+    },
+    {
+      "q": "Everyone ___ here now.",
+      "options": [{"text": "is", "error_tag": null}, {"text": "are", "error_tag": "agreement"}],
+      "answer": 0,
+      "explain": {
+        "vi": "everyone là chủ ngữ số ít, nên dùng is.",
+        "en": "everyone is a singular subject, so use is."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về việc bạn muốn làm hoặc nơi bạn muốn đến, dùng một từ ghép với some-, any-, no- hoặc every-.",
+      "en": "Write one sentence about something you want to do or somewhere you want to go, using a some-, any-, no- or every- compound."
+    },
+    "placeholder": "I want to go somewhere ...",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"role": "other", "any_of": ["someone", "somewhere"]}]},
+    "sample": {"text": "I want to go somewhere quiet this weekend."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791001493",
+    "generated_at": "2026-10-03T04:24:53Z",
+    "r5_source": {
+      "ids": ["a2-some-any-no-every-compounds"],
+      "content_version": 2,
+      "content_hash": "9b1e8e8dbedd8ad91ebaff212e2fb7725abcc2207e9ba0f3cd963971e44edf00",
+      "corrections": [
+        {
+          "r5_id": "a2-some-any-no-every-compounds",
+          "issue": "The R5 lesson lists 'no one/nobody' under person compounds but does not show that no- already carries negation, which leads to double negatives.",
+          "fix": "Added a negative formula with not + any- and a common mistake entry showing 'I don't know nothing' → 'I don't know anything'."
+        },
+        {
+          "r5_id": "a2-some-any-no-every-compounds",
+          "issue": "The R5 example 'I can't find anything' is correct but the lesson does not explain why any- is used instead of no-.",
+          "fix": "Added an annotation on the example explaining that the sentence is already negative with can't, so any- is required."
+        },
+        {
+          "r5_id": "a2-some-any-no-every-compounds",
+          "issue": "The R5 guided practice includes 'Nobody don't understand' as a correction task, but the corrected form 'Nobody understands' is not explained in the lesson.",
+          "fix": "Added a when_to_use point and a quick-practice item about singular verb agreement with everyone/nobody."
+        },
+        {
+          "r5_id": "a2-some-any-no-every-compounds",
+          "issue": "The R5 lesson does not include a formula or structured comparison with some/any as quantifiers.",
+          "fix": "Added a formula with prefix + base + verb, and a compare entry contrasting indefinite compounds with some/any before nouns."
+        }
+      ]
+    }
+  },
+  "review": null
+}

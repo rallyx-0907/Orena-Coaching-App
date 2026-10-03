@@ -1,0 +1,270 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b1.032",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.verb_patterns",
+  "level": {"framework": "cefr", "value": "B1", "rank": 3},
+  "prereqs": ["en.gerund_after_preference"],
+  "contrasts": [],
+  "error_tags": ["word_form"],
+  "source_refs": {"r5": ["b1-gerund-vs-infinitive-common-patterns"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["b1-gerund-vs-infinitive-common-patterns"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {
+      "vi": "danh động từ vs động từ nguyên mẫu: common patterns",
+      "en": "Gerund vs infinitive: common patterns"
+    },
+    "native_title": "Gerund vs infinitive: common patterns",
+    "level": {"framework": "cefr", "value": "B1", "rank": 3},
+    "summary": {
+      "vi": "Chủ điểm này dạy cách chọn giữa V-ing và to-infinitive sau một số động từ và giới từ thông dụng ở trình độ B1.",
+      "en": "This point teaches how to choose between the -ing form and the to-infinitive after common verbs and prepositions at B1 level."
+    },
+    "sub": {"vi": "V-ing hay to-V", "en": "V-ing or to-V"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi động từ chính là enjoy, avoid, suggest, mind, finish, practise: dùng V-ing.",
+      "en": "When the main verb is enjoy, avoid, suggest, mind, finish, or practise: use the -ing form."
+    },
+    {
+      "vi": "Khi động từ chính là want, decide, hope, plan, need, promise: dùng to-infinitive.",
+      "en": "When the main verb is want, decide, hope, plan, need, or promise: use the to-infinitive."
+    },
+    {
+      "vi": "Sau giới từ (in, at, of, about, for, without): dùng V-ing, không dùng to-infinitive.",
+      "en": "After a preposition (in, at, of, about, for, without): use the -ing form, not the to-infinitive."
+    },
+    {
+      "vi": "Khi muốn diễn tả sở thích, thói quen hoặc hành động đã xảy ra: V-ing thường phù hợp hơn.",
+      "en": "When you want to express an interest, a habit, or an action that has happened: the -ing form is usually more suitable."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {
+        "text": "V1",
+        "role": "verb",
+        "label": {"vi": "động từ chính", "en": "main verb"},
+        "options": [
+          {"text": "enjoy"},
+          {"text": "avoid"},
+          {"text": "suggest"},
+          {"text": "mind"},
+          {"text": "finish"},
+          {"text": "practise"}
+        ]
+      },
+      {"text": "V-ing", "role": "complement", "label": {"vi": "dạng V-ing", "en": "-ing form"}},
+      {"text": "O", "role": "object", "label": {"vi": "tân ngữ", "en": "object"}, "optional": true}
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "do/does",
+          "role": "aux",
+          "label": {"vi": "trợ động từ", "en": "auxiliary"},
+          "options": [{"text": "do"}, {"text": "does"}]
+        },
+        {"text": "not", "role": "marker", "label": {"vi": "phủ định", "en": "negative marker"}},
+        {
+          "text": "V1",
+          "role": "verb",
+          "label": {"vi": "động từ chính", "en": "main verb"},
+          "options": [
+            {"text": "enjoy"},
+            {"text": "avoid"},
+            {"text": "suggest"},
+            {"text": "mind"},
+            {"text": "finish"},
+            {"text": "practise"}
+          ]
+        },
+        {"text": "V-ing", "role": "complement", "label": {"vi": "dạng V-ing", "en": "-ing form"}},
+        {
+          "text": "O",
+          "role": "object",
+          "label": {"vi": "tân ngữ", "en": "object"},
+          "optional": true
+        }
+      ],
+      "question": [
+        {
+          "text": "do/does",
+          "role": "aux",
+          "label": {"vi": "trợ động từ", "en": "auxiliary"},
+          "options": [{"text": "do"}, {"text": "does"}]
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "V1",
+          "role": "verb",
+          "label": {"vi": "động từ chính", "en": "main verb"},
+          "options": [
+            {"text": "enjoy"},
+            {"text": "avoid"},
+            {"text": "suggest"},
+            {"text": "mind"},
+            {"text": "finish"},
+            {"text": "practise"}
+          ]
+        },
+        {"text": "V-ing", "role": "complement", "label": {"vi": "dạng V-ing", "en": "-ing form"}},
+        {
+          "text": "O",
+          "role": "object",
+          "label": {"vi": "tân ngữ", "en": "object"},
+          "optional": true
+        }
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "I avoid checking my phone while studying.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 2, "end": 7, "role": "verb"},
+        {"start": 8, "end": 16, "role": "complement"},
+        {"start": 17, "end": 25, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "avoid + V-ing: hành động được xem như thói quen cần tránh.",
+        "en": "avoid + -ing: the action is seen as a habit to stay away from."
+      },
+      "translation": {
+        "vi": "Tôi tránh kiểm tra điện thoại khi đang học.",
+        "en": "I avoid checking my phone while studying."
+      }
+    },
+    {
+      "text": "She decided to apply for the job.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 11, "role": "verb"},
+        {"start": 12, "end": 20, "role": "complement"},
+        {"start": 21, "end": 32, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "decide + to-infinitive: quyết định hướng tới một hành động cụ thể.",
+        "en": "decide + to-infinitive: a decision directed at a specific action."
+      },
+      "translation": {
+        "vi": "Cô ấy quyết định ứng tuyển cho công việc đó.",
+        "en": "She decided to apply for the job."
+      }
+    },
+    {
+      "text": "They suggested taking a taxi.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 5, "end": 14, "role": "verb"},
+        {"start": 15, "end": 21, "role": "complement"},
+        {"start": 22, "end": 28, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "suggest + V-ing: đề xuất một hành động chung, không dùng to-infinitive.",
+        "en": "suggest + -ing: proposing a shared action; the to-infinitive is not used here."
+      },
+      "translation": {"vi": "Họ đề nghị đi taxi.", "en": "They suggested taking a taxi."}
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học Việt thường dịch 'đề nghị làm gì' thành suggest + to-V, nhưng suggest yêu cầu V-ing khi không có tân ngữ gián tiếp.",
+        "en": "Vietnamese learners often translate 'đề nghị làm gì' as suggest + to-V, but suggest requires the -ing form when there is no indirect object."
+      },
+      "error_tag": "word_form",
+      "l1": ["vi"],
+      "wrong": "She suggested to go early.",
+      "right": "She suggested going early."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "I enjoy ___ books before bed.",
+      "options": [{"text": "reading", "error_tag": null}, {"text": "to read", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {
+        "vi": "enjoy + V-ing: sở thích đọc sách trước khi ngủ.",
+        "en": "enjoy + -ing: the hobby of reading before bed."
+      }
+    },
+    {
+      "q": "She decided ___ a new language this year.",
+      "options": [{"text": "to learn", "error_tag": null}, {"text": "learning", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {
+        "vi": "decide + to-infinitive: quyết định học một ngôn ngữ mới.",
+        "en": "decide + to-infinitive: a decision to learn a new language."
+      }
+    },
+    {
+      "q": "He is interested in ___ Japanese.",
+      "options": [{"text": "learning", "error_tag": null}, {"text": "to learn", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {
+        "vi": "interested in + V-ing: sau giới từ in dùng V-ing.",
+        "en": "interested in + -ing: after the preposition in, use the -ing form."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một việc bạn thích làm, dùng enjoy + V-ing.",
+      "en": "Write one sentence about something you enjoy doing, using enjoy + -ing."
+    },
+    "placeholder": "I enjoy ...",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"role": "complement", "regex": "\\b\\w+ing\\b"}]},
+    "sample": {"text": "I enjoy reading before bed."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791001485",
+    "generated_at": "2026-10-03T04:24:45Z",
+    "r5_source": {
+      "ids": ["b1-gerund-vs-infinitive-common-patterns"],
+      "content_version": 2,
+      "content_hash": "d50b9508d0387e9ec1bca4bee845e570e1965fd65f0c81e3f96bd367a13db4d0",
+      "corrections": [
+        {
+          "r5_id": "b1-gerund-vs-infinitive-common-patterns",
+          "issue": "R5's explanation_vi is generic and does not state the actual rule for choosing between V-ing and to-infinitive.",
+          "fix": "Replaced it with a concrete summary and when_to_use conditions that name the verb groups and the preposition rule."
+        },
+        {
+          "r5_id": "b1-gerund-vs-infinitive-common-patterns",
+          "issue": "R5's guided_practice 'contrast' item asks learners to explain a difference but gives no usable answer or explanation.",
+          "fix": "Removed the vague contrast task and replaced it with clear quick-practice cloze items that test the pattern directly."
+        },
+        {
+          "r5_id": "b1-gerund-vs-infinitive-common-patterns",
+          "issue": "R5's mistakes list includes 'I'm interested to learn languages' but does not explain the preposition + V-ing mechanism clearly.",
+          "fix": "Kept the suggest + V-ing mistake as the single common_mistakes entry and wrote a reason that names the L1 translation trap."
+        },
+        {
+          "r5_id": "b1-gerund-vs-infinitive-common-patterns",
+          "issue": "R5's examples include 'He's interested in learning Japanese' but the lesson does not show the preposition + V-ing pattern in the formula.",
+          "fix": "Added a quick-practice item for interested in + V-ing and kept the formula focused on the core verb + V-ing / to-infinitive patterns."
+        }
+      ]
+    }
+  },
+  "review": null
+}

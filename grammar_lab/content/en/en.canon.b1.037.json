@@ -1,0 +1,230 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b1.037",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.linking",
+  "level": {"framework": "cefr", "value": "B1", "rank": 3},
+  "prereqs": [],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["b1-although-despite-however"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["b1-although-despite-however"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Although/despite/however", "en": "Although/despite/however"},
+    "native_title": "Although/despite/however",
+    "level": {"framework": "cefr", "value": "B1", "rank": 3},
+    "summary": {
+      "vi": "Chủ điểm này dạy cách diễn tả sự nhượng bộ (concession) bằng although/even though + mệnh đề, despite/in spite of + danh từ hoặc V-ing, và however như một connector nối hai câu độc lập.",
+      "en": "This point teaches how to express concession with although/even though + clause, despite/in spite of + noun or V-ing, and however as a connector between two independent sentences."
+    },
+    "sub": {"vi": "nhượng bộ", "en": "concession"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói một sự việc xảy ra bất chấp một trở ngại hoặc điều trái ngược.",
+      "en": "When you want to say something happens in spite of an obstacle or a contrasting fact."
+    },
+    {
+      "vi": "Khi bạn muốn đưa ra một nhượng bộ ngắn gọn bằng cụm danh từ hoặc V-ing thay vì cả một mệnh đề.",
+      "en": "When you want to make a short concession with a noun phrase or V-ing instead of a full clause."
+    },
+    {
+      "vi": "Khi bạn muốn nối hai câu độc lập có ý trái ngược trong văn viết trang trọng hơn.",
+      "en": "When you want to link two independent sentences with a contrasting idea in more formal writing."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "Although/Even though",
+        "role": "connector",
+        "label": {"vi": "liên từ nhượng bộ", "en": "concession conjunction"},
+        "options": [{"text": "Although"}, {"text": "Even though"}]
+      },
+      {
+        "text": "S",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ mệnh đề phụ", "en": "subject of the subordinate clause"}
+      },
+      {
+        "text": "V",
+        "role": "verb",
+        "label": {"vi": "động từ mệnh đề phụ", "en": "verb of the subordinate clause"}
+      },
+      {
+        "text": "S",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ mệnh đề chính", "en": "subject of the main clause"}
+      },
+      {
+        "text": "V",
+        "role": "verb",
+        "label": {"vi": "động từ mệnh đề chính", "en": "verb of the main clause"}
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "Although he was tired, he kept working.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 8, "role": "connector"},
+        {"start": 9, "end": 11, "role": "subject"},
+        {"start": 12, "end": 15, "role": "verb"},
+        {"start": 23, "end": 25, "role": "subject"},
+        {"start": 26, "end": 30, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Although mở đầu mệnh đề nhượng bộ; mệnh đề chính nêu kết quả trái ngược.",
+        "en": "Although introduces the concessive clause; the main clause gives the contrasting result."
+      },
+      "translation": {
+        "vi": "Dù mệt, anh ấy vẫn tiếp tục làm việc.",
+        "en": "Although he was tired, he kept working."
+      }
+    },
+    {
+      "text": "Despite the traffic, we arrived on time.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 7, "role": "connector"},
+        {"start": 21, "end": 23, "role": "subject"},
+        {"start": 24, "end": 31, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Despite + cụm danh từ (the traffic), không theo mệnh đề.",
+        "en": "Despite + noun phrase (the traffic), not a clause."
+      },
+      "translation": {
+        "vi": "Dù tắc đường, chúng tôi vẫn đến đúng giờ.",
+        "en": "Despite the traffic, we arrived on time."
+      }
+    },
+    {
+      "text": "The task was difficult. However, we finished it.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 8, "role": "subject"},
+        {"start": 9, "end": 12, "role": "verb"},
+        {"start": 24, "end": 31, "role": "connector"},
+        {"start": 33, "end": 35, "role": "subject"},
+        {"start": 36, "end": 44, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "However nối hai câu độc lập, thường đứng sau dấu chấm và trước dấu phẩy.",
+        "en": "However links two independent sentences, usually after a full stop and before a comma."
+      },
+      "translation": {
+        "vi": "Nhiệm vụ khó. Tuy nhiên, chúng tôi đã hoàn thành nó.",
+        "en": "The task was difficult. However, we finished it."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Despite không đi với mệnh đề đầy đủ (finite clause); cần Although + mệnh đề hoặc Despite + cụm danh từ/V-ing.",
+        "en": "Despite cannot be followed by a finite clause; use Although + clause or Despite + noun/V-ing."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "Despite he was tired, he continued.",
+      "right": "Although he was tired, he continued."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "___ the rain, we went out.",
+      "options": [
+        {"text": "Despite", "error_tag": null},
+        {"text": "Although", "error_tag": "sentence_structure"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Despite + cụm danh từ (the rain). Although cần một mệnh đề đầy đủ.",
+        "en": "Despite + noun phrase (the rain). Although needs a full clause."
+      }
+    },
+    {
+      "q": "It was late. ___, we stayed.",
+      "options": [
+        {"text": "However", "error_tag": null},
+        {"text": "Although", "error_tag": "sentence_structure"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "However nối hai câu độc lập; Although cần mệnh đề phụ ngay sau nó.",
+        "en": "However links two independent sentences; Although needs a subordinate clause right after it."
+      }
+    },
+    {
+      "q": "___ she was ill, she went to class.",
+      "options": [
+        {"text": "Although", "error_tag": null},
+        {"text": "Despite", "error_tag": "sentence_structure"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Although + mệnh đề (she was ill). Despite không đi với mệnh đề đầy đủ.",
+        "en": "Although + clause (she was ill). Despite cannot take a full clause."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về bản thân dùng 'Although' + mệnh đề để nêu một trở ngại và kết quả trái ngược.",
+      "en": "Write a sentence about yourself using 'Although' + clause to give an obstacle and a contrasting result."
+    },
+    "placeholder": "Although I was ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "connector", "any_of": ["although"]},
+        {"role": "subject", "regex": "(?i)\\b(i|you|he|she|it|we|they)\\b"},
+        {
+          "role": "verb",
+          "regex": "(?i)\\b(was|were|is|are|am|had|has|have|did|do|does|kept|went|stayed|finished|arrived|continued)\\b"
+        }
+      ]
+    },
+    "sample": {"text": "Although I was tired, I finished my homework."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791001512",
+    "generated_at": "2026-10-03T04:25:12Z",
+    "r5_source": {
+      "ids": ["b1-although-despite-however"],
+      "content_version": 2,
+      "content_hash": "c84a907e794c9a70e3768ebc1ccc04bcb3011d296669afc2c4796e967c9e79fc",
+      "corrections": [
+        {
+          "r5_id": "b1-although-despite-however",
+          "issue": "R5's example 'In spite of feeling ill, she went to class.' is correct but the lesson did not include a formula or spans for the target structures.",
+          "fix": "Added a formula with abstract slots for although/even though + clause and a separate example for despite + noun; spans now mark the connector, subject, and verb roles."
+        },
+        {
+          "r5_id": "b1-although-despite-however",
+          "issue": "R5's mistake 'It was late, however we stayed.' was listed but the correction 'It was late. However, we stayed.' was not clearly explained as a punctuation rule.",
+          "fix": "Kept the mistake but added a clear reason: however cannot join two independent clauses with only a comma; it needs a full stop or semicolon."
+        },
+        {
+          "r5_id": "b1-although-despite-however",
+          "issue": "R5 did not include a quick-practice section or personal production card.",
+          "fix": "Added three cloze questions and a personal production card with a pattern rule that checks for the connector, subject, and verb."
+        }
+      ]
+    }
+  },
+  "review": null
+}

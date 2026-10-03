@@ -1,0 +1,229 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b2.008",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.possibility",
+  "level": {"framework": "cefr", "value": "B2", "rank": 4},
+  "prereqs": ["en.canon.a2.003"],
+  "contrasts": [],
+  "error_tags": ["tense"],
+  "source_refs": {"r5": ["b2-past-deduction"]},
+  "point_type": "tense_aspect",
+  "sequence": 2,
+  "aliases": ["b2-past-deduction"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Past deduction", "en": "Past deduction"},
+    "native_title": "Past deduction",
+    "level": {"framework": "cefr", "value": "B2", "rank": 4},
+    "summary": {
+      "vi": "Cấu trúc modal perfect dùng để suy đoán về một sự việc trong quá khứ: must have + quá khứ phân từ cho suy đoán chắc chắn, may/might/could have cho khả năng, và can't/couldn't have cho điều không thể.",
+      "en": "Modal perfect structures used to make deductions about the past: must have + past participle for strong positive deduction, may/might/could have for possibility, and can't/couldn't have for impossibility."
+    },
+    "sub": {"vi": "suy đoán quá khứ", "en": "past deduction"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn có bằng chứng cụ thể và muốn kết luận điều gì đó gần như chắc chắn đã xảy ra trong quá khứ.",
+      "en": "When you have concrete evidence and want to conclude that something almost certainly happened in the past."
+    },
+    {
+      "vi": "Khi bạn muốn nói một sự việc trong quá khứ là có thể, nhưng bạn không chắc chắn.",
+      "en": "When you want to say that a past event was possible, but you are not certain."
+    },
+    {
+      "vi": "Khi bạn muốn khẳng định một điều gì đó trong quá khứ là không thể xảy ra, dựa trên logic hoặc bằng chứng.",
+      "en": "When you want to state that something in the past was impossible, based on logic or evidence."
+    },
+    {
+      "vi": "Khi bạn đang kể lại hoặc giải thích một tình huống đã qua và cần thể hiện mức độ chắc chắn khác nhau.",
+      "en": "When you are recounting or explaining a past situation and need to express different degrees of certainty."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {
+        "text": "must/may/might/could/can't/couldn't",
+        "role": "aux",
+        "label": {"vi": "động từ khuyết thiếu", "en": "modal verb"},
+        "options": [
+          {"text": "must"},
+          {"text": "may"},
+          {"text": "might"},
+          {"text": "could"},
+          {"text": "can't"},
+          {"text": "couldn't"}
+        ]
+      },
+      {"text": "have", "role": "aux", "label": {"vi": "trợ động từ", "en": "auxiliary"}},
+      {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}}
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "can't/couldn't",
+          "role": "aux",
+          "label": {"vi": "động từ khuyết thiếu phủ định", "en": "negative modal"},
+          "options": [{"text": "can't"}, {"text": "couldn't"}]
+        },
+        {"text": "have", "role": "aux", "label": {"vi": "trợ động từ", "en": "auxiliary"}},
+        {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}}
+      ],
+      "question": [
+        {
+          "text": "Modal",
+          "role": "aux",
+          "label": {"vi": "động từ khuyết thiếu", "en": "modal verb"},
+          "options": [{"text": "Must"}, {"text": "May"}, {"text": "Might"}, {"text": "Could"}, {"text": "Can"}]
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {"text": "have", "role": "aux", "label": {"vi": "trợ động từ", "en": "auxiliary"}},
+        {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}}
+      ]
+    },
+    "illustration": {"kind": "timeline", "timeline": {"shape": "point_past"}}
+  },
+  "examples": [
+    {
+      "text": "She must have forgotten the appointment.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 8, "role": "aux"},
+        {"start": 9, "end": 13, "role": "aux"},
+        {"start": 14, "end": 23, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "must have + quá khứ phân từ diễn tả suy đoán chắc chắn dựa trên bằng chứng.",
+        "en": "must have + past participle expresses a strong deduction based on evidence."
+      },
+      "translation": {"vi": "Chắc hẳn cô ấy đã quên cuộc hẹn.", "en": "She must have forgotten the appointment."}
+    },
+    {
+      "text": "They might have taken the wrong train.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 5, "end": 10, "role": "aux"},
+        {"start": 11, "end": 15, "role": "aux"},
+        {"start": 16, "end": 21, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "might have + quá khứ phân từ diễn tả khả năng trong quá khứ, không chắc chắn.",
+        "en": "might have + past participle expresses a past possibility, not certain."
+      },
+      "translation": {"vi": "Có thể họ đã lên nhầm chuyến tàu.", "en": "They might have taken the wrong train."}
+    },
+    {
+      "text": "He can't have seen the message yet.",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 3, "end": 8, "role": "aux"},
+        {"start": 9, "end": 13, "role": "aux"},
+        {"start": 14, "end": 18, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "can't have + quá khứ phân từ diễn tả điều không thể xảy ra trong quá khứ.",
+        "en": "can't have + past participle expresses impossibility in the past."
+      },
+      "translation": {
+        "vi": "Không thể nào anh ấy đã thấy tin nhắn rồi.",
+        "en": "He can't have seen the message yet."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Sau 'have' trong cấu trúc modal perfect phải dùng quá khứ phân từ (gone), không dùng quá khứ đơn (went).",
+        "en": "After 'have' in a modal perfect structure, you must use the past participle (gone), not the past simple (went)."
+      },
+      "error_tag": "tense",
+      "l1": ["vi"],
+      "wrong": "She might have went out.",
+      "right": "She might have gone out."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "She ___ have forgotten the appointment; she never misses meetings.",
+      "options": [{"text": "must", "error_tag": null}, {"text": "mustn't", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Dùng 'must have' để diễn tả suy đoán chắc chắn dựa trên bằng chứng. 'Mustn't have' không dùng cho suy đoán phủ định.",
+        "en": "Use 'must have' to express a strong deduction based on evidence. 'Mustn't have' is not used for negative deduction."
+      }
+    },
+    {
+      "q": "They ___ have taken the wrong train; they arrived very late.",
+      "options": [{"text": "might", "error_tag": null}, {"text": "might have", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 'might' trong cấu trúc suy đoán quá khứ, dùng 'have + quá khứ phân từ'. Không lặp lại 'have'.",
+        "en": "After 'might' in a past deduction structure, use 'have + past participle'. Do not repeat 'have'."
+      }
+    },
+    {
+      "q": "He ___ have seen the message; he was offline all day.",
+      "options": [{"text": "can't", "error_tag": null}, {"text": "mustn't", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Dùng 'can't have' để diễn tả điều không thể xảy ra trong quá khứ. 'Mustn't have' không dùng cho suy đoán phủ định.",
+        "en": "Use 'can't have' to express impossibility in the past. 'Mustn't have' is not used for negative deduction."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu suy đoán về điều gì đó đã xảy ra trong quá khứ, dùng 'must have', 'might have' hoặc 'can't have' + quá khứ phân từ.",
+      "en": "Write a sentence making a deduction about something that happened in the past, using 'must have', 'might have', or 'can't have' + past participle."
+    },
+    "placeholder": "I must have ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "aux", "any_of": ["must", "might"]},
+        {"role": "aux", "any_of": ["have"]},
+        {"role": "verb", "regex": "\\b\\w+(?:ed|en|ne|wn|rn|lt|nt|de|t)\\b"}
+      ]
+    },
+    "sample": {"text": "I must have left my keys at home."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791001579",
+    "generated_at": "2026-10-03T04:26:19Z",
+    "r5_source": {
+      "ids": ["b2-past-deduction"],
+      "content_version": 2,
+      "content_hash": "c1656126b487ce4ae17005b9ee2682b86584dc901693e7c7801f5118d2922a70",
+      "corrections": [
+        {
+          "r5_id": "b2-past-deduction",
+          "issue": "The R5 lesson included 'mustn't have' as a common mistake but did not explicitly state that 'mustn't have' is not used for negative deduction; it only said 'Negative deduction uses can't/couldn't have.'",
+          "fix": "Added explicit note in the explanation and quick practice that 'mustn't have' is not used for negative deduction."
+        },
+        {
+          "r5_id": "b2-past-deduction",
+          "issue": "The R5 lesson's example 'The noise could have come from upstairs.' was listed under examples but not clearly tied to the formula or given a translation.",
+          "fix": "Replaced with a clearer example 'They might have taken the wrong train.' and provided full spans, annotation, and translation."
+        },
+        {
+          "r5_id": "b2-past-deduction",
+          "issue": "The R5 lesson did not provide a structured formula with slots and roles.",
+          "fix": "Added a complete formula with subject, modal, have, and past participle slots, including negative and question forms."
+        }
+      ]
+    }
+  },
+  "review": null
+}

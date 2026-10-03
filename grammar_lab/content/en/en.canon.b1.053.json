@@ -1,0 +1,206 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b1.053",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.verb_patterns",
+  "level": {"framework": "cefr", "value": "B1", "rank": 3},
+  "prereqs": ["en.canon.b1.052"],
+  "contrasts": [],
+  "error_tags": ["naturalness"],
+  "source_refs": {},
+  "point_type": "other",
+  "sequence": 6,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Phrasal Verbs Separable", "en": "Phrasal Verbs Separable"},
+    "native_title": "Phrasal Verbs Separable",
+    "level": {"framework": "cefr", "value": "B1", "rank": 3},
+    "summary": {
+      "vi": "Động từ ghép tách rời cho phép tân ngữ đứng giữa động từ và tiểu từ, hoặc đứng sau tiểu từ.",
+      "en": "Separable phrasal verbs allow the object to come between the verb and the particle, or after the particle."
+    },
+    "sub": {"vi": "tách rời được", "en": "separable"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi tân ngữ là một danh từ ngắn, bạn có thể đặt nó trước hoặc sau tiểu từ.",
+      "en": "When the object is a short noun, you can put it before or after the particle."
+    },
+    {
+      "vi": "Khi tân ngữ là đại từ (it, them, him, her), nó bắt buộc phải đứng giữa động từ và tiểu từ.",
+      "en": "When the object is a pronoun (it, them, him, her), it must come between the verb and the particle."
+    },
+    {
+      "vi": "Khi bạn muốn nhấn mạnh hành động tách rời, đặt tân ngữ ngay sau động từ.",
+      "en": "When you want to emphasize the separated action, put the object right after the verb."
+    },
+    {
+      "vi": "Khi động từ ghép có thể tách rời như turn on, pick up, write down, turn off, put on.",
+      "en": "When the phrasal verb is separable, such as turn on, pick up, write down, turn off, put on."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}},
+      {"text": "O", "role": "object", "label": {"vi": "tân ngữ", "en": "object"}},
+      {"text": "particle", "role": "particle", "label": {"vi": "tiểu từ", "en": "particle"}}
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "aux",
+          "role": "aux",
+          "label": {"vi": "trợ động từ", "en": "auxiliary"},
+          "options": [{"text": "do not"}, {"text": "does not"}, {"text": "did not"}]
+        },
+        {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}},
+        {"text": "O", "role": "object", "label": {"vi": "tân ngữ", "en": "object"}},
+        {"text": "particle", "role": "particle", "label": {"vi": "tiểu từ", "en": "particle"}}
+      ],
+      "question": [
+        {
+          "text": "aux",
+          "role": "aux",
+          "label": {"vi": "trợ động từ", "en": "auxiliary"},
+          "options": [{"text": "Do"}, {"text": "Does"}, {"text": "Did"}]
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}},
+        {"text": "O", "role": "object", "label": {"vi": "tân ngữ", "en": "object"}},
+        {"text": "particle", "role": "particle", "label": {"vi": "tiểu từ", "en": "particle"}}
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "She turned the light off.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 10, "role": "verb"},
+        {"start": 11, "end": 20, "role": "object"},
+        {"start": 21, "end": 24, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "Tân ngữ 'the light' đứng giữa động từ và tiểu từ.",
+        "en": "The object 'the light' comes between the verb and the particle."
+      },
+      "translation": {"vi": "Cô ấy đã tắt đèn.", "en": "She turned the light off."}
+    },
+    {
+      "text": "He picked the book up.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 3, "end": 9, "role": "verb"},
+        {"start": 10, "end": 18, "role": "object"},
+        {"start": 19, "end": 21, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "Tân ngữ 'the book' đứng giữa động từ và tiểu từ.",
+        "en": "The object 'the book' comes between the verb and the particle."
+      },
+      "translation": {"vi": "Anh ấy đã nhặt cuốn sách lên.", "en": "He picked the book up."}
+    },
+    {
+      "text": "They wrote the address down.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 5, "end": 10, "role": "verb"},
+        {"start": 11, "end": 22, "role": "object"},
+        {"start": 23, "end": 27, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "Tân ngữ 'the address' đứng giữa động từ và tiểu từ.",
+        "en": "The object 'the address' comes between the verb and the particle."
+      },
+      "translation": {"vi": "Họ đã viết địa chỉ xuống.", "en": "They wrote the address down."}
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Khi tân ngữ là đại từ, nó phải đứng giữa động từ và tiểu từ, không đứng sau tiểu từ.",
+        "en": "When the object is a pronoun, it must come between the verb and the particle, not after the particle."
+      },
+      "error_tag": "naturalness",
+      "l1": ["vi"],
+      "wrong": "She turned off it.",
+      "right": "She turned it off."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "Can you ___?",
+      "options": [
+        {"text": "turn the TV off", "error_tag": null},
+        {"text": "turn off it", "error_tag": "naturalness"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Với tân ngữ là danh từ, có thể đặt trước hoặc sau tiểu từ. Nhưng với đại từ 'it', phải đặt giữa: turn it off.",
+        "en": "With a noun object, you can put it before or after the particle. But with the pronoun 'it', it must go between: turn it off."
+      }
+    },
+    {
+      "q": "She ___ yesterday.",
+      "options": [
+        {"text": "picked up the kids", "error_tag": null},
+        {"text": "picked up them", "error_tag": "naturalness"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Tân ngữ danh từ có thể đứng trước hoặc sau tiểu từ. Nhưng đại từ 'them' phải đứng giữa: picked them up.",
+        "en": "A noun object can go before or after the particle. But the pronoun 'them' must go between: picked them up."
+      }
+    },
+    {
+      "q": "I need to ___ before the meeting.",
+      "options": [
+        {"text": "write down the notes", "error_tag": null},
+        {"text": "write down them", "error_tag": "naturalness"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Tân ngữ danh từ có thể đứng trước hoặc sau tiểu từ. Nhưng đại từ 'them' phải đứng giữa: write them down.",
+        "en": "A noun object can go before or after the particle. But the pronoun 'them' must go between: write them down."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về việc bạn đã làm hôm qua, sử dụng một động từ ghép tách rời với tân ngữ là danh từ.",
+      "en": "Write a sentence about something you did yesterday, using a separable phrasal verb with a noun object."
+    },
+    "placeholder": "I turned the light off ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "verb", "any_of": ["turned", "picked", "wrote"]},
+        {
+          "role": "object",
+          "regex": "\\b(the|a|an|my|your|his|her|its|our|their|this|that|these|those)\\s+\\w+"
+        },
+        {"role": "particle", "any_of": ["off", "up", "down"]}
+      ]
+    },
+    "sample": {"text": "I turned the light off before leaving."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791001561",
+    "generated_at": "2026-10-03T04:26:01Z"
+  },
+  "review": null
+}

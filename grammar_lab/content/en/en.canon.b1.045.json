@@ -1,0 +1,316 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b1.045",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.comparison",
+  "level": {"framework": "cefr", "value": "B1", "rank": 3},
+  "prereqs": ["en.as_as"],
+  "contrasts": [],
+  "error_tags": ["word_form"],
+  "source_refs": {"r5": ["b1-comparative-patterns-and-intensifiers"]},
+  "point_type": "morphology",
+  "sequence": 1,
+  "aliases": ["b1-comparative-patterns-and-intensifiers"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "so sánh hơn patterns and intensifiers", "en": "Comparative patterns and intensifiers"},
+    "native_title": "Comparative patterns and intensifiers",
+    "level": {"framework": "cefr", "value": "B1", "rank": 3},
+    "summary": {
+      "vi": "Chủ điểm này dạy cách dùng dạng so sánh hơn với các từ nhấn mạnh mức độ khác biệt và hai mẫu câu diễn tả sự thay đổi tăng dần.",
+      "en": "This point teaches comparative forms with words that show the size of a difference, and two patterns for gradual change."
+    },
+    "sub": {"vi": "so sánh hơn & mức độ", "en": "comparatives & degree"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói hai người hoặc hai vật khác nhau ở mức độ lớn hay nhỏ, dùng much/far/a lot hoặc a bit/slightly trước dạng so sánh hơn.",
+      "en": "When you want to say two people or things differ a lot or a little, use much/far/a lot or a bit/slightly before the comparative."
+    },
+    {
+      "vi": "Khi một thay đổi ở vế này kéo theo thay đổi ở vế kia, dùng mẫu the + so sánh hơn, the + so sánh hơn.",
+      "en": "When one change causes another, use the + comparative, the + comparative."
+    },
+    {
+      "vi": "Khi một tình trạng tăng dần theo thời gian, dùng so sánh hơn + and + so sánh hơn.",
+      "en": "When a situation increases over time, use comparative + and + comparative."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {
+        "text": "be",
+        "role": "verb",
+        "label": {"vi": "động từ liên kết", "en": "linking verb"},
+        "options": [{"text": "is"}, {"text": "are"}]
+      },
+      {
+        "text": "much/far/a lot/a bit/slightly",
+        "role": "marker",
+        "label": {"vi": "từ nhấn mạnh mức độ", "en": "degree marker"},
+        "optional": true,
+        "options": [
+          {"text": "much"},
+          {"text": "far"},
+          {"text": "a lot"},
+          {"text": "a bit"},
+          {"text": "slightly"}
+        ]
+      },
+      {
+        "text": "comparative adjective",
+        "role": "complement",
+        "label": {"vi": "tính từ so sánh hơn", "en": "comparative adjective"}
+      },
+      {
+        "text": "than",
+        "role": "marker",
+        "label": {"vi": "từ so sánh", "en": "comparison marker"},
+        "optional": true
+      },
+      {
+        "text": "N",
+        "role": "object",
+        "label": {"vi": "đối tượng so sánh", "en": "comparison object"},
+        "optional": true
+      }
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "be",
+          "role": "verb",
+          "label": {"vi": "động từ liên kết", "en": "linking verb"},
+          "options": [{"text": "is"}, {"text": "are"}]
+        },
+        {"text": "not", "role": "marker", "label": {"vi": "phủ định", "en": "negation"}},
+        {
+          "text": "much/far/a lot/a bit/slightly",
+          "role": "marker",
+          "label": {"vi": "từ nhấn mạnh mức độ", "en": "degree marker"},
+          "optional": true,
+          "options": [
+            {"text": "much"},
+            {"text": "far"},
+            {"text": "a lot"},
+            {"text": "a bit"},
+            {"text": "slightly"}
+          ]
+        },
+        {
+          "text": "comparative adjective",
+          "role": "complement",
+          "label": {"vi": "tính từ so sánh hơn", "en": "comparative adjective"}
+        },
+        {
+          "text": "than",
+          "role": "marker",
+          "label": {"vi": "từ so sánh", "en": "comparison marker"},
+          "optional": true
+        },
+        {
+          "text": "N",
+          "role": "object",
+          "label": {"vi": "đối tượng so sánh", "en": "comparison object"},
+          "optional": true
+        }
+      ],
+      "question": [
+        {
+          "text": "be",
+          "role": "verb",
+          "label": {"vi": "động từ liên kết", "en": "linking verb"},
+          "options": [{"text": "Is"}, {"text": "Are"}]
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "much/far/a lot/a bit/slightly",
+          "role": "marker",
+          "label": {"vi": "từ nhấn mạnh mức độ", "en": "degree marker"},
+          "optional": true,
+          "options": [
+            {"text": "much"},
+            {"text": "far"},
+            {"text": "a lot"},
+            {"text": "a bit"},
+            {"text": "slightly"}
+          ]
+        },
+        {
+          "text": "comparative adjective",
+          "role": "complement",
+          "label": {"vi": "tính từ so sánh hơn", "en": "comparative adjective"}
+        },
+        {
+          "text": "than",
+          "role": "marker",
+          "label": {"vi": "từ so sánh", "en": "comparison marker"},
+          "optional": true
+        },
+        {
+          "text": "N",
+          "role": "object",
+          "label": {"vi": "đối tượng so sánh", "en": "comparison object"},
+          "optional": true
+        }
+      ]
+    },
+    "illustration": {
+      "kind": "morphology",
+      "morphology": [
+        {"base": "fast", "affix": "-er", "result": "faster"},
+        {"base": "cheap", "affix": "-er", "result": "cheaper"},
+        {"base": "easy", "affix": "-ier", "result": "easier"}
+      ]
+    }
+  },
+  "examples": [
+    {
+      "text": "This version is much faster than the old one.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 12, "role": "subject"},
+        {"start": 13, "end": 15, "role": "verb"},
+        {"start": 16, "end": 20, "role": "marker"},
+        {"start": 21, "end": 27, "role": "complement"},
+        {"start": 28, "end": 32, "role": "marker"},
+        {"start": 33, "end": 44, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "much nhấn mạnh mức độ khác biệt lớn giữa hai phiên bản.",
+        "en": "much emphasises a large difference between the two versions."
+      },
+      "translation": {
+        "vi": "Phiên bản này nhanh hơn nhiều so với phiên bản cũ.",
+        "en": "This version is much faster than the old one."
+      }
+    },
+    {
+      "text": "The new model is slightly cheaper than the old one.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 13, "role": "subject"},
+        {"start": 14, "end": 16, "role": "verb"},
+        {"start": 17, "end": 25, "role": "marker"},
+        {"start": 26, "end": 33, "role": "complement"},
+        {"start": 34, "end": 38, "role": "marker"},
+        {"start": 39, "end": 50, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "slightly cho thấy mức chênh lệch rất nhỏ.",
+        "en": "slightly shows a very small difference."
+      },
+      "translation": {
+        "vi": "Mẫu mới rẻ hơn một chút so với mẫu cũ.",
+        "en": "The new model is slightly cheaper than the old one."
+      }
+    },
+    {
+      "text": "The weather is getting colder and colder.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 11, "role": "subject"},
+        {"start": 12, "end": 22, "role": "verb"},
+        {"start": 23, "end": 29, "role": "complement"},
+        {"start": 34, "end": 40, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Mẫu so sánh hơn + and + so sánh hơn cho thấy sự thay đổi tăng dần theo thời gian.",
+        "en": "The comparative + and + comparative pattern shows a change that increases over time."
+      },
+      "translation": {"vi": "Thời tiết ngày càng lạnh.", "en": "The weather is getting colder and colder."}
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "very không bổ nghĩa cho dạng so sánh hơn; để nhấn mạnh mức độ khác biệt, tiếng Anh dùng much/far/a lot.",
+        "en": "very cannot modify a comparative form; to emphasise a large difference, English uses much/far/a lot."
+      },
+      "error_tag": "word_form",
+      "l1": ["vi"],
+      "wrong": "This is very better.",
+      "right": "This is much better."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "This version is ___ faster than the old one.",
+      "options": [{"text": "much", "error_tag": null}, {"text": "very", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {
+        "vi": "much bổ nghĩa cho faster để nhấn mạnh khác biệt lớn; very không dùng với dạng so sánh hơn.",
+        "en": "much modifies faster to emphasise a large difference; very is not used with a comparative."
+      }
+    },
+    {
+      "q": "The new model is ___ cheaper than the old one.",
+      "options": [{"text": "slightly", "error_tag": null}, {"text": "very", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {
+        "vi": "slightly cho thấy mức chênh lệch nhỏ; very không đứng trước cheaper.",
+        "en": "slightly shows a small difference; very cannot come before cheaper."
+      }
+    },
+    {
+      "q": "The more you practise, ___ it becomes.",
+      "options": [{"text": "the easier", "error_tag": null}, {"text": "the easy", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Vế thứ hai của mẫu the...the cũng cần dạng so sánh hơn: the easier.",
+        "en": "The second half of the the...the pattern also needs a comparative form: the easier."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu so sánh hai thứ bạn biết, dùng much/far/a lot hoặc a bit/slightly trước tính từ so sánh hơn.",
+      "en": "Write one sentence comparing two things you know, using much/far/a lot or a bit/slightly before a comparative adjective."
+    },
+    "placeholder": "My new phone is much ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "marker", "any_of": ["much", "slightly"]},
+        {"role": "complement", "regex": "(?i)\\b\\w+er\\b|\\bmore\\s+\\w+"}
+      ]
+    },
+    "sample": {"text": "My new phone is much faster than my old one."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791001557",
+    "generated_at": "2026-10-03T04:25:57Z",
+    "r5_source": {
+      "ids": ["b1-comparative-patterns-and-intensifiers"],
+      "content_version": 2,
+      "content_hash": "b91d182c396f3b1b0de9e536ecd5714e5fbcf339a7e7a6255ca7298490712fe0",
+      "corrections": [
+        {
+          "r5_id": "b1-comparative-patterns-and-intensifiers",
+          "issue": "R5 example 'The new model is slightly cheaper.' lacks the comparison object, so it does not show the full comparative pattern.",
+          "fix": "Wrote 'The new model is slightly cheaper than the old one.' to include than + object."
+        },
+        {
+          "r5_id": "b1-comparative-patterns-and-intensifiers",
+          "issue": "R5 lists 'The weather is getting colder and colder.' as an example but the rules do not explain the comparative + and + comparative pattern.",
+          "fix": "Added a when_to_use condition for comparative + and + comparative and kept the pattern in the lesson scope."
+        },
+        {
+          "r5_id": "b1-comparative-patterns-and-intensifiers",
+          "issue": "R5 mistake 'The more you practise, the easy it becomes.' is correct as a mistake, but the explanation only says both halves need a comparative without naming the form.",
+          "fix": "Used the mistake in quick_practice with an explanation that names the required comparative form 'the easier'."
+        }
+      ]
+    }
+  },
+  "review": null
+}

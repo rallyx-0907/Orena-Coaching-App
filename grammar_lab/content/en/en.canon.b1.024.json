@@ -1,0 +1,214 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b1.024",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.questions",
+  "level": {"framework": "cefr", "value": "B1", "rank": 3},
+  "prereqs": ["en.canon.b1.023"],
+  "contrasts": [],
+  "error_tags": ["sentence_structure"],
+  "source_refs": {"r5": ["b1-subject-questions-and-object-questions"]},
+  "point_type": "other",
+  "sequence": 3,
+  "aliases": ["b1-subject-questions-and-object-questions"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Subject câu hỏi and object câu hỏi", "en": "Subject questions and object questions"},
+    "native_title": "Subject questions and object questions",
+    "level": {"framework": "cefr", "value": "B1", "rank": 3},
+    "summary": {
+      "vi": "Câu hỏi với wh-word có thể hỏi về chủ ngữ (không dùng trợ động từ do) hoặc về tân ngữ (cần trợ động từ do/does/did).",
+      "en": "Wh-questions can ask about the subject (no do-support) or about the object (do-support is required)."
+    },
+    "sub": {"vi": "chủ ngữ hay tân ngữ", "en": "subject or object"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi wh-word (who, what, which) đứng ở vị trí chủ ngữ và bạn muốn biết danh tính của người/vật thực hiện hành động.",
+      "en": "When the wh-word (who, what, which) is the subject and you want to know the identity of the person or thing doing the action."
+    },
+    {
+      "vi": "Khi wh-word là tân ngữ và bạn muốn biết người/vật nhận hành động.",
+      "en": "When the wh-word is the object and you want to know the person or thing receiving the action."
+    },
+    {
+      "vi": "Khi câu trả lời cho wh-word là chủ ngữ của câu trả lời (ví dụ: 'Who called?' — 'Tom called.').",
+      "en": "When the answer to the wh-word is the subject of the answer sentence (e.g., 'Who called?' — 'Tom called.')."
+    },
+    {
+      "vi": "Khi câu trả lời cho wh-word là tân ngữ của câu trả lời (ví dụ: 'Who did you call?' — 'I called Tom.').",
+      "en": "When the answer to the wh-word is the object of the answer sentence (e.g., 'Who did you call?' — 'I called Tom.')."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "Wh-word",
+        "role": "subject",
+        "label": {"vi": "từ để hỏi làm chủ ngữ", "en": "wh-word as subject"}
+      },
+      {
+        "text": "V",
+        "role": "verb",
+        "label": {"vi": "động từ chia theo chủ ngữ", "en": "verb agreeing with subject"}
+      },
+      {"text": "O", "role": "object", "label": {"vi": "tân ngữ", "en": "object"}, "optional": true}
+    ],
+    "variants": {
+      "question": [
+        {
+          "text": "Wh-word",
+          "role": "object",
+          "label": {"vi": "từ để hỏi làm tân ngữ", "en": "wh-word as object"}
+        },
+        {
+          "text": "aux",
+          "role": "aux",
+          "label": {"vi": "trợ động từ", "en": "auxiliary"},
+          "options": [{"text": "do"}, {"text": "does"}, {"text": "did"}]
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên thể", "en": "base verb"}}
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "Who called you last night?",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 10, "role": "verb"},
+        {"start": 11, "end": 14, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Wh-word 'Who' là chủ ngữ, động từ 'called' chia theo chủ ngữ, không có trợ động từ.",
+        "en": "The wh-word 'Who' is the subject, the verb 'called' agrees with it, and there is no auxiliary."
+      },
+      "translation": {"vi": "Ai đã gọi bạn tối qua?", "en": "Who called you last night?"}
+    },
+    {
+      "text": "Who did you call last night?",
+      "form": "question",
+      "spans": [
+        {"start": 0, "end": 3, "role": "object"},
+        {"start": 4, "end": 7, "role": "aux"},
+        {"start": 8, "end": 11, "role": "subject"},
+        {"start": 12, "end": 16, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Wh-word 'Who' là tân ngữ, cần trợ động từ 'did' và động từ nguyên thể 'call'.",
+        "en": "The wh-word 'Who' is the object, so the auxiliary 'did' and the base verb 'call' are required."
+      },
+      "translation": {"vi": "Bạn đã gọi ai tối qua?", "en": "Who did you call last night?"}
+    },
+    {
+      "text": "What happened after the meeting?",
+      "form": "affirmative",
+      "spans": [{"start": 0, "end": 4, "role": "subject"}, {"start": 5, "end": 13, "role": "verb"}],
+      "annotation": {
+        "vi": "Wh-word 'What' là chủ ngữ, động từ 'happened' chia theo chủ ngữ, không có trợ động từ.",
+        "en": "The wh-word 'What' is the subject, the verb 'happened' agrees with it, and there is no auxiliary."
+      },
+      "translation": {"vi": "Chuyện gì đã xảy ra sau cuộc họp?", "en": "What happened after the meeting?"}
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Khi wh-word là chủ ngữ, không dùng trợ động từ 'did'; động từ chính tự chia thì.",
+        "en": "When the wh-word is the subject, do not use the auxiliary 'did'; the main verb carries the tense."
+      },
+      "error_tag": "sentence_structure",
+      "l1": ["vi"],
+      "wrong": "Who did call you?",
+      "right": "Who called you?"
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "___ wrote this letter?",
+      "options": [{"text": "Who", "error_tag": null}, {"text": "Who did", "error_tag": "sentence_structure"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Wh-word 'Who' là chủ ngữ, không cần trợ động từ 'did'.",
+        "en": "The wh-word 'Who' is the subject, so no auxiliary 'did' is needed."
+      }
+    },
+    {
+      "q": "Who ___ you meet at the party?",
+      "options": [
+        {"text": "did", "error_tag": null},
+        {"text": "do", "error_tag": "tense"},
+        {"text": "does", "error_tag": "tense"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Wh-word 'Who' là tân ngữ, cần trợ động từ 'did' cho thì quá khứ đơn.",
+        "en": "The wh-word 'Who' is the object, so the auxiliary 'did' is needed for the past simple."
+      }
+    },
+    {
+      "q": "What ___ to your car?",
+      "options": [
+        {"text": "happened", "error_tag": null},
+        {"text": "did happen", "error_tag": "sentence_structure"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Wh-word 'What' là chủ ngữ, động từ 'happened' tự chia thì quá khứ, không dùng 'did'.",
+        "en": "The wh-word 'What' is the subject, so the verb 'happened' carries the past tense without 'did'."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu hỏi về chủ ngữ (wh-word làm chủ ngữ, không dùng do/does/did).",
+      "en": "Write a subject question (wh-word as subject, no do/does/did)."
+    },
+    "placeholder": "Who ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "subject", "any_of": ["who", "what"]},
+        {"role": "verb", "regex": "\\b\\w+(?:ed|s|es)\\b"}
+      ]
+    },
+    "sample": {"text": "Who called you?"}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791001483",
+    "generated_at": "2026-10-03T04:24:43Z",
+    "r5_source": {
+      "ids": ["b1-subject-questions-and-object-questions"],
+      "content_version": 2,
+      "content_hash": "a17a4b3c4cf0a2ac8f99488a97450aa3489b9c23532acb339772e925835bc372",
+      "corrections": [
+        {
+          "r5_id": "b1-subject-questions-and-object-questions",
+          "issue": "R5 examples include 'Which student won the prize?' but the formula does not cover 'which' as a wh-word.",
+          "fix": "Added 'which' to the wh-word options in the formula and pattern rule."
+        },
+        {
+          "r5_id": "b1-subject-questions-and-object-questions",
+          "issue": "R5 mistakes list 'Who did call you?' as incorrect, but the reason says 'neutral subject question' without explaining the mechanism.",
+          "fix": "Rewrote the reason to explain that when the wh-word is the subject, the main verb carries the tense and no auxiliary is used."
+        },
+        {
+          "r5_id": "b1-subject-questions-and-object-questions",
+          "issue": "R5 guided practice includes a production prompt that is too vague ('Answers vary').",
+          "fix": "Replaced with a concrete personal production prompt and a deterministic pattern rule."
+        }
+      ]
+    }
+  },
+  "review": null
+}

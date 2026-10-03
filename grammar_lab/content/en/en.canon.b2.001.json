@@ -1,0 +1,301 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b2.001",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.aspect_viewpoint",
+  "level": {"framework": "cefr", "value": "B2", "rank": 4},
+  "prereqs": [],
+  "contrasts": [],
+  "error_tags": ["tense", "coherence"],
+  "source_refs": {
+    "r5": [
+      "b2-perfect-aspect-in-discourse",
+      "b2-present-aspect-and-viewpoint",
+      "b2-past-aspect-and-narrative-viewpoint"
+    ]
+  },
+  "point_type": "tense_aspect",
+  "sequence": 1,
+  "aliases": [
+    "b2-perfect-aspect-in-discourse",
+    "b2-present-aspect-and-viewpoint",
+    "b2-past-aspect-and-narrative-viewpoint"
+  ],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Perfect aspect in discourse", "en": "Perfect aspect in discourse"},
+    "native_title": "Perfect aspect in discourse",
+    "level": {"framework": "cefr", "value": "B2", "rank": 4},
+    "summary": {
+      "vi": "Thì hoàn thành (perfect) liên kết một tình huống đã xảy ra với một mốc tham chiếu, giúp người nói thể hiện kết quả, trải nghiệm, tính trước thời điểm và vai trò nền trong diễn ngôn.",
+      "en": "The perfect aspect links a prior situation to a reference point, letting speakers express result, experience, anteriority and background in discourse."
+    },
+    "sub": {"vi": "liên kết mốc thời gian", "en": "linking time reference"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói một sự việc đã xảy ra trước một mốc thời gian cụ thể (hiện tại, quá khứ hoặc tương lai) và kết quả hoặc mối liên hệ vẫn còn quan trọng ở mốc đó.",
+      "en": "When you want to say a situation happened before a specific reference point (present, past or future) and its result or relevance still matters at that point."
+    },
+    {
+      "vi": "Khi bạn kể lại kinh nghiệm hoặc thành tựu mà không cần nêu thời gian kết thúc cụ thể.",
+      "en": "When you report an experience or achievement without naming a finished time."
+    },
+    {
+      "vi": "Khi bạn cần diễn tả một hành động đã kéo dài hoặc lặp lại cho đến một mốc tham chiếu, nhấn mạnh quá trình hoặc thời lượng.",
+      "en": "When you need to describe an action that continued or repeated up to a reference point, emphasising process or duration."
+    },
+    {
+      "vi": "Khi bạn muốn đặt một sự việc làm nền hoặc nguyên nhân cho một sự việc khác trong câu chuyện hoặc lập luận.",
+      "en": "When you want to set a situation as background or cause for another event in a story or argument."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {
+        "text": "have/has/had/will have",
+        "role": "aux",
+        "label": {"vi": "trợ động từ", "en": "auxiliary"},
+        "options": [{"text": "have"}, {"text": "has"}, {"text": "had"}, {"text": "will have"}]
+      },
+      {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}},
+      {"text": "O", "role": "object", "label": {"vi": "tân ngữ", "en": "object"}, "optional": true},
+      {
+        "text": "time",
+        "role": "time",
+        "label": {"vi": "mốc thời gian", "en": "time reference"},
+        "optional": true
+      }
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "have/has/had/will have",
+          "role": "aux",
+          "label": {"vi": "trợ động từ", "en": "auxiliary"},
+          "options": [{"text": "have"}, {"text": "has"}, {"text": "had"}, {"text": "will have"}]
+        },
+        {"text": "not", "role": "marker", "label": {"vi": "phủ định", "en": "negation"}},
+        {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}},
+        {
+          "text": "O",
+          "role": "object",
+          "label": {"vi": "tân ngữ", "en": "object"},
+          "optional": true
+        },
+        {
+          "text": "time",
+          "role": "time",
+          "label": {"vi": "mốc thời gian", "en": "time reference"},
+          "optional": true
+        }
+      ],
+      "question": [
+        {
+          "text": "have/has/had/will have",
+          "role": "aux",
+          "label": {"vi": "trợ động từ", "en": "auxiliary"},
+          "options": [{"text": "have"}, {"text": "has"}, {"text": "had"}, {"text": "will have"}]
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}},
+        {
+          "text": "O",
+          "role": "object",
+          "label": {"vi": "tân ngữ", "en": "object"},
+          "optional": true
+        },
+        {
+          "text": "time",
+          "role": "time",
+          "label": {"vi": "mốc thời gian", "en": "time reference"},
+          "optional": true
+        }
+      ]
+    },
+    "illustration": {"kind": "timeline", "timeline": {"shape": "unspecified_past"}}
+  },
+  "examples": [
+    {
+      "text": "We have already discussed this issue.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 3, "end": 7, "role": "aux"},
+        {"start": 16, "end": 25, "role": "verb"},
+        {"start": 26, "end": 36, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Hành động thảo luận đã xảy ra trước hiện tại và kết quả vẫn còn liên quan.",
+        "en": "The discussion happened before now and its result is still relevant."
+      },
+      "translation": {
+        "vi": "Chúng tôi đã thảo luận vấn đề này rồi.",
+        "en": "We have already discussed this issue."
+      }
+    },
+    {
+      "text": "By the time she arrived, the meeting had ended.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 25, "end": 36, "role": "subject"},
+        {"start": 37, "end": 40, "role": "aux"},
+        {"start": 41, "end": 46, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Cuộc họp kết thúc trước khi cô ấy đến, tạo mốc tham chiếu trong quá khứ.",
+        "en": "The meeting ended before she arrived, setting a past reference point."
+      },
+      "translation": {
+        "vi": "Vào lúc cô ấy đến, cuộc họp đã kết thúc.",
+        "en": "By the time she arrived, the meeting had ended."
+      }
+    },
+    {
+      "text": "By June, I will have worked here for ten years.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 9, "end": 10, "role": "subject"},
+        {"start": 11, "end": 20, "role": "aux"},
+        {"start": 21, "end": 27, "role": "verb"},
+        {"start": 33, "end": 46, "role": "time"}
+      ],
+      "annotation": {
+        "vi": "Hành động làm việc sẽ hoàn tất trước mốc tháng Sáu trong tương lai.",
+        "en": "The working will be completed before the future point of June."
+      },
+      "translation": {
+        "vi": "Đến tháng Sáu, tôi sẽ làm việc ở đây được mười năm.",
+        "en": "By June, I will have worked here for ten years."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Thì hiện tại hoàn thành không dùng với mốc thời gian đã kết thúc rõ ràng như 'yesterday'; cần dùng quá khứ đơn.",
+        "en": "The present perfect is not used with a finished time adverbial like 'yesterday'; the past simple is required."
+      },
+      "error_tag": "tense",
+      "l1": ["vi"],
+      "wrong": "Yesterday I have completed the task.",
+      "right": "Yesterday I completed the task."
+    },
+    {
+      "reason": {
+        "vi": "Khi mốc tham chiếu là quá khứ, cần dùng quá khứ hoàn thành (had + V3) để diễn tả hành động xảy ra trước đó, không dùng hiện tại hoàn thành.",
+        "en": "When the reference point is in the past, the past perfect (had + V3) is needed for an earlier action, not the present perfect."
+      },
+      "error_tag": "coherence",
+      "l1": ["vi"],
+      "wrong": "Before I arrived, she has left.",
+      "right": "Before I arrived, she had left."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "By the time we arrived, the film ___.",
+      "options": [
+        {"text": "had started", "error_tag": null},
+        {"text": "has started", "error_tag": "tense"},
+        {"text": "started", "error_tag": "tense"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Mốc tham chiếu là quá khứ (we arrived), nên hành động phim bắt đầu trước đó cần quá khứ hoàn thành 'had started'.",
+        "en": "The reference point is past (we arrived), so the earlier action of the film starting needs the past perfect 'had started'."
+      }
+    },
+    {
+      "q": "She ___ in London for five years before she moved to Paris.",
+      "options": [{"text": "had lived", "error_tag": null}, {"text": "has lived", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Hành động sống ở London kéo dài trước khi cô ấy chuyển đến Paris (mốc quá khứ), nên dùng quá khứ hoàn thành 'had lived'.",
+        "en": "The living in London lasted before she moved to Paris (a past reference point), so the past perfect 'had lived' is used."
+      }
+    },
+    {
+      "q": "I ___ this book three times.",
+      "options": [{"text": "have read", "error_tag": null}, {"text": "read", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Kinh nghiệm đọc sách tính đến hiện tại, không có mốc thời gian kết thúc cụ thể, nên dùng hiện tại hoàn thành 'have read'.",
+        "en": "The experience of reading up to now, without a specific finished time, takes the present perfect 'have read'."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một việc bạn đã làm hoặc đã trải nghiệm, dùng thì hiện tại hoàn thành (have/has + V3).",
+      "en": "Write a sentence about something you have done or experienced, using the present perfect (have/has + V3)."
+    },
+    "placeholder": "I have ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "aux", "any_of": ["have"]},
+        {
+          "role": "verb",
+          "regex": "\\b\\w+(ed|en|ne|wn|rn|lt|ought|aught|elt|ept|ade|one|ung|ound)\\b"
+        }
+      ]
+    },
+    "sample": {"text": "I have visited Japan twice."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791001562",
+    "generated_at": "2026-10-03T04:26:02Z",
+    "r5_source": {
+      "ids": [
+        "b2-perfect-aspect-in-discourse",
+        "b2-present-aspect-and-viewpoint",
+        "b2-past-aspect-and-narrative-viewpoint"
+      ],
+      "content_version": 2,
+      "content_hash": "411e1d2d44dd2e23755fe48cc6039536ce17409bf69719d6ec66f8e317705a6c",
+      "corrections": [
+        {
+          "r5_id": "b2-perfect-aspect-in-discourse",
+          "issue": "The R5 lesson included a future perfect example ('By June, I will have worked here for ten years.') but the formula and explanation did not explicitly cover the future perfect form.",
+          "fix": "Added 'will have' as an option in the auxiliary slot and included a future perfect example with appropriate spans and annotation."
+        },
+        {
+          "r5_id": "b2-perfect-aspect-in-discourse",
+          "issue": "The R5 lesson's common mistakes section had a mistake ('Yesterday I have completed the task.') but the error tag was not specified; the schema requires error tags 'tense' and 'coherence'.",
+          "fix": "Tagged the first mistake as 'tense' and the second as 'coherence', and rewrote the reasons to be more explicit about the mechanism."
+        },
+        {
+          "r5_id": "b2-perfect-aspect-in-discourse",
+          "issue": "The R5 lesson did not include a clear negative or question form for the perfect aspect.",
+          "fix": "Added negative and question formula variants with appropriate slots and options."
+        },
+        {
+          "r5_id": "b2-perfect-aspect-in-discourse",
+          "issue": "The R5 lesson's examples did not all have spans or annotations as required by the schema.",
+          "fix": "Provided three clean examples with spans, annotations and translations, ensuring all required roles are represented."
+        },
+        {
+          "r5_id": "b2-perfect-aspect-in-discourse",
+          "issue": "The R5 lesson's guided practice was not in the quick_practice format required by the schema.",
+          "fix": "Created three quick_practice cloze questions with options, answers and explanations, ensuring distractors are real learner errors."
+        },
+        {
+          "r5_id": "b2-perfect-aspect-in-discourse",
+          "issue": "The R5 lesson did not include a personal production card with a pattern rule.",
+          "fix": "Added a personal_production section with prompt, placeholder, target_form, pattern_rule and sample."
+        }
+      ]
+    }
+  },
+  "review": null
+}

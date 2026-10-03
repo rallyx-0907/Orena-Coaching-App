@@ -1,0 +1,249 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b2.002",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.future_plans",
+  "level": {"framework": "cefr", "value": "B2", "rank": 4},
+  "prereqs": [],
+  "contrasts": [],
+  "error_tags": ["tense"],
+  "source_refs": {"r5": ["b2-future-perfect", "b1-future-perfect-introduction"]},
+  "point_type": "tense_aspect",
+  "sequence": 1,
+  "aliases": ["b2-future-perfect", "b1-future-perfect-introduction"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "tương lai hoàn thành", "en": "Future perfect"},
+    "native_title": "Future perfect",
+    "level": {"framework": "cefr", "value": "B2", "rank": 4},
+    "summary": {
+      "vi": "Thì tương lai hoàn thành dùng để nói một hành động hoặc trạng thái sẽ hoàn tất trước một mốc thời gian trong tương lai.",
+      "en": "The future perfect describes an action or state that will be completed before a specific point in the future."
+    },
+    "sub": {"vi": "hoàn tất trước mốc", "en": "completion before a deadline"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nêu một kết quả sẽ đạt được trước một thời điểm hoặc sự kiện trong tương lai, thường với by, by the time hoặc before.",
+      "en": "When you want to state a result that will be achieved before a future time or event, often with by, by the time, or before."
+    },
+    {
+      "vi": "Khi bạn đo lường một khoảng thời gian sẽ tích lũy tính đến một mốc tương lai, đặc biệt với động từ trạng thái như live, work, know.",
+      "en": "When you measure a duration that will have accumulated by a future point, especially with stative verbs like live, work, know."
+    },
+    {
+      "vi": "Khi bạn cần phân biệt rõ giữa một hành động đã xong trước mốc và một hành động đang diễn ra tại mốc đó.",
+      "en": "When you need to make clear the difference between an action finished before a point and an action in progress at that point."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "by/before",
+        "role": "marker",
+        "label": {"vi": "giới từ mốc thời gian", "en": "time marker"},
+        "options": [{"text": "by"}, {"text": "before"}]
+      },
+      {
+        "text": "time",
+        "role": "time",
+        "label": {"vi": "mốc thời gian tương lai", "en": "future time point"}
+      },
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {"text": "will have", "role": "aux", "label": {"vi": "trợ động từ", "en": "auxiliary"}},
+      {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}}
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "will not have",
+          "role": "aux",
+          "label": {"vi": "trợ động từ phủ định", "en": "negative auxiliary"}
+        },
+        {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}},
+        {
+          "text": "by/before",
+          "role": "marker",
+          "label": {"vi": "giới từ mốc thời gian", "en": "time marker"},
+          "options": [{"text": "by"}, {"text": "before"}]
+        },
+        {
+          "text": "time",
+          "role": "time",
+          "label": {"vi": "mốc thời gian tương lai", "en": "future time point"}
+        }
+      ],
+      "question": [
+        {
+          "text": "Will",
+          "role": "aux",
+          "label": {"vi": "trợ động từ đảo lên đầu", "en": "fronted auxiliary"}
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {"text": "have", "role": "aux", "label": {"vi": "trợ động từ", "en": "auxiliary"}},
+        {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}},
+        {
+          "text": "by/before",
+          "role": "marker",
+          "label": {"vi": "giới từ mốc thời gian", "en": "time marker"},
+          "options": [{"text": "by"}, {"text": "before"}]
+        },
+        {
+          "text": "time",
+          "role": "time",
+          "label": {"vi": "mốc thời gian tương lai", "en": "future time point"}
+        }
+      ]
+    },
+    "illustration": {"kind": "timeline", "timeline": {"shape": "future_condition"}}
+  },
+  "examples": [
+    {
+      "text": "By Friday, we will have completed the migration.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "marker"},
+        {"start": 3, "end": 9, "role": "time"},
+        {"start": 11, "end": 13, "role": "subject"},
+        {"start": 14, "end": 23, "role": "aux"},
+        {"start": 24, "end": 33, "role": "verb"}
+      ],
+      "annotation": {"vi": "hoàn tất trước mốc thứ Sáu", "en": "completed before the Friday deadline"},
+      "translation": {
+        "vi": "Đến thứ Sáu, chúng tôi sẽ hoàn tất việc migration.",
+        "en": "By Friday, we will have completed the migration."
+      }
+    },
+    {
+      "text": "She will not have left by the time we arrive.",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 17, "role": "aux"},
+        {"start": 18, "end": 22, "role": "verb"},
+        {"start": 23, "end": 25, "role": "marker"},
+        {"start": 26, "end": 44, "role": "time"}
+      ],
+      "annotation": {
+        "vi": "phủ định: cô ấy vẫn chưa rời đi trước lúc chúng ta đến",
+        "en": "negative: she will still be there when we arrive"
+      },
+      "translation": {
+        "vi": "Cô ấy sẽ chưa rời đi trước khi chúng ta đến.",
+        "en": "She will not have left by the time we arrive."
+      }
+    },
+    {
+      "text": "Will you have finished the report by six?",
+      "form": "question",
+      "spans": [
+        {"start": 0, "end": 4, "role": "aux"},
+        {"start": 5, "end": 8, "role": "subject"},
+        {"start": 9, "end": 13, "role": "aux"},
+        {"start": 14, "end": 22, "role": "verb"},
+        {"start": 34, "end": 36, "role": "marker"},
+        {"start": 37, "end": 40, "role": "time"}
+      ],
+      "annotation": {
+        "vi": "câu hỏi: liệu báo cáo có xong trước sáu giờ không",
+        "en": "question: will the report be done before six"
+      },
+      "translation": {
+        "vi": "Bạn sẽ hoàn thành báo cáo trước sáu giờ chứ?",
+        "en": "Will you have finished the report by six?"
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học Việt Nam thường dùng thì tương lai đơn với 'already' để diễn tả ý hoàn tất trước mốc, nhưng tiếng Anh cần thì tương lai hoàn thành để thể hiện rõ quan hệ trước-sau.",
+        "en": "Vietnamese learners often use the simple future with 'already' to express completion before a deadline, but English requires the future perfect to show the before/after relationship clearly."
+      },
+      "error_tag": "tense",
+      "l1": ["vi"],
+      "wrong": "By Friday, we will complete the migration already.",
+      "right": "By Friday, we will have completed the migration."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "By next month, she ___ here for five years.",
+      "options": [{"text": "will have worked", "error_tag": null}, {"text": "will work", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Cần thì tương lai hoàn thành để đo khoảng thời gian tích lũy đến mốc tương lai.",
+        "en": "The future perfect is needed to measure duration accumulated up to a future point."
+      }
+    },
+    {
+      "q": "By the time you arrive, I ___ the whole house.",
+      "options": [
+        {"text": "will have cleaned", "error_tag": null},
+        {"text": "will clean", "error_tag": "tense"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Hành động sẽ hoàn tất trước khi bạn đến, nên dùng tương lai hoàn thành.",
+        "en": "The action will be completed before you arrive, so the future perfect is required."
+      }
+    },
+    {
+      "q": "___ they have finished the project by the deadline?",
+      "options": [{"text": "Will", "error_tag": null}, {"text": "Do", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu hỏi tương lai hoàn thành dùng Will + chủ ngữ + have + V3.",
+        "en": "Future perfect questions use Will + subject + have + past participle."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về việc bạn sẽ hoàn thành trước một mốc thời gian trong tương lai.",
+      "en": "Write one sentence about something you will have completed before a future deadline."
+    },
+    "placeholder": "By next year, I will have ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "aux", "any_of": ["will have"]},
+        {
+          "role": "verb",
+          "regex": "\\b\\w+(ed|en|ne|wn|lt|nt|de|id|ilt|ung|ought|aid|ound|old|elt|ept|ent|ade|one|orn|ung)\\b"
+        }
+      ]
+    },
+    "sample": {"text": "By next year, I will have saved enough money for a house."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791001579",
+    "generated_at": "2026-10-03T04:26:19Z",
+    "r5_source": {
+      "ids": ["b2-future-perfect", "b1-future-perfect-introduction"],
+      "content_version": 2,
+      "content_hash": "e1efb8d9b2073ef882ec834c45f901d9d9967249d249c804a868521385e86555",
+      "corrections": [
+        {
+          "r5_id": "b2-future-perfect",
+          "issue": "The R5 lesson included a mistake example 'At six, I will have been finished the report.' which is not a typical learner error and the correction changes the time marker from 'At' to 'By'.",
+          "fix": "Replaced with a more representative Vietnamese learner error: using simple future with 'already' instead of future perfect, and kept the time marker consistent."
+        },
+        {
+          "r5_id": "b1-future-perfect-introduction",
+          "issue": "The R5 lesson's guided practice included a recognition task that simply repeated the example without adding practice value.",
+          "fix": "Replaced with a cloze question that tests the choice between future perfect and simple future in a deadline context."
+        }
+      ]
+    }
+  },
+  "review": null
+}
