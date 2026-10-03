@@ -10,11 +10,11 @@ functions:
     - en.present_simple.habit
     - en.present_simple.third_person_s
     - en.adverbs_of_frequency
+    - en.canon.a2.004
     zh-Hans: []
     ja: []
   planned:
-    en:
-    - en.canon.a2.004
+    en: []
     zh-Hans: []
     ja:
     - ja.masu_form.present
@@ -137,12 +137,12 @@ functions:
     - en.canon.b1.006
     - en.canon.b1.009
     - en.canon.b1.007
+    - en.canon.b1.008
     zh-Hans:
     - zh.le_completion
     ja: []
   planned:
     en:
-    - en.canon.b1.008
     - en.canon.b1.010
     - en.canon.b1.048
     zh-Hans:
@@ -160,13 +160,13 @@ functions:
     - en.present_perfect.experience
     - en.canon.b1.002
     - en.canon.b1.003
+    - en.canon.b1.016
     zh-Hans:
     - zh.guo_experience
     ja: []
   planned:
     en:
     - en.canon.b1.004
-    - en.canon.b1.016
     zh-Hans: []
     ja:
     - ja.ta_koto_ga_aru
@@ -553,12 +553,12 @@ functions:
   realizations:
     en:
     - en.canon.b1.005
+    - en.past_simple_vs_continuous
     zh-Hans: []
     ja: []
   planned:
     en:
     - en.past_continuous
-    - en.past_simple_vs_continuous
     zh-Hans: []
     ja: []
 - id: fn.future_plans
@@ -572,6 +572,7 @@ functions:
     - en.canon.b2.003
     - en.canon.b2.004
     - en.canon.c1.006
+    - en.will.decisions
     zh-Hans:
     - zh.canon.gf.hsk1.a_1_1_2.p1
     - zh.canon.gf.hsk7_9.a_7_2_2_2.p1
@@ -579,7 +580,6 @@ functions:
   planned:
     en:
     - en.going_to.plans
-    - en.will.decisions
     - en.present_continuous.arrangements
     - en.canon.b1.011
     - en.canon.b1.012
@@ -601,6 +601,8 @@ functions:
     - en.canon.b1.044
     - en.canon.b1.055
     - en.too_enough
+    - en.adjectives_vs_adverbs
+    - en.adverbs.manner_degree
     zh-Hans:
     - zh.canon.gf.hsk6.a_6_2_3.p2
     - zh.canon.gf.hsk7_9.a_7_1_4_1.p1
@@ -609,8 +611,6 @@ functions:
     ja: []
   planned:
     en:
-    - en.adjectives_vs_adverbs
-    - en.adverbs.manner_degree
     - en.canon.b1.054
     zh-Hans:
     - zh.tai_le
@@ -636,6 +636,7 @@ functions:
     - en.canon.b1.018
     - en.canon.b1.020
     - en.canon.b2.010
+    - en.canon.b1.019
     zh-Hans:
     - zh.canon.gf.hsk2.a_2_1_1.p1
     - zh.canon.gf.hsk2.a_2_3.p1
@@ -644,7 +645,6 @@ functions:
     ja: []
   planned:
     en:
-    - en.canon.b1.019
     - en.canon.b1.021
     zh-Hans:
     - zh.ba_suggestion
@@ -665,6 +665,7 @@ functions:
     - en.canon.b2.007
     - en.canon.c1.007
     - en.canon.c1.008
+    - en.canon.b1.015
     zh-Hans:
     - zh.canon.gf.hsk3.a_3_5_4.p1
     - zh.canon.r5.hsk3_7_b_ng_kh_n_ng
@@ -675,7 +676,6 @@ functions:
     ja: []
   planned:
     en:
-    - en.canon.b1.015
     - en.canon.b2.008
     - en.canon.b2.009
     - en.canon.b2.014
@@ -1116,11 +1116,11 @@ functions:
   realizations:
     en:
     - en.canon.b2.016
+    - en.canon.b1.014
     zh-Hans: []
     ja: []
   planned:
     en:
-    - en.canon.b1.014
     - en.canon.b1.034
     - en.canon.b2.013
     - en.canon.b2.015

@@ -1,0 +1,275 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b1.016",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.past_experience",
+  "level": {"framework": "cefr", "value": "B1", "rank": 3},
+  "prereqs": ["en.canon.b1.004"],
+  "contrasts": [],
+  "error_tags": ["tense", "sentence_structure"],
+  "source_refs": {"r5": ["b1-present-perfect-passive"]},
+  "point_type": "tense_aspect",
+  "sequence": 4,
+  "aliases": ["b1-present-perfect-passive"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "hiện tại hoàn thành bị động", "en": "Present perfect passive"},
+    "native_title": "Present perfect passive",
+    "level": {"framework": "cefr", "value": "B1", "rank": 3},
+    "summary": {
+      "vi": "Câu bị động ở thì hiện tại hoàn thành dùng để nói một hành động đã hoàn thành và kết quả của nó còn liên quan đến hiện tại, trong khi người thực hiện hành động không được nhấn mạnh.",
+      "en": "The present perfect passive describes an action that has been completed and whose result matters now, while the person who did it is not the focus."
+    },
+    "sub": {"vi": "trải nghiệm", "en": "experience"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói một việc đã được làm xong và kết quả còn ảnh hưởng đến hiện tại, nhưng không cần nêu ai làm.",
+      "en": "Use it when something has been done and the result still matters now, but you do not need to say who did it."
+    },
+    {
+      "vi": "Khi người thực hiện không quan trọng, không được biết, hoặc quá rõ để nhắc lại.",
+      "en": "Use it when the doer is unimportant, unknown, or too obvious to mention."
+    },
+    {
+      "vi": "Khi bạn muốn thêm người thực hiện bằng 'by' vì thông tin đó hữu ích.",
+      "en": "Use it when you want to add the doer with 'by' because that information is useful."
+    },
+    {
+      "vi": "Khi bạn hỏi hoặc phủ định về một việc đã được hoàn thành tính đến thời điểm hiện tại.",
+      "en": "Use it when you ask or deny whether something has been completed up to now."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {
+        "text": "have/has",
+        "role": "aux",
+        "label": {"vi": "trợ động từ", "en": "auxiliary"},
+        "options": [{"text": "have"}, {"text": "has"}]
+      },
+      {"text": "been", "role": "aux", "label": {"vi": "been", "en": "been"}},
+      {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}},
+      {
+        "text": "by",
+        "role": "other",
+        "label": {"vi": "giới từ tác nhân", "en": "agent preposition"},
+        "optional": true
+      },
+      {
+        "text": "agent",
+        "role": "other",
+        "label": {"vi": "tác nhân", "en": "agent"},
+        "optional": true
+      }
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "have/has",
+          "role": "aux",
+          "label": {"vi": "trợ động từ", "en": "auxiliary"},
+          "options": [{"text": "have"}, {"text": "has"}]
+        },
+        {"text": "not", "role": "aux", "label": {"vi": "phủ định", "en": "negative"}},
+        {"text": "been", "role": "aux", "label": {"vi": "been", "en": "been"}},
+        {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}},
+        {
+          "text": "by",
+          "role": "other",
+          "label": {"vi": "giới từ tác nhân", "en": "agent preposition"},
+          "optional": true
+        },
+        {
+          "text": "agent",
+          "role": "other",
+          "label": {"vi": "tác nhân", "en": "agent"},
+          "optional": true
+        }
+      ],
+      "question": [
+        {
+          "text": "have/has",
+          "role": "aux",
+          "label": {"vi": "trợ động từ", "en": "auxiliary"},
+          "options": [{"text": "have"}, {"text": "has"}]
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {"text": "been", "role": "aux", "label": {"vi": "been", "en": "been"}},
+        {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}},
+        {
+          "text": "by",
+          "role": "other",
+          "label": {"vi": "giới từ tác nhân", "en": "agent preposition"},
+          "optional": true
+        },
+        {
+          "text": "agent",
+          "role": "other",
+          "label": {"vi": "tác nhân", "en": "agent"},
+          "optional": true
+        }
+      ]
+    },
+    "illustration": {"kind": "timeline", "timeline": {"shape": "unspecified_past"}}
+  },
+  "examples": [
+    {
+      "text": "The road has been repaired.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 8, "role": "subject"},
+        {"start": 9, "end": 12, "role": "aux"},
+        {"start": 13, "end": 17, "role": "aux"},
+        {"start": 18, "end": 26, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Con đường đã được sửa xong và hiện tại nó có thể đi lại được.",
+        "en": "The road has been repaired and is now usable."
+      },
+      "translation": {"vi": "Con đường đã được sửa.", "en": "The road has been repaired."}
+    },
+    {
+      "text": "The documents have not been sent yet.",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 13, "role": "subject"},
+        {"start": 14, "end": 18, "role": "aux"},
+        {"start": 19, "end": 22, "role": "aux"},
+        {"start": 23, "end": 27, "role": "aux"},
+        {"start": 28, "end": 32, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Việc gửi tài liệu chưa hoàn thành tính đến bây giờ.",
+        "en": "The sending of the documents has not been completed up to now."
+      },
+      "translation": {"vi": "Tài liệu vẫn chưa được gửi.", "en": "The documents have not been sent yet."}
+    },
+    {
+      "text": "Has the problem been solved by the team?",
+      "form": "question",
+      "spans": [
+        {"start": 0, "end": 3, "role": "aux"},
+        {"start": 4, "end": 15, "role": "subject"},
+        {"start": 16, "end": 20, "role": "aux"},
+        {"start": 21, "end": 27, "role": "verb"},
+        {"start": 28, "end": 30, "role": "other"},
+        {"start": 31, "end": 39, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Hỏi liệu vấn đề đã được nhóm giải quyết chưa.",
+        "en": "Asking whether the problem has been solved by the team."
+      },
+      "translation": {
+        "vi": "Vấn đề đã được nhóm giải quyết chưa?",
+        "en": "Has the problem been solved by the team?"
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học bỏ 'been' vì nghĩ 'has repaired' đã là bị động, nhưng thiếu 'been' thì câu thành chủ động.",
+        "en": "The learner drops 'been' because 'has repaired' looks passive, but without 'been' the sentence is active."
+      },
+      "error_tag": "tense",
+      "l1": ["vi"],
+      "wrong": "The road has repaired.",
+      "right": "The road has been repaired."
+    },
+    {
+      "reason": {
+        "vi": "Sau 'been' phải dùng quá khứ phân từ 'sent', không dùng dạng nguyên thể 'send'.",
+        "en": "After 'been' you need the past participle 'sent', not the base form 'send'."
+      },
+      "error_tag": "sentence_structure",
+      "l1": ["vi"],
+      "wrong": "The documents have been send.",
+      "right": "The documents have been sent."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "The emails ___ already been sent.",
+      "options": [{"text": "have", "error_tag": null}, {"text": "has", "error_tag": "agreement"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Chủ ngữ 'The emails' số nhiều nên dùng 'have', không dùng 'has'.",
+        "en": "The subject 'The emails' is plural, so use 'have', not 'has'."
+      }
+    },
+    {
+      "q": "The road has ___ repaired.",
+      "options": [{"text": "been", "error_tag": null}, {"text": "be", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 'has' trong câu bị động hoàn thành phải là 'been', không phải 'be'.",
+        "en": "After 'has' in the present perfect passive you need 'been', not 'be'."
+      }
+    },
+    {
+      "q": "The documents have been ___.",
+      "options": [{"text": "sent", "error_tag": null}, {"text": "send", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 'been' phải dùng quá khứ phân từ 'sent', không dùng 'send'.",
+        "en": "After 'been' you need the past participle 'sent', not 'send'."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một việc đã được hoàn thành và kết quả còn quan trọng bây giờ, dùng cấu trúc hiện tại hoàn thành bị động.",
+      "en": "Write one sentence about something that has been completed and whose result matters now, using the present perfect passive."
+    },
+    "placeholder": "The project has been ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "aux", "any_of": ["have", "has"]},
+        {"role": "aux", "any_of": ["been"]},
+        {
+          "role": "verb",
+          "regex": "\\b\\w+(ed|en|t|ne|wn|rn|lt|ld|nt|st|ft|pt|kt|ut|ad|id|od|ud)\\b"
+        }
+      ]
+    },
+    "sample": {"text": "The project has been finished."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791000504",
+    "generated_at": "2026-10-03T04:08:24Z",
+    "r5_source": {
+      "ids": ["b1-present-perfect-passive"],
+      "content_version": 2,
+      "content_hash": "0f4eb6c19861c3c1a48f01c7fd2fd0167a84a67fcff0c803d9913e85acc2b6e1",
+      "corrections": [
+        {
+          "r5_id": "b1-present-perfect-passive",
+          "issue": "R5 example 'The emails have already been sent.' is correct but the lesson did not include a negative form or a question form in the formula.",
+          "fix": "Added negative and question formula variants and used them in examples."
+        },
+        {
+          "r5_id": "b1-present-perfect-passive",
+          "issue": "R5 mistake 'The documents have been send.' was listed under 'passive participle' but the error tag was not specified.",
+          "fix": "Tagged it as sentence_structure and explained that 'been' requires a past participle."
+        },
+        {
+          "r5_id": "b1-present-perfect-passive",
+          "issue": "R5 did not include a personal production card with a deterministic pattern rule.",
+          "fix": "Added a personal production card with a rule that checks for have/has + been + past participle."
+        }
+      ]
+    }
+  },
+  "review": null
+}

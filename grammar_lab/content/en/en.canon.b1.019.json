@@ -1,0 +1,211 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b1.019",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.obligation_advice",
+  "level": {"framework": "cefr", "value": "B1", "rank": 3},
+  "prereqs": [],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["b1-advice-should-ought-to-had-better"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": ["b1-advice-should-ought-to-had-better"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Advice: should/ought to/had better", "en": "Advice: should/ought to/had better"},
+    "native_title": "Advice: should/ought to/had better",
+    "level": {"framework": "cefr", "value": "B1", "rank": 3},
+    "summary": {
+      "vi": "Chủ điểm này dạy cách đưa ra lời khuyên bằng should, ought to và had better, phân biệt lời khuyên chung với lời cảnh báo mạnh gắn với hậu quả cụ thể.",
+      "en": "This point teaches how to give advice with should, ought to and had better, distinguishing general advice from a strong warning tied to a specific consequence."
+    },
+    "sub": {"vi": "lời khuyên", "en": "giving advice"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Dùng should + động từ nguyên mẫu khi đưa lời khuyên chung, không nhấn mạnh hậu quả.",
+      "en": "Use should + base verb for general advice without stressing a consequence."
+    },
+    {
+      "vi": "Dùng ought to + động từ nguyên mẫu khi muốn nói lời khuyên trang trọng hơn một chút; nghĩa gần giống should nhưng ít phổ biến hơn.",
+      "en": "Use ought to + base verb for slightly more formal advice; it means about the same as should but is less common."
+    },
+    {
+      "vi": "Dùng had better + động từ nguyên mẫu khi lời khuyên gắn với tình huống cụ thể và có hậu quả xấu nếu không làm.",
+      "en": "Use had better + base verb when the advice is tied to a specific situation and something bad will happen if it is not followed."
+    },
+    {
+      "vi": "Dùng had better not + động từ nguyên mẫu để cảnh báo mạnh nên tránh làm gì.",
+      "en": "Use had better not + base verb for a strong warning to avoid doing something."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {
+        "text": "should/ought to/had better",
+        "role": "aux",
+        "label": {"vi": "trợ động từ khuyên bảo", "en": "advice auxiliary"},
+        "options": [{"text": "should"}, {"text": "ought to"}, {"text": "had better"}]
+      },
+      {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên mẫu", "en": "base verb"}}
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "should not/ought not to/had better not",
+          "role": "aux",
+          "label": {"vi": "trợ động từ phủ định", "en": "negative advice auxiliary"},
+          "options": [{"text": "should not"}, {"text": "ought not to"}, {"text": "had better not"}]
+        },
+        {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên mẫu", "en": "base verb"}}
+      ],
+      "question": [
+        {
+          "text": "Should",
+          "role": "aux",
+          "label": {"vi": "trợ động từ đảo lên đầu", "en": "fronted auxiliary"}
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên mẫu", "en": "base verb"}}
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "You should talk to your manager.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 10, "role": "aux"},
+        {"start": 11, "end": 15, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "should + động từ nguyên mẫu đưa ra lời khuyên chung.",
+        "en": "should + base verb gives general advice."
+      },
+      "translation": {"vi": "Bạn nên nói chuyện với quản lý của mình.", "en": "You should talk to your manager."}
+    },
+    {
+      "text": "You ought to get more sleep.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 12, "role": "aux"},
+        {"start": 13, "end": 16, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "ought to + động từ nguyên mẫu, nghĩa gần should nhưng trang trọng hơn.",
+        "en": "ought to + base verb, close to should but slightly more formal."
+      },
+      "translation": {"vi": "Bạn nên ngủ nhiều hơn.", "en": "You ought to get more sleep."}
+    },
+    {
+      "text": "We'd better hurry or we'll miss the bus.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 11, "role": "aux"},
+        {"start": 12, "end": 17, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "had better + động từ nguyên mẫu: lời khuyên mạnh vì có hậu quả cụ thể.",
+        "en": "had better + base verb: strong advice because there is a specific consequence."
+      },
+      "translation": {
+        "vi": "Chúng ta nên nhanh lên nếu không sẽ lỡ xe buýt.",
+        "en": "We'd better hurry or we'll miss the bus."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "had better đi với động từ nguyên mẫu không có to; thêm to là lỗi vì had better không phải là ought to.",
+        "en": "had better takes a bare base verb; adding to is wrong because had better is not ought to."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "You had better to call her.",
+      "right": "You had better call her."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "You ___ rest if you feel tired.",
+      "options": [{"text": "should", "error_tag": null}, {"text": "should to", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {"vi": "should + động từ nguyên mẫu, không có to.", "en": "should + base verb, with no to."}
+    },
+    {
+      "q": "You ___ better not touch that wire.",
+      "options": [{"text": "had", "error_tag": null}, {"text": "have", "error_tag": "word_choice"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Cụm cố định là had better not + động từ nguyên mẫu.",
+        "en": "The fixed form is had better not + base verb."
+      }
+    },
+    {
+      "q": "She ought ___ apologize for being late.",
+      "options": [{"text": "to", "error_tag": null}, {"text": "for", "error_tag": "preposition"}],
+      "answer": 0,
+      "explain": {
+        "vi": "ought luôn đi với to trước động từ nguyên mẫu.",
+        "en": "ought always takes to before the base verb."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một lời khuyên cho một người bạn bằng should, ought to hoặc had better.",
+      "en": "Write one piece of advice for a friend using should, ought to or had better."
+    },
+    "placeholder": "You should ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "aux", "any_of": ["should", "ought to", "had better", "'d better"]},
+        {"role": "verb", "regex": "[a-z]+"}
+      ]
+    },
+    "sample": {"text": "You should talk to your manager."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791000501",
+    "generated_at": "2026-10-03T04:08:21Z",
+    "r5_source": {
+      "ids": ["b1-advice-should-ought-to-had-better"],
+      "content_version": 2,
+      "content_hash": "d9ddd866a8887d8cefac8845afc9c1dce80057db5e7167a3bf93e68b724771b3",
+      "corrections": [
+        {
+          "r5_id": "b1-advice-should-ought-to-had-better",
+          "issue": "R5's example 'You'd better not touch that wire' is correct, but the lesson did not give a negative formula or a question formula, so learners cannot see the full pattern.",
+          "fix": "Added negative and question formula arrays with should not/ought not to/had better not and fronted Should."
+        },
+        {
+          "r5_id": "b1-advice-should-ought-to-had-better",
+          "issue": "R5's mistake 'You should to rest' is a real learner error, but the lesson only listed it without explaining the mechanism.",
+          "fix": "Kept the had better + base mistake as the common_mistakes entry and explained that had better takes a bare base verb, not to + verb."
+        },
+        {
+          "r5_id": "b1-advice-should-ought-to-had-better",
+          "issue": "R5's guided practice asked learners to 'identify the target structure' in a full sentence, which does not test production or contrast.",
+          "fix": "Replaced with three cloze quick-practice items that test should + base, had better not, and ought to + base."
+        }
+      ]
+    }
+  },
+  "review": null
+}

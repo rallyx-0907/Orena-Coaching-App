@@ -1,0 +1,257 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b1.015",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.possibility",
+  "level": {"framework": "cefr", "value": "B1", "rank": 3},
+  "prereqs": [],
+  "contrasts": [],
+  "error_tags": ["sentence_structure"],
+  "source_refs": {"r5": ["b1-passive-with-modals"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["b1-passive-with-modals"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "bị động with động từ khuyết thiếu", "en": "Passive with modals"},
+    "native_title": "Passive with modals",
+    "level": {"framework": "cefr", "value": "B1", "rank": 3},
+    "summary": {
+      "vi": "Câu bị động với động từ khuyết thiếu dùng để nói về khả năng, sự cho phép, lời khuyên hoặc nghĩa vụ khi người thực hiện hành động không quan trọng hoặc không được biết.",
+      "en": "The passive with modals expresses possibility, permission, advice, or obligation when the doer of the action is unknown or unimportant."
+    },
+    "sub": {"vi": "bị động với modal", "en": "passive with modals"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói điều gì đó có thể, nên, phải hoặc được phép xảy ra, nhưng không cần nêu ai làm.",
+      "en": "When you want to say something can, should, must, or may happen, but you do not need to say who does it."
+    },
+    {
+      "vi": "Khi quy tắc, hướng dẫn hoặc quy trình áp dụng cho mọi người, không riêng một cá nhân.",
+      "en": "When a rule, instruction, or process applies to everyone, not to one specific person."
+    },
+    {
+      "vi": "Khi bạn muốn nhấn mạnh hành động hoặc kết quả hơn là người thực hiện.",
+      "en": "When you want to focus on the action or result rather than the person who does it."
+    },
+    {
+      "vi": "Khi người thực hiện đã rõ trong ngữ cảnh hoặc không quan trọng với người nghe.",
+      "en": "When the doer is already clear from context or is not important to the listener."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {
+        "text": "modal",
+        "role": "aux",
+        "label": {"vi": "động từ khuyết thiếu", "en": "modal verb"},
+        "options": [
+          {"text": "can"},
+          {"text": "could"},
+          {"text": "may"},
+          {"text": "might"},
+          {"text": "must"},
+          {"text": "should"},
+          {"text": "will"},
+          {"text": "would"}
+        ]
+      },
+      {"text": "be", "role": "aux", "label": {"vi": "be", "en": "be"}},
+      {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}}
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "modal",
+          "role": "aux",
+          "label": {"vi": "động từ khuyết thiếu", "en": "modal verb"},
+          "options": [
+            {"text": "can"},
+            {"text": "could"},
+            {"text": "may"},
+            {"text": "might"},
+            {"text": "must"},
+            {"text": "should"},
+            {"text": "will"},
+            {"text": "would"}
+          ]
+        },
+        {"text": "not", "role": "aux", "label": {"vi": "phủ định", "en": "negative marker"}},
+        {"text": "be", "role": "aux", "label": {"vi": "be", "en": "be"}},
+        {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}}
+      ],
+      "question": [
+        {
+          "text": "modal",
+          "role": "aux",
+          "label": {"vi": "động từ khuyết thiếu", "en": "modal verb"},
+          "options": [
+            {"text": "can"},
+            {"text": "could"},
+            {"text": "may"},
+            {"text": "might"},
+            {"text": "must"},
+            {"text": "should"},
+            {"text": "will"},
+            {"text": "would"}
+          ]
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {"text": "be", "role": "aux", "label": {"vi": "be", "en": "be"}},
+        {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}}
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "The form must be signed today.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 8, "role": "subject"},
+        {"start": 9, "end": 13, "role": "aux"},
+        {"start": 14, "end": 16, "role": "aux"},
+        {"start": 17, "end": 23, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "must + be + V3 diễn tả nghĩa vụ bị động.",
+        "en": "must + be + V3 expresses passive obligation."
+      },
+      "translation": {"vi": "Mẫu phải được ký hôm nay.", "en": "The form must be signed today."}
+    },
+    {
+      "text": "This problem can be solved easily.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 12, "role": "subject"},
+        {"start": 13, "end": 16, "role": "aux"},
+        {"start": 17, "end": 19, "role": "aux"},
+        {"start": 20, "end": 26, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "can + be + V3 diễn tả khả năng bị động.",
+        "en": "can + be + V3 expresses passive possibility."
+      },
+      "translation": {
+        "vi": "Vấn đề này có thể được giải quyết dễ dàng.",
+        "en": "This problem can be solved easily."
+      }
+    },
+    {
+      "text": "The medicine should not be taken without food.",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 12, "role": "subject"},
+        {"start": 13, "end": 19, "role": "aux"},
+        {"start": 20, "end": 23, "role": "aux"},
+        {"start": 24, "end": 26, "role": "aux"},
+        {"start": 27, "end": 32, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "should not + be + V3 diễn tả lời khuyên phủ định ở dạng bị động.",
+        "en": "should not + be + V3 expresses negative passive advice."
+      },
+      "translation": {
+        "vi": "Thuốc không nên được uống khi bụng đói.",
+        "en": "The medicine should not be taken without food."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học bỏ be vì nghĩ modal đi thẳng với động từ chính, nhưng cấu trúc bị động bắt buộc có be + V3.",
+        "en": "Learners omit be because they think the modal connects directly to the main verb, but the passive structure requires be + V3."
+      },
+      "error_tag": "sentence_structure",
+      "l1": ["vi"],
+      "wrong": "The report must finished today.",
+      "right": "The report must be finished today."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "The machine can ___ repaired tomorrow.",
+      "options": [{"text": "be", "error_tag": null}, {"text": "is", "error_tag": "sentence_structure"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau modal can, cấu trúc bị động là be + V3, không dùng is.",
+        "en": "After the modal can, the passive structure is be + V3, not is."
+      }
+    },
+    {
+      "q": "The form must ___ signed by both parties.",
+      "options": [{"text": "be", "error_tag": null}, {"text": "been", "error_tag": "sentence_structure"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau modal must, ta dùng be, không dùng been.",
+        "en": "After the modal must, we use be, not been."
+      }
+    },
+    {
+      "q": "The room may ___ for meetings.",
+      "options": [{"text": "be used", "error_tag": null}, {"text": "used", "error_tag": "sentence_structure"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Cấu trúc bị động với may là may be + V3, không bỏ be.",
+        "en": "The passive with may is may be + V3; do not drop be."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một việc cần, nên hoặc có thể được làm trong trường học hoặc nơi làm việc của bạn.",
+      "en": "Write one sentence about something that must, should, or can be done at your school or workplace."
+    },
+    "placeholder": "The form must be ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {
+          "role": "aux",
+          "any_of": ["can", "could", "may", "might", "must", "should", "will", "would"]
+        },
+        {"role": "aux", "any_of": ["be"]},
+        {"role": "verb", "regex": "\\b\\w+(ed|en|wn|ne|nt|de|id|ilt|elt|ought|aught)\\b"}
+      ]
+    },
+    "sample": {"text": "The form must be signed before Friday."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791000495",
+    "generated_at": "2026-10-03T04:08:15Z",
+    "r5_source": {
+      "ids": ["b1-passive-with-modals"],
+      "content_version": 2,
+      "content_hash": "9cfe0f5d329c785591ff5a029f2a16e1b1fb02d6b2cb499772d953d4f55aeafa",
+      "corrections": [
+        {
+          "r5_id": "b1-passive-with-modals",
+          "issue": "The R5 example 'The medicine should be taken with food' is acceptable, but the lesson did not include a negative example even though the rules mention negative forms.",
+          "fix": "Added a negative example: 'The medicine should not be taken without food.'"
+        },
+        {
+          "r5_id": "b1-passive-with-modals",
+          "issue": "The R5 mistake 'The machine can repaired.' was listed, but the explanation did not clearly state that be is required after the modal.",
+          "fix": "Rewrote the mistake explanation to state that the passive structure requires be + V3 after the modal."
+        },
+        {
+          "r5_id": "b1-passive-with-modals",
+          "issue": "The R5 lesson did not provide a clear formula with slots and roles.",
+          "fix": "Added a formula with subject, modal, be, and past participle slots, plus negative and question variants."
+        }
+      ]
+    }
+  },
+  "review": null
+}

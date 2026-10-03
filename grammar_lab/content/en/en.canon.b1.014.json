@@ -1,0 +1,263 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b1.014",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.voice_causative",
+  "level": {"framework": "cefr", "value": "B1", "rank": 3},
+  "prereqs": [],
+  "contrasts": [],
+  "error_tags": ["tense", "sentence_structure"],
+  "source_refs": {"r5": ["b1-passive-voice-present-and-past"]},
+  "point_type": "tense_aspect",
+  "sequence": 1,
+  "aliases": ["b1-passive-voice-present-and-past"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "câu bị động: present and past", "en": "Passive voice: present and past"},
+    "native_title": "Passive voice: present and past",
+    "level": {"framework": "cefr", "value": "B1", "rank": 3},
+    "summary": {
+      "vi": "Câu bị động ở thì hiện tại đơn và quá khứ đơn dùng be + quá khứ phân từ để nhấn mạnh người/vật nhận hành động hoặc chính hành động, khi người thực hiện không quan trọng hoặc đã rõ.",
+      "en": "The present and past simple passive uses be + past participle to focus on the receiver or the action itself, when the doer is unimportant or already known."
+    },
+    "sub": {"vi": "bị động hiện tại / quá khứ", "en": "present / past passive"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi người thực hiện hành động không quan trọng, không rõ hoặc đã được biết đến.",
+      "en": "When the person who does the action is unimportant, unknown, or already clear."
+    },
+    {
+      "vi": "Khi muốn nhấn mạnh người hoặc vật nhận hành động hơn là người thực hiện.",
+      "en": "When you want to focus on the receiver of the action rather than the doer."
+    },
+    {
+      "vi": "Khi mô tả quy trình, quy tắc hoặc sự kiện chung chung, không gắn với một cá nhân cụ thể.",
+      "en": "When describing processes, rules, or general events that are not tied to a specific person."
+    },
+    {
+      "vi": "Khi muốn thêm by + danh từ để nêu người thực hiện nếu thông tin đó thực sự hữu ích.",
+      "en": "When you want to add by + noun to name the doer if that information is genuinely useful."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {
+        "text": "be",
+        "role": "aux",
+        "label": {"vi": "trợ động từ be", "en": "be auxiliary"},
+        "options": [{"text": "am"}, {"text": "is"}, {"text": "are"}, {"text": "was"}, {"text": "were"}]
+      },
+      {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}},
+      {
+        "text": "by",
+        "role": "marker",
+        "label": {"vi": "giới từ by", "en": "by preposition"},
+        "optional": true
+      },
+      {"text": "N", "role": "object", "label": {"vi": "danh từ", "en": "noun"}, "optional": true}
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "be",
+          "role": "aux",
+          "label": {"vi": "trợ động từ be", "en": "be auxiliary"},
+          "options": [{"text": "am"}, {"text": "is"}, {"text": "are"}, {"text": "was"}, {"text": "were"}]
+        },
+        {"text": "not", "role": "particle", "label": {"vi": "phủ định", "en": "negation"}},
+        {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}},
+        {
+          "text": "by",
+          "role": "marker",
+          "label": {"vi": "giới từ by", "en": "by preposition"},
+          "optional": true
+        },
+        {"text": "N", "role": "object", "label": {"vi": "danh từ", "en": "noun"}, "optional": true}
+      ],
+      "question": [
+        {
+          "text": "be",
+          "role": "aux",
+          "label": {"vi": "trợ động từ be", "en": "be auxiliary"},
+          "options": [{"text": "Am"}, {"text": "Is"}, {"text": "Are"}, {"text": "Was"}, {"text": "Were"}]
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}},
+        {
+          "text": "by",
+          "role": "marker",
+          "label": {"vi": "giới từ by", "en": "by preposition"},
+          "optional": true
+        },
+        {"text": "N", "role": "object", "label": {"vi": "danh từ", "en": "noun"}, "optional": true}
+      ]
+    },
+    "illustration": {"kind": "timeline", "timeline": {"shape": "point_past"}}
+  },
+  "examples": [
+    {
+      "text": "English is spoken in many countries.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 7, "role": "subject"},
+        {"start": 8, "end": 10, "role": "aux"},
+        {"start": 11, "end": 17, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "be + quá khứ phân từ tạo bị động hiện tại đơn; người nói không quan trọng.",
+        "en": "be + past participle forms the present simple passive; the doer is unimportant."
+      },
+      "translation": {"vi": "Tiếng Anh được nói ở nhiều nước.", "en": "English is spoken in many countries."}
+    },
+    {
+      "text": "The bridge was built in 1998.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 10, "role": "subject"},
+        {"start": 11, "end": 14, "role": "aux"},
+        {"start": 15, "end": 20, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "was + quá khứ phân từ tạo bị động quá khứ đơn; hành động xảy ra và kết thúc trong quá khứ.",
+        "en": "was + past participle forms the past simple passive; the action happened and finished in the past."
+      },
+      "translation": {"vi": "Cây cầu được xây năm 1998.", "en": "The bridge was built in 1998."}
+    },
+    {
+      "text": "These products are not tested carefully.",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 14, "role": "subject"},
+        {"start": 15, "end": 18, "role": "aux"},
+        {"start": 19, "end": 22, "role": "particle"},
+        {"start": 23, "end": 29, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "not đứng sau be để phủ định bị động hiện tại đơn.",
+        "en": "not comes after be to make the present simple passive negative."
+      },
+      "translation": {
+        "vi": "Những sản phẩm này không được kiểm tra kỹ.",
+        "en": "These products are not tested carefully."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Câu bị động cần trợ động từ be chia theo thì và chủ ngữ; thiếu was thì câu không còn là bị động hoàn chỉnh.",
+        "en": "A passive sentence needs the auxiliary be with tense and agreement; without was the sentence is not a complete passive."
+      },
+      "error_tag": "tense",
+      "l1": ["vi"],
+      "wrong": "The bridge built in 1998.",
+      "right": "The bridge was built in 1998."
+    },
+    {
+      "reason": {
+        "vi": "Sau be phải dùng quá khứ phân từ (made), không dùng động từ nguyên mẫu (make).",
+        "en": "After be you need the past participle (made), not the base verb (make)."
+      },
+      "error_tag": "sentence_structure",
+      "l1": ["vi"],
+      "wrong": "These phones are make in China.",
+      "right": "These phones are made in China."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "The letters ___ every morning.",
+      "options": [
+        {"text": "are delivered", "error_tag": null},
+        {"text": "deliver", "error_tag": "sentence_structure"},
+        {"text": "are deliver", "error_tag": "word_form"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Bị động hiện tại đơn: are + quá khứ phân từ delivered.",
+        "en": "Present simple passive: are + past participle delivered."
+      }
+    },
+    {
+      "q": "The window ___ by the storm last night.",
+      "options": [
+        {"text": "was broken", "error_tag": null},
+        {"text": "broke", "error_tag": "tense"},
+        {"text": "was break", "error_tag": "word_form"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Bị động quá khứ đơn: was + quá khứ phân từ broken.",
+        "en": "Past simple passive: was + past participle broken."
+      }
+    },
+    {
+      "q": "This song ___ by a famous singer.",
+      "options": [
+        {"text": "was written", "error_tag": null},
+        {"text": "wrote", "error_tag": "tense"},
+        {"text": "was wrote", "error_tag": "word_form"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Bị động quá khứ đơn: was + quá khứ phân từ written.",
+        "en": "Past simple passive: was + past participle written."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu bị động ở hiện tại đơn hoặc quá khứ đơn về một đồ vật hoặc địa điểm quen thuộc.",
+      "en": "Write one passive sentence in the present simple or past simple about an object or place you know."
+    },
+    "placeholder": "This bridge was built ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "aux", "any_of": ["am", "is", "are", "was", "were"]},
+        {
+          "role": "verb",
+          "regex": "\\b\\w+(ed|en|ne|nt|lt|ld|rn|wn|ung|ought|ade|old|elt|ept|aid)\\b"
+        }
+      ]
+    },
+    "sample": {"text": "This bridge was built in 1998."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791000504",
+    "generated_at": "2026-10-03T04:08:24Z",
+    "r5_source": {
+      "ids": ["b1-passive-voice-present-and-past"],
+      "content_version": 2,
+      "content_hash": "d4b0bfc18f8c70c07a20af1d319d551bb287c681ccda6bf71abdb340495afdda",
+      "corrections": [
+        {
+          "r5_id": "b1-passive-voice-present-and-past",
+          "issue": "R5's example 'These products are tested carefully.' is fine, but the lesson did not include a negative or question form, which the point needs for full coverage.",
+          "fix": "Added a negative example 'These products are not tested carefully.' and full negative/question formula variants."
+        },
+        {
+          "r5_id": "b1-passive-voice-present-and-past",
+          "issue": "R5's mistake 'These phones are make in China.' was labelled only as a past participle error; the schema requires an error tag from the evaluator list.",
+          "fix": "Tagged it as sentence_structure and explained that be must be followed by a past participle, not a base verb."
+        },
+        {
+          "r5_id": "b1-passive-voice-present-and-past",
+          "issue": "R5's guided practice included a production prompt with no model or pattern rule, so learners had no concrete route to follow.",
+          "fix": "Added a personal_production card with a prompt, placeholder, sample, and a deterministic pattern_rule that checks for be + past participle."
+        }
+      ]
+    }
+  },
+  "review": null
+}

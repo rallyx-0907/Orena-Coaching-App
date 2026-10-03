@@ -1,0 +1,229 @@
+{
+  "schema_version": "0.4",
+  "id": "en.adverbs.manner_degree",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.degree",
+  "level": {"framework": "cefr", "value": "A2", "rank": 2},
+  "prereqs": ["en.adjectives_vs_adverbs"],
+  "contrasts": ["en.adjectives_vs_adverbs", "en.too_enough"],
+  "error_tags": ["word_form"],
+  "source_refs": {"r5": ["a2-adverbs-of-manner-and-degree"]},
+  "point_type": "word_order",
+  "sequence": 3,
+  "aliases": ["a2-adverbs-of-manner-and-degree"],
+  "source_anchors": {
+    "status": "anchored",
+    "items": [
+      {"source": "core_inventory", "code": "153", "level": "A2"},
+      {"source": "core_inventory", "code": "162", "level": "A2"}
+    ]
+  },
+  "header": {
+    "title": {"vi": "Trạng từ chỉ cách thức và mức độ", "en": "Adverbs of manner and degree"},
+    "native_title": "Adverbs of manner and degree",
+    "level": {"framework": "cefr", "value": "A2", "rank": 2},
+    "summary": {
+      "vi": "Trạng từ chỉ cách thức cho biết hành động diễn ra như thế nào; trạng từ chỉ mức độ cho biết mức độ của một tính từ hoặc một trạng từ khác.",
+      "en": "Manner adverbs say how an action happens; degree adverbs say how strong an adjective or another adverb is."
+    },
+    "sub": {"vi": "cách thức và mức độ", "en": "manner and degree"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói một hành động được làm như thế nào, hãy dùng trạng từ chỉ cách thức sau động từ thường: speak slowly, drive carefully.",
+      "en": "When you want to say how an action is done, use a manner adverb after the main verb: speak slowly, drive carefully."
+    },
+    {
+      "vi": "Khi bạn muốn tăng hoặc giảm mức độ của một tính từ, hãy đặt trạng từ chỉ mức độ trước tính từ đó: very tired, quite difficult.",
+      "en": "When you want to raise or lower the strength of an adjective, put a degree adverb before it: very tired, quite difficult."
+    },
+    {
+      "vi": "Khi bạn muốn tăng mức độ của một trạng từ khác, hãy đặt trạng từ chỉ mức độ trước trạng từ đó: really slowly, very well.",
+      "en": "When you want to raise the strength of another adverb, put a degree adverb before it: really slowly, very well."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ thường", "en": "main verb"}},
+      {
+        "text": "manner adverb",
+        "role": "other",
+        "label": {"vi": "trạng từ chỉ cách thức", "en": "manner adverb"}
+      },
+      {
+        "text": "degree adverb",
+        "role": "other",
+        "label": {"vi": "trạng từ chỉ mức độ", "en": "degree adverb"},
+        "optional": true
+      },
+      {
+        "text": "adjective/adverb",
+        "role": "complement",
+        "label": {"vi": "tính từ/trạng từ được bổ nghĩa", "en": "adjective/adverb being modified"},
+        "optional": true
+      }
+    ],
+    "illustration": {"kind": "word_order"}
+  },
+  "examples": [
+    {
+      "text": "She speaks slowly.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 10, "role": "verb"},
+        {"start": 11, "end": 17, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "slowly cho biết cách thức của hành động speaks.",
+        "en": "slowly tells how the action speaks happens."
+      },
+      "translation": {"vi": "Cô ấy nói chậm.", "en": "She speaks slowly."}
+    },
+    {
+      "text": "The test was quite difficult.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 8, "role": "subject"},
+        {"start": 9, "end": 12, "role": "verb"},
+        {"start": 13, "end": 18, "role": "other"},
+        {"start": 19, "end": 28, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "quite đứng trước tính từ difficult để giảm nhẹ mức độ.",
+        "en": "quite comes before the adjective difficult to soften the degree."
+      },
+      "translation": {"vi": "Bài kiểm tra khá khó.", "en": "The test was quite difficult."}
+    },
+    {
+      "text": "She did it really well.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 7, "role": "verb"},
+        {"start": 11, "end": 17, "role": "other"},
+        {"start": 18, "end": 22, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "really tăng mức độ cho trạng từ well.",
+        "en": "really raises the degree of the adverb well."
+      },
+      "translation": {"vi": "Cô ấy làm rất tốt.", "en": "She did it really well."}
+    }
+  ],
+  "compare": [
+    {
+      "with": "en.adjectives_vs_adverbs",
+      "this_example": "He speaks quietly.",
+      "other_example": "He is very quiet.",
+      "this_meaning": {
+        "vi": "Trạng từ chỉ cách thức bổ nghĩa cho động từ và cho biết hành động diễn ra thế nào.",
+        "en": "A manner adverb modifies a verb and says how the action happens."
+      },
+      "other_meaning": {
+        "vi": "Tính từ bổ nghĩa cho danh từ hoặc đứng sau động từ liên kết như be, seem, feel.",
+        "en": "An adjective modifies a noun or follows a linking verb like be, seem, feel."
+      }
+    },
+    {
+      "with": "en.too_enough",
+      "this_example": "The test was quite difficult.",
+      "other_example": "The test was too difficult for me.",
+      "this_meaning": {
+        "vi": "Trạng từ chỉ mức độ như very, really, quite đứng trước tính từ/trạng từ để điều chỉnh mức độ.",
+        "en": "Degree adverbs like very, really, quite come before an adjective/adverb to adjust its strength."
+      },
+      "other_meaning": {
+        "vi": "too và enough diễn tả mức độ vượt quá hoặc đủ so với một nhu cầu; too đứng trước tính từ, enough đứng sau tính từ.",
+        "en": "too and enough express a level beyond or sufficient for a need; too comes before an adjective, enough comes after it."
+      }
+    }
+  ],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Sau động từ thường drives cần trạng từ chỉ cách thức carefully, không dùng tính từ careful.",
+        "en": "After the main verb drives, you need the manner adverb carefully, not the adjective careful."
+      },
+      "error_tag": "word_form",
+      "l1": ["vi"],
+      "wrong": "He drives very careful.",
+      "right": "He drives very carefully."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "She speaks English ___.",
+      "options": [{"text": "fluently", "error_tag": null}, {"text": "fluent", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau động từ speaks cần trạng từ chỉ cách thức fluently.",
+        "en": "After the verb speaks, you need the manner adverb fluently."
+      }
+    },
+    {
+      "q": "The room is ___ quiet.",
+      "options": [{"text": "really", "error_tag": null}, {"text": "real", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Trạng từ chỉ mức độ really đứng trước tính từ quiet.",
+        "en": "The degree adverb really comes before the adjective quiet."
+      }
+    },
+    {
+      "q": "He opened the door ___.",
+      "options": [{"text": "carefully", "error_tag": null}, {"text": "careful", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau động từ opened cần trạng từ chỉ cách thức carefully.",
+        "en": "After the verb opened, you need the manner adverb carefully."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về cách bạn làm một việc gì đó, dùng một trạng từ chỉ cách thức và một trạng từ chỉ mức độ.",
+      "en": "Write one sentence about how you do something, using a manner adverb and a degree adverb."
+    },
+    "placeholder": "I speak English ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "verb", "regex": "\\b\\w+s?\\b"}, {"role": "other", "regex": "\\b\\w+ly\\b"}]
+    },
+    "sample": {"text": "I speak English really slowly."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791000452",
+    "generated_at": "2026-10-03T04:07:32Z",
+    "r5_source": {
+      "ids": ["a2-adverbs-of-manner-and-degree"],
+      "content_version": 2,
+      "content_hash": "0c126fcecd2da1dbac27333f34999c1ec9b7647e3c4dfe21491d50f4f584bf56",
+      "corrections": [
+        {
+          "r5_id": "a2-adverbs-of-manner-and-degree",
+          "issue": "R5's example 'She did it really well.' was listed under manner adverbs, but 'well' is an adverb of manner and 'really' is a degree adverb; the lesson did not clearly separate the two functions in the example set.",
+          "fix": "Kept the example but added spans and an annotation that marks 'really' as the degree adverb and 'well' as the manner adverb."
+        },
+        {
+          "r5_id": "a2-adverbs-of-manner-and-degree",
+          "issue": "R5's mistake 'I very like this song.' was correct as a learner error, but the lesson did not give a clear rule for why 'very' cannot modify a lexical verb.",
+          "fix": "Added a when_to_use condition and a compare entry showing that degree adverbs like very/really/quite modify adjectives or adverbs, not lexical verbs."
+        },
+        {
+          "r5_id": "a2-adverbs-of-manner-and-degree",
+          "issue": "R5's guided practice item 'The room is really quietly.' was a good correction task, but the lesson did not include a quick-practice item targeting the adjective/adverb choice after a linking verb.",
+          "fix": "Added a quick-practice cloze 'The room is ___ quiet.' with 'really' as the correct degree adverb and 'real' as the word_form distractor."
+        }
+      ]
+    }
+  },
+  "review": null
+}

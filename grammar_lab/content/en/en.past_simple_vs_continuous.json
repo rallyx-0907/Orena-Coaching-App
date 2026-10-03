@@ -1,0 +1,258 @@
+{
+  "schema_version": "0.4",
+  "id": "en.past_simple_vs_continuous",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.past_ongoing",
+  "level": {"framework": "cefr", "value": "A2", "rank": 2},
+  "prereqs": ["en.past_continuous"],
+  "contrasts": ["en.past_continuous"],
+  "error_tags": ["tense"],
+  "source_refs": {"r5": ["a2-past-simple-vs-past-continuous"]},
+  "point_type": "tense_aspect",
+  "sequence": 2,
+  "aliases": ["a2-past-simple-vs-past-continuous"],
+  "source_anchors": {"status": "anchored", "items": [{"source": "core_inventory", "code": "68", "level": "A2"}]},
+  "header": {
+    "title": {"vi": "Quá khứ đơn và quá khứ tiếp diễn", "en": "Past simple vs past continuous"},
+    "native_title": "Past simple vs past continuous",
+    "level": {"framework": "cefr", "value": "A2", "rank": 2},
+    "summary": {
+      "vi": "Phân biệt quá khứ đơn (hành động hoàn tất, sự kiện) với quá khứ tiếp diễn (hành động đang diễn ra làm nền) trong quá khứ.",
+      "en": "Distinguish the past simple (completed actions, events) from the past continuous (actions in progress as background) in the past."
+    },
+    "sub": {"vi": "sự kiện và nền", "en": "event and background"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi kể một chuỗi sự kiện xảy ra và kết thúc trong quá khứ, dùng quá khứ đơn.",
+      "en": "When telling a sequence of events that happened and finished in the past, use the past simple."
+    },
+    {
+      "vi": "Khi mô tả một hành động đang diễn ra tại một thời điểm trong quá khứ, dùng quá khứ tiếp diễn.",
+      "en": "When describing an action that was in progress at a moment in the past, use the past continuous."
+    },
+    {
+      "vi": "Khi một hành động đang diễn ra thì một hành động khác xen vào, dùng quá khứ tiếp diễn cho hành động nền và quá khứ đơn cho hành động xen vào.",
+      "en": "When one action was in progress and another interrupted it, use the past continuous for the background action and the past simple for the interrupting action."
+    },
+    {
+      "vi": "Khi hai hành động dài xảy ra song song trong quá khứ, dùng quá khứ tiếp diễn cho cả hai.",
+      "en": "When two longer actions happened at the same time in the past, use the past continuous for both."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {
+        "text": "was/were",
+        "role": "aux",
+        "label": {"vi": "trợ động từ", "en": "auxiliary"},
+        "options": [{"text": "was"}, {"text": "were"}]
+      },
+      {"text": "V-ing", "role": "verb", "label": {"vi": "động từ đuôi -ing", "en": "verb -ing"}},
+      {
+        "text": "when",
+        "role": "connector",
+        "label": {"vi": "liên từ", "en": "connector"},
+        "optional": true
+      },
+      {
+        "text": "S",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "optional": true
+      },
+      {
+        "text": "V2",
+        "role": "verb",
+        "label": {"vi": "động từ quá khứ", "en": "past verb"},
+        "optional": true
+      }
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "was/were not",
+          "role": "aux",
+          "label": {"vi": "trợ động từ phủ định", "en": "negative auxiliary"},
+          "options": [{"text": "was not"}, {"text": "were not"}, {"text": "wasn't"}, {"text": "weren't"}]
+        },
+        {"text": "V-ing", "role": "verb", "label": {"vi": "động từ đuôi -ing", "en": "verb -ing"}}
+      ],
+      "question": [
+        {
+          "text": "was/were",
+          "role": "aux",
+          "label": {"vi": "trợ động từ", "en": "auxiliary"},
+          "options": [{"text": "was"}, {"text": "were"}]
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {"text": "V-ing", "role": "verb", "label": {"vi": "động từ đuôi -ing", "en": "verb -ing"}}
+      ]
+    },
+    "illustration": {"kind": "timeline", "timeline": {"shape": "past_ongoing"}}
+  },
+  "examples": [
+    {
+      "text": "I was walking home when I saw Anna.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 2, "end": 5, "role": "aux"},
+        {"start": 6, "end": 13, "role": "verb"},
+        {"start": 19, "end": 23, "role": "connector"},
+        {"start": 24, "end": 25, "role": "subject"},
+        {"start": 26, "end": 29, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Hành động đang đi bộ là nền; hành động nhìn thấy xen vào.",
+        "en": "The walking action is the background; the seeing action interrupts it."
+      },
+      "translation": {"vi": "Tôi đang đi bộ về nhà thì gặp Anna.", "en": "I was walking home when I saw Anna."}
+    },
+    {
+      "text": "While we were eating, the lights went out.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 6, "end": 8, "role": "subject"},
+        {"start": 9, "end": 13, "role": "aux"},
+        {"start": 14, "end": 20, "role": "verb"},
+        {"start": 22, "end": 32, "role": "subject"},
+        {"start": 33, "end": 37, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Hành động đang ăn là nền; việc mất điện xen vào.",
+        "en": "The eating action is the background; the lights going out interrupts it."
+      },
+      "translation": {
+        "vi": "Trong khi chúng tôi đang ăn thì mất điện.",
+        "en": "While we were eating, the lights went out."
+      }
+    },
+    {
+      "text": "He dropped his phone while he was running.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 3, "end": 10, "role": "verb"},
+        {"start": 27, "end": 29, "role": "subject"},
+        {"start": 30, "end": 33, "role": "aux"},
+        {"start": 34, "end": 41, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Hành động đang chạy là nền; việc làm rơi điện thoại xen vào.",
+        "en": "The running action is the background; dropping the phone interrupts it."
+      },
+      "translation": {
+        "vi": "Cậu ấy làm rơi điện thoại khi đang chạy.",
+        "en": "He dropped his phone while he was running."
+      }
+    }
+  ],
+  "compare": [
+    {
+      "with": "en.past_continuous",
+      "this_example": "I read the email.",
+      "other_example": "I was reading the email when he called.",
+      "this_meaning": {
+        "vi": "Quá khứ đơn diễn tả hành động hoàn tất, sự kiện xảy ra và kết thúc trong quá khứ.",
+        "en": "The past simple describes a completed action or an event that happened and finished in the past."
+      },
+      "other_meaning": {
+        "vi": "Quá khứ tiếp diễn diễn tả hành động đang diễn ra tại một thời điểm trong quá khứ, thường làm nền cho sự kiện khác.",
+        "en": "The past continuous describes an action that was in progress at a moment in the past, often as background for another event."
+      }
+    }
+  ],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học dùng quá khứ đơn cho hành động nền đang diễn ra và quá khứ tiếp diễn cho sự kiện xen vào, trong khi thực tế phải ngược lại: hành động đang diễn ra dùng quá khứ tiếp diễn, sự kiện xen vào dùng quá khứ đơn.",
+        "en": "The learner uses the past simple for the ongoing background action and the past continuous for the interrupting event, but the correct pattern is the opposite: ongoing action in the past continuous, interrupting event in the past simple."
+      },
+      "error_tag": "tense",
+      "l1": ["vi"],
+      "wrong": "I walked home when it was starting to rain.",
+      "right": "I was walking home when it started to rain."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "While I ___ dinner, the phone rang.",
+      "options": [{"text": "was cooking", "error_tag": null}, {"text": "cooked", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Hành động nấu ăn đang diễn ra làm nền, nên dùng quá khứ tiếp diễn 'was cooking'.",
+        "en": "The cooking was in progress as background, so use the past continuous 'was cooking'."
+      }
+    },
+    {
+      "q": "The doorbell ___ while I was showering.",
+      "options": [{"text": "rang", "error_tag": null}, {"text": "was ringing", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Tiếng chuông cửa là sự kiện xen vào hành động đang tắm, nên dùng quá khứ đơn 'rang'.",
+        "en": "The doorbell is an interrupting event during the shower, so use the past simple 'rang'."
+      }
+    },
+    {
+      "q": "They ___ football when it started to rain.",
+      "options": [{"text": "were playing", "error_tag": null}, {"text": "played", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Hành động chơi bóng đang diễn ra làm nền, nên dùng quá khứ tiếp diễn 'were playing'.",
+        "en": "The football action was in progress as background, so use the past continuous 'were playing'."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu kể về một việc bạn đang làm thì một việc khác xen vào trong quá khứ.",
+      "en": "Write a sentence about something you were doing when something else happened in the past."
+    },
+    "placeholder": "I was ... when ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "aux", "any_of": ["was", "were"]},
+        {"role": "verb", "regex": "\\b\\w+ing\\b"},
+        {"role": "connector", "any_of": ["when"]}
+      ]
+    },
+    "sample": {"text": "I was walking home when I saw Anna."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791000390",
+    "generated_at": "2026-10-03T04:06:30Z",
+    "r5_source": {
+      "ids": ["a2-past-simple-vs-past-continuous"],
+      "content_version": 2,
+      "content_hash": "760d7c0ff6c2fd7dfdb0b7bdca0bc8bbfbe637a96717d7133fa1a1abe7d0d4d0",
+      "corrections": [
+        {
+          "r5_id": "a2-past-simple-vs-past-continuous",
+          "issue": "R5 mistake example 'I walked home when it was starting to rain.' is ungrammatical because 'was starting' is not used for an interrupting event in this context.",
+          "fix": "Replaced with 'I walked home when it was starting to rain.' → 'I was walking home when it started to rain.' and explained the viewpoint reversal."
+        },
+        {
+          "r5_id": "a2-past-simple-vs-past-continuous",
+          "issue": "R5 mistake example 'While I cooked, the phone was ringing once.' is ungrammatical because 'was ringing once' is not a natural interrupting event.",
+          "fix": "Replaced with 'While I was cooking, the phone rang.' and explained that a single event uses the past simple."
+        },
+        {
+          "r5_id": "a2-past-simple-vs-past-continuous",
+          "issue": "R5 did not include a structured formula, negative/question forms, or a comparison entry.",
+          "fix": "Added formula, negative, question, compare, quick_practice, and personal_production sections."
+        }
+      ]
+    }
+  },
+  "review": null
+}

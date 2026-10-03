@@ -1,0 +1,349 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b1.008",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.completed_past",
+  "level": {"framework": "cefr", "value": "B1", "rank": 3},
+  "prereqs": ["en.past_simple.irregular"],
+  "contrasts": [],
+  "error_tags": ["tense"],
+  "source_refs": {"r5": ["b1-past-narrative-tense-system"]},
+  "point_type": "tense_aspect",
+  "sequence": 3,
+  "aliases": ["b1-past-narrative-tense-system"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Past narrative tense system", "en": "Past narrative tense system"},
+    "native_title": "Past narrative tense system",
+    "level": {"framework": "cefr", "value": "B1", "rank": 3},
+    "summary": {
+      "vi": "Chủ điểm này dạy cách phối hợp bốn thì quá khứ để kể một câu chuyện: past simple cho sự việc chính, past continuous cho bối cảnh, past perfect cho việc xảy ra trước đó, và past perfect continuous cho hoạt động kéo dài trước một mốc quá khứ.",
+      "en": "This point teaches how to combine four past tenses to tell a story: past simple for main events, past continuous for background, past perfect for an earlier event, and past perfect continuous for an activity continuing up to a past point."
+    },
+    "sub": {"vi": "kể chuyện quá khứ", "en": "past narrative"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi kể một chuỗi sự việc đã xảy ra và kết thúc trong quá khứ, dùng past simple cho từng sự việc chính.",
+      "en": "When you tell a sequence of completed events in the past, use past simple for each main event."
+    },
+    {
+      "vi": "Khi muốn dựng bối cảnh hoặc mô tả một hành động đang diễn ra thì một hành động khác xen vào, dùng past continuous.",
+      "en": "When you want to set the scene or describe an action in progress when another action interrupted it, use past continuous."
+    },
+    {
+      "vi": "Khi cần nói rõ một việc đã hoàn thành trước một mốc quá khứ khác, dùng past perfect.",
+      "en": "When you need to show that one event was completed before another past point, use past perfect."
+    },
+    {
+      "vi": "Khi muốn nhấn mạnh một hoạt động kéo dài liên tục trước một mốc quá khứ, dùng past perfect continuous.",
+      "en": "When you want to emphasise an activity that continued up to a past point, use past perfect continuous."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {
+        "text": "V2",
+        "role": "verb",
+        "label": {"vi": "động từ quá khứ đơn", "en": "past simple verb"}
+      },
+      {"text": "O", "role": "object", "label": {"vi": "tân ngữ", "en": "object"}, "optional": true},
+      {
+        "text": "when",
+        "role": "connector",
+        "label": {"vi": "liên từ thời gian", "en": "time connector"},
+        "optional": true
+      },
+      {
+        "text": "S",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ mệnh đề phụ", "en": "second subject"},
+        "optional": true
+      },
+      {
+        "text": "was/were",
+        "role": "aux",
+        "label": {"vi": "trợ động từ quá khứ tiếp diễn", "en": "past continuous auxiliary"},
+        "optional": true,
+        "options": [{"text": "was"}, {"text": "were"}]
+      },
+      {
+        "text": "V-ing",
+        "role": "verb",
+        "label": {"vi": "động từ đang diễn ra", "en": "present participle"},
+        "optional": true
+      },
+      {
+        "text": "had",
+        "role": "aux",
+        "label": {"vi": "trợ động từ quá khứ hoàn thành", "en": "past perfect auxiliary"},
+        "optional": true
+      },
+      {
+        "text": "V3",
+        "role": "verb",
+        "label": {"vi": "quá khứ phân từ", "en": "past participle"},
+        "optional": true
+      },
+      {
+        "text": "had been",
+        "role": "aux",
+        "label": {
+          "vi": "trợ động từ quá khứ hoàn thành tiếp diễn",
+          "en": "past perfect continuous auxiliary"
+        },
+        "optional": true
+      },
+      {
+        "text": "V-ing",
+        "role": "verb",
+        "label": {"vi": "động từ kéo dài", "en": "continuous participle"},
+        "optional": true
+      }
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "did not",
+          "role": "aux",
+          "label": {"vi": "phủ định quá khứ đơn", "en": "past simple negative auxiliary"},
+          "options": [{"text": "did not"}, {"text": "didn't"}]
+        },
+        {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên thể", "en": "base verb"}},
+        {
+          "text": "was/were not",
+          "role": "aux",
+          "label": {"vi": "phủ định quá khứ tiếp diễn", "en": "past continuous negative auxiliary"},
+          "optional": true,
+          "options": [{"text": "was not"}, {"text": "were not"}, {"text": "wasn't"}, {"text": "weren't"}]
+        },
+        {
+          "text": "V-ing",
+          "role": "verb",
+          "label": {"vi": "động từ đang diễn ra", "en": "present participle"},
+          "optional": true
+        },
+        {
+          "text": "had not",
+          "role": "aux",
+          "label": {"vi": "phủ định quá khứ hoàn thành", "en": "past perfect negative auxiliary"},
+          "optional": true,
+          "options": [{"text": "had not"}, {"text": "hadn't"}]
+        },
+        {
+          "text": "V3",
+          "role": "verb",
+          "label": {"vi": "quá khứ phân từ", "en": "past participle"},
+          "optional": true
+        }
+      ],
+      "question": [
+        {
+          "text": "Did",
+          "role": "aux",
+          "label": {"vi": "trợ động từ nghi vấn quá khứ đơn", "en": "past simple question auxiliary"}
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên thể", "en": "base verb"}},
+        {
+          "text": "Was/Were",
+          "role": "aux",
+          "label": {
+            "vi": "trợ động từ nghi vấn quá khứ tiếp diễn",
+            "en": "past continuous question auxiliary"
+          },
+          "optional": true,
+          "options": [{"text": "Was"}, {"text": "Were"}]
+        },
+        {
+          "text": "S",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ", "en": "subject"},
+          "optional": true
+        },
+        {
+          "text": "V-ing",
+          "role": "verb",
+          "label": {"vi": "động từ đang diễn ra", "en": "present participle"},
+          "optional": true
+        },
+        {
+          "text": "Had",
+          "role": "aux",
+          "label": {"vi": "trợ động từ nghi vấn quá khứ hoàn thành", "en": "past perfect question auxiliary"},
+          "optional": true
+        },
+        {
+          "text": "S",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ", "en": "subject"},
+          "optional": true
+        },
+        {
+          "text": "V3",
+          "role": "verb",
+          "label": {"vi": "quá khứ phân từ", "en": "past participle"},
+          "optional": true
+        }
+      ]
+    },
+    "illustration": {"kind": "timeline", "timeline": {"shape": "point_past"}}
+  },
+  "examples": [
+    {
+      "text": "I was walking home when I saw the accident.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 2, "end": 5, "role": "aux"},
+        {"start": 6, "end": 13, "role": "verb"},
+        {"start": 19, "end": 23, "role": "connector"},
+        {"start": 24, "end": 25, "role": "subject"},
+        {"start": 26, "end": 29, "role": "verb"},
+        {"start": 30, "end": 42, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Hành động đang diễn ra (was walking) làm nền cho sự việc chính xen vào (saw).",
+        "en": "The action in progress (was walking) forms the background for the main event that interrupts it (saw)."
+      },
+      "translation": {
+        "vi": "Tôi đang đi bộ về nhà thì nhìn thấy vụ tai nạn.",
+        "en": "I was walking home when I saw the accident."
+      }
+    },
+    {
+      "text": "The driver had already left when the police arrived.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 10, "role": "subject"},
+        {"start": 11, "end": 14, "role": "aux"},
+        {"start": 23, "end": 27, "role": "verb"},
+        {"start": 28, "end": 32, "role": "connector"},
+        {"start": 33, "end": 43, "role": "subject"},
+        {"start": 44, "end": 51, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "had left xảy ra và hoàn tất trước khi cảnh sát đến (arrived).",
+        "en": "had left happened and was complete before the police arrived."
+      },
+      "translation": {
+        "vi": "Tài xế đã rời đi trước khi cảnh sát đến.",
+        "en": "The driver had already left when the police arrived."
+      }
+    },
+    {
+      "text": "It had been raining, so the road was wet.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 3, "end": 11, "role": "aux"},
+        {"start": 12, "end": 19, "role": "verb"},
+        {"start": 24, "end": 32, "role": "subject"},
+        {"start": 33, "end": 36, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "had been raining nhấn mạnh hoạt động mưa kéo dài trước khi đường ướt.",
+        "en": "had been raining emphasises the rain continuing before the road became wet."
+      },
+      "translation": {
+        "vi": "Trời đã mưa một thời gian nên đường ướt.",
+        "en": "It had been raining, so the road was wet."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học Việt thường dịch 'đã đến' thành had arrived, nhưng khi arrival là sự việc chính trong chuỗi kể chuyện, past simple mới đúng; past perfect chỉ dùng khi cần chỉ rõ việc xảy ra trước một mốc quá khứ khác.",
+        "en": "Vietnamese learners often translate 'đã đến' as had arrived, but when the arrival is a main event in the narrative sequence, past simple is correct; past perfect is only used to show an event before another past point."
+      },
+      "error_tag": "tense",
+      "l1": ["vi"],
+      "wrong": "When I had arrived, I saw the door was open.",
+      "right": "When I arrived, I saw that the door was open."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "When I ___ the station, the train had already left.",
+      "options": [{"text": "arrived", "error_tag": null}, {"text": "had arrived", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "arrived là sự việc chính trong chuỗi kể chuyện, dùng past simple; had left mới là việc xảy ra trước đó.",
+        "en": "arrived is the main event in the narrative sequence, so past simple is used; had left is the earlier event."
+      }
+    },
+    {
+      "q": "She was tired because she ___ all night.",
+      "options": [{"text": "had been working", "error_tag": null}, {"text": "worked", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "had been working nhấn mạnh hoạt động kéo dài liên tục trước khi cô ấy mệt.",
+        "en": "had been working emphasises the activity continuing up to the moment she was tired."
+      }
+    },
+    {
+      "q": "They ___ TV when the phone rang.",
+      "options": [{"text": "were watching", "error_tag": null}, {"text": "watched", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "were watching là hành động đang diễn ra làm nền cho sự việc xen vào rang.",
+        "en": "were watching is the action in progress that forms the background for the interrupting event rang."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu kể về một việc bạn đã làm trước một sự việc khác trong quá khứ, dùng had + V3.",
+      "en": "Write one sentence about something you had done before another past event, using had + V3."
+    },
+    "placeholder": "I had ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "aux", "any_of": ["had"]},
+        {
+          "role": "verb",
+          "regex": "\\b\\w+(ed|en|ne|wn|lt|nt|de|rn|ad|id|ought|aid|eld|elt|ept|ent|ade|oke|ote|ove|ew|ung|ang|ung)\\b"
+        }
+      ]
+    },
+    "sample": {"text": "I had finished my homework before my friends arrived."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791000469",
+    "generated_at": "2026-10-03T04:07:49Z",
+    "r5_source": {
+      "ids": ["b1-past-narrative-tense-system"],
+      "content_version": 2,
+      "content_hash": "a5faff214a7f4a3f02fc4191ecb6d95a436d75491571883322792dda9f3ae99e",
+      "corrections": [
+        {
+          "r5_id": "b1-past-narrative-tense-system",
+          "issue": "R5's example 'It had been raining, so the road was wet' was listed under past perfect continuous but the meaning_vi said 'Trời đã mưa một thời gian nên đường ướt', which is correct; however the lesson did not give a clear formula for the four-tense system.",
+          "fix": "Added an explicit formula with slots for past simple, past continuous, past perfect and past perfect continuous, and kept the example with a corrected annotation."
+        },
+        {
+          "r5_id": "b1-past-narrative-tense-system",
+          "issue": "R5's mistake 'She was tired because she worked all night before that' was corrected to 'She was tired because she had been working all night', but the reason did not explain why past perfect continuous is needed.",
+          "fix": "Wrote a clear reason in the common_mistakes entry explaining that past perfect continuous emphasises duration before a past point."
+        },
+        {
+          "r5_id": "b1-past-narrative-tense-system",
+          "issue": "R5's guided practice included a production prompt with answer 'Answers vary', which is not usable as a model.",
+          "fix": "Replaced it with a personal_production card that gives a concrete prompt, placeholder, sample and a deterministic pattern_rule."
+        }
+      ]
+    }
+  },
+  "review": null
+}
