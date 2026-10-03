@@ -105,14 +105,15 @@ assert.equal(view.measured, true);
   assert.equal(detail.ink, 'var(--red)');
 }
 
-/* --- metricsFor: Accuracy / Fluency / Completeness; rule 40 - unmeasured fluency reads 0 --- */
+/* --- metricsFor: Accuracy / Fluency / Completeness; unsupported fluency remains unavailable --- */
 {
   assert.deepEqual(metricsFor(pronunciationView(null)), [], 'nothing measured: no cells');
   const measured = metricsFor(view);
   assert.deepEqual(measured.map((m) => m.key), ['accuracy', 'fluency', 'completeness']);
   assert.deepEqual(measured.map((m) => m.value), [80, 88, 95]);
   const noFluency = metricsFor(pronunciationView({ ...RESULT, fluency_score: null }, { language: 'en' }));
-  assert.equal(noFluency.find((m) => m.key === 'fluency').value, 0, 'rule 40: not returned = 0, never guessed');
+  assert.equal(noFluency.find((m) => m.key === 'fluency').value, null, 'an unsupported provider metric is unavailable, never a measured zero');
+  assert.equal(noFluency.find((m) => m.key === 'fluency').ink, 'var(--muted)', 'unavailable metrics must not encode a poor score');
   assert.equal(metricsFor({ measured: true, reduced: true, overall: 70 }).length, 0, 'a reopened attempt knows only its overall score');
 }
 

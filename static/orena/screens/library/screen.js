@@ -82,7 +82,7 @@ function contentPanel(rows, language, menuFor) {
 function languageRow(row, language) {
   return html`<div class="s-library-lang-row">
     <span class="s-library-chip">${row.kind === 'phrase' ? t('typePhrase') : sc('word')}</span>
-    <span class="s-library-lang-row__text"><span class="s-library-lang-row__word" lang="${langAttr(language)}">${row.word}</span>${row.sub ? html`<span class="s-library-lang-row__sub">${row.sub}</span>` : ''}</span>
+    <button type="button" class="s-library-lang-row__text" data-word-open="${row.word}"><span class="s-library-lang-row__word" lang="${langAttr(language)}">${row.word}</span>${row.sub ? html`<span class="s-library-lang-row__sub">${row.sub}</span>` : ''}</button>
     ${row.isNew ? html`<span class="${cls('s-library-chip', 's-library-chip--new')}">${t('newBadge')}</span>` : html`${masteryBars({ filled: row.filled })}`}
     <button type="button" class="s-library-lang-row__play" data-play="${row.word}" aria-label="${sc('pronunciation')}">${raw(icon('volume-2', { size: 18 }))}</button>
   </div>`;
@@ -180,7 +180,8 @@ export default async function library(element, ctx) {
   await useStyles('kit/overflow.css');
   const support = languages().support;
   const language = ctx.context.language;
-  let active = 'content';
+  const requestedTab = ctx.query?.get('tab');
+  let active = TABS.includes(requestedTab) ? requestedTab : 'content';
   let menuFor = '';
   // The account's view of the imports first, so a deletion made on another device is not shown here.
   await syncImports(ctx.context.memory, language).catch(() => false);
@@ -232,11 +233,16 @@ export default async function library(element, ctx) {
     for (const button of element.querySelectorAll('[data-tab]')) {
       button.addEventListener('click', () => {
         active = button.dataset.tab;
+        menuFor = '';
+        history.replaceState(history.state, '', ctx.href('library', {}, { tab: active }));
         paint();
       });
     }
     for (const button of element.querySelectorAll('[data-content]')) {
       button.addEventListener('click', () => ctx.go(ctx.href('content', { id: button.dataset.content })));
+    }
+    for (const button of element.querySelectorAll('[data-word-open]')) {
+      button.addEventListener('click', () => ctx.go(ctx.href('word', { id: button.dataset.wordOpen })));
     }
     for (const button of element.querySelectorAll('[data-more]')) {
       button.addEventListener('click', () => {
@@ -294,4 +300,5 @@ export default async function library(element, ctx) {
     if (ctx.isCurrent && !ctx.isCurrent()) stopListening();
     else paint();
   });
+  return stopListening;
 }

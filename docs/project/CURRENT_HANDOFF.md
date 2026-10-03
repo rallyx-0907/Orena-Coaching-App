@@ -107,17 +107,16 @@ human gates. Never touch persistent volumes as cleanup.
 
 ## NEXT EXACT TASK
 
-Admin REVIEWABLE: existing credentials/pickers preserved; :8021 key provisioned,
-seven text configs initialized preserving Writing, static8 PASS, sandbox capability
-routing on. Cloud-key HTTPS enforced. Six areas and import processing connected.
-Azure Speech/OpenAI REVIEWABLE (`7857d43`): Admin credentials/runtime connected; live Speech auth passed.
-OpenAI operator credential/deployment acceptance remains. Evidence: AZURE_VISUAL_SKIN_BROWSER_CHECKPOINT.md.
-Visual Skin EN/ZH owns palette/theme; screen pins own composition; brand unchanged.
+Admin/Azure REVIEWABLE: preserve `2931823` / `7857d43` and the evidence above.
+OpenAI operator acceptance remains. Visual Skin owns treatment; screen pins own
+composition; approved brand unchanged.
 
 Current phase: basic functional coverage first (human instruction, 2026-10-02).
 Preserve accepted Books/Progress; do not reopen them or restart a full-app audit.
 S2 basic Listening and S6 Admin media rights/publish are REVIEWABLE; stop deepening
-those paths. Next: bounded Azure operator/mobile acceptance, then canonical Grammar/Intelligence.
+those paths. Human priority (2026-10-03): fix My Library overlap/interaction, then Speaking.
+Library text bounds, Word Detail and tab return/reload verified at :8021 desktop/390x844.
+Speaking basic completion active; live mic/provider acceptance awaits browser mic permission.
 Preserve the completed control plane and S6 checkpoint. Current Azure local125/Node/review pass; mobile unverified.
 Deep fidelity/cross-device/edge/performance work follows whole-app basic coverage.
 Captions first; ASR within D-111.6 caps. Activity counts do not prove mastery.

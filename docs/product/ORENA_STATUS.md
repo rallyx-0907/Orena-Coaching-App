@@ -84,6 +84,14 @@ IMPLEMENTING. This is a visibly testable slice, not Product Completion.
 The complete current UI/spec inventory and integrated Intelligence/Agent
 reconciliation, evidence, recommendations and action routing remain required.
 
+My Library correction (2026-10-03): Saved content/language text now uses bounded
+block lines rather than overflowing inline spans. Saved words open Word Detail;
+Back/reload retain the selected tab. Desktop and 390x844 :8021 browser verified; learner
+collections/decks detail remains truthfully unavailable. Speaking basic completion
+is now active by human priority: shared loading and unsupported Fluency display
+corrected; live microphone/provider acceptance still pending browser mic permission.
+Evidence: `docs/reviews/LIBRARY_SPEAKING_BROWSER_CHECKPOINT.md`.
+
 WEB_REVIEW_TARGET: http://127.0.0.1:8021/next
 
 S2 evidence: `docs/reviews/S2_MEDIA_BASIC_BROWSER_CHECKPOINT.md`; local Python 2738 pass/370 skip.

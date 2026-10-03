@@ -14,6 +14,7 @@
   gap: 14px;
 }
 .s-library-content-row {
+  min-width: 0;
   display: flex;
   gap: 18px;
   align-items: center;
@@ -34,11 +35,13 @@
   min-width: 0;
 }
 .s-library-content-row__type {
+  display: block;
   font-size: 13px;
   font-weight: 600;
   color: var(--accent-text);
 }
 .s-library-content-row__title {
+  display: block;
   font-size: 16px;
   font-weight: 600;
   margin-top: 2px;
@@ -47,6 +50,7 @@
   text-overflow: ellipsis;
 }
 .s-library-content-row__source {
+  display: block;
   font-size: 13px;
   color: var(--muted);
   margin-top: 2px;
@@ -134,10 +138,17 @@
   font-weight: 700;
 }
 .s-library-lang-row__text {
+  display: block;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
   flex: 1;
   min-width: 0;
 }
 .s-library-lang-row__word {
+  display: block;
   font-size: 16px;
   font-weight: 600;
   overflow: hidden;
@@ -145,6 +156,7 @@
   white-space: nowrap;
 }
 .s-library-lang-row__sub {
+  display: block;
   font-size: 13px;
   color: var(--muted);
   overflow: hidden;

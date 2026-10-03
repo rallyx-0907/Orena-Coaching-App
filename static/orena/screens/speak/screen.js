@@ -1,6 +1,6 @@
 /* Scripted Pronunciation (frame 15, `#/speak/:id`; D-091). One line, said and assessed: the
    target sentence as tappable tokens, model/mine playback, a mic recorder, and a result card with
-   a score ring, three metrics and the ASR line. There is no "next line" control (confirmed against
+   a score ring, three metric slots and the ASR line. There is no "next line" control (confirmed against
    the source, SCRATCH/inventory/D5-speaking.md - neither Scripted Pronunciation nor Compare With
    Model draws one), so this room works the one line `product/speaking-source.js` resolves from
    the route (the first of the source, or the segment a link names).
@@ -9,8 +9,8 @@
    (the line + its model audio, when the source has one), `POST /api/speech/pronunciation`
    (`capabilities/speaking-take.js`, unchanged, through `product/speaking-recorder.js`), the
    audio-free record it keeps (`POST /api/speech/attempts`), and this tab's own take list
-   (`product/take-store.js`, D-076). A measurement the provider did not return is 0 in its
-   component, never guessed (rule 40). */
+   (`product/take-store.js`, D-076). Unreturned Fluency remains unavailable, with no score
+   track or session fact, instead of being represented as a measured zero. */
 import { html, mount, raw, cls } from '../../kit/html.js';
 import { icon } from '../../kit/icons.js';
 import { markGlyph } from '../../kit/brand.js';
@@ -48,7 +48,8 @@ export default async function mountScriptedPronunciation(element, ctx) {
   const segmentId = segmentOf(ctx.query);
   const lineQuery = segmentId ? { segment: segmentId } : {};
 
-  mount(element, html`<div class="s-speak-loading">${raw(icon('mic', { size: 22 }))}</div>`);
+  // This lesson route's delayed loading skeleton is owned by the router.
+  mount(element, '');
   element.classList.add('s-speak-root');
 
   const source = await loadSpeakingSource(ctx.params.id, { api, support, language, owner: ctx.context.owner || 'local', segmentId });
@@ -85,7 +86,7 @@ export default async function mountScriptedPronunciation(element, ctx) {
     language,
     facts: (finished) => [
       { label: t('metricAccuracy'), value: finished.accuracy },
-      { label: t('metricFluency'), value: finished.fluencyMeasured ? finished.fluency : 0 },
+      ...(finished.fluencyMeasured ? [{ label: t('metricFluency'), value: finished.fluency }] : []),
     ],
     on: {
       change(next) {
@@ -274,7 +275,7 @@ export default async function mountScriptedPronunciation(element, ctx) {
       </div>
       ${
         metrics.length
-          ? html`<div class="s-speak-metrics">${metrics.map((m) => html`<div class="s-speak-metric"><div class="s-speak-metric__row"><span>${t(`metric${m.key[0].toUpperCase()}${m.key.slice(1)}`)}</span><b>${m.value}</b></div><div class="s-speak-metric__track"><i style="width:${Math.max(0, Math.min(100, m.value))}%;background:${m.ink}"></i></div></div>`)}</div>`
+          ? html`<div class="s-speak-metrics">${metrics.map((m) => html`<div class="s-speak-metric"><div class="s-speak-metric__row"><span>${t(`metric${m.key[0].toUpperCase()}${m.key.slice(1)}`)}</span><b>${m.value ?? '—'}</b></div>${m.value == null ? '' : html`<div class="s-speak-metric__track"><i style="width:${Math.max(0, Math.min(100, m.value))}%;background:${m.ink}"></i></div>`}</div>`)}</div>`
           : ''
       }
       ${recognizedText() ? html`<div class="s-speak-asr">${t('asrLabel')} <i lang="${langAttr(language)}">“${recognizedText()}”</i> ${t('asrNote')}</div>` : ''}

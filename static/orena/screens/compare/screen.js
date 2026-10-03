@@ -14,6 +14,7 @@
 import { html, mount, raw, cls } from '../../kit/html.js';
 import { icon } from '../../kit/icons.js';
 import { useStyles } from '../../kit/styles.js';
+import { loadingMarkup } from '../../kit/states.js';
 import { langAttr } from '../../kit/lang.js';
 import { toast } from '../../kit/toast.js';
 import { shellCopy } from '../../copy/shell.js';
@@ -60,7 +61,7 @@ export default async function mountCompareWithModel(element, ctx) {
   const segmentId = segmentOf(ctx.query);
   const lineQuery = segmentId ? { segment: segmentId } : {};
 
-  mount(element, html`<div class="s-compare-loading">${raw(icon('mic', { size: 22 }))}</div>`);
+  mount(element, loadingMarkup(shellCopy('loadingLesson')));
   element.classList.add('s-compare-root');
 
   const source = await loadSpeakingSource(ctx.params.id, { api, support, language, owner: ctx.context.owner || 'local', segmentId });
@@ -115,7 +116,7 @@ export default async function mountCompareWithModel(element, ctx) {
     language,
     facts: (finished) => [
       { label: t('metricAccuracy'), value: finished.accuracy },
-      { label: t('metricFluency'), value: finished.fluencyMeasured ? finished.fluency : 0 },
+      ...(finished.fluencyMeasured ? [{ label: t('metricFluency'), value: finished.fluency }] : []),
     ],
     on: {
       change(next) {

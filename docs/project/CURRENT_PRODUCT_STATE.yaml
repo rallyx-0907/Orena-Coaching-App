@@ -50,7 +50,7 @@
   "current_primary_workstream": {
     "id": "orena_product_completion_d110_d111",
     "status": "in_progress",
-    "next_task": "D-114 basic whole-app coverage first. Azure Speech/OpenAI Admin/runtime REVIEWABLE at 7857d43; Speech live authentication passed, saved credentials dynamically feed existing EN/ZH adapter. OpenAI deployment form reachable, no configured sandbox credential: operator live acceptance remains. Existing encrypted control plane preserved; sandbox capability routing only, public activation gated. Visual Skin EN/ZH defines palette/theme; screen prototypes own composition. Four accents, EN/ZH Settings and light/dark browser checked. Phone viewport acceptance remains unverified. Evidence: AZURE_VISUAL_SKIN_BROWSER_CHECKPOINT.md. Finish bounded Admin acceptance then canonical Grammar and integrated Intelligence/Agent. Preserve Books/Progress/S2/S6; no full-app audit or deep hardening."
+    "next_task": "Human priority 2026-10-03: My Library overlap/interaction correction then basic Speaking. Library Saved content/language bounded text, Word Detail, tab return/reload browser verified at :8021 desktop/390x844; evidence LIBRARY_SPEAKING_BROWSER_CHECKPOINT.md. Speaking source entry/Free Talk setup visible; shared loading and unsupported Fluency corrected, live microphone/provider journey awaiting browser mic permission. Azure 7857d43 preserved; OpenAI operator acceptance remains. Preserve Books/Progress/S2/S6; no full-app audit or deep hardening. Canonical Grammar/Intelligence remain subsequent basic gaps."
   },
   "design": {
     "web_is_visual_source_of_truth": true,

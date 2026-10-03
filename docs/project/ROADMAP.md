@@ -50,6 +50,11 @@ Current sequence:
 
 1. Preserve accepted Progress and Books work; do not reopen them for non-blocking completeness or fidelity.
 2. Finish preserved Listening/Media to basic browser-usable coverage: imports, usable transcripts, core line actions, Dictation, Shadowing and truthful unavailable states in EN/ZH.
+Current immediate priority (human, 2026-10-03): repair My Library overlap and
+prototype interactions, then complete basic Speaking. Preserve accepted slices.
+Azure operator acceptance remains open without blocking this UI work; Grammar
+and integrated Intelligence/Agent remain subsequent major basic gaps.
+
 3. Once Listening is basically usable, move to the next major basic gap: Admin control-center coverage, then canonical Grammar runtime and integrated Intelligence/Agent as their reviewed contracts permit.
    Admin reconciliation preserves the completed credential and capability control
    plane. Missing sandbox master key and deferred LEGACY activation are runtime
