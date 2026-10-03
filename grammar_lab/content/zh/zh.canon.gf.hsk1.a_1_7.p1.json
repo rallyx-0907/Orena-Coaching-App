@@ -1,0 +1,217 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk1.a_1_7.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.questions",
+  "level": {"framework": "hsk3", "value": "1", "rank": 1},
+  "prereqs": [],
+  "contrasts": [],
+  "error_tags": ["particle"],
+  "source_refs": {"gf0025": ["gf0025.hsk1.047"]},
+  "point_type": "other",
+  "sequence": 5,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Cách đặt câu hỏi: 用“还是”提问", "en": "Ways of asking questions: 用“还是”提问"},
+    "native_title": "用“还是”提问",
+    "level": {"framework": "hsk3", "value": "1", "rank": 1},
+    "summary": {
+      "vi": "Mẫu câu dùng “还是” để hỏi người nghe chọn một trong hai khả năng.",
+      "en": "The pattern with “还是” asks the listener to choose between two possibilities."
+    },
+    "sub": {"vi": "câu hỏi lựa chọn", "en": "choice questions"},
+    "native_title_pinyin": ["yòng", "", "hái", "shì", "", "tí", "wèn"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn người nghe chọn một trong hai thứ, hai người hoặc hai hành động.",
+      "en": "When you want the listener to choose between two things, two people, or two actions."
+    },
+    {
+      "vi": "Khi cả hai khả năng đều được nêu rõ trong câu, không phải câu hỏi có/không.",
+      "en": "When both possibilities are stated in the sentence, not a yes/no question."
+    },
+    {
+      "vi": "Khi câu trả lời mong đợi là một trong hai phương án, không phải “có” hay “không”.",
+      "en": "When the expected answer is one of the two options, not “yes” or “no”."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "动词",
+        "role": "verb",
+        "label": {"vi": "động từ", "en": "verb"},
+        "pinyin": ["dòng", "cí"]
+      },
+      {
+        "text": "A",
+        "role": "object",
+        "label": {"vi": "lựa chọn thứ nhất", "en": "first option"},
+        "pinyin": [""]
+      },
+      {
+        "text": "还是",
+        "role": "connector",
+        "label": {"vi": "hay là", "en": "or"},
+        "pinyin": ["hái", "shì"]
+      },
+      {
+        "text": "B",
+        "role": "object",
+        "label": {"vi": "lựa chọn thứ hai", "en": "second option"},
+        "pinyin": [""]
+      },
+      {
+        "text": "？",
+        "role": "particle",
+        "label": {"vi": "dấu hỏi", "en": "question mark"},
+        "pinyin": [""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "你喝茶还是咖啡？",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "verb"},
+        {"start": 2, "end": 3, "role": "object"},
+        {"start": 3, "end": 5, "role": "connector"},
+        {"start": 5, "end": 7, "role": "object"},
+        {"start": 7, "end": 8, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "“还是” nối hai lựa chọn để người nghe chọn một.",
+        "en": "“还是” links the two options for the listener to choose one."
+      },
+      "translation": {"vi": "Bạn uống trà hay cà phê?", "en": "Do you drink tea or coffee?"},
+      "pinyin": ["nǐ", "hē", "chá", "hái", "shì", "kā", "fēi", ""]
+    },
+    {
+      "text": "我们去北京还是上海？",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 3, "role": "verb"},
+        {"start": 3, "end": 5, "role": "object"},
+        {"start": 5, "end": 7, "role": "connector"},
+        {"start": 7, "end": 9, "role": "object"},
+        {"start": 9, "end": 10, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "Hai địa điểm là hai lựa chọn, “还是” đứng giữa chúng.",
+        "en": "The two places are the options, and “还是” stands between them."
+      },
+      "translation": {"vi": "Chúng ta đi Bắc Kinh hay Thượng Hải?", "en": "Are we going to Beijing or Shanghai?"},
+      "pinyin": ["wǒ", "men", "qù", "běi", "jīng", "hái", "shì", "shàng", "hǎi", ""]
+    },
+    {
+      "text": "你吃米饭还是面条？",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "verb"},
+        {"start": 2, "end": 4, "role": "object"},
+        {"start": 4, "end": 6, "role": "connector"},
+        {"start": 6, "end": 8, "role": "object"},
+        {"start": 8, "end": 9, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "“还是” đặt giữa hai món ăn để hỏi chọn món nào.",
+        "en": "“还是” sits between the two dishes to ask which one."
+      },
+      "translation": {"vi": "Bạn ăn cơm hay mì?", "en": "Do you eat rice or noodles?"},
+      "pinyin": ["nǐ", "chī", "mǐ", "fàn", "hái", "shì", "miàn", "tiáo", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "你喝茶或者是咖啡？",
+      "right": "你喝茶还是咖啡？",
+      "reason": {
+        "vi": "Người học Việt Nam dịch “hoặc” thành “或者”, nhưng trong câu hỏi lựa chọn tiếng Trung phải dùng “还是”.",
+        "en": "Vietnamese learners translate “hoặc” as “或者”, but a Chinese choice question requires “还是”."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong_pinyin": ["nǐ", "hē", "chá", "huò", "zhě", "shì", "kā", "fēi", ""],
+      "right_pinyin": ["nǐ", "hē", "chá", "hái", "shì", "kā", "fēi", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "你喝咖啡___茶？",
+      "options": [
+        {"text": "还是", "error_tag": null, "pinyin": ["hái", "shì"]},
+        {"text": "或者", "error_tag": "particle", "pinyin": ["huò", "zhě"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu hỏi lựa chọn dùng “还是”, không dùng “或者”.",
+        "en": "A choice question uses “还是”, not “或者”."
+      },
+      "q_pinyin": ["nǐ", "hē", "kā", "fēi", "", "", "", "chá", ""]
+    },
+    {
+      "q": "你去学校___去商店？",
+      "options": [
+        {"text": "还是", "error_tag": null, "pinyin": ["hái", "shì"]},
+        {"text": "或者", "error_tag": "particle", "pinyin": ["huò", "zhě"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Hai hành động được nêu để chọn, nên dùng “还是”.",
+        "en": "Two actions are offered as a choice, so use “还是”."
+      },
+      "q_pinyin": ["nǐ", "qù", "xué", "xiào", "", "", "", "qù", "shāng", "diàn", ""]
+    },
+    {
+      "q": "你吃米饭___面条？",
+      "options": [
+        {"text": "还是", "error_tag": null, "pinyin": ["hái", "shì"]},
+        {"text": "或者", "error_tag": "particle", "pinyin": ["huò", "zhě"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Đây là câu hỏi chọn món, phải dùng “还是”.",
+        "en": "This is a question choosing between dishes, so “还是” is required."
+      },
+      "q_pinyin": ["nǐ", "chī", "mǐ", "fàn", "", "", "", "miàn", "tiáo", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu hỏi lựa chọn về đồ uống hoặc món ăn bạn thích, dùng “还是”.",
+      "en": "Write a choice question about a drink or food you like, using “还是”."
+    },
+    "placeholder": "你喝……还是……？",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "connector", "any_of": ["还是"]}, {"role": "particle", "any_of": ["？"]}]
+    },
+    "sample": {"text": "你喝茶还是咖啡？", "pinyin": ["nǐ", "hē", "chá", "hái", "shì", "kā", "fēi", ""]},
+    "placeholder_pinyin": ["nǐ", "hē", "", "", "hái", "shì", "", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790831983",
+    "generated_at": "2026-10-01T05:19:43Z"
+  },
+  "review": null
+}

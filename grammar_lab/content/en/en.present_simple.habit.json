@@ -4,147 +4,65 @@
   "version": 1,
   "target_lang": "en",
   "function": "fn.habit_fact",
-  "level": {
-    "framework": "cefr",
-    "value": "A1",
-    "rank": 1
-  },
+  "level": {"framework": "cefr", "value": "A1", "rank": 1},
   "prereqs": [],
-  "contrasts": [
-    "en.present_continuous.now"
-  ],
-  "error_tags": [
-    "tense"
-  ],
-  "source_refs": {
-    "r5": [
-      "a1-present-simple"
-    ]
-  },
+  "contrasts": ["en.present_continuous.now", "en.present_simple.third_person_s"],
+  "error_tags": ["tense"],
+  "source_refs": {"r5": ["a1-present-simple"]},
   "point_type": "tense_aspect",
   "header": {
-    "title": {
-      "vi": "Hiện tại đơn: thói quen và sự thật",
-      "en": "Present simple: habits and facts"
-    },
+    "title": {"vi": "Hiện tại đơn: thói quen, sự thật", "en": "Present simple: habits and facts"},
     "native_title": "Present simple",
-    "sub": {
-      "vi": "thói quen, sự thật",
-      "en": "habits and facts"
-    },
-    "level": {
-      "framework": "cefr",
-      "value": "A1",
-      "rank": 1
-    },
+    "sub": {"vi": "thói quen, sự thật", "en": "habits and facts"},
+    "level": {"framework": "cefr", "value": "A1", "rank": 1},
     "summary": {
       "vi": "Hiện tại đơn nói về thói quen, việc lặp lại và sự thật nói chung.",
       "en": "The present simple talks about habits, repeated actions, and general facts."
     }
   },
   "when_to_use": [
-    {
-      "vi": "Nói về thói quen hoặc việc lặp lại.",
-      "en": "Talk about habits or repeated actions."
-    },
-    {
-      "vi": "Nói về sự thật hoặc điều thường đúng.",
-      "en": "State facts or things generally true."
-    }
+    {"vi": "Nói về thói quen hoặc việc lặp lại.", "en": "Talk about habits or repeated actions."},
+    {"vi": "Nói về sự thật hoặc điều thường đúng.", "en": "State facts or things generally true."}
   ],
   "pattern": {
     "formula": [
-      {
-        "text": "S",
-        "role": "subject",
-        "label": {
-          "vi": "chủ ngữ",
-          "en": "subject"
-        }
-      },
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
       {
         "text": "V",
         "role": "verb",
-        "label": {
-          "vi": "động từ hiện tại đơn",
-          "en": "present-simple verb"
-        }
+        "label": {"vi": "động từ hiện tại đơn", "en": "present-simple verb"}
       },
       {
         "text": "rest",
         "role": "object",
-        "label": {
-          "vi": "phần còn lại",
-          "en": "rest"
-        },
+        "label": {"vi": "phần còn lại", "en": "rest"},
         "optional": true
       }
     ],
-    "illustration": {
-      "kind": "timeline",
-      "timeline": {
-        "shape": "habit"
-      }
-    }
+    "illustration": {"kind": "timeline", "timeline": {"shape": "habit"}}
   },
   "examples": [
     {
       "text": "I drink coffee every morning.",
       "form": "affirmative",
       "spans": [
-        {
-          "start": 0,
-          "end": 1,
-          "role": "subject"
-        },
-        {
-          "start": 2,
-          "end": 7,
-          "role": "verb"
-        },
-        {
-          "start": 8,
-          "end": 28,
-          "role": "object"
-        }
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 2, "end": 7, "role": "verb"},
+        {"start": 8, "end": 28, "role": "object"}
       ],
-      "annotation": {
-        "vi": "Every morning cho biết đây là thói quen.",
-        "en": "Every morning marks a habit."
-      },
-      "translation": {
-        "vi": "Every morning cho biết đây là thói quen.",
-        "en": "Every morning marks a habit."
-      }
+      "annotation": {"vi": "Every morning cho biết đây là thói quen.", "en": "Every morning marks a habit."},
+      "translation": {"vi": "Every morning cho biết đây là thói quen.", "en": "Every morning marks a habit."}
     },
     {
       "text": "They live in Hanoi.",
       "form": "affirmative",
       "spans": [
-        {
-          "start": 0,
-          "end": 4,
-          "role": "subject"
-        },
-        {
-          "start": 5,
-          "end": 9,
-          "role": "verb"
-        },
-        {
-          "start": 10,
-          "end": 18,
-          "role": "object"
-        }
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 5, "end": 9, "role": "verb"},
+        {"start": 10, "end": 18, "role": "object"}
       ],
-      "annotation": {
-        "vi": "Live diễn tả tình huống ổn định.",
-        "en": "Live describes a stable situation."
-      },
-      "translation": {
-        "vi": "Live diễn tả tình huống ổn định.",
-        "en": "Live describes a stable situation."
-      }
+      "annotation": {"vi": "Live diễn tả tình huống ổn định.", "en": "Live describes a stable situation."},
+      "translation": {"vi": "Live diễn tả tình huống ổn định.", "en": "Live describes a stable situation."}
     }
   ],
   "compare": [],
@@ -157,77 +75,39 @@
         "en": "With ordinary present-simple verbs, do not put am/is/are before the verb."
       },
       "error_tag": "tense",
-      "l1": [
-        "vi"
-      ]
+      "l1": ["vi"]
     }
   ],
   "quick_practice": [
     {
       "q": "I ___ breakfast at seven every day.",
       "options": [
-        {
-          "text": "eat",
-          "error_tag": null
-        },
-        {
-          "text": "am eating",
-          "error_tag": "tense"
-        },
-        {
-          "text": "eats",
-          "error_tag": "tense"
-        }
+        {"text": "eat", "error_tag": null},
+        {"text": "am eating", "error_tag": "tense"},
+        {"text": "eats", "error_tag": "tense"}
       ],
       "answer": 0,
-      "explain": {
-        "vi": "Thói quen với I dùng eat.",
-        "en": "A habit with I uses eat."
-      }
+      "explain": {"vi": "Thói quen với I dùng eat.", "en": "A habit with I uses eat."}
     },
     {
       "q": "They ___ near the station.",
       "options": [
-        {
-          "text": "live",
-          "error_tag": null
-        },
-        {
-          "text": "are live",
-          "error_tag": "tense"
-        },
-        {
-          "text": "lives",
-          "error_tag": "tense"
-        }
+        {"text": "live", "error_tag": null},
+        {"text": "are live", "error_tag": "tense"},
+        {"text": "lives", "error_tag": "tense"}
       ],
       "answer": 0,
-      "explain": {
-        "vi": "Với they dùng live.",
-        "en": "With they, use live."
-      }
+      "explain": {"vi": "Với they dùng live.", "en": "With they, use live."}
     },
     {
       "q": "We ___ English on Mondays.",
       "options": [
-        {
-          "text": "study",
-          "error_tag": null
-        },
-        {
-          "text": "are study",
-          "error_tag": "tense"
-        },
-        {
-          "text": "studies",
-          "error_tag": "tense"
-        }
+        {"text": "study", "error_tag": null},
+        {"text": "are study", "error_tag": "tense"},
+        {"text": "studies", "error_tag": "tense"}
       ],
       "answer": 0,
-      "explain": {
-        "vi": "Lịch lặp lại dùng study.",
-        "en": "A repeated schedule uses study."
-      }
+      "explain": {"vi": "Lịch lặp lại dùng study.", "en": "A repeated schedule uses study."}
     }
   ],
   "status": "draft_ai",
@@ -236,21 +116,11 @@
     "model": "openai:gpt-5.6-sol",
     "prompt_version": "direct-author.en-a1.v1",
     "run_id": "chatgpt.en-a1.20260930",
-    "generated_at": "2026-09-30T10:35:00Z"
+    "generated_at": "2026-09-30T10:35:00Z",
+    "metadata_stale": true
   },
   "review": null,
   "sequence": 1,
-  "source_anchors": {
-    "status": "anchored",
-    "items": [
-      {
-        "source": "core_inventory",
-        "code": "64",
-        "level": "A1"
-      }
-    ]
-  },
-  "aliases": [
-    "a1-present-simple"
-  ]
+  "source_anchors": {"status": "anchored", "items": [{"source": "core_inventory", "code": "64", "level": "A1"}]},
+  "aliases": ["a1-present-simple"]
 }

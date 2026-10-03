@@ -1,0 +1,320 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk6.a_6_6_2_7.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.condition_real",
+  "level": {"framework": "hsk3", "value": "6", "rank": 6},
+  "prereqs": ["zh.canon.gf.hsk4.a_4_5_2_7.p1"],
+  "contrasts": [],
+  "error_tags": ["conjunction"],
+  "source_refs": {"gf0025": ["gf0025.hsk6.051"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Câu phức: 凡是⋯⋯，都⋯⋯", "en": "Complex sentences: 凡是⋯⋯，都⋯⋯"},
+    "native_title": "凡是⋯⋯，都⋯⋯",
+    "level": {"framework": "hsk3", "value": "6", "rank": 6},
+    "summary": {
+      "vi": "Mẫu câu điều kiện khái quát: nêu một phạm vi bằng 凡是 ở đầu câu, rồi khẳng định kết quả chung bằng 都 ở mệnh đề sau.",
+      "en": "A general real-condition pattern: 凡是 opens with a whole category, and 都 in the second clause states what holds for every member of it."
+    },
+    "sub": {"vi": "điều kiện khái quát", "en": "general condition"},
+    "native_title_pinyin": ["fán", "shì", "", "", "", "dōu", "", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói một quy tắc áp dụng cho tất cả thành viên của một nhóm, không trừ ai.",
+      "en": "When a rule applies to every member of a group, with no exceptions."
+    },
+    {
+      "vi": "Khi mệnh đề sau là kết quả hoặc yêu cầu chung, thường có 都, 就 hoặc 必须.",
+      "en": "When the second clause gives a shared result or requirement, usually with 都, 就 or 必须."
+    },
+    {
+      "vi": "Khi muốn nhấn mạnh phạm vi bằng một cụm danh từ rõ ràng: 凡是学生, 凡是新来的, 凡是报名的人.",
+      "en": "When the scope is a clear noun phrase: 凡是学生, 凡是新来的, 凡是报名的人."
+    },
+    {
+      "vi": "Dùng trong văn viết quy định, thông báo, hoặc lời khuyên mang tính nguyên tắc.",
+      "en": "In written rules, notices, or advice stated as a principle."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "凡是",
+        "role": "connector",
+        "label": {"vi": "từ mở đầu phạm vi", "en": "scope opener"},
+        "pinyin": ["fán", "shì"]
+      },
+      {
+        "text": "N",
+        "role": "object",
+        "label": {"vi": "phạm vi / nhóm", "en": "scope / group"},
+        "pinyin": [""]
+      },
+      {"text": "，", "role": "other", "label": {"vi": "dấu phẩy", "en": "comma"}, "pinyin": [""]},
+      {
+        "text": "S",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ mệnh đề sau", "en": "second-clause subject"},
+        "optional": true,
+        "pinyin": [""]
+      },
+      {
+        "text": "都",
+        "role": "marker",
+        "label": {"vi": "phó từ bao quát", "en": "universal adverb"},
+        "pinyin": ["dōu"]
+      },
+      {
+        "text": "VP",
+        "role": "verb",
+        "label": {"vi": "vị ngữ / kết quả", "en": "predicate / result"},
+        "pinyin": ["", ""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "凡是学生，都必须带学生证。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 4, "role": "object"},
+        {"start": 4, "end": 5, "role": "other"},
+        {"start": 5, "end": 6, "role": "marker"},
+        {"start": 6, "end": 12, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "凡是 mở phạm vi là toàn bộ học sinh; 都 trong mệnh đề sau khẳng định quy định áp dụng cho tất cả.",
+        "en": "凡是 opens the scope to all students; 都 in the second clause states the rule holds for every one of them."
+      },
+      "translation": {
+        "vi": "Phàm là học sinh thì đều phải mang thẻ học sinh.",
+        "en": "All students must carry their student ID."
+      },
+      "pinyin": ["fán", "shì", "xué", "shēng", "", "dōu", "bì", "xū", "dài", "xué", "shēng", "zhèng", ""]
+    },
+    {
+      "text": "凡是新来的同事，他都会主动打招呼。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 7, "role": "object"},
+        {"start": 7, "end": 8, "role": "other"},
+        {"start": 8, "end": 9, "role": "subject"},
+        {"start": 9, "end": 10, "role": "marker"},
+        {"start": 10, "end": 16, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Chủ ngữ 他 đứng sau dấu phẩy; 都 đứng trước vị ngữ để chỉ không trừ một ai.",
+        "en": "The subject 他 follows the comma; 都 precedes the predicate to mark no exceptions."
+      },
+      "translation": {
+        "vi": "Phàm là đồng nghiệp mới đến thì anh ấy đều chủ động chào hỏi.",
+        "en": "He greets every new colleague on his own initiative."
+      },
+      "pinyin": [
+        "fán",
+        "shì",
+        "xīn",
+        "lái",
+        "de",
+        "tóng",
+        "shì",
+        "",
+        "tā",
+        "dōu",
+        "huì",
+        "zhǔ",
+        "dòng",
+        "dǎ",
+        "zhāo",
+        "hu",
+        ""
+      ]
+    },
+    {
+      "text": "凡是报名的人，都要先交一份材料。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 6, "role": "object"},
+        {"start": 6, "end": 7, "role": "other"},
+        {"start": 7, "end": 8, "role": "marker"},
+        {"start": 8, "end": 15, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Mệnh đề sau không có chủ ngữ riêng vì chủ ngữ đã nằm trong phạm vi 报名的人.",
+        "en": "The second clause has no separate subject because the subject is already inside the scope 报名的人."
+      },
+      "translation": {
+        "vi": "Phàm là người đăng ký thì đều phải nộp một bộ hồ sơ trước.",
+        "en": "Everyone who registers must first submit a set of documents."
+      },
+      "pinyin": [
+        "fán",
+        "shì",
+        "bào",
+        "míng",
+        "de",
+        "rén",
+        "",
+        "dōu",
+        "yào",
+        "xiān",
+        "jiāo",
+        "yī",
+        "fèn",
+        "cái",
+        "liào",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "凡是学生，必须带学生证。",
+      "right": "凡是学生，都必须带学生证。",
+      "reason": {
+        "vi": "Người học Việt Nam thường dịch thẳng 凡是 thành 'phàm là' rồi bỏ 都, nhưng 凡是 bắt buộc phải có 都 ở mệnh đề sau để chốt nghĩa bao quát.",
+        "en": "Vietnamese learners translate 凡是 as a scope opener and drop 都, but 凡是 requires 都 in the second clause to complete the universal meaning."
+      },
+      "error_tag": "conjunction",
+      "l1": ["vi"],
+      "wrong_pinyin": ["fán", "shì", "xué", "shēng", "", "bì", "xū", "dài", "xué", "shēng", "zhèng", ""],
+      "right_pinyin": ["fán", "shì", "xué", "shēng", "", "dōu", "bì", "xū", "dài", "xué", "shēng", "zhèng", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "凡是新来的同事，他___会主动打招呼。",
+      "options": [
+        {"text": "都", "error_tag": null, "pinyin": ["dōu"]},
+        {"text": "也", "error_tag": "conjunction", "pinyin": ["yě"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "凡是 cần 都 ở mệnh đề sau để chỉ toàn bộ phạm vi; 也 chỉ nghĩa 'cũng', không bao quát.",
+        "en": "凡是 needs 都 in the second clause to cover the whole scope; 也 only means 'also' and does not cover it."
+      },
+      "q_pinyin": [
+        "fán",
+        "shì",
+        "xīn",
+        "lái",
+        "de",
+        "tóng",
+        "shì",
+        "",
+        "tā",
+        "",
+        "",
+        "",
+        "huì",
+        "zhǔ",
+        "dòng",
+        "dǎ",
+        "zhāo",
+        "hu",
+        ""
+      ]
+    },
+    {
+      "q": "凡是报名的人，___要先交一份材料。",
+      "options": [
+        {"text": "都", "error_tag": null, "pinyin": ["dōu"]},
+        {"text": "就", "error_tag": "conjunction", "pinyin": ["jiù"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "都 là phó từ bao quát bắt buộc sau 凡是; 就 chỉ nhấn mạnh kết quả, không thay được 都.",
+        "en": "都 is the required universal adverb after 凡是; 就 only stresses the result and cannot replace it."
+      },
+      "q_pinyin": [
+        "fán",
+        "shì",
+        "bào",
+        "míng",
+        "de",
+        "rén",
+        "",
+        "",
+        "",
+        "",
+        "yào",
+        "xiān",
+        "jiāo",
+        "yī",
+        "fèn",
+        "cái",
+        "liào",
+        ""
+      ]
+    },
+    {
+      "q": "凡是学生，都___带学生证。",
+      "options": [
+        {"text": "必须", "error_tag": null, "pinyin": ["bì", "xū"]},
+        {"text": "必须带", "error_tag": "redundancy", "pinyin": ["bì", "xū", "dài"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 都 chỉ cần động từ 必须 + 带; nếu điền 必须带 thì 带 bị lặp lại trong câu.",
+        "en": "After 都 only 必须 + 带 is needed; filling in 必须带 repeats 带 in the sentence."
+      },
+      "q_pinyin": ["fán", "shì", "xué", "shēng", "", "dōu", "", "", "", "dài", "xué", "shēng", "zhèng", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một quy tắc áp dụng cho tất cả thành viên trong một nhóm mà bạn biết, dùng 凡是⋯⋯，都⋯⋯.",
+      "en": "Write one sentence about a rule that applies to every member of a group you know, using 凡是⋯⋯，都⋯⋯."
+    },
+    "placeholder": "凡是……，都……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "connector", "any_of": ["凡是"]}, {"role": "marker", "any_of": ["都"]}]
+    },
+    "sample": {
+      "text": "凡是参加考试的人，都要提前十分钟到。",
+      "pinyin": [
+        "fán",
+        "shì",
+        "cān",
+        "jiā",
+        "kǎo",
+        "shì",
+        "de",
+        "rén",
+        "",
+        "dōu",
+        "yào",
+        "tí",
+        "qián",
+        "shí",
+        "fēn",
+        "zhōng",
+        "dào",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["fán", "shì", "", "", "", "dōu", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790834232",
+    "generated_at": "2026-10-01T05:57:12Z"
+  },
+  "review": null
+}

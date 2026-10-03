@@ -1,0 +1,326 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk6.a_6_6_2_4.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.linking",
+  "level": {"framework": "hsk3", "value": "6", "rank": 6},
+  "prereqs": ["zh.canon.gf.hsk6.a_6_6_2_2.p1"],
+  "contrasts": [],
+  "error_tags": ["conjunction"],
+  "source_refs": {"gf0025": ["gf0025.hsk6.048"]},
+  "point_type": "other",
+  "sequence": 9,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Câu phức: 要么⋯⋯，要么⋯⋯", "en": "Complex sentences: 要么⋯⋯，要么⋯⋯"},
+    "native_title": "要么⋯⋯，要么⋯⋯",
+    "level": {"framework": "hsk3", "value": "6", "rank": 6},
+    "summary": {
+      "vi": "要么⋯⋯，要么⋯⋯ dùng để nêu hai lựa chọn thay thế cho nhau: chọn cái này hoặc cái kia.",
+      "en": "要么⋯⋯，要么⋯⋯ presents two alternatives that exclude each other: either one thing or the other."
+    },
+    "sub": {"vi": "lựa chọn thay thế", "en": "alternative choice"},
+    "native_title_pinyin": ["yào", "me", "", "", "", "yào", "me", "", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi người nói đưa ra hai khả năng và chỉ một trong hai được chọn.",
+      "en": "When the speaker offers two possibilities and only one of them can be chosen."
+    },
+    {
+      "vi": "Khi cả hai vế đều là mệnh đề đầy đủ, mỗi vế bắt đầu bằng 要么.",
+      "en": "When both parts are full clauses, each beginning with 要么."
+    },
+    {
+      "vi": "Khi muốn gợi ý một giải pháp thay thế cho việc gì đó, thường dùng ở cuối câu.",
+      "en": "When suggesting an alternative course of action, often placed at the end of a sentence."
+    },
+    {
+      "vi": "Khi hai lựa chọn được xem là ngang hàng, không nhấn mạnh vế nào hơn.",
+      "en": "When the two options are treated as equal, with no emphasis on either one."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "要么",
+        "role": "connector",
+        "label": {"vi": "liên từ mở đầu lựa chọn thứ nhất", "en": "connector opening the first alternative"},
+        "pinyin": ["yào", "me"]
+      },
+      {
+        "text": "分句一",
+        "role": "other",
+        "label": {"vi": "mệnh đề thứ nhất", "en": "first clause"},
+        "pinyin": ["fēn", "jù", "yī"]
+      },
+      {
+        "text": "要么",
+        "role": "connector",
+        "label": {"vi": "liên từ mở đầu lựa chọn thứ hai", "en": "connector opening the second alternative"},
+        "pinyin": ["yào", "me"]
+      },
+      {
+        "text": "分句二",
+        "role": "other",
+        "label": {"vi": "mệnh đề thứ hai", "en": "second clause"},
+        "pinyin": ["fēn", "jù", "èr"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "要么你打电话，要么我发邮件。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 6, "role": "other"},
+        {"start": 7, "end": 9, "role": "connector"},
+        {"start": 9, "end": 13, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Hai vế 要么 đưa ra hai cách liên lạc, chỉ chọn một.",
+        "en": "The two 要么 clauses offer two ways to contact, and only one is chosen."
+      },
+      "translation": {"vi": "Hoặc bạn gọi điện, hoặc tôi gửi email.", "en": "Either you call, or I send an email."},
+      "pinyin": ["yào", "me", "nǐ", "dǎ", "diàn", "huà", "", "yào", "me", "wǒ", "fā", "yóu", "jiàn", ""]
+    },
+    {
+      "text": "周末我们要么去爬山，要么去看电影。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 4, "end": 6, "role": "connector"},
+        {"start": 6, "end": 9, "role": "other"},
+        {"start": 10, "end": 12, "role": "connector"},
+        {"start": 12, "end": 16, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Hai hoạt động cho cuối tuần, chọn một trong hai.",
+        "en": "Two weekend activities, one of which will be chosen."
+      },
+      "translation": {
+        "vi": "Cuối tuần chúng ta hoặc đi leo núi, hoặc đi xem phim.",
+        "en": "On the weekend we will either go hiking or go to a movie."
+      },
+      "pinyin": [
+        "zhōu",
+        "mò",
+        "wǒ",
+        "men",
+        "yào",
+        "me",
+        "qù",
+        "pá",
+        "shān",
+        "",
+        "yào",
+        "me",
+        "qù",
+        "kàn",
+        "diàn",
+        "yǐng",
+        ""
+      ]
+    },
+    {
+      "text": "要么坐地铁，要么打车，你决定吧。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 5, "role": "other"},
+        {"start": 6, "end": 8, "role": "connector"},
+        {"start": 8, "end": 10, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Hai phương án đi lại được đưa ra để người nghe chọn.",
+        "en": "Two travel options are given for the listener to choose."
+      },
+      "translation": {
+        "vi": "Hoặc đi tàu điện ngầm, hoặc bắt taxi, bạn quyết định đi.",
+        "en": "Either take the subway or take a taxi, you decide."
+      },
+      "pinyin": [
+        "yào",
+        "me",
+        "zuò",
+        "dì",
+        "tiě",
+        "",
+        "yào",
+        "me",
+        "dǎ",
+        "chē",
+        "",
+        "nǐ",
+        "jué",
+        "dìng",
+        "ba",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "你打电话，要么我发邮件。",
+      "right": "要么你打电话，要么我发邮件。",
+      "reason": {
+        "vi": "Người học quen với cấu trúc chỉ có vế sau mới có liên từ, nên bỏ 要么 ở vế đầu. Trong cấu trúc này cả hai vế đều phải có 要么.",
+        "en": "Learners are used to structures where only the second clause carries the conjunction, so they drop 要么 from the first clause. In this pattern both clauses need 要么."
+      },
+      "error_tag": "conjunction",
+      "l1": ["vi"],
+      "wrong_pinyin": ["nǐ", "dǎ", "diàn", "huà", "", "yào", "me", "wǒ", "fā", "yóu", "jiàn", ""],
+      "right_pinyin": ["yào", "me", "nǐ", "dǎ", "diàn", "huà", "", "yào", "me", "wǒ", "fā", "yóu", "jiàn", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "___你去，我去，总得有一个人去。",
+      "options": [
+        {"text": "要么", "error_tag": null, "pinyin": ["yào", "me"]},
+        {"text": "因为", "error_tag": "conjunction", "pinyin": ["yīn", "wèi"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Hai khả năng loại trừ nhau cần 要么 ở cả hai vế; 因为 diễn tả nguyên nhân, không phải lựa chọn.",
+        "en": "Two mutually exclusive possibilities need 要么 in both clauses; 因为 expresses cause, not a choice."
+      },
+      "q_pinyin": [
+        "",
+        "",
+        "",
+        "nǐ",
+        "qù",
+        "",
+        "wǒ",
+        "qù",
+        "",
+        "zǒng",
+        "děi",
+        "yǒu",
+        "yī",
+        "gè",
+        "rén",
+        "qù",
+        ""
+      ]
+    },
+    {
+      "q": "我们___坐火车去，坐飞机去，都可以。",
+      "options": [
+        {"text": "要么", "error_tag": null, "pinyin": ["yào", "me"]},
+        {"text": "虽然", "error_tag": "conjunction", "pinyin": ["suī", "rán"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu nêu hai phương án đi lại ngang hàng nên dùng 要么; 虽然 dùng để nhượng bộ, không hợp ở đây.",
+        "en": "The sentence gives two equal travel options, so 要么 fits; 虽然 marks concession and does not fit here."
+      },
+      "q_pinyin": [
+        "wǒ",
+        "men",
+        "",
+        "",
+        "",
+        "zuò",
+        "huǒ",
+        "chē",
+        "qù",
+        "",
+        "zuò",
+        "fēi",
+        "jī",
+        "qù",
+        "",
+        "dōu",
+        "kě",
+        "yǐ",
+        ""
+      ]
+    },
+    {
+      "q": "你___今天做完，明天做完，别拖到后天。",
+      "options": [
+        {"text": "要么", "error_tag": null, "pinyin": ["yào", "me"]},
+        {"text": "不但", "error_tag": "conjunction", "pinyin": ["bù", "dàn"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Hai thời hạn loại trừ nhau cần 要么; 不但 là quan hệ tăng tiến, không phải lựa chọn.",
+        "en": "Two mutually exclusive deadlines need 要么; 不但 is additive, not a choice."
+      },
+      "q_pinyin": [
+        "nǐ",
+        "",
+        "",
+        "",
+        "jīn",
+        "tiān",
+        "zuò",
+        "wán",
+        "",
+        "míng",
+        "tiān",
+        "zuò",
+        "wán",
+        "",
+        "bié",
+        "tuō",
+        "dào",
+        "hòu",
+        "tiān",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về hai lựa chọn của bạn cho cuối tuần này, dùng 要么⋯⋯，要么⋯⋯.",
+      "en": "Write one sentence about your two options for this weekend, using 要么⋯⋯，要么⋯⋯."
+    },
+    "placeholder": "这个周末我要么……，要么……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "connector", "any_of": ["要么"]}, {"role": "connector", "any_of": ["要么"]}]
+    },
+    "sample": {
+      "text": "这个周末我要么去图书馆，要么在家休息。",
+      "pinyin": [
+        "zhè",
+        "gè",
+        "zhōu",
+        "mò",
+        "wǒ",
+        "yào",
+        "me",
+        "qù",
+        "tú",
+        "shū",
+        "guǎn",
+        "",
+        "yào",
+        "me",
+        "zài",
+        "jiā",
+        "xiū",
+        "xi",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["zhè", "gè", "zhōu", "mò", "wǒ", "yào", "me", "", "", "", "yào", "me", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790834192",
+    "generated_at": "2026-10-01T05:56:32Z"
+  },
+  "review": null
+}

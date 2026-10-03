@@ -1,0 +1,242 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk2.a_2_1_7_3.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.location",
+  "level": {"framework": "hsk3", "value": "2", "rank": 2},
+  "prereqs": ["zh.canon.gf.hsk2.a_2_1_7_2.p1"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"gf0025": ["gf0025.hsk2.027", "gf0025.hsk2.028"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 离", "en": "Chinese grammar: 离"},
+    "native_title": "离",
+    "level": {"framework": "hsk3", "value": "2", "rank": 2},
+    "summary": {
+      "vi": "Giới từ 离 dùng để nói khoảng cách về không gian, thời gian hoặc mức độ giữa hai sự vật, sự việc.",
+      "en": "The preposition 离 expresses distance in space, time, or degree between two things or events."
+    },
+    "sub": {"vi": "khoảng cách", "en": "distance"},
+    "native_title_pinyin": ["lí"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói hai địa điểm cách nhau bao xa, ví dụ nhà cách trường bao xa.",
+      "en": "When saying how far apart two places are, for example how far home is from school."
+    },
+    {
+      "vi": "Khi muốn nói một thời điểm cách thời điểm hiện tại hoặc một mốc khác bao lâu.",
+      "en": "When saying how far a point in time is from now or from another point in time."
+    },
+    {
+      "vi": "Khi muốn nói mức độ chênh lệch giữa hai con số hoặc hai tình trạng.",
+      "en": "When saying the difference in degree between two numbers or two situations."
+    },
+    {
+      "vi": "Khi muốn hỏi khoảng cách hoặc khoảng thời gian bằng 离……多远 hoặc 离……多久.",
+      "en": "When asking about distance or time with 离……多远 or 离……多久."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "A",
+        "role": "subject",
+        "label": {"vi": "đối tượng thứ nhất", "en": "first item"},
+        "pinyin": [""]
+      },
+      {
+        "text": "离",
+        "role": "marker",
+        "label": {"vi": "giới từ 离", "en": "preposition 离"},
+        "pinyin": ["lí"]
+      },
+      {
+        "text": "B",
+        "role": "object",
+        "label": {"vi": "đối tượng thứ hai", "en": "second item"},
+        "pinyin": [""]
+      },
+      {
+        "text": "多远/多久/很近/不远",
+        "role": "complement",
+        "label": {"vi": "bổ ngữ khoảng cách", "en": "distance complement"},
+        "options": [
+          {"text": "多远", "pinyin": ["duō", "yuǎn"]},
+          {"text": "多久", "pinyin": ["duō", "jiǔ"]},
+          {"text": "很近", "pinyin": ["hěn", "jìn"]},
+          {"text": "不远", "pinyin": ["bù", "yuǎn"]}
+        ],
+        "pinyin": ["duō", "yuǎn", "", "duō", "jiǔ", "", "hěn", "jìn", "", "bù", "yuǎn"]
+      }
+    ],
+    "variants": {
+      "question": [
+        {
+          "text": "A",
+          "role": "subject",
+          "label": {"vi": "đối tượng thứ nhất", "en": "first item"},
+          "pinyin": [""]
+        },
+        {
+          "text": "离",
+          "role": "marker",
+          "label": {"vi": "giới từ 离", "en": "preposition 离"},
+          "pinyin": ["lí"]
+        },
+        {
+          "text": "B",
+          "role": "object",
+          "label": {"vi": "đối tượng thứ hai", "en": "second item"},
+          "pinyin": [""]
+        },
+        {
+          "text": "多远/多久",
+          "role": "complement",
+          "label": {"vi": "bổ ngữ hỏi khoảng cách", "en": "question complement"},
+          "options": [{"text": "多远", "pinyin": ["duō", "yuǎn"]}, {"text": "多久", "pinyin": ["duō", "jiǔ"]}],
+          "pinyin": ["duō", "yuǎn", "", "duō", "jiǔ"]
+        }
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "我家离学校很近。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 3, "role": "marker"},
+        {"start": 3, "end": 5, "role": "object"},
+        {"start": 5, "end": 7, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "离 đứng giữa hai đối tượng, 很近 cho biết khoảng cách.",
+        "en": "离 stands between the two items, and 很近 states the distance."
+      },
+      "translation": {"vi": "Nhà tôi rất gần trường.", "en": "My home is very close to school."},
+      "pinyin": ["wǒ", "jiā", "lí", "xué", "xiào", "hěn", "jìn", ""]
+    },
+    {
+      "text": "现在离春节还有一个月。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 3, "role": "marker"},
+        {"start": 3, "end": 5, "role": "object"},
+        {"start": 5, "end": 10, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "离 dùng cho khoảng thời gian: từ bây giờ đến Tết còn một tháng.",
+        "en": "离 is used for time distance: from now to Spring Festival there is one month left."
+      },
+      "translation": {
+        "vi": "Bây giờ còn một tháng nữa là đến Tết.",
+        "en": "It is still one month from now to the Spring Festival."
+      },
+      "pinyin": ["xiàn", "zài", "lí", "chūn", "jié", "hái", "yǒu", "yī", "gè", "yuè", ""]
+    },
+    {
+      "text": "北京离上海多远？",
+      "form": "question",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 3, "role": "marker"},
+        {"start": 3, "end": 5, "role": "object"},
+        {"start": 5, "end": 7, "role": "complement"}
+      ],
+      "annotation": {"vi": "Câu hỏi khoảng cách dùng 离……多远.", "en": "A distance question uses 离……多远."},
+      "translation": {"vi": "Bắc Kinh cách Thượng Hải bao xa?", "en": "How far is Beijing from Shanghai?"},
+      "pinyin": ["běi", "jīng", "lí", "shàng", "hǎi", "duō", "yuǎn", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "我家从学校很近。",
+      "right": "我家离学校很近。",
+      "reason": {
+        "vi": "Người học Việt Nam hay dùng 从 vì nghĩ đến 'từ', nhưng 从 chỉ điểm xuất phát của hành động, còn 离 mới diễn tả khoảng cách.",
+        "en": "Vietnamese learners often use 从 because they think of 'from', but 从 marks the starting point of an action, while 离 expresses distance."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong_pinyin": ["wǒ", "jiā", "cóng", "xué", "xiào", "hěn", "jìn", ""],
+      "right_pinyin": ["wǒ", "jiā", "lí", "xué", "xiào", "hěn", "jìn", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "我家___学校很近。",
+      "options": [
+        {"text": "离", "error_tag": null, "pinyin": ["lí"]},
+        {"text": "从", "error_tag": "word_choice", "pinyin": ["cóng"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "离 dùng để nói khoảng cách giữa hai địa điểm; 从 chỉ điểm xuất phát của hành động.",
+        "en": "离 expresses distance between two places; 从 marks the starting point of an action."
+      },
+      "q_pinyin": ["wǒ", "jiā", "", "", "", "xué", "xiào", "hěn", "jìn", ""]
+    },
+    {
+      "q": "现在___春节还有一个月。",
+      "options": [
+        {"text": "离", "error_tag": null, "pinyin": ["lí"]},
+        {"text": "从", "error_tag": "word_choice", "pinyin": ["cóng"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Khoảng thời gian từ hiện tại đến một mốc dùng 离, không dùng 从.",
+        "en": "A time gap from now to a point in time uses 离, not 从."
+      },
+      "q_pinyin": ["xiàn", "zài", "", "", "", "chūn", "jié", "hái", "yǒu", "yī", "gè", "yuè", ""]
+    },
+    {
+      "q": "北京离上海___？",
+      "options": [
+        {"text": "多远", "error_tag": null, "pinyin": ["duō", "yuǎn"]},
+        {"text": "多久", "error_tag": "word_choice", "pinyin": ["duō", "jiǔ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Hỏi khoảng cách dùng 多远; 多久 dùng cho khoảng thời gian.",
+        "en": "Asking about distance uses 多远; 多久 is for duration."
+      },
+      "q_pinyin": ["běi", "jīng", "lí", "shàng", "hǎi", "", "", "", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu nói nhà bạn cách một địa điểm quen thuộc bao xa, dùng 离.",
+      "en": "Write one sentence saying how far your home is from a familiar place, using 离."
+    },
+    "placeholder": "我家离……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "marker", "any_of": ["离"]},
+        {"role": "complement", "any_of": ["很近", "不远", "很远", "多远", "多久", "还有一个月"]}
+      ]
+    },
+    "sample": {"text": "我家离公司很近。", "pinyin": ["wǒ", "jiā", "lí", "gōng", "sī", "hěn", "jìn", ""]},
+    "placeholder_pinyin": ["wǒ", "jiā", "lí", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790832215",
+    "generated_at": "2026-10-01T05:23:35Z",
+    "metadata_stale": true
+  },
+  "review": null
+}

@@ -1,0 +1,276 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk5_3_topic",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.negation",
+  "level": {"framework": "hsk3", "value": "5", "rank": 5},
+  "prereqs": ["zh.canon.r5.hsk4_8_topic_110"],
+  "contrasts": [],
+  "error_tags": ["particle"],
+  "source_refs": {"r5": ["zh-hsk5-3-topic"], "gf0025": ["gf0025.hsk4.010"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["zh-hsk5-3-topic"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 否定副词：未必", "en": "Chinese grammar: 否定副词：未必"},
+    "native_title": "否定副词：未必",
+    "level": {"framework": "hsk3", "value": "5", "rank": 5},
+    "summary": {
+      "vi": "未必 và 不见得 dùng để giảm mức độ chắc chắn: 'chưa chắc', 'không hẳn', phủ định một suy đoán chứ không phủ định một sự thật.",
+      "en": "未必 and 不见得 lower certainty: 'not necessarily', 'may not', negating an inference rather than stating a fact."
+    },
+    "sub": {"vi": "chưa chắc", "en": "not necessarily"},
+    "native_title_pinyin": ["fǒu", "dìng", "fù", "cí", "", "wèi", "bì"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói một kết luận không chắc đúng, dù người khác có thể đang nghĩ vậy.",
+      "en": "When you want to say a conclusion is not certain, even if others may assume it is."
+    },
+    {
+      "vi": "Khi phản bác một suy luận chung, ví dụ 'đắt thì tốt'.",
+      "en": "When countering a common inference, for example 'expensive means good'."
+    },
+    {
+      "vi": "Khi cần sắc thái lịch sự, không khẳng định đối phương sai hoàn toàn.",
+      "en": "When you need a polite tone that does not flatly say the other person is wrong."
+    },
+    {
+      "vi": "Khi đưa ra đánh giá mang tính chủ quan, không dùng để phủ định một sự kiện đã biết.",
+      "en": "When giving a subjective judgment, not to deny a known fact."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "未必/不见得",
+        "role": "aux",
+        "label": {"vi": "phó từ giảm chắc chắn", "en": "certainty-lowering adverb"},
+        "options": [{"text": "未必", "pinyin": ["wèi", "bì"]}, {"text": "不见得", "pinyin": ["bú", "jiàn", "de"]}],
+        "pinyin": ["wèi", "bì", "", "bú", "jiàn", "de"]
+      },
+      {
+        "text": "谓语",
+        "role": "verb",
+        "label": {"vi": "vị ngữ", "en": "predicate"},
+        "pinyin": ["wèi", "yǔ"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "贵的未必就是最好的。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 4, "role": "aux"},
+        {"start": 4, "end": 9, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "未必 đứng trước vị ngữ, phủ định suy luận 'đắt thì tốt nhất'.",
+        "en": "未必 stands before the predicate, negating the inference 'expensive means best'."
+      },
+      "translation": {"vi": "Đắt chưa chắc đã là tốt nhất.", "en": "Expensive is not necessarily the best."},
+      "pinyin": ["guì", "de", "wèi", "bì", "jiù", "shì", "zuì", "hǎo", "de", ""]
+    },
+    {
+      "text": "他今天未必有时间。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 3, "end": 5, "role": "aux"},
+        {"start": 5, "end": 8, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Chủ ngữ + 未必 + vị ngữ: 'hôm nay chưa chắc có thời gian'.",
+        "en": "Subject + 未必 + predicate: 'may not have time today'."
+      },
+      "translation": {"vi": "Hôm nay anh ấy chưa chắc có thời gian.", "en": "He may not have time today."},
+      "pinyin": ["tā", "jīn", "tiān", "wèi", "bì", "yǒu", "shí", "jiān", ""]
+    },
+    {
+      "text": "这个办法不见得有效。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 4, "end": 7, "role": "aux"},
+        {"start": 7, "end": 9, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "不见得 đồng nghĩa với 未必 nhưng thông dụng hơn trong khẩu ngữ.",
+        "en": "不见得 means the same as 未必 but is more common in speech."
+      },
+      "translation": {"vi": "Cách này chưa chắc hiệu quả.", "en": "This method is not necessarily effective."},
+      "pinyin": ["zhè", "ge", "bàn", "fǎ", "bú", "jiàn", "de", "yǒu", "xiào", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "他未必不来。",
+      "right": "他未必会来。",
+      "reason": {
+        "vi": "未必 + 不 tạo phủ định kép, nghĩa thành 'chưa chắc anh ấy không đến' (có thể vẫn đến), khác với ý 'chưa chắc anh ấy đến'.",
+        "en": "未必 + 不 creates a double negative meaning 'it is not certain that he won't come' (he may still come), not 'he may not come'."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong_pinyin": ["tā", "wèi", "bì", "bù", "lái", ""],
+      "right_pinyin": ["tā", "wèi", "bì", "huì", "lái", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "这个办法___有效，我们再试试别的。",
+      "options": [
+        {"text": "不见得", "error_tag": null, "pinyin": ["bú", "jiàn", "de"]},
+        {"text": "不", "error_tag": "particle", "pinyin": ["bù"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Cần phó từ giảm chắc chắn 不见得; chỉ 不 là phủ định sự thật, không hợp nghĩa 'chưa chắc'.",
+        "en": "The certainty-lowering adverb 不见得 is needed; bare 不 is factual negation, not 'not necessarily'."
+      },
+      "q_pinyin": [
+        "zhè",
+        "ge",
+        "bàn",
+        "fǎ",
+        "",
+        "",
+        "",
+        "yǒu",
+        "xiào",
+        "",
+        "wǒ",
+        "men",
+        "zài",
+        "shì",
+        "shi",
+        "bié",
+        "de",
+        ""
+      ]
+    },
+    {
+      "q": "他今天___有时间，我们改天再约吧。",
+      "options": [
+        {"text": "未必", "error_tag": null, "pinyin": ["wèi", "bì"]},
+        {"text": "没", "error_tag": "aspect", "pinyin": ["méi"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "未必 + 有 thời gian diễn tả 'chưa chắc có'; 没 phủ định sự tồn tại, không đúng ý suy đoán.",
+        "en": "未必 + 有 time expresses 'may not have'; 没 negates existence, not an inference."
+      },
+      "q_pinyin": [
+        "tā",
+        "jīn",
+        "tiān",
+        "",
+        "",
+        "",
+        "yǒu",
+        "shí",
+        "jiān",
+        "",
+        "wǒ",
+        "men",
+        "gǎi",
+        "tiān",
+        "zài",
+        "yuē",
+        "ba",
+        ""
+      ]
+    },
+    {
+      "q": "贵的___就是最好的，要看合不合适。",
+      "options": [
+        {"text": "未必", "error_tag": null, "pinyin": ["wèi", "bì"]},
+        {"text": "不", "error_tag": "particle", "pinyin": ["bù"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu phản bác suy luận 'đắt thì tốt nhất' cần 未必; 不 sẽ thành phủ định trực tiếp, sai logic.",
+        "en": "Countering the inference 'expensive means best' needs 未必; 不 would be direct negation, wrong logic."
+      },
+      "q_pinyin": [
+        "guì",
+        "de",
+        "",
+        "",
+        "",
+        "jiù",
+        "shì",
+        "zuì",
+        "hǎo",
+        "de",
+        "",
+        "yào",
+        "kàn",
+        "hé",
+        "bu",
+        "hé",
+        "shì",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về bản thân dùng 未必 hoặc 不见得 để nói điều gì đó chưa chắc đúng.",
+      "en": "Write one sentence about yourself using 未必 or 不见得 to say something is not necessarily true."
+    },
+    "placeholder": "我未必……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"role": "aux", "any_of": ["未必", "不见得"]}]},
+    "sample": {"text": "我未必明天有空。", "pinyin": ["wǒ", "wèi", "bì", "míng", "tiān", "yǒu", "kòng", ""]},
+    "placeholder_pinyin": ["wǒ", "wèi", "bì", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790833552",
+    "generated_at": "2026-10-01T05:45:52Z",
+    "r5_source": {
+      "ids": ["zh-hsk5-3-topic"],
+      "content_version": 2,
+      "content_hash": "540facb8c689896b59999902e3f85daaae913ffafabe0a1cc03dc297567310e9",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk5-3-topic",
+          "issue": "R5 ghi '他未必不来 = same as he definitely won't come' là sai logic; 未必 + 不 là phủ định kép, nghĩa là 'chưa chắc anh ấy không đến'.",
+          "fix": "Sửa thành '他未必会来' cho nghĩa 'chưa chắc anh ấy đến', và ghi rõ trong common_mistakes."
+        },
+        {
+          "r5_id": "zh-hsk5-3-topic",
+          "issue": "R5 dùng 未必 để phủ định sự thật đã biết, trong khi 未必 chỉ dùng cho phán đoán chủ quan.",
+          "fix": "Thêm when_to_use nói rõ 未必/不见得 không dùng để phủ định sự kiện đã biết; dùng 并非/不是 cho phủ định sự thật."
+        },
+        {
+          "r5_id": "zh-hsk5-3-topic",
+          "issue": "R5 không cung cấp công thức cấu trúc, các dạng phủ định/nghi vấn, hay spans cho ví dụ.",
+          "fix": "Bổ sung formula với các slot 主语 + 未必/不见得 + 谓语, và spans cho từng ví dụ."
+        },
+        {
+          "r5_id": "zh-hsk5-3-topic",
+          "issue": "R5 có lỗi phiên âm: 'bú jiàn de' thay vì 'bú jiàn dé' và 'mǎ shàng' thay vì 'mǎ shàng'.",
+          "fix": "Sửa phiên âm thành 'bú jiàn dé' và 'mǎ shàng' trong các ví dụ tương ứng."
+        }
+      ]
+    }
+  },
+  "review": null
+}

@@ -4,230 +4,246 @@
   "version": 1,
   "target_lang": "en",
   "function": "fn.instructions",
-  "level": {
-    "framework": "cefr",
-    "value": "A1",
-    "rank": 1
-  },
+  "level": {"framework": "cefr", "value": "A1", "rank": 1},
   "prereqs": [],
   "contrasts": [],
-  "error_tags": [
-    "sentence_structure"
-  ],
-  "source_refs": {
-    "r5": [
-      "a1-basic-imperatives-and-let-s"
-    ]
-  },
+  "error_tags": ["sentence_structure"],
+  "source_refs": {"r5": ["a1-basic-imperatives-and-let-s"]},
   "point_type": "word_order",
+  "sequence": 1,
+  "aliases": ["a1-basic-imperatives-and-let-s"],
+  "source_anchors": {"status": "anchored", "items": [{"source": "core_inventory", "code": "58", "level": "A1"}]},
   "header": {
-    "title": {
-      "vi": "Câu mệnh lệnh và let's",
-      "en": "Imperatives and let's"
-    },
+    "title": {"vi": "Câu mệnh lệnh và let's", "en": "Imperatives and let's"},
     "native_title": "Imperatives and let's",
-    "sub": {
-      "vi": "chỉ dẫn và rủ cùng làm",
-      "en": "instructions and suggestions"
-    },
-    "level": {
-      "framework": "cefr",
-      "value": "A1",
-      "rank": 1
-    },
+    "level": {"framework": "cefr", "value": "A1", "rank": 1},
     "summary": {
-      "vi": "Câu mệnh lệnh dùng động từ nguyên thể không có chủ ngữ; let's + động từ dùng để rủ người khác cùng làm.",
-      "en": "Imperatives use the base verb without a subject; let's + base verb suggests doing something together."
-    }
+      "vi": "Câu mệnh lệnh dùng động từ nguyên mẫu để yêu cầu hoặc hướng dẫn trực tiếp, và Let's + động từ nguyên mẫu để đề nghị cùng làm một việc.",
+      "en": "Imperatives use the base verb to give direct instructions, and Let's + base verb to suggest doing something together."
+    },
+    "sub": {"vi": "yêu cầu và đề nghị", "en": "instructions and suggestions"}
   },
   "when_to_use": [
     {
-      "vi": "Dùng động từ nguyên thể để ra lệnh, hướng dẫn hoặc yêu cầu ngắn: Sit down.",
-      "en": "Use the base verb for commands, instructions, or short requests: Sit down."
+      "vi": "Khi bạn muốn bảo ai đó làm gì ngay bây giờ, như trong lớp học hoặc khi chỉ đường.",
+      "en": "When you want to tell someone to do something now, such as in class or when giving directions."
     },
     {
-      "vi": "Dùng Let's + V để rủ cùng làm: Let's go.",
-      "en": "Use Let's + V to suggest doing something together: Let's go."
+      "vi": "Khi bạn muốn cảnh báo ai đó đừng làm điều gì đó nguy hiểm hoặc không mong muốn.",
+      "en": "When you want to warn someone not to do something dangerous or unwanted."
+    },
+    {
+      "vi": "Khi bạn muốn đề nghị cả nhóm cùng làm một việc, ví dụ 'Let's go'.",
+      "en": "When you want to suggest that you and others do something together, for example 'Let's go'."
+    },
+    {
+      "vi": "Khi bạn muốn đưa ra hướng dẫn từng bước, như công thức nấu ăn hoặc bài tập.",
+      "en": "When you want to give step-by-step instructions, such as in a recipe or an exercise."
     }
   ],
   "pattern": {
     "formula": [
-      {
-        "text": "V",
-        "role": "verb",
-        "label": {
-          "vi": "động từ nguyên thể",
-          "en": "base verb"
-        }
-      },
-      {
-        "text": "rest",
-        "role": "object",
-        "label": {
-          "vi": "phần còn lại",
-          "en": "rest of sentence"
-        },
-        "optional": true
-      }
+      {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên mẫu", "en": "base verb"}},
+      {"text": "O", "role": "object", "label": {"vi": "tân ngữ", "en": "object"}, "optional": true}
     ],
-    "illustration": {
-      "kind": "word_order"
-    }
+    "variants": {
+      "negative": [
+        {
+          "text": "Don't",
+          "role": "aux",
+          "label": {"vi": "trợ động từ phủ định", "en": "negative auxiliary"}
+        },
+        {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên mẫu", "en": "base verb"}},
+        {
+          "text": "O",
+          "role": "object",
+          "label": {"vi": "tân ngữ", "en": "object"},
+          "optional": true
+        }
+      ]
+    },
+    "illustration": {"kind": "word_order"}
   },
   "examples": [
     {
       "text": "Open the door.",
       "form": "affirmative",
+      "spans": [{"start": 0, "end": 4, "role": "verb"}, {"start": 5, "end": 13, "role": "object"}],
+      "annotation": {
+        "vi": "Động từ nguyên mẫu đứng đầu câu để ra lệnh hoặc yêu cầu trực tiếp.",
+        "en": "The base verb at the start gives a direct order or request."
+      },
+      "translation": {"vi": "Mở cửa.", "en": "Open the door."}
+    },
+    {
+      "text": "Don't touch that.",
+      "form": "negative",
       "spans": [
-        {
-          "start": 0,
-          "end": 4,
-          "role": "verb"
-        },
-        {
-          "start": 5,
-          "end": 13,
-          "role": "object"
-        }
+        {"start": 0, "end": 5, "role": "aux"},
+        {"start": 6, "end": 11, "role": "verb"},
+        {"start": 12, "end": 16, "role": "object"}
       ],
       "annotation": {
-        "vi": "Mệnh lệnh bắt đầu bằng động từ.",
-        "en": "The imperative starts with the verb."
+        "vi": "Don't + động từ nguyên mẫu tạo mệnh lệnh phủ định, dùng để cảnh báo.",
+        "en": "Don't + base verb forms a negative imperative, used for warnings."
       },
-      "translation": {
-        "vi": "Mệnh lệnh bắt đầu bằng động từ.",
-        "en": "The imperative starts with the verb."
-      }
+      "translation": {"vi": "Đừng chạm vào đó.", "en": "Don't touch that."}
     },
     {
       "text": "Let's go home.",
       "form": "affirmative",
       "spans": [
-        {
-          "start": 6,
-          "end": 8,
-          "role": "verb"
-        },
-        {
-          "start": 9,
-          "end": 13,
-          "role": "object"
-        }
+        {"start": 0, "end": 5, "role": "verb"},
+        {"start": 6, "end": 8, "role": "verb"},
+        {"start": 9, "end": 13, "role": "object"}
       ],
       "annotation": {
-        "vi": "Sau let's dùng động từ nguyên thể.",
-        "en": "After let's, use the base verb."
+        "vi": "Let's + động từ nguyên mẫu đề nghị cả người nói và người nghe cùng làm.",
+        "en": "Let's + base verb suggests that the speaker and listener do something together."
       },
-      "translation": {
-        "vi": "Sau let's dùng động từ nguyên thể.",
-        "en": "After let's, use the base verb."
-      }
+      "translation": {"vi": "Chúng ta về nhà nhé.", "en": "Let's go home."}
     }
   ],
   "compare": [],
   "common_mistakes": [
     {
-      "wrong": "You open the door!",
-      "right": "Open the door!",
+      "wrong": "You open the book, please.",
+      "right": "Open the book, please.",
       "reason": {
-        "vi": "Câu mệnh lệnh thông thường không cần chủ ngữ you.",
-        "en": "A normal imperative does not need the subject you."
+        "vi": "Trong mệnh lệnh cơ bản, chủ ngữ you thường được lược bỏ; thêm you làm câu mất tính mệnh lệnh trực tiếp.",
+        "en": "In basic imperatives, the subject you is usually left out; adding you makes the sentence lose its direct imperative force."
       },
       "error_tag": "sentence_structure",
-      "l1": [
-        "vi"
-      ]
+      "l1": ["vi"]
     }
   ],
   "quick_practice": [
     {
       "q": "___ the window, please.",
-      "options": [
-        {
-          "text": "Open",
-          "error_tag": null
-        },
-        {
-          "text": "Opens",
-          "error_tag": "sentence_structure"
-        },
-        {
-          "text": "Opening",
-          "error_tag": "sentence_structure"
-        }
-      ],
+      "options": [{"text": "Open", "error_tag": null}, {"text": "You open", "error_tag": "sentence_structure"}],
       "answer": 0,
       "explain": {
-        "vi": "Mệnh lệnh dùng Open.",
-        "en": "Imperatives use Open."
+        "vi": "Câu mệnh lệnh khẳng định bắt đầu bằng động từ nguyên mẫu, không có chủ ngữ you.",
+        "en": "A positive imperative starts with the base verb, without the subject you."
       }
     },
     {
-      "q": "Let's ___ lunch now.",
-      "options": [
-        {
-          "text": "have",
-          "error_tag": null
-        },
-        {
-          "text": "has",
-          "error_tag": "sentence_structure"
-        },
-        {
-          "text": "having",
-          "error_tag": "sentence_structure"
-        }
-      ],
+      "q": "___ run in the classroom.",
+      "options": [{"text": "Don't", "error_tag": null}, {"text": "Not", "error_tag": "sentence_structure"}],
       "answer": 0,
       "explain": {
-        "vi": "Sau let's dùng have.",
-        "en": "After let's, use have."
+        "vi": "Mệnh lệnh phủ định dùng Don't + động từ nguyên mẫu, không dùng Not.",
+        "en": "Negative imperatives use Don't + base verb, not Not."
       }
     },
     {
-      "q": "___ careful!",
-      "options": [
-        {
-          "text": "Be",
-          "error_tag": null
-        },
-        {
-          "text": "Is",
-          "error_tag": "sentence_structure"
-        },
-        {
-          "text": "Being",
-          "error_tag": "sentence_structure"
-        }
-      ],
+      "q": "Let's ___ a break.",
+      "options": [{"text": "take", "error_tag": null}, {"text": "to take", "error_tag": "word_form"}],
       "answer": 0,
       "explain": {
-        "vi": "Mệnh lệnh với be dùng Be.",
-        "en": "The imperative of be uses Be."
+        "vi": "Sau Let's dùng động từ nguyên mẫu không có to.",
+        "en": "After Let's, use the base verb without to."
       }
     }
   ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu mệnh lệnh hoặc đề nghị cho một người bạn.",
+      "en": "Write an instruction or suggestion for a friend."
+    },
+    "placeholder": "Let's ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {
+          "role": "verb",
+          "any_of": [
+            "Let's",
+            "Open",
+            "Close",
+            "Sit",
+            "Turn",
+            "Go",
+            "Take",
+            "Study",
+            "Rest",
+            "Watch",
+            "Meet",
+            "Use",
+            "Touch",
+            "Run",
+            "Eat",
+            "Drink",
+            "Read",
+            "Write",
+            "Listen",
+            "Speak",
+            "Look",
+            "Come",
+            "Help",
+            "Wait",
+            "Stop",
+            "Start",
+            "Begin",
+            "Finish",
+            "Call",
+            "Ask",
+            "Tell",
+            "Give",
+            "Put",
+            "Make",
+            "Do",
+            "Have",
+            "Be",
+            "Keep",
+            "Let",
+            "Try",
+            "Need",
+            "Want",
+            "Like",
+            "Love",
+            "Hate",
+            "Know",
+            "Think",
+            "Feel",
+            "See",
+            "Hear"
+          ]
+        }
+      ]
+    },
+    "sample": {"text": "Let's study together."}
+  },
   "status": "draft_ai",
   "flags": [],
   "provenance": {
-    "model": "openai:gpt-5.6-sol",
-    "prompt_version": "direct-author.en-a1.v1",
-    "run_id": "chatgpt.en-a1.20260930",
-    "generated_at": "2026-09-30T10:35:00Z"
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790830360",
+    "generated_at": "2026-10-01T04:52:40Z",
+    "r5_source": {
+      "ids": ["a1-basic-imperatives-and-let-s"],
+      "content_version": 2,
+      "content_hash": "86377c05e7a4fdb0e6ea0f1b5f99b7a83f3efc4d245b70f4f3cb815f9d5d4391",
+      "corrections": [
+        {
+          "r5_id": "a1-basic-imperatives-and-let-s",
+          "issue": "R5's example 'Please close the window.' is fine, but the lesson did not include a clear formula or negative/question variants.",
+          "fix": "Added formula slots for affirmative and negative imperatives, and left question empty because basic imperatives do not have a distinct question form."
+        },
+        {
+          "r5_id": "a1-basic-imperatives-and-let-s",
+          "issue": "R5's mistake 'You open the book, please.' was correct in meaning but the explanation did not mention that 'you' is usually omitted.",
+          "fix": "Rewrote the reason to explain that the subject 'you' is left out in basic imperatives."
+        },
+        {
+          "r5_id": "a1-basic-imperatives-and-let-s",
+          "issue": "R5's guided practice included 'Let's to watch a movie.' as a mistake, but the correction was not clearly tied to the rule.",
+          "fix": "Added a quick-practice item that tests 'Let's + base verb' without 'to'."
+        }
+      ]
+    }
   },
-  "review": null,
-  "sequence": 1,
-  "source_anchors": {
-    "status": "anchored",
-    "items": [
-      {
-        "source": "core_inventory",
-        "code": "58",
-        "level": "A1"
-      }
-    ]
-  },
-  "aliases": [
-    "a1-basic-imperatives-and-let-s"
-  ]
+  "review": null
 }

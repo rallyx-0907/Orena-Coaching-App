@@ -987,7 +987,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.a2.001
   level: A2
-  function: fn.catalog_unclassified
+  function: fn.identity_state
   point_type: other
   native_title: 'Stative verbs: introduction'
   title:
@@ -2053,7 +2053,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.a2.006
   level: A2
-  function: fn.catalog_unclassified
+  function: fn.verb_patterns
   point_type: other
   native_title: Phrasal Verbs Basic
   title:
@@ -2064,7 +2064,7 @@
   contrasts: []
   prereqs:
   - en.canon.a2.001
-  sequence: 2
+  sequence: 4
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -2081,7 +2081,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.a2.007
   level: A2
-  function: fn.catalog_unclassified
+  function: fn.sequence
   point_type: other
   native_title: Time Clauses Basic
   title:
@@ -2092,7 +2092,7 @@
   contrasts: []
   prereqs:
   - en.canon.a2.006
-  sequence: 3
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -2120,7 +2120,7 @@
   contrasts: []
   prereqs:
   - en.infinitive_of_purpose
-  sequence: 4
+  sequence: 5
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -2508,7 +2508,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.b1.014
   level: B1
-  function: fn.catalog_unclassified
+  function: fn.voice_causative
   point_type: tense_aspect
   native_title: 'Passive voice: present and past'
   title:
@@ -2592,7 +2592,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.b1.017
   level: B1
-  function: fn.catalog_unclassified
+  function: fn.possibility
   point_type: other
   native_title: Ability across time
   title:
@@ -2620,7 +2620,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.b1.018
   level: B1
-  function: fn.catalog_unclassified
+  function: fn.obligation_advice
   point_type: other
   native_title: Prohibition and lack of necessity
   title:
@@ -2631,7 +2631,7 @@
   contrasts: []
   prereqs:
   - en.canon.b1.017
-  sequence: 3
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -2658,7 +2658,7 @@
   - other
   contrasts: []
   prereqs: []
-  sequence: 1
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -2688,7 +2688,7 @@
   contrasts: []
   prereqs:
   - en.canon.b1.019
-  sequence: 2
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -2716,7 +2716,7 @@
   contrasts: []
   prereqs:
   - en.modals.should
-  sequence: 3
+  sequence: 4
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -2875,7 +2875,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.b1.027
   level: B1
-  function: fn.catalog_unclassified
+  function: fn.reporting
   point_type: other
   native_title: Reported statements
   title:
@@ -2885,7 +2885,7 @@
   - other
   contrasts: []
   prereqs: []
-  sequence: 4
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -2929,7 +2929,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.b1.029
   level: B1
-  function: fn.catalog_unclassified
+  function: fn.reporting
   point_type: other
   native_title: Reported commands and requests
   title:
@@ -2940,7 +2940,7 @@
   contrasts: []
   prereqs:
   - en.canon.b1.027
-  sequence: 5
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -3074,7 +3074,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.b1.034
   level: B1
-  function: fn.catalog_unclassified
+  function: fn.voice_causative
   point_type: other
   native_title: Causative have/get
   title:
@@ -3085,7 +3085,7 @@
   contrasts: []
   prereqs:
   - en.canon.b1.018
-  sequence: 6
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -3298,7 +3298,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.b1.042
   level: B1
-  function: fn.catalog_unclassified
+  function: fn.reference
   point_type: other
   native_title: One/ones
   title:
@@ -3309,7 +3309,7 @@
   contrasts: []
   prereqs:
   - en.canon.b1.034
-  sequence: 7
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -3412,7 +3412,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.b1.046
   level: B1
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
   native_title: Adjective Order
   title:
@@ -3422,7 +3422,7 @@
   - other
   contrasts: []
   prereqs: []
-  sequence: 8
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -3439,7 +3439,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.b1.047
   level: B1
-  function: fn.catalog_unclassified
+  function: fn.verb_patterns
   point_type: other
   native_title: Adjective Preposition
   title:
@@ -3449,7 +3449,7 @@
   - preposition
   contrasts: []
   prereqs: []
-  sequence: 9
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -3533,7 +3533,7 @@
   contrasts: []
   prereqs:
   - en.canon.b1.032
-  sequence: 3
+  sequence: 4
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -3577,7 +3577,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.b1.052
   level: B1
-  function: fn.catalog_unclassified
+  function: fn.verb_patterns
   point_type: other
   native_title: Make Let Allow
   title:
@@ -3588,7 +3588,7 @@
   contrasts: []
   prereqs:
   - en.canon.b1.042
-  sequence: 10
+  sequence: 5
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -3605,7 +3605,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.b1.053
   level: B1
-  function: fn.catalog_unclassified
+  function: fn.verb_patterns
   point_type: other
   native_title: Phrasal Verbs Separable
   title:
@@ -3616,7 +3616,7 @@
   contrasts: []
   prereqs:
   - en.canon.b1.052
-  sequence: 11
+  sequence: 6
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -3689,7 +3689,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.b2.001
   level: B2
-  function: fn.catalog_unclassified
+  function: fn.aspect_viewpoint
   point_type: tense_aspect
   native_title: Perfect aspect in discourse
   title:
@@ -3811,7 +3811,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.b2.005
   level: B2
-  function: fn.condition_real
+  function: fn.hypothetical_counterfactual
   point_type: other
   native_title: Mixed conditionals
   title:
@@ -3854,7 +3854,7 @@
   contrasts: []
   prereqs:
   - en.unless
-  sequence: 2
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -3982,7 +3982,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.b2.011
   level: B2
-  function: fn.catalog_unclassified
+  function: fn.verb_patterns
   point_type: other
   native_title: Would rather/would prefer/prefer
   title:
@@ -3993,7 +3993,7 @@
   contrasts: []
   prereqs:
   - en.canon.b1.053
-  sequence: 2
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -4010,7 +4010,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.b2.012
   level: B2
-  function: fn.catalog_unclassified
+  function: fn.time_expression
   point_type: tense_aspect
   native_title: It's time + past form
   title:
@@ -4020,7 +4020,7 @@
   - tense
   contrasts: []
   prereqs: []
-  sequence: 3
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -4037,7 +4037,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.b2.013
   level: B2
-  function: fn.catalog_unclassified
+  function: fn.voice_causative
   point_type: other
   native_title: Advanced passive forms
   title:
@@ -4048,7 +4048,7 @@
   contrasts: []
   prereqs:
   - en.canon.b1.014
-  sequence: 4
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -4094,7 +4094,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.b2.015
   level: B2
-  function: fn.catalog_unclassified
+  function: fn.voice_causative
   point_type: other
   native_title: Two-object passive
   title:
@@ -4105,7 +4105,7 @@
   contrasts: []
   prereqs:
   - en.canon.b2.013
-  sequence: 5
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -4122,7 +4122,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.b2.016
   level: B2
-  function: fn.catalog_unclassified
+  function: fn.voice_causative
   point_type: other
   native_title: 'Causative have/get: extended'
   title:
@@ -4133,7 +4133,7 @@
   contrasts: []
   prereqs:
   - en.canon.b2.011
-  sequence: 6
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -4150,7 +4150,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.b2.017
   level: B2
-  function: fn.catalog_unclassified
+  function: fn.reporting
   point_type: other
   native_title: Reporting passive
   title:
@@ -4161,7 +4161,7 @@
   contrasts: []
   prereqs:
   - en.canon.b2.015
-  sequence: 7
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -4185,7 +4185,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.b2.018
   level: B2
-  function: fn.catalog_unclassified
+  function: fn.reporting
   point_type: tense_aspect
   native_title: 'Reported speech: tense choice'
   title:
@@ -4197,7 +4197,7 @@
   contrasts: []
   prereqs:
   - en.canon.b1.029
-  sequence: 8
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -4214,7 +4214,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.b2.019
   level: B2
-  function: fn.catalog_unclassified
+  function: fn.reporting
   point_type: other
   native_title: Reporting verbs and patterns
   title:
@@ -4225,7 +4225,7 @@
   contrasts: []
   prereqs:
   - en.canon.b2.016
-  sequence: 9
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -4372,7 +4372,7 @@
   - word_form
   contrasts: []
   prereqs: []
-  sequence: 1
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -4401,7 +4401,7 @@
   - word_form
   contrasts: []
   prereqs: []
-  sequence: 2
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -4430,7 +4430,7 @@
   contrasts: []
   prereqs:
   - en.canon.a2.008
-  sequence: 3
+  sequence: 4
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -4459,7 +4459,7 @@
   contrasts: []
   prereqs:
   - en.canon.b1.050
-  sequence: 4
+  sequence: 5
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -4476,7 +4476,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.b2.028
   level: B2
-  function: fn.sentence_basics
+  function: fn.information_structure
   point_type: word_order
   native_title: Cleft sentences
   title:
@@ -4508,7 +4508,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.b2.029
   level: B2
-  function: fn.sentence_basics
+  function: fn.information_structure
   point_type: word_order
   native_title: Pseudo-cleft sentences
   title:
@@ -4540,7 +4540,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.b2.030
   level: B2
-  function: fn.sentence_basics
+  function: fn.information_structure
   point_type: word_order
   native_title: Fronting for emphasis
   title:
@@ -4572,7 +4572,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.b2.031
   level: B2
-  function: fn.catalog_unclassified
+  function: fn.information_structure
   point_type: other
   native_title: Emphatic do
   title:
@@ -4583,7 +4583,7 @@
   contrasts: []
   prereqs:
   - en.canon.b2.019
-  sequence: 10
+  sequence: 4
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -4656,7 +4656,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.b2.034
   level: B2
-  function: fn.catalog_unclassified
+  function: fn.reference
   point_type: other
   native_title: Reference and substitution
   title:
@@ -4667,7 +4667,7 @@
   contrasts: []
   prereqs:
   - en.canon.b2.031
-  sequence: 11
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -4684,7 +4684,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.b2.035
   level: B2
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
   native_title: Ellipsis
   title:
@@ -4695,7 +4695,7 @@
   contrasts: []
   prereqs:
   - en.canon.b2.034
-  sequence: 12
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -4716,7 +4716,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.b2.036
   level: B2
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
   native_title: Nominal clauses
   title:
@@ -4727,7 +4727,7 @@
   contrasts: []
   prereqs:
   - en.canon.b2.035
-  sequence: 13
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -4744,7 +4744,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.b2.037
   level: B2
-  function: fn.catalog_unclassified
+  function: fn.relative
   point_type: other
   native_title: Complex noun phrases
   title:
@@ -4754,7 +4754,7 @@
   - other
   contrasts: []
   prereqs: []
-  sequence: 14
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -4775,7 +4775,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.b2.038
   level: B2
-  function: fn.catalog_unclassified
+  function: fn.verb_patterns
   point_type: other
   native_title: Dependent prepositions
   title:
@@ -4786,7 +4786,7 @@
   contrasts: []
   prereqs:
   - en.canon.b1.047
-  sequence: 15
+  sequence: 6
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -4803,7 +4803,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.b2.039
   level: B2
-  function: fn.catalog_unclassified
+  function: fn.contrast
   point_type: other
   native_title: Concession patterns
   title:
@@ -4814,7 +4814,7 @@
   contrasts: []
   prereqs:
   - en.canon.b2.036
-  sequence: 16
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -4831,7 +4831,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.b2.040
   level: B2
-  function: fn.catalog_unclassified
+  function: fn.register_style
   point_type: other
   native_title: Formal vs informal grammar choices
   title:
@@ -4842,7 +4842,7 @@
   contrasts: []
   prereqs:
   - en.canon.b2.039
-  sequence: 17
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -4863,7 +4863,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.b2.041
   level: B2
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
   native_title: Punctuation with complex clauses
   title:
@@ -4874,7 +4874,7 @@
   contrasts: []
   prereqs:
   - en.canon.b2.040
-  sequence: 18
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -4895,7 +4895,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.b2.042
   level: B2
-  function: fn.catalog_unclassified
+  function: fn.comparison
   point_type: other
   native_title: As If As Though
   title:
@@ -4906,7 +4906,7 @@
   contrasts: []
   prereqs:
   - en.canon.b2.041
-  sequence: 19
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -4923,7 +4923,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.b2.043
   level: B2
-  function: fn.catalog_unclassified
+  function: fn.voice_causative
   point_type: other
   native_title: Get Passive
   title:
@@ -4934,7 +4934,7 @@
   contrasts: []
   prereqs:
   - en.canon.b2.017
-  sequence: 20
+  sequence: 4
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -4951,7 +4951,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.b2.044
   level: B2
-  function: fn.catalog_unclassified
+  function: fn.verb_patterns
   point_type: other
   native_title: Phrasal Verbs Advanced
   title:
@@ -4962,7 +4962,7 @@
   contrasts: []
   prereqs:
   - en.canon.b2.042
-  sequence: 21
+  sequence: 7
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -4979,7 +4979,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.c1.001
   level: C1
-  function: fn.sentence_basics
+  function: fn.information_structure
   point_type: word_order
   native_title: Only-phrase inversion
   title:
@@ -5039,7 +5039,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.c1.003
   level: C1
-  function: fn.catalog_unclassified
+  function: fn.aspect_viewpoint
   point_type: tense_aspect
   native_title: Advanced simple vs continuous aspect
   title:
@@ -5071,7 +5071,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.c1.004
   level: C1
-  function: fn.catalog_unclassified
+  function: fn.aspect_viewpoint
   point_type: tense_aspect
   native_title: Lexical aspect and meaning shifts
   title:
@@ -5103,7 +5103,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.c1.005
   level: C1
-  function: fn.catalog_unclassified
+  function: fn.aspect_viewpoint
   point_type: tense_aspect
   native_title: Historic present and narrative shifts
   title:
@@ -5246,7 +5246,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.c1.010
   level: C1
-  function: fn.catalog_unclassified
+  function: fn.possibility
   point_type: other
   native_title: Boosting and controlled certainty
   title:
@@ -5274,7 +5274,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.c1.011
   level: C1
-  function: fn.degree
+  function: fn.information_structure
   point_type: word_order
   native_title: Negative adverbial inversion
   title:
@@ -5285,7 +5285,7 @@
   contrasts: []
   prereqs:
   - en.adverbs.manner_degree
-  sequence: 1
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -5306,7 +5306,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.c1.012
   level: C1
-  function: fn.condition_real
+  function: fn.hypothetical_counterfactual
   point_type: word_order
   native_title: Conditional inversion
   title:
@@ -5339,7 +5339,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.c1.013
   level: C1
-  function: fn.degree
+  function: fn.information_structure
   point_type: word_order
   native_title: So/such inversion
   title:
@@ -5350,7 +5350,7 @@
   contrasts: []
   prereqs:
   - en.canon.b1.055
-  sequence: 2
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -5367,7 +5367,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.c1.014
   level: C1
-  function: fn.catalog_unclassified
+  function: fn.information_structure
   point_type: other
   native_title: Extraposition with anticipatory it
   title:
@@ -5378,7 +5378,7 @@
   contrasts: []
   prereqs:
   - en.canon.c1.010
-  sequence: 5
+  sequence: 4
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -5422,7 +5422,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.c1.016
   level: C1
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
   native_title: Nominalisation
   title:
@@ -5433,7 +5433,7 @@
   contrasts: []
   prereqs:
   - en.canon.c1.014
-  sequence: 6
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -5450,7 +5450,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.c1.017
   level: C1
-  function: fn.verb_patterns
+  function: fn.reporting
   point_type: tense_aspect
   native_title: Perfect infinitives in reporting
   title:
@@ -5479,7 +5479,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.c1.018
   level: C1
-  function: fn.catalog_unclassified
+  function: fn.verb_patterns
   point_type: other
   native_title: Mandative subjunctive
   title:
@@ -5490,7 +5490,7 @@
   contrasts: []
   prereqs:
   - en.canon.c1.016
-  sequence: 7
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -5507,7 +5507,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.c1.019
   level: C1
-  function: fn.catalog_unclassified
+  function: fn.hypothetical_counterfactual
   point_type: other
   native_title: Were-subjunctive
   title:
@@ -5518,7 +5518,7 @@
   contrasts: []
   prereqs:
   - en.canon.c1.018
-  sequence: 8
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -5567,7 +5567,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.c1.021
   level: C1
-  function: fn.catalog_unclassified
+  function: fn.verb_patterns
   point_type: other
   native_title: Advanced non-finite clauses
   title:
@@ -5578,7 +5578,7 @@
   contrasts: []
   prereqs:
   - en.canon.c1.019
-  sequence: 9
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -5595,7 +5595,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.c1.022
   level: C1
-  function: fn.catalog_unclassified
+  function: fn.verb_patterns
   point_type: tense_aspect
   native_title: Perfect and passive non-finites
   title:
@@ -5607,7 +5607,7 @@
   contrasts: []
   prereqs:
   - en.canon.b2.001
-  sequence: 10
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -5624,7 +5624,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.c1.023
   level: C1
-  function: fn.catalog_unclassified
+  function: fn.contrast
   point_type: other
   native_title: Advanced concession
   title:
@@ -5635,7 +5635,7 @@
   contrasts: []
   prereqs:
   - en.canon.c1.021
-  sequence: 11
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -5656,7 +5656,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.c1.024
   level: C1
-  function: fn.catalog_unclassified
+  function: fn.reason_result
   point_type: other
   native_title: Cause/result/purpose relations
   title:
@@ -5667,7 +5667,7 @@
   contrasts: []
   prereqs:
   - en.canon.c1.023
-  sequence: 12
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -5684,7 +5684,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.c1.025
   level: C1
-  function: fn.catalog_unclassified
+  function: fn.reference
   point_type: other
   native_title: Discourse reference
   title:
@@ -5695,7 +5695,7 @@
   contrasts: []
   prereqs:
   - en.canon.c1.024
-  sequence: 13
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -5712,7 +5712,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.c1.026
   level: C1
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
   native_title: Parallelism and coordination
   title:
@@ -5723,7 +5723,7 @@
   contrasts: []
   prereqs:
   - en.canon.c1.025
-  sequence: 14
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -5740,7 +5740,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.c1.027
   level: C1
-  function: fn.catalog_unclassified
+  function: fn.exclusion
   point_type: other
   native_title: Qualification and limitation
   title:
@@ -5751,7 +5751,7 @@
   contrasts: []
   prereqs:
   - en.canon.c1.026
-  sequence: 15
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -5768,7 +5768,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.c1.028
   level: C1
-  function: fn.catalog_unclassified
+  function: fn.register_style
   point_type: other
   native_title: Register-driven grammar
   title:
@@ -5779,7 +5779,7 @@
   contrasts: []
   prereqs:
   - en.canon.c1.027
-  sequence: 16
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -5800,7 +5800,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.c1.029
   level: C1
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
   native_title: Academic definitions and classifications
   title:
@@ -5811,7 +5811,7 @@
   contrasts: []
   prereqs:
   - en.canon.c1.028
-  sequence: 17
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -5828,7 +5828,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.c1.030
   level: C1
-  function: fn.catalog_unclassified
+  function: fn.information_structure
   point_type: other
   native_title: Sentence rhythm, end-weight and end-focus
   title:
@@ -5839,7 +5839,7 @@
   contrasts: []
   prereqs:
   - en.canon.c1.029
-  sequence: 18
+  sequence: 5
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -5888,7 +5888,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.c2.002
   level: C2
-  function: fn.catalog_unclassified
+  function: fn.hypothetical_counterfactual
   point_type: other
   native_title: Counterfactual compression
   title:
@@ -5943,7 +5943,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.c2.004
   level: C2
-  function: fn.catalog_unclassified
+  function: fn.information_structure
   point_type: other
   native_title: Only/focus scope
   title:
@@ -5954,7 +5954,7 @@
   contrasts: []
   prereqs:
   - en.canon.c2.002
-  sequence: 2
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -5971,7 +5971,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.c2.005
   level: C2
-  function: fn.catalog_unclassified
+  function: fn.relative
   point_type: other
   native_title: Ambiguity from modifier attachment
   title:
@@ -5982,7 +5982,7 @@
   contrasts: []
   prereqs:
   - en.canon.c2.004
-  sequence: 3
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -5999,7 +5999,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.c2.006
   level: C2
-  function: fn.catalog_unclassified
+  function: fn.reference
   point_type: other
   native_title: Reference ambiguity
   title:
@@ -6010,7 +6010,7 @@
   contrasts: []
   prereqs:
   - en.canon.c2.005
-  sequence: 4
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -6027,7 +6027,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.c2.007
   level: C2
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
   native_title: Deep clause embedding
   title:
@@ -6038,7 +6038,7 @@
   contrasts: []
   prereqs:
   - en.canon.c2.006
-  sequence: 5
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -6055,7 +6055,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.c2.008
   level: C2
-  function: fn.catalog_unclassified
+  function: fn.relative
   point_type: other
   native_title: Advanced apposition
   title:
@@ -6066,7 +6066,7 @@
   contrasts: []
   prereqs:
   - en.canon.c2.007
-  sequence: 6
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -6083,7 +6083,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.c2.009
   level: C2
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
   native_title: Parenthetical grammar
   title:
@@ -6094,7 +6094,7 @@
   contrasts: []
   prereqs:
   - en.canon.c2.008
-  sequence: 7
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -6111,7 +6111,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.c2.010
   level: C2
-  function: fn.catalog_unclassified
+  function: fn.information_structure
   point_type: other
   native_title: Heavy constituent shift
   title:
@@ -6122,7 +6122,7 @@
   contrasts: []
   prereqs:
   - en.canon.c2.009
-  sequence: 8
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -6139,7 +6139,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.c2.011
   level: C2
-  function: fn.catalog_unclassified
+  function: fn.information_structure
   point_type: other
   native_title: Advanced extraposition
   title:
@@ -6150,7 +6150,7 @@
   contrasts: []
   prereqs:
   - en.canon.c2.010
-  sequence: 9
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -6194,7 +6194,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.c2.013
   level: C2
-  function: fn.catalog_unclassified
+  function: fn.verb_patterns
   point_type: other
   native_title: Advanced complement alternation
   title:
@@ -6205,7 +6205,7 @@
   contrasts: []
   prereqs:
   - en.canon.c2.011
-  sequence: 10
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -6222,7 +6222,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.c2.014
   level: C2
-  function: fn.catalog_unclassified
+  function: fn.reporting
   point_type: other
   native_title: Advanced reporting and distancing
   title:
@@ -6233,7 +6233,7 @@
   contrasts: []
   prereqs:
   - en.canon.c2.013
-  sequence: 11
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -6250,7 +6250,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.c2.015
   level: C2
-  function: fn.catalog_unclassified
+  function: fn.information_structure
   point_type: other
   native_title: Cross-sentence ellipsis
   title:
@@ -6261,7 +6261,7 @@
   contrasts: []
   prereqs:
   - en.canon.c2.014
-  sequence: 12
+  sequence: 4
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -6278,7 +6278,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.c2.016
   level: C2
-  function: fn.catalog_unclassified
+  function: fn.reference
   point_type: other
   native_title: Discourse substitution chains
   title:
@@ -6289,7 +6289,7 @@
   contrasts: []
   prereqs:
   - en.canon.c2.015
-  sequence: 13
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -6306,7 +6306,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.c2.017
   level: C2
-  function: fn.catalog_unclassified
+  function: fn.verb_patterns
   point_type: other
   native_title: Lexico-grammar and colligation
   title:
@@ -6317,7 +6317,7 @@
   contrasts: []
   prereqs:
   - en.canon.c2.016
-  sequence: 14
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -6334,7 +6334,7 @@
     metadata_origin: reviewed_seed
 - id: en.canon.c2.018
   level: C2
-  function: fn.catalog_unclassified
+  function: fn.register_style
   point_type: other
   native_title: Metadiscourse grammar
   title:
@@ -6345,7 +6345,7 @@
   contrasts: []
   prereqs:
   - en.canon.c2.017
-  sequence: 15
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5:

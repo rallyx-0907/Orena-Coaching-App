@@ -1,0 +1,231 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b1.033",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.verb_patterns",
+  "level": {"framework": "cefr", "value": "B1", "rank": 3},
+  "prereqs": ["en.canon.a1.004"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["b1-verb-pattern-meaning-changes-introduction", "b2-gerund-infinitive-meaning-contrasts"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": ["b1-verb-pattern-meaning-changes-introduction", "b2-gerund-infinitive-meaning-contrasts"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {
+      "vi": "Verb pattern meaning changes: introduction",
+      "en": "Verb pattern meaning changes: introduction"
+    },
+    "native_title": "Verb pattern meaning changes: introduction",
+    "level": {"framework": "cefr", "value": "B1", "rank": 3},
+    "summary": {
+      "vi": "Một số động từ như remember, stop, try đổi nghĩa khi theo sau là V-ing hoặc to-infinitive.",
+      "en": "Some verbs like remember, stop and try change meaning depending on whether a gerund or a to-infinitive follows."
+    },
+    "sub": {"vi": "đổi nghĩa theo dạng động từ", "en": "meaning changes by verb form"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói về một ký ức đã xảy ra (remember + V-ing) hoặc nhắc ai đó làm gì (remember + to-infinitive).",
+      "en": "When you want to talk about a memory of a past event (remember + V-ing) or remind someone to do something (remember + to-infinitive)."
+    },
+    {
+      "vi": "Khi bạn muốn nói đã dừng hẳn một hoạt động (stop + V-ing) hoặc dừng lại để làm việc khác (stop + to-infinitive).",
+      "en": "When you want to say you ceased an activity (stop + V-ing) or paused in order to do something else (stop + to-infinitive)."
+    },
+    {
+      "vi": "Khi bạn muốn nói thử một cách làm (try + V-ing) hoặc cố gắng làm điều gì đó khó (try + to-infinitive).",
+      "en": "When you want to say you test a method (try + V-ing) or make an effort to do something difficult (try + to-infinitive)."
+    },
+    {
+      "vi": "Khi bạn cần phân biệt ý định (mean + to-infinitive) với hệ quả (mean + V-ing).",
+      "en": "When you need to distinguish intention (mean + to-infinitive) from consequence (mean + V-ing)."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {
+        "text": "remember/stop/try/mean",
+        "role": "verb",
+        "label": {"vi": "động từ chính", "en": "main verb"},
+        "options": [{"text": "remember"}, {"text": "stop"}, {"text": "try"}, {"text": "mean"}]
+      },
+      {"text": "V-ing", "role": "complement", "label": {"vi": "danh động từ", "en": "gerund"}}
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "do/does",
+          "role": "aux",
+          "label": {"vi": "trợ động từ", "en": "auxiliary"},
+          "options": [{"text": "do"}, {"text": "does"}]
+        },
+        {"text": "not", "role": "marker", "label": {"vi": "phủ định", "en": "negator"}},
+        {
+          "text": "remember/stop/try/mean",
+          "role": "verb",
+          "label": {"vi": "động từ chính", "en": "main verb"},
+          "options": [{"text": "remember"}, {"text": "stop"}, {"text": "try"}, {"text": "mean"}]
+        },
+        {"text": "V-ing", "role": "complement", "label": {"vi": "danh động từ", "en": "gerund"}}
+      ],
+      "question": [
+        {
+          "text": "do/does",
+          "role": "aux",
+          "label": {"vi": "trợ động từ", "en": "auxiliary"},
+          "options": [{"text": "do"}, {"text": "does"}]
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "remember/stop/try/mean",
+          "role": "verb",
+          "label": {"vi": "động từ chính", "en": "main verb"},
+          "options": [{"text": "remember"}, {"text": "stop"}, {"text": "try"}, {"text": "mean"}]
+        },
+        {"text": "V-ing", "role": "complement", "label": {"vi": "danh động từ", "en": "gerund"}}
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "I remember meeting her years ago.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 2, "end": 10, "role": "verb"},
+        {"start": 11, "end": 18, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "remember + V-ing: nhớ một việc đã xảy ra trong quá khứ.",
+        "en": "remember + V-ing: a memory of a past event."
+      },
+      "translation": {"vi": "Tôi nhớ đã gặp cô ấy nhiều năm trước.", "en": "I remember meeting her years ago."}
+    },
+    {
+      "text": "He stopped smoking last year.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 3, "end": 10, "role": "verb"},
+        {"start": 11, "end": 18, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "stop + V-ing: dừng hẳn một hoạt động.",
+        "en": "stop + V-ing: cease an activity completely."
+      },
+      "translation": {"vi": "Anh ấy đã bỏ thuốc năm ngoái.", "en": "He stopped smoking last year."}
+    },
+    {
+      "text": "You should try restarting the computer.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 11, "end": 14, "role": "verb"},
+        {"start": 15, "end": 25, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "try + V-ing: thử một cách làm để xem có hiệu quả không.",
+        "en": "try + V-ing: test a method to see if it works."
+      },
+      "translation": {"vi": "Bạn nên thử khởi động lại máy tính.", "en": "You should try restarting the computer."}
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "I remembered to meet her years ago.",
+      "right": "I remember meeting her years ago.",
+      "reason": {
+        "vi": "Khi ý là ký ức về một việc đã xảy ra, dùng remember + V-ing; remember + to-infinitive là nhớ để làm việc gì đó trong tương lai.",
+        "en": "When the meaning is a memory of a past event, use remember + V-ing; remember + to-infinitive means remember to do something in the future."
+      },
+      "error_tag": "other",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "I remember ___ the door before I left.",
+      "options": [{"text": "locking", "error_tag": null}, {"text": "to lock", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {
+        "vi": "remember + V-ing diễn tả ký ức về một hành động đã xảy ra.",
+        "en": "remember + V-ing expresses a memory of a past action."
+      }
+    },
+    {
+      "q": "He stopped ___ last year for health reasons.",
+      "options": [{"text": "smoking", "error_tag": null}, {"text": "to smoke", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {
+        "vi": "stop + V-ing nghĩa là dừng hẳn một hoạt động.",
+        "en": "stop + V-ing means to cease an activity completely."
+      }
+    },
+    {
+      "q": "Try ___ the router if the internet is slow.",
+      "options": [{"text": "restarting", "error_tag": null}, {"text": "to restart", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {
+        "vi": "try + V-ing nghĩa là thử một cách làm để xem có hiệu quả không.",
+        "en": "try + V-ing means to test a method to see if it works."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một việc bạn nhớ đã làm trong quá khứ, dùng remember + V-ing.",
+      "en": "Write a sentence about something you remember doing in the past, using remember + V-ing."
+    },
+    "placeholder": "I remember ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {
+          "role": "verb",
+          "any_of": ["remember", "remembered", "stop", "stopped", "try", "tried", "mean", "meant"]
+        },
+        {"role": "complement", "regex": "\\w+ing\\b"}
+      ]
+    },
+    "sample": {"text": "I remember visiting my grandparents last summer."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790830969",
+    "generated_at": "2026-10-01T05:02:49Z",
+    "r5_source": {
+      "ids": ["b1-verb-pattern-meaning-changes-introduction", "b2-gerund-infinitive-meaning-contrasts"],
+      "content_version": 2,
+      "content_hash": "0eba61ae74b0ef752b1685e82b85497d9723b96a82b2392abfc2461e1f0f71f4",
+      "corrections": [
+        {
+          "r5_id": "b1-verb-pattern-meaning-changes-introduction",
+          "issue": "The R5 mistake example 'I remembered to meet her years ago.' is ungrammatical as a correction target because the past tense 'remembered' does not fit the intended memory meaning; the correct version should use present 'remember'.",
+          "fix": "Changed the wrong sentence to 'I remembered to meet her years ago.' and the right sentence to 'I remember meeting her years ago.'"
+        },
+        {
+          "r5_id": "b1-verb-pattern-meaning-changes-introduction",
+          "issue": "The R5 rule 'stop + to-infinitive = dừng một activity khác để làm mục đích mới' is imprecise; stop + to-infinitive means to interrupt or cease an activity in order to do something else.",
+          "fix": "Rewrote the rule as 'stop + V-ing = ngừng activity; stop + to-infinitive = dừng một activity khác để làm mục đích mới' with clearer wording in the summary and when_to_use."
+        },
+        {
+          "r5_id": "b2-gerund-infinitive-meaning-contrasts",
+          "issue": "The R5 example 'This job means to work at weekends.' is ungrammatical; 'mean' with the entailment meaning requires a gerund, not a to-infinitive.",
+          "fix": "Corrected to 'This job means working at weekends.' and included the entailment contrast in the when_to_use section."
+        }
+      ]
+    }
+  },
+  "review": null
+}

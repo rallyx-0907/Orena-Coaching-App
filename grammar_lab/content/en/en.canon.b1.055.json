@@ -1,0 +1,258 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b1.055",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.degree",
+  "level": {"framework": "cefr", "value": "B1", "rank": 3},
+  "prereqs": ["en.canon.b1.054"],
+  "contrasts": [],
+  "error_tags": ["agreement"],
+  "source_refs": {},
+  "point_type": "other",
+  "sequence": 3,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "So Neither Agreement", "en": "So Neither Agreement"},
+    "native_title": "So Neither Agreement",
+    "level": {"framework": "cefr", "value": "B1", "rank": 3},
+    "summary": {
+      "vi": "Cấu trúc 'so' và 'neither' dùng để đồng tình với một câu khẳng định hoặc phủ định trước đó, với trợ động từ được lặp lại và chủ ngữ đứng sau.",
+      "en": "The 'so' and 'neither' structures agree with a previous affirmative or negative statement, repeating the auxiliary and placing the subject after it."
+    },
+    "sub": {"vi": "đồng tình so / neither", "en": "so / neither agreement"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi ai đó vừa nói một điều khẳng định và bạn muốn nói rằng bạn cũng vậy.",
+      "en": "When someone has just made an affirmative statement and you want to say the same is true for you."
+    },
+    {
+      "vi": "Khi ai đó vừa nói một điều phủ định và bạn muốn nói rằng bạn cũng không.",
+      "en": "When someone has just made a negative statement and you want to say the same is true for you."
+    },
+    {
+      "vi": "Trong hội thoại, để tránh lặp lại toàn bộ câu trước đó.",
+      "en": "In conversation, to avoid repeating the whole previous sentence."
+    },
+    {
+      "vi": "Khi bạn muốn xác nhận thông tin về một người hoặc vật khác, không phải chính bạn.",
+      "en": "When you want to confirm the same information about another person or thing, not yourself."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "so",
+        "role": "connector",
+        "label": {"vi": "từ nối đồng tình khẳng định", "en": "affirmative agreement connector"}
+      },
+      {
+        "text": "aux",
+        "role": "aux",
+        "label": {"vi": "trợ động từ", "en": "auxiliary verb"},
+        "options": [
+          {"text": "do"},
+          {"text": "does"},
+          {"text": "did"},
+          {"text": "have"},
+          {"text": "has"},
+          {"text": "had"},
+          {"text": "am"},
+          {"text": "is"},
+          {"text": "are"},
+          {"text": "was"},
+          {"text": "were"},
+          {"text": "can"},
+          {"text": "could"},
+          {"text": "will"},
+          {"text": "would"},
+          {"text": "should"},
+          {"text": "must"}
+        ]
+      },
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}}
+    ],
+    "variants": {
+      "negative": [
+        {
+          "text": "neither",
+          "role": "connector",
+          "label": {"vi": "từ nối đồng tình phủ định", "en": "negative agreement connector"}
+        },
+        {
+          "text": "aux",
+          "role": "aux",
+          "label": {"vi": "trợ động từ", "en": "auxiliary verb"},
+          "options": [
+            {"text": "do"},
+            {"text": "does"},
+            {"text": "did"},
+            {"text": "have"},
+            {"text": "has"},
+            {"text": "had"},
+            {"text": "am"},
+            {"text": "is"},
+            {"text": "are"},
+            {"text": "was"},
+            {"text": "were"},
+            {"text": "can"},
+            {"text": "could"},
+            {"text": "will"},
+            {"text": "would"},
+            {"text": "should"},
+            {"text": "must"}
+          ]
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}}
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "I like jazz, and so does my brother.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 17, "end": 19, "role": "connector"},
+        {"start": 20, "end": 24, "role": "aux"},
+        {"start": 25, "end": 35, "role": "subject"}
+      ],
+      "annotation": {
+        "vi": "đồng tình với 'I like jazz' bằng 'so' + trợ động từ 'does' + chủ ngữ 'my brother'.",
+        "en": "agrees with 'I like jazz' using 'so' + auxiliary 'does' + subject 'my brother'."
+      },
+      "translation": {
+        "vi": "Tôi thích nhạc jazz, và anh trai tôi cũng vậy.",
+        "en": "I like jazz, and my brother does too."
+      }
+    },
+    {
+      "text": "She didn't come to the party, and neither did her friends.",
+      "form": "negative",
+      "spans": [
+        {"start": 34, "end": 41, "role": "connector"},
+        {"start": 42, "end": 45, "role": "aux"},
+        {"start": 46, "end": 57, "role": "subject"}
+      ],
+      "annotation": {
+        "vi": "đồng tình với câu phủ định 'She didn't come' bằng 'neither' + trợ động từ 'did' + chủ ngữ 'her friends'.",
+        "en": "agrees with the negative statement 'She didn't come' using 'neither' + auxiliary 'did' + subject 'her friends'."
+      },
+      "translation": {
+        "vi": "Cô ấy không đến bữa tiệc, và bạn bè của cô ấy cũng không.",
+        "en": "She didn't come to the party, and her friends didn't either."
+      }
+    },
+    {
+      "text": "We have finished the report, and so has the other team.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 33, "end": 35, "role": "connector"},
+        {"start": 36, "end": 39, "role": "aux"},
+        {"start": 40, "end": 54, "role": "subject"}
+      ],
+      "annotation": {
+        "vi": "đồng tình với 'We have finished' bằng 'so' + trợ động từ 'has' + chủ ngữ 'the other team'.",
+        "en": "agrees with 'We have finished' using 'so' + auxiliary 'has' + subject 'the other team'."
+      },
+      "translation": {
+        "vi": "Chúng tôi đã hoàn thành báo cáo, và nhóm khác cũng vậy.",
+        "en": "We have finished the report, and the other team has too."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "I like jazz, and so my brother does.",
+      "right": "I like jazz, and so does my brother.",
+      "reason": {
+        "vi": "Trong cấu trúc 'so', trợ động từ phải đứng ngay sau 'so' và trước chủ ngữ; người học thường đặt chủ ngữ trước trợ động từ theo thói quen tiếng Việt.",
+        "en": "In the 'so' structure, the auxiliary must come immediately after 'so' and before the subject; learners often put the subject before the auxiliary, following their first-language word order."
+      },
+      "error_tag": "agreement",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "I enjoy swimming, and so ___ my sister.",
+      "options": [{"text": "does", "error_tag": null}, {"text": "do", "error_tag": "agreement"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Chủ ngữ 'my sister' là số ít nên trợ động từ phải là 'does', không phải 'do'.",
+        "en": "The subject 'my sister' is singular, so the auxiliary must be 'does', not 'do'."
+      }
+    },
+    {
+      "q": "They didn't go to the concert, and neither ___ we.",
+      "options": [{"text": "did", "error_tag": null}, {"text": "do", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu trước ở thì quá khứ đơn nên trợ động từ trong 'neither' cũng phải ở quá khứ: 'did'.",
+        "en": "The previous sentence is in the past simple, so the auxiliary in 'neither' must also be past: 'did'."
+      }
+    },
+    {
+      "q": "He can play the guitar, and so ___ I.",
+      "options": [{"text": "can", "error_tag": null}, {"text": "do", "error_tag": "word_choice"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu trước dùng 'can' nên trợ động từ lặp lại trong 'so' cũng phải là 'can', không phải 'do'.",
+        "en": "The previous sentence uses 'can', so the repeated auxiliary in 'so' must also be 'can', not 'do'."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu đồng tình với một người khác bằng 'so' hoặc 'neither'.",
+      "en": "Write a sentence agreeing with someone else using 'so' or 'neither'."
+    },
+    "placeholder": "I like ..., and so ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "connector", "any_of": ["so"]},
+        {
+          "role": "aux",
+          "any_of": [
+            "do",
+            "does",
+            "did",
+            "have",
+            "has",
+            "had",
+            "am",
+            "is",
+            "are",
+            "was",
+            "were",
+            "can",
+            "could",
+            "will",
+            "would",
+            "should",
+            "must"
+          ]
+        },
+        {
+          "role": "subject",
+          "regex": "(?i)\\b(i|you|he|she|it|we|they|my|your|his|her|our|their|the|this|that|these|those)\\b"
+        }
+      ]
+    },
+    "sample": {"text": "I enjoy cooking, and so does my friend."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790831066",
+    "generated_at": "2026-10-01T05:04:26Z"
+  },
+  "review": null
+}

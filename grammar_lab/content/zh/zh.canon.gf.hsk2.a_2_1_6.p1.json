@@ -1,0 +1,251 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk2.a_2_1_6.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.time_expression",
+  "level": {"framework": "hsk3", "value": "2", "rank": 2},
+  "prereqs": ["zh.dates_times"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"gf0025": ["gf0025.hsk2.013", "gf0025.hsk2.014", "gf0025.hsk2.015", "gf0025.hsk2.016"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Trạng từ: 程度副词：多、多么、好、更、十分、特别、挺、有（一）点儿", "en": "Adverbs: 程度副词：多、多么、好、更、十分、特别、挺、有（一）点儿"},
+    "native_title": "程度副词：多、多么、好、更、十分、特别、挺、有（一）点儿",
+    "level": {"framework": "hsk3", "value": "2", "rank": 2},
+    "summary": {
+      "vi": "Các phó từ chỉ mức độ như 多, 多么, 好, 更, 十分, 特别, 挺, 有（一）点儿 đứng trước tính từ để nói mức độ mạnh hay nhẹ của một tính chất.",
+      "en": "Degree adverbs such as 多, 多么, 好, 更, 十分, 特别, 挺, 有（一）点儿 stand before an adjective to express how strong or weak a quality is."
+    },
+    "sub": {"vi": "phó từ mức độ", "en": "degree adverbs"},
+    "native_title_pinyin": [
+      "chéng",
+      "dù",
+      "fù",
+      "cí",
+      "",
+      "duō",
+      "",
+      "duō",
+      "me",
+      "",
+      "hǎo",
+      "",
+      "gèng",
+      "",
+      "shí",
+      "fēn",
+      "",
+      "tè",
+      "bié",
+      "",
+      "tǐng",
+      "",
+      "yǒu",
+      "",
+      "yī",
+      "",
+      "diǎn",
+      "ér"
+    ]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói một tính chất mạnh hơn mức bình thường, dùng 很, 十分, 特别, 挺 hoặc 好 trước tính từ.",
+      "en": "When you want to say a quality is stronger than usual, use 很, 十分, 特别, 挺 or 好 before the adjective."
+    },
+    {
+      "vi": "Khi so sánh hai sự vật và muốn nói cái sau hơn cái trước, dùng 更 trước tính từ.",
+      "en": "When comparing two things and saying the second is more so than the first, use 更 before the adjective."
+    },
+    {
+      "vi": "Khi muốn nhấn mạnh cảm xúc trong câu cảm thán, dùng 多 hoặc 多么 trước tính từ.",
+      "en": "When you want to stress emotion in an exclamation, use 多 or 多么 before the adjective."
+    },
+    {
+      "vi": "Khi muốn nói một tính chất chỉ ở mức nhẹ hoặc hơi quá, dùng 有（一）点儿 trước tính từ.",
+      "en": "When you want to say a quality is only slight or a bit too much, use 有（一）点儿 before the adjective."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "程度副词",
+        "role": "other",
+        "label": {"vi": "phó từ mức độ", "en": "degree adverb"},
+        "options": [
+          {"text": "很", "pinyin": ["hěn"]},
+          {"text": "十分", "pinyin": ["shí", "fēn"]},
+          {"text": "特别", "pinyin": ["tè", "bié"]},
+          {"text": "挺", "pinyin": ["tǐng"]},
+          {"text": "好", "pinyin": ["hǎo"]},
+          {"text": "更", "pinyin": ["gèng"]},
+          {"text": "多", "pinyin": ["duō"]},
+          {"text": "多么", "pinyin": ["duō", "me"]},
+          {"text": "有（一）点儿", "pinyin": ["yǒu", "", "yī", "", "diǎn", "r"]}
+        ],
+        "pinyin": ["chéng", "dù", "fù", "cí"]
+      },
+      {
+        "text": "形容词",
+        "role": "complement",
+        "label": {"vi": "tính từ", "en": "adjective"},
+        "pinyin": ["xíng", "róng", "cí"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "今天天气特别好。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 4, "end": 6, "role": "other"},
+        {"start": 6, "end": 7, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "特别 đứng trước tính từ 好 để nói mức độ mạnh.",
+        "en": "特别 stands before the adjective 好 to mark a strong degree."
+      },
+      "translation": {"vi": "Hôm nay thời tiết đặc biệt đẹp.", "en": "The weather today is especially nice."},
+      "pinyin": ["jīn", "tiān", "tiān", "qì", "tè", "bié", "hǎo", ""]
+    },
+    {
+      "text": "这个箱子有点儿重。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 4, "end": 7, "role": "other"},
+        {"start": 7, "end": 8, "role": "complement"}
+      ],
+      "annotation": {"vi": "有点儿 cho biết tính chất chỉ ở mức nhẹ.", "en": "有点儿 shows the quality is only slight."},
+      "translation": {"vi": "Cái hộp này hơi nặng.", "en": "This box is a bit heavy."},
+      "pinyin": ["zhè", "ge", "xiāng", "zi", "yǒu", "diǎn", "r", "zhòng", ""]
+    },
+    {
+      "text": "他跑得更快。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 3, "end": 4, "role": "other"},
+        {"start": 4, "end": 5, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "更 đứng trước tính từ để so sánh hơn.",
+        "en": "更 stands before the adjective to mark a higher degree in comparison."
+      },
+      "translation": {"vi": "Anh ấy chạy nhanh hơn.", "en": "He runs faster."},
+      "pinyin": ["tā", "pǎo", "de", "gèng", "kuài", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "今天天气好特别。",
+      "right": "今天天气特别好。",
+      "reason": {
+        "vi": "Phó từ mức độ phải đứng trước tính từ; người học đặt 特别 sau 好 theo thói quen tiếng Việt.",
+        "en": "The degree adverb must come before the adjective; learners put 特别 after 好 by habit."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong_pinyin": ["jīn", "tiān", "tiān", "qì", "hǎo", "tè", "bié", ""],
+      "right_pinyin": ["jīn", "tiān", "tiān", "qì", "tè", "bié", "hǎo", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "这个箱子___重，我搬不动。",
+      "options": [
+        {"text": "有点儿", "error_tag": null, "pinyin": ["yǒu", "diǎn", "r"]},
+        {"text": "有点儿重", "error_tag": "redundancy", "pinyin": ["yǒu", "diǎn", "r", "zhòng"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "有点儿 đứng trước tính từ 重 để nói mức nhẹ; không lặp lại tính từ sau nó.",
+        "en": "有点儿 comes before the adjective 重 to mark a slight degree; do not repeat the adjective after it."
+      },
+      "q_pinyin": ["zhè", "ge", "xiāng", "zi", "", "", "", "zhòng", "", "wǒ", "bān", "bù", "dòng", ""]
+    },
+    {
+      "q": "他跑得___快，我追不上。",
+      "options": [
+        {"text": "更", "error_tag": null, "pinyin": ["gèng"]},
+        {"text": "更比", "error_tag": "word_choice", "pinyin": ["gèng", "bǐ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "更 đứng trước tính từ 快 để so sánh hơn; không dùng 更比.",
+        "en": "更 comes before the adjective 快 to mark a higher degree; 更比 is not used."
+      },
+      "q_pinyin": ["tā", "pǎo", "de", "", "", "", "kuài", "", "wǒ", "zhuī", "bù", "shàng", ""]
+    },
+    {
+      "q": "今天天气___好，我们去公园吧。",
+      "options": [
+        {"text": "特别", "error_tag": null, "pinyin": ["tè", "bié"]},
+        {"text": "特别地", "error_tag": "particle", "pinyin": ["tè", "bié", "de"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "特别 đứng trước tính từ 好 để nói mức độ mạnh; không thêm 地.",
+        "en": "特别 comes before the adjective 好 to mark a strong degree; do not add 地."
+      },
+      "q_pinyin": [
+        "jīn",
+        "tiān",
+        "tiān",
+        "qì",
+        "",
+        "",
+        "",
+        "hǎo",
+        "",
+        "wǒ",
+        "men",
+        "qù",
+        "gōng",
+        "yuán",
+        "ba",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về thời tiết hoặc một đồ vật, dùng phó từ mức độ trước tính từ.",
+      "en": "Write one sentence about the weather or an object, using a degree adverb before an adjective."
+    },
+    "placeholder": "今天天气……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "other", "any_of": ["很", "十分", "特别", "挺", "好", "更", "多", "多么", "有点儿", "有（一）点儿"]},
+        {"role": "complement", "regex": "[\\u4e00-\\u9fff]"}
+      ]
+    },
+    "sample": {"text": "今天天气特别好。", "pinyin": ["jīn", "tiān", "tiān", "qì", "tè", "bié", "hǎo", ""]},
+    "placeholder_pinyin": ["jīn", "tiān", "tiān", "qì", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790832177",
+    "generated_at": "2026-10-01T05:22:57Z"
+  },
+  "review": null
+}

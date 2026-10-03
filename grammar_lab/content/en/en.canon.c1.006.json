@@ -1,0 +1,248 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.c1.006",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.future_plans",
+  "level": {"framework": "cefr", "value": "C1", "rank": 5},
+  "prereqs": ["en.canon.b2.004"],
+  "contrasts": [],
+  "error_tags": ["tense"],
+  "source_refs": {"r5": ["c1-future-in-the-past-systems"]},
+  "point_type": "tense_aspect",
+  "sequence": 1,
+  "aliases": ["c1-future-in-the-past-systems"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Future-in-the-past systems", "en": "Future-in-the-past systems"},
+    "native_title": "Future-in-the-past systems",
+    "level": {"framework": "cefr", "value": "C1", "rank": 5},
+    "summary": {
+      "vi": "Cấu trúc tương lai trong quá khứ diễn tả một sự việc được nhìn từ một mốc thời gian trong quá khứ, với các lựa chọn would, was/were going to, was/were about to, was/were due to và past continuous.",
+      "en": "Future-in-the-past systems express an event viewed from a past reference point, using would, was/were going to, was/were about to, was/were due to, and past continuous arrangements."
+    },
+    "sub": {"vi": "tương lai trong quá khứ", "en": "future in the past"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi thuật lại một dự đoán, kế hoạch hoặc sắp xếp đã được nói đến trong quá khứ.",
+      "en": "When reporting a prediction, plan, or arrangement that was expressed in the past."
+    },
+    {
+      "vi": "Khi cần phân biệt giữa một tương lai trung tính (would) và một ý định trước đó (was/were going to).",
+      "en": "When distinguishing a neutral future (would) from a prior intention (was/were going to)."
+    },
+    {
+      "vi": "Khi muốn nhấn mạnh một sự việc sắp xảy ra (was/were about to) hoặc đã được lên lịch (was/were due to).",
+      "en": "When emphasising an imminent event (was/were about to) or a scheduled one (was/were due to)."
+    },
+    {
+      "vi": "Khi kể chuyện hoặc tường thuật, để giữ góc nhìn quá khứ xuyên suốt.",
+      "en": "When narrating or reporting, to keep a consistent past viewpoint."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {"text": "would", "role": "aux", "label": {"vi": "trợ động từ", "en": "auxiliary"}},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên mẫu", "en": "base verb"}},
+      {"text": "O", "role": "object", "label": {"vi": "tân ngữ", "en": "object"}, "optional": true},
+      {
+        "text": "time",
+        "role": "time",
+        "label": {"vi": "mốc thời gian", "en": "time"},
+        "optional": true
+      }
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "would not",
+          "role": "aux",
+          "label": {"vi": "trợ động từ phủ định", "en": "negative auxiliary"},
+          "options": [{"text": "would not"}, {"text": "wouldn't"}]
+        },
+        {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên mẫu", "en": "base verb"}},
+        {
+          "text": "O",
+          "role": "object",
+          "label": {"vi": "tân ngữ", "en": "object"},
+          "optional": true
+        },
+        {
+          "text": "time",
+          "role": "time",
+          "label": {"vi": "mốc thời gian", "en": "time"},
+          "optional": true
+        }
+      ],
+      "question": [
+        {"text": "Would", "role": "aux", "label": {"vi": "trợ động từ", "en": "auxiliary"}},
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên mẫu", "en": "base verb"}},
+        {
+          "text": "O",
+          "role": "object",
+          "label": {"vi": "tân ngữ", "en": "object"},
+          "optional": true
+        },
+        {
+          "text": "time",
+          "role": "time",
+          "label": {"vi": "mốc thời gian", "en": "time"},
+          "optional": true
+        }
+      ]
+    },
+    "illustration": {"kind": "timeline", "timeline": {"shape": "future_condition"}}
+  },
+  "examples": [
+    {
+      "text": "We knew the negotiations would take months.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 25, "end": 30, "role": "aux"},
+        {"start": 31, "end": 35, "role": "verb"},
+        {"start": 36, "end": 42, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "would + động từ nguyên mẫu diễn tả một sự việc tương lai được nhìn từ quá khứ.",
+        "en": "would + base verb expresses a future event viewed from the past."
+      },
+      "translation": {
+        "vi": "Chúng tôi biết các cuộc đàm phán sẽ kéo dài nhiều tháng.",
+        "en": "We knew the negotiations would take months."
+      }
+    },
+    {
+      "text": "They were going to launch in May, but funding was withdrawn.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 5, "end": 18, "role": "aux"},
+        {"start": 19, "end": 25, "role": "verb"},
+        {"start": 26, "end": 32, "role": "time"}
+      ],
+      "annotation": {
+        "vi": "was/were going to diễn tả một ý định hoặc dự định trước đó trong quá khứ.",
+        "en": "was/were going to expresses a prior intention or plan in the past."
+      },
+      "translation": {
+        "vi": "Họ định ra mắt vào tháng Năm, nhưng nguồn vốn bị rút.",
+        "en": "They were going to launch in May, but funding was withdrawn."
+      }
+    },
+    {
+      "text": "The train was due to leave at six.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 9, "role": "subject"},
+        {"start": 10, "end": 20, "role": "aux"},
+        {"start": 21, "end": 26, "role": "verb"},
+        {"start": 27, "end": 33, "role": "time"}
+      ],
+      "annotation": {
+        "vi": "was/were due to diễn tả một sự việc đã được lên lịch hoặc dự kiến trong quá khứ.",
+        "en": "was/were due to expresses a scheduled or expected event in the past."
+      },
+      "translation": {"vi": "Tàu dự kiến rời đi lúc sáu giờ.", "en": "The train was due to leave at six."}
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "He said he will return the next day.",
+      "right": "He said he would return the next day.",
+      "reason": {
+        "vi": "Khi tường thuật từ một mốc quá khứ, tiếng Anh thường lùi thì: will trở thành would.",
+        "en": "When reporting from a past reference point, English commonly backshifts: will becomes would."
+      },
+      "error_tag": "tense",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "She said she ___ call me later.",
+      "options": [{"text": "would", "error_tag": null}, {"text": "will", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 'said' (quá khứ), dùng 'would' để diễn tả tương lai trong quá khứ.",
+        "en": "After 'said' (past), use 'would' to express future in the past."
+      }
+    },
+    {
+      "q": "They ___ going to move house, but they changed their minds.",
+      "options": [{"text": "were", "error_tag": null}, {"text": "was", "error_tag": "agreement"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Chủ ngữ 'They' số nhiều nên dùng 'were', không dùng 'was'.",
+        "en": "The plural subject 'They' takes 'were', not 'was'."
+      }
+    },
+    {
+      "q": "The meeting was ___ to start at nine, but it was delayed.",
+      "options": [{"text": "due", "error_tag": null}, {"text": "about", "error_tag": "word_choice"}],
+      "answer": 0,
+      "explain": {
+        "vi": "'was due to' diễn tả sự việc đã được lên lịch; 'was about to' diễn tả sự việc sắp xảy ra ngay.",
+        "en": "'was due to' expresses a scheduled event; 'was about to' expresses an imminent event."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu kể lại một dự định hoặc dự đoán trong quá khứ của bạn, dùng 'would' hoặc 'was/were going to'.",
+      "en": "Write a sentence about a past plan or prediction of yours, using 'would' or 'was/were going to'."
+    },
+    "placeholder": "I knew I would ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {
+          "role": "aux",
+          "any_of": [
+            "would",
+            "was going to",
+            "were going to",
+            "was due to",
+            "were due to",
+            "was about to",
+            "were about to"
+          ]
+        },
+        {"role": "verb", "regex": "[a-z]+"}
+      ]
+    },
+    "sample": {"text": "I knew I would regret that decision."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790831398",
+    "generated_at": "2026-10-01T05:09:58Z",
+    "r5_source": {
+      "ids": ["c1-future-in-the-past-systems"],
+      "content_version": 2,
+      "content_hash": "95f735fb908ea3315c3b8991c71a60d33476b10f0638606874c64da761f78ff3",
+      "corrections": [
+        {
+          "r5_id": "c1-future-in-the-past-systems",
+          "issue": "The R5 lesson lists 'was/were about to' and 'was/were due to' as part of the target system, but the formula and examples only cover 'would' and 'was/were going to'.",
+          "fix": "Added 'was/were about to' and 'was/were due to' to the formula options and included an example with 'was due to'."
+        },
+        {
+          "r5_id": "c1-future-in-the-past-systems",
+          "issue": "The R5 mistake 'She was about leaving when I arrived' is not a typical Vietnamese learner error for this point; the more common error is using 'will' instead of 'would' in reported speech.",
+          "fix": "Replaced the mistake with 'He said he will return the next day' and its correction 'He said he would return the next day'."
+        }
+      ]
+    }
+  },
+  "review": null
+}

@@ -5,13 +5,16 @@
   "target_lang": "zh-Hans",
   "function": "fn.completed_past",
   "level": {"framework": "hsk3", "value": "1", "rank": 1},
-  "prereqs": [],
-  "contrasts": ["zh.guo_experience"],
+  "prereqs": ["zh.svo_basic"],
+  "contrasts": ["zh.guo_experience", "zh.mei_negation"],
   "error_tags": ["aspect"],
-  "source_refs": {},
+  "source_refs": {
+    "r5": ["zh-hsk1-16-ho-n-th-nh-c-b-n"],
+    "gf0025": ["gf0025.hsk1.021", "gf0025.hsk1.040", "gf0025.hsk1.041"]
+  },
   "point_type": "tense_aspect",
   "header": {
-    "title": {"vi": "Trợ từ 了 (hoàn thành)", "en": "The particle 了"},
+    "title": {"vi": "Trợ từ 了 (hoàn thành)", "en": "The particle 了: completed action"},
     "native_title": "动态助词“了”",
     "level": {"framework": "hsk3", "value": "1", "rank": 1},
     "summary": {
@@ -180,7 +183,8 @@
     "model": "deepseek:deepseek-flash",
     "prompt_version": "generate_point_v04.v5",
     "run_id": "generate.1790589975",
-    "generated_at": "2026-09-28T10:06:15Z"
+    "generated_at": "2026-09-28T10:06:15Z",
+    "metadata_stale": true
   },
   "review": null,
   "sequence": 1,
@@ -195,5 +199,6 @@
     "pattern_rule": {"ordered": true, "slots": [{"role": "particle", "any_of": ["了"]}]},
     "sample": {"text": "我今天吃了早饭。", "pinyin": ["wǒ", "jīn", "tiān", "chī", "le", "zǎo", "fàn", ""]}
   },
-  "source_anchors": {"status": "unanchored", "items": []}
+  "source_anchors": {"status": "unanchored", "items": []},
+  "aliases": ["zh-hsk1-16-ho-n-th-nh-c-b-n"]
 }

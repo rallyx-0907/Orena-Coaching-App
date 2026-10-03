@@ -1,0 +1,204 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk6.a_6_2_3.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.time_expression",
+  "level": {"framework": "hsk3", "value": "6", "rank": 6},
+  "prereqs": ["zh.canon.gf.hsk5.a_5_4_3.p1"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"gf0025": ["gf0025.hsk6.006", "gf0025.hsk6.007", "gf0025.hsk6.008", "gf0025.hsk6.009"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Trạng từ: 程度副词：特、异常", "en": "Adverbs: 程度副词：特、异常"},
+    "native_title": "程度副词：特、异常",
+    "level": {"framework": "hsk3", "value": "6", "rank": 6},
+    "summary": {
+      "vi": "Phó từ chỉ mức độ 特 và 异常 đứng trước tính từ để nhấn mạnh mức độ rất cao.",
+      "en": "The degree adverbs 特 and 异常 come before an adjective to mark a very high degree."
+    },
+    "sub": {"vi": "mức độ cao", "en": "high degree"},
+    "native_title_pinyin": ["chéng", "dù", "fù", "cí", "", "tè", "", "yì", "cháng"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói một tính chất đạt mức rất cao trong khẩu ngữ, dùng 特 trước tính từ.",
+      "en": "Use 特 before an adjective to say a quality reaches a very high degree in spoken Chinese."
+    },
+    {
+      "vi": "Khi muốn nhấn mạnh mức độ bất thường, khác thường trong văn viết, dùng 异常 trước tính từ.",
+      "en": "Use 异常 before an adjective to stress an unusual, exceptional degree in written Chinese."
+    },
+    {
+      "vi": "Cả hai phó từ đều đứng ngay trước tính từ, không cần 很 hay 非常.",
+      "en": "Both adverbs stand directly before the adjective; 很 or 非常 is not added."
+    },
+    {
+      "vi": "Câu có 特 thường dùng khi nói về cảm nhận, thời tiết, đồ ăn; 异常 thường dùng khi miêu tả tình trạng, hiện tượng.",
+      "en": "Sentences with 特 often describe feelings, weather or food; 异常 often describes conditions or phenomena."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "特/异常",
+        "role": "other",
+        "label": {"vi": "phó từ mức độ", "en": "degree adverb"},
+        "options": [{"text": "特", "pinyin": ["tè"]}, {"text": "异常", "pinyin": ["yì", "cháng"]}],
+        "pinyin": ["tè", "", "yì", "cháng"]
+      },
+      {
+        "text": "形容词",
+        "role": "complement",
+        "label": {"vi": "tính từ", "en": "adjective"},
+        "pinyin": ["xíng", "róng", "cí"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "这家饭馆的菜特好吃。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 6, "role": "subject"},
+        {"start": 6, "end": 7, "role": "other"},
+        {"start": 7, "end": 9, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "特 nhấn mạnh mức độ rất cao của tính từ 好吃.",
+        "en": "特 stresses the very high degree of the adjective 好吃."
+      },
+      "translation": {
+        "vi": "Món ăn của quán này rất ngon.",
+        "en": "The food at this restaurant is really delicious."
+      },
+      "pinyin": ["zhè", "jiā", "fàn", "guǎn", "de", "cài", "tè", "hǎo", "chī", ""]
+    },
+    {
+      "text": "今天的天气特冷。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 5, "role": "subject"},
+        {"start": 5, "end": 6, "role": "other"},
+        {"start": 6, "end": 7, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "特 đứng trước tính từ 冷 để nói mức độ rất cao.",
+        "en": "特 comes before the adjective 冷 to mark a very high degree."
+      },
+      "translation": {"vi": "Thời tiết hôm nay rất lạnh.", "en": "The weather today is really cold."},
+      "pinyin": ["jīn", "tiān", "de", "tiān", "qì", "tè", "lěng", ""]
+    },
+    {
+      "text": "今年冬天的气温异常低。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 7, "role": "subject"},
+        {"start": 7, "end": 9, "role": "other"},
+        {"start": 9, "end": 10, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "异常 nhấn mạnh mức độ bất thường của tính từ 低.",
+        "en": "异常 stresses the unusual degree of the adjective 低."
+      },
+      "translation": {
+        "vi": "Nhiệt độ mùa đông năm nay thấp một cách bất thường.",
+        "en": "The temperature this winter is unusually low."
+      },
+      "pinyin": ["jīn", "nián", "dōng", "tiān", "de", "qì", "wēn", "yì", "cháng", "dī", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "这家饭馆的菜特很好吃。",
+      "right": "这家饭馆的菜特好吃。",
+      "reason": {
+        "vi": "特 đã biểu thị mức độ rất cao nên không dùng thêm 很 trước tính từ.",
+        "en": "特 already marks a very high degree, so 很 is not added before the adjective."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong_pinyin": ["zhè", "jiā", "fàn", "guǎn", "de", "cài", "tè", "hěn", "hǎo", "chī", ""],
+      "right_pinyin": ["zhè", "jiā", "fàn", "guǎn", "de", "cài", "tè", "hǎo", "chī", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "这家饭馆的菜___好吃。",
+      "options": [
+        {"text": "特", "error_tag": null, "pinyin": ["tè"]},
+        {"text": "很特", "error_tag": "redundancy", "pinyin": ["hěn", "tè"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "特 đứng một mình trước tính từ 好吃, không thêm 很.",
+        "en": "特 stands alone before the adjective 好吃; 很 is not added."
+      },
+      "q_pinyin": ["zhè", "jiā", "fàn", "guǎn", "de", "cài", "", "", "", "hǎo", "chī", ""]
+    },
+    {
+      "q": "今年冬天的气温___低。",
+      "options": [
+        {"text": "异常", "error_tag": null, "pinyin": ["yì", "cháng"]},
+        {"text": "异常地", "error_tag": "particle", "pinyin": ["yì", "cháng", "de"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "异常 đứng trực tiếp trước tính từ 低, không cần thêm 地.",
+        "en": "异常 stands directly before the adjective 低; 地 is not added."
+      },
+      "q_pinyin": ["jīn", "nián", "dōng", "tiān", "de", "qì", "wēn", "", "", "", "dī", ""]
+    },
+    {
+      "q": "今天的天气___冷。",
+      "options": [
+        {"text": "特", "error_tag": null, "pinyin": ["tè"]},
+        {"text": "特很", "error_tag": "redundancy", "pinyin": ["tè", "hěn"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "特 đã đủ để nhấn mạnh mức độ, không dùng thêm 很.",
+        "en": "特 alone marks the high degree; 很 is not used with it."
+      },
+      "q_pinyin": ["jīn", "tiān", "de", "tiān", "qì", "", "", "", "lěng", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một món ăn hoặc thời tiết bạn thấy rất đặc biệt, dùng 特 hoặc 异常 trước tính từ.",
+      "en": "Write one sentence about a food or weather you find extreme, using 特 or 异常 before the adjective."
+    },
+    "placeholder": "今天的天气……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "other", "any_of": ["特", "异常"]},
+        {"role": "complement", "regex": "[\\u4e00-\\u9fff]"}
+      ]
+    },
+    "sample": {"text": "今天的天气特热。", "pinyin": ["jīn", "tiān", "de", "tiān", "qì", "tè", "rè", ""]},
+    "placeholder_pinyin": ["jīn", "tiān", "de", "tiān", "qì", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790834038",
+    "generated_at": "2026-10-01T05:53:58Z"
+  },
+  "review": null
+}

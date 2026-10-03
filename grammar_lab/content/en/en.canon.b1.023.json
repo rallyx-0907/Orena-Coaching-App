@@ -1,0 +1,229 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b1.023",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.questions",
+  "level": {"framework": "cefr", "value": "B1", "rank": 3},
+  "prereqs": ["en.canon.b1.022"],
+  "contrasts": [],
+  "error_tags": ["sentence_structure"],
+  "source_refs": {"r5": ["b1-indirect-questions"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": ["b1-indirect-questions"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Indirect câu hỏi", "en": "Indirect questions"},
+    "native_title": "Indirect questions",
+    "level": {"framework": "cefr", "value": "B1", "rank": 3},
+    "summary": {
+      "vi": "Câu hỏi gián tiếp dùng một cụm dẫn như 'Could you tell me' hoặc 'Do you know' rồi đặt mệnh đề hỏi ở dạng câu kể, không đảo ngữ và không dùng trợ động từ do.",
+      "en": "Indirect questions use an introductory phrase such as 'Could you tell me' or 'Do you know' followed by the question clause in statement order, with no inversion and no do-support."
+    },
+    "sub": {"vi": "câu hỏi lịch sự", "en": "polite questions"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi hỏi người lạ hoặc người bạn muốn giữ lịch sự, thay vì hỏi trực tiếp.",
+      "en": "When you ask a stranger or want to sound polite instead of asking directly."
+    },
+    {
+      "vi": "Khi mở đầu bằng 'Could you tell me', 'Do you know', 'Can you remember' hoặc 'I wonder'.",
+      "en": "When you start with 'Could you tell me', 'Do you know', 'Can you remember' or 'I wonder'."
+    },
+    {
+      "vi": "Khi câu hỏi trực tiếp là câu hỏi wh- (where, what, when, why, how) và bạn muốn nhúng nó vào một câu dài hơn.",
+      "en": "When the direct question is a wh-question (where, what, when, why, how) and you want to embed it in a longer sentence."
+    },
+    {
+      "vi": "Khi câu hỏi trực tiếp là câu hỏi yes/no và bạn dùng 'if' hoặc 'whether' để nối.",
+      "en": "When the direct question is a yes/no question and you use 'if' or 'whether' to link it."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "introductory phrase",
+        "role": "other",
+        "label": {"vi": "cụm dẫn", "en": "introductory phrase"}
+      },
+      {
+        "text": "wh-word / if / whether",
+        "role": "connector",
+        "label": {"vi": "từ nối", "en": "connector"},
+        "options": [
+          {"text": "where"},
+          {"text": "what"},
+          {"text": "when"},
+          {"text": "why"},
+          {"text": "how"},
+          {"text": "if"},
+          {"text": "whether"}
+        ]
+      },
+      {"text": "subject", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {"text": "verb", "role": "verb", "label": {"vi": "động từ", "en": "verb"}},
+      {
+        "text": "object / complement",
+        "role": "object",
+        "label": {"vi": "tân ngữ / bổ ngữ", "en": "object / complement"},
+        "optional": true
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "Could you tell me where the bank is?",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 17, "role": "other"},
+        {"start": 18, "end": 23, "role": "connector"},
+        {"start": 24, "end": 32, "role": "subject"},
+        {"start": 33, "end": 35, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Cụm dẫn 'Could you tell me' mở đầu câu hỏi lịch sự; mệnh đề sau 'where' giữ trật tự câu kể: chủ ngữ + động từ.",
+        "en": "The introductory phrase 'Could you tell me' opens a polite question; the clause after 'where' keeps statement order: subject + verb."
+      },
+      "translation": {
+        "vi": "Bạn có thể cho tôi biết ngân hàng ở đâu không?",
+        "en": "Could you tell me where the bank is?"
+      }
+    },
+    {
+      "text": "Do you know what time the train leaves?",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 11, "role": "other"},
+        {"start": 12, "end": 21, "role": "connector"},
+        {"start": 22, "end": 31, "role": "subject"},
+        {"start": 32, "end": 38, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Sau 'what time', mệnh đề dùng trật tự câu kể 'the train leaves', không đảo ngữ và không dùng 'does'.",
+        "en": "After 'what time', the clause uses statement order 'the train leaves', with no inversion and no 'does'."
+      },
+      "translation": {"vi": "Bạn biết tàu rời lúc mấy giờ không?", "en": "Do you know what time the train leaves?"}
+    },
+    {
+      "text": "I wonder whether she is coming.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 8, "role": "other"},
+        {"start": 9, "end": 16, "role": "connector"},
+        {"start": 17, "end": 20, "role": "subject"},
+        {"start": 21, "end": 30, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "'Whether' nối câu hỏi yes/no vào mệnh đề; sau đó là trật tự câu kể 'she is coming'.",
+        "en": "'Whether' links a yes/no question into the clause; it is followed by statement order 'she is coming'."
+      },
+      "translation": {"vi": "Tôi tự hỏi liệu cô ấy có đến không.", "en": "I wonder whether she is coming."}
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "Could you tell me where is the bank?",
+      "right": "Could you tell me where the bank is?",
+      "reason": {
+        "vi": "Người học giữ nguyên trật tự đảo ngữ của câu hỏi trực tiếp khi nhúng vào câu hỏi gián tiếp; mệnh đề nhúng phải dùng trật tự câu kể.",
+        "en": "Learners keep the inverted order of the direct question when embedding it; the embedded clause must use statement order."
+      },
+      "error_tag": "sentence_structure",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "Do you know where the station ___?",
+      "options": [{"text": "is", "error_tag": null}, {"text": "is it", "error_tag": "sentence_structure"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Mệnh đề nhúng sau 'where' dùng trật tự câu kể: chủ ngữ + động từ, nên chỉ cần 'is'.",
+        "en": "The embedded clause after 'where' uses statement order: subject + verb, so only 'is' is needed."
+      }
+    },
+    {
+      "q": "Can you tell me what time the film ___?",
+      "options": [
+        {"text": "starts", "error_tag": null},
+        {"text": "does start", "error_tag": "sentence_structure"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Không dùng trợ động từ 'does' trong mệnh đề nhúng; động từ chính chia theo chủ ngữ.",
+        "en": "Do not use the auxiliary 'does' in the embedded clause; the main verb agrees with the subject."
+      }
+    },
+    {
+      "q": "I wonder ___ she will come to the party.",
+      "options": [{"text": "if", "error_tag": null}, {"text": "that", "error_tag": "word_choice"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu hỏi yes/no gián tiếp dùng 'if' hoặc 'whether', không dùng 'that'.",
+        "en": "An indirect yes/no question uses 'if' or 'whether', not 'that'."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu hỏi gián tiếp lịch sự mà bạn có thể hỏi ai đó hôm nay.",
+      "en": "Write one polite indirect question you could ask someone today."
+    },
+    "placeholder": "Could you tell me where ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {
+          "role": "other",
+          "any_of": ["Could you tell me", "Do you know", "Can you remember", "I wonder"]
+        },
+        {"role": "connector", "any_of": ["where", "what", "when", "why", "how", "if", "whether"]},
+        {
+          "role": "subject",
+          "regex": "(?i)\\b(the|a|an|my|your|his|her|its|our|their|this|that|these|those|she|he|it|they|we|you|I)\\b"
+        },
+        {
+          "role": "verb",
+          "regex": "(?i)\\b(is|are|was|were|leaves|starts|comes|works|lives|has|have|does|do|can|will|would|should|could|might|may|must)\\b"
+        }
+      ]
+    },
+    "sample": {"text": "Could you tell me where the nearest bus stop is?"}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790830888",
+    "generated_at": "2026-10-01T05:01:28Z",
+    "r5_source": {
+      "ids": ["b1-indirect-questions"],
+      "content_version": 2,
+      "content_hash": "049ba8fd3e96ad7db3709cf624d31317a6e3bbfa4db4fa9df77c15aac3ebe541",
+      "corrections": [
+        {
+          "r5_id": "b1-indirect-questions",
+          "issue": "R5's rule 'For yes/no: Do you know if/whether + subject + verb...? Embedded question does not use do-support/inversion.' is correct but the examples do not show a yes/no indirect question with 'if' or 'whether' in the main examples list.",
+          "fix": "Added 'I wonder whether she is coming.' as an example and included 'if'/'whether' in the formula connector options."
+        },
+        {
+          "r5_id": "b1-indirect-questions",
+          "issue": "R5's mistake 'Do you know where does he live?' is a real learner error, but the lesson only lists one mistake and does not tag it.",
+          "fix": "Kept the mistake as 'Could you tell me where is the bank?' with error_tag 'sentence_structure' and added a clear reason about statement order."
+        },
+        {
+          "r5_id": "b1-indirect-questions",
+          "issue": "R5's explanation_vi is generic and does not state the core rule about statement order and no do-support.",
+          "fix": "Rewrote summary and when_to_use to state the rule directly and added a formula with slots."
+        }
+      ]
+    }
+  },
+  "review": null
+}

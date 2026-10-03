@@ -1,0 +1,261 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk5.a_5_5_1.p2",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.comparison",
+  "level": {"framework": "hsk3", "value": "5", "rank": 5},
+  "prereqs": ["zh.canon.gf.hsk3.a_3_2_4.p1"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"gf0025": ["gf0025.hsk5.043"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Mẫu câu đặc biệt: 比较句5", "en": "Special sentence patterns: 比较句5"},
+    "native_title": "比较句5",
+    "level": {"framework": "hsk3", "value": "5", "rank": 5},
+    "summary": {
+      "vi": "Mẫu câu so sánh 比较句 dùng 比 để so sánh hai sự vật theo một tiêu chí, có thể kèm mức độ chênh lệch.",
+      "en": "The 比较句 comparison pattern uses 比 to compare two things on one criterion, optionally with the degree of difference."
+    },
+    "sub": {"vi": "câu so sánh 比", "en": "比 comparison"},
+    "native_title_pinyin": ["bǐ", "jiào", "jù", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói A hơn B về một tiêu chí nào đó (cao hơn, đắt hơn, giỏi hơn).",
+      "en": "When you want to say A is more than B on some criterion (taller, more expensive, better)."
+    },
+    {
+      "vi": "Khi cần nêu rõ mức độ chênh lệch, ví dụ 一点儿, 一些, 得多, 多了.",
+      "en": "When you need to state the degree of difference, e.g. 一点儿, 一些, 得多, 多了."
+    },
+    {
+      "vi": "Khi so sánh hai người hoặc hai vật cụ thể, không dùng 比 với chính mình.",
+      "en": "When comparing two specific people or things; 比 is not used with the same item on both sides."
+    },
+    {
+      "vi": "Khi muốn phủ định một so sánh, dùng 没有 thay cho 比.",
+      "en": "When negating a comparison, use 没有 instead of 比."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "A",
+        "role": "subject",
+        "label": {"vi": "đối tượng thứ nhất", "en": "first item"},
+        "pinyin": [""]
+      },
+      {
+        "text": "比",
+        "role": "marker",
+        "label": {"vi": "từ so sánh 比", "en": "comparison marker 比"},
+        "pinyin": ["bǐ"]
+      },
+      {
+        "text": "B",
+        "role": "object",
+        "label": {"vi": "đối tượng thứ hai", "en": "second item"},
+        "pinyin": [""]
+      },
+      {
+        "text": "形容词",
+        "role": "complement",
+        "label": {"vi": "tính từ so sánh", "en": "adjective of comparison"},
+        "pinyin": ["xíng", "róng", "cí"]
+      },
+      {
+        "text": "一点儿/一些/得多/多了",
+        "role": "complement",
+        "label": {"vi": "mức độ chênh lệch", "en": "degree of difference"},
+        "optional": true,
+        "options": [
+          {"text": "一点儿", "pinyin": ["yì", "diǎn", "r"]},
+          {"text": "一些", "pinyin": ["yì", "xiē"]},
+          {"text": "得多", "pinyin": ["de", "duō"]},
+          {"text": "多了", "pinyin": ["duō", "le"]}
+        ],
+        "pinyin": ["yì", "diǎn", "r", "", "yì", "xiē", "", "de", "duō", "", "duō", "le"]
+      }
+    ],
+    "variants": {
+      "negative": [
+        {
+          "text": "A",
+          "role": "subject",
+          "label": {"vi": "đối tượng thứ nhất", "en": "first item"},
+          "pinyin": [""]
+        },
+        {
+          "text": "没有",
+          "role": "aux",
+          "label": {"vi": "phủ định 没有", "en": "negator 没有"},
+          "pinyin": ["méi", "yǒu"]
+        },
+        {
+          "text": "B",
+          "role": "object",
+          "label": {"vi": "đối tượng thứ hai", "en": "second item"},
+          "pinyin": [""]
+        },
+        {
+          "text": "形容词",
+          "role": "complement",
+          "label": {"vi": "tính từ so sánh", "en": "adjective of comparison"},
+          "pinyin": ["xíng", "róng", "cí"]
+        }
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "河内比胡志明市凉快一些。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 3, "role": "marker"},
+        {"start": 3, "end": 7, "role": "object"},
+        {"start": 7, "end": 9, "role": "complement"},
+        {"start": 9, "end": 11, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "比 đặt giữa hai đối tượng, 一些 cho biết mức chênh lệch nhỏ.",
+        "en": "比 sits between the two items; 一些 shows a small degree of difference."
+      },
+      "translation": {
+        "vi": "Hà Nội mát hơn Thành phố Hồ Chí Minh một chút.",
+        "en": "Hanoi is a bit cooler than Ho Chi Minh City."
+      },
+      "pinyin": ["hé", "nèi", "bǐ", "hú", "zhì", "míng", "shì", "liáng", "kuài", "yì", "xiē", ""]
+    },
+    {
+      "text": "这个箱子比那个箱子重得多。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 4, "end": 5, "role": "marker"},
+        {"start": 5, "end": 9, "role": "object"},
+        {"start": 9, "end": 10, "role": "complement"},
+        {"start": 10, "end": 12, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "得多 đứng sau tính từ, nhấn mạnh mức chênh lệch lớn.",
+        "en": "得多 follows the adjective and stresses a large degree of difference."
+      },
+      "translation": {
+        "vi": "Cái hộp này nặng hơn cái hộp kia nhiều.",
+        "en": "This box is much heavier than that box."
+      },
+      "pinyin": ["zhè", "ge", "xiāng", "zi", "bǐ", "nà", "ge", "xiāng", "zi", "zhòng", "de", "duō", ""]
+    },
+    {
+      "text": "今天没有昨天那么热。",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 4, "role": "aux"},
+        {"start": 4, "end": 6, "role": "object"},
+        {"start": 8, "end": 9, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Phủ định so sánh dùng 没有, không dùng 比.",
+        "en": "Negation of comparison uses 没有, not 比."
+      },
+      "translation": {"vi": "Hôm nay không nóng bằng hôm qua.", "en": "Today is not as hot as yesterday."},
+      "pinyin": ["jīn", "tiān", "méi", "yǒu", "zuó", "tiān", "nà", "me", "rè", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "他比我很高。",
+      "right": "他比我高得多。",
+      "reason": {
+        "vi": "Không dùng 很, 非常, 太 trước tính từ trong câu 比; muốn nêu mức độ thì dùng 得多, 多了, 一点儿.",
+        "en": "Do not use 很, 非常, 太 before the adjective in a 比 sentence; to show degree use 得多, 多了, 一点儿."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong_pinyin": ["tā", "bǐ", "wǒ", "hěn", "gāo", ""],
+      "right_pinyin": ["tā", "bǐ", "wǒ", "gāo", "de", "duō", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "这个手机比那个手机___。",
+      "options": [
+        {"text": "贵得多", "error_tag": null, "pinyin": ["guì", "de", "duō"]},
+        {"text": "很贵", "error_tag": "other", "pinyin": ["hěn", "guì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Trong câu 比, mức độ chênh lệch đứng sau tính từ: 贵得多. Không dùng 很 ở đây.",
+        "en": "In a 比 sentence the degree of difference follows the adjective: 贵得多. 很 is not used here."
+      },
+      "q_pinyin": ["zhè", "ge", "shǒu", "jī", "bǐ", "nà", "ge", "shǒu", "jī", "", "", "", ""]
+    },
+    {
+      "q": "我的汉语没有他___好。",
+      "options": [
+        {"text": "那么", "error_tag": null, "pinyin": ["nà", "me"]},
+        {"text": "比", "error_tag": "other", "pinyin": ["bǐ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Phủ định so sánh dùng 没有 ... 那么, không dùng 比 trong câu phủ định.",
+        "en": "Negated comparison uses 没有 ... 那么; 比 is not used in the negative."
+      },
+      "q_pinyin": ["wǒ", "de", "hàn", "yǔ", "méi", "yǒu", "tā", "", "", "", "hǎo", ""]
+    },
+    {
+      "q": "坐火车比坐飞机___。",
+      "options": [
+        {"text": "慢一点儿", "error_tag": null, "pinyin": ["màn", "yì", "diǎn", "r"]},
+        {"text": "慢一点儿吗", "error_tag": "particle", "pinyin": ["màn", "yì", "diǎn", "r", "ma"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu trần thuật so sánh không thêm 吗; 吗 chỉ dùng cho câu hỏi.",
+        "en": "A statement comparison does not take 吗; 吗 is only for questions."
+      },
+      "q_pinyin": ["zuò", "huǒ", "chē", "bǐ", "zuò", "fēi", "jī", "", "", "", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu so sánh hai người hoặc hai vật bằng 比, có thể thêm mức độ chênh lệch.",
+      "en": "Write one sentence comparing two people or things with 比, optionally adding a degree of difference."
+    },
+    "placeholder": "我的……比……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "marker", "any_of": ["比"]},
+        {
+          "role": "complement",
+          "regex": "(得多|多了|一点儿|一些|高|大|小|快|慢|好|贵|便宜|重|轻|热|冷|凉快|忙|累|新|旧|长|短|早|晚)"
+        }
+      ]
+    },
+    "sample": {
+      "text": "我的房间比他的房间大一些。",
+      "pinyin": ["wǒ", "de", "fáng", "jiān", "bǐ", "tā", "de", "fáng", "jiān", "dà", "yì", "xiē", ""]
+    },
+    "placeholder_pinyin": ["wǒ", "de", "", "", "bǐ", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790833724",
+    "generated_at": "2026-10-01T05:48:44Z"
+  },
+  "review": null
+}

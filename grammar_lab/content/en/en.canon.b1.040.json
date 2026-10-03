@@ -1,0 +1,208 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b1.040",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.quantity",
+  "level": {"framework": "cefr", "value": "B1", "rank": 3},
+  "prereqs": ["en.quantifiers.few_little"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["b1-quantifiers-and-distributives"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["b1-quantifiers-and-distributives"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "từ chỉ lượng and distributives", "en": "Quantifiers and distributives"},
+    "native_title": "Quantifiers and distributives",
+    "level": {"framework": "cefr", "value": "B1", "rank": 3},
+    "summary": {
+      "vi": "Chủ điểm này dạy cách dùng các từ chỉ lượng và từ phân phối như all, both, each, every, either, neither, most, none để nói về số lượng và cách phân bổ trong một nhóm.",
+      "en": "This point teaches how to use quantifiers and distributives such as all, both, each, every, either, neither, most, and none to talk about quantity and how members of a group are distributed."
+    },
+    "sub": {"vi": "lượng từ và phân phối", "en": "quantifiers and distributives"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói về một nhóm chung chung, không xác định: most people, all students.",
+      "en": "When you want to talk about a group in general, not a specific one: most people, all students."
+    },
+    {
+      "vi": "Khi bạn muốn nói về một nhóm cụ thể đã được xác định: most of the students, all of my friends.",
+      "en": "When you want to talk about a specific, already identified group: most of the students, all of my friends."
+    },
+    {
+      "vi": "Khi bạn muốn nhấn mạnh từng cá thể trong nhóm: each student, every student.",
+      "en": "When you want to emphasise each individual member of a group: each student, every student."
+    },
+    {
+      "vi": "Khi bạn nói về hai người hoặc hai vật: both, either, neither.",
+      "en": "When you are talking about two people or things: both, either, neither."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "quantifier",
+        "role": "other",
+        "label": {"vi": "từ chỉ lượng", "en": "quantifier"},
+        "options": [
+          {"text": "all"},
+          {"text": "both"},
+          {"text": "each"},
+          {"text": "every"},
+          {"text": "either"},
+          {"text": "neither"},
+          {"text": "most"},
+          {"text": "none"}
+        ]
+      },
+      {"text": "of", "role": "other", "label": {"vi": "of", "en": "of"}, "optional": true},
+      {
+        "text": "determiner",
+        "role": "other",
+        "label": {"vi": "hạn định từ", "en": "determiner"},
+        "optional": true,
+        "options": [{"text": "the"}, {"text": "my"}, {"text": "these"}, {"text": "those"}]
+      },
+      {"text": "N", "role": "object", "label": {"vi": "danh từ", "en": "noun"}},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}}
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "Each student received a card.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "other"},
+        {"start": 5, "end": 12, "role": "object"},
+        {"start": 13, "end": 21, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "each + danh từ đếm được số ít, động từ chia số ít.",
+        "en": "each + singular countable noun, singular verb."
+      },
+      "translation": {"vi": "Mỗi học sinh nhận một thẻ.", "en": "Each student received a card."}
+    },
+    {
+      "text": "Most people use smartphones.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "other"},
+        {"start": 5, "end": 11, "role": "object"},
+        {"start": 12, "end": 15, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "most + danh từ số nhiều không xác định, động từ chia số nhiều.",
+        "en": "most + plural noun in a general sense, plural verb."
+      },
+      "translation": {"vi": "Hầu hết mọi người dùng điện thoại thông minh.", "en": "Most people use smartphones."}
+    },
+    {
+      "text": "None of the information was useful.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "other"},
+        {"start": 5, "end": 7, "role": "other"},
+        {"start": 8, "end": 11, "role": "other"},
+        {"start": 12, "end": 23, "role": "object"},
+        {"start": 24, "end": 27, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "none of + danh từ không đếm được xác định, động từ chia số ít.",
+        "en": "none of + specific uncountable noun, singular verb."
+      },
+      "translation": {"vi": "Không thông tin nào hữu ích.", "en": "None of the information was useful."}
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "Every students need a book.",
+      "right": "Every student needs a book.",
+      "reason": {
+        "vi": "every luôn đi với danh từ đếm được số ít, nên động từ cũng chia số ít.",
+        "en": "every always takes a singular countable noun, so the verb is also singular."
+      },
+      "error_tag": "other",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "___ student in the class received a certificate.",
+      "options": [{"text": "Each", "error_tag": null}, {"text": "Every", "error_tag": "other"}],
+      "answer": 0,
+      "explain": {
+        "vi": "each + danh từ số ít, nhấn mạnh từng cá thể; every cũng đúng nhưng ở đây each phù hợp hơn vì nhấn từng học sinh nhận riêng.",
+        "en": "each + singular noun emphasises individual members; every is also possible but each is more precise here because it stresses each student individually."
+      }
+    },
+    {
+      "q": "Most of ___ students in this class speak two languages.",
+      "options": [{"text": "the", "error_tag": null}, {"text": "no article", "error_tag": "article"}],
+      "answer": 0,
+      "explain": {
+        "vi": "most of + the + danh từ xác định; nếu nói chung thì dùng most students.",
+        "en": "most of + the + specific noun; for a general statement, use most students."
+      }
+    },
+    {
+      "q": "Neither of my brothers ___ married.",
+      "options": [{"text": "is", "error_tag": null}, {"text": "are", "error_tag": "agreement"}],
+      "answer": 0,
+      "explain": {
+        "vi": "neither of + danh từ số nhiều thường đi với động từ số ít trong văn phong chuẩn.",
+        "en": "neither of + plural noun usually takes a singular verb in standard usage."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một nhóm người hoặc vật mà bạn biết, dùng một từ chỉ lượng như all, most, each, every, both, either, neither, none.",
+      "en": "Write one sentence about a group of people or things you know, using a quantifier such as all, most, each, every, both, either, neither, none."
+    },
+    "placeholder": "Most of my friends ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {
+          "role": "other",
+          "any_of": ["all", "both", "each", "every", "either", "neither", "most", "none"]
+        },
+        {"role": "object", "regex": "[a-zA-Z]+"},
+        {"role": "verb", "regex": "[a-zA-Z]+"}
+      ]
+    },
+    "sample": {"text": "Most of my friends live in the city."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790830988",
+    "generated_at": "2026-10-01T05:03:08Z",
+    "r5_source": {
+      "ids": ["b1-quantifiers-and-distributives"],
+      "content_version": 2,
+      "content_hash": "f790617aa08e106746a6be17f7c7098f3ca14b445c8563e237729f2ea59dfaa2",
+      "corrections": [
+        {
+          "r5_id": "b1-quantifiers-and-distributives",
+          "issue": "R5 example 'None of the information was useful.' is correct, but the rule 'none of + plural/uncountable determiner phrase' is vague and does not mention verb agreement.",
+          "fix": "Clarified that none of + uncountable noun takes a singular verb, and added a quick-practice item on neither of + plural noun + singular verb."
+        },
+        {
+          "r5_id": "b1-quantifiers-and-distributives",
+          "issue": "R5 mistake 'Most of people agreed.' is a real error, but the explanation 'most of cần specified group' is incomplete: it does not say that most of must be followed by a determiner.",
+          "fix": "Added the determiner requirement in the explanation and included a quick-practice item contrasting 'most of the students' with 'most students'."
+        }
+      ]
+    }
+  },
+  "review": null
+}

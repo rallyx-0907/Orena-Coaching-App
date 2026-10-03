@@ -1,0 +1,191 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk7_9.a_7_1_7_1.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.reference",
+  "level": {"framework": "hsk3", "value": "7", "rank": 7},
+  "prereqs": ["zh.canon.gf.hsk7_9.a_7_1_5_3.p1"],
+  "contrasts": [],
+  "error_tags": ["particle"],
+  "source_refs": {"gf0025": ["gf0025.hsk7_9.056"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Trợ từ: 之", "en": "Particles: 之"},
+    "native_title": "之",
+    "level": {"framework": "hsk3", "value": "7", "rank": 7},
+    "summary": {
+      "vi": "之 là trợ từ văn viết cổ điển, dùng để nối hai thành phần danh từ theo kiểu sở hữu hoặc định ngữ, tương đương 的 trong văn hiện đại.",
+      "en": "之 is a classical written particle that links two nominal elements in a possessive or attributive relation, equivalent to 的 in modern prose."
+    },
+    "sub": {"vi": "trợ từ văn viết", "en": "classical particle"},
+    "native_title_pinyin": ["zhī"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Trong thành ngữ, tục ngữ hoặc câu văn mang phong cách cổ điển, khi muốn nối danh từ với danh từ.",
+      "en": "In idioms, proverbs, or sentences with a classical tone, when linking a noun to another noun."
+    },
+    {
+      "vi": "Trong tiêu đề sách báo, tên tác phẩm, hoặc câu đối, nơi văn phong trang trọng và ngắn gọn được ưu tiên.",
+      "en": "In book or article titles, work names, or couplets, where a formal and compact style is preferred."
+    },
+    {
+      "vi": "Khi muốn diễn đạt quan hệ sở hữu hoặc định ngữ mà không dùng 的, đặc biệt trong văn viết trang trọng.",
+      "en": "When expressing a possessive or attributive relation without 的, especially in formal writing."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "N1",
+        "role": "subject",
+        "label": {"vi": "danh từ thứ nhất", "en": "first noun"},
+        "pinyin": ["", ""]
+      },
+      {
+        "text": "之",
+        "role": "particle",
+        "label": {"vi": "trợ từ nối", "en": "linking particle"},
+        "pinyin": ["zhī"]
+      },
+      {
+        "text": "N2",
+        "role": "object",
+        "label": {"vi": "danh từ thứ hai", "en": "second noun"},
+        "pinyin": ["", ""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "这是成功之母。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 2, "end": 4, "role": "subject"},
+        {"start": 4, "end": 5, "role": "particle"},
+        {"start": 5, "end": 6, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "之 nối 成功 với 母, tạo thành cụm danh từ mang nghĩa 'mẹ của thành công'.",
+        "en": "之 links 成功 with 母, forming a noun phrase meaning 'mother of success'."
+      },
+      "translation": {"vi": "Đây là mẹ của thành công.", "en": "This is the mother of success."},
+      "pinyin": ["zhè", "shì", "chéng", "gōng", "zhī", "mǔ", ""]
+    },
+    {
+      "text": "他是中国之友。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 2, "end": 4, "role": "subject"},
+        {"start": 4, "end": 5, "role": "particle"},
+        {"start": 5, "end": 6, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "之 nối 中国 với 友, nghĩa là 'bạn của Trung Quốc'.",
+        "en": "之 links 中国 with 友, meaning 'friend of China'."
+      },
+      "translation": {"vi": "Ông ấy là bạn của Trung Quốc.", "en": "He is a friend of China."},
+      "pinyin": ["tā", "shì", "zhōng", "guó", "zhī", "yǒu", ""]
+    },
+    {
+      "text": "时间之河不停流动。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 3, "role": "particle"},
+        {"start": 3, "end": 4, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "之 nối 时间 với 河, tạo hình ảnh 'dòng sông thời gian'.",
+        "en": "之 links 时间 with 河, creating the image 'river of time'."
+      },
+      "translation": {
+        "vi": "Dòng sông thời gian không ngừng chảy.",
+        "en": "The river of time flows without stopping."
+      },
+      "pinyin": ["shí", "jiān", "zhī", "hé", "bù", "tíng", "liú", "dòng", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "他是中国友。",
+      "right": "他是中国之友。",
+      "reason": {
+        "vi": "Người học bỏ 之 vì quen với việc lược bỏ 的 trong văn nói, nhưng trong văn viết cổ điển 之 là bắt buộc để nối hai danh từ.",
+        "en": "Learners drop 之 because they are used to omitting 的 in speech, but in classical writing 之 is required to link the two nouns."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong_pinyin": ["tā", "shì", "zhōng", "guó", "yǒu", ""],
+      "right_pinyin": ["tā", "shì", "zhōng", "guó", "zhī", "yǒu", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "失败是成功___母。",
+      "options": [
+        {"text": "之", "error_tag": null, "pinyin": ["zhī"]},
+        {"text": "的", "error_tag": "particle", "pinyin": ["de"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Trong thành ngữ cổ điển, 之 được dùng để nối hai danh từ, không dùng 的.",
+        "en": "In classical idioms, 之 is used to link two nouns, not 的."
+      },
+      "q_pinyin": ["shī", "bài", "shì", "chéng", "gōng", "", "", "", "mǔ", ""]
+    },
+    {
+      "q": "他们是中国___友。",
+      "options": [
+        {"text": "之", "error_tag": null, "pinyin": ["zhī"]},
+        {"text": "的", "error_tag": "particle", "pinyin": ["de"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "之 là trợ từ văn viết nối 中国 với 友, tương đương 的 nhưng mang sắc thái trang trọng.",
+        "en": "之 is the classical particle linking 中国 with 友, equivalent to 的 but formal."
+      },
+      "q_pinyin": ["tā", "men", "shì", "zhōng", "guó", "", "", "", "yǒu", ""]
+    },
+    {
+      "q": "时间___河不停流动。",
+      "options": [
+        {"text": "之", "error_tag": null, "pinyin": ["zhī"]},
+        {"text": "的", "error_tag": "particle", "pinyin": ["de"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Trong văn viết cổ điển, 之 nối 时间 với 河 để tạo cụm danh từ 'dòng sông thời gian'.",
+        "en": "In classical writing, 之 links 时间 with 河 to form the noun phrase 'river of time'."
+      },
+      "q_pinyin": ["shí", "jiān", "", "", "", "hé", "bù", "tíng", "liú", "dòng", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu cổ điển ngắn dùng 之 để nối hai danh từ, ví dụ nói về một người hoặc vật là '... của ...'.",
+      "en": "Write a short classical sentence using 之 to link two nouns, for example saying someone or something is '... of ...'."
+    },
+    "placeholder": "他是……之……。",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"role": "particle", "any_of": ["之"]}]},
+    "sample": {"text": "他是自由之友。", "pinyin": ["tā", "shì", "zì", "yóu", "zhī", "yǒu", ""]},
+    "placeholder_pinyin": ["tā", "shì", "", "", "zhī", "", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790834600",
+    "generated_at": "2026-10-01T06:03:20Z",
+    "metadata_stale": true
+  },
+  "review": null
+}

@@ -1,0 +1,263 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.a2.001",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.identity_state",
+  "level": {"framework": "cefr", "value": "A2", "rank": 2},
+  "prereqs": [],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["a1-stative-verbs-introduction"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["a1-stative-verbs-introduction"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Stative verbs: introduction", "en": "Stative verbs: introduction"},
+    "native_title": "Stative verbs: introduction",
+    "level": {"framework": "cefr", "value": "A2", "rank": 2},
+    "summary": {
+      "vi": "Một số động từ tiếng Anh diễn tả trạng thái, cảm xúc, suy nghĩ hoặc sở hữu; ở nghĩa cơ bản, chúng dùng thì hiện tại đơn, không dùng dạng tiếp diễn.",
+      "en": "Some English verbs describe states, feelings, thoughts or possession; in their basic meaning they use the present simple, not the continuous form."
+    },
+    "sub": {"vi": "trạng thái", "en": "states"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn nói về kiến thức hoặc hiểu biết: know, understand.",
+      "en": "When you talk about knowledge or understanding: know, understand."
+    },
+    {
+      "vi": "Khi bạn nói về cảm xúc hoặc sở thích: like, love, want.",
+      "en": "When you talk about feelings or preferences: like, love, want."
+    },
+    {
+      "vi": "Khi bạn nói về nhu cầu hoặc sở hữu: need, have.",
+      "en": "When you talk about needs or possession: need, have."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {
+        "text": "stative verb",
+        "role": "verb",
+        "label": {"vi": "động từ trạng thái", "en": "stative verb"},
+        "options": [
+          {"text": "know"},
+          {"text": "like"},
+          {"text": "love"},
+          {"text": "want"},
+          {"text": "need"},
+          {"text": "understand"}
+        ]
+      },
+      {
+        "text": "-s/-es",
+        "role": "verb",
+        "label": {"vi": "đuôi -s/-es", "en": "-s/-es ending"},
+        "optional": true
+      },
+      {"text": "complement", "role": "complement", "label": {"vi": "bổ ngữ", "en": "complement"}}
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "do/does not",
+          "role": "aux",
+          "label": {"vi": "trợ động từ phủ định", "en": "negative auxiliary"},
+          "options": [{"text": "do not"}, {"text": "does not"}, {"text": "don't"}, {"text": "doesn't"}]
+        },
+        {
+          "text": "stative verb",
+          "role": "verb",
+          "label": {"vi": "động từ trạng thái", "en": "stative verb"},
+          "options": [
+            {"text": "know"},
+            {"text": "like"},
+            {"text": "love"},
+            {"text": "want"},
+            {"text": "need"},
+            {"text": "understand"}
+          ]
+        },
+        {"text": "complement", "role": "complement", "label": {"vi": "bổ ngữ", "en": "complement"}}
+      ],
+      "question": [
+        {
+          "text": "Do/Does",
+          "role": "aux",
+          "label": {"vi": "trợ động từ nghi vấn", "en": "question auxiliary"},
+          "options": [{"text": "Do"}, {"text": "Does"}]
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "stative verb",
+          "role": "verb",
+          "label": {"vi": "động từ trạng thái", "en": "stative verb"},
+          "options": [
+            {"text": "know"},
+            {"text": "like"},
+            {"text": "love"},
+            {"text": "want"},
+            {"text": "need"},
+            {"text": "understand"}
+          ]
+        },
+        {"text": "complement", "role": "complement", "label": {"vi": "bổ ngữ", "en": "complement"}}
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "I know her name.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 2, "end": 6, "role": "verb"},
+        {"start": 7, "end": 15, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "know diễn tả trạng thái biết, không dùng am knowing.",
+        "en": "know describes a state of knowledge, not am knowing."
+      },
+      "translation": {"vi": "Tôi biết tên cô ấy.", "en": "I know her name."}
+    },
+    {
+      "text": "He likes science.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 3, "end": 8, "role": "verb"},
+        {"start": 9, "end": 16, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Với he/she/it, động từ trạng thái vẫn thêm -s: likes.",
+        "en": "With he/she/it, the stative verb still takes -s: likes."
+      },
+      "translation": {"vi": "Cậu ấy thích khoa học.", "en": "He likes science."}
+    },
+    {
+      "text": "We need more time.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 3, "end": 7, "role": "verb"},
+        {"start": 8, "end": 17, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "need diễn tả nhu cầu, dùng hiện tại đơn.",
+        "en": "need describes a need, so it uses the present simple."
+      },
+      "translation": {"vi": "Chúng tôi cần thêm thời gian.", "en": "We need more time."}
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "I am knowing the answer.",
+      "right": "I know the answer.",
+      "reason": {
+        "vi": "know ở nghĩa 'biết' là trạng thái, không dùng dạng tiếp diễn am knowing.",
+        "en": "know in the sense of 'have knowledge' is a state, so the continuous form am knowing is not used."
+      },
+      "error_tag": "other",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "She ___ a new phone.",
+      "options": [{"text": "wants", "error_tag": null}, {"text": "is wanting", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "want ở nghĩa mong muốn là trạng thái, dùng hiện tại đơn: wants.",
+        "en": "want in the sense of desire is a state, so use the present simple: wants."
+      }
+    },
+    {
+      "q": "They ___ the question.",
+      "options": [
+        {"text": "understand", "error_tag": null},
+        {"text": "are understanding", "error_tag": "tense"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "understand là động từ trạng thái, dùng hiện tại đơn.",
+        "en": "understand is a stative verb, so use the present simple."
+      }
+    },
+    {
+      "q": "He ___ his teacher.",
+      "options": [{"text": "likes", "error_tag": null}, {"text": "like", "error_tag": "agreement"}],
+      "answer": 0,
+      "explain": {"vi": "Với he, động từ thêm -s: likes.", "en": "With he, the verb takes -s: likes."}
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về điều bạn biết, thích hoặc cần, dùng động từ trạng thái ở hiện tại đơn.",
+      "en": "Write one sentence about something you know, like or need, using a stative verb in the present simple."
+    },
+    "placeholder": "I know ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {
+          "role": "verb",
+          "any_of": [
+            "know",
+            "knows",
+            "like",
+            "likes",
+            "love",
+            "loves",
+            "want",
+            "wants",
+            "need",
+            "needs",
+            "understand",
+            "understands"
+          ]
+        }
+      ]
+    },
+    "sample": {"text": "I know this place."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790830460",
+    "generated_at": "2026-10-01T04:54:20Z",
+    "r5_source": {
+      "ids": ["a1-stative-verbs-introduction"],
+      "content_version": 2,
+      "content_hash": "7796e844a3f9322492ebadfcc591e24d1eca7ea89e82304f5b322701bfa4ab99",
+      "corrections": [
+        {
+          "r5_id": "a1-stative-verbs-introduction",
+          "issue": "R5 lists 'have' as a stative verb for possession, but at A1 'have' also forms actions (have a shower) and the point's scope names only know, like, love, want, need, understand.",
+          "fix": "Removed 'have' from the stative verb options and kept the six verbs named in the scope."
+        },
+        {
+          "r5_id": "a1-stative-verbs-introduction",
+          "issue": "R5's guided practice asks learners to classify 'run' and 'play' as stative or action, but those verbs are not part of this point's target set and the task is not a cloze.",
+          "fix": "Replaced with three cloze questions using only the target stative verbs and real learner errors (is wanting, are understanding, like for he)."
+        },
+        {
+          "r5_id": "a1-stative-verbs-introduction",
+          "issue": "R5 gives no negative or question forms, so learners cannot produce them.",
+          "fix": "Added negative (do/does not + stative verb) and question (Do/Does + subject + stative verb) formulas with examples."
+        }
+      ]
+    },
+    "metadata_stale": true
+  },
+  "review": null
+}

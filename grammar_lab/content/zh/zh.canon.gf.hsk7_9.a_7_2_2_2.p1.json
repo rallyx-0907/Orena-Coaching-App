@@ -1,0 +1,201 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk7_9.a_7_2_2_2.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.future_plans",
+  "level": {"framework": "hsk3", "value": "8", "rank": 8},
+  "prereqs": ["zh.canon.gf.hsk7_9.a_7_2_2_1.p2"],
+  "contrasts": [],
+  "error_tags": ["particle"],
+  "source_refs": {"gf0025": ["gf0025.hsk7_9.068", "gf0025.hsk7_9.069", "gf0025.hsk7_9.070", "gf0025.hsk7_9.071"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 巴不得", "en": "Chinese grammar: 巴不得"},
+    "native_title": "巴不得",
+    "level": {"framework": "hsk3", "value": "8", "rank": 8},
+    "summary": {
+      "vi": "巴不得 diễn tả mong muốn rất mạnh mẽ, thường là mong một điều gì đó xảy ra ngay hoặc thoát khỏi tình huống khó chịu.",
+      "en": "巴不得 expresses a strong wish, often wanting something to happen right away or to escape an unpleasant situation."
+    },
+    "sub": {"vi": "mong muốn mạnh mẽ", "en": "strong wish"},
+    "native_title_pinyin": ["bā", "bù", "dé"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn rất muốn một việc gì đó xảy ra ngay lập tức, thường vì tình huống hiện tại khó chịu.",
+      "en": "When you strongly want something to happen immediately, often because the current situation is unpleasant."
+    },
+    {
+      "vi": "Khi bạn muốn thoát khỏi một việc bắt buộc hoặc tình huống không thoải mái.",
+      "en": "When you want to escape an obligation or an uncomfortable situation."
+    },
+    {
+      "vi": "Khi mong muốn mạnh đến mức gần như không thể chờ thêm được nữa.",
+      "en": "When the wish is so strong that you almost cannot wait any longer."
+    },
+    {
+      "vi": "Dùng trong câu khẳng định, sau chủ ngữ, trước động từ hoặc tính từ.",
+      "en": "Used in affirmative sentences, after the subject and before a verb or adjective."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "巴不得",
+        "role": "marker",
+        "label": {"vi": "dấu hiệu mong muốn mạnh", "en": "strong-wish marker"},
+        "pinyin": ["bā", "bu", "de"]
+      },
+      {
+        "text": "动词/形容词",
+        "role": "verb",
+        "label": {"vi": "động từ / tính từ", "en": "verb / adjective"},
+        "pinyin": ["dòng", "cí", "", "xíng", "róng", "cí"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "我巴不得现在就走。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 4, "role": "marker"},
+        {"start": 7, "end": 8, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "巴不得 đứng sau chủ ngữ, thể hiện mong muốn rời đi ngay lập tức.",
+        "en": "巴不得 follows the subject and shows a strong wish to leave right away."
+      },
+      "translation": {"vi": "Tôi chỉ mong đi ngay bây giờ.", "en": "I can't wait to leave right now."},
+      "pinyin": ["wǒ", "bā", "bu", "de", "xiàn", "zài", "jiù", "zǒu", ""]
+    },
+    {
+      "text": "他巴不得早点回家。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 4, "role": "marker"},
+        {"start": 6, "end": 8, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "巴不得 diễn tả mong muốn về nhà sớm, không thể chờ thêm.",
+        "en": "巴不得 expresses a strong wish to go home early, with no patience left."
+      },
+      "translation": {"vi": "Anh ấy chỉ mong sớm về nhà.", "en": "He can't wait to go home early."},
+      "pinyin": ["tā", "bā", "bu", "de", "zǎo", "diǎn", "huí", "jiā", ""]
+    },
+    {
+      "text": "我们巴不得马上放假。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 5, "role": "marker"},
+        {"start": 7, "end": 9, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "巴不得 đứng trước động từ 放假, nhấn mạnh mong muốn được nghỉ ngay.",
+        "en": "巴不得 comes before the verb 放假, stressing the wish to be on holiday immediately."
+      },
+      "translation": {
+        "vi": "Chúng tôi chỉ mong được nghỉ ngay lập tức.",
+        "en": "We can't wait for the holiday to start."
+      },
+      "pinyin": ["wǒ", "men", "bā", "bu", "de", "mǎ", "shàng", "fàng", "jià", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "我巴不得现在就走的。",
+      "right": "我巴不得现在就走。",
+      "reason": {
+        "vi": "Người học thêm 的 vào cuối câu vì quen với cấu trúc 是……的, nhưng 巴不得 không dùng 的 ở cuối câu.",
+        "en": "Learners add 的 at the end because they are used to the 是……的 structure, but 巴不得 does not take 的 at the end of the sentence."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong_pinyin": ["wǒ", "bā", "bu", "de", "xiàn", "zài", "jiù", "zǒu", "de", ""],
+      "right_pinyin": ["wǒ", "bā", "bu", "de", "xiàn", "zài", "jiù", "zǒu", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "我___现在就走。",
+      "options": [
+        {"text": "巴不得", "error_tag": null, "pinyin": ["bā", "bu", "de"]},
+        {"text": "巴不得的", "error_tag": "particle", "pinyin": ["bā", "bu", "de", "de"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "巴不得 là một cụm cố định, không thêm 的 vào giữa hoặc cuối cụm.",
+        "en": "巴不得 is a fixed expression; do not add 的 inside or after it."
+      },
+      "q_pinyin": ["wǒ", "", "", "", "xiàn", "zài", "jiù", "zǒu", ""]
+    },
+    {
+      "q": "他___早点回家。",
+      "options": [
+        {"text": "巴不得", "error_tag": null, "pinyin": ["bā", "bu", "de"]},
+        {"text": "巴不得的", "error_tag": "particle", "pinyin": ["bā", "bu", "de", "de"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 巴不得 là động từ hoặc tính từ, không thêm 的.",
+        "en": "After 巴不得 comes a verb or adjective; do not add 的."
+      },
+      "q_pinyin": ["tā", "", "", "", "zǎo", "diǎn", "huí", "jiā", ""]
+    },
+    {
+      "q": "我们___马上放假。",
+      "options": [
+        {"text": "巴不得", "error_tag": null, "pinyin": ["bā", "bu", "de"]},
+        {"text": "巴不得的", "error_tag": "particle", "pinyin": ["bā", "bu", "de", "de"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "巴不得 không đi với 的; nó đứng trước động từ 放假.",
+        "en": "巴不得 does not take 的; it comes before the verb 放假."
+      },
+      "q_pinyin": ["wǒ", "men", "", "", "", "mǎ", "shàng", "fàng", "jià", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về điều bạn rất mong xảy ra ngay bây giờ, dùng 巴不得.",
+      "en": "Write one sentence about something you strongly wish would happen right now, using 巴不得."
+    },
+    "placeholder": "我巴不得……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "marker", "any_of": ["巴不得"]}, {"role": "verb", "regex": "[\\u4e00-\\u9fff]"}]
+    },
+    "sample": {
+      "text": "我巴不得现在就回家。",
+      "pinyin": ["wǒ", "bā", "bu", "de", "xiàn", "zài", "jiù", "huí", "jiā", ""]
+    },
+    "placeholder_pinyin": ["wǒ", "bā", "bu", "de", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790834640",
+    "generated_at": "2026-10-01T06:04:00Z",
+    "metadata_stale": true
+  },
+  "review": null
+}

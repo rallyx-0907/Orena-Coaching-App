@@ -4,230 +4,224 @@
   "version": 1,
   "target_lang": "en",
   "function": "fn.pronoun_reference",
-  "level": {
-    "framework": "cefr",
-    "value": "A1",
-    "rank": 1
-  },
+  "level": {"framework": "cefr", "value": "A1", "rank": 1},
   "prereqs": [],
   "contrasts": [],
-  "error_tags": [
-    "word_choice"
-  ],
-  "source_refs": {
-    "r5": [
-      "a1-this-that-these-those"
-    ]
-  },
+  "error_tags": ["word_choice"],
+  "source_refs": {"r5": ["a1-this-that-these-those"]},
   "point_type": "other",
+  "sequence": 2,
+  "aliases": ["a1-this-that-these-those"],
+  "source_anchors": {"status": "anchored", "items": [{"source": "core_inventory", "code": "146", "level": "A1"}]},
   "header": {
-    "title": {
-      "vi": "This / that / these / those",
-      "en": "This / that / these / those"
-    },
+    "title": {"vi": "This / that / these / those", "en": "This / that / these / those"},
     "native_title": "This / that / these / those",
-    "sub": {
-      "vi": "gần/xa, ít/nhiều",
-      "en": "near/far, singular/plural"
-    },
-    "level": {
-      "framework": "cefr",
-      "value": "A1",
-      "rank": 1
-    },
+    "level": {"framework": "cefr", "value": "A1", "rank": 1},
     "summary": {
-      "vi": "This/these chỉ vật gần; that/those chỉ vật xa. This/that đi với số ít, these/those với số nhiều.",
-      "en": "This/these point to things near you; that/those to things farther away. This/that are singular, these/those plural."
-    }
+      "vi": "Dùng this/that/these/those để chỉ người hoặc vật theo số lượng (một/nhiều) và khoảng cách (gần/xa) so với người nói.",
+      "en": "Use this/that/these/those to point to people or things by number (one/many) and distance (near/far) from the speaker."
+    },
+    "sub": {"vi": "chỉ định gần/xa", "en": "near and far pointing"}
   },
   "when_to_use": [
     {
-      "vi": "Dùng this cho một vật gần và these cho nhiều vật gần.",
-      "en": "Use this for one nearby thing and these for several nearby things."
+      "vi": "Khi bạn chỉ một vật ở ngay cạnh mình: this + danh từ số ít.",
+      "en": "When you point to one thing right next to you: this + singular noun."
     },
     {
-      "vi": "Dùng that cho một vật xa và those cho nhiều vật xa.",
-      "en": "Use that for one farther thing and those for several farther things."
+      "vi": "Khi bạn chỉ một vật ở xa hơn: that + danh từ số ít.",
+      "en": "When you point to one thing farther away: that + singular noun."
+    },
+    {
+      "vi": "Khi bạn chỉ nhiều vật ở gần: these + danh từ số nhiều.",
+      "en": "When you point to several things near you: these + plural noun."
+    },
+    {
+      "vi": "Khi bạn chỉ nhiều vật ở xa: those + danh từ số nhiều.",
+      "en": "When you point to several things farther away: those + plural noun."
     }
   ],
   "pattern": {
     "formula": [
       {
-        "text": "demonstrative",
-        "role": "marker",
-        "label": {
-          "vi": "từ chỉ định",
-          "en": "demonstrative"
-        }
+        "text": "this/that",
+        "role": "other",
+        "label": {"vi": "từ chỉ định số ít", "en": "singular demonstrative"},
+        "options": [{"text": "this"}, {"text": "that"}]
       },
+      {"text": "N", "role": "object", "label": {"vi": "danh từ số ít", "en": "singular noun"}},
+      {"text": "be", "role": "verb", "label": {"vi": "động từ to be", "en": "verb be"}},
       {
-        "text": "N",
-        "role": "object",
-        "label": {
-          "vi": "danh từ",
-          "en": "noun"
-        },
-        "optional": true
+        "text": "complement",
+        "role": "complement",
+        "label": {"vi": "phần bổ sung", "en": "complement"}
       }
     ],
-    "illustration": {
-      "kind": "none"
-    }
+    "variants": {
+      "negative": [
+        {
+          "text": "this/that",
+          "role": "other",
+          "label": {"vi": "từ chỉ định số ít", "en": "singular demonstrative"},
+          "options": [{"text": "this"}, {"text": "that"}]
+        },
+        {"text": "N", "role": "object", "label": {"vi": "danh từ số ít", "en": "singular noun"}},
+        {"text": "be", "role": "verb", "label": {"vi": "động từ to be", "en": "verb be"}},
+        {"text": "not", "role": "other", "label": {"vi": "phủ định", "en": "negator"}},
+        {
+          "text": "complement",
+          "role": "complement",
+          "label": {"vi": "phần bổ sung", "en": "complement"}
+        }
+      ],
+      "question": [
+        {"text": "be", "role": "verb", "label": {"vi": "động từ to be", "en": "verb be"}},
+        {
+          "text": "this/that",
+          "role": "other",
+          "label": {"vi": "từ chỉ định số ít", "en": "singular demonstrative"},
+          "options": [{"text": "this"}, {"text": "that"}]
+        },
+        {"text": "N", "role": "object", "label": {"vi": "danh từ số ít", "en": "singular noun"}},
+        {
+          "text": "complement",
+          "role": "complement",
+          "label": {"vi": "phần bổ sung", "en": "complement"}
+        }
+      ]
+    },
+    "illustration": {"kind": "none"}
   },
   "examples": [
     {
-      "text": "This book is mine.",
+      "text": "This bag is mine.",
       "form": "affirmative",
       "spans": [
-        {
-          "start": 0,
-          "end": 4,
-          "role": "marker"
-        },
-        {
-          "start": 5,
-          "end": 9,
-          "role": "object"
-        }
+        {"start": 0, "end": 4, "role": "other"},
+        {"start": 5, "end": 8, "role": "object"},
+        {"start": 9, "end": 11, "role": "verb"},
+        {"start": 12, "end": 16, "role": "complement"}
       ],
       "annotation": {
-        "vi": "This dùng với một vật ở gần.",
-        "en": "This is used with one nearby thing."
+        "vi": "this chỉ một vật số ít ở gần người nói.",
+        "en": "this points to one singular thing near the speaker."
       },
-      "translation": {
-        "vi": "This dùng với một vật ở gần.",
-        "en": "This is used with one nearby thing."
-      }
+      "translation": {"vi": "Cái túi này là của tôi.", "en": "This bag is mine."}
     },
     {
-      "text": "Those shoes are expensive.",
+      "text": "That house is very old.",
       "form": "affirmative",
       "spans": [
-        {
-          "start": 0,
-          "end": 5,
-          "role": "marker"
-        },
-        {
-          "start": 6,
-          "end": 11,
-          "role": "object"
-        }
+        {"start": 0, "end": 4, "role": "other"},
+        {"start": 5, "end": 10, "role": "object"},
+        {"start": 11, "end": 13, "role": "verb"},
+        {"start": 14, "end": 22, "role": "complement"}
       ],
       "annotation": {
-        "vi": "Those dùng với nhiều vật ở xa.",
-        "en": "Those is used with plural things farther away."
+        "vi": "that chỉ một vật số ít ở xa người nói.",
+        "en": "that points to one singular thing farther from the speaker."
       },
-      "translation": {
-        "vi": "Those dùng với nhiều vật ở xa.",
-        "en": "Those is used with plural things farther away."
-      }
+      "translation": {"vi": "Ngôi nhà kia rất cũ.", "en": "That house is very old."}
+    },
+    {
+      "text": "These shoes are comfortable.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 5, "role": "other"},
+        {"start": 6, "end": 11, "role": "object"},
+        {"start": 12, "end": 15, "role": "verb"},
+        {"start": 16, "end": 27, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "these chỉ nhiều vật ở gần người nói.",
+        "en": "these points to several things near the speaker."
+      },
+      "translation": {"vi": "Những đôi giày này rất thoải mái.", "en": "These shoes are comfortable."}
     }
   ],
   "compare": [],
   "common_mistakes": [
     {
-      "wrong": "This shoes are new.",
-      "right": "These shoes are new.",
+      "wrong": "This books are new.",
+      "right": "These books are new.",
       "reason": {
-        "vi": "Shoes là số nhiều, nên dùng these/those.",
-        "en": "Shoes is plural, so use these/those."
+        "vi": "books là danh từ số nhiều nên phải dùng these, không dùng this (số ít).",
+        "en": "books is a plural noun, so use these, not this (singular)."
       },
       "error_tag": "word_choice",
-      "l1": [
-        "vi"
-      ]
+      "l1": ["vi"]
     }
   ],
   "quick_practice": [
     {
-      "q": "___ apple here is mine.",
-      "options": [
-        {
-          "text": "This",
-          "error_tag": null
-        },
-        {
-          "text": "These",
-          "error_tag": "word_choice"
-        },
-        {
-          "text": "Those",
-          "error_tag": "word_choice"
-        }
-      ],
+      "q": "___ bag is mine.",
+      "options": [{"text": "This", "error_tag": null}, {"text": "These", "error_tag": "agreement"}],
       "answer": 0,
       "explain": {
-        "vi": "Apple số ít và ở gần: this.",
-        "en": "One nearby apple takes this."
+        "vi": "bag là danh từ số ít nên dùng this, không dùng these.",
+        "en": "bag is singular, so use this, not these."
       }
     },
     {
-      "q": "___ books here are new.",
-      "options": [
-        {
-          "text": "These",
-          "error_tag": null
-        },
-        {
-          "text": "This",
-          "error_tag": "word_choice"
-        },
-        {
-          "text": "That",
-          "error_tag": "word_choice"
-        }
-      ],
+      "q": "___ shoes are comfortable.",
+      "options": [{"text": "These", "error_tag": null}, {"text": "This", "error_tag": "agreement"}],
       "answer": 0,
       "explain": {
-        "vi": "Books số nhiều và ở gần: these.",
-        "en": "Nearby plural books take these."
+        "vi": "shoes là danh từ số nhiều nên dùng these, không dùng this.",
+        "en": "shoes is plural, so use these, not this."
       }
     },
     {
-      "q": "___ house over there is old.",
-      "options": [
-        {
-          "text": "That",
-          "error_tag": null
-        },
-        {
-          "text": "This",
-          "error_tag": "word_choice"
-        },
-        {
-          "text": "These",
-          "error_tag": "word_choice"
-        }
-      ],
+      "q": "___ house is very old.",
+      "options": [{"text": "That", "error_tag": null}, {"text": "Those", "error_tag": "agreement"}],
       "answer": 0,
       "explain": {
-        "vi": "Một ngôi nhà ở xa: that.",
-        "en": "One house farther away takes that."
+        "vi": "house là danh từ số ít nên dùng that, không dùng those.",
+        "en": "house is singular, so use that, not those."
       }
     }
   ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một vật ở gần bạn, dùng this hoặc these.",
+      "en": "Write one sentence about something near you, using this or these."
+    },
+    "placeholder": "This ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "other", "any_of": ["this", "that", "these", "those"]},
+        {"role": "object", "regex": "[a-z]+"},
+        {"role": "verb", "any_of": ["is", "are"]}
+      ]
+    },
+    "sample": {"text": "This phone is new."}
+  },
   "status": "draft_ai",
   "flags": [],
   "provenance": {
-    "model": "openai:gpt-5.6-sol",
-    "prompt_version": "direct-author.en-a1.v1",
-    "run_id": "chatgpt.en-a1.20260930",
-    "generated_at": "2026-09-30T10:35:00Z"
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v10",
+    "run_id": "generate.1790828963",
+    "generated_at": "2026-10-01T04:29:23Z",
+    "r5_source": {
+      "ids": ["a1-this-that-these-those"],
+      "content_version": 2,
+      "content_hash": "0d5bec3e156d2666c8374adae76f65c5fea93882fa1866ed7b4e580c3b51fb77",
+      "corrections": [
+        {
+          "r5_id": "a1-this-that-these-those",
+          "issue": "R5 examples only show affirmative sentences and do not include negative or question forms.",
+          "fix": "Added negative and question formula variants and ensured examples cover affirmative forms."
+        },
+        {
+          "r5_id": "a1-this-that-these-those",
+          "issue": "R5 mistakes list includes 'Those car is expensive' but the correct form 'That car is expensive' is not clearly tied to the singular/plural agreement rule.",
+          "fix": "Kept one clear mistake 'This books are new' and its correction to focus on the core agreement error."
+        }
+      ]
+    }
   },
-  "review": null,
-  "sequence": 2,
-  "source_anchors": {
-    "status": "anchored",
-    "items": [
-      {
-        "source": "core_inventory",
-        "code": "146",
-        "level": "A1"
-      }
-    ]
-  },
-  "aliases": [
-    "a1-this-that-these-those"
-  ]
+  "review": null
 }

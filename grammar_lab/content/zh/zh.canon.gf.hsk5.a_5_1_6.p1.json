@@ -1,0 +1,343 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk5.a_5_1_6.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.sentence_basics",
+  "level": {"framework": "hsk3", "value": "5", "rank": 5},
+  "prereqs": ["zh.canon.gf.hsk5.a_5_1_4_3.p1"],
+  "contrasts": [],
+  "error_tags": ["particle"],
+  "source_refs": {"gf0025": ["gf0025.hsk5.016"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Trợ từ: 其他助词：也好", "en": "Particles: 其他助词：也好"},
+    "native_title": "其他助词：也好",
+    "level": {"framework": "hsk3", "value": "5", "rank": 5},
+    "summary": {
+      "vi": "也好 dùng để nêu một lựa chọn hoặc một khả năng được chấp nhận, thường đứng sau danh từ hay cụm động từ và có thể lặp lại cho nhiều lựa chọn.",
+      "en": "也好 marks an option or possibility that is acceptable, usually following a noun or verb phrase and often repeated for multiple options."
+    },
+    "sub": {"vi": "lựa chọn chấp nhận", "en": "acceptable options"},
+    "native_title_pinyin": ["qí", "tā", "zhù", "cí", "", "yě", "hǎo"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói một phương án nào đó cũng được, không quan trọng lắm.",
+      "en": "When you want to say that one option is also fine, not very important."
+    },
+    {
+      "vi": "Khi liệt kê hai hay nhiều lựa chọn và mỗi lựa chọn đều có thể chấp nhận.",
+      "en": "When listing two or more options and each one is acceptable."
+    },
+    {
+      "vi": "Khi bạn muốn nhượng bộ rằng dù chọn cách nào thì kết quả cũng không đổi.",
+      "en": "When you want to concede that whichever way is chosen, the result does not change."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "X",
+        "role": "other",
+        "label": {"vi": "lựa chọn (danh từ hoặc cụm động từ)", "en": "option (noun or verb phrase)"},
+        "pinyin": [""]
+      },
+      {
+        "text": "也好",
+        "role": "particle",
+        "label": {"vi": "trợ từ lựa chọn", "en": "option particle"},
+        "pinyin": ["yě", "hǎo"]
+      },
+      {
+        "text": "X",
+        "role": "other",
+        "label": {"vi": "lựa chọn thứ hai", "en": "second option"},
+        "optional": true,
+        "pinyin": [""]
+      },
+      {
+        "text": "也好",
+        "role": "particle",
+        "label": {"vi": "trợ từ lựa chọn", "en": "option particle"},
+        "optional": true,
+        "pinyin": ["yě", "hǎo"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "坐地铁也好，坐公交也好，都能到那儿。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "other"},
+        {"start": 3, "end": 5, "role": "particle"},
+        {"start": 6, "end": 9, "role": "other"},
+        {"start": 9, "end": 11, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "Hai lựa chọn được nêu ra, mỗi lựa chọn theo sau bởi 也好.",
+        "en": "Two options are listed, each followed by 也好."
+      },
+      "translation": {
+        "vi": "Đi tàu điện ngầm cũng được, đi xe buýt cũng được, đều có thể đến đó.",
+        "en": "Taking the subway is fine, taking the bus is fine too; both can get there."
+      },
+      "pinyin": [
+        "zuò",
+        "dì",
+        "tiě",
+        "yě",
+        "hǎo",
+        "",
+        "zuò",
+        "gōng",
+        "jiāo",
+        "yě",
+        "hǎo",
+        "",
+        "dōu",
+        "néng",
+        "dào",
+        "nà",
+        "r",
+        ""
+      ]
+    },
+    {
+      "text": "今天去也好，明天去也好，我都可以。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "other"},
+        {"start": 3, "end": 5, "role": "particle"},
+        {"start": 6, "end": 9, "role": "other"},
+        {"start": 9, "end": 11, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "Hai thời điểm khác nhau đều được chấp nhận, mỗi cụm theo sau bởi 也好.",
+        "en": "Two different times are both acceptable, each phrase followed by 也好."
+      },
+      "translation": {
+        "vi": "Hôm nay đi cũng được, ngày mai đi cũng được, tôi đều có thể.",
+        "en": "Going today is fine, going tomorrow is fine too; either works for me."
+      },
+      "pinyin": [
+        "jīn",
+        "tiān",
+        "qù",
+        "yě",
+        "hǎo",
+        "",
+        "míng",
+        "tiān",
+        "qù",
+        "yě",
+        "hǎo",
+        "",
+        "wǒ",
+        "dōu",
+        "kě",
+        "yǐ",
+        ""
+      ]
+    },
+    {
+      "text": "茶也好，咖啡也好，我都喜欢。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "other"},
+        {"start": 1, "end": 3, "role": "particle"},
+        {"start": 4, "end": 6, "role": "other"},
+        {"start": 6, "end": 8, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "Hai danh từ được nêu như hai lựa chọn, mỗi danh từ theo sau bởi 也好.",
+        "en": "Two nouns are given as options, each followed by 也好."
+      },
+      "translation": {
+        "vi": "Trà cũng được, cà phê cũng được, tôi đều thích.",
+        "en": "Tea is fine, coffee is fine too; I like both."
+      },
+      "pinyin": ["chá", "yě", "hǎo", "", "kā", "fēi", "yě", "hǎo", "", "wǒ", "dōu", "xǐ", "huān", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "坐地铁也，坐公交也，都能到那儿。",
+      "right": "坐地铁也好，坐公交也好，都能到那儿。",
+      "reason": {
+        "vi": "Người học cắt ngắn 也好 thành 也 vì nghĩ 也 đã đủ nghĩa 'cũng', nhưng 也好 là một trợ từ cố định, không thể rút gọn.",
+        "en": "Learners shorten 也好 to 也 because they think 也 alone means 'also', but 也好 is a fixed particle and cannot be reduced."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong_pinyin": [
+        "zuò",
+        "dì",
+        "tiě",
+        "yě",
+        "",
+        "zuò",
+        "gōng",
+        "jiāo",
+        "yě",
+        "",
+        "dōu",
+        "néng",
+        "dào",
+        "nà",
+        "r",
+        ""
+      ],
+      "right_pinyin": [
+        "zuò",
+        "dì",
+        "tiě",
+        "yě",
+        "hǎo",
+        "",
+        "zuò",
+        "gōng",
+        "jiāo",
+        "yě",
+        "hǎo",
+        "",
+        "dōu",
+        "néng",
+        "dào",
+        "nà",
+        "r",
+        ""
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "坐地铁___，坐公交也好，都能到那儿。",
+      "options": [
+        {"text": "也好", "error_tag": null, "pinyin": ["yě", "hǎo"]},
+        {"text": "也", "error_tag": "particle", "pinyin": ["yě"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Cần trợ từ đầy đủ 也好 sau lựa chọn thứ nhất; 也 một mình không đủ nghĩa trong cấu trúc này.",
+        "en": "The full particle 也好 is needed after the first option; 也 alone does not work in this structure."
+      },
+      "q_pinyin": [
+        "zuò",
+        "dì",
+        "tiě",
+        "",
+        "",
+        "",
+        "",
+        "zuò",
+        "gōng",
+        "jiāo",
+        "yě",
+        "hǎo",
+        "",
+        "dōu",
+        "néng",
+        "dào",
+        "nà",
+        "r",
+        ""
+      ]
+    },
+    {
+      "q": "茶也好，咖啡___，我都喜欢。",
+      "options": [
+        {"text": "也好", "error_tag": null, "pinyin": ["yě", "hǎo"]},
+        {"text": "也", "error_tag": "particle", "pinyin": ["yě"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Lựa chọn thứ hai cũng cần 也好 đầy đủ để song song với lựa chọn thứ nhất.",
+        "en": "The second option also needs the full 也好 to parallel the first option."
+      },
+      "q_pinyin": ["chá", "yě", "hǎo", "", "kā", "fēi", "", "", "", "", "wǒ", "dōu", "xǐ", "huān", ""]
+    },
+    {
+      "q": "今天去也好，明天去___，我都可以。",
+      "options": [
+        {"text": "也好", "error_tag": null, "pinyin": ["yě", "hǎo"]},
+        {"text": "也", "error_tag": "particle", "pinyin": ["yě"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Cấu trúc song song đòi hỏi 也好 ở cả hai vế; thiếu 好 là lỗi trợ từ.",
+        "en": "The parallel structure requires 也好 in both clauses; missing 好 is a particle error."
+      },
+      "q_pinyin": [
+        "jīn",
+        "tiān",
+        "qù",
+        "yě",
+        "hǎo",
+        "",
+        "míng",
+        "tiān",
+        "qù",
+        "",
+        "",
+        "",
+        "",
+        "wǒ",
+        "dōu",
+        "kě",
+        "yǐ",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu nói rằng hai lựa chọn nào đó đều ổn với bạn, dùng 也好 sau mỗi lựa chọn.",
+      "en": "Write a sentence saying that two options are both fine with you, using 也好 after each option."
+    },
+    "placeholder": "……也好，……也好，我都可以。",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "particle", "any_of": ["也好"]}, {"role": "particle", "any_of": ["也好"]}]
+    },
+    "sample": {
+      "text": "喝茶也好，喝咖啡也好，我都可以。",
+      "pinyin": [
+        "hē",
+        "chá",
+        "yě",
+        "hǎo",
+        "",
+        "hē",
+        "kā",
+        "fēi",
+        "yě",
+        "hǎo",
+        "",
+        "wǒ",
+        "dōu",
+        "kě",
+        "yǐ",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["", "", "yě", "hǎo", "", "", "", "yě", "hǎo", "", "wǒ", "dōu", "kě", "yǐ", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790833643",
+    "generated_at": "2026-10-01T05:47:23Z",
+    "metadata_stale": true
+  },
+  "review": null
+}

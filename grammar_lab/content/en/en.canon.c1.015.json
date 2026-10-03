@@ -1,0 +1,274 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.c1.015",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.existence",
+  "level": {"framework": "cefr", "value": "C1", "rank": 5},
+  "prereqs": [],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["c1-existential-there-with-complex-noun-phrases"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["c1-existential-there-with-complex-noun-phrases"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {
+      "vi": "Existential there with complex noun phrases",
+      "en": "Existential there with complex noun phrases"
+    },
+    "native_title": "Existential there with complex noun phrases",
+    "level": {"framework": "cefr", "value": "C1", "rank": 5},
+    "summary": {
+      "vi": "Cấu trúc 'there' tồn tại dùng để giới thiệu sự tồn tại của một thực thể hoặc sự việc mới, thường với cụm danh từ phức tạp có hậu tố bổ nghĩa.",
+      "en": "Existential 'there' introduces the existence of a new entity or event, often with a complex postmodified noun phrase."
+    },
+    "sub": {"vi": "tồn tại với cụm danh từ phức", "en": "existential with complex NPs"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nêu sự tồn tại của một thực thể mới mà không đặt nó làm chủ đề câu.",
+      "en": "When you want to state the existence of a new entity without making it the topic of the sentence."
+    },
+    {
+      "vi": "Khi cụm danh từ theo sau 'there' có hậu tố bổ nghĩa dài (mệnh đề quan hệ, cụm giới từ, phân từ).",
+      "en": "When the noun phrase after 'there' carries a long postmodifier (relative clause, prepositional phrase, participle)."
+    },
+    {
+      "vi": "Khi bạn muốn dùng các động từ như 'appear', 'seem', 'remain' để diễn đạt sắc thái suy đoán hoặc tiếp diễn.",
+      "en": "When you want to use verbs like 'appear', 'seem', 'remain' to express inference or continuation."
+    },
+    {
+      "vi": "Trong văn viết trang trọng, khi cần trình bày thông tin mới một cách khách quan.",
+      "en": "In formal writing, when presenting new information objectively."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "There", "role": "other", "label": {"vi": "chủ ngữ giả", "en": "dummy subject"}},
+      {
+        "text": "be",
+        "role": "verb",
+        "label": {"vi": "động từ be", "en": "verb be"},
+        "options": [
+          {"text": "is"},
+          {"text": "are"},
+          {"text": "was"},
+          {"text": "were"},
+          {"text": "has been"},
+          {"text": "have been"}
+        ]
+      },
+      {"text": "NP", "role": "object", "label": {"vi": "cụm danh từ", "en": "noun phrase"}},
+      {
+        "text": "postmodifier",
+        "role": "complement",
+        "label": {"vi": "hậu tố bổ nghĩa", "en": "postmodifier"},
+        "optional": true
+      }
+    ],
+    "variants": {
+      "negative": [
+        {"text": "There", "role": "other", "label": {"vi": "chủ ngữ giả", "en": "dummy subject"}},
+        {
+          "text": "be",
+          "role": "verb",
+          "label": {"vi": "động từ be", "en": "verb be"},
+          "options": [
+            {"text": "is"},
+            {"text": "are"},
+            {"text": "was"},
+            {"text": "were"},
+            {"text": "has been"},
+            {"text": "have been"}
+          ]
+        },
+        {"text": "not", "role": "other", "label": {"vi": "phủ định", "en": "negator"}},
+        {"text": "NP", "role": "object", "label": {"vi": "cụm danh từ", "en": "noun phrase"}},
+        {
+          "text": "postmodifier",
+          "role": "complement",
+          "label": {"vi": "hậu tố bổ nghĩa", "en": "postmodifier"},
+          "optional": true
+        }
+      ],
+      "question": [
+        {
+          "text": "be",
+          "role": "verb",
+          "label": {"vi": "động từ be", "en": "verb be"},
+          "options": [
+            {"text": "is"},
+            {"text": "are"},
+            {"text": "was"},
+            {"text": "were"},
+            {"text": "has been"},
+            {"text": "have been"}
+          ]
+        },
+        {"text": "there", "role": "other", "label": {"vi": "chủ ngữ giả", "en": "dummy subject"}},
+        {"text": "NP", "role": "object", "label": {"vi": "cụm danh từ", "en": "noun phrase"}},
+        {
+          "text": "postmodifier",
+          "role": "complement",
+          "label": {"vi": "hậu tố bổ nghĩa", "en": "postmodifier"},
+          "optional": true
+        }
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "There has been a substantial decline in response rates.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 5, "role": "other"},
+        {"start": 6, "end": 14, "role": "verb"},
+        {"start": 15, "end": 36, "role": "object"},
+        {"start": 37, "end": 54, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Giới thiệu sự tồn tại của một sự việc mới: sự giảm đáng kể.",
+        "en": "Introduces the existence of a new event: a substantial decline."
+      },
+      "translation": {
+        "vi": "Đã có sự giảm đáng kể tỷ lệ phản hồi.",
+        "en": "There has been a substantial decline in response rates."
+      }
+    },
+    {
+      "text": "There appear to be several factors contributing to the change.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 5, "role": "other"},
+        {"start": 6, "end": 18, "role": "verb"},
+        {"start": 19, "end": 34, "role": "object"},
+        {"start": 35, "end": 61, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Dùng 'appear to be' để diễn đạt sự suy đoán về sự tồn tại của nhiều yếu tố.",
+        "en": "Uses 'appear to be' to express inference about the existence of several factors."
+      },
+      "translation": {
+        "vi": "Dường như có vài yếu tố góp phần vào thay đổi.",
+        "en": "There appear to be several factors contributing to the change."
+      }
+    },
+    {
+      "text": "There remains a significant gap between policy and practice.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 5, "role": "other"},
+        {"start": 6, "end": 13, "role": "verb"},
+        {"start": 14, "end": 31, "role": "object"},
+        {"start": 32, "end": 59, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Dùng 'remains' để nhấn mạnh sự tồn tại tiếp diễn của một khoảng cách.",
+        "en": "Uses 'remains' to emphasize the continued existence of a gap."
+      },
+      "translation": {
+        "vi": "Vẫn còn khoảng cách đáng kể giữa chính sách và thực tế.",
+        "en": "There remains a significant gap between policy and practice."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "There has been several problems.",
+      "right": "There have been several problems.",
+      "reason": {
+        "vi": "Người học thường chia động từ theo 'there' mà quên rằng động từ phải hòa hợp với cụm danh từ theo sau.",
+        "en": "Learners often make the verb agree with 'there' instead of the following noun phrase."
+      },
+      "error_tag": "other",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "There ___ a sharp increase in applications this year.",
+      "options": [{"text": "has been", "error_tag": null}, {"text": "have been", "error_tag": "agreement"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Cụm danh từ 'a sharp increase' số ít nên dùng 'has been'.",
+        "en": "The noun phrase 'a sharp increase' is singular, so 'has been' is correct."
+      }
+    },
+    {
+      "q": "There ___ several factors that explain the phenomenon.",
+      "options": [
+        {"text": "appear to be", "error_tag": null},
+        {"text": "appears to be", "error_tag": "agreement"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Cụm danh từ 'several factors' số nhiều nên dùng 'appear to be'.",
+        "en": "The noun phrase 'several factors' is plural, so 'appear to be' is correct."
+      }
+    },
+    {
+      "q": "There ___ a significant gap between policy and practice.",
+      "options": [{"text": "remains", "error_tag": null}, {"text": "remain", "error_tag": "agreement"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Cụm danh từ 'a significant gap' số ít nên dùng 'remains'.",
+        "en": "The noun phrase 'a significant gap' is singular, so 'remains' is correct."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu giới thiệu sự tồn tại của một vấn đề hoặc xu hướng trong lĩnh vực của bạn, dùng cấu trúc 'There + be/verb + cụm danh từ phức'.",
+      "en": "Write a sentence introducing the existence of a problem or trend in your field, using 'There + be/verb + complex noun phrase'."
+    },
+    "placeholder": "There has been ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "other", "any_of": ["There"]},
+        {
+          "role": "verb",
+          "any_of": ["has been", "have been", "is", "are", "was", "were", "remains", "appear to be"]
+        },
+        {"role": "object", "regex": "(?i)\\b(a|an|the|several|many|some|no|every|each)\\s+\\w+"}
+      ]
+    },
+    "sample": {"text": "There has been a noticeable shift in consumer behaviour."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790831466",
+    "generated_at": "2026-10-01T05:11:06Z",
+    "r5_source": {
+      "ids": ["c1-existential-there-with-complex-noun-phrases"],
+      "content_version": 2,
+      "content_hash": "9a8f6a397d2e6d93033cf403cc4604a7999c527eacea81494a77ebaecddf8a2d",
+      "corrections": [
+        {
+          "r5_id": "c1-existential-there-with-complex-noun-phrases",
+          "issue": "The R5 lesson included a mistake 'There appears several factors to explain it.' which is not a typical learner error for this point; the correct form 'There appear to be several factors that explain it.' is already covered.",
+          "fix": "Removed this mistake and replaced with a more common agreement error: 'There has been several problems.'"
+        },
+        {
+          "r5_id": "c1-existential-there-with-complex-noun-phrases",
+          "issue": "The R5 lesson did not provide a clear formula or structured explanation with slots and roles.",
+          "fix": "Added a detailed formula with slots for 'There', verb, noun phrase, and optional postmodifier, including negative and question forms."
+        },
+        {
+          "r5_id": "c1-existential-there-with-complex-noun-phrases",
+          "issue": "The R5 lesson lacked quick practice and personal production activities aligned with the point.",
+          "fix": "Added three quick practice questions and a personal production task with a pattern rule."
+        }
+      ]
+    }
+  },
+  "review": null
+}

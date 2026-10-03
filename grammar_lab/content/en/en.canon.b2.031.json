@@ -1,0 +1,203 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b2.031",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.information_structure",
+  "level": {"framework": "cefr", "value": "B2", "rank": 4},
+  "prereqs": ["en.canon.b2.019"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["b2-emphatic-do"]},
+  "point_type": "other",
+  "sequence": 4,
+  "aliases": ["b2-emphatic-do"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Emphatic do", "en": "Emphatic do"},
+    "native_title": "Emphatic do",
+    "level": {"framework": "cefr", "value": "B2", "rank": 4},
+    "summary": {
+      "vi": "Trợ động từ do/does/did đứng trước động từ chính ở dạng nguyên thể trong câu khẳng định để nhấn mạnh sự thật, phản bác hoặc chỉnh sửa điều vừa nói.",
+      "en": "The auxiliary do/does/did before a base verb in an affirmative clause emphasises truth, counters doubt, or corrects what was said."
+    },
+    "sub": {"vi": "nhấn mạnh sự thật", "en": "emphatic truth"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi người nghe có vẻ không tin hoặc vừa phủ nhận điều bạn nói.",
+      "en": "When the listener seems not to believe you or has just denied what you said."
+    },
+    {
+      "vi": "Khi bạn muốn sửa lại một thông tin sai vừa được đưa ra.",
+      "en": "When you want to correct a piece of information that was just given wrongly."
+    },
+    {
+      "vi": "Khi bạn muốn thể hiện cảm xúc thật mạnh trong lời mời hoặc yêu cầu lịch sự.",
+      "en": "When you want to add strong feeling to an invitation or a polite request."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {
+        "text": "do/does/did",
+        "role": "aux",
+        "label": {"vi": "trợ động từ nhấn mạnh", "en": "emphatic auxiliary"},
+        "options": [{"text": "do"}, {"text": "does"}, {"text": "did"}]
+      },
+      {
+        "text": "V",
+        "role": "verb",
+        "label": {"vi": "động từ chính (nguyên thể)", "en": "main verb (base form)"}
+      },
+      {
+        "text": "O/C",
+        "role": "object",
+        "label": {"vi": "tân ngữ / bổ ngữ", "en": "object / complement"},
+        "optional": true
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "I do appreciate your help.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 2, "end": 4, "role": "aux"},
+        {"start": 5, "end": 15, "role": "verb"},
+        {"start": 16, "end": 25, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "do nhấn mạnh rằng sự trân trọng là thật, không chỉ là lời nói xã giao.",
+        "en": "do stresses that the appreciation is real, not just polite words."
+      },
+      "translation": {
+        "vi": "Tôi thực sự trân trọng sự giúp đỡ của bạn.",
+        "en": "I really do appreciate your help."
+      }
+    },
+    {
+      "text": "She does know the answer.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 8, "role": "aux"},
+        {"start": 9, "end": 13, "role": "verb"},
+        {"start": 14, "end": 24, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "does phản bác ý cho rằng cô ấy không biết; động từ chính giữ nguyên thể know.",
+        "en": "does counters the idea that she does not know; the main verb stays in the base form know."
+      },
+      "translation": {"vi": "Cô ấy thực sự biết câu trả lời.", "en": "She really does know the answer."}
+    },
+    {
+      "text": "He did send the email yesterday.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 3, "end": 6, "role": "aux"},
+        {"start": 7, "end": 11, "role": "verb"},
+        {"start": 12, "end": 21, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "did khẳng định mạnh mẽ hành động đã xảy ra trong quá khứ; send ở dạng nguyên thể.",
+        "en": "did strongly asserts that the action happened in the past; send stays in the base form."
+      },
+      "translation": {
+        "vi": "Anh ấy đúng là đã gửi email hôm qua.",
+        "en": "He really did send the email yesterday."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "She does knows the answer.",
+      "right": "She does know the answer.",
+      "reason": {
+        "vi": "Sau does, động từ chính phải ở dạng nguyên thể, không chia -s.",
+        "en": "After does, the main verb must be in the base form, without -s."
+      },
+      "error_tag": "other",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "He ___ call me yesterday, even though you said he forgot.",
+      "options": [{"text": "did", "error_tag": null}, {"text": "does", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "yesterday chỉ quá khứ nên dùng did; does sai thì.",
+        "en": "yesterday signals past, so did is correct; does is the wrong tense."
+      }
+    },
+    {
+      "q": "She ___ care about this project, no matter what people say.",
+      "options": [{"text": "does", "error_tag": null}, {"text": "do", "error_tag": "agreement"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Chủ ngữ She số ít nên dùng does; do sai hòa hợp chủ ngữ.",
+        "en": "The singular subject She takes does; do is the wrong agreement."
+      }
+    },
+    {
+      "q": "I ___ understand your point, but I still disagree.",
+      "options": [{"text": "do", "error_tag": null}, {"text": "does", "error_tag": "agreement"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Chủ ngữ I đi với do; does sai hòa hợp chủ ngữ.",
+        "en": "The subject I takes do; does is the wrong agreement."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu khẳng định dùng do/does/did + động từ nguyên thể để nhấn mạnh điều bạn thực sự làm hoặc cảm nhận.",
+      "en": "Write one affirmative sentence using do/does/did + base verb to emphasise something you really do or feel."
+    },
+    "placeholder": "I do ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "aux", "any_of": ["do", "does", "did"]}, {"role": "verb", "regex": "\\b[a-z]+\\b"}]
+    },
+    "sample": {"text": "I do believe that practice makes perfect."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790831264",
+    "generated_at": "2026-10-01T05:07:44Z",
+    "r5_source": {
+      "ids": ["b2-emphatic-do"],
+      "content_version": 2,
+      "content_hash": "16b0a358ca7ef83ec98f8678700359c665d3460a1702f24b73e6ec6fb311c684",
+      "corrections": [
+        {
+          "r5_id": "b2-emphatic-do",
+          "issue": "R5 includes 'Do sit down.' as an example of emphatic do, but this is an imperative use, not the affirmative-clause emphasis this point teaches.",
+          "fix": "Removed the imperative example; kept only affirmative-clause examples with do/does/did + base verb."
+        },
+        {
+          "r5_id": "b2-emphatic-do",
+          "issue": "R5's explanation_vi is generic and does not state the core form rule clearly.",
+          "fix": "Wrote a direct summary and when_to_use conditions that name the form and the three main functions."
+        },
+        {
+          "r5_id": "b2-emphatic-do",
+          "issue": "R5 lists 'Fronting for emphasis' as a required contrast but provides no contrast content.",
+          "fix": "Left compare empty because the schema for this point requires no compare entries; the contrast is not developed in R5."
+        }
+      ]
+    },
+    "metadata_stale": true
+  },
+  "review": null
+}

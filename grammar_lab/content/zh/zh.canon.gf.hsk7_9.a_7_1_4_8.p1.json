@@ -1,0 +1,295 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk7_9.a_7_1_4_8.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.possibility",
+  "level": {"framework": "hsk3", "value": "7", "rank": 7},
+  "prereqs": ["zh.canon.gf.hsk7_9.a_7_1_4_7.p1"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"gf0025": ["gf0025.hsk7_9.028"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Trạng từ: 按说", "en": "Adverbs: 按说"},
+    "native_title": "按说",
+    "level": {"framework": "hsk3", "value": "7", "rank": 7},
+    "summary": {
+      "vi": "按说 dùng để nói rằng theo lẽ thường hay theo suy đoán thì sự việc phải như vậy, thường dẫn đến một kết quả trái ngược.",
+      "en": "按说 marks a statement as what common sense or expectation says should be the case, often followed by a contrasting result."
+    },
+    "sub": {"vi": "theo lẽ thường", "en": "by rights"},
+    "native_title_pinyin": ["àn", "shuō"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói theo lý thuyết hoặc theo lẽ thường thì phải như vậy, nhưng thực tế lại khác.",
+      "en": "Use it when you want to say that by theory or common sense something should be so, but reality is different."
+    },
+    {
+      "vi": "Khi bạn dựa vào một thông tin đã biết để suy ra một kết luận hợp lý.",
+      "en": "Use it when you infer a reasonable conclusion from known information."
+    },
+    {
+      "vi": "Khi bạn muốn phản bác nhẹ hoặc tỏ ý ngạc nhiên trước một kết quả không như mong đợi.",
+      "en": "Use it to mildly object or express surprise at an unexpected result."
+    },
+    {
+      "vi": "Thường đứng đầu câu hoặc sau chủ ngữ, trước vị ngữ chính.",
+      "en": "It usually comes at the beginning of the sentence or after the subject, before the main predicate."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "按说",
+        "role": "marker",
+        "label": {"vi": "trạng từ mở đầu", "en": "introductory adverb"},
+        "pinyin": ["àn", "shuō"]
+      },
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}, "pinyin": [""]},
+      {
+        "text": "VP",
+        "role": "verb",
+        "label": {"vi": "vị ngữ", "en": "predicate"},
+        "pinyin": ["", ""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "按说今天应该下雨，可是太阳很大。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "marker"},
+        {"start": 2, "end": 4, "role": "subject"},
+        {"start": 4, "end": 8, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "按说 đặt trước điều được suy đoán theo lẽ thường; vế sau nêu kết quả trái ngược.",
+        "en": "按说 introduces what common sense predicts; the second clause gives the contrasting result."
+      },
+      "translation": {
+        "vi": "Theo lẽ thường hôm nay phải mưa, nhưng nắng rất to.",
+        "en": "By rights it should rain today, but the sun is very strong."
+      },
+      "pinyin": [
+        "àn",
+        "shuō",
+        "jīn",
+        "tiān",
+        "yīng",
+        "gāi",
+        "xià",
+        "yǔ",
+        "",
+        "kě",
+        "shì",
+        "tài",
+        "yáng",
+        "hěn",
+        "dà",
+        ""
+      ]
+    },
+    {
+      "text": "按说他已经到了，怎么还没来？",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "marker"},
+        {"start": 2, "end": 3, "role": "subject"},
+        {"start": 3, "end": 7, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "按说 dựa trên thông tin đã biết để suy ra điều đáng lẽ đã xảy ra.",
+        "en": "按说 bases a reasonable expectation on known information."
+      },
+      "translation": {
+        "vi": "Theo lẽ thường anh ấy đã đến rồi, sao vẫn chưa thấy?",
+        "en": "By rights he should have arrived already; why isn't he here yet?"
+      },
+      "pinyin": ["àn", "shuō", "tā", "yǐ", "jīng", "dào", "le", "", "zěn", "me", "hái", "méi", "lái", ""]
+    },
+    {
+      "text": "按说这个办法很好，但是做起来很难。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "marker"},
+        {"start": 2, "end": 6, "role": "subject"},
+        {"start": 6, "end": 8, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "按说 nêu đánh giá theo lý thuyết; vế sau nói thực tế khó khăn.",
+        "en": "按说 states a theoretical judgment; the second clause gives the practical difficulty."
+      },
+      "translation": {
+        "vi": "Theo lẽ thường cách này rất tốt, nhưng làm thì rất khó.",
+        "en": "By rights this method is very good, but it is hard to put into practice."
+      },
+      "pinyin": [
+        "àn",
+        "shuō",
+        "zhè",
+        "ge",
+        "bàn",
+        "fǎ",
+        "hěn",
+        "hǎo",
+        "",
+        "dàn",
+        "shì",
+        "zuò",
+        "qǐ",
+        "lái",
+        "hěn",
+        "nán",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "按说他应该来，但是他没来。",
+      "right": "按说他应该来，但是他来了。",
+      "reason": {
+        "vi": "按说 không phải động từ nên không được thêm 了 hoặc 过 vào chính nó; lỗi thường gặp là đặt 了 sai vị trí hoặc dùng 按说 như vị ngữ chính.",
+        "en": "按说 is not a verb, so it cannot take 了 or 过 itself; a common mistake is putting 了 in the wrong place or using 按说 as the main predicate."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong_pinyin": ["àn", "shuō", "tā", "yīng", "gāi", "lái", "", "dàn", "shì", "tā", "méi", "lái", ""],
+      "right_pinyin": ["àn", "shuō", "tā", "yīng", "gāi", "lái", "", "dàn", "shì", "tā", "lái", "le", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "按说今天___下雨，可是太阳很大。",
+      "options": [
+        {"text": "应该", "error_tag": null, "pinyin": ["yīng", "gāi"]},
+        {"text": "已经", "error_tag": "word_choice", "pinyin": ["yǐ", "jīng"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "按说 dẫn ra điều được suy đoán theo lẽ thường, nên dùng 应该; 已经 không hợp nghĩa.",
+        "en": "按说 introduces what common sense predicts, so 应该 fits; 已经 does not fit the meaning."
+      },
+      "q_pinyin": [
+        "àn",
+        "shuō",
+        "jīn",
+        "tiān",
+        "",
+        "",
+        "",
+        "xià",
+        "yǔ",
+        "",
+        "kě",
+        "shì",
+        "tài",
+        "yáng",
+        "hěn",
+        "dà",
+        ""
+      ]
+    },
+    {
+      "q": "按说他___到了，怎么还没来？",
+      "options": [
+        {"text": "已经", "error_tag": null, "pinyin": ["yǐ", "jīng"]},
+        {"text": "刚才", "error_tag": "word_choice", "pinyin": ["gāng", "cái"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "按说 dựa trên thông tin đã biết để suy đoán, nên dùng 已经; 刚才 chỉ thời điểm vừa qua, không hợp.",
+        "en": "按说 bases an expectation on known information, so 已经 fits; 刚才 refers to a past moment and does not fit."
+      },
+      "q_pinyin": ["àn", "shuō", "tā", "", "", "", "dào", "le", "", "zěn", "me", "hái", "méi", "lái", ""]
+    },
+    {
+      "q": "按说这个办法很好，___做起来很难。",
+      "options": [
+        {"text": "但是", "error_tag": null, "pinyin": ["dàn", "shì"]},
+        {"text": "因为", "error_tag": "conjunction", "pinyin": ["yīn", "wèi"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "按说 thường đi với vế sau biểu thị kết quả trái ngược, nên dùng 但是; 因为 chỉ nguyên nhân, không hợp.",
+        "en": "按说 is often followed by a contrasting result, so 但是 fits; 因为 marks cause and does not fit."
+      },
+      "q_pinyin": [
+        "àn",
+        "shuō",
+        "zhè",
+        "ge",
+        "bàn",
+        "fǎ",
+        "hěn",
+        "hǎo",
+        "",
+        "",
+        "",
+        "",
+        "zuò",
+        "qǐ",
+        "lái",
+        "hěn",
+        "nán",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng 按说 để nói điều theo lẽ thường phải như vậy, nhưng thực tế lại khác.",
+      "en": "Write one sentence with 按说 saying what should be so by common sense, but reality is different."
+    },
+    "placeholder": "按说……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "marker", "any_of": ["按说"]},
+        {"role": "subject", "regex": "[\\u4e00-\\u9fff]+"},
+        {"role": "verb", "regex": "[\\u4e00-\\u9fff]+"}
+      ]
+    },
+    "sample": {
+      "text": "按说今天应该下雨，可是太阳很大。",
+      "pinyin": [
+        "àn",
+        "shuō",
+        "jīn",
+        "tiān",
+        "yīng",
+        "gāi",
+        "xià",
+        "yǔ",
+        "",
+        "kě",
+        "shì",
+        "tài",
+        "yáng",
+        "hěn",
+        "dà",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["àn", "shuō", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790834538",
+    "generated_at": "2026-10-01T06:02:18Z",
+    "metadata_stale": true
+  },
+  "review": null
+}

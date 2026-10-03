@@ -1,0 +1,251 @@
+{
+  "schema_version": "0.4",
+  "id": "en.present_simple.schedules",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.future_plans",
+  "level": {"framework": "cefr", "value": "A2", "rank": 2},
+  "prereqs": ["en.present_simple.habit"],
+  "contrasts": ["en.present_continuous.arrangements"],
+  "error_tags": ["tense"],
+  "source_refs": {"r5": ["a2-present-simple-for-schedules"]},
+  "point_type": "tense_aspect",
+  "sequence": 4,
+  "aliases": ["a2-present-simple-for-schedules"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Hiện tại đơn cho lịch trình", "en": "Present simple for timetables"},
+    "native_title": "Present simple for schedules",
+    "level": {"framework": "cefr", "value": "A2", "rank": 2},
+    "summary": {
+      "vi": "Thì hiện tại đơn dùng để nói về các sự kiện xảy ra theo lịch trình, thời gian biểu hoặc chương trình đã định sẵn.",
+      "en": "The present simple is used to talk about events that happen according to a timetable, schedule, or fixed programme."
+    },
+    "sub": {"vi": "lịch trình", "en": "schedules"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi nói về giờ tàu, xe, máy bay chạy theo lịch cố định.",
+      "en": "When talking about train, bus, or flight times that follow a fixed timetable."
+    },
+    {
+      "vi": "Khi nói về thời gian bắt đầu hoặc kết thúc của một sự kiện đã được lên lịch như phim, khóa học, trận đấu.",
+      "en": "When talking about the start or end time of a scheduled event such as a film, course, or match."
+    },
+    {
+      "vi": "Khi hỏi hoặc trả lời về giờ mở cửa, đóng cửa của cửa hàng, bảo tàng, văn phòng.",
+      "en": "When asking or answering about opening or closing times of shops, museums, or offices."
+    },
+    {
+      "vi": "Khi sự việc được nhìn như một sự thật theo lịch, không phải kế hoạch cá nhân.",
+      "en": "When the event is seen as a scheduled fact, not a personal plan."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}},
+      {
+        "text": "-s/-es",
+        "role": "verb",
+        "label": {"vi": "hậu tố ngôi thứ ba số ít", "en": "third-person singular ending"},
+        "optional": true
+      },
+      {"text": "time", "role": "time", "label": {"vi": "mốc thời gian", "en": "time expression"}}
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "do/does",
+          "role": "aux",
+          "label": {"vi": "trợ động từ", "en": "auxiliary"},
+          "options": [{"text": "do"}, {"text": "does"}]
+        },
+        {"text": "not", "role": "aux", "label": {"vi": "phủ định", "en": "negator"}},
+        {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}},
+        {"text": "time", "role": "time", "label": {"vi": "mốc thời gian", "en": "time expression"}}
+      ],
+      "question": [
+        {
+          "text": "do/does",
+          "role": "aux",
+          "label": {"vi": "trợ động từ", "en": "auxiliary"},
+          "options": [{"text": "do"}, {"text": "does"}]
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}},
+        {"text": "time", "role": "time", "label": {"vi": "mốc thời gian", "en": "time expression"}}
+      ]
+    },
+    "illustration": {"kind": "timeline", "timeline": {"shape": "future_plan"}}
+  },
+  "examples": [
+    {
+      "text": "The train leaves at 6:30 tomorrow.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 9, "role": "subject"},
+        {"start": 10, "end": 16, "role": "verb"},
+        {"start": 17, "end": 33, "role": "time"}
+      ],
+      "annotation": {
+        "vi": "Động từ 'leaves' chia theo ngôi thứ ba số ít vì chủ ngữ 'The train' số ít.",
+        "en": "The verb 'leaves' takes the third-person singular ending because the subject 'The train' is singular."
+      },
+      "translation": {"vi": "Tàu rời ga lúc 6:30 ngày mai.", "en": "The train leaves at 6:30 tomorrow."}
+    },
+    {
+      "text": "The course starts next Monday.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 10, "role": "subject"},
+        {"start": 11, "end": 17, "role": "verb"},
+        {"start": 18, "end": 29, "role": "time"}
+      ],
+      "annotation": {
+        "vi": "Thì hiện tại đơn diễn tả một sự kiện đã được lên lịch trong tương lai.",
+        "en": "The present simple describes a scheduled event in the future."
+      },
+      "translation": {"vi": "Khóa học bắt đầu thứ Hai tới.", "en": "The course starts next Monday."}
+    },
+    {
+      "text": "What time does the museum open tomorrow?",
+      "form": "question",
+      "spans": [
+        {"start": 10, "end": 14, "role": "aux"},
+        {"start": 15, "end": 25, "role": "subject"},
+        {"start": 26, "end": 30, "role": "verb"},
+        {"start": 31, "end": 39, "role": "time"}
+      ],
+      "annotation": {
+        "vi": "Câu hỏi dùng trợ động từ 'does' vì chủ ngữ số ít, động từ chính giữ nguyên mẫu.",
+        "en": "The question uses the auxiliary 'does' because the subject is singular, and the main verb stays in base form."
+      },
+      "translation": {"vi": "Mấy giờ bảo tàng mở cửa ngày mai?", "en": "What time does the museum open tomorrow?"}
+    }
+  ],
+  "compare": [
+    {
+      "with": "en.present_continuous.arrangements",
+      "this_example": "The train leaves at 8.",
+      "other_example": "We're leaving at 8.",
+      "this_meaning": {
+        "vi": "Thì hiện tại đơn dùng cho sự kiện theo lịch trình cố định, không phụ thuộc vào ý muốn cá nhân.",
+        "en": "The present simple is used for events that follow a fixed timetable, independent of personal intention."
+      },
+      "other_meaning": {
+        "vi": "Thì hiện tại tiếp diễn dùng cho kế hoạch cá nhân đã sắp xếp, có thể thay đổi.",
+        "en": "The present continuous is used for personal arrangements that have been made and can change."
+      }
+    }
+  ],
+  "common_mistakes": [
+    {
+      "wrong": "The class start at nine tomorrow.",
+      "right": "The class starts at nine tomorrow.",
+      "reason": {
+        "vi": "Chủ ngữ 'The class' là số ít nên động từ phải thêm -s ở thì hiện tại đơn.",
+        "en": "The subject 'The class' is singular, so the verb must take -s in the present simple."
+      },
+      "error_tag": "tense",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "The bus ___ at 7:15 tomorrow.",
+      "options": [{"text": "arrives", "error_tag": null}, {"text": "arrive", "error_tag": "agreement"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Chủ ngữ 'The bus' số ít nên động từ 'arrives' phải thêm -s.",
+        "en": "The subject 'The bus' is singular, so the verb 'arrives' takes -s."
+      }
+    },
+    {
+      "q": "What time ___ the film start?",
+      "options": [{"text": "does", "error_tag": null}, {"text": "do", "error_tag": "agreement"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Chủ ngữ 'the film' số ít nên dùng trợ động từ 'does'.",
+        "en": "The subject 'the film' is singular, so the auxiliary 'does' is used."
+      }
+    },
+    {
+      "q": "The shop ___ at 9 p.m. on Sundays.",
+      "options": [{"text": "closes", "error_tag": null}, {"text": "close", "error_tag": "agreement"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Chủ ngữ 'The shop' số ít nên động từ 'closes' phải thêm -s.",
+        "en": "The subject 'The shop' is singular, so the verb 'closes' takes -s."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về thời gian bắt đầu hoặc kết thúc của một sự kiện theo lịch trình (ví dụ: bộ phim, chuyến tàu, lớp học).",
+      "en": "Write one sentence about the start or end time of a scheduled event (e.g., a film, a train, a class)."
+    },
+    "placeholder": "The film starts ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {
+          "role": "verb",
+          "any_of": [
+            "start",
+            "starts",
+            "leave",
+            "leaves",
+            "open",
+            "opens",
+            "close",
+            "closes",
+            "begin",
+            "begins",
+            "finish",
+            "finishes",
+            "arrive",
+            "arrives",
+            "depart",
+            "departs",
+            "end",
+            "ends"
+          ]
+        },
+        {
+          "role": "time",
+          "regex": "(?i)\\b(at|on|in|tomorrow|next|this|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|January|February|March|April|May|June|July|August|September|October|November|December)\\b"
+        }
+      ]
+    },
+    "sample": {"text": "The film starts at 7 p.m. tomorrow."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790830532",
+    "generated_at": "2026-10-01T04:55:32Z",
+    "r5_source": {
+      "ids": ["a2-present-simple-for-schedules"],
+      "content_version": 2,
+      "content_hash": "54f422754153149b15e10068d2a38a3752599ed3ce0230a720d6a379887cefd3",
+      "corrections": [
+        {
+          "r5_id": "a2-present-simple-for-schedules",
+          "issue": "The R5 example 'The film finishes at ten.' lacks a future time marker, so it could be read as a habitual statement rather than a scheduled future event.",
+          "fix": "Added 'tomorrow' to make the future schedule clear: 'The film finishes at ten tomorrow.'"
+        },
+        {
+          "r5_id": "a2-present-simple-for-schedules",
+          "issue": "The R5 mistake 'The train is leave at eight.' is not a typical learner error for this point; learners usually omit -s or use present continuous, not 'is leave'.",
+          "fix": "Replaced with a more realistic mistake: 'The class start at nine tomorrow.' (missing third-person -s)."
+        }
+      ]
+    }
+  },
+  "review": null
+}

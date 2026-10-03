@@ -1,0 +1,312 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk7_9.a_7_5_2_12.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.linking",
+  "level": {"framework": "hsk3", "value": "8", "rank": 8},
+  "prereqs": ["zh.canon.gf.hsk7_9.a_7_5_2_11.p1"],
+  "contrasts": [],
+  "error_tags": ["word_order", "complement", "conjunction"],
+  "source_refs": {"gf0025": ["gf0025.hsk7_9.126", "gf0025.hsk7_9.127"]},
+  "point_type": "word_order",
+  "sequence": 9,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Câu phức: （要+）动词+就+动词+个+补语", "en": "Complex sentences: （要+）动词+就+动词+个+补语"},
+    "native_title": "（要+）动词+就+动词+个+补语",
+    "level": {"framework": "hsk3", "value": "8", "rank": 8},
+    "summary": {
+      "vi": "Mẫu câu phức （要）动词 + 就 + 动词 + 个 + 补语 dùng để nói nếu đã làm gì thì làm cho trọn vẹn, thường nhấn mạnh kết quả hoặc mức độ.",
+      "en": "The complex pattern （要）verb + 就 + verb + 个 + complement says that if you do something, you do it thoroughly, often stressing the result or degree."
+    },
+    "sub": {"vi": "làm cho trọn vẹn", "en": "do it thoroughly"},
+    "native_title_pinyin": ["", "yào", "", "", "dòng", "cí", "", "jiù", "", "dòng", "cí", "", "gè", "", "bǔ", "yǔ"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói nếu đã làm việc gì thì nên làm đến cùng, làm cho đã.",
+      "en": "When you want to say that if you do something, you should do it fully or to your heart's content."
+    },
+    {
+      "vi": "Khi nhấn mạnh kết quả hoặc mức độ của hành động, thường dùng trong khẩu ngữ.",
+      "en": "When you want to stress the result or degree of an action, often in spoken Chinese."
+    },
+    {
+      "vi": "Khi đưa ra lời khuyên hoặc quyết tâm, ví dụ: đã học thì học cho hiểu.",
+      "en": "When giving advice or expressing determination, for example: if you study, study until you understand."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "（要）",
+        "role": "aux",
+        "label": {"vi": "phó từ điều kiện (có thể lược bỏ)", "en": "conditional adverb (optional)"},
+        "optional": true,
+        "pinyin": ["", "yào", ""]
+      },
+      {
+        "text": "动词",
+        "role": "verb",
+        "label": {"vi": "động từ thứ nhất", "en": "first verb"},
+        "pinyin": ["dòng", "cí"]
+      },
+      {
+        "text": "就",
+        "role": "connector",
+        "label": {"vi": "liên từ nối", "en": "linking adverb"},
+        "pinyin": ["jiù"]
+      },
+      {
+        "text": "动词",
+        "role": "verb",
+        "label": {"vi": "động từ lặp lại", "en": "repeated verb"},
+        "pinyin": ["dòng", "cí"]
+      },
+      {
+        "text": "个",
+        "role": "particle",
+        "label": {"vi": "trợ từ nối với bổ ngữ", "en": "linking particle before the complement"},
+        "pinyin": ["gè"]
+      },
+      {
+        "text": "补语",
+        "role": "complement",
+        "label": {"vi": "bổ ngữ chỉ kết quả hoặc mức độ", "en": "result or degree complement"},
+        "pinyin": ["bǔ", "yǔ"]
+      }
+    ],
+    "illustration": {"kind": "word_order"}
+  },
+  "examples": [
+    {
+      "text": "你要学，就学个明白。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 1, "end": 2, "role": "aux"},
+        {"start": 2, "end": 3, "role": "verb"},
+        {"start": 4, "end": 5, "role": "connector"},
+        {"start": 5, "end": 6, "role": "verb"},
+        {"start": 6, "end": 7, "role": "particle"},
+        {"start": 7, "end": 9, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Nhấn mạnh nếu đã học thì học cho hiểu rõ.",
+        "en": "Stresses that if you study, you study until you understand clearly."
+      },
+      "translation": {
+        "vi": "Nếu bạn học thì học cho hiểu rõ.",
+        "en": "If you study, study until you understand clearly."
+      },
+      "pinyin": ["nǐ", "yào", "xué", "", "jiù", "xué", "gè", "míng", "bai", ""]
+    },
+    {
+      "text": "我们要玩，就玩个痛快。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 2, "end": 3, "role": "aux"},
+        {"start": 3, "end": 4, "role": "verb"},
+        {"start": 5, "end": 6, "role": "connector"},
+        {"start": 6, "end": 7, "role": "verb"},
+        {"start": 7, "end": 8, "role": "particle"},
+        {"start": 8, "end": 10, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Nếu đã chơi thì chơi cho thỏa thích.",
+        "en": "If we play, we play to our heart's content."
+      },
+      "translation": {
+        "vi": "Nếu chúng ta chơi thì chơi cho thỏa thích.",
+        "en": "If we play, we play to our heart's content."
+      },
+      "pinyin": ["wǒ", "men", "yào", "wán", "", "jiù", "wán", "gè", "tòng", "kuài", ""]
+    },
+    {
+      "text": "他要吃，就吃个够。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 1, "end": 2, "role": "aux"},
+        {"start": 2, "end": 3, "role": "verb"},
+        {"start": 4, "end": 5, "role": "connector"},
+        {"start": 5, "end": 6, "role": "verb"},
+        {"start": 6, "end": 7, "role": "particle"},
+        {"start": 7, "end": 8, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Nếu đã ăn thì ăn cho đủ, cho đã.",
+        "en": "If he eats, he eats until he has had enough."
+      },
+      "translation": {"vi": "Nếu anh ấy ăn thì ăn cho đã.", "en": "If he eats, he eats until he has had enough."},
+      "pinyin": ["tā", "yào", "chī", "", "jiù", "chī", "gè", "gòu", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "你要学，学就个明白。",
+      "right": "你要学，就学个明白。",
+      "reason": {
+        "vi": "Đặt 就 sau động từ thay vì trước động từ lặp lại; trong mẫu này 就 phải đứng trước động từ thứ hai.",
+        "en": "Placing 就 after the verb instead of before the repeated verb; in this pattern 就 must come before the second verb."
+      },
+      "error_tag": "word_order",
+      "l1": ["vi"],
+      "wrong_pinyin": ["nǐ", "yào", "xué", "", "xué", "jiù", "gè", "míng", "bai", ""],
+      "right_pinyin": ["nǐ", "yào", "xué", "", "jiù", "xué", "gè", "míng", "bai", ""]
+    },
+    {
+      "wrong": "我们要玩，就玩痛快。",
+      "right": "我们要玩，就玩个痛快。",
+      "reason": {
+        "vi": "Thiếu 个 trước bổ ngữ; trong mẫu này 个 là bắt buộc để nối động từ với bổ ngữ.",
+        "en": "Missing 个 before the complement; in this pattern 个 is required to link the verb with the complement."
+      },
+      "error_tag": "complement",
+      "l1": ["vi"],
+      "wrong_pinyin": ["wǒ", "men", "yào", "wán", "", "jiù", "wán", "tòng", "kuài", ""],
+      "right_pinyin": ["wǒ", "men", "yào", "wán", "", "jiù", "wán", "gè", "tòng", "kuài", ""]
+    },
+    {
+      "wrong": "他要吃，就吃个够，但是他不饿。",
+      "right": "他要吃，就吃个够。",
+      "reason": {
+        "vi": "Dùng 但是 nối hai vế không cùng loại logic; mẫu này chỉ diễn đạt điều kiện và kết quả, không dùng liên từ tương phản.",
+        "en": "Using 但是 to link two clauses that are not logically contrastive; this pattern expresses condition and result, so a contrastive conjunction is out of place."
+      },
+      "error_tag": "conjunction",
+      "l1": ["vi"],
+      "wrong_pinyin": ["tā", "yào", "chī", "", "jiù", "chī", "gè", "gòu", "", "dàn", "shì", "tā", "bù", "è", ""],
+      "right_pinyin": ["tā", "yào", "chī", "", "jiù", "chī", "gè", "gòu", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "你要学，___学个明白。",
+      "options": [
+        {"text": "就", "error_tag": null, "pinyin": ["jiù"]},
+        {"text": "也", "error_tag": "conjunction", "pinyin": ["yě"]},
+        {"text": "还", "error_tag": "conjunction", "pinyin": ["hái"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Mẫu câu dùng 就 để nối điều kiện với kết quả; 也 và 还 không phù hợp.",
+        "en": "The pattern uses 就 to link condition and result; 也 and 还 do not fit."
+      },
+      "q_pinyin": ["nǐ", "yào", "xué", "", "", "", "", "xué", "gè", "míng", "bai", ""]
+    },
+    {
+      "q": "我们要玩，就玩___痛快。",
+      "options": [
+        {"text": "个", "error_tag": null, "pinyin": ["gè"]},
+        {"text": "得", "error_tag": "particle", "pinyin": ["de"]},
+        {"text": "的", "error_tag": "particle", "pinyin": ["de"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Trong mẫu này phải dùng 个 trước bổ ngữ, không dùng 得 hay 的.",
+        "en": "In this pattern you must use 个 before the complement, not 得 or 的."
+      },
+      "q_pinyin": ["wǒ", "men", "yào", "wán", "", "jiù", "wán", "", "", "", "tòng", "kuài", ""]
+    },
+    {
+      "q": "他要吃，就吃个___。",
+      "options": [
+        {"text": "够", "error_tag": null, "pinyin": ["gòu"]},
+        {"text": "完", "error_tag": "complement", "pinyin": ["wán"]},
+        {"text": "好", "error_tag": "complement", "pinyin": ["hǎo"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Bổ ngữ 够 diễn tả mức độ đủ, phù hợp với nghĩa 'ăn cho đã'; 完 và 好 không đúng nghĩa ở đây.",
+        "en": "The complement 够 expresses sufficiency, matching the meaning 'eat until satisfied'; 完 and 好 do not fit here."
+      },
+      "q_pinyin": ["tā", "yào", "chī", "", "jiù", "chī", "gè", "", "", "", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng mẫu （要）动词 + 就 + 动词 + 个 + 补语 để nói bạn sẽ làm gì đó cho trọn vẹn.",
+      "en": "Write a sentence using （要）verb + 就 + verb + 个 + complement to say you will do something thoroughly."
+    },
+    "placeholder": "我要学，就学个……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "aux", "any_of": ["要"]},
+        {
+          "role": "verb",
+          "any_of": [
+            "学",
+            "玩",
+            "吃",
+            "看",
+            "做",
+            "写",
+            "读",
+            "听",
+            "说",
+            "买",
+            "喝",
+            "睡",
+            "走",
+            "跑",
+            "唱",
+            "跳",
+            "洗",
+            "用",
+            "想",
+            "问"
+          ]
+        },
+        {"role": "connector", "any_of": ["就"]},
+        {
+          "role": "verb",
+          "any_of": [
+            "学",
+            "玩",
+            "吃",
+            "看",
+            "做",
+            "写",
+            "读",
+            "听",
+            "说",
+            "买",
+            "喝",
+            "睡",
+            "走",
+            "跑",
+            "唱",
+            "跳",
+            "洗",
+            "用",
+            "想",
+            "问"
+          ]
+        },
+        {"role": "particle", "any_of": ["个"]},
+        {
+          "role": "complement",
+          "any_of": ["明白", "痛快", "够", "清楚", "彻底", "干净", "饱", "好", "完", "累", "开心", "舒服"]
+        }
+      ]
+    },
+    "sample": {
+      "text": "我要学，就学个明白。",
+      "pinyin": ["wǒ", "yào", "xué", "", "jiù", "xué", "gè", "míng", "bai", ""]
+    },
+    "placeholder_pinyin": ["wǒ", "yào", "xué", "", "jiù", "xué", "gè", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790834790",
+    "generated_at": "2026-10-01T06:06:30Z"
+  },
+  "review": null
+}

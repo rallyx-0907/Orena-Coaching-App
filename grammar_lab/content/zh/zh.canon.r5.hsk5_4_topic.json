@@ -1,0 +1,300 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk5_4_topic",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.possibility",
+  "level": {"framework": "hsk3", "value": "5", "rank": 5},
+  "prereqs": ["zh.canon.r5.hsk5_3_approximate_quantities"],
+  "contrasts": [],
+  "error_tags": ["particle"],
+  "source_refs": {"r5": ["zh-hsk5-4-topic"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["zh-hsk5-4-topic"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 难免/免不了", "en": "Chinese grammar: 难免/免不了"},
+    "native_title": "难免/免不了",
+    "level": {"framework": "hsk3", "value": "5", "rank": 5},
+    "summary": {
+      "vi": "难免 và 免不了 diễn tả một kết quả khó tránh, thường là điều không mong muốn, do hoàn cảnh hoặc giới hạn của con người gây ra.",
+      "en": "难免 and 免不了 express a result that is hard to avoid, usually something undesirable, given the situation or human limits."
+    },
+    "sub": {"vi": "khó tránh", "en": "hard to avoid"},
+    "native_title_pinyin": ["nán", "miǎn", "", "miǎn", "bù", "liǎo"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi nói về lần đầu làm gì đó, thiếu kinh nghiệm nên khó tránh sai sót.",
+      "en": "When talking about doing something for the first time, where inexperience makes mistakes hard to avoid."
+    },
+    {
+      "vi": "Khi tình huống phức tạp hoặc đông người, dẫn đến một kết quả không mong muốn.",
+      "en": "When a situation is complex or crowded, leading to an undesirable result."
+    },
+    {
+      "vi": "Khi muốn đưa ra nhận xét khách quan rằng điều gì đó khó tránh khỏi, không phải lỗi của ai.",
+      "en": "When giving an objective comment that something is hard to avoid, not blaming anyone."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "难免",
+        "role": "marker",
+        "label": {"vi": "dấu hiệu khó tránh", "en": "unavoidability marker"},
+        "pinyin": ["nán", "miǎn"]
+      },
+      {
+        "text": "会",
+        "role": "aux",
+        "label": {"vi": "trợ động từ sẽ", "en": "auxiliary will"},
+        "optional": true,
+        "pinyin": ["huì"]
+      },
+      {
+        "text": "VP",
+        "role": "verb",
+        "label": {"vi": "cụm động từ", "en": "verb phrase"},
+        "pinyin": ["", ""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "第一次做这种工作，难免会出错。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 9, "end": 11, "role": "marker"},
+        {"start": 11, "end": 12, "role": "aux"},
+        {"start": 12, "end": 14, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Lần đầu làm nên khó tránh sai sót.",
+        "en": "Doing it for the first time makes mistakes hard to avoid."
+      },
+      "translation": {
+        "vi": "Lần đầu làm việc này khó tránh sai.",
+        "en": "Doing this kind of work for the first time, mistakes are hard to avoid."
+      },
+      "pinyin": [
+        "dì",
+        "yī",
+        "cì",
+        "zuò",
+        "zhè",
+        "zhǒng",
+        "gōng",
+        "zuò",
+        "",
+        "nán",
+        "miǎn",
+        "huì",
+        "chū",
+        "cuò",
+        ""
+      ]
+    },
+    {
+      "text": "人多的时候难免有点乱。",
+      "form": "affirmative",
+      "spans": [{"start": 5, "end": 7, "role": "marker"}, {"start": 7, "end": 10, "role": "verb"}],
+      "annotation": {
+        "vi": "Khi đông người thì khó tránh hơi lộn xộn.",
+        "en": "When there are many people, it is hard to avoid some messiness."
+      },
+      "translation": {
+        "vi": "Khi đông người khó tránh hơi loạn.",
+        "en": "When there are many people, it is hard to avoid a bit of chaos."
+      },
+      "pinyin": ["rén", "duō", "de", "shí", "hòu", "nán", "miǎn", "yǒu", "diǎn", "luàn", ""]
+    },
+    {
+      "text": "这么复杂的项目免不了要修改几次。",
+      "form": "affirmative",
+      "spans": [{"start": 7, "end": 10, "role": "marker"}, {"start": 10, "end": 15, "role": "verb"}],
+      "annotation": {
+        "vi": "Dự án phức tạp thế này khó tránh phải sửa vài lần.",
+        "en": "A project this complex will inevitably need several revisions."
+      },
+      "translation": {
+        "vi": "Dự án phức tạp thế khó tránh phải sửa vài lần.",
+        "en": "Such a complex project will inevitably need to be revised several times."
+      },
+      "pinyin": [
+        "zhè",
+        "me",
+        "fù",
+        "zá",
+        "de",
+        "xiàng",
+        "mù",
+        "miǎn",
+        "bù",
+        "liǎo",
+        "yào",
+        "xiū",
+        "gǎi",
+        "jǐ",
+        "cì",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "第一次做，未必会出错。",
+      "right": "第一次做，难免会出错。",
+      "reason": {
+        "vi": "Người học dùng 未必 (không chắc) khi muốn nói 'khó tránh', làm sai sắc thái xác suất.",
+        "en": "The learner uses 未必 (not necessarily) when meaning 'hard to avoid', which changes the probability stance."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong_pinyin": ["dì", "yī", "cì", "zuò", "", "wèi", "bì", "huì", "chū", "cuò", ""],
+      "right_pinyin": ["dì", "yī", "cì", "zuò", "", "nán", "miǎn", "huì", "chū", "cuò", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "第一次做这种工作，___会出错。",
+      "options": [
+        {"text": "难免", "error_tag": null, "pinyin": ["nán", "miǎn"]},
+        {"text": "未必", "error_tag": "word_choice", "pinyin": ["wèi", "bì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu cần 'khó tránh' nên dùng 难免; 未必 nghĩa là 'chưa chắc', trái với ý câu.",
+        "en": "The sentence needs 'hard to avoid', so 难免 is correct; 未必 means 'not necessarily', the opposite of the intended meaning."
+      },
+      "q_pinyin": [
+        "dì",
+        "yī",
+        "cì",
+        "zuò",
+        "zhè",
+        "zhǒng",
+        "gōng",
+        "zuò",
+        "",
+        "",
+        "",
+        "",
+        "huì",
+        "chū",
+        "cuò",
+        ""
+      ]
+    },
+    {
+      "q": "这么复杂的项目___要修改几次。",
+      "options": [
+        {"text": "免不了", "error_tag": null, "pinyin": ["miǎn", "bù", "liǎo"]},
+        {"text": "难免", "error_tag": "word_choice", "pinyin": ["nán", "miǎn"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "免不了 đứng trước 要 + động từ, nhấn mạnh việc phải làm là không thể tránh; 难免 không tự nhiên khi đi với 要 trong câu này.",
+        "en": "免不了 comes before 要 + verb, stressing that the action cannot be avoided; 难免 is not natural with 要 here."
+      },
+      "q_pinyin": [
+        "zhè",
+        "me",
+        "fù",
+        "zá",
+        "de",
+        "xiàng",
+        "mù",
+        "",
+        "",
+        "",
+        "yào",
+        "xiū",
+        "gǎi",
+        "jǐ",
+        "cì",
+        ""
+      ]
+    },
+    {
+      "q": "刚开始学习，___会遇到困难。",
+      "options": [
+        {"text": "免不了", "error_tag": null, "pinyin": ["miǎn", "bù", "liǎo"]},
+        {"text": "难免", "error_tag": "word_choice", "pinyin": ["nán", "miǎn"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "免不了 + 会 + VP là cách nói tự nhiên cho tình huống mới bắt đầu; 难免 + 会 + VP cũng đúng nhưng ở đây 免不了 phù hợp hơn với văn nói.",
+        "en": "免不了 + 会 + VP is the natural spoken pattern for a new situation; 难免 + 会 + VP is also correct but 免不了 fits better here."
+      },
+      "q_pinyin": ["gāng", "kāi", "shǐ", "xué", "xí", "", "", "", "", "huì", "yù", "dào", "kùn", "nán", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về lần đầu bạn làm gì đó, dùng 难免 hoặc 免不了 để nói điều khó tránh.",
+      "en": "Write one sentence about the first time you did something, using 难免 or 免不了 to say what was hard to avoid."
+    },
+    "placeholder": "第一次……，难免……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "marker", "any_of": ["难免", "免不了"]}, {"role": "verb", "regex": "[\\u4e00-\\u9fff]+"}]
+    },
+    "sample": {
+      "text": "第一次上台演讲，难免会紧张。",
+      "pinyin": [
+        "dì",
+        "yī",
+        "cì",
+        "shàng",
+        "tái",
+        "yǎn",
+        "jiǎng",
+        "",
+        "nán",
+        "miǎn",
+        "huì",
+        "jǐn",
+        "zhāng",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["dì", "yī", "cì", "", "", "", "nán", "miǎn", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790833931",
+    "generated_at": "2026-10-01T05:52:11Z",
+    "r5_source": {
+      "ids": ["zh-hsk5-4-topic"],
+      "content_version": 2,
+      "content_hash": "4b78f3690d7261ba85374aa00a81b201316ff8bcef6fe82b04cfb60605d98f3a",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk5-4-topic",
+          "issue": "R5 ghi '难免 + VP/会 + result; 免不了 + VP' nhưng không nêu rõ 难免 và 免不了 có thể đứng trước 会 + VP, và không phân biệt được sắc thái văn nói của 免不了.",
+          "fix": "Đã viết formula với marker 难免/免不了 + aux 会 (tùy chọn) + VP, và thêm ghi chú về sắc thái văn nói của 免不了 trong phần when_to_use và quick_practice."
+        },
+        {
+          "r5_id": "zh-hsk5-4-topic",
+          "issue": "R5 đưa ví dụ '成功难免会发生' như một lỗi, nhưng không giải thích rõ vì sao 难免 thường dùng cho kết quả không mong muốn.",
+          "fix": "Đã thay bằng lỗi thực tế của người Việt: dùng 未必 thay vì 难免 khi muốn nói 'khó tránh', kèm lý do về sắc thái xác suất."
+        },
+        {
+          "r5_id": "zh-hsk5-4-topic",
+          "issue": "R5 có phần 'contrasts' với 未必/不见得 và 不妨/何不, nhưng schema không yêu cầu compare cho điểm này.",
+          "fix": "Đã bỏ compare vì danh sách 'compare required' trống; giữ nội dung đối chiếu 未必 trong common_mistakes và quick_practice."
+        }
+      ]
+    },
+    "metadata_stale": true
+  },
+  "review": null
+}

@@ -4,257 +4,224 @@
   "version": 1,
   "target_lang": "en",
   "function": "fn.questions",
-  "level": {
-    "framework": "cefr",
-    "value": "A1",
-    "rank": 1
-  },
-  "prereqs": [
-    "en.present_simple.habit"
-  ],
-  "contrasts": [],
-  "error_tags": [
-    "sentence_structure"
-  ],
-  "source_refs": {
-    "r5": [
-      "a1-do-does-questions"
-    ]
-  },
+  "level": {"framework": "cefr", "value": "A1", "rank": 1},
+  "prereqs": ["en.present_simple.habit"],
+  "contrasts": ["en.be.questions_short_answers", "en.questions.wh"],
+  "error_tags": ["sentence_structure"],
+  "source_refs": {"r5": ["a1-do-does-questions"]},
   "point_type": "word_order",
+  "sequence": 2,
+  "aliases": ["a1-do-does-questions"],
+  "source_anchors": {"status": "anchored", "items": [{"source": "core_inventory", "code": "60", "level": "A1"}]},
   "header": {
-    "title": {
-      "vi": "Câu hỏi với do / does",
-      "en": "Do / does questions"
-    },
+    "title": {"vi": "Câu hỏi với do / does", "en": "Do / does questions"},
     "native_title": "Do / does questions",
-    "sub": {
-      "vi": "Do you...? Does she...?",
-      "en": "Do you...? Does she...?"
-    },
-    "level": {
-      "framework": "cefr",
-      "value": "A1",
-      "rank": 1
-    },
+    "level": {"framework": "cefr", "value": "A1", "rank": 1},
     "summary": {
-      "vi": "Câu hỏi hiện tại đơn với động từ thường dùng do/does trước chủ ngữ; động từ chính dùng dạng nguyên thể.",
-      "en": "Present-simple questions with ordinary verbs use do/does before the subject; the main verb stays in the base form."
-    }
+      "vi": "Dùng do hoặc does đặt trước chủ ngữ để tạo câu hỏi yes/no ở thì hiện tại đơn với động từ thường.",
+      "en": "Use do or does before the subject to make yes/no questions in the present simple with ordinary verbs."
+    },
+    "sub": {"vi": "câu hỏi yes/no", "en": "yes/no questions"}
   },
   "when_to_use": [
     {
-      "vi": "Dùng Do với I/you/we/they.",
-      "en": "Use Do with I/you/we/they."
+      "vi": "Khi bạn muốn hỏi ai đó có làm một việc gì đó thường xuyên hay không.",
+      "en": "When you want to ask whether someone does something regularly."
     },
     {
-      "vi": "Dùng Does với he/she/it.",
-      "en": "Use Does with he/she/it."
+      "vi": "Khi động từ chính là động từ thường (like, work, live, play), không phải be.",
+      "en": "When the main verb is an ordinary verb (like, work, live, play), not be."
+    },
+    {
+      "vi": "Khi bạn muốn câu trả lời ngắn gọn là có hoặc không.",
+      "en": "When you want a short yes or no answer."
     }
   ],
   "pattern": {
     "formula": [
       {
-        "text": "Do / Does",
+        "text": "Do/Does",
         "role": "aux",
-        "label": {
-          "vi": "trợ động từ",
-          "en": "auxiliary"
-        },
-        "options": [
-          {
-            "text": "Do"
-          },
-          {
-            "text": "Does"
-          }
-        ]
+        "label": {"vi": "trợ động từ", "en": "auxiliary"},
+        "options": [{"text": "Do"}, {"text": "Does"}]
       },
-      {
-        "text": "S",
-        "role": "subject",
-        "label": {
-          "vi": "chủ ngữ",
-          "en": "subject"
-        }
-      },
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
       {
         "text": "V",
         "role": "verb",
-        "label": {
-          "vi": "động từ nguyên thể",
-          "en": "base verb"
-        }
-      }
+        "label": {"vi": "động từ chính (nguyên mẫu)", "en": "main verb (base form)"}
+      },
+      {"text": "O", "role": "object", "label": {"vi": "tân ngữ", "en": "object"}, "optional": true}
     ],
-    "illustration": {
-      "kind": "word_order"
-    }
+    "variants": {
+      "question": [
+        {
+          "text": "Do/Does",
+          "role": "aux",
+          "label": {"vi": "trợ động từ", "en": "auxiliary"},
+          "options": [{"text": "Do"}, {"text": "Does"}]
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "V",
+          "role": "verb",
+          "label": {"vi": "động từ chính (nguyên mẫu)", "en": "main verb (base form)"}
+        },
+        {
+          "text": "O",
+          "role": "object",
+          "label": {"vi": "tân ngữ", "en": "object"},
+          "optional": true
+        }
+      ]
+    },
+    "illustration": {"kind": "word_order"}
   },
   "examples": [
     {
-      "text": "Do you like coffee?",
-      "form": "affirmative",
+      "text": "Do you live near here?",
+      "form": "question",
       "spans": [
-        {
-          "start": 0,
-          "end": 2,
-          "role": "aux"
-        },
-        {
-          "start": 3,
-          "end": 6,
-          "role": "subject"
-        },
-        {
-          "start": 7,
-          "end": 11,
-          "role": "verb"
-        }
+        {"start": 0, "end": 2, "role": "aux"},
+        {"start": 3, "end": 6, "role": "subject"},
+        {"start": 7, "end": 11, "role": "verb"}
       ],
       "annotation": {
-        "vi": "You dùng Do; động từ giữ dạng like.",
-        "en": "You takes Do; the verb stays like."
+        "vi": "Do đứng trước chủ ngữ để tạo câu hỏi; live giữ nguyên mẫu.",
+        "en": "Do comes before the subject to make a question; live stays in the base form."
       },
-      "translation": {
-        "vi": "You dùng Do; động từ giữ dạng like.",
-        "en": "You takes Do; the verb stays like."
-      }
+      "translation": {"vi": "Bạn có sống gần đây không?", "en": "Do you live near here?"}
     },
     {
-      "text": "Does she work here?",
-      "form": "affirmative",
+      "text": "Does your brother play football?",
+      "form": "question",
       "spans": [
-        {
-          "start": 0,
-          "end": 4,
-          "role": "aux"
-        },
-        {
-          "start": 5,
-          "end": 8,
-          "role": "subject"
-        },
-        {
-          "start": 9,
-          "end": 13,
-          "role": "verb"
-        }
+        {"start": 0, "end": 4, "role": "aux"},
+        {"start": 5, "end": 17, "role": "subject"},
+        {"start": 18, "end": 22, "role": "verb"},
+        {"start": 23, "end": 31, "role": "object"}
       ],
       "annotation": {
-        "vi": "She dùng Does; work không thêm -s.",
-        "en": "She takes Does; work does not take -s."
+        "vi": "Does dùng với chủ ngữ số ít; play không thêm -s.",
+        "en": "Does is used with a singular subject; play does not take -s."
       },
-      "translation": {
-        "vi": "She dùng Does; work không thêm -s.",
-        "en": "She takes Does; work does not take -s."
+      "translation": {"vi": "Anh/em trai của bạn có chơi bóng đá không?", "en": "Does your brother play football?"}
+    },
+    {
+      "text": "Do they study on Saturday?",
+      "form": "question",
+      "spans": [
+        {"start": 0, "end": 2, "role": "aux"},
+        {"start": 3, "end": 7, "role": "subject"},
+        {"start": 8, "end": 13, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Do dùng với they; study ở dạng nguyên mẫu.",
+        "en": "Do is used with they; study is in the base form."
+      },
+      "translation": {"vi": "Họ có học vào thứ Bảy không?", "en": "Do they study on Saturday?"}
+    }
+  ],
+  "compare": [
+    {
+      "with": "en.be.questions_short_answers",
+      "this_example": "Do you work here?",
+      "other_example": "Are you tired?",
+      "this_meaning": {
+        "vi": "Dùng do/does khi động từ chính là động từ thường.",
+        "en": "Use do/does when the main verb is an ordinary verb."
+      },
+      "other_meaning": {"vi": "Dùng be trực tiếp, không cần do/does.", "en": "Use be directly, without do/does."}
+    },
+    {
+      "with": "en.questions.wh",
+      "this_example": "Do you like tea?",
+      "other_example": "Where do you live?",
+      "this_meaning": {"vi": "Câu hỏi yes/no bắt đầu bằng do/does.", "en": "Yes/no questions start with do/does."},
+      "other_meaning": {
+        "vi": "Câu hỏi wh- bắt đầu bằng từ để hỏi, sau đó mới đến do/does.",
+        "en": "Wh- questions start with a question word, then do/does."
       }
     }
   ],
-  "compare": [],
   "common_mistakes": [
     {
-      "wrong": "Does she works here?",
-      "right": "Does she work here?",
+      "wrong": "Does he works here?",
+      "right": "Does he work here?",
       "reason": {
-        "vi": "Khi có does, động từ chính dùng dạng nguyên thể.",
-        "en": "With does, the main verb uses the base form."
+        "vi": "Sau does, động từ chính phải ở dạng nguyên mẫu, không thêm -s.",
+        "en": "After does, the main verb must be in the base form, without -s."
       },
       "error_tag": "sentence_structure",
-      "l1": [
-        "vi"
-      ]
+      "l1": ["vi"]
     }
   ],
   "quick_practice": [
     {
-      "q": "___ you speak English?",
-      "options": [
-        {
-          "text": "Do",
-          "error_tag": null
-        },
-        {
-          "text": "Does",
-          "error_tag": "sentence_structure"
-        },
-        {
-          "text": "Are",
-          "error_tag": "sentence_structure"
-        }
-      ],
+      "q": "___ she like music?",
+      "options": [{"text": "Does", "error_tag": null}, {"text": "Do", "error_tag": "agreement"}],
+      "answer": 0,
+      "explain": {"vi": "Chủ ngữ she số ít nên dùng does.", "en": "The subject she is singular, so use does."}
+    },
+    {
+      "q": "Do they ___ on Saturday?",
+      "options": [{"text": "study", "error_tag": null}, {"text": "studies", "error_tag": "agreement"}],
       "answer": 0,
       "explain": {
-        "vi": "You dùng Do.",
-        "en": "You takes Do."
+        "vi": "Sau do, động từ chính ở dạng nguyên mẫu.",
+        "en": "After do, the main verb is in the base form."
       }
     },
     {
-      "q": "___ he live near here?",
-      "options": [
-        {
-          "text": "Does",
-          "error_tag": null
-        },
-        {
-          "text": "Do",
-          "error_tag": "sentence_structure"
-        },
-        {
-          "text": "Is",
-          "error_tag": "sentence_structure"
-        }
-      ],
+      "q": "___ your brother play football?",
+      "options": [{"text": "Does", "error_tag": null}, {"text": "Do", "error_tag": "agreement"}],
       "answer": 0,
       "explain": {
-        "vi": "He dùng Does.",
-        "en": "He takes Does."
-      }
-    },
-    {
-      "q": "Does Mai ___ coffee?",
-      "options": [
-        {
-          "text": "like",
-          "error_tag": null
-        },
-        {
-          "text": "likes",
-          "error_tag": "sentence_structure"
-        },
-        {
-          "text": "liking",
-          "error_tag": "sentence_structure"
-        }
-      ],
-      "answer": 0,
-      "explain": {
-        "vi": "Sau does dùng like.",
-        "en": "After does, use like."
+        "vi": "Chủ ngữ your brother số ít nên dùng does.",
+        "en": "The subject your brother is singular, so use does."
       }
     }
   ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu hỏi yes/no về thói quen của một người bạn hoặc thành viên gia đình.",
+      "en": "Write a yes/no question about a friend's or family member's habit."
+    },
+    "placeholder": "Do you ...",
+    "target_form": "question",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "aux", "any_of": ["do", "does"]},
+        {"role": "verb", "regex": "\\b(live|play|study|like|work|read|eat|go|watch|have)\\b"}
+      ]
+    },
+    "sample": {"text": "Do you play football?"}
+  },
   "status": "draft_ai",
   "flags": [],
   "provenance": {
-    "model": "openai:gpt-5.6-sol",
-    "prompt_version": "direct-author.en-a1.v1",
-    "run_id": "chatgpt.en-a1.20260930",
-    "generated_at": "2026-09-30T10:35:00Z"
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790830389",
+    "generated_at": "2026-10-01T04:53:09Z",
+    "r5_source": {
+      "ids": ["a1-do-does-questions"],
+      "content_version": 2,
+      "content_hash": "41c54d2f7169fea47144415f7b1abe3e697734c69506eb18931fbb0e100c1949",
+      "corrections": [
+        {
+          "r5_id": "a1-do-does-questions",
+          "issue": "R5 includes short answers (Yes, she does.) as part of the point, but the target point is only the question form.",
+          "fix": "Removed short answers from the formula and examples; kept only do/does questions."
+        },
+        {
+          "r5_id": "a1-do-does-questions",
+          "issue": "R5 example 'Do they study on Saturday?' has a time phrase 'on Saturday' that is not part of the formula.",
+          "fix": "Kept the example but did not mark 'on Saturday' as a span because the formula does not include a time slot."
+        }
+      ]
+    }
   },
-  "review": null,
-  "sequence": 2,
-  "source_anchors": {
-    "status": "anchored",
-    "items": [
-      {
-        "source": "core_inventory",
-        "code": "60",
-        "level": "A1"
-      }
-    ]
-  },
-  "aliases": [
-    "a1-do-does-questions"
-  ]
+  "review": null
 }

@@ -1,0 +1,225 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk1.a_1_6_1.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.quantity",
+  "level": {"framework": "hsk3", "value": "1", "rank": 1},
+  "prereqs": ["zh.canon.gf.hsk1.a_1_1_7_2.p1"],
+  "contrasts": [],
+  "error_tags": ["particle"],
+  "source_refs": {"gf0025": ["gf0025.hsk1.043"]},
+  "point_type": "other",
+  "sequence": 4,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Cách biểu đạt số: 钱数表示法", "en": "Expressing numbers: 钱数表示法"},
+    "native_title": "钱数表示法",
+    "level": {"framework": "hsk3", "value": "1", "rank": 1},
+    "summary": {
+      "vi": "Cách nói số tiền trong tiếng Trung: dùng 元/块 cho đơn vị tiền, 角/毛 cho hào và 分 cho xu.",
+      "en": "How to say amounts of money in Chinese: use 元/块 for the main unit, 角/毛 for the tenth and 分 for the hundredth."
+    },
+    "sub": {"vi": "số tiền", "en": "money amounts"},
+    "native_title_pinyin": ["qián", "shù", "biǎo", "shì", "fǎ"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi nói giá cả hoặc số tiền cụ thể, ví dụ khi mua hàng.",
+      "en": "When you state a price or a specific amount of money, for example while shopping."
+    },
+    {
+      "vi": "Khi số tiền có cả hào và xu, bạn nói lần lượt từ đơn vị lớn đến nhỏ.",
+      "en": "When an amount includes tenths and hundredths, you say the units from largest to smallest."
+    },
+    {
+      "vi": "Khi đọc số tiền trong câu, bạn đặt số tiền trước danh từ chỉ đồ vật.",
+      "en": "When an amount appears in a sentence, you put it before the noun it refers to."
+    },
+    {
+      "vi": "Khi dùng 块 trong khẩu ngữ thay cho 元 trong văn viết.",
+      "en": "When you use 块 in speech instead of 元 in writing."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "数词",
+        "role": "other",
+        "label": {"vi": "số đếm", "en": "number"},
+        "pinyin": ["shù", "cí"]
+      },
+      {
+        "text": "元/块",
+        "role": "classifier",
+        "label": {"vi": "đơn vị tiền", "en": "money unit"},
+        "options": [{"text": "元", "pinyin": ["yuán"]}, {"text": "块", "pinyin": ["kuài"]}],
+        "pinyin": ["yuán", "", "kuài"]
+      },
+      {
+        "text": "数词",
+        "role": "other",
+        "label": {"vi": "số hào", "en": "number of tenths"},
+        "optional": true,
+        "pinyin": ["shù", "cí"]
+      },
+      {
+        "text": "角/毛",
+        "role": "classifier",
+        "label": {"vi": "đơn vị hào", "en": "tenth unit"},
+        "optional": true,
+        "options": [{"text": "角", "pinyin": ["jiǎo"]}, {"text": "毛", "pinyin": ["máo"]}],
+        "pinyin": ["jiǎo", "", "máo"]
+      },
+      {
+        "text": "数词",
+        "role": "other",
+        "label": {"vi": "số xu", "en": "number of hundredths"},
+        "optional": true,
+        "pinyin": ["shù", "cí"]
+      },
+      {
+        "text": "分",
+        "role": "classifier",
+        "label": {"vi": "đơn vị xu", "en": "hundredth unit"},
+        "optional": true,
+        "pinyin": ["fēn"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "这本书二十元。",
+      "form": "affirmative",
+      "spans": [{"start": 3, "end": 5, "role": "other"}, {"start": 5, "end": 6, "role": "classifier"}],
+      "annotation": {
+        "vi": "Số tiền đứng sau danh từ, 元 là đơn vị tiền.",
+        "en": "The amount follows the noun, and 元 is the money unit."
+      },
+      "translation": {"vi": "Cuốn sách này hai mươi tệ.", "en": "This book is twenty yuan."},
+      "pinyin": ["zhè", "běn", "shū", "èr", "shí", "yuán", ""]
+    },
+    {
+      "text": "一杯咖啡十五块五毛。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 4, "end": 6, "role": "other"},
+        {"start": 6, "end": 7, "role": "classifier"},
+        {"start": 7, "end": 8, "role": "other"},
+        {"start": 8, "end": 9, "role": "classifier"}
+      ],
+      "annotation": {
+        "vi": "Nói từ đơn vị lớn đến nhỏ: 块 rồi đến 毛.",
+        "en": "Say the units from largest to smallest: 块 then 毛."
+      },
+      "translation": {"vi": "Một tách cà phê mười lăm tệ năm hào.", "en": "A cup of coffee is fifteen yuan fifty."},
+      "pinyin": ["yī", "bēi", "kā", "fēi", "shí", "wǔ", "kuài", "wǔ", "máo", ""]
+    },
+    {
+      "text": "苹果三块二毛五分。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 2, "end": 3, "role": "other"},
+        {"start": 3, "end": 4, "role": "classifier"},
+        {"start": 4, "end": 5, "role": "other"},
+        {"start": 5, "end": 6, "role": "classifier"},
+        {"start": 6, "end": 7, "role": "other"},
+        {"start": 7, "end": 8, "role": "classifier"}
+      ],
+      "annotation": {
+        "vi": "Số tiền có đủ ba đơn vị: 块, 毛 và 分.",
+        "en": "The amount has all three units: 块, 毛 and 分."
+      },
+      "translation": {"vi": "Táo ba tệ hai hào năm xu.", "en": "The apples are three yuan twenty-five."},
+      "pinyin": ["píng", "guǒ", "sān", "kuài", "èr", "máo", "wǔ", "fēn", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "这个十元了。",
+      "right": "这个十元。",
+      "reason": {
+        "vi": "Câu nói số tiền không dùng 了; 了 chỉ dùng cho hành động hoặc sự thay đổi, không dùng cho một số tiền cố định.",
+        "en": "A money amount does not take 了; 了 marks an action or a change, not a fixed price."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong_pinyin": ["zhè", "gè", "shí", "yuán", "le", ""],
+      "right_pinyin": ["zhè", "gè", "shí", "yuán", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "这杯茶五___。",
+      "options": [
+        {"text": "块", "error_tag": null, "pinyin": ["kuài"]},
+        {"text": "个", "error_tag": "measure_word", "pinyin": ["gè"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "块 là đơn vị tiền, 个 là lượng từ chung nên không dùng cho số tiền.",
+        "en": "块 is the money unit; 个 is a general measure word and is not used for amounts of money."
+      },
+      "q_pinyin": ["zhè", "bēi", "chá", "wǔ", "", "", "", ""]
+    },
+    {
+      "q": "苹果三块二___。",
+      "options": [
+        {"text": "毛", "error_tag": null, "pinyin": ["máo"]},
+        {"text": "块", "error_tag": "word_choice", "pinyin": ["kuài"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 块 là hào, nên dùng 毛; 块 là đơn vị tiền chính, không đứng sau 块.",
+        "en": "After 块 comes the tenth unit, so use 毛; 块 is the main unit and does not follow 块."
+      },
+      "q_pinyin": ["píng", "guǒ", "sān", "kuài", "èr", "", "", "", ""]
+    },
+    {
+      "q": "这本书二十___。",
+      "options": [
+        {"text": "元", "error_tag": null, "pinyin": ["yuán"]},
+        {"text": "分", "error_tag": "word_choice", "pinyin": ["fēn"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "二十 là số đếm đơn vị tiền chính, nên dùng 元; 分 là đơn vị xu, quá nhỏ cho một cuốn sách.",
+        "en": "Twenty counts main units, so use 元; 分 is the hundredth unit, too small for a book."
+      },
+      "q_pinyin": ["zhè", "běn", "shū", "èr", "shí", "", "", "", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu nói giá của một đồ vật bạn mua hôm nay, dùng 元 hoặc 块.",
+      "en": "Write one sentence giving the price of something you bought today, using 元 or 块."
+    },
+    "placeholder": "这个……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {
+          "role": "other",
+          "any_of": ["一", "二", "三", "四", "五", "六", "七", "八", "九", "十", "百", "千", "万"]
+        },
+        {"role": "classifier", "any_of": ["元", "块"]}
+      ]
+    },
+    "sample": {"text": "这个面包八元。", "pinyin": ["zhè", "gè", "miàn", "bāo", "bā", "yuán", ""]},
+    "placeholder_pinyin": ["zhè", "gè", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790831938",
+    "generated_at": "2026-10-01T05:18:58Z",
+    "metadata_stale": true
+  },
+  "review": null
+}

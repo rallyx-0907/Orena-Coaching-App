@@ -1,0 +1,370 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk3_8_topic",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.location",
+  "level": {"framework": "hsk3", "value": "3", "rank": 3},
+  "prereqs": ["zh.canon.gf.hsk3.a_3_2_4.p2"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["zh-hsk3-8-topic"], "gf0025": ["gf0025.hsk3.021", "gf0025.hsk4.030"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": ["zh-hsk3-8-topic"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 自从", "en": "Chinese grammar: 自从"},
+    "native_title": "自从",
+    "level": {"framework": "hsk3", "value": "3", "rank": 3},
+    "summary": {
+      "vi": "自从...以来 dùng để nêu một mốc hoặc sự việc bắt đầu trong quá khứ và nói về khoảng thời gian từ đó kéo dài đến hiện tại.",
+      "en": "自从...以来 marks a starting point or event in the past and describes the period from then up to now."
+    },
+    "sub": {"vi": "mốc bắt đầu", "en": "starting point"},
+    "native_title_pinyin": ["zì", "cóng"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói một tình trạng hoặc hành động bắt đầu từ một thời điểm/sự việc trong quá khứ và vẫn tiếp diễn hoặc còn ảnh hưởng đến hiện tại.",
+      "en": "Use it when a state or action started at a past time or event and still continues or still matters now."
+    },
+    {
+      "vi": "Khi mốc bắt đầu là một sự việc đã xảy ra, như 学中文, 毕业, 来到这里, chứ không phải một mốc tương lai.",
+      "en": "Use it when the starting point is a past event, such as 学中文, 毕业, 来到这里, not a future point."
+    },
+    {
+      "vi": "Khi mệnh đề chính thường có 一直, 已经 hoặc một thay đổi kéo dài từ mốc đó.",
+      "en": "Use it when the main clause often has 一直, 已经, or a continuing change from that starting point."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "自从",
+        "role": "marker",
+        "label": {"vi": "dấu mốc bắt đầu", "en": "starting-point marker"},
+        "pinyin": ["zì", "cóng"]
+      },
+      {
+        "text": "sự việc/mốc thời gian",
+        "role": "other",
+        "label": {"vi": "sự việc hoặc mốc bắt đầu", "en": "starting event or time"},
+        "pinyin": ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""]
+      },
+      {
+        "text": "以来",
+        "role": "particle",
+        "label": {"vi": "tiểu từ khép khung thời gian", "en": "frame-closing particle"},
+        "pinyin": ["yǐ", "lái"]
+      },
+      {
+        "text": "chủ ngữ",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["", "", "", "", "", "", ""]
+      },
+      {
+        "text": "vị ngữ",
+        "role": "verb",
+        "label": {"vi": "vị ngữ chính", "en": "main predicate"},
+        "pinyin": ["", "", "", "", "", ""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "自从学中文以来，我认识了很多朋友。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "marker"},
+        {"start": 2, "end": 5, "role": "other"},
+        {"start": 5, "end": 7, "role": "particle"},
+        {"start": 8, "end": 9, "role": "subject"},
+        {"start": 9, "end": 16, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Mốc bắt đầu là việc học tiếng Trung; từ đó đến nay đã quen nhiều bạn.",
+        "en": "The starting point is beginning to study Chinese; from then until now, many friends have been made."
+      },
+      "translation": {
+        "vi": "Từ khi học tiếng Trung, tôi đã quen nhiều bạn.",
+        "en": "Since I started studying Chinese, I have made many friends."
+      },
+      "pinyin": [
+        "zì",
+        "cóng",
+        "xué",
+        "Zhōng",
+        "wén",
+        "yǐ",
+        "lái",
+        "",
+        "wǒ",
+        "rèn",
+        "shi",
+        "le",
+        "hěn",
+        "duō",
+        "péng",
+        "you",
+        ""
+      ]
+    },
+    {
+      "text": "自从来到这里以来，他一直很忙。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "marker"},
+        {"start": 2, "end": 6, "role": "other"},
+        {"start": 6, "end": 8, "role": "particle"},
+        {"start": 9, "end": 10, "role": "subject"},
+        {"start": 10, "end": 14, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Mốc bắt đầu là việc đến đây; tình trạng bận kéo dài từ đó đến nay.",
+        "en": "The starting point is arriving here; the state of being busy has continued from then until now."
+      },
+      "translation": {
+        "vi": "Từ khi đến đây, anh ấy luôn bận.",
+        "en": "Since he came here, he has been busy all along."
+      },
+      "pinyin": [
+        "zì",
+        "cóng",
+        "lái",
+        "dào",
+        "zhè",
+        "lǐ",
+        "yǐ",
+        "lái",
+        "",
+        "tā",
+        "yì",
+        "zhí",
+        "hěn",
+        "máng",
+        ""
+      ]
+    },
+    {
+      "text": "自从毕业以来，她一直在这家公司工作。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "marker"},
+        {"start": 2, "end": 4, "role": "other"},
+        {"start": 4, "end": 6, "role": "particle"},
+        {"start": 7, "end": 8, "role": "subject"},
+        {"start": 8, "end": 17, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Mốc bắt đầu là việc tốt nghiệp; hành động làm việc kéo dài từ đó đến nay.",
+        "en": "The starting point is graduating; the action of working has continued from then until now."
+      },
+      "translation": {
+        "vi": "Từ khi tốt nghiệp, cô ấy luôn làm ở công ty này.",
+        "en": "Since she graduated, she has been working at this company."
+      },
+      "pinyin": [
+        "zì",
+        "cóng",
+        "bì",
+        "yè",
+        "yǐ",
+        "lái",
+        "",
+        "tā",
+        "yì",
+        "zhí",
+        "zài",
+        "zhè",
+        "jiā",
+        "gōng",
+        "sī",
+        "gōng",
+        "zuò",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "自从明天以来，我每天跑步。",
+      "right": "从明天起，我每天跑步。",
+      "reason": {
+        "vi": "自从...以来 chỉ dùng cho mốc bắt đầu trong quá khứ, không dùng cho mốc tương lai như 明天. Với mốc tương lai phải dùng 从...起.",
+        "en": "自从...以来 only works with a past starting point, not a future one like 明天. For a future starting point, use 从...起."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong_pinyin": ["zì", "cóng", "míng", "tiān", "yǐ", "lái", "", "wǒ", "měi", "tiān", "pǎo", "bù", ""],
+      "right_pinyin": ["cóng", "míng", "tiān", "qǐ", "", "wǒ", "měi", "tiān", "pǎo", "bù", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "___学中文以来，我认识了很多朋友。",
+      "options": [
+        {"text": "自从", "error_tag": null, "pinyin": ["zì", "cóng"]},
+        {"text": "从", "error_tag": "other", "pinyin": ["cóng"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Khung 自从...以来 cần cả 自从 ở đầu mốc bắt đầu và 以来 ở cuối; chỉ 从 không đủ.",
+        "en": "The 自从...以来 frame needs both 自从 at the start of the starting point and 以来 at the end; 从 alone is not enough."
+      },
+      "q_pinyin": [
+        "",
+        "",
+        "",
+        "xué",
+        "Zhōng",
+        "wén",
+        "yǐ",
+        "lái",
+        "",
+        "wǒ",
+        "rèn",
+        "shi",
+        "le",
+        "hěn",
+        "duō",
+        "péng",
+        "you",
+        ""
+      ]
+    },
+    {
+      "q": "自从毕业___，她一直在这家公司工作。",
+      "options": [
+        {"text": "以来", "error_tag": null, "pinyin": ["yǐ", "lái"]},
+        {"text": "以后", "error_tag": "other", "pinyin": ["yǐ", "hòu"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "以来 khép khung thời gian từ mốc bắt đầu đến hiện tại; 以后 chỉ nói sau đó, không tạo khung 自从...以来.",
+        "en": "以来 closes the time frame from the starting point to now; 以后 only means after that and does not form the 自从...以来 frame."
+      },
+      "q_pinyin": [
+        "zì",
+        "cóng",
+        "bì",
+        "yè",
+        "",
+        "",
+        "",
+        "",
+        "tā",
+        "yì",
+        "zhí",
+        "zài",
+        "zhè",
+        "jiā",
+        "gōng",
+        "sī",
+        "gōng",
+        "zuò",
+        ""
+      ]
+    },
+    {
+      "q": "自从来到这里___，他一直很忙。",
+      "options": [
+        {"text": "以来", "error_tag": null, "pinyin": ["yǐ", "lái"]},
+        {"text": "来", "error_tag": "other", "pinyin": ["lái"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "以来 là tiểu từ khép khung; chỉ 来 không mang nghĩa 'từ đó đến nay'.",
+        "en": "以来 is the frame-closing particle; 来 alone does not mean 'from then until now'."
+      },
+      "q_pinyin": [
+        "zì",
+        "cóng",
+        "lái",
+        "dào",
+        "zhè",
+        "lǐ",
+        "",
+        "",
+        "",
+        "",
+        "tā",
+        "yì",
+        "zhí",
+        "hěn",
+        "máng",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về bản thân dùng 自从...以来, nói một việc bắt đầu trong quá khứ và kéo dài đến nay.",
+      "en": "Write one sentence about yourself using 自从...以来, saying something that started in the past and continues now."
+    },
+    "placeholder": "自从……以来，我……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "marker", "any_of": ["自从"]}, {"role": "particle", "any_of": ["以来"]}]
+    },
+    "sample": {
+      "text": "自从学中文以来，我认识了很多朋友。",
+      "pinyin": [
+        "zì",
+        "cóng",
+        "xué",
+        "Zhōng",
+        "wén",
+        "yǐ",
+        "lái",
+        "",
+        "wǒ",
+        "rèn",
+        "shi",
+        "le",
+        "hěn",
+        "duō",
+        "péng",
+        "you",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["zì", "cóng", "", "", "yǐ", "lái", "", "wǒ", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790832663",
+    "generated_at": "2026-10-01T05:31:03Z",
+    "r5_source": {
+      "ids": ["zh-hsk3-8-topic"],
+      "content_version": 2,
+      "content_hash": "ce0b943a10a0abab72fc4a08fff44f602d7d5001628d3dd6407f3390c0fe48e7",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk3-8-topic",
+          "issue": "R5 dùng ví dụ 自从有了孩子以后，他们更忙了, nhưng 以后 không phải là 以来; câu này không minh họa đúng khung 自从...以来.",
+          "fix": "Bỏ ví dụ đó khỏi phần minh họa của điểm này; chỉ giữ các ví dụ có đủ 自从...以来."
+        },
+        {
+          "r5_id": "zh-hsk3-8-topic",
+          "issue": "R5 ghi '以来 có thể theo time phrase directly in some formal patterns' nhưng không đưa ra ví dụ hay giới hạn rõ ràng, dễ khiến người học dùng sai ở HSK3.",
+          "fix": "Không đưa quy tắc mơ hồ đó vào bài; bài chỉ dạy khung đầy đủ 自从 + sự việc/mốc thời gian + 以来."
+        },
+        {
+          "r5_id": "zh-hsk3-8-topic",
+          "issue": "R5 có lỗi 自从我来这里，我一直忙以来 với 以来 đặt sai vị trí, nhưng phần giải thích chưa nói rõ 以来 phải đứng ngay sau mốc bắt đầu.",
+          "fix": "Sửa thành 自从我来这里以来，我一直很忙 và dùng làm cơ sở cho phần công thức: 以来 đứng sau mốc bắt đầu, không đứng cuối mệnh đề chính."
+        }
+      ]
+    },
+    "metadata_stale": true
+  },
+  "review": null
+}

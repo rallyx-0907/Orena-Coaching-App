@@ -4,223 +4,208 @@
   "version": 1,
   "target_lang": "en",
   "function": "fn.pronoun_reference",
-  "level": {
-    "framework": "cefr",
-    "value": "A1",
-    "rank": 1
-  },
-  "prereqs": [
-    "en.be.present"
-  ],
+  "level": {"framework": "cefr", "value": "A1", "rank": 1},
+  "prereqs": ["en.be.present"],
   "contrasts": [],
-  "error_tags": [
-    "word_form"
-  ],
-  "source_refs": {
-    "r5": [
-      "a1-subject-and-object-pronouns"
-    ]
-  },
+  "error_tags": ["word_form"],
+  "source_refs": {"r5": ["a1-subject-and-object-pronouns"]},
   "point_type": "other",
+  "sequence": 1,
+  "aliases": ["a1-subject-and-object-pronouns"],
+  "source_anchors": {"status": "anchored", "items": [{"source": "core_inventory", "code": "125", "level": "A1"}]},
   "header": {
-    "title": {
-      "vi": "Đại từ chủ ngữ và tân ngữ",
-      "en": "Subject and object pronouns"
-    },
+    "title": {"vi": "Đại từ chủ ngữ và tân ngữ", "en": "Subject and object pronouns"},
     "native_title": "Subject and object pronouns",
-    "sub": {
-      "vi": "I/me, he/him...",
-      "en": "I/me, he/him..."
-    },
-    "level": {
-      "framework": "cefr",
-      "value": "A1",
-      "rank": 1
-    },
+    "level": {"framework": "cefr", "value": "A1", "rank": 1},
     "summary": {
-      "vi": "Đại từ đổi dạng tùy vị trí: dạng chủ ngữ đứng trước động từ, dạng tân ngữ đứng sau động từ hoặc giới từ.",
-      "en": "Pronouns change form by position: subject forms come before verbs, object forms after verbs or prepositions."
-    }
+      "vi": "Đại từ chủ ngữ đứng trước động từ để chỉ người hoặc vật thực hiện hành động; đại từ tân ngữ đứng sau động từ hoặc giới từ để chỉ người hoặc vật nhận tác động.",
+      "en": "Subject pronouns go before the verb for the person or thing doing the action; object pronouns go after a verb or preposition for the person or thing receiving it."
+    },
+    "sub": {"vi": "đại từ nhân xưng", "en": "subject / object"}
   },
   "when_to_use": [
     {
-      "vi": "Dùng I, you, he, she, it, we, they làm chủ ngữ.",
-      "en": "Use I, you, he, she, it, we, and they as subjects."
+      "vi": "Khi bạn đã nhắc đến một người hoặc vật và không muốn lặp lại danh từ đó.",
+      "en": "When you have already mentioned a person or thing and do not want to repeat the noun."
     },
     {
-      "vi": "Dùng me, you, him, her, it, us, them làm tân ngữ.",
-      "en": "Use me, you, him, her, it, us, and them as objects."
+      "vi": "Khi người hoặc vật đó thực hiện hành động: dùng dạng chủ ngữ trước động từ chính.",
+      "en": "When that person or thing does the action: use the subject form before the main verb."
+    },
+    {
+      "vi": "Khi người hoặc vật đó nhận hành động: dùng dạng tân ngữ sau động từ.",
+      "en": "When that person or thing receives the action: use the object form after the verb."
+    },
+    {
+      "vi": "Khi đại từ đứng sau một giới từ như with, for, to, next to.",
+      "en": "When the pronoun comes after a preposition such as with, for, to, next to."
     }
   ],
   "pattern": {
     "formula": [
       {
-        "text": "pronoun",
-        "role": "other",
-        "label": {
-          "vi": "đại từ đúng dạng",
-          "en": "correct pronoun form"
-        }
+        "text": "S",
+        "role": "subject",
+        "label": {"vi": "đại từ chủ ngữ", "en": "subject pronoun"},
+        "options": [
+          {"text": "I"},
+          {"text": "you"},
+          {"text": "he"},
+          {"text": "she"},
+          {"text": "it"},
+          {"text": "we"},
+          {"text": "they"}
+        ]
+      },
+      {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}},
+      {
+        "text": "O",
+        "role": "object",
+        "label": {"vi": "đại từ tân ngữ", "en": "object pronoun"},
+        "options": [
+          {"text": "me"},
+          {"text": "you"},
+          {"text": "him"},
+          {"text": "her"},
+          {"text": "it"},
+          {"text": "us"},
+          {"text": "them"}
+        ]
       }
     ],
-    "illustration": {
-      "kind": "none"
-    }
+    "illustration": {"kind": "none"}
   },
   "examples": [
     {
-      "text": "She knows me.",
+      "text": "She calls me after school.",
       "form": "affirmative",
       "spans": [
-        {
-          "start": 0,
-          "end": 3,
-          "role": "other"
-        },
-        {
-          "start": 10,
-          "end": 12,
-          "role": "other"
-        }
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 9, "role": "verb"},
+        {"start": 10, "end": 12, "role": "object"}
       ],
       "annotation": {
-        "vi": "She là chủ ngữ; me là tân ngữ.",
-        "en": "She is the subject form; me is the object form."
+        "vi": "She làm chủ ngữ, me nhận hành động calls.",
+        "en": "She is the subject; me receives the action calls."
       },
-      "translation": {
-        "vi": "She là chủ ngữ; me là tân ngữ.",
-        "en": "She is the subject form; me is the object form."
-      }
+      "translation": {"vi": "Cô ấy gọi cho tôi sau giờ học.", "en": "She calls me after school."}
     },
     {
-      "text": "They live with us.",
+      "text": "I see him on the bus.",
       "form": "affirmative",
       "spans": [
-        {
-          "start": 0,
-          "end": 4,
-          "role": "other"
-        },
-        {
-          "start": 15,
-          "end": 17,
-          "role": "other"
-        }
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 2, "end": 5, "role": "verb"},
+        {"start": 6, "end": 9, "role": "object"}
       ],
       "annotation": {
-        "vi": "Sau with dùng us.",
-        "en": "After with, use us."
+        "vi": "I làm chủ ngữ, him là người nhận hành động see.",
+        "en": "I is the subject; him receives the action see."
       },
-      "translation": {
-        "vi": "Sau with dùng us.",
-        "en": "After with, use us."
-      }
+      "translation": {"vi": "Tôi gặp cậu ấy trên xe buýt.", "en": "I see him on the bus."}
+    },
+    {
+      "text": "They help us with homework.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 5, "end": 9, "role": "verb"},
+        {"start": 10, "end": 12, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "They làm chủ ngữ, us là người nhận hành động help.",
+        "en": "They is the subject; us receives the action help."
+      },
+      "translation": {"vi": "Họ giúp chúng tôi làm bài tập.", "en": "They help us with homework."}
     }
   ],
   "compare": [],
   "common_mistakes": [
     {
-      "wrong": "Me am tired.",
-      "right": "I am tired.",
+      "wrong": "I often talk to she.",
+      "right": "I often talk to her.",
       "reason": {
-        "vi": "Đầu câu làm chủ ngữ phải dùng I, không dùng me.",
-        "en": "Use I, not me, as the subject."
+        "vi": "Sau giới từ to phải dùng dạng tân ngữ her, không dùng dạng chủ ngữ she.",
+        "en": "After the preposition to you need the object form her, not the subject form she."
       },
       "error_tag": "word_form",
-      "l1": [
-        "vi"
-      ]
+      "l1": ["vi"]
     }
   ],
   "quick_practice": [
     {
-      "q": "___ is my sister.",
-      "options": [
-        {
-          "text": "She",
-          "error_tag": null
-        },
-        {
-          "text": "Her",
-          "error_tag": "word_form"
-        },
-        {
-          "text": "Him",
-          "error_tag": "word_form"
-        }
-      ],
+      "q": "I know ___.",
+      "options": [{"text": "him", "error_tag": null}, {"text": "he", "error_tag": "word_form"}],
       "answer": 0,
       "explain": {
-        "vi": "Vị trí chủ ngữ cần She.",
-        "en": "The subject position needs She."
+        "vi": "Sau động từ know cần dạng tân ngữ him.",
+        "en": "After the verb know you need the object form him."
       }
     },
     {
-      "q": "I see ___ every day.",
-      "options": [
-        {
-          "text": "him",
-          "error_tag": null
-        },
-        {
-          "text": "he",
-          "error_tag": "word_form"
-        },
-        {
-          "text": "his",
-          "error_tag": "word_form"
-        }
-      ],
+      "q": "___ are in my class.",
+      "options": [{"text": "They", "error_tag": null}, {"text": "Them", "error_tag": "word_form"}],
       "answer": 0,
       "explain": {
-        "vi": "Sau see cần him.",
-        "en": "After see, use him."
+        "vi": "Đầu câu làm chủ ngữ nên dùng they.",
+        "en": "At the start of the sentence as subject you use they."
       }
     },
     {
-      "q": "Come with ___.",
-      "options": [
-        {
-          "text": "us",
-          "error_tag": null
-        },
-        {
-          "text": "we",
-          "error_tag": "word_form"
-        },
-        {
-          "text": "our",
-          "error_tag": "word_form"
-        }
-      ],
+      "q": "Please come with ___.",
+      "options": [{"text": "us", "error_tag": null}, {"text": "we", "error_tag": "word_form"}],
       "answer": 0,
       "explain": {
-        "vi": "Sau with cần us.",
-        "en": "After with, use us."
+        "vi": "Sau giới từ with cần dạng tân ngữ us.",
+        "en": "After the preposition with you need the object form us."
       }
     }
   ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một người bạn hoặc người trong gia đình, dùng một đại từ chủ ngữ và một đại từ tân ngữ.",
+      "en": "Write one sentence about a friend or family member, using a subject pronoun and an object pronoun."
+    },
+    "placeholder": "She helps me ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "subject", "any_of": ["I", "you", "he", "she", "it", "we", "they"]},
+        {"role": "object", "any_of": ["me", "you", "him", "her", "it", "us", "them"]}
+      ]
+    },
+    "sample": {"text": "She helps me with my homework."}
+  },
   "status": "draft_ai",
   "flags": [],
   "provenance": {
-    "model": "openai:gpt-5.6-sol",
-    "prompt_version": "direct-author.en-a1.v1",
-    "run_id": "chatgpt.en-a1.20260930",
-    "generated_at": "2026-09-30T10:35:00Z"
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790829544",
+    "generated_at": "2026-10-01T04:39:04Z",
+    "r5_source": {
+      "ids": ["a1-subject-and-object-pronouns"],
+      "content_version": 2,
+      "content_hash": "ce4a3783046c9345d6b434e2450ca6833126eda6fe005b90c716de75bb36ca78",
+      "corrections": [
+        {
+          "r5_id": "a1-subject-and-object-pronouns",
+          "issue": "R5 dạy kèm contrast với Be: am/is/are và Possessive adjectives, vượt phạm vi điểm này.",
+          "fix": "Chỉ giữ nội dung đại từ chủ ngữ và tân ngữ; bỏ phần so sánh với be và tính từ sở hữu."
+        },
+        {
+          "r5_id": "a1-subject-and-object-pronouns",
+          "issue": "R5 không có công thức trừu tượng, chỉ có câu ví dụ.",
+          "fix": "Thêm formula S + V + O với các lựa chọn đại từ chủ ngữ và tân ngữ."
+        },
+        {
+          "r5_id": "a1-subject-and-object-pronouns",
+          "issue": "R5 ghi 'Can you sit next to her?' nhưng không đánh dấu vị trí sau giới từ trong cấu trúc.",
+          "fix": "Thêm điều kiện dùng đại từ tân ngữ sau giới từ vào when_to_use và giữ ví dụ tương tự trong quick_practice."
+        }
+      ]
+    }
   },
-  "review": null,
-  "sequence": 1,
-  "source_anchors": {
-    "status": "anchored",
-    "items": [
-      {
-        "source": "core_inventory",
-        "code": "125",
-        "level": "A1"
-      }
-    ]
-  },
-  "aliases": [
-    "a1-subject-and-object-pronouns"
-  ]
+  "review": null
 }

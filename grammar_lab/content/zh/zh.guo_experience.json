@@ -8,10 +8,13 @@
   "prereqs": ["zh.le_completion"],
   "contrasts": ["zh.le_completion"],
   "error_tags": ["aspect"],
-  "source_refs": {},
+  "source_refs": {
+    "r5": ["zh-hsk2-1-kinh-nghi-m"],
+    "gf0025": ["gf0025.hsk2.025", "gf0025.hsk2.032", "gf0025.hsk2.071"]
+  },
   "point_type": "tense_aspect",
   "header": {
-    "title": {"vi": "Trợ từ 过 (đã từng)", "en": "The particle 过"},
+    "title": {"vi": "Trợ từ 过 (đã từng)", "en": "The particle 过: experience"},
     "native_title": "动态助词“过”",
     "level": {"framework": "hsk3", "value": "2", "rank": 2},
     "summary": {
@@ -180,7 +183,8 @@
     "model": "deepseek:deepseek-flash",
     "prompt_version": "generate_point_v04.v5",
     "run_id": "generate.1790589982",
-    "generated_at": "2026-09-28T10:06:22Z"
+    "generated_at": "2026-09-28T10:06:22Z",
+    "metadata_stale": true
   },
   "review": null,
   "sequence": 1,
@@ -195,5 +199,6 @@
     "pattern_rule": {"ordered": true, "slots": [{"role": "particle", "any_of": ["过"]}]},
     "sample": {"text": "我去过上海。", "pinyin": ["wǒ", "qù", "guò", "shàng", "hǎi", ""]}
   },
-  "source_anchors": {"status": "unanchored", "items": []}
+  "source_anchors": {"status": "unanchored", "items": []},
+  "aliases": ["zh-hsk2-1-kinh-nghi-m"]
 }

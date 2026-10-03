@@ -1,0 +1,256 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk4.a_4_5_2_10.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.linking",
+  "level": {"framework": "hsk3", "value": "4", "rank": 4},
+  "prereqs": ["zh.canon.gf.hsk4.a_4_5_2_9.p1"],
+  "contrasts": [],
+  "error_tags": ["particle", "conjunction"],
+  "source_refs": {"gf0025": ["gf0025.hsk4.058"]},
+  "point_type": "other",
+  "sequence": 14,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Câu phức: ⋯⋯，好⋯⋯", "en": "Complex sentences: ⋯⋯，好⋯⋯"},
+    "native_title": "⋯⋯，好⋯⋯",
+    "level": {"framework": "hsk3", "value": "4", "rank": 4},
+    "summary": {
+      "vi": "Mẫu câu phức dùng vế thứ hai mở đầu bằng 好 để nói kết quả hoặc mục đích của hành động ở vế thứ nhất.",
+      "en": "A complex sentence pattern where the second clause begins with 好 to state the result or purpose of the action in the first clause."
+    },
+    "sub": {"vi": "mục đích với 好", "en": "purpose with 好"},
+    "native_title_pinyin": ["", "", "", "hǎo", "", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói rõ mục đích của một hành động, ví dụ: 我早点起床，好赶上第一班车。",
+      "en": "When you want to state the purpose of an action, for example: 我早点起床，好赶上第一班车。"
+    },
+    {
+      "vi": "Khi vế thứ hai là kết quả mong muốn của vế thứ nhất, ví dụ: 他每天练习，好提高口语。",
+      "en": "When the second clause is the desired result of the first, for example: 他每天练习，好提高口语。"
+    },
+    {
+      "vi": "Khi bạn muốn diễn đạt mục đích trong văn nói hoặc văn viết trang trọng hơn một chút, ví dụ: 我们提前订票，好有座位。",
+      "en": "When you want to express purpose in speech or slightly formal writing, for example: 我们提前订票，好有座位。"
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "动词短语",
+        "role": "verb",
+        "label": {"vi": "cụm động từ", "en": "verb phrase"},
+        "pinyin": ["dòng", "cí", "duǎn", "yǔ"]
+      },
+      {
+        "text": "好",
+        "role": "connector",
+        "label": {"vi": "liên từ mục đích", "en": "purpose connector"},
+        "pinyin": ["hǎo"]
+      },
+      {
+        "text": "动词短语",
+        "role": "verb",
+        "label": {"vi": "cụm động từ", "en": "verb phrase"},
+        "pinyin": ["dòng", "cí", "duǎn", "yǔ"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "我早点起床，好赶上第一班车。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 5, "role": "verb"},
+        {"start": 6, "end": 7, "role": "connector"},
+        {"start": 7, "end": 13, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "好 nối vế thứ hai, nêu mục đích của việc dậy sớm.",
+        "en": "好 links the second clause, stating the purpose of getting up early."
+      },
+      "translation": {
+        "vi": "Tôi dậy sớm một chút để kịp chuyến xe đầu tiên.",
+        "en": "I get up early so that I can catch the first bus."
+      },
+      "pinyin": ["wǒ", "zǎo", "diǎn", "qǐ", "chuáng", "", "hǎo", "gǎn", "shàng", "dì", "yī", "bān", "chē", ""]
+    },
+    {
+      "text": "他每天练习，好提高口语。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 5, "role": "verb"},
+        {"start": 6, "end": 7, "role": "connector"},
+        {"start": 7, "end": 11, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "好 đứng trước vế thứ hai, cho biết mục đích của việc luyện tập.",
+        "en": "好 comes before the second clause, showing the purpose of practising."
+      },
+      "translation": {
+        "vi": "Anh ấy luyện tập mỗi ngày để nâng cao khả năng nói.",
+        "en": "He practises every day so that he can improve his speaking."
+      },
+      "pinyin": ["tā", "měi", "tiān", "liàn", "xí", "", "hǎo", "tí", "gāo", "kǒu", "yǔ", ""]
+    },
+    {
+      "text": "我们提前订票，好有座位。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 6, "role": "verb"},
+        {"start": 7, "end": 8, "role": "connector"},
+        {"start": 8, "end": 11, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "好 nối hai vế, vế sau là kết quả mong muốn của việc đặt vé sớm.",
+        "en": "好 connects the two clauses; the second is the desired result of booking early."
+      },
+      "translation": {
+        "vi": "Chúng tôi đặt vé sớm để có chỗ ngồi.",
+        "en": "We book tickets early so that we can have seats."
+      },
+      "pinyin": ["wǒ", "men", "tí", "qián", "dìng", "piào", "", "hǎo", "yǒu", "zuò", "wèi", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "我早点起床，好赶上第一班车了。",
+      "right": "我早点起床，好赶上第一班车。",
+      "reason": {
+        "vi": "Vế sau 好 không phải là một sự việc đã xảy ra, nên không dùng 了 ở cuối câu.",
+        "en": "The clause after 好 is not a completed event, so 了 is not used at the end."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong_pinyin": [
+        "wǒ",
+        "zǎo",
+        "diǎn",
+        "qǐ",
+        "chuáng",
+        "",
+        "hǎo",
+        "gǎn",
+        "shàng",
+        "dì",
+        "yī",
+        "bān",
+        "chē",
+        "le",
+        ""
+      ],
+      "right_pinyin": ["wǒ", "zǎo", "diǎn", "qǐ", "chuáng", "", "hǎo", "gǎn", "shàng", "dì", "yī", "bān", "chē", ""]
+    },
+    {
+      "wrong": "我早点起床，为了好赶上第一班车。",
+      "right": "我早点起床，好赶上第一班车。",
+      "reason": {
+        "vi": "好 đã mang nghĩa mục đích, không cần thêm 为了 ở trước.",
+        "en": "好 already carries the purpose meaning, so 为了 is not added before it."
+      },
+      "error_tag": "conjunction",
+      "l1": ["vi"],
+      "wrong_pinyin": [
+        "wǒ",
+        "zǎo",
+        "diǎn",
+        "qǐ",
+        "chuáng",
+        "",
+        "wèi",
+        "le",
+        "hǎo",
+        "gǎn",
+        "shàng",
+        "dì",
+        "yī",
+        "bān",
+        "chē",
+        ""
+      ],
+      "right_pinyin": ["wǒ", "zǎo", "diǎn", "qǐ", "chuáng", "", "hǎo", "gǎn", "shàng", "dì", "yī", "bān", "chē", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "我每天练习，___提高口语。",
+      "options": [
+        {"text": "好", "error_tag": null, "pinyin": ["hǎo"]},
+        {"text": "为了", "error_tag": "conjunction", "pinyin": ["wèi", "le"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "好 đứng trước vế mục đích, không dùng 为了 trong mẫu câu này.",
+        "en": "好 comes before the purpose clause; 为了 is not used in this pattern."
+      },
+      "q_pinyin": ["wǒ", "měi", "tiān", "liàn", "xí", "", "", "", "", "tí", "gāo", "kǒu", "yǔ", ""]
+    },
+    {
+      "q": "我们提前订票，___有座位。",
+      "options": [
+        {"text": "好", "error_tag": null, "pinyin": ["hǎo"]},
+        {"text": "好了", "error_tag": "particle", "pinyin": ["hǎo", "le"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "好 là liên từ mục đích, không thêm 了 vào sau nó.",
+        "en": "好 is the purpose connector; 了 is not added after it."
+      },
+      "q_pinyin": ["wǒ", "men", "tí", "qián", "dìng", "piào", "", "", "", "", "yǒu", "zuò", "wèi", ""]
+    },
+    {
+      "q": "他早点出发，___不迟到。",
+      "options": [
+        {"text": "好", "error_tag": null, "pinyin": ["hǎo"]},
+        {"text": "为了", "error_tag": "conjunction", "pinyin": ["wèi", "le"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "好 nối vế mục đích, không dùng 为了 trong mẫu câu này.",
+        "en": "好 links the purpose clause; 为了 is not used in this pattern."
+      },
+      "q_pinyin": ["tā", "zǎo", "diǎn", "chū", "fā", "", "", "", "", "bù", "chí", "dào", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về việc bạn làm gì đó để đạt được mục đích, dùng cấu trúc ⋯⋯，好⋯⋯.",
+      "en": "Write a sentence about doing something to achieve a purpose, using ⋯⋯，好⋯⋯."
+    },
+    "placeholder": "我……，好……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "connector", "any_of": ["好"]}, {"role": "verb", "regex": ".+"}]
+    },
+    "sample": {
+      "text": "我每天复习，好记住生词。",
+      "pinyin": ["wǒ", "měi", "tiān", "fù", "xí", "", "hǎo", "jì", "zhù", "shēng", "cí", ""]
+    },
+    "placeholder_pinyin": ["wǒ", "", "", "", "hǎo", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790833361",
+    "generated_at": "2026-10-01T05:42:41Z"
+  },
+  "review": null
+}

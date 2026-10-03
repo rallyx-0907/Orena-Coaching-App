@@ -1,0 +1,251 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk6.a_6_6_2_1.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.linking",
+  "level": {"framework": "hsk3", "value": "6", "rank": 6},
+  "prereqs": ["zh.canon.gf.hsk6.a_6_2_5.p1"],
+  "contrasts": [],
+  "error_tags": ["conjunction"],
+  "source_refs": {"gf0025": ["gf0025.hsk6.042", "gf0025.hsk6.043"]},
+  "point_type": "other",
+  "sequence": 7,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Câu phức: 时而⋯⋯，时而⋯⋯", "en": "Complex sentences: 时而⋯⋯，时而⋯⋯"},
+    "native_title": "时而⋯⋯，时而⋯⋯",
+    "level": {"framework": "hsk3", "value": "6", "rank": 6},
+    "summary": {
+      "vi": "Mẫu câu dùng 时而⋯⋯，时而⋯⋯ để nêu hai hoặc nhiều trạng thái, hành động thay nhau xuất hiện trong cùng một khoảng thời gian.",
+      "en": "The pattern 时而⋯⋯，时而⋯⋯ lists two or more states or actions that alternate within the same period of time."
+    },
+    "sub": {"vi": "thay nhau", "en": "alternating states"},
+    "native_title_pinyin": ["shí", "ér", "", "", "", "shí", "ér", "", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi mô tả một người hay sự vật lúc thế này lúc thế khác trong cùng một giai đoạn.",
+      "en": "When describing someone or something that is one way at one moment and another way at the next within the same period."
+    },
+    {
+      "vi": "Khi kể lại một quá trình có nhịp thay đổi đều đặn, ví dụ thời tiết, cảm xúc, động tác lặp đi lặp lại.",
+      "en": "When recounting a process with a regular rhythm of change, such as weather, moods, or repeated actions."
+    },
+    {
+      "vi": "Khi cần liệt kê từ hai trạng thái trở lên và muốn nhấn mạnh sự luân phiên, không phải sự đồng thời.",
+      "en": "When listing two or more states and emphasising alternation rather than simultaneity."
+    },
+    {
+      "vi": "Dùng trong văn viết hoặc lời kể có tính miêu tả; khẩu ngữ thường thay bằng 一会儿⋯⋯一会儿⋯⋯.",
+      "en": "Used in written or descriptive narration; in casual speech 一会儿⋯⋯一会儿⋯⋯ is more common."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "时而",
+        "role": "connector",
+        "label": {"vi": "liên từ mở đầu vế thứ nhất", "en": "connector opening the first clause"},
+        "pinyin": ["shí", "ér"]
+      },
+      {
+        "text": "A",
+        "role": "other",
+        "label": {"vi": "trạng thái hoặc hành động thứ nhất", "en": "first state or action"},
+        "pinyin": [""]
+      },
+      {
+        "text": "时而",
+        "role": "connector",
+        "label": {"vi": "liên từ mở đầu vế thứ hai", "en": "connector opening the second clause"},
+        "pinyin": ["shí", "ér"]
+      },
+      {
+        "text": "B",
+        "role": "other",
+        "label": {"vi": "trạng thái hoặc hành động thứ hai", "en": "second state or action"},
+        "pinyin": [""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "他时而安静，时而健谈。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 1, "end": 3, "role": "connector"},
+        {"start": 3, "end": 5, "role": "other"},
+        {"start": 6, "end": 8, "role": "connector"},
+        {"start": 8, "end": 10, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Hai trạng thái tính cách thay nhau, không cùng lúc.",
+        "en": "Two personality states alternate; they do not occur at the same time."
+      },
+      "translation": {
+        "vi": "Anh ấy lúc thì yên tĩnh, lúc thì hoạt bát.",
+        "en": "He is sometimes quiet, sometimes talkative."
+      },
+      "pinyin": ["tā", "shí", "ér", "ān", "jìng", "", "shí", "ér", "jiàn", "tán", ""]
+    },
+    {
+      "text": "天气时而晴朗，时而阴沉。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 2, "end": 4, "role": "connector"},
+        {"start": 4, "end": 6, "role": "other"},
+        {"start": 7, "end": 9, "role": "connector"},
+        {"start": 9, "end": 11, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Thời tiết đổi qua lại giữa hai trạng thái trong cùng một ngày.",
+        "en": "The weather shifts back and forth between two states within the same day."
+      },
+      "translation": {
+        "vi": "Thời tiết lúc thì trong sáng, lúc thì âm u.",
+        "en": "The weather is sometimes clear, sometimes gloomy."
+      },
+      "pinyin": ["tiān", "qì", "shí", "ér", "qíng", "lǎng", "", "shí", "ér", "yīn", "chén", ""]
+    },
+    {
+      "text": "她时而低头写字，时而抬头看窗外。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 1, "end": 3, "role": "connector"},
+        {"start": 3, "end": 7, "role": "other"},
+        {"start": 8, "end": 10, "role": "connector"},
+        {"start": 10, "end": 15, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Hai hành động lặp đi lặp lại, thay phiên nhau.",
+        "en": "Two actions repeat, taking turns."
+      },
+      "translation": {
+        "vi": "Cô ấy lúc thì cúi đầu viết, lúc thì ngẩng lên nhìn ra ngoài cửa sổ.",
+        "en": "She is sometimes writing with her head down, sometimes looking out of the window."
+      },
+      "pinyin": [
+        "tā",
+        "shí",
+        "ér",
+        "dī",
+        "tóu",
+        "xiě",
+        "zì",
+        "",
+        "shí",
+        "ér",
+        "tái",
+        "tóu",
+        "kàn",
+        "chuāng",
+        "wài",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "他时而安静，但是时而健谈。",
+      "right": "他时而安静，时而健谈。",
+      "reason": {
+        "vi": "时而 đã mang nghĩa luân phiên nên không đi cùng 但是; thêm 但是 tạo cảm giác đối lập, sai logic của mẫu.",
+        "en": "时而 already carries the alternating meaning, so it does not take 但是; adding 但是 creates a contrast that breaks the pattern's logic."
+      },
+      "error_tag": "conjunction",
+      "l1": ["vi"],
+      "wrong_pinyin": ["tā", "shí", "ér", "ān", "jìng", "", "dàn", "shì", "shí", "ér", "jiàn", "tán", ""],
+      "right_pinyin": ["tā", "shí", "ér", "ān", "jìng", "", "shí", "ér", "jiàn", "tán", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "他___沉默，时而大笑。",
+      "options": [
+        {"text": "时而", "error_tag": null, "pinyin": ["shí", "ér"]},
+        {"text": "但是", "error_tag": "conjunction", "pinyin": ["dàn", "shì"]},
+        {"text": "因为", "error_tag": "conjunction", "pinyin": ["yīn", "wèi"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Mẫu 时而⋯⋯，时而⋯⋯ cần 时而 ở cả hai vế; 但是 và 因为 đều không tạo được nghĩa luân phiên.",
+        "en": "The pattern 时而⋯⋯，时而⋯⋯ needs 时而 in both clauses; 但是 and 因为 cannot express alternation."
+      },
+      "q_pinyin": ["tā", "", "", "", "chén", "mò", "", "shí", "ér", "dà", "xiào", ""]
+    },
+    {
+      "q": "天气时而晴朗，___阴沉。",
+      "options": [
+        {"text": "时而", "error_tag": null, "pinyin": ["shí", "ér"]},
+        {"text": "而且", "error_tag": "conjunction", "pinyin": ["ér", "qiě"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Vế thứ hai phải mở đầu bằng 时而 để tạo thế đối xứng; 而且 chỉ dùng để bổ sung ý.",
+        "en": "The second clause must open with 时而 to keep the parallel structure; 而且 only adds information."
+      },
+      "q_pinyin": ["tiān", "qì", "shí", "ér", "qíng", "lǎng", "", "", "", "", "yīn", "chén", ""]
+    },
+    {
+      "q": "她___低头写字，时而抬头看窗外。",
+      "options": [
+        {"text": "时而", "error_tag": null, "pinyin": ["shí", "ér"]},
+        {"text": "虽然", "error_tag": "conjunction", "pinyin": ["suī", "rán"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Cả hai vế đều dùng 时而; 虽然 mở đầu câu nhượng bộ, không hợp với mẫu luân phiên.",
+        "en": "Both clauses use 时而; 虽然 starts a concessive clause and does not fit the alternating pattern."
+      },
+      "q_pinyin": [
+        "tā",
+        "",
+        "",
+        "",
+        "dī",
+        "tóu",
+        "xiě",
+        "zì",
+        "",
+        "shí",
+        "ér",
+        "tái",
+        "tóu",
+        "kàn",
+        "chuāng",
+        "wài",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu kể về một người hoặc một sự việc lúc thế này lúc thế khác, dùng 时而⋯⋯，时而⋯⋯.",
+      "en": "Write one sentence about someone or something that is one way at one moment and another way at the next, using 时而⋯⋯，时而⋯⋯."
+    },
+    "placeholder": "我弟弟时而……，时而……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "connector", "any_of": ["时而"]}, {"role": "connector", "any_of": ["时而"]}]
+    },
+    "sample": {
+      "text": "我弟弟时而认真，时而马虎。",
+      "pinyin": ["wǒ", "dì", "di", "shí", "ér", "rèn", "zhēn", "", "shí", "ér", "mǎ", "hu", ""]
+    },
+    "placeholder_pinyin": ["wǒ", "dì", "di", "shí", "ér", "", "", "", "shí", "ér", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790834191",
+    "generated_at": "2026-10-01T05:56:31Z"
+  },
+  "review": null
+}

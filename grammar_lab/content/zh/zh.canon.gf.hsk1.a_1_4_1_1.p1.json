@@ -1,0 +1,163 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk1.a_1_4_1_1.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.sentence_basics",
+  "level": {"framework": "hsk3", "value": "1", "rank": 1},
+  "prereqs": [],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"gf0025": ["gf0025.hsk1.031"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Câu đơn: 非主谓句", "en": "Simple sentences: 非主谓句"},
+    "native_title": "非主谓句",
+    "level": {"framework": "hsk3", "value": "1", "rank": 1},
+    "summary": {
+      "vi": "Câu đơn không có cấu trúc chủ ngữ – vị ngữ, thường dùng để miêu tả thời tiết, trạng thái hoặc lời chào.",
+      "en": "A simple sentence without a subject–predicate structure, often used for weather, states, or greetings."
+    },
+    "sub": {"vi": "câu không chủ vị", "en": "non-subject-predicate"},
+    "native_title_pinyin": ["fēi", "zhǔ", "wèi", "jù"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi nói về thời tiết như mưa, nắng, nóng, lạnh mà không cần nêu chủ ngữ.",
+      "en": "When talking about weather like rain, sun, heat, or cold without naming a subject."
+    },
+    {
+      "vi": "Khi chào hỏi hoặc đáp lại lời chào trong giao tiếp hằng ngày.",
+      "en": "When greeting or responding to a greeting in everyday conversation."
+    },
+    {
+      "vi": "Khi miêu tả một trạng thái chung, không nhắm vào ai cụ thể.",
+      "en": "When describing a general state that does not target a specific person."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "谓语",
+        "role": "verb",
+        "label": {"vi": "vị ngữ", "en": "predicate"},
+        "pinyin": ["wèi", "yǔ"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "下雨了。",
+      "form": "affirmative",
+      "spans": [{"start": 0, "end": 3, "role": "verb"}],
+      "annotation": {
+        "vi": "Vị ngữ '下雨了' tự đứng một mình, không có chủ ngữ.",
+        "en": "The predicate '下雨了' stands alone with no subject."
+      },
+      "translation": {"vi": "Trời mưa rồi.", "en": "It's raining."},
+      "pinyin": ["xià", "yǔ", "le", ""]
+    },
+    {
+      "text": "太热了。",
+      "form": "affirmative",
+      "spans": [{"start": 0, "end": 3, "role": "verb"}],
+      "annotation": {
+        "vi": "Vị ngữ '太热了' miêu tả trạng thái chung, không cần chủ ngữ.",
+        "en": "The predicate '太热了' describes a general state without a subject."
+      },
+      "translation": {"vi": "Nóng quá.", "en": "It's too hot."},
+      "pinyin": ["tài", "rè", "le", ""]
+    },
+    {
+      "text": "早上好！",
+      "form": "affirmative",
+      "spans": [{"start": 0, "end": 3, "role": "verb"}],
+      "annotation": {
+        "vi": "Vị ngữ '早上好' là lời chào, không có chủ ngữ.",
+        "en": "The predicate '早上好' is a greeting with no subject."
+      },
+      "translation": {"vi": "Chào buổi sáng!", "en": "Good morning!"},
+      "pinyin": ["zǎo", "shang", "hǎo", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "它下雨了。",
+      "right": "下雨了。",
+      "reason": {
+        "vi": "Người Việt thường thêm 'nó' vì quen có chủ ngữ, nhưng câu không chủ vị không dùng đại từ này.",
+        "en": "Vietnamese speakers often add 'it' because they are used to having a subject, but non-subject-predicate sentences do not use this pronoun."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong_pinyin": ["tā", "xià", "yǔ", "le", ""],
+      "right_pinyin": ["xià", "yǔ", "le", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "___了。",
+      "options": [
+        {"text": "下雨", "error_tag": null, "pinyin": ["xià", "yǔ"]},
+        {"text": "它下雨", "error_tag": "other", "pinyin": ["tā", "xià", "yǔ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu không chủ vị chỉ cần vị ngữ '下雨', không thêm '它'.",
+        "en": "A non-subject-predicate sentence only needs the predicate '下雨'; do not add '它'."
+      },
+      "q_pinyin": ["", "", "", "le", ""]
+    },
+    {
+      "q": "___了。",
+      "options": [
+        {"text": "太冷", "error_tag": null, "pinyin": ["tài", "lěng"]},
+        {"text": "它太冷", "error_tag": "other", "pinyin": ["tā", "tài", "lěng"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu không chủ vị dùng vị ngữ '太冷' để miêu tả trạng thái, không cần chủ ngữ.",
+        "en": "A non-subject-predicate sentence uses the predicate '太冷' to describe a state; no subject is needed."
+      },
+      "q_pinyin": ["", "", "", "le", ""]
+    },
+    {
+      "q": "___！",
+      "options": [
+        {"text": "早上好", "error_tag": null, "pinyin": ["zǎo", "shang", "hǎo"]},
+        {"text": "你早上好", "error_tag": "other", "pinyin": ["nǐ", "zǎo", "shang", "hǎo"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Lời chào '早上好' là câu không chủ vị, không thêm '你'.",
+        "en": "The greeting '早上好' is a non-subject-predicate sentence; do not add '你'."
+      },
+      "q_pinyin": ["", "", "", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu không chủ vị để miêu tả thời tiết hôm nay.",
+      "en": "Write a non-subject-predicate sentence to describe today's weather."
+    },
+    "placeholder": "今天……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"role": "verb", "any_of": ["下雨", "太热", "太冷", "晴天", "阴天", "早上好"]}]},
+    "sample": {"text": "今天下雨了。", "pinyin": ["jīn", "tiān", "xià", "yǔ", "le", ""]},
+    "placeholder_pinyin": ["jīn", "tiān", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790831916",
+    "generated_at": "2026-10-01T05:18:36Z"
+  },
+  "review": null
+}

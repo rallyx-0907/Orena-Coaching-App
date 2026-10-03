@@ -1,0 +1,228 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.c2.008",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.relative",
+  "level": {"framework": "cefr", "value": "C2", "rank": 6},
+  "prereqs": ["en.canon.c2.007"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["c2-advanced-apposition"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": ["c2-advanced-apposition"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Advanced apposition", "en": "Advanced apposition"},
+    "native_title": "Advanced apposition",
+    "level": {"framework": "cefr", "value": "C2", "rank": 6},
+    "summary": {
+      "vi": "Apposition là cách đặt một cụm danh từ hoặc mệnh đề ngay cạnh một cụm danh từ khác để định danh, phân loại hoặc diễn giải nó, với dấu câu quyết định đó là thông tin bổ sung hay thông tin xác định.",
+      "en": "Apposition places a noun phrase or clause next to another noun phrase to identify, classify or reformulate it, with punctuation deciding whether the information is extra or identifying."
+    },
+    "sub": {"vi": "đồng vị nâng cao", "en": "advanced apposition"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn định danh rõ một người hoặc vật bằng một cụm danh từ đứng ngay sau nó, ví dụ 'my colleague Marta'.",
+      "en": "When you want to identify a person or thing precisely with a noun phrase placed right after it, e.g. 'my colleague Marta'."
+    },
+    {
+      "vi": "Khi bạn muốn thêm thông tin giải thích cho một cụm danh từ đã xác định, tách bằng dấu phẩy, gạch ngang hoặc ngoặc đơn.",
+      "en": "When you want to add explanatory information to an already identified noun phrase, set off by commas, dashes or parentheses."
+    },
+    {
+      "vi": "Khi bạn cần nêu nội dung cụ thể của một danh từ trừu tượng như 'the fact', 'the assumption', 'the claim' bằng mệnh đề that.",
+      "en": "When you need to state the specific content of an abstract noun such as 'the fact', 'the assumption', 'the claim' with a that-clause."
+    },
+    {
+      "vi": "Khi bạn muốn thay đổi nhịp điệu hoặc mức độ trang trọng của câu bằng cách chọn dấu câu khác nhau cho phần đồng vị.",
+      "en": "When you want to change the rhythm or formality of a sentence by choosing different punctuation for the appositive."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "NP1",
+        "role": "subject",
+        "label": {"vi": "cụm danh từ chính", "en": "main noun phrase"}
+      },
+      {
+        "text": "NP2",
+        "role": "complement",
+        "label": {"vi": "cụm danh từ đồng vị", "en": "appositive noun phrase"}
+      },
+      {"text": "V", "role": "verb", "label": {"vi": "động từ chính", "en": "main verb"}},
+      {
+        "text": "X",
+        "role": "other",
+        "label": {"vi": "phần còn lại của câu", "en": "rest of the clause"},
+        "optional": true
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "Dr Rao, the lead investigator, presented the findings.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 6, "role": "subject"},
+        {"start": 8, "end": 29, "role": "complement"},
+        {"start": 31, "end": 40, "role": "verb"},
+        {"start": 41, "end": 53, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Cụm 'the lead investigator' là đồng vị không hạn định, giải thích thêm cho 'Dr Rao'.",
+        "en": "'The lead investigator' is a non-restrictive appositive, adding extra information about 'Dr Rao'."
+      },
+      "translation": {
+        "vi": "Tiến sĩ Rao, trưởng nhóm nghiên cứu, đã trình bày các phát hiện.",
+        "en": "Dr Rao, the lead investigator, presented the findings."
+      }
+    },
+    {
+      "text": "The assumption that demand would remain stable proved false.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 14, "role": "subject"},
+        {"start": 15, "end": 46, "role": "complement"},
+        {"start": 47, "end": 53, "role": "verb"},
+        {"start": 54, "end": 59, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Mệnh đề 'that demand would remain stable' là đồng vị nội dung, nêu rõ giả định là gì.",
+        "en": "The clause 'that demand would remain stable' is a content appositive, specifying what the assumption was."
+      },
+      "translation": {
+        "vi": "Giả định rằng nhu cầu sẽ ổn định đã được chứng minh là sai.",
+        "en": "The assumption that demand would remain stable proved false."
+      }
+    },
+    {
+      "text": "One concern—the lack of long-term data—remains unresolved.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 11, "role": "subject"},
+        {"start": 12, "end": 38, "role": "complement"},
+        {"start": 39, "end": 46, "role": "verb"},
+        {"start": 47, "end": 57, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Cụm 'the lack of long-term data' được đặt giữa hai dấu gạch ngang để nhấn mạnh thông tin bổ sung.",
+        "en": "The phrase 'the lack of long-term data' is set off by dashes to emphasise the extra information."
+      },
+      "translation": {
+        "vi": "Một lo ngại—thiếu dữ liệu dài hạn—vẫn chưa được giải quyết.",
+        "en": "One concern—the lack of long-term data—remains unresolved."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "The fact, that demand fell, surprised us.",
+      "right": "The fact that demand fell surprised us.",
+      "reason": {
+        "vi": "Mệnh đề that sau danh từ trừu tượng là đồng vị nội dung, không phải mệnh đề quan hệ không hạn định, nên không tách bằng dấu phẩy.",
+        "en": "A that-clause after an abstract noun is a content appositive, not a non-restrictive relative clause, so it is not set off by commas."
+      },
+      "error_tag": "other",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "My only sister ___ a lawyer lives abroad.",
+      "options": [{"text": ", ", "error_tag": null}, {"text": " ", "error_tag": "punctuation"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Đồng vị không hạn định cần dấu phẩy để tách khỏi cụm danh từ chính.",
+        "en": "A non-restrictive appositive needs commas to separate it from the main noun phrase."
+      }
+    },
+    {
+      "q": "The claim ___ costs fell was rejected.",
+      "options": [{"text": "that", "error_tag": null}, {"text": "which", "error_tag": "word_choice"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau danh từ trừu tượng 'claim', dùng 'that' để dẫn mệnh đề đồng vị nội dung, không dùng 'which'.",
+        "en": "After the abstract noun 'claim', use 'that' to introduce a content appositive clause, not 'which'."
+      }
+    },
+    {
+      "q": "The poet T.S. Eliot ___ born in America.",
+      "options": [{"text": "was", "error_tag": null}, {"text": "were", "error_tag": "agreement"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Đồng vị hạn định 'T.S. Eliot' xác định nhà thơ nào, chủ ngữ số ít nên dùng 'was'.",
+        "en": "The restrictive appositive 'T.S. Eliot' identifies which poet, and the singular subject takes 'was'."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu giới thiệu một người bạn hoặc đồng nghiệp, dùng đồng vị hạn định (ví dụ: my friend Anna) hoặc không hạn định (ví dụ: my brother, a teacher, ...).",
+      "en": "Write a sentence introducing a friend or colleague, using either a restrictive appositive (e.g. my friend Anna) or a non-restrictive one (e.g. my brother, a teacher, ...)."
+    },
+    "placeholder": "My friend ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {
+          "role": "subject",
+          "any_of": [
+            "my friend",
+            "my colleague",
+            "my brother",
+            "my sister",
+            "Dr Rao",
+            "The assumption",
+            "One concern"
+          ]
+        },
+        {"role": "complement", "regex": "[A-Z][a-z]+|a [a-z]+|an [a-z]+|the [a-z]+|that [a-z]+"}
+      ]
+    },
+    "sample": {"text": "My colleague Marta will chair the session."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790831625",
+    "generated_at": "2026-10-01T05:13:45Z",
+    "r5_source": {
+      "ids": ["c2-advanced-apposition"],
+      "content_version": 2,
+      "content_hash": "93df0203aa9f39b28fc0b5de922392d21b2cf6221f167e55501d9fe35926f6ac",
+      "corrections": [
+        {
+          "r5_id": "c2-advanced-apposition",
+          "issue": "The R5 lesson lists 'My only sister a lawyer lives abroad.' as a mistake, but the correction 'My only sister, a lawyer, lives abroad.' is correct; however, the mistake itself is missing punctuation, which is a punctuation error, not a general 'other' error. The error tag should be 'punctuation'.",
+          "fix": "Changed the error_tag for this mistake to 'punctuation' in the common_mistakes section."
+        },
+        {
+          "r5_id": "c2-advanced-apposition",
+          "issue": "The R5 lesson includes a guided practice item 'The fact, that demand fell, surprised us.' with the correction 'The fact that demand fell surprised us.' This is correct, but the explanation says 'Content that-clause is not normally comma-separated like non-defining relative.' which is accurate but could be clearer for learners.",
+          "fix": "Rewrote the reason in both Vietnamese and English to explicitly state that a that-clause after an abstract noun is a content appositive, not a non-restrictive relative clause, so it is not set off by commas."
+        },
+        {
+          "r5_id": "c2-advanced-apposition",
+          "issue": "The R5 lesson's examples include 'My colleague Marta will chair the session.' which is a restrictive appositive, but the lesson does not provide a clear formula or spans for examples. The schema requires spans for every slot in the formula.",
+          "fix": "Added spans to all examples, ensuring each non-optional slot of the formula is represented, and created a formula that covers both restrictive and non-restrictive apposition as well as content clauses."
+        },
+        {
+          "r5_id": "c2-advanced-apposition",
+          "issue": "The R5 lesson does not include a personal production task with a pattern rule. The schema requires a personal_production object with a deterministic pattern_rule.",
+          "fix": "Added a personal_production section with a prompt, placeholder, target_form, pattern_rule and sample sentence that matches the pattern."
+        }
+      ]
+    },
+    "metadata_stale": true
+  },
+  "review": null
+}

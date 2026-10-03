@@ -1,0 +1,210 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk7_9.a_7_3.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.questions",
+  "level": {"framework": "hsk3", "value": "8", "rank": 8},
+  "prereqs": ["zh.canon.gf.hsk7_9.a_7_2_2_2.p1"],
+  "contrasts": [],
+  "error_tags": ["collocation"],
+  "source_refs": {"gf0025": ["gf0025.hsk7_9.080", "gf0025.hsk7_9.081", "gf0025.hsk7_9.084"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Cấu trúc cố định: 不知⋯⋯好", "en": "Fixed patterns: 不知⋯⋯好"},
+    "native_title": "不知⋯⋯好",
+    "level": {"framework": "hsk3", "value": "8", "rank": 8},
+    "summary": {
+      "vi": "Mẫu cố định 不知⋯⋯好 dùng để nói rằng người nói đang phân vân, không biết nên chọn cách nào trong một tình huống.",
+      "en": "The fixed pattern 不知⋯⋯好 expresses that the speaker is at a loss, unsure which option to choose in a situation."
+    },
+    "sub": {"vi": "phân vân, không biết nên", "en": "at a loss which to"},
+    "native_title_pinyin": ["bù", "zhī", "", "", "hǎo"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn đứng trước hai hay nhiều lựa chọn mà không biết chọn cái nào.",
+      "en": "When you face two or more options and cannot decide which one to pick."
+    },
+    {
+      "vi": "Khi bạn muốn diễn tả sự bối rối, lúng túng trước một tình huống khó xử.",
+      "en": "When you want to express confusion or awkwardness in a difficult situation."
+    },
+    {
+      "vi": "Khi bạn kể lại chuyện đã xảy ra và muốn nói mình đã không biết phải làm gì.",
+      "en": "When you recount something that happened and want to say you did not know what to do."
+    },
+    {
+      "vi": "Khi câu trả lời cho câu hỏi 'nên làm gì?' chính là 'không biết nên làm gì'.",
+      "en": "When the answer to the question 'what should I do?' is exactly 'I don't know what to do'."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "不知",
+        "role": "verb",
+        "label": {"vi": "không biết", "en": "not know"},
+        "pinyin": ["bù", "zhī"]
+      },
+      {
+        "text": "疑问词",
+        "role": "other",
+        "label": {"vi": "từ để hỏi", "en": "question word"},
+        "options": [
+          {"text": "怎么", "pinyin": ["zěn", "me"]},
+          {"text": "怎么办", "pinyin": ["zěn", "me", "bàn"]},
+          {"text": "如何", "pinyin": ["rú", "hé"]},
+          {"text": "说什么", "pinyin": ["shuō", "shén", "me"]}
+        ],
+        "pinyin": ["yí", "wèn", "cí"]
+      },
+      {
+        "text": "好",
+        "role": "particle",
+        "label": {"vi": "trợ từ kết thúc mẫu", "en": "pattern-closing particle"},
+        "pinyin": ["hǎo"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "我不知怎么回答好。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 3, "role": "verb"},
+        {"start": 3, "end": 5, "role": "other"},
+        {"start": 7, "end": 8, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "不知 + 怎么 + 好: người nói không biết nên trả lời thế nào.",
+        "en": "不知 + 怎么 + 好: the speaker does not know how to answer."
+      },
+      "translation": {"vi": "Tôi không biết trả lời thế nào cho phải.", "en": "I don't know how to answer."},
+      "pinyin": ["wǒ", "bù", "zhī", "zěn", "me", "huí", "dá", "hǎo", ""]
+    },
+    {
+      "text": "他不知怎么办好。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 3, "role": "verb"},
+        {"start": 3, "end": 6, "role": "other"},
+        {"start": 6, "end": 7, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "不知 + 怎么办 + 好: anh ấy lúng túng, không biết xử lý ra sao.",
+        "en": "不知 + 怎么办 + 好: he is at a loss, not knowing what to do."
+      },
+      "translation": {"vi": "Anh ấy không biết phải làm thế nào.", "en": "He doesn't know what to do."},
+      "pinyin": ["tā", "bù", "zhī", "zěn", "me", "bàn", "hǎo", ""]
+    },
+    {
+      "text": "我们不知说什么好。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 4, "role": "verb"},
+        {"start": 4, "end": 7, "role": "other"},
+        {"start": 7, "end": 8, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "不知 + 说什么 + 好: cả nhóm không biết nên nói gì trong tình huống đó.",
+        "en": "不知 + 说什么 + 好: the group does not know what to say in that situation."
+      },
+      "translation": {"vi": "Chúng tôi không biết nói gì cho phải.", "en": "We don't know what to say."},
+      "pinyin": ["wǒ", "men", "bù", "zhī", "shuō", "shén", "me", "hǎo", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "我不知怎么回答。",
+      "right": "我不知怎么回答好。",
+      "reason": {
+        "vi": "Mẫu cố định này bắt buộc có 好 ở cuối; thiếu 好 thì câu mất đi nghĩa 'không biết nên làm gì cho phải'.",
+        "en": "This fixed pattern requires 好 at the end; without 好 the sentence loses the meaning 'not knowing what would be the right thing to do'."
+      },
+      "error_tag": "collocation",
+      "l1": ["vi"],
+      "wrong_pinyin": ["wǒ", "bù", "zhī", "zěn", "me", "huí", "dá", ""],
+      "right_pinyin": ["wǒ", "bù", "zhī", "zěn", "me", "huí", "dá", "hǎo", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "他不知怎么办___。",
+      "options": [
+        {"text": "好", "error_tag": null, "pinyin": ["hǎo"]},
+        {"text": "吗", "error_tag": "particle", "pinyin": ["ma"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Mẫu 不知⋯⋯好 luôn kết thúc bằng 好, không dùng 吗 ở đây.",
+        "en": "The pattern 不知⋯⋯好 always ends with 好; 吗 does not belong here."
+      },
+      "q_pinyin": ["tā", "bù", "zhī", "zěn", "me", "bàn", "", "", "", ""]
+    },
+    {
+      "q": "我们不知___好。",
+      "options": [
+        {"text": "说什么", "error_tag": null, "pinyin": ["shuō", "shén", "me"]},
+        {"text": "说吗", "error_tag": "particle", "pinyin": ["shuō", "ma"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 不知 cần một từ để hỏi như 说什么, không dùng 吗 trong mẫu này.",
+        "en": "After 不知 you need a question word such as 说什么; 吗 is not used in this pattern."
+      },
+      "q_pinyin": ["wǒ", "men", "bù", "zhī", "", "", "", "hǎo", ""]
+    },
+    {
+      "q": "我不知怎么回答好，你___？",
+      "options": [
+        {"text": "说呢", "error_tag": null, "pinyin": ["shuō", "ne"]},
+        {"text": "说吗", "error_tag": "particle", "pinyin": ["shuō", "ma"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu hỏi tiếp diễn dùng 呢, còn 吗 không hợp trong ngữ cảnh này.",
+        "en": "A follow-up question uses 呢; 吗 does not fit this context."
+      },
+      "q_pinyin": ["wǒ", "bù", "zhī", "zěn", "me", "huí", "dá", "hǎo", "", "nǐ", "", "", "", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu kể về lúc bạn phân vân, không biết nên làm gì, dùng mẫu 不知⋯⋯好.",
+      "en": "Write a sentence about a time you were at a loss, not knowing what to do, using 不知⋯⋯好."
+    },
+    "placeholder": "我不知……好。",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "verb", "any_of": ["不知"]}, {"role": "particle", "any_of": ["好"]}]
+    },
+    "sample": {"text": "我不知怎么回答好。", "pinyin": ["wǒ", "bù", "zhī", "zěn", "me", "huí", "dá", "hǎo", ""]},
+    "placeholder_pinyin": ["wǒ", "bù", "zhī", "", "", "hǎo", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790834649",
+    "generated_at": "2026-10-01T06:04:09Z",
+    "metadata_stale": true
+  },
+  "review": null
+}

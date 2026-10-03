@@ -1,0 +1,303 @@
+{
+  "schema_version": "0.4",
+  "id": "en.past_simple.irregular",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.completed_past",
+  "level": {"framework": "cefr", "value": "A2", "rank": 2},
+  "prereqs": ["en.past_simple.regular_ed"],
+  "contrasts": ["en.past_simple.regular_ed"],
+  "error_tags": ["tense", "word_form"],
+  "source_refs": {"r5": ["a2-past-simple-irregular-verbs"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": ["a2-past-simple-irregular-verbs"],
+  "source_anchors": {"status": "anchored", "items": [{"source": "core_inventory", "code": "67", "level": "A1"}]},
+  "header": {
+    "title": {"vi": "Quá khứ đơn: động từ bất quy tắc", "en": "Past simple: irregular verbs"},
+    "native_title": "Past simple: irregular verbs",
+    "level": {"framework": "cefr", "value": "A2", "rank": 2},
+    "summary": {
+      "vi": "Động từ bất quy tắc có dạng quá khứ riêng (V2), không thêm -ed; ở câu phủ định và câu hỏi, dùng did/didn't với động từ nguyên mẫu.",
+      "en": "Irregular verbs have their own past form (V2) instead of adding -ed; in negatives and questions, use did/didn't with the base verb."
+    },
+    "sub": {"vi": "động từ bất quy tắc", "en": "irregular verbs"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Kể lại một hành động đã kết thúc trong quá khứ, không nói rõ thời điểm hoặc đã biết rõ.",
+      "en": "Talking about a finished action in the past, with the time clear or already known."
+    },
+    {
+      "vi": "Kể một chuỗi sự việc đã xảy ra, ví dụ trong một câu chuyện ngắn.",
+      "en": "Telling a sequence of events that happened, for example in a short story."
+    },
+    {
+      "vi": "Nói về trải nghiệm hoặc việc đã làm trong quá khứ mà không cần nêu thời gian cụ thể.",
+      "en": "Talking about an experience or something you did in the past without naming a specific time."
+    },
+    {
+      "vi": "Dùng với các mốc thời gian quá khứ như yesterday, last week, in 2019, two days ago.",
+      "en": "Using past time markers such as yesterday, last week, in 2019, two days ago."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {
+        "text": "V2",
+        "role": "verb",
+        "label": {"vi": "động từ bất quy tắc ở quá khứ", "en": "irregular past verb"}
+      },
+      {"text": "O", "role": "object", "label": {"vi": "tân ngữ", "en": "object"}, "optional": true},
+      {
+        "text": "time",
+        "role": "time",
+        "label": {"vi": "mốc thời gian", "en": "time phrase"},
+        "optional": true
+      }
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "didn't",
+          "role": "aux",
+          "label": {"vi": "trợ động từ phủ định", "en": "negative auxiliary"},
+          "options": [{"text": "didn't"}, {"text": "did not"}]
+        },
+        {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên mẫu", "en": "base verb"}},
+        {
+          "text": "O",
+          "role": "object",
+          "label": {"vi": "tân ngữ", "en": "object"},
+          "optional": true
+        },
+        {
+          "text": "time",
+          "role": "time",
+          "label": {"vi": "mốc thời gian", "en": "time phrase"},
+          "optional": true
+        }
+      ],
+      "question": [
+        {
+          "text": "Did",
+          "role": "aux",
+          "label": {"vi": "trợ động từ nghi vấn", "en": "question auxiliary"}
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên mẫu", "en": "base verb"}},
+        {
+          "text": "O",
+          "role": "object",
+          "label": {"vi": "tân ngữ", "en": "object"},
+          "optional": true
+        },
+        {
+          "text": "time",
+          "role": "time",
+          "label": {"vi": "mốc thời gian", "en": "time phrase"},
+          "optional": true
+        }
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "We went to the beach last weekend.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 3, "end": 7, "role": "verb"},
+        {"start": 8, "end": 20, "role": "object"},
+        {"start": 21, "end": 33, "role": "time"}
+      ],
+      "annotation": {"vi": "went là V2 của go, không thêm -ed.", "en": "went is the V2 of go, not go + -ed."},
+      "translation": {"vi": "Chúng tôi đã đi biển cuối tuần trước.", "en": "We went to the beach last weekend."}
+    },
+    {
+      "text": "She didn't see him yesterday.",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 10, "role": "aux"},
+        {"start": 11, "end": 14, "role": "verb"},
+        {"start": 15, "end": 18, "role": "object"},
+        {"start": 19, "end": 28, "role": "time"}
+      ],
+      "annotation": {
+        "vi": "Sau didn't, động từ trở về dạng nguyên mẫu see, không dùng saw.",
+        "en": "After didn't, the verb goes back to the base form see, not saw."
+      },
+      "translation": {"vi": "Hôm qua cô ấy không gặp anh ấy.", "en": "She didn't see him yesterday."}
+    },
+    {
+      "text": "Did you take the bus this morning?",
+      "form": "question",
+      "spans": [
+        {"start": 0, "end": 3, "role": "aux"},
+        {"start": 4, "end": 7, "role": "subject"},
+        {"start": 8, "end": 12, "role": "verb"},
+        {"start": 13, "end": 20, "role": "object"},
+        {"start": 21, "end": 33, "role": "time"}
+      ],
+      "annotation": {
+        "vi": "Câu hỏi dùng Did + chủ ngữ + động từ nguyên mẫu take.",
+        "en": "The question uses Did + subject + base verb take."
+      },
+      "translation": {"vi": "Sáng nay bạn có đi xe buýt không?", "en": "Did you take the bus this morning?"}
+    }
+  ],
+  "compare": [
+    {
+      "with": "en.past_simple.regular_ed",
+      "this_example": "She bought a notebook.",
+      "other_example": "She walked to school.",
+      "this_meaning": {
+        "vi": "Động từ bất quy tắc có dạng V2 riêng, không theo quy tắc thêm -ed.",
+        "en": "Irregular verbs have their own V2 form and do not follow the -ed rule."
+      },
+      "other_meaning": {
+        "vi": "Động từ có quy tắc tạo quá khứ bằng cách thêm -ed vào động từ nguyên mẫu.",
+        "en": "Regular verbs form the past by adding -ed to the base verb."
+      }
+    }
+  ],
+  "common_mistakes": [
+    {
+      "wrong": "I goed home.",
+      "right": "I went home.",
+      "reason": {
+        "vi": "Người học áp dụng quy tắc -ed cho động từ bất quy tắc; go có dạng quá khứ riêng là went.",
+        "en": "The learner applies the -ed rule to an irregular verb; go has its own past form went."
+      },
+      "error_tag": "word_form",
+      "l1": ["vi"]
+    },
+    {
+      "wrong": "Did she bought it?",
+      "right": "Did she buy it?",
+      "reason": {
+        "vi": "Sau trợ động từ did, động từ chính phải ở dạng nguyên mẫu, không dùng V2 bought.",
+        "en": "After the auxiliary did, the main verb must be in the base form, not the V2 bought."
+      },
+      "error_tag": "tense",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "We ___ to the beach last weekend.",
+      "options": [
+        {"text": "went", "error_tag": null},
+        {"text": "goed", "error_tag": "word_form"},
+        {"text": "go", "error_tag": "tense"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "went là dạng quá khứ của go; goed không tồn tại và go là hiện tại.",
+        "en": "went is the past form of go; goed does not exist and go is present."
+      }
+    },
+    {
+      "q": "She didn't ___ him yesterday.",
+      "options": [{"text": "see", "error_tag": null}, {"text": "saw", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau didn't, dùng động từ nguyên mẫu see, không dùng saw.",
+        "en": "After didn't, use the base verb see, not saw."
+      }
+    },
+    {
+      "q": "Did you ___ the bus this morning?",
+      "options": [{"text": "take", "error_tag": null}, {"text": "took", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau Did, dùng động từ nguyên mẫu take, không dùng took.",
+        "en": "After Did, use the base verb take, not took."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu kể về một việc bạn đã làm trong quá khứ, dùng một động từ bất quy tắc.",
+      "en": "Write one sentence about something you did in the past, using an irregular verb."
+    },
+    "placeholder": "Last weekend, I ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {
+          "role": "verb",
+          "any_of": [
+            "went",
+            "saw",
+            "bought",
+            "took",
+            "came",
+            "had",
+            "did",
+            "made",
+            "got",
+            "gave",
+            "found",
+            "left",
+            "met",
+            "read",
+            "wrote",
+            "drank",
+            "ate",
+            "slept",
+            "spoke",
+            "told"
+          ]
+        }
+      ]
+    },
+    "sample": {"text": "Last weekend, I went to the beach with my family."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790830491",
+    "generated_at": "2026-10-01T04:54:51Z",
+    "r5_source": {
+      "ids": ["a2-past-simple-irregular-verbs"],
+      "content_version": 2,
+      "content_hash": "e10e2e632b4ee565535e8824ed621c510428c871c8dd7382dec6252986197e35",
+      "corrections": [
+        {
+          "r5_id": "a2-past-simple-irregular-verbs",
+          "issue": "R5's example 'We went to the beach.' lacks a past time marker, so it does not clearly show the completed-past use at A2.",
+          "fix": "Added 'last weekend' to the example: 'We went to the beach last weekend.'"
+        },
+        {
+          "r5_id": "a2-past-simple-irregular-verbs",
+          "issue": "R5's example 'I didn't see him yesterday.' is correct but the lesson did not show the base-verb rule after didn't with a clear time phrase in the negative.",
+          "fix": "Kept the sentence and added a span-level annotation explaining that see stays in the base form after didn't."
+        },
+        {
+          "r5_id": "a2-past-simple-irregular-verbs",
+          "issue": "R5's example 'Did you take the bus?' has no time phrase, so the past-time context is weak.",
+          "fix": "Added 'this morning': 'Did you take the bus this morning?'"
+        },
+        {
+          "r5_id": "a2-past-simple-irregular-verbs",
+          "issue": "R5's mistake 'I goed home.' is a word-form error, but the lesson did not tag it or explain the mechanism.",
+          "fix": "Tagged it as word_form and explained that the learner over-applies the -ed rule to an irregular verb."
+        },
+        {
+          "r5_id": "a2-past-simple-irregular-verbs",
+          "issue": "R5's mistake 'Did she bought it?' is a tense error, but the lesson did not tag it or explain the mechanism.",
+          "fix": "Tagged it as tense and explained that the main verb must be in the base form after did."
+        }
+      ]
+    }
+  },
+  "review": null
+}

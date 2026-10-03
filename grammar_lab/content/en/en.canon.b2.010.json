@@ -1,0 +1,204 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b2.010",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.obligation_advice",
+  "level": {"framework": "cefr", "value": "B2", "rank": 4},
+  "prereqs": ["en.canon.b1.020"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["b2-needn-t-have-vs-didn-t-need-to"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["b2-needn-t-have-vs-didn-t-need-to"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Needn't have vs didn't need to", "en": "Needn't have vs didn't need to"},
+    "native_title": "Needn't have vs didn't need to",
+    "level": {"framework": "cefr", "value": "B2", "rank": 4},
+    "summary": {
+      "vi": "Phân biệt needn't have + quá khứ phân từ (việc đã làm nhưng không cần thiết) với didn't need to + động từ nguyên mẫu (không có sự cần thiết, không cho biết việc có xảy ra hay không).",
+      "en": "Distinguish needn't have + past participle (something was done but was unnecessary) from didn't need to + base verb (there was no necessity, without saying whether the action happened)."
+    },
+    "sub": {"vi": "không cần thiết trong quá khứ", "en": "past unnecessary actions"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Dùng needn't have + quá khứ phân từ khi bạn biết chắc hành động đã xảy ra và muốn nói nó không cần thiết.",
+      "en": "Use needn't have + past participle when you know for certain the action happened and you want to say it was unnecessary."
+    },
+    {
+      "vi": "Dùng didn't need to + động từ nguyên mẫu khi chỉ muốn nói không có sự cần thiết, không quan tâm việc đó có được làm hay không.",
+      "en": "Use didn't need to + base verb when you only want to say there was no necessity, without saying whether the action was done."
+    },
+    {
+      "vi": "Dùng needn't have khi muốn thể hiện sự tiếc nuối hoặc phê bình nhẹ rằng ai đó đã làm việc không cần thiết.",
+      "en": "Use needn't have to express mild regret or criticism that someone did something unnecessary."
+    },
+    {
+      "vi": "Dùng didn't need to khi kể lại tình huống trong quá khứ mà không có nghĩa vụ, thường đi kèm lý do như because, so.",
+      "en": "Use didn't need to to narrate a past situation with no obligation, often with a reason such as because or so."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {
+        "text": "needn't have",
+        "role": "aux",
+        "label": {"vi": "trợ động từ phủ định + have", "en": "negative auxiliary + have"}
+      },
+      {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}},
+      {"text": "O", "role": "object", "label": {"vi": "tân ngữ", "en": "object"}, "optional": true}
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "You needn't have brought food; we had plenty.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 16, "role": "aux"},
+        {"start": 17, "end": 24, "role": "verb"},
+        {"start": 25, "end": 29, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Hành động mang thức ăn đã xảy ra, nhưng không cần thiết.",
+        "en": "The action of bringing food happened, but it was unnecessary."
+      },
+      "translation": {
+        "vi": "Bạn đã không cần mang thức ăn; chúng tôi có nhiều rồi.",
+        "en": "You didn't need to bring food; we had plenty."
+      }
+    },
+    {
+      "text": "I didn't need to work yesterday because it was a holiday.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 2, "end": 16, "role": "aux"},
+        {"start": 17, "end": 21, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Không có sự cần thiết phải làm việc; không cho biết tôi có làm hay không.",
+        "en": "There was no necessity to work; it does not say whether I worked."
+      },
+      "translation": {
+        "vi": "Hôm qua tôi không cần làm việc vì là ngày nghỉ.",
+        "en": "I didn't need to work yesterday because it was a holiday."
+      }
+    },
+    {
+      "text": "She needn't have paid for a taxi.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 16, "role": "aux"},
+        {"start": 17, "end": 21, "role": "verb"},
+        {"start": 22, "end": 32, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Cô ấy đã trả tiền taxi, nhưng việc đó không cần thiết.",
+        "en": "She paid for a taxi, but it was unnecessary."
+      },
+      "translation": {"vi": "Cô ấy đã không cần trả tiền taxi.", "en": "She needn't have paid for a taxi."}
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "I needn't bought it.",
+      "right": "I needn't have bought it.",
+      "reason": {
+        "vi": "Sau needn't phải có have + quá khứ phân từ, không dùng quá khứ đơn.",
+        "en": "After needn't you need have + past participle, not the past simple."
+      },
+      "error_tag": "other",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "You ___ have brought food; we had plenty.",
+      "options": [
+        {"text": "needn't", "error_tag": null},
+        {"text": "didn't need to", "error_tag": "word_choice"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Hành động mang thức ăn đã xảy ra, nên dùng needn't have + quá khứ phân từ.",
+        "en": "The action of bringing food happened, so use needn't have + past participle."
+      }
+    },
+    {
+      "q": "I ___ work yesterday because it was a holiday.",
+      "options": [
+        {"text": "didn't need to", "error_tag": null},
+        {"text": "needn't have", "error_tag": "word_choice"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Chỉ nói không có sự cần thiết, không cho biết việc có xảy ra hay không, nên dùng didn't need to + động từ nguyên mẫu.",
+        "en": "It only says there was no necessity, without saying whether the action happened, so use didn't need to + base verb."
+      }
+    },
+    {
+      "q": "She needn't have ___ for a taxi.",
+      "options": [{"text": "paid", "error_tag": null}, {"text": "pay", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau needn't have phải dùng quá khứ phân từ, không dùng động từ nguyên mẫu.",
+        "en": "After needn't have you need the past participle, not the base verb."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một việc bạn đã làm trong quá khứ nhưng không cần thiết, dùng needn't have + quá khứ phân từ.",
+      "en": "Write a sentence about something you did in the past that was unnecessary, using needn't have + past participle."
+    },
+    "placeholder": "I needn't have ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "aux", "any_of": ["needn't have", "didn't need to"]},
+        {"role": "verb", "regex": "\\b\\w+(ed|en|t|ght|ne|rn|wn|ld|nt|d)\\b"}
+      ]
+    },
+    "sample": {"text": "I needn't have bought so much milk."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790831141",
+    "generated_at": "2026-10-01T05:05:41Z",
+    "r5_source": {
+      "ids": ["b2-needn-t-have-vs-didn-t-need-to"],
+      "content_version": 2,
+      "content_hash": "8c015daf5a04d0505330c7fa09ce33acaf64c657e5b4e30757320a8f0589041d",
+      "corrections": [
+        {
+          "r5_id": "b2-needn-t-have-vs-didn-t-need-to",
+          "issue": "The R5 lesson lists 'I didn't need to have called, so I didn't call.' as a mistake, but it is grammatically possible and not a real learner error for this point.",
+          "fix": "Removed it from common_mistakes and replaced it with the genuine error 'I needn't bought it.' -> 'I needn't have bought it.'"
+        },
+        {
+          "r5_id": "b2-needn-t-have-vs-didn-t-need-to",
+          "issue": "The R5 lesson gives no formula, no negative/question forms, no spans, no comparison, and no quick practice.",
+          "fix": "Added the formula with slots and roles, empty negative/question arrays (the point has no distinct negative or question form), spans for all examples, and three quick-practice questions."
+        },
+        {
+          "r5_id": "b2-needn-t-have-vs-didn-t-need-to",
+          "issue": "The R5 example 'We didn't need to book in advance.' is correct but the lesson does not explain that it does not say whether the booking happened.",
+          "fix": "Kept the meaning in the summary and when_to_use, and used a parallel example 'I didn't need to work yesterday because it was a holiday.' with an annotation making that point explicit."
+        }
+      ]
+    }
+  },
+  "review": null
+}

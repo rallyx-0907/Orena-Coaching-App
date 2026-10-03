@@ -1,0 +1,219 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk6.a_6_2_1.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.pronoun_reference",
+  "level": {"framework": "hsk3", "value": "6", "rank": 6},
+  "prereqs": ["zh.canon.gf.hsk5.a_5_8.p1"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"gf0025": ["gf0025.hsk6.003"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Đại từ: 指示代词：本、此", "en": "Pronouns: 指示代词：本、此"},
+    "native_title": "指示代词：本、此",
+    "level": {"framework": "hsk3", "value": "6", "rank": 6},
+    "summary": {
+      "vi": "Đại từ chỉ định 本 và 此 dùng để chỉ người, vật hoặc sự việc đã được xác định trong ngữ cảnh, thường mang sắc thái trang trọng hoặc văn viết.",
+      "en": "The demonstrative pronouns 本 and 此 refer to people, things, or matters already identified in context, and they usually carry a formal or written tone."
+    },
+    "sub": {"vi": "chỉ định trang trọng", "en": "formal demonstratives"},
+    "native_title_pinyin": ["zhǐ", "shì", "dài", "cí", "", "běn", "", "cǐ"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn chỉ người, vật hoặc sự việc đã được nhắc đến hoặc đã rõ trong ngữ cảnh, thay cho 这/那.",
+      "en": "When you want to point to a person, thing, or matter already mentioned or clear from context, instead of 这/那."
+    },
+    {
+      "vi": "Khi viết văn bản trang trọng như thông báo, thư từ, báo cáo hoặc diễn văn.",
+      "en": "When writing formal texts such as notices, letters, reports, or speeches."
+    },
+    {
+      "vi": "Khi nói về bản thân hoặc tổ chức của mình bằng cụm cố định như 本人, 本校, 本公司.",
+      "en": "When referring to yourself or your own organization with fixed phrases like 本人, 本校, 本公司."
+    },
+    {
+      "vi": "Khi muốn nhấn mạnh một sự việc cụ thể trong lập luận, ví dụ 此事, 此问题.",
+      "en": "When emphasizing a specific matter in an argument, for example 此事, 此问题."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "本/此",
+        "role": "other",
+        "label": {"vi": "đại từ chỉ định", "en": "demonstrative pronoun"},
+        "options": [{"text": "本", "pinyin": ["běn"]}, {"text": "此", "pinyin": ["cǐ"]}],
+        "pinyin": ["běn", "", "cǐ"]
+      },
+      {
+        "text": "N",
+        "role": "object",
+        "label": {"vi": "danh từ được chỉ định", "en": "noun referred to"},
+        "pinyin": [""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "本校定于九月一日开学。",
+      "form": "affirmative",
+      "spans": [{"start": 0, "end": 2, "role": "other"}, {"start": 4, "end": 8, "role": "object"}],
+      "annotation": {
+        "vi": "本校 là cách nói trang trọng của 我们学校, dùng trong thông báo chính thức.",
+        "en": "本校 is the formal way to say 我们学校, used in official notices."
+      },
+      "translation": {
+        "vi": "Trường chúng tôi ấn định ngày 1 tháng 9 khai giảng.",
+        "en": "Our school has set September 1 as the opening day."
+      },
+      "pinyin": ["běn", "xiào", "dìng", "yú", "jiǔ", "yuè", "yī", "rì", "kāi", "xué", ""]
+    },
+    {
+      "text": "此事关系重大，请大家认真考虑。",
+      "form": "affirmative",
+      "spans": [{"start": 0, "end": 2, "role": "other"}, {"start": 2, "end": 4, "role": "object"}],
+      "annotation": {
+        "vi": "此事 nghĩa là 'việc này', trang trọng hơn 这件事.",
+        "en": "此事 means 'this matter', more formal than 这件事."
+      },
+      "translation": {
+        "vi": "Việc này có liên quan trọng đại, xin mọi người suy nghĩ kỹ.",
+        "en": "This matter is of great importance; please consider it carefully."
+      },
+      "pinyin": [
+        "cǐ",
+        "shì",
+        "guān",
+        "xì",
+        "zhòng",
+        "dà",
+        "",
+        "qǐng",
+        "dà",
+        "jiā",
+        "rèn",
+        "zhēn",
+        "kǎo",
+        "lǜ",
+        ""
+      ]
+    },
+    {
+      "text": "本人已收到通知，特此回复。",
+      "form": "affirmative",
+      "spans": [{"start": 0, "end": 2, "role": "other"}, {"start": 5, "end": 7, "role": "object"}],
+      "annotation": {
+        "vi": "本人 là cách tự gọi mình trang trọng trong văn bản hành chính.",
+        "en": "本人 is a formal way to refer to oneself in administrative writing."
+      },
+      "translation": {
+        "vi": "Tôi đã nhận được thông báo, xin trả lời đặc biệt.",
+        "en": "I have received the notice and hereby reply."
+      },
+      "pinyin": ["běn", "rén", "yǐ", "shōu", "dào", "tōng", "zhī", "", "tè", "cǐ", "huí", "fù", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "本学校很大。",
+      "right": "本校很大。",
+      "reason": {
+        "vi": "本 không kết hợp tự do với mọi danh từ; với trường học phải dùng cụm cố định 本校, không nói 本学校.",
+        "en": "本 does not combine freely with every noun; for a school you use the fixed phrase 本校, not 本学校."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong_pinyin": ["běn", "xué", "xiào", "hěn", "dà", ""],
+      "right_pinyin": ["běn", "xiào", "hěn", "dà", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "___公司定于下周举行会议。",
+      "options": [
+        {"text": "本", "error_tag": null, "pinyin": ["běn"]},
+        {"text": "这", "error_tag": "register", "pinyin": ["zhè"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Trong thông báo trang trọng, dùng 本公司 thay vì 这公司.",
+        "en": "In a formal notice, use 本公司 rather than 这公司."
+      },
+      "q_pinyin": ["", "", "", "gōng", "sī", "dìng", "yú", "xià", "zhōu", "jǔ", "xíng", "huì", "yì", ""]
+    },
+    {
+      "q": "___问题已经解决，请大家放心。",
+      "options": [
+        {"text": "此", "error_tag": null, "pinyin": ["cǐ"]},
+        {"text": "那", "error_tag": "register", "pinyin": ["nà"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "此问题 là cách nói trang trọng, phù hợp văn bản thông báo.",
+        "en": "此问题 is the formal choice, suitable for a written notice."
+      },
+      "q_pinyin": [
+        "",
+        "",
+        "",
+        "wèn",
+        "tí",
+        "yǐ",
+        "jīng",
+        "jiě",
+        "jué",
+        "",
+        "qǐng",
+        "dà",
+        "jiā",
+        "fàng",
+        "xīn",
+        ""
+      ]
+    },
+    {
+      "q": "___人已经签字，文件生效。",
+      "options": [
+        {"text": "本", "error_tag": null, "pinyin": ["běn"]},
+        {"text": "我", "error_tag": "register", "pinyin": ["wǒ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "本人 là cách tự xưng trang trọng trong văn bản hành chính.",
+        "en": "本人 is the formal self-reference used in administrative documents."
+      },
+      "q_pinyin": ["", "", "", "rén", "yǐ", "jīng", "qiān", "zì", "", "wén", "jiàn", "shēng", "xiào", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu trang trọng giới thiệu bản thân hoặc tổ chức của bạn, dùng 本 hoặc 此.",
+      "en": "Write one formal sentence introducing yourself or your organization, using 本 or 此."
+    },
+    "placeholder": "本人……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "other", "any_of": ["本", "此"]}, {"role": "object", "regex": "[\\u4e00-\\u9fff]+"}]
+    },
+    "sample": {"text": "本人已经收到通知。", "pinyin": ["běn", "rén", "yǐ", "jīng", "shōu", "dào", "tōng", "zhī", ""]},
+    "placeholder_pinyin": ["běn", "rén", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790834030",
+    "generated_at": "2026-10-01T05:53:50Z"
+  },
+  "review": null
+}

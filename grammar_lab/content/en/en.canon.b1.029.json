@@ -1,0 +1,225 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b1.029",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.reporting",
+  "level": {"framework": "cefr", "value": "B1", "rank": 3},
+  "prereqs": ["en.canon.b1.027"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["b1-reported-commands-and-requests"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": ["b1-reported-commands-and-requests"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Reported commands and requests", "en": "Reported commands and requests"},
+    "native_title": "Reported commands and requests",
+    "level": {"framework": "cefr", "value": "B1", "rank": 3},
+    "summary": {
+      "vi": "Tường thuật mệnh lệnh và yêu cầu bằng tell/ask/order + tân ngữ + (not) to + động từ nguyên mẫu.",
+      "en": "Report commands and requests with tell/ask/order + object + (not) to + base verb."
+    },
+    "sub": {"vi": "tường thuật mệnh lệnh", "en": "reported commands"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn kể lại lời ai đó đã bảo hoặc yêu cầu người khác làm gì, không lặp lại nguyên văn.",
+      "en": "When you retell what someone told or asked another person to do, without repeating the exact words."
+    },
+    {
+      "vi": "Khi người nói có quyền ra lệnh (giáo viên, bố mẹ, cảnh sát) và bạn muốn nhấn mạnh mệnh lệnh đó.",
+      "en": "When the speaker has authority to give an order (teacher, parent, officer) and you want to stress the command."
+    },
+    {
+      "vi": "Khi bạn muốn chuyển một câu mệnh lệnh trực tiếp như 'Close the door' thành lời kể gián tiếp.",
+      "en": "When you want to turn a direct imperative such as 'Close the door' into indirect speech."
+    },
+    {
+      "vi": "Khi cần phân biệt giữa lời yêu cầu lịch sự (ask) và mệnh lệnh mạnh (tell/order).",
+      "en": "When you need to distinguish a polite request (ask) from a strong command (tell/order)."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {
+        "text": "tell/ask/order",
+        "role": "verb",
+        "label": {"vi": "động từ tường thuật", "en": "reporting verb"},
+        "options": [{"text": "tell"}, {"text": "ask"}, {"text": "order"}]
+      },
+      {
+        "text": "O",
+        "role": "object",
+        "label": {"vi": "tân ngữ (người nhận)", "en": "object (person)"}
+      },
+      {"text": "to", "role": "marker", "label": {"vi": "tiểu từ to", "en": "to-infinitive marker"}},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên mẫu", "en": "base verb"}}
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "tell/ask/order",
+          "role": "verb",
+          "label": {"vi": "động từ tường thuật", "en": "reporting verb"},
+          "options": [{"text": "tell"}, {"text": "ask"}, {"text": "order"}]
+        },
+        {
+          "text": "O",
+          "role": "object",
+          "label": {"vi": "tân ngữ (người nhận)", "en": "object (person)"}
+        },
+        {
+          "text": "not to",
+          "role": "marker",
+          "label": {"vi": "tiểu từ phủ định not to", "en": "negative to-infinitive marker"}
+        },
+        {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên mẫu", "en": "base verb"}}
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "The teacher told us to open our books.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 11, "role": "subject"},
+        {"start": 12, "end": 16, "role": "verb"},
+        {"start": 17, "end": 19, "role": "object"},
+        {"start": 20, "end": 22, "role": "marker"},
+        {"start": 23, "end": 27, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "tường thuật mệnh lệnh trực tiếp 'Open your books'",
+        "en": "reports the direct command 'Open your books'"
+      },
+      "translation": {"vi": "Giáo viên bảo chúng tôi mở sách.", "en": "The teacher told us to open our books."}
+    },
+    {
+      "text": "She asked me to wait outside.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 9, "role": "verb"},
+        {"start": 10, "end": 12, "role": "object"},
+        {"start": 13, "end": 15, "role": "marker"},
+        {"start": 16, "end": 20, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "ask + tân ngữ + to-infinitive diễn tả yêu cầu lịch sự",
+        "en": "ask + object + to-infinitive expresses a polite request"
+      },
+      "translation": {"vi": "Cô ấy yêu cầu tôi chờ ngoài.", "en": "She asked me to wait outside."}
+    },
+    {
+      "text": "Dad told me not to be late.",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 8, "role": "verb"},
+        {"start": 9, "end": 11, "role": "object"},
+        {"start": 12, "end": 18, "role": "marker"},
+        {"start": 19, "end": 21, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "not to + động từ nguyên mẫu tường thuật mệnh lệnh phủ định",
+        "en": "not to + base verb reports a negative command"
+      },
+      "translation": {"vi": "Bố bảo tôi đừng muộn.", "en": "Dad told me not to be late."}
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "She told to me wait.",
+      "right": "She told me to wait.",
+      "reason": {
+        "vi": "tell cần tân ngữ trực tiếp ngay sau nó, rồi mới đến to-infinitive; 'to me' chen vào làm sai trật tự.",
+        "en": "tell needs a direct object immediately after it, then the to-infinitive; inserting 'to me' breaks the order."
+      },
+      "error_tag": "other",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "The officer ordered them ___ stop.",
+      "options": [{"text": "to", "error_tag": null}, {"text": "for", "error_tag": "preposition"}],
+      "answer": 0,
+      "explain": {
+        "vi": "order + tân ngữ + to + động từ nguyên mẫu; 'for' không dùng trong cấu trúc này.",
+        "en": "order + object + to + base verb; 'for' is not used in this pattern."
+      }
+    },
+    {
+      "q": "He asked me ___ call him after work.",
+      "options": [{"text": "not to", "error_tag": null}, {"text": "don't", "error_tag": "sentence_structure"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Yêu cầu phủ định dùng not to + động từ nguyên mẫu, không dùng trợ động từ don't.",
+        "en": "A negative request uses not to + base verb, not the auxiliary don't."
+      }
+    },
+    {
+      "q": "The teacher told ___ to open our books.",
+      "options": [{"text": "us", "error_tag": null}, {"text": "we", "error_tag": "agreement"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau tell cần tân ngữ 'us', không dùng chủ ngữ 'we'.",
+        "en": "After tell we need the object 'us', not the subject 'we'."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu kể lại điều ai đó đã bảo hoặc yêu cầu bạn làm, dùng tell/ask/order + tân ngữ + (not) to + động từ.",
+      "en": "Write one sentence reporting what someone told or asked you to do, using tell/ask/order + object + (not) to + verb."
+    },
+    "placeholder": "My teacher told me to ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "verb", "any_of": ["told", "asked", "ordered"]},
+        {"role": "marker", "any_of": ["to"]}
+      ]
+    },
+    "sample": {"text": "My teacher told me to finish the homework before Friday."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790830924",
+    "generated_at": "2026-10-01T05:02:04Z",
+    "r5_source": {
+      "ids": ["b1-reported-commands-and-requests"],
+      "content_version": 2,
+      "content_hash": "1e205e6bfe4a528c572372c748c6479b48e75f5d6c861515e891a74200be462c",
+      "corrections": [
+        {
+          "r5_id": "b1-reported-commands-and-requests",
+          "issue": "R5 mistake 'She told to me wait.' was listed with the wrong explanation: it said 'Order sai; tell + object + to-infinitive' but did not explain that 'to me' is the wrong element.",
+          "fix": "Rewrote the reason to state that tell takes a direct object immediately after it, so 'to me' must be removed: 'She told me to wait.'"
+        },
+        {
+          "r5_id": "b1-reported-commands-and-requests",
+          "issue": "R5 example 'The officer ordered them to stop.' was correct but the lesson did not show the negative form with 'order'.",
+          "fix": "Kept the example and added a negative example 'Dad told me not to be late.' to cover the negative pattern."
+        },
+        {
+          "r5_id": "b1-reported-commands-and-requests",
+          "issue": "R5 did not include a formula or spans, and its explanation was generic.",
+          "fix": "Added the abstract formula with slots, negative variant, and spans for all examples."
+        }
+      ]
+    },
+    "metadata_stale": true
+  },
+  "review": null
+}

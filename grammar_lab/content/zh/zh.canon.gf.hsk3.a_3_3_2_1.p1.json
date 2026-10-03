@@ -1,0 +1,233 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk3.a_3_3_2_1.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.negation",
+  "level": {"framework": "hsk3", "value": "3", "rank": 3},
+  "prereqs": [],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"gf0025": ["gf0025.hsk3.034"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 不A不B", "en": "Chinese grammar: 不A不B"},
+    "native_title": "不A不B",
+    "level": {"framework": "hsk3", "value": "3", "rank": 3},
+    "summary": {
+      "vi": "Mẫu 不A不B dùng để nói một trạng thái không nghiêng về A cũng không nghiêng về B, thường là ở giữa hoặc không đạt yêu cầu.",
+      "en": "The 不A不B pattern describes a state that is neither A nor B, often something in between or not good enough."
+    },
+    "sub": {"vi": "không A không B", "en": "neither A nor B"},
+    "native_title_pinyin": ["bù", "", "bù", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói một người hay vật không thuộc hẳn về bên A cũng không thuộc hẳn về bên B.",
+      "en": "When you want to say a person or thing is not clearly on side A and not clearly on side B."
+    },
+    {
+      "vi": "Khi miêu tả mức độ ở khoảng giữa, ví dụ không quá nóng cũng không quá lạnh.",
+      "en": "When describing a middle degree, for example neither too hot nor too cold."
+    },
+    {
+      "vi": "Khi phê bình nhẹ rằng một việc chưa đủ tốt, ví dụ không tốt cũng không xấu.",
+      "en": "When mildly criticising that something is not good enough, for example neither good nor bad."
+    },
+    {
+      "vi": "Khi nói về thái độ lưỡng lự, không muốn cũng không từ chối.",
+      "en": "When talking about a hesitant attitude, neither wanting nor refusing."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "不",
+        "role": "marker",
+        "label": {"vi": "phủ định thứ nhất", "en": "first negator"},
+        "pinyin": ["bù"]
+      },
+      {
+        "text": "A",
+        "role": "other",
+        "label": {"vi": "vị từ thứ nhất", "en": "first predicate"},
+        "pinyin": [""]
+      },
+      {
+        "text": "不",
+        "role": "marker",
+        "label": {"vi": "phủ định thứ hai", "en": "second negator"},
+        "pinyin": ["bù"]
+      },
+      {
+        "text": "B",
+        "role": "other",
+        "label": {"vi": "vị từ thứ hai", "en": "second predicate"},
+        "pinyin": [""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "这件衣服不大不小，正好。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 4, "end": 5, "role": "marker"},
+        {"start": 5, "end": 6, "role": "other"},
+        {"start": 6, "end": 7, "role": "marker"},
+        {"start": 7, "end": 8, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Không lớn cũng không nhỏ, tức là vừa đúng.",
+        "en": "Not big and not small, meaning just right."
+      },
+      "translation": {
+        "vi": "Cái áo này không lớn không nhỏ, vừa đúng.",
+        "en": "This piece of clothing is neither big nor small, it fits just right."
+      },
+      "pinyin": ["zhè", "jiàn", "yī", "fu", "bù", "dà", "bù", "xiǎo", "", "zhèng", "hǎo", ""]
+    },
+    {
+      "text": "他每天不早不晚，八点就到公司。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 3, "end": 4, "role": "marker"},
+        {"start": 4, "end": 5, "role": "other"},
+        {"start": 5, "end": 6, "role": "marker"},
+        {"start": 6, "end": 7, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Không sớm cũng không muộn, đúng giờ.",
+        "en": "Neither early nor late, exactly on time."
+      },
+      "translation": {
+        "vi": "Anh ấy ngày nào cũng không sớm không muộn, tám giờ là đến công ty.",
+        "en": "Every day he arrives at the office at eight, neither early nor late."
+      },
+      "pinyin": [
+        "tā",
+        "měi",
+        "tiān",
+        "bù",
+        "zǎo",
+        "bù",
+        "wǎn",
+        "",
+        "bā",
+        "diǎn",
+        "jiù",
+        "dào",
+        "gōng",
+        "sī",
+        ""
+      ]
+    },
+    {
+      "text": "这个菜不咸不淡，很好吃。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 3, "end": 4, "role": "marker"},
+        {"start": 4, "end": 5, "role": "other"},
+        {"start": 5, "end": 6, "role": "marker"},
+        {"start": 6, "end": 7, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Không mặn cũng không nhạt, vị vừa ăn.",
+        "en": "Neither salty nor bland, the taste is just right."
+      },
+      "translation": {
+        "vi": "Món này không mặn không nhạt, rất ngon.",
+        "en": "This dish is neither salty nor bland, it is very tasty."
+      },
+      "pinyin": ["zhè", "ge", "cài", "bù", "xián", "bù", "dàn", "", "hěn", "hǎo", "chī", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "这件衣服不大和小，正好。",
+      "right": "这件衣服不大不小，正好。",
+      "reason": {
+        "vi": "Người học quen dùng 和 để nối hai tính từ, nhưng trong mẫu 不A不B phải lặp lại 不 trước vế thứ hai, không dùng 和.",
+        "en": "Learners often use 和 to join two adjectives, but the 不A不B pattern repeats 不 before the second part and does not use 和."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong_pinyin": ["zhè", "jiàn", "yī", "fu", "bù", "dà", "hé", "xiǎo", "", "zhèng", "hǎo", ""],
+      "right_pinyin": ["zhè", "jiàn", "yī", "fu", "bù", "dà", "bù", "xiǎo", "", "zhèng", "hǎo", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "这件衣服___，正好。",
+      "options": [
+        {"text": "不大不小", "error_tag": null, "pinyin": ["bù", "dà", "bù", "xiǎo"]},
+        {"text": "不大和小", "error_tag": "conjunction", "pinyin": ["bù", "dà", "hé", "xiǎo"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Mẫu 不A不B lặp lại 不 trước vế thứ hai, không dùng 和 để nối.",
+        "en": "The 不A不B pattern repeats 不 before the second part; it does not use 和 to join them."
+      },
+      "q_pinyin": ["zhè", "jiàn", "yī", "fu", "", "", "", "", "zhèng", "hǎo", ""]
+    },
+    {
+      "q": "他每天___，八点就到公司。",
+      "options": [
+        {"text": "不早不晚", "error_tag": null, "pinyin": ["bù", "zǎo", "bù", "wǎn"]},
+        {"text": "不早和晚", "error_tag": "conjunction", "pinyin": ["bù", "zǎo", "hé", "wǎn"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Phải nói 不早不晚, tức là lặp lại 不 trước vế thứ hai.",
+        "en": "You say 不早不晚, repeating 不 before the second part."
+      },
+      "q_pinyin": ["tā", "měi", "tiān", "", "", "", "", "bā", "diǎn", "jiù", "dào", "gōng", "sī", ""]
+    },
+    {
+      "q": "这个菜___，很好吃。",
+      "options": [
+        {"text": "不咸不淡", "error_tag": null, "pinyin": ["bù", "xián", "bù", "dàn"]},
+        {"text": "不咸和淡", "error_tag": "conjunction", "pinyin": ["bù", "xián", "hé", "dàn"]}
+      ],
+      "answer": 0,
+      "explain": {"vi": "Mẫu đúng là 不咸不淡, không dùng 和.", "en": "The correct pattern is 不咸不淡, not 和."},
+      "q_pinyin": ["zhè", "ge", "cài", "", "", "", "", "hěn", "hǎo", "chī", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng 不A不B để miêu tả một người hoặc vật ở mức vừa phải.",
+      "en": "Write one sentence with 不A不B to describe a person or thing that is just moderate."
+    },
+    "placeholder": "这件衣服……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "marker", "any_of": ["不"]},
+        {"role": "other", "regex": "[\\u4e00-\\u9fff]"},
+        {"role": "marker", "any_of": ["不"]},
+        {"role": "other", "regex": "[\\u4e00-\\u9fff]"}
+      ]
+    },
+    "sample": {
+      "text": "这件衣服不大不小，正好。",
+      "pinyin": ["zhè", "jiàn", "yī", "fu", "bù", "dà", "bù", "xiǎo", "", "zhèng", "hǎo", ""]
+    },
+    "placeholder_pinyin": ["zhè", "jiàn", "yī", "fu", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790832695",
+    "generated_at": "2026-10-01T05:31:35Z"
+  },
+  "review": null
+}

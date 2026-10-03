@@ -1,0 +1,227 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk2.a_2_5_3.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.contrast",
+  "level": {"framework": "hsk3", "value": "2", "rank": 2},
+  "prereqs": ["zh.suiran_danshi"],
+  "contrasts": [],
+  "error_tags": ["conjunction"],
+  "source_refs": {"gf0025": ["gf0025.hsk2.062", "gf0025.hsk2.063", "gf0025.hsk2.064", "gf0025.hsk2.065"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Câu phức: 承接复句", "en": "Complex sentences: 承接复句"},
+    "native_title": "承接复句",
+    "level": {"framework": "hsk3", "value": "2", "rank": 2},
+    "summary": {
+      "vi": "Câu phức 承接复句 nối hai sự việc theo trình tự: việc thứ nhất xảy ra trước, việc thứ hai tiếp theo sau.",
+      "en": "A 承接复句 links two events in sequence: the first happens, then the second follows."
+    },
+    "sub": {"vi": "trình tự tiếp nối", "en": "sequential order"},
+    "native_title_pinyin": ["chéng", "jiē", "fù", "jù"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi kể hai hành động xảy ra lần lượt, việc này xong rồi mới đến việc kia.",
+      "en": "When you narrate two actions one after another, the first finishing before the second starts."
+    },
+    {
+      "vi": "Khi kể lại một chuỗi việc đã xảy ra trong quá khứ, thường dùng 了 ở vế thứ nhất.",
+      "en": "When retelling a chain of past events, often with 了 in the first clause."
+    },
+    {
+      "vi": "Khi cần nêu rõ quan hệ thời gian giữa hai vế, không chỉ đơn thuần liệt kê.",
+      "en": "When the time relation between the two clauses matters, not just a plain list."
+    },
+    {
+      "vi": "Khi viết hoặc nói một câu có hai vế mà vế sau là kết quả trực tiếp của vế trước.",
+      "en": "When a sentence has two clauses and the second is the direct next step after the first."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ vế một", "en": "subject of clause one"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "动词",
+        "role": "verb",
+        "label": {"vi": "động từ vế một", "en": "verb of clause one"},
+        "pinyin": ["dòng", "cí"]
+      },
+      {
+        "text": "了",
+        "role": "particle",
+        "label": {"vi": "trợ từ 了 đánh dấu việc đã xong", "en": "了 marking the first action as completed"},
+        "optional": true,
+        "pinyin": ["le"]
+      },
+      {
+        "text": "就",
+        "role": "connector",
+        "label": {
+          "vi": "liên từ 就 nối hai vế theo trình tự",
+          "en": "connector 就 linking the two clauses in sequence"
+        },
+        "pinyin": ["jiù"]
+      },
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ vế hai", "en": "subject of clause two"},
+        "optional": true,
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "动词",
+        "role": "verb",
+        "label": {"vi": "động từ vế hai", "en": "verb of clause two"},
+        "pinyin": ["dòng", "cí"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "我吃了饭就去看电影。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "verb"},
+        {"start": 2, "end": 3, "role": "particle"},
+        {"start": 4, "end": 5, "role": "connector"},
+        {"start": 5, "end": 6, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Việc ăn xong trước, rồi mới đi xem phim; 就 cho thấy vế hai tiếp ngay sau vế một.",
+        "en": "Eating finishes first, then the movie; 就 shows clause two follows right after clause one."
+      },
+      "translation": {"vi": "Tôi ăn cơm xong rồi đi xem phim.", "en": "I ate, then went to see a movie."},
+      "pinyin": ["wǒ", "chī", "le", "fàn", "jiù", "qù", "kàn", "diàn", "yǐng", ""]
+    },
+    {
+      "text": "他下了课就回家。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "verb"},
+        {"start": 2, "end": 3, "role": "particle"},
+        {"start": 4, "end": 5, "role": "connector"},
+        {"start": 5, "end": 6, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Tan học là về nhà ngay; hai vế nối theo trình tự thời gian.",
+        "en": "Class ends and he goes home right away; the two clauses are linked in time order."
+      },
+      "translation": {"vi": "Anh ấy tan học rồi về nhà ngay.", "en": "He finished class and went home right away."},
+      "pinyin": ["tā", "xià", "le", "kè", "jiù", "huí", "jiā", ""]
+    },
+    {
+      "text": "我们买了票就进去。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 3, "role": "verb"},
+        {"start": 3, "end": 4, "role": "particle"},
+        {"start": 5, "end": 6, "role": "connector"},
+        {"start": 6, "end": 8, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Mua vé xong là vào ngay; 就 nối hành động thứ hai với hành động thứ nhất.",
+        "en": "Buying the tickets is followed immediately by going in; 就 links the second action to the first."
+      },
+      "translation": {
+        "vi": "Chúng tôi mua vé xong rồi vào trong.",
+        "en": "We bought the tickets and then went in."
+      },
+      "pinyin": ["wǒ", "men", "mǎi", "le", "piào", "jiù", "jìn", "qù", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "我吃了饭去看电影。",
+      "right": "我吃了饭就去看电影。",
+      "reason": {
+        "vi": "Người Việt thường nối hai vế bằng cách đặt cạnh nhau như câu tiếng Việt, thiếu 就 nên câu mất dấu hiệu trình tự tiếp nối.",
+        "en": "Vietnamese speakers often join the two clauses by placing them side by side as in Vietnamese, omitting 就, so the sentence loses its sequential marker."
+      },
+      "error_tag": "conjunction",
+      "l1": ["vi"],
+      "wrong_pinyin": ["wǒ", "chī", "le", "fàn", "qù", "kàn", "diàn", "yǐng", ""],
+      "right_pinyin": ["wǒ", "chī", "le", "fàn", "jiù", "qù", "kàn", "diàn", "yǐng", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "他下了课___去图书馆。",
+      "options": [
+        {"text": "就", "error_tag": null, "pinyin": ["jiù"]},
+        {"text": "也", "error_tag": "conjunction", "pinyin": ["yě"]},
+        {"text": "还", "error_tag": "conjunction", "pinyin": ["hái"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "就 nối vế hai theo trình tự: tan học xong thì đi thư viện. 也 và 还 không diễn tả trình tự tiếp nối.",
+        "en": "就 links clause two in sequence: class ends, then the library. 也 and 还 do not express sequential order."
+      },
+      "q_pinyin": ["tā", "xià", "le", "kè", "", "", "", "qù", "tú", "shū", "guǎn", ""]
+    },
+    {
+      "q": "我吃了饭___回家。",
+      "options": [
+        {"text": "就", "error_tag": null, "pinyin": ["jiù"]},
+        {"text": "但是", "error_tag": "conjunction", "pinyin": ["dàn", "shì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Hai việc nối tiếp nhau nên dùng 就. 但是 chuyển ý tương phản, không hợp ở đây.",
+        "en": "The two events follow each other, so 就 is used. 但是 marks contrast and does not fit here."
+      },
+      "q_pinyin": ["wǒ", "chī", "le", "fàn", "", "", "", "huí", "jiā", ""]
+    },
+    {
+      "q": "我们买了票___进去。",
+      "options": [
+        {"text": "就", "error_tag": null, "pinyin": ["jiù"]},
+        {"text": "因为", "error_tag": "conjunction", "pinyin": ["yīn", "wèi"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Mua vé rồi vào ngay là quan hệ tiếp nối, dùng 就. 因为 nêu nguyên nhân, không đúng.",
+        "en": "Buying tickets then going in is a sequence, so 就 is used. 因为 gives a reason and is wrong here."
+      },
+      "q_pinyin": ["wǒ", "men", "mǎi", "le", "piào", "", "", "", "jìn", "qù", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu kể hai việc bạn làm lần lượt, dùng 了...就...",
+      "en": "Write one sentence about two things you did one after another, using 了...就..."
+    },
+    "placeholder": "我吃了饭就……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "particle", "any_of": ["了"]}, {"role": "connector", "any_of": ["就"]}]
+    },
+    "sample": {"text": "我吃了饭就睡觉。", "pinyin": ["wǒ", "chī", "le", "fàn", "jiù", "shuì", "jiào", ""]},
+    "placeholder_pinyin": ["wǒ", "chī", "le", "fàn", "jiù", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790832331",
+    "generated_at": "2026-10-01T05:25:31Z"
+  },
+  "review": null
+}

@@ -1,0 +1,233 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk4_8_topic_110",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.negation",
+  "level": {"framework": "hsk3", "value": "4", "rank": 4},
+  "prereqs": ["zh.canon.gf.hsk4.a_4_7.p2"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["zh-hsk4-8-topic-110"], "gf0025": ["gf0025.hsk5.055", "gf0025.hsk5.057"]},
+  "point_type": "other",
+  "sequence": 3,
+  "aliases": ["zh-hsk4-8-topic-110"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 再⋯⋯也⋯⋯", "en": "Chinese grammar: 再⋯⋯也⋯⋯"},
+    "native_title": "再⋯⋯也⋯⋯",
+    "level": {"framework": "hsk3", "value": "4", "rank": 4},
+    "summary": {
+      "vi": "Mẫu 再⋯⋯也⋯⋯ dùng để nói rằng dù mức độ có tăng đến đâu thì kết quả vẫn không thay đổi.",
+      "en": "The 再⋯⋯也⋯⋯ pattern says that no matter how much a degree increases, the result stays the same."
+    },
+    "sub": {"vi": "nhượng bộ theo mức độ", "en": "concession by degree"},
+    "native_title_pinyin": ["zài", "", "", "yě", "", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói dù một tình huống có cực đoan đến đâu, kết quả vẫn giữ nguyên.",
+      "en": "When you want to say that however extreme a situation gets, the result stays the same."
+    },
+    {
+      "vi": "Khi nhấn mạnh mức độ tăng lên của một tính từ hoặc hành động, không phải sự lặp lại.",
+      "en": "When you stress an increasing degree of an adjective or action, not a repetition."
+    },
+    {
+      "vi": "Khi đưa ra lời khuyên, quyết định hoặc kết luận không thay đổi trước mọi mức độ.",
+      "en": "When giving advice, a decision, or a conclusion that does not change at any degree."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "再",
+        "role": "marker",
+        "label": {"vi": "dấu hiệu nhượng bộ theo mức độ", "en": "degree-concession marker"},
+        "pinyin": ["zài"]
+      },
+      {
+        "text": "Adj/V",
+        "role": "other",
+        "label": {"vi": "tính từ hoặc cụm động từ", "en": "adjective or verb phrase"},
+        "pinyin": ["", "", "", "", ""]
+      },
+      {
+        "text": "也",
+        "role": "marker",
+        "label": {"vi": "dấu hiệu kết quả không đổi", "en": "unchanged-result marker"},
+        "pinyin": ["yě"]
+      },
+      {
+        "text": "result",
+        "role": "other",
+        "label": {
+          "vi": "kết quả hoặc hành động vẫn giữ nguyên",
+          "en": "result or action that stays the same"
+        },
+        "pinyin": ["", "", "", "", "", ""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "再忙也要注意身体。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "marker"},
+        {"start": 1, "end": 2, "role": "other"},
+        {"start": 2, "end": 3, "role": "marker"},
+        {"start": 3, "end": 8, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "再 đánh dấu mức độ bận tăng lên; 也 giữ kết quả là phải chú ý sức khỏe.",
+        "en": "再 marks the increasing degree of being busy; 也 keeps the result of taking care of your health."
+      },
+      "translation": {
+        "vi": "Dù bận đến đâu cũng phải chú ý sức khỏe.",
+        "en": "No matter how busy you are, you still have to take care of your health."
+      },
+      "pinyin": ["zài", "máng", "yě", "yào", "zhù", "yì", "shēn", "tǐ", ""]
+    },
+    {
+      "text": "这件事再难我也要做完。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 3, "end": 4, "role": "marker"},
+        {"start": 4, "end": 5, "role": "other"},
+        {"start": 6, "end": 7, "role": "marker"},
+        {"start": 7, "end": 10, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "再 đặt trước tính từ 难 để nói mức độ khó tăng lên; 也 giữ kết quả là tôi vẫn làm xong.",
+        "en": "再 comes before the adjective 难 to show an increasing degree of difficulty; 也 keeps the result that I will still finish it."
+      },
+      "translation": {
+        "vi": "Việc này dù khó đến đâu tôi cũng làm xong.",
+        "en": "No matter how hard this task is, I will still finish it."
+      },
+      "pinyin": ["zhè", "jiàn", "shì", "zài", "nán", "wǒ", "yě", "yào", "zuò", "wán", ""]
+    },
+    {
+      "text": "再贵也有人买。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "marker"},
+        {"start": 1, "end": 2, "role": "other"},
+        {"start": 2, "end": 3, "role": "marker"},
+        {"start": 3, "end": 6, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "再 đứng trước tính từ 贵 để nói mức độ đắt tăng lên; 也 giữ kết quả là vẫn có người mua.",
+        "en": "再 stands before the adjective 贵 to show an increasing degree of expensiveness; 也 keeps the result that people still buy it."
+      },
+      "translation": {
+        "vi": "Dù đắt đến đâu vẫn có người mua.",
+        "en": "No matter how expensive it is, people still buy it."
+      },
+      "pinyin": ["zài", "guì", "yě", "yǒu", "rén", "mǎi", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "再忙就要休息。",
+      "right": "再忙也要休息。",
+      "reason": {
+        "vi": "Người học dùng 就 để nối điều kiện với kết quả, nhưng 再⋯⋯也⋯⋯ cần 也 để giữ kết quả không đổi trước mức độ tăng lên.",
+        "en": "Learners use 就 to link a condition with a result, but 再⋯⋯也⋯⋯ needs 也 to keep the result unchanged despite an increasing degree."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong_pinyin": ["zài", "máng", "jiù", "yào", "xiū", "xi", ""],
+      "right_pinyin": ["zài", "máng", "yě", "yào", "xiū", "xi", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "再累___要吃饭。",
+      "options": [
+        {"text": "也", "error_tag": null, "pinyin": ["yě"]},
+        {"text": "就", "error_tag": "conjunction", "pinyin": ["jiù"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "再⋯⋯也⋯⋯ giữ kết quả không đổi; 就 biến câu thành quan hệ điều kiện - kết quả.",
+        "en": "再⋯⋯也⋯⋯ keeps the result unchanged; 就 turns the sentence into a condition-result relation."
+      },
+      "q_pinyin": ["zài", "lèi", "", "", "", "yào", "chī", "fàn", ""]
+    },
+    {
+      "q": "这件衣服再贵，我___要买。",
+      "options": [
+        {"text": "也", "error_tag": null, "pinyin": ["yě"]},
+        {"text": "都", "error_tag": "word_choice", "pinyin": ["dōu"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "也 là dấu hiệu cố định của mẫu 再⋯⋯也⋯⋯; 都 không thay thế được trong mẫu này.",
+        "en": "也 is the fixed marker of the 再⋯⋯也⋯⋯ pattern; 都 cannot replace it here."
+      },
+      "q_pinyin": ["zhè", "jiàn", "yī", "fu", "zài", "guì", "", "wǒ", "", "", "", "yào", "mǎi", ""]
+    },
+    {
+      "q": "___难，我们也要做完。",
+      "options": [
+        {"text": "再", "error_tag": null, "pinyin": ["zài"]},
+        {"text": "又", "error_tag": "word_choice", "pinyin": ["yòu"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "再 đánh dấu mức độ tăng lên trong mẫu nhượng bộ; 又 chỉ sự lặp lại hoặc thêm một lần nữa.",
+        "en": "再 marks an increasing degree in the concessive pattern; 又 only marks repetition or another occurrence."
+      },
+      "q_pinyin": ["", "", "", "nán", "", "wǒ", "men", "yě", "yào", "zuò", "wán", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về bản thân dùng 再⋯⋯也⋯⋯ để nói dù điều gì có đến mức nào, bạn vẫn giữ một quyết định hoặc thói quen.",
+      "en": "Write one sentence about yourself using 再⋯⋯也⋯⋯ to say that no matter how extreme something gets, you still keep a decision or habit."
+    },
+    "placeholder": "再……我也……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "marker", "any_of": ["再"]}, {"role": "marker", "any_of": ["也"]}]
+    },
+    "sample": {"text": "再忙我也要运动。", "pinyin": ["zài", "máng", "wǒ", "yě", "yào", "yùn", "dòng", ""]},
+    "placeholder_pinyin": ["zài", "", "", "wǒ", "yě", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790833448",
+    "generated_at": "2026-10-01T05:44:08Z",
+    "r5_source": {
+      "ids": ["zh-hsk4-8-topic-110"],
+      "content_version": 2,
+      "content_hash": "dcb3bff8c77b6e21cd67b89d26cef6925b3a765d592119facbe915608f8c2c7c",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk4-8-topic-110",
+          "issue": "R5 example 你再解释，我也不会改变决定。 is not a clean 再⋯⋯也⋯⋯ concessive-degree sentence: 再解释 reads as 'explain again', and the subject 你 sits between 再 and the verb, so the pattern is not shown clearly.",
+          "fix": "Replaced it with 再贵也有人买, where 再 directly precedes the adjective 贵 and 也 introduces the unchanged result."
+        },
+        {
+          "r5_id": "zh-hsk4-8-topic-110",
+          "issue": "R5 mistake 我再去也昨天。 is malformed and does not show a real learner error for this point.",
+          "fix": "Replaced it with 再忙就要休息 → 再忙也要休息, which shows the real error of using 就 instead of 也 in the concessive pattern."
+        },
+        {
+          "r5_id": "zh-hsk4-8-topic-110",
+          "issue": "R5 lists contrast targets 宁可...也不... and 越是...越..., but the point's compare requirement is empty and those are sibling topics, not required contrasts for this lesson.",
+          "fix": "Left compare empty and kept the lesson scoped to 再⋯⋯也⋯⋯ only."
+        }
+      ]
+    }
+  },
+  "review": null
+}

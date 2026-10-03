@@ -4,258 +4,229 @@
   "version": 1,
   "target_lang": "en",
   "function": "fn.identity_state",
-  "level": {
-    "framework": "cefr",
-    "value": "A1",
-    "rank": 1
-  },
+  "level": {"framework": "cefr", "value": "A1", "rank": 1},
   "prereqs": [],
-  "contrasts": [],
-  "error_tags": [
-    "agreement"
-  ],
-  "source_refs": {
-    "r5": [
-      "a1-be-am-is-are"
-    ]
-  },
+  "contrasts": ["en.have_got"],
+  "error_tags": ["agreement"],
+  "source_refs": {"r5": ["a1-be-am-is-are"]},
   "point_type": "other",
+  "sequence": 1,
+  "aliases": ["a1-be-am-is-are"],
+  "source_anchors": {"status": "anchored", "items": [{"source": "core_inventory", "code": "56", "level": "A1"}]},
   "header": {
-    "title": {
-      "vi": "Động từ be: am / is / are",
-      "en": "Be: am / is / are"
-    },
+    "title": {"vi": "Động từ be: am / is / are", "en": "Be: am / is / are"},
     "native_title": "Be: am / is / are",
-    "sub": {
-      "vi": "nói ai/cái gì là gì",
-      "en": "identity and state"
-    },
-    "level": {
-      "framework": "cefr",
-      "value": "A1",
-      "rank": 1
-    },
+    "level": {"framework": "cefr", "value": "A1", "rank": 1},
     "summary": {
-      "vi": "Dùng am, is, are để nối chủ ngữ với danh tính, trạng thái, tính chất hoặc nơi chốn.",
-      "en": "Use am, is, and are to link a subject to identity, state, description, or location."
-    }
+      "vi": "Dùng am/is/are để nối chủ ngữ với danh tính, nghề nghiệp, tính chất, trạng thái hoặc vị trí ở hiện tại.",
+      "en": "Use am/is/are to link a subject to an identity, job, quality, state, or present location."
+    },
+    "sub": {"vi": "danh tính và trạng thái", "en": "identity and state"}
   },
   "when_to_use": [
     {
-      "vi": "Nói ai hoặc vật là gì: I am a student.",
-      "en": "Say what someone or something is: I am a student."
+      "vi": "Nói tên, tuổi, quốc tịch hoặc nghề nghiệp: I am Lan. She is a nurse.",
+      "en": "Give a name, age, nationality, or job: I am Lan. She is a nurse."
     },
     {
-      "vi": "Mô tả trạng thái, tính chất hoặc nơi chốn.",
-      "en": "Describe a state, quality, or location."
+      "vi": "Mô tả tính chất hoặc trạng thái hiện tại: The soup is hot. I am tired.",
+      "en": "Describe a current quality or state: The soup is hot. I am tired."
+    },
+    {
+      "vi": "Nói ai hoặc vật gì đang ở đâu: My sister is at school. We are in class.",
+      "en": "Say where someone or something is now: My sister is at school. We are in class."
+    },
+    {
+      "vi": "Nói mối quan hệ giữa người và người: They are good friends.",
+      "en": "State a relationship between people: They are good friends."
     }
   ],
   "pattern": {
     "formula": [
-      {
-        "text": "S",
-        "role": "subject",
-        "label": {
-          "vi": "chủ ngữ",
-          "en": "subject"
-        }
-      },
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
       {
         "text": "be",
         "role": "verb",
-        "label": {
-          "vi": "am / is / are",
-          "en": "am / is / are"
-        },
-        "options": [
-          {
-            "text": "am"
-          },
-          {
-            "text": "is"
-          },
-          {
-            "text": "are"
-          }
-        ]
+        "label": {"vi": "động từ be", "en": "verb be"},
+        "options": [{"text": "am"}, {"text": "is"}, {"text": "are"}]
       },
       {
         "text": "complement",
         "role": "complement",
-        "label": {
-          "vi": "phần mô tả",
-          "en": "complement"
-        }
+        "label": {"vi": "danh từ / tính từ / cụm chỉ nơi chốn", "en": "noun / adjective / place phrase"}
       }
     ],
-    "illustration": {
-      "kind": "none"
-    }
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "be",
+          "role": "verb",
+          "label": {"vi": "động từ be", "en": "verb be"},
+          "options": [{"text": "am"}, {"text": "is"}, {"text": "are"}]
+        },
+        {"text": "not", "role": "marker", "label": {"vi": "phủ định", "en": "negator"}},
+        {
+          "text": "complement",
+          "role": "complement",
+          "label": {"vi": "danh từ / tính từ / cụm chỉ nơi chốn", "en": "noun / adjective / place phrase"}
+        }
+      ],
+      "question": [
+        {
+          "text": "be",
+          "role": "verb",
+          "label": {"vi": "động từ be", "en": "verb be"},
+          "options": [{"text": "Am"}, {"text": "Is"}, {"text": "Are"}]
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "complement",
+          "role": "complement",
+          "label": {"vi": "danh từ / tính từ / cụm chỉ nơi chốn", "en": "noun / adjective / place phrase"}
+        }
+      ]
+    },
+    "illustration": {"kind": "none"}
   },
   "examples": [
     {
-      "text": "I am tired.",
+      "text": "I am sixteen years old.",
       "form": "affirmative",
       "spans": [
-        {
-          "start": 0,
-          "end": 1,
-          "role": "subject"
-        },
-        {
-          "start": 2,
-          "end": 4,
-          "role": "verb"
-        },
-        {
-          "start": 5,
-          "end": 10,
-          "role": "complement"
-        }
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 2, "end": 4, "role": "verb"},
+        {"start": 5, "end": 22, "role": "complement"}
       ],
       "annotation": {
-        "vi": "I đi với am.",
-        "en": "I takes am."
+        "vi": "am nối chủ ngữ I với thông tin về tuổi.",
+        "en": "am links the subject I to age information."
       },
-      "translation": {
-        "vi": "I đi với am.",
-        "en": "I takes am."
-      }
+      "translation": {"vi": "Tôi mười sáu tuổi.", "en": "I am sixteen years old."}
     },
     {
-      "text": "They are students.",
+      "text": "My sister is at school.",
       "form": "affirmative",
       "spans": [
-        {
-          "start": 0,
-          "end": 4,
-          "role": "subject"
-        },
-        {
-          "start": 5,
-          "end": 8,
-          "role": "verb"
-        },
-        {
-          "start": 9,
-          "end": 17,
-          "role": "complement"
-        }
+        {"start": 0, "end": 9, "role": "subject"},
+        {"start": 10, "end": 12, "role": "verb"},
+        {"start": 13, "end": 22, "role": "complement"}
       ],
       "annotation": {
-        "vi": "They đi với are.",
-        "en": "They takes are."
+        "vi": "is nối chủ ngữ số ít với cụm chỉ nơi chốn.",
+        "en": "is links a singular subject to a place phrase."
       },
-      "translation": {
-        "vi": "They đi với are.",
-        "en": "They takes are."
+      "translation": {"vi": "Chị/em gái tôi đang ở trường.", "en": "My sister is at school."}
+    },
+    {
+      "text": "We are good friends.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 3, "end": 6, "role": "verb"},
+        {"start": 7, "end": 19, "role": "complement"}
+      ],
+      "annotation": {"vi": "are dùng với chủ ngữ số nhiều we.", "en": "are is used with the plural subject we."},
+      "translation": {"vi": "Chúng tôi là bạn tốt.", "en": "We are good friends."}
+    }
+  ],
+  "compare": [
+    {
+      "with": "en.have_got",
+      "this_example": "She is a teacher.",
+      "other_example": "She has got a car.",
+      "this_meaning": {
+        "vi": "be nói danh tính, tính chất hoặc trạng thái: She is a teacher.",
+        "en": "be states identity, quality, or state: She is a teacher."
+      },
+      "other_meaning": {
+        "vi": "have got nói sở hữu: She has got a car.",
+        "en": "have got states possession: She has got a car."
       }
     }
   ],
-  "compare": [],
   "common_mistakes": [
     {
-      "wrong": "She are happy.",
-      "right": "She is happy.",
+      "wrong": "I is tired.",
+      "right": "I am tired.",
       "reason": {
-        "vi": "She/he/it đi với is.",
-        "en": "She/he/it takes is."
+        "vi": "Chủ ngữ I luôn đi với am ở hiện tại; is dùng cho he/she/it.",
+        "en": "The subject I always takes am in the present; is goes with he/she/it."
       },
       "error_tag": "agreement",
-      "l1": [
-        "vi"
-      ]
+      "l1": ["vi"]
     }
   ],
   "quick_practice": [
     {
-      "q": "I ___ from Vietnam.",
-      "options": [
-        {
-          "text": "am",
-          "error_tag": null
-        },
-        {
-          "text": "is",
-          "error_tag": "agreement"
-        },
-        {
-          "text": "are",
-          "error_tag": "agreement"
-        }
-      ],
+      "q": "My parents ___ at work.",
+      "options": [{"text": "are", "error_tag": null}, {"text": "is", "error_tag": "agreement"}],
       "answer": 0,
-      "explain": {
-        "vi": "I đi với am.",
-        "en": "I takes am."
-      }
+      "explain": {"vi": "My parents là số nhiều nên dùng are.", "en": "My parents is plural, so use are."}
     },
     {
-      "q": "He ___ my friend.",
-      "options": [
-        {
-          "text": "is",
-          "error_tag": null
-        },
-        {
-          "text": "am",
-          "error_tag": "agreement"
-        },
-        {
-          "text": "are",
-          "error_tag": "agreement"
-        }
-      ],
+      "q": "She ___ my cousin.",
+      "options": [{"text": "is", "error_tag": null}, {"text": "are", "error_tag": "agreement"}],
       "answer": 0,
-      "explain": {
-        "vi": "He đi với is.",
-        "en": "He takes is."
-      }
+      "explain": {"vi": "She là số ít nên dùng is.", "en": "She is singular, so use is."}
     },
     {
-      "q": "We ___ ready.",
-      "options": [
-        {
-          "text": "are",
-          "error_tag": null
-        },
-        {
-          "text": "is",
-          "error_tag": "agreement"
-        },
-        {
-          "text": "am",
-          "error_tag": "agreement"
-        }
-      ],
+      "q": "I ___ ready.",
+      "options": [{"text": "am", "error_tag": null}, {"text": "is", "error_tag": "agreement"}],
       "answer": 0,
-      "explain": {
-        "vi": "We đi với are.",
-        "en": "We takes are."
-      }
+      "explain": {"vi": "I luôn dùng am ở hiện tại.", "en": "I always takes am in the present."}
     }
   ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về bản thân, dùng am/is/are với tên, tuổi, nghề nghiệp hoặc trạng thái của bạn.",
+      "en": "Write one sentence about yourself using am/is/are with your name, age, job, or state."
+    },
+    "placeholder": "I am ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "verb", "any_of": ["am", "is", "are", "'m", "'s", "'re"]},
+        {"role": "complement", "regex": "[A-Za-z]"}
+      ]
+    },
+    "sample": {"text": "I am a student."}
+  },
   "status": "draft_ai",
   "flags": [],
   "provenance": {
-    "model": "openai:gpt-5.6-sol",
-    "prompt_version": "direct-author.en-a1.v1",
-    "run_id": "chatgpt.en-a1.20260930",
-    "generated_at": "2026-09-30T10:35:00Z"
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790829538",
+    "generated_at": "2026-10-01T04:38:58Z",
+    "r5_source": {
+      "ids": ["a1-be-am-is-are"],
+      "content_version": 2,
+      "content_hash": "9b587ec007634c830c3aafad462f068821fbffd2fff206e9c4e39eea8c1f431b",
+      "corrections": [
+        {
+          "r5_id": "a1-be-am-is-are",
+          "issue": "R5's contrast list mentions 'Complete sentences and basic word order' and 'Subject and object pronouns', but the required comparison for this point is en.have_got.",
+          "fix": "Replaced the contrast section with a single compare entry against en.have_got (possession vs identity/state)."
+        },
+        {
+          "r5_id": "a1-be-am-is-are",
+          "issue": "R5 had no structured formula, negative, or question forms.",
+          "fix": "Added abstract formulas for affirmative, negative (be + not), and question (be + S + complement) with am/is/are options."
+        },
+        {
+          "r5_id": "a1-be-am-is-are",
+          "issue": "R5's guided practice included a 'choose' item with two full sentences, which does not fit the cloze format.",
+          "fix": "Rewrote practice as three cloze questions with one blank each and tagged distractors."
+        },
+        {
+          "r5_id": "a1-be-am-is-are",
+          "issue": "R5's mistakes list had two entries but the schema requires one entry for the agreement tag.",
+          "fix": "Kept the I is tired error as the single agreement mistake and dropped the duplicate They is error."
+        }
+      ]
+    }
   },
-  "review": null,
-  "sequence": 1,
-  "source_anchors": {
-    "status": "anchored",
-    "items": [
-      {
-        "source": "core_inventory",
-        "code": "56",
-        "level": "A1"
-      }
-    ]
-  },
-  "aliases": [
-    "a1-be-am-is-are"
-  ]
+  "review": null
 }

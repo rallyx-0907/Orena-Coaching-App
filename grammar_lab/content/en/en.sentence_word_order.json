@@ -4,237 +4,188 @@
   "version": 1,
   "target_lang": "en",
   "function": "fn.sentence_basics",
-  "level": {
-    "framework": "cefr",
-    "value": "A1",
-    "rank": 1
-  },
+  "level": {"framework": "cefr", "value": "A1", "rank": 1},
   "prereqs": [],
   "contrasts": [],
-  "error_tags": [
-    "sentence_structure"
-  ],
-  "source_refs": {
-    "r5": [
-      "a1-complete-sentences-and-basic-word-order"
-    ]
-  },
+  "error_tags": ["sentence_structure"],
+  "source_refs": {"r5": ["a1-complete-sentences-and-basic-word-order"]},
   "point_type": "word_order",
+  "sequence": 1,
+  "aliases": ["a1-complete-sentences-and-basic-word-order"],
+  "source_anchors": {"status": "unanchored", "items": []},
   "header": {
-    "title": {
-      "vi": "Câu hoàn chỉnh và trật tự từ cơ bản",
-      "en": "Complete sentences and basic word order"
-    },
+    "title": {"vi": "Câu hoàn chỉnh và trật tự từ cơ bản", "en": "Complete sentences and basic word order"},
     "native_title": "Complete sentences and basic word order",
-    "sub": {
-      "vi": "S + V + phần còn lại",
-      "en": "S + V + the rest"
-    },
-    "level": {
-      "framework": "cefr",
-      "value": "A1",
-      "rank": 1
-    },
+    "level": {"framework": "cefr", "value": "A1", "rank": 1},
     "summary": {
-      "vi": "Câu tiếng Anh cơ bản thường cần chủ ngữ và động từ, theo trật tự chủ ngữ trước động từ.",
-      "en": "A basic English sentence usually needs a subject and a verb, with the subject before the verb."
-    }
+      "vi": "Câu tiếng Anh cơ bản đặt chủ ngữ trước động từ, và tân ngữ hoặc phần bổ nghĩa theo sau động từ.",
+      "en": "A basic English sentence puts the subject before the verb, and the object or complement after it."
+    },
+    "sub": {"vi": "trật tự cơ bản", "en": "basic order"}
   },
   "when_to_use": [
     {
-      "vi": "Dùng trật tự Chủ ngữ + Động từ khi tạo câu khẳng định cơ bản.",
-      "en": "Use Subject + Verb for a basic affirmative sentence."
+      "vi": "Khi bạn nói ai hoặc cái gì làm một việc gì đó.",
+      "en": "When you say who or what does something."
     },
     {
-      "vi": "Thêm tân ngữ hoặc bổ ngữ sau động từ khi ý nghĩa cần chúng.",
-      "en": "Add an object or complement after the verb when the meaning needs one."
+      "vi": "Khi bạn nói ai hoặc cái gì thích, cần, hoặc có một thứ gì đó.",
+      "en": "When you say who or what likes, needs, or has something."
+    },
+    {
+      "vi": "Khi bạn mô tả một người hoặc vật bằng động từ be.",
+      "en": "When you describe a person or thing with the verb be."
     }
   ],
   "pattern": {
     "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}},
+      {"text": "O", "role": "object", "label": {"vi": "tân ngữ", "en": "object"}, "optional": true},
       {
-        "text": "S",
-        "role": "subject",
-        "label": {
-          "vi": "chủ ngữ",
-          "en": "subject"
-        }
-      },
-      {
-        "text": "V",
-        "role": "verb",
-        "label": {
-          "vi": "động từ",
-          "en": "verb"
-        }
-      },
-      {
-        "text": "O / complement",
-        "role": "object",
-        "label": {
-          "vi": "tân ngữ hoặc bổ ngữ",
-          "en": "object or complement"
-        },
+        "text": "C",
+        "role": "complement",
+        "label": {"vi": "bổ ngữ", "en": "complement"},
         "optional": true
       }
     ],
-    "illustration": {
-      "kind": "word_order"
-    }
+    "illustration": {"kind": "word_order"}
   },
   "examples": [
     {
-      "text": "I like coffee.",
+      "text": "I study English every day.",
       "form": "affirmative",
       "spans": [
-        {
-          "start": 0,
-          "end": 1,
-          "role": "subject"
-        },
-        {
-          "start": 2,
-          "end": 6,
-          "role": "verb"
-        },
-        {
-          "start": 7,
-          "end": 13,
-          "role": "object"
-        }
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 2, "end": 7, "role": "verb"},
+        {"start": 8, "end": 15, "role": "object"}
       ],
       "annotation": {
-        "vi": "Chủ ngữ I đứng trước động từ like.",
-        "en": "The subject I comes before the verb like."
+        "vi": "Chủ ngữ I đứng trước động từ study, tân ngữ English đứng sau.",
+        "en": "The subject I comes before the verb study, and the object English comes after."
       },
-      "translation": {
-        "vi": "Chủ ngữ I đứng trước động từ like.",
-        "en": "The subject I comes before the verb like."
-      }
+      "translation": {"vi": "Tôi học tiếng Anh mỗi ngày.", "en": "I study English every day."}
     },
     {
-      "text": "My sister works.",
+      "text": "My brother plays football.",
       "form": "affirmative",
       "spans": [
-        {
-          "start": 0,
-          "end": 9,
-          "role": "subject"
-        },
-        {
-          "start": 10,
-          "end": 15,
-          "role": "verb"
-        }
+        {"start": 0, "end": 10, "role": "subject"},
+        {"start": 11, "end": 16, "role": "verb"},
+        {"start": 17, "end": 25, "role": "object"}
       ],
       "annotation": {
-        "vi": "Câu vẫn hoàn chỉnh dù không có tân ngữ.",
-        "en": "The sentence is complete without an object."
+        "vi": "Cụm chủ ngữ My brother đứng trước động từ plays, tân ngữ football đứng sau.",
+        "en": "The subject My brother comes before the verb plays, and the object football comes after."
       },
-      "translation": {
-        "vi": "Câu vẫn hoàn chỉnh dù không có tân ngữ.",
-        "en": "The sentence is complete without an object."
-      }
+      "translation": {"vi": "Anh/em trai tôi chơi bóng đá.", "en": "My brother plays football."}
+    },
+    {
+      "text": "The room is quiet.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 8, "role": "subject"},
+        {"start": 9, "end": 11, "role": "verb"},
+        {"start": 12, "end": 17, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Chủ ngữ The room đứng trước động từ is, bổ ngữ quiet đứng sau.",
+        "en": "The subject The room comes before the verb is, and the complement quiet comes after."
+      },
+      "translation": {"vi": "Căn phòng yên tĩnh.", "en": "The room is quiet."}
     }
   ],
   "compare": [],
   "common_mistakes": [
     {
-      "wrong": "Like I coffee.",
-      "right": "I like coffee.",
+      "wrong": "Like I this song.",
+      "right": "I like this song.",
       "reason": {
-        "vi": "Tiếng Anh cơ bản cần giữ chủ ngữ trước động từ.",
-        "en": "Basic English keeps the subject before the verb."
+        "vi": "Trong câu khẳng định cơ bản, chủ ngữ I phải đứng trước động từ like, và tân ngữ this song đứng sau động từ.",
+        "en": "In a basic statement, the subject I must come before the verb like, and the object this song comes after the verb."
       },
       "error_tag": "sentence_structure",
-      "l1": [
-        "vi"
-      ]
+      "l1": ["vi"]
     }
   ],
   "quick_practice": [
     {
-      "q": "___ plays tennis every Sunday.",
-      "options": [
-        {
-          "text": "My brother",
-          "error_tag": null
-        },
-        {
-          "text": "Plays my brother",
-          "error_tag": "sentence_structure"
-        },
-        {
-          "text": "Tennis my brother",
-          "error_tag": "sentence_structure"
-        }
-      ],
+      "q": "___ like this song.",
+      "options": [{"text": "I", "error_tag": null}, {"text": "Like I", "error_tag": "sentence_structure"}],
       "answer": 0,
       "explain": {
-        "vi": "Chủ ngữ đứng trước động từ plays.",
-        "en": "The subject comes before the verb plays."
+        "vi": "Chủ ngữ I đứng trước động từ like.",
+        "en": "The subject I comes before the verb like."
       }
     },
     {
-      "q": "She ___ English.",
-      "options": [
-        {
-          "text": "studies",
-          "error_tag": null
-        },
-        {
-          "text": "English studies",
-          "error_tag": "sentence_structure"
-        },
-        {
-          "text": "she",
-          "error_tag": "sentence_structure"
-        }
-      ],
+      "q": "She ___ books.",
+      "options": [{"text": "reads", "error_tag": null}, {"text": "read", "error_tag": "agreement"}],
       "answer": 0,
       "explain": {
-        "vi": "Sau chủ ngữ She cần động từ studies.",
-        "en": "After the subject She, use the verb studies."
+        "vi": "Với chủ ngữ she, động từ thêm -s: reads.",
+        "en": "With the subject she, the verb takes -s: reads."
       }
     },
     {
-      "q": "Choose the normal order: ___.",
-      "options": [
-        {
-          "text": "We eat breakfast",
-          "error_tag": null
-        },
-        {
-          "text": "Eat we breakfast",
-          "error_tag": "sentence_structure"
-        },
-        {
-          "text": "Breakfast we eat",
-          "error_tag": "sentence_structure"
-        }
-      ],
+      "q": "The room ___ quiet.",
+      "options": [{"text": "is", "error_tag": null}, {"text": "are", "error_tag": "agreement"}],
       "answer": 0,
       "explain": {
-        "vi": "Trật tự cơ bản là S + V + O.",
-        "en": "The basic order is S + V + O."
+        "vi": "Chủ ngữ số ít The room đi với is.",
+        "en": "The singular subject The room goes with is."
       }
     }
   ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về thói quen hằng ngày của bạn, dùng chủ ngữ + động từ + tân ngữ.",
+      "en": "Write one sentence about your daily routine, using subject + verb + object."
+    },
+    "placeholder": "I ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {
+          "role": "subject",
+          "any_of": ["I", "You", "He", "She", "It", "We", "They", "My brother", "The room"]
+        },
+        {"role": "verb", "regex": "\\b\\w+\\b"},
+        {"role": "object", "regex": "\\b\\w+\\b"}
+      ]
+    },
+    "sample": {"text": "I drink coffee."}
+  },
   "status": "draft_ai",
   "flags": [],
   "provenance": {
-    "model": "openai:gpt-5.6-sol",
-    "prompt_version": "direct-author.en-a1.v1",
-    "run_id": "chatgpt.en-a1.20260930",
-    "generated_at": "2026-09-30T10:35:00Z"
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790829544",
+    "generated_at": "2026-10-01T04:39:04Z",
+    "r5_source": {
+      "ids": ["a1-complete-sentences-and-basic-word-order"],
+      "content_version": 2,
+      "content_hash": "dc23acffafca7d36d36c45b1f9f7b64224268dfa026bb453ab7bc743838bb010",
+      "corrections": [
+        {
+          "r5_id": "a1-complete-sentences-and-basic-word-order",
+          "issue": "R5's example 'I study English every day.' includes a time phrase 'every day' that is not part of the basic Subject + Verb + Object formula taught in this point.",
+          "fix": "Kept the example but did not mark 'every day' as a span, since the formula does not include a time slot. The sentence still illustrates the basic order."
+        },
+        {
+          "r5_id": "a1-complete-sentences-and-basic-word-order",
+          "issue": "R5's mistake 'Is very cold today.' is corrected to 'It is very cold today.' but the reason given ('cần chủ ngữ hình thức it') is about weather sentences, not the core point of subject before verb.",
+          "fix": "Replaced with a mistake that directly targets word order: 'Like I this song.' corrected to 'I like this song.'"
+        },
+        {
+          "r5_id": "a1-complete-sentences-and-basic-word-order",
+          "issue": "R5's guided practice includes a 'classify' task asking learners to identify Subject, Verb, Object in 'Sara opens the window', but the lesson does not provide a clear formula with slots for learners to reference.",
+          "fix": "Added an explicit formula with slots S, V, O, C and examples with spans so learners can see the order directly."
+        }
+      ]
+    }
   },
-  "review": null,
-  "sequence": 1,
-  "source_anchors": {
-    "status": "unanchored",
-    "items": []
-  },
-  "aliases": [
-    "a1-complete-sentences-and-basic-word-order"
-  ]
+  "review": null
 }

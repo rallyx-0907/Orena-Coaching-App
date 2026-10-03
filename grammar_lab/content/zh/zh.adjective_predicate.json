@@ -1,0 +1,274 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.adjective_predicate",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.identity_state",
+  "level": {"framework": "hsk3", "value": "1", "rank": 1},
+  "prereqs": ["zh.shi_sentence"],
+  "contrasts": ["zh.shi_sentence"],
+  "error_tags": ["word_order", "redundancy"],
+  "source_refs": {
+    "r5": ["zh-hsk1-14-v-c-u-t-nh-t"],
+    "gf0025": [
+      "gf0025.hsk1.025",
+      "gf0025.hsk1.027",
+      "gf0025.hsk1.028",
+      "gf0025.hsk1.029",
+      "gf0025.hsk1.030",
+      "gf0025.hsk2.041",
+      "gf0025.hsk2.051",
+      "gf0025.hsk2.053",
+      "gf0025.hsk2.054",
+      "gf0025.hsk3.044"
+    ]
+  },
+  "point_type": "word_order",
+  "sequence": 2,
+  "aliases": ["zh-hsk1-14-v-c-u-t-nh-t"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Câu tính từ và 很", "en": "Adjective predicates and 很"},
+    "native_title": "形容词谓语句",
+    "level": {"framework": "hsk3", "value": "1", "rank": 1},
+    "summary": {
+      "vi": "Câu tính từ tiếng Trung dùng tính từ làm vị ngữ trực tiếp, thường có 很 đứng trước tính từ để câu nghe tự nhiên.",
+      "en": "Chinese adjective-predicate sentences use an adjective directly as the predicate, usually with 很 before the adjective to make the sentence sound natural."
+    },
+    "sub": {"vi": "miêu tả trạng thái", "en": "describing states"},
+    "native_title_pinyin": ["xíng", "róng", "cí", "wèi", "yǔ", "jù"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn miêu tả người, vật hoặc thời tiết bằng một tính từ đơn giản.",
+      "en": "When you want to describe a person, thing, or the weather with a simple adjective."
+    },
+    {
+      "vi": "Khi câu khẳng định trung tính, không nhấn mạnh mức độ quá cao.",
+      "en": "When the affirmative sentence is neutral and does not stress an extreme degree."
+    },
+    {
+      "vi": "Khi chủ ngữ là đại từ hoặc danh từ chỉ sự vật, và tính từ đứng ngay sau chủ ngữ.",
+      "en": "When the subject is a pronoun or noun and the adjective comes right after the subject."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}, "pinyin": [""]},
+      {
+        "text": "很",
+        "role": "marker",
+        "label": {"vi": "dấu hiệu tự nhiên", "en": "naturalness marker"},
+        "pinyin": ["hěn"]
+      },
+      {
+        "text": "Adj",
+        "role": "complement",
+        "label": {"vi": "tính từ", "en": "adjective"},
+        "pinyin": ["", "", ""]
+      }
+    ],
+    "variants": {
+      "negative": [
+        {
+          "text": "S",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ", "en": "subject"},
+          "pinyin": [""]
+        },
+        {
+          "text": "不",
+          "role": "marker",
+          "label": {"vi": "phủ định", "en": "negation"},
+          "pinyin": ["bù"]
+        },
+        {
+          "text": "Adj",
+          "role": "complement",
+          "label": {"vi": "tính từ", "en": "adjective"},
+          "pinyin": ["", "", ""]
+        }
+      ]
+    },
+    "illustration": {"kind": "word_order"}
+  },
+  "examples": [
+    {
+      "text": "我很好。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "marker"},
+        {"start": 2, "end": 3, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "很 đứng trước tính từ 好 để câu miêu tả nghe tự nhiên.",
+        "en": "很 comes before the adjective 好 to make the description sound natural."
+      },
+      "translation": {"vi": "Tôi khỏe.", "en": "I am fine."},
+      "pinyin": ["wǒ", "hěn", "hǎo", ""]
+    },
+    {
+      "text": "今天很冷。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 3, "role": "marker"},
+        {"start": 3, "end": 4, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "今天 là chủ ngữ, 很 đứng trước tính từ 冷.",
+        "en": "今天 is the subject, and 很 comes before the adjective 冷."
+      },
+      "translation": {"vi": "Hôm nay lạnh.", "en": "Today is cold."},
+      "pinyin": ["jīn", "tiān", "hěn", "lěng", ""]
+    },
+    {
+      "text": "她很忙。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "marker"},
+        {"start": 2, "end": 3, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Câu miêu tả cơ bản: chủ ngữ + 很 + tính từ.",
+        "en": "Basic description: subject + 很 + adjective."
+      },
+      "translation": {"vi": "Cô ấy bận.", "en": "She is busy."},
+      "pinyin": ["tā", "hěn", "máng", ""]
+    }
+  ],
+  "compare": [
+    {
+      "with": "zh.shi_sentence",
+      "this_example": "她很忙。",
+      "other_example": "她是老师。",
+      "this_meaning": {
+        "vi": "Câu tính từ vị ngữ miêu tả trạng thái trực tiếp, không dùng 是.",
+        "en": "An adjective-predicate sentence describes a state directly and does not use 是."
+      },
+      "other_meaning": {
+        "vi": "Câu 是 dùng để nói ai/cái gì là gì, thường nối với danh từ.",
+        "en": "A 是 sentence says who or what someone or something is, usually linking to a noun."
+      },
+      "this_example_pinyin": ["tā", "hěn", "máng", ""],
+      "other_example_pinyin": ["tā", "shì", "lǎo", "shī", ""]
+    }
+  ],
+  "common_mistakes": [
+    {
+      "wrong": "她是很忙。",
+      "right": "她很忙。",
+      "reason": {
+        "vi": "Người học tiếng Việt quen dịch 'cô ấy là bận' nên thêm 是, nhưng câu tính từ vị ngữ không dùng 是.",
+        "en": "Vietnamese learners often translate 'she is busy' word by word and add 是, but adjective-predicate sentences do not use 是."
+      },
+      "error_tag": "redundancy",
+      "l1": ["vi"],
+      "wrong_pinyin": ["tā", "shì", "hěn", "máng", ""],
+      "right_pinyin": ["tā", "hěn", "máng", ""]
+    },
+    {
+      "wrong": "很今天冷。",
+      "right": "今天很冷。",
+      "reason": {
+        "vi": "Người học đặt 很 trước chủ ngữ theo thói quen trạng từ tiếng Việt, nhưng 很 phải đứng sau chủ ngữ và trước tính từ.",
+        "en": "Learners put 很 before the subject by analogy with Vietnamese adverbs, but 很 must come after the subject and before the adjective."
+      },
+      "error_tag": "word_order",
+      "l1": ["vi"],
+      "wrong_pinyin": ["hěn", "jīn", "tiān", "lěng", ""],
+      "right_pinyin": ["jīn", "tiān", "hěn", "lěng", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "我___好。",
+      "options": [
+        {"text": "很", "error_tag": null, "pinyin": ["hěn"]},
+        {"text": "是", "error_tag": "redundancy", "pinyin": ["shì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu tính từ vị ngữ dùng 很 trước tính từ, không dùng 是.",
+        "en": "Adjective-predicate sentences use 很 before the adjective, not 是."
+      },
+      "q_pinyin": ["wǒ", "", "", "", "hǎo", ""]
+    },
+    {
+      "q": "今天___冷。",
+      "options": [
+        {"text": "很", "error_tag": null, "pinyin": ["hěn"]},
+        {"text": "是", "error_tag": "redundancy", "pinyin": ["shì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Không dùng 是 trước tính từ trong câu miêu tả cơ bản; 很 đứng sau chủ ngữ.",
+        "en": "Do not use 是 before an adjective in a basic description; 很 comes after the subject."
+      },
+      "q_pinyin": ["jīn", "tiān", "", "", "", "lěng", ""]
+    },
+    {
+      "q": "她___忙。",
+      "options": [
+        {"text": "很", "error_tag": null, "pinyin": ["hěn"]},
+        {"text": "是", "error_tag": "redundancy", "pinyin": ["shì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu tính từ vị ngữ: chủ ngữ + 很 + tính từ, không có 是.",
+        "en": "Adjective-predicate sentence: subject + 很 + adjective, with no 是."
+      },
+      "q_pinyin": ["tā", "", "", "", "máng", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu miêu tả trạng thái của bạn hoặc người thân, dùng 很 trước tính từ.",
+      "en": "Write one sentence describing your state or a family member's state, using 很 before an adjective."
+    },
+    "placeholder": "我很……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "marker", "any_of": ["很"]},
+        {"role": "complement", "any_of": ["好", "忙", "冷", "热", "累", "高兴", "开心", "饿", "渴"]}
+      ]
+    },
+    "sample": {"text": "我很高兴。", "pinyin": ["wǒ", "hěn", "gāo", "xìng", ""]},
+    "placeholder_pinyin": ["wǒ", "hěn", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790831917",
+    "generated_at": "2026-10-01T05:18:37Z",
+    "r5_source": {
+      "ids": ["zh-hsk1-14-v-c-u-t-nh-t"],
+      "content_version": 2,
+      "content_hash": "907ddf678ac12e20c4edac9f06b380ef3247d9381c61d2ecf179fc0a6280bf11",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk1-14-v-c-u-t-nh-t",
+          "issue": "R5 dạy phủ định S + 不 + Adj nhưng không đưa vào cấu trúc chính thức; cần bổ sung dạng phủ định.",
+          "fix": "Đã thêm mảng negative với S + 不 + Adj và giữ ví dụ phủ định ở phần giải thích."
+        },
+        {
+          "r5_id": "zh-hsk1-14-v-c-u-t-nh-t",
+          "issue": "R5 ghi 'Không cần 是 trước tính từ vị ngữ thông thường' nhưng không nêu rõ lỗi thêm 是 là lỗi thừa.",
+          "fix": "Đã thêm common_mistakes với error_tag redundancy cho lỗi 她是很忙."
+        },
+        {
+          "r5_id": "zh-hsk1-14-v-c-u-t-nh-t",
+          "issue": "R5 có ví dụ 这个菜很好吃 nhưng không có trong cấu trúc S + 很 + Adj đơn giản vì 好吃 là tính từ ghép vị ngữ.",
+          "fix": "Đã thay bằng ví dụ 她很忙 để giữ đúng mẫu cơ bản HSK1."
+        }
+      ]
+    }
+  },
+  "review": null
+}

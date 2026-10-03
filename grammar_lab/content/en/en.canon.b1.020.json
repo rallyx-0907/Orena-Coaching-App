@@ -1,0 +1,242 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b1.020",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.obligation_advice",
+  "level": {"framework": "cefr", "value": "B1", "rank": 3},
+  "prereqs": ["en.canon.b1.019"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["b1-deduction-must-might-can-t"]},
+  "point_type": "other",
+  "sequence": 3,
+  "aliases": ["b1-deduction-must-might-can-t"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Deduction: must/might/can't", "en": "Deduction: must/might/can't"},
+    "native_title": "Deduction: must/might/can't",
+    "level": {"framework": "cefr", "value": "B1", "rank": 3},
+    "summary": {
+      "vi": "Dùng must, might/may/could và can't để suy luận về một tình huống ở hiện tại dựa trên bằng chứng.",
+      "en": "Use must, might/may/could and can't to make a logical deduction about a present situation based on evidence."
+    },
+    "sub": {"vi": "suy luận hiện tại", "en": "present deduction"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn có bằng chứng mạnh và kết luận gần như chắc chắn: dùng must.",
+      "en": "When the evidence is strong and the conclusion is almost certain: use must."
+    },
+    {
+      "vi": "Khi bạn chỉ thấy một khả năng, không chắc chắn: dùng might, may hoặc could.",
+      "en": "When you see only a possibility, not a certainty: use might, may or could."
+    },
+    {
+      "vi": "Khi bằng chứng cho thấy điều gì đó là không thể: dùng can't, không dùng mustn't.",
+      "en": "When the evidence shows something is impossible: use can't, not mustn't."
+    },
+    {
+      "vi": "Khi bạn đang đoán về người, vật hoặc tình trạng ngay lúc nói, không phải về hành động trong quá khứ.",
+      "en": "When you are guessing about a person, thing or situation at the moment of speaking, not about a past action."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {
+        "text": "must/might/may/could/can't",
+        "role": "aux",
+        "label": {"vi": "động từ khuyết thiếu suy luận", "en": "deduction modal"},
+        "options": [{"text": "must"}, {"text": "might"}, {"text": "may"}, {"text": "could"}, {"text": "can't"}]
+      },
+      {"text": "be", "role": "verb", "label": {"vi": "động từ nguyên mẫu", "en": "base verb"}},
+      {
+        "text": "complement",
+        "role": "complement",
+        "label": {"vi": "thông tin bổ sung", "en": "complement"}
+      }
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "can't",
+          "role": "aux",
+          "label": {"vi": "phủ định suy luận", "en": "negative deduction modal"},
+          "options": [{"text": "can't"}, {"text": "cannot"}]
+        },
+        {"text": "be", "role": "verb", "label": {"vi": "động từ nguyên mẫu", "en": "base verb"}},
+        {
+          "text": "complement",
+          "role": "complement",
+          "label": {"vi": "thông tin bổ sung", "en": "complement"}
+        }
+      ],
+      "question": [
+        {
+          "text": "must/might/may/could/can't",
+          "role": "aux",
+          "label": {"vi": "động từ khuyết thiếu suy luận", "en": "deduction modal"},
+          "options": [
+            {"text": "must"},
+            {"text": "might"},
+            {"text": "may"},
+            {"text": "could"},
+            {"text": "can't"}
+          ]
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {"text": "be", "role": "verb", "label": {"vi": "động từ nguyên mẫu", "en": "base verb"}},
+        {
+          "text": "complement",
+          "role": "complement",
+          "label": {"vi": "thông tin bổ sung", "en": "complement"}
+        }
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "She must be tired after that trip.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 8, "role": "aux"},
+        {"start": 9, "end": 11, "role": "verb"},
+        {"start": 12, "end": 17, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "must + be + tính từ: bằng chứng mạnh, gần như chắc chắn.",
+        "en": "must + be + adjective: strong evidence, almost certain."
+      },
+      "translation": {"vi": "Sau chuyến đi đó cô ấy chắc hẳn mệt.", "en": "She must be tired after that trip."}
+    },
+    {
+      "text": "They might know the answer.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 5, "end": 10, "role": "aux"},
+        {"start": 11, "end": 15, "role": "verb"},
+        {"start": 16, "end": 26, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "might + động từ nguyên mẫu: chỉ là một khả năng.",
+        "en": "might + base verb: only a possibility."
+      },
+      "translation": {"vi": "Có thể họ biết câu trả lời.", "en": "They might know the answer."}
+    },
+    {
+      "text": "He can't be at home; I just saw him downtown.",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 3, "end": 8, "role": "aux"},
+        {"start": 9, "end": 11, "role": "verb"},
+        {"start": 12, "end": 19, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "can't + be: suy luận phủ định mạnh, điều này là không thể.",
+        "en": "can't + be: strong negative deduction, this is impossible."
+      },
+      "translation": {
+        "vi": "Anh ấy không thể ở nhà; tôi vừa thấy anh ấy ở trung tâm.",
+        "en": "He can't be at home; I just saw him downtown."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "He mustn't be the manager; he's too young.",
+      "right": "He can't be the manager; he's too young.",
+      "reason": {
+        "vi": "mustn't diễn tả sự cấm đoán, không diễn tả suy luận phủ định. Khi kết luận điều gì đó là không thể, tiếng Anh dùng can't.",
+        "en": "mustn't expresses prohibition, not negative deduction. When you conclude that something is impossible, English uses can't."
+      },
+      "error_tag": "other",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "Look at those clouds. It ___ rain soon.",
+      "options": [{"text": "might", "error_tag": null}, {"text": "must", "error_tag": "word_choice"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Mây đen chỉ là một dấu hiệu, nên đây là khả năng: might. Must sẽ là kết luận gần như chắc chắn.",
+        "en": "Dark clouds are only one sign, so this is a possibility: might. Must would be an almost certain conclusion."
+      }
+    },
+    {
+      "q": "She has three degrees. She ___ be intelligent.",
+      "options": [{"text": "must", "error_tag": null}, {"text": "can't", "error_tag": "word_choice"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Bằng chứng rất mạnh nên dùng must để suy luận khẳng định. Can't sẽ nói điều ngược lại.",
+        "en": "The evidence is very strong, so use must for an affirmative deduction. Can't would say the opposite."
+      }
+    },
+    {
+      "q": "He ___ be at the office; I saw him at the beach five minutes ago.",
+      "options": [{"text": "can't", "error_tag": null}, {"text": "mustn't", "error_tag": "word_choice"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Đây là suy luận phủ định mạnh, nên dùng can't. Mustn't là cấm đoán, không dùng ở đây.",
+        "en": "This is a strong negative deduction, so use can't. Mustn't is prohibition and does not fit here."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu suy luận về một người bạn nhìn thấy bây giờ, dùng must, might hoặc can't + be.",
+      "en": "Write one deduction about a person you can see now, using must, might or can't + be."
+    },
+    "placeholder": "She must be ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "aux", "any_of": ["must", "might", "may", "could"]},
+        {
+          "role": "verb",
+          "regex": "\\b(be|know|have|need|want|like|work|live|come|go|see|think|feel|look|seem|sound|taste|smell|remember|understand|believe|mean|cost|weigh|belong|contain|include|matter|depend|consist|deserve|fit|involve|lack|owe|own|possess|prefer|require|resemble|suit|tend)\\b"
+        }
+      ]
+    },
+    "sample": {"text": "She must be tired after that trip."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790830864",
+    "generated_at": "2026-10-01T05:01:04Z",
+    "r5_source": {
+      "ids": ["b1-deduction-must-might-can-t"],
+      "content_version": 2,
+      "content_hash": "d3140c9b4b8e023d00542d71a4d3d60d6ff193fd9fd272807ac3f5d533f2fe64",
+      "corrections": [
+        {
+          "r5_id": "b1-deduction-must-might-can-t",
+          "issue": "R5 rule says 'can't have (possession sense)' as a deduction form, which is confusing and not a present deduction pattern.",
+          "fix": "Removed 'can't have' from the deduction rule; the formula now teaches modal + be + complement for present deduction."
+        },
+        {
+          "r5_id": "b1-deduction-must-might-can-t",
+          "issue": "R5 example 'This could be the right address.' is correct but was not used; the lesson needed exactly three examples covering must, might and can't.",
+          "fix": "Kept three examples: must be tired, might know, can't be at home; dropped the could example to keep the set focused."
+        },
+        {
+          "r5_id": "b1-deduction-must-might-can-t",
+          "issue": "R5 mistake 'She must to be tired.' is a real error but the required error tag for this point is 'other', and the mustn't/can't contrast is the more central deduction mistake.",
+          "fix": "Used the mustn't vs can't mistake as the single common_mistakes entry, tagged 'other'."
+        }
+      ]
+    }
+  },
+  "review": null
+}

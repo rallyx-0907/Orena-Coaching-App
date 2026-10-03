@@ -1,0 +1,375 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk79_10_conditional_rhetoric",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.hypothetical_counterfactual",
+  "level": {"framework": "hsk3", "value": "9", "rank": 9},
+  "prereqs": [],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["zh-hsk79-10-conditional-rhetoric"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["zh-hsk79-10-conditional-rhetoric"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {
+      "vi": "Ngữ pháp tiếng Trung: Conditional rhetoric",
+      "en": "Chinese grammar: Conditional rhetoric"
+    },
+    "native_title": "条件句的修辞用法",
+    "level": {"framework": "hsk3", "value": "9", "rank": 9},
+    "summary": {
+      "vi": "Nhóm cấu trúc điều kiện trang trọng dùng để đặt điều kiện, ngoại lệ và điều kiện cần cho một kết luận hoặc quy định.",
+      "en": "A set of formal conditional patterns used to set conditions, exceptions and necessary conditions for a conclusion or rule."
+    },
+    "sub": {"vi": "điều kiện trang trọng", "en": "formal conditionals"},
+    "native_title_pinyin": ["tiáo", "jiàn", "jù", "de", "xiū", "cí", "yòng", "fǎ"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi viết quy định, quy trình hoặc văn bản hành chính cần nêu điều kiện rõ ràng.",
+      "en": "When writing rules, procedures or formal documents that state conditions clearly."
+    },
+    {
+      "vi": "Khi muốn phân biệt điều kiện giả định yếu với điều kiện kích hoạt mạnh.",
+      "en": "When you need to distinguish a weak hypothetical condition from a strong trigger condition."
+    },
+    {
+      "vi": "Khi cần nêu ngoại lệ và mặc định nếu ngoại lệ không được đáp ứng.",
+      "en": "When you need to state an exception and the default outcome if it is not met."
+    },
+    {
+      "vi": "Khi lập luận rằng chỉ khi điều kiện cần được thỏa mãn thì kết quả mới xảy ra.",
+      "en": "When arguing that only if a necessary condition is met does the result occur."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "若/倘若",
+        "role": "marker",
+        "label": {"vi": "dấu điều kiện giả định", "en": "hypothetical condition marker"},
+        "options": [{"text": "若", "pinyin": ["ruò"]}, {"text": "倘若", "pinyin": ["tǎng", "ruò"]}],
+        "pinyin": ["ruò", "", "tǎng", "ruò"]
+      },
+      {
+        "text": "条件",
+        "role": "other",
+        "label": {"vi": "mệnh đề điều kiện", "en": "condition clause"},
+        "pinyin": ["tiáo", "jiàn"]
+      },
+      {
+        "text": "则",
+        "role": "connector",
+        "label": {"vi": "thì (kết quả)", "en": "then (result)"},
+        "pinyin": ["zé"]
+      },
+      {
+        "text": "结果",
+        "role": "other",
+        "label": {"vi": "mệnh đề kết quả", "en": "result clause"},
+        "pinyin": ["jié", "guǒ"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "若现有证据不足，则应暂缓作出结论。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "marker"},
+        {"start": 1, "end": 7, "role": "other"},
+        {"start": 8, "end": 9, "role": "connector"},
+        {"start": 9, "end": 16, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "若 đánh dấu điều kiện giả định; 则 dẫn kết quả bắt buộc.",
+        "en": "若 marks a hypothetical condition; 则 introduces the required result."
+      },
+      "translation": {
+        "vi": "Nếu bằng chứng hiện có chưa đủ thì nên tạm hoãn đưa ra kết luận.",
+        "en": "If the existing evidence is insufficient, the conclusion should be postponed."
+      },
+      "pinyin": [
+        "ruò",
+        "xiàn",
+        "yǒu",
+        "zhèng",
+        "jù",
+        "bù",
+        "zú",
+        "",
+        "zé",
+        "yīng",
+        "zàn",
+        "huǎn",
+        "zuò",
+        "chū",
+        "jié",
+        "lùn",
+        ""
+      ]
+    },
+    {
+      "text": "一旦发现安全风险，应立即停止测试。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "marker"},
+        {"start": 2, "end": 8, "role": "other"},
+        {"start": 9, "end": 10, "role": "connector"},
+        {"start": 10, "end": 16, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "一旦 đánh dấu điều kiện kích hoạt mạnh; 应 dẫn kết quả bắt buộc.",
+        "en": "一旦 marks a strong trigger condition; 应 introduces the required result."
+      },
+      "translation": {
+        "vi": "Một khi phát hiện rủi ro an toàn thì phải dừng kiểm thử ngay.",
+        "en": "Once a safety risk is detected, testing must stop immediately."
+      },
+      "pinyin": [
+        "yī",
+        "dàn",
+        "fā",
+        "xiàn",
+        "ān",
+        "quán",
+        "fēng",
+        "xiǎn",
+        "",
+        "yīng",
+        "lì",
+        "jí",
+        "tíng",
+        "zhǐ",
+        "cè",
+        "shì",
+        ""
+      ]
+    },
+    {
+      "text": "除非获得书面许可，否则不得复制相关资料。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "marker"},
+        {"start": 2, "end": 8, "role": "other"},
+        {"start": 9, "end": 11, "role": "connector"},
+        {"start": 11, "end": 19, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "除非 nêu ngoại lệ; 否则 dẫn mặc định nếu ngoại lệ không được đáp ứng.",
+        "en": "除非 states the exception; 否则 introduces the default if it is not met."
+      },
+      "translation": {
+        "vi": "Trừ khi có giấy phép bằng văn bản, nếu không thì không được sao chép tài liệu liên quan.",
+        "en": "Unless written permission is obtained, the relevant materials may not be copied."
+      },
+      "pinyin": [
+        "chú",
+        "fēi",
+        "huò",
+        "dé",
+        "shū",
+        "miàn",
+        "xǔ",
+        "kě",
+        "",
+        "fǒu",
+        "zé",
+        "bù",
+        "dé",
+        "fù",
+        "zhì",
+        "xiāng",
+        "guān",
+        "zī",
+        "liào",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "除非授权，所以不得修改。",
+      "right": "除非获得授权，否则不得修改。",
+      "reason": {
+        "vi": "Cặp ngoại lệ cần 否则 để dẫn mặc định, không dùng 所以.",
+        "en": "The exception pair needs 否则 to introduce the default, not 所以."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong_pinyin": ["chú", "fēi", "shòu", "quán", "", "suǒ", "yǐ", "bù", "dé", "xiū", "gǎi", ""],
+      "right_pinyin": ["chú", "fēi", "huò", "dé", "shòu", "quán", "", "fǒu", "zé", "bù", "dé", "xiū", "gǎi", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "___获得书面许可，否则不得复制相关资料。",
+      "options": [
+        {"text": "除非", "error_tag": null, "pinyin": ["chú", "fēi"]},
+        {"text": "所以", "error_tag": "conjunction", "pinyin": ["suǒ", "yǐ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "除非...否则 là cặp ngoại lệ/mặc định; 所以 không dùng trong cấu trúc này.",
+        "en": "除非...否则 is the exception/default pair; 所以 is not used in this structure."
+      },
+      "q_pinyin": [
+        "",
+        "",
+        "",
+        "huò",
+        "dé",
+        "shū",
+        "miàn",
+        "xǔ",
+        "kě",
+        "",
+        "fǒu",
+        "zé",
+        "bù",
+        "dé",
+        "fù",
+        "zhì",
+        "xiāng",
+        "guān",
+        "zī",
+        "liào",
+        ""
+      ]
+    },
+    {
+      "q": "若现有证据不足，___应暂缓作出结论。",
+      "options": [
+        {"text": "则", "error_tag": null, "pinyin": ["zé"]},
+        {"text": "所以", "error_tag": "conjunction", "pinyin": ["suǒ", "yǐ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "若...则 là cặp điều kiện/kết quả trang trọng; 所以 không phù hợp.",
+        "en": "若...则 is the formal condition/result pair; 所以 does not fit."
+      },
+      "q_pinyin": [
+        "ruò",
+        "xiàn",
+        "yǒu",
+        "zhèng",
+        "jù",
+        "bù",
+        "zú",
+        "",
+        "",
+        "",
+        "",
+        "yīng",
+        "zàn",
+        "huǎn",
+        "zuò",
+        "chū",
+        "jié",
+        "lùn",
+        ""
+      ]
+    },
+    {
+      "q": "一旦发现安全风险，___立即停止测试。",
+      "options": [
+        {"text": "应", "error_tag": null, "pinyin": ["yīng"]},
+        {"text": "也许", "error_tag": "word_choice", "pinyin": ["yě", "xǔ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "一旦 dẫn kết quả bắt buộc, nên dùng 应; 也许 chỉ là khả năng yếu.",
+        "en": "一旦 leads to a required result, so 应 is used; 也许 only expresses weak possibility."
+      },
+      "q_pinyin": [
+        "yī",
+        "dàn",
+        "fā",
+        "xiàn",
+        "ān",
+        "quán",
+        "fēng",
+        "xiǎn",
+        "",
+        "",
+        "",
+        "",
+        "lì",
+        "jí",
+        "tíng",
+        "zhǐ",
+        "cè",
+        "shì",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu quy định dùng 若...则 hoặc 一旦...应 để nêu điều kiện và kết quả bắt buộc.",
+      "en": "Write one rule sentence using 若...则 or 一旦...应 to state a condition and a required result."
+    },
+    "placeholder": "若……，则……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "marker", "any_of": ["若", "倘若", "一旦", "除非"]},
+        {"role": "connector", "any_of": ["则", "否则", "应"]}
+      ]
+    },
+    "sample": {
+      "text": "若发现数据异常，则应立即上报。",
+      "pinyin": [
+        "ruò",
+        "fā",
+        "xiàn",
+        "shù",
+        "jù",
+        "yì",
+        "cháng",
+        "",
+        "zé",
+        "yīng",
+        "lì",
+        "jí",
+        "shàng",
+        "bào",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["ruò", "", "", "", "zé", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790834906",
+    "generated_at": "2026-10-01T06:08:26Z",
+    "r5_source": {
+      "ids": ["zh-hsk79-10-conditional-rhetoric"],
+      "content_version": 2,
+      "content_hash": "42abe2dde6925e4cd8037a16d8b2cb5e544fffeb4b1ed339ddf407165ebd3aca",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk79-10-conditional-rhetoric",
+          "issue": "R5 example 一旦发现安全风险，应立即停止测试。 was listed with pinyin 'Yí dàn' for 一旦.",
+          "fix": "Corrected the pinyin to 'yī dàn' and kept the example."
+        },
+        {
+          "r5_id": "zh-hsk79-10-conditional-rhetoric",
+          "issue": "R5 mistake 一旦可能出现问题，也许停止。 was ungrammatical and did not clearly show the trigger-vs-hypothetical contrast.",
+          "fix": "Replaced it with the clearer exception-pair mistake 除非授权，所以不得修改。 and its correction 除非获得授权，否则不得修改。"
+        }
+      ]
+    },
+    "metadata_stale": true
+  },
+  "review": null
+}

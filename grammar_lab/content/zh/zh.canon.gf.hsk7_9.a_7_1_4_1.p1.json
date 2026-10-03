@@ -1,0 +1,238 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk7_9.a_7_1_4_1.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.degree",
+  "level": {"framework": "hsk3", "value": "7", "rank": 7},
+  "prereqs": ["zh.canon.r5.hsk4_10_n_ng_cao"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"gf0025": ["gf0025.hsk7_9.005", "gf0025.hsk7_9.006", "gf0025.hsk7_9.007", "gf0025.hsk7_9.008"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Trạng từ: 极为", "en": "Adverbs: 极为"},
+    "native_title": "极为",
+    "level": {"framework": "hsk3", "value": "7", "rank": 7},
+    "summary": {
+      "vi": "Phó từ 极为 dùng trước tính từ hoặc động từ tâm lý để diễn tả mức độ rất cao, gần nghĩa với 极其 nhưng văn viết hơn.",
+      "en": "The adverb 极为 goes before an adjective or a psychological verb to express a very high degree, close in meaning to 极其 but more formal and written."
+    },
+    "sub": {"vi": "mức độ cao", "en": "high degree"},
+    "native_title_pinyin": ["jí", "wéi"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói một mức độ rất cao trong văn viết, báo cáo, bài luận.",
+      "en": "When you want to express a very high degree in writing, reports, or essays."
+    },
+    {
+      "vi": "Khi tính từ hoặc động từ tâm lý đứng ngay sau 极为, không cần 很 hay 非常.",
+      "en": "When the adjective or psychological verb follows 极为 directly, without 很 or 非常."
+    },
+    {
+      "vi": "Khi câu mang sắc thái trang trọng, ít dùng trong khẩu ngữ hằng ngày.",
+      "en": "When the sentence has a formal tone; it is rarely used in everyday speech."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "极为",
+        "role": "aux",
+        "label": {"vi": "phó từ mức độ", "en": "degree adverb"},
+        "pinyin": ["jí", "wéi"]
+      },
+      {
+        "text": "形容词/心理动词",
+        "role": "complement",
+        "label": {"vi": "tính từ / động từ tâm lý", "en": "adjective / psychological verb"},
+        "pinyin": ["xíng", "róng", "cí", "", "xīn", "lǐ", "dòng", "cí"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "这个消息极为重要。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 4, "end": 6, "role": "aux"},
+        {"start": 6, "end": 8, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "极为 đứng trước tính từ 重要 để nhấn mạnh mức độ rất cao.",
+        "en": "极为 stands before the adjective 重要 to emphasize a very high degree."
+      },
+      "translation": {"vi": "Tin này cực kỳ quan trọng.", "en": "This news is extremely important."},
+      "pinyin": ["zhè", "gè", "xiāo", "xī", "jí", "wéi", "zhòng", "yào", ""]
+    },
+    {
+      "text": "他对这个结果极为满意。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 6, "end": 8, "role": "aux"},
+        {"start": 8, "end": 10, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "极为 bổ nghĩa cho động từ tâm lý 满意, cho thấy mức độ hài lòng rất cao.",
+        "en": "极为 modifies the psychological verb 满意, showing a very high degree of satisfaction."
+      },
+      "translation": {
+        "vi": "Anh ấy cực kỳ hài lòng với kết quả này.",
+        "en": "He is extremely satisfied with this result."
+      },
+      "pinyin": ["tā", "duì", "zhè", "gè", "jié", "guǒ", "jí", "wéi", "mǎn", "yì", ""]
+    },
+    {
+      "text": "这里的交通极为方便。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 5, "role": "subject"},
+        {"start": 5, "end": 7, "role": "aux"},
+        {"start": 7, "end": 9, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "极为 đứng trước tính từ 方便, nhấn mạnh mức độ thuận tiện rất cao.",
+        "en": "极为 stands before the adjective 方便, emphasizing a very high degree of convenience."
+      },
+      "translation": {
+        "vi": "Giao thông ở đây cực kỳ thuận tiện.",
+        "en": "The transportation here is extremely convenient."
+      },
+      "pinyin": ["zhè", "lǐ", "de", "jiāo", "tōng", "jí", "wéi", "fāng", "biàn", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "这个消息极为很重要。",
+      "right": "这个消息极为重要。",
+      "reason": {
+        "vi": "极为 đã bao hàm mức độ rất cao, nên không dùng thêm 很; người học Việt thường dịch 'rất' thành 很 và đặt sau 极为.",
+        "en": "极为 already carries a very high degree, so 很 is not added; Vietnamese learners often translate 'rất' as 很 and place it after 极为."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong_pinyin": ["zhè", "gè", "xiāo", "xī", "jí", "wéi", "hěn", "zhòng", "yào", ""],
+      "right_pinyin": ["zhè", "gè", "xiāo", "xī", "jí", "wéi", "zhòng", "yào", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "这个发现___重要，值得进一步研究。",
+      "options": [
+        {"text": "极为", "error_tag": null, "pinyin": ["jí", "wéi"]},
+        {"text": "极为很", "error_tag": "redundancy", "pinyin": ["jí", "wéi", "hěn"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "极为 đã diễn tả mức độ rất cao, không cần thêm 很.",
+        "en": "极为 already expresses a very high degree, so 很 is not needed."
+      },
+      "q_pinyin": [
+        "zhè",
+        "gè",
+        "fā",
+        "xiàn",
+        "",
+        "",
+        "",
+        "zhòng",
+        "yào",
+        "",
+        "zhí",
+        "de",
+        "jìn",
+        "yī",
+        "bù",
+        "yán",
+        "jiū",
+        ""
+      ]
+    },
+    {
+      "q": "他对这次失败___失望。",
+      "options": [
+        {"text": "极为", "error_tag": null, "pinyin": ["jí", "wéi"]},
+        {"text": "极为地", "error_tag": "particle", "pinyin": ["jí", "wéi", "de"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "极为 là phó từ, không kết hợp với 地; 地 chỉ dùng sau tính từ làm trạng ngữ.",
+        "en": "极为 is an adverb and does not take 地; 地 is used after adjectives functioning as adverbials."
+      },
+      "q_pinyin": ["tā", "duì", "zhè", "cì", "shī", "bài", "", "", "", "shī", "wàng", ""]
+    },
+    {
+      "q": "这里的风景___美丽，吸引了很多游客。",
+      "options": [
+        {"text": "极为", "error_tag": null, "pinyin": ["jí", "wéi"]},
+        {"text": "极为的", "error_tag": "particle", "pinyin": ["jí", "wéi", "de"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "极为 đứng trước tính từ 美丽, không dùng 的 ở giữa.",
+        "en": "极为 stands before the adjective 美丽; 的 is not used in between."
+      },
+      "q_pinyin": [
+        "zhè",
+        "lǐ",
+        "de",
+        "fēng",
+        "jǐng",
+        "",
+        "",
+        "",
+        "měi",
+        "lì",
+        "",
+        "xī",
+        "yǐn",
+        "le",
+        "hěn",
+        "duō",
+        "yóu",
+        "kè",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng 极为 để nói về một điều gì đó rất quan trọng hoặc rất thú vị đối với bạn.",
+      "en": "Write one sentence using 极为 to say that something is very important or very interesting to you."
+    },
+    "placeholder": "对我来说，……极为……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "aux", "any_of": ["极为"]}, {"role": "complement", "regex": "[\\u4e00-\\u9fff]{2,}"}]
+    },
+    "sample": {
+      "text": "对我来说，健康极为重要。",
+      "pinyin": ["duì", "wǒ", "lái", "shuō", "", "jiàn", "kāng", "jí", "wéi", "zhòng", "yào", ""]
+    },
+    "placeholder_pinyin": ["duì", "wǒ", "lái", "shuō", "", "", "", "jí", "wéi", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790834432",
+    "generated_at": "2026-10-01T06:00:32Z"
+  },
+  "review": null
+}

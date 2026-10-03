@@ -4,37 +4,17 @@
   "version": 1,
   "target_lang": "en",
   "function": "fn.linking",
-  "level": {
-    "framework": "cefr",
-    "value": "A1",
-    "rank": 1
-  },
+  "level": {"framework": "cefr", "value": "A1", "rank": 1},
   "prereqs": [],
-  "contrasts": [],
-  "error_tags": [
-    "word_choice"
-  ],
-  "source_refs": {
-    "r5": [
-      "a1-and-but-or-because-so"
-    ]
-  },
+  "contrasts": ["en.conjunctions.because_so"],
+  "error_tags": ["word_choice"],
+  "source_refs": {"r5": ["a1-and-but-or-because-so"]},
   "point_type": "other",
   "header": {
-    "title": {
-      "vi": "And / but / or",
-      "en": "And / but / or"
-    },
+    "title": {"vi": "And / but / or", "en": "And / but / or"},
     "native_title": "And / but / or",
-    "sub": {
-      "vi": "thêm / đối lập / lựa chọn",
-      "en": "addition / contrast / choice"
-    },
-    "level": {
-      "framework": "cefr",
-      "value": "A1",
-      "rank": 1
-    },
+    "sub": {"vi": "thêm / đối lập / lựa chọn", "en": "addition / contrast / choice"},
+    "level": {"framework": "cefr", "value": "A1", "rank": 1},
     "summary": {
       "vi": "And nối ý cùng hướng, but nối ý tương phản, or đưa ra lựa chọn.",
       "en": "And adds similar information, but introduces contrast, and or presents a choice."
@@ -45,111 +25,43 @@
       "vi": "Dùng and để thêm thông tin và but để nối hai ý trái nhau.",
       "en": "Use and to add information and but to connect contrasting ideas."
     },
-    {
-      "vi": "Dùng or để đưa ra lựa chọn.",
-      "en": "Use or to present alternatives."
-    }
+    {"vi": "Dùng or để đưa ra lựa chọn.", "en": "Use or to present alternatives."}
   ],
   "pattern": {
     "formula": [
-      {
-        "text": "idea 1",
-        "role": "other",
-        "label": {
-          "vi": "ý thứ nhất",
-          "en": "first idea"
-        }
-      },
+      {"text": "idea 1", "role": "other", "label": {"vi": "ý thứ nhất", "en": "first idea"}},
       {
         "text": "and / but / or",
         "role": "connector",
-        "label": {
-          "vi": "liên từ",
-          "en": "conjunction"
-        },
-        "options": [
-          {
-            "text": "and"
-          },
-          {
-            "text": "but"
-          },
-          {
-            "text": "or"
-          }
-        ]
+        "label": {"vi": "liên từ", "en": "conjunction"},
+        "options": [{"text": "and"}, {"text": "but"}, {"text": "or"}]
       },
-      {
-        "text": "idea 2",
-        "role": "other",
-        "label": {
-          "vi": "ý thứ hai",
-          "en": "second idea"
-        }
-      }
+      {"text": "idea 2", "role": "other", "label": {"vi": "ý thứ hai", "en": "second idea"}}
     ],
-    "illustration": {
-      "kind": "none"
-    }
+    "illustration": {"kind": "none"}
   },
   "examples": [
     {
       "text": "I like tea and coffee.",
       "form": "affirmative",
       "spans": [
-        {
-          "start": 0,
-          "end": 10,
-          "role": "other"
-        },
-        {
-          "start": 11,
-          "end": 14,
-          "role": "connector"
-        },
-        {
-          "start": 15,
-          "end": 21,
-          "role": "other"
-        }
+        {"start": 0, "end": 10, "role": "other"},
+        {"start": 11, "end": 14, "role": "connector"},
+        {"start": 15, "end": 21, "role": "other"}
       ],
-      "annotation": {
-        "vi": "And thêm một ý cùng hướng.",
-        "en": "And adds similar information."
-      },
-      "translation": {
-        "vi": "And thêm một ý cùng hướng.",
-        "en": "And adds similar information."
-      }
+      "annotation": {"vi": "And thêm một ý cùng hướng.", "en": "And adds similar information."},
+      "translation": {"vi": "And thêm một ý cùng hướng.", "en": "And adds similar information."}
     },
     {
       "text": "She is tired but happy.",
       "form": "affirmative",
       "spans": [
-        {
-          "start": 0,
-          "end": 12,
-          "role": "other"
-        },
-        {
-          "start": 13,
-          "end": 16,
-          "role": "connector"
-        },
-        {
-          "start": 17,
-          "end": 22,
-          "role": "other"
-        }
+        {"start": 0, "end": 12, "role": "other"},
+        {"start": 13, "end": 16, "role": "connector"},
+        {"start": 17, "end": 22, "role": "other"}
       ],
-      "annotation": {
-        "vi": "But nối hai ý tương phản.",
-        "en": "But connects contrasting ideas."
-      },
-      "translation": {
-        "vi": "But nối hai ý tương phản.",
-        "en": "But connects contrasting ideas."
-      }
+      "annotation": {"vi": "But nối hai ý tương phản.", "en": "But connects contrasting ideas."},
+      "translation": {"vi": "But nối hai ý tương phản.", "en": "But connects contrasting ideas."}
     }
   ],
   "compare": [],
@@ -162,77 +74,39 @@
         "en": "When simply adding two liked items, use and."
       },
       "error_tag": "word_choice",
-      "l1": [
-        "vi"
-      ]
+      "l1": ["vi"]
     }
   ],
   "quick_practice": [
     {
       "q": "I like apples ___ bananas.",
       "options": [
-        {
-          "text": "and",
-          "error_tag": null
-        },
-        {
-          "text": "but",
-          "error_tag": "word_choice"
-        },
-        {
-          "text": "or",
-          "error_tag": "word_choice"
-        }
+        {"text": "and", "error_tag": null},
+        {"text": "but", "error_tag": "word_choice"},
+        {"text": "or", "error_tag": "word_choice"}
       ],
       "answer": 0,
-      "explain": {
-        "vi": "Hai thứ đều được thích nên dùng and.",
-        "en": "Both items are liked, so use and."
-      }
+      "explain": {"vi": "Hai thứ đều được thích nên dùng and.", "en": "Both items are liked, so use and."}
     },
     {
       "q": "He is young ___ very experienced.",
       "options": [
-        {
-          "text": "but",
-          "error_tag": null
-        },
-        {
-          "text": "and",
-          "error_tag": "word_choice"
-        },
-        {
-          "text": "or",
-          "error_tag": "word_choice"
-        }
+        {"text": "but", "error_tag": null},
+        {"text": "and", "error_tag": "word_choice"},
+        {"text": "or", "error_tag": "word_choice"}
       ],
       "answer": 0,
-      "explain": {
-        "vi": "Hai ý tương phản nên dùng but.",
-        "en": "The ideas contrast, so use but."
-      }
+      "explain": {"vi": "Hai ý tương phản nên dùng but.", "en": "The ideas contrast, so use but."}
     },
     {
       "q": "Would you like tea ___ coffee?",
       "options": [
-        {
-          "text": "or",
-          "error_tag": null
-        },
-        {
-          "text": "and",
-          "error_tag": "word_choice"
-        },
-        {
-          "text": "but",
-          "error_tag": "word_choice"
-        }
+        {"text": "or", "error_tag": null},
+        {"text": "and", "error_tag": "word_choice"},
+        {"text": "but", "error_tag": "word_choice"}
       ],
       "answer": 0,
-      "explain": {
-        "vi": "Đây là lựa chọn nên dùng or.",
-        "en": "This presents a choice, so use or."
-      }
+      "explain": {"vi": "Đây là lựa chọn nên dùng or.", "en": "This presents a choice, so use or."}
     }
   ],
   "status": "draft_ai",
@@ -241,21 +115,11 @@
     "model": "openai:gpt-5.6-sol",
     "prompt_version": "direct-author.en-a1.v1",
     "run_id": "chatgpt.en-a1.20260930",
-    "generated_at": "2026-09-30T10:35:00Z"
+    "generated_at": "2026-09-30T10:35:00Z",
+    "metadata_stale": true
   },
   "review": null,
   "sequence": 1,
-  "source_anchors": {
-    "status": "anchored",
-    "items": [
-      {
-        "source": "core_inventory",
-        "code": "47",
-        "level": "A1"
-      }
-    ]
-  },
-  "aliases": [
-    "a1-and-but-or-because-so"
-  ]
+  "source_anchors": {"status": "anchored", "items": [{"source": "core_inventory", "code": "47", "level": "A1"}]},
+  "aliases": ["a1-and-but-or-because-so"]
 }

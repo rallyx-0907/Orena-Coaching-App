@@ -1,0 +1,205 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk7_9.a_7_4_1.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.sentence_basics",
+  "level": {"framework": "hsk3", "value": "8", "rank": 8},
+  "prereqs": ["zh.canon.gf.hsk6.a_6_6_1.p1"],
+  "contrasts": [],
+  "error_tags": ["word_order", "particle"],
+  "source_refs": {"gf0025": ["gf0025.hsk7_9.085"]},
+  "point_type": "word_order",
+  "sequence": 2,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Tân ngữ: 宾语的语义类型3", "en": "Objects: 宾语的语义类型3"},
+    "native_title": "宾语的语义类型3",
+    "level": {"framework": "hsk3", "value": "8", "rank": 8},
+    "summary": {
+      "vi": "Điểm ngữ pháp này giải thích trật tự cơ bản của câu tiếng Trung: chủ ngữ đứng trước, sau đó là động từ, rồi đến tân ngữ.",
+      "en": "This grammar point explains the basic word order of a Chinese sentence: the subject comes first, then the verb, then the object."
+    },
+    "sub": {"vi": "trật tự câu", "en": "sentence order"},
+    "native_title_pinyin": ["bīn", "yǔ", "de", "yǔ", "yì", "lèi", "xíng", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói ai đó làm gì đó với một đối tượng cụ thể.",
+      "en": "When you want to say that someone does something to a specific object."
+    },
+    {
+      "vi": "Khi bạn cần xác định đâu là chủ ngữ, đâu là động từ và đâu là tân ngữ trong câu.",
+      "en": "When you need to identify which part is the subject, the verb, and the object in a sentence."
+    },
+    {
+      "vi": "Khi bạn muốn viết một câu đơn giản, đúng trật tự, không thêm trợ từ hay bổ ngữ.",
+      "en": "When you want to write a simple, correctly ordered sentence without adding particles or complements."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "动词",
+        "role": "verb",
+        "label": {"vi": "động từ", "en": "verb"},
+        "pinyin": ["dòng", "cí"]
+      },
+      {
+        "text": "宾语",
+        "role": "object",
+        "label": {"vi": "tân ngữ", "en": "object"},
+        "pinyin": ["bīn", "yǔ"]
+      }
+    ],
+    "illustration": {"kind": "word_order"}
+  },
+  "examples": [
+    {
+      "text": "我吃米饭。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "verb"},
+        {"start": 2, "end": 4, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Câu theo đúng trật tự chủ ngữ + động từ + tân ngữ.",
+        "en": "The sentence follows the subject + verb + object order."
+      },
+      "translation": {"vi": "Tôi ăn cơm.", "en": "I eat rice."},
+      "pinyin": ["wǒ", "chī", "mǐ", "fàn", ""]
+    },
+    {
+      "text": "他开门。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "verb"},
+        {"start": 2, "end": 3, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Chủ ngữ '他' đứng trước động từ '开', tân ngữ '门' đứng sau.",
+        "en": "The subject '他' comes before the verb '开', and the object '门' comes after."
+      },
+      "translation": {"vi": "Anh ấy mở cửa.", "en": "He opens the door."},
+      "pinyin": ["tā", "kāi", "mén", ""]
+    },
+    {
+      "text": "我们喝茶。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 3, "role": "verb"},
+        {"start": 3, "end": 4, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Trật tự cơ bản: chủ ngữ '我们', động từ '喝', tân ngữ '茶'.",
+        "en": "Basic order: subject '我们', verb '喝', object '茶'."
+      },
+      "translation": {"vi": "Chúng tôi uống trà.", "en": "We drink tea."},
+      "pinyin": ["wǒ", "men", "hē", "chá", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "我米饭吃。",
+      "right": "我吃米饭。",
+      "reason": {
+        "vi": "Trong tiếng Trung, động từ phải đứng trước tân ngữ; đặt tân ngữ trước động từ là sai trật tự.",
+        "en": "In Chinese, the verb must come before the object; putting the object before the verb is the wrong order."
+      },
+      "error_tag": "word_order",
+      "l1": ["vi"],
+      "wrong_pinyin": ["wǒ", "mǐ", "fàn", "chī", ""],
+      "right_pinyin": ["wǒ", "chī", "mǐ", "fàn", ""]
+    },
+    {
+      "wrong": "我吃了米饭。",
+      "right": "我吃米饭。",
+      "reason": {
+        "vi": "Câu này không cần trợ từ '了' vì đang nói về một thói quen, không phải hành động đã hoàn thành.",
+        "en": "This sentence does not need the particle '了' because it describes a habit, not a completed action."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong_pinyin": ["wǒ", "chī", "le", "mǐ", "fàn", ""],
+      "right_pinyin": ["wǒ", "chī", "mǐ", "fàn", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "我___米饭。",
+      "options": [
+        {"text": "吃", "error_tag": null, "pinyin": ["chī"]},
+        {"text": "米饭", "error_tag": "word_order", "pinyin": ["mǐ", "fàn"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Động từ '吃' phải đứng trước tân ngữ '米饭'.",
+        "en": "The verb '吃' must come before the object '米饭'."
+      },
+      "q_pinyin": ["wǒ", "", "", "", "mǐ", "fàn", ""]
+    },
+    {
+      "q": "他___门。",
+      "options": [
+        {"text": "开", "error_tag": null, "pinyin": ["kāi"]},
+        {"text": "门", "error_tag": "word_order", "pinyin": ["mén"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Động từ '开' đứng trước tân ngữ '门'.",
+        "en": "The verb '开' comes before the object '门'."
+      },
+      "q_pinyin": ["tā", "", "", "", "mén", ""]
+    },
+    {
+      "q": "我们___茶。",
+      "options": [
+        {"text": "喝", "error_tag": null, "pinyin": ["hē"]},
+        {"text": "茶", "error_tag": "word_order", "pinyin": ["chá"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Động từ '喝' đứng trước tân ngữ '茶'.",
+        "en": "The verb '喝' comes before the object '茶'."
+      },
+      "q_pinyin": ["wǒ", "men", "", "", "", "chá", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu đơn giản theo trật tự chủ ngữ + động từ + tân ngữ về việc bạn làm hằng ngày.",
+      "en": "Write a simple sentence in subject + verb + object order about something you do every day."
+    },
+    "placeholder": "我吃……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "verb", "any_of": ["吃", "喝", "开", "看", "写"]},
+        {"role": "object", "regex": "[\\u4e00-\\u9fff]+"}
+      ]
+    },
+    "sample": {"text": "我吃米饭。", "pinyin": ["wǒ", "chī", "mǐ", "fàn", ""]},
+    "placeholder_pinyin": ["wǒ", "chī", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790834657",
+    "generated_at": "2026-10-01T06:04:17Z"
+  },
+  "review": null
+}

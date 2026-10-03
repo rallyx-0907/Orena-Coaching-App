@@ -1,0 +1,326 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.c1.001",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.information_structure",
+  "level": {"framework": "cefr", "value": "C1", "rank": 5},
+  "prereqs": ["en.canon.b2.030"],
+  "contrasts": [],
+  "error_tags": ["sentence_structure"],
+  "source_refs": {"r5": ["b2-only-phrase-inversion"]},
+  "point_type": "word_order",
+  "sequence": 1,
+  "aliases": ["b2-only-phrase-inversion"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Only-phrase đảo ngữ", "en": "Only-phrase inversion"},
+    "native_title": "Only-phrase inversion",
+    "level": {"framework": "cefr", "value": "C1", "rank": 5},
+    "summary": {
+      "vi": "Khi một cụm bắt đầu bằng 'only' được đưa lên đầu câu, mệnh đề chính phải đảo trợ động từ lên trước chủ ngữ.",
+      "en": "When a phrase beginning with 'only' is fronted, the main clause takes auxiliary-subject inversion."
+    },
+    "sub": {"vi": "đảo ngữ với only", "en": "only-phrase inversion"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nhấn mạnh một mốc thời gian hoặc điều kiện là yếu tố duy nhất quyết định, và cụm 'only...' đứng đầu câu.",
+      "en": "When you want to stress that a time or condition is the single decisive factor, and the 'only...' phrase stands at the front of the sentence."
+    },
+    {
+      "vi": "Trong văn viết trang trọng, báo chí, báo cáo hoặc bài luận, nơi trật tự đảo ngữ tạo giọng nhấn mạnh.",
+      "en": "In formal writing, journalism, reports or essays, where inverted order creates an emphatic tone."
+    },
+    {
+      "vi": "Khi mệnh đề chính diễn tả kết quả chỉ xảy ra sau điều kiện hoặc thời điểm đã nêu ở cụm 'only'.",
+      "en": "When the main clause states a result that happens only after the condition or time named in the 'only' phrase."
+    },
+    {
+      "vi": "Khi 'only' bổ nghĩa cho trạng ngữ hoặc mệnh đề, không phải cho chủ ngữ.",
+      "en": "When 'only' modifies an adverbial or a clause, not the subject."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "Only", "role": "marker", "label": {"vi": "tiểu từ nhấn mạnh", "en": "focus marker"}},
+      {
+        "text": "time/condition phrase",
+        "role": "other",
+        "label": {"vi": "cụm thời gian / điều kiện", "en": "time or condition phrase"}
+      },
+      {
+        "text": "aux",
+        "role": "aux",
+        "label": {"vi": "trợ động từ", "en": "auxiliary"},
+        "options": [
+          {"text": "do"},
+          {"text": "does"},
+          {"text": "did"},
+          {"text": "can"},
+          {"text": "could"},
+          {"text": "will"},
+          {"text": "would"},
+          {"text": "have"},
+          {"text": "has"},
+          {"text": "had"}
+        ]
+      },
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ chính", "en": "main verb"}},
+      {
+        "text": "O/C",
+        "role": "object",
+        "label": {"vi": "tân ngữ / bổ ngữ", "en": "object or complement"},
+        "optional": true
+      }
+    ],
+    "variants": {
+      "negative": [
+        {
+          "text": "Only",
+          "role": "marker",
+          "label": {"vi": "tiểu từ nhấn mạnh", "en": "focus marker"}
+        },
+        {
+          "text": "time/condition phrase",
+          "role": "other",
+          "label": {"vi": "cụm thời gian / điều kiện", "en": "time or condition phrase"}
+        },
+        {
+          "text": "aux",
+          "role": "aux",
+          "label": {"vi": "trợ động từ", "en": "auxiliary"},
+          "options": [
+            {"text": "do"},
+            {"text": "does"},
+            {"text": "did"},
+            {"text": "can"},
+            {"text": "could"},
+            {"text": "will"},
+            {"text": "would"},
+            {"text": "have"},
+            {"text": "has"},
+            {"text": "had"}
+          ]
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {"text": "not", "role": "particle", "label": {"vi": "phủ định", "en": "negator"}},
+        {"text": "V", "role": "verb", "label": {"vi": "động từ chính", "en": "main verb"}},
+        {
+          "text": "O/C",
+          "role": "object",
+          "label": {"vi": "tân ngữ / bổ ngữ", "en": "object or complement"},
+          "optional": true
+        }
+      ],
+      "question": [
+        {
+          "text": "Only",
+          "role": "marker",
+          "label": {"vi": "tiểu từ nhấn mạnh", "en": "focus marker"}
+        },
+        {
+          "text": "time/condition phrase",
+          "role": "other",
+          "label": {"vi": "cụm thời gian / điều kiện", "en": "time or condition phrase"}
+        },
+        {
+          "text": "aux",
+          "role": "aux",
+          "label": {"vi": "trợ động từ", "en": "auxiliary"},
+          "options": [
+            {"text": "do"},
+            {"text": "does"},
+            {"text": "did"},
+            {"text": "can"},
+            {"text": "could"},
+            {"text": "will"},
+            {"text": "would"},
+            {"text": "have"},
+            {"text": "has"},
+            {"text": "had"}
+          ]
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {"text": "V", "role": "verb", "label": {"vi": "động từ chính", "en": "main verb"}},
+        {
+          "text": "O/C",
+          "role": "object",
+          "label": {"vi": "tân ngữ / bổ ngữ", "en": "object or complement"},
+          "optional": true
+        }
+      ]
+    },
+    "illustration": {"kind": "word_order"}
+  },
+  "examples": [
+    {
+      "text": "Only then did I realise my mistake.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "marker"},
+        {"start": 5, "end": 9, "role": "other"},
+        {"start": 10, "end": 13, "role": "aux"},
+        {"start": 14, "end": 15, "role": "subject"},
+        {"start": 16, "end": 23, "role": "verb"},
+        {"start": 24, "end": 34, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Cụm 'only then' đứng đầu câu buộc trợ động từ 'did' đảo lên trước chủ ngữ 'I'.",
+        "en": "The fronted 'only then' forces the auxiliary 'did' to move before the subject 'I'."
+      },
+      "translation": {
+        "vi": "Chỉ đến lúc đó tôi mới nhận ra lỗi của mình.",
+        "en": "Only then did I realise my mistake."
+      }
+    },
+    {
+      "text": "Only after the meeting did she explain the problem.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "marker"},
+        {"start": 5, "end": 22, "role": "other"},
+        {"start": 23, "end": 26, "role": "aux"},
+        {"start": 27, "end": 30, "role": "subject"},
+        {"start": 31, "end": 38, "role": "verb"},
+        {"start": 39, "end": 50, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Mệnh đề chính đảo ngữ với 'did'; cụm 'after the meeting' giữ trật tự bình thường.",
+        "en": "The main clause inverts with 'did'; the phrase 'after the meeting' keeps normal order."
+      },
+      "translation": {
+        "vi": "Chỉ sau cuộc họp cô ấy mới giải thích vấn đề.",
+        "en": "Only after the meeting did she explain the problem."
+      }
+    },
+    {
+      "text": "Only if we act now can we avoid further delays.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "marker"},
+        {"start": 5, "end": 18, "role": "other"},
+        {"start": 19, "end": 22, "role": "aux"},
+        {"start": 23, "end": 25, "role": "subject"},
+        {"start": 26, "end": 31, "role": "verb"},
+        {"start": 32, "end": 46, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Điều kiện 'only if...' đứng đầu câu, mệnh đề chính đảo 'can' lên trước 'we'.",
+        "en": "The condition 'only if...' is fronted, and the main clause inverts 'can' before 'we'."
+      },
+      "translation": {
+        "vi": "Chỉ nếu chúng ta hành động ngay thì mới tránh được sự chậm trễ thêm.",
+        "en": "Only if we act now can we avoid further delays."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "Only then I understood.",
+      "right": "Only then did I understand.",
+      "reason": {
+        "vi": "Người học giữ trật tự chủ ngữ – động từ như tiếng Việt, nhưng cụm 'only' đứng đầu câu bắt buộc phải đảo trợ động từ lên trước chủ ngữ.",
+        "en": "Learners keep subject-verb order as in Vietnamese, but a fronted 'only' phrase requires auxiliary-subject inversion."
+      },
+      "error_tag": "sentence_structure",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "Only later ___ they discover the truth.",
+      "options": [
+        {"text": "did", "error_tag": null},
+        {"text": "do", "error_tag": "tense"},
+        {"text": "were", "error_tag": "agreement"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Cụm 'only later' đứng đầu câu, mệnh đề chính đảo trợ động từ; 'discover' là động từ nguyên mẫu nên dùng 'did' cho quá khứ.",
+        "en": "The fronted 'only later' triggers inversion in the main clause; 'discover' is a bare infinitive, so past time takes 'did'."
+      }
+    },
+    {
+      "q": "Only after I read the report ___ I understand the decision.",
+      "options": [{"text": "did", "error_tag": null}, {"text": "do", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Mệnh đề chính đảo ngữ; 'read' ở quá khứ nên trợ động từ là 'did'.",
+        "en": "The main clause inverts; 'read' is past, so the auxiliary is 'did'."
+      }
+    },
+    {
+      "q": "Only if you agree ___ we proceed.",
+      "options": [
+        {"text": "will", "error_tag": null},
+        {"text": "do", "error_tag": "tense"},
+        {"text": "are", "error_tag": "agreement"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Điều kiện 'only if...' đứng đầu câu, mệnh đề chính đảo trợ động từ; 'proceed' là động từ nguyên mẫu nên dùng 'will' cho tương lai.",
+        "en": "The fronted 'only if...' condition triggers inversion in the main clause; 'proceed' is a bare infinitive, so future takes 'will'."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về lần bạn chỉ nhận ra điều gì đó sau một sự kiện, dùng 'Only after ... did ...'.",
+      "en": "Write one sentence about a time you realised something only after an event, using 'Only after ... did ...'."
+    },
+    "placeholder": "Only after ... did I ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "marker", "any_of": ["Only"]},
+        {
+          "role": "aux",
+          "any_of": ["did", "do", "does", "can", "could", "will", "would", "have", "has", "had"]
+        },
+        {"role": "subject", "regex": "\\b(I|you|he|she|it|we|they)\\b"}
+      ]
+    },
+    "sample": {"text": "Only after the interview did I understand what the job involved."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790831362",
+    "generated_at": "2026-10-01T05:09:22Z",
+    "r5_source": {
+      "ids": ["b2-only-phrase-inversion"],
+      "content_version": 2,
+      "content_hash": "8d9b5b7782a570e54353f1ab4834e76f4a5a3450560f36ad75960ebe316aad2e",
+      "corrections": [
+        {
+          "r5_id": "b2-only-phrase-inversion",
+          "issue": "The R5 lesson is labelled B2, but the point is being written at C1.",
+          "fix": "Rewrote the lesson at C1, keeping the same target structure but raising the register and complexity of the examples and explanations."
+        },
+        {
+          "r5_id": "b2-only-phrase-inversion",
+          "issue": "The R5 'mistakes' entry 'Only after did I read the report I understood.' is not a natural learner error and mixes two clause boundaries.",
+          "fix": "Replaced it with the attested Vietnamese-L1 error 'Only then I understood.' and its correction 'Only then did I understand.'"
+        },
+        {
+          "r5_id": "b2-only-phrase-inversion",
+          "issue": "The R5 rules do not state that 'only' + subject does not trigger inversion, and the exceptions section is vague.",
+          "fix": "Added the restriction explicitly in the explanation and kept the formula limited to adverbial/condition 'only' phrases."
+        },
+        {
+          "r5_id": "b2-only-phrase-inversion",
+          "issue": "The R5 examples lack translations and structural annotations.",
+          "fix": "Added Vietnamese translations and annotations that name the inverted auxiliary and the fronted phrase."
+        }
+      ]
+    },
+    "metadata_stale": true
+  },
+  "review": null
+}

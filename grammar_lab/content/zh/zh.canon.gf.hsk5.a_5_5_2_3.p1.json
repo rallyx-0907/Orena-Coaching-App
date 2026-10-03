@@ -1,0 +1,243 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk5.a_5_5_2_3.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.sequence",
+  "level": {"framework": "hsk3", "value": "5", "rank": 5},
+  "prereqs": ["zh.canon.gf.hsk5.a_5_1_3.p2"],
+  "contrasts": [],
+  "error_tags": ["conjunction"],
+  "source_refs": {"gf0025": ["gf0025.hsk5.046"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Câu phức: 一旦⋯⋯，就⋯⋯", "en": "Complex sentences: 一旦⋯⋯，就⋯⋯"},
+    "native_title": "一旦⋯⋯，就⋯⋯",
+    "level": {"framework": "hsk3", "value": "5", "rank": 5},
+    "summary": {
+      "vi": "Mẫu câu 一旦⋯⋯，就⋯⋯ dùng để nói rằng một khi điều kiện nào đó xảy ra thì kết quả sẽ lập tức theo sau.",
+      "en": "The pattern 一旦⋯⋯，就⋯⋯ says that once a certain condition happens, the result follows immediately."
+    },
+    "sub": {"vi": "một khi… thì", "en": "once… then"},
+    "native_title_pinyin": ["yí", "dàn", "", "", "", "jiù", "", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói một tình huống giả định hoặc chưa xảy ra, nhưng một khi nó xảy ra thì kết quả là tất yếu.",
+      "en": "Use it for a hypothetical or not-yet-real situation where, once it happens, the result is certain."
+    },
+    {
+      "vi": "Khi kết quả xảy ra ngay sau điều kiện, không chờ đợi gì thêm.",
+      "en": "Use it when the result comes right after the condition, with nothing in between."
+    },
+    {
+      "vi": "Khi muốn nhấn mạnh điều kiện là điểm khởi đầu duy nhất dẫn đến kết quả đó.",
+      "en": "Use it to stress that the condition is the single starting point that leads to that result."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "一旦",
+        "role": "connector",
+        "label": {"vi": "từ nối điều kiện", "en": "condition connector"},
+        "pinyin": ["yī", "dàn"]
+      },
+      {
+        "text": "条件",
+        "role": "other",
+        "label": {"vi": "điều kiện", "en": "condition"},
+        "pinyin": ["tiáo", "jiàn"]
+      },
+      {
+        "text": "就",
+        "role": "connector",
+        "label": {"vi": "từ nối kết quả", "en": "result connector"},
+        "pinyin": ["jiù"]
+      },
+      {
+        "text": "结果",
+        "role": "other",
+        "label": {"vi": "kết quả", "en": "result"},
+        "pinyin": ["jié", "guǒ"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "一旦你决定了，就告诉我。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 6, "role": "other"},
+        {"start": 7, "end": 8, "role": "connector"},
+        {"start": 8, "end": 11, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "一旦 mở đầu điều kiện, 就 mở đầu kết quả xảy ra ngay sau đó.",
+        "en": "一旦 opens the condition, and 就 opens the result that follows right after."
+      },
+      "translation": {
+        "vi": "Một khi bạn đã quyết định thì hãy nói cho tôi biết.",
+        "en": "Once you have decided, tell me."
+      },
+      "pinyin": ["yī", "dàn", "nǐ", "jué", "dìng", "le", "", "jiù", "gào", "su", "wǒ", ""]
+    },
+    {
+      "text": "一旦开始下雨，比赛就会取消。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 6, "role": "other"},
+        {"start": 9, "end": 10, "role": "connector"},
+        {"start": 10, "end": 13, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "就 đứng trước 会 để nói kết quả chắc chắn xảy ra sau điều kiện.",
+        "en": "就 comes before 会 to say the result will certainly happen after the condition."
+      },
+      "translation": {
+        "vi": "Một khi trời bắt đầu mưa thì trận đấu sẽ bị hủy.",
+        "en": "Once it starts raining, the match will be cancelled."
+      },
+      "pinyin": ["yī", "dàn", "kāi", "shǐ", "xià", "yǔ", "", "bǐ", "sài", "jiù", "huì", "qǔ", "xiāo", ""]
+    },
+    {
+      "text": "一旦发现问题，我们就马上处理。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 6, "role": "other"},
+        {"start": 9, "end": 10, "role": "connector"},
+        {"start": 10, "end": 14, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "就 kết nối điều kiện với hành động xử lý xảy ra ngay lập tức.",
+        "en": "就 links the condition to the action that happens immediately."
+      },
+      "translation": {
+        "vi": "Một khi phát hiện vấn đề thì chúng tôi xử lý ngay.",
+        "en": "Once we find a problem, we deal with it right away."
+      },
+      "pinyin": [
+        "yī",
+        "dàn",
+        "fā",
+        "xiàn",
+        "wèn",
+        "tí",
+        "",
+        "wǒ",
+        "men",
+        "jiù",
+        "mǎ",
+        "shàng",
+        "chǔ",
+        "lǐ",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "一旦你决定了，然后告诉我。",
+      "right": "一旦你决定了，就告诉我。",
+      "reason": {
+        "vi": "Người học Việt Nam thường dịch 'thì' thành 然后, nhưng 一旦 cần 就 ở vế sau để nối kết quả, không dùng 然后.",
+        "en": "Vietnamese learners often translate 'then' as 然后, but 一旦 requires 就 in the second clause to link the result; 然后 is not used here."
+      },
+      "error_tag": "conjunction",
+      "l1": ["vi"],
+      "wrong_pinyin": ["yī", "dàn", "nǐ", "jué", "dìng", "le", "", "rán", "hòu", "gào", "su", "wǒ", ""],
+      "right_pinyin": ["yī", "dàn", "nǐ", "jué", "dìng", "le", "", "jiù", "gào", "su", "wǒ", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "一旦你到了，___给我打电话。",
+      "options": [
+        {"text": "就", "error_tag": null, "pinyin": ["jiù"]},
+        {"text": "然后", "error_tag": "conjunction", "pinyin": ["rán", "hòu"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "一旦 cần 就 ở vế sau để nối kết quả, không dùng 然后.",
+        "en": "一旦 needs 就 in the second clause to link the result; 然后 is not used."
+      },
+      "q_pinyin": ["yī", "dàn", "nǐ", "dào", "le", "", "", "", "", "gěi", "wǒ", "dǎ", "diàn", "huà", ""]
+    },
+    {
+      "q": "一旦开始，___不能停下来。",
+      "options": [
+        {"text": "就", "error_tag": null, "pinyin": ["jiù"]},
+        {"text": "也", "error_tag": "conjunction", "pinyin": ["yě"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "就 nối điều kiện với kết quả tất yếu; 也 không phù hợp ở đây.",
+        "en": "就 links the condition to the certain result; 也 does not fit here."
+      },
+      "q_pinyin": ["yī", "dàn", "kāi", "shǐ", "", "", "", "", "bù", "néng", "tíng", "xià", "lái", ""]
+    },
+    {
+      "q": "一旦他知道了，___会生气。",
+      "options": [
+        {"text": "就", "error_tag": null, "pinyin": ["jiù"]},
+        {"text": "才", "error_tag": "conjunction", "pinyin": ["cái"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "一旦 đi với 就 để chỉ kết quả xảy ra ngay; 才 không dùng trong mẫu này.",
+        "en": "一旦 pairs with 就 for the immediate result; 才 is not used in this pattern."
+      },
+      "q_pinyin": ["yī", "dàn", "tā", "zhī", "dào", "le", "", "", "", "", "huì", "shēng", "qì", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về bản thân dùng 一旦⋯⋯，就⋯⋯ để nói một điều kiện và kết quả của nó.",
+      "en": "Write one sentence about yourself using 一旦⋯⋯，就⋯⋯ to state a condition and its result."
+    },
+    "placeholder": "一旦我……，就……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "connector", "any_of": ["一旦"]}, {"role": "connector", "any_of": ["就"]}]
+    },
+    "sample": {
+      "text": "一旦我到了北京，就给你打电话。",
+      "pinyin": [
+        "yī",
+        "dàn",
+        "wǒ",
+        "dào",
+        "le",
+        "běi",
+        "jīng",
+        "",
+        "jiù",
+        "gěi",
+        "nǐ",
+        "dǎ",
+        "diàn",
+        "huà",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["yī", "dàn", "wǒ", "", "", "", "jiù", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790833754",
+    "generated_at": "2026-10-01T05:49:14Z"
+  },
+  "review": null
+}

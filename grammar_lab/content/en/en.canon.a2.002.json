@@ -1,0 +1,202 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.a2.002",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.quantity",
+  "level": {"framework": "cefr", "value": "A2", "rank": 2},
+  "prereqs": ["en.quantifiers.some_any"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["a1-much-many-a-lot-of"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": ["a1-much-many-a-lot-of"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Much/many/a lot of", "en": "Much/many/a lot of"},
+    "native_title": "Much/many/a lot of",
+    "level": {"framework": "cefr", "value": "A2", "rank": 2},
+    "summary": {
+      "vi": "Dùng much, many và a lot of để nói số lượng, tùy theo danh từ đếm được hay không đếm được và loại câu.",
+      "en": "Use much, many and a lot of to talk about quantity, depending on whether the noun is countable or uncountable and on the sentence type."
+    },
+    "sub": {"vi": "số lượng", "en": "quantity"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói số lượng lớn của một danh từ đếm được số nhiều, dùng many hoặc a lot of.",
+      "en": "When you want to talk about a large quantity of a plural countable noun, use many or a lot of."
+    },
+    {
+      "vi": "Khi bạn muốn nói số lượng lớn của một danh từ không đếm được, dùng much hoặc a lot of.",
+      "en": "When you want to talk about a large quantity of an uncountable noun, use much or a lot of."
+    },
+    {
+      "vi": "Trong câu khẳng định giao tiếp, a lot of thường tự nhiên hơn much.",
+      "en": "In affirmative everyday sentences, a lot of is usually more natural than much."
+    },
+    {
+      "vi": "Trong câu hỏi và câu phủ định, much và many thường được dùng.",
+      "en": "In questions and negative sentences, much and many are common."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "much/many",
+        "role": "other",
+        "label": {"vi": "lượng từ", "en": "quantifier"},
+        "options": [{"text": "much"}, {"text": "many"}]
+      },
+      {"text": "N", "role": "object", "label": {"vi": "danh từ", "en": "noun"}}
+    ],
+    "variants": {
+      "negative": [
+        {"text": "not", "role": "aux", "label": {"vi": "phủ định", "en": "negator"}},
+        {
+          "text": "much/many",
+          "role": "other",
+          "label": {"vi": "lượng từ", "en": "quantifier"},
+          "options": [{"text": "much"}, {"text": "many"}]
+        },
+        {"text": "N", "role": "object", "label": {"vi": "danh từ", "en": "noun"}}
+      ],
+      "question": [
+        {
+          "text": "How much/many",
+          "role": "other",
+          "label": {"vi": "hỏi số lượng", "en": "quantity question"},
+          "options": [{"text": "How much"}, {"text": "How many"}]
+        },
+        {"text": "N", "role": "object", "label": {"vi": "danh từ", "en": "noun"}}
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "There are many students in the library.",
+      "form": "affirmative",
+      "spans": [{"start": 10, "end": 14, "role": "other"}, {"start": 15, "end": 23, "role": "object"}],
+      "annotation": {
+        "vi": "many đi với danh từ đếm được số nhiều students.",
+        "en": "many goes with the plural countable noun students."
+      },
+      "translation": {"vi": "Có nhiều học sinh trong thư viện.", "en": "There are many students in the library."}
+    },
+    {
+      "text": "We don't have much time.",
+      "form": "negative",
+      "spans": [
+        {"start": 3, "end": 8, "role": "aux"},
+        {"start": 14, "end": 18, "role": "other"},
+        {"start": 19, "end": 23, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "much đi với danh từ không đếm được time trong câu phủ định.",
+        "en": "much goes with the uncountable noun time in a negative sentence."
+      },
+      "translation": {"vi": "Chúng ta không có nhiều thời gian.", "en": "We don't have much time."}
+    },
+    {
+      "text": "She has a lot of books.",
+      "form": "affirmative",
+      "spans": [{"start": 8, "end": 16, "role": "other"}, {"start": 17, "end": 22, "role": "object"}],
+      "annotation": {
+        "vi": "a lot of dùng được với danh từ đếm được số nhiều books.",
+        "en": "a lot of works with the plural countable noun books."
+      },
+      "translation": {"vi": "Cô ấy có rất nhiều sách.", "en": "She has a lot of books."}
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "I have much friends.",
+      "right": "I have many friends.",
+      "reason": {
+        "vi": "friends là danh từ đếm được số nhiều, nên dùng many, không dùng much.",
+        "en": "friends is a plural countable noun, so use many, not much."
+      },
+      "error_tag": "other",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "We have ___ homework today.",
+      "options": [{"text": "much", "error_tag": null}, {"text": "many", "error_tag": "agreement"}],
+      "answer": 0,
+      "explain": {
+        "vi": "homework là danh từ không đếm được, nên dùng much.",
+        "en": "homework is uncountable, so use much."
+      }
+    },
+    {
+      "q": "How ___ students are there?",
+      "options": [{"text": "many", "error_tag": null}, {"text": "much", "error_tag": "agreement"}],
+      "answer": 0,
+      "explain": {
+        "vi": "students là danh từ đếm được số nhiều, nên dùng many.",
+        "en": "students is a plural countable noun, so use many."
+      }
+    },
+    {
+      "q": "She has ___ books.",
+      "options": [{"text": "a lot of", "error_tag": null}, {"text": "much", "error_tag": "agreement"}],
+      "answer": 0,
+      "explain": {
+        "vi": "books là danh từ đếm được số nhiều, nên dùng a lot of.",
+        "en": "books is a plural countable noun, so use a lot of."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về số lượng đồ vật hoặc thời gian bạn có, dùng much, many hoặc a lot of.",
+      "en": "Write one sentence about the quantity of things or time you have, using much, many or a lot of."
+    },
+    "placeholder": "I have ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "other", "any_of": ["much", "many", "a lot of"]},
+        {"role": "object", "regex": "[a-z]+s?\\b"}
+      ]
+    },
+    "sample": {"text": "I have a lot of books."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790830459",
+    "generated_at": "2026-10-01T04:54:19Z",
+    "r5_source": {
+      "ids": ["a1-much-many-a-lot-of"],
+      "content_version": 2,
+      "content_hash": "504d51a0b47310b79186933aef9f467acf9ad8d40b524c7beaa6d143fe5eb599",
+      "corrections": [
+        {
+          "r5_id": "a1-much-many-a-lot-of",
+          "issue": "R5 dạy ở cấp A1 nhưng điểm này là A2; cần điều chỉnh độ khó và ví dụ cho phù hợp A2.",
+          "fix": "Giữ nội dung cốt lõi nhưng viết lại ví dụ và giải thích ở mức A2, thêm cấu trúc câu hỏi và phủ định rõ ràng."
+        },
+        {
+          "r5_id": "a1-much-many-a-lot-of",
+          "issue": "R5 không có công thức trừu tượng, chỉ có quy tắc và ví dụ.",
+          "fix": "Thêm formula với các slot trừu tượng và biến thể negative/question."
+        },
+        {
+          "r5_id": "a1-much-many-a-lot-of",
+          "issue": "R5 có lỗi sai 'How many money do you need?' nhưng không giải thích đủ cơ chế.",
+          "fix": "Đưa vào common_mistakes với lỗi 'much friends' và giải thích rõ danh từ đếm được/không đếm được."
+        }
+      ]
+    }
+  },
+  "review": null
+}

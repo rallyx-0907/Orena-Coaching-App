@@ -1,0 +1,252 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk2.a_2_3.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.obligation_advice",
+  "level": {"framework": "hsk3", "value": "2", "rank": 2},
+  "prereqs": ["zh.canon.gf.hsk2.a_2_2_3_1.p1"],
+  "contrasts": [],
+  "error_tags": ["particle", "collocation"],
+  "source_refs": {"gf0025": ["gf0025.hsk2.045", "gf0025.hsk2.046", "gf0025.hsk2.047"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Cấu trúc cố định: 还是⋯⋯吧", "en": "Fixed patterns: 还是⋯⋯吧"},
+    "native_title": "还是⋯⋯吧",
+    "level": {"framework": "hsk3", "value": "2", "rank": 2},
+    "summary": {
+      "vi": "Mẫu cố định 还是⋯⋯吧 dùng để nêu một lựa chọn đã cân nhắc và khuyên chọn phương án đó.",
+      "en": "The fixed pattern 还是⋯⋯吧 presents a considered option and suggests choosing it."
+    },
+    "sub": {"vi": "đề xuất lựa chọn", "en": "suggesting a choice"},
+    "native_title_pinyin": ["hái", "shì", "", "", "ba"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn đã cân nhắc vài khả năng và muốn nói ra phương án mình thấy nên chọn.",
+      "en": "When you have weighed a few possibilities and want to name the one you think is best."
+    },
+    {
+      "vi": "Khi đưa ra lời khuyên nhẹ nhàng cho người nghe, không phải mệnh lệnh.",
+      "en": "When giving a gentle suggestion to the listener rather than a command."
+    },
+    {
+      "vi": "Khi câu trả lời cho một câu hỏi chọn lựa, chốt lại một phương án.",
+      "en": "When answering a choice question and settling on one option."
+    },
+    {
+      "vi": "Khi muốn kết thúc một cuộc bàn bạc bằng một đề xuất cụ thể.",
+      "en": "When closing a discussion with a concrete proposal."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "还是",
+        "role": "connector",
+        "label": {"vi": "từ nối nêu phương án", "en": "connector introducing the option"},
+        "pinyin": ["hái", "shì"]
+      },
+      {
+        "text": "động từ / tính từ",
+        "role": "verb",
+        "label": {
+          "vi": "hành động hoặc tính chất được đề xuất",
+          "en": "the action or quality being suggested"
+        },
+        "pinyin": ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""]
+      },
+      {
+        "text": "吧",
+        "role": "particle",
+        "label": {"vi": "trợ từ đề xuất", "en": "suggestion particle"},
+        "pinyin": ["ba"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "我们还是坐地铁吧。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 2, "end": 4, "role": "connector"},
+        {"start": 4, "end": 5, "role": "verb"},
+        {"start": 7, "end": 8, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "还是 mở đầu phương án được chọn, 吧 chốt lại thành lời đề xuất.",
+        "en": "还是 opens the chosen option, and 吧 closes it as a suggestion."
+      },
+      "translation": {"vi": "Chúng ta vẫn nên đi tàu điện ngầm thôi.", "en": "Let's just take the subway."},
+      "pinyin": ["wǒ", "men", "hái", "shì", "zuò", "dì", "tiě", "ba", ""]
+    },
+    {
+      "text": "这件衣服还是买蓝色的吧。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 4, "end": 6, "role": "connector"},
+        {"start": 6, "end": 7, "role": "verb"},
+        {"start": 10, "end": 11, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "Sau khi cân nhắc màu, người nói chốt phương án mua màu xanh.",
+        "en": "After weighing the colours, the speaker settles on buying the blue one."
+      },
+      "translation": {
+        "vi": "Cái áo này thôi mua màu xanh đi.",
+        "en": "For this shirt, let's just buy the blue one."
+      },
+      "pinyin": ["zhè", "jiàn", "yī", "fu", "hái", "shì", "mǎi", "lán", "sè", "de", "ba", ""]
+    },
+    {
+      "text": "今天太晚了，我们还是明天去吧。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 8, "end": 10, "role": "connector"},
+        {"start": 12, "end": 13, "role": "verb"},
+        {"start": 13, "end": 14, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "Vì đã muộn, người nói đề xuất dời sang ngày mai.",
+        "en": "Because it is late, the speaker suggests going tomorrow instead."
+      },
+      "translation": {
+        "vi": "Hôm nay muộn quá rồi, chúng ta thôi để mai đi vậy.",
+        "en": "It's too late today; let's just go tomorrow."
+      },
+      "pinyin": [
+        "jīn",
+        "tiān",
+        "tài",
+        "wǎn",
+        "le",
+        "",
+        "wǒ",
+        "men",
+        "hái",
+        "shì",
+        "míng",
+        "tiān",
+        "qù",
+        "ba",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "我们还是坐地铁。",
+      "right": "我们还是坐地铁吧。",
+      "reason": {
+        "vi": "Thiếu 吧 ở cuối câu, nên câu mất đi ý đề xuất, chỉ còn là một câu trần thuật.",
+        "en": "Without 吧 at the end, the sentence loses its suggestion force and becomes a plain statement."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong_pinyin": ["wǒ", "men", "hái", "shì", "zuò", "dì", "tiě", ""],
+      "right_pinyin": ["wǒ", "men", "hái", "shì", "zuò", "dì", "tiě", "ba", ""]
+    },
+    {
+      "wrong": "还是我们坐地铁吧。",
+      "right": "我们还是坐地铁吧。",
+      "reason": {
+        "vi": "还是 phải đứng sau chủ ngữ, trước động từ; đặt trước chủ ngữ là sai vị trí.",
+        "en": "还是 must follow the subject and precede the verb; placing it before the subject is the wrong position."
+      },
+      "error_tag": "collocation",
+      "l1": ["vi"],
+      "wrong_pinyin": ["hái", "shì", "wǒ", "men", "zuò", "dì", "tiě", "ba", ""],
+      "right_pinyin": ["wǒ", "men", "hái", "shì", "zuò", "dì", "tiě", "ba", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "外面下雨了，我们___打车去吧。",
+      "options": [
+        {"text": "还是", "error_tag": null, "pinyin": ["hái", "shì"]},
+        {"text": "或者", "error_tag": "conjunction", "pinyin": ["huò", "zhě"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "还是 đứng sau chủ ngữ để nêu phương án được chọn; 或者 dùng để liệt kê lựa chọn, không hợp ở đây.",
+        "en": "还是 follows the subject to name the chosen option; 或者 lists alternatives and does not fit here."
+      },
+      "q_pinyin": ["wài", "miàn", "xià", "yǔ", "le", "", "wǒ", "men", "", "", "", "dǎ", "chē", "qù", "ba", ""]
+    },
+    {
+      "q": "这个太贵了，我们___买那个便宜的吧。",
+      "options": [
+        {"text": "还是", "error_tag": null, "pinyin": ["hái", "shì"]},
+        {"text": "还", "error_tag": "particle", "pinyin": ["hái"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Mẫu cố định là 还是, không được rút gọn thành 还.",
+        "en": "The fixed pattern is 还是; it cannot be shortened to 还."
+      },
+      "q_pinyin": [
+        "zhè",
+        "ge",
+        "tài",
+        "guì",
+        "le",
+        "",
+        "wǒ",
+        "men",
+        "",
+        "",
+        "",
+        "mǎi",
+        "nà",
+        "ge",
+        "pián",
+        "yi",
+        "de",
+        "ba",
+        ""
+      ]
+    },
+    {
+      "q": "时间不早了，我们___回家吧。",
+      "options": [
+        {"text": "还是", "error_tag": null, "pinyin": ["hái", "shì"]},
+        {"text": "但是", "error_tag": "conjunction", "pinyin": ["dàn", "shì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "还是 nêu phương án được chọn sau khi cân nhắc; 但是 chỉ dùng để chuyển ý tương phản.",
+        "en": "还是 names the chosen option after weighing things; 但是 only marks a contrast."
+      },
+      "q_pinyin": ["shí", "jiān", "bù", "zǎo", "le", "", "wǒ", "men", "", "", "", "huí", "jiā", "ba", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu đề xuất một việc nên làm, dùng 还是⋯⋯吧.",
+      "en": "Write one sentence suggesting what should be done, using 还是⋯⋯吧."
+    },
+    "placeholder": "我们还是……吧。",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "connector", "any_of": ["还是"]}, {"role": "particle", "any_of": ["吧"]}]
+    },
+    "sample": {"text": "我们还是坐地铁吧。", "pinyin": ["wǒ", "men", "hái", "shì", "zuò", "dì", "tiě", "ba", ""]},
+    "placeholder_pinyin": ["wǒ", "men", "hái", "shì", "", "", "ba", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790832304",
+    "generated_at": "2026-10-01T05:25:04Z",
+    "metadata_stale": true
+  },
+  "review": null
+}

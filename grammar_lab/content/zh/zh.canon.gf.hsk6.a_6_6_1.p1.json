@@ -1,0 +1,269 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk6.a_6_6_1.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.sentence_basics",
+  "level": {"framework": "hsk3", "value": "6", "rank": 6},
+  "prereqs": ["zh.canon.gf.hsk6.a_6_5_1.p1"],
+  "contrasts": [],
+  "error_tags": ["word_order"],
+  "source_refs": {"gf0025": ["gf0025.hsk6.041"]},
+  "point_type": "word_order",
+  "sequence": 5,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {
+      "vi": "Mẫu câu đặc biệt: 被动句4：主语+被/叫/让+宾语+给+动词+其他成分",
+      "en": "Special sentence patterns: 被动句4：主语+被/叫/让+宾语+给+动词+其他成分"
+    },
+    "native_title": "被动句4：主语+被/叫/让+宾语+给+动词+其他成分",
+    "level": {"framework": "hsk3", "value": "6", "rank": 6},
+    "summary": {
+      "vi": "Mẫu câu bị động 4 dùng 被/叫/让 + tân ngữ + 给 + động từ + thành phần khác để nói ai đó bị hoặc được ai làm gì.",
+      "en": "Passive pattern 4 uses 被/叫/让 + object + 给 + verb + other elements to say that someone is affected by another person's action."
+    },
+    "sub": {"vi": "bị động với 给", "en": "passive with 给"},
+    "native_title_pinyin": [
+      "bèi",
+      "dòng",
+      "jù",
+      "",
+      "",
+      "zhǔ",
+      "yǔ",
+      "",
+      "bèi",
+      "",
+      "jiào",
+      "",
+      "ràng",
+      "",
+      "bīn",
+      "yǔ",
+      "",
+      "gěi",
+      "",
+      "dòng",
+      "cí",
+      "",
+      "qí",
+      "tā",
+      "chéng",
+      "fèn"
+    ]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói chủ ngữ bị hoặc được người khác tác động, và người tác động được nêu rõ sau 被/叫/让.",
+      "en": "Use it when the subject is affected by someone else's action and the doer is named after 被/叫/让."
+    },
+    {
+      "vi": "Khi muốn nhấn mạnh kết quả hoặc mức độ của hành động bằng cách thêm 给 trước động từ.",
+      "en": "Use it to emphasize the result or extent of the action by adding 给 before the verb."
+    },
+    {
+      "vi": "Khi câu cần có thành phần theo sau động từ như 了, 完, 走, 坏 để cho biết kết quả.",
+      "en": "Use it when the verb needs a following element such as 了, 完, 走, or 坏 to show the result."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "被/叫/让",
+        "role": "marker",
+        "label": {"vi": "từ bị động", "en": "passive marker"},
+        "options": [
+          {"text": "被", "pinyin": ["bèi"]},
+          {"text": "叫", "pinyin": ["jiào"]},
+          {"text": "让", "pinyin": ["ràng"]}
+        ],
+        "pinyin": ["bèi", "", "jiào", "", "ràng"]
+      },
+      {
+        "text": "宾语",
+        "role": "object",
+        "label": {"vi": "tân ngữ (người tác động)", "en": "object (doer)"},
+        "pinyin": ["bīn", "yǔ"]
+      },
+      {
+        "text": "给",
+        "role": "aux",
+        "label": {"vi": "trợ từ 给", "en": "auxiliary 给"},
+        "pinyin": ["gěi"]
+      },
+      {
+        "text": "动词",
+        "role": "verb",
+        "label": {"vi": "động từ", "en": "verb"},
+        "pinyin": ["dòng", "cí"]
+      },
+      {
+        "text": "其他成分",
+        "role": "complement",
+        "label": {"vi": "thành phần khác", "en": "other elements"},
+        "pinyin": ["qí", "tā", "chéng", "fèn"]
+      }
+    ],
+    "illustration": {"kind": "word_order"}
+  },
+  "examples": [
+    {
+      "text": "我的自行车被弟弟给骑走了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 5, "role": "subject"},
+        {"start": 5, "end": 6, "role": "marker"},
+        {"start": 6, "end": 8, "role": "object"},
+        {"start": 8, "end": 9, "role": "aux"},
+        {"start": 9, "end": 10, "role": "verb"},
+        {"start": 10, "end": 12, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "给 nhấn mạnh hành động 骑 do 弟弟 gây ra, 走了 cho biết kết quả.",
+        "en": "给 emphasizes the action 骑 done by 弟弟, and 走了 shows the result."
+      },
+      "translation": {
+        "vi": "Xe đạp của tôi bị em trai đi mất rồi.",
+        "en": "My bike was ridden away by my younger brother."
+      },
+      "pinyin": ["wǒ", "de", "zì", "xíng", "chē", "bèi", "dì", "di", "gěi", "qí", "zǒu", "le", ""]
+    },
+    {
+      "text": "那本书叫同学给借走了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 3, "end": 4, "role": "marker"},
+        {"start": 4, "end": 6, "role": "object"},
+        {"start": 6, "end": 7, "role": "aux"},
+        {"start": 7, "end": 8, "role": "verb"},
+        {"start": 8, "end": 10, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "叫 thay cho 被 trong văn nói, 给 đứng trước động từ để nhấn mạnh.",
+        "en": "叫 replaces 被 in spoken Chinese, and 给 stands before the verb for emphasis."
+      },
+      "translation": {
+        "vi": "Cuốn sách đó bị bạn học mượn đi mất rồi.",
+        "en": "That book was borrowed away by a classmate."
+      },
+      "pinyin": ["nà", "běn", "shū", "jiào", "tóng", "xué", "gěi", "jiè", "zǒu", "le", ""]
+    },
+    {
+      "text": "我的手机让弟弟给摔坏了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 4, "end": 5, "role": "marker"},
+        {"start": 5, "end": 7, "role": "object"},
+        {"start": 7, "end": 8, "role": "aux"},
+        {"start": 8, "end": 9, "role": "verb"},
+        {"start": 9, "end": 11, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "让 cũng là từ bị động thông dụng; 坏了 cho biết kết quả hư hỏng.",
+        "en": "让 is another common passive marker; 坏了 shows the result of damage."
+      },
+      "translation": {
+        "vi": "Điện thoại của tôi bị em trai làm rơi hỏng rồi.",
+        "en": "My phone was dropped and broken by my younger brother."
+      },
+      "pinyin": ["wǒ", "de", "shǒu", "jī", "ràng", "dì", "di", "gěi", "shuāi", "huài", "le", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "我的自行车被弟弟骑走了给。",
+      "right": "我的自行车被弟弟给骑走了。",
+      "reason": {
+        "vi": "给 phải đứng ngay trước động từ, không đứng sau động từ hay cuối câu.",
+        "en": "给 must come right before the verb, not after the verb or at the end of the sentence."
+      },
+      "error_tag": "word_order",
+      "l1": ["vi"],
+      "wrong_pinyin": ["wǒ", "de", "zì", "xíng", "chē", "bèi", "dì", "di", "qí", "zǒu", "le", "gěi", ""],
+      "right_pinyin": ["wǒ", "de", "zì", "xíng", "chē", "bèi", "dì", "di", "gěi", "qí", "zǒu", "le", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "我的书___同学给借走了。",
+      "options": [
+        {"text": "被", "error_tag": null, "pinyin": ["bèi"]},
+        {"text": "把", "error_tag": "ba_sentence", "pinyin": ["bǎ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu bị động dùng 被/叫/让, không dùng 把 vì 把 là câu chủ động.",
+        "en": "The passive uses 被/叫/让, not 把, because 把 marks an active sentence."
+      },
+      "q_pinyin": ["wǒ", "de", "shū", "", "", "", "tóng", "xué", "gěi", "jiè", "zǒu", "le", ""]
+    },
+    {
+      "q": "我的手机让弟弟给___。",
+      "options": [
+        {"text": "摔坏了", "error_tag": null, "pinyin": ["shuāi", "huài", "le"]},
+        {"text": "摔坏", "error_tag": "complement", "pinyin": ["shuāi", "huài"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu bị động cần thành phần sau động từ; 了 cho biết hành động đã xảy ra và có kết quả.",
+        "en": "The passive needs an element after the verb; 了 shows the action happened with a result."
+      },
+      "q_pinyin": ["wǒ", "de", "shǒu", "jī", "ràng", "dì", "di", "gěi", "", "", "", ""]
+    },
+    {
+      "q": "那本书叫同学给借___。",
+      "options": [
+        {"text": "走了", "error_tag": null, "pinyin": ["zǒu", "le"]},
+        {"text": "走", "error_tag": "aspect", "pinyin": ["zǒu"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "给 đứng trước động từ, sau động từ cần 了 để chỉ kết quả đã hoàn thành.",
+        "en": "给 comes before the verb, and 了 after the verb marks a completed result."
+      },
+      "q_pinyin": ["nà", "běn", "shū", "jiào", "tóng", "xué", "gěi", "jiè", "", "", "", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu kể về việc bạn bị hoặc được ai đó làm gì, dùng 被/叫/让 + người + 给 + động từ + thành phần khác.",
+      "en": "Write a sentence about something someone did to you, using 被/叫/让 + person + 给 + verb + other elements."
+    },
+    "placeholder": "我的……被……给……了。",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "marker", "any_of": ["被", "叫", "让"]},
+        {"role": "aux", "any_of": ["给"]},
+        {"role": "verb", "regex": "[\\u4e00-\\u9fff]"},
+        {"role": "complement", "any_of": ["了", "走", "坏", "完", "掉"]}
+      ]
+    },
+    "sample": {
+      "text": "我的雨伞被同事给拿走了。",
+      "pinyin": ["wǒ", "de", "yǔ", "sǎn", "bèi", "tóng", "shì", "gěi", "ná", "zǒu", "le", ""]
+    },
+    "placeholder_pinyin": ["wǒ", "de", "", "", "bèi", "", "", "gěi", "", "", "le", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790834193",
+    "generated_at": "2026-10-01T05:56:33Z"
+  },
+  "review": null
+}

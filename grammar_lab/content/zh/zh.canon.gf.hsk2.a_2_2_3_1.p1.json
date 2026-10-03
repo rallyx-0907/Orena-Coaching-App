@@ -1,0 +1,259 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk2.a_2_2_3_1.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.time_expression",
+  "level": {"framework": "hsk3", "value": "2", "rank": 2},
+  "prereqs": ["zh.canon.gf.hsk2.a_2_2_2.p1"],
+  "contrasts": [],
+  "error_tags": ["particle"],
+  "source_refs": {"gf0025": ["gf0025.hsk2.042", "gf0025.hsk2.043"]},
+  "point_type": "other",
+  "sequence": 3,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 不一会儿", "en": "Chinese grammar: 不一会儿"},
+    "native_title": "不一会儿",
+    "level": {"framework": "hsk3", "value": "2", "rank": 2},
+    "summary": {
+      "vi": "不一会儿 dùng để nói rằng một việc gì đó xảy ra chỉ sau một khoảng thời gian rất ngắn.",
+      "en": "不一会儿 is used to say that something happens after only a very short amount of time."
+    },
+    "sub": {"vi": "một lát sau", "en": "in a moment"},
+    "native_title_pinyin": ["bù", "yī", "huì", "er"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn kể một việc xảy ra ngay sau đó, chỉ một lát sau.",
+      "en": "When you want to say something happened right after, only a short while later."
+    },
+    {
+      "vi": "Khi câu chuyện đã có một mốc thời gian hoặc một hành động trước đó, rồi mới đến việc này.",
+      "en": "When the story already has an earlier time or action, and this event comes after it."
+    },
+    {
+      "vi": "Khi muốn nhấn mạnh khoảng chờ rất ngắn, không lâu.",
+      "en": "When you want to stress that the wait was very short, not long."
+    },
+    {
+      "vi": "Dùng trong câu kể chuyện, thường đứng đầu vế câu thứ hai.",
+      "en": "Used in narration, usually at the start of the second clause."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "不一会儿",
+        "role": "time",
+        "label": {"vi": "mốc thời gian ngắn", "en": "short time phrase"},
+        "pinyin": ["bù", "yī", "huì", "ér"]
+      },
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "就",
+        "role": "marker",
+        "label": {"vi": "trợ từ nhấn mạnh", "en": "emphasis marker"},
+        "optional": true,
+        "pinyin": ["jiù"]
+      },
+      {
+        "text": "动词",
+        "role": "verb",
+        "label": {"vi": "động từ", "en": "verb"},
+        "pinyin": ["dòng", "cí"]
+      },
+      {
+        "text": "了",
+        "role": "particle",
+        "label": {"vi": "trợ từ hoàn thành", "en": "completion particle"},
+        "optional": true,
+        "pinyin": ["le"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "不一会儿，他就来了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "time"},
+        {"start": 5, "end": 6, "role": "subject"},
+        {"start": 6, "end": 7, "role": "marker"},
+        {"start": 7, "end": 8, "role": "verb"},
+        {"start": 8, "end": 9, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "不一会儿 cho biết chỉ một lát sau; 就 nhấn mạnh việc xảy ra ngay; 了 cho biết hành động đã xảy ra.",
+        "en": "不一会儿 marks only a short while later; 就 stresses that it happened right away; 了 marks the action as completed."
+      },
+      "translation": {"vi": "Một lát sau, anh ấy đã đến.", "en": "A moment later, he arrived."},
+      "pinyin": ["bù", "yī", "huì", "ér", "", "tā", "jiù", "lái", "le", ""]
+    },
+    {
+      "text": "不一会儿，雨就停了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "time"},
+        {"start": 5, "end": 6, "role": "subject"},
+        {"start": 6, "end": 7, "role": "marker"},
+        {"start": 7, "end": 8, "role": "verb"},
+        {"start": 8, "end": 9, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "不一会儿 đứng đầu câu, cho biết mưa tạnh chỉ sau một lát; 就 nhấn mạnh sự việc xảy ra nhanh.",
+        "en": "不一会儿 opens the sentence and says the rain stopped after only a short while; 就 stresses how quickly it happened."
+      },
+      "translation": {"vi": "Một lát sau, mưa đã tạnh.", "en": "A moment later, the rain stopped."},
+      "pinyin": ["bù", "yī", "huì", "ér", "", "yǔ", "jiù", "tíng", "le", ""]
+    },
+    {
+      "text": "我们等了一会儿，不一会儿，车就来了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 8, "end": 12, "role": "time"},
+        {"start": 13, "end": 14, "role": "subject"},
+        {"start": 14, "end": 15, "role": "marker"},
+        {"start": 15, "end": 16, "role": "verb"},
+        {"start": 16, "end": 17, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "不一会儿 đứng sau vế câu thứ nhất, cho biết xe đến chỉ sau một lát chờ.",
+        "en": "不一会儿 follows the first clause and says the car came after only a short wait."
+      },
+      "translation": {
+        "vi": "Chúng tôi đợi một lát, một lát sau, xe đã đến.",
+        "en": "We waited a little, and a moment later, the car came."
+      },
+      "pinyin": [
+        "wǒ",
+        "men",
+        "děng",
+        "le",
+        "yī",
+        "huì",
+        "ér",
+        "",
+        "bù",
+        "yī",
+        "huì",
+        "ér",
+        "",
+        "chē",
+        "jiù",
+        "lái",
+        "le",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "不一会儿，他就来。",
+      "right": "不一会儿，他就来了。",
+      "reason": {
+        "vi": "Người học quên 了 ở cuối câu, nên câu không cho biết hành động đã xảy ra. Với 不一会儿, hành động thường đã hoàn thành, cần 了.",
+        "en": "Learners drop the sentence-final 了, so the sentence does not show the action as completed. With 不一会儿 the action is usually finished, so 了 is needed."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong_pinyin": ["bù", "yī", "huì", "ér", "", "tā", "jiù", "lái", ""],
+      "right_pinyin": ["bù", "yī", "huì", "ér", "", "tā", "jiù", "lái", "le", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "不一会儿，他___来了。",
+      "options": [
+        {"text": "就", "error_tag": null, "pinyin": ["jiù"]},
+        {"text": "才", "error_tag": "word_choice", "pinyin": ["cái"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "不一会儿 đi với 就 để nhấn mạnh việc xảy ra ngay sau một lát. 才 mang nghĩa 'mãi mới', không hợp ở đây.",
+        "en": "不一会儿 pairs with 就 to stress that something happened right after a short while. 才 means 'only then, after a long time', which does not fit here."
+      },
+      "q_pinyin": ["bù", "yī", "huì", "ér", "", "tā", "", "", "", "lái", "le", ""]
+    },
+    {
+      "q": "不一会儿，雨就停___。",
+      "options": [
+        {"text": "了", "error_tag": null, "pinyin": ["le"]},
+        {"text": "过", "error_tag": "aspect", "pinyin": ["guò"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu này kể một việc đã xảy ra xong, nên dùng 了 ở cuối câu. 过 dùng để nói đã từng trải qua, không hợp ở đây.",
+        "en": "This sentence reports a completed event, so the sentence-final 了 is used. 过 marks past experience, which does not fit here."
+      },
+      "q_pinyin": ["bù", "yī", "huì", "ér", "", "yǔ", "jiù", "tíng", "", "", "", ""]
+    },
+    {
+      "q": "我们等了一会儿，___，车就来了。",
+      "options": [
+        {"text": "不一会儿", "error_tag": null, "pinyin": ["bù", "yī", "huì", "ér"]},
+        {"text": "不一会", "error_tag": "character_choice", "pinyin": ["bù", "yī", "huì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Cụm cố định là 不一会儿, phải có 儿 ở cuối. Viết 不一会 là thiếu chữ, không đúng.",
+        "en": "The fixed phrase is 不一会儿, with 儿 at the end. Writing 不一会 drops a character and is not correct."
+      },
+      "q_pinyin": [
+        "wǒ",
+        "men",
+        "děng",
+        "le",
+        "yī",
+        "huì",
+        "ér",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "chē",
+        "jiù",
+        "lái",
+        "le",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu kể việc gì đó xảy ra chỉ một lát sau, dùng 不一会儿.",
+      "en": "Write one sentence saying that something happened only a short while later, using 不一会儿."
+    },
+    "placeholder": "不一会儿，……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "time", "any_of": ["不一会儿"]},
+        {"role": "marker", "any_of": ["就"]},
+        {"role": "particle", "any_of": ["了"]}
+      ]
+    },
+    "sample": {"text": "不一会儿，他就来了。", "pinyin": ["bù", "yī", "huì", "ér", "", "tā", "jiù", "lái", "le", ""]},
+    "placeholder_pinyin": ["bù", "yī", "huì", "ér", "", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790832304",
+    "generated_at": "2026-10-01T05:25:04Z",
+    "metadata_stale": true
+  },
+  "review": null
+}

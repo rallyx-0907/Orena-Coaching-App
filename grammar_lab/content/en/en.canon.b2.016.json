@@ -1,0 +1,301 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b2.016",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.voice_causative",
+  "level": {"framework": "cefr", "value": "B2", "rank": 4},
+  "prereqs": ["en.canon.b2.011"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["b2-causative-have-get-extended"]},
+  "point_type": "other",
+  "sequence": 3,
+  "aliases": ["b2-causative-have-get-extended"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Causative have/get: extended", "en": "Causative have/get: extended"},
+    "native_title": "Causative have/get: extended",
+    "level": {"framework": "cefr", "value": "B2", "rank": 4},
+    "summary": {
+      "vi": "Cấu trúc causative have/get mở rộng dùng để nói rằng bạn sắp xếp hoặc khiến ai đó làm việc gì, hoặc khiến một vật được xử lý bởi người khác.",
+      "en": "The extended causative have/get is used to say that you arrange or cause someone to do something, or that you have something done by someone else."
+    },
+    "sub": {"vi": "sai khiến mở rộng", "en": "extended causative"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn thuê hoặc nhờ một chuyên gia làm việc gì đó cho mình (have + người + động từ nguyên thể).",
+      "en": "When you employ or ask a professional to do something for you (have + person + base verb)."
+    },
+    {
+      "vi": "Khi bạn thuyết phục hoặc sắp xếp để ai đó làm việc gì (get + người + to-infinitive).",
+      "en": "When you persuade or arrange for someone to do something (get + person + to-infinitive)."
+    },
+    {
+      "vi": "Khi bạn muốn nói rằng một vật được xử lý bởi người khác, không nhấn mạnh ai làm (have/get + vật + quá khứ phân từ).",
+      "en": "When you want to say that something is dealt with by someone else, without focusing on who does it (have/get + thing + past participle)."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {
+        "text": "have/get",
+        "role": "verb",
+        "label": {"vi": "động từ sai khiến", "en": "causative verb"},
+        "options": [{"text": "have"}, {"text": "get"}]
+      },
+      {
+        "text": "person",
+        "role": "object",
+        "label": {"vi": "người được sai khiến", "en": "person caused to act"}
+      },
+      {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên thể", "en": "base verb"}},
+      {
+        "text": "to V",
+        "role": "verb",
+        "label": {"vi": "động từ nguyên thể có to", "en": "to-infinitive"},
+        "optional": true
+      },
+      {
+        "text": "thing",
+        "role": "object",
+        "label": {"vi": "vật được xử lý", "en": "thing dealt with"},
+        "optional": true
+      },
+      {
+        "text": "V3",
+        "role": "verb",
+        "label": {"vi": "quá khứ phân từ", "en": "past participle"},
+        "optional": true
+      }
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "do/does/did",
+          "role": "aux",
+          "label": {"vi": "trợ động từ", "en": "auxiliary"},
+          "options": [{"text": "do"}, {"text": "does"}, {"text": "did"}]
+        },
+        {"text": "not", "role": "marker", "label": {"vi": "phủ định", "en": "negator"}},
+        {
+          "text": "have/get",
+          "role": "verb",
+          "label": {"vi": "động từ sai khiến", "en": "causative verb"},
+          "options": [{"text": "have"}, {"text": "get"}]
+        },
+        {
+          "text": "person",
+          "role": "object",
+          "label": {"vi": "người được sai khiến", "en": "person caused to act"}
+        },
+        {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên thể", "en": "base verb"}},
+        {
+          "text": "to V",
+          "role": "verb",
+          "label": {"vi": "động từ nguyên thể có to", "en": "to-infinitive"},
+          "optional": true
+        },
+        {
+          "text": "thing",
+          "role": "object",
+          "label": {"vi": "vật được xử lý", "en": "thing dealt with"},
+          "optional": true
+        },
+        {
+          "text": "V3",
+          "role": "verb",
+          "label": {"vi": "quá khứ phân từ", "en": "past participle"},
+          "optional": true
+        }
+      ],
+      "question": [
+        {
+          "text": "do/does/did",
+          "role": "aux",
+          "label": {"vi": "trợ động từ", "en": "auxiliary"},
+          "options": [{"text": "do"}, {"text": "does"}, {"text": "did"}]
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "have/get",
+          "role": "verb",
+          "label": {"vi": "động từ sai khiến", "en": "causative verb"},
+          "options": [{"text": "have"}, {"text": "get"}]
+        },
+        {
+          "text": "person",
+          "role": "object",
+          "label": {"vi": "người được sai khiến", "en": "person caused to act"}
+        },
+        {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên thể", "en": "base verb"}},
+        {
+          "text": "to V",
+          "role": "verb",
+          "label": {"vi": "động từ nguyên thể có to", "en": "to-infinitive"},
+          "optional": true
+        },
+        {
+          "text": "thing",
+          "role": "object",
+          "label": {"vi": "vật được xử lý", "en": "thing dealt with"},
+          "optional": true
+        },
+        {
+          "text": "V3",
+          "role": "verb",
+          "label": {"vi": "quá khứ phân từ", "en": "past participle"},
+          "optional": true
+        }
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "I'll have the engineer inspect the system.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 5, "end": 9, "role": "verb"},
+        {"start": 10, "end": 22, "role": "object"},
+        {"start": 23, "end": 30, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "have + người + động từ nguyên thể: sắp xếp để kỹ sư kiểm tra.",
+        "en": "have + person + base verb: arrange for the engineer to inspect."
+      },
+      "translation": {
+        "vi": "Tôi sẽ cho kỹ sư kiểm tra hệ thống.",
+        "en": "I'll have the engineer inspect the system."
+      }
+    },
+    {
+      "text": "We got the supplier to replace the unit.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 3, "end": 6, "role": "verb"},
+        {"start": 7, "end": 19, "role": "object"},
+        {"start": 20, "end": 30, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "get + người + to-infinitive: thuyết phục/sắp xếp để nhà cung cấp thay.",
+        "en": "get + person + to-infinitive: persuade/arrange for the supplier to replace."
+      },
+      "translation": {
+        "vi": "Chúng tôi đã khiến nhà cung cấp thay thiết bị.",
+        "en": "We got the supplier to replace the unit."
+      }
+    },
+    {
+      "text": "She had her passport renewed.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 7, "role": "verb"},
+        {"start": 8, "end": 20, "role": "object"},
+        {"start": 21, "end": 28, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "have + vật + quá khứ phân từ: hộ chiếu được làm mới bởi người khác.",
+        "en": "have + thing + past participle: the passport was renewed by someone else."
+      },
+      "translation": {"vi": "Cô ấy đã làm mới hộ chiếu.", "en": "She had her passport renewed."}
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "I'll have him to call you.",
+      "right": "I'll have him call you.",
+      "reason": {
+        "vi": "Sau have + người, động từ chính ở dạng nguyên thể không có to; thêm to là lỗi thường gặp do ảnh hưởng của cấu trúc get + người + to V.",
+        "en": "After have + person, the main verb is a bare infinitive; adding to is a common error influenced by get + person + to-infinitive."
+      },
+      "error_tag": "other",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "I'll have the technician ___ the machine tomorrow.",
+      "options": [{"text": "check", "error_tag": null}, {"text": "to check", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {
+        "vi": "have + người + động từ nguyên thể không to: have the technician check.",
+        "en": "have + person + bare infinitive: have the technician check."
+      }
+    },
+    {
+      "q": "We got the plumber ___ the leak.",
+      "options": [{"text": "to fix", "error_tag": null}, {"text": "fix", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {
+        "vi": "get + người + to-infinitive: got the plumber to fix.",
+        "en": "get + person + to-infinitive: got the plumber to fix."
+      }
+    },
+    {
+      "q": "She had her hair ___ at the salon.",
+      "options": [{"text": "done", "error_tag": null}, {"text": "do", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {
+        "vi": "have + vật + quá khứ phân từ: had her hair done.",
+        "en": "have + thing + past participle: had her hair done."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về việc bạn đã nhờ hoặc thuê ai đó làm gì cho mình, dùng cấu trúc have/get + người + động từ.",
+      "en": "Write a sentence about something you asked or paid someone to do for you, using have/get + person + verb."
+    },
+    "placeholder": "I had the ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "verb", "any_of": ["have", "has", "had", "get", "gets", "got"]},
+        {"role": "object", "regex": "(the|my|his|her|our|their|a|an)\\s+\\w+"},
+        {"role": "verb", "regex": "\\b\\w+\\b"}
+      ]
+    },
+    "sample": {"text": "I had the mechanic check my car."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790831167",
+    "generated_at": "2026-10-01T05:06:07Z",
+    "r5_source": {
+      "ids": ["b2-causative-have-get-extended"],
+      "content_version": 2,
+      "content_hash": "9b3703ab2d75dccf5f9f03919b32936168f4f14370a463643081ff43ba6aa176",
+      "corrections": [
+        {
+          "r5_id": "b2-causative-have-get-extended",
+          "issue": "R5's formula mixed active and passive causative without clearly separating the two patterns, and the example 'Can you get this form signed?' was listed under the same rule as active causatives.",
+          "fix": "Separated the formula into active causative (have/get + person + base/to-infinitive) and passive causative (have/get + thing + past participle), and moved the signed-form example to the passive pattern."
+        },
+        {
+          "r5_id": "b2-causative-have-get-extended",
+          "issue": "R5's mistake 'We got the engineer check it.' was corrected to 'We got the engineer to check it.', but the explanation did not state that get + person always takes to-infinitive while have + person takes bare infinitive.",
+          "fix": "Added explicit contrast in the rules and in the common mistakes section: have + person + base verb vs. get + person + to-infinitive."
+        },
+        {
+          "r5_id": "b2-causative-have-get-extended",
+          "issue": "R5's guided practice included a production prompt with 'Answers vary.' and no model, which does not help learners see the target form.",
+          "fix": "Replaced with a personal production card that includes a concrete prompt, placeholder, and model sentence using the target pattern."
+        }
+      ]
+    },
+    "metadata_stale": true
+  },
+  "review": null
+}

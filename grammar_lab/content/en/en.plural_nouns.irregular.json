@@ -4,205 +4,204 @@
   "version": 1,
   "target_lang": "en",
   "function": "fn.quantity",
-  "level": {
-    "framework": "cefr",
-    "value": "A1",
-    "rank": 1
-  },
-  "prereqs": [
-    "en.plural_nouns.regular"
-  ],
-  "contrasts": [],
-  "error_tags": [
-    "word_form"
-  ],
-  "source_refs": {
-    "r5": [
-      "a1-singular-and-plural-nouns"
-    ]
-  },
+  "level": {"framework": "cefr", "value": "A1", "rank": 1},
+  "prereqs": ["en.plural_nouns.regular"],
+  "contrasts": ["en.plural_nouns.regular"],
+  "error_tags": ["word_form"],
+  "source_refs": {"r5": ["a1-singular-and-plural-nouns"]},
   "point_type": "other",
+  "sequence": 2,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
   "header": {
-    "title": {
-      "vi": "Danh từ số nhiều bất quy tắc",
-      "en": "Irregular plural nouns"
-    },
+    "title": {"vi": "Danh từ số nhiều bất quy tắc", "en": "Irregular plural nouns"},
     "native_title": "Irregular plural nouns",
-    "sub": {
-      "vi": "man → men, child → children",
-      "en": "man → men, child → children"
-    },
-    "level": {
-      "framework": "cefr",
-      "value": "A1",
-      "rank": 1
-    },
+    "level": {"framework": "cefr", "value": "A1", "rank": 1},
     "summary": {
-      "vi": "Một số danh từ không tạo số nhiều bằng -s/-es mà đổi dạng và phải học theo từng từ.",
-      "en": "Some nouns do not form the plural with -s/-es; they change form and must be learned individually."
-    }
+      "vi": "Một số danh từ thông dụng không thêm -s khi ở số nhiều mà đổi hẳn thành dạng khác.",
+      "en": "Some common nouns do not add -s in the plural; they change to a different form."
+    },
+    "sub": {"vi": "số nhiều bất quy tắc", "en": "irregular plurals"}
   },
   "when_to_use": [
     {
-      "vi": "Dùng dạng bất quy tắc khi nói nhiều hơn một: one child, two children.",
-      "en": "Use the irregular plural for more than one: one child, two children."
+      "vi": "Khi bạn nói về hai hoặc nhiều người, con vật hoặc vật mà danh từ có dạng số nhiều bất quy tắc.",
+      "en": "When you talk about two or more people, animals or things whose noun has an irregular plural form."
     },
     {
-      "vi": "Các dạng phổ biến gồm man/men, woman/women, child/children, person/people.",
-      "en": "Common forms include man/men, woman/women, child/children, and person/people."
+      "vi": "Khi số lượng từ hai trở lên và danh từ là child, person, man, woman, foot, tooth, mouse, fish, sheep.",
+      "en": "When the quantity is two or more and the noun is child, person, man, woman, foot, tooth, mouse, fish or sheep."
+    },
+    {
+      "vi": "Khi bạn dùng danh từ đếm được với số nhiều nhưng không muốn thêm -s theo quy tắc thông thường.",
+      "en": "When you use a countable noun in the plural but do not want to add -s in the regular way."
     }
   ],
   "pattern": {
     "formula": [
       {
-        "text": "irregular plural",
+        "text": "quantity",
         "role": "other",
-        "label": {
-          "vi": "dạng số nhiều bất quy tắc",
-          "en": "irregular plural form"
-        }
+        "label": {"vi": "số lượng từ hai trở lên", "en": "quantity of two or more"}
+      },
+      {
+        "text": "irregular plural noun",
+        "role": "object",
+        "label": {"vi": "danh từ số nhiều bất quy tắc", "en": "irregular plural noun"},
+        "options": [
+          {"text": "children"},
+          {"text": "people"},
+          {"text": "men"},
+          {"text": "women"},
+          {"text": "feet"},
+          {"text": "teeth"},
+          {"text": "mice"},
+          {"text": "fish"},
+          {"text": "sheep"}
+        ]
       }
     ],
-    "illustration": {
-      "kind": "none"
-    }
+    "illustration": {"kind": "none"}
   },
   "examples": [
     {
-      "text": "Two children are playing.",
+      "text": "I have two children.",
       "form": "affirmative",
-      "spans": [
-        {
-          "start": 4,
-          "end": 12,
-          "role": "other"
-        }
-      ],
+      "spans": [{"start": 7, "end": 10, "role": "other"}, {"start": 11, "end": 19, "role": "object"}],
       "annotation": {
-        "vi": "Child đổi thành children.",
-        "en": "Child changes to children."
+        "vi": "child đổi thành children khi có hai trở lên.",
+        "en": "child changes to children when there are two or more."
       },
-      "translation": {
-        "vi": "Child đổi thành children.",
-        "en": "Child changes to children."
-      }
+      "translation": {"vi": "Tôi có hai đứa con.", "en": "I have two children."}
     },
     {
-      "text": "Three people are waiting.",
+      "text": "There are three people in the room.",
       "form": "affirmative",
-      "spans": [
-        {
-          "start": 6,
-          "end": 12,
-          "role": "other"
-        }
-      ],
+      "spans": [{"start": 10, "end": 15, "role": "other"}, {"start": 16, "end": 22, "role": "object"}],
       "annotation": {
-        "vi": "Person thường có số nhiều là people.",
-        "en": "The usual plural of person is people."
+        "vi": "person đổi thành people khi có ba người.",
+        "en": "person changes to people when there are three people."
       },
-      "translation": {
-        "vi": "Person thường có số nhiều là people.",
-        "en": "The usual plural of person is people."
+      "translation": {"vi": "Có ba người trong phòng.", "en": "There are three people in the room."}
+    },
+    {
+      "text": "The farmer has ten sheep.",
+      "form": "affirmative",
+      "spans": [{"start": 15, "end": 18, "role": "other"}, {"start": 19, "end": 24, "role": "object"}],
+      "annotation": {
+        "vi": "sheep giữ nguyên dạng khi ở số nhiều.",
+        "en": "sheep keeps the same form in the plural."
+      },
+      "translation": {"vi": "Người nông dân có mười con cừu.", "en": "The farmer has ten sheep."}
+    }
+  ],
+  "compare": [
+    {
+      "with": "en.plural_nouns.regular",
+      "this_example": "I have two children.",
+      "other_example": "I have two books.",
+      "this_meaning": {
+        "vi": "Danh từ số nhiều bất quy tắc đổi hẳn dạng, không thêm -s.",
+        "en": "Irregular plural nouns change to a different form and do not add -s."
+      },
+      "other_meaning": {
+        "vi": "Danh từ số nhiều quy tắc thêm -s hoặc -es vào dạng số ít.",
+        "en": "Regular plural nouns add -s or -es to the singular form."
       }
     }
   ],
-  "compare": [],
   "common_mistakes": [
     {
-      "wrong": "Two childs are here.",
-      "right": "Two children are here.",
+      "wrong": "I have two childs.",
+      "right": "I have two children.",
       "reason": {
-        "vi": "Child có số nhiều bất quy tắc children.",
-        "en": "Child has the irregular plural children."
+        "vi": "child không thêm -s; dạng số nhiều là children.",
+        "en": "child does not add -s; its plural form is children."
       },
       "error_tag": "word_form",
-      "l1": [
-        "vi"
-      ]
+      "l1": ["vi"]
     }
   ],
   "quick_practice": [
     {
-      "q": "Two ___ are in the park.",
-      "options": [
-        {
-          "text": "children",
-          "error_tag": null
-        },
-        {
-          "text": "childs",
-          "error_tag": "word_form"
-        },
-        {
-          "text": "child",
-          "error_tag": "word_form"
-        }
-      ],
+      "q": "There are five ___ in the park.",
+      "options": [{"text": "children", "error_tag": null}, {"text": "childs", "error_tag": "word_form"}],
       "answer": 0,
       "explain": {
-        "vi": "Số nhiều của child là children.",
-        "en": "The plural of child is children."
+        "vi": "child có dạng số nhiều bất quy tắc là children.",
+        "en": "child has the irregular plural form children."
       }
     },
     {
-      "q": "Three ___ are waiting.",
-      "options": [
-        {
-          "text": "people",
-          "error_tag": null
-        },
-        {
-          "text": "persons",
-          "error_tag": "word_form"
-        },
-        {
-          "text": "person",
-          "error_tag": "word_form"
-        }
-      ],
+      "q": "I see three ___ in the garden.",
+      "options": [{"text": "men", "error_tag": null}, {"text": "mans", "error_tag": "word_form"}],
       "answer": 0,
       "explain": {
-        "vi": "Số nhiều thông thường của person là people.",
-        "en": "The ordinary plural of person is people."
+        "vi": "man có dạng số nhiều bất quy tắc là men.",
+        "en": "man has the irregular plural form men."
       }
     },
     {
-      "q": "Two ___ are talking.",
-      "options": [
-        {
-          "text": "men",
-          "error_tag": null
-        },
-        {
-          "text": "mans",
-          "error_tag": "word_form"
-        },
-        {
-          "text": "man",
-          "error_tag": "word_form"
-        }
-      ],
+      "q": "She has two ___ at home.",
+      "options": [{"text": "mice", "error_tag": null}, {"text": "mouses", "error_tag": "word_form"}],
       "answer": 0,
       "explain": {
-        "vi": "Số nhiều của man là men.",
-        "en": "The plural of man is men."
+        "vi": "mouse có dạng số nhiều bất quy tắc là mice.",
+        "en": "mouse has the irregular plural form mice."
       }
     }
   ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về số lượng người hoặc con vật trong nhà bạn, dùng một danh từ số nhiều bất quy tắc.",
+      "en": "Write one sentence about the number of people or animals in your home, using an irregular plural noun."
+    },
+    "placeholder": "I have two ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {
+          "role": "other",
+          "any_of": ["two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"]
+        },
+        {
+          "role": "object",
+          "any_of": ["children", "people", "men", "women", "feet", "teeth", "mice", "fish", "sheep"]
+        }
+      ]
+    },
+    "sample": {"text": "I have two children."}
+  },
   "status": "draft_ai",
   "flags": [],
   "provenance": {
-    "model": "openai:gpt-5.6-sol",
-    "prompt_version": "direct-author.en-a1.v1",
-    "run_id": "chatgpt.en-a1.20260930",
-    "generated_at": "2026-09-30T10:35:00Z"
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790829555",
+    "generated_at": "2026-10-01T04:39:15Z",
+    "r5_source": {
+      "ids": ["a1-singular-and-plural-nouns"],
+      "content_version": 2,
+      "content_hash": "60ffba0bbb5fdae0cedb77025c4d6a4a57f0deb8d90115a67d1272c5ebe35ac3",
+      "corrections": [
+        {
+          "r5_id": "a1-singular-and-plural-nouns",
+          "issue": "R5 gộp cả danh từ số nhiều quy tắc và bất quy tắc trong một bài, trong khi điểm này chỉ tập trung vào bất quy tắc.",
+          "fix": "Tách riêng nội dung bất quy tắc; không đưa quy tắc thêm -s/-es vào bài này."
+        },
+        {
+          "r5_id": "a1-singular-and-plural-nouns",
+          "issue": "R5 dùng ví dụ 'There are three boxes by the door' và 'Many cities have large parks' là số nhiều quy tắc, không thuộc điểm bất quy tắc.",
+          "fix": "Thay bằng ví dụ bất quy tắc: 'I have two children.', 'There are three people in the room.', 'The farmer has ten sheep.'"
+        },
+        {
+          "r5_id": "a1-singular-and-plural-nouns",
+          "issue": "R5 có lỗi 'two cat' và 'three citys' nhưng đây là lỗi số nhiều quy tắc, không phải bất quy tắc.",
+          "fix": "Đưa lỗi bất quy tắc thực tế: 'two childs' → 'two children'."
+        }
+      ]
+    }
   },
-  "review": null,
-  "sequence": 2,
-  "source_anchors": {
-    "status": "unanchored",
-    "items": []
-  },
-  "aliases": []
+  "review": null
 }

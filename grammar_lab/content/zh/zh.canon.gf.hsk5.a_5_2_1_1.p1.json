@@ -1,0 +1,225 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk5.a_5_2_1_1.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.negation",
+  "level": {"framework": "hsk3", "value": "5", "rank": 5},
+  "prereqs": ["zh.canon.r5.hsk5_3_topic"],
+  "contrasts": [],
+  "error_tags": ["particle"],
+  "source_refs": {"gf0025": ["gf0025.hsk5.017", "gf0025.hsk5.018", "gf0025.hsk5.019", "gf0025.hsk5.020"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: A来A去", "en": "Chinese grammar: A来A去"},
+    "native_title": "A来A去",
+    "level": {"framework": "hsk3", "value": "5", "rank": 5},
+    "summary": {
+      "vi": "Mẫu A来A去 dùng để nói một hành động được lặp đi lặp lại theo nhiều hướng hoặc nhiều lần, thường gợi ý sự lặp lại kéo dài hoặc không có kết quả rõ ràng.",
+      "en": "The A来A去 pattern describes an action repeated over and over in different directions or many times, often suggesting prolonged or inconclusive repetition."
+    },
+    "sub": {"vi": "lặp đi lặp lại", "en": "repeated action"},
+    "native_title_pinyin": ["", "lái", "", "qù"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói một người làm cùng một động tác nhiều lần theo các hướng khác nhau, ví dụ đi tới đi lui, tìm tới tìm lui.",
+      "en": "Use it when someone does the same action many times in different directions, such as walking back and forth or searching everywhere."
+    },
+    {
+      "vi": "Khi muốn nhấn mạnh hành động lặp lại nhiều lần đến mức gây mệt mỏi hoặc sốt ruột.",
+      "en": "Use it to stress that the repetition is tiring or frustrating."
+    },
+    {
+      "vi": "Khi muốn nói một hành động lặp lại nhưng vẫn chưa có kết quả rõ ràng.",
+      "en": "Use it when the repeated action still has no clear result."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "A", "role": "verb", "label": {"vi": "động từ", "en": "verb"}, "pinyin": [""]},
+      {
+        "text": "来",
+        "role": "particle",
+        "label": {"vi": "trợ từ hướng", "en": "directional particle"},
+        "pinyin": ["lái"]
+      },
+      {
+        "text": "A",
+        "role": "verb",
+        "label": {"vi": "động từ lặp lại", "en": "repeated verb"},
+        "pinyin": [""]
+      },
+      {
+        "text": "去",
+        "role": "particle",
+        "label": {"vi": "trợ từ hướng", "en": "directional particle"},
+        "pinyin": ["qù"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "他在门口走来走去。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 4, "end": 5, "role": "verb"},
+        {"start": 5, "end": 6, "role": "particle"},
+        {"start": 6, "end": 7, "role": "verb"},
+        {"start": 7, "end": 8, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "Động từ 走 được lặp lại giữa 来 và 去, nghĩa là đi tới đi lui.",
+        "en": "The verb 走 is repeated between 来 and 去, meaning to walk back and forth."
+      },
+      "translation": {"vi": "Anh ấy đi tới đi lui ở cửa.", "en": "He walks back and forth at the door."},
+      "pinyin": ["tā", "zài", "mén", "kǒu", "zǒu", "lái", "zǒu", "qù", ""]
+    },
+    {
+      "text": "我找来找去，还是没找到钥匙。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 1, "end": 2, "role": "verb"},
+        {"start": 2, "end": 3, "role": "particle"},
+        {"start": 3, "end": 4, "role": "verb"},
+        {"start": 4, "end": 5, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "找来找去 nhấn mạnh việc tìm kiếm lặp lại nhiều lần mà vẫn không có kết quả.",
+        "en": "找来找去 stresses repeated searching that still has no result."
+      },
+      "translation": {
+        "vi": "Tôi tìm tới tìm lui mà vẫn không tìm thấy chìa khóa.",
+        "en": "I searched everywhere but still did not find the keys."
+      },
+      "pinyin": ["wǒ", "zhǎo", "lái", "zhǎo", "qù", "", "hái", "shì", "méi", "zhǎo", "dào", "yào", "shi", ""]
+    },
+    {
+      "text": "孩子们在草地上跑来跑去。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 7, "end": 8, "role": "verb"},
+        {"start": 8, "end": 9, "role": "particle"},
+        {"start": 9, "end": 10, "role": "verb"},
+        {"start": 10, "end": 11, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "跑来跑去 mô tả các em nhỏ chạy qua chạy lại nhiều lần trên bãi cỏ.",
+        "en": "跑来跑去 describes children running back and forth many times on the grass."
+      },
+      "translation": {
+        "vi": "Bọn trẻ chạy qua chạy lại trên bãi cỏ.",
+        "en": "The children run back and forth on the grass."
+      },
+      "pinyin": ["hái", "zi", "men", "zài", "cǎo", "dì", "shàng", "pǎo", "lái", "pǎo", "qù", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "他走来走去在门口。",
+      "right": "他在门口走来走去。",
+      "reason": {
+        "vi": "Cụm A来A去 phải đứng sau cụm chỉ nơi chốn; người học tiếng Việt thường đặt cụm chỉ nơi chốn ra sau vì quen với trật tự 'đi tới đi lui ở cửa'.",
+        "en": "The A来A去 phrase must follow the place phrase; Vietnamese learners often put the place phrase last because Vietnamese allows 'walk back and forth at the door' with the place at the end."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong_pinyin": ["tā", "zǒu", "lái", "zǒu", "qù", "zài", "mén", "kǒu", ""],
+      "right_pinyin": ["tā", "zài", "mén", "kǒu", "zǒu", "lái", "zǒu", "qù", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "他在房间里___，好像在找什么。",
+      "options": [
+        {"text": "走来走去", "error_tag": null, "pinyin": ["zǒu", "lái", "zǒu", "qù"]},
+        {"text": "走去走来", "error_tag": "word_order", "pinyin": ["zǒu", "qù", "zǒu", "lái"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Mẫu cố định là A来A去, không đảo thành A去A来.",
+        "en": "The fixed pattern is A来A去, not A去A来."
+      },
+      "q_pinyin": [
+        "tā",
+        "zài",
+        "fáng",
+        "jiān",
+        "lǐ",
+        "",
+        "",
+        "",
+        "",
+        "hǎo",
+        "xiàng",
+        "zài",
+        "zhǎo",
+        "shén",
+        "me",
+        ""
+      ]
+    },
+    {
+      "q": "我___，终于找到了那本书。",
+      "options": [
+        {"text": "找来找去", "error_tag": null, "pinyin": ["zhǎo", "lái", "zhǎo", "qù"]},
+        {"text": "找去找来", "error_tag": "word_order", "pinyin": ["zhǎo", "qù", "zhǎo", "lái"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Động từ được lặp lại giữa 来 và 去 theo đúng thứ tự A来A去.",
+        "en": "The verb is repeated between 来 and 去 in the fixed order A来A去."
+      },
+      "q_pinyin": ["wǒ", "", "", "", "", "zhōng", "yú", "zhǎo", "dào", "le", "nà", "běn", "shū", ""]
+    },
+    {
+      "q": "小狗在院子里___，非常开心。",
+      "options": [
+        {"text": "跑来跑去", "error_tag": null, "pinyin": ["pǎo", "lái", "pǎo", "qù"]},
+        {"text": "跑去跑来", "error_tag": "word_order", "pinyin": ["pǎo", "qù", "pǎo", "lái"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Trật tự đúng là 来 trước 去, nên phải là 跑来跑去.",
+        "en": "The correct order is 来 before 去, so it must be 跑来跑去."
+      },
+      "q_pinyin": ["xiǎo", "gǒu", "zài", "yuàn", "zi", "lǐ", "", "", "", "", "fēi", "cháng", "kāi", "xīn", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu kể về việc bạn đã đi tới đi lui hoặc tìm tới tìm lui ở một nơi nào đó, dùng mẫu A来A去.",
+      "en": "Write one sentence about walking back and forth or searching everywhere in some place, using the A来A去 pattern."
+    },
+    "placeholder": "我在……走来走去。",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "verb", "any_of": ["走", "跑", "找", "看", "想", "说", "问", "飞", "游", "爬"]},
+        {"role": "particle", "any_of": ["来"]},
+        {"role": "verb", "any_of": ["走", "跑", "找", "看", "想", "说", "问", "飞", "游", "爬"]},
+        {"role": "particle", "any_of": ["去"]}
+      ]
+    },
+    "sample": {
+      "text": "我在公园里走来走去。",
+      "pinyin": ["wǒ", "zài", "gōng", "yuán", "lǐ", "zǒu", "lái", "zǒu", "qù", ""]
+    },
+    "placeholder_pinyin": ["wǒ", "zài", "", "", "zǒu", "lái", "zǒu", "qù", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790833642",
+    "generated_at": "2026-10-01T05:47:22Z"
+  },
+  "review": null
+}

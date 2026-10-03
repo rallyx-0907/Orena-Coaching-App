@@ -1,0 +1,285 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk6_2_topic",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.possibility",
+  "level": {"framework": "hsk3", "value": "6", "rank": 6},
+  "prereqs": ["zh.jiaru_tangruo"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {
+    "r5": ["zh-hsk6-2-topic", "zh-hsk79-2-advanced-modality-and-stance"],
+    "gf0025": ["gf0025.hsk3.018"]
+  },
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["zh-hsk6-2-topic", "zh-hsk79-2-advanced-modality-and-stance"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 情态副词：大概、恐怕", "en": "Chinese grammar: 情态副词：大概、恐怕"},
+    "native_title": "情态副词：大概、恐怕",
+    "level": {"framework": "hsk3", "value": "6", "rank": 6},
+    "summary": {
+      "vi": "Phó từ tình thái 大概 và 恐怕 đứng trước vị ngữ để nói mức độ chắc chắn của người nói: 大概 là phỏng đoán trung tính, 恐怕 là phỏng đoán kèm lo ngại hoặc điều không mong muốn.",
+      "en": "The modal adverbs 大概 and 恐怕 stand before the predicate to show how certain the speaker is: 大概 is a neutral guess, while 恐怕 adds worry or a negative expectation."
+    },
+    "sub": {"vi": "phỏng đoán và lo ngại", "en": "probability and concern"},
+    "native_title_pinyin": ["qíng", "tài", "fù", "cí", "", "dà", "gài", "", "kǒng", "pà"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói một việc có khả năng xảy ra nhưng không chắc, và không có bằng chứng rõ ràng: dùng 大概.",
+      "en": "Use 大概 when you think something is probably true or likely to happen but you are not sure and have no clear evidence."
+    },
+    {
+      "vi": "Khi bạn dự đoán một điều không hay hoặc muốn nói lời cảnh báo nhẹ nhàng: dùng 恐怕.",
+      "en": "Use 恐怕 when you expect something unpleasant or want to give a soft warning."
+    },
+    {
+      "vi": "Khi câu có 能, 会, 已经 hoặc 来不及, phó từ tình thái đứng trước những thành phần đó.",
+      "en": "When the sentence has 能, 会, 已经 or 来不及, the modal adverb comes before those elements."
+    },
+    {
+      "vi": "Khi bạn muốn giảm nhẹ mức độ khẳng định để giữ lịch sự trong giao tiếp.",
+      "en": "When you want to soften a statement to stay polite in conversation."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "大概/恐怕",
+        "role": "aux",
+        "label": {"vi": "phó từ tình thái", "en": "modal adverb"},
+        "options": [{"text": "大概", "pinyin": ["dà", "gài"]}, {"text": "恐怕", "pinyin": ["kǒng", "pà"]}],
+        "pinyin": ["dà", "gài", "", "kǒng", "pà"]
+      },
+      {
+        "text": "谓语",
+        "role": "verb",
+        "label": {"vi": "vị ngữ", "en": "predicate"},
+        "pinyin": ["wèi", "yǔ"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "他大概已经到了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 3, "role": "aux"},
+        {"start": 3, "end": 7, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "大概 đứng trước vị ngữ để nói phỏng đoán trung tính.",
+        "en": "大概 comes before the predicate to mark a neutral guess."
+      },
+      "translation": {"vi": "Có lẽ anh ấy đã tới rồi.", "en": "He has probably already arrived."},
+      "pinyin": ["tā", "dà", "gài", "yǐ", "jīng", "dào", "le", ""]
+    },
+    {
+      "text": "我恐怕今天来不及完成。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 3, "role": "aux"},
+        {"start": 3, "end": 10, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "恐怕 báo hiệu phỏng đoán kèm lo ngại về kết quả.",
+        "en": "恐怕 signals a guess with concern about the outcome."
+      },
+      "translation": {
+        "vi": "E là hôm nay tôi không kịp hoàn thành.",
+        "en": "I'm afraid I won't finish today in time."
+      },
+      "pinyin": ["wǒ", "kǒng", "pà", "jīn", "tiān", "lái", "bù", "jí", "wán", "chéng", ""]
+    },
+    {
+      "text": "这个项目大概下个月会重新启动。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 4, "end": 6, "role": "aux"},
+        {"start": 6, "end": 14, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "大概 đứng trước cụm thời gian và trợ động từ 会.",
+        "en": "大概 comes before the time phrase and the auxiliary 会."
+      },
+      "translation": {
+        "vi": "Dự án này có lẽ sẽ khởi động lại vào tháng sau.",
+        "en": "This project will probably restart next month."
+      },
+      "pinyin": [
+        "zhè",
+        "ge",
+        "xiàng",
+        "mù",
+        "dà",
+        "gài",
+        "xià",
+        "ge",
+        "yuè",
+        "huì",
+        "chóng",
+        "xīn",
+        "qǐ",
+        "dòng",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "他恐怕大概会来。",
+      "right": "他大概会来。",
+      "reason": {
+        "vi": "Không xếp hai phó từ tình thái cùng chức năng trong một câu; 恐怕 và 大概 đều đánh dấu mức độ chắc chắn nên chỉ dùng một.",
+        "en": "Do not stack two modal adverbs with the same function; 恐怕 and 大概 both mark certainty level, so use only one."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong_pinyin": ["tā", "kǒng", "pà", "dà", "gài", "huì", "lái", ""],
+      "right_pinyin": ["tā", "dà", "gài", "huì", "lái", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "他___已经到了，我们不用等他。",
+      "options": [
+        {"text": "大概", "error_tag": null, "pinyin": ["dà", "gài"]},
+        {"text": "恐怕", "error_tag": "other", "pinyin": ["kǒng", "pà"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu này chỉ nêu phỏng đoán trung tính, không có lo ngại, nên dùng 大概.",
+        "en": "This sentence states a neutral guess with no worry, so 大概 is the right choice."
+      },
+      "q_pinyin": ["tā", "", "", "", "yǐ", "jīng", "dào", "le", "", "wǒ", "men", "bù", "yòng", "děng", "tā", ""]
+    },
+    {
+      "q": "___今天来不及完成，我们明天继续吧。",
+      "options": [
+        {"text": "恐怕", "error_tag": null, "pinyin": ["kǒng", "pà"]},
+        {"text": "大概", "error_tag": "other", "pinyin": ["dà", "gài"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu này thể hiện lo ngại về việc không kịp hoàn thành, nên dùng 恐怕.",
+        "en": "This sentence expresses concern about not finishing in time, so 恐怕 fits."
+      },
+      "q_pinyin": [
+        "",
+        "",
+        "",
+        "jīn",
+        "tiān",
+        "lái",
+        "bù",
+        "jí",
+        "wán",
+        "chéng",
+        "",
+        "wǒ",
+        "men",
+        "míng",
+        "tiān",
+        "jì",
+        "xù",
+        "ba",
+        ""
+      ]
+    },
+    {
+      "q": "这个项目___下个月会重新启动。",
+      "options": [
+        {"text": "大概", "error_tag": null, "pinyin": ["dà", "gài"]},
+        {"text": "恐怕", "error_tag": "other", "pinyin": ["kǒng", "pà"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Đây là dự đoán trung tính về thời gian, không có sắc thái lo ngại, nên dùng 大概.",
+        "en": "This is a neutral prediction about timing with no worry, so 大概 is correct."
+      },
+      "q_pinyin": [
+        "zhè",
+        "ge",
+        "xiàng",
+        "mù",
+        "",
+        "",
+        "",
+        "xià",
+        "ge",
+        "yuè",
+        "huì",
+        "chóng",
+        "xīn",
+        "qǐ",
+        "dòng",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dự đoán điều có thể xảy ra với bạn hoặc người khác, dùng 大概 hoặc 恐怕.",
+      "en": "Write one sentence predicting something that may happen to you or someone else, using 大概 or 恐怕."
+    },
+    "placeholder": "我大概……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"role": "aux", "any_of": ["大概", "恐怕"]}]},
+    "sample": {
+      "text": "我大概明天会去图书馆。",
+      "pinyin": ["wǒ", "dà", "gài", "míng", "tiān", "huì", "qù", "tú", "shū", "guǎn", ""]
+    },
+    "placeholder_pinyin": ["wǒ", "dà", "gài", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790834007",
+    "generated_at": "2026-10-01T05:53:27Z",
+    "r5_source": {
+      "ids": ["zh-hsk6-2-topic", "zh-hsk79-2-advanced-modality-and-stance"],
+      "content_version": 2,
+      "content_hash": "7b97e22912722c0be38648942f1b223a61acf9c2f5dc2655e6637d32b9569b7c",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk6-2-topic",
+          "issue": "R5 gộp bốn từ 恐怕/大概/显然/据说 vào một bài, vượt phạm vi điểm ngữ pháp này.",
+          "fix": "Chỉ giữ 大概 và 恐怕; loại 显然 và 据说 khỏi bài."
+        },
+        {
+          "r5_id": "zh-hsk6-2-topic",
+          "issue": "Ví dụ '从这些数据来看，问题显然比想象的严重。' dùng 显然, không thuộc điểm này.",
+          "fix": "Thay bằng ví dụ dùng 大概: '这个项目大概下个月会重新启动。'"
+        },
+        {
+          "r5_id": "zh-hsk6-2-topic",
+          "issue": "Lỗi '据说显然他一定会来。' liên quan đến 据说/显然, không thuộc điểm này.",
+          "fix": "Thay bằng lỗi thực tế của người Việt: xếp chồng 恐怕 và 大概 trong '他恐怕大概会来。'"
+        },
+        {
+          "r5_id": "zh-hsk79-2-advanced-modality-and-stance",
+          "issue": "Bài HSK7-9 bao gồm nhiều cấu trúc tình thái nâng cao vượt phạm vi điểm này.",
+          "fix": "Không đưa nội dung HSK7-9 vào; chỉ giữ 大概 và 恐怕 ở mức HSK6."
+        }
+      ]
+    },
+    "metadata_stale": true
+  },
+  "review": null
+}

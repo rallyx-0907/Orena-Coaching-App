@@ -1,0 +1,233 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk4.a_4_5_1.p2",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.sentence_basics",
+  "level": {"framework": "hsk3", "value": "4", "rank": 4},
+  "prereqs": ["zh.canon.gf.hsk4.a_4_4_2.p1"],
+  "contrasts": [],
+  "error_tags": ["particle"],
+  "source_refs": {"gf0025": ["gf0025.hsk4.042"]},
+  "point_type": "other",
+  "sequence": 5,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {
+      "vi": "Mẫu câu đặc biệt: “是⋯⋯的”句2：强调说话人的看法或态度",
+      "en": "Special sentence patterns: “是⋯⋯的”句2：强调说话人的看法或态度"
+    },
+    "native_title": "“是⋯⋯的”句2：强调说话人的看法或态度",
+    "level": {"framework": "hsk3", "value": "4", "rank": 4},
+    "summary": {
+      "vi": "Mẫu câu “是⋯⋯的” dùng để nhấn mạnh nhận xét, đánh giá hoặc thái độ của người nói đối với một sự việc.",
+      "en": "The “是⋯⋯的” pattern used to emphasise the speaker's judgement, evaluation or attitude towards a situation."
+    },
+    "sub": {"vi": "nhấn mạnh đánh giá", "en": "emphatic judgement"},
+    "native_title_pinyin": [
+      "",
+      "shì",
+      "",
+      "",
+      "de",
+      "",
+      "jù",
+      "",
+      "",
+      "qiáng",
+      "diào",
+      "shuō",
+      "huà",
+      "rén",
+      "de",
+      "kàn",
+      "fǎ",
+      "huò",
+      "tài",
+      "dù"
+    ]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói rõ thái độ hoặc đánh giá của mình về một việc đã xảy ra, chứ không chỉ kể lại sự việc.",
+      "en": "When you want to state your attitude or evaluation of something that happened, not just report the event."
+    },
+    {
+      "vi": "Khi câu trả lời của bạn cần nhấn mạnh vào lý do, cách thức hoặc mức độ của hành động.",
+      "en": "When your answer needs to stress the reason, the manner or the degree of an action."
+    },
+    {
+      "vi": "Khi bạn muốn phản hồi lại ý kiến của người khác bằng một nhận xét có trọng tâm.",
+      "en": "When you want to respond to someone else's opinion with a focused judgement."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "是",
+        "role": "marker",
+        "label": {"vi": "trợ từ nhấn mạnh", "en": "emphasis marker"},
+        "pinyin": ["shì"]
+      },
+      {
+        "text": "状语",
+        "role": "other",
+        "label": {"vi": "thành phần được nhấn mạnh", "en": "emphasised element"},
+        "pinyin": ["zhuàng", "yǔ"]
+      },
+      {
+        "text": "的",
+        "role": "particle",
+        "label": {"vi": "trợ từ kết thúc", "en": "closing particle"},
+        "pinyin": ["de"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "我是昨天才知道这个消息的。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "marker"},
+        {"start": 2, "end": 4, "role": "other"},
+        {"start": 11, "end": 12, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "Nhấn mạnh thời điểm “hôm qua” là lúc người nói mới biết tin, không phải chỉ kể sự việc.",
+        "en": "Stresses that “yesterday” was the moment the speaker learnt the news, rather than simply reporting the event."
+      },
+      "translation": {
+        "vi": "Tôi mãi đến hôm qua mới biết tin này.",
+        "en": "It was only yesterday that I learnt this news."
+      },
+      "pinyin": ["wǒ", "shì", "zuó", "tiān", "cái", "zhī", "dào", "zhè", "ge", "xiāo", "xi", "de", ""]
+    },
+    {
+      "text": "他是在北京学的汉语。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "marker"},
+        {"start": 2, "end": 5, "role": "other"},
+        {"start": 6, "end": 7, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "Nhấn mạnh nơi học là Bắc Kinh, trả lời cho câu hỏi “học ở đâu”.",
+        "en": "Stresses that Beijing was the place of study, answering the question “where did he study”."
+      },
+      "translation": {"vi": "Anh ấy học tiếng Hán ở Bắc Kinh.", "en": "It was in Beijing that he studied Chinese."},
+      "pinyin": ["tā", "shì", "zài", "běi", "jīng", "xué", "de", "hàn", "yǔ", ""]
+    },
+    {
+      "text": "我们是坐火车去上海的。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 3, "role": "marker"},
+        {"start": 3, "end": 6, "role": "other"},
+        {"start": 9, "end": 10, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "Nhấn mạnh cách thức đi lại là ngồi tàu, không phải máy bay hay xe khác.",
+        "en": "Stresses that the means of travel was the train, not a plane or another vehicle."
+      },
+      "translation": {
+        "vi": "Chúng tôi đi Thượng Hải bằng tàu hỏa.",
+        "en": "It was by train that we went to Shanghai."
+      },
+      "pinyin": ["wǒ", "men", "shì", "zuò", "huǒ", "chē", "qù", "shàng", "hǎi", "de", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "我是昨天才知道这个消息。",
+      "right": "我是昨天才知道这个消息的。",
+      "reason": {
+        "vi": "Người học quen với câu trần thuật thường, nên bỏ mất trợ từ “的” ở cuối; thiếu “的” thì câu mất đi trọng tâm nhấn mạnh và nghe như chưa nói hết.",
+        "en": "Learners are used to plain statements and drop the final particle “的”; without it the sentence loses its emphatic focus and sounds unfinished."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong_pinyin": ["wǒ", "shì", "zuó", "tiān", "cái", "zhī", "dào", "zhè", "ge", "xiāo", "xi", ""],
+      "right_pinyin": ["wǒ", "shì", "zuó", "tiān", "cái", "zhī", "dào", "zhè", "ge", "xiāo", "xi", "de", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "我___去年才开始学汉语的。",
+      "options": [
+        {"text": "是", "error_tag": null, "pinyin": ["shì"]},
+        {"text": "的", "error_tag": "particle", "pinyin": ["de"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "“是” đứng trước thành phần được nhấn mạnh “去年”, còn “的” đã có ở cuối câu.",
+        "en": "“是” comes before the emphasised element “去年”, while “的” already stands at the end of the sentence."
+      },
+      "q_pinyin": ["wǒ", "", "", "", "qù", "nián", "cái", "kāi", "shǐ", "xué", "hàn", "yǔ", "de", ""]
+    },
+    {
+      "q": "他___坐飞机去广州的。",
+      "options": [
+        {"text": "是", "error_tag": null, "pinyin": ["shì"]},
+        {"text": "在", "error_tag": "word_choice", "pinyin": ["zài"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "“是” là trợ từ nhấn mạnh của mẫu câu này; “在” chỉ dùng cho nơi chốn, không đứng trước cách thức.",
+        "en": "“是” is the emphasis marker of this pattern; “在” is for places and cannot precede a manner phrase."
+      },
+      "q_pinyin": ["tā", "", "", "", "zuò", "fēi", "jī", "qù", "guǎng", "zhōu", "de", ""]
+    },
+    {
+      "q": "我们是上个月___家的。",
+      "options": [
+        {"text": "搬", "error_tag": null, "pinyin": ["bān"]},
+        {"text": "搬家了", "error_tag": "aspect", "pinyin": ["bān", "jiā", "le"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Cuối câu nhấn mạnh dùng “的”, nên động từ đứng trước “的” không mang “了”; “了” chỉ sự hoàn thành, không tạo trọng tâm nhấn mạnh.",
+        "en": "The emphatic sentence ends with “的”, so the verb before “的” does not take “了”; “了” marks completion and does not create the emphatic focus."
+      },
+      "q_pinyin": ["wǒ", "men", "shì", "shàng", "ge", "yuè", "", "", "", "jiā", "de", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng “是⋯⋯的” để nhấn mạnh thời gian, địa điểm hoặc cách thức của một việc bạn đã làm.",
+      "en": "Write one sentence with “是⋯⋯的” to emphasise the time, place or manner of something you did."
+    },
+    "placeholder": "我是……的。",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "marker", "any_of": ["是"]}, {"role": "particle", "any_of": ["的"]}]
+    },
+    "sample": {
+      "text": "我是去年开始学汉语的。",
+      "pinyin": ["wǒ", "shì", "qù", "nián", "kāi", "shǐ", "xué", "hàn", "yǔ", "de", ""]
+    },
+    "placeholder_pinyin": ["wǒ", "shì", "", "", "de", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790833288",
+    "generated_at": "2026-10-01T05:41:28Z",
+    "metadata_stale": true
+  },
+  "review": null
+}

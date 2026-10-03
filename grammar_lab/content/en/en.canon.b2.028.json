@@ -1,0 +1,267 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b2.028",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.information_structure",
+  "level": {"framework": "cefr", "value": "B2", "rank": 4},
+  "prereqs": ["en.indirect_objects"],
+  "contrasts": [],
+  "error_tags": ["sentence_structure"],
+  "source_refs": {"r5": ["b2-cleft-sentences", "c1-it-clefts"]},
+  "point_type": "word_order",
+  "sequence": 1,
+  "aliases": ["b2-cleft-sentences", "c1-it-clefts"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "câu chẻ", "en": "Cleft sentences"},
+    "native_title": "Cleft sentences",
+    "level": {"framework": "cefr", "value": "B2", "rank": 4},
+    "summary": {
+      "vi": "Câu chẻ dùng It is/was + thành phần được nhấn mạnh + that/who + phần còn lại để làm nổi bật một thông tin trong câu.",
+      "en": "A cleft sentence uses It is/was + the focused element + that/who + the rest of the clause to highlight one piece of information."
+    },
+    "sub": {"vi": "câu chẻ", "en": "cleft sentences"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn sửa lại thông tin người khác vừa nói, ví dụ nhấn mạnh đúng người hoặc đúng vật.",
+      "en": "When you want to correct information someone has just given, for example stressing the right person or thing."
+    },
+    {
+      "vi": "Khi bạn muốn so sánh hai lựa chọn và làm nổi bật lựa chọn đúng.",
+      "en": "When you want to contrast two options and highlight the correct one."
+    },
+    {
+      "vi": "Khi bạn muốn nhấn mạnh thời gian hoặc địa điểm cụ thể trong câu chuyện.",
+      "en": "When you want to emphasise a specific time or place in a story."
+    },
+    {
+      "vi": "Khi bạn viết hoặc nói ở văn phong trang trọng hơn, muốn câu có trọng tâm rõ ràng.",
+      "en": "When you are writing or speaking in a more formal style and want a clear focus in the sentence."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "It", "role": "subject", "label": {"vi": "chủ ngữ giả", "en": "dummy subject"}},
+      {
+        "text": "be",
+        "role": "verb",
+        "label": {"vi": "động từ be", "en": "verb be"},
+        "options": [{"text": "is"}, {"text": "was"}]
+      },
+      {
+        "text": "focused element",
+        "role": "complement",
+        "label": {"vi": "thành phần được nhấn mạnh", "en": "focused element"}
+      },
+      {
+        "text": "that/who",
+        "role": "marker",
+        "label": {"vi": "từ nối", "en": "relative marker"},
+        "options": [{"text": "that"}, {"text": "who"}]
+      },
+      {
+        "text": "clause",
+        "role": "other",
+        "label": {"vi": "mệnh đề còn lại", "en": "remaining clause"}
+      }
+    ],
+    "variants": {
+      "negative": [
+        {"text": "It", "role": "subject", "label": {"vi": "chủ ngữ giả", "en": "dummy subject"}},
+        {
+          "text": "be",
+          "role": "verb",
+          "label": {"vi": "động từ be", "en": "verb be"},
+          "options": [{"text": "is"}, {"text": "was"}]
+        },
+        {"text": "not", "role": "particle", "label": {"vi": "phủ định", "en": "negator"}},
+        {
+          "text": "focused element",
+          "role": "complement",
+          "label": {"vi": "thành phần được nhấn mạnh", "en": "focused element"}
+        },
+        {
+          "text": "that/who",
+          "role": "marker",
+          "label": {"vi": "từ nối", "en": "relative marker"},
+          "options": [{"text": "that"}, {"text": "who"}]
+        },
+        {
+          "text": "clause",
+          "role": "other",
+          "label": {"vi": "mệnh đề còn lại", "en": "remaining clause"}
+        }
+      ],
+      "question": [
+        {
+          "text": "be",
+          "role": "verb",
+          "label": {"vi": "động từ be", "en": "verb be"},
+          "options": [{"text": "is"}, {"text": "was"}]
+        },
+        {"text": "it", "role": "subject", "label": {"vi": "chủ ngữ giả", "en": "dummy subject"}},
+        {
+          "text": "focused element",
+          "role": "complement",
+          "label": {"vi": "thành phần được nhấn mạnh", "en": "focused element"}
+        },
+        {
+          "text": "that/who",
+          "role": "marker",
+          "label": {"vi": "từ nối", "en": "relative marker"},
+          "options": [{"text": "that"}, {"text": "who"}]
+        },
+        {
+          "text": "clause",
+          "role": "other",
+          "label": {"vi": "mệnh đề còn lại", "en": "remaining clause"}
+        }
+      ]
+    },
+    "illustration": {"kind": "word_order"}
+  },
+  "examples": [
+    {
+      "text": "It was Maria who solved the problem.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 3, "end": 6, "role": "verb"},
+        {"start": 7, "end": 12, "role": "complement"},
+        {"start": 13, "end": 16, "role": "marker"},
+        {"start": 17, "end": 35, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Nhấn mạnh Maria là người giải quyết vấn đề, không phải ai khác.",
+        "en": "Highlights Maria as the one who solved the problem, not someone else."
+      },
+      "translation": {
+        "vi": "Chính Maria là người giải quyết vấn đề.",
+        "en": "It was Maria who solved the problem."
+      }
+    },
+    {
+      "text": "It was the blue one that I ordered.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 3, "end": 6, "role": "verb"},
+        {"start": 7, "end": 19, "role": "complement"},
+        {"start": 20, "end": 24, "role": "marker"},
+        {"start": 25, "end": 34, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Nhấn mạnh vật được chọn là cái màu xanh, không phải cái khác.",
+        "en": "Highlights the blue one as the thing chosen, not another one."
+      },
+      "translation": {"vi": "Chính cái màu xanh là cái tôi đã đặt.", "en": "It was the blue one that I ordered."}
+    },
+    {
+      "text": "It was in 2019 that they first met.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 3, "end": 6, "role": "verb"},
+        {"start": 7, "end": 14, "role": "complement"},
+        {"start": 15, "end": 19, "role": "marker"},
+        {"start": 20, "end": 34, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Nhấn mạnh thời điểm họ gặp nhau lần đầu là năm 2019.",
+        "en": "Highlights 2019 as the time they first met."
+      },
+      "translation": {
+        "vi": "Chính năm 2019 là năm họ gặp nhau lần đầu.",
+        "en": "It was in 2019 that they first met."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "It was Maria solved the problem.",
+      "right": "It was Maria who solved the problem.",
+      "reason": {
+        "vi": "Câu chẻ cần từ nối that hoặc who giữa thành phần được nhấn mạnh và mệnh đề còn lại; thiếu từ nối làm câu mất cấu trúc.",
+        "en": "A cleft sentence needs the relative marker that or who between the focused element and the remaining clause; without it the structure breaks."
+      },
+      "error_tag": "sentence_structure",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "It ___ my brother who fixed the bike.",
+      "options": [{"text": "was", "error_tag": null}, {"text": "were", "error_tag": "agreement"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Chủ ngữ giả 'It' đi với 'was' ở số ít; 'were' sai vì không hợp số.",
+        "en": "The dummy subject 'It' takes 'was' in the singular; 'were' is wrong because it does not agree."
+      }
+    },
+    {
+      "q": "It was the red car ___ I bought.",
+      "options": [{"text": "that", "error_tag": null}, {"text": "who", "error_tag": "word_choice"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Với vật, dùng 'that'; 'who' chỉ dùng cho người.",
+        "en": "For things, use 'that'; 'who' is only for people."
+      }
+    },
+    {
+      "q": "It was yesterday ___ she called me.",
+      "options": [{"text": "that", "error_tag": null}, {"text": "when", "error_tag": "sentence_structure"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Trong câu chẻ chuẩn, dùng 'that' cho thành phần thời gian; 'when' không đúng cấu trúc.",
+        "en": "In a standard cleft, use 'that' for a time element; 'when' does not fit the structure."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu chẻ để nhấn mạnh người hoặc vật đã làm điều gì đó cho bạn.",
+      "en": "Write a cleft sentence to highlight the person or thing that did something for you."
+    },
+    "placeholder": "It was ... who/that ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "subject", "any_of": ["It"]},
+        {"role": "verb", "any_of": ["was", "is"]},
+        {"role": "marker", "any_of": ["who", "that"]}
+      ]
+    },
+    "sample": {"text": "It was my sister who helped me move."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790831266",
+    "generated_at": "2026-10-01T05:07:46Z",
+    "r5_source": {
+      "ids": ["b2-cleft-sentences", "c1-it-clefts"],
+      "content_version": 2,
+      "content_hash": "034ab5ff5d2a3913c56bfd84ba49b26eb76fd853eab790856c1d997186dc39b1",
+      "corrections": [
+        {
+          "r5_id": "b2-cleft-sentences",
+          "issue": "The R5 lesson includes a mistake 'It is what I need that a break.' which is not a real learner error for this point; it confuses it-cleft with pseudo-cleft and is ungrammatical in a way that does not reflect a typical L1 Vietnamese mistake.",
+          "fix": "Replaced with a real L1 Vietnamese mistake: 'It was Maria solved the problem.' (missing relative marker), which is a common sentence-structure error."
+        },
+        {
+          "r5_id": "c1-it-clefts",
+          "issue": "The R5 lesson is at C1 level and includes examples and rules beyond the B2 scope, such as 'It wasn't until Friday that the error was discovered.' which is more advanced.",
+          "fix": "Excluded C1-level content and kept only B2-appropriate examples and rules, focusing on basic it-clefts with subject, object, and time focus."
+        }
+      ]
+    },
+    "metadata_stale": true
+  },
+  "review": null
+}

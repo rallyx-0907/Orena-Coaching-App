@@ -1,0 +1,210 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b2.044",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.verb_patterns",
+  "level": {"framework": "cefr", "value": "B2", "rank": 4},
+  "prereqs": ["en.canon.b2.042"],
+  "contrasts": [],
+  "error_tags": ["naturalness"],
+  "source_refs": {},
+  "point_type": "other",
+  "sequence": 7,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Phrasal Verbs Advanced", "en": "Phrasal Verbs Advanced"},
+    "native_title": "Phrasal Verbs Advanced",
+    "level": {"framework": "cefr", "value": "B2", "rank": 4},
+    "summary": {
+      "vi": "Các cụm động từ (phrasal verb) ở trình độ B2 thường có nghĩa không thể đoán từ các từ riêng lẻ, và nhiều cụm cho phép tân ngữ đứng giữa động từ và tiểu từ.",
+      "en": "At B2, phrasal verbs often carry meanings you cannot guess from their parts, and many of them allow the object to move between the verb and the particle."
+    },
+    "sub": {"vi": "cụm động từ nâng cao", "en": "advanced phrasal verbs"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn diễn đạt một ý theo cách người bản ngữ thường dùng, thay vì dùng động từ trang trọng tương đương.",
+      "en": "When you want to express an idea the way native speakers usually do, instead of using a more formal single verb."
+    },
+    {
+      "vi": "Khi tân ngữ là một danh từ và bạn muốn nhấn mạnh hoặc đưa tân ngữ vào giữa động từ và tiểu từ.",
+      "en": "When the object is a noun and you want to emphasise it or place it between the verb and the particle."
+    },
+    {
+      "vi": "Khi tân ngữ là đại từ (it, them, him...), bạn phải đặt đại từ ở giữa động từ và tiểu từ.",
+      "en": "When the object is a pronoun (it, them, him...), you must put the pronoun between the verb and the particle."
+    },
+    {
+      "vi": "Khi bạn muốn dùng một cụm động từ có nghĩa thành ngữ trong văn nói hoặc văn viết bán trang trọng.",
+      "en": "When you want to use an idiomatic phrasal verb in speaking or semi-formal writing."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ chính", "en": "main verb"}},
+      {"text": "particle", "role": "particle", "label": {"vi": "tiểu từ", "en": "particle"}},
+      {"text": "O", "role": "object", "label": {"vi": "tân ngữ", "en": "object"}}
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "do/does/did",
+          "role": "aux",
+          "label": {"vi": "trợ động từ", "en": "auxiliary"},
+          "options": [{"text": "do"}, {"text": "does"}, {"text": "did"}]
+        },
+        {"text": "not", "role": "marker", "label": {"vi": "phủ định", "en": "negator"}},
+        {"text": "V", "role": "verb", "label": {"vi": "động từ chính", "en": "main verb"}},
+        {"text": "particle", "role": "particle", "label": {"vi": "tiểu từ", "en": "particle"}},
+        {"text": "O", "role": "object", "label": {"vi": "tân ngữ", "en": "object"}}
+      ],
+      "question": [
+        {
+          "text": "do/does/did",
+          "role": "aux",
+          "label": {"vi": "trợ động từ", "en": "auxiliary"},
+          "options": [{"text": "do"}, {"text": "does"}, {"text": "did"}]
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {"text": "V", "role": "verb", "label": {"vi": "động từ chính", "en": "main verb"}},
+        {"text": "particle", "role": "particle", "label": {"vi": "tiểu từ", "en": "particle"}},
+        {"text": "O", "role": "object", "label": {"vi": "tân ngữ", "en": "object"}}
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "She turned down the job offer.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 10, "role": "verb"},
+        {"start": 11, "end": 15, "role": "particle"},
+        {"start": 16, "end": 29, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "tân ngữ là danh từ nên có thể đứng sau tiểu từ.",
+        "en": "the object is a noun, so it can come after the particle."
+      },
+      "translation": {"vi": "Cô ấy đã từ chối lời đề nghị việc làm.", "en": "She rejected the job offer."}
+    },
+    {
+      "text": "They did not put off the meeting.",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 5, "end": 8, "role": "aux"},
+        {"start": 9, "end": 12, "role": "marker"},
+        {"start": 13, "end": 16, "role": "verb"},
+        {"start": 17, "end": 20, "role": "particle"},
+        {"start": 21, "end": 32, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "phủ định dùng trợ động từ did + not, động từ chính giữ nguyên.",
+        "en": "the negative uses the auxiliary did + not, and the main verb stays in its base form."
+      },
+      "translation": {"vi": "Họ đã không hoãn cuộc họp.", "en": "They did not postpone the meeting."}
+    },
+    {
+      "text": "Did you figure out the answer?",
+      "form": "question",
+      "spans": [
+        {"start": 0, "end": 3, "role": "aux"},
+        {"start": 4, "end": 7, "role": "subject"},
+        {"start": 8, "end": 14, "role": "verb"},
+        {"start": 15, "end": 18, "role": "particle"},
+        {"start": 19, "end": 29, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "câu hỏi đảo trợ động từ lên trước chủ ngữ, động từ chính giữ nguyên.",
+        "en": "the question puts the auxiliary before the subject, and the main verb stays in its base form."
+      },
+      "translation": {"vi": "Bạn đã tìm ra câu trả lời chưa?", "en": "Did you find the answer?"}
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "I picked up it at the station.",
+      "right": "I picked it up at the station.",
+      "reason": {
+        "vi": "Khi tân ngữ là đại từ, tiếng Anh bắt buộc đặt đại từ giữa động từ và tiểu từ; đặt sau tiểu từ nghe không tự nhiên.",
+        "en": "When the object is a pronoun, English requires the pronoun between the verb and the particle; putting it after the particle sounds unnatural."
+      },
+      "error_tag": "naturalness",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "She ___ the application form and sent it.",
+      "options": [
+        {"text": "filled in", "error_tag": null},
+        {"text": "filled it in", "error_tag": "sentence_structure"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Tân ngữ là danh từ (the application form) nên có thể đứng sau tiểu từ: filled in the application form.",
+        "en": "The object is a noun (the application form), so it can come after the particle: filled in the application form."
+      }
+    },
+    {
+      "q": "They ___ the old factory last year.",
+      "options": [
+        {"text": "took down", "error_tag": null},
+        {"text": "took it down", "error_tag": "sentence_structure"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Tân ngữ là danh từ (the old factory) nên có thể đứng sau tiểu từ: took down the old factory.",
+        "en": "The object is a noun (the old factory), so it can come after the particle: took down the old factory."
+      }
+    },
+    {
+      "q": "I can't ___ this word in the dictionary.",
+      "options": [
+        {"text": "look up", "error_tag": null},
+        {"text": "look it up", "error_tag": "sentence_structure"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Tân ngữ là danh từ (this word) nên có thể đứng sau tiểu từ: look up this word.",
+        "en": "The object is a noun (this word), so it can come after the particle: look up this word."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu kể về một việc bạn đã trì hoãn hoặc từ chối, dùng cụm động từ tách rời với tân ngữ là danh từ.",
+      "en": "Write a sentence about something you postponed or turned down, using a separable phrasal verb with a noun object."
+    },
+    "placeholder": "I turned down ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {
+          "role": "verb",
+          "any_of": ["turned", "put", "picked", "filled", "took", "looked", "gave", "brought"]
+        },
+        {"role": "particle", "any_of": ["down", "off", "up", "in", "out", "back", "away", "over"]}
+      ]
+    },
+    "sample": {"text": "I turned down the offer because the salary was too low."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790831365",
+    "generated_at": "2026-10-01T05:09:25Z",
+    "metadata_stale": true
+  },
+  "review": null
+}

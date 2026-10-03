@@ -1,0 +1,208 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk4.a_4_1_5_2.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.linking",
+  "level": {"framework": "hsk3", "value": "4", "rank": 4},
+  "prereqs": ["zh.canon.r5.hsk4_13_topic"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"gf0025": ["gf0025.hsk4.016"]},
+  "point_type": "other",
+  "sequence": 5,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 替", "en": "Chinese grammar: 替"},
+    "native_title": "替",
+    "level": {"framework": "hsk3", "value": "4", "rank": 4},
+    "summary": {
+      "vi": "Giới từ 替 đứng trước danh từ chỉ người để nói rằng bạn làm việc gì đó thay cho người đó.",
+      "en": "The preposition 替 comes before a person to say you do something on that person's behalf."
+    },
+    "sub": {"vi": "làm thay ai", "en": "doing something for someone"},
+    "native_title_pinyin": ["tì"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn làm một việc mà người khác đáng lẽ phải làm, để giúp họ.",
+      "en": "When you do a task that another person would otherwise have to do, in order to help them."
+    },
+    {
+      "vi": "Khi bạn nói về việc mua, trả tiền, mang, gửi hoặc dịch giúp ai đó.",
+      "en": "When you talk about buying, paying, carrying, sending, or translating something for someone."
+    },
+    {
+      "vi": "Khi người được giúp là người, không phải một vật hay một việc.",
+      "en": "When the person you help is a person, not a thing or an action."
+    },
+    {
+      "vi": "Khi bạn muốn câu nói rõ ai là người nhận lợi ích từ hành động của bạn.",
+      "en": "When you want the sentence to make clear who benefits from your action."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "替",
+        "role": "marker",
+        "label": {"vi": "giới từ 替", "en": "preposition 替"},
+        "pinyin": ["tì"]
+      },
+      {
+        "text": "人",
+        "role": "object",
+        "label": {"vi": "người được làm thay", "en": "person helped"},
+        "pinyin": ["rén"]
+      },
+      {
+        "text": "动词短语",
+        "role": "verb",
+        "label": {"vi": "cụm động từ", "en": "verb phrase"},
+        "pinyin": ["dòng", "cí", "duǎn", "yǔ"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "我替妈妈买菜。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "marker"},
+        {"start": 2, "end": 4, "role": "object"},
+        {"start": 4, "end": 6, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "替妈妈 cho biết việc mua thức ăn là làm thay cho mẹ.",
+        "en": "替妈妈 shows that the grocery shopping is done on Mom's behalf."
+      },
+      "translation": {"vi": "Tôi mua thức ăn thay mẹ.", "en": "I buy groceries for my mother."},
+      "pinyin": ["wǒ", "tì", "mā", "ma", "mǎi", "cài", ""]
+    },
+    {
+      "text": "他替朋友还书。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "marker"},
+        {"start": 2, "end": 4, "role": "object"},
+        {"start": 4, "end": 6, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "替朋友 cho biết anh ấy trả sách thay cho bạn.",
+        "en": "替朋友 shows that he returns the book on his friend's behalf."
+      },
+      "translation": {"vi": "Anh ấy trả sách thay bạn.", "en": "He returns the book for his friend."},
+      "pinyin": ["tā", "tì", "péng", "you", "huán", "shū", ""]
+    },
+    {
+      "text": "我们替老师拿书。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 3, "role": "marker"},
+        {"start": 3, "end": 5, "role": "object"},
+        {"start": 5, "end": 7, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "替老师 cho biết chúng tôi cầm sách thay cho giáo viên.",
+        "en": "替老师 shows that we carry the books on the teacher's behalf."
+      },
+      "translation": {"vi": "Chúng tôi cầm sách thay giáo viên.", "en": "We carry the books for the teacher."},
+      "pinyin": ["wǒ", "men", "tì", "lǎo", "shī", "ná", "shū", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "我替妈妈我买菜。",
+      "right": "我替妈妈买菜。",
+      "reason": {
+        "vi": "Người học đặt chủ ngữ một lần nữa sau 替妈妈, nhưng 替妈妈 đã nằm giữa chủ ngữ và động từ nên không được lặp chủ ngữ.",
+        "en": "The learner repeats the subject after 替妈妈, but 替妈妈 already sits between the subject and the verb, so the subject must not appear again."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong_pinyin": ["wǒ", "tì", "mā", "ma", "wǒ", "mǎi", "cài", ""],
+      "right_pinyin": ["wǒ", "tì", "mā", "ma", "mǎi", "cài", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "我___妈妈买菜。",
+      "options": [
+        {"text": "替", "error_tag": null, "pinyin": ["tì"]},
+        {"text": "给", "error_tag": "word_choice", "pinyin": ["gěi"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "替妈妈 nghĩa là mua thay cho mẹ; 给妈妈 nghĩa là mua cho mẹ, không nhấn mạnh việc làm thay.",
+        "en": "替妈妈 means buying on Mom's behalf; 给妈妈 means buying for Mom, without the sense of doing her task."
+      },
+      "q_pinyin": ["wǒ", "", "", "", "mā", "ma", "mǎi", "cài", ""]
+    },
+    {
+      "q": "他___朋友还书。",
+      "options": [
+        {"text": "替", "error_tag": null, "pinyin": ["tì"]},
+        {"text": "对", "error_tag": "word_choice", "pinyin": ["duì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "替朋友 nghĩa là trả sách thay cho bạn; 对朋友 nghĩa là đối với bạn, không nói việc làm thay.",
+        "en": "替朋友 means returning the book on the friend's behalf; 对朋友 means toward the friend and does not express doing the task for them."
+      },
+      "q_pinyin": ["tā", "", "", "", "péng", "you", "huán", "shū", ""]
+    },
+    {
+      "q": "我们___老师拿书。",
+      "options": [
+        {"text": "替", "error_tag": null, "pinyin": ["tì"]},
+        {"text": "跟", "error_tag": "word_choice", "pinyin": ["gēn"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "替老师 nghĩa là cầm sách thay cho giáo viên; 跟老师 nghĩa là cùng với giáo viên, không phải làm thay.",
+        "en": "替老师 means carrying the books on the teacher's behalf; 跟老师 means together with the teacher, not instead of them."
+      },
+      "q_pinyin": ["wǒ", "men", "", "", "", "lǎo", "shī", "ná", "shū", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu kể việc bạn làm thay cho một người trong gia đình, dùng 替 + người + động từ.",
+      "en": "Write one sentence about something you do for a family member, using 替 + person + verb."
+    },
+    "placeholder": "我替……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "marker", "any_of": ["替"]},
+        {"role": "object", "any_of": ["妈妈", "爸爸", "朋友", "老师", "姐姐", "哥哥", "弟弟", "妹妹", "奶奶", "爷爷"]},
+        {"role": "verb", "any_of": ["买菜", "买书", "拿书", "还书", "做饭", "洗衣服", "打扫房间", "寄信", "付钱", "翻译"]}
+      ]
+    },
+    "sample": {"text": "我替妈妈买菜。", "pinyin": ["wǒ", "tì", "mā", "ma", "mǎi", "cài", ""]},
+    "placeholder_pinyin": ["wǒ", "tì", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790833144",
+    "generated_at": "2026-10-01T05:39:04Z",
+    "metadata_stale": true
+  },
+  "review": null
+}

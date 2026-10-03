@@ -1,0 +1,234 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b2.025",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.verb_patterns",
+  "level": {"framework": "cefr", "value": "B2", "rank": 4},
+  "prereqs": [],
+  "contrasts": [],
+  "error_tags": ["tense", "sentence_structure", "word_form"],
+  "source_refs": {"r5": ["b2-perfect-participle-clauses"]},
+  "point_type": "tense_aspect",
+  "sequence": 3,
+  "aliases": ["b2-perfect-participle-clauses"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Perfect phân từ clauses", "en": "Perfect participle clauses"},
+    "native_title": "Perfect participle clauses",
+    "level": {"framework": "cefr", "value": "B2", "rank": 4},
+    "summary": {
+      "vi": "Mệnh đề phân từ hoàn thành dùng having + quá khứ phân từ (hoặc having been + quá khứ phân từ) để diễn tả một hành động xảy ra trước hành động chính.",
+      "en": "A perfect participle clause uses having + past participle (or having been + past participle) to show an action that happened before the main action."
+    },
+    "sub": {"vi": "hành động trước", "en": "earlier action"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn kể một hành động đã hoàn thành trước một hành động khác trong quá khứ, thay vì dùng after + mệnh đề đầy đủ.",
+      "en": "When you want to mention a completed action that happened before another past action, instead of using a full after-clause."
+    },
+    {
+      "vi": "Khi chủ ngữ của hành động trước và hành động sau là cùng một người hoặc cùng một vật.",
+      "en": "When the subject of the earlier action and the later action is the same person or thing."
+    },
+    {
+      "vi": "Khi hành động trước mang nghĩa bị động, dùng having been + quá khứ phân từ.",
+      "en": "When the earlier action is passive, use having been + past participle."
+    },
+    {
+      "vi": "Trong văn viết trang trọng hoặc tường thuật, để câu gọn hơn và mạch lạc hơn.",
+      "en": "In formal or narrative writing, to make the sentence shorter and more cohesive."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "Having",
+        "role": "aux",
+        "label": {"vi": "trợ động từ having", "en": "auxiliary having"}
+      },
+      {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}},
+      {
+        "text": "S",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ mệnh đề chính", "en": "main-clause subject"}
+      },
+      {"text": "V", "role": "verb", "label": {"vi": "động từ chính", "en": "main verb"}}
+    ],
+    "illustration": {"kind": "timeline", "timeline": {"shape": "point_past"}}
+  },
+  "examples": [
+    {
+      "text": "Having completed the training, she applied for the role.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 6, "role": "aux"},
+        {"start": 7, "end": 16, "role": "verb"},
+        {"start": 31, "end": 34, "role": "subject"},
+        {"start": 35, "end": 42, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Cô ấy hoàn thành đào tạo trước, rồi mới ứng tuyển.",
+        "en": "She completed the training first, then applied."
+      },
+      "translation": {
+        "vi": "Sau khi hoàn thành đào tạo, cô ấy ứng tuyển vào vị trí đó.",
+        "en": "After completing the training, she applied for the role."
+      }
+    },
+    {
+      "text": "Having lost his key, he had to wait outside.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 6, "role": "aux"},
+        {"start": 7, "end": 11, "role": "verb"},
+        {"start": 21, "end": 23, "role": "subject"},
+        {"start": 24, "end": 27, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Việc mất chìa khóa xảy ra trước, dẫn đến việc phải chờ bên ngoài.",
+        "en": "Losing the key happened first, which led to waiting outside."
+      },
+      "translation": {
+        "vi": "Vì làm mất chìa khóa, anh ấy phải chờ bên ngoài.",
+        "en": "Because he had lost his key, he had to wait outside."
+      }
+    },
+    {
+      "text": "Having been informed of the change, we adjusted the plan.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 6, "role": "aux"},
+        {"start": 7, "end": 11, "role": "aux"},
+        {"start": 12, "end": 20, "role": "verb"},
+        {"start": 36, "end": 38, "role": "subject"},
+        {"start": 39, "end": 47, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Chúng tôi được thông báo trước, rồi mới điều chỉnh kế hoạch.",
+        "en": "We were informed first, then adjusted the plan."
+      },
+      "translation": {
+        "vi": "Sau khi được thông báo về thay đổi, chúng tôi điều chỉnh kế hoạch.",
+        "en": "After being informed of the change, we adjusted the plan."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "Having finished the report, the email was sent.",
+      "right": "Having finished the report, she sent the email.",
+      "reason": {
+        "vi": "Chủ ngữ của mệnh đề phân từ hoàn thành phải trùng với chủ ngữ mệnh đề chính. Trong câu sai, 'the email' không thể là người hoàn thành báo cáo.",
+        "en": "The subject of the perfect participle clause must be the same as the main-clause subject. In the wrong sentence, 'the email' cannot be the one who finished the report."
+      },
+      "error_tag": "sentence_structure",
+      "l1": ["vi"]
+    },
+    {
+      "wrong": "Having been complete the task, he left.",
+      "right": "Having completed the task, he left.",
+      "reason": {
+        "vi": "Sau 'having been' phải là quá khứ phân từ (completed), không phải động từ nguyên mẫu (complete). Câu này cũng sai vì hành động 'hoàn thành' là chủ động, không cần dạng bị động.",
+        "en": "After 'having been' we need a past participle (completed), not a base verb (complete). The sentence is also wrong because 'complete the task' is active, so the passive form is not needed."
+      },
+      "error_tag": "word_form",
+      "l1": ["vi"]
+    },
+    {
+      "wrong": "Having finished the report, she sends it.",
+      "right": "Having finished the report, she sent it.",
+      "reason": {
+        "vi": "Mệnh đề phân từ hoàn thành diễn tả hành động trước một hành động quá khứ, nên động từ chính cũng phải ở quá khứ (sent), không dùng hiện tại (sends).",
+        "en": "A perfect participle clause describes an action before a past action, so the main verb must also be past (sent), not present (sends)."
+      },
+      "error_tag": "tense",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "___ the report, she sent it to the manager.",
+      "options": [
+        {"text": "Having finished", "error_tag": null},
+        {"text": "Having finish", "error_tag": "word_form"},
+        {"text": "Have finished", "error_tag": "word_form"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 'having' phải là quá khứ phân từ 'finished', không phải động từ nguyên mẫu hay dạng chia 'have'.",
+        "en": "After 'having' we need the past participle 'finished', not the base form or the finite form 'have'."
+      }
+    },
+    {
+      "q": "Having been ___ about the delay, we left later.",
+      "options": [{"text": "informed", "error_tag": null}, {"text": "inform", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Cấu trúc bị động 'having been' cần quá khứ phân từ 'informed'.",
+        "en": "The passive structure 'having been' requires the past participle 'informed'."
+      }
+    },
+    {
+      "q": "Having lost his passport, ___ had to go to the embassy.",
+      "options": [{"text": "he", "error_tag": null}, {"text": "it", "error_tag": "sentence_structure"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Chủ ngữ mệnh đề chính phải là người thực hiện hành động 'lost', tức 'he', không phải 'it'.",
+        "en": "The main-clause subject must be the one who did the losing, so 'he', not 'it'."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu kể về một việc bạn đã làm xong trước một việc khác trong quá khứ, dùng 'Having + quá khứ phân từ'.",
+      "en": "Write a sentence about something you had done before another past action, using 'Having + past participle'."
+    },
+    "placeholder": "Having finished my homework, I ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "aux", "any_of": ["Having"]},
+        {
+          "role": "verb",
+          "regex": "\\b\\w+ed\\b|\\b(?:done|made|seen|been|gone|taken|written|read|lost|found|left|met|sent|built|bought|caught|chosen|driven|eaten|given|known|paid|put|run|said|sold|shown|spoken|told|thought|understood|won)\\b"
+        }
+      ]
+    },
+    "sample": {"text": "Having finished my homework, I went out with my friends."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790831236",
+    "generated_at": "2026-10-01T05:07:16Z",
+    "r5_source": {
+      "ids": ["b2-perfect-participle-clauses"],
+      "content_version": 2,
+      "content_hash": "d374d8bf296f1abdd83fcd9c8809df3b44e090646c7169aac8457f1db3979d21",
+      "corrections": [
+        {
+          "r5_id": "b2-perfect-participle-clauses",
+          "issue": "R5's example 'Having been complete the task, he left.' is ungrammatical: after 'having been' the verb must be a past participle, and the passive is not appropriate for an active action.",
+          "fix": "Replaced with 'Having completed the task, he left.' and used the error as a common mistake with the correct form."
+        },
+        {
+          "r5_id": "b2-perfect-participle-clauses",
+          "issue": "R5's mistake 'Having finished the report, the email was sent.' is a dangling participle; the correction given was 'Having finished the report, she sent the email.' but the reason was not fully explained for learners.",
+          "fix": "Kept the correction and wrote a clear reason in both locales explaining subject coreference."
+        },
+        {
+          "r5_id": "b2-perfect-participle-clauses",
+          "issue": "R5 did not include a tense mistake, but Vietnamese learners often use a present-tense main verb after a perfect participle clause.",
+          "fix": "Added a common mistake 'Having finished the report, she sends it.' with the correction 'Having finished the report, she sent it.' and a tense explanation."
+        }
+      ]
+    }
+  },
+  "review": null
+}

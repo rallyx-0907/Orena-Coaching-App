@@ -1,0 +1,301 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk1.a_1_1_1.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.location",
+  "level": {"framework": "hsk3", "value": "1", "rank": 1},
+  "prereqs": [],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"gf0025": ["gf0025.hsk1.001"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {
+      "vi": "Danh từ: 方位名词：上、下、里、外、前、后、左、右、东、南、西、北；上边、下边、里边、外边、前边、后边、左边、右边、东边、南边、西边、北边",
+      "en": "Nouns: 方位名词：上、下、里、外、前、后、左、右、东、南、西、北；上边、下边、里边、外边、前边、后边、左边、右边、东边、南边、西边、北边"
+    },
+    "native_title": "方位名词：上、下、里、外、前、后、左、右、东、南、西、北；上边、下边、里边、外边、前边、后边、左边、右边、东边、南边、西边、北边",
+    "level": {"framework": "hsk3", "value": "1", "rank": 1},
+    "summary": {
+      "vi": "Nhóm từ chỉ phương hướng như 上、下、里、外、前、后、左、右、东、南、西、北 (và dạng có 边) dùng để nói vị trí của người hay vật.",
+      "en": "Direction words such as 上, 下, 里, 外, 前, 后, 左, 右, 东, 南, 西, 北 (and their 边 forms) are used to say where a person or thing is."
+    },
+    "sub": {"vi": "vị trí, phương hướng", "en": "location words"},
+    "native_title_pinyin": [
+      "fāng",
+      "wèi",
+      "míng",
+      "cí",
+      "",
+      "shàng",
+      "",
+      "xià",
+      "",
+      "lǐ",
+      "",
+      "wài",
+      "",
+      "qián",
+      "",
+      "hòu",
+      "",
+      "zuǒ",
+      "",
+      "yòu",
+      "",
+      "dōng",
+      "",
+      "nán",
+      "",
+      "xī",
+      "",
+      "běi",
+      "",
+      "shàng",
+      "biān",
+      "",
+      "xià",
+      "biān",
+      "",
+      "lǐ",
+      "biān",
+      "",
+      "wài",
+      "biān",
+      "",
+      "qián",
+      "biān",
+      "",
+      "hòu",
+      "biān",
+      "",
+      "zuǒ",
+      "biān",
+      "",
+      "yòu",
+      "biān",
+      "",
+      "dōng",
+      "biān",
+      "",
+      "nán",
+      "biān",
+      "",
+      "xī",
+      "biān",
+      "",
+      "běi",
+      "biān"
+    ]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói một vật ở trên, dưới, trong hay ngoài một vật khác.",
+      "en": "When you want to say something is on, under, in, or outside another thing."
+    },
+    {
+      "vi": "Khi muốn nói vị trí tương đối so với người nói: trước, sau, bên trái, bên phải.",
+      "en": "When you want to give a position relative to the speaker: front, back, left, right."
+    },
+    {
+      "vi": "Khi muốn nói một nơi ở hướng đông, nam, tây hay bắc.",
+      "en": "When you want to say a place is to the east, south, west, or north."
+    },
+    {
+      "vi": "Khi từ chỉ phương hướng đứng sau một danh từ để xác định chỗ cụ thể.",
+      "en": "When the direction word follows a noun to pin down the exact spot."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "N",
+        "role": "object",
+        "label": {"vi": "danh từ chỉ vật/mốc", "en": "noun (the reference thing)"},
+        "pinyin": [""]
+      },
+      {
+        "text": "方位词",
+        "role": "place",
+        "label": {"vi": "từ phương hướng", "en": "direction word"},
+        "options": [
+          {"text": "上", "pinyin": ["shàng"]},
+          {"text": "下", "pinyin": ["xià"]},
+          {"text": "里", "pinyin": ["lǐ"]},
+          {"text": "外", "pinyin": ["wài"]},
+          {"text": "前", "pinyin": ["qián"]},
+          {"text": "后", "pinyin": ["hòu"]},
+          {"text": "左", "pinyin": ["zuǒ"]},
+          {"text": "右", "pinyin": ["yòu"]},
+          {"text": "东", "pinyin": ["dōng"]},
+          {"text": "南", "pinyin": ["nán"]},
+          {"text": "西", "pinyin": ["xī"]},
+          {"text": "北", "pinyin": ["běi"]},
+          {"text": "上边", "pinyin": ["shàng", "biān"]},
+          {"text": "下边", "pinyin": ["xià", "biān"]},
+          {"text": "里边", "pinyin": ["lǐ", "biān"]},
+          {"text": "外边", "pinyin": ["wài", "biān"]},
+          {"text": "前边", "pinyin": ["qián", "biān"]},
+          {"text": "后边", "pinyin": ["hòu", "biān"]},
+          {"text": "左边", "pinyin": ["zuǒ", "biān"]},
+          {"text": "右边", "pinyin": ["yòu", "biān"]},
+          {"text": "东边", "pinyin": ["dōng", "biān"]},
+          {"text": "南边", "pinyin": ["nán", "biān"]},
+          {"text": "西边", "pinyin": ["xī", "biān"]},
+          {"text": "北边", "pinyin": ["běi", "biān"]}
+        ],
+        "pinyin": ["fāng", "wèi", "cí"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "书在桌子上。",
+      "form": "affirmative",
+      "spans": [{"start": 2, "end": 4, "role": "object"}, {"start": 4, "end": 5, "role": "place"}],
+      "annotation": {
+        "vi": "桌子 là vật mốc, 上 cho biết vị trí ở trên bề mặt.",
+        "en": "桌子 is the reference thing; 上 puts the book on its surface."
+      },
+      "translation": {"vi": "Quyển sách ở trên bàn.", "en": "The book is on the table."},
+      "pinyin": ["shū", "zài", "zhuō", "zi", "shàng", ""]
+    },
+    {
+      "text": "猫在椅子下边。",
+      "form": "affirmative",
+      "spans": [{"start": 2, "end": 4, "role": "object"}, {"start": 4, "end": 6, "role": "place"}],
+      "annotation": {
+        "vi": "下边 là dạng có 边 của 下, nghĩa là ở dưới.",
+        "en": "下边 is the 边 form of 下, meaning underneath."
+      },
+      "translation": {"vi": "Con mèo ở dưới ghế.", "en": "The cat is under the chair."},
+      "pinyin": ["māo", "zài", "yǐ", "zi", "xià", "biān", ""]
+    },
+    {
+      "text": "学校在公园东边。",
+      "form": "affirmative",
+      "spans": [{"start": 3, "end": 5, "role": "object"}, {"start": 5, "end": 7, "role": "place"}],
+      "annotation": {
+        "vi": "东边 cho biết trường học nằm ở phía đông của công viên.",
+        "en": "东边 says the school lies to the east of the park."
+      },
+      "translation": {"vi": "Trường học ở phía đông công viên.", "en": "The school is east of the park."},
+      "pinyin": ["xué", "xiào", "zài", "gōng", "yuán", "dōng", "biān", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "书在桌子。",
+      "right": "书在桌子上。",
+      "reason": {
+        "vi": "桌子 chỉ là vật mốc, không tự nói vị trí; phải thêm từ phương hướng như 上 để chỉ chỗ cụ thể.",
+        "en": "桌子 is only the reference thing and does not give a position by itself; a direction word like 上 is needed to say where exactly."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong_pinyin": ["shū", "zài", "zhuō", "zi", ""],
+      "right_pinyin": ["shū", "zài", "zhuō", "zi", "shàng", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "书在桌子___。",
+      "options": [
+        {"text": "上", "error_tag": null, "pinyin": ["shàng"]},
+        {"text": "里", "error_tag": "word_choice", "pinyin": ["lǐ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sách nằm trên bề mặt bàn nên dùng 上, không dùng 里 (trong).",
+        "en": "The book is on the table's surface, so 上 is correct; 里 (inside) does not fit."
+      },
+      "q_pinyin": ["shū", "zài", "zhuō", "zi", "", "", "", ""]
+    },
+    {
+      "q": "猫在椅子___。",
+      "options": [
+        {"text": "下边", "error_tag": null, "pinyin": ["xià", "biān"]},
+        {"text": "上边", "error_tag": "word_choice", "pinyin": ["shàng", "biān"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Mèo ở dưới ghế nên dùng 下边; 上边 là ở trên, không đúng.",
+        "en": "The cat is under the chair, so 下边 is right; 上边 means on top and does not fit."
+      },
+      "q_pinyin": ["māo", "zài", "yǐ", "zi", "", "", "", ""]
+    },
+    {
+      "q": "学校在公园___。",
+      "options": [
+        {"text": "东边", "error_tag": null, "pinyin": ["dōng", "biān"]},
+        {"text": "东", "error_tag": "other", "pinyin": ["dōng"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau danh từ mốc 公园, từ phương hướng thường dùng dạng có 边: 东边.",
+        "en": "After the reference noun 公园, the direction word normally takes the 边 form: 东边."
+      },
+      "q_pinyin": ["xué", "xiào", "zài", "gōng", "yuán", "", "", "", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu nói một vật quen thuộc ở đâu, dùng danh từ mốc + từ phương hướng.",
+      "en": "Write one sentence saying where a familiar thing is, using a reference noun plus a direction word."
+    },
+    "placeholder": "我的书在……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "object", "any_of": ["桌子", "椅子", "公园", "学校", "书", "猫"]},
+        {
+          "role": "place",
+          "any_of": [
+            "上",
+            "下",
+            "里",
+            "外",
+            "前",
+            "后",
+            "左",
+            "右",
+            "东",
+            "南",
+            "西",
+            "北",
+            "上边",
+            "下边",
+            "里边",
+            "外边",
+            "前边",
+            "后边",
+            "左边",
+            "右边",
+            "东边",
+            "南边",
+            "西边",
+            "北边"
+          ]
+        }
+      ]
+    },
+    "sample": {"text": "我的书在桌子上。", "pinyin": ["wǒ", "de", "shū", "zài", "zhuō", "zi", "shàng", ""]},
+    "placeholder_pinyin": ["wǒ", "de", "shū", "zài", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790831740",
+    "generated_at": "2026-10-01T05:15:40Z"
+  },
+  "review": null
+}

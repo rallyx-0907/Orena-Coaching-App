@@ -1,0 +1,265 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk5_1_topic",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.linking",
+  "level": {"framework": "hsk3", "value": "5", "rank": 5},
+  "prereqs": ["zh.wh_universal"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["zh-hsk5-1-topic"], "gf0025": ["gf0025.hsk4.043", "gf0025.hsk5.060", "gf0025.hsk6.046"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["zh-hsk5-1-topic"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 不是⋯⋯，而是⋯⋯", "en": "Chinese grammar: 不是⋯⋯，而是⋯⋯"},
+    "native_title": "不是⋯⋯，而是⋯⋯",
+    "level": {"framework": "hsk3", "value": "5", "rank": 5},
+    "summary": {
+      "vi": "不是⋯⋯，而是⋯⋯ dùng để bác bỏ một khả năng A và khẳng định khả năng đúng là B, sửa lại điều người nghe có thể hiểu sai.",
+      "en": "不是⋯⋯，而是⋯⋯ rejects one possibility A and asserts the correct one B, correcting what the listener might have assumed."
+    },
+    "sub": {"vi": "bác bỏ rồi sửa", "en": "reject then correct"},
+    "native_title_pinyin": ["bú", "shì", "", "", "", "ér", "shì", "", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi ai đó hiểu sai nguyên nhân, mục đích hoặc bản chất của sự việc và bạn muốn nói rõ điều đúng.",
+      "en": "When someone has misread the cause, purpose or nature of something and you want to state what is actually true."
+    },
+    {
+      "vi": "Khi hai khả năng A và B loại trừ nhau, chỉ một trong hai đúng.",
+      "en": "When two possibilities A and B are mutually exclusive, so only one of them is true."
+    },
+    {
+      "vi": "Khi A và B là hai lựa chọn cùng loại, có thể so sánh trực tiếp với nhau.",
+      "en": "When A and B are alternatives of the same kind and can be directly compared."
+    },
+    {
+      "vi": "Khi cần nhấn mạnh vào vế sau B, không phải vào vế bị bác bỏ A.",
+      "en": "When you need the emphasis to fall on the second part B, not on the rejected part A."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "不是",
+        "role": "marker",
+        "label": {"vi": "dấu bác bỏ", "en": "rejection marker"},
+        "pinyin": ["bù", "shì"]
+      },
+      {
+        "text": "A",
+        "role": "other",
+        "label": {"vi": "nội dung bị bác bỏ", "en": "rejected content"},
+        "pinyin": [""]
+      },
+      {
+        "text": "而是",
+        "role": "connector",
+        "label": {"vi": "dấu nối chọn B", "en": "selection connector"},
+        "pinyin": ["ér", "shì"]
+      },
+      {
+        "text": "B",
+        "role": "other",
+        "label": {"vi": "nội dung được chọn", "en": "selected content"},
+        "pinyin": [""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "问题不是价格，而是时间。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 4, "role": "marker"},
+        {"start": 4, "end": 6, "role": "other"},
+        {"start": 7, "end": 9, "role": "connector"},
+        {"start": 9, "end": 11, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Bác bỏ 'giá', khẳng định vấn đề thật là 'thời gian'.",
+        "en": "Rejects 'price' and asserts that the real issue is 'time'."
+      },
+      "translation": {
+        "vi": "Vấn đề không phải giá mà là thời gian.",
+        "en": "The problem is not the price, but the time."
+      },
+      "pinyin": ["wèn", "tí", "bù", "shì", "jià", "gé", "", "ér", "shì", "shí", "jiān", ""]
+    },
+    {
+      "text": "他不是不想去，而是没有时间。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 3, "role": "marker"},
+        {"start": 3, "end": 6, "role": "other"},
+        {"start": 7, "end": 9, "role": "connector"},
+        {"start": 9, "end": 13, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Bác bỏ lý do 'không muốn đi', khẳng định lý do thật là 'không có thời gian'.",
+        "en": "Rejects the reason 'does not want to go' and asserts the real reason is 'has no time'."
+      },
+      "translation": {
+        "vi": "Không phải anh ấy không muốn đi mà là không có thời gian.",
+        "en": "It is not that he does not want to go, but that he has no time."
+      },
+      "pinyin": ["tā", "bù", "shì", "bù", "xiǎng", "qù", "", "ér", "shì", "méi", "yǒu", "shí", "jiān", ""]
+    },
+    {
+      "text": "这不是失败，而是一次学习机会。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 3, "role": "marker"},
+        {"start": 3, "end": 5, "role": "other"},
+        {"start": 6, "end": 8, "role": "connector"},
+        {"start": 8, "end": 14, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Bác bỏ cách gọi 'thất bại', khẳng định bản chất thật là 'cơ hội học tập'.",
+        "en": "Rejects the label 'failure' and asserts the real nature is 'a learning opportunity'."
+      },
+      "translation": {
+        "vi": "Đây không phải thất bại mà là một cơ hội học tập.",
+        "en": "This is not a failure, but a learning opportunity."
+      },
+      "pinyin": ["zhè", "bù", "shì", "shī", "bài", "", "ér", "shì", "yí", "cì", "xué", "xí", "jī", "huì", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "问题不是价格，而且时间。",
+      "right": "问题不是价格，而是时间。",
+      "reason": {
+        "vi": "Người học nhầm 而是 với 而且. 而且 dùng để thêm một ý cùng đúng, còn 而是 dùng để chọn ý đúng sau khi bác bỏ ý sai.",
+        "en": "The learner confuses 而是 with 而且. 而且 adds another true point, while 而是 selects the correct one after rejecting the wrong one."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong_pinyin": ["wèn", "tí", "bù", "shì", "jià", "gé", "", "ér", "qiě", "shí", "jiān", ""],
+      "right_pinyin": ["wèn", "tí", "bù", "shì", "jià", "gé", "", "ér", "shì", "shí", "jiān", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "问题不是价格，___时间。",
+      "options": [
+        {"text": "而是", "error_tag": null, "pinyin": ["ér", "shì"]},
+        {"text": "而且", "error_tag": "conjunction", "pinyin": ["ér", "qiě"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau khi bác bỏ A bằng 不是, ta chọn B bằng 而是. 而且 sẽ biến câu thành phép cộng hai ý cùng đúng.",
+        "en": "After rejecting A with 不是, we select B with 而是. 而且 would turn the sentence into an addition of two true points."
+      },
+      "q_pinyin": ["wèn", "tí", "bù", "shì", "jià", "gé", "", "", "", "", "shí", "jiān", ""]
+    },
+    {
+      "q": "他不是不想去，___没有时间。",
+      "options": [
+        {"text": "而是", "error_tag": null, "pinyin": ["ér", "shì"]},
+        {"text": "但是", "error_tag": "conjunction", "pinyin": ["dàn", "shì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "但是 chỉ đối lập hai mệnh đề, không dùng để chọn B sau khi bác bỏ A. Ở đây cần 而是.",
+        "en": "但是 contrasts two clauses; it does not select B after rejecting A. Here 而是 is required."
+      },
+      "q_pinyin": ["tā", "bù", "shì", "bù", "xiǎng", "qù", "", "", "", "", "méi", "yǒu", "shí", "jiān", ""]
+    },
+    {
+      "q": "这不是失败，___一次学习机会。",
+      "options": [
+        {"text": "而是", "error_tag": null, "pinyin": ["ér", "shì"]},
+        {"text": "就是", "error_tag": "word_choice", "pinyin": ["jiù", "shì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "就是 khẳng định mạnh một điều, không mang nghĩa bác bỏ A rồi chọn B. Cấu trúc này cần 而是.",
+        "en": "就是 strongly asserts one thing; it does not reject A and select B. This structure needs 而是."
+      },
+      "q_pinyin": ["zhè", "bù", "shì", "shī", "bài", "", "", "", "", "yí", "cì", "xué", "xí", "jī", "huì", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về bản thân bạn, bác bỏ một điều người khác có thể nghĩ và nêu điều đúng, dùng 不是⋯⋯，而是⋯⋯.",
+      "en": "Write one sentence about yourself that rejects something others might assume and states what is true, using 不是⋯⋯，而是⋯⋯."
+    },
+    "placeholder": "我学习中文不是……，而是……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "marker", "any_of": ["不是"]}, {"role": "connector", "any_of": ["而是"]}]
+    },
+    "sample": {
+      "text": "我学习中文不是为考试，而是为工作。",
+      "pinyin": [
+        "wǒ",
+        "xué",
+        "xí",
+        "zhōng",
+        "wén",
+        "bù",
+        "shì",
+        "wèi",
+        "kǎo",
+        "shì",
+        "",
+        "ér",
+        "shì",
+        "wèi",
+        "gōng",
+        "zuò",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["wǒ", "xué", "xí", "zhōng", "wén", "bù", "shì", "", "", "", "ér", "shì", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790833553",
+    "generated_at": "2026-10-01T05:45:53Z",
+    "r5_source": {
+      "ids": ["zh-hsk5-1-topic"],
+      "content_version": 2,
+      "content_hash": "ad3b62fcbfc3abed7ea997e2e49c8cbb8d5b75624487c3431f23971811ead09a",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk5-1-topic",
+          "issue": "Pinyin của 问题 viết là 'Wèn tí' nhưng 题 đọc là tí ở đây không đúng; phải là tí? Thực tế 题 là tí trong 问题, nhưng R5 viết 'Wèn tí bú shì' với 不 là 'bú' thay vì 'bù'.",
+          "fix": "Sửa pinyin thành Wèn tí bù shì jià gé, ér shì shí jiān, giữ đúng thanh điệu của 不 trước 是."
+        },
+        {
+          "r5_id": "zh-hsk5-1-topic",
+          "issue": "Câu sai '他不是会中文，而是会英文，如果 cả hai true' trộn tiếng Việt vào câu tiếng Trung và không phải lỗi người học thật.",
+          "fix": "Thay bằng lỗi thật: dùng 而且 thay cho 而是 trong cặp bác bỏ – chọn, ví dụ 问题不是价格，而且时间。"
+        },
+        {
+          "r5_id": "zh-hsk5-1-topic",
+          "issue": "R5 không có công thức dạng slot, không có spans, không có quick practice và personal production.",
+          "fix": "Bổ sung formula 主语 + 不是 + A + 而是 + B, spans cho từng ví dụ, 3 câu quick practice và thẻ Try it yourself."
+        }
+      ]
+    },
+    "metadata_stale": true
+  },
+  "review": null
+}

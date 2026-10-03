@@ -1,0 +1,280 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.measure_words.basic",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.quantity",
+  "level": {"framework": "hsk3", "value": "1", "rank": 1},
+  "prereqs": ["zh.demonstratives"],
+  "contrasts": ["zh.demonstratives", "zh.liang_er"],
+  "error_tags": ["measure_word"],
+  "source_refs": {
+    "r5": ["zh-hsk1-8-s-v-l-ng-t-c-b-n"],
+    "gf0025": [
+      "gf0025.hsk1.008",
+      "gf0025.hsk2.010",
+      "gf0025.hsk2.011",
+      "gf0025.hsk2.012",
+      "gf0025.hsk3.009",
+      "gf0025.hsk3.010",
+      "gf0025.hsk3.011",
+      "gf0025.hsk3.033",
+      "gf0025.hsk4.003",
+      "gf0025.hsk4.004",
+      "gf0025.hsk4.029",
+      "gf0025.hsk4.061",
+      "gf0025.hsk4.065",
+      "gf0025.hsk6.004",
+      "gf0025.hsk6.005",
+      "gf0025.hsk6.024",
+      "gf0025.hsk6.035",
+      "gf0025.hsk7_9.004",
+      "gf0025.hsk7_9.059"
+    ]
+  },
+  "point_type": "word_order",
+  "sequence": 1,
+  "aliases": ["zh-hsk1-8-s-v-l-ng-t-c-b-n"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Lượng từ cơ bản (个, 本, 口...)", "en": "Basic measure words"},
+    "native_title": "量词",
+    "level": {"framework": "hsk3", "value": "1", "rank": 1},
+    "summary": {
+      "vi": "Trong tiếng Trung, khi đếm danh từ, số lượng thường không đứng trực tiếp trước danh từ mà cần một lượng từ (classifier) ở giữa.",
+      "en": "In Chinese, when counting nouns, a number usually cannot stand directly before the noun; a measure word (classifier) is needed in between."
+    },
+    "sub": {"vi": "số + lượng từ", "en": "number + classifier"},
+    "native_title_pinyin": ["liàng", "cí"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói số lượng cụ thể của một danh từ đếm được, ví dụ một người, hai quyển sách.",
+      "en": "When you want to give a specific quantity of a countable noun, for example one person, two books."
+    },
+    {
+      "vi": "Khi danh từ đứng sau số và bạn cần chọn lượng từ phù hợp với loại danh từ đó.",
+      "en": "When a noun follows a number and you need to choose the classifier that fits that type of noun."
+    },
+    {
+      "vi": "Khi bạn muốn hỏi hoặc trả lời về số lượng trong câu có 几 hoặc 多少.",
+      "en": "When you want to ask or answer about quantity in a sentence with 几 or 多少."
+    },
+    {
+      "vi": "Khi bạn dùng 这/那/哪 trước danh từ, lượng từ vẫn cần đứng giữa.",
+      "en": "When you use 这/那/哪 before a noun, the classifier still needs to stand in between."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "数词",
+        "role": "other",
+        "label": {"vi": "số từ", "en": "number"},
+        "pinyin": ["shù", "cí"]
+      },
+      {
+        "text": "量词",
+        "role": "classifier",
+        "label": {"vi": "lượng từ", "en": "classifier"},
+        "options": [
+          {"text": "个", "pinyin": ["gè"]},
+          {"text": "本", "pinyin": ["běn"]},
+          {"text": "杯", "pinyin": ["bēi"]},
+          {"text": "张", "pinyin": ["zhāng"]},
+          {"text": "口", "pinyin": ["kǒu"]}
+        ],
+        "pinyin": ["liàng", "cí"]
+      },
+      {
+        "text": "名词",
+        "role": "object",
+        "label": {"vi": "danh từ", "en": "noun"},
+        "pinyin": ["míng", "cí"]
+      }
+    ],
+    "illustration": {"kind": "word_order"}
+  },
+  "examples": [
+    {
+      "text": "我有一个朋友。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 2, "end": 3, "role": "other"},
+        {"start": 3, "end": 4, "role": "classifier"},
+        {"start": 4, "end": 6, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "个 là lượng từ chung, dùng được với 朋友.",
+        "en": "个 is the general classifier, usable with 朋友."
+      },
+      "translation": {"vi": "Tôi có một người bạn.", "en": "I have one friend."},
+      "pinyin": ["wǒ", "yǒu", "yī", "gè", "péng", "yǒu", ""]
+    },
+    {
+      "text": "她买了两本书。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 3, "end": 4, "role": "other"},
+        {"start": 4, "end": 5, "role": "classifier"},
+        {"start": 5, "end": 6, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "本 là lượng từ dùng cho sách vở; 两 dùng trước lượng từ để nói 'hai'.",
+        "en": "本 is the classifier for books; 两 is used before a classifier to mean 'two'."
+      },
+      "translation": {"vi": "Cô ấy đã mua hai quyển sách.", "en": "She bought two books."},
+      "pinyin": ["tā", "mǎi", "le", "liǎng", "běn", "shū", ""]
+    },
+    {
+      "text": "我们喝三杯茶。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 3, "end": 4, "role": "other"},
+        {"start": 4, "end": 5, "role": "classifier"},
+        {"start": 5, "end": 6, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "杯 là lượng từ cho đồ uống đựng trong cốc.",
+        "en": "杯 is the classifier for drinks served in cups."
+      },
+      "translation": {"vi": "Chúng tôi uống ba cốc trà.", "en": "We drink three cups of tea."},
+      "pinyin": ["wǒ", "men", "hē", "sān", "bēi", "chá", ""]
+    }
+  ],
+  "compare": [
+    {
+      "with": "zh.demonstratives",
+      "this_example": "一个人",
+      "other_example": "这个人",
+      "this_meaning": {
+        "vi": "Số từ đứng trước lượng từ rồi mới đến danh từ: 一 + 个 + 人.",
+        "en": "A number comes before a classifier, then the noun: 一 + 个 + 人."
+      },
+      "other_meaning": {
+        "vi": "Chỉ định từ 这/那/哪 cũng đứng trước lượng từ rồi mới đến danh từ: 这 + 个 + 人.",
+        "en": "Demonstratives 这/那/哪 also come before a classifier, then the noun: 这 + 个 + 人."
+      },
+      "this_example_pinyin": ["yī", "gè", "rén"],
+      "other_example_pinyin": ["zhè", "gè", "rén"]
+    },
+    {
+      "with": "zh.liang_er",
+      "this_example": "两本书",
+      "other_example": "一二三",
+      "this_meaning": {
+        "vi": "Trước lượng từ, 'hai' luôn là 两, không dùng 二: 两本书.",
+        "en": "Before a classifier, 'two' is always 两, not 二: 两本书."
+      },
+      "other_meaning": {
+        "vi": "二 dùng khi đếm số, đọc số điện thoại, làm toán, không đứng trước lượng từ trong câu đếm thông thường.",
+        "en": "二 is used when counting, reading phone numbers, or doing math; it does not stand before a classifier in ordinary counting."
+      },
+      "this_example_pinyin": ["liǎng", "běn", "shū"],
+      "other_example_pinyin": ["yī", "èr", "sān"]
+    }
+  ],
+  "common_mistakes": [
+    {
+      "wrong": "我买两书。",
+      "right": "我买两本书。",
+      "reason": {
+        "vi": "Người Việt quen nói 'hai quyển sách' nhưng có thể bỏ quên lượng từ vì tiếng Việt đôi khi cho phép nói tắt; trong tiếng Trung, số từ không đứng trực tiếp trước danh từ đếm được.",
+        "en": "Vietnamese speakers may omit the classifier because Vietnamese sometimes allows a short form; in Chinese, a number cannot stand directly before a countable noun."
+      },
+      "error_tag": "measure_word",
+      "l1": ["vi"],
+      "wrong_pinyin": ["wǒ", "mǎi", "liǎng", "shū", ""],
+      "right_pinyin": ["wǒ", "mǎi", "liǎng", "běn", "shū", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "我有一___朋友。",
+      "options": [
+        {"text": "个", "error_tag": null, "pinyin": ["gè"]},
+        {"text": "本", "error_tag": "measure_word", "pinyin": ["běn"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "朋友 dùng lượng từ 个; 本 dùng cho sách vở.",
+        "en": "朋友 takes the classifier 个; 本 is for books."
+      },
+      "q_pinyin": ["wǒ", "yǒu", "yī", "", "", "", "péng", "yǒu", ""]
+    },
+    {
+      "q": "她买了三___茶。",
+      "options": [
+        {"text": "杯", "error_tag": null, "pinyin": ["bēi"]},
+        {"text": "个", "error_tag": "measure_word", "pinyin": ["gè"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Trà đựng trong cốc dùng lượng từ 杯; 个 không phù hợp ở đây.",
+        "en": "Tea served in a cup takes the classifier 杯; 个 does not fit here."
+      },
+      "q_pinyin": ["tā", "mǎi", "le", "sān", "", "", "", "chá", ""]
+    },
+    {
+      "q": "这___书很好看。",
+      "options": [
+        {"text": "本", "error_tag": null, "pinyin": ["běn"]},
+        {"text": "个", "error_tag": "measure_word", "pinyin": ["gè"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "书 dùng lượng từ 本; 个 là lượng từ chung nhưng không đúng với sách.",
+        "en": "书 takes the classifier 本; 个 is general but not correct for books."
+      },
+      "q_pinyin": ["zhè", "", "", "", "shū", "hěn", "hǎo", "kàn", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về số lượng đồ vật bạn có, dùng số từ + lượng từ + danh từ.",
+      "en": "Write one sentence about how many things you have, using number + classifier + noun."
+    },
+    "placeholder": "我有……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "other", "any_of": ["一", "两", "三", "四", "五", "六", "七", "八", "九", "十"]},
+        {"role": "classifier", "any_of": ["个", "本", "杯", "张", "口"]}
+      ]
+    },
+    "sample": {"text": "我有两本书。", "pinyin": ["wǒ", "yǒu", "liǎng", "běn", "shū", ""]},
+    "placeholder_pinyin": ["wǒ", "yǒu", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790831792",
+    "generated_at": "2026-10-01T05:16:32Z",
+    "r5_source": {
+      "ids": ["zh-hsk1-8-s-v-l-ng-t-c-b-n"],
+      "content_version": 2,
+      "content_hash": "ea38fceb5ecb262f648e18978246c64db7a78560df8f8c49f64041523f99d942",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk1-8-s-v-l-ng-t-c-b-n",
+          "issue": "R5 ghi '两本书' là ví dụ cho mẫu số + lượng từ + danh từ, nhưng không giải thích rõ vì sao dùng 两 mà không dùng 二 trước lượng từ.",
+          "fix": "Thêm phần so sánh với zh.liang_er, nêu rõ trước lượng từ 'hai' là 两, còn 二 dùng khi đếm số hoặc đọc số."
+        },
+        {
+          "r5_id": "zh-hsk1-8-s-v-l-ng-t-c-b-n",
+          "issue": "R5 đưa ví dụ '四张票' nhưng không có trong phần giải thích chính, khiến người học khó nhận ra 张 là lượng từ cho vé.",
+          "fix": "Đưa 张 vào danh sách options của slot lượng từ và giữ ví dụ minh họa ở dạng câu đầy đủ trong phần luyện tập."
+        },
+        {
+          "r5_id": "zh-hsk1-8-s-v-l-ng-t-c-b-n",
+          "issue": "R5 nói 'Không dùng 个 cho mọi noun nếu đã học classifier chuyên biệt' nhưng không cung cấp ví dụ sai cụ thể.",
+          "fix": "Thêm lỗi thường gặp '我买两书' và sửa thành '我买两本书', kèm giải thích cơ chế bỏ sót lượng từ."
+        }
+      ]
+    }
+  },
+  "review": null
+}

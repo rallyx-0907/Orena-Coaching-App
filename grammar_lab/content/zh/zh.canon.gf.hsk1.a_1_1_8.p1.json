@@ -1,0 +1,218 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk1.a_1_1_8.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.linking",
+  "level": {"framework": "hsk3", "value": "1", "rank": 1},
+  "prereqs": [],
+  "contrasts": [],
+  "error_tags": ["conjunction"],
+  "source_refs": {"gf0025": ["gf0025.hsk1.019"]},
+  "point_type": "other",
+  "sequence": 3,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Liên từ: 连接词或短语：跟、还是、和", "en": "Conjunctions: 连接词或短语：跟、还是、和"},
+    "native_title": "连接词或短语：跟、还是、和",
+    "level": {"framework": "hsk3", "value": "1", "rank": 1},
+    "summary": {
+      "vi": "Điểm ngữ pháp này dạy cách dùng 跟, 还是 và 和 để nối hai danh từ, đại từ hoặc cụm danh từ trong câu tiếng Trung.",
+      "en": "This grammar point teaches how to use 跟, 还是 and 和 to link two nouns, pronouns or noun phrases in Chinese sentences."
+    },
+    "sub": {"vi": "Nối danh từ", "en": "linking nouns"},
+    "native_title_pinyin": ["lián", "jiē", "cí", "huò", "duǎn", "yǔ", "", "gēn", "", "hái", "shì", "", "hé"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói hai người hoặc hai vật cùng làm một việc gì đó, dùng 跟 hoặc 和 giữa hai danh từ.",
+      "en": "When you want to say two people or things do something together, use 跟 or 和 between the two nouns."
+    },
+    {
+      "vi": "Khi bạn muốn nói sở hữu hoặc quan hệ giữa hai danh từ, dùng 跟 hoặc 和.",
+      "en": "When you want to express possession or a relationship between two nouns, use 跟 or 和."
+    },
+    {
+      "vi": "Khi bạn đặt câu hỏi lựa chọn giữa hai danh từ, dùng 还是.",
+      "en": "When you ask a choice question between two nouns, use 还是."
+    },
+    {
+      "vi": "Khi bạn liệt kê ba danh từ trở lên, dùng 和 trước danh từ cuối cùng.",
+      "en": "When you list three or more nouns, use 和 before the last noun."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "N1",
+        "role": "subject",
+        "label": {"vi": "danh từ thứ nhất", "en": "first noun"},
+        "pinyin": ["", ""]
+      },
+      {
+        "text": "跟/和/还是",
+        "role": "connector",
+        "label": {"vi": "từ nối", "en": "connector"},
+        "options": [
+          {"text": "跟", "pinyin": ["gēn"]},
+          {"text": "和", "pinyin": ["hé"]},
+          {"text": "还是", "pinyin": ["hái", "shì"]}
+        ],
+        "pinyin": ["gēn", "", "hé", "", "hái", "shì"]
+      },
+      {
+        "text": "N2",
+        "role": "object",
+        "label": {"vi": "danh từ thứ hai", "en": "second noun"},
+        "pinyin": ["", ""]
+      }
+    ],
+    "variants": {
+      "question": [
+        {
+          "text": "N1",
+          "role": "subject",
+          "label": {"vi": "danh từ thứ nhất", "en": "first noun"},
+          "pinyin": ["", ""]
+        },
+        {
+          "text": "还是",
+          "role": "connector",
+          "label": {"vi": "từ nối lựa chọn", "en": "choice connector"},
+          "pinyin": ["hái", "shì"]
+        },
+        {
+          "text": "N2",
+          "role": "object",
+          "label": {"vi": "danh từ thứ hai", "en": "second noun"},
+          "pinyin": ["", ""]
+        }
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "我跟他是朋友。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "connector"},
+        {"start": 2, "end": 3, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "跟 nối hai danh từ, nghĩa là 'và' hoặc 'với'.",
+        "en": "跟 links two nouns, meaning 'and' or 'with'."
+      },
+      "translation": {"vi": "Tôi và anh ấy là bạn.", "en": "He and I are friends."},
+      "pinyin": ["wǒ", "gēn", "tā", "shì", "péng", "yǒu", ""]
+    },
+    {
+      "text": "你喝茶还是咖啡？",
+      "form": "question",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 3, "end": 5, "role": "connector"},
+        {"start": 5, "end": 7, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "还是 dùng để hỏi lựa chọn giữa hai danh từ.",
+        "en": "还是 is used to ask a choice between two nouns."
+      },
+      "translation": {"vi": "Bạn uống trà hay cà phê?", "en": "Do you drink tea or coffee?"},
+      "pinyin": ["nǐ", "hē", "chá", "hái", "shì", "kā", "fēi", ""]
+    },
+    {
+      "text": "苹果和香蕉都很好吃。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 3, "role": "connector"},
+        {"start": 3, "end": 5, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "和 nối hai danh từ trong câu khẳng định.",
+        "en": "和 links two nouns in an affirmative sentence."
+      },
+      "translation": {"vi": "Táo và chuối đều rất ngon.", "en": "Apples and bananas are both delicious."},
+      "pinyin": ["píng", "guǒ", "hé", "xiāng", "jiāo", "dōu", "hěn", "hǎo", "chī", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "我喝茶和咖啡？",
+      "right": "我喝茶还是咖啡？",
+      "reason": {
+        "vi": "Người Việt thường dịch 'hay' thành 'và' nên dùng 和 trong câu hỏi lựa chọn, nhưng tiếng Trung phải dùng 还是.",
+        "en": "Vietnamese speakers often translate 'hay' as 'and' and use 和 in choice questions, but Chinese requires 还是."
+      },
+      "error_tag": "conjunction",
+      "l1": ["vi"],
+      "wrong_pinyin": ["wǒ", "hē", "chá", "hé", "kā", "fēi", ""],
+      "right_pinyin": ["wǒ", "hē", "chá", "hái", "shì", "kā", "fēi", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "你喝咖啡___茶？",
+      "options": [
+        {"text": "还是", "error_tag": null, "pinyin": ["hái", "shì"]},
+        {"text": "和", "error_tag": "conjunction", "pinyin": ["hé"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu hỏi lựa chọn phải dùng 还是, không dùng 和.",
+        "en": "A choice question requires 还是, not 和."
+      },
+      "q_pinyin": ["nǐ", "hē", "kā", "fēi", "", "", "", "chá", ""]
+    },
+    {
+      "q": "我___他是同学。",
+      "options": [
+        {"text": "跟", "error_tag": null, "pinyin": ["gēn"]},
+        {"text": "还是", "error_tag": "conjunction", "pinyin": ["hái", "shì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu khẳng định nối hai danh từ dùng 跟 hoặc 和, không dùng 还是.",
+        "en": "An affirmative sentence linking two nouns uses 跟 or 和, not 还是."
+      },
+      "q_pinyin": ["wǒ", "", "", "", "tā", "shì", "tóng", "xué", ""]
+    },
+    {
+      "q": "苹果___香蕉都很好吃。",
+      "options": [
+        {"text": "和", "error_tag": null, "pinyin": ["hé"]},
+        {"text": "还是", "error_tag": "conjunction", "pinyin": ["hái", "shì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu khẳng định nối hai danh từ dùng 和, không dùng 还是.",
+        "en": "An affirmative sentence linking two nouns uses 和, not 还是."
+      },
+      "q_pinyin": ["píng", "guǒ", "", "", "", "xiāng", "jiāo", "dōu", "hěn", "hǎo", "chī", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về bạn và một người bạn, dùng 跟 hoặc 和 để nối hai người.",
+      "en": "Write a sentence about you and a friend, using 跟 or 和 to link the two people."
+    },
+    "placeholder": "我跟……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"role": "connector", "any_of": ["跟", "和"]}]},
+    "sample": {"text": "我跟他是朋友。", "pinyin": ["wǒ", "gēn", "tā", "shì", "péng", "yǒu", ""]},
+    "placeholder_pinyin": ["wǒ", "gēn", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790831883",
+    "generated_at": "2026-10-01T05:18:03Z"
+  },
+  "review": null
+}

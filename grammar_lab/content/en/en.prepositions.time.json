@@ -4,240 +4,199 @@
   "version": 1,
   "target_lang": "en",
   "function": "fn.place_time",
-  "level": {
-    "framework": "cefr",
-    "value": "A1",
-    "rank": 1
-  },
+  "level": {"framework": "cefr", "value": "A1", "rank": 1},
   "prereqs": [],
-  "contrasts": [],
-  "error_tags": [
-    "preposition"
-  ],
-  "source_refs": {
-    "r5": [
-      "a1-basic-prepositions-of-time"
-    ]
-  },
+  "contrasts": ["en.prepositions.place"],
+  "error_tags": ["preposition"],
+  "source_refs": {"r5": ["a1-basic-prepositions-of-time"]},
   "point_type": "other",
+  "sequence": 2,
+  "aliases": ["a1-basic-prepositions-of-time"],
+  "source_anchors": {"status": "anchored", "items": [{"source": "core_inventory", "code": "133a", "level": "A1"}]},
   "header": {
-    "title": {
-      "vi": "Giới từ chỉ thời gian: at / on / in",
-      "en": "Prepositions of time: at / on / in"
-    },
+    "title": {"vi": "Giới từ chỉ thời gian: at / on / in", "en": "Prepositions of time"},
     "native_title": "Prepositions of time: at / on / in",
-    "sub": {
-      "vi": "giờ / ngày / khoảng thời gian",
-      "en": "clock / day / period"
-    },
-    "level": {
-      "framework": "cefr",
-      "value": "A1",
-      "rank": 1
-    },
+    "level": {"framework": "cefr", "value": "A1", "rank": 1},
     "summary": {
-      "vi": "At thường dùng với giờ cụ thể, on với ngày/ngày tháng, in với tháng, năm và khoảng thời gian dài hơn.",
-      "en": "At is common with clock times, on with days and dates, and in with months, years, and longer periods."
-    }
+      "vi": "Dùng at, on và in để đặt một hoạt động vào đúng loại mốc thời gian.",
+      "en": "Use at, on and in to place an activity at the right kind of time point."
+    },
+    "sub": {"vi": "at / on / in", "en": "at / on / in"}
   },
   "when_to_use": [
     {
-      "vi": "Dùng at với giờ.",
-      "en": "Use at with clock times."
+      "vi": "Khi bạn nói một giờ cụ thể hoặc một điểm trong ngày: at 7:30, at noon, at night.",
+      "en": "When you name a clock time or a point in the day: at 7:30, at noon, at night."
     },
     {
-      "vi": "Dùng on với ngày và in với tháng/năm.",
-      "en": "Use on with days and in with months/years."
+      "vi": "Khi bạn nói một ngày hoặc một ngày tháng: on Monday, on 16 August.",
+      "en": "When you name a day or a date: on Monday, on 16 August."
+    },
+    {
+      "vi": "Khi bạn nói một tháng, một năm, một mùa hoặc một buổi trong ngày: in May, in 2026, in summer, in the morning.",
+      "en": "When you name a month, a year, a season or a part of the day: in May, in 2026, in summer, in the morning."
+    },
+    {
+      "vi": "Khi bạn nói lịch của mình: giờ dùng at, ngày dùng on, tháng/năm dùng in.",
+      "en": "When you talk about your schedule: use at for times, on for days, in for months and years."
     }
   ],
   "pattern": {
     "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}},
       {
-        "text": "at / on / in",
+        "text": "at/on/in",
         "role": "marker",
-        "label": {
-          "vi": "giới từ thời gian",
-          "en": "time preposition"
-        },
-        "options": [
-          {
-            "text": "at"
-          },
-          {
-            "text": "on"
-          },
-          {
-            "text": "in"
-          }
-        ]
+        "label": {"vi": "giới từ chỉ thời gian", "en": "time preposition"},
+        "options": [{"text": "at"}, {"text": "on"}, {"text": "in"}]
       },
-      {
-        "text": "time",
-        "role": "time",
-        "label": {
-          "vi": "mốc thời gian",
-          "en": "time expression"
-        }
-      }
+      {"text": "time", "role": "time", "label": {"vi": "mốc thời gian", "en": "time expression"}}
     ],
-    "illustration": {
-      "kind": "none"
-    }
+    "illustration": {"kind": "none"}
   },
   "examples": [
     {
       "text": "The class starts at nine.",
       "form": "affirmative",
       "spans": [
-        {
-          "start": 17,
-          "end": 19,
-          "role": "marker"
-        },
-        {
-          "start": 20,
-          "end": 24,
-          "role": "time"
-        }
+        {"start": 0, "end": 9, "role": "subject"},
+        {"start": 10, "end": 16, "role": "verb"},
+        {"start": 17, "end": 19, "role": "marker"},
+        {"start": 20, "end": 24, "role": "time"}
       ],
       "annotation": {
-        "vi": "Giờ cụ thể dùng at.",
-        "en": "Use at with a specific clock time."
+        "vi": "at + giờ cụ thể: chín giờ là một điểm thời gian.",
+        "en": "at + clock time: nine is a point in time."
       },
-      "translation": {
-        "vi": "Giờ cụ thể dùng at.",
-        "en": "Use at with a specific clock time."
-      }
+      "translation": {"vi": "Lớp bắt đầu lúc chín giờ.", "en": "The class starts at nine."}
     },
     {
-      "text": "We meet on Monday.",
+      "text": "We have English on Tuesday.",
       "form": "affirmative",
       "spans": [
-        {
-          "start": 8,
-          "end": 10,
-          "role": "marker"
-        },
-        {
-          "start": 11,
-          "end": 17,
-          "role": "time"
-        }
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 3, "end": 7, "role": "verb"},
+        {"start": 16, "end": 18, "role": "marker"},
+        {"start": 19, "end": 26, "role": "time"}
       ],
       "annotation": {
-        "vi": "Ngày trong tuần dùng on.",
-        "en": "Use on with a day of the week."
+        "vi": "on + ngày trong tuần: Tuesday là một ngày cụ thể.",
+        "en": "on + day of the week: Tuesday is a specific day."
       },
-      "translation": {
-        "vi": "Ngày trong tuần dùng on.",
-        "en": "Use on with a day of the week."
+      "translation": {"vi": "Chúng tôi học tiếng Anh vào thứ Ba.", "en": "We have English on Tuesday."}
+    },
+    {
+      "text": "My birthday is in November.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 11, "role": "subject"},
+        {"start": 12, "end": 14, "role": "verb"},
+        {"start": 15, "end": 17, "role": "marker"},
+        {"start": 18, "end": 26, "role": "time"}
+      ],
+      "annotation": {
+        "vi": "in + tháng: November là một khoảng thời gian dài hơn một ngày.",
+        "en": "in + month: November is a longer period than a day."
+      },
+      "translation": {"vi": "Sinh nhật của tôi vào tháng Mười Một.", "en": "My birthday is in November."}
+    }
+  ],
+  "compare": [
+    {
+      "with": "en.prepositions.place",
+      "this_example": "We meet at 7 p.m. on Monday.",
+      "other_example": "We meet at the bus stop on the corner.",
+      "this_meaning": {
+        "vi": "at/on/in chỉ thời gian: at 7 p.m., on Monday, in May.",
+        "en": "at/on/in for time: at 7 p.m., on Monday, in May."
+      },
+      "other_meaning": {
+        "vi": "at/on/in chỉ nơi chốn: at the bus stop, on the table, in the box.",
+        "en": "at/on/in for place: at the bus stop, on the table, in the box."
       }
     }
   ],
-  "compare": [],
   "common_mistakes": [
     {
-      "wrong": "I was born on 2000.",
-      "right": "I was born in 2000.",
+      "wrong": "I have class in Monday.",
+      "right": "I have class on Monday.",
       "reason": {
-        "vi": "Năm dùng in, không dùng on.",
-        "en": "Use in with a year, not on."
+        "vi": "Monday là một ngày, nên dùng on; in dùng cho tháng, năm, mùa.",
+        "en": "Monday is a day, so use on; in is for months, years and seasons."
       },
       "error_tag": "preposition",
-      "l1": [
-        "vi"
-      ]
+      "l1": ["vi"]
     }
   ],
   "quick_practice": [
     {
-      "q": "The train leaves ___ 6:30.",
-      "options": [
-        {
-          "text": "at",
-          "error_tag": null
-        },
-        {
-          "text": "on",
-          "error_tag": "preposition"
-        },
-        {
-          "text": "in",
-          "error_tag": "preposition"
-        }
-      ],
+      "q": "We meet ___ 7 p.m.",
+      "options": [{"text": "at", "error_tag": null}, {"text": "on", "error_tag": "preposition"}],
       "answer": 0,
-      "explain": {
-        "vi": "Giờ cụ thể dùng at.",
-        "en": "Use at with a clock time."
-      }
+      "explain": {"vi": "7 p.m. là giờ cụ thể, nên dùng at.", "en": "7 p.m. is a clock time, so use at."}
     },
     {
-      "q": "We have class ___ Friday.",
-      "options": [
-        {
-          "text": "on",
-          "error_tag": null
-        },
-        {
-          "text": "at",
-          "error_tag": "preposition"
-        },
-        {
-          "text": "in",
-          "error_tag": "preposition"
-        }
-      ],
+      "q": "My exam is ___ June.",
+      "options": [{"text": "in", "error_tag": null}, {"text": "at", "error_tag": "preposition"}],
       "answer": 0,
-      "explain": {
-        "vi": "Ngày trong tuần dùng on.",
-        "en": "Use on with a day of the week."
-      }
+      "explain": {"vi": "June là một tháng, nên dùng in.", "en": "June is a month, so use in."}
     },
     {
-      "q": "My birthday is ___ July.",
-      "options": [
-        {
-          "text": "in",
-          "error_tag": null
-        },
-        {
-          "text": "on",
-          "error_tag": "preposition"
-        },
-        {
-          "text": "at",
-          "error_tag": "preposition"
-        }
-      ],
+      "q": "I get up ___ 6:30.",
+      "options": [{"text": "at", "error_tag": null}, {"text": "in", "error_tag": "preposition"}],
       "answer": 0,
-      "explain": {
-        "vi": "Tháng dùng in.",
-        "en": "Use in with a month."
-      }
+      "explain": {"vi": "6:30 là giờ cụ thể, nên dùng at.", "en": "6:30 is a clock time, so use at."}
     }
   ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về lịch của bạn, dùng at, on hoặc in với một mốc thời gian.",
+      "en": "Write one sentence about your schedule, using at, on or in with a time expression."
+    },
+    "placeholder": "I wake up at ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "marker", "any_of": ["at", "on", "in"]},
+        {
+          "role": "time",
+          "regex": "(?i)\\b(?:\\d{1,2}(?::\\d{2})?\\s*(?:a\\.?m\\.?|p\\.?m\\.?)?|noon|midnight|night|morning|afternoon|evening|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|January|February|March|April|May|June|July|August|September|October|November|December|\\d{4}|summer|winter|spring|autumn|fall|nine|ten|eleven|twelve|one|two|three|four|five|six|seven|eight)\\b"
+        }
+      ]
+    },
+    "sample": {"text": "I wake up at 6:30."}
+  },
   "status": "draft_ai",
   "flags": [],
   "provenance": {
-    "model": "openai:gpt-5.6-sol",
-    "prompt_version": "direct-author.en-a1.v1",
-    "run_id": "chatgpt.en-a1.20260930",
-    "generated_at": "2026-09-30T10:35:00Z"
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790830419",
+    "generated_at": "2026-10-01T04:53:39Z",
+    "r5_source": {
+      "ids": ["a1-basic-prepositions-of-time"],
+      "content_version": 2,
+      "content_hash": "ac6d642783ff0a2b0bd9a191e160a3d738f84b6d50f19685213dc7ebd8759ee9",
+      "corrections": [
+        {
+          "r5_id": "a1-basic-prepositions-of-time",
+          "issue": "R5's explanation says 'in cho ... phần lớn các buổi trong ngày' but does not state the fixed exception at night, which is a common A1 trap.",
+          "fix": "Added at night as a fixed expression in when_to_use and kept in the morning as the regular pattern."
+        },
+        {
+          "r5_id": "a1-basic-prepositions-of-time",
+          "issue": "R5's mistake 'We meet on 7 p.m.' is not a natural learner error; learners say 'in 7 p.m.' or 'on 7 p.m.' less often than they confuse day/month.",
+          "fix": "Replaced with the more common 'I have class in Monday.' and its correction 'I have class on Monday.'"
+        },
+        {
+          "r5_id": "a1-basic-prepositions-of-time",
+          "issue": "R5's guided practice includes a production task asking for three sentences, which is outside this point's single-card scope.",
+          "fix": "Moved production to the personal_production card with one sentence and a deterministic pattern rule."
+        }
+      ]
+    }
   },
-  "review": null,
-  "sequence": 2,
-  "source_anchors": {
-    "status": "anchored",
-    "items": [
-      {
-        "source": "core_inventory",
-        "code": "133a",
-        "level": "A1"
-      }
-    ]
-  },
-  "aliases": [
-    "a1-basic-prepositions-of-time"
-  ]
+  "review": null
 }

@@ -1,0 +1,245 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b2.019",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.reporting",
+  "level": {"framework": "cefr", "value": "B2", "rank": 4},
+  "prereqs": ["en.canon.b2.016"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["b2-reporting-verbs-and-patterns"]},
+  "point_type": "other",
+  "sequence": 3,
+  "aliases": ["b2-reporting-verbs-and-patterns"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Reporting verbs and patterns", "en": "Reporting verbs and patterns"},
+    "native_title": "Reporting verbs and patterns",
+    "level": {"framework": "cefr", "value": "B2", "rank": 4},
+    "summary": {
+      "vi": "Điểm ngữ pháp này trình bày các mẫu bổ ngữ khác nhau của động từ tường thuật: động từ + that-clause, động từ + to-infinitive, động từ + tân ngữ + to-infinitive, động từ + V-ing, và giới từ + V-ing.",
+      "en": "This point presents the different complement patterns that reporting verbs take: verb + that-clause, verb + to-infinitive, verb + object + to-infinitive, verb + V-ing, and preposition + V-ing."
+    },
+    "sub": {"vi": "mẫu bổ ngữ", "en": "complement patterns"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn tường thuật lại lời nói, suy nghĩ hoặc hành động của người khác bằng một động từ tường thuật cụ thể.",
+      "en": "When you want to report what someone said, thought, or did using a specific reporting verb."
+    },
+    {
+      "vi": "Khi bạn cần chọn đúng mẫu bổ ngữ cho động từ tường thuật, ví dụ: agree + to-infinitive, admit + V-ing, advise + tân ngữ + to-infinitive.",
+      "en": "When you need to choose the correct complement pattern for a reporting verb, e.g. agree + to-infinitive, admit + V-ing, advise + object + to-infinitive."
+    },
+    {
+      "vi": "Khi bạn muốn diễn đạt thái độ hoặc đánh giá của người nói đối với hành động được tường thuật (thừa nhận, phủ nhận, đề nghị, cảnh báo, v.v.).",
+      "en": "When you want to convey the speaker's attitude or evaluation of the reported action (admitting, denying, offering, warning, etc.)."
+    },
+    {
+      "vi": "Khi bạn cần phân biệt giữa các động từ tường thuật có nghĩa gần giống nhau nhưng dùng mẫu bổ ngữ khác nhau, ví dụ: admit + V-ing so với agree + to-infinitive.",
+      "en": "When you need to distinguish between reporting verbs with similar meanings but different complement patterns, e.g. admit + V-ing vs. agree + to-infinitive."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {
+        "text": "reporting verb",
+        "role": "verb",
+        "label": {"vi": "động từ tường thuật", "en": "reporting verb"}
+      },
+      {
+        "text": "that-clause",
+        "role": "object",
+        "label": {"vi": "mệnh đề that", "en": "that-clause"},
+        "optional": true
+      },
+      {
+        "text": "to-infinitive",
+        "role": "complement",
+        "label": {"vi": "động từ nguyên thể có to", "en": "to-infinitive"},
+        "optional": true
+      },
+      {
+        "text": "object",
+        "role": "object",
+        "label": {"vi": "tân ngữ", "en": "object"},
+        "optional": true
+      },
+      {
+        "text": "V-ing",
+        "role": "complement",
+        "label": {"vi": "động từ dạng V-ing", "en": "V-ing form"},
+        "optional": true
+      },
+      {
+        "text": "preposition",
+        "role": "marker",
+        "label": {"vi": "giới từ", "en": "preposition"},
+        "optional": true
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "She admitted making a mistake.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 12, "role": "verb"},
+        {"start": 13, "end": 19, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "admit + V-ing: thừa nhận đã làm gì",
+        "en": "admit + V-ing: acknowledge doing something"
+      },
+      "translation": {"vi": "Cô ấy thừa nhận đã phạm lỗi.", "en": "She admitted making a mistake."}
+    },
+    {
+      "text": "He refused to answer the question.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 3, "end": 10, "role": "verb"},
+        {"start": 11, "end": 20, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "refuse + to-infinitive: từ chối làm gì",
+        "en": "refuse + to-infinitive: decline to do something"
+      },
+      "translation": {"vi": "Anh ấy từ chối trả lời câu hỏi.", "en": "He refused to answer the question."}
+    },
+    {
+      "text": "They advised us to leave early.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 5, "end": 12, "role": "verb"},
+        {"start": 13, "end": 15, "role": "object"},
+        {"start": 16, "end": 24, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "advise + tân ngữ + to-infinitive: khuyên ai làm gì",
+        "en": "advise + object + to-infinitive: recommend someone to do something"
+      },
+      "translation": {"vi": "Họ khuyên chúng tôi rời đi sớm.", "en": "They advised us to leave early."}
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "She suggested me to leave.",
+      "right": "She suggested that I leave.",
+      "reason": {
+        "vi": "Động từ 'suggest' không dùng mẫu tân ngữ + to-infinitive; nó thường đi với that-clause hoặc V-ing.",
+        "en": "'Suggest' does not take an object + to-infinitive pattern; it typically takes a that-clause or V-ing."
+      },
+      "error_tag": "other",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "He admitted ___ the money.",
+      "options": [{"text": "taking", "error_tag": null}, {"text": "to take", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 'admit' dùng V-ing, không dùng to-infinitive.",
+        "en": "After 'admit' we use V-ing, not to-infinitive."
+      }
+    },
+    {
+      "q": "She warned me ___ touch the wire.",
+      "options": [{"text": "not to", "error_tag": null}, {"text": "to not", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Cấu trúc đúng là warn + tân ngữ + not + to-infinitive.",
+        "en": "The correct pattern is warn + object + not + to-infinitive."
+      }
+    },
+    {
+      "q": "They accused him ___ stealing the documents.",
+      "options": [{"text": "of", "error_tag": null}, {"text": "for", "error_tag": "preposition"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Cấu trúc đúng là accuse someone of + V-ing.",
+        "en": "The correct pattern is accuse someone of + V-ing."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu tường thuật lại lời nói hoặc hành động của ai đó, dùng một động từ tường thuật và mẫu bổ ngữ phù hợp (ví dụ: admit + V-ing, agree + to-infinitive, advise + tân ngữ + to-infinitive).",
+      "en": "Write a sentence reporting what someone said or did, using a reporting verb and its correct complement pattern (e.g. admit + V-ing, agree + to-infinitive, advise + object + to-infinitive)."
+    },
+    "placeholder": "She admitted ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {
+          "role": "verb",
+          "any_of": [
+            "admitted",
+            "refused",
+            "advised",
+            "suggested",
+            "denied",
+            "agreed",
+            "offered",
+            "warned",
+            "reminded",
+            "accused",
+            "apologised"
+          ]
+        },
+        {"role": "complement", "regex": "(?i)(to\\s+\\w+|\\w+ing)"}
+      ]
+    },
+    "sample": {"text": "She admitted making a mistake."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790831199",
+    "generated_at": "2026-10-01T05:06:39Z",
+    "r5_source": {
+      "ids": ["b2-reporting-verbs-and-patterns"],
+      "content_version": 2,
+      "content_hash": "3047fe43af79a82b95ec3e643b679c0b3c74314bff9a7d8d74495657295c8042",
+      "corrections": [
+        {
+          "r5_id": "b2-reporting-verbs-and-patterns",
+          "issue": "The R5 lesson's formula was not explicitly stated as abstract slots; it only listed rules and examples.",
+          "fix": "Added a formula array with abstract slots covering all complement patterns taught."
+        },
+        {
+          "r5_id": "b2-reporting-verbs-and-patterns",
+          "issue": "The R5 lesson did not include negative or question forms for reporting verbs.",
+          "fix": "Left negative and question arrays empty because reporting verbs do not have distinct negative/question patterns at this level."
+        },
+        {
+          "r5_id": "b2-reporting-verbs-and-patterns",
+          "issue": "The R5 lesson's common mistake 'He accused me to lie' was corrected to 'He accused me of lying', but the error tag was not specified.",
+          "fix": "Tagged the mistake as 'other' and provided a clear reason in both locales."
+        },
+        {
+          "r5_id": "b2-reporting-verbs-and-patterns",
+          "issue": "The R5 lesson lacked quick practice items with tagged distractors.",
+          "fix": "Added three quick practice questions with correct answers and plausible wrong options tagged with error types."
+        },
+        {
+          "r5_id": "b2-reporting-verbs-and-patterns",
+          "issue": "The R5 lesson did not include a personal production task with a pattern rule for automatic checking.",
+          "fix": "Added a personal production card with prompt, placeholder, sample, and a pattern rule that matches the sample and examples."
+        }
+      ]
+    },
+    "metadata_stale": true
+  },
+  "review": null
+}

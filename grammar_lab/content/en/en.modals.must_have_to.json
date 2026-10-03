@@ -1,0 +1,253 @@
+{
+  "schema_version": "0.4",
+  "id": "en.modals.must_have_to",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.obligation_advice",
+  "level": {"framework": "cefr", "value": "A2", "rank": 2},
+  "prereqs": [],
+  "contrasts": ["en.modals.should"],
+  "error_tags": ["word_choice"],
+  "source_refs": {"r5": ["a2-must-have-to", "b1-obligation-must-have-to-need-to"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["a2-must-have-to", "b1-obligation-must-have-to-need-to"],
+  "source_anchors": {
+    "status": "anchored",
+    "items": [
+      {"source": "core_inventory", "code": "112", "level": "A2"},
+      {"source": "core_inventory", "code": "113", "level": "A2"}
+    ]
+  },
+  "header": {
+    "title": {"vi": "Must và have to (bắt buộc)", "en": "Must and have to"},
+    "native_title": "Must / have to",
+    "level": {"framework": "cefr", "value": "A2", "rank": 2},
+    "summary": {
+      "vi": "Must và have to đều diễn tả sự bắt buộc, nhưng must là động từ khuyết thiếu còn have to là động từ thường có chia theo chủ ngữ và thời gian.",
+      "en": "Must and have to both express obligation, but must is a modal verb while have to is an ordinary verb that changes with the subject and the tense."
+    },
+    "sub": {"vi": "bắt buộc", "en": "obligation"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi nói về một quy tắc hoặc luật mà người nói cho là quan trọng: You must wear a helmet.",
+      "en": "When you state a rule or law that you see as important: You must wear a helmet."
+    },
+    {
+      "vi": "Khi nói về một việc cần thiết do hoàn cảnh bên ngoài: I have to get up early.",
+      "en": "When you talk about something necessary because of an outside situation: I have to get up early."
+    },
+    {
+      "vi": "Khi kể lại một việc bắt buộc trong quá khứ, dùng had to: We had to cancel the meeting.",
+      "en": "When you talk about a past obligation, use had to: We had to cancel the meeting."
+    },
+    {
+      "vi": "Khi hỏi xem một việc có bắt buộc không, dùng do/does + have to: Do we have to book in advance?",
+      "en": "When you ask if something is necessary, use do/does + have to: Do we have to book in advance?"
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {"text": "must", "role": "aux", "label": {"vi": "động từ khuyết thiếu", "en": "modal verb"}},
+      {
+        "text": "V",
+        "role": "verb",
+        "label": {"vi": "động từ nguyên mẫu không to", "en": "base verb"}
+      },
+      {"text": "O", "role": "object", "label": {"vi": "tân ngữ", "en": "object"}, "optional": true}
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "mustn't",
+          "role": "aux",
+          "label": {"vi": "không được (cấm)", "en": "must not (prohibition)"}
+        },
+        {
+          "text": "V",
+          "role": "verb",
+          "label": {"vi": "động từ nguyên mẫu không to", "en": "base verb"}
+        },
+        {
+          "text": "O",
+          "role": "object",
+          "label": {"vi": "tân ngữ", "en": "object"},
+          "optional": true
+        }
+      ],
+      "question": [
+        {
+          "text": "Do/Does",
+          "role": "aux",
+          "label": {"vi": "trợ động từ", "en": "auxiliary"},
+          "options": [{"text": "Do"}, {"text": "Does"}]
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {"text": "have to", "role": "verb", "label": {"vi": "phải (bắt buộc)", "en": "have to"}},
+        {
+          "text": "V",
+          "role": "verb",
+          "label": {"vi": "động từ nguyên mẫu không to", "en": "base verb"}
+        },
+        {
+          "text": "O",
+          "role": "object",
+          "label": {"vi": "tân ngữ", "en": "object"},
+          "optional": true
+        }
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "You must wear a seat belt.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 8, "role": "aux"},
+        {"start": 9, "end": 13, "role": "verb"},
+        {"start": 14, "end": 25, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "must + động từ nguyên mẫu diễn tả quy tắc bắt buộc.",
+        "en": "must + base verb states a rule that is obligatory."
+      },
+      "translation": {"vi": "Bạn phải thắt dây an toàn.", "en": "You must wear a seat belt."}
+    },
+    {
+      "text": "I have to get up early.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 2, "end": 9, "role": "aux"},
+        {"start": 10, "end": 16, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "have to + động từ nguyên mẫu diễn tả việc cần thiết do hoàn cảnh.",
+        "en": "have to + base verb expresses necessity coming from the situation."
+      },
+      "translation": {"vi": "Tôi phải dậy sớm.", "en": "I have to get up early."}
+    },
+    {
+      "text": "She has to wear a uniform.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 10, "role": "aux"},
+        {"start": 11, "end": 15, "role": "verb"},
+        {"start": 16, "end": 25, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Với she/he/it, have to đổi thành has to.",
+        "en": "With she/he/it, have to becomes has to."
+      },
+      "translation": {"vi": "Cô ấy phải mặc đồng phục.", "en": "She has to wear a uniform."}
+    }
+  ],
+  "compare": [
+    {
+      "with": "en.modals.should",
+      "this_example": "You must wear a seat belt.",
+      "other_example": "You should wear a seat belt.",
+      "this_meaning": {
+        "vi": "Must/have to diễn tả bắt buộc: việc phải làm.",
+        "en": "Must/have to express obligation: something you are required to do."
+      },
+      "other_meaning": {
+        "vi": "Should diễn tả lời khuyên: việc nên làm nhưng không bắt buộc.",
+        "en": "Should gives advice: something it is good to do, but not required."
+      }
+    }
+  ],
+  "common_mistakes": [
+    {
+      "wrong": "He must to leave.",
+      "right": "He must leave.",
+      "reason": {
+        "vi": "Must là động từ khuyết thiếu nên theo sau là động từ nguyên mẫu không to; thêm to là sai.",
+        "en": "Must is a modal verb, so it is followed by a base verb without to; adding to is wrong."
+      },
+      "error_tag": "word_choice",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "She ___ to take the bus.",
+      "options": [{"text": "has", "error_tag": null}, {"text": "have", "error_tag": "agreement"}],
+      "answer": 0,
+      "explain": {"vi": "Với she, dùng has to.", "en": "With she, use has to."}
+    },
+    {
+      "q": "We ___ go now.",
+      "options": [{"text": "must", "error_tag": null}, {"text": "must to", "error_tag": "word_choice"}],
+      "answer": 0,
+      "explain": {"vi": "Must + động từ nguyên mẫu, không có to.", "en": "Must + base verb, with no to."}
+    },
+    {
+      "q": "___ we have to book in advance?",
+      "options": [{"text": "Do", "error_tag": null}, {"text": "Are", "error_tag": "word_choice"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu hỏi với have to dùng trợ động từ do/does.",
+        "en": "Questions with have to use the auxiliary do/does."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một việc bạn phải làm, dùng must hoặc have to.",
+      "en": "Write one sentence about something you have to do, using must or have to."
+    },
+    "placeholder": "I have to ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "aux", "any_of": ["must", "have to", "has to"]},
+        {"role": "verb", "regex": "[a-z]+"}
+      ]
+    },
+    "sample": {"text": "I must finish my homework tonight."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790830616",
+    "generated_at": "2026-10-01T04:56:56Z",
+    "r5_source": {
+      "ids": ["a2-must-have-to", "b1-obligation-must-have-to-need-to"],
+      "content_version": 2,
+      "content_hash": "72b61a8f5a1bdeeda223fded3f05356ff6f95da8071f6ba51651cc129191effd",
+      "corrections": [
+        {
+          "r5_id": "a2-must-have-to",
+          "issue": "The R5 lesson mixes must and have to in one formula without showing that have to changes with the subject (have/has) and that questions use do/does.",
+          "fix": "Added a separate question formula with Do/Does + S + have to + V, and kept must as a modal with no change."
+        },
+        {
+          "r5_id": "a2-must-have-to",
+          "issue": "The R5 mistake 'She have to work' is listed but the correction 'She has to work' is not shown as a full right sentence in the mistakes section.",
+          "fix": "Included the agreement mistake in quick practice with the correct option 'has' and the wrong option 'have' tagged as agreement."
+        },
+        {
+          "r5_id": "b1-obligation-must-have-to-need-to",
+          "issue": "The B1 lesson includes need to, which is outside this A2 point's scope.",
+          "fix": "Removed need to from the formula, examples, and practice; kept only must and have to."
+        },
+        {
+          "r5_id": "b1-obligation-must-have-to-need-to",
+          "issue": "The B1 lesson's example 'I musted leave early' is not a real learner error for A2 and the correction 'I had to leave early' introduces past tense beyond this point.",
+          "fix": "Replaced with the A2-level mistake 'He must to leave' and its correction 'He must leave'."
+        }
+      ]
+    }
+  },
+  "review": null
+}

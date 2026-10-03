@@ -1,0 +1,220 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b1.018",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.obligation_advice",
+  "level": {"framework": "cefr", "value": "B1", "rank": 3},
+  "prereqs": ["en.canon.b1.017"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["b1-prohibition-and-lack-of-necessity"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["b1-prohibition-and-lack-of-necessity"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Prohibition and lack of necessity", "en": "Prohibition and lack of necessity"},
+    "native_title": "Prohibition and lack of necessity",
+    "level": {"framework": "cefr", "value": "B1", "rank": 3},
+    "summary": {
+      "vi": "Phân biệt cấm đoán (mustn't, can't, not allowed to) với không cần thiết (don't have to, don't need to, needn't).",
+      "en": "Distinguish prohibition (mustn't, can't, not allowed to) from lack of necessity (don't have to, don't need to, needn't)."
+    },
+    "sub": {"vi": "cấm và không cần", "en": "prohibition vs no need"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói một hành động bị cấm, dùng mustn't, can't hoặc be not allowed to.",
+      "en": "When you want to say an action is forbidden, use mustn't, can't, or be not allowed to."
+    },
+    {
+      "vi": "Khi muốn nói một hành động không bắt buộc, dùng don't have to, don't need to hoặc needn't.",
+      "en": "When you want to say an action is not required, use don't have to, don't need to, or needn't."
+    },
+    {
+      "vi": "Khi phân biệt giữa bị cấm và không cần, chú ý mustn't khác hoàn toàn với don't have to.",
+      "en": "When distinguishing between forbidden and not necessary, note that mustn't is completely different from don't have to."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {
+        "text": "mustn't/can't/not allowed to",
+        "role": "aux",
+        "label": {"vi": "trợ động từ cấm", "en": "prohibition auxiliary"},
+        "options": [{"text": "mustn't"}, {"text": "can't"}, {"text": "not allowed to"}]
+      },
+      {"text": "V", "role": "verb", "label": {"vi": "động từ chính", "en": "main verb"}},
+      {"text": "O", "role": "object", "label": {"vi": "tân ngữ", "en": "object"}, "optional": true}
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "don't have to/don't need to/needn't",
+          "role": "aux",
+          "label": {"vi": "trợ động từ không cần", "en": "lack of necessity auxiliary"},
+          "options": [{"text": "don't have to"}, {"text": "don't need to"}, {"text": "needn't"}]
+        },
+        {"text": "V", "role": "verb", "label": {"vi": "động từ chính", "en": "main verb"}},
+        {
+          "text": "O",
+          "role": "object",
+          "label": {"vi": "tân ngữ", "en": "object"},
+          "optional": true
+        }
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "You mustn't use your phone during the exam.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 11, "role": "aux"},
+        {"start": 12, "end": 15, "role": "verb"},
+        {"start": 16, "end": 26, "role": "object"}
+      ],
+      "annotation": {"vi": "mustn't diễn tả hành động bị cấm.", "en": "mustn't expresses a forbidden action."},
+      "translation": {
+        "vi": "Bạn không được dùng điện thoại trong giờ thi.",
+        "en": "You mustn't use your phone during the exam."
+      }
+    },
+    {
+      "text": "You don't have to come early.",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 17, "role": "aux"},
+        {"start": 18, "end": 22, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "don't have to diễn tả không bắt buộc, không phải cấm.",
+        "en": "don't have to expresses lack of necessity, not prohibition."
+      },
+      "translation": {"vi": "Bạn không cần đến sớm.", "en": "You don't have to come early."}
+    },
+    {
+      "text": "Visitors aren't allowed to enter this room.",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 8, "role": "subject"},
+        {"start": 9, "end": 26, "role": "aux"},
+        {"start": 27, "end": 32, "role": "verb"},
+        {"start": 33, "end": 42, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "aren't allowed to diễn tả hành động bị cấm.",
+        "en": "aren't allowed to expresses a forbidden action."
+      },
+      "translation": {
+        "vi": "Khách không được phép vào phòng này.",
+        "en": "Visitors aren't allowed to enter this room."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "You mustn't bring anything if you don't want to.",
+      "right": "You don't have to bring anything if you don't want to.",
+      "reason": {
+        "vi": "Người học nhầm mustn't (cấm) với don't have to (không cần).",
+        "en": "Learners confuse mustn't (prohibition) with don't have to (lack of necessity)."
+      },
+      "error_tag": "other",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "You ___ smoke in the hospital. It's against the rules.",
+      "options": [
+        {"text": "mustn't", "error_tag": null},
+        {"text": "don't have to", "error_tag": "word_choice"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "mustn't diễn tả hành động bị cấm; don't have to nghĩa là không cần.",
+        "en": "mustn't expresses prohibition; don't have to means lack of necessity."
+      }
+    },
+    {
+      "q": "You ___ pay now. You can pay later.",
+      "options": [
+        {"text": "don't have to", "error_tag": null},
+        {"text": "mustn't", "error_tag": "word_choice"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "don't have to diễn tả không bắt buộc; mustn't nghĩa là bị cấm.",
+        "en": "don't have to expresses lack of necessity; mustn't means prohibition."
+      }
+    },
+    {
+      "q": "You ___ bring any food. We have plenty.",
+      "options": [{"text": "needn't", "error_tag": null}, {"text": "needn't to", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {
+        "vi": "needn't theo sau là động từ nguyên thể không 'to'.",
+        "en": "needn't is followed by the base form of the verb without 'to'."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu nói về một việc bạn không cần phải làm, dùng don't have to, don't need to hoặc needn't.",
+      "en": "Write a sentence about something you don't have to do, using don't have to, don't need to, or needn't."
+    },
+    "placeholder": "I don't have to ...",
+    "target_form": "negative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {
+          "role": "aux",
+          "any_of": ["don't have to", "don't need to", "needn't", "aren't allowed to"]
+        },
+        {"role": "verb", "regex": "[a-z]+"}
+      ]
+    },
+    "sample": {"text": "I don't have to work tomorrow."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790830861",
+    "generated_at": "2026-10-01T05:01:01Z",
+    "r5_source": {
+      "ids": ["b1-prohibition-and-lack-of-necessity"],
+      "content_version": 2,
+      "content_hash": "c68e4b4ff170c162eca8b3c00d47aa4b3c3487ecd43931f6c05723544e38df01",
+      "corrections": [
+        {
+          "r5_id": "b1-prohibition-and-lack-of-necessity",
+          "issue": "R5 example 'You needn't bring any food.' is correct but the mistake 'You needn't to pay now.' is listed as a common mistake; the correction is fine, but the lesson did not explicitly state that needn't takes the base form without 'to'.",
+          "fix": "Added a quick-practice item and explanation that needn't is followed by the base verb without 'to'."
+        },
+        {
+          "r5_id": "b1-prohibition-and-lack-of-necessity",
+          "issue": "R5 did not provide a clear formula or structured spans for the target structures.",
+          "fix": "Added formula and negative formula with abstract slots and options, and provided spans for all examples."
+        },
+        {
+          "r5_id": "b1-prohibition-and-lack-of-necessity",
+          "issue": "R5 included a guided practice item 'You mustn't use your phone during the exam.' as recognition, but the lesson lacked a clear contrast between prohibition and lack of necessity in the practice.",
+          "fix": "Added quick-practice items that contrast mustn't and don't have to, and a personal production task focusing on lack of necessity."
+        }
+      ]
+    },
+    "metadata_stale": true
+  },
+  "review": null
+}

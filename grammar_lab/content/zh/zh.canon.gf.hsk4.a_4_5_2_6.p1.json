@@ -1,0 +1,306 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk4.a_4_5_2_6.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.linking",
+  "level": {"framework": "hsk3", "value": "4", "rank": 4},
+  "prereqs": ["zh.canon.gf.hsk4.a_4_5_2_4.p1"],
+  "contrasts": [],
+  "error_tags": ["conjunction"],
+  "source_refs": {"gf0025": ["gf0025.hsk4.051"]},
+  "point_type": "other",
+  "sequence": 12,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Câu phức: 假如⋯⋯，（就）⋯⋯", "en": "Complex sentences: 假如⋯⋯，（就）⋯⋯"},
+    "native_title": "假如⋯⋯，（就）⋯⋯",
+    "level": {"framework": "hsk3", "value": "4", "rank": 4},
+    "summary": {
+      "vi": "Mẫu câu giả định dùng 假如 ở đầu câu để nêu một điều kiện, rồi dùng 就 ở mệnh đề sau để nói kết quả.",
+      "en": "A hypothetical conditional pattern that opens with 假如 to set a condition and uses 就 in the second clause to give the result."
+    },
+    "sub": {"vi": "điều kiện giả định", "en": "hypothetical condition"},
+    "native_title_pinyin": ["jiǎ", "rú", "", "", "", "", "jiù", "", "", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nêu một tình huống giả định, không có thật hoặc chưa xảy ra, rồi nói điều sẽ xảy ra.",
+      "en": "When you want to present an imagined or unreal situation and then say what would happen."
+    },
+    {
+      "vi": "Khi lời nói cần trang trọng hoặc trung tính hơn là dùng 如果 trong văn nói thân mật.",
+      "en": "When you need a slightly more formal or neutral tone than the conversational 如果."
+    },
+    {
+      "vi": "Khi mệnh đề kết quả có 就 để nối rõ hệ quả với điều kiện vừa nêu.",
+      "en": "When the result clause takes 就 to link the consequence clearly to the condition."
+    },
+    {
+      "vi": "Khi cả câu chỉ có một chủ ngữ chung cho cả hai mệnh đề, chủ ngữ thường đứng trước 假如.",
+      "en": "When both clauses share one subject, that subject normally comes before 假如."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "S",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "optional": true,
+        "pinyin": [""]
+      },
+      {
+        "text": "假如",
+        "role": "connector",
+        "label": {"vi": "từ nối điều kiện", "en": "conditional connector"},
+        "pinyin": ["jiǎ", "rú"]
+      },
+      {
+        "text": "条件",
+        "role": "other",
+        "label": {"vi": "mệnh đề điều kiện", "en": "condition clause"},
+        "pinyin": ["tiáo", "jiàn"]
+      },
+      {
+        "text": "就",
+        "role": "connector",
+        "label": {"vi": "từ nối kết quả", "en": "result connector"},
+        "optional": true,
+        "pinyin": ["jiù"]
+      },
+      {
+        "text": "结果",
+        "role": "other",
+        "label": {"vi": "mệnh đề kết quả", "en": "result clause"},
+        "pinyin": ["jié", "guǒ"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "假如明天下雨，我们就不去公园。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 6, "role": "other"},
+        {"start": 9, "end": 10, "role": "connector"},
+        {"start": 10, "end": 14, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "假如 mở đầu điều kiện giả định, 就 nối kết quả tất yếu.",
+        "en": "假如 opens the imagined condition, and 就 links the resulting consequence."
+      },
+      "translation": {
+        "vi": "Nếu ngày mai trời mưa, chúng tôi sẽ không đi công viên.",
+        "en": "If it rains tomorrow, we will not go to the park."
+      },
+      "pinyin": [
+        "jiǎ",
+        "rú",
+        "míng",
+        "tiān",
+        "xià",
+        "yǔ",
+        "",
+        "wǒ",
+        "men",
+        "jiù",
+        "bù",
+        "qù",
+        "gōng",
+        "yuán",
+        ""
+      ]
+    },
+    {
+      "text": "假如你有时间，就帮我买一本书。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 6, "role": "other"},
+        {"start": 7, "end": 8, "role": "connector"},
+        {"start": 8, "end": 14, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Chủ ngữ 你 đứng sau 假如; 就 đứng trước lời nhờ ở mệnh đề kết quả.",
+        "en": "The subject 你 follows 假如; 就 comes before the request in the result clause."
+      },
+      "translation": {
+        "vi": "Nếu bạn có thời gian, hãy mua giúp tôi một cuốn sách.",
+        "en": "If you have time, buy a book for me."
+      },
+      "pinyin": [
+        "jiǎ",
+        "rú",
+        "nǐ",
+        "yǒu",
+        "shí",
+        "jiān",
+        "",
+        "jiù",
+        "bāng",
+        "wǒ",
+        "mǎi",
+        "yī",
+        "běn",
+        "shū",
+        ""
+      ]
+    },
+    {
+      "text": "假如他不来，我们就改时间。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 5, "role": "other"},
+        {"start": 8, "end": 9, "role": "connector"},
+        {"start": 9, "end": 12, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Điều kiện giả định có thể là điều mình không mong, 就 vẫn đứng trước kết quả.",
+        "en": "The imagined condition can be something unwanted; 就 still precedes the result."
+      },
+      "translation": {
+        "vi": "Nếu anh ấy không đến, chúng tôi sẽ đổi thời gian.",
+        "en": "If he does not come, we will change the time."
+      },
+      "pinyin": ["jiǎ", "rú", "tā", "bù", "lái", "", "wǒ", "men", "jiù", "gǎi", "shí", "jiān", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "假如明天下雨，我们不去公园就。",
+      "right": "假如明天下雨，我们就不去公园。",
+      "reason": {
+        "vi": "就 phải đứng trước động từ ở mệnh đề kết quả, không đứng cuối câu như một số từ nối trong tiếng Việt.",
+        "en": "就 must come before the verb in the result clause; it cannot sit at the end of the sentence as some Vietnamese connectors do."
+      },
+      "error_tag": "conjunction",
+      "l1": ["vi"],
+      "wrong_pinyin": [
+        "jiǎ",
+        "rú",
+        "míng",
+        "tiān",
+        "xià",
+        "yǔ",
+        "",
+        "wǒ",
+        "men",
+        "bù",
+        "qù",
+        "gōng",
+        "yuán",
+        "jiù",
+        ""
+      ],
+      "right_pinyin": [
+        "jiǎ",
+        "rú",
+        "míng",
+        "tiān",
+        "xià",
+        "yǔ",
+        "",
+        "wǒ",
+        "men",
+        "jiù",
+        "bù",
+        "qù",
+        "gōng",
+        "yuán",
+        ""
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "假如你明天有空，我们___去看电影。",
+      "options": [
+        {"text": "就", "error_tag": null, "pinyin": ["jiù"]},
+        {"text": "才", "error_tag": "conjunction", "pinyin": ["cái"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau mệnh đề 假如, mệnh đề kết quả dùng 就 để nối hệ quả; 才 chỉ dùng cho điều kiện cần thiết, không hợp ở đây.",
+        "en": "After a 假如 clause, the result clause takes 就; 才 marks a necessary condition and does not fit here."
+      },
+      "q_pinyin": [
+        "jiǎ",
+        "rú",
+        "nǐ",
+        "míng",
+        "tiān",
+        "yǒu",
+        "kòng",
+        "",
+        "wǒ",
+        "men",
+        "",
+        "",
+        "",
+        "qù",
+        "kàn",
+        "diàn",
+        "yǐng",
+        ""
+      ]
+    },
+    {
+      "q": "假如他不来，我们___开始吧。",
+      "options": [
+        {"text": "就", "error_tag": null, "pinyin": ["jiù"]},
+        {"text": "也", "error_tag": "conjunction", "pinyin": ["yě"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "就 nối điều kiện giả định với kết quả; 也 chỉ thêm ý 'cũng', không diễn tả quan hệ điều kiện – kết quả.",
+        "en": "就 links the imagined condition to its result; 也 only adds 'also' and does not express condition–result."
+      },
+      "q_pinyin": ["jiǎ", "rú", "tā", "bù", "lái", "", "wǒ", "men", "", "", "", "kāi", "shǐ", "ba", ""]
+    },
+    {
+      "q": "___你不想去，我们就不去了。",
+      "options": [
+        {"text": "假如", "error_tag": null, "pinyin": ["jiǎ", "rú"]},
+        {"text": "虽然", "error_tag": "conjunction", "pinyin": ["suī", "rán"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu này nêu một giả định, nên mở đầu bằng 假如; 虽然 dùng để nhượng bộ, không hợp với 就 ở mệnh đề sau.",
+        "en": "The sentence presents a hypothetical, so it opens with 假如; 虽然 marks concession and does not pair with 就 here."
+      },
+      "q_pinyin": ["", "", "", "nǐ", "bù", "xiǎng", "qù", "", "wǒ", "men", "jiù", "bù", "qù", "le", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về kế hoạch của bạn, dùng 假如 ở đầu để nêu điều kiện và 就 ở mệnh đề sau để nói kết quả.",
+      "en": "Write one sentence about your plans, using 假如 to set a condition and 就 in the second clause for the result."
+    },
+    "placeholder": "假如明天……，我就……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "connector", "any_of": ["假如"]}, {"role": "connector", "any_of": ["就"]}]
+    },
+    "sample": {
+      "text": "假如明天天气好，我就去跑步。",
+      "pinyin": ["jiǎ", "rú", "míng", "tiān", "tiān", "qì", "hǎo", "", "wǒ", "jiù", "qù", "pǎo", "bù", ""]
+    },
+    "placeholder_pinyin": ["jiǎ", "rú", "míng", "tiān", "", "", "", "wǒ", "jiù", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790833326",
+    "generated_at": "2026-10-01T05:42:06Z"
+  },
+  "review": null
+}

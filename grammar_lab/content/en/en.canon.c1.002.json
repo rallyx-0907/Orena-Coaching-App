@@ -1,0 +1,232 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.c1.002",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.negation",
+  "level": {"framework": "cefr", "value": "C1", "rank": 5},
+  "prereqs": ["en.canon.b1.041"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["b2-no-sooner-hardly-scarcely"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["b2-no-sooner-hardly-scarcely"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "No sooner/hardly/scarcely", "en": "No sooner/hardly/scarcely"},
+    "native_title": "No sooner/hardly/scarcely",
+    "level": {"framework": "cefr", "value": "C1", "rank": 5},
+    "summary": {
+      "vi": "Cấu trúc đảo ngữ no sooner...than và hardly/scarcely...when/before dùng để kể hai sự việc xảy ra gần như cùng lúc, sự việc thứ hai theo ngay sau sự việc thứ nhất.",
+      "en": "The inverted patterns no sooner...than and hardly/scarcely...when/before narrate two events that happen almost at the same time, with the second following immediately after the first."
+    },
+    "sub": {"vi": "đảo ngữ trình tự", "en": "inverted sequence"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi kể lại hai sự việc trong quá khứ xảy ra sát nhau đến mức gần như không có khoảng nghỉ.",
+      "en": "When narrating two past events that happen so close together that there is almost no gap."
+    },
+    {
+      "vi": "Khi muốn nhấn mạnh sự việc thứ hai đến bất ngờ hoặc ngay lập tức, thường trong văn kể chuyện hoặc tường thuật trang trọng.",
+      "en": "When you want to emphasise that the second event came as a surprise or immediately, typically in narrative or formal reporting."
+    },
+    {
+      "vi": "Khi cần dùng cấu trúc đảo ngữ với trợ động từ had đứng trước chủ ngữ sau cụm no sooner, hardly hoặc scarcely.",
+      "en": "When you need the inverted structure with the auxiliary had before the subject after no sooner, hardly or scarcely."
+    },
+    {
+      "vi": "Khi muốn thay thế as soon as bằng một cách nói trang trọng và có tính nhấn mạnh hơn.",
+      "en": "When you want a more formal and emphatic alternative to as soon as."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "No sooner", "role": "marker", "label": {"vi": "cụm mở đầu", "en": "opening marker"}},
+      {"text": "had", "role": "aux", "label": {"vi": "trợ động từ đảo", "en": "inverted auxiliary"}},
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}},
+      {
+        "text": "than",
+        "role": "connector",
+        "label": {"vi": "liên từ nối", "en": "linking conjunction"}
+      },
+      {
+        "text": "S",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ mệnh đề sau", "en": "second clause subject"}
+      },
+      {
+        "text": "V2",
+        "role": "verb",
+        "label": {"vi": "động từ quá khứ đơn", "en": "past simple verb"}
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "No sooner had we arrived than it started to rain.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 9, "role": "marker"},
+        {"start": 10, "end": 13, "role": "aux"},
+        {"start": 14, "end": 16, "role": "subject"},
+        {"start": 17, "end": 24, "role": "verb"},
+        {"start": 25, "end": 29, "role": "connector"},
+        {"start": 30, "end": 32, "role": "subject"},
+        {"start": 33, "end": 40, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Hai sự việc xảy ra gần như cùng lúc; mệnh đề sau dùng quá khứ đơn.",
+        "en": "The two events happen almost simultaneously; the second clause uses the past simple."
+      },
+      "translation": {
+        "vi": "Chúng tôi vừa đến thì trời bắt đầu mưa.",
+        "en": "We had no sooner arrived than it started to rain."
+      }
+    },
+    {
+      "text": "Hardly had I closed the door when someone knocked.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 6, "role": "marker"},
+        {"start": 7, "end": 10, "role": "aux"},
+        {"start": 11, "end": 12, "role": "subject"},
+        {"start": 13, "end": 19, "role": "verb"},
+        {"start": 29, "end": 33, "role": "connector"},
+        {"start": 34, "end": 41, "role": "subject"},
+        {"start": 42, "end": 49, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Hardly đi với when; hành động thứ hai xảy ra ngay sau hành động thứ nhất.",
+        "en": "Hardly pairs with when; the second action follows immediately after the first."
+      },
+      "translation": {
+        "vi": "Tôi vừa đóng cửa thì có người gõ.",
+        "en": "I had hardly closed the door when someone knocked."
+      }
+    },
+    {
+      "text": "Scarcely had the meeting begun before the fire alarm sounded.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 8, "role": "marker"},
+        {"start": 9, "end": 12, "role": "aux"},
+        {"start": 13, "end": 24, "role": "subject"},
+        {"start": 25, "end": 30, "role": "verb"},
+        {"start": 31, "end": 37, "role": "connector"},
+        {"start": 38, "end": 52, "role": "subject"},
+        {"start": 53, "end": 60, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Scarcely có thể đi với before; sự việc thứ hai cắt ngang sự việc thứ nhất.",
+        "en": "Scarcely can pair with before; the second event interrupts the first."
+      },
+      "translation": {
+        "vi": "Cuộc họp vừa bắt đầu thì chuông báo cháy vang lên.",
+        "en": "The meeting had scarcely begun before the fire alarm sounded."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "No sooner I had arrived than it rained.",
+      "right": "No sooner had I arrived than it rained.",
+      "reason": {
+        "vi": "Cụm phủ định no sooner đứng đầu câu bắt buộc phải đảo trợ động từ had lên trước chủ ngữ, giống như các trạng từ phủ định khác.",
+        "en": "The negative-like phrase no sooner at the start of a clause triggers inversion, so the auxiliary had must come before the subject."
+      },
+      "error_tag": "other",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "No sooner ___ we arrived than it started to rain.",
+      "options": [
+        {"text": "had", "error_tag": null},
+        {"text": "have", "error_tag": "tense"},
+        {"text": "did", "error_tag": "word_choice"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Cấu trúc cố định là no sooner had + chủ ngữ + quá khứ phân từ; had là trợ động từ đảo.",
+        "en": "The fixed pattern is no sooner had + subject + past participle; had is the inverted auxiliary."
+      }
+    },
+    {
+      "q": "Hardly had I closed the door ___ someone knocked.",
+      "options": [{"text": "when", "error_tag": null}, {"text": "than", "error_tag": "word_choice"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Hardly đi với when, không đi với than; than thuộc cấu trúc no sooner...than.",
+        "en": "Hardly pairs with when, not than; than belongs to no sooner...than."
+      }
+    },
+    {
+      "q": "Scarcely had the meeting begun ___ the fire alarm sounded.",
+      "options": [{"text": "before", "error_tag": null}, {"text": "than", "error_tag": "word_choice"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Scarcely có thể đi với before hoặc when, nhưng không đi với than.",
+        "en": "Scarcely can pair with before or when, but not with than."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu kể lại hai sự việc xảy ra gần như cùng lúc trong quá khứ, dùng no sooner...than hoặc hardly/scarcely...when/before.",
+      "en": "Write a sentence narrating two past events that happened almost at the same time, using no sooner...than or hardly/scarcely...when/before."
+    },
+    "placeholder": "No sooner had I ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "marker", "any_of": ["no sooner", "hardly", "scarcely"]},
+        {"role": "aux", "any_of": ["had"]},
+        {"role": "connector", "any_of": ["than", "when", "before"]}
+      ]
+    },
+    "sample": {"text": "No sooner had I sat down than the phone rang."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790831359",
+    "generated_at": "2026-10-01T05:09:19Z",
+    "r5_source": {
+      "ids": ["b2-no-sooner-hardly-scarcely"],
+      "content_version": 2,
+      "content_hash": "bb20e30f30b674e5b0276399bae985165143d57a6212f8fc14346da61b0a23b5",
+      "corrections": [
+        {
+          "r5_id": "b2-no-sooner-hardly-scarcely",
+          "issue": "R5 xếp chủ điểm ở B2, nhưng yêu cầu của khóa học là C1.",
+          "fix": "Đã viết lại toàn bộ nội dung cho đúng cấp độ C1, giữ nguyên phạm vi ngữ pháp."
+        },
+        {
+          "r5_id": "b2-no-sooner-hardly-scarcely",
+          "issue": "R5 không cung cấp công thức dạng slot trừu tượng, thiếu spans và cấu trúc cho phần kiểm tra nhanh.",
+          "fix": "Đã bổ sung formula với các slot marker, aux, subject, verb, connector; thêm spans cho từng ví dụ và 3 câu quick_practice."
+        },
+        {
+          "r5_id": "b2-no-sooner-hardly-scarcely",
+          "issue": "R5 có lỗi sai minh họa 'No sooner I had arrived than it rained.' nhưng không nêu rõ cơ chế đảo ngữ.",
+          "fix": "Đã sửa thành 'No sooner had I arrived than it rained.' và giải thích rõ việc đảo trợ động từ had sau cụm phủ định đầu câu."
+        },
+        {
+          "r5_id": "b2-no-sooner-hardly-scarcely",
+          "issue": "R5 dùng 'Hardly had we arrived than the show started.' làm lỗi sai nhưng không nhấn mạnh hardly đi với when/before.",
+          "fix": "Đã thêm quick_practice kiểm tra giới từ nối đúng cho hardly và scarcely."
+        }
+      ]
+    }
+  },
+  "review": null
+}

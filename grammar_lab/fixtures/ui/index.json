@@ -20,38 +20,7 @@
       "target_lang": "en",
       "status": "draft_ai",
       "production_ready": false,
-      "en_placeholder_paths": [
-        "pattern.formula[0].label",
-        "pattern.formula[1].label",
-        "pattern.formula[2].label",
-        "pattern.formula[3].label",
-        "pattern.formula[4].label",
-        "pattern.variants.negative[0].label",
-        "pattern.variants.negative[1].label",
-        "pattern.variants.negative[2].label",
-        "pattern.variants.negative[3].label",
-        "pattern.variants.negative[4].label",
-        "pattern.variants.question[0].label",
-        "pattern.variants.question[1].label",
-        "pattern.variants.question[2].label",
-        "pattern.variants.question[3].label",
-        "when_to_use[0]",
-        "when_to_use[1]",
-        "when_to_use[2]",
-        "when_to_use[3]",
-        "examples[0].annotation",
-        "examples[0].translation",
-        "examples[1].annotation",
-        "examples[1].translation",
-        "examples[2].annotation",
-        "examples[2].translation",
-        "compare[0].this_meaning",
-        "compare[0].other_meaning",
-        "common_mistakes[0].reason",
-        "quick_practice[0].explain",
-        "quick_practice[1].explain",
-        "quick_practice[2].explain"
-      ],
+      "en_placeholder_paths": [],
       "level": {"framework": "cefr", "value": "A1", "rank": 1},
       "point_type": "tense_aspect",
       "file": "en.present_continuous.now.json",
@@ -60,15 +29,38 @@
       "provider_calls_for_this_fixture": 0,
       "content_provenance": {
         "model": "deepseek:deepseek-flash",
-        "prompt_version": "generate_point_v04.v5",
-        "run_id": "generate.1790589955",
-        "generated_at": "2026-09-28T10:05:55Z"
+        "prompt_version": "generate_point_v04.v11",
+        "run_id": "generate.1790830400",
+        "generated_at": "2026-10-01T04:53:20Z",
+        "r5_source": {
+          "ids": ["a1-present-continuous"],
+          "content_version": 2,
+          "content_hash": "9d2e3f755195ff42e02360303f0f7b72b5077c840e47ac016e139998453d904b",
+          "corrections": [
+            {
+              "r5_id": "a1-present-continuous",
+              "issue": "R5's example 'She is talking to her friend.' has no time expression, so it does not clearly show the 'now' meaning.",
+              "fix": "Added 'now' to the affirmative example: 'I am doing my homework now.'"
+            },
+            {
+              "r5_id": "a1-present-continuous",
+              "issue": "R5's mistake 'Are they play a game?' is a question-form error, but the lesson's main trap is missing be in statements.",
+              "fix": "Used the more typical L1 mistake 'He playing football now.' as the common mistake."
+            },
+            {
+              "r5_id": "a1-present-continuous",
+              "issue": "R5 did not include a comparison with present simple third-person -s.",
+              "fix": "Added a compare entry contrasting 'She is reading a book.' with 'She reads every night.'"
+            }
+          ]
+        }
       },
       "primitives": [
         "header",
         "when_to_use",
         "pattern.formula",
         "pattern.formula.optional",
+        "pattern.formula.options",
         "pattern.variants.negative",
         "pattern.variants.question",
         "pattern.illustration.timeline",
@@ -152,10 +144,5 @@
       ]
     }
   ],
-  "not_covered_by_these_two": [
-    "blocks.story",
-    "pattern.formula.options",
-    "pattern.illustration.morphology",
-    "pattern.illustration.word_order"
-  ]
+  "not_covered_by_these_two": ["blocks.story", "pattern.illustration.morphology", "pattern.illustration.word_order"]
 }

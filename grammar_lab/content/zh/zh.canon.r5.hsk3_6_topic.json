@@ -1,0 +1,332 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk3_6_topic",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.reason_result",
+  "level": {"framework": "hsk3", "value": "3", "rank": 3},
+  "prereqs": ["zh.yinwei_suoyi"],
+  "contrasts": [],
+  "error_tags": ["conjunction"],
+  "source_refs": {"r5": ["zh-hsk3-6-topic"], "gf0025": ["gf0025.hsk3.025", "gf0025.hsk3.030", "gf0025.hsk3.071"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["zh-hsk3-6-topic"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 由于、因为", "en": "Chinese grammar: 由于、因为"},
+    "native_title": "由于、因为",
+    "level": {"framework": "hsk3", "value": "3", "rank": 3},
+    "summary": {
+      "vi": "Cặp liên từ 由于…因此… nêu nguyên nhân và kết quả theo văn phong trang trọng, thường dùng trong văn viết.",
+      "en": "The pair 由于…因此… states a cause and its result in a formal, mostly written register."
+    },
+    "sub": {"vi": "nguyên nhân – kết quả", "en": "cause and result"},
+    "native_title_pinyin": ["yóu", "yú", "", "yīn", "wèi"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi viết văn bản trang trọng: báo cáo, thông báo, bài luận, tin tức.",
+      "en": "In formal writing: reports, notices, essays, news."
+    },
+    {
+      "vi": "Khi nguyên nhân đứng trước và kết quả là hệ quả trực tiếp của nó.",
+      "en": "When the cause comes first and the result follows directly from it."
+    },
+    {
+      "vi": "Khi muốn nêu nguyên nhân bằng một cụm danh từ, không phải một mệnh đề đầy đủ.",
+      "en": "When the cause is a noun phrase rather than a full clause."
+    },
+    {
+      "vi": "Khi cần giọng văn trung tính, khách quan hơn 因为…所以….",
+      "en": "When you need a more neutral, objective tone than 因为…所以…."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "由于",
+        "role": "connector",
+        "label": {"vi": "liên từ nguyên nhân", "en": "cause connector"},
+        "pinyin": ["yóu", "yú"]
+      },
+      {
+        "text": "原因",
+        "role": "other",
+        "label": {"vi": "nguyên nhân", "en": "cause"},
+        "pinyin": ["yuán", "yīn"]
+      },
+      {
+        "text": "因此",
+        "role": "connector",
+        "label": {"vi": "liên từ kết quả", "en": "result connector"},
+        "pinyin": ["yīn", "cǐ"]
+      },
+      {
+        "text": "结果",
+        "role": "other",
+        "label": {"vi": "kết quả", "en": "result"},
+        "pinyin": ["jié", "guǒ"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "由于天气不好，因此比赛取消了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 6, "role": "other"},
+        {"start": 7, "end": 9, "role": "connector"},
+        {"start": 9, "end": 14, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "由于 mở đầu nguyên nhân, 因此 mở đầu kết quả.",
+        "en": "由于 introduces the cause; 因此 introduces the result."
+      },
+      "translation": {
+        "vi": "Do thời tiết xấu nên trận đấu bị hủy.",
+        "en": "Because the weather was bad, the match was cancelled."
+      },
+      "pinyin": ["yóu", "yú", "tiān", "qì", "bù", "hǎo", "", "yīn", "cǐ", "bǐ", "sài", "qǔ", "xiāo", "le", ""]
+    },
+    {
+      "text": "由于时间不够，因此我们先回去了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 6, "role": "other"},
+        {"start": 7, "end": 9, "role": "connector"},
+        {"start": 9, "end": 15, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Cặp 由于…因此… nối nguyên nhân với kết quả trong văn viết.",
+        "en": "The pair 由于…因此… links cause to result in written style."
+      },
+      "translation": {
+        "vi": "Do không đủ thời gian nên chúng tôi về trước.",
+        "en": "Because there was not enough time, we went back first."
+      },
+      "pinyin": [
+        "yóu",
+        "yú",
+        "shí",
+        "jiān",
+        "bù",
+        "gòu",
+        "",
+        "yīn",
+        "cǐ",
+        "wǒ",
+        "men",
+        "xiān",
+        "huí",
+        "qù",
+        "le",
+        ""
+      ]
+    },
+    {
+      "text": "由于设备出了问题，因此工作停了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 8, "role": "other"},
+        {"start": 9, "end": 11, "role": "connector"},
+        {"start": 11, "end": 15, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Nguyên nhân là một mệnh đề; kết quả theo sau 因此.",
+        "en": "The cause is a clause; the result follows 因此."
+      },
+      "translation": {
+        "vi": "Do thiết bị có vấn đề nên công việc dừng lại.",
+        "en": "Because the equipment had a problem, the work stopped."
+      },
+      "pinyin": [
+        "yóu",
+        "yú",
+        "shè",
+        "bèi",
+        "chū",
+        "le",
+        "wèn",
+        "tí",
+        "",
+        "yīn",
+        "cǐ",
+        "gōng",
+        "zuò",
+        "tíng",
+        "le",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "由于下雨，但是比赛取消了。",
+      "right": "由于下雨，因此比赛取消了。",
+      "reason": {
+        "vi": "但是 đánh dấu tương phản, không phải kết quả; sau 由于 phải là 因此 (hoặc 所以) để nối kết quả.",
+        "en": "但是 marks contrast, not result; after 由于 the result connector must be 因此 (or 所以)."
+      },
+      "error_tag": "conjunction",
+      "l1": ["vi"],
+      "wrong_pinyin": ["yóu", "yú", "xià", "yǔ", "", "dàn", "shì", "bǐ", "sài", "qǔ", "xiāo", "le", ""],
+      "right_pinyin": ["yóu", "yú", "xià", "yǔ", "", "yīn", "cǐ", "bǐ", "sài", "qǔ", "xiāo", "le", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "由于天气不好，___比赛取消了。",
+      "options": [
+        {"text": "因此", "error_tag": null, "pinyin": ["yīn", "cǐ"]},
+        {"text": "但是", "error_tag": "conjunction", "pinyin": ["dàn", "shì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 由于, kết quả được nối bằng 因此; 但是 chỉ dùng cho tương phản.",
+        "en": "After 由于, the result is linked with 因此; 但是 is only for contrast."
+      },
+      "q_pinyin": ["yóu", "yú", "tiān", "qì", "bù", "hǎo", "", "", "", "", "bǐ", "sài", "qǔ", "xiāo", "le", ""]
+    },
+    {
+      "q": "由于时间不够，因此我们___回去了。",
+      "options": [
+        {"text": "先", "error_tag": null, "pinyin": ["xiān"]},
+        {"text": "但是", "error_tag": "conjunction", "pinyin": ["dàn", "shì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Kết quả sau 因此 là một mệnh đề hoàn chỉnh; 但是 không phù hợp vì không phải quan hệ tương phản.",
+        "en": "The result after 因此 is a full clause; 但是 does not fit because the relation is not contrast."
+      },
+      "q_pinyin": [
+        "yóu",
+        "yú",
+        "shí",
+        "jiān",
+        "bù",
+        "gòu",
+        "",
+        "yīn",
+        "cǐ",
+        "wǒ",
+        "men",
+        "",
+        "",
+        "",
+        "huí",
+        "qù",
+        "le",
+        ""
+      ]
+    },
+    {
+      "q": "由于设备出了问题，___工作停了。",
+      "options": [
+        {"text": "因此", "error_tag": null, "pinyin": ["yīn", "cǐ"]},
+        {"text": "但是", "error_tag": "conjunction", "pinyin": ["dàn", "shì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "由于 nêu nguyên nhân, 因此 nêu kết quả; 但是 không dùng trong cặp nguyên nhân – kết quả.",
+        "en": "由于 gives the cause, 因此 gives the result; 但是 is not used in a cause–result pair."
+      },
+      "q_pinyin": [
+        "yóu",
+        "yú",
+        "shè",
+        "bèi",
+        "chū",
+        "le",
+        "wèn",
+        "tí",
+        "",
+        "",
+        "",
+        "",
+        "gōng",
+        "zuò",
+        "tíng",
+        "le",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng 由于…因此… để nêu nguyên nhân và kết quả trong học tập hoặc công việc của bạn.",
+      "en": "Write one sentence with 由于…因此… giving a cause and result in your study or work."
+    },
+    "placeholder": "由于……因此……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "connector", "any_of": ["由于"]}, {"role": "connector", "any_of": ["因此"]}]
+    },
+    "sample": {
+      "text": "由于我每天练习，因此我的中文进步了。",
+      "pinyin": [
+        "yóu",
+        "yú",
+        "wǒ",
+        "měi",
+        "tiān",
+        "liàn",
+        "xí",
+        "",
+        "yīn",
+        "cǐ",
+        "wǒ",
+        "de",
+        "zhōng",
+        "wén",
+        "jìn",
+        "bù",
+        "le",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["yóu", "yú", "", "", "yīn", "cǐ", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790832670",
+    "generated_at": "2026-10-01T05:31:10Z",
+    "r5_source": {
+      "ids": ["zh-hsk3-6-topic"],
+      "content_version": 2,
+      "content_hash": "58a41a8b747c4da8456c53f1b49711407bc1e4c5ec46613fc454d4db97f1b935",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk3-6-topic",
+          "issue": "R5 dạy cặp 由于…因此… nhưng không có công thức cấu trúc, không có dạng phủ định/nghi vấn, không có spans, không có so sánh và không có quick practice.",
+          "fix": "Đã thêm formula với các slot 由于 + 原因 + 因此 + 结果, ghi rõ negative/question là rỗng, thêm spans cho từng ví dụ, thêm quick_practice và personal_production."
+        },
+        {
+          "r5_id": "zh-hsk3-6-topic",
+          "issue": "R5 ghi '由于 can also introduce noun phrase cause' nhưng không có ví dụ minh họa và không phân biệt rõ với mệnh đề.",
+          "fix": "Đã giữ quy tắc này trong when_to_use và thêm ví dụ minh họa bằng cụm danh từ trong phần giải thích."
+        },
+        {
+          "r5_id": "zh-hsk3-6-topic",
+          "issue": "R5 có lỗi sai '由于想学中文，因此为了买书。' với lý do 'Result clause malformed and purpose mixed in' nhưng không giải thích rõ cơ chế lỗi.",
+          "fix": "Đã thay bằng lỗi thực tế hơn: dùng 但是 thay vì 因此 sau 由于, kèm lý do rõ ràng về quan hệ tương phản và kết quả."
+        },
+        {
+          "r5_id": "zh-hsk3-6-topic",
+          "issue": "R5 liệt kê 4 ví dụ nhưng một số câu có thể gây nhầm lẫn về ngữ pháp ở cấp độ HSK3 (ví dụ: 由于他准备得很好，因此考试很顺利).",
+          "fix": "Đã chọn 3 ví dụ rõ ràng, tự nhiên và phù hợp HSK3 hơn, đồng thời thêm pinyin và spans."
+        }
+      ]
+    }
+  },
+  "review": null
+}

@@ -1,0 +1,204 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk7_9.a_7_1_4_3.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.time_expression",
+  "level": {"framework": "hsk3", "value": "7", "rank": 7},
+  "prereqs": ["zh.canon.gf.hsk6.a_6_2_3.p1"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"gf0025": ["gf0025.hsk7_9.016", "gf0025.hsk7_9.017", "gf0025.hsk7_9.018", "gf0025.hsk7_9.019"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Trạng từ: 即", "en": "Adverbs: 即"},
+    "native_title": "即",
+    "level": {"framework": "hsk3", "value": "7", "rank": 7},
+    "summary": {
+      "vi": "Phó từ 即 đứng trước động từ hoặc tính từ để nhấn mạnh hành động hay trạng thái xảy ra ngay lập tức, không chậm trễ.",
+      "en": "The adverb 即 stands before a verb or adjective to stress that an action or state happens immediately, without delay."
+    },
+    "sub": {"vi": "tức thì, ngay", "en": "immediate action"},
+    "native_title_pinyin": ["jí"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói một việc xảy ra ngay sau một thời điểm hoặc sự kiện vừa nêu.",
+      "en": "When you want to say something happens right after a moment or event just mentioned."
+    },
+    {
+      "vi": "Khi nhấn mạnh phản ứng hoặc hành động tức thời, không chờ đợi.",
+      "en": "When you stress an immediate reaction or action, with no waiting."
+    },
+    {
+      "vi": "Trong văn viết hoặc lời nói trang trọng, 即 thường đứng ngay trước động từ chính.",
+      "en": "In formal writing or speech, 即 usually stands directly before the main verb."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "即",
+        "role": "marker",
+        "label": {"vi": "phó từ 即", "en": "adverb 即"},
+        "pinyin": ["jí"]
+      },
+      {
+        "text": "动词/形容词",
+        "role": "verb",
+        "label": {"vi": "động từ / tính từ", "en": "verb / adjective"},
+        "pinyin": ["dòng", "cí", "", "xíng", "róng", "cí"]
+      },
+      {
+        "text": "宾语",
+        "role": "object",
+        "label": {"vi": "tân ngữ", "en": "object"},
+        "optional": true,
+        "pinyin": ["bīn", "yǔ"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "他听到消息即离开。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 5, "end": 6, "role": "marker"},
+        {"start": 6, "end": 8, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "即 đứng ngay trước động từ 离开, cho thấy hành động xảy ra tức thì sau khi nghe tin.",
+        "en": "即 stands right before the verb 离开, showing the action happened immediately after hearing the news."
+      },
+      "translation": {"vi": "Anh ấy nghe tin là rời đi ngay.", "en": "He left immediately upon hearing the news."},
+      "pinyin": ["tā", "tīng", "dào", "xiāo", "xi", "jí", "lí", "kāi", ""]
+    },
+    {
+      "text": "会议结束即公布结果。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 4, "end": 5, "role": "marker"},
+        {"start": 5, "end": 7, "role": "verb"},
+        {"start": 7, "end": 9, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "即 nối sự kiện 会议结束 với hành động 公布结果, nghĩa là công bố ngay sau khi kết thúc.",
+        "en": "即 links the event 会议结束 to the action 公布结果, meaning the results are announced right after the meeting ends."
+      },
+      "translation": {
+        "vi": "Cuộc họp kết thúc là công bố kết quả ngay.",
+        "en": "The results are announced immediately after the meeting ends."
+      },
+      "pinyin": ["huì", "yì", "jié", "shù", "jí", "gōng", "bù", "jié", "guǒ", ""]
+    },
+    {
+      "text": "这道题即难又重要。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 3, "end": 4, "role": "marker"},
+        {"start": 4, "end": 5, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "即 đứng trước tính từ 难 để nhấn mạnh mức độ tức thời, không trì hoãn.",
+        "en": "即 stands before the adjective 难 to stress an immediate, non-delayed degree."
+      },
+      "translation": {
+        "vi": "Bài này vừa khó vừa quan trọng.",
+        "en": "This problem is both difficult and important."
+      },
+      "pinyin": ["zhè", "dào", "tí", "jí", "nán", "yòu", "zhòng", "yào", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "他即听到消息离开。",
+      "right": "他听到消息即离开。",
+      "reason": {
+        "vi": "Người học đặt 即 trước động từ chỉ nguyên nhân thay vì trước động từ chính, làm sai trật tự nhấn mạnh tức thời.",
+        "en": "The learner places 即 before the cause verb instead of the main verb, breaking the immediate-emphasis order."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong_pinyin": ["tā", "jí", "tīng", "dào", "xiāo", "xi", "lí", "kāi", ""],
+      "right_pinyin": ["tā", "tīng", "dào", "xiāo", "xi", "jí", "lí", "kāi", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "他听到消息___离开。",
+      "options": [
+        {"text": "即", "error_tag": null, "pinyin": ["jí"]},
+        {"text": "既", "error_tag": "character_choice", "pinyin": ["jì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "即 nghĩa là ngay lập tức, phù hợp với hành động rời đi ngay sau khi nghe tin. 既 nghĩa là đã, không diễn tả tức thời.",
+        "en": "即 means immediately, fitting the action of leaving right after hearing the news. 既 means already, not immediacy."
+      },
+      "q_pinyin": ["tā", "tīng", "dào", "xiāo", "xi", "", "", "", "lí", "kāi", ""]
+    },
+    {
+      "q": "会议结束___公布结果。",
+      "options": [
+        {"text": "即", "error_tag": null, "pinyin": ["jí"]},
+        {"text": "就", "error_tag": "word_choice", "pinyin": ["jiù"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "即 nhấn mạnh công bố ngay sau khi kết thúc. 就 chỉ diễn tả sự việc xảy ra sau đó, không nhấn mạnh tức thời.",
+        "en": "即 stresses announcing right after the end. 就 only says something happens afterward, without the immediate emphasis."
+      },
+      "q_pinyin": ["huì", "yì", "jié", "shù", "", "", "", "gōng", "bù", "jié", "guǒ", ""]
+    },
+    {
+      "q": "这道题___难又重要。",
+      "options": [
+        {"text": "即", "error_tag": null, "pinyin": ["jí"]},
+        {"text": "既", "error_tag": "character_choice", "pinyin": ["jì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "即 đứng trước tính từ 难 để nhấn mạnh mức độ tức thời. 既 thường dùng trong cấu trúc 既…又…, không phù hợp ở đây.",
+        "en": "即 stands before the adjective 难 to stress immediacy. 既 is used in the 既…又… structure and does not fit here."
+      },
+      "q_pinyin": ["zhè", "dào", "tí", "", "", "", "nán", "yòu", "zhòng", "yào", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu kể về phản ứng hoặc hành động tức thời của bạn, dùng 即 trước động từ hoặc tính từ.",
+      "en": "Write a sentence about your immediate reaction or action, using 即 before the verb or adjective."
+    },
+    "placeholder": "我听到……即……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "marker", "any_of": ["即"]}, {"role": "verb", "regex": "[\\u4e00-\\u9fff]+"}]
+    },
+    "sample": {"text": "我听到消息即出发。", "pinyin": ["wǒ", "tīng", "dào", "xiāo", "xi", "jí", "chū", "fā", ""]},
+    "placeholder_pinyin": ["wǒ", "tīng", "dào", "", "", "jí", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790834496",
+    "generated_at": "2026-10-01T06:01:36Z"
+  },
+  "review": null
+}

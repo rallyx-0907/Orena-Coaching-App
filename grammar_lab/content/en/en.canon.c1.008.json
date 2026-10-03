@@ -1,0 +1,250 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.c1.008",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.possibility",
+  "level": {"framework": "cefr", "value": "C1", "rank": 5},
+  "prereqs": ["en.canon.c1.007"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["c1-deontic-and-dynamic-modality"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": ["c1-deontic-and-dynamic-modality"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Deontic and dynamic động từ khuyết thiếuity", "en": "Deontic and dynamic modality"},
+    "native_title": "Deontic and dynamic modality",
+    "level": {"framework": "cefr", "value": "C1", "rank": 5},
+    "summary": {
+      "vi": "Điểm ngữ pháp này phân biệt hai loại nghĩa của động từ khuyết thiếu: deontic (quyền hạn, nghĩa vụ, sự cho phép) và dynamic (khả năng, sự sẵn lòng, điều kiện nội tại).",
+      "en": "This point distinguishes two kinds of modal meaning: deontic (authority, obligation, permission) and dynamic (ability, willingness, inherent circumstances)."
+    },
+    "sub": {"vi": "nghĩa vụ và khả năng", "en": "obligation and ability"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói ai đó có nghĩa vụ làm gì theo quy định, luật lệ hoặc thẩm quyền (deontic).",
+      "en": "When you want to say someone has an obligation under a rule, law or authority (deontic)."
+    },
+    {
+      "vi": "Khi bạn muốn nói ai đó được phép làm gì theo sự cho phép của người có thẩm quyền (deontic).",
+      "en": "When you want to say someone is permitted to do something by an authority (deontic)."
+    },
+    {
+      "vi": "Khi bạn muốn nói ai đó có khả năng, kỹ năng hoặc điều kiện nội tại để làm gì (dynamic).",
+      "en": "When you want to say someone has the ability, skill or inherent capacity to do something (dynamic)."
+    },
+    {
+      "vi": "Khi bạn muốn nói ai đó sẵn lòng hoặc không sẵn lòng làm gì (dynamic).",
+      "en": "When you want to say someone is willing or unwilling to do something (dynamic)."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {
+        "text": "modal",
+        "role": "aux",
+        "label": {"vi": "động từ khuyết thiếu", "en": "modal verb"},
+        "options": [
+          {"text": "must"},
+          {"text": "may"},
+          {"text": "can"},
+          {"text": "should"},
+          {"text": "will"},
+          {"text": "would"}
+        ]
+      },
+      {"text": "V", "role": "verb", "label": {"vi": "động từ chính", "en": "main verb"}},
+      {"text": "O", "role": "object", "label": {"vi": "tân ngữ", "en": "object"}, "optional": true}
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "modal",
+          "role": "aux",
+          "label": {"vi": "động từ khuyết thiếu", "en": "modal verb"},
+          "options": [
+            {"text": "must not"},
+            {"text": "may not"},
+            {"text": "cannot"},
+            {"text": "should not"},
+            {"text": "will not"},
+            {"text": "would not"}
+          ]
+        },
+        {"text": "V", "role": "verb", "label": {"vi": "động từ chính", "en": "main verb"}},
+        {
+          "text": "O",
+          "role": "object",
+          "label": {"vi": "tân ngữ", "en": "object"},
+          "optional": true
+        }
+      ],
+      "question": [
+        {
+          "text": "modal",
+          "role": "aux",
+          "label": {"vi": "động từ khuyết thiếu", "en": "modal verb"},
+          "options": [
+            {"text": "Must"},
+            {"text": "May"},
+            {"text": "Can"},
+            {"text": "Should"},
+            {"text": "Will"},
+            {"text": "Would"}
+          ]
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {"text": "V", "role": "verb", "label": {"vi": "động từ chính", "en": "main verb"}},
+        {
+          "text": "O",
+          "role": "object",
+          "label": {"vi": "tân ngữ", "en": "object"},
+          "optional": true
+        }
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "Employees must wear protective equipment.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 9, "role": "subject"},
+        {"start": 10, "end": 14, "role": "aux"},
+        {"start": 15, "end": 19, "role": "verb"},
+        {"start": 20, "end": 40, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "must ở đây là deontic: nghĩa vụ theo quy định của công ty.",
+        "en": "must here is deontic: an obligation under company rules."
+      },
+      "translation": {"vi": "Nhân viên phải mặc đồ bảo hộ.", "en": "Employees must wear protective equipment."}
+    },
+    {
+      "text": "Visitors may enter only with permission.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 8, "role": "subject"},
+        {"start": 9, "end": 12, "role": "aux"},
+        {"start": 13, "end": 18, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "may ở đây là deontic: sự cho phép có điều kiện.",
+        "en": "may here is deontic: conditional permission."
+      },
+      "translation": {"vi": "Khách chỉ được vào khi có phép.", "en": "Visitors may enter only with permission."}
+    },
+    {
+      "text": "This device can operate at low temperatures.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 11, "role": "subject"},
+        {"start": 12, "end": 15, "role": "aux"},
+        {"start": 16, "end": 23, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "can ở đây là dynamic: khả năng nội tại của thiết bị.",
+        "en": "can here is dynamic: the device's inherent capacity."
+      },
+      "translation": {
+        "vi": "Thiết bị này có thể hoạt động ở nhiệt độ thấp.",
+        "en": "This device can operate at low temperatures."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "He must be tired is an obligation.",
+      "right": "He must be tired means the speaker infers that he is tired.",
+      "reason": {
+        "vi": "Người học thấy must là nghĩa vụ nên gán nghĩa deontic cho mọi câu có must; nhưng must + be + tính từ thường là suy luận (epistemic), không phải nghĩa vụ.",
+        "en": "Learners see must as obligation and assign deontic meaning to every must-sentence; but must + be + adjective is usually an inference (epistemic), not an obligation."
+      },
+      "error_tag": "other",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "The sign says visitors ___ not feed the animals.",
+      "options": [{"text": "must", "error_tag": null}, {"text": "can", "error_tag": "word_choice"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Quy định cấm → must not (deontic). can not ở đây sai vì can diễn tả khả năng, không diễn tả quy định.",
+        "en": "A prohibition rule → must not (deontic). can not is wrong here because can expresses ability, not a rule."
+      }
+    },
+    {
+      "q": "She ___ speak three languages fluently.",
+      "options": [{"text": "can", "error_tag": null}, {"text": "must", "error_tag": "word_choice"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Kỹ năng cá nhân → can (dynamic). must không diễn tả khả năng.",
+        "en": "Personal skill → can (dynamic). must does not express ability."
+      }
+    },
+    {
+      "q": "You ___ leave now; the meeting is over.",
+      "options": [{"text": "may", "error_tag": null}, {"text": "must", "error_tag": "word_choice"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Cho phép → may (deontic). must mang nghĩa bắt buộc, không phù hợp ngữ cảnh cho phép.",
+        "en": "Permission → may (deontic). must carries obligation, which does not fit a permission context."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một quy định hoặc sự cho phép ở nơi bạn làm việc/học tập, dùng must, may, can hoặc should.",
+      "en": "Write one sentence about a rule or permission at your workplace or school, using must, may, can or should."
+    },
+    "placeholder": "At my workplace, employees must ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "aux", "any_of": ["must", "may", "can", "should", "will", "would"]},
+        {"role": "verb", "regex": "[a-z]+"}
+      ]
+    },
+    "sample": {"text": "At my workplace, employees must wear identity badges."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790831389",
+    "generated_at": "2026-10-01T05:09:49Z",
+    "r5_source": {
+      "ids": ["c1-deontic-and-dynamic-modality"],
+      "content_version": 2,
+      "content_hash": "17f2e9b5f6227118738b773b5f8a356dd5d583d093594cc183bede7d76f86f8e",
+      "corrections": [
+        {
+          "r5_id": "c1-deontic-and-dynamic-modality",
+          "issue": "R5's 'mistakes' are not learner errors but conceptual statements about modality ('The sentence uses can, so it must express ability.'). They cannot be used as wrong/right pairs for a Vietnamese learner.",
+          "fix": "Replaced with a real learner error: treating 'He must be tired' as an obligation, and corrected it to the epistemic reading."
+        },
+        {
+          "r5_id": "c1-deontic-and-dynamic-modality",
+          "issue": "R5 gives no formula, no negative/question forms, no spans, and no quick practice.",
+          "fix": "Added the abstract formula S + modal + V + O, negative and question variants, three clean examples with spans, and three cloze questions."
+        },
+        {
+          "r5_id": "c1-deontic-and-dynamic-modality",
+          "issue": "R5's example 'He simply won't cooperate' is dynamic willingness, but the lesson does not mark it as such or contrast it with deontic uses.",
+          "fix": "Kept the dynamic willingness idea in the when_to_use list and used 'can' for ability in the examples, so the deontic/dynamic contrast is visible."
+        }
+      ]
+    }
+  },
+  "review": null
+}

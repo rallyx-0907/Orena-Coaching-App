@@ -1,0 +1,298 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk6_6_topic",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.object_disposal",
+  "level": {"framework": "hsk3", "value": "6", "rank": 6},
+  "prereqs": ["zh.canon.gf.hsk5.a_5_5_1.p1"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["zh-hsk6-6-topic"], "gf0025": ["gf0025.hsk6.040"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["zh-hsk6-6-topic"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: “把”字句4：表致使", "en": "Chinese grammar: “把”字句4：表致使"},
+    "native_title": "“把”字句4：表致使",
+    "level": {"framework": "hsk3", "value": "6", "rank": 6},
+    "summary": {
+      "vi": "“把”字句 với nghĩa gây khiến dùng để nói rằng chủ thể (hoặc một sự việc) tác động lên một đối tượng và khiến nó rơi vào một kết quả, trạng thái cụ thể.",
+      "en": "The causative 把-sentence states that the subject (or an event) acts on an object and brings it into a specific result or state."
+    },
+    "sub": {"vi": "gây khiến", "en": "causative"},
+    "native_title_pinyin": ["", "bǎ", "", "zì", "jù", "", "", "biǎo", "zhì", "shǐ"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nhấn mạnh kết quả mà một hành động gây ra cho đối tượng, chứ không chỉ kể hành động.",
+      "en": "When you want to highlight the result an action brings to an object, not just report the action."
+    },
+    {
+      "vi": "Khi đối tượng bị tác động là thứ đã biết hoặc đang được nói tới, nên đứng sau 把.",
+      "en": "When the affected object is already known or under discussion, so it comes after 把."
+    },
+    {
+      "vi": "Khi câu cần nêu rõ kết quả, mức độ hoặc trạng thái mới của đối tượng sau hành động.",
+      "en": "When the sentence needs to state the object's result, degree, or new state after the action."
+    },
+    {
+      "vi": "Khi muốn diễn đạt một sự việc khiến ai/cái gì rơi vào tình trạng nào đó, thường là kết quả không mong muốn.",
+      "en": "When expressing that an event puts someone or something into a certain state, often an unwanted result."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ thể gây ra tác động", "en": "the causer"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "把",
+        "role": "marker",
+        "label": {
+          "vi": "giới từ đưa đối tượng bị tác động lên trước động từ",
+          "en": "the marker that moves the affected object before the verb"
+        },
+        "pinyin": ["bǎ"]
+      },
+      {
+        "text": "宾语",
+        "role": "object",
+        "label": {"vi": "đối tượng bị tác động", "en": "the affected object"},
+        "pinyin": ["bīn", "yǔ"]
+      },
+      {
+        "text": "动词",
+        "role": "verb",
+        "label": {"vi": "hành động tác động lên đối tượng", "en": "the action done to the object"},
+        "pinyin": ["dòng", "cí"]
+      },
+      {
+        "text": "结果补语",
+        "role": "complement",
+        "label": {
+          "vi": "kết quả hoặc trạng thái mà đối tượng rơi vào",
+          "en": "the result or state the object ends up in"
+        },
+        "pinyin": ["jié", "guǒ", "bǔ", "yǔ"]
+      }
+    ],
+    "variants": {
+      "negative": [
+        {
+          "text": "主语",
+          "role": "subject",
+          "label": {"vi": "chủ thể gây ra tác động", "en": "the causer"},
+          "pinyin": ["zhǔ", "yǔ"]
+        },
+        {
+          "text": "没",
+          "role": "aux",
+          "label": {"vi": "phủ định hành động đã không xảy ra", "en": "negates that the action happened"},
+          "pinyin": ["méi"]
+        },
+        {
+          "text": "把",
+          "role": "marker",
+          "label": {
+            "vi": "giới từ đưa đối tượng bị tác động lên trước động từ",
+            "en": "the marker that moves the affected object before the verb"
+          },
+          "pinyin": ["bǎ"]
+        },
+        {
+          "text": "宾语",
+          "role": "object",
+          "label": {"vi": "đối tượng bị tác động", "en": "the affected object"},
+          "pinyin": ["bīn", "yǔ"]
+        },
+        {
+          "text": "动词",
+          "role": "verb",
+          "label": {"vi": "hành động tác động lên đối tượng", "en": "the action done to the object"},
+          "pinyin": ["dòng", "cí"]
+        },
+        {
+          "text": "结果补语",
+          "role": "complement",
+          "label": {
+            "vi": "kết quả hoặc trạng thái mà đối tượng rơi vào",
+            "en": "the result or state the object ends up in"
+          },
+          "pinyin": ["jié", "guǒ", "bǔ", "yǔ"]
+        }
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "这场大雨把山路冲坏了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 4, "end": 5, "role": "marker"},
+        {"start": 5, "end": 7, "role": "object"},
+        {"start": 7, "end": 8, "role": "verb"},
+        {"start": 8, "end": 10, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "“把” đưa “山路” lên trước động từ; “坏了” nêu kết quả hư hỏng mà mưa gây ra.",
+        "en": "把 moves 山路 before the verb; 坏了 states the damaged result the rain caused."
+      },
+      "translation": {
+        "vi": "Trận mưa lớn này đã làm hỏng đường núi.",
+        "en": "The heavy rain damaged the mountain road."
+      },
+      "pinyin": ["zhè", "chǎng", "dà", "yǔ", "bǎ", "shān", "lù", "chōng", "huài", "le", ""]
+    },
+    {
+      "text": "他把房间打扫得干干净净。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "marker"},
+        {"start": 2, "end": 4, "role": "object"},
+        {"start": 4, "end": 6, "role": "verb"},
+        {"start": 6, "end": 11, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "“得干干净净” là bổ ngữ kết quả, cho biết phòng đạt trạng thái sạch hoàn toàn.",
+        "en": "得干干净净 is the result complement, showing the room ends up completely clean."
+      },
+      "translation": {"vi": "Anh ấy dọn phòng sạch bong.", "en": "He cleaned the room spotless."},
+      "pinyin": ["tā", "bǎ", "fáng", "jiān", "dǎ", "sǎo", "de", "gān", "gān", "jìng", "jìng", ""]
+    },
+    {
+      "text": "他没把作业做完。",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "aux"},
+        {"start": 2, "end": 3, "role": "marker"},
+        {"start": 3, "end": 5, "role": "object"},
+        {"start": 5, "end": 6, "role": "verb"},
+        {"start": 6, "end": 7, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "“没” đứng trước “把” để phủ định; “完” nêu kết quả chưa đạt được.",
+        "en": "没 comes before 把 to negate; 完 states the result was not reached."
+      },
+      "translation": {"vi": "Anh ấy chưa làm xong bài tập.", "en": "He did not finish his homework."},
+      "pinyin": ["tā", "méi", "bǎ", "zuò", "yè", "zuò", "wán", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "他把房间打扫。",
+      "right": "他把房间打扫干净了。",
+      "reason": {
+        "vi": "“把”字句 bắt buộc phải có kết quả hoặc trạng thái sau động từ; chỉ nêu hành động “打扫” là thiếu bổ ngữ kết quả.",
+        "en": "A 把-sentence requires a result or state after the verb; stating only the action 打扫 leaves out the required result complement."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong_pinyin": ["tā", "bǎ", "fáng", "jiān", "dǎ", "sǎo", ""],
+      "right_pinyin": ["tā", "bǎ", "fáng", "jiān", "dǎ", "sǎo", "gān", "jìng", "le", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "这场大雨把山路___。",
+      "options": [
+        {"text": "冲坏了", "error_tag": null, "pinyin": ["chōng", "huài", "le"]},
+        {"text": "冲", "error_tag": "complement", "pinyin": ["chōng"]},
+        {"text": "坏", "error_tag": "complement", "pinyin": ["huài"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "“把”字句 cần nêu kết quả; “冲坏了” là động từ kèm bổ ngữ kết quả, còn “冲” hoặc “坏” đứng một mình không diễn đạt được kết quả đầy đủ.",
+        "en": "A 把-sentence needs a result; 冲坏了 is the verb with its result complement, while 冲 or 坏 alone does not express the full result."
+      },
+      "q_pinyin": ["zhè", "chǎng", "dà", "yǔ", "bǎ", "shān", "lù", "", "", "", ""]
+    },
+    {
+      "q": "他___把作业做完。",
+      "options": [
+        {"text": "没", "error_tag": null, "pinyin": ["méi"]},
+        {"text": "不", "error_tag": "aspect", "pinyin": ["bù"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Phủ định hành động đã không xảy ra trong “把”字句 dùng “没”, không dùng “不”.",
+        "en": "To negate that an action happened in a 把-sentence, use 没, not 不."
+      },
+      "q_pinyin": ["tā", "", "", "", "bǎ", "zuò", "yè", "zuò", "wán", ""]
+    },
+    {
+      "q": "请把窗户___。",
+      "options": [
+        {"text": "擦干净", "error_tag": null, "pinyin": ["cā", "gān", "jìng"]},
+        {"text": "擦", "error_tag": "complement", "pinyin": ["cā"]},
+        {"text": "干净", "error_tag": "complement", "pinyin": ["gān", "jìng"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau “把” cần động từ và kết quả; “擦干净” là cụm động từ kèm bổ ngữ kết quả.",
+        "en": "After 把 you need the verb and its result; 擦干净 is the verb with its result complement."
+      },
+      "q_pinyin": ["qǐng", "bǎ", "chuāng", "hù", "", "", "", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu kể việc bạn đã làm khiến đồ vật hoặc nơi chốn thay đổi trạng thái, dùng “把” và nêu rõ kết quả.",
+      "en": "Write one sentence about something you did that changed an object or place, using 把 and stating the result."
+    },
+    "placeholder": "我把……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "marker", "any_of": ["把"]},
+        {"role": "complement", "regex": "(干净|完|好|坏|满|开|掉|成|到|见|懂|清楚|整齐|破|断|死|光|走|跑|倒|翻|湿|干)"}
+      ]
+    },
+    "sample": {
+      "text": "我把房间打扫干净了。",
+      "pinyin": ["wǒ", "bǎ", "fáng", "jiān", "dǎ", "sǎo", "gān", "jìng", "le", ""]
+    },
+    "placeholder_pinyin": ["wǒ", "bǎ", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790834162",
+    "generated_at": "2026-10-01T05:56:02Z",
+    "r5_source": {
+      "ids": ["zh-hsk6-6-topic"],
+      "content_version": 2,
+      "content_hash": "8aa7b0928704ce467d0d04b66ecfe37d548a05bcec6870f657fbb0a518dcccc0",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk6-6-topic",
+          "issue": "R5 dạy 导致/致使, không phải “把”字句 biểu thị gây khiến như tiêu đề điểm ngữ pháp yêu cầu.",
+          "fix": "Đã thay toàn bộ nội dung bằng cấu trúc “把”字句 gây khiến: công thức 主语 + 把 + 宾语 + 动词 + 结果补语, ví dụ và lỗi kèm theo."
+        },
+        {
+          "r5_id": "zh-hsk6-6-topic",
+          "issue": "R5 không có công thức, không có dạng phủ định, không có bài kiểm tra nhanh và không có sản phẩm cá nhân hóa.",
+          "fix": "Đã bổ sung công thức, dạng phủ định với 没, ba câu hỏi kiểm tra nhanh và thẻ luyện viết cá nhân."
+        },
+        {
+          "r5_id": "zh-hsk6-6-topic",
+          "issue": "R5 dùng thuật ngữ HSK6 và các ví dụ về 导致/致使 không thuộc điểm “把”字句 gây khiến.",
+          "fix": "Đã thay bằng ví dụ HSK3–4 với “把” và bổ ngữ kết quả, giữ đúng phạm vi điểm ngữ pháp."
+        }
+      ]
+    }
+  },
+  "review": null
+}

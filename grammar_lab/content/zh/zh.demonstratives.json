@@ -1,0 +1,263 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.demonstratives",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.pronoun_reference",
+  "level": {"framework": "hsk3", "value": "1", "rank": 1},
+  "prereqs": [],
+  "contrasts": ["zh.measure_words.basic"],
+  "error_tags": ["measure_word", "word_order"],
+  "source_refs": {"r5": ["zh-hsk1-7-topic"], "gf0025": ["gf0025.hsk1.006", "gf0025.hsk2.007"]},
+  "point_type": "word_order",
+  "sequence": 1,
+  "aliases": ["zh-hsk1-7-topic"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "这 / 那 / 哪", "en": "这 / 那 / 哪"},
+    "native_title": "指示代词“这/那/哪”",
+    "level": {"framework": "hsk3", "value": "1", "rank": 1},
+    "summary": {
+      "vi": "这, 那, 哪 dùng để chỉ gần, chỉ xa hoặc hỏi 'nào'; khi đứng trước danh từ đếm được thường phải có lượng từ ở giữa.",
+      "en": "这, 那 and 哪 point to something near, something far, or ask 'which'; before a countable noun they normally need a measure word in between."
+    },
+    "sub": {"vi": "chỉ định và hỏi", "en": "pointing and asking"},
+    "native_title_pinyin": ["zhǐ", "shì", "dài", "cí", "", "zhè", "", "nà", "", "nǎ", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi chỉ một vật ở gần người nói, dùng 这 + lượng từ + danh từ.",
+      "en": "When you point to something near the speaker, use 这 + measure word + noun."
+    },
+    {
+      "vi": "Khi chỉ một vật ở xa người nói, dùng 那 + lượng từ + danh từ.",
+      "en": "When you point to something away from the speaker, use 那 + measure word + noun."
+    },
+    {
+      "vi": "Khi hỏi chọn cái nào trong một nhóm, dùng 哪 + lượng từ + danh từ, và 哪 giữ nguyên vị trí của cụm danh từ trong câu.",
+      "en": "When you ask which one among a group, use 哪 + measure word + noun, and 哪 stays in the noun phrase's normal position in the sentence."
+    },
+    {
+      "vi": "Khi danh từ đã rõ, có thể dùng 这个/那个/哪个 như một cụm thay cho danh từ.",
+      "en": "When the noun is already clear, 这个/那个/哪个 can stand alone as a phrase replacing the noun."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "这/那/哪",
+        "role": "other",
+        "label": {"vi": "từ chỉ định / từ hỏi", "en": "demonstrative / question word"},
+        "options": [
+          {"text": "这", "pinyin": ["zhè"]},
+          {"text": "那", "pinyin": ["nà"]},
+          {"text": "哪", "pinyin": ["nǎ"]}
+        ],
+        "pinyin": ["zhè", "", "nà", "", "nǎ"]
+      },
+      {
+        "text": "CL",
+        "role": "classifier",
+        "label": {"vi": "lượng từ", "en": "measure word"},
+        "pinyin": ["", ""]
+      },
+      {"text": "N", "role": "object", "label": {"vi": "danh từ", "en": "noun"}, "pinyin": [""]}
+    ],
+    "variants": {
+      "question": [
+        {
+          "text": "这/那/哪",
+          "role": "other",
+          "label": {"vi": "từ chỉ định / từ hỏi", "en": "demonstrative / question word"},
+          "options": [
+            {"text": "这", "pinyin": ["zhè"]},
+            {"text": "那", "pinyin": ["nà"]},
+            {"text": "哪", "pinyin": ["nǎ"]}
+          ],
+          "pinyin": ["zhè", "", "nà", "", "nǎ"]
+        },
+        {
+          "text": "CL",
+          "role": "classifier",
+          "label": {"vi": "lượng từ", "en": "measure word"},
+          "pinyin": ["", ""]
+        },
+        {"text": "N", "role": "object", "label": {"vi": "danh từ", "en": "noun"}, "pinyin": [""]}
+      ]
+    },
+    "illustration": {"kind": "word_order"}
+  },
+  "examples": [
+    {
+      "text": "这本书很好。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "other"},
+        {"start": 1, "end": 2, "role": "classifier"},
+        {"start": 2, "end": 3, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "这 chỉ vật ở gần người nói; 本 là lượng từ bắt buộc trước 书.",
+        "en": "这 points to something near the speaker; 本 is the measure word required before 书."
+      },
+      "translation": {"vi": "Quyển sách này tốt.", "en": "This book is good."},
+      "pinyin": ["zhè", "běn", "shū", "hěn", "hǎo", ""]
+    },
+    {
+      "text": "那个人是老师。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "other"},
+        {"start": 1, "end": 2, "role": "classifier"},
+        {"start": 2, "end": 3, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "那 chỉ người ở xa người nói; 个 là lượng từ chung cho 人.",
+        "en": "那 points to a person away from the speaker; 个 is the general measure word for 人."
+      },
+      "translation": {"vi": "Người kia là giáo viên.", "en": "That person is a teacher."},
+      "pinyin": ["nà", "ge", "rén", "shì", "lǎo", "shī", ""]
+    },
+    {
+      "text": "你喜欢哪个菜？",
+      "form": "question",
+      "spans": [
+        {"start": 3, "end": 4, "role": "other"},
+        {"start": 4, "end": 5, "role": "classifier"},
+        {"start": 5, "end": 6, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "哪 hỏi 'nào' và đứng ngay trước cụm danh từ, không chuyển lên đầu câu.",
+        "en": "哪 asks 'which' and stays right before the noun phrase, not moved to the front."
+      },
+      "translation": {"vi": "Bạn thích món nào?", "en": "Which dish do you like?"},
+      "pinyin": ["nǐ", "xǐ", "huan", "nǎ", "ge", "cài", ""]
+    }
+  ],
+  "compare": [
+    {
+      "with": "zh.measure_words.basic",
+      "this_example": "这本书很好。",
+      "other_example": "我有三本书。",
+      "this_meaning": {
+        "vi": "这/那/哪 đứng trước lượng từ để chỉ định hoặc hỏi: 这本书, 那个人, 哪个老师.",
+        "en": "这/那/哪 come before a measure word to point or ask: 这本书, 那个人, 哪个老师."
+      },
+      "other_meaning": {
+        "vi": "Lượng từ cơ bản đứng giữa số từ và danh từ để đếm: 三本书, 两个人.",
+        "en": "Basic measure words stand between a number and a noun to count: 三本书, 两个人."
+      },
+      "this_example_pinyin": ["zhè", "běn", "shū", "hěn", "hǎo", ""],
+      "other_example_pinyin": ["wǒ", "yǒu", "sān", "běn", "shū", ""]
+    }
+  ],
+  "common_mistakes": [
+    {
+      "wrong": "这书很好。",
+      "right": "这本书很好。",
+      "reason": {
+        "vi": "Tiếng Việt nói 'quyển sách này' có thể lược lượng từ trong một số ngữ cảnh, nhưng tiếng Trung trước danh từ đếm được trong mẫu cơ bản phải có lượng từ: 这 + 本 + 书.",
+        "en": "Vietnamese can drop the measure word in some contexts, but Chinese requires it before a countable noun in this basic pattern: 这 + 本 + 书."
+      },
+      "error_tag": "measure_word",
+      "l1": ["vi"],
+      "wrong_pinyin": ["zhè", "shū", "hěn", "hǎo", ""],
+      "right_pinyin": ["zhè", "běn", "shū", "hěn", "hǎo", ""]
+    },
+    {
+      "wrong": "哪你喜欢本书？",
+      "right": "你喜欢哪本书？",
+      "reason": {
+        "vi": "Tiếng Việt có thể đưa từ hỏi lên đầu câu, nhưng 哪 trong tiếng Trung giữ vị trí của cụm danh từ: 你喜欢哪本书？",
+        "en": "Vietnamese can move the question word to the front, but 哪 in Chinese stays in the noun phrase's position: 你喜欢哪本书？"
+      },
+      "error_tag": "word_order",
+      "l1": ["vi"],
+      "wrong_pinyin": ["nǎ", "nǐ", "xǐ", "huan", "běn", "shū", ""],
+      "right_pinyin": ["nǐ", "xǐ", "huan", "nǎ", "běn", "shū", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "___本书是我的。",
+      "options": [
+        {"text": "这", "error_tag": null, "pinyin": ["zhè"]},
+        {"text": "哪", "error_tag": "word_choice", "pinyin": ["nǎ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu khẳng định chỉ vật ở gần dùng 这, không dùng 哪 vì 哪 là từ hỏi.",
+        "en": "A statement pointing to something near uses 这, not 哪, because 哪 is a question word."
+      },
+      "q_pinyin": ["", "", "", "běn", "shū", "shì", "wǒ", "de", ""]
+    },
+    {
+      "q": "那个人___老师。",
+      "options": [
+        {"text": "是", "error_tag": null, "pinyin": ["shì"]},
+        {"text": "的", "error_tag": "particle", "pinyin": ["de"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu 'A 是 B' cần 是 làm động từ, không dùng 的.",
+        "en": "An 'A 是 B' sentence needs 是 as the verb; 的 is not the verb here."
+      },
+      "q_pinyin": ["nà", "ge", "rén", "", "", "", "lǎo", "shī", ""]
+    },
+    {
+      "q": "你喜欢___个菜？",
+      "options": [
+        {"text": "哪", "error_tag": null, "pinyin": ["nǎ"]},
+        {"text": "那", "error_tag": "word_choice", "pinyin": ["nà"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu hỏi chọn trong một nhóm dùng 哪, không dùng 那 chỉ xa.",
+        "en": "A question choosing among a group uses 哪, not 那 for something far."
+      },
+      "q_pinyin": ["nǐ", "xǐ", "huan", "", "", "", "ge", "cài", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu giới thiệu một đồ vật ở gần bạn, dùng 这 + lượng từ + danh từ.",
+      "en": "Write one sentence introducing something near you, using 这 + measure word + noun."
+    },
+    "placeholder": "这是我的……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"role": "other", "any_of": ["这", "那", "哪"]}]},
+    "sample": {"text": "这是我的书。", "pinyin": ["zhè", "shì", "wǒ", "de", "shū", ""]},
+    "placeholder_pinyin": ["zhè", "shì", "wǒ", "de", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790831807",
+    "generated_at": "2026-10-01T05:16:47Z",
+    "r5_source": {
+      "ids": ["zh-hsk1-7-topic"],
+      "content_version": 2,
+      "content_hash": "c06d2e17a8c91a0726e465507807dfac512a254d79bbf9ed31eeb3f91f273a70",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk1-7-topic",
+          "issue": "R5 ghi ví dụ 这是我的。 với nghĩa 'Cái này là của tôi', nhưng không nêu rõ đây là trường hợp lược danh từ sau 这, khác với mẫu đầy đủ 这 + CL + N.",
+          "fix": "Thêm khi nào dùng 这个/那个/哪个 như cụm thay danh từ khi danh từ đã rõ, và giữ ví dụ đầy đủ 这本书很好 làm mẫu chính."
+        },
+        {
+          "r5_id": "zh-hsk1-7-topic",
+          "issue": "R5 xếp 哪 vào cùng nhóm 'đại từ chỉ định' mà không nói rõ 哪 là từ hỏi, dễ khiến người học dùng 哪 trong câu khẳng định.",
+          "fix": "Tách rõ 这/那 chỉ định và 哪 hỏi 'nào'; thêm lỗi thường gặp dùng 哪 trong câu khẳng định và bài tập nhanh phân biệt 这 với 哪."
+        },
+        {
+          "r5_id": "zh-hsk1-7-topic",
+          "issue": "R5 nói 'Không đặt 哪 đầu câu chỉ vì là từ hỏi' nhưng không cho ví dụ đúng/sai cụ thể.",
+          "fix": "Thêm cặp lỗi 哪你喜欢本书？ → 你喜欢哪本书？ với lý do giữ vị trí cụm danh từ."
+        }
+      ]
+    }
+  },
+  "review": null
+}

@@ -4,241 +4,214 @@
   "version": 1,
   "target_lang": "en",
   "function": "fn.possibility",
-  "level": {
-    "framework": "cefr",
-    "value": "A1",
-    "rank": 1
-  },
+  "level": {"framework": "cefr", "value": "A1", "rank": 1},
   "prereqs": [],
   "contrasts": [],
-  "error_tags": [
-    "word_form"
-  ],
-  "source_refs": {
-    "r5": [
-      "a2-can-could-be-able-to-basics"
-    ]
-  },
+  "error_tags": ["word_form"],
+  "source_refs": {"r5": ["a2-can-could-be-able-to-basics"]},
   "point_type": "other",
+  "sequence": 1,
+  "aliases": ["a2-can-could-be-able-to-basics"],
+  "source_anchors": {"status": "unanchored", "items": []},
   "header": {
-    "title": {
-      "vi": "Can để nói khả năng",
-      "en": "Can for ability"
-    },
+    "title": {"vi": "Can để nói khả năng", "en": "Can for ability"},
     "native_title": "Can for ability",
-    "sub": {
-      "vi": "can + động từ nguyên thể",
-      "en": "can + base verb"
-    },
-    "level": {
-      "framework": "cefr",
-      "value": "A1",
-      "rank": 1
-    },
+    "level": {"framework": "cefr", "value": "A1", "rank": 1},
     "summary": {
-      "vi": "Can + động từ nguyên thể diễn tả khả năng ở hiện tại; can dùng giống nhau với mọi chủ ngữ.",
-      "en": "Can + base verb expresses present ability; can has the same form with every subject."
-    }
+      "vi": "Can dùng để nói ai đó có khả năng làm việc gì, và can't để nói không có khả năng đó.",
+      "en": "Can says that someone is able to do something, and can't says that they are not able to do it."
+    },
+    "sub": {"vi": "khả năng", "en": "ability"}
   },
   "when_to_use": [
     {
-      "vi": "Nói ai đó biết hoặc có khả năng làm gì.",
-      "en": "Say that someone knows how or is able to do something."
+      "vi": "Khi nói bạn biết làm gì đó: I can swim.",
+      "en": "When you say you know how to do something: I can swim."
     },
     {
-      "vi": "Sau can dùng động từ nguyên thể không có to.",
-      "en": "After can, use the base verb without to."
+      "vi": "Khi nói ai đó có thể làm gì ngay bây giờ: She can help you today.",
+      "en": "When you say someone is able to do something now: She can help you today."
+    },
+    {
+      "vi": "Khi nói bạn không thể làm gì: I can't drive.",
+      "en": "When you say you are not able to do something: I can't drive."
+    },
+    {
+      "vi": "Khi hỏi ai đó có biết làm gì không: Can you cook?",
+      "en": "When you ask if someone knows how to do something: Can you cook?"
     }
   ],
   "pattern": {
     "formula": [
-      {
-        "text": "S",
-        "role": "subject",
-        "label": {
-          "vi": "chủ ngữ",
-          "en": "subject"
-        }
-      },
-      {
-        "text": "can",
-        "role": "aux",
-        "label": {
-          "vi": "can",
-          "en": "can"
-        }
-      },
-      {
-        "text": "V",
-        "role": "verb",
-        "label": {
-          "vi": "động từ nguyên thể",
-          "en": "base verb"
-        }
-      }
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {"text": "can", "role": "aux", "label": {"vi": "động từ khuyết thiếu", "en": "modal verb"}},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên thể", "en": "base verb"}},
+      {"text": "O", "role": "object", "label": {"vi": "tân ngữ", "en": "object"}, "optional": true}
     ],
-    "illustration": {
-      "kind": "none"
-    }
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "can't",
+          "role": "aux",
+          "label": {"vi": "phủ định của can", "en": "negative modal"},
+          "options": [{"text": "can't"}, {"text": "cannot"}]
+        },
+        {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên thể", "en": "base verb"}},
+        {
+          "text": "O",
+          "role": "object",
+          "label": {"vi": "tân ngữ", "en": "object"},
+          "optional": true
+        }
+      ],
+      "question": [
+        {"text": "Can", "role": "aux", "label": {"vi": "động từ khuyết thiếu", "en": "modal verb"}},
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên thể", "en": "base verb"}},
+        {
+          "text": "O",
+          "role": "object",
+          "label": {"vi": "tân ngữ", "en": "object"},
+          "optional": true
+        }
+      ]
+    },
+    "illustration": {"kind": "none"}
   },
   "examples": [
     {
       "text": "I can swim.",
       "form": "affirmative",
       "spans": [
-        {
-          "start": 0,
-          "end": 1,
-          "role": "subject"
-        },
-        {
-          "start": 2,
-          "end": 5,
-          "role": "aux"
-        },
-        {
-          "start": 6,
-          "end": 10,
-          "role": "verb"
-        }
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 2, "end": 5, "role": "aux"},
+        {"start": 6, "end": 10, "role": "verb"}
       ],
       "annotation": {
-        "vi": "Sau can dùng swim.",
-        "en": "After can, use swim."
+        "vi": "can + động từ nguyên thể nói khả năng hiện tại.",
+        "en": "can + base verb states a present ability."
       },
-      "translation": {
-        "vi": "Sau can dùng swim.",
-        "en": "After can, use swim."
-      }
+      "translation": {"vi": "Tôi biết bơi.", "en": "I am able to swim."}
     },
     {
-      "text": "She can drive.",
-      "form": "affirmative",
+      "text": "She can't drive.",
+      "form": "negative",
       "spans": [
-        {
-          "start": 0,
-          "end": 3,
-          "role": "subject"
-        },
-        {
-          "start": 4,
-          "end": 7,
-          "role": "aux"
-        },
-        {
-          "start": 8,
-          "end": 13,
-          "role": "verb"
-        }
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 9, "role": "aux"},
+        {"start": 10, "end": 15, "role": "verb"}
       ],
       "annotation": {
-        "vi": "Can không đổi theo chủ ngữ.",
-        "en": "Can does not change with the subject."
+        "vi": "can't + động từ nguyên thể nói không có khả năng.",
+        "en": "can't + base verb states a lack of ability."
       },
-      "translation": {
-        "vi": "Can không đổi theo chủ ngữ.",
-        "en": "Can does not change with the subject."
-      }
+      "translation": {"vi": "Cô ấy không biết lái xe.", "en": "She is not able to drive."}
+    },
+    {
+      "text": "Can you cook?",
+      "form": "question",
+      "spans": [
+        {"start": 0, "end": 3, "role": "aux"},
+        {"start": 4, "end": 7, "role": "subject"},
+        {"start": 8, "end": 12, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Câu hỏi đảo can lên trước chủ ngữ.",
+        "en": "The question puts can before the subject."
+      },
+      "translation": {"vi": "Bạn có biết nấu ăn không?", "en": "Are you able to cook?"}
     }
   ],
   "compare": [],
   "common_mistakes": [
     {
-      "wrong": "She can to drive.",
-      "right": "She can drive.",
+      "wrong": "She can to swim.",
+      "right": "She can swim.",
       "reason": {
-        "vi": "Sau can dùng động từ nguyên thể không có to.",
-        "en": "After can, use the base verb without to."
+        "vi": "Sau can phải là động từ nguyên thể, không có to. Người học thêm to vì nghĩ đến cấu trúc to-infinitive.",
+        "en": "After can the verb must be in its base form, with no to. Learners add to because they are thinking of the to-infinitive."
       },
       "error_tag": "word_form",
-      "l1": [
-        "vi"
-      ]
+      "l1": ["vi"]
     }
   ],
   "quick_practice": [
     {
-      "q": "I can ___ English.",
-      "options": [
-        {
-          "text": "speak",
-          "error_tag": null
-        },
-        {
-          "text": "to speak",
-          "error_tag": "word_form"
-        },
-        {
-          "text": "speaks",
-          "error_tag": "word_form"
-        }
-      ],
+      "q": "I ___ swim very well.",
+      "options": [{"text": "can", "error_tag": null}, {"text": "can to", "error_tag": "word_form"}],
       "answer": 0,
       "explain": {
-        "vi": "Sau can dùng speak.",
-        "en": "After can, use speak."
+        "vi": "Sau can dùng động từ nguyên thể, không có to.",
+        "en": "After can we use the base verb, with no to."
       }
     },
     {
-      "q": "She ___ swim very well.",
-      "options": [
-        {
-          "text": "can",
-          "error_tag": null
-        },
-        {
-          "text": "cans",
-          "error_tag": "word_form"
-        },
-        {
-          "text": "is can",
-          "error_tag": "word_form"
-        }
-      ],
+      "q": "He ___ drive a car.",
+      "options": [{"text": "can't", "error_tag": null}, {"text": "can't to", "error_tag": "word_form"}],
       "answer": 0,
       "explain": {
-        "vi": "Can không đổi theo chủ ngữ.",
-        "en": "Can does not change with the subject."
+        "vi": "Sau can't dùng động từ nguyên thể, không có to.",
+        "en": "After can't we use the base verb, with no to."
       }
     },
     {
-      "q": "They can ___ a car.",
-      "options": [
-        {
-          "text": "drive",
-          "error_tag": null
-        },
-        {
-          "text": "drives",
-          "error_tag": "word_form"
-        },
-        {
-          "text": "driving",
-          "error_tag": "word_form"
-        }
-      ],
+      "q": "___ you speak English?",
+      "options": [{"text": "Can", "error_tag": null}, {"text": "Do can", "error_tag": "sentence_structure"}],
       "answer": 0,
       "explain": {
-        "vi": "Sau can dùng drive.",
-        "en": "After can, use drive."
+        "vi": "Câu hỏi với can đảo can lên trước chủ ngữ, không dùng do.",
+        "en": "In questions with can, can comes before the subject; do is not used."
       }
     }
   ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về khả năng của bạn, dùng can hoặc can't.",
+      "en": "Write one sentence about something you can or can't do."
+    },
+    "placeholder": "I can ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "aux", "any_of": ["can", "can't", "cannot"]}, {"role": "verb", "regex": "[a-z]+"}]
+    },
+    "sample": {"text": "I can swim."}
+  },
   "status": "draft_ai",
   "flags": [],
   "provenance": {
-    "model": "openai:gpt-5.6-sol",
-    "prompt_version": "direct-author.en-a1.v1",
-    "run_id": "chatgpt.en-a1.20260930",
-    "generated_at": "2026-09-30T10:35:00Z"
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790830436",
+    "generated_at": "2026-10-01T04:53:56Z",
+    "r5_source": {
+      "ids": ["a2-can-could-be-able-to-basics"],
+      "content_version": 2,
+      "content_hash": "15fff7994839e3157a61e15ada65b964903d678db7e2edf1febdcc12e1da6bc5",
+      "corrections": [
+        {
+          "r5_id": "a2-can-could-be-able-to-basics",
+          "issue": "R5 covers can, could and be able to together at A2, but this point is A1 and only about can for ability.",
+          "fix": "Removed could and be able to from the lesson; kept only can/can't for present ability."
+        },
+        {
+          "r5_id": "a2-can-could-be-able-to-basics",
+          "issue": "R5 example 'She could read at five' is past ability, outside this A1 point.",
+          "fix": "Replaced with present-ability examples: I can swim; She can't drive; Can you cook?"
+        },
+        {
+          "r5_id": "a2-can-could-be-able-to-basics",
+          "issue": "R5 mistake 'I could to speak English' is about could, not can.",
+          "fix": "Kept only the can mistake: She can to swim → She can swim."
+        },
+        {
+          "r5_id": "a2-can-could-be-able-to-basics",
+          "issue": "R5 guided practice includes transformation to be able to, which is not part of this A1 point.",
+          "fix": "Replaced with can-only cloze questions."
+        }
+      ]
+    }
   },
-  "review": null,
-  "sequence": 1,
-  "source_anchors": {
-    "status": "unanchored",
-    "items": []
-  },
-  "aliases": [
-    "a2-can-could-be-able-to-basics"
-  ]
+  "review": null
 }

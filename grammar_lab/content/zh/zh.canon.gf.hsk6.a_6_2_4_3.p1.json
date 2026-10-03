@@ -1,0 +1,249 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk6.a_6_2_4_3.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.linking",
+  "level": {"framework": "hsk3", "value": "6", "rank": 6},
+  "prereqs": ["zh.canon.gf.hsk6.a_6_2_3.p2"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"gf0025": ["gf0025.hsk6.015"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 同、与", "en": "Chinese grammar: 同、与"},
+    "native_title": "同、与",
+    "level": {"framework": "hsk3", "value": "6", "rank": 6},
+    "summary": {
+      "vi": "同 và 与 là hai giới từ văn viết dùng để nối hai danh từ, nghĩa là \"và\" hoặc \"với\".",
+      "en": "同 and 与 are two written-style prepositions that link two nouns, meaning \"and\" or \"with\"."
+    },
+    "sub": {"vi": "nối danh từ", "en": "noun connector"},
+    "native_title_pinyin": ["tóng", "", "yǔ"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Dùng trong văn viết, hợp đồng, thông báo, tiêu đề để nối hai danh từ hoặc cụm danh từ.",
+      "en": "Use in written texts, contracts, notices, and headlines to link two nouns or noun phrases."
+    },
+    {
+      "vi": "Dùng khi muốn nói \"cùng với ai/cái gì\" trong câu có động từ như 商量, 合作, 交流.",
+      "en": "Use when saying \"together with someone/something\" in sentences with verbs like 商量, 合作, 交流."
+    },
+    {
+      "vi": "Không dùng trong khẩu ngữ thân mật; khi nói hằng ngày nên dùng 跟 hoặc 和.",
+      "en": "Do not use in casual speech; in everyday conversation use 跟 or 和 instead."
+    },
+    {
+      "vi": "Chỉ nối danh từ, không nối mệnh đề hay tính từ.",
+      "en": "It links nouns only, not clauses or adjectives."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "同/与",
+        "role": "marker",
+        "label": {"vi": "giới từ nối", "en": "linking preposition"},
+        "options": [{"text": "同", "pinyin": ["tóng"]}, {"text": "与", "pinyin": ["yǔ"]}],
+        "pinyin": ["tóng", "", "yǔ"]
+      },
+      {
+        "text": "宾语",
+        "role": "object",
+        "label": {"vi": "tân ngữ", "en": "object"},
+        "pinyin": ["bīn", "yǔ"]
+      },
+      {
+        "text": "动词",
+        "role": "verb",
+        "label": {"vi": "động từ", "en": "verb"},
+        "pinyin": ["dòng", "cí"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "我同他商量了这件事。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "marker"},
+        {"start": 2, "end": 3, "role": "object"},
+        {"start": 3, "end": 5, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "同 nối chủ ngữ 我 với người cùng tham gia 他.",
+        "en": "同 links the subject 我 with the co-participant 他."
+      },
+      "translation": {"vi": "Tôi đã bàn với anh ấy chuyện này.", "en": "I discussed this matter with him."},
+      "pinyin": ["wǒ", "tóng", "tā", "shāng", "liang", "le", "zhè", "jiàn", "shì", ""]
+    },
+    {
+      "text": "公司同银行签订了合同。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 3, "role": "marker"},
+        {"start": 3, "end": 5, "role": "object"},
+        {"start": 5, "end": 7, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "同 dùng trong văn viết trang trọng để nối hai tổ chức.",
+        "en": "同 is used in formal writing to link two organisations."
+      },
+      "translation": {
+        "vi": "Công ty đã ký hợp đồng với ngân hàng.",
+        "en": "The company signed a contract with the bank."
+      },
+      "pinyin": ["gōng", "sī", "tóng", "yín", "háng", "qiān", "dìng", "le", "hé", "tóng", ""]
+    },
+    {
+      "text": "校长与老师们交流了教学经验。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 3, "role": "marker"},
+        {"start": 3, "end": 6, "role": "object"},
+        {"start": 6, "end": 8, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "与 trang trọng hơn 同, thường gặp trong văn bản chính thức.",
+        "en": "与 is more formal than 同 and is common in official texts."
+      },
+      "translation": {
+        "vi": "Hiệu trưởng đã trao đổi kinh nghiệm giảng dạy với các giáo viên.",
+        "en": "The principal exchanged teaching experience with the teachers."
+      },
+      "pinyin": [
+        "xiào",
+        "zhǎng",
+        "yǔ",
+        "lǎo",
+        "shī",
+        "men",
+        "jiāo",
+        "liú",
+        "le",
+        "jiào",
+        "xué",
+        "jīng",
+        "yàn",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "我同他商量这件事了。",
+      "right": "我同他商量了这件事。",
+      "reason": {
+        "vi": "了 phải đứng ngay sau động từ khi tân ngữ là cụm danh từ xác định; đặt 了 cuối câu là lỗi trật tự thường gặp.",
+        "en": "了 must follow the verb directly when the object is a definite noun phrase; placing 了 at the end is a common word-order error."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong_pinyin": ["wǒ", "tóng", "tā", "shāng", "liang", "zhè", "jiàn", "shì", "le", ""],
+      "right_pinyin": ["wǒ", "tóng", "tā", "shāng", "liang", "le", "zhè", "jiàn", "shì", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "我___他商量了这件事。",
+      "options": [
+        {"text": "同", "error_tag": null, "pinyin": ["tóng"]},
+        {"text": "和", "error_tag": "register", "pinyin": ["hé"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Trong văn viết trang trọng, 同 phù hợp hơn 和 (khẩu ngữ).",
+        "en": "In formal writing, 同 is more appropriate than the colloquial 和."
+      },
+      "q_pinyin": ["wǒ", "", "", "", "tā", "shāng", "liang", "le", "zhè", "jiàn", "shì", ""]
+    },
+    {
+      "q": "公司___银行签订了合同。",
+      "options": [
+        {"text": "与", "error_tag": null, "pinyin": ["yǔ"]},
+        {"text": "跟", "error_tag": "register", "pinyin": ["gēn"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "与 là giới từ văn viết, phù hợp với ngữ cảnh hợp đồng.",
+        "en": "与 is a written-style preposition, fitting the contract context."
+      },
+      "q_pinyin": ["gōng", "sī", "", "", "", "yín", "háng", "qiān", "dìng", "le", "hé", "tóng", ""]
+    },
+    {
+      "q": "校长___老师们交流了教学经验。",
+      "options": [
+        {"text": "与", "error_tag": null, "pinyin": ["yǔ"]},
+        {"text": "和", "error_tag": "register", "pinyin": ["hé"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "与 trang trọng hơn 和, thích hợp trong báo cáo, văn bản chính thức.",
+        "en": "与 is more formal than 和, suitable for reports and official texts."
+      },
+      "q_pinyin": [
+        "xiào",
+        "zhǎng",
+        "",
+        "",
+        "",
+        "lǎo",
+        "shī",
+        "men",
+        "jiāo",
+        "liú",
+        "le",
+        "jiào",
+        "xué",
+        "jīng",
+        "yàn",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng 同 hoặc 与 để nói bạn đã bàn bạc, hợp tác hoặc trao đổi với ai đó.",
+      "en": "Write one sentence using 同 or 与 to say you discussed, cooperated, or exchanged something with someone."
+    },
+    "placeholder": "我同……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "marker", "any_of": ["同", "与"]},
+        {"role": "verb", "any_of": ["商量", "合作", "交流", "讨论", "签订", "研究"]}
+      ]
+    },
+    "sample": {
+      "text": "我同朋友讨论了这个问题。",
+      "pinyin": ["wǒ", "tóng", "péng", "you", "tǎo", "lùn", "le", "zhè", "ge", "wèn", "tí", ""]
+    },
+    "placeholder_pinyin": ["wǒ", "tóng", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790834077",
+    "generated_at": "2026-10-01T05:54:37Z",
+    "metadata_stale": true
+  },
+  "review": null
+}

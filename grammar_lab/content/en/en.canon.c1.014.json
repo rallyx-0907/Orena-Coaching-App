@@ -1,0 +1,286 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.c1.014",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.information_structure",
+  "level": {"framework": "cefr", "value": "C1", "rank": 5},
+  "prereqs": ["en.canon.c1.010"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["c1-extraposition-with-anticipatory-it"]},
+  "point_type": "other",
+  "sequence": 4,
+  "aliases": ["c1-extraposition-with-anticipatory-it"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Extraposition with anticipatory it", "en": "Extraposition with anticipatory it"},
+    "native_title": "Extraposition with anticipatory it",
+    "level": {"framework": "cefr", "value": "C1", "rank": 5},
+    "summary": {
+      "vi": "Cấu trúc 'it' làm chủ ngữ giả đưa mệnh đề hoặc cụm động từ nguyên thể nặng về cuối câu, giúp câu cân đối và trang trọng hơn.",
+      "en": "The anticipatory 'it' moves a heavy clause or infinitive phrase to the end of the sentence, keeping the sentence balanced and formal."
+    },
+    "sub": {"vi": "chủ ngữ giả", "en": "anticipatory it"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi chủ ngữ thật là một mệnh đề that hoặc whether dài, đặt nó ở đầu câu sẽ nặng nề.",
+      "en": "When the real subject is a long that-clause or whether-clause that would be awkward at the front."
+    },
+    {
+      "vi": "Khi bạn muốn nhấn mạnh nhận xét, đánh giá hoặc mức độ chắc chắn hơn là bản thân sự việc.",
+      "en": "When you want to foreground a judgement, evaluation, or degree of certainty rather than the fact itself."
+    },
+    {
+      "vi": "Trong văn viết học thuật, báo cáo hoặc thảo luận trang trọng.",
+      "en": "In academic writing, reports, or formal discussion."
+    },
+    {
+      "vi": "Khi động từ chính là seem, appear, turn out, remain, hoặc be + tính từ như clear, likely, difficult.",
+      "en": "When the main predicate is seem, appear, turn out, remain, or be plus an adjective such as clear, likely, difficult."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "It",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ giả", "en": "anticipatory subject"}
+      },
+      {
+        "text": "be/seem/appear",
+        "role": "verb",
+        "label": {"vi": "động từ liên kết", "en": "linking verb"},
+        "options": [{"text": "is"}, {"text": "was"}, {"text": "seems"}, {"text": "appears"}]
+      },
+      {
+        "text": "adjective/noun",
+        "role": "complement",
+        "label": {"vi": "bổ ngữ", "en": "complement"}
+      },
+      {
+        "text": "that/whether/to",
+        "role": "marker",
+        "label": {"vi": "từ nối", "en": "clause marker"},
+        "options": [{"text": "that"}, {"text": "whether"}, {"text": "to"}]
+      },
+      {
+        "text": "clause",
+        "role": "other",
+        "label": {"vi": "mệnh đề/cụm động từ", "en": "clause or infinitive"}
+      }
+    ],
+    "variants": {
+      "negative": [
+        {
+          "text": "It",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ giả", "en": "anticipatory subject"}
+        },
+        {
+          "text": "is not",
+          "role": "verb",
+          "label": {"vi": "động từ liên kết phủ định", "en": "negative linking verb"},
+          "options": [{"text": "is not"}, {"text": "was not"}, {"text": "does not seem"}]
+        },
+        {
+          "text": "adjective/noun",
+          "role": "complement",
+          "label": {"vi": "bổ ngữ", "en": "complement"}
+        },
+        {
+          "text": "that/whether/to",
+          "role": "marker",
+          "label": {"vi": "từ nối", "en": "clause marker"},
+          "options": [{"text": "that"}, {"text": "whether"}, {"text": "to"}]
+        },
+        {
+          "text": "clause",
+          "role": "other",
+          "label": {"vi": "mệnh đề/cụm động từ", "en": "clause or infinitive"}
+        }
+      ],
+      "question": [
+        {
+          "text": "Is",
+          "role": "verb",
+          "label": {"vi": "động từ liên kết đảo", "en": "inverted linking verb"},
+          "options": [{"text": "Is"}, {"text": "Was"}, {"text": "Does"}]
+        },
+        {
+          "text": "it",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ giả", "en": "anticipatory subject"}
+        },
+        {
+          "text": "adjective/noun",
+          "role": "complement",
+          "label": {"vi": "bổ ngữ", "en": "complement"}
+        },
+        {
+          "text": "that/whether/to",
+          "role": "marker",
+          "label": {"vi": "từ nối", "en": "clause marker"},
+          "options": [{"text": "that"}, {"text": "whether"}, {"text": "to"}]
+        },
+        {
+          "text": "clause",
+          "role": "other",
+          "label": {"vi": "mệnh đề/cụm động từ", "en": "clause or infinitive"}
+        }
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "It is clear that further research is needed.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 3, "end": 5, "role": "verb"},
+        {"start": 6, "end": 11, "role": "complement"},
+        {"start": 12, "end": 16, "role": "marker"},
+        {"start": 17, "end": 43, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Chủ ngữ thật là mệnh đề 'that further research is needed', được đưa ra sau để câu cân đối.",
+        "en": "The real subject is the that-clause 'that further research is needed', placed at the end for balance."
+      },
+      "translation": {
+        "vi": "Rõ ràng là cần nghiên cứu thêm.",
+        "en": "It is clear that further research is needed."
+      }
+    },
+    {
+      "text": "It was difficult to determine the exact cause.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 3, "end": 6, "role": "verb"},
+        {"start": 7, "end": 16, "role": "complement"},
+        {"start": 17, "end": 19, "role": "marker"},
+        {"start": 20, "end": 45, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Chủ ngữ thật là cụm động từ nguyên thể 'to determine the exact cause'.",
+        "en": "The real subject is the infinitive phrase 'to determine the exact cause'."
+      },
+      "translation": {
+        "vi": "Thật khó để xác định nguyên nhân chính xác.",
+        "en": "It was difficult to determine the exact cause."
+      }
+    },
+    {
+      "text": "It surprised us that the effect was so small.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 3, "end": 12, "role": "verb"},
+        {"start": 13, "end": 15, "role": "complement"},
+        {"start": 16, "end": 20, "role": "marker"},
+        {"start": 21, "end": 44, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Chủ ngữ thật là mệnh đề 'that the effect was so small'; 'us' là bổ ngữ của surprised.",
+        "en": "The real subject is the clause 'that the effect was so small'; 'us' is the complement of surprised."
+      },
+      "translation": {
+        "vi": "Chúng tôi ngạc nhiên vì tác động lại nhỏ như vậy.",
+        "en": "It surprised us that the effect was so small."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "It is likely the results to change.",
+      "right": "It is likely that the results will change.",
+      "reason": {
+        "vi": "Với tính từ như 'likely', mệnh đề that cần đầy đủ chủ ngữ và động từ; không thể dùng cấu trúc 'likely + tân ngữ + to V'.",
+        "en": "With adjectives like 'likely', a that-clause needs a full subject and verb; you cannot use 'likely + object + to V'."
+      },
+      "error_tag": "other",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "___ is important that everyone arrives on time.",
+      "options": [{"text": "It", "error_tag": null}, {"text": "That", "error_tag": "sentence_structure"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Cần chủ ngữ giả 'It' trước 'is important that...'; 'That' sẽ tạo mệnh đề chủ ngữ nhưng không đúng ở đây.",
+        "en": "The anticipatory subject 'It' is needed before 'is important that...'; 'That' would create a subject clause but is not correct here."
+      }
+    },
+    {
+      "q": "It is not clear ___ the policy will continue.",
+      "options": [{"text": "whether", "error_tag": null}, {"text": "that", "error_tag": "word_choice"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 'not clear' dùng 'whether' để diễn tả sự không chắc chắn; 'that' không phù hợp về nghĩa.",
+        "en": "After 'not clear', use 'whether' to express uncertainty; 'that' does not fit the meaning."
+      }
+    },
+    {
+      "q": "It was difficult ___ the exact cause.",
+      "options": [{"text": "to determine", "error_tag": null}, {"text": "determine", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau tính từ 'difficult' cần động từ nguyên thể có 'to': 'to determine'.",
+        "en": "After the adjective 'difficult', an infinitive with 'to' is required: 'to determine'."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng 'It is + tính từ + that/to...' để nhận xét về một vấn đề trong học tập hoặc công việc của bạn.",
+      "en": "Write a sentence using 'It is + adjective + that/to...' to comment on an issue in your studies or work."
+    },
+    "placeholder": "It is important that ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "subject", "any_of": ["It"]},
+        {"role": "verb", "any_of": ["is", "was", "seems", "appears", "surprised"]},
+        {"role": "marker", "any_of": ["that", "whether", "to"]}
+      ]
+    },
+    "sample": {"text": "It is important that students receive clear feedback."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790831477",
+    "generated_at": "2026-10-01T05:11:17Z",
+    "r5_source": {
+      "ids": ["c1-extraposition-with-anticipatory-it"],
+      "content_version": 2,
+      "content_hash": "ed9340a0b10b8a1eae33c0e7562be88d6180c5277777995f49e57cc7b6bb9629",
+      "corrections": [
+        {
+          "r5_id": "c1-extraposition-with-anticipatory-it",
+          "issue": "R5's example 'It surprised us that the effect was so small.' was listed under 'examples' but the lesson did not provide a clear formula or spans for it.",
+          "fix": "Added a full formula with slots and spans for all examples, including the surprised example, so learners can see the structure."
+        },
+        {
+          "r5_id": "c1-extraposition-with-anticipatory-it",
+          "issue": "R5's mistake 'It is likely the results to change.' was corrected to 'It is likely that the results will change. / The results are likely to change.' but the reason was vague.",
+          "fix": "Clarified the reason: with adjectives like 'likely', a that-clause needs a full subject and verb; 'likely + object + to V' is not possible."
+        },
+        {
+          "r5_id": "c1-extraposition-with-anticipatory-it",
+          "issue": "R5's guided practice included a contrast prompt that was not a real contrast for this point.",
+          "fix": "Removed the contrast prompt and replaced it with a focused quick practice set that targets the anticipatory it structure."
+        }
+      ]
+    },
+    "metadata_stale": true
+  },
+  "review": null
+}

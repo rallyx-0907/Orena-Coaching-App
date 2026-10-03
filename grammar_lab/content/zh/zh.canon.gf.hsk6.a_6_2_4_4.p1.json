@@ -1,0 +1,213 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk6.a_6_2_4_4.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.reason_result",
+  "level": {"framework": "hsk3", "value": "6", "rank": 6},
+  "prereqs": ["zh.canon.r5.hsk6_7_topic_172"],
+  "contrasts": [],
+  "error_tags": ["particle"],
+  "source_refs": {"gf0025": ["gf0025.hsk6.017"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 因", "en": "Chinese grammar: 因"},
+    "native_title": "因",
+    "level": {"framework": "hsk3", "value": "6", "rank": 6},
+    "summary": {
+      "vi": "「因」 là từ nối dùng để nêu nguyên nhân hoặc lý do, thường đứng trước kết quả trong câu.",
+      "en": "「因」 is a connector used to introduce a cause or reason, usually before the result in a sentence."
+    },
+    "sub": {"vi": "nêu nguyên nhân", "en": "stating a cause"},
+    "native_title_pinyin": ["yīn"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nêu lý do cho một sự việc hoặc kết quả ở mệnh đề sau.",
+      "en": "When you want to give the reason for an event or result in the following clause."
+    },
+    {
+      "vi": "Khi viết hoặc nói ở văn phong trang trọng, súc tích hơn là dùng 「因为」.",
+      "en": "When writing or speaking in a more formal, concise style instead of using 「因为」."
+    },
+    {
+      "vi": "Khi nguyên nhân và kết quả nằm trong cùng một câu, nguyên nhân đứng trước.",
+      "en": "When the cause and result are in the same sentence, with the cause coming first."
+    },
+    {
+      "vi": "Khi bạn muốn nhấn mạnh lý do trực tiếp dẫn đến một kết luận hoặc hành động.",
+      "en": "When you want to emphasize the direct reason leading to a conclusion or action."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "因",
+        "role": "connector",
+        "label": {"vi": "từ nối nguyên nhân", "en": "cause connector"},
+        "pinyin": ["yīn"]
+      },
+      {
+        "text": "原因",
+        "role": "object",
+        "label": {"vi": "nguyên nhân", "en": "cause"},
+        "pinyin": ["yuán", "yīn"]
+      },
+      {"text": "，", "role": "other", "label": {"vi": "dấu phẩy", "en": "comma"}, "pinyin": [""]},
+      {
+        "text": "结果",
+        "role": "object",
+        "label": {"vi": "kết quả", "en": "result"},
+        "pinyin": ["jié", "guǒ"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "因天气原因，比赛取消了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "connector"},
+        {"start": 1, "end": 5, "role": "object"},
+        {"start": 5, "end": 6, "role": "other"},
+        {"start": 6, "end": 11, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "「因」 nêu nguyên nhân là thời tiết, dẫn đến kết quả là trận đấu bị hủy.",
+        "en": "「因」 introduces the cause (weather), leading to the result (the match was cancelled)."
+      },
+      "translation": {
+        "vi": "Vì lý do thời tiết, trận đấu đã bị hủy.",
+        "en": "Due to the weather, the match was cancelled."
+      },
+      "pinyin": ["yīn", "tiān", "qì", "yuán", "yīn", "", "bǐ", "sài", "qǔ", "xiāo", "le", ""]
+    },
+    {
+      "text": "因交通堵塞，他迟到了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "connector"},
+        {"start": 1, "end": 5, "role": "object"},
+        {"start": 5, "end": 6, "role": "other"},
+        {"start": 6, "end": 10, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "「因」 đứng trước nguyên nhân là tắc đường, kết quả là anh ấy đến muộn.",
+        "en": "「因」 comes before the cause (traffic jam), with the result being that he was late."
+      },
+      "translation": {"vi": "Vì tắc đường, anh ấy đã đến muộn.", "en": "Because of the traffic jam, he was late."},
+      "pinyin": ["yīn", "jiāo", "tōng", "dǔ", "sè", "", "tā", "chí", "dào", "le", ""]
+    },
+    {
+      "text": "因准备不足，我们失败了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "connector"},
+        {"start": 1, "end": 5, "role": "object"},
+        {"start": 5, "end": 6, "role": "other"},
+        {"start": 6, "end": 11, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "「因」 nêu nguyên nhân là chuẩn bị chưa đầy đủ, dẫn đến kết quả thất bại.",
+        "en": "「因」 states the cause (insufficient preparation), leading to the result of failure."
+      },
+      "translation": {
+        "vi": "Vì chuẩn bị không đầy đủ, chúng tôi đã thất bại.",
+        "en": "Due to insufficient preparation, we failed."
+      },
+      "pinyin": ["yīn", "zhǔn", "bèi", "bù", "zú", "", "wǒ", "men", "shī", "bài", "le", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "因天气原因，比赛取消。",
+      "right": "因天气原因，比赛取消了。",
+      "reason": {
+        "vi": "Người học quên thêm 「了」 để đánh dấu kết quả đã xảy ra, khiến câu thiếu tính hoàn thành.",
+        "en": "Learners forget to add 「了」 to mark the result as completed, making the sentence lack completion."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong_pinyin": ["yīn", "tiān", "qì", "yuán", "yīn", "", "bǐ", "sài", "qǔ", "xiāo", ""],
+      "right_pinyin": ["yīn", "tiān", "qì", "yuán", "yīn", "", "bǐ", "sài", "qǔ", "xiāo", "le", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "因下雨，我们___在家。",
+      "options": [
+        {"text": "待", "error_tag": null, "pinyin": ["dāi"]},
+        {"text": "待了", "error_tag": "aspect", "pinyin": ["dāi", "le"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "「因」 nêu nguyên nhân, kết quả ở hiện tại không cần 「了」.",
+        "en": "「因」 introduces the cause; the present result does not need 「了」."
+      },
+      "q_pinyin": ["yīn", "xià", "yǔ", "", "wǒ", "men", "", "", "", "zài", "jiā", ""]
+    },
+    {
+      "q": "因___，他放弃了比赛。",
+      "options": [
+        {"text": "受伤", "error_tag": null, "pinyin": ["shòu", "shāng"]},
+        {"text": "受伤了", "error_tag": "aspect", "pinyin": ["shòu", "shāng", "le"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 「因」, nguyên nhân thường là cụm danh từ hoặc động từ không cần 「了」.",
+        "en": "After 「因」, the cause is usually a noun or verb phrase without 「了」."
+      },
+      "q_pinyin": ["yīn", "", "", "", "", "tā", "fàng", "qì", "le", "bǐ", "sài", ""]
+    },
+    {
+      "q": "因___，会议推迟了。",
+      "options": [
+        {"text": "重要", "error_tag": null, "pinyin": ["zhòng", "yào"]},
+        {"text": "重要了", "error_tag": "aspect", "pinyin": ["zhòng", "yào", "le"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "「因」 theo sau là tính từ hoặc cụm từ nêu lý do, không thêm 「了」.",
+        "en": "「因」 is followed by an adjective or phrase stating the reason, without adding 「了」."
+      },
+      "q_pinyin": ["yīn", "", "", "", "", "huì", "yì", "tuī", "chí", "le", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng 「因」 để nêu lý do cho một kết quả.",
+      "en": "Write a sentence using 「因」 to give a reason for a result."
+    },
+    "placeholder": "因……，……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "connector", "any_of": ["因"]},
+        {"role": "object", "regex": "[^，]+"},
+        {"role": "other", "any_of": ["，"]},
+        {"role": "object", "regex": "[^。]+"}
+      ]
+    },
+    "sample": {
+      "text": "因下雨，我们没去公园。",
+      "pinyin": ["yīn", "xià", "yǔ", "", "wǒ", "men", "méi", "qù", "gōng", "yuán", ""]
+    },
+    "placeholder_pinyin": ["yīn", "", "", "", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790834086",
+    "generated_at": "2026-10-01T05:54:46Z",
+    "metadata_stale": true
+  },
+  "review": null
+}

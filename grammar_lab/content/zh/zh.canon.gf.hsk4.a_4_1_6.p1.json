@@ -1,0 +1,258 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk4.a_4_1_6.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.linking",
+  "level": {"framework": "hsk3", "value": "4", "rank": 4},
+  "prereqs": ["zh.canon.gf.hsk3.a_3_6_3_10.p1"],
+  "contrasts": [],
+  "error_tags": ["conjunction"],
+  "source_refs": {"gf0025": ["gf0025.hsk4.019"]},
+  "point_type": "other",
+  "sequence": 7,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Liên từ: 连接词或词组：并、以及", "en": "Conjunctions: 连接词或词组：并、以及"},
+    "native_title": "连接词或词组：并、以及",
+    "level": {"framework": "hsk3", "value": "4", "rank": 4},
+    "summary": {
+      "vi": "Điểm ngữ pháp này dạy cách dùng liên từ 并 và 以及 để nối các từ, cụm từ hoặc mệnh đề trong câu tiếng Trung.",
+      "en": "This grammar point teaches how to use the conjunctions 并 and 以及 to link words, phrases, or clauses in Chinese sentences."
+    },
+    "sub": {"vi": "liên từ 并/以及", "en": "conjunctions 并/以及"},
+    "native_title_pinyin": ["lián", "jiē", "cí", "huò", "cí", "zǔ", "", "bìng", "", "yǐ", "jí"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nối hai động từ hoặc hai tính từ với nhau trong một câu, dùng 并.",
+      "en": "When you want to link two verbs or two adjectives in a sentence, use 并."
+    },
+    {
+      "vi": "Khi bạn muốn liệt kê thêm một thành phần tương tự trong câu, dùng 以及.",
+      "en": "When you want to add another similar item in a list, use 以及."
+    },
+    {
+      "vi": "Khi cần nối các danh từ hoặc cụm danh từ trong câu, dùng 以及.",
+      "en": "When you need to connect nouns or noun phrases in a sentence, use 以及."
+    },
+    {
+      "vi": "Khi muốn nhấn mạnh sự tương đồng giữa hai hành động hoặc trạng thái, dùng 并.",
+      "en": "When you want to emphasize similarity between two actions or states, use 并."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "并",
+        "role": "connector",
+        "label": {"vi": "liên từ 并", "en": "conjunction 并"},
+        "pinyin": ["bìng"]
+      },
+      {
+        "text": "动词/形容词",
+        "role": "verb",
+        "label": {"vi": "động từ/tính từ", "en": "verb/adjective"},
+        "pinyin": ["dòng", "cí", "", "xíng", "róng", "cí"]
+      },
+      {
+        "text": "以及",
+        "role": "connector",
+        "label": {"vi": "liên từ 以及", "en": "conjunction 以及"},
+        "pinyin": ["yǐ", "jí"]
+      },
+      {
+        "text": "名词/短语",
+        "role": "object",
+        "label": {"vi": "danh từ/cụm từ", "en": "noun/phrase"},
+        "pinyin": ["míng", "cí", "", "duǎn", "yǔ"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "他并喜欢看书以及听音乐。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "connector"},
+        {"start": 2, "end": 4, "role": "verb"},
+        {"start": 6, "end": 8, "role": "connector"},
+        {"start": 8, "end": 11, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "并 nối hai hành động 喜欢 và 听音乐, 以及 thêm một hành động tương tự.",
+        "en": "并 links the two actions 喜欢 and 听音乐, and 以及 adds a similar action."
+      },
+      "translation": {
+        "vi": "Anh ấy thích đọc sách và nghe nhạc.",
+        "en": "He likes reading books and listening to music."
+      },
+      "pinyin": ["tā", "bìng", "xǐ", "huān", "kàn", "shū", "yǐ", "jí", "tīng", "yīn", "yuè", ""]
+    },
+    {
+      "text": "我们并讨论了这个问题以及它的解决方法。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 3, "role": "connector"},
+        {"start": 3, "end": 5, "role": "verb"},
+        {"start": 10, "end": 12, "role": "connector"},
+        {"start": 12, "end": 18, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "并 nối hai hành động 讨论 và 解决, 以及 thêm một cụm danh từ.",
+        "en": "并 links the two actions 讨论 and 解决, and 以及 adds a noun phrase."
+      },
+      "translation": {
+        "vi": "Chúng tôi đã thảo luận vấn đề này và cách giải quyết nó.",
+        "en": "We discussed this problem and its solution."
+      },
+      "pinyin": [
+        "wǒ",
+        "men",
+        "bìng",
+        "tǎo",
+        "lùn",
+        "le",
+        "zhè",
+        "gè",
+        "wèn",
+        "tí",
+        "yǐ",
+        "jí",
+        "tā",
+        "de",
+        "jiě",
+        "jué",
+        "fāng",
+        "fǎ",
+        ""
+      ]
+    },
+    {
+      "text": "她并聪明以及努力。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "connector"},
+        {"start": 2, "end": 4, "role": "verb"},
+        {"start": 4, "end": 6, "role": "connector"},
+        {"start": 6, "end": 8, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "并 nối hai tính từ 聪明 và 努力, 以及 thêm một tính từ tương tự.",
+        "en": "并 links the two adjectives 聪明 and 努力, and 以及 adds a similar adjective."
+      },
+      "translation": {"vi": "Cô ấy thông minh và chăm chỉ.", "en": "She is smart and hardworking."},
+      "pinyin": ["tā", "bìng", "cōng", "míng", "yǐ", "jí", "nǔ", "lì", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "他喜欢看书以及听音乐并。",
+      "right": "他喜欢看书并听音乐以及。",
+      "reason": {
+        "vi": "Người học thường đặt sai vị trí của 并 và 以及 trong câu, dẫn đến trật tự từ không đúng.",
+        "en": "Learners often misplace 并 and 以及 in the sentence, leading to incorrect word order."
+      },
+      "error_tag": "conjunction",
+      "l1": ["vi"],
+      "wrong_pinyin": ["tā", "xǐ", "huān", "kàn", "shū", "yǐ", "jí", "tīng", "yīn", "yuè", "bìng", ""],
+      "right_pinyin": ["tā", "xǐ", "huān", "kàn", "shū", "bìng", "tīng", "yīn", "yuè", "yǐ", "jí", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "他喜欢看书___听音乐。",
+      "options": [
+        {"text": "并", "error_tag": null, "pinyin": ["bìng"]},
+        {"text": "以及", "error_tag": "conjunction", "pinyin": ["yǐ", "jí"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "并 dùng để nối hai động từ 喜欢 và 听, trong khi 以及 thường dùng để nối danh từ.",
+        "en": "并 is used to link two verbs 喜欢 and 听, while 以及 is typically used to link nouns."
+      },
+      "q_pinyin": ["tā", "xǐ", "huān", "kàn", "shū", "", "", "", "tīng", "yīn", "yuè", ""]
+    },
+    {
+      "q": "我们讨论了这个问题___它的解决方法。",
+      "options": [
+        {"text": "以及", "error_tag": null, "pinyin": ["yǐ", "jí"]},
+        {"text": "并", "error_tag": "conjunction", "pinyin": ["bìng"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "以及 dùng để nối hai cụm danh từ 这个问题 và 它的解决方法, trong khi 并 thường nối động từ hoặc tính từ.",
+        "en": "以及 is used to link two noun phrases 这个问题 and 它的解决方法, while 并 typically links verbs or adjectives."
+      },
+      "q_pinyin": [
+        "wǒ",
+        "men",
+        "tǎo",
+        "lùn",
+        "le",
+        "zhè",
+        "gè",
+        "wèn",
+        "tí",
+        "",
+        "",
+        "",
+        "tā",
+        "de",
+        "jiě",
+        "jué",
+        "fāng",
+        "fǎ",
+        ""
+      ]
+    },
+    {
+      "q": "她___聪明以及努力。",
+      "options": [
+        {"text": "并", "error_tag": null, "pinyin": ["bìng"]},
+        {"text": "以及", "error_tag": "conjunction", "pinyin": ["yǐ", "jí"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "并 dùng để nối hai tính từ 聪明 và 努力, trong khi 以及 thường dùng để nối danh từ.",
+        "en": "并 is used to link two adjectives 聪明 and 努力, while 以及 is typically used to link nouns."
+      },
+      "q_pinyin": ["tā", "", "", "", "cōng", "míng", "yǐ", "jí", "nǔ", "lì", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về bản thân bạn, sử dụng 并 hoặc 以及 để nối hai hành động hoặc hai danh từ.",
+      "en": "Write a sentence about yourself, using 并 or 以及 to link two actions or two nouns."
+    },
+    "placeholder": "我喜欢……以及……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"role": "connector", "any_of": ["并", "以及"]}]},
+    "sample": {
+      "text": "我喜欢看书以及听音乐。",
+      "pinyin": ["wǒ", "xǐ", "huān", "kàn", "shū", "yǐ", "jí", "tīng", "yīn", "yuè", ""]
+    },
+    "placeholder_pinyin": ["wǒ", "xǐ", "huān", "", "", "yǐ", "jí", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790833188",
+    "generated_at": "2026-10-01T05:39:48Z"
+  },
+  "review": null
+}

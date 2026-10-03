@@ -1,0 +1,294 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk6.a_6_2_4_6.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.linking",
+  "level": {"framework": "hsk3", "value": "6", "rank": 6},
+  "prereqs": ["zh.canon.gf.hsk6.a_6_2_4_4.p1"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"gf0025": ["gf0025.hsk6.019"]},
+  "point_type": "other",
+  "sequence": 3,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 据", "en": "Chinese grammar: 据"},
+    "native_title": "据",
+    "level": {"framework": "hsk3", "value": "6", "rank": 6},
+    "summary": {
+      "vi": "Giới từ 据 dùng để nêu nguồn thông tin hoặc căn cứ cho một nhận định, thường đứng trước danh từ hoặc cụm danh từ.",
+      "en": "The preposition 据 introduces the source of information or the basis for a statement, usually before a noun or noun phrase."
+    },
+    "sub": {"vi": "căn cứ, nguồn tin", "en": "according to"},
+    "native_title_pinyin": ["jù"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói mình dựa vào đâu để biết hoặc kết luận điều gì đó, ví dụ dựa vào báo cáo, tin tức, lời kể.",
+      "en": "When you want to say what you are basing a statement or conclusion on, such as a report, the news, or what someone said."
+    },
+    {
+      "vi": "Khi nguồn thông tin là một danh từ hoặc cụm danh từ ngắn, không phải một câu đầy đủ.",
+      "en": "When the source of information is a noun or a short noun phrase, not a full sentence."
+    },
+    {
+      "vi": "Khi bạn muốn mở đầu câu bằng căn cứ đó rồi mới nêu nhận định, thường gặp trong văn viết và tin tức.",
+      "en": "When you want to open the sentence with that basis and then give the statement, common in writing and news."
+    },
+    {
+      "vi": "Khi cần phân biệt với 根据: 据 thường gắn với nguồn tin ngắn, súc tích hơn.",
+      "en": "When you need to distinguish it from 根据: 据 often attaches to a shorter, more compact source."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "据",
+        "role": "marker",
+        "label": {"vi": "giới từ nêu căn cứ", "en": "preposition marking the basis"},
+        "pinyin": ["jù"]
+      },
+      {
+        "text": "N",
+        "role": "object",
+        "label": {"vi": "nguồn thông tin / căn cứ", "en": "source of information / basis"},
+        "pinyin": [""]
+      },
+      {
+        "text": "S",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ của nhận định", "en": "subject of the statement"},
+        "pinyin": [""]
+      },
+      {
+        "text": "V",
+        "role": "verb",
+        "label": {"vi": "động từ / vị ngữ", "en": "verb / predicate"},
+        "pinyin": [""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "据天气预报，明天会下雨。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "marker"},
+        {"start": 1, "end": 5, "role": "object"},
+        {"start": 6, "end": 8, "role": "subject"},
+        {"start": 8, "end": 11, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "据 đứng trước nguồn tin 天气预报, rồi mới nêu nhận định.",
+        "en": "据 comes before the source 天气预报, then the statement follows."
+      },
+      "translation": {
+        "vi": "Theo dự báo thời tiết, ngày mai trời sẽ mưa.",
+        "en": "According to the weather forecast, it will rain tomorrow."
+      },
+      "pinyin": ["jù", "tiān", "qì", "yù", "bào", "", "míng", "tiān", "huì", "xià", "yǔ", ""]
+    },
+    {
+      "text": "据我了解，他已经回国了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "marker"},
+        {"start": 1, "end": 4, "role": "object"},
+        {"start": 5, "end": 6, "role": "subject"},
+        {"start": 6, "end": 11, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "据 + 我了解 là cách nói rất tự nhiên để nêu căn cứ là hiểu biết của người nói.",
+        "en": "据 + 我了解 is a natural way to give the speaker's own understanding as the basis."
+      },
+      "translation": {
+        "vi": "Theo tôi biết, anh ấy đã về nước rồi.",
+        "en": "As far as I know, he has already returned to his country."
+      },
+      "pinyin": ["jù", "wǒ", "liǎo", "jiě", "", "tā", "yǐ", "jīng", "huí", "guó", "le", ""]
+    },
+    {
+      "text": "据最新消息，事故没有造成人员伤亡。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "marker"},
+        {"start": 1, "end": 5, "role": "object"},
+        {"start": 6, "end": 8, "role": "subject"},
+        {"start": 8, "end": 16, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "据 dẫn nguồn tin 最新消息, phần sau là nội dung được thông báo.",
+        "en": "据 cites the source 最新消息; what follows is the reported content."
+      },
+      "translation": {
+        "vi": "Theo tin mới nhất, vụ tai nạn không gây thương vong về người.",
+        "en": "According to the latest news, the accident caused no casualties."
+      },
+      "pinyin": [
+        "jù",
+        "zuì",
+        "xīn",
+        "xiāo",
+        "xī",
+        "",
+        "shì",
+        "gù",
+        "méi",
+        "yǒu",
+        "zào",
+        "chéng",
+        "rén",
+        "yuán",
+        "shāng",
+        "wáng",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "据我看来，据他说，这件事是真的。",
+      "right": "据我看来，这件事是真的。",
+      "reason": {
+        "vi": "Người học hay dùng liên tiếp hai cụm 据... để nêu căn cứ, khiến câu bị trùng lặp. Chỉ cần một cụm 据 là đủ.",
+        "en": "Learners often stack two 据 phrases to give the basis, which makes the sentence redundant. One 据 phrase is enough."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong_pinyin": [
+        "jù",
+        "wǒ",
+        "kàn",
+        "lái",
+        "",
+        "jù",
+        "tā",
+        "shuō",
+        "",
+        "zhè",
+        "jiàn",
+        "shì",
+        "shì",
+        "zhēn",
+        "de",
+        ""
+      ],
+      "right_pinyin": ["jù", "wǒ", "kàn", "lái", "", "zhè", "jiàn", "shì", "shì", "zhēn", "de", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "___气象台报道，今晚会有大风。",
+      "options": [
+        {"text": "据", "error_tag": null, "pinyin": ["jù"]},
+        {"text": "对", "error_tag": "word_choice", "pinyin": ["duì"]},
+        {"text": "跟", "error_tag": "word_choice", "pinyin": ["gēn"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "据 dùng để nêu nguồn tin 气象台报道. 对 và 跟 không mang nghĩa 'theo/căn cứ'.",
+        "en": "据 introduces the source 气象台报道. 对 and 跟 do not mean 'according to'."
+      },
+      "q_pinyin": [
+        "",
+        "",
+        "",
+        "qì",
+        "xiàng",
+        "tái",
+        "bào",
+        "dào",
+        "",
+        "jīn",
+        "wǎn",
+        "huì",
+        "yǒu",
+        "dà",
+        "fēng",
+        ""
+      ]
+    },
+    {
+      "q": "据___调查，多数学生每天运动一小时。",
+      "options": [
+        {"text": "一项", "error_tag": null, "pinyin": ["yī", "xiàng"]},
+        {"text": "一个", "error_tag": "measure_word", "pinyin": ["yī", "gè"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "调查 đi với lượng từ 项, không dùng 个. 据 + 一项调查 là cụm căn cứ đúng.",
+        "en": "调查 takes the measure word 项, not 个. 据 + 一项调查 is the correct basis phrase."
+      },
+      "q_pinyin": [
+        "jù",
+        "",
+        "",
+        "",
+        "diào",
+        "chá",
+        "",
+        "duō",
+        "shù",
+        "xué",
+        "shēng",
+        "měi",
+        "tiān",
+        "yùn",
+        "dòng",
+        "yī",
+        "xiǎo",
+        "shí",
+        ""
+      ]
+    },
+    {
+      "q": "据___说，这家店的菜很好吃。",
+      "options": [
+        {"text": "朋友", "error_tag": null, "pinyin": ["péng", "yǒu"]},
+        {"text": "朋友的", "error_tag": "particle", "pinyin": ["péng", "yǒu", "de"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "据 + 朋友 + 说 là cách nói cố định, không thêm 的 vào giữa.",
+        "en": "据 + 朋友 + 说 is a fixed pattern; do not insert 的 in between."
+      },
+      "q_pinyin": ["jù", "", "", "", "shuō", "", "zhè", "jiā", "diàn", "de", "cài", "hěn", "hǎo", "chī", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng 据 để nêu nguồn tin hoặc căn cứ cho một nhận định của bạn.",
+      "en": "Write one sentence using 据 to give the source or basis for a statement of yours."
+    },
+    "placeholder": "据我了解，……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "marker", "any_of": ["据"]},
+        {"role": "object", "any_of": ["我了解", "我看来", "他说", "天气预报", "最新消息", "新闻报道", "调查"]},
+        {"role": "subject", "regex": "[\\u4e00-\\u9fff]"},
+        {"role": "verb", "regex": "[\\u4e00-\\u9fff]"}
+      ]
+    },
+    "sample": {
+      "text": "据我了解，他已经搬到上海了。",
+      "pinyin": ["jù", "wǒ", "liǎo", "jiě", "", "tā", "yǐ", "jīng", "bān", "dào", "shàng", "hǎi", "le", ""]
+    },
+    "placeholder_pinyin": ["jù", "wǒ", "liǎo", "jiě", "", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790834120",
+    "generated_at": "2026-10-01T05:55:20Z",
+    "metadata_stale": true
+  },
+  "review": null
+}

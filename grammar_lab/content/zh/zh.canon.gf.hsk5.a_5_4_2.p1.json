@@ -1,0 +1,285 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk5.a_5_4_2.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.sentence_basics",
+  "level": {"framework": "hsk3", "value": "5", "rank": 5},
+  "prereqs": ["zh.canon.gf.hsk5.a_5_3.p2"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"gf0025": ["gf0025.hsk5.033"]},
+  "point_type": "other",
+  "sequence": 5,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Trạng ngữ: 多项状语", "en": "Adverbials: 多项状语"},
+    "native_title": "多项状语",
+    "level": {"framework": "hsk3", "value": "5", "rank": 5},
+    "summary": {
+      "vi": "Khi một câu tiếng Trung có nhiều trạng ngữ, chúng xuất hiện theo thứ tự cố định: thời gian trước, rồi đến địa điểm, cách thức, và cuối cùng là động từ cùng tân ngữ.",
+      "en": "When a Chinese sentence has several adverbials, they appear in a fixed order: time first, then place, then manner, and finally the verb with its object."
+    },
+    "sub": {"vi": "trật tự trạng ngữ", "en": "adverbial order"},
+    "native_title_pinyin": ["duō", "xiàng", "zhuàng", "yǔ"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói một hành động xảy ra lúc nào và ở đâu trong cùng một câu.",
+      "en": "When you want to say when and where an action happens in the same sentence."
+    },
+    {
+      "vi": "Khi bạn cần thêm cách thức thực hiện hành động vào câu đã có thời gian và địa điểm.",
+      "en": "When you need to add how an action is done to a sentence that already has time and place."
+    },
+    {
+      "vi": "Khi bạn muốn nhấn mạnh đối tượng chịu tác động của hành động, đặt sau các trạng ngữ.",
+      "en": "When you want to emphasize the object affected by the action, placed after the adverbials."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "时间",
+        "role": "time",
+        "label": {"vi": "trạng ngữ thời gian", "en": "time adverbial"},
+        "optional": true,
+        "pinyin": ["shí", "jiān"]
+      },
+      {
+        "text": "地点",
+        "role": "place",
+        "label": {"vi": "trạng ngữ địa điểm", "en": "place adverbial"},
+        "optional": true,
+        "pinyin": ["dì", "diǎn"]
+      },
+      {
+        "text": "方式",
+        "role": "other",
+        "label": {"vi": "trạng ngữ cách thức", "en": "manner adverbial"},
+        "optional": true,
+        "pinyin": ["fāng", "shì"]
+      },
+      {
+        "text": "动词",
+        "role": "verb",
+        "label": {"vi": "động từ", "en": "verb"},
+        "pinyin": ["dòng", "cí"]
+      },
+      {
+        "text": "宾语",
+        "role": "object",
+        "label": {"vi": "tân ngữ", "en": "object"},
+        "pinyin": ["bīn", "yǔ"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "我昨天在图书馆认真地看书。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 3, "role": "time"},
+        {"start": 3, "end": 7, "role": "place"},
+        {"start": 7, "end": 10, "role": "other"},
+        {"start": 10, "end": 11, "role": "verb"},
+        {"start": 11, "end": 12, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Thời gian '昨天' đứng trước địa điểm '在图书馆', sau đó là cách thức '认真地', cuối cùng là động từ và tân ngữ.",
+        "en": "Time '昨天' comes before place '在图书馆', then manner '认真地', and finally the verb and object."
+      },
+      "translation": {
+        "vi": "Hôm qua tôi đọc sách một cách chăm chú ở thư viện.",
+        "en": "Yesterday I read books carefully in the library."
+      },
+      "pinyin": ["wǒ", "zuó", "tiān", "zài", "tú", "shū", "guǎn", "rèn", "zhēn", "de", "kàn", "shū", ""]
+    },
+    {
+      "text": "他每天早上在公园里慢慢地跑步。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 5, "role": "time"},
+        {"start": 5, "end": 9, "role": "place"},
+        {"start": 9, "end": 12, "role": "other"},
+        {"start": 12, "end": 13, "role": "verb"},
+        {"start": 13, "end": 14, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Trạng ngữ thời gian '每天早上' đứng đầu, tiếp theo là địa điểm '在公园里', cách thức '慢慢地', rồi đến động từ '跑' và tân ngữ '步'.",
+        "en": "Time adverbial '每天早上' comes first, followed by place '在公园里', manner '慢慢地', then verb '跑' and object '步'."
+      },
+      "translation": {
+        "vi": "Anh ấy chạy bộ chậm rãi trong công viên mỗi sáng.",
+        "en": "He jogs slowly in the park every morning."
+      },
+      "pinyin": [
+        "tā",
+        "měi",
+        "tiān",
+        "zǎo",
+        "shang",
+        "zài",
+        "gōng",
+        "yuán",
+        "lǐ",
+        "màn",
+        "màn",
+        "de",
+        "pǎo",
+        "bù",
+        ""
+      ]
+    },
+    {
+      "text": "我们上周在教室里认真地讨论了这个问题。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 4, "role": "time"},
+        {"start": 4, "end": 8, "role": "place"},
+        {"start": 8, "end": 11, "role": "other"},
+        {"start": 11, "end": 13, "role": "verb"},
+        {"start": 14, "end": 18, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Câu có đầy đủ các trạng ngữ theo thứ tự: thời gian '上周', địa điểm '在教室里', cách thức '认真地', sau đó là động từ '讨论' và tân ngữ '这个问题'.",
+        "en": "The sentence has all adverbials in order: time '上周', place '在教室里', manner '认真地', then verb '讨论' and object '这个问题'."
+      },
+      "translation": {
+        "vi": "Tuần trước chúng tôi đã thảo luận vấn đề này một cách nghiêm túc trong lớp học.",
+        "en": "Last week we discussed this issue seriously in the classroom."
+      },
+      "pinyin": [
+        "wǒ",
+        "men",
+        "shàng",
+        "zhōu",
+        "zài",
+        "jiào",
+        "shì",
+        "lǐ",
+        "rèn",
+        "zhēn",
+        "de",
+        "tǎo",
+        "lùn",
+        "le",
+        "zhè",
+        "ge",
+        "wèn",
+        "tí",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "我昨天认真地看书在图书馆。",
+      "right": "我昨天在图书馆认真地看书。",
+      "reason": {
+        "vi": "Người học thường đặt trạng ngữ địa điểm sau động từ vì ảnh hưởng từ tiếng Việt, nhưng trong tiếng Trung trạng ngữ địa điểm phải đứng trước động từ.",
+        "en": "Learners often place the place adverbial after the verb due to L1 influence, but in Chinese the place adverbial must come before the verb."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong_pinyin": ["wǒ", "zuó", "tiān", "rèn", "zhēn", "de", "kàn", "shū", "zài", "tú", "shū", "guǎn", ""],
+      "right_pinyin": ["wǒ", "zuó", "tiān", "zài", "tú", "shū", "guǎn", "rèn", "zhēn", "de", "kàn", "shū", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "我___在图书馆看书。",
+      "options": [
+        {"text": "昨天", "error_tag": null, "pinyin": ["zuó", "tiān"]},
+        {"text": "看书", "error_tag": "word_order", "pinyin": ["kàn", "shū"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Trạng ngữ thời gian '昨天' phải đứng trước trạng ngữ địa điểm '在图书馆' và động từ.",
+        "en": "The time adverbial '昨天' must come before the place adverbial '在图书馆' and the verb."
+      },
+      "q_pinyin": ["wǒ", "", "", "", "zài", "tú", "shū", "guǎn", "kàn", "shū", ""]
+    },
+    {
+      "q": "他每天___跑步。",
+      "options": [
+        {"text": "在公园里", "error_tag": null, "pinyin": ["zài", "gōng", "yuán", "lǐ"]},
+        {
+          "text": "跑步在公园里",
+          "error_tag": "word_order",
+          "pinyin": ["pǎo", "bù", "zài", "gōng", "yuán", "lǐ"]
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Trạng ngữ địa điểm '在公园里' phải đứng trước động từ '跑步'.",
+        "en": "The place adverbial '在公园里' must come before the verb '跑步'."
+      },
+      "q_pinyin": ["tā", "měi", "tiān", "", "", "", "pǎo", "bù", ""]
+    },
+    {
+      "q": "我们上周___讨论了这个问题。",
+      "options": [
+        {
+          "text": "在教室里认真地",
+          "error_tag": null,
+          "pinyin": ["zài", "jiào", "shì", "lǐ", "rèn", "zhēn", "de"]
+        },
+        {
+          "text": "认真地教室里在",
+          "error_tag": "word_order",
+          "pinyin": ["rèn", "zhēn", "de", "jiào", "shì", "lǐ", "zài"]
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Trạng ngữ địa điểm '在教室里' phải đứng trước trạng ngữ cách thức '认真地'.",
+        "en": "The place adverbial '在教室里' must come before the manner adverbial '认真地'."
+      },
+      "q_pinyin": ["wǒ", "men", "shàng", "zhōu", "", "", "", "tǎo", "lùn", "le", "zhè", "ge", "wèn", "tí", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về việc bạn đã làm gì đó ở đâu và khi nào, sử dụng ít nhất hai trạng ngữ.",
+      "en": "Write a sentence about what you did somewhere and when, using at least two adverbials."
+    },
+    "placeholder": "我昨天在……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "time", "any_of": ["昨天", "今天", "明天", "上周", "每天早上"]},
+        {"role": "place", "any_of": ["在图书馆", "在公园里", "在教室里", "在家", "在学校"]},
+        {"role": "verb", "any_of": ["看", "跑", "讨论", "吃", "学习"]}
+      ]
+    },
+    "sample": {
+      "text": "我昨天在图书馆认真地看书。",
+      "pinyin": ["wǒ", "zuó", "tiān", "zài", "tú", "shū", "guǎn", "rèn", "zhēn", "de", "kàn", "shū", ""]
+    },
+    "placeholder_pinyin": ["wǒ", "zuó", "tiān", "zài", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790833685",
+    "generated_at": "2026-10-01T05:48:05Z",
+    "metadata_stale": true
+  },
+  "review": null
+}

@@ -1,0 +1,272 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk7_9.a_7_1_6.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.linking",
+  "level": {"framework": "hsk3", "value": "7", "rank": 7},
+  "prereqs": ["zh.canon.gf.hsk6.a_6_6_2_8.p1"],
+  "contrasts": [],
+  "error_tags": ["conjunction"],
+  "source_refs": {"gf0025": ["gf0025.hsk7_9.054", "gf0025.hsk7_9.055"]},
+  "point_type": "other",
+  "sequence": 3,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Liên từ: 连接词或词组：及", "en": "Conjunctions: 连接词或词组：及"},
+    "native_title": "连接词或词组：及",
+    "level": {"framework": "hsk3", "value": "7", "rank": 7},
+    "summary": {
+      "vi": "Liên từ 及 nối hai danh từ hoặc cụm danh từ trong văn viết trang trọng, tương đương với 和 nhưng mang sắc thái văn bản hơn.",
+      "en": "The conjunction 及 links two nouns or noun phrases in formal written Chinese, equivalent to 和 but more literary in tone."
+    },
+    "sub": {"vi": "liên từ 及", "en": "conjunction 及"},
+    "native_title_pinyin": ["lián", "jiē", "cí", "huò", "cí", "zǔ", "", "jí"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Dùng trong văn viết trang trọng như báo cáo, thông báo, văn bản hành chính, nơi 和 nghe quá khẩu ngữ.",
+      "en": "Use it in formal writing such as reports, notices, and official documents, where 和 sounds too colloquial."
+    },
+    {
+      "vi": "Dùng khi nối hai danh từ hoặc cụm danh từ có quan hệ liệt kê, thường là những khái niệm trừu tượng hoặc thành phần chính thức.",
+      "en": "Use it to join two nouns or noun phrases in a list, often abstract concepts or formal components."
+    },
+    {
+      "vi": "Không dùng 及 để nối hai mệnh đề hay hai động từ; trong trường hợp đó phải dùng 和 hoặc 并.",
+      "en": "Do not use 及 to join two clauses or two verbs; in those cases use 和 or 并."
+    },
+    {
+      "vi": "Có thể dùng 及 trong kết cấu 及……及…… hoặc 以及 để mở rộng danh sách, nhưng 及 đứng một mình thường chỉ nối hai thành phần.",
+      "en": "It can appear in patterns like 及……及…… or 以及 to extend a list, but 及 alone usually joins just two items."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "N1",
+        "role": "object",
+        "label": {"vi": "danh từ thứ nhất", "en": "first noun"},
+        "pinyin": ["", ""]
+      },
+      {
+        "text": "及",
+        "role": "connector",
+        "label": {"vi": "liên từ 及", "en": "conjunction 及"},
+        "pinyin": ["jí"]
+      },
+      {
+        "text": "N2",
+        "role": "object",
+        "label": {"vi": "danh từ thứ hai", "en": "second noun"},
+        "pinyin": ["", ""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "会议讨论及决定由委员会负责。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "object"},
+        {"start": 4, "end": 5, "role": "connector"},
+        {"start": 5, "end": 7, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "及 nối hai danh từ 会议讨论 và 决定, cả câu mang văn phong hành chính.",
+        "en": "及 joins the two nouns 会议讨论 and 决定; the whole sentence has an administrative tone."
+      },
+      "translation": {
+        "vi": "Việc thảo luận và quyết định của cuộc họp do ủy ban phụ trách.",
+        "en": "The discussion and decisions of the meeting are the responsibility of the committee."
+      },
+      "pinyin": ["huì", "yì", "tǎo", "lùn", "jí", "jué", "dìng", "yóu", "wěi", "yuán", "huì", "fù", "zé", ""]
+    },
+    {
+      "text": "本合同适用于甲方及乙方。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 6, "end": 8, "role": "object"},
+        {"start": 8, "end": 9, "role": "connector"},
+        {"start": 9, "end": 11, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "及 nối hai bên trong hợp đồng, sắc thái pháp lý trang trọng.",
+        "en": "及 joins the two contract parties; the tone is legal and formal."
+      },
+      "translation": {
+        "vi": "Hợp đồng này áp dụng cho bên A và bên B.",
+        "en": "This contract applies to Party A and Party B."
+      },
+      "pinyin": ["běn", "hé", "tóng", "shì", "yòng", "yú", "jiǎ", "fāng", "jí", "yǐ", "fāng", ""]
+    },
+    {
+      "text": "公司关注环境保护及员工福利。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 4, "end": 8, "role": "object"},
+        {"start": 8, "end": 9, "role": "connector"},
+        {"start": 9, "end": 13, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "及 nối hai cụm danh từ trừu tượng, phù hợp văn bản báo cáo.",
+        "en": "及 joins two abstract noun phrases, fitting a report style."
+      },
+      "translation": {
+        "vi": "Công ty quan tâm đến bảo vệ môi trường và phúc lợi nhân viên.",
+        "en": "The company cares about environmental protection and employee welfare."
+      },
+      "pinyin": [
+        "gōng",
+        "sī",
+        "guān",
+        "zhù",
+        "huán",
+        "jìng",
+        "bǎo",
+        "hù",
+        "jí",
+        "yuán",
+        "gōng",
+        "fú",
+        "lì",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "他喜欢音乐及喜欢运动。",
+      "right": "他喜欢音乐和运动。",
+      "reason": {
+        "vi": "及 chỉ nối danh từ hoặc cụm danh từ, không nối hai động từ hay hai mệnh đề. Khi nối hai hành động phải dùng 和.",
+        "en": "及 only joins nouns or noun phrases, not two verbs or clauses. To join two actions, use 和."
+      },
+      "error_tag": "conjunction",
+      "l1": ["vi"],
+      "wrong_pinyin": ["tā", "xǐ", "huān", "yīn", "yuè", "jí", "xǐ", "huān", "yùn", "dòng", ""],
+      "right_pinyin": ["tā", "xǐ", "huān", "yīn", "yuè", "hé", "yùn", "dòng", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "这份报告涉及经济___政治两个方面。",
+      "options": [
+        {"text": "及", "error_tag": null, "pinyin": ["jí"]},
+        {"text": "和", "error_tag": "register", "pinyin": ["hé"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Trong văn viết trang trọng, 及 phù hợp hơn 和 khi nối hai danh từ trừu tượng.",
+        "en": "In formal writing, 及 is more appropriate than 和 when joining two abstract nouns."
+      },
+      "q_pinyin": [
+        "zhè",
+        "fèn",
+        "bào",
+        "gào",
+        "shè",
+        "jí",
+        "jīng",
+        "jì",
+        "",
+        "",
+        "",
+        "zhèng",
+        "zhì",
+        "liǎng",
+        "gè",
+        "fāng",
+        "miàn",
+        ""
+      ]
+    },
+    {
+      "q": "公司需要评估市场风险___投资回报。",
+      "options": [
+        {"text": "及", "error_tag": null, "pinyin": ["jí"]},
+        {"text": "以及", "error_tag": "register", "pinyin": ["yǐ", "jí"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "及 nối trực tiếp hai cụm danh từ trong câu trang trọng; 以及 thường dùng khi danh sách dài hơn hoặc có dấu phẩy.",
+        "en": "及 directly joins two noun phrases in a formal sentence; 以及 is usually used for longer lists or with a comma."
+      },
+      "q_pinyin": [
+        "gōng",
+        "sī",
+        "xū",
+        "yào",
+        "píng",
+        "gū",
+        "shì",
+        "chǎng",
+        "fēng",
+        "xiǎn",
+        "",
+        "",
+        "",
+        "tóu",
+        "zī",
+        "huí",
+        "bào",
+        ""
+      ]
+    },
+    {
+      "q": "请提交身份证明___学历证明。",
+      "options": [
+        {"text": "及", "error_tag": null, "pinyin": ["jí"]},
+        {"text": "和", "error_tag": "register", "pinyin": ["hé"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Trong thông báo hành chính, 及 là lựa chọn trang trọng hơn 和.",
+        "en": "In administrative notices, 及 is the more formal choice than 和."
+      },
+      "q_pinyin": [
+        "qǐng",
+        "tí",
+        "jiāo",
+        "shēn",
+        "fèn",
+        "zhèng",
+        "míng",
+        "",
+        "",
+        "",
+        "xué",
+        "lì",
+        "zhèng",
+        "míng",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu trang trọng nói về hai thứ bạn quan tâm trong học tập hoặc công việc, dùng 及 để nối chúng.",
+      "en": "Write one formal sentence about two things you care about in study or work, using 及 to join them."
+    },
+    "placeholder": "我关注……及……。",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"role": "connector", "any_of": ["及"]}]},
+    "sample": {
+      "text": "我关注学习效率及身体健康。",
+      "pinyin": ["wǒ", "guān", "zhù", "xué", "xí", "xiào", "lǜ", "jí", "shēn", "tǐ", "jiàn", "kāng", ""]
+    },
+    "placeholder_pinyin": ["wǒ", "guān", "zhù", "", "", "jí", "", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790834602",
+    "generated_at": "2026-10-01T06:03:22Z"
+  },
+  "review": null
+}

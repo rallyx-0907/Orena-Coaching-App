@@ -1,0 +1,276 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk6.a_6_2_3.p2",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.degree",
+  "level": {"framework": "hsk3", "value": "6", "rank": 6},
+  "prereqs": ["zh.canon.gf.hsk6.a_6_1_2.p1"],
+  "contrasts": [],
+  "error_tags": ["particle"],
+  "source_refs": {"gf0025": ["gf0025.hsk6.010", "gf0025.hsk6.011", "gf0025.hsk6.012"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Trạng từ: 方式副词：不禁、赶忙、亲眼、特地、特意", "en": "Adverbs: 方式副词：不禁、赶忙、亲眼、特地、特意"},
+    "native_title": "方式副词：不禁、赶忙、亲眼、特地、特意",
+    "level": {"framework": "hsk3", "value": "6", "rank": 6},
+    "summary": {
+      "vi": "Nhóm phó từ chỉ cách thức này đứng trước động từ để diễn tả cảm xúc bất chợt, sự vội vàng, việc tận mắt chứng kiến hoặc mục đích riêng của hành động.",
+      "en": "This group of manner adverbs stands before the verb to express a sudden emotion, haste, seeing something with one's own eyes, or a special purpose behind an action."
+    },
+    "sub": {"vi": "phó từ cách thức", "en": "manner adverbs"},
+    "native_title_pinyin": [
+      "fāng",
+      "shì",
+      "fù",
+      "cí",
+      "",
+      "bù",
+      "jīn",
+      "",
+      "gǎn",
+      "máng",
+      "",
+      "qīn",
+      "yǎn",
+      "",
+      "tè",
+      "dì",
+      "",
+      "tè",
+      "yì"
+    ]
+  },
+  "when_to_use": [
+    {
+      "vi": "Dùng 不禁 khi một cảm xúc hay phản ứng bật ra mà người nói không kìm được.",
+      "en": "Use 不禁 when an emotion or reaction comes out without the speaker being able to hold it back."
+    },
+    {
+      "vi": "Dùng 赶忙 khi ai đó vội vàng làm gì để kịp xử lý một tình huống.",
+      "en": "Use 赶忙 when someone hurries to do something in order to deal with a situation in time."
+    },
+    {
+      "vi": "Dùng 亲眼 khi nhấn mạnh rằng chính người nói đã tận mắt thấy sự việc.",
+      "en": "Use 亲眼 to stress that the speaker saw the event with their own eyes."
+    },
+    {
+      "vi": "Dùng 特地 hoặc 特意 khi hành động được làm riêng vì một mục đích hoặc cho một người nào đó.",
+      "en": "Use 特地 or 特意 when an action is done specially for a purpose or for a particular person."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "不禁/赶忙/亲眼/特地/特意",
+        "role": "marker",
+        "label": {"vi": "phó từ cách thức", "en": "manner adverb"},
+        "options": [
+          {"text": "不禁", "pinyin": ["bù", "jīn"]},
+          {"text": "赶忙", "pinyin": ["gǎn", "máng"]},
+          {"text": "亲眼", "pinyin": ["qīn", "yǎn"]},
+          {"text": "特地", "pinyin": ["tè", "dì"]},
+          {"text": "特意", "pinyin": ["tè", "yì"]}
+        ],
+        "pinyin": ["bù", "jīn", "", "gǎn", "máng", "", "qīn", "yǎn", "", "tè", "dì", "", "tè", "yì"]
+      },
+      {
+        "text": "动词短语",
+        "role": "verb",
+        "label": {"vi": "cụm động từ", "en": "verb phrase"},
+        "pinyin": ["dòng", "cí", "duǎn", "yǔ"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "听到这个消息，她不禁哭了起来。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 7, "end": 8, "role": "subject"},
+        {"start": 8, "end": 10, "role": "marker"},
+        {"start": 10, "end": 14, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "不禁 đứng trước động từ, cho thấy cảm xúc bật ra mà cô ấy không kìm được.",
+        "en": "不禁 stands before the verb, showing the emotion came out without her being able to hold it back."
+      },
+      "translation": {
+        "vi": "Nghe tin đó, cô ấy không kìm được mà bật khóc.",
+        "en": "Hearing the news, she could not help but burst into tears."
+      },
+      "pinyin": ["tīng", "dào", "zhè", "ge", "xiāo", "xi", "", "tā", "bù", "jīn", "kū", "le", "qǐ", "lái", ""]
+    },
+    {
+      "text": "他亲眼看见那位老人过马路。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 3, "role": "marker"},
+        {"start": 3, "end": 12, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "亲眼 nhấn mạnh rằng chính anh ấy đã tận mắt thấy sự việc.",
+        "en": "亲眼 stresses that he himself saw the event with his own eyes."
+      },
+      "translation": {
+        "vi": "Anh ấy tận mắt thấy ông cụ đó qua đường.",
+        "en": "He saw the old man cross the road with his own eyes."
+      },
+      "pinyin": ["tā", "qīn", "yǎn", "kàn", "jiàn", "nà", "wèi", "lǎo", "rén", "guò", "mǎ", "lù", ""]
+    },
+    {
+      "text": "妈妈特地做了几道菜等我回家。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 4, "role": "marker"},
+        {"start": 4, "end": 13, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "特地 cho thấy mẹ làm mấy món ăn riêng vì mục đích đợi con về.",
+        "en": "特地 shows that the mother made the dishes specially for the purpose of waiting for her child to come home."
+      },
+      "translation": {
+        "vi": "Mẹ đặc biệt làm mấy món ăn để đợi tôi về nhà.",
+        "en": "Mom specially made several dishes to wait for me to come home."
+      },
+      "pinyin": ["mā", "ma", "tè", "dì", "zuò", "le", "jǐ", "dào", "cài", "děng", "wǒ", "huí", "jiā", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "她不禁哭了起来了。",
+      "right": "她不禁哭了起来。",
+      "reason": {
+        "vi": "Người học Việt Nam quen với việc đánh dấu kết thúc bằng một trợ từ, nên thêm 了 thứ hai sau 起来; nhưng 了 trong 哭了起来 đã đánh dấu sự việc bắt đầu, không cần thêm 了 nữa.",
+        "en": "Vietnamese learners are used to marking completion with a final particle, so they add a second 了 after 起来; but the 了 in 哭了起来 already marks the start of the event, so another 了 is not needed."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong_pinyin": ["tā", "bù", "jīn", "kū", "le", "qǐ", "lái", "le", ""],
+      "right_pinyin": ["tā", "bù", "jīn", "kū", "le", "qǐ", "lái", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "听到这个好消息，他___笑了起来。",
+      "options": [
+        {"text": "不禁", "error_tag": null, "pinyin": ["bù", "jīn"]},
+        {"text": "亲眼", "error_tag": "word_choice", "pinyin": ["qīn", "yǎn"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Cảm xúc bật ra không kìm được thì dùng 不禁; 亲眼 chỉ việc tận mắt nhìn thấy, không hợp ở đây.",
+        "en": "When an emotion comes out without being held back, use 不禁; 亲眼 means seeing with one's own eyes and does not fit here."
+      },
+      "q_pinyin": [
+        "tīng",
+        "dào",
+        "zhè",
+        "ge",
+        "hǎo",
+        "xiāo",
+        "xi",
+        "",
+        "tā",
+        "",
+        "",
+        "",
+        "xiào",
+        "le",
+        "qǐ",
+        "lái",
+        ""
+      ]
+    },
+    {
+      "q": "他___看见小偷进了那栋楼。",
+      "options": [
+        {"text": "亲眼", "error_tag": null, "pinyin": ["qīn", "yǎn"]},
+        {"text": "特地", "error_tag": "word_choice", "pinyin": ["tè", "dì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Nhấn mạnh chính mình tận mắt thấy thì dùng 亲眼; 特地 nói về mục đích riêng, không hợp ở đây.",
+        "en": "To stress that one saw it personally, use 亲眼; 特地 is about a special purpose and does not fit here."
+      },
+      "q_pinyin": ["tā", "", "", "", "kàn", "jiàn", "xiǎo", "tōu", "jìn", "le", "nà", "dòng", "lóu", ""]
+    },
+    {
+      "q": "为了欢迎你，妈妈___做了一桌菜。",
+      "options": [
+        {"text": "特地", "error_tag": null, "pinyin": ["tè", "dì"]},
+        {"text": "赶忙", "error_tag": "word_choice", "pinyin": ["gǎn", "máng"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Làm riêng vì một mục đích thì dùng 特地; 赶忙 là vội vàng vì gấp gáp, không hợp ở đây.",
+        "en": "When something is done specially for a purpose, use 特地; 赶忙 means hurrying because of time pressure and does not fit here."
+      },
+      "q_pinyin": [
+        "wèi",
+        "le",
+        "huān",
+        "yíng",
+        "nǐ",
+        "",
+        "mā",
+        "ma",
+        "",
+        "",
+        "",
+        "zuò",
+        "le",
+        "yì",
+        "zhuō",
+        "cài",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu kể việc bạn đã tận mắt chứng kiến, dùng 亲眼 trước động từ.",
+      "en": "Write one sentence about something you saw with your own eyes, using 亲眼 before the verb."
+    },
+    "placeholder": "我亲眼……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "marker", "any_of": ["亲眼", "不禁", "特地", "特意", "赶忙"]},
+        {
+          "role": "verb",
+          "regex": "看|见|看到|看见|目睹|发现|哭|做|笑|说|听|走|来|去|想|问|答|买|吃|喝|写|读|学|教|给|送|拿|放|开|关|站|坐|睡|起|回|进|出|上|下|过|到|等|找|帮|用|打|唱|跳|跑|飞|游|洗|穿|戴|带|变|成|长|生|死|活|爱|恨|怕|喜|欢|悲|伤|高|兴|生|气|着|急|忙|闲|累|饿|渴|冷|热|暖|凉|亮|暗|黑|白|红|绿|蓝|黄|紫|粉|灰|棕|橙|青|彩|美|丑|好|坏|对|错|真|假|新|旧|快|慢|早|晚|远|近|深|浅|厚|薄|宽|窄|长|短|粗|细|重|轻|硬|软|强|弱|富|穷|贵|贱|难|易|简|繁|清|楚|明|白|懂|会|能|可|以|该|应|愿|意|肯|敢|需|要|得|必|须|想|念|记|忘|知|道|认|识|了|解|明|白|清|楚|高|兴|快|乐|幸|福|痛|苦|难|过|舒|服|累|饿|渴|冷|热|暖|凉|亮|暗|黑|白|红|绿|蓝|黄|紫|粉|灰|棕|橙|青|彩|美|丑|好|坏|对|错|真|假|新|旧|快|慢|早|晚|远|近|深|浅|厚|薄|宽|窄|长|短|粗|细|重|轻|硬|软|强|弱|富|穷|贵|贱|难|易|简|繁|清|楚|明|白|懂|会|能|可|以|该|应|愿|意|肯|敢|需|要|得|必|须|想|念|记|忘|知|道|认|识|了|解"
+        }
+      ]
+    },
+    "sample": {
+      "text": "我亲眼看见他走进了那家书店。",
+      "pinyin": ["wǒ", "qīn", "yǎn", "kàn", "jiàn", "tā", "zǒu", "jìn", "le", "nà", "jiā", "shū", "diàn", ""]
+    },
+    "placeholder_pinyin": ["wǒ", "qīn", "yǎn", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790834053",
+    "generated_at": "2026-10-01T05:54:13Z",
+    "metadata_stale": true
+  },
+  "review": null
+}

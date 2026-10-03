@@ -1,0 +1,242 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.a2.007",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.sequence",
+  "level": {"framework": "cefr", "value": "A2", "rank": 2},
+  "prereqs": ["en.canon.a2.006"],
+  "contrasts": [],
+  "error_tags": ["sentence_structure"],
+  "source_refs": {},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Time Clauses Basic", "en": "Time Clauses Basic"},
+    "native_title": "Time Clauses Basic",
+    "level": {"framework": "cefr", "value": "A2", "rank": 2},
+    "summary": {
+      "vi": "Mệnh đề thời gian cho biết một hành động xảy ra khi nào, dùng when, before, after, until, as soon as.",
+      "en": "Time clauses say when an action happens, using when, before, after, until, as soon as."
+    },
+    "sub": {"vi": "mệnh đề thời gian", "en": "time clauses"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói một hành động xảy ra cùng lúc với hành động khác, dùng when.",
+      "en": "Use when to say one action happens at the same time as another."
+    },
+    {
+      "vi": "Khi bạn muốn nói thứ tự trước sau, dùng before hoặc after.",
+      "en": "Use before or after to show which action comes first."
+    },
+    {
+      "vi": "Khi bạn muốn nói một hành động kéo dài đến một điểm dừng, dùng until.",
+      "en": "Use until to say an action continues up to a stopping point."
+    },
+    {
+      "vi": "Khi bạn muốn nói một hành động xảy ra ngay sau hành động khác, dùng as soon as.",
+      "en": "Use as soon as to say one action happens immediately after another."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}},
+      {
+        "text": "when/before/after/until/as soon as",
+        "role": "connector",
+        "label": {"vi": "từ nối thời gian", "en": "time connector"},
+        "options": [
+          {"text": "when"},
+          {"text": "before"},
+          {"text": "after"},
+          {"text": "until"},
+          {"text": "as soon as"}
+        ]
+      },
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}}
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "do/does not",
+          "role": "aux",
+          "label": {"vi": "trợ động từ phủ định", "en": "negative auxiliary"},
+          "options": [{"text": "do not"}, {"text": "does not"}, {"text": "don't"}, {"text": "doesn't"}]
+        },
+        {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}},
+        {
+          "text": "when/before/after/until/as soon as",
+          "role": "connector",
+          "label": {"vi": "từ nối thời gian", "en": "time connector"},
+          "options": [
+            {"text": "when"},
+            {"text": "before"},
+            {"text": "after"},
+            {"text": "until"},
+            {"text": "as soon as"}
+          ]
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}}
+      ],
+      "question": [
+        {
+          "text": "Do/Does",
+          "role": "aux",
+          "label": {"vi": "trợ động từ nghi vấn", "en": "question auxiliary"},
+          "options": [{"text": "Do"}, {"text": "Does"}]
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}},
+        {
+          "text": "when/before/after/until/as soon as",
+          "role": "connector",
+          "label": {"vi": "từ nối thời gian", "en": "time connector"},
+          "options": [
+            {"text": "when"},
+            {"text": "before"},
+            {"text": "after"},
+            {"text": "until"},
+            {"text": "as soon as"}
+          ]
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}}
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "I call my mother when I get home.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 2, "end": 6, "role": "verb"},
+        {"start": 17, "end": 21, "role": "connector"},
+        {"start": 22, "end": 23, "role": "subject"},
+        {"start": 24, "end": 27, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "when nối hai hành động xảy ra cùng lúc.",
+        "en": "when links two actions that happen at the same time."
+      },
+      "translation": {"vi": "Tôi gọi cho mẹ khi tôi về đến nhà.", "en": "I call my mother when I get home."}
+    },
+    {
+      "text": "We don't leave the office until the work is finished.",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 3, "end": 8, "role": "aux"},
+        {"start": 9, "end": 14, "role": "verb"},
+        {"start": 26, "end": 31, "role": "connector"},
+        {"start": 32, "end": 40, "role": "subject"},
+        {"start": 41, "end": 43, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "until cho biết hành động kéo dài đến khi công việc xong.",
+        "en": "until shows the action continues up to the moment the work is finished."
+      },
+      "translation": {
+        "vi": "Chúng tôi không rời văn phòng cho đến khi công việc xong.",
+        "en": "We don't leave the office until the work is finished."
+      }
+    },
+    {
+      "text": "Do you call your family after you arrive?",
+      "form": "question",
+      "spans": [
+        {"start": 0, "end": 2, "role": "aux"},
+        {"start": 3, "end": 6, "role": "subject"},
+        {"start": 7, "end": 11, "role": "verb"},
+        {"start": 24, "end": 29, "role": "connector"},
+        {"start": 30, "end": 33, "role": "subject"},
+        {"start": 34, "end": 40, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "after cho biết hành động thứ hai xảy ra sau hành động thứ nhất.",
+        "en": "after shows the second action happens later than the first."
+      },
+      "translation": {
+        "vi": "Bạn có gọi cho gia đình sau khi bạn đến không?",
+        "en": "Do you call your family after you arrive?"
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "I call my mother when I will get home.",
+      "right": "I call my mother when I get home.",
+      "reason": {
+        "vi": "Trong mệnh đề thời gian ở tương lai, tiếng Anh dùng hiện tại đơn, không dùng will.",
+        "en": "In a future time clause, English uses the present simple, not will."
+      },
+      "error_tag": "sentence_structure",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "I call my mother ___ I get home.",
+      "options": [{"text": "when", "error_tag": null}, {"text": "because", "error_tag": "word_choice"}],
+      "answer": 0,
+      "explain": {
+        "vi": "when nối hai hành động xảy ra cùng lúc; because nói lý do, không phải thời gian.",
+        "en": "when links two actions at the same time; because gives a reason, not a time."
+      }
+    },
+    {
+      "q": "We don't leave the office ___ the work is finished.",
+      "options": [{"text": "until", "error_tag": null}, {"text": "after", "error_tag": "word_choice"}],
+      "answer": 0,
+      "explain": {
+        "vi": "until cho biết hành động kéo dài đến khi công việc xong; after nói hành động xảy ra sau đó.",
+        "en": "until shows the action continues up to the moment the work is finished; after says the action happens later."
+      }
+    },
+    {
+      "q": "Do you call your family ___ you arrive?",
+      "options": [{"text": "after", "error_tag": null}, {"text": "until", "error_tag": "word_choice"}],
+      "answer": 0,
+      "explain": {
+        "vi": "after cho biết hành động thứ hai xảy ra sau hành động thứ nhất; until nói hành động kéo dài đến một điểm dừng.",
+        "en": "after shows the second action happens later than the first; until says an action continues up to a stopping point."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về thói quen của bạn, dùng when, before, after, until hoặc as soon as.",
+      "en": "Write one sentence about your routine, using when, before, after, until, or as soon as."
+    },
+    "placeholder": "I call my mother when ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "connector", "any_of": ["when", "before", "after", "until", "as soon as"]},
+        {"role": "subject", "any_of": ["I", "you", "we", "they", "he", "she", "it"]},
+        {"role": "verb", "regex": "[a-z]+"}
+      ]
+    },
+    "sample": {"text": "I call my mother when I get home."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790830727",
+    "generated_at": "2026-10-01T04:58:47Z",
+    "metadata_stale": true
+  },
+  "review": null
+}

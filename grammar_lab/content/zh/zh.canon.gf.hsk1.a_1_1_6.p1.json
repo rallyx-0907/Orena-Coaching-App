@@ -1,0 +1,212 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk1.a_1_1_6.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.duration_frequency",
+  "level": {"framework": "hsk3", "value": "1", "rank": 1},
+  "prereqs": [],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"gf0025": ["gf0025.hsk1.009", "gf0025.hsk1.010", "gf0025.hsk1.012", "gf0025.hsk1.013"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Trạng từ: 程度副词：非常、很、太、真、最", "en": "Adverbs: 程度副词：非常、很、太、真、最"},
+    "native_title": "程度副词：非常、很、太、真、最",
+    "level": {"framework": "hsk3", "value": "1", "rank": 1},
+    "summary": {
+      "vi": "Các phó từ chỉ mức độ như 很, 非常, 太, 真, 最 đứng trước tính từ để nói mức độ mạnh yếu của một đặc điểm.",
+      "en": "Degree adverbs such as 很, 非常, 太, 真, 最 go before an adjective to express how strong a quality is."
+    },
+    "sub": {"vi": "mức độ", "en": "degree"},
+    "native_title_pinyin": ["chéng", "dù", "fù", "cí", "", "fēi", "cháng", "", "hěn", "", "tài", "", "zhēn", "", "zuì"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói một người hay vật có đặc điểm gì đó ở mức bình thường, dùng 很 trước tính từ.",
+      "en": "When you want to say a person or thing has a quality to a normal degree, use 很 before the adjective."
+    },
+    {
+      "vi": "Khi mức độ rất cao, dùng 非常 hoặc 真 trước tính từ.",
+      "en": "When the degree is very high, use 非常 or 真 before the adjective."
+    },
+    {
+      "vi": "Khi mức độ vượt quá mức bình thường, dùng 太 trước tính từ, thường có 了 ở cuối câu.",
+      "en": "When the degree goes beyond the normal level, use 太 before the adjective, often with 了 at the end."
+    },
+    {
+      "vi": "Khi so sánh một vật với tất cả những vật khác trong cùng nhóm, dùng 最 trước tính từ.",
+      "en": "When comparing one thing with all others in the same group, use 最 before the adjective."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "程度副词",
+        "role": "other",
+        "label": {"vi": "phó từ chỉ mức độ", "en": "degree adverb"},
+        "options": [
+          {"text": "很", "pinyin": ["hěn"]},
+          {"text": "非常", "pinyin": ["fēi", "cháng"]},
+          {"text": "太", "pinyin": ["tài"]},
+          {"text": "真", "pinyin": ["zhēn"]},
+          {"text": "最", "pinyin": ["zuì"]}
+        ],
+        "pinyin": ["chéng", "dù", "fù", "cí"]
+      },
+      {
+        "text": "形容词",
+        "role": "complement",
+        "label": {"vi": "tính từ", "en": "adjective"},
+        "pinyin": ["xíng", "róng", "cí"]
+      },
+      {
+        "text": "了",
+        "role": "particle",
+        "label": {"vi": "trợ từ cuối câu (với 太)", "en": "sentence-final particle (with 太)"},
+        "optional": true,
+        "pinyin": ["le"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "今天很热。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 3, "role": "other"},
+        {"start": 3, "end": 4, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "很 đứng trước tính từ 热 để nói mức độ bình thường, không phải so sánh.",
+        "en": "很 before the adjective 热 marks a normal degree, not a comparison."
+      },
+      "translation": {"vi": "Hôm nay rất nóng.", "en": "Today is very hot."},
+      "pinyin": ["jīn", "tiān", "hěn", "rè", ""]
+    },
+    {
+      "text": "这个菜非常好吃。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 3, "end": 5, "role": "other"},
+        {"start": 5, "end": 7, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "非常 nhấn mạnh mức độ cao hơn 很, đứng ngay trước tính từ.",
+        "en": "非常 stresses a higher degree than 很 and stands right before the adjective."
+      },
+      "translation": {"vi": "Món ăn này rất ngon.", "en": "This dish is extremely tasty."},
+      "pinyin": ["zhè", "ge", "cài", "fēi", "cháng", "hǎo", "chī", ""]
+    },
+    {
+      "text": "这个箱子太重了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 4, "end": 5, "role": "other"},
+        {"start": 5, "end": 6, "role": "complement"},
+        {"start": 6, "end": 7, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "太 ... 了 nói mức độ vượt quá mức bình thường, thường dùng khi phàn nàn hoặc cảm thán.",
+        "en": "太 ... 了 expresses a degree beyond the normal level, often in complaints or exclamations."
+      },
+      "translation": {"vi": "Cái hộp này nặng quá.", "en": "This box is too heavy."},
+      "pinyin": ["zhè", "ge", "xiāng", "zi", "tài", "zhòng", "le", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "今天热很。",
+      "right": "今天很热。",
+      "reason": {
+        "vi": "Trong tiếng Trung, phó từ chỉ mức độ phải đứng trước tính từ; người học đặt 很 sau tính từ theo thói quen tiếng Việt.",
+        "en": "In Chinese the degree adverb must come before the adjective; learners put 很 after it by habit from Vietnamese."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong_pinyin": ["jīn", "tiān", "rè", "hěn", ""],
+      "right_pinyin": ["jīn", "tiān", "hěn", "rè", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "这个苹果___甜。",
+      "options": [
+        {"text": "很", "error_tag": null, "pinyin": ["hěn"]},
+        {"text": "甜很", "error_tag": "word_order", "pinyin": ["tián", "hěn"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "很 phải đứng trước tính từ 甜, không đứng sau.",
+        "en": "很 must come before the adjective 甜, not after it."
+      },
+      "q_pinyin": ["zhè", "ge", "píng", "guǒ", "", "", "", "tián", ""]
+    },
+    {
+      "q": "这个箱子___重了。",
+      "options": [
+        {"text": "太", "error_tag": null, "pinyin": ["tài"]},
+        {"text": "最", "error_tag": "word_choice", "pinyin": ["zuì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "太 ... 了 diễn tả mức độ vượt quá mức bình thường; 最 dùng cho so sánh nhất, không hợp ở đây.",
+        "en": "太 ... 了 expresses a degree beyond the normal level; 最 is for superlatives and does not fit here."
+      },
+      "q_pinyin": ["zhè", "ge", "xiāng", "zi", "", "", "", "zhòng", "le", ""]
+    },
+    {
+      "q": "他___喜欢这个电影。",
+      "options": [
+        {"text": "非常", "error_tag": null, "pinyin": ["fēi", "cháng"]},
+        {"text": "太", "error_tag": "collocation", "pinyin": ["tài"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "非常 có thể đứng trước động từ chỉ cảm xúc như 喜欢; 太 không dùng trực tiếp trước 喜欢.",
+        "en": "非常 can go before an emotion verb like 喜欢; 太 is not used directly before 喜欢."
+      },
+      "q_pinyin": ["tā", "", "", "", "xǐ", "huān", "zhè", "ge", "diàn", "yǐng", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một người hoặc vật quen thuộc với bạn, dùng 很, 非常, 太 hoặc 最 trước một tính từ.",
+      "en": "Write one sentence about a person or thing you know well, using 很, 非常, 太 or 最 before an adjective."
+    },
+    "placeholder": "我的……很……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "other", "any_of": ["很", "非常", "太", "真", "最"]},
+        {"role": "complement", "regex": "[\\u4e00-\\u9fff]"}
+      ]
+    },
+    "sample": {"text": "我的房间很小。", "pinyin": ["wǒ", "de", "fáng", "jiān", "hěn", "xiǎo", ""]},
+    "placeholder_pinyin": ["wǒ", "de", "", "", "hěn", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790831788",
+    "generated_at": "2026-10-01T05:16:28Z"
+  },
+  "review": null
+}

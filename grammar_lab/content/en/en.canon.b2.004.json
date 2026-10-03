@@ -1,0 +1,220 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b2.004",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.future_plans",
+  "level": {"framework": "cefr", "value": "B2", "rank": 4},
+  "prereqs": ["en.canon.b1.013"],
+  "contrasts": [],
+  "error_tags": ["tense"],
+  "source_refs": {"r5": ["b2-future-in-the-past"]},
+  "point_type": "tense_aspect",
+  "sequence": 3,
+  "aliases": ["b2-future-in-the-past"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Future in the past", "en": "Future in the past"},
+    "native_title": "Future in the past",
+    "level": {"framework": "cefr", "value": "B2", "rank": 4},
+    "summary": {
+      "vi": "Diễn tả một sự việc tương lai được nhìn từ một thời điểm trong quá khứ, dùng would, was/were going to hoặc was/were about to.",
+      "en": "Talk about a future event as seen from a point in the past, using would, was/were going to, or was/were about to."
+    },
+    "sub": {"vi": "tương lai trong quá khứ", "en": "future in the past"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi thuật lại lời nói hoặc suy nghĩ trong quá khứ về một việc sẽ xảy ra sau đó.",
+      "en": "When reporting past speech or thoughts about something that was going to happen later."
+    },
+    {
+      "vi": "Khi kể một dự định trong quá khứ mà việc đó chưa hoặc không xảy ra.",
+      "en": "When describing a past intention that had not happened yet or did not happen."
+    },
+    {
+      "vi": "Khi một hành động đã sắp xảy ra thì bị ngắt bởi một hành động khác.",
+      "en": "When an action was just about to happen and was interrupted by another action."
+    },
+    {
+      "vi": "Khi kể lại một lịch hẹn hoặc kế hoạch đã được sắp xếp trong quá khứ.",
+      "en": "When recounting an arrangement or plan that had already been made in the past."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {"text": "would", "role": "aux", "label": {"vi": "trợ động từ", "en": "auxiliary"}},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên thể", "en": "base verb"}},
+      {"text": "O", "role": "object", "label": {"vi": "tân ngữ", "en": "object"}, "optional": true}
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "would not",
+          "role": "aux",
+          "label": {"vi": "trợ động từ phủ định", "en": "negative auxiliary"},
+          "options": [{"text": "would not"}, {"text": "wouldn't"}]
+        },
+        {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên thể", "en": "base verb"}},
+        {
+          "text": "O",
+          "role": "object",
+          "label": {"vi": "tân ngữ", "en": "object"},
+          "optional": true
+        }
+      ],
+      "question": [
+        {"text": "Would", "role": "aux", "label": {"vi": "trợ động từ", "en": "auxiliary"}},
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên thể", "en": "base verb"}},
+        {
+          "text": "O",
+          "role": "object",
+          "label": {"vi": "tân ngữ", "en": "object"},
+          "optional": true
+        }
+      ]
+    },
+    "illustration": {"kind": "timeline", "timeline": {"shape": "future_plan"}}
+  },
+  "examples": [
+    {
+      "text": "I knew the journey would be difficult.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 19, "end": 24, "role": "aux"},
+        {"start": 25, "end": 27, "role": "verb"},
+        {"start": 28, "end": 37, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "would + động từ nguyên thể diễn tả một dự đoán trong quá khứ về tương lai.",
+        "en": "would + base verb expresses a past prediction about the future."
+      },
+      "translation": {"vi": "Tôi biết chuyến đi rồi sẽ khó.", "en": "I knew the journey would be difficult."}
+    },
+    {
+      "text": "We were going to leave at six, but the car broke down.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 3, "end": 16, "role": "aux"},
+        {"start": 17, "end": 22, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "was/were going to + động từ nguyên thể diễn tả một dự định trong quá khứ.",
+        "en": "was/were going to + base verb expresses a past intention."
+      },
+      "translation": {
+        "vi": "Chúng tôi định đi lúc sáu giờ nhưng xe hỏng.",
+        "en": "We were going to leave at six, but the car broke down."
+      }
+    },
+    {
+      "text": "She was about to speak when the phone rang.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 16, "role": "aux"},
+        {"start": 17, "end": 22, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "was/were about to + động từ nguyên thể diễn tả một hành động sắp xảy ra trong quá khứ.",
+        "en": "was/were about to + base verb expresses an action that was just about to happen in the past."
+      },
+      "translation": {
+        "vi": "Cô ấy sắp nói thì điện thoại reo.",
+        "en": "She was about to speak when the phone rang."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "He said he will call later.",
+      "right": "He said he would call later.",
+      "reason": {
+        "vi": "Khi thuật lại lời nói trong quá khứ, will thường chuyển thành would.",
+        "en": "When reporting speech in the past, will usually shifts to would."
+      },
+      "error_tag": "tense",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "I knew she ___ call me later.",
+      "options": [{"text": "would", "error_tag": null}, {"text": "will", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 'knew' (quá khứ), dùng 'would' để diễn tả tương lai trong quá khứ.",
+        "en": "After 'knew' (past), use 'would' to express future in the past."
+      }
+    },
+    {
+      "q": "We ___ leave at six, but the car broke down.",
+      "options": [{"text": "were going to", "error_tag": null}, {"text": "are going to", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Dùng 'were going to' để diễn tả một dự định trong quá khứ.",
+        "en": "Use 'were going to' to express a past intention."
+      }
+    },
+    {
+      "q": "She was about ___ when the phone rang.",
+      "options": [{"text": "to speak", "error_tag": null}, {"text": "speak", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Cấu trúc 'be about to + động từ nguyên thể' diễn tả hành động sắp xảy ra.",
+        "en": "The structure 'be about to + base verb' expresses an action that was just about to happen."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu kể lại một dự định hoặc dự đoán trong quá khứ của bạn, dùng 'would', 'was/were going to' hoặc 'was/were about to'.",
+      "en": "Write a sentence about a past plan or prediction you had, using 'would', 'was/were going to', or 'was/were about to'."
+    },
+    "placeholder": "I knew I would ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {
+          "role": "aux",
+          "any_of": ["would", "was going to", "were going to", "was about to", "were about to"]
+        },
+        {"role": "verb", "regex": "[a-z]+"}
+      ]
+    },
+    "sample": {"text": "I knew I would pass the exam."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790831103",
+    "generated_at": "2026-10-01T05:05:03Z",
+    "r5_source": {
+      "ids": ["b2-future-in-the-past"],
+      "content_version": 2,
+      "content_hash": "c6298e9bf9c2f8949815fb025b3054bacfb1f3baea4dba600d4ea1cc61120fef",
+      "corrections": [
+        {
+          "r5_id": "b2-future-in-the-past",
+          "issue": "R5's example 'He said he was meeting the client the next day.' uses past continuous for future-in-the-past, but the formula and rules do not cover this form, and the example is not included in the structured output.",
+          "fix": "Omitted this example to keep the formula consistent with the taught forms (would, was/were going to, was/were about to)."
+        },
+        {
+          "r5_id": "b2-future-in-the-past",
+          "issue": "R5's mistake 'I was about leaving when she arrived.' is corrected to 'I was about to leave when she arrived.', but the error tag 'word_form' is not in the allowed list for common_mistakes (only 'tense' is allowed).",
+          "fix": "Used the allowed error tag 'tense' for the common mistake, as the error involves the tense/aspect form of the verb."
+        }
+      ]
+    }
+  },
+  "review": null
+}

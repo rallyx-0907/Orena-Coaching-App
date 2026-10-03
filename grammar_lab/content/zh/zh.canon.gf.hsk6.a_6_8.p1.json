@@ -1,0 +1,299 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk6.a_6_8.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.negation",
+  "level": {"framework": "hsk3", "value": "6", "rank": 6},
+  "prereqs": ["zh.canon.gf.hsk6.a_6_6_2_3.p1"],
+  "contrasts": [],
+  "error_tags": ["particle", "register"],
+  "source_refs": {"gf0025": ["gf0025.hsk6.056", "gf0025.hsk6.057", "gf0025.hsk6.058", "gf0025.hsk6.059"]},
+  "point_type": "other",
+  "sequence": 3,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: X到Y头上来了", "en": "Chinese grammar: X到Y头上来了"},
+    "native_title": "X到Y头上来了",
+    "level": {"framework": "hsk3", "value": "6", "rank": 6},
+    "summary": {
+      "vi": "Mẫu 到……头上来了 dùng để nói một việc xấu, một trách nhiệm hay một rắc rối đã lan tới đúng người phải chịu, thường kèm ý bất mãn hoặc bất ngờ.",
+      "en": "The pattern 到……头上来了 says that something bad, a responsibility or a trouble has reached exactly the person who has to bear it, usually with a tone of complaint or surprise."
+    },
+    "sub": {"vi": "trách nhiệm đổ lên đầu", "en": "blame lands on someone"},
+    "native_title_pinyin": ["", "dào", "", "tóu", "shàng", "lái", "le"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi một rắc rối, lỗi lầm hay trách nhiệm cuối cùng lại rơi đúng vào một người cụ thể.",
+      "en": "When a trouble, a fault or a responsibility finally lands on one specific person."
+    },
+    {
+      "vi": "Khi người nói muốn thể hiện sự bất mãn: việc đó không nên đến tay mình hoặc đến tay người được nhắc tới.",
+      "en": "When the speaker wants to show dissatisfaction: the matter should not have come to them or to the person mentioned."
+    },
+    {
+      "vi": "Khi sự việc vừa mới xảy ra và người nói vừa mới nhận ra nó nhắm vào ai.",
+      "en": "When the event has just happened and the speaker has just realised who it is aimed at."
+    },
+    {
+      "vi": "Dùng trong văn nói hoặc văn viết có sắc thái cảm xúc, không dùng cho thông báo trung tính.",
+      "en": "Used in speech or in writing with an emotional colour; not for neutral announcements."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ thể gây ra việc", "en": "the party that causes the matter"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "到",
+        "role": "marker",
+        "label": {"vi": "giới từ chỉ đích đến", "en": "preposition marking the endpoint"},
+        "pinyin": ["dào"]
+      },
+      {
+        "text": "宾语",
+        "role": "object",
+        "label": {"vi": "người phải chịu", "en": "the person who has to bear it"},
+        "pinyin": ["bīn", "yǔ"]
+      },
+      {
+        "text": "头上",
+        "role": "place",
+        "label": {"vi": "trên đầu, nơi trách nhiệm đổ xuống", "en": "on the head, where the burden lands"},
+        "pinyin": ["tóu", "shàng"]
+      },
+      {
+        "text": "来",
+        "role": "verb",
+        "label": {
+          "vi": "động từ chỉ hướng, cho thấy việc tiến tới người đó",
+          "en": "directional verb showing the matter moves towards that person"
+        },
+        "pinyin": ["lái"]
+      },
+      {
+        "text": "了",
+        "role": "particle",
+        "label": {"vi": "trợ từ thể hiện việc đã xảy ra", "en": "particle marking that it has happened"},
+        "pinyin": ["le"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "这个麻烦事到我们头上来了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 5, "role": "subject"},
+        {"start": 5, "end": 6, "role": "marker"},
+        {"start": 6, "end": 8, "role": "object"},
+        {"start": 8, "end": 10, "role": "place"},
+        {"start": 10, "end": 11, "role": "verb"},
+        {"start": 11, "end": 12, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "Việc rắc rối đã lan tới đúng chúng tôi, với ý không mong muốn.",
+        "en": "The troublesome matter has reached exactly us, with a sense that it was not wanted."
+      },
+      "translation": {
+        "vi": "Cái việc rắc rối này đã đổ lên đầu chúng tôi rồi.",
+        "en": "This troublesome matter has landed on us."
+      },
+      "pinyin": ["zhè", "gè", "má", "fan", "shì", "dào", "wǒ", "men", "tóu", "shàng", "lái", "le", ""]
+    },
+    {
+      "text": "责任到每个人头上来了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 3, "role": "marker"},
+        {"start": 3, "end": 6, "role": "object"},
+        {"start": 6, "end": 8, "role": "place"},
+        {"start": 8, "end": 9, "role": "verb"},
+        {"start": 9, "end": 10, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "Trách nhiệm đã được chia tới từng người, không ai tránh được.",
+        "en": "The responsibility has come down to each person; nobody can avoid it."
+      },
+      "translation": {
+        "vi": "Trách nhiệm đã đổ lên đầu từng người rồi.",
+        "en": "The responsibility has now landed on each person."
+      },
+      "pinyin": ["zé", "rèn", "dào", "měi", "gè", "rén", "tóu", "shàng", "lái", "le", ""]
+    },
+    {
+      "text": "批评到小王头上来了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 3, "role": "marker"},
+        {"start": 3, "end": 5, "role": "object"},
+        {"start": 5, "end": 7, "role": "place"},
+        {"start": 7, "end": 8, "role": "verb"},
+        {"start": 8, "end": 9, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "Lời phê bình cuối cùng lại nhắm đúng vào Tiểu Vương.",
+        "en": "The criticism has finally come to rest on Xiao Wang."
+      },
+      "translation": {
+        "vi": "Lời phê bình đã đổ lên đầu Tiểu Vương rồi.",
+        "en": "The criticism has landed on Xiao Wang."
+      },
+      "pinyin": ["pī", "píng", "dào", "xiǎo", "wáng", "tóu", "shàng", "lái", "le", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "这个麻烦事到我们头上来了吗？",
+      "right": "这个麻烦事到我们头上来了。",
+      "reason": {
+        "vi": "Mẫu 到……头上来了 là câu trần thuật, không dùng 吗 để tạo câu hỏi; muốn hỏi phải dùng cấu trúc khác như 是不是……了.",
+        "en": "The pattern 到……头上来了 is a statement and does not take 吗 to form a question; to ask, use another structure such as 是不是……了."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong_pinyin": ["zhè", "gè", "má", "fan", "shì", "dào", "wǒ", "men", "tóu", "shàng", "lái", "le", "ma", ""],
+      "right_pinyin": ["zhè", "gè", "má", "fan", "shì", "dào", "wǒ", "men", "tóu", "shàng", "lái", "le", ""]
+    },
+    {
+      "wrong": "这个麻烦事到我们头上来了，请大家按流程处理。",
+      "right": "这个麻烦事落到我们部门了，请大家按流程处理。",
+      "reason": {
+        "vi": "Mẫu 到……头上来了 mang sắc thái bất mãn, không phù hợp khi trình bày trung lập trong báo cáo hay văn bản trang trọng; ở văn phong đó nên dùng 落到……了.",
+        "en": "The pattern 到……头上来了 carries a tone of complaint and is out of place in a neutral report or formal writing; in that register use 落到……了 instead."
+      },
+      "error_tag": "register",
+      "l1": ["vi"],
+      "wrong_pinyin": [
+        "zhè",
+        "gè",
+        "má",
+        "fan",
+        "shì",
+        "dào",
+        "wǒ",
+        "men",
+        "tóu",
+        "shàng",
+        "lái",
+        "le",
+        "",
+        "qǐng",
+        "dà",
+        "jiā",
+        "àn",
+        "liú",
+        "chéng",
+        "chǔ",
+        "lǐ",
+        ""
+      ],
+      "right_pinyin": [
+        "zhè",
+        "gè",
+        "má",
+        "fan",
+        "shì",
+        "luò",
+        "dào",
+        "wǒ",
+        "men",
+        "bù",
+        "mén",
+        "le",
+        "",
+        "qǐng",
+        "dà",
+        "jiā",
+        "àn",
+        "liú",
+        "chéng",
+        "chǔ",
+        "lǐ",
+        ""
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "这个麻烦事___我们头上来了。",
+      "options": [
+        {"text": "到", "error_tag": null, "pinyin": ["dào"]},
+        {"text": "在", "error_tag": "word_choice", "pinyin": ["zài"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Mẫu cố định là 到……头上来了, dùng 到 để chỉ đích đến; 在 không đi với 头上来了 trong mẫu này.",
+        "en": "The fixed pattern is 到……头上来了, using 到 to mark the endpoint; 在 does not go with 头上来了 in this pattern."
+      },
+      "q_pinyin": ["zhè", "gè", "má", "fan", "shì", "", "", "", "wǒ", "men", "tóu", "shàng", "lái", "le", ""]
+    },
+    {
+      "q": "责任到每个人头上___了。",
+      "options": [
+        {"text": "来", "error_tag": null, "pinyin": ["lái"]},
+        {"text": "去", "error_tag": "word_choice", "pinyin": ["qù"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Mẫu dùng 来 vì trách nhiệm tiến tới phía người phải chịu; 去 chỉ hướng ngược lại nên sai.",
+        "en": "The pattern uses 来 because the responsibility moves towards the person who bears it; 去 points the other way and is wrong here."
+      },
+      "q_pinyin": ["zé", "rèn", "dào", "měi", "gè", "rén", "tóu", "shàng", "", "", "", "le", ""]
+    },
+    {
+      "q": "批评到小王头上来了___",
+      "options": [
+        {"text": "。", "error_tag": null, "pinyin": [""]},
+        {"text": "吗？", "error_tag": "particle", "pinyin": ["ma", ""]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "到……头上来了 là câu trần thuật, kết thúc bằng dấu chấm; 吗 không dùng trong mẫu này.",
+        "en": "到……头上来了 is a statement and ends with a full stop; 吗 is not used in this pattern."
+      },
+      "q_pinyin": ["pī", "píng", "dào", "xiǎo", "wáng", "tóu", "shàng", "lái", "le", "", "", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu kể về một việc rắc rối hoặc trách nhiệm đã đổ lên đầu bạn hoặc người bạn quen, dùng mẫu 到……头上来了.",
+      "en": "Write one sentence about a trouble or responsibility that has landed on you or someone you know, using 到……头上来了."
+    },
+    "placeholder": "这个麻烦事到……头上来了。",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "marker", "any_of": ["到"]},
+        {"role": "place", "any_of": ["头上"]},
+        {"role": "verb", "any_of": ["来"]},
+        {"role": "particle", "any_of": ["了"]}
+      ]
+    },
+    "sample": {
+      "text": "这个麻烦事到我头上来了。",
+      "pinyin": ["zhè", "gè", "má", "fan", "shì", "dào", "wǒ", "tóu", "shàng", "lái", "le", ""]
+    },
+    "placeholder_pinyin": ["zhè", "gè", "má", "fan", "shì", "dào", "", "", "tóu", "shàng", "lái", "le", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790834277",
+    "generated_at": "2026-10-01T05:57:57Z"
+  },
+  "review": null
+}

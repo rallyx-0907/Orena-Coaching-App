@@ -1,0 +1,335 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk6.a_6_6_2_8.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.linking",
+  "level": {"framework": "hsk3", "value": "6", "rank": 6},
+  "prereqs": ["zh.canon.gf.hsk6.a_6_6_2_6.p1"],
+  "contrasts": [],
+  "error_tags": ["conjunction"],
+  "source_refs": {"gf0025": ["gf0025.hsk6.052"]},
+  "point_type": "other",
+  "sequence": 11,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Câu phức: 就算/就是⋯⋯也⋯⋯", "en": "Complex sentences: 就算/就是⋯⋯也⋯⋯"},
+    "native_title": "就算/就是⋯⋯也⋯⋯",
+    "level": {"framework": "hsk3", "value": "6", "rank": 6},
+    "summary": {
+      "vi": "Mẫu câu 就算/就是⋯⋯也⋯⋯ dùng để nhượng bộ: thừa nhận một điều kiện cực đoan rồi khẳng định kết quả vẫn không đổi.",
+      "en": "The 就算/就是⋯⋯也⋯⋯ pattern expresses concession: it grants an extreme condition and then states that the result stays the same."
+    },
+    "sub": {"vi": "nhượng bộ", "en": "concession"},
+    "native_title_pinyin": ["jiù", "suàn", "", "jiù", "shì", "", "", "yě", "", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói 'dù cho... thì...', thừa nhận một tình huống khó hoặc cực đoan trước.",
+      "en": "When you want to say 'even if... still...', granting a difficult or extreme situation first."
+    },
+    {
+      "vi": "Khi điều kiện đưa ra chỉ là giả định, không nhất thiết đã xảy ra.",
+      "en": "When the condition is hypothetical and has not necessarily happened."
+    },
+    {
+      "vi": "Khi bạn muốn nhấn mạnh rằng kết quả ở vế sau không hề thay đổi.",
+      "en": "When you want to stress that the result in the second clause does not change at all."
+    },
+    {
+      "vi": "Khi câu có thể dùng 就算 hoặc 就是 ở đầu vế nhượng bộ, nghĩa gần như nhau.",
+      "en": "When the concessive clause can start with either 就算 or 就是, with almost the same meaning."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "就算/就是",
+        "role": "connector",
+        "label": {"vi": "liên từ nhượng bộ", "en": "concessive connector"},
+        "options": [{"text": "就算", "pinyin": ["jiù", "suàn"]}, {"text": "就是", "pinyin": ["jiù", "shì"]}],
+        "pinyin": ["jiù", "suàn", "", "jiù", "shì"]
+      },
+      {
+        "text": "条件",
+        "role": "other",
+        "label": {"vi": "điều kiện giả định", "en": "hypothetical condition"},
+        "pinyin": ["tiáo", "jiàn"]
+      },
+      {
+        "text": "也",
+        "role": "connector",
+        "label": {"vi": "cũng / vẫn", "en": "also / still"},
+        "pinyin": ["yě"]
+      },
+      {
+        "text": "结果",
+        "role": "other",
+        "label": {"vi": "kết quả không đổi", "en": "unchanged result"},
+        "pinyin": ["jié", "guǒ"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "就算明天下雨，比赛也照常进行。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 6, "role": "other"},
+        {"start": 9, "end": 10, "role": "connector"},
+        {"start": 10, "end": 14, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Điều kiện 'ngày mai mưa' được thừa nhận, nhưng kết quả 'vẫn tiến hành như thường' không đổi.",
+        "en": "The condition 'it rains tomorrow' is granted, but the result 'still goes ahead as usual' does not change."
+      },
+      "translation": {
+        "vi": "Dù ngày mai trời mưa, trận đấu vẫn tiến hành như thường.",
+        "en": "Even if it rains tomorrow, the match will still go ahead as usual."
+      },
+      "pinyin": [
+        "jiù",
+        "suàn",
+        "míng",
+        "tiān",
+        "xià",
+        "yǔ",
+        "",
+        "bǐ",
+        "sài",
+        "yě",
+        "zhào",
+        "cháng",
+        "jìn",
+        "xíng",
+        ""
+      ]
+    },
+    {
+      "text": "就是再累，我也要把作业写完。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 4, "role": "other"},
+        {"start": 6, "end": 7, "role": "connector"},
+        {"start": 7, "end": 13, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Nhượng bộ bằng 'dù có mệt đến đâu', kết quả 'vẫn phải làm xong bài tập' không thay đổi.",
+        "en": "Concedes with 'no matter how tired', while the result 'still have to finish the homework' stays the same."
+      },
+      "translation": {
+        "vi": "Dù có mệt đến đâu, tôi cũng phải làm xong bài tập.",
+        "en": "Even if I am exhausted, I still have to finish my homework."
+      },
+      "pinyin": ["jiù", "shì", "zài", "lèi", "", "wǒ", "yě", "yào", "bǎ", "zuò", "yè", "xiě", "wán", ""]
+    },
+    {
+      "text": "就算你不同意，这个计划也要继续。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 6, "role": "other"},
+        {"start": 11, "end": 12, "role": "connector"},
+        {"start": 12, "end": 15, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Điều kiện 'bạn không đồng ý' được thừa nhận, nhưng kết quả 'kế hoạch vẫn tiếp tục' không đổi.",
+        "en": "The condition 'you do not agree' is granted, but the result 'the plan still continues' does not change."
+      },
+      "translation": {
+        "vi": "Dù bạn không đồng ý, kế hoạch này vẫn phải tiếp tục.",
+        "en": "Even if you do not agree, this plan will still continue."
+      },
+      "pinyin": [
+        "jiù",
+        "suàn",
+        "nǐ",
+        "bù",
+        "tóng",
+        "yì",
+        "",
+        "zhè",
+        "gè",
+        "jì",
+        "huà",
+        "yě",
+        "yào",
+        "jì",
+        "xù",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "就算明天下雨，比赛照常进行。",
+      "right": "就算明天下雨，比赛也照常进行。",
+      "reason": {
+        "vi": "Người học quen với câu nhượng bộ tiếng Việt không cần từ nối ở vế sau, nên bỏ mất 也. Trong mẫu 就算/就是⋯⋯也⋯⋯, 也 là bắt buộc để nối hai vế.",
+        "en": "Learners are used to Vietnamese concessive sentences that need no linker in the second clause, so they drop 也. In the 就算/就是⋯⋯也⋯⋯ pattern, 也 is required to link the two clauses."
+      },
+      "error_tag": "conjunction",
+      "l1": ["vi"],
+      "wrong_pinyin": [
+        "jiù",
+        "suàn",
+        "míng",
+        "tiān",
+        "xià",
+        "yǔ",
+        "",
+        "bǐ",
+        "sài",
+        "zhào",
+        "cháng",
+        "jìn",
+        "xíng",
+        ""
+      ],
+      "right_pinyin": [
+        "jiù",
+        "suàn",
+        "míng",
+        "tiān",
+        "xià",
+        "yǔ",
+        "",
+        "bǐ",
+        "sài",
+        "yě",
+        "zhào",
+        "cháng",
+        "jìn",
+        "xíng",
+        ""
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "就算今天很忙，我___要给你打电话。",
+      "options": [
+        {"text": "也", "error_tag": null, "pinyin": ["yě"]},
+        {"text": "就", "error_tag": "conjunction", "pinyin": ["jiù"]},
+        {"text": "还", "error_tag": "conjunction", "pinyin": ["hái"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau vế nhượng bộ 就算⋯⋯, vế kết quả phải dùng 也 để nối: 就算今天很忙，我也要给你打电话.",
+        "en": "After the concessive clause 就算⋯⋯, the result clause must use 也 to link: 就算今天很忙，我也要给你打电话."
+      },
+      "q_pinyin": [
+        "jiù",
+        "suàn",
+        "jīn",
+        "tiān",
+        "hěn",
+        "máng",
+        "",
+        "wǒ",
+        "",
+        "",
+        "",
+        "yào",
+        "gěi",
+        "nǐ",
+        "dǎ",
+        "diàn",
+        "huà",
+        ""
+      ]
+    },
+    {
+      "q": "就是再难，我们___不能放弃。",
+      "options": [
+        {"text": "也", "error_tag": null, "pinyin": ["yě"]},
+        {"text": "都", "error_tag": "conjunction", "pinyin": ["dōu"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Mẫu 就是⋯⋯也⋯⋯ cần 也 ở vế sau; 都 không thuộc mẫu này.",
+        "en": "The 就是⋯⋯也⋯⋯ pattern needs 也 in the second clause; 都 does not belong to this pattern."
+      },
+      "q_pinyin": ["jiù", "shì", "zài", "nán", "", "wǒ", "men", "", "", "", "bù", "néng", "fàng", "qì", ""]
+    },
+    {
+      "q": "___你说得再好，我也不会相信。",
+      "options": [
+        {"text": "就算", "error_tag": null, "pinyin": ["jiù", "suàn"]},
+        {"text": "因为", "error_tag": "conjunction", "pinyin": ["yīn", "wèi"]},
+        {"text": "所以", "error_tag": "conjunction", "pinyin": ["suǒ", "yǐ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu nhượng bộ mở đầu bằng 就算 hoặc 就是; 因为 và 所以 là cặp nhân quả, không hợp ở đây.",
+        "en": "A concessive sentence starts with 就算 or 就是; 因为 and 所以 form a cause-effect pair and do not fit here."
+      },
+      "q_pinyin": [
+        "",
+        "",
+        "",
+        "nǐ",
+        "shuō",
+        "de",
+        "zài",
+        "hǎo",
+        "",
+        "wǒ",
+        "yě",
+        "bù",
+        "huì",
+        "xiāng",
+        "xìn",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về bản thân dùng mẫu 就算/就是⋯⋯也⋯⋯, ví dụ về một việc khó khăn mà bạn vẫn quyết tâm làm.",
+      "en": "Write one sentence about yourself using 就算/就是⋯⋯也⋯⋯, for example about something difficult you are still determined to do."
+    },
+    "placeholder": "就算……，我也……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "connector", "any_of": ["就算", "就是"]}, {"role": "connector", "any_of": ["也"]}]
+    },
+    "sample": {
+      "text": "就算工作很忙，我也要每天学中文。",
+      "pinyin": [
+        "jiù",
+        "suàn",
+        "gōng",
+        "zuò",
+        "hěn",
+        "máng",
+        "",
+        "wǒ",
+        "yě",
+        "yào",
+        "měi",
+        "tiān",
+        "xué",
+        "zhōng",
+        "wén",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["jiù", "suàn", "", "", "", "wǒ", "yě", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790834232",
+    "generated_at": "2026-10-01T05:57:12Z"
+  },
+  "review": null
+}

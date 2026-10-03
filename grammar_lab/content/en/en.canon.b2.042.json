@@ -1,0 +1,206 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b2.042",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.comparison",
+  "level": {"framework": "cefr", "value": "B2", "rank": 4},
+  "prereqs": ["en.canon.b2.041"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "As If As Though", "en": "As If As Though"},
+    "native_title": "As If As Though",
+    "level": {"framework": "cefr", "value": "B2", "rank": 4},
+    "summary": {
+      "vi": "Cấu trúc 'as if / as though' dùng để diễn tả một tình huống trông có vẻ như thế nào đó, thường là không có thật hoặc chỉ là giả định.",
+      "en": "The structure 'as if / as though' describes how a situation seems, often when it is not real or is only imagined."
+    },
+    "sub": {"vi": "như thể là", "en": "as if / as though"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói một việc trông có vẻ như đang xảy ra hoặc đã xảy ra, nhưng bạn không chắc đó là thật.",
+      "en": "When you want to say something seems to be happening or seems to have happened, but you are not sure it is real."
+    },
+    {
+      "vi": "Khi bạn so sánh một tình huống với một tình huống khác chỉ trong tưởng tượng.",
+      "en": "When you compare a situation with another situation that exists only in your imagination."
+    },
+    {
+      "vi": "Khi bạn muốn nhấn mạnh rằng một hành động hoặc trạng thái không giống với thực tế.",
+      "en": "When you want to emphasise that an action or state does not match reality."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ chính", "en": "main verb"}},
+      {
+        "text": "as if/as though",
+        "role": "connector",
+        "label": {"vi": "liên từ", "en": "connector"},
+        "options": [{"text": "as if"}, {"text": "as though"}]
+      },
+      {
+        "text": "S",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ mệnh đề sau", "en": "clause subject"}
+      },
+      {"text": "V", "role": "verb", "label": {"vi": "động từ mệnh đề sau", "en": "clause verb"}}
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "She looks as if she has seen a ghost.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 9, "role": "verb"},
+        {"start": 10, "end": 15, "role": "connector"},
+        {"start": 16, "end": 19, "role": "subject"},
+        {"start": 20, "end": 28, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Cô ấy trông như thể vừa nhìn thấy ma — điều này khó có thật.",
+        "en": "She seems to have seen a ghost — something that is probably not true."
+      },
+      "translation": {
+        "vi": "Cô ấy trông như thể cô ấy vừa nhìn thấy ma.",
+        "en": "She looks as if she has seen a ghost."
+      }
+    },
+    {
+      "text": "He talks as though he knows everything.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 3, "end": 8, "role": "verb"},
+        {"start": 9, "end": 18, "role": "connector"},
+        {"start": 19, "end": 21, "role": "subject"},
+        {"start": 22, "end": 27, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Anh ấy nói như thể anh ấy biết mọi thứ — nhưng thực tế thì không.",
+        "en": "He speaks as if he knows everything — but in reality he does not."
+      },
+      "translation": {
+        "vi": "Anh ấy nói như thể anh ấy biết mọi thứ.",
+        "en": "He talks as though he knows everything."
+      }
+    },
+    {
+      "text": "The room smells as if someone has been smoking.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 8, "role": "subject"},
+        {"start": 9, "end": 15, "role": "verb"},
+        {"start": 16, "end": 21, "role": "connector"},
+        {"start": 22, "end": 29, "role": "subject"},
+        {"start": 30, "end": 46, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Căn phòng có mùi như thể ai đó vừa hút thuốc — dấu hiệu này khiến ta suy đoán.",
+        "en": "The room has a smell that makes us think someone has been smoking."
+      },
+      "translation": {
+        "vi": "Căn phòng có mùi như thể ai đó vừa hút thuốc.",
+        "en": "The room smells as if someone has been smoking."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "She looks as if she seen a ghost.",
+      "right": "She looks as if she has seen a ghost.",
+      "reason": {
+        "vi": "Người học thường bỏ trợ động từ 'has' trong thì hiện tại hoàn thành sau 'as if', vì nghĩ rằng động từ chính đã đủ nghĩa.",
+        "en": "Learners often drop the auxiliary 'has' in the present perfect after 'as if', thinking the main verb alone is enough."
+      },
+      "error_tag": "other",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "He acts ___ he owns the place.",
+      "options": [{"text": "as if", "error_tag": null}, {"text": "like", "error_tag": "word_choice"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 'acts' cần liên từ 'as if' để nối với mệnh đề 'he owns the place'. 'Like' là giới từ, không đứng trước mệnh đề.",
+        "en": "After 'acts' we need the conjunction 'as if' to link to the clause 'he owns the place'. 'Like' is a preposition and cannot introduce a clause."
+      }
+    },
+    {
+      "q": "It looks ___ it is going to rain.",
+      "options": [{"text": "as though", "error_tag": null}, {"text": "as", "error_tag": "word_choice"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Cụm 'as though' diễn tả vẻ ngoài có thể xảy ra. Chỉ dùng 'as' sẽ thiếu nghĩa 'như thể'.",
+        "en": "'As though' expresses how something seems. Using only 'as' loses the meaning 'as if'."
+      }
+    },
+    {
+      "q": "She behaves as if she ___ the boss.",
+      "options": [{"text": "were", "error_tag": null}, {"text": "is", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 'as if' khi nói về điều không có thật ở hiện tại, dùng 'were' cho mọi chủ ngữ. 'Is' không phù hợp vì cô ấy không phải là sếp.",
+        "en": "After 'as if' for an unreal present situation, use 'were' for all subjects. 'Is' is wrong because she is not actually the boss."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một người bạn hoặc thành viên gia đình, dùng 'as if' hoặc 'as though' để nói họ trông hoặc cư xử như thế nào.",
+      "en": "Write one sentence about a friend or family member, using 'as if' or 'as though' to say how they look or behave."
+    },
+    "placeholder": "My brother talks as if ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "connector", "any_of": ["as if", "as though"]},
+        {
+          "role": "subject",
+          "any_of": [
+            "he",
+            "she",
+            "it",
+            "they",
+            "I",
+            "we",
+            "you",
+            "someone",
+            "somebody",
+            "anyone",
+            "everyone",
+            "nobody"
+          ]
+        },
+        {
+          "role": "verb",
+          "regex": "(?i)\\b(?:is|are|was|were|has|have|had|knows|know|owns|own|likes|like|wants|want|needs|need|works|work|plays|play|talks|talk|looks|look|feels|feel|seems|seem|behaves|behave|smokes|smoke|smells|smell|sees|see|seen|been|being|going|goes|go|does|do|did|can|could|will|would|should|must|may|might)\\b"
+        }
+      ]
+    },
+    "sample": {"text": "My brother talks as if he knows everything."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790831331",
+    "generated_at": "2026-10-01T05:08:51Z",
+    "metadata_stale": true
+  },
+  "review": null
+}

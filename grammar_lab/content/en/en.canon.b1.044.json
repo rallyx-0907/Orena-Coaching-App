@@ -1,0 +1,219 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b1.044",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.degree",
+  "level": {"framework": "cefr", "value": "B1", "rank": 3},
+  "prereqs": ["en.too_enough"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["b1-so-such-too-enough"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["b1-so-such-too-enough"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "So/such/too/enough", "en": "So/such/too/enough"},
+    "native_title": "So/such/too/enough",
+    "level": {"framework": "cefr", "value": "B1", "rank": 3},
+    "summary": {
+      "vi": "Cấu trúc so/such dùng để nhấn mạnh mức độ và thường dẫn đến kết quả, còn too/enough diễn tả việc vượt ngưỡng hoặc đạt ngưỡng cần thiết.",
+      "en": "So/such emphasise a degree and often lead to a result, while too/enough express being above or reaching a necessary limit."
+    },
+    "sub": {"vi": "mức độ và ngưỡng", "en": "degree and limit"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nhấn mạnh một tính từ hoặc trạng từ và thường nêu kết quả đi kèm, dùng so + adjective/adverb.",
+      "en": "Use so + adjective/adverb to emphasise a quality and often add the result that follows."
+    },
+    {
+      "vi": "Khi nhấn mạnh một cụm danh từ, dùng such + (a/an) + adjective + noun.",
+      "en": "Use such + (a/an) + adjective + noun to emphasise a whole noun phrase."
+    },
+    {
+      "vi": "Khi một việc vượt quá mức cần thiết hoặc gây khó khăn, dùng too + adjective/adverb + to-infinitive.",
+      "en": "Use too + adjective/adverb + to-infinitive when something is more than is wanted or possible."
+    },
+    {
+      "vi": "Khi một việc đạt đủ mức cần thiết, dùng adjective/adverb + enough + to-infinitive hoặc enough + noun.",
+      "en": "Use adjective/adverb + enough + to-infinitive, or enough + noun, when something reaches the necessary level."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {
+        "text": "be",
+        "role": "verb",
+        "label": {"vi": "động từ be", "en": "verb be"},
+        "options": [{"text": "is"}, {"text": "are"}, {"text": "was"}, {"text": "were"}]
+      },
+      {"text": "so", "role": "marker", "label": {"vi": "từ nhấn mạnh so", "en": "degree marker so"}},
+      {
+        "text": "adj/adv",
+        "role": "complement",
+        "label": {"vi": "tính từ/trạng từ", "en": "adjective/adverb"}
+      },
+      {
+        "text": "that",
+        "role": "connector",
+        "label": {"vi": "từ nối that", "en": "result connector that"},
+        "optional": true
+      },
+      {
+        "text": "result clause",
+        "role": "other",
+        "label": {"vi": "mệnh đề kết quả", "en": "result clause"},
+        "optional": true
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "It was so cold that the lake froze.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 3, "end": 6, "role": "verb"},
+        {"start": 7, "end": 9, "role": "marker"},
+        {"start": 10, "end": 14, "role": "complement"},
+        {"start": 15, "end": 19, "role": "connector"},
+        {"start": 20, "end": 34, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "so + tính từ nhấn mạnh mức độ, that dẫn đến kết quả.",
+        "en": "so + adjective emphasises the degree, and that introduces the result."
+      },
+      "translation": {"vi": "Trời lạnh đến mức hồ đóng băng.", "en": "It was so cold that the lake froze."}
+    },
+    {
+      "text": "It was such a difficult exam that many students failed.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 3, "end": 6, "role": "verb"},
+        {"start": 7, "end": 11, "role": "marker"},
+        {"start": 12, "end": 28, "role": "complement"},
+        {"start": 29, "end": 33, "role": "connector"},
+        {"start": 34, "end": 54, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "such + a + tính từ + danh từ nhấn mạnh cả cụm danh từ.",
+        "en": "such + a + adjective + noun emphasises the whole noun phrase."
+      },
+      "translation": {
+        "vi": "Đó là kỳ thi khó đến mức nhiều học sinh trượt.",
+        "en": "It was such a difficult exam that many students failed."
+      }
+    },
+    {
+      "text": "The bag is too heavy to carry.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 7, "role": "subject"},
+        {"start": 8, "end": 10, "role": "verb"},
+        {"start": 11, "end": 14, "role": "marker"},
+        {"start": 15, "end": 20, "role": "complement"},
+        {"start": 21, "end": 29, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "too + tính từ + to-infinitive: vượt ngưỡng nên không thể mang.",
+        "en": "too + adjective + to-infinitive: above the limit, so it cannot be carried."
+      },
+      "translation": {"vi": "Túi quá nặng để mang.", "en": "The bag is too heavy to carry."}
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "It was so a difficult problem.",
+      "right": "It was such a difficult problem.",
+      "reason": {
+        "vi": "so không đứng trước a + tính từ + danh từ; với cụm danh từ phải dùng such.",
+        "en": "so cannot come before a + adjective + noun; use such with a noun phrase."
+      },
+      "error_tag": "other",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "It was ___ a difficult exam that many students failed.",
+      "options": [{"text": "such", "error_tag": null}, {"text": "so", "error_tag": "word_choice"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Trước a + tính từ + danh từ dùng such, không dùng so.",
+        "en": "Use such before a + adjective + noun, not so."
+      }
+    },
+    {
+      "q": "He is ___ tall to reach the top shelf.",
+      "options": [{"text": "enough", "error_tag": null}, {"text": "too", "error_tag": "word_choice"}],
+      "answer": 0,
+      "explain": {
+        "vi": "enough đứng sau tính từ: tall enough to reach.",
+        "en": "enough comes after the adjective: tall enough to reach."
+      }
+    },
+    {
+      "q": "The coffee is ___ hot to drink.",
+      "options": [{"text": "too", "error_tag": null}, {"text": "enough", "error_tag": "word_choice"}],
+      "answer": 0,
+      "explain": {
+        "vi": "too + tính từ + to-infinitive diễn tả vượt ngưỡng, không uống được.",
+        "en": "too + adjective + to-infinitive means above the limit, so it cannot be drunk."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng so + tính từ + that + kết quả về một trải nghiệm của bạn.",
+      "en": "Write one sentence using so + adjective + that + result about an experience of yours."
+    },
+    "placeholder": "It was so ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "marker", "any_of": ["so", "such", "too"]},
+        {"role": "complement", "regex": "[a-z]+"},
+        {"role": "connector", "any_of": ["that", "to"]}
+      ]
+    },
+    "sample": {"text": "It was so cold that the lake froze."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790831015",
+    "generated_at": "2026-10-01T05:03:35Z",
+    "r5_source": {
+      "ids": ["b1-so-such-too-enough"],
+      "content_version": 2,
+      "content_hash": "8f283b610b5b8b312dfadd8d9cbd1e49ceac9d30d9a742cdc2799f9d11faefed",
+      "corrections": [
+        {
+          "r5_id": "b1-so-such-too-enough",
+          "issue": "R5's formula only listed 'so + adjective/adverb; such + (a/an) + adjective + noun' and did not include the result clause with 'that', which is central to the examples.",
+          "fix": "Added optional 'that' and 'result clause' slots to the formula so the pattern covers the full so/such result structure."
+        },
+        {
+          "r5_id": "b1-so-such-too-enough",
+          "issue": "R5's mistake 'He is enough tall to reach it' was correct in its diagnosis but the corrected sentence 'He is tall enough to reach it' was not included in the examples.",
+          "fix": "Kept the correction and added a clean example 'The bag is too heavy to carry' to illustrate too + adjective + to-infinitive."
+        },
+        {
+          "r5_id": "b1-so-such-too-enough",
+          "issue": "R5's guided practice included a production prompt with 'Answers vary', which is not usable as a deterministic check.",
+          "fix": "Replaced it with a personal_production card that has a concrete prompt, placeholder, sample, and a pattern_rule the app can check."
+        }
+      ]
+    }
+  },
+  "review": null
+}

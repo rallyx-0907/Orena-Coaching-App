@@ -4,16 +4,16 @@
   "version": 1,
   "target_lang": "en",
   "function": "fn.condition_real",
-  "level": {"framework": "cefr", "value": "B1", "rank": 3},
-  "prereqs": ["en.present_simple.third_person_s"],
-  "contrasts": [],
+  "level": {"framework": "cefr", "value": "A2", "rank": 2},
+  "prereqs": ["en.conditional_zero"],
+  "contrasts": ["en.conditional_zero", "en.unless"],
   "error_tags": ["tense"],
-  "source_refs": {},
+  "source_refs": {"r5": ["a2-first-conditional"]},
   "point_type": "tense_aspect",
   "header": {
     "title": {"vi": "Câu điều kiện loại 1", "en": "First conditional"},
     "native_title": "First conditional",
-    "level": {"framework": "cefr", "value": "B1", "rank": 3},
+    "level": {"framework": "cefr", "value": "A2", "rank": 2},
     "summary": {
       "vi": "Câu điều kiện loại 1 dùng để nói về một điều kiện có thể xảy ra trong hiện tại hoặc tương lai và kết quả của nó.",
       "en": "Talk about a possible condition and its likely result in the future."
@@ -159,10 +159,11 @@
     "model": "deepseek:deepseek-flash",
     "prompt_version": "generate_point_v04.v5",
     "run_id": "generate.1790590028",
-    "generated_at": "2026-09-28T10:07:08Z"
+    "generated_at": "2026-09-28T10:07:08Z",
+    "metadata_stale": true
   },
   "review": null,
-  "sequence": 1,
+  "sequence": 2,
   "personal_production": {
     "prompt": {
       "vi": "Viết một câu về điều bạn sẽ làm nếu trời mai đẹp.",
@@ -176,5 +177,6 @@
     },
     "sample": {"text": "If it is sunny tomorrow, I will go to the park."}
   },
-  "source_anchors": {"status": "anchored", "items": [{"source": "core_inventory", "code": "90", "level": "A2"}]}
+  "source_anchors": {"status": "anchored", "items": [{"source": "core_inventory", "code": "90", "level": "A2"}]},
+  "aliases": ["a2-first-conditional"]
 }

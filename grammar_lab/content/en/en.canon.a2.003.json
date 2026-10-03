@@ -1,0 +1,232 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.a2.003",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.possibility",
+  "level": {"framework": "cefr", "value": "A2", "rank": 2},
+  "prereqs": [],
+  "contrasts": [],
+  "error_tags": ["tense"],
+  "source_refs": {"r5": ["a2-can-could-be-able-to-basics"]},
+  "point_type": "tense_aspect",
+  "sequence": 2,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Could Past Ability", "en": "Could Past Ability"},
+    "native_title": "Could Past Ability",
+    "level": {"framework": "cefr", "value": "A2", "rank": 2},
+    "summary": {
+      "vi": "Could diễn tả khả năng chung trong quá khứ, tức là việc ai đó biết làm gì ở một giai đoạn trước đây.",
+      "en": "Could describes general ability in the past, meaning what someone knew how to do at an earlier time."
+    },
+    "sub": {"vi": "khả năng quá khứ", "en": "past ability"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi kể về việc mình biết làm gì trong quá khứ, thường là cả một giai đoạn chứ không phải một lần cụ thể.",
+      "en": "When talking about what you knew how to do in the past, usually over a period rather than on one specific occasion."
+    },
+    {
+      "vi": "Khi kể về khả năng của người khác ở một mốc tuổi hoặc một giai đoạn trong quá khứ.",
+      "en": "When describing another person's ability at an age or during a period in the past."
+    },
+    {
+      "vi": "Khi so sánh khả năng bây giờ với khả năng trước đây.",
+      "en": "When comparing an ability now with an ability before."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {
+        "text": "could",
+        "role": "aux",
+        "label": {"vi": "trợ động từ khả năng quá khứ", "en": "past ability auxiliary"}
+      },
+      {
+        "text": "V",
+        "role": "verb",
+        "label": {"vi": "động từ nguyên mẫu không to", "en": "base verb"}
+      },
+      {"text": "O", "role": "object", "label": {"vi": "tân ngữ", "en": "object"}, "optional": true}
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "couldn't",
+          "role": "aux",
+          "label": {"vi": "trợ động từ phủ định khả năng quá khứ", "en": "negative past ability auxiliary"}
+        },
+        {
+          "text": "V",
+          "role": "verb",
+          "label": {"vi": "động từ nguyên mẫu không to", "en": "base verb"}
+        },
+        {
+          "text": "O",
+          "role": "object",
+          "label": {"vi": "tân ngữ", "en": "object"},
+          "optional": true
+        }
+      ],
+      "question": [
+        {
+          "text": "Could",
+          "role": "aux",
+          "label": {"vi": "trợ động từ khả năng quá khứ", "en": "past ability auxiliary"}
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "V",
+          "role": "verb",
+          "label": {"vi": "động từ nguyên mẫu không to", "en": "base verb"}
+        },
+        {
+          "text": "O",
+          "role": "object",
+          "label": {"vi": "tân ngữ", "en": "object"},
+          "optional": true
+        }
+      ]
+    },
+    "illustration": {"kind": "timeline", "timeline": {"shape": "point_past"}}
+  },
+  "examples": [
+    {
+      "text": "She could read at five.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 9, "role": "aux"},
+        {"start": 10, "end": 14, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Khả năng chung ở tuổi năm, không phải một lần cụ thể.",
+        "en": "General ability at age five, not one specific occasion."
+      },
+      "translation": {"vi": "Cô ấy biết đọc lúc năm tuổi.", "en": "She could read at five."}
+    },
+    {
+      "text": "I couldn't swim when I was six.",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 2, "end": 10, "role": "aux"},
+        {"start": 11, "end": 15, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Phủ định khả năng trong quá khứ: lúc sáu tuổi tôi không biết bơi.",
+        "en": "Negative past ability: at six I did not know how to swim."
+      },
+      "translation": {"vi": "Tôi không biết bơi khi tôi sáu tuổi.", "en": "I couldn't swim when I was six."}
+    },
+    {
+      "text": "Could you ride a bike at seven?",
+      "form": "question",
+      "spans": [
+        {"start": 0, "end": 5, "role": "aux"},
+        {"start": 6, "end": 9, "role": "subject"},
+        {"start": 10, "end": 14, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Câu hỏi về khả năng trong quá khứ: lúc bảy tuổi bạn có biết đi xe đạp không?",
+        "en": "Question about past ability: at seven, did you know how to ride a bike?"
+      },
+      "translation": {"vi": "Bạn có biết đi xe đạp lúc bảy tuổi không?", "en": "Could you ride a bike at seven?"}
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "She could to swim when she was five.",
+      "right": "She could swim when she was five.",
+      "reason": {
+        "vi": "Sau could phải dùng động từ nguyên mẫu không to; thêm to là lỗi vì could đã là trợ động từ.",
+        "en": "After could, use the base verb without to; adding to is an error because could is already the auxiliary."
+      },
+      "error_tag": "tense",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "When I was seven, I ___ ride a bike.",
+      "options": [{"text": "could", "error_tag": null}, {"text": "can", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Khi nói về khả năng trong quá khứ, dùng could, không dùng can.",
+        "en": "For past ability, use could, not can."
+      }
+    },
+    {
+      "q": "He ___ speak English when he was ten.",
+      "options": [{"text": "could", "error_tag": null}, {"text": "could to", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau could dùng động từ nguyên mẫu không to: could speak.",
+        "en": "After could, use the base verb: could speak."
+      }
+    },
+    {
+      "q": "___ you swim when you were five?",
+      "options": [{"text": "Could", "error_tag": null}, {"text": "Can", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu hỏi về khả năng trong quá khứ dùng Could, không dùng Can.",
+        "en": "For a question about past ability, use Could, not Can."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về việc bạn biết làm gì khi còn nhỏ, dùng could.",
+      "en": "Write one sentence about something you could do when you were a child, using could."
+    },
+    "placeholder": "I could ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "aux", "any_of": ["could"]}, {"role": "verb", "regex": "[a-z]+"}]
+    },
+    "sample": {"text": "I could ride a bike when I was six."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790830554",
+    "generated_at": "2026-10-01T04:55:54Z",
+    "r5_source": {
+      "ids": ["a2-can-could-be-able-to-basics"],
+      "content_version": 2,
+      "content_hash": "15fff7994839e3157a61e15ada65b964903d678db7e2edf1febdcc12e1da6bc5",
+      "corrections": [
+        {
+          "r5_id": "a2-can-could-be-able-to-basics",
+          "issue": "R5 covers can, could, and be able to together, but this point is only about could for past ability.",
+          "fix": "Narrowed the lesson to could for past ability; left out can and be able to."
+        },
+        {
+          "r5_id": "a2-can-could-be-able-to-basics",
+          "issue": "R5's example 'We are able to meet tomorrow' is about future arrangement, not past ability.",
+          "fix": "Replaced it with past-ability examples: 'She could read at five.', 'I couldn't swim when I was six.', 'Could you ride a bike at seven?'"
+        },
+        {
+          "r5_id": "a2-can-could-be-able-to-basics",
+          "issue": "R5's mistake 'She can to swim.' is about can, not could.",
+          "fix": "Wrote a could-specific mistake: 'She could to swim when she was five.' → 'She could swim when she was five.'"
+        },
+        {
+          "r5_id": "a2-can-could-be-able-to-basics",
+          "issue": "R5's guided practice mixes can, could, and be able to, so it does not test this point alone.",
+          "fix": "Wrote three quick-practice items that all test could for past ability."
+        }
+      ]
+    }
+  },
+  "review": null
+}

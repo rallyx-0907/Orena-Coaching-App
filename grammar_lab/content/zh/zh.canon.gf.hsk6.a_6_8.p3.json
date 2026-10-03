@@ -1,0 +1,438 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk6.a_6_8.p3",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.negation",
+  "level": {"framework": "hsk3", "value": "6", "rank": 6},
+  "prereqs": ["zh.canon.gf.hsk6.a_6_8.p1"],
+  "contrasts": [],
+  "error_tags": ["particle", "register"],
+  "source_refs": {"gf0025": ["gf0025.hsk6.064", "gf0025.hsk6.065", "gf0025.hsk6.066", "gf0025.hsk6.067"]},
+  "point_type": "other",
+  "sequence": 4,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 放着X不Y", "en": "Chinese grammar: 放着X不Y"},
+    "native_title": "放着X不Y",
+    "level": {"framework": "hsk3", "value": "6", "rank": 6},
+    "summary": {
+      "vi": "Mẫu câu 放着X不Y dùng để phê bình việc để sẵn một thứ gì đó (X) mà không dùng, không làm, hoặc không giải quyết (Y).",
+      "en": "The pattern 放着X不Y criticises leaving something available (X) unused, undone, or unresolved (Y)."
+    },
+    "sub": {"vi": "để đó mà không dùng", "en": "leave unused"},
+    "native_title_pinyin": ["fàng", "zhe", "", "bù", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói ai đó có sẵn một thứ tốt, một cơ hội, một người giúp đỡ mà lại không dùng đến.",
+      "en": "When you want to say someone has something good, an opportunity, or help available but does not use it."
+    },
+    {
+      "vi": "Khi bạn muốn phê bình ai đó bỏ qua việc cần làm, việc đáng làm mà lại chọn cách khác.",
+      "en": "When you want to criticise someone for ignoring something that should be done and choosing another way."
+    },
+    {
+      "vi": "Khi bạn muốn nhấn mạnh sự lãng phí: có sẵn mà không tận dụng.",
+      "en": "When you want to emphasise waste: something is available but not taken advantage of."
+    },
+    {
+      "vi": "Khi bạn muốn nói ai đó cố tình không giải quyết một việc dù cách giải quyết đã rõ ràng.",
+      "en": "When you want to say someone deliberately does not deal with something even though the solution is clear."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}, "pinyin": [""]},
+      {
+        "text": "放着",
+        "role": "verb",
+        "label": {"vi": "để sẵn, bỏ đó", "en": "leave available"},
+        "pinyin": ["fàng", "zhe"]
+      },
+      {
+        "text": "X",
+        "role": "object",
+        "label": {"vi": "thứ có sẵn", "en": "available thing"},
+        "pinyin": [""]
+      },
+      {
+        "text": "不",
+        "role": "marker",
+        "label": {"vi": "phủ định", "en": "negator"},
+        "pinyin": ["bù"]
+      },
+      {
+        "text": "Y",
+        "role": "verb",
+        "label": {"vi": "việc không làm", "en": "action not taken"},
+        "pinyin": [""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "他放着好好的工作不做，非要去创业。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 3, "role": "verb"},
+        {"start": 3, "end": 8, "role": "object"},
+        {"start": 8, "end": 9, "role": "marker"},
+        {"start": 9, "end": 10, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Có sẵn công việc tốt mà lại không làm, rồi chọn việc khó hơn.",
+        "en": "A good job is available, yet he does not do it and chooses something harder."
+      },
+      "translation": {
+        "vi": "Anh ấy để đó một công việc tốt mà không làm, nhất định đòi đi khởi nghiệp.",
+        "en": "He leaves a perfectly good job unused and insists on starting a business."
+      },
+      "pinyin": [
+        "tā",
+        "fàng",
+        "zhe",
+        "hǎo",
+        "hǎo",
+        "de",
+        "gōng",
+        "zuò",
+        "bù",
+        "zuò",
+        "",
+        "fēi",
+        "yào",
+        "qù",
+        "chuàng",
+        "yè",
+        ""
+      ]
+    },
+    {
+      "text": "你放着现成的答案不抄，偏要自己算。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 3, "role": "verb"},
+        {"start": 3, "end": 8, "role": "object"},
+        {"start": 8, "end": 9, "role": "marker"},
+        {"start": 9, "end": 10, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Có sẵn đáp án mà không chép, lại chọn cách tự tính.",
+        "en": "The answer is right there, but you do not copy it and insist on calculating yourself."
+      },
+      "translation": {
+        "vi": "Bạn để đó đáp án có sẵn mà không chép, cứ nhất định tự tính.",
+        "en": "You leave the ready-made answer unused and insist on working it out yourself."
+      },
+      "pinyin": [
+        "nǐ",
+        "fàng",
+        "zhe",
+        "xiàn",
+        "chéng",
+        "de",
+        "dá",
+        "àn",
+        "bù",
+        "chāo",
+        "",
+        "piān",
+        "yào",
+        "zì",
+        "jǐ",
+        "suàn",
+        ""
+      ]
+    },
+    {
+      "text": "我们放着免费的资源不用，太浪费了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 4, "role": "verb"},
+        {"start": 4, "end": 9, "role": "object"},
+        {"start": 9, "end": 10, "role": "marker"},
+        {"start": 10, "end": 11, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Có sẵn tài nguyên miễn phí mà không dùng, thật lãng phí.",
+        "en": "Free resources are available, but we do not use them; that is a waste."
+      },
+      "translation": {
+        "vi": "Chúng ta để đó nguồn tài nguyên miễn phí mà không dùng, quá lãng phí.",
+        "en": "We leave free resources unused; it is such a waste."
+      },
+      "pinyin": [
+        "wǒ",
+        "men",
+        "fàng",
+        "zhe",
+        "miǎn",
+        "fèi",
+        "de",
+        "zī",
+        "yuán",
+        "bù",
+        "yòng",
+        "",
+        "tài",
+        "làng",
+        "fèi",
+        "le",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "他放着好好的工作不做，非要去创业了。",
+      "right": "他放着好好的工作不做，非要去创业。",
+      "reason": {
+        "vi": "Mẫu 放着X不Y nêu một thái độ, một lựa chọn chung, không kể một sự việc đã xảy ra, nên không dùng 了 ở cuối.",
+        "en": "The 放着X不Y pattern states a general attitude or choice, not a completed event, so sentence-final 了 does not belong."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong_pinyin": [
+        "tā",
+        "fàng",
+        "zhe",
+        "hǎo",
+        "hǎo",
+        "de",
+        "gōng",
+        "zuò",
+        "bù",
+        "zuò",
+        "",
+        "fēi",
+        "yào",
+        "qù",
+        "chuàng",
+        "yè",
+        "le",
+        ""
+      ],
+      "right_pinyin": [
+        "tā",
+        "fàng",
+        "zhe",
+        "hǎo",
+        "hǎo",
+        "de",
+        "gōng",
+        "zuò",
+        "bù",
+        "zuò",
+        "",
+        "fēi",
+        "yào",
+        "qù",
+        "chuàng",
+        "yè",
+        ""
+      ]
+    },
+    {
+      "wrong": "你放着现成的答案不抄，偏要自己算，真是的。",
+      "right": "你放着现成的答案不抄，偏要自己算。",
+      "reason": {
+        "vi": "放着X不Y là lời phê bình trực tiếp, không dùng thêm 真是的 ở cuối vì cách nói đó quá khẩu ngữ và làm câu mất tính trang trọng.",
+        "en": "放着X不Y is a direct criticism; adding 真是的 at the end is too colloquial and lowers the register of the sentence."
+      },
+      "error_tag": "register",
+      "l1": ["vi"],
+      "wrong_pinyin": [
+        "nǐ",
+        "fàng",
+        "zhe",
+        "xiàn",
+        "chéng",
+        "de",
+        "dá",
+        "àn",
+        "bù",
+        "chāo",
+        "",
+        "piān",
+        "yào",
+        "zì",
+        "jǐ",
+        "suàn",
+        "",
+        "zhēn",
+        "shì",
+        "de",
+        ""
+      ],
+      "right_pinyin": [
+        "nǐ",
+        "fàng",
+        "zhe",
+        "xiàn",
+        "chéng",
+        "de",
+        "dá",
+        "àn",
+        "bù",
+        "chāo",
+        "",
+        "piān",
+        "yào",
+        "zì",
+        "jǐ",
+        "suàn",
+        ""
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "他放着好好的工作___，非要去创业。",
+      "options": [
+        {"text": "不做", "error_tag": null, "pinyin": ["bù", "zuò"]},
+        {"text": "做不", "error_tag": "word_order", "pinyin": ["zuò", "bù"]},
+        {"text": "不做了", "error_tag": "particle", "pinyin": ["bù", "zuò", "le"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "放着X不Y cố định theo thứ tự X rồi 不 rồi Y, nên phải là 不做. 做不 sai trật tự, 不做了 thêm 了 không đúng với mẫu.",
+        "en": "放着X不Y fixes the order X, then 不, then Y, so 不做 is correct. 做不 reverses the order, and 不做了 adds 了, which the pattern does not take."
+      },
+      "q_pinyin": [
+        "tā",
+        "fàng",
+        "zhe",
+        "hǎo",
+        "hǎo",
+        "de",
+        "gōng",
+        "zuò",
+        "",
+        "",
+        "",
+        "",
+        "fēi",
+        "yào",
+        "qù",
+        "chuàng",
+        "yè",
+        ""
+      ]
+    },
+    {
+      "q": "你放着现成的答案不___，偏要自己算。",
+      "options": [
+        {"text": "抄", "error_tag": null, "pinyin": ["chāo"]},
+        {"text": "抄了", "error_tag": "aspect", "pinyin": ["chāo", "le"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 不 trong mẫu này là động từ trần, không mang 了, vì câu nói về việc không làm chứ không phải một hành động đã xong.",
+        "en": "After 不 in this pattern the verb stays bare, with no 了, because the sentence is about not doing something, not about a completed action."
+      },
+      "q_pinyin": [
+        "nǐ",
+        "fàng",
+        "zhe",
+        "xiàn",
+        "chéng",
+        "de",
+        "dá",
+        "àn",
+        "bù",
+        "",
+        "",
+        "",
+        "",
+        "piān",
+        "yào",
+        "zì",
+        "jǐ",
+        "suàn",
+        ""
+      ]
+    },
+    {
+      "q": "我们放着免费的资源不___，太浪费了。",
+      "options": [
+        {"text": "用", "error_tag": null, "pinyin": ["yòng"]},
+        {"text": "用了", "error_tag": "aspect", "pinyin": ["yòng", "le"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Mẫu 放着X不Y chỉ nêu việc không dùng, nên động từ đứng trần sau 不; thêm 了 sẽ biến nó thành việc đã dùng rồi.",
+        "en": "The 放着X不Y pattern states that something is not used, so the verb stays bare after 不; adding 了 would turn it into a completed use."
+      },
+      "q_pinyin": [
+        "wǒ",
+        "men",
+        "fàng",
+        "zhe",
+        "miǎn",
+        "fèi",
+        "de",
+        "zī",
+        "yuán",
+        "bù",
+        "",
+        "",
+        "",
+        "",
+        "tài",
+        "làng",
+        "fèi",
+        "le",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu phê bình ai đó để sẵn một thứ tốt mà không dùng, theo mẫu 放着X不Y.",
+      "en": "Write one sentence criticising someone for leaving something good unused, using 放着X不Y."
+    },
+    "placeholder": "他放着……不……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "verb", "any_of": ["放着"]}, {"role": "marker", "any_of": ["不"]}]
+    },
+    "sample": {
+      "text": "他放着好好的机会不抓，真可惜。",
+      "pinyin": [
+        "tā",
+        "fàng",
+        "zhe",
+        "hǎo",
+        "hǎo",
+        "de",
+        "jī",
+        "huì",
+        "bù",
+        "zhuā",
+        "",
+        "zhēn",
+        "kě",
+        "xī",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["tā", "fàng", "zhe", "", "", "bù", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790834271",
+    "generated_at": "2026-10-01T05:57:51Z"
+  },
+  "review": null
+}

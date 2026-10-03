@@ -1,0 +1,220 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b1.028",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.questions",
+  "level": {"framework": "cefr", "value": "B1", "rank": 3},
+  "prereqs": [],
+  "contrasts": [],
+  "error_tags": ["sentence_structure"],
+  "source_refs": {"r5": ["b1-reported-questions"]},
+  "point_type": "other",
+  "sequence": 4,
+  "aliases": ["b1-reported-questions"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Reported câu hỏi", "en": "Reported questions"},
+    "native_title": "Reported questions",
+    "level": {"framework": "cefr", "value": "B1", "rank": 3},
+    "summary": {
+      "vi": "Câu hỏi tường thuật dùng động từ ask hoặc want to know rồi đưa câu hỏi vào mệnh đề phụ với trật tự câu kể, không đảo trợ động từ và không dùng dấu hỏi.",
+      "en": "Reported questions use ask or want to know followed by an embedded clause in statement word order, with no auxiliary inversion and no question mark."
+    },
+    "sub": {"vi": "câu hỏi gián tiếp", "en": "embedded questions"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn kể lại một câu hỏi ai đó đã hỏi bạn, thay vì trích dẫn nguyên văn.",
+      "en": "When you retell a question someone asked you instead of quoting it directly."
+    },
+    {
+      "vi": "Khi bạn muốn nói mình đã hỏi hoặc muốn biết điều gì đó một cách lịch sự, không đặt câu hỏi trực tiếp.",
+      "en": "When you want to say you asked or wanted to know something politely, without asking directly."
+    },
+    {
+      "vi": "Khi câu hỏi gốc là yes/no và bạn cần dùng if hoặc whether để nối.",
+      "en": "When the original question is a yes/no question and you need if or whether to link it."
+    },
+    {
+      "vi": "Khi bạn viết tường thuật, email hoặc báo cáo và cần chuyển lời nói trực tiếp sang gián tiếp.",
+      "en": "When you write a narrative, email or report and need to move direct speech into indirect speech."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {
+        "text": "ask/want to know",
+        "role": "verb",
+        "label": {"vi": "động từ tường thuật", "en": "reporting verb"},
+        "options": [{"text": "ask"}, {"text": "want to know"}]
+      },
+      {
+        "text": "O",
+        "role": "object",
+        "label": {"vi": "người được hỏi", "en": "person asked"},
+        "optional": true
+      },
+      {
+        "text": "wh-word/if/whether",
+        "role": "connector",
+        "label": {"vi": "từ nối", "en": "linking word"},
+        "options": [{"text": "wh-word"}, {"text": "if"}, {"text": "whether"}]
+      },
+      {
+        "text": "S",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ mệnh đề phụ", "en": "embedded subject"}
+      },
+      {"text": "V", "role": "verb", "label": {"vi": "động từ mệnh đề phụ", "en": "embedded verb"}}
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "She asked me where I worked.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 9, "role": "verb"},
+        {"start": 10, "end": 12, "role": "object"},
+        {"start": 13, "end": 18, "role": "connector"},
+        {"start": 19, "end": 20, "role": "subject"},
+        {"start": 21, "end": 27, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Câu hỏi gốc 'Where do you work?' được chuyển thành mệnh đề phụ với trật tự câu kể, không còn trợ động từ do.",
+        "en": "The original question 'Where do you work?' becomes an embedded clause in statement order, with no auxiliary do."
+      },
+      "translation": {"vi": "Cô ấy hỏi tôi làm việc ở đâu.", "en": "She asked me where I worked."}
+    },
+    {
+      "text": "He wanted to know if I was free.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 3, "end": 17, "role": "verb"},
+        {"start": 18, "end": 20, "role": "connector"},
+        {"start": 21, "end": 22, "role": "subject"},
+        {"start": 23, "end": 26, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Câu hỏi yes/no gốc 'Are you free?' được nối bằng if và đưa về trật tự câu kể.",
+        "en": "The original yes/no question 'Are you free?' is linked with if and put into statement order."
+      },
+      "translation": {"vi": "Anh ấy muốn biết tôi có rảnh không.", "en": "He wanted to know if I was free."}
+    },
+    {
+      "text": "They asked when the train would arrive.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 5, "end": 10, "role": "verb"},
+        {"start": 11, "end": 15, "role": "connector"},
+        {"start": 16, "end": 25, "role": "subject"},
+        {"start": 26, "end": 38, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Câu hỏi gốc 'When will the train arrive?' được lùi thì thành would arrive và bỏ đảo trợ động từ.",
+        "en": "The original question 'When will the train arrive?' is backshifted to would arrive and the inversion is removed."
+      },
+      "translation": {"vi": "Họ hỏi tàu sẽ đến khi nào.", "en": "They asked when the train would arrive."}
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "She asked where did I work.",
+      "right": "She asked where I worked.",
+      "reason": {
+        "vi": "Người học giữ nguyên trật tự đảo trợ động từ của câu hỏi trực tiếp khi chuyển sang câu hỏi tường thuật, nhưng mệnh đề phụ phải dùng trật tự câu kể và bỏ do-support.",
+        "en": "Learners keep the auxiliary inversion of the direct question in the reported clause, but the embedded clause needs statement order and no do-support."
+      },
+      "error_tag": "sentence_structure",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "He asked me where I ___.",
+      "options": [
+        {"text": "lived", "error_tag": null},
+        {"text": "did live", "error_tag": "sentence_structure"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Mệnh đề phụ trong câu hỏi tường thuật dùng trật tự câu kể, không dùng trợ động từ did.",
+        "en": "The embedded clause in a reported question uses statement order, so no auxiliary did is used."
+      }
+    },
+    {
+      "q": "She asked ___ I was ready.",
+      "options": [{"text": "if", "error_tag": null}, {"text": "that", "error_tag": "word_choice"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu hỏi yes/no tường thuật cần if hoặc whether, không dùng that.",
+        "en": "A reported yes/no question needs if or whether, not that."
+      }
+    },
+    {
+      "q": "They wanted to know when the train ___.",
+      "options": [{"text": "would arrive", "error_tag": null}, {"text": "will arrive", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Khi động từ tường thuật ở quá khứ, động từ trong mệnh đề phụ thường lùi thì: will thành would.",
+        "en": "When the reporting verb is past, the embedded verb usually backshifts: will becomes would."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu kể lại câu hỏi ai đó đã hỏi bạn, dùng ask hoặc want to know và mệnh đề phụ với trật tự câu kể.",
+      "en": "Write a sentence reporting a question someone asked you, using ask or want to know and an embedded clause in statement order."
+    },
+    "placeholder": "My friend asked me where ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "verb", "any_of": ["asked", "wanted to know"]},
+        {
+          "role": "connector",
+          "any_of": ["where", "when", "why", "how", "who", "what", "if", "whether"]
+        }
+      ]
+    },
+    "sample": {"text": "My friend asked me where I lived."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790830924",
+    "generated_at": "2026-10-01T05:02:04Z",
+    "r5_source": {
+      "ids": ["b1-reported-questions"],
+      "content_version": 2,
+      "content_hash": "fb0a6883234b756224999b76d8c08900d208f703b67fe3b870b17707ac7f222c",
+      "corrections": [
+        {
+          "r5_id": "b1-reported-questions",
+          "issue": "The R5 lesson lists 'He asked was I ready.' as a learner mistake, but the correct form 'He asked if I was ready.' is already given as a separate example, so the mistake is not clearly tied to the yes/no rule.",
+          "fix": "Kept the mistake in common_mistakes with the error tag sentence_structure and explained that the embedded clause needs if/whether and statement order."
+        },
+        {
+          "r5_id": "b1-reported-questions",
+          "issue": "The R5 rules mention backshift and pronoun/time changes but do not state that the embedded clause must not use do-support or inversion.",
+          "fix": "Added the restriction to the formula and to the common_mistakes reason: the embedded clause uses statement order and no do-support."
+        },
+        {
+          "r5_id": "b1-reported-questions",
+          "issue": "The R5 examples include 'I asked her whether she had finished.' but the lesson does not show whether as a variant of if in the formula.",
+          "fix": "Included whether as an option in the connector slot of the formula and kept the example set focused on ask/want to know with wh-word and if."
+        }
+      ]
+    }
+  },
+  "review": null
+}

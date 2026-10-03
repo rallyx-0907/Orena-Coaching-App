@@ -1,0 +1,295 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk4.a_4_5_2_4.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.linking",
+  "level": {"framework": "hsk3", "value": "4", "rank": 4},
+  "prereqs": ["zh.canon.gf.hsk4.a_4_5_2_3.p1"],
+  "contrasts": [],
+  "error_tags": ["conjunction"],
+  "source_refs": {"gf0025": ["gf0025.hsk4.048"]},
+  "point_type": "other",
+  "sequence": 10,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Câu phức: 或者⋯⋯，或者⋯⋯", "en": "Complex sentences: 或者⋯⋯，或者⋯⋯"},
+    "native_title": "或者⋯⋯，或者⋯⋯",
+    "level": {"framework": "hsk3", "value": "4", "rank": 4},
+    "summary": {
+      "vi": "Cấu trúc 或者⋯⋯，或者⋯⋯ dùng để nêu hai lựa chọn thay thế trong cùng một câu, nghĩa là \"hoặc⋯⋯ hoặc⋯⋯\".",
+      "en": "The pattern 或者⋯⋯，或者⋯⋯ presents two alternative choices in one sentence, meaning \"either⋯⋯ or⋯⋯\"."
+    },
+    "sub": {"vi": "lựa chọn thay thế", "en": "alternative choice"},
+    "native_title_pinyin": ["huò", "zhě", "", "", "", "huò", "zhě", "", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói hai khả năng đều có thể xảy ra và người nghe chọn một trong hai.",
+      "en": "When you want to say that two possibilities are both acceptable and the listener picks one."
+    },
+    {
+      "vi": "Khi bạn đưa ra hai kế hoạch hoặc hai cách làm khác nhau cho cùng một việc.",
+      "en": "When you offer two different plans or two ways of doing the same thing."
+    },
+    {
+      "vi": "Khi bạn muốn nói về hai món, hai nơi hoặc hai thời điểm mà bạn không cần chọn trước.",
+      "en": "When you talk about two dishes, two places, or two times without choosing in advance."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "或者",
+        "role": "connector",
+        "label": {"vi": "liên từ thứ nhất", "en": "first connector"},
+        "pinyin": ["huò", "zhě"]
+      },
+      {
+        "text": "A",
+        "role": "other",
+        "label": {"vi": "lựa chọn thứ nhất", "en": "first choice"},
+        "pinyin": [""]
+      },
+      {
+        "text": "或者",
+        "role": "connector",
+        "label": {"vi": "liên từ thứ hai", "en": "second connector"},
+        "pinyin": ["huò", "zhě"]
+      },
+      {
+        "text": "B",
+        "role": "other",
+        "label": {"vi": "lựa chọn thứ hai", "en": "second choice"},
+        "pinyin": [""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "我们或者坐地铁，或者坐公交车。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 2, "end": 4, "role": "connector"},
+        {"start": 4, "end": 7, "role": "other"},
+        {"start": 8, "end": 10, "role": "connector"},
+        {"start": 10, "end": 14, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Hai liên từ 或者 nối hai cách đi lại, người nói chưa chọn cách nào.",
+        "en": "The two 或者 connectors link two ways of travelling; the speaker has not chosen one yet."
+      },
+      "translation": {
+        "vi": "Chúng ta hoặc đi tàu điện ngầm, hoặc đi xe buýt.",
+        "en": "We can either take the subway or take the bus."
+      },
+      "pinyin": [
+        "wǒ",
+        "men",
+        "huò",
+        "zhě",
+        "zuò",
+        "dì",
+        "tiě",
+        "",
+        "huò",
+        "zhě",
+        "zuò",
+        "gōng",
+        "jiāo",
+        "chē",
+        ""
+      ]
+    },
+    {
+      "text": "周末我或者去爬山，或者在家看书。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 3, "end": 5, "role": "connector"},
+        {"start": 5, "end": 8, "role": "other"},
+        {"start": 9, "end": 11, "role": "connector"},
+        {"start": 11, "end": 15, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Hai hoạt động được đưa ra như hai lựa chọn cho cuối tuần.",
+        "en": "Two activities are given as the two options for the weekend."
+      },
+      "translation": {
+        "vi": "Cuối tuần tôi hoặc đi leo núi, hoặc ở nhà đọc sách.",
+        "en": "On the weekend I either go hiking or read at home."
+      },
+      "pinyin": [
+        "zhōu",
+        "mò",
+        "wǒ",
+        "huò",
+        "zhě",
+        "qù",
+        "pá",
+        "shān",
+        "",
+        "huò",
+        "zhě",
+        "zài",
+        "jiā",
+        "kàn",
+        "shū",
+        ""
+      ]
+    },
+    {
+      "text": "晚饭或者吃米饭，或者吃面条。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 2, "end": 4, "role": "connector"},
+        {"start": 4, "end": 7, "role": "other"},
+        {"start": 8, "end": 10, "role": "connector"},
+        {"start": 10, "end": 13, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Hai món ăn được nêu như hai lựa chọn cho bữa tối.",
+        "en": "Two dishes are presented as the two options for dinner."
+      },
+      "translation": {
+        "vi": "Bữa tối hoặc ăn cơm, hoặc ăn mì.",
+        "en": "For dinner we can either have rice or have noodles."
+      },
+      "pinyin": ["wǎn", "fàn", "huò", "zhě", "chī", "mǐ", "fàn", "", "huò", "zhě", "chī", "miàn", "tiáo", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "我们或者坐地铁，坐公交车。",
+      "right": "我们或者坐地铁，或者坐公交车。",
+      "reason": {
+        "vi": "Người học chỉ dùng 或者 một lần rồi bỏ liên từ thứ hai, nên câu không còn là cấu trúc 或者⋯⋯，或者⋯⋯.",
+        "en": "The learner uses 或者 only once and drops the second connector, so the sentence is no longer the 或者⋯⋯，或者⋯⋯ pattern."
+      },
+      "error_tag": "conjunction",
+      "l1": ["vi"],
+      "wrong_pinyin": ["wǒ", "men", "huò", "zhě", "zuò", "dì", "tiě", "", "zuò", "gōng", "jiāo", "chē", ""],
+      "right_pinyin": [
+        "wǒ",
+        "men",
+        "huò",
+        "zhě",
+        "zuò",
+        "dì",
+        "tiě",
+        "",
+        "huò",
+        "zhě",
+        "zuò",
+        "gōng",
+        "jiāo",
+        "chē",
+        ""
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "周末我或者去爬山，___在家看书。",
+      "options": [
+        {"text": "或者", "error_tag": null, "pinyin": ["huò", "zhě"]},
+        {"text": "还是", "error_tag": "conjunction", "pinyin": ["hái", "shì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu trần thuật nêu hai lựa chọn dùng 或者 ở cả hai vế; 还是 chỉ dùng trong câu hỏi.",
+        "en": "A statement offering two alternatives uses 或者 in both parts; 还是 is used in questions."
+      },
+      "q_pinyin": [
+        "zhōu",
+        "mò",
+        "wǒ",
+        "huò",
+        "zhě",
+        "qù",
+        "pá",
+        "shān",
+        "",
+        "",
+        "",
+        "",
+        "zài",
+        "jiā",
+        "kàn",
+        "shū",
+        ""
+      ]
+    },
+    {
+      "q": "晚饭或者吃米饭，或者___。",
+      "options": [
+        {"text": "吃面条", "error_tag": null, "pinyin": ["chī", "miàn", "tiáo"]},
+        {"text": "吃面条吗", "error_tag": "particle", "pinyin": ["chī", "miàn", "tiáo", "ma"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Vế thứ hai của 或者⋯⋯，或者⋯⋯ là một lựa chọn trần thuật, không thêm 吗.",
+        "en": "The second part of 或者⋯⋯，或者⋯⋯ is a plain alternative, so 吗 is not added."
+      },
+      "q_pinyin": ["wǎn", "fàn", "huò", "zhě", "chī", "mǐ", "fàn", "", "huò", "zhě", "", "", "", ""]
+    },
+    {
+      "q": "我们或者坐地铁，或者___。",
+      "options": [
+        {"text": "坐公交车", "error_tag": null, "pinyin": ["zuò", "gōng", "jiāo", "chē"]},
+        {"text": "坐公交车吧", "error_tag": "particle", "pinyin": ["zuò", "gōng", "jiāo", "chē", "ba"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Đây là câu nêu hai lựa chọn, không dùng 吧 để rủ rê hay đề nghị.",
+        "en": "This sentence states two alternatives, so 吧 is not used to make a suggestion."
+      },
+      "q_pinyin": ["wǒ", "men", "huò", "zhě", "zuò", "dì", "tiě", "", "huò", "zhě", "", "", "", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về hai lựa chọn của bạn cho cuối tuần, dùng 或者⋯⋯，或者⋯⋯.",
+      "en": "Write one sentence about your two options for the weekend, using 或者⋯⋯，或者⋯⋯."
+    },
+    "placeholder": "周末我或者……，或者……。",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "connector", "any_of": ["或者"]}, {"role": "connector", "any_of": ["或者"]}]
+    },
+    "sample": {
+      "text": "周末我或者去爬山，或者在家看书。",
+      "pinyin": [
+        "zhōu",
+        "mò",
+        "wǒ",
+        "huò",
+        "zhě",
+        "qù",
+        "pá",
+        "shān",
+        "",
+        "huò",
+        "zhě",
+        "zài",
+        "jiā",
+        "kàn",
+        "shū",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["zhōu", "mò", "wǒ", "huò", "zhě", "", "", "", "huò", "zhě", "", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790833330",
+    "generated_at": "2026-10-01T05:42:10Z"
+  },
+  "review": null
+}

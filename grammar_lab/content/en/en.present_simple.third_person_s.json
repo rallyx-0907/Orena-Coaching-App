@@ -5,103 +5,162 @@
   "target_lang": "en",
   "function": "fn.habit_fact",
   "level": {"framework": "cefr", "value": "A1", "rank": 1},
-  "prereqs": [],
-  "contrasts": ["en.present_continuous.now"],
+  "prereqs": ["en.present_simple.habit"],
+  "contrasts": ["en.present_continuous.now", "en.present_simple.habit"],
   "error_tags": ["agreement"],
-  "source_refs": {},
+  "source_refs": {"r5": ["a1-third-person-s-and-spelling"]},
   "point_type": "morphology",
+  "sequence": 2,
+  "aliases": ["a1-third-person-s-and-spelling"],
+  "source_anchors": {"status": "anchored", "items": [{"source": "core_inventory", "code": "64", "level": "A1"}]},
   "header": {
-    "title": {"vi": "Thêm -s/-es với he/she/it", "en": "Third person -s"},
+    "title": {"vi": "Thêm -s / -es với he / she / it", "en": "Third person -s and -es"},
     "native_title": "Third person -s",
     "level": {"framework": "cefr", "value": "A1", "rank": 1},
     "summary": {
-      "vi": "Thì hiện tại đơn với chủ ngữ he, she, it hoặc danh từ số ít: động từ thêm -s hoặc -es.",
-      "en": "In the present simple, verbs add -s or -es after he, she, it or a singular noun."
+      "vi": "Trong thì hiện tại đơn, động từ thêm -s hoặc -es khi chủ ngữ là he, she, it.",
+      "en": "In the present simple, the verb adds -s or -es when the subject is he, she, or it."
     },
     "sub": {"vi": "he / she / it", "en": "he / she / it"}
   },
   "when_to_use": [
-    {"vi": "Khi chủ ngữ là he, she, it hoặc một danh từ số ít (my brother, the cat, this book)."},
-    {"vi": "Khi nói về thói quen lặp đi lặp lại: She walks to school every day."},
-    {"vi": "Khi nói về sự thật hiển nhiên hoặc điều luôn đúng: The sun rises in the east."},
-    {"vi": "Khi nói về lịch trình, thời gian biểu cố định: The train leaves at 7 a.m."}
+    {
+      "vi": "Khi nói về thói quen hoặc việc lặp đi lặp lại của một người: She walks to work.",
+      "en": "When talking about a person's habit or repeated action: She walks to work."
+    },
+    {
+      "vi": "Khi nói về sự thật hiển nhiên hoặc tình trạng lâu dài: He lives in Hanoi.",
+      "en": "When stating a general fact or long-term situation: He lives in Hanoi."
+    },
+    {
+      "vi": "Khi chủ ngữ là một người hoặc vật số ít ở ngôi thứ ba: my brother, the cat, it.",
+      "en": "When the subject is a single person or thing in the third person: my brother, the cat, it."
+    }
   ],
   "pattern": {
     "formula": [
-      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ số ít"}},
-      {"text": "V", "role": "verb", "label": {"vi": "động từ"}},
-      {"text": "-s/-es", "role": "particle", "label": {"vi": "hậu tố -s/-es"}},
-      {"text": "O", "role": "object", "label": {"vi": "tân ngữ"}, "optional": true}
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {
+        "text": "V-s/-es",
+        "role": "verb",
+        "label": {"vi": "động từ thêm -s/-es", "en": "verb with -s/-es"}
+      },
+      {"text": "O", "role": "object", "label": {"vi": "tân ngữ", "en": "object"}, "optional": true}
     ],
     "variants": {
       "negative": [
-        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ số ít"}},
-        {"text": "does not", "role": "aux", "label": {"vi": "trợ động từ phủ định"}},
-        {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên mẫu"}},
-        {"text": "O", "role": "object", "label": {"vi": "tân ngữ"}, "optional": true}
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "doesn't",
+          "role": "aux",
+          "label": {"vi": "trợ động từ phủ định", "en": "negative auxiliary"}
+        },
+        {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên mẫu", "en": "base verb"}},
+        {
+          "text": "O",
+          "role": "object",
+          "label": {"vi": "tân ngữ", "en": "object"},
+          "optional": true
+        }
       ],
       "question": [
-        {"text": "Does", "role": "aux", "label": {"vi": "trợ động từ nghi vấn"}},
-        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ số ít"}},
-        {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên mẫu"}},
-        {"text": "O", "role": "object", "label": {"vi": "tân ngữ"}, "optional": true}
+        {
+          "text": "Does",
+          "role": "aux",
+          "label": {"vi": "trợ động từ nghi vấn", "en": "question auxiliary"}
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên mẫu", "en": "base verb"}},
+        {
+          "text": "O",
+          "role": "object",
+          "label": {"vi": "tân ngữ", "en": "object"},
+          "optional": true
+        }
       ]
     },
     "illustration": {
       "kind": "morphology",
       "morphology": [
-        {"base": "read", "affix": "-s", "result": "reads"},
+        {"base": "work", "affix": "-s", "result": "works"},
         {"base": "watch", "affix": "-es", "result": "watches"},
         {"base": "study", "affix": "-ies", "result": "studies"},
-        {"base": "go", "affix": "-es", "result": "goes"}
+        {"base": "have", "affix": "-s", "result": "has"}
       ]
     }
   },
   "examples": [
     {
-      "text": "She reads a book every evening.",
+      "text": "My dad works in a hospital.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 6, "role": "subject"},
+        {"start": 7, "end": 11, "role": "verb"},
+        {"start": 11, "end": 12, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "work + s → works, vì chủ ngữ là ngôi thứ ba số ít.",
+        "en": "work + s → works, because the subject is third-person singular."
+      },
+      "translation": {"vi": "Bố tôi làm việc ở bệnh viện.", "en": "My dad works in a hospital."}
+    },
+    {
+      "text": "She watches videos after dinner.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 9, "role": "verb"},
+        {"start": 9, "end": 11, "role": "verb"},
+        {"start": 12, "end": 18, "role": "object"}
+      ],
+      "annotation": {"vi": "watch tận cùng bằng -ch nên thêm -es.", "en": "watch ends in -ch, so it takes -es."},
+      "translation": {"vi": "Cô ấy xem video sau bữa tối.", "en": "She watches videos after dinner."}
+    },
+    {
+      "text": "Tom studies English every evening.",
       "form": "affirmative",
       "spans": [
         {"start": 0, "end": 3, "role": "subject"},
         {"start": 4, "end": 8, "role": "verb"},
-        {"start": 8, "end": 9, "role": "particle"},
-        {"start": 10, "end": 16, "role": "object"}
+        {"start": 8, "end": 11, "role": "verb"},
+        {"start": 12, "end": 19, "role": "object"}
       ],
-      "annotation": {"vi": "Chủ ngữ số ít she → động từ read thêm -s thành reads."},
-      "translation": {"vi": "Cô ấy đọc một cuốn sách mỗi tối."}
-    },
-    {
-      "text": "He does not like coffee.",
-      "form": "negative",
-      "spans": [
-        {"start": 0, "end": 2, "role": "subject"},
-        {"start": 3, "end": 11, "role": "aux"},
-        {"start": 12, "end": 16, "role": "verb"},
-        {"start": 17, "end": 23, "role": "object"}
-      ],
-      "annotation": {"vi": "Phủ định với does not: động từ chính trở về nguyên mẫu like, không thêm -s."},
-      "translation": {"vi": "Anh ấy không thích cà phê."}
-    },
-    {
-      "text": "Does she live in Hanoi?",
-      "form": "question",
-      "spans": [
-        {"start": 0, "end": 4, "role": "aux"},
-        {"start": 5, "end": 8, "role": "subject"},
-        {"start": 9, "end": 13, "role": "verb"},
-        {"start": 14, "end": 22, "role": "object"}
-      ],
-      "annotation": {"vi": "Câu hỏi với Does: động từ chính giữ nguyên mẫu live, không thêm -s."},
-      "translation": {"vi": "Cô ấy sống ở Hà Nội phải không?"}
+      "annotation": {
+        "vi": "study tận cùng bằng phụ âm + y, đổi y thành -ies.",
+        "en": "study ends in consonant + y, so y changes to -ies."
+      },
+      "translation": {"vi": "Tom học tiếng Anh mỗi tối.", "en": "Tom studies English every evening."}
     }
   ],
-  "compare": [],
+  "compare": [
+    {
+      "with": "en.present_continuous.now",
+      "this_example": "She works in a bank.",
+      "other_example": "She is working now.",
+      "this_meaning": {"vi": "Thói quen hoặc sự thật lặp đi lặp lại.", "en": "A habit or a repeated fact."},
+      "other_meaning": {"vi": "Hành động đang xảy ra ngay lúc nói.", "en": "An action happening right now."}
+    },
+    {
+      "with": "en.present_simple.habit",
+      "this_example": "He plays football every Sunday.",
+      "other_example": "They play football every Sunday.",
+      "this_meaning": {
+        "vi": "Dạng động từ thêm -s/-es ở ngôi thứ ba số ít.",
+        "en": "The verb form with -s/-es in the third-person singular."
+      },
+      "other_meaning": {
+        "vi": "Cách dùng chung của thì hiện tại đơn cho thói quen, không chỉ riêng ngôi thứ ba.",
+        "en": "The general present simple use for habits, not only third-person singular."
+      }
+    }
+  ],
   "common_mistakes": [
     {
-      "wrong": "She read a book every evening.",
-      "right": "She reads a book every evening.",
+      "wrong": "She study English every day.",
+      "right": "She studies English every day.",
       "reason": {
-        "vi": "Người Việt thường không thêm -s vì tiếng Việt không biến đổi động từ theo chủ ngữ; nhưng trong tiếng Anh, chủ ngữ số ít ngôi thứ ba bắt buộc phải thêm -s/-es vào động từ ở thì hiện tại đơn."
+        "vi": "Chủ ngữ she là ngôi thứ ba số ít nên động từ phải thêm -s/-es; study đổi thành studies.",
+        "en": "The subject she is third-person singular, so the verb needs -s/-es; study becomes studies."
       },
       "error_tag": "agreement",
       "l1": ["vi"]
@@ -109,58 +168,87 @@
   ],
   "quick_practice": [
     {
-      "q": "My brother ___ football every Sunday.",
-      "options": [
-        {"text": "plays", "error_tag": null},
-        {"text": "play", "error_tag": "agreement"},
-        {"text": "playing", "error_tag": "tense"}
-      ],
+      "q": "My brother ___ coffee every morning.",
+      "options": [{"text": "drinks", "error_tag": null}, {"text": "drink", "error_tag": "agreement"}],
       "answer": 0,
-      "explain": {"vi": "Chủ ngữ my brother là số ít ngôi thứ ba, nên động từ play thêm -s thành plays."}
+      "explain": {
+        "vi": "Chủ ngữ my brother là ngôi thứ ba số ít nên dùng drinks.",
+        "en": "The subject my brother is third-person singular, so use drinks."
+      }
     },
     {
-      "q": "She ___ like fish.",
-      "options": [
-        {"text": "does not", "error_tag": null},
-        {"text": "do not", "error_tag": "agreement"},
-        {"text": "not", "error_tag": "sentence_structure"}
-      ],
+      "q": "She ___ her homework after school.",
+      "options": [{"text": "does", "error_tag": null}, {"text": "do", "error_tag": "agreement"}],
       "answer": 0,
-      "explain": {"vi": "Với chủ ngữ she, dùng does not; do not dùng cho I, you, we, they."}
+      "explain": {
+        "vi": "Với she, động từ do thêm -es thành does.",
+        "en": "With she, the verb do adds -es to become does."
+      }
     },
     {
-      "q": "___ he work in a bank?",
-      "options": [
-        {"text": "Does", "error_tag": null},
-        {"text": "Do", "error_tag": "agreement"},
-        {"text": "Is", "error_tag": "tense"}
-      ],
+      "q": "The cat ___ on the sofa every afternoon.",
+      "options": [{"text": "sleeps", "error_tag": null}, {"text": "sleep", "error_tag": "agreement"}],
       "answer": 0,
-      "explain": {"vi": "Câu hỏi với chủ ngữ he dùng Does; Do dùng cho I, you, we, they."}
+      "explain": {
+        "vi": "Chủ ngữ the cat là số ít nên động từ thêm -s: sleeps.",
+        "en": "The subject the cat is singular, so the verb adds -s: sleeps."
+      }
     }
   ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về thói quen của một người bạn hoặc người thân, dùng động từ thêm -s/-es.",
+      "en": "Write one sentence about a friend's or family member's habit, using a verb with -s/-es."
+    },
+    "placeholder": "My friend ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {
+          "role": "subject",
+          "any_of": [
+            "he",
+            "she",
+            "it",
+            "my friend",
+            "my brother",
+            "my sister",
+            "my dad",
+            "my mom",
+            "Tom",
+            "Anna"
+          ]
+        },
+        {"role": "verb", "regex": "\\b\\w+(s|es|ies)\\b"}
+      ]
+    },
+    "sample": {"text": "My sister watches TV in the evening."}
+  },
   "status": "draft_ai",
   "flags": [],
   "provenance": {
     "model": "deepseek:deepseek-flash",
-    "prompt_version": "generate_point_v04.v5",
-    "run_id": "generate.1790589944",
-    "generated_at": "2026-09-28T10:05:44Z"
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790830384",
+    "generated_at": "2026-10-01T04:53:04Z",
+    "r5_source": {
+      "ids": ["a1-third-person-s-and-spelling"],
+      "content_version": 2,
+      "content_hash": "121ce98ae51df794474e5c0b184661b5679bdb9b500eb47865fc74a2e3e51069",
+      "corrections": [
+        {
+          "r5_id": "a1-third-person-s-and-spelling",
+          "issue": "The R5 example 'He has two sisters.' uses the irregular form 'has', which does not fit the base + affix pattern taught in the formula.",
+          "fix": "Replaced with regular examples that show separable base and affix: 'My dad works in a hospital.', 'She watches videos after dinner.', 'Tom studies English every evening.'"
+        },
+        {
+          "r5_id": "a1-third-person-s-and-spelling",
+          "issue": "The R5 mistake 'Does he plays football?' is a question-form error, but the point's common_mistakes entry is tagged 'agreement' and should focus on the third-person -s agreement in affirmative sentences.",
+          "fix": "Used 'She study English every day.' → 'She studies English every day.' as the agreement mistake, and kept the question-form correction in the question formula."
+        }
+      ]
+    }
   },
-  "review": null,
-  "sequence": 1,
-  "personal_production": {
-    "prompt": {
-      "vi": "Viết một câu về thói quen của một người khác (he hoặc she).",
-      "en": "Write a sentence about another person's habit (he or she)."
-    },
-    "placeholder": "She ... every day.",
-    "target_form": "affirmative",
-    "pattern_rule": {
-      "ordered": true,
-      "slots": [{"role": "particle", "regex": "\\b(?:he|she|it)\\s+(?:\\w+\\s+)?\\w+(?:s|es)\\b"}]
-    },
-    "sample": {"text": "She works in a bank."}
-  },
-  "source_anchors": {"status": "anchored", "items": [{"source": "core_inventory", "code": "64", "level": "A1"}]}
+  "review": null
 }

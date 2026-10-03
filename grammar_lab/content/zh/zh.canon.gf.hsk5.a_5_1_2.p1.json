@@ -1,0 +1,251 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk5.a_5_1_2.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.quantity",
+  "level": {"framework": "hsk3", "value": "5", "rank": 5},
+  "prereqs": ["zh.canon.gf.hsk2.a_2_4_1.p1"],
+  "contrasts": [],
+  "error_tags": ["measure_word"],
+  "source_refs": {"gf0025": ["gf0025.hsk5.002"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Lượng từ: 名重词：册、朵、幅、届、颗、匹、扇", "en": "Measure words: 名重词：册、朵、幅、届、颗、匹、扇"},
+    "native_title": "名重词：册、朵、幅、届、颗、匹、扇",
+    "level": {"framework": "hsk3", "value": "5", "rank": 5},
+    "summary": {
+      "vi": "Điểm ngữ pháp này dạy cách dùng lượng từ tiếng Trung để đếm và phân loại danh từ theo hình dạng, chức năng hoặc nhóm nghĩa của chúng.",
+      "en": "This point teaches how to use Chinese measure words to count and classify nouns according to their shape, function, or meaning group."
+    },
+    "sub": {"vi": "lượng từ", "en": "measure words"},
+    "native_title_pinyin": [
+      "míng",
+      "zhòng",
+      "cí",
+      "",
+      "cè",
+      "",
+      "duǒ",
+      "",
+      "fú",
+      "",
+      "jiè",
+      "",
+      "kē",
+      "",
+      "pǐ",
+      "",
+      "shàn"
+    ]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói số lượng của một danh từ, ví dụ một quyển sách, hai bông hoa.",
+      "en": "When you want to state the quantity of a noun, for example one book, two flowers."
+    },
+    {
+      "vi": "Khi danh từ chỉ vật có hình dạng hoặc chức năng đặc trưng, như sách, hoa, tranh, viên ngọc, con ngựa, cánh cửa.",
+      "en": "When the noun refers to an object with a characteristic shape or function, such as books, flowers, paintings, pearls, horses, doors."
+    },
+    {
+      "vi": "Khi bạn cần dùng cấu trúc số từ + lượng từ + danh từ trong câu khẳng định hoặc câu hỏi.",
+      "en": "When you need the structure number + measure word + noun in an affirmative sentence or a question."
+    },
+    {
+      "vi": "Khi bạn muốn hỏi số lượng bằng 几 hoặc 多少, lượng từ vẫn đứng giữa số từ và danh từ.",
+      "en": "When you ask about quantity with 几 or 多少, the measure word still stands between the number and the noun."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "数词",
+        "role": "other",
+        "label": {"vi": "số từ", "en": "number"},
+        "pinyin": ["shù", "cí"]
+      },
+      {
+        "text": "量词",
+        "role": "classifier",
+        "label": {"vi": "lượng từ", "en": "measure word"},
+        "options": [
+          {"text": "册", "pinyin": ["cè"]},
+          {"text": "朵", "pinyin": ["duǒ"]},
+          {"text": "幅", "pinyin": ["fú"]},
+          {"text": "届", "pinyin": ["jiè"]},
+          {"text": "颗", "pinyin": ["kē"]},
+          {"text": "匹", "pinyin": ["pǐ"]},
+          {"text": "扇", "pinyin": ["shàn"]}
+        ],
+        "pinyin": ["liàng", "cí"]
+      },
+      {
+        "text": "名词",
+        "role": "object",
+        "label": {"vi": "danh từ", "en": "noun"},
+        "pinyin": ["míng", "cí"]
+      }
+    ],
+    "variants": {
+      "question": [
+        {"text": "几", "role": "other", "label": {"vi": "mấy", "en": "how many"}, "pinyin": ["jǐ"]},
+        {
+          "text": "量词",
+          "role": "classifier",
+          "label": {"vi": "lượng từ", "en": "measure word"},
+          "options": [
+            {"text": "册", "pinyin": ["cè"]},
+            {"text": "朵", "pinyin": ["duǒ"]},
+            {"text": "幅", "pinyin": ["fú"]},
+            {"text": "届", "pinyin": ["jiè"]},
+            {"text": "颗", "pinyin": ["kē"]},
+            {"text": "匹", "pinyin": ["pǐ"]},
+            {"text": "扇", "pinyin": ["shàn"]}
+          ],
+          "pinyin": ["liàng", "cí"]
+        },
+        {
+          "text": "名词",
+          "role": "object",
+          "label": {"vi": "danh từ", "en": "noun"},
+          "pinyin": ["míng", "cí"]
+        }
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "我买了两册书。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 3, "end": 4, "role": "other"},
+        {"start": 4, "end": 5, "role": "classifier"},
+        {"start": 5, "end": 6, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "两 là số từ, 册 là lượng từ dùng cho sách, 书 là danh từ.",
+        "en": "两 is the number, 册 is the measure word for books, 书 is the noun."
+      },
+      "translation": {"vi": "Tôi đã mua hai quyển sách.", "en": "I bought two books."},
+      "pinyin": ["wǒ", "mǎi", "le", "liǎng", "cè", "shū", ""]
+    },
+    {
+      "text": "花园里开了三朵花。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 5, "end": 6, "role": "other"},
+        {"start": 6, "end": 7, "role": "classifier"},
+        {"start": 7, "end": 8, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "三 là số từ, 朵 là lượng từ dùng cho hoa, 花 là danh từ.",
+        "en": "三 is the number, 朵 is the measure word for flowers, 花 is the noun."
+      },
+      "translation": {"vi": "Trong vườn nở ba bông hoa.", "en": "Three flowers bloomed in the garden."},
+      "pinyin": ["huā", "yuán", "lǐ", "kāi", "le", "sān", "duǒ", "huā", ""]
+    },
+    {
+      "text": "墙上挂着两幅画。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 4, "end": 5, "role": "other"},
+        {"start": 5, "end": 6, "role": "classifier"},
+        {"start": 6, "end": 7, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "两 là số từ, 幅 là lượng từ dùng cho tranh, 画 là danh từ.",
+        "en": "两 is the number, 幅 is the measure word for paintings, 画 is the noun."
+      },
+      "translation": {"vi": "Trên tường treo hai bức tranh.", "en": "Two paintings hang on the wall."},
+      "pinyin": ["qiáng", "shàng", "guà", "zhe", "liǎng", "fú", "huà", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "我买了三书。",
+      "right": "我买了三本书。",
+      "reason": {
+        "vi": "Người học thường bỏ lượng từ vì tiếng Việt có thể nói 'ba sách' mà không cần từ loại tương ứng. Trong tiếng Trung, giữa số từ và danh từ bắt buộc phải có lượng từ.",
+        "en": "Learners often drop the measure word because Vietnamese can say 'ba sách' without a classifier. In Chinese, a measure word is required between the number and the noun."
+      },
+      "error_tag": "measure_word",
+      "l1": ["vi"],
+      "wrong_pinyin": ["wǒ", "mǎi", "le", "sān", "shū", ""],
+      "right_pinyin": ["wǒ", "mǎi", "le", "sān", "běn", "shū", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "桌子上放着两___画。",
+      "options": [
+        {"text": "幅", "error_tag": null, "pinyin": ["fú"]},
+        {"text": "朵", "error_tag": "measure_word", "pinyin": ["duǒ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "画 là tranh, dùng lượng từ 幅. 朵 dùng cho hoa.",
+        "en": "画 means painting, so the measure word is 幅. 朵 is used for flowers."
+      },
+      "q_pinyin": ["zhuō", "zi", "shàng", "fàng", "zhe", "liǎng", "", "", "", "huà", ""]
+    },
+    {
+      "q": "花园里开了三___花。",
+      "options": [
+        {"text": "朵", "error_tag": null, "pinyin": ["duǒ"]},
+        {"text": "册", "error_tag": "measure_word", "pinyin": ["cè"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "花 là hoa, dùng lượng từ 朵. 册 dùng cho sách.",
+        "en": "花 means flower, so the measure word is 朵. 册 is used for books."
+      },
+      "q_pinyin": ["huā", "yuán", "lǐ", "kāi", "le", "sān", "", "", "", "huā", ""]
+    },
+    {
+      "q": "我买了两___书。",
+      "options": [
+        {"text": "册", "error_tag": null, "pinyin": ["cè"]},
+        {"text": "匹", "error_tag": "measure_word", "pinyin": ["pǐ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "书 là sách, dùng lượng từ 册. 匹 dùng cho ngựa.",
+        "en": "书 means book, so the measure word is 册. 匹 is used for horses."
+      },
+      "q_pinyin": ["wǒ", "mǎi", "le", "liǎng", "", "", "", "shū", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về số lượng đồ vật bạn có, dùng cấu trúc số từ + lượng từ + danh từ.",
+      "en": "Write one sentence about how many things you have, using number + measure word + noun."
+    },
+    "placeholder": "我有两……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "other", "any_of": ["一", "二", "两", "三", "四", "五", "六", "七", "八", "九", "十"]},
+        {"role": "classifier", "any_of": ["册", "朵", "幅", "届", "颗", "匹", "扇"]},
+        {"role": "object", "regex": "[\\u4e00-\\u9fff]+"}
+      ]
+    },
+    "sample": {"text": "我有两册书。", "pinyin": ["wǒ", "yǒu", "liǎng", "cè", "shū", ""]},
+    "placeholder_pinyin": ["wǒ", "yǒu", "liǎng", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790833604",
+    "generated_at": "2026-10-01T05:46:44Z"
+  },
+  "review": null
+}

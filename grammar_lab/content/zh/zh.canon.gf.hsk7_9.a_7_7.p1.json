@@ -1,0 +1,238 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk7_9.a_7_7.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.negation",
+  "level": {"framework": "hsk3", "value": "9", "rank": 9},
+  "prereqs": ["zh.canon.gf.hsk7_9.a_7_2_2_2.p2"],
+  "contrasts": [],
+  "error_tags": ["particle", "register"],
+  "source_refs": {"gf0025": ["gf0025.hsk7_9.131", "gf0025.hsk7_9.132", "gf0025.hsk7_9.133", "gf0025.hsk7_9.134"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: X（也）不是，不X也不是", "en": "Chinese grammar: X（也）不是，不X也不是"},
+    "native_title": "X（也）不是，不X也不是",
+    "level": {"framework": "hsk3", "value": "9", "rank": 9},
+    "summary": {
+      "vi": "Mẫu câu này dùng để nói rằng dù chọn cách nào thì kết quả cũng không đổi: làm cũng không được, không làm cũng không được.",
+      "en": "This pattern says that neither choice works: doing it is no good, and not doing it is no good either."
+    },
+    "sub": {"vi": "dù thế nào cũng không", "en": "neither choice works"},
+    "native_title_pinyin": ["", "", "yě", "", "bú", "shì", "", "bù", "", "yě", "bú", "shì"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi cả hai lựa chọn đều dẫn đến kết quả không mong muốn, không có cách nào ổn.",
+      "en": "When both options lead to an unwanted result and neither way is acceptable."
+    },
+    {
+      "vi": "Khi người nói muốn nhấn mạnh sự bế tắc, không còn cách nào khác.",
+      "en": "When the speaker wants to stress a dead end, with no other way out."
+    },
+    {
+      "vi": "Khi muốn nói rằng dù có làm hay không làm thì vấn đề vẫn không được giải quyết.",
+      "en": "When saying that whether you act or not, the problem still is not solved."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "X",
+        "role": "other",
+        "label": {"vi": "vế thứ nhất", "en": "first clause"},
+        "pinyin": [""]
+      },
+      {
+        "text": "也",
+        "role": "connector",
+        "label": {"vi": "cũng", "en": "also"},
+        "optional": true,
+        "pinyin": ["yě"]
+      },
+      {
+        "text": "不是",
+        "role": "verb",
+        "label": {"vi": "không phải / không được", "en": "is not / is no good"},
+        "pinyin": ["bù", "shì"]
+      },
+      {
+        "text": "不X",
+        "role": "other",
+        "label": {"vi": "phủ định của vế thứ nhất", "en": "negated first clause"},
+        "pinyin": ["bù", ""]
+      },
+      {
+        "text": "也不是",
+        "role": "verb",
+        "label": {"vi": "cũng không phải / cũng không được", "en": "is also not / is also no good"},
+        "pinyin": ["yě", "bù", "shì"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "去也不是，不去也不是。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "other"},
+        {"start": 1, "end": 2, "role": "connector"},
+        {"start": 2, "end": 4, "role": "verb"},
+        {"start": 5, "end": 7, "role": "other"},
+        {"start": 7, "end": 10, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Hai vế đối nhau: đi cũng không được, không đi cũng không được.",
+        "en": "The two clauses mirror each other: going is no good, and not going is no good either."
+      },
+      "translation": {
+        "vi": "Đi cũng không được, không đi cũng không được.",
+        "en": "Going is no good, and not going is no good either."
+      },
+      "pinyin": ["qù", "yě", "bù", "shì", "", "bù", "qù", "yě", "bù", "shì", ""]
+    },
+    {
+      "text": "买也不是，不买也不是。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "other"},
+        {"start": 1, "end": 2, "role": "connector"},
+        {"start": 2, "end": 4, "role": "verb"},
+        {"start": 5, "end": 7, "role": "other"},
+        {"start": 7, "end": 10, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Mua cũng không ổn, không mua cũng không ổn.",
+        "en": "Buying is not right, and not buying is not right either."
+      },
+      "translation": {
+        "vi": "Mua cũng không được, không mua cũng không được.",
+        "en": "Buying is no good, and not buying is no good either."
+      },
+      "pinyin": ["mǎi", "yě", "bù", "shì", "", "bù", "mǎi", "yě", "bù", "shì", ""]
+    },
+    {
+      "text": "说也不是，不说也不是。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "other"},
+        {"start": 1, "end": 2, "role": "connector"},
+        {"start": 2, "end": 4, "role": "verb"},
+        {"start": 5, "end": 7, "role": "other"},
+        {"start": 7, "end": 10, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Nói cũng không được, không nói cũng không được.",
+        "en": "Speaking up is no good, and staying silent is no good either."
+      },
+      "translation": {
+        "vi": "Nói cũng không được, không nói cũng không được.",
+        "en": "Saying it is no good, and not saying it is no good either."
+      },
+      "pinyin": ["shuō", "yě", "bù", "shì", "", "bù", "shuō", "yě", "bù", "shì", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "去不是，不去也不是。",
+      "right": "去也不是，不去也不是。",
+      "reason": {
+        "vi": "Thiếu 也 ở vế đầu. Mẫu câu này cần 也 ở cả hai vế để tạo thế đối xứng; nếu chỉ có một 也 thì câu mất tính đối chiếu và nghe như câu phủ định thường.",
+        "en": "The first 也 is missing. The pattern needs 也 in both clauses to create the mirror effect; with only one 也 the sentence loses the contrast and sounds like a plain negative."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong_pinyin": ["qù", "bù", "shì", "", "bù", "qù", "yě", "bù", "shì", ""],
+      "right_pinyin": ["qù", "yě", "bù", "shì", "", "bù", "qù", "yě", "bù", "shì", ""]
+    },
+    {
+      "wrong": "去也不是，不去也不是吧。",
+      "right": "去也不是，不去也不是。",
+      "reason": {
+        "vi": "Thêm 吧 làm câu mang sắc thái đề nghị, thương lượng, không phù hợp với mẫu câu diễn tả sự bế tắc. Mẫu này là câu trần thuật, không dùng tiểu từ tình thái cuối câu.",
+        "en": "Adding 吧 turns the sentence into a suggestion or negotiation, which does not fit a pattern that states a dead end. This pattern is a plain statement and takes no sentence-final modal particle."
+      },
+      "error_tag": "register",
+      "l1": ["vi"],
+      "wrong_pinyin": ["qù", "yě", "bù", "shì", "", "bù", "qù", "yě", "bù", "shì", "ba", ""],
+      "right_pinyin": ["qù", "yě", "bù", "shì", "", "bù", "qù", "yě", "bù", "shì", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "去___不是，不去也不是。",
+      "options": [
+        {"text": "也", "error_tag": null, "pinyin": ["yě"]},
+        {"text": "都", "error_tag": "word_choice", "pinyin": ["dōu"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Mẫu câu cần 也 ở cả hai vế để tạo thế đối xứng. 都 không dùng trong khuôn này.",
+        "en": "The pattern needs 也 in both clauses to create the mirror effect. 都 is not used in this frame."
+      },
+      "q_pinyin": ["qù", "", "", "", "bù", "shì", "", "bù", "qù", "yě", "bù", "shì", ""]
+    },
+    {
+      "q": "买也不是，___也不是。",
+      "options": [
+        {"text": "不买", "error_tag": null, "pinyin": ["bù", "mǎi"]},
+        {"text": "买不", "error_tag": "word_order", "pinyin": ["mǎi", "bù"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Vế thứ hai là dạng phủ định của vế thứ nhất: 不 đứng trước động từ 买. Đảo thành 买不 là sai trật tự.",
+        "en": "The second clause is the negated form of the first: 不 comes before the verb 买. Reversing it to 买不 is the wrong order."
+      },
+      "q_pinyin": ["mǎi", "yě", "bù", "shì", "", "", "", "", "yě", "bù", "shì", ""]
+    },
+    {
+      "q": "说也不是，不说___不是。",
+      "options": [
+        {"text": "也", "error_tag": null, "pinyin": ["yě"]},
+        {"text": "还", "error_tag": "word_choice", "pinyin": ["hái"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Vế thứ hai cũng dùng 也: 不说也不是. 还 không thuộc khuôn này.",
+        "en": "The second clause also takes 也: 不说也不是. 还 does not belong in this frame."
+      },
+      "q_pinyin": ["shuō", "yě", "bù", "shì", "", "bù", "shuō", "", "", "", "bù", "shì", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng mẫu X（也）不是，不X也不是 về một việc bạn thấy dù làm hay không làm đều không ổn.",
+      "en": "Write one sentence with X（也）不是，不X也不是 about something where doing it or not doing it both feel wrong."
+    },
+    "placeholder": "去也不是，不去也不是。",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "connector", "any_of": ["也"]},
+        {"role": "verb", "any_of": ["不是"]},
+        {"role": "other", "any_of": ["不去", "不买", "不说"]},
+        {"role": "verb", "any_of": ["也不是"]}
+      ]
+    },
+    "sample": {
+      "text": "去也不是，不去也不是。",
+      "pinyin": ["qù", "yě", "bù", "shì", "", "bù", "qù", "yě", "bù", "shì", ""]
+    },
+    "placeholder_pinyin": ["qù", "yě", "bù", "shì", "", "bù", "qù", "yě", "bù", "shì", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790834828",
+    "generated_at": "2026-10-01T06:07:08Z"
+  },
+  "review": null
+}

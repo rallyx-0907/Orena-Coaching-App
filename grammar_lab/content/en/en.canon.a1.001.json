@@ -4,155 +4,113 @@
   "version": 1,
   "target_lang": "en",
   "function": "fn.completed_past",
-  "level": {
-    "framework": "cefr",
-    "value": "A1",
-    "rank": 1
-  },
-  "prereqs": [
-    "en.be.present"
-  ],
+  "level": {"framework": "cefr", "value": "A1", "rank": 1},
+  "prereqs": ["en.be.present"],
   "contrasts": [],
-  "error_tags": [
-    "tense",
-    "agreement"
-  ],
-  "source_refs": {
-    "r5": [
-      "a2-past-simple-be"
-    ]
-  },
+  "error_tags": ["tense", "agreement"],
+  "source_refs": {"r5": ["a2-past-simple-be"]},
   "point_type": "tense_aspect",
+  "sequence": 1,
+  "aliases": ["a2-past-simple-be"],
+  "source_anchors": {"status": "unanchored", "items": []},
   "header": {
-    "title": {
-      "vi": "Quá khứ đơn của be",
-      "en": "Past simple: be"
-    },
+    "title": {"vi": "Quá khứ đơn của be", "en": "Past simple: be"},
     "native_title": "Past simple: be",
-    "sub": {
-      "vi": "was / were",
-      "en": "was / were"
-    },
-    "level": {
-      "framework": "cefr",
-      "value": "A1",
-      "rank": 1
-    },
+    "level": {"framework": "cefr", "value": "A1", "rank": 1},
     "summary": {
-      "vi": "Was và were là dạng quá khứ của be, dùng để nói trạng thái, danh tính hoặc nơi chốn trong quá khứ.",
-      "en": "Was and were are the past forms of be, used for past states, identity, and location."
-    }
+      "vi": "was/were là dạng quá khứ của be, dùng để nói về trạng thái, danh tính hoặc vị trí trong quá khứ.",
+      "en": "Was/were is the past form of be, used to talk about states, identity, or location in the past."
+    },
+    "sub": {"vi": "trạng thái quá khứ", "en": "past states"}
   },
   "when_to_use": [
     {
-      "vi": "Dùng was với I/he/she/it và were với you/we/they.",
-      "en": "Use was with I/he/she/it and were with you/we/they."
+      "vi": "Khi nói về tình trạng của ai đó trong quá khứ: I was tired yesterday.",
+      "en": "When talking about someone's state in the past: I was tired yesterday."
     },
     {
-      "vi": "Nói một trạng thái hoặc nơi chốn trong quá khứ.",
-      "en": "Describe a state or location in the past."
+      "vi": "Khi nói về vị trí trong quá khứ: They were at the park.",
+      "en": "When talking about location in the past: They were at the park."
+    },
+    {
+      "vi": "Khi nói về danh tính hoặc đặc điểm trong quá khứ: She was a teacher.",
+      "en": "When talking about identity or characteristics in the past: She was a teacher."
     }
   ],
   "pattern": {
     "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
       {
-        "text": "S",
-        "role": "subject",
-        "label": {
-          "vi": "chủ ngữ",
-          "en": "subject"
-        }
-      },
-      {
-        "text": "was / were",
+        "text": "was/were",
         "role": "verb",
-        "label": {
-          "vi": "was hoặc were",
-          "en": "was or were"
-        },
-        "options": [
-          {
-            "text": "was"
-          },
-          {
-            "text": "were"
-          }
-        ]
+        "label": {"vi": "động từ be ở quá khứ", "en": "past form of be"},
+        "options": [{"text": "was"}, {"text": "were"}]
       },
-      {
-        "text": "complement",
-        "role": "complement",
-        "label": {
-          "vi": "phần mô tả",
-          "en": "complement"
-        }
-      }
+      {"text": "complement", "role": "complement", "label": {"vi": "bổ ngữ", "en": "complement"}}
     ],
-    "illustration": {
-      "kind": "timeline",
-      "timeline": {
-        "shape": "point_past"
-      }
-    }
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "wasn't/weren't",
+          "role": "verb",
+          "label": {"vi": "phủ định của be ở quá khứ", "en": "negative past form of be"},
+          "options": [{"text": "wasn't"}, {"text": "weren't"}]
+        },
+        {"text": "complement", "role": "complement", "label": {"vi": "bổ ngữ", "en": "complement"}}
+      ],
+      "question": [
+        {
+          "text": "Was/Were",
+          "role": "verb",
+          "label": {"vi": "be ở quá khứ đảo lên trước", "en": "past form of be before subject"},
+          "options": [{"text": "Was"}, {"text": "Were"}]
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {"text": "complement", "role": "complement", "label": {"vi": "bổ ngữ", "en": "complement"}}
+      ]
+    },
+    "illustration": {"kind": "timeline", "timeline": {"shape": "point_past"}}
   },
   "examples": [
     {
-      "text": "I was tired yesterday.",
+      "text": "I was at home last night.",
       "form": "affirmative",
       "spans": [
-        {
-          "start": 0,
-          "end": 1,
-          "role": "subject"
-        },
-        {
-          "start": 2,
-          "end": 5,
-          "role": "verb"
-        },
-        {
-          "start": 6,
-          "end": 21,
-          "role": "complement"
-        }
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 2, "end": 5, "role": "verb"},
+        {"start": 6, "end": 24, "role": "complement"}
       ],
       "annotation": {
-        "vi": "I dùng was.",
-        "en": "I takes was."
+        "vi": "was diễn tả trạng thái ở nhà trong quá khứ.",
+        "en": "was describes the state of being at home in the past."
       },
-      "translation": {
-        "vi": "I dùng was.",
-        "en": "I takes was."
-      }
+      "translation": {"vi": "Tối qua tôi ở nhà.", "en": "I was at home last night."}
     },
     {
-      "text": "They were at home last night.",
+      "text": "They were busy yesterday.",
       "form": "affirmative",
       "spans": [
-        {
-          "start": 0,
-          "end": 4,
-          "role": "subject"
-        },
-        {
-          "start": 5,
-          "end": 9,
-          "role": "verb"
-        },
-        {
-          "start": 10,
-          "end": 28,
-          "role": "complement"
-        }
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 5, "end": 9, "role": "verb"},
+        {"start": 10, "end": 24, "role": "complement"}
       ],
       "annotation": {
-        "vi": "They dùng were.",
-        "en": "They takes were."
+        "vi": "were dùng với chủ ngữ số nhiều they.",
+        "en": "were is used with the plural subject they."
       },
-      "translation": {
-        "vi": "They dùng were.",
-        "en": "They takes were."
-      }
+      "translation": {"vi": "Hôm qua họ bận.", "en": "They were busy yesterday."}
+    },
+    {
+      "text": "She wasn't at school.",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 10, "role": "verb"},
+        {"start": 11, "end": 20, "role": "complement"}
+      ],
+      "annotation": {"vi": "wasn't là dạng phủ định của was.", "en": "wasn't is the negative form of was."},
+      "translation": {"vi": "Cô ấy không ở trường.", "en": "She wasn't at school."}
     }
   ],
   "compare": [],
@@ -161,98 +119,88 @@
       "wrong": "We was late.",
       "right": "We were late.",
       "reason": {
-        "vi": "We đi với were.",
-        "en": "We takes were."
+        "vi": "Chủ ngữ we số nhiều nên dùng were, không dùng was.",
+        "en": "The plural subject we takes were, not was."
       },
       "error_tag": "agreement",
-      "l1": [
-        "vi"
-      ]
+      "l1": ["vi"]
+    },
+    {
+      "wrong": "Did he be at home?",
+      "right": "Was he at home?",
+      "reason": {
+        "vi": "Với be ở quá khứ, câu hỏi đảo was/were lên trước chủ ngữ, không dùng did.",
+        "en": "For past be questions, invert was/were before the subject; do not use did."
+      },
+      "error_tag": "tense",
+      "l1": ["vi"]
     }
   ],
   "quick_practice": [
     {
-      "q": "She ___ at work yesterday.",
-      "options": [
-        {
-          "text": "was",
-          "error_tag": null
-        },
-        {
-          "text": "were",
-          "error_tag": "agreement"
-        },
-        {
-          "text": "is",
-          "error_tag": "tense"
-        }
-      ],
+      "q": "My friends ___ here yesterday.",
+      "options": [{"text": "were", "error_tag": null}, {"text": "was", "error_tag": "agreement"}],
       "answer": 0,
       "explain": {
-        "vi": "She đi với was.",
-        "en": "She takes was."
+        "vi": "Chủ ngữ số nhiều 'friends' nên dùng were.",
+        "en": "The plural subject 'friends' takes were."
       }
     },
     {
-      "q": "We ___ very tired.",
-      "options": [
-        {
-          "text": "were",
-          "error_tag": null
-        },
-        {
-          "text": "was",
-          "error_tag": "agreement"
-        },
-        {
-          "text": "are",
-          "error_tag": "tense"
-        }
-      ],
+      "q": "I ___ tired after the trip.",
+      "options": [{"text": "was", "error_tag": null}, {"text": "were", "error_tag": "agreement"}],
       "answer": 0,
-      "explain": {
-        "vi": "We đi với were.",
-        "en": "We takes were."
-      }
+      "explain": {"vi": "Chủ ngữ I đi với was.", "en": "The subject I takes was."}
     },
     {
-      "q": "I ___ at home last night.",
-      "options": [
-        {
-          "text": "was",
-          "error_tag": null
-        },
-        {
-          "text": "were",
-          "error_tag": "agreement"
-        },
-        {
-          "text": "am",
-          "error_tag": "tense"
-        }
-      ],
+      "q": "___ you at the party last night?",
+      "options": [{"text": "Were", "error_tag": null}, {"text": "Did", "error_tag": "tense"}],
       "answer": 0,
       "explain": {
-        "vi": "I dùng was.",
-        "en": "I takes was."
+        "vi": "Câu hỏi với be ở quá khứ dùng Were, không dùng Did.",
+        "en": "Past be questions use Were, not Did."
       }
     }
   ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về nơi bạn đã ở hoặc trạng thái của bạn trong quá khứ, dùng was/were.",
+      "en": "Write one sentence about where you were or how you felt in the past, using was/were."
+    },
+    "placeholder": "I was ...",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"role": "verb", "any_of": ["was", "were"]}]},
+    "sample": {"text": "I was at my grandmother's house last weekend."}
+  },
   "status": "draft_ai",
   "flags": [],
   "provenance": {
-    "model": "openai:gpt-5.6-sol",
-    "prompt_version": "direct-author.en-a1.v1",
-    "run_id": "chatgpt.en-a1.20260930",
-    "generated_at": "2026-09-30T10:35:00Z"
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790830436",
+    "generated_at": "2026-10-01T04:53:56Z",
+    "r5_source": {
+      "ids": ["a2-past-simple-be"],
+      "content_version": 2,
+      "content_hash": "9ea397ac02d00629ad910bbded958d75babcfacb4e3ecea0faf95fb432406401",
+      "corrections": [
+        {
+          "r5_id": "a2-past-simple-be",
+          "issue": "R5 lists level as A2 but the point id is a1.001; the content (was/were for past states) is A1.",
+          "fix": "Wrote the lesson at A1 level with A1 vocabulary and simple structures."
+        },
+        {
+          "r5_id": "a2-past-simple-be",
+          "issue": "R5's contrast section includes 'Past simple: regular verbs' but the compare requirement for this point is none.",
+          "fix": "Left compare empty as required."
+        },
+        {
+          "r5_id": "a2-past-simple-be",
+          "issue": "R5's guided practice includes a production task asking for 4 sentences, which is beyond the scope of a single quick-practice card.",
+          "fix": "Replaced with a personal production card asking for one sentence."
+        }
+      ]
+    }
   },
-  "review": null,
-  "sequence": 1,
-  "source_anchors": {
-    "status": "unanchored",
-    "items": []
-  },
-  "aliases": [
-    "a2-past-simple-be"
-  ]
+  "review": null
 }

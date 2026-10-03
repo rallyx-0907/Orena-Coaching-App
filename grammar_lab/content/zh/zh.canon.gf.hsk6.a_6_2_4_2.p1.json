@@ -1,0 +1,206 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk6.a_6_2_4_2.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.ongoing_now",
+  "level": {"framework": "hsk3", "value": "6", "rank": 6},
+  "prereqs": ["zh.canon.gf.hsk5.a_5_2_1_2.p1"],
+  "contrasts": [],
+  "error_tags": ["particle"],
+  "source_refs": {"gf0025": ["gf0025.hsk6.014"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 沿（着）", "en": "Chinese grammar: 沿（着）"},
+    "native_title": "沿（着）",
+    "level": {"framework": "hsk3", "value": "6", "rank": 6},
+    "summary": {
+      "vi": "Giới từ 沿（着） dùng để nói hành động, sự di chuyển diễn ra dọc theo một con đường, con sông hoặc một vật dài.",
+      "en": "The preposition 沿（着） is used to say an action or movement goes along a road, a river, or a long object."
+    },
+    "sub": {"vi": "dọc theo", "en": "along"},
+    "native_title_pinyin": ["yán", "", "zhe", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói đi, chạy, lái xe men theo một con đường, con sông hay bờ biển.",
+      "en": "When you want to say someone walks, runs, or drives along a road, a river, or a coast."
+    },
+    {
+      "vi": "Khi muốn nói một hàng người hay một dãy vật nằm dọc theo một đường dài.",
+      "en": "When you want to say a line of people or things stands or lies along a long path."
+    },
+    {
+      "vi": "Khi muốn nói một sự việc phát triển hoặc thay đổi theo một hướng, một chiều dài.",
+      "en": "When you want to say something develops or changes along a direction or a length."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "沿（着）",
+        "role": "marker",
+        "label": {"vi": "giới từ dọc theo", "en": "along marker"},
+        "options": [{"text": "沿", "pinyin": ["yán"]}, {"text": "沿着", "pinyin": ["yán", "zhe"]}],
+        "pinyin": ["yán", "", "zhe", ""]
+      },
+      {
+        "text": "宾语",
+        "role": "object",
+        "label": {"vi": "tân ngữ", "en": "object"},
+        "pinyin": ["bīn", "yǔ"]
+      },
+      {
+        "text": "动词",
+        "role": "verb",
+        "label": {"vi": "động từ", "en": "verb"},
+        "pinyin": ["dòng", "cí"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "我们沿着河边散步。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 4, "role": "marker"},
+        {"start": 4, "end": 6, "role": "object"},
+        {"start": 6, "end": 8, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "沿着 đứng trước 河边, cho biết hành động 散步 đi dọc theo con sông.",
+        "en": "沿着 comes before 河边 and shows that the walking goes along the river."
+      },
+      "translation": {"vi": "Chúng tôi đi dạo dọc theo bờ sông.", "en": "We walk along the river."},
+      "pinyin": ["wǒ", "men", "yán", "zhe", "hé", "biān", "sàn", "bù", ""]
+    },
+    {
+      "text": "孩子们沿着小路跑。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 3, "end": 5, "role": "marker"},
+        {"start": 5, "end": 7, "role": "object"},
+        {"start": 7, "end": 8, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "沿着 + 小路 nêu rõ con đường mà hành động 跑 bám theo.",
+        "en": "沿着 + 小路 names the path that the running follows."
+      },
+      "translation": {"vi": "Bọn trẻ chạy dọc theo con đường nhỏ.", "en": "The children run along the path."},
+      "pinyin": ["hái", "zi", "men", "yán", "zhe", "xiǎo", "lù", "pǎo", ""]
+    },
+    {
+      "text": "汽车沿着海边开。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 4, "role": "marker"},
+        {"start": 4, "end": 6, "role": "object"},
+        {"start": 6, "end": 7, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "沿着 + 海边 cho biết xe chạy men theo bờ biển.",
+        "en": "沿着 + 海边 shows the car drives along the seaside."
+      },
+      "translation": {"vi": "Xe hơi chạy dọc theo bờ biển.", "en": "The car drives along the seaside."},
+      "pinyin": ["qì", "chē", "yán", "zhe", "hǎi", "biān", "kāi", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "我们沿河边散步。",
+      "right": "我们沿着河边散步。",
+      "reason": {
+        "vi": "Khi tân ngữ là một nơi chốn cụ thể như 河边, người học thường bỏ 着, nhưng 沿着 là dạng cố định và tự nhiên hơn trong câu này.",
+        "en": "With a concrete place like 河边, learners often drop 着, but 沿着 is the fixed, natural form in this sentence."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong_pinyin": ["wǒ", "men", "yán", "hé", "biān", "sàn", "bù", ""],
+      "right_pinyin": ["wǒ", "men", "yán", "zhe", "hé", "biān", "sàn", "bù", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "我们___河边散步。",
+      "options": [
+        {"text": "沿着", "error_tag": null, "pinyin": ["yán", "zhe"]},
+        {"text": "沿", "error_tag": "particle", "pinyin": ["yán"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "沿着 là dạng đầy đủ, tự nhiên trước một địa điểm cụ thể như 河边.",
+        "en": "沿着 is the full, natural form before a concrete place like 河边."
+      },
+      "q_pinyin": ["wǒ", "men", "", "", "", "hé", "biān", "sàn", "bù", ""]
+    },
+    {
+      "q": "孩子们___小路跑。",
+      "options": [
+        {"text": "沿着", "error_tag": null, "pinyin": ["yán", "zhe"]},
+        {"text": "沿", "error_tag": "particle", "pinyin": ["yán"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Trước 小路, cần 沿着 để câu nghe tự nhiên.",
+        "en": "Before 小路, 沿着 is needed for a natural sentence."
+      },
+      "q_pinyin": ["hái", "zi", "men", "", "", "", "xiǎo", "lù", "pǎo", ""]
+    },
+    {
+      "q": "汽车___海边开。",
+      "options": [
+        {"text": "沿着", "error_tag": null, "pinyin": ["yán", "zhe"]},
+        {"text": "沿", "error_tag": "particle", "pinyin": ["yán"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "沿着 + 海边 là cách nói chuẩn khi tả xe chạy men theo bờ biển.",
+        "en": "沿着 + 海边 is the standard way to say a car drives along the seaside."
+      },
+      "q_pinyin": ["qì", "chē", "", "", "", "hǎi", "biān", "kāi", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu kể về việc bạn đi dạo hoặc chạy dọc theo một con đường, con sông hay bờ biển.",
+      "en": "Write one sentence about walking or running along a road, a river, or a coast."
+    },
+    "placeholder": "我沿着……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "marker", "any_of": ["沿着", "沿"]},
+        {"role": "verb", "any_of": ["散步", "跑", "走", "开", "骑"]}
+      ]
+    },
+    "sample": {
+      "text": "我沿着公园的小路走。",
+      "pinyin": ["wǒ", "yán", "zhe", "gōng", "yuán", "de", "xiǎo", "lù", "zǒu", ""]
+    },
+    "placeholder_pinyin": ["wǒ", "yán", "zhe", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790834070",
+    "generated_at": "2026-10-01T05:54:30Z"
+  },
+  "review": null
+}

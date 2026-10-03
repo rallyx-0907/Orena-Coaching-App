@@ -1,0 +1,285 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b1.027",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.reporting",
+  "level": {"framework": "cefr", "value": "B1", "rank": 3},
+  "prereqs": [],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["b1-reported-statements"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["b1-reported-statements"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Reported statements", "en": "Reported statements"},
+    "native_title": "Reported statements",
+    "level": {"framework": "cefr", "value": "B1", "rank": 3},
+    "summary": {
+      "vi": "Tường thuật phát biểu bằng động từ tường thuật + mệnh đề nội dung, có lùi thì khi góc nhìn tường thuật ở quá khứ.",
+      "en": "Report what someone said with a reporting verb plus a content clause, shifting the tense back when the reporting viewpoint is in the past."
+    },
+    "sub": {"vi": "tường thuật phát biểu", "en": "reported statements"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn kể lại lời ai đó đã nói, thay vì trích dẫn nguyên văn.",
+      "en": "When you retell what someone said instead of quoting their exact words."
+    },
+    {
+      "vi": "Khi động từ tường thuật ở quá khứ (said, told) và bạn muốn thể hiện góc nhìn quá khứ.",
+      "en": "When the reporting verb is in the past (said, told) and you want to show a past viewpoint."
+    },
+    {
+      "vi": "Khi bạn cần đổi đại từ và cụm thời gian cho phù hợp với thời điểm tường thuật.",
+      "en": "When you need to change pronouns and time phrases to fit the moment of reporting."
+    },
+    {
+      "vi": "Khi bạn muốn dùng tell thay vì say vì có người nghe được nhắc đến.",
+      "en": "When you want to use tell instead of say because the listener is mentioned."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {
+        "text": "said/told",
+        "role": "verb",
+        "label": {"vi": "động từ tường thuật", "en": "reporting verb"},
+        "options": [{"text": "said"}, {"text": "told"}]
+      },
+      {
+        "text": "O",
+        "role": "object",
+        "label": {"vi": "người nghe", "en": "listener"},
+        "optional": true
+      },
+      {
+        "text": "that",
+        "role": "marker",
+        "label": {"vi": "từ nối", "en": "linker"},
+        "optional": true
+      },
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ mệnh đề", "en": "clause subject"}},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ mệnh đề", "en": "clause verb"}},
+      {
+        "text": "O/C",
+        "role": "complement",
+        "label": {"vi": "bổ ngữ", "en": "complement"},
+        "optional": true
+      }
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "said/told",
+          "role": "verb",
+          "label": {"vi": "động từ tường thuật", "en": "reporting verb"},
+          "options": [{"text": "said"}, {"text": "told"}]
+        },
+        {
+          "text": "O",
+          "role": "object",
+          "label": {"vi": "người nghe", "en": "listener"},
+          "optional": true
+        },
+        {
+          "text": "that",
+          "role": "marker",
+          "label": {"vi": "từ nối", "en": "linker"},
+          "optional": true
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ mệnh đề", "en": "clause subject"}},
+        {
+          "text": "didn't",
+          "role": "aux",
+          "label": {"vi": "trợ động từ phủ định", "en": "negative auxiliary"},
+          "options": [{"text": "didn't"}, {"text": "did not"}]
+        },
+        {"text": "V", "role": "verb", "label": {"vi": "động từ mệnh đề", "en": "clause verb"}},
+        {
+          "text": "O/C",
+          "role": "complement",
+          "label": {"vi": "bổ ngữ", "en": "complement"},
+          "optional": true
+        }
+      ],
+      "question": [
+        {
+          "text": "Did",
+          "role": "aux",
+          "label": {"vi": "trợ động từ nghi vấn", "en": "question auxiliary"}
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "say/tell",
+          "role": "verb",
+          "label": {"vi": "động từ tường thuật", "en": "reporting verb"},
+          "options": [{"text": "say"}, {"text": "tell"}]
+        },
+        {
+          "text": "O",
+          "role": "object",
+          "label": {"vi": "người nghe", "en": "listener"},
+          "optional": true
+        },
+        {
+          "text": "that",
+          "role": "marker",
+          "label": {"vi": "từ nối", "en": "linker"},
+          "optional": true
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ mệnh đề", "en": "clause subject"}},
+        {"text": "V", "role": "verb", "label": {"vi": "động từ mệnh đề", "en": "clause verb"}},
+        {
+          "text": "O/C",
+          "role": "complement",
+          "label": {"vi": "bổ ngữ", "en": "complement"},
+          "optional": true
+        }
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "He said that he was busy.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 3, "end": 7, "role": "verb"},
+        {"start": 8, "end": 12, "role": "marker"},
+        {"start": 13, "end": 15, "role": "subject"},
+        {"start": 16, "end": 19, "role": "verb"},
+        {"start": 20, "end": 24, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Lùi thì: hiện tại → quá khứ khi tường thuật ở quá khứ.",
+        "en": "Backshift: present → past when reporting in the past."
+      },
+      "translation": {"vi": "Anh ấy nói mình bận.", "en": "He said that he was busy."}
+    },
+    {
+      "text": "She told me that she had finished.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 8, "role": "verb"},
+        {"start": 9, "end": 11, "role": "object"},
+        {"start": 12, "end": 16, "role": "marker"},
+        {"start": 17, "end": 20, "role": "subject"},
+        {"start": 21, "end": 33, "role": "verb"}
+      ],
+      "annotation": {"vi": "Lùi thì: quá khứ → quá khứ hoàn thành.", "en": "Backshift: past → past perfect."},
+      "translation": {"vi": "Cô ấy nói với tôi rằng cô ấy đã xong.", "en": "She told me that she had finished."}
+    },
+    {
+      "text": "They said they would call later.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 5, "end": 9, "role": "verb"},
+        {"start": 10, "end": 14, "role": "subject"},
+        {"start": 15, "end": 25, "role": "verb"},
+        {"start": 26, "end": 31, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Lùi thì: will → would khi tường thuật ở quá khứ.",
+        "en": "Backshift: will → would when reporting in the past."
+      },
+      "translation": {"vi": "Họ nói họ sẽ gọi sau.", "en": "They said they would call later."}
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "She said me that she was tired.",
+      "right": "She told me that she was tired.",
+      "reason": {
+        "vi": "say không nhận tân ngữ chỉ người nghe trực tiếp; tell mới nhận.",
+        "en": "say does not take a direct listener object; tell does."
+      },
+      "error_tag": "other",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "He ___ that he was busy.",
+      "options": [{"text": "said", "error_tag": null}, {"text": "told", "error_tag": "other"}],
+      "answer": 0,
+      "explain": {
+        "vi": "said không cần tân ngữ chỉ người nghe; told cần tân ngữ.",
+        "en": "said does not need a listener object; told does."
+      }
+    },
+    {
+      "q": "She told me that she ___ finished.",
+      "options": [{"text": "had", "error_tag": null}, {"text": "has", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Lùi thì: quá khứ → quá khứ hoàn thành khi tường thuật ở quá khứ.",
+        "en": "Backshift: past → past perfect when reporting in the past."
+      }
+    },
+    {
+      "q": "They said they ___ call later.",
+      "options": [{"text": "would", "error_tag": null}, {"text": "will", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Lùi thì: will → would khi tường thuật ở quá khứ.",
+        "en": "Backshift: will → would when reporting in the past."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu tường thuật điều ai đó đã nói với bạn.",
+      "en": "Write a sentence reporting what someone said to you."
+    },
+    "placeholder": "My friend said that ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "verb", "any_of": ["said", "told"]},
+        {"role": "subject", "regex": "(?i)\\b(he|she|they|I|we|you|it|\\w+)\\b"},
+        {
+          "role": "verb",
+          "regex": "(?i)\\b(was|were|had|would|did|is|are|has|will|do|does|can|could|may|might|must|should)\\b"
+        }
+      ]
+    },
+    "sample": {"text": "My friend said that she was tired."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790830898",
+    "generated_at": "2026-10-01T05:01:38Z",
+    "r5_source": {
+      "ids": ["b1-reported-statements"],
+      "content_version": 2,
+      "content_hash": "ee73a38a6531faa05c3887581b718e82a96ee17c3cae0b0f49cfdc156c9c4582",
+      "corrections": [
+        {
+          "r5_id": "b1-reported-statements",
+          "issue": "R5 example 'Mia says she is ready.' uses present reporting verb, which does not illustrate the backshift rule taught in this point.",
+          "fix": "Replaced with 'They said they would call later.' to show will → would backshift."
+        },
+        {
+          "r5_id": "b1-reported-statements",
+          "issue": "R5 mistake 'He said he will come the next day.' is listed as a mistake but the correct version 'He said he would come the next day.' is not given as a separate example.",
+          "fix": "Added 'They said they would call later.' as an example and kept the mistake pair in common_mistakes."
+        }
+      ]
+    },
+    "metadata_stale": true
+  },
+  "review": null
+}

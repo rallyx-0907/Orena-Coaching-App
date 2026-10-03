@@ -1,0 +1,252 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk3_3_topic_69",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.contrast",
+  "level": {"framework": "hsk3", "value": "3", "rank": 3},
+  "prereqs": ["zh.canon.r5.hsk3_4_topic"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {
+    "r5": ["zh-hsk3-3-topic-69", "zh-hsk4-8-topic"],
+    "gf0025": ["gf0025.hsk5.051", "gf0025.hsk7_9.094"]
+  },
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["zh-hsk3-3-topic-69", "zh-hsk4-8-topic"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 即使⋯⋯，也⋯⋯", "en": "Chinese grammar: 即使⋯⋯，也⋯⋯"},
+    "native_title": "即使⋯⋯，也⋯⋯",
+    "level": {"framework": "hsk3", "value": "3", "rank": 3},
+    "summary": {
+      "vi": "即使...也... dùng để nói rằng dù cho điều kiện A có xảy ra (dù là giả định hay cực đoan) thì kết quả B vẫn giữ nguyên, không thay đổi.",
+      "en": "即使...也... is used to say that even if condition A happens (whether hypothetical or extreme), result B still holds and does not change."
+    },
+    "sub": {"vi": "nhượng bộ mạnh", "en": "strong concession"},
+    "native_title_pinyin": ["jí", "shǐ", "", "", "", "yě", "", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói 'ngay cả nếu' hoặc 'dù cho' một tình huống giả định xảy ra, kết quả vẫn không đổi.",
+      "en": "When you want to say 'even if' or 'no matter if' a hypothetical situation happens, the result still does not change."
+    },
+    {
+      "vi": "Khi điều kiện A là cực đoan hoặc bất lợi, nhưng người nói vẫn giữ quyết định/thái độ B.",
+      "en": "When condition A is extreme or unfavorable, but the speaker still keeps decision/attitude B."
+    },
+    {
+      "vi": "Khi cần nhấn mạnh rằng B là điều chắc chắn, không bị ảnh hưởng bởi A.",
+      "en": "When you need to emphasize that B is certain and is not affected by A."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "即使",
+        "role": "connector",
+        "label": {"vi": "liên từ nhượng bộ", "en": "concessive conjunction"},
+        "pinyin": ["jí", "shǐ"]
+      },
+      {
+        "text": "A",
+        "role": "other",
+        "label": {"vi": "điều kiện/giả định", "en": "condition/hypothesis"},
+        "pinyin": [""]
+      },
+      {
+        "text": "也",
+        "role": "connector",
+        "label": {"vi": "phó từ nhấn mạnh kết quả", "en": "result-emphasizing adverb"},
+        "pinyin": ["yě"]
+      },
+      {
+        "text": "B",
+        "role": "other",
+        "label": {"vi": "kết quả vẫn giữ", "en": "result that still holds"},
+        "pinyin": [""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "即使下雨，我也要去。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 4, "role": "other"},
+        {"start": 6, "end": 7, "role": "connector"},
+        {"start": 7, "end": 9, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "即使 mở điều kiện giả định; 也 đứng trước kết quả vẫn giữ.",
+        "en": "即使 opens a hypothetical condition; 也 stands before the result that still holds."
+      },
+      "translation": {"vi": "Ngay cả nếu trời mưa, tôi vẫn đi.", "en": "Even if it rains, I will still go."},
+      "pinyin": ["jí", "shǐ", "xià", "yǔ", "", "wǒ", "yě", "yào", "qù", ""]
+    },
+    {
+      "text": "即使很忙，他也每天运动。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 4, "role": "other"},
+        {"start": 6, "end": 7, "role": "connector"},
+        {"start": 7, "end": 11, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Điều kiện A là 'rất bận', nhưng kết quả B 'tập thể dục mỗi ngày' vẫn không đổi.",
+        "en": "Condition A is 'very busy', but result B 'exercises every day' still does not change."
+      },
+      "translation": {
+        "vi": "Dù rất bận, anh ấy vẫn tập thể dục mỗi ngày.",
+        "en": "Even if he is very busy, he still exercises every day."
+      },
+      "pinyin": ["jí", "shǐ", "hěn", "máng", "", "tā", "yě", "měi", "tiān", "yùn", "dòng", ""]
+    },
+    {
+      "text": "即使失败，我们也要再试一次。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 4, "role": "other"},
+        {"start": 7, "end": 8, "role": "connector"},
+        {"start": 8, "end": 13, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "即使 đưa ra tình huống xấu nhất; 也 nhấn mạnh quyết tâm vẫn giữ.",
+        "en": "即使 presents the worst-case situation; 也 emphasizes the determination still holds."
+      },
+      "translation": {
+        "vi": "Ngay cả nếu thất bại, chúng ta vẫn phải thử lại một lần nữa.",
+        "en": "Even if we fail, we still have to try again."
+      },
+      "pinyin": ["jí", "shǐ", "shī", "bài", "", "wǒ", "men", "yě", "yào", "zài", "shì", "yí", "cì", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "即使下雨，所以我不去。",
+      "right": "即使下雨，我也去。",
+      "reason": {
+        "vi": "Người học dùng 所以 để nối kết quả, nhưng 即使...也... diễn tả nhượng bộ: kết quả vẫn giữ, không phải kết quả do nguyên nhân.",
+        "en": "Learners use 所以 to connect a result, but 即使...也... expresses concession: the result still holds, not a result caused by a reason."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong_pinyin": ["jí", "shǐ", "xià", "yǔ", "", "suǒ", "yǐ", "wǒ", "bù", "qù", ""],
+      "right_pinyin": ["jí", "shǐ", "xià", "yǔ", "", "wǒ", "yě", "qù", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "即使明天下雨，我___要去公园。",
+      "options": [
+        {"text": "也", "error_tag": null, "pinyin": ["yě"]},
+        {"text": "所以", "error_tag": "conjunction", "pinyin": ["suǒ", "yǐ"]},
+        {"text": "但是", "error_tag": "conjunction", "pinyin": ["dàn", "shì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "即使...也... là cặp cố định; 也 đứng trước kết quả vẫn giữ. 所以 và 但是 không dùng trong cấu trúc nhượng bộ này.",
+        "en": "即使...也... is a fixed pair; 也 stands before the result that still holds. 所以 and 但是 are not used in this concessive structure."
+      },
+      "q_pinyin": [
+        "jí",
+        "shǐ",
+        "míng",
+        "tiān",
+        "xià",
+        "yǔ",
+        "",
+        "wǒ",
+        "",
+        "",
+        "",
+        "yào",
+        "qù",
+        "gōng",
+        "yuán",
+        ""
+      ]
+    },
+    {
+      "q": "即使你不同意，我___会告诉他。",
+      "options": [
+        {"text": "也", "error_tag": null, "pinyin": ["yě"]},
+        {"text": "就", "error_tag": "conjunction", "pinyin": ["jiù"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Trong cấu trúc nhượng bộ 即使...也..., phải dùng 也 trước kết quả. 就 không mang nghĩa 'vẫn' trong ngữ cảnh này.",
+        "en": "In the concessive structure 即使...也..., you must use 也 before the result. 就 does not carry the meaning 'still' in this context."
+      },
+      "q_pinyin": ["jí", "shǐ", "nǐ", "bù", "tóng", "yì", "", "wǒ", "", "", "", "huì", "gào", "su", "tā", ""]
+    },
+    {
+      "q": "即使很累，他___每天跑步。",
+      "options": [
+        {"text": "也", "error_tag": null, "pinyin": ["yě"]},
+        {"text": "所以", "error_tag": "conjunction", "pinyin": ["suǒ", "yǐ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "也 là thành phần bắt buộc trong cặp 即使...也..., đứng trước kết quả. 所以 không phù hợp vì đây là quan hệ nhượng bộ, không phải nhân quả.",
+        "en": "也 is the required element in the pair 即使...也..., standing before the result. 所以 is not suitable because this is a concessive relation, not cause-effect."
+      },
+      "q_pinyin": ["jí", "shǐ", "hěn", "lèi", "", "tā", "", "", "", "měi", "tiān", "pǎo", "bù", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về bản thân dùng 即使...也... để nói rằng dù điều kiện A xảy ra, bạn vẫn giữ quyết định B.",
+      "en": "Write a sentence about yourself using 即使...也... to say that even if condition A happens, you still keep decision B."
+    },
+    "placeholder": "即使……，我也……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "connector", "any_of": ["即使"]}, {"role": "connector", "any_of": ["也"]}]
+    },
+    "sample": {
+      "text": "即使很忙，我也每天学习汉语。",
+      "pinyin": ["jí", "shǐ", "hěn", "máng", "", "wǒ", "yě", "měi", "tiān", "xué", "xí", "hàn", "yǔ", ""]
+    },
+    "placeholder_pinyin": ["jí", "shǐ", "", "", "", "wǒ", "yě", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790832897",
+    "generated_at": "2026-10-01T05:34:57Z",
+    "r5_source": {
+      "ids": ["zh-hsk3-3-topic-69", "zh-hsk4-8-topic"],
+      "content_version": 2,
+      "content_hash": "2dea3edf75140f532bde42c44a35470faa45e6e144bb4b5441737765726d3879",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk3-3-topic-69",
+          "issue": "R5 example '即使很忙，他也每天运动。' uses 运动 as a verb, but at HSK3 运动 is more commonly a noun; the sentence is acceptable but slightly unnatural for this level.",
+          "fix": "Replaced with '即使很忙，他也每天运动。' kept but adjusted to '即使很忙，他也每天运动。' — actually kept as is because it is grammatical; no change needed. Correction: no change."
+        },
+        {
+          "r5_id": "zh-hsk3-3-topic-69",
+          "issue": "R5 mistake '虽然下雨，我也要去 nếu intended hypothetical.' mixes Vietnamese and Chinese and is not a clean learner error.",
+          "fix": "Replaced with a clean Vietnamese-L1 error: '即使下雨，所以我不去。' with correction '即使下雨，我也去。'"
+        },
+        {
+          "r5_id": "zh-hsk4-8-topic",
+          "issue": "R5 HSK4 lesson covers 哪怕/即便...也..., which is outside this HSK3 point's scope.",
+          "fix": "Excluded from this lesson; only used as background for contrast, not included in formula or examples."
+        }
+      ]
+    },
+    "metadata_stale": true
+  },
+  "review": null
+}

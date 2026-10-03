@@ -4,220 +4,196 @@
   "version": 1,
   "target_lang": "en",
   "function": "fn.sentence_basics",
-  "level": {
-    "framework": "cefr",
-    "value": "A1",
-    "rank": 1
-  },
-  "prereqs": [
-    "en.be.present"
-  ],
+  "level": {"framework": "cefr", "value": "A1", "rank": 1},
+  "prereqs": ["en.be.present"],
   "contrasts": [],
-  "error_tags": [
-    "sentence_structure",
-    "word_form"
-  ],
+  "error_tags": ["sentence_structure", "word_form"],
   "source_refs": {},
   "point_type": "word_order",
+  "sequence": 2,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
   "header": {
-    "title": {
-      "vi": "Vị trí của tính từ",
-      "en": "Adjective position"
-    },
+    "title": {"vi": "Vị trí của tính từ", "en": "Adjective position"},
     "native_title": "Adjective position",
-    "sub": {
-      "vi": "a red car / is red",
-      "en": "a red car / is red"
-    },
-    "level": {
-      "framework": "cefr",
-      "value": "A1",
-      "rank": 1
-    },
+    "level": {"framework": "cefr", "value": "A1", "rank": 1},
     "summary": {
-      "vi": "Tính từ thường đứng trước danh từ hoặc sau be; tiếng Anh không đặt tính từ sau danh từ theo mẫu thông thường.",
-      "en": "Adjectives usually come before a noun or after be; standard English does not normally place them after the noun."
-    }
+      "vi": "Tính từ trong tiếng Anh đứng trước danh từ hoặc sau động từ to be để bổ nghĩa cho danh từ đó.",
+      "en": "In English, adjectives come before the noun they describe or after the verb be."
+    },
+    "sub": {"vi": "vị trí tính từ", "en": "adjective position"}
   },
   "when_to_use": [
     {
-      "vi": "Đặt tính từ trước danh từ: a small house.",
-      "en": "Put an adjective before a noun: a small house."
+      "vi": "Khi bạn muốn miêu tả một người hoặc vật bằng một tính từ đơn giản.",
+      "en": "When you want to describe a person or thing with a simple adjective."
     },
     {
-      "vi": "Đặt tính từ sau be: The house is small.",
-      "en": "Put an adjective after be: The house is small."
+      "vi": "Khi bạn dùng động từ to be (am, is, are) để nói tính chất của sự vật.",
+      "en": "When you use the verb be (am, is, are) to state a quality of something."
+    },
+    {
+      "vi": "Khi bạn đặt tính từ ngay trước danh từ để tạo thành một cụm danh từ.",
+      "en": "When you put an adjective directly before a noun to make a noun phrase."
+    },
+    {
+      "vi": "Khi bạn cần phân biệt giữa câu có to be và câu không có to be.",
+      "en": "When you need to tell the difference between a sentence with be and one without be."
     }
   ],
   "pattern": {
     "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
       {
-        "text": "adjective",
-        "role": "complement",
-        "label": {
-          "vi": "tính từ",
-          "en": "adjective"
-        }
+        "text": "be",
+        "role": "verb",
+        "label": {"vi": "động từ to be", "en": "verb be"},
+        "options": [{"text": "am"}, {"text": "is"}, {"text": "are"}]
       },
-      {
-        "text": "N",
-        "role": "object",
-        "label": {
-          "vi": "danh từ",
-          "en": "noun"
-        }
-      }
+      {"text": "Adj", "role": "complement", "label": {"vi": "tính từ", "en": "adjective"}}
     ],
-    "illustration": {
-      "kind": "word_order"
-    }
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "be",
+          "role": "verb",
+          "label": {"vi": "động từ to be", "en": "verb be"},
+          "options": [{"text": "am"}, {"text": "is"}, {"text": "are"}]
+        },
+        {"text": "not", "role": "aux", "label": {"vi": "phủ định", "en": "negator"}},
+        {"text": "Adj", "role": "complement", "label": {"vi": "tính từ", "en": "adjective"}}
+      ],
+      "question": [
+        {
+          "text": "be",
+          "role": "verb",
+          "label": {"vi": "động từ to be", "en": "verb be"},
+          "options": [{"text": "am"}, {"text": "is"}, {"text": "are"}]
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {"text": "Adj", "role": "complement", "label": {"vi": "tính từ", "en": "adjective"}}
+      ]
+    },
+    "illustration": {"kind": "word_order"}
   },
   "examples": [
     {
-      "text": "She has a red car.",
+      "text": "My sister is kind.",
       "form": "affirmative",
       "spans": [
-        {
-          "start": 10,
-          "end": 13,
-          "role": "complement"
-        },
-        {
-          "start": 14,
-          "end": 17,
-          "role": "object"
-        }
+        {"start": 0, "end": 9, "role": "subject"},
+        {"start": 10, "end": 12, "role": "verb"},
+        {"start": 13, "end": 17, "role": "complement"}
       ],
       "annotation": {
-        "vi": "Red đứng trước car.",
-        "en": "Red comes before car."
+        "vi": "Tính từ đứng sau động từ to be để miêu tả chủ ngữ.",
+        "en": "The adjective comes after the verb be to describe the subject."
       },
-      "translation": {
-        "vi": "Red đứng trước car.",
-        "en": "Red comes before car."
-      }
+      "translation": {"vi": "Chị gái tôi tốt bụng.", "en": "My sister is kind."}
     },
     {
-      "text": "It is a small room.",
-      "form": "affirmative",
+      "text": "The soup is not hot.",
+      "form": "negative",
       "spans": [
-        {
-          "start": 8,
-          "end": 13,
-          "role": "complement"
-        },
-        {
-          "start": 14,
-          "end": 18,
-          "role": "object"
-        }
+        {"start": 0, "end": 8, "role": "subject"},
+        {"start": 9, "end": 11, "role": "verb"},
+        {"start": 12, "end": 15, "role": "aux"},
+        {"start": 16, "end": 19, "role": "complement"}
       ],
       "annotation": {
-        "vi": "Small đứng trước room.",
-        "en": "Small comes before room."
+        "vi": "Trong câu phủ định, not đứng giữa to be và tính từ.",
+        "en": "In a negative sentence, not comes between be and the adjective."
       },
-      "translation": {
-        "vi": "Small đứng trước room.",
-        "en": "Small comes before room."
-      }
+      "translation": {"vi": "Món súp không nóng.", "en": "The soup is not hot."}
+    },
+    {
+      "text": "Is your room clean?",
+      "form": "question",
+      "spans": [
+        {"start": 0, "end": 2, "role": "verb"},
+        {"start": 3, "end": 12, "role": "subject"},
+        {"start": 13, "end": 18, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Trong câu hỏi, to be đứng trước chủ ngữ, tính từ vẫn đứng sau.",
+        "en": "In a question, be comes before the subject, and the adjective still follows."
+      },
+      "translation": {"vi": "Phòng của bạn có sạch không?", "en": "Is your room clean?"}
     }
   ],
   "compare": [],
   "common_mistakes": [
     {
-      "wrong": "She has a car red.",
-      "right": "She has a red car.",
+      "wrong": "My sister kind.",
+      "right": "My sister is kind.",
       "reason": {
-        "vi": "Trong cụm danh từ cơ bản, tính từ đứng trước danh từ.",
-        "en": "In a basic noun phrase, the adjective comes before the noun."
+        "vi": "Tiếng Việt có thể nói 'Chị tôi tốt bụng' mà không cần động từ, nhưng tiếng Anh cần động từ to be trước tính từ.",
+        "en": "Vietnamese can say 'My sister kind' without a verb, but English needs the verb be before the adjective."
       },
       "error_tag": "sentence_structure",
-      "l1": [
-        "vi"
-      ]
+      "l1": ["vi"]
+    },
+    {
+      "wrong": "She is a kind.",
+      "right": "She is kind.",
+      "reason": {
+        "vi": "Tính từ không đi với mạo từ a/an khi đứng một mình sau to be; a/an chỉ dùng trước cụm danh từ.",
+        "en": "An adjective does not take a/an when it stands alone after be; a/an is used before a noun phrase."
+      },
+      "error_tag": "word_form",
+      "l1": ["vi"]
     }
   ],
   "quick_practice": [
     {
-      "q": "She has a ___ bag.",
-      "options": [
-        {
-          "text": "blue",
-          "error_tag": null
-        },
-        {
-          "text": "bag blue",
-          "error_tag": "sentence_structure"
-        },
-        {
-          "text": "is blue",
-          "error_tag": "sentence_structure"
-        }
-      ],
+      "q": "My brother ___ tall.",
+      "options": [{"text": "is", "error_tag": null}, {"text": "are", "error_tag": "agreement"}],
       "answer": 0,
       "explain": {
-        "vi": "Blue đứng trước bag.",
-        "en": "Blue comes before bag."
+        "vi": "Chủ ngữ số ít 'My brother' đi với 'is'.",
+        "en": "The singular subject 'My brother' takes 'is'."
       }
     },
     {
-      "q": "It is a ___ house.",
-      "options": [
-        {
-          "text": "big",
-          "error_tag": null
-        },
-        {
-          "text": "house big",
-          "error_tag": "sentence_structure"
-        },
-        {
-          "text": "bigness",
-          "error_tag": "word_form"
-        }
-      ],
+      "q": "The weather ___ nice today.",
+      "options": [{"text": "is", "error_tag": null}, {"text": "are", "error_tag": "agreement"}],
       "answer": 0,
       "explain": {
-        "vi": "Big đứng trước house.",
-        "en": "Big comes before house."
+        "vi": "'The weather' là danh từ số ít nên dùng 'is'.",
+        "en": "'The weather' is singular, so use 'is'."
       }
     },
     {
-      "q": "He bought a ___ phone.",
-      "options": [
-        {
-          "text": "new",
-          "error_tag": null
-        },
-        {
-          "text": "phone new",
-          "error_tag": "sentence_structure"
-        },
-        {
-          "text": "newly",
-          "error_tag": "word_form"
-        }
-      ],
+      "q": "This is a ___ house.",
+      "options": [{"text": "big", "error_tag": null}, {"text": "bigs", "error_tag": "word_form"}],
       "answer": 0,
       "explain": {
-        "vi": "New đứng trước phone.",
-        "en": "New comes before phone."
+        "vi": "Tính từ không thêm -s khi bổ nghĩa cho danh từ.",
+        "en": "Adjectives do not add -s when they describe a noun."
       }
     }
   ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu miêu tả người hoặc vật xung quanh bạn, dùng động từ to be và một tính từ.",
+      "en": "Write one sentence describing a person or thing around you, using the verb be and an adjective."
+    },
+    "placeholder": "My best friend is ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "verb", "any_of": ["am", "is", "are"]}, {"role": "complement", "regex": "[a-z]+"}]
+    },
+    "sample": {"text": "My best friend is funny."}
+  },
   "status": "draft_ai",
   "flags": [],
   "provenance": {
-    "model": "openai:gpt-5.6-sol",
-    "prompt_version": "direct-author.en-a1.v1",
-    "run_id": "chatgpt.en-a1.20260930",
-    "generated_at": "2026-09-30T10:35:00Z"
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790830436",
+    "generated_at": "2026-10-01T04:53:56Z"
   },
-  "review": null,
-  "sequence": 2,
-  "source_anchors": {
-    "status": "unanchored",
-    "items": []
-  },
-  "aliases": []
+  "review": null
 }

@@ -4,261 +4,229 @@
   "version": 1,
   "target_lang": "en",
   "function": "fn.questions",
-  "level": {
-    "framework": "cefr",
-    "value": "A1",
-    "rank": 1
-  },
-  "prereqs": [
-    "en.be.present"
-  ],
-  "contrasts": [],
-  "error_tags": [
-    "sentence_structure"
-  ],
-  "source_refs": {
-    "r5": [
-      "a1-be-questions-and-short-answers"
+  "level": {"framework": "cefr", "value": "A1", "rank": 1},
+  "prereqs": ["en.be.present"],
+  "contrasts": ["en.present_simple.do_questions"],
+  "error_tags": ["sentence_structure"],
+  "source_refs": {"r5": ["a1-be-questions-and-short-answers"]},
+  "point_type": "word_order",
+  "sequence": 1,
+  "aliases": ["a1-be-questions-and-short-answers"],
+  "source_anchors": {
+    "status": "anchored",
+    "items": [
+      {"source": "core_inventory", "code": "56", "level": "A1"},
+      {"source": "core_inventory", "code": "60", "level": "A1"}
     ]
   },
-  "point_type": "word_order",
   "header": {
-    "title": {
-      "vi": "Câu hỏi với be và trả lời ngắn",
-      "en": "Be: questions and short answers"
-    },
+    "title": {"vi": "Câu hỏi với be và câu trả lời ngắn", "en": "Be: questions and short answers"},
     "native_title": "Be: questions and short answers",
-    "sub": {
-      "vi": "Are you...? Yes, I am.",
-      "en": "Are you...? Yes, I am."
-    },
-    "level": {
-      "framework": "cefr",
-      "value": "A1",
-      "rank": 1
-    },
+    "level": {"framework": "cefr", "value": "A1", "rank": 1},
     "summary": {
-      "vi": "Với be, đưa am/is/are lên trước chủ ngữ để hỏi; câu trả lời ngắn lặp lại đúng dạng be.",
-      "en": "With be, move am/is/are before the subject to ask a question; short answers repeat the correct form of be."
-    }
+      "vi": "Để tạo câu hỏi yes/no với be, đưa am/is/are lên trước chủ ngữ; trả lời ngắn bằng đại từ chủ ngữ và đúng dạng của be.",
+      "en": "To make yes/no questions with be, put am/is/are before the subject; answer short with a subject pronoun and the matching form of be."
+    },
+    "sub": {"vi": "câu hỏi với be", "en": "be questions"}
   },
   "when_to_use": [
     {
-      "vi": "Hỏi về danh tính, trạng thái hoặc nơi chốn.",
-      "en": "Ask about identity, state, or location."
+      "vi": "Khi bạn muốn hỏi thông tin có/không về trạng thái, vị trí hoặc đặc điểm hiện tại.",
+      "en": "When you want a yes/no answer about a present state, location, or quality."
     },
     {
-      "vi": "Trả lời ngắn bằng Yes/No + chủ ngữ + be.",
-      "en": "Give short answers with Yes/No + subject + be."
+      "vi": "Khi câu trần thuật đã có am/is/are và bạn cần chuyển thành câu hỏi.",
+      "en": "When a statement already has am/is/are and you need to turn it into a question."
+    },
+    {
+      "vi": "Khi bạn trả lời ngắn gọn, không lặp lại toàn bộ câu hỏi.",
+      "en": "When you answer briefly without repeating the whole question."
     }
   ],
   "pattern": {
     "formula": [
       {
         "text": "be",
-        "role": "verb",
-        "label": {
-          "vi": "am/is/are",
-          "en": "am/is/are"
-        },
-        "options": [
-          {
-            "text": "Am"
-          },
-          {
-            "text": "Is"
-          },
-          {
-            "text": "Are"
-          }
-        ]
+        "role": "aux",
+        "label": {"vi": "be (am/is/are)", "en": "be (am/is/are)"},
+        "options": [{"text": "am"}, {"text": "is"}, {"text": "are"}]
       },
-      {
-        "text": "S",
-        "role": "subject",
-        "label": {
-          "vi": "chủ ngữ",
-          "en": "subject"
-        }
-      },
-      {
-        "text": "complement",
-        "role": "complement",
-        "label": {
-          "vi": "phần mô tả",
-          "en": "complement"
-        },
-        "optional": true
-      }
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {"text": "complement", "role": "complement", "label": {"vi": "bổ ngữ", "en": "complement"}}
     ],
-    "illustration": {
-      "kind": "word_order"
-    }
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "be",
+          "role": "aux",
+          "label": {"vi": "be (am/is/are)", "en": "be (am/is/are)"},
+          "options": [{"text": "am"}, {"text": "is"}, {"text": "are"}]
+        },
+        {"text": "not", "role": "other", "label": {"vi": "phủ định", "en": "negator"}},
+        {"text": "complement", "role": "complement", "label": {"vi": "bổ ngữ", "en": "complement"}}
+      ],
+      "question": [
+        {
+          "text": "be",
+          "role": "aux",
+          "label": {"vi": "be (am/is/are)", "en": "be (am/is/are)"},
+          "options": [{"text": "am"}, {"text": "is"}, {"text": "are"}]
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {"text": "complement", "role": "complement", "label": {"vi": "bổ ngữ", "en": "complement"}}
+      ]
+    },
+    "illustration": {"kind": "word_order"}
   },
   "examples": [
     {
-      "text": "Are you tired?",
-      "form": "affirmative",
+      "text": "Are you hungry?",
+      "form": "question",
       "spans": [
-        {
-          "start": 0,
-          "end": 3,
-          "role": "verb"
-        },
-        {
-          "start": 4,
-          "end": 7,
-          "role": "subject"
-        },
-        {
-          "start": 8,
-          "end": 13,
-          "role": "complement"
-        }
+        {"start": 0, "end": 3, "role": "aux"},
+        {"start": 4, "end": 7, "role": "subject"},
+        {"start": 8, "end": 14, "role": "complement"}
       ],
       "annotation": {
-        "vi": "Đưa are lên trước you.",
-        "en": "Move are before you."
+        "vi": "Are đứng trước chủ ngữ để tạo câu hỏi yes/no.",
+        "en": "Are comes before the subject to make a yes/no question."
       },
-      "translation": {
-        "vi": "Đưa are lên trước you.",
-        "en": "Move are before you."
-      }
+      "translation": {"vi": "Bạn có đói không?", "en": "Are you hungry?"}
     },
     {
-      "text": "Is Lan at home?",
-      "form": "affirmative",
+      "text": "Is your brother at home?",
+      "form": "question",
       "spans": [
-        {
-          "start": 0,
-          "end": 2,
-          "role": "verb"
-        },
-        {
-          "start": 3,
-          "end": 6,
-          "role": "subject"
-        },
-        {
-          "start": 7,
-          "end": 14,
-          "role": "complement"
-        }
+        {"start": 0, "end": 2, "role": "aux"},
+        {"start": 3, "end": 15, "role": "subject"},
+        {"start": 16, "end": 23, "role": "complement"}
       ],
       "annotation": {
-        "vi": "Lan số ít nên dùng Is.",
-        "en": "Lan is singular, so use Is."
+        "vi": "Is đứng trước chủ ngữ số ít để hỏi vị trí.",
+        "en": "Is comes before a singular subject to ask about location."
       },
-      "translation": {
-        "vi": "Lan số ít nên dùng Is.",
-        "en": "Lan is singular, so use Is."
+      "translation": {"vi": "Anh/em trai bạn có ở nhà không?", "en": "Is your brother at home?"}
+    },
+    {
+      "text": "Are the shops open?",
+      "form": "question",
+      "spans": [
+        {"start": 0, "end": 3, "role": "aux"},
+        {"start": 4, "end": 13, "role": "subject"},
+        {"start": 14, "end": 18, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Are đứng trước chủ ngữ số nhiều để hỏi trạng thái.",
+        "en": "Are comes before a plural subject to ask about a state."
+      },
+      "translation": {"vi": "Các cửa hàng có mở cửa không?", "en": "Are the shops open?"}
+    }
+  ],
+  "compare": [
+    {
+      "with": "en.present_simple.do_questions",
+      "this_example": "Are you tired?",
+      "other_example": "Do you like coffee?",
+      "this_meaning": {
+        "vi": "Dùng be (am/is/are) đảo lên trước chủ ngữ để hỏi yes/no.",
+        "en": "Use be (am/is/are) before the subject to make a yes/no question."
+      },
+      "other_meaning": {
+        "vi": "Dùng do/does trước chủ ngữ khi động từ chính không phải be.",
+        "en": "Use do/does before the subject when the main verb is not be."
       }
     }
   ],
-  "compare": [],
   "common_mistakes": [
     {
-      "wrong": "You are tired?",
+      "wrong": "Do you are tired?",
       "right": "Are you tired?",
       "reason": {
-        "vi": "Trong câu hỏi chuẩn với be, be đứng trước chủ ngữ.",
-        "en": "In a standard be question, be comes before the subject."
+        "vi": "Câu đã có be (are) nên không thêm do; chỉ cần đưa are lên trước chủ ngữ.",
+        "en": "The sentence already has be (are), so do is not added; just put are before the subject."
       },
       "error_tag": "sentence_structure",
-      "l1": [
-        "vi"
-      ]
+      "l1": ["vi"]
     }
   ],
   "quick_practice": [
     {
-      "q": "___ you ready?",
-      "options": [
-        {
-          "text": "Are",
-          "error_tag": null
-        },
-        {
-          "text": "Is",
-          "error_tag": "sentence_structure"
-        },
-        {
-          "text": "Do",
-          "error_tag": "sentence_structure"
-        }
-      ],
+      "q": "___ she a teacher?",
+      "options": [{"text": "Is", "error_tag": null}, {"text": "Does", "error_tag": "sentence_structure"}],
       "answer": 0,
       "explain": {
-        "vi": "You dùng Are.",
-        "en": "You takes Are."
+        "vi": "Với be, đưa is lên trước chủ ngữ she; không dùng does.",
+        "en": "With be, put is before the subject she; do not use does."
       }
     },
     {
-      "q": "___ she at work?",
-      "options": [
-        {
-          "text": "Is",
-          "error_tag": null
-        },
-        {
-          "text": "Are",
-          "error_tag": "sentence_structure"
-        },
-        {
-          "text": "Does",
-          "error_tag": "sentence_structure"
-        }
-      ],
+      "q": "Are they at school? Yes, they ___.",
+      "options": [{"text": "are", "error_tag": null}, {"text": "is", "error_tag": "agreement"}],
       "answer": 0,
       "explain": {
-        "vi": "She dùng Is.",
-        "en": "She takes Is."
+        "vi": "They đi với are trong câu trả lời ngắn.",
+        "en": "They goes with are in the short answer."
       }
     },
     {
-      "q": "'Are they here?' 'Yes, they ___.'",
-      "options": [
-        {
-          "text": "are",
-          "error_tag": null
-        },
-        {
-          "text": "do",
-          "error_tag": "sentence_structure"
-        },
-        {
-          "text": "is",
-          "error_tag": "sentence_structure"
-        }
-      ],
+      "q": "Is Tom your friend? No, he ___.",
+      "options": [{"text": "isn't", "error_tag": null}, {"text": "aren't", "error_tag": "agreement"}],
       "answer": 0,
       "explain": {
-        "vi": "Trả lời ngắn lặp lại are.",
-        "en": "The short answer repeats are."
+        "vi": "He đi với isn't trong câu trả lời ngắn phủ định.",
+        "en": "He goes with isn't in the negative short answer."
       }
     }
   ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu hỏi yes/no với be về một người bạn hoặc thành viên gia đình, rồi trả lời ngắn.",
+      "en": "Write a yes/no question with be about a friend or family member, then give a short answer."
+    },
+    "placeholder": "Is your ...? Yes, ...",
+    "target_form": "question",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "aux", "any_of": ["am", "is", "are"]},
+        {
+          "role": "subject",
+          "regex": "(?i)\\b(you|he|she|it|we|they|your|his|her|my|our|their|tom|mai|nam|lan|minh|anna|john|mary|peter|sarah|david|linda|james|emma|robert|maria|the\\s+\\w+)\\b"
+        }
+      ]
+    },
+    "sample": {"text": "Is your brother at home? Yes, he is."}
+  },
   "status": "draft_ai",
   "flags": [],
   "provenance": {
-    "model": "openai:gpt-5.6-sol",
-    "prompt_version": "direct-author.en-a1.v1",
-    "run_id": "chatgpt.en-a1.20260930",
-    "generated_at": "2026-09-30T10:35:00Z"
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790830393",
+    "generated_at": "2026-10-01T04:53:13Z",
+    "r5_source": {
+      "ids": ["a1-be-questions-and-short-answers"],
+      "content_version": 2,
+      "content_hash": "2e9767ef9314477352ee79dcc40bb53116adbb4c8b38b9c7571a42636c1940ca",
+      "corrections": [
+        {
+          "r5_id": "a1-be-questions-and-short-answers",
+          "issue": "R5's example 'Am I in the right room? Yes, you are.' is correct but the short answer 'Yes, you are' is not a typical short answer for the question 'Am I...?' because the responder would say 'Yes, you are' only when addressing the asker; it is better to use a clearer example.",
+          "fix": "Replaced with 'Are you hungry? Yes, I am.' to show a clear question and short answer pair."
+        },
+        {
+          "r5_id": "a1-be-questions-and-short-answers",
+          "issue": "R5's mistake 'Is they at school?' is a real error, but the explanation says 'They đi với are' without noting that the question form also requires 'Are'.",
+          "fix": "Added a common mistake entry 'Do you are tired?' with a clear reason about not adding do to be questions, and kept the agreement focus in quick practice."
+        },
+        {
+          "r5_id": "a1-be-questions-and-short-answers",
+          "issue": "R5's guided practice includes a fill item 'Is Mai here? No, ___ ___.' with answer 'she isn't', but the blank format is unclear and the explanation does not mention the pronoun replacement.",
+          "fix": "Replaced with a quick practice item 'Is Tom your friend? No, he ___.' with options 'isn't' and 'aren't', and an explanation about pronoun agreement."
+        }
+      ]
+    }
   },
-  "review": null,
-  "sequence": 1,
-  "source_anchors": {
-    "status": "anchored",
-    "items": [
-      {
-        "source": "core_inventory",
-        "code": "56",
-        "level": "A1"
-      }
-    ]
-  },
-  "aliases": [
-    "a1-be-questions-and-short-answers"
-  ]
+  "review": null
 }

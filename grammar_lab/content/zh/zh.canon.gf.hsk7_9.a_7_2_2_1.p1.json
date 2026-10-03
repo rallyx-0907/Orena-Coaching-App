@@ -1,0 +1,249 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk7_9.a_7_2_2_1.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.negation",
+  "level": {"framework": "hsk3", "value": "7", "rank": 7},
+  "prereqs": ["zh.canon.gf.hsk7_9.a_7_1_4_6.p1"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"gf0025": ["gf0025.hsk7_9.060", "gf0025.hsk7_9.061", "gf0025.hsk7_9.062", "gf0025.hsk7_9.063"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 爱A不A", "en": "Chinese grammar: 爱A不A"},
+    "native_title": "爱A不A",
+    "level": {"framework": "hsk3", "value": "7", "rank": 7},
+    "summary": {
+      "vi": "Mẫu 爱A不A dùng để nói thái độ hờ hững, miễn cưỡng: người nói không quan tâm hoặc không muốn làm gì đó.",
+      "en": "The pattern 爱A不A expresses a dismissive, reluctant attitude: the speaker does not care or does not want to do something."
+    },
+    "sub": {"vi": "thái độ hờ hững", "en": "dismissive attitude"},
+    "native_title_pinyin": ["ài", "", "bù", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói rằng mình không quan tâm người khác có làm gì hay không.",
+      "en": "When you want to say you do not care whether someone does something or not."
+    },
+    {
+      "vi": "Khi bạn miễn cưỡng làm việc gì đó và muốn thể hiện thái độ không vui.",
+      "en": "When you are reluctant to do something and want to show an unhappy attitude."
+    },
+    {
+      "vi": "Khi bạn muốn nói ai đó cứ làm theo ý họ, bạn không can thiệp.",
+      "en": "When you want to say someone can do as they please and you will not interfere."
+    },
+    {
+      "vi": "Khi bạn muốn nói rằng dù có làm hay không thì kết quả cũng không quan trọng.",
+      "en": "When you want to say that whether it is done or not, the result does not matter."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "爱",
+        "role": "aux",
+        "label": {"vi": "trợ động từ 爱", "en": "auxiliary 爱"},
+        "pinyin": ["ài"]
+      },
+      {"text": "A", "role": "verb", "label": {"vi": "động từ A", "en": "verb A"}, "pinyin": [""]},
+      {
+        "text": "不",
+        "role": "marker",
+        "label": {"vi": "phủ định 不", "en": "negator 不"},
+        "pinyin": ["bù"]
+      },
+      {
+        "text": "A",
+        "role": "verb",
+        "label": {"vi": "động từ A lặp lại", "en": "repeated verb A"},
+        "pinyin": [""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "他爱来不来，我们不等了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 1, "end": 2, "role": "aux"},
+        {"start": 2, "end": 3, "role": "verb"},
+        {"start": 3, "end": 4, "role": "marker"},
+        {"start": 4, "end": 5, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Nói rằng dù anh ấy có đến hay không, chúng tôi không quan tâm.",
+        "en": "Saying that whether he comes or not, we do not care."
+      },
+      "translation": {
+        "vi": "Anh ấy thích đến thì đến, chúng tôi không đợi nữa.",
+        "en": "Whether he comes or not, we are not waiting."
+      },
+      "pinyin": ["tā", "ài", "lái", "bù", "lái", "", "wǒ", "men", "bù", "děng", "le", ""]
+    },
+    {
+      "text": "你爱信不信，反正我说的是真的。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 1, "end": 2, "role": "aux"},
+        {"start": 2, "end": 3, "role": "verb"},
+        {"start": 3, "end": 4, "role": "marker"},
+        {"start": 4, "end": 5, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Nói rằng người nghe có tin hay không cũng không quan trọng.",
+        "en": "Saying that whether the listener believes it or not does not matter."
+      },
+      "translation": {
+        "vi": "Bạn tin hay không thì tùy, dù sao điều tôi nói là thật.",
+        "en": "Believe it or not, what I said is true anyway."
+      },
+      "pinyin": [
+        "nǐ",
+        "ài",
+        "xìn",
+        "bù",
+        "xìn",
+        "",
+        "fǎn",
+        "zhèng",
+        "wǒ",
+        "shuō",
+        "de",
+        "shì",
+        "zhēn",
+        "de",
+        ""
+      ]
+    },
+    {
+      "text": "她爱去不去，我一个人也能去。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 1, "end": 2, "role": "aux"},
+        {"start": 2, "end": 3, "role": "verb"},
+        {"start": 3, "end": 4, "role": "marker"},
+        {"start": 4, "end": 5, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Nói rằng dù cô ấy có đi hay không, người nói vẫn đi được một mình.",
+        "en": "Saying that whether she goes or not, the speaker can still go alone."
+      },
+      "translation": {
+        "vi": "Cô ấy thích đi thì đi, một mình tôi cũng đi được.",
+        "en": "Whether she goes or not, I can go by myself."
+      },
+      "pinyin": ["tā", "ài", "qù", "bù", "qù", "", "wǒ", "yī", "gè", "rén", "yě", "néng", "qù", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "他爱来不爱来，我们不等了。",
+      "right": "他爱来不来，我们不等了。",
+      "reason": {
+        "vi": "Mẫu 爱A不A không lặp lại 爱 ở giữa; chỉ dùng 不 trước động từ lặp lại.",
+        "en": "The pattern 爱A不A does not repeat 爱 in the middle; only 不 is used before the repeated verb."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong_pinyin": ["tā", "ài", "lái", "bù", "ài", "lái", "", "wǒ", "men", "bù", "děng", "le", ""],
+      "right_pinyin": ["tā", "ài", "lái", "bù", "lái", "", "wǒ", "men", "bù", "děng", "le", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "你___信不信，反正我说的是真的。",
+      "options": [
+        {"text": "爱", "error_tag": null, "pinyin": ["ài"]},
+        {"text": "要", "error_tag": "word_choice", "pinyin": ["yào"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Mẫu 爱A不A dùng 爱 ở đầu, không dùng 要.",
+        "en": "The pattern 爱A不A uses 爱 at the beginning, not 要."
+      },
+      "q_pinyin": [
+        "nǐ",
+        "",
+        "",
+        "",
+        "xìn",
+        "bù",
+        "xìn",
+        "",
+        "fǎn",
+        "zhèng",
+        "wǒ",
+        "shuō",
+        "de",
+        "shì",
+        "zhēn",
+        "de",
+        ""
+      ]
+    },
+    {
+      "q": "他爱来不___，我们不等了。",
+      "options": [
+        {"text": "来", "error_tag": null, "pinyin": ["lái"]},
+        {"text": "去", "error_tag": "word_choice", "pinyin": ["qù"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Động từ sau 不 phải lặp lại đúng động từ A ở trước.",
+        "en": "The verb after 不 must repeat the same verb A used before."
+      },
+      "q_pinyin": ["tā", "ài", "lái", "bù", "", "", "", "", "wǒ", "men", "bù", "děng", "le", ""]
+    },
+    {
+      "q": "她爱去不___，我一个人也能去。",
+      "options": [
+        {"text": "去", "error_tag": null, "pinyin": ["qù"]},
+        {"text": "来", "error_tag": "word_choice", "pinyin": ["lái"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Động từ lặp lại phải giống động từ A: 去 lặp lại thành 去.",
+        "en": "The repeated verb must match verb A: 去 repeats as 去."
+      },
+      "q_pinyin": ["tā", "ài", "qù", "bù", "", "", "", "", "wǒ", "yī", "gè", "rén", "yě", "néng", "qù", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng 爱A不A để nói bạn không quan tâm ai đó làm gì.",
+      "en": "Write a sentence using 爱A不A to say you do not care what someone does."
+    },
+    "placeholder": "他爱……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "aux", "any_of": ["爱"]},
+        {"role": "verb", "regex": "[\\u4e00-\\u9fff]"},
+        {"role": "marker", "any_of": ["不"]},
+        {"role": "verb", "regex": "[\\u4e00-\\u9fff]"}
+      ]
+    },
+    "sample": {
+      "text": "他爱来不来，我们不等了。",
+      "pinyin": ["tā", "ài", "lái", "bù", "lái", "", "wǒ", "men", "bù", "děng", "le", ""]
+    },
+    "placeholder_pinyin": ["tā", "ài", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790834606",
+    "generated_at": "2026-10-01T06:03:26Z"
+  },
+  "review": null
+}

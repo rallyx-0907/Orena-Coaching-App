@@ -1,0 +1,210 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.c2.018",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.register_style",
+  "level": {"framework": "cefr", "value": "C2", "rank": 6},
+  "prereqs": ["en.canon.c2.017"],
+  "contrasts": [],
+  "error_tags": ["coherence"],
+  "source_refs": {"r5": ["c2-metadiscourse-grammar"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["c2-metadiscourse-grammar"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Metadiscourse grammar", "en": "Metadiscourse grammar"},
+    "native_title": "Metadiscourse grammar",
+    "level": {"framework": "cefr", "value": "C2", "rank": 6},
+    "summary": {
+      "vi": "Ngữ pháp diễn ngôn (metadiscourse) dùng các cụm từ cố định để định hướng người đọc qua lập luận: báo trước, nhắc lại, nêu lập trường và mời người đọc cùng xem xét.",
+      "en": "Metadiscourse grammar uses fixed phrases to guide the reader through an argument: previewing, reviewing, marking stance, and inviting the reader to consider a point."
+    },
+    "sub": {"vi": "định hướng lập luận", "en": "guiding the argument"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn cần báo trước phần sắp trình bày, ví dụ mở đầu bằng 'The next section examines...'.",
+      "en": "When you need to preview what comes next, for example opening with 'The next section examines...'."
+    },
+    {
+      "vi": "Khi bạn muốn nhắc lại một điểm đã nêu để giữ mạch lập luận, ví dụ 'As noted above, ...'.",
+      "en": "When you want to refer back to a point already made to keep the argument coherent, for example 'As noted above, ...'."
+    },
+    {
+      "vi": "Khi bạn muốn đánh dấu lập trường của mình một cách thận trọng, ví dụ 'It may be argued that...'.",
+      "en": "When you want to mark your stance cautiously, for example 'It may be argued that...'."
+    },
+    {
+      "vi": "Khi bạn muốn mời người đọc cùng xem xét một ví dụ hoặc một khả năng, ví dụ 'Consider, for example, ...'.",
+      "en": "When you want to invite the reader to examine an example or possibility, for example 'Consider, for example, ...'."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "frame marker",
+        "role": "marker",
+        "label": {"vi": "dấu hiệu định hướng", "en": "frame marker"},
+        "options": [
+          {"text": "The next section"},
+          {"text": "As noted above"},
+          {"text": "What follows"},
+          {"text": "As the previous section showed"}
+        ]
+      },
+      {
+        "text": "clause",
+        "role": "other",
+        "label": {"vi": "mệnh đề nội dung", "en": "content clause"}
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "The next section examines two alternative explanations.",
+      "form": "affirmative",
+      "spans": [{"start": 0, "end": 16, "role": "marker"}, {"start": 17, "end": 54, "role": "other"}],
+      "annotation": {
+        "vi": "Cụm mở đầu báo trước nội dung phần tiếp theo, không phải sự kiện ngoài đời.",
+        "en": "The opening phrase previews the next part of the text, not a real-world event."
+      },
+      "translation": {
+        "vi": "Phần tiếp theo xem xét hai cách giải thích khác.",
+        "en": "The next section examines two alternative explanations."
+      }
+    },
+    {
+      "text": "As noted above, the evidence remains incomplete.",
+      "form": "affirmative",
+      "spans": [{"start": 0, "end": 14, "role": "marker"}, {"start": 16, "end": 47, "role": "other"}],
+      "annotation": {
+        "vi": "Cụm nhắc lại liên kết với điều đã nói trước đó, giữ mạch lập luận.",
+        "en": "The reviewing phrase links back to what was said earlier, keeping the argument coherent."
+      },
+      "translation": {
+        "vi": "Như đã lưu ý ở trên, bằng chứng vẫn chưa đầy đủ.",
+        "en": "As noted above, the evidence remains incomplete."
+      }
+    },
+    {
+      "text": "What matters here is not the absolute value but the direction of change.",
+      "form": "affirmative",
+      "spans": [{"start": 0, "end": 17, "role": "marker"}, {"start": 18, "end": 71, "role": "other"}],
+      "annotation": {
+        "vi": "Cấu trúc nhấn mạnh định hướng người đọc vào điểm chính, không phải dữ kiện.",
+        "en": "The focusing structure directs the reader to the main point, not the data."
+      },
+      "translation": {
+        "vi": "Điều quan trọng ở đây không phải giá trị tuyệt đối mà là hướng thay đổi.",
+        "en": "What matters here is not the absolute value but the direction of change."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "It is important to note that this section will now discuss the next topic.",
+      "right": "The next section compares the two approaches.",
+      "reason": {
+        "vi": "Cụm diễn ngôn rỗng chỉ thông báo hành động viết, không tạo quan hệ hay lập trường; cần thay bằng frame marker trực tiếp nêu nội dung.",
+        "en": "Empty metadiscourse merely announces a writing action and creates no relation or stance; replace it with a direct frame marker that states the content."
+      },
+      "error_tag": "coherence",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "___ the previous section showed, the two models diverge on this point.",
+      "options": [{"text": "As", "error_tag": null}, {"text": "Like", "error_tag": "preposition"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Cần 'As' để tạo cụm nhắc lại liên kết với phần trước; 'Like' là giới từ so sánh, không dẫn mệnh đề.",
+        "en": "'As' is needed to form a reviewing phrase that links back; 'Like' is a preposition of comparison and cannot introduce a clause."
+      }
+    },
+    {
+      "q": "The next section ___ two alternative explanations.",
+      "options": [{"text": "examines", "error_tag": null}, {"text": "examine", "error_tag": "agreement"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Chủ ngữ số ít 'The next section' cần động từ 'examines'; 'examine' sai hòa hợp chủ-vị.",
+        "en": "The singular subject 'The next section' requires 'examines'; 'examine' is an agreement error."
+      }
+    },
+    {
+      "q": "Consider, for example, the effect of delayed ___.",
+      "options": [{"text": "maintenance", "error_tag": null}, {"text": "maintain", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 'of' cần danh từ 'maintenance'; 'maintain' là động từ, sai dạng từ.",
+        "en": "After 'of' the noun 'maintenance' is required; 'maintain' is a verb and the wrong word form."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng cụm diễn ngôn để báo trước hoặc nhắc lại một điểm trong lập luận của bạn.",
+      "en": "Write one sentence using a metadiscourse phrase to preview or review a point in your argument."
+    },
+    "placeholder": "The next section ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {
+          "role": "marker",
+          "any_of": [
+            "The next section",
+            "As noted above",
+            "What follows",
+            "As the previous section showed",
+            "What matters here"
+          ]
+        },
+        {"role": "other", "regex": ".+"}
+      ]
+    },
+    "sample": {"text": "The next section examines two alternative explanations."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790831691",
+    "generated_at": "2026-10-01T05:14:51Z",
+    "r5_source": {
+      "ids": ["c2-metadiscourse-grammar"],
+      "content_version": 2,
+      "content_hash": "c5e1d58689c77b6f9a23140609fbac78bebc7c2e7fa8c59d29db22b2ac830ae4",
+      "corrections": [
+        {
+          "r5_id": "c2-metadiscourse-grammar",
+          "issue": "R5's mistake example 'As mentioned before above previously, the result was different.' is not a real learner error; it is an artificial pile-up of redundant markers.",
+          "fix": "Replaced with the real coherence error 'It is important to note that this section will now discuss the next topic.' and its direct correction 'The next section compares the two approaches.'"
+        },
+        {
+          "r5_id": "c2-metadiscourse-grammar",
+          "issue": "R5 lists 'It is important to note that...' as a mistake, but the same phrase appears in the scope as a legitimate stance marker; the lesson contradicts itself.",
+          "fix": "Kept the empty-metadiscourse point but framed it as overuse/emptiness, not as a banned form, and used it only as the wrong side of the coherence mistake."
+        },
+        {
+          "r5_id": "c2-metadiscourse-grammar",
+          "issue": "R5 gives no formula, no spans, no quick practice, and no personal production task.",
+          "fix": "Added the abstract formula (frame marker + content clause), three clean examples with spans, three cloze questions, and a personal production card with a deterministic pattern rule."
+        },
+        {
+          "r5_id": "c2-metadiscourse-grammar",
+          "issue": "R5's example 'Consider, for example, the effect of delayed maintenance.' is fine, but the lesson never shows how the frame marker and the content clause relate structurally.",
+          "fix": "Used the example in quick practice and made the marker/clause relation explicit in the formula and in the example annotations."
+        }
+      ]
+    },
+    "metadata_stale": true
+  },
+  "review": null
+}

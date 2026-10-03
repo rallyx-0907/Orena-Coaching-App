@@ -1,0 +1,285 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b2.003",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.future_plans",
+  "level": {"framework": "cefr", "value": "B2", "rank": 4},
+  "prereqs": ["en.canon.b2.002"],
+  "contrasts": [],
+  "error_tags": ["tense"],
+  "source_refs": {"r5": ["b2-future-perfect-continuous"]},
+  "point_type": "tense_aspect",
+  "sequence": 2,
+  "aliases": ["b2-future-perfect-continuous"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "tương lai hoàn thành continuous", "en": "Future perfect continuous"},
+    "native_title": "Future perfect continuous",
+    "level": {"framework": "cefr", "value": "B2", "rank": 4},
+    "summary": {
+      "vi": "Thì tương lai hoàn thành tiếp diễn dùng để nói một hành động đang diễn ra liên tục và sẽ kéo dài đến một thời điểm cụ thể trong tương lai.",
+      "en": "The future perfect continuous describes an action that will be in progress up to a specific point in the future."
+    },
+    "sub": {"vi": "hành động kéo dài", "en": "duration up to future"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nhấn mạnh khoảng thời gian một hành động đã diễn ra tính đến một mốc tương lai.",
+      "en": "When you want to emphasise how long an action will have been happening by a future point."
+    },
+    {
+      "vi": "Khi hành động bắt đầu trước mốc tương lai và vẫn đang tiếp diễn tại mốc đó.",
+      "en": "When the action starts before a future point and is still ongoing at that point."
+    },
+    {
+      "vi": "Khi bạn dùng các cụm từ chỉ thời gian như 'by', 'by then', 'by the time', 'for', 'since'.",
+      "en": "When you use time expressions like 'by', 'by then', 'by the time', 'for', 'since'."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {"text": "will have been", "role": "aux", "label": {"vi": "trợ động từ", "en": "auxiliary"}},
+      {
+        "text": "V-ing",
+        "role": "verb",
+        "label": {"vi": "động từ thêm -ing", "en": "present participle"}
+      },
+      {
+        "text": "for/since",
+        "role": "marker",
+        "label": {"vi": "giới từ chỉ thời gian", "en": "time marker"},
+        "optional": true,
+        "options": [{"text": "for"}, {"text": "since"}]
+      },
+      {
+        "text": "time",
+        "role": "time",
+        "label": {"vi": "mốc thời gian", "en": "time expression"},
+        "optional": true
+      }
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "will not have been",
+          "role": "aux",
+          "label": {"vi": "trợ động từ phủ định", "en": "negative auxiliary"}
+        },
+        {
+          "text": "V-ing",
+          "role": "verb",
+          "label": {"vi": "động từ thêm -ing", "en": "present participle"}
+        },
+        {
+          "text": "for/since",
+          "role": "marker",
+          "label": {"vi": "giới từ chỉ thời gian", "en": "time marker"},
+          "optional": true,
+          "options": [{"text": "for"}, {"text": "since"}]
+        },
+        {
+          "text": "time",
+          "role": "time",
+          "label": {"vi": "mốc thời gian", "en": "time expression"},
+          "optional": true
+        }
+      ],
+      "question": [
+        {"text": "Will", "role": "aux", "label": {"vi": "trợ động từ", "en": "auxiliary"}},
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {"text": "have been", "role": "aux", "label": {"vi": "trợ động từ", "en": "auxiliary"}},
+        {
+          "text": "V-ing",
+          "role": "verb",
+          "label": {"vi": "động từ thêm -ing", "en": "present participle"}
+        },
+        {
+          "text": "for/since",
+          "role": "marker",
+          "label": {"vi": "giới từ chỉ thời gian", "en": "time marker"},
+          "optional": true,
+          "options": [{"text": "for"}, {"text": "since"}]
+        },
+        {
+          "text": "time",
+          "role": "time",
+          "label": {"vi": "mốc thời gian", "en": "time expression"},
+          "optional": true
+        }
+      ]
+    },
+    "illustration": {"kind": "timeline", "timeline": {"shape": "future_condition"}}
+  },
+  "examples": [
+    {
+      "text": "By noon, she will have been working for six hours.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 9, "end": 12, "role": "subject"},
+        {"start": 13, "end": 27, "role": "aux"},
+        {"start": 28, "end": 35, "role": "verb"},
+        {"start": 36, "end": 39, "role": "marker"},
+        {"start": 40, "end": 49, "role": "time"}
+      ],
+      "annotation": {
+        "vi": "Hành động 'work' bắt đầu trước và kéo dài đến tận trưa.",
+        "en": "The action 'work' starts earlier and continues up to noon."
+      },
+      "translation": {
+        "vi": "Đến trưa, cô ấy sẽ làm việc được sáu tiếng.",
+        "en": "By noon, she will have been working for six hours."
+      }
+    },
+    {
+      "text": "Next month, we will have been living here for a year.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 12, "end": 14, "role": "subject"},
+        {"start": 15, "end": 29, "role": "aux"},
+        {"start": 30, "end": 36, "role": "verb"},
+        {"start": 42, "end": 45, "role": "marker"},
+        {"start": 46, "end": 52, "role": "time"}
+      ],
+      "annotation": {
+        "vi": "Nhấn mạnh khoảng thời gian sống ở đây tính đến tháng sau.",
+        "en": "Emphasises the duration of living here up to next month."
+      },
+      "translation": {
+        "vi": "Tháng tới, chúng tôi sẽ sống ở đây được một năm.",
+        "en": "Next month, we will have been living here for a year."
+      }
+    },
+    {
+      "text": "By the end of the race, he will have been running for over three hours.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 4, "end": 6, "role": "subject"},
+        {"start": 27, "end": 41, "role": "aux"},
+        {"start": 42, "end": 49, "role": "verb"},
+        {"start": 50, "end": 53, "role": "marker"},
+        {"start": 54, "end": 70, "role": "time"}
+      ],
+      "annotation": {
+        "vi": "Hành động chạy kéo dài hơn ba giờ tính đến cuối cuộc đua.",
+        "en": "The action of running lasts more than three hours by the end of the race."
+      },
+      "translation": {
+        "vi": "Đến cuối cuộc đua, anh ấy sẽ chạy được hơn ba tiếng.",
+        "en": "By the end of the race, he will have been running for over three hours."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "By June, I will have been knowing her for ten years.",
+      "right": "By June, I will have known her for ten years.",
+      "reason": {
+        "vi": "Động từ 'know' là động từ trạng thái, không dùng ở dạng tiếp diễn; phải dùng thì tương lai hoàn thành đơn.",
+        "en": "'Know' is a stative verb and is not used in continuous form; the future perfect simple is required."
+      },
+      "error_tag": "tense",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "By next year, I ___ here for five years.",
+      "options": [
+        {"text": "will have been working", "error_tag": null},
+        {"text": "will have worked", "error_tag": "tense"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Nhấn mạnh khoảng thời gian làm việc liên tục đến năm sau, nên dùng tương lai hoàn thành tiếp diễn.",
+        "en": "To emphasise the duration of working up to next year, use the future perfect continuous."
+      }
+    },
+    {
+      "q": "By the time you arrive, she ___ for three hours.",
+      "options": [
+        {"text": "will have been cooking", "error_tag": null},
+        {"text": "will have cooked", "error_tag": "tense"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Hành động nấu ăn đang diễn ra và kéo dài đến lúc bạn đến, nên dùng tương lai hoàn thành tiếp diễn.",
+        "en": "The cooking is ongoing and continues until you arrive, so the future perfect continuous is correct."
+      }
+    },
+    {
+      "q": "How long ___ by the time you retire?",
+      "options": [
+        {"text": "will you have been teaching", "error_tag": null},
+        {"text": "will you have taught", "error_tag": "tense"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu hỏi về khoảng thời gian dạy học kéo dài đến lúc nghỉ hưu, dùng tương lai hoàn thành tiếp diễn.",
+        "en": "Asking about the duration of teaching up to retirement, use the future perfect continuous."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một hành động bạn sẽ đang làm liên tục tính đến một thời điểm trong tương lai.",
+      "en": "Write a sentence about an action you will have been doing continuously up to a future point."
+    },
+    "placeholder": "By next year, I will have been ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "aux", "any_of": ["will have been"]}, {"role": "verb", "regex": "\\w+ing\\b"}]
+    },
+    "sample": {"text": "By next year, I will have been living in this city for ten years."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790831099",
+    "generated_at": "2026-10-01T05:04:59Z",
+    "r5_source": {
+      "ids": ["b2-future-perfect-continuous"],
+      "content_version": 2,
+      "content_hash": "77c0c61bf24bfa56d81782ced7511e2767ae103f20aca4727872be061634f4bd",
+      "corrections": [
+        {
+          "r5_id": "b2-future-perfect-continuous",
+          "issue": "The R5 lesson included a mistake 'By five, she will have been writing three reports.' which is not a typical learner error for this point; it confuses count with duration.",
+          "fix": "Replaced with a more relevant stative verb mistake: 'By June, I will have been knowing her for ten years.'"
+        },
+        {
+          "r5_id": "b2-future-perfect-continuous",
+          "issue": "The R5 lesson did not provide a clear formula with slots and roles.",
+          "fix": "Added a structured formula with subject, auxiliary, verb, marker, and time slots."
+        },
+        {
+          "r5_id": "b2-future-perfect-continuous",
+          "issue": "The R5 lesson lacked negative and question forms.",
+          "fix": "Added negative and question formulas with appropriate slots."
+        },
+        {
+          "r5_id": "b2-future-perfect-continuous",
+          "issue": "The R5 lesson did not include spans for examples.",
+          "fix": "Added spans for each example to show how they realise the formula slots."
+        },
+        {
+          "r5_id": "b2-future-perfect-continuous",
+          "issue": "The R5 lesson did not include quick practice questions.",
+          "fix": "Added three quick practice questions with distractors targeting tense errors."
+        },
+        {
+          "r5_id": "b2-future-perfect-continuous",
+          "issue": "The R5 lesson did not include a personal production task.",
+          "fix": "Added a personal production prompt with a pattern rule and sample."
+        }
+      ]
+    }
+  },
+  "review": null
+}

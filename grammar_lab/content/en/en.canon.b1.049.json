@@ -1,0 +1,220 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b1.049",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.linking",
+  "level": {"framework": "cefr", "value": "B1", "rank": 3},
+  "prereqs": ["en.canon.b1.038"],
+  "contrasts": [],
+  "error_tags": ["coherence"],
+  "source_refs": {},
+  "point_type": "other",
+  "sequence": 3,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Discourse Markers", "en": "Discourse Markers"},
+    "native_title": "Discourse Markers",
+    "level": {"framework": "cefr", "value": "B1", "rank": 3},
+    "summary": {
+      "vi": "Điểm ngữ pháp này dạy cách dùng các từ nối như 'however', 'therefore', 'moreover' để gắn kết các ý giữa các câu, giúp đoạn văn mạch lạc hơn.",
+      "en": "This point teaches how to use discourse markers such as 'however', 'therefore' and 'moreover' to link ideas across sentences, making a text more coherent."
+    },
+    "sub": {"vi": "liên kết ý", "en": "linking ideas"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn thêm một ý bổ sung cho câu trước, dùng 'moreover', 'furthermore' hoặc 'in addition'.",
+      "en": "When you want to add another point to what you just said, use 'moreover', 'furthermore' or 'in addition'."
+    },
+    {
+      "vi": "Khi bạn muốn đưa ra một ý đối lập, dùng 'however', 'nevertheless' hoặc 'on the other hand'.",
+      "en": "When you want to introduce a contrasting idea, use 'however', 'nevertheless' or 'on the other hand'."
+    },
+    {
+      "vi": "Khi bạn muốn nêu kết quả của một hành động hoặc sự việc, dùng 'therefore', 'consequently' hoặc 'as a result'.",
+      "en": "When you want to state the result of an action or event, use 'therefore', 'consequently' or 'as a result'."
+    },
+    {
+      "vi": "Khi bạn muốn sắp xếp các ý theo thứ tự, dùng 'first', 'then', 'next' hoặc 'finally'.",
+      "en": "When you want to order your ideas, use 'first', 'then', 'next' or 'finally'."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}},
+      {"text": "O", "role": "object", "label": {"vi": "tân ngữ", "en": "object"}},
+      {
+        "text": "connector",
+        "role": "connector",
+        "label": {"vi": "từ nối", "en": "connector"},
+        "options": [
+          {"text": "however"},
+          {"text": "therefore"},
+          {"text": "moreover"},
+          {"text": "for example"},
+          {"text": "in addition"},
+          {"text": "as a result"},
+          {"text": "on the other hand"},
+          {"text": "first"},
+          {"text": "then"},
+          {"text": "finally"}
+        ]
+      },
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}},
+      {"text": "O", "role": "object", "label": {"vi": "tân ngữ", "en": "object"}}
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "The weather was terrible. However, we decided to go for a walk.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 11, "role": "subject"},
+        {"start": 12, "end": 15, "role": "verb"},
+        {"start": 16, "end": 24, "role": "object"},
+        {"start": 26, "end": 33, "role": "connector"},
+        {"start": 35, "end": 37, "role": "subject"},
+        {"start": 38, "end": 45, "role": "verb"},
+        {"start": 46, "end": 62, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "'However' báo hiệu một ý đối lập với câu trước.",
+        "en": "'However' signals a contrast with the previous sentence."
+      },
+      "translation": {
+        "vi": "Thời tiết rất tệ. Tuy nhiên, chúng tôi vẫn quyết định đi dạo.",
+        "en": "The weather was terrible. However, we decided to go for a walk."
+      }
+    },
+    {
+      "text": "She studied hard for the exam. Therefore, she passed with a high score.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 11, "role": "verb"},
+        {"start": 12, "end": 29, "role": "object"},
+        {"start": 31, "end": 40, "role": "connector"},
+        {"start": 42, "end": 45, "role": "subject"},
+        {"start": 46, "end": 52, "role": "verb"},
+        {"start": 53, "end": 70, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "'Therefore' giới thiệu kết quả của hành động ở câu trước.",
+        "en": "'Therefore' introduces the result of the action in the previous sentence."
+      },
+      "translation": {
+        "vi": "Cô ấy học chăm chỉ cho kỳ thi. Vì vậy, cô ấy đã đỗ với điểm cao.",
+        "en": "She studied hard for the exam. Therefore, she passed with a high score."
+      }
+    },
+    {
+      "text": "The city is expensive. Moreover, it is very crowded.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 8, "role": "subject"},
+        {"start": 9, "end": 11, "role": "verb"},
+        {"start": 12, "end": 21, "role": "object"},
+        {"start": 23, "end": 31, "role": "connector"},
+        {"start": 33, "end": 35, "role": "subject"},
+        {"start": 36, "end": 38, "role": "verb"},
+        {"start": 39, "end": 51, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "'Moreover' thêm một ý bổ sung cho câu trước.",
+        "en": "'Moreover' adds another point to the previous sentence."
+      },
+      "translation": {
+        "vi": "Thành phố này đắt đỏ. Hơn nữa, nó rất đông đúc.",
+        "en": "The city is expensive. Moreover, it is very crowded."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "I was tired. I went to bed early.",
+      "right": "I was tired. Therefore, I went to bed early.",
+      "reason": {
+        "vi": "Người học thường nối hai câu bằng dấu chấm mà không dùng từ nối, khiến mối quan hệ nhân quả không rõ ràng. Cần thêm 'therefore' để thể hiện kết quả.",
+        "en": "Learners often join two sentences with just a full stop, leaving the cause-effect relationship unclear. Adding 'therefore' makes the result explicit."
+      },
+      "error_tag": "coherence",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "The hotel was expensive. ___, the service was excellent.",
+      "options": [{"text": "However", "error_tag": null}, {"text": "Therefore", "error_tag": "coherence"}],
+      "answer": 0,
+      "explain": {
+        "vi": "'However' dùng để nêu ý đối lập: khách sạn đắt nhưng dịch vụ tốt. 'Therefore' chỉ kết quả, không phù hợp ở đây.",
+        "en": "'However' introduces a contrast: the hotel was expensive but the service was good. 'Therefore' shows a result, which does not fit here."
+      }
+    },
+    {
+      "q": "He missed the bus. ___, he was late for work.",
+      "options": [
+        {"text": "As a result", "error_tag": null},
+        {"text": "For example", "error_tag": "coherence"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "'As a result' chỉ kết quả của việc lỡ xe buýt. 'For example' dùng để đưa ví dụ, không phù hợp.",
+        "en": "'As a result' shows the consequence of missing the bus. 'For example' introduces an example, which does not fit."
+      }
+    },
+    {
+      "q": "First, we visited the museum. ___, we had lunch in a small café.",
+      "options": [{"text": "Then", "error_tag": null}, {"text": "However", "error_tag": "coherence"}],
+      "answer": 0,
+      "explain": {
+        "vi": "'Then' dùng để sắp xếp các sự việc theo thứ tự thời gian. 'However' dùng để đối lập, không phù hợp.",
+        "en": "'Then' orders events in time. 'However' is for contrast, which does not fit here."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết hai câu về một trải nghiệm của bạn, dùng một từ nối như 'however', 'therefore' hoặc 'moreover' để liên kết ý.",
+      "en": "Write two sentences about an experience of yours, using a connector like 'however', 'therefore' or 'moreover' to link the ideas."
+    },
+    "placeholder": "I wanted to ... However, ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {
+          "role": "connector",
+          "any_of": [
+            "however",
+            "therefore",
+            "moreover",
+            "for example",
+            "in addition",
+            "as a result",
+            "on the other hand",
+            "first",
+            "then",
+            "finally"
+          ]
+        }
+      ]
+    },
+    "sample": {"text": "I wanted to travel abroad. However, I did not have enough money."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790831048",
+    "generated_at": "2026-10-01T05:04:08Z"
+  },
+  "review": null
+}

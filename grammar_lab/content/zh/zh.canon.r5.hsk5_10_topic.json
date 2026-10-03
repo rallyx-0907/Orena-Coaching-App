@@ -1,0 +1,266 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk5_10_topic",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.exclusion",
+  "level": {"framework": "hsk3", "value": "5", "rank": 5},
+  "prereqs": ["zh.canon.r5.hsk5_5_topic"],
+  "contrasts": [],
+  "error_tags": ["particle"],
+  "source_refs": {"r5": ["zh-hsk5-10-topic"], "gf0025": ["gf0025.hsk7_9.044", "gf0025.hsk7_9.082"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["zh-hsk5-10-topic"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 无非", "en": "Chinese grammar: 无非"},
+    "native_title": "无非",
+    "level": {"framework": "hsk3", "value": "5", "rank": 5},
+    "summary": {
+      "vi": "无非/不过是 dùng để nói rằng sự việc thực ra chỉ là một điều đơn giản, không có gì nghiêm trọng hay phức tạp hơn.",
+      "en": "无非/不过是 presents a matter as being nothing more than something simple, with no greater seriousness or complexity."
+    },
+    "sub": {"vi": "chẳng qua là", "en": "nothing more than"},
+    "native_title_pinyin": ["wú", "fēi"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói một việc thực chất chỉ là một điều đơn giản, không đáng lo.",
+      "en": "When you want to say that something is really just a simple matter, not worth worrying about."
+    },
+    {
+      "vi": "Khi muốn giảm nhẹ mức độ nghiêm trọng của một vấn đề hoặc lời phàn nàn.",
+      "en": "When you want to play down the seriousness of a problem or a complaint."
+    },
+    {
+      "vi": "Khi tóm tắt bản chất của một việc bằng một cụm danh từ hoặc một mệnh đề ngắn.",
+      "en": "When you sum up the nature of something with a short noun phrase or clause."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "无非/不过",
+        "role": "marker",
+        "label": {"vi": "trợ từ giới hạn", "en": "limiting marker"},
+        "options": [{"text": "无非", "pinyin": ["wú", "fēi"]}, {"text": "不过", "pinyin": ["bú", "guò"]}],
+        "pinyin": ["wú", "fēi", "", "bú", "guò"]
+      },
+      {"text": "是", "role": "verb", "label": {"vi": "động từ", "en": "verb"}, "pinyin": ["shì"]},
+      {
+        "text": "NP/clause",
+        "role": "object",
+        "label": {"vi": "cụm danh từ/mệnh đề", "en": "noun phrase/clause"},
+        "pinyin": ["", "", "", "", "", "", "", "", ""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "这无非是个误会。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 3, "role": "marker"},
+        {"start": 3, "end": 4, "role": "verb"},
+        {"start": 4, "end": 7, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Nhấn mạnh rằng sự việc chỉ là một hiểu lầm đơn giản, không có gì nghiêm trọng.",
+        "en": "Emphasises that the matter is just a simple misunderstanding, nothing serious."
+      },
+      "translation": {
+        "vi": "Đây chẳng qua chỉ là một hiểu lầm.",
+        "en": "This is nothing more than a misunderstanding."
+      },
+      "pinyin": ["zhè", "wú", "fēi", "shì", "gè", "wù", "huì", ""]
+    },
+    {
+      "text": "他不过是想提醒你。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 3, "role": "marker"},
+        {"start": 3, "end": 4, "role": "verb"},
+        {"start": 4, "end": 8, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Giảm nhẹ ý định của người nói: anh ấy chỉ muốn nhắc nhở, không có ý gì khác.",
+        "en": "Plays down the speaker's intention: he just wants to remind you, nothing more."
+      },
+      "translation": {
+        "vi": "Anh ấy chẳng qua chỉ muốn nhắc bạn thôi.",
+        "en": "He just wants to remind you, nothing more."
+      },
+      "pinyin": ["tā", "bú", "guò", "shì", "xiǎng", "tí", "xǐng", "nǐ", ""]
+    },
+    {
+      "text": "问题无非有两个原因。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 4, "role": "marker"},
+        {"start": 4, "end": 5, "role": "verb"},
+        {"start": 5, "end": 9, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Nói rằng vấn đề thực ra chỉ có hai nguyên nhân, không phức tạp hơn.",
+        "en": "States that the problem really has only two causes, nothing more complicated."
+      },
+      "translation": {
+        "vi": "Vấn đề chẳng qua chỉ có hai nguyên nhân.",
+        "en": "The problem is nothing more than two causes."
+      },
+      "pinyin": ["wèn", "tí", "wú", "fēi", "yǒu", "liǎng", "gè", "yuán", "yīn", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "我无非买一本书。",
+      "right": "我只买了一本书。",
+      "reason": {
+        "vi": "无非/不过是 không dùng để nhấn mạnh số lượng đơn thuần; khi chỉ muốn nói 'chỉ có một quyển' thì dùng 只.",
+        "en": "无非/不过是 is not used to focus on simple quantity; when you mean 'only one book', use 只."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong_pinyin": ["wǒ", "wú", "fēi", "mǎi", "yī", "běn", "shū", ""],
+      "right_pinyin": ["wǒ", "zhǐ", "mǎi", "le", "yī", "běn", "shū", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "这___是个误会，你别担心。",
+      "options": [
+        {"text": "无非", "error_tag": null, "pinyin": ["wú", "fēi"]},
+        {"text": "只", "error_tag": "particle", "pinyin": ["zhǐ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "无非是 nhấn mạnh sự việc chỉ là một hiểu lầm đơn giản; 只 không dùng trong cấu trúc này.",
+        "en": "无非是 emphasises that the matter is just a simple misunderstanding; 只 is not used in this structure."
+      },
+      "q_pinyin": ["zhè", "", "", "", "shì", "gè", "wù", "huì", "", "nǐ", "bié", "dān", "xīn", ""]
+    },
+    {
+      "q": "他___是想帮你，没有别的意思。",
+      "options": [
+        {"text": "不过", "error_tag": null, "pinyin": ["bú", "guò"]},
+        {"text": "只", "error_tag": "particle", "pinyin": ["zhǐ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "不过是 dùng để nói mục đích thực ra chỉ đơn giản là giúp đỡ; 只 không phù hợp ở đây.",
+        "en": "不过是 is used to say the intention is simply to help; 只 does not fit here."
+      },
+      "q_pinyin": [
+        "tā",
+        "",
+        "",
+        "",
+        "shì",
+        "xiǎng",
+        "bāng",
+        "nǐ",
+        "",
+        "méi",
+        "yǒu",
+        "bié",
+        "de",
+        "yì",
+        "si",
+        ""
+      ]
+    },
+    {
+      "q": "这个问题___有两个原因，不用想得太复杂。",
+      "options": [
+        {"text": "无非", "error_tag": null, "pinyin": ["wú", "fēi"]},
+        {"text": "只", "error_tag": "particle", "pinyin": ["zhǐ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "无非有 nói vấn đề thực ra chỉ có hai nguyên nhân, không phức tạp; 只 không dùng trong cấu trúc này.",
+        "en": "无非有 says the problem really has only two causes, nothing complex; 只 is not used in this structure."
+      },
+      "q_pinyin": [
+        "zhè",
+        "gè",
+        "wèn",
+        "tí",
+        "",
+        "",
+        "",
+        "yǒu",
+        "liǎng",
+        "gè",
+        "yuán",
+        "yīn",
+        "",
+        "bù",
+        "yòng",
+        "xiǎng",
+        "de",
+        "tài",
+        "fù",
+        "zá",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng 无非/不过是 để nói rằng một việc thực ra chỉ là một điều đơn giản.",
+      "en": "Write one sentence using 无非/不过是 to say that something is really just a simple matter."
+    },
+    "placeholder": "这无非是……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "marker", "any_of": ["无非", "不过"]}, {"role": "verb", "any_of": ["是", "有"]}]
+    },
+    "sample": {"text": "这无非是个小问题。", "pinyin": ["zhè", "wú", "fēi", "shì", "gè", "xiǎo", "wèn", "tí", ""]},
+    "placeholder_pinyin": ["zhè", "wú", "fēi", "shì", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790833833",
+    "generated_at": "2026-10-01T05:50:33Z",
+    "r5_source": {
+      "ids": ["zh-hsk5-10-topic"],
+      "content_version": 2,
+      "content_hash": "01183b365971473d5b8c506fc00997e0e09ba974747be938c69b67858e368464",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk5-10-topic",
+          "issue": "R5 ghi '无非是 + NP/clause; 不过是 + NP' nhưng không nêu rõ 无非/不过是 có thể đứng trước động từ 有 trong câu như '问题无非有两个原因'.",
+          "fix": "Đã bổ sung công thức với slot động từ có thể là 是 hoặc 有, và thêm ví dụ '问题无非有两个原因'."
+        },
+        {
+          "r5_id": "zh-hsk5-10-topic",
+          "issue": "R5 xếp '我无非买一本书' vào lỗi nhưng không gắn thẻ lỗi theo hệ thống của Orena.",
+          "fix": "Đã gắn error_tag 'particle' cho lỗi này và viết lại lý do rõ ràng hơn."
+        },
+        {
+          "r5_id": "zh-hsk5-10-topic",
+          "issue": "R5 có câu '重大事故无非是小事' trong phần mistakes nhưng đây là câu đúng ngữ pháp, chỉ không phù hợp ngữ dụng, không nên đặt ở cột 'incorrect'.",
+          "fix": "Đã bỏ câu này khỏi common_mistakes và thay bằng lỗi thực sự về dùng 无非 thay cho 只."
+        }
+      ]
+    },
+    "metadata_stale": true
+  },
+  "review": null
+}

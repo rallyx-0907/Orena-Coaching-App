@@ -1,0 +1,202 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b1.051",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.identity_state",
+  "level": {"framework": "cefr", "value": "B1", "rank": 3},
+  "prereqs": [],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "It Be tính từ To", "en": "It Be Adjective To"},
+    "native_title": "It Be Adjective To",
+    "level": {"framework": "cefr", "value": "B1", "rank": 3},
+    "summary": {
+      "vi": "Cấu trúc 'It + be + tính từ + to + động từ' dùng để nhận xét một hành động hoặc tình huống, thường là ý kiến của người nói.",
+      "en": "The pattern 'It + be + adjective + to + verb' is used to comment on an action or situation, often giving the speaker's opinion."
+    },
+    "sub": {"vi": "nhận xét hành động", "en": "commenting on actions"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn đưa ra ý kiến hoặc đánh giá về một hành động, chẳng hạn như dễ, khó, quan trọng, thú vị.",
+      "en": "When you want to give an opinion or evaluation about an action, such as easy, difficult, important, interesting."
+    },
+    {
+      "vi": "Khi bạn muốn nói về mức độ quan trọng hoặc tính cần thiết của một việc gì đó.",
+      "en": "When you want to talk about how important or necessary something is."
+    },
+    {
+      "vi": "Khi bạn muốn nhấn mạnh cảm xúc hoặc thái độ của mình đối với một tình huống.",
+      "en": "When you want to emphasise your feeling or attitude towards a situation."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "It", "role": "subject", "label": {"vi": "chủ ngữ giả", "en": "dummy subject"}},
+      {
+        "text": "be",
+        "role": "verb",
+        "label": {"vi": "động từ to be", "en": "verb be"},
+        "options": [{"text": "is"}, {"text": "was"}]
+      },
+      {"text": "adjective", "role": "complement", "label": {"vi": "tính từ", "en": "adjective"}},
+      {"text": "to", "role": "marker", "label": {"vi": "tiểu từ to", "en": "infinitive marker"}},
+      {"text": "verb", "role": "verb", "label": {"vi": "động từ nguyên mẫu", "en": "base verb"}}
+    ],
+    "variants": {
+      "negative": [
+        {"text": "It", "role": "subject", "label": {"vi": "chủ ngữ giả", "en": "dummy subject"}},
+        {
+          "text": "be",
+          "role": "verb",
+          "label": {"vi": "động từ to be", "en": "verb be"},
+          "options": [{"text": "is"}, {"text": "was"}]
+        },
+        {"text": "not", "role": "aux", "label": {"vi": "phủ định", "en": "negator"}},
+        {"text": "adjective", "role": "complement", "label": {"vi": "tính từ", "en": "adjective"}},
+        {"text": "to", "role": "marker", "label": {"vi": "tiểu từ to", "en": "infinitive marker"}},
+        {"text": "verb", "role": "verb", "label": {"vi": "động từ nguyên mẫu", "en": "base verb"}}
+      ],
+      "question": [
+        {
+          "text": "be",
+          "role": "verb",
+          "label": {"vi": "động từ to be", "en": "verb be"},
+          "options": [{"text": "Is"}, {"text": "Was"}]
+        },
+        {"text": "it", "role": "subject", "label": {"vi": "chủ ngữ giả", "en": "dummy subject"}},
+        {"text": "adjective", "role": "complement", "label": {"vi": "tính từ", "en": "adjective"}},
+        {"text": "to", "role": "marker", "label": {"vi": "tiểu từ to", "en": "infinitive marker"}},
+        {"text": "verb", "role": "verb", "label": {"vi": "động từ nguyên mẫu", "en": "base verb"}}
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "It is easy to learn English.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 3, "end": 5, "role": "verb"},
+        {"start": 6, "end": 10, "role": "complement"},
+        {"start": 11, "end": 13, "role": "marker"},
+        {"start": 14, "end": 19, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Nhấn mạnh rằng việc học tiếng Anh là dễ dàng.",
+        "en": "Emphasises that learning English is easy."
+      },
+      "translation": {"vi": "Thật dễ dàng để học tiếng Anh.", "en": "It is easy to learn English."}
+    },
+    {
+      "text": "It is important to arrive on time.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 3, "end": 5, "role": "verb"},
+        {"start": 6, "end": 15, "role": "complement"},
+        {"start": 16, "end": 18, "role": "marker"},
+        {"start": 19, "end": 25, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Nhấn mạnh tầm quan trọng của việc đến đúng giờ.",
+        "en": "Highlights the importance of arriving on time."
+      },
+      "translation": {"vi": "Điều quan trọng là đến đúng giờ.", "en": "It is important to arrive on time."}
+    },
+    {
+      "text": "It is not difficult to make friends here.",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 3, "end": 5, "role": "verb"},
+        {"start": 6, "end": 9, "role": "aux"},
+        {"start": 10, "end": 19, "role": "complement"},
+        {"start": 20, "end": 22, "role": "marker"},
+        {"start": 23, "end": 27, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Phủ định rằng việc kết bạn ở đây là khó.",
+        "en": "Negates that making friends here is difficult."
+      },
+      "translation": {"vi": "Không khó để kết bạn ở đây.", "en": "It is not difficult to make friends here."}
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "It is easy learn English.",
+      "right": "It is easy to learn English.",
+      "reason": {
+        "vi": "Người học thường bỏ 'to' trước động từ nguyên mẫu vì trong tiếng Việt không có tiểu từ này.",
+        "en": "Learners often omit 'to' before the base verb because Vietnamese does not have this infinitive marker."
+      },
+      "error_tag": "other",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "It is important ___ a break.",
+      "options": [{"text": "to take", "error_tag": null}, {"text": "take", "error_tag": "other"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau tính từ 'important' cần 'to' + động từ nguyên mẫu.",
+        "en": "After the adjective 'important', we need 'to' + base verb."
+      }
+    },
+    {
+      "q": "It ___ easy to learn English.",
+      "options": [{"text": "is", "error_tag": null}, {"text": "are", "error_tag": "agreement"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Chủ ngữ giả 'It' đi với động từ số ít 'is'.",
+        "en": "The dummy subject 'It' takes the singular verb 'is'."
+      }
+    },
+    {
+      "q": "It is not difficult ___ friends here.",
+      "options": [{"text": "to make", "error_tag": null}, {"text": "make", "error_tag": "other"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau tính từ 'difficult' cần 'to' + động từ nguyên mẫu.",
+        "en": "After the adjective 'difficult', we need 'to' + base verb."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng cấu trúc 'It is + tính từ + to + động từ' để nói về một việc bạn thấy dễ, khó, quan trọng hoặc thú vị.",
+      "en": "Write a sentence using 'It is + adjective + to + verb' to say something you find easy, difficult, important, or interesting."
+    },
+    "placeholder": "It is ... to ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "subject", "any_of": ["It"]},
+        {"role": "verb", "any_of": ["is", "was"]},
+        {"role": "marker", "any_of": ["to"]},
+        {"role": "verb", "regex": "[a-z]+"}
+      ]
+    },
+    "sample": {"text": "It is easy to learn English."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790831042",
+    "generated_at": "2026-10-01T05:04:02Z"
+  },
+  "review": null
+}

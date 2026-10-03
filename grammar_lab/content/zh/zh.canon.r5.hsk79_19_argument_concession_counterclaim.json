@@ -1,0 +1,484 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk79_19_argument_concession_counterclaim",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.contrast",
+  "level": {"framework": "hsk3", "value": "9", "rank": 9},
+  "prereqs": ["zh.canon.r5.hsk79_18_academic_definition_and_classification"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["zh-hsk79-19-argument-concession-counterclaim", "zh-hsk79-9-concessive-rhetoric"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["zh-hsk79-19-argument-concession-counterclaim", "zh-hsk79-9-concessive-rhetoric"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {
+      "vi": "Ngữ pháp tiếng Trung: Argument concession-counterclaim",
+      "en": "Chinese grammar: Argument concession-counterclaim"
+    },
+    "native_title": "论证中的让步与反驳",
+    "level": {"framework": "hsk3", "value": "9", "rank": 9},
+    "summary": {
+      "vi": "Cấu trúc nhượng bộ–phản biện: thừa nhận một điểm đúng rồi giới hạn nó và nêu luận điểm mạnh hơn.",
+      "en": "The concession–counterclaim pattern: acknowledge a valid point, limit it, then advance a stronger claim."
+    },
+    "sub": {"vi": "nhượng bộ rồi phản biện", "en": "concede then counter"},
+    "native_title_pinyin": ["lùn", "zhèng", "zhōng", "de", "ràng", "bù", "yǔ", "fǎn", "bó"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn thừa nhận một ưu điểm hoặc sự thật trước khi phản bác, để lập luận không bị coi là phiến diện.",
+      "en": "When you want to grant a merit or fact before disagreeing, so your argument does not look one-sided."
+    },
+    {
+      "vi": "Khi cần giới hạn phạm vi của một nhận định: đúng trong ngắn hạn, đúng ở một khía cạnh, nhưng chưa đủ.",
+      "en": "When you need to limit a claim's scope: true in the short term, true in one respect, but not enough."
+    },
+    {
+      "vi": "Khi viết hoặc nói ở văn phong học thuật, báo cáo, tranh luận — không dùng cho hội thoại đời thường.",
+      "en": "When writing or speaking in academic, reporting, or argumentative register — not for casual conversation."
+    },
+    {
+      "vi": "Khi mệnh đề sau phải trực tiếp bàn về điều vừa nhượng bộ, không đổi sang chủ đề khác.",
+      "en": "When the second clause must directly engage the point just conceded, not switch to another topic."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "诚然/固然/尽管",
+        "role": "connector",
+        "label": {"vi": "từ nối nhượng bộ", "en": "concession marker"},
+        "options": [
+          {"text": "诚然", "pinyin": ["chéng", "rán"]},
+          {"text": "固然", "pinyin": ["gù", "rán"]},
+          {"text": "尽管", "pinyin": ["jǐn", "guǎn"]}
+        ],
+        "pinyin": ["chéng", "rán", "", "gù", "rán", "", "jǐn", "guǎn"]
+      },
+      {
+        "text": "A",
+        "role": "other",
+        "label": {"vi": "mệnh đề được thừa nhận", "en": "conceded clause"},
+        "pinyin": [""]
+      },
+      {
+        "text": "然而/但是/不过/即便如此",
+        "role": "connector",
+        "label": {"vi": "từ nối chuyển ý", "en": "pivot marker"},
+        "options": [
+          {"text": "然而", "pinyin": ["rán", "ér"]},
+          {"text": "但是", "pinyin": ["dàn", "shì"]},
+          {"text": "不过", "pinyin": ["bù", "guò"]},
+          {"text": "即便如此", "pinyin": ["jí", "biàn", "rú", "cǐ"]}
+        ],
+        "pinyin": ["rán", "ér", "", "dàn", "shì", "", "bù", "guò", "", "jí", "biàn", "rú", "cǐ"]
+      },
+      {
+        "text": "B",
+        "role": "other",
+        "label": {"vi": "mệnh đề phản biện", "en": "counterclaim clause"},
+        "pinyin": [""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "诚然，这一方法成本较高；然而，它在稳定性方面具有明显优势。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 3, "end": 11, "role": "other"},
+        {"start": 12, "end": 14, "role": "connector"},
+        {"start": 15, "end": 28, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "诚然 thừa nhận nhược điểm; 然而 chuyển sang ưu điểm đối trọng.",
+        "en": "诚然 grants the drawback; 然而 pivots to the countervailing advantage."
+      },
+      "translation": {
+        "vi": "Đúng là cách này tốn kém; tuy nhiên nó có lợi thế rõ rệt về độ ổn định.",
+        "en": "It is true that this method is costly; however, it has a clear advantage in stability."
+      },
+      "pinyin": [
+        "chéng",
+        "rán",
+        "",
+        "zhè",
+        "yī",
+        "fāng",
+        "fǎ",
+        "chéng",
+        "běn",
+        "jiào",
+        "gāo",
+        "",
+        "rán",
+        "ér",
+        "",
+        "tā",
+        "zài",
+        "wěn",
+        "dìng",
+        "xìng",
+        "fāng",
+        "miàn",
+        "jù",
+        "yǒu",
+        "míng",
+        "xiǎn",
+        "yōu",
+        "shì",
+        ""
+      ]
+    },
+    {
+      "text": "固然样本规模有限，但结果在不同地区重复出现。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 8, "role": "other"},
+        {"start": 9, "end": 10, "role": "connector"},
+        {"start": 10, "end": 21, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "固然 thừa nhận hạn chế; 但 nêu bằng chứng đối lập.",
+        "en": "固然 concedes the limitation; 但 presents the opposing evidence."
+      },
+      "translation": {
+        "vi": "Tuy quy mô mẫu có hạn, kết quả vẫn lặp lại ở nhiều vùng khác nhau.",
+        "en": "Granted the sample size is limited, but the results recur across different regions."
+      },
+      "pinyin": [
+        "gù",
+        "rán",
+        "yàng",
+        "běn",
+        "guī",
+        "mó",
+        "yǒu",
+        "xiàn",
+        "",
+        "dàn",
+        "jié",
+        "guǒ",
+        "zài",
+        "bù",
+        "tóng",
+        "dì",
+        "qū",
+        "chóng",
+        "fù",
+        "chū",
+        "xiàn",
+        ""
+      ]
+    },
+    {
+      "text": "尽管这一批评有一定道理，然而它忽视了长期影响。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 11, "role": "other"},
+        {"start": 12, "end": 14, "role": "connector"},
+        {"start": 14, "end": 22, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "尽管 mở đầu nhượng bộ; 然而 chuyển sang phản biện ở mệnh đề sau.",
+        "en": "尽管 opens the concession; 然而 pivots to the counterclaim in the following clause."
+      },
+      "translation": {
+        "vi": "Dù lời phê bình này có phần đúng, tuy nhiên nó đã bỏ qua tác động dài hạn.",
+        "en": "Although this criticism has some merit, however it overlooks the long-term effects."
+      },
+      "pinyin": [
+        "jǐn",
+        "guǎn",
+        "zhè",
+        "yī",
+        "pī",
+        "píng",
+        "yǒu",
+        "yī",
+        "dìng",
+        "dào",
+        "lǐ",
+        "",
+        "rán",
+        "ér",
+        "tā",
+        "hū",
+        "shì",
+        "le",
+        "cháng",
+        "qī",
+        "yǐng",
+        "xiǎng",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "诚然这一方法成本较高，因此它在稳定性方面具有明显优势。",
+      "right": "诚然这一方法成本较高，然而它在稳定性方面具有明显优势。",
+      "reason": {
+        "vi": "因此 biểu thị quan hệ kết quả, không tạo được quan hệ nhượng bộ–phản biện; cần từ nối chuyển ý như 然而/但是/不过.",
+        "en": "因此 marks a result relation, which cannot create a concession–counterclaim; a pivot marker such as 然而/但是/不过 is required."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong_pinyin": [
+        "chéng",
+        "rán",
+        "zhè",
+        "yī",
+        "fāng",
+        "fǎ",
+        "chéng",
+        "běn",
+        "jiào",
+        "gāo",
+        "",
+        "yīn",
+        "cǐ",
+        "tā",
+        "zài",
+        "wěn",
+        "dìng",
+        "xìng",
+        "fāng",
+        "miàn",
+        "jù",
+        "yǒu",
+        "míng",
+        "xiǎn",
+        "yōu",
+        "shì",
+        ""
+      ],
+      "right_pinyin": [
+        "chéng",
+        "rán",
+        "zhè",
+        "yī",
+        "fāng",
+        "fǎ",
+        "chéng",
+        "běn",
+        "jiào",
+        "gāo",
+        "",
+        "rán",
+        "ér",
+        "tā",
+        "zài",
+        "wěn",
+        "dìng",
+        "xìng",
+        "fāng",
+        "miàn",
+        "jù",
+        "yǒu",
+        "míng",
+        "xiǎn",
+        "yōu",
+        "shì",
+        ""
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "___这一方案成本较高，然而它的长期收益更大。",
+      "options": [
+        {"text": "诚然", "error_tag": null, "pinyin": ["chéng", "rán"]},
+        {"text": "因此", "error_tag": "conjunction", "pinyin": ["yīn", "cǐ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "诚然 mở đầu nhượng bộ, 然而 mới là từ chuyển ý; 因此 chỉ quan hệ kết quả.",
+        "en": "诚然 opens the concession and 然而 is the pivot; 因此 only marks a result."
+      },
+      "q_pinyin": [
+        "",
+        "",
+        "",
+        "zhè",
+        "yī",
+        "fāng",
+        "àn",
+        "chéng",
+        "běn",
+        "jiào",
+        "gāo",
+        "",
+        "rán",
+        "ér",
+        "tā",
+        "de",
+        "cháng",
+        "qī",
+        "shōu",
+        "yì",
+        "gèng",
+        "dà",
+        ""
+      ]
+    },
+    {
+      "q": "固然样本规模有限，___结果在不同地区重复出现。",
+      "options": [
+        {"text": "但", "error_tag": null, "pinyin": ["dàn"]},
+        {"text": "因此", "error_tag": "conjunction", "pinyin": ["yīn", "cǐ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 固然 cần từ nối chuyển ý như 但/然而; 因此 đổi sang quan hệ kết quả.",
+        "en": "After 固然 a pivot marker such as 但/然而 is needed; 因此 switches to a result relation."
+      },
+      "q_pinyin": [
+        "gù",
+        "rán",
+        "yàng",
+        "běn",
+        "guī",
+        "mó",
+        "yǒu",
+        "xiàn",
+        "",
+        "",
+        "",
+        "",
+        "jié",
+        "guǒ",
+        "zài",
+        "bù",
+        "tóng",
+        "dì",
+        "qū",
+        "chóng",
+        "fù",
+        "chū",
+        "xiàn",
+        ""
+      ]
+    },
+    {
+      "q": "尽管这一批评有一定道理，它___忽视了长期影响。",
+      "options": [
+        {"text": "却", "error_tag": null, "pinyin": ["què"]},
+        {"text": "因此", "error_tag": "conjunction", "pinyin": ["yīn", "cǐ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "却 đánh dấu sự đối lập với mệnh đề nhượng bộ; 因此 không phù hợp.",
+        "en": "却 marks the contrast with the concessive clause; 因此 does not fit."
+      },
+      "q_pinyin": [
+        "jǐn",
+        "guǎn",
+        "zhè",
+        "yī",
+        "pī",
+        "píng",
+        "yǒu",
+        "yī",
+        "dìng",
+        "dào",
+        "lǐ",
+        "",
+        "tā",
+        "",
+        "",
+        "",
+        "hū",
+        "shì",
+        "le",
+        "cháng",
+        "qī",
+        "yǐng",
+        "xiǎng",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu nhượng bộ–phản biện về một quyết định của bạn: thừa nhận một nhược điểm bằng 诚然/固然, rồi dùng 然而/但 nêu lý do bạn vẫn chọn nó.",
+      "en": "Write one concession–counterclaim sentence about a decision of yours: grant a drawback with 诚然/固然, then use 然而/但 to give the reason you still chose it."
+    },
+    "placeholder": "诚然……，然而……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "connector", "any_of": ["诚然", "固然", "尽管"]},
+        {"role": "connector", "any_of": ["然而", "但是", "但", "不过", "即便如此", "却"]}
+      ]
+    },
+    "sample": {
+      "text": "诚然这份工作薪水不高，然而它让我学到很多。",
+      "pinyin": [
+        "chéng",
+        "rán",
+        "zhè",
+        "fèn",
+        "gōng",
+        "zuò",
+        "xīn",
+        "shuǐ",
+        "bù",
+        "gāo",
+        "",
+        "rán",
+        "ér",
+        "tā",
+        "ràng",
+        "wǒ",
+        "xué",
+        "dào",
+        "hěn",
+        "duō",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["chéng", "rán", "", "", "", "rán", "ér", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790835014",
+    "generated_at": "2026-10-01T06:10:14Z",
+    "r5_source": {
+      "ids": ["zh-hsk79-19-argument-concession-counterclaim", "zh-hsk79-9-concessive-rhetoric"],
+      "content_version": 2,
+      "content_hash": "c1b760508472c1718c4d116bfc34ee8ec1c0de466a4272c4720851dc201f7c6d",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk79-19-argument-concession-counterclaim",
+          "issue": "Example 3 uses 尽管…却…, which is a concessive-contrast pattern, not the concession–counterclaim pattern taught here (no acknowledged point followed by a limiting counterclaim).",
+          "fix": "Replaced it with 尽管这一批评有一定道理，然而它忽视了长期影响, where the first clause concedes a valid point and the second limits it with the pivot marker 然而."
+        },
+        {
+          "r5_id": "zh-hsk79-19-argument-concession-counterclaim",
+          "issue": "The mistake 让步后转到无关话题 is a discourse-level description, not a learner sentence, so it cannot be shown as wrong/right.",
+          "fix": "Replaced it with the concrete wrong sentence 诚然这一方法成本较高，因此它在稳定性方面具有明显优势 and its corrected version with 然而."
+        },
+        {
+          "r5_id": "zh-hsk79-9-concessive-rhetoric",
+          "issue": "The lesson overlaps this point and its examples duplicate the same concession–counterclaim content, which would teach the same pattern twice.",
+          "fix": "Kept only this point's concession–counterclaim material; the hypothetical 纵然/即便 concession is left out of the formula and examples."
+        }
+      ]
+    },
+    "metadata_stale": true
+  },
+  "review": null
+}

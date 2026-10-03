@@ -1,0 +1,269 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.c1.007",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.possibility",
+  "level": {"framework": "cefr", "value": "C1", "rank": 5},
+  "prereqs": ["en.canon.b2.007"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["c1-advanced-epistemic-modality"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["c1-advanced-epistemic-modality"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Advanced epistemic động từ khuyết thiếuity", "en": "Advanced epistemic modality"},
+    "native_title": "Advanced epistemic modality",
+    "level": {"framework": "cefr", "value": "C1", "rank": 5},
+    "summary": {
+      "vi": "Điểm ngữ pháp này dạy cách dùng động từ khuyết thiếu để diễn tả mức độ chắc chắn và nguồn thông tin, bao gồm cả suy đoán trong quá khứ.",
+      "en": "This point teaches how to use modal verbs to express degrees of certainty and sources of knowledge, including past inference."
+    },
+    "sub": {"vi": "suy đoán và bằng chứng", "en": "inference and evidence"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn suy luận điều gì đó từ bằng chứng, không phải từ kiến thức trực tiếp.",
+      "en": "When you infer something from evidence rather than direct knowledge."
+    },
+    {
+      "vi": "Khi bạn muốn diễn tả mức độ chắc chắn khác nhau mà không đưa ra con số phần trăm cụ thể.",
+      "en": "When you want to express different degrees of certainty without giving exact percentages."
+    },
+    {
+      "vi": "Khi bạn cần nói về một suy đoán trong quá khứ dựa trên thông tin hiện có.",
+      "en": "When you need to talk about a past inference based on available information."
+    },
+    {
+      "vi": "Khi bạn muốn nêu nguồn thông tin bằng các động từ như appear, seem, suggest.",
+      "en": "When you want to indicate the source of information using verbs like appear, seem, suggest."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {
+        "text": "modal",
+        "role": "aux",
+        "label": {"vi": "động từ khuyết thiếu", "en": "modal verb"},
+        "options": [
+          {"text": "must"},
+          {"text": "may"},
+          {"text": "might"},
+          {"text": "could"},
+          {"text": "can't"},
+          {"text": "should"},
+          {"text": "will"}
+        ]
+      },
+      {"text": "V", "role": "verb", "label": {"vi": "động từ chính", "en": "main verb"}},
+      {
+        "text": "have",
+        "role": "aux",
+        "label": {"vi": "trợ động từ have", "en": "auxiliary have"},
+        "optional": true
+      },
+      {
+        "text": "V3",
+        "role": "verb",
+        "label": {"vi": "quá khứ phân từ", "en": "past participle"},
+        "optional": true
+      }
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "modal",
+          "role": "aux",
+          "label": {"vi": "động từ khuyết thiếu", "en": "modal verb"},
+          "options": [{"text": "can't"}, {"text": "couldn't"}, {"text": "may not"}, {"text": "might not"}]
+        },
+        {"text": "V", "role": "verb", "label": {"vi": "động từ chính", "en": "main verb"}},
+        {
+          "text": "have",
+          "role": "aux",
+          "label": {"vi": "trợ động từ have", "en": "auxiliary have"},
+          "optional": true
+        },
+        {
+          "text": "V3",
+          "role": "verb",
+          "label": {"vi": "quá khứ phân từ", "en": "past participle"},
+          "optional": true
+        }
+      ],
+      "question": [
+        {
+          "text": "modal",
+          "role": "aux",
+          "label": {"vi": "động từ khuyết thiếu", "en": "modal verb"},
+          "options": [
+            {"text": "must"},
+            {"text": "may"},
+            {"text": "might"},
+            {"text": "could"},
+            {"text": "can"},
+            {"text": "should"},
+            {"text": "will"}
+          ]
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {"text": "V", "role": "verb", "label": {"vi": "động từ chính", "en": "main verb"}},
+        {
+          "text": "have",
+          "role": "aux",
+          "label": {"vi": "trợ động từ have", "en": "auxiliary have"},
+          "optional": true
+        },
+        {
+          "text": "V3",
+          "role": "verb",
+          "label": {"vi": "quá khứ phân từ", "en": "past participle"},
+          "optional": true
+        }
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "The discrepancy may reflect a reporting error.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 15, "role": "subject"},
+        {"start": 16, "end": 19, "role": "aux"},
+        {"start": 20, "end": 27, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "may diễn tả khả năng có thể xảy ra, không chắc chắn.",
+        "en": "may expresses possibility, not certainty."
+      },
+      "translation": {
+        "vi": "Sự khác biệt có thể phản ánh lỗi báo cáo.",
+        "en": "The discrepancy may reflect a reporting error."
+      }
+    },
+    {
+      "text": "She must have misunderstood the instructions.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 8, "role": "aux"},
+        {"start": 9, "end": 13, "role": "aux"},
+        {"start": 14, "end": 27, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "must + have + V3 diễn tả suy đoán chắc chắn về một sự việc trong quá khứ.",
+        "en": "must + have + V3 expresses a strong inference about a past event."
+      },
+      "translation": {
+        "vi": "Chắc hẳn cô ấy đã hiểu sai hướng dẫn.",
+        "en": "She must have misunderstood the instructions."
+      }
+    },
+    {
+      "text": "That cannot be the whole explanation.",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 5, "end": 11, "role": "aux"},
+        {"start": 12, "end": 14, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "cannot (can't) diễn tả suy đoán phủ định mạnh mẽ, gần như chắc chắn là không đúng.",
+        "en": "cannot (can't) expresses a strong negative inference, almost certain that it is not true."
+      },
+      "translation": {
+        "vi": "Đó không thể là toàn bộ lời giải thích.",
+        "en": "That cannot be the whole explanation."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "He mustn't be at home; the lights are off.",
+      "right": "He can't be at home; the lights are off.",
+      "reason": {
+        "vi": "Người học dùng mustn't cho suy đoán phủ định, nhưng mustn't diễn tả sự cấm đoán, không phải suy đoán. Suy đoán phủ định mạnh dùng can't.",
+        "en": "Learners use mustn't for negative inference, but mustn't expresses prohibition, not inference. Strong negative inference uses can't."
+      },
+      "error_tag": "other",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "The lights are off; she ___ be at home.",
+      "options": [{"text": "can't", "error_tag": null}, {"text": "mustn't", "error_tag": "other"}],
+      "answer": 0,
+      "explain": {
+        "vi": "can't diễn tả suy đoán phủ định mạnh mẽ dựa trên bằng chứng (đèn tắt). mustn't là cấm đoán.",
+        "en": "can't expresses strong negative inference based on evidence (lights off). mustn't is prohibition."
+      }
+    },
+    {
+      "q": "She ___ have left already; her coat is gone.",
+      "options": [{"text": "must", "error_tag": null}, {"text": "must to", "error_tag": "other"}],
+      "answer": 0,
+      "explain": {
+        "vi": "must + have + V3 diễn tả suy đoán chắc chắn về quá khứ. Không dùng 'must to'.",
+        "en": "must + have + V3 expresses strong past inference. 'must to' is not used."
+      }
+    },
+    {
+      "q": "The parcel ___ arrive by noon; the tracking says it's out for delivery.",
+      "options": [{"text": "should", "error_tag": null}, {"text": "must", "error_tag": "other"}],
+      "answer": 0,
+      "explain": {
+        "vi": "should diễn tả kỳ vọng dựa trên thông tin hiện có, không phải suy đoán chắc chắn như must.",
+        "en": "should expresses expectation based on available information, not a strong inference like must."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu suy đoán về một tình huống trong quá khứ dựa trên bằng chứng bạn thấy.",
+      "en": "Write a sentence inferring something about a past situation based on evidence you see."
+    },
+    "placeholder": "She must have ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "aux", "any_of": ["must", "may", "might", "could", "should", "will"]},
+        {"role": "verb", "regex": "\\b\\w+(ed|en|t|ght|ought|aid|elt|ept|\\w+)\\b"}
+      ]
+    },
+    "sample": {"text": "She must have misunderstood the instructions."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790831396",
+    "generated_at": "2026-10-01T05:09:56Z",
+    "r5_source": {
+      "ids": ["c1-advanced-epistemic-modality"],
+      "content_version": 2,
+      "content_hash": "9b1e1544111266182ccd94793d9fba6ee2d219f50869573fe1ce03eee617d57e",
+      "corrections": [
+        {
+          "r5_id": "c1-advanced-epistemic-modality",
+          "issue": "The R5 lesson's example 'The parcel should arrive by noon' was translated as 'Kiện hàng dự kiến có thể tới trưa', which adds 'có thể' (possibility) not present in the English 'should' (expectation).",
+          "fix": "Corrected the Vietnamese translation to 'Kiện hàng dự kiến sẽ tới trưa' to reflect expectation, not possibility."
+        },
+        {
+          "r5_id": "c1-advanced-epistemic-modality",
+          "issue": "The R5 lesson's mistake 'He mustn't be at home; the lights are off.' was corrected to 'He can't be at home; the lights are off.' but the reason given was 'Negative epistemic target uses can't.' which is correct but incomplete.",
+          "fix": "Expanded the reason to explain that mustn't expresses prohibition, not inference, and that can't is used for strong negative inference."
+        }
+      ]
+    }
+  },
+  "review": null
+}

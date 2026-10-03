@@ -1,0 +1,187 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.a2.005",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.questions",
+  "level": {"framework": "cefr", "value": "A2", "rank": 2},
+  "prereqs": ["en.questions.wh"],
+  "contrasts": [],
+  "error_tags": ["tense", "sentence_structure"],
+  "source_refs": {},
+  "point_type": "tense_aspect",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "quá khứ đơn Did câu hỏi", "en": "Past Simple Did Questions"},
+    "native_title": "Past Simple Did Questions",
+    "level": {"framework": "cefr", "value": "A2", "rank": 2},
+    "summary": {
+      "vi": "Cấu trúc này dùng để đặt câu hỏi về hành động hoặc sự việc đã xảy ra và kết thúc trong quá khứ.",
+      "en": "This structure is used to ask questions about actions or events that happened and finished in the past."
+    },
+    "sub": {"vi": "câu hỏi thì quá khứ đơn", "en": "past simple questions"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn hỏi ai đó đã làm gì trong quá khứ, ví dụ: Did you call me yesterday?",
+      "en": "When you want to ask what someone did in the past, for example: Did you call me yesterday?"
+    },
+    {
+      "vi": "Khi bạn cần xác nhận thông tin về một sự việc đã xảy ra, ví dụ: Did she finish the report?",
+      "en": "When you need to confirm information about a past event, for example: Did she finish the report?"
+    },
+    {
+      "vi": "Khi bạn hỏi về một trải nghiệm hoặc hành động cụ thể trong quá khứ mà không cần biết thời gian chính xác.",
+      "en": "When you ask about a specific past experience or action without needing the exact time."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "Did", "role": "aux", "label": {"vi": "trợ động từ", "en": "auxiliary verb"}},
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên thể", "en": "base verb"}},
+      {"text": "O", "role": "object", "label": {"vi": "tân ngữ", "en": "object"}, "optional": true}
+    ],
+    "variants": {
+      "question": [
+        {"text": "Did", "role": "aux", "label": {"vi": "trợ động từ", "en": "auxiliary verb"}},
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên thể", "en": "base verb"}},
+        {
+          "text": "O",
+          "role": "object",
+          "label": {"vi": "tân ngữ", "en": "object"},
+          "optional": true
+        }
+      ]
+    },
+    "illustration": {"kind": "timeline", "timeline": {"shape": "point_past"}}
+  },
+  "examples": [
+    {
+      "text": "Did you watch the film last night?",
+      "form": "question",
+      "spans": [
+        {"start": 0, "end": 3, "role": "aux"},
+        {"start": 4, "end": 7, "role": "subject"},
+        {"start": 8, "end": 13, "role": "verb"},
+        {"start": 14, "end": 22, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Hỏi về một hành động đã xảy ra tối qua.",
+        "en": "Asking about an action that happened last night."
+      },
+      "translation": {"vi": "Bạn có xem phim tối qua không?", "en": "Did you watch the film last night?"}
+    },
+    {
+      "text": "Did she call her mother yesterday?",
+      "form": "question",
+      "spans": [
+        {"start": 0, "end": 3, "role": "aux"},
+        {"start": 4, "end": 7, "role": "subject"},
+        {"start": 8, "end": 12, "role": "verb"},
+        {"start": 13, "end": 23, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Hỏi xem cô ấy có gọi cho mẹ hôm qua không.",
+        "en": "Asking if she called her mother yesterday."
+      },
+      "translation": {"vi": "Cô ấy có gọi cho mẹ hôm qua không?", "en": "Did she call her mother yesterday?"}
+    },
+    {
+      "text": "Did they finish the project on time?",
+      "form": "question",
+      "spans": [
+        {"start": 0, "end": 3, "role": "aux"},
+        {"start": 4, "end": 8, "role": "subject"},
+        {"start": 9, "end": 15, "role": "verb"},
+        {"start": 16, "end": 27, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Hỏi xem họ có hoàn thành dự án đúng hạn không.",
+        "en": "Asking if they finished the project on time."
+      },
+      "translation": {"vi": "Họ có hoàn thành dự án đúng hạn không?", "en": "Did they finish the project on time?"}
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "Did you watched the film last night?",
+      "right": "Did you watch the film last night?",
+      "reason": {
+        "vi": "Sau trợ động từ 'Did', động từ chính phải ở dạng nguyên thể, không chia quá khứ.",
+        "en": "After the auxiliary 'Did', the main verb must be in its base form, not in the past tense."
+      },
+      "error_tag": "tense",
+      "l1": ["vi"]
+    },
+    {
+      "wrong": "You did watch the film last night?",
+      "right": "Did you watch the film last night?",
+      "reason": {
+        "vi": "Trong câu hỏi Yes/No, trợ động từ 'Did' phải đứng trước chủ ngữ, không đứng sau.",
+        "en": "In yes/no questions, the auxiliary 'Did' must come before the subject, not after it."
+      },
+      "error_tag": "sentence_structure",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "___ you see the news last night?",
+      "options": [{"text": "Did", "error_tag": null}, {"text": "Do", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Dùng 'Did' cho câu hỏi thì quá khứ đơn.",
+        "en": "Use 'Did' for past simple questions."
+      }
+    },
+    {
+      "q": "Did she ___ to the party?",
+      "options": [{"text": "go", "error_tag": null}, {"text": "went", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 'Did', động từ chính ở dạng nguyên thể 'go'.",
+        "en": "After 'Did', the main verb is in base form 'go'."
+      }
+    },
+    {
+      "q": "Did they ___ the homework?",
+      "options": [{"text": "finish", "error_tag": null}, {"text": "finished", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 'Did', động từ chính ở dạng nguyên thể 'finish'.",
+        "en": "After 'Did', the main verb is in base form 'finish'."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu hỏi về việc bạn đã làm ngày hôm qua.",
+      "en": "Write a question about something you did yesterday."
+    },
+    "placeholder": "Did you ...",
+    "target_form": "question",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "aux", "any_of": ["Did"]},
+        {"role": "subject", "any_of": ["you", "she", "he", "they", "we", "I"]},
+        {"role": "verb", "regex": "\\b\\w+\\b"}
+      ]
+    },
+    "sample": {"text": "Did you visit your grandparents last weekend?"}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790830674",
+    "generated_at": "2026-10-01T04:57:54Z"
+  },
+  "review": null
+}

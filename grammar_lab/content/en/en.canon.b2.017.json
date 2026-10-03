@@ -1,0 +1,295 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b2.017",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.reporting",
+  "level": {"framework": "cefr", "value": "B2", "rank": 4},
+  "prereqs": ["en.canon.b2.015"],
+  "contrasts": [],
+  "error_tags": ["sentence_structure"],
+  "source_refs": {"r5": ["b2-reporting-passive", "b2-impersonal-passive", "c1-reporting-passives"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["b2-reporting-passive", "b2-impersonal-passive", "c1-reporting-passives"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Reporting bị động", "en": "Reporting passive"},
+    "native_title": "Reporting passive",
+    "level": {"framework": "cefr", "value": "B2", "rank": 4},
+    "summary": {
+      "vi": "Cấu trúc bị động tường thuật đưa chủ thể được nói đến lên đầu câu: X + be + phân từ tường thuật + to + động từ nguyên thể, với động từ nguyên thể hoàn thành khi sự việc xảy ra trước thời điểm đưa tin.",
+      "en": "The reporting passive raises the reported subject to the front: X + be + reporting participle + to-infinitive, with a perfect infinitive when the reported event happened before the reporting point."
+    },
+    "sub": {"vi": "bị động tường thuật", "en": "reporting passive"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi nguồn tin không quan trọng hoặc không muốn nêu tên, và bạn muốn nhấn vào người hay vật được nói đến.",
+      "en": "When the source of the information is unimportant or you prefer not to name it, and you want to focus on the person or thing being talked about."
+    },
+    {
+      "vi": "Khi viết tin tức, báo cáo hoặc văn bản học thuật cần giọng khách quan, ít quy trách nhiệm cá nhân.",
+      "en": "When writing news, reports or academic texts that need an objective tone and avoid assigning responsibility to a person."
+    },
+    {
+      "vi": "Khi muốn phân biệt sự việc đang xảy ra, sự việc đã xảy ra trước đó, hoặc sự việc sẽ xảy ra, bằng cách chọn dạng nguyên thể phù hợp.",
+      "en": "When you need to show whether the reported event is current, earlier than the report, or still to come, by choosing the right infinitive form."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "S",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ được tường thuật", "en": "reported subject"}
+      },
+      {
+        "text": "be",
+        "role": "aux",
+        "label": {"vi": "trợ động từ be", "en": "auxiliary be"},
+        "options": [{"text": "is"}, {"text": "are"}, {"text": "was"}, {"text": "were"}]
+      },
+      {
+        "text": "reporting participle",
+        "role": "verb",
+        "label": {"vi": "phân từ tường thuật", "en": "reporting participle"},
+        "options": [
+          {"text": "said"},
+          {"text": "believed"},
+          {"text": "thought"},
+          {"text": "expected"},
+          {"text": "reported"}
+        ]
+      },
+      {"text": "to", "role": "marker", "label": {"vi": "to", "en": "to"}},
+      {
+        "text": "infinitive",
+        "role": "verb",
+        "label": {"vi": "động từ nguyên thể", "en": "infinitive"},
+        "options": [{"text": "be"}, {"text": "do"}, {"text": "have done"}, {"text": "have been"}]
+      }
+    ],
+    "variants": {
+      "negative": [
+        {
+          "text": "S",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ được tường thuật", "en": "reported subject"}
+        },
+        {
+          "text": "be",
+          "role": "aux",
+          "label": {"vi": "trợ động từ be", "en": "auxiliary be"},
+          "options": [{"text": "is"}, {"text": "are"}, {"text": "was"}, {"text": "were"}]
+        },
+        {"text": "not", "role": "aux", "label": {"vi": "phủ định", "en": "negator"}},
+        {
+          "text": "reporting participle",
+          "role": "verb",
+          "label": {"vi": "phân từ tường thuật", "en": "reporting participle"},
+          "options": [
+            {"text": "said"},
+            {"text": "believed"},
+            {"text": "thought"},
+            {"text": "expected"},
+            {"text": "reported"}
+          ]
+        },
+        {"text": "to", "role": "marker", "label": {"vi": "to", "en": "to"}},
+        {
+          "text": "infinitive",
+          "role": "verb",
+          "label": {"vi": "động từ nguyên thể", "en": "infinitive"},
+          "options": [{"text": "be"}, {"text": "do"}, {"text": "have done"}, {"text": "have been"}]
+        }
+      ],
+      "question": [
+        {
+          "text": "be",
+          "role": "aux",
+          "label": {"vi": "trợ động từ be", "en": "auxiliary be"},
+          "options": [{"text": "Is"}, {"text": "Are"}, {"text": "Was"}, {"text": "Were"}]
+        },
+        {
+          "text": "S",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ được tường thuật", "en": "reported subject"}
+        },
+        {
+          "text": "reporting participle",
+          "role": "verb",
+          "label": {"vi": "phân từ tường thuật", "en": "reporting participle"},
+          "options": [
+            {"text": "said"},
+            {"text": "believed"},
+            {"text": "thought"},
+            {"text": "expected"},
+            {"text": "reported"}
+          ]
+        },
+        {"text": "to", "role": "marker", "label": {"vi": "to", "en": "to"}},
+        {
+          "text": "infinitive",
+          "role": "verb",
+          "label": {"vi": "động từ nguyên thể", "en": "infinitive"},
+          "options": [{"text": "be"}, {"text": "do"}, {"text": "have done"}, {"text": "have been"}]
+        }
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "The company is expected to announce results tomorrow.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 11, "role": "subject"},
+        {"start": 12, "end": 14, "role": "aux"},
+        {"start": 15, "end": 23, "role": "verb"},
+        {"start": 24, "end": 26, "role": "marker"},
+        {"start": 27, "end": 35, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Sự việc sẽ xảy ra sau thời điểm đưa tin, nên dùng nguyên thể đơn.",
+        "en": "The event is later than the reporting point, so the simple infinitive is used."
+      },
+      "translation": {
+        "vi": "Công ty được dự kiến công bố kết quả vào ngày mai.",
+        "en": "The company is expected to announce results tomorrow."
+      }
+    },
+    {
+      "text": "He is believed to have left the country.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 3, "end": 5, "role": "aux"},
+        {"start": 6, "end": 14, "role": "verb"},
+        {"start": 15, "end": 17, "role": "marker"},
+        {"start": 18, "end": 27, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Sự việc xảy ra trước thời điểm đưa tin, nên dùng nguyên thể hoàn thành.",
+        "en": "The event happened before the reporting point, so the perfect infinitive is used."
+      },
+      "translation": {
+        "vi": "Người ta tin rằng anh ấy đã rời khỏi đất nước.",
+        "en": "He is believed to have left the country."
+      }
+    },
+    {
+      "text": "The drug is thought to be safe.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 8, "role": "subject"},
+        {"start": 9, "end": 11, "role": "aux"},
+        {"start": 12, "end": 19, "role": "verb"},
+        {"start": 20, "end": 22, "role": "marker"},
+        {"start": 23, "end": 25, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Trạng thái hiện tại, không có mốc thời gian trước đó, nên dùng nguyên thể đơn.",
+        "en": "A present state with no earlier time reference, so the simple infinitive is used."
+      },
+      "translation": {"vi": "Loại thuốc này được cho là an toàn.", "en": "The drug is thought to be safe."}
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "He is believed that he left.",
+      "right": "He is believed to have left.",
+      "reason": {
+        "vi": "Người học trộn cấu trúc bị động tường thuật cá nhân (He is believed to...) với cấu trúc bị động tường thuật vô nhân xưng (It is believed that...). Chỉ được chọn một trong hai, không được ghép chủ ngữ cá nhân với mệnh đề that.",
+        "en": "The learner mixes the personal reporting passive (He is believed to...) with the impersonal pattern (It is believed that...). You must choose one pattern; a personal subject cannot be followed by a that-clause here."
+      },
+      "error_tag": "sentence_structure",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "The minister is reported ___ resigned yesterday.",
+      "options": [{"text": "to have", "error_tag": null}, {"text": "to", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Sự việc xảy ra trước thời điểm đưa tin (yesterday), nên cần nguyên thể hoàn thành to have resigned.",
+        "en": "The event happened before the reporting point (yesterday), so the perfect infinitive to have resigned is needed."
+      }
+    },
+    {
+      "q": "The bridge is expected ___ completed in June.",
+      "options": [{"text": "to be", "error_tag": null}, {"text": "to have", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Cây cầu là đối tượng chịu tác động của complete, và sự việc chưa xảy ra, nên dùng nguyên thể bị động to be completed.",
+        "en": "The bridge is the patient of complete, and the event is still in the future, so the passive infinitive to be completed is needed."
+      }
+    },
+    {
+      "q": "She ___ believed to have left early.",
+      "options": [{"text": "is", "error_tag": null}, {"text": "believes", "error_tag": "agreement"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Cấu trúc bị động tường thuật cần be + phân từ tường thuật, không dùng động từ chủ động believes.",
+        "en": "The reporting passive needs be + reporting participle, not the active verb believes."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một người hoặc vật mà bạn nghe nói là đã làm gì đó trước đây, dùng cấu trúc bị động tường thuật với nguyên thể hoàn thành.",
+      "en": "Write one sentence about a person or thing you have heard did something earlier, using the reporting passive with a perfect infinitive."
+    },
+    "placeholder": "He is said to have ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "aux", "any_of": ["is", "are", "was", "were"]},
+        {"role": "verb", "any_of": ["said", "believed", "thought", "expected", "reported"]},
+        {"role": "marker", "any_of": ["to"]},
+        {"role": "verb", "regex": "\\b(be|do|have\\s+\\w+|\\w+)\\b"}
+      ]
+    },
+    "sample": {"text": "She is said to have worked in Paris for ten years."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790831179",
+    "generated_at": "2026-10-01T05:06:19Z",
+    "r5_source": {
+      "ids": ["b2-reporting-passive", "b2-impersonal-passive", "c1-reporting-passives"],
+      "content_version": 2,
+      "content_hash": "d00eedbf398298aacb3e3571ca707f2e9b8b91ea1da1acc6bcb971113fbd14d9",
+      "corrections": [
+        {
+          "r5_id": "b2-reporting-passive",
+          "issue": "The R5 lesson mixes the personal reporting passive (He is believed to...) with the impersonal pattern (It is believed that...) in its examples and corrections, which blurs the target point.",
+          "fix": "Kept only the personal reporting passive in the formula, examples and practice; the impersonal pattern is left out of this point's scope."
+        },
+        {
+          "r5_id": "b2-reporting-passive",
+          "issue": "The R5 rule 'subject + be + reporting participle + to-infinitive' does not show the choice of infinitive form (simple vs perfect) as part of the pattern.",
+          "fix": "Added the infinitive slot with options be / do / have done / have been, and explained the time relation in the annotation."
+        },
+        {
+          "r5_id": "b2-impersonal-passive",
+          "issue": "This lesson teaches the impersonal It is believed that... pattern, which is a different point from the personal reporting passive.",
+          "fix": "Not used as source content for this point; only the personal reporting passive is taught here."
+        },
+        {
+          "r5_id": "c1-reporting-passives",
+          "issue": "The C1 lesson includes progressive and perfect continuous infinitives (to be working, to have been working), which are beyond this B2 point.",
+          "fix": "Restricted the infinitive options to simple and perfect forms only, matching the B2 level."
+        }
+      ]
+    },
+    "metadata_stale": true
+  },
+  "review": null
+}

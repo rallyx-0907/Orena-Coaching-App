@@ -1,0 +1,260 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk3.a_3_9.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.questions",
+  "level": {"framework": "hsk3", "value": "3", "rank": 3},
+  "prereqs": ["zh.canon.gf.hsk3.a_3_8.p1"],
+  "contrasts": [],
+  "error_tags": ["particle"],
+  "source_refs": {"gf0025": ["gf0025.hsk3.078"]},
+  "point_type": "other",
+  "sequence": 4,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Cách đặt câu hỏi: 用疑问语调表示疑问", "en": "Ways of asking questions: 用疑问语调表示疑问"},
+    "native_title": "用疑问语调表示疑问",
+    "level": {"framework": "hsk3", "value": "3", "rank": 3},
+    "summary": {
+      "vi": "Câu hỏi tiếng Trung có thể chỉ dùng ngữ điệu lên giọng ở cuối câu, giữ nguyên trật tự từ như câu kể.",
+      "en": "A Chinese question can be formed with rising intonation alone, keeping the same word order as a statement."
+    },
+    "sub": {"vi": "ngữ điệu nghi vấn", "en": "question intonation"},
+    "native_title_pinyin": ["yòng", "yí", "wèn", "yǔ", "diào", "biǎo", "shì", "yí", "wèn"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn xác nhận một điều gì đó mà mình đã phỏng đoán, không cần thêm từ hỏi.",
+      "en": "When you want to confirm something you already suspect, without adding a question word."
+    },
+    {
+      "vi": "Khi câu hỏi ngắn, thân mật, thường dùng trong hội thoại hằng ngày.",
+      "en": "When the question is short and casual, typical of everyday conversation."
+    },
+    {
+      "vi": "Khi bạn giữ nguyên câu kể nhưng lên giọng ở âm tiết cuối để biến nó thành câu hỏi.",
+      "en": "When you keep a statement as it is but raise your pitch on the final syllable to turn it into a question."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "谓语",
+        "role": "verb",
+        "label": {"vi": "vị ngữ", "en": "predicate"},
+        "pinyin": ["wèi", "yǔ"]
+      },
+      {
+        "text": "宾语",
+        "role": "object",
+        "label": {"vi": "tân ngữ", "en": "object"},
+        "optional": true,
+        "pinyin": ["bīn", "yǔ"]
+      },
+      {
+        "text": "↗",
+        "role": "other",
+        "label": {"vi": "ngữ điệu lên giọng", "en": "rising intonation"},
+        "pinyin": [""]
+      }
+    ],
+    "variants": {
+      "question": [
+        {
+          "text": "主语",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ", "en": "subject"},
+          "pinyin": ["zhǔ", "yǔ"]
+        },
+        {
+          "text": "谓语",
+          "role": "verb",
+          "label": {"vi": "vị ngữ", "en": "predicate"},
+          "pinyin": ["wèi", "yǔ"]
+        },
+        {
+          "text": "宾语",
+          "role": "object",
+          "label": {"vi": "tân ngữ", "en": "object"},
+          "optional": true,
+          "pinyin": ["bīn", "yǔ"]
+        },
+        {
+          "text": "↗",
+          "role": "other",
+          "label": {"vi": "ngữ điệu lên giọng", "en": "rising intonation"},
+          "pinyin": [""]
+        }
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "你是学生？",
+      "form": "question",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "verb"},
+        {"start": 2, "end": 4, "role": "object"},
+        {"start": 4, "end": 5, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Giữ nguyên trật tự câu kể, chỉ lên giọng ở cuối để hỏi.",
+        "en": "The statement order stays the same; only the final rising intonation makes it a question."
+      },
+      "translation": {"vi": "Bạn là học sinh à?", "en": "Are you a student?"},
+      "pinyin": ["nǐ", "shì", "xué", "shēng", ""]
+    },
+    {
+      "text": "你明天去学校？",
+      "form": "question",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 3, "end": 4, "role": "verb"},
+        {"start": 4, "end": 6, "role": "object"},
+        {"start": 6, "end": 7, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Câu kể có trạng ngữ thời gian, cuối câu lên giọng thành câu hỏi.",
+        "en": "A statement with a time phrase; the rising final intonation turns it into a question."
+      },
+      "translation": {"vi": "Mai bạn đi đến trường à?", "en": "Are you going to school tomorrow?"},
+      "pinyin": ["nǐ", "míng", "tiān", "qù", "xué", "xiào", ""]
+    },
+    {
+      "text": "这个苹果很甜？",
+      "form": "question",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 4, "end": 6, "role": "verb"},
+        {"start": 6, "end": 7, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Câu có vị ngữ tính từ, không thêm từ hỏi, chỉ lên giọng cuối câu.",
+        "en": "An adjective-predicate sentence; no question word is added, only the final rise."
+      },
+      "translation": {"vi": "Quả táo này rất ngọt à?", "en": "Is this apple very sweet?"},
+      "pinyin": ["zhè", "ge", "píng", "guǒ", "hěn", "tián", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "你是学生吗？",
+      "right": "你是学生？",
+      "reason": {
+        "vi": "Người học quen dùng trợ từ 吗 nên thêm vào cả khi câu chỉ cần ngữ điệu; 吗 và ngữ điệu nghi vấn không dùng cùng nhau trong một câu hỏi ngắn kiểu này.",
+        "en": "Learners overuse the particle 吗 and add it even when intonation alone is intended; 吗 and question intonation are not combined in this short question type."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong_pinyin": ["nǐ", "shì", "xué", "shēng", "ma", ""],
+      "right_pinyin": ["nǐ", "shì", "xué", "shēng", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "你明天去学校___",
+      "options": [
+        {"text": "？", "error_tag": null, "pinyin": [""]},
+        {"text": "吗？", "error_tag": "particle", "pinyin": ["ma", ""]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu hỏi ngữ điệu chỉ cần dấu hỏi ở cuối, không thêm 吗.",
+        "en": "An intonation question needs only the question mark at the end; do not add 吗."
+      },
+      "q_pinyin": ["nǐ", "míng", "tiān", "qù", "xué", "xiào", "", "", ""]
+    },
+    {
+      "q": "这个苹果很甜___",
+      "options": [
+        {"text": "？", "error_tag": null, "pinyin": [""]},
+        {"text": "吗？", "error_tag": "particle", "pinyin": ["ma", ""]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Với câu vị ngữ tính từ, chỉ cần lên giọng cuối câu, không dùng 吗.",
+        "en": "With an adjective-predicate sentence, just use rising intonation; 吗 is not used."
+      },
+      "q_pinyin": ["zhè", "ge", "píng", "guǒ", "hěn", "tián", "", "", ""]
+    },
+    {
+      "q": "你昨天去公园___",
+      "options": [
+        {"text": "？", "error_tag": null, "pinyin": [""]},
+        {"text": "吗？", "error_tag": "particle", "pinyin": ["ma", ""]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu kể giữ nguyên, chỉ thêm ngữ điệu lên giọng ở cuối; 吗 không cần thiết.",
+        "en": "The statement stays as it is; only the final rising intonation is added, so 吗 is unnecessary."
+      },
+      "q_pinyin": ["nǐ", "zuó", "tiān", "qù", "gōng", "yuán", "", "", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu hỏi ngắn về kế hoạch của bạn, chỉ dùng ngữ điệu lên giọng ở cuối, không thêm 吗.",
+      "en": "Write a short question about your plan, using only rising intonation at the end, without adding 吗."
+    },
+    "placeholder": "你明天……",
+    "target_form": "question",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "subject", "any_of": ["你", "我", "他", "她", "我们", "你们", "他们", "她们", "这个", "那个"]},
+        {
+          "role": "verb",
+          "any_of": [
+            "去",
+            "来",
+            "是",
+            "有",
+            "在",
+            "吃",
+            "喝",
+            "看",
+            "买",
+            "做",
+            "学",
+            "说",
+            "想",
+            "要",
+            "会",
+            "能",
+            "喜欢",
+            "很甜",
+            "很好",
+            "很忙",
+            "很累",
+            "很贵",
+            "很冷",
+            "很热"
+          ]
+        },
+        {"role": "other", "any_of": ["？", "?"]}
+      ]
+    },
+    "sample": {"text": "你明天去学校？", "pinyin": ["nǐ", "míng", "tiān", "qù", "xué", "xiào", ""]},
+    "placeholder_pinyin": ["nǐ", "míng", "tiān", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790832868",
+    "generated_at": "2026-10-01T05:34:28Z"
+  },
+  "review": null
+}

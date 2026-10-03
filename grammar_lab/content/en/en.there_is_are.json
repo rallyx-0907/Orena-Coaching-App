@@ -5,123 +5,198 @@
   "target_lang": "en",
   "function": "fn.existence",
   "level": {"framework": "cefr", "value": "A1", "rank": 1},
-  "prereqs": ["en.plural_nouns.regular"],
-  "contrasts": [],
+  "prereqs": ["en.be.present"],
+  "contrasts": ["en.have_got"],
   "error_tags": ["sentence_structure", "agreement"],
-  "source_refs": {},
+  "source_refs": {"r5": ["a1-there-is-there-are"]},
   "point_type": "word_order",
+  "sequence": 1,
+  "aliases": ["a1-there-is-there-are"],
+  "source_anchors": {"status": "anchored", "items": [{"source": "core_inventory", "code": "123", "level": "A1"}]},
   "header": {
     "title": {"vi": "There is / There are", "en": "There is / There are"},
     "native_title": "There is / There are",
     "level": {"framework": "cefr", "value": "A1", "rank": 1},
     "summary": {
-      "vi": "Cấu trúc \"There is / There are\" dùng để nói rằng một người hay vật nào đó tồn tại hoặc hiện diện ở một nơi nào đó.",
-      "en": "Say that a person or thing exists somewhere: there is for one, there are for more."
+      "vi": "Cấu trúc there is/there are dùng để nói rằng một người hoặc vật tồn tại hoặc có mặt ở một nơi nào đó.",
+      "en": "The structure there is/there are is used to say that a person or thing exists or is present in a place."
     },
-    "sub": {"vi": "có ... ở đâu", "en": "existence"}
+    "sub": {"vi": "sự tồn tại", "en": "existence"}
   },
   "when_to_use": [
-    {"vi": "Khi bạn muốn nói có một thứ gì đó tồn tại hoặc đang ở một nơi cụ thể."},
-    {"vi": "Khi bạn giới thiệu một người hoặc vật mà người nghe chưa biết."},
     {
-      "vi": "Khi bạn mô tả một nơi chốn có những gì (ví dụ: trong phòng, trên bàn, trong thành phố)."
+      "vi": "Khi bạn muốn giới thiệu rằng có một thứ gì đó tồn tại hoặc hiện diện, lần đầu được nhắc đến.",
+      "en": "When you want to introduce that something exists or is present, mentioned for the first time."
     },
-    {"vi": "Khi bạn muốn hỏi xem có thứ gì đó hay không."}
+    {
+      "vi": "Khi bạn mô tả một không gian, một nơi chốn có những gì.",
+      "en": "When you describe what is in a space or place."
+    },
+    {
+      "vi": "Khi bạn hỏi xem một nơi nào đó có thứ gì không.",
+      "en": "When you ask whether a place has something."
+    },
+    {
+      "vi": "Khi bạn nói rằng một thứ gì đó không tồn tại hoặc không có mặt.",
+      "en": "When you say that something does not exist or is not present."
+    }
   ],
   "pattern": {
     "formula": [
-      {"text": "There", "role": "other", "label": {"vi": "chủ ngữ giả"}},
+      {"text": "There", "role": "other", "label": {"vi": "chủ ngữ giả", "en": "dummy subject"}},
       {
-        "text": "be",
+        "text": "is/are",
         "role": "verb",
-        "label": {"vi": "động từ to be"},
+        "label": {"vi": "động từ to be", "en": "verb to be"},
         "options": [{"text": "is"}, {"text": "are"}]
       },
-      {"text": "N", "role": "subject", "label": {"vi": "danh từ"}},
-      {"text": "place", "role": "place", "label": {"vi": "nơi chốn"}, "optional": true}
+      {
+        "text": "a/an",
+        "role": "other",
+        "label": {"vi": "mạo từ", "en": "article"},
+        "optional": true,
+        "options": [{"text": "a"}, {"text": "an"}]
+      },
+      {"text": "N", "role": "object", "label": {"vi": "danh từ", "en": "noun"}},
+      {
+        "text": "place",
+        "role": "place",
+        "label": {"vi": "nơi chốn", "en": "place"},
+        "optional": true
+      }
     ],
     "variants": {
       "negative": [
-        {"text": "There", "role": "other", "label": {"vi": "chủ ngữ giả"}},
+        {"text": "There", "role": "other", "label": {"vi": "chủ ngữ giả", "en": "dummy subject"}},
         {
-          "text": "be",
+          "text": "is/are",
           "role": "verb",
-          "label": {"vi": "động từ to be"},
+          "label": {"vi": "động từ to be", "en": "verb to be"},
           "options": [{"text": "is"}, {"text": "are"}]
         },
-        {"text": "not", "role": "other", "label": {"vi": "phủ định"}},
-        {"text": "N", "role": "subject", "label": {"vi": "danh từ"}},
-        {"text": "place", "role": "place", "label": {"vi": "nơi chốn"}, "optional": true}
+        {"text": "not", "role": "other", "label": {"vi": "phủ định", "en": "negator"}},
+        {
+          "text": "a/an",
+          "role": "other",
+          "label": {"vi": "mạo từ", "en": "article"},
+          "optional": true,
+          "options": [{"text": "a"}, {"text": "an"}]
+        },
+        {"text": "N", "role": "object", "label": {"vi": "danh từ", "en": "noun"}},
+        {
+          "text": "place",
+          "role": "place",
+          "label": {"vi": "nơi chốn", "en": "place"},
+          "optional": true
+        }
       ],
       "question": [
         {
-          "text": "be",
+          "text": "Is/Are",
           "role": "verb",
-          "label": {"vi": "động từ to be"},
+          "label": {"vi": "động từ to be", "en": "verb to be"},
           "options": [{"text": "Is"}, {"text": "Are"}]
         },
-        {"text": "there", "role": "other", "label": {"vi": "chủ ngữ giả"}},
-        {"text": "N", "role": "subject", "label": {"vi": "danh từ"}},
-        {"text": "place", "role": "place", "label": {"vi": "nơi chốn"}, "optional": true}
+        {"text": "there", "role": "other", "label": {"vi": "chủ ngữ giả", "en": "dummy subject"}},
+        {
+          "text": "a/an",
+          "role": "other",
+          "label": {"vi": "mạo từ", "en": "article"},
+          "optional": true,
+          "options": [{"text": "a"}, {"text": "an"}]
+        },
+        {"text": "N", "role": "object", "label": {"vi": "danh từ", "en": "noun"}},
+        {
+          "text": "place",
+          "role": "place",
+          "label": {"vi": "nơi chốn", "en": "place"},
+          "optional": true
+        }
       ]
     },
     "illustration": {"kind": "word_order"}
   },
   "examples": [
     {
-      "text": "There is a book on the table.",
+      "text": "There is a supermarket on this street.",
       "form": "affirmative",
       "spans": [
         {"start": 0, "end": 5, "role": "other"},
         {"start": 6, "end": 8, "role": "verb"},
-        {"start": 9, "end": 15, "role": "subject"},
-        {"start": 16, "end": 28, "role": "place"}
+        {"start": 9, "end": 10, "role": "other"},
+        {"start": 11, "end": 22, "role": "object"},
+        {"start": 23, "end": 37, "role": "place"}
       ],
-      "annotation": {"vi": "Cấu trúc khẳng định: There is + danh từ số ít + nơi chốn."},
-      "translation": {"vi": "Có một quyển sách trên bàn."}
+      "annotation": {
+        "vi": "Giới thiệu sự tồn tại của một siêu thị trên con phố này.",
+        "en": "Introduces the existence of a supermarket on this street."
+      },
+      "translation": {"vi": "Có một siêu thị trên con phố này.", "en": "There is a supermarket on this street."}
     },
     {
-      "text": "There are two cats in the garden.",
+      "text": "There are three people in the kitchen.",
       "form": "affirmative",
       "spans": [
         {"start": 0, "end": 5, "role": "other"},
         {"start": 6, "end": 9, "role": "verb"},
-        {"start": 10, "end": 18, "role": "subject"},
-        {"start": 19, "end": 32, "role": "place"}
+        {"start": 10, "end": 22, "role": "object"},
+        {"start": 23, "end": 37, "role": "place"}
       ],
-      "annotation": {"vi": "Cấu trúc khẳng định: There are + danh từ số nhiều + nơi chốn."},
-      "translation": {"vi": "Có hai con mèo trong vườn."}
+      "annotation": {
+        "vi": "Nói rằng có ba người trong bếp.",
+        "en": "Says that there are three people in the kitchen."
+      },
+      "translation": {"vi": "Có ba người trong bếp.", "en": "There are three people in the kitchen."}
     },
     {
-      "text": "There is not a pen in my bag.",
-      "form": "negative",
+      "text": "Is there a bathroom upstairs?",
+      "form": "question",
       "spans": [
-        {"start": 0, "end": 5, "role": "other"},
-        {"start": 6, "end": 8, "role": "verb"},
-        {"start": 9, "end": 12, "role": "other"},
-        {"start": 13, "end": 18, "role": "subject"},
-        {"start": 19, "end": 28, "role": "place"}
+        {"start": 0, "end": 2, "role": "verb"},
+        {"start": 3, "end": 8, "role": "other"},
+        {"start": 9, "end": 10, "role": "other"},
+        {"start": 11, "end": 19, "role": "object"},
+        {"start": 20, "end": 28, "role": "place"}
       ],
-      "annotation": {"vi": "Cấu trúc phủ định: There is not + danh từ số ít + nơi chốn."},
-      "translation": {"vi": "Không có một cây bút nào trong túi của tôi."}
+      "annotation": {
+        "vi": "Hỏi xem trên lầu có nhà vệ sinh không.",
+        "en": "Asks whether there is a bathroom upstairs."
+      },
+      "translation": {"vi": "Trên lầu có nhà vệ sinh không?", "en": "Is there a bathroom upstairs?"}
     }
   ],
-  "compare": [],
+  "compare": [
+    {
+      "with": "en.have_got",
+      "this_example": "There is a book on the desk.",
+      "other_example": "I have got a book.",
+      "this_meaning": {
+        "vi": "There is/there are nói rằng một thứ tồn tại hoặc có mặt ở một nơi, không nói ai sở hữu nó.",
+        "en": "There is/there are says that something exists or is present in a place; it does not say who owns it."
+      },
+      "other_meaning": {
+        "vi": "Have got nói rằng ai đó sở hữu hoặc có một thứ gì đó.",
+        "en": "Have got says that someone owns or has something."
+      }
+    }
+  ],
   "common_mistakes": [
     {
       "wrong": "There is two cats in the garden.",
       "right": "There are two cats in the garden.",
       "reason": {
-        "vi": "Người Việt thường không phân biệt số ít/số nhiều của động từ to be khi nói về sự tồn tại, nên dùng 'is' cho cả danh từ số nhiều. Cần chia 'are' với danh từ số nhiều."
+        "vi": "Người học dùng there is với danh từ số nhiều vì không nhận ra 'two cats' là số nhiều; trong mẫu cơ bản phải dùng there are.",
+        "en": "The learner uses there is with a plural noun because they do not notice that 'two cats' is plural; in the basic pattern there are is required."
       },
       "error_tag": "agreement",
       "l1": ["vi"]
     },
     {
-      "wrong": "There have a book on the table.",
-      "right": "There is a book on the table.",
+      "wrong": "Are there a bank near here?",
+      "right": "Is there a bank near here?",
       "reason": {
-        "vi": "Người Việt dịch 'có' thành 'have' vì nghĩ 'có' tương đương với 'have', nhưng cấu trúc tồn tại trong tiếng Anh dùng 'there is/are', không dùng 'have'."
+        "vi": "Người học đảo are lên trước there theo thói quen câu hỏi số nhiều, nhưng 'a bank' là số ít nên phải dùng Is there.",
+        "en": "The learner fronts are before there by habit from plural questions, but 'a bank' is singular so Is there is required."
       },
       "error_tag": "sentence_structure",
       "l1": ["vi"]
@@ -129,64 +204,70 @@
   ],
   "quick_practice": [
     {
-      "q": "___ a cat on the sofa.",
-      "options": [
-        {"text": "There is", "error_tag": null},
-        {"text": "There are", "error_tag": "agreement"},
-        {"text": "There have", "error_tag": "sentence_structure"}
-      ],
+      "q": "There ___ a bus stop outside.",
+      "options": [{"text": "is", "error_tag": null}, {"text": "are", "error_tag": "agreement"}],
       "answer": 0,
       "explain": {
-        "vi": "Danh từ 'a cat' là số ít, nên dùng 'There is'. 'There are' sai vì không hợp số ít; 'There have' sai vì không dùng 'have' trong cấu trúc tồn tại."
+        "vi": "'a bus stop' là danh từ số ít nên dùng there is.",
+        "en": "'a bus stop' is a singular noun, so there is is used."
       }
     },
     {
-      "q": "___ many students in the classroom?",
-      "options": [
-        {"text": "Is there", "error_tag": "agreement"},
-        {"text": "Are there", "error_tag": null},
-        {"text": "There are", "error_tag": "sentence_structure"}
-      ],
+      "q": "There ___ five desks in the room.",
+      "options": [{"text": "is", "error_tag": "agreement"}, {"text": "are", "error_tag": null}],
       "answer": 1,
       "explain": {
-        "vi": "Danh từ 'many students' là số nhiều, nên câu hỏi dùng 'Are there'. 'Is there' sai vì không hợp số nhiều; 'There are' sai vì không phải dạng câu hỏi."
+        "vi": "'five desks' là danh từ số nhiều nên dùng there are.",
+        "en": "'five desks' is a plural noun, so there are is used."
       }
     },
     {
-      "q": "There ___ any milk in the fridge.",
-      "options": [
-        {"text": "is not", "error_tag": null},
-        {"text": "are not", "error_tag": "agreement"},
-        {"text": "not is", "error_tag": "sentence_structure"}
-      ],
+      "q": "___ there a pharmacy nearby?",
+      "options": [{"text": "Is", "error_tag": null}, {"text": "Are", "error_tag": "agreement"}],
       "answer": 0,
       "explain": {
-        "vi": "Danh từ 'milk' không đếm được, nên dùng 'There is not'. 'There are not' sai vì không hợp danh từ không đếm được; 'There not is' sai vì trật tự từ."
+        "vi": "'a pharmacy' là danh từ số ít nên câu hỏi dùng Is there.",
+        "en": "'a pharmacy' is a singular noun, so the question uses Is there."
       }
     }
   ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một thứ tồn tại ở nơi bạn đang ở, dùng 'There is' hoặc 'There are'.",
+      "en": "Write one sentence about something that exists where you are, using 'There is' or 'There are'."
+    },
+    "placeholder": "There is ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "other", "any_of": ["There"]}, {"role": "verb", "any_of": ["is", "are"]}]
+    },
+    "sample": {"text": "There is a small park near my house."}
+  },
   "status": "draft_ai",
   "flags": [],
   "provenance": {
     "model": "deepseek:deepseek-flash",
-    "prompt_version": "generate_point_v04.v7",
-    "run_id": "generate.1790591161",
-    "generated_at": "2026-09-28T10:26:01Z"
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790830366",
+    "generated_at": "2026-10-01T04:52:46Z",
+    "r5_source": {
+      "ids": ["a1-there-is-there-are"],
+      "content_version": 2,
+      "content_hash": "e11ce950b37636318907611614895581ed3e3eb3178057579d2bc0baec0840ef",
+      "corrections": [
+        {
+          "r5_id": "a1-there-is-there-are",
+          "issue": "R5 dùng 'There is two chairs' làm ví dụ sai nhưng không cung cấp dạng câu hỏi và phủ định đầy đủ trong bảng.",
+          "fix": "Đã thêm đầy đủ negative và question vào formula, đồng thời giữ lỗi 'There is two cats' làm common mistake với tag agreement."
+        },
+        {
+          "r5_id": "a1-there-is-there-are",
+          "issue": "R5 có lỗi 'Are there a bank near here?' nhưng không gắn nhãn lỗi cấu trúc câu.",
+          "fix": "Đã đưa vào common_mistakes với error_tag sentence_structure và sửa thành 'Is there a bank near here?'."
+        }
+      ]
+    }
   },
-  "review": null,
-  "sequence": 1,
-  "personal_production": {
-    "prompt": {
-      "vi": "Viết một câu nói có gì ở trong phòng của bạn.",
-      "en": "Write a sentence about what is in your room."
-    },
-    "placeholder": "There is ... in my room.",
-    "target_form": "affirmative",
-    "pattern_rule": {
-      "ordered": true,
-      "slots": [{"role": "other", "any_of": ["there"]}, {"role": "verb", "any_of": ["is", "are"]}]
-    },
-    "sample": {"text": "There are three chairs in the room."}
-  },
-  "source_anchors": {"status": "anchored", "items": [{"source": "core_inventory", "code": "123", "level": "A1"}]}
+  "review": null
 }

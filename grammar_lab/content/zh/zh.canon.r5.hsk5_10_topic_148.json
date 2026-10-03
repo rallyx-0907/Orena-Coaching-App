@@ -1,0 +1,214 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk5_10_topic_148",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.location",
+  "level": {"framework": "hsk3", "value": "5", "rank": 5},
+  "prereqs": ["zh.canon.r5.hsk5_1_ki_m_ng"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["zh-hsk5-10-topic-148"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["zh-hsk5-10-topic-148"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 之中/之内/之上/之下", "en": "Chinese grammar: 之中/之内/之上/之下"},
+    "native_title": "之中/之内/之上/之下",
+    "level": {"framework": "hsk3", "value": "5", "rank": 5},
+    "summary": {
+      "vi": "之中/之内/之上/之下 là các dạng trang trọng của 中/内/上/下, dùng sau danh từ để chỉ vị trí, phạm vi hoặc quan hệ trừu tượng.",
+      "en": "之中/之内/之上/之下 are formal variants of 中/内/上/下, placed after a noun to express position, scope, or an abstract relation."
+    },
+    "sub": {"vi": "vị trí trang trọng", "en": "formal position"},
+    "native_title_pinyin": ["zhī", "zhōng", "", "zhī", "nèi", "", "zhī", "shàng", "", "zhī", "xià"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói 'trong vòng' một giới hạn thời gian hoặc không gian, dùng 之内 sau danh từ chỉ giới hạn đó.",
+      "en": "Use 之内 after a noun to mean 'within' a time or space limit."
+    },
+    {
+      "vi": "Khi muốn nói 'trong số' hoặc 'ở giữa' một tập hợp, dùng 之中 sau danh từ chỉ tập hợp đó.",
+      "en": "Use 之中 after a noun to mean 'among' or 'in the middle of' a group or set."
+    },
+    {
+      "vi": "Khi muốn nói 'ở trên' hoặc 'ở dưới' trong một thứ bậc hoặc quan hệ trừu tượng, dùng 之上 hoặc 之下.",
+      "en": "Use 之上 or 之下 for 'above' or 'below' in a hierarchy or abstract relation."
+    },
+    {
+      "vi": "Các dạng này thường xuất hiện trong văn viết trang trọng, không dùng cho vị trí vật lý thông thường.",
+      "en": "These forms usually appear in formal writing, not for ordinary physical location."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "N", "role": "object", "label": {"vi": "danh từ", "en": "noun"}, "pinyin": [""]},
+      {
+        "text": "之中/之内/之上/之下",
+        "role": "marker",
+        "label": {"vi": "trợ từ vị trí trang trọng", "en": "formal locative marker"},
+        "options": [
+          {"text": "之中", "pinyin": ["zhī", "zhōng"]},
+          {"text": "之内", "pinyin": ["zhī", "nèi"]},
+          {"text": "之上", "pinyin": ["zhī", "shàng"]},
+          {"text": "之下", "pinyin": ["zhī", "xià"]}
+        ],
+        "pinyin": ["zhī", "zhōng", "", "zhī", "nèi", "", "zhī", "shàng", "", "zhī", "xià"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "请在三天之内完成。",
+      "form": "affirmative",
+      "spans": [{"start": 2, "end": 4, "role": "object"}, {"start": 4, "end": 6, "role": "marker"}],
+      "annotation": {"vi": "之内 đánh dấu giới hạn thời gian ba ngày.", "en": "之内 marks the three-day time limit."},
+      "translation": {"vi": "Hãy hoàn thành trong vòng ba ngày.", "en": "Please finish within three days."},
+      "pinyin": ["qǐng", "zài", "sān", "tiān", "zhī", "nèi", "wán", "chéng", ""]
+    },
+    {
+      "text": "在所有方案之中，这个最安全。",
+      "form": "affirmative",
+      "spans": [{"start": 1, "end": 5, "role": "object"}, {"start": 5, "end": 7, "role": "marker"}],
+      "annotation": {"vi": "之中 chọn ra một phương án trong tập hợp.", "en": "之中 selects one option from the set."},
+      "translation": {
+        "vi": "Trong tất cả các phương án, cái này an toàn nhất.",
+        "en": "Among all the options, this one is the safest."
+      },
+      "pinyin": ["zài", "suǒ", "yǒu", "fāng", "àn", "zhī", "zhōng", "", "zhè", "ge", "zuì", "ān", "quán", ""]
+    },
+    {
+      "text": "任何人都不能凌驾于法律之上。",
+      "form": "affirmative",
+      "spans": [{"start": 9, "end": 11, "role": "object"}, {"start": 11, "end": 13, "role": "marker"}],
+      "annotation": {
+        "vi": "之上 chỉ vị trí cao hơn trong thứ bậc trừu tượng.",
+        "en": "之上 indicates a higher position in an abstract hierarchy."
+      },
+      "translation": {"vi": "Không ai được đứng trên pháp luật.", "en": "No one may stand above the law."},
+      "pinyin": ["rèn", "hé", "rén", "dōu", "bù", "néng", "líng", "jià", "yú", "fǎ", "lǜ", "zhī", "shàng", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "我在桌子之上放手机。",
+      "right": "我把手机放在桌子上。",
+      "reason": {
+        "vi": "之上 dùng cho quan hệ trừu tượng hoặc thứ bậc, không dùng cho vị trí vật lý thông thường; vị trí vật lý dùng 上.",
+        "en": "之上 is for abstract or hierarchical relations, not ordinary physical location; physical location uses 上."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong_pinyin": ["wǒ", "zài", "zhuō", "zi", "zhī", "shàng", "fàng", "shǒu", "jī", ""],
+      "right_pinyin": ["wǒ", "bǎ", "shǒu", "jī", "fàng", "zài", "zhuō", "zi", "shàng", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "请在三天___完成这份报告。",
+      "options": [
+        {"text": "之内", "error_tag": null, "pinyin": ["zhī", "nèi"]},
+        {"text": "之中", "error_tag": "word_choice", "pinyin": ["zhī", "zhōng"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "之内 đánh dấu giới hạn thời gian; 之中 không dùng cho giới hạn thời gian.",
+        "en": "之内 marks a time limit; 之中 is not used for a time limit."
+      },
+      "q_pinyin": ["qǐng", "zài", "sān", "tiān", "", "", "", "wán", "chéng", "zhè", "fèn", "bào", "gào", ""]
+    },
+    {
+      "q": "在所有学生___，她最努力。",
+      "options": [
+        {"text": "之中", "error_tag": null, "pinyin": ["zhī", "zhōng"]},
+        {"text": "之内", "error_tag": "word_choice", "pinyin": ["zhī", "nèi"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "之中 dùng để chọn ra một cá thể trong tập hợp; 之内 chỉ giới hạn phạm vi.",
+        "en": "之中 selects one member from a group; 之内 marks a boundary."
+      },
+      "q_pinyin": ["zài", "suǒ", "yǒu", "xué", "shēng", "", "", "", "", "tā", "zuì", "nǔ", "lì", ""]
+    },
+    {
+      "q": "任何人都不能凌驾于法律___。",
+      "options": [
+        {"text": "之上", "error_tag": null, "pinyin": ["zhī", "shàng"]},
+        {"text": "之下", "error_tag": "word_choice", "pinyin": ["zhī", "xià"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "之上 chỉ vị trí cao hơn trong thứ bậc; 之下 là phía dưới.",
+        "en": "之上 means above in a hierarchy; 之下 means below."
+      },
+      "q_pinyin": ["rèn", "hé", "rén", "dōu", "bù", "néng", "líng", "jià", "yú", "fǎ", "lǜ", "", "", "", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng 之中, 之内, 之上 hoặc 之下 để nói về một giới hạn hoặc thứ bậc trong cuộc sống của bạn.",
+      "en": "Write one sentence using 之中, 之内, 之上, or 之下 to talk about a limit or hierarchy in your life."
+    },
+    "placeholder": "在我……之中，……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"role": "marker", "any_of": ["之中", "之内", "之上", "之下"]}]},
+    "sample": {
+      "text": "在我所有的朋友之中，她最了解我。",
+      "pinyin": [
+        "zài",
+        "wǒ",
+        "suǒ",
+        "yǒu",
+        "de",
+        "péng",
+        "yǒu",
+        "zhī",
+        "zhōng",
+        "",
+        "tā",
+        "zuì",
+        "liǎo",
+        "jiě",
+        "wǒ",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["zài", "wǒ", "", "", "zhī", "zhōng", "", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790833856",
+    "generated_at": "2026-10-01T05:50:56Z",
+    "r5_source": {
+      "ids": ["zh-hsk5-10-topic-148"],
+      "content_version": 2,
+      "content_hash": "69e39b9ffc0ff794b8c9d131baee18cb96701067e4bf0ff3d1fcbda922dfc22b",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk5-10-topic-148",
+          "issue": "R5 dùng '三天之中完成' như một lỗi, nhưng không cung cấp dạng đúng rõ ràng trong ngoại lệ; cần phân biệt 之内 (giới hạn) và 之中 (trong số/ở giữa).",
+          "fix": "Đã thêm ví dụ đúng '请在三天之内完成。' và giải thích 之内 đánh dấu giới hạn thời gian, 之中 không dùng cho giới hạn thời gian."
+        },
+        {
+          "r5_id": "zh-hsk5-10-topic-148",
+          "issue": "R5 đưa ví dụ '我在桌子之上放手机。' là sai nhưng không nêu rõ 之上 chỉ dùng cho quan hệ trừu tượng/thứ bậc, không dùng cho vị trí vật lý.",
+          "fix": "Đã sửa thành '我把手机放在桌子上。' và thêm lý do: 之上 dùng cho quan hệ trừu tượng hoặc thứ bậc, vị trí vật lý dùng 上."
+        },
+        {
+          "r5_id": "zh-hsk5-10-topic-148",
+          "issue": "R5 thiếu công thức cấu trúc rõ ràng và các dạng câu hỏi/phủ định.",
+          "fix": "Đã thêm formula với N + 之中/之内/之上/之下; negative và question để trống vì điểm này không có dạng phủ định/câu hỏi riêng."
+        }
+      ]
+    },
+    "metadata_stale": true
+  },
+  "review": null
+}

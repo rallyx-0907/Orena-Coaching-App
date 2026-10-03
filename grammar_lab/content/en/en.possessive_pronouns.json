@@ -4,211 +4,269 @@
   "version": 1,
   "target_lang": "en",
   "function": "fn.possession",
-  "level": {
-    "framework": "cefr",
-    "value": "A1",
-    "rank": 1
-  },
-  "prereqs": [
-    "en.possessive_adjectives"
-  ],
-  "contrasts": [],
-  "error_tags": [
-    "word_form"
-  ],
-  "source_refs": {
-    "r5": [
-      "a1-possessive-adjectives-pronouns-and-possessive-s"
-    ]
-  },
+  "level": {"framework": "cefr", "value": "A1", "rank": 1},
+  "prereqs": ["en.possessive_adjectives"],
+  "contrasts": ["en.possessive_adjectives"],
+  "error_tags": ["word_form"],
+  "source_refs": {"r5": ["a1-possessive-adjectives-pronouns-and-possessive-s"]},
   "point_type": "other",
+  "sequence": 2,
+  "aliases": [],
+  "source_anchors": {"status": "anchored", "items": [{"source": "core_inventory", "code": "129", "level": "A1"}]},
   "header": {
-    "title": {
-      "vi": "Đại từ sở hữu",
-      "en": "Possessive pronouns"
-    },
+    "title": {"vi": "Đại từ sở hữu (mine, yours...)", "en": "Possessive pronouns"},
     "native_title": "Possessive pronouns",
-    "sub": {
-      "vi": "mine, yours, his...",
-      "en": "mine, yours, his..."
-    },
-    "level": {
-      "framework": "cefr",
-      "value": "A1",
-      "rank": 1
-    },
+    "level": {"framework": "cefr", "value": "A1", "rank": 1},
     "summary": {
-      "vi": "Mine, yours, his, hers, ours, theirs thay cho cả cụm tính từ sở hữu + danh từ để tránh lặp danh từ.",
-      "en": "Mine, yours, his, hers, ours, and theirs replace a possessive adjective plus noun to avoid repetition."
-    }
+      "vi": "Đại từ sở hữu (mine, yours, hers...) thay cho cả cụm danh từ đã nhắc trước, cho biết vật thuộc về ai.",
+      "en": "Possessive pronouns (mine, yours, hers...) replace a whole noun phrase and show who something belongs to."
+    },
+    "sub": {"vi": "đại từ sở hữu", "en": "possessive pronouns"}
   },
   "when_to_use": [
     {
-      "vi": "Dùng khi danh từ đã rõ: This book is mine.",
-      "en": "Use them when the noun is already clear: This book is mine."
+      "vi": "Khi danh từ đã rõ hoặc vừa được nhắc đến, không cần lặp lại: This book is mine.",
+      "en": "When the noun is already clear or was just mentioned, so you do not repeat it: This book is mine."
     },
     {
-      "vi": "Không đặt thêm danh từ ngay sau mine/yours/hers/ours/theirs.",
-      "en": "Do not put a noun directly after mine/yours/hers/ours/theirs."
+      "vi": "Khi trả lời câu hỏi Whose...? mà không muốn lặp danh từ: It's hers.",
+      "en": "When answering Whose...? without repeating the noun: It's hers."
+    },
+    {
+      "vi": "Khi so sánh hai vật thuộc về hai người khác nhau: Your bag is big, but mine is small.",
+      "en": "When comparing two things that belong to different people: Your bag is big, but mine is small."
+    },
+    {
+      "vi": "Sau động từ be hoặc sau giới từ, khi cụm danh từ sở hữu đã được hiểu ngầm: That phone is hers. / a friend of mine.",
+      "en": "After the verb be or after a preposition, when the possessive noun phrase is understood: That phone is hers. / a friend of mine."
     }
   ],
   "pattern": {
     "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {
+        "text": "be",
+        "role": "verb",
+        "label": {"vi": "động từ be", "en": "verb be"},
+        "options": [{"text": "is"}, {"text": "are"}, {"text": "am"}]
+      },
       {
         "text": "possessive pronoun",
         "role": "complement",
-        "label": {
-          "vi": "đại từ sở hữu",
-          "en": "possessive pronoun"
-        }
+        "label": {"vi": "đại từ sở hữu", "en": "possessive pronoun"},
+        "options": [
+          {"text": "mine"},
+          {"text": "yours"},
+          {"text": "his"},
+          {"text": "hers"},
+          {"text": "ours"},
+          {"text": "theirs"}
+        ]
       }
     ],
-    "illustration": {
-      "kind": "none"
-    }
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "be",
+          "role": "verb",
+          "label": {"vi": "động từ be", "en": "verb be"},
+          "options": [{"text": "is"}, {"text": "are"}, {"text": "am"}]
+        },
+        {"text": "not", "role": "particle", "label": {"vi": "phủ định", "en": "negator"}},
+        {
+          "text": "possessive pronoun",
+          "role": "complement",
+          "label": {"vi": "đại từ sở hữu", "en": "possessive pronoun"},
+          "options": [
+            {"text": "mine"},
+            {"text": "yours"},
+            {"text": "his"},
+            {"text": "hers"},
+            {"text": "ours"},
+            {"text": "theirs"}
+          ]
+        }
+      ],
+      "question": [
+        {
+          "text": "be",
+          "role": "verb",
+          "label": {"vi": "động từ be", "en": "verb be"},
+          "options": [{"text": "Is"}, {"text": "Are"}, {"text": "Am"}]
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "possessive pronoun",
+          "role": "complement",
+          "label": {"vi": "đại từ sở hữu", "en": "possessive pronoun"},
+          "options": [
+            {"text": "mine"},
+            {"text": "yours"},
+            {"text": "his"},
+            {"text": "hers"},
+            {"text": "ours"},
+            {"text": "theirs"}
+          ]
+        }
+      ]
+    },
+    "illustration": {"kind": "none"}
   },
   "examples": [
     {
-      "text": "This bag is mine.",
+      "text": "This book is mine.",
       "form": "affirmative",
       "spans": [
-        {
-          "start": 12,
-          "end": 16,
-          "role": "complement"
-        }
+        {"start": 0, "end": 9, "role": "subject"},
+        {"start": 10, "end": 12, "role": "verb"},
+        {"start": 13, "end": 17, "role": "complement"}
       ],
       "annotation": {
-        "vi": "Mine thay cho my bag.",
-        "en": "Mine replaces my bag."
+        "vi": "mine thay cho my book, không lặp lại danh từ.",
+        "en": "mine replaces my book, so the noun is not repeated."
+      },
+      "translation": {"vi": "Quyển sách này là của tôi.", "en": "This book is mine."}
+    },
+    {
+      "text": "That blue backpack is not hers.",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 18, "role": "subject"},
+        {"start": 19, "end": 21, "role": "verb"},
+        {"start": 22, "end": 25, "role": "particle"},
+        {"start": 26, "end": 30, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "not đứng sau is; hers thay cho her backpack.",
+        "en": "not comes after is; hers replaces her backpack."
       },
       "translation": {
-        "vi": "Mine thay cho my bag.",
-        "en": "Mine replaces my bag."
+        "vi": "Chiếc ba lô màu xanh đó không phải của cô ấy.",
+        "en": "That blue backpack is not hers."
       }
     },
     {
-      "text": "Those seats are ours.",
-      "form": "affirmative",
+      "text": "Is this pen yours?",
+      "form": "question",
       "spans": [
-        {
-          "start": 16,
-          "end": 20,
-          "role": "complement"
-        }
+        {"start": 0, "end": 2, "role": "verb"},
+        {"start": 3, "end": 11, "role": "subject"},
+        {"start": 12, "end": 17, "role": "complement"}
       ],
       "annotation": {
-        "vi": "Ours thay cho our seats.",
-        "en": "Ours replaces our seats."
+        "vi": "Câu hỏi đảo be lên trước chủ ngữ; yours thay cho your pen.",
+        "en": "In questions be comes before the subject; yours replaces your pen."
       },
-      "translation": {
-        "vi": "Ours thay cho our seats.",
-        "en": "Ours replaces our seats."
+      "translation": {"vi": "Cây bút này là của bạn phải không?", "en": "Is this pen yours?"}
+    }
+  ],
+  "compare": [
+    {
+      "with": "en.possessive_adjectives",
+      "this_example": "This book is mine.",
+      "other_example": "This is my book.",
+      "this_meaning": {
+        "vi": "Đại từ sở hữu đứng một mình, thay cả cụm danh từ: This book is mine.",
+        "en": "A possessive pronoun stands alone and replaces the whole noun phrase: This book is mine."
+      },
+      "other_meaning": {
+        "vi": "Tính từ sở hữu đứng trước danh từ, không thay danh từ: This is my book.",
+        "en": "A possessive adjective comes before a noun and does not replace it: This is my book."
       }
     }
   ],
-  "compare": [],
   "common_mistakes": [
     {
       "wrong": "This book is my.",
       "right": "This book is mine.",
       "reason": {
-        "vi": "My phải đi với danh từ; đứng một mình cần mine.",
-        "en": "My modifies a noun; use mine when it stands alone."
+        "vi": "my là tính từ sở hữu, phải có danh từ theo sau; khi đứng một mình sau be phải dùng đại từ sở hữu mine.",
+        "en": "my is a possessive adjective and needs a noun after it; standing alone after be, the possessive pronoun mine is required."
       },
       "error_tag": "word_form",
-      "l1": [
-        "vi"
-      ]
+      "l1": ["vi"]
     }
   ],
   "quick_practice": [
     {
-      "q": "This pen is ___.",
-      "options": [
-        {
-          "text": "mine",
-          "error_tag": null
-        },
-        {
-          "text": "my",
-          "error_tag": "word_form"
-        },
-        {
-          "text": "me",
-          "error_tag": "word_form"
-        }
-      ],
+      "q": "This notebook is ___.",
+      "options": [{"text": "mine", "error_tag": null}, {"text": "my", "error_tag": "word_form"}],
       "answer": 0,
       "explain": {
-        "vi": "Đứng một mình sau is cần mine.",
-        "en": "Standing alone after is, use mine."
+        "vi": "Sau be và không có danh từ theo sau, dùng đại từ sở hữu mine.",
+        "en": "After be with no noun following, use the possessive pronoun mine."
       }
     },
     {
-      "q": "These keys are ___.",
-      "options": [
-        {
-          "text": "theirs",
-          "error_tag": null
-        },
-        {
-          "text": "their",
-          "error_tag": "word_form"
-        },
-        {
-          "text": "them",
-          "error_tag": "word_form"
-        }
-      ],
+      "q": "That red phone is ___.",
+      "options": [{"text": "hers", "error_tag": null}, {"text": "her", "error_tag": "word_form"}],
       "answer": 0,
       "explain": {
-        "vi": "Dùng theirs khi không có danh từ theo sau.",
-        "en": "Use theirs when no noun follows."
+        "vi": "her cần danh từ theo sau; khi đứng một mình dùng hers.",
+        "en": "her needs a noun after it; standing alone, use hers."
       }
     },
     {
-      "q": "Is this coat ___?",
-      "options": [
-        {
-          "text": "yours",
-          "error_tag": null
-        },
-        {
-          "text": "your",
-          "error_tag": "word_form"
-        },
-        {
-          "text": "you",
-          "error_tag": "word_form"
-        }
-      ],
+      "q": "These seats are ___.",
+      "options": [{"text": "ours", "error_tag": null}, {"text": "our", "error_tag": "word_form"}],
       "answer": 0,
       "explain": {
-        "vi": "Không có danh từ theo sau nên dùng yours.",
-        "en": "No noun follows, so use yours."
+        "vi": "our cần danh từ theo sau; khi đứng một mình dùng ours.",
+        "en": "our needs a noun after it; standing alone, use ours."
       }
     }
   ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu nói một vật thuộc về bạn, dùng đại từ sở hữu (mine, yours, hers...).",
+      "en": "Write one sentence saying something belongs to you, using a possessive pronoun (mine, yours, hers...)."
+    },
+    "placeholder": "This ... is ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "verb", "any_of": ["is", "are", "am"]},
+        {"role": "complement", "any_of": ["mine", "yours", "his", "hers", "ours", "theirs"]}
+      ]
+    },
+    "sample": {"text": "This phone is mine."}
+  },
   "status": "draft_ai",
   "flags": [],
   "provenance": {
-    "model": "openai:gpt-5.6-sol",
-    "prompt_version": "direct-author.en-a1.v1",
-    "run_id": "chatgpt.en-a1.20260930",
-    "generated_at": "2026-09-30T10:35:00Z"
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790829541",
+    "generated_at": "2026-10-01T04:39:01Z",
+    "r5_source": {
+      "ids": ["a1-possessive-adjectives-pronouns-and-possessive-s"],
+      "content_version": 2,
+      "content_hash": "758362d0f6bfae3d8bc6800e0cbdf2f4d065a172301be492c127dad7a25abb63",
+      "corrections": [
+        {
+          "r5_id": "a1-possessive-adjectives-pronouns-and-possessive-s",
+          "issue": "R5 gộp ba điểm (possessive adjectives, possessive pronouns, possessive 's) vào một bài, vượt phạm vi điểm này.",
+          "fix": "Chỉ giữ phần đại từ sở hữu (mine, yours, hers...); phần tính từ sở hữu và 's được tách ra, chỉ dùng làm đối chiếu."
+        },
+        {
+          "r5_id": "a1-possessive-adjectives-pronouns-and-possessive-s",
+          "issue": "R5 nói 'his stays his' nhưng không nêu rõ his vừa là tính từ vừa là đại từ sở hữu.",
+          "fix": "Ghi rõ trong bảng đại từ sở hữu: his dùng cho cả hai vị trí (his book / This book is his)."
+        },
+        {
+          "r5_id": "a1-possessive-adjectives-pronouns-and-possessive-s",
+          "issue": "R5 thiếu công thức và các dạng phủ định, nghi vấn cho đại từ sở hữu.",
+          "fix": "Thêm formula (S + be + possessive pronoun), negative (S + be + not + possessive pronoun) và question (Be + S + possessive pronoun?)."
+        },
+        {
+          "r5_id": "a1-possessive-adjectives-pronouns-and-possessive-s",
+          "issue": "R5 chỉ có hai lỗi mẫu, chưa bao quát lỗi dùng tính từ sở hữu thay đại từ sở hữu.",
+          "fix": "Thêm lỗi 'This book is my' → 'This book is mine' với giải thích my cần danh từ theo sau."
+        }
+      ]
+    }
   },
-  "review": null,
-  "sequence": 2,
-  "source_anchors": {
-    "status": "anchored",
-    "items": [
-      {
-        "source": "core_inventory",
-        "code": "129",
-        "level": "A1"
-      }
-    ]
-  },
-  "aliases": []
+  "review": null
 }

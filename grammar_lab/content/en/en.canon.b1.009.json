@@ -1,0 +1,211 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b1.009",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.completed_past",
+  "level": {"framework": "cefr", "value": "B1", "rank": 3},
+  "prereqs": [],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["b1-used-to"]},
+  "point_type": "other",
+  "sequence": 4,
+  "aliases": ["b1-used-to"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Used to", "en": "Used to"},
+    "native_title": "Used to",
+    "level": {"framework": "cefr", "value": "B1", "rank": 3},
+    "summary": {
+      "vi": "Cấu trúc 'used to + động từ nguyên mẫu' diễn tả một thói quen hoặc trạng thái đã từng đúng trong quá khứ nhưng nay không còn nữa.",
+      "en": "'Used to + base verb' describes a past habit or state that was true in the past but is no longer true now."
+    },
+    "sub": {"vi": "thói quen quá khứ", "en": "past habits"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói về một thói quen trong quá khứ mà bây giờ bạn không còn làm nữa.",
+      "en": "When you want to talk about a past habit that you no longer do."
+    },
+    {
+      "vi": "Khi bạn muốn nói về một trạng thái trong quá khứ đã thay đổi (ví dụ: từng sống ở đâu đó, từng có một đặc điểm nào đó).",
+      "en": "When you want to talk about a past state that has changed (e.g., you used to live somewhere, used to have a certain characteristic)."
+    },
+    {
+      "vi": "Khi bạn muốn so sánh giữa quá khứ và hiện tại, nhấn mạnh sự khác biệt.",
+      "en": "When you want to contrast the past with the present, emphasizing the difference."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {"text": "used to", "role": "aux", "label": {"vi": "trợ động từ", "en": "auxiliary"}},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên mẫu", "en": "base verb"}}
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "didn't use to",
+          "role": "aux",
+          "label": {"vi": "trợ động từ phủ định", "en": "negative auxiliary"},
+          "options": [{"text": "didn't use to"}, {"text": "did not use to"}]
+        },
+        {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên mẫu", "en": "base verb"}}
+      ],
+      "question": [
+        {
+          "text": "Did",
+          "role": "aux",
+          "label": {"vi": "trợ động từ nghi vấn", "en": "question auxiliary"}
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {"text": "use to", "role": "aux", "label": {"vi": "trợ động từ", "en": "auxiliary"}},
+        {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên mẫu", "en": "base verb"}}
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "I used to walk to school.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 2, "end": 9, "role": "aux"},
+        {"start": 10, "end": 14, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Thói quen trong quá khứ: trước đây tôi thường đi bộ đến trường, bây giờ thì không.",
+        "en": "Past habit: I walked to school in the past, but I don't now."
+      },
+      "translation": {"vi": "Tôi từng đi bộ đến trường.", "en": "I used to walk to school."}
+    },
+    {
+      "text": "She used to be very shy.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 11, "role": "aux"},
+        {"start": 12, "end": 14, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Trạng thái trong quá khứ: cô ấy từng rất nhút nhát, bây giờ đã thay đổi.",
+        "en": "Past state: she was very shy in the past, but she has changed."
+      },
+      "translation": {"vi": "Cô ấy từng rất nhút nhát.", "en": "She used to be very shy."}
+    },
+    {
+      "text": "We didn't use to have smartphones.",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 3, "end": 16, "role": "aux"},
+        {"start": 17, "end": 21, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Phủ định của thói quen quá khứ: trước đây chúng tôi không có điện thoại thông minh.",
+        "en": "Negative past habit: we did not have smartphones in the past."
+      },
+      "translation": {
+        "vi": "Trước đây chúng tôi không có điện thoại thông minh.",
+        "en": "We didn't use to have smartphones."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "I am used to live here.",
+      "right": "I used to live here.",
+      "reason": {
+        "vi": "Nhầm lẫn với cấu trúc 'be used to + V-ing' (quen với việc gì). Khi diễn tả thói quen quá khứ, không dùng 'am/is/are'.",
+        "en": "Confusion with 'be used to + V-ing' (be accustomed to). For past habits, do not use 'am/is/are'."
+      },
+      "error_tag": "other",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "I ___ play the piano when I was a child.",
+      "options": [{"text": "used to", "error_tag": null}, {"text": "use to", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Trong câu khẳng định, dùng 'used to' + động từ nguyên mẫu.",
+        "en": "In affirmative sentences, use 'used to' + base verb."
+      }
+    },
+    {
+      "q": "She ___ like coffee, but now she loves it.",
+      "options": [
+        {"text": "didn't use to", "error_tag": null},
+        {"text": "didn't used to", "error_tag": "word_form"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 'didn't' dùng 'use to', không dùng 'used to'.",
+        "en": "After 'didn't', use 'use to', not 'used to'."
+      }
+    },
+    {
+      "q": "___ you use to live in the countryside?",
+      "options": [{"text": "Did", "error_tag": null}, {"text": "Do", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu hỏi về thói quen quá khứ dùng 'Did you use to...?'.",
+        "en": "Questions about past habits use 'Did you use to...?'."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một thói quen hoặc trạng thái bạn từng có trong quá khứ nhưng bây giờ không còn nữa.",
+      "en": "Write a sentence about a past habit or state you used to have but no longer do."
+    },
+    "placeholder": "I used to ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "aux", "any_of": ["used to"]}, {"role": "verb", "regex": "[a-z]+"}]
+    },
+    "sample": {"text": "I used to play tennis every weekend."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790830780",
+    "generated_at": "2026-10-01T04:59:40Z",
+    "r5_source": {
+      "ids": ["b1-used-to"],
+      "content_version": 2,
+      "content_hash": "bc14727833097f9e12a893d505ba727ba83e3338a3debdb5ca32f657fda80bb8",
+      "corrections": [
+        {
+          "r5_id": "b1-used-to",
+          "issue": "The R5 lesson did not include a structured formula with slots and roles.",
+          "fix": "Added a formula with subject, auxiliary 'used to', and base verb slots, plus negative and question variants."
+        },
+        {
+          "r5_id": "b1-used-to",
+          "issue": "The R5 examples lacked annotations and translations for each sentence.",
+          "fix": "Provided annotations and translations for all examples, and marked spans for each formula slot."
+        },
+        {
+          "r5_id": "b1-used-to",
+          "issue": "The R5 common mistakes section had two entries but the schema requires exactly one for this point.",
+          "fix": "Selected the most representative mistake (confusion with 'be used to') and wrote it with a clear reason."
+        },
+        {
+          "r5_id": "b1-used-to",
+          "issue": "The R5 guided practice was not in the quick-practice cloze format required by the schema.",
+          "fix": "Created three cloze questions with two options each, tagging wrong options with appropriate error labels."
+        }
+      ]
+    }
+  },
+  "review": null
+}

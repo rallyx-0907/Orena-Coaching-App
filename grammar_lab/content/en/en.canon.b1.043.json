@@ -1,0 +1,272 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b1.043",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.pronoun_reference",
+  "level": {"framework": "cefr", "value": "B1", "rank": 3},
+  "prereqs": ["en.pronouns.subject_object"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["b1-reflexive-pronouns-and-each-other"]},
+  "point_type": "other",
+  "sequence": 3,
+  "aliases": ["b1-reflexive-pronouns-and-each-other"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Reflexive đại từ and each other", "en": "Reflexive pronouns and each other"},
+    "native_title": "Reflexive pronouns and each other",
+    "level": {"framework": "cefr", "value": "B1", "rank": 3},
+    "summary": {
+      "vi": "Đại từ phản thân (myself, yourself, himself...) dùng khi chủ thể và đối tượng là cùng một người, còn each other / one another dùng khi hai hay nhiều người tác động qua lại lẫn nhau.",
+      "en": "Reflexive pronouns (myself, yourself, himself...) are used when the subject and the object are the same person, while each other / one another are used when two or more people act on one another."
+    },
+    "sub": {"vi": "phản thân và lẫn nhau", "en": "reflexive and reciprocal"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi chủ ngữ và tân ngữ chỉ cùng một người hoặc một vật: She hurt herself.",
+      "en": "When the subject and the object refer to the same person or thing: She hurt herself."
+    },
+    {
+      "vi": "Khi muốn nhấn mạnh rằng ai đó tự làm việc gì, không nhờ người khác: I painted the room myself.",
+      "en": "When you want to emphasise that someone did something personally, without help: I painted the room myself."
+    },
+    {
+      "vi": "Khi hai hay nhiều người cùng thực hiện một hành động hướng vào nhau: They smiled at each other.",
+      "en": "When two or more people do the same action to one another: They smiled at each other."
+    },
+    {
+      "vi": "Sau một số động từ và giới từ cố định như by myself, enjoy yourself, help yourself, look after yourself.",
+      "en": "After certain fixed verbs and prepositions such as by myself, enjoy yourself, help yourself, look after yourself."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}},
+      {
+        "text": "reflexive pronoun",
+        "role": "object",
+        "label": {"vi": "đại từ phản thân", "en": "reflexive pronoun"},
+        "options": [
+          {"text": "myself"},
+          {"text": "yourself"},
+          {"text": "himself"},
+          {"text": "herself"},
+          {"text": "itself"},
+          {"text": "ourselves"},
+          {"text": "yourselves"},
+          {"text": "themselves"}
+        ]
+      }
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "do/does not",
+          "role": "aux",
+          "label": {"vi": "trợ động từ phủ định", "en": "negative auxiliary"},
+          "options": [{"text": "do not"}, {"text": "does not"}, {"text": "don't"}, {"text": "doesn't"}]
+        },
+        {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}},
+        {
+          "text": "reflexive pronoun",
+          "role": "object",
+          "label": {"vi": "đại từ phản thân", "en": "reflexive pronoun"},
+          "options": [
+            {"text": "myself"},
+            {"text": "yourself"},
+            {"text": "himself"},
+            {"text": "herself"},
+            {"text": "itself"},
+            {"text": "ourselves"},
+            {"text": "yourselves"},
+            {"text": "themselves"}
+          ]
+        }
+      ],
+      "question": [
+        {
+          "text": "Do/Does",
+          "role": "aux",
+          "label": {"vi": "trợ động từ nghi vấn", "en": "question auxiliary"},
+          "options": [{"text": "Do"}, {"text": "Does"}]
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}},
+        {
+          "text": "reflexive pronoun",
+          "role": "object",
+          "label": {"vi": "đại từ phản thân", "en": "reflexive pronoun"},
+          "options": [
+            {"text": "myself"},
+            {"text": "yourself"},
+            {"text": "himself"},
+            {"text": "herself"},
+            {"text": "itself"},
+            {"text": "ourselves"},
+            {"text": "yourselves"},
+            {"text": "themselves"}
+          ]
+        }
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "He taught himself to code.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 3, "end": 9, "role": "verb"},
+        {"start": 10, "end": 17, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Chủ ngữ 'He' và tân ngữ 'himself' chỉ cùng một người.",
+        "en": "The subject 'He' and the object 'himself' refer to the same person."
+      },
+      "translation": {"vi": "Anh ấy tự học lập trình.", "en": "He taught himself to code."}
+    },
+    {
+      "text": "We introduced ourselves.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 3, "end": 13, "role": "verb"},
+        {"start": 14, "end": 23, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Chủ ngữ số nhiều 'We' đi với 'ourselves'.",
+        "en": "The plural subject 'We' takes 'ourselves'."
+      },
+      "translation": {"vi": "Chúng tôi tự giới thiệu.", "en": "We introduced ourselves."}
+    },
+    {
+      "text": "They looked at each other.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 5, "end": 11, "role": "verb"},
+        {"start": 15, "end": 25, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "'each other' cho thấy hành động diễn ra qua lại giữa hai người.",
+        "en": "'each other' shows the action goes both ways between two people."
+      },
+      "translation": {"vi": "Họ nhìn nhau.", "en": "They looked at each other."}
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "Please email myself.",
+      "right": "Please email me.",
+      "reason": {
+        "vi": "Người nhận email không phải là chủ ngữ 'you' ngầm hiểu, nên không dùng đại từ phản thân; cần đại từ tân ngữ 'me'.",
+        "en": "The person receiving the email is not the same as the implied subject 'you', so a reflexive pronoun is wrong; the object pronoun 'me' is needed."
+      },
+      "error_tag": "other",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "She looked at ___ in the mirror.",
+      "options": [{"text": "herself", "error_tag": null}, {"text": "her", "error_tag": "word_choice"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Chủ ngữ 'She' và người trong gương là cùng một người, nên dùng 'herself'.",
+        "en": "The subject 'She' and the person in the mirror are the same, so 'herself' is correct."
+      }
+    },
+    {
+      "q": "They blamed ___ for the accident.",
+      "options": [
+        {"text": "each other", "error_tag": null},
+        {"text": "themselves", "error_tag": "word_choice"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Mỗi người đổ lỗi cho người kia, không phải cho chính mình, nên dùng 'each other'.",
+        "en": "Each person blamed the other, not themselves, so 'each other' is correct."
+      }
+    },
+    {
+      "q": "He doesn't hurt ___ when he falls.",
+      "options": [{"text": "himself", "error_tag": null}, {"text": "his self", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Đại từ phản thân là một từ 'himself', không tách thành 'his self'.",
+        "en": "The reflexive pronoun is one word 'himself', not two words 'his self'."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu kể về việc bạn tự làm gì đó cho chính mình, dùng đại từ phản thân.",
+      "en": "Write a sentence about something you did for yourself, using a reflexive pronoun."
+    },
+    "placeholder": "I taught myself ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "subject", "any_of": ["I", "you", "he", "she", "it", "we", "they"]},
+        {
+          "role": "verb",
+          "regex": "[a-z]+ed|taught|made|fixed|hurt|enjoyed|introduced|prepared|organized|looked"
+        },
+        {
+          "role": "object",
+          "any_of": [
+            "myself",
+            "yourself",
+            "himself",
+            "herself",
+            "itself",
+            "ourselves",
+            "yourselves",
+            "themselves",
+            "each other",
+            "one another"
+          ]
+        }
+      ]
+    },
+    "sample": {"text": "I taught myself to play the guitar."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790831019",
+    "generated_at": "2026-10-01T05:03:39Z",
+    "r5_source": {
+      "ids": ["b1-reflexive-pronouns-and-each-other"],
+      "content_version": 2,
+      "content_hash": "caef5671b7992f578d95a015139ab0e0263b2d3eb8dac043744585aacd096d49",
+      "corrections": [
+        {
+          "r5_id": "b1-reflexive-pronouns-and-each-other",
+          "issue": "R5's mistake example 'The two teams blamed themselves' is not a real learner error for this point; it is a possible sentence with a different meaning.",
+          "fix": "Replaced with 'Please email myself' → 'Please email me', which is a genuine overuse of reflexive pronouns by Vietnamese learners."
+        },
+        {
+          "r5_id": "b1-reflexive-pronouns-and-each-other",
+          "issue": "R5's explanation_vi is a generic meta-description that does not explain the point.",
+          "fix": "Wrote a concrete summary and when_to_use conditions in both vi and en."
+        },
+        {
+          "r5_id": "b1-reflexive-pronouns-and-each-other",
+          "issue": "R5 has no formula, no negative/question forms, no spans, no quick practice, and no personal production card.",
+          "fix": "Added the full formula with slots and options, negative and question variants, three examples with spans, three quick-practice questions, and a personal production card with a deterministic pattern rule."
+        }
+      ]
+    }
+  },
+  "review": null
+}

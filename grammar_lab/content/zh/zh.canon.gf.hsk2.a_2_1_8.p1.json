@@ -1,0 +1,197 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk2.a_2_1_8.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.linking",
+  "level": {"framework": "hsk3", "value": "2", "rank": 2},
+  "prereqs": ["zh.ye_dou"],
+  "contrasts": [],
+  "error_tags": ["conjunction"],
+  "source_refs": {"gf0025": ["gf0025.hsk2.029"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Liên từ: 连接词或短语：或、或者", "en": "Conjunctions: 连接词或短语：或、或者"},
+    "native_title": "连接词或短语：或、或者",
+    "level": {"framework": "hsk3", "value": "2", "rank": 2},
+    "summary": {
+      "vi": "Dùng 或 và 或者 để nối hai từ hoặc hai cụm từ có thể thay thế cho nhau trong câu.",
+      "en": "Use 或 and 或者 to link two words or two phrases that can replace each other in a sentence."
+    },
+    "sub": {"vi": "hoặc", "en": "or"},
+    "native_title_pinyin": ["lián", "jiē", "cí", "huò", "duǎn", "yǔ", "", "huò", "", "huò", "zhě"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nêu hai lựa chọn giữa hai danh từ, ví dụ hai món ăn hoặc hai người.",
+      "en": "When you want to offer two choices between two nouns, such as two dishes or two people."
+    },
+    {
+      "vi": "Khi hai cụm từ nối với nhau có thể thay thế cho nhau mà nghĩa của câu không đổi.",
+      "en": "When the two linked phrases can replace each other without changing the meaning of the sentence."
+    },
+    {
+      "vi": "Khi câu chỉ có một vị ngữ chung cho cả hai lựa chọn, không lặp lại động từ.",
+      "en": "When the sentence has one shared predicate for both choices, without repeating the verb."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "A",
+        "role": "other",
+        "label": {"vi": "thành phần thứ nhất", "en": "first item"},
+        "pinyin": [""]
+      },
+      {
+        "text": "或/或者",
+        "role": "connector",
+        "label": {"vi": "từ nối lựa chọn", "en": "choice connector"},
+        "options": [{"text": "或", "pinyin": ["huò"]}, {"text": "或者", "pinyin": ["huò", "zhě"]}],
+        "pinyin": ["huò", "", "huò", "zhě"]
+      },
+      {
+        "text": "B",
+        "role": "other",
+        "label": {"vi": "thành phần thứ hai", "en": "second item"},
+        "pinyin": [""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "我喝茶或者咖啡。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 2, "end": 3, "role": "other"},
+        {"start": 3, "end": 5, "role": "connector"},
+        {"start": 5, "end": 7, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "或者 nối hai danh từ 茶 và 咖啡, cả hai đều có thể là thứ tôi uống.",
+        "en": "或者 links the two nouns 茶 and 咖啡; either one can be what I drink."
+      },
+      "translation": {"vi": "Tôi uống trà hoặc cà phê.", "en": "I drink tea or coffee."},
+      "pinyin": ["wǒ", "hē", "chá", "huò", "zhě", "kā", "fēi", ""]
+    },
+    {
+      "text": "明天或后天都可以。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "other"},
+        {"start": 2, "end": 3, "role": "connector"},
+        {"start": 3, "end": 5, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "或 nối hai mốc thời gian 明天 và 后天; cả hai ngày đều được.",
+        "en": "或 links the two time words 明天 and 后天; either day works."
+      },
+      "translation": {
+        "vi": "Ngày mai hoặc ngày mốt đều được.",
+        "en": "Tomorrow or the day after tomorrow both work."
+      },
+      "pinyin": ["míng", "tiān", "huò", "hòu", "tiān", "dōu", "kě", "yǐ", ""]
+    },
+    {
+      "text": "你可以坐地铁或者打车去。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 3, "end": 6, "role": "other"},
+        {"start": 6, "end": 8, "role": "connector"},
+        {"start": 8, "end": 10, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "或者 nối hai cụm động từ 坐地铁 và 打车; cả hai cách đi đều được.",
+        "en": "或者 links the two verb phrases 坐地铁 and 打车; either way of going works."
+      },
+      "translation": {
+        "vi": "Bạn có thể đi tàu điện ngầm hoặc bắt taxi.",
+        "en": "You can go by subway or take a taxi."
+      },
+      "pinyin": ["nǐ", "kě", "yǐ", "zuò", "dì", "tiě", "huò", "zhě", "dǎ", "chē", "qù", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "我喝茶和咖啡。",
+      "right": "我喝茶或者咖啡。",
+      "reason": {
+        "vi": "和 nối hai thứ cùng lúc, còn ở đây người nói chỉ chọn một trong hai, nên phải dùng 或者.",
+        "en": "和 joins two things at the same time, but here the speaker chooses one of the two, so 或者 is required."
+      },
+      "error_tag": "conjunction",
+      "l1": ["vi"],
+      "wrong_pinyin": ["wǒ", "hē", "chá", "hé", "kā", "fēi", ""],
+      "right_pinyin": ["wǒ", "hē", "chá", "huò", "zhě", "kā", "fēi", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "你想喝咖啡___茶？",
+      "options": [
+        {"text": "或者", "error_tag": null, "pinyin": ["huò", "zhě"]},
+        {"text": "和", "error_tag": "conjunction", "pinyin": ["hé"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu hỏi đưa ra hai lựa chọn, nên dùng 或者; 和 sẽ gộp cả hai lại.",
+        "en": "The question offers two choices, so 或者 is used; 和 would combine both."
+      },
+      "q_pinyin": ["nǐ", "xiǎng", "hē", "kā", "fēi", "", "", "", "chá", ""]
+    },
+    {
+      "q": "我们坐地铁___坐公共汽车去。",
+      "options": [
+        {"text": "或者", "error_tag": null, "pinyin": ["huò", "zhě"]},
+        {"text": "还是", "error_tag": "conjunction", "pinyin": ["hái", "shì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Đây là câu kể, không phải câu hỏi lựa chọn, nên dùng 或者 chứ không dùng 还是.",
+        "en": "This is a statement, not a choice question, so 或者 is used, not 还是."
+      },
+      "q_pinyin": ["wǒ", "men", "zuò", "dì", "tiě", "", "", "", "zuò", "gōng", "gòng", "qì", "chē", "qù", ""]
+    },
+    {
+      "q": "周末我___去公园。",
+      "options": [
+        {"text": "或者", "error_tag": null, "pinyin": ["huò", "zhě"]},
+        {"text": "和", "error_tag": "conjunction", "pinyin": ["hé"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu này nêu một lựa chọn thay thế cho hoạt động, nên dùng 或者; 和 không phù hợp.",
+        "en": "This sentence offers an alternative activity, so 或者 is used; 和 does not fit."
+      },
+      "q_pinyin": ["zhōu", "mò", "wǒ", "", "", "", "qù", "gōng", "yuán", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về hai lựa chọn của bạn, dùng 或者 để nối chúng.",
+      "en": "Write one sentence about two of your choices, using 或者 to link them."
+    },
+    "placeholder": "我周末去……或者……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"role": "connector", "any_of": ["或者", "或"]}]},
+    "sample": {
+      "text": "我周末去公园或者看电影。",
+      "pinyin": ["wǒ", "zhōu", "mò", "qù", "gōng", "yuán", "huò", "zhě", "kàn", "diàn", "yǐng", ""]
+    },
+    "placeholder_pinyin": ["wǒ", "zhōu", "mò", "qù", "", "", "huò", "zhě", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790832214",
+    "generated_at": "2026-10-01T05:23:34Z"
+  },
+  "review": null
+}

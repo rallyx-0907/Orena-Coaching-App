@@ -1,0 +1,206 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk2.a_2_6.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.ongoing_now",
+  "level": {"framework": "hsk3", "value": "2", "rank": 2},
+  "prereqs": ["zh.zhe_state"],
+  "contrasts": [],
+  "error_tags": ["particle"],
+  "source_refs": {"gf0025": ["gf0025.hsk2.070"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Thể của hành động: 持续态：动词+着", "en": "Aspect of actions: 持续态：动词+着"},
+    "native_title": "持续态：动词+着",
+    "level": {"framework": "hsk3", "value": "2", "rank": 2},
+    "summary": {
+      "vi": "Trợ từ 着 đặt sau động từ để diễn tả một hành động hoặc trạng thái đang tiếp diễn, kéo dài tại thời điểm nói.",
+      "en": "The particle 着 follows a verb to show an action or state that is ongoing and continuing at the moment of speaking."
+    },
+    "sub": {"vi": "hành động đang tiếp diễn", "en": "ongoing action"},
+    "native_title_pinyin": ["chí", "xù", "tài", "", "dòng", "cí", "", "zhe"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói ai đó đang làm gì ngay lúc này, hành động chưa kết thúc.",
+      "en": "When you want to say someone is doing something right now and the action has not finished."
+    },
+    {
+      "vi": "Khi miêu tả một trạng thái kéo dài như đang ngồi, đang đứng, đang mở.",
+      "en": "When you describe a continuing state such as sitting, standing, or being open."
+    },
+    {
+      "vi": "Khi hành động thứ hai diễn ra trong lúc hành động thứ nhất đang tiếp diễn.",
+      "en": "When a second action happens while the first action is going on."
+    },
+    {
+      "vi": "Khi muốn nhấn mạnh tư thế hoặc cách thức của một hành động đang diễn ra.",
+      "en": "When you want to stress the posture or manner of an action in progress."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "动词",
+        "role": "verb",
+        "label": {"vi": "động từ", "en": "verb"},
+        "pinyin": ["dòng", "cí"]
+      },
+      {
+        "text": "着",
+        "role": "particle",
+        "label": {"vi": "trợ từ 着", "en": "particle 着"},
+        "pinyin": ["zhe"]
+      },
+      {
+        "text": "宾语",
+        "role": "object",
+        "label": {"vi": "tân ngữ", "en": "object"},
+        "optional": true,
+        "pinyin": ["bīn", "yǔ"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "他坐着看书。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "verb"},
+        {"start": 2, "end": 3, "role": "particle"},
+        {"start": 4, "end": 5, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "着 cho biết tư thế ngồi đang tiếp diễn trong lúc đọc sách.",
+        "en": "着 shows the sitting posture is continuing while he reads."
+      },
+      "translation": {"vi": "Anh ấy ngồi đọc sách.", "en": "He is sitting and reading a book."},
+      "pinyin": ["tā", "zuò", "zhe", "kàn", "shū", ""]
+    },
+    {
+      "text": "门开着。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "verb"},
+        {"start": 2, "end": 3, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "着 diễn tả trạng thái mở vẫn đang tiếp diễn, không phải hành động mở cửa.",
+        "en": "着 describes the continuing state of being open, not the act of opening."
+      },
+      "translation": {"vi": "Cửa đang mở.", "en": "The door is open."},
+      "pinyin": ["mén", "kāi", "zhe", ""]
+    },
+    {
+      "text": "她笑着说话。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "verb"},
+        {"start": 2, "end": 3, "role": "particle"},
+        {"start": 4, "end": 5, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "着 cho biết hành động cười diễn ra song song với hành động nói.",
+        "en": "着 shows the smiling goes on at the same time as the speaking."
+      },
+      "translation": {"vi": "Cô ấy vừa cười vừa nói.", "en": "She is talking while smiling."},
+      "pinyin": ["tā", "xiào", "zhe", "shuō", "huà", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "他坐看书。",
+      "right": "他坐着看书。",
+      "reason": {
+        "vi": "Người học bỏ 着 vì tiếng Việt không có trợ từ đứng sau động từ để đánh dấu thể tiếp diễn, nên họ dựa vào ngữ cảnh và quên mất dấu hiệu bắt buộc này.",
+        "en": "Learners drop 着 because Vietnamese does not mark ongoing aspect with a verb-following particle, so they rely on context and omit the required marker."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong_pinyin": ["tā", "zuò", "kàn", "shū", ""],
+      "right_pinyin": ["tā", "zuò", "zhe", "kàn", "shū", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "他站___门口等人。",
+      "options": [
+        {"text": "着", "error_tag": null, "pinyin": ["zhe"]},
+        {"text": "了", "error_tag": "aspect", "pinyin": ["le"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "着 đánh dấu tư thế đứng đang tiếp diễn; 了 chỉ sự hoàn thành nên không hợp ở đây.",
+        "en": "着 marks the continuing standing posture; 了 marks completion and does not fit here."
+      },
+      "q_pinyin": ["tā", "zhàn", "", "", "", "mén", "kǒu", "děng", "rén", ""]
+    },
+    {
+      "q": "妈妈坐___沙发上休息。",
+      "options": [
+        {"text": "着", "error_tag": null, "pinyin": ["zhe"]},
+        {"text": "过", "error_tag": "aspect", "pinyin": ["guò"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "着 diễn tả tư thế ngồi đang tiếp diễn; 过 chỉ trải nghiệm trong quá khứ nên sai nghĩa.",
+        "en": "着 describes the ongoing sitting posture; 过 marks past experience and gives the wrong meaning."
+      },
+      "q_pinyin": ["mā", "ma", "zuò", "", "", "", "shā", "fā", "shàng", "xiū", "xi", ""]
+    },
+    {
+      "q": "门开___，里面没有人。",
+      "options": [
+        {"text": "着", "error_tag": null, "pinyin": ["zhe"]},
+        {"text": "了", "error_tag": "aspect", "pinyin": ["le"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "着 miêu tả trạng thái mở vẫn đang tiếp diễn; 了 chỉ sự việc đã xảy ra nên không đúng.",
+        "en": "着 describes the continuing state of being open; 了 marks a completed event and is wrong here."
+      },
+      "q_pinyin": ["mén", "kāi", "", "", "", "", "lǐ", "miàn", "méi", "yǒu", "rén", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu tả việc bạn đang làm ngay lúc này, dùng động từ + 着.",
+      "en": "Write one sentence about what you are doing right now, using verb + 着."
+    },
+    "placeholder": "我坐着……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "verb", "any_of": ["坐", "站", "躺", "笑", "看", "听", "说", "走", "拿", "开", "穿", "等"]},
+        {"role": "particle", "any_of": ["着"]}
+      ]
+    },
+    "sample": {"text": "我坐着喝茶。", "pinyin": ["wǒ", "zuò", "zhe", "hē", "chá", ""]},
+    "placeholder_pinyin": ["wǒ", "zuò", "zhe", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790832378",
+    "generated_at": "2026-10-01T05:26:18Z"
+  },
+  "review": null
+}

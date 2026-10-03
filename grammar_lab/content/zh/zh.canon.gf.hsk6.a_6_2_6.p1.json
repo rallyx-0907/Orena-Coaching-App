@@ -1,0 +1,214 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk6.a_6_2_6.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.relative",
+  "level": {"framework": "hsk3", "value": "6", "rank": 6},
+  "prereqs": ["zh.canon.gf.hsk6.a_6_2_4_6.p1"],
+  "contrasts": [],
+  "error_tags": ["particle"],
+  "source_refs": {"gf0025": ["gf0025.hsk6.022", "gf0025.hsk6.023"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Trợ từ: 结构助词：所", "en": "Particles: 结构助词：所"},
+    "native_title": "结构助词：所",
+    "level": {"framework": "hsk3", "value": "6", "rank": 6},
+    "summary": {
+      "vi": "Trợ từ 所 đứng trước động từ để biến cụm động từ thành cụm mang nghĩa 'cái/điều được...', thường dùng trong văn viết trang trọng.",
+      "en": "The particle 所 stands before a verb to turn the verb phrase into a phrase meaning 'that which is ...ed', used mainly in formal writing."
+    },
+    "sub": {"vi": "trợ từ 所", "en": "particle 所"},
+    "native_title_pinyin": ["jié", "gòu", "zhù", "cí", "", "suǒ"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói 'cái được...' hoặc 'điều được...' trong văn viết trang trọng, dùng 所 + động từ.",
+      "en": "When you want to say 'what is ...ed' or 'that which is ...ed' in formal writing, use 所 + verb."
+    },
+    {
+      "vi": "Khi cụm 所 + động từ + 的 làm định ngữ cho một danh từ, ví dụ 所认识的人.",
+      "en": "When the phrase 所 + verb + 的 modifies a noun, for example 所认识的人."
+    },
+    {
+      "vi": "Khi muốn nhấn mạnh đối tượng của hành động trong câu khẳng định trang trọng.",
+      "en": "When you want to emphasize the object of an action in a formal affirmative sentence."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}, "pinyin": [""]},
+      {
+        "text": "所",
+        "role": "particle",
+        "label": {"vi": "trợ từ 所", "en": "particle 所"},
+        "pinyin": ["suǒ"]
+      },
+      {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}, "pinyin": [""]},
+      {
+        "text": "的",
+        "role": "particle",
+        "label": {"vi": "trợ từ 的", "en": "particle 的"},
+        "optional": true,
+        "pinyin": ["de"]
+      },
+      {
+        "text": "N",
+        "role": "object",
+        "label": {"vi": "danh từ", "en": "noun"},
+        "optional": true,
+        "pinyin": [""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "他所认识的人不多。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "particle"},
+        {"start": 2, "end": 4, "role": "verb"},
+        {"start": 4, "end": 5, "role": "particle"},
+        {"start": 5, "end": 6, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "所 + 认识 + 的 bổ nghĩa cho 人: những người mà anh ấy quen.",
+        "en": "所 + 认识 + 的 modifies 人: the people he knows."
+      },
+      "translation": {"vi": "Những người mà anh ấy quen không nhiều.", "en": "The people he knows are not many."},
+      "pinyin": ["tā", "suǒ", "rèn", "shi", "de", "rén", "bù", "duō", ""]
+    },
+    {
+      "text": "他所提出的建议很有用。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "particle"},
+        {"start": 2, "end": 4, "role": "verb"},
+        {"start": 4, "end": 5, "role": "particle"},
+        {"start": 5, "end": 7, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "所 + 提出 + 的 bổ nghĩa cho 建议: đề xuất mà anh ấy đưa ra.",
+        "en": "所 + 提出 + 的 modifies 建议: the suggestion he put forward."
+      },
+      "translation": {
+        "vi": "Đề xuất mà anh ấy đưa ra rất hữu ích.",
+        "en": "The suggestion he put forward is very useful."
+      },
+      "pinyin": ["tā", "suǒ", "tí", "chū", "de", "jiàn", "yì", "hěn", "yǒu", "yòng", ""]
+    },
+    {
+      "text": "他所关心的事情并不多。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "particle"},
+        {"start": 2, "end": 4, "role": "verb"},
+        {"start": 4, "end": 5, "role": "particle"},
+        {"start": 5, "end": 7, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "所 + 关心 + 的 bổ nghĩa cho 事情: những việc mà anh ấy quan tâm.",
+        "en": "所 + 关心 + 的 modifies 事情: the things he cares about."
+      },
+      "translation": {
+        "vi": "Những việc mà anh ấy quan tâm không nhiều.",
+        "en": "The things he cares about are not many."
+      },
+      "pinyin": ["tā", "suǒ", "guān", "xīn", "de", "shì", "qing", "bìng", "bù", "duō", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "他所认识人不算多。",
+      "right": "他所认识的人不算多。",
+      "reason": {
+        "vi": "Khi 所 + động từ làm định ngữ cho danh từ, tiếng Trung bắt buộc phải có 的 giữa động từ và danh từ; người Việt thường bỏ 的 vì tiếng Việt không cần từ nối này.",
+        "en": "When 所 + verb modifies a noun, Chinese requires 的 between the verb and the noun; Vietnamese speakers often drop 的 because Vietnamese does not need this linker."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong_pinyin": ["tā", "suǒ", "rèn", "shi", "rén", "bù", "suàn", "duō", ""],
+      "right_pinyin": ["tā", "suǒ", "rèn", "shi", "de", "rén", "bù", "suàn", "duō", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "他所写的___很有名。",
+      "options": [
+        {"text": "书", "error_tag": null, "pinyin": ["shū"]},
+        {"text": "的", "error_tag": "particle", "pinyin": ["de"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 所 + động từ + 的 cần một danh từ, ở đây là 书; 的 đã xuất hiện trước đó nên không lặp lại.",
+        "en": "After 所 + verb + 的 a noun is needed, here 书; 的 already appears earlier so it is not repeated."
+      },
+      "q_pinyin": ["tā", "suǒ", "xiě", "de", "", "", "", "hěn", "yǒu", "míng", ""]
+    },
+    {
+      "q": "这个道理为众人___明白。",
+      "options": [
+        {"text": "所", "error_tag": null, "pinyin": ["suǒ"]},
+        {"text": "的", "error_tag": "particle", "pinyin": ["de"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Cấu trúc bị động văn viết 为...所... cần 所 trước động từ 明白.",
+        "en": "The written passive 为...所... needs 所 before the verb 明白."
+      },
+      "q_pinyin": ["zhè", "ge", "dào", "lǐ", "wéi", "zhòng", "rén", "", "", "", "míng", "bai", ""]
+    },
+    {
+      "q": "他所做的___都为了家人。",
+      "options": [
+        {"text": "一切", "error_tag": null, "pinyin": ["yī", "qiè"]},
+        {"text": "地", "error_tag": "particle", "pinyin": ["de"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 所 + động từ + 的 cần danh từ 一切; 地 là trợ từ trạng ngữ, không dùng ở đây.",
+        "en": "After 所 + verb + 的 the noun 一切 is needed; 地 is an adverbial particle and does not fit here."
+      },
+      "q_pinyin": ["tā", "suǒ", "zuò", "de", "", "", "", "dōu", "wèi", "le", "jiā", "rén", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng 所 + động từ + 的 + danh từ để nói về một người hoặc vật mà bạn biết.",
+      "en": "Write one sentence using 所 + verb + 的 + noun to talk about a person or thing you know."
+    },
+    "placeholder": "我所认识的……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "particle", "any_of": ["所"]},
+        {"role": "verb", "regex": "[\\u4e00-\\u9fff]"},
+        {"role": "particle", "any_of": ["的"]}
+      ]
+    },
+    "sample": {
+      "text": "我所认识的朋友都很热情。",
+      "pinyin": ["wǒ", "suǒ", "rèn", "shi", "de", "péng", "you", "dōu", "hěn", "rè", "qíng", ""]
+    },
+    "placeholder_pinyin": ["wǒ", "suǒ", "rèn", "shi", "de", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790834119",
+    "generated_at": "2026-10-01T05:55:19Z",
+    "metadata_stale": true
+  },
+  "review": null
+}

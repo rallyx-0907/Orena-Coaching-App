@@ -1,0 +1,208 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk2.a_2_1_7_2.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.location",
+  "level": {"framework": "hsk3", "value": "2", "rank": 2},
+  "prereqs": ["zh.canon.gf.hsk2.a_2_1_3.p1"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"gf0025": ["gf0025.hsk2.022", "gf0025.hsk2.023", "gf0025.hsk2.024"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 往", "en": "Chinese grammar: 往"},
+    "native_title": "往",
+    "level": {"framework": "hsk3", "value": "2", "rank": 2},
+    "summary": {
+      "vi": "Giới từ 往 đứng trước từ chỉ phương hướng hoặc nơi chốn để nói ai đó di chuyển về phía nào.",
+      "en": "The preposition 往 comes before a direction or place word to say which way someone moves."
+    },
+    "sub": {"vi": "hướng di chuyển", "en": "direction of movement"},
+    "native_title_pinyin": ["wǎng"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói ai đó đi, chạy, nhìn hoặc ném về một hướng cụ thể.",
+      "en": "When you say that someone walks, runs, looks or throws towards a specific direction."
+    },
+    {
+      "vi": "Khi từ sau 往 là một từ chỉ phương hướng như 前, 后, 左, 右, 东, 西, 上, 下.",
+      "en": "When the word after 往 is a direction word such as 前, 后, 左, 右, 东, 西, 上, 下."
+    },
+    {
+      "vi": "Khi từ sau 往 là một nơi chốn cụ thể mà người đó hướng tới, ví dụ 北京, 学校, 医院.",
+      "en": "When the word after 往 is a concrete place the person heads to, for example 北京, 学校, 医院."
+    },
+    {
+      "vi": "Khi động từ chính đứng ngay sau cụm 往 + hướng/nơi chốn, không chen từ nào vào giữa.",
+      "en": "When the main verb comes right after the 往 + direction/place phrase, with nothing in between."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "往",
+        "role": "marker",
+        "label": {"vi": "giới từ chỉ hướng", "en": "direction preposition"},
+        "pinyin": ["wǎng"]
+      },
+      {
+        "text": "方向/地点",
+        "role": "place",
+        "label": {"vi": "hướng hoặc nơi chốn", "en": "direction or place"},
+        "pinyin": ["fāng", "xiàng", "", "dì", "diǎn"]
+      },
+      {
+        "text": "动词",
+        "role": "verb",
+        "label": {"vi": "động từ chính", "en": "main verb"},
+        "pinyin": ["dòng", "cí"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "他往前走。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "marker"},
+        {"start": 2, "end": 3, "role": "place"},
+        {"start": 3, "end": 4, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "往 + 前 cho biết hướng đi là về phía trước; 走 là động từ chính.",
+        "en": "往 + 前 gives the direction as forward; 走 is the main verb."
+      },
+      "translation": {"vi": "Anh ấy đi về phía trước.", "en": "He walks forward."},
+      "pinyin": ["tā", "wǎng", "qián", "zǒu", ""]
+    },
+    {
+      "text": "我们往左看。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 3, "role": "marker"},
+        {"start": 3, "end": 4, "role": "place"},
+        {"start": 4, "end": 5, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "往 + 左 nêu hướng nhìn; động từ 看 đứng ngay sau cụm giới từ.",
+        "en": "往 + 左 gives the direction of looking; the verb 看 follows the prepositional phrase directly."
+      },
+      "translation": {"vi": "Chúng tôi nhìn sang bên trái.", "en": "We look to the left."},
+      "pinyin": ["wǒ", "men", "wǎng", "zuǒ", "kàn", ""]
+    },
+    {
+      "text": "他往北京开。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "marker"},
+        {"start": 2, "end": 4, "role": "place"},
+        {"start": 4, "end": 5, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "往 + 北京 cho biết đích hướng là Bắc Kinh; 开 là động từ lái xe.",
+        "en": "往 + 北京 gives Beijing as the destination; 开 is the verb for driving."
+      },
+      "translation": {"vi": "Anh ấy lái xe về phía Bắc Kinh.", "en": "He drives towards Beijing."},
+      "pinyin": ["tā", "wǎng", "běi", "jīng", "kāi", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "他走往前。",
+      "right": "他往前走。",
+      "reason": {
+        "vi": "Người học Việt Nam quen đặt từ chỉ hướng sau động từ như trong tiếng Việt, nhưng 往 phải đứng trước từ chỉ hướng và trước động từ chính.",
+        "en": "Vietnamese learners tend to put the direction word after the verb, as in Vietnamese, but 往 must come before the direction word and before the main verb."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong_pinyin": ["tā", "zǒu", "wǎng", "qián", ""],
+      "right_pinyin": ["tā", "wǎng", "qián", "zǒu", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "他___前走。",
+      "options": [
+        {"text": "往", "error_tag": null, "pinyin": ["wǎng"]},
+        {"text": "在", "error_tag": "word_choice", "pinyin": ["zài"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "往 đứng trước 前 để chỉ hướng đi; 在 chỉ vị trí, không dùng ở đây.",
+        "en": "往 comes before 前 to show direction; 在 marks location and does not fit here."
+      },
+      "q_pinyin": ["tā", "", "", "", "qián", "zǒu", ""]
+    },
+    {
+      "q": "我们___左看。",
+      "options": [
+        {"text": "往", "error_tag": null, "pinyin": ["wǎng"]},
+        {"text": "从", "error_tag": "word_choice", "pinyin": ["cóng"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "往 + 左 cho biết hướng nhìn; 从 chỉ điểm xuất phát nên không hợp.",
+        "en": "往 + 左 gives the direction of looking; 从 marks a starting point, so it does not fit."
+      },
+      "q_pinyin": ["wǒ", "men", "", "", "", "zuǒ", "kàn", ""]
+    },
+    {
+      "q": "他___北京开。",
+      "options": [
+        {"text": "往", "error_tag": null, "pinyin": ["wǎng"]},
+        {"text": "对", "error_tag": "word_choice", "pinyin": ["duì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "往 + 北京 chỉ hướng lái xe; 对 dùng cho đối tượng, không dùng cho hướng di chuyển.",
+        "en": "往 + 北京 gives the driving direction; 对 is used for a target, not for a direction of movement."
+      },
+      "q_pinyin": ["tā", "", "", "", "běi", "jīng", "kāi", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu kể bạn đi hoặc nhìn về hướng nào, dùng 往 + hướng/nơi chốn + động từ.",
+      "en": "Write one sentence about where you walk or look, using 往 + direction/place + verb."
+    },
+    "placeholder": "我往……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "marker", "any_of": ["往"]},
+        {"role": "place", "any_of": ["前", "后", "左", "右", "东", "西", "上", "下", "北京", "学校", "医院"]},
+        {"role": "verb", "any_of": ["走", "看", "开", "跑", "飞", "扔"]}
+      ]
+    },
+    "sample": {"text": "我往右走。", "pinyin": ["wǒ", "wǎng", "yòu", "zǒu", ""]},
+    "placeholder_pinyin": ["wǒ", "wǎng", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790832205",
+    "generated_at": "2026-10-01T05:23:25Z",
+    "metadata_stale": true
+  },
+  "review": null
+}

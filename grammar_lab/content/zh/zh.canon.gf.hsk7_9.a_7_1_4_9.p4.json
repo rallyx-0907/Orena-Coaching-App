@@ -1,0 +1,201 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk7_9.a_7_1_4_9.p4",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.degree",
+  "level": {"framework": "hsk3", "value": "7", "rank": 7},
+  "prereqs": ["zh.canon.gf.hsk7_9.a_7_1_4_9.p3"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"gf0025": ["gf0025.hsk7_9.042", "gf0025.hsk7_9.043", "gf0025.hsk7_9.045", "gf0025.hsk7_9.046"]},
+  "point_type": "other",
+  "sequence": 3,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Trạng từ: 万万", "en": "Adverbs: 万万"},
+    "native_title": "万万",
+    "level": {"framework": "hsk3", "value": "7", "rank": 7},
+    "summary": {
+      "vi": "Phó từ 万万 dùng để nhấn mạnh tuyệt đối, thường trong câu phủ định, nghĩa là 'tuyệt đối không' hoặc 'hoàn toàn không'.",
+      "en": "The adverb 万万 is used for absolute emphasis, usually in negative sentences, meaning 'absolutely not' or 'under no circumstances'."
+    },
+    "sub": {"vi": "nhấn mạnh tuyệt đối", "en": "absolute emphasis"},
+    "native_title_pinyin": ["wàn", "wàn"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói 'tuyệt đối không' hoặc 'nhất định không' trước một lời khuyên, cảnh báo hay lời hứa.",
+      "en": "When you want to say 'absolutely not' or 'under no circumstances' before advice, a warning, or a promise."
+    },
+    {
+      "vi": "Dùng trong câu phủ định với 不 hoặc 没 để nhấn mạnh mức độ không thể xảy ra.",
+      "en": "Use in negative sentences with 不 or 没 to emphasize that something cannot possibly happen."
+    },
+    {
+      "vi": "Thường đứng trước chủ ngữ hoặc trước động từ để tăng tính nghiêm túc, trang trọng.",
+      "en": "It usually stands before the subject or before the verb to add a serious, formal tone."
+    },
+    {
+      "vi": "Không dùng trong câu khẳng định thông thường; nếu dùng, nghĩa là 'vạn nhất' trong văn viết trang trọng.",
+      "en": "Do not use it in ordinary affirmative sentences; if used, it means 'in the unlikely event' in formal writing."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "万万",
+        "role": "marker",
+        "label": {"vi": "phó từ nhấn mạnh", "en": "emphatic adverb"},
+        "pinyin": ["wàn", "wàn"]
+      },
+      {
+        "text": "不/没",
+        "role": "aux",
+        "label": {"vi": "phủ định", "en": "negator"},
+        "options": [{"text": "不", "pinyin": ["bù"]}, {"text": "没", "pinyin": ["méi"]}],
+        "pinyin": ["bù", "", "méi"]
+      },
+      {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}, "pinyin": [""]}
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "万万不可粗心大意。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "marker"},
+        {"start": 2, "end": 4, "role": "aux"},
+        {"start": 4, "end": 8, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "万万 nhấn mạnh rằng việc 'cẩu thả' là điều tuyệt đối không được phép.",
+        "en": "万万 emphasizes that being careless is absolutely not allowed."
+      },
+      "translation": {"vi": "Tuyệt đối không được cẩu thả.", "en": "You must absolutely not be careless."},
+      "pinyin": ["wàn", "wàn", "bù", "kě", "cū", "xīn", "dà", "yì", ""]
+    },
+    {
+      "text": "万万没想到他会迟到。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "marker"},
+        {"start": 2, "end": 3, "role": "aux"},
+        {"start": 3, "end": 5, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "万万 đứng trước 没 để nhấn mạnh rằng việc 'không nghĩ tới' là hoàn toàn bất ngờ.",
+        "en": "万万 before 没 emphasizes that not having thought of it was completely unexpected."
+      },
+      "translation": {
+        "vi": "Tuyệt đối không ngờ rằng anh ấy sẽ đến muộn.",
+        "en": "I absolutely never expected that he would be late."
+      },
+      "pinyin": ["wàn", "wàn", "méi", "xiǎng", "dào", "tā", "huì", "chí", "dào", ""]
+    },
+    {
+      "text": "万万不能把这件事告诉他。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "marker"},
+        {"start": 2, "end": 4, "role": "aux"},
+        {"start": 8, "end": 10, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "万万 nhấn mạnh lời cảnh báo: tuyệt đối không được nói cho anh ấy biết.",
+        "en": "万万 emphasizes the warning: you absolutely must not tell him."
+      },
+      "translation": {
+        "vi": "Tuyệt đối không được nói chuyện này cho anh ấy biết.",
+        "en": "You absolutely must not tell him about this."
+      },
+      "pinyin": ["wàn", "wàn", "bù", "néng", "bǎ", "zhè", "jiàn", "shì", "gào", "su", "tā", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "万万他会来。",
+      "right": "万万没想到他会来。",
+      "reason": {
+        "vi": "万万 không dùng trong câu khẳng định đơn thuần; nó cần đi với phủ định hoặc trong cụm như 万万没想到.",
+        "en": "万万 is not used in a plain affirmative sentence; it needs a negative or a fixed phrase like 万万没想到."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong_pinyin": ["wàn", "wàn", "tā", "huì", "lái", ""],
+      "right_pinyin": ["wàn", "wàn", "méi", "xiǎng", "dào", "tā", "huì", "lái", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "你___把这件事告诉他。",
+      "options": [
+        {"text": "万万不能", "error_tag": null, "pinyin": ["wàn", "wàn", "bù", "néng"]},
+        {"text": "万万能", "error_tag": "other", "pinyin": ["wàn", "wàn", "néng"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "万万 cần đi với phủ định 不/没; 万万能 là sai vì không có phủ định.",
+        "en": "万万 needs a negative 不/没; 万万能 is wrong because there is no negation."
+      },
+      "q_pinyin": ["nǐ", "", "", "", "bǎ", "zhè", "jiàn", "shì", "gào", "su", "tā", ""]
+    },
+    {
+      "q": "我___他会突然出现。",
+      "options": [
+        {"text": "万万没想到", "error_tag": null, "pinyin": ["wàn", "wàn", "méi", "xiǎng", "dào"]},
+        {"text": "万万想到", "error_tag": "other", "pinyin": ["wàn", "wàn", "xiǎng", "dào"]}
+      ],
+      "answer": 0,
+      "explain": {"vi": "Cụm cố định là 万万没想到, không nói 万万想到.", "en": "The fixed phrase is 万万没想到, not 万万想到."},
+      "q_pinyin": ["wǒ", "", "", "", "tā", "huì", "tū", "rán", "chū", "xiàn", ""]
+    },
+    {
+      "q": "这种事___粗心。",
+      "options": [
+        {"text": "万万不可", "error_tag": null, "pinyin": ["wàn", "wàn", "bù", "kě"]},
+        {"text": "万万可", "error_tag": "other", "pinyin": ["wàn", "wàn", "kě"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "万万不可 là cách nói trang trọng 'tuyệt đối không được'; thiếu 不 thì sai.",
+        "en": "万万不可 is the formal way to say 'absolutely must not'; without 不 it is wrong."
+      },
+      "q_pinyin": ["zhè", "zhǒng", "shì", "", "", "", "cū", "xīn", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng 万万 để nhấn mạnh điều tuyệt đối không được làm.",
+      "en": "Write a sentence using 万万 to emphasize something you absolutely must not do."
+    },
+    "placeholder": "万万不能……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "marker", "any_of": ["万万"]},
+        {"role": "aux", "any_of": ["不", "没", "不可", "不能", "没想到"]},
+        {"role": "verb", "regex": "[\\u4e00-\\u9fff]+"}
+      ]
+    },
+    "sample": {
+      "text": "万万不能忘记带护照。",
+      "pinyin": ["wàn", "wàn", "bù", "néng", "wàng", "jì", "dài", "hù", "zhào", ""]
+    },
+    "placeholder_pinyin": ["wàn", "wàn", "bù", "néng", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790834571",
+    "generated_at": "2026-10-01T06:02:51Z",
+    "metadata_stale": true
+  },
+  "review": null
+}

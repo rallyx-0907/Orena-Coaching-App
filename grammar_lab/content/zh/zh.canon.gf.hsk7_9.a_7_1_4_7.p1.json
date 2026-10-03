@@ -1,0 +1,344 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk7_9.a_7_1_4_7.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.verb_patterns",
+  "level": {"framework": "hsk3", "value": "7", "rank": 7},
+  "prereqs": ["zh.canon.gf.hsk7_9.a_7_1_4_5.p1"],
+  "contrasts": [],
+  "error_tags": ["particle"],
+  "source_refs": {"gf0025": ["gf0025.hsk7_9.025", "gf0025.hsk7_9.026", "gf0025.hsk7_9.027"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Trạng từ: 不由得", "en": "Adverbs: 不由得"},
+    "native_title": "不由得",
+    "level": {"framework": "hsk3", "value": "7", "rank": 7},
+    "summary": {
+      "vi": "Phó từ 不由得 diễn tả một phản ứng tự nhiên, không thể kìm lại được trước một tình huống nào đó.",
+      "en": "The adverb 不由得 expresses a natural reaction that cannot be held back in a given situation."
+    },
+    "sub": {"vi": "phản ứng không kìm được", "en": "uncontrollable reaction"},
+    "native_title_pinyin": ["bù", "yóu", "de"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Dùng khi một tình huống khiến bạn buộc phải có một cảm xúc hay hành động mà bạn không thể ngăn lại.",
+      "en": "Use it when a situation forces an emotion or action you cannot hold back."
+    },
+    {
+      "vi": "Dùng trước một cụm động từ chỉ phản ứng tự nhiên như 想起, 流泪, 笑, 感叹.",
+      "en": "Use it before a verb phrase naming a natural reaction such as 想起, 流泪, 笑, 感叹."
+    },
+    {
+      "vi": "Thường đứng sau phần nêu nguyên nhân hay tình huống, để dẫn ra phản ứng.",
+      "en": "It usually follows the cause or situation and introduces the reaction."
+    },
+    {
+      "vi": "Dùng trong văn viết và cả khẩu ngữ khi kể lại một trải nghiệm có sức tác động mạnh.",
+      "en": "It appears in writing and speech when recounting an experience with strong impact."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}, "pinyin": [""]},
+      {
+        "text": "不由得",
+        "role": "aux",
+        "label": {"vi": "phó từ", "en": "adverb"},
+        "pinyin": ["bù", "yóu", "de"]
+      },
+      {
+        "text": "VP",
+        "role": "verb",
+        "label": {"vi": "cụm động từ", "en": "verb phrase"},
+        "pinyin": ["", ""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "听到这个消息，她不由得流下了眼泪。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 7, "end": 8, "role": "subject"},
+        {"start": 8, "end": 11, "role": "aux"},
+        {"start": 11, "end": 16, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Tình huống khiến phản ứng xảy ra ngoài ý muốn.",
+        "en": "The situation triggers a reaction beyond her control."
+      },
+      "translation": {
+        "vi": "Nghe tin đó, cô ấy không kìm được mà rơi nước mắt.",
+        "en": "Hearing the news, she could not hold back her tears."
+      },
+      "pinyin": [
+        "tīng",
+        "dào",
+        "zhè",
+        "ge",
+        "xiāo",
+        "xi",
+        "",
+        "tā",
+        "bù",
+        "yóu",
+        "de",
+        "liú",
+        "xià",
+        "le",
+        "yǎn",
+        "lèi",
+        ""
+      ]
+    },
+    {
+      "text": "看到老照片，他不由得想起了童年。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 6, "end": 7, "role": "subject"},
+        {"start": 7, "end": 10, "role": "aux"},
+        {"start": 10, "end": 15, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Ký ức tự đến, không thể ngăn.",
+        "en": "The memory comes on its own, without being stopped."
+      },
+      "translation": {
+        "vi": "Nhìn tấm ảnh cũ, ông ấy không kìm được mà nhớ về tuổi thơ.",
+        "en": "Seeing the old photo, he could not help but think of his childhood."
+      },
+      "pinyin": [
+        "kàn",
+        "dào",
+        "lǎo",
+        "zhào",
+        "piàn",
+        "",
+        "tā",
+        "bù",
+        "yóu",
+        "de",
+        "xiǎng",
+        "qǐ",
+        "le",
+        "tóng",
+        "nián",
+        ""
+      ]
+    },
+    {
+      "text": "听到这个笑话，大家不由得笑了起来。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 7, "end": 9, "role": "subject"},
+        {"start": 9, "end": 12, "role": "aux"},
+        {"start": 12, "end": 16, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Phản ứng bật ra ngay trước tình huống.",
+        "en": "The reaction bursts out immediately at the situation."
+      },
+      "translation": {
+        "vi": "Nghe câu chuyện cười đó, mọi người không nhịn được mà bật cười.",
+        "en": "Hearing the joke, everyone could not help but laugh."
+      },
+      "pinyin": [
+        "tīng",
+        "dào",
+        "zhè",
+        "ge",
+        "xiào",
+        "huà",
+        "",
+        "dà",
+        "jiā",
+        "bù",
+        "yóu",
+        "de",
+        "xiào",
+        "le",
+        "qǐ",
+        "lái",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "听到这个消息，她不由得流下眼泪了。",
+      "right": "听到这个消息，她不由得流下了眼泪。",
+      "reason": {
+        "vi": "不由得 dẫn ra một phản ứng đã xảy ra ngay lúc đó, nên 了 phải đứng sau động từ chính để đánh dấu kết quả, không đặt ở cuối câu.",
+        "en": "不由得 introduces a reaction that happened right then, so 了 must follow the main verb to mark the result, not sit at the end of the sentence."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong_pinyin": [
+        "tīng",
+        "dào",
+        "zhè",
+        "ge",
+        "xiāo",
+        "xi",
+        "",
+        "tā",
+        "bù",
+        "yóu",
+        "de",
+        "liú",
+        "xià",
+        "yǎn",
+        "lèi",
+        "le",
+        ""
+      ],
+      "right_pinyin": [
+        "tīng",
+        "dào",
+        "zhè",
+        "ge",
+        "xiāo",
+        "xi",
+        "",
+        "tā",
+        "bù",
+        "yóu",
+        "de",
+        "liú",
+        "xià",
+        "le",
+        "yǎn",
+        "lèi",
+        ""
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "听到这个好消息，她___笑了起来。",
+      "options": [
+        {"text": "不由得", "error_tag": null, "pinyin": ["bù", "yóu", "de"]},
+        {"text": "不由得了", "error_tag": "particle", "pinyin": ["bù", "yóu", "de", "le"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "不由得 là một phó từ cố định, không thêm 了 vào chính nó; 了 thuộc về động từ phía sau.",
+        "en": "不由得 is a fixed adverb; 了 is not added to it but belongs to the following verb."
+      },
+      "q_pinyin": [
+        "tīng",
+        "dào",
+        "zhè",
+        "ge",
+        "hǎo",
+        "xiāo",
+        "xi",
+        "",
+        "tā",
+        "",
+        "",
+        "",
+        "xiào",
+        "le",
+        "qǐ",
+        "lái",
+        ""
+      ]
+    },
+    {
+      "q": "看到那幅画，他___想起了故乡。",
+      "options": [
+        {"text": "不由得", "error_tag": null, "pinyin": ["bù", "yóu", "de"]},
+        {"text": "不由", "error_tag": "particle", "pinyin": ["bù", "yóu"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "不由得 phải có đủ 得; thiếu 得 thì không còn là phó từ này.",
+        "en": "不由得 must keep 得; without it the adverb is incomplete."
+      },
+      "q_pinyin": [
+        "kàn",
+        "dào",
+        "nà",
+        "fú",
+        "huà",
+        "",
+        "tā",
+        "",
+        "",
+        "",
+        "xiǎng",
+        "qǐ",
+        "le",
+        "gù",
+        "xiāng",
+        ""
+      ]
+    },
+    {
+      "q": "听到这个消息，她不由得___。",
+      "options": [
+        {"text": "流下了眼泪", "error_tag": null, "pinyin": ["liú", "xià", "le", "yǎn", "lèi"]},
+        {"text": "眼泪流下了", "error_tag": "word_order", "pinyin": ["yǎn", "lèi", "liú", "xià", "le"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "不由得 đứng ngay trước cụm động từ chỉ phản ứng; đảo tân ngữ lên trước là sai trật tự.",
+        "en": "不由得 stands directly before the reaction verb phrase; moving the object first breaks the order."
+      },
+      "q_pinyin": ["tīng", "dào", "zhè", "ge", "xiāo", "xi", "", "tā", "bù", "yóu", "de", "", "", "", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu kể lại một tình huống khiến bạn không kìm được một phản ứng tự nhiên, dùng 不由得.",
+      "en": "Write one sentence about a situation that made you unable to hold back a natural reaction, using 不由得."
+    },
+    "placeholder": "听到……，我……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "aux", "any_of": ["不由得"]}, {"role": "verb", "regex": "[\\u4e00-\\u9fff]+"}]
+    },
+    "sample": {
+      "text": "听到这个消息，我不由得流下了眼泪。",
+      "pinyin": [
+        "tīng",
+        "dào",
+        "zhè",
+        "ge",
+        "xiāo",
+        "xi",
+        "",
+        "wǒ",
+        "bù",
+        "yóu",
+        "de",
+        "liú",
+        "xià",
+        "le",
+        "yǎn",
+        "lèi",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["tīng", "dào", "", "", "", "wǒ", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790834539",
+    "generated_at": "2026-10-01T06:02:19Z",
+    "metadata_stale": true
+  },
+  "review": null
+}

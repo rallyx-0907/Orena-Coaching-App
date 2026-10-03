@@ -5,84 +5,125 @@
   "target_lang": "en",
   "function": "fn.reference",
   "level": {"framework": "cefr", "value": "A1", "rank": 1},
-  "prereqs": ["en.plural_nouns.regular"],
-  "contrasts": ["en.articles.the"],
+  "prereqs": [],
+  "contrasts": ["en.articles.the", "en.articles.zero"],
   "error_tags": ["article"],
-  "source_refs": {},
+  "source_refs": {"r5": ["a1-articles-a-an-the"]},
   "point_type": "other",
+  "sequence": 1,
+  "aliases": ["a1-articles-a-an-the"],
+  "source_anchors": {"status": "anchored", "items": [{"source": "core_inventory", "code": "135", "level": "A1"}]},
   "header": {
-    "title": {"vi": "Mạo từ không xác định a/an", "en": "Indefinite articles a / an"},
+    "title": {"vi": "Mạo từ không xác định a / an", "en": "Indefinite articles a / an"},
     "native_title": "Indefinite articles: a / an",
     "level": {"framework": "cefr", "value": "A1", "rank": 1},
     "summary": {
-      "vi": "Mạo từ không xác định a/an đứng trước danh từ đếm được số ít khi người nói không xác định rõ đối tượng cụ thể.",
-      "en": "Use a or an before a singular countable noun when the listener does not know which one."
+      "vi": "Dùng a hoặc an trước danh từ đếm được số ít khi người nghe chưa biết chính xác đối tượng nào.",
+      "en": "Use a or an before a singular countable noun when the listener does not know exactly which one you mean."
     },
-    "sub": {"vi": "không xác định", "en": "indefinite"}
+    "sub": {"vi": "một, chưa xác định", "en": "one, not specific"}
   },
   "when_to_use": [
     {
-      "vi": "Khi nhắc đến một người hay vật lần đầu, người nghe chưa biết chính xác là ai hay cái gì."
+      "vi": "Khi bạn nhắc đến một vật hoặc người lần đầu, chưa xác định: I need a pen.",
+      "en": "When you mention a thing or person for the first time, not specific: I need a pen."
     },
-    {"vi": "Khi nói về một người hay vật thuộc một nhóm chung, không phải một cá thể cụ thể."},
-    {"vi": "Khi nói về nghề nghiệp hoặc vai trò của một người."},
-    {"vi": "Khi dùng trong câu cảm thán với danh từ đếm được số ít."}
+    {
+      "vi": "Khi nói về nghề nghiệp hoặc một loại: She is a teacher.",
+      "en": "When you talk about a job or a type: She is a teacher."
+    },
+    {"vi": "Khi nói về số lượng một: I have a sister.", "en": "When you mean one: I have a sister."},
+    {
+      "vi": "Khi mô tả một vật trong câu có tính từ: It is a big house.",
+      "en": "When you describe something with an adjective: It is a big house."
+    }
   ],
   "pattern": {
     "formula": [
       {
         "text": "a/an",
         "role": "marker",
-        "label": {"vi": "mạo từ không xác định"},
+        "label": {"vi": "mạo từ không xác định", "en": "indefinite article"},
         "options": [{"text": "a"}, {"text": "an"}]
       },
-      {"text": "adj", "role": "complement", "label": {"vi": "tính từ bổ nghĩa"}, "optional": true},
-      {"text": "N", "role": "object", "label": {"vi": "danh từ đếm được số ít"}}
+      {
+        "text": "adj",
+        "role": "complement",
+        "label": {"vi": "tính từ (không bắt buộc)", "en": "adjective (optional)"},
+        "optional": true
+      },
+      {
+        "text": "N",
+        "role": "object",
+        "label": {"vi": "danh từ đếm được số ít", "en": "singular countable noun"}
+      }
     ],
     "illustration": {"kind": "none"}
   },
   "examples": [
     {
-      "text": "I have a dog.",
+      "text": "I need a pen.",
       "form": "affirmative",
-      "spans": [{"start": 3, "end": 4, "role": "marker"}, {"start": 9, "end": 12, "role": "object"}],
-      "annotation": {"vi": "a đứng trước danh từ đếm được số ít bắt đầu bằng phụ âm."},
-      "translation": {"vi": "Tôi có một con chó."}
+      "spans": [{"start": 7, "end": 8, "role": "marker"}, {"start": 9, "end": 12, "role": "object"}],
+      "annotation": {
+        "vi": "a đứng trước danh từ số ít chưa xác định.",
+        "en": "a comes before a singular noun that is not specific."
+      },
+      "translation": {"vi": "Tôi cần một cây bút.", "en": "I need a pen."}
     },
     {
-      "text": "She is an engineer.",
+      "text": "She ate an apple after lunch.",
       "form": "affirmative",
-      "spans": [{"start": 7, "end": 9, "role": "marker"}, {"start": 10, "end": 18, "role": "object"}],
-      "annotation": {"vi": "an đứng trước danh từ bắt đầu bằng nguyên âm."},
-      "translation": {"vi": "Cô ấy là một kỹ sư."}
+      "spans": [{"start": 8, "end": 10, "role": "marker"}, {"start": 11, "end": 16, "role": "object"}],
+      "annotation": {
+        "vi": "an đứng trước danh từ bắt đầu bằng âm nguyên âm.",
+        "en": "an comes before a noun that starts with a vowel sound."
+      },
+      "translation": {"vi": "Cô ấy ăn một quả táo sau bữa trưa.", "en": "She ate an apple after lunch."}
     },
     {
-      "text": "He bought a new car.",
+      "text": "He is a doctor.",
       "form": "affirmative",
-      "spans": [
-        {"start": 10, "end": 11, "role": "marker"},
-        {"start": 12, "end": 15, "role": "complement"},
-        {"start": 16, "end": 19, "role": "object"}
-      ],
-      "annotation": {"vi": "a đứng trước tính từ bổ nghĩa cho danh từ đếm được số ít."},
-      "translation": {"vi": "Anh ấy đã mua một chiếc xe hơi mới."}
+      "spans": [{"start": 6, "end": 7, "role": "marker"}, {"start": 8, "end": 14, "role": "object"}],
+      "annotation": {"vi": "a dùng trước tên nghề nghiệp số ít.", "en": "a is used before a singular job name."},
+      "translation": {"vi": "Anh ấy là một bác sĩ.", "en": "He is a doctor."}
     }
   ],
   "compare": [
     {
       "with": "en.articles.the",
-      "this_meaning": {"vi": "Dùng khi người nghe chưa biết hoặc không cần xác định rõ đối tượng cụ thể."},
-      "this_example": "I saw a cat in the garden.",
-      "other_meaning": {"vi": "Dùng khi cả người nói và người nghe đều đã biết đối tượng cụ thể được nhắc đến."},
-      "other_example": "The cat is sleeping on the sofa."
+      "this_example": "I saw a dog.",
+      "other_example": "The dog is mine.",
+      "this_meaning": {
+        "vi": "a/an giới thiệu một đối tượng chưa xác định, người nghe chưa biết là cái nào.",
+        "en": "a/an introduces something not specific; the listener does not know which one."
+      },
+      "other_meaning": {
+        "vi": "the chỉ một đối tượng đã xác định, cả người nói và người nghe đều biết là cái nào.",
+        "en": "the points to a specific thing that both speaker and listener can identify."
+      }
+    },
+    {
+      "with": "en.articles.zero",
+      "this_example": "She has a cat.",
+      "other_example": "She likes cats.",
+      "this_meaning": {
+        "vi": "a/an dùng với danh từ đếm được số ít khi nói đến một đối tượng chưa xác định.",
+        "en": "a/an is used with a singular countable noun when talking about one non-specific thing."
+      },
+      "other_meaning": {
+        "vi": "Không dùng mạo từ (zero article) trước danh từ số nhiều hoặc danh từ không đếm được khi nói chung chung.",
+        "en": "No article (zero article) is used before plural nouns or uncountable nouns when speaking in general."
+      }
     }
   ],
   "common_mistakes": [
     {
-      "wrong": "I have dog.",
-      "right": "I have a dog.",
+      "wrong": "She has a orange.",
+      "right": "She has an orange.",
       "reason": {
-        "vi": "Tiếng Việt không có mạo từ, nên người học thường bỏ a/an trước danh từ đếm được số ít."
+        "vi": "orange bắt đầu bằng âm nguyên âm /ɒ/, nên phải dùng an, không dùng a.",
+        "en": "orange starts with the vowel sound /ɒ/, so you must use an, not a."
       },
       "error_tag": "article",
       "l1": ["vi"]
@@ -90,55 +131,75 @@
   ],
   "quick_practice": [
     {
-      "q": "She wants to buy ___ umbrella.",
-      "options": [
-        {"text": "an", "error_tag": null},
-        {"text": "a", "error_tag": "article"},
-        {"text": "the", "error_tag": "article"}
-      ],
+      "q": "I need ___ umbrella.",
+      "options": [{"text": "an", "error_tag": null}, {"text": "a", "error_tag": "article"}],
       "answer": 0,
-      "explain": {"vi": "Umbrella bắt đầu bằng nguyên âm /ʌ/, nên dùng an."}
+      "explain": {
+        "vi": "umbrella bắt đầu bằng âm nguyên âm /ʌ/, nên dùng an.",
+        "en": "umbrella starts with the vowel sound /ʌ/, so use an."
+      }
     },
     {
-      "q": "He is ___ teacher.",
-      "options": [
-        {"text": "a", "error_tag": null},
-        {"text": "an", "error_tag": "article"},
-        {"text": "the", "error_tag": "article"}
-      ],
+      "q": "He is ___ university student.",
+      "options": [{"text": "a", "error_tag": null}, {"text": "an", "error_tag": "article"}],
       "answer": 0,
-      "explain": {"vi": "Teacher bắt đầu bằng phụ âm /t/, nên dùng a."}
+      "explain": {
+        "vi": "university bắt đầu bằng âm /j/, là âm phụ âm, nên dùng a.",
+        "en": "university starts with the consonant sound /j/, so use a."
+      }
     },
     {
-      "q": "I need ___ new phone.",
-      "options": [
-        {"text": "a", "error_tag": null},
-        {"text": "an", "error_tag": "article"},
-        {"text": "the", "error_tag": "article"}
-      ],
+      "q": "She wants to buy ___ new phone.",
+      "options": [{"text": "a", "error_tag": null}, {"text": "an", "error_tag": "article"}],
       "answer": 0,
-      "explain": {"vi": "New bắt đầu bằng phụ âm /n/, nên dùng a."}
+      "explain": {
+        "vi": "new bắt đầu bằng âm phụ âm /n/, nên dùng a.",
+        "en": "new starts with the consonant sound /n/, so use a."
+      }
     }
   ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một đồ vật bạn cần hoặc muốn mua, dùng a hoặc an.",
+      "en": "Write one sentence about something you need or want to buy, using a or an."
+    },
+    "placeholder": "I need ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "marker", "any_of": ["a", "an"]}, {"role": "object", "regex": "[a-z]+"}]
+    },
+    "sample": {"text": "I need a new bag."}
+  },
   "status": "draft_ai",
   "flags": [],
   "provenance": {
     "model": "deepseek:deepseek-flash",
-    "prompt_version": "generate_point_v04.v7",
-    "run_id": "generate.1790591165",
-    "generated_at": "2026-09-28T10:26:05Z"
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790829556",
+    "generated_at": "2026-10-01T04:39:16Z",
+    "r5_source": {
+      "ids": ["a1-articles-a-an-the"],
+      "content_version": 2,
+      "content_hash": "b34a3270aa5d6024e5414db11d2bec71cd0b4748ed661114b6b39d8b847da778",
+      "corrections": [
+        {
+          "r5_id": "a1-articles-a-an-the",
+          "issue": "R5 gộp cả a/an và the trong một bài, trong khi điểm này chỉ tập trung vào a/an.",
+          "fix": "Tách riêng nội dung a/an; phần the được đưa vào mục so sánh (compare) với en.articles.the."
+        },
+        {
+          "r5_id": "a1-articles-a-an-the",
+          "issue": "R5 có ví dụ 'I bought a book. The book is on my desk.' dùng cả a và the, không phù hợp với điểm chỉ dạy a/an.",
+          "fix": "Thay bằng ví dụ chỉ dùng a/an: 'I need a pen.', 'She ate an apple after lunch.', 'He is a doctor.'"
+        },
+        {
+          "r5_id": "a1-articles-a-an-the",
+          "issue": "R5 có lỗi sai 'She has a orange.' nhưng giải thích chưa nêu rõ âm đầu.",
+          "fix": "Giữ lỗi sai này trong common_mistakes và giải thích rõ: orange bắt đầu bằng âm nguyên âm /ɒ/ nên dùng an."
+        }
+      ]
+    }
   },
-  "review": null,
-  "sequence": 1,
-  "personal_production": {
-    "prompt": {
-      "vi": "Viết một câu về một thứ bạn có hoặc thấy (dùng a hoặc an).",
-      "en": "Write a sentence about something you have or see (use a or an)."
-    },
-    "placeholder": "I have a ...",
-    "target_form": "affirmative",
-    "pattern_rule": {"ordered": true, "slots": [{"role": "marker", "any_of": ["a", "an"]}]},
-    "sample": {"text": "I have an orange."}
-  },
-  "source_anchors": {"status": "anchored", "items": [{"source": "core_inventory", "code": "135", "level": "A1"}]}
+  "review": null
 }

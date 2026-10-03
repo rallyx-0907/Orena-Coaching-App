@@ -1,0 +1,192 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk2.a_2_1_4.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.quantity",
+  "level": {"framework": "hsk3", "value": "2", "rank": 2},
+  "prereqs": ["zh.canon.gf.hsk1.a_1_2_1.p1"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"gf0025": ["gf0025.hsk2.009"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Số từ: 千、万、亿", "en": "Numerals: 千、万、亿"},
+    "native_title": "千、万、亿",
+    "level": {"framework": "hsk3", "value": "2", "rank": 2},
+    "summary": {
+      "vi": "Các số từ 千 (nghìn), 万 (mười nghìn) và 亿 (trăm triệu) dùng để đọc và viết các số lớn trong tiếng Trung.",
+      "en": "The numerals 千 (thousand), 万 (ten thousand) and 亿 (hundred million) are used to read and write large numbers in Chinese."
+    },
+    "sub": {"vi": "số lớn", "en": "large numbers"},
+    "native_title_pinyin": ["qiān", "", "wàn", "", "yì"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói một số lượng từ một nghìn trở lên, ví dụ dân số, giá cả hay số lượng hàng hóa.",
+      "en": "When you want to say a quantity of one thousand or more, such as a population, a price or an amount of goods."
+    },
+    {
+      "vi": "Khi bạn đọc số điện thoại, năm tháng hay địa chỉ có nhiều chữ số.",
+      "en": "When you read a phone number, a year or an address with several digits."
+    },
+    {
+      "vi": "Khi bạn cần viết số bằng chữ Hán trong hợp đồng, hóa đơn hoặc văn bản trang trọng.",
+      "en": "When you need to write a number in Chinese characters in a contract, an invoice or a formal text."
+    },
+    {
+      "vi": "Khi bạn nghe người khác nói 万 hoặc 亿 và cần hiểu đúng giá trị của con số.",
+      "en": "When you hear someone say 万 or 亿 and need to understand the exact value of the number."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "số", "role": "other", "label": {"vi": "chữ số", "en": "digit"}, "pinyin": ["", ""]},
+      {
+        "text": "千/万/亿",
+        "role": "classifier",
+        "label": {"vi": "đơn vị đếm", "en": "counting unit"},
+        "options": [
+          {"text": "千", "pinyin": ["qiān"]},
+          {"text": "万", "pinyin": ["wàn"]},
+          {"text": "亿", "pinyin": ["yì"]}
+        ],
+        "pinyin": ["qiān", "", "wàn", "", "yì"]
+      },
+      {
+        "text": "số",
+        "role": "other",
+        "label": {"vi": "chữ số còn lại", "en": "remaining digit"},
+        "optional": true,
+        "pinyin": ["", ""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "这个城市有三百万人口。",
+      "form": "affirmative",
+      "spans": [{"start": 5, "end": 6, "role": "other"}, {"start": 6, "end": 8, "role": "classifier"}],
+      "annotation": {
+        "vi": "三 + 百万 = 3.000.000, đơn vị 百万 đứng sau chữ số.",
+        "en": "三 + 百万 = 3,000,000; the unit 百万 follows the digit."
+      },
+      "translation": {"vi": "Thành phố này có ba triệu dân.", "en": "This city has a population of three million."},
+      "pinyin": ["zhè", "gè", "chéng", "shì", "yǒu", "sān", "bǎi", "wàn", "rén", "kǒu", ""]
+    },
+    {
+      "text": "这本书要五千块。",
+      "form": "affirmative",
+      "spans": [{"start": 4, "end": 5, "role": "other"}, {"start": 5, "end": 6, "role": "classifier"}],
+      "annotation": {
+        "vi": "五 + 千 = 5.000, 千 là đơn vị nghìn.",
+        "en": "五 + 千 = 5,000; 千 is the unit for thousand."
+      },
+      "translation": {"vi": "Cuốn sách này giá năm nghìn tệ.", "en": "This book costs five thousand yuan."},
+      "pinyin": ["zhè", "běn", "shū", "yào", "wǔ", "qiān", "kuài", ""]
+    },
+    {
+      "text": "中国有十四亿人。",
+      "form": "affirmative",
+      "spans": [{"start": 3, "end": 5, "role": "other"}, {"start": 5, "end": 6, "role": "classifier"}],
+      "annotation": {
+        "vi": "十四 + 亿 = 1.400.000.000, 亿 là đơn vị trăm triệu.",
+        "en": "十四 + 亿 = 1,400,000,000; 亿 is the unit for hundred million."
+      },
+      "translation": {"vi": "Trung Quốc có 1,4 tỷ người.", "en": "China has 1.4 billion people."},
+      "pinyin": ["zhōng", "guó", "yǒu", "shí", "sì", "yì", "rén", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "这个城市有三千万人口。",
+      "right": "这个城市有三百万人口。",
+      "reason": {
+        "vi": "Người học Việt Nam hay nhầm 万 với 千 vì cả hai đều là đơn vị đếm; 三千万 là ba mươi triệu, còn ba triệu phải là 三百万.",
+        "en": "Vietnamese learners often confuse 万 with 千 because both are counting units; 三千万 is thirty million, while three million must be 三百万."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong_pinyin": ["zhè", "gè", "chéng", "shì", "yǒu", "sān", "qiān", "wàn", "rén", "kǒu", ""],
+      "right_pinyin": ["zhè", "gè", "chéng", "shì", "yǒu", "sān", "bǎi", "wàn", "rén", "kǒu", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "这个城市有三百万___口。",
+      "options": [
+        {"text": "人", "error_tag": null, "pinyin": ["rén"]},
+        {"text": "千", "error_tag": "word_choice", "pinyin": ["qiān"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "人口 là từ cố định nghĩa là dân số; 千 là đơn vị đếm nên không hợp ở đây.",
+        "en": "人口 is a fixed word meaning population; 千 is a counting unit and does not fit here."
+      },
+      "q_pinyin": ["zhè", "gè", "chéng", "shì", "yǒu", "sān", "bǎi", "wàn", "", "", "", "kǒu", ""]
+    },
+    {
+      "q": "这本书要五___块。",
+      "options": [
+        {"text": "千", "error_tag": null, "pinyin": ["qiān"]},
+        {"text": "万", "error_tag": "word_choice", "pinyin": ["wàn"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Với giá năm nghìn tệ, đơn vị đúng là 千; 万 sẽ thành năm mươi nghìn tệ.",
+        "en": "For a price of five thousand yuan, the correct unit is 千; 万 would make it fifty thousand yuan."
+      },
+      "q_pinyin": ["zhè", "běn", "shū", "yào", "wǔ", "", "", "", "kuài", ""]
+    },
+    {
+      "q": "中国有十四___人。",
+      "options": [
+        {"text": "亿", "error_tag": null, "pinyin": ["yì"]},
+        {"text": "万", "error_tag": "word_choice", "pinyin": ["wàn"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Dân số Trung Quốc là 1,4 tỷ, nên phải dùng 亿; 万 chỉ là mười nghìn.",
+        "en": "China's population is 1.4 billion, so 亿 is required; 万 is only ten thousand."
+      },
+      "q_pinyin": ["zhōng", "guó", "yǒu", "shí", "sì", "", "", "", "rén", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về số lượng lớn trong thành phố của bạn, dùng 千, 万 hoặc 亿.",
+      "en": "Write one sentence about a large number in your city, using 千, 万 or 亿."
+    },
+    "placeholder": "我的城市有……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {
+          "role": "other",
+          "any_of": ["一", "二", "两", "三", "四", "五", "六", "七", "八", "九", "十", "百", "千", "万", "亿"]
+        },
+        {"role": "classifier", "any_of": ["千", "万", "亿"]}
+      ]
+    },
+    "sample": {
+      "text": "我的城市有五百万人口。",
+      "pinyin": ["wǒ", "de", "chéng", "shì", "yǒu", "wǔ", "bǎi", "wàn", "rén", "kǒu", ""]
+    },
+    "placeholder_pinyin": ["wǒ", "de", "chéng", "shì", "yǒu", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790832178",
+    "generated_at": "2026-10-01T05:22:58Z"
+  },
+  "review": null
+}

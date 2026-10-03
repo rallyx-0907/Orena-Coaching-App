@@ -1,0 +1,183 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b1.042",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.reference",
+  "level": {"framework": "cefr", "value": "B1", "rank": 3},
+  "prereqs": ["en.canon.b1.034"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["b1-one-ones"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": ["b1-one-ones"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "One/ones", "en": "One/ones"},
+    "native_title": "One/ones",
+    "level": {"framework": "cefr", "value": "B1", "rank": 3},
+    "summary": {
+      "vi": "One/ones thay thế một danh từ đếm được đã được nhắc đến trước đó, giúp tránh lặp lại danh từ đó trong câu.",
+      "en": "One/ones replaces a countable noun that has already been mentioned, so the noun does not have to be repeated."
+    },
+    "sub": {"vi": "thay danh từ đếm được", "en": "replacing countable nouns"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi danh từ đếm được đã rõ từ ngữ cảnh trước và bạn không muốn lặp lại nó.",
+      "en": "When a countable noun is already clear from the previous context and you do not want to repeat it."
+    },
+    {
+      "vi": "Khi đứng sau một tính từ hoặc từ hạn định như the, this, another, which để chỉ một vật cụ thể.",
+      "en": "After an adjective or a determiner such as the, this, another, which to point to a specific thing."
+    },
+    {
+      "vi": "Khi thay danh từ số nhiều đã xác định, dùng ones sau tính từ hoặc the.",
+      "en": "When replacing a definite plural noun, use ones after an adjective or the."
+    },
+    {
+      "vi": "Khi trả lời ngắn hoặc hỏi lại về một danh từ đếm được vừa được nhắc đến.",
+      "en": "In short answers or follow-up questions about a countable noun just mentioned."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "determiner/adjective",
+        "role": "other",
+        "label": {"vi": "từ hạn định/tính từ", "en": "determiner/adjective"},
+        "optional": true
+      },
+      {
+        "text": "one/ones",
+        "role": "complement",
+        "label": {"vi": "đại từ thay thế", "en": "substitute pronoun"},
+        "options": [{"text": "one"}, {"text": "ones"}]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "Which jacket do you want? The black one.",
+      "form": "affirmative",
+      "spans": [{"start": 26, "end": 35, "role": "other"}, {"start": 36, "end": 39, "role": "complement"}],
+      "annotation": {
+        "vi": "one thay cho jacket đã được nhắc đến, tránh lặp lại danh từ.",
+        "en": "one replaces the already mentioned jacket, avoiding repetition of the noun."
+      },
+      "translation": {
+        "vi": "Bạn muốn chiếc áo khoác nào? Chiếc màu đen.",
+        "en": "Which jacket do you want? The black one."
+      }
+    },
+    {
+      "text": "These shoes are cheaper than the other ones.",
+      "form": "affirmative",
+      "spans": [{"start": 29, "end": 38, "role": "other"}, {"start": 39, "end": 43, "role": "complement"}],
+      "annotation": {
+        "vi": "ones thay cho shoes số nhiều đã xác định ở vế trước.",
+        "en": "ones replaces the definite plural noun shoes from the first part of the sentence."
+      },
+      "translation": {
+        "vi": "Những đôi giày này rẻ hơn những đôi khác.",
+        "en": "These shoes are cheaper than the other ones."
+      }
+    },
+    {
+      "text": "I need a pen. Have you got one?",
+      "form": "affirmative",
+      "spans": [{"start": 27, "end": 30, "role": "complement"}],
+      "annotation": {
+        "vi": "one thay cho a pen vừa được nhắc đến trong câu trước.",
+        "en": "one replaces a pen, which was just mentioned in the previous sentence."
+      },
+      "translation": {"vi": "Tôi cần một cây bút. Bạn có cây nào không?", "en": "I need a pen. Have you got one?"}
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "I prefer the blue shirt to the red shirt one.",
+      "right": "I prefer the blue shirt to the red one.",
+      "reason": {
+        "vi": "one đã thay cho shirt nên không được lặp lại shirt trước one.",
+        "en": "one already replaces shirt, so shirt must not be repeated before one."
+      },
+      "error_tag": "other",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "I don't like these shoes. Can I try the brown ___?",
+      "options": [{"text": "ones", "error_tag": null}, {"text": "one", "error_tag": "agreement"}],
+      "answer": 0,
+      "explain": {
+        "vi": "shoes là danh từ số nhiều nên dùng ones, không dùng one.",
+        "en": "shoes is plural, so ones is used, not one."
+      }
+    },
+    {
+      "q": "This coffee is cold. Could I have a hot ___?",
+      "options": [{"text": "one", "error_tag": null}, {"text": "ones", "error_tag": "agreement"}],
+      "answer": 0,
+      "explain": {
+        "vi": "coffee ở đây là một cốc cụ thể, danh từ đếm được số ít nên dùng one.",
+        "en": "coffee here refers to one specific cup, a singular countable item, so one is used."
+      }
+    },
+    {
+      "q": "I need some advice. Can you give me ___?",
+      "options": [{"text": "one", "error_tag": "word_choice"}, {"text": "a suggestion", "error_tag": null}],
+      "answer": 1,
+      "explain": {
+        "vi": "advice là danh từ không đếm được nên không thể thay bằng one; cần một danh từ đếm được như a suggestion.",
+        "en": "advice is uncountable, so it cannot be replaced by one; a countable noun such as a suggestion is needed."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu so sánh hai đồ vật cùng loại, dùng one hoặc ones để tránh lặp danh từ.",
+      "en": "Write a sentence comparing two items of the same kind, using one or ones to avoid repeating the noun."
+    },
+    "placeholder": "I prefer the ... one ...",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"role": "complement", "any_of": ["one", "ones"]}]},
+    "sample": {"text": "I prefer the blue one to the red one."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790830987",
+    "generated_at": "2026-10-01T05:03:07Z",
+    "r5_source": {
+      "ids": ["b1-one-ones"],
+      "content_version": 2,
+      "content_hash": "08e7b4963429c654dc7f53ace01170e92fcfd2738932b0a566a7a981172dc517",
+      "corrections": [
+        {
+          "r5_id": "b1-one-ones",
+          "issue": "The R5 mistake 'I need an advice; give me one.' is not a real learner error with one/ones because advice is uncountable and one cannot replace it; the correction also changes the sentence structure too much.",
+          "fix": "Replaced with a real mistake: 'I prefer the blue shirt to the red shirt one.' corrected to 'I prefer the blue shirt to the red one.'"
+        },
+        {
+          "r5_id": "b1-one-ones",
+          "issue": "The R5 example 'The ones near the door are ours.' is grammatical but the point is not clearly highlighted because ones is not contrasted with a repeated noun in the same sentence.",
+          "fix": "Replaced with 'These shoes are cheaper than the other ones.' to show ones replacing a plural noun already mentioned."
+        },
+        {
+          "r5_id": "b1-one-ones",
+          "issue": "The R5 explanation does not state that one/ones cannot replace uncountable nouns directly.",
+          "fix": "Added a quick-practice item and a common mistake showing that uncountable nouns like advice need a countable substitute such as a suggestion."
+        }
+      ]
+    },
+    "metadata_stale": true
+  },
+  "review": null
+}

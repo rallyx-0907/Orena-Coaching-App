@@ -1,0 +1,239 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b1.046",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.sentence_basics",
+  "level": {"framework": "cefr", "value": "B1", "rank": 3},
+  "prereqs": [],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "tính từ Order", "en": "Adjective Order"},
+    "native_title": "Adjective Order",
+    "level": {"framework": "cefr", "value": "B1", "rank": 3},
+    "summary": {
+      "vi": "Trật tự tính từ tiếng Anh sắp xếp các tính từ theo một thứ tự cố định trước danh từ.",
+      "en": "English adjective order arranges adjectives in a fixed sequence before a noun."
+    },
+    "sub": {"vi": "trật tự tính từ", "en": "adjective order"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn dùng hai tính từ trở lên để miêu tả cùng một danh từ.",
+      "en": "When you use two or more adjectives to describe the same noun."
+    },
+    {
+      "vi": "Khi bạn muốn thêm ý kiến, kích thước, tuổi, hình dáng, màu sắc, nguồn gốc hoặc chất liệu vào một danh từ.",
+      "en": "When you want to add opinion, size, age, shape, colour, origin or material to a noun."
+    },
+    {
+      "vi": "Khi bạn viết mô tả sản phẩm, người hoặc địa điểm và cần các tính từ nghe tự nhiên.",
+      "en": "When you write descriptions of products, people or places and need the adjectives to sound natural."
+    },
+    {
+      "vi": "Khi bạn nhận ra một cụm danh từ nghe sai dù từng tính từ đều đúng.",
+      "en": "When a noun phrase sounds wrong even though each adjective is correct on its own."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "opinion",
+        "role": "other",
+        "label": {"vi": "ý kiến", "en": "opinion"},
+        "optional": true
+      },
+      {
+        "text": "size",
+        "role": "other",
+        "label": {"vi": "kích thước", "en": "size"},
+        "optional": true
+      },
+      {"text": "age", "role": "other", "label": {"vi": "tuổi", "en": "age"}, "optional": true},
+      {
+        "text": "shape",
+        "role": "other",
+        "label": {"vi": "hình dáng", "en": "shape"},
+        "optional": true
+      },
+      {
+        "text": "colour",
+        "role": "other",
+        "label": {"vi": "màu sắc", "en": "colour"},
+        "optional": true
+      },
+      {
+        "text": "origin",
+        "role": "other",
+        "label": {"vi": "nguồn gốc", "en": "origin"},
+        "optional": true
+      },
+      {
+        "text": "material",
+        "role": "other",
+        "label": {"vi": "chất liệu", "en": "material"},
+        "optional": true
+      },
+      {"text": "N", "role": "object", "label": {"vi": "danh từ", "en": "noun"}}
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "She bought a beautiful small round wooden table.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 13, "end": 22, "role": "other"},
+        {"start": 23, "end": 28, "role": "other"},
+        {"start": 29, "end": 34, "role": "other"},
+        {"start": 35, "end": 41, "role": "other"},
+        {"start": 42, "end": 47, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Tính từ đi theo thứ tự ý kiến → kích thước → hình dáng → chất liệu trước danh từ.",
+        "en": "The adjectives follow opinion → size → shape → material before the noun."
+      },
+      "translation": {
+        "vi": "Cô ấy mua một chiếc bàn gỗ tròn nhỏ xinh.",
+        "en": "She bought a beautiful small round wooden table."
+      }
+    },
+    {
+      "text": "He drives an old Italian sports car.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 13, "end": 16, "role": "other"},
+        {"start": 17, "end": 24, "role": "other"},
+        {"start": 32, "end": 35, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Tuổi đứng trước nguồn gốc, và cả hai đứng trước danh từ.",
+        "en": "Age comes before origin, and both come before the noun."
+      },
+      "translation": {"vi": "Anh ấy lái một chiếc xe thể thao Ý cũ.", "en": "He drives an old Italian sports car."}
+    },
+    {
+      "text": "They live in a lovely big grey stone house.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 15, "end": 21, "role": "other"},
+        {"start": 22, "end": 25, "role": "other"},
+        {"start": 26, "end": 30, "role": "other"},
+        {"start": 31, "end": 36, "role": "other"},
+        {"start": 37, "end": 42, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Ý kiến, kích thước, màu sắc và chất liệu theo đúng thứ tự chuẩn.",
+        "en": "Opinion, size, colour and material appear in the standard order."
+      },
+      "translation": {
+        "vi": "Họ sống trong một ngôi nhà đá xám to đẹp.",
+        "en": "They live in a lovely big grey stone house."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "She bought a wooden round small beautiful table.",
+      "right": "She bought a beautiful small round wooden table.",
+      "reason": {
+        "vi": "Tiếng Việt thường đặt tính từ gần danh từ theo mức độ quan trọng, còn tiếng Anh bắt buộc theo thứ tự ý kiến → kích thước → hình dáng → chất liệu.",
+        "en": "Vietnamese often places adjectives near the noun by importance, but English requires the fixed order opinion → size → shape → material."
+      },
+      "error_tag": "other",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "She wore a ___ dress to the party.",
+      "options": [
+        {"text": "beautiful long red", "error_tag": null},
+        {"text": "red long beautiful", "error_tag": "word_choice"},
+        {"text": "long red beautiful", "error_tag": "word_choice"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Thứ tự đúng là ý kiến (beautiful) → kích thước/dài (long) → màu sắc (red).",
+        "en": "The correct order is opinion (beautiful) → size/length (long) → colour (red)."
+      }
+    },
+    {
+      "q": "He bought a ___ table for his living room.",
+      "options": [
+        {"text": "small round wooden", "error_tag": null},
+        {"text": "wooden round small", "error_tag": "word_choice"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Kích thước (small) → hình dáng (round) → chất liệu (wooden) là thứ tự đúng.",
+        "en": "Size (small) → shape (round) → material (wooden) is the correct order."
+      }
+    },
+    {
+      "q": "They visited a ___ castle in Scotland.",
+      "options": [
+        {"text": "magnificent old stone", "error_tag": null},
+        {"text": "stone old magnificent", "error_tag": "word_choice"},
+        {"text": "old stone magnificent", "error_tag": "word_choice"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Ý kiến (magnificent) → tuổi (old) → chất liệu (stone) đứng trước danh từ.",
+        "en": "Opinion (magnificent) → age (old) → material (stone) come before the noun."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một đồ vật bạn sở hữu, dùng ít nhất hai tính từ trước danh từ.",
+      "en": "Write one sentence about something you own, using at least two adjectives before the noun."
+    },
+    "placeholder": "I have a ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {
+          "role": "other",
+          "any_of": [
+            "beautiful",
+            "lovely",
+            "magnificent",
+            "small",
+            "big",
+            "old",
+            "round",
+            "grey",
+            "red",
+            "wooden",
+            "stone",
+            "Italian"
+          ]
+        },
+        {
+          "role": "object",
+          "regex": "(?i)\\b(table|car|house|dress|castle|bag|phone|chair|room|garden)\\b"
+        }
+      ]
+    },
+    "sample": {"text": "I have a beautiful small wooden table."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790831009",
+    "generated_at": "2026-10-01T05:03:29Z",
+    "metadata_stale": true
+  },
+  "review": null
+}

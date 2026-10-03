@@ -1,0 +1,345 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk5.a_5_5_2_8.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.negation",
+  "level": {"framework": "hsk3", "value": "5", "rank": 5},
+  "prereqs": ["zh.canon.gf.hsk5.a_5_2_1_1.p1"],
+  "contrasts": [],
+  "error_tags": ["conjunction"],
+  "source_refs": {"gf0025": ["gf0025.hsk5.054"]},
+  "point_type": "other",
+  "sequence": 3,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Câu phức: 没有⋯⋯就没有⋯⋯", "en": "Complex sentences: 没有⋯⋯就没有⋯⋯"},
+    "native_title": "没有⋯⋯就没有⋯⋯",
+    "level": {"framework": "hsk3", "value": "5", "rank": 5},
+    "summary": {
+      "vi": "Mẫu câu 没有⋯⋯就没有⋯⋯ dùng để nói rằng nếu thiếu điều kiện thứ nhất thì kết quả thứ hai không thể có.",
+      "en": "The pattern 没有⋯⋯就没有⋯⋯ states that without the first condition, the second result cannot happen."
+    },
+    "sub": {"vi": "điều kiện phủ định", "en": "negative condition"},
+    "native_title_pinyin": ["méi", "yǒu", "", "", "jiù", "méi", "yǒu", "", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói một kết quả chỉ có được nhờ một điều kiện cụ thể, và không có điều kiện đó thì kết quả không xảy ra.",
+      "en": "Use it when a result only comes from one specific condition, and without that condition the result does not happen."
+    },
+    {
+      "vi": "Khi cả hai vế đều là mệnh đề khẳng định bình thường, vế sau được phủ định bằng 没有.",
+      "en": "Use it when both parts are ordinary statements and the second part is negated with 没有."
+    },
+    {
+      "vi": "Khi bạn muốn nhấn mạnh sự phụ thuộc lẫn nhau giữa hai việc, thường trong lời khuyên hoặc giải thích.",
+      "en": "Use it to stress that two things depend on each other, often in advice or explanations."
+    },
+    {
+      "vi": "Khi chủ ngữ của hai vế giống nhau, chủ ngữ thứ hai thường được lược bỏ.",
+      "en": "Use it when the two parts share the same subject; the second subject is usually left out."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "没有",
+        "role": "marker",
+        "label": {"vi": "phủ định điều kiện", "en": "negates the condition"},
+        "pinyin": ["méi", "yǒu"]
+      },
+      {
+        "text": "条件",
+        "role": "other",
+        "label": {"vi": "điều kiện", "en": "condition"},
+        "pinyin": ["tiáo", "jiàn"]
+      },
+      {"text": "就", "role": "connector", "label": {"vi": "thì", "en": "then"}, "pinyin": ["jiù"]},
+      {
+        "text": "没有",
+        "role": "marker",
+        "label": {"vi": "phủ định kết quả", "en": "negates the result"},
+        "pinyin": ["méi", "yǒu"]
+      },
+      {
+        "text": "结果",
+        "role": "other",
+        "label": {"vi": "kết quả", "en": "result"},
+        "pinyin": ["jié", "guǒ"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "没有时间就没有办法完成这个任务。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "marker"},
+        {"start": 2, "end": 4, "role": "other"},
+        {"start": 4, "end": 5, "role": "connector"},
+        {"start": 5, "end": 7, "role": "marker"},
+        {"start": 7, "end": 15, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Thiếu điều kiện 时间 thì kết quả 没有办法完成这个任务 không thể có.",
+        "en": "Without the condition 时间, the result 没有办法完成这个任务 cannot happen."
+      },
+      "translation": {
+        "vi": "Không có thời gian thì không có cách nào hoàn thành nhiệm vụ này.",
+        "en": "Without time, there is no way to finish this task."
+      },
+      "pinyin": [
+        "méi",
+        "yǒu",
+        "shí",
+        "jiān",
+        "jiù",
+        "méi",
+        "yǒu",
+        "bàn",
+        "fǎ",
+        "wán",
+        "chéng",
+        "zhè",
+        "gè",
+        "rèn",
+        "wù",
+        ""
+      ]
+    },
+    {
+      "text": "没有大家的帮助就没有今天的成绩。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "marker"},
+        {"start": 2, "end": 7, "role": "other"},
+        {"start": 7, "end": 8, "role": "connector"},
+        {"start": 8, "end": 10, "role": "marker"},
+        {"start": 10, "end": 15, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Điều kiện 大家的帮助 là nguồn gốc của kết quả 今天的成绩.",
+        "en": "The condition 大家的帮助 is the source of the result 今天的成绩."
+      },
+      "translation": {
+        "vi": "Không có sự giúp đỡ của mọi người thì không có thành tích ngày hôm nay.",
+        "en": "Without everyone's help, there would be no success today."
+      },
+      "pinyin": [
+        "méi",
+        "yǒu",
+        "dà",
+        "jiā",
+        "de",
+        "bāng",
+        "zhù",
+        "jiù",
+        "méi",
+        "yǒu",
+        "jīn",
+        "tiān",
+        "de",
+        "chéng",
+        "jì",
+        ""
+      ]
+    },
+    {
+      "text": "没有健康的身体就没有幸福的生活。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "marker"},
+        {"start": 2, "end": 7, "role": "other"},
+        {"start": 7, "end": 8, "role": "connector"},
+        {"start": 8, "end": 10, "role": "marker"},
+        {"start": 10, "end": 15, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Điều kiện 健康的身体 quyết định kết quả 幸福的生活.",
+        "en": "The condition 健康的身体 determines the result 幸福的生活."
+      },
+      "translation": {
+        "vi": "Không có cơ thể khỏe mạnh thì không có cuộc sống hạnh phúc.",
+        "en": "Without a healthy body, there is no happy life."
+      },
+      "pinyin": [
+        "méi",
+        "yǒu",
+        "jiàn",
+        "kāng",
+        "de",
+        "shēn",
+        "tǐ",
+        "jiù",
+        "méi",
+        "yǒu",
+        "xìng",
+        "fú",
+        "de",
+        "shēng",
+        "huó",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "没有时间，没有办法完成这个任务。",
+      "right": "没有时间就没有办法完成这个任务。",
+      "reason": {
+        "vi": "Người học chỉ nối hai vế bằng dấu phẩy, thiếu 就 nên câu mất liên kết điều kiện – kết quả.",
+        "en": "The learner joins the two parts with only a comma and drops 就, so the condition–result link is lost."
+      },
+      "error_tag": "conjunction",
+      "l1": ["vi"],
+      "wrong_pinyin": [
+        "méi",
+        "yǒu",
+        "shí",
+        "jiān",
+        "",
+        "méi",
+        "yǒu",
+        "bàn",
+        "fǎ",
+        "wán",
+        "chéng",
+        "zhè",
+        "gè",
+        "rèn",
+        "wù",
+        ""
+      ],
+      "right_pinyin": [
+        "méi",
+        "yǒu",
+        "shí",
+        "jiān",
+        "jiù",
+        "méi",
+        "yǒu",
+        "bàn",
+        "fǎ",
+        "wán",
+        "chéng",
+        "zhè",
+        "gè",
+        "rèn",
+        "wù",
+        ""
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "没有努力，___没有好的结果。",
+      "options": [
+        {"text": "就", "error_tag": null, "pinyin": ["jiù"]},
+        {"text": "也", "error_tag": "conjunction", "pinyin": ["yě"]},
+        {"text": "还", "error_tag": "conjunction", "pinyin": ["hái"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Trong mẫu 没有⋯⋯就没有⋯⋯, vế sau bắt đầu bằng 就.",
+        "en": "In the pattern 没有⋯⋯就没有⋯⋯, the second part begins with 就."
+      },
+      "q_pinyin": ["méi", "yǒu", "nǔ", "lì", "", "", "", "", "méi", "yǒu", "hǎo", "de", "jié", "guǒ", ""]
+    },
+    {
+      "q": "没有大家的支持，___今天的成功。",
+      "options": [
+        {"text": "就没有", "error_tag": null, "pinyin": ["jiù", "méi", "yǒu"]},
+        {"text": "就不", "error_tag": "conjunction", "pinyin": ["jiù", "bù"]},
+        {"text": "就", "error_tag": "conjunction", "pinyin": ["jiù"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Vế kết quả bị phủ định bằng 没有, không dùng 不.",
+        "en": "The result part is negated with 没有, not with 不."
+      },
+      "q_pinyin": [
+        "méi",
+        "yǒu",
+        "dà",
+        "jiā",
+        "de",
+        "zhī",
+        "chí",
+        "",
+        "",
+        "",
+        "",
+        "jīn",
+        "tiān",
+        "de",
+        "chéng",
+        "gōng",
+        ""
+      ]
+    },
+    {
+      "q": "没有好的计划，就没有办法___。",
+      "options": [
+        {"text": "开始工作", "error_tag": null, "pinyin": ["kāi", "shǐ", "gōng", "zuò"]},
+        {"text": "开始工作吗", "error_tag": "particle", "pinyin": ["kāi", "shǐ", "gōng", "zuò", "ma"]},
+        {"text": "开始了工作", "error_tag": "aspect", "pinyin": ["kāi", "shǐ", "le", "gōng", "zuò"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 没有办法 là một cụm động từ trần thuật, không thêm 吗 hay 了.",
+        "en": "After 没有办法 comes a plain verb phrase; do not add 吗 or 了."
+      },
+      "q_pinyin": ["méi", "yǒu", "hǎo", "de", "jì", "huà", "", "jiù", "méi", "yǒu", "bàn", "fǎ", "", "", "", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng 没有⋯⋯就没有⋯⋯ về điều kiện và kết quả trong cuộc sống của bạn.",
+      "en": "Write one sentence with 没有⋯⋯就没有⋯⋯ about a condition and a result in your own life."
+    },
+    "placeholder": "没有……就没有……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "marker", "any_of": ["没有"]},
+        {"role": "connector", "any_of": ["就"]},
+        {"role": "marker", "any_of": ["没有"]}
+      ]
+    },
+    "sample": {
+      "text": "没有家人的支持就没有今天的我。",
+      "pinyin": [
+        "méi",
+        "yǒu",
+        "jiā",
+        "rén",
+        "de",
+        "zhī",
+        "chí",
+        "jiù",
+        "méi",
+        "yǒu",
+        "jīn",
+        "tiān",
+        "de",
+        "wǒ",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["méi", "yǒu", "", "", "jiù", "méi", "yǒu", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790833764",
+    "generated_at": "2026-10-01T05:49:24Z"
+  },
+  "review": null
+}

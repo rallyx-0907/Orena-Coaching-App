@@ -1,0 +1,205 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk3.a_3_2_5_1.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.location",
+  "level": {"framework": "hsk3", "value": "3", "rank": 3},
+  "prereqs": ["zh.zai_location"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"gf0025": ["gf0025.hsk3.020"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 由", "en": "Chinese grammar: 由"},
+    "native_title": "由",
+    "level": {"framework": "hsk3", "value": "3", "rank": 3},
+    "summary": {
+      "vi": "由 dùng để nói nguồn gốc, xuất xứ hoặc người làm ra một vật gì đó.",
+      "en": "由 marks the source, origin, or the person who makes or provides something."
+    },
+    "sub": {"vi": "nguồn gốc, xuất xứ", "en": "source and origin"},
+    "native_title_pinyin": ["yóu"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói một vật được làm ra hoặc cung cấp bởi ai hay từ đâu.",
+      "en": "When you say who makes or provides something, or where it comes from."
+    },
+    {
+      "vi": "Khi nói về nguồn gốc của một sản phẩm, món ăn, hoặc tác phẩm.",
+      "en": "When you talk about the origin of a product, a dish, or a work."
+    },
+    {
+      "vi": "Khi câu có hai phần: vật được nói tới đứng trước, nguồn gốc đứng sau 由.",
+      "en": "When the sentence has two parts: the thing comes first, and the source follows 由."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "由",
+        "role": "marker",
+        "label": {"vi": "giới từ nguồn gốc", "en": "source marker"},
+        "pinyin": ["yóu"]
+      },
+      {
+        "text": "来源",
+        "role": "object",
+        "label": {"vi": "nguồn gốc", "en": "source"},
+        "pinyin": ["lái", "yuán"]
+      },
+      {
+        "text": "动词",
+        "role": "verb",
+        "label": {"vi": "động từ", "en": "verb"},
+        "pinyin": ["dòng", "cí"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "这个蛋糕由我妈妈做。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 4, "end": 5, "role": "marker"},
+        {"start": 5, "end": 8, "role": "object"},
+        {"start": 8, "end": 9, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "由 đứng trước người làm ra bánh, cho biết ai là nguồn gốc.",
+        "en": "由 comes before the person who made the cake, marking her as the source."
+      },
+      "translation": {"vi": "Cái bánh này do mẹ tôi làm.", "en": "This cake is made by my mother."},
+      "pinyin": ["zhè", "gè", "dàn", "gāo", "yóu", "wǒ", "mā", "ma", "zuò", ""]
+    },
+    {
+      "text": "这些水果由农民种。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 4, "end": 5, "role": "marker"},
+        {"start": 5, "end": 7, "role": "object"},
+        {"start": 7, "end": 8, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "由 cho biết nguồn gốc của hành động trồng là nông dân.",
+        "en": "由 marks the farmers as the source of the growing."
+      },
+      "translation": {
+        "vi": "Những loại trái cây này do nông dân trồng.",
+        "en": "These fruits are grown by farmers."
+      },
+      "pinyin": ["zhè", "xiē", "shuǐ", "guǒ", "yóu", "nóng", "mín", "zhòng", ""]
+    },
+    {
+      "text": "那本书由一位老师写。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 3, "end": 4, "role": "marker"},
+        {"start": 4, "end": 8, "role": "object"},
+        {"start": 8, "end": 9, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "由 đứng trước tác giả, nói ai là người viết ra cuốn sách.",
+        "en": "由 comes before the author, naming who wrote the book."
+      },
+      "translation": {"vi": "Cuốn sách đó do một giáo viên viết.", "en": "That book is written by a teacher."},
+      "pinyin": ["nà", "běn", "shū", "yóu", "yī", "wèi", "lǎo", "shī", "xiě", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "这个蛋糕做由我妈妈。",
+      "right": "这个蛋糕由我妈妈做。",
+      "reason": {
+        "vi": "由 phải đứng ngay trước nguồn gốc, không đứng sau động từ. Người Việt thường đặt theo trật tự 'làm bởi ai' nên dễ đẩy 由 ra sau.",
+        "en": "由 must come right before the source, not after the verb. Vietnamese speakers often follow the 'made by' order and push 由 to the end."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong_pinyin": ["zhè", "gè", "dàn", "gāo", "zuò", "yóu", "wǒ", "mā", "ma", ""],
+      "right_pinyin": ["zhè", "gè", "dàn", "gāo", "yóu", "wǒ", "mā", "ma", "zuò", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "这个蛋糕___我妈妈做。",
+      "options": [
+        {"text": "由", "error_tag": null, "pinyin": ["yóu"]},
+        {"text": "从", "error_tag": "word_choice", "pinyin": ["cóng"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "由 đứng trước người làm ra vật để nói nguồn gốc. 从 chỉ nơi xuất phát, không dùng ở đây.",
+        "en": "由 comes before the person who makes the thing to mark the source. 从 marks a starting place, not a maker."
+      },
+      "q_pinyin": ["zhè", "gè", "dàn", "gāo", "", "", "", "wǒ", "mā", "ma", "zuò", ""]
+    },
+    {
+      "q": "这些水果___农民种。",
+      "options": [
+        {"text": "由", "error_tag": null, "pinyin": ["yóu"]},
+        {"text": "被", "error_tag": "bei_sentence", "pinyin": ["bèi"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "由 nêu nguồn gốc, người làm ra. 被 dùng cho câu bị động với ý không may, không hợp ở đây.",
+        "en": "由 names the source, the maker. 被 is for passive sentences with an unfortunate tone, which does not fit here."
+      },
+      "q_pinyin": ["zhè", "xiē", "shuǐ", "guǒ", "", "", "", "nóng", "mín", "zhòng", ""]
+    },
+    {
+      "q": "那本书___一位老师写。",
+      "options": [
+        {"text": "由", "error_tag": null, "pinyin": ["yóu"]},
+        {"text": "在", "error_tag": "word_choice", "pinyin": ["zài"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "由 đứng trước tác giả để nói ai viết cuốn sách. 在 chỉ nơi chốn hoặc thời gian, không dùng cho nguồn gốc.",
+        "en": "由 comes before the author to say who wrote the book. 在 marks place or time, not a source."
+      },
+      "q_pinyin": ["nà", "běn", "shū", "", "", "", "yī", "wèi", "lǎo", "shī", "xiě", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một món ăn hoặc đồ vật do ai đó trong gia đình bạn làm, dùng 由.",
+      "en": "Write one sentence about a dish or object made by someone in your family, using 由."
+    },
+    "placeholder": "这个菜由……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "marker", "any_of": ["由"]},
+        {"role": "verb", "any_of": ["做", "写", "种", "画", "包", "煮", "炒"]}
+      ]
+    },
+    "sample": {"text": "这个菜由我爸爸做。", "pinyin": ["zhè", "gè", "cài", "yóu", "wǒ", "bà", "ba", "zuò", ""]},
+    "placeholder_pinyin": ["zhè", "gè", "cài", "yóu", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790832657",
+    "generated_at": "2026-10-01T05:30:57Z"
+  },
+  "review": null
+}

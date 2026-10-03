@@ -1,0 +1,271 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk1.a_1_1_2.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.future_plans",
+  "level": {"framework": "hsk3", "value": "1", "rank": 1},
+  "prereqs": [],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"gf0025": ["gf0025.hsk1.003"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Động từ: 能愿动词：想、要", "en": "Verbs: 能愿动词：想、要"},
+    "native_title": "能愿动词：想、要",
+    "level": {"framework": "hsk3", "value": "1", "rank": 1},
+    "summary": {
+      "vi": "Động từ năng nguyện 想 và 要 đứng trước động từ chính để nói điều mình muốn hoặc cần làm.",
+      "en": "The modal verbs 想 and 要 come before a main verb to express what someone wants or needs to do."
+    },
+    "sub": {"vi": "mong muốn và nhu cầu", "en": "wants and needs"},
+    "native_title_pinyin": ["néng", "yuàn", "dòng", "cí", "", "xiǎng", "", "yào"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói mình mong muốn làm gì đó một cách nhẹ nhàng, dùng 想 trước động từ.",
+      "en": "Use 想 before a verb to say gently that you would like to do something."
+    },
+    {
+      "vi": "Khi bạn muốn nói mình cần hoặc nhất định phải làm gì đó, dùng 要 trước động từ.",
+      "en": "Use 要 before a verb to say you need or intend to do something."
+    },
+    {
+      "vi": "Khi phủ định mong muốn, dùng 不想; khi phủ định nhu cầu, dùng 不用.",
+      "en": "To negate a wish use 不想; to negate a need use 不用."
+    },
+    {
+      "vi": "Khi hỏi ý người khác, đặt 想 hay 要 trước động từ và thêm 吗 ở cuối câu.",
+      "en": "To ask about someone's intention, put 想 or 要 before the verb and add 吗 at the end."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "想/要",
+        "role": "aux",
+        "label": {"vi": "động từ năng nguyện", "en": "modal verb"},
+        "options": [{"text": "想", "pinyin": ["xiǎng"]}, {"text": "要", "pinyin": ["yào"]}],
+        "pinyin": ["xiǎng", "", "yào"]
+      },
+      {
+        "text": "动词",
+        "role": "verb",
+        "label": {"vi": "động từ chính", "en": "main verb"},
+        "pinyin": ["dòng", "cí"]
+      },
+      {
+        "text": "宾语",
+        "role": "object",
+        "label": {"vi": "tân ngữ", "en": "object"},
+        "optional": true,
+        "pinyin": ["bīn", "yǔ"]
+      }
+    ],
+    "variants": {
+      "negative": [
+        {
+          "text": "主语",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ", "en": "subject"},
+          "pinyin": ["zhǔ", "yǔ"]
+        },
+        {
+          "text": "不想/不用",
+          "role": "aux",
+          "label": {"vi": "phủ định của năng nguyện", "en": "negated modal"},
+          "options": [{"text": "不想", "pinyin": ["bù", "xiǎng"]}, {"text": "不用", "pinyin": ["bù", "yòng"]}],
+          "pinyin": ["bù", "xiǎng", "", "bù", "yòng"]
+        },
+        {
+          "text": "动词",
+          "role": "verb",
+          "label": {"vi": "động từ chính", "en": "main verb"},
+          "pinyin": ["dòng", "cí"]
+        },
+        {
+          "text": "宾语",
+          "role": "object",
+          "label": {"vi": "tân ngữ", "en": "object"},
+          "optional": true,
+          "pinyin": ["bīn", "yǔ"]
+        }
+      ],
+      "question": [
+        {
+          "text": "主语",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ", "en": "subject"},
+          "pinyin": ["zhǔ", "yǔ"]
+        },
+        {
+          "text": "想/要",
+          "role": "aux",
+          "label": {"vi": "động từ năng nguyện", "en": "modal verb"},
+          "options": [{"text": "想", "pinyin": ["xiǎng"]}, {"text": "要", "pinyin": ["yào"]}],
+          "pinyin": ["xiǎng", "", "yào"]
+        },
+        {
+          "text": "动词",
+          "role": "verb",
+          "label": {"vi": "động từ chính", "en": "main verb"},
+          "pinyin": ["dòng", "cí"]
+        },
+        {
+          "text": "宾语",
+          "role": "object",
+          "label": {"vi": "tân ngữ", "en": "object"},
+          "optional": true,
+          "pinyin": ["bīn", "yǔ"]
+        },
+        {
+          "text": "吗",
+          "role": "particle",
+          "label": {"vi": "trợ từ nghi vấn", "en": "question particle"},
+          "pinyin": ["ma"]
+        }
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "我想喝茶。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "aux"},
+        {"start": 2, "end": 3, "role": "verb"},
+        {"start": 3, "end": 4, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "想 đứng trước động từ 喝 để nói mong muốn nhẹ nhàng.",
+        "en": "想 comes before the verb 喝 to express a gentle wish."
+      },
+      "translation": {"vi": "Tôi muốn uống trà.", "en": "I want to drink tea."},
+      "pinyin": ["wǒ", "xiǎng", "hē", "chá", ""]
+    },
+    {
+      "text": "他不想去学校。",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 3, "role": "aux"},
+        {"start": 3, "end": 4, "role": "verb"},
+        {"start": 4, "end": 6, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "不想 là phủ định của 想, đứng ngay trước động từ 去.",
+        "en": "不想 is the negative of 想 and stands right before the verb 去."
+      },
+      "translation": {"vi": "Cậu ấy không muốn đi học.", "en": "He does not want to go to school."},
+      "pinyin": ["tā", "bù", "xiǎng", "qù", "xué", "xiào", ""]
+    },
+    {
+      "text": "你要买水果吗？",
+      "form": "question",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "aux"},
+        {"start": 2, "end": 3, "role": "verb"},
+        {"start": 3, "end": 5, "role": "object"},
+        {"start": 5, "end": 6, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "要 hỏi về nhu cầu, 吗 ở cuối biến câu thành câu hỏi.",
+        "en": "要 asks about a need, and 吗 at the end makes the sentence a question."
+      },
+      "translation": {"vi": "Bạn cần mua hoa quả à?", "en": "Do you need to buy fruit?"},
+      "pinyin": ["nǐ", "yào", "mǎi", "shuǐ", "guǒ", "ma", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "我喝茶想。",
+      "right": "我想喝茶。",
+      "reason": {
+        "vi": "Người học Việt đặt động từ chính trước vì quen với trật tự 'uống trà muốn', nhưng 想 và 要 phải đứng ngay trước động từ chính.",
+        "en": "Vietnamese learners put the main verb first because Vietnamese allows 'uống trà muốn', but 想 and 要 must stand directly before the main verb."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong_pinyin": ["wǒ", "hē", "chá", "xiǎng", ""],
+      "right_pinyin": ["wǒ", "xiǎng", "hē", "chá", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "我___看电影。",
+      "options": [
+        {"text": "想", "error_tag": null, "pinyin": ["xiǎng"]},
+        {"text": "不", "error_tag": "other", "pinyin": ["bù"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "想 đứng trước động từ 看 để nói mong muốn; 不 một mình không diễn tả được mong muốn.",
+        "en": "想 comes before the verb 看 to express a wish; 不 alone cannot express a wish."
+      },
+      "q_pinyin": ["wǒ", "", "", "", "kàn", "diàn", "yǐng", ""]
+    },
+    {
+      "q": "他___去学校，因为他病了。",
+      "options": [
+        {"text": "不想", "error_tag": null, "pinyin": ["bù", "xiǎng"]},
+        {"text": "想不", "error_tag": "word_order", "pinyin": ["xiǎng", "bù"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Phủ định của 想 là 不想, phủ định đứng trước năng nguyện từ.",
+        "en": "The negative of 想 is 不想; the negator comes before the modal verb."
+      },
+      "q_pinyin": ["tā", "", "", "", "qù", "xué", "xiào", "", "yīn", "wèi", "tā", "bìng", "le", ""]
+    },
+    {
+      "q": "你___买水果吗？",
+      "options": [
+        {"text": "要", "error_tag": null, "pinyin": ["yào"]},
+        {"text": "不要", "error_tag": "other", "pinyin": ["bù", "yào"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu hỏi với 吗 dùng 要 ở dạng khẳng định; 不要 là phủ định nên không hợp với 吗.",
+        "en": "A 吗 question uses 要 in the affirmative; 不要 is negative and does not fit with 吗."
+      },
+      "q_pinyin": ["nǐ", "", "", "", "mǎi", "shuǐ", "guǒ", "ma", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về điều bạn muốn hoặc cần làm hôm nay, dùng 想 hoặc 要 trước động từ.",
+      "en": "Write one sentence about what you want or need to do today, using 想 or 要 before the verb."
+    },
+    "placeholder": "我想……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "aux", "any_of": ["想", "要"]}, {"role": "verb", "regex": "[\\u4e00-\\u9fff]"}]
+    },
+    "sample": {"text": "我要买水果。", "pinyin": ["wǒ", "yào", "mǎi", "shuǐ", "guǒ", ""]},
+    "placeholder_pinyin": ["wǒ", "xiǎng", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790831737",
+    "generated_at": "2026-10-01T05:15:37Z",
+    "metadata_stale": true
+  },
+  "review": null
+}

@@ -1,0 +1,225 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b2.021",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.pronoun_reference",
+  "level": {"framework": "cefr", "value": "B2", "rank": 4},
+  "prereqs": ["en.canon.b1.031"],
+  "contrasts": [],
+  "error_tags": ["preposition", "sentence_structure"],
+  "source_refs": {"r5": ["b2-preposition-relative-pronoun"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["b2-preposition-relative-pronoun"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "giới từ + đại từ quan hệ", "en": "Preposition + relative pronoun"},
+    "native_title": "Preposition + relative pronoun",
+    "level": {"framework": "cefr", "value": "B2", "rank": 4},
+    "summary": {
+      "vi": "Cấu trúc này cho phép đưa giới từ lên trước đại từ quan hệ trong mệnh đề quan hệ xác định, tạo văn phong trang trọng, hoặc giữ giới từ ở cuối câu theo lối nói tự nhiên.",
+      "en": "This structure lets you front a preposition before a relative pronoun in a defining relative clause for a formal style, or keep the preposition at the end in a more neutral, spoken style."
+    },
+    "sub": {"vi": "giới từ + đại từ quan hệ", "en": "preposition + relative pronoun"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Dùng trong văn viết trang trọng, học thuật hoặc báo chí, khi muốn câu văn chặt chẽ và ít thân mật hơn.",
+      "en": "Use it in formal writing, academic or journalistic prose, when you want a tighter, less conversational tone."
+    },
+    {
+      "vi": "Dùng khi giới từ gắn chặt với động từ hoặc tính từ theo sau (rely on, speak to, base on) và bạn muốn nhấn mạnh mối quan hệ đó.",
+      "en": "Use it when the preposition is closely tied to the following verb or adjective (rely on, speak to, base on) and you want to foreground that relationship."
+    },
+    {
+      "vi": "Dùng khi mệnh đề quan hệ xác định bổ nghĩa cho danh từ đứng trước, và đại từ quan hệ làm tân ngữ của giới từ.",
+      "en": "Use it when the defining relative clause modifies the preceding noun and the relative pronoun is the object of the preposition."
+    },
+    {
+      "vi": "Tránh dùng trong hội thoại hàng ngày hoặc văn bản thân mật, vì người bản ngữ thường đẩy giới từ ra cuối câu.",
+      "en": "Avoid it in everyday conversation or informal writing, where native speakers usually strand the preposition at the end."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "N", "role": "object", "label": {"vi": "danh từ", "en": "noun"}},
+      {"text": "preposition", "role": "marker", "label": {"vi": "giới từ", "en": "preposition"}},
+      {
+        "text": "whom/which",
+        "role": "connector",
+        "label": {"vi": "đại từ quan hệ", "en": "relative pronoun"},
+        "options": [{"text": "whom"}, {"text": "which"}]
+      },
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}}
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "The analyst to whom I spoke recommended a second test.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 11, "role": "object"},
+        {"start": 12, "end": 14, "role": "marker"},
+        {"start": 15, "end": 19, "role": "connector"},
+        {"start": 20, "end": 21, "role": "subject"},
+        {"start": 22, "end": 27, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Giới từ 'to' đứng trước 'whom' vì 'whom' là tân ngữ của giới từ trong mệnh đề quan hệ.",
+        "en": "The preposition 'to' is fronted before 'whom' because 'whom' is the object of the preposition in the relative clause."
+      },
+      "translation": {
+        "vi": "Nhà phân tích mà tôi nói chuyện cùng đã đề nghị làm thêm một bài kiểm tra nữa.",
+        "en": "The analyst I spoke to recommended a second test."
+      }
+    },
+    {
+      "text": "This is the framework on which the model is based.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 8, "end": 21, "role": "object"},
+        {"start": 22, "end": 24, "role": "marker"},
+        {"start": 25, "end": 30, "role": "connector"},
+        {"start": 31, "end": 40, "role": "subject"},
+        {"start": 41, "end": 49, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Giới từ 'on' được đưa lên trước 'which' vì 'which' thay cho 'the framework' làm tân ngữ của 'based on'.",
+        "en": "The preposition 'on' is fronted before 'which' because 'which' replaces 'the framework' as the object of 'based on'."
+      },
+      "translation": {
+        "vi": "Đây là framework mà mô hình dựa trên.",
+        "en": "This is the framework the model is based on."
+      }
+    },
+    {
+      "text": "The colleague with whom she shares an office is on leave.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 13, "role": "object"},
+        {"start": 14, "end": 18, "role": "marker"},
+        {"start": 19, "end": 23, "role": "connector"},
+        {"start": 24, "end": 27, "role": "subject"},
+        {"start": 28, "end": 34, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Giới từ 'with' đứng trước 'whom' vì 'whom' là tân ngữ của giới từ trong mệnh đề quan hệ.",
+        "en": "The preposition 'with' is fronted before 'whom' because 'whom' is the object of the preposition in the relative clause."
+      },
+      "translation": {
+        "vi": "Đồng nghiệp mà cô ấy dùng chung văn phòng đang nghỉ phép.",
+        "en": "The colleague she shares an office with is on leave."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "The analyst to that I spoke was helpful.",
+      "right": "The analyst to whom I spoke was helpful.",
+      "reason": {
+        "vi": "Sau giới từ đã đưa lên trước, không dùng 'that'; phải dùng 'whom' cho người hoặc 'which' cho vật.",
+        "en": "After a fronted preposition, 'that' is not allowed; use 'whom' for people or 'which' for things."
+      },
+      "error_tag": "preposition",
+      "l1": ["vi"]
+    },
+    {
+      "wrong": "The framework on we rely is stable.",
+      "right": "The framework on which we rely is stable.",
+      "reason": {
+        "vi": "Sau giới từ đã đưa lên trước, không thể bỏ đại từ quan hệ; cần 'which' hoặc 'whom'.",
+        "en": "After a fronted preposition, the relative pronoun cannot be omitted; you need 'which' or 'whom'."
+      },
+      "error_tag": "sentence_structure",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "The consultant ___ I discussed the plan was very experienced.",
+      "options": [
+        {"text": "to whom", "error_tag": null},
+        {"text": "to that", "error_tag": "preposition"},
+        {"text": "to who", "error_tag": "word_choice"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau giới từ 'to' đã đưa lên trước, dùng 'whom' cho người; không dùng 'that' hoặc 'who'.",
+        "en": "After the fronted preposition 'to', use 'whom' for a person; 'that' and 'who' are not used here."
+      }
+    },
+    {
+      "q": "This is the policy ___ the committee objected.",
+      "options": [{"text": "to which", "error_tag": null}, {"text": "to that", "error_tag": "preposition"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau giới từ 'to' đã đưa lên trước, dùng 'which' cho vật; không dùng 'that'.",
+        "en": "After the fronted preposition 'to', use 'which' for a thing; 'that' is not used here."
+      }
+    },
+    {
+      "q": "The scientist ___ the research was based retired last year.",
+      "options": [
+        {"text": "on whose work", "error_tag": null},
+        {"text": "on who's work", "error_tag": "word_form"},
+        {"text": "on that work", "error_tag": "preposition"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Cấu trúc 'on whose + danh từ' đưa giới từ lên trước đại từ quan hệ sở hữu; không dùng 'who's' hoặc 'that'.",
+        "en": "The structure 'on whose + noun' fronts the preposition before a possessive relative pronoun; 'who's' and 'that' are not used here."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một người hoặc vật mà bạn đã nói chuyện cùng, dựa vào, hoặc làm việc cùng, dùng giới từ + đại từ quan hệ.",
+      "en": "Write one sentence about a person or thing you spoke to, relied on, or worked with, using a preposition + relative pronoun."
+    },
+    "placeholder": "The person to whom I ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "marker", "any_of": ["to", "with", "on", "for", "about", "from", "in", "at"]},
+        {"role": "connector", "any_of": ["whom", "which", "whose"]}
+      ]
+    },
+    "sample": {"text": "The mentor to whom I owe my career has retired."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790831200",
+    "generated_at": "2026-10-01T05:06:40Z",
+    "r5_source": {
+      "ids": ["b2-preposition-relative-pronoun"],
+      "content_version": 2,
+      "content_hash": "df816cda4ef7c1da7c6f8b7037db7ed44bb1e12adc1107ce94395d90218b8fcf",
+      "corrections": [
+        {
+          "r5_id": "b2-preposition-relative-pronoun",
+          "issue": "R5's example 'The analyst I spoke to recommended a second test.' is labelled as a target example but does not contain a fronted preposition + relative pronoun; it illustrates the stranded alternative, which is a different form.",
+          "fix": "Kept it only as a translation gloss for the formal example, and used three clean fronted-preposition examples in the examples array."
+        },
+        {
+          "r5_id": "b2-preposition-relative-pronoun",
+          "issue": "R5's mistake 'The framework on we rely is stable.' is described as a zero-relative error, but the actual error is a missing relative pronoun after a fronted preposition; the label 'zero relative' is imprecise.",
+          "fix": "Rewrote the reason to state that after a fronted preposition the relative pronoun cannot be omitted and 'which' or 'whom' is required."
+        },
+        {
+          "r5_id": "b2-preposition-relative-pronoun",
+          "issue": "R5's guided practice includes a classify task with a blank in 'the person to __ I spoke', which is not a natural learner task and mixes two different patterns in one prompt.",
+          "fix": "Replaced it with a quick-practice cloze item that tests the same restriction in a single clear sentence."
+        }
+      ]
+    }
+  },
+  "review": null
+}

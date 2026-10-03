@@ -1,0 +1,306 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk6.a_6_2_4_5.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.exclusion",
+  "level": {"framework": "hsk3", "value": "6", "rank": 6},
+  "prereqs": ["zh.chule_yiwai"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"gf0025": ["gf0025.hsk6.018"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 除", "en": "Chinese grammar: 除"},
+    "native_title": "除",
+    "level": {"framework": "hsk3", "value": "6", "rank": 6},
+    "summary": {
+      "vi": "Điểm ngữ pháp này dạy cách dùng 除 (kèm 以外/之外) để loại trừ một đối tượng khỏi một nhóm hay một phạm vi.",
+      "en": "This point teaches how to use 除 (with 以外/之外) to exclude something from a group or scope."
+    },
+    "sub": {"vi": "loại trừ", "en": "exclusion"},
+    "native_title_pinyin": ["chú"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói 'ngoài X ra thì ...', tức là loại X khỏi phần còn lại.",
+      "en": "When you want to say 'apart from X, ...', i.e. exclude X from the rest."
+    },
+    {
+      "vi": "Khi vế sau có 都 hoặc 也 để nhấn mạnh phần còn lại cũng vậy.",
+      "en": "When the second clause has 都 or 也 to stress that the rest is also the case."
+    },
+    {
+      "vi": "Khi đối tượng bị loại trừ là người, vật hoặc một hành động.",
+      "en": "When the excluded item is a person, a thing, or an action."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "除",
+        "role": "marker",
+        "label": {"vi": "dấu hiệu loại trừ", "en": "exclusion marker"},
+        "pinyin": ["chú"]
+      },
+      {
+        "text": "N",
+        "role": "object",
+        "label": {"vi": "đối tượng bị loại trừ", "en": "excluded item"},
+        "pinyin": [""]
+      },
+      {
+        "text": "以外/之外",
+        "role": "particle",
+        "label": {"vi": "tiểu từ loại trừ", "en": "exclusion particle"},
+        "options": [{"text": "以外", "pinyin": ["yǐ", "wài"]}, {"text": "之外", "pinyin": ["zhī", "wài"]}],
+        "pinyin": ["yǐ", "wài", "", "zhī", "wài"]
+      },
+      {
+        "text": "S",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ vế sau", "en": "second-clause subject"},
+        "pinyin": [""]
+      },
+      {
+        "text": "都/也",
+        "role": "connector",
+        "label": {"vi": "phó từ nhấn mạnh", "en": "emphasis adverb"},
+        "optional": true,
+        "options": [{"text": "都", "pinyin": ["dōu"]}, {"text": "也", "pinyin": ["yě"]}],
+        "pinyin": ["dōu", "", "yě"]
+      },
+      {
+        "text": "V",
+        "role": "verb",
+        "label": {"vi": "động từ vế sau", "en": "second-clause verb"},
+        "pinyin": [""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "除了他以外，我们都去过北京。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "marker"},
+        {"start": 2, "end": 3, "role": "object"},
+        {"start": 3, "end": 5, "role": "particle"},
+        {"start": 6, "end": 8, "role": "subject"},
+        {"start": 8, "end": 9, "role": "connector"},
+        {"start": 9, "end": 11, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Loại anh ấy ra khỏi nhóm; phần còn lại (chúng tôi) đều đã đến Bắc Kinh.",
+        "en": "He is excluded from the group; the rest of us have all been to Beijing."
+      },
+      "translation": {
+        "vi": "Ngoài anh ấy ra, chúng tôi đều đã đến Bắc Kinh.",
+        "en": "Apart from him, all of us have been to Beijing."
+      },
+      "pinyin": ["chú", "le", "tā", "yǐ", "wài", "", "wǒ", "men", "dōu", "qù", "guo", "běi", "jīng", ""]
+    },
+    {
+      "text": "除了周末以外，他每天也去图书馆。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "marker"},
+        {"start": 2, "end": 4, "role": "object"},
+        {"start": 4, "end": 6, "role": "particle"},
+        {"start": 7, "end": 8, "role": "subject"},
+        {"start": 10, "end": 11, "role": "connector"},
+        {"start": 11, "end": 12, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Loại cuối tuần ra; những ngày khác anh ấy cũng đến thư viện.",
+        "en": "Weekends are excluded; on other days he also goes to the library."
+      },
+      "translation": {
+        "vi": "Ngoài cuối tuần ra, ngày nào anh ấy cũng đến thư viện.",
+        "en": "Apart from weekends, he goes to the library every day too."
+      },
+      "pinyin": [
+        "chú",
+        "le",
+        "zhōu",
+        "mò",
+        "yǐ",
+        "wài",
+        "",
+        "tā",
+        "měi",
+        "tiān",
+        "yě",
+        "qù",
+        "tú",
+        "shū",
+        "guǎn",
+        ""
+      ]
+    },
+    {
+      "text": "除了这个办法之外，我们没有别的选择。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "marker"},
+        {"start": 2, "end": 6, "role": "object"},
+        {"start": 6, "end": 8, "role": "particle"},
+        {"start": 9, "end": 11, "role": "subject"},
+        {"start": 11, "end": 13, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Loại cách này ra thì không còn cách nào khác.",
+        "en": "This method is excluded; there is no other choice."
+      },
+      "translation": {
+        "vi": "Ngoài cách này ra, chúng tôi không có lựa chọn nào khác.",
+        "en": "Apart from this method, we have no other choice."
+      },
+      "pinyin": [
+        "chú",
+        "le",
+        "zhè",
+        "gè",
+        "bàn",
+        "fǎ",
+        "zhī",
+        "wài",
+        "",
+        "wǒ",
+        "men",
+        "méi",
+        "yǒu",
+        "bié",
+        "de",
+        "xuǎn",
+        "zé",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "除了他以外，我们都不去过北京。",
+      "right": "除了他以外，我们都去过北京。",
+      "reason": {
+        "vi": "Người học tiếng Việt hay dịch 'đều đã từng' thành 都不去过, nhưng 都 không đi với 不 trong câu khẳng định về kinh nghiệm; phải dùng 都去过.",
+        "en": "Vietnamese learners often translate 'all have been' as 都不去过, but 都 does not combine with 不 in an affirmative experience sentence; use 都去过."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong_pinyin": ["chú", "le", "tā", "yǐ", "wài", "", "wǒ", "men", "dōu", "bù", "qù", "guo", "běi", "jīng", ""],
+      "right_pinyin": ["chú", "le", "tā", "yǐ", "wài", "", "wǒ", "men", "dōu", "qù", "guo", "běi", "jīng", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "除了他___，我们都去过北京。",
+      "options": [
+        {"text": "以外", "error_tag": null, "pinyin": ["yǐ", "wài"]},
+        {"text": "以内", "error_tag": "word_choice", "pinyin": ["yǐ", "nèi"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Loại trừ dùng 以外, không dùng 以内 (nghĩa là 'trong vòng').",
+        "en": "Exclusion uses 以外, not 以内 (which means 'within')."
+      },
+      "q_pinyin": ["chú", "le", "tā", "", "", "", "", "wǒ", "men", "dōu", "qù", "guo", "běi", "jīng", ""]
+    },
+    {
+      "q": "除了周末以外，他每天___去图书馆。",
+      "options": [
+        {"text": "也", "error_tag": null, "pinyin": ["yě"]},
+        {"text": "都", "error_tag": "naturalness", "pinyin": ["dōu"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Với 'mỗi ngày' và nghĩa 'cũng', dùng 也; 都 ở đây không tự nhiên vì không có chủ thể số nhiều.",
+        "en": "With 'every day' and the meaning 'also', use 也; 都 is unnatural here because there is no plural subject."
+      },
+      "q_pinyin": [
+        "chú",
+        "le",
+        "zhōu",
+        "mò",
+        "yǐ",
+        "wài",
+        "",
+        "tā",
+        "měi",
+        "tiān",
+        "",
+        "",
+        "",
+        "qù",
+        "tú",
+        "shū",
+        "guǎn",
+        ""
+      ]
+    },
+    {
+      "q": "除了这个办法___，我们没有别的选择。",
+      "options": [
+        {"text": "之外", "error_tag": null, "pinyin": ["zhī", "wài"]},
+        {"text": "之后", "error_tag": "word_choice", "pinyin": ["zhī", "hòu"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Loại trừ dùng 之外, không dùng 之后 (nghĩa là 'sau đó').",
+        "en": "Exclusion uses 之外, not 之后 (which means 'after that')."
+      },
+      "q_pinyin": [
+        "chú",
+        "le",
+        "zhè",
+        "gè",
+        "bàn",
+        "fǎ",
+        "",
+        "",
+        "",
+        "",
+        "wǒ",
+        "men",
+        "méi",
+        "yǒu",
+        "bié",
+        "de",
+        "xuǎn",
+        "zé",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về bản thân dùng 除了...以外 để loại trừ một người hoặc một việc.",
+      "en": "Write one sentence about yourself using 除了...以外 to exclude a person or a thing."
+    },
+    "placeholder": "除了……以外，我……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "marker", "any_of": ["除"]}, {"role": "particle", "any_of": ["以外", "之外"]}]
+    },
+    "sample": {
+      "text": "除了他以外，我也去过北京。",
+      "pinyin": ["chú", "le", "tā", "yǐ", "wài", "", "wǒ", "yě", "qù", "guo", "běi", "jīng", ""]
+    },
+    "placeholder_pinyin": ["chú", "le", "", "", "yǐ", "wài", "", "wǒ", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790834091",
+    "generated_at": "2026-10-01T05:54:51Z"
+  },
+  "review": null
+}

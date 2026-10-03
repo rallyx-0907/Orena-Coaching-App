@@ -37,7 +37,7 @@
     metadata_origin: reviewed_seed
 - id: zh.modal.hui
   level: '1'
-  function: fn.catalog_unclassified
+  function: fn.possibility
   point_type: other
   native_title: 能愿动词：会、能
   title:
@@ -76,7 +76,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk1.a_1_1_2.p1
   level: '1'
-  function: fn.catalog_unclassified
+  function: fn.future_plans
   point_type: other
   native_title: 能愿动词：想、要
   title:
@@ -86,7 +86,7 @@
   - other
   contrasts: []
   prereqs: []
-  sequence: 2
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -621,7 +621,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk1.a_1_1_7_2.p1
   level: '1'
-  function: fn.catalog_unclassified
+  function: fn.comparison
   point_type: other
   native_title: 比
   title:
@@ -632,7 +632,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk1.a_1_1_2.p1
-  sequence: 3
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -1234,7 +1234,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk1.a_1_6_1.p1
   level: '1'
-  function: fn.catalog_unclassified
+  function: fn.quantity
   point_type: other
   native_title: 钱数表示法
   title:
@@ -1379,9 +1379,9 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk2_3_cu_i_c_u_thay_i_tr_ng_th_i
   level: '1'
-  function: fn.catalog_unclassified
+  function: fn.completed_past
   point_type: other
-  native_title: '了 cuối câu: thay đổi trạng thái'
+  native_title: 句末“了”：状态变化
   title:
     vi: 'Ngữ pháp tiếng Trung: 了 cuối câu: thay đổi trạng thái'
     en: 'Chinese grammar: 了 cuối câu: thay đổi trạng thái'
@@ -1390,7 +1390,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk1.a_1_6_1.p1
-  sequence: 5
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -1409,9 +1409,9 @@
     metadata_origin: reviewed_seed
 - id: zh.ba_suggestion
   level: '1'
-  function: fn.catalog_unclassified
+  function: fn.obligation_advice
   point_type: other
-  native_title: ba_suggestion
+  native_title: “吧”表示建议
   title:
     vi: 'Ngữ pháp tiếng Trung: ba_suggestion'
     en: 'Chinese grammar: ba_suggestion'
@@ -1420,7 +1420,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk2_3_cu_i_c_u_thay_i_tr_ng_th_i
-  sequence: 6
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -1465,9 +1465,9 @@
     metadata_origin: reviewed_seed
 - id: zh.modal.xiang_yao
   level: '1'
-  function: fn.catalog_unclassified
+  function: fn.future_plans
   point_type: other
-  native_title: modal.xiang_yao
+  native_title: 能愿动词“想/要”
   title:
     vi: 'Ngữ pháp tiếng Trung: modal.xiang_yao'
     en: 'Chinese grammar: modal.xiang_yao'
@@ -1476,7 +1476,7 @@
   contrasts: []
   prereqs:
   - zh.modal.hui
-  sequence: 7
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -1493,9 +1493,9 @@
     metadata_origin: reviewed_seed
 - id: zh.qing_request
   level: '1'
-  function: fn.catalog_unclassified
+  function: fn.instructions
   point_type: other
-  native_title: qing_request
+  native_title: “请”表示请求
   title:
     vi: 'Ngữ pháp tiếng Trung: qing_request'
     en: 'Chinese grammar: qing_request'
@@ -1504,7 +1504,7 @@
   contrasts: []
   prereqs:
   - zh.ba_suggestion
-  sequence: 8
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -1521,9 +1521,9 @@
     metadata_origin: reviewed_seed
 - id: zh.serial_verbs.qu_lai
   level: '1'
-  function: fn.catalog_unclassified
+  function: fn.sequence
   point_type: other
-  native_title: serial_verbs.qu_lai
+  native_title: 连动句“去/来 + 动词”
   title:
     vi: 'Ngữ pháp tiếng Trung: serial_verbs.qu_lai'
     en: 'Chinese grammar: serial_verbs.qu_lai'
@@ -1532,7 +1532,7 @@
   contrasts: []
   prereqs:
   - zh.qing_request
-  sequence: 9
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -1576,9 +1576,9 @@
     metadata_origin: reviewed_seed
 - id: zh.tai_le
   level: '1'
-  function: fn.catalog_unclassified
+  function: fn.degree
   point_type: other
-  native_title: tai_le
+  native_title: “太……了”
   title:
     vi: 'Ngữ pháp tiếng Trung: tai_le'
     en: 'Chinese grammar: tai_le'
@@ -1587,7 +1587,7 @@
   contrasts: []
   prereqs:
   - zh.serial_verbs.qu_lai
-  sequence: 10
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -1633,9 +1633,9 @@
     metadata_origin: reviewed_seed
 - id: zh.zenme_question
   level: '1'
-  function: fn.catalog_unclassified
+  function: fn.questions
   point_type: other
-  native_title: zenme_question
+  native_title: “怎么”疑问句
   title:
     vi: 'Ngữ pháp tiếng Trung: zenme_question'
     en: 'Chinese grammar: zenme_question'
@@ -1643,7 +1643,7 @@
   - other
   contrasts: []
   prereqs: []
-  sequence: 11
+  sequence: 6
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -1660,7 +1660,7 @@
     metadata_origin: reviewed_seed
 - id: zh.modal.neng_keyi
   level: '2'
-  function: fn.catalog_unclassified
+  function: fn.possibility
   point_type: other
   native_title: 能愿动词：会、能
   title:
@@ -1699,7 +1699,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk3_10_topic
   level: '2'
-  function: fn.catalog_unclassified
+  function: fn.comparison
   point_type: other
   native_title: 跟、和
   title:
@@ -1710,7 +1710,7 @@
   contrasts: []
   prereqs:
   - zh.tai_le
-  sequence: 2
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -1829,7 +1829,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk2.a_2_1_1.p1
   level: '2'
-  function: fn.catalog_unclassified
+  function: fn.obligation_advice
   point_type: other
   native_title: 能愿动词
   title:
@@ -1840,7 +1840,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk3_10_topic
-  sequence: 3
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -1947,7 +1947,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk2.a_2_1_3.p1
   level: '2'
-  function: fn.catalog_unclassified
+  function: fn.degree
   point_type: morphology
   native_title: 形容词重叠：AA、AABB
   title:
@@ -1958,7 +1958,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk2.a_2_1_1.p1
-  sequence: 4
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -2145,7 +2145,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk2.a_2_1_7_2.p1
   level: '2'
-  function: fn.catalog_unclassified
+  function: fn.location
   point_type: other
   native_title: 往
   title:
@@ -2156,7 +2156,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk2.a_2_1_3.p1
-  sequence: 5
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -2277,7 +2277,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk2.a_2_1_7_3.p1
   level: '2'
-  function: fn.catalog_unclassified
+  function: fn.location
   point_type: other
   native_title: 离
   title:
@@ -2288,7 +2288,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk2.a_2_1_7_2.p1
-  sequence: 6
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -2391,7 +2391,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk2.a_2_1_9.p1
   level: '2'
-  function: fn.catalog_unclassified
+  function: fn.action_result
   point_type: other
   native_title: 结构助词：得
   title:
@@ -2402,7 +2402,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk2.a_2_1_7_3.p1
-  sequence: 7
+  sequence: 4
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -2433,7 +2433,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk2.a_2_1_10.p1
   level: '2'
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
   native_title: 喂
   title:
@@ -2444,7 +2444,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk2.a_2_1_9.p1
-  sequence: 8
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -2480,7 +2480,7 @@
   contrasts: []
   prereqs:
   - zh.svo_basic
-  sequence: 1
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -2508,7 +2508,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk2.a_2_2_2.p1
   level: '2'
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
   native_title: 名词性短语
   title:
@@ -2519,7 +2519,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk2.a_2_1_10.p1
-  sequence: 9
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -2547,7 +2547,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk2.a_2_2_3_1.p1
   level: '2'
-  function: fn.catalog_unclassified
+  function: fn.time_expression
   point_type: other
   native_title: 不一会儿
   title:
@@ -2558,7 +2558,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk2.a_2_2_2.p1
-  sequence: 10
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -2626,7 +2626,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk2.a_2_3.p1
   level: '2'
-  function: fn.catalog_unclassified
+  function: fn.obligation_advice
   point_type: other
   native_title: 还是⋯⋯吧
   title:
@@ -2638,7 +2638,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk2.a_2_2_3_1.p1
-  sequence: 11
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -2842,7 +2842,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk2.a_2_1_7_1.p1
-  sequence: 3
+  sequence: 4
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -3075,7 +3075,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk2.a_2_7.p1
   level: '2'
-  function: fn.catalog_unclassified
+  function: fn.quantity
   point_type: other
   native_title: 序数表示法
   title:
@@ -3086,7 +3086,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk2.a_2_3.p1
-  sequence: 12
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -3113,7 +3113,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk2.a_2_8.p1
   level: '2'
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
   native_title: 用“就”表示强调
   title:
@@ -3124,7 +3124,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk2.a_2_7.p1
-  sequence: 13
+  sequence: 4
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -3192,7 +3192,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk2.a_2_10.p1
   level: '2'
-  function: fn.catalog_unclassified
+  function: fn.future_plans
   point_type: other
   native_title: 该⋯⋯了
   title:
@@ -3204,7 +3204,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk2.a_2_8.p1
-  sequence: 14
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -3476,9 +3476,9 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk3_11_nh_n_m_nh
   level: '2'
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
-  native_title: 是...的 nhấn mạnh
+  native_title: “是……的”强调结构
   title:
     vi: 'Ngữ pháp tiếng Trung: 是...的 nhấn mạnh'
     en: 'Chinese grammar: 是...的 nhấn mạnh'
@@ -3487,7 +3487,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk2.a_2_10.p1
-  sequence: 15
+  sequence: 5
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -3509,9 +3509,9 @@
     metadata_origin: reviewed_seed
 - id: zh.bie_imperative
   level: '2'
-  function: fn.catalog_unclassified
+  function: fn.instructions
   point_type: other
-  native_title: bie_imperative
+  native_title: “别”祈使句
   title:
     vi: 'Ngữ pháp tiếng Trung: bie_imperative'
     en: 'Chinese grammar: bie_imperative'
@@ -3520,7 +3520,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk3_11_nh_n_m_nh
-  sequence: 16
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -3537,9 +3537,9 @@
     metadata_origin: reviewed_seed
 - id: zh.cong_dao
   level: '2'
-  function: fn.catalog_unclassified
+  function: fn.time_expression
   point_type: other
-  native_title: cong_dao
+  native_title: “从……到……”
   title:
     vi: 'Ngữ pháp tiếng Trung: cong_dao'
     en: 'Chinese grammar: cong_dao'
@@ -3548,7 +3548,7 @@
   contrasts: []
   prereqs:
   - zh.bie_imperative
-  sequence: 17
+  sequence: 5
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -3565,9 +3565,9 @@
     metadata_origin: reviewed_seed
 - id: zh.duo_adjective_question
   level: '2'
-  function: fn.catalog_unclassified
+  function: fn.questions
   point_type: other
-  native_title: duo_adjective_question
+  native_title: “多 + 形容词”疑问句
   title:
     vi: 'Ngữ pháp tiếng Trung: duo_adjective_question'
     en: 'Chinese grammar: duo_adjective_question'
@@ -3576,7 +3576,7 @@
   contrasts: []
   prereqs:
   - zh.zenme_question
-  sequence: 18
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -3593,9 +3593,9 @@
     metadata_origin: reviewed_seed
 - id: zh.gei_dui
   level: '2'
-  function: fn.catalog_unclassified
+  function: fn.location
   point_type: other
-  native_title: gei_dui
+  native_title: 介词“给/对”
   title:
     vi: 'Ngữ pháp tiếng Trung: gei_dui'
     en: 'Chinese grammar: gei_dui'
@@ -3604,7 +3604,7 @@
   contrasts: []
   prereqs:
   - zh.cong_dao
-  sequence: 19
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -3621,9 +3621,9 @@
     metadata_origin: reviewed_seed
 - id: zh.haishi_huozhe
   level: '2'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
-  native_title: haishi_huozhe
+  native_title: “还是/或者”
   title:
     vi: 'Ngữ pháp tiếng Trung: haishi_huozhe'
     en: 'Chinese grammar: haishi_huozhe'
@@ -3632,7 +3632,7 @@
   contrasts: []
   prereqs:
   - zh.gei_dui
-  sequence: 20
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -3705,9 +3705,9 @@
     metadata_origin: reviewed_seed
 - id: zh.shi_bu_shi
   level: '2'
-  function: fn.catalog_unclassified
+  function: fn.questions
   point_type: other
-  native_title: shi_bu_shi
+  native_title: “是不是”正反问句
   title:
     vi: 'Ngữ pháp tiếng Trung: shi_bu_shi'
     en: 'Chinese grammar: shi_bu_shi'
@@ -3716,7 +3716,7 @@
   contrasts: []
   prereqs:
   - zh.haishi_huozhe
-  sequence: 21
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -3762,9 +3762,9 @@
     metadata_origin: reviewed_seed
 - id: zh.yao_le
   level: '2'
-  function: fn.catalog_unclassified
+  function: fn.future_plans
   point_type: other
-  native_title: yao_le
+  native_title: “要……了”
   title:
     vi: 'Ngữ pháp tiếng Trung: yao_le'
     en: 'Chinese grammar: yao_le'
@@ -3773,7 +3773,7 @@
   contrasts: []
   prereqs:
   - zh.shi_bu_shi
-  sequence: 22
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -3818,9 +3818,9 @@
     metadata_origin: reviewed_seed
 - id: zh.yijing_haimei
   level: '2'
-  function: fn.catalog_unclassified
+  function: fn.time_expression
   point_type: other
-  native_title: yijing_haimei
+  native_title: “已经……还没……”
   title:
     vi: 'Ngữ pháp tiếng Trung: yijing_haimei'
     en: 'Chinese grammar: yijing_haimei'
@@ -3829,7 +3829,7 @@
   contrasts: []
   prereqs:
   - zh.yao_le
-  sequence: 23
+  sequence: 6
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -3902,9 +3902,9 @@
     metadata_origin: reviewed_seed
 - id: zh.youdian_yidian
   level: '2'
-  function: fn.catalog_unclassified
+  function: fn.degree
   point_type: other
-  native_title: youdian_yidian
+  native_title: “有点儿/一点儿”
   title:
     vi: 'Ngữ pháp tiếng Trung: youdian_yidian'
     en: 'Chinese grammar: youdian_yidian'
@@ -3913,7 +3913,7 @@
   contrasts: []
   prereqs:
   - zh.yijing_haimei
-  sequence: 24
+  sequence: 4
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -3930,7 +3930,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk3.a_3_1_1.p1
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
   native_title: 第-、老-、小-
   title:
@@ -3966,7 +3966,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk3.a_3_1_2.p1
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
   native_title: -儿、一家、-们、-头、-子
   title:
@@ -4002,7 +4002,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk3.a_3_2_1.p1
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.future_plans
   point_type: other
   native_title: 能愿动词：敢
   title:
@@ -4013,7 +4013,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk3.a_3_1_2.p1
-  sequence: 3
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -4124,7 +4124,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk3.a_3_2_4.p2
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.questions
   point_type: other
   native_title: 关联副词：再
   title:
@@ -4135,7 +4135,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk3.a_3_2_1.p1
-  sequence: 4
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -4203,7 +4203,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk3_8_topic
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.location
   point_type: other
   native_title: 自从
   title:
@@ -4214,7 +4214,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk3.a_3_2_4.p2
-  sequence: 5
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -4245,7 +4245,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk3.a_3_2_5_2.p1
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.location
   point_type: other
   native_title: 朝
   title:
@@ -4256,7 +4256,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk3_8_topic
-  sequence: 6
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -4282,7 +4282,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk3.a_3_2_5_3.p1
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.location
   point_type: other
   native_title: 为
   title:
@@ -4293,7 +4293,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk3.a_3_2_5_2.p1
-  sequence: 7
+  sequence: 4
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -4367,7 +4367,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk3_5_topic
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.reason_result
   point_type: other
   native_title: 为了
   title:
@@ -4378,7 +4378,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk3.a_3_2_5_3.p1
-  sequence: 8
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -4448,7 +4448,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk3.a_3_2_7.p1
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
   native_title: 哈哈
   title:
@@ -4459,7 +4459,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk3_5_topic
-  sequence: 9
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -4495,7 +4495,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk2.a_2_2_1.p1
-  sequence: 1
+  sequence: 4
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -4556,7 +4556,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk3.a_3_3_2_2.p1
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
   native_title: 看起来
   title:
@@ -4567,7 +4567,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk3.a_3_2_7.p1
-  sequence: 10
+  sequence: 5
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -4599,7 +4599,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk3_7_topic
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.time_expression
   point_type: other
   native_title: 从⋯⋯起
   title:
@@ -4610,7 +4610,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk3.a_3_3_2_2.p1
-  sequence: 11
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -4636,7 +4636,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk3_9_topic
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
   native_title: 对⋯⋯来说
   title:
@@ -4647,7 +4647,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk3_7_topic
-  sequence: 12
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -4719,7 +4719,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk3.a_3_3_1.p1
-  sequence: 2
+  sequence: 6
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -4744,7 +4744,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk3.a_3_5_3.p1
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.relative
   point_type: other
   native_title: 动词或动词性短语、主谓短语作定语
   title:
@@ -4755,7 +4755,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk3_9_topic
-  sequence: 13
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -4825,7 +4825,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk3.a_3_5_4.p1
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.possibility
   point_type: other
   native_title: 可能补语1：动词+得/不+动词/形容词；动词+得/不+了
   title:
@@ -4837,7 +4837,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk3.a_3_5_3.p1
-  sequence: 14
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -4873,7 +4873,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk3.a_3_5_1.p1
-  sequence: 3
+  sequence: 7
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -4910,7 +4910,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk3.a_3_6_1.p1
-  sequence: 4
+  sequence: 8
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -4955,7 +4955,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk2.a_2_1_8.p1
-  sequence: 1
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -4998,7 +4998,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk3.a_3_6_3_1.p1
-  sequence: 2
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -5024,7 +5024,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk3_1_topic
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
   native_title: 不仅/不光 ，还/而且
   title:
@@ -5035,7 +5035,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk3.a_3_5_4.p1
-  sequence: 15
+  sequence: 4
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -5078,7 +5078,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk3.a_3_6_3_3.p1
-  sequence: 3
+  sequence: 5
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -5115,7 +5115,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk3.a_3_6_3_4.p1
-  sequence: 4
+  sequence: 6
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -5153,7 +5153,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk3.a_3_6_3_6.p1
-  sequence: 5
+  sequence: 7
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -5179,7 +5179,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk3.a_3_7.p1
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.quantity
   point_type: other
   native_title: 概数表示法2
   title:
@@ -5190,7 +5190,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk3_1_topic
-  sequence: 16
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -5225,7 +5225,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk3.a_3_2_2.p1
-  sequence: 2
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -5266,7 +5266,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk3.a_3_8.p1
-  sequence: 3
+  sequence: 4
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -5290,7 +5290,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk3.a_3_10.p1
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.time_expression
   point_type: other
   native_title: 都⋯⋯了
   title:
@@ -5302,7 +5302,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk3.a_3_7.p1
-  sequence: 17
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -5332,7 +5332,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk3_2_topic
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
   native_title: 既⋯⋯，又/也⋯⋯
   title:
@@ -5343,7 +5343,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk3.a_3_10.p1
-  sequence: 18
+  sequence: 8
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -5371,7 +5371,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk3_4_topic
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.condition_real
   point_type: other
   native_title: 无论⋯⋯，都/也⋯⋯
   title:
@@ -5382,7 +5382,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk3_2_topic
-  sequence: 19
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -5414,7 +5414,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk3_3_topic_69
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.contrast
   point_type: other
   native_title: 即使⋯⋯，也⋯⋯
   title:
@@ -5425,7 +5425,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk3_4_topic
-  sequence: 20
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -5462,7 +5462,7 @@
   level: '3'
   function: fn.object_disposal
   point_type: word_order
-  native_title: '把字句: nền tảng'
+  native_title: 把字句基础
   title:
     vi: 'Ngữ pháp tiếng Trung: 把字句: nền tảng'
     en: 'Chinese grammar: 把字句: nền tảng'
@@ -5489,9 +5489,9 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk3_12_topic_comment_introduction
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
-  native_title: Topic-comment introduction
+  native_title: 话题—说明结构入门
   title:
     vi: 'Ngữ pháp tiếng Trung: Topic-comment introduction'
     en: 'Chinese grammar: Topic-comment introduction'
@@ -5500,7 +5500,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk3_3_topic_69
-  sequence: 21
+  sequence: 9
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -5517,9 +5517,9 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk3_13_nh_ng_d_i_v_i
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.relative
   point_type: other
-  native_title: Định ngữ dài với 的
+  native_title: “的”长定语
   title:
     vi: 'Ngữ pháp tiếng Trung: Định ngữ dài với 的'
     en: 'Chinese grammar: Định ngữ dài với 的'
@@ -5528,7 +5528,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk3_12_topic_comment_introduction
-  sequence: 22
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -5547,7 +5547,7 @@
   level: '3'
   function: fn.object_disposal
   point_type: other
-  native_title: 把 + bổ ngữ kết quả
+  native_title: 把字句 + 结果补语
   title:
     vi: 'Ngữ pháp tiếng Trung: 把 + bổ ngữ kết quả'
     en: 'Chinese grammar: 把 + bổ ngữ kết quả'
@@ -5601,9 +5601,9 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk3_4_n_n_t_ng
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.voice_causative
   point_type: word_order
-  native_title: '被字句: nền tảng'
+  native_title: 被字句基础
   title:
     vi: 'Ngữ pháp tiếng Trung: 被字句: nền tảng'
     en: 'Chinese grammar: 被字句: nền tảng'
@@ -5613,7 +5613,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk3_13_nh_ng_d_i_v_i
-  sequence: 23
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -5632,7 +5632,7 @@
   level: '3'
   function: fn.object_disposal
   point_type: other
-  native_title: 把 và 被 đối chiếu
+  native_title: 把字句与被字句对比
   title:
     vi: 'Ngữ pháp tiếng Trung: 把 và 被 đối chiếu'
     en: 'Chinese grammar: 把 và 被 đối chiếu'
@@ -5658,9 +5658,9 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk3_6_b_ng_xu_h_ng_k_p
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.action_result
   point_type: other
-  native_title: Bổ ngữ xu hướng kép
+  native_title: 复合趋向补语
   title:
     vi: 'Ngữ pháp tiếng Trung: Bổ ngữ xu hướng kép'
     en: 'Chinese grammar: Bổ ngữ xu hướng kép'
@@ -5669,7 +5669,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk3_4_n_n_t_ng
-  sequence: 24
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -5686,9 +5686,9 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk3_7_b_ng_kh_n_ng
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.possibility
   point_type: other
-  native_title: Bổ ngữ khả năng
+  native_title: 可能补语
   title:
     vi: 'Ngữ pháp tiếng Trung: Bổ ngữ khả năng'
     en: 'Chinese grammar: Bổ ngữ khả năng'
@@ -5697,7 +5697,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk3_6_b_ng_xu_h_ng_k_p
-  sequence: 25
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -5714,9 +5714,9 @@
     metadata_origin: reviewed_seed
 - id: zh.adjective_reduplication
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.degree
   point_type: other
-  native_title: adjective_reduplication
+  native_title: 形容词重叠
   title:
     vi: 'Ngữ pháp tiếng Trung: adjective_reduplication'
     en: 'Chinese grammar: adjective_reduplication'
@@ -5724,7 +5724,7 @@
   - other
   contrasts: []
   prereqs: []
-  sequence: 26
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -5742,9 +5742,9 @@
     metadata_origin: reviewed_seed
 - id: zh.bi_yidian_deduo
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.comparison
   point_type: other
-  native_title: bi_yidian_deduo
+  native_title: 比较句 + 一点儿/得多
   title:
     vi: 'Ngữ pháp tiếng Trung: bi_yidian_deduo'
     en: 'Chinese grammar: bi_yidian_deduo'
@@ -5753,7 +5753,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk3_7_b_ng_kh_n_ng
-  sequence: 27
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -5770,9 +5770,9 @@
     metadata_origin: reviewed_seed
 - id: zh.cunxian_sentence
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.existence
   point_type: other
-  native_title: cunxian_sentence
+  native_title: 存现句
   title:
     vi: 'Ngữ pháp tiếng Trung: cunxian_sentence'
     en: 'Chinese grammar: cunxian_sentence'
@@ -5781,7 +5781,7 @@
   contrasts: []
   prereqs:
   - zh.bi_yidian_deduo
-  sequence: 28
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -5798,9 +5798,9 @@
     metadata_origin: reviewed_seed
 - id: zh.de_di_de
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
-  native_title: de_di_de
+  native_title: 的/地/得
   title:
     vi: 'Ngữ pháp tiếng Trung: de_di_de'
     en: 'Chinese grammar: de_di_de'
@@ -5809,7 +5809,7 @@
   contrasts: []
   prereqs:
   - zh.cunxian_sentence
-  sequence: 29
+  sequence: 9
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -5826,9 +5826,9 @@
     metadata_origin: reviewed_seed
 - id: zh.gang_gangcai
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.time_expression
   point_type: other
-  native_title: gang_gangcai
+  native_title: 刚/刚才
   title:
     vi: 'Ngữ pháp tiếng Trung: gang_gangcai'
     en: 'Chinese grammar: gang_gangcai'
@@ -5837,7 +5837,7 @@
   contrasts: []
   prereqs:
   - zh.de_di_de
-  sequence: 30
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -5854,9 +5854,9 @@
     metadata_origin: reviewed_seed
 - id: zh.jianyu_qing_rang
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.verb_patterns
   point_type: other
-  native_title: jianyu_qing_rang
+  native_title: 兼语句“请/让”
   title:
     vi: 'Ngữ pháp tiếng Trung: jianyu_qing_rang'
     en: 'Chinese grammar: jianyu_qing_rang'
@@ -5865,7 +5865,7 @@
   contrasts: []
   prereqs:
   - zh.gang_gangcai
-  sequence: 31
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -5882,9 +5882,9 @@
     metadata_origin: reviewed_seed
 - id: zh.neng_yuan_dei
   level: '3'
-  function: fn.catalog_unclassified
+  function: fn.obligation_advice
   point_type: other
-  native_title: neng_yuan_dei
+  native_title: 能愿动词“得”
   title:
     vi: 'Ngữ pháp tiếng Trung: neng_yuan_dei'
     en: 'Chinese grammar: neng_yuan_dei'
@@ -5893,7 +5893,7 @@
   contrasts: []
   prereqs:
   - zh.jianyu_qing_rang
-  sequence: 32
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -5910,7 +5910,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk4_12_topic
   level: '4'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
   native_title: 按、按照
   title:
@@ -5952,7 +5952,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk4_2_topic
   level: '4'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
   native_title: 一方面⋯⋯，另一方面⋯⋯
   title:
@@ -5991,7 +5991,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk4_3_topic_104
   level: '4'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
   native_title: 首先⋯⋯，然后⋯⋯
   title:
@@ -6033,7 +6033,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk4_4_topic_105
   level: '4'
-  function: fn.catalog_unclassified
+  function: fn.contrast
   point_type: other
   native_title: ⋯⋯X 是 X，就是/不过⋯⋯
   title:
@@ -6045,7 +6045,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk4_3_topic_104
-  sequence: 4
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -6088,7 +6088,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk4.a_4_1_1.p1
   level: '4'
-  function: fn.catalog_unclassified
+  function: fn.obligation_advice
   point_type: other
   native_title: 能愿动词：得
   title:
@@ -6099,7 +6099,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk4_4_topic_105
-  sequence: 5
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -6205,7 +6205,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk4.a_4_1_4.p2
   level: '4'
-  function: fn.catalog_unclassified
+  function: fn.contrast
   point_type: other
   native_title: 关联副词：却
   title:
@@ -6216,7 +6216,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk4.a_4_1_1.p1
-  sequence: 6
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -6284,7 +6284,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk4_13_topic
   level: '4'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
   native_title: 对于
   title:
@@ -6295,7 +6295,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk4.a_4_1_4.p2
-  sequence: 7
+  sequence: 4
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -6333,7 +6333,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk4.a_4_1_5_2.p1
   level: '4'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
   native_title: 替
   title:
@@ -6344,7 +6344,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk4_13_topic
-  sequence: 8
+  sequence: 5
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -6370,7 +6370,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk4.a_4_1_5_3.p1
   level: '4'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
   native_title: 作为
   title:
@@ -6381,7 +6381,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk4.a_4_1_5_2.p1
-  sequence: 9
+  sequence: 6
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -6418,7 +6418,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk3.a_3_6_3_10.p1
-  sequence: 1
+  sequence: 7
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -6454,7 +6454,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk4.a_4_1_6.p1
-  sequence: 2
+  sequence: 8
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -6484,7 +6484,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk4.a_4_1_7.p1
   level: '4'
-  function: fn.catalog_unclassified
+  function: fn.comparison
   point_type: other
   native_title: 其他助词：似的
   title:
@@ -6495,7 +6495,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk4.a_4_1_5_3.p1
-  sequence: 10
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -6520,7 +6520,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk4.a_4_1_8.p1
   level: '4'
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
   native_title: 啊
   title:
@@ -6531,7 +6531,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk4.a_4_1_7.p1
-  sequence: 11
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -6556,7 +6556,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk4.a_4_2_1_1.p1
   level: '4'
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
   native_title: 大A大B
   title:
@@ -6567,7 +6567,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk4.a_4_1_8.p1
-  sequence: 12
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -6596,7 +6596,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk4.a_4_2_1_2.p1
   level: '4'
-  function: fn.catalog_unclassified
+  function: fn.possibility
   point_type: other
   native_title: 看来
   title:
@@ -6607,7 +6607,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk4.a_4_2_1_1.p1
-  sequence: 13
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -6642,7 +6642,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk4_12_topic_115
   level: '4'
-  function: fn.catalog_unclassified
+  function: fn.possibility
   point_type: other
   native_title: 来得及/来不及
   title:
@@ -6653,7 +6653,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk4.a_4_2_1_2.p1
-  sequence: 14
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -6681,7 +6681,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk4_14_topic
   level: '4'
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
   native_title: 由⋯⋯组成
   title:
@@ -6692,7 +6692,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk4_12_topic_115
-  sequence: 15
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -6720,7 +6720,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk4.a_4_2_1_2.p2
   level: '4'
-  function: fn.catalog_unclassified
+  function: fn.location
   point_type: other
   native_title: 在⋯⋯上/下/中
   title:
@@ -6731,7 +6731,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk4_14_topic
-  sequence: 16
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -6768,7 +6768,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk3.a_3_6_2.p1
-  sequence: 1
+  sequence: 4
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -6796,7 +6796,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk4.a_4_4_2.p1
   level: '4'
-  function: fn.catalog_unclassified
+  function: fn.relative
   point_type: other
   native_title: 多项定语
   title:
@@ -6807,7 +6807,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk4.a_4_2_1_2.p2
-  sequence: 17
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -6877,7 +6877,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk4.a_4_5_1.p2
   level: '4'
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
   native_title: “是⋯⋯的”句2：强调说话人的看法或态度
   title:
@@ -6888,7 +6888,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk4.a_4_4_2.p1
-  sequence: 18
+  sequence: 5
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -6913,7 +6913,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk4_5_topic_106
   level: '4'
-  function: fn.catalog_unclassified
+  function: fn.reason_result
   point_type: other
   native_title: ⋯⋯，于是⋯⋯
   title:
@@ -6924,7 +6924,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk4.a_4_5_1.p2
-  sequence: 19
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -6966,7 +6966,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk4_5_topic
-  sequence: 3
+  sequence: 9
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -7003,7 +7003,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk4.a_4_5_2_3.p1
-  sequence: 4
+  sequence: 10
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -7029,7 +7029,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk4_6_topic
   level: '4'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
   native_title: ⋯⋯，否则⋯⋯
   title:
@@ -7040,7 +7040,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk4_5_topic_106
-  sequence: 20
+  sequence: 11
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -7088,7 +7088,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk4.a_4_5_2_4.p1
-  sequence: 5
+  sequence: 12
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -7162,7 +7162,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk3_6_topic
-  sequence: 1
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -7199,7 +7199,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk4.a_4_5_2_6.p1
-  sequence: 6
+  sequence: 13
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -7237,7 +7237,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk4.a_4_5_2_9.p1
-  sequence: 7
+  sequence: 14
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -7274,7 +7274,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk4.a_4_5_2_10.p1
-  sequence: 8
+  sequence: 15
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -7303,7 +7303,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk4.a_4_6_1.p1
   level: '4'
-  function: fn.catalog_unclassified
+  function: fn.quantity
   point_type: other
   native_title: 小数、分数、百分数、倍数的表示法
   title:
@@ -7314,7 +7314,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk4_6_topic
-  sequence: 21
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -7383,7 +7383,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk4_3_topic
   level: '4'
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
   native_title: 用 \\"连⋯⋯也/都⋯⋯”表示强调
   title:
@@ -7394,7 +7394,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk4.a_4_6_1.p1
-  sequence: 22
+  sequence: 6
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -7627,7 +7627,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk4_4_topic
   level: '4'
-  function: fn.catalog_unclassified
+  function: fn.contrast
   point_type: other
   native_title: 与其⋯⋯ ，不如⋯⋯
   title:
@@ -7638,7 +7638,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk4_3_topic
-  sequence: 23
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -7677,7 +7677,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk4.a_4_5_2_8.p1
-  sequence: 2
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -7707,7 +7707,7 @@
   level: '4'
   function: fn.object_disposal
   point_type: other
-  native_title: 把 với cấu trúc phức
+  native_title: 复杂把字句
   title:
     vi: 'Ngữ pháp tiếng Trung: 把 với cấu trúc phức'
     en: 'Chinese grammar: 把 với cấu trúc phức'
@@ -7765,7 +7765,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk4_11_topic
   level: '4'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
   native_title: 通过...
   title:
@@ -7776,7 +7776,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk4_4_topic
-  sequence: 24
+  sequence: 16
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -7793,9 +7793,9 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk4_15_v_introduction
   level: '4'
-  function: fn.catalog_unclassified
+  function: fn.relative
   point_type: other
-  native_title: '所 + V: introduction'
+  native_title: “所 + V”结构入门
   title:
     vi: 'Ngữ pháp tiếng Trung: 所 + V: introduction'
     en: 'Chinese grammar: 所 + V: introduction'
@@ -7804,7 +7804,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk4_11_topic
-  sequence: 25
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -7825,9 +7825,9 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk4_2_n_ng_cao
   level: '4'
-  function: fn.catalog_unclassified
+  function: fn.voice_causative
   point_type: other
-  native_title: 被 nâng cao
+  native_title: 高级被字句
   title:
     vi: 'Ngữ pháp tiếng Trung: 被 nâng cao'
     en: 'Chinese grammar: 被 nâng cao'
@@ -7836,7 +7836,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk4_15_v_introduction
-  sequence: 26
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -7857,7 +7857,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk4_7_topic_109
   level: '4'
-  function: fn.catalog_unclassified
+  function: fn.contrast
   point_type: other
   native_title: 宁可...也不...
   title:
@@ -7868,7 +7868,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk4_2_n_ng_cao
-  sequence: 27
+  sequence: 4
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -7885,9 +7885,9 @@
     metadata_origin: reviewed_seed
 - id: zh.wh_universal
   level: '4'
-  function: fn.catalog_unclassified
+  function: fn.questions
   point_type: other
-  native_title: wh_universal
+  native_title: 疑问代词任指用法
   title:
     vi: 'Ngữ pháp tiếng Trung: wh_universal'
     en: 'Chinese grammar: wh_universal'
@@ -7896,7 +7896,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk4_7_topic_109
-  sequence: 28
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -7989,7 +7989,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk5_1_topic
   level: '5'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
   native_title: 不是⋯⋯，而是⋯⋯
   title:
@@ -8190,7 +8190,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk5.a_5_1_4_2.p1
   level: '5'
-  function: fn.catalog_unclassified
+  function: fn.object_disposal
   point_type: other
   native_title: 将
   title:
@@ -8201,7 +8201,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk5_1_topic
-  sequence: 2
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -8230,7 +8230,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk5.a_5_1_4_3.p1
   level: '5'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
   native_title: 凭
   title:
@@ -8241,7 +8241,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk5.a_5_1_4_2.p1
-  sequence: 3
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -8284,7 +8284,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk4.a_4_5_2_11.p1
-  sequence: 1
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -8314,7 +8314,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk5.a_5_1_6.p1
   level: '5'
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
   native_title: 其他助词：也好
   title:
@@ -8325,7 +8325,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk5.a_5_1_4_3.p1
-  sequence: 4
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -8396,7 +8396,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk5.a_5_2_1_1.p2
   level: '5'
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
   native_title: 有A有B
   title:
@@ -8407,7 +8407,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk5.a_5_1_6.p1
-  sequence: 5
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -8433,7 +8433,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk5_6_topic
   level: '5'
-  function: fn.catalog_unclassified
+  function: fn.degree
   point_type: other
   native_title: 不得了
   title:
@@ -8445,7 +8445,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk5.a_5_2_1_1.p2
-  sequence: 6
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -8522,7 +8522,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk5.a_5_3.p1
   level: '5'
-  function: fn.catalog_unclassified
+  function: fn.time_expression
   point_type: other
   native_title: 到⋯⋯为止
   title:
@@ -8534,7 +8534,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk5_6_topic
-  sequence: 7
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -8567,7 +8567,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk5.a_5_3.p2
   level: '5'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
   native_title: 在 …… 看来
   title:
@@ -8578,7 +8578,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk5.a_5_3.p1
-  sequence: 8
+  sequence: 4
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -8614,7 +8614,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk5_2_topic_139
-  sequence: 2
+  sequence: 4
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -8639,7 +8639,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk5.a_5_4_2.p1
   level: '5'
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
   native_title: 多项状语
   title:
@@ -8650,7 +8650,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk5.a_5_3.p2
-  sequence: 9
+  sequence: 5
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -8687,7 +8687,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk5.a_5_1_3.p1
-  sequence: 2
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -8726,7 +8726,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk4_1_v_i_c_u_tr_c_ph_c
-  sequence: 1
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -8807,7 +8807,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk5_8_topic
-  sequence: 2
+  sequence: 5
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -8833,7 +8833,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk5_9_topic
   level: '5'
-  function: fn.catalog_unclassified
+  function: fn.contrast
   point_type: other
   native_title: 尽管⋯⋯，名声/可是⋯⋯
   title:
@@ -8844,7 +8844,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk5.a_5_4_2.p1
-  sequence: 10
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -8925,7 +8925,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk5.a_5_5_2_1.p1
-  sequence: 3
+  sequence: 6
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -8951,7 +8951,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk5_7_topic
   level: '5'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
   native_title: ⋯⋯，以便⋯⋯
   title:
@@ -8962,7 +8962,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk5_9_topic
-  sequence: 11
+  sequence: 7
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -9112,7 +9112,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk5.a_5_6.p2
   level: '5'
-  function: fn.catalog_unclassified
+  function: fn.condition_real
   point_type: other
   native_title: X归X，Y归Y
   title:
@@ -9123,7 +9123,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk5_7_topic
-  sequence: 12
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -9232,7 +9232,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk5_5_topic
   level: '5'
-  function: fn.catalog_unclassified
+  function: fn.obligation_advice
   point_type: other
   native_title: 不妨
   title:
@@ -9243,7 +9243,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk5.a_5_6.p2
-  sequence: 13
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -9271,7 +9271,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk5_10_topic
   level: '5'
-  function: fn.catalog_unclassified
+  function: fn.exclusion
   point_type: other
   native_title: 无非
   title:
@@ -9282,7 +9282,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk5_5_topic
-  sequence: 14
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -9313,7 +9313,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk5_8_topic_146
   level: '5'
-  function: fn.catalog_unclassified
+  function: fn.reason_result
   point_type: other
   native_title: 基于
   title:
@@ -9324,7 +9324,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk5_10_topic
-  sequence: 15
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -9355,7 +9355,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk5_11_topic
   level: '5'
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
   native_title: 以⋯⋯ 为⋯⋯
   title:
@@ -9366,7 +9366,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk5_8_topic_146
-  sequence: 16
+  sequence: 6
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -9396,9 +9396,9 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk5_1_ki_m_ng
   level: '5'
-  function: fn.catalog_unclassified
+  function: fn.verb_patterns
   point_type: other
-  native_title: 使/令/让 + kiêm ngữ
+  native_title: “使/令/让”兼语句
   title:
     vi: 'Ngữ pháp tiếng Trung: 使/令/让 + kiêm ngữ'
     en: 'Chinese grammar: 使/令/让 + kiêm ngữ'
@@ -9407,7 +9407,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk5_11_topic
-  sequence: 17
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -9428,7 +9428,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk5_10_topic_148
   level: '5'
-  function: fn.catalog_unclassified
+  function: fn.location
   point_type: other
   native_title: 之中/之内/之上/之下
   title:
@@ -9439,7 +9439,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk5_1_ki_m_ng
-  sequence: 18
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -9456,7 +9456,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk5_12_topic
   level: '5'
-  function: fn.catalog_unclassified
+  function: fn.information_structure
   point_type: other
   native_title: 话题链与省略
   title:
@@ -9467,7 +9467,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk5_10_topic_148
-  sequence: 19
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -9491,9 +9491,9 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk5_13_reference
   level: '5'
-  function: fn.catalog_unclassified
+  function: fn.pronoun_reference
   point_type: other
-  native_title: 其/该/此/上述 reference
+  native_title: “其/该/此/上述”的指代
   title:
     vi: 'Ngữ pháp tiếng Trung: 其/该/此/上述 reference'
     en: 'Chinese grammar: 其/该/此/上述 reference'
@@ -9502,7 +9502,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk5_12_topic
-  sequence: 20
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -9523,9 +9523,9 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk5_14_n_ng_cao_153
   level: '5'
-  function: fn.catalog_unclassified
+  function: fn.relative
   point_type: other
-  native_title: 长定语 nâng cao
+  native_title: 高级长定语
   title:
     vi: 'Định ngữ: 长定语 nâng cao'
     en: 'Attributives: 长定语 nâng cao'
@@ -9534,7 +9534,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk5_13_reference
-  sequence: 21
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -9555,9 +9555,9 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk5_15_tendencies
   level: '5'
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
-  native_title: 名词化 tendencies
+  native_title: 名词化倾向
   title:
     vi: 'Danh từ: 名词化 tendencies'
     en: 'Nouns: 名词化 tendencies'
@@ -9566,7 +9566,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk5_14_n_ng_cao_153
-  sequence: 22
+  sequence: 7
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -9589,7 +9589,7 @@
   level: '5'
   function: fn.linking
   point_type: other
-  native_title: 紧缩复句 introduction
+  native_title: 紧缩复句入门
   title:
     vi: 'Câu phức: 紧缩复句 introduction'
     en: 'Complex sentences: 紧缩复句 introduction'
@@ -9598,7 +9598,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk5.a_5_5_2_7.p1
-  sequence: 4
+  sequence: 8
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -9615,7 +9615,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk5_2_topic
   level: '5'
-  function: fn.catalog_unclassified
+  function: fn.negation
   point_type: other
   native_title: 并非/并不是
   title:
@@ -9626,7 +9626,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk5_15_tendencies
-  sequence: 23
+  sequence: 6
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -9647,9 +9647,9 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk5_3_approximate_quantities
   level: '5'
-  function: fn.catalog_unclassified
+  function: fn.quantity
   point_type: other
-  native_title: Approximate quantities
+  native_title: 概数表达
   title:
     vi: 'Ngữ pháp tiếng Trung: Approximate quantities'
     en: 'Chinese grammar: Approximate quantities'
@@ -9658,7 +9658,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk5_2_topic
-  sequence: 24
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -9679,7 +9679,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk5_4_topic
   level: '5'
-  function: fn.catalog_unclassified
+  function: fn.possibility
   point_type: other
   native_title: 难免/免不了
   title:
@@ -9690,7 +9690,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk5_3_approximate_quantities
-  sequence: 25
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -9707,7 +9707,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk5_4_topic_141
   level: '5'
-  function: fn.catalog_unclassified
+  function: fn.quantity
   point_type: other
   native_title: 倍数和比例
   title:
@@ -9718,7 +9718,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk5_4_topic
-  sequence: 26
+  sequence: 4
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -9735,9 +9735,9 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk5_5_scope
   level: '5'
-  function: fn.catalog_unclassified
+  function: fn.exclusion
   point_type: other
-  native_title: 仅/只/光/单 scope
+  native_title: “仅/只/光/单”的范围
   title:
     vi: 'Ngữ pháp tiếng Trung: 仅/只/光/单 scope'
     en: 'Chinese grammar: 仅/只/光/单 scope'
@@ -9746,7 +9746,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk5_4_topic_141
-  sequence: 27
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -9767,7 +9767,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk5_7_topic_145
   level: '5'
-  function: fn.catalog_unclassified
+  function: fn.relative
   point_type: other
   native_title: 同位与解释
   title:
@@ -9778,7 +9778,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk5_5_scope
-  sequence: 28
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -9799,9 +9799,9 @@
     metadata_origin: reviewed_seed
 - id: zh.jiaru_tangruo
   level: '5'
-  function: fn.catalog_unclassified
+  function: fn.condition_real
   point_type: other
-  native_title: jiaru_tangruo
+  native_title: “假如/倘若”条件句
   title:
     vi: 'Ngữ pháp tiếng Trung: jiaru_tangruo'
     en: 'Chinese grammar: jiaru_tangruo'
@@ -9810,7 +9810,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk5_7_topic_145
-  sequence: 29
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -9827,7 +9827,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk6_2_topic
   level: '6'
-  function: fn.catalog_unclassified
+  function: fn.possibility
   point_type: other
   native_title: 情态副词：大概、恐怕
   title:
@@ -9869,7 +9869,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk6_7_topic_181
   level: '6'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
   native_title: 从⋯⋯来看
   title:
@@ -9880,7 +9880,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk6_2_topic
-  sequence: 2
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -9906,7 +9906,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk6.a_6_1_1.p1
   level: '6'
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
   native_title: 超-、多-、反-、无-、亚-、准
   title:
@@ -9917,7 +9917,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk6_7_topic_181
-  sequence: 3
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -9942,7 +9942,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk6.a_6_1_2.p1
   level: '6'
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
   native_title: -化、-式、-型、-性
   title:
@@ -9953,7 +9953,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk6.a_6_1_1.p1
-  sequence: 4
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -10059,7 +10059,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk6.a_6_2_3.p2
   level: '6'
-  function: fn.catalog_unclassified
+  function: fn.degree
   point_type: other
   native_title: 方式副词：不禁、赶忙、亲眼、特地、特意
   title:
@@ -10070,7 +10070,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk6.a_6_1_2.p1
-  sequence: 5
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -10175,7 +10175,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk6.a_6_2_4_3.p1
   level: '6'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
   native_title: 同、与
   title:
@@ -10186,7 +10186,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk6.a_6_2_3.p2
-  sequence: 6
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -10212,7 +10212,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk6_7_topic_172
   level: '6'
-  function: fn.catalog_unclassified
+  function: fn.information_structure
   point_type: other
   native_title: 至于
   title:
@@ -10223,7 +10223,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk6.a_6_2_4_3.p1
-  sequence: 7
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -10257,7 +10257,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk6.a_6_2_4_4.p1
   level: '6'
-  function: fn.catalog_unclassified
+  function: fn.reason_result
   point_type: other
   native_title: 因
   title:
@@ -10268,7 +10268,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk6_7_topic_172
-  sequence: 8
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -10331,7 +10331,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk6.a_6_2_4_6.p1
   level: '6'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
   native_title: 据
   title:
@@ -10342,7 +10342,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk6.a_6_2_4_4.p1
-  sequence: 9
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -10379,7 +10379,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk5_17_introduction
-  sequence: 1
+  sequence: 4
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -10407,7 +10407,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk6.a_6_2_6.p1
   level: '6'
-  function: fn.catalog_unclassified
+  function: fn.relative
   point_type: other
   native_title: 结构助词：所
   title:
@@ -10418,7 +10418,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk6.a_6_2_4_6.p1
-  sequence: 10
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -10446,7 +10446,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk6.a_6_3_2_1.p1
   level: '6'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
   native_title: 或A或B
   title:
@@ -10457,7 +10457,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk6.a_6_2_6.p1
-  sequence: 11
+  sequence: 5
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -10492,7 +10492,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk6.a_6_3_2_2.p1
   level: '6'
-  function: fn.catalog_unclassified
+  function: fn.questions
   point_type: other
   native_title: 不怎么
   title:
@@ -10503,7 +10503,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk6.a_6_3_2_1.p1
-  sequence: 12
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -10538,7 +10538,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk6.a_6_3_2_2.p2
   level: '6'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
   native_title: 就是说/这就是说
   title:
@@ -10549,7 +10549,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk6.a_6_3_2_2.p1
-  sequence: 13
+  sequence: 6
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -10578,7 +10578,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk6.a_6_4.p1
   level: '6'
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
   native_title: 东一A，西一A
   title:
@@ -10589,7 +10589,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk6.a_6_3_2_2.p2
-  sequence: 14
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -10625,7 +10625,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk5.a_5_4_1.p1
-  sequence: 1
+  sequence: 4
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -10735,7 +10735,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk6.a_6_5_1.p1
-  sequence: 2
+  sequence: 5
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -10771,7 +10771,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk6.a_6_2_5.p1
-  sequence: 2
+  sequence: 7
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -10811,7 +10811,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk6.a_6_6_2_1.p1
-  sequence: 3
+  sequence: 8
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -10888,7 +10888,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk6.a_6_6_2_2.p1
-  sequence: 4
+  sequence: 9
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -10962,7 +10962,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk6.a_6_6_2_4.p1
-  sequence: 5
+  sequence: 10
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -11036,7 +11036,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk6.a_6_6_2_6.p1
-  sequence: 6
+  sequence: 11
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -11062,7 +11062,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk6_7_topic
   level: '6'
-  function: fn.catalog_unclassified
+  function: fn.negation
   point_type: other
   native_title: 不⋯⋯不⋯⋯
   title:
@@ -11073,7 +11073,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk6.a_6_4.p1
-  sequence: 15
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -11142,7 +11142,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk6.a_6_7.p1
   level: '6'
-  function: fn.catalog_unclassified
+  function: fn.obligation_advice
   point_type: other
   native_title: 用“非⋯⋯不可”表示强调
   title:
@@ -11153,7 +11153,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk6_7_topic
-  sequence: 16
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -11189,7 +11189,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk6.a_6_6_2_3.p1
-  sequence: 2
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -11280,7 +11280,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk6.a_6_8.p1
-  sequence: 3
+  sequence: 4
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -11313,9 +11313,9 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk6_1_t_ng_t_c_n_ng_cao
   level: '6'
-  function: fn.ongoing_now
+  function: fn.aspect_viewpoint
   point_type: other
-  native_title: 了/过/着 tương tác nâng cao
+  native_title: “了/过/着”的高级互动
   title:
     vi: 'Ngữ pháp tiếng Trung: 了/过/着 tương tác nâng cao'
     en: 'Chinese grammar: 了/过/着 tương tác nâng cao'
@@ -11324,7 +11324,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk6.a_6_2_4_2.p1
-  sequence: 2
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -11345,9 +11345,9 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk6_12_parallel_structure_in_formal_prose
   level: '6'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
-  native_title: Parallel structure in formal prose
+  native_title: 正式语体中的平行结构
   title:
     vi: 'Ngữ pháp tiếng Trung: Parallel structure in formal prose'
     en: 'Chinese grammar: Parallel structure in formal prose'
@@ -11356,7 +11356,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk6.a_6_7.p1
-  sequence: 17
+  sequence: 12
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -11377,9 +11377,9 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk6_14_formal_comparison
   level: '6'
-  function: fn.catalog_unclassified
+  function: fn.comparison
   point_type: other
-  native_title: Formal comparison
+  native_title: 正式语体中的比较
   title:
     vi: 'Ngữ pháp tiếng Trung: Formal comparison'
     en: 'Chinese grammar: Formal comparison'
@@ -11387,7 +11387,7 @@
   - other
   contrasts: []
   prereqs: []
-  sequence: 18
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -11408,9 +11408,9 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk6_19_sentence_final_particles_in_advanced_use
   level: '6'
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
-  native_title: Sentence-final particles in advanced use
+  native_title: 句末语气词的高级用法
   title:
     vi: 'Ngữ pháp tiếng Trung: Sentence-final particles in advanced use'
     en: 'Chinese grammar: Sentence-final particles in advanced use'
@@ -11418,7 +11418,7 @@
   - other
   contrasts: []
   prereqs: []
-  sequence: 19
+  sequence: 6
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -11435,9 +11435,9 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk6_20_register_control
   level: '6'
-  function: fn.catalog_unclassified
+  function: fn.register_style
   point_type: other
-  native_title: Register control
+  native_title: 语体控制
   title:
     vi: 'Ngữ pháp tiếng Trung: Register control'
     en: 'Chinese grammar: Register control'
@@ -11446,7 +11446,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk6_12_parallel_structure_in_formal_prose
-  sequence: 20
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -11463,9 +11463,9 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk6_22_punctuation_and_clause_grammar
   level: '6'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
-  native_title: Punctuation and clause grammar
+  native_title: 标点与分句语法
   title:
     vi: 'Ngữ pháp tiếng Trung: Punctuation and clause grammar'
     en: 'Chinese grammar: Punctuation and clause grammar'
@@ -11474,7 +11474,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk6_20_register_control
-  sequence: 21
+  sequence: 13
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -11491,9 +11491,9 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk6_3_agent_source
   level: '6'
-  function: fn.catalog_unclassified
+  function: fn.voice_causative
   point_type: other
-  native_title: 由 + agent/source
+  native_title: “由”表示施事或来源
   title:
     vi: 'Ngữ pháp tiếng Trung: 由 + agent/source'
     en: 'Chinese grammar: 由 + agent/source'
@@ -11502,7 +11502,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk6_22_punctuation_and_clause_grammar
-  sequence: 22
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -11519,9 +11519,9 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk6_4_patterns
   level: '6'
-  function: fn.catalog_unclassified
+  function: fn.reference
   point_type: other
-  native_title: 者 patterns
+  native_title: “者”字结构
   title:
     vi: 'Ngữ pháp tiếng Trung: 者 patterns'
     en: 'Chinese grammar: 者 patterns'
@@ -11530,7 +11530,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk6_3_agent_source
-  sequence: 23
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -11547,7 +11547,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk6_4_topic
   level: '6'
-  function: fn.catalog_unclassified
+  function: fn.verb_patterns
   point_type: other
   native_title: 为...所...
   title:
@@ -11558,7 +11558,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk6_4_patterns
-  sequence: 24
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -11575,9 +11575,9 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk6_5_patterns
   level: '6'
-  function: fn.catalog_unclassified
+  function: fn.reference
   point_type: other
-  native_title: 之 patterns
+  native_title: “之”字结构
   title:
     vi: 'Ngữ pháp tiếng Trung: 之 patterns'
     en: 'Chinese grammar: 之 patterns'
@@ -11586,7 +11586,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk6_4_topic
-  sequence: 25
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -11603,9 +11603,9 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk6_6_rhetorical_questions
   level: '6'
-  function: fn.catalog_unclassified
+  function: fn.questions
   point_type: other
-  native_title: 难道/岂/何尝 rhetorical questions
+  native_title: “难道/岂/何尝”反问句
   title:
     vi: 'Ngữ pháp tiếng Trung: 难道/岂/何尝 rhetorical questions'
     en: 'Chinese grammar: 难道/岂/何尝 rhetorical questions'
@@ -11614,7 +11614,7 @@
   contrasts: []
   prereqs:
   - zh.duo_adjective_question
-  sequence: 26
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -11635,7 +11635,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk7_9.a_7_1_1.p1
   level: '7'
-  function: fn.catalog_unclassified
+  function: fn.possibility
   point_type: other
   native_title: 能愿动词：需
   title:
@@ -11799,7 +11799,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk7_9.a_7_1_4_2.p1
   level: '7'
-  function: fn.catalog_unclassified
+  function: fn.quantity
   point_type: other
   native_title: 凡
   title:
@@ -11810,7 +11810,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk7_9.a_7_1_1.p1
-  sequence: 2
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -11931,7 +11931,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk7_9.a_7_1_4_5.p1
   level: '7'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
   native_title: 亦
   title:
@@ -11942,7 +11942,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk7_9.a_7_1_4_2.p1
-  sequence: 3
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -12008,7 +12008,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk7_9.a_7_1_4_7.p1
   level: '7'
-  function: fn.catalog_unclassified
+  function: fn.verb_patterns
   point_type: other
   native_title: 不由得
   title:
@@ -12019,7 +12019,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk7_9.a_7_1_4_5.p1
-  sequence: 4
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -12051,7 +12051,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk7_9.a_7_1_4_8.p1
   level: '7'
-  function: fn.catalog_unclassified
+  function: fn.possibility
   point_type: other
   native_title: 按说
   title:
@@ -12062,7 +12062,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk7_9.a_7_1_4_7.p1
-  sequence: 5
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -12088,7 +12088,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk7_9.a_7_1_4_9.p1
   level: '7'
-  function: fn.catalog_unclassified
+  function: fn.possibility
   point_type: other
   native_title: 必定
   title:
@@ -12099,7 +12099,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk7_9.a_7_1_4_8.p1
-  sequence: 6
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -12134,7 +12134,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk7_9.a_7_1_4_9.p2
   level: '7'
-  function: fn.catalog_unclassified
+  function: fn.contrast
   point_type: other
   native_title: 反倒
   title:
@@ -12145,7 +12145,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk7_9.a_7_1_4_9.p1
-  sequence: 7
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -12180,7 +12180,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk7_9.a_7_1_4_9.p3
   level: '7'
-  function: fn.catalog_unclassified
+  function: fn.reason_result
   point_type: other
   native_title: 乃
   title:
@@ -12191,7 +12191,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk7_9.a_7_1_4_9.p2
-  sequence: 8
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -12226,7 +12226,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk7_9.a_7_1_4_9.p4
   level: '7'
-  function: fn.catalog_unclassified
+  function: fn.degree
   point_type: other
   native_title: 万万
   title:
@@ -12237,7 +12237,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk7_9.a_7_1_4_9.p3
-  sequence: 9
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -12272,7 +12272,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk7_9.a_7_1_4_9.p5
   level: '7'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
   native_title: 终究
   title:
@@ -12283,7 +12283,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk7_9.a_7_1_4_9.p4
-  sequence: 10
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -12309,7 +12309,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk7_9.a_7_1_5_1.p1
   level: '7'
-  function: fn.ongoing_now
+  function: fn.location
   point_type: other
   native_title: 顺着
   title:
@@ -12346,7 +12346,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk7_9.a_7_1_5_2.p1
   level: '7'
-  function: fn.ongoing_now
+  function: fn.location
   point_type: other
   native_title: 当着
   title:
@@ -12386,7 +12386,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk7_9.a_7_1_5_3.p1
   level: '7'
-  function: fn.catalog_unclassified
+  function: fn.time_expression
   point_type: other
   native_title: 趁
   title:
@@ -12397,7 +12397,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk7_9.a_7_1_4_9.p5
-  sequence: 11
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -12437,7 +12437,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk6.a_6_6_2_8.p1
-  sequence: 1
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -12465,7 +12465,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk7_9.a_7_1_7_1.p1
   level: '7'
-  function: fn.catalog_unclassified
+  function: fn.reference
   point_type: other
   native_title: 之
   title:
@@ -12476,7 +12476,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk7_9.a_7_1_5_3.p1
-  sequence: 12
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -12502,7 +12502,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk7_9.a_7_1_7_2.p1
   level: '7'
-  function: fn.catalog_unclassified
+  function: fn.exclusion
   point_type: other
   native_title: 而已
   title:
@@ -12513,7 +12513,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk7_9.a_7_1_7_1.p1
-  sequence: 13
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -12588,7 +12588,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk7_9.a_7_2_2_1.p2
   level: '8'
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
   native_title: 忽A忽B
   title:
@@ -12634,7 +12634,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk7_9.a_7_2_2_2.p1
   level: '8'
-  function: fn.catalog_unclassified
+  function: fn.future_plans
   point_type: other
   native_title: 巴不得
   title:
@@ -12645,7 +12645,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk7_9.a_7_2_2_1.p2
-  sequence: 2
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -12772,7 +12772,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk7_9.a_7_3.p1
   level: '8'
-  function: fn.catalog_unclassified
+  function: fn.questions
   point_type: other
   native_title: 不知⋯⋯好
   title:
@@ -12783,7 +12783,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk7_9.a_7_2_2_2.p1
-  sequence: 3
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -12825,7 +12825,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk6.a_6_6_1.p1
-  sequence: 1
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -13178,7 +13178,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk7_9.a_7_5_2_6.p1
   level: '8'
-  function: fn.linking
+  function: fn.hypothetical_counterfactual
   point_type: other
   native_title: 倘若/若⋯⋯，⋯⋯
   title:
@@ -13189,7 +13189,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk7_9.a_7_5_2_4.p1
-  sequence: 6
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -13221,7 +13221,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk7_9.a_7_5_2_7.p1
   level: '8'
-  function: fn.condition_real
+  function: fn.contrast
   point_type: other
   native_title: 别管⋯⋯ ，都⋯⋯
   title:
@@ -13232,7 +13232,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk6.a_6_6_2_7.p1
-  sequence: 1
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -13309,7 +13309,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk7_9.a_7_5_2_6.p1
-  sequence: 7
+  sequence: 6
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -13353,7 +13353,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk7_9.a_7_5_2_9.p1
-  sequence: 8
+  sequence: 7
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -13393,7 +13393,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk7_9.a_7_5_2_10.p1
-  sequence: 9
+  sequence: 8
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -13432,7 +13432,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk7_9.a_7_5_2_11.p1
-  sequence: 10
+  sequence: 9
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -13473,7 +13473,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk7_9.a_7_5_2_12.p1
-  sequence: 11
+  sequence: 10
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -13510,7 +13510,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk7_9.a_7_1_2.p1
-  sequence: 1
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -13579,7 +13579,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk7_9.a_7_7.p2
   level: '9'
-  function: fn.catalog_unclassified
+  function: fn.degree
   point_type: other
   native_title: 别提（有）多X了
   title:
@@ -13704,7 +13704,7 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.gf.hsk7_9.a_7_8_1.p1
   level: '9'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
   native_title: 带关联词语
   title:
@@ -13715,7 +13715,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk7_9.a_7_7.p2
-  sequence: 2
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5: []
@@ -13782,9 +13782,9 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk79_10_conditional_rhetoric
   level: '9'
-  function: fn.catalog_unclassified
+  function: fn.hypothetical_counterfactual
   point_type: other
-  native_title: Conditional rhetoric
+  native_title: 条件句的修辞用法
   title:
     vi: 'Ngữ pháp tiếng Trung: Conditional rhetoric'
     en: 'Chinese grammar: Conditional rhetoric'
@@ -13792,7 +13792,7 @@
   - other
   contrasts: []
   prereqs: []
-  sequence: 3
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -13809,9 +13809,9 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk79_11_cause_vs_evidence_distinction
   level: '9'
-  function: fn.catalog_unclassified
+  function: fn.reason_result
   point_type: other
-  native_title: Cause vs evidence distinction
+  native_title: 原因与证据的区分
   title:
     vi: 'Ngữ pháp tiếng Trung: Cause vs evidence distinction'
     en: 'Chinese grammar: Cause vs evidence distinction'
@@ -13820,7 +13820,7 @@
   contrasts: []
   prereqs:
   - zh.canon.gf.hsk7_9.a_7_8_1.p1
-  sequence: 4
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -13837,9 +13837,9 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk79_12_reformulation_and_qualification
   level: '9'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
-  native_title: Reformulation and qualification
+  native_title: 改述与限定
   title:
     vi: 'Ngữ pháp tiếng Trung: Reformulation and qualification'
     en: 'Chinese grammar: Reformulation and qualification'
@@ -13848,7 +13848,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk79_11_cause_vs_evidence_distinction
-  sequence: 5
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -13872,9 +13872,9 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk79_14_productive_four_character_grammar_patterns
   level: '9'
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
-  native_title: Productive four-character grammar patterns
+  native_title: 四字格语法结构
   title:
     vi: 'Ngữ pháp tiếng Trung: Productive four-character grammar patterns'
     en: 'Chinese grammar: Productive four-character grammar patterns'
@@ -13883,7 +13883,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk79_12_reformulation_and_qualification
-  sequence: 6
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -13900,9 +13900,9 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk79_16_information_structure_and_emphasis
   level: '9'
-  function: fn.catalog_unclassified
+  function: fn.information_structure
   point_type: other
-  native_title: Information structure and emphasis
+  native_title: 信息结构与强调
   title:
     vi: 'Ngữ pháp tiếng Trung: Information structure and emphasis'
     en: 'Chinese grammar: Information structure and emphasis'
@@ -13911,7 +13911,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk79_14_productive_four_character_grammar_patterns
-  sequence: 7
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -13928,9 +13928,9 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk79_17_ellipsis_and_recoverability
   level: '9'
-  function: fn.catalog_unclassified
+  function: fn.information_structure
   point_type: other
-  native_title: Ellipsis and recoverability
+  native_title: 省略与可恢复性
   title:
     vi: 'Ngữ pháp tiếng Trung: Ellipsis and recoverability'
     en: 'Chinese grammar: Ellipsis and recoverability'
@@ -13939,7 +13939,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk79_16_information_structure_and_emphasis
-  sequence: 8
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -13956,9 +13956,9 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk79_18_academic_definition_and_classification
   level: '9'
-  function: fn.catalog_unclassified
+  function: fn.sentence_basics
   point_type: other
-  native_title: Academic definition and classification
+  native_title: 学术定义与分类
   title:
     vi: 'Ngữ pháp tiếng Trung: Academic definition and classification'
     en: 'Chinese grammar: Academic definition and classification'
@@ -13967,7 +13967,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk79_17_ellipsis_and_recoverability
-  sequence: 9
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -13984,9 +13984,9 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk79_19_argument_concession_counterclaim
   level: '9'
-  function: fn.catalog_unclassified
+  function: fn.contrast
   point_type: other
-  native_title: Argument concession-counterclaim
+  native_title: 论证中的让步与反驳
   title:
     vi: 'Ngữ pháp tiếng Trung: Argument concession-counterclaim'
     en: 'Chinese grammar: Argument concession-counterclaim'
@@ -13995,7 +13995,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk79_18_academic_definition_and_classification
-  sequence: 10
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -14016,9 +14016,9 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk79_20_reporting_and_attribution
   level: '9'
-  function: fn.catalog_unclassified
+  function: fn.reporting
   point_type: other
-  native_title: Reporting and attribution
+  native_title: 引述与归因
   title:
     vi: 'Ngữ pháp tiếng Trung: Reporting and attribution'
     en: 'Chinese grammar: Reporting and attribution'
@@ -14027,7 +14027,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk79_19_argument_concession_counterclaim
-  sequence: 11
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -14044,9 +14044,9 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk79_21_legal_administrative_register_patterns
   level: '9'
-  function: fn.catalog_unclassified
+  function: fn.register_style
   point_type: other
-  native_title: Legal/administrative register patterns
+  native_title: 法律与行政语体结构
   title:
     vi: 'Ngữ pháp tiếng Trung: Legal/administrative register patterns'
     en: 'Chinese grammar: Legal/administrative register patterns'
@@ -14055,7 +14055,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk79_20_reporting_and_attribution
-  sequence: 12
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -14072,9 +14072,9 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk79_22_literary_descriptive_syntax
   level: '9'
-  function: fn.catalog_unclassified
+  function: fn.register_style
   point_type: other
-  native_title: Literary descriptive syntax
+  native_title: 文学描写句法
   title:
     vi: 'Ngữ pháp tiếng Trung: Literary descriptive syntax'
     en: 'Chinese grammar: Literary descriptive syntax'
@@ -14083,7 +14083,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk79_21_legal_administrative_register_patterns
-  sequence: 13
+  sequence: 2
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -14100,9 +14100,9 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk79_28_advanced_connector_economy
   level: '9'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
-  native_title: Advanced connector economy
+  native_title: 高级连接词的精简用法
   title:
     vi: 'Ngữ pháp tiếng Trung: Advanced connector economy'
     en: 'Chinese grammar: Advanced connector economy'
@@ -14111,7 +14111,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk79_22_literary_descriptive_syntax
-  sequence: 14
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -14128,9 +14128,9 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk79_29_metadiscourse_grammar
   level: '9'
-  function: fn.catalog_unclassified
+  function: fn.register_style
   point_type: other
-  native_title: Metadiscourse grammar
+  native_title: 元话语语法
   title:
     vi: 'Ngữ pháp tiếng Trung: Metadiscourse grammar'
     en: 'Chinese grammar: Metadiscourse grammar'
@@ -14139,7 +14139,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk79_28_advanced_connector_economy
-  sequence: 15
+  sequence: 3
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -14156,9 +14156,9 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk79_3_negative_raising_and_scope
   level: '9'
-  function: fn.catalog_unclassified
+  function: fn.negation
   point_type: other
-  native_title: Negative raising and scope
+  native_title: 否定提升与否定范围
   title:
     vi: 'Ngữ pháp tiếng Trung: Negative raising and scope'
     en: 'Chinese grammar: Negative raising and scope'
@@ -14167,7 +14167,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk79_29_metadiscourse_grammar
-  sequence: 16
+  sequence: 4
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -14184,9 +14184,9 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk79_5_in_modern_formal_prose
   level: '9'
-  function: fn.catalog_unclassified
+  function: fn.register_style
   point_type: other
-  native_title: 于/以/为/所/者/之 in modern formal prose
+  native_title: “于/以/为/所/者/之”的现代正式书面语用法
   title:
     vi: 'Ngữ pháp tiếng Trung: 于/以/为/所/者/之 in modern formal prose'
     en: 'Chinese grammar: 于/以/为/所/者/之 in modern formal prose'
@@ -14195,7 +14195,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk79_3_negative_raising_and_scope
-  sequence: 17
+  sequence: 4
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -14212,9 +14212,9 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk79_6_advanced_passive_causative_alternation
   level: '9'
-  function: fn.catalog_unclassified
+  function: fn.voice_causative
   point_type: other
-  native_title: Advanced passive/causative alternation
+  native_title: 高级被动与使役交替
   title:
     vi: 'Ngữ pháp tiếng Trung: Advanced passive/causative alternation'
     en: 'Chinese grammar: Advanced passive/causative alternation'
@@ -14222,7 +14222,7 @@
   - other
   contrasts: []
   prereqs: []
-  sequence: 18
+  sequence: 1
   anchors: []
   batch: full-seed-2026-09-30
   r5:
@@ -14239,9 +14239,9 @@
     metadata_origin: reviewed_seed
 - id: zh.canon.r5.hsk79_8_long_sentence_architecture
   level: '9'
-  function: fn.catalog_unclassified
+  function: fn.linking
   point_type: other
-  native_title: Long sentence architecture
+  native_title: 长句结构
   title:
     vi: 'Ngữ pháp tiếng Trung: Long sentence architecture'
     en: 'Chinese grammar: Long sentence architecture'
@@ -14250,7 +14250,7 @@
   contrasts: []
   prereqs:
   - zh.canon.r5.hsk79_5_in_modern_formal_prose
-  sequence: 19
+  sequence: 4
   anchors: []
   batch: full-seed-2026-09-30
   r5:

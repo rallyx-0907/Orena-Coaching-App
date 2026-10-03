@@ -1,0 +1,221 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk3.a_3_5_3.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.relative",
+  "level": {"framework": "hsk3", "value": "3", "rank": 3},
+  "prereqs": ["zh.canon.r5.hsk3_9_topic"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"gf0025": ["gf0025.hsk3.045"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Định ngữ: 动词或动词性短语、主谓短语作定语", "en": "Attributives: 动词或动词性短语、主谓短语作定语"},
+    "native_title": "动词或动词性短语、主谓短语作定语",
+    "level": {"framework": "hsk3", "value": "3", "rank": 3},
+    "summary": {
+      "vi": "Động từ, cụm động từ hoặc cụm chủ vị có thể đứng trước danh từ làm định ngữ, thường cần trợ từ 的 ở giữa.",
+      "en": "A verb, a verb phrase, or a subject-predicate phrase can stand before a noun as its modifier, usually with the particle 的 in between."
+    },
+    "sub": {"vi": "định ngữ động từ", "en": "verb as modifier"},
+    "native_title_pinyin": [
+      "dòng",
+      "cí",
+      "huò",
+      "dòng",
+      "cí",
+      "xìng",
+      "duǎn",
+      "yǔ",
+      "",
+      "zhǔ",
+      "wèi",
+      "duǎn",
+      "yǔ",
+      "zuò",
+      "dìng",
+      "yǔ"
+    ]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn dùng cả một hành động để miêu tả người hay vật đứng sau nó.",
+      "en": "When you want to use an action to describe the person or thing that follows it."
+    },
+    {
+      "vi": "Khi cả một câu nhỏ (chủ ngữ + vị ngữ) làm định ngữ cho danh từ đứng sau, ví dụ người mà tôi quen.",
+      "en": "When a whole small clause (subject + predicate) modifies the following noun, for example the person I know."
+    },
+    {
+      "vi": "Khi định ngữ dài hơn một từ, thường phải có 的 đứng giữa định ngữ và danh từ.",
+      "en": "When the modifier is longer than one word, 的 usually stands between the modifier and the noun."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "定语",
+        "role": "other",
+        "label": {
+          "vi": "định ngữ (động từ / cụm động từ / cụm chủ vị)",
+          "en": "modifier (verb / verb phrase / subject-predicate phrase)"
+        },
+        "pinyin": ["dìng", "yǔ"]
+      },
+      {
+        "text": "的",
+        "role": "particle",
+        "label": {"vi": "trợ từ kết nối", "en": "linking particle"},
+        "pinyin": ["de"]
+      },
+      {
+        "text": "中心语",
+        "role": "object",
+        "label": {"vi": "danh từ trung tâm", "en": "head noun"},
+        "pinyin": ["zhōng", "xīn", "yǔ"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "正在跑步的学生是我弟弟。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "other"},
+        {"start": 4, "end": 5, "role": "particle"},
+        {"start": 5, "end": 7, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Cụm động từ 正在跑步 làm định ngữ cho 学生, 的 nối hai phần.",
+        "en": "The verb phrase 正在跑步 modifies 学生, and 的 links the two parts."
+      },
+      "translation": {
+        "vi": "Học sinh đang chạy bộ là em trai tôi.",
+        "en": "The student who is running is my younger brother."
+      },
+      "pinyin": ["zhèng", "zài", "pǎo", "bù", "de", "xué", "shēng", "shì", "wǒ", "dì", "di", ""]
+    },
+    {
+      "text": "我认识的那个医生很热情。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "other"},
+        {"start": 3, "end": 4, "role": "particle"},
+        {"start": 4, "end": 8, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Cụm chủ vị 我认识 làm định ngữ cho 那个医生.",
+        "en": "The subject-predicate phrase 我认识 modifies 那个医生."
+      },
+      "translation": {"vi": "Bác sĩ mà tôi quen rất nhiệt tình.", "en": "The doctor I know is very warm."},
+      "pinyin": ["wǒ", "rèn", "shi", "de", "nà", "ge", "yī", "shēng", "hěn", "rè", "qíng", ""]
+    },
+    {
+      "text": "妈妈买的苹果很甜。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "other"},
+        {"start": 3, "end": 4, "role": "particle"},
+        {"start": 4, "end": 6, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Cụm chủ vị 妈妈买 làm định ngữ cho 苹果.",
+        "en": "The subject-predicate phrase 妈妈买 modifies 苹果."
+      },
+      "translation": {"vi": "Táo mẹ mua rất ngọt.", "en": "The apples Mom bought are very sweet."},
+      "pinyin": ["mā", "ma", "mǎi", "de", "píng", "guǒ", "hěn", "tián", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "我认识医生很热情。",
+      "right": "我认识的医生很热情。",
+      "reason": {
+        "vi": "Khi định ngữ là cụm chủ vị, tiếng Trung bắt buộc có 的 giữa định ngữ và danh từ; thiếu 的 thì câu bị hiểu thành hai câu riêng.",
+        "en": "When the modifier is a subject-predicate phrase, Chinese requires 的 between the modifier and the noun; without 的 the sentence reads as two separate statements."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong_pinyin": ["wǒ", "rèn", "shi", "yī", "shēng", "hěn", "rè", "qíng", ""],
+      "right_pinyin": ["wǒ", "rèn", "shi", "de", "yī", "shēng", "hěn", "rè", "qíng", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "我昨天买的___很好吃。",
+      "options": [
+        {"text": "蛋糕", "error_tag": null, "pinyin": ["dàn", "gāo"]},
+        {"text": "吃蛋糕", "error_tag": "word_order", "pinyin": ["chī", "dàn", "gāo"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 的 phải là danh từ trung tâm; 吃蛋糕 là cụm động từ, không thể đứng sau 的 trong câu này.",
+        "en": "After 的 the head noun is needed; 吃蛋糕 is a verb phrase and cannot fill that slot here."
+      },
+      "q_pinyin": ["wǒ", "zuó", "tiān", "mǎi", "de", "", "", "", "hěn", "hǎo", "chī", ""]
+    },
+    {
+      "q": "那个___的女孩是我的同学。",
+      "options": [
+        {"text": "唱歌", "error_tag": null, "pinyin": ["chàng", "gē"]},
+        {"text": "唱歌的", "error_tag": "redundancy", "pinyin": ["chàng", "gē", "de"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Định ngữ đứng trước 的, không lặp lại 的 trong chỗ trống.",
+        "en": "The modifier stands before 的, so 的 is not repeated inside the blank."
+      },
+      "q_pinyin": ["nà", "ge", "", "", "", "de", "nǚ", "hái", "shì", "wǒ", "de", "tóng", "xué", ""]
+    },
+    {
+      "q": "他___的书在桌子上。",
+      "options": [
+        {"text": "看", "error_tag": null, "pinyin": ["kàn"]},
+        {"text": "看的", "error_tag": "redundancy", "pinyin": ["kàn", "de"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Động từ đơn 看 làm định ngữ, 的 đã có sẵn sau chỗ trống nên không thêm 的 vào chỗ trống.",
+        "en": "The single verb 看 is the modifier; 的 already follows the blank, so 的 is not added inside it."
+      },
+      "q_pinyin": ["tā", "", "", "", "de", "shū", "zài", "zhuō", "zi", "shàng", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng động từ hoặc cụm chủ vị làm định ngữ cho một danh từ, ví dụ người hoặc vật mà bạn quen.",
+      "en": "Write one sentence using a verb or a subject-predicate phrase as the modifier of a noun, for example a person or thing you know."
+    },
+    "placeholder": "我认识的……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "other", "regex": "我认识|妈妈买|正在跑步|他看|我昨天买"},
+        {"role": "particle", "any_of": ["的"]},
+        {"role": "object", "regex": "老师|医生|苹果|学生|书|蛋糕|女孩"}
+      ]
+    },
+    "sample": {
+      "text": "我认识的老师很友好。",
+      "pinyin": ["wǒ", "rèn", "shi", "de", "lǎo", "shī", "hěn", "yǒu", "hǎo", ""]
+    },
+    "placeholder_pinyin": ["wǒ", "rèn", "shi", "de", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790832782",
+    "generated_at": "2026-10-01T05:33:02Z",
+    "metadata_stale": true
+  },
+  "review": null
+}

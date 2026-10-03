@@ -1,0 +1,262 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b1.005",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.past_ongoing",
+  "level": {"framework": "cefr", "value": "B1", "rank": 3},
+  "prereqs": [],
+  "contrasts": [],
+  "error_tags": ["tense"],
+  "source_refs": {"r5": ["b1-past-simple-vs-present-perfect", "a2-present-perfect-vs-past-simple"]},
+  "point_type": "tense_aspect",
+  "sequence": 1,
+  "aliases": ["b1-past-simple-vs-present-perfect", "a2-present-perfect-vs-past-simple"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "quá khứ đơn vs hiện tại hoàn thành", "en": "Past simple vs present perfect"},
+    "native_title": "Past simple vs present perfect",
+    "level": {"framework": "cefr", "value": "B1", "rank": 3},
+    "summary": {
+      "vi": "Phân biệt thì quá khứ đơn (gắn với thời gian đã kết thúc) và thì hiện tại hoàn thành (nối quá khứ với hiện tại, không chốt thời gian).",
+      "en": "Distinguish the past simple (tied to a finished past time) from the present perfect (linking the past to now, with no finished time)."
+    },
+    "sub": {"vi": "thời gian đã kết thúc hay chưa", "en": "finished or unfinished time"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Dùng quá khứ đơn khi câu trả lời cho 'Khi nào?' là một mốc đã kết thúc: yesterday, last week, in 2022, two hours ago.",
+      "en": "Use the past simple when the answer to 'When?' is a finished point: yesterday, last week, in 2022, two hours ago."
+    },
+    {
+      "vi": "Dùng hiện tại hoàn thành khi nói về trải nghiệm trong đời, không quan trọng thời điểm: I have been to Japan.",
+      "en": "Use the present perfect for life experience when the exact time does not matter: I have been to Japan."
+    },
+    {
+      "vi": "Dùng hiện tại hoàn thành khi kết quả quá khứ còn ảnh hưởng đến hiện tại: She has lost her keys (bây giờ cô ấy không vào được nhà).",
+      "en": "Use the present perfect when a past result still matters now: She has lost her keys (so she cannot get in now)."
+    },
+    {
+      "vi": "Dùng hiện tại hoàn thành với khoảng thời gian chưa kết thúc: today, this week, this year.",
+      "en": "Use the present perfect with an unfinished period: today, this week, this year."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {"text": "V2", "role": "verb", "label": {"vi": "động từ quá khứ", "en": "past verb"}},
+      {
+        "text": "finished time",
+        "role": "time",
+        "label": {"vi": "mốc thời gian đã kết thúc", "en": "finished time"},
+        "optional": true
+      }
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "didn't",
+          "role": "aux",
+          "label": {"vi": "trợ động từ phủ định", "en": "negative auxiliary"}
+        },
+        {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên mẫu", "en": "base verb"}},
+        {
+          "text": "finished time",
+          "role": "time",
+          "label": {"vi": "mốc thời gian đã kết thúc", "en": "finished time"},
+          "optional": true
+        }
+      ],
+      "question": [
+        {
+          "text": "Did",
+          "role": "aux",
+          "label": {"vi": "trợ động từ nghi vấn", "en": "question auxiliary"}
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên mẫu", "en": "base verb"}},
+        {
+          "text": "finished time",
+          "role": "time",
+          "label": {"vi": "mốc thời gian đã kết thúc", "en": "finished time"},
+          "optional": true
+        }
+      ]
+    },
+    "illustration": {"kind": "timeline", "timeline": {"shape": "point_past"}}
+  },
+  "examples": [
+    {
+      "text": "I visited Paris in 2022.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 2, "end": 9, "role": "verb"},
+        {"start": 16, "end": 23, "role": "time"}
+      ],
+      "annotation": {
+        "vi": "Sự việc nằm trong mốc thời gian đã kết thúc (2022) nên dùng quá khứ đơn.",
+        "en": "The event sits in a finished time (2022), so the past simple is used."
+      },
+      "translation": {"vi": "Tôi đã đến Paris năm 2022.", "en": "I visited Paris in 2022."}
+    },
+    {
+      "text": "We didn't see him last week.",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 3, "end": 9, "role": "aux"},
+        {"start": 10, "end": 13, "role": "verb"},
+        {"start": 18, "end": 27, "role": "time"}
+      ],
+      "annotation": {
+        "vi": "Phủ định quá khứ đơn: didn't + động từ nguyên mẫu, với mốc thời gian đã kết thúc.",
+        "en": "Past simple negative: didn't + base verb, with a finished time."
+      },
+      "translation": {"vi": "Tuần trước chúng tôi không gặp anh ấy.", "en": "We didn't see him last week."}
+    },
+    {
+      "text": "Did you go to Japan last year?",
+      "form": "question",
+      "spans": [
+        {"start": 0, "end": 3, "role": "aux"},
+        {"start": 4, "end": 7, "role": "subject"},
+        {"start": 8, "end": 10, "role": "verb"},
+        {"start": 20, "end": 29, "role": "time"}
+      ],
+      "annotation": {
+        "vi": "Câu hỏi quá khứ đơn: Did + chủ ngữ + động từ nguyên mẫu, hỏi về một chuyến đi đã kết thúc.",
+        "en": "Past simple question: Did + subject + base verb, asking about a finished trip."
+      },
+      "translation": {"vi": "Bạn đã đến Nhật năm ngoái phải không?", "en": "Did you go to Japan last year?"}
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "I've called him yesterday.",
+      "right": "I called him yesterday.",
+      "reason": {
+        "vi": "Người học Việt thường dịch 'đã' thành hiện tại hoàn thành, nhưng 'yesterday' là mốc thời gian đã kết thúc nên phải dùng quá khứ đơn.",
+        "en": "Vietnamese learners often translate 'đã' as the present perfect, but 'yesterday' is a finished time, so the past simple is required."
+      },
+      "error_tag": "tense",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "I ___ my keys yesterday, so I couldn't get in.",
+      "options": [{"text": "lost", "error_tag": null}, {"text": "have lost", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "'Yesterday' là thời gian đã kết thúc, nên dùng quá khứ đơn 'lost'.",
+        "en": "'Yesterday' is finished time, so the past simple 'lost' is correct."
+      }
+    },
+    {
+      "q": "She ___ her work already, so she is free now.",
+      "options": [{"text": "has finished", "error_tag": null}, {"text": "finished", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Kết quả còn ảnh hưởng đến hiện tại (cô ấy rảnh bây giờ) nên dùng hiện tại hoàn thành.",
+        "en": "The result still matters now (she is free), so the present perfect is used."
+      }
+    },
+    {
+      "q": "___ you ever been to Japan?",
+      "options": [{"text": "Have", "error_tag": null}, {"text": "Did", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Hỏi về trải nghiệm trong đời, không chốt thời gian, nên dùng hiện tại hoàn thành 'Have you ever been'.",
+        "en": "Asking about life experience with no finished time, so the present perfect 'Have you ever been' is used."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu kể về một việc bạn đã làm trong quá khứ với thời gian đã kết thúc (ví dụ: last year, in 2020, yesterday).",
+      "en": "Write one sentence about something you did in the past with a finished time (e.g. last year, in 2020, yesterday)."
+    },
+    "placeholder": "I visited ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {
+          "role": "verb",
+          "any_of": [
+            "visited",
+            "went",
+            "saw",
+            "met",
+            "called",
+            "finished",
+            "started",
+            "bought",
+            "made",
+            "took",
+            "had",
+            "did",
+            "was",
+            "were"
+          ]
+        },
+        {
+          "role": "time",
+          "any_of": [
+            "yesterday",
+            "last week",
+            "last month",
+            "last year",
+            "last weekend",
+            "in 2020",
+            "in 2021",
+            "in 2022",
+            "in 2023",
+            "two days ago",
+            "three days ago"
+          ]
+        }
+      ]
+    },
+    "sample": {"text": "I visited my grandparents last weekend."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790830758",
+    "generated_at": "2026-10-01T04:59:18Z",
+    "r5_source": {
+      "ids": ["b1-past-simple-vs-present-perfect", "a2-present-perfect-vs-past-simple"],
+      "content_version": 2,
+      "content_hash": "dfd734681ae3ea21e4dc2bfbc7e25ae5a88666d55144f3e1f451ecf5721cdcfb",
+      "corrections": [
+        {
+          "r5_id": "b1-past-simple-vs-present-perfect",
+          "issue": "The R5 lesson mixes both tenses but does not give a clear formula for the past simple or its negative/question forms.",
+          "fix": "Added a formula for the past simple affirmative, negative and question, with slots and roles."
+        },
+        {
+          "r5_id": "b1-past-simple-vs-present-perfect",
+          "issue": "The example 'She has just finished her work.' is present perfect, but the lesson's target is the contrast; it is not used in the structured examples.",
+          "fix": "Replaced with three past simple examples that show affirmative, negative and question forms with finished time."
+        },
+        {
+          "r5_id": "a2-present-perfect-vs-past-simple",
+          "issue": "The mistake 'I have saw that film.' is a participle error, not a tense-choice error, and does not fit the B1 contrast focus.",
+          "fix": "Used a tense-choice mistake instead: 'I've called him yesterday.' → 'I called him yesterday.'"
+        },
+        {
+          "r5_id": "a2-present-perfect-vs-past-simple",
+          "issue": "The guided practice item 'I have lost/lost my keys yesterday.' is ambiguous because 'yesterday' forces 'lost', but the prompt does not make the finished-time rule explicit.",
+          "fix": "Created a quick-practice item with the same contrast and a clear explanation of finished time."
+        }
+      ]
+    }
+  },
+  "review": null
+}

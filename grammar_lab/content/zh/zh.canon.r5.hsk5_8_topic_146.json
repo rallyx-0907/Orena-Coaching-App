@@ -1,0 +1,389 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk5_8_topic_146",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.reason_result",
+  "level": {"framework": "hsk3", "value": "5", "rank": 5},
+  "prereqs": ["zh.canon.r5.hsk5_10_topic"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["zh-hsk5-8-topic-146"], "gf0025": ["gf0025.hsk7_9.052", "gf0025.hsk7_9.114"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["zh-hsk5-8-topic-146"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 基于", "en": "Chinese grammar: 基于"},
+    "native_title": "基于",
+    "level": {"framework": "hsk3", "value": "5", "rank": 5},
+    "summary": {
+      "vi": "Giới từ 基于 dùng để nêu căn cứ, cơ sở hay nguồn dữ liệu cho một nhận định hoặc hành động.",
+      "en": "The preposition 基于 introduces the basis, evidence, or source for a judgment or action."
+    },
+    "sub": {"vi": "căn cứ, cơ sở", "en": "basis, grounds"},
+    "native_title_pinyin": ["jī", "yú"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn nêu dữ liệu, sự kiện hoặc lý lẽ làm nền tảng cho một kết luận.",
+      "en": "When you state data, facts, or reasoning that form the foundation for a conclusion."
+    },
+    {
+      "vi": "Khi bạn giải thích lý do cho một quyết định, chính sách hoặc đánh giá.",
+      "en": "When you explain the reason for a decision, policy, or assessment."
+    },
+    {
+      "vi": "Trong văn viết trang trọng, báo cáo, hoặc thảo luận học thuật.",
+      "en": "In formal writing, reports, or academic discussion."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "基于",
+        "role": "marker",
+        "label": {"vi": "giới từ nêu căn cứ", "en": "preposition marking basis"},
+        "pinyin": ["jī", "yú"]
+      },
+      {
+        "text": "N",
+        "role": "object",
+        "label": {"vi": "căn cứ, cơ sở", "en": "basis, evidence"},
+        "pinyin": [""]
+      },
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}, "pinyin": [""]},
+      {
+        "text": "VP",
+        "role": "verb",
+        "label": {"vi": "vị ngữ", "en": "predicate"},
+        "pinyin": ["", ""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "基于现有数据，我们还不能下结论。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "marker"},
+        {"start": 2, "end": 6, "role": "object"},
+        {"start": 7, "end": 9, "role": "subject"},
+        {"start": 9, "end": 15, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "基于 đánh dấu căn cứ '现有数据' cho kết luận '还不能下结论'.",
+        "en": "基于 marks the basis '现有数据' for the conclusion '还不能下结论'."
+      },
+      "translation": {
+        "vi": "Dựa trên dữ liệu hiện có, chúng tôi chưa thể đưa ra kết luận.",
+        "en": "Based on the existing data, we cannot draw a conclusion yet."
+      },
+      "pinyin": [
+        "jī",
+        "yú",
+        "xiàn",
+        "yǒu",
+        "shù",
+        "jù",
+        "",
+        "wǒ",
+        "men",
+        "hái",
+        "bù",
+        "néng",
+        "xià",
+        "jié",
+        "lùn",
+        ""
+      ]
+    },
+    {
+      "text": "基于市场调查，公司调整了产品策略。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "marker"},
+        {"start": 2, "end": 6, "role": "object"},
+        {"start": 7, "end": 9, "role": "subject"},
+        {"start": 9, "end": 16, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "基于 nêu '市场调查' là cơ sở cho hành động '调整了产品策略'.",
+        "en": "基于 presents '市场调查' as the basis for the action '调整了产品策略'."
+      },
+      "translation": {
+        "vi": "Dựa trên khảo sát thị trường, công ty đã điều chỉnh chiến lược sản phẩm.",
+        "en": "Based on market research, the company adjusted its product strategy."
+      },
+      "pinyin": [
+        "jī",
+        "yú",
+        "shì",
+        "chǎng",
+        "diào",
+        "chá",
+        "",
+        "gōng",
+        "sī",
+        "tiáo",
+        "zhěng",
+        "le",
+        "chǎn",
+        "pǐn",
+        "cè",
+        "lüè",
+        ""
+      ]
+    },
+    {
+      "text": "基于以上理由，我们决定支持这个方案。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "marker"},
+        {"start": 2, "end": 6, "role": "object"},
+        {"start": 7, "end": 9, "role": "subject"},
+        {"start": 9, "end": 17, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "基于 dẫn ra '以上理由' làm căn cứ cho quyết định '支持这个方案'.",
+        "en": "基于 introduces '以上理由' as the grounds for the decision '支持这个方案'."
+      },
+      "translation": {
+        "vi": "Dựa trên những lý do trên, chúng tôi quyết định ủng hộ phương án này.",
+        "en": "Based on the above reasons, we decided to support this plan."
+      },
+      "pinyin": [
+        "jī",
+        "yú",
+        "yǐ",
+        "shàng",
+        "lǐ",
+        "yóu",
+        "",
+        "wǒ",
+        "men",
+        "jué",
+        "dìng",
+        "zhī",
+        "chí",
+        "zhè",
+        "gè",
+        "fāng",
+        "àn",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "基于风险较高，我们决定暂停项目。",
+      "right": "鉴于风险较高，我们决定暂停项目。",
+      "reason": {
+        "vi": "Khi nêu hoàn cảnh hoặc tình huống làm căn cứ cho quyết định, tiếng Trung dùng 鉴于, không dùng 基于. 基于 dùng cho dữ liệu, bằng chứng cụ thể.",
+        "en": "When citing a circumstance or situation as the basis for a decision, Chinese uses 鉴于, not 基于. 基于 is for concrete data or evidence."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong_pinyin": [
+        "jī",
+        "yú",
+        "fēng",
+        "xiǎn",
+        "jiào",
+        "gāo",
+        "",
+        "wǒ",
+        "men",
+        "jué",
+        "dìng",
+        "zàn",
+        "tíng",
+        "xiàng",
+        "mù",
+        ""
+      ],
+      "right_pinyin": [
+        "jiàn",
+        "yú",
+        "fēng",
+        "xiǎn",
+        "jiào",
+        "gāo",
+        "",
+        "wǒ",
+        "men",
+        "jué",
+        "dìng",
+        "zàn",
+        "tíng",
+        "xiàng",
+        "mù",
+        ""
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "___现有数据，我们还不能下结论。",
+      "options": [
+        {"text": "基于", "error_tag": null, "pinyin": ["jī", "yú"]},
+        {"text": "针对", "error_tag": "word_choice", "pinyin": ["zhēn", "duì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "基于 dùng để nêu căn cứ '现有数据' cho kết luận. 针对 dùng để nêu đối tượng tác động, không phù hợp ở đây.",
+        "en": "基于 introduces the basis '现有数据' for the conclusion. 针对 introduces a target of action, which does not fit here."
+      },
+      "q_pinyin": [
+        "",
+        "",
+        "",
+        "xiàn",
+        "yǒu",
+        "shù",
+        "jù",
+        "",
+        "wǒ",
+        "men",
+        "hái",
+        "bù",
+        "néng",
+        "xià",
+        "jié",
+        "lùn",
+        ""
+      ]
+    },
+    {
+      "q": "___市场调查，公司调整了产品策略。",
+      "options": [
+        {"text": "基于", "error_tag": null, "pinyin": ["jī", "yú"]},
+        {"text": "鉴于", "error_tag": "word_choice", "pinyin": ["jiàn", "yú"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "基于 dùng cho căn cứ cụ thể như '市场调查'. 鉴于 dùng cho hoàn cảnh, tình huống.",
+        "en": "基于 is used for concrete evidence like '市场调查'. 鉴于 is used for circumstances or situations."
+      },
+      "q_pinyin": [
+        "",
+        "",
+        "",
+        "shì",
+        "chǎng",
+        "diào",
+        "chá",
+        "",
+        "gōng",
+        "sī",
+        "tiáo",
+        "zhěng",
+        "le",
+        "chǎn",
+        "pǐn",
+        "cè",
+        "lüè",
+        ""
+      ]
+    },
+    {
+      "q": "___以上理由，我们决定支持这个方案。",
+      "options": [
+        {"text": "基于", "error_tag": null, "pinyin": ["jī", "yú"]},
+        {"text": "关于", "error_tag": "word_choice", "pinyin": ["guān", "yú"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "基于 nêu '以上理由' làm căn cứ cho quyết định. 关于 chỉ nêu chủ đề, không phải căn cứ.",
+        "en": "基于 presents '以上理由' as the basis for the decision. 关于 only introduces a topic, not a basis."
+      },
+      "q_pinyin": [
+        "",
+        "",
+        "",
+        "yǐ",
+        "shàng",
+        "lǐ",
+        "yóu",
+        "",
+        "wǒ",
+        "men",
+        "jué",
+        "dìng",
+        "zhī",
+        "chí",
+        "zhè",
+        "gè",
+        "fāng",
+        "àn",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng 基于 để nêu căn cứ cho một quyết định hoặc nhận định của bạn.",
+      "en": "Write one sentence using 基于 to state the basis for your decision or judgment."
+    },
+    "placeholder": "基于……，我……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"role": "marker", "any_of": ["基于"]}]},
+    "sample": {
+      "text": "基于个人经验，我认为这个计划可行。",
+      "pinyin": [
+        "jī",
+        "yú",
+        "gè",
+        "rén",
+        "jīng",
+        "yàn",
+        "",
+        "wǒ",
+        "rèn",
+        "wéi",
+        "zhè",
+        "gè",
+        "jì",
+        "huà",
+        "kě",
+        "xíng",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["jī", "yú", "", "", "", "wǒ", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790833844",
+    "generated_at": "2026-10-01T05:50:44Z",
+    "r5_source": {
+      "ids": ["zh-hsk5-8-topic-146"],
+      "content_version": 2,
+      "content_hash": "957f8b41660acad26e7a9400c65ccee75c89faa8d524f0850bfda1ee3b92c2c4",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk5-8-topic-146",
+          "issue": "R5 gộp ba điểm ngữ pháp 鉴于/基于/针对 vào một bài, nhưng điểm chuẩn chỉ yêu cầu dạy 基于.",
+          "fix": "Tách riêng 基于; chỉ giữ các ví dụ và lỗi liên quan đến 基于, chuyển các nội dung về 鉴于 và 针对 sang bài tương ứng."
+        },
+        {
+          "r5_id": "zh-hsk5-8-topic-146",
+          "issue": "R5 đưa ví dụ '针对用户反馈，我们修改了界面。' và '公司针对安全问题制定了新的规定。' không thuộc phạm vi điểm 基于.",
+          "fix": "Loại bỏ các ví dụ này khỏi bài 基于; thay bằng ví dụ minh họa cho 基于."
+        },
+        {
+          "r5_id": "zh-hsk5-8-topic-146",
+          "issue": "R5 có lỗi '基于风险高，我们暂停。' với giải thích dùng 鉴于, nhưng không cung cấp dạng đúng đầy đủ.",
+          "fix": "Sửa thành '鉴于风险较高，我们决定暂停项目。' và ghi rõ đây là lỗi dùng 基于 thay vì 鉴于 khi nêu hoàn cảnh."
+        }
+      ]
+    },
+    "metadata_stale": true
+  },
+  "review": null
+}

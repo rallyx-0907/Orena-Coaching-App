@@ -1,0 +1,251 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b1.006",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.completed_past",
+  "level": {"framework": "cefr", "value": "B1", "rank": 3},
+  "prereqs": [],
+  "contrasts": [],
+  "error_tags": ["tense"],
+  "source_refs": {"r5": ["b1-past-perfect-simple"]},
+  "point_type": "tense_aspect",
+  "sequence": 1,
+  "aliases": ["b1-past-perfect-simple"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "quá khứ hoàn thành simple", "en": "Past perfect simple"},
+    "native_title": "Past perfect simple",
+    "level": {"framework": "cefr", "value": "B1", "rank": 3},
+    "summary": {
+      "vi": "Thì quá khứ hoàn thành đơn dùng had + quá khứ phân từ để diễn tả một hành động đã hoàn thành trước một thời điểm hoặc một hành động khác trong quá khứ.",
+      "en": "The past perfect simple uses had + past participle to show that an action was completed before another past time or event."
+    },
+    "sub": {"vi": "hành động trước quá khứ", "en": "earlier past action"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi cần làm rõ hành động nào xảy ra trước một hành động khác trong quá khứ.",
+      "en": "When you need to make clear which of two past actions happened first."
+    },
+    {
+      "vi": "Khi dùng với by the time, before, after để chỉ thứ tự thời gian.",
+      "en": "When you use by the time, before, or after to show the order of past events."
+    },
+    {
+      "vi": "Khi kể lại một trải nghiệm tính đến một thời điểm trong quá khứ (thường với never, already, just).",
+      "en": "When you talk about an experience up to a point in the past, often with never, already, or just."
+    },
+    {
+      "vi": "Khi muốn nhấn mạnh rằng một hành động đã kết thúc trước một mốc thời gian cụ thể trong quá khứ.",
+      "en": "When you want to emphasise that an action was finished before a specific past time."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {"text": "had", "role": "aux", "label": {"vi": "trợ động từ", "en": "auxiliary"}},
+      {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}},
+      {
+        "text": "object/complement",
+        "role": "object",
+        "label": {"vi": "tân ngữ/bổ ngữ", "en": "object/complement"},
+        "optional": true
+      },
+      {
+        "text": "time",
+        "role": "time",
+        "label": {"vi": "mốc thời gian", "en": "time reference"},
+        "optional": true
+      }
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "had not",
+          "role": "aux",
+          "label": {"vi": "trợ động từ phủ định", "en": "negative auxiliary"},
+          "options": [{"text": "had not"}, {"text": "hadn't"}]
+        },
+        {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}},
+        {
+          "text": "object/complement",
+          "role": "object",
+          "label": {"vi": "tân ngữ/bổ ngữ", "en": "object/complement"},
+          "optional": true
+        },
+        {
+          "text": "time",
+          "role": "time",
+          "label": {"vi": "mốc thời gian", "en": "time reference"},
+          "optional": true
+        }
+      ],
+      "question": [
+        {
+          "text": "Had",
+          "role": "aux",
+          "label": {"vi": "trợ động từ đảo lên đầu", "en": "auxiliary in question"}
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}},
+        {
+          "text": "object/complement",
+          "role": "object",
+          "label": {"vi": "tân ngữ/bổ ngữ", "en": "object/complement"},
+          "optional": true
+        },
+        {
+          "text": "time",
+          "role": "time",
+          "label": {"vi": "mốc thời gian", "en": "time reference"},
+          "optional": true
+        }
+      ]
+    },
+    "illustration": {"kind": "timeline", "timeline": {"shape": "point_past"}}
+  },
+  "examples": [
+    {
+      "text": "By the time we arrived, the film had started.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 12, "end": 14, "role": "subject"},
+        {"start": 33, "end": 36, "role": "aux"},
+        {"start": 37, "end": 44, "role": "verb"}
+      ],
+      "annotation": {"vi": "Phim bắt đầu trước khi chúng tôi đến.", "en": "The film started before we arrived."},
+      "translation": {
+        "vi": "Khi chúng tôi đến thì phim đã bắt đầu.",
+        "en": "By the time we arrived, the film had started."
+      }
+    },
+    {
+      "text": "She had never seen snow before that trip.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 7, "role": "aux"},
+        {"start": 14, "end": 18, "role": "verb"},
+        {"start": 19, "end": 23, "role": "object"},
+        {"start": 24, "end": 40, "role": "time"}
+      ],
+      "annotation": {
+        "vi": "Cô ấy chưa từng thấy tuyết tính đến trước chuyến đi đó.",
+        "en": "She had no experience of snow up to that trip."
+      },
+      "translation": {
+        "vi": "Cô ấy chưa từng thấy tuyết trước chuyến đi đó.",
+        "en": "She had never seen snow before that trip."
+      }
+    },
+    {
+      "text": "Had they met before the party?",
+      "form": "question",
+      "spans": [
+        {"start": 0, "end": 3, "role": "aux"},
+        {"start": 4, "end": 8, "role": "subject"},
+        {"start": 9, "end": 12, "role": "verb"},
+        {"start": 13, "end": 29, "role": "time"}
+      ],
+      "annotation": {
+        "vi": "Hỏi liệu họ đã gặp nhau trước bữa tiệc chưa.",
+        "en": "Asking whether they had met before the party."
+      },
+      "translation": {"vi": "Họ đã gặp nhau trước bữa tiệc chưa?", "en": "Had they met before the party?"}
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "He had went home before I called.",
+      "right": "He had gone home before I called.",
+      "reason": {
+        "vi": "Sau had phải dùng quá khứ phân từ gone, không dùng quá khứ đơn went.",
+        "en": "After had you need the past participle gone, not the past simple went."
+      },
+      "error_tag": "tense",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "By the time we arrived, the film ___.",
+      "options": [{"text": "had started", "error_tag": null}, {"text": "started", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Hành động bắt đầu phim xảy ra trước khi chúng tôi đến, nên dùng had + quá khứ phân từ.",
+        "en": "The film started before we arrived, so we use had + past participle."
+      }
+    },
+    {
+      "q": "She realised she ___ her keys at home.",
+      "options": [{"text": "had left", "error_tag": null}, {"text": "has left", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Việc để quên chìa khóa xảy ra trước khi cô ấy nhận ra, nên dùng quá khứ hoàn thành.",
+        "en": "Leaving the keys happened before she realised, so the past perfect is needed."
+      }
+    },
+    {
+      "q": "___ they met before the party?",
+      "options": [{"text": "Had", "error_tag": null}, {"text": "Have", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu hỏi về hành động trước một mốc trong quá khứ dùng Had + chủ ngữ + quá khứ phân từ.",
+        "en": "A question about an action before a past point uses Had + subject + past participle."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu kể về việc bạn đã làm xong trước một sự kiện khác trong quá khứ.",
+      "en": "Write a sentence about something you had done before another past event."
+    },
+    "placeholder": "I had ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "aux", "any_of": ["had"]},
+        {
+          "role": "verb",
+          "regex": "\\b\\w+(ed|en|ne|wn|lt|nt|de|rn|ad|ft|ld|st|ok|me|ne|ze|se|ht|pt|ut|it|et|ought|aught)\\b"
+        }
+      ]
+    },
+    "sample": {"text": "I had finished my homework before dinner."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790830749",
+    "generated_at": "2026-10-01T04:59:09Z",
+    "r5_source": {
+      "ids": ["b1-past-perfect-simple"],
+      "content_version": 2,
+      "content_hash": "8b8a005e987fe2f2771c0bae8c64ec4ba98811c5d0027876690d70a988f1c97b",
+      "corrections": [
+        {
+          "r5_id": "b1-past-perfect-simple",
+          "issue": "R5 example 'Had they met before the party?' is a question form but was listed under examples without form labels; the schema requires form and spans.",
+          "fix": "Kept the sentence as a question example and added form 'question' with spans for Had, they, met, before the party."
+        },
+        {
+          "r5_id": "b1-past-perfect-simple",
+          "issue": "R5 mistake 'Yesterday I had bought milk and then went home' is not a past perfect error; it is a style choice where simple past is more natural, so it does not fit the required error tag 'tense'.",
+          "fix": "Replaced with the real tense error 'He had went home before I called' and its correction 'He had gone home before I called'."
+        },
+        {
+          "r5_id": "b1-past-perfect-simple",
+          "issue": "R5 did not provide a structured formula, negative, question, or quick practice items.",
+          "fix": "Added formula, negative, question, quick_practice, and personal_production according to the schema."
+        }
+      ]
+    }
+  },
+  "review": null
+}

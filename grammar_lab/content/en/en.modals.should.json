@@ -1,0 +1,244 @@
+{
+  "schema_version": "0.4",
+  "id": "en.modals.should",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.obligation_advice",
+  "level": {"framework": "cefr", "value": "A2", "rank": 2},
+  "prereqs": [],
+  "contrasts": ["en.modals.must_have_to", "en.modals.possibility"],
+  "error_tags": ["word_choice"],
+  "source_refs": {"r5": ["a2-should-ought-to"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": ["a2-should-ought-to"],
+  "source_anchors": {"status": "anchored", "items": [{"source": "core_inventory", "code": "115", "level": "A2"}]},
+  "header": {
+    "title": {"vi": "Should (lời khuyên)", "en": "Should: advice"},
+    "native_title": "Should",
+    "level": {"framework": "cefr", "value": "A2", "rank": 2},
+    "summary": {
+      "vi": "Should dùng để đưa ra lời khuyên hoặc nói điều gì đó là hợp lý nên làm.",
+      "en": "Should gives advice or says that something is a good and sensible thing to do."
+    },
+    "sub": {"vi": "lời khuyên", "en": "advice"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn khuyên ai đó nên làm gì, không phải ra lệnh.",
+      "en": "When you want to tell someone it is a good idea to do something, not give an order."
+    },
+    {
+      "vi": "Khi bạn nói điều gì đó là hợp lý hoặc đúng đắn trong tình huống này.",
+      "en": "When you say something is the sensible or right thing in this situation."
+    },
+    {
+      "vi": "Khi bạn xin lời khuyên bằng câu hỏi Should I ...?",
+      "en": "When you ask for advice with the question Should I ...?"
+    },
+    {
+      "vi": "Khi bạn khuyên ai đó đừng làm gì, dùng shouldn't.",
+      "en": "When you advise someone not to do something, use shouldn't."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {"text": "should", "role": "aux", "label": {"vi": "trợ động từ", "en": "modal verb"}},
+      {
+        "text": "V",
+        "role": "verb",
+        "label": {"vi": "động từ nguyên mẫu không to", "en": "base verb"}
+      },
+      {"text": "O", "role": "object", "label": {"vi": "tân ngữ", "en": "object"}, "optional": true}
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "shouldn't",
+          "role": "aux",
+          "label": {"vi": "trợ động từ phủ định", "en": "negative modal"}
+        },
+        {
+          "text": "V",
+          "role": "verb",
+          "label": {"vi": "động từ nguyên mẫu không to", "en": "base verb"}
+        },
+        {
+          "text": "O",
+          "role": "object",
+          "label": {"vi": "tân ngữ", "en": "object"},
+          "optional": true
+        }
+      ],
+      "question": [
+        {"text": "Should", "role": "aux", "label": {"vi": "trợ động từ", "en": "modal verb"}},
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "V",
+          "role": "verb",
+          "label": {"vi": "động từ nguyên mẫu không to", "en": "base verb"}
+        },
+        {
+          "text": "O",
+          "role": "object",
+          "label": {"vi": "tân ngữ", "en": "object"},
+          "optional": true
+        }
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "You should drink more water.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 10, "role": "aux"},
+        {"start": 11, "end": 16, "role": "verb"},
+        {"start": 17, "end": 27, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "should + động từ nguyên mẫu đưa ra lời khuyên.",
+        "en": "should + base verb gives advice."
+      },
+      "translation": {"vi": "Bạn nên uống nhiều nước hơn.", "en": "You should drink more water."}
+    },
+    {
+      "text": "You shouldn't stay up late.",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 13, "role": "aux"},
+        {"start": 14, "end": 18, "role": "verb"},
+        {"start": 19, "end": 26, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "shouldn't + động từ nguyên mẫu khuyên đừng làm gì.",
+        "en": "shouldn't + base verb advises against doing something."
+      },
+      "translation": {"vi": "Bạn không nên thức khuya.", "en": "You shouldn't stay up late."}
+    },
+    {
+      "text": "Should I call her?",
+      "form": "question",
+      "spans": [
+        {"start": 0, "end": 6, "role": "aux"},
+        {"start": 7, "end": 8, "role": "subject"},
+        {"start": 9, "end": 13, "role": "verb"},
+        {"start": 14, "end": 17, "role": "object"}
+      ],
+      "annotation": {"vi": "Should đứng đầu câu để hỏi lời khuyên.", "en": "Should at the start asks for advice."},
+      "translation": {"vi": "Tôi có nên gọi cô ấy không?", "en": "Should I call her?"}
+    }
+  ],
+  "compare": [
+    {
+      "with": "en.modals.must_have_to",
+      "this_example": "You should rest.",
+      "other_example": "You must rest.",
+      "this_meaning": {
+        "vi": "should = lời khuyên, điều hợp lý nên làm.",
+        "en": "should = advice, the sensible thing to do."
+      },
+      "other_meaning": {
+        "vi": "must/have to = nghĩa vụ mạnh, bắt buộc.",
+        "en": "must/have to = strong obligation, necessary."
+      }
+    },
+    {
+      "with": "en.modals.possibility",
+      "this_example": "You should take an umbrella.",
+      "other_example": "It might rain later.",
+      "this_meaning": {"vi": "should = khuyến nghị, nên làm.", "en": "should = recommendation, it is a good idea."},
+      "other_meaning": {
+        "vi": "might/could = khả năng, có thể xảy ra.",
+        "en": "might/could = possibility, it may happen."
+      }
+    }
+  ],
+  "common_mistakes": [
+    {
+      "wrong": "You should to rest.",
+      "right": "You should rest.",
+      "reason": {
+        "vi": "Sau should là động từ nguyên mẫu không to; thêm to là lỗi.",
+        "en": "After should, use the base verb without to; adding to is an error."
+      },
+      "error_tag": "word_choice",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "You ___ see a dentist.",
+      "options": [{"text": "should", "error_tag": null}, {"text": "should to", "error_tag": "word_choice"}],
+      "answer": 0,
+      "explain": {"vi": "should + động từ nguyên mẫu, không có to.", "en": "should + base verb, no to."}
+    },
+    {
+      "q": "You ___ stay up late.",
+      "options": [
+        {"text": "shouldn't", "error_tag": null},
+        {"text": "shouldn't to", "error_tag": "word_choice"}
+      ],
+      "answer": 0,
+      "explain": {"vi": "shouldn't + động từ nguyên mẫu, không có to.", "en": "shouldn't + base verb, no to."}
+    },
+    {
+      "q": "___ I call her?",
+      "options": [{"text": "Should", "error_tag": null}, {"text": "Should to", "error_tag": "word_choice"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu hỏi dùng Should + chủ ngữ + động từ nguyên mẫu.",
+        "en": "Questions use Should + subject + base verb."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một lời khuyên cho một người bạn bằng should hoặc shouldn't.",
+      "en": "Write one piece of advice for a friend using should or shouldn't."
+    },
+    "placeholder": "You should ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "aux", "any_of": ["should", "shouldn't"]}, {"role": "verb", "regex": "[a-z]+"}]
+    },
+    "sample": {"text": "You should drink more water."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790830599",
+    "generated_at": "2026-10-01T04:56:39Z",
+    "r5_source": {
+      "ids": ["a2-should-ought-to"],
+      "content_version": 2,
+      "content_hash": "9d4eab84487100ae61246060d9c9bee22e8c6d6db971510c9d26847bae3da093",
+      "corrections": [
+        {
+          "r5_id": "a2-should-ought-to",
+          "issue": "R5 includes 'ought to' as part of the target point, but the app point is only 'should'.",
+          "fix": "Removed 'ought to' from the formula, examples, and practice; kept only should/shouldn't."
+        },
+        {
+          "r5_id": "a2-should-ought-to",
+          "issue": "R5 example 'We ought to leave early.' is outside this point's scope.",
+          "fix": "Replaced with 'Should I call her?' to cover the question form of should."
+        },
+        {
+          "r5_id": "a2-should-ought-to",
+          "issue": "R5 mistake 'He ought go now.' belongs to 'ought to', not to this point.",
+          "fix": "Replaced with the should-specific mistake 'You should to rest.'"
+        }
+      ]
+    }
+  },
+  "review": null
+}

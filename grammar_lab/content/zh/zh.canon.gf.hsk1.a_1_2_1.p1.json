@@ -1,0 +1,207 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk1.a_1_2_1.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.quantity",
+  "level": {"framework": "hsk3", "value": "1", "rank": 1},
+  "prereqs": ["zh.measure_words.basic"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"gf0025": ["gf0025.hsk1.023"]},
+  "point_type": "other",
+  "sequence": 3,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Kiểu cấu trúc: 数量短语", "en": "Structural patterns: 数量短语"},
+    "native_title": "数量短语",
+    "level": {"framework": "hsk3", "value": "1", "rank": 1},
+    "summary": {
+      "vi": "Cấu trúc số lượng dùng số từ hoặc từ hỏi số lượng kèm lượng từ để đếm người hoặc vật.",
+      "en": "Quantity phrases use a number or a quantity question word plus a measure word to count people or things."
+    },
+    "sub": {"vi": "số lượng và lượng từ", "en": "quantity and measure words"},
+    "native_title_pinyin": ["shù", "liàng", "duǎn", "yǔ"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói chính xác có bao nhiêu người hoặc vật, ví dụ ba cuốn sách, hai giáo viên.",
+      "en": "When you want to state exactly how many people or things there are, for example three books, two teachers."
+    },
+    {
+      "vi": "Khi bạn muốn hỏi số lượng của một danh từ đã biết, dùng 几 hoặc 多少 trước lượng từ.",
+      "en": "When you want to ask the quantity of a known noun, use 几 or 多少 before the measure word."
+    },
+    {
+      "vi": "Khi danh từ chỉ người dùng lượng từ 个, còn danh từ chỉ đồ vật dùng lượng từ riêng như 本, 只, 张.",
+      "en": "When the noun is a person, use the measure word 个; for objects use their own measure word such as 本, 只, 张."
+    },
+    {
+      "vi": "Khi số lượng đứng trước danh từ làm chủ ngữ hoặc tân ngữ, không cần thêm 的 ở giữa.",
+      "en": "When the quantity phrase stands before the noun as subject or object, no 的 is needed in between."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "数词/疑问词",
+        "role": "other",
+        "label": {"vi": "số từ hoặc từ hỏi số lượng", "en": "number or quantity question word"},
+        "options": [
+          {"text": "三", "pinyin": ["sān"]},
+          {"text": "几", "pinyin": ["jǐ"]},
+          {"text": "多少", "pinyin": ["duō", "shao"]}
+        ],
+        "pinyin": ["shù", "cí", "", "yí", "wèn", "cí"]
+      },
+      {
+        "text": "量词",
+        "role": "classifier",
+        "label": {"vi": "lượng từ", "en": "measure word"},
+        "options": [
+          {"text": "个", "pinyin": ["gè"]},
+          {"text": "本", "pinyin": ["běn"]},
+          {"text": "只", "pinyin": ["zhī"]}
+        ],
+        "pinyin": ["liàng", "cí"]
+      },
+      {
+        "text": "名词",
+        "role": "object",
+        "label": {"vi": "danh từ", "en": "noun"},
+        "pinyin": ["míng", "cí"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "我有三本书。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 2, "end": 3, "role": "other"},
+        {"start": 3, "end": 4, "role": "classifier"},
+        {"start": 4, "end": 5, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "三 là số từ, 本 là lượng từ cho sách, 书 là danh từ được đếm.",
+        "en": "三 is the number, 本 is the measure word for books, and 书 is the counted noun."
+      },
+      "translation": {"vi": "Tôi có ba cuốn sách.", "en": "I have three books."},
+      "pinyin": ["wǒ", "yǒu", "sān", "běn", "shū", ""]
+    },
+    {
+      "text": "我们班有二十个学生。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 4, "end": 6, "role": "other"},
+        {"start": 6, "end": 7, "role": "classifier"},
+        {"start": 7, "end": 9, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "二十 là số từ, 个 là lượng từ cho người, 学生 là danh từ chỉ người.",
+        "en": "二十 is the number, 个 is the measure word for people, and 学生 is the person noun."
+      },
+      "translation": {"vi": "Lớp chúng tôi có hai mươi học sinh.", "en": "Our class has twenty students."},
+      "pinyin": ["wǒ", "men", "bān", "yǒu", "èr", "shí", "gè", "xué", "sheng", ""]
+    },
+    {
+      "text": "我家有两只猫。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 3, "end": 4, "role": "other"},
+        {"start": 4, "end": 5, "role": "classifier"},
+        {"start": 5, "end": 6, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "两 dùng trước lượng từ thay cho 二, 只 là lượng từ cho động vật nhỏ, 猫 là danh từ được đếm.",
+        "en": "两 replaces 二 before a measure word, 只 is the measure word for small animals, and 猫 is the counted noun."
+      },
+      "translation": {"vi": "Nhà tôi có hai con mèo.", "en": "My family has two cats."},
+      "pinyin": ["wǒ", "jiā", "yǒu", "liǎng", "zhī", "māo", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "我有三书。",
+      "right": "我有三本书。",
+      "reason": {
+        "vi": "Tiếng Việt có thể nói \"ba cuốn sách\" với lượng từ, nhưng trong tiếng Trung lượng từ bắt buộc phải đứng giữa số từ và danh từ; thiếu 本 là lỗi thiếu lượng từ.",
+        "en": "Vietnamese can say \"ba cuốn sách\" with a classifier, but in Chinese a measure word is obligatory between the number and the noun; leaving out 本 is a missing-measure-word error."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong_pinyin": ["wǒ", "yǒu", "sān", "shū", ""],
+      "right_pinyin": ["wǒ", "yǒu", "sān", "běn", "shū", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "桌子上有一___书。",
+      "options": [
+        {"text": "本", "error_tag": null, "pinyin": ["běn"]},
+        {"text": "个", "error_tag": "measure_word", "pinyin": ["gè"]}
+      ],
+      "answer": 0,
+      "explain": {"vi": "书 dùng lượng từ 本, không dùng 个.", "en": "书 takes the measure word 本, not 个."},
+      "q_pinyin": ["zhuō", "zi", "shàng", "yǒu", "yī", "", "", "", "shū", ""]
+    },
+    {
+      "q": "我们班有三十___学生。",
+      "options": [
+        {"text": "个", "error_tag": null, "pinyin": ["gè"]},
+        {"text": "本", "error_tag": "measure_word", "pinyin": ["běn"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "学生 là danh từ chỉ người nên dùng lượng từ 个.",
+        "en": "学生 is a person noun, so it takes the measure word 个."
+      },
+      "q_pinyin": ["wǒ", "men", "bān", "yǒu", "sān", "shí", "", "", "", "xué", "sheng", ""]
+    },
+    {
+      "q": "我家有三___猫。",
+      "options": [
+        {"text": "只", "error_tag": null, "pinyin": ["zhī"]},
+        {"text": "个", "error_tag": "measure_word", "pinyin": ["gè"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "猫 là động vật nhỏ nên dùng lượng từ 只.",
+        "en": "猫 is a small animal, so it takes the measure word 只."
+      },
+      "q_pinyin": ["wǒ", "jiā", "yǒu", "sān", "", "", "", "māo", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về số lượng đồ vật hoặc người trong nhà bạn, dùng số từ + lượng từ + danh từ.",
+      "en": "Write one sentence about how many things or people are in your home, using number + measure word + noun."
+    },
+    "placeholder": "我家有……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {
+          "role": "other",
+          "any_of": ["一", "二", "两", "三", "四", "五", "六", "七", "八", "九", "十", "几", "多少"]
+        },
+        {"role": "classifier", "any_of": ["个", "本", "只", "张", "件", "条", "位"]}
+      ]
+    },
+    "sample": {"text": "我家有三只猫。", "pinyin": ["wǒ", "jiā", "yǒu", "sān", "zhī", "māo", ""]},
+    "placeholder_pinyin": ["wǒ", "jiā", "yǒu", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790831921",
+    "generated_at": "2026-10-01T05:18:41Z"
+  },
+  "review": null
+}

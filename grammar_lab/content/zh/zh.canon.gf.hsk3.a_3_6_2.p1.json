@@ -1,0 +1,272 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk3.a_3_6_2.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.sentence_basics",
+  "level": {"framework": "hsk3", "value": "3", "rank": 3},
+  "prereqs": ["zh.canon.gf.hsk3.a_3_6_1.p1"],
+  "contrasts": [],
+  "error_tags": ["word_order", "complement"],
+  "source_refs": {"gf0025": ["gf0025.hsk3.055", "gf0025.hsk3.056", "gf0025.hsk3.057", "gf0025.hsk3.059"]},
+  "point_type": "word_order",
+  "sequence": 8,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {
+      "vi": "Mẫu câu đặc biệt: 被动句1：主语+被/叫/让+宾语+动词+其他成分",
+      "en": "Special sentence patterns: 被动句1：主语+被/叫/让+宾语+动词+其他成分"
+    },
+    "native_title": "被动句1：主语+被/叫/让+宾语+动词+其他成分",
+    "level": {"framework": "hsk3", "value": "3", "rank": 3},
+    "summary": {
+      "vi": "Mẫu câu bị động 被动句 dùng 被, 叫 hoặc 让 để nói ai đó hoặc cái gì đó chịu tác động của một hành động.",
+      "en": "The 被动句 passive pattern uses 被, 叫 or 让 to say that someone or something is affected by an action."
+    },
+    "sub": {"vi": "câu bị động 被", "en": "the 被 passive"},
+    "native_title_pinyin": [
+      "bèi",
+      "dòng",
+      "jù",
+      "",
+      "",
+      "zhǔ",
+      "yǔ",
+      "",
+      "bèi",
+      "",
+      "jiào",
+      "",
+      "ràng",
+      "",
+      "bīn",
+      "yǔ",
+      "",
+      "dòng",
+      "cí",
+      "",
+      "qí",
+      "tā",
+      "chéng",
+      "fèn"
+    ]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi chủ ngữ là người hoặc vật nhận tác động, không phải người thực hiện hành động.",
+      "en": "When the subject is the person or thing affected by the action, not the one doing it."
+    },
+    {
+      "vi": "Khi bạn muốn nêu rõ ai hoặc cái gì gây ra hành động, đặt sau 被/叫/让.",
+      "en": "When you want to name who or what caused the action, placed after 被/叫/让."
+    },
+    {
+      "vi": "Khi câu cần một kết quả hoặc thay đổi ở cuối, như 了, 完, 走, 坏.",
+      "en": "When the sentence needs a result or change at the end, such as 了, 完, 走, 坏."
+    },
+    {
+      "vi": "Khi muốn kể lại một việc không may hoặc một sự việc bất ngờ xảy đến với ai đó.",
+      "en": "When telling about something unfortunate or unexpected that happened to someone."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ chịu tác động", "en": "affected subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "被/叫/让",
+        "role": "marker",
+        "label": {"vi": "từ bị động", "en": "passive marker"},
+        "options": [
+          {"text": "被", "pinyin": ["bèi"]},
+          {"text": "叫", "pinyin": ["jiào"]},
+          {"text": "让", "pinyin": ["ràng"]}
+        ],
+        "pinyin": ["bèi", "", "jiào", "", "ràng"]
+      },
+      {
+        "text": "宾语",
+        "role": "object",
+        "label": {"vi": "người/vật gây ra hành động", "en": "doer of the action"},
+        "pinyin": ["bīn", "yǔ"]
+      },
+      {
+        "text": "动词",
+        "role": "verb",
+        "label": {"vi": "động từ", "en": "verb"},
+        "pinyin": ["dòng", "cí"]
+      },
+      {
+        "text": "其他成分",
+        "role": "complement",
+        "label": {"vi": "thành phần khác (kết quả, 了, 走...)", "en": "other element (result, 了, 走...)"},
+        "pinyin": ["qí", "tā", "chéng", "fèn"]
+      }
+    ],
+    "illustration": {"kind": "word_order"}
+  },
+  "examples": [
+    {
+      "text": "我的手机被弟弟拿走了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 4, "end": 5, "role": "marker"},
+        {"start": 5, "end": 7, "role": "object"},
+        {"start": 7, "end": 8, "role": "verb"},
+        {"start": 8, "end": 10, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Chủ ngữ 我的手机 chịu tác động; 弟弟 là người gây ra hành động; 走了 cho biết kết quả.",
+        "en": "The subject 我的手机 is affected; 弟弟 is the doer; 走了 gives the result."
+      },
+      "translation": {
+        "vi": "Điện thoại của tôi bị em trai lấy đi rồi.",
+        "en": "My phone was taken away by my younger brother."
+      },
+      "pinyin": ["wǒ", "de", "shǒu", "jī", "bèi", "dì", "di", "ná", "zǒu", "le", ""]
+    },
+    {
+      "text": "那本书叫妹妹弄坏了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 3, "end": 4, "role": "marker"},
+        {"start": 4, "end": 6, "role": "object"},
+        {"start": 6, "end": 7, "role": "verb"},
+        {"start": 7, "end": 9, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "叫 thay cho 被 trong văn nói; 坏了 là kết quả hư hỏng.",
+        "en": "叫 replaces 被 in spoken Chinese; 坏了 is the result of damage."
+      },
+      "translation": {
+        "vi": "Cuốn sách đó bị em gái làm hỏng rồi.",
+        "en": "That book was ruined by my younger sister."
+      },
+      "pinyin": ["nà", "běn", "shū", "jiào", "mèi", "mei", "nòng", "huài", "le", ""]
+    },
+    {
+      "text": "我的自行车让朋友骑走了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 5, "role": "subject"},
+        {"start": 5, "end": 6, "role": "marker"},
+        {"start": 6, "end": 8, "role": "object"},
+        {"start": 8, "end": 9, "role": "verb"},
+        {"start": 9, "end": 11, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "让 cũng là từ bị động trong khẩu ngữ; 走了 cho biết xe đã bị đem đi.",
+        "en": "让 is also a spoken passive marker; 走了 shows the bike was taken away."
+      },
+      "translation": {
+        "vi": "Xe đạp của tôi bị bạn bè đi mất rồi.",
+        "en": "My bicycle was ridden away by a friend."
+      },
+      "pinyin": ["wǒ", "de", "zì", "xíng", "chē", "ràng", "péng", "you", "qí", "zǒu", "le", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "我的手机弟弟被拿走了。",
+      "right": "我的手机被弟弟拿走了。",
+      "reason": {
+        "vi": "Người học đặt 被 sau người gây ra hành động theo thói quen tiếng Việt. Trong tiếng Trung, 被 phải đứng ngay sau chủ ngữ chịu tác động, trước người gây ra hành động.",
+        "en": "Learners put 被 after the doer, following Vietnamese order. In Chinese, 被 must come right after the affected subject, before the doer."
+      },
+      "error_tag": "word_order",
+      "l1": ["vi"],
+      "wrong_pinyin": ["wǒ", "de", "shǒu", "jī", "dì", "di", "bèi", "ná", "zǒu", "le", ""],
+      "right_pinyin": ["wǒ", "de", "shǒu", "jī", "bèi", "dì", "di", "ná", "zǒu", "le", ""]
+    },
+    {
+      "wrong": "我的手机被弟弟拿。",
+      "right": "我的手机被弟弟拿走了。",
+      "reason": {
+        "vi": "Câu bị động tiếng Trung thường cần một thành phần ở cuối để nói kết quả hoặc sự thay đổi. Chỉ dùng động từ trần 拿 làm câu nghe chưa trọn ý.",
+        "en": "A Chinese passive sentence usually needs a final element showing result or change. A bare verb 拿 leaves the sentence incomplete."
+      },
+      "error_tag": "complement",
+      "l1": ["vi"],
+      "wrong_pinyin": ["wǒ", "de", "shǒu", "jī", "bèi", "dì", "di", "ná", ""],
+      "right_pinyin": ["wǒ", "de", "shǒu", "jī", "bèi", "dì", "di", "ná", "zǒu", "le", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "我的杯子___弟弟打破了。",
+      "options": [
+        {"text": "被", "error_tag": null, "pinyin": ["bèi"]},
+        {"text": "把", "error_tag": "ba_sentence", "pinyin": ["bǎ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Chủ ngữ 我的杯子 chịu tác động nên dùng 被. 把 dùng khi chủ ngữ là người thực hiện hành động.",
+        "en": "The subject 我的杯子 is affected, so 被 is correct. 把 is used when the subject does the action."
+      },
+      "q_pinyin": ["wǒ", "de", "bēi", "zi", "", "", "", "dì", "di", "dǎ", "pò", "le", ""]
+    },
+    {
+      "q": "那本书叫妹妹___。",
+      "options": [
+        {"text": "弄坏了", "error_tag": null, "pinyin": ["nòng", "huài", "le"]},
+        {"text": "弄坏", "error_tag": "complement", "pinyin": ["nòng", "huài"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu bị động cần thành phần kết quả ở cuối; 了 cho biết việc đã xảy ra.",
+        "en": "The passive sentence needs a result element at the end; 了 shows the action is complete."
+      },
+      "q_pinyin": ["nà", "běn", "shū", "jiào", "mèi", "mei", "", "", "", ""]
+    },
+    {
+      "q": "我的自行车___朋友骑走了。",
+      "options": [
+        {"text": "让", "error_tag": null, "pinyin": ["ràng"]},
+        {"text": "被朋友", "error_tag": "word_order", "pinyin": ["bèi", "péng", "you"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "让 đứng ngay sau chủ ngữ chịu tác động, trước người gây ra hành động 朋友.",
+        "en": "让 comes right after the affected subject, before the doer 朋友."
+      },
+      "q_pinyin": ["wǒ", "de", "zì", "xíng", "chē", "", "", "", "péng", "you", "qí", "zǒu", "le", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu kể một việc không may xảy đến với đồ vật của bạn, dùng 被, 叫 hoặc 让.",
+      "en": "Write one sentence about something unfortunate that happened to your belongings, using 被, 叫 or 让."
+    },
+    "placeholder": "我的……被……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "marker", "any_of": ["被", "叫", "让"]},
+        {"role": "complement", "any_of": ["了", "走", "坏", "完", "破", "掉"]}
+      ]
+    },
+    "sample": {
+      "text": "我的雨伞被同学拿走了。",
+      "pinyin": ["wǒ", "de", "yǔ", "sǎn", "bèi", "tóng", "xué", "ná", "zǒu", "le", ""]
+    },
+    "placeholder_pinyin": ["wǒ", "de", "", "", "bèi", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790832785",
+    "generated_at": "2026-10-01T05:33:05Z"
+  },
+  "review": null
+}

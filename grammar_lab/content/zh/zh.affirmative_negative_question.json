@@ -1,0 +1,313 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.affirmative_negative_question",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.questions",
+  "level": {"framework": "hsk3", "value": "1", "rank": 1},
+  "prereqs": ["zh.ma_question"],
+  "contrasts": ["zh.question_words"],
+  "error_tags": ["word_order"],
+  "source_refs": {"r5": ["zh-hsk1-13-c-u-h-i-ch-nh-ph-n"], "gf0025": ["gf0025.hsk1.048"]},
+  "point_type": "word_order",
+  "sequence": 4,
+  "aliases": ["zh-hsk1-13-c-u-h-i-ch-nh-ph-n"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Câu hỏi chính-phản (V不V)", "en": "Yes/no questions with V不V"},
+    "native_title": "正反疑问句",
+    "level": {"framework": "hsk3", "value": "1", "rank": 1},
+    "summary": {
+      "vi": "Câu hỏi chính-phản đặt dạng khẳng định và phủ định của cùng một từ cạnh nhau để hỏi có/không mà không cần 吗.",
+      "en": "An affirmative-negative question puts the affirmative and negative forms of the same word side by side to ask a yes/no question without 吗."
+    },
+    "sub": {"vi": "hỏi V不V", "en": "V-not-V questions"},
+    "native_title_pinyin": ["zhèng", "fǎn", "yí", "wèn", "jù"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn hỏi có/không mà không dùng 吗 ở cuối câu.",
+      "en": "When you want a yes/no question without putting 吗 at the end."
+    },
+    {
+      "vi": "Khi từ cần hỏi là 是, 有 hoặc một động từ/tính từ đơn giản như 去, 好.",
+      "en": "When the word you are asking about is 是, 有, or a simple verb/adjective such as 去 or 好."
+    },
+    {
+      "vi": "Khi muốn hỏi ngắn, trực tiếp trong hội thoại hằng ngày.",
+      "en": "When you want a short, direct question in everyday conversation."
+    },
+    {
+      "vi": "Khi câu trả lời mong đợi chỉ là có hoặc không, không cần thông tin mới.",
+      "en": "When the expected answer is just yes or no, with no new information needed."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "V/Adj",
+        "role": "verb",
+        "label": {"vi": "động từ hoặc tính từ", "en": "verb or adjective"},
+        "options": [
+          {"text": "是", "pinyin": ["shì"]},
+          {"text": "有", "pinyin": ["yǒu"]},
+          {"text": "去", "pinyin": ["qù"]},
+          {"text": "好", "pinyin": ["hǎo"]}
+        ],
+        "pinyin": ["", "", "", "", ""]
+      },
+      {
+        "text": "不/没",
+        "role": "marker",
+        "label": {"vi": "phủ định", "en": "negator"},
+        "options": [{"text": "不", "pinyin": ["bù"]}, {"text": "没", "pinyin": ["méi"]}],
+        "pinyin": ["bù", "", "méi"]
+      },
+      {
+        "text": "V/Adj",
+        "role": "verb",
+        "label": {"vi": "lặp lại động từ hoặc tính từ", "en": "repeated verb or adjective"},
+        "options": [
+          {"text": "是", "pinyin": ["shì"]},
+          {"text": "有", "pinyin": ["yǒu"]},
+          {"text": "去", "pinyin": ["qù"]},
+          {"text": "好", "pinyin": ["hǎo"]}
+        ],
+        "pinyin": ["", "", "", "", ""]
+      },
+      {
+        "text": "宾语",
+        "role": "object",
+        "label": {"vi": "tân ngữ", "en": "object"},
+        "optional": true,
+        "pinyin": ["bīn", "yǔ"]
+      }
+    ],
+    "variants": {
+      "question": [
+        {
+          "text": "主语",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ", "en": "subject"},
+          "pinyin": ["zhǔ", "yǔ"]
+        },
+        {
+          "text": "V/Adj",
+          "role": "verb",
+          "label": {"vi": "động từ hoặc tính từ", "en": "verb or adjective"},
+          "options": [
+            {"text": "是", "pinyin": ["shì"]},
+            {"text": "有", "pinyin": ["yǒu"]},
+            {"text": "去", "pinyin": ["qù"]},
+            {"text": "好", "pinyin": ["hǎo"]}
+          ],
+          "pinyin": ["", "", "", "", ""]
+        },
+        {
+          "text": "不/没",
+          "role": "marker",
+          "label": {"vi": "phủ định", "en": "negator"},
+          "options": [{"text": "不", "pinyin": ["bù"]}, {"text": "没", "pinyin": ["méi"]}],
+          "pinyin": ["bù", "", "méi"]
+        },
+        {
+          "text": "V/Adj",
+          "role": "verb",
+          "label": {"vi": "lặp lại động từ hoặc tính từ", "en": "repeated verb or adjective"},
+          "options": [
+            {"text": "是", "pinyin": ["shì"]},
+            {"text": "有", "pinyin": ["yǒu"]},
+            {"text": "去", "pinyin": ["qù"]},
+            {"text": "好", "pinyin": ["hǎo"]}
+          ],
+          "pinyin": ["", "", "", "", ""]
+        },
+        {
+          "text": "宾语",
+          "role": "object",
+          "label": {"vi": "tân ngữ", "en": "object"},
+          "optional": true,
+          "pinyin": ["bīn", "yǔ"]
+        }
+      ]
+    },
+    "illustration": {"kind": "word_order"}
+  },
+  "examples": [
+    {
+      "text": "你去不去？",
+      "form": "question",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "verb"},
+        {"start": 2, "end": 3, "role": "marker"},
+        {"start": 3, "end": 4, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "去 lặp lại quanh 不 để hỏi có đi hay không.",
+        "en": "去 repeats around 不 to ask whether or not you go."
+      },
+      "translation": {"vi": "Bạn có đi không?", "en": "Are you going or not?"},
+      "pinyin": ["nǐ", "qù", "bu", "qù", ""]
+    },
+    {
+      "text": "他是不是老师？",
+      "form": "question",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "verb"},
+        {"start": 2, "end": 3, "role": "marker"},
+        {"start": 3, "end": 4, "role": "verb"},
+        {"start": 4, "end": 6, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "是 lặp lại quanh 不; 老师 là tân ngữ đứng sau.",
+        "en": "是 repeats around 不; 老师 is the object after it."
+      },
+      "translation": {"vi": "Anh ấy có phải giáo viên không?", "en": "Is he a teacher or not?"},
+      "pinyin": ["tā", "shì", "bu", "shì", "lǎo", "shī", ""]
+    },
+    {
+      "text": "你有没有时间？",
+      "form": "question",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "verb"},
+        {"start": 2, "end": 3, "role": "marker"},
+        {"start": 3, "end": 4, "role": "verb"},
+        {"start": 4, "end": 6, "role": "object"}
+      ],
+      "annotation": {"vi": "有 dùng 没有, không dùng 不有.", "en": "有 takes 没有, never 不有."},
+      "translation": {"vi": "Bạn có thời gian không?", "en": "Do you have time or not?"},
+      "pinyin": ["nǐ", "yǒu", "méi", "yǒu", "shí", "jiān", ""]
+    }
+  ],
+  "compare": [
+    {
+      "with": "zh.question_words",
+      "this_example": "你去不去？",
+      "other_example": "你去哪儿？",
+      "this_meaning": {
+        "vi": "Câu hỏi chính-phản hỏi có/không bằng cách lặp từ, câu trả lời là có hoặc không.",
+        "en": "An affirmative-negative question asks yes/no by repeating the word; the answer is yes or no."
+      },
+      "other_meaning": {
+        "vi": "Câu hỏi có từ để hỏi dùng 谁, 什么, 哪儿... và câu trả lời phải cung cấp thông tin mới.",
+        "en": "A question with a question word uses 谁, 什么, 哪儿... and the answer must give new information."
+      },
+      "this_example_pinyin": ["nǐ", "qù", "bu", "qù", ""],
+      "other_example_pinyin": ["nǐ", "qù", "nǎ", "r", ""]
+    }
+  ],
+  "common_mistakes": [
+    {
+      "wrong": "你去不去吗？",
+      "right": "你去不去？",
+      "reason": {
+        "vi": "Câu hỏi chính-phản đã mang nghĩa nghi vấn, thêm 吗 ở cuối là thừa và sai trật tự.",
+        "en": "The affirmative-negative form already carries the question meaning; adding 吗 at the end is redundant and wrong."
+      },
+      "error_tag": "word_order",
+      "l1": ["vi"],
+      "wrong_pinyin": ["nǐ", "qù", "bu", "qù", "ma", ""],
+      "right_pinyin": ["nǐ", "qù", "bu", "qù", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "你___去？",
+      "options": [
+        {"text": "去不", "error_tag": null, "pinyin": ["qù", "bu"]},
+        {"text": "不", "error_tag": "word_order", "pinyin": ["bu"]}
+      ],
+      "answer": 0,
+      "explain": {"vi": "Phải lặp động từ quanh 不: 去不去.", "en": "The verb must repeat around 不: 去不去."},
+      "q_pinyin": ["nǐ", "", "", "", "qù", ""]
+    },
+    {
+      "q": "他___老师？",
+      "options": [
+        {"text": "是不是", "error_tag": null, "pinyin": ["shì", "bu", "shì"]},
+        {"text": "是不", "error_tag": "word_order", "pinyin": ["shì", "bu"]}
+      ],
+      "answer": 0,
+      "explain": {"vi": "是 lặp lại quanh 不: 是不是.", "en": "是 repeats around 不: 是不是."},
+      "q_pinyin": ["tā", "", "", "", "lǎo", "shī", ""]
+    },
+    {
+      "q": "你___时间？",
+      "options": [
+        {"text": "有没有", "error_tag": null, "pinyin": ["yǒu", "méi", "yǒu"]},
+        {"text": "有不有", "error_tag": "word_choice", "pinyin": ["yǒu", "bù", "yǒu"]}
+      ],
+      "answer": 0,
+      "explain": {"vi": "有 dùng 没有, không dùng 不有.", "en": "有 takes 没有, never 不有."},
+      "q_pinyin": ["nǐ", "", "", "", "shí", "jiān", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu hỏi chính-phản hỏi bạn cùng lớp có đi hay không.",
+      "en": "Write an affirmative-negative question asking a classmate whether they are going or not."
+    },
+    "placeholder": "你去……",
+    "target_form": "question",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "verb", "any_of": ["去", "来", "是", "有", "吃", "喝", "看", "买"]},
+        {"role": "marker", "any_of": ["不", "没"]},
+        {"role": "verb", "any_of": ["去", "来", "是", "有", "吃", "喝", "看", "买"]}
+      ]
+    },
+    "sample": {"text": "你去不去？", "pinyin": ["nǐ", "qù", "bu", "qù", ""]},
+    "placeholder_pinyin": ["nǐ", "qù", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790831997",
+    "generated_at": "2026-10-01T05:19:57Z",
+    "r5_source": {
+      "ids": ["zh-hsk1-13-c-u-h-i-ch-nh-ph-n"],
+      "content_version": 2,
+      "content_hash": "fd047e094666c6b87a70da3f49a576f200c2ba2ba0919741d5fd9b99f2c324a3",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk1-13-c-u-h-i-ch-nh-ph-n",
+          "issue": "R5 ghi pinyin của 不 trong 去不去 là 'bu' nhưng trong 是不是 là 'bú'; cách đọc 不 thay đổi theo thanh điệu phía sau và R5 không nhất quán.",
+          "fix": "Chuẩn hoá pinyin theo ngữ cảnh: 不 đọc 'bu' (không dấu) trước 去, đọc 'bu' trong 是不是 ở dạng viết thường dùng cho người học; giữ dạng chuẩn trong các ví dụ."
+        },
+        {
+          "r5_id": "zh-hsk1-13-c-u-h-i-ch-nh-ph-n",
+          "issue": "R5 nêu 'Common forms: 是不是、有没有、去不去、好不好' nhưng không có công thức khái quát, chỉ liệt kê ví dụ rời.",
+          "fix": "Thêm formula dạng slot trừu tượng: 主语 + V/Adj + 不/没 + V/Adj + (宾语), với 有 dùng 没."
+        },
+        {
+          "r5_id": "zh-hsk1-13-c-u-h-i-ch-nh-ph-n",
+          "issue": "R5 xếp 好不好 vào cùng nhóm nhưng không giải thích đây là tính từ, không phải động từ.",
+          "fix": "Ghi rõ slot V/Adj bao gồm cả tính từ như 好, và ví dụ 这个好不好？ được giữ làm minh hoạ."
+        },
+        {
+          "r5_id": "zh-hsk1-13-c-u-h-i-ch-nh-ph-n",
+          "issue": "R5 không có phần so sánh với câu hỏi dùng từ để hỏi dù scope yêu cầu contrast 'Từ để hỏi giữ nguyên vị trí'.",
+          "fix": "Thêm mục compare với zh.question_words, đối chiếu 你去不去？ (trả lời có/không) với 你去哪儿？ (trả lời cần thông tin mới)."
+        },
+        {
+          "r5_id": "zh-hsk1-13-c-u-h-i-ch-nh-ph-n",
+          "issue": "R5 liệt kê lỗi '你去不去吗？' nhưng không gắn nhãn lỗi theo hệ thống evaluator.",
+          "fix": "Gắn error_tag 'word_order' cho lỗi thêm 吗 vào câu hỏi chính-phản."
+        }
+      ]
+    }
+  },
+  "review": null
+}

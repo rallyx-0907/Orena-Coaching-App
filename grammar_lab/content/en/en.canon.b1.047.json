@@ -1,0 +1,224 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b1.047",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.verb_patterns",
+  "level": {"framework": "cefr", "value": "B1", "rank": 3},
+  "prereqs": [],
+  "contrasts": [],
+  "error_tags": ["preposition"],
+  "source_refs": {},
+  "point_type": "other",
+  "sequence": 3,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "tính từ giới từ", "en": "Adjective Preposition"},
+    "native_title": "Adjective Preposition",
+    "level": {"framework": "cefr", "value": "B1", "rank": 3},
+    "summary": {
+      "vi": "Tính từ giới từ là cấu trúc gồm một tính từ theo sau bởi một giới từ cố định, tạo thành một cụm nghĩa hoàn chỉnh.",
+      "en": "Adjective preposition is a structure where an adjective is followed by a fixed preposition, forming a complete meaning unit."
+    },
+    "sub": {"vi": "tính từ + giới từ", "en": "adjective + preposition"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn diễn tả cảm xúc hoặc thái độ của ai đó đối với một việc gì (interested in, afraid of).",
+      "en": "When you want to express someone's feeling or attitude towards something (interested in, afraid of)."
+    },
+    {
+      "vi": "Khi bạn muốn nói ai đó giỏi, kém hoặc có khả năng ở một lĩnh vực nào (good at, bad at).",
+      "en": "When you want to say someone is good, bad, or capable in an area (good at, bad at)."
+    },
+    {
+      "vi": "Khi bạn muốn nói ai đó có thái độ tích cực hoặc tiêu cực với một việc (keen on, tired of).",
+      "en": "When you want to say someone has a positive or negative attitude towards something (keen on, tired of)."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {
+        "text": "be",
+        "role": "verb",
+        "label": {"vi": "động từ to be", "en": "verb be"},
+        "options": [{"text": "am"}, {"text": "is"}, {"text": "are"}]
+      },
+      {"text": "adjective", "role": "complement", "label": {"vi": "tính từ", "en": "adjective"}},
+      {"text": "preposition", "role": "marker", "label": {"vi": "giới từ", "en": "preposition"}},
+      {"text": "N/V-ing", "role": "object", "label": {"vi": "tân ngữ", "en": "object"}}
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "be",
+          "role": "verb",
+          "label": {"vi": "động từ to be", "en": "verb be"},
+          "options": [{"text": "am"}, {"text": "is"}, {"text": "are"}]
+        },
+        {"text": "not", "role": "aux", "label": {"vi": "phủ định", "en": "negator"}},
+        {"text": "adjective", "role": "complement", "label": {"vi": "tính từ", "en": "adjective"}},
+        {"text": "preposition", "role": "marker", "label": {"vi": "giới từ", "en": "preposition"}},
+        {"text": "N/V-ing", "role": "object", "label": {"vi": "tân ngữ", "en": "object"}}
+      ],
+      "question": [
+        {
+          "text": "be",
+          "role": "verb",
+          "label": {"vi": "động từ to be", "en": "verb be"},
+          "options": [{"text": "Am"}, {"text": "Is"}, {"text": "Are"}]
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {"text": "adjective", "role": "complement", "label": {"vi": "tính từ", "en": "adjective"}},
+        {"text": "preposition", "role": "marker", "label": {"vi": "giới từ", "en": "preposition"}},
+        {"text": "N/V-ing", "role": "object", "label": {"vi": "tân ngữ", "en": "object"}}
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "She is interested in learning new languages.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 6, "role": "verb"},
+        {"start": 7, "end": 17, "role": "complement"},
+        {"start": 18, "end": 20, "role": "marker"},
+        {"start": 21, "end": 43, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Cụm 'interested in' diễn tả sự quan tâm, theo sau là V-ing.",
+        "en": "'Interested in' expresses interest, followed by V-ing."
+      },
+      "translation": {"vi": "Cô ấy thích học ngôn ngữ mới.", "en": "She is interested in learning new languages."}
+    },
+    {
+      "text": "He is not afraid of making mistakes.",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 3, "end": 5, "role": "verb"},
+        {"start": 6, "end": 9, "role": "aux"},
+        {"start": 10, "end": 16, "role": "complement"},
+        {"start": 17, "end": 19, "role": "marker"},
+        {"start": 20, "end": 35, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Phủ định với 'not' đứng sau 'be', trước tính từ 'afraid of'.",
+        "en": "Negation with 'not' after 'be', before the adjective 'afraid of'."
+      },
+      "translation": {"vi": "Anh ấy không sợ mắc lỗi.", "en": "He is not afraid of making mistakes."}
+    },
+    {
+      "text": "Are you good at solving problems?",
+      "form": "question",
+      "spans": [
+        {"start": 0, "end": 3, "role": "verb"},
+        {"start": 4, "end": 7, "role": "subject"},
+        {"start": 8, "end": 12, "role": "complement"},
+        {"start": 13, "end": 15, "role": "marker"},
+        {"start": 16, "end": 32, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Câu hỏi đảo 'be' lên trước chủ ngữ, giữ nguyên cụm 'good at'.",
+        "en": "Question form inverts 'be' before the subject, keeping 'good at'."
+      },
+      "translation": {"vi": "Bạn có giỏi giải quyết vấn đề không?", "en": "Are you good at solving problems?"}
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "She is interested on learning new languages.",
+      "right": "She is interested in learning new languages.",
+      "reason": {
+        "vi": "Người Việt thường dịch 'quan tâm đến' thành 'on' vì 'đến' gần nghĩa với 'on', nhưng tính từ 'interested' luôn đi với giới từ 'in'.",
+        "en": "Vietnamese speakers often translate 'quan tâm đến' as 'on' because 'đến' is close to 'on', but the adjective 'interested' always takes the preposition 'in'."
+      },
+      "error_tag": "preposition",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "She is very good ___ playing the piano.",
+      "options": [
+        {"text": "at", "error_tag": null},
+        {"text": "in", "error_tag": "preposition"},
+        {"text": "on", "error_tag": "preposition"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Tính từ 'good' đi với giới từ 'at' khi nói về khả năng.",
+        "en": "The adjective 'good' takes the preposition 'at' when talking about ability."
+      }
+    },
+    {
+      "q": "He is afraid ___ dogs.",
+      "options": [{"text": "of", "error_tag": null}, {"text": "with", "error_tag": "preposition"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Tính từ 'afraid' luôn đi với giới từ 'of'.",
+        "en": "The adjective 'afraid' always takes the preposition 'of'."
+      }
+    },
+    {
+      "q": "I am not interested ___ watching sports.",
+      "options": [
+        {"text": "in", "error_tag": null},
+        {"text": "on", "error_tag": "preposition"},
+        {"text": "at", "error_tag": "preposition"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Cụm 'interested in' là cố định, không thay đổi giới từ.",
+        "en": "'Interested in' is a fixed phrase; the preposition does not change."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về bản thân dùng cấu trúc tính từ + giới từ (ví dụ: interested in, good at, afraid of).",
+      "en": "Write a sentence about yourself using an adjective + preposition structure (e.g., interested in, good at, afraid of)."
+    },
+    "placeholder": "I am interested in ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "verb", "any_of": ["am", "is", "are"]},
+        {
+          "role": "complement",
+          "any_of": [
+            "interested",
+            "good",
+            "afraid",
+            "keen",
+            "tired",
+            "bad",
+            "fond",
+            "proud",
+            "worried",
+            "excited"
+          ]
+        },
+        {"role": "marker", "any_of": ["in", "at", "of", "on", "about", "with"]}
+      ]
+    },
+    "sample": {"text": "I am interested in learning English."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790831010",
+    "generated_at": "2026-10-01T05:03:30Z",
+    "metadata_stale": true
+  },
+  "review": null
+}

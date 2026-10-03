@@ -1,0 +1,216 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk3.a_3_10.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.time_expression",
+  "level": {"framework": "hsk3", "value": "3", "rank": 3},
+  "prereqs": ["zh.canon.gf.hsk3.a_3_7.p1"],
+  "contrasts": [],
+  "error_tags": ["particle", "register"],
+  "source_refs": {"gf0025": ["gf0025.hsk3.079", "gf0025.hsk3.080", "gf0025.hsk3.081"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 都⋯⋯了", "en": "Chinese grammar: 都⋯⋯了"},
+    "native_title": "都⋯⋯了",
+    "level": {"framework": "hsk3", "value": "3", "rank": 3},
+    "summary": {
+      "vi": "Mẫu 都⋯⋯了 dùng để nói rằng một tình trạng đã đạt đến mức độ nào đó hoặc một việc đã xảy ra rồi, với 都 nhấn mạnh và 了 xác nhận kết quả.",
+      "en": "The pattern 都⋯⋯了 states that a situation has already reached a certain point or degree, with 都 adding emphasis and 了 confirming the resulting state."
+    },
+    "sub": {"vi": "đã đến mức", "en": "already reached"},
+    "native_title_pinyin": ["dōu", "", "", "le"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói một việc đã xảy ra rồi và nhấn mạnh rằng nó đã muộn hoặc đã xong: 都十点了，他还没来。",
+      "en": "When something has already happened and you stress that it is late or finished: 都十点了，他还没来。"
+    },
+    {
+      "vi": "Khi muốn nói một người hoặc vật đã đạt đến một mức độ nào đó: 他都三十岁了。",
+      "en": "When a person or thing has reached a certain degree: 他都三十岁了。"
+    },
+    {
+      "vi": "Khi muốn nhấn mạnh số lượng đã nhiều rồi: 我都喝了三杯咖啡了。",
+      "en": "When you stress that a quantity is already large: 我都喝了三杯咖啡了。"
+    },
+    {
+      "vi": "Khi muốn nói một việc đã hoàn thành và không cần làm nữa: 饭都做好了。",
+      "en": "When something is already done and no further action is needed: 饭都做好了。"
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "都",
+        "role": "marker",
+        "label": {"vi": "trợ từ nhấn mạnh 都", "en": "emphasis marker 都"},
+        "pinyin": ["dōu"]
+      },
+      {
+        "text": "动词/形容词",
+        "role": "verb",
+        "label": {"vi": "động từ hoặc tính từ", "en": "verb or adjective"},
+        "pinyin": ["dòng", "cí", "", "xíng", "róng", "cí"]
+      },
+      {
+        "text": "了",
+        "role": "particle",
+        "label": {"vi": "trợ từ 了", "en": "particle 了"},
+        "pinyin": ["le"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "他都三十岁了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "marker"},
+        {"start": 2, "end": 5, "role": "verb"},
+        {"start": 5, "end": 6, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "都 nhấn mạnh rằng anh ấy đã đạt đến tuổi ba mươi, 了 xác nhận tình trạng đó.",
+        "en": "都 stresses that he has reached thirty, and 了 confirms that state."
+      },
+      "translation": {"vi": "Anh ấy đã ba mươi tuổi rồi.", "en": "He is already thirty years old."},
+      "pinyin": ["tā", "dōu", "sān", "shí", "suì", "le", ""]
+    },
+    {
+      "text": "我都喝了三杯咖啡了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "marker"},
+        {"start": 2, "end": 4, "role": "verb"},
+        {"start": 8, "end": 9, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "都 nhấn mạnh số lượng đã nhiều, 了 ở cuối câu xác nhận việc đã xảy ra.",
+        "en": "都 stresses the large quantity, and the final 了 confirms that it has happened."
+      },
+      "translation": {"vi": "Tôi đã uống ba cốc cà phê rồi.", "en": "I have already drunk three cups of coffee."},
+      "pinyin": ["wǒ", "dōu", "hē", "le", "sān", "bēi", "kā", "fēi", "le", ""]
+    },
+    {
+      "text": "饭都做好了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "marker"},
+        {"start": 2, "end": 4, "role": "verb"},
+        {"start": 4, "end": 5, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "都 nhấn mạnh rằng cơm đã xong hoàn toàn, 了 xác nhận kết quả.",
+        "en": "都 stresses that the meal is completely done, and 了 confirms the result."
+      },
+      "translation": {"vi": "Cơm đã nấu xong rồi.", "en": "The meal is already cooked."},
+      "pinyin": ["fàn", "dōu", "zuò", "hǎo", "le", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "他都三十岁。",
+      "right": "他都三十岁了。",
+      "reason": {
+        "vi": "Người học quên 了 ở cuối câu, nhưng 都⋯⋯了 cần 了 để xác nhận tình trạng đã đạt đến mức đó.",
+        "en": "Learners drop the final 了, but 都⋯⋯了 needs 了 to confirm that the state has been reached."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong_pinyin": ["tā", "dōu", "sān", "shí", "suì", ""],
+      "right_pinyin": ["tā", "dōu", "sān", "shí", "suì", "le", ""]
+    },
+    {
+      "wrong": "你都已经吃饭了没有？",
+      "right": "你都已经吃饭了吗？",
+      "reason": {
+        "vi": "Người học dùng 没有 cho câu hỏi trong khi 都⋯⋯了 đã mang nghĩa khẳng định; câu hỏi xác nhận phải dùng 吗.",
+        "en": "Learners use 没有 for the question even though 都⋯⋯了 is affirmative; a confirmation question takes 吗."
+      },
+      "error_tag": "register",
+      "l1": ["vi"],
+      "wrong_pinyin": ["nǐ", "dōu", "yǐ", "jīng", "chī", "fàn", "le", "méi", "yǒu", ""],
+      "right_pinyin": ["nǐ", "dōu", "yǐ", "jīng", "chī", "fàn", "le", "ma", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "他___五十岁了，还在工作。",
+      "options": [
+        {"text": "都", "error_tag": null, "pinyin": ["dōu"]},
+        {"text": "也", "error_tag": "word_choice", "pinyin": ["yě"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "都 nhấn mạnh rằng anh ấy đã đạt đến tuổi năm mươi; 也 chỉ có nghĩa \"cũng\", không dùng trong mẫu này.",
+        "en": "都 stresses that he has reached fifty; 也 only means \"also\" and does not fit this pattern."
+      },
+      "q_pinyin": ["tā", "", "", "", "wǔ", "shí", "suì", "le", "", "hái", "zài", "gōng", "zuò", ""]
+    },
+    {
+      "q": "我都写___三封信了。",
+      "options": [
+        {"text": "了", "error_tag": null, "pinyin": ["le"]},
+        {"text": "过", "error_tag": "aspect", "pinyin": ["guò"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau động từ trong mẫu 都⋯⋯了 phải dùng 了 để xác nhận việc đã xảy ra; 过 không phù hợp ở đây.",
+        "en": "After the verb in 都⋯⋯了, 了 confirms that the action has happened; 过 does not fit here."
+      },
+      "q_pinyin": ["wǒ", "dōu", "xiě", "", "", "", "sān", "fēng", "xìn", "le", ""]
+    },
+    {
+      "q": "都十二点___，我们该走了。",
+      "options": [
+        {"text": "了", "error_tag": null, "pinyin": ["le"]},
+        {"text": "的", "error_tag": "particle", "pinyin": ["de"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Cuối câu 都⋯⋯了 cần 了 để xác nhận tình trạng đã đến mức đó; 的 không dùng ở vị trí này.",
+        "en": "The final 了 in 都⋯⋯了 confirms that the situation has reached that point; 的 does not belong here."
+      },
+      "q_pinyin": ["dōu", "shí", "èr", "diǎn", "", "", "", "", "wǒ", "men", "gāi", "zǒu", "le", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về bản thân dùng 都⋯⋯了, ví dụ nói bạn đã đạt đến một độ tuổi hoặc một việc đã xong rồi.",
+      "en": "Write one sentence about yourself using 都⋯⋯了, for example that you have reached a certain age or that something is already done."
+    },
+    "placeholder": "我都……了。",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "marker", "any_of": ["都"]}, {"role": "particle", "any_of": ["了"]}]
+    },
+    "sample": {"text": "我都二十岁了。", "pinyin": ["wǒ", "dōu", "èr", "shí", "suì", "le", ""]},
+    "placeholder_pinyin": ["wǒ", "dōu", "", "", "le", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790832852",
+    "generated_at": "2026-10-01T05:34:12Z",
+    "metadata_stale": true
+  },
+  "review": null
+}

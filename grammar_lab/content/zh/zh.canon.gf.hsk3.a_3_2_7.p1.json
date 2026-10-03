@@ -1,0 +1,174 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk3.a_3_2_7.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.sentence_basics",
+  "level": {"framework": "hsk3", "value": "3", "rank": 3},
+  "prereqs": ["zh.canon.r5.hsk3_5_topic"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"gf0025": ["gf0025.hsk3.031"]},
+  "point_type": "other",
+  "sequence": 3,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 哈哈", "en": "Chinese grammar: 哈哈"},
+    "native_title": "哈哈",
+    "level": {"framework": "hsk3", "value": "3", "rank": 3},
+    "summary": {
+      "vi": "哈哈 là từ tượng thanh diễn tả tiếng cười tự nhiên, dùng để thể hiện sự buồn cười hoặc thái độ vui vẻ trong giao tiếp.",
+      "en": "哈哈 is an onomatopoeic expression for laughter, used to show amusement or a light, friendly tone in conversation."
+    },
+    "sub": {"vi": "tiếng cười", "en": "laughter"},
+    "native_title_pinyin": ["hā", "hā"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn thể hiện điều gì đó buồn cười trong tin nhắn hoặc trò chuyện.",
+      "en": "When you want to show that something is funny in a message or chat."
+    },
+    {
+      "vi": "Khi bạn muốn giữ giọng điệu nhẹ nhàng, thân thiện thay vì nghiêm túc.",
+      "en": "When you want to keep the tone light and friendly rather than serious."
+    },
+    {
+      "vi": "Khi bạn phản hồi một câu chuyện vui hoặc một trò đùa ngắn.",
+      "en": "When you respond to a funny story or a short joke."
+    },
+    {
+      "vi": "Khi bạn muốn làm mềm lời nói để tránh gây căng thẳng.",
+      "en": "When you want to soften what you say to avoid tension."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "哈哈",
+        "role": "other",
+        "label": {"vi": "từ tượng thanh tiếng cười", "en": "laughter expression"},
+        "pinyin": ["hā", "hā"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "哈哈，这个笑话太好笑了。",
+      "form": "affirmative",
+      "spans": [{"start": 0, "end": 2, "role": "other"}],
+      "annotation": {
+        "vi": "哈哈 đứng đầu câu để thể hiện ngay phản ứng buồn cười.",
+        "en": "哈哈 comes first to show the amused reaction right away."
+      },
+      "translation": {"vi": "Haha, câu chuyện cười này buồn cười quá.", "en": "Haha, this joke is really funny."},
+      "pinyin": ["hā", "hā", "", "zhè", "ge", "xiào", "huà", "tài", "hǎo", "xiào", "le", ""]
+    },
+    {
+      "text": "他讲的故事让我哈哈笑。",
+      "form": "affirmative",
+      "spans": [{"start": 7, "end": 9, "role": "other"}],
+      "annotation": {
+        "vi": "哈哈 đứng trước động từ 笑 để mô tả cách cười.",
+        "en": "哈哈 comes before the verb 笑 to describe the way of laughing."
+      },
+      "translation": {
+        "vi": "Câu chuyện anh ấy kể làm tôi cười haha.",
+        "en": "The story he told made me laugh haha."
+      },
+      "pinyin": ["tā", "jiǎng", "de", "gù", "shì", "ràng", "wǒ", "hā", "hā", "xiào", ""]
+    },
+    {
+      "text": "哈哈，你说得对。",
+      "form": "affirmative",
+      "spans": [{"start": 0, "end": 2, "role": "other"}],
+      "annotation": {
+        "vi": "哈哈 làm giọng điệu nhẹ nhàng, thân thiện khi đồng ý.",
+        "en": "哈哈 keeps the tone light and friendly when agreeing."
+      },
+      "translation": {"vi": "Haha, bạn nói đúng.", "en": "Haha, you're right."},
+      "pinyin": ["hā", "hā", "", "nǐ", "shuō", "de", "duì", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "哈哈，这个笑话太好笑。",
+      "right": "哈哈，这个笑话太好笑了。",
+      "reason": {
+        "vi": "Người học thường bỏ 了 ở cuối câu khi nhấn mạnh mức độ, nhưng với 太……了, 了 là bắt buộc để câu tự nhiên.",
+        "en": "Learners often drop the sentence-final 了 when emphasising degree, but with 太……了 the 了 is required for a natural sentence."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong_pinyin": ["hā", "hā", "", "zhè", "ge", "xiào", "huà", "tài", "hǎo", "xiào", ""],
+      "right_pinyin": ["hā", "hā", "", "zhè", "ge", "xiào", "huà", "tài", "hǎo", "xiào", "le", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "___，这个电影太有意思了。",
+      "options": [
+        {"text": "哈哈", "error_tag": null, "pinyin": ["hā", "hā"]},
+        {"text": "哈", "error_tag": "other", "pinyin": ["hā"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "哈哈 là dạng đầy đủ, tự nhiên để thể hiện tiếng cười; một 哈 thường chỉ là âm tiết đơn lẻ, không diễn tả tiếng cười rõ.",
+        "en": "哈哈 is the full, natural laughter expression; a single 哈 is just one syllable and does not clearly express laughter."
+      },
+      "q_pinyin": ["", "", "", "", "zhè", "ge", "diàn", "yǐng", "tài", "yǒu", "yì", "si", "le", ""]
+    },
+    {
+      "q": "他讲的笑话让我___笑。",
+      "options": [
+        {"text": "哈哈", "error_tag": null, "pinyin": ["hā", "hā"]},
+        {"text": "哈", "error_tag": "other", "pinyin": ["hā"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "哈哈 đứng trước 笑 để mô tả cách cười; dùng một 哈 không tạo thành từ tượng thanh tiếng cười.",
+        "en": "哈哈 goes before 笑 to describe the way of laughing; a single 哈 does not form the laughter expression."
+      },
+      "q_pinyin": ["tā", "jiǎng", "de", "xiào", "huà", "ràng", "wǒ", "", "", "", "xiào", ""]
+    },
+    {
+      "q": "___，你说得对。",
+      "options": [
+        {"text": "哈哈", "error_tag": null, "pinyin": ["hā", "hā"]},
+        {"text": "哈", "error_tag": "other", "pinyin": ["hā"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "哈哈 dùng ở đầu câu để giữ giọng điệu nhẹ nhàng, thân thiện; một 哈 không mang sắc thái đó.",
+        "en": "哈哈 at the start keeps the tone light and friendly; a single 哈 does not carry that tone."
+      },
+      "q_pinyin": ["", "", "", "", "nǐ", "shuō", "de", "duì", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu ngắn kể về điều gì đó buồn cười, bắt đầu bằng 哈哈.",
+      "en": "Write a short sentence about something funny, starting with 哈哈."
+    },
+    "placeholder": "哈哈，……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"role": "other", "any_of": ["哈哈"]}]},
+    "sample": {
+      "text": "哈哈，这个笑话太好笑了。",
+      "pinyin": ["hā", "hā", "", "zhè", "ge", "xiào", "huà", "tài", "hǎo", "xiào", "le", ""]
+    },
+    "placeholder_pinyin": ["hā", "hā", "", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790832686",
+    "generated_at": "2026-10-01T05:31:26Z",
+    "metadata_stale": true
+  },
+  "review": null
+}

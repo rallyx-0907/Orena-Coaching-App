@@ -6,116 +6,198 @@
   "function": "fn.comparison",
   "level": {"framework": "cefr", "value": "A2", "rank": 2},
   "prereqs": [],
-  "contrasts": [],
+  "contrasts": ["en.as_as", "en.superlatives"],
   "error_tags": ["word_form", "sentence_structure"],
-  "source_refs": {},
+  "source_refs": {"r5": ["a2-comparatives"]},
   "point_type": "morphology",
+  "sequence": 1,
+  "aliases": ["a2-comparatives"],
+  "source_anchors": {"status": "anchored", "items": [{"source": "core_inventory", "code": "149", "level": "A1"}]},
   "header": {
     "title": {"vi": "So sánh hơn", "en": "Comparatives"},
     "native_title": "Comparatives",
     "level": {"framework": "cefr", "value": "A2", "rank": 2},
     "summary": {
-      "vi": "So sánh hơn dùng để so sánh hai người hoặc hai vật, cho thấy một bên có đặc điểm nhiều hơn bên kia.",
-      "en": "Compare two people or things: one has more of a quality than the other."
+      "vi": "So sánh hơn dùng để nói một người hoặc vật có mức độ cao hơn (hoặc thấp hơn) so với người hoặc vật khác.",
+      "en": "The comparative is used to say that one person or thing has a higher (or lower) degree of a quality than another."
     },
-    "sub": {"vi": "so sánh hơn", "en": "comparing two"}
+    "sub": {"vi": "so sánh hơn", "en": "comparing two things"}
   },
   "when_to_use": [
-    {"vi": "Khi so sánh hai người, hai vật hoặc hai nhóm cụ thể."},
-    {"vi": "Khi tính từ ngắn (một âm tiết) như tall, small, fast."},
-    {"vi": "Khi tính từ dài (hai âm tiết trở lên) như beautiful, expensive, interesting."},
-    {"vi": "Khi muốn nhấn mạnh mức độ khác biệt bằng 'much' hoặc 'a lot' trước hình thức so sánh."}
+    {
+      "vi": "Khi so sánh hai người, hai vật hoặc hai tình huống với nhau.",
+      "en": "When you compare two people, two things, or two situations with each other."
+    },
+    {
+      "vi": "Khi muốn nói một thứ tốt hơn, nhanh hơn, đắt hơn, thú vị hơn, v.v. so với thứ khác.",
+      "en": "When you want to say one thing is better, faster, more expensive, more interesting, etc. than another."
+    },
+    {
+      "vi": "Khi câu trả lời cần nêu rõ mốc so sánh, thường bắt đầu bằng “than”.",
+      "en": "When the answer needs to name the point of comparison, usually introduced by “than”."
+    }
   ],
   "pattern": {
     "formula": [
-      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ"}},
-      {"text": "V", "role": "verb", "label": {"vi": "động từ"}},
-      {"text": "adj-er", "role": "complement", "label": {"vi": "tính từ ngắn + -er"}},
-      {"text": "than", "role": "marker", "label": {"vi": "từ so sánh"}},
-      {"text": "N", "role": "object", "label": {"vi": "đối tượng so sánh"}}
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {
+        "text": "be",
+        "role": "verb",
+        "label": {"vi": "động từ be", "en": "verb be"},
+        "options": [{"text": "is"}, {"text": "are"}, {"text": "am"}]
+      },
+      {
+        "text": "adj-er",
+        "role": "complement",
+        "label": {"vi": "tính từ ngắn + -er", "en": "short adjective + -er"}
+      },
+      {"text": "than", "role": "marker", "label": {"vi": "từ so sánh", "en": "comparison marker"}},
+      {"text": "N", "role": "object", "label": {"vi": "mốc so sánh", "en": "point of comparison"}}
     ],
     "variants": {
       "negative": [
-        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ"}},
-        {"text": "V", "role": "verb", "label": {"vi": "động từ"}},
-        {"text": "not", "role": "particle", "label": {"vi": "phủ định"}},
-        {"text": "adj-er", "role": "complement", "label": {"vi": "tính từ ngắn + -er"}},
-        {"text": "than", "role": "marker", "label": {"vi": "từ so sánh"}},
-        {"text": "N", "role": "object", "label": {"vi": "đối tượng so sánh"}}
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "be",
+          "role": "verb",
+          "label": {"vi": "động từ be", "en": "verb be"},
+          "options": [{"text": "is"}, {"text": "are"}, {"text": "am"}]
+        },
+        {"text": "not", "role": "aux", "label": {"vi": "phủ định", "en": "negator"}},
+        {
+          "text": "adj-er",
+          "role": "complement",
+          "label": {"vi": "tính từ ngắn + -er", "en": "short adjective + -er"}
+        },
+        {"text": "than", "role": "marker", "label": {"vi": "từ so sánh", "en": "comparison marker"}},
+        {"text": "N", "role": "object", "label": {"vi": "mốc so sánh", "en": "point of comparison"}}
       ],
       "question": [
-        {"text": "V", "role": "aux", "label": {"vi": "trợ động từ"}},
-        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ"}},
-        {"text": "adj-er", "role": "complement", "label": {"vi": "tính từ ngắn + -er"}},
-        {"text": "than", "role": "marker", "label": {"vi": "từ so sánh"}},
-        {"text": "N", "role": "object", "label": {"vi": "đối tượng so sánh"}}
+        {
+          "text": "be",
+          "role": "verb",
+          "label": {"vi": "động từ be", "en": "verb be"},
+          "options": [{"text": "Is"}, {"text": "Are"}, {"text": "Am"}]
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "adj-er",
+          "role": "complement",
+          "label": {"vi": "tính từ ngắn + -er", "en": "short adjective + -er"}
+        },
+        {"text": "than", "role": "marker", "label": {"vi": "từ so sánh", "en": "comparison marker"}},
+        {"text": "N", "role": "object", "label": {"vi": "mốc so sánh", "en": "point of comparison"}}
       ]
     },
     "illustration": {
       "kind": "morphology",
       "morphology": [
-        {"base": "tall", "affix": "-er", "result": "taller"},
-        {"base": "big", "affix": "-ger", "result": "bigger"},
-        {"base": "happy", "affix": "-ier", "result": "happier"},
-        {"base": "large", "affix": "-r", "result": "larger"}
+        {"base": "fast", "affix": "-er", "result": "faster"},
+        {"base": "big", "affix": "-er", "result": "bigger"},
+        {"base": "happy", "affix": "-er", "result": "happier"},
+        {"base": "nice", "affix": "-r", "result": "nicer"}
       ]
     }
   },
   "examples": [
     {
-      "text": "My house is bigger than your house.",
+      "text": "My bike is faster than yours.",
       "form": "affirmative",
       "spans": [
-        {"start": 0, "end": 8, "role": "subject"},
-        {"start": 9, "end": 11, "role": "verb"},
-        {"start": 12, "end": 18, "role": "complement"},
-        {"start": 19, "end": 23, "role": "marker"},
-        {"start": 24, "end": 34, "role": "object"}
+        {"start": 0, "end": 7, "role": "subject"},
+        {"start": 8, "end": 10, "role": "verb"},
+        {"start": 11, "end": 17, "role": "complement"},
+        {"start": 18, "end": 22, "role": "marker"},
+        {"start": 23, "end": 28, "role": "object"}
       ],
-      "annotation": {"vi": "So sánh hai ngôi nhà, dùng 'bigger' vì 'big' là tính từ ngắn."},
-      "translation": {"vi": "Nhà của tôi lớn hơn nhà của bạn."}
+      "annotation": {
+        "vi": "“faster” là dạng so sánh hơn của “fast”; “than yours” nêu mốc so sánh.",
+        "en": "“faster” is the comparative form of “fast”; “than yours” gives the point of comparison."
+      },
+      "translation": {"vi": "Xe đạp của tôi nhanh hơn xe của bạn.", "en": "My bike is faster than yours."}
     },
     {
-      "text": "This book is not more interesting than that book.",
-      "form": "negative",
+      "text": "This lesson is more interesting than the last one.",
+      "form": "affirmative",
       "spans": [
-        {"start": 0, "end": 9, "role": "subject"},
-        {"start": 10, "end": 12, "role": "verb"},
-        {"start": 13, "end": 16, "role": "particle"},
-        {"start": 17, "end": 33, "role": "complement"},
-        {"start": 34, "end": 38, "role": "marker"},
-        {"start": 39, "end": 48, "role": "object"}
+        {"start": 0, "end": 11, "role": "subject"},
+        {"start": 12, "end": 14, "role": "verb"},
+        {"start": 15, "end": 31, "role": "complement"},
+        {"start": 32, "end": 36, "role": "marker"},
+        {"start": 37, "end": 49, "role": "object"}
       ],
-      "annotation": {"vi": "Phủ định so sánh hơn: 'not' đứng trước 'more interesting'."},
-      "translation": {"vi": "Cuốn sách này không thú vị hơn cuốn sách kia."}
+      "annotation": {
+        "vi": "Tính từ dài “interesting” dùng “more” thay vì thêm -er.",
+        "en": "The long adjective “interesting” uses “more” instead of -er."
+      },
+      "translation": {
+        "vi": "Bài học này thú vị hơn bài trước.",
+        "en": "This lesson is more interesting than the last one."
+      }
     },
     {
-      "text": "Is your car faster than my car?",
-      "form": "question",
+      "text": "Today is hotter than yesterday.",
+      "form": "affirmative",
       "spans": [
-        {"start": 0, "end": 2, "role": "aux"},
-        {"start": 3, "end": 11, "role": "subject"},
-        {"start": 12, "end": 18, "role": "complement"},
-        {"start": 19, "end": 23, "role": "marker"},
-        {"start": 24, "end": 30, "role": "object"}
+        {"start": 0, "end": 5, "role": "subject"},
+        {"start": 6, "end": 8, "role": "verb"},
+        {"start": 9, "end": 15, "role": "complement"},
+        {"start": 16, "end": 20, "role": "marker"},
+        {"start": 21, "end": 30, "role": "object"}
       ],
-      "annotation": {"vi": "Câu hỏi so sánh hơn: đảo trợ động từ 'is' lên trước chủ ngữ."},
-      "translation": {"vi": "Xe của bạn nhanh hơn xe của tôi phải không?"}
+      "annotation": {
+        "vi": "“hotter” gấp đôi phụ âm cuối trước khi thêm -er.",
+        "en": "“hotter” doubles the final consonant before adding -er."
+      },
+      "translation": {"vi": "Hôm nay nóng hơn hôm qua.", "en": "Today is hotter than yesterday."}
     }
   ],
-  "compare": [],
+  "compare": [
+    {
+      "with": "en.as_as",
+      "this_example": "My bike is faster than yours.",
+      "other_example": "My bike is as fast as yours.",
+      "this_meaning": {
+        "vi": "So sánh hơn nói mức độ khác nhau: một bên hơn bên kia.",
+        "en": "The comparative says the degrees are different: one side is more than the other."
+      },
+      "other_meaning": {
+        "vi": "So sánh bằng nói hai bên ngang nhau, không bên nào hơn.",
+        "en": "The as...as pattern says the two sides are equal, with no difference."
+      }
+    },
+    {
+      "with": "en.superlatives",
+      "this_example": "This restaurant is better than that one.",
+      "other_example": "This restaurant is the best in town.",
+      "this_meaning": {
+        "vi": "So sánh hơn so hai người/vật với nhau.",
+        "en": "The comparative compares two people or things with each other."
+      },
+      "other_meaning": {
+        "vi": "So sánh nhất so một người/vật với cả nhóm, nêu mức cao nhất.",
+        "en": "The superlative compares one person or thing with the whole group and names the highest degree."
+      }
+    }
+  ],
   "common_mistakes": [
     {
-      "wrong": "She is more tall than her sister.",
-      "right": "She is taller than her sister.",
-      "reason": {"vi": "Với tính từ ngắn như 'tall', phải thêm '-er' thay vì dùng 'more'."},
+      "wrong": "This car is more faster.",
+      "right": "This car is faster.",
+      "reason": {
+        "vi": "“faster” đã là dạng so sánh hơn, nên không dùng thêm “more”.",
+        "en": "“faster” is already a comparative form, so “more” cannot be added."
+      },
       "error_tag": "word_form",
       "l1": ["vi"]
     },
     {
-      "wrong": "This bag is expensiver than that bag.",
-      "right": "This bag is more expensive than that bag.",
-      "reason": {"vi": "Với tính từ dài như 'expensive', phải dùng 'more' thay vì thêm '-er'."},
+      "wrong": "Math is difficulter.",
+      "right": "Math is more difficult.",
+      "reason": {
+        "vi": "Tính từ dài như “difficult” tạo so sánh hơn bằng “more”, không thêm -er.",
+        "en": "Long adjectives like “difficult” form the comparative with “more”, not with -er."
+      },
       "error_tag": "sentence_structure",
       "l1": ["vi"]
     }
@@ -123,60 +205,84 @@
   "quick_practice": [
     {
       "q": "My sister is ___ than me.",
-      "options": [
-        {"text": "taller", "error_tag": null},
-        {"text": "more tall", "error_tag": "word_form"},
-        {"text": "tallest", "error_tag": "word_form"}
-      ],
+      "options": [{"text": "taller", "error_tag": null}, {"text": "more tall", "error_tag": "word_form"}],
       "answer": 0,
-      "explain": {"vi": "Tính từ ngắn 'tall' tạo so sánh hơn bằng cách thêm '-er': taller."}
+      "explain": {
+        "vi": "“tall” là tính từ ngắn, dạng so sánh hơn là “taller”.",
+        "en": "“tall” is a short adjective, so its comparative form is “taller”."
+      }
     },
     {
-      "q": "This exercise is ___ than the last one.",
+      "q": "This book is ___ than that one.",
       "options": [
-        {"text": "more difficult", "error_tag": null},
-        {"text": "difficulter", "error_tag": "word_form"},
-        {"text": "most difficult", "error_tag": "word_form"}
+        {"text": "more interesting", "error_tag": null},
+        {"text": "interestinger", "error_tag": "word_form"}
       ],
       "answer": 0,
-      "explain": {"vi": "Tính từ dài 'difficult' tạo so sánh hơn bằng 'more': more difficult."}
+      "explain": {
+        "vi": "“interesting” là tính từ dài, dùng “more interesting”.",
+        "en": "“interesting” is a long adjective, so we use “more interesting”."
+      }
     },
     {
       "q": "The weather today is ___ than yesterday.",
-      "options": [
-        {"text": "worse", "error_tag": null},
-        {"text": "more bad", "error_tag": "word_form"},
-        {"text": "badder", "error_tag": "word_form"}
-      ],
+      "options": [{"text": "worse", "error_tag": null}, {"text": "more bad", "error_tag": "word_form"}],
       "answer": 0,
-      "explain": {"vi": "'Bad' có dạng so sánh hơn bất quy tắc là 'worse'."}
+      "explain": {
+        "vi": "“bad” có dạng so sánh hơn bất quy tắc là “worse”.",
+        "en": "“bad” has the irregular comparative form “worse”."
+      }
     }
   ],
-  "status": "draft_ai",
-  "flags": [],
-  "provenance": {
-    "model": "deepseek:deepseek-flash",
-    "prompt_version": "generate_point_v04.v5",
-    "run_id": "generate.1790589933",
-    "generated_at": "2026-09-28T10:05:33Z"
-  },
-  "review": null,
-  "sequence": 1,
   "personal_production": {
     "prompt": {
-      "vi": "Viết một câu so sánh hai người hoặc hai vật.",
-      "en": "Write a sentence comparing two people or things."
+      "vi": "Viết một câu so sánh hơn về hai người hoặc hai vật quanh bạn.",
+      "en": "Write one comparative sentence about two people or things around you."
     },
-    "placeholder": "My brother is ... than me.",
+    "placeholder": "My ... is ... than ...",
     "target_form": "affirmative",
     "pattern_rule": {
       "ordered": true,
       "slots": [
-        {"role": "complement", "regex": "\\b\\w+er\\b|\\bmore \\w+\\b"},
+        {"role": "verb", "any_of": ["is", "are", "am"]},
+        {
+          "role": "complement",
+          "regex": "(?i)\\b\\w+(er|r)\\b|\\bmore\\s+\\w+\\b|\\bbetter\\b|\\bworse\\b"
+        },
         {"role": "marker", "any_of": ["than"]}
       ]
     },
-    "sample": {"text": "My brother is taller than me."}
+    "sample": {"text": "My phone is newer than yours."}
   },
-  "source_anchors": {"status": "anchored", "items": [{"source": "core_inventory", "code": "149", "level": "A1"}]}
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790830526",
+    "generated_at": "2026-10-01T04:55:26Z",
+    "r5_source": {
+      "ids": ["a2-comparatives"],
+      "content_version": 2,
+      "content_hash": "36ac257fe99b6abaca5eb9145305a4dddb086d550aa65a6379db288c309cd323",
+      "corrections": [
+        {
+          "r5_id": "a2-comparatives",
+          "issue": "R5's example 'This car is more faster.' is given as a mistake, but the corrected version 'This car is faster.' is fine; however, R5's rule list does not mention the irregular forms 'better/worse' in the formula, only in exceptions.",
+          "fix": "Added irregular forms to the formula options and to the quick practice, and kept the double comparative as a common mistake."
+        },
+        {
+          "r5_id": "a2-comparatives",
+          "issue": "R5's example 'Math is difficulter.' is a mistake, but the explanation says 'difficult dùng more' without showing the full corrected sentence with 'than'.",
+          "fix": "Wrote the corrected sentence as 'Math is more difficult.' and explained that long adjectives use 'more'."
+        },
+        {
+          "r5_id": "a2-comparatives",
+          "issue": "R5's guided practice includes 'more ___ than (interesting)' with answer 'more interesting than', which is not a full sentence and mixes the blank with the marker.",
+          "fix": "Replaced with a full cloze sentence in quick_practice: 'This book is ___ than that one.' with options 'more interesting' and 'interestinger'."
+        }
+      ]
+    }
+  },
+  "review": null
 }

@@ -1,0 +1,204 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.a2.006",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.verb_patterns",
+  "level": {"framework": "cefr", "value": "A2", "rank": 2},
+  "prereqs": ["en.canon.a2.001"],
+  "contrasts": [],
+  "error_tags": ["naturalness"],
+  "source_refs": {},
+  "point_type": "other",
+  "sequence": 4,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Phrasal Verbs Basic", "en": "Phrasal Verbs Basic"},
+    "native_title": "Phrasal Verbs Basic",
+    "level": {"framework": "cefr", "value": "A2", "rank": 2},
+    "summary": {
+      "vi": "Cụm động từ tiếng Anh gồm một động từ chính và một tiểu từ (giới từ hoặc trạng từ) tạo thành một nghĩa mới, thường không đoán được từ hai từ riêng lẻ.",
+      "en": "English phrasal verbs combine a main verb with a particle (a preposition or adverb) to make a new meaning that is often not obvious from the two words alone."
+    },
+    "sub": {"vi": "cụm động từ cơ bản", "en": "basic phrasal verbs"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn diễn đạt một hành động thường ngày bằng một cụm từ ngắn gọn thay vì một động từ dài, chẳng hạn get up thay cho rise.",
+      "en": "When you want to express an everyday action with a short phrase instead of a longer verb, for example get up instead of rise."
+    },
+    {
+      "vi": "Khi nghĩa của động từ thay đổi hoàn toàn khi thêm tiểu từ, chẳng hạn look có nghĩa là nhìn nhưng look after có nghĩa là chăm sóc.",
+      "en": "When the meaning of the verb changes completely with the particle, for example look means to direct your eyes but look after means to take care of."
+    },
+    {
+      "vi": "Khi bạn muốn nói về việc bắt đầu, tiếp tục hoặc kết thúc một hoạt động, chẳng hạn take up, go on, give up.",
+      "en": "When you want to talk about starting, continuing or stopping an activity, for example take up, go on, give up."
+    },
+    {
+      "vi": "Khi bạn muốn thêm một tân ngữ sau cụm động từ, chẳng hạn turn on the light hoặc turn the light on.",
+      "en": "When you want to add an object after the phrasal verb, for example turn on the light or turn the light on."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ chính", "en": "main verb"}},
+      {"text": "particle", "role": "particle", "label": {"vi": "tiểu từ", "en": "particle"}},
+      {"text": "O", "role": "object", "label": {"vi": "tân ngữ", "en": "object"}, "optional": true}
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "do/does not",
+          "role": "aux",
+          "label": {"vi": "trợ động từ phủ định", "en": "negative auxiliary"},
+          "options": [{"text": "do not"}, {"text": "does not"}, {"text": "don't"}, {"text": "doesn't"}]
+        },
+        {"text": "V", "role": "verb", "label": {"vi": "động từ chính", "en": "main verb"}},
+        {"text": "particle", "role": "particle", "label": {"vi": "tiểu từ", "en": "particle"}},
+        {
+          "text": "O",
+          "role": "object",
+          "label": {"vi": "tân ngữ", "en": "object"},
+          "optional": true
+        }
+      ],
+      "question": [
+        {
+          "text": "Do/Does",
+          "role": "aux",
+          "label": {"vi": "trợ động từ nghi vấn", "en": "question auxiliary"},
+          "options": [{"text": "Do"}, {"text": "Does"}]
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {"text": "V", "role": "verb", "label": {"vi": "động từ chính", "en": "main verb"}},
+        {"text": "particle", "role": "particle", "label": {"vi": "tiểu từ", "en": "particle"}},
+        {
+          "text": "O",
+          "role": "object",
+          "label": {"vi": "tân ngữ", "en": "object"},
+          "optional": true
+        }
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "I get up at six every morning.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 2, "end": 5, "role": "verb"},
+        {"start": 6, "end": 8, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "get up là cụm động từ có nghĩa là thức dậy và ra khỏi giường.",
+        "en": "get up is a phrasal verb meaning to rise from bed."
+      },
+      "translation": {"vi": "Tôi thức dậy lúc sáu giờ mỗi sáng.", "en": "I get up at six every morning."}
+    },
+    {
+      "text": "She doesn't give up easily.",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 11, "role": "aux"},
+        {"start": 12, "end": 16, "role": "verb"},
+        {"start": 17, "end": 19, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "give up là cụm động từ có nghĩa là từ bỏ; trợ động từ doesn't đứng trước động từ chính.",
+        "en": "give up is a phrasal verb meaning to stop trying; the auxiliary doesn't comes before the main verb."
+      },
+      "translation": {"vi": "Cô ấy không dễ dàng từ bỏ.", "en": "She doesn't give up easily."}
+    },
+    {
+      "text": "Do you turn on the TV?",
+      "form": "question",
+      "spans": [
+        {"start": 0, "end": 2, "role": "aux"},
+        {"start": 3, "end": 6, "role": "subject"},
+        {"start": 7, "end": 11, "role": "verb"},
+        {"start": 12, "end": 14, "role": "particle"},
+        {"start": 15, "end": 21, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "turn on là cụm động từ có nghĩa là bật; trợ động từ Do đứng đầu câu hỏi.",
+        "en": "turn on is a phrasal verb meaning to switch on; the auxiliary Do comes first in the question."
+      },
+      "translation": {"vi": "Bạn có bật TV không?", "en": "Do you turn on the TV?"}
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "I get up early every day, but my brother get up late.",
+      "right": "I get up early every day, but my brother gets up late.",
+      "reason": {
+        "vi": "Người học quên chia động từ chính ở ngôi thứ ba số ít vì tập trung vào tiểu từ của cụm động từ.",
+        "en": "Learners forget to add -s to the main verb in the third person singular because they focus on the particle of the phrasal verb."
+      },
+      "error_tag": "naturalness",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "My sister ___ up at 7 o'clock every day.",
+      "options": [{"text": "gets", "error_tag": null}, {"text": "get", "error_tag": "agreement"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Chủ ngữ số ít 'my sister' nên động từ chính 'get' phải thêm -s thành 'gets'.",
+        "en": "The singular subject 'my sister' requires the main verb 'get' to take -s, becoming 'gets'."
+      }
+    },
+    {
+      "q": "They ___ give up when the exercise is difficult.",
+      "options": [{"text": "don't", "error_tag": null}, {"text": "doesn't", "error_tag": "agreement"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Chủ ngữ số nhiều 'they' đi với trợ động từ phủ định 'don't', không dùng 'doesn't'.",
+        "en": "The plural subject 'they' takes the negative auxiliary 'don't', not 'doesn't'."
+      }
+    },
+    {
+      "q": "___ she look after her little brother?",
+      "options": [{"text": "Does", "error_tag": null}, {"text": "Do", "error_tag": "agreement"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Chủ ngữ số ít 'she' nên câu hỏi bắt đầu bằng 'Does', không dùng 'Do'.",
+        "en": "The singular subject 'she' requires the question to start with 'Does', not 'Do'."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về thói quen hàng ngày của bạn, dùng một cụm động từ như get up, turn on, look after.",
+      "en": "Write one sentence about your daily routine using a phrasal verb such as get up, turn on, or look after."
+    },
+    "placeholder": "I get up ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "verb", "any_of": ["get", "turn", "look", "give", "take", "go"]},
+        {"role": "particle", "any_of": ["up", "on", "after", "off", "out", "in"]}
+      ]
+    },
+    "sample": {"text": "I get up at seven o'clock."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790830727",
+    "generated_at": "2026-10-01T04:58:47Z",
+    "metadata_stale": true
+  },
+  "review": null
+}

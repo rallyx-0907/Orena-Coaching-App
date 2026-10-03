@@ -1,0 +1,246 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk4_7_topic_109",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.contrast",
+  "level": {"framework": "hsk3", "value": "4", "rank": 4},
+  "prereqs": ["zh.canon.r5.hsk4_2_n_ng_cao"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["zh-hsk4-7-topic-109"]},
+  "point_type": "other",
+  "sequence": 4,
+  "aliases": ["zh-hsk4-7-topic-109"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 宁可...也不...", "en": "Chinese grammar: 宁可...也不..."},
+    "native_title": "宁可...也不...",
+    "level": {"framework": "hsk3", "value": "4", "rank": 4},
+    "summary": {
+      "vi": "宁可...也不... dùng để nói người nói thà chọn một việc (A) còn hơn làm việc kia (B), thể hiện sự lựa chọn dứt khoát.",
+      "en": "宁可...也不... expresses that the speaker would rather choose one option (A) than do the other (B), showing a firm preference."
+    },
+    "sub": {"vi": "thà... còn hơn", "en": "would rather... than"},
+    "native_title_pinyin": ["nìng", "kě", "", "", "", "yě", "bù", "", "", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói rõ mình thà chịu một điều bất lợi nhỏ còn hơn làm điều mình không muốn.",
+      "en": "When you want to say you would rather accept a small disadvantage than do something you do not want."
+    },
+    {
+      "vi": "Khi so sánh hai lựa chọn và muốn nhấn mạnh lựa chọn đứng sau 宁可 là điều bạn thực sự muốn.",
+      "en": "When comparing two options and emphasizing that the one after 宁可 is what you really want."
+    },
+    {
+      "vi": "Khi từ chối một đề nghị hoặc thói quen mà bạn không thích, nhưng vẫn giữ thái độ lịch sự, dứt khoát.",
+      "en": "When rejecting an offer or habit you dislike while keeping a polite but firm tone."
+    },
+    {
+      "vi": "Khi viết hoặc nói ở mức HSK4 về sở thích, nguyên tắc sống hoặc cách làm việc của bản thân.",
+      "en": "When writing or speaking at HSK4 about personal preferences, life principles, or ways of working."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "宁可",
+        "role": "marker",
+        "label": {"vi": "dấu hiệu thà", "en": "would-rather marker"},
+        "pinyin": ["nìng", "kě"]
+      },
+      {
+        "text": "A",
+        "role": "other",
+        "label": {"vi": "lựa chọn được ưu tiên", "en": "preferred option"},
+        "pinyin": [""]
+      },
+      {
+        "text": "也不",
+        "role": "marker",
+        "label": {"vi": "cũng không", "en": "also not"},
+        "pinyin": ["yě", "bù"]
+      },
+      {
+        "text": "B",
+        "role": "other",
+        "label": {"vi": "lựa chọn bị từ chối", "en": "rejected option"},
+        "pinyin": [""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "我宁可走路，也不坐出租车。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 3, "role": "marker"},
+        {"start": 3, "end": 5, "role": "other"},
+        {"start": 6, "end": 8, "role": "marker"},
+        {"start": 8, "end": 12, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Chủ ngữ + 宁可 + việc được chọn + 也不 + việc bị từ chối.",
+        "en": "Subject + 宁可 + preferred action + 也不 + rejected action."
+      },
+      "translation": {"vi": "Tôi thà đi bộ còn hơn đi taxi.", "en": "I would rather walk than take a taxi."},
+      "pinyin": ["wǒ", "nìng", "kě", "zǒu", "lù", "", "yě", "bù", "zuò", "chū", "zū", "chē", ""]
+    },
+    {
+      "text": "他宁可晚一点，也不愿意出错。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 3, "role": "marker"},
+        {"start": 3, "end": 6, "role": "other"},
+        {"start": 7, "end": 9, "role": "marker"},
+        {"start": 9, "end": 13, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "宁可 + A, 也不 + B: A là điều chấp nhận, B là điều không muốn.",
+        "en": "宁可 + A, 也不 + B: A is acceptable, B is what the speaker refuses."
+      },
+      "translation": {
+        "vi": "Anh ấy thà chậm một chút còn hơn để xảy ra lỗi.",
+        "en": "He would rather be a bit late than make a mistake."
+      },
+      "pinyin": ["tā", "nìng", "kě", "wǎn", "yì", "diǎn", "", "yě", "bù", "yuàn", "yì", "chū", "cuò", ""]
+    },
+    {
+      "text": "她宁可自己做，也不麻烦别人。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 3, "role": "marker"},
+        {"start": 3, "end": 6, "role": "other"},
+        {"start": 7, "end": 9, "role": "marker"},
+        {"start": 9, "end": 13, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Cấu trúc cố định: 宁可 đứng trước lựa chọn ưu tiên, 也不 đứng trước lựa chọn bị từ chối.",
+        "en": "Fixed pattern: 宁可 comes before the preferred choice, 也不 before the rejected one."
+      },
+      "translation": {
+        "vi": "Cô ấy thà tự làm còn hơn làm phiền người khác.",
+        "en": "She would rather do it herself than trouble others."
+      },
+      "pinyin": ["tā", "nìng", "kě", "zì", "jǐ", "zuò", "", "yě", "bù", "má", "fán", "bié", "rén", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "我宁可坐出租车，也不走路。",
+      "right": "我宁可走路，也不坐出租车。",
+      "reason": {
+        "vi": "Người học đặt lựa chọn mình thích sau 也不, nhưng 宁可 phải đứng trước lựa chọn được ưu tiên và 也不 đứng trước lựa chọn bị từ chối.",
+        "en": "The learner puts the preferred option after 也不, but 宁可 must come before the preferred option and 也不 before the rejected one."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong_pinyin": ["wǒ", "nìng", "kě", "zuò", "chū", "zū", "chē", "", "yě", "bù", "zǒu", "lù", ""],
+      "right_pinyin": ["wǒ", "nìng", "kě", "zǒu", "lù", "", "yě", "bù", "zuò", "chū", "zū", "chē", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "我___走路，也不坐出租车。",
+      "options": [
+        {"text": "宁可", "error_tag": null, "pinyin": ["nìng", "kě"]},
+        {"text": "不如", "error_tag": "conjunction", "pinyin": ["bù", "rú"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "宁可...也不... là cặp cố định, không dùng 不如 trong mẫu này.",
+        "en": "宁可...也不... is a fixed pair; 不如 is not used in this pattern."
+      },
+      "q_pinyin": ["wǒ", "", "", "", "zǒu", "lù", "", "yě", "bù", "zuò", "chū", "zū", "chē", ""]
+    },
+    {
+      "q": "他宁可晚一点，___愿意出错。",
+      "options": [
+        {"text": "也不", "error_tag": null, "pinyin": ["yě", "bù"]},
+        {"text": "也不了", "error_tag": "particle", "pinyin": ["yě", "bù", "le"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 也不 không thêm 了; 也不 đứng trước động từ/cụm động từ.",
+        "en": "Do not add 了 after 也不; 也不 comes directly before the verb phrase."
+      },
+      "q_pinyin": ["tā", "nìng", "kě", "wǎn", "yì", "diǎn", "", "", "", "", "yuàn", "yì", "chū", "cuò", ""]
+    },
+    {
+      "q": "她宁可自己做，___麻烦别人。",
+      "options": [
+        {"text": "也不", "error_tag": null, "pinyin": ["yě", "bù"]},
+        {"text": "不也", "error_tag": "word_order", "pinyin": ["bù", "yě"]}
+      ],
+      "answer": 0,
+      "explain": {"vi": "Trật tự cố định là 也不, không đảo thành 不也.", "en": "The fixed order is 也不, not 不也."},
+      "q_pinyin": ["tā", "nìng", "kě", "zì", "jǐ", "zuò", "", "", "", "", "má", "fán", "bié", "rén", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về bản thân dùng 宁可...也不..., nói bạn thà làm gì còn hơn làm gì.",
+      "en": "Write one sentence about yourself using 宁可...也不..., saying what you would rather do than do something else."
+    },
+    "placeholder": "我宁可……，也不……。",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "marker", "any_of": ["宁可"]}, {"role": "marker", "any_of": ["也不"]}]
+    },
+    "sample": {
+      "text": "我宁可早起，也不迟到。",
+      "pinyin": ["wǒ", "nìng", "kě", "zǎo", "qǐ", "", "yě", "bù", "chí", "dào", ""]
+    },
+    "placeholder_pinyin": ["wǒ", "nìng", "kě", "", "", "", "yě", "bù", "", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790833516",
+    "generated_at": "2026-10-01T05:45:16Z",
+    "r5_source": {
+      "ids": ["zh-hsk4-7-topic-109"],
+      "content_version": 2,
+      "content_hash": "a116370117bb60bc12da43240011d7d12651c7eff05cac36456a846aba2b162d",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk4-7-topic-109",
+          "issue": "R5 example '我宁可少赚一点，也不做不喜欢的工作。' uses 不喜欢 which is not in the HSK4 vocabulary list.",
+          "fix": "Replaced with '她宁可自己做，也不麻烦别人。' using HSK4-level vocabulary."
+        },
+        {
+          "r5_id": "zh-hsk4-7-topic-109",
+          "issue": "R5 mistake '我宁可坐出租车，也不走路 nếu intended prefer walking.' mixes Vietnamese into the Chinese sentence and is not a clean learner error.",
+          "fix": "Rewrote as a clean Chinese wrong sentence '我宁可坐出租车，也不走路。' with the correct version '我宁可走路，也不坐出租车。'"
+        },
+        {
+          "r5_id": "zh-hsk4-7-topic-109",
+          "issue": "R5 rule 'Can use 宁愿 similarly in many contexts.' is vague and not a rule for this point.",
+          "fix": "Removed; the formula and examples now show the fixed 宁可...也不... pattern only."
+        },
+        {
+          "r5_id": "zh-hsk4-7-topic-109",
+          "issue": "R5 guided practice includes a contrast with 与其...不如... but the schema requires no compare entries for this point.",
+          "fix": "Omitted the contrast section; kept the point's own pattern and examples."
+        }
+      ]
+    },
+    "metadata_stale": true
+  },
+  "review": null
+}

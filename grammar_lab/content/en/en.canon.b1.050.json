@@ -1,0 +1,167 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b1.050",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.verb_patterns",
+  "level": {"framework": "cefr", "value": "B1", "rank": 3},
+  "prereqs": ["en.canon.b1.032"],
+  "contrasts": [],
+  "error_tags": ["word_form"],
+  "source_refs": {},
+  "point_type": "other",
+  "sequence": 4,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "danh động từ Subject", "en": "Gerund Subject"},
+    "native_title": "Gerund Subject",
+    "level": {"framework": "cefr", "value": "B1", "rank": 3},
+    "summary": {
+      "vi": "Danh động từ (V-ing) có thể làm chủ ngữ của câu, và động từ theo sau nó chia ở số ít.",
+      "en": "A gerund (V-ing) can be the subject of a sentence, and the verb that follows it takes a singular form."
+    },
+    "sub": {"vi": "danh động từ làm chủ ngữ", "en": "gerund as subject"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói về một hoạt động như một chủ đề chung, không gắn với một người cụ thể nào.",
+      "en": "When you want to talk about an activity as a general topic, not tied to a specific person."
+    },
+    {
+      "vi": "Khi chủ ngữ là một hành động, ví dụ 'đọc sách' hay 'tập thể dục', chứ không phải một người hay vật.",
+      "en": "When the subject is an action, such as 'reading' or 'exercising', rather than a person or thing."
+    },
+    {
+      "vi": "Khi bạn đưa ra một nhận xét hoặc ý kiến chung, ví dụ 'Học ngoại ngữ rất hữu ích'.",
+      "en": "When you make a general comment or opinion, for example 'Learning languages is useful'."
+    },
+    {
+      "vi": "Khi bạn muốn câu văn trang trọng hơn thay vì dùng 'It is ... to ...'.",
+      "en": "When you want a more formal sentence instead of using 'It is ... to ...'."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "V-ing", "role": "subject", "label": {"vi": "danh động từ", "en": "gerund"}},
+      {"text": "V-s", "role": "verb", "label": {"vi": "động từ chia số ít", "en": "singular verb"}},
+      {
+        "text": "complement",
+        "role": "complement",
+        "label": {"vi": "phần bổ sung", "en": "complement"}
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "Reading helps you learn new words.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 7, "role": "subject"},
+        {"start": 8, "end": 13, "role": "verb"},
+        {"start": 14, "end": 33, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Danh động từ 'Reading' làm chủ ngữ, động từ 'helps' chia số ít.",
+        "en": "The gerund 'Reading' is the subject, and the verb 'helps' is singular."
+      },
+      "translation": {"vi": "Đọc sách giúp bạn học từ mới.", "en": "Reading helps you learn new words."}
+    },
+    {
+      "text": "Swimming is good for your health.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 8, "role": "subject"},
+        {"start": 9, "end": 11, "role": "verb"},
+        {"start": 12, "end": 32, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Danh động từ 'Swimming' làm chủ ngữ, động từ 'is' chia số ít.",
+        "en": "The gerund 'Swimming' is the subject, and the verb 'is' is singular."
+      },
+      "translation": {"vi": "Bơi lội tốt cho sức khỏe của bạn.", "en": "Swimming is good for your health."}
+    },
+    {
+      "text": "Learning a new language takes time.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 8, "role": "subject"},
+        {"start": 24, "end": 29, "role": "verb"},
+        {"start": 30, "end": 34, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Danh động từ 'Learning' làm chủ ngữ, động từ 'takes' chia số ít.",
+        "en": "The gerund 'Learning' is the subject, and the verb 'takes' is singular."
+      },
+      "translation": {"vi": "Học một ngôn ngữ mới cần thời gian.", "en": "Learning a new language takes time."}
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "Read helps you learn new words.",
+      "right": "Reading helps you learn new words.",
+      "reason": {
+        "vi": "Người học dùng động từ nguyên thể thay vì danh động từ khi làm chủ ngữ.",
+        "en": "The learner uses the base verb instead of the gerund as the subject."
+      },
+      "error_tag": "word_form",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "___ is good for your health.",
+      "options": [{"text": "Swimming", "error_tag": null}, {"text": "Swim", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Danh động từ 'Swimming' làm chủ ngữ, động từ 'is' chia số ít.",
+        "en": "The gerund 'Swimming' is the subject, and the verb 'is' is singular."
+      }
+    },
+    {
+      "q": "___ a new language takes time.",
+      "options": [{"text": "Learning", "error_tag": null}, {"text": "Learn", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Danh động từ 'Learning' làm chủ ngữ, động từ 'takes' chia số ít.",
+        "en": "The gerund 'Learning' is the subject, and the verb 'takes' is singular."
+      }
+    },
+    {
+      "q": "___ helps you learn new words.",
+      "options": [{"text": "Reading", "error_tag": null}, {"text": "Read", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Danh động từ 'Reading' làm chủ ngữ, động từ 'helps' chia số ít.",
+        "en": "The gerund 'Reading' is the subject, and the verb 'helps' is singular."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một hoạt động bạn thích, dùng danh động từ làm chủ ngữ.",
+      "en": "Write a sentence about an activity you like, using a gerund as the subject."
+    },
+    "placeholder": "Reading ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "subject", "regex": "[A-Za-z]+ing"},
+        {"role": "verb", "any_of": ["is", "helps", "takes", "makes", "gives"]}
+      ]
+    },
+    "sample": {"text": "Reading helps you learn new words."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790831047",
+    "generated_at": "2026-10-01T05:04:07Z"
+  },
+  "review": null
+}

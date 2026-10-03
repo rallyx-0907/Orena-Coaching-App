@@ -1,0 +1,207 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b1.001",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.pronoun_reference",
+  "level": {"framework": "cefr", "value": "B1", "rank": 3},
+  "prereqs": [],
+  "contrasts": [],
+  "error_tags": ["sentence_structure"],
+  "source_refs": {"r5": ["a2-object-relative-pronoun-omission"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["a2-object-relative-pronoun-omission"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Object đại từ quan hệ omission", "en": "Object relative pronoun omission"},
+    "native_title": "Object relative pronoun omission",
+    "level": {"framework": "cefr", "value": "B1", "rank": 3},
+    "summary": {
+      "vi": "Trong mệnh đề quan hệ xác định, đại từ quan hệ làm tân ngữ (who, which, that) có thể lược bỏ, nhưng đại từ làm chủ ngữ thì không.",
+      "en": "In a defining relative clause, an object relative pronoun (who, which, that) can be left out, but a subject relative pronoun cannot."
+    },
+    "sub": {"vi": "lược bỏ đại từ tân ngữ", "en": "omitting object pronouns"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi mệnh đề quan hệ đã có chủ ngữ riêng đứng ngay sau đại từ quan hệ, ví dụ 'the book (that) I bought'.",
+      "en": "When the relative clause already has its own subject right after the relative pronoun, as in 'the book (that) I bought'."
+    },
+    {
+      "vi": "Khi bạn muốn câu gọn hơn trong văn nói hoặc văn viết thân mật, ví dụ 'the film we watched'.",
+      "en": "When you want a shorter sentence in speech or informal writing, as in 'the film we watched'."
+    },
+    {
+      "vi": "Khi đại từ quan hệ đứng trước một chủ ngữ + động từ, không phải trước động từ trần.",
+      "en": "When the relative pronoun comes before a subject plus a verb, not before a bare verb."
+    },
+    {
+      "vi": "Khi bạn muốn nhấn mạnh thông tin trong mệnh đề chính, không phải trong mệnh đề quan hệ.",
+      "en": "When you want to focus on the main clause, not on the relative clause."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "N", "role": "object", "label": {"vi": "danh từ đứng trước", "en": "noun before"}},
+      {
+        "text": "who/which/that",
+        "role": "marker",
+        "label": {
+          "vi": "đại từ quan hệ làm tân ngữ (có thể lược bỏ)",
+          "en": "object relative pronoun (optional)"
+        },
+        "optional": true,
+        "options": [{"text": "who"}, {"text": "which"}, {"text": "that"}]
+      },
+      {
+        "text": "S",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ của mệnh đề quan hệ", "en": "subject of the relative clause"}
+      },
+      {
+        "text": "V",
+        "role": "verb",
+        "label": {"vi": "động từ của mệnh đề quan hệ", "en": "verb of the relative clause"}
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "The film we watched was funny.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 8, "role": "object"},
+        {"start": 9, "end": 11, "role": "subject"},
+        {"start": 12, "end": 19, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Đại từ quan hệ 'that' đã được lược bỏ vì nó làm tân ngữ; 'we' là chủ ngữ của mệnh đề quan hệ.",
+        "en": "The relative pronoun 'that' is left out because it is the object; 'we' is the subject of the relative clause."
+      },
+      "translation": {"vi": "Bộ phim chúng tôi xem rất vui.", "en": "The film we watched was funny."}
+    },
+    {
+      "text": "The teacher I asked helped me.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 11, "role": "object"},
+        {"start": 12, "end": 13, "role": "subject"},
+        {"start": 14, "end": 19, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Đại từ quan hệ 'who' đã được lược bỏ vì nó làm tân ngữ; 'I' là chủ ngữ của mệnh đề quan hệ.",
+        "en": "The relative pronoun 'who' is left out because it is the object; 'I' is the subject of the relative clause."
+      },
+      "translation": {"vi": "Giáo viên tôi hỏi đã giúp tôi.", "en": "The teacher I asked helped me."}
+    },
+    {
+      "text": "This is the phone she bought.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 8, "end": 17, "role": "object"},
+        {"start": 18, "end": 21, "role": "subject"},
+        {"start": 22, "end": 28, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Đại từ quan hệ 'that' đã được lược bỏ vì nó làm tân ngữ; 'she' là chủ ngữ của mệnh đề quan hệ.",
+        "en": "The relative pronoun 'that' is left out because it is the object; 'she' is the subject of the relative clause."
+      },
+      "translation": {"vi": "Đây là chiếc điện thoại cô ấy mua.", "en": "This is the phone she bought."}
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "The boy sits there is my cousin.",
+      "right": "The boy who sits there is my cousin.",
+      "reason": {
+        "vi": "Người học bỏ đại từ quan hệ làm chủ ngữ vì nghĩ rằng mọi đại từ quan hệ đều có thể lược bỏ. Nhưng 'who' ở đây là chủ ngữ của 'sits', nên không thể bỏ.",
+        "en": "The learner omits the subject relative pronoun because they think all relative pronouns can be left out. But 'who' here is the subject of 'sits', so it cannot be omitted."
+      },
+      "error_tag": "sentence_structure",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "The book ___ I bought was expensive.",
+      "options": [{"text": "which", "error_tag": null}, {"text": "who", "error_tag": "word_choice"}],
+      "answer": 0,
+      "explain": {
+        "vi": "'which' thay cho 'the book' (vật), làm tân ngữ của 'bought'. 'who' chỉ dùng cho người.",
+        "en": "'which' replaces 'the book' (a thing) and is the object of 'bought'. 'who' is only for people."
+      }
+    },
+    {
+      "q": "The woman ___ I met yesterday was very kind.",
+      "options": [{"text": "who", "error_tag": null}, {"text": "which", "error_tag": "word_choice"}],
+      "answer": 0,
+      "explain": {
+        "vi": "'who' thay cho 'the woman' (người), làm tân ngữ của 'met'. 'which' chỉ dùng cho vật.",
+        "en": "'who' replaces 'the woman' (a person) and is the object of 'met'. 'which' is only for things."
+      }
+    },
+    {
+      "q": "The man ___ lives next door is a doctor.",
+      "options": [{"text": "who", "error_tag": null}, {"text": "which", "error_tag": "word_choice"}],
+      "answer": 0,
+      "explain": {
+        "vi": "'who' là chủ ngữ của 'lives', không thể lược bỏ. 'which' không dùng cho người.",
+        "en": "'who' is the subject of 'lives' and cannot be omitted. 'which' is not used for people."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một đồ vật bạn đã mua hoặc một người bạn đã gặp, dùng mệnh đề quan hệ làm tân ngữ và lược bỏ đại từ quan hệ.",
+      "en": "Write a sentence about something you bought or someone you met, using an object relative clause with the relative pronoun left out."
+    },
+    "placeholder": "The ... I ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {
+          "role": "object",
+          "regex": "\\b(the|a|an|this|that|these|those|my|your|his|her|its|our|their)\\s+\\w+"
+        },
+        {"role": "subject", "any_of": ["I", "you", "he", "she", "it", "we", "they"]},
+        {"role": "verb", "regex": "\\b\\w+(ed|t|ght|ld|nt|d)\\b"}
+      ]
+    },
+    "sample": {"text": "The phone she bought was expensive."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790830727",
+    "generated_at": "2026-10-01T04:58:47Z",
+    "r5_source": {
+      "ids": ["a2-object-relative-pronoun-omission"],
+      "content_version": 2,
+      "content_hash": "f95855c11aeda4ae449dbf4b87250f2474731353f3a9473524c35281e1b17e32",
+      "corrections": [
+        {
+          "r5_id": "a2-object-relative-pronoun-omission",
+          "issue": "The R5 lesson lists 'The book which I bought it was expensive.' as a mistake, but the correct version 'The book which I bought was expensive.' still contains the relative pronoun 'which'. The point is about omitting the object relative pronoun, so the correct version should show the omission: 'The book I bought was expensive.'",
+          "fix": "Changed the correct version to 'The book I bought was expensive.' to demonstrate the target structure."
+        },
+        {
+          "r5_id": "a2-object-relative-pronoun-omission",
+          "issue": "The R5 lesson includes 'The boy who sits there is my cousin.' as an example of a subject relative clause, but this is not an example of object relative pronoun omission. It is a contrast example, not a target example.",
+          "fix": "Removed it from the target examples and used it only in the common mistakes section as the correct version of a subject relative clause error."
+        },
+        {
+          "r5_id": "a2-object-relative-pronoun-omission",
+          "issue": "The R5 lesson's guided practice includes a production task asking for '2 object relatives omit + 2 subject relatives', which is beyond the scope of this single point and mixes two structures.",
+          "fix": "Replaced with a focused personal production task that asks for one sentence using the object relative pronoun omission pattern."
+        }
+      ]
+    }
+  },
+  "review": null
+}

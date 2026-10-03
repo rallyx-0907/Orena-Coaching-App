@@ -1,0 +1,290 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk6.a_6_3_2_1.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.linking",
+  "level": {"framework": "hsk3", "value": "6", "rank": 6},
+  "prereqs": ["zh.canon.gf.hsk6.a_6_2_6.p1"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"gf0025": ["gf0025.hsk6.025", "gf0025.hsk6.026", "gf0025.hsk6.027", "gf0025.hsk6.028"]},
+  "point_type": "other",
+  "sequence": 5,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 或A或B", "en": "Chinese grammar: 或A或B"},
+    "native_title": "或A或B",
+    "level": {"framework": "hsk3", "value": "6", "rank": 6},
+    "summary": {
+      "vi": "Mẫu 或A或B dùng để nêu hai khả năng thay thế nhau, nghĩa là hoặc cái này hoặc cái kia.",
+      "en": "The pattern 或A或B presents two alternatives, meaning either one or the other."
+    },
+    "sub": {"vi": "hoặc A hoặc B", "en": "either A or B"},
+    "native_title_pinyin": ["huò", "", "huò", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói hai lựa chọn đều có thể xảy ra, không cần chọn trước.",
+      "en": "When you want to say that two options are both possible, without choosing one in advance."
+    },
+    {
+      "vi": "Khi hai vế là hai hành động hoặc hai trạng thái song song, thường có cùng cấu trúc.",
+      "en": "When the two parts are parallel actions or states, usually with the same structure."
+    },
+    {
+      "vi": "Khi câu mang sắc thái khách quan, ít dùng trong khẩu ngữ thân mật hằng ngày.",
+      "en": "When the sentence has an objective tone; it is less common in casual everyday speech."
+    },
+    {
+      "vi": "Khi bạn muốn nhấn mạnh rằng dù chọn cách nào thì kết quả vẫn như nhau.",
+      "en": "When you want to stress that either choice leads to the same result."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "或",
+        "role": "connector",
+        "label": {"vi": "hoặc (thứ nhất)", "en": "or (first)"},
+        "pinyin": ["huò"]
+      },
+      {
+        "text": "A",
+        "role": "other",
+        "label": {"vi": "vế thứ nhất", "en": "first part"},
+        "pinyin": [""]
+      },
+      {
+        "text": "或",
+        "role": "connector",
+        "label": {"vi": "hoặc (thứ hai)", "en": "or (second)"},
+        "pinyin": ["huò"]
+      },
+      {
+        "text": "B",
+        "role": "other",
+        "label": {"vi": "vế thứ hai", "en": "second part"},
+        "pinyin": [""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "周末我或看书或散步。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 3, "end": 4, "role": "connector"},
+        {"start": 4, "end": 6, "role": "other"},
+        {"start": 6, "end": 7, "role": "connector"},
+        {"start": 7, "end": 9, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Hai hoạt động thay thế nhau: hoặc đọc sách, hoặc đi dạo.",
+        "en": "Two alternative activities: either reading or taking a walk."
+      },
+      "translation": {
+        "vi": "Cuối tuần tôi hoặc đọc sách hoặc đi dạo.",
+        "en": "On weekends I either read or take a walk."
+      },
+      "pinyin": ["zhōu", "mò", "wǒ", "huò", "kàn", "shū", "huò", "sàn", "bù", ""]
+    },
+    {
+      "text": "这个办法或好或坏，都要试过才知道。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 4, "end": 5, "role": "connector"},
+        {"start": 5, "end": 6, "role": "other"},
+        {"start": 6, "end": 7, "role": "connector"},
+        {"start": 7, "end": 8, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Hai khả năng đối lập: hoặc tốt hoặc xấu, chưa biết trước.",
+        "en": "Two opposite possibilities: either good or bad, unknown in advance."
+      },
+      "translation": {
+        "vi": "Cách này hoặc tốt hoặc xấu, phải thử mới biết.",
+        "en": "This method is either good or bad; you only know after trying."
+      },
+      "pinyin": [
+        "zhè",
+        "gè",
+        "bàn",
+        "fǎ",
+        "huò",
+        "hǎo",
+        "huò",
+        "huài",
+        "",
+        "dōu",
+        "yào",
+        "shì",
+        "guò",
+        "cái",
+        "zhī",
+        "dào",
+        ""
+      ]
+    },
+    {
+      "text": "明天或下雨或晴天，我们都要出发。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 2, "end": 3, "role": "connector"},
+        {"start": 3, "end": 5, "role": "other"},
+        {"start": 5, "end": 6, "role": "connector"},
+        {"start": 6, "end": 8, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Hai tình huống thời tiết thay thế nhau, kết quả không đổi.",
+        "en": "Two alternative weather situations; the result stays the same."
+      },
+      "translation": {
+        "vi": "Ngày mai hoặc mưa hoặc nắng, chúng tôi đều phải lên đường.",
+        "en": "Tomorrow it will either rain or be sunny; we still have to set off."
+      },
+      "pinyin": [
+        "míng",
+        "tiān",
+        "huò",
+        "xià",
+        "yǔ",
+        "huò",
+        "qíng",
+        "tiān",
+        "",
+        "wǒ",
+        "men",
+        "dōu",
+        "yào",
+        "chū",
+        "fā",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "周末我或者看书或者散步。",
+      "right": "周末我或看书或散步。",
+      "reason": {
+        "vi": "Trong mẫu song song 或A或B, tiếng Trung dùng 或 đơn; dùng 或者 ở cả hai vế phá vỡ cấu trúc đối xứng của mẫu.",
+        "en": "In the parallel 或A或B pattern, Chinese uses the single 或; using 或者 in both parts breaks the pattern's symmetry."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong_pinyin": ["zhōu", "mò", "wǒ", "huò", "zhě", "kàn", "shū", "huò", "zhě", "sàn", "bù", ""],
+      "right_pinyin": ["zhōu", "mò", "wǒ", "huò", "kàn", "shū", "huò", "sàn", "bù", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "周末我___看书或散步。",
+      "options": [
+        {"text": "或", "error_tag": null, "pinyin": ["huò"]},
+        {"text": "或者", "error_tag": "conjunction", "pinyin": ["huò", "zhě"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Mẫu 或A或B dùng 或 đơn, không dùng 或者 trong cấu trúc song song này.",
+        "en": "The 或A或B pattern uses the single 或, not 或者, in this parallel structure."
+      },
+      "q_pinyin": ["zhōu", "mò", "wǒ", "", "", "", "kàn", "shū", "huò", "sàn", "bù", ""]
+    },
+    {
+      "q": "这个办法或好___坏，都要试过才知道。",
+      "options": [
+        {"text": "或", "error_tag": null, "pinyin": ["huò"]},
+        {"text": "还是", "error_tag": "conjunction", "pinyin": ["hái", "shì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "还是 dùng cho câu hỏi lựa chọn, còn 或A或B dùng cho câu trần thuật nêu hai khả năng.",
+        "en": "还是 is for choice questions, while 或A或B is for statements presenting two possibilities."
+      },
+      "q_pinyin": [
+        "zhè",
+        "gè",
+        "bàn",
+        "fǎ",
+        "huò",
+        "hǎo",
+        "",
+        "",
+        "",
+        "huài",
+        "",
+        "dōu",
+        "yào",
+        "shì",
+        "guò",
+        "cái",
+        "zhī",
+        "dào",
+        ""
+      ]
+    },
+    {
+      "q": "明天或下雨___晴天，我们都要出发。",
+      "options": [
+        {"text": "或", "error_tag": null, "pinyin": ["huò"]},
+        {"text": "或者", "error_tag": "conjunction", "pinyin": ["huò", "zhě"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Trong mẫu 或A或B, hai vế phải song song và dùng 或, không dùng 或者.",
+        "en": "In the 或A或B pattern, the two parts must be parallel and use 或, not 或者."
+      },
+      "q_pinyin": [
+        "míng",
+        "tiān",
+        "huò",
+        "xià",
+        "yǔ",
+        "",
+        "",
+        "",
+        "qíng",
+        "tiān",
+        "",
+        "wǒ",
+        "men",
+        "dōu",
+        "yào",
+        "chū",
+        "fā",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về thói quen cuối tuần của bạn, dùng mẫu 或A或B.",
+      "en": "Write a sentence about your weekend habits using the 或A或B pattern."
+    },
+    "placeholder": "周末我或……或……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "connector", "any_of": ["或"]}, {"role": "connector", "any_of": ["或"]}]
+    },
+    "sample": {
+      "text": "周末我或看书或散步。",
+      "pinyin": ["zhōu", "mò", "wǒ", "huò", "kàn", "shū", "huò", "sàn", "bù", ""]
+    },
+    "placeholder_pinyin": ["zhōu", "mò", "wǒ", "huò", "", "", "huò", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790834127",
+    "generated_at": "2026-10-01T05:55:27Z",
+    "metadata_stale": true
+  },
+  "review": null
+}

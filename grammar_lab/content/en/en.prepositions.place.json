@@ -4,240 +4,284 @@
   "version": 1,
   "target_lang": "en",
   "function": "fn.place_time",
-  "level": {
-    "framework": "cefr",
-    "value": "A1",
-    "rank": 1
-  },
+  "level": {"framework": "cefr", "value": "A1", "rank": 1},
   "prereqs": [],
-  "contrasts": [],
-  "error_tags": [
-    "preposition"
-  ],
-  "source_refs": {
-    "r5": [
-      "a1-basic-prepositions-of-place"
-    ]
-  },
+  "contrasts": ["en.prepositions.time"],
+  "error_tags": ["preposition"],
+  "source_refs": {"r5": ["a1-basic-prepositions-of-place"]},
   "point_type": "other",
+  "sequence": 1,
+  "aliases": ["a1-basic-prepositions-of-place"],
+  "source_anchors": {"status": "anchored", "items": [{"source": "core_inventory", "code": "133a", "level": "A1"}]},
   "header": {
-    "title": {
-      "vi": "Giới từ chỉ nơi chốn: in / on / at",
-      "en": "Prepositions of place: in / on / at"
-    },
+    "title": {"vi": "Giới từ chỉ nơi chốn: in / on / at", "en": "Prepositions of place"},
     "native_title": "Prepositions of place: in / on / at",
-    "sub": {
-      "vi": "trong / trên / tại",
-      "en": "in / on / at"
-    },
-    "level": {
-      "framework": "cefr",
-      "value": "A1",
-      "rank": 1
-    },
+    "level": {"framework": "cefr", "value": "A1", "rank": 1},
     "summary": {
-      "vi": "In thường chỉ bên trong một không gian, on chỉ trên bề mặt, at chỉ một điểm hoặc địa điểm cụ thể.",
-      "en": "In often means inside an area, on means on a surface, and at points to a specific place or point."
-    }
+      "vi": "Giới từ chỉ nơi chốn cho biết một người hoặc vật ở đâu so với một vật mốc.",
+      "en": "Prepositions of place show where a person or thing is in relation to a reference point."
+    },
+    "sub": {"vi": "vị trí đồ vật", "en": "where things are"}
   },
   "when_to_use": [
     {
-      "vi": "Dùng in với không gian hoặc khu vực.",
-      "en": "Use in with an enclosed space or area."
+      "vi": "Khi nói một vật ở bên trong một không gian hoặc vật chứa: in the bag, in the room.",
+      "en": "When something is inside a space or container: in the bag, in the room."
     },
     {
-      "vi": "Dùng on với bề mặt và at với một điểm cụ thể.",
-      "en": "Use on with a surface and at with a specific point."
+      "vi": "Khi nói một vật nằm trên một bề mặt: on the table, on the wall.",
+      "en": "When something is on a surface: on the table, on the wall."
+    },
+    {
+      "vi": "Khi nói vị trí thấp hơn hoặc phía sau một vật mốc: under the chair, behind the door.",
+      "en": "When something is lower than or behind a reference point: under the chair, behind the door."
+    },
+    {
+      "vi": "Khi nói vị trí ngay bên cạnh hoặc ở giữa hai vật: next to the shop, between the bank and the hotel.",
+      "en": "When something is next to or between two things: next to the shop, between the bank and the hotel."
     }
   ],
   "pattern": {
     "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
       {
-        "text": "in / on / at",
+        "text": "be",
+        "role": "verb",
+        "label": {"vi": "động từ be", "en": "verb be"},
+        "options": [{"text": "is"}, {"text": "are"}]
+      },
+      {
+        "text": "preposition",
         "role": "marker",
-        "label": {
-          "vi": "giới từ nơi chốn",
-          "en": "place preposition"
-        },
+        "label": {"vi": "giới từ chỉ nơi chốn", "en": "preposition of place"},
         "options": [
-          {
-            "text": "in"
-          },
-          {
-            "text": "on"
-          },
-          {
-            "text": "at"
-          }
+          {"text": "in"},
+          {"text": "on"},
+          {"text": "under"},
+          {"text": "next to"},
+          {"text": "between"},
+          {"text": "behind"}
         ]
       },
       {
         "text": "place",
         "role": "place",
-        "label": {
-          "vi": "nơi chốn",
-          "en": "place"
-        }
+        "label": {"vi": "cụm danh từ chỉ nơi chốn", "en": "place noun phrase"}
       }
     ],
-    "illustration": {
-      "kind": "none"
-    }
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "be",
+          "role": "verb",
+          "label": {"vi": "động từ be", "en": "verb be"},
+          "options": [{"text": "is"}, {"text": "are"}]
+        },
+        {"text": "not", "role": "aux", "label": {"vi": "phủ định", "en": "negator"}},
+        {
+          "text": "preposition",
+          "role": "marker",
+          "label": {"vi": "giới từ chỉ nơi chốn", "en": "preposition of place"},
+          "options": [
+            {"text": "in"},
+            {"text": "on"},
+            {"text": "under"},
+            {"text": "next to"},
+            {"text": "between"},
+            {"text": "behind"}
+          ]
+        },
+        {
+          "text": "place",
+          "role": "place",
+          "label": {"vi": "cụm danh từ chỉ nơi chốn", "en": "place noun phrase"}
+        }
+      ],
+      "question": [
+        {
+          "text": "be",
+          "role": "verb",
+          "label": {"vi": "động từ be", "en": "verb be"},
+          "options": [{"text": "Is"}, {"text": "Are"}]
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "preposition",
+          "role": "marker",
+          "label": {"vi": "giới từ chỉ nơi chốn", "en": "preposition of place"},
+          "options": [
+            {"text": "in"},
+            {"text": "on"},
+            {"text": "under"},
+            {"text": "next to"},
+            {"text": "between"},
+            {"text": "behind"}
+          ]
+        },
+        {
+          "text": "place",
+          "role": "place",
+          "label": {"vi": "cụm danh từ chỉ nơi chốn", "en": "place noun phrase"}
+        }
+      ]
+    },
+    "illustration": {"kind": "none"}
   },
   "examples": [
     {
-      "text": "The keys are on the table.",
+      "text": "My phone is in my bag.",
       "form": "affirmative",
       "spans": [
-        {
-          "start": 13,
-          "end": 15,
-          "role": "marker"
-        },
-        {
-          "start": 16,
-          "end": 25,
-          "role": "place"
-        }
+        {"start": 0, "end": 8, "role": "subject"},
+        {"start": 9, "end": 11, "role": "verb"},
+        {"start": 12, "end": 14, "role": "marker"},
+        {"start": 15, "end": 21, "role": "place"}
       ],
       "annotation": {
-        "vi": "On dùng với bề mặt bàn.",
-        "en": "On is used with the table surface."
+        "vi": "in cho biết điện thoại nằm bên trong túi.",
+        "en": "in shows the phone is inside the bag."
       },
-      "translation": {
-        "vi": "On dùng với bề mặt bàn.",
-        "en": "On is used with the table surface."
-      }
+      "translation": {"vi": "Điện thoại của tôi ở trong túi.", "en": "My phone is in my bag."}
     },
     {
-      "text": "She is at the station.",
-      "form": "affirmative",
+      "text": "The keys are not on the table.",
+      "form": "negative",
       "spans": [
-        {
-          "start": 7,
-          "end": 9,
-          "role": "marker"
-        },
-        {
-          "start": 10,
-          "end": 21,
-          "role": "place"
-        }
+        {"start": 0, "end": 8, "role": "subject"},
+        {"start": 9, "end": 12, "role": "verb"},
+        {"start": 13, "end": 16, "role": "aux"},
+        {"start": 17, "end": 19, "role": "marker"},
+        {"start": 20, "end": 29, "role": "place"}
       ],
       "annotation": {
-        "vi": "At xem nhà ga như một điểm.",
-        "en": "At treats the station as a point."
+        "vi": "not đặt sau be để phủ định vị trí trên bàn.",
+        "en": "not after be makes the place statement negative."
       },
-      "translation": {
-        "vi": "At xem nhà ga như một điểm.",
-        "en": "At treats the station as a point."
+      "translation": {"vi": "Chìa khóa không ở trên bàn.", "en": "The keys are not on the table."}
+    },
+    {
+      "text": "Is the cat under the chair?",
+      "form": "question",
+      "spans": [
+        {"start": 0, "end": 2, "role": "verb"},
+        {"start": 3, "end": 10, "role": "subject"},
+        {"start": 11, "end": 16, "role": "marker"},
+        {"start": 17, "end": 26, "role": "place"}
+      ],
+      "annotation": {
+        "vi": "Is đứng đầu câu để hỏi vị trí của con mèo.",
+        "en": "Is at the start asks about the cat's position."
+      },
+      "translation": {"vi": "Con mèo có ở dưới ghế không?", "en": "Is the cat under the chair?"}
+    }
+  ],
+  "compare": [
+    {
+      "with": "en.prepositions.time",
+      "this_example": "The book is on the desk.",
+      "other_example": "The class is at 9 o'clock.",
+      "this_meaning": {
+        "vi": "Giới từ chỉ nơi chốn trả lời câu hỏi ở đâu.",
+        "en": "Prepositions of place answer the question where."
+      },
+      "other_meaning": {
+        "vi": "Giới từ chỉ thời gian trả lời câu hỏi khi nào.",
+        "en": "Prepositions of time answer the question when."
       }
     }
   ],
-  "compare": [],
   "common_mistakes": [
     {
       "wrong": "The keys are in the table.",
       "right": "The keys are on the table.",
       "reason": {
-        "vi": "Vật nằm trên bề mặt bàn dùng on.",
-        "en": "Use on for something on a table surface."
+        "vi": "Bàn là bề mặt, không phải vật chứa, nên phải dùng on chứ không dùng in.",
+        "en": "A table is a surface, not a container, so on is needed, not in."
       },
       "error_tag": "preposition",
-      "l1": [
-        "vi"
-      ]
+      "l1": ["vi"]
     }
   ],
   "quick_practice": [
     {
-      "q": "The picture is ___ the wall.",
-      "options": [
-        {
-          "text": "on",
-          "error_tag": null
-        },
-        {
-          "text": "in",
-          "error_tag": "preposition"
-        },
-        {
-          "text": "at",
-          "error_tag": "preposition"
-        }
-      ],
+      "q": "The books are ___ the shelf.",
+      "options": [{"text": "on", "error_tag": null}, {"text": "in", "error_tag": "preposition"}],
       "answer": 0,
       "explain": {
-        "vi": "Bức tranh ở trên bề mặt tường.",
-        "en": "A picture is on the wall surface."
+        "vi": "Sách nằm trên bề mặt của kệ nên dùng on.",
+        "en": "Books rest on the surface of a shelf, so on is correct."
       }
     },
     {
-      "q": "We are ___ the kitchen.",
-      "options": [
-        {
-          "text": "in",
-          "error_tag": null
-        },
-        {
-          "text": "on",
-          "error_tag": "preposition"
-        },
-        {
-          "text": "at",
-          "error_tag": "preposition"
-        }
-      ],
+      "q": "The shoes are ___ the bed.",
+      "options": [{"text": "under", "error_tag": null}, {"text": "on", "error_tag": "preposition"}],
       "answer": 0,
       "explain": {
-        "vi": "Ở bên trong bếp dùng in.",
-        "en": "Use in for being inside the kitchen."
+        "vi": "Giày ở phía dưới giường nên dùng under.",
+        "en": "The shoes are below the bed, so under is correct."
       }
     },
     {
-      "q": "Meet me ___ the bus stop.",
-      "options": [
-        {
-          "text": "at",
-          "error_tag": null
-        },
-        {
-          "text": "in",
-          "error_tag": "preposition"
-        },
-        {
-          "text": "on",
-          "error_tag": "preposition"
-        }
-      ],
+      "q": "The café is ___ the bank and the hotel.",
+      "options": [{"text": "between", "error_tag": null}, {"text": "next to", "error_tag": "preposition"}],
       "answer": 0,
       "explain": {
-        "vi": "Bus stop được xem như một điểm.",
-        "en": "A bus stop is treated as a point."
+        "vi": "Có hai mốc (ngân hàng và khách sạn) nên dùng between.",
+        "en": "There are two reference points (the bank and the hotel), so between is correct."
       }
     }
   ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu nói một đồ vật của bạn đang ở đâu.",
+      "en": "Write one sentence saying where one of your things is."
+    },
+    "placeholder": "My ... is ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "verb", "any_of": ["is", "are"]},
+        {"role": "marker", "any_of": ["in", "on", "under", "next to", "between", "behind"]}
+      ]
+    },
+    "sample": {"text": "My notebook is on the desk."}
+  },
   "status": "draft_ai",
   "flags": [],
   "provenance": {
-    "model": "openai:gpt-5.6-sol",
-    "prompt_version": "direct-author.en-a1.v1",
-    "run_id": "chatgpt.en-a1.20260930",
-    "generated_at": "2026-09-30T10:35:00Z"
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790830413",
+    "generated_at": "2026-10-01T04:53:33Z",
+    "r5_source": {
+      "ids": ["a1-basic-prepositions-of-place"],
+      "content_version": 2,
+      "content_hash": "639c8f0b29df3cf7dea502a9fff5ffc0c92ee147e90f24dc0958495097fc8e63",
+      "corrections": [
+        {
+          "r5_id": "a1-basic-prepositions-of-place",
+          "issue": "R5's rule 'Subject + be + preposition of place + noun phrase' is a concrete pattern, not an abstract formula, and it does not show the choice between is/are or the list of prepositions taught.",
+          "fix": "Wrote the formula as abstract slots S + be (is/are) + preposition (in/on/under/next to/between/behind) + place, with negative and question variants."
+        },
+        {
+          "r5_id": "a1-basic-prepositions-of-place",
+          "issue": "R5's example 'The bus stop is between the school and the park.' is correct but the lesson did not mark which words realise the formula.",
+          "fix": "Added spans to every example so each slot of the formula is highlighted."
+        },
+        {
+          "r5_id": "a1-basic-prepositions-of-place",
+          "issue": "R5's mistake 'The café is between the bank.' is a real error, but the lesson did not tag it or give a reason in both explanation locales.",
+          "fix": "Kept the mistake, tagged it as preposition, and wrote the reason in vi and en."
+        },
+        {
+          "r5_id": "a1-basic-prepositions-of-place",
+          "issue": "R5's guided practice had only one option per question, so it did not test the contrast between prepositions.",
+          "fix": "Wrote three quick-practice questions with two options each, where the wrong option is a real preposition error."
+        }
+      ]
+    }
   },
-  "review": null,
-  "sequence": 1,
-  "source_anchors": {
-    "status": "anchored",
-    "items": [
-      {
-        "source": "core_inventory",
-        "code": "133a",
-        "level": "A1"
-      }
-    ]
-  },
-  "aliases": [
-    "a1-basic-prepositions-of-place"
-  ]
+  "review": null
 }

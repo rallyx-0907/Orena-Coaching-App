@@ -1,0 +1,248 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b1.052",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.verb_patterns",
+  "level": {"framework": "cefr", "value": "B1", "rank": 3},
+  "prereqs": ["en.canon.b1.042"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {},
+  "point_type": "other",
+  "sequence": 5,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Make Let Allow", "en": "Make Let Allow"},
+    "native_title": "Make Let Allow",
+    "level": {"framework": "cefr", "value": "B1", "rank": 3},
+    "summary": {
+      "vi": "Cấu trúc make / let / allow dùng để nói ai đó khiến, cho phép hoặc không cho phép một người khác làm gì.",
+      "en": "The structures make, let and allow express that someone causes, permits or does not permit another person to do something."
+    },
+    "sub": {"vi": "khiến và cho phép", "en": "cause and permit"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói ai đó bắt buộc hoặc khiến người khác làm một việc gì đó, dùng make + tân ngữ + động từ nguyên mẫu không có to.",
+      "en": "Use make + object + bare infinitive when someone forces or causes another person to do something."
+    },
+    {
+      "vi": "Khi bạn muốn nói ai đó cho phép người khác làm gì, dùng let + tân ngữ + động từ nguyên mẫu không có to.",
+      "en": "Use let + object + bare infinitive when someone gives another person permission to do something."
+    },
+    {
+      "vi": "Khi bạn muốn nói ai đó cho phép hoặc không cho phép một việc gì đó, dùng allow + tân ngữ + to + động từ nguyên mẫu.",
+      "en": "Use allow + object + to + infinitive when someone permits or does not permit an action."
+    },
+    {
+      "vi": "Khi bạn muốn nói một người được phép làm gì, dùng dạng bị động be allowed to + động từ nguyên mẫu.",
+      "en": "Use be allowed to + infinitive when you talk about someone being permitted to do something."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {
+        "text": "make/let/allow",
+        "role": "verb",
+        "label": {"vi": "động từ chính", "en": "main verb"},
+        "options": [{"text": "make"}, {"text": "let"}, {"text": "allow"}]
+      },
+      {"text": "O", "role": "object", "label": {"vi": "tân ngữ", "en": "object"}},
+      {
+        "text": "to",
+        "role": "marker",
+        "label": {"vi": "tiểu từ to", "en": "infinitive marker"},
+        "optional": true
+      },
+      {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên mẫu", "en": "base verb"}}
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "do/does not",
+          "role": "aux",
+          "label": {"vi": "trợ động từ phủ định", "en": "negative auxiliary"},
+          "options": [{"text": "do not"}, {"text": "does not"}, {"text": "don't"}, {"text": "doesn't"}]
+        },
+        {
+          "text": "make/let/allow",
+          "role": "verb",
+          "label": {"vi": "động từ chính", "en": "main verb"},
+          "options": [{"text": "make"}, {"text": "let"}, {"text": "allow"}]
+        },
+        {"text": "O", "role": "object", "label": {"vi": "tân ngữ", "en": "object"}},
+        {
+          "text": "to",
+          "role": "marker",
+          "label": {"vi": "tiểu từ to", "en": "infinitive marker"},
+          "optional": true
+        },
+        {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên mẫu", "en": "base verb"}}
+      ],
+      "question": [
+        {
+          "text": "Do/Does",
+          "role": "aux",
+          "label": {"vi": "trợ động từ nghi vấn", "en": "question auxiliary"},
+          "options": [{"text": "Do"}, {"text": "Does"}]
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "make/let/allow",
+          "role": "verb",
+          "label": {"vi": "động từ chính", "en": "main verb"},
+          "options": [{"text": "make"}, {"text": "let"}, {"text": "allow"}]
+        },
+        {"text": "O", "role": "object", "label": {"vi": "tân ngữ", "en": "object"}},
+        {
+          "text": "to",
+          "role": "marker",
+          "label": {"vi": "tiểu từ to", "en": "infinitive marker"},
+          "optional": true
+        },
+        {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên mẫu", "en": "base verb"}}
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "My parents make me study every evening.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 10, "role": "subject"},
+        {"start": 11, "end": 15, "role": "verb"},
+        {"start": 16, "end": 18, "role": "object"},
+        {"start": 19, "end": 24, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "make + tân ngữ + động từ nguyên mẫu không có to: bố mẹ bắt buộc tôi học.",
+        "en": "make + object + bare infinitive: my parents force me to study."
+      },
+      "translation": {"vi": "Bố mẹ bắt tôi học mỗi tối.", "en": "My parents make me study every evening."}
+    },
+    {
+      "text": "The teacher does not let us use our phones in class.",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 11, "role": "subject"},
+        {"start": 12, "end": 20, "role": "aux"},
+        {"start": 21, "end": 24, "role": "verb"},
+        {"start": 25, "end": 27, "role": "object"},
+        {"start": 28, "end": 31, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "let + tân ngữ + động từ nguyên mẫu không có to ở dạng phủ định: giáo viên không cho phép.",
+        "en": "let + object + bare infinitive in the negative: the teacher does not permit it."
+      },
+      "translation": {
+        "vi": "Giáo viên không cho chúng tôi dùng điện thoại trong lớp.",
+        "en": "The teacher does not let us use our phones in class."
+      }
+    },
+    {
+      "text": "Does the company allow employees to work from home?",
+      "form": "question",
+      "spans": [
+        {"start": 0, "end": 4, "role": "aux"},
+        {"start": 5, "end": 16, "role": "subject"},
+        {"start": 17, "end": 22, "role": "verb"},
+        {"start": 23, "end": 32, "role": "object"},
+        {"start": 33, "end": 35, "role": "marker"},
+        {"start": 36, "end": 40, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "allow + tân ngữ + to + động từ nguyên mẫu ở dạng câu hỏi: công ty có cho phép không?",
+        "en": "allow + object + to + infinitive in a question: does the company permit it?"
+      },
+      "translation": {
+        "vi": "Công ty có cho nhân viên làm việc tại nhà không?",
+        "en": "Does the company allow employees to work from home?"
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "My parents make me to study every evening.",
+      "right": "My parents make me study every evening.",
+      "reason": {
+        "vi": "Sau make + tân ngữ, tiếng Anh dùng động từ nguyên mẫu không có to; người Việt thường thêm to vì quen với cấu trúc động từ nguyên mẫu có to.",
+        "en": "After make + object, English uses the bare infinitive; Vietnamese learners often add to because they expect a to-infinitive."
+      },
+      "error_tag": "other",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "My boss ___ me work late yesterday.",
+      "options": [
+        {"text": "made", "error_tag": null},
+        {"text": "made me to", "error_tag": "word_form"},
+        {"text": "make", "error_tag": "tense"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "make + tân ngữ + động từ nguyên mẫu không có to; ở quá khứ dùng made.",
+        "en": "make + object + bare infinitive; the past form is made."
+      }
+    },
+    {
+      "q": "The school does not ___ students to smoke on campus.",
+      "options": [
+        {"text": "allow", "error_tag": null},
+        {"text": "let", "error_tag": "word_choice"},
+        {"text": "make", "error_tag": "word_choice"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "allow + tân ngữ + to + động từ nguyên mẫu; let và make không dùng với to.",
+        "en": "allow + object + to + infinitive; let and make do not take to."
+      }
+    },
+    {
+      "q": "Her parents ___ her go to the party last Saturday.",
+      "options": [{"text": "let", "error_tag": null}, {"text": "allowed", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {
+        "vi": "let + tân ngữ + động từ nguyên mẫu không có to; allowed cần to trước động từ.",
+        "en": "let + object + bare infinitive; allowed needs to before the verb."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về việc ai đó khiến hoặc cho phép bạn làm gì, dùng make, let hoặc allow.",
+      "en": "Write one sentence about someone making or letting you do something, using make, let or allow."
+    },
+    "placeholder": "My parents let me ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {
+          "role": "verb",
+          "any_of": ["make", "makes", "made", "let", "lets", "allow", "allows", "allowed"]
+        },
+        {"role": "object", "any_of": ["me", "us", "him", "her", "them", "you"]},
+        {"role": "verb", "regex": "\\b[a-z]+\\b"}
+      ]
+    },
+    "sample": {"text": "My parents let me choose my own clothes."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790831044",
+    "generated_at": "2026-10-01T05:04:04Z",
+    "metadata_stale": true
+  },
+  "review": null
+}

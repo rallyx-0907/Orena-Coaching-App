@@ -1,0 +1,388 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk5.a_5_5_2_1.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.linking",
+  "level": {"framework": "hsk3", "value": "5", "rank": 5},
+  "prereqs": ["zh.canon.r5.hsk5_8_topic"],
+  "contrasts": [],
+  "error_tags": ["conjunction"],
+  "source_refs": {"gf0025": ["gf0025.hsk5.044"]},
+  "point_type": "other",
+  "sequence": 5,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Câu phức: 或是⋯⋯，或是⋯⋯", "en": "Complex sentences: 或是⋯⋯，或是⋯⋯"},
+    "native_title": "或是⋯⋯，或是⋯⋯",
+    "level": {"framework": "hsk3", "value": "5", "rank": 5},
+    "summary": {
+      "vi": "Mẫu câu 或是⋯⋯，或是⋯⋯ dùng để nêu hai khả năng hoặc hai lựa chọn thay thế trong cùng một câu.",
+      "en": "The pattern 或是⋯⋯，或是⋯⋯ presents two possibilities or alternatives within one sentence."
+    },
+    "sub": {"vi": "hai lựa chọn", "en": "two alternatives"},
+    "native_title_pinyin": ["huò", "shì", "", "", "", "huò", "shì", "", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói hai khả năng đều có thể xảy ra, không cần chọn một.",
+      "en": "When you want to say that either of two possibilities can happen, without choosing one."
+    },
+    {
+      "vi": "Khi bạn đưa ra hai lựa chọn cho người nghe hoặc cho chính mình.",
+      "en": "When you offer two options to the listener or to yourself."
+    },
+    {
+      "vi": "Khi bạn muốn liệt kê hai hành động hoặc hai tình huống có thể thay thế cho nhau.",
+      "en": "When you want to list two actions or situations that can replace each other."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "或是",
+        "role": "connector",
+        "label": {"vi": "hoặc là (thứ nhất)", "en": "or (first)"},
+        "pinyin": ["huò", "shì"]
+      },
+      {
+        "text": "A",
+        "role": "other",
+        "label": {"vi": "nội dung thứ nhất", "en": "first item"},
+        "pinyin": [""]
+      },
+      {
+        "text": "或是",
+        "role": "connector",
+        "label": {"vi": "hoặc là (thứ hai)", "en": "or (second)"},
+        "pinyin": ["huò", "shì"]
+      },
+      {
+        "text": "B",
+        "role": "other",
+        "label": {"vi": "nội dung thứ hai", "en": "second item"},
+        "pinyin": [""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "周末我们或是去爬山，或是去看电影。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 4, "end": 6, "role": "connector"},
+        {"start": 6, "end": 9, "role": "other"},
+        {"start": 10, "end": 12, "role": "connector"},
+        {"start": 12, "end": 16, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Hai lựa chọn cho cuối tuần, không cần chọn trước.",
+        "en": "Two options for the weekend, with no need to choose in advance."
+      },
+      "translation": {
+        "vi": "Cuối tuần chúng tôi hoặc là đi leo núi, hoặc là đi xem phim.",
+        "en": "On the weekend we either go hiking or go to the movies."
+      },
+      "pinyin": [
+        "zhōu",
+        "mò",
+        "wǒ",
+        "men",
+        "huò",
+        "shì",
+        "qù",
+        "pá",
+        "shān",
+        "",
+        "huò",
+        "shì",
+        "qù",
+        "kàn",
+        "diàn",
+        "yǐng",
+        ""
+      ]
+    },
+    {
+      "text": "你可以或是坐地铁，或是坐公交车去机场。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 3, "end": 5, "role": "connector"},
+        {"start": 5, "end": 8, "role": "other"},
+        {"start": 9, "end": 11, "role": "connector"},
+        {"start": 11, "end": 15, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Hai cách đi đến sân bay, cả hai đều được.",
+        "en": "Two ways to get to the airport; both are fine."
+      },
+      "translation": {
+        "vi": "Bạn có thể hoặc là đi tàu điện ngầm, hoặc là đi xe buýt đến sân bay.",
+        "en": "You can either take the subway or take the bus to the airport."
+      },
+      "pinyin": [
+        "nǐ",
+        "kě",
+        "yǐ",
+        "huò",
+        "shì",
+        "zuò",
+        "dì",
+        "tiě",
+        "",
+        "huò",
+        "shì",
+        "zuò",
+        "gōng",
+        "jiāo",
+        "chē",
+        "qù",
+        "jī",
+        "chǎng",
+        ""
+      ]
+    },
+    {
+      "text": "明天的会议或是上午开，或是下午开，还没定。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 5, "end": 7, "role": "connector"},
+        {"start": 7, "end": 10, "role": "other"},
+        {"start": 11, "end": 13, "role": "connector"},
+        {"start": 13, "end": 16, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Hai thời điểm có thể cho cuộc họp, chưa quyết định.",
+        "en": "Two possible times for the meeting; it is not decided yet."
+      },
+      "translation": {
+        "vi": "Cuộc họp ngày mai hoặc là mở buổi sáng, hoặc là mở buổi chiều, vẫn chưa định.",
+        "en": "Tomorrow's meeting will be either in the morning or in the afternoon; it is not decided yet."
+      },
+      "pinyin": [
+        "míng",
+        "tiān",
+        "de",
+        "huì",
+        "yì",
+        "huò",
+        "shì",
+        "shàng",
+        "wǔ",
+        "kāi",
+        "",
+        "huò",
+        "shì",
+        "xià",
+        "wǔ",
+        "kāi",
+        "",
+        "hái",
+        "méi",
+        "dìng",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "周末我们或是去爬山，去看电影。",
+      "right": "周末我们或是去爬山，或是去看电影。",
+      "reason": {
+        "vi": "Người học chỉ dùng 或是 một lần rồi bỏ qua vế thứ hai, trong khi mẫu câu này cần cả hai vế 或是 để nối hai lựa chọn.",
+        "en": "The learner uses 或是 only once and drops the second one, but this pattern needs both 或是 to link the two alternatives."
+      },
+      "error_tag": "conjunction",
+      "l1": ["vi"],
+      "wrong_pinyin": [
+        "zhōu",
+        "mò",
+        "wǒ",
+        "men",
+        "huò",
+        "shì",
+        "qù",
+        "pá",
+        "shān",
+        "",
+        "qù",
+        "kàn",
+        "diàn",
+        "yǐng",
+        ""
+      ],
+      "right_pinyin": [
+        "zhōu",
+        "mò",
+        "wǒ",
+        "men",
+        "huò",
+        "shì",
+        "qù",
+        "pá",
+        "shān",
+        "",
+        "huò",
+        "shì",
+        "qù",
+        "kàn",
+        "diàn",
+        "yǐng",
+        ""
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "周末我们或是去爬山，___去看电影。",
+      "options": [
+        {"text": "或是", "error_tag": null, "pinyin": ["huò", "shì"]},
+        {"text": "还是", "error_tag": "conjunction", "pinyin": ["hái", "shì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Mẫu 或是⋯⋯，或是⋯⋯ cần 或是 ở cả hai vế; 还是 dùng cho câu hỏi lựa chọn, không hợp ở đây.",
+        "en": "The pattern 或是⋯⋯，或是⋯⋯ needs 或是 in both parts; 还是 is for choice questions and does not fit here."
+      },
+      "q_pinyin": [
+        "zhōu",
+        "mò",
+        "wǒ",
+        "men",
+        "huò",
+        "shì",
+        "qù",
+        "pá",
+        "shān",
+        "",
+        "",
+        "",
+        "",
+        "qù",
+        "kàn",
+        "diàn",
+        "yǐng",
+        ""
+      ]
+    },
+    {
+      "q": "你可以或是坐地铁，___坐公交车去机场。",
+      "options": [
+        {"text": "或是", "error_tag": null, "pinyin": ["huò", "shì"]},
+        {"text": "或者", "error_tag": "conjunction", "pinyin": ["huò", "zhě"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Trong mẫu cố định này, vế thứ hai lặp lại 或是; 或者 không lặp lại đúng mẫu.",
+        "en": "In this fixed pattern the second part repeats 或是; 或者 does not repeat the pattern correctly."
+      },
+      "q_pinyin": [
+        "nǐ",
+        "kě",
+        "yǐ",
+        "huò",
+        "shì",
+        "zuò",
+        "dì",
+        "tiě",
+        "",
+        "",
+        "",
+        "",
+        "zuò",
+        "gōng",
+        "jiāo",
+        "chē",
+        "qù",
+        "jī",
+        "chǎng",
+        ""
+      ]
+    },
+    {
+      "q": "明天的会议或是上午开，___下午开，还没定。",
+      "options": [
+        {"text": "或是", "error_tag": null, "pinyin": ["huò", "shì"]},
+        {"text": "还是", "error_tag": "conjunction", "pinyin": ["hái", "shì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu này nêu hai khả năng, không phải câu hỏi, nên dùng 或是 chứ không dùng 还是.",
+        "en": "This sentence states two possibilities, not a question, so it uses 或是, not 还是."
+      },
+      "q_pinyin": [
+        "míng",
+        "tiān",
+        "de",
+        "huì",
+        "yì",
+        "huò",
+        "shì",
+        "shàng",
+        "wǔ",
+        "kāi",
+        "",
+        "",
+        "",
+        "",
+        "xià",
+        "wǔ",
+        "kāi",
+        "",
+        "hái",
+        "méi",
+        "dìng",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về hai lựa chọn của bạn cho cuối tuần này, dùng 或是⋯⋯，或是⋯⋯.",
+      "en": "Write one sentence about your two options for this weekend, using 或是⋯⋯，或是⋯⋯."
+    },
+    "placeholder": "这个周末我或是……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "connector", "any_of": ["或是"]}, {"role": "connector", "any_of": ["或是"]}]
+    },
+    "sample": {
+      "text": "这个周末我或是去图书馆，或是在家休息。",
+      "pinyin": [
+        "zhè",
+        "gè",
+        "zhōu",
+        "mò",
+        "wǒ",
+        "huò",
+        "shì",
+        "qù",
+        "tú",
+        "shū",
+        "guǎn",
+        "",
+        "huò",
+        "shì",
+        "zài",
+        "jiā",
+        "xiū",
+        "xi",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["zhè", "gè", "zhōu", "mò", "wǒ", "huò", "shì", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790833712",
+    "generated_at": "2026-10-01T05:48:32Z"
+  },
+  "review": null
+}

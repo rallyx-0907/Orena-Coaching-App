@@ -1,0 +1,246 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk7_9.a_7_2_2_1.p2",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.sentence_basics",
+  "level": {"framework": "hsk3", "value": "8", "rank": 8},
+  "prereqs": ["zh.canon.gf.hsk7_9.a_7_1_7_2.p1"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"gf0025": ["gf0025.hsk7_9.064", "gf0025.hsk7_9.065", "gf0025.hsk7_9.066", "gf0025.hsk7_9.067"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 忽A忽B", "en": "Chinese grammar: 忽A忽B"},
+    "native_title": "忽A忽B",
+    "level": {"framework": "hsk3", "value": "8", "rank": 8},
+    "summary": {
+      "vi": "Mẫu 忽A忽B dùng để nói một trạng thái hoặc hành động thay đổi qua lại giữa hai cực A và B.",
+      "en": "The 忽A忽B pattern describes a state or action that keeps switching back and forth between two extremes, A and B."
+    },
+    "sub": {"vi": "thay đổi qua lại", "en": "alternating states"},
+    "native_title_pinyin": ["hū", "", "hū", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi một người hoặc vật lúc thì ở trạng thái A, lúc lại ở trạng thái B, lặp đi lặp lại.",
+      "en": "When a person or thing is sometimes in state A and sometimes in state B, over and over."
+    },
+    {
+      "vi": "Khi hai tính từ trái ngược nhau cùng mô tả một chủ thể trong cùng một khoảng thời gian.",
+      "en": "When two opposite adjectives describe the same subject within the same period of time."
+    },
+    {
+      "vi": "Khi muốn nói về cảm xúc, thời tiết, nhiệt độ hoặc tình hình thay đổi thất thường.",
+      "en": "When talking about moods, weather, temperature, or situations that change unpredictably."
+    },
+    {
+      "vi": "Trong văn viết và văn nói, mẫu này thường mang sắc thái phê bình nhẹ hoặc nhấn mạnh sự bất ổn.",
+      "en": "In both writing and speech, the pattern often carries a mild tone of criticism or highlights instability."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "忽",
+        "role": "marker",
+        "label": {"vi": "dấu hiệu thay đổi", "en": "change marker"},
+        "pinyin": ["hū"]
+      },
+      {
+        "text": "A",
+        "role": "complement",
+        "label": {"vi": "trạng thái A", "en": "state A"},
+        "pinyin": [""]
+      },
+      {
+        "text": "忽",
+        "role": "marker",
+        "label": {"vi": "dấu hiệu thay đổi", "en": "change marker"},
+        "pinyin": ["hū"]
+      },
+      {
+        "text": "B",
+        "role": "complement",
+        "label": {"vi": "trạng thái B", "en": "state B"},
+        "pinyin": [""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "他忽冷忽热，让人很难接近。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "marker"},
+        {"start": 2, "end": 3, "role": "complement"},
+        {"start": 3, "end": 4, "role": "marker"},
+        {"start": 4, "end": 5, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Hai tính từ trái nghĩa 冷 và 热 được đặt sau 忽 để diễn tả sự thay đổi thất thường.",
+        "en": "The two opposite adjectives 冷 and 热 follow 忽 to show unpredictable alternation."
+      },
+      "translation": {
+        "vi": "Anh ấy lúc lạnh lúc nóng, khiến người khác khó gần.",
+        "en": "He is hot and cold by turns, which makes him hard to approach."
+      },
+      "pinyin": ["tā", "hū", "lěng", "hū", "rè", "", "ràng", "rén", "hěn", "nán", "jiē", "jìn", ""]
+    },
+    {
+      "text": "天气忽晴忽雨，出门要带伞。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 3, "role": "marker"},
+        {"start": 3, "end": 4, "role": "complement"},
+        {"start": 4, "end": 5, "role": "marker"},
+        {"start": 5, "end": 6, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Chủ ngữ 天气 theo sau là hai trạng thái thời tiết trái ngược 晴 và 雨.",
+        "en": "The subject 天气 is followed by the two opposite weather states 晴 and 雨."
+      },
+      "translation": {
+        "vi": "Thời tiết lúc nắng lúc mưa, ra ngoài phải mang ô.",
+        "en": "The weather alternates between sunny and rainy, so bring an umbrella when you go out."
+      },
+      "pinyin": ["tiān", "qì", "hū", "qíng", "hū", "yǔ", "", "chū", "mén", "yào", "dài", "sǎn", ""]
+    },
+    {
+      "text": "她忽喜忽悲，情绪很不稳定。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "marker"},
+        {"start": 2, "end": 3, "role": "complement"},
+        {"start": 3, "end": 4, "role": "marker"},
+        {"start": 4, "end": 5, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Hai trạng thái cảm xúc 喜 và 悲 thay phiên nhau sau 忽.",
+        "en": "The two emotional states 喜 and 悲 alternate after 忽."
+      },
+      "translation": {
+        "vi": "Cô ấy lúc vui lúc buồn, cảm xúc rất bất ổn.",
+        "en": "She is happy and sad by turns; her mood is very unstable."
+      },
+      "pinyin": ["tā", "hū", "xǐ", "hū", "bēi", "", "qíng", "xù", "hěn", "bù", "wěn", "dìng", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "他忽然冷忽然热，让人很难接近。",
+      "right": "他忽冷忽热，让人很难接近。",
+      "reason": {
+        "vi": "Người học hay dùng 忽然 (đột nhiên) thay cho 忽 trong mẫu 忽A忽B, làm mất cấu trúc đối xứng và sai nghĩa.",
+        "en": "Learners often use 忽然 (suddenly) instead of 忽 in the 忽A忽B pattern, which breaks the symmetrical structure and changes the meaning."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong_pinyin": [
+        "tā",
+        "hū",
+        "rán",
+        "lěng",
+        "hū",
+        "rán",
+        "rè",
+        "",
+        "ràng",
+        "rén",
+        "hěn",
+        "nán",
+        "jiē",
+        "jìn",
+        ""
+      ],
+      "right_pinyin": ["tā", "hū", "lěng", "hū", "rè", "", "ràng", "rén", "hěn", "nán", "jiē", "jìn", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "他___冷忽热，让人很难接近。",
+      "options": [
+        {"text": "忽", "error_tag": null, "pinyin": ["hū"]},
+        {"text": "忽然", "error_tag": "word_choice", "pinyin": ["hū", "rán"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Mẫu 忽A忽B dùng 忽 đơn lẻ trước mỗi tính từ, không dùng 忽然.",
+        "en": "The 忽A忽B pattern uses the single character 忽 before each adjective, not 忽然."
+      },
+      "q_pinyin": ["tā", "", "", "", "lěng", "hū", "rè", "", "ràng", "rén", "hěn", "nán", "jiē", "jìn", ""]
+    },
+    {
+      "q": "天气忽晴___雨，出门要带伞。",
+      "options": [
+        {"text": "忽", "error_tag": null, "pinyin": ["hū"]},
+        {"text": "忽然", "error_tag": "word_choice", "pinyin": ["hū", "rán"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Trong mẫu 忽A忽B, 忽 đứng trước mỗi trạng thái để diễn tả sự thay đổi qua lại.",
+        "en": "In the 忽A忽B pattern, 忽 comes before each state to express alternation."
+      },
+      "q_pinyin": ["tiān", "qì", "hū", "qíng", "", "", "", "yǔ", "", "chū", "mén", "yào", "dài", "sǎn", ""]
+    },
+    {
+      "q": "她忽喜___悲，情绪很不稳定。",
+      "options": [
+        {"text": "忽", "error_tag": null, "pinyin": ["hū"]},
+        {"text": "忽然", "error_tag": "word_choice", "pinyin": ["hū", "rán"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Mẫu 忽A忽B yêu cầu 忽 đứng trước mỗi tính từ, không phải 忽然.",
+        "en": "The 忽A忽B pattern requires 忽 before each adjective, not 忽然."
+      },
+      "q_pinyin": ["tā", "hū", "xǐ", "", "", "", "bēi", "", "qíng", "xù", "hěn", "bù", "wěn", "dìng", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng 忽A忽B để nói về một người hoặc sự vật lúc thì ở trạng thái này, lúc lại ở trạng thái khác.",
+      "en": "Write one sentence using 忽A忽B to describe someone or something that is sometimes in one state and sometimes in another."
+    },
+    "placeholder": "他忽……忽……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "marker", "any_of": ["忽"]},
+        {"role": "complement", "regex": "[\\u4e00-\\u9fff]"},
+        {"role": "marker", "any_of": ["忽"]},
+        {"role": "complement", "regex": "[\\u4e00-\\u9fff]"}
+      ]
+    },
+    "sample": {
+      "text": "他忽冷忽热，让人很难接近。",
+      "pinyin": ["tā", "hū", "lěng", "hū", "rè", "", "ràng", "rén", "hěn", "nán", "jiē", "jìn", ""]
+    },
+    "placeholder_pinyin": ["tā", "hū", "", "", "hū", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790834617",
+    "generated_at": "2026-10-01T06:03:37Z",
+    "metadata_stale": true
+  },
+  "review": null
+}

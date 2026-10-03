@@ -1,0 +1,264 @@
+{
+  "schema_version": "0.4",
+  "id": "en.as_as",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.comparison",
+  "level": {"framework": "cefr", "value": "A2", "rank": 2},
+  "prereqs": ["en.comparatives"],
+  "contrasts": ["en.comparatives"],
+  "error_tags": ["sentence_structure"],
+  "source_refs": {"r5": ["a2-as-as"]},
+  "point_type": "word_order",
+  "sequence": 3,
+  "aliases": ["a2-as-as"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "So sánh bằng: as ... as", "en": "As ... as"},
+    "native_title": "As ... as",
+    "level": {"framework": "cefr", "value": "A2", "rank": 2},
+    "summary": {
+      "vi": "Cấu trúc as ... as dùng để so sánh hai người hoặc vật có cùng mức độ về một tính chất nào đó.",
+      "en": "The as ... as structure compares two people or things that are equal in some quality."
+    },
+    "sub": {"vi": "so sánh bằng", "en": "equality"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi hai người hoặc vật có cùng một đặc điểm ở mức tương đương: My room is as big as yours.",
+      "en": "When two people or things share a quality to the same degree: My room is as big as yours."
+    },
+    {
+      "vi": "Khi muốn nói một người hoặc vật không bằng người/vật khác: This test isn't as difficult as the last one.",
+      "en": "When you want to say one person or thing is not equal to another: This test isn't as difficult as the last one."
+    },
+    {
+      "vi": "Khi so sánh cách làm việc, tốc độ, hoặc mức độ của hành động: She runs as fast as her brother.",
+      "en": "When comparing how someone does something, speed, or degree of an action: She runs as fast as her brother."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {
+        "text": "be",
+        "role": "verb",
+        "label": {"vi": "động từ to be", "en": "verb be"},
+        "options": [{"text": "is"}, {"text": "are"}, {"text": "am"}]
+      },
+      {"text": "as", "role": "marker", "label": {"vi": "as thứ nhất", "en": "first as"}},
+      {
+        "text": "adj/adv",
+        "role": "complement",
+        "label": {"vi": "tính từ/trạng từ", "en": "adjective/adverb"}
+      },
+      {"text": "as", "role": "marker", "label": {"vi": "as thứ hai", "en": "second as"}},
+      {
+        "text": "N/pronoun",
+        "role": "object",
+        "label": {"vi": "danh từ/đại từ", "en": "noun/pronoun"}
+      }
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "be",
+          "role": "verb",
+          "label": {"vi": "động từ to be", "en": "verb be"},
+          "options": [{"text": "is"}, {"text": "are"}, {"text": "am"}]
+        },
+        {"text": "not", "role": "aux", "label": {"vi": "phủ định", "en": "negator"}},
+        {"text": "as", "role": "marker", "label": {"vi": "as thứ nhất", "en": "first as"}},
+        {
+          "text": "adj/adv",
+          "role": "complement",
+          "label": {"vi": "tính từ/trạng từ", "en": "adjective/adverb"}
+        },
+        {"text": "as", "role": "marker", "label": {"vi": "as thứ hai", "en": "second as"}},
+        {
+          "text": "N/pronoun",
+          "role": "object",
+          "label": {"vi": "danh từ/đại từ", "en": "noun/pronoun"}
+        }
+      ],
+      "question": [
+        {
+          "text": "be",
+          "role": "verb",
+          "label": {"vi": "động từ to be", "en": "verb be"},
+          "options": [{"text": "Is"}, {"text": "Are"}, {"text": "Am"}]
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {"text": "as", "role": "marker", "label": {"vi": "as thứ nhất", "en": "first as"}},
+        {
+          "text": "adj/adv",
+          "role": "complement",
+          "label": {"vi": "tính từ/trạng từ", "en": "adjective/adverb"}
+        },
+        {"text": "as", "role": "marker", "label": {"vi": "as thứ hai", "en": "second as"}},
+        {
+          "text": "N/pronoun",
+          "role": "object",
+          "label": {"vi": "danh từ/đại từ", "en": "noun/pronoun"}
+        }
+      ]
+    },
+    "illustration": {"kind": "word_order"}
+  },
+  "examples": [
+    {
+      "text": "My room is as big as yours.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 7, "role": "subject"},
+        {"start": 8, "end": 10, "role": "verb"},
+        {"start": 11, "end": 13, "role": "marker"},
+        {"start": 14, "end": 17, "role": "complement"},
+        {"start": 18, "end": 20, "role": "marker"},
+        {"start": 21, "end": 26, "role": "object"}
+      ],
+      "annotation": {"vi": "Hai phòng có cùng kích thước.", "en": "The two rooms are the same size."},
+      "translation": {"vi": "Phòng tôi lớn bằng phòng bạn.", "en": "My room is as big as yours."}
+    },
+    {
+      "text": "This test isn't as difficult as the last one.",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 9, "role": "subject"},
+        {"start": 10, "end": 12, "role": "verb"},
+        {"start": 12, "end": 15, "role": "aux"},
+        {"start": 16, "end": 18, "role": "marker"},
+        {"start": 19, "end": 28, "role": "complement"},
+        {"start": 29, "end": 31, "role": "marker"},
+        {"start": 32, "end": 44, "role": "object"}
+      ],
+      "annotation": {"vi": "Bài này dễ hơn bài trước.", "en": "This test is easier than the last one."},
+      "translation": {
+        "vi": "Bài kiểm tra này không khó bằng bài trước.",
+        "en": "This test isn't as difficult as the last one."
+      }
+    },
+    {
+      "text": "She runs as fast as her brother.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 8, "role": "verb"},
+        {"start": 9, "end": 11, "role": "marker"},
+        {"start": 12, "end": 16, "role": "complement"},
+        {"start": 17, "end": 19, "role": "marker"},
+        {"start": 20, "end": 31, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Cô ấy chạy nhanh bằng anh/em trai.",
+        "en": "She runs at the same speed as her brother."
+      },
+      "translation": {"vi": "Cô ấy chạy nhanh bằng anh/em trai.", "en": "She runs as fast as her brother."}
+    }
+  ],
+  "compare": [
+    {
+      "with": "en.comparatives",
+      "this_example": "My room is as big as yours.",
+      "other_example": "My room is bigger than yours.",
+      "this_meaning": {
+        "vi": "as ... as diễn tả hai đối tượng bằng nhau về một tính chất.",
+        "en": "as ... as expresses that two things are equal in a quality."
+      },
+      "other_meaning": {
+        "vi": "So sánh hơn (comparatives) diễn tả một đối tượng hơn kém đối tượng kia.",
+        "en": "Comparatives express that one thing has more or less of a quality than another."
+      }
+    }
+  ],
+  "common_mistakes": [
+    {
+      "wrong": "He is as taller as me.",
+      "right": "He is as tall as me.",
+      "reason": {
+        "vi": "Sau as thứ nhất phải dùng tính từ/trạng từ ở dạng gốc, không dùng dạng so sánh hơn.",
+        "en": "After the first as, use the base form of the adjective/adverb, not the comparative form."
+      },
+      "error_tag": "sentence_structure",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "My car is ___ fast as your car.",
+      "options": [{"text": "as", "error_tag": null}, {"text": "than", "error_tag": "sentence_structure"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Cấu trúc so sánh bằng dùng as ... as, không dùng than.",
+        "en": "The equality structure uses as ... as, not than."
+      }
+    },
+    {
+      "q": "This book isn't as interesting ___ that one.",
+      "options": [{"text": "as", "error_tag": null}, {"text": "than", "error_tag": "sentence_structure"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Trong cấu trúc not as ... as, từ nối cuối cùng là as.",
+        "en": "In the not as ... as structure, the final connector is as."
+      }
+    },
+    {
+      "q": "She runs as ___ as her brother.",
+      "options": [{"text": "fast", "error_tag": null}, {"text": "faster", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau as phải dùng trạng từ ở dạng gốc, không dùng dạng so sánh hơn.",
+        "en": "After as, use the base form of the adverb, not the comparative form."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu so sánh hai người hoặc vật bằng nhau về một đặc điểm, dùng cấu trúc as ... as.",
+      "en": "Write one sentence comparing two people or things that are equal in one quality, using as ... as."
+    },
+    "placeholder": "My ... is as ... as ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "marker", "any_of": ["as"]},
+        {"role": "complement", "regex": "[a-z]+"},
+        {"role": "marker", "any_of": ["as"]}
+      ]
+    },
+    "sample": {"text": "My phone is as new as yours."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790830562",
+    "generated_at": "2026-10-01T04:56:02Z",
+    "r5_source": {
+      "ids": ["a2-as-as"],
+      "content_version": 2,
+      "content_hash": "a57b8262f1fae87c13798894f53bd2ca941317b7b0470f216aa42592d0827792",
+      "corrections": [
+        {
+          "r5_id": "a2-as-as",
+          "issue": "R5 dạy 'as...as' nhưng không cung cấp công thức trừu tượng với các slot, cũng không có dạng câu hỏi.",
+          "fix": "Đã thêm formula với các slot S + be + as + adj/adv + as + N/pronoun, và thêm dạng câu hỏi (đảo be lên trước chủ ngữ)."
+        },
+        {
+          "r5_id": "a2-as-as",
+          "issue": "R5 liệt kê lỗi 'as taller as' nhưng không giải thích cơ chế.",
+          "fix": "Đã thêm giải thích: sau as thứ nhất phải dùng dạng gốc của tính từ/trạng từ, không dùng dạng so sánh hơn."
+        },
+        {
+          "r5_id": "a2-as-as",
+          "issue": "R5 có ví dụ 'She runs as fast as her brother' nhưng không đánh dấu các thành phần.",
+          "fix": "Đã thêm spans cho từng thành phần trong ví dụ, bao gồm cả hai as và trạng từ fast."
+        }
+      ]
+    }
+  },
+  "review": null
+}

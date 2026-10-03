@@ -1,0 +1,278 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk3.a_3_5_4.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.possibility",
+  "level": {"framework": "hsk3", "value": "3", "rank": 3},
+  "prereqs": ["zh.canon.gf.hsk3.a_3_5_3.p1"],
+  "contrasts": [],
+  "error_tags": ["particle", "complement"],
+  "source_refs": {"gf0025": ["gf0025.hsk3.048"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {
+      "vi": "Bổ ngữ: 可能补语1：动词+得/不+动词/形容词；动词+得/不+了",
+      "en": "Complements: 可能补语1：动词+得/不+动词/形容词；动词+得/不+了"
+    },
+    "native_title": "可能补语1：动词+得/不+动词/形容词；动词+得/不+了",
+    "level": {"framework": "hsk3", "value": "3", "rank": 3},
+    "summary": {
+      "vi": "Bổ ngữ khả năng dùng 得 hoặc 不 ở giữa động từ và kết quả để nói có thể hay không thể làm được gì.",
+      "en": "The potential complement uses 得 or 不 between a verb and its result to say whether something can or cannot be done."
+    },
+    "sub": {"vi": "bổ ngữ khả năng", "en": "potential complement"},
+    "native_title_pinyin": [
+      "kě",
+      "néng",
+      "bǔ",
+      "yǔ",
+      "",
+      "",
+      "dòng",
+      "cí",
+      "",
+      "dé",
+      "",
+      "bù",
+      "",
+      "dòng",
+      "cí",
+      "",
+      "xíng",
+      "róng",
+      "cí",
+      "",
+      "dòng",
+      "cí",
+      "",
+      "dé",
+      "",
+      "bù",
+      "",
+      "le"
+    ]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói ai đó có thể hoặc không thể hoàn thành một hành động vì năng lực hay điều kiện khách quan.",
+      "en": "When you want to say whether someone can or cannot complete an action because of ability or external conditions."
+    },
+    {
+      "vi": "Khi câu trả lời ngắn gọn, không cần dùng 能 hay 可以.",
+      "en": "When a short answer is enough and you do not need 能 or 可以."
+    },
+    {
+      "vi": "Khi động từ có kết quả như 完, 懂, 见, 到, 好 hoặc 了.",
+      "en": "When the verb has a result such as 完, 懂, 见, 到, 好 or 了."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "动词",
+        "role": "verb",
+        "label": {"vi": "động từ", "en": "verb"},
+        "pinyin": ["dòng", "cí"]
+      },
+      {
+        "text": "得/不",
+        "role": "aux",
+        "label": {"vi": "trợ từ khả năng", "en": "potential marker"},
+        "options": [{"text": "得", "pinyin": ["de"]}, {"text": "不", "pinyin": ["bu"]}],
+        "pinyin": ["de", "", "bu"]
+      },
+      {
+        "text": "动词/形容词",
+        "role": "complement",
+        "label": {"vi": "bổ ngữ", "en": "complement"},
+        "pinyin": ["dòng", "cí", "", "xíng", "róng", "cí"]
+      },
+      {
+        "text": "宾语",
+        "role": "object",
+        "label": {"vi": "tân ngữ", "en": "object"},
+        "optional": true,
+        "pinyin": ["bīn", "yǔ"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "我听得懂中文。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "verb"},
+        {"start": 2, "end": 3, "role": "aux"},
+        {"start": 3, "end": 4, "role": "complement"},
+        {"start": 4, "end": 6, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "得 đứng giữa 听 và 懂 để nói có thể nghe hiểu.",
+        "en": "得 sits between 听 and 懂 to say one can understand by listening."
+      },
+      "translation": {"vi": "Tôi có thể nghe hiểu tiếng Trung.", "en": "I can understand Chinese by listening."},
+      "pinyin": ["wǒ", "tīng", "de", "dǒng", "zhōng", "wén", ""]
+    },
+    {
+      "text": "他看不见那个字。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "verb"},
+        {"start": 2, "end": 3, "role": "aux"},
+        {"start": 3, "end": 4, "role": "complement"},
+        {"start": 4, "end": 7, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "不 đứng giữa 看 và 见 để nói không thể nhìn thấy.",
+        "en": "不 sits between 看 and 见 to say one cannot see."
+      },
+      "translation": {"vi": "Anh ấy không nhìn thấy chữ đó.", "en": "He cannot see that character."},
+      "pinyin": ["tā", "kàn", "bu", "jiàn", "nà", "ge", "zì", ""]
+    },
+    {
+      "text": "这么多菜，我们吃不了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 5, "end": 7, "role": "subject"},
+        {"start": 7, "end": 8, "role": "verb"},
+        {"start": 8, "end": 9, "role": "aux"},
+        {"start": 9, "end": 10, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "不了 sau 吃 nói không thể ăn hết vì quá nhiều.",
+        "en": "不了 after 吃 says one cannot finish eating because there is too much."
+      },
+      "translation": {
+        "vi": "Nhiều món thế này, chúng tôi ăn không hết.",
+        "en": "There is so much food that we cannot finish it."
+      },
+      "pinyin": ["zhè", "me", "duō", "cài", "", "wǒ", "men", "chī", "bu", "liǎo", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "我听得懂不懂中文。",
+      "right": "我听不懂中文。",
+      "reason": {
+        "vi": "Người học giữ cả 得 và 不 trong một câu, nhưng bổ ngữ khả năng chỉ chọn một: 得 cho khẳng định, 不 cho phủ định.",
+        "en": "Learners keep both 得 and 不 in one sentence, but the potential complement chooses one: 得 for affirmative, 不 for negative."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong_pinyin": ["wǒ", "tīng", "de", "dǒng", "bu", "dǒng", "zhōng", "wén", ""],
+      "right_pinyin": ["wǒ", "tīng", "bu", "dǒng", "zhōng", "wén", ""]
+    },
+    {
+      "wrong": "我听得懂中文。",
+      "right": "我听不懂中文。",
+      "reason": {
+        "vi": "Người học dùng 得 cho câu phủ định; khi muốn nói không thể làm được phải dùng 不, không dùng 得.",
+        "en": "Learners use 得 in a negative sentence; to say something cannot be done you use 不, not 得."
+      },
+      "error_tag": "complement",
+      "l1": ["vi"],
+      "wrong_pinyin": ["wǒ", "tīng", "de", "dǒng", "zhōng", "wén", ""],
+      "right_pinyin": ["wǒ", "tīng", "bu", "dǒng", "zhōng", "wén", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "这本书我看___完。",
+      "options": [
+        {"text": "得", "error_tag": null, "pinyin": ["de"]},
+        {"text": "不", "error_tag": "complement", "pinyin": ["bu"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu khẳng định dùng 得 giữa 看 và 完 để nói có thể đọc xong.",
+        "en": "An affirmative sentence uses 得 between 看 and 完 to say one can finish reading."
+      },
+      "q_pinyin": ["zhè", "běn", "shū", "wǒ", "kàn", "", "", "", "wán", ""]
+    },
+    {
+      "q": "今天太忙了，我___了这么多事。",
+      "options": [
+        {"text": "做不", "error_tag": null, "pinyin": ["zuò", "bu"]},
+        {"text": "做得", "error_tag": "complement", "pinyin": ["zuò", "de"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu phủ định dùng 不 giữa 做 và 了 để nói không thể làm hết.",
+        "en": "A negative sentence uses 不 between 做 and 了 to say one cannot finish doing."
+      },
+      "q_pinyin": [
+        "jīn",
+        "tiān",
+        "tài",
+        "máng",
+        "le",
+        "",
+        "wǒ",
+        "",
+        "",
+        "",
+        "liǎo",
+        "zhè",
+        "me",
+        "duō",
+        "shì",
+        ""
+      ]
+    },
+    {
+      "q": "这个字很小，我___见。",
+      "options": [
+        {"text": "不", "error_tag": null, "pinyin": ["bu"]},
+        {"text": "得", "error_tag": "complement", "pinyin": ["de"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu phủ định dùng 不 giữa 看 và 见 để nói không thể nhìn thấy.",
+        "en": "A negative sentence uses 不 between 看 and 见 to say one cannot see."
+      },
+      "q_pinyin": ["zhè", "ge", "zì", "hěn", "xiǎo", "", "wǒ", "", "", "", "jiàn", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về việc bạn có thể hoặc không thể làm, dùng 得 hoặc 不 ở giữa động từ và kết quả.",
+      "en": "Write one sentence about something you can or cannot do, using 得 or 不 between a verb and its result."
+    },
+    "placeholder": "我听得懂……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "verb", "any_of": ["听", "看", "吃", "做", "买", "写", "读", "说"]},
+        {"role": "aux", "any_of": ["得", "不"]},
+        {"role": "complement", "any_of": ["懂", "见", "完", "了", "到", "好", "清楚"]}
+      ]
+    },
+    "sample": {"text": "我听得懂中文。", "pinyin": ["wǒ", "tīng", "de", "dǒng", "zhōng", "wén", ""]},
+    "placeholder_pinyin": ["wǒ", "tīng", "de", "dǒng", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790832782",
+    "generated_at": "2026-10-01T05:33:02Z",
+    "metadata_stale": true
+  },
+  "review": null
+}

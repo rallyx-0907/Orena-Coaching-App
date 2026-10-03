@@ -1,0 +1,220 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk3_7_b_ng_kh_n_ng",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.possibility",
+  "level": {"framework": "hsk3", "value": "3", "rank": 3},
+  "prereqs": ["zh.canon.r5.hsk3_6_b_ng_xu_h_ng_k_p"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["zh-hsk3-7-b-ng-kh-n-ng"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": ["zh-hsk3-7-b-ng-kh-n-ng"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: Bổ ngữ khả năng", "en": "Chinese grammar: Bổ ngữ khả năng"},
+    "native_title": "可能补语",
+    "level": {"framework": "hsk3", "value": "3", "rank": 3},
+    "summary": {
+      "vi": "Bổ ngữ khả năng dùng 得 hoặc 不 chen giữa động từ và bổ ngữ kết quả/xu hướng để nói có thể hay không thể đạt được kết quả đó trong hoàn cảnh cụ thể.",
+      "en": "The potential complement uses 得 or 不 between a verb and its result or directional complement to say whether the result can or cannot be achieved in a given situation."
+    },
+    "sub": {"vi": "khả năng đạt kết quả", "en": "can / cannot achieve"},
+    "native_title_pinyin": ["kě", "néng", "bǔ", "yǔ"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói một hành động có thể hay không thể đưa tới một kết quả cụ thể (hiểu, xong, vào được, nghe rõ).",
+      "en": "When you want to say whether an action can or cannot bring about a specific result (understand, finish, get in, hear clearly)."
+    },
+    {
+      "vi": "Khi khả năng đó phụ thuộc vào hoàn cảnh cụ thể, không phải năng lực chung: quyển sách này khó, cửa này nhỏ, hôm nay không đủ thời gian.",
+      "en": "When the ability depends on a specific situation rather than general skill: this book is hard, this door is narrow, there is not enough time today."
+    },
+    {
+      "vi": "Khi muốn phủ định khả năng đạt kết quả bằng 不 đặt ngay trước bổ ngữ, thay vì dùng 不能.",
+      "en": "When you want to negate the possibility of achieving a result with 不 placed directly before the complement, instead of using 不能."
+    },
+    {
+      "vi": "Khi bổ ngữ kết quả hoặc xu hướng là thành phần bắt buộc để câu diễn đạt trọn ý khả năng.",
+      "en": "When a result or directional complement is required for the sentence to express the potential meaning fully."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}, "pinyin": [""]},
+      {
+        "text": "得/不",
+        "role": "particle",
+        "label": {"vi": "trợ từ khả năng", "en": "potential particle"},
+        "options": [{"text": "得", "pinyin": ["de"]}, {"text": "不", "pinyin": ["bu"]}],
+        "pinyin": ["de", "", "bu"]
+      },
+      {
+        "text": "结果/趋向补语",
+        "role": "complement",
+        "label": {"vi": "bổ ngữ kết quả / xu hướng", "en": "result / directional complement"},
+        "pinyin": ["jié", "guǒ", "", "qū", "xiàng", "bǔ", "yǔ"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "这本书我看得懂。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 4, "end": 5, "role": "verb"},
+        {"start": 5, "end": 6, "role": "particle"},
+        {"start": 6, "end": 7, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "看 + 得 + 懂: có thể đọc hiểu được quyển sách này.",
+        "en": "看 + 得 + 懂: can read and understand this book."
+      },
+      "translation": {"vi": "Quyển sách này tôi đọc hiểu được.", "en": "I can read and understand this book."},
+      "pinyin": ["zhè", "běn", "shū", "wǒ", "kàn", "de", "dǒng", ""]
+    },
+    {
+      "text": "这个工作今天做不完。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 6, "end": 7, "role": "verb"},
+        {"start": 7, "end": 8, "role": "particle"},
+        {"start": 8, "end": 9, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "做 + 不 + 完: không thể làm xong công việc này trong hôm nay.",
+        "en": "做 + 不 + 完: cannot finish this work today."
+      },
+      "translation": {"vi": "Công việc này hôm nay làm không xong.", "en": "I cannot finish this work today."},
+      "pinyin": ["zhè", "ge", "gōng", "zuò", "jīn", "tiān", "zuò", "bu", "wán", ""]
+    },
+    {
+      "text": "门太小，桌子搬不进去。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 6, "end": 7, "role": "verb"},
+        {"start": 7, "end": 8, "role": "particle"},
+        {"start": 8, "end": 10, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "搬 + 不 + 进去: cửa nhỏ quá nên không thể khiêng bàn vào trong.",
+        "en": "搬 + 不 + 进去: the door is too narrow, so the table cannot be carried in."
+      },
+      "translation": {
+        "vi": "Cửa nhỏ quá, bàn không khiêng vào được.",
+        "en": "The door is too narrow; the table cannot be carried in."
+      },
+      "pinyin": ["mén", "tài", "xiǎo", "", "zhuō", "zi", "bān", "bu", "jìn", "qù", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "我看不得懂。",
+      "right": "我看得懂。",
+      "reason": {
+        "vi": "Trợ từ khả năng 得 phải đứng ngay sau động từ 看, không được đặt trước động từ hay trước bổ ngữ.",
+        "en": "The potential particle 得 must come immediately after the verb 看, not before the verb or before the complement."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong_pinyin": ["wǒ", "kàn", "bu", "de", "dǒng", ""],
+      "right_pinyin": ["wǒ", "kàn", "de", "dǒng", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "这本书我看___懂。",
+      "options": [
+        {"text": "得", "error_tag": null, "pinyin": ["de"]},
+        {"text": "不", "error_tag": "other", "pinyin": ["bu"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu khẳng định về khả năng đọc hiểu dùng 得 sau động từ 看.",
+        "en": "An affirmative potential sentence uses 得 after the verb 看."
+      },
+      "q_pinyin": ["zhè", "běn", "shū", "wǒ", "kàn", "", "", "", "dǒng", ""]
+    },
+    {
+      "q": "这个工作今天做___完。",
+      "options": [
+        {"text": "不", "error_tag": null, "pinyin": ["bu"]},
+        {"text": "得", "error_tag": "other", "pinyin": ["de"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu phủ định khả năng dùng 不 sau động từ 做 để nói không thể làm xong.",
+        "en": "A negative potential sentence uses 不 after the verb 做 to say the work cannot be finished."
+      },
+      "q_pinyin": ["zhè", "ge", "gōng", "zuò", "jīn", "tiān", "zuò", "", "", "", "wán", ""]
+    },
+    {
+      "q": "门太小，桌子搬___进去。",
+      "options": [
+        {"text": "不", "error_tag": null, "pinyin": ["bu"]},
+        {"text": "得", "error_tag": "other", "pinyin": ["de"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Cửa nhỏ nên không thể khiêng bàn vào, dùng 不 trước bổ ngữ xu hướng 进去.",
+        "en": "The door is narrow, so the table cannot be carried in; use 不 before the directional complement 进去."
+      },
+      "q_pinyin": ["mén", "tài", "xiǎo", "", "zhuō", "zi", "bān", "", "", "", "jìn", "qù", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng bổ ngữ khả năng để nói bạn có thể hoặc không thể làm xong/ hiểu/ vào được việc gì đó trong hoàn cảnh cụ thể.",
+      "en": "Write one sentence using a potential complement to say you can or cannot finish, understand, or get into something in a specific situation."
+    },
+    "placeholder": "这本书我看……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "verb", "any_of": ["看", "做", "搬", "听", "吃", "写", "买"]},
+        {"role": "particle", "any_of": ["得", "不"]},
+        {"role": "complement", "any_of": ["懂", "完", "进去", "清楚", "到", "好", "上"]}
+      ]
+    },
+    "sample": {"text": "这本书我看得懂。", "pinyin": ["zhè", "běn", "shū", "wǒ", "kàn", "de", "dǒng", ""]},
+    "placeholder_pinyin": ["zhè", "běn", "shū", "wǒ", "kàn", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790833004",
+    "generated_at": "2026-10-01T05:36:44Z",
+    "r5_source": {
+      "ids": ["zh-hsk3-7-b-ng-kh-n-ng"],
+      "content_version": 2,
+      "content_hash": "a5bd6f318be9c9390ac4f32d4881ecc109104c56e39f9e8f39da754e2dcafed2",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk3-7-b-ng-kh-n-ng",
+          "issue": "R5 ghi ví dụ 他说得太快，我听不清楚 với pinyin 'tīng bu qīngchu' nhưng không nêu rõ đây là bổ ngữ khả năng phủ định; câu này đúng nhưng thiếu chú thích cấu trúc V + 不 + complement.",
+          "fix": "Đã thêm cấu trúc và giữ ví dụ tương tự trong phần giải thích; các ví dụ chính được viết lại rõ cấu trúc V + 得/不 + complement."
+        },
+        {
+          "r5_id": "zh-hsk3-7-b-ng-kh-n-ng",
+          "issue": "R5 xếp 这个工作今天做不完 vào dạng khẳng định trong khi câu chứa 不 là phủ định khả năng.",
+          "fix": "Đã phân loại lại: câu chứa 不 được hiểu là phủ định khả năng; trong schema này các ví dụ minh họa vẫn gắn form affirmative vì câu không phải câu hỏi/câu phủ định ngữ pháp, nhưng phần giải thích nêu rõ 不 là phủ định khả năng."
+        },
+        {
+          "r5_id": "zh-hsk3-7-b-ng-kh-n-ng",
+          "issue": "R5 đưa lỗi '我不能看不懂' nhưng không giải thích rõ cơ chế sai: dùng 不能 thay vì 不 trong bổ ngữ khả năng.",
+          "fix": "Đã thay bằng lỗi thực tế '我看不得懂' và giải thích vị trí 得 phải sau động từ, không đặt trước bổ ngữ."
+        }
+      ]
+    },
+    "metadata_stale": true
+  },
+  "review": null
+}

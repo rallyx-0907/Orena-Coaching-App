@@ -6,33 +6,44 @@
   "function": "fn.quantity",
   "level": {"framework": "cefr", "value": "A1", "rank": 1},
   "prereqs": [],
-  "contrasts": [],
+  "contrasts": ["en.plural_nouns.irregular"],
   "error_tags": ["agreement"],
-  "source_refs": {},
+  "source_refs": {"r5": ["a1-singular-and-plural-nouns"]},
   "point_type": "morphology",
+  "sequence": 1,
+  "aliases": ["a1-singular-and-plural-nouns"],
+  "source_anchors": {"status": "unanchored", "items": []},
   "header": {
-    "title": {"vi": "Danh từ số nhiều", "en": "Plural nouns"},
+    "title": {"vi": "Danh từ số nhiều có quy tắc", "en": "Regular plural nouns"},
     "native_title": "Plural nouns",
     "level": {"framework": "cefr", "value": "A1", "rank": 1},
     "summary": {
-      "vi": "Danh từ đếm được ở số nhiều thường thêm -s hoặc -es vào cuối từ.",
-      "en": "Countable nouns usually add -s or -es to show more than one."
+      "vi": "Danh từ đếm được ở số nhiều thường thêm -s hoặc -es vào dạng số ít.",
+      "en": "Countable nouns usually add -s or -es to the singular form to make the plural."
     },
-    "sub": {"vi": "thêm -s / -es", "en": "add -s / -es"}
+    "sub": {"vi": "số nhiều có quy tắc", "en": "regular plurals"}
   },
   "when_to_use": [
-    {"vi": "Khi nói về hai hoặc nhiều người, vật, hoặc sự việc."},
-    {"vi": "Khi danh từ đứng sau các từ chỉ số lượng như two, three, many, some, a lot of."},
-    {"vi": "Khi danh từ đếm được được dùng chung, không có a/an ở trước."},
-    {"vi": "Khi chủ ngữ của câu là nhiều người hoặc nhiều vật."}
+    {
+      "vi": "Khi nói về hai hoặc nhiều người hoặc vật cùng loại.",
+      "en": "When you talk about two or more people or things of the same kind."
+    },
+    {
+      "vi": "Khi danh từ đứng sau một số đếm từ hai trở lên, ví dụ two, three, many.",
+      "en": "When the noun follows a number from two up, for example two, three, many."
+    },
+    {
+      "vi": "Khi danh từ đứng sau các từ chỉ số nhiều như some, a lot of, several.",
+      "en": "When the noun follows plural words like some, a lot of, several."
+    }
   ],
   "pattern": {
     "formula": [
-      {"text": "N", "role": "subject", "label": {"vi": "danh từ"}},
+      {"text": "N", "role": "subject", "label": {"vi": "danh từ số ít", "en": "singular noun"}},
       {
         "text": "-s/-es",
         "role": "other",
-        "label": {"vi": "hậu tố số nhiều"},
+        "label": {"vi": "hậu tố số nhiều", "en": "plural ending"},
         "options": [{"text": "-s"}, {"text": "-es"}]
       }
     ],
@@ -47,34 +58,55 @@
   },
   "examples": [
     {
-      "text": "I have two books.",
+      "text": "I have two cats.",
       "form": "affirmative",
-      "spans": [{"start": 11, "end": 15, "role": "subject"}, {"start": 15, "end": 16, "role": "other"}],
-      "annotation": {"vi": "book là danh từ đếm được, thêm -s để thành số nhiều books."},
-      "translation": {"vi": "Tôi có hai quyển sách."}
+      "spans": [{"start": 11, "end": 14, "role": "subject"}, {"start": 14, "end": 15, "role": "other"}],
+      "annotation": {
+        "vi": "cat là danh từ số ít, thêm -s để thành số nhiều sau số hai.",
+        "en": "cat is the singular noun; -s makes it plural after the number two."
+      },
+      "translation": {"vi": "Tôi có hai con mèo.", "en": "I have two cats."}
     },
     {
-      "text": "She buys three boxes.",
+      "text": "There are three boxes by the door.",
       "form": "affirmative",
-      "spans": [{"start": 15, "end": 18, "role": "subject"}, {"start": 18, "end": 20, "role": "other"}],
-      "annotation": {"vi": "box tận cùng bằng -x, nên thêm -es để thành boxes."},
-      "translation": {"vi": "Cô ấy mua ba cái hộp."}
+      "spans": [{"start": 16, "end": 19, "role": "subject"}, {"start": 19, "end": 21, "role": "other"}],
+      "annotation": {"vi": "box kết thúc bằng -x nên thêm -es.", "en": "box ends in -x, so it takes -es."},
+      "translation": {"vi": "Có ba chiếc hộp cạnh cửa.", "en": "There are three boxes by the door."}
     },
     {
-      "text": "The students like their new class.",
+      "text": "Many cities have large parks.",
       "form": "affirmative",
-      "spans": [{"start": 4, "end": 11, "role": "subject"}, {"start": 11, "end": 12, "role": "other"}],
-      "annotation": {"vi": "student là danh từ số nhiều, thêm -s để thành students."},
-      "translation": {"vi": "Các học sinh thích lớp học mới của họ."}
+      "spans": [{"start": 5, "end": 8, "role": "subject"}, {"start": 8, "end": 11, "role": "other"}],
+      "annotation": {
+        "vi": "city có phụ âm trước y, nên đổi y thành -ies.",
+        "en": "city has a consonant before y, so y changes to -ies."
+      },
+      "translation": {"vi": "Nhiều thành phố có công viên lớn.", "en": "Many cities have large parks."}
     }
   ],
-  "compare": [],
+  "compare": [
+    {
+      "with": "en.plural_nouns.irregular",
+      "this_example": "book → books",
+      "other_example": "child → children",
+      "this_meaning": {
+        "vi": "Số nhiều có quy tắc được tạo bằng cách thêm -s hoặc -es vào dạng số ít.",
+        "en": "Regular plurals are made by adding -s or -es to the singular form."
+      },
+      "other_meaning": {
+        "vi": "Số nhiều bất quy tắc không thêm -s hoặc -es; hình thức thay đổi hoàn toàn và phải học thuộc.",
+        "en": "Irregular plurals do not add -s or -es; the form changes completely and must be learned."
+      }
+    }
+  ],
   "common_mistakes": [
     {
-      "wrong": "I have two book.",
-      "right": "I have two books.",
+      "wrong": "I have two cat.",
+      "right": "I have two cats.",
       "reason": {
-        "vi": "Tiếng Việt không biến đổi hình thức danh từ theo số lượng, nên người học thường quên thêm -s sau danh từ đếm được khi có số lượng từ hai trở lên."
+        "vi": "Số đếm từ hai trở lên yêu cầu danh từ ở dạng số nhiều, nhưng người học giữ nguyên dạng số ít.",
+        "en": "A number from two up requires the noun in plural form, but the learner keeps the singular form."
       },
       "error_tag": "agreement",
       "l1": ["vi"]
@@ -82,46 +114,72 @@
   ],
   "quick_practice": [
     {
-      "q": "There are many ___ in the garden.",
+      "q": "There are three ___ in the garden.",
       "options": [{"text": "flowers", "error_tag": null}, {"text": "flower", "error_tag": "agreement"}],
       "answer": 0,
-      "explain": {"vi": "Sau many, danh từ đếm được phải ở số nhiều: flowers."}
+      "explain": {
+        "vi": "Sau số three, danh từ phải ở dạng số nhiều: flowers.",
+        "en": "After the number three, the noun must be plural: flowers."
+      }
     },
     {
-      "q": "My sister has two ___.",
-      "options": [{"text": "cats", "error_tag": null}, {"text": "cat", "error_tag": "agreement"}],
-      "answer": 0,
-      "explain": {"vi": "Sau số từ two, danh từ đếm được phải ở số nhiều: cats."}
-    },
-    {
-      "q": "She puts the ___ on the table.",
+      "q": "She has two ___ in her bag.",
       "options": [{"text": "boxes", "error_tag": null}, {"text": "boxs", "error_tag": "word_form"}],
       "answer": 0,
-      "explain": {"vi": "Danh từ tận cùng bằng -x tạo số nhiều bằng -es: boxes, không phải boxs."}
+      "explain": {
+        "vi": "box kết thúc bằng -x nên thêm -es: boxes.",
+        "en": "box ends in -x, so it takes -es: boxes."
+      }
+    },
+    {
+      "q": "Many ___ have big parks.",
+      "options": [{"text": "cities", "error_tag": null}, {"text": "citys", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {
+        "vi": "city có phụ âm trước y, nên đổi y thành -ies: cities.",
+        "en": "city has a consonant before y, so y changes to -ies: cities."
+      }
     }
   ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về những thứ bạn có, dùng một danh từ số nhiều có quy tắc.",
+      "en": "Write one sentence about things you have, using a regular plural noun."
+    },
+    "placeholder": "I have two ...",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"role": "subject", "regex": "[a-z]+s\\b"}]},
+    "sample": {"text": "I have two cats."}
+  },
   "status": "draft_ai",
   "flags": [],
   "provenance": {
     "model": "deepseek:deepseek-flash",
-    "prompt_version": "generate_point_v04.v8",
-    "run_id": "generate.1790591370",
-    "generated_at": "2026-09-28T10:29:30Z"
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790829555",
+    "generated_at": "2026-10-01T04:39:15Z",
+    "r5_source": {
+      "ids": ["a1-singular-and-plural-nouns"],
+      "content_version": 2,
+      "content_hash": "60ffba0bbb5fdae0cedb77025c4d6a4a57f0deb8d90115a67d1272c5ebe35ac3",
+      "corrections": [
+        {
+          "r5_id": "a1-singular-and-plural-nouns",
+          "issue": "R5 includes irregular plurals (child → children, person → people) in the same lesson, but this point is only regular plurals.",
+          "fix": "Removed irregular forms from the explanation and examples; they belong to en.plural_nouns.irregular, which is the compare target."
+        },
+        {
+          "r5_id": "a1-singular-and-plural-nouns",
+          "issue": "R5 example 'Two children are playing outside.' uses an irregular plural, not a regular one.",
+          "fix": "Replaced with regular-plural examples: 'I have two cats.', 'There are three boxes by the door.', 'Many cities have large parks.'"
+        },
+        {
+          "r5_id": "a1-singular-and-plural-nouns",
+          "issue": "R5 mistake 'There are three citys nearby.' is a spelling error, not a grammar mistake learners make with this point.",
+          "fix": "Replaced with the agreement mistake 'I have two cat.' → 'I have two cats.', which shows the missing plural form after a number."
+        }
+      ]
+    }
   },
-  "review": null,
-  "sequence": 1,
-  "personal_production": {
-    "prompt": {
-      "vi": "Viết một câu nói bạn có hoặc thấy nhiều hơn một thứ.",
-      "en": "Write a sentence about having or seeing more than one thing."
-    },
-    "placeholder": "I have three ...",
-    "target_form": "affirmative",
-    "pattern_rule": {
-      "ordered": true,
-      "slots": [{"role": "other", "regex": "\\b(?!this\\b|its\\b|was\\b|has\\b|does\\b|yes\\b)\\w{3,}s\\b"}]
-    },
-    "sample": {"text": "I see two birds."}
-  },
-  "source_anchors": {"status": "unanchored", "items": []}
+  "review": null
 }

@@ -4,259 +4,204 @@
   "version": 1,
   "target_lang": "en",
   "function": "fn.possession",
-  "level": {
-    "framework": "cefr",
-    "value": "A1",
-    "rank": 1
-  },
-  "prereqs": [
-    "en.be.present"
-  ],
-  "contrasts": [],
-  "error_tags": [
-    "word_form"
-  ],
-  "source_refs": {
-    "r5": [
-      "a1-possessive-adjectives-pronouns-and-possessive-s"
-    ]
-  },
+  "level": {"framework": "cefr", "value": "A1", "rank": 1},
+  "prereqs": ["en.be.present"],
+  "contrasts": ["en.possessive_adjectives"],
+  "error_tags": ["word_form"],
+  "source_refs": {"r5": ["a1-possessive-adjectives-pronouns-and-possessive-s"]},
   "point_type": "morphology",
+  "sequence": 3,
+  "aliases": [],
+  "source_anchors": {"status": "anchored", "items": [{"source": "core_inventory", "code": "128", "level": "A1"}]},
   "header": {
-    "title": {
-      "vi": "Sở hữu cách 's",
-      "en": "Possessive 's"
-    },
+    "title": {"vi": "Sở hữu cách 's", "en": "Possessive 's"},
     "native_title": "Possessive 's",
-    "sub": {
-      "vi": "Lan's book",
-      "en": "Lan's book"
-    },
-    "level": {
-      "framework": "cefr",
-      "value": "A1",
-      "rank": 1
-    },
+    "level": {"framework": "cefr", "value": "A1", "rank": 1},
     "summary": {
-      "vi": "Thêm 's vào tên hoặc danh từ chỉ người để nói một vật thuộc về người đó.",
-      "en": "Add 's to a name or person noun to show that something belongs to that person."
-    }
+      "vi": "Thêm 's vào sau người hoặc vật sở hữu để nói đồ vật thuộc về ai.",
+      "en": "Add 's after the owner to say who something belongs to."
+    },
+    "sub": {"vi": "sở hữu với 's", "en": "possessive 's"}
   },
   "when_to_use": [
     {
-      "vi": "Dùng với tên người: Mai's phone.",
-      "en": "Use it with names: Mai's phone."
+      "vi": "Khi người sở hữu là một người cụ thể, có tên hoặc danh từ chỉ người.",
+      "en": "When the owner is a specific person, with a name or a person noun."
     },
     {
-      "vi": "Dùng với danh từ chỉ người số ít: my brother's room.",
-      "en": "Use it with singular person nouns: my brother's room."
+      "vi": "Khi bạn muốn nói một đồ vật thuộc về ai đó trong câu nói hằng ngày.",
+      "en": "When you want to say an object belongs to someone in everyday speech."
+    },
+    {
+      "vi": "Khi chủ sở hữu đứng ngay trước danh từ chỉ vật được sở hữu.",
+      "en": "When the owner comes right before the noun for the thing owned."
     }
   ],
   "pattern": {
     "formula": [
-      {
-        "text": "person",
-        "role": "subject",
-        "label": {
-          "vi": "người sở hữu",
-          "en": "owner"
-        }
-      },
-      {
-        "text": "'s",
-        "role": "marker",
-        "label": {
-          "vi": "dấu sở hữu",
-          "en": "possessive marker"
-        }
-      },
+      {"text": "owner", "role": "subject", "label": {"vi": "người/vật sở hữu", "en": "owner"}},
+      {"text": "'s", "role": "particle", "label": {"vi": "dấu sở hữu", "en": "possessive marker"}},
       {
         "text": "N",
         "role": "object",
-        "label": {
-          "vi": "vật được sở hữu",
-          "en": "thing owned"
-        }
+        "label": {"vi": "danh từ chỉ vật được sở hữu", "en": "owned noun"}
       }
     ],
     "illustration": {
       "kind": "morphology",
       "morphology": [
-        {
-          "base": "Lan",
-          "affix": "'s",
-          "result": "Lan's"
-        },
-        {
-          "base": "my brother",
-          "affix": "'s",
-          "result": "my brother's"
-        }
+        {"base": "Minh", "affix": "'s", "result": "Minh's"},
+        {"base": "sister", "affix": "'s", "result": "sister's"},
+        {"base": "teacher", "affix": "'s", "result": "teacher's"}
       ]
     }
   },
   "examples": [
     {
-      "text": "Lan's bag is here.",
+      "text": "This is Minh's bicycle.",
       "form": "affirmative",
       "spans": [
-        {
-          "start": 0,
-          "end": 3,
-          "role": "subject"
-        },
-        {
-          "start": 3,
-          "end": 5,
-          "role": "marker"
-        },
-        {
-          "start": 6,
-          "end": 9,
-          "role": "object"
-        }
+        {"start": 8, "end": 12, "role": "subject"},
+        {"start": 12, "end": 14, "role": "particle"},
+        {"start": 15, "end": 22, "role": "object"}
       ],
       "annotation": {
-        "vi": "Lan's bag nghĩa là chiếc túi của Lan.",
-        "en": "Lan's bag means the bag belonging to Lan."
+        "vi": "Minh là người sở hữu, 's cho biết chiếc xe thuộc về Minh.",
+        "en": "Minh is the owner; 's shows the bicycle belongs to Minh."
       },
-      "translation": {
-        "vi": "Lan's bag nghĩa là chiếc túi của Lan.",
-        "en": "Lan's bag means the bag belonging to Lan."
-      }
+      "translation": {"vi": "Đây là xe đạp của Minh.", "en": "This is Minh's bicycle."}
     },
     {
-      "text": "My brother's room is small.",
+      "text": "My sister's room is small.",
       "form": "affirmative",
       "spans": [
-        {
-          "start": 0,
-          "end": 10,
-          "role": "subject"
-        },
-        {
-          "start": 10,
-          "end": 12,
-          "role": "marker"
-        },
-        {
-          "start": 13,
-          "end": 17,
-          "role": "object"
-        }
+        {"start": 3, "end": 9, "role": "subject"},
+        {"start": 9, "end": 11, "role": "particle"},
+        {"start": 12, "end": 16, "role": "object"}
       ],
       "annotation": {
-        "vi": "Thêm 's sau người sở hữu.",
-        "en": "Add 's after the owner."
+        "vi": "sister là người sở hữu, 's cho biết căn phòng thuộc về chị/em gái.",
+        "en": "sister is the owner; 's shows the room belongs to the sister."
       },
-      "translation": {
-        "vi": "Thêm 's sau người sở hữu.",
-        "en": "Add 's after the owner."
+      "translation": {"vi": "Phòng của chị tôi nhỏ.", "en": "My sister's room is small."}
+    },
+    {
+      "text": "The teacher's book is on the desk.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 4, "end": 11, "role": "subject"},
+        {"start": 11, "end": 13, "role": "particle"},
+        {"start": 14, "end": 18, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "teacher là người sở hữu, 's cho biết quyển sách thuộc về giáo viên.",
+        "en": "teacher is the owner; 's shows the book belongs to the teacher."
+      },
+      "translation": {"vi": "Sách của giáo viên ở trên bàn.", "en": "The teacher's book is on the desk."}
+    }
+  ],
+  "compare": [
+    {
+      "with": "en.possessive_adjectives",
+      "this_example": "This is Minh's bicycle.",
+      "other_example": "This is my bicycle.",
+      "this_meaning": {
+        "vi": "Dùng 's sau người sở hữu: tên hoặc danh từ chỉ người + 's + danh từ.",
+        "en": "Use 's after the owner: a name or person noun + 's + noun."
+      },
+      "other_meaning": {
+        "vi": "Dùng tính từ sở hữu trước danh từ: my, your, his, her, our, their + danh từ.",
+        "en": "Use a possessive adjective before the noun: my, your, his, her, our, their + noun."
       }
     }
   ],
-  "compare": [],
   "common_mistakes": [
     {
-      "wrong": "The bag of Lan is here.",
-      "right": "Lan's bag is here.",
+      "wrong": "That is John bike.",
+      "right": "That is John's bike.",
       "reason": {
-        "vi": "Với người, 's là cách tự nhiên và gọn ở mức A1.",
-        "en": "For people, 's is the natural compact A1 form."
+        "vi": "Người học quên dấu 's sau tên người sở hữu vì tiếng Việt không có dấu này.",
+        "en": "The learner drops 's after the owner's name because Vietnamese does not mark possession this way."
       },
       "error_tag": "word_form",
-      "l1": [
-        "vi"
-      ]
+      "l1": ["vi"]
     }
   ],
   "quick_practice": [
     {
-      "q": "This is ___ bike.",
-      "options": [
-        {
-          "text": "Tom's",
-          "error_tag": null
-        },
-        {
-          "text": "Tom",
-          "error_tag": "word_form"
-        },
-        {
-          "text": "Toms",
-          "error_tag": "word_form"
-        }
-      ],
+      "q": "This is ___ bag.",
+      "options": [{"text": "Lan's", "error_tag": null}, {"text": "Lan", "error_tag": "word_form"}],
       "answer": 0,
       "explain": {
-        "vi": "Thêm 's sau Tom.",
-        "en": "Add 's after Tom."
+        "vi": "Cần 's sau tên người sở hữu: Lan's bag.",
+        "en": "You need 's after the owner's name: Lan's bag."
       }
     },
     {
-      "q": "My ___ name is Hoa.",
-      "options": [
-        {
-          "text": "sister's",
-          "error_tag": null
-        },
-        {
-          "text": "sister",
-          "error_tag": "word_form"
-        },
-        {
-          "text": "sisters",
-          "error_tag": "word_form"
-        }
-      ],
+      "q": "The ___ toy is new.",
+      "options": [{"text": "baby's", "error_tag": null}, {"text": "baby", "error_tag": "word_form"}],
       "answer": 0,
       "explain": {
-        "vi": "Dùng sister's để chỉ sở hữu.",
-        "en": "Use sister's to show possession."
+        "vi": "Danh từ chỉ người cần 's để chỉ sở hữu: baby's toy.",
+        "en": "A person noun needs 's to show possession: baby's toy."
       }
     },
     {
-      "q": "That is ___ desk.",
-      "options": [
-        {
-          "text": "Mr Lee's",
-          "error_tag": null
-        },
-        {
-          "text": "Mr Lee",
-          "error_tag": "word_form"
-        },
-        {
-          "text": "Mr Lees",
-          "error_tag": "word_form"
-        }
-      ],
+      "q": "I like ___ car.",
+      "options": [{"text": "Nam's", "error_tag": null}, {"text": "Nam", "error_tag": "word_form"}],
       "answer": 0,
       "explain": {
-        "vi": "Tên người nhận 's.",
-        "en": "A person's name takes 's."
+        "vi": "Thêm 's sau tên Nam để nói chiếc xe thuộc về Nam.",
+        "en": "Add 's after Nam to say the car belongs to Nam."
       }
     }
   ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một đồ vật thuộc về một người bạn hoặc người thân, dùng tên + 's + danh từ.",
+      "en": "Write one sentence about an object that belongs to a friend or family member, using name + 's + noun."
+    },
+    "placeholder": "This is ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "subject", "regex": "[A-Za-z]+"},
+        {"role": "particle", "regex": "'s"},
+        {"role": "object", "regex": "[A-Za-z]+"}
+      ]
+    },
+    "sample": {"text": "This is Lan's book."}
+  },
   "status": "draft_ai",
   "flags": [],
   "provenance": {
-    "model": "openai:gpt-5.6-sol",
-    "prompt_version": "direct-author.en-a1.v1",
-    "run_id": "chatgpt.en-a1.20260930",
-    "generated_at": "2026-09-30T10:35:00Z"
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790829563",
+    "generated_at": "2026-10-01T04:39:23Z",
+    "r5_source": {
+      "ids": ["a1-possessive-adjectives-pronouns-and-possessive-s"],
+      "content_version": 2,
+      "content_hash": "758362d0f6bfae3d8bc6800e0cbdf2f4d065a172301be492c127dad7a25abb63",
+      "corrections": [
+        {
+          "r5_id": "a1-possessive-adjectives-pronouns-and-possessive-s",
+          "issue": "R5 gộp ba điểm ngữ pháp (possessive adjectives, possessive pronouns, possessive 's) vào một bài, vượt phạm vi điểm này.",
+          "fix": "Tách riêng possessive 's; chỉ giữ cấu trúc owner + 's + noun và các ví dụ, lỗi liên quan."
+        },
+        {
+          "r5_id": "a1-possessive-adjectives-pronouns-and-possessive-s",
+          "issue": "R5 dùng ví dụ 'That is Minh's bicycle.' nhưng không có công thức tách slot và không đánh dấu thành phần.",
+          "fix": "Thêm formula owner + 's + N và spans cho từng ví dụ."
+        },
+        {
+          "r5_id": "a1-possessive-adjectives-pronouns-and-possessive-s",
+          "issue": "R5 có lỗi 'That is John bike.' nhưng thiếu giải thích cơ chế lỗi.",
+          "fix": "Thêm common_mistakes với lý do người Việt quên 's vì tiếng Việt không có dấu sở hữu."
+        }
+      ]
+    }
   },
-  "review": null,
-  "sequence": 3,
-  "source_anchors": {
-    "status": "anchored",
-    "items": [
-      {
-        "source": "core_inventory",
-        "code": "128",
-        "level": "A1"
-      }
-    ]
-  },
-  "aliases": []
+  "review": null
 }

@@ -1,0 +1,312 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.c2.002",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.hypothetical_counterfactual",
+  "level": {"framework": "cefr", "value": "C2", "rank": 6},
+  "prereqs": ["en.canon.c1.030"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["c2-counterfactual-compression"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["c2-counterfactual-compression"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Counterfactual compression", "en": "Counterfactual compression"},
+    "native_title": "Counterfactual compression",
+    "level": {"framework": "cefr", "value": "C2", "rank": 6},
+    "summary": {
+      "vi": "Nén mệnh đề điều kiện không có thật bằng đảo ngữ, cụm giới từ và mệnh đề nối, giữ nguyên quan hệ thời gian và thể.",
+      "en": "Compress unreal conditionals into inversion, prepositional phrases, and connective clauses while preserving the original time and aspect relations."
+    },
+    "sub": {"vi": "nén điều kiện không thật", "en": "counterfactual compression"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn diễn đạt điều kiện không có thật trong văn viết trang trọng hoặc học thuật, tránh dùng if dài dòng.",
+      "en": "When you want to express an unreal condition in formal or academic writing without a lengthy if-clause."
+    },
+    {
+      "vi": "Khi cần nhấn mạnh nguyên nhân hoặc điều kiện tiên quyết bằng cụm danh từ ngắn gọn thay vì mệnh đề đầy đủ.",
+      "en": "When you need to foreground a cause or prerequisite as a compact noun phrase rather than a full clause."
+    },
+    {
+      "vi": "Khi muốn nối hai mệnh đề mà mệnh đề thứ hai là kết quả không có thật của mệnh đề thứ nhất, dùng otherwise hoặc else.",
+      "en": "When you want to link two clauses where the second is the unreal result of the first, using otherwise or else."
+    },
+    {
+      "vi": "Khi cần kiểm soát mức độ trang trọng và nhịp điệu câu, chọn dạng nén phù hợp với ngữ cảnh.",
+      "en": "When you need to control formality and sentence rhythm by choosing the compressed form that fits the context."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "Had", "role": "aux", "label": {"vi": "trợ động từ đảo", "en": "inverted auxiliary"}},
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}},
+      {
+        "text": "but for",
+        "role": "marker",
+        "label": {"vi": "giới từ điều kiện", "en": "counterfactual preposition"}
+      },
+      {"text": "NP", "role": "object", "label": {"vi": "cụm danh từ", "en": "noun phrase"}},
+      {
+        "text": "otherwise",
+        "role": "connector",
+        "label": {"vi": "liên từ kết quả", "en": "result connective"}
+      },
+      {
+        "text": "S",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ mệnh đề kết quả", "en": "result clause subject"}
+      },
+      {
+        "text": "would have",
+        "role": "aux",
+        "label": {"vi": "trợ động từ modal hoàn thành", "en": "modal perfect auxiliary"}
+      },
+      {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}}
+    ],
+    "variants": {
+      "negative": [
+        {
+          "text": "Had",
+          "role": "aux",
+          "label": {"vi": "trợ động từ đảo", "en": "inverted auxiliary"}
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {"text": "not", "role": "particle", "label": {"vi": "phủ định", "en": "negator"}},
+        {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}},
+        {
+          "text": "but for",
+          "role": "marker",
+          "label": {"vi": "giới từ điều kiện", "en": "counterfactual preposition"}
+        },
+        {"text": "NP", "role": "object", "label": {"vi": "cụm danh từ", "en": "noun phrase"}},
+        {
+          "text": "otherwise",
+          "role": "connector",
+          "label": {"vi": "liên từ kết quả", "en": "result connective"}
+        },
+        {
+          "text": "S",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ mệnh đề kết quả", "en": "result clause subject"}
+        },
+        {
+          "text": "would not have",
+          "role": "aux",
+          "label": {"vi": "trợ động từ modal hoàn thành phủ định", "en": "negative modal perfect auxiliary"}
+        },
+        {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}}
+      ],
+      "question": [
+        {
+          "text": "Had",
+          "role": "aux",
+          "label": {"vi": "trợ động từ đảo", "en": "inverted auxiliary"}
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}},
+        {
+          "text": "but for",
+          "role": "marker",
+          "label": {"vi": "giới từ điều kiện", "en": "counterfactual preposition"}
+        },
+        {"text": "NP", "role": "object", "label": {"vi": "cụm danh từ", "en": "noun phrase"}},
+        {
+          "text": "otherwise",
+          "role": "connector",
+          "label": {"vi": "liên từ kết quả", "en": "result connective"}
+        },
+        {
+          "text": "S",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ mệnh đề kết quả", "en": "result clause subject"}
+        },
+        {
+          "text": "would have",
+          "role": "aux",
+          "label": {"vi": "trợ động từ modal hoàn thành", "en": "modal perfect auxiliary"}
+        },
+        {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}}
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "Had the backup failed, but for the update, otherwise the service would have gone offline.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "aux"},
+        {"start": 4, "end": 14, "role": "subject"},
+        {"start": 15, "end": 21, "role": "verb"},
+        {"start": 23, "end": 30, "role": "marker"},
+        {"start": 31, "end": 41, "role": "object"},
+        {"start": 43, "end": 52, "role": "connector"},
+        {"start": 53, "end": 64, "role": "subject"},
+        {"start": 65, "end": 75, "role": "aux"},
+        {"start": 76, "end": 80, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Đảo ngữ Had + chủ ngữ + quá khứ phân từ thay cho if-clause; but for + cụm danh từ nén điều kiện; otherwise nối kết quả không có thật.",
+        "en": "Inversion Had + subject + past participle replaces an if-clause; but for + noun phrase compresses the condition; otherwise links the unreal result."
+      },
+      "translation": {
+        "vi": "Nếu backup lỗi, nhưng nhờ có bản cập nhật, nếu không thì dịch vụ đã offline.",
+        "en": "If the backup had failed, but for the update, otherwise the service would have gone offline."
+      }
+    },
+    {
+      "text": "Had the launch been delayed, but for a last-minute update, otherwise the team would have missed the deadline.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "aux"},
+        {"start": 4, "end": 14, "role": "subject"},
+        {"start": 15, "end": 19, "role": "verb"},
+        {"start": 29, "end": 36, "role": "marker"},
+        {"start": 37, "end": 57, "role": "object"},
+        {"start": 59, "end": 68, "role": "connector"},
+        {"start": 69, "end": 77, "role": "subject"},
+        {"start": 78, "end": 88, "role": "aux"},
+        {"start": 89, "end": 95, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Had + chủ ngữ + quá khứ phân từ nén điều kiện không có thật; but for + cụm danh từ nêu điều kiện tiên quyết; otherwise nối kết quả không có thật.",
+        "en": "Had + subject + past participle compresses the unreal condition; but for + noun phrase states the prerequisite; otherwise links the unreal result."
+      },
+      "translation": {
+        "vi": "Nếu ra mắt bị hoãn, nhưng nhờ cập nhật phút chót, nếu không thì đội đã trễ hạn.",
+        "en": "If the launch had been delayed, but for a last-minute update, otherwise the team would have missed the deadline."
+      }
+    },
+    {
+      "text": "Had we left early, but for that, otherwise we would have missed the train.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "aux"},
+        {"start": 4, "end": 6, "role": "subject"},
+        {"start": 7, "end": 11, "role": "verb"},
+        {"start": 19, "end": 26, "role": "marker"},
+        {"start": 27, "end": 31, "role": "object"},
+        {"start": 33, "end": 42, "role": "connector"},
+        {"start": 43, "end": 45, "role": "subject"},
+        {"start": 46, "end": 56, "role": "aux"},
+        {"start": 57, "end": 63, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Had + chủ ngữ + quá khứ phân từ nén điều kiện; but for + cụm danh từ nêu điều kiện; otherwise nối kết quả không có thật.",
+        "en": "Had + subject + past participle compresses the condition; but for + noun phrase states the condition; otherwise links the unreal result."
+      },
+      "translation": {
+        "vi": "Nếu chúng tôi rời sớm, nhưng nhờ điều đó, nếu không thì đã lỡ tàu.",
+        "en": "If we had left early, but for that, otherwise we would have missed the train."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "But for she helped us, we would have failed.",
+      "right": "But for her help, we would have failed.",
+      "reason": {
+        "vi": "But for cần một cụm danh từ, không phải mệnh đề hữu hạn.",
+        "en": "But for requires a noun phrase, not a finite clause."
+      },
+      "error_tag": "other",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "___ the backup failed, the service would have gone offline.",
+      "options": [
+        {"text": "Had", "error_tag": null},
+        {"text": "Have", "error_tag": "tense"},
+        {"text": "Has", "error_tag": "agreement"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Đảo ngữ điều kiện không thật dùng Had + chủ ngữ + quá khứ phân từ.",
+        "en": "Counterfactual inversion uses Had + subject + past participle."
+      }
+    },
+    {
+      "q": "But for her ___, we would have failed.",
+      "options": [
+        {"text": "help", "error_tag": null},
+        {"text": "she helped", "error_tag": "sentence_structure"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "But for cần một cụm danh từ, không phải mệnh đề.",
+        "en": "But for requires a noun phrase, not a clause."
+      }
+    },
+    {
+      "q": "We left early; ___, we would have missed the train.",
+      "options": [{"text": "otherwise", "error_tag": null}, {"text": "therefore", "error_tag": "word_choice"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Otherwise diễn tả kết quả không có thật nếu điều trước không xảy ra.",
+        "en": "Otherwise expresses the unreal result if the preceding condition had not held."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một quyết định trong quá khứ của bạn và kết quả không có thật của nó, dùng cấu trúc nén.",
+      "en": "Write one sentence about a past decision of yours and its unreal result, using a compressed structure."
+    },
+    "placeholder": "Had I ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "aux", "any_of": ["Had"]},
+        {"role": "verb", "regex": "\\b\\w+ed\\b|\\b\\w+en\\b|\\b\\w+t\\b"},
+        {"role": "marker", "any_of": ["but for"]},
+        {"role": "object", "regex": "\\b\\w+\\b"},
+        {"role": "connector", "any_of": ["otherwise"]}
+      ]
+    },
+    "sample": {
+      "text": "Had I known about the delay, but for that, otherwise I would have taken an earlier train."
+    }
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790831603",
+    "generated_at": "2026-10-01T05:13:23Z",
+    "r5_source": {
+      "ids": ["c2-counterfactual-compression"],
+      "content_version": 2,
+      "content_hash": "3e4a5330fcd8211f9acbb3b31662906b98cbe0ccf9e94ab36f06017673d9c0b9",
+      "corrections": [
+        {
+          "r5_id": "c2-counterfactual-compression",
+          "issue": "The R5 lesson lists 'Had I would have known' as a mistake but does not explain that the inversion itself replaces the if-clause and the modal perfect stays in the result clause.",
+          "fix": "Added a clear formula and examples showing Had + subject + past participle in the condition and would have + past participle in the result."
+        },
+        {
+          "r5_id": "c2-counterfactual-compression",
+          "issue": "The R5 lesson mixes several compression types without a unified formula or clear boundaries.",
+          "fix": "Restructured into a single formula with slots for inversion, but for + NP, and otherwise, and provided separate negative and question variants."
+        },
+        {
+          "r5_id": "c2-counterfactual-compression",
+          "issue": "The R5 example 'Without her intervention, the dispute might have escalated' uses 'might' which is not covered by the core formula and could confuse learners about the modal choice.",
+          "fix": "Replaced with examples using 'would have' to keep the modal perfect consistent with the taught pattern."
+        }
+      ]
+    },
+    "metadata_stale": true
+  },
+  "review": null
+}

@@ -1,0 +1,287 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk4.a_4_5_2_7.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.condition_real",
+  "level": {"framework": "hsk3", "value": "4", "rank": 4},
+  "prereqs": ["zh.ruguo_jiu"],
+  "contrasts": [],
+  "error_tags": ["conjunction"],
+  "source_refs": {"gf0025": ["gf0025.hsk4.053"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Câu phức: 不管⋯⋯，都/也⋯⋯", "en": "Complex sentences: 不管⋯⋯，都/也⋯⋯"},
+    "native_title": "不管⋯⋯，都/也⋯⋯",
+    "level": {"framework": "hsk3", "value": "4", "rank": 4},
+    "summary": {
+      "vi": "Mẫu câu phức 不管⋯⋯，都/也⋯⋯ dùng để nói rằng kết quả ở vế sau không thay đổi dù điều kiện ở vế trước là gì.",
+      "en": "The complex pattern 不管⋯⋯，都/也⋯⋯ states that the result in the second clause stays the same no matter what the condition in the first clause is."
+    },
+    "sub": {"vi": "điều kiện bất kể", "en": "no matter what"},
+    "native_title_pinyin": ["bù", "guǎn", "", "", "", "dōu", "", "yě", "", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi vế trước nêu một loạt lựa chọn (A hay B, ai, cái gì, thế nào) và vế sau vẫn giữ nguyên một kết luận.",
+      "en": "When the first clause lists alternatives (A or B, who, what, how) and the second clause keeps the same conclusion."
+    },
+    {
+      "vi": "Khi muốn nhấn mạnh rằng điều kiện không quan trọng, không ảnh hưởng đến kết quả.",
+      "en": "When you want to stress that the condition does not matter and does not change the result."
+    },
+    {
+      "vi": "Khi vế trước dùng 多/怎么/谁/什么/哪 để tạo nghĩa bao quát mọi khả năng.",
+      "en": "When the first clause uses 多/怎么/谁/什么/哪 to cover every possibility."
+    },
+    {
+      "vi": "Khi câu có hai vế và vế sau bắt đầu bằng 都 hoặc 也.",
+      "en": "When the sentence has two clauses and the second one begins with 都 or 也."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "不管",
+        "role": "connector",
+        "label": {"vi": "liên từ mở đầu", "en": "opening conjunction"},
+        "pinyin": ["bù", "guǎn"]
+      },
+      {
+        "text": "điều kiện",
+        "role": "other",
+        "label": {"vi": "vế điều kiện", "en": "condition clause"},
+        "pinyin": ["", "", "", "", "", "", "", "", ""]
+      },
+      {
+        "text": "都/也",
+        "role": "connector",
+        "label": {"vi": "liên từ nối vế kết quả", "en": "result-clause connector"},
+        "options": [{"text": "都", "pinyin": ["dōu"]}, {"text": "也", "pinyin": ["yě"]}],
+        "pinyin": ["dōu", "", "yě"]
+      },
+      {
+        "text": "kết quả",
+        "role": "other",
+        "label": {"vi": "vế kết quả", "en": "result clause"},
+        "pinyin": ["", "", "", "", "", "", ""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "不管明天下不下雨，比赛都照常进行。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 8, "role": "other"},
+        {"start": 11, "end": 12, "role": "connector"},
+        {"start": 12, "end": 16, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Vế điều kiện nêu hai khả năng mưa/không mưa; 都 đánh dấu kết quả không đổi.",
+        "en": "The condition clause gives both rain/no-rain possibilities; 都 marks the unchanged result."
+      },
+      "translation": {
+        "vi": "Dù ngày mai mưa hay không mưa, trận đấu vẫn diễn ra như thường.",
+        "en": "Whether or not it rains tomorrow, the match will go ahead as usual."
+      },
+      "pinyin": [
+        "bù",
+        "guǎn",
+        "míng",
+        "tiān",
+        "xià",
+        "bù",
+        "xià",
+        "yǔ",
+        "",
+        "bǐ",
+        "sài",
+        "dōu",
+        "zhào",
+        "cháng",
+        "jìn",
+        "xíng",
+        ""
+      ]
+    },
+    {
+      "text": "不管你怎么解释，他也不相信。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 7, "role": "other"},
+        {"start": 9, "end": 10, "role": "connector"},
+        {"start": 10, "end": 13, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Vế điều kiện dùng 怎么 để bao quát mọi cách giải thích; 也 nhấn mạnh kết quả giữ nguyên.",
+        "en": "The condition clause uses 怎么 to cover every way of explaining; 也 stresses the unchanged result."
+      },
+      "translation": {
+        "vi": "Dù bạn giải thích thế nào, anh ấy cũng không tin.",
+        "en": "No matter how you explain it, he still won't believe it."
+      },
+      "pinyin": ["bù", "guǎn", "nǐ", "zěn", "me", "jiě", "shì", "", "tā", "yě", "bù", "xiāng", "xìn", ""]
+    },
+    {
+      "text": "不管是谁，都要遵守规则。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 4, "role": "other"},
+        {"start": 5, "end": 6, "role": "connector"},
+        {"start": 6, "end": 11, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Vế điều kiện dùng 谁 để chỉ bất kỳ ai; 都 cho thấy quy tắc áp dụng cho tất cả.",
+        "en": "The condition clause uses 谁 for anyone at all; 都 shows the rule applies to everyone."
+      },
+      "translation": {
+        "vi": "Dù là ai, cũng phải tuân thủ quy tắc.",
+        "en": "No matter who it is, everyone must follow the rules."
+      },
+      "pinyin": ["bù", "guǎn", "shì", "shéi", "", "dōu", "yào", "zūn", "shǒu", "guī", "zé", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "不管明天下雨，比赛都照常进行。",
+      "right": "不管明天下不下雨，比赛都照常进行。",
+      "reason": {
+        "vi": "Vế sau 不管 phải nêu các khả năng (mưa/không mưa), không chỉ một sự việc đơn lẻ; thiếu 不⋯不 làm câu sai logic.",
+        "en": "The clause after 不管 must present alternatives (rain / no rain), not a single fact; missing the 不⋯不 pair breaks the logic."
+      },
+      "error_tag": "conjunction",
+      "l1": ["vi"],
+      "wrong_pinyin": [
+        "bù",
+        "guǎn",
+        "míng",
+        "tiān",
+        "xià",
+        "yǔ",
+        "",
+        "bǐ",
+        "sài",
+        "dōu",
+        "zhào",
+        "cháng",
+        "jìn",
+        "xíng",
+        ""
+      ],
+      "right_pinyin": [
+        "bù",
+        "guǎn",
+        "míng",
+        "tiān",
+        "xià",
+        "bù",
+        "xià",
+        "yǔ",
+        "",
+        "bǐ",
+        "sài",
+        "dōu",
+        "zhào",
+        "cháng",
+        "jìn",
+        "xíng",
+        ""
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "不管天气怎么样，我们___要去公园。",
+      "options": [
+        {"text": "都", "error_tag": null, "pinyin": ["dōu"]},
+        {"text": "但是", "error_tag": "conjunction", "pinyin": ["dàn", "shì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau vế 不管 phải dùng 都 hoặc 也 để nối vế kết quả; 但是 không phù hợp.",
+        "en": "After the 不管 clause you need 都 or 也 to link the result; 但是 does not fit."
+      },
+      "q_pinyin": [
+        "bù",
+        "guǎn",
+        "tiān",
+        "qì",
+        "zěn",
+        "me",
+        "yàng",
+        "",
+        "wǒ",
+        "men",
+        "",
+        "",
+        "",
+        "yào",
+        "qù",
+        "gōng",
+        "yuán",
+        ""
+      ]
+    },
+    {
+      "q": "不管是谁，___不能违反规定。",
+      "options": [
+        {"text": "都", "error_tag": null, "pinyin": ["dōu"]},
+        {"text": "就", "error_tag": "conjunction", "pinyin": ["jiù"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau vế 不管 phải dùng 都 hoặc 也 để nối vế kết quả; 就 không dùng ở đây.",
+        "en": "After the 不管 clause you need 都 or 也 to link the result; 就 does not fit here."
+      },
+      "q_pinyin": ["bù", "guǎn", "shì", "shéi", "", "", "", "", "bù", "néng", "wéi", "fǎn", "guī", "dìng", ""]
+    },
+    {
+      "q": "不管多忙，他___会每天读书。",
+      "options": [
+        {"text": "都", "error_tag": null, "pinyin": ["dōu"]},
+        {"text": "所以", "error_tag": "conjunction", "pinyin": ["suǒ", "yǐ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Vế kết quả sau 不管 cần 都 hoặc 也; 所以 chỉ kết quả nhân quả, không dùng ở đây.",
+        "en": "The result clause after 不管 needs 都 or 也; 所以 marks a cause-effect result and does not fit here."
+      },
+      "q_pinyin": ["bù", "guǎn", "duō", "máng", "", "tā", "", "", "", "huì", "měi", "tiān", "dú", "shū", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về thói quen của bạn, dùng 不管⋯⋯，都/也⋯⋯ để nói rằng dù điều kiện thế nào bạn vẫn làm việc đó.",
+      "en": "Write a sentence about your own habit, using 不管⋯⋯，都/也⋯⋯ to say that you still do something no matter the condition."
+    },
+    "placeholder": "不管……，我都……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "connector", "any_of": ["不管"]}, {"role": "connector", "any_of": ["都", "也"]}]
+    },
+    "sample": {
+      "text": "不管多累，我都坚持跑步。",
+      "pinyin": ["bù", "guǎn", "duō", "lèi", "", "wǒ", "dōu", "jiān", "chí", "pǎo", "bù", ""]
+    },
+    "placeholder_pinyin": ["bù", "guǎn", "", "", "", "wǒ", "dōu", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790833333",
+    "generated_at": "2026-10-01T05:42:13Z"
+  },
+  "review": null
+}

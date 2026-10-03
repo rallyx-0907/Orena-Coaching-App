@@ -1,0 +1,305 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk7_9.a_7_1_4_2.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.quantity",
+  "level": {"framework": "hsk3", "value": "7", "rank": 7},
+  "prereqs": ["zh.canon.gf.hsk7_9.a_7_1_1.p1"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"gf0025": ["gf0025.hsk7_9.012", "gf0025.hsk7_9.013", "gf0025.hsk7_9.014", "gf0025.hsk7_9.015"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Trạng từ: 凡", "en": "Adverbs: 凡"},
+    "native_title": "凡",
+    "level": {"framework": "hsk3", "value": "7", "rank": 7},
+    "summary": {
+      "vi": "Phó từ 凡 dùng để khái quát: nêu một phạm vi chung rồi nói điều đúng cho mọi trường hợp trong phạm vi đó.",
+      "en": "The adverb 凡 generalises: it sets a broad scope and then states what holds for every case inside that scope."
+    },
+    "sub": {"vi": "khái quát phạm vi", "en": "generalising scope"},
+    "native_title_pinyin": ["fán"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói một quy tắc hoặc kết luận đúng cho mọi đối tượng thuộc một nhóm, không trừ trường hợp nào.",
+      "en": "When a rule or conclusion holds for every member of a group, with no exceptions."
+    },
+    {
+      "vi": "Khi đưa ra điều kiện chung trong văn viết, thông báo, quy định hoặc câu mang tính tổng kết.",
+      "en": "When stating a general condition in writing, notices, rules, or summary statements."
+    },
+    {
+      "vi": "Khi phạm vi được nêu bằng một cụm danh từ như 凡学生, 凡参加者, 凡年满十八岁的人.",
+      "en": "When the scope is a noun phrase such as 凡学生, 凡参加者, or 凡年满十八岁的人."
+    },
+    {
+      "vi": "Khi câu sau nêu một yêu cầu, một quy định hoặc một nhận định áp dụng cho toàn bộ phạm vi đó.",
+      "en": "When the following clause gives a requirement, rule, or judgement that applies to that whole scope."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "凡",
+        "role": "marker",
+        "label": {"vi": "phó từ khái quát", "en": "generalising adverb"},
+        "pinyin": ["fán"]
+      },
+      {
+        "text": "NP",
+        "role": "object",
+        "label": {"vi": "phạm vi", "en": "scope"},
+        "pinyin": ["", ""]
+      },
+      {
+        "text": "都",
+        "role": "marker",
+        "label": {"vi": "đều", "en": "all"},
+        "optional": true,
+        "pinyin": ["dōu"]
+      },
+      {
+        "text": "VP",
+        "role": "verb",
+        "label": {"vi": "điều đúng cho mọi trường hợp", "en": "what holds for every case"},
+        "pinyin": ["", ""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "凡参加者都必须出示身份证。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "marker"},
+        {"start": 1, "end": 4, "role": "object"},
+        {"start": 4, "end": 5, "role": "marker"},
+        {"start": 5, "end": 12, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "凡 mở phạm vi 'mọi người tham gia', 都 nhấn mạnh không trừ ai.",
+        "en": "凡 opens the scope 'all participants', and 都 stresses that no one is excluded."
+      },
+      "translation": {
+        "vi": "Mọi người tham gia đều phải xuất trình chứng minh nhân dân.",
+        "en": "All participants must present their ID cards."
+      },
+      "pinyin": ["fán", "cān", "jiā", "zhě", "dōu", "bì", "xū", "chū", "shì", "shēn", "fèn", "zhèng", ""]
+    },
+    {
+      "text": "凡年满十八岁的公民都有选举权。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "marker"},
+        {"start": 1, "end": 9, "role": "object"},
+        {"start": 9, "end": 10, "role": "marker"},
+        {"start": 10, "end": 14, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Phạm vi là một cụm danh từ dài; 凡 đứng ngay trước cụm đó.",
+        "en": "The scope is a long noun phrase; 凡 stands right before it."
+      },
+      "translation": {
+        "vi": "Mọi công dân đủ mười tám tuổi đều có quyền bầu cử.",
+        "en": "Every citizen aged eighteen or over has the right to vote."
+      },
+      "pinyin": [
+        "fán",
+        "nián",
+        "mǎn",
+        "shí",
+        "bā",
+        "suì",
+        "de",
+        "gōng",
+        "mín",
+        "dōu",
+        "yǒu",
+        "xuǎn",
+        "jǔ",
+        "quán",
+        ""
+      ]
+    },
+    {
+      "text": "凡符合条件的学生都可以申请奖学金。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "marker"},
+        {"start": 1, "end": 8, "role": "object"},
+        {"start": 8, "end": 9, "role": "marker"},
+        {"start": 9, "end": 16, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Câu nêu quy định chung: mọi sinh viên trong phạm vi 'đủ điều kiện' đều được hưởng.",
+        "en": "A general rule: every student inside the scope 'meets the conditions' is eligible."
+      },
+      "translation": {
+        "vi": "Mọi sinh viên đủ điều kiện đều có thể xin học bổng.",
+        "en": "All students who meet the conditions may apply for the scholarship."
+      },
+      "pinyin": [
+        "fán",
+        "fú",
+        "hé",
+        "tiáo",
+        "jiàn",
+        "de",
+        "xué",
+        "shēng",
+        "dōu",
+        "kě",
+        "yǐ",
+        "shēn",
+        "qǐng",
+        "jiǎng",
+        "xué",
+        "jīn",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "凡参加者必须都出示身份证。",
+      "right": "凡参加者都必须出示身份证。",
+      "reason": {
+        "vi": "都 phải đứng trước cụm động từ, không đứng sau trợ động từ 必须; đặt sai vị trí làm câu mất trật tự chuẩn.",
+        "en": "都 must come before the verb phrase, not after the modal 必须; the wrong position breaks the standard order."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong_pinyin": ["fán", "cān", "jiā", "zhě", "bì", "xū", "dōu", "chū", "shì", "shēn", "fèn", "zhèng", ""],
+      "right_pinyin": ["fán", "cān", "jiā", "zhě", "dōu", "bì", "xū", "chū", "shì", "shēn", "fèn", "zhèng", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "凡参加者___必须出示身份证。",
+      "options": [
+        {"text": "都", "error_tag": null, "pinyin": ["dōu"]},
+        {"text": "也", "error_tag": "word_choice", "pinyin": ["yě"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "凡 nêu phạm vi chung nên đi với 都 để nói 'tất cả đều'; 也 chỉ thêm một trường hợp tương tự.",
+        "en": "凡 sets a general scope, so it pairs with 都 for 'all'; 也 only adds a similar case."
+      },
+      "q_pinyin": ["fán", "cān", "jiā", "zhě", "", "", "", "bì", "xū", "chū", "shì", "shēn", "fèn", "zhèng", ""]
+    },
+    {
+      "q": "凡年满十八岁的公民___有选举权。",
+      "options": [
+        {"text": "都", "error_tag": null, "pinyin": ["dōu"]},
+        {"text": "就", "error_tag": "word_choice", "pinyin": ["jiù"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu khái quát toàn bộ phạm vi cần 都; 就 chỉ nhấn mạnh kết quả hoặc thời điểm, không diễn tả 'mọi trường hợp'.",
+        "en": "A statement covering the whole scope needs 都; 就 stresses a result or timing, not 'every case'."
+      },
+      "q_pinyin": [
+        "fán",
+        "nián",
+        "mǎn",
+        "shí",
+        "bā",
+        "suì",
+        "de",
+        "gōng",
+        "mín",
+        "",
+        "",
+        "",
+        "yǒu",
+        "xuǎn",
+        "jǔ",
+        "quán",
+        ""
+      ]
+    },
+    {
+      "q": "凡符合条件的学生___可以申请奖学金。",
+      "options": [
+        {"text": "都", "error_tag": null, "pinyin": ["dōu"]},
+        {"text": "才", "error_tag": "word_choice", "pinyin": ["cái"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "凡 ... 都 ... là cặp chuẩn để nói mọi đối tượng trong phạm vi; 才 mang nghĩa 'mãi mới', không phù hợp.",
+        "en": "凡 ... 都 ... is the standard pair for every member of a scope; 才 means 'only then', which does not fit."
+      },
+      "q_pinyin": [
+        "fán",
+        "fú",
+        "hé",
+        "tiáo",
+        "jiàn",
+        "de",
+        "xué",
+        "shēng",
+        "",
+        "",
+        "",
+        "kě",
+        "yǐ",
+        "shēn",
+        "qǐng",
+        "jiǎng",
+        "xué",
+        "jīn",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một quy định chung cho một nhóm mà bạn biết, dùng 凡 ... 都 ...",
+      "en": "Write a general rule for a group you know, using 凡 ... 都 ..."
+    },
+    "placeholder": "凡……都……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "marker", "any_of": ["凡"]}, {"role": "marker", "any_of": ["都"]}]
+    },
+    "sample": {
+      "text": "凡本店会员都可以享受九折优惠。",
+      "pinyin": [
+        "fán",
+        "běn",
+        "diàn",
+        "huì",
+        "yuán",
+        "dōu",
+        "kě",
+        "yǐ",
+        "xiǎng",
+        "shòu",
+        "jiǔ",
+        "zhé",
+        "yōu",
+        "huì",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["fán", "", "", "dōu", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790834498",
+    "generated_at": "2026-10-01T06:01:38Z",
+    "metadata_stale": true
+  },
+  "review": null
+}

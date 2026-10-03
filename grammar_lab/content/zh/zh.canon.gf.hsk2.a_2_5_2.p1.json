@@ -1,0 +1,262 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk2.a_2_5_2.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.time_expression",
+  "level": {"framework": "hsk3", "value": "2", "rank": 2},
+  "prereqs": ["zh.canon.gf.hsk2.a_2_1_7_1.p1"],
+  "contrasts": [],
+  "error_tags": ["word_order", "particle"],
+  "source_refs": {"gf0025": ["gf0025.hsk2.056", "gf0025.hsk2.057", "gf0025.hsk2.060"]},
+  "point_type": "word_order",
+  "sequence": 4,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Mẫu câu đặc biệt: 存现句1：表示存在", "en": "Special sentence patterns: 存现句1：表示存在"},
+    "native_title": "存现句1：表示存在",
+    "level": {"framework": "hsk3", "value": "2", "rank": 2},
+    "summary": {
+      "vi": "Mẫu câu 存现句 dùng để nói ở một nơi nào đó có hoặc không có người, vật gì; nơi chốn đứng đầu câu, sau đó là động từ chỉ sự tồn tại và danh từ chỉ người/vật.",
+      "en": "The 存现句 pattern states that something exists or does not exist in a place; the place comes first, followed by an existence verb and the noun that exists."
+    },
+    "sub": {"vi": "tồn tại", "en": "existence"},
+    "native_title_pinyin": ["cún", "xiàn", "jù", "", "", "biǎo", "shì", "cún", "zài"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói ở một nơi nào đó có người hoặc vật gì, chứ không phải ai đó sở hữu cái gì.",
+      "en": "When you want to say that a place contains or has someone or something, not that a person owns something."
+    },
+    {
+      "vi": "Khi câu bắt đầu bằng một cụm nơi chốn như 桌子上, 房间里, 学校旁边.",
+      "en": "When the sentence starts with a place phrase such as 桌子上, 房间里, 学校旁边."
+    },
+    {
+      "vi": "Khi bạn muốn phủ định sự tồn tại đó bằng 没有 đặt trước động từ.",
+      "en": "When you want to deny that existence with 没有 placed before the verb."
+    },
+    {
+      "vi": "Khi bạn muốn hỏi ở một nơi nào đó có gì, dùng 吗 ở cuối câu.",
+      "en": "When you want to ask what exists in a place, using 吗 at the end of the sentence."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "place",
+        "role": "place",
+        "label": {"vi": "nơi chốn", "en": "place"},
+        "pinyin": ["", "", "", "", ""]
+      },
+      {
+        "text": "有",
+        "role": "verb",
+        "label": {"vi": "động từ tồn tại", "en": "existence verb"},
+        "pinyin": ["yǒu"]
+      },
+      {
+        "text": "N",
+        "role": "object",
+        "label": {"vi": "danh từ chỉ người/vật", "en": "noun that exists"},
+        "pinyin": [""]
+      }
+    ],
+    "variants": {
+      "negative": [
+        {
+          "text": "place",
+          "role": "place",
+          "label": {"vi": "nơi chốn", "en": "place"},
+          "pinyin": ["", "", "", "", ""]
+        },
+        {
+          "text": "没有",
+          "role": "aux",
+          "label": {"vi": "phủ định tồn tại", "en": "existence negator"},
+          "pinyin": ["méi", "yǒu"]
+        },
+        {
+          "text": "N",
+          "role": "object",
+          "label": {"vi": "danh từ chỉ người/vật", "en": "noun that exists"},
+          "pinyin": [""]
+        }
+      ],
+      "question": [
+        {
+          "text": "place",
+          "role": "place",
+          "label": {"vi": "nơi chốn", "en": "place"},
+          "pinyin": ["", "", "", "", ""]
+        },
+        {
+          "text": "有",
+          "role": "verb",
+          "label": {"vi": "động từ tồn tại", "en": "existence verb"},
+          "pinyin": ["yǒu"]
+        },
+        {
+          "text": "N",
+          "role": "object",
+          "label": {"vi": "danh từ chỉ người/vật", "en": "noun that exists"},
+          "pinyin": [""]
+        },
+        {
+          "text": "吗",
+          "role": "particle",
+          "label": {"vi": "trợ từ nghi vấn", "en": "question particle"},
+          "pinyin": ["ma"]
+        }
+      ]
+    },
+    "illustration": {"kind": "word_order"}
+  },
+  "examples": [
+    {
+      "text": "桌子上有一本书。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "place"},
+        {"start": 3, "end": 4, "role": "verb"},
+        {"start": 4, "end": 7, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Nơi chốn 桌子上 đứng đầu câu, 有 nói có tồn tại, 一本书 là vật tồn tại.",
+        "en": "The place 桌子上 comes first, 有 states existence, and 一本书 is what exists."
+      },
+      "translation": {"vi": "Trên bàn có một quyển sách.", "en": "There is a book on the table."},
+      "pinyin": ["zhuō", "zi", "shàng", "yǒu", "yì", "běn", "shū", ""]
+    },
+    {
+      "text": "房间里没有电视。",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "place"},
+        {"start": 3, "end": 5, "role": "aux"},
+        {"start": 5, "end": 7, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "没有 đặt trước danh từ để phủ định sự tồn tại trong phòng.",
+        "en": "没有 comes before the noun to deny that a TV exists in the room."
+      },
+      "translation": {"vi": "Trong phòng không có tivi.", "en": "There is no television in the room."},
+      "pinyin": ["fáng", "jiān", "lǐ", "méi", "yǒu", "diàn", "shì", ""]
+    },
+    {
+      "text": "学校旁边有银行吗？",
+      "form": "question",
+      "spans": [
+        {"start": 0, "end": 4, "role": "place"},
+        {"start": 4, "end": 5, "role": "verb"},
+        {"start": 5, "end": 7, "role": "object"},
+        {"start": 7, "end": 8, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "Giữ nguyên trật tự câu khẳng định và thêm 吗 ở cuối để hỏi.",
+        "en": "The statement order stays the same and 吗 is added at the end to ask a question."
+      },
+      "translation": {"vi": "Cạnh trường học có ngân hàng không?", "en": "Is there a bank next to the school?"},
+      "pinyin": ["xué", "xiào", "páng", "biān", "yǒu", "yín", "háng", "ma", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "一本书在桌子上。",
+      "right": "桌子上有一本书。",
+      "reason": {
+        "vi": "Người học Việt đặt danh từ lên trước theo thói quen, nhưng 存现句 bắt buộc bắt đầu bằng cụm nơi chốn, rồi mới đến 有 và danh từ.",
+        "en": "Vietnamese learners front the noun out of habit, but the 存现句 pattern must start with the place phrase, then 有, then the noun."
+      },
+      "error_tag": "word_order",
+      "l1": ["vi"],
+      "wrong_pinyin": ["yì", "běn", "shū", "zài", "zhuō", "zi", "shàng", ""],
+      "right_pinyin": ["zhuō", "zi", "shàng", "yǒu", "yì", "běn", "shū", ""]
+    },
+    {
+      "wrong": "房间里不有电视。",
+      "right": "房间里没有电视。",
+      "reason": {
+        "vi": "Không dùng 不 để phủ định 有; phủ định sự tồn tại luôn là 没有.",
+        "en": "有 is not negated with 不; the negative of existence is always 没有."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong_pinyin": ["fáng", "jiān", "lǐ", "bù", "yǒu", "diàn", "shì", ""],
+      "right_pinyin": ["fáng", "jiān", "lǐ", "méi", "yǒu", "diàn", "shì", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "桌子上___一本书。",
+      "options": [
+        {"text": "有", "error_tag": null, "pinyin": ["yǒu"]},
+        {"text": "在", "error_tag": "word_choice", "pinyin": ["zài"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu tồn tại dùng 有 sau cụm nơi chốn; 在 không đứng ở vị trí này.",
+        "en": "The existence sentence uses 有 after the place phrase; 在 does not fit this position."
+      },
+      "q_pinyin": ["zhuō", "zi", "shàng", "", "", "", "yì", "běn", "shū", ""]
+    },
+    {
+      "q": "房间里___电视。",
+      "options": [
+        {"text": "没有", "error_tag": null, "pinyin": ["méi", "yǒu"]},
+        {"text": "不有", "error_tag": "particle", "pinyin": ["bù", "yǒu"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Phủ định của 有 là 没有, không dùng 不有.",
+        "en": "The negative of 有 is 没有; 不有 is not used."
+      },
+      "q_pinyin": ["fáng", "jiān", "lǐ", "", "", "", "diàn", "shì", ""]
+    },
+    {
+      "q": "学校旁边有银行___？",
+      "options": [
+        {"text": "吗", "error_tag": null, "pinyin": ["ma"]},
+        {"text": "呢", "error_tag": "particle", "pinyin": ["ne"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu hỏi có/không dùng trợ từ 吗 ở cuối câu; 呢 không dùng cho câu hỏi tồn tại này.",
+        "en": "A yes/no question uses the particle 吗 at the end; 呢 is not used for this existence question."
+      },
+      "q_pinyin": ["xué", "xiào", "páng", "biān", "yǒu", "yín", "háng", "", "", "", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu nói ở một nơi bạn biết có người hoặc vật gì, dùng mẫu 存现句.",
+      "en": "Write one sentence saying that a place you know contains someone or something, using the 存现句 pattern."
+    },
+    "placeholder": "我家旁边有……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "place", "any_of": ["我家旁边", "桌子上", "房间里", "学校旁边"]},
+        {"role": "verb", "any_of": ["有"]},
+        {"role": "object", "regex": "[\\u4e00-\\u9fff]+"}
+      ]
+    },
+    "sample": {
+      "text": "我家旁边有一个公园。",
+      "pinyin": ["wǒ", "jiā", "páng", "biān", "yǒu", "yí", "gè", "gōng", "yuán", ""]
+    },
+    "placeholder_pinyin": ["wǒ", "jiā", "páng", "biān", "yǒu", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790832342",
+    "generated_at": "2026-10-01T05:25:42Z"
+  },
+  "review": null
+}

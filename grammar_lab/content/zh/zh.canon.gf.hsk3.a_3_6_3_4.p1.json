@@ -1,0 +1,288 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk3.a_3_6_3_4.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.linking",
+  "level": {"framework": "hsk3", "value": "3", "rank": 3},
+  "prereqs": ["zh.canon.gf.hsk3.a_3_6_3_3.p1"],
+  "contrasts": [],
+  "error_tags": ["conjunction"],
+  "source_refs": {"gf0025": ["gf0025.hsk3.067"]},
+  "point_type": "other",
+  "sequence": 5,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Câu phức: 不是，就是⋯⋯", "en": "Complex sentences: 不是，就是⋯⋯"},
+    "native_title": "不是，就是⋯⋯",
+    "level": {"framework": "hsk3", "value": "3", "rank": 3},
+    "summary": {
+      "vi": "Mẫu câu 不是⋯⋯，就是⋯⋯ dùng để nêu hai khả năng loại trừ nhau, nghĩa là 'không phải cái này thì là cái kia'.",
+      "en": "The pattern 不是⋯⋯，就是⋯⋯ presents two mutually exclusive possibilities, meaning 'if it is not one, then it is the other'."
+    },
+    "sub": {"vi": "hai lựa chọn loại trừ", "en": "either / or"},
+    "native_title_pinyin": ["bú", "shì", "", "jiù", "shì", "", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói sự việc chỉ có thể là một trong hai khả năng, không có khả năng thứ ba.",
+      "en": "When you want to say a situation can only be one of two possibilities, with no third option."
+    },
+    {
+      "vi": "Khi bạn đoán hoặc suy luận về một người hay sự việc mà không chắc chắn.",
+      "en": "When you are guessing or reasoning about a person or event without being certain."
+    },
+    {
+      "vi": "Khi bạn muốn giải thích lý do của một tình huống bằng cách loại trừ hai khả năng.",
+      "en": "When you want to explain the reason for a situation by ruling out two possibilities."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "不是",
+        "role": "connector",
+        "label": {"vi": "phủ định thứ nhất", "en": "first negation"},
+        "pinyin": ["bù", "shì"]
+      },
+      {
+        "text": "A",
+        "role": "other",
+        "label": {"vi": "khả năng thứ nhất", "en": "first possibility"},
+        "pinyin": [""]
+      },
+      {
+        "text": "就是",
+        "role": "connector",
+        "label": {"vi": "liên từ nối", "en": "linking connector"},
+        "pinyin": ["jiù", "shì"]
+      },
+      {
+        "text": "B",
+        "role": "other",
+        "label": {"vi": "khả năng thứ hai", "en": "second possibility"},
+        "pinyin": [""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "他每天不是看书，就是写作业。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 3, "end": 5, "role": "connector"},
+        {"start": 5, "end": 7, "role": "other"},
+        {"start": 8, "end": 10, "role": "connector"},
+        {"start": 10, "end": 13, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Hai khả năng 'đọc sách' và 'làm bài tập' loại trừ nhau, chỉ có thể là một trong hai.",
+        "en": "The two possibilities 'reading' and 'doing homework' are mutually exclusive; only one can be true."
+      },
+      "translation": {
+        "vi": "Anh ấy mỗi ngày không đọc sách thì làm bài tập.",
+        "en": "Every day he is either reading or doing homework."
+      },
+      "pinyin": ["tā", "měi", "tiān", "bù", "shì", "kàn", "shū", "", "jiù", "shì", "xiě", "zuò", "yè", ""]
+    },
+    {
+      "text": "周末他不是去公园，就是去超市。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 2, "end": 3, "role": "subject"},
+        {"start": 3, "end": 5, "role": "connector"},
+        {"start": 5, "end": 8, "role": "other"},
+        {"start": 9, "end": 11, "role": "connector"},
+        {"start": 11, "end": 14, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Hai địa điểm 'công viên' và 'siêu thị' là hai lựa chọn duy nhất vào cuối tuần.",
+        "en": "The two places 'the park' and 'the supermarket' are the only weekend options."
+      },
+      "translation": {
+        "vi": "Cuối tuần anh ấy không đi công viên thì đi siêu thị.",
+        "en": "On weekends he either goes to the park or goes to the supermarket."
+      },
+      "pinyin": [
+        "zhōu",
+        "mò",
+        "tā",
+        "bù",
+        "shì",
+        "qù",
+        "gōng",
+        "yuán",
+        "",
+        "jiù",
+        "shì",
+        "qù",
+        "chāo",
+        "shì",
+        ""
+      ]
+    },
+    {
+      "text": "这个孩子不是像爸爸，就是像妈妈。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 4, "end": 6, "role": "connector"},
+        {"start": 6, "end": 9, "role": "other"},
+        {"start": 10, "end": 12, "role": "connector"},
+        {"start": 12, "end": 15, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Đứa trẻ chỉ có thể giống bố hoặc giống mẹ, không có khả năng nào khác.",
+        "en": "The child can only resemble the father or the mother; there is no other possibility."
+      },
+      "translation": {
+        "vi": "Đứa bé này không giống bố thì giống mẹ.",
+        "en": "This child either looks like the father or looks like the mother."
+      },
+      "pinyin": [
+        "zhè",
+        "gè",
+        "hái",
+        "zi",
+        "bù",
+        "shì",
+        "xiàng",
+        "bà",
+        "ba",
+        "",
+        "jiù",
+        "shì",
+        "xiàng",
+        "mā",
+        "ma",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "他每天不是看书，还是写作业。",
+      "right": "他每天不是看书，就是写作业。",
+      "reason": {
+        "vi": "Người học Việt Nam hay dùng 还是 vì quen với nghĩa 'hoặc là' trong câu hỏi lựa chọn, nhưng mẫu câu này cố định là 不是⋯⋯，就是⋯⋯, không thay 就是 bằng 还是.",
+        "en": "Vietnamese learners often use 还是 because they are used to its 'or' meaning in choice questions, but this pattern is fixed as 不是⋯⋯，就是⋯⋯; 就是 cannot be replaced by 还是."
+      },
+      "error_tag": "conjunction",
+      "l1": ["vi"],
+      "wrong_pinyin": ["tā", "měi", "tiān", "bù", "shì", "kàn", "shū", "", "hái", "shì", "xiě", "zuò", "yè", ""],
+      "right_pinyin": ["tā", "měi", "tiān", "bù", "shì", "kàn", "shū", "", "jiù", "shì", "xiě", "zuò", "yè", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "他每天不是看书，___写作业。",
+      "options": [
+        {"text": "就是", "error_tag": null, "pinyin": ["jiù", "shì"]},
+        {"text": "还是", "error_tag": "conjunction", "pinyin": ["hái", "shì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Mẫu câu cố định là 不是⋯⋯，就是⋯⋯, nên chỗ trống phải là 就是. 还是 chỉ dùng trong câu hỏi lựa chọn.",
+        "en": "The fixed pattern is 不是⋯⋯，就是⋯⋯, so the blank must be 就是. 还是 is only used in choice questions."
+      },
+      "q_pinyin": ["tā", "měi", "tiān", "bù", "shì", "kàn", "shū", "", "", "", "", "xiě", "zuò", "yè", ""]
+    },
+    {
+      "q": "周末他不是去公园，___去超市。",
+      "options": [
+        {"text": "就是", "error_tag": null, "pinyin": ["jiù", "shì"]},
+        {"text": "但是", "error_tag": "conjunction", "pinyin": ["dàn", "shì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Vế sau của mẫu câu này bắt đầu bằng 就是, không dùng 但是 vì 但是 chỉ sự tương phản, không phải lựa chọn loại trừ.",
+        "en": "The second clause of this pattern starts with 就是; 但是 is not used because it marks contrast, not mutually exclusive alternatives."
+      },
+      "q_pinyin": [
+        "zhōu",
+        "mò",
+        "tā",
+        "bù",
+        "shì",
+        "qù",
+        "gōng",
+        "yuán",
+        "",
+        "",
+        "",
+        "",
+        "qù",
+        "chāo",
+        "shì",
+        ""
+      ]
+    },
+    {
+      "q": "这个孩子不是像爸爸，___像妈妈。",
+      "options": [
+        {"text": "就是", "error_tag": null, "pinyin": ["jiù", "shì"]},
+        {"text": "还是", "error_tag": "conjunction", "pinyin": ["hái", "shì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Đây là câu khẳng định nêu hai khả năng loại trừ, nên dùng 就是. 还是 không phù hợp vì nó dành cho câu hỏi.",
+        "en": "This is a statement of two mutually exclusive possibilities, so 就是 is used. 还是 does not fit because it belongs in questions."
+      },
+      "q_pinyin": [
+        "zhè",
+        "gè",
+        "hái",
+        "zi",
+        "bù",
+        "shì",
+        "xiàng",
+        "bà",
+        "ba",
+        "",
+        "",
+        "",
+        "",
+        "xiàng",
+        "mā",
+        "ma",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về thói quen của một người bạn hoặc người thân, dùng mẫu 不是⋯⋯，就是⋯⋯ để nói hai khả năng loại trừ nhau.",
+      "en": "Write one sentence about a friend's or family member's habit, using 不是⋯⋯，就是⋯⋯ to present two mutually exclusive possibilities."
+    },
+    "placeholder": "他/她不是……，就是……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "connector", "any_of": ["不是"]}, {"role": "connector", "any_of": ["就是"]}]
+    },
+    "sample": {
+      "text": "我弟弟不是打篮球，就是踢足球。",
+      "pinyin": ["wǒ", "dì", "di", "bù", "shì", "dǎ", "lán", "qiú", "", "jiù", "shì", "tī", "zú", "qiú", ""]
+    },
+    "placeholder_pinyin": ["tā", "", "tā", "bù", "shì", "", "", "", "jiù", "shì", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790832818",
+    "generated_at": "2026-10-01T05:33:38Z"
+  },
+  "review": null
+}

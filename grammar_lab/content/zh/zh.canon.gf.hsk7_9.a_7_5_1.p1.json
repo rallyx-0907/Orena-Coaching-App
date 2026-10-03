@@ -1,0 +1,321 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk7_9.a_7_5_1.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.object_disposal",
+  "level": {"framework": "hsk3", "value": "8", "rank": 8},
+  "prereqs": ["zh.canon.gf.hsk6.a_6_8.p2"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"gf0025": ["gf0025.hsk7_9.088", "gf0025.hsk7_9.089", "gf0025.hsk7_9.090"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: “把”字句5：表致使", "en": "Chinese grammar: “把”字句5：表致使"},
+    "native_title": "“把”字句5：表致使",
+    "level": {"framework": "hsk3", "value": "8", "rank": 8},
+    "summary": {
+      "vi": "Câu chữ 把 dùng để nói rõ kết quả hoặc tình trạng mà hành động gây ra cho đối tượng, tức là làm cho đối tượng biến thành thế nào.",
+      "en": "The 把 sentence used to state the result or state that an action causes in an object, that is, what the object is made to become."
+    },
+    "sub": {"vi": "kết quả gây ra", "en": "caused result"},
+    "native_title_pinyin": ["", "bǎ", "", "zì", "jù", "", "", "biǎo", "zhì", "shǐ"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói hành động làm cho đối tượng thay đổi trạng thái, chứ không chỉ nói hành động đã xảy ra.",
+      "en": "When you want to say an action changes the object's state, not merely that the action happened."
+    },
+    {
+      "vi": "Khi sau động từ cần có kết quả cụ thể như 成, 坏, 干净, 好 để cho biết đối tượng thành ra thế nào.",
+      "en": "When the verb needs a concrete result such as 成, 坏, 干净, 好 to show what the object becomes."
+    },
+    {
+      "vi": "Khi đối tượng đã được xác định và người nói muốn nhấn mạnh cách xử lý nó.",
+      "en": "When the object is already identified and the speaker wants to stress how it is handled."
+    },
+    {
+      "vi": "Khi câu có 把 mà không có kết quả đi kèm thì nghe như câu bỏ dở, nên cần thêm phần kết quả.",
+      "en": "When a 把 sentence without a result sounds unfinished, so the result part is required."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "把",
+        "role": "marker",
+        "label": {"vi": "trợ từ 把", "en": "the 把 marker"},
+        "pinyin": ["bǎ"]
+      },
+      {
+        "text": "宾语",
+        "role": "object",
+        "label": {"vi": "tân ngữ", "en": "object"},
+        "pinyin": ["bīn", "yǔ"]
+      },
+      {
+        "text": "动词",
+        "role": "verb",
+        "label": {"vi": "động từ", "en": "verb"},
+        "pinyin": ["dòng", "cí"]
+      },
+      {
+        "text": "成/坏/干净/好",
+        "role": "complement",
+        "label": {"vi": "bổ ngữ kết quả", "en": "result complement"},
+        "options": [
+          {"text": "成", "pinyin": ["chéng"]},
+          {"text": "坏", "pinyin": ["huài"]},
+          {"text": "干净", "pinyin": ["gān", "jìng"]},
+          {"text": "好", "pinyin": ["hǎo"]}
+        ],
+        "pinyin": ["chéng", "", "huài", "", "gān", "jìng", "", "hǎo"]
+      },
+      {
+        "text": "了",
+        "role": "particle",
+        "label": {"vi": "trợ từ 了", "en": "the particle 了"},
+        "optional": true,
+        "pinyin": ["le"]
+      }
+    ],
+    "variants": {
+      "negative": [
+        {
+          "text": "主语",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ", "en": "subject"},
+          "pinyin": ["zhǔ", "yǔ"]
+        },
+        {
+          "text": "没",
+          "role": "aux",
+          "label": {"vi": "phủ định 没", "en": "the negator 没"},
+          "pinyin": ["méi"]
+        },
+        {
+          "text": "把",
+          "role": "marker",
+          "label": {"vi": "trợ từ 把", "en": "the 把 marker"},
+          "pinyin": ["bǎ"]
+        },
+        {
+          "text": "宾语",
+          "role": "object",
+          "label": {"vi": "tân ngữ", "en": "object"},
+          "pinyin": ["bīn", "yǔ"]
+        },
+        {
+          "text": "动词",
+          "role": "verb",
+          "label": {"vi": "động từ", "en": "verb"},
+          "pinyin": ["dòng", "cí"]
+        },
+        {
+          "text": "成/坏/干净/好",
+          "role": "complement",
+          "label": {"vi": "bổ ngữ kết quả", "en": "result complement"},
+          "options": [
+            {"text": "成", "pinyin": ["chéng"]},
+            {"text": "坏", "pinyin": ["huài"]},
+            {"text": "干净", "pinyin": ["gān", "jìng"]},
+            {"text": "好", "pinyin": ["hǎo"]}
+          ],
+          "pinyin": ["chéng", "", "huài", "", "gān", "jìng", "", "hǎo"]
+        }
+      ],
+      "question": [
+        {
+          "text": "主语",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ", "en": "subject"},
+          "pinyin": ["zhǔ", "yǔ"]
+        },
+        {
+          "text": "把",
+          "role": "marker",
+          "label": {"vi": "trợ từ 把", "en": "the 把 marker"},
+          "pinyin": ["bǎ"]
+        },
+        {
+          "text": "宾语",
+          "role": "object",
+          "label": {"vi": "tân ngữ", "en": "object"},
+          "pinyin": ["bīn", "yǔ"]
+        },
+        {
+          "text": "动词",
+          "role": "verb",
+          "label": {"vi": "động từ", "en": "verb"},
+          "pinyin": ["dòng", "cí"]
+        },
+        {
+          "text": "成/坏/干净/好",
+          "role": "complement",
+          "label": {"vi": "bổ ngữ kết quả", "en": "result complement"},
+          "options": [
+            {"text": "成", "pinyin": ["chéng"]},
+            {"text": "坏", "pinyin": ["huài"]},
+            {"text": "干净", "pinyin": ["gān", "jìng"]},
+            {"text": "好", "pinyin": ["hǎo"]}
+          ],
+          "pinyin": ["chéng", "", "huài", "", "gān", "jìng", "", "hǎo"]
+        },
+        {
+          "text": "了吗",
+          "role": "particle",
+          "label": {"vi": "trợ từ nghi vấn 了吗", "en": "the question particle 了吗"},
+          "pinyin": ["le", "ma"]
+        }
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "我把房间打扫干净了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "marker"},
+        {"start": 2, "end": 4, "role": "object"},
+        {"start": 4, "end": 6, "role": "verb"},
+        {"start": 6, "end": 8, "role": "complement"},
+        {"start": 8, "end": 9, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "Kết quả 干净 cho biết phòng đã trở nên sạch sau khi được dọn.",
+        "en": "The result 干净 shows the room became clean after being cleaned."
+      },
+      "translation": {"vi": "Tôi đã dọn phòng sạch sẽ.", "en": "I cleaned the room until it was clean."},
+      "pinyin": ["wǒ", "bǎ", "fáng", "jiān", "dǎ", "sǎo", "gān", "jìng", "le", ""]
+    },
+    {
+      "text": "他把那件衣服洗坏了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "marker"},
+        {"start": 2, "end": 6, "role": "object"},
+        {"start": 6, "end": 7, "role": "verb"},
+        {"start": 7, "end": 8, "role": "complement"},
+        {"start": 8, "end": 9, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "Kết quả 坏 cho biết quần áo bị hỏng vì việc giặt.",
+        "en": "The result 坏 shows the clothes were damaged by the washing."
+      },
+      "translation": {
+        "vi": "Anh ấy giặt hỏng mất cái áo đó rồi.",
+        "en": "He washed that piece of clothing and ruined it."
+      },
+      "pinyin": ["tā", "bǎ", "nà", "jiàn", "yī", "fu", "xǐ", "huài", "le", ""]
+    },
+    {
+      "text": "妈妈没把菜洗干净。",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 3, "role": "aux"},
+        {"start": 3, "end": 4, "role": "marker"},
+        {"start": 4, "end": 5, "role": "object"},
+        {"start": 5, "end": 6, "role": "verb"},
+        {"start": 6, "end": 8, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Phủ định 没 đặt trước 把, kết quả 干净 vẫn giữ nguyên.",
+        "en": "The negator 没 comes before 把, and the result 干净 stays in place."
+      },
+      "translation": {"vi": "Mẹ chưa rửa rau sạch.", "en": "Mom did not wash the vegetables clean."},
+      "pinyin": ["mā", "ma", "méi", "bǎ", "cài", "xǐ", "gān", "jìng", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "我把房间打扫很干净。",
+      "right": "我把房间打扫得很干净。",
+      "reason": {
+        "vi": "Khi bổ ngữ kết quả có 很 ở trước, câu bắt buộc phải có 得 để nối động từ với phần kết quả; thiếu 得 thì câu sai.",
+        "en": "When the result phrase has 很 before it, the sentence needs 得 to link the verb to the result; without 得 the sentence is wrong."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong_pinyin": ["wǒ", "bǎ", "fáng", "jiān", "dǎ", "sǎo", "hěn", "gān", "jìng", ""],
+      "right_pinyin": ["wǒ", "bǎ", "fáng", "jiān", "dǎ", "sǎo", "de", "hěn", "gān", "jìng", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "他把我的手机摔___了。",
+      "options": [
+        {"text": "坏", "error_tag": null, "pinyin": ["huài"]},
+        {"text": "很坏", "error_tag": "complement", "pinyin": ["hěn", "huài"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau động từ 摔 cần bổ ngữ kết quả 坏 để nói điện thoại hỏng; 很坏 không đứng trực tiếp sau động từ.",
+        "en": "After the verb 摔 the result complement 坏 states the phone broke; 很坏 cannot follow the verb directly."
+      },
+      "q_pinyin": ["tā", "bǎ", "wǒ", "de", "shǒu", "jī", "shuāi", "", "", "", "le", ""]
+    },
+    {
+      "q": "妈妈___把菜洗干净。",
+      "options": [
+        {"text": "没", "error_tag": null, "pinyin": ["méi"]},
+        {"text": "不", "error_tag": "aspect", "pinyin": ["bù"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu chữ 把 phủ định việc đã xảy ra dùng 没, không dùng 不.",
+        "en": "A 把 sentence that negates a completed action uses 没, not 不."
+      },
+      "q_pinyin": ["mā", "ma", "", "", "", "bǎ", "cài", "xǐ", "gān", "jìng", ""]
+    },
+    {
+      "q": "我把作业写___了。",
+      "options": [
+        {"text": "好", "error_tag": null, "pinyin": ["hǎo"]},
+        {"text": "很好", "error_tag": "complement", "pinyin": ["hěn", "hǎo"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "写 cần bổ ngữ kết quả 好 để nói bài tập đã xong; 很好 không làm bổ ngữ kết quả.",
+        "en": "写 needs the result complement 好 to say the homework is done; 很好 does not work as a result complement."
+      },
+      "q_pinyin": ["wǒ", "bǎ", "zuò", "yè", "xiě", "", "", "", "le", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng 把 để nói bạn đã làm cho một đồ vật của mình thành ra thế nào (ví dụ: rửa sạch, lau khô, sửa hỏng).",
+      "en": "Write one 把 sentence saying what you made one of your things become (for example: washed clean, wiped dry, broke by repairing)."
+    },
+    "placeholder": "我把……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "marker", "any_of": ["把"]}, {"role": "complement", "any_of": ["成", "坏", "干净", "好"]}]
+    },
+    "sample": {"text": "我把自行车修好了。", "pinyin": ["wǒ", "bǎ", "zì", "xíng", "chē", "xiū", "hǎo", "le", ""]},
+    "placeholder_pinyin": ["wǒ", "bǎ", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790834703",
+    "generated_at": "2026-10-01T06:05:03Z"
+  },
+  "review": null
+}

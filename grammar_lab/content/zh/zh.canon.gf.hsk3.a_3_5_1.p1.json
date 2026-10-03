@@ -1,0 +1,252 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk3.a_3_5_1.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.sentence_basics",
+  "level": {"framework": "hsk3", "value": "3", "rank": 3},
+  "prereqs": ["zh.canon.gf.hsk3.a_3_3_1.p1"],
+  "contrasts": [],
+  "error_tags": ["word_order"],
+  "source_refs": {"gf0025": ["gf0025.hsk3.043"]},
+  "point_type": "word_order",
+  "sequence": 6,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Chủ ngữ: 动词或动词性短语、形容词或形容词性短语作主语", "en": "Subjects: 动词或动词性短语、形容词或形容词性短语作主语"},
+    "native_title": "动词或动词性短语、形容词或形容词性短语作主语",
+    "level": {"framework": "hsk3", "value": "3", "rank": 3},
+    "summary": {
+      "vi": "Điểm ngữ pháp này nói về câu tiếng Trung có chủ ngữ là một động từ hoặc cụm động từ, hoặc một tính từ hoặc cụm tính từ.",
+      "en": "This point is about Chinese sentences whose subject is a verb or verb phrase, or an adjective or adjective phrase."
+    },
+    "sub": {"vi": "động từ làm chủ ngữ", "en": "verb as subject"},
+    "native_title_pinyin": [
+      "dòng",
+      "cí",
+      "huò",
+      "dòng",
+      "cí",
+      "xìng",
+      "duǎn",
+      "yǔ",
+      "",
+      "xíng",
+      "róng",
+      "cí",
+      "huò",
+      "xíng",
+      "róng",
+      "cí",
+      "xìng",
+      "duǎn",
+      "yǔ",
+      "zuò",
+      "zhǔ",
+      "yǔ"
+    ]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói một hành động hoặc một trạng thái là chủ đề của câu, chứ không phải một người hay vật cụ thể.",
+      "en": "When you want an action or a state to be the topic of the sentence, not a specific person or thing."
+    },
+    {
+      "vi": "Khi câu trả lời cho câu hỏi 'Việc gì quan trọng?' hoặc 'Điều gì làm bạn vui?'.",
+      "en": "When the sentence answers a question like 'What activity matters?' or 'What makes you happy?'."
+    },
+    {
+      "vi": "Khi bạn nhận xét, đánh giá một hoạt động hoặc một tính chất, ví dụ: học tiếng Trung rất thú vị.",
+      "en": "When you comment on or evaluate an activity or a quality, for example: learning Chinese is interesting."
+    },
+    {
+      "vi": "Khi chủ ngữ dài hơn một từ và bạn cần giữ đúng trật tự: cụm động từ hoặc cụm tính từ đứng trước, vị ngữ đứng sau.",
+      "en": "When the subject is longer than one word and you need to keep the order: the verb or adjective phrase comes first, the predicate follows."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "动词/动词短语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ là động từ hoặc cụm động từ", "en": "subject as verb or verb phrase"},
+        "options": [
+          {"text": "动词", "pinyin": ["dòng", "cí"]},
+          {"text": "动词短语", "pinyin": ["dòng", "cí", "duǎn", "yǔ"]}
+        ],
+        "pinyin": ["dòng", "cí", "", "dòng", "cí", "duǎn", "yǔ"]
+      },
+      {
+        "text": "形容词/形容词短语",
+        "role": "subject",
+        "label": {
+          "vi": "chủ ngữ là tính từ hoặc cụm tính từ",
+          "en": "subject as adjective or adjective phrase"
+        },
+        "optional": true,
+        "options": [
+          {"text": "形容词", "pinyin": ["xíng", "róng", "cí"]},
+          {"text": "形容词短语", "pinyin": ["xíng", "róng", "cí", "duǎn", "yǔ"]}
+        ],
+        "pinyin": ["xíng", "róng", "cí", "", "xíng", "róng", "cí", "duǎn", "yǔ"]
+      },
+      {
+        "text": "很/非常/太",
+        "role": "other",
+        "label": {"vi": "phó từ mức độ", "en": "degree adverb"},
+        "optional": true,
+        "options": [
+          {"text": "很", "pinyin": ["hěn"]},
+          {"text": "非常", "pinyin": ["fēi", "cháng"]},
+          {"text": "太", "pinyin": ["tài"]}
+        ],
+        "pinyin": ["hěn", "", "fēi", "cháng", "", "tài"]
+      },
+      {
+        "text": "形容词",
+        "role": "complement",
+        "label": {"vi": "vị ngữ tính từ", "en": "adjectival predicate"},
+        "pinyin": ["xíng", "róng", "cí"]
+      },
+      {
+        "text": "了",
+        "role": "particle",
+        "label": {"vi": "trợ từ", "en": "particle"},
+        "optional": true,
+        "pinyin": ["le"]
+      }
+    ],
+    "illustration": {"kind": "word_order"}
+  },
+  "examples": [
+    {
+      "text": "学习汉语很有意思。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 4, "end": 5, "role": "other"},
+        {"start": 5, "end": 8, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Cụm động từ '学习汉语' làm chủ ngữ, '很有意思' là vị ngữ đánh giá.",
+        "en": "The verb phrase '学习汉语' is the subject, and '很有意思' is the evaluating predicate."
+      },
+      "translation": {"vi": "Học tiếng Trung rất thú vị.", "en": "Learning Chinese is very interesting."},
+      "pinyin": ["xué", "xí", "hàn", "yǔ", "hěn", "yǒu", "yì", "si", ""]
+    },
+    {
+      "text": "跑步对身体很好。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 5, "end": 6, "role": "other"},
+        {"start": 6, "end": 7, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Động từ '跑步' làm chủ ngữ, '对身体很好' là vị ngữ nói về lợi ích.",
+        "en": "The verb '跑步' is the subject, and '对身体很好' is the predicate about benefit."
+      },
+      "translation": {"vi": "Chạy bộ rất tốt cho sức khỏe.", "en": "Running is very good for your health."},
+      "pinyin": ["pǎo", "bù", "duì", "shēn", "tǐ", "hěn", "hǎo", ""]
+    },
+    {
+      "text": "安静很难得。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 3, "role": "other"},
+        {"start": 3, "end": 5, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Tính từ '安静' làm chủ ngữ, '很难得' là vị ngữ nhận xét.",
+        "en": "The adjective '安静' is the subject, and '很难得' is the commenting predicate."
+      },
+      "translation": {"vi": "Yên tĩnh là điều rất hiếm có.", "en": "Quietness is very rare."},
+      "pinyin": ["ān", "jìng", "hěn", "nán", "dé", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "我学习汉语很有意思。",
+      "right": "学习汉语很有意思。",
+      "reason": {
+        "vi": "Người học tiếng Việt thường thêm đại từ '我' vào trước cụm động từ vì quen với cấu trúc 'Tôi học tiếng Trung rất thú vị', nhưng khi cả hoạt động làm chủ ngữ thì không cần chủ ngữ người.",
+        "en": "Vietnamese learners often add the pronoun '我' before the verb phrase because they are used to 'I study Chinese is interesting', but when the whole activity is the subject, no personal subject is needed."
+      },
+      "error_tag": "word_order",
+      "l1": ["vi"],
+      "wrong_pinyin": ["wǒ", "xué", "xí", "hàn", "yǔ", "hěn", "yǒu", "yì", "si", ""],
+      "right_pinyin": ["xué", "xí", "hàn", "yǔ", "hěn", "yǒu", "yì", "si", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "___很有意思。",
+      "options": [
+        {"text": "学习汉语", "error_tag": null, "pinyin": ["xué", "xí", "hàn", "yǔ"]},
+        {"text": "我学习汉语", "error_tag": "word_order", "pinyin": ["wǒ", "xué", "xí", "hàn", "yǔ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Khi cả hoạt động '学习汉语' làm chủ ngữ, không thêm đại từ '我' vào trước.",
+        "en": "When the whole activity '学习汉语' is the subject, do not add the pronoun '我' before it."
+      },
+      "q_pinyin": ["", "", "", "hěn", "yǒu", "yì", "si", ""]
+    },
+    {
+      "q": "跑步对身体___。",
+      "options": [
+        {"text": "很好", "error_tag": null, "pinyin": ["hěn", "hǎo"]},
+        {"text": "好很", "error_tag": "word_order", "pinyin": ["hǎo", "hěn"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Phó từ mức độ '很' phải đứng trước tính từ '好', không đứng sau.",
+        "en": "The degree adverb '很' must come before the adjective '好', not after it."
+      },
+      "q_pinyin": ["pǎo", "bù", "duì", "shēn", "tǐ", "", "", "", ""]
+    },
+    {
+      "q": "___很难得。",
+      "options": [
+        {"text": "安静", "error_tag": null, "pinyin": ["ān", "jìng"]},
+        {"text": "很安静", "error_tag": "word_order", "pinyin": ["hěn", "ān", "jìng"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Khi tính từ '安静' làm chủ ngữ, không đặt '很' trước nó; '很' thuộc phần vị ngữ.",
+        "en": "When the adjective '安静' is the subject, do not put '很' before it; '很' belongs to the predicate."
+      },
+      "q_pinyin": ["", "", "", "hěn", "nán", "dé", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu nói rằng một hoạt động hoặc một tính chất nào đó rất thú vị hoặc rất tốt.",
+      "en": "Write one sentence saying that an activity or a quality is very interesting or very good."
+    },
+    "placeholder": "学习汉语……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "subject", "any_of": ["学习汉语", "跑步", "安静"]},
+        {"role": "other", "any_of": ["很", "非常", "太"]},
+        {"role": "complement", "any_of": ["有意思", "好", "难得"]}
+      ]
+    },
+    "sample": {"text": "学习汉语很有意思。", "pinyin": ["xué", "xí", "hàn", "yǔ", "hěn", "yǒu", "yì", "si", ""]},
+    "placeholder_pinyin": ["xué", "xí", "hàn", "yǔ", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790832732",
+    "generated_at": "2026-10-01T05:32:12Z"
+  },
+  "review": null
+}

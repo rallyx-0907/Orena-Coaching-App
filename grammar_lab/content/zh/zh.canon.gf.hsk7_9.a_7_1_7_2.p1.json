@@ -1,0 +1,200 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk7_9.a_7_1_7_2.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.exclusion",
+  "level": {"framework": "hsk3", "value": "7", "rank": 7},
+  "prereqs": ["zh.canon.gf.hsk7_9.a_7_1_7_1.p1"],
+  "contrasts": [],
+  "error_tags": ["particle"],
+  "source_refs": {"gf0025": ["gf0025.hsk7_9.057", "gf0025.hsk7_9.058"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Trợ từ: 而已", "en": "Particles: 而已"},
+    "native_title": "而已",
+    "level": {"framework": "hsk3", "value": "7", "rank": 7},
+    "summary": {
+      "vi": "而已 dùng ở cuối câu để nhấn mạnh rằng sự việc chỉ giới hạn ở mức đó, không hơn.",
+      "en": "而已 goes at the end of a sentence to stress that the matter is limited to that extent and nothing more."
+    },
+    "sub": {"vi": "giới hạn mà thôi", "en": "only, nothing more"},
+    "native_title_pinyin": ["ér", "yǐ"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói một việc chỉ ở mức nhỏ, mức thấp, không đáng kể.",
+      "en": "When you want to say something is only at a small or low level, not worth much."
+    },
+    {
+      "vi": "Khi cần làm rõ rằng không có ý gì khác ngoài điều vừa nói.",
+      "en": "When you need to make clear there is nothing beyond what was just said."
+    },
+    {
+      "vi": "Khi trả lời một câu hỏi và muốn hạ thấp mức độ của sự việc.",
+      "en": "When answering a question and wanting to play down the extent of the matter."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "谓语",
+        "role": "verb",
+        "label": {"vi": "vị ngữ", "en": "predicate"},
+        "pinyin": ["wèi", "yǔ"]
+      },
+      {
+        "text": "而已",
+        "role": "particle",
+        "label": {"vi": "trợ từ giới hạn", "en": "limiting particle"},
+        "pinyin": ["ér", "yǐ"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "我随便问问而已。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 5, "role": "verb"},
+        {"start": 5, "end": 7, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "而已 cho thấy chỉ hỏi cho biết, không có ý gì khác.",
+        "en": "而已 shows it is just a casual question, with no other intent."
+      },
+      "translation": {"vi": "Tôi chỉ hỏi cho biết thôi.", "en": "I was just asking casually, that's all."},
+      "pinyin": ["wǒ", "suí", "biàn", "wèn", "wèn", "ér", "yǐ", ""]
+    },
+    {
+      "text": "他不过开个玩笑而已。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 7, "role": "verb"},
+        {"start": 7, "end": 9, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "而已 hạ thấp sự việc xuống mức chỉ là đùa.",
+        "en": "而已 plays the matter down to the level of a mere joke."
+      },
+      "translation": {"vi": "Anh ấy chỉ đùa một chút thôi.", "en": "He was only joking, that's all."},
+      "pinyin": ["tā", "bù", "guò", "kāi", "gè", "wán", "xiào", "ér", "yǐ", ""]
+    },
+    {
+      "text": "这件衣服只要一百块而已。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 4, "end": 9, "role": "verb"},
+        {"start": 9, "end": 11, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "而已 nhấn mạnh giá chỉ ở mức một trăm tệ.",
+        "en": "而已 stresses the price is only one hundred yuan."
+      },
+      "translation": {
+        "vi": "Cái áo này chỉ có một trăm tệ thôi.",
+        "en": "This piece of clothing is only one hundred yuan, that's all."
+      },
+      "pinyin": ["zhè", "jiàn", "yī", "fu", "zhǐ", "yào", "yī", "bǎi", "kuài", "ér", "yǐ", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "我随便问问而己。",
+      "right": "我随便问问而已。",
+      "reason": {
+        "vi": "Người học viết nhầm 已 thành 己 vì hai chữ gần giống nhau, nhưng 而已 là một trợ từ cố định, không được thay chữ.",
+        "en": "Learners write 己 instead of 已 because the two characters look alike, but 而已 is a fixed particle and the character cannot be swapped."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong_pinyin": ["wǒ", "suí", "biàn", "wèn", "wèn", "ér", "jǐ", ""],
+      "right_pinyin": ["wǒ", "suí", "biàn", "wèn", "wèn", "ér", "yǐ", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "他不过开个玩笑___。",
+      "options": [
+        {"text": "而已", "error_tag": null, "pinyin": ["ér", "yǐ"]},
+        {"text": "而己", "error_tag": "particle", "pinyin": ["ér", "jǐ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "而已 là trợ từ cố định ở cuối câu, không viết thành 而己.",
+        "en": "而已 is a fixed sentence-final particle; it is not written 而己."
+      },
+      "q_pinyin": ["tā", "bù", "guò", "kāi", "gè", "wán", "xiào", "", "", "", ""]
+    },
+    {
+      "q": "我随便问问___。",
+      "options": [
+        {"text": "而已", "error_tag": null, "pinyin": ["ér", "yǐ"]},
+        {"text": "而己", "error_tag": "particle", "pinyin": ["ér", "jǐ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Chỉ có 而已 mới đúng chính tả và đúng chức năng trợ từ giới hạn.",
+        "en": "Only 而已 is correct in spelling and in its function as a limiting particle."
+      },
+      "q_pinyin": ["wǒ", "suí", "biàn", "wèn", "wèn", "", "", "", ""]
+    },
+    {
+      "q": "这件衣服只要一百块___。",
+      "options": [
+        {"text": "而已", "error_tag": null, "pinyin": ["ér", "yǐ"]},
+        {"text": "而己", "error_tag": "particle", "pinyin": ["ér", "jǐ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "而已 đứng cuối câu để nhấn mạnh mức độ thấp, không dùng 而己.",
+        "en": "而已 stands at the end of the sentence to stress a low extent; 而己 is not used."
+      },
+      "q_pinyin": ["zhè", "jiàn", "yī", "fu", "zhǐ", "yào", "yī", "bǎi", "kuài", "", "", "", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu nói rằng bạn chỉ làm một việc gì đó nhỏ, dùng 而已 ở cuối câu.",
+      "en": "Write a sentence saying you only did something small, using 而已 at the end."
+    },
+    "placeholder": "我只不过……而已。",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "subject", "any_of": ["我", "我们", "你", "他", "她", "它", "他们", "她们", "这", "那"]},
+        {"role": "particle", "any_of": ["而已"]}
+      ]
+    },
+    "sample": {
+      "text": "我只不过随便问问而已。",
+      "pinyin": ["wǒ", "zhǐ", "bù", "guò", "suí", "biàn", "wèn", "wèn", "ér", "yǐ", ""]
+    },
+    "placeholder_pinyin": ["wǒ", "zhǐ", "bù", "guò", "", "", "ér", "yǐ", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790834599",
+    "generated_at": "2026-10-01T06:03:19Z",
+    "metadata_stale": true
+  },
+  "review": null
+}

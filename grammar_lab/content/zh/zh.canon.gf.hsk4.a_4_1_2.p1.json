@@ -1,0 +1,244 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk4.a_4_1_2.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.pronoun_reference",
+  "level": {"framework": "hsk3", "value": "4", "rank": 4},
+  "prereqs": ["zh.canon.gf.hsk2.a_2_1_2.p1"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"gf0025": ["gf0025.hsk4.002"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Đại từ: 人称代词：人家", "en": "Pronouns: 人称代词：人家"},
+    "native_title": "人称代词：人家",
+    "level": {"framework": "hsk3", "value": "4", "rank": 4},
+    "summary": {
+      "vi": "Đại từ 人家 dùng để chỉ người khác hoặc chính mình với sắc thái thân mật, đôi khi hơi trách móc hoặc làm nũng.",
+      "en": "The pronoun 人家 refers to other people or to oneself with a familiar, sometimes mildly reproachful or coy tone."
+    },
+    "sub": {"vi": "đại từ 人家", "en": "pronoun 人家"},
+    "native_title_pinyin": ["rén", "chēng", "dài", "cí", "", "rén", "jiā"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi nói về người khác mà không muốn nêu tên, nhất là trong khẩu ngữ thân mật.",
+      "en": "When talking about other people without naming them, especially in familiar spoken Chinese."
+    },
+    {
+      "vi": "Khi người nói muốn chỉ chính mình với vẻ làm nũng, hờn dỗi hoặc thanh minh nhẹ.",
+      "en": "When the speaker refers to themselves with a coy, sulky, or mildly self-justifying tone."
+    },
+    {
+      "vi": "Khi muốn nhấn mạnh rằng người khác đã làm gì đó mà người nói không hài lòng.",
+      "en": "When emphasising that someone else did something the speaker is not happy about."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "人家",
+        "role": "subject",
+        "label": {"vi": "đại từ 人家", "en": "the pronoun 人家"},
+        "pinyin": ["rén", "jia"]
+      },
+      {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}, "pinyin": [""]},
+      {
+        "text": "O",
+        "role": "object",
+        "label": {"vi": "tân ngữ", "en": "object"},
+        "optional": true,
+        "pinyin": [""]
+      }
+    ],
+    "variants": {
+      "negative": [
+        {
+          "text": "人家",
+          "role": "subject",
+          "label": {"vi": "đại từ 人家", "en": "the pronoun 人家"},
+          "pinyin": ["rén", "jia"]
+        },
+        {
+          "text": "不",
+          "role": "aux",
+          "label": {"vi": "phủ định 不", "en": "negator 不"},
+          "pinyin": ["bù"]
+        },
+        {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}, "pinyin": [""]},
+        {
+          "text": "O",
+          "role": "object",
+          "label": {"vi": "tân ngữ", "en": "object"},
+          "optional": true,
+          "pinyin": [""]
+        }
+      ],
+      "question": [
+        {
+          "text": "人家",
+          "role": "subject",
+          "label": {"vi": "đại từ 人家", "en": "the pronoun 人家"},
+          "pinyin": ["rén", "jia"]
+        },
+        {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}, "pinyin": [""]},
+        {
+          "text": "O",
+          "role": "object",
+          "label": {"vi": "tân ngữ", "en": "object"},
+          "optional": true,
+          "pinyin": [""]
+        },
+        {
+          "text": "吗",
+          "role": "particle",
+          "label": {"vi": "trợ từ nghi vấn 吗", "en": "question particle 吗"},
+          "pinyin": ["ma"]
+        }
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "人家已经走了。",
+      "form": "affirmative",
+      "spans": [{"start": 0, "end": 2, "role": "subject"}, {"start": 4, "end": 5, "role": "verb"}],
+      "annotation": {
+        "vi": "人家 chỉ người khác, không nêu tên.",
+        "en": "人家 refers to other people without naming them."
+      },
+      "translation": {"vi": "Người ta đã đi rồi.", "en": "They have already left."},
+      "pinyin": ["rén", "jia", "yǐ", "jīng", "zǒu", "le", ""]
+    },
+    {
+      "text": "人家不喜欢这个颜色。",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 3, "role": "aux"},
+        {"start": 3, "end": 5, "role": "verb"},
+        {"start": 5, "end": 9, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "人家 ở đây chỉ chính người nói, giọng hơi hờn.",
+        "en": "Here 人家 refers to the speaker, with a slightly sulky tone."
+      },
+      "translation": {"vi": "Người ta không thích màu này.", "en": "I don't like this colour."},
+      "pinyin": ["rén", "jia", "bù", "xǐ", "huan", "zhè", "ge", "yán", "sè", ""]
+    },
+    {
+      "text": "人家会来吗？",
+      "form": "question",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 3, "end": 4, "role": "verb"},
+        {"start": 4, "end": 5, "role": "particle"}
+      ],
+      "annotation": {"vi": "Câu hỏi có 吗, 人家 vẫn là chủ ngữ.", "en": "A 吗-question; 人家 remains the subject."},
+      "translation": {"vi": "Người ta sẽ đến à?", "en": "Will they come?"},
+      "pinyin": ["rén", "jia", "huì", "lái", "ma", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "人家们已经走了。",
+      "right": "人家已经走了。",
+      "reason": {
+        "vi": "人家 đã mang nghĩa số nhiều hoặc bất định, không thêm 们.",
+        "en": "人家 already covers plural or unspecified reference, so it does not take 们."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong_pinyin": ["rén", "jia", "men", "yǐ", "jīng", "zǒu", "le", ""],
+      "right_pinyin": ["rén", "jia", "yǐ", "jīng", "zǒu", "le", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "人家___走了，你别等了。",
+      "options": [
+        {"text": "已经", "error_tag": null, "pinyin": ["yǐ", "jīng"]},
+        {"text": "已经们", "error_tag": "other", "pinyin": ["yǐ", "jīng", "men"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "人家 là chủ ngữ, sau đó là trạng ngữ 已经 rồi đến động từ; không thêm 们.",
+        "en": "人家 is the subject, followed by the adverb 已经 and then the verb; 们 is not added."
+      },
+      "q_pinyin": ["rén", "jia", "", "", "", "zǒu", "le", "", "nǐ", "bié", "děng", "le", ""]
+    },
+    {
+      "q": "人家___这个颜色，我们换一个吧。",
+      "options": [
+        {"text": "不喜欢", "error_tag": null, "pinyin": ["bù", "xǐ", "huan"]},
+        {"text": "不们喜欢", "error_tag": "other", "pinyin": ["bù", "men", "xǐ", "huan"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Phủ định của động từ là 不 + động từ; 人家 không đi với 们.",
+        "en": "Verb negation is 不 + verb; 人家 does not combine with 们."
+      },
+      "q_pinyin": [
+        "rén",
+        "jia",
+        "",
+        "",
+        "",
+        "zhè",
+        "ge",
+        "yán",
+        "sè",
+        "",
+        "wǒ",
+        "men",
+        "huàn",
+        "yī",
+        "ge",
+        "ba",
+        ""
+      ]
+    },
+    {
+      "q": "人家___来吗？",
+      "options": [
+        {"text": "会", "error_tag": null, "pinyin": ["huì"]},
+        {"text": "会们", "error_tag": "other", "pinyin": ["huì", "men"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu hỏi với 吗: 人家 + 会 + động từ + 吗; không thêm 们.",
+        "en": "A 吗-question: 人家 + 会 + verb + 吗; 们 is not added."
+      },
+      "q_pinyin": ["rén", "jia", "", "", "", "lái", "ma", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng 人家 để nói về người khác hoặc về chính bạn với giọng thân mật.",
+      "en": "Write one sentence with 人家 about someone else or about yourself in a familiar tone."
+    },
+    "placeholder": "人家……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "subject", "any_of": ["人家"]}, {"role": "verb", "regex": "[\\u4e00-\\u9fff]"}]
+    },
+    "sample": {"text": "人家已经走了。", "pinyin": ["rén", "jia", "yǐ", "jīng", "zǒu", "le", ""]},
+    "placeholder_pinyin": ["rén", "jia", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790833087",
+    "generated_at": "2026-10-01T05:38:07Z"
+  },
+  "review": null
+}

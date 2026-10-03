@@ -1,0 +1,348 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.separable_verbs",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.separable_verbs",
+  "level": {"framework": "hsk3", "value": "2", "rank": 2},
+  "prereqs": [],
+  "contrasts": [],
+  "error_tags": ["word_order"],
+  "source_refs": {"r5": ["zh-hsk2-11-ng-t-ly-h-p"], "gf0025": ["gf0025.hsk3.005", "gf0025.hsk3.006"]},
+  "point_type": "word_order",
+  "sequence": 1,
+  "aliases": ["zh-hsk2-11-ng-t-ly-h-p"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Động từ ly hợp", "en": "Separable verbs"},
+    "native_title": "离合词",
+    "level": {"framework": "hsk3", "value": "2", "rank": 2},
+    "summary": {
+      "vi": "Động từ ly hợp là từ gồm hai phần (động từ + tân ngữ) nhưng hoạt động như một động từ, và các thành phần như 了, 过, số lượng có thể chen vào giữa hai phần đó.",
+      "en": "Separable verbs look like one verb but are made of a verb plus an object; aspect markers and quantity words go between the two parts."
+    },
+    "sub": {"vi": "động từ ly hợp", "en": "separable verbs"},
+    "native_title_pinyin": ["lí", "hé", "cí"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn dùng các từ như 见面, 帮忙, 洗澡, 睡觉, 结婚, 请假.",
+      "en": "When you use words like 见面, 帮忙, 洗澡, 睡觉, 结婚, 请假."
+    },
+    {
+      "vi": "Khi muốn nói đã làm, từng làm, hoặc làm bao nhiêu lần: 了, 过, số lần chen vào giữa.",
+      "en": "When you say it happened, has happened, or how many times: 了, 过 and count words go in the middle."
+    },
+    {
+      "vi": "Khi muốn nói làm cùng ai, phải dùng 跟/和 + người trước động từ, không đặt người ngay sau.",
+      "en": "When you say who you did it with, use 跟/和 + person before the verb, not right after it."
+    },
+    {
+      "vi": "Khi muốn nói thời lượng hoặc số lượng của hành động: 洗了个澡, 睡了一会儿觉.",
+      "en": "When you give the duration or amount of the action: 洗了个澡, 睡了一会儿觉."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "跟/和",
+        "role": "marker",
+        "label": {"vi": "giới từ đi cùng", "en": "with-marker"},
+        "optional": true,
+        "options": [{"text": "跟", "pinyin": ["gēn"]}, {"text": "和", "pinyin": ["hé"]}],
+        "pinyin": ["gēn", "", "hé"]
+      },
+      {
+        "text": "人",
+        "role": "object",
+        "label": {"vi": "người cùng làm", "en": "person"},
+        "optional": true,
+        "pinyin": ["rén"]
+      },
+      {
+        "text": "动词",
+        "role": "verb",
+        "label": {"vi": "động từ", "en": "verb"},
+        "pinyin": ["dòng", "cí"]
+      },
+      {
+        "text": "了/过",
+        "role": "particle",
+        "label": {"vi": "trợ từ thể", "en": "aspect particle"},
+        "optional": true,
+        "options": [{"text": "了", "pinyin": ["le"]}, {"text": "过", "pinyin": ["guo"]}],
+        "pinyin": ["le", "", "guo"]
+      },
+      {
+        "text": "数量",
+        "role": "complement",
+        "label": {"vi": "số lần / số lượng", "en": "count or amount"},
+        "optional": true,
+        "pinyin": ["shù", "liàng"]
+      },
+      {
+        "text": "宾语",
+        "role": "object",
+        "label": {"vi": "phần tân ngữ của động từ ly hợp", "en": "object part of the separable verb"},
+        "pinyin": ["bīn", "yǔ"]
+      }
+    ],
+    "variants": {
+      "negative": [
+        {
+          "text": "主语",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ", "en": "subject"},
+          "pinyin": ["zhǔ", "yǔ"]
+        },
+        {
+          "text": "没",
+          "role": "aux",
+          "label": {"vi": "phủ định", "en": "negator"},
+          "pinyin": ["méi"]
+        },
+        {
+          "text": "跟/和",
+          "role": "marker",
+          "label": {"vi": "giới từ đi cùng", "en": "with-marker"},
+          "optional": true,
+          "options": [{"text": "跟", "pinyin": ["gēn"]}, {"text": "和", "pinyin": ["hé"]}],
+          "pinyin": ["gēn", "", "hé"]
+        },
+        {
+          "text": "人",
+          "role": "object",
+          "label": {"vi": "người cùng làm", "en": "person"},
+          "optional": true,
+          "pinyin": ["rén"]
+        },
+        {
+          "text": "动词",
+          "role": "verb",
+          "label": {"vi": "động từ", "en": "verb"},
+          "pinyin": ["dòng", "cí"]
+        },
+        {
+          "text": "宾语",
+          "role": "object",
+          "label": {"vi": "phần tân ngữ của động từ ly hợp", "en": "object part of the separable verb"},
+          "pinyin": ["bīn", "yǔ"]
+        }
+      ],
+      "question": [
+        {
+          "text": "主语",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ", "en": "subject"},
+          "pinyin": ["zhǔ", "yǔ"]
+        },
+        {
+          "text": "跟/和",
+          "role": "marker",
+          "label": {"vi": "giới từ đi cùng", "en": "with-marker"},
+          "optional": true,
+          "options": [{"text": "跟", "pinyin": ["gēn"]}, {"text": "和", "pinyin": ["hé"]}],
+          "pinyin": ["gēn", "", "hé"]
+        },
+        {
+          "text": "人",
+          "role": "object",
+          "label": {"vi": "người cùng làm", "en": "person"},
+          "optional": true,
+          "pinyin": ["rén"]
+        },
+        {
+          "text": "动词",
+          "role": "verb",
+          "label": {"vi": "động từ", "en": "verb"},
+          "pinyin": ["dòng", "cí"]
+        },
+        {
+          "text": "过",
+          "role": "particle",
+          "label": {"vi": "trợ từ thể", "en": "aspect particle"},
+          "optional": true,
+          "pinyin": ["guo"]
+        },
+        {
+          "text": "宾语",
+          "role": "object",
+          "label": {"vi": "phần tân ngữ của động từ ly hợp", "en": "object part of the separable verb"},
+          "pinyin": ["bīn", "yǔ"]
+        },
+        {
+          "text": "吗",
+          "role": "particle",
+          "label": {"vi": "trợ từ nghi vấn", "en": "question particle"},
+          "pinyin": ["ma"]
+        }
+      ]
+    },
+    "illustration": {"kind": "word_order"}
+  },
+  "examples": [
+    {
+      "text": "我昨天跟他见了面。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 3, "end": 5, "role": "marker"},
+        {"start": 5, "end": 6, "role": "verb"},
+        {"start": 6, "end": 7, "role": "particle"},
+        {"start": 7, "end": 8, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "了 chen vào giữa 见 và 面, không đặt sau 见面.",
+        "en": "了 goes between 见 and 面, not after 见面."
+      },
+      "translation": {"vi": "Hôm qua tôi đã gặp anh ấy.", "en": "I met him yesterday."},
+      "pinyin": ["wǒ", "zuó", "tiān", "gēn", "tā", "jiàn", "le", "miàn", ""]
+    },
+    {
+      "text": "我们见过两次面。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 3, "role": "verb"},
+        {"start": 3, "end": 4, "role": "particle"},
+        {"start": 4, "end": 6, "role": "complement"},
+        {"start": 6, "end": 7, "role": "object"}
+      ],
+      "annotation": {"vi": "过 và số lần 两次 đứng giữa 见 và 面.", "en": "过 and the count 两次 sit between 见 and 面."},
+      "translation": {"vi": "Chúng tôi từng gặp nhau hai lần.", "en": "We have met twice."},
+      "pinyin": ["wǒ", "men", "jiàn", "guo", "liǎng", "cì", "miàn", ""]
+    },
+    {
+      "text": "我想洗个澡。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 2, "end": 3, "role": "verb"},
+        {"start": 3, "end": 4, "role": "complement"},
+        {"start": 4, "end": 5, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "个 đứng giữa 洗 và 澡 để nói một lần tắm.",
+        "en": "个 goes between 洗 and 澡 to mean one bath."
+      },
+      "translation": {"vi": "Tôi muốn tắm một cái.", "en": "I want to take a bath."},
+      "pinyin": ["wǒ", "xiǎng", "xǐ", "ge", "zǎo", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "我见面了他。",
+      "right": "我跟他见了面。",
+      "reason": {
+        "vi": "见面 đã chứa tân ngữ 面, nên không nhận thêm người ngay sau; phải dùng 跟 + người trước động từ, và 了 chen vào giữa 见 và 面.",
+        "en": "见面 already contains the object 面, so it cannot take a person right after it; use 跟 + person before the verb, and 了 goes between 见 and 面."
+      },
+      "error_tag": "word_order",
+      "l1": ["vi"],
+      "wrong_pinyin": ["wǒ", "jiàn", "miàn", "le", "tā", ""],
+      "right_pinyin": ["wǒ", "gēn", "tā", "jiàn", "le", "miàn", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "我昨天跟他见___面。",
+      "options": [
+        {"text": "了", "error_tag": null, "pinyin": ["le"]},
+        {"text": "过", "error_tag": "aspect", "pinyin": ["guo"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Với 昨天 (mốc thời gian xác định) dùng 了, không dùng 过.",
+        "en": "With 昨天 (a definite past time) use 了, not 过."
+      },
+      "q_pinyin": ["wǒ", "zuó", "tiān", "gēn", "tā", "jiàn", "", "", "", "miàn", ""]
+    },
+    {
+      "q": "我们见过两___面。",
+      "options": [
+        {"text": "次", "error_tag": null, "pinyin": ["cì"]},
+        {"text": "个", "error_tag": "measure_word", "pinyin": ["ge"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Đếm số lần gặp dùng 次, không dùng 个.",
+        "en": "Count the number of meetings with 次, not 个."
+      },
+      "q_pinyin": ["wǒ", "men", "jiàn", "guo", "liǎng", "", "", "", "miàn", ""]
+    },
+    {
+      "q": "我想洗___澡。",
+      "options": [
+        {"text": "个", "error_tag": null, "pinyin": ["ge"]},
+        {"text": "了", "error_tag": "particle", "pinyin": ["le"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 想 (muốn) không dùng 了; ở đây cần lượng từ 个 chen vào giữa 洗 và 澡.",
+        "en": "After 想 (want) you do not use 了; here you need the measure word 个 between 洗 and 澡."
+      },
+      "q_pinyin": ["wǒ", "xiǎng", "xǐ", "", "", "", "zǎo", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về việc bạn đã gặp ai đó, dùng 见面 và đặt 了 vào đúng chỗ.",
+      "en": "Write a sentence about meeting someone, using 见面 and putting 了 in the right place."
+    },
+    "placeholder": "我昨天跟他……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "verb", "any_of": ["见", "洗", "帮", "睡", "结"]},
+        {"role": "particle", "any_of": ["了", "过", "个"]},
+        {"role": "object", "any_of": ["面", "澡", "忙", "觉", "婚"]}
+      ]
+    },
+    "sample": {"text": "我昨天跟他见了面。", "pinyin": ["wǒ", "zuó", "tiān", "gēn", "tā", "jiàn", "le", "miàn", ""]},
+    "placeholder_pinyin": ["wǒ", "zuó", "tiān", "gēn", "tā", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790832441",
+    "generated_at": "2026-10-01T05:27:21Z",
+    "r5_source": {
+      "ids": ["zh-hsk2-11-ng-t-ly-h-p"],
+      "content_version": 2,
+      "content_hash": "6e30c909740f6677af05f1b1c8c540e74ed6a0135363fc4dae06283704a2374d",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk2-11-ng-t-ly-h-p",
+          "issue": "Câu sai '我见面过两次。' được sửa thành '我见过两次面。' nhưng bản sửa vẫn đặt 过 sai chỗ (phải là 见过两次面, không phải 见面过).",
+          "fix": "Dùng ví dụ đúng '我们见过两次面。' và nêu rõ 过 cùng số lần 两次 chen giữa 见 và 面."
+        },
+        {
+          "r5_id": "zh-hsk2-11-ng-t-ly-h-p",
+          "issue": "Câu sai '我见面了他。' được sửa thành '我跟他见面了。' nhưng thiếu 了 ở giữa 见 và 面, không thể hiện đặc điểm ly hợp.",
+          "fix": "Sửa thành '我跟他见了面。' để 了 nằm giữa 见 và 面."
+        },
+        {
+          "r5_id": "zh-hsk2-11-ng-t-ly-h-p",
+          "issue": "Bài R5 không có công thức, không phân biệt dạng phủ định/nghi vấn, không có bài kiểm tra nhanh.",
+          "fix": "Bổ sung công thức dạng ô trống, dạng phủ định 没 + động từ + tân ngữ, dạng nghi vấn với 吗, và 3 câu quick practice."
+        },
+        {
+          "r5_id": "zh-hsk2-11-ng-t-ly-h-p",
+          "issue": "Bài R5 ghi 'Aspect/quantity can enter' nhưng không nói rõ vị trí của 了/过/số lần so với phần tân ngữ.",
+          "fix": "Nêu rõ trong when_to_use và ví dụ: 了, 过, số lần, lượng từ đều đứng giữa động từ và phần tân ngữ."
+        }
+      ]
+    }
+  },
+  "review": null
+}

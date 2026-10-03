@@ -1,0 +1,201 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b2.032",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.reference",
+  "level": {"framework": "cefr", "value": "B2", "rank": 4},
+  "prereqs": ["en.canon.b1.039"],
+  "contrasts": [],
+  "error_tags": ["article"],
+  "source_refs": {"r5": ["b2-advanced-articles-and-determiners"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["b2-advanced-articles-and-determiners"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Advanced mạo từ and từ hạn định", "en": "Advanced articles and determiners"},
+    "native_title": "Advanced articles and determiners",
+    "level": {"framework": "cefr", "value": "B2", "rank": 4},
+    "summary": {
+      "vi": "Điểm này giải thích cách dùng mạo từ và từ hạn định ở trình độ B2: khi nào dùng the, khi nào bỏ mạo từ trước danh từ số nhiều/không đếm được, và khi nào mạo từ thay đổi theo chức năng của sự vật.",
+      "en": "This point explains advanced article and determiner use at B2: when to use the, when to drop the article before plural and uncountable nouns, and when the article changes with the function of the noun."
+    },
+    "sub": {"vi": "mạo từ nâng cao", "en": "advanced articles"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi nói về một nhóm chung, không xác định: danh từ số nhiều hoặc không đếm được thường không có mạo từ.",
+      "en": "When talking about a group in general, not a specific one: plural or uncountable nouns usually take no article."
+    },
+    {
+      "vi": "Khi cả người nói và người nghe đều biết chính xác đối tượng nào: dùng the.",
+      "en": "When both speaker and listener know exactly which one is meant: use the."
+    },
+    {
+      "vi": "Khi danh từ chỉ một chức năng, hoạt động hoặc thể chế hơn là một địa điểm cụ thể: thường không dùng mạo từ.",
+      "en": "When the noun names a function, activity or institution rather than a physical place: usually no article."
+    },
+    {
+      "vi": "Khi danh từ chỉ một nhạc cụ, một nhóm người đặc trưng hoặc một tên riêng theo quy ước: dùng the.",
+      "en": "When the noun names an instrument, a class of people or a conventional proper name: use the."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "the",
+        "role": "marker",
+        "label": {"vi": "mạo từ xác định", "en": "definite article"},
+        "optional": true
+      },
+      {"text": "N", "role": "object", "label": {"vi": "danh từ", "en": "noun"}},
+      {
+        "text": "-s/-es",
+        "role": "particle",
+        "label": {"vi": "hậu tố số nhiều", "en": "plural ending"},
+        "optional": true
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "Children usually start school at six here.",
+      "form": "affirmative",
+      "spans": [{"start": 0, "end": 8, "role": "object"}, {"start": 23, "end": 29, "role": "object"}],
+      "annotation": {
+        "vi": "Danh từ số nhiều và danh từ chỉ hoạt động học tập đều không có mạo từ vì nói chung, không xác định.",
+        "en": "The plural noun and the noun naming an activity take no article because they are general, not specific."
+      },
+      "translation": {
+        "vi": "Trẻ em thường bắt đầu đi học lúc sáu tuổi ở đây.",
+        "en": "Children usually start school at six here."
+      }
+    },
+    {
+      "text": "I went to the school to speak to the principal.",
+      "form": "affirmative",
+      "spans": [{"start": 10, "end": 13, "role": "marker"}, {"start": 14, "end": 20, "role": "object"}],
+      "annotation": {
+        "vi": "Dùng the vì đây là một ngôi trường cụ thể, không phải hoạt động học tập nói chung.",
+        "en": "The is used because this is a specific school building, not the general activity of attending school."
+      },
+      "translation": {
+        "vi": "Tôi đến ngôi trường đó để nói chuyện với hiệu trưởng.",
+        "en": "I went to the school to speak to the principal."
+      }
+    },
+    {
+      "text": "She plays the violin but studies music.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 10, "end": 13, "role": "marker"},
+        {"start": 14, "end": 20, "role": "object"},
+        {"start": 33, "end": 38, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Nhạc cụ dùng the, nhưng môn học thì không dùng mạo từ.",
+        "en": "Instruments take the, but academic subjects take no article."
+      },
+      "translation": {
+        "vi": "Cô ấy chơi violin nhưng học âm nhạc.",
+        "en": "She plays the violin but studies music."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "I went to school to meet my son's teacher after work.",
+      "right": "I went to the school to meet my son's teacher after work.",
+      "reason": {
+        "vi": "Người nói không phải học sinh và mục đích là tới một tòa nhà cụ thể, nên cần the. Bỏ mạo từ sẽ gợi rằng người nói đến trường với tư cách học sinh.",
+        "en": "The speaker is not a pupil and the purpose is to visit a specific building, so the is needed. Dropping it suggests the speaker attended school as a pupil."
+      },
+      "error_tag": "article",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "She is learning ___ at university.",
+      "options": [{"text": "French", "error_tag": null}, {"text": "the French", "error_tag": "article"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Tên ngôn ngữ không dùng mạo từ: French, không phải the French.",
+        "en": "Language names take no article: French, not the French."
+      }
+    },
+    {
+      "q": "My brother goes to ___ every weekday morning.",
+      "options": [{"text": "school", "error_tag": null}, {"text": "the school", "error_tag": "article"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Khi nói về hoạt động đi học nói chung, dùng school không có mạo từ.",
+        "en": "When talking about the general activity of attending school, use school with no article."
+      }
+    },
+    {
+      "q": "He is at ___ because he is a student there.",
+      "options": [
+        {"text": "university", "error_tag": null},
+        {"text": "the university", "error_tag": "article"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Khi nói về vai trò sinh viên, dùng university không có mạo từ.",
+        "en": "When talking about the role of being a student, use university with no article."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về thói quen hoặc vai trò của bạn, dùng danh từ chỉ thể chế không có mạo từ.",
+      "en": "Write one sentence about your routine or role, using an institution noun with no article."
+    },
+    "placeholder": "I go to ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {
+          "role": "object",
+          "any_of": ["school", "university", "college", "bed", "work", "church", "prison", "violin", "music"]
+        }
+      ]
+    },
+    "sample": {"text": "I go to school by bus every morning."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790831277",
+    "generated_at": "2026-10-01T05:07:57Z",
+    "r5_source": {
+      "ids": ["b2-advanced-articles-and-determiners"],
+      "content_version": 2,
+      "content_hash": "a984235455290726f6abd13b081a995f35aa1a745097ae88765614a02b56ccad",
+      "corrections": [
+        {
+          "r5_id": "b2-advanced-articles-and-determiners",
+          "issue": "R5 dạy cả 'Complex quantifiers' như một contrast nhưng scope của điểm này chỉ gồm mạo từ và từ hạn định.",
+          "fix": "Bỏ phần complex quantifiers; chỉ giữ các quy tắc mạo từ và từ hạn định."
+        },
+        {
+          "r5_id": "b2-advanced-articles-and-determiners",
+          "issue": "R5 không có formula, negative, question, spans hay quick practice.",
+          "fix": "Thêm formula dạng slot trừu tượng, spans cho từng ví dụ, và 3 câu quick practice."
+        },
+        {
+          "r5_id": "b2-advanced-articles-and-determiners",
+          "issue": "R5 liệt kê 'She is learning the French' là lỗi nhưng không giải thích cơ chế rõ ràng.",
+          "fix": "Viết lại lý do: tên ngôn ngữ không dùng mạo từ, và đưa vào quick practice."
+        }
+      ]
+    }
+  },
+  "review": null
+}

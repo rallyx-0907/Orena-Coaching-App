@@ -1,0 +1,339 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk6.a_6_3_2_2.p2",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.linking",
+  "level": {"framework": "hsk3", "value": "6", "rank": 6},
+  "prereqs": ["zh.canon.gf.hsk6.a_6_3_2_2.p1"],
+  "contrasts": [],
+  "error_tags": ["particle"],
+  "source_refs": {"gf0025": ["gf0025.hsk6.033", "gf0025.hsk6.034"]},
+  "point_type": "other",
+  "sequence": 6,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 就是说/这就是说", "en": "Chinese grammar: 就是说/这就是说"},
+    "native_title": "就是说/这就是说",
+    "level": {"framework": "hsk3", "value": "6", "rank": 6},
+    "summary": {
+      "vi": "「就是说」và「这就是说」dùng để giải thích lại hoặc diễn đạt lại điều vừa nói bằng một cách nói rõ hơn, thường đứng đầu câu giải thích.",
+      "en": "「就是说」and「这就是说」are used to restate or explain what was just said in clearer terms, usually at the start of the explaining clause."
+    },
+    "sub": {"vi": "nói lại, giải thích", "en": "restating, explaining"},
+    "native_title_pinyin": ["jiù", "shì", "shuō", "", "zhè", "jiù", "shì", "shuō"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn vừa nói một điều gì đó và muốn diễn đạt lại nó bằng cách rõ ràng, dễ hiểu hơn.",
+      "en": "When you have just said something and want to restate it in a clearer, simpler way."
+    },
+    {
+      "vi": "Khi cần giải thích ý nghĩa thực sự của một câu nói, một quy định hoặc một tình huống vừa được nhắc đến.",
+      "en": "When you need to explain the real meaning of a statement, a rule, or a situation just mentioned."
+    },
+    {
+      "vi": "Khi muốn rút ra kết luận trực tiếp từ thông tin vừa đưa ra, thường theo sau là một mệnh đề ngắn gọn.",
+      "en": "When you want to draw a direct conclusion from the information just given, usually followed by a short clause."
+    },
+    {
+      "vi": "Trong văn nói hoặc văn viết có tính giải thích, khi người nói muốn người nghe hiểu đúng ý mình.",
+      "en": "In spoken or explanatory writing, when the speaker wants the listener to understand the intended meaning correctly."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "就是说",
+        "role": "connector",
+        "label": {"vi": "từ nối giải thích", "en": "explanatory connector"},
+        "pinyin": ["jiù", "shì", "shuō"]
+      },
+      {
+        "text": "分句",
+        "role": "other",
+        "label": {"vi": "mệnh đề giải thích", "en": "explanatory clause"},
+        "pinyin": ["fēn", "jù"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "他明天不来，就是说我们不用等他。",
+      "form": "affirmative",
+      "spans": [{"start": 6, "end": 9, "role": "connector"}, {"start": 9, "end": 15, "role": "other"}],
+      "annotation": {
+        "vi": "「就是说」mở đầu mệnh đề diễn giải lại ý của câu trước.",
+        "en": "「就是说」introduces the clause that restates the meaning of the previous sentence."
+      },
+      "translation": {
+        "vi": "Anh ấy mai không đến, có nghĩa là chúng ta không cần đợi anh ấy.",
+        "en": "He is not coming tomorrow, that is to say, we don't need to wait for him."
+      },
+      "pinyin": [
+        "tā",
+        "míng",
+        "tiān",
+        "bù",
+        "lái",
+        "",
+        "jiù",
+        "shì",
+        "shuō",
+        "wǒ",
+        "men",
+        "bù",
+        "yòng",
+        "děng",
+        "tā",
+        ""
+      ]
+    },
+    {
+      "text": "这个字很难写，这就是说你要多练习。",
+      "form": "affirmative",
+      "spans": [{"start": 7, "end": 11, "role": "connector"}, {"start": 11, "end": 16, "role": "other"}],
+      "annotation": {
+        "vi": "「这就是说」dùng để rút ra kết luận hoặc lời khuyên từ điều vừa nói.",
+        "en": "「这就是说」draws a conclusion or gives advice based on what was just said."
+      },
+      "translation": {
+        "vi": "Chữ này khó viết, điều đó có nghĩa là bạn cần luyện tập nhiều hơn.",
+        "en": "This character is hard to write, that is to say, you need to practice more."
+      },
+      "pinyin": [
+        "zhè",
+        "ge",
+        "zì",
+        "hěn",
+        "nán",
+        "xiě",
+        "",
+        "zhè",
+        "jiù",
+        "shì",
+        "shuō",
+        "nǐ",
+        "yào",
+        "duō",
+        "liàn",
+        "xí",
+        ""
+      ]
+    },
+    {
+      "text": "会议改到下午三点，就是说我们还有两个小时。",
+      "form": "affirmative",
+      "spans": [{"start": 9, "end": 12, "role": "connector"}, {"start": 12, "end": 20, "role": "other"}],
+      "annotation": {
+        "vi": "「就是说」diễn giải lại thông tin vừa đưa ra thành một kết luận cụ thể.",
+        "en": "「就是说」restates the information just given as a concrete conclusion."
+      },
+      "translation": {
+        "vi": "Cuộc họp đổi sang ba giờ chiều, có nghĩa là chúng ta còn hai tiếng nữa.",
+        "en": "The meeting is moved to three in the afternoon, that is to say, we still have two hours."
+      },
+      "pinyin": [
+        "huì",
+        "yì",
+        "gǎi",
+        "dào",
+        "xià",
+        "wǔ",
+        "sān",
+        "diǎn",
+        "",
+        "jiù",
+        "shì",
+        "shuō",
+        "wǒ",
+        "men",
+        "hái",
+        "yǒu",
+        "liǎng",
+        "ge",
+        "xiǎo",
+        "shí",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "他明天不来，就是说的我们不用等他。",
+      "right": "他明天不来，就是说我们不用等他。",
+      "reason": {
+        "vi": "「就是说」là một cụm từ nối cố định, không thêm 「的」vào sau 「说」; thêm 「的」sẽ biến nó thành kết cấu 「是……的」và làm sai chức năng giải thích.",
+        "en": "「就是说」is a fixed connective phrase; adding 「的」after 「说」turns it into a 「是……的」structure and breaks its explanatory function."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong_pinyin": [
+        "tā",
+        "míng",
+        "tiān",
+        "bù",
+        "lái",
+        "",
+        "jiù",
+        "shì",
+        "shuō",
+        "de",
+        "wǒ",
+        "men",
+        "bù",
+        "yòng",
+        "děng",
+        "tā",
+        ""
+      ],
+      "right_pinyin": [
+        "tā",
+        "míng",
+        "tiān",
+        "bù",
+        "lái",
+        "",
+        "jiù",
+        "shì",
+        "shuō",
+        "wǒ",
+        "men",
+        "bù",
+        "yòng",
+        "děng",
+        "tā",
+        ""
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "他明天不来，___我们不用等他。",
+      "options": [
+        {"text": "就是说", "error_tag": null, "pinyin": ["jiù", "shì", "shuō"]},
+        {"text": "就是说的", "error_tag": "particle", "pinyin": ["jiù", "shì", "shuō", "de"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "「就是说」là cụm từ nối cố định để diễn giải lại ý trước đó; không thêm 「的」.",
+        "en": "「就是说」is a fixed connective phrase used to restate the previous idea; do not add 「的」."
+      },
+      "q_pinyin": [
+        "tā",
+        "míng",
+        "tiān",
+        "bù",
+        "lái",
+        "",
+        "",
+        "",
+        "",
+        "wǒ",
+        "men",
+        "bù",
+        "yòng",
+        "děng",
+        "tā",
+        ""
+      ]
+    },
+    {
+      "q": "这个字很难写，___你要多练习。",
+      "options": [
+        {"text": "这就是说", "error_tag": null, "pinyin": ["zhè", "jiù", "shì", "shuō"]},
+        {"text": "这就是说的", "error_tag": "particle", "pinyin": ["zhè", "jiù", "shì", "shuō", "de"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "「这就是说」đứng đầu mệnh đề giải thích, không có 「的」ở cuối.",
+        "en": "「这就是说」starts the explanatory clause and does not take 「的」at the end."
+      },
+      "q_pinyin": ["zhè", "ge", "zì", "hěn", "nán", "xiě", "", "", "", "", "nǐ", "yào", "duō", "liàn", "xí", ""]
+    },
+    {
+      "q": "会议改到下午三点，___我们还有两个小时。",
+      "options": [
+        {"text": "就是说", "error_tag": null, "pinyin": ["jiù", "shì", "shuō"]},
+        {"text": "就是说的", "error_tag": "particle", "pinyin": ["jiù", "shì", "shuō", "de"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "「就是说」nối câu trước với phần diễn giải, không thêm trợ từ 「的」.",
+        "en": "「就是说」links the previous sentence to the explanation; do not add the particle 「的」."
+      },
+      "q_pinyin": [
+        "huì",
+        "yì",
+        "gǎi",
+        "dào",
+        "xià",
+        "wǔ",
+        "sān",
+        "diǎn",
+        "",
+        "",
+        "",
+        "",
+        "wǒ",
+        "men",
+        "hái",
+        "yǒu",
+        "liǎng",
+        "ge",
+        "xiǎo",
+        "shí",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu nói rằng bạn không đến một nơi nào đó vào ngày mai, rồi dùng 「就是说」để giải thích điều đó có nghĩa là gì.",
+      "en": "Write a sentence saying you are not going somewhere tomorrow, then use 「就是说」to explain what that means."
+    },
+    "placeholder": "我明天不去……，就是说……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "connector", "any_of": ["就是说", "这就是说"]}, {"role": "other", "regex": ".+"}]
+    },
+    "sample": {
+      "text": "我明天不去学校，就是说我可以睡懒觉。",
+      "pinyin": [
+        "wǒ",
+        "míng",
+        "tiān",
+        "bù",
+        "qù",
+        "xué",
+        "xiào",
+        "",
+        "jiù",
+        "shì",
+        "shuō",
+        "wǒ",
+        "kě",
+        "yǐ",
+        "shuì",
+        "lǎn",
+        "jiào",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["wǒ", "míng", "tiān", "bù", "qù", "", "", "", "jiù", "shì", "shuō", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790834155",
+    "generated_at": "2026-10-01T05:55:55Z",
+    "metadata_stale": true
+  },
+  "review": null
+}

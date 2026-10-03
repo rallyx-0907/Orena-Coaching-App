@@ -1,0 +1,193 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b2.034",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.reference",
+  "level": {"framework": "cefr", "value": "B2", "rank": 4},
+  "prereqs": ["en.canon.b2.031"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["b2-reference-and-substitution"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": ["b2-reference-and-substitution"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Reference and substitution", "en": "Reference and substitution"},
+    "native_title": "Reference and substitution",
+    "level": {"framework": "cefr", "value": "B2", "rank": 4},
+    "summary": {
+      "vi": "Chủ điểm này dạy cách dùng đại từ, one/ones, do so và so/not để thay thế cho từ hoặc cụm từ đã xuất hiện trước đó, giúp câu văn liên kết mà không lặp lại.",
+      "en": "This point teaches how to use pronouns, one/ones, do so, and so/not to replace words or phrases already mentioned, keeping the text cohesive without repetition."
+    },
+    "sub": {"vi": "thay thế và quy chiếu", "en": "reference and substitution"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nhắc lại một danh từ đếm được đã nhắc đến mà không lặp lại nó, dùng one/ones.",
+      "en": "When you want to refer back to a countable noun already mentioned without repeating it, use one/ones."
+    },
+    {
+      "vi": "Khi bạn muốn thay thế cho một hành động hoặc cụm động từ đã nói trước đó, dùng do so (trang trọng hơn) hoặc do it/that.",
+      "en": "When you want to replace an action or verb phrase already mentioned, use do so (more formal) or do it/that."
+    },
+    {
+      "vi": "Khi bạn muốn thay thế cho một mệnh đề sau các động từ như think, hope, believe, suppose, dùng so (khẳng định) hoặc not (phủ định).",
+      "en": "When you want to substitute a clause after verbs like think, hope, believe, suppose, use so (affirmative) or not (negative)."
+    },
+    {
+      "vi": "Khi bạn muốn tránh lặp lại một danh từ không đếm được, dùng some hoặc lượng từ phù hợp thay vì one.",
+      "en": "When you want to avoid repeating an uncountable noun, use some or a suitable quantifier instead of one."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}},
+      {
+        "text": "one/ones",
+        "role": "object",
+        "label": {"vi": "đại từ thay thế danh từ đếm được", "en": "substitute for countable noun"},
+        "options": [{"text": "one"}, {"text": "ones"}]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "The old printer is slower than the new one.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 15, "role": "subject"},
+        {"start": 16, "end": 18, "role": "verb"},
+        {"start": 39, "end": 42, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "‘one’ thay thế cho ‘printer’ đã nhắc đến trước đó, tránh lặp lại danh từ.",
+        "en": "‘one’ substitutes for ‘printer’ mentioned earlier, avoiding repetition of the noun."
+      },
+      "translation": {"vi": "Máy in cũ chậm hơn máy mới.", "en": "The old printer is slower than the new one."}
+    },
+    {
+      "text": "She promised to reply and eventually did so.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 12, "role": "verb"},
+        {"start": 37, "end": 43, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "‘did so’ thay thế cho cụm động từ ‘reply’ đã nhắc đến, tránh lặp lại.",
+        "en": "‘did so’ substitutes for the verb phrase ‘reply’ mentioned earlier, avoiding repetition."
+      },
+      "translation": {
+        "vi": "Cô ấy hứa trả lời và cuối cùng đã làm.",
+        "en": "She promised to reply and eventually did so."
+      }
+    },
+    {
+      "text": "Will prices fall? I hope so.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 18, "end": 19, "role": "subject"},
+        {"start": 20, "end": 24, "role": "verb"},
+        {"start": 25, "end": 27, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "‘so’ thay thế cho mệnh đề ‘prices will fall’, tránh lặp lại toàn bộ mệnh đề.",
+        "en": "‘so’ substitutes for the clause ‘prices will fall’, avoiding repetition of the whole clause."
+      },
+      "translation": {"vi": "Giá sẽ giảm chứ? Tôi hy vọng vậy.", "en": "Will prices fall? I hope so."}
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "I need new furniture, so I'll buy a new one.",
+      "right": "I need new furniture, so I'll buy some.",
+      "reason": {
+        "vi": "‘Furniture’ là danh từ không đếm được, không thể thay thế bằng ‘one’ vì ‘one’ chỉ thay cho danh từ đếm được số ít.",
+        "en": "‘Furniture’ is an uncountable noun, so it cannot be replaced by ‘one’ because ‘one’ substitutes only a singular countable noun."
+      },
+      "error_tag": "other",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "I don't like the red shoes; I prefer the blue ___.",
+      "options": [{"text": "ones", "error_tag": null}, {"text": "one", "error_tag": "agreement"}],
+      "answer": 0,
+      "explain": {
+        "vi": "‘Shoes’ là danh từ đếm được số nhiều, nên dùng ‘ones’ để thay thế.",
+        "en": "‘Shoes’ is a plural countable noun, so ‘ones’ is used to substitute it."
+      }
+    },
+    {
+      "q": "She said she would help and she ___.",
+      "options": [{"text": "did so", "error_tag": null}, {"text": "did it so", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {
+        "vi": "‘Did so’ là cách thay thế đúng cho cụm động từ ‘help’ đã nhắc đến.",
+        "en": "‘Did so’ is the correct substitution for the verb phrase ‘help’ mentioned earlier."
+      }
+    },
+    {
+      "q": "Will it rain tomorrow? I hope ___.",
+      "options": [{"text": "not", "error_tag": null}, {"text": "no", "error_tag": "word_choice"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau ‘hope’ để thay thế mệnh đề phủ định, dùng ‘not’, không dùng ‘no’.",
+        "en": "After ‘hope’ to substitute a negative clause, use ‘not’, not ‘no’."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu so sánh hai đồ vật cùng loại, dùng ‘one’ hoặc ‘ones’ để thay thế cho danh từ đã nhắc đến.",
+      "en": "Write a sentence comparing two items of the same kind, using ‘one’ or ‘ones’ to substitute for the noun already mentioned."
+    },
+    "placeholder": "The new phone is better than the old ...",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"role": "object", "any_of": ["one", "ones", "did so", "so"]}]},
+    "sample": {"text": "The new phone is better than the old one."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790831307",
+    "generated_at": "2026-10-01T05:08:27Z",
+    "r5_source": {
+      "ids": ["b2-reference-and-substitution"],
+      "content_version": 2,
+      "content_hash": "ce72357ab8e3f1f5b791d5023d254cb5bf8b4850914d8b33d00c76ea42b1b424",
+      "corrections": [
+        {
+          "r5_id": "b2-reference-and-substitution",
+          "issue": "R5 includes a contrast with 'Complex quantifiers' and 'Ellipsis' but the point's compare list is empty; the contrast is not required here.",
+          "fix": "Removed the contrast entries; compare array is empty as specified."
+        },
+        {
+          "r5_id": "b2-reference-and-substitution",
+          "issue": "R5's example 'The first proposal focused on cost; the latter focused on quality.' uses 'the latter' which is not covered by the formula (one/ones, do so, so/not) and is outside the point's core substitution patterns.",
+          "fix": "Replaced with an example using 'so' after 'hope' to stay within the taught forms."
+        },
+        {
+          "r5_id": "b2-reference-and-substitution",
+          "issue": "R5's mistake 'Tom told Ben that he was wrong.' is about pronoun ambiguity, not about the substitution patterns taught (one/ones, do so, so/not).",
+          "fix": "Replaced with a mistake about using 'one' for an uncountable noun, which directly relates to the point."
+        },
+        {
+          "r5_id": "b2-reference-and-substitution",
+          "issue": "R5's rules mention 'do so' but do not specify its register or that it is not a natural replacement for every verb phrase.",
+          "fix": "Added a note in when_to_use that 'do so' is more formal and provided a clear example."
+        }
+      ]
+    },
+    "metadata_stale": true
+  },
+  "review": null
+}

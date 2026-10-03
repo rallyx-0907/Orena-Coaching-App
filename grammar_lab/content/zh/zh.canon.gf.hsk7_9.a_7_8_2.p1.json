@@ -1,0 +1,300 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk7_9.a_7_8_2.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.reason_result",
+  "level": {"framework": "hsk3", "value": "9", "rank": 9},
+  "prereqs": ["zh.canon.gf.hsk7_9.a_7_5_2_8.p1"],
+  "contrasts": [],
+  "error_tags": ["particle"],
+  "source_refs": {"gf0025": ["gf0025.hsk7_9.147", "gf0025.hsk7_9.148"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {
+      "vi": "Ngữ pháp tiếng Trung: 联合关系：并列句群、承接句群、递进句群、选择句群、解说句群、总括句群",
+      "en": "Chinese grammar: 联合关系：并列句群、承接句群、递进句群、选择句群、解说句群、总括句群"
+    },
+    "native_title": "联合关系：并列句群、承接句群、递进句群、选择句群、解说句群、总括句群",
+    "level": {"framework": "hsk3", "value": "9", "rank": 9},
+    "summary": {
+      "vi": "Điểm ngữ pháp này trình bày cách nối các câu thành đoạn văn bằng quan hệ liên hợp: liệt kê, tiếp nối, tăng tiến, lựa chọn, giải thích và tổng kết.",
+      "en": "This grammar point shows how to link sentences into paragraphs with coordinate relations: listing, sequencing, progression, choice, explanation, and summary."
+    },
+    "sub": {"vi": "quan hệ liên hợp", "en": "coordinate relations"},
+    "native_title_pinyin": [
+      "lián",
+      "hé",
+      "guān",
+      "xì",
+      "",
+      "bìng",
+      "liè",
+      "jù",
+      "qún",
+      "",
+      "chéng",
+      "jiē",
+      "jù",
+      "qún",
+      "",
+      "dì",
+      "jìn",
+      "jù",
+      "qún",
+      "",
+      "xuǎn",
+      "zé",
+      "jù",
+      "qún",
+      "",
+      "jiě",
+      "shuō",
+      "jù",
+      "qún",
+      "",
+      "zǒng",
+      "kuò",
+      "jù",
+      "qún"
+    ]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn liệt kê hai hay nhiều sự việc ngang hàng trong một đoạn văn.",
+      "en": "When you want to list two or more parallel facts in a paragraph."
+    },
+    {
+      "vi": "Khi bạn muốn kể các hành động theo thứ tự trước sau.",
+      "en": "When you want to narrate actions in sequence."
+    },
+    {
+      "vi": "Khi bạn muốn nhấn mạnh ý sau mạnh hơn ý trước.",
+      "en": "When you want to emphasize that the later point is stronger than the earlier one."
+    },
+    {
+      "vi": "Khi bạn muốn đưa ra lựa chọn, giải thích hoặc tóm tắt ý đã nói.",
+      "en": "When you want to present a choice, explain, or summarize what was said."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "分句",
+        "role": "other",
+        "label": {"vi": "phân câu", "en": "clause"},
+        "pinyin": ["fēn", "jù"]
+      },
+      {
+        "text": "并列/承接/递进/选择/解说/总括",
+        "role": "connector",
+        "label": {"vi": "quan hệ liên hợp", "en": "coordinate relation"},
+        "options": [
+          {"text": "并列", "pinyin": ["bìng", "liè"]},
+          {"text": "承接", "pinyin": ["chéng", "jiē"]},
+          {"text": "递进", "pinyin": ["dì", "jìn"]},
+          {"text": "选择", "pinyin": ["xuǎn", "zé"]},
+          {"text": "解说", "pinyin": ["jiě", "shuō"]},
+          {"text": "总括", "pinyin": ["zǒng", "kuò"]}
+        ],
+        "pinyin": [
+          "bìng",
+          "liè",
+          "",
+          "chéng",
+          "jiē",
+          "",
+          "dì",
+          "jìn",
+          "",
+          "xuǎn",
+          "zé",
+          "",
+          "jiě",
+          "shuō",
+          "",
+          "zǒng",
+          "kuò"
+        ]
+      },
+      {
+        "text": "分句",
+        "role": "other",
+        "label": {"vi": "phân câu", "en": "clause"},
+        "pinyin": ["fēn", "jù"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "他喜欢读书，也喜欢运动。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 5, "role": "other"},
+        {"start": 6, "end": 7, "role": "connector"},
+        {"start": 7, "end": 11, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "“也” nối hai sự việc ngang hàng, thuộc quan hệ liên hợp loại liệt kê.",
+        "en": "“也” links two parallel facts, a listing type of coordinate relation."
+      },
+      "translation": {
+        "vi": "Anh ấy thích đọc sách, cũng thích vận động.",
+        "en": "He likes reading and also likes sports."
+      },
+      "pinyin": ["tā", "xǐ", "huān", "dú", "shū", "", "yě", "xǐ", "huān", "yùn", "dòng", ""]
+    },
+    {
+      "text": "他先写完作业，然后去打球。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 6, "role": "other"},
+        {"start": 7, "end": 9, "role": "connector"},
+        {"start": 9, "end": 12, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "“然后” nối hai hành động theo thứ tự trước sau, thuộc quan hệ liên hợp loại tiếp nối.",
+        "en": "“然后” links two actions in sequence, a sequencing type of coordinate relation."
+      },
+      "translation": {
+        "vi": "Anh ấy làm xong bài tập trước, sau đó đi chơi bóng.",
+        "en": "He finished his homework first, and then went to play ball."
+      },
+      "pinyin": ["tā", "xiān", "xiě", "wán", "zuò", "yè", "", "rán", "hòu", "qù", "dǎ", "qiú", ""]
+    },
+    {
+      "text": "这个办法不但省时间，而且省钱。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 9, "role": "other"},
+        {"start": 10, "end": 12, "role": "connector"},
+        {"start": 12, "end": 14, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "“不但……而且……” nối hai ý tăng tiến, ý sau mạnh hơn ý trước.",
+        "en": "“不但……而且……” links two points in progression, with the second stronger than the first."
+      },
+      "translation": {
+        "vi": "Cách này không những tiết kiệm thời gian mà còn tiết kiệm tiền.",
+        "en": "This method not only saves time but also saves money."
+      },
+      "pinyin": [
+        "zhè",
+        "gè",
+        "bàn",
+        "fǎ",
+        "bù",
+        "dàn",
+        "shěng",
+        "shí",
+        "jiān",
+        "",
+        "ér",
+        "qiě",
+        "shěng",
+        "qián",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "他喜欢读书，也喜欢运动吧。",
+      "right": "他喜欢读书，也喜欢运动。",
+      "reason": {
+        "vi": "Người học tiếng Việt quen dùng “nhé/nhá” ở cuối câu liệt kê nên thêm “吧” vào câu trần thuật, nhưng “吧” chỉ dùng cho câu đề nghị hoặc phỏng đoán, không dùng trong quan hệ liên hợp.",
+        "en": "Vietnamese learners often add “吧” to a listing sentence because Vietnamese uses sentence-final particles like “nhé/nhá”, but “吧” is only for suggestions or guesses, not for coordinate relations."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong_pinyin": ["tā", "xǐ", "huān", "dú", "shū", "", "yě", "xǐ", "huān", "yùn", "dòng", "ba", ""],
+      "right_pinyin": ["tā", "xǐ", "huān", "dú", "shū", "", "yě", "xǐ", "huān", "yùn", "dòng", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "他喜欢读书，___喜欢运动。",
+      "options": [
+        {"text": "也", "error_tag": null, "pinyin": ["yě"]},
+        {"text": "吧", "error_tag": "particle", "pinyin": ["ba"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "“也” nối hai sự việc ngang hàng trong quan hệ liên hợp loại liệt kê; “吧” là trợ từ cuối câu, không dùng để nối.",
+        "en": "“也” links two parallel facts in a listing coordinate relation; “吧” is a sentence-final particle and cannot link clauses."
+      },
+      "q_pinyin": ["tā", "xǐ", "huān", "dú", "shū", "", "", "", "", "xǐ", "huān", "yùn", "dòng", ""]
+    },
+    {
+      "q": "他先写完作业，___去打球。",
+      "options": [
+        {"text": "然后", "error_tag": null, "pinyin": ["rán", "hòu"]},
+        {"text": "但是", "error_tag": "conjunction", "pinyin": ["dàn", "shì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "“然后” nối hai hành động theo thứ tự trước sau, thuộc quan hệ liên hợp loại tiếp nối; “但是” biểu thị quan hệ chuyển ngoặt, không phù hợp ở đây.",
+        "en": "“然后” links two actions in sequence, a sequencing coordinate relation; “但是” marks contrast and does not fit here."
+      },
+      "q_pinyin": ["tā", "xiān", "xiě", "wán", "zuò", "yè", "", "", "", "", "qù", "dǎ", "qiú", ""]
+    },
+    {
+      "q": "这个办法不但省时间，___省钱。",
+      "options": [
+        {"text": "而且", "error_tag": null, "pinyin": ["ér", "qiě"]},
+        {"text": "或者", "error_tag": "conjunction", "pinyin": ["huò", "zhě"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "“不但……而且……” biểu thị quan hệ tăng tiến, ý sau mạnh hơn ý trước; “或者” biểu thị lựa chọn, không phù hợp.",
+        "en": "“不但……而且……” marks progression, with the second point stronger; “或者” marks choice and does not fit."
+      },
+      "q_pinyin": [
+        "zhè",
+        "gè",
+        "bàn",
+        "fǎ",
+        "bù",
+        "dàn",
+        "shěng",
+        "shí",
+        "jiān",
+        "",
+        "",
+        "",
+        "",
+        "shěng",
+        "qián",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu kể hai việc bạn thích làm, dùng “也” để nối hai phân câu.",
+      "en": "Write one sentence about two things you like doing, using “也” to link the two clauses."
+    },
+    "placeholder": "我喜欢……，也喜欢……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"role": "connector", "any_of": ["也", "然后", "而且"]}]},
+    "sample": {
+      "text": "我喜欢看书，也喜欢听音乐。",
+      "pinyin": ["wǒ", "xǐ", "huān", "kàn", "shū", "", "yě", "xǐ", "huān", "tīng", "yīn", "yuè", ""]
+    },
+    "placeholder_pinyin": ["wǒ", "xǐ", "huān", "", "", "", "yě", "xǐ", "huān", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790834885",
+    "generated_at": "2026-10-01T06:08:05Z"
+  },
+  "review": null
+}

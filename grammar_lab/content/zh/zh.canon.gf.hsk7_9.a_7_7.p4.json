@@ -1,0 +1,327 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk7_9.a_7_7.p4",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.negation",
+  "level": {"framework": "hsk3", "value": "9", "rank": 9},
+  "prereqs": ["zh.canon.gf.hsk7_9.a_7_7.p3"],
+  "contrasts": [],
+  "error_tags": ["register"],
+  "source_refs": {"gf0025": ["gf0025.hsk7_9.144"]},
+  "point_type": "other",
+  "sequence": 3,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 要X有/没X，要Y有/没Y", "en": "Chinese grammar: 要X有/没X，要Y有/没Y"},
+    "native_title": "要X有/没X，要Y有/没Y",
+    "level": {"framework": "hsk3", "value": "9", "rank": 9},
+    "summary": {
+      "vi": "Mẫu 要X有/没X，要Y有/没Y dùng để nói rằng trong hai thứ thì cái này có (hoặc không có) và cái kia cũng có (hoặc cũng không có), nhấn mạnh sự tương phản giữa hai vế.",
+      "en": "The pattern 要X有/没X，要Y有/没Y states that of two things, one is present (or absent) and the other is present (or absent) too, highlighting the contrast between the two halves."
+    },
+    "sub": {"vi": "tương phản có/không", "en": "contrastive have/not-have"},
+    "native_title_pinyin": ["yào", "", "yǒu", "", "méi", "", "", "yào", "", "yǒu", "", "méi", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn so sánh hai thứ và nói rằng cả hai đều có, hoặc cả hai đều không có.",
+      "en": "When you want to compare two things and say that both are present, or both are absent."
+    },
+    {
+      "vi": "Khi bạn muốn nhấn mạnh rằng không phải chỉ một vế đúng mà cả hai vế đều đúng như nhau.",
+      "en": "When you want to stress that it is not just one half that holds but both halves hold equally."
+    },
+    {
+      "vi": "Khi bạn đang tranh luận hoặc giải thích và cần đối chiếu hai khả năng rõ ràng.",
+      "en": "When you are arguing or explaining and need to set two possibilities side by side clearly."
+    },
+    {
+      "vi": "Khi bạn muốn nói về hai mặt của cùng một tình huống, ví dụ tiền và thời gian, ưu điểm và nhược điểm.",
+      "en": "When you want to talk about two sides of the same situation, for example money and time, or advantages and disadvantages."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "要",
+        "role": "marker",
+        "label": {"vi": "dấu hiệu mở đầu vế", "en": "clause-opening marker"},
+        "pinyin": ["yào"]
+      },
+      {
+        "text": "X",
+        "role": "object",
+        "label": {"vi": "sự vật thứ nhất", "en": "first item"},
+        "pinyin": [""]
+      },
+      {
+        "text": "有/没",
+        "role": "verb",
+        "label": {"vi": "có / không có", "en": "have / not have"},
+        "options": [{"text": "有", "pinyin": ["yǒu"]}, {"text": "没", "pinyin": ["méi"]}],
+        "pinyin": ["yǒu", "", "méi"]
+      },
+      {
+        "text": "X",
+        "role": "object",
+        "label": {"vi": "sự vật thứ nhất (lặp lại)", "en": "first item (repeated)"},
+        "pinyin": [""]
+      },
+      {
+        "text": "要",
+        "role": "marker",
+        "label": {"vi": "dấu hiệu mở đầu vế thứ hai", "en": "second-clause marker"},
+        "pinyin": ["yào"]
+      },
+      {
+        "text": "Y",
+        "role": "object",
+        "label": {"vi": "sự vật thứ hai", "en": "second item"},
+        "pinyin": [""]
+      },
+      {
+        "text": "有/没",
+        "role": "verb",
+        "label": {"vi": "có / không có", "en": "have / not have"},
+        "options": [{"text": "有", "pinyin": ["yǒu"]}, {"text": "没", "pinyin": ["méi"]}],
+        "pinyin": ["yǒu", "", "méi"]
+      },
+      {
+        "text": "Y",
+        "role": "object",
+        "label": {"vi": "sự vật thứ hai (lặp lại)", "en": "second item (repeated)"},
+        "pinyin": [""]
+      }
+    ],
+    "variants": {
+      "negative": [
+        {
+          "text": "要",
+          "role": "marker",
+          "label": {"vi": "dấu hiệu mở đầu vế", "en": "clause-opening marker"},
+          "pinyin": ["yào"]
+        },
+        {
+          "text": "X",
+          "role": "object",
+          "label": {"vi": "sự vật thứ nhất", "en": "first item"},
+          "pinyin": [""]
+        },
+        {
+          "text": "没",
+          "role": "verb",
+          "label": {"vi": "không có", "en": "not have"},
+          "pinyin": ["méi"]
+        },
+        {
+          "text": "X",
+          "role": "object",
+          "label": {"vi": "sự vật thứ nhất (lặp lại)", "en": "first item (repeated)"},
+          "pinyin": [""]
+        },
+        {
+          "text": "要",
+          "role": "marker",
+          "label": {"vi": "dấu hiệu mở đầu vế thứ hai", "en": "second-clause marker"},
+          "pinyin": ["yào"]
+        },
+        {
+          "text": "Y",
+          "role": "object",
+          "label": {"vi": "sự vật thứ hai", "en": "second item"},
+          "pinyin": [""]
+        },
+        {
+          "text": "没",
+          "role": "verb",
+          "label": {"vi": "không có", "en": "not have"},
+          "pinyin": ["méi"]
+        },
+        {
+          "text": "Y",
+          "role": "object",
+          "label": {"vi": "sự vật thứ hai (lặp lại)", "en": "second item (repeated)"},
+          "pinyin": [""]
+        }
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "要钱有钱，要时间有时间。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "marker"},
+        {"start": 1, "end": 2, "role": "object"},
+        {"start": 2, "end": 3, "role": "verb"},
+        {"start": 3, "end": 4, "role": "object"},
+        {"start": 5, "end": 6, "role": "marker"},
+        {"start": 6, "end": 8, "role": "object"},
+        {"start": 8, "end": 9, "role": "verb"},
+        {"start": 9, "end": 11, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Hai vế đều dùng 有, nghĩa là cả tiền và thời gian đều có.",
+        "en": "Both halves use 有, meaning both money and time are available."
+      },
+      "translation": {
+        "vi": "Có tiền thì có tiền, có thời gian thì có thời gian.",
+        "en": "If it is money, there is money; if it is time, there is time."
+      },
+      "pinyin": ["yào", "qián", "yǒu", "qián", "", "yào", "shí", "jiān", "yǒu", "shí", "jiān", ""]
+    },
+    {
+      "text": "要钱没钱，要时间没时间。",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "marker"},
+        {"start": 1, "end": 2, "role": "object"},
+        {"start": 2, "end": 3, "role": "verb"},
+        {"start": 3, "end": 4, "role": "object"},
+        {"start": 5, "end": 6, "role": "marker"},
+        {"start": 6, "end": 8, "role": "object"},
+        {"start": 8, "end": 9, "role": "verb"},
+        {"start": 9, "end": 11, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Hai vế đều dùng 没, nghĩa là cả tiền và thời gian đều không có.",
+        "en": "Both halves use 没, meaning neither money nor time is available."
+      },
+      "translation": {
+        "vi": "Tiền thì không có, thời gian cũng không có.",
+        "en": "Money is lacking, and time is lacking too."
+      },
+      "pinyin": ["yào", "qián", "méi", "qián", "", "yào", "shí", "jiān", "méi", "shí", "jiān", ""]
+    },
+    {
+      "text": "要经验有经验，要学历有学历。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "marker"},
+        {"start": 1, "end": 3, "role": "object"},
+        {"start": 3, "end": 4, "role": "verb"},
+        {"start": 4, "end": 6, "role": "object"},
+        {"start": 7, "end": 8, "role": "marker"},
+        {"start": 8, "end": 10, "role": "object"},
+        {"start": 10, "end": 11, "role": "verb"},
+        {"start": 11, "end": 13, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Cả hai vế đều khẳng định, dùng để nói ứng viên có đủ cả hai điều kiện.",
+        "en": "Both halves are affirmative, saying the candidate has both qualifications."
+      },
+      "translation": {
+        "vi": "Kinh nghiệm thì có kinh nghiệm, bằng cấp thì có bằng cấp.",
+        "en": "Experience, there is experience; qualifications, there are qualifications."
+      },
+      "pinyin": ["yào", "jīng", "yàn", "yǒu", "jīng", "yàn", "", "yào", "xué", "lì", "yǒu", "xué", "lì", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "要钱有钱，要时间有钱。",
+      "right": "要钱有钱，要时间有时间。",
+      "reason": {
+        "vi": "Người học lặp lại động từ của vế trước thay vì lặp lại danh từ của vế sau, khiến câu mất tính đối xứng và sai nghĩa.",
+        "en": "The learner repeats the verb from the first half instead of repeating the noun of the second half, which breaks the symmetry and changes the meaning."
+      },
+      "error_tag": "register",
+      "l1": ["vi"],
+      "wrong_pinyin": ["yào", "qián", "yǒu", "qián", "", "yào", "shí", "jiān", "yǒu", "qián", ""],
+      "right_pinyin": ["yào", "qián", "yǒu", "qián", "", "yào", "shí", "jiān", "yǒu", "shí", "jiān", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "要钱___钱，要时间有时间。",
+      "options": [
+        {"text": "有", "error_tag": null, "pinyin": ["yǒu"]},
+        {"text": "没", "error_tag": "word_choice", "pinyin": ["méi"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Vế thứ hai dùng 有, nên vế thứ nhất cũng phải dùng 有 để hai vế đối xứng.",
+        "en": "The second half uses 有, so the first half must also use 有 to keep the two halves parallel."
+      },
+      "q_pinyin": ["yào", "qián", "", "", "", "qián", "", "yào", "shí", "jiān", "yǒu", "shí", "jiān", ""]
+    },
+    {
+      "q": "要经验有经验，要学历___学历。",
+      "options": [
+        {"text": "有", "error_tag": null, "pinyin": ["yǒu"]},
+        {"text": "没", "error_tag": "word_choice", "pinyin": ["méi"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Vế trước dùng 有, nên vế sau cũng dùng 有 để giữ cấu trúc song song.",
+        "en": "The first half uses 有, so the second half also uses 有 to keep the structure parallel."
+      },
+      "q_pinyin": [
+        "yào",
+        "jīng",
+        "yàn",
+        "yǒu",
+        "jīng",
+        "yàn",
+        "",
+        "yào",
+        "xué",
+        "lì",
+        "",
+        "",
+        "",
+        "xué",
+        "lì",
+        ""
+      ]
+    },
+    {
+      "q": "要钱没钱，要时间___时间。",
+      "options": [
+        {"text": "没", "error_tag": null, "pinyin": ["méi"]},
+        {"text": "有", "error_tag": "word_choice", "pinyin": ["yǒu"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Vế trước dùng 没, nên vế sau cũng phải dùng 没 để hai vế cùng phủ định.",
+        "en": "The first half uses 没, so the second half must also use 没 so both halves are negative."
+      },
+      "q_pinyin": ["yào", "qián", "méi", "qián", "", "yào", "shí", "jiān", "", "", "", "shí", "jiān", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng mẫu 要X有/没X，要Y有/没Y để nói về hai thứ bạn có hoặc không có.",
+      "en": "Write one sentence using 要X有/没X，要Y有/没Y about two things you have or do not have."
+    },
+    "placeholder": "要……有……，要……有……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "marker", "any_of": ["要"]},
+        {"role": "verb", "any_of": ["有", "没"]},
+        {"role": "marker", "any_of": ["要"]},
+        {"role": "verb", "any_of": ["有", "没"]}
+      ]
+    },
+    "sample": {
+      "text": "要钱有钱，要时间有时间。",
+      "pinyin": ["yào", "qián", "yǒu", "qián", "", "yào", "shí", "jiān", "yǒu", "shí", "jiān", ""]
+    },
+    "placeholder_pinyin": ["yào", "", "", "yǒu", "", "", "", "yào", "", "", "yǒu", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790834886",
+    "generated_at": "2026-10-01T06:08:06Z"
+  },
+  "review": null
+}

@@ -1,0 +1,220 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.c2.003",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.quantity",
+  "level": {"framework": "cefr", "value": "C2", "rank": 6},
+  "prereqs": [],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["c2-negation-and-quantifier-scope"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["c2-negation-and-quantifier-scope"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "phủ định and từ chỉ lượng scope", "en": "Negation and quantifier scope"},
+    "native_title": "Negation and quantifier scope",
+    "level": {"framework": "cefr", "value": "C2", "rank": 6},
+    "summary": {
+      "vi": "Vị trí của từ phủ định so với từ chỉ lượng quyết định nghĩa của cả câu: 'not all' khác 'no', 'not many' khác 'few', và phủ định có thể nằm trong mệnh đề chính hoặc mệnh đề phụ.",
+      "en": "The position of the negator relative to a quantifier decides the meaning of the whole sentence: 'not all' differs from 'no', 'not many' differs from 'few', and negation can sit in the main clause or a subordinate one."
+    },
+    "sub": {"vi": "phủ định và phạm vi", "en": "negation and scope"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói 'một phần nhưng không phải tất cả' — dùng 'not all', không dùng 'all ... not'.",
+      "en": "When you mean 'some but not all' — use 'not all', not 'all ... not'."
+    },
+    {
+      "vi": "Khi bạn muốn nói số lượng rất ít và mang sắc thái tiêu cực — dùng 'few' hoặc 'not many' tùy mức độ nhấn mạnh.",
+      "en": "When you want to say the number is small with a negative slant — use 'few' or 'not many' depending on emphasis."
+    },
+    {
+      "vi": "Khi phủ định áp lên một động từ tình thái hoặc một mệnh đề phụ, và bạn cần tránh cách hiểu hai nghĩa.",
+      "en": "When negation applies to a modal verb or a subordinate clause and you need to avoid a double reading."
+    },
+    {
+      "vi": "Khi bạn muốn nhấn mạnh một nhóm cụ thể bằng 'only' kèm phủ định — 'only two teams did not submit'.",
+      "en": "When you want to single out a specific group with 'only' plus negation — 'only two teams did not submit'."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "not all",
+        "role": "marker",
+        "label": {"vi": "phủ định một phần", "en": "partial negation"}
+      },
+      {"text": "N", "role": "subject", "label": {"vi": "danh từ chỉ nhóm", "en": "group noun"}},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ chính", "en": "main verb"}},
+      {"text": "O", "role": "object", "label": {"vi": "tân ngữ", "en": "object"}, "optional": true}
+    ],
+    "variants": {
+      "negative": [
+        {"text": "not", "role": "marker", "label": {"vi": "phủ định", "en": "negator"}},
+        {"text": "V", "role": "verb", "label": {"vi": "động từ chính", "en": "main verb"}},
+        {
+          "text": "O",
+          "role": "object",
+          "label": {"vi": "tân ngữ", "en": "object"},
+          "optional": true
+        }
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "Not all participants completed the second survey.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 7, "role": "marker"},
+        {"start": 8, "end": 20, "role": "subject"},
+        {"start": 21, "end": 30, "role": "verb"},
+        {"start": 31, "end": 48, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Phủ định đứng trước lượng từ 'all' để tạo nghĩa 'một phần nhưng không phải tất cả'.",
+        "en": "The negator precedes the quantifier 'all' to mean 'some but not all'."
+      },
+      "translation": {
+        "vi": "Không phải tất cả người tham gia đều hoàn thành khảo sát thứ hai.",
+        "en": "Not all participants completed the second survey."
+      }
+    },
+    {
+      "text": "Few participants reported serious problems.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "marker"},
+        {"start": 4, "end": 16, "role": "subject"},
+        {"start": 17, "end": 25, "role": "verb"},
+        {"start": 26, "end": 42, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "'Few' đứng một mình mang nghĩa 'rất ít' và hàm ý tiêu cực, khác với 'a few' (một vài).",
+        "en": "'Few' on its own means 'not many' with a negative slant, unlike 'a few' (some)."
+      },
+      "translation": {
+        "vi": "Rất ít người tham gia báo cáo vấn đề nghiêm trọng.",
+        "en": "Few participants reported serious problems."
+      }
+    },
+    {
+      "text": "The change did not significantly reduce costs.",
+      "form": "negative",
+      "spans": [
+        {"start": 11, "end": 18, "role": "marker"},
+        {"start": 19, "end": 39, "role": "verb"},
+        {"start": 40, "end": 45, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Phủ định đứng trước trạng từ 'significantly', nên nghĩa là 'không giảm đáng kể', không phải 'giảm nhưng không đáng kể'.",
+        "en": "The negator precedes the adverb 'significantly', so the meaning is 'did not reduce significantly', not 'reduced but not significantly'."
+      },
+      "translation": {
+        "vi": "Thay đổi này không làm giảm chi phí một cách đáng kể.",
+        "en": "The change did not significantly reduce costs."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "All participants did not complete the survey.",
+      "right": "Not all participants completed the survey.",
+      "reason": {
+        "vi": "Trong tiếng Anh, 'all ... not' thường bị hiểu là 'không ai cả' hoặc gây mơ hồ; muốn nói 'một phần nhưng không phải tất cả' phải đặt 'not' trước 'all'.",
+        "en": "In English, 'all ... not' is usually read as 'none' or is ambiguous; to mean 'some but not all', 'not' must precede 'all'."
+      },
+      "error_tag": "other",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "___ of the applicants met the deadline, so we extended it.",
+      "options": [{"text": "Not all", "error_tag": null}, {"text": "All not", "error_tag": "word_choice"}],
+      "answer": 0,
+      "explain": {
+        "vi": "'Not all' đặt phủ định trước lượng từ để chỉ một phần. 'All not' không phải là cụm từ tiếng Anh chuẩn.",
+        "en": "'Not all' places the negator before the quantifier to mean a subset. 'All not' is not a standard English phrase."
+      }
+    },
+    {
+      "q": "___ students attended the lecture, so the room felt empty.",
+      "options": [{"text": "Few", "error_tag": null}, {"text": "A few", "error_tag": "word_choice"}],
+      "answer": 0,
+      "explain": {
+        "vi": "'Few' không có mạo từ mang nghĩa 'rất ít' và sắc thái tiêu cực, phù hợp với 'room felt empty'. 'A few' nghĩa là 'một vài', sắc thái tích cực hơn.",
+        "en": "'Few' without an article means 'not many' with a negative slant, matching 'the room felt empty'. 'A few' means 'some', with a more positive slant."
+      }
+    },
+    {
+      "q": "The new policy ___ apply to part-time staff, so they were exempt.",
+      "options": [
+        {"text": "did not", "error_tag": null},
+        {"text": "not did", "error_tag": "sentence_structure"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Trợ động từ 'did' phải đứng trước 'not' trong câu phủ định quá khứ đơn. 'Not did' đảo ngược trật tự sai.",
+        "en": "The auxiliary 'did' must precede 'not' in a past simple negative. 'Not did' reverses the order incorrectly."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một nhóm người bạn biết, dùng 'not all' hoặc 'few' để nói rằng chỉ một phần trong số họ làm điều gì đó.",
+      "en": "Write one sentence about a group of people you know, using 'not all' or 'few' to say that only a subset of them did something."
+    },
+    "placeholder": "Not all of my colleagues ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "marker", "any_of": ["not all", "few", "not many"]},
+        {
+          "role": "subject",
+          "regex": "(?i)\\b(of\\s+)?(my|the|our|their|his|her|its|these|those|\\w+)\\b"
+        },
+        {"role": "verb", "regex": "(?i)\\b\\w+(ed|s|ing)?\\b"}
+      ]
+    },
+    "sample": {"text": "Not all of my colleagues attended the meeting."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790831587",
+    "generated_at": "2026-10-01T05:13:07Z",
+    "r5_source": {
+      "ids": ["c2-negation-and-quantifier-scope"],
+      "content_version": 2,
+      "content_hash": "9adc6a655ac9144c831997586e5bacf2a65a3b10e0670e02eaa12965ca1c09fe",
+      "corrections": [
+        {
+          "r5_id": "c2-negation-and-quantifier-scope",
+          "issue": "R5's example 'The change did not significantly reduce costs' was listed under affirmative examples but is a negative sentence.",
+          "fix": "Moved it to the negative form and marked its form as 'negative' in the examples array."
+        },
+        {
+          "r5_id": "c2-negation-and-quantifier-scope",
+          "issue": "R5's mistake entry 'The policy may not apply' was labelled incorrect, but the sentence is grammatical; the problem is only ambiguity, not ungrammaticality.",
+          "fix": "Replaced it with a genuine learner error: 'All participants did not complete the survey' for the intended meaning 'not all'."
+        },
+        {
+          "r5_id": "c2-negation-and-quantifier-scope",
+          "issue": "R5 had no formula, no spans, no quick practice, and no personal production task.",
+          "fix": "Added the abstract formula for 'not all' and 'not many', span-annotated examples, three cloze questions, and a personal production card with a deterministic pattern rule."
+        }
+      ]
+    }
+  },
+  "review": null
+}

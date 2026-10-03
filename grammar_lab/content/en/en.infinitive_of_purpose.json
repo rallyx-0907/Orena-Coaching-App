@@ -1,0 +1,201 @@
+{
+  "schema_version": "0.4",
+  "id": "en.infinitive_of_purpose",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.verb_patterns",
+  "level": {"framework": "cefr", "value": "A2", "rank": 2},
+  "prereqs": ["en.infinitive_after_want_plan_need"],
+  "contrasts": ["en.conjunctions.because_so"],
+  "error_tags": ["word_form"],
+  "source_refs": {"r5": ["a2-infinitive-of-purpose"]},
+  "point_type": "other",
+  "sequence": 3,
+  "aliases": ["a2-infinitive-of-purpose"],
+  "source_anchors": {"status": "anchored", "items": [{"source": "core_inventory", "code": "87", "level": "A2"}]},
+  "header": {
+    "title": {"vi": "To + V chỉ mục đích", "en": "To + infinitive of purpose"},
+    "native_title": "To + infinitive of purpose",
+    "level": {"framework": "cefr", "value": "A2", "rank": 2},
+    "summary": {
+      "vi": "Dùng to + động từ nguyên mẫu để nêu mục đích của hành động chính.",
+      "en": "Use to + base verb to state the purpose of the main action."
+    },
+    "sub": {"vi": "mục đích", "en": "purpose"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn trả lời câu hỏi \"để làm gì?\" cho hành động trước đó.",
+      "en": "When you want to answer the question \"why?\" for the action before it."
+    },
+    {
+      "vi": "Khi hành động thứ hai là mục tiêu hoặc ý định của hành động thứ nhất.",
+      "en": "When the second action is the goal or intention of the first action."
+    },
+    {
+      "vi": "Khi bạn muốn nhấn mạnh mục đích rõ hơn, dùng in order to + động từ nguyên mẫu.",
+      "en": "When you want to make the purpose more explicit, use in order to + base verb."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ chính", "en": "main verb"}},
+      {"text": "O", "role": "object", "label": {"vi": "tân ngữ", "en": "object"}, "optional": true},
+      {"text": "to", "role": "marker", "label": {"vi": "dấu hiệu mục đích", "en": "purpose marker"}},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên mẫu", "en": "base verb"}},
+      {"text": "O", "role": "object", "label": {"vi": "tân ngữ", "en": "object"}, "optional": true}
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "I called you to ask a question.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 2, "end": 8, "role": "verb"},
+        {"start": 9, "end": 12, "role": "object"},
+        {"start": 13, "end": 15, "role": "marker"},
+        {"start": 16, "end": 19, "role": "verb"},
+        {"start": 20, "end": 30, "role": "object"}
+      ],
+      "annotation": {"vi": "to ask nêu mục đích của việc gọi.", "en": "to ask states the purpose of the call."},
+      "translation": {"vi": "Tôi gọi bạn để hỏi một câu.", "en": "I called you to ask a question."}
+    },
+    {
+      "text": "She went to the shop to buy bread.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 8, "role": "verb"},
+        {"start": 9, "end": 20, "role": "object"},
+        {"start": 21, "end": 23, "role": "marker"},
+        {"start": 24, "end": 27, "role": "verb"},
+        {"start": 28, "end": 33, "role": "object"}
+      ],
+      "annotation": {"vi": "to buy nêu mục đích của việc đi.", "en": "to buy states the purpose of going."},
+      "translation": {"vi": "Cô ấy đi đến cửa hàng để mua bánh mì.", "en": "She went to the shop to buy bread."}
+    },
+    {
+      "text": "We use this app to practise vocabulary.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 3, "end": 6, "role": "verb"},
+        {"start": 7, "end": 15, "role": "object"},
+        {"start": 16, "end": 18, "role": "marker"},
+        {"start": 19, "end": 27, "role": "verb"},
+        {"start": 28, "end": 38, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "to practise nêu mục đích của việc dùng app.",
+        "en": "to practise states the purpose of using the app."
+      },
+      "translation": {
+        "vi": "Chúng tôi dùng ứng dụng này để luyện từ vựng.",
+        "en": "We use this app to practise vocabulary."
+      }
+    }
+  ],
+  "compare": [
+    {
+      "with": "en.conjunctions.because_so",
+      "this_example": "I went out to buy milk.",
+      "other_example": "I went out because I needed milk.",
+      "this_meaning": {
+        "vi": "to + động từ nguyên mẫu nêu mục đích: hành động thứ hai là lý do hướng tới của hành động thứ nhất.",
+        "en": "to + base verb states purpose: the second action is the intended goal of the first action."
+      },
+      "other_meaning": {
+        "vi": "because và so nêu nguyên nhân và kết quả: một việc xảy ra vì một việc khác, hoặc dẫn đến một việc khác.",
+        "en": "because and so state cause and result: one thing happens because of another, or leads to another."
+      }
+    }
+  ],
+  "common_mistakes": [
+    {
+      "wrong": "I went there for buy food.",
+      "right": "I went there to buy food.",
+      "reason": {
+        "vi": "for + động từ nguyên mẫu không dùng để nêu mục đích; tiếng Anh dùng to + động từ nguyên mẫu.",
+        "en": "for + base verb is not used for purpose; English uses to + base verb."
+      },
+      "error_tag": "word_form",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "She studies hard ___ pass the exam.",
+      "options": [{"text": "to", "error_tag": null}, {"text": "for", "error_tag": "preposition"}],
+      "answer": 0,
+      "explain": {
+        "vi": "to + động từ nguyên mẫu nêu mục đích; for không đứng trước động từ nguyên mẫu trong mẫu này.",
+        "en": "to + base verb states purpose; for does not come before a base verb in this pattern."
+      }
+    },
+    {
+      "q": "He got up early ___ catch the bus.",
+      "options": [{"text": "to", "error_tag": null}, {"text": "for", "error_tag": "preposition"}],
+      "answer": 0,
+      "explain": {
+        "vi": "to + động từ nguyên mẫu nêu mục đích của việc dậy sớm.",
+        "en": "to + base verb states the purpose of getting up early."
+      }
+    },
+    {
+      "q": "We use this app ___ practise vocabulary.",
+      "options": [{"text": "to", "error_tag": null}, {"text": "for", "error_tag": "preposition"}],
+      "answer": 0,
+      "explain": {
+        "vi": "to + động từ nguyên mẫu nêu mục đích của việc dùng app.",
+        "en": "to + base verb states the purpose of using the app."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về việc bạn làm gì đó để làm gì, dùng to + động từ nguyên mẫu.",
+      "en": "Write one sentence about something you do and why, using to + base verb."
+    },
+    "placeholder": "I went to the shop to ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "marker", "any_of": ["to"]}, {"role": "verb", "regex": "\\b[a-z]+\\b"}]
+    },
+    "sample": {"text": "I went to the shop to buy bread."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790830633",
+    "generated_at": "2026-10-01T04:57:13Z",
+    "r5_source": {
+      "ids": ["a2-infinitive-of-purpose"],
+      "content_version": 2,
+      "content_hash": "454de5c5da030cd7855ae57e35ecc74f4af20138b1eb4112b2e3dc3a7223ca97",
+      "corrections": [
+        {
+          "r5_id": "a2-infinitive-of-purpose",
+          "issue": "R5's contrast section mentions 'Infinitive after want/plan/need' but the required comparison for this point is with because/so.",
+          "fix": "Replaced the contrast with a comparison between purpose (to + base verb) and cause/result (because/so)."
+        },
+        {
+          "r5_id": "a2-infinitive-of-purpose",
+          "issue": "R5's mistake 'She studies to passing the exam' is not a typical Vietnamese learner error for this point; the common error is using for + base verb.",
+          "fix": "Replaced it with 'I went there for buy food' → 'I went there to buy food', which reflects the real L1 interference."
+        },
+        {
+          "r5_id": "a2-infinitive-of-purpose",
+          "issue": "R5's guided practice includes a combine task that is not part of the required schema.",
+          "fix": "Removed the combine task and kept only the fill and correct tasks as quick practice."
+        }
+      ]
+    }
+  },
+  "review": null
+}

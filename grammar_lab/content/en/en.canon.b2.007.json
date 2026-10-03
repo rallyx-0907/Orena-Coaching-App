@@ -1,0 +1,297 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b2.007",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.possibility",
+  "level": {"framework": "cefr", "value": "B2", "rank": 4},
+  "prereqs": ["en.modals.possibility"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["b2-modal-certainty-and-probability"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["b2-modal-certainty-and-probability"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {
+      "vi": "động từ khuyết thiếu certainty and probability",
+      "en": "Modal certainty and probability"
+    },
+    "native_title": "Modal certainty and probability",
+    "level": {"framework": "cefr", "value": "B2", "rank": 4},
+    "summary": {
+      "vi": "Dùng động từ khuyết thiếu để diễn tả mức độ chắc chắn hoặc khả năng của một suy đoán: must/can't cho suy luận mạnh, may/might/could cho khả năng yếu hơn, should cho điều được mong đợi.",
+      "en": "Use modal verbs to show how certain or probable a deduction is: must/can't for strong logical deduction, may/might/could for weaker possibility, and should for what is expected."
+    },
+    "sub": {"vi": "suy đoán và khả năng", "en": "deduction and probability"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn có bằng chứng rõ ràng và muốn kết luận gần như chắc chắn: dùng must hoặc can't.",
+      "en": "When you have clear evidence and want to draw a near-certain conclusion: use must or can't."
+    },
+    {
+      "vi": "Khi bạn chỉ thấy một khả năng, không chắc chắn: dùng may, might hoặc could.",
+      "en": "When you see only a possibility, not a certainty: use may, might or could."
+    },
+    {
+      "vi": "Khi bạn nói về điều được mong đợi hoặc theo kế hoạch: dùng should.",
+      "en": "When you talk about what is expected or scheduled: use should."
+    },
+    {
+      "vi": "Khi bạn muốn thêm mức độ chắc chắn vào một dự đoán: dùng will với trạng từ như probably, certainly.",
+      "en": "When you want to add a degree of certainty to a prediction: use will with adverbs such as probably or certainly."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {
+        "text": "modal",
+        "role": "aux",
+        "label": {"vi": "động từ khuyết thiếu", "en": "modal verb"},
+        "options": [
+          {"text": "must"},
+          {"text": "can't"},
+          {"text": "may"},
+          {"text": "might"},
+          {"text": "could"},
+          {"text": "should"},
+          {"text": "will"}
+        ]
+      },
+      {
+        "text": "V",
+        "role": "verb",
+        "label": {"vi": "động từ nguyên mẫu không to", "en": "base verb"}
+      },
+      {
+        "text": "complement",
+        "role": "complement",
+        "label": {"vi": "phần bổ sung", "en": "complement"}
+      }
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "modal",
+          "role": "aux",
+          "label": {"vi": "động từ khuyết thiếu", "en": "modal verb"},
+          "options": [
+            {"text": "must"},
+            {"text": "can't"},
+            {"text": "may"},
+            {"text": "might"},
+            {"text": "could"},
+            {"text": "should"},
+            {"text": "will"}
+          ]
+        },
+        {"text": "not", "role": "aux", "label": {"vi": "phủ định", "en": "negator"}},
+        {
+          "text": "V",
+          "role": "verb",
+          "label": {"vi": "động từ nguyên mẫu không to", "en": "base verb"}
+        },
+        {
+          "text": "complement",
+          "role": "complement",
+          "label": {"vi": "phần bổ sung", "en": "complement"}
+        }
+      ],
+      "question": [
+        {
+          "text": "modal",
+          "role": "aux",
+          "label": {"vi": "động từ khuyết thiếu", "en": "modal verb"},
+          "options": [
+            {"text": "must"},
+            {"text": "can't"},
+            {"text": "may"},
+            {"text": "might"},
+            {"text": "could"},
+            {"text": "should"},
+            {"text": "will"}
+          ]
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "V",
+          "role": "verb",
+          "label": {"vi": "động từ nguyên mẫu không to", "en": "base verb"}
+        },
+        {
+          "text": "complement",
+          "role": "complement",
+          "label": {"vi": "phần bổ sung", "en": "complement"}
+        }
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "She must be exhausted after the flight.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 8, "role": "aux"},
+        {"start": 9, "end": 11, "role": "verb"},
+        {"start": 12, "end": 38, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "must + be: suy luận mạnh dựa trên bằng chứng (chuyến bay dài).",
+        "en": "must + be: strong deduction based on evidence (the long flight)."
+      },
+      "translation": {
+        "vi": "Cô ấy chắc hẳn kiệt sức sau chuyến bay.",
+        "en": "She must be exhausted after the flight."
+      }
+    },
+    {
+      "text": "The parcel should arrive tomorrow.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 10, "role": "subject"},
+        {"start": 11, "end": 17, "role": "aux"},
+        {"start": 18, "end": 24, "role": "verb"},
+        {"start": 25, "end": 33, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "should + arrive: điều được mong đợi theo kế hoạch hoặc lịch trình.",
+        "en": "should + arrive: what is expected by plan or schedule."
+      },
+      "translation": {
+        "vi": "Kiện hàng được mong đợi sẽ đến vào ngày mai.",
+        "en": "The parcel should arrive tomorrow."
+      }
+    },
+    {
+      "text": "They may have the information we need.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 5, "end": 8, "role": "aux"},
+        {"start": 9, "end": 13, "role": "verb"},
+        {"start": 14, "end": 37, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "may + have: khả năng yếu hơn must, không dựa trên bằng chứng mạnh.",
+        "en": "may + have: weaker possibility than must, not based on strong evidence."
+      },
+      "translation": {"vi": "Có thể họ có thông tin chúng ta cần.", "en": "They may have the information we need."}
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "He mustn't be at home; the lights are off.",
+      "right": "He can't be at home; the lights are off.",
+      "reason": {
+        "vi": "mustn't diễn tả sự cấm đoán, không phải suy luận phủ định. Khi suy luận rằng điều gì đó không thể đúng, dùng can't.",
+        "en": "mustn't expresses prohibition, not negative deduction. To deduce that something is impossible, use can't."
+      },
+      "error_tag": "other",
+      "l1": ["vi"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "Look at those clouds. It ___ rain soon.",
+      "options": [
+        {"text": "may", "error_tag": null},
+        {"text": "must", "error_tag": "word_choice"},
+        {"text": "should", "error_tag": "word_choice"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "may diễn tả khả năng dựa trên bằng chứng không chắc chắn (mây đen). must quá mạnh, should là mong đợi.",
+        "en": "may expresses possibility based on uncertain evidence (dark clouds). must is too strong, should is expectation."
+      }
+    },
+    {
+      "q": "She has been studying all night. She ___ be tired.",
+      "options": [
+        {"text": "must", "error_tag": null},
+        {"text": "might", "error_tag": "word_choice"},
+        {"text": "can't", "error_tag": "word_choice"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "must diễn tả suy luận mạnh dựa trên bằng chứng rõ ràng (thức cả đêm). might quá yếu, can't ngược nghĩa.",
+        "en": "must expresses strong deduction from clear evidence (studying all night). might is too weak, can't is the opposite."
+      }
+    },
+    {
+      "q": "The lights are off. He ___ be at home.",
+      "options": [{"text": "can't", "error_tag": null}, {"text": "mustn't", "error_tag": "word_choice"}],
+      "answer": 0,
+      "explain": {
+        "vi": "can't diễn tả suy luận phủ định mạnh: không thể nào. mustn't là cấm đoán, không dùng cho suy luận.",
+        "en": "can't expresses strong negative deduction: it is impossible. mustn't is prohibition, not used for deduction."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu suy đoán về ai đó hoặc điều gì đó dựa trên bằng chứng bạn thấy, dùng must, can't, may, might, could hoặc should.",
+      "en": "Write a deduction about someone or something based on evidence you can see, using must, can't, may, might, could or should."
+    },
+    "placeholder": "She must be ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "aux", "any_of": ["must", "can't", "may", "might", "could", "should", "will"]},
+        {
+          "role": "verb",
+          "regex": "\\b(be|have|arrive|rain|know|need|work|live|want|like|go|come|take|make|see|think|feel|seem|stay|leave|start|finish)\\b"
+        }
+      ]
+    },
+    "sample": {"text": "She must be exhausted after the flight."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v11",
+    "run_id": "generate.1790831101",
+    "generated_at": "2026-10-01T05:05:01Z",
+    "r5_source": {
+      "ids": ["b2-modal-certainty-and-probability"],
+      "content_version": 2,
+      "content_hash": "e1def7c60626326a971a82d16547bd1fd976ff2f2ebf25c85102efb8c2da9fb0",
+      "corrections": [
+        {
+          "r5_id": "b2-modal-certainty-and-probability",
+          "issue": "R5's contrast section mentions 'In case/provided/as long as' and 'Past deduction' as required contrast targets, but these are not part of this point's scope and the schema requires no compare entries for this point.",
+          "fix": "Removed those contrast targets; the compare array is empty as required."
+        },
+        {
+          "r5_id": "b2-modal-certainty-and-probability",
+          "issue": "R5's common_traps mention mixing time reference of if-clause and result clause, which belongs to conditional sentences, not modal certainty.",
+          "fix": "Replaced with the actual trap for this point: using mustn't for negative deduction instead of can't."
+        },
+        {
+          "r5_id": "b2-modal-certainty-and-probability",
+          "issue": "R5's example 'They may have the information we need' is correct but the meaning_vi 'Có thể họ có thông tin' is incomplete; it should include 'chúng ta cần'.",
+          "fix": "Wrote the full translation: 'Có thể họ có thông tin chúng ta cần.'"
+        },
+        {
+          "r5_id": "b2-modal-certainty-and-probability",
+          "issue": "R5's mistake 'She should to arrive soon' is a real error but the schema requires one mistake entry for the tag 'other'; the mustn't/can't mistake is more central to this point's meaning contrast.",
+          "fix": "Kept the mustn't/can't mistake as the single common_mistakes entry, tagged 'other'."
+        },
+        {
+          "r5_id": "b2-modal-certainty-and-probability",
+          "issue": "R5's guided_practice items are prompts and answers, not the structured quick_practice cloze format required by the schema.",
+          "fix": "Wrote three cloze questions with real learner-error distractors and explanations."
+        }
+      ]
+    }
+  },
+  "review": null
+}
