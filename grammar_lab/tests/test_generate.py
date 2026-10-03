@@ -18,9 +18,11 @@ from grammar_lab.pipeline.generate import (
     _generation_schema_v04,
     _normalize_seg,
     _story_generation_schema,
+    align_formula_order_from_examples,
     build_rule_table,
     complete_literal_example_spans,
     pinyin_from_pairs,
+    repair_personal_production_rule,
     resolve_spans,
     semantic_repair_hints,
 )
@@ -782,6 +784,92 @@ def test_v04_prompt_forbids_open_class_vocabulary_enumeration() -> None:
     assert "1-4 rule slots total" in prompt
     assert "at most 8 literals" in prompt
     assert "simulate the highlighted spans from left to" in prompt
+
+
+
+def test_align_formula_order_from_examples_repairs_only_unambiguous_role_order() -> None:
+    pattern = {"formula": [
+        {"text": "was/were", "role": "aux", "label": {"vi": "trợ động từ"}},
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ"}},
+        {"text": "V-ing", "role": "verb", "label": {"vi": "động từ"}},
+    ]}
+    examples = [
+        {"text": "I was working.", "form": "affirmative", "spans": [
+            {"start": 0, "end": 1, "role": "subject"},
+            {"start": 2, "end": 5, "role": "aux"},
+            {"start": 6, "end": 13, "role": "verb"},
+        ]},
+        {"text": "She was reading.", "form": "affirmative", "spans": [
+            {"start": 0, "end": 3, "role": "subject"},
+            {"start": 4, "end": 7, "role": "aux"},
+            {"start": 8, "end": 15, "role": "verb"},
+        ]},
+    ]
+    align_formula_order_from_examples(examples, pattern)
+    assert [slot["role"] for slot in pattern["formula"]] == ["subject", "aux", "verb"]
+
+
+def test_align_formula_order_from_examples_leaves_disagreement_for_validator() -> None:
+    pattern = {"formula": [
+        {"text": "A", "role": "aux", "label": {"vi": "a"}},
+        {"text": "S", "role": "subject", "label": {"vi": "s"}},
+        {"text": "V", "role": "verb", "label": {"vi": "v"}},
+    ]}
+    examples = [
+        {"text": "x", "form": "affirmative", "spans": [
+            {"start": 0, "end": 1, "role": "subject"},
+            {"start": 1, "end": 2, "role": "aux"},
+            {"start": 2, "end": 3, "role": "verb"},
+        ]},
+        {"text": "y", "form": "affirmative", "spans": [
+            {"start": 0, "end": 1, "role": "aux"},
+            {"start": 1, "end": 2, "role": "subject"},
+            {"start": 2, "end": 3, "role": "verb"},
+        ]},
+    ]
+    before = [slot["role"] for slot in pattern["formula"]]
+    align_formula_order_from_examples(examples, pattern)
+    assert [slot["role"] for slot in pattern["formula"]] == before
+
+
+def test_repair_personal_production_rule_adds_observed_will_contraction_and_drops_lexical_constraint() -> None:
+    pattern = {"formula": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ"}},
+        {"text": "will", "role": "aux", "label": {"vi": "will"}},
+        {"text": "V", "role": "verb", "label": {"vi": "động từ"}},
+        {"text": "O", "role": "object", "label": {"vi": "tân ngữ"}},
+    ]}
+    examples = [{"text": "I'll carry that for you.", "form": "affirmative", "spans": []}]
+    production = {
+        "target_form": "affirmative",
+        "pattern_rule": {"ordered": True, "slots": [
+            {"role": "aux", "any_of": ["will"]},
+            {"role": "object", "any_of": ["my grandparents"]},
+        ]},
+        "sample": {"text": "I'll visit my grandparents this weekend."},
+    }
+    repair_personal_production_rule(production, pattern, examples, False)
+    assert production["pattern_rule"]["slots"] == [{"role": "aux", "any_of": ["will", "I'll"]}]
+
+
+def test_repair_personal_production_rule_uses_formula_literal_anchor_for_going_to() -> None:
+    pattern = {"formula": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ"}},
+        {"text": "am/is/are", "role": "aux", "label": {"vi": "be"}},
+        {"text": "going to", "role": "marker", "label": {"vi": "going to"}},
+        {"text": "V", "role": "verb", "label": {"vi": "động từ"}},
+    ]}
+    examples = [{"text": "I'm going to study tonight.", "form": "affirmative", "spans": []}]
+    production = {
+        "target_form": "affirmative",
+        "pattern_rule": {"ordered": True, "slots": [
+            {"role": "verb", "any_of": ["visit"]},
+        ]},
+        "sample": {"text": "I'm going to visit my grandmother."},
+    }
+    repair_personal_production_rule(production, pattern, examples, False)
+    slots = production["pattern_rule"]["slots"]
+    assert any(slot["role"] == "marker" and "going to" in slot["any_of"] for slot in slots)
 
 
 def test_generate_v04_rejects_with_story(tmp_path: Path) -> None:
