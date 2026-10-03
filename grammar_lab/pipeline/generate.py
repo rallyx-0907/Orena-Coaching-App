@@ -19,6 +19,7 @@ regenerate" action.
 
 from __future__ import annotations
 
+import copy
 import hashlib
 import json
 import re
@@ -727,7 +728,14 @@ def complete_literal_example_spans(examples: list[dict[str, Any]], pattern: dict
                 continue
             for candidate in _literal_slot_candidates(slot):
                 if re.search(r"[A-Za-z]", candidate):
-                    matches = list(re.finditer(r"(?<!\w)" + re.escape(candidate) + r"(?!\w)", example["text"], re.IGNORECASE))
+                    # Contraction suffixes are grammar-bearing literals but are
+                    # intentionally inside a larger token: "n't" in "didn't",
+                    # "'ve" in "I've", etc. Ordinary Latin literals still use
+                    # word boundaries so "be" never matches "because".
+                    if candidate.casefold().replace("\u2019", "'") in {"n't", "'m", "'re", "'s", "'ve", "'ll", "'d"}:
+                        matches = list(re.finditer(re.escape(candidate), example["text"], re.IGNORECASE))
+                    else:
+                        matches = list(re.finditer(r"(?<!\w)" + re.escape(candidate) + r"(?!\w)", example["text"], re.IGNORECASE))
                     starts = [match.start() for match in matches]
                 else:
                     starts = []
@@ -823,6 +831,34 @@ def _slot_matches_text(slot: dict[str, Any], text: str, zh: bool) -> bool:
     return matcher is not None and pattern_rule_matches(False, [matcher], text, zh)
 
 
+
+def _compact_observed_any_of(slot: dict[str, Any], texts: list[str], zh: bool) -> dict[str, Any]:
+    """Keep only literals that the candidate actually demonstrates.
+
+    Weak-schema providers sometimes enumerate an open vocabulary set despite
+    the prompt. For generation repair, an any_of only needs surface forms
+    observed in the model's own sample/examples. Preserve order, deduplicate,
+    and cap the stored matcher to the contract bound.
+    """
+    values = slot.get("any_of")
+    if not isinstance(values, list) or not values:
+        return slot
+    observed: list[str] = []
+    seen: set[str] = set()
+    for value in values:
+        probe = {"role": slot.get("role"), "any_of": [value]}
+        if not any(_slot_matches_text(probe, text, zh) for text in texts):
+            continue
+        key = str(value).casefold().replace("\u2019", "'")
+        if key in seen:
+            continue
+        observed.append(value)
+        seen.add(key)
+        if len(observed) >= PERSONAL_PRODUCTION_MAX_ANY_OF:
+            break
+    return {**slot, "any_of": observed}
+
+
 def _expand_observed_contractions(slot: dict[str, Any], texts: list[str], zh: bool) -> dict[str, Any]:
     """Add only contraction tokens actually present in this candidate's sample/examples."""
     if zh or "any_of" not in slot:
@@ -869,7 +905,7 @@ def repair_personal_production_rule(
     texts = [sample, *target_examples]
 
     raw_slots = [
-        _expand_observed_contractions(slot, texts, zh)
+        _expand_observed_contractions(_compact_observed_any_of(slot, texts, zh), texts, zh)
         for slot in production["pattern_rule"]["slots"]
         if slot.get("role") in formula_roles and _stored_rule_matcher(slot) is not None
     ]
@@ -1224,6 +1260,18 @@ class Generator:
             locales=locales, l1s=l1s, error_tags=existing["error_tags"], engine_tags=engine_tags,
             contrast_with=existing["contrasts"], point_type=point_type, zh=zh, r5_ids=r5_ids,
         )
+        provider_schema = schema
+        if self.llm.provider == "deepseek":
+            # DeepSeek json_object mode does not enforce JSON Schema. Let an
+            # oversized any_of reach deterministic repair instead of billing a
+            # whole fresh response just because it exceeded maxItems. Strong
+            # structured-output providers keep the strict schema.
+            provider_schema = copy.deepcopy(schema)
+            rule_props = (
+                provider_schema["properties"]["personal_production"]["properties"]
+                ["pattern_rule"]["properties"]["slots"]["items"]["properties"]
+            )
+            rule_props["any_of"].pop("maxItems", None)
         system = PROMPT_PATH_V04.read_text(encoding="utf-8").format(
             point_id=point_id, target_lang=existing["target_lang"],
             level_framework=existing["level"]["framework"], level_value=existing["level"]["value"],
@@ -1334,7 +1382,7 @@ class Generator:
                 )
             try:
                 result = self.llm.complete(
-                    system=system, user=attempt_user, json_schema=schema,
+                    system=system, user=attempt_user, json_schema=provider_schema,
                     schema_name="grammar_point_v04", max_tokens=V04_MAX_TOKENS,
                 )
             except LLMError as exc:
@@ -1371,7 +1419,7 @@ class Generator:
             # The provider/JSON schema accepted this response, so complete()
             # cached it. Domain-semantic rejection makes that cache entry unsafe:
             # evict it so a resumed run gets a genuinely fresh chance.
-            self.llm.invalidate_cache(system=system, user=attempt_user, json_schema=schema)
+            self.llm.invalidate_cache(system=system, user=attempt_user, json_schema=provider_schema)
             last_problem = "; ".join(
                 f"{issue.code} at {issue.path}: {issue.message}" for issue in issues[:8]
             )
