@@ -201,17 +201,17 @@ def apply_patch(data: dict[str, Any], patch: dict[str, Any]) -> dict[str, Any]:
         order = patch["formula_order"][form]
         if sorted(order) != list(range(len(slots))):
             raise ValueError(f"{form} formula_order is not a permutation")
+        for index in patch["make_optional"][form]:
+            if not 0 <= index < len(slots):
+                raise ValueError(f"{form} optional index out of range")
+            slots[index]["optional"] = True
+
         reordered = [slots[index] for index in order]
         key = _formula_key(form)
         if key in out:
             out[key] = reordered
         elif reordered:
             raise ValueError(f"{form} formula does not exist")
-
-        for index in patch["make_optional"][form]:
-            if not 0 <= index < len(reordered):
-                raise ValueError(f"{form} optional index out of range")
-            reordered[index]["optional"] = True
 
     seen_indexes: set[int] = set()
     for example_patch in patch["examples"]:
