@@ -13,7 +13,7 @@ const { STREAMS, chooseStream, mockTurn } = await import('../static/orena/agent/
 const { buildRequest, createSession } = await import('../static/orena/agent/session.js');
 const { createDispatcher, registerActionHandler } = await import('../static/orena/agent/dispatcher.js');
 const { agentMemory } = await import('../static/orena/agent/memory.js');
-const { intentHref, supportedIntents, INTENTS } = await import('../static/orena/agent/intents.js');
+const { intentHref, supportedIntents, INTENTS, mediaRouteId } = await import('../static/orena/agent/intents.js');
 const transport = fs.readFileSync('static/orena/agent/transport.js', 'utf8');
 
 // 1. The contract as data equals the contract as written.
@@ -266,6 +266,12 @@ assert.equal(intentHref('vocabulary.word', { text: '我', lang: 'zh-CN' }), `#/w
 assert.equal(intentHref('reading.workspace', {}), null);
 assert.deepEqual(supportedIntents(new Set(['coming'])), [], 'nothing is offered before its screen exists');
 assert.ok(supportedIntents(new Set(['today', 'orena'])).includes('orena.home'));
+// F-9 (§6.1): one content-id namespace; the Listening routes take the bare id.
+assert.equal(mediaRouteId('media:en-daily-pen'), 'en-daily-pen');
+assert.equal(mediaRouteId('en-daily-pen'), 'en-daily-pen', 'an older bare id passes through');
+// F-3 (§6.1): no grammar point is offered until the canonical Grammar store serves Grammar Lab ids.
+assert.ok(!supportedIntents(new Set(['grammar-concept', 'grammar'])).includes('grammar.point'));
+assert.ok(supportedIntents(new Set(['grammar-concept', 'grammar'])).includes('grammar.catalog'));
 
 // 10. §2.1 HTTP statuses and §4.1 error classes: the tables the UI reads equal the contract text,
 //     and the live transport answers each status as they say (driven with a fake fetch; it stays off).

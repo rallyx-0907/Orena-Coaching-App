@@ -108,6 +108,15 @@ def test_a_listening_lesson_and_the_learners_dictation_on_it():
     assert tools(**reads).invoke("get_current_listening_context", EN, {"content_id": "zh-lesson-1"}).data == {"found": False}
 
 
+def test_a_listening_content_id_in_the_contract_namespace_is_read(  # F-9 (contract §6.1)
+) -> None:
+    reads = {"listening_lesson": lambda i: LESSON if i == "zh-lesson-1" else None, "listening_progress": lambda a: []}
+    named = tools(**reads).invoke("get_current_listening_context", ZH, {"content_id": "media:zh-lesson-1"})
+    assert named.data["found"] is True and named.data["title"] == "在咖啡馆"
+    bare = tools(**reads).invoke("get_current_listening_context", ZH, {"content_id": "zh-lesson-1"})
+    assert bare.data["found"] is True  # an older client's bare id still reads
+
+
 def test_a_client_sourced_dictation_score_is_never_stated_as_a_result():
     """H-14: a row written before server scoring (or one that does not say) carries the client's own number."""
 

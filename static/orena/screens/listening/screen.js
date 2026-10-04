@@ -590,7 +590,8 @@ export default async function listening(element, ctx) {
       askOrena({
         surface: 'listening.workspace',
         activity_type: 'listening',
-        content_id: routeId,
+        // The contract's one namespace (§6.1, F-9): `media:<id>`, never the bare route id.
+        content_id: contentId,
         selected_item: { type: 'sentence', id, text: seg.original_text, lang: language },
       });
       return;

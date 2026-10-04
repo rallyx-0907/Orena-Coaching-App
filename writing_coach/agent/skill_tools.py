@@ -277,7 +277,8 @@ class ListeningArguments(BaseModel):
 
 
 def _lesson_in_language(read: ListeningLesson, learner: LearnerScope, content_id: str) -> Mapping[str, Any] | None:
-    lesson = read(content_id)
+    # Contract §6.1 (F-9): a Listening content id is `media:<id>`; a bare id from an older client is read as is.
+    lesson = read(content_id.removeprefix("media:"))
     if not lesson or str(lesson.get("language") or "").casefold().split("-")[0] != learner.language:
         return None
     return lesson
@@ -322,7 +323,7 @@ def _listening_attempt(read: ListeningLesson, progress: ListeningProgress) -> Ca
         lesson = _lesson_in_language(read, learner, args.content_id)
         if lesson is None:
             return ToolResult(summary="no such lesson in this language", data={"found": False}, count=0)
-        asset_id = str(lesson.get("media_object_id") or args.content_id)  # progress is keyed by the media asset
+        asset_id = str(lesson.get("media_object_id") or args.content_id.removeprefix("media:"))  # progress is keyed by the media asset
         rows = [row for row in progress(asset_id) if isinstance(row, Mapping)]
         lines = [
             {

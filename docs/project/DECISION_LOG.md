@@ -4090,3 +4090,13 @@ of runtime only. `AGENT_ENABLED` on the server is the per-environment switch; th
 Checked in full against contract v5 (capabilities, SSE turn, 409, 429 with Retry-After,
 `context.address`, actions as invitations, opening turn from real data, `tool_call` labels).
 Production and public activation remain human gates.
+
+## D-126 - Agent contract id conventions: Grammar Lab ids and one content-id namespace
+
+2026-10-04, explicit human instruction closing INTELLIGENCE_RECONCILIATION_D4 F-3 and F-9 on the
+UI lane. F-3: `grammar_id` in the agent contract is a Grammar Lab point id (D-100); an R5 Concept
+ID is never sent or emitted, and until the canonical Grammar Store/API serves points the UI leaves
+`grammar.point` out of `supported_intents`. F-9: `content_id` is `<kind>:<id>` (`article:`,
+`book:<id>:<chapter>`, `media:`), one namespace for UI context and agent payloads, owned by
+contract §6.1; tools may accept a bare id from an older client, never emit one. Contract v5 text
+clarified, no version bump (no id added or renamed).

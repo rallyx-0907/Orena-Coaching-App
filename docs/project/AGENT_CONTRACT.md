@@ -289,6 +289,9 @@ preferences                preferences.agent_memory
 
 `{…}` are required parameters, passed in `action.payload`. An id the new UI does not implement is simply absent from `client.supported_intents`.
 
+- `content_id` is `<kind>:<id>`, one namespace for the UI and the agent (decision F-9, 2026-10-04): `article:<id>` (a Reading article), `book:<book_id>:<chapter_id>` (a book chapter), `media:<id>` (a Listening lesson or media item, curated or imported). The same string is the `context.content_id` the UI sends and the `payload.content_id` the agent returns; the UI maps it to its own route id. A tool may accept a bare id for an older client, never emit one.
+- `grammar_id` is a Grammar Lab point id (D-100; decision F-3, 2026-10-04). An R5 Concept ID is never sent or emitted. Until the canonical Grammar Store/API serves points, the UI leaves `grammar.point` out of `client.supported_intents`, so by §3.1 no grammar point is navigated to.
+
 Adding an id: contract change (bump version). Renaming a screen in the UI: no contract change.
 
 ### 6.2 Surface names and purposes (published by the UI)

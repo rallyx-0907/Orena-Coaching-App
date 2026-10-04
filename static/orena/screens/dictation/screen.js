@@ -332,7 +332,8 @@ export default async function mountDictation(element, ctx) {
       askOrena({
         surface: 'listening.dictation',
         activity_type: 'listening',
-        content_id: lesson.id,
+        // The contract's one namespace (§6.1, F-9): `media:<id>`.
+        content_id: `media:${lesson.id}`,
         selected_item: { type: 'sentence', id: seg.id, text: seg.text, lang: lesson.language },
       });
     });

@@ -5,6 +5,18 @@
 import { SURFACES, fromContractLang } from './contract.js';
 import { byId, href } from '../shell/routes.js';
 
+/* §6.1 (F-9): a Listening `content_id` is `media:<id>`; the Listening routes take the bare id. A bare
+   id from an older server is passed through unchanged. */
+export function mediaRouteId(contentId) {
+  const value = String(contentId || '');
+  return value.startsWith('media:') ? value.slice('media:'.length) : value;
+}
+
+/* §6.1 (F-3): `grammar.point` carries a Grammar Lab point id. Until the canonical Grammar API serves
+   points (grammar-source.js reads no live store yet), the intent is not offered, so the agent never
+   navigates to a grammar point it cannot name in the store's ids. */
+const AWAITING_CANONICAL_STORE = new Set(['grammar.point']);
+
 /* intent → [route id, params from payload, query from payload] */
 const MAP = {
   home: (p) => ['today'],
@@ -13,8 +25,8 @@ const MAP = {
   'reading.library': () => ['discover', {}, { tab: 'read' }],
   'reading.workspace': (p) => ['reader', { id: p.content_id }],
   'listening.library': () => ['discover', {}, { tab: 'listen' }],
-  'listening.workspace': (p) => ['listening', { id: p.content_id }],
-  'listening.dictation': (p) => ['dictation', { id: p.content_id }],
+  'listening.workspace': (p) => ['listening', { id: mediaRouteId(p.content_id) }],
+  'listening.dictation': (p) => ['dictation', { id: mediaRouteId(p.content_id) }],
   'speaking.library': () => ['skillhub', { skill: 'speak' }],
   'speaking.workspace': (p) => ['speak', { id: p.content_id }],
   'speaking.free_talk': () => ['freetalk'],
@@ -55,6 +67,7 @@ export function intentHref(intent, payload = {}) {
 /* Intents whose screen is built. `built` is the set of screen folders in shell/screens.js. */
 export function supportedIntents(built) {
   return Object.keys(MAP).filter((intent) => {
+    if (AWAITING_CANONICAL_STORE.has(intent)) return false;
     const route = byId(intentRoute(intent));
     return route && built.has(route.screen);
   });
