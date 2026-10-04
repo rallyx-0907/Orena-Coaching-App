@@ -142,7 +142,9 @@ Then summarize root cause, files changed, tests run, and residual risk.
     if ($RequestedModel) {
         $args += @("--model", $RequestedModel)
     }
-    $args += @($prompt)
+    # Use Codex's explicit stdin sentinel. Windows PowerShell 5.1 can split a
+    # multiline positional prompt into multiple argv entries even when quoted.
+    $args += "-"
 
     Push-Location "grammar_lab"
     $previousErrorActionPreference = $ErrorActionPreference
@@ -151,7 +153,7 @@ Then summarize root cause, files changed, tests run, and residual risk.
         # Codex writes informational banners/progress to stderr, so do not let
         # ErrorActionPreference=Stop turn normal native output into an exception.
         $ErrorActionPreference = "Continue"
-        $output = & codex @args 2>&1
+        $output = $prompt | & codex @args 2>&1
         $exitCode = [int]$LASTEXITCODE
     }
     finally {
