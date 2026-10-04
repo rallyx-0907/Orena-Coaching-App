@@ -1,0 +1,234 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.c2.005",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.relative",
+  "level": {"framework": "cefr", "value": "C2", "rank": 6},
+  "prereqs": ["en.canon.c2.004"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["c2-ambiguity-from-modifier-attachment"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["c2-ambiguity-from-modifier-attachment"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ambiguity from modifier attachment", "en": "Ambiguity from modifier attachment"},
+    "native_title": "Ambiguity from modifier attachment",
+    "level": {"framework": "cefr", "value": "C2", "rank": 6},
+    "summary": {
+      "vi": "Điểm ngữ pháp này giúp người học nhận ra và sửa lỗi mơ hồ khi một thành phần bổ nghĩa (cụm giới từ, mệnh đề quan hệ, phân từ hoặc trạng ngữ) có thể gắn vào nhiều từ hoặc nhiều vị trí khác nhau trong câu.",
+      "en": "This point helps learners recognise and repair ambiguity when a modifier (prepositional phrase, relative clause, participle or adverb) can attach to more than one head or position in a sentence."
+    },
+    "sub": {"vi": "gắn bổ nghĩa", "en": "modifier attachment"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi một cụm giới từ đứng sau danh từ và có thể bổ nghĩa cho danh từ đó hoặc cho động từ chính.",
+      "en": "When a prepositional phrase follows a noun and could modify either that noun or the main verb."
+    },
+    {
+      "vi": "Khi một mệnh đề quan hệ hoặc phân từ có thể bổ nghĩa cho danh từ gần nhất hoặc cho cả cụm danh từ phía trước.",
+      "en": "When a relative clause or participle could modify the nearest noun or the whole noun phrase before it."
+    },
+    {
+      "vi": "Khi một trạng ngữ chỉ thời gian hoặc nơi chốn có thể thuộc về sự việc được nêu trong mệnh đề chính hoặc thuộc về nội dung của danh từ.",
+      "en": "When a time or place adverbial could belong to the main event or to the content of a noun."
+    },
+    {
+      "vi": "Khi cần viết lại câu để người đọc chỉ hiểu theo một nghĩa duy nhất mà vẫn giữ nguyên nội dung cốt lõi.",
+      "en": "When you need to rewrite a sentence so that readers can only understand one meaning while keeping the core proposition."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "repair",
+        "role": "other",
+        "label": {"vi": "cách sửa", "en": "repair"},
+        "optional": true,
+        "options": [{"text": "reorder"}, {"text": "relative clause"}, {"text": "punctuation"}]
+      },
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ chính", "en": "main verb"}},
+      {"text": "O", "role": "object", "label": {"vi": "tân ngữ", "en": "object"}},
+      {
+        "text": "modifier",
+        "role": "other",
+        "label": {"vi": "thành phần bổ nghĩa", "en": "modifier"}
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "Using a telescope, I saw the man standing on the hill.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 17, "role": "other"},
+        {"start": 19, "end": 20, "role": "subject"},
+        {"start": 21, "end": 24, "role": "verb"},
+        {"start": 25, "end": 32, "role": "object"},
+        {"start": 33, "end": 53, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Cụm phân từ đứng đầu câu tách khỏi danh từ, nên nó bổ nghĩa cho chủ ngữ 'I', không phải cho 'the man'.",
+        "en": "The fronted participle phrase is separated from the noun, so it modifies the subject 'I', not 'the man'."
+      },
+      "translation": {
+        "vi": "Dùng kính thiên văn, tôi thấy người đàn ông đang đứng trên đồi.",
+        "en": "Using a telescope, I saw the man standing on the hill."
+      }
+    },
+    {
+      "text": "On Monday, we reviewed the report on customer complaints.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 9, "role": "other"},
+        {"start": 11, "end": 13, "role": "subject"},
+        {"start": 14, "end": 22, "role": "verb"},
+        {"start": 23, "end": 33, "role": "object"},
+        {"start": 34, "end": 56, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Trạng ngữ thời gian đứng đầu câu nên 'on customer complaints' chỉ có thể bổ nghĩa cho 'the report'.",
+        "en": "The time adverbial is fronted, so 'on customer complaints' can only modify 'the report'."
+      },
+      "translation": {
+        "vi": "Thứ Hai, chúng tôi xem báo cáo về khiếu nại khách hàng.",
+        "en": "On Monday, we reviewed the report on customer complaints."
+      }
+    },
+    {
+      "text": "The manager spoke to the engineer who had designed the system.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 11, "role": "subject"},
+        {"start": 12, "end": 17, "role": "verb"},
+        {"start": 18, "end": 33, "role": "object"},
+        {"start": 34, "end": 61, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Mệnh đề quan hệ đứng ngay sau 'the engineer' nên chỉ bổ nghĩa cho danh từ đó.",
+        "en": "The relative clause follows 'the engineer' directly, so it modifies only that noun."
+      },
+      "translation": {
+        "vi": "Quản lý nói với kỹ sư đã thiết kế hệ thống.",
+        "en": "The manager spoke to the engineer who had designed the system."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Cụm giới từ 'with the telescope' có thể gắn vào 'saw' (tôi dùng kính) hoặc vào 'the man' (người đàn ông có kính). Người học thường để nguyên câu vì nghĩ người đọc sẽ tự hiểu theo ý mình.",
+        "en": "The prepositional phrase 'with the telescope' can attach to 'saw' (I used the telescope) or to 'the man' (the man had the telescope). Learners often leave the sentence as it is, assuming readers will pick the intended reading."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "I saw the man with the telescope.",
+      "right": "Using a telescope, I saw the man. / I saw the man who had the telescope."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "We discussed the report about the merger ___.",
+      "options": [
+        {"text": "in the office", "error_tag": "other"},
+        {"text": "In the office, we discussed the report about the merger.", "error_tag": null}
+      ],
+      "answer": 1,
+      "explain": {
+        "vi": "Đặt trạng ngữ nơi chốn lên đầu câu để nó chỉ bổ nghĩa cho hành động thảo luận, không gắn vào 'the merger'.",
+        "en": "Front the place adverbial so it modifies the discussion event, not 'the merger'."
+      }
+    },
+    {
+      "q": "The committee approved the plan for the new bridge ___.",
+      "options": [
+        {"text": "with a narrow majority", "error_tag": "other"},
+        {
+          "text": "The committee approved with a narrow majority the plan for the new bridge.",
+          "error_tag": null
+        }
+      ],
+      "answer": 1,
+      "explain": {
+        "vi": "Đưa cụm giới từ vào giữa để nó bổ nghĩa cho động từ 'approved', tránh gắn vào 'the new bridge'.",
+        "en": "Place the phrase next to the verb 'approved' so it does not attach to 'the new bridge'."
+      }
+    },
+    {
+      "q": "She greeted the guest ___ at the door.",
+      "options": [
+        {"text": "who was carrying a suitcase", "error_tag": "other"},
+        {"text": "who was carrying a suitcase,", "error_tag": null}
+      ],
+      "answer": 1,
+      "explain": {
+        "vi": "Dùng dấu phẩy để tách mệnh đề quan hệ không hạn định, tránh hiểu nhầm rằng chỉ có một vị khách nhất định.",
+        "en": "Use a comma to mark the relative clause as non-restrictive, avoiding the reading that only one specific guest is meant."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu kể về việc bạn đã làm, trong đó có một thành phần bổ nghĩa mà không gây mơ hồ.",
+      "en": "Write a sentence about something you did, with a modifier that cannot be misread."
+    },
+    "placeholder": "Last week, I ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {
+          "regex": "(?i)\\b(saw|met|found|read|wrote|discussed|reviewed|visited|watched|heard)\\b",
+          "role": "verb"
+        },
+        {
+          "regex": "(?i)\\b(who|which|that|standing|sitting|holding|wearing|carrying|using|on|in|with|about|for)\\b",
+          "role": "other"
+        }
+      ]
+    },
+    "sample": {"text": "Last week, I met the author who wrote the article about climate policy."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v15",
+    "run_id": "generate.1791101742",
+    "generated_at": "2026-10-04T08:15:42Z",
+    "r5_source": {
+      "ids": ["c2-ambiguity-from-modifier-attachment"],
+      "content_version": 2,
+      "content_hash": "8dfa577caac0f5d0bf2eb056e4b52aad96df795e02701a75447fad749ac00647",
+      "corrections": [
+        {
+          "r5_id": "c2-ambiguity-from-modifier-attachment",
+          "issue": "R5 đưa 'I saw the man with the telescope' vào mục mistakes nhưng lại ghi 'correct' là hai câu khác nhau, khiến người học tưởng câu gốc sai ngữ pháp.",
+          "fix": "Chuyển thành common_mistakes với giải thích rõ câu gốc không sai ngữ pháp mà mơ hồ, và đưa hai cách viết lại giữ nguyên nội dung."
+        },
+        {
+          "r5_id": "c2-ambiguity-from-modifier-attachment",
+          "issue": "R5 nói 'Punctuation can distinguish parenthetical from integrated modifier' nhưng không có ví dụ minh họa.",
+          "fix": "Thêm ví dụ 'She greeted the guest who was carrying a suitcase, at the door.' vào quick_practice để minh họa dấu phẩy tách mệnh đề không hạn định."
+        },
+        {
+          "r5_id": "c2-ambiguity-from-modifier-attachment",
+          "issue": "R5 liệt kê 'Only/focus scope' và 'Reference ambiguity' là contrast targets nhưng không cung cấp nội dung đối chiếu.",
+          "fix": "Bỏ compare vì không có dữ liệu đối chiếu đáng tin cậy; giữ phạm vi ở modifier attachment."
+        },
+        {
+          "r5_id": "c2-ambiguity-from-modifier-attachment",
+          "issue": "R5 dùng 'nearest noun' như một quy tắc ngầm dù exceptions nói không nên.",
+          "fix": "Nhấn mạnh trong when_to_use rằng vị trí gần nhất không phải quy tắc quyết định, mà là một trong các yếu tố cần cân nhắc."
+        }
+      ]
+    }
+  },
+  "review": null
+}

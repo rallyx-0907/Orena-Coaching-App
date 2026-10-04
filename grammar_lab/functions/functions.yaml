@@ -89,12 +89,12 @@ functions:
     - en.canon.b2.034
     - en.canon.c1.025
     - en.canon.b1.039
+    - en.canon.c2.006
     zh-Hans:
     - zh.canon.gf.hsk7_9.a_7_1_7_1.p1
     ja: []
   planned:
     en:
-    - en.canon.c2.006
     - en.canon.c2.016
     zh-Hans:
     - zh.canon.r5.hsk6_4_patterns
@@ -744,13 +744,13 @@ functions:
     - en.canon.b2.023
     - en.canon.b2.037
     - en.canon.c1.020
+    - en.canon.c2.005
     zh-Hans:
     - zh.canon.gf.hsk3.a_3_5_3.p1
     - zh.canon.gf.hsk6.a_6_2_6.p1
     ja: []
   planned:
-    en:
-    - en.canon.c2.005
+    en: []
     zh-Hans:
     - zh.canon.r5.hsk3_13_nh_ng_d_i_v_i
     - zh.canon.gf.hsk4.a_4_4_2.p1
@@ -1095,11 +1095,11 @@ functions:
     - en.canon.b2.030
     - en.canon.b2.029
     - en.canon.c1.013
+    - en.canon.c2.004
     zh-Hans: []
     ja: []
   planned:
     en:
-    - en.canon.c2.004
     - en.canon.c2.010
     - en.canon.c2.015
     zh-Hans:

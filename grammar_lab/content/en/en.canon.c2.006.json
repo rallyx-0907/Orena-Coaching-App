@@ -1,0 +1,226 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.c2.006",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.reference",
+  "level": {"framework": "cefr", "value": "C2", "rank": 6},
+  "prereqs": ["en.canon.c2.005"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["c2-reference-ambiguity"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["c2-reference-ambiguity"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Reference ambiguity", "en": "Reference ambiguity"},
+    "native_title": "Reference ambiguity",
+    "level": {"framework": "cefr", "value": "C2", "rank": 6},
+    "summary": {
+      "vi": "Điểm này dạy cách nhận diện và sửa lỗi mơ hồ khi đại từ hoặc cụm chỉ định có thể trỏ tới nhiều đối tượng hoặc tới cả một mệnh đề trước đó.",
+      "en": "This point teaches how to spot and repair ambiguity when a pronoun or demonstrative can refer to more than one entity or to a whole preceding proposition."
+    },
+    "sub": {"vi": "mơ hồ quy chiếu", "en": "reference ambiguity"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi hai danh từ cùng giống hoặc cùng số xuất hiện trước một đại từ, khiến người đọc không chắc đại từ trỏ vào ai.",
+      "en": "When two nouns of the same gender or number precede a pronoun, so the reader cannot tell which one it refers to."
+    },
+    {
+      "vi": "Khi 'this' hoặc 'it' được dùng để chỉ một hành động hoặc một mệnh đề vừa nêu, nhưng không có danh từ tóm tắt đi kèm.",
+      "en": "When 'this' or 'it' is used to refer to a whole action or clause just mentioned, but no summary noun accompanies it."
+    },
+    {
+      "vi": "Khi một câu dùng 'former' hoặc 'latter' với hơn hai đối tượng, hoặc khi hai đối tượng cách quá xa nhau.",
+      "en": "When a sentence uses 'former' or 'latter' with more than two entities, or when the two entities are too far apart."
+    },
+    {
+      "vi": "Khi cần viết lại câu để người đọc chỉ có một cách hiểu duy nhất, đặc biệt trong văn bản học thuật hoặc hợp đồng.",
+      "en": "When you need to rewrite a sentence so that the reader has only one possible interpretation, especially in academic or contractual writing."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}},
+      {"text": "O", "role": "object", "label": {"vi": "tân ngữ", "en": "object"}},
+      {
+        "text": "connector",
+        "role": "connector",
+        "label": {"vi": "từ nối", "en": "connector"},
+        "options": [{"text": "and"}, {"text": "but"}, {"text": "so"}]
+      },
+      {
+        "text": "this/that/it/they",
+        "role": "other",
+        "label": {"vi": "đại từ/cụm chỉ định", "en": "pronoun/demonstrative"},
+        "options": [{"text": "this"}, {"text": "that"}, {"text": "it"}, {"text": "they"}]
+      },
+      {
+        "text": "summary noun",
+        "role": "other",
+        "label": {"vi": "danh từ tóm tắt", "en": "summary noun"},
+        "optional": true
+      },
+      {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}}
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "The server lost contact with the gateway, and this communication failure triggered an alarm.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 10, "role": "subject"},
+        {"start": 11, "end": 15, "role": "verb"},
+        {"start": 16, "end": 40, "role": "object"},
+        {"start": 42, "end": 45, "role": "connector"},
+        {"start": 46, "end": 50, "role": "other"},
+        {"start": 51, "end": 72, "role": "other"},
+        {"start": 73, "end": 82, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "‘this’ + danh từ tóm tắt ‘communication failure’ làm rõ quy chiếu tới cả sự việc phía trước.",
+        "en": "'this' plus the summary noun 'communication failure' makes clear that the reference is to the whole preceding event."
+      },
+      "translation": {
+        "vi": "Máy chủ mất liên lạc với cổng kết nối, và sự cố liên lạc này đã kích hoạt báo động.",
+        "en": "The server lost contact with the gateway, and this communication failure triggered an alarm."
+      }
+    },
+    {
+      "text": "Maria told Elena that Elena's estimate was too low.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 5, "role": "subject"},
+        {"start": 6, "end": 10, "role": "verb"},
+        {"start": 11, "end": 16, "role": "object"},
+        {"start": 17, "end": 21, "role": "connector"},
+        {"start": 22, "end": 29, "role": "other"},
+        {"start": 30, "end": 38, "role": "other"},
+        {"start": 39, "end": 42, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Lặp lại tên riêng ‘Elena’s’ thay vì dùng ‘her’ để tránh mơ hồ giữa hai nhân vật nữ.",
+        "en": "Repeating the proper name 'Elena's' instead of using 'her' avoids ambiguity between two female characters."
+      },
+      "translation": {
+        "vi": "Maria nói với Elena rằng ước tính của Elena quá thấp.",
+        "en": "Maria told Elena that Elena's estimate was too low."
+      }
+    },
+    {
+      "text": "The policy increased prices, and this increase reduced demand.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 10, "role": "subject"},
+        {"start": 11, "end": 20, "role": "verb"},
+        {"start": 21, "end": 27, "role": "object"},
+        {"start": 29, "end": 32, "role": "connector"},
+        {"start": 33, "end": 37, "role": "other"},
+        {"start": 38, "end": 46, "role": "other"},
+        {"start": 47, "end": 54, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "‘this increase’ tóm tắt và quy chiếu rõ ràng tới sự tăng giá vừa nêu.",
+        "en": "'this increase' summarises and clearly refers back to the price rise just mentioned."
+      },
+      "translation": {
+        "vi": "Chính sách đã tăng giá, và sự tăng này làm giảm nhu cầu.",
+        "en": "The policy increased prices, and this increase reduced demand."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Đại từ ‘her’ có thể trỏ tới Maria hoặc Elena vì cả hai đều là nữ và cùng số ít; cần lặp lại danh từ riêng để quy chiếu rõ.",
+        "en": "'her' can refer to either Maria or Elena because both are female and singular; repeating the proper name makes the reference unambiguous."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "Maria told Elena that her estimate was too low.",
+      "right": "Maria told Elena that Elena's estimate was too low."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "The manager spoke to the client, and ___ promised to send the report by Friday.",
+      "options": [{"text": "the manager", "error_tag": null}, {"text": "he", "error_tag": "other"}],
+      "answer": 0,
+      "explain": {
+        "vi": "‘he’ có thể trỏ tới manager hoặc client, nên cần lặp lại danh từ ‘the manager’ để tránh mơ hồ.",
+        "en": "'he' could refer to either the manager or the client, so repeating 'the manager' removes the ambiguity."
+      }
+    },
+    {
+      "q": "The company changed its policy, and ___ led to a drop in sales.",
+      "options": [{"text": "this change", "error_tag": null}, {"text": "this", "error_tag": "other"}],
+      "answer": 0,
+      "explain": {
+        "vi": "‘this’ đứng một mình có thể chỉ cả mệnh đề hoặc chỉ ‘policy’; thêm danh từ tóm tắt ‘change’ làm rõ quy chiếu.",
+        "en": "Standalone 'this' could refer to the whole clause or just to 'policy'; adding the summary noun 'change' clarifies the reference."
+      }
+    },
+    {
+      "q": "Two options were proposed. The first was cheap; ___ was innovative.",
+      "options": [{"text": "the second", "error_tag": null}, {"text": "the latter", "error_tag": "other"}],
+      "answer": 0,
+      "explain": {
+        "vi": "‘the latter’ chỉ dùng khi có đúng hai đối tượng và khoảng cách gần; ở đây ‘the second’ rõ ràng hơn và tránh nhầm lẫn.",
+        "en": "'the latter' is only safe with exactly two entities and a short distance; here 'the second' is clearer and avoids confusion."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu kể về một sự việc xảy ra và dùng ‘this’ + danh từ tóm tắt để chỉ cả sự việc đó, tránh đại từ mơ hồ.",
+      "en": "Write a sentence about an event and use 'this' plus a summary noun to refer to the whole event, avoiding an ambiguous pronoun."
+    },
+    "placeholder": "The team missed the deadline, and this ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"any_of": ["and"], "role": "connector"},
+        {"any_of": ["this", "that"], "role": "other"},
+        {"regex": "[a-z]+", "role": "other"}
+      ]
+    },
+    "sample": {"text": "The team missed the deadline, and this delay frustrated the client."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v15",
+    "run_id": "generate.1791101753",
+    "generated_at": "2026-10-04T08:15:53Z",
+    "r5_source": {
+      "ids": ["c2-reference-ambiguity"],
+      "content_version": 2,
+      "content_hash": "587d113d9bb6f9e715036ebff276f22c5c5447da14803d3207733cd82ffe9bbd",
+      "corrections": [
+        {
+          "r5_id": "c2-reference-ambiguity",
+          "issue": "R5 example 'The server disconnected from the gateway because it failed' is ambiguous but the correction 'The server disconnected because the gateway failed. / The gateway disconnected because the server failed.' changes the original meaning rather than repairing the reference.",
+          "fix": "Replaced with a clear repair that keeps the original proposition: 'The server disconnected from the gateway because the gateway failed.'"
+        },
+        {
+          "r5_id": "c2-reference-ambiguity",
+          "issue": "R5 lists 'former/latter overload' as a trap but does not show a corrected example or a rule for when former/latter is safe.",
+          "fix": "Added a quick-practice item contrasting 'the latter' with 'the second' and an explanation that former/latter is safe only with exactly two entities and a short distance."
+        },
+        {
+          "r5_id": "c2-reference-ambiguity",
+          "issue": "R5's guided practice includes a transformation prompt with answer 'Answers vary', which is not a usable model for a structured lesson.",
+          "fix": "Replaced with a concrete personal-production task that requires 'this' plus a summary noun and provides a model sentence."
+        }
+      ]
+    }
+  },
+  "review": null
+}
