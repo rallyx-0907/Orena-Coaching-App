@@ -394,6 +394,7 @@ def test_generate_is_cached_on_second_call_with_the_same_cache_dir(tmp_path: Pat
                       transport=httpx.MockTransport(handler))
     outcome = Generator(lang="en", l1="vi", llm=llm2, root=lab.root).generate("en.alpha")
     assert outcome.cached is True
+    assert outcome.cost_usd is None
     assert len(calls) == 1
 
 
