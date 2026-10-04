@@ -99,8 +99,10 @@ function Invoke-Rescue {
         $args += @("-CodexModel", $CodexModel)
     }
 
-    & powershell @args
-    return $LASTEXITCODE
+    $output = & powershell @args 2>&1
+    $exitCode = [int]$LASTEXITCODE
+    $output | ForEach-Object { Write-Host $_ }
+    return $exitCode
 }
 
 function Assert-CorpusComplete {
