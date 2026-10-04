@@ -44,7 +44,7 @@ const WRITE_ICONS = { writing: 'pen-line', rewrite: 'repeat', timedwr: 'timer' }
 /* 'keyboard' (design PH_MAP "Dictation":"kbd") and 'repeat' (design PH_MAP "Shadowing":"repeat",
    the same icon Speak's own Shadowing mode already uses) - both already present in kit/icons.js,
    no sync needed. */
-const LISTEN_ICONS = { dictation: 'keyboard', shadow: 'repeat' };
+const LISTEN_ICONS = { dictation: 'keyboard', listening: 'headphones' };
 const VOCAB_ICONS = { review: 'bookmark-check', timed: 'timer', transfer: 'arrow-left-right', feed: 'flame' };
 const GRAMMAR_ICONS = { grammarlib: 'book-open' };
 /* 'book-open' (design PH_MAP "Start Reading Practice":"book" - the same path as Lucide's
@@ -98,8 +98,6 @@ export function speakModes(items = []) {
     { key: 'sound', routeId: 'sound' },
   ];
   modes.push({ key: 'speak', labelRouteId: 'speak', routeId: 'discover', query: { tab: 'listen', practice: 'pronunciation' } });
-  const clip = firstOfType(list, 'clip');
-  if (clip) modes.push({ key: 'shadow', labelRouteId: 'shadow', routeId: 'discover', query: { tab: 'listen', practice: 'pronunciation' } });
   const retell = firstOfType(list, 'retell');
   if (retell) modes.push({ key: 'retell', routeId: 'retell', params: { id: retell.id }, level: retell.level || '' });
   return shown(modes);
@@ -120,29 +118,15 @@ export function writeModes() {
   ]);
 }
 
-/* One Listening library item (GET /api/listening/library) whose `available_modes`
-   (listening_catalog.py PRACTICE_MODES: exactly `listen`/`active`/`dictation`/`shadowing`, no
-   others) includes the given mode - the same firstOfType pattern speakModes() uses above, just
-   keyed by array membership instead of a single `practice_type` field. */
-function firstWithMode(items, mode) {
-  return items.find((item) => item && Array.isArray(item.available_modes) && item.available_modes.includes(mode)) || null;
-}
-
-/* Listen's two modes reachable without an id this screen must invent: Dictation and Shadowing,
-   gated on the Listening library actually having an item whose `available_modes` carries that
-   mode (empty catalogue -> empty result, correct, not a bug - same shape as speakModes() above).
-   The design's other Listen modes have no comparable real source and stay out (rule 40):
-   "React / Reuse" and "Retell" (its own "Use what you hear" group) have no `available_modes`
-   value at all in the schema (PRACTICE_MODES has no react/retell entry), and "Continue listening"
-   (its own "Continue" group) is device-memory continuation, already surfaced by
-   continuationRows() below, not a catalogue-backed mode. */
+/* Human correction: listening comprehension and dictation are separate choices,
+   both choose content before practice. Speaking owns the single pronunciation /
+   shadowing entry. Only lessons with materialized questions admit comprehension. */
 export function listenModes(items = []) {
   const list = Array.isArray(items) ? items : [];
   const modes = [];
-  const dictation = firstWithMode(list, 'dictation');
-  if (dictation) modes.push({ key: 'dictation', routeId: 'dictation', params: { id: dictation.lesson_id }, level: dictation.level || '' });
-  const shadowing = firstWithMode(list, 'shadowing');
-  if (shadowing) modes.push({ key: 'shadow', routeId: 'shadow', params: { id: shadowing.lesson_id }, level: shadowing.level || '' });
+  if (list.some(item => item?.comprehension_count > 0)) modes.push({ key: 'listening', labelRouteId: 'listenQuestions', routeId: 'discover', query: { tab: 'listen', practice: 'listening' } });
+  // Personal prepared imports also support dictation; the chooser owns admission.
+  modes.push({ key: 'dictation', labelRouteId: 'dictation', routeId: 'discover', query: { tab: 'listen', practice: 'dictation' } });
   return modes;
 }
 

@@ -123,6 +123,8 @@ jobs:
           node scripts/test_orena_screen_content.mjs
           node scripts/test_orena_screen_practice.mjs
           node scripts/test_orena_practice_continuation.mjs
+          node scripts/test_orena_listening_entries.mjs
+          node scripts/test_orena_listening_questions.mjs
           node scripts/test_orena_screen_library.mjs
           node scripts/test_orena_screen_collection.mjs
           node scripts/test_orena_screen_word.mjs

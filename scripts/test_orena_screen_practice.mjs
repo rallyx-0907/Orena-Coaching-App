@@ -38,15 +38,14 @@ import {
     { id: 22, practice_type: 'retell', level: 'A2' },
     { id: 33, practice_type: 'sentences', level: 'C1' }, // a later duplicate type must not replace the first
   ]);
-  assert.equal(withItems.length, 5, 'the two content-gated modes in this release appear once the library has a matching item each');
+  assert.equal(withItems.length, 4, 'Pronunciation and media Shadowing share one entry');
   const speak = withItems.find((m) => m.key === 'speak');
   assert.equal(speak.routeId, 'discover', 'Pronunciation starts with content choice');
   assert.equal(speak.labelRouteId, 'speak');
   assert.deepEqual(speak.query, { tab: 'listen', practice: 'pronunciation' });
   assert.equal(speak.params, undefined, 'no arbitrary first lesson is selected');
   const shadow = withItems.find((m) => m.key === 'shadow');
-  assert.equal(shadow.routeId, 'discover');
-  assert.equal(shadow.labelRouteId, 'shadow');
+  assert.equal(shadow, undefined, 'no duplicate Shadowing card');
   assert.equal(withItems.find((m) => m.key === 'retell'), undefined, 'Retell is deferred (H9) even when the library has an item');
 
   assert.deepEqual(speakModes(), speakModes([]), 'a missing list behaves like an empty one');
@@ -72,21 +71,21 @@ import {
 
 // --- Listen: two content-gated modes, one per available_modes value ----------------------------
 {
-  assert.deepEqual(listenModes([]), [], 'an empty Listening library -> no modes, not a bug (same shape as Speak)');
+  assert.deepEqual(listenModes([]).map(m=>m.key), ['dictation'], 'Dictation can choose personal prepared imports even with an empty public catalogue');
   assert.deepEqual(listenModes(), listenModes([]));
   assert.deepEqual(listenModes(null), listenModes([]), 'a non-array list behaves like an empty one, never a crash');
 
   const items = [
-    { lesson_id: 'en-daily-pen-in-my-bag', level: 'A1', available_modes: ['listen', 'active', 'dictation', 'shadowing'] },
+    { lesson_id: 'en-daily-pen-in-my-bag', level: 'A1', available_modes: ['listen', 'active', 'dictation', 'shadowing'], comprehension_count: 2 },
     { lesson_id: 'en-science-cosmic-calendar', level: 'B2', available_modes: ['listen', 'active', 'dictation', 'shadowing'] },
   ];
   const modes = listenModes(items);
-  assert.deepEqual(modes.map((m) => m.key), ['dictation', 'shadow'], 'the first item carrying each mode wins, not a later duplicate');
+  assert.deepEqual(modes.map((m) => m.key), ['listening', 'dictation'], 'comprehension and dictation have distinct choices; Shadowing belongs to Speaking');
   const dictation = modes.find((m) => m.key === 'dictation');
-  assert.deepEqual(dictation.params, { id: 'en-daily-pen-in-my-bag' });
-  assert.equal(dictation.level, 'A1');
+  assert.equal(dictation.params, undefined, 'no fixed lesson assignment');
+  assert.deepEqual(dictation.query, {tab:'listen',practice:'dictation'});
   const shadow = modes.find((m) => m.key === 'shadow');
-  assert.deepEqual(shadow.params, { id: 'en-daily-pen-in-my-bag' });
+  assert.equal(shadow, undefined);
 
   const dictationOnly = listenModes([{ lesson_id: 'x', level: 'B1', available_modes: ['listen', 'dictation'] }]);
   assert.deepEqual(dictationOnly.map((m) => m.key), ['dictation'], 'shadowing stays out when no item supports it - never a fabricated tile');
@@ -116,7 +115,7 @@ import {
 // --- buildSkillSections is data-driven: a skill's section appears only when it has real modes --
 {
   const noListenOrReading = buildSkillSections({ speakingItems: [], due: 3, listeningItems: [], reading: { available: false, next: null } });
-  assert.deepEqual(noListenOrReading.map((s) => s.skill), ['speak', 'write', 'vocabulary', 'grammar'], 'Speak/Write/Vocabulary/Grammar always have a fixed mode; Listen/Reading drop out with no real data');
+  assert.deepEqual(noListenOrReading.map((s) => s.skill), ['speak', 'write', 'listen', 'vocabulary', 'grammar'], 'Listen retains its personal-import Dictation chooser; comprehension requires a materialized set');
   assert.equal(noListenOrReading.find((s) => s.skill === 'vocabulary').modes.find((m) => m.key === 'review').due, 3);
 
   const withAll = buildSkillSections({

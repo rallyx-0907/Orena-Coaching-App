@@ -7,6 +7,7 @@ import { defineCopy } from '../../copy/index.js';
 
 const KEYS = [
   'choosePracticeMedia', 'practiceSearch',
+  'chooseDictationMedia', 'chooseListeningMedia',
   'searchPlaceholder', 'filters', 'importAction', 'clearFilters', 'emptyText',
   'tabAll', 'tabRead', 'tabListen', 'tabCollections', 'tabImported',
   'typeArticle', 'typeBook', 'typeVideo', 'typeAudio', 'typeCollection', 'typeText', 'typeUpload',
@@ -17,6 +18,8 @@ const KEYS = [
 export const t = defineCopy('discover', {
   layers: Object.fromEntries(KEYS.map((key) => [key, 'interface'])),
   en: {
+    chooseDictationMedia: 'Choose a clip to listen and type what you hear.',
+    chooseListeningMedia: 'Choose a lesson to listen and answer questions.',
     choosePracticeMedia: 'Choose media to practise speaking.',
     practiceSearch: 'Search practice content…',
     searchPlaceholder: 'Search books, media, collections…',
@@ -34,8 +37,10 @@ export const t = defineCopy('discover', {
     showResults_one: 'Show {n} result', showResults_other: 'Show {n} results',
   },
   vi: {
+    chooseDictationMedia: 'Chọn bài để nghe và gõ lại nội dung.',
+    chooseListeningMedia: 'Chọn bài để nghe và trả lời câu hỏi.',
     choosePracticeMedia: 'Chọn media để luyện phát âm.',
-    practiceSearch: 'Tìm nội dung luyện phát âm…',
+    practiceSearch: 'Tìm bài luyện…',
     searchPlaceholder: 'Tìm sách, media, bộ sưu tập…',
     filters: 'Bộ lọc', importAction: 'Nhập', clearFilters: 'Xóa bộ lọc',
     emptyText: 'Chưa có gì khớp với các bộ lọc này.',
@@ -51,8 +56,10 @@ export const t = defineCopy('discover', {
     showResults_other: 'Xem {n} kết quả',
   },
   zh: {
+    chooseDictationMedia: '选择片段，听后写出内容。',
+    chooseListeningMedia: '选择课程，听后回答问题。',
     choosePracticeMedia: '选择媒体，练习发音。',
-    practiceSearch: '搜索发音练习内容…',
+    practiceSearch: '搜索练习内容…',
     searchPlaceholder: '搜索书籍、媒体、合集…',
     filters: '筛选', importAction: '导入', clearFilters: '清除筛选',
     emptyText: '没有符合这些筛选条件的内容。',

@@ -44,6 +44,7 @@ export const ROUTES = Object.freeze([
   { id: 'discussion', path: 'read/:id/discuss', design: 'discussion', screen: 'discussion', focus: true, crumb: 'discussion' },
   { id: 'listening', path: 'listen/:id', design: 'listening', screen: 'listening', focus: true, crumb: 'listening', lesson: true, intent: 'listening.workspace' },
   { id: 'dictation', path: 'listen/:id/dictation', design: 'dictation', screen: 'dictation', focus: true, crumb: 'dictation', lesson: true, intent: 'listening.dictation' },
+  { id: 'listenQuestions', path: 'listen/:id/questions', design: 'checku', screen: 'listening-questions', focus: true, crumb: 'listeningComprehension', lesson: true },
   { id: 'shadow', path: 'listen/:id/shadow', design: 'shadow', screen: 'compare', focus: true, crumb: 'shadowing', lesson: true },
   { id: 'react', path: 'listen/:id/react', design: 'react', screen: 'react', focus: true, crumb: 'reactReuse', lesson: true },
   { id: 'respond', path: 'respond/:id', design: 'respond', screen: 'respond', focus: true, crumb: 'respondToContent', lesson: true },

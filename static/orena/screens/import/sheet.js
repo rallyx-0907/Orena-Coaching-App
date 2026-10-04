@@ -39,9 +39,9 @@ export async function openImport(ctx = {}, { mediaRoute = 'listening' } = {}) {
   const context = ctx.context || {};
   const memory = context.memory || null;
   const admittedForPractice = (id, result) => {
-    if (mediaRoute !== 'shadow') return true;
+    if (!['shadow','dictation'].includes(mediaRoute)) return true;
     const source = sourceFromLesson(id, result, '', languages().support);
-    return source?.hasModelAudio && source.language === context.language && result.asset?.processing_state !== 'processing';
+    return source?.hasModelAudio && source.language === context.language && (!result.asset?.processing_state || result.asset.processing_state === 'ready');
   };
   const navigate = (routeId, params) => {
     const target = href(routeId, params);

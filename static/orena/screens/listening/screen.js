@@ -50,7 +50,6 @@ export default async function listening(element, ctx) {
   const c = ctx.context;
   const support = languages().support;
   const lessonId = ctx.params.id;
-  ctx.setLoadingLabel?.(`${t('preparingMeaning')}${support !== c.language ? ` ${t('aiMeaningNotice')}` : ''}`);
 
   /* A curated lesson, a stored upload or a pasted link: one resolver, one payload shape
      (product/media-source.js). A source with no transcript still opens and plays. */

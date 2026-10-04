@@ -1,0 +1,13 @@
+/* Check Understanding composition; audio and primary next action stay docked.
+   Only the question/options/feedback card scrolls. No second colour owner. */
+.s-listenq { gap: 14px; }
+.s-listenq .s-check__card { flex: 1; }
+.s-listenq__player, .s-listenq__footer { display: flex; align-items: center; gap: 12px; flex: none; }
+.s-listenq__footer { justify-content: flex-end; padding-bottom: 12px; }
+.s-listenq .o-btn { min-height: 44px; }
+@media (max-width: 600px) {
+  .s-listenq .s-check__card { padding: 20px; }
+  .s-listenq .s-check__head { gap: 10px; }
+  .s-listenq .s-check__question { font-size: 19px; }
+  .s-listenq .s-check__option { padding: 14px; }
+}

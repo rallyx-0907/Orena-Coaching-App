@@ -8,6 +8,7 @@ import { defineCopy } from '../../copy/index.js';
 
 const layers = {
   headerTitle: 'interface',
+  chooseLesson: 'interface',
   play: 'interface',
   playing: 'interface',
   checkButton: 'interface',
@@ -42,6 +43,7 @@ const layers = {
 export const t = defineCopy('dictation', {
   layers,
   en: {
+    chooseLesson: 'Choose lesson',
     headerTitle: 'Dictation · segment {n} of {total}',
     play: 'Play segment',
     playing: 'Playing segment…',
@@ -75,6 +77,7 @@ export const t = defineCopy('dictation', {
     progressUnread: "Couldn't read your earlier progress on this line, so this attempt wasn't saved and nothing was overwritten.",
   },
   vi: {
+    chooseLesson: 'Chọn bài khác',
     headerTitle: 'Chép chính tả · đoạn {n}/{total}',
     play: 'Phát đoạn này',
     playing: 'Đang phát đoạn…',
@@ -107,6 +110,7 @@ export const t = defineCopy('dictation', {
     progressUnread: 'Chưa đọc được tiến độ trước đó của câu này, nên lần thử này không được lưu và không có gì bị ghi đè.',
   },
   zh: {
+    chooseLesson: '选择其他课程',
     headerTitle: '听写 · 第 {n} / {total} 段',
     play: '播放这一段',
     playing: '正在播放…',
