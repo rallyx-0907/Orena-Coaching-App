@@ -259,6 +259,8 @@ class _Turn:
         yield self.stream.emit(SessionEvent(session_id=session.agent_session_id, contract_version=self.stream.version))
         try:
             turn = TurnInput.from_request(self.request)
+            # A changed target language starts from a clean context: nothing kept in the other one is read (3.3).
+            session = session.for_target(self.locale.target)
             tier1 = build_tier1(turn, session)
             self.address = tier1.address
             self.gate.address = tier1.address
@@ -670,7 +672,7 @@ class _Turn:
         limit = self.rt.limits.max_recent_tool_results
 
         def change(state):
-            state = state.with_context(turn.context)
+            state = state.for_target(self.locale.target).with_context(turn.context)
             if not self.opening:  # an opening turn is not a learner turn (§3.2)
                 state = state.with_turn()
             if self.address_offered_now:

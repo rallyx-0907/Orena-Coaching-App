@@ -51,6 +51,24 @@ class AgentSessionState:
     voice_session_ref: str | None = field(default=None, repr=False)
     turn_count: int = 0
     address_asked: bool = False  # the learner was asked once, this session, about an address pair
+    target_language: str | None = None  # the contract target the kept context belongs to
+
+    def for_target(self, target: str | None) -> AgentSessionState:
+        """The session as a turn in `target` may see it (dogfood gate 3.3).
+
+        What was kept belongs to the language it was learned in: a selection, the
+        tools' results, the app context, a goal and a voice session are dropped when
+        the learner's target language changes, so nothing of an English context
+        reaches a Chinese turn. What does not depend on the target - who the session
+        belongs to, its turn count, whether an address was asked - stays.
+        """
+
+        if target is None or self.target_language == target:
+            return self
+        if self.target_language is None and not self.turn_count:
+            return replace(self, target_language=target)
+        return replace(self, target_language=target, current_app_context=None, last_selected_entity=None,
+                       active_learning_goal=None, recent_tool_results=(), voice_session_ref=None)
 
     def with_context(self, context: AppContextSnapshot) -> AgentSessionState:
         selected = context.selected_item or self.last_selected_entity
