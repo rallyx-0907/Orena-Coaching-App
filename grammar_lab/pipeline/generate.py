@@ -984,9 +984,179 @@ def complete_generated_terminal_bindings(data: dict[str, Any], zh: bool) -> dict
     return out
 
 
+
+def normalize_generated_safe_joiner_slots(data: dict[str, Any], zh: bool) -> dict[str, Any]:
+    """Split only closed, unambiguous generated '+' sequences.
+
+    The stored UI draws '+' between slots, so a provider slot such as
+    ``aux + not`` is structurally invalid. For English ``X + not`` only, split
+    the slot when every affected surface binding also has the exact form
+    ``<X surface> not``. Indexes in examples and personal production are
+    remapped together. Anything ambiguous remains untouched and fails closed.
+    """
+    if zh:
+        return copy.deepcopy(data)
+
+    out = copy.deepcopy(data)
+    form_keys = {"affirmative": "formula", "negative": "negative", "question": "question"}
+
+    for form, key in form_keys.items():
+        formula = out.get(key) or []
+        if not formula:
+            continue
+
+        split_old: dict[int, tuple[str, dict[str, Any], dict[str, Any]]] = {}
+        for old_index, slot in enumerate(formula):
+            text = str(slot.get("text", ""))
+            parts = [part.strip() for part in text.split("+")]
+            if (
+                len(parts) == 2
+                and parts[0]
+                and parts[1].casefold() == "not"
+                and not slot.get("options")
+            ):
+                first = copy.deepcopy(slot)
+                first["text"] = parts[0]
+                second = {
+                    "text": "not",
+                    "role": "marker",
+                    "label": "not",
+                    "optional": bool(slot.get("optional", False)),
+                    "options": [],
+                }
+                split_old[old_index] = (parts[0], first, second)
+
+        if not split_old:
+            continue
+
+        split_bindings: dict[tuple[int, int], tuple[str, str]] = {}
+        safe = True
+        for example_index, example in enumerate(out.get("examples", [])):
+            if example.get("form") != form:
+                continue
+            for binding_index, binding in enumerate(example.get("bindings") or []):
+                old_index = binding.get("slot_index")
+                if old_index not in split_old:
+                    continue
+                surface = target_text(str(binding.get("text", "")), False)
+                match = re.fullmatch(r"(.+?)\s+(not)", surface, flags=re.IGNORECASE)
+                if match is None:
+                    safe = False
+                    break
+                split_bindings[(example_index, binding_index)] = (
+                    match.group(1),
+                    match.group(2),
+                )
+            if not safe:
+                break
+        if not safe:
+            continue
+
+        production = out.get("personal_production") or {}
+        production_rule = production.get("pattern_rule") or {}
+        production_split: dict[int, tuple[list[str], list[str]]] = {}
+        if production.get("target_form") == form:
+            slots = production_rule.get("slots") or []
+            for rule_index, rule_slot in enumerate(slots):
+                old_index = rule_slot.get("slot_index")
+                if old_index not in split_old:
+                    continue
+                if rule_slot.get("regex"):
+                    safe = False
+                    break
+                any_of = rule_slot.get("any_of") or []
+                left_values: list[str] = []
+                right_values: list[str] = []
+                for literal in any_of:
+                    match = re.fullmatch(
+                        r"(.+?)\s+(not)",
+                        str(literal).strip(),
+                        flags=re.IGNORECASE,
+                    )
+                    if match is None:
+                        safe = False
+                        break
+                    left_values.append(match.group(1))
+                    right_values.append(match.group(2))
+                if not safe or not left_values:
+                    safe = False
+                    break
+                production_split[rule_index] = (left_values, right_values)
+            if not safe or len(slots) + len(production_split) > PERSONAL_PRODUCTION_MAX_SLOTS:
+                continue
+
+        new_formula: list[dict[str, Any]] = []
+        remap: dict[int, int] = {}
+        split_new: dict[int, tuple[int, int]] = {}
+        for old_index, slot in enumerate(formula):
+            remap[old_index] = len(new_formula)
+            if old_index in split_old:
+                _left_text, first, second = split_old[old_index]
+                first_index = len(new_formula)
+                new_formula.extend([first, second])
+                split_new[old_index] = (first_index, first_index + 1)
+            else:
+                new_formula.append(copy.deepcopy(slot))
+
+        out[key] = new_formula
+
+        for example_index, example in enumerate(out.get("examples", [])):
+            if example.get("form") != form:
+                continue
+            rewritten: list[dict[str, Any]] = []
+            for binding_index, binding in enumerate(example.get("bindings") or []):
+                old_index = binding.get("slot_index")
+                if old_index in split_new:
+                    left_index, right_index = split_new[old_index]
+                    left_text, right_text = split_bindings[(example_index, binding_index)]
+                    rewritten.extend([
+                        {"slot_index": left_index, "text": left_text},
+                        {"slot_index": right_index, "text": right_text},
+                    ])
+                elif old_index in remap:
+                    rewritten.append({
+                        **binding,
+                        "slot_index": remap[old_index],
+                    })
+                else:
+                    rewritten.append(copy.deepcopy(binding))
+            example["bindings"] = rewritten
+
+        if production.get("target_form") == form:
+            rewritten_rule: list[dict[str, Any]] = []
+            for rule_index, rule_slot in enumerate(production_rule.get("slots") or []):
+                old_index = rule_slot.get("slot_index")
+                if rule_index in production_split:
+                    left_values, right_values = production_split[rule_index]
+                    left_index, right_index = split_new[old_index]
+                    rewritten_rule.extend([
+                        {
+                            "slot_index": left_index,
+                            "any_of": left_values,
+                            "regex": "",
+                        },
+                        {
+                            "slot_index": right_index,
+                            "any_of": right_values,
+                            "regex": "",
+                        },
+                    ])
+                elif old_index in remap:
+                    rewritten_rule.append({
+                        **rule_slot,
+                        "slot_index": remap[old_index],
+                    })
+                else:
+                    rewritten_rule.append(copy.deepcopy(rule_slot))
+            production_rule["slots"] = rewritten_rule
+
+    return out
+
+
 def normalize_generated_structure(data: dict[str, Any], zh: bool) -> dict[str, Any]:
     """Return the exact structural candidate that full assembly validates."""
-    out = normalize_generated_formula_order(data, zh)
+    out = normalize_generated_safe_joiner_slots(data, zh)
+    out = normalize_generated_formula_order(out, zh)
     out = complete_generated_single_gap_bindings(out, zh)
     out = complete_generated_terminal_bindings(out, zh)
     return normalize_generated_formula_order(out, zh)
