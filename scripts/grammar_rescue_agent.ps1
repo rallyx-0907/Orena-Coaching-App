@@ -9,10 +9,45 @@ param(
     [ValidateRange(1, 60)]
     [int]$MaxTurns = 24,
 
-    [string]$Model = ""
+    [string]$Model = "",
+
+    [switch]$AllowInitialPaidCandidate,
+
+    [ValidateRange(0.001, 1.0)]
+    [double]$CostCeilingUsd = 0.02
 )
 
 $ErrorActionPreference = "Stop"
+
+function Invoke-OneShotGeneration {
+    param(
+        [string]$Id,
+        [double]$Ceiling
+    )
+
+    $lang = if ($Id.StartsWith("zh.")) { "zh" } else { "en" }
+    $args = @(
+        "-m", "grammar_lab.pipeline.cli", "generate-corpus",
+        "--lang", $lang,
+        "--provider", "deepseek",
+        "--model", "deepseek-flash",
+        "--workers", "1",
+        "--point-ids", $Id,
+        "--one-shot",
+        "--cost-ceiling-usd", "$Ceiling"
+    )
+
+    $lines = & python @args 2>&1
+    $exitCode = $LASTEXITCODE
+    $text = ($lines | Out-String)
+    Write-Host $text
+
+    return [pscustomobject]@{
+        ExitCode = $exitCode
+        Text = $text
+    }
+}
+
 
 function Invoke-CacheReplay {
     param([string]$Id)
@@ -140,7 +175,12 @@ if (-not (Get-Command claude -ErrorAction SilentlyContinue)) {
 
 Write-Host "Grammar rescue agent: $PointId"
 Write-Host "Maximum cycles: $MaxCycles"
-Write-Host "Provider access: BLOCKED (wrapper replay is cache-only; Claude cannot run generate-corpus)."
+Write-Host "Claude provider access: BLOCKED (Claude cannot run generate-corpus)."
+if ($AllowInitialPaidCandidate) {
+    Write-Host "Initial DeepSeek candidate: ALLOWED ONCE by wrapper; one-shot; soft ceiling USD $CostCeilingUsd."
+} else {
+    Write-Host "Initial DeepSeek candidate: BLOCKED. Cache-only rescue only."
+}
 
 function Get-ChangedPaths {
     $paths = @()
@@ -174,8 +214,30 @@ for ($cycle = 1; $cycle -le $MaxCycles; $cycle++) {
     }
 
     if ($replay.Text -match "cache-only mode: no cached completion") {
-        Write-Error "No paid cached candidate exists for $PointId. Rescue mode will not generate one."
-        exit 20
+        if (-not $AllowInitialPaidCandidate) {
+            Write-Error (
+                "No paid cached candidate exists for $PointId. " +
+                "Re-run with -AllowInitialPaidCandidate to authorize exactly one one-shot candidate."
+            )
+            exit 20
+        }
+
+        Write-Host ""
+        Write-Host "=== Rescue cycle $cycle/$MaxCycles : authorized one-shot paid candidate ==="
+        $paid = Invoke-OneShotGeneration -Id $PointId -Ceiling $CostCeilingUsd
+        $AllowInitialPaidCandidate = $false
+
+        if ($paid.Text -match "(?m)^written\s+$([regex]::Escape($PointId))") {
+            Write-Host "RESCUE COMPLETE: $PointId was written by the single authorized candidate."
+            exit 0
+        }
+
+        if ($paid.Text -notmatch "(?m)^error\s+$([regex]::Escape($PointId))") {
+            Write-Error "Authorized one-shot generation returned an unrecognized result. Stopping fail-closed."
+            exit 22
+        }
+
+        $replay = $paid
     }
 
     if ($replay.Text -notmatch "(?m)^error\s+$([regex]::Escape($PointId))") {
