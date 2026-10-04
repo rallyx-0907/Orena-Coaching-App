@@ -131,7 +131,7 @@ export function listPage({ state, view, t, ui, href, now }) {
   return {
     title: t('aiTitle'),
     markup: html`<section class="a-page" data-screen-label="A2 AI &amp; Models">
-      ${pageHead({ title: t('aiTitle'), sub: t('aiSub') })}
+      ${pageHead({ title: t('aiTitle'), sub: t('aiSub'), actions: [{ label: t('costTitle'), size: 'sm', a: 'go', data: { to: href('adminAiCosts') } }] })}
       ${banners.map(banner)}
       ${tab === 'route' ? legacyStatus(t, state) : ''}
       ${tabs([

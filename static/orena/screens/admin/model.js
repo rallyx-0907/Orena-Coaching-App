@@ -24,7 +24,7 @@ const ROUTES_OF = {
   overview: ['adminOverview'],
   users: ['adminUsers', 'adminUser'],
   operations: ['adminOperations', 'adminWorkers', 'adminPolling', 'adminErrors'],
-  ai: ['adminAi', 'adminProvider', 'adminProviderKey', 'adminCapability'],
+  ai: ['adminAi', 'adminProvider', 'adminProviderKey', 'adminCapability', 'adminAiCosts'],
   content: ['adminContent', 'adminBooks', 'adminBook', 'adminMedia', 'adminMediaItem', 'adminVocab', 'adminCollection',
     'adminReading', 'adminQueue', 'adminArticle', 'adminSet', 'adminAdd', 'adminSources', 'adminSource'],
   imports: ['adminImports', 'adminImportBooks', 'adminImportMedia', 'adminImportVocab', 'adminImportPack', 'adminImportSource', 'adminJobs', 'adminJob', 'adminHistory'],

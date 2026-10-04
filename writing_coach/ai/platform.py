@@ -909,15 +909,16 @@ def admin_ai_operations(request: Request, limit: int = 100) -> dict[str, Any]:
 
 # Audio capabilities are reported per minute of audio; every other one per call.
 _PER_MINUTE = frozenset({"speech_asr"})
+# (code, English text): the Admin page words each code in the interface language.
 COST_REPORT_GAPS = (
-    "Per learner: the operation telemetry is anonymous by design; only Orena agent turns carry an account "
-    "(agent.turn rows), so cost per learner exists for the agent only.",
-    "Per Orena turn: a turn is one to four agent_turn_fast rounds; the per-turn cost is in the agent.turn "
-    "timeline report, not here.",
-    "Infrastructure (hosting, database, storage, bandwidth) is not measured: unknown.",
-    "Audio rates are provider list prices (ai/pricing.py); the Azure pronunciation rate is to be checked "
-    "against the Azure bill.",
-    "Calls before 2026-10-04 for speech recognition and pronunciation scoring were never recorded.",
+    ("per_learner", "Per learner: the operation telemetry is anonymous by design; only Orena agent turns carry an "
+     "account (agent.turn rows), so cost per learner exists for the agent only."),
+    ("per_turn", "Per Orena turn: a turn is one to four agent_turn_fast rounds; the per-turn cost is in the "
+     "agent.turn timeline report, not here."),
+    ("infrastructure", "Infrastructure (hosting, database, storage, bandwidth) is not measured: unknown."),
+    ("audio_list_price", "Audio rates are provider list prices (ai/pricing.py); the Azure pronunciation rate is to "
+     "be checked against the Azure bill."),
+    ("audio_before", "Calls before 2026-10-04 for speech recognition and pronunciation scoring were never recorded."),
 )
 
 
@@ -954,7 +955,7 @@ def cost_report(rows: list[dict[str, Any]], *, days: int, since: datetime) -> di
     return {
         "since": since.isoformat(), "days": days, "currency": "USD",
         "by_day": [dict(day, usd=round(day["usd"], 8)) for day in sorted(by_day.values(), key=lambda d: d["day"], reverse=True)],
-        "by_feature": features, "gaps": list(COST_REPORT_GAPS),
+        "by_feature": features, "gaps": [{"code": code, "text": text} for code, text in COST_REPORT_GAPS],
     }
 
 

@@ -134,4 +134,4 @@ def test_the_cost_report_gives_a_unit_cost_per_call_and_per_audio_minute():
     assert features["speech_asr"]["unit"] == "audio_minute" and features["speech_asr"]["usd_per_unit"] == 0.0002
     assert features["learner_dictionary"]["usd_per_unit"] is None, "an average over nothing is null, never 0"
     assert [d["day"] for d in report["by_day"]] == ["2026-10-04", "2026-10-03"]
-    assert report["gaps"], "the report says what it cannot measure"
+    assert report["gaps"] and all(gap["code"] and gap["text"] for gap in report["gaps"]), "the report says what it cannot measure"

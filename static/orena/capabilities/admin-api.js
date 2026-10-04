@@ -56,6 +56,7 @@ async function packExport(body) {
 
 export const adminApi = {
   packExport,
+  aiCosts: (days = 30) => request(`/api/admin/ai/costs${query({ days })}`),
   packPlan: (file) => request('/api/admin/content-packs/plan', { method: 'POST', body: files('file', [file]) }),
   packImport: (file) => request('/api/admin/content-packs/import', { method: 'POST', body: files('file', [file]) }),
   overview: () => request('/api/admin/console/overview'),

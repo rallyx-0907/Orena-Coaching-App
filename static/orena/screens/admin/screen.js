@@ -18,7 +18,9 @@ const AREA_PAGES = {
   overview: () => import('./control.js').then((module) => module.mountControl),
   users: () => import('./control.js').then((module) => module.mountControl),
   operations: () => import('./control.js').then((module) => module.mountControl),
-  ai: () => import('./ai.js').then((module) => module.mountAi),
+  ai: (routeId) => (routeId === 'adminAiCosts'
+    ? import('./costs.js').then((module) => module.mountCosts)
+    : import('./ai.js').then((module) => module.mountAi)),
   content: (routeId) => (READING_ROUTES.has(routeId)
     ? import('./reading.js').then((module) => module.mountReading)
     : import('./content.js').then((module) => module.mountContent)),

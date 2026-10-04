@@ -79,6 +79,7 @@ const { ROUTES, match, href, isAdminHash } = await import('../static/orena/shell
    reason is required, and every key here must still not be a design page (the list cannot hide one). */
 const KIT_PAGES = Object.freeze({
   impPack: 'D-128: content pack export/import, kit blocks only (human decision 2026-10-04, item 2 of the completion plan)',
+  aiCosts: 'D-128: AI cost page, kit blocks only (human decision 2026-10-04, decision 2)',
 });
 /* ---- 1. routes: Admin is bare, admin-only, and on the pinned design's own keys ---------------- */
 const pin = fs.readFileSync('docs/design/canonical-ui/screens/Orena-Admin.dc.html', 'utf8');
