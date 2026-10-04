@@ -921,7 +921,7 @@ def assemble_generated_example(
 
 
 
-V04_STRUCTURE_REPAIR_MAX_TOKENS = 2200
+V04_STRUCTURE_REPAIR_MAX_TOKENS = 1600
 
 _GENERATION_STRUCTURE_DERIVATIVE_CODES = {
     "example.formula_role_missing",
@@ -1999,30 +1999,34 @@ class Generator:
             # evict it so a resumed run gets a genuinely fresh chance.
             self.llm.invalidate_cache(system=system, user=attempt_user, json_schema=provider_schema)
 
-            # v13 binding failures are often caused by one malformed formula
-            # projection (for example mutually exclusive article routes written as
-            # sequential required slots). Repair only formula/variants, bindings and
-            # the production matcher before paying for another full lesson.
+            # v13 binding failures are projection failures, not a reason to
+            # buy the whole lesson again. Keep the accepted lesson prose and make
+            # at most two small structure-only repair calls.
+            structure_repair_exhausted = False
             if can_repair_generation_structure(issues):
-                try:
-                    structure_patch = request_generation_structure_patch(
-                        self.llm,
-                        point_id=point_id,
-                        title=header["native_title"],
-                        target_lang=existing["target_lang"],
-                        data=result.data,
-                        issues=issues,
-                        full_schema=schema,
-                    )
-                except LLMError as exc:
-                    if exc.usage is not None:
-                        patch_cost = exc.usage.cost_usd(self.llm.model)
-                        if patch_cost is None:
-                            cost_known = False
-                        else:
-                            total_cost += patch_cost
-                    all_cached = False
-                else:
+                structure_data = result.data
+                structure_issues = issues
+                for _structure_attempt in range(2):
+                    try:
+                        structure_patch = request_generation_structure_patch(
+                            self.llm,
+                            point_id=point_id,
+                            title=header["native_title"],
+                            target_lang=existing["target_lang"],
+                            data=structure_data,
+                            issues=structure_issues,
+                            full_schema=schema,
+                        )
+                    except LLMError as exc:
+                        if exc.usage is not None:
+                            patch_cost = exc.usage.cost_usd(self.llm.model)
+                            if patch_cost is None:
+                                cost_known = False
+                            else:
+                                total_cost += patch_cost
+                        all_cached = False
+                        break
+
                     patch_cost = structure_patch.usage.cost_usd(structure_patch.model)
                     if patch_cost is None:
                         cost_known = False
@@ -2030,26 +2034,33 @@ class Generator:
                         total_cost += patch_cost
                     all_cached = all_cached and structure_patch.cached
                     try:
-                        patched_data = apply_generation_structure_patch(
-                            result.data, structure_patch.data
+                        structure_data = apply_generation_structure_patch(
+                            structure_data, structure_patch.data
                         )
                     except ValueError:
-                        pass
-                    else:
-                        result = replace(result, data=patched_data)
-                        point, contract_issues = assemble(result)
-                        issues = [
-                            *contract_issues,
-                            *validate_generated_point(self.lang, point, self.root),
-                        ]
-                        if not issues:
-                            save_point(self.lang, point, self.root)
-                            register_realization(point, self.root)
-                            return GenerateOutcome(
-                                point_id, "written",
-                                cost_usd=(total_cost if cost_known and total_cost else None),
-                                cached=all_cached,
-                            )
+                        break
+
+                    result = replace(result, data=structure_data)
+                    point, contract_issues = assemble(result)
+                    structure_issues = [
+                        *contract_issues,
+                        *validate_generated_point(self.lang, point, self.root),
+                    ]
+                    if not structure_issues:
+                        save_point(self.lang, point, self.root)
+                        register_realization(point, self.root)
+                        return GenerateOutcome(
+                            point_id, "written",
+                            cost_usd=(total_cost if cost_known and total_cost else None),
+                            cached=all_cached,
+                        )
+                    if not can_repair_generation_structure(structure_issues):
+                        break
+
+                issues = structure_issues
+                structure_repair_exhausted = any(
+                    issue.code.startswith("generation.") for issue in issues
+                )
 
             # Remaining semantic failures can still be confined to formula ordering,
             # stored example spans and the deterministic production rule. Repair that
@@ -2121,7 +2132,7 @@ class Generator:
             # buy two more 8k-token full generations. Likewise, v13 binding
             # contract failures get one feedback retry, then fail closed.
             contract_failure = any(issue.code.startswith("generation.") for issue in issues)
-            if targeted_repair_used or (contract_failure and attempt >= 2):
+            if targeted_repair_used or structure_repair_exhausted or (contract_failure and attempt >= 2):
                 break
 
             repair_context = (
