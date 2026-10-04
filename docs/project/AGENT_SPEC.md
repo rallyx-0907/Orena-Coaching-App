@@ -238,8 +238,7 @@ Kiểm live 2026-09-28 (trần 0,20 USD, thực ≈ 0,10 USD; sandbox đã gỡ)
 Sửa R21 161544d: agent/labels.py (SRS, danh mục lỗi hai ngôn ngữ, loại lỗi, lỗi phát âm; LearnerScope mang
           interface), đổi lại xưng hô, câu mời gọn; "Mình lưu … cho bạn" là claim (v5 B1). Flow live mới: decline
           (một cặp qua nhiều lượt, hỏi một lần, từ chối), rechange.
-Slice 3  IMPLEMENTING (2026-09-28; R21, R23). Gate local đạt; live chưa kiểm được: flash-lite hết quota (429),
-          gemini-3.8-flash quá tải (503) - REVIEWABLE sau một lần live đạt. 03faf0c: coaching.py - build_learning_snapshot (/api/learner-summary
+Slice 3  REVIEWABLE (live 2026-10-04, gói trả phí; R21, R23, R26). 03faf0c: coaching.py - build_learning_snapshot (/api/learner-summary
           30 ngày + review due, không current_level, số demo bị loại, null khi không đọc được),
           get_learning_weaknesses (đếm tất định trên bản ghi; ngữ pháp null), get_recommended_next_activities
           (thứ tự backend: từ đến hạn rồi cross-skill cue, kèm id cho navigate); coach notes lớp 3 (remember_note /
@@ -250,8 +249,14 @@ Live     2026-09-28 notes trên gemini-3.8-flash (R25): lưu note đạt; sửa 
           (vòng 1 không gọi tool); xoá chưa kiểm được - 503 "high demand" 3 lần, lần thứ 4 vượt trần đợt 0,15 USD
           (bound 0,0802; chi phí thật 0, gói miễn phí). Tới segment đầu 17,6 s / 19,1 s (flash-lite trước đây: trung vị
           2,96 s trên 82 lượt khác). Lần sau: gemini-3.7-flash.
-Tiếp      Người quyết: trần mới cho lần live Slice 3 (notes, coaching, claims) trên gemini-3.7-flash; gói/quota provider
-          trước khi kích hoạt; rồi Slice 4 (§26).
+Live     2026-10-04 notes, coaching, claims trên gemini-3.5-flash-lite, ghim cho cả agent_turn_fast và agent_turn_deep
+          (trần 0,30 USD; bound 0,0443; khóa nhịp tim gemini-text): 11/11 lượt trả lời, không lần thử lại, không vòng
+          nào kết thúc bất thường (không có lượt Gemini kết thúc stream mà không gửi lý do). Notes đạt cả bốn bước:
+          lưu note; sửa thay đúng note (cùng id) và xoá đúng note - cả hai sau lời nhắc của server (vòng 1 không gọi
+          tool). Lượt mở đầu nêu dữ kiện từ snapshot ("3 từ đến hạn ôn"); câu mời do server viết, đúng ngôn ngữ, không
+          câu nào nói đã làm. Tới segment đầu: trung vị 3,99 s, chậm nhất 5,94 s.
+Tiếp      Dark merge vào codex/work (agent tắt mặc định; người chủ dự án merge), rồi bật trên staging :8011; quota
+          dùng chung trước khi chạy nhiều worker (R26); rồi Slice 4 (§26).
 ```
 
 ---
