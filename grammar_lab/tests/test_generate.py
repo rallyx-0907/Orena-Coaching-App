@@ -585,7 +585,7 @@ def test_generate_v04_retries_semantic_validation_with_feedback(tmp_path: Path) 
 def test_generate_v04_no_paid_repairs_stops_after_full_candidate(tmp_path: Path) -> None:
     lab = _v04_lab(tmp_path)
     lab.write()
-    bad = copy.deepcopy(CANNED_V04)
+    bad = _answer(copy.deepcopy(CANNED_V04))
     bad["formula"].insert(1, {
         "text": "required marker",
         "role": "marker",
@@ -611,7 +611,7 @@ def test_generate_v04_no_paid_repairs_stops_after_full_candidate(tmp_path: Path)
             "content": [{
                 "type": "tool_use",
                 "name": sent["tool_choice"]["name"],
-                "input": _answer(bad),
+                "input": bad,
             }],
             "usage": {"input_tokens": 500, "output_tokens": 300},
         })
