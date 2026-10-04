@@ -24,7 +24,7 @@ import hashlib
 import json
 import re
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any
 
@@ -715,6 +715,172 @@ def assemble_generated_example(
 
     example["spans"] = spans
     return example, problems
+
+
+
+V04_STRUCTURE_REPAIR_MAX_TOKENS = 2200
+
+_GENERATION_STRUCTURE_DERIVATIVE_CODES = {
+    "example.formula_role_missing",
+    "example.span_role_not_in_formula",
+    "example.span_slot_mismatch",
+    "personal_production.rule_invalid",
+    "personal_production.rule_role_not_in_formula",
+    "personal_production.rule_rejects_sample",
+    "personal_production.rule_rejects_example",
+}
+
+
+def can_repair_generation_structure(issues: list[Any]) -> bool:
+    """Repair raw v13 formula/binding failures without rewriting lesson prose."""
+    codes = [str(getattr(issue, "code", "")) for issue in issues]
+    return (
+        any(code.startswith("generation.") for code in codes)
+        and all(
+            code.startswith("generation.") or code in _GENERATION_STRUCTURE_DERIVATIVE_CODES
+            for code in codes
+        )
+    )
+
+
+def _generation_structure_patch_schema(full_schema: dict[str, Any]) -> dict[str, Any]:
+    props = full_schema["properties"]
+    binding = copy.deepcopy(
+        props["examples"]["items"]["properties"]["bindings"]["items"]
+    )
+    rule = copy.deepcopy(
+        props["personal_production"]["properties"]["pattern_rule"]
+    )
+    example_patch = {
+        "type": "object",
+        "additionalProperties": False,
+        "required": ["index", "bindings"],
+        "properties": {
+            "index": {"type": "integer", "minimum": 0, "maximum": V04_EXAMPLES - 1},
+            "bindings": {"type": "array", "minItems": 1, "items": binding},
+        },
+    }
+    return {
+        "type": "object",
+        "additionalProperties": False,
+        "required": ["formula", "negative", "question", "examples", "personal_production_pattern_rule"],
+        "properties": {
+            "formula": copy.deepcopy(props["formula"]),
+            "negative": copy.deepcopy(props["negative"]),
+            "question": copy.deepcopy(props["question"]),
+            "examples": {
+                "type": "array",
+                "minItems": V04_EXAMPLES,
+                "maxItems": V04_EXAMPLES,
+                "items": example_patch,
+            },
+            "personal_production_pattern_rule": rule,
+        },
+    }
+
+
+def _generation_structure_context(
+    point_id: str, data: dict[str, Any], issues: list[Any],
+) -> dict[str, Any]:
+    return {
+        "point_id": point_id,
+        "issues": [
+            {"code": issue.code, "path": issue.path, "message": issue.message}
+            for issue in issues[:12]
+        ],
+        "formula": data["formula"],
+        "negative": data["negative"],
+        "question": data["question"],
+        "examples": [
+            {
+                "index": index,
+                "text": example["text"],
+                "form": example["form"],
+                "bindings": example["bindings"],
+            }
+            for index, example in enumerate(data["examples"])
+        ],
+        "personal_production": {
+            "target_form": data["personal_production"]["target_form"],
+            "sample": data["personal_production"]["sample"],
+            "pattern_rule": data["personal_production"]["pattern_rule"],
+        },
+    }
+
+
+def request_generation_structure_patch(
+    llm: LLMClient,
+    *,
+    point_id: str,
+    target_lang: str,
+    data: dict[str, Any],
+    issues: list[Any],
+    full_schema: dict[str, Any],
+) -> Any:
+    """Repair only the v13 structural projection; learner-facing prose stays immutable."""
+    patch_schema = _generation_structure_patch_schema(full_schema)
+    system = """You repair ONLY the structural grammar projection of an already-written lesson.
+The lesson's prose and example sentences are immutable. Return a corrected structural object
+matching the schema.
+
+Rules:
+- Every formula list is ONE realizable left-to-right sentence path, never several mutually
+  exclusive paths concatenated together.
+- Surface alternatives that occupy the same grammatical position belong in ONE slot's options.
+  Example: a/an are options of one article slot, not two sequential slots.
+- If a grammatical element can be absent, use ONE optional=true slot. Absence itself is not
+  a token: never create a required slot such as zero article, no article, O-slash or empty-set
+  in addition to another article route. Represent zero article by omitting an optional
+  article/determiner slot.
+- Keep a slot abstract where the examples vary lexically (S, V, N, NP, clause, etc.).
+- Each unchanged example must bind every non-optional slot of its selected form exactly once,
+  using an exact substring, in slot order. Optional slots may be omitted.
+- Do not fake coverage by marking a genuinely required grammar-bearing slot optional.
+- If the current same-form examples expose several surface realizations, factor their shared
+  order into options/optional slots when that is grammatically truthful.
+- personal_production_pattern_rule uses zero-based slot_index values from the REPAIRED
+  target-form formula. It must match the unchanged sample and at least one unchanged example
+  of that form. Use only grammar-bearing evidence, never enumerate open-class vocabulary.
+- Do not change, paraphrase, or replace any example text, translation, explanation, practice
+  item, title, summary, mistake, or other lesson content."""
+    user = (
+        f"Repair the structural projection for {point_id} ({target_lang}).\n"
+        + json.dumps(
+            _generation_structure_context(point_id, data, issues),
+            ensure_ascii=False,
+            separators=(",", ":"),
+        )
+    )
+    return llm.complete(
+        system=system,
+        user=user,
+        json_schema=patch_schema,
+        schema_name="grammar_point_v04_structure_patch",
+        max_tokens=V04_STRUCTURE_REPAIR_MAX_TOKENS,
+    )
+
+
+def apply_generation_structure_patch(
+    data: dict[str, Any], patch: dict[str, Any],
+) -> dict[str, Any]:
+    """Apply a structure-only patch while proving learner-facing content is unchanged."""
+    out = copy.deepcopy(data)
+    out["formula"] = patch["formula"]
+    out["negative"] = patch["negative"]
+    out["question"] = patch["question"]
+
+    seen: set[int] = set()
+    for item in patch["examples"]:
+        index = item["index"]
+        if index in seen or not 0 <= index < len(out["examples"]):
+            raise ValueError("structure patch example indexes must be unique and in range")
+        seen.add(index)
+        out["examples"][index]["bindings"] = item["bindings"]
+    if seen != set(range(len(out["examples"]))):
+        raise ValueError("structure patch must return bindings for every unchanged example")
+
+    out["personal_production"]["pattern_rule"] = patch["personal_production_pattern_rule"]
+    return out
 
 
 def assemble_generated_personal_production(
