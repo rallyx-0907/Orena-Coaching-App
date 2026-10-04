@@ -60,8 +60,18 @@ def _slot_view(slot: dict[str, Any]) -> dict[str, Any]:
 
 
 def _affected_example_indexes(issues: list[Any]) -> list[int]:
+    """Examples whose own span/form annotations need repair.
+
+    Some personal-production diagnostics deliberately point at an example text
+    that the rule failed to match (for example
+    personal_production.rule_rejects_example at examples[0].text). That path
+    is evidence for the rule failure, not a request to rewrite the example's
+    spans, so only example.* diagnostics select example patches here.
+    """
     indexes: set[int] = set()
     for issue in issues:
+        if not str(getattr(issue, "code", "")).startswith("example."):
+            continue
         match = _EXAMPLE_PATH.match(getattr(issue, "path", ""))
         if match:
             indexes.add(int(match.group(1)))
