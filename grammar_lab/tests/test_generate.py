@@ -623,6 +623,7 @@ def test_generate_v04_no_paid_repairs_stops_after_full_candidate(tmp_path: Path)
 
     assert outcome.status == "error"
     assert "semantic validation failed after 1 full attempt(s)" in outcome.reason
+    assert "plus targeted repair" not in outcome.reason
     assert len(calls) == 1
 
 
