@@ -1,15 +1,16 @@
-"""Targeted repair for schema-v0.4 grammar candidates.
+"""Targeted structural repair for schema-v0.4 assembled grammar points.
 
-Full point generation is expensive and mostly correct by the time deterministic
-validation finds a formula/span or personal-production mismatch. This module
-asks the provider for a small patch instead of rewriting translations,
-explanations, comparisons, mistakes, and practice items that already passed.
+The validator checks the assembled point, so repair must operate on that exact
+representation too. Keeping repair on the validator-facing object avoids a
+raw-vs-assembled mismatch (sanitized/recovered spans and reordered formulas)
+and lets the provider return only the examples/forms implicated by the issues.
 """
 
 from __future__ import annotations
 
 import copy
 import json
+import re
 from typing import Any
 
 from grammar_lab.pipeline.llm_client import LLMClient, LLMResult
@@ -21,8 +22,10 @@ ROLES = (
 )
 MAX_RULE_SLOTS = 4
 MAX_ANY_OF = 8
-TARGETED_REPAIR_MAX_TOKENS = 2600
-TARGETED_REPAIR_ATTEMPTS = 2
+TARGETED_REPAIR_MAX_TOKENS = 1800
+# One precise patch per full candidate. If it fails, let the existing full
+# semantic retry produce a fresh candidate rather than stacking repair spend.
+TARGETED_REPAIR_ATTEMPTS = 1
 
 _REPAIRABLE_CODES = {
     "example.formula_role_missing",
@@ -33,19 +36,18 @@ _REPAIRABLE_CODES = {
     "personal_production.rule_rejects_sample",
     "personal_production.rule_rejects_example",
 }
+_EXAMPLE_PATH = re.compile(r"^examples\[(\d+)\]")
 
 
 def can_target_repair(issues: list[Any]) -> bool:
-    """True only when every failure belongs to the small patch surface."""
+    """True only when every failure belongs to the bounded structural surface."""
     return bool(issues) and all(getattr(issue, "code", "") in _REPAIRABLE_CODES for issue in issues)
 
 
-def _formula_key(form: str) -> str:
-    return "formula" if form == "affirmative" else form
-
-
-def _formula_slots(data: dict[str, Any], form: str) -> list[dict[str, Any]]:
-    return data.get(_formula_key(form)) or []
+def _formula_slots(point: dict[str, Any], form: str) -> list[dict[str, Any]]:
+    if form == "affirmative":
+        return point["pattern"]["formula"]
+    return point["pattern"].get("variants", {}).get(form, [])
 
 
 def _slot_view(slot: dict[str, Any]) -> dict[str, Any]:
@@ -57,7 +59,32 @@ def _slot_view(slot: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _context(data: dict[str, Any], issues: list[Any], point_id: str) -> dict[str, Any]:
+def _affected_example_indexes(issues: list[Any]) -> list[int]:
+    indexes: set[int] = set()
+    for issue in issues:
+        match = _EXAMPLE_PATH.match(getattr(issue, "path", ""))
+        if match:
+            indexes.add(int(match.group(1)))
+    return sorted(indexes)
+
+
+def _example_view(example: dict[str, Any], index: int) -> dict[str, Any]:
+    text = example["text"]
+    return {
+        "index": index,
+        "text": text,
+        "form": example["form"],
+        "spans": [
+            {"text": text[span["start"]:span["end"]], "role": span["role"]}
+            for span in example.get("spans", [])
+        ],
+    }
+
+
+def _context(point: dict[str, Any], issues: list[Any], point_id: str) -> dict[str, Any]:
+    affected = _affected_example_indexes(issues)
+    production = point["personal_production"]
+    target_form = production["target_form"]
     return {
         "point_id": point_id,
         "issues": [
@@ -65,27 +92,26 @@ def _context(data: dict[str, Any], issues: list[Any], point_id: str) -> dict[str
             for issue in issues[:12]
         ],
         "formulas": {
-            form: [_slot_view(slot) for slot in _formula_slots(data, form)]
+            form: [_slot_view(slot) for slot in _formula_slots(point, form)]
             for form in FORMS
         },
-        "examples": [
-            {
-                "index": index,
-                "text": example["text"],
-                "form": example["form"],
-                "spans": example.get("spans", []),
-            }
-            for index, example in enumerate(data["examples"])
+        "affected_examples": [
+            _example_view(point["examples"][index], index)
+            for index in affected
         ],
         "personal_production": {
-            "target_form": data["personal_production"]["target_form"],
-            "sample": data["personal_production"]["sample"],
-            "pattern_rule": data["personal_production"]["pattern_rule"],
+            "target_form": target_form,
+            "sample": production["sample"]["text"],
+            "pattern_rule": production["pattern_rule"],
+            "target_examples": [
+                example["text"] for example in point["examples"]
+                if example["form"] == target_form
+            ],
         },
     }
 
 
-def _index_array_schema(length: int) -> dict[str, Any]:
+def _permutation_schema(length: int) -> dict[str, Any]:
     if length == 0:
         return {"type": "array", "maxItems": 0}
     return {
@@ -97,18 +123,8 @@ def _index_array_schema(length: int) -> dict[str, Any]:
     }
 
 
-def _optional_index_schema(length: int) -> dict[str, Any]:
-    if length == 0:
-        return {"type": "array", "maxItems": 0}
-    return {
-        "type": "array",
-        "maxItems": length,
-        "uniqueItems": True,
-        "items": {"type": "integer", "minimum": 0, "maximum": length - 1},
-    }
-
-
-def patch_schema(data: dict[str, Any]) -> dict[str, Any]:
+def patch_schema(point: dict[str, Any], issues: list[Any]) -> dict[str, Any]:
+    affected = _affected_example_indexes(issues)
     span = {
         "type": "object",
         "additionalProperties": False,
@@ -118,16 +134,30 @@ def patch_schema(data: dict[str, Any]) -> dict[str, Any]:
             "role": {"enum": list(ROLES)},
         },
     }
+    formula_order = {
+        "type": "object",
+        "additionalProperties": False,
+        "required": ["form", "order"],
+        "properties": {
+            "form": {"enum": list(FORMS)},
+            "order": {"type": "array", "items": {"type": "integer", "minimum": 0}},
+        },
+    }
+    optional = {
+        "type": "object",
+        "additionalProperties": False,
+        "required": ["form", "slot_index"],
+        "properties": {
+            "form": {"enum": list(FORMS)},
+            "slot_index": {"type": "integer", "minimum": 0},
+        },
+    }
     example_patch = {
         "type": "object",
         "additionalProperties": False,
         "required": ["index", "spans"],
         "properties": {
-            "index": {
-                "type": "integer",
-                "minimum": 0,
-                "maximum": max(0, len(data["examples"]) - 1),
-            },
+            "index": {"enum": affected} if affected else {"type": "integer"},
             "spans": {"type": "array", "minItems": 1, "items": span},
         },
     }
@@ -145,101 +175,130 @@ def patch_schema(data: dict[str, Any]) -> dict[str, Any]:
             "regex": {"type": "string"},
         },
     }
+    pattern_rule = {
+        "type": ["object", "null"],
+        "additionalProperties": False,
+        "required": ["ordered", "slots"],
+        "properties": {
+            "ordered": {"type": "boolean"},
+            "slots": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": MAX_RULE_SLOTS,
+                "items": rule_slot,
+            },
+        },
+    }
     return {
         "type": "object",
         "additionalProperties": False,
-        "required": ["formula_order", "make_optional", "examples", "pattern_rule"],
+        "required": ["formula_orders", "make_optional", "example_spans", "pattern_rule"],
         "properties": {
-            "formula_order": {
-                "type": "object",
-                "additionalProperties": False,
-                "required": list(FORMS),
-                "properties": {
-                    form: _index_array_schema(len(_formula_slots(data, form)))
-                    for form in FORMS
-                },
+            "formula_orders": {
+                "type": "array",
+                "maxItems": len(FORMS),
+                "items": formula_order,
             },
             "make_optional": {
-                "type": "object",
-                "additionalProperties": False,
-                "required": list(FORMS),
-                "properties": {
-                    form: _optional_index_schema(len(_formula_slots(data, form)))
-                    for form in FORMS
-                },
-            },
-            "examples": {
                 "type": "array",
-                "minItems": len(data["examples"]),
-                "maxItems": len(data["examples"]),
+                "items": optional,
+            },
+            "example_spans": {
+                "type": "array",
+                "minItems": len(affected),
+                "maxItems": len(affected),
                 "items": example_patch,
             },
-            "pattern_rule": {
-                "type": "object",
-                "additionalProperties": False,
-                "required": ["ordered", "slots"],
-                "properties": {
-                    "ordered": {"type": "boolean"},
-                    "slots": {
-                        "type": "array",
-                        "minItems": 1,
-                        "maxItems": MAX_RULE_SLOTS,
-                        "items": rule_slot,
-                    },
-                },
-            },
+            "pattern_rule": pattern_rule,
         },
     }
 
 
-def apply_patch(data: dict[str, Any], patch: dict[str, Any]) -> dict[str, Any]:
-    """Apply only bounded structural edits; reject a patch that changes text."""
-    out = copy.deepcopy(data)
+def _resolve_exact_spans(text: str, raw_spans: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Resolve patch substrings left-to-right; text itself is never rewritten."""
+    position = 0
+    spans: list[dict[str, Any]] = []
+    for raw in raw_spans:
+        needle = raw["text"]
+        start = text.find(needle, position)
+        if start < 0:
+            # Allow an earlier occurrence only when it does not overlap already
+            # resolved spans; this handles repeated words without guessing.
+            start = text.find(needle)
+        if start < 0:
+            raise ValueError(f"span {needle!r} is not an exact substring")
+        end = start + len(needle)
+        if any(not (end <= item["start"] or start >= item["end"]) for item in spans):
+            raise ValueError(f"overlapping span {needle!r}")
+        spans.append({"start": start, "end": end, "role": raw["role"]})
+        position = end
+    return spans
 
-    for form in FORMS:
+
+def _normalize_pattern_rule(raw: dict[str, Any]) -> dict[str, Any]:
+    slots: list[dict[str, Any]] = []
+    for raw_slot in raw["slots"]:
+        values = list(raw_slot.get("any_of") or [])
+        regex = str(raw_slot.get("regex") or "")
+        if bool(values) == bool(regex):
+            raise ValueError("pattern rule slot needs exactly one matcher")
+        if len(values) > MAX_ANY_OF:
+            raise ValueError("pattern rule any_of exceeds bound")
+        slot = {"role": raw_slot["role"]}
+        if values:
+            slot["any_of"] = values
+        else:
+            try:
+                re.compile(regex)
+            except re.error as exc:
+                raise ValueError(f"invalid pattern regex: {exc}") from exc
+            slot["regex"] = regex
+        slots.append(slot)
+    return {"ordered": bool(raw["ordered"]), "slots": slots}
+
+
+def apply_patch(point: dict[str, Any], patch: dict[str, Any], issues: list[Any]) -> dict[str, Any]:
+    """Apply a bounded patch directly to the validator-facing assembled point."""
+    out = copy.deepcopy(point)
+    affected = set(_affected_example_indexes(issues))
+
+    seen_forms: set[str] = set()
+    for operation in patch["formula_orders"]:
+        form = operation["form"]
+        if form in seen_forms:
+            raise ValueError(f"duplicate formula order for {form}")
+        seen_forms.add(form)
         slots = _formula_slots(out, form)
-        order = patch["formula_order"][form]
+        order = operation["order"]
         if sorted(order) != list(range(len(slots))):
             raise ValueError(f"{form} formula_order is not a permutation")
-        for index in patch["make_optional"][form]:
-            if not 0 <= index < len(slots):
-                raise ValueError(f"{form} optional index out of range")
-            slots[index]["optional"] = True
-
         reordered = [slots[index] for index in order]
-        key = _formula_key(form)
-        if key in out:
-            out[key] = reordered
-        elif reordered:
-            raise ValueError(f"{form} formula does not exist")
+        if form == "affirmative":
+            out["pattern"]["formula"] = reordered
+        else:
+            out["pattern"].setdefault("variants", {})[form] = reordered
 
-    seen_indexes: set[int] = set()
-    for example_patch in patch["examples"]:
+    for operation in patch["make_optional"]:
+        slots = _formula_slots(out, operation["form"])
+        index = operation["slot_index"]
+        if not 0 <= index < len(slots):
+            raise ValueError("optional slot index out of range")
+        slots[index]["optional"] = True
+
+    seen_examples: set[int] = set()
+    for example_patch in patch["example_spans"]:
         index = example_patch["index"]
-        if index in seen_indexes or not 0 <= index < len(out["examples"]):
-            raise ValueError("example indexes must be unique and in range")
-        seen_indexes.add(index)
+        if index not in affected or index in seen_examples:
+            raise ValueError("example patch index is not an affected unique example")
+        seen_examples.add(index)
         text = out["examples"][index]["text"]
-        occupied: list[tuple[int, int]] = []
-        spans: list[dict[str, str]] = []
-        cursor: dict[str, int] = {}
-        for span in example_patch["spans"]:
-            needle = span["text"]
-            start = text.find(needle, cursor.get(needle, 0))
-            if start < 0:
-                raise ValueError(f"span {needle!r} is not an exact substring of example {index}")
-            end = start + len(needle)
-            cursor[needle] = end
-            if any(not (end <= left or start >= right) for left, right in occupied):
-                raise ValueError(f"overlapping span {needle!r} in example {index}")
-            occupied.append((start, end))
-            spans.append({"text": needle, "role": span["role"]})
-        out["examples"][index]["spans"] = spans
+        out["examples"][index]["spans"] = _resolve_exact_spans(text, example_patch["spans"])
 
-    if seen_indexes != set(range(len(out["examples"]))):
-        raise ValueError("patch must return spans for every example")
+    if seen_examples != affected:
+        raise ValueError("patch must return spans for every affected example")
 
-    out["personal_production"]["pattern_rule"] = patch["pattern_rule"]
+    if patch["pattern_rule"] is not None:
+        out["personal_production"]["pattern_rule"] = _normalize_pattern_rule(patch["pattern_rule"])
     return out
 
 
@@ -248,30 +307,32 @@ def request_patch(
     *,
     point_id: str,
     target_lang: str,
-    data: dict[str, Any],
+    point: dict[str, Any],
     issues: list[Any],
 ) -> LLMResult:
-    system = """You repair only structural grammar annotations in an existing lesson candidate.
-Do not rewrite lesson prose or sentence text.
+    affected = _affected_example_indexes(issues)
+    has_rule_issue = any(getattr(issue, "code", "").startswith("personal_production.") for issue in issues)
+    system = """You repair structural annotations on an already assembled grammar lesson.
+The validator errors below refer to exactly the formulas and spans you see here.
+Do not rewrite any sentence, explanation, translation, title, or practice item.
 
-Return one JSON patch matching the supplied schema.
+Return one minimal JSON patch matching the schema.
 
-Rules:
-- formula_order is a permutation of the existing slot indexes for each form. Reorder only when needed.
-- make_optional lists existing slot indexes that are legitimately omissible in that form (for example a zero article). Do not use optional merely to silence a missing span.
-- examples must return spans for every example. Each span text must be an exact substring of that unchanged sentence and use only roles from that example's selected formula.
-- Cover every non-optional formula role. Keep spans in natural sentence order.
-- pattern_rule must match the unchanged personal-production sample and at least one unchanged example of its target form.
-- Use at most four pattern-rule slots and at most eight any_of literals per slot. Never enumerate open-class vocabulary.
-- Fix the reported validator issues and preserve everything outside this patch surface."""
+- example_spans: return spans only for the affected example indexes requested. Each span text must be an exact substring of the unchanged sentence. Cover every non-optional formula role and use no role absent from that form.
+- formula_orders: normally []. Use it only when the existing slots are correct but in the wrong order. order is a permutation of existing zero-based slot indexes.
+- make_optional: normally []. Use only when the grammar genuinely permits that existing slot to be absent, never merely to silence a validator.
+- pattern_rule: return null unless a personal_production error is listed. If needed, it must match the unchanged sample and at least one target-form example; use 1-4 grammar-bearing slots, max 8 closed-set any_of literals, and never enumerate open-class vocabulary.
+- Preserve all content outside these structural annotations."""
     user = (
-        f"Repair grammar point {point_id} ({target_lang}).\n"
-        + json.dumps(_context(data, issues, point_id), ensure_ascii=False, separators=(",", ":"))
+        f"Repair grammar point {point_id} ({target_lang}). "
+        f"Affected example indexes: {affected}. "
+        f"Personal-production repair required: {has_rule_issue}.\n"
+        + json.dumps(_context(point, issues, point_id), ensure_ascii=False, separators=(",", ":"))
     )
     return llm.complete(
         system=system,
         user=user,
-        json_schema=patch_schema(data),
+        json_schema=patch_schema(point, issues),
         schema_name="grammar_point_v04_semantic_patch",
         max_tokens=TARGETED_REPAIR_MAX_TOKENS,
     )
