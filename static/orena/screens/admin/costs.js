@@ -1,8 +1,9 @@
 /* Admin > AI & Models > AI cost (D-128: the design draws no cost page; existing kit blocks only, by the
    human's decision 2026-10-04). Reads GET /api/admin/ai/costs: the shared AI ledger by UTC day and by
    feature x provider x model, with a unit cost per call or per audio minute. Totals only - the ledger is
-   anonymous; cost per learner arrives with the per-account cost record (AC-2). The report's own gaps are
-   shown as the server states them, never hidden. */
+   anonymous. Cost per account (AC-2) is a second read, GET /api/admin/ai/costs/accounts, an administrator's
+   only; before its table exists the block says so. The report's own gaps are shown as the server states
+   them, never hidden. */
 import { html } from '../../kit/html.js';
 import { languages } from '../../copy/index.js';
 import { adminApi } from '../../capabilities/admin-api.js';
@@ -22,7 +23,7 @@ function capabilityLabel(key) {
   return label && label !== `cap_${key}` ? label : key;
 }
 
-export function costsPage({ report, days, failed, ui, href }) {
+export function costsPage({ report, accounts, days, failed, ui, href }) {
   const head = pageHead({ back: { href: href('adminAi'), label: t('aiTitle') }, title: t('costTitle'), sub: t('costSub') });
   if (failed) return html`<section class="a-page" data-screen-label="AI cost">${head}${block({ body: t('opUnavailable') })}</section>`;
   if (!report) return html`<section class="a-page" data-screen-label="AI cost">${head}${skeleton(t('loading'))}</section>`;
@@ -48,6 +49,12 @@ export function costsPage({ report, days, failed, ui, href }) {
       ${block({ span: true, title: t('costByDay'), body: rowList((report.by_day || []).map((day) => ({
         title: day.day, meta: t('costDayMeta', { calls: day.calls, unpriced: day.unpriced_calls }), right: usd(day.usd, ui),
       })), { title: t('opNone'), text: '' }) })}
+      ${accounts ? block({ span: true, title: t('costByAccount'), body: accounts.available
+        ? rowList([
+          ...(accounts.accounts || []).map((row) => ({ title: row.name || row.email, meta: [row.email, t('costAccountMeta', { calls: row.calls })].filter(Boolean).join(' · '), right: usd(row.usd, ui) })),
+          ...(accounts.truncated ? [{ title: t('costAccountsTop') }] : []),
+        ], { title: t('opNone'), text: '' })
+        : t('costAccountsOff') }) : ''}
       ${block({ span: true, title: t('costGaps'), body: rowList((report.gaps || []).map((gap) => ({ title: t(`costGap_${gap.code}`) }))) })}
     </div>
   </section>`;
@@ -55,17 +62,23 @@ export function costsPage({ report, days, failed, ui, href }) {
 
 export async function mountCosts(shell, ctx) {
   const host = createHost(shell, ctx);
-  const view = { days: 30, report: null, failed: false };
+  const view = { days: 30, report: null, accounts: null, failed: false };
   const ui = () => languages().ui;
-  host.setBuilder(() => ({ title: t('costTitle'), markup: costsPage({ report: view.report, days: view.days, failed: view.failed, ui: ui(), href: ctx.href }) }));
+  host.setBuilder(() => ({ title: t('costTitle'), markup: costsPage({ report: view.report, accounts: view.accounts, days: view.days, failed: view.failed, ui: ui(), href: ctx.href }) }));
   async function load() {
     view.report = null;
+    view.accounts = null;
     view.failed = false;
     host.paint();
     try {
       view.report = await adminApi.aiCosts(view.days);
     } catch {
       view.failed = true;
+    }
+    try {
+      view.accounts = await adminApi.aiCostsByAccount(view.days);
+    } catch {
+      view.accounts = null;
     }
     host.paint();
   }

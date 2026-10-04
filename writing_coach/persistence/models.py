@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
+from decimal import Decimal
 
 from sqlalchemy import (
     JSON,
@@ -13,6 +14,7 @@ from sqlalchemy import (
     ForeignKeyConstraint,
     Index,
     Integer,
+    Numeric,
     SmallInteger,
     String,
     Text,
@@ -622,6 +624,33 @@ class VocabularyCollectionMembership(Base):
     membership_metadata: Mapped[dict] = mapped_column(
         "metadata", JSON, default=dict, nullable=False
     )
+
+
+class AICostRecord(Base):
+    """One priced provider call made for a signed-in account (AC-2, proposed migration 20261005_0026).
+
+    The account, the feature, provider and model, the estimated cost and the units it was priced on - nothing the
+    learner wrote or said. Kept 13 months (writing_coach/ai/account_costs.py); deleted with the account."""
+
+    __tablename__ = "ai_cost_records"
+    __table_args__ = (
+        CheckConstraint("cost_state IN ('estimated', 'unpriced', 'partial', 'unknown')", name="ck_ai_cost_state"),
+        CheckConstraint("cost_usd IS NULL OR cost_usd >= 0", name="ck_ai_cost_nonnegative"),
+        Index("ix_ai_cost_records_account_time", "account_id", "occurred_at"),
+        Index("ix_ai_cost_records_time", "occurred_at"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
+    account_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    feature: Mapped[str] = mapped_column(String(80), nullable=False)
+    provider: Mapped[str] = mapped_column(String(40), default="", nullable=False)
+    model: Mapped[str] = mapped_column(String(160), default="", nullable=False)
+    cost_state: Mapped[str] = mapped_column(String(16), nullable=False)
+    cost_usd: Mapped[Decimal | None] = mapped_column(Numeric(14, 8), nullable=True)
+    input_tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    output_tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    audio_seconds: Mapped[Decimal | None] = mapped_column(Numeric(10, 3), nullable=True)
 
 
 class VocabularySenseLocalization(Base):

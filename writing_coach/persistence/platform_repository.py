@@ -315,6 +315,15 @@ class SQLitePlatformRepository:
         # Telemetry is PostgreSQL-only: nothing to report from the archive store.
         return []
 
+    def record_ai_cost(self, user_key: str, event: dict) -> bool:
+        return False
+
+    def delete_ai_costs_before(self, before: datetime, *, limit: int) -> int:
+        return 0
+
+    def ai_costs_by_account(self, since: datetime, *, limit: int = 100) -> list[dict] | None:
+        return None
+
 
 class PostgresPlatformRepository:
     """PostgreSQL platform configuration backed by Alembic-owned storage."""
@@ -602,3 +611,70 @@ class PostgresPlatformRepository:
             }
             for row in rows
         ]
+
+    # ---- AI cost per account (AC-2; proposed migration 20261005_0026) -------------------------------------
+
+    def record_ai_cost(self, user_key: str, event: dict) -> bool:
+        """One priced call for a signed-in account: account, feature, provider, model, cost and units - no learner
+        words. One statement in the learner's request, bounded by short timeouts so a slow database delays a learner
+        by at most a fraction of a second. False (nothing written) for a key with no account row; an error (the
+        table not there yet, a timeout) is the caller's to absorb."""
+
+        cost = event.get("cost") if isinstance(event.get("cost"), dict) else {}
+        usage = event.get("usage") if isinstance(event.get("usage"), dict) else {}
+        values = {
+            "id": uuid.uuid4(), "user_key": user_key, "occurred_at": datetime.now(UTC),
+            "feature": str(event.get("capability") or "")[:80], "provider": str(event.get("provider") or "")[:40],
+            "model": str(event.get("model") or "")[:160], "cost_state": str(cost.get("state") or "unknown"),
+            "cost_usd": cost.get("amount"), "input_tokens": usage.get("prompt_tokens"),
+            "output_tokens": usage.get("completion_tokens"), "audio_seconds": usage.get("audio_seconds"),
+        }  # fmt: skip
+        statement = text(
+            "INSERT INTO ai_cost_records (id, account_id, occurred_at, feature, provider, model, cost_state, cost_usd, "
+            "input_tokens, output_tokens, audio_seconds) "
+            "SELECT :id, users.id, :occurred_at, :feature, :provider, :model, :cost_state, :cost_usd, :input_tokens, "
+            ":output_tokens, :audio_seconds FROM users WHERE users.user_key = :user_key"
+        )
+        with self.engine.begin() as connection:
+            connection.execute(text("SET LOCAL statement_timeout = 500"))
+            connection.execute(text("SET LOCAL lock_timeout = 200"))
+            return int(connection.execute(statement, values).rowcount or 0) == 1
+
+    def delete_ai_costs_before(self, before: datetime, *, limit: int) -> int:
+        """The 13-month sweep (ai/account_costs.py): at most `limit` cost records older than `before`, oldest first.
+        Only that table."""
+
+        from writing_coach.persistence.models import AICostRecord
+
+        bounded = max(1, min(int(limit), 50_000))
+        oldest = (select(AICostRecord.id).where(AICostRecord.occurred_at < before)
+                  .order_by(AICostRecord.occurred_at).limit(bounded).scalar_subquery())  # fmt: skip
+        with Session(self.engine) as session, session.begin():
+            result = session.execute(delete(AICostRecord).where(AICostRecord.id.in_(oldest))
+                                     .execution_options(synchronize_session=False))  # fmt: skip
+            return int(result.rowcount or 0)
+
+    def ai_costs_by_account(self, since: datetime, *, limit: int = 100) -> list[dict] | None:
+        """Cost per account since `since`, the most expensive first, at most `limit` accounts, for an
+        administrator. None before the table."""
+
+        from sqlalchemy import func
+        from sqlalchemy.exc import ProgrammingError
+
+        from writing_coach.persistence.models import AICostRecord
+
+        query = (
+            select(User.email, User.name, func.count(AICostRecord.id), func.coalesce(func.sum(AICostRecord.cost_usd), 0))
+            .join(User, User.id == AICostRecord.account_id)
+            .where(AICostRecord.occurred_at >= since)
+            .group_by(User.id, User.email, User.name)
+            .order_by(func.coalesce(func.sum(AICostRecord.cost_usd), 0).desc())
+            .limit(max(1, min(int(limit), 1000)))
+        )
+        try:
+            with Session(self.engine) as session:
+                rows = session.execute(query).all()
+        except ProgrammingError:
+            return None
+        return [{"email": email, "name": name, "calls": int(calls), "usd": round(float(usd or 0), 8)}
+                for email, name, calls, usd in rows]

@@ -4800,6 +4800,9 @@ The human asked for an Admin page with AI cost by day, by feature and by learner
   - **AC-1** a design frame for the cost page;
   - **AC-2** cost per learner. The operation telemetry is anonymous by design; only Orena agent
     turns carry an account (`agent.turn`, Intelligence lane). Linking every provider call to a
-    learner is a privacy decision;
+    learner is a privacy decision. *Decided 2026-10-04; built 2026-10-05* (`proposals/AI_COST_PER_ACCOUNT.md`):
+    code, page block and tests on `codex/work`; the table is migration `20261005_0026`, reviewed (APPROVE
+    WITH CONDITIONS, conditions met) and **waiting for the human's authorization** to be promoted. Until
+    then nothing is recorded and the page block says so;
   - **AC-3** the Azure pronunciation rate, to be checked against the bill;
   - **AC-4** infrastructure cost, which is not measured.

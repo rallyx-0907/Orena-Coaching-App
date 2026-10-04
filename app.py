@@ -457,6 +457,10 @@ _persistence_runtime = build_runtime(
 configure_auth_repository(_persistence_runtime.auth_repository)
 configure_account_settings(_persistence_runtime.auth_repository)
 configure_platform_repository(_persistence_runtime.platform_repository)
+# AC-2: AI cost per signed-in account, kept 13 months; a no-op until migration 20261005_0026 is applied.
+from writing_coach.ai import account_costs as _account_costs  # noqa: E402
+
+_account_costs.install(_persistence_runtime.platform_repository)
 configure_product_repository(_persistence_runtime.product_repository)
 
 # PostgreSQL is the application runtime. In auth-disabled local development the

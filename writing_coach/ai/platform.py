@@ -284,6 +284,12 @@ def _persist_operation_telemetry(telemetry: dict[str, Any]) -> None:
     if safe is None or not callable(recorder):
         return
     try:
+        from writing_coach.ai.account_costs import record_for_current_account
+
+        record_for_current_account(safe)  # AC-2: the same call, once more, for the signed-in account
+    except Exception:  # noqa: BLE001 - never changes the operation
+        pass
+    try:
         recorder(safe)
     except Exception:
         # Telemetry must never change learner/provider operation semantics.
@@ -911,8 +917,9 @@ def admin_ai_operations(request: Request, limit: int = 100) -> dict[str, Any]:
 _PER_MINUTE = frozenset({"speech_asr"})
 # (code, English text): the Admin page words each code in the interface language.
 COST_REPORT_GAPS = (
-    ("per_learner", "Per learner: the operation telemetry is anonymous by design; only Orena agent turns carry an "
-     "account (agent.turn rows), so cost per learner exists for the agent only."),
+    ("per_learner", "Per learner: the operation telemetry is anonymous by design. Cost per account is recorded "
+     "separately once migration 20261005_0026 is applied (AC-2); before that, only Orena agent turns carry an "
+     "account."),
     ("per_turn", "Per Orena turn: a turn is one to four agent_turn_fast rounds; the per-turn cost is in the "
      "agent.turn timeline report, not here."),
     ("infrastructure", "Infrastructure (hosting, database, storage, bandwidth) is not measured: unknown."),
@@ -970,6 +977,25 @@ def admin_ai_costs(request: Request, days: int = 30) -> dict[str, Any]:
     reader = getattr(_installed_platform_repository(), "ai_cost_rows", None)
     rows = reader(since) if callable(reader) else []
     return cost_report(rows, days=bounded, since=since)
+
+
+@router.get("/costs/accounts")
+def admin_ai_costs_by_account(request: Request, days: int = 30) -> dict[str, Any]:
+    """AI cost per account (AC-2), an administrator's view only; each look is itself recorded. The window is at
+    most 90 days, like the totals, though records are kept 13 months."""
+
+    admin = _require_admin(request)
+    bounded = max(1, min(int(days), 90))
+    now = datetime.now(UTC)
+    since = datetime(now.year, now.month, now.day, tzinfo=UTC) - timedelta(days=bounded - 1)
+    reader = getattr(_installed_platform_repository(), "ai_costs_by_account", None)
+    limit = 100
+    # One more than shown, to say whether the list was cut (the page shows the most expensive accounts only).
+    accounts = reader(since, limit=limit + 1) if callable(reader) else None
+    _record_admin_event(admin, "admin.ai.costs.accounts.view", entity_type="ai_costs", entity_id="accounts",
+                        payload={"days": bounded, "available": accounts is not None})
+    return {"since": since.isoformat(), "days": bounded, "currency": "USD", "available": accounts is not None,
+            "accounts": (accounts or [])[:limit], "truncated": len(accounts or []) > limit}
 
 
 @router.put("/config", deprecated=True)
