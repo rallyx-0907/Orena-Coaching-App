@@ -35,11 +35,11 @@ Frame/route/code/status: `docs/design/canonical-ui/IMPLEMENTATION_MAP.md`.
 
 ## Last verified batch
 
-Content readiness (D-121): preparation at admission; learning reads saved artifacts
-and plays original segments. ZH affected import's Listening/Shadowing/Hear/reopen:
-zero preparation routes. EN/VI, viewport controls and independent code review pass.
-Exact local gates/limits: `docs/reviews/CONTENT_READINESS_BROWSER_CHECKPOINT.md`.
-Next: human review, then Product Completion. :8021 restart only; no schema/production.
+Pronunciation entry/phone correction (D-122): ready content chooser, direct practice,
+source/segment reuse, readable sentence and Hear/Record within phone viewport.
+EN/ZH/VI and zero preparation POSTs verified; D-121 preserved.
+Evidence: docs/reviews/PRONUNCIATION_ENTRY_PHONE_CHECKPOINT.md.
+Next: human review, then Product Completion; native remains frozen.
 
 Admin REVIEWABLE: six areas, sandbox routing, imports/EN/ZH lookup (`2931823`);
 Azure/Skin (`7857d43`) local125/Node/review pass. Azure browser evidence/limits:

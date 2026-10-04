@@ -109,6 +109,15 @@ New recording through the merged entry remains to
 verify; previous real EN/ZH assessments are preserved evidence.
 YouTube import (Me at the zoo,4 lines) also browser-opens the shared recorder;
 regional language tags and supported embeds share Listening's validated gates.
+Pronunciation entry/phone correction (2026-10-04, D-122) is REVIEWABLE at :8021
+(096240d): generic entry chooses content; personal/curated media goes directly to
+shared practice; Choose media preserves intent and same-source segment. Phone
+heading/source controls are compact, sentence/meaning scroll within the card and
+Hear/Record stay visible, including while the original video plays. Initial seek
+no longer autoplays or drifts lines; stale endpoint cannot end a new model play.
+EN/ZH/VI verified. Native remains frozen; phone web is its future review reference.
+Evidence/limits: PRONUNCIATION_ENTRY_PHONE_CHECKPOINT.md.
+
 Current correction (2026-10-04, D-121): imported YouTube NkYwdZhkHF0 reuses canonical
 original segment playback in Compare and Scripted Pronunciation. Workspace entry
 does not extract/download/assess source audio or translate missing source meanings.

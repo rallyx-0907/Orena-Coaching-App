@@ -40,8 +40,8 @@
     "expected_development_branch": "codex/work",
     "lane": "unified_baseline_and_ui_lane"
   },
-  "last_verified_application_commit": "3aa577b73b743568ede2645dbc9402ccc344cc08",
-  "last_verified_batch": "content_readiness_d121_zero_source_work_en_zh_vi",
+  "last_verified_application_commit": "096240da824897893387cf749b426da2cb6605be",
+  "last_verified_batch": "pronunciation_entry_phone_en_zh_vi_d122",
   "current_program_stage": {
     "id": "ORENA_PRODUCT_COMPLETION",
     "name": "Coherent content-first web product completion",
@@ -207,5 +207,5 @@
     "eight_design_screens_are_coming_soon_until_a_backend_exists",
     "platform_admin_moves_into_the_new_ui_d101_old_admin_untouched_until_cutover"
   ],
-  "last_verified_at": "2026-10-03"
+  "last_verified_at": "2026-10-04"
 }
