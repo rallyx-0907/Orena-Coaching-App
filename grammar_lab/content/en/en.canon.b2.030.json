@@ -1,0 +1,256 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b2.030",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.information_structure",
+  "level": {"framework": "cefr", "value": "B2", "rank": 4},
+  "prereqs": ["en.canon.b2.029"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["b2-fronting-for-emphasis", "c1-fronting-and-topicalisation"]},
+  "point_type": "word_order",
+  "sequence": 3,
+  "aliases": ["b2-fronting-for-emphasis", "c1-fronting-and-topicalisation"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Fronting for nhấn mạnh", "en": "Fronting for emphasis"},
+    "native_title": "Fronting for emphasis",
+    "level": {"framework": "cefr", "value": "B2", "rank": 4},
+    "summary": {
+      "vi": "Cấu trúc fronting đưa một thành phần (tân ngữ, bổ ngữ hoặc trạng ngữ) lên đầu câu để nhấn mạnh hoặc tạo tương phản, trong khi mệnh đề chính vẫn giữ trật tự bình thường.",
+      "en": "Fronting moves a constituent (object, complement or adverbial) to the front of the sentence for emphasis or contrast, while the main clause keeps its normal word order."
+    },
+    "sub": {"vi": "nhấn mạnh bằng đảo thành phần", "en": "emphasis by fronting"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn tương phản rõ ràng một thành phần với một thành phần khác đã được nhắc đến.",
+      "en": "When you want to contrast one constituent clearly with another already mentioned."
+    },
+    {
+      "vi": "Khi thành phần được đưa lên đầu đã được biết đến và bạn muốn nó làm chủ đề của câu.",
+      "en": "When the fronted constituent is already known and you want it to act as the topic of the sentence."
+    },
+    {
+      "vi": "Trong văn viết trang trọng hoặc diễn ngôn có chủ đích, để tạo nhịp điệu và sự nhấn mạnh.",
+      "en": "In formal writing or deliberate discourse, to create rhythm and emphasis."
+    },
+    {
+      "vi": "Khi trật tự bình thường sẽ chôn vùi thông tin quan trọng ở cuối câu.",
+      "en": "When the normal order would bury the important information at the end of the sentence."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "fronted constituent",
+        "role": "object",
+        "label": {"vi": "thành phần đưa lên đầu", "en": "fronted constituent"}
+      },
+      {"text": "subject", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {
+        "text": "aux",
+        "role": "aux",
+        "label": {"vi": "trợ động từ", "en": "auxiliary"},
+        "optional": true,
+        "options": [{"text": "can"}, {"text": "will"}, {"text": "do"}, {"text": "have"}]
+      },
+      {"text": "verb", "role": "verb", "label": {"vi": "động từ", "en": "verb"}},
+      {
+        "text": "complement",
+        "role": "complement",
+        "label": {"vi": "bổ ngữ", "en": "complement"},
+        "optional": true
+      }
+    ],
+    "variants": {
+      "negative": [
+        {
+          "text": "fronted constituent",
+          "role": "object",
+          "label": {"vi": "thành phần đưa lên đầu", "en": "fronted constituent"}
+        },
+        {"text": "subject", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "aux",
+          "role": "aux",
+          "label": {"vi": "trợ động từ", "en": "auxiliary"},
+          "options": [{"text": "cannot"}, {"text": "will not"}, {"text": "do not"}]
+        },
+        {"text": "verb", "role": "verb", "label": {"vi": "động từ", "en": "verb"}},
+        {
+          "text": "complement",
+          "role": "complement",
+          "label": {"vi": "bổ ngữ", "en": "complement"},
+          "optional": true
+        }
+      ],
+      "question": [
+        {
+          "text": "fronted constituent",
+          "role": "object",
+          "label": {"vi": "thành phần đưa lên đầu", "en": "fronted constituent"}
+        },
+        {
+          "text": "aux",
+          "role": "aux",
+          "label": {"vi": "trợ động từ", "en": "auxiliary"},
+          "options": [{"text": "can"}, {"text": "will"}, {"text": "do"}, {"text": "have"}]
+        },
+        {"text": "subject", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {"text": "verb", "role": "verb", "label": {"vi": "động từ", "en": "verb"}},
+        {
+          "text": "complement",
+          "role": "complement",
+          "label": {"vi": "bổ ngữ", "en": "complement"},
+          "optional": true
+        }
+      ]
+    },
+    "illustration": {"kind": "word_order"}
+  },
+  "examples": [
+    {
+      "text": "That kind of behaviour I cannot accept.",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 22, "role": "object"},
+        {"start": 23, "end": 24, "role": "subject"},
+        {"start": 25, "end": 31, "role": "aux"},
+        {"start": 32, "end": 38, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Tân ngữ được đưa lên đầu để nhấn mạnh sự tương phản; mệnh đề chính giữ trật tự bình thường.",
+        "en": "The object is fronted for contrastive emphasis; the main clause keeps normal order."
+      },
+      "translation": {
+        "vi": "Loại hành vi đó tôi không thể chấp nhận.",
+        "en": "That kind of behaviour I cannot accept."
+      }
+    },
+    {
+      "text": "This point we will return to later.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 10, "role": "object"},
+        {"start": 11, "end": 13, "role": "subject"},
+        {"start": 14, "end": 18, "role": "aux"},
+        {"start": 19, "end": 25, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Tân ngữ 'this point' được đưa lên làm chủ đề; không có đảo ngữ.",
+        "en": "The object 'this point' is fronted as topic; there is no inversion."
+      },
+      "translation": {"vi": "Điểm này chúng ta sẽ quay lại sau.", "en": "This point we will return to later."}
+    },
+    {
+      "text": "This problem I can solve.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 12, "role": "object"},
+        {"start": 13, "end": 14, "role": "subject"},
+        {"start": 15, "end": 18, "role": "aux"},
+        {"start": 19, "end": 24, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Tân ngữ 'this problem' được đưa lên đầu để tương phản; trật tự chủ ngữ - trợ động từ - động từ được giữ nguyên.",
+        "en": "The object 'this problem' is fronted for contrast; subject-auxiliary-verb order is kept."
+      },
+      "translation": {"vi": "Vấn đề này tôi có thể giải quyết.", "en": "This problem I can solve."}
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Fronting tân ngữ thông thường không gây đảo ngữ trợ động từ; người học nhầm với đảo ngữ do trạng ngữ phủ định.",
+        "en": "Ordinary object fronting does not trigger subject-auxiliary inversion; learners confuse it with negative-adverbial inversion."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "This problem can I solve.",
+      "right": "This problem I can solve."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "___ I cannot accept.",
+      "options": [
+        {"text": "That kind of behaviour", "error_tag": null},
+        {"text": "That kind of behaviour can", "error_tag": "sentence_structure"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Tân ngữ được đưa lên đầu mà không cần trợ động từ; 'can' không thuộc thành phần fronted.",
+        "en": "The object is fronted without an auxiliary; 'can' does not belong to the fronted constituent."
+      }
+    },
+    {
+      "q": "This point we ___ return to later.",
+      "options": [
+        {"text": "will", "error_tag": null},
+        {"text": "will can", "error_tag": "word_form"},
+        {"text": "are", "error_tag": "tense"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau chủ ngữ 'we' cần trợ động từ 'will' để tạo thì tương lai; không dùng hai trợ động từ.",
+        "en": "After the subject 'we', the auxiliary 'will' forms the future; two auxiliaries are not used together."
+      }
+    },
+    {
+      "q": "More difficult ___ the question of funding.",
+      "options": [{"text": "was", "error_tag": null}, {"text": "were", "error_tag": "agreement"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Chủ ngữ thật là 'the question of funding' số ít, nên động từ 'be' chia là 'was'.",
+        "en": "The real subject 'the question of funding' is singular, so 'be' takes 'was'."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về bản thân, bắt đầu bằng một thành phần được đưa lên đầu để nhấn mạnh.",
+      "en": "Write a sentence about yourself, starting with a fronted constituent for emphasis."
+    },
+    "placeholder": "That kind of ... I ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "object", "regex": "^[A-Z][a-z]+(?:\\s+[a-z]+){0,4}\\s+(?:I|we|they|he|she)\\b"}]
+    },
+    "sample": {"text": "That kind of music I really enjoy."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791090726",
+    "generated_at": "2026-10-04T05:12:06Z",
+    "r5_source": {
+      "ids": ["b2-fronting-for-emphasis", "c1-fronting-and-topicalisation"],
+      "content_version": 2,
+      "content_hash": "86941e95d58c20548a49ddca8591dc9a509c7529d31e5586a393a1a80c03f08f",
+      "corrections": [
+        {
+          "r5_id": "b2-fronting-for-emphasis",
+          "issue": "R5 gộp fronting thông thường với đảo ngữ do trạng ngữ phủ định, khiến người học hiểu sai rằng mọi fronting đều gây đảo ngữ.",
+          "fix": "Tách bạch: fronting tân ngữ/bổ ngữ thông thường giữ trật tự chủ ngữ - động từ; chỉ đảo ngữ khi có trạng ngữ phủ định/hạn định. Formula và ví dụ phản ánh điều này."
+        },
+        {
+          "r5_id": "b2-fronting-for-emphasis",
+          "issue": "Ví dụ 'At the end of the corridor stood a tall cabinet' thuộc đảo ngữ vị trí, không phải fronting nhấn mạnh thông thường.",
+          "fix": "Loại bỏ khỏi phần ví dụ chính; chỉ giữ các ví dụ fronting tân ngữ/bổ ngữ không đảo ngữ."
+        },
+        {
+          "r5_id": "c1-fronting-and-topicalisation",
+          "issue": "R5 C1 trùng lặp nội dung với B2 và đưa vào các ví dụ đảo ngữ chỉ dành cho C1.",
+          "fix": "Chỉ giữ phần fronting nhấn mạnh phù hợp B2; loại bỏ các ví dụ và quy tắc đảo ngữ nâng cao khỏi phạm vi bài này."
+        }
+      ]
+    }
+  },
+  "review": null
+}

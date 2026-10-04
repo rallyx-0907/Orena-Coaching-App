@@ -469,6 +469,7 @@ functions:
     - en.canon.b1.038
     - en.canon.b1.037
     - en.canon.b2.041
+    - en.canon.c1.026
     zh-Hans:
     - zh.canon.gf.hsk1.a_1_1_8.p1
     - zh.canon.gf.hsk2.a_2_1_8.p1
@@ -501,8 +502,7 @@ functions:
     - zh.canon.gf.hsk7_9.a_7_5_2_12.p1
     ja: []
   planned:
-    en:
-    - en.canon.c1.026
+    en: []
     zh-Hans:
     - zh.canon.gf.hsk1.a_1_4_4.p1
     - zh.he_conjunction
@@ -1092,12 +1092,12 @@ functions:
     - en.canon.c2.011
     - en.canon.c1.011
     - en.canon.c1.030
+    - en.canon.b2.030
     zh-Hans: []
     ja: []
   planned:
     en:
     - en.canon.b2.029
-    - en.canon.b2.030
     - en.canon.c1.013
     - en.canon.c2.004
     - en.canon.c2.010
@@ -1139,11 +1139,11 @@ functions:
   realizations:
     en:
     - en.canon.c2.018
+    - en.canon.b2.040
     zh-Hans: []
     ja: []
   planned:
     en:
-    - en.canon.b2.040
     - en.canon.c1.028
     zh-Hans:
     - zh.canon.r5.hsk6_20_register_control

@@ -1,0 +1,223 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b2.040",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.register_style",
+  "level": {"framework": "cefr", "value": "B2", "rank": 4},
+  "prereqs": ["en.canon.b2.039"],
+  "contrasts": [],
+  "error_tags": ["register"],
+  "source_refs": {
+    "r5": ["b2-formal-vs-informal-grammar-choices", "c2-academic-vs-business-vs-conversational-grammar"]
+  },
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["b2-formal-vs-informal-grammar-choices", "c2-academic-vs-business-vs-conversational-grammar"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {
+      "vi": "trang trọng vs intrang trọng grammar choices",
+      "en": "Formal vs informal grammar choices"
+    },
+    "native_title": "Formal vs informal grammar choices",
+    "level": {"framework": "cefr", "value": "B2", "rank": 4},
+    "summary": {
+      "vi": "Chọn cấu trúc ngữ pháp theo mức độ trang trọng: dạng đầy đủ và cấu trúc trang trọng cho văn viết, dạng rút gọn và cấu trúc thân mật cho hội thoại.",
+      "en": "Choose grammar structures by register: full forms and formal patterns for writing, contractions and informal patterns for conversation."
+    },
+    "sub": {"vi": "trang trọng / thân mật", "en": "formal / informal"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi viết email, báo cáo hoặc văn bản học thuật, dùng dạng đầy đủ và cấu trúc trang trọng.",
+      "en": "When writing emails, reports or academic texts, use full forms and formal structures."
+    },
+    {
+      "vi": "Khi nói chuyện với bạn bè hoặc trong tin nhắn, dùng dạng rút gọn và cấu trúc thân mật.",
+      "en": "When talking to friends or in messages, use contractions and informal structures."
+    },
+    {
+      "vi": "Khi cần thể hiện thái độ khách quan hoặc vô nhân xưng, dùng bị động hoặc cấu trúc trang trọng.",
+      "en": "When you need to sound objective or impersonal, use passive or formal structures."
+    },
+    {
+      "vi": "Khi chuyển đổi giữa các ngữ cảnh, điều chỉnh cấu trúc để phù hợp với người nghe và mục đích.",
+      "en": "When switching between contexts, adjust structures to suit the audience and purpose."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}},
+      {"text": "O", "role": "object", "label": {"vi": "tân ngữ", "en": "object"}},
+      {
+        "text": "register",
+        "role": "marker",
+        "label": {"vi": "dấu hiệu trang trọng/thân mật", "en": "register marker"},
+        "optional": true,
+        "options": [{"text": "formal"}, {"text": "informal"}]
+      }
+    ],
+    "variants": {
+      "question": [
+        {"text": "Wh-", "role": "marker", "label": {"vi": "từ để hỏi", "en": "wh-word"}},
+        {"text": "aux", "role": "aux", "label": {"vi": "trợ động từ", "en": "auxiliary"}},
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}},
+        {
+          "text": "prep",
+          "role": "marker",
+          "label": {"vi": "giới từ", "en": "preposition"},
+          "optional": true,
+          "options": [{"text": "stranded"}, {"text": "fronted"}]
+        }
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "We can't accept the proposal.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 3, "end": 15, "role": "verb"},
+        {"start": 16, "end": 28, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Dạng rút gọn 'can't' thể hiện sự thân mật trong hội thoại.",
+        "en": "The contraction 'can't' signals an informal conversational tone."
+      },
+      "translation": {"vi": "Chúng tôi không thể chấp nhận đề xuất.", "en": "We can't accept the proposal."}
+    },
+    {
+      "text": "The proposal cannot be accepted in its current form.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 12, "role": "subject"},
+        {"start": 13, "end": 31, "role": "verb"},
+        {"start": 32, "end": 51, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Dạng đầy đủ 'cannot' và bị động tạo giọng trang trọng, khách quan.",
+        "en": "The full form 'cannot' and passive voice create a formal, objective tone."
+      },
+      "translation": {
+        "vi": "Đề xuất không thể được chấp nhận ở dạng hiện tại.",
+        "en": "The proposal cannot be accepted in its current form."
+      }
+    },
+    {
+      "text": "Who are you waiting for?",
+      "form": "question",
+      "spans": [
+        {"start": 0, "end": 3, "role": "marker"},
+        {"start": 4, "end": 7, "role": "aux"},
+        {"start": 8, "end": 11, "role": "subject"},
+        {"start": 12, "end": 19, "role": "verb"},
+        {"start": 20, "end": 23, "role": "marker"}
+      ],
+      "annotation": {
+        "vi": "Giới từ đứng cuối câu (preposition stranding) là đặc trưng của văn nói thân mật.",
+        "en": "Preposition stranding at the end is typical of informal spoken English."
+      },
+      "translation": {"vi": "Bạn đang chờ ai?", "en": "Who are you waiting for?"}
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Khi giới từ được đưa lên đầu câu, không lặp lại giới từ ở cuối.",
+        "en": "When the preposition is fronted, do not repeat it at the end."
+      },
+      "error_tag": "register",
+      "l1": ["vi"],
+      "wrong": "To whom are you talking to?",
+      "right": "To whom are you talking?"
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "Choose the informal version: ___",
+      "options": [
+        {"text": "We can't accept the proposal.", "error_tag": null},
+        {"text": "We cannot accept the proposal.", "error_tag": "register"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Dạng rút gọn 'can't' là lựa chọn thân mật; 'cannot' trang trọng hơn.",
+        "en": "The contraction 'can't' is the informal choice; 'cannot' is more formal."
+      }
+    },
+    {
+      "q": "Choose the formal version: ___",
+      "options": [
+        {"text": "The proposal cannot be accepted in its current form.", "error_tag": null},
+        {"text": "We can't accept the proposal.", "error_tag": "register"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Bị động với 'cannot' tạo giọng trang trọng, khách quan.",
+        "en": "The passive with 'cannot' creates a formal, objective tone."
+      }
+    },
+    {
+      "q": "Choose the informal question: ___",
+      "options": [
+        {"text": "Who are you waiting for?", "error_tag": null},
+        {"text": "For whom are you waiting?", "error_tag": "register"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Giới từ đứng cuối câu là đặc trưng thân mật; 'For whom...' trang trọng hơn.",
+        "en": "Preposition stranding is informal; 'For whom...' is more formal."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu bạn sẽ nói với bạn bè, dùng dạng rút gọn hoặc cấu trúc thân mật.",
+      "en": "Write a sentence you would say to a friend, using a contraction or informal structure."
+    },
+    "placeholder": "I can't ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "subject", "any_of": ["I", "we"]}, {"role": "marker", "any_of": ["can't"]}]
+    },
+    "sample": {"text": "I can't come to the party tonight."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791090751",
+    "generated_at": "2026-10-04T05:12:31Z",
+    "r5_source": {
+      "ids": ["b2-formal-vs-informal-grammar-choices", "c2-academic-vs-business-vs-conversational-grammar"],
+      "content_version": 2,
+      "content_hash": "0d35560536839a81ff68387264b4df5d69e2ba67ddfb0aca78e066377680df8a",
+      "corrections": [
+        {
+          "r5_id": "b2-formal-vs-informal-grammar-choices",
+          "issue": "The R5 lesson includes a mistake 'The lunch was eaten by me at noon.' with correction 'I ate lunch at noon.' but the explanation says it is 'awkward formalisation' rather than a clear register error; the correction is fine but the reason should focus on register mismatch.",
+          "fix": "Kept the example but clarified that the passive is grammatically possible but register-inappropriate for ordinary personal action; the correction uses active voice for informal context."
+        },
+        {
+          "r5_id": "b2-formal-vs-informal-grammar-choices",
+          "issue": "The R5 lesson lists 'Who did you speak to? ↔ To whom did you speak?' as a contrast but does not provide a clear formula or structured explanation for the point.",
+          "fix": "Added a formula with slots for subject, verb, object, and register marker, and provided examples that illustrate both formal and informal patterns."
+        },
+        {
+          "r5_id": "c2-academic-vs-business-vs-conversational-grammar",
+          "issue": "This lesson is at C2 level and covers academic, business, and conversational registers, which is beyond the scope of the B2 point 'Formal vs informal grammar choices'.",
+          "fix": "Excluded this lesson from the current point; only used the B2 lesson as source material."
+        }
+      ]
+    }
+  },
+  "review": null
+}
