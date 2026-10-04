@@ -247,9 +247,12 @@ def _one_locale(node):
 
 
 def _answer(payload: dict) -> dict:
-    """What a schema-obeying model would send for ``payload``: plain strings for a single locale, and
-    ``options`` on every formula slot (the schema requires it, [] when the slot is not a choice).
-    Every answer is checked against the real schema now (llm_client.schema_problems)."""
+    """What a schema-obeying full-generation model sends.
+
+    Test fixtures stay readable in the stored-v0.4 shape (role-labelled spans/rule
+    slots). This helper converts them to the v13 provider contract: formula-slot
+    bindings for examples and slot_index matchers for personal production.
+    """
     def slots(node):
         if isinstance(node, dict):
             if {"role", "label"} <= set(node):
@@ -259,7 +262,45 @@ def _answer(payload: dict) -> dict:
             return [slots(value) for value in node]
         return node
 
-    return slots(_one_locale(payload))
+    data = slots(_one_locale(payload))
+
+    def formula_for(form: str) -> list[dict]:
+        if form == "affirmative":
+            return data["formula"]
+        return data.get(form) or []
+
+    for example in data.get("examples", []):
+        if "spans" not in example:
+            continue
+        formula = formula_for(example["form"])
+        bindings = []
+        formula_cursor = 0
+        for span in example.pop("spans"):
+            slot_index = next(
+                (i for i in range(formula_cursor, len(formula)) if formula[i]["role"] == span["role"]),
+                None,
+            )
+            if slot_index is None:
+                # Old fixtures sometimes add an extra visual role to verify it
+                # cannot enter stored content. The v13 contract has no way to
+                # invent such a role, so it is deliberately unrepresentable.
+                continue
+            bindings.append({"slot_index": slot_index, "text": span["text"]})
+            formula_cursor = slot_index + 1
+        example["bindings"] = bindings
+
+    production = data.get("personal_production")
+    if production:
+        formula = formula_for(production["target_form"])
+        for rule_slot in production["pattern_rule"]["slots"]:
+            role = rule_slot.pop("role", None)
+            slot_index = next(
+                (i for i, slot in enumerate(formula) if slot["role"] == role),
+                len(formula),
+            )
+            rule_slot["slot_index"] = slot_index
+
+    return data
 
 
 def v04_transport(payload: dict) -> httpx.MockTransport:
@@ -780,6 +821,12 @@ def test_generation_schema_v04_bounds_personal_production_rule_size() -> None:
     rule = schema["properties"]["personal_production"]["properties"]["pattern_rule"]["properties"]
     assert rule["slots"]["maxItems"] == PERSONAL_PRODUCTION_MAX_SLOTS == 4
     assert rule["slots"]["items"]["properties"]["any_of"]["maxItems"] == PERSONAL_PRODUCTION_MAX_ANY_OF == 8
+    assert "slot_index" in rule["slots"]["items"]["properties"]
+    assert "role" not in rule["slots"]["items"]["properties"]
+    example = schema["properties"]["examples"]["items"]
+    assert "bindings" in example["properties"]
+    assert "spans" not in example["properties"]
+    assert set(example["properties"]["bindings"]["items"]["properties"]) == {"slot_index", "text"}
 
 
 def test_v04_prompt_forbids_open_class_vocabulary_enumeration() -> None:
@@ -787,7 +834,8 @@ def test_v04_prompt_forbids_open_class_vocabulary_enumeration() -> None:
     assert "Never enumerate open-class vocabulary" in prompt
     assert "1-4 rule slots total" in prompt
     assert "at most 8 literals" in prompt
-    assert "simulate the highlighted spans from left to" in prompt
+    assert "slot_index" in prompt
+    assert "Bind every non-optional formula slot exactly once" in prompt
 
 
 
