@@ -66,6 +66,11 @@ Tiêu đề (ngôn ngữ giải thích + tên gốc bằng ngôn ngữ đích), 
 - Ô là một lựa chọn giữa nhiều dạng → `options`: `text` gọi tên lựa chọn, mỗi phần tử là một
   dạng (`{"text": "be", "options": [{"text": "is"}, {"text": "are"}]}`, `much | many`, `a | an`).
   Tối thiểu 2, không trùng (`formula.option_duplicate`); tiếng Trung mỗi lựa chọn có `pinyin`.
+- Một mảng `formula` là **một đường câu có thể hiện thực hoá từ trái sang phải**, không phải
+  nhiều đường loại trừ nhau nối tiếp. Hai dạng chiếm cùng vị trí → một ô với `options`; một
+  thành phần có thể vắng → một ô `optional: true`. Không viết `a/an + N + zero article + N`
+  để biểu diễn hai đường mạo từ; zero/no article là sự vắng mặt của ô mạo từ optional, không
+  phải một token bắt buộc trong câu.
 - Công thức phải phủ **mọi dạng tiêu đề nêu**. Verify kiểm bằng model khác họ với model sinh
   (blind-solve, hiện là Groq): đưa tiêu đề + tóm tắt + công thức (kèm các lựa chọn), hỏi còn
   thiếu dạng nào; thiếu → cờ `formula_incomplete` (điểm bị flagged). Prompt: `grammar_lab/prompts/verify_formula.md`.
@@ -114,6 +119,20 @@ Tiêu đề (ngôn ngữ giải thích + tên gốc bằng ngôn ngữ đích), 
   (`example.form_without_variant`).
 - `start`/`end` là vị trí ký tự (0-based, `end` không gồm). Model đưa chuỗi con, code tự tính
   vị trí — model không phải đếm ký tự.
+
+### Wire format khi generate (không đổi stored schema)
+
+Stored v0.4 vẫn lưu `spans[{start,end,role}]`. Nhưng full-generation không yêu cầu model lặp lại
+`role` trong từng span nữa: model trả `bindings[{slot_index,text}]`, trong đó `slot_index`
+trỏ vào formula của `form` tương ứng và `text` là substring chính xác. Code lấy `role` từ
+formula slot rồi mới tạo stored span. Mọi slot không optional phải được bind đúng một lần, đúng
+thứ tự; index thiếu/trùng/vượt phạm vi hoặc substring sai đều fail-closed trước khi ghi file.
+
+Nếu chỉ projection cấu trúc này sai trong khi lesson text đã hợp lệ, generator được phép chạy
+một **structure-only repair** giới hạn ở `formula`/negative/question, bindings và
+`personal_production.pattern_rule`. Repair không được sửa title, summary, when-to-use, câu ví
+dụ, translation, common mistakes hay quick practice; kết quả vẫn phải qua cùng deterministic
+validator trước khi được ghi. Đây là repair cấu trúc, không phải đường bypass validation.
 
 ## 5. compare
 
