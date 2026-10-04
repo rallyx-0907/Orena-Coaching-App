@@ -782,6 +782,123 @@ def normalize_generated_formula_order(data: dict[str, Any], zh: bool) -> dict[st
     return out
 
 
+
+def _safe_generated_gap_candidate(slot: dict[str, Any], candidate: str, zh: bool) -> bool:
+    """Accept only surface shapes that the slot label itself makes unambiguous."""
+    slot_hint = str(slot.get("text", "")).casefold()
+    if zh:
+        phrase_like = any(
+            hint in slot_hint
+            for hint in ("np", "noun phrase", "clause", "complement", "constituent", "短语", "从句")
+        )
+        return (
+            phrase_like
+            and sum(1 for char in candidate if _HAN.fullmatch(char)) >= 2
+        )
+
+    tokens = re.findall(r"[A-Za-z]+(?:'[A-Za-z]+)?", candidate)
+    phrase_like = any(
+        hint in slot_hint
+        for hint in (
+            "np", "noun phrase", "clause", "complement", "constituent",
+            "reported content", "content clause", "object phrase",
+        )
+    )
+    if phrase_like:
+        return len(tokens) >= 2
+
+    v3_like = bool(re.search(r"(?:^|[^a-z0-9])v3(?:$|[^a-z0-9])", slot_hint)) or "past participle" in slot_hint
+    if v3_like and len(tokens) == 1:
+        token = tokens[0].casefold()
+        irregular_participles = {
+            form.casefold()
+            for _past, participle in en_morphology.IRREGULAR_VERBS.values()
+            for form in participle.split("/")
+        }
+        return token in irregular_participles or token.endswith(("ed", "ied"))
+
+    return False
+
+
+def complete_generated_single_gap_bindings(data: dict[str, Any], zh: bool) -> dict[str, Any]:
+    """Recover exactly one missing required slot from one bounded surface gap.
+
+    No POS/role is guessed. Existing exact bindings determine the only possible
+    text interval for the missing formula position, and the slot label must make
+    that interval's surface shape safe to accept (for example a phrase/clause,
+    or one recognisable English V3 token).
+    """
+    out = copy.deepcopy(data)
+    form_keys = {"affirmative": "formula", "negative": "negative", "question": "question"}
+    trim_chars = " \t\r\n,.;:!?—–()[]{}\"“”"
+
+    for example in out.get("examples", []):
+        form = example.get("form")
+        key = form_keys.get(form)
+        formula = out.get(key) if key else None
+        if not formula:
+            continue
+
+        bindings = example.get("bindings") or []
+        bound_indexes = {
+            binding.get("slot_index")
+            for binding in bindings
+            if isinstance(binding.get("slot_index"), int)
+        }
+        required = {i for i, slot in enumerate(formula) if not slot.get("optional")}
+        missing = sorted(required - bound_indexes)
+        if len(missing) != 1:
+            continue
+        missing_index = missing[0]
+
+        # Any second unbound optional slot makes the uncovered interval
+        # structurally ambiguous, so leave it to fail-closed repair.
+        if any(
+            i not in bound_indexes and i != missing_index and slot.get("optional")
+            for i, slot in enumerate(formula)
+        ):
+            continue
+
+        text = target_text(str(example.get("text", "")), zh)
+        located = _locate_generated_bindings(text, bindings, zh)
+        if not located and bindings:
+            continue
+
+        # Formula order must already agree with the located surface order.
+        ordered_bound = sorted(located.items())
+        if any(
+            ordered_bound[i][1][0] > ordered_bound[i + 1][1][0]
+            for i in range(len(ordered_bound) - 1)
+        ):
+            continue
+
+        left = [
+            (slot_index, finish)
+            for slot_index, (_begin, finish, _needle) in located.items()
+            if slot_index < missing_index
+        ]
+        right = [
+            (slot_index, begin)
+            for slot_index, (begin, _finish, _needle) in located.items()
+            if slot_index > missing_index
+        ]
+        start = max(left, default=(-1, 0), key=lambda item: item[0])[1]
+        finish = min(right, default=(len(formula), len(text)), key=lambda item: item[0])[1]
+        if finish <= start:
+            continue
+
+        candidate = text[start:finish].strip(trim_chars)
+        if not candidate or not _safe_generated_gap_candidate(
+            formula[missing_index], candidate, zh
+        ):
+            continue
+
+        bindings.append({"slot_index": missing_index, "text": candidate})
+        example["bindings"] = bindings
+
+    return out
+
+
 def complete_generated_terminal_bindings(data: dict[str, Any], zh: bool) -> dict[str, Any]:
     """Recover one missing edge slot from the only remaining sentence surface.
 
@@ -863,6 +980,7 @@ def complete_generated_terminal_bindings(data: dict[str, Any], zh: bool) -> dict
 def normalize_generated_structure(data: dict[str, Any], zh: bool) -> dict[str, Any]:
     """Return the exact structural candidate that full assembly validates."""
     out = normalize_generated_formula_order(data, zh)
+    out = complete_generated_single_gap_bindings(out, zh)
     out = complete_generated_terminal_bindings(out, zh)
     return normalize_generated_formula_order(out, zh)
 
