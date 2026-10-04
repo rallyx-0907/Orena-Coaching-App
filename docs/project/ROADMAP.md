@@ -48,9 +48,12 @@ Individual skill implementation or backend/test status does not establish readin
 
 Current sequence:
 
-Human sequencing update2026-10-04: defer Grammar and continue other basic
-Product Completion gaps. The current bounded slice is S3's collection learner
-save -> scoped review -> reopen, reusing the existing vocabulary/SRS owners.
+Human sequencing update2026-10-04: Grammar deferred. Preserve the verified S3
+collection actions. Accepted next order: Reading content pipeline -> vocabulary
+enrichment -> practice on publication -> Agent -> Grammar later -> whole-product
+QA/release gates. Bounded S1 registered-source admission is implemented and
+browser-verified; source/level breadth and comprehension materialization remain
+open. Evidence: READING_SOURCE_ADMISSION_CHECKPOINT.md; status IMPLEMENTING.
 
 1. Preserve accepted Progress and Books work; do not reopen them for non-blocking completeness or fidelity.
 2. Finish preserved Listening/Media to basic browser-usable coverage: imports, usable transcripts, core line actions, Dictation, Shadowing and truthful unavailable states in EN/ZH.

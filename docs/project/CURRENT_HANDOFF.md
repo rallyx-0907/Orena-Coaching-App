@@ -5,9 +5,9 @@
 Purpose: execution position. Change when work/gates change. Do not store secrets or unverified claims.
 Authority: `PROJECT_MEMORY.md`. Local checks are not CI/product approval.
 
-Product completion is judged against the full new Orena UI/spec capability and flow inventory, not only currently implemented backend features or the next active slices.
+Product completion covers the full approved UI/spec capability and flow inventory.
 
-Current program: `ROADMAP.md` (D-113). R21/mobile and separate skill releases are historical.
+Program: `ROADMAP.md` (D-113); R21/mobile/skill releases are historical.
 
 ## Current branch / lane
 
@@ -35,14 +35,14 @@ Frame/route/code/status: `docs/design/canonical-ui/IMPLEMENTATION_MAP.md`.
 
 ## Last verified batch
 
-S3 collection learner actions (2026-10-04): explicit Add all reuses saved words;
-scoped review reads complete collection-owned rows, no first200 truncation.
-EN/ZH import -> save2 -> review -> grade -> reload/reopen verified at :8021,
-360x740 controls visible; no new AI telemetry. Local Python2814 pass/3 inherited
-fail/370 skip; Node128/130 (one date fixture, one human-owned contract edit).
-Evidence: docs/reviews/VOCABULARY_COLLECTION_CHECKPOINT.md. IMPLEMENTING: full
-fidelity and S3 enrichment/publication breadth remain open. Grammar deferred
-by human 2026-10-04; preserve the prerequisite checkpoint below.
+S1 Reading source admission (e74735b): active registry policy, grounded
+EN/ZH targets and cleared rights admit atomically; unknown/mismatched origins,
+attribution or conflicting duplicate rights stay held/refused. Browser import ->
+Free Reading -> reopen verified; provider telemetry unchanged. QA archived.
+Final focused159 pass; broad2838 pass/4 fail/370 skip (D4 suite-only unresolved);
+Node128/130. READING_SOURCE_ADMISSION_CHECKPOINT.md holds scope/evidence.
+IMPLEMENTING: level validation, source breadth, enrichment/questions/fidelity open.
+Preserve S3 a8e7914: VOCABULARY_COLLECTION_CHECKPOINT.md. Grammar deferred.
 
 Grammar prerequisites (`0d5732c`): PR67/68 integrated, adapters verified; drafts
 unserved, no Store/API or migration. GRAMMAR_INTEGRATION_CHECKPOINT.md retains evidence.
@@ -112,9 +112,10 @@ human gates. Never touch persistent volumes as cleanup.
 
 ## NEXT EXACT TASK
 
-Grammar is deferred by explicit human instruction2026-10-04. Review the bounded
-S3 collection learner flow at :8021, then continue remaining basic Product
-Completion gaps under ROADMAP; do not resume Grammar Store/API now.
+Grammar remains deferred. Human2026-10-04 accepts Reading -> vocabulary
+enrichment -> practice on publish -> Agent; Grammar later. Review bounded S1
+source admission, then S3 vocabulary/context enrichment through existing owners.
+Source/level breadth and S7 persisted questions remain open; no new learner schema.
 
 Preserve Admin/Azure (`2931823`/`7857d43`); OpenAI operator acceptance remains.
 

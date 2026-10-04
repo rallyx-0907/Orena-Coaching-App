@@ -27,6 +27,19 @@ review -> grade -> reload/reopen and 360x740 controls verified; no new AI
 telemetry. Local Python2814 pass/3 inherited fail/370 skip; Node128/130.
 Status remains IMPLEMENTING: full fidelity and collection enrichment/publishing
 breadth are open. Evidence: docs/reviews/VOCABULARY_COLLECTION_CHECKPOINT.md.
+S1 Reading registered-source admission (e74735b): imported content binds to
+the existing registry/snapshot/article owner. Cleared active source automation,
+URL identity, visible attribution, content quality and grounded target checks
+admit atomically; failures stay in review, conflicting duplicate rights are
+refused. Chinese targets now follow shared token boundaries instead of character
+n-grams. Owned EN/ZH import -> publication -> Free Reading -> reopen verified
+at :8021; phone360x740 and zero new provider telemetry. QA articles archived.
+Final focused159 pass, broad2838 pass/4 fail/370 skip; D4 suite-only failure
+unresolved despite focused current/clean HEAD passes. Node128/130. Full fidelity,
+level calibration, corpus breadth, vocabulary enrichment and persisted questions
+remain open; IMPLEMENTING. Evidence: READING_SOURCE_ADMISSION_CHECKPOINT.md.
+Next accepted order: vocabulary enrichment, practice on publish, Agent; Grammar later.
+
 Books evidence remains in `docs/reviews/S8_BOOKS_BROWSER_CHECKPOINT.md` unchanged.
 
 S6 Admin media rights review/publication is REVIEWABLE (`71ddcd4`): EN/ZH upload,

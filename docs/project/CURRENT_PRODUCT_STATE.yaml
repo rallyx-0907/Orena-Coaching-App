@@ -40,8 +40,8 @@
     "expected_development_branch": "codex/work",
     "lane": "unified_baseline_and_ui_lane"
   },
-  "last_verified_application_commit": "096240da824897893387cf749b426da2cb6605be",
-  "last_verified_batch": "pronunciation_entry_phone_en_zh_vi_d122",
+  "last_verified_application_commit": "e74735b615bf37c3f44c75e86e6466bc14b38dd3",
+  "last_verified_batch": "reading_registered_source_admission_en_zh",
   "current_program_stage": {
     "id": "ORENA_PRODUCT_COMPLETION",
     "name": "Coherent content-first web product completion",
@@ -50,7 +50,7 @@
   "current_primary_workstream": {
     "id": "orena_product_completion_d110_d111",
     "status": "in_progress",
-    "next_task": "Human defers Grammar2026-10-04. Review the bounded S3 vocabulary collection learner save -> scoped review -> reopen at :8021, then continue remaining basic Product Completion gaps. Existing vocabulary/SRS owners reused; collection review has no first200 truncation. EN/ZH and360x740 functionally verified; no new AI telemetry. Local Python2814 pass/3 inherited fail/370 skip; Node128/130. Evidence: VOCABULARY_COLLECTION_CHECKPOINT.md. Full fidelity and S3 enrichment/publication breadth remain open. Preserve accepted Library/Books/Progress/Admin, D-121 shared media readiness and durable sandbox PG; no production/schema/retention activation."
+    "next_task": "Human defers Grammar and accepts Reading -> vocabulary enrichment -> practice on publish -> Agent, Grammar later. Bounded S1 registered-source admission implemented: deterministic EN/ZH processing, source rights/origin/attribution/target gates, atomic publication, immutable snapshot reuse and explicit rights-conflict refusal. Browser-owned imports -> publication -> Free Reading/reopen verified at :8021, EN/ZH phone360x740; no new provider telemetry. QA articles archived after evidence. Final focused159 pass; broad run2838 pass/4 fail/370 skip; D4 suite-only failure unresolved (focused current/clean HEAD pass). Node128/130; full fidelity and production gate open. Review Reading source checkpoint, then S3 source vocabulary enrichment under existing owners; S1 level/source breadth and S7 questions remain open. Preserve accepted media/S3/Books/Progress; no production/schema changes."
   },
   "design": {
     "web_is_visual_source_of_truth": true,
