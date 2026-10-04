@@ -4080,3 +4080,13 @@ separate learner-requested capability. This applies the cost plan's rule 1 and i
 visible learner attribution is an open pre-release gate). Schema:
 `proposals/VOCABULARY_LOCALIZATION.md`; its table needs independent review and authorization
 before promotion. Native frozen; product approval still follows browser review.
+
+## D-125 - Orena agent live on the lane runtime :8021
+
+2026-10-04, explicit human instruction after PR #69 (Orena Intelligence, dark merge): the agent is
+switched on at the lane runtime :8021, not :8011 (deferred by D-102), superseding D-101 G's choice
+of runtime only. `AGENT_ENABLED` on the server is the per-environment switch; the client follows
+`GET /api/agent/capabilities` (404 hides Orena) and keeps the contract mock for forced review only.
+Checked in full against contract v5 (capabilities, SSE turn, 409, 429 with Retry-After,
+`context.address`, actions as invitations, opening turn from real data, `tool_call` labels).
+Production and public activation remain human gates.

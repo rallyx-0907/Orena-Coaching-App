@@ -1,7 +1,7 @@
 /* Orena Home (OA1, frame 11, D1 §6) - a browsing place (shell/routes.js `orena.focus: false`), the
    ambient assistant thread every learner can return to. Real data only: the thread and its coach
-   notes are device memory (agent/memory.js), replies come from the contract mock (agent/mock.js,
-   AGENT_LIVE false, AGENT_CONTRACT §11) until the intelligence lane is integrated (D-086), and
+   notes are device memory (agent/memory.js), replies come from the server's agent where it is on
+   (agent/transport.js, AGENT_CONTRACT §2.1; the contract mock only when the address asks), and
    every action button runs through the one dispatcher (agent/dispatcher.js) against the app's real
    APIs. The frame's "last active: Listening, 2 h ago" clause has no backing data anywhere in this
    build (model.js's `homeSubtitle` doc comment) and is dropped, not invented (rule 40). */

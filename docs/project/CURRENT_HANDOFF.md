@@ -27,8 +27,8 @@ Frame/route/code/status: `docs/design/canonical-ui/IMPLEMENTATION_MAP.md`.
   only. Worker stopped. `ORENA_ACCOUNT_BACKBONE=on` here only. Recreate copies env by name.
 - Wave B (`161d917`): REVIEWABLE; backend-less routes stay Coming soon,
   Orena uses the mock; Grammar waits for its canonical runtime.
-- Agent UI side: contract v5 on the mock; Orena's entry points hide when the
-  agent is absent.
+- Orena agent LIVE on :8021 only (D-125, `AGENT_ENABLED=true`, Gemini flash-lite legacy
+  selection); the client follows capabilities (404 hides Orena). ORENA_AGENT_LIVE_8021_CHECKPOINT.md.
 - Grammar Lab replaces R5 (D-100, PR#66 `f86a2bf`); screens44/47 (`b83142d`)
   wait for canonical fixtures behind grammar-source.js. G-1..G-9: UI_BACKEND_GAPS.
   No false pattern-used claim. Store/API waits for architecture review.

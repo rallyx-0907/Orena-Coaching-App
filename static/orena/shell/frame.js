@@ -157,8 +157,8 @@ export function drawFrame(root) {
       if (crumb) mount(crumb, crumbMarkup(state));
     },
   };
-  // §2.1: asked once when the UI starts; the mock answers instantly (AGENT_LIVE false), a live
-  // server's 404 hides every entry point via the `onOrenaPresence` repaint below.
+  // §2.1: asked once when the UI starts; a server without the agent answers 404, which hides every
+  // entry point via the `onOrenaPresence` repaint below.
   void probe();
   onOrenaPresence(() => {
     if (lastState) handles.paint(lastState);

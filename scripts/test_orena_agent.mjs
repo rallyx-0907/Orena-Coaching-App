@@ -33,8 +33,8 @@ assert.equal(contract.toContractLang('zh'), 'zh-CN');
 assert.equal(contract.fromContractLang('zh-CN'), 'zh');
 assert.equal(contract.toContractLang('en'), 'en');
 
-// 2. Nothing calls /api/agent/* until the human says so.
-assert.match(transport, /export const AGENT_LIVE = false;/, 'the live transport is off');
+// 2. The server decides (§2.1): no client constant turns the agent on or off.
+assert.doesNotMatch(transport, /AGENT_LIVE/, 'no client-side switch: AGENT_ENABLED on the server is the switch');
 
 // 3. SSE framing: chunk boundaries, CRLF, comments, multi-line data.
 async function* chunks(...parts) {
@@ -288,7 +288,7 @@ const classRows = [...section('The classes a server sends', '## 5.').matchAll(/^
 assert.deepEqual(Object.fromEntries(classRows), { ...contract.ERROR_CLASSES }, '§4.1 classes and their fallbacks');
 assert.equal(contract.fallbackOf('later'), 'none', 'an unknown fallback reads as none');
 
-const { liveTurn, turn, probe } = await import('../static/orena/agent/transport.js');
+const { liveTurn, turn, probe, resetProbe } = await import('../static/orena/agent/transport.js');
 const { orenaPresent, onOrenaPresence } = await import('../static/orena/agent/presence.js');
 const SSE_OK = 'event: session\ndata: {"session_id":"s1","contract_version":4}\n\nevent: done\ndata: {"usage":{},"trace_id":"t"}\n\n';
 const answer = (status, body = null, headers = {}) => new Response(body, { status, headers });
@@ -337,13 +337,24 @@ assert.deepEqual(run.events, ['session', 'error:transport:retry'], 'a stream wit
 run = await drive([answer(200, 'event: session\ndata: {"session_id":"s1"}\n\nevent: error\ndata: {"class":"voice_unavailable","message":"m","fallback":"text_only"}\n\n')]);
 assert.deepEqual(run.events, ['session', 'error:voice_unavailable:text_only'], 'a server error passes through');
 
-// The transport tells the shell when Orena is absent; while the mock serves, Orena is present.
+// The server's capabilities answer decides the visit: 200 is live, 404 hides Orena; a turn waits for it.
 let probed = 0;
-assert.equal(await probe({ fetchImpl: async () => { probed += 1; return answer(404); } }), true, 'the mock is always on');
-assert.equal(probed, 0, 'nothing calls /api/agent/* while AGENT_LIVE is false');
+assert.equal(await probe({ fetchImpl: async () => { probed += 1; return answer(200, '{"contract_version":5,"capabilities":[]}'); } }), true, 'a 200: the agent is on');
+assert.equal(await probe({ fetchImpl: async () => { probed += 1; return answer(404); } }), true, 'asked once per visit');
+assert.equal(probed, 1);
+const liveSent = [];
+const liveEvents = [];
+const liveStream = 'event: session\ndata: {"session_id":"s1"}\n\nevent: done\ndata: {"usage":{}}\n\n';
+for await (const e of turn(base, { fetchImpl: async (url) => { liveSent.push(url); return answer(200, liveStream); } })) liveEvents.push(e.event);
+assert.deepEqual([liveSent, liveEvents], [['/api/agent/turn'], ['session', 'done']], 'a live server answers the turn, never the mock');
+resetProbe();
 const presence = [];
 const stopWatching = onOrenaPresence((value) => presence.push(value));
 assert.equal(orenaPresent(), true);
+const offEvents = [];
+for await (const e of turn(base, { fetchImpl: async () => answer(404) })) offEvents.push(e.event);
+assert.deepEqual([offEvents, orenaPresent(), presence], [['absent'], false, [false]], 'a server without the agent: 404 hides Orena, no mock reply');
+resetProbe();
 globalThis.location = { hash: '#/orena?agent=H404' };
 const absentRun = [];
 for await (const e of turn(base)) absentRun.push(e.event);
@@ -583,4 +594,4 @@ assert.equal(chooseStream({ message: 'Gọi mình là em nhé.', context: {} }),
 assert.equal(chooseStream({ message: 'Call me Minh.', context: {} }), 'S14', 'chooseStream: en address request');
 assert.equal(chooseStream({ message: '请叫我小明。', context: {} }), 'S14', 'chooseStream: zh address request');
 
-console.log(`Orena agent contract v${contract.CONTRACT_VERSION}: data equals the contract text, ${Object.keys(STREAMS).length} canonical streams keep §4/§7, requests, reducer, dispatcher, device memory, intents and §5.6 address (defaults, terms, the note, S14/S15, no provider names) behave, every §2.1 status and §4.1 fallback is answered as written; live transport off: PASS`);
+console.log(`Orena agent contract v${contract.CONTRACT_VERSION}: data equals the contract text, ${Object.keys(STREAMS).length} canonical streams keep §4/§7, requests, reducer, dispatcher, device memory, intents and §5.6 address (defaults, terms, the note, S14/S15, no provider names) behave, every §2.1 status and §4.1 fallback is answered as written; the server decides live or absent: PASS`);
