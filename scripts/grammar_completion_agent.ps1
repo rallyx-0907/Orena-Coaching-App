@@ -99,10 +99,21 @@ function Invoke-Rescue {
         $args += @("-CodexModel", $CodexModel)
     }
 
-    $output = & powershell @args 2>&1
-    $exitCode = [int]$LASTEXITCODE
+    $previousErrorActionPreference = $ErrorActionPreference
+    try {
+        # The rescue child may forward native stderr from Codex. On Windows
+        # PowerShell 5.1 that is represented as NativeCommandError even when
+        # Codex exits successfully, so rely on LASTEXITCODE instead.
+        $ErrorActionPreference = "Continue"
+        $output = & powershell @args 2>&1
+        $exitCode = [int]$LASTEXITCODE
+    }
+    finally {
+        $ErrorActionPreference = $previousErrorActionPreference
+    }
+
     $output | ForEach-Object { Write-Host $_ }
-    return $exitCode
+    return [int]$exitCode
 }
 
 function Assert-CorpusComplete {
