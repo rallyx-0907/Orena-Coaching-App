@@ -880,7 +880,15 @@ def pattern_rule_matches(ordered: bool, matchers: list[Any], text: str, zh: bool
             candidates = []
             for literal in matcher:
                 literal = literal.casefold()
-                pattern = re.escape(literal) if zh else rf"(?<![\w']){re.escape(literal)}(?![\w])"
+                if zh:
+                    pattern = re.escape(literal)
+                elif literal.replace("\u2019", "'") in {"n't", "'m", "'re", "'s", "'ve", "'ll", "'d"}:
+                    # Contraction suffixes are grammar-bearing literals inside a
+                    # larger orthographic token (isn't, I've, she'll...). They
+                    # cannot satisfy the normal left whole-word boundary.
+                    pattern = rf"{re.escape(literal)}(?![\w])"
+                else:
+                    pattern = rf"(?<![\w']){re.escape(literal)}(?![\w])"
                 candidates.append(re.compile(pattern))
         else:
             candidates = [matcher]
