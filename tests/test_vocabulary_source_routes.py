@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import asyncio
 import json
+
+import pytest
 from dataclasses import replace
 
 import httpx
@@ -283,3 +285,38 @@ def test_chinese_import_completes_missing_meanings_from_the_dictionary(tmp_path,
     ]
     assert pine["readings"][0]["text"] == "sōng shù"
     assert pine["provenance"]["dictionary"]["source"] == "cc-cedict"
+
+
+@pytest.mark.parametrize(("rights", "completeness", "published"), [
+    ("public_domain", "complete", True),
+    ("licensed", "complete", True),
+    ("unknown", "complete", False),
+    ("licensed", "in_progress", False),
+])
+def test_cleared_rights_and_a_complete_collection_publish_by_the_d111_rule(monkeypatch, tmp_path, rights, completeness, published) -> None:
+    from writing_coach.persistence.vocabulary_repository import sqlite_vocabulary_repository
+
+    repository = sqlite_vocabulary_repository(tmp_path / "auto.db")
+    repository.initialize()
+    monkeypatch.setattr(app_module, "_persistence_runtime",
+                        replace(app_module._persistence_runtime, vocabulary_repository=repository))  # fmt: skip
+    app_module.configure_becoming_library_content(repository)
+    response = _request(
+        "POST",
+        "/api/admin/vocabulary/import",
+        data={
+            "metadata": json.dumps({"title": "Auto Pack", "language_code": "en", "collection_id": f"auto-{rights}",
+                                    "rights_status": rights, "completeness": completeness}),
+            "mappings": json.dumps({"words.csv": {"term": "English", "short_meaning": "Vietnamese"}}),
+        },
+        files=[("files", ("words.csv", b"English|Vietnamese\nhello|xin chao\n", "text/csv"))],
+    )
+    assert response.status_code == 200, response.text
+    collection = response.json()["collection"]
+    assert (collection["catalog_status"] == "published") is published, response.text
+    if published:
+        stored = repository.get_collection(f"auto-{rights}") if hasattr(repository, "get_collection") else None
+        admission = ((stored or {}).get("provenance") or {}).get("admission") or {}
+        assert not stored or (admission.get("attested_by") == app_module.VOCABULARY_AUTO_PUBLISHER
+                              and admission.get("auto_published") is True)  # fmt: skip
+        assert [c["id"] for c in repository.list_collections("en")] == [f"auto-{rights}"], "learners see it"

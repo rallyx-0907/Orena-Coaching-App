@@ -3197,6 +3197,9 @@ _VOCABULARY_PUBLISHABLE_RIGHTS = {
 }
 
 
+VOCABULARY_AUTO_PUBLISHER = "orena:auto-publish (D-111)"
+
+
 def _vocabulary_admission(
     metadata: dict[str, Any], *, imported_by: str
 ) -> tuple[str, dict[str, Any]]:
@@ -3213,6 +3216,14 @@ def _vocabulary_admission(
         "publication_attested": attested,
     }
     if not publish:
+        # D-111 point 1: cleared rights and a complete collection publish by the rule, without a per-import
+        # attestation - and still only when every row of every file imports (the batch_failed check below).
+        if rights_status in _VOCABULARY_PUBLISHABLE_RIGHTS and completeness == "complete":
+            # The rule is the reviewer of record: approved and attested in its own name, and marked as such.
+            admission.update(review_status="approved", publication_attested=True, auto_published=True,
+                             attested_by=VOCABULARY_AUTO_PUBLISHER, warnings_at_publication=[],
+                             published_over_warnings=False)  # fmt: skip
+            return "published", admission
         return "pending_review", admission
     if not attested:
         raise HTTPException(
