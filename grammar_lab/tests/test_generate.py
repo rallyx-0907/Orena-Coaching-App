@@ -980,6 +980,8 @@ def test_v04_prompt_forbids_open_class_vocabulary_enumeration() -> None:
     assert "at most 8 literals" in prompt
     assert "slot_index" in prompt
     assert "Bind every non-optional formula slot exactly once" in prompt
+    assert "one realizable" in prompt
+    assert "Absence is not a token" in prompt
 
 
 
