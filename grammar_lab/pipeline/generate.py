@@ -2149,10 +2149,11 @@ class Generator:
                 f"{issue.code} at {issue.path}: {issue.message}" for issue in issues[:8]
             )
             focused_hints = semantic_repair_hints(issues)
-            # A targeted repair already spent one extra provider call on the
-            # exact failing structure. If that still cannot validate, do not
-            # buy two more 8k-token full generations. Likewise, v13 binding
-            # contract failures get one feedback retry, then fail closed.
+            # A targeted repair already spent on the exact failing
+            # structure, so do not buy more full generations after it fails.
+            # Pure generation-structure failures are handled above by cached
+            # deterministic/structure-only repair and fail closed without a
+            # second full lesson. Mixed failures retain one bounded full retry.
             contract_failure = any(issue.code.startswith("generation.") for issue in issues)
             if targeted_repair_used or structure_repair_exhausted or (contract_failure and attempt >= 2):
                 break
