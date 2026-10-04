@@ -106,7 +106,7 @@ GOAL
 Make the already-paid cached candidate validate truthfully. Do not obtain a new candidate.
 
 NON-NEGOTIABLE CONTRACT
-- Work only under grammar_lab/**.
+- Your Codex project root is already grammar_lab/. Work only inside this workspace.
 - Do not run generate-corpus. The outer wrapper owns replay.
 - Do not call DeepSeek, Gemini, Anthropic, OpenAI API, curl, wget, Invoke-WebRequest, or any network command.
 - Do not delete, invalidate, rewrite, rename, fabricate, or hand-edit LLM cache files.
@@ -136,6 +136,7 @@ Then summarize root cause, files changed, tests run, and residual risk.
     $args = @(
         "exec",
         "--full-auto",
+        "-C", "grammar_lab",
         "-c", "sandbox_workspace_write.network_access=false"
     )
     if ($RequestedModel) {
