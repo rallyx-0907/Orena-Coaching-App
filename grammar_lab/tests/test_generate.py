@@ -581,6 +581,51 @@ def test_generate_v04_retries_semantic_validation_with_feedback(tmp_path: Path) 
 
 
 
+
+def test_generate_v04_no_paid_repairs_stops_after_full_candidate(tmp_path: Path) -> None:
+    lab = _v04_lab(tmp_path)
+    lab.write()
+    bad = copy.deepcopy(CANNED_V04)
+    bad["formula"].insert(1, {
+        "text": "required marker",
+        "role": "marker",
+        "label": "dấu bắt buộc",
+        "optional": False,
+        "options": [],
+    })
+    for example in bad["examples"]:
+        if example["form"] == "affirmative":
+            for binding in example["bindings"]:
+                if binding["slot_index"] == 1:
+                    binding["slot_index"] = 2
+    for rule_slot in bad["personal_production"]["pattern_rule"]["slots"]:
+        if rule_slot["slot_index"] == 1:
+            rule_slot["slot_index"] = 2
+
+    calls: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(request)
+        sent = json.loads(request.content)
+        return httpx.Response(200, json={
+            "content": [{
+                "type": "tool_use",
+                "name": sent["tool_choice"]["name"],
+                "input": _answer(bad),
+            }],
+            "usage": {"input_tokens": 500, "output_tokens": 300},
+        })
+
+    generator = make_generator(lab.root, httpx.MockTransport(handler))
+    generator.max_full_attempts = 1
+    generator.paid_repairs = False
+    outcome = generator.generate("en.alpha")
+
+    assert outcome.status == "error"
+    assert "semantic validation failed after 1 full attempt(s)" in outcome.reason
+    assert len(calls) == 1
+
+
 def test_generate_v04_honors_one_full_attempt_hard_cap(tmp_path: Path) -> None:
     lab = _v04_lab(tmp_path)
     lab.write()
