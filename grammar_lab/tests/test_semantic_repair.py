@@ -148,21 +148,16 @@ def test_generate_v04_uses_issue_local_patch_on_assembled_candidate(tmp_path) ->
     lab = _v04_lab(tmp_path)
     lab.write()
     bad = copy.deepcopy(CANNED_V04)
-    # V-s is abstract, so deterministic literal recovery cannot recreate this
-    # missing verb span; the candidate must reach targeted repair.
-    bad["examples"][0]["spans"] = [
-        span for span in bad["examples"][0]["spans"] if span["role"] != "verb"
-    ]
+    # v13 makes example/formula alignment structural. Keep those bindings
+    # valid and force a remaining semantic failure in personal production.
+    bad["personal_production"]["pattern_rule"]["slots"][0]["regex"] = r"\bNEVER\b"
     calls: list[str] = []
 
     patch = {
         "formula_orders": [],
         "make_optional": [],
-        "example_spans": [{
-            "index": 0,
-            "spans": copy.deepcopy(CANNED_V04["examples"][0]["spans"]),
-        }],
-        "pattern_rule": None,
+        "example_spans": [],
+        "pattern_rule": copy.deepcopy(CANNED_V04["personal_production"]["pattern_rule"]),
     }
 
     def handler(request: httpx.Request) -> httpx.Response:
