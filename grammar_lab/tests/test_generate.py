@@ -19,6 +19,8 @@ from grammar_lab.pipeline.generate import (
     _normalize_seg,
     _story_generation_schema,
     align_formula_order_from_examples,
+    assemble_generated_example,
+    assemble_generated_personal_production,
     build_rule_table,
     complete_literal_example_spans,
     pinyin_from_pairs,
@@ -796,6 +798,73 @@ def test_resolve_spans_follows_sentence_order_so_an_affix_lands_after_its_base()
     text = "She sells two books."
     spans = resolve_spans(text, [{"text": "book", "role": "object"}, {"text": "s", "role": "other"}])
     assert [(text[s["start"]:s["end"]], s["start"]) for s in spans] == [("book", 14), ("s", 18)]
+
+
+
+def test_generated_example_bindings_derive_roles_and_require_every_nonoptional_slot() -> None:
+    pattern = {"formula": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ"}},
+        {"text": "V", "role": "verb", "label": {"vi": "động từ"}},
+        {"text": "O", "role": "object", "label": {"vi": "tân ngữ"}},
+    ]}
+    raw = {
+        "text": "She reads books.", "form": "affirmative",
+        "bindings": [
+            {"slot_index": 0, "text": "She"},
+            {"slot_index": 1, "text": "reads"},
+            {"slot_index": 2, "text": "books"},
+        ],
+        "annotation": "a", "translation": "b",
+    }
+    example, problems = assemble_generated_example(raw, pattern, False, lambda x: {"vi": x}, 0)
+    assert problems == []
+    assert [(example["text"][s["start"]:s["end"]], s["role"]) for s in example["spans"]] == [
+        ("She", "subject"), ("reads", "verb"), ("books", "object"),
+    ]
+
+    missing = copy.deepcopy(raw)
+    missing["bindings"] = missing["bindings"][:-1]
+    _example, problems = assemble_generated_example(missing, pattern, False, lambda x: {"vi": x}, 0)
+    assert any(code == "generation.binding_required_slot_missing" for _path, code, _message in problems)
+
+
+def test_generated_example_bindings_reject_formula_surface_order_mismatch() -> None:
+    pattern = {"formula": [
+        {"text": "Aux", "role": "aux", "label": {"vi": "trợ động từ"}},
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ"}},
+    ]}
+    raw = {
+        "text": "She can swim.", "form": "affirmative",
+        "bindings": [
+            {"slot_index": 0, "text": "can"},
+            {"slot_index": 1, "text": "She"},
+        ],
+        "annotation": "a", "translation": "b",
+    }
+    _example, problems = assemble_generated_example(raw, pattern, False, lambda x: {"vi": x}, 0)
+    assert any(code == "generation.binding_text_order" for _path, code, _message in problems)
+
+
+def test_generated_personal_production_derives_rule_role_from_target_formula_slot() -> None:
+    pattern = {"formula": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ"}},
+        {"text": "will", "role": "aux", "label": {"vi": "will"}},
+        {"text": "V", "role": "verb", "label": {"vi": "động từ"}},
+    ]}
+    raw = {
+        "prompt": "Viết một câu.", "placeholder": "I will ...",
+        "target_form": "affirmative",
+        "pattern_rule": {
+            "ordered": True,
+            "slots": [{"slot_index": 1, "any_of": ["will"], "regex": ""}],
+        },
+        "sample": "I will study.",
+    }
+    production, problems = assemble_generated_personal_production(
+        raw, pattern, False, lambda x: {"vi": x}
+    )
+    assert problems == []
+    assert production["pattern_rule"]["slots"] == [{"any_of": ["will"], "role": "aux"}]
 
 
 def test_generation_schema_v04_asks_only_for_the_illustration_data_the_point_type_needs() -> None:
