@@ -110,6 +110,15 @@ OPENING = """This is an opening turn: the learner has not written anything yet.
   actions, none that needs a confirmation. Claim no error without evidence."""
 
 
+SCREEN_HELP = """The learner asks what this screen is for and what they can do here (explain_current_screen).
+- Answer from context.screen and context.capabilities_here only: what the screen is for (context.screen.purpose),
+  then what the learner can do here (the titles in context.capabilities_here), in two to four sentences.
+- That is the whole answer. Recommend no lesson, word or next step in your words and mention none of the
+  learner's own records: they asked about the screen. You may add follow-up questions with suggest_next.
+- Say nothing the screen does not do. With no purpose and nothing listed here, name the screen and say you have
+  nothing more about it."""
+
+
 def _language_name(contract_code: str | None, *, target: bool) -> str | None:
     if contract_code is None:
         return None
@@ -257,6 +266,7 @@ def opening_messages(
     *,
     opening: bool = False,
     snapshot: dict | None = None,
+    screen_help: bool = False,
 ) -> list[ProviderMessage]:
     context = json.dumps(context_document(turn, tier1, capabilities, session), ensure_ascii=False)
     messages = [
@@ -283,6 +293,8 @@ def opening_messages(
     if selected and turn.message is not None:
         # Restated next to the learner's words: the live run lost a selection that sat only in the context.
         messages.append(ProviderMessage(role="system", content=selected))
+    if screen_help and turn.message is not None:
+        messages.append(ProviderMessage(role="system", content=SCREEN_HELP))
     if turn.message is not None:
         messages.append(ProviderMessage(role="user", content=turn.message))
     return messages

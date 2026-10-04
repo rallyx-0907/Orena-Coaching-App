@@ -23,6 +23,7 @@ from typing import Protocol
 from writing_coach.agent.capability_registry import CapabilityRegistry
 from writing_coach.agent.context import Tier1Context, TurnInput
 from writing_coach.agent.identity import IdentityQuestion, identity_question
+from writing_coach.agent.screen_help import is_screen_help
 
 
 class DecisionQuestion(StrEnum):
@@ -30,6 +31,7 @@ class DecisionQuestion(StrEnum):
     NEEDS_TOOLS = "needs_tools"
     IDENTITY_QUESTION = "identity_question"
     AUTHORIZATION = "authorization"
+    SCREEN_HELP = "screen_help"
 
 
 @dataclass(frozen=True)
@@ -38,6 +40,8 @@ class Decisions:
     needs_tools: bool | None = None  # None: let the model decide
     identity: IdentityQuestion | None = None  # the learner asked who, or which model, Orena is
     authorized: bool = True
+    # The learner asks what this screen is for (F-13): answered from the screen's context with no tool offered.
+    screen_help: bool = False
     reason: str | None = None
 
 
@@ -61,4 +65,5 @@ class RuleDecisionProvider:
         identity = None
         if DecisionQuestion.IDENTITY_QUESTION in questions:
             identity = identity_question(state.turn.message)
-        return Decisions(capability_ids=capability_ids, identity=identity)
+        screen_help = DecisionQuestion.SCREEN_HELP in questions and is_screen_help(state.turn.message)
+        return Decisions(capability_ids=capability_ids, identity=identity, screen_help=screen_help)

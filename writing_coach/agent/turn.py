@@ -106,6 +106,7 @@ from writing_coach.agent.tools import (
 )
 from writing_coach.core.request_context import LANGUAGE_CODE_CTX, USER_KEY_CTX
 
+SCREEN_HELP_REPLY_TOOLS = frozenset({"suggest_next", "set_voice_style"})
 _log = logging.getLogger(__name__)
 
 Meter = Callable[[str, str, int, str], None]  # (user_key, feature, amount, request_id)
@@ -204,6 +205,7 @@ class _Turn:
         # What is streamed; an action is never reported as done (agent/honesty.py).
         self.gate = ClaimGate(interface=request.context.locale.interface, support=request.context.locale.support)
         self.provider_rounds = 0
+        self.screen_help = False  # set per turn by the decision (F-13)
         self.address_offered_now = False
         self.notes_asked: tuple[CoachNote, ...] = ()  # coach notes the message changes (agent/notes.py)
         self.notes_verdict_logged = False  # one "agent notes" verdict line per turn, never two
@@ -227,6 +229,7 @@ class _Turn:
             questions = {DecisionQuestion.CAPABILITY}
             if not self.opening:  # an opening turn has no message to ask about
                 questions.add(DecisionQuestion.IDENTITY_QUESTION)
+                questions.add(DecisionQuestion.SCREEN_HELP)
             decisions = self.rt.decider.decide(
                 DecisionState(turn=turn, tier1=tier1, registry=self.rt.capabilities), frozenset(questions)
             )
@@ -277,8 +280,10 @@ class _Turn:
             self.notes_asked = notes_the_message_changes(turn.message, tier1.coach_notes)
             self.notes_intent = note_intent(turn.message) if self.notes_asked else None
             self.gate.hold_all = bool(self.notes_asked)  # it may be written again: nothing streams early
+        self.screen_help = decisions.screen_help
         messages = opening_messages(
-            turn, tier1, [c for c in here if c], session, opening=self.opening, snapshot=snapshot
+            turn, tier1, [c for c in here if c], session, opening=self.opening, snapshot=snapshot,
+            screen_help=self.screen_help,
         )
         outputs = ReplyOutputs(
             client=self.request.client,
@@ -338,7 +343,9 @@ class _Turn:
 
     def _rounds(self, messages: list[ProviderMessage], outputs: ReplyOutputs) -> Iterator[Event]:
         # An opening turn reads nothing itself: the server gave it the snapshot (S13 has no tool_call).
-        read_specs = () if self.opening else tuple(
+        # A screen-help turn (F-13) is answered from the screen's context: the server offers it no read tool, so
+        # no learner data is read to explain a screen, and no action or note: nothing that was not asked for.
+        read_specs = () if self.opening or self.screen_help else tuple(
             ProviderToolSpec.from_tool(tool)
             for tool in self.rt.tools.tools()
             if self.learner.contract_language in tool.languages
@@ -346,6 +353,9 @@ class _Turn:
         reply_specs = reply_tool_specs(
             self.request.client, self.locale.target, version=self.stream.version, opening=self.opening
         )
+        if self.screen_help:
+            # Canonical stream S1 (contract §12): an answer, follow-up questions, nothing else.
+            reply_specs = tuple(spec for spec in reply_specs if spec.name in SCREEN_HELP_REPLY_TOOLS)
         limit = self.rt.limits.max_tool_iterations_per_turn
         nudged = notes_nudged = False
         for round_index in range(limit + 1):
@@ -409,7 +419,16 @@ class _Turn:
                 continue
             messages.append(ProviderMessage(role="assistant", content="".join(round_text), tool_calls=tuple(calls)))
             read_any = False
+            offered = {spec.name for spec in offer}
             for call in calls:
+                if call.name not in offered:
+                    # A tool the server did not offer this round never runs, whatever the model asks for: an
+                    # opening or screen-help turn reads nothing, and the last round may only answer (F-13).
+                    _log.warning("agent model called a tool it was not offered: %s", call.name,
+                                 extra={"trace_id": self.trace_id})  # fmt: skip
+                    messages.append(ProviderMessage(role="tool", content="unavailable: not offered in this turn",
+                                                    tool_call_id=call.id))  # fmt: skip
+                    continue
                 if call.name in REPLY_TOOL_NAMES:
                     answer = outputs.handle(call.name, call.arguments, known_evidence=frozenset(self.evidence_ids))
                 else:
