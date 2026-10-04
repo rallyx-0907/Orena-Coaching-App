@@ -1,4 +1,4 @@
-# Prompt: generate_point_v04 (v14)
+# Prompt: generate_point_v04 (v15)
 
 Versioned prompt for one grammar point under schema v0.4 (GRAMMAR_CONTENT_CONTRACT.md).
 `generate.py` fills the placeholders below and sends the result as the `system` message; the
@@ -41,6 +41,11 @@ v14: a formula is one realizable left-to-right route. Mutually exclusive routes 
 Forms that occupy the same position use one slot with `options`; an element that can be absent is one
 `optional` slot. In particular zero/no article is represented by omission of an optional article slot,
 never by a second required "zero article" slot plus another noun route.
+
+v15: English contractions are treated as surface units when that avoids overlapping or reordered
+bindings. In particular tag auxiliaries such as `isn't`, `aren't`, `doesn't`, `won't` should be one
+auxiliary slot (with options when needed), followed by the tag pronoun; do not encode the pronoun before
+a separate `n't` suffix.
 
 ---
 
@@ -109,9 +114,11 @@ Output one JSON object matching the schema you were given -- no commentary outsi
    Prefer a single slot with `options` for alternatives rather than several sequential required
    slots: e.g. one quantifier slot with options `few/a few/little/a little`, not four required
    quantifier slots; one connector slot with alternative forms, not every connector as a required
-   step. If an example uses a contraction such as `don't` / `doesn't` / `isn't`, prefer one
-   formula slot whose text/options represent the actual surface unit cleanly rather than inventing
-   overlapping bindings. `annotation` is a short note on what the bound grammar does (e.g.
+   step. If an example uses a contraction such as `don't` / `doesn't` / `isn't`, use one
+   formula slot whose text/options represent the actual surface unit cleanly whenever splitting it
+   would create overlap or make formula order differ from surface order. For question tags,
+   `isn't it` is auxiliary `isn't` followed by pronoun `it`; never model it as auxiliary
+   `is`, pronoun `it`, then suffix `n't`. `annotation` is a short note on what the bound grammar does (e.g.
    "bắt đầu trong quá khứ → vẫn đúng bây giờ"), `translation` a natural translation.
 6. **compare**: one entry per id listed above under "compare required" (none if none).
    `this_meaning`/`this_example` describe this point, `other_meaning`/`other_example` the
