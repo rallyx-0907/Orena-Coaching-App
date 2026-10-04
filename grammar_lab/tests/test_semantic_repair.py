@@ -159,6 +159,58 @@ def test_apply_patch_rejects_span_text_not_present_in_unchanged_example() -> Non
         apply_patch(point, patch, issues)
 
 
+
+def test_generate_v04_rule_only_repair_gets_one_small_second_chance(tmp_path) -> None:
+    lab = _v04_lab(tmp_path)
+    lab.write()
+    bad = copy.deepcopy(CANNED_V04)
+    bad["personal_production"]["pattern_rule"]["slots"][0]["regex"] = r"\bNEVER\b"
+
+    first_bad_patch = {
+        "formula_orders": [],
+        "make_optional": [],
+        "example_spans": [],
+        "pattern_rule": {
+            "ordered": True,
+            "slots": [{"role": "verb", "any_of": [], "regex": r"\bNOBODY\b"}],
+        },
+    }
+    good_patch = {
+        "formula_orders": [],
+        "make_optional": [],
+        "example_spans": [],
+        "pattern_rule": copy.deepcopy(CANNED_V04["personal_production"]["pattern_rule"]),
+    }
+    calls: list[str] = []
+    patch_calls = 0
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal patch_calls
+        sent = json.loads(request.content)
+        tool_name = sent["tool_choice"]["name"]
+        calls.append(tool_name)
+        if tool_name == "emit_grammar_point_v04":
+            payload = _answer(bad)
+        elif tool_name == "emit_grammar_point_v04_semantic_patch":
+            patch_calls += 1
+            payload = first_bad_patch if patch_calls == 1 else good_patch
+        else:
+            raise AssertionError(tool_name)
+        return httpx.Response(200, json={
+            "content": [{"type": "tool_use", "name": tool_name, "input": payload}],
+            "usage": {"input_tokens": 100, "output_tokens": 100},
+        })
+
+    outcome = make_generator(lab.root, httpx.MockTransport(handler)).generate("en.alpha")
+
+    assert outcome.status == "written", outcome.reason
+    assert calls == [
+        "emit_grammar_point_v04",
+        "emit_grammar_point_v04_semantic_patch",
+        "emit_grammar_point_v04_semantic_patch",
+    ]
+
+
 def test_generate_v04_uses_issue_local_patch_on_assembled_candidate(tmp_path) -> None:
     lab = _v04_lab(tmp_path)
     lab.write()
