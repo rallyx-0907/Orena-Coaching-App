@@ -89,6 +89,7 @@ function Invoke-Rescue {
     param([string]$PointId)
 
     $args = @(
+        "-NoProfile",
         "-ExecutionPolicy", "Bypass",
         "-File", ".\scripts\grammar_rescue_agent.ps1",
         "-PointId", $PointId,
