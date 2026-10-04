@@ -642,13 +642,65 @@ def _formula_for_generated_form(pattern: dict[str, Any], form: str) -> list[dict
 
 
 
-def normalize_generated_formula_order(data: dict[str, Any], zh: bool) -> dict[str, Any]:
-    """Reorder raw v13 formula slots only when unchanged examples prove the surface order.
 
-    This is deterministic structural normalization, not grammar inference. Each binding
-    must name an exact substring that occurs uniquely in its example. Those observed
-    positions create ordering constraints between existing slot indexes. If the
-    constraints are acyclic, formula slots and every dependent slot_index are remapped.
+def _locate_generated_bindings(
+    text: str, bindings: list[dict[str, Any]], zh: bool,
+) -> dict[int, tuple[int, int, str]] | None:
+    """Locate all declared binding substrings without assuming formula order.
+
+    Repeated words are allowed. A small backtracking search chooses the first
+    deterministic non-overlapping placement, so one repeated pronoun/article no
+    longer disables structural order recovery for the whole example.
+    """
+    items: list[tuple[int, str, list[tuple[int, int]]]] = []
+    seen_slots: set[int] = set()
+    for binding in bindings:
+        slot_index = binding.get("slot_index")
+        if not isinstance(slot_index, int) or slot_index in seen_slots:
+            return None
+        seen_slots.add(slot_index)
+        needle = target_text(str(binding.get("text", "")), zh)
+        if not needle:
+            return None
+        positions: list[tuple[int, int]] = []
+        start = text.find(needle)
+        while start >= 0:
+            positions.append((start, start + len(needle)))
+            start = text.find(needle, start + 1)
+        if not positions:
+            return None
+        items.append((slot_index, needle, positions))
+
+    # Most-constrained binding first keeps the search tiny while retaining
+    # deterministic leftmost placement within each candidate list.
+    items.sort(key=lambda item: (len(item[2]), item[0]))
+    placed: dict[int, tuple[int, int, str]] = {}
+
+    def search(index: int) -> bool:
+        if index >= len(items):
+            return True
+        slot_index, needle, positions = items[index]
+        for begin, finish in positions:
+            if any(
+                not (finish <= other_begin or begin >= other_finish)
+                for other_begin, other_finish, _ in placed.values()
+            ):
+                continue
+            placed[slot_index] = (begin, finish, needle)
+            if search(index + 1):
+                return True
+            placed.pop(slot_index, None)
+        return False
+
+    return dict(placed) if search(0) else None
+
+
+def normalize_generated_formula_order(data: dict[str, Any], zh: bool) -> dict[str, Any]:
+    """Reorder v13 formula slots when unchanged examples prove surface order.
+
+    This is structural normalization, not grammar inference. Exact provider
+    binding substrings are located in the unchanged sentence; their observed
+    left-to-right positions create ordering constraints between slot indexes.
     """
     out = copy.deepcopy(data)
     form_keys = {"affirmative": "formula", "negative": "negative", "question": "question"}
@@ -664,35 +716,16 @@ def normalize_generated_formula_order(data: dict[str, Any], zh: bool) -> dict[st
             if example.get("form") != form:
                 continue
             text = target_text(str(example.get("text", "")), zh)
-            located: list[tuple[int, int, int]] = []
-            valid = True
-            for binding in example.get("bindings") or []:
-                slot_index = binding.get("slot_index")
-                if not isinstance(slot_index, int) or not 0 <= slot_index < len(formula):
-                    valid = False
-                    break
-                needle = target_text(str(binding.get("text", "")), zh)
-                if not needle:
-                    valid = False
-                    break
-                starts: list[int] = []
-                start = text.find(needle)
-                while start >= 0:
-                    starts.append(start)
-                    start = text.find(needle, start + 1)
-                if len(starts) != 1:
-                    valid = False
-                    break
-                begin = starts[0]
-                located.append((begin, begin + len(needle), slot_index))
-            if not valid or len(located) < 2:
+            located = _locate_generated_bindings(text, example.get("bindings") or [], zh)
+            if not located or len(located) < 2:
                 continue
 
-            located.sort()
-            if any(located[i][1] > located[i + 1][0] for i in range(len(located) - 1)):
-                continue
+            surface = sorted(
+                (begin, finish, slot_index)
+                for slot_index, (begin, finish, _needle) in located.items()
+            )
             used_example = True
-            for left, right in zip(located, located[1:]):
+            for left, right in zip(surface, surface[1:]):
                 if left[2] != right[2]:
                     edges.add((left[2], right[2]))
 
@@ -702,6 +735,8 @@ def normalize_generated_formula_order(data: dict[str, Any], zh: bool) -> dict[st
         incoming = {index: 0 for index in range(len(formula))}
         outgoing: dict[int, set[int]] = {index: set() for index in range(len(formula))}
         for left, right in edges:
+            if left not in outgoing or right not in incoming:
+                continue
             if right not in outgoing[left]:
                 outgoing[left].add(right)
                 incoming[right] += 1
@@ -743,6 +778,68 @@ def normalize_generated_formula_order(data: dict[str, Any], zh: bool) -> dict[st
                     rule.get("slots") or [],
                     key=lambda slot: slot.get("slot_index", len(formula)),
                 )
+
+    return out
+
+
+def complete_generated_terminal_bindings(data: dict[str, Any], zh: bool) -> dict[str, Any]:
+    """Recover one missing edge slot from the only remaining sentence surface.
+
+    This deliberately handles only the first/last required formula slot and only
+    when every other required slot is already bound. It does not infer POS or
+    grammar roles; it maps the sole uncovered edge phrase to the sole missing
+    edge slot. Ambiguous middle gaps remain fail-closed for structural repair.
+    """
+    out = copy.deepcopy(data)
+    form_keys = {"affirmative": "formula", "negative": "negative", "question": "question"}
+    trim_chars = " \t\r\n,.;:!?—–()[]{}\"“”"
+
+    for example in out.get("examples", []):
+        form = example.get("form")
+        key = form_keys.get(form)
+        formula = out.get(key) if key else None
+        if not formula:
+            continue
+
+        bindings = example.get("bindings") or []
+        bound_indexes = {
+            binding.get("slot_index")
+            for binding in bindings
+            if isinstance(binding.get("slot_index"), int)
+        }
+        required = {i for i, slot in enumerate(formula) if not slot.get("optional")}
+        missing = sorted(required - bound_indexes)
+        if len(missing) != 1:
+            continue
+        missing_index = missing[0]
+        if missing_index not in {0, len(formula) - 1}:
+            continue
+
+        # Do not absorb a distinct unbound optional edge slot into the recovered
+        # phrase; that surface would be structurally ambiguous.
+        if any(
+            i not in bound_indexes and i != missing_index and slot.get("optional")
+            for i, slot in enumerate(formula)
+        ):
+            continue
+
+        text = target_text(str(example.get("text", "")), zh)
+        located = _locate_generated_bindings(text, bindings, zh)
+        if not located and bindings:
+            continue
+
+        if missing_index == 0:
+            edge = min((begin for begin, _end, _ in (located or {}).values()), default=len(text))
+            candidate = text[:edge].strip(trim_chars)
+        else:
+            edge = max((_end for _begin, _end, _ in (located or {}).values()), default=0)
+            candidate = text[edge:].strip(trim_chars)
+
+        if not candidate or not any(char.isalnum() or _HAN.fullmatch(char) for char in candidate):
+            continue
+
+        bindings.append({"slot_index": missing_index, "text": candidate})
+        example["bindings"] = bindings
 
     return out
 
@@ -1765,6 +1862,8 @@ class Generator:
             user += "\n\nR5 source lesson(s) for this point (restructure, correct, complete):\n" + r5_source_text(r5_records)
         def assemble(result: Any) -> dict[str, Any]:
             data = normalize_generated_formula_order(result.data, zh)
+            data = complete_generated_terminal_bindings(data, zh)
+            data = normalize_generated_formula_order(data, zh)
 
             illustration: dict[str, Any] = {"kind": ILLUSTRATION_FOR_POINT_TYPE[point_type]}
             if point_type == "tense_aspect":
