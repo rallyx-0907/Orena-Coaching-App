@@ -31,6 +31,10 @@ const recent = recentRows([visits[0], { ...visits[0], id: 'media:upload:asset' }
 assert.equal(recent.length, 1, 'aliases of the same content and practice mode share one recent row');
 assert.deepEqual(recent[0].query, { segment: 's2' }, 'the most recent selected segment survives');
 assert.equal(recent[0].place, null, 'navigation sentinel is never presented as progress');
+assert.equal(recentRows([visits[0], { ...visits[0], id: 'media:another-lesson' }], new Map([
+  [visits[0].id, { canonicalId: 'lesson-a', assetId: 'shared-asset', segment: 's2' }],
+  ['media:another-lesson', { canonicalId: 'lesson-b', assetId: 'shared-asset', segment: 's3' }],
+])).length, 2, 'different lesson excerpts over one asset are not aliases');
 assert.equal(recentRows([visits[0]], new Map([[visits[0].id, null]])).length, 0, 'unavailable media is not admitted');
 assert.equal(pendingRows({ continuation: Array.from({ length: 6 }, (_, i) => ({ id: `article:${i}`, place: { within: 20 } })) }, 'en').length, 3);
 for (const language of ['en', 'zh']) {

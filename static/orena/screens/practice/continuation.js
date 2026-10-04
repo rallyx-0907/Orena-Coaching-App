@@ -25,7 +25,8 @@ export async function recentMediaFacts(entries, options) {
       const source = sourceFromLesson(canonicalId, payload, item.segment, options.support);
       if (source.language !== options.language || !source.hasModelAudio) return [item.id, null];
       const index = source.lines.findIndex(line => line.lineId === source.line.lineId) + 1;
-      return [item.id, { canonicalId, assetId: source.assetId, segment: source.line.lineId, index, total: source.lines.length }];
+      return [item.id, { canonicalId, contentKey: payload.catalog?.lesson_id || source.assetId || id,
+        segment: source.line.lineId, index, total: source.lines.length }];
     } catch { return [item.id, null]; }
   })));
 }
@@ -72,7 +73,7 @@ export function recentRows(entries = [], mediaFacts = new Map()) {
   return continuationRows(entries, { limit: Infinity }).flatMap(row => {
     const fact = mediaFacts.get(row.id);
     if (mediaFacts.has(row.id) && !fact) return [];
-    const identity = fact?.canonicalId ? `media:${fact.assetId || fact.canonicalId}` : row.id;
+    const identity = fact?.canonicalId ? `media:${fact.contentKey || fact.canonicalId}` : row.id;
     const key = `${identity}:${row.routeId}`;
     if (seen.has(key)) return [];
     seen.add(key);
