@@ -52,6 +52,12 @@ same topic. Every non-optional slot must have an actual surface realization. Sam
 silently use incompatible constituent orders; factor genuine same-position alternatives into options or
 optional slots, otherwise choose examples that share one realizable route.
 
+v17: example bindings are visual grammar highlights, not a semantic parse of the whole sentence. They must
+be pairwise non-overlapping. For ellipsis/substitution, bind the minimal grammar-bearing substitute
+(`one/ones`, `do so`, `so`, `not to`, etc.); ordinary enclosing phrase/clause context stays unbound.
+Never require a formula slot whose realization strictly contains another slot's realization in the same
+example. Do not create discontinuous context slots or make a slot optional merely to avoid overlap.
+
 ---
 
 You are writing one grammar lesson for Orena, a language-learning app. This is the lesson's
@@ -112,7 +118,11 @@ Output one JSON object matching the schema you were given -- no commentary outsi
    `bindings` says which exact substring of the unchanged sentence realises each formula slot.
    Each binding contains only `slot_index` and `text`; **never repeat or invent a role here**.
    Bind every non-optional formula slot exactly once. An optional slot may be omitted when that
-   sentence genuinely does not realise it. **An example is valid only if it actually instantiates its
+   sentence genuinely does not realise it. Bindings must be pairwise non-overlapping: they are the minimal
+   grammar-bearing surface units the UI highlights, not a semantic parse of the whole sentence. In
+   ellipsis/substitution examples, bind the substitute itself (for example `one`, `do so`, `not to`);
+   do not also bind an enclosing phrase/clause that contains it. Surrounding sentence context can remain
+   unbound. **An example is valid only if it actually instantiates its
    selected formula; a clean sentence that merely illustrates the same topic is not enough.** If a
    non-optional abstract slot such as NP, clause, complement, shifted constituent, reported content,
    object, time or place has no exact surface realization in the sentence, rewrite the example before
