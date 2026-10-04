@@ -4473,6 +4473,7 @@ client switch). :8011 is deferred (D-102); production never serves the agent; pu
 | F-9 | P3 | Content-id namespaces unreconciled | **Decided and built:** `content_id` is `<kind>:<id>` (`article:`, `book:<id>:<chapter>`, `media:`), contract §6.1. Listening and Dictation send `media:<id>`; the agent's Listening tools accept it (a bare id still reads); the UI maps it back to its route id. |
 | F-10 | P3 | Speaking persistence change (audio-free takes) | Watch: re-check `speaking_progress` and pronunciation history when it lands. |
 | F-11/12 | Info | Shared-file footprint; working tree mid-change | Resolved by the merge (PR #69, `684b011`). |
+| F-13 | P3 | "What is this screen for?" answered with recommendations | Open (Intelligence lane): live on :8021 2026-10-04, `listening.dictation` with its published purpose in `context.screen.purpose`, Gemini flash-lite called `get_recommended_next_activities` and described the app generally. The purpose reaches the server (`agent/prompts.py:_screen`); app-help routing/prompting should answer from it. |
 
 ### I-C. Contract actions and payloads
 
