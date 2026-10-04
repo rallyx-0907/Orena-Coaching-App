@@ -4757,7 +4757,9 @@ Resolved by the human's D-105 decisions; AD-A, AD-B and AD-H above are closed by
 
 Architecture and proposed schema: `docs/project/proposals/VOCABULARY_LOCALIZATION.md`.
 
-- **VL-1 Localization table not yet authorized.** `vocabulary_sense_localizations` is proposed
+- **VL-1 — resolved on :8021 (2026-10-04).** `20261004_0025` promoted and applied to :8021 only
+  (human authorization, pg_dump + restore check). Other runtimes must apply it before running this
+  code. Original note: **Localization table not yet authorized.** `vocabulary_sense_localizations` is proposed
   (`migrations/proposed/20261004_0025_…`). Until review and authorization, support-language
   glosses can be added only to unpublished senses (in `short_meanings`); a published collection
   cannot gain a new support language.
@@ -4776,3 +4778,10 @@ Architecture and proposed schema: `docs/project/proposals/VOCABULARY_LOCALIZATIO
   language at save time and several new-UI models read them. For catalog-linked words (with
   `entry_id`) the meaning must be rendered from the sense's localization for the current support
   language (proposal §6); the columns stay as learner notes for free-typed words (D4 hold).
+  Server readers checked 2026-10-04: library list, review queue/due/grading, collection
+  `review_items`, save/restore all merge catalogue meanings (`_row_to_item`); learner summary,
+  decks, admin metrics read no meaning; there is no server-side Agent tool or data-export endpoint
+  on codex/work. Fixed: Collection retrieval snippet (now the sense's meaning for the support
+  language) and PostgreSQL library search (also matches localization glosses). Accepted by the
+  human: legacy `GET /api/vocabulary` (old UI) shows no meaning for such words; the SQLite test
+  backend's library search covers the learner's own fields only.

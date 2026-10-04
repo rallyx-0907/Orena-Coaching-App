@@ -28,6 +28,8 @@ from writing_coach.persistence.models import (
     SpeakingAttempt,
     User,
     UserLanguageProfile,
+    VocabularyEntry,
+    VocabularySenseLocalization,
 )
 
 
@@ -1135,6 +1137,16 @@ class SQLiteSpecializedLearningRepository:
 class PostgresSpecializedLearningRepository:
     """SQLAlchemy implementation ready for a later explicit runtime cutover."""
 
+    def _has_localizations(self) -> bool:
+        cached = getattr(self, "_localizations_present", None)
+        if cached is None:
+            try:
+                cached = "vocabulary_sense_localizations" in set(inspect(self.engine).get_table_names())
+            except Exception:  # noqa: BLE001 - an unreadable catalogue only narrows the search
+                cached = False
+            self._localizations_present = cached
+        return cached
+
     def sentences_using(self, word: str, *, limit: int = 4) -> list[dict[str, Any]]:
         """The learner's own sentences that use this word, newest first."""
 
@@ -1336,11 +1348,23 @@ class PostgresSpecializedLearningRepository:
         needle = str(search or "").strip().casefold()
         if needle:
             pattern = "%" + needle + "%"
-            conditions.append(
+            matches = (
                 func.lower(SavedWord.word).like(pattern)
                 | func.lower(func.coalesce(SavedWord.translation_vi, "")).like(pattern)
                 | func.lower(func.coalesce(SavedWord.definition, "")).like(pattern)
             )
+            if self._has_localizations():
+                # A word saved from the catalogue carries no copy of its meaning
+                # (D-124); its sense's localizations are searched instead.
+                matches = matches | SavedWord.normalized_word.in_(
+                    select(VocabularyEntry.normalized_term)
+                    .join(VocabularySenseLocalization, VocabularySenseLocalization.entry_id == VocabularyEntry.id)
+                    .where(
+                        VocabularyEntry.language_code == lang,
+                        func.lower(VocabularySenseLocalization.gloss).like(pattern),
+                    )
+                )
+            conditions.append(matches)
         if wanted_status == "mastered":
             conditions.append(SavedWord.review_stage >= LIBRARY_MASTERED_STAGE)
         elif wanted_status == "learning":

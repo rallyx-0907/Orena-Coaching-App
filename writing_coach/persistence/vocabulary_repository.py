@@ -33,6 +33,7 @@ from writing_coach.persistence.models import (
     VocabularyCollection,
     VocabularyCollectionMembership,
     VocabularyEntry,
+    VocabularySenseLocalization,
     VocabularySourceImport,
 )
 from writing_coach.vocabulary_source_import import (
@@ -264,6 +265,54 @@ def _publication_admission(provenance: Mapping[str, Any]) -> dict[str, Any]:
     return admission
 
 
+LOCALIZATION_TABLE = "vocabulary_sense_localizations"
+
+
+def _localization_item(row: VocabularySenseLocalization) -> dict[str, Any]:
+    return {
+        "language": row.support_language,
+        "text": row.gloss,
+        "origin": row.method,
+        "source": row.source,
+    }
+
+
+def _merge_localization_rows(items: list[dict[str, Any]], rows: Iterable[VocabularySenseLocalization]) -> None:
+    """Add each sense's selected localizations to its projected item (D-124).
+
+    Applied after any membership snapshot (review P1-1): localizations are not
+    part of the snapshot contract, so a published collection shown through a
+    frozen snapshot still gains a new support language. A language the
+    projected item already carries - the corpus's own meaning, or a snapshot's
+    deliberate collection-scoped one - is kept, never replaced.
+    """
+
+    by_entry: dict[str, list[VocabularySenseLocalization]] = {}
+    for row in rows:
+        by_entry.setdefault(str(row.entry_id), []).append(row)
+    for item in items:
+        extra = by_entry.get(str(item.get("id") or ""))
+        if not extra:
+            continue
+        meanings = list(item.get("short_meanings") or [])
+        present = {
+            _text(meaning.get("language")).casefold()
+            for meaning in meanings
+            if isinstance(meaning, Mapping) and _text(meaning.get("text"))
+        }
+        for row in extra:
+            if row.support_language in present:
+                continue
+            meanings.append(_localization_item(row))
+            present.add(row.support_language)
+        item["short_meanings"] = meanings
+        translations = dict(item.get("support_translations") or {})
+        for meaning in meanings:
+            if isinstance(meaning, Mapping) and meaning.get("language") and meaning.get("text"):
+                translations.setdefault(meaning["language"], meaning["text"])
+        item["support_translations"] = translations
+
+
 def _merge_list(existing: Any, incoming: Any) -> list[Any]:
     current = list(existing) if isinstance(existing, list) else []
     additions = incoming if isinstance(incoming, list) else []
@@ -379,6 +428,160 @@ class SQLAlchemyVocabularyRepository:
         except Exception:
             return False
 
+    def localizations_available(self) -> bool:
+        """Whether the localization table exists in this runtime (20261004_0025).
+
+        Read paths work without it (the corpus's own meanings are served as
+        before), so a runtime that has not applied the migration keeps working.
+        """
+
+        cached = getattr(self, "_localizations_present", None)
+        if cached is not None:
+            return cached
+        try:
+            present = LOCALIZATION_TABLE in set(inspect(self.engine).get_table_names())
+        except Exception:
+            present = False
+        self._localizations_present = present
+        return present
+
+    def _with_localizations(self, session: Session, items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        if not items or not self.localizations_available():
+            return items
+        ids = []
+        for item in items:
+            try:
+                ids.append(uuid.UUID(str(item.get("id"))))
+            except (TypeError, ValueError):
+                continue
+        rows: list[VocabularySenseLocalization] = []
+        for start in range(0, len(ids), 1000):
+            rows.extend(
+                session.scalars(
+                    select(VocabularySenseLocalization).where(
+                        VocabularySenseLocalization.entry_id.in_(ids[start:start + 1000]),
+                        VocabularySenseLocalization.selected.is_(True),
+                    )
+                )
+            )
+        _merge_localization_rows(items, rows)
+        return items
+
+    def localization_candidates(
+        self,
+        language_code: str,
+        support_language: str,
+        *,
+        collection_id: str = "",
+        limit: int = 5000,
+    ) -> list[dict[str, Any]]:
+        """Senses that have no meaning yet in this support language.
+
+        Each candidate carries its term, part of speech and the meanings it
+        already has by language (corpus and table), which is what a
+        localization source may use - never anything about a learner.
+        """
+
+        self._require_available()
+        support = _text(support_language).casefold()
+        language = _text(language_code).casefold()
+        with Session(self.engine) as session:
+            statement = (
+                select(VocabularyEntry, VocabularyCollectionMembership)
+                .join(
+                    VocabularyCollectionMembership,
+                    VocabularyCollectionMembership.entry_id == VocabularyEntry.id,
+                )
+                .where(VocabularyEntry.language_code == language)
+                .order_by(VocabularyEntry.identity_key)
+            )
+            if collection_id:
+                statement = statement.where(VocabularyCollectionMembership.collection_id == _text(collection_id))
+            items: list[dict[str, Any]] = []
+            seen: set[str] = set()
+            for entry, membership in session.execute(statement).all():
+                if str(entry.id) in seen:
+                    continue
+                seen.add(str(entry.id))
+                item = _entry_dict(entry)
+                _apply_content_snapshot(item, (_copy_json(membership.membership_metadata, {}) or {}).get("content_snapshot"))
+                items.append(item)
+            self._with_localizations(session, items)
+        candidates: list[dict[str, Any]] = []
+        for item in items:
+            known: dict[str, str] = {}
+            for meaning in item.get("short_meanings") or []:
+                if isinstance(meaning, Mapping) and _text(meaning.get("text")) and _text(meaning.get("language")):
+                    known.setdefault(_text(meaning["language"]).casefold(), _text(meaning["text"]))
+            if support in known:
+                continue
+            candidates.append(
+                {
+                    "entry_id": item["id"],
+                    "term": item["term"],
+                    "part_of_speech": item.get("part_of_speech") or "",
+                    "meanings": known,
+                }
+            )
+            if len(candidates) >= max(0, min(limit, 20000)):
+                break
+        return candidates
+
+    def store_localizations(self, rows: Iterable[Mapping[str, Any]]) -> dict[str, int]:
+        """Insert localization rows; the first for a sense x language is selected.
+
+        A row already present for the same source is left as it is. A later
+        source never displaces a selected gloss: changing the selection is an
+        operator action with a reason, not a side effect of a run.
+        """
+
+        if not self.localizations_available():
+            raise VocabularyContentUnavailable("The vocabulary localization table is not applied in this runtime.")
+        now = _now()
+        counts = {"inserted": 0, "selected": 0, "existing": 0}
+        with Session(self.engine) as session, session.begin():
+            for raw in rows:
+                entry_id = uuid.UUID(str(raw["entry_id"]))
+                language = _text(raw["support_language"]).casefold()
+                source = _text(raw["source"])[:80]
+                exists = session.scalar(
+                    select(VocabularySenseLocalization.id).where(
+                        VocabularySenseLocalization.entry_id == entry_id,
+                        VocabularySenseLocalization.support_language == language,
+                        VocabularySenseLocalization.source == source,
+                    )
+                )
+                if exists is not None:
+                    counts["existing"] += 1
+                    continue
+                has_selected = session.scalar(
+                    select(VocabularySenseLocalization.id).where(
+                        VocabularySenseLocalization.entry_id == entry_id,
+                        VocabularySenseLocalization.support_language == language,
+                        VocabularySenseLocalization.selected.is_(True),
+                    )
+                ) is not None
+                session.add(
+                    VocabularySenseLocalization(
+                        id=uuid.uuid4(),
+                        entry_id=entry_id,
+                        support_language=language,
+                        gloss=_text(raw["gloss"]),
+                        source=source,
+                        source_version=_text(raw.get("source_version"))[:120] or "unversioned",
+                        method=_text(raw["method"]),
+                        selected=not has_selected,
+                        selection_reason="" if has_selected else "first validated gloss for this sense and language",
+                        validation=_copy_json(raw.get("validation"), {}) or {},
+                        created_at=now,
+                        updated_at=now,
+                    )
+                )
+                session.flush()
+                counts["inserted"] += 1
+                counts["selected"] += 0 if has_selected else 1
+        return counts
+
     def initialize(self) -> None:
         """Create only the isolated SQLite content schema when permitted."""
 
@@ -395,8 +598,10 @@ class SQLAlchemyVocabularyRepository:
                 VocabularyEntry.__table__,
                 VocabularySourceImport.__table__,
                 VocabularyCollectionMembership.__table__,
+                VocabularySenseLocalization.__table__,
             ],
         )
+        self._localizations_present = None
 
     def _require_available(self) -> None:
         if not self.available():
@@ -988,7 +1193,9 @@ class SQLAlchemyVocabularyRepository:
                 .order_by(VocabularyEntry.identity_key)
                 .limit(1)
             )
-            return _entry_dict(entry) if entry is not None else None
+            if entry is None:
+                return None
+            return self._with_localizations(session, [_entry_dict(entry)])[0]
 
     def search_entries(
         self, language_code: str, query: str, *, limit: int = 20
@@ -1040,7 +1247,7 @@ class SQLAlchemyVocabularyRepository:
                     continue
                 seen.add(entry.id)
                 result.append(_entry_dict(entry))
-            return result
+            return self._with_localizations(session, result)
 
     def find_neighbours(
         self, language_code: str, normalized_term: str, *, limit: int = 12
@@ -1092,7 +1299,7 @@ class SQLAlchemyVocabularyRepository:
                     continue
                 seen.add(entry.id)
                 result.append(_entry_dict(entry))
-            return result
+            return self._with_localizations(session, result)
 
     def list_entries_for_language(
         self, language_code: str, *, limit: int = 1000
@@ -1125,7 +1332,7 @@ class SQLAlchemyVocabularyRepository:
                     continue
                 seen.add(entry.id)
                 result.append(_entry_dict(entry))
-            return result
+            return self._with_localizations(session, result)
 
     def _list_entries_in_session(
         self,
@@ -1196,7 +1403,7 @@ class SQLAlchemyVocabularyRepository:
                 if membership_metadata.get(field):
                     item[field] = membership_metadata[field]
             items.append(item)
-        return items, total
+        return self._with_localizations(session, items), total
 
 
 def _merge_existing_entry(

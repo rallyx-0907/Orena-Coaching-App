@@ -313,3 +313,77 @@ def default_sources() -> list[LocalizationSource]:
             )
         )
     return sources
+
+
+def materialize_localizations(
+    repository: Any,
+    language_code: str,
+    sources: Sequence[LocalizationSource],
+    *,
+    support_languages: Sequence[str] = AVAILABLE_SUPPORT_LANGUAGES,
+    collection_id: str = "",
+) -> list[dict[str, Any]]:
+    """Fill the localization table for senses that lack a support language (D-124).
+
+    The table-backed form of `localize_records`: it works on persisted senses,
+    so it also reaches published collections (a localization never mutates a
+    published sense). Each source is asked only for senses still missing the
+    language; every answer passes `checked_gloss` before it is stored. Returns
+    one report per language a source could serve.
+    """
+
+    target = str(language_code or "").strip().casefold().split("-", 1)[0]
+    live = [source for source in sources if source.available()]
+    reports: list[dict[str, Any]] = []
+    for support in support_languages:
+        if support == target:
+            continue
+        candidates = repository.localization_candidates(target, support, collection_id=collection_id)
+        if not candidates:
+            continue
+        report = LanguageReport(language=support)
+        senses = [
+            SenseInput(
+                key=str(row["entry_id"]),
+                term=str(row["term"]),
+                part_of_speech=str(row.get("part_of_speech") or ""),
+                meanings=dict(row.get("meanings") or {}),
+            )
+            for row in candidates
+        ]
+        attempted = False
+        for source in live:
+            if not senses:
+                break
+            answers = source.localize(target, support, senses)
+            if not answers:
+                continue
+            attempted = True
+            rows = []
+            for sense in senses:
+                gloss = checked_gloss(sense.term, answers.get(sense.key), support)
+                if not gloss:
+                    if sense.key in answers:
+                        report.rejected += 1
+                    continue
+                provenance = source.provenance()
+                rows.append(
+                    {
+                        "entry_id": sense.key,
+                        "support_language": support,
+                        "gloss": gloss,
+                        "source": source.source_id,
+                        "source_version": str(provenance.get("release") or provenance.get("model") or provenance.get("version") or ""),
+                        "method": source.method,
+                        "validation": {"rule": VALIDATION_RULE, **provenance},
+                    }
+                )
+            if rows:
+                counts = repository.store_localizations(rows)
+                report.added[source.source_id] = report.added.get(source.source_id, 0) + counts["inserted"]
+            done = {row["entry_id"] for row in rows}
+            senses = [sense for sense in senses if sense.key not in done]
+        report.missing = len(senses)
+        if attempted:
+            reports.append(report.to_dict())
+    return reports

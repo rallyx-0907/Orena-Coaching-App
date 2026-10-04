@@ -55,6 +55,8 @@ from datetime import datetime, UTC
 from typing import Any
 from urllib.parse import urlencode
 
+from writing_coach.vocabulary_meaning import current_support_language, saved_word_meaning
+
 DOMAINS = ('language', 'reading', 'media', 'writing', 'speaking', 'grammar')
 KIND_OF = {
     'language': 'language',
@@ -187,6 +189,7 @@ def _clip(text: Any, size: int = SNIPPET) -> str:
 def language_entries(rows: Sequence[Mapping[str, Any]], language: str) -> list[CollectionEntry]:
     """Saved words, from the library owner. Review scheduling stays there."""
     entries = []
+    support = current_support_language()
     for row in rows:
         word = str(row.get('word') or '').strip()
         if not word:
@@ -195,7 +198,10 @@ def language_entries(rows: Sequence[Mapping[str, Any]], language: str) -> list[C
             domain='language',
             id=unicodedata.normalize('NFKC', word).casefold(),
             title=word,
-            snippet=_clip(row.get('definition') or row.get('source_fragment')),
+            # The word's sense in the learner's support language (D-124), not only
+            # what was copied into the saved row - a catalogue word saved without
+            # a copy still has its meaning here.
+            snippet=_clip(saved_word_meaning(row, support) or row.get('source_fragment')),
             learning_language=_language_of(row, language),
             relationship='saved',
             updated_at=str(row.get('added_at') or ''),

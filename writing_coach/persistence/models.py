@@ -624,6 +624,56 @@ class VocabularyCollectionMembership(Base):
     )
 
 
+class VocabularySenseLocalization(Base):
+    """A sense's meaning in one support language, from one source (D-124, 20261004_0025).
+
+    Mirrors the migration so the hermetic suite creates the same table. A sense
+    exists once (`vocabulary_entries`); its localizations are separate rows, so
+    adding a support language mutates neither the sense nor a published
+    membership snapshot. One row per source; exactly one `selected` per
+    (sense, support language).
+    """
+
+    __tablename__ = "vocabulary_sense_localizations"
+    __table_args__ = (
+        UniqueConstraint(
+            "entry_id", "support_language", "source", name="uq_vocabulary_localization_source"
+        ),
+        Index(
+            "uq_vocabulary_localization_selected",
+            "entry_id",
+            "support_language",
+            unique=True,
+            postgresql_where=text("selected"),
+            sqlite_where=text("selected = 1"),
+        ),
+        CheckConstraint(
+            "support_language <> '' AND gloss <> '' AND source <> '' AND source_version <> ''",
+            name="ck_vocabulary_localization_identity",
+        ),
+        CheckConstraint(
+            "method IN ('source', 'curated', 'dictionary', 'pivot_translation', 'reviewed_batch')",
+            name="ck_vocabulary_localization_method",
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
+    entry_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("vocabulary_entries.id", ondelete="CASCADE", name="fk_vocabulary_localization_entry"),
+        nullable=False,
+    )
+    support_language: Mapped[str] = mapped_column(String(20), nullable=False)
+    gloss: Mapped[str] = mapped_column(Text, nullable=False)
+    source: Mapped[str] = mapped_column(String(80), nullable=False)
+    source_version: Mapped[str] = mapped_column(String(120), nullable=False)
+    method: Mapped[str] = mapped_column(String(40), nullable=False)
+    selected: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false(), nullable=False)
+    selection_reason: Mapped[str] = mapped_column(Text, default="", server_default="", nullable=False)
+    validation: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
 # ---------------------------------------------------------------------------
 # Thu vien cua toi - what a learner kept, across every kind (20260923_0013).
 #

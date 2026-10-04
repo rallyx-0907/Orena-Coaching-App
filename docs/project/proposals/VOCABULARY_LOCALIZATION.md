@@ -1,6 +1,7 @@
 # Vocabulary localization: one sense, many support languages
 
-**Status:** PROPOSED, revision 2 (2026-10-04), after the independent review
+**Status:** revision 2 APPLIED to :8021 only (2026-10-04, human authorization; migration promoted to
+`migrations/versions/`). Revision 2 (2026-10-04) came after the independent review
 `VOCABULARY_LOCALIZATION.REVIEW.md` (APPROVE WITH CONDITIONS on rev 1; responses in §9).
 Direction is the human's (2026-10-04, recorded as D-124);
 the schema in §5 needs independent architecture review and the human's authorization before

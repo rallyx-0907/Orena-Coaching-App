@@ -284,14 +284,12 @@ def library_page(
     ignored, so the caller gets that question's first page.
 
     **What a search matches**: the word, the definition and the translation the
-    learner kept with it - every field the learner's own database holds. Not
-    the curated catalogue's `support_translations`, which are attached when a
-    word is read, not stored with it. This costs nothing in practice, because
-    every way of keeping a word writes the meaning the learner was looking at
-    into `definition` or `translation_vi` (see `vocabularyKeepPayload` and the
-    reader's and Quick Sheet's keep actions). The alternative - searching the
-    shared catalogue and intersecting - would be a second store in the search
-    path for a case the keep paths already cover.
+    learner kept with it, and - on the PostgreSQL runtime - the localizations of
+    the word's catalogue sense (D-124). A word saved from a collection no longer
+    carries a copy of its meaning, so the sense's glosses in
+    `vocabulary_sense_localizations` are what a search by meaning finds. The
+    SQLite test backend keeps the catalogue in a separate database and searches
+    the learner's own fields only.
     """
 
     resolve = _catalog_resolver(current_language_code().strip().casefold())

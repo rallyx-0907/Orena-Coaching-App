@@ -139,9 +139,11 @@ from writing_coach.core.support_languages import (
 )
 from writing_coach.vocabulary_cards import vocabulary_card_from_catalog_entry
 from writing_coach.vocabulary_dictionary import complete_from_dictionary
+from writing_coach.vocabulary_meaning import configure_support_language as configure_vocabulary_support_language
 from writing_coach.vocabulary_localization import (
     default_sources as default_vocabulary_localization_sources,
     localize_records,
+    materialize_localizations,
 )
 from writing_coach.vocabulary_source_import import (
     VocabularySourceError,
@@ -190,6 +192,7 @@ from writing_coach.cross_skill_transfer import select_cross_skill_cue
 from writing_coach.product_activity_api import product_activity_response
 from writing_coach.readiness_summary import build_readiness_summary
 from fastapi import FastAPI, File, Form, HTTPException, Query, Request, Response, UploadFile
+from fastapi.concurrency import run_in_threadpool
 from fastapi.exception_handlers import request_validation_exception_handler as fastapi_validation_exception_handler
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
@@ -551,6 +554,11 @@ _reading_lookup_service = ReadingLookupService(
     _reading_translation_service,
 )
 configure_reading_lookup(_reading_lookup_service)
+# A saved word's meaning in the learner's support language (D-124), for the
+# payloads the server composes itself; resolved per request from the profile.
+configure_vocabulary_support_language(
+    lambda: resolve_support_language(get_learner_profile().get("native_language"))
+)
 configure_word_detail(
     lookup=_reading_lookup_service.lookup,
     saved_terms=saved_vocabulary_words,
@@ -3157,6 +3165,14 @@ def _vocabulary_admission(
     return "published", admission
 
 
+def _localization_table_available(repository: Any) -> bool:
+    probe = getattr(repository, "localizations_available", None)
+    try:
+        return bool(probe()) if callable(probe) else False
+    except Exception:  # noqa: BLE001 - an absent table is the pre-migration state, not an error
+        return False
+
+
 async def _parse_uploaded_vocabulary_source(upload: UploadFile):
     filename = str(upload.filename or "source").strip() or "source"
     raw = await read_source_upload(upload)
@@ -3343,9 +3359,14 @@ async def admin_vocabulary_source_import(
             records, dictionary_summary = complete_from_dictionary(
                 normalized["records"], collection_metadata["language_code"]
             )
-            records, localization_report = localize_records(
-                records, collection_metadata["language_code"], default_vocabulary_localization_sources()
-            )
+            # Before the localization table exists, localizations travel with
+            # the imported records (unpublished senses only); once it does, they
+            # are materialized into it after the import, below.
+            localization_report: list[dict[str, Any]] = []
+            if not _localization_table_available(repository):
+                records, localization_report = localize_records(
+                    records, collection_metadata["language_code"], default_vocabulary_localization_sources()
+                )
             result = repository.import_source(
                 collection=collection,
                 source=normalized,
@@ -3388,6 +3409,21 @@ async def admin_vocabulary_source_import(
                     reason=f"import failed: {exc}",
                 )
             )
+    if collection_persisted and _localization_table_available(repository):
+        try:
+            table_reports = await run_in_threadpool(
+                materialize_localizations,
+                repository,
+                collection_metadata["language_code"],
+                default_vocabulary_localization_sources(),
+                collection_id=collection_id,
+            )
+        except Exception:  # noqa: BLE001 - localization never undoes a completed import
+            table_reports = []
+        for item in results:
+            if item.get("status") != "failed":
+                item["localizations"] = table_reports
+                break
     batch_failed = any(
         item.get("status") == "failed" or int(item.get("failed") or 0) > 0
         for item in results

@@ -15,7 +15,16 @@ throwaway test database by pointing Alembic's `version_locations` at this
 directory. It becomes real by being moved into `versions/` — one `git mv`,
 after the review and authorization its own docstring names.
 
-**No proposal is open.** D4, the learner records (`docs/project/proposals/LEARNER_RECORDS_D4.md`, revision 3, decided by
+**Open proposal:** `20261001_0024_media_entries.py` (MEDIA_METADATA_POSTGRES.md rev 2; APPROVE WITH CONDITIONS,
+awaiting the human's authorization). If it is promoted after 0025, re-parent it on `20261004_0025`.
+
+**Promoted 2026-10-04:** `20261004_0025_vocabulary_sense_localizations.py` (D-124, VOCABULARY_LOCALIZATION.md rev 2,
+independent review APPROVE WITH CONDITIONS, conditions closed, PostgreSQL 16 rehearsal at 100k entries). The human
+authorized :8021 only; it was applied there with `scripts/bootstrap_runtime_schema.py --upgrade` after a verified
+`pg_dump` and restore check. Any other runtime that takes this code must apply it (operator step, after a backup) before
+it starts: startup refuses a schema below head.
+
+**Earlier:** D4, the learner records (`docs/project/proposals/LEARNER_RECORDS_D4.md`, revision 3, decided by
 D-104), passed its independent review (APPROVE) and rehearsal (53 PASS at 100k rows); the human authorized it for the lane
 runtime :8021 only (D-105). Its seven revisions moved into `versions/` together and were applied to :8021 one revision per
 invocation after a backup (2026-09-30). :8000 is untouched until the merge and its own gates. Below, what D4 added, then

@@ -41,7 +41,7 @@
     "lane": "unified_baseline_and_ui_lane"
   },
   "last_verified_application_commit": "e74735b615bf37c3f44c75e86e6466bc14b38dd3",
-  "last_verified_batch": "vocabulary_localization_cc_cedict_step1",
+  "last_verified_batch": "vocabulary_localization_table_applied_8021",
   "current_program_stage": {
     "id": "ORENA_PRODUCT_COMPLETION",
     "name": "Coherent content-first web product completion",
@@ -206,7 +206,7 @@
     "grammar_contract_and_fixtures_integrated_screens_wait_for_store_api_and_published_content",
     "eight_design_screens_are_coming_soon_until_a_backend_exists",
     "platform_admin_moves_into_the_new_ui_d101_old_admin_untouched_until_cutover",
-    "vocabulary_localization_table_proposed_needs_review_and_vi_open_data_choice_d124"
+    "vocabulary_localization_table_applied_on_8021_only_vi_sources_and_licences_page_in_progress_d124"
   ],
   "last_verified_at": "2026-10-04"
 }

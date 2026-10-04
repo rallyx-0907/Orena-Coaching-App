@@ -278,7 +278,8 @@ def test_chinese_import_completes_missing_meanings_from_the_dictionary(tmp_path,
     entries, total = repository.list_entries("test-forest-words-zh")
     assert total == 2
     pine = next(entry for entry in entries if entry["term"] == "松树")
-    assert pine["short_meanings"] == [{"language": "en", "text": "pine; pine tree", "origin": "dictionary"}]
+    assert pine["short_meanings"] == [
+        {"language": "en", "text": "pine; pine tree", "origin": "dictionary", "source": "cc-cedict"}
+    ]
     assert pine["readings"][0]["text"] == "sōng shù"
     assert pine["provenance"]["dictionary"]["source"] == "cc-cedict"
-    assert pine["provenance"]["localizations"]["en"]["source"] == "cc-cedict"
