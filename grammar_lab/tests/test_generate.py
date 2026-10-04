@@ -511,7 +511,9 @@ def test_generate_v04_retries_semantic_validation_with_feedback(tmp_path: Path) 
     lab = _v04_lab(tmp_path)
     lab.write()
     bad = copy.deepcopy(CANNED_V04)
-    bad["personal_production"]["pattern_rule"]["slots"][0]["regex"] = r"\bNEVER\b"
+    # Use a semantic failure outside the targeted formula/span/rule repair
+    # surface so this test continues to exercise the full-candidate retry path.
+    bad["quick_practice"][0]["q"] = "He goes to school."
     calls: list[dict] = []
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -536,7 +538,9 @@ def test_generate_v04_does_not_persist_after_three_semantic_failures(tmp_path: P
     path = lab.root / "content" / "en" / "en.alpha.json"
     before = path.read_text(encoding="utf-8")
     bad = copy.deepcopy(CANNED_V04)
-    bad["personal_production"]["pattern_rule"]["slots"][0]["regex"] = r"\bNEVER\b"
+    # Keep this failure outside targeted repair: the contract under test is
+    # three fresh full semantic attempts with no persisted bad draft.
+    bad["quick_practice"][0]["q"] = "He goes to school."
     calls: list[httpx.Request] = []
 
     def handler(request: httpx.Request) -> httpx.Response:
