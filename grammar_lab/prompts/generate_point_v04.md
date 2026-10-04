@@ -1,4 +1,4 @@
-# Prompt: generate_point_v04 (v15)
+# Prompt: generate_point_v04 (v16)
 
 Versioned prompt for one grammar point under schema v0.4 (GRAMMAR_CONTENT_CONTRACT.md).
 `generate.py` fills the placeholders below and sends the result as the `system` message; the
@@ -46,6 +46,11 @@ v15: English contractions are treated as surface units when that avoids overlapp
 bindings. In particular tag auxiliaries such as `isn't`, `aren't`, `doesn't`, `won't` should be one
 auxiliary slot (with options when needed), followed by the tag pronoun; do not encode the pronoun before
 a separate `n't` suffix.
+
+v16: examples are strict realizations of their selected formula, not merely grammatical sentences on the
+same topic. Every non-optional slot must have an actual surface realization. Same-form examples may not
+silently use incompatible constituent orders; factor genuine same-position alternatives into options or
+optional slots, otherwise choose examples that share one realizable route.
 
 ---
 
@@ -107,10 +112,17 @@ Output one JSON object matching the schema you were given -- no commentary outsi
    `bindings` says which exact substring of the unchanged sentence realises each formula slot.
    Each binding contains only `slot_index` and `text`; **never repeat or invent a role here**.
    Bind every non-optional formula slot exactly once. An optional slot may be omitted when that
-   sentence genuinely does not realise it. Do not bind punctuation.
+   sentence genuinely does not realise it. **An example is valid only if it actually instantiates its
+   selected formula; a clean sentence that merely illustrates the same topic is not enough.** If a
+   non-optional abstract slot such as NP, clause, complement, shifted constituent, reported content,
+   object, time or place has no exact surface realization in the sentence, rewrite the example before
+   returning JSON rather than omitting the binding. Do not bind punctuation.
    Before returning JSON, walk the selected formula from slot 0 to the end and verify that each
    bound `text` occurs as an exact substring of the sentence in the same left-to-right order.
    If the sentence cannot realise the formula that way, rewrite the formula or the example.
+   If two examples with the same `form` would require contradictory slot orders, do not emit that
+   contradiction: use a truthful same-position `options`/optional representation when possible, or
+   choose examples that all realise one consistent route.
    Prefer a single slot with `options` for alternatives rather than several sequential required
    slots: e.g. one quantifier slot with options `few/a few/little/a little`, not four required
    quantifier slots; one connector slot with alternative forms, not every connector as a required
