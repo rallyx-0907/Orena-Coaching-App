@@ -87,13 +87,13 @@ functions:
     - en.canon.b1.042
     - en.canon.b2.032
     - en.canon.b2.034
+    - en.canon.c1.025
     zh-Hans:
     - zh.canon.gf.hsk7_9.a_7_1_7_1.p1
     ja: []
   planned:
     en:
     - en.canon.b1.039
-    - en.canon.c1.025
     - en.canon.c2.006
     - en.canon.c2.016
     zh-Hans:
@@ -671,6 +671,7 @@ functions:
     - en.canon.b2.014
     - en.canon.c1.009
     - en.canon.c2.001
+    - en.canon.c1.010
     zh-Hans:
     - zh.canon.gf.hsk3.a_3_5_4.p1
     - zh.canon.r5.hsk3_7_b_ng_kh_n_ng
@@ -680,8 +681,7 @@ functions:
     - zh.canon.gf.hsk7_9.a_7_1_4_9.p1
     ja: []
   planned:
-    en:
-    - en.canon.c1.010
+    en: []
     zh-Hans:
     - zh.modal.hui
     - zh.modal.neng_keyi
@@ -1030,11 +1030,11 @@ functions:
     - en.canon.b2.001
     - en.canon.c1.004
     - en.canon.c1.003
+    - en.canon.c1.005
     zh-Hans: []
     ja: []
   planned:
-    en:
-    - en.canon.c1.005
+    en: []
     zh-Hans:
     - zh.canon.r5.hsk6_1_t_ng_t_c_n_ng_cao
     ja: []
@@ -1093,11 +1093,11 @@ functions:
     - en.canon.c1.011
     - en.canon.c1.030
     - en.canon.b2.030
+    - en.canon.b2.029
     zh-Hans: []
     ja: []
   planned:
     en:
-    - en.canon.b2.029
     - en.canon.c1.013
     - en.canon.c2.004
     - en.canon.c2.010

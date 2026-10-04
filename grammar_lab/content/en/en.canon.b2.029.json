@@ -1,0 +1,219 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b2.029",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.information_structure",
+  "level": {"framework": "cefr", "value": "B2", "rank": 4},
+  "prereqs": ["en.canon.b2.028"],
+  "contrasts": [],
+  "error_tags": ["sentence_structure"],
+  "source_refs": {"r5": ["b2-pseudo-cleft-sentences", "c1-wh-clefts-and-reversed-clefts"]},
+  "point_type": "word_order",
+  "sequence": 2,
+  "aliases": ["b2-pseudo-cleft-sentences", "c1-wh-clefts-and-reversed-clefts"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Pseudo-câu chẻ", "en": "Pseudo-cleft sentences"},
+    "native_title": "Pseudo-cleft sentences",
+    "level": {"framework": "cefr", "value": "B2", "rank": 4},
+    "summary": {
+      "vi": "Câu chẻ giả dùng mệnh đề what + be để đưa phần thông tin cần nhấn mạnh ra cuối câu.",
+      "en": "A pseudo-cleft uses a what-clause plus be to place the focused information at the end of the sentence."
+    },
+    "sub": {"vi": "nhấn mạnh thông tin", "en": "focusing information"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nhấn mạnh một thành phần cụ thể thay vì nói câu trung tính.",
+      "en": "When you want to emphasise one specific element instead of using a neutral sentence."
+    },
+    {
+      "vi": "Khi câu trả lời cần đặt thông tin mới hoặc quan trọng ở vị trí cuối.",
+      "en": "When the answer needs to put new or important information in final position."
+    },
+    {
+      "vi": "Khi bạn muốn sửa lại điều người khác vừa nói bằng cách tập trung vào đúng phần bị hiểu sai.",
+      "en": "When you want to correct what someone has just said by focusing on the exact part that was misunderstood."
+    },
+    {
+      "vi": "Khi viết hoặc nói ở văn phong trang trọng vừa phải và cần câu có trọng tâm rõ ràng.",
+      "en": "When writing or speaking in a moderately formal style and you need a sentence with a clear focus."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "What",
+        "role": "marker",
+        "label": {"vi": "từ mở đầu mệnh đề", "en": "clause opener"}
+      },
+      {
+        "text": "S",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ của mệnh đề what", "en": "subject of the what-clause"}
+      },
+      {
+        "text": "V",
+        "role": "verb",
+        "label": {"vi": "động từ của mệnh đề what", "en": "verb of the what-clause"}
+      },
+      {
+        "text": "be",
+        "role": "verb",
+        "label": {"vi": "động từ be", "en": "linking be"},
+        "options": [{"text": "is"}, {"text": "was"}]
+      },
+      {
+        "text": "focus",
+        "role": "complement",
+        "label": {"vi": "phần được nhấn mạnh", "en": "focused element"}
+      }
+    ],
+    "illustration": {"kind": "word_order"}
+  },
+  "examples": [
+    {
+      "text": "What I need is more time.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "marker"},
+        {"start": 5, "end": 6, "role": "subject"},
+        {"start": 7, "end": 11, "role": "verb"},
+        {"start": 12, "end": 14, "role": "verb"},
+        {"start": 15, "end": 24, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Mệnh đề what làm chủ ngữ; is nối với phần được nhấn mạnh ở cuối.",
+        "en": "The what-clause acts as subject; is links it to the focused element at the end."
+      },
+      "translation": {"vi": "Điều tôi cần là thêm thời gian.", "en": "What I need is more time."}
+    },
+    {
+      "text": "What surprised me was his reaction.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "marker"},
+        {"start": 5, "end": 14, "role": "verb"},
+        {"start": 15, "end": 17, "role": "subject"},
+        {"start": 18, "end": 21, "role": "verb"},
+        {"start": 22, "end": 34, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "was ở quá khứ vì sự việc đã xảy ra; phần nhấn mạnh là his reaction.",
+        "en": "Was is past because the event already happened; the focused element is his reaction."
+      },
+      "translation": {
+        "vi": "Điều làm tôi ngạc nhiên là phản ứng của anh ấy.",
+        "en": "What surprised me was his reaction."
+      }
+    },
+    {
+      "text": "What the team needs is a clearer decision process.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "marker"},
+        {"start": 5, "end": 13, "role": "subject"},
+        {"start": 14, "end": 19, "role": "verb"},
+        {"start": 20, "end": 22, "role": "verb"},
+        {"start": 23, "end": 49, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Mệnh đề what có chủ ngữ riêng; is đưa phần quan trọng ra cuối câu.",
+        "en": "The what-clause has its own subject; is puts the important part at the end."
+      },
+      "translation": {
+        "vi": "Điều nhóm cần là một quy trình quyết định rõ hơn.",
+        "en": "What the team needs is a clearer decision process."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Mệnh đề what đã là chủ ngữ, nên không được thêm it lần nữa.",
+        "en": "The what-clause is already the subject, so you must not add another it."
+      },
+      "error_tag": "sentence_structure",
+      "l1": ["vi"],
+      "wrong": "What I need it is more time.",
+      "right": "What I need is more time."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "What I need ___ more time.",
+      "options": [{"text": "is", "error_tag": null}, {"text": "are", "error_tag": "agreement"}],
+      "answer": 0,
+      "explain": {"vi": "Mệnh đề what số ít nên dùng is.", "en": "The what-clause is singular, so use is."}
+    },
+    {
+      "q": "What surprised me ___ his reaction.",
+      "options": [{"text": "was", "error_tag": null}, {"text": "were", "error_tag": "agreement"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Sự việc đã xảy ra trong quá khứ nên dùng was.",
+        "en": "The event happened in the past, so use was."
+      }
+    },
+    {
+      "q": "What the team needs ___ a clearer decision process.",
+      "options": [{"text": "is", "error_tag": null}, {"text": "are", "error_tag": "agreement"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Mệnh đề what làm chủ ngữ số ít nên dùng is.",
+        "en": "The what-clause is a singular subject, so use is."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu chẻ giả về điều bạn cần hoặc điều làm bạn ngạc nhiên.",
+      "en": "Write a pseudo-cleft about something you need or something that surprised you."
+    },
+    "placeholder": "What I need is ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "marker", "any_of": ["what"]}, {"role": "verb", "any_of": ["is", "was"]}]
+    },
+    "sample": {"text": "What I need is more time."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791094950",
+    "generated_at": "2026-10-04T06:22:30Z",
+    "r5_source": {
+      "ids": ["b2-pseudo-cleft-sentences", "c1-wh-clefts-and-reversed-clefts"],
+      "content_version": 2,
+      "content_hash": "35bf320183562e3bf810ddd1b6fdb254f0ba2fcda3920f204dccccaf09df6723",
+      "corrections": [
+        {
+          "r5_id": "b2-pseudo-cleft-sentences",
+          "issue": "The example 'The reason I left is what I want to explain' is a reversed pseudo-cleft, not the standard What + clause + be + focus pattern taught in the lesson.",
+          "fix": "Replaced it with 'What the team needs is a clearer decision process' to keep the standard pattern."
+        },
+        {
+          "r5_id": "b2-pseudo-cleft-sentences",
+          "issue": "The mistake 'What did surprise me was his reaction' is not always wrong; emphatic do is possible in some contexts.",
+          "fix": "Removed it and kept only the clear resumptive-it mistake 'What I need it is more time'."
+        },
+        {
+          "r5_id": "c1-wh-clefts-and-reversed-clefts",
+          "issue": "The example 'Where the two approaches differ is in their treatment of risk' is a wh-cleft with where, which is beyond this B2 point's scope.",
+          "fix": "Did not include it; kept only what-clause examples."
+        },
+        {
+          "r5_id": "c1-wh-clefts-and-reversed-clefts",
+          "issue": "The mistake 'What does concern me is the cost' is not a clear error because emphatic do can be correct.",
+          "fix": "Did not include it; used the resumptive-it mistake instead."
+        }
+      ]
+    }
+  },
+  "review": null
+}

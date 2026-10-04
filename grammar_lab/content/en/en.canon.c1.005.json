@@ -1,0 +1,241 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.c1.005",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.aspect_viewpoint",
+  "level": {"framework": "cefr", "value": "C1", "rank": 5},
+  "prereqs": [],
+  "contrasts": [],
+  "error_tags": ["tense"],
+  "source_refs": {"r5": ["c1-historic-present-and-narrative-shifts"]},
+  "point_type": "tense_aspect",
+  "sequence": 3,
+  "aliases": ["c1-historic-present-and-narrative-shifts"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Historic present and narrative shifts", "en": "Historic present and narrative shifts"},
+    "native_title": "Historic present and narrative shifts",
+    "level": {"framework": "cefr", "value": "C1", "rank": 5},
+    "summary": {
+      "vi": "Thì hiện tại lịch sử dùng dạng hiện tại để kể lại sự việc đã xảy ra, làm câu chuyện sống động hơn, và có thể chuyển đổi thì có kiểm soát giữa các đoạn tường thuật.",
+      "en": "The historic present uses present-tense forms to recount past events for vividness, and allows controlled tense shifts between narrative segments."
+    },
+    "sub": {"vi": "hiện tại lịch sử", "en": "historic present"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi kể lại một sự việc đã xảy ra trong quá khứ nhưng muốn người nghe như đang chứng kiến ngay lúc đó, đặc biệt trong hội thoại hoặc kể chuyện.",
+      "en": "When recounting a past event but wanting the listener to feel present at the scene, especially in conversation or storytelling."
+    },
+    {
+      "vi": "Khi tóm tắt cốt truyện, sự kiện trong phim, tiểu thuyết hoặc vở kịch, nơi thì hiện tại là quy ước chung.",
+      "en": "When summarising plot, events in a film, novel, or play, where the present tense is a common convention."
+    },
+    {
+      "vi": "Khi viết học thuật mô tả nội dung của một văn bản, lập luận hoặc nghiên cứu (ví dụ: 'The study begins by...').",
+      "en": "When academic writing describes the content of a text, argument, or study (e.g., 'The study begins by...')."
+    },
+    {
+      "vi": "Khi muốn chuyển từ tường thuật quá khứ trung tính sang hiện tại lịch sử để nhấn mạnh một khoảnh khắc, nhưng phải giữ sự chuyển đổi có chủ đích và nhất quán trong đoạn.",
+      "en": "When shifting from neutral past narration to historic present to highlight a moment, but the shift must be purposeful and consistent within the segment."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {
+        "text": "V-s/es",
+        "role": "verb",
+        "label": {"vi": "động từ thì hiện tại", "en": "present-tense verb"}
+      },
+      {
+        "text": "O/C",
+        "role": "object",
+        "label": {"vi": "tân ngữ/bổ ngữ", "en": "object/complement"},
+        "optional": true
+      },
+      {
+        "text": "time",
+        "role": "time",
+        "label": {"vi": "trạng ngữ thời gian", "en": "time adverbial"},
+        "optional": true
+      }
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "do/does not",
+          "role": "aux",
+          "label": {"vi": "trợ động từ phủ định", "en": "negative auxiliary"},
+          "options": [{"text": "do not"}, {"text": "does not"}]
+        },
+        {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên thể", "en": "base verb"}},
+        {
+          "text": "O/C",
+          "role": "object",
+          "label": {"vi": "tân ngữ/bổ ngữ", "en": "object/complement"},
+          "optional": true
+        }
+      ],
+      "question": [
+        {
+          "text": "do/does",
+          "role": "aux",
+          "label": {"vi": "trợ động từ nghi vấn", "en": "question auxiliary"},
+          "options": [{"text": "do"}, {"text": "does"}]
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên thể", "en": "base verb"}},
+        {
+          "text": "O/C",
+          "role": "object",
+          "label": {"vi": "tân ngữ/bổ ngữ", "en": "object/complement"},
+          "optional": true
+        }
+      ]
+    },
+    "illustration": {"kind": "timeline", "timeline": {"shape": "point_past"}}
+  },
+  "examples": [
+    {
+      "text": "So I open the door, and there he is, holding the missing file.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 3, "end": 4, "role": "subject"},
+        {"start": 5, "end": 9, "role": "verb"},
+        {"start": 10, "end": 18, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Hiện tại lịch sử: sự việc đã xảy ra nhưng được kể như đang diễn ra trước mắt.",
+        "en": "Historic present: the event happened in the past but is told as if happening now."
+      },
+      "translation": {
+        "vi": "Thế là tôi mở cửa, và anh ta ở đó, cầm tập hồ sơ bị mất.",
+        "en": "So I open the door, and there he is, holding the missing file."
+      }
+    },
+    {
+      "text": "In the final chapter, the narrator discovers the truth.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 22, "end": 34, "role": "subject"},
+        {"start": 35, "end": 44, "role": "verb"},
+        {"start": 45, "end": 54, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Hiện tại lịch sử dùng để tóm tắt cốt truyện, không chỉ sự kiện có thật.",
+        "en": "Historic present used for plot summary, not only real events."
+      },
+      "translation": {
+        "vi": "Trong chương cuối, người kể phát hiện ra sự thật.",
+        "en": "In the final chapter, the narrator discovers the truth."
+      }
+    },
+    {
+      "text": "The study begins by examining three competing explanations.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 9, "role": "subject"},
+        {"start": 10, "end": 16, "role": "verb"},
+        {"start": 17, "end": 58, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Hiện tại lịch sử trong văn học thuật để mô tả nội dung của một nghiên cứu.",
+        "en": "Historic present in academic writing to describe the content of a study."
+      },
+      "translation": {
+        "vi": "Nghiên cứu bắt đầu bằng việc xem xét ba cách giải thích cạnh tranh nhau.",
+        "en": "The study begins by examining three competing explanations."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học chuyển sang hiện tại lịch sử nhưng không giữ nhất quán, tạo ra sự pha trộn thì không có chủ đích trong tường thuật lịch sử trung tính.",
+        "en": "The learner shifts to historic present but does not keep it consistent, creating an unmotivated tense mix in neutral historical narrative."
+      },
+      "error_tag": "tense",
+      "l1": ["vi"],
+      "wrong": "In 1998 the company launches the product and expanded rapidly.",
+      "right": "In 1998 the company launched the product and expanded rapidly."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "So I ___ the door, and there he is, holding the missing file.",
+      "options": [{"text": "open", "error_tag": null}, {"text": "opened", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Dùng hiện tại lịch sử 'open' để làm câu chuyện sống động; 'opened' là quá khứ trung tính, không sai ngữ pháp nhưng không phù hợp với khung tường thuật đang dùng.",
+        "en": "Use historic present 'open' to make the story vivid; 'opened' is neutral past, not ungrammatical but inconsistent with the narrative frame."
+      }
+    },
+    {
+      "q": "In the final chapter, the narrator ___ the truth.",
+      "options": [{"text": "discovers", "error_tag": null}, {"text": "discovered", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Tóm tắt cốt truyện dùng hiện tại lịch sử 'discovers'; 'discovered' là quá khứ, không sai nhưng không theo quy ước tóm tắt.",
+        "en": "Plot summary uses historic present 'discovers'; 'discovered' is past, not wrong but not the summarising convention."
+      }
+    },
+    {
+      "q": "The study ___ by examining three competing explanations.",
+      "options": [{"text": "begins", "error_tag": null}, {"text": "began", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Văn học thuật mô tả nội dung nghiên cứu dùng hiện tại lịch sử 'begins'; 'began' là quá khứ, không phù hợp quy ước.",
+        "en": "Academic writing describing study content uses historic present 'begins'; 'began' is past, not the convention."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu kể lại sự việc đã xảy ra với bạn, dùng thì hiện tại lịch sử để làm câu chuyện sống động hơn.",
+      "en": "Write a sentence recounting something that happened to you, using the historic present to make the story more vivid."
+    },
+    "placeholder": "So I ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "subject", "any_of": ["I", "he"]},
+        {
+          "role": "verb",
+          "regex": "\\b(open|opens|walk|walks|see|sees|run|runs|go|goes|come|comes|take|takes|give|gives|find|finds|discover|discovers|begin|begins|launch|launches|expand|expands)\\b"
+        }
+      ]
+    },
+    "sample": {"text": "So I open the door, and there he is, holding the missing file."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791095000",
+    "generated_at": "2026-10-04T06:23:20Z",
+    "r5_source": {
+      "ids": ["c1-historic-present-and-narrative-shifts"],
+      "content_version": 2,
+      "content_hash": "79ee31225d1f3f782289a1999ca0dc3b0e15dcf1c480fd7642df44cca4e5b19f",
+      "corrections": [
+        {
+          "r5_id": "c1-historic-present-and-narrative-shifts",
+          "issue": "R5 examples include 'Yesterday, I was walking home when this guy comes up to me and asks for directions.' which mixes past continuous and historic present without clear framing, and may confuse learners about the point's scope.",
+          "fix": "Replaced with a cleaner example 'So I open the door, and there he is, holding the missing file.' that clearly illustrates historic present without mixing tenses."
+        },
+        {
+          "r5_id": "c1-historic-present-and-narrative-shifts",
+          "issue": "R5 mistakes include 'The novel was published in 1950 and then the hero discovers the secret.' with correction 'The novel was published in 1950. In the story, the hero discovers the secret.' but the explanation does not clearly state the mechanism of viewpoint separation.",
+          "fix": "Kept the mistake but clarified the reason: mixing publication fact (past) and plot summary (historic present) without framing; the correction separates viewpoints."
+        }
+      ]
+    }
+  },
+  "review": null
+}

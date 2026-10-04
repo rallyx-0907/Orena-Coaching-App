@@ -1,0 +1,245 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.c1.025",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.reference",
+  "level": {"framework": "cefr", "value": "C1", "rank": 5},
+  "prereqs": ["en.canon.c1.024"],
+  "contrasts": [],
+  "error_tags": ["coherence"],
+  "source_refs": {"r5": ["c1-discourse-reference"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["c1-discourse-reference"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Discourse reference", "en": "Discourse reference"},
+    "native_title": "Discourse reference",
+    "level": {"framework": "cefr", "value": "C1", "rank": 5},
+    "summary": {
+      "vi": "Điểm này dạy cách duy trì sự quy chiếu qua nhiều câu bằng đại từ, từ chỉ định, từ đồng nghĩa và danh từ khái quát, sao cho người đọc luôn xác định được đối tượng được nói tới.",
+      "en": "This point teaches how to keep reference clear across sentences using pronouns, demonstratives, lexical substitution and encapsulating nouns, so the reader can always recover what is being talked about."
+    },
+    "sub": {"vi": "quy chiếu liên câu", "en": "cross-sentence reference"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nhắc lại một ý vừa nêu ở câu trước mà không lặp lại toàn bộ mệnh đề.",
+      "en": "When you want to refer back to an idea just stated without repeating the whole clause."
+    },
+    {
+      "vi": "Khi có nhiều danh từ cùng loại trong ngữ cảnh và bạn cần chỉ rõ mình đang nói tới cái nào.",
+      "en": "When several similar nouns are present and you need to make clear which one you mean."
+    },
+    {
+      "vi": "Khi bạn muốn gói cả một sự việc hoặc lập luận trước đó thành một cụm danh từ để bình luận tiếp.",
+      "en": "When you want to package a previous event or argument as a noun phrase so you can comment on it."
+    },
+    {
+      "vi": "Khi bạn so sánh hai đối tượng đã được nhắc tới và cần phân biệt chúng bằng former/latter hoặc the one/the other.",
+      "en": "When you compare two already-mentioned items and need to distinguish them with former/latter or the one/the other."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S1", "role": "subject", "label": {"vi": "câu thứ nhất", "en": "first sentence"}},
+      {
+        "text": "V1",
+        "role": "verb",
+        "label": {"vi": "động từ câu thứ nhất", "en": "verb of the first sentence"}
+      },
+      {
+        "text": "O1",
+        "role": "object",
+        "label": {"vi": "tân ngữ câu thứ nhất", "en": "object of the first sentence"}
+      },
+      {
+        "text": "ref",
+        "role": "other",
+        "label": {"vi": "từ quy chiếu", "en": "reference word"},
+        "options": [
+          {"text": "this"},
+          {"text": "these"},
+          {"text": "it"},
+          {"text": "they"},
+          {"text": "the former"},
+          {"text": "the latter"},
+          {"text": "such"}
+        ]
+      },
+      {
+        "text": "N-summary",
+        "role": "other",
+        "label": {"vi": "danh từ khái quát", "en": "summary noun"},
+        "optional": true,
+        "options": [
+          {"text": "decision"},
+          {"text": "change"},
+          {"text": "limitation"},
+          {"text": "problem"},
+          {"text": "claim"},
+          {"text": "trend"}
+        ]
+      },
+      {
+        "text": "V2",
+        "role": "verb",
+        "label": {"vi": "động từ câu thứ hai", "en": "verb of the second sentence"}
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "The company reduced its workforce. This decision lowered short-term costs.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 11, "role": "subject"},
+        {"start": 12, "end": 19, "role": "verb"},
+        {"start": 20, "end": 33, "role": "object"},
+        {"start": 35, "end": 39, "role": "other"},
+        {"start": 40, "end": 48, "role": "other"},
+        {"start": 49, "end": 56, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "This decision gói cả sự việc ở câu trước thành một cụm danh từ.",
+        "en": "This decision packages the previous event as a noun phrase."
+      },
+      "translation": {
+        "vi": "Công ty đã cắt giảm nhân sự. Quyết định này làm giảm chi phí ngắn hạn.",
+        "en": "The company reduced its workforce. This decision lowered short-term costs."
+      }
+    },
+    {
+      "text": "Two explanations were proposed. The former focused on demand; the latter on supply.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 16, "role": "subject"},
+        {"start": 17, "end": 30, "role": "verb"},
+        {"start": 32, "end": 42, "role": "other"},
+        {"start": 43, "end": 50, "role": "verb"},
+        {"start": 51, "end": 60, "role": "object"},
+        {"start": 62, "end": 72, "role": "other"},
+        {"start": 73, "end": 82, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "The former và the latter lần lượt chỉ cách giải thích thứ nhất và thứ hai.",
+        "en": "The former and the latter refer to the first and second explanation respectively."
+      },
+      "translation": {
+        "vi": "Hai cách giải thích đã được đưa ra. Cách đầu tập trung vào cầu; cách sau vào cung.",
+        "en": "Two explanations were proposed. The former focused on demand; the latter on supply."
+      }
+    },
+    {
+      "text": "The model failed under load. This limitation should be addressed before release.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 9, "role": "subject"},
+        {"start": 10, "end": 16, "role": "verb"},
+        {"start": 17, "end": 27, "role": "object"},
+        {"start": 29, "end": 33, "role": "other"},
+        {"start": 34, "end": 44, "role": "other"},
+        {"start": 45, "end": 64, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "This limitation quy chiếu tới sự cố vừa nêu, không chỉ tới danh từ 'model'.",
+        "en": "This limitation refers to the failure just described, not just to the noun 'model'."
+      },
+      "translation": {
+        "vi": "Mô hình đã lỗi khi tải cao. Hạn chế này cần được xử lý trước khi phát hành.",
+        "en": "The model failed under load. This limitation should be addressed before release."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Đại từ 'he' có thể chỉ người quản lý hoặc kỹ sư, nên người đọc không xác định được antecedent. Cần lặp lại danh từ hoặc dùng cấu trúc khác để giữ mạch văn rõ ràng.",
+        "en": "'He' can refer to either the manager or the engineer, so the reader cannot recover the antecedent. Repeat the noun or restructure to keep the discourse coherent."
+      },
+      "error_tag": "coherence",
+      "l1": ["vi"],
+      "wrong": "The manager told the engineer that he was wrong.",
+      "right": "The manager told the engineer that the engineer was wrong."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "The server crashed after the database stalled. ___ was restarted immediately.",
+      "options": [{"text": "The database", "error_tag": null}, {"text": "This", "error_tag": "coherence"}],
+      "answer": 0,
+      "explain": {
+        "vi": "'This' không rõ đang chỉ server hay database; cần nêu rõ danh từ để tránh mơ hồ.",
+        "en": "'This' is unclear: it could refer to the server or the database; name the noun explicitly to avoid ambiguity."
+      }
+    },
+    {
+      "q": "Several teams tested the tool, and ___ feedback informed the redesign.",
+      "options": [{"text": "their", "error_tag": null}, {"text": "its", "error_tag": "agreement"}],
+      "answer": 0,
+      "explain": {
+        "vi": "'Several teams' là số nhiều nên cần 'their', không dùng 'its'.",
+        "en": "'Several teams' is plural, so 'their' is required, not 'its'."
+      }
+    },
+    {
+      "q": "The policy increased costs. ___ change was criticised by small firms.",
+      "options": [{"text": "This", "error_tag": null}, {"text": "It", "error_tag": "coherence"}],
+      "answer": 0,
+      "explain": {
+        "vi": "'It' có thể bị hiểu là 'the policy' hoặc cả sự việc; 'This change' gói cả sự việc và giữ mạch văn rõ.",
+        "en": "'It' could be read as 'the policy' or the whole event; 'This change' encapsulates the event and keeps the reference clear."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu nói về một quyết định hoặc thay đổi gần đây của bạn, rồi thêm một câu dùng 'This + danh từ khái quát' để bình luận về nó.",
+      "en": "Write a sentence about a recent decision or change of yours, then add a sentence using 'This + summary noun' to comment on it."
+    },
+    "placeholder": "I decided to ... This decision ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "other", "any_of": ["this"]},
+        {"role": "other", "any_of": ["decision", "change", "limitation"]}
+      ]
+    },
+    "sample": {"text": "I decided to change my career path. This decision was difficult but necessary."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791094990",
+    "generated_at": "2026-10-04T06:23:10Z",
+    "r5_source": {
+      "ids": ["c1-discourse-reference"],
+      "content_version": 2,
+      "content_hash": "39b74efbe9618a1c03c3c74ead7e6acff920e5ea31ccc2a7e66580b49142fede",
+      "corrections": [
+        {
+          "r5_id": "c1-discourse-reference",
+          "issue": "R5's example 'The server crashed after the database stalled. This was restarted.' is presented as a mistake, but the correction 'The database was restarted after the server crash.' changes the meaning and does not demonstrate the target reference pattern.",
+          "fix": "Replaced with a quick-practice item that keeps the original two-sentence structure and fixes only the ambiguous reference: 'The server crashed after the database stalled. The database was restarted immediately.'"
+        },
+        {
+          "r5_id": "c1-discourse-reference",
+          "issue": "R5's mistake 'The manager told the engineer that he was wrong.' is corrected with a direct quotation, which is a different construction and not a reference repair.",
+          "fix": "Corrected to 'The manager told the engineer that the engineer was wrong.' to show lexical repetition as the reference repair."
+        },
+        {
+          "r5_id": "c1-discourse-reference",
+          "issue": "R5 lists 'former/latter' as a contrast but does not include it in the formula or examples.",
+          "fix": "Added 'the former' and 'the latter' as options in the reference slot and included an example using them."
+        }
+      ]
+    }
+  },
+  "review": null
+}

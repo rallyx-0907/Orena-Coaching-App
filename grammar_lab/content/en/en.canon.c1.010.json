@@ -1,0 +1,248 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.c1.010",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.possibility",
+  "level": {"framework": "cefr", "value": "C1", "rank": 5},
+  "prereqs": ["en.canon.c1.004"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["c1-boosting-and-controlled-certainty"]},
+  "point_type": "other",
+  "sequence": 4,
+  "aliases": ["c1-boosting-and-controlled-certainty"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Boosting and controlled certainty", "en": "Boosting and controlled certainty"},
+    "native_title": "Boosting and controlled certainty",
+    "level": {"framework": "cefr", "value": "C1", "rank": 5},
+    "summary": {
+      "vi": "Điểm ngữ pháp này dạy cách dùng từ tăng cường và trạng từ tình thái để thể hiện mức độ chắc chắn có kiểm soát trong tiếng Anh học thuật.",
+      "en": "This point teaches how to use boosters and modal adverbs to express controlled certainty in academic English."
+    },
+    "sub": {"vi": "tăng cường và kiểm soát độ chắc chắn", "en": "boosting and controlled certainty"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nhấn mạnh một kết luận dựa trên bằng chứng mạnh, nhưng không muốn nói quá mức.",
+      "en": "When you want to strengthen a conclusion based on strong evidence without overstating it."
+    },
+    {
+      "vi": "Khi bạn cần thể hiện quan điểm cá nhân một cách dứt khoát nhưng vẫn giữ giọng học thuật.",
+      "en": "When you need to state a personal stance firmly while keeping an academic tone."
+    },
+    {
+      "vi": "Khi bạn muốn phân biệt giữa một tuyên bố có bằng chứng vững chắc và một tuyên bố chỉ mang tính khả năng.",
+      "en": "When you want to distinguish between a claim with solid evidence and one that is merely possible."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {
+        "text": "booster",
+        "role": "marker",
+        "label": {"vi": "từ tăng cường", "en": "booster"},
+        "options": [
+          {"text": "clearly"},
+          {"text": "undoubtedly"},
+          {"text": "certainly"},
+          {"text": "strongly"},
+          {"text": "indeed"}
+        ]
+      },
+      {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}},
+      {"text": "O", "role": "object", "label": {"vi": "tân ngữ", "en": "object"}}
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "do/does not",
+          "role": "aux",
+          "label": {"vi": "trợ động từ phủ định", "en": "negative auxiliary"},
+          "options": [{"text": "do not"}, {"text": "does not"}]
+        },
+        {
+          "text": "booster",
+          "role": "marker",
+          "label": {"vi": "từ tăng cường", "en": "booster"},
+          "options": [
+            {"text": "clearly"},
+            {"text": "undoubtedly"},
+            {"text": "certainly"},
+            {"text": "strongly"},
+            {"text": "indeed"}
+          ]
+        },
+        {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}},
+        {"text": "O", "role": "object", "label": {"vi": "tân ngữ", "en": "object"}}
+      ],
+      "question": [
+        {
+          "text": "Do/Does",
+          "role": "aux",
+          "label": {"vi": "trợ động từ nghi vấn", "en": "question auxiliary"},
+          "options": [{"text": "Do"}, {"text": "Does"}]
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "booster",
+          "role": "marker",
+          "label": {"vi": "từ tăng cường", "en": "booster"},
+          "options": [
+            {"text": "clearly"},
+            {"text": "undoubtedly"},
+            {"text": "certainly"},
+            {"text": "strongly"},
+            {"text": "indeed"}
+          ]
+        },
+        {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}},
+        {"text": "O", "role": "object", "label": {"vi": "tân ngữ", "en": "object"}}
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "The results clearly indicate a change in behaviour.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 11, "role": "subject"},
+        {"start": 12, "end": 19, "role": "marker"},
+        {"start": 20, "end": 28, "role": "verb"},
+        {"start": 29, "end": 50, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "từ tăng cường 'clearly' làm mạnh kết luận dựa trên bằng chứng rõ ràng.",
+        "en": "The booster 'clearly' strengthens the conclusion based on clear evidence."
+      },
+      "translation": {
+        "vi": "Kết quả rõ ràng cho thấy một sự thay đổi trong hành vi.",
+        "en": "The results clearly indicate a change in behaviour."
+      }
+    },
+    {
+      "text": "The policy undoubtedly reduced waste.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 10, "role": "subject"},
+        {"start": 11, "end": 22, "role": "marker"},
+        {"start": 23, "end": 30, "role": "verb"},
+        {"start": 31, "end": 36, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "từ tăng cường 'undoubtedly' thể hiện mức độ chắc chắn cao dựa trên bằng chứng mạnh.",
+        "en": "The booster 'undoubtedly' expresses high certainty based on strong evidence."
+      },
+      "translation": {
+        "vi": "Chính sách chắc chắn đã giảm rác thải.",
+        "en": "The policy undoubtedly reduced waste."
+      }
+    },
+    {
+      "text": "The intervention certainly produced measurable gains.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 16, "role": "subject"},
+        {"start": 17, "end": 26, "role": "marker"},
+        {"start": 27, "end": 35, "role": "verb"},
+        {"start": 36, "end": 52, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "từ tăng cường 'certainly' khẳng định kết quả đã thực sự xảy ra.",
+        "en": "The booster 'certainly' affirms that the result really happened."
+      },
+      "translation": {
+        "vi": "Can thiệp chắc chắn đã tạo ra những cải thiện đo được.",
+        "en": "The intervention certainly produced measurable gains."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học thường xếp chồng các trạng từ chỉ mức độ không tương thích (maybe + definitely) gây mâu thuẫn về mức độ chắc chắn.",
+        "en": "Learners often stack incompatible stance adverbs (maybe + definitely), creating conflicting levels of certainty."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "The data maybe definitely prove the theory.",
+      "right": "The data strongly support the theory."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "The results ___ indicate a change in behaviour.",
+      "options": [{"text": "clearly", "error_tag": null}, {"text": "maybe definitely", "error_tag": "other"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Chọn 'clearly' vì nó là một từ tăng cường phù hợp, trong khi 'maybe definitely' là sự kết hợp mâu thuẫn.",
+        "en": "Choose 'clearly' because it is a suitable booster, while 'maybe definitely' is a contradictory combination."
+      }
+    },
+    {
+      "q": "There is ___ evidence that the policy reduced waste.",
+      "options": [{"text": "strong", "error_tag": null}, {"text": "strongly", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Cần tính từ 'strong' để bổ nghĩa cho danh từ 'evidence', không dùng trạng từ 'strongly'.",
+        "en": "The adjective 'strong' is needed to modify the noun 'evidence', not the adverb 'strongly'."
+      }
+    },
+    {
+      "q": "The intervention ___ produce measurable gains.",
+      "options": [{"text": "did", "error_tag": null}, {"text": "does", "error_tag": "agreement"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Chủ ngữ 'The intervention' số ít nhưng thì quá khứ, nên dùng 'did' để nhấn mạnh.",
+        "en": "The subject 'The intervention' is singular but past tense, so 'did' is used for emphasis."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một kết quả nghiên cứu hoặc quan sát của bạn, dùng một từ tăng cường như 'clearly' hoặc 'strongly'.",
+      "en": "Write a sentence about a research result or observation of yours, using a booster like 'clearly' or 'strongly'."
+    },
+    "placeholder": "The data clearly show ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "marker", "any_of": ["clearly", "undoubtedly", "certainly"]},
+        {"role": "verb", "regex": "\\b(indicate|show|demonstrate|suggest|prove|support)\\b"}
+      ]
+    },
+    "sample": {"text": "The data clearly indicate a significant trend."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791094997",
+    "generated_at": "2026-10-04T06:23:17Z",
+    "r5_source": {
+      "ids": ["c1-boosting-and-controlled-certainty"],
+      "content_version": 2,
+      "content_hash": "4b3e872f8243b2c33675bef5defb77b87ba099a12ca10a37709f5a9908ce3a75",
+      "corrections": [
+        {
+          "r5_id": "c1-boosting-and-controlled-certainty",
+          "issue": "R5 example 'The intervention did produce measurable gains.' was listed under affirmative but uses emphatic 'did', which is a boosting device; it is correct but the formula did not cover emphatic auxiliaries.",
+          "fix": "Replaced with 'The intervention certainly produced measurable gains.' so the example follows the booster + verb formula without requiring an auxiliary slot."
+        },
+        {
+          "r5_id": "c1-boosting-and-controlled-certainty",
+          "issue": "R5 mistake 'A small sample undoubtedly proves the claim.' was corrected to 'A small sample provides preliminary support for the claim.' but the reason was not clearly linked to evidence strength.",
+          "fix": "Kept the correction but clarified the reason: booster strength must match evidence strength; weak evidence does not license strong boosters."
+        }
+      ]
+    }
+  },
+  "review": null
+}
