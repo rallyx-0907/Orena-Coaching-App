@@ -1850,6 +1850,7 @@ class Generator:
     r5_root: Path | None = None  # the app's grammar data (r5_source.DEFAULT_R5_ROOT when None)
     allow_default_safe: bool = False  # explicit override for points whose metadata was never reviewed
     max_full_attempts: int = V04_SEMANTIC_ATTEMPTS
+    paid_repairs: bool = True
 
     def generate(
         self, point_id: str, *, regenerate_note: str | None = None, with_story: bool = False, story_mode: str = "everyday"
@@ -2152,6 +2153,12 @@ class Generator:
                     cost_usd=(total_cost if cost_known and total_cost else None),
                     cached=all_cached,
                 )
+
+            if not self.paid_repairs:
+                last_problem = "; ".join(
+                    f"{issue.code} at {issue.path}: {issue.message}" for issue in issues[:8]
+                )
+                break
 
             # The provider/JSON schema accepted this response, so complete()
             # cached it. Keep that paid candidate while deterministic/targeted
