@@ -95,10 +95,26 @@ def test_the_console_reports_the_state_and_the_actions_that_fit_it():
     assert {"unpublish", "archive"} <= set(published["actions"])
     assert "delete" not in published["actions"]
 
+    # Republishing is offered only when the item could be published: an
+    # unpublished item without cleared rights and a usable transcript is not.
     unpublished = media_record(_entry(status="unpublished"))
     assert unpublished["status"] == "unpublished"
-    assert "republish" in unpublished["actions"]
+    assert "republish" not in unpublished["actions"]
     assert "unpublish" not in unpublished["actions"]
+    assert "archive" in unpublished["actions"]
+
+    usable = {"payload": {"transcript": {"segments": [
+        {"start_ms": 0, "end_ms": 900, "original_text": "I found my pen in my bag."},
+    ]}}}
+    cleared = {**_entry().source, "rights": "cleared"}
+    eligible = media_record(_entry(status="unpublished", source=cleared, lesson=usable))
+    assert "republish" in eligible["actions"]
+    # Each condition is needed on its own.
+    assert "republish" not in media_record(_entry(status="unpublished", lesson=usable))["actions"]
+    assert "republish" not in media_record(_entry(status="unpublished", source=cleared))["actions"]
+    assert "republish" not in media_record(
+        _entry(status="unpublished", source=cleared, lesson=usable, processing={"state": "running"})
+    )["actions"]
 
     archived = media_record(_entry(status="archived"))
     assert archived["status"] == "archived"

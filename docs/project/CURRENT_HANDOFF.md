@@ -21,10 +21,10 @@ Agent stays on the contract mock until Intelligence integration is authorized.
 Frame/route/code/status: `docs/design/canonical-ui/IMPLEMENTATION_MAP.md`.
 
 - Foundation/Wave A/B: REVIEWABLE; inventory in IMPLEMENTATION_MAP.md.
-- QA :8021: web uses durable PG volume `orena-next-verify-postgres` (schema0023); old
-  ephemeral PG retained, old QA records lost. Media volume `orena-next-verify-media` at
-  `/lanedata`; `/rundata` SQLite scratch only. Worker stopped. `ORENA_ACCOUNT_BACKBONE=on`
-  here only. Recreate copies env by name only. Recovery authorized 2026-10-03.
+- QA :8021: durable PG volume `orena-next-verify-postgres`, schema `20261004_0025` (D-124
+  table applied 2026-10-04 after pg_dump+restore check; the promotion commit is not yet on
+  origin). Media volume `orena-next-verify-media` at `/lanedata`; `/rundata` SQLite scratch
+  only. Worker stopped. `ORENA_ACCOUNT_BACKBONE=on` here only. Recreate copies env by name.
 - Wave B (`161d917`): REVIEWABLE; backend-less routes stay Coming soon,
   Orena uses the mock; Grammar waits for its canonical runtime.
 - Agent UI side: contract v5 on the mock; Orena's entry points hide when the
@@ -35,9 +35,9 @@ Frame/route/code/status: `docs/design/canonical-ui/IMPLEMENTATION_MAP.md`.
 
 ## Last verified batch
 
-D-124 vocabulary localization step 1 (local): CC-CEDICT+Unihan vendored (cost plan P1);
-ZH imports gain pinyin/`en` meaning, ZH lookup senses, zero provider calls; focused 335 pass.
-(sense, support language) table PROPOSED only: `proposals/VOCABULARY_LOCALIZATION.md`, VL-1..5.
+D-124 vocabulary localization: CC-CEDICT+Unihan vendored (cost plan P1); ZH imports gain
+pinyin/`en` meaning; read path by support language; source registry; zero provider calls.
+Design/review: `proposals/VOCABULARY_LOCALIZATION.md` (+ .REVIEW); gaps VL-1..5.
 S1 source admission (e74735b): READING_SOURCE_ADMISSION_CHECKPOINT.md; level/source breadth,
 enrichment/questions/fidelity open. Preserve S3 a8e7914: VOCABULARY_COLLECTION_CHECKPOINT.md. Grammar deferred.
 
@@ -68,15 +68,15 @@ Foundation/Wave A/B REVIEWABLE; history: PROJECT_STATE.md "New learner UI migrat
   S8a (`b7380b1`): body/count/Admin-link fixes; evidence: S8_BOOKS_BROWSER_CHECKPOINT.md.
   Finish EN/ZH continuity/fidelity; no full Books completion claim.
 - Human review: Wave A/B.
-- Chinese writing evaluator recall: causes and fix options in
-  `ZH_WRITING_EVALUATOR_RECALL.md`; no change until the human chooses a fix.
-- H2, the declared level: `proposals/DECLARED_LEVEL_STORAGE.md`, independently
-  reviewed (APPROVE at `6c0db16`, review in the same folder); waits for the
-  human's approval and three confirmations. No code or migration yet.
-- Chinese evaluator: fix (1) landed (`871e2b9`, contract v2.7) and the benchmark
-  measures recall (`fa93601`, v2); the live run that gives (4) its numbers waits
-  for the human's go (provider cost).
-- D4 (D-104/D-105): code and migrations 0017-0023 on `codex/work`, applied to :8021 only; independently reviewed (LEARNER_RECORDS_D4_IMPLEMENTATION_REVIEW.md: delta APPROVE WITH CONDITIONS, `f30044a`). `ORENA_ACCOUNT_BACKBONE` on at :8021 only; flag-on browser QA round 2 at `9a7b190`: all six flows PASS. Open for the human: delete for an imported text (design draws none), media-import bound. Before :8000: ACCOUNT_RECORD_LIMITS rev 3 (approved with conditions, not built), upload media deletion (D-055(b)), code+schema one deployment unit. Admin slices 1-4 in /next; Grammar Store/API remains.
+- Chinese writing evaluator recall (`ZH_WRITING_EVALUATOR_RECALL.md`): fix (1) landed
+  (`871e2b9`, v2.7), benchmark measures recall (`fa93601`); live run for (4) waits for the
+  human's go (provider cost).
+- H2 declared level: `proposals/DECLARED_LEVEL_STORAGE.md` reviewed APPROVE (`6c0db16`);
+  waits for the human's approval and three confirmations. No code or migration yet.
+- D4 (D-104/D-105): migrations 0017-0023, :8021 only; review APPROVE WITH CONDITIONS
+  (`f30044a`); flag-on QA round 2 (`9a7b190`) six flows PASS. Open for the human: delete for
+  an imported text, media-import bound. Before :8000: ACCOUNT_RECORD_LIMITS rev 3 (not built),
+  upload media deletion (D-055(b)), code+schema one deployment unit.
 
 ## PENDING
 
@@ -109,9 +109,10 @@ human gates. Never touch persistent volumes as cleanup.
 
 ## NEXT EXACT TASK
 
-D-124: read path+source registry done; 0025 rev2 reviewed (APPROVE w/ cond.), PG16 100k
-rehearsed; needs human OK (:8021). Next: free Marian zh/en→vi sample; →vi data: human (VL-2).
-No paid provider in vocabulary. → vi open data is the human's choice (VL-2).
+D-124 (human 2026-10-04): → vi from the list, then Wiktionary (kaikki, en+vi editions),
+then open-dsl-dict (CC BY-SA only); no machine translation. Measure coverage per source and
+export 100-item samples for the human; English fallback labelled; Hán-Việt only if Wiktionary
+separates it from Nôm; licences page + THIRD_PARTY_NOTICES. No paid provider in vocabulary.
 
 Grammar remains deferred. Human2026-10-04 accepts Reading -> vocabulary
 enrichment -> practice on publish -> Agent; Grammar later. Review bounded S1
