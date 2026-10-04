@@ -155,3 +155,8 @@ def test_a_tool_called_in_the_last_round_where_none_is_offered_never_runs():
     list(rt.run(_request("en", selected={"type": "word", "text": "x", "lang": "en"}), EN))
     assert provider.requests[1].tools == (), "the last round offers nothing"
     assert len(seen) == 1, "the call made in the round that offered nothing did not run"
+
+
+@pytest.mark.parametrize("message", ["What should I study today?!", "what should I study."])
+def test_trailing_punctuation_does_not_hide_a_records_question(message):
+    assert needs_learner_evidence(message)

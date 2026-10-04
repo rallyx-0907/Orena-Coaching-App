@@ -29,7 +29,7 @@ _log = logging.getLogger(__name__)
 
 CAP_ENV = "AGENT_DAILY_SPEND_CAP_USD"
 UNPRICED_ALLOWANCE_USD = 0.01
-CACHE_SECONDS = 15.0
+CACHE_SECONDS = 5.0  # a soft cap: turns admitted inside one window, and rounds in flight, may overshoot it
 
 SpendReader = Callable[[datetime], tuple[float, int]]  # since -> (estimated USD, unpriced provider calls)
 

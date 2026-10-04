@@ -87,6 +87,8 @@ def _patterns(
         rf"|已(?:经)?(?:帮|为|给){zyou}(?:{zh})"
         # "我打开了门", "我收藏了很多书" are lesson sentences: only the app's own objects make it a claim (P2-2).
         rf"|{zme}(?:已经|已)?(?:{zh})了(?:{_ZH_APP_OBJECT})"
+        # "我已经保存了。" alone: done, with nothing after it that makes it a lesson sentence.
+        rf"|{zme}(?:已经|已)(?:{zh})了(?=[。！!.\s]*$)"
         rf"|{zme}(?:已经|已)?把(?:{_ZH_APP_OBJECT})[^。！？\n]{{0,12}}?(?:{zh})[^。！？\n]{{0,10}}?(?:了(?!解)|好)"
     )
     # A completion with no actor: false only beside a pending button.

@@ -32,13 +32,13 @@ _VI = (
     rf"{_VI_ME} (?:đang )?(?:tiến bộ|tiến triển) (?:thế nào|ra sao|đến đâu)",
 )
 _EN = (
-    r"what should i (?:learn|study|practi[cs]e|review|work on)(?: today| next| now)?\??$",
-    r"what do i (?:usually |often |always |most often |keep )?(?:get wrong|getting wrong|struggle with)\??$",
+    r"what should i (?:learn|study|practi[cs]e|review|work on)(?: today| next| now)?[?!.\s]*$",
+    r"what do i (?:usually |often |always |most often |keep )?(?:get wrong|getting wrong|struggle with)[?!.\s]*$",
     r"\bmy (?:weak(?:est)?|biggest) (?:areas?|points?|spots?|skills?)\b",
     r"\bmy (?:most )?common (?:mistakes|errors)\b",
     r"\bmy weakness(?:es)?\b",
     r"what am i (?:worst|weakest|bad|weak) at",
-    r"how am i (?:doing|progressing)(?: overall| so far| with my (?:english|chinese|learning))\??$",
+    r"how am i (?:doing|progressing)(?: overall| so far| with my (?:english|chinese|learning))[?!.\s]*$",
 )
 _ZH = (
     r"我(?:今天)?(?:应该|该)(?:学|复习|练|练习)(?:什么|哪些|啥)",

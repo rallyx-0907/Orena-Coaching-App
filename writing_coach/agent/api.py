@@ -67,11 +67,11 @@ def _admit(limiter: SlidingWindowLimiter) -> None:
 
 
 def _turn_allowed(runtime: AgentRuntime = Depends(_require_runtime)) -> AgentRuntime:
-    _admit(runtime.turn_limiter)
+    # The daily spend cap first (agent/budget.py): a request it refuses is not counted in the learner's window.
     wait = runtime.spend_guard() if runtime.spend_guard is not None else None
     if wait is not None:
-        # The daily spend cap (agent/budget.py), said as the contract's 429: try again once it resets.
         raise HTTPException(status_code=429, detail="rate_limited", headers={"Retry-After": str(max(1, math.ceil(wait)))})
+    _admit(runtime.turn_limiter)
     return runtime
 
 

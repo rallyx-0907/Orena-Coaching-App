@@ -239,3 +239,14 @@ def test_a_turn_over_the_daily_spend_cap_is_the_contracts_429_and_reaches_no_pro
     agent_api._runtime.spend_guard = lambda: 3600.0
     response = client.post("/api/agent/turn", json=body())
     assert response.status_code == 429 and response.headers["retry-after"] == "3600"
+
+
+def test_a_turn_refused_by_the_cap_is_not_counted_in_the_learners_window(client):
+    from writing_coach.agent import api as agent_api
+    from writing_coach.agent.limits import AgentLimits
+
+    enable([reply("Ok.")], limits=AgentLimits(turns_per_window=1))
+    agent_api._runtime.spend_guard = lambda: 60.0
+    assert client.post("/api/agent/turn", json=body()).status_code == 429
+    agent_api._runtime.spend_guard = None  # the cap resets: the one turn the window allows still runs
+    assert client.post("/api/agent/turn", json=body()).status_code == 200

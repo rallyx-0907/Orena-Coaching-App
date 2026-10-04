@@ -303,7 +303,8 @@ class SQLitePlatformRepository:
         return []
 
     def ai_spend_since(self, since: datetime) -> tuple[float, int]:
-        return 0.0, 0
+        # No AI ledger here (telemetry is PostgreSQL-only): a spend cap must refuse, not read zero.
+        raise NotImplementedError("the AI spend ledger is PostgreSQL-only")
 
 
 class PostgresPlatformRepository:

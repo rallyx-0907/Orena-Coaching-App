@@ -260,6 +260,8 @@ def test_through_a_turn_the_addressed_claim_gives_way_to_the_offer():
         "已帮你打开复习。",
         "我打开了设置。",
         "我把它加入词库了。",
+        "我已经保存了。",
+        "我已经添加了",
     ],
 )
 def test_more_ways_of_saying_it_acted_are_claims(text):
