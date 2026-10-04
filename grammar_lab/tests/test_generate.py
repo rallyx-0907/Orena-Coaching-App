@@ -23,6 +23,7 @@ from grammar_lab.pipeline.generate import (
     assemble_generated_example,
     assemble_generated_personal_production,
     build_rule_table,
+    normalize_generated_formula_order,
     complete_literal_example_spans,
     pinyin_from_pairs,
     repair_personal_production_rule,
@@ -30,7 +31,7 @@ from grammar_lab.pipeline.generate import (
     semantic_repair_hints,
 )
 from grammar_lab.pipeline.llm_client import LLMClient
-from grammar_lab.pipeline.validate import validate_lang
+from grammar_lab.pipeline.validate import pattern_rule_matches, validate_lang
 from grammar_lab.tests.conftest import Lab
 
 CANNED_BLOCKS = {
@@ -901,6 +902,60 @@ def test_generated_example_bindings_derive_roles_and_require_every_nonoptional_s
     missing["bindings"] = missing["bindings"][:-1]
     _example, problems = assemble_generated_example(missing, pattern, False, lambda x: {"vi": x}, 0)
     assert any(code == "generation.binding_required_slot_missing" for _path, code, _message in problems)
+
+
+
+def test_normalize_generated_formula_order_repairs_contraction_tag_surface_order() -> None:
+    data = {
+        "formula": [
+            {"text": "statement subject", "role": "subject"},
+            {"text": "statement predicate", "role": "complement"},
+            {"text": "tag auxiliary", "role": "aux"},
+            {"text": "tag pronoun", "role": "subject"},
+            {"text": "n't", "role": "particle"},
+        ],
+        "negative": [],
+        "question": [],
+        "examples": [{
+            "text": "It's cold today, isn't it?",
+            "form": "affirmative",
+            "bindings": [
+                {"slot_index": 0, "text": "It"},
+                {"slot_index": 1, "text": "cold today"},
+                {"slot_index": 2, "text": "is"},
+                {"slot_index": 3, "text": "it"},
+                {"slot_index": 4, "text": "n't"},
+            ],
+        }],
+        "personal_production": {
+            "target_form": "affirmative",
+            "pattern_rule": {
+                "ordered": True,
+                "slots": [
+                    {"slot_index": 2, "any_of": ["is"]},
+                    {"slot_index": 3, "any_of": ["it"]},
+                    {"slot_index": 4, "any_of": ["n't"]},
+                ],
+            },
+        },
+    }
+
+    out = normalize_generated_formula_order(data, False)
+
+    assert [slot["text"] for slot in out["formula"]] == [
+        "statement subject", "statement predicate", "tag auxiliary", "n't", "tag pronoun",
+    ]
+    assert [binding["slot_index"] for binding in out["examples"][0]["bindings"]] == [0, 1, 2, 4, 3]
+    assert [slot["slot_index"] for slot in out["personal_production"]["pattern_rule"]["slots"]] == [2, 3, 4]
+
+
+def test_pattern_rule_matches_contraction_suffix_literal_inside_token() -> None:
+    assert pattern_rule_matches(
+        True,
+        [["is"], ["n't"], ["it"]],
+        "It's cold today, isn't it?",
+        False,
+    )
 
 
 def test_generated_example_bindings_reject_formula_surface_order_mismatch() -> None:
