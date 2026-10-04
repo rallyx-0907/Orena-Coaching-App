@@ -232,6 +232,31 @@ def test_deepseek_embeds_the_schema_and_the_word_json_in_the_system_message(tmp_
     assert "greeting" in system_message  # a property name from SCHEMA, proving the schema was embedded
 
 
+
+def test_deepseek_empty_content_can_be_hard_capped_at_one_attempt(tmp_path: Path) -> None:
+    calls: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(request)
+        return httpx.Response(200, json={
+            "choices": [{"message": {"content": ""}}],
+            "usage": {"prompt_tokens": 100, "completion_tokens": 500},
+        })
+
+    c = LLMClient(
+        "deepseek", "deepseek-flash",
+        api_key="test-key",
+        cache_dir=tmp_path,
+        transport=httpx.MockTransport(handler),
+        deepseek_empty_attempts=1,
+    )
+    with pytest.raises(LLMError, match="attempt 1/1") as excinfo:
+        c.complete(system="s", user="u", json_schema=SCHEMA)
+
+    assert len(calls) == 1
+    assert excinfo.value.usage == LLMUsage(100, 500)
+
+
 def test_deepseek_empty_content_raises_llm_error_after_3_attempts(tmp_path: Path) -> None:
     calls: list[httpx.Request] = []
 
