@@ -724,6 +724,94 @@ configure_learner_summary(runtime_sources(
 ))
 app.include_router(learner_summary_router)
 
+# Orena Intelligence (D-085): /api/agent/*. Off unless AGENT_ENABLED is set on a
+# runtime that is not production (human ruling 2026-09-27); while off both routes
+# answer 404. It routes through the legacy AI selection and reads with the app's
+# own services: the Writing review below and the usage store it meters with.
+from writing_coach.agent.api import agent_enabled, configure_agent, router as agent_router  # noqa: E402
+from writing_coach.agent.runtime import AppReads, build_agent_runtime  # noqa: E402
+
+
+def _agent_writing_review(essay_id: int) -> dict[str, Any] | None:
+    try:
+        return essay_review(essay_id)
+    except HTTPException as exc:
+        if exc.status_code == 404:
+            return None
+        raise
+
+
+def _agent_learner_summary(window: str) -> dict[str, Any]:
+    # The route's own composition (GET /api/learner-summary); not configured is unreadable, never empty.
+    from writing_coach.learner_summary_api import summary
+
+    try:
+        return summary(window)
+    except HTTPException as exc:
+        raise RuntimeError("the learner summary is not available") from exc
+
+
+def _agent_engine() -> Any:
+    if _persistence_runtime.engine is None:
+        raise RuntimeError("the reading records require the PostgreSQL runtime")
+    return _persistence_runtime.engine
+
+
+def _agent_reading_evidence(limit: int) -> list[dict[str, Any]]:
+    if _reading_evidence_repository is None:  # not "no attempts": there is no store to ask
+        raise RuntimeError("reading evidence requires the PostgreSQL runtime")
+    return _reading_evidence_repository.list_evidence(limit)
+
+
+def _agent_listening_lesson(lesson_id: str) -> dict[str, Any] | None:
+    # The catalogue, never the lesson route: that one translates through a provider and writes a cache.
+    from writing_coach.listening_catalog import catalog_lesson, lesson_metadata
+
+    lesson = catalog_lesson(lesson_id)
+    return lesson_metadata(lesson) if lesson is not None else None
+
+
+def _agent_grammar_lesson(grammar_id: str) -> dict[str, Any] | None:
+    try:
+        return api_grammar_lesson(grammar_id)
+    except HTTPException as exc:
+        if exc.status_code in (404, 503):  # no such point here, or its knowledge is not there
+            return None
+        raise
+
+
+configure_agent(
+    build_agent_runtime(
+        writing_review=_agent_writing_review,
+        writing_history=lambda: api_error_memory(),
+        reads=AppReads(
+            grammar_library=lambda: api_grammar_library(),
+            grammar_lesson=lambda grammar_id: _agent_grammar_lesson(grammar_id),
+            # The learner records live on PostgreSQL only; elsewhere these raise and the tool reports unavailable.
+            speaking_attempts=lambda limit, *, asset_id=None, segment_id=None: (
+                _specialized_learning_repository.list_speaking_attempt_records(
+                    limit, asset_id=asset_id, segment_id=segment_id
+                )
+            ),
+            speaking_progress=lambda: _specialized_learning_repository.speaking_progress(),
+            listening_lesson=lambda lesson_id: _agent_listening_lesson(lesson_id),
+            listening_progress=lambda asset_id: _specialized_learning_repository.list_listening_progress_records(asset_id),
+            reading_article=lambda article_id: ReadingContentRepository(_agent_engine()).get_published_article(article_id),
+            reading_chapter=lambda book_id, chapter_id: PostgresReadingLibraryRepository(_agent_engine()).get_chapter(
+                book_id, chapter_id
+            ),
+            reading_evidence=lambda limit: _agent_reading_evidence(limit),
+            learner_summary=lambda window: _agent_learner_summary(window),
+            cross_skill_cue=lambda: becoming_cross_skill_cue_get(),
+            listening_recent=lambda limit: _specialized_learning_repository.list_recent_listening_progress_records(limit),
+        ),
+        record_usage=_persistence_runtime.product_repository.record_usage,
+    )
+    if agent_enabled(os.environ, production=APP_ENV == "production")
+    else None
+)
+app.include_router(agent_router)
+
 # Account work (I2 write path). Built from the flag and the schema, both
 # required: off is `disabled`, on without the tables is `unavailable`, and only
 # `active` constructs the repositories. The tables are read only when asked.

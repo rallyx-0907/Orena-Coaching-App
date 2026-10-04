@@ -66,6 +66,42 @@ class AIProviderUnsupportedOperation(AICapabilityUnsupported):
     """A known provider cannot perform a capability's declared operation."""
 
 
+@dataclass(frozen=True)
+class ChatTextDelta:
+    """A piece of streamed assistant text."""
+
+    text: str
+
+
+@dataclass(frozen=True)
+class ChatToolCall:
+    """A complete native tool call; `arguments` is the provider's JSON text.
+
+    `extra` is what the provider attached to the call for itself (Gemini's
+    `extra_content` holds a thought signature) and requires back, verbatim, when
+    the call is sent in the next round. It is opaque: never parsed, never shown.
+    """
+
+    id: str
+    name: str
+    arguments: str
+    extra: dict[str, Any] | None = None
+
+
+@dataclass(frozen=True)
+class ChatFinished:
+    """The end of one streamed round, with whatever usage the provider reported."""
+
+    finish_reason: str
+    prompt_tokens: int | None = None
+    completion_tokens: int | None = None
+    cached_tokens: int | None = None
+    rate_limit: dict[str, int | None] | None = None
+
+
+ChatStreamEvent = ChatTextDelta | ChatToolCall | ChatFinished
+
+
 @dataclass
 class AIResult:
     data: dict[str, Any]

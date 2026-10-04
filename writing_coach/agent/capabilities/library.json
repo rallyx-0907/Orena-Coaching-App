@@ -1,0 +1,29 @@
+{
+  "capabilities": [
+    {
+      "id": "library.find",
+      "title": {
+        "en": "Find something to learn",
+        "vi": "Tìm nội dung để học",
+        "zh-CN": "查找学习内容"
+      },
+      "surfaces": [
+        "library",
+        "reading.library",
+        "listening.library",
+        "speaking.library"
+      ],
+      "status": "pending",
+      "contexts": [],
+      "actions": [
+        "navigate"
+      ],
+      "languages": [
+        "en",
+        "zh-CN"
+      ],
+      "evidence_source": null,
+      "tools": []
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "capabilities": [
+    {
+      "id": "writing.review",
+      "title": {
+        "en": "Writing feedback",
+        "vi": "Nhận xét bài viết",
+        "zh-CN": "写作反馈"
+      },
+      "surfaces": [
+        "writing.workspace",
+        "writing.review",
+        "writing.revision"
+      ],
+      "status": "active",
+      "contexts": [
+        "essay_id",
+        "selected_item"
+      ],
+      "actions": [
+        "navigate"
+      ],
+      "languages": [
+        "en",
+        "zh-CN"
+      ],
+      "evidence_source": "writing.evaluation",
+      "tools": [
+        "get_current_writing_evaluation",
+        "get_writing_feedback_items",
+        "get_writing_history_summary"
+      ]
+    }
+  ]
+}

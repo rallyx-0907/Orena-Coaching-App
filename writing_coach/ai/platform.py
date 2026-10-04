@@ -5,6 +5,7 @@ import os
 from time import perf_counter
 from enum import Enum
 from pathlib import Path
+from collections.abc import Iterator
 from typing import Any, Callable
 
 from fastapi import APIRouter, FastAPI, HTTPException, Request, Response
@@ -23,13 +24,15 @@ from writing_coach.ai.base import (
     AIProviderResponseInvalid,
     AIProviderUnavailable,
     AIResult,
+    ChatFinished,
+    ChatStreamEvent,
     normalized_latency,
     normalized_rate_limit,
     normalized_usage,
     sanitize_telemetry,
     telemetry_error_class,
 )
-from writing_coach.ai.capabilities import require_capability
+from writing_coach.ai.capabilities import AIOperation, require_capability
 from writing_coach.ai.config import CapabilityConfig, validate_capability_config
 from writing_coach.ai.control_plane import (
     AIControlPlane,
@@ -48,7 +51,7 @@ from writing_coach.ai.routing import (
     build_chain,
     run_chain,
 )
-from writing_coach.ai.providers import build_providers, provider_definitions
+from writing_coach.ai.providers import build_providers, get_provider_definition, provider_definitions
 from writing_coach.persistence.platform_repository import PlatformRepository
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -327,6 +330,116 @@ def _record_attempt(capability_key: str | None) -> Callable[[Attempt], None]:
         )
 
     return record
+
+
+AGENT_TURN_CAPABILITY = "agent_turn_fast"
+
+
+def stream_agent_turn(
+    *,
+    messages: list[dict[str, Any]],
+    tools: list[dict[str, Any]],
+    max_output_tokens: int,
+    temperature: float | None = None,
+    should_stop: Callable[[], bool] = lambda: False,
+    timeout_seconds: float | None = None,
+) -> Iterator[ChatStreamEvent]:
+    """Stream one Orena Intelligence round on the legacy active selection.
+
+    The agent routes the way every learner call routes until a reviewed
+    activation makes its capability keys configurable (human ruling
+    2026-09-27): the one provider and model selected in Admin › AI. It never
+    runs on a local model (spec D2) - the silent Ollama default of an unset
+    selection is refused, not used - and never switches provider on failure.
+    Each round is recorded in the anonymised AI operation telemetry under
+    `agent_turn_fast`, like `generate_structured` records its calls.
+    """
+
+    started = perf_counter()
+    provider_id: str | None = None
+    model: str | None = None
+
+    def record(
+        outcome: str,
+        *,
+        error: BaseException | None = None,
+        finished: ChatFinished | None = None,
+        error_class: str | None = None,
+    ) -> None:
+        model_display, model_redacted = safe_model_display(model)
+        runtime = {
+            "prompt_tokens": finished.prompt_tokens if finished else None,
+            "completion_tokens": finished.completion_tokens if finished else None,
+        }
+        usage = normalized_usage(runtime) if finished else normalized_usage(None)
+        rate_limit = finished.rate_limit if finished else getattr(error, "rate_limit", None)
+        _persist_operation_telemetry(
+            {
+                "capability": AGENT_TURN_CAPABILITY,
+                "origin": "learner",
+                "provider": provider_id,
+                "model": model_display or None,
+                "model_redacted": model_redacted,
+                "outcome": outcome,
+                "error_class": error_class or (telemetry_error_class(error) if error is not None else None),
+                "latency_ms": normalized_latency((perf_counter() - started) * 1000),
+                "usage": usage,
+                "rate_limit": normalized_rate_limit(rate_limit),
+                "cost": estimate_token_cost(provider_id, model_display, usage if finished else None),
+                "quota_available": "unknown",
+            }
+        )
+
+    try:
+        item, model = active_selection()
+        provider_id = str(getattr(item, "id", "") or "") or None
+        if getattr(item, "kind", "") != "cloud":
+            raise AIProviderUnavailable("The agent needs a managed provider selected in Admin > AI.")
+        if not item.configured:
+            raise AIProviderUnavailable(f"{item.name} is not configured.")
+        definition = get_provider_definition(item.id)
+        stream_chat = getattr(item, "stream_chat", None)
+        if definition is None or not definition.supports(AIOperation.AGENT_TURN) or not callable(stream_chat):
+            raise AIProviderUnavailable(f"{item.name} cannot stream agent turns.")
+        events = stream_chat(
+            messages=messages,
+            tools=tools,
+            model=model,
+            max_output_tokens=max_output_tokens,
+            temperature=temperature,
+            should_stop=should_stop,
+            read_timeout=timeout_seconds,
+        )
+    except (AICapabilityError, AIProviderError) as exc:
+        record("failure", error=exc)
+        raise
+
+    def recorded() -> Iterator[ChatStreamEvent]:
+        finished: ChatFinished | None = None
+        try:
+            for event in events:
+                if isinstance(event, ChatFinished):
+                    finished = event
+                yield event
+        except (AICapabilityError, AIProviderError) as exc:
+            record("failure", error=exc)
+            raise
+        except GeneratorExit:
+            # The learner left mid-round: the provider may already have been
+            # paid, so the round is recorded rather than lost.
+            if finished is not None:
+                record("success", finished=finished)
+            else:
+                record("failure", error_class="client_abandoned")
+            raise
+        if finished is not None:
+            # A round that did not end normally is a failure in the telemetry too, with its usage kept (it may be paid).
+            if finished.finish_reason in ("stop", "tool_calls"):
+                record("success", finished=finished)
+            else:
+                record("failure", finished=finished, error_class="abnormal_finish")
+
+    return recorded()
 
 
 def generate_structured(

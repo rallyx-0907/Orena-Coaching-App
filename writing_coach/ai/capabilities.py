@@ -8,10 +8,10 @@ route requests without duplicating capabilities by learning language.
 from __future__ import annotations
 
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass
 from enum import StrEnum
 from types import MappingProxyType
-from typing import Mapping
 
 from writing_coach.ai.base import AICapabilityUnsupported
 
@@ -24,6 +24,10 @@ class AIOperation(StrEnum):
     SPEECH_RECOGNITION = "speech_recognition"
     PRONUNCIATION_EVALUATION = "pronunciation_evaluation"
     SPEAKING_EVALUATION = "speaking_evaluation"
+    # Orena Intelligence (D-085).
+    AGENT_TURN = "agent_turn"  # streaming turn with native tool calls
+    CONVERSATIONAL_SPEECH = "conversational_speech"  # speech-to-speech session
+    TEXT_TO_SPEECH = "text_to_speech"
 
 
 class AIFallbackPolicy(StrEnum):
@@ -176,6 +180,38 @@ _DEFINITIONS = (
     _definition(
         "speaking_evaluator",
         operation=AIOperation.SPEAKING_EVALUATION,
+        provider_backed=True,
+        configurable=False,
+        implemented=False,
+    ),
+    # Orena Intelligence (D-085), reserved like the speech keys: defined, not
+    # configurable, no fallback. Until a reviewed activation makes them
+    # configurable, an agent turn routes through the legacy active selection
+    # like every learner call (human ruling 2026-09-27).
+    _definition(
+        "agent_turn_fast",
+        operation=AIOperation.AGENT_TURN,
+        provider_backed=True,
+        configurable=False,
+        implemented=False,
+    ),
+    _definition(
+        "agent_turn_deep",
+        operation=AIOperation.AGENT_TURN,
+        provider_backed=True,
+        configurable=False,
+        implemented=False,
+    ),
+    _definition(
+        "conversational_speech",
+        operation=AIOperation.CONVERSATIONAL_SPEECH,
+        provider_backed=True,
+        configurable=False,
+        implemented=False,
+    ),
+    _definition(
+        "text_to_speech",
+        operation=AIOperation.TEXT_TO_SPEECH,
         provider_backed=True,
         configurable=False,
         implemented=False,

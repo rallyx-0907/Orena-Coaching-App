@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 import sqlite3
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Protocol
 
@@ -34,6 +34,7 @@ class ProductRepository(Protocol):
         request_id: str = "",
     ) -> None: ...
     def monthly_usage(self, *, user_key: str, feature: str) -> int: ...
+    def daily_usage(self, *, user_key: str, feature: str, day: date | None = None) -> int: ...
 
 
 class SQLiteProductRepository:
@@ -127,3 +128,26 @@ class SQLiteProductRepository:
                 (user_key, feature, month_start),
             ).fetchone()
         return int(row["total"] if row else 0)
+
+    def daily_usage(self, *, user_key: str, feature: str, day: date | None = None) -> int:
+        """The feature's usage on one UTC calendar day (today by default)."""
+
+        start, end = utc_day_bounds(day)
+        with self.connect() as conn:
+            row = conn.execute(
+                """
+                SELECT COALESCE(SUM(amount), 0) AS total
+                FROM usage_events
+                WHERE user_key = ? AND feature = ? AND occurred_at >= ? AND occurred_at < ?
+                """,
+                (user_key, feature, start.isoformat(timespec="seconds"), end.isoformat(timespec="seconds")),
+            ).fetchone()
+        return int(row["total"] if row else 0)
+
+
+def utc_day_bounds(day: date | None = None) -> tuple[datetime, datetime]:
+    """[start, end) of a UTC calendar day, the boundary both usage stores count by."""
+
+    chosen = day or datetime.now(UTC).date()
+    start = datetime(chosen.year, chosen.month, chosen.day, tzinfo=UTC)
+    return start, start + timedelta(days=1)

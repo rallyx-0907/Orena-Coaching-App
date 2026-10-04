@@ -1,0 +1,59 @@
+{
+  "capabilities": [
+    {
+      "id": "home.overview",
+      "title": {
+        "en": "Learning overview",
+        "vi": "Tổng quan việc học",
+        "zh-CN": "学习概况"
+      },
+      "surfaces": [
+        "home",
+        "orena.home"
+      ],
+      "status": "pending",
+      "contexts": [],
+      "actions": [
+        "navigate"
+      ],
+      "languages": [
+        "en",
+        "zh-CN"
+      ],
+      "evidence_source": "learner_summary",
+      "tools": [
+        "get_learning_overview",
+        "get_recent_learning_activity"
+      ]
+    },
+    {
+      "id": "coaching.next_steps",
+      "title": {
+        "en": "What to learn next",
+        "vi": "Nên học gì tiếp",
+        "zh-CN": "接下来学什么"
+      },
+      "surfaces": [
+        "home",
+        "orena.home",
+        "progress"
+      ],
+      "status": "active",
+      "contexts": [],
+      "actions": [
+        "navigate",
+        "start_review"
+      ],
+      "languages": [
+        "en",
+        "zh-CN"
+      ],
+      "evidence_source": "learner_summary",
+      "tools": [
+        "build_learning_snapshot",
+        "get_learning_weaknesses",
+        "get_recommended_next_activities"
+      ]
+    }
+  ]
+}

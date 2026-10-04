@@ -1,0 +1,30 @@
+{
+  "capabilities": [
+    {
+      "id": "progress.overview",
+      "title": {
+        "en": "Progress",
+        "vi": "Tiến độ",
+        "zh-CN": "学习进度"
+      },
+      "surfaces": [
+        "progress"
+      ],
+      "status": "pending",
+      "contexts": [],
+      "actions": [
+        "navigate"
+      ],
+      "languages": [
+        "en",
+        "zh-CN"
+      ],
+      "evidence_source": "learner_summary",
+      "tools": [
+        "get_learning_overview",
+        "get_skill_progress",
+        "get_recent_learning_activity"
+      ]
+    }
+  ]
+}

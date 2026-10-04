@@ -162,17 +162,22 @@ def test_static_validation_and_provider_id_parity_require_no_network(monkeypatch
     monkeypatch.setattr("requests.post", network_forbidden)
     validate_capability_config("writing_evaluator", config())
     assert {item.id for item in provider_definitions()} == set(build_providers())
-    # Operations differ by provider (Azure Speech evaluates pronunciation and
-    # generates no text), so parity is about ids and each declared operation set
-    # being one the catalogue knows - never one shared set for every provider.
-    operations = {item.id: item.supported_operations for item in provider_definitions()}
-    assert operations["azure-speech"] == frozenset({AIOperation.PRONUNCIATION_EVALUATION})
-    assert all(
-        operation_set == frozenset({AIOperation.STRUCTURED_TEXT_GENERATION})
-        for provider_id, operation_set in operations.items()
-        if provider_id != "azure-speech"
-    )
-
+    # The combined provider-operation contract: codex/work's Azure providers
+    # (Azure Speech evaluates pronunciation and generates no text) and the
+    # Intelligence lane's agent turns, streamed by the managed chat providers
+    # only (D-085) - never by Azure OpenAI or a local model (D2). Every provider
+    # is listed: a new one must declare its operations here.
+    text = AIOperation.STRUCTURED_TEXT_GENERATION
+    agent = AIOperation.AGENT_TURN
+    assert {item.id: item.supported_operations for item in provider_definitions()} == {
+        "azure-speech": frozenset({AIOperation.PRONUNCIATION_EVALUATION}),
+        "azure-openai": frozenset({text}),
+        "ollama": frozenset({text}),
+        "openai": frozenset({text, agent}),
+        "deepseek": frozenset({text, agent}),
+        "groq": frozenset({text, agent}),
+        "gemini": frozenset({text, agent}),
+    }
 
 def _exercise_repository(repository, *, sqlite_path: Path | None = None) -> None:
     assert repository.get_capability_config("writing_evaluator") is None

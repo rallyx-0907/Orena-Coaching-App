@@ -49,30 +49,30 @@ stay as history.
 Deviations from the pinned frames, each with its reason. A row leaves this
 table when the human decides it or the design changes.
 
-| # | Where | Deviation | Why |
-| --- | --- | --- | --- |
-| N-1 | Every Vietnamese string | Set in Plus Jakarta Sans (via `:lang(vi)`), not Outfit | Outfit has no Vietnamese subset (latin, latin-ext only); letters like ế ạ ữ would fall back glyph by glyph inside a word. Plus Jakarta Sans is the face this design project used before its skin, and has the subset. Technical fallback, D-088 point 5. |
-| N-2 | Icons | The package's path for each icon, not the frame's hand-typed variant (x, mic, search, volume-2, inbox, pencil, clock and ~20 more) | Rule 46: official paths only, `lucide-static@0.525.0` (the release matching the most frame icons byte for byte, 45 of the design's icons). |
-| N-3 | Coming soon | The frame's footer line ("Kept in the navigation so the Orena information architecture stays complete.") and its sample "Would resume at" block are not shown | The footer is a note to the reviewer, not learner copy (rule 50); the resume block shows only when a real resume position exists. |
-| N-4 | Prototype strip | Desktop / Mobile / Light / Dark buttons above the frame are not built | Prototype chrome. Device follows the window (rule 48), theme follows the system (D-089). |
-| N-5 | Tablet | One switch between the desk and phone layouts (below 900 px the phone layout) | The design has two frames and no tablet (rule 48). |
-| N-6 | Phone learning workspaces | Recomposed to the viewport where a phone frame scrolls as a page (Listening Workspace on a phone first) | Rule 49, reaffirmed by the human for this design. |
-| N-7 | Rule 50 | Decorative subtitles and taglines in the frames are not carried (e.g. "Your study companion", "Find something worth learning from.") | Rule 50 / D-087; listed per surface as it is built. |
-| N-8 | Colour contrast | **Applied (D-093).** The design's own tokens failed AA 4.5:1 for small text in 13 pairs; the smallest lightness-only change below is in `kit/tokens.css` and gated. | Rule 41; the human chose the minimal adjustment. |
+| #   | Where                     | Deviation                                                                                                                                                           | Why                                                                                                                                                                                                                                                      |
+| --- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| N-1 | Every Vietnamese string   | Set in Plus Jakarta Sans (via `:lang(vi)`), not Outfit                                                                                                              | Outfit has no Vietnamese subset (latin, latin-ext only); letters like ế ạ ữ would fall back glyph by glyph inside a word. Plus Jakarta Sans is the face this design project used before its skin, and has the subset. Technical fallback, D-088 point 5. |
+| N-2 | Icons                     | The package's path for each icon, not the frame's hand-typed variant (x, mic, search, volume-2, inbox, pencil, clock and ~20 more)                                  | Rule 46: official paths only, `lucide-static@0.525.0` (the release matching the most frame icons byte for byte, 45 of the design's icons).                                                                                                               |
+| N-3 | Coming soon               | The frame's footer line ("Kept in the navigation so the Orena information architecture stays complete.") and its sample "Would resume at" block are not shown       | The footer is a note to the reviewer, not learner copy (rule 50); the resume block shows only when a real resume position exists.                                                                                                                        |
+| N-4 | Prototype strip           | Desktop / Mobile / Light / Dark buttons above the frame are not built                                                                                               | Prototype chrome. Device follows the window (rule 48), theme follows the system (D-089).                                                                                                                                                                 |
+| N-5 | Tablet                    | One switch between the desk and phone layouts (below 900 px the phone layout)                                                                                       | The design has two frames and no tablet (rule 48).                                                                                                                                                                                                       |
+| N-6 | Phone learning workspaces | Recomposed to the viewport where a phone frame scrolls as a page (Listening Workspace on a phone first)                                                             | Rule 49, reaffirmed by the human for this design.                                                                                                                                                                                                        |
+| N-7 | Rule 50                   | Decorative subtitles and taglines in the frames are not carried (e.g. "Your study companion", "Find something worth learning from.")                                | Rule 50 / D-087; listed per surface as it is built.                                                                                                                                                                                                      |
+| N-8 | Colour contrast           | **Applied (D-093).** The design's own tokens failed AA 4.5:1 for small text in 13 pairs; the smallest lightness-only change below is in `kit/tokens.css` and gated. | Rule 41; the human chose the minimal adjustment.                                                                                                                                                                                                         |
 
 **N-8, measured and applied (D-093).** Lightness only, hue and saturation kept
 (the applied values differ from the first proposal by at most one step, taken to
 clear 4.5 with margin):
 
-| Theme | Pair (where it shows) | Design | Applied | After |
-| --- | --- | ---: | --- | ---: |
-| dark | `--text3` on bg / surface / surface2 (placeholders, meta, inactive phone tabs) | 4.40 / 4.07 / 3.77 | `--text3` #77778E → #858599 | 5.32 / 4.92 / 4.56 |
-| dark | `--accent` on `--accent-soft` (active rail item, language pill) | 4.19 | `--accent` #7D78F5 → #847FF6 | 4.53 |
-| dark | white on `--accent` (primary buttons) | 3.57 | a filled-control token `--accent-fill` #6862F3 (hover #5E58EA, pressed #544EDC) | 4.54 |
-| dark | white on `--red` (count badges) | 2.77 | badge numbers in a dark `--badge-ink` #0E0E16 (moving the red alone would change its hue) | 6.94 |
-| light | `--text3` on bg / surface / surface2 | 2.95 / 3.21 / 2.93 | `--text3` #8E8EA2 → #6E6E86 | 4.56 / 4.96 / 4.52 |
-| light | `--green` / `--red` / `--amber` on their `-soft` (result tags) | 3.90 / 3.91 / 3.62 | #138A5A → #117E52, #D93D42 → #D0292E, #B86E00 → #A16000 | 4.55 / 4.55 / 4.56 |
-| light | white on `--red` (count badges) | 4.47 | the same `--red` #D0292E | 5.20 |
+| Theme | Pair (where it shows)                                                          |             Design | Applied                                                                                   |              After |
+| ----- | ------------------------------------------------------------------------------ | -----------------: | ----------------------------------------------------------------------------------------- | -----------------: |
+| dark  | `--text3` on bg / surface / surface2 (placeholders, meta, inactive phone tabs) | 4.40 / 4.07 / 3.77 | `--text3` #77778E → #858599                                                               | 5.32 / 4.92 / 4.56 |
+| dark  | `--accent` on `--accent-soft` (active rail item, language pill)                |               4.19 | `--accent` #7D78F5 → #847FF6                                                              |               4.53 |
+| dark  | white on `--accent` (primary buttons)                                          |               3.57 | a filled-control token `--accent-fill` #6862F3 (hover #5E58EA, pressed #544EDC)           |               4.54 |
+| dark  | white on `--red` (count badges)                                                |               2.77 | badge numbers in a dark `--badge-ink` #0E0E16 (moving the red alone would change its hue) |               6.94 |
+| light | `--text3` on bg / surface / surface2                                           | 2.95 / 3.21 / 2.93 | `--text3` #8E8EA2 → #6E6E86                                                               | 4.56 / 4.96 / 4.52 |
+| light | `--green` / `--red` / `--amber` on their `-soft` (result tags)                 | 3.90 / 3.91 / 3.62 | #138A5A → #117E52, #D93D42 → #D0292E, #B86E00 → #A16000                                   | 4.55 / 4.55 / 4.56 |
+| light | white on `--red` (count badges)                                                |               4.47 | the same `--red` #D0292E                                                                  |               5.20 |
 
 Contract gaps for the agent surfaces: `docs/project/AGENT_CONTRACT_V2_PROPOSAL.md`
 (awaiting approval). One backend gap it names: **N-9** - a speaking attempt's
@@ -122,10 +122,11 @@ Content, and the learner's device-memory imports (`product/memory.js`). Three
 sources the design's own placeholder names ("media, collections, saved items,
 imported files and every transcript line") have no backend at all, so the
 placeholder was shortened rather than promising a source that is not searched:
+
 - No route searches inside a shared-library book chapter's or a published
   article's own text (transcript lines / article sentences) - same absence
   N-10 already names for Content Detail's Related rail.
-- No route searches the admin-curated vocabulary *collections* themselves
+- No route searches the admin-curated vocabulary _collections_ themselves
   (`vocabulary_collections` - distinct from the per-word catalogue search
   above, which already is composed in).
 - Recent searches are device-only (`localStorage`, bounded to 8, this session's
@@ -138,6 +139,7 @@ placeholder was shortened rather than promising a source that is not searched:
 **N-19** - Collection Detail (`static/orena/screens/collection/screen.js`,
 `model.js`, frame 21, D2 §6). Three fields the frame draws have no backend
 source at all:
+
 - The cover image. `VocabularyCollection` (`writing_coach/persistence/models.py`)
   carries no image/asset column, so `heroMedia()` is called with `image: ''`
   (rule 40) and the cover renders as the plain scrim gradient with no photo.
@@ -148,16 +150,16 @@ source at all:
   how many of a collection's words the learner has met in their own reading or
   listening content (the closest real thing, `progress.learned_count`, is a
   saved/review relationship, not a source-encounter count). Always `0`.
-Fourth: `colSave` (save/bookmark a whole collection). No endpoint or
-device-memory concept saves a curated collection as a unit (concept A) -
-`POST /api/library/vocabulary` and `DELETE /api/library/vocabulary/{word}`
-only ever address one word. Built conservatively: the button is drawn (the
-frame draws it) but its handler shows an honest "not available yet" toast
-instead of inventing a client-only bookmark that would silently not persist.
-A real implementation needs either a `vocabulary_collections`-level saved-set
-table or a new relationship on the existing per-word save, plus a cover-image
-and description field on the collection record and a word-to-source-encounter
-index (the same shape RD-8/VC-10 above already need for a single word).
+  Fourth: `colSave` (save/bookmark a whole collection). No endpoint or
+  device-memory concept saves a curated collection as a unit (concept A) -
+  `POST /api/library/vocabulary` and `DELETE /api/library/vocabulary/{word}`
+  only ever address one word. Built conservatively: the button is drawn (the
+  frame draws it) but its handler shows an honest "not available yet" toast
+  instead of inventing a client-only bookmark that would silently not persist.
+  A real implementation needs either a `vocabulary_collections`-level saved-set
+  table or a new relationship on the existing per-word save, plus a cover-image
+  and description field on the collection record and a word-to-source-encounter
+  index (the same shape RD-8/VC-10 above already need for a single word).
 
 (The `copy/index.js` `fill()`-drops-zero bug this surface hit while building is
 consolidated with its four sibling screens' own hits of the same bug, and a
@@ -196,6 +198,7 @@ unlike the fields above.
 **N-21** - Today (`static/orena/screens/today/screen.js`, `model.js`, frame
 10-Today.html, D1 §5). Three cards the frame draws have no cross-activity
 backend at all:
+
 - The daily-goal ring and its 3 skill mini-rings (`pgGoal.pct/dash`,
   `tdSkills[3].dash`). No endpoint measures "percent of today's goal" or a
   per-skill daily percent for any of Reading/Listening/Speaking together - the
@@ -215,9 +218,9 @@ backend at all:
   rather than the learner's real level (`B2` in the frame's own sample is a
   target-language proficiency label, a different concept, already shown
   correctly in the shell's own language pill).
-A real daily goal, per-skill percent, cross-activity streak and level/XP
-system are each a product-and-schema decision (Architecture holds §7), not
-something this surface can measure.
+  A real daily goal, per-skill percent, cross-activity streak and level/XP
+  system are each a product-and-schema decision (Architecture holds §7), not
+  something this surface can measure.
 
 (This screen's own hit of the `copy/index.js` `fill()`-drops-zero bug - the
 streak count, skill percents and XP value - is consolidated into **N-34**.)
@@ -271,13 +274,14 @@ duration estimate anywhere in the schema (the frame's own `~3 min`/`~8 min`/
 field) - every mode row/tile omits it rather than fabricating one. No
 "locked"/"not yet available" signal exists for a mode that is real but
 conditionally gated (the frame's `pi.op`/`SOON` dimming, Skill Hub's `md.op`)
+
 - since nothing here is drawn at all unless it is fully real and addressable
-today, that state is never needed, not missing. Vocabulary's Due Review count
-and Speaking's/Listening's/Reading's per-mode level are the only real
-per-mode metadata fields that exist; Writing's recommendation
-(`GET /api/practice-recommendation`) is the only real per-skill recommender -
-Speak/Listen/Vocabulary/Grammar/Reading Skill Hubs correctly show no
-recommendation card rather than one with no real reason behind it.
+  today, that state is never needed, not missing. Vocabulary's Due Review count
+  and Speaking's/Listening's/Reading's per-mode level are the only real
+  per-mode metadata fields that exist; Writing's recommendation
+  (`GET /api/practice-recommendation`) is the only real per-skill recommender -
+  Speak/Listen/Vocabulary/Grammar/Reading Skill Hubs correctly show no
+  recommendation card rather than one with no real reason behind it.
 
 (This screen's own hit of `copy/index.js`'s second bug - `plural()` reading
 English's own `_one` form, backfilled into the merged object, for a Vietnamese
@@ -302,10 +306,10 @@ first pass shipped, not just a documentation gap; see below):
    four are real focus routes in `shell/routes.js` with no screen registered
    yet, so today each correctly lands on the router's own Coming-soon fallback
    - the same place the Due tab's own "Start review" button already sends a
-   learner. No duration estimate exists for any of them, the same absence
-   N-22 already documents for Practice/Skill Hub's own mode tiles (this tab is
-   effectively Vocabulary's own mode list, reached from a second place); `dur`
-   is simply not carried rather than showing N-22's same invented "~3 min".
+     learner. No duration estimate exists for any of them, the same absence
+     N-22 already documents for Practice/Skill Hub's own mode tiles (this tab is
+     effectively Vocabulary's own mode list, reached from a second place); `dur`
+     is simply not carried rather than showing N-22's same invented "~3 min".
 2. **A saved word/phrase's tap-to-jump-to-source (`ll.onSource` in the frame,
    "jump to the source context where a word/phrase was met") has no general
    target.** `SavedWord` (`writing_coach/persistence/models.py`) carries
@@ -324,7 +328,7 @@ first pass shipped, not just a documentation gap; see below):
    it lists** (`static/orena/screens/` has no such folder; `shell/routes.js`
    defines only the one `collection/:id` route, and that is reserved for a
    third, unrelated concept - a curated vocabulary pack, `GET
-   /api/vocabulary/library/collections/{id}`, reached from Discover, not from
+/api/vocabulary/library/collections/{id}`, reached from Discover, not from
    a learner's own library). The room's first pass sent every Collections-tab
    card (both a My Library collection, `GET /api/library/collections`, and a
    Vocabulary deck, `GET /api/vocabulary/decks`) into that same wrong route,
@@ -442,7 +446,7 @@ each already rule-40 zeroed/honestly-empty in the built screen, none fabricated:
    in the schema. Always `0`; the design's own `weekDelta` line ("+N min vs
    last week") is dropped rather than comparing two unmeasured numbers.
 3. **Weekly-goal done-count** (the identity card's 5-segment bar, "0 / 5").
-   The segment *count* itself (5) is the design's own fixed constant
+   The segment _count_ itself (5) is the design's own fixed constant
    (`WEEKLY_GOAL_TARGET`, a rendering parameter, not a claimed measurement,
    the same way Today's 3 skill rings are a fixed set) - no configurable
    weekly-goal-in-days feature exists to measure a real done-count against it.
@@ -473,7 +477,7 @@ cross-activity streak table, a configurable weekly-goal setting, and an
 achievements/milestone catalogue, before the frontend has anything real to
 bind to.
 
-**N-33** - *(R5 content; R5 is being retired - see CURRENT_HANDOFF.md.)* Grammar Library and Grammar Concept, found on independent review of
+**N-33** - _(R5 content; R5 is being retired - see CURRENT_HANDOFF.md.)_ Grammar Library and Grammar Concept, found on independent review of
 N-20 (`static/orena/screens/grammar/`, `static/orena/screens/grammar-concept/`,
 frames 44/47). For the **Chinese-target (HSK) catalogue**,
 `GET /api/library/grammar` and `GET /api/library/grammar/{id}` return `title`
@@ -489,6 +493,7 @@ via a documented `"default"`-key locale map; the frontend now honestly omits
 `examples[]`'s translation line for a non-vi-support learner because that
 field has no map to fall back through). `title` has no locale mechanism to
 select from, English or Chinese, so it is not fixable in the frontend at all
+
 - there is no field to `pickLocale` between.
 
 By contrast, every **English**-target lesson's `title` is genuine English at
@@ -516,7 +521,7 @@ Practice Hub N-22, My Library N-23): (1) `fill()` dropped a `{n}`/`{min}`-style
 placeholder whenever the interpolated value was exactly `0`, leaving the
 literal token in the rendered string - hit by every rule-40 zero that a
 screen tried to interpolate; (2) `plural(key, n)` chose the singular form by
-checking the *merged*, English-backfilled copy object, so a Vietnamese or
+checking the _merged_, English-backfilled copy object, so a Vietnamese or
 Chinese interface read the English `_one` string at `n === 1` instead of its
 own `_other` form. Both are now fixed centrally in `copy/index.js`: `fill()`
 fills a real `0`, and `plural()` picks the form with `Intl.PluralRules` of the
@@ -545,7 +550,7 @@ stays a backend gap:
    (`writing_coach/languages/grammar_registry.py` `GrammarProvider.level_names`) is the backend's
    own English label for a closed, nine-label space shared by both providers (English A1-C2,
    Chinese/HSK1-7-9). Backend code is out of scope for this pass, so the mapping lives in the
-   frontend instead, keyed by the level *code* (the one thing both providers already return
+   frontend instead, keyed by the level _code_ (the one thing both providers already return
    verbatim) rather than the backend's own English text: `screens/grammar/copy.js`'s `level*` keys,
    `model.js#levelName`/`LEVEL_NAME_KEY`. A level code neither provider currently uses falls back to
    the raw code rather than guessing a label.
@@ -587,6 +592,7 @@ script-check fallback in this build.
 captured from the running app (`scripts/fixtures/api/`). Field reads the API never satisfied were
 fixed in the UI (Search, My Library, Progress, Grammar Concept); three things only the backend can
 change remain:
+
 1. **RESOLVED (2026-09-28).** Progress's Evidence row for an essay could not show the excerpt the
    frame draws: `GET /api/essays` (the list route) dropped `text` (`app.py` `row_to_dict`,
    non-detail branch) with nothing put in its place, so the row showed its title only.
@@ -603,7 +609,7 @@ change remain:
    (`tests/test_essay_list_excerpt.py`) and live on the isolated stack (`GET /api/essays` after
    `POST /api/evaluate` via the sandbox's Ollama fallback).
 2. No curated vocabulary collection is published in this build, so `GET
-   /api/vocabulary/library/collections` and `GET /api/vocabulary/catalogue/search` answer empty for
+/api/vocabulary/library/collections` and `GET /api/vocabulary/catalogue/search` answer empty for
    every language (the packs exist in `writing_coach/vocabulary_library.py`; the routes serve
    published packs only). Collection Detail and Search's word results stay empty until packs are
    published - a content decision, not a UI defect.
@@ -618,6 +624,7 @@ change remain:
 55, full-screen voice frame 56; D1 §6, E5 §6-7). Built against AGENT_CONTRACT v5 and the contract
 mock (`agent/mock.js`, D-086 - the intelligence lane is not integrated yet). Gaps the frames or the
 contract leave open, each already filled the conservative way (rule 40) rather than guessed:
+
 1. Frame 11's header subtitle reads "Knows your `{{ tlLabel }}` · last active: Listening, 2 h ago" -
    only `tlLabel` is a binding; "last active: …" is literal sample text in the export (D1 §6 own copy
    audit already flags this). No device or server record of "which capability the learner last used,
@@ -725,9 +732,9 @@ fallback in place; these ask which fallback should become the real feature.
    for Reading vs. a media file), so wiring it was not assumed. Wire File to
    it now, ahead of the design's own phasing, or wait for a design revision
    that specifies File's real shape?
-3. **Grammar Concept** (N-33) - *Overtaken (2026-09-28): the human is retiring R5;
+3. **Grammar Concept** (N-33) - _Overtaken (2026-09-28): the human is retiring R5;
    Grammar Lab becomes the only grammar source, rendered from a grammar content
-   contract not yet written. This question will not be answered for R5.* The
+   contract not yet written. This question will not be answered for R5._ The
    Chinese-target (HSK) curriculum's
    explanatory prose and, worse, its lesson titles exist only in Vietnamese,
    with no English/Chinese field or locale-map to select from. A learner
@@ -776,14 +783,14 @@ liệu. Các mục ở trên là ghi chép chi tiết theo từng màn; phần n
 
 ## A. Nút đã vẽ nhưng chưa có hành vi
 
-| # | Ở đâu | Tình trạng | Cần anh quyết |
-| --- | --- | --- | --- |
-| A1 | Reader · "Lưu bài" và "Đọc tiếp sau" | Frame cho hai nút **cùng icon bookmark** và không nói hành vi. Đang làm: "Lưu bài" bật/tắt đánh dấu; "Đọc tiếp sau" đánh dấu rồi rời bài. | Hai hành động hay một? Nếu một thì thanh còn 5 nút. |
-| A2 | Reader · "Nghe" | Disabled, có title "sắp có". Văn bản chưa có audio đọc. Frame vẽ nút này bật. | Đọc bằng TTS, hay bỏ nút khỏi thanh cho tới khi có audio? |
-| A3 | Reader · "Kiểm tra hiểu" | Disabled khi bài không kèm câu hỏi (sách nhập không có). | Sinh câu hỏi bằng AI, hay ẩn nút khi không có? |
-| A4 | Listening · "Kiểm tra hiểu" | Cùng câu hỏi, đã treo từ trước. | Như trên. |
-| A5 | Book detail · 3 nút icon (bookmark, tải về, ⋯) | Disabled, "sắp có". Frame **không vẽ** chúng. | Xoá theo frame, hay giữ và làm chức năng? |
-| A6 | Profile · "Chia sẻ", "Chỉnh sửa", huy hiệu kim cương trên avatar | Frame vẽ cả ba; app chưa có hành vi nào cho chúng nên chưa dựng. | Chia sẻ cái gì và sửa được những gì? Huy hiệu kim cương là bậc, hay là thứ khác? |
+| #   | Ở đâu                                                            | Tình trạng                                                                                                                                | Cần anh quyết                                                                    |
+| --- | ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| A1  | Reader · "Lưu bài" và "Đọc tiếp sau"                             | Frame cho hai nút **cùng icon bookmark** và không nói hành vi. Đang làm: "Lưu bài" bật/tắt đánh dấu; "Đọc tiếp sau" đánh dấu rồi rời bài. | Hai hành động hay một? Nếu một thì thanh còn 5 nút.                              |
+| A2  | Reader · "Nghe"                                                  | Disabled, có title "sắp có". Văn bản chưa có audio đọc. Frame vẽ nút này bật.                                                             | Đọc bằng TTS, hay bỏ nút khỏi thanh cho tới khi có audio?                        |
+| A3  | Reader · "Kiểm tra hiểu"                                         | Disabled khi bài không kèm câu hỏi (sách nhập không có).                                                                                  | Sinh câu hỏi bằng AI, hay ẩn nút khi không có?                                   |
+| A4  | Listening · "Kiểm tra hiểu"                                      | Cùng câu hỏi, đã treo từ trước.                                                                                                           | Như trên.                                                                        |
+| A5  | Book detail · 3 nút icon (bookmark, tải về, ⋯)                   | Disabled, "sắp có". Frame **không vẽ** chúng.                                                                                             | Xoá theo frame, hay giữ và làm chức năng?                                        |
+| A6  | Profile · "Chia sẻ", "Chỉnh sửa", huy hiệu kim cương trên avatar | Frame vẽ cả ba; app chưa có hành vi nào cho chúng nên chưa dựng.                                                                          | Chia sẻ cái gì và sửa được những gì? Huy hiệu kim cương là bậc, hay là thứ khác? |
 
 ## A2. Hồ sơ (Profile) — đã dựng 2026-09-22
 
@@ -808,54 +815,53 @@ khi có `tier`. Hai file vẽ hai thứ khác nhau cho cùng một chỗ.
 
 ## B. Thành phần frame vẽ mà app chưa dựng
 
-
-| # | Ở đâu | Tình trạng |
-| --- | --- | --- |
-| B1 | **Progress** | **Dựng lại theo frame MỚI** (2026-09-22, sau khi re-pin - frame cũ trong cache đã lệch 22 KB). Frame mới **bỏ hẳn** hàng "Bằng chứng gần nhất", thay bằng **thang cấp bậc 20 bậc** (lưới 4 cột, ô 227x56 r14, ba trạng thái: mở / hiện tại / khoá) + **thẻ CẤP BẬC** (102 cao, pad 16/18, r18). Cột phụ 600 giữ heatmap, hàng kỹ năng **có thanh**, và "Việc nên làm tiếp" là **thẻ có mũi tên** (78 cao, r17, kính tiêu điểm). Ngưỡng 20 bậc lấy từ chính frame: 50 · 150 · 300 · 500 · 700 · 950 · 1200 · 1450 · 1600 · **?** · 3000 · 4500 · 6000 · 8000 · 10000 · 13000 · 16000 · 20000 · 25000 · 30000 từ. **Bậc 10 (Virtuoso) frame không ghi số** - nó vẽ "BẬC HIỆN TẠI" đè lên - nên app hiển thị "—" và không đoán. Còn thiếu so với frame: **hàng 4 panel thứ hai** (Vừa học xong · Từ đang ôn · Kiểm tra hiểu · Nhớ lại) vì cần số liệu ôn tập/hiểu mà backend chưa có (C4). |
-| B2 | **Hệ cấp bậc (rank)** | **Component đã dựng** (`ui/rank-frame.js`, port từ "Rank Frame Master v2": 20 bậc, 5 chặng, một nguồn sáng −48°, SVG sinh từ toạ độ cực, không raster; gate `test_orena_rank_frame.mjs`). **Chưa hiện ở đâu** vì `ProgressOverview.tier {name, level, current, target}` chưa ai phục vụ - cần **ngưỡng mỗi bậc**, là quyết định sản phẩm. Ngày có `tier`, khung pha lê hiện luôn, không cần sửa code. Frame: "CẤP BẬC · Virtuoso · bậc 4 · 1 994 / 3 000 từ". Anh muốn rank là **khung avatar** pha lê SVG+CSS, nhiều họ màu. |
-| B3 | Book detail · dải từ đã lưu ở hero | Frame đặt "BẠN ĐÃ LƯU TỪ ĐÂY" + chip từ trong hero; app có dữ liệu nhưng để ở cột phải. |
-| B5 | **Progress · tab "Xu hướng"** | **ĐÃ DỰNG** (2026-09-22): tab Tổng quan / Xu hướng ở `#/progress?tab=trends`, ba khối *Đang tốt lên · Dựa trên gì · Lỗi lặp lại*. **Mọi con số là 0 / "—"** vì chưa có mô hình xu hướng, mô hình lỗi lặp lại, hay lịch sử theo từng thước đo - `ProgressTrends.json` chưa ai phục vụ. Frame gốc: `Progress trends` (`data-screen-label="Progress trends"` + bản mobile) với các hàng xu hướng và thẻ độ khó. App **chưa có tab nào** để tới đó, và chưa dựng màn. Cần dữ liệu xu hướng theo thời gian (`ProgressTrends.json`) mà backend chưa phục vụ. |
-| B6 | **Progress · hàng 4 panel thứ hai** | **ĐÃ DỰNG** (2026-09-22), 4 panel 375x147 pad 16/18 r18 gap 20. *Vừa học xong* và *Từ đang ôn* chạy bằng số thật từ kho từ của học viên; *Kiểm tra hiểu* và *Nhớ lại* render **0** vì chưa có số liệu (C4). Vị trí: **nằm giữa** hàng 3 số lớn và thang cấp bậc, chạy hết chiều ngang: *Vừa học xong* (14 từ · HSK 2 · trong 3 ngày + chip từ) · *Từ đang ôn* (42 từ · 18 chữ tới hạn hôm nay + thanh 24/42) · *Kiểm tra hiểu* (9/11 · câu đúng · 3 bài đọc + dải ô đúng/sai) · *Nhớ lại* (86% · 312 thẻ trong 7 ngày + thanh + 268 nhớ / 31 chưa chắc / 13 quên). Chưa dựng vì cần số liệu ôn tập và hiểu backend chưa có (C4). |
-| B4 | Reader · panel bên | Padding 26 / gap 20 của frame chưa khớp (app 22 / 16). Chưa chỉnh vì **nội dung** panel chưa phải của frame. |
+| #   | Ở đâu                               | Tình trạng                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| --- | ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| B1  | **Progress**                        | **Dựng lại theo frame MỚI** (2026-09-22, sau khi re-pin - frame cũ trong cache đã lệch 22 KB). Frame mới **bỏ hẳn** hàng "Bằng chứng gần nhất", thay bằng **thang cấp bậc 20 bậc** (lưới 4 cột, ô 227x56 r14, ba trạng thái: mở / hiện tại / khoá) + **thẻ CẤP BẬC** (102 cao, pad 16/18, r18). Cột phụ 600 giữ heatmap, hàng kỹ năng **có thanh**, và "Việc nên làm tiếp" là **thẻ có mũi tên** (78 cao, r17, kính tiêu điểm). Ngưỡng 20 bậc lấy từ chính frame: 50 · 150 · 300 · 500 · 700 · 950 · 1200 · 1450 · 1600 · **?** · 3000 · 4500 · 6000 · 8000 · 10000 · 13000 · 16000 · 20000 · 25000 · 30000 từ. **Bậc 10 (Virtuoso) frame không ghi số** - nó vẽ "BẬC HIỆN TẠI" đè lên - nên app hiển thị "—" và không đoán. Còn thiếu so với frame: **hàng 4 panel thứ hai** (Vừa học xong · Từ đang ôn · Kiểm tra hiểu · Nhớ lại) vì cần số liệu ôn tập/hiểu mà backend chưa có (C4). |
+| B2  | **Hệ cấp bậc (rank)**               | **Component đã dựng** (`ui/rank-frame.js`, port từ "Rank Frame Master v2": 20 bậc, 5 chặng, một nguồn sáng −48°, SVG sinh từ toạ độ cực, không raster; gate `test_orena_rank_frame.mjs`). **Chưa hiện ở đâu** vì `ProgressOverview.tier {name, level, current, target}` chưa ai phục vụ - cần **ngưỡng mỗi bậc**, là quyết định sản phẩm. Ngày có `tier`, khung pha lê hiện luôn, không cần sửa code. Frame: "CẤP BẬC · Virtuoso · bậc 4 · 1 994 / 3 000 từ". Anh muốn rank là **khung avatar** pha lê SVG+CSS, nhiều họ màu.                                                                                                                                                                                                                                                                                                                                                           |
+| B3  | Book detail · dải từ đã lưu ở hero  | Frame đặt "BẠN ĐÃ LƯU TỪ ĐÂY" + chip từ trong hero; app có dữ liệu nhưng để ở cột phải.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| B5  | **Progress · tab "Xu hướng"**       | **ĐÃ DỰNG** (2026-09-22): tab Tổng quan / Xu hướng ở `#/progress?tab=trends`, ba khối _Đang tốt lên · Dựa trên gì · Lỗi lặp lại_. **Mọi con số là 0 / "—"** vì chưa có mô hình xu hướng, mô hình lỗi lặp lại, hay lịch sử theo từng thước đo - `ProgressTrends.json` chưa ai phục vụ. Frame gốc: `Progress trends` (`data-screen-label="Progress trends"` + bản mobile) với các hàng xu hướng và thẻ độ khó. App **chưa có tab nào** để tới đó, và chưa dựng màn. Cần dữ liệu xu hướng theo thời gian (`ProgressTrends.json`) mà backend chưa phục vụ.                                                                                                                                                                                                                                                                                                                                  |
+| B6  | **Progress · hàng 4 panel thứ hai** | **ĐÃ DỰNG** (2026-09-22), 4 panel 375x147 pad 16/18 r18 gap 20. _Vừa học xong_ và _Từ đang ôn_ chạy bằng số thật từ kho từ của học viên; _Kiểm tra hiểu_ và _Nhớ lại_ render **0** vì chưa có số liệu (C4). Vị trí: **nằm giữa** hàng 3 số lớn và thang cấp bậc, chạy hết chiều ngang: _Vừa học xong_ (14 từ · HSK 2 · trong 3 ngày + chip từ) · _Từ đang ôn_ (42 từ · 18 chữ tới hạn hôm nay + thanh 24/42) · _Kiểm tra hiểu_ (9/11 · câu đúng · 3 bài đọc + dải ô đúng/sai) · _Nhớ lại_ (86% · 312 thẻ trong 7 ngày + thanh + 268 nhớ / 31 chưa chắc / 13 quên). Chưa dựng vì cần số liệu ôn tập và hiểu backend chưa có (C4).                                                                                                                                                                                                                                                        |
+| B4  | Reader · panel bên                  | Padding 26 / gap 20 của frame chưa khớp (app 22 / 16). Chưa chỉnh vì **nội dung** panel chưa phải của frame.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 
 ## C. Thiếu dữ liệu backend — UI không được bịa
 
-| # | Thiếu gì | Hệ quả thấy được |
-| --- | --- | --- |
-| C1 | CEFR level + ước lượng **số phút đọc** cho từng mục catalogue | Thẻ thư viện thường trống dòng meta; frame luôn in `B1 · tiểu thuyết · 22 phút`. |
-| C2 | Thời gian đọc theo chương | Hàng chương in **số từ**, frame in **số phút**. |
-| C3 | Cấp độ theo từng kỹ năng (`profile.skill_levels`) | Rail không in được level cho Đọc/Nghe/Nói/Viết. |
-| C4 | Chuỗi ngày, thời gian học 90 ngày, hoạt động 18 tuần, ngưỡng rank | Các ô Progress sẽ phải in "—" nếu dựng theo frame ngay bây giờ. |
-| C5 | Câu hỏi hiểu cho sách nhập | A3 ở trên. |
-| C6 | **Ngưỡng bậc 10 (Virtuoso)** | Frame vẽ "BẬC HIỆN TẠI" đè lên số của chính nó, nên 19/20 ngưỡng có số, riêng bậc 10 không. Learner ở giữa 1 600 và 3 000 từ sẽ bị tính là bậc 9. Cần anh cho **một con số**. |
+| #   | Thiếu gì                                                          | Hệ quả thấy được                                                                                                                                                              |
+| --- | ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| C1  | CEFR level + ước lượng **số phút đọc** cho từng mục catalogue     | Thẻ thư viện thường trống dòng meta; frame luôn in `B1 · tiểu thuyết · 22 phút`.                                                                                              |
+| C2  | Thời gian đọc theo chương                                         | Hàng chương in **số từ**, frame in **số phút**.                                                                                                                               |
+| C3  | Cấp độ theo từng kỹ năng (`profile.skill_levels`)                 | Rail không in được level cho Đọc/Nghe/Nói/Viết.                                                                                                                               |
+| C4  | Chuỗi ngày, thời gian học 90 ngày, hoạt động 18 tuần, ngưỡng rank | Các ô Progress sẽ phải in "—" nếu dựng theo frame ngay bây giờ.                                                                                                               |
+| C5  | Câu hỏi hiểu cho sách nhập                                        | A3 ở trên.                                                                                                                                                                    |
+| C6  | **Ngưỡng bậc 10 (Virtuoso)**                                      | Frame vẽ "BẬC HIỆN TẠI" đè lên số của chính nó, nên 19/20 ngưỡng có số, riêng bậc 10 không. Learner ở giữa 1 600 và 3 000 từ sẽ bị tính là bậc 9. Cần anh cho **một con số**. |
 
 ## C. Dữ liệu backend cần cho UI đã dựng sẵn (2026-09-22)
 
-Human: *"Backend chưa có thì note lại làm sau. UI phải có hoàn chỉnh đã."* Các màn dưới đây **đã dựng đủ
+Human: _"Backend chưa có thì note lại làm sau. UI phải có hoàn chỉnh đã."_ Các màn dưới đây **đã dựng đủ
 component**, đang render 0 / "—" đúng rule 4, và sẽ tự có số khi backend phục vụ:
 
-| Ô đang trống | Cần gì |
-| --- | --- |
-| Progress · Kiểm tra hiểu | số câu đúng / tổng, theo 7 ngày |
-| Progress · Nhớ lại | số thẻ đã chấm 7 ngày + tách nhớ / chưa chắc / quên |
-| Progress · Chuỗi ngày, Thời gian học | đếm ngày liên tiếp, thời gian học 90 ngày |
-| Progress · heatmap 18 tuần | hoạt động theo từng ngày |
+| Ô đang trống                             | Cần gì                                               |
+| ---------------------------------------- | ---------------------------------------------------- |
+| Progress · Kiểm tra hiểu                 | số câu đúng / tổng, theo 7 ngày                      |
+| Progress · Nhớ lại                       | số thẻ đã chấm 7 ngày + tách nhớ / chưa chắc / quên  |
+| Progress · Chuỗi ngày, Thời gian học     | đếm ngày liên tiếp, thời gian học 90 ngày            |
+| Progress · heatmap 18 tuần               | hoạt động theo từng ngày                             |
 | Progress · thời gian 7 ngày theo kỹ năng | thời gian theo kỹ năng (chép chính tả tính vào Nghe) |
-| Xu hướng · Đang tốt lên | 4 thước đo so với 4 tuần trước |
-| Xu hướng · Dựa trên gì | đếm thẻ / bản viết / câu hỏi / phiên nói / bài đọc |
-| Xu hướng · Lỗi lặp lại | mô hình lỗi lặp: tên lỗi, số lần, ví dụ, nguồn |
-| Hồ sơ · XP và chuỗi ngày | điểm kinh nghiệm và chuỗi ngày |
-| Hồ sơ · khung rank trên avatar | `ProgressOverview.tier` + ngưỡng bậc 10 (C6) |
+| Xu hướng · Đang tốt lên                  | 4 thước đo so với 4 tuần trước                       |
+| Xu hướng · Dựa trên gì                   | đếm thẻ / bản viết / câu hỏi / phiên nói / bài đọc   |
+| Xu hướng · Lỗi lặp lại                   | mô hình lỗi lặp: tên lỗi, số lần, ví dụ, nguồn       |
+| Hồ sơ · XP và chuỗi ngày                 | điểm kinh nghiệm và chuỗi ngày                       |
+| Hồ sơ · khung rank trên avatar           | `ProgressOverview.tier` + ngưỡng bậc 10 (C6)         |
 
 ## D. Quyết định quy tắc, không phải quyết định code
 
-| # | Việc | Hai lựa chọn |
-| --- | --- | --- |
-| D1 | Chip lọc thư viện | Frame liệt kê **11** loại; app chỉ hiện chip cho loại **thực sự có nội dung** (nay là 4). Hiện đủ 11 thì có chip bấm vào không ra gì. |
-| D2 | Ghi công nguồn & bản quyền | Frame **không vẽ ở đâu cả**. Nút đã bỏ theo yêu cầu; khối ghi công hiện nằm dưới bài đọc vì văn bản đã xuất bản buộc phải có. Đặt ở đâu là của anh. |
-| D3 | Màu chữ | Frame dùng `rgba(255,255,255,0.72 / 0.55)`; app đọc token `--text-secondary` / `--text-muted`. Component chỉ được đọc token, nên nếu phải khớp tuyệt đối thì sửa ở `theme.css`, không sửa trong component. |
-| D4 | DM Mono → Roboto Mono cho tiếng Việt | Đã treo từ trước; mọi nhãn mono tiếng Việt đang rơi về Roboto Mono. |
-| D5 | Ink / Paper | Anh nhắc trong yêu cầu, nhưng D-066 đã khai tử và code đã gỡ theme picker. Đang làm **một** hệ Dark Glass. Muốn hai theme trở lại thì là quyết định sản phẩm mới. |
+| #   | Việc                                 | Hai lựa chọn                                                                                                                                                                                               |
+| --- | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| D1  | Chip lọc thư viện                    | Frame liệt kê **11** loại; app chỉ hiện chip cho loại **thực sự có nội dung** (nay là 4). Hiện đủ 11 thì có chip bấm vào không ra gì.                                                                      |
+| D2  | Ghi công nguồn & bản quyền           | Frame **không vẽ ở đâu cả**. Nút đã bỏ theo yêu cầu; khối ghi công hiện nằm dưới bài đọc vì văn bản đã xuất bản buộc phải có. Đặt ở đâu là của anh.                                                        |
+| D3  | Màu chữ                              | Frame dùng `rgba(255,255,255,0.72 / 0.55)`; app đọc token `--text-secondary` / `--text-muted`. Component chỉ được đọc token, nên nếu phải khớp tuyệt đối thì sửa ở `theme.css`, không sửa trong component. |
+| D4  | DM Mono → Roboto Mono cho tiếng Việt | Đã treo từ trước; mọi nhãn mono tiếng Việt đang rơi về Roboto Mono.                                                                                                                                        |
+| D5  | Ink / Paper                          | Anh nhắc trong yêu cầu, nhưng D-066 đã khai tử và code đã gỡ theme picker. Đang làm **một** hệ Dark Glass. Muốn hai theme trở lại thì là quyết định sản phẩm mới.                                          |
 
 ## S. Speaking — nhánh `feature/speaking` (2026-09-23)
 
@@ -866,76 +872,75 @@ trong phiên, tuỳ chọn giữ 5 bản/câu trên máy; free talk chỉ chấm
 thật và nghe nhại; hoãn cài đặt Speaking và SRS). Những chỗ dưới đây frame vẽ nhưng chưa có dữ liệu
 hoặc quyết định, nên **không bịa**; mục đã được anh trả lời ghi rõ.
 
-| # | Ở đâu | Đang làm gì | Cần anh quyết |
-| --- | --- | --- | --- |
-| S1 | Thư viện · chip loại luyện | Chỉ hiện chip cho loại có nội dung thật: "Nhại theo clip" (bài Listening có shadowing) và "Nói tự do". Catalogue Speaking riêng (`writing_coach/content/speaking_catalog.v1.json`) **rỗng** - không seed nội dung giả (quyết định 10). | Nội dung cho Đọc theo câu / Luyện âm / Kể lại / Phỏng vấn mô phỏng (việc nội dung). |
-| S2 | Sóng âm của mẫu | **Đã làm:** sóng và cao độ của câu mẫu đo từ audio thật, lấy cùng origin qua `/api/speaking/model-audio/...` (host catalogue không có CORS). Lúc chưa ghi, cột phẳng. | - |
-| S3 | Câu nhận xét kiểu "Thanh 3 bị đọc thành thanh 2" | Không viết: Azure không chấm thanh; đường cao độ đo thật được vẽ, **không kèm lời phán** (D-076). Đo khoảng hở tiếng Trung: lệch thanh làm điểm âm tiết giảm 6/7 lần thử nhưng Azure chỉ cờ 2/7; 3↔2 không bị cờ (`docs/operations/SPEAKING_AZURE_E2E_2026-09-23.md`). **Known gap (D-077):** Azure chưa đủ tin cậy để chấm thanh; chưa thêm SpeechSuper. | Provider chấm thanh trả phí - cổng của anh, chưa làm. |
-| S4 | Chi tiết một chữ · "BẠN ĐỌC" | **Đã làm:** đường cao độ của lượt thu, đo từ audio (YIN), cắt theo mốc thời gian của từ. Ô "MẪU" vẫn vẽ hình thanh từ pinyin của bài (hình chuẩn), còn so sánh với mẫu đo thật ở màn "So với mẫu". | - |
-| S5 | Giá trị LƯU LOÁT màu hổ phách | Để trắng: không có ngưỡng lưu loát (quyết định 6: không đặt ngưỡng). | - |
-| S6 | Từ "Đạt" nhưng một âm rất thấp | Hàng ghi "Đạt" theo cờ provider; âm yếu hiện trong chi tiết, không đè verdict (quyết định 7). | - |
-| S7 | "Luyện riêng chữ này" | **Đã làm** (quyết định 8): có nút gợi ý quay về cả câu (`data-sp-back-line`). | - |
-| S8 | "Câu trước" | Không thêm (quyết định 9). | - |
-| S9 | "Chạm vào một chữ để nghe riêng" | Giọng đọc của thiết bị (speechSynthesis) như lớp tra từ; clip mẫu không có mốc theo từ. | Chấp nhận TTS thiết bị? |
-| S10 | Free talk · "CỤM CÓ THỂ DÙNG", dịch câu bạn vừa nói, cấp độ, nhãn loại lỗi ("NGỮ PHÁP · V2") | Không có dữ liệu → không vẽ. Thẻ sửa lấy từ coaching (`landed_differently`), nhãn là nhận định của coaching. | Nội dung cụm từ; có dịch câu học viên nói không. |
-| S11 | Thư viện · "Chủ đề của bạn" | Giữ ở nút hành động của thanh thư viện. Frame Speaking không vẽ nút này. | Giữ ở đó, hay chuyển vào "⋯"? |
-| S12 | "Ghi âm của tôi · ĐÃ LƯU", "Lưu vào Thư viện" (04, 05) | Không dựng (D-076: không lưu server/thư viện). Tóm tắt bài ghi "Đã lưu kết quả vào lịch sử luyện" (điểm, không audio). | Sau review schema + privacy. |
-| S13 | Chuỗi ngày trên thanh workspace | Hiện **0** (chưa đo), như Dictation. | Như C4. |
-| S14 | Free talk result (04) · "Xem kỹ hơn · Phát triển thành bài viết · Bắt đầu trò chuyện" | **Quyết (D-077):** giữ cả ba, một bước vào trong: nút "⋯" trên thanh của màn kết quả mở sheet "luyện sâu" dùng chung với Listening. | - |
-| S15 | Free talk · "NÓI LẠI CÂU NÀY" | **Quyết (D-077):** trường `say_again` của hợp đồng `spoken-response` được duyệt: bắt buộc trong schema, chỉ trả về khi là chữ viết của ngôn ngữ đang học, không thì rỗng. Frame tô tím chữ đã sửa; app chưa tô (cần so khớp câu nói với câu sửa) - gap còn mở. | Có cần tô chữ đã sửa không. |
-| S16 | Nghe nhại · câu tô dần theo mẫu ("请给我们" tím, phần sau mờ) | Chưa làm: câu mẫu không có mốc thời gian theo từ. | Có cần không (cần mốc theo từ của clip). |
-| S17 | Nghe nhại · "không tai nghe" | Ghi chú cố định của frame "Đeo tai nghe…" luôn hiện. Frame ghi "nếu phát hiện loa ngoài thì gợi ý, ghi chú dưới điểm" - trình duyệt không phân biệt loa/tai nghe đáng tin cậy, nên không phát hiện và không ghi chú dưới điểm. | Chấp nhận? |
-| S18 | Nghe nhại · 3-2-1 | Frame ghi "đếm 3-2-1" nhưng không vẽ chỗ đặt; app viết số vào dòng gợi ý dưới nút. Trong lúc ghi, tốc độ và thu lại **bắt đầu lại lượt** (tốc độ mới / cùng tốc độ). | - |
-| S19 | Micro bị chặn (09 A) · "Mở Cài đặt" | Trang web không mở được cài đặt hệ thống; nút là "Thử lại" (xin quyền lại), chữ hướng dẫn chỉ biểu tượng ổ khoá. | - |
-| S20 | Tóm tắt bài (05) · "Luyện lại 2 câu dưới 80" | Theo D-076: "Luyện lại N câu có chữ bị đánh dấu". Chip "CHỮ HAY SAI" ghi pinyin + số lần, **không** ghi "thanh 3" (không đo thanh). Không đưa vào SRS (hoãn). | - |
-| S21 | So với mẫu (06) · dòng "想: mẫu xuống rồi lên, bạn đi ngang" và "Giữ 5 lần gần nhất… lưu vào Thư viện" | Không có lời phán (D-076); dòng giữ bản thu thay bằng ô chọn "Giữ bản thu gần đây trên máy này" (D-076). "Nghe xen kẽ" phát mẫu rồi lượt thu, theo câu. | - |
-| S22 | Cài đặt Speaking, trạng thái rỗng (09 D) | Cài đặt hoãn (D-076). Trạng thái rỗng không tới được: thư viện luôn có bài Listening có shadowing. | - |
-| S23 | Nhận dạng tiếng Trung trong free talk | ASR (Groq Whisper) đôi khi trả chữ phồn thể ("英國人"); hiện đúng như nhận được. | Có ép giản thể không? |
-| S24 | Grammar · trang của nó (`#/practice?intent=grammar`) | Lối vào duy nhất trước đây là trang Practice cũ, nay đã bỏ (D-078: `#/practice` về Home). Vẫn mở được từ một mục Continue và từ trong Grammar; thiết kế không vẽ chỗ nào cho Grammar. | Grammar vào từ đâu (Home, Library, một kỹ năng)? |
-| S25 | Speaking · bố cục theo D-078 (khác frame có chủ ý) | Hàng hành động của kết quả thành một hàng: "Nghe bản của bạn", "So với bản mẫu" (chỉ còn icon khi panel hẹp, vẫn có tên cho trình đọc màn hình), "Câu tiếp" là hành động chính; nút "Thu lại" thứ hai trong panel bỏ (thu lại là micro và nút quay lại bên cạnh). Hai panel khép cùng một đáy (dải điều khiển = dải hành động). Dòng từ gọn hơn (≈56px). Clip mẫu co theo chiều cao còn lại (16:9) và nhường chỗ trước. | - (quyết định của anh ở D-078) |
+| #   | Ở đâu                                                                                                  | Đang làm gì                                                                                                                                                                                                                                                                                                                                                                                                             | Cần anh quyết                                                                       |
+| --- | ------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| S1  | Thư viện · chip loại luyện                                                                             | Chỉ hiện chip cho loại có nội dung thật: "Nhại theo clip" (bài Listening có shadowing) và "Nói tự do". Catalogue Speaking riêng (`writing_coach/content/speaking_catalog.v1.json`) **rỗng** - không seed nội dung giả (quyết định 10).                                                                                                                                                                                  | Nội dung cho Đọc theo câu / Luyện âm / Kể lại / Phỏng vấn mô phỏng (việc nội dung). |
+| S2  | Sóng âm của mẫu                                                                                        | **Đã làm:** sóng và cao độ của câu mẫu đo từ audio thật, lấy cùng origin qua `/api/speaking/model-audio/...` (host catalogue không có CORS). Lúc chưa ghi, cột phẳng.                                                                                                                                                                                                                                                   | -                                                                                   |
+| S3  | Câu nhận xét kiểu "Thanh 3 bị đọc thành thanh 2"                                                       | Không viết: Azure không chấm thanh; đường cao độ đo thật được vẽ, **không kèm lời phán** (D-076). Đo khoảng hở tiếng Trung: lệch thanh làm điểm âm tiết giảm 6/7 lần thử nhưng Azure chỉ cờ 2/7; 3↔2 không bị cờ (`docs/operations/SPEAKING_AZURE_E2E_2026-09-23.md`). **Known gap (D-077):** Azure chưa đủ tin cậy để chấm thanh; chưa thêm SpeechSuper.                                                               | Provider chấm thanh trả phí - cổng của anh, chưa làm.                               |
+| S4  | Chi tiết một chữ · "BẠN ĐỌC"                                                                           | **Đã làm:** đường cao độ của lượt thu, đo từ audio (YIN), cắt theo mốc thời gian của từ. Ô "MẪU" vẫn vẽ hình thanh từ pinyin của bài (hình chuẩn), còn so sánh với mẫu đo thật ở màn "So với mẫu".                                                                                                                                                                                                                      | -                                                                                   |
+| S5  | Giá trị LƯU LOÁT màu hổ phách                                                                          | Để trắng: không có ngưỡng lưu loát (quyết định 6: không đặt ngưỡng).                                                                                                                                                                                                                                                                                                                                                    | -                                                                                   |
+| S6  | Từ "Đạt" nhưng một âm rất thấp                                                                         | Hàng ghi "Đạt" theo cờ provider; âm yếu hiện trong chi tiết, không đè verdict (quyết định 7).                                                                                                                                                                                                                                                                                                                           | -                                                                                   |
+| S7  | "Luyện riêng chữ này"                                                                                  | **Đã làm** (quyết định 8): có nút gợi ý quay về cả câu (`data-sp-back-line`).                                                                                                                                                                                                                                                                                                                                           | -                                                                                   |
+| S8  | "Câu trước"                                                                                            | Không thêm (quyết định 9).                                                                                                                                                                                                                                                                                                                                                                                              | -                                                                                   |
+| S9  | "Chạm vào một chữ để nghe riêng"                                                                       | Giọng đọc của thiết bị (speechSynthesis) như lớp tra từ; clip mẫu không có mốc theo từ.                                                                                                                                                                                                                                                                                                                                 | Chấp nhận TTS thiết bị?                                                             |
+| S10 | Free talk · "CỤM CÓ THỂ DÙNG", dịch câu bạn vừa nói, cấp độ, nhãn loại lỗi ("NGỮ PHÁP · V2")           | Không có dữ liệu → không vẽ. Thẻ sửa lấy từ coaching (`landed_differently`), nhãn là nhận định của coaching.                                                                                                                                                                                                                                                                                                            | Nội dung cụm từ; có dịch câu học viên nói không.                                    |
+| S11 | Thư viện · "Chủ đề của bạn"                                                                            | Giữ ở nút hành động của thanh thư viện. Frame Speaking không vẽ nút này.                                                                                                                                                                                                                                                                                                                                                | Giữ ở đó, hay chuyển vào "⋯"?                                                       |
+| S12 | "Ghi âm của tôi · ĐÃ LƯU", "Lưu vào Thư viện" (04, 05)                                                 | Không dựng (D-076: không lưu server/thư viện). Tóm tắt bài ghi "Đã lưu kết quả vào lịch sử luyện" (điểm, không audio).                                                                                                                                                                                                                                                                                                  | Sau review schema + privacy.                                                        |
+| S13 | Chuỗi ngày trên thanh workspace                                                                        | Hiện **0** (chưa đo), như Dictation.                                                                                                                                                                                                                                                                                                                                                                                    | Như C4.                                                                             |
+| S14 | Free talk result (04) · "Xem kỹ hơn · Phát triển thành bài viết · Bắt đầu trò chuyện"                  | **Quyết (D-077):** giữ cả ba, một bước vào trong: nút "⋯" trên thanh của màn kết quả mở sheet "luyện sâu" dùng chung với Listening.                                                                                                                                                                                                                                                                                     | -                                                                                   |
+| S15 | Free talk · "NÓI LẠI CÂU NÀY"                                                                          | **Quyết (D-077):** trường `say_again` của hợp đồng `spoken-response` được duyệt: bắt buộc trong schema, chỉ trả về khi là chữ viết của ngôn ngữ đang học, không thì rỗng. Frame tô tím chữ đã sửa; app chưa tô (cần so khớp câu nói với câu sửa) - gap còn mở.                                                                                                                                                          | Có cần tô chữ đã sửa không.                                                         |
+| S16 | Nghe nhại · câu tô dần theo mẫu ("请给我们" tím, phần sau mờ)                                          | Chưa làm: câu mẫu không có mốc thời gian theo từ.                                                                                                                                                                                                                                                                                                                                                                       | Có cần không (cần mốc theo từ của clip).                                            |
+| S17 | Nghe nhại · "không tai nghe"                                                                           | Ghi chú cố định của frame "Đeo tai nghe…" luôn hiện. Frame ghi "nếu phát hiện loa ngoài thì gợi ý, ghi chú dưới điểm" - trình duyệt không phân biệt loa/tai nghe đáng tin cậy, nên không phát hiện và không ghi chú dưới điểm.                                                                                                                                                                                          | Chấp nhận?                                                                          |
+| S18 | Nghe nhại · 3-2-1                                                                                      | Frame ghi "đếm 3-2-1" nhưng không vẽ chỗ đặt; app viết số vào dòng gợi ý dưới nút. Trong lúc ghi, tốc độ và thu lại **bắt đầu lại lượt** (tốc độ mới / cùng tốc độ).                                                                                                                                                                                                                                                    | -                                                                                   |
+| S19 | Micro bị chặn (09 A) · "Mở Cài đặt"                                                                    | Trang web không mở được cài đặt hệ thống; nút là "Thử lại" (xin quyền lại), chữ hướng dẫn chỉ biểu tượng ổ khoá.                                                                                                                                                                                                                                                                                                        | -                                                                                   |
+| S20 | Tóm tắt bài (05) · "Luyện lại 2 câu dưới 80"                                                           | Theo D-076: "Luyện lại N câu có chữ bị đánh dấu". Chip "CHỮ HAY SAI" ghi pinyin + số lần, **không** ghi "thanh 3" (không đo thanh). Không đưa vào SRS (hoãn).                                                                                                                                                                                                                                                           | -                                                                                   |
+| S21 | So với mẫu (06) · dòng "想: mẫu xuống rồi lên, bạn đi ngang" và "Giữ 5 lần gần nhất… lưu vào Thư viện" | Không có lời phán (D-076); dòng giữ bản thu thay bằng ô chọn "Giữ bản thu gần đây trên máy này" (D-076). "Nghe xen kẽ" phát mẫu rồi lượt thu, theo câu.                                                                                                                                                                                                                                                                 | -                                                                                   |
+| S22 | Cài đặt Speaking, trạng thái rỗng (09 D)                                                               | Cài đặt hoãn (D-076). Trạng thái rỗng không tới được: thư viện luôn có bài Listening có shadowing.                                                                                                                                                                                                                                                                                                                      | -                                                                                   |
+| S23 | Nhận dạng tiếng Trung trong free talk                                                                  | ASR (Groq Whisper) đôi khi trả chữ phồn thể ("英國人"); hiện đúng như nhận được.                                                                                                                                                                                                                                                                                                                                        | Có ép giản thể không?                                                               |
+| S24 | Grammar · trang của nó (`#/practice?intent=grammar`)                                                   | Lối vào duy nhất trước đây là trang Practice cũ, nay đã bỏ (D-078: `#/practice` về Home). Vẫn mở được từ một mục Continue và từ trong Grammar; thiết kế không vẽ chỗ nào cho Grammar.                                                                                                                                                                                                                                   | Grammar vào từ đâu (Home, Library, một kỹ năng)?                                    |
+| S25 | Speaking · bố cục theo D-078 (khác frame có chủ ý)                                                     | Hàng hành động của kết quả thành một hàng: "Nghe bản của bạn", "So với bản mẫu" (chỉ còn icon khi panel hẹp, vẫn có tên cho trình đọc màn hình), "Câu tiếp" là hành động chính; nút "Thu lại" thứ hai trong panel bỏ (thu lại là micro và nút quay lại bên cạnh). Hai panel khép cùng một đáy (dải điều khiển = dải hành động). Dòng từ gọn hơn (≈56px). Clip mẫu co theo chiều cao còn lại (16:9) và nhường chỗ trước. | - (quyết định của anh ở D-078)                                                      |
 
 ## E. Cổng kích hoạt (không phải việc của lane này)
 
-| # | Việc |
-| --- | --- |
-| E1 | `reading.discussion_turn` hiện **đếm usage, không chặn ai**. Bật enforcement Free/Premium là cổng kích hoạt thương mại, cần anh mở, và khi mở thì phải đi qua quota ledger chứ không phải `usage_events`. |
-| E2 | Tầng fallback thứ ba cho AI router: chỉ cần thêm một trường config, không cần code. |
+| #   | Việc                                                                                                                                                                                                      |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| E1  | `reading.discussion_turn` hiện **đếm usage, không chặn ai**. Bật enforcement Free/Premium là cổng kích hoạt thương mại, cần anh mở, và khi mở thì phải đi qua quota ledger chứ không phải `usage_events`. |
+| E2  | Tầng fallback thứ ba cho AI router: chỉ cần thêm một trường config, không cần code.                                                                                                                       |
 
 ## F. Nợ kỹ thuật thấy được trong phiên
 
-| # | Việc |
-| --- | --- |
-| F1 | `scripts/test_orena_vocabulary_theme_tokens.mjs` và `scripts/test_orena_writing_workspace.mjs` **fail sẵn từ `3deab1e`**, kiểm chứng trên cây sạch. Chưa sửa vì ngoài phạm vi. |
-| F4 | **Sandbox `:8011` mất sạch dữ liệu học viên sau khi Docker engine treo và được khởi động lại (2026-09-22 05:51).** Bảng còn nguyên, schema vẫn ở `20260922_0012`, nhưng `essays`, `reading_sessions`, `text_discussions`, `usage_events` đều **0 dòng**; sáng cùng ngày có 10 bài viết, một luồng thảo luận và các dòng usage. Nguyên nhân **không xác định được** từ đây. Điều xác minh được: container `orena-foundation-postgres` có `Mounts: []` - **không gắn volume nào**, dữ liệu nằm trong lớp ghi của container, nên runtime này chưa bao giờ bền vững. Volume của production và preview (`ai-writing-coach-data`, `ai-writing-coach-postgres-data`) vẫn còn nguyên, không bị đụng tới. |
-| F2 | Sandbox `:8011` đang có 1 EPUB thử ("Kafka pa stranden", 5 chương, id `ce71a298…`) tôi nhập để đo màn Book detail. Giữ để anh xem, hay archive? |
-| F3 | Chưa đo lại Reader và Library ở **390 mobile** sau các thay đổi hôm nay; đã đo desktop 1920. |
-
+| #   | Việc                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| F1  | `scripts/test_orena_vocabulary_theme_tokens.mjs` và `scripts/test_orena_writing_workspace.mjs` **fail sẵn từ `3deab1e`**, kiểm chứng trên cây sạch. Chưa sửa vì ngoài phạm vi.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| F4  | **Sandbox `:8011` mất sạch dữ liệu học viên sau khi Docker engine treo và được khởi động lại (2026-09-22 05:51).** Bảng còn nguyên, schema vẫn ở `20260922_0012`, nhưng `essays`, `reading_sessions`, `text_discussions`, `usage_events` đều **0 dòng**; sáng cùng ngày có 10 bài viết, một luồng thảo luận và các dòng usage. Nguyên nhân **không xác định được** từ đây. Điều xác minh được: container `orena-foundation-postgres` có `Mounts: []` - **không gắn volume nào**, dữ liệu nằm trong lớp ghi của container, nên runtime này chưa bao giờ bền vững. Volume của production và preview (`ai-writing-coach-data`, `ai-writing-coach-postgres-data`) vẫn còn nguyên, không bị đụng tới. |
+| F2  | Sandbox `:8011` đang có 1 EPUB thử ("Kafka pa stranden", 5 chương, id `ce71a298…`) tôi nhập để đo màn Book detail. Giữ để anh xem, hay archive?                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| F3  | Chưa đo lại Reader và Library ở **390 mobile** sau các thay đổi hôm nay; đã đo desktop 1920.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 
 ---
 
 ## Summary by canonical screen
 
-| Canonical UI | Required contract | Backend implementation | Data source / DB | Tests | Status |
-| --- | --- | --- | --- | --- | --- |
-| Quick Sheet, word | `WordDetail` | `/api/dictionary/word-detail` (projection in `word_detail.py`) over `reading_lookup` and the contextual explanation; `ui/quick-sheet.js` | vocabulary catalog, tagger, AI capability | `tests/test_word_detail.py` (held to the pinned contract), `test_orena_reading_room.mjs`, `test_media_interaction` | IN_PROGRESS (S1 built; see log) |
-| Sentence sheet | `SentenceSheet` | `/api/dictionary/sentence-sheet`; parts and vocabulary in `ui/quick-sheet.js` | as above | as above | IN_PROGRESS (S1 built; see log) |
-| Writing review | `WritingReview` | `GET /api/essays/{id}/review` (`writing_contract.py`); `example` in the evaluator contract (v2.5), English `register` category; `ui/writing-feedback.js` | `essays` | `tests/test_writing_contract.py` (held to the pinned contract), `test_writing_evaluation`, `test_orena_writing_review.mjs` | IN_PROGRESS (S2 built; see log) |
-| Writing revision | `RevisionCompare` | `GET /api/essays/{id}/revision`; `revision_delta` judged by the words | `essays` chain | `test_writing_revision_contract`, `test_writing_contract` | IN_PROGRESS (S2 built; see log) |
-| Writing entry, workspace | `ContentCard`, draft | `/api/drafts`, `/api/tasks/generate`; prompt library | account backbone, catalogue | `test_work_api`, `test_orena_writing_workspace.mjs` | BLOCKED (`[CONTENT]` prompts; drafts past sandbox) |
-| Listening library, workspace | `ContentCard`, `AudioPlayer`, `Transcript` | `listening_api`, `media_*`; `content_type` derived; library `ui/library-browse.js`; workspace details open (see log) | catalogue JSON, `listening_progress`, device memory | `test_listening_*`, `test_orena_library.mjs`, `test_orena_pure_listening.mjs` | IN_PROGRESS (S3a built, S3b open) |
-| Dictation | `DictationResult` | `capabilities/dictation-result.js`, `ui/dictation-screen.js`; `pinyin_alignment.py`; the evaluator and evidence save unchanged | outcomes, catalogue JSON | `test_orena_dictation_screen.mjs`, `test_pinyin_alignment.py`, `test_dictation_evaluator.mjs` | IN_PROGRESS (S3b built; DC-5 needs a decision) |
-| Reading library, book detail | `ContentCard`, `Chapter` | `reading_library_api`; add kind, level, duration | `reading_books`, `reading_book_chapters` | `test_reading_library_api`, `test_orena_reading_library.mjs` | BLOCKED (`[REVIEW]` catalogue schema) |
-| Reading workspace | `ReadingChapter` | `libraryBookChapter`, `readingTranslate`; whole-chapter translation | book assets, translation cache, device `place.within` | `test_reading_translation`, `test_orena_reading_room.mjs`, `test_orena_reader_place.mjs` | IN_PROGRESS (S4: whole-chapter translation) |
-| Reading comprehension | comprehension | per-question check endpoint (landed: `POST /api/reading/session/{id}/answer/{index}`); per-chapter generation | `reading_sessions`, `reading_attempts` | `test_reading_answer_per_question`, `test_orena_comprehension.mjs` | READY for the check; per-chapter generation still S4 |
-| Search (all libraries) | `ContentCard[]` | catalogue search API, read-only | books, listening, vocabulary, collections | add | IN_PROGRESS (S5) |
-| Speaking library | `ContentCard` | `/api/speaking/library`: Speaking catalogue (empty) + shadowable Listening lessons | catalogue | `test_speaking_library` | IN_PROGRESS (built; catalogue `[CONTENT]`) |
-| Speaking workspace | `PronunciationResult` | provider seam + Azure adapter built; SpeechSuper / tone contour not built | `speaking_attempts` (no raw audio) | `test_speech_pronunciation`, `test_speech_pronunciation_api`, `test_m3_pronunciation_contract.mjs`, `test_speaking_take.mjs`, `test_speaking_workspace.mjs` | IN_PROGRESS (built); E2E `[PROVIDER]` |
-| Vocabulary library, card, strokes | `VocabularyCollection`, `WordDetail` | `vocabulary_library`, stroke order | `vocabulary_*` | `test_vocabulary_library*`, `test_chinese_stroke_order`, `test_orena_vocabulary_library.mjs` | IN_PROGRESS (L) |
-| Vocabulary context clips | `ContextClip` | word to clip index over listening transcripts | new index | add | BLOCKED (`[REVIEW]`/index design) |
-| Vocabulary review | `VocabularyCard` | three-grade scheduler and interval preview | `saved_words` | `test_vocabulary_cards`, `test_orena_vocabulary_card.mjs`; add SRS tests | BLOCKED (`[REVIEW]` rule change) |
-| Progress overview, trends | `ProgressOverview`, `ProgressTrends` | read model over the domain owners; every metric carries `measured` | LearnerSummary, events (new) | `test_learner_summary`, `test_orena_growth_summary.mjs` | BLOCKED (`[DEF]`, `[REVIEW]`) |
-| Home / Discover | `AppShell`, `ContentCard` | shared card serializer; Continue read model | catalogues, device continuation | `test_orena_discover_layout.mjs` | IN_PROGRESS (L) |
-| App shell | `AppShell` | profile fields; metric fallback | profile, LearnerSummary | `test_orena_foundation.mjs` | IN_PROGRESS (foundation with S1) |
+| Canonical UI                      | Required contract                          | Backend implementation                                                                                                                                   | Data source / DB                                      | Tests                                                                                                                                                       | Status                                               |
+| --------------------------------- | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| Quick Sheet, word                 | `WordDetail`                               | `/api/dictionary/word-detail` (projection in `word_detail.py`) over `reading_lookup` and the contextual explanation; `ui/quick-sheet.js`                 | vocabulary catalog, tagger, AI capability             | `tests/test_word_detail.py` (held to the pinned contract), `test_orena_reading_room.mjs`, `test_media_interaction`                                          | IN_PROGRESS (S1 built; see log)                      |
+| Sentence sheet                    | `SentenceSheet`                            | `/api/dictionary/sentence-sheet`; parts and vocabulary in `ui/quick-sheet.js`                                                                            | as above                                              | as above                                                                                                                                                    | IN_PROGRESS (S1 built; see log)                      |
+| Writing review                    | `WritingReview`                            | `GET /api/essays/{id}/review` (`writing_contract.py`); `example` in the evaluator contract (v2.5), English `register` category; `ui/writing-feedback.js` | `essays`                                              | `tests/test_writing_contract.py` (held to the pinned contract), `test_writing_evaluation`, `test_orena_writing_review.mjs`                                  | IN_PROGRESS (S2 built; see log)                      |
+| Writing revision                  | `RevisionCompare`                          | `GET /api/essays/{id}/revision`; `revision_delta` judged by the words                                                                                    | `essays` chain                                        | `test_writing_revision_contract`, `test_writing_contract`                                                                                                   | IN_PROGRESS (S2 built; see log)                      |
+| Writing entry, workspace          | `ContentCard`, draft                       | `/api/drafts`, `/api/tasks/generate`; prompt library                                                                                                     | account backbone, catalogue                           | `test_work_api`, `test_orena_writing_workspace.mjs`                                                                                                         | BLOCKED (`[CONTENT]` prompts; drafts past sandbox)   |
+| Listening library, workspace      | `ContentCard`, `AudioPlayer`, `Transcript` | `listening_api`, `media_*`; `content_type` derived; library `ui/library-browse.js`; workspace details open (see log)                                     | catalogue JSON, `listening_progress`, device memory   | `test_listening_*`, `test_orena_library.mjs`, `test_orena_pure_listening.mjs`                                                                               | IN_PROGRESS (S3a built, S3b open)                    |
+| Dictation                         | `DictationResult`                          | `capabilities/dictation-result.js`, `ui/dictation-screen.js`; `pinyin_alignment.py`; the evaluator and evidence save unchanged                           | outcomes, catalogue JSON                              | `test_orena_dictation_screen.mjs`, `test_pinyin_alignment.py`, `test_dictation_evaluator.mjs`                                                               | IN_PROGRESS (S3b built; DC-5 needs a decision)       |
+| Reading library, book detail      | `ContentCard`, `Chapter`                   | `reading_library_api`; add kind, level, duration                                                                                                         | `reading_books`, `reading_book_chapters`              | `test_reading_library_api`, `test_orena_reading_library.mjs`                                                                                                | BLOCKED (`[REVIEW]` catalogue schema)                |
+| Reading workspace                 | `ReadingChapter`                           | `libraryBookChapter`, `readingTranslate`; whole-chapter translation                                                                                      | book assets, translation cache, device `place.within` | `test_reading_translation`, `test_orena_reading_room.mjs`, `test_orena_reader_place.mjs`                                                                    | IN_PROGRESS (S4: whole-chapter translation)          |
+| Reading comprehension             | comprehension                              | per-question check endpoint (landed: `POST /api/reading/session/{id}/answer/{index}`); per-chapter generation                                            | `reading_sessions`, `reading_attempts`                | `test_reading_answer_per_question`, `test_orena_comprehension.mjs`                                                                                          | READY for the check; per-chapter generation still S4 |
+| Search (all libraries)            | `ContentCard[]`                            | catalogue search API, read-only                                                                                                                          | books, listening, vocabulary, collections             | add                                                                                                                                                         | IN_PROGRESS (S5)                                     |
+| Speaking library                  | `ContentCard`                              | `/api/speaking/library`: Speaking catalogue (empty) + shadowable Listening lessons                                                                       | catalogue                                             | `test_speaking_library`                                                                                                                                     | IN_PROGRESS (built; catalogue `[CONTENT]`)           |
+| Speaking workspace                | `PronunciationResult`                      | provider seam + Azure adapter built; SpeechSuper / tone contour not built                                                                                | `speaking_attempts` (no raw audio)                    | `test_speech_pronunciation`, `test_speech_pronunciation_api`, `test_m3_pronunciation_contract.mjs`, `test_speaking_take.mjs`, `test_speaking_workspace.mjs` | IN_PROGRESS (built); E2E `[PROVIDER]`                |
+| Vocabulary library, card, strokes | `VocabularyCollection`, `WordDetail`       | `vocabulary_library`, stroke order                                                                                                                       | `vocabulary_*`                                        | `test_vocabulary_library*`, `test_chinese_stroke_order`, `test_orena_vocabulary_library.mjs`                                                                | IN_PROGRESS (L)                                      |
+| Vocabulary context clips          | `ContextClip`                              | word to clip index over listening transcripts                                                                                                            | new index                                             | add                                                                                                                                                         | BLOCKED (`[REVIEW]`/index design)                    |
+| Vocabulary review                 | `VocabularyCard`                           | three-grade scheduler and interval preview                                                                                                               | `saved_words`                                         | `test_vocabulary_cards`, `test_orena_vocabulary_card.mjs`; add SRS tests                                                                                    | BLOCKED (`[REVIEW]` rule change)                     |
+| Progress overview, trends         | `ProgressOverview`, `ProgressTrends`       | read model over the domain owners; every metric carries `measured`                                                                                       | LearnerSummary, events (new)                          | `test_learner_summary`, `test_orena_growth_summary.mjs`                                                                                                     | BLOCKED (`[DEF]`, `[REVIEW]`)                        |
+| Home / Discover                   | `AppShell`, `ContentCard`                  | shared card serializer; Continue read model                                                                                                              | catalogues, device continuation                       | `test_orena_discover_layout.mjs`                                                                                                                            | IN_PROGRESS (L)                                      |
+| App shell                         | `AppShell`                                 | profile fields; metric fallback                                                                                                                          | profile, LearnerSummary                               | `test_orena_foundation.mjs`                                                                                                                                 | IN_PROGRESS (foundation with S1)                     |
 
 ## Requirements
 
@@ -944,164 +949,164 @@ change. Group headers name the contract, data source and tests once.
 
 ### Shell — `AppShell` · profile, LearnerSummary · `test_orena_foundation.mjs`
 
-| ID | Canonical UI | Have → Need | Slice | Status |
-| --- | --- | --- | --- | --- |
-| SH-1 | Display name and avatar | `/api/me` gives email and mode → profile fields | L | BLOCKED `[REVIEW]` |
-| SH-2 | Level next to the language ("B1", "HSK 2") | CEFR `declared_level`, not stored, no HSK → stored level per language framework | L | BLOCKED `[REVIEW]` |
-| SH-3 | Language ("NORSK" in the mock) | `/api/platform/languages` is en and zh → none; Norwegian is demo data | - | IN_PROGRESS |
-| SH-4 | Rank label ("Virtuoso · bậc 4") | none → rank definition and ladder; shows `0` until measured | L | BLOCKED `[DEF]` |
-| SH-5 | Streak in the top bar and headers | none → streak definition and measurement; shows `0` | L | BLOCKED `[DEF]` |
-| SH-6 | Level per skill in the rail | none → stored level per skill | L | BLOCKED `[REVIEW]` |
-| SH-7 | Search field, desktop and phone | none server-side → S5 | S5 | IN_PROGRESS |
-| SH-8 | Active nav and skill, five-item phone bar | client routing → none | - | IN_PROGRESS |
-| SH-9 | Loading, empty, error | baseline draws none → keep the existing skeleton and degraded panel | - | IN_PROGRESS |
-| SH-10 | Auth | Google OAuth, session guard, admin guard → none | - | IN_PROGRESS |
+| ID    | Canonical UI                               | Have → Need                                                                     | Slice | Status             |
+| ----- | ------------------------------------------ | ------------------------------------------------------------------------------- | ----- | ------------------ |
+| SH-1  | Display name and avatar                    | `/api/me` gives email and mode → profile fields                                 | L     | BLOCKED `[REVIEW]` |
+| SH-2  | Level next to the language ("B1", "HSK 2") | CEFR `declared_level`, not stored, no HSK → stored level per language framework | L     | BLOCKED `[REVIEW]` |
+| SH-3  | Language ("NORSK" in the mock)             | `/api/platform/languages` is en and zh → none; Norwegian is demo data           | -     | IN_PROGRESS        |
+| SH-4  | Rank label ("Virtuoso · bậc 4")            | none → rank definition and ladder; shows `0` until measured                     | L     | BLOCKED `[DEF]`    |
+| SH-5  | Streak in the top bar and headers          | none → streak definition and measurement; shows `0`                             | L     | BLOCKED `[DEF]`    |
+| SH-6  | Level per skill in the rail                | none → stored level per skill                                                   | L     | BLOCKED `[REVIEW]` |
+| SH-7  | Search field, desktop and phone            | none server-side → S5                                                           | S5    | IN_PROGRESS        |
+| SH-8  | Active nav and skill, five-item phone bar  | client routing → none                                                           | -     | IN_PROGRESS        |
+| SH-9  | Loading, empty, error                      | baseline draws none → keep the existing skeleton and degraded panel             | -     | IN_PROGRESS        |
+| SH-10 | Auth                                       | Google OAuth, session guard, admin guard → none                                 | -     | IN_PROGRESS        |
 
 ### Home — `AppShell`, `ContentCard` · catalogues, device continuation · `test_orena_discover_layout.mjs`
 
-| ID | Canonical UI | Have → Need | Slice | Status |
-| --- | --- | --- | --- | --- |
-| HM-1 | Continue strip: kind, title, 68%, "còn 4 phút", resume | device `continuation`; progress only where a place is recorded → a `ContinueLearning` read model; cross-device is gated | L | BLOCKED `[REVIEW]` |
-| HM-2 | "Mới cho bạn · phù hợp trình độ" | nothing ranks content → level-based ordering (needs SH-2) | L | BLOCKED `[REVIEW]` |
-| HM-3 | Reading, Listening, Vocabulary rails | separate shapes per domain → the shared `ContentCard` serializer | L | IN_PROGRESS |
-| HM-4 | Speaking rail | no Speaking library → SP-1 | L | BLOCKED `[CONTENT]` |
-| HM-5 | Writing rail "Gợi ý viết mỗi ngày" | only AI task generation → WR-2 | L | BLOCKED `[CONTENT]` |
-| HM-6 | Card: 17 types, skill, hue, badge (ĐANG LUYỆN, ĐÃ LƯU, TẠO RIÊNG, ĐÃ NHẬP) | per-domain fields; hue is artwork → one serializer | L | IN_PROGRESS |
-| HM-7 | Populated rails | 7 listening lessons, books only after admin import → supply content | L | BLOCKED `[CONTENT]` |
+| ID   | Canonical UI                                                               | Have → Need                                                                                                             | Slice | Status              |
+| ---- | -------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ----- | ------------------- |
+| HM-1 | Continue strip: kind, title, 68%, "còn 4 phút", resume                     | device `continuation`; progress only where a place is recorded → a `ContinueLearning` read model; cross-device is gated | L     | BLOCKED `[REVIEW]`  |
+| HM-2 | "Mới cho bạn · phù hợp trình độ"                                           | nothing ranks content → level-based ordering (needs SH-2)                                                               | L     | BLOCKED `[REVIEW]`  |
+| HM-3 | Reading, Listening, Vocabulary rails                                       | separate shapes per domain → the shared `ContentCard` serializer                                                        | L     | IN_PROGRESS         |
+| HM-4 | Speaking rail                                                              | no Speaking library → SP-1                                                                                              | L     | BLOCKED `[CONTENT]` |
+| HM-5 | Writing rail "Gợi ý viết mỗi ngày"                                         | only AI task generation → WR-2                                                                                          | L     | BLOCKED `[CONTENT]` |
+| HM-6 | Card: 17 types, skill, hue, badge (ĐANG LUYỆN, ĐÃ LƯU, TẠO RIÊNG, ĐÃ NHẬP) | per-domain fields; hue is artwork → one serializer                                                                      | L     | IN_PROGRESS         |
+| HM-7 | Populated rails                                                            | 7 listening lessons, books only after admin import → supply content                                                     | L     | BLOCKED `[CONTENT]` |
 
 ### Reading — `ReadingChapter`, `Chapter`, `ContentCard` · `reading_books`, `reading_book_chapters`, assets · `test_reading_library_api`, `test_reading_translation`, `test_orena_reading_library.mjs`, `test_orena_reading_room.mjs`
 
-| ID | Canonical UI | Have → Need | Slice | Status |
-| --- | --- | --- | --- | --- |
-| RD-1 | 11 type chips (books, excerpts, articles, news, essays, stories, dialogues, quotes, own, imported) | books carry no kind, level or topic → catalogue metadata | L | BLOCKED `[REVIEW]` |
-| RD-2 | Card: author, level, kind, minutes | author and word count only → level, kind, and an owned reading-speed rule for minutes | L | BLOCKED `[REVIEW]` |
-| RD-3 | Search inside the library | none → S5 | S5 | IN_PROGRESS |
-| RD-4 | "Nhập văn bản", TẠO RIÊNG / ĐÃ NHẬP | import exists, device memory → wire the badge | L | IN_PROGRESS |
-| RD-5 | Paged cover grid | cursor and `/cover` exist → none (real art is supply) | - | IN_PROGRESS |
-| RD-6 | Book hero: continue chapter, 34%, time left | `libraryBook`; percent from continuation → `Chapter.progress` | L | IN_PROGRESS |
-| RD-7 | Chapter state read / reading / unread | only the current chapter (device) → durable chapter state | L | BLOCKED `[REVIEW]` |
-| RD-8 | "Bạn đã lưu từ đây … + 83 từ" | saved words carry no book link → word-to-book link | L | BLOCKED `[REVIEW]` |
-| RD-9 | Book bookmark, menu, listen | none; device speech for words → saved items, audio | L | BLOCKED `[REVIEW]` `[PROVIDER]` |
-| RD-10 | Position inside a chapter | chapter only → exact position | L | BLOCKED `[REVIEW]` |
-| RD-11 | Bilingual layer | `readingTranslate`, first 12 paragraphs → whole chapter, batched and cached | S4 | IN_PROGRESS |
-| RD-12 | Panel tabs Word, Grammar, Notes | Word only → grammar notes and notes | L | BLOCKED `[REVIEW]` |
-| RD-13 | Action bar: save, listen, check, discuss, write a response, read later | check, discuss (`conversation-turn`) and response (`practice_context`) partly exist; save and read-later do not → wire and add saved items | L | IN_PROGRESS |
-| RD-14 | Comprehension: one question, verdict and "đoạn giúp bạn trả lời", skippable | generated sessions hold answer, explanation and evidence, but `/answer` grades the whole set → per-question check; sessions for library chapters | S4 | IN_PROGRESS |
-| RD-15 | "Bỏ qua vẫn tính đã đọc" | no completion record → part of RD-7 | L | BLOCKED `[REVIEW]` |
+| ID    | Canonical UI                                                                                       | Have → Need                                                                                                                                      | Slice | Status                          |
+| ----- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ----- | ------------------------------- |
+| RD-1  | 11 type chips (books, excerpts, articles, news, essays, stories, dialogues, quotes, own, imported) | books carry no kind, level or topic → catalogue metadata                                                                                         | L     | BLOCKED `[REVIEW]`              |
+| RD-2  | Card: author, level, kind, minutes                                                                 | author and word count only → level, kind, and an owned reading-speed rule for minutes                                                            | L     | BLOCKED `[REVIEW]`              |
+| RD-3  | Search inside the library                                                                          | none → S5                                                                                                                                        | S5    | IN_PROGRESS                     |
+| RD-4  | "Nhập văn bản", TẠO RIÊNG / ĐÃ NHẬP                                                                | import exists, device memory → wire the badge                                                                                                    | L     | IN_PROGRESS                     |
+| RD-5  | Paged cover grid                                                                                   | cursor and `/cover` exist → none (real art is supply)                                                                                            | -     | IN_PROGRESS                     |
+| RD-6  | Book hero: continue chapter, 34%, time left                                                        | `libraryBook`; percent from continuation → `Chapter.progress`                                                                                    | L     | IN_PROGRESS                     |
+| RD-7  | Chapter state read / reading / unread                                                              | only the current chapter (device) → durable chapter state                                                                                        | L     | BLOCKED `[REVIEW]`              |
+| RD-8  | "Bạn đã lưu từ đây … + 83 từ"                                                                      | saved words carry no book link → word-to-book link                                                                                               | L     | BLOCKED `[REVIEW]`              |
+| RD-9  | Book bookmark, menu, listen                                                                        | none; device speech for words → saved items, audio                                                                                               | L     | BLOCKED `[REVIEW]` `[PROVIDER]` |
+| RD-10 | Position inside a chapter                                                                          | chapter only → exact position                                                                                                                    | L     | BLOCKED `[REVIEW]`              |
+| RD-11 | Bilingual layer                                                                                    | `readingTranslate`, first 12 paragraphs → whole chapter, batched and cached                                                                      | S4    | IN_PROGRESS                     |
+| RD-12 | Panel tabs Word, Grammar, Notes                                                                    | Word only → grammar notes and notes                                                                                                              | L     | BLOCKED `[REVIEW]`              |
+| RD-13 | Action bar: save, listen, check, discuss, write a response, read later                             | check, discuss (`conversation-turn`) and response (`practice_context`) partly exist; save and read-later do not → wire and add saved items       | L     | IN_PROGRESS                     |
+| RD-14 | Comprehension: one question, verdict and "đoạn giúp bạn trả lời", skippable                        | generated sessions hold answer, explanation and evidence, but `/answer` grades the whole set → per-question check; sessions for library chapters | S4    | IN_PROGRESS                     |
+| RD-15 | "Bỏ qua vẫn tính đã đọc"                                                                           | no completion record → part of RD-7                                                                                                              | L     | BLOCKED `[REVIEW]`              |
 
 ### Quick Sheet — `WordDetail`, `SentenceSheet` · vocabulary catalog, tagger, AI capability · `test_media_interaction`, `test_reading_lookup`, `test_orena_understanding.mjs`, `test_r16_contextual_dictionary.mjs`
 
-| ID | Canonical UI | Have → Need | Slice | Status |
-| --- | --- | --- | --- | --- |
-| QS-1 | Layer 1: headword, IPA or pinyin, part of speech, speaker, save | lookup returns all of it → serializer | S1 | IN_PROGRESS |
-| QS-2 | "Nghĩa ở câu này" in layer 1 | dictionary meaning only; contextual meaning is an AI explain → a contextual-meaning request through the provider abstraction, distinct from lookup | S1 | IN_PROGRESS |
-| QS-3 | Seven usage levels | `USAGE_JUDGEMENTS` are the same seven → rename to the contract values | S1 | IN_PROGRESS |
-| QS-4 | "Vì sao ở đây?": verdict, reason, examples, common mistake, grammar note, related | `judgement`, `judgement_reason`, `examples`, `counter_examples`, `grammar_notes`, `vocabulary` → map | S1 | IN_PROGRESS |
-| QS-5 | Core idea, mental model, contrast | not in the schema → extend the explanation schema | S1 | IN_PROGRESS |
-| QS-6 | "Hỏi tiếp" chips and free question | `follow_ups`, `question` → none | S1 | IN_PROGRESS |
-| QS-7 | Where you met it; your own sentences | provenance is device memory; essays not indexed by word → `learnerSentences` read model; sources gated | S1 / L | IN_PROGRESS / BLOCKED `[REVIEW]` |
-| QS-8 | "Lưu giải thích" | no saved explanation → saved explanations | L | BLOCKED `[REVIEW]` |
-| QS-9 | Chinese variant with pinyin | annotate and explain cover it → none | S1 | IN_PROGRESS |
-| QS-10 | Writing-feedback variant | same contract plus `errors[].suggestion` → S2 | S2 | IN_PROGRESS |
-| QS-11 | Sentence sheet: translation, short explanation, structure, vocabulary with saved state | all but structure → `structure[{chunk, role}]`, language-neutral roles | S1 | IN_PROGRESS |
-| QS-12 | Audio pauses and resumes | client → none | - | IN_PROGRESS |
+| ID    | Canonical UI                                                                           | Have → Need                                                                                                                                        | Slice  | Status                           |
+| ----- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | -------------------------------- |
+| QS-1  | Layer 1: headword, IPA or pinyin, part of speech, speaker, save                        | lookup returns all of it → serializer                                                                                                              | S1     | IN_PROGRESS                      |
+| QS-2  | "Nghĩa ở câu này" in layer 1                                                           | dictionary meaning only; contextual meaning is an AI explain → a contextual-meaning request through the provider abstraction, distinct from lookup | S1     | IN_PROGRESS                      |
+| QS-3  | Seven usage levels                                                                     | `USAGE_JUDGEMENTS` are the same seven → rename to the contract values                                                                              | S1     | IN_PROGRESS                      |
+| QS-4  | "Vì sao ở đây?": verdict, reason, examples, common mistake, grammar note, related      | `judgement`, `judgement_reason`, `examples`, `counter_examples`, `grammar_notes`, `vocabulary` → map                                               | S1     | IN_PROGRESS                      |
+| QS-5  | Core idea, mental model, contrast                                                      | not in the schema → extend the explanation schema                                                                                                  | S1     | IN_PROGRESS                      |
+| QS-6  | "Hỏi tiếp" chips and free question                                                     | `follow_ups`, `question` → none                                                                                                                    | S1     | IN_PROGRESS                      |
+| QS-7  | Where you met it; your own sentences                                                   | provenance is device memory; essays not indexed by word → `learnerSentences` read model; sources gated                                             | S1 / L | IN_PROGRESS / BLOCKED `[REVIEW]` |
+| QS-8  | "Lưu giải thích"                                                                       | no saved explanation → saved explanations                                                                                                          | L      | BLOCKED `[REVIEW]`               |
+| QS-9  | Chinese variant with pinyin                                                            | annotate and explain cover it → none                                                                                                               | S1     | IN_PROGRESS                      |
+| QS-10 | Writing-feedback variant                                                               | same contract plus `errors[].suggestion` → S2                                                                                                      | S2     | IN_PROGRESS                      |
+| QS-11 | Sentence sheet: translation, short explanation, structure, vocabulary with saved state | all but structure → `structure[{chunk, role}]`, language-neutral roles                                                                             | S1     | IN_PROGRESS                      |
+| QS-12 | Audio pauses and resumes                                                               | client → none                                                                                                                                      | -      | IN_PROGRESS                      |
 
 ### Listening, Dictation — `ContentCard`, `AudioPlayer`, `Transcript`, `DictationResult` · catalogue JSON, `listening_progress`, `shadowing_progress`, outcomes · `test_listening_*`, `test_orena_pure_listening.mjs`, `test_dictation_evaluator.mjs`, `test_orena_dictation_*.mjs`
 
-| ID | Canonical UI | Have → Need | Slice | Status |
-| --- | --- | --- | --- | --- |
-| LS-1 | Nine type chips | `content_type` derived from playback, topic and tags (`listening_catalog.content_type`, served in `lesson_metadata`); chips only for types some item has; a lesson that says nothing gets none; imported = the learner's own media | S3a | IN_PROGRESS (built; see log) |
-| LS-2 | Card: duration, level, time left, video badge | duration on the cover, level, "time left" and a progress bar from the place in device memory, video and provenance badges | S3a | IN_PROGRESS (built; see log) |
-| LS-3 | Library search | the bar's search filters the room's own items (title, level, type); catalogue-wide search stays S5 | S5 | IN_PROGRESS |
-| LS-4 | Player: scrubber, transport, speed, loop | scrubber violet with a white knob and a played part that follows the position; transport, speeds and "replay line" as before | S3b | IN_PROGRESS (built; see log) |
-| LS-5 | Transcript with pinyin, translation, active word, autoscroll | header chips (auto-scroll, the reading, the support language); auto-scroll is a kept preference that really stops the list following; a tapped line is picked ("Tua tới đây", "Nghe lại dòng") and the voice does not move | S3b | IN_PROGRESS (built; see log) |
-| LS-6 | Listening comprehension | none → items and scoring | L | BLOCKED `[CONTENT]` |
-| LS-7 | Bookmark | none → saved items | L | BLOCKED `[REVIEW]` |
-| LS-8 | Deep actions: dictation, shadow, read line, keep phrase, inspect | one "⋯" button and a sheet (`ui/line-sheet.js`); the five ways run the practices that already existed | S3b | IN_PROGRESS (built; see log) |
-| DC-1 | Line 2 of 5, clip range, replay | its own screen: segmented progress, the clip with its range and a bar of where the voice is, replay | S3b | IN_PROGRESS (built; see log) |
-| DC-2 | Hint level 1-3, "5 / 11 ký tự" | three levels, leading units, never the whole line (held by a gate); typed-earned units also shown | S3b | IN_PROGRESS (built; see log) |
-| DC-3 | Pinyin per revealed character | `pinyin_alignment.py` cuts the reviewed reading into one syllable per character; served as `pinyin_chars_by_segment`; a line that does not agree draws none | S3b | IN_PROGRESS (built; see log) |
-| DC-4 | Result: score, count, wrong / missing / extra | `capabilities/dictation-result.js` maps the evaluator to `DictationResult`; a substitution is one wrong place; the count under the ring is the count the score is made of | S3b | IN_PROGRESS (built; see log) |
-| DC-5 | "Đã dùng gợi ý — không tính vào chuỗi" | `used_hint` + hint level stored with the attempt (D-068); no score effect | L | BLOCKED (migration chain awaiting authorization + architecture review) |
-| DC-6 | Keep a word from the result | "Lưu <term>": the lesson's own vocabulary term found in the line, else the whole line, into device memory | S3b | IN_PROGRESS (built; see log) |
+| ID   | Canonical UI                                                     | Have → Need                                                                                                                                                                                                                        | Slice | Status                                                                 |
+| ---- | ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- | ---------------------------------------------------------------------- |
+| LS-1 | Nine type chips                                                  | `content_type` derived from playback, topic and tags (`listening_catalog.content_type`, served in `lesson_metadata`); chips only for types some item has; a lesson that says nothing gets none; imported = the learner's own media | S3a   | IN_PROGRESS (built; see log)                                           |
+| LS-2 | Card: duration, level, time left, video badge                    | duration on the cover, level, "time left" and a progress bar from the place in device memory, video and provenance badges                                                                                                          | S3a   | IN_PROGRESS (built; see log)                                           |
+| LS-3 | Library search                                                   | the bar's search filters the room's own items (title, level, type); catalogue-wide search stays S5                                                                                                                                 | S5    | IN_PROGRESS                                                            |
+| LS-4 | Player: scrubber, transport, speed, loop                         | scrubber violet with a white knob and a played part that follows the position; transport, speeds and "replay line" as before                                                                                                       | S3b   | IN_PROGRESS (built; see log)                                           |
+| LS-5 | Transcript with pinyin, translation, active word, autoscroll     | header chips (auto-scroll, the reading, the support language); auto-scroll is a kept preference that really stops the list following; a tapped line is picked ("Tua tới đây", "Nghe lại dòng") and the voice does not move         | S3b   | IN_PROGRESS (built; see log)                                           |
+| LS-6 | Listening comprehension                                          | none → items and scoring                                                                                                                                                                                                           | L     | BLOCKED `[CONTENT]`                                                    |
+| LS-7 | Bookmark                                                         | none → saved items                                                                                                                                                                                                                 | L     | BLOCKED `[REVIEW]`                                                     |
+| LS-8 | Deep actions: dictation, shadow, read line, keep phrase, inspect | one "⋯" button and a sheet (`ui/line-sheet.js`); the five ways run the practices that already existed                                                                                                                              | S3b   | IN_PROGRESS (built; see log)                                           |
+| DC-1 | Line 2 of 5, clip range, replay                                  | its own screen: segmented progress, the clip with its range and a bar of where the voice is, replay                                                                                                                                | S3b   | IN_PROGRESS (built; see log)                                           |
+| DC-2 | Hint level 1-3, "5 / 11 ký tự"                                   | three levels, leading units, never the whole line (held by a gate); typed-earned units also shown                                                                                                                                  | S3b   | IN_PROGRESS (built; see log)                                           |
+| DC-3 | Pinyin per revealed character                                    | `pinyin_alignment.py` cuts the reviewed reading into one syllable per character; served as `pinyin_chars_by_segment`; a line that does not agree draws none                                                                        | S3b   | IN_PROGRESS (built; see log)                                           |
+| DC-4 | Result: score, count, wrong / missing / extra                    | `capabilities/dictation-result.js` maps the evaluator to `DictationResult`; a substitution is one wrong place; the count under the ring is the count the score is made of                                                          | S3b   | IN_PROGRESS (built; see log)                                           |
+| DC-5 | "Đã dùng gợi ý — không tính vào chuỗi"                           | `used_hint` + hint level stored with the attempt (D-068); no score effect                                                                                                                                                          | L     | BLOCKED (migration chain awaiting authorization + architecture review) |
+| DC-6 | Keep a word from the result                                      | "Lưu <term>": the lesson's own vocabulary term found in the line, else the whole line, into device memory                                                                                                                          | S3b   | IN_PROGRESS (built; see log)                                           |
 
 ### Speaking — `PronunciationResult` · `speaking_attempts` (no raw audio, D-066 rule 7) · `test_speech_pronunciation`, `test_speaking_evaluator`, `test_m3_pronunciation_contract.mjs`
 
-| ID | Canonical UI | Have → Need | Slice | Status |
-| --- | --- | --- | --- | --- |
-| SP-1 | Six practice types, "2/5 câu" | `/api/speaking/library`: Speaking catalogue (empty, `[CONTENT]`) + Listening lessons with `shadowing`; chips only for types with items (S1) | L | IN_PROGRESS (built 2026-09-23, `feature/speaking`; catalogue content `[CONTENT]`) |
-| SP-2 | "Ghi âm của tôi" library | no durable audio by policy → not drawn (S12); durable audio needs its own review | L | BLOCKED `[REVIEW]` |
-| SP-3 | Clip, sentence, waveform, mic controls | built: model clip (line-bounded), line + reading + meaning, live mic level, 3 round controls; the model's waveform is measured from its audio (same-origin `/api/speaking/model-audio`), idle bars flat (S2) | L | IN_PROGRESS (built) |
-| SP-4 | Transcribe | `/api/speech/transcribe` (free talk); Groq ASR on the sandbox, real E2E 2026-09-23 | L | IN_PROGRESS (built; production credentials `[PROVIDER]`) |
-| SP-5 | Score panel: overall, accuracy, fluency, passed | provider seam + Azure adapter (words, phonemes, syllables, offsets) → `PronunciationResult`; passed = provider flag (D-084); 0 with no attempt; silence is 'not heard', never a score | L | IN_PROGRESS (built; Azure E2E real 2026-09-23) |
-| SP-6 | Timing note | learner speech span (provider word offsets) vs the model line's span | L | IN_PROGRESS (built) |
-| SP-7 | Per-word note in words | provider's error type + weakest phoneme/syllable; no tone sentence without a tone measurement (S3) | L | IN_PROGRESS (built) |
-| SP-8 | Tone curve, target and actual | target from the lesson reading; actual = the take's pitch measured from its audio (YIN), no written verdict (D-076); a tone *score* needs a tone provider (S3) | L | IN_PROGRESS (contour built; tone score `[PROVIDER]`) |
-| SP-9 | Compare, hear your take | built: model line, then the take (this tab's copy only); hear one word from the take by its offsets | L | IN_PROGRESS (built) |
-| SP-10 | Free talk: topic, what you said, result (04) | built: ASR + unscripted Azure (pronunciation, fluency) + coaching fixes and `say_again` (S15); grammar/vocabulary 0, no overall, no 'last time' (D-076); phrases, translation, level absent (S10) | L | IN_PROGRESS (built; real E2E) |
-| SP-11 | Recording state | built: pill + timer, live level, stop, cancel (✕ / Esc), auto-stop at 60 s | L | IN_PROGRESS (built) |
-| SP-12 | Compare with the model (06) | built: measured waveforms and (zh) pitch contours of model and take, flagged-word bands, attempts list (session; optional 5 per line on device, D-076), interleave | L | IN_PROGRESS (built) |
-| SP-13 | Lesson summary (05) | built: lines with best measured take, 'practise again' = lines with flags (D-076), missed characters with reading and count; no SRS (deferred) | L | IN_PROGRESS (built) |
-| SP-14 | Shadowing (07) | built: 3-2-1, model and microphone together, auto stop at model end + 0.8 s, speed 0.75/0.85/1 kept per lesson, lag from the first word's offset; speed and again restart a take | L | IN_PROGRESS (built) |
-| SP-15 | States (09 A-C) | built: microphone blocked (listen-only), not heard (twice → skip), offline (take kept in the tab, graded when back online) | L | IN_PROGRESS (built) |
+| ID    | Canonical UI                                    | Have → Need                                                                                                                                                                                                  | Slice | Status                                                                            |
+| ----- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----- | --------------------------------------------------------------------------------- |
+| SP-1  | Six practice types, "2/5 câu"                   | `/api/speaking/library`: Speaking catalogue (empty, `[CONTENT]`) + Listening lessons with `shadowing`; chips only for types with items (S1)                                                                  | L     | IN_PROGRESS (built 2026-09-23, `feature/speaking`; catalogue content `[CONTENT]`) |
+| SP-2  | "Ghi âm của tôi" library                        | no durable audio by policy → not drawn (S12); durable audio needs its own review                                                                                                                             | L     | BLOCKED `[REVIEW]`                                                                |
+| SP-3  | Clip, sentence, waveform, mic controls          | built: model clip (line-bounded), line + reading + meaning, live mic level, 3 round controls; the model's waveform is measured from its audio (same-origin `/api/speaking/model-audio`), idle bars flat (S2) | L     | IN_PROGRESS (built)                                                               |
+| SP-4  | Transcribe                                      | `/api/speech/transcribe` (free talk); Groq ASR on the sandbox, real E2E 2026-09-23                                                                                                                           | L     | IN_PROGRESS (built; production credentials `[PROVIDER]`)                          |
+| SP-5  | Score panel: overall, accuracy, fluency, passed | provider seam + Azure adapter (words, phonemes, syllables, offsets) → `PronunciationResult`; passed = provider flag (D-084); 0 with no attempt; silence is 'not heard', never a score                        | L     | IN_PROGRESS (built; Azure E2E real 2026-09-23)                                    |
+| SP-6  | Timing note                                     | learner speech span (provider word offsets) vs the model line's span                                                                                                                                         | L     | IN_PROGRESS (built)                                                               |
+| SP-7  | Per-word note in words                          | provider's error type + weakest phoneme/syllable; no tone sentence without a tone measurement (S3)                                                                                                           | L     | IN_PROGRESS (built)                                                               |
+| SP-8  | Tone curve, target and actual                   | target from the lesson reading; actual = the take's pitch measured from its audio (YIN), no written verdict (D-076); a tone _score_ needs a tone provider (S3)                                               | L     | IN_PROGRESS (contour built; tone score `[PROVIDER]`)                              |
+| SP-9  | Compare, hear your take                         | built: model line, then the take (this tab's copy only); hear one word from the take by its offsets                                                                                                          | L     | IN_PROGRESS (built)                                                               |
+| SP-10 | Free talk: topic, what you said, result (04)    | built: ASR + unscripted Azure (pronunciation, fluency) + coaching fixes and `say_again` (S15); grammar/vocabulary 0, no overall, no 'last time' (D-076); phrases, translation, level absent (S10)            | L     | IN_PROGRESS (built; real E2E)                                                     |
+| SP-11 | Recording state                                 | built: pill + timer, live level, stop, cancel (✕ / Esc), auto-stop at 60 s                                                                                                                                   | L     | IN_PROGRESS (built)                                                               |
+| SP-12 | Compare with the model (06)                     | built: measured waveforms and (zh) pitch contours of model and take, flagged-word bands, attempts list (session; optional 5 per line on device, D-076), interleave                                           | L     | IN_PROGRESS (built)                                                               |
+| SP-13 | Lesson summary (05)                             | built: lines with best measured take, 'practise again' = lines with flags (D-076), missed characters with reading and count; no SRS (deferred)                                                               | L     | IN_PROGRESS (built)                                                               |
+| SP-14 | Shadowing (07)                                  | built: 3-2-1, model and microphone together, auto stop at model end + 0.8 s, speed 0.75/0.85/1 kept per lesson, lag from the first word's offset; speed and again restart a take                             | L     | IN_PROGRESS (built)                                                               |
+| SP-15 | States (09 A-C)                                 | built: microphone blocked (listen-only), not heard (twice → skip), offline (take kept in the tab, graded when back online)                                                                                   | L     | IN_PROGRESS (built)                                                               |
 
 ### Writing — `WritingReview`, `RevisionCompare`, draft · `essays`, `essay_revisions`, account drafts · `test_writing_evaluation`, `test_writing_review_completeness`, `test_writing_review_reuse`, `test_writing_revision_contract`, `test_writing_evaluator_contract`, `test_work_api`, `test_orena_writing_review.mjs`, `test_orena_writing_workspace.mjs`
 
-| ID | Canonical UI | Have → Need | Slice | Status |
-| --- | --- | --- | --- | --- |
-| WR-1 | Entry: continue draft, "lưu 6 phút trước" | account drafts (sandbox) and device → `updated_at` | L | BLOCKED `[REVIEW]` |
-| WR-2 | "Theo gợi ý": prompt list by kind, level, target words | AI task generation only → curated prompt library | L | BLOCKED `[CONTENT]` |
-| WR-3 | Four modes | free, own prompt, `practice_context` exist → wire | L | IN_PROGRESS |
-| WR-4 | Workspace: autosave, word count, target | limits, count, `saveDraft` → none | S2 | IN_PROGRESS |
-| WR-5 | Review: summary, strengths, three issues, rule, related grammar, ask more | `summary_vi`, `strengths_vi`, `errors[]`, `grammar_links` → serializer | S2 | IN_PROGRESS (built) |
-| WR-6 | Example sentence per issue | no such field → add to the evaluator contract, versioned | S2 | IN_PROGRESS (built) |
-| WR-7 | Issue kind: register, grammar, punctuation, vocabulary, naturalness | categories are rubric keys → extend the taxonomy, EN and ZH together | S2 | IN_PROGRESS (built) |
-| WR-8 | Four dimensions, 0-100 | five rubric keys → serialize the four drawn; keep `task_achievement` | S2 | IN_PROGRESS (built) |
-| WR-9 | "Lưu nhận xét" | every review is stored as an essay → none | S2 | IN_PROGRESS (built) |
-| WR-10 | "Lưu khái niệm" | no saved concept from a review → saved concept | L | BLOCKED `[REVIEW]` |
-| WR-11 | Apply a fix | client, uses `anchored` → none | S2 | IN_PROGRESS (built) |
-| WR-12 | Revision: v1 and v2, fixed / remaining / new, headline | `revision_delta` → titles, details and headline from the data | S2 | IN_PROGRESS (built) |
-| WR-13 | Dimension change "72 → 88" | delta is a difference → return `from` and `to` | S2 | IN_PROGRESS (built) |
-| WR-14 | Done, edit again | client → none | S2 | IN_PROGRESS (built) |
+| ID    | Canonical UI                                                              | Have → Need                                                            | Slice | Status              |
+| ----- | ------------------------------------------------------------------------- | ---------------------------------------------------------------------- | ----- | ------------------- |
+| WR-1  | Entry: continue draft, "lưu 6 phút trước"                                 | account drafts (sandbox) and device → `updated_at`                     | L     | BLOCKED `[REVIEW]`  |
+| WR-2  | "Theo gợi ý": prompt list by kind, level, target words                    | AI task generation only → curated prompt library                       | L     | BLOCKED `[CONTENT]` |
+| WR-3  | Four modes                                                                | free, own prompt, `practice_context` exist → wire                      | L     | IN_PROGRESS         |
+| WR-4  | Workspace: autosave, word count, target                                   | limits, count, `saveDraft` → none                                      | S2    | IN_PROGRESS         |
+| WR-5  | Review: summary, strengths, three issues, rule, related grammar, ask more | `summary_vi`, `strengths_vi`, `errors[]`, `grammar_links` → serializer | S2    | IN_PROGRESS (built) |
+| WR-6  | Example sentence per issue                                                | no such field → add to the evaluator contract, versioned               | S2    | IN_PROGRESS (built) |
+| WR-7  | Issue kind: register, grammar, punctuation, vocabulary, naturalness       | categories are rubric keys → extend the taxonomy, EN and ZH together   | S2    | IN_PROGRESS (built) |
+| WR-8  | Four dimensions, 0-100                                                    | five rubric keys → serialize the four drawn; keep `task_achievement`   | S2    | IN_PROGRESS (built) |
+| WR-9  | "Lưu nhận xét"                                                            | every review is stored as an essay → none                              | S2    | IN_PROGRESS (built) |
+| WR-10 | "Lưu khái niệm"                                                           | no saved concept from a review → saved concept                         | L     | BLOCKED `[REVIEW]`  |
+| WR-11 | Apply a fix                                                               | client, uses `anchored` → none                                         | S2    | IN_PROGRESS (built) |
+| WR-12 | Revision: v1 and v2, fixed / remaining / new, headline                    | `revision_delta` → titles, details and headline from the data          | S2    | IN_PROGRESS (built) |
+| WR-13 | Dimension change "72 → 88"                                                | delta is a difference → return `from` and `to`                         | S2    | IN_PROGRESS (built) |
+| WR-14 | Done, edit again                                                          | client → none                                                          | S2    | IN_PROGRESS (built) |
 
 ### Vocabulary — `VocabularyCollection`, `VocabularyCard`, `WordDetail`, `ContextClip` · `vocabulary_collections`, `vocabulary_entries`, memberships, `saved_words` · `test_vocabulary_library*`, `test_vocabulary_cards`, `test_chinese_stroke_order`, `test_orena_vocabulary_*.mjs`
 
-| ID | Canonical UI | Have → Need | Slice | Status |
-| --- | --- | --- | --- | --- |
-| VC-1 | Collections with language, size, percent | `vocabularyLibraryCollections` → shared card | L | IN_PROGRESS |
-| VC-2 | Real packs | catalog gated until a pack is published → supply | L | BLOCKED `[CONTENT]` |
-| VC-3 | Search words or collections | inside one collection only → S5 | S5 | IN_PROGRESS |
-| VC-4 | Card front and back, mastery 0-3 | entries, `review_stage` → define mastery mapping once | L | IN_PROGRESS |
-| VC-5 | Deep card: senses, collocations, contrast, mistake, mental model, related | free-text fields → structured entry or on-demand explain | L | IN_PROGRESS |
-| VC-6 | "Lấy từ đâu" | device provenance → durable source link | L | BLOCKED `[REVIEW]` |
-| VC-7 | "Câu của bạn" | essays not indexed by word → read model (as QS-7) | L | IN_PROGRESS |
-| VC-8 | Han strokes: radical, components, order, animation | offline stroke pack → check the pack for decomposition | L | IN_PROGRESS |
-| VC-9 | Trace along, free write | no canvas → client capability | L | IN_PROGRESS |
-| VC-10 | Context clips for a word | no word-to-clip index → inverted index over listening transcripts | L | BLOCKED `[REVIEW]` |
-| VC-11 | Review: three grades with intervals, 3 / 24 | `again` / `got_it` → three-grade scheduler, interval preview, server-chosen queue; map old states, add tests, keep history | L | BLOCKED `[REVIEW]` |
-| VC-12 | Tier, 87/150, "chưa thuộc", show all | progress and filters exist; tier does not → tier definition | L | BLOCKED `[DEF]` |
-| VC-13 | Han or Latin script | `orthography` → none | L | IN_PROGRESS |
+| ID    | Canonical UI                                                              | Have → Need                                                                                                                | Slice | Status              |
+| ----- | ------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | ----- | ------------------- |
+| VC-1  | Collections with language, size, percent                                  | `vocabularyLibraryCollections` → shared card                                                                               | L     | IN_PROGRESS         |
+| VC-2  | Real packs                                                                | catalog gated until a pack is published → supply                                                                           | L     | BLOCKED `[CONTENT]` |
+| VC-3  | Search words or collections                                               | inside one collection only → S5                                                                                            | S5    | IN_PROGRESS         |
+| VC-4  | Card front and back, mastery 0-3                                          | entries, `review_stage` → define mastery mapping once                                                                      | L     | IN_PROGRESS         |
+| VC-5  | Deep card: senses, collocations, contrast, mistake, mental model, related | free-text fields → structured entry or on-demand explain                                                                   | L     | IN_PROGRESS         |
+| VC-6  | "Lấy từ đâu"                                                              | device provenance → durable source link                                                                                    | L     | BLOCKED `[REVIEW]`  |
+| VC-7  | "Câu của bạn"                                                             | essays not indexed by word → read model (as QS-7)                                                                          | L     | IN_PROGRESS         |
+| VC-8  | Han strokes: radical, components, order, animation                        | offline stroke pack → check the pack for decomposition                                                                     | L     | IN_PROGRESS         |
+| VC-9  | Trace along, free write                                                   | no canvas → client capability                                                                                              | L     | IN_PROGRESS         |
+| VC-10 | Context clips for a word                                                  | no word-to-clip index → inverted index over listening transcripts                                                          | L     | BLOCKED `[REVIEW]`  |
+| VC-11 | Review: three grades with intervals, 3 / 24                               | `again` / `got_it` → three-grade scheduler, interval preview, server-chosen queue; map old states, add tests, keep history | L     | BLOCKED `[REVIEW]`  |
+| VC-12 | Tier, 87/150, "chưa thuộc", show all                                      | progress and filters exist; tier does not → tier definition                                                                | L     | BLOCKED `[DEF]`     |
+| VC-13 | Han or Latin script                                                       | `orthography` → none                                                                                                       | L     | IN_PROGRESS         |
 
 ### Progress — `ProgressOverview`, `ProgressTrends` · LearnerSummary, `saved_words`, `reading_attempts`, `essays` · `test_learner_summary`, `test_orena_growth_summary.mjs`, `test_writing_analytics`
 
 Every value below renders `0` (a chart, its zero state) until measured.
 
-| ID | Canonical UI | Have → Need | Slice | Status |
-| --- | --- | --- | --- | --- |
-| PG-1 | Streak | none → definition and measurement | L | BLOCKED `[DEF]` |
-| PG-2 | Study time and per-skill time | no duration is recorded → official rule (time of completed work, never app-open time) and telemetry | L | BLOCKED `[DEF]` `[REVIEW]` |
-| PG-3 | Words mastered | `review_stage` → one threshold | L | IN_PROGRESS |
-| PG-4 | Just learned, with samples | `saved_words.added_at` → none | L | IN_PROGRESS |
-| PG-5 | Reviewing, due, done today | due from `next_review_at`; no event → review events | L | BLOCKED `[REVIEW]` |
-| PG-6 | Comprehension 9/11 and sequence | `reading_attempts` for generated passages → chapter quizzes (S4) | L | IN_PROGRESS |
-| PG-7 | Recall accuracy, cards, got / unsure / forgot | cumulative counters only → review event table; needs VC-11 | L | BLOCKED `[REVIEW]` |
-| PG-8 | Recent evidence per skill | LearnerSummary latest observations → `EvidenceItem` projection | L | IN_PROGRESS |
-| PG-9 | Rank panel | none → SH-4 | L | BLOCKED `[DEF]` |
-| PG-10 | 18-week heatmap | none → per-day activity | L | BLOCKED `[DEF]` `[REVIEW]` |
-| PG-11 | Next action | `practiceRecommendation`, `crossSkillCue`, `reviewCue` → one contract | L | IN_PROGRESS |
-| PG-12 | Improving over four weeks | only comparable measures may show a trend → series where comparable, `0` otherwise | L | BLOCKED `[DEF]` |
-| PG-13 | Recurring errors | `error-memory` covers Writing → cross-domain read model | L | IN_PROGRESS |
-| PG-14 | "Dựa trên gì" counts | derivable → after PG-7 | L | IN_PROGRESS |
+| ID    | Canonical UI                                  | Have → Need                                                                                         | Slice | Status                     |
+| ----- | --------------------------------------------- | --------------------------------------------------------------------------------------------------- | ----- | -------------------------- |
+| PG-1  | Streak                                        | none → definition and measurement                                                                   | L     | BLOCKED `[DEF]`            |
+| PG-2  | Study time and per-skill time                 | no duration is recorded → official rule (time of completed work, never app-open time) and telemetry | L     | BLOCKED `[DEF]` `[REVIEW]` |
+| PG-3  | Words mastered                                | `review_stage` → one threshold                                                                      | L     | IN_PROGRESS                |
+| PG-4  | Just learned, with samples                    | `saved_words.added_at` → none                                                                       | L     | IN_PROGRESS                |
+| PG-5  | Reviewing, due, done today                    | due from `next_review_at`; no event → review events                                                 | L     | BLOCKED `[REVIEW]`         |
+| PG-6  | Comprehension 9/11 and sequence               | `reading_attempts` for generated passages → chapter quizzes (S4)                                    | L     | IN_PROGRESS                |
+| PG-7  | Recall accuracy, cards, got / unsure / forgot | cumulative counters only → review event table; needs VC-11                                          | L     | BLOCKED `[REVIEW]`         |
+| PG-8  | Recent evidence per skill                     | LearnerSummary latest observations → `EvidenceItem` projection                                      | L     | IN_PROGRESS                |
+| PG-9  | Rank panel                                    | none → SH-4                                                                                         | L     | BLOCKED `[DEF]`            |
+| PG-10 | 18-week heatmap                               | none → per-day activity                                                                             | L     | BLOCKED `[DEF]` `[REVIEW]` |
+| PG-11 | Next action                                   | `practiceRecommendation`, `crossSkillCue`, `reviewCue` → one contract                               | L     | IN_PROGRESS                |
+| PG-12 | Improving over four weeks                     | only comparable measures may show a trend → series where comparable, `0` otherwise                  | L     | BLOCKED `[DEF]`            |
+| PG-13 | Recurring errors                              | `error-memory` covers Writing → cross-domain read model                                             | L     | IN_PROGRESS                |
+| PG-14 | "Dựa trên gì" counts                          | derivable → after PG-7                                                                              | L     | IN_PROGRESS                |
 
 ## Progress log
 
@@ -1296,7 +1301,7 @@ the full answer can be a sentence translation). Deleted the old Writing review l
 `.review-bar` box that also clipped the vocabulary session's header. Phone sheet checked with
 touch (bottom sheet, scrim, no horizontal overflow, closes on navigation).
 
-Still open from S1/S2: the zh *interface* on the sheets and the phone views of ask/deeper
+Still open from S1/S2: the zh _interface_ on the sheets and the phone views of ask/deeper
 for zh; provider-down states are covered by unit tests, not a browser pass; the two
 `verify_*_browser.mjs` scripts (cited in docs) wait for the deleted `.review-headline` and
 must be rewritten for the new markup; unused copy keys (`reviewFocus`, `reviewDeeper`,
@@ -1326,25 +1331,25 @@ them - decisions for the human, not guesses:
 
 ## Bugs 7-13 (2026-09-21) - what changed and where
 
-| # | Result | Where |
-| --- | --- | --- |
-| 7 | PASS: a replaced or closed sheet is cancelled; only the latest tap is answered; the last tap's own selection no longer reads as a drag; words in any visible line are askable (the line becomes current, paused) | `ui/lexical.js`, `ui/quick-sheet.js`, `ui/encounter.js`, `scripts/test_orena_lookup_race.mjs` |
-| 8 | PASS: follow-ups go to a contextual tutor (answer first, never restated, short by default, earlier turns carried) | `media_interaction.answer_learner_question`, `word_detail.py`, `tests/test_word_detail.py` |
-| 9 | PASS: Previous / Next on the Dictation rail, in step with the progress | `ui/dictation-screen.js`, `dictation.css` |
-| 10 | PASS: hear, line, field and check fit 390x844 (check at y 572-622); a long line scrolls in its own pane | `dictation.css` |
-| 11 | PASS as built in S3b (ring, count, marks, right line; no invented number); no new deviation found | `ui/dictation-screen.js` |
-| 12 | PASS: a tap on a line goes to it and plays it; the half-way picked state is deleted | `ui/encounter.js`, `listening.css` |
-| 13 | PASS: the overflow is the menu icon (three lines) | `ui/encounter.js`, `ui/symbols.js`, `ui/expression.js` |
+| #   | Result                                                                                                                                                                                                           | Where                                                                                         |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| 7   | PASS: a replaced or closed sheet is cancelled; only the latest tap is answered; the last tap's own selection no longer reads as a drag; words in any visible line are askable (the line becomes current, paused) | `ui/lexical.js`, `ui/quick-sheet.js`, `ui/encounter.js`, `scripts/test_orena_lookup_race.mjs` |
+| 8   | PASS: follow-ups go to a contextual tutor (answer first, never restated, short by default, earlier turns carried)                                                                                                | `media_interaction.answer_learner_question`, `word_detail.py`, `tests/test_word_detail.py`    |
+| 9   | PASS: Previous / Next on the Dictation rail, in step with the progress                                                                                                                                           | `ui/dictation-screen.js`, `dictation.css`                                                     |
+| 10  | PASS: hear, line, field and check fit 390x844 (check at y 572-622); a long line scrolls in its own pane                                                                                                          | `dictation.css`                                                                               |
+| 11  | PASS as built in S3b (ring, count, marks, right line; no invented number); no new deviation found                                                                                                                | `ui/dictation-screen.js`                                                                      |
+| 12  | PASS: a tap on a line goes to it and plays it; the half-way picked state is deleted                                                                                                                              | `ui/encounter.js`, `listening.css`                                                            |
+| 13  | PASS: the overflow is the menu icon (three lines)                                                                                                                                                                | `ui/encounter.js`, `ui/symbols.js`, `ui/expression.js`                                        |
 
 "Ink + Paper": the Paper theme was retired by D-066; there is one theme, so the check is desktop and phone
 in one theme.
 
 ## Bugs 14-15 and the design sync (2026-09-22)
 
-| # | Result | Where |
-| --- | --- | --- |
-| 14 | PASS: a word typed with an extra letter ("breack") is still wrong and the hint never shows it whole - the place where it parts from the target stays masked; the old test that expected the word revealed is re-expressed | `capabilities/dictation-hints.js`, `scripts/test_orena_dictation_hints.mjs` |
-| 15 | PASS: on a desk the task is one screen (check button at 979/1080, 720/768, 686/720; with or without a result); the picture takes what the height allows, the line scrolls in its own pane | `dictation.css`, `scripts/test_orena_dictation_screen.mjs` |
+| #   | Result                                                                                                                                                                                                                    | Where                                                                       |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| 14  | PASS: a word typed with an extra letter ("breack") is still wrong and the hint never shows it whole - the place where it parts from the target stays masked; the old test that expected the word revealed is re-expressed | `capabilities/dictation-hints.js`, `scripts/test_orena_dictation_hints.mjs` |
+| 15  | PASS: on a desk the task is one screen (check button at 979/1080, 720/768, 686/720; with or without a result); the picture takes what the height allows, the line scrolls in its own pane                                 | `dictation.css`, `scripts/test_orena_dictation_screen.mjs`                  |
 
 Design sync: tokens and the contracts checked are unchanged; the rules documents were read for the first time and
 are recorded in `docs/design/canonical-ui/SYNC_2026-09-22.md`. From them: the Writing review is a Draft / Review tab
@@ -1547,7 +1552,7 @@ comment claiming the frame "draws the same figure twice" as two rails is correct
   frame draws no attribution anywhere; where it should live is still the call recorded in the
   fidelity notes.
 - **The way out of a book was a loop.** The book page's back was `history.back()` while the reader's
-  back *navigates* to `#/book`, so back from the reader pushed the book page, and back from there
+  back _navigates_ to `#/book`, so back from the reader pushed the book page, and back from there
   returned to the reader: a learner could not leave the book. The book page's back is now a link to
   the reading library, so library → book → reader unwinds one step at a time. Verified:
   `#/encounter…` → `#/book?id=…` → `#/practice?intent=reading`.
@@ -1577,7 +1582,7 @@ against Gemini.
 **Two inferences, recorded for the human rather than decided:**
 
 - The frame gives "Lưu bài" and "Đọc tiếp sau" the same bookmark glyph and no behaviour. Built as:
-  "Lưu bài" toggles the bookmark; "Đọc tiếp sau" keeps it *and leaves the text*, which is what its
+  "Lưu bài" toggles the bookmark; "Đọc tiếp sau" keeps it _and leaves the text_, which is what its
   words say. If they are meant to be one action, the bar drops to five.
 - "Nghe" stays unavailable with its "coming" title: a text has no audio to read aloud yet. The frame
   draws it enabled. Same open question as the disabled "Kiểm tra hiểu".
@@ -1593,7 +1598,7 @@ the streak chip, which the overview bar carries and the trends bar does not. The
 used to draw there is deleted (rule 44), and with it the screen fits one viewport at 1920x1080:
 nothing on Tổng quan or Xu hướng needs scrolling any more.
 
-**The two tabs.** The frame draws the tab pair only on its *trends* frames - `Tổng quan` inactive,
+**The two tabs.** The frame draws the tab pair only on its _trends_ frames - `Tổng quan` inactive,
 `Xu hướng` solid - and the overview frames draw none. Taken literally that leaves Xu hướng
 unreachable, so the pair is drawn on both screens: it is one component with two states, and the
 inactive `Tổng quan` pill the trends frame draws is that component's other half. **Open for the
@@ -1682,10 +1687,10 @@ to 170, the full crystal above).
 **The conflict, recorded rather than decided (rule 7).** Two design sources
 count ranks differently:
 
-| Source | Ranks | States thresholds? |
-| --- | ---: | --- |
+| Source                                                                    |  Ranks | States thresholds?         |
+| ------------------------------------------------------------------------- | -----: | -------------------------- |
 | `Orena Rank Frame Master v2` (and `Orena Hạn mức sử dụng`: "bậc 10 / 32") | **32** | no - it is a material spec |
-| The Progress frame's ladder ("THANG CẤP BẬC · 20 BẬC") | **20** | yes, a word count per tile |
+| The Progress frame's ladder ("THANG CẤP BẬC · 20 BẬC")                    | **20** | yes, a word count per tile |
 
 Taken as newest-wins the master is current, and the app follows it: the ladder
 draws thirty-two. The Progress frame's numbers are kept **by name**, not by
@@ -1748,16 +1753,16 @@ vocabulary request made all of them wait.
 
 **What each screen asks for now**
 
-| Surface | Before | Now |
-| --- | --- | --- |
-| Hồ sơ | whole library, counted in the browser | `/api/library/vocabulary/summary` |
-| Tiến độ | whole library | the summary, plus `?limit=3&order=recent` |
-| Home ("what is due") | whole library, `.filter(due)` | the summary's `due` |
-| Recall queue | whole library, `.filter(due)` | `?status=due&order=due&limit=60` |
-| My Language | whole library | `?limit=50`, then `?cursor=…`; search, status and order go to the server |
-| Saved panel | whole library, searched and sorted in the browser | the same paged query |
-| Search | whole library, filtered per keystroke | `?query=…&limit=40`, debounced |
-| Book page | whole library, matched on the note | `?focus=<title>&focus=<chapter>…` |
+| Surface              | Before                                            | Now                                                                      |
+| -------------------- | ------------------------------------------------- | ------------------------------------------------------------------------ |
+| Hồ sơ                | whole library, counted in the browser             | `/api/library/vocabulary/summary`                                        |
+| Tiến độ              | whole library                                     | the summary, plus `?limit=3&order=recent`                                |
+| Home ("what is due") | whole library, `.filter(due)`                     | the summary's `due`                                                      |
+| Recall queue         | whole library, `.filter(due)`                     | `?status=due&order=due&limit=60`                                         |
+| My Language          | whole library                                     | `?limit=50`, then `?cursor=…`; search, status and order go to the server |
+| Saved panel          | whole library, searched and sorted in the browser | the same paged query                                                     |
+| Search               | whole library, filtered per keystroke             | `?query=…&limit=40`, debounced                                           |
+| Book page            | whole library, matched on the note                | `?focus=<title>&focus=<chapter>…`                                        |
 
 `summary` (and the learner's rank) travels with every page, counted by
 aggregate queries, so no screen adds items up and Hồ sơ and Tiến độ cannot
@@ -1777,13 +1782,13 @@ for. Nothing else was added.
 **Measured, on the schema the runtime creates** (best of five, in the app
 image; the learner has that many saved words):
 
-| | 0 | 12 | 1 600 | 10 000 |
-| --- | ---: | ---: | ---: | ---: |
-| summary (counts + rank) | 0.2 ms | 0.3 ms | 0.8 ms | 3.9 ms |
-| first page (50) | 0.3 ms | 0.6 ms | 1.5 ms | 7.6 ms |
-| recent three | 0.5 ms | 0.3 ms | 1.3 ms | 7.4 ms |
-| due queue (25) | 0.3 ms | 0.3 ms | 2.9 ms | 13.5 ms |
-| search one page | 0.3 ms | 0.3 ms | 1.9 ms | 7.9 ms |
+|                         |      0 |     12 |  1 600 |  10 000 |
+| ----------------------- | -----: | -----: | -----: | ------: |
+| summary (counts + rank) | 0.2 ms | 0.3 ms | 0.8 ms |  3.9 ms |
+| first page (50)         | 0.3 ms | 0.6 ms | 1.5 ms |  7.6 ms |
+| recent three            | 0.5 ms | 0.3 ms | 1.3 ms |  7.4 ms |
+| due queue (25)          | 0.3 ms | 0.3 ms | 2.9 ms | 13.5 ms |
+| search one page         | 0.3 ms | 0.3 ms | 1.9 ms |  7.9 ms |
 
 Over HTTP in the sandbox, with the seeded 1 612-word learner: the summary is
 6 ms and 2.4 KB, a 50-word page 20 ms and 23 KB, the due queue 24 ms, three
@@ -1951,9 +1956,7 @@ mismatch (a pronunciation projection that no longer carries the score the test
 expects) and fails on a clean HEAD tree as well. Same family as the CRLF note
 already recorded for `test_orena_grammar.mjs`: an environment failure, not an
 application regression - and the gates that are written against source text
-would be steadier matching `
-?
-`.
+would be steadier matching `?`.
 
 ## Vocabulary review, rebuilt on its frame (2026-09-22)
 
@@ -1972,8 +1975,9 @@ and the schedule.
 **Each grade says what it will do.** The source prints an interval under every
 grade. Rather than writing those numbers on the buttons, every saved word now
 carries `schedule` - the scheduler's own answer for that card at its own stage
+
 - and the buttons print it. A card at stage 0 shows 10m / 1d / 1d; at stage 1,
-10m / 1d / 3d.
+  10m / 1d / 3d.
 
 **The screen is the card.** 420x560 at 1920, the violet ring and the bloom when
 it is open, the plain glass when it is closed; the word in Noto Serif 54 (39 on
@@ -2057,7 +2061,7 @@ throwaway cards into the DOM, reading their geometry and discarding them on
 reload - nothing was seeded or stored.
 
 **One shared component was wrong and is fixed**: `.state-panel--empty` is a
-column, but its text kept the 14rem *basis* the row layout gives it, which in a
+column, but its text kept the 14rem _basis_ the row layout gives it, which in a
 column is a height - so every empty state in Orena drew a 224px box under two
 lines of text. Upright it now takes what it needs (the Vocabulary empty state
 went from 348px to 151px).
@@ -2070,7 +2074,6 @@ name, so the bar now says what the navigation says.
 scroll, nothing clipped, chips and rows at the phone frame's sizes. At 1920 the
 grid fits five covers across exactly as the frame does, unless a scrollbar is
 present, which costs 15px and drops it to four.
-
 
 ## Four designs arrived; what each one needs before it can be built (2026-09-23)
 
@@ -2107,7 +2110,7 @@ no grading - settings (14), mic blocked (15), not heard (16), offline grading
 (17), empty (18), shadowing (13) - are buildable now.
 
 **Thư viện của tôi (26 frames, new) - blocked on a contract, not on UI.** It is
-one library over *every* kind of thing a learner kept: words, writing, speaking
+one library over _every_ kind of thing a learner kept: words, writing, speaking
 takes, reading, grammar, books, and collections across them. Orena has no
 cross-type "kept" contract; each capability keeps its own. Building one is a
 learner-data persistence decision, which AGENTS §7 reserves. **For the human:**
@@ -2115,9 +2118,9 @@ this screen also answers the open question left by the Vocabulary Library entry
 above ("where do the learner's own words live"), so it should be decided with
 that one rather than separately.
 
-**Admin Control Center (21 frames, new) - held.** *Overtaken 2026-09-29 (D-099): the console was
+**Admin Control Center (21 frames, new) - held.** _Overtaken 2026-09-29 (D-099): the console was
 merged by PR #63 and runs at `/#/admin`; it keeps its own address through the cutover, and the
-Admin wave builds on the pinned `Orena Admin.dc.html`, which supersedes this Control Center.* AGENTS §7 keeps Platform
+Admin wave builds on the pinned `Orena Admin.dc.html`, which supersedes this Control Center._ AGENTS §7 keeps Platform
 Admin inert: its APIs and `static/admin.js` survive, the historical shell was
 removed, and the hold says not to restore a host for it. The design now draws
 that host in full. **This lane will not build it until the human lifts the
@@ -2302,9 +2305,9 @@ neither Vocabulary nor My Library answers anything differently.
 `scripts/measure_word_audio_coverage.py` (crosses the network, so it is an
 operator tool, not CI):
 
-| | |
-| --- | --- |
-| English, 30 ordinary words | **30/30** |
+|                                                    |           |
+| -------------------------------------------------- | --------- |
+| English, 30 ordinary words                         | **30/30** |
 | Chinese, 15 readings of 8 multi-reading characters | **12/15** |
 
 Missing and recorded rather than worked around: 行 háng, 重 chóng, 差 chāi.
@@ -2353,7 +2356,7 @@ Every Commons clip here is CC BY-SA or CC BY: playing it obliges naming the
 author and the licence. The frame draws the pill and nothing else. So for now
 the attribution travels on the control itself - `title` and `aria-label`, so it
 reaches both a pointer and a screen reader - and **this is not a decision, it
-is a placeholder.** *DESIGN DECISION NEEDED:* where a learner sees "Dvortygirl
+is a placeholder.** _DESIGN DECISION NEEDED:_ where a learner sees "Dvortygirl
 · CC BY-SA 3.0 · Wikimedia Commons" - a line under the card, the word's detail
 sheet, or a credits screen in Settings. Until then the obligation is met
 minimally rather than visibly, and that is a compromise the human should settle
@@ -2372,14 +2375,14 @@ published, which `find_entry` requires.
 
 **Verified end to end through the API, against the real Commons:**
 
-| | |
-| --- | --- |
-| `harbour` | available, CC BY-SA 4.0, "Speaker: Vealhurl" |
-| `winter` | available, CC BY-SA 3.0, "Dvortygirl" |
-| 行, no reading | refused, `reading_ambiguous`, and the two readings offered |
-| 行 `?reading=xíng` | available, CC BY 2.0 fr, "Wei Gao, Vion Nicolas" |
-| 行 `?reading=háng` | `not_found` - the gap the coverage measurement named |
-| cache | first 0.84s, second **0.05s**; the bytes route serves 10 138 bytes of `audio/ogg` |
+|                    |                                                                                   |
+| ------------------ | --------------------------------------------------------------------------------- |
+| `harbour`          | available, CC BY-SA 4.0, "Speaker: Vealhurl"                                      |
+| `winter`           | available, CC BY-SA 3.0, "Dvortygirl"                                             |
+| 行, no reading     | refused, `reading_ambiguous`, and the two readings offered                        |
+| 行 `?reading=xíng` | available, CC BY 2.0 fr, "Wei Gao, Vion Nicolas"                                  |
+| 行 `?reading=háng` | `not_found` - the gap the coverage measurement named                              |
+| cache              | first 0.84s, second **0.05s**; the bytes route serves 10 138 bytes of `audio/ogg` |
 
 ## The fallback works; the voice behind it is the human's to run (2026-09-23)
 
@@ -2388,11 +2391,11 @@ The **path** is verified, with a stand-in that speaks the protocol
 `KokoroVoice` uses (a local service returning a valid WAV - not a voice, and
 not in the repository):
 
-| | |
-| --- | --- |
+|                            |                                                                                                    |
+| -------------------------- | -------------------------------------------------------------------------------------------------- |
 | 行 háng, 重 chóng, 差 chāi | Commons has none; the fallback answered each, and was told **the reading**, not just the character |
-| `harbour` | Commons answered; the fallback was asked **0 times** |
-| cache | every one of them: first ~1.6s, second 0.000s |
+| `harbour`                  | Commons answered; the fallback was asked **0 times**                                               |
+| cache                      | every one of them: first ~1.6s, second 0.000s                                                      |
 
 **What is missing is a voice, not wiring.** The application image has no
 Kokoro, no ONNX runtime and no espeak, and putting one there is not this
@@ -2436,12 +2439,12 @@ is not even asked.
 
 What that means for the three gaps the coverage measurement named:
 
-| | |
-| --- | --- |
-| Words with one reading and no recording | the fallback covers them |
-| 行 háng, 重 chóng, 差 chāi | **still uncovered**, and honestly so |
+|                                         |                                      |
+| --------------------------------------- | ------------------------------------ |
+| Words with one reading and no recording | the fallback covers them             |
+| 行 háng, 重 chóng, 差 chāi              | **still uncovered**, and honestly so |
 
-A deployment that *can* honour a reading - a grapheme-to-phoneme override in
+A deployment that _can_ honour a reading - a grapheme-to-phoneme override in
 front of the voice - declares itself with `KOKORO_READING_AWARE=1`, and then it
 is asked and told the reading. That override does not exist here, and building
 one is its own piece of work, not something to assume.
@@ -2460,12 +2463,12 @@ from the pin taken this morning; all 32 frames are listed below.
 
 ### Synced in this pass
 
-| What the frame says | What the app had | Now |
-| --- | --- | --- |
+| What the frame says                                                            | What the app had                                                | Now                                                                                                                                        |
+| ------------------------------------------------------------------------------ | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
 | "Vocabulary library" body is **the chips and the pack grid, and nothing else** | a third block under them: the learner's due row and "Từ đã lưu" | **removed** - Vocabulary is the shared catalogue, and a learner's own words are Thư viện của tôi's (D-074). Rule 44: deleted, not restyled |
-| chip 40 tall, 10/18, 15px, radius 999 | 46 tall (the page's 1.7 line-height inflating it) | **40**, with the line-height set after `font: inherit`, which was putting it back |
-| review card word 54, weight **600**, serif | 54 at weight 700 | **600** |
-| the "Nghe phát âm" pill is as wide as its words | stretched the card's width | centred at its own width |
+| chip 40 tall, 10/18, 15px, radius 999                                          | 46 tall (the page's 1.7 line-height inflating it)               | **40**, with the line-height set after `font: inherit`, which was putting it back                                                          |
+| review card word 54, weight **600**, serif                                     | 54 at weight 700                                                | **600**                                                                                                                                    |
+| the "Nghe phát âm" pill is as wide as its words                                | stretched the card's width                                      | centred at its own width                                                                                                                   |
 
 The saved-word management view inside the Vocabulary room is now unreachable:
 its only entry was the row that went. Its code is still there and still pinned
@@ -2494,40 +2497,40 @@ shared bar's search simply narrower than the baseline says?
 Read this table with the dated sections below it: each one says how a frame was
 built, what it is fed by, and what was recorded rather than decided.
 
-| # | Frame | App |
-| ---: | --- | --- |
-| 1 | Vocabulary library | **yes** - `#/language`, with the head frames 01-02 draw (2026-09-23) |
-| 2 | Vocabulary library mobile | **yes** - the same room at 390 |
-| 3 | Vocabulary card deep | **yes** - the dictionary's half of the word (2026-09-23) |
-| 4 | Vocabulary card deep scrolled | **yes** - the learner's half |
-| 5 | Vocabulary strokes | **yes** - on the stroke capability vendored 2026-08-26 (2026-09-23) |
-| 6 | Vocabulary context clips | **yes** - real timestamped moments in the listening catalogue (2026-09-23) |
-| 7 | Vocabulary context clips mobile | **yes** |
-| 8 | Vocabulary review | **yes** - `#/practice?intent=recall` |
-| 9 | Vocabulary review mobile | **yes** |
-| 10 | Vocabulary review mobile hidden | **yes** - including the listen pill |
-| 11 | Review typing retry | **yes** - two tries, the hint, marks not required (2026-09-23) |
-| 12 | Review typing mobile | **yes** |
-| 13 | Review listen choose mobile | **yes** - offered only where there is a recording and neighbours |
-| 14 | Review dictation mobile | **yes** |
-| 15 | Review cloze mobile | **yes** - offered only where the sentence really holds the word |
-| 16 | Review speaking mobile | **no screen** - speech grading is the Speaking lane's |
-| 17 | Review speaking mic blocked | **no screen** - same lane |
-| 18 | Review summary | **yes** |
-| 19 | Review summary mobile | **yes** |
-| 20 | Vocabulary search | **yes** - the room's own search, both halves server-side (2026-09-23) |
-| 21 | Vocabulary search mobile | **yes** |
-| 22 | Save to deck sheet mobile | **yes** - over Thư viện của tôi's own sets (2026-09-23) |
-| 23 | Add word modal | **yes** - the same fields as 24, widened |
-| 24 | Add word mobile | **yes** |
-| 25 | Create deck mobile | **yes** - name and language; the colour chooser needs a column (below) |
-| 26 | Vocabulary deep desktop | **yes** - both halves at once, with the strokes column (2026-09-23) |
-| 27 | Review settings desktop | **yes** - device memory, no schema (2026-09-23) |
-| 28 | Review settings mobile | **yes** |
-| 29 | Vocabulary empty mobile | **yes** - measured against this frame (2026-09-23) |
-| 30 | Deck nothing due mobile | **yes** - both numbers counted, and the second door to the settings |
-| 31 | Review offline mobile | **yes** - answers wait on the device and sync (2026-09-23) |
-| 32 | Deck load error mobile | **yes** - with the code a learner can quote |
+|   # | Frame                           | App                                                                        |
+| --: | ------------------------------- | -------------------------------------------------------------------------- |
+|   1 | Vocabulary library              | **yes** - `#/language`, with the head frames 01-02 draw (2026-09-23)       |
+|   2 | Vocabulary library mobile       | **yes** - the same room at 390                                             |
+|   3 | Vocabulary card deep            | **yes** - the dictionary's half of the word (2026-09-23)                   |
+|   4 | Vocabulary card deep scrolled   | **yes** - the learner's half                                               |
+|   5 | Vocabulary strokes              | **yes** - on the stroke capability vendored 2026-08-26 (2026-09-23)        |
+|   6 | Vocabulary context clips        | **yes** - real timestamped moments in the listening catalogue (2026-09-23) |
+|   7 | Vocabulary context clips mobile | **yes**                                                                    |
+|   8 | Vocabulary review               | **yes** - `#/practice?intent=recall`                                       |
+|   9 | Vocabulary review mobile        | **yes**                                                                    |
+|  10 | Vocabulary review mobile hidden | **yes** - including the listen pill                                        |
+|  11 | Review typing retry             | **yes** - two tries, the hint, marks not required (2026-09-23)             |
+|  12 | Review typing mobile            | **yes**                                                                    |
+|  13 | Review listen choose mobile     | **yes** - offered only where there is a recording and neighbours           |
+|  14 | Review dictation mobile         | **yes**                                                                    |
+|  15 | Review cloze mobile             | **yes** - offered only where the sentence really holds the word            |
+|  16 | Review speaking mobile          | **no screen** - speech grading is the Speaking lane's                      |
+|  17 | Review speaking mic blocked     | **no screen** - same lane                                                  |
+|  18 | Review summary                  | **yes**                                                                    |
+|  19 | Review summary mobile           | **yes**                                                                    |
+|  20 | Vocabulary search               | **yes** - the room's own search, both halves server-side (2026-09-23)      |
+|  21 | Vocabulary search mobile        | **yes**                                                                    |
+|  22 | Save to deck sheet mobile       | **yes** - over Thư viện của tôi's own sets (2026-09-23)                    |
+|  23 | Add word modal                  | **yes** - the same fields as 24, widened                                   |
+|  24 | Add word mobile                 | **yes**                                                                    |
+|  25 | Create deck mobile              | **yes** - name and language; the colour chooser needs a column (below)     |
+|  26 | Vocabulary deep desktop         | **yes** - both halves at once, with the strokes column (2026-09-23)        |
+|  27 | Review settings desktop         | **yes** - device memory, no schema (2026-09-23)                            |
+|  28 | Review settings mobile          | **yes**                                                                    |
+|  29 | Vocabulary empty mobile         | **yes** - measured against this frame (2026-09-23)                         |
+|  30 | Deck nothing due mobile         | **yes** - both numbers counted, and the second door to the settings        |
+|  31 | Review offline mobile           | **yes** - answers wait on the device and sync (2026-09-23)                 |
+|  32 | Deck load error mobile          | **yes** - with the code a learner can quote                                |
 
 **Thirty of the thirty-two have a screen, and the other two are not this
 lane's**: frames 16 and 17 are Speaking's. Every Vocabulary frame is built.
@@ -2572,11 +2575,11 @@ tôi. The route in is the tab bar, which the design gives it.
 Three controls the old view carried are **not drawn by any canonical frame** and
 were not rebuilt anywhere:
 
-| Control | Where it was | Decision |
-| --- | --- | --- |
+| Control                                                                    | Where it was       | Decision                                                    |
+| -------------------------------------------------------------------------- | ------------------ | ----------------------------------------------------------- |
 | Status filter chips over saved words (all/new/learning/due/mastered/saved) | Vocabulary → saved | Not drawn. Thư viện của tôi draws "cần ôn hôm nay" instead. |
-| Sort (recommended / alpha / level / due) over saved words | Vocabulary → saved | Not drawn. |
-| Choosing words to start a study session from the list | Vocabulary → saved | Not drawn. Recall decides its own queue. |
+| Sort (recommended / alpha / level / due) over saved words                  | Vocabulary → saved | Not drawn.                                                  |
+| Choosing words to start a study session from the list                      | Vocabulary → saved | Not drawn. Recall decides its own queue.                    |
 
 They survive on the **collection** views, where `management()` still serves the
 catalogue, and whether the canonical collection frames draw them is measured in
@@ -2595,15 +2598,15 @@ Frames **03 Vocabulary card deep**, **04 Vocabulary card deep scrolled** and
 Each section has one source, and a section with nothing in it is **absent**
 rather than filled:
 
-| Section | Where it comes from |
-| --- | --- |
-| Nhiều nghĩa · từ loại | the catalogue entry's `detailed_definitions` / `short_meanings`, its part of speech and its examples |
-| Kết hợp thường gặp | **new**: `VocabularyRepository.find_neighbours` — published entries that contain this word and are longer, shorter first |
-| Cụm liên quan | the same neighbours, kept only where one carries a meaning |
+| Section                    | Where it comes from                                                                                                                                             |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Nhiều nghĩa · từ loại      | the catalogue entry's `detailed_definitions` / `short_meanings`, its part of speech and its examples                                                            |
+| Kết hợp thường gặp         | **new**: `VocabularyRepository.find_neighbours` — published entries that contain this word and are longer, shorter first                                        |
+| Cụm liên quan              | the same neighbours, kept only where one carries a meaning                                                                                                      |
 | Đối chiếu · Mô hình tư duy | the explanation capability, **cached in the asset store** under `blake2s(identity, reading, support)`, so a word opened twice costs one call and says one thing |
-| Lỗi thường gặp | the catalogue's own `usage_notes` first; the explanation only where the catalogue is silent |
-| Lấy từ đâu | the provenance the saved word already carries (`source_kind`, `source_fragment`) — one row, because one place is what the app recorded |
-| Câu của bạn | **new**: `sentences_using` on both repositories — the learner's own writing, narrowed by the database and cut to sentences here |
+| Lỗi thường gặp             | the catalogue's own `usage_notes` first; the explanation only where the catalogue is silent                                                                     |
+| Lấy từ đâu                 | the provenance the saved word already carries (`source_kind`, `source_fragment`) — one row, because one place is what the app recorded                          |
+| Câu của bạn                | **new**: `sentences_using` on both repositories — the learner's own writing, narrowed by the database and cut to sentences here                                 |
 
 No schema: the explanation cache is a `BookAssetStore` key, as per-word audio
 is. `GET /api/library/vocabulary/{word}/deep` is the whole screen in one read.
@@ -2679,7 +2682,7 @@ Deck load error mobile** — built and measured.
   server **waits on the device**, in the order it was given, and goes up on the
   next connection — `product/review-queue.js`, with the rules a queue needs to
   be trustworthy: order is kept, a failure holds the ones behind it (they are
-  later events in the same schedule), and a *refusal* is dropped rather than
+  later events in the same schedule), and a _refusal_ is dropped rather than
   retried forever. Every grade in the room now goes through that one place,
   flashcard and task card alike.
 - **Frame 32** is the set that would not load, with the code a learner can
@@ -2712,7 +2715,7 @@ Two things recorded rather than decided:
 1. **No populated Vocabulary frame draws a way to add a word by hand.** The
    `+` and "Tự thêm từ" are on frame 29, the empty room, and that is where they
    are. Frame 23's own title — "Thêm từ vào Norsk hverdag" — says the other
-   door is on a *set*, which belongs to the Thư viện của tôi frames, not to
+   door is on a _set_, which belongs to the Thư viện của tôi frames, not to
    these. Until that door is drawn there, a learner with words reaches the add
    screen through the set picker on frame 22.
 2. **Frame 25 draws a cover-colour chooser and nothing stores a chosen
@@ -2754,7 +2757,7 @@ mobile** — built and measured, with the way in the desktop deep frame draws
 there are clips.
 
 **Every clip is a real moment in real media.** A clip is a timestamped segment
-of a listening-catalogue lesson whose *own transcript* contains the word — the
+of a listening-catalogue lesson whose _own transcript_ contains the word — the
 lesson's vocabulary list is not evidence that the word is in any particular
 moment of it. Nothing is generated and nothing is stitched: the gate refuses a
 voice import in that module, and a word the catalogue has never said has no
@@ -2777,24 +2780,24 @@ Orena does not hold, and proposed importing Make Me a Hanzi behind a rights
 decision. That was wrong, and it was wrong because it was written without
 auditing the code. The audit:
 
-| What exists | Where |
-| --- | --- |
-| The Make Me a Hanzi pack, vendored with `ARPHICPL.TXT` beside it | `writing_coach/languages/chinese/stroke_data/` (2026-08-26) |
-| Deterministic lookup: stroke count, paths in writing order, medians, glyph box | `writing_coach/languages/chinese/stroke_order.py` |
-| A route with an ETag and immutable caching | `GET /api/chinese/stroke-order` |
-| A client for it | `api.chineseStrokeOrder` |
-| The shared orthography contract, with `radical` and `components` facts | `writing_coach/orthography.py` |
+| What exists                                                                    | Where                                                       |
+| ------------------------------------------------------------------------------ | ----------------------------------------------------------- |
+| The Make Me a Hanzi pack, vendored with `ARPHICPL.TXT` beside it               | `writing_coach/languages/chinese/stroke_data/` (2026-08-26) |
+| Deterministic lookup: stroke count, paths in writing order, medians, glyph box | `writing_coach/languages/chinese/stroke_order.py`           |
+| A route with an ETag and immutable caching                                     | `GET /api/chinese/stroke-order`                             |
+| A client for it                                                                | `api.chineseStrokeOrder`                                    |
+| The shared orthography contract, with `radical` and `components` facts         | `writing_coach/orthography.py`                              |
 
 So the rights decision was taken long ago and nothing needed importing. What
 was actually missing was a **surface**: the only thing any screen had ever
-drawn from this capability was the stroke *count* (`orthographyMarkup` in
+drawn from this capability was the stroke _count_ (`orthographyMarkup` in
 `ui/vocabulary-card.js`). The paths and medians reached the browser and were
 thrown away.
 
 Frame 05 now draws them:
 
 - **13 nét** — `stroke_count`.
-- **Thứ tự nét** — five cells, each the character after the first *n* strokes,
+- **Thứ tự nét** — five cells, each the character after the first _n_ strokes,
   built from the real paths; the strip always ends on the finished character.
 - **Xem animation** — one stroke a time from the same paths.
 - **Tô theo** — judged against the **medians**, which are the one piece of the
@@ -2814,7 +2817,6 @@ with their own provenance". The shared contract already has `radical` and
 entry's orthography when a curator has supplied them, and is **absent** when
 they have not — never guessed from the glyph. Filling them is a content task
 against a contract that exists, not a schema or a rights question.
-
 
 ## A Deck is not a Collection (2026-09-23)
 
@@ -2838,7 +2840,7 @@ owner column.
   may not self-approve its own schema change.
 - `DeckRepository`, `/api/vocabulary/decks`, and frames 22–25 are wired to the
   Deck contract. Until the tables exist the routes answer `503
-  decks_unavailable` and the screens say so. They are deliberately **not**
+decks_unavailable` and the screens say so. They are deliberately **not**
   wired back to `library_collections`: shipping the wrong domain again to keep
   a screen green would be the worse failure.
 - A set holds a **reference** to the learner's saved word and no copy, and
@@ -2860,7 +2862,7 @@ sandbox should be carried over or left as My Library collections.
   the room to its items, which is what a Collection is.
 - **Free practice is real and cannot touch the schedule.** Three things were
   wrong: `practiceOnly` was set on the way in and never cleared, so a learner
-  who used it once was silently no longer recorded in the *next* real session;
+  who used it once was silently no longer recorded in the _next_ real session;
   the grade buttons were drawn and did nothing; and nothing said the pass was
   not counted. Now the flag is a parameter of starting a session, the grades are
   not drawn in a free pass because they belong to the scheduler, and the bar
@@ -2890,7 +2892,7 @@ case-folded — was left, because `uq_library_collection_title` has the identica
 property and changing one alone would make two sibling tables disagree.
 
 **P2, and the human's instruction, are done: undo restores deck memberships.**
-Membership cascades with the word, so the sets are read *before* the delete,
+Membership cascades with the word, so the sets are read _before_ the delete,
 carried in the undo payload, and re-filed after the word is restored — the
 word first, because a membership has nothing to attach to until the row is
 back. No schema change. My Library may read decks and put a word back into one
@@ -2928,7 +2930,7 @@ carries the author and the progress bar the frame draws; they are absent only
 when the data is.
 
 **One real defect, and it was a behaviour, not a pixel.** The library's control
-is labelled "Nhập văn bản" / "Import text" and opened the *passage generator*:
+is labelled "Nhập văn bản" / "Import text" and opened the _passage generator_:
 a sheet asking which form, level and topic to **invent** a passage about, with
 no field to paste anything into. A learner could not bring their own text in
 from Reading at all. It now opens the learner's own import (`ctx.import` — a
@@ -2938,11 +2940,11 @@ the frame draws. Asking for a generated passage keeps its own door
 
 ### Ownership audit, done before touching anything
 
-| Owner | Modules |
-| --- | --- |
-| **Admin lane** | `reading_admin_api`, `reading_content_engine`, `reading_source_import`, `reading_worker`, `reading_processing`, and `reading_content_repository` |
-| **This lane** | `reading_articles_api` (published only), `becoming_reading`, `/api/reading/session*`, and the learner half of `reading_library_api` |
-| **Shared file** | `reading_library_api` holds admin EPUB import *and* the learner catalog/chapter reads. Nothing in it was changed. |
+| Owner           | Modules                                                                                                                                          |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Admin lane**  | `reading_admin_api`, `reading_content_engine`, `reading_source_import`, `reading_worker`, `reading_processing`, and `reading_content_repository` |
+| **This lane**   | `reading_articles_api` (published only), `becoming_reading`, `/api/reading/session*`, and the learner half of `reading_library_api`              |
+| **Shared file** | `reading_library_api` holds admin EPUB import _and_ the learner catalog/chapter reads. Nothing in it was changed.                                |
 
 ### Dependencies on the Admin lane — recorded, not worked around
 
@@ -3119,6 +3121,7 @@ theo" walking to question 2, and "Xem lại trong bài" closing the sheet onto t
 marked words in the text. Sizes measured in place: 25/800/-0.02em question,
 17/18 radius-15 options, 16.5/1.8 evidence, 15.5 reason, 13.5 skip line, 50px
 quiet actions, 54px primary.
+
 ---
 
 ## The learner rail on the Platform Admin console (2026-09-23, DECIDED)
@@ -3141,6 +3144,7 @@ console went from 885px of usable width to 1199px on a 1280px window.
 The reader's precedent - a room may quiet the shell but never removes a
 destination - is honoured by the back link rather than by keeping the rail:
 Admin is not a learner room, and the one destination it needs is the way out.
+
 ## Speaking slice, measured (2026-09-23, `feature/speaking`)
 
 Built on `Orena-Speaking.dc.html` frames "Speaking library", "Speaking workspace", "… mobile",
@@ -3175,15 +3179,13 @@ S1-S13 in the register above.
   evidence and the attempt record were the real routes. One fix from the phone check: the two side
   buttons no longer overflow 390px.
 - **Deviation shared with the other libraries, not changed here:** the frame's desktop grid is four
-  362px columns; the shared library (`media-library.css`, `#main > *` capped at 1480px) shows three at
-  1920. The phone library is the shared two-column grid, where the frame draws one large card then
+  362px columns; the shared library (`media-library.css`, `#main > *` capped at 1480px) shows three at 1920. The phone library is the shared two-column grid, where the frame draws one large card then
   pairs. Both belong to the library template, not to Speaking.
 - `scripts/test_m3_pronunciation_contract.mjs` is rewritten to `PronunciationResult` and passes (it
   held the D-065 "no score" report). Six `.mjs` gates fail locally on a clean `3bf2c3f` tree as well,
   with the same first assertion: `test_orena_admin_console`, `test_orena_admin_entry`,
   `test_orena_continuation`, `test_orena_product`, `test_orena_reference`,
   `test_orena_writing_workspace` - inherited, not this slice.
-
 
 ## Speaking, the re-pinned frames measured and run against Azure (2026-09-23, later)
 
@@ -3333,7 +3335,7 @@ wiring these to the real backend, for the ten workspace agents that call them an
 - **No "mark as known" action.** The Word Quick Sheet's mastery row (frame 53, `qsHasWC` branch)
   draws a text "Mark as known" toggle (`onKnown`) beside the mastery bars. The real vocabulary
   contract only exposes incremental SRS grading (`POST /api/library/vocabulary/{word}/review
-  {result: again|unsure|got_it}`, `writing_coach`'s own schedule), which advances a word one step,
+{result: again|unsure|got_it}`, `writing_coach`'s own schedule), which advances a word one step,
   never jumps it straight to the mastered/"Available" stage. **Not built** - no safe real mapping
   from a single tap to "known" exists without inventing a scoring rule the backend does not have.
 - **`deeper.whyHere` needs a provider.** The Word Quick Sheet's "Why here?" row is always drawn
@@ -3344,7 +3346,7 @@ wiring these to the real backend, for the ten workspace agents that call them an
   every word currently shows the fallback; verify the real-reason path once a provider is
   configured.
 - **`source.title` is caller-supplied, optional.** The frame's "Source sentence · {{time}}" binding
-  turned out, measured live, to show the *content's title* (e.g. an article's), not a timestamp as
+  turned out, measured live, to show the _content's title_ (e.g. an article's), not a timestamp as
   the static export's own placeholder name suggested. `openWordSheet`'s `source` therefore accepts
   an optional `title` field; a caller with a real one (content_id already resolves to a title in
   most rooms) should pass it, or the sheet falls back to the bare "Source sentence" label - never a
@@ -3391,11 +3393,11 @@ endpoint the other Speaking/Listening rooms already read serves it.
   nothing to the learner's record, Progress does not count it, and "Finish" only leaves. (Check
   Understanding is the one Reading activity that writes evidence.)
 - **RT-4. The text must be in the learning language.** The endpoint answers 409 unless
-  `source_language` is the learner's *current learning language*; the screen passes it from the
+  `source_language` is the learner's _current learning language_; the screen passes it from the
   learner's context, never from the text. A text in another language fails with the generic
   "Coaching isn't available right now" toast - the frame draws no distinct state for it.
 - **RT-5. Which sentence.** No "where I stopped reading" signal reaches this screen, so it starts at
-  the first *workable* sentence of the text (at least 4 words, or 6 Han characters for Chinese; at
+  the first _workable_ sentence of the text (at least 4 words, or 6 Han characters for Chinese; at
   most 400 characters so it fits the request's `situation` beside its task) and "Another sentence"
   moves on in reading order, wrapping. The frame starts at a fixed demo index. With a single workable
   sentence "Another sentence" is not offered (it would only repeat Retry).
@@ -3405,11 +3407,11 @@ endpoint the other Speaking/Listening rooms already read serves it.
   second-guess it.
 - **Check Understanding's grading is off by default, and the disabled state must be honest.**
   `POST /api/reading/practice/sets/{id}/questions/{id}/grade` and `POST
-  /api/reading/practice/attempts` both 503 (`reading_submit_disabled`) unless
+/api/reading/practice/attempts` both 503 (`reading_submit_disabled`) unless
   `ORENA_READING_PRACTICE_SUBMIT=on` (`writing_coach/reading_practice_api.py`) - confirmed live on
   the isolated stack, where the flag is unset. Rather than let a learner tap an option and hit a
   503 mid-quiz, the screen reads the `submit_enabled` flag `GET
-  /api/reading/practice/articles/{id}` already returns alongside the question set, before showing
+/api/reading/practice/articles/{id}` already returns alongside the question set, before showing
   any interactive card, and shows the honest "Practice answers aren't being saved yet" empty state
   instead when it is false. Separately, **no article in this sandbox has an approved comprehension
   set at all** (`scripts/fixtures/api/reading_practice_article_set.json` - the real, captured 404
@@ -3429,7 +3431,7 @@ endpoint the other Speaking/Listening rooms already read serves it.
 - **Check Understanding's "Go deeper" chips only include Discuss/Reading Transfer.** The frame's
   `cuDeeper` list (D3 §2.4) is inferred, not specified, to also cover "review saved words" and
   "next chapter" - neither has a real per-document data source this screen can read honestly (a
-  saved-word count scoped to *this* document does not exist anywhere, the same absence N-10/N-23
+  saved-word count scoped to _this_ document does not exist anywhere, the same absence N-10/N-23
   already name for a related concept; a book chapter's own "is there a next one" needs the book's
   chapter list). Left out rather than shown with a guessed destination (rule 40).
 - **Check Understanding's "Show in text" has no addressable evidence location.** The frame's own
@@ -3500,7 +3502,7 @@ registered in `shell/screens.js`. `rewrite` (`#/rewrite`, frame 37 Context Rewri
   for a different, un-designed grading shape is a product decision this pass has no standing to
   invent. Per the Wave B brief's own instruction for these two ("real backends only, else Coming
   soon"), both routes were left **unregistered** in `shell/screens.js` - `shell/router.js
-  #loadScreen`'s existing, already-tested fallback serves the design's own Coming soon screen,
+#loadScreen`'s existing, already-tested fallback serves the design's own Coming soon screen,
   titled from each route's own `crumb` (`contextRewrite` / `timedWriting`, both already real
   `copy/shell.js` keys - no new key needed). No `screen.js`/`model.js`/`copy.js`/test gate was
   written for either folder: there is no real behaviour to implement, and shipping an interactive
@@ -3511,7 +3513,7 @@ registered in `shell/screens.js`. `rewrite` (`#/rewrite`, frame 37 Context Rewri
   more than Coming soon.
 - **A finding's `priority` is real, but this build only ever marks one "high" per essay.**
   `GET /api/essays/{id}` (`app.py#row_to_dict`, `detail=True`) computes
-  `"priority": "high" if index == 0 else "medium"` - i.e. exactly the *first*-listed finding, never
+  `"priority": "high" if index == 0 else "medium"` - i.e. exactly the _first_-listed finding, never
   more than one, regardless of how severe the others are. The Writing screen uses this real field
   as-is for the frame's Priority/Other split (rule 40: use the real signal, do not re-derive a
   better one client-side) rather than inventing its own ranking - but this means "Priority issues"
@@ -3538,7 +3540,7 @@ registered in `shell/screens.js`. `rewrite` (`#/rewrite`, frame 37 Context Rewri
   Rewrite / Timed Writing an essay started from) is not persisted at all** - `create_essay()`
   (`app.py`) never writes a `writing_mode` column, so `GET /api/essays/{id}` cannot answer it. The
   frame's own header meta line reads `Prompt · {{ wrLevel }} · {{ wrRegister }} · ~{{ wrTarget }}
-  words · {{ wrVersionLabel }}`, where the literal word "Prompt" appears to name the entry mode,
+words · {{ wrVersionLabel }}`, where the literal word "Prompt" appears to name the entry mode,
   not a bound value; with no real field to bind it to, this build's meta line omits that word
   entirely rather than show a permanent, possibly-wrong "Prompt" label on every piece regardless of
   how it was actually started.
@@ -3566,7 +3568,7 @@ registered in `shell/screens.js`. `rewrite` (`#/rewrite`, frame 37 Context Rewri
   literally.** An earlier pass repeated the delta card once per scored dimension (naturalness,
   grammar, vocabulary, coherence), reasoning that hiding three other real, measured movements read
   as closer to a rule-40 violation than following the sample literally. On finishing, `19-Compare-
-  Versions.html` was re-read against that choice: the frame draws exactly one summary line with the
+Versions.html` was re-read against that choice: the frame draws exactly one summary line with the
   literal word "Grammar" typed in - not a name-bound repeating card - so the finished build
   (`writing-compare/model.js#mapCompare`) reads only `dimensionDeltas`' `grammar` entry and drops the
   rest, matching rule 43 (nothing the frame does not draw) instead of rule 40's "show every real
@@ -3576,7 +3578,7 @@ registered in `shell/screens.js`. `rewrite` (`#/rewrite`, frame 37 Context Rewri
   **Answered 2026-09-29 (D-098): follow the frame** - one Grammar line, as built; closed.
 - **Compare Versions' summary line's "range" (CEFR band) delta is now shown for real, when both
   sides have one.** `RevisionCompare` itself carries no `app_cefr`/range and no id for the earlier
-  revision, but the *current* essay's own `GET /api/essays/{id}` answer carries a `revisions[]` list
+  revision, but the _current_ essay's own `GET /api/essays/{id}` answer carries a `revisions[]` list
   (id + revision_no + created_at) for the whole series, including the earlier one being compared;
   the finished build (`writing-compare/screen.js`) reads the earlier revision's id off that list
   (`model.js#revisionIdOf`) and fetches its own `GET /api/essays/{id}` for its `cefr_estimate`, then
@@ -3646,7 +3648,7 @@ Other gaps, each already filled the conservative way (rule 40) rather than guess
 - **Kit token gaps remain open on the largest surface** (not this unit's files to fix -
   `static/orena/kit/tokens.css` is shared): the desktop aside's background is `--mark-disc` (two
   stops) where the frame draws a third `#0E0E16` stop (`radial-gradient(120% 140% at 0% 0%, #2B2158
-  0%, #150F2E 62%, #0E0E16 100%)`), the big hero mark's shadow is `--mark-glow-strong` (`0 4px 12px`)
+0%, #150F2E 62%, #0E0E16 100%)`), the big hero mark's shadow is `--mark-glow-strong` (`0 4px 12px`)
   where the frame draws `0 20px 50px rgba(122,92,246,.35)`, and the aside's ink is `--toast-ink`
   (`#fff`) where the frame's dark-only text is `#F3F3F8`. **For the lead:** add theme-independent
   tokens for the aside gradient, a stronger hero glow and the aside ink, then this screen swaps them
@@ -3679,7 +3681,7 @@ gap, a content one:
   pairs... pick the character") - the clearest case in this set of the frame promising content the
   data model has never had (E2 §10's own finding, confirmed again here).
 
-All four practice types exist as *names* in `speaking_library.py`'s `PRACTICE_TYPES`
+All four practice types exist as _names_ in `speaking_library.py`'s `PRACTICE_TYPES`
 ("retell"/"interview"/"sounds"), but the Speaking catalogue ships empty by product decision
 (`content/speaking_catalog.v1.json`, `{"items": []}`, UI_BACKEND_GAPS SP-1) - so even once
 authored, an item of one of these types would still carry no checkpoint/question/pair data, only a
@@ -3696,14 +3698,15 @@ All three replace the frames' own prototype content and scoring with real source
 pipeline (`capabilities/audio-recorder.js`, the shared Mic state sheet's `micGate`/`openMicState`),
 real ASR (`POST /api/speech/transcribe`), and real coaching
 (`POST /api/dictionary/spoken-response`, `writing_coach/media_interaction.py#coach_spoken_response`
+
 - the same "carried / landed_differently / another_way / next_attempt / say_again" shape the
-current Free Talk's own `ui/speaking-free.js` already calls, reused as the real contract, not
-duplicated). Conversation additionally reuses `product/conversation.js`'s existing turn state
-machine and `POST /api/dictionary/conversation-turn` whole. Scenario/topic content for all three
-comes from `content/voice-invitations.js` (3 real, Orena-authored situations per learning
-language) - the same bank the current Free Talk already draws from - in place of each frame's own
-fixed prototype set (Free Talk's `ftSuggest`, Conversation's 4-scenario `CONV` script, Situation
-Reaction's 2-item `SITUATIONS`).
+  current Free Talk's own `ui/speaking-free.js` already calls, reused as the real contract, not
+  duplicated). Conversation additionally reuses `product/conversation.js`'s existing turn state
+  machine and `POST /api/dictionary/conversation-turn` whole. Scenario/topic content for all three
+  comes from `content/voice-invitations.js` (3 real, Orena-authored situations per learning
+  language) - the same bank the current Free Talk already draws from - in place of each frame's own
+  fixed prototype set (Free Talk's `ftSuggest`, Conversation's 4-scenario `CONV` script, Situation
+  Reaction's 2-item `SITUATIONS`).
 
 Deviations recorded, not silently resolved:
 
@@ -3725,7 +3728,7 @@ Deviations recorded, not silently resolved:
   no per-answer coaching UI beyond its own Improvement/Alternative cards (already covered above).
   Precision correction (found on this resumed pass): Conversation's per-turn "How did that land?"
   is NOT coaching-UI-free - the source's own handler (`orena-script.js`'s `onCoach`) actually opens
-  the Orena panel with a *simulated* regex analysis (`analyze()`'s fake fix/strength), one of the
+  the Orena panel with a _simulated_ regex analysis (`analyze()`'s fake fix/strength), one of the
   prototype's own internal simulations this build must not copy (brief §1, "NOT behaviour to
   copy"), not a real design pattern to reproduce literally. Real content exists instead
   (`POST /api/dictionary/spoken-response`, the same endpoint/shape Free Talk and Situation Reaction
@@ -3780,7 +3783,7 @@ Deviations recorded, not silently resolved:
   not silently "fixed" here.
 - **`ctx.go(ctx.href('spsummary'))`** is what "Finish" calls in all three - the real route
   (`shell/routes.js` 'spsummary', crumb `speakingSummary`) another Wave B pass owns (`screens/
-  speak-summary/`, registered in `shell/screens.js` while this pass was running). At the time of
+speak-summary/`, registered in `shell/screens.js` while this pass was running). At the time of
   this pass's own browser verification that folder had no `screen.js` yet (a live, in-progress
   sibling build, confirmed via `git status` - not this pass's file), so "Finish" showed the
   router's own load-error screen rather than a real summary; expected to resolve once that sibling
@@ -3834,7 +3837,7 @@ bindings), not from the compact frames alone. Gaps and decisions for the human:
 - **Dictation's "Live check" strip is built** (`dLiveOn` is `dHint > 0 && no result`, so it appears
   the moment a hint is taken - an earlier note here saying nothing ever sets it was wrong). The
   design's hint ladder is three taps: word shapes, first letters, "some words revealed". The
-  prototype's own level 3 reveals *every* word, which contradicts its own note and the brief (LS5:
+  prototype's own level 3 reveals _every_ word, which contradicts its own note and the brief (LS5:
   "a wrong word is not fully exposed merely because the learner asks for a hint"); this build reveals
   every third word the learner has not earned and did not type wrong, and never confirms a word the
   learner has not reached (`capabilities/dictation-hints.js#wordProgress`). Chinese groups
@@ -3873,7 +3876,7 @@ bindings), not from the compact frames alone. Gaps and decisions for the human:
 - **The shared mic sheet's "Microphone is blocked" state offers "Type instead"**, which Shadowing has
   no meaning for (there is nothing to type). It is raised by `screens/mic/sheet.js#micGate`'s own
   blocked branch, which takes no `textFallback` option (`openMicState` does); request: `micGate(ctx,
-  start, { textFallback: false })`. Every other mic state is used as the sheet draws it.
+start, { textFallback: false })`. Every other mic state is used as the sheet draws it.
 - **The offline sheet says the recording "will be assessed automatically when you're back online"**;
   Shadowing keeps that promise while the room is open (the take is held in this tab and re-assessed
   when the browser reports online) and only then - a take is never stored (D-076).
@@ -3917,7 +3920,7 @@ context.
   Again / Hard / Good / Easy with four fixed intervals. The real scheduler
   (`becoming_library.py#review_schedule`, on every item as `item.schedule`) accepts exactly three
   (`again` / `unsure` / `got_it`, `VocabularyReviewIn.result`) and reports a real interval per grade
-  for *this* card's own stage. Three buttons, each labelled with the number `item.schedule` carries
+  for _this_ card's own stage. Three buttons, each labelled with the number `item.schedule` carries
   for that card ("10 min / 1 day / 1 day" verified live); `unsure` takes the frame's "Hard" amber,
   `got_it` its "Good" fill; "Easy" has nothing to bind to and is dropped, not merged.
 - **Review Session: the frame's two ways of asking are both built** (`rvMode`, D7 §1.5), on real
@@ -4030,8 +4033,8 @@ gates run and every rule-40 fallback: `SCRATCH/reports/listening.md`. Summary he
   `screens/orena/orena.css` (a different Wave B agent's file, not touched here); the gate's own
   three checks were replayed standalone against `listening/`+`react/`+`respond/` only, clean after
   this fix.
-- **Save Phrase has no home.** The Listening frame draws a `savePhrase` button (saves the *selected
-  segment/phrase* as a whole), but no endpoint exists at that grain - only
+- **Save Phrase has no home.** The Listening frame draws a `savePhrase` button (saves the _selected
+  segment/phrase_ as a whole), but no endpoint exists at that grain - only
   `POST /api/library/vocabulary` (a single word) and `POST /api/library/collections/{id}/items`
   (an already-kept item). Left out entirely (rule 40) rather than wired to the wrong-grained
   endpoint. A real sentence/phrase-grain save endpoint would close this.
@@ -4130,7 +4133,7 @@ backend cannot yet serve:
   device with no voice for the text's language (Chinese on many desktops) gets a toast, not a silent
   button. Chunked one paragraph at a time from the learner's position.
 - **Translation needs the AI provider.** `POST /api/reading/translate` answers `status:
-  "unavailable"` here (captured, `reading_translate.json`); the Reader asks in turns of 12
+"unavailable"` here (captured, `reading_translate.json`); the Reader asks in turns of 12
   paragraphs (the route's own comment: a chapter is "sent in turns") and, when nothing comes back,
   switches the aid off with a toast. The `ready` rendering was verified with a route-intercepted
   response of the serializer's own shape, never shipped.
@@ -4155,7 +4158,7 @@ backend cannot yet serve:
   `product/word-span.js`, imported by both; no behaviour change.)
 - **Not a defect: word roles/pinyin 409 on the one Chinese article unless the learning language is
   zh.** `POST /api/media-learning/annotate` enforces the same rule as Reading Transfer's RT-4 above:
-  `source_language` must equal the learner's *current* learning language (`current_language_code()`,
+  `source_language` must equal the learner's _current_ learning language (`current_language_code()`,
   set from `POST /api/platform/language`), not merely the text's own language. Discover/Library only
   ever surface an article in the learner's active learning language, so under normal navigation
   `doc.language` and the learner's learning language already agree and this never fires; it only
@@ -4336,7 +4339,7 @@ of the old console into `capabilities/admin-reading.js`, `admin-imports.js`, `ad
 
 - **The real loop, on :8021 (2026-09-29/30), through the new Admin UI, real endpoints, real AI.**
   1. Add: `#/admin/reading/add`, text, English, rights answered "Allow" (the Townsend translation of
-     *The Lion and the Mouse*, Aesop's Fables, Project Gutenberg eBook #21, public domain in the
+     _The Lion and the Mouse_, Aesop's Fables, Project Gutenberg eBook #21, public domain in the
      United States; source URL and licence note entered). `POST /api/admin/reading/jobs` -> 202, job
      `889c0ac8-b84c-4aec-9f2e-77f11a39b1ff`; the tray followed it to completed / `article_created`.
   2. Review: article `b483bd10-e42a-4f42-8dd4-d60a84465e5e` (`needs_review`, level C1, 133 words),
@@ -4363,9 +4366,9 @@ of the old console into `capabilities/admin-reading.js`, `admin-imports.js`, `ad
      fixtures and `languages/*/vocabulary_collections.json` are the built-in catalogue), so no collection was
      published. The importer's read side (preview and column mapping) was exercised on a two-row CSV that
      writes nothing; the publish path is covered by the node gate (fixture) and the old console's server tests.
-  D3 notes: Reading `content -> do -> assess`: an admin can now take a real article to a served, approved
-  comprehension set entirely from the new Admin; `store` / `come back` stay the learner side's. The learner
-  surface for the loop is blocked by the runtime flag above, not by content.
+     D3 notes: Reading `content -> do -> assess`: an admin can now take a real article to a served, approved
+     comprehension set entirely from the new Admin; `store` / `come back` stay the learner side's. The learner
+     surface for the loop is blocked by the runtime flag above, not by content.
 - **Grammar Lab package import: not built, reported.** `docs/grammar_lab/INTEGRATION_DESIGN.md` is not in
   this repository (only `README.md`, `SPEC.md`, `PHASE0_DECISIONS.md` and a sample), the pinned Admin design
   draws no grammar frame, and there is no grammar store or `/api/grammar/v1/*` (D-100 point 4: it goes
@@ -4384,7 +4387,7 @@ of the old console into `capabilities/admin-reading.js`, `admin-imports.js`, `ad
   (attribution, adaptation and automation are not asked there, so a fresh article always warns "attribution
   unknown" at Publish). A route to answer them, or two more questions on the form, is a decision.
 - **AD-C · Learning targets' meaning is read-only.** The design edits a target's meaning inline; `POST
-  .../targets` adds a target with a meaning but no route edits one afterwards. Kept / dropped / order / add
+.../targets` adds a target with a meaning but no route edits one afterwards. Kept / dropped / order / add
   are real.
 - **AD-D · Source pages are thinner than the design.** No per-source imported/published/rejected counts and
   no "articles from this source" list (no endpoint filters the queue by source). Rights are read-only (the
@@ -4430,6 +4433,69 @@ of the old console into `capabilities/admin-reading.js`, `admin-imports.js`, `ad
   14px-padded actions. Browser-checked (desktop 1920x1080 and touch phone 390x844, en/vi/zh, light and
   dark) on 18 addresses: no page scroll or horizontal overflow, no page error; access: 17 addresses x
   desktop and phone for a non-admin, zero admin requests.
+
+## I. Orena Intelligence (D-085), lane `feature/orena-intelligence`, 2026-09-27
+
+> Pre-merge Intelligence audit from 2026-09-28. Preserved during the
+> `codex/work` merge-forward for post-merge re-audit. Individual gap states
+> below are not considered current until checked against D-101–D-105,
+> D4 persistence, the new Reading loop and the Grammar Lab contract.
+
+The agent's read-only tools, their actions and their provider path, measured
+against the code in Slice 1a. The tool plan is `writing_coach/agent/tool_plan.py`;
+`tests/test_agent_capability_registry.py` fails if a gap below is missing here.
+No row is built by inventing a service; each waits for the owner or decision
+named in it.
+
+### I-A. Tools with no backing service
+
+| #   | Tool                           | What is missing                                                                                                                                                                                                                                                                                                                                                                                                                                         | Who decides                                                                  |
+| --- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| I-1 | `get_learning_weaknesses`      | **Built in Slice 3 (human direction 2026-09-28), counts only:** per skill, what the learner's records show at least twice - writing error categories, words the pronunciation provider flagged, dictation lines not exact or revealed, reading answers wrong, words forgotten - with the counts; an unreadable source is null. Still missing: strengths, trends (growth stays unavailable), and grammar (no store of mistakes per grammar point: null). | Product: whether a strength or a trend should ever be claimed, and from what |
+| I-2 | `get_tone_analysis` (zh-CN)    | No measured tone: the provider's syllable tone is the reference label, `toneActual` stays empty until a provider measures pitch (D-084). A client-measured contour can only arrive as `client_evidence.pitch_contour_ref`.                                                                                                                                                                                                                              | Human: SpeechSuper or another tone provider [PROVIDER]                       |
+| I-3 | `get_stress_analysis` (en)     | No per-word stress: one overall prosody score, requested for en-US only and off by default.                                                                                                                                                                                                                                                                                                                                                             | Human: turn prosody on, or a stress provider [PROVIDER]                      |
+| I-4 | `get_grammar_mistakes_summary` | Grammar progress stores completion only; essays keep heuristic category links, not grammar ids.                                                                                                                                                                                                                                                                                                                                                         | Product: whether a writing issue may be attributed to a grammar point        |
+| I-5 | `get_reading_mistakes`         | No public read of which questions a learner answered wrong across attempts; the answers live only inside the Reading evidence repository's private replay.                                                                                                                                                                                                                                                                                              | Reading owner: a read-only method on `ReadingEvidenceRepository`             |
+| I-6 | `get_word_context_in_reading`  | No service returns the sentence around a word from a content id. The client can send the sentence as `selected_item.text`.                                                                                                                                                                                                                                                                                                                              | UI lane (send it) or Reading owner (a deterministic extractor)               |
+| I-7 | `get_listening_mistakes`       | Dictation comparison runs in the client; no server-side mismatch list exists.                                                                                                                                                                                                                                                                                                                                                                           | Listening owner                                                              |
+
+### I-B. Backing services a read-only tool may not call as they are
+
+| #    | Service                               | Why                                                                                 | Plan                                                                                                        |
+| ---- | ------------------------------------- | ----------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| I-8  | `ReadingEvidenceRepository.ability()` | Refreshes a stored ability projection (UPDATE/INSERT) before answering.             | `get_reading_progress` uses `list_evidence` only, until a pure read exists.                                 |
+| I-9  | The Listening lesson routes           | A meaning missing from the cache calls a translation provider and writes the cache. | `get_current_listening_context` reads the curated catalog only; imported media waits for a cache-only read. |
+| I-10 | `word_detail.py`                      | Every call reaches a provider and writes operation telemetry.                       | `get_word_detail` uses the catalog and card builders, no provider.                                          |
+
+### I-C. Contract actions whose payload differs from the existing APIs
+
+**Resolved by contract v2 (D-092), served since Slice 1c:** words are `{text, lang}`,
+takes are a client `take_ref`, `say_again` names the line, `start_review` is `due` or one
+word, and `add_word_to_collection` names a deck or a library collection. The rows stay as
+the record of why. I-16's read-by-id is still missing (N-9).
+
+| #    | Action                                                                     | Contract payload | What the API takes                                                                                                                                                                                                      |
+| ---- | -------------------------------------------------------------------------- | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| I-11 | `save_word`, `unsave_word`, `add_word_to_collection`, `start_review{word}` | `word_id`        | No API returns or accepts a saved-word id: words are keyed by text under the session's language (`POST /api/library/vocabulary`, `DELETE /api/library/vocabulary/{word}`).                                              |
+| I-12 | `save_word`                                                                | `{text, lang}`   | No `lang` field: the language is the session's.                                                                                                                                                                         |
+| I-13 | `add_word_to_collection`                                                   | `collection_id`  | Two collection systems: Decks (`/api/vocabulary/decks/{deck_id}/words`, by word text) and My Library collections (`/api/library/collections/{collection_id}/items`, by library item id, itself made from a saved word). |
+| I-14 | `play_user`                                                                | `{attempt_id}`   | No audio is stored for a take (by design); only the client's own recording could play.                                                                                                                                  |
+| I-15 | `start_review`                                                             | one action       | No single call: the due list, then one review call per card.                                                                                                                                                            |
+| I-16 | `get_pronunciation_attempt`, `compare_with_model`                          | `attempt_id`     | No get-by-id; attempts are listed by `asset_id` / `segment_id`.                                                                                                                                                         |
+
+### I-D. Provider layer and activation
+
+| #    | Item                                                                                            | State                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| ---- | ----------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| I-17 | Capability keys `agent_turn_fast`, `agent_turn_deep`, `conversational_speech`, `text_to_speech` | In the catalog as reserved definitions (`implemented=False`, `configurable=False`, fallback `{NONE}`) since the Admin labels landed on `codex/work` (71e84a0). The agent routes through the legacy active selection until a reviewed activation makes `agent_turn_fast` configurable (R8).                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| I-18 | Streaming and native tool calls                                                                 | Built on the existing OpenAI-compatible chat/completions path (`OpenAICompatibleProvider.stream_chat`, no new dependency), tested against recorded stream shapes only. How Gemini's and DeepSeek's compatible endpoints number tool-call fragments and report usage on a stream is not yet verified live [PROVIDER].                                                                                                                                                                                                                                                                                                                                                                                                  |
+| I-19 | Live speech, TTS, ephemeral tokens, `google-genai`                                              | Not approved (ruling 2026-09-27). Voice stays interfaces only. [PROVIDER]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| I-20 | Metering                                                                                        | Each completed turn records `agent.turn` (1) and `agent.tokens` through `record_usage`; `daily_usage` reads a UTC day on both stores, no migration. `budget_state` is always `ok` and no `metered` event is sent in V1; `soft_limited` waits for the quota ledger (E1).                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| I-21 | Provider fallback                                                                               | None automatic (ARCHITECTURE_INVARIANTS). A failed provider ends the turn with `error.fallback = retry`; a failed voice session continues `text_only`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| I-22 | Legacy route health                                                                             | The legacy route has no cooldown or availability check today; the agent adds none, so a failing provider fails each turn with `retry` until the operator changes the selection. Live run 2026-09-28: the Gemini key's plan answers HTTP 429 (quota) at about 25-30 model calls a minute - an agent turn makes 1-3 - so the plan or quota is an activation decision (human gate); the provider's message now reaches the operator log.                                                                                                                                                                                                                                                                                 |
+| I-23 | Identity answers (spec ┬º35)                                                                    | **Resolved in Slice 1c:** `RuleDecisionProvider` recognises a message that is wholly a who-are-you or which-model question (EN, VI with or without diacritics, ZH; `agent/identity.py`) and the turn answers it from support-layer copy before any model is asked; the answer is Orena and names no provider. Anything else still reaches the model, which is instructed to answer as Orena. The voice session's instructions (┬º33) get the same when voice is built.                                                                                                                                                                                                                                                |
+| I-24 | Rate limit per learner (spec ┬º22)                                                              | **Resolved in Slice 1c, in process:** a sliding window per authenticated learner, 12 turns and 60 capability reads a minute (`AgentLimits`), 429 `rate_limited` with `Retry-After` before anything runs. Each worker counts its own; a limit shared across workers, and any limit per IP at the edge, are deployment decisions for activation. Contract v4 (D-095, on `codex/work`) names 404, 409, 422 and 429 in ┬º2.1; this lane serves them as written.                                                                                                                                                                                                                                                           |
+| I-25 | Capability status                                                                               | Active: `vocabulary.words`, `review.due`, `writing.review` (Slice 1c); `grammar.point`, `speaking.pronunciation.line`, `speaking.free_talk`, `listening.dictation`, `reading.passage` (Slice 2); `coaching.next_steps` (Slice 3) - every tool they name runs, and on PostgreSQL each reads only the learner's own records in their language. The active entries list only the tools that exist: `get_grammar_mistakes_summary`, `get_listening_mistakes`, `get_reading_mistakes` and `get_word_context_in_reading` stay the gaps of I-A. `speaking.pronunciation.tone` and `.stress` stay `pending`: nothing measures tone or per-word stress (D-084). Home, library, progress and agent memory wait for their tools. |
 
 ### Admin: Reading rights gate and queue (D-105 point 5, 2026-09-30)
 

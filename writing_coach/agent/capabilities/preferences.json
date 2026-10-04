@@ -1,0 +1,27 @@
+{
+  "capabilities": [
+    {
+      "id": "preferences.agent_memory",
+      "title": {
+        "en": "What Orena remembers",
+        "vi": "Những gì Orena ghi nhớ",
+        "zh-CN": "Orena 记住的内容"
+      },
+      "surfaces": [
+        "preferences",
+        "preferences.agent_memory"
+      ],
+      "status": "pending",
+      "contexts": [],
+      "actions": [
+        "navigate"
+      ],
+      "languages": [
+        "en",
+        "zh-CN"
+      ],
+      "evidence_source": null,
+      "tools": []
+    }
+  ]
+}
