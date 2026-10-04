@@ -193,6 +193,10 @@ def generate_corpus_command(
     deepseek_thinking: str = typer.Option(
         "off", "--deepseek-thinking", help="Only for DeepSeek: off | low | high."
     ),
+    cache_only: bool = typer.Option(
+        False, "--cache-only",
+        help="Never call the provider. Re-evaluate only completions already present in the local LLM cache.",
+    ),
     with_story: bool = typer.Option(False, "--with-story", help="Also generate the optional story block."),
     story_mode: str = typer.Option("everyday", "--story-mode", help="Story mode passed to Generator."),
     cost_ceiling_usd: float = typer.Option(
@@ -287,6 +291,7 @@ def generate_corpus_command(
         f"generate-corpus: {len(candidates)} {mode} point(s) selected; "
         f"{normalized_skipped} already normalized skipped; "
         f"workers={workers}, provider={provider}, model={model}"
+        + (", cache-only" if cache_only else "")
     )
     if not candidates:
         return
@@ -299,7 +304,11 @@ def generate_corpus_command(
             # One client per in-flight point: no HTTP client or response state is
             # shared across worker threads. The provider quota lock is held by
             # the outer corpus run, and the LLM cache remains content-addressed.
-            with LLMClient(provider, model, deepseek_thinking=deepseek_thinking) as llm:
+            with LLMClient(
+                provider, model,
+                deepseek_thinking=deepseek_thinking,
+                cache_only=cache_only,
+            ) as llm:
                 generator = Generator(
                     lang=lang_code, l1=l1, llm=llm, root=root, allow_default_safe=False
                 )
@@ -371,6 +380,7 @@ def generate_corpus_command(
         "provider": provider,
         "model": model,
         "deepseek_thinking": deepseek_thinking if provider == "deepseek" else None,
+        "cache_only": cache_only,
         "with_story": with_story,
         "story_mode": story_mode if with_story else None,
         "cost_ceiling_usd": cost_ceiling_usd,
