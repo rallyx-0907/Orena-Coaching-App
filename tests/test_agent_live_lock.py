@@ -35,13 +35,18 @@ class Clock:
         self.now += seconds
 
 
-def held(path: Path, clock: Clock, *, lane: str = "grammar-lab", pid: int = 4242, age: float = 0) -> dict:
+def held(path: Path, clock: Clock, *, lane: str = "grammar-lab", pid: int = 4242, age: float = 0,
+         beat_age: float | None = None) -> dict:  # fmt: skip
+    """A lock on disk: the old format (no heartbeat_at) unless `beat_age` is given."""
+
     record = {
         "lane": lane,
         "pid": pid,
         "acquired_at": datetime.fromtimestamp(clock() - age, UTC).isoformat(),
         "cost_ceiling_usd": 0.2,
     }
+    if beat_age is not None:
+        record["heartbeat_at"] = datetime.fromtimestamp(clock() - beat_age, UTC).isoformat()
     path.write_text(json.dumps(record), encoding="utf-8")
     return record
 
@@ -59,7 +64,8 @@ def test_the_record_is_exactly_the_shared_format(tmp_path):
     path, clock = tmp_path / "live-provider.lock", Clock()
     taken = take(path, clock)
     record = on_disk(path)
-    assert set(record) == {"lane", "pid", "acquired_at", "cost_ceiling_usd"}
+    assert set(record) == {"lane", "pid", "acquired_at", "heartbeat_at", "cost_ceiling_usd"}
+    assert record["heartbeat_at"] == record["acquired_at"]
     assert record["lane"] == LANE and record["pid"] == os.getpid() and record["cost_ceiling_usd"] == 0.3
     acquired = datetime.fromisoformat(record["acquired_at"])
     assert acquired.utcoffset().total_seconds() == 0 and acquired.timestamp() == clock()
@@ -230,3 +236,65 @@ def test_the_runner_holds_it_around_the_sandbox():
 def test_the_voice_spike_holds_only_the_live_group():
     source = (Path(__file__).resolve().parents[1] / "scripts/voice_spike/server.py").read_text(encoding="utf-8")
     assert 'group="gemini-live"' in source and 'group="gemini-text"' not in source
+
+
+
+# --- the heartbeat (Grammar Lab's format, human direction 2026-10-04) -------------------------------------------
+
+
+def test_another_lanes_lock_with_a_heartbeat_older_than_10_minutes_is_stale(tmp_path):
+    path, clock = tmp_path / "live-provider.lock", Clock()
+    held(path, clock, lane="grammar-lab", pid=714397, age=15 * 60, beat_age=11 * 60)
+    taken = take(path, clock, alive=lambda pid: True)
+    assert taken.notes == ["orphan lock removed: lane=grammar-lab reason=stale"]
+
+
+def test_another_lanes_beating_lock_is_waited_for_whatever_its_pid(tmp_path):
+    path, clock = tmp_path / "live-provider.lock", Clock()
+    record = held(path, clock, lane="grammar-lab", pid=714397, age=50 * 60, beat_age=30)
+    with pytest.raises(lock.LockTimeout):
+        lock.acquire(LANE, 0.3, path=path, clock=clock, sleep=clock.sleep, alive=lambda pid: False,
+                     say=lambda _m: None, wait=60)  # fmt: skip
+    assert on_disk(path) == record  # a "dead" pid of another lane changes nothing; its heartbeat is fresh
+
+
+def test_a_heartbeat_is_stamped_only_on_this_lane_and_pids_own_lock(tmp_path):
+    path, clock = tmp_path / "live-provider.lock", Clock()
+    taken = take(path, clock)
+    before = on_disk(path)["heartbeat_at"]
+    assert lock.refresh_heartbeat(path, LANE, os.getpid(), clock=lambda: clock() + 120)
+    after = on_disk(path)
+    assert after["heartbeat_at"] != before and after["acquired_at"] == before
+    assert not lock.refresh_heartbeat(path, "grammar-lab", os.getpid())  # not that lane's
+    taken.release()
+    other = held(path, clock, lane="grammar-lab", beat_age=0)
+    assert not lock.refresh_heartbeat(path, LANE, os.getpid())
+    assert on_disk(path) == other
+
+
+def test_the_heartbeat_thread_keeps_the_lock_alive_until_release(tmp_path):
+    import time
+
+    path = tmp_path / "live-provider.lock"
+    taken = lock.acquire(LANE, 0.3, path=path, say=lambda _m: None).start_heartbeat(interval=0.05)
+    first = on_disk(path)["heartbeat_at"]
+    deadline = time.monotonic() + 3
+    while on_disk(path)["heartbeat_at"] == first and time.monotonic() < deadline:
+        time.sleep(0.02)
+    assert on_disk(path)["heartbeat_at"] != first
+    taken.release()
+    assert not path.exists()
+
+
+def test_locks_taken_stay_beating_while_a_later_group_is_awaited(monkeypatch, tmp_path):
+    monkeypatch.setenv("USERPROFILE", str(tmp_path))
+    clock = Clock()
+    lock.lock_path("deepseek").parent.mkdir(parents=True)
+    held(lock.lock_path("deepseek"), clock, lane="grammar-lab", beat_age=0)
+    beats = []
+    real = lock.refresh_heartbeat
+    monkeypatch.setattr(lock, "refresh_heartbeat", lambda *a, **k: beats.append(a[0].name) or real(*a, **k))
+    with pytest.raises(lock.LockTimeout):
+        lock.acquire_groups(LANE, 0.3, ["gemini-text", "deepseek"], clock=clock, sleep=clock.sleep,
+                            alive=lambda pid: True, say=lambda _m: None, wait=90)  # fmt: skip
+    assert "live-gemini-text.lock" in beats  # the one already taken was kept fresh while waiting

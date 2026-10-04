@@ -672,7 +672,7 @@ def main() -> int:
             signal.signal(getattr(signal, name), _stop_on_signal)
     # Lanes using the same quota queue on its lock before any sandbox or provider call (lock.py, README.md).
     try:
-        lock = live_lock.acquire(_lane(), args.cap_usd, group="gemini-text")  # this run's one quota group
+        lock = live_lock.acquire(_lane(), args.cap_usd, group="gemini-text").start_heartbeat()  # its one group
     except live_lock.LockTimeout as error:
         print(f"stopping: {error}")
         return 3

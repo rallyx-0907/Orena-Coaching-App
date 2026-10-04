@@ -177,8 +177,12 @@ R26 (2026-10-04) Review kiến trúc độc lập (người review do người c
     app.py). Dark merge: APPROVED. Kích hoạt production: CHANGES_REQUIRED. Đã sửa ở lane: (P1) chữ model viết cùng
     vòng với read tool không tới người học, câu trả lời viết sau khi đọc mới tới; (P1/P2) vòng kết thúc không bình
     thường ("length", lý do lạ, thiếu lý do) là lỗi cho người học và failure trong telemetry, không bao giờ coi là
-    "stop". Điều kiện trước khi rollout nhiều worker/công khai (P2): giới hạn tần suất hiện là best-effort theo process;
-    cần quota dùng chung theo tài khoản. Không phản đối daily_usage và phần nối app.py cho dark merge.
+    "stop". Điều kiện BẮT BUỘC trước khi chạy nhiều worker hoặc mở công khai (P2): giới hạn tần suất hiện là best-effort
+    theo process; cần quota dùng chung theo tài khoản. Hoãn theo quyết định của người chủ dự án (2026-10-04): staging
+    chạy một worker. Khi tới lúc, đề xuất trước cách đếm từ bảng usage_events sẵn có (agent.turn, agent.tokens theo
+    tài khoản và cửa sổ thời gian) rồi mới nghĩ tới lưu trữ mới. Không phản đối daily_usage và phần nối app.py cho
+    dark merge. Dark merge vào codex/work: người chủ dự án đồng ý (2026-10-04), agent tắt mặc định; chỉ bật trên
+    staging :8011 sau khi live đạt.
 ```
 
 Tiến độ lane (cập nhật mỗi slice):

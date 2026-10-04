@@ -32,7 +32,8 @@ order of the table and releases them in reverse, so two lanes never wait on each
 **The file.** Each lock holds one JSON object. This is the format the Grammar Lab lane defined:
 
 ```json
-{"lane": "feature/orena-intelligence", "pid": 12345, "acquired_at": "2026-09-28T06:13:48.760421+00:00", "cost_ceiling_usd": 0.15}
+{"lane": "feature/orena-intelligence", "pid": 12345, "acquired_at": "2026-10-04T06:13:48.760421+00:00",
+ "heartbeat_at": "2026-10-04T06:15:48.120004+00:00", "cost_ceiling_usd": 0.30}
 ```
 
 | Field | Meaning |
@@ -40,6 +41,7 @@ order of the table and releases them in reverse, so two lanes never wait on each
 | `lane` | the lane that holds it (this runner: the branch) |
 | `pid` | the process that will release it. On Windows this is the Windows process id; in Git Bash use `cat /proc/$$/winpid`, not `$$` |
 | `acquired_at` | when it was taken, ISO 8601, UTC |
+| `heartbeat_at` | rewritten by the holder every 60 s while it holds the lock, ISO 8601, UTC |
 | `cost_ceiling_usd` | the human-approved cost cap of the run (0 on a free tier) |
 
 **The rules.** They are the same for every group.
@@ -50,12 +52,19 @@ order of the table and releases them in reverse, so two lanes never wait on each
    only when its `lane` and `pid` are the ones you wrote.
 3. **Held:** look again every 30 s, for at most 30 min. Then stop and report the lane and PID that hold it. If
    another group's lock was already taken, give it back. Never stop another lane's containers.
-4. **Orphan:** a lock is an orphan when either:
-   - its `pid` is no longer alive (Windows: `OpenProcess`; POSIX: `os.kill(pid, 0)`), or
-   - `acquired_at` is more than 60 min ago.
+4. **Heartbeat:** while holding a lock, rewrite its `heartbeat_at` every 60 s (write to a temporary file, then
+   replace). Only the lane and PID that wrote the lock may do this.
+5. **Orphan:** whether a lock is an orphan depends on whose it is:
+   - **another lane's lock** is an orphan only when `heartbeat_at` is more than 10 min old. Its PID is never
+     checked: it may live in WSL or a container, where it means nothing on this host;
+   - **your own lock** is an orphan when its PID is no longer alive (Windows: `OpenProcess`; POSIX:
+     `os.kill(pid, 0)`), or when its `heartbeat_at` is more than 10 min old;
+   - **a lock in the old format**, with no `heartbeat_at`, falls back to `acquired_at` against 60 min.
 
    Remove it and record `orphan lock removed: lane=<lane> reason=dead-pid|stale`, then try again at once.
    Re-read the file just before removing it, and leave it alone if it has changed.
+
+These are the Grammar Lab lane's rules (`grammar_lab/sandbox/live_provider_lock.py`), kept exactly.
 
 `run.py` holds `gemini-text` through `lock.py` and lists what happened in the result's `"lock"` field. Another lane
 can wrap any command with it; repeat `--group` for each group the command uses:

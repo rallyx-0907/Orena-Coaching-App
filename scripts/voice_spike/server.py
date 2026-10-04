@@ -148,7 +148,7 @@ def main() -> int:
     import lock as live_lock  # the quota-group locks lanes queue on before a real provider call
 
     try:
-        held = live_lock.acquire("feature/orena-intelligence:voice-spike", 0.0, group="gemini-live")
+        held = live_lock.acquire("feature/orena-intelligence:voice-spike", 0.0, group="gemini-live").start_heartbeat()
     except live_lock.LockTimeout as error:
         print(f"stopping: {error}")
         return 3

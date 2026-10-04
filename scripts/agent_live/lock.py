@@ -6,9 +6,12 @@ Lanes queue only when they use the same quota. One lock file per group, outside 
     %USERPROFILE%\\.orena\\live-gemini-live.lock   Gemini Live models (the voice spike)
     %USERPROFILE%\\.orena\\live-deepseek.lock      DeepSeek
 
-The format is the one the Grammar Lab lane defined first; keep it exactly:
+The format is the one the Grammar Lab lane defined (grammar_lab/sandbox/live_provider_lock.py); keep it exactly:
 
-    {"lane": "...", "pid": <int>, "acquired_at": "<ISO-8601 UTC>", "cost_ceiling_usd": <number>}
+    {"lane": "...", "pid": <int>, "acquired_at": "<ISO-8601 UTC>", "heartbeat_at": "<ISO-8601 UTC>",
+     "cost_ceiling_usd": <number>}
+
+The holder rewrites heartbeat_at every 60 s while it holds the lock.
 
 A process holds exactly the locks of the groups it uses, taken in the order above and released in reverse. The
 single live-provider.lock of before is retired.
@@ -17,9 +20,10 @@ single live-provider.lock of before is retired.
   removed in the same finally/trap that takes the sandbox down.
 - Held: look again every 30 s, for at most 30 min; then stop and name the lane and
   PID that hold it.
-- Orphan: acquired_at is more than 60 min ago, or - for this lane's own lock only - its PID is no longer
+- Orphan: heartbeat_at is more than 10 min old, or - for this lane's own lock only - its PID is no longer
   alive (Windows: OpenProcess; POSIX: os.kill(pid, 0)); another lane's PID may live in WSL or a
-  container and is never judged from here. Remove it, say
+  container and is never judged from here. A lock in the old format (no heartbeat_at) falls back to
+  acquired_at against 60 min. Remove it, say
   "orphan lock removed: lane=... reason=dead-pid|stale", and try again at once.
 - Remove it only when its lane and pid are the ones this run wrote.
 - Never stop another lane's containers.
@@ -37,6 +41,7 @@ import json
 import os
 import subprocess
 import sys
+import threading
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -45,7 +50,9 @@ from pathlib import Path
 
 POLL_SECONDS = 30
 WAIT_SECONDS = 30 * 60
-STALE_SECONDS = 60 * 60
+HEARTBEAT_SECONDS = 60
+STALE_SECONDS = 10 * 60  # heartbeat_at older than this: an orphan
+LEGACY_STALE_SECONDS = 60 * 60  # a lock with no heartbeat_at: acquired_at older than this
 
 
 GROUPS = ("gemini-text", "gemini-live", "deepseek")  # the taking order: never two lanes waiting on each other
@@ -105,12 +112,39 @@ def _read(path: Path) -> tuple[dict | None, float | None]:
     return (record if isinstance(record, dict) else None), mtime
 
 
-def _acquired(record: dict | None, mtime: float) -> float:
+def _stamp(record: dict | None, key: str) -> float | None:
     try:
-        moment = datetime.fromisoformat(str(record["acquired_at"]).replace("Z", "+00:00"))  # type: ignore[index]
+        moment = datetime.fromisoformat(str(record[key]).replace("Z", "+00:00"))  # type: ignore[index]
     except (TypeError, KeyError, ValueError):
-        return mtime  # unreadable: judged by when the file was written
+        return None
     return (moment if moment.tzinfo else moment.replace(tzinfo=UTC)).timestamp()
+
+
+def _age(record: dict | None, mtime: float, now: float) -> tuple[float, bool]:
+    """(seconds since the last sign of life, whether that was a heartbeat). Old format: acquired_at; unreadable:
+    the file's own time."""
+
+    beat = _stamp(record, "heartbeat_at")
+    if beat is not None:
+        return now - beat, True
+    acquired = _stamp(record, "acquired_at")
+    return now - (acquired if acquired is not None else mtime), False
+
+
+def refresh_heartbeat(path: Path, lane: str, pid: int, *, clock: Callable[[], float] = time.time) -> bool:
+    """Stamps heartbeat_at on this lane and pid's own lock; False when it is not ours (any more)."""
+
+    current, _ = _read(path)
+    if not current or current.get("lane") != lane or current.get("pid") != pid:
+        return False
+    current = {**current, "heartbeat_at": datetime.fromtimestamp(clock(), UTC).isoformat()}
+    temp = path.with_name(f"{path.name}.{pid}.tmp")
+    temp.write_text(json.dumps(current), encoding="utf-8")
+    try:
+        os.replace(temp, path)
+    except PermissionError:  # Windows: a reader has it open this instant; the next beat retries
+        temp.unlink(missing_ok=True)
+    return True
 
 
 def _holder(record: dict | None) -> str:
@@ -125,6 +159,22 @@ class Lock:
     record: dict
     notes: list[str] = field(default_factory=list)  # what the run's result must say (orphans removed, waits)
     released: bool = False
+    _stop: threading.Event = field(default_factory=threading.Event, repr=False)
+    _beater: threading.Thread | None = field(default=None, repr=False)
+
+    def beat(self) -> bool:
+        return refresh_heartbeat(self.path, self.record["lane"], self.record["pid"])
+
+    def start_heartbeat(self, interval: float = HEARTBEAT_SECONDS) -> Lock:
+        """Stamps heartbeat_at every `interval` s until released (a daemon thread)."""
+
+        def run() -> None:
+            while not self._stop.wait(interval):
+                if not self.beat():
+                    return  # not ours any more
+        self._beater = threading.Thread(target=run, name="live-lock-heartbeat", daemon=True)
+        self._beater.start()
+        return self
 
     def release(self) -> None:
         """Removes the lock only while its lane and pid are this run's; someone else's is never touched."""
@@ -132,6 +182,9 @@ class Lock:
         if self.released:
             return
         self.released = True
+        self._stop.set()
+        if self._beater is not None and self._beater.is_alive():
+            self._beater.join(timeout=5)
         current, _ = _read(self.path)
         if current and current.get("lane") == self.record["lane"] and current.get("pid") == self.record["pid"]:
             try:
@@ -149,6 +202,7 @@ def acquire(
     poll: float = POLL_SECONDS,
     wait: float = WAIT_SECONDS,
     stale_after: float = STALE_SECONDS,
+    legacy_stale_after: float = LEGACY_STALE_SECONDS,
     alive: Callable[[int], bool] = pid_alive,
     clock: Callable[[], float] = time.time,
     sleep: Callable[[float], None] = time.sleep,
@@ -160,10 +214,12 @@ def acquire(
     notes: list[str] = []
     waited = False
     while True:
+        stamp = datetime.fromtimestamp(clock(), UTC).isoformat()
         record = {
             "lane": lane,
             "pid": os.getpid(),
-            "acquired_at": datetime.fromtimestamp(clock(), UTC).isoformat(),
+            "acquired_at": stamp,
+            "heartbeat_at": stamp,
             "cost_ceiling_usd": cost_ceiling_usd,
         }
         try:
@@ -180,7 +236,7 @@ def acquire(
         holder, mtime = _read(path)
         if mtime is None:
             continue  # released between the two looks: try again at once
-        reason = _orphan(holder, mtime, clock(), stale_after, alive, lane=lane)
+        reason = _orphan(holder, mtime, clock(), stale_after, alive, lane=lane, legacy_stale_after=legacy_stale_after)
         if reason and _remove_if_unchanged(path, holder, mtime):
             note = f"orphan lock removed: lane={(holder or {}).get('lane', '?')} reason={reason}"
             notes.append(note)
@@ -207,6 +263,11 @@ class Locks:
     def notes(self) -> list[str]:
         return [note for lock in self.held for note in lock.notes]
 
+    def start_heartbeat(self, interval: float = HEARTBEAT_SECONDS) -> Locks:
+        for lock in self.held:
+            lock.start_heartbeat(interval)
+        return self
+
     def release(self) -> None:
         for lock in reversed(self.held):
             lock.release()
@@ -216,9 +277,16 @@ def acquire_groups(lane: str, cost_ceiling_usd: float, groups: list[str] | tuple
     """Each group's lock, in the fixed order of GROUPS; if one cannot be had, those taken are given back."""
 
     taken: list[Lock] = []
+    sleep = kw.pop("sleep", time.sleep)
+
+    def heartbeating_sleep(seconds: float) -> None:  # locks already taken stay alive while a later one is awaited
+        for lock in taken:
+            lock.beat()
+        sleep(seconds)
+
     try:
         for group in sorted(set(groups), key=GROUPS.index):
-            taken.append(acquire(lane, cost_ceiling_usd, group=group, **kw))
+            taken.append(acquire(lane, cost_ceiling_usd, group=group, sleep=heartbeating_sleep, **kw))
     except BaseException:
         Locks(taken).release()
         raise
@@ -226,16 +294,18 @@ def acquire_groups(lane: str, cost_ceiling_usd: float, groups: list[str] | tuple
 
 
 def _orphan(
-    holder: dict | None, mtime: float, now: float, stale_after: float, alive, *, lane: str | None = None
+    holder: dict | None, mtime: float, now: float, stale_after: float, alive, *, lane: str | None = None,
+    legacy_stale_after: float = LEGACY_STALE_SECONDS,
 ) -> str | None:
     pid = (holder or {}).get("pid")
     # A pid is judged only on this lane's own locks: another lane may run in WSL or a container, where its pid means
     # nothing to this host (2026-09-28: a Grammar Lab lock one minute old was taken for dead and removed). Another
-    # lane's lock is an orphan only when stale.
+    # lane's lock is an orphan only when its heartbeat is stale.
     own = lane is None or (holder or {}).get("lane") == lane
     if own and isinstance(pid, int) and not isinstance(pid, bool) and not alive(pid):
         return "dead-pid"
-    if now - _acquired(holder, mtime) > stale_after:
+    age, beating = _age(holder, mtime, now)
+    if age > (stale_after if beating else legacy_stale_after):
         return "stale"
     return None
 
@@ -271,7 +341,7 @@ def _cli() -> int:
         return 0
     argv = args.argv[1:] if args.argv[:1] == ["--"] else args.argv
     try:
-        lock = acquire_groups(args.lane, args.cost_ceiling_usd, args.group)
+        lock = acquire_groups(args.lane, args.cost_ceiling_usd, args.group).start_heartbeat()
     except LockTimeout as error:
         print(error)
         return 3
