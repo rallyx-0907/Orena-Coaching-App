@@ -379,6 +379,30 @@ def test_cache_is_shared_across_client_instances_with_the_same_cache_dir(tmp_pat
     assert len(calls) == 1
 
 
+
+def test_cache_only_mode_replays_cache_but_blocks_provider_on_miss(tmp_path: Path) -> None:
+    calls: list[httpx.Request] = []
+    transport = _anthropic_transport(calls)
+    normal = LLMClient(
+        "anthropic", "claude-haiku-4-5-20251001",
+        api_key="k", cache_dir=tmp_path, transport=transport,
+    )
+    normal.complete(system="s", user="cached", json_schema=SCHEMA)
+    assert len(calls) == 1
+
+    cache_only = LLMClient(
+        "anthropic", "claude-haiku-4-5-20251001",
+        api_key="k", cache_dir=tmp_path, transport=transport, cache_only=True,
+    )
+    replay = cache_only.complete(system="s", user="cached", json_schema=SCHEMA)
+    assert replay.cached is True
+    assert len(calls) == 1
+
+    with pytest.raises(LLMError, match="cache-only mode"):
+        cache_only.complete(system="s", user="miss", json_schema=SCHEMA)
+    assert len(calls) == 1
+
+
 def test_missing_api_key_raises_before_any_request(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
     calls: list[httpx.Request] = []
