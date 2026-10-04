@@ -264,6 +264,7 @@ class LLMClient:
         transport: httpx.BaseTransport | None = None,
         timeout: float = 120.0,
         deepseek_thinking: str = "off",
+        cache_only: bool = False,
     ) -> None:
         if provider not in PROVIDERS:
             raise ValueError(f"unknown provider {provider!r}; expected one of {sorted(PROVIDERS)}")
@@ -273,6 +274,7 @@ class LLMClient:
         self.model = model
         self.cache_dir = cache_dir
         self.deepseek_thinking = deepseek_thinking
+        self.cache_only = cache_only
         self.api_key = api_key if api_key is not None else os.environ.get(_ENV_VAR_BY_PROVIDER[provider], "")
         self._client = httpx.Client(transport=transport, timeout=timeout)
 
@@ -311,6 +313,10 @@ class LLMClient:
             usage = LLMUsage(cached["usage"]["input_tokens"], cached["usage"]["output_tokens"])
             return LLMResult(cached["data"], usage, self.model, self.provider, cached=True)
 
+        if self.cache_only:
+            raise LLMError(
+                f"cache-only mode: no cached completion for {self.provider}:{self.model}; provider call blocked"
+            )
         if not self.api_key:
             raise LLMError(f"no API key for provider {self.provider!r}; set {_ENV_VAR_BY_PROVIDER[self.provider]}")
         if self.provider == "anthropic":
