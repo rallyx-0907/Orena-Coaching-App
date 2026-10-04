@@ -332,6 +332,8 @@ Return one minimal JSON patch matching the schema.
 - formula_orders: normally []. Use it only when the existing slots are correct but in the wrong order. order is a permutation of existing zero-based slot indexes.
 - make_optional: normally []. Use only when the grammar genuinely permits that existing slot to be absent, never merely to silence a validator.
 - pattern_rule: return null unless a personal_production error is listed. If needed, it must match the unchanged sample and at least one target-form example; use 1-4 grammar-bearing slots, max 8 closed-set any_of literals, and never enumerate open-class vocabulary.
+- For rule_rejects_sample / rule_rejects_example, mentally test the matcher against the exact unchanged sample and target examples before returning it. If those sentences realize the same grammar with different auxiliaries, pronouns, inflections or other surface words, do not overfit an any_of list to one sentence. Use a bounded regex for the grammar-bearing shape or a smaller invariant formula anchor instead.
+- For a rule-only failure, leave formula_orders, make_optional and example_spans empty; fix only pattern_rule.
 - Preserve all content outside these structural annotations."""
     user = (
         f"Repair grammar point {point_id} ({target_lang}). "
