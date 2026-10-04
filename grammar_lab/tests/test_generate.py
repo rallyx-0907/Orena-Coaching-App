@@ -866,7 +866,17 @@ def test_generate_v04_structure_failure_never_buys_a_second_full_lesson(tmp_path
         "optional": False,
         "options": [],
     })
-    # Existing bindings intentionally do not bind the inserted middle slot.
+    # Preserve the original subject/verb mapping while leaving the inserted
+    # middle marker unbound; terminal-gap recovery must not be able to hide it.
+    for example in bad["examples"]:
+        if example["form"] == "affirmative":
+            for binding in example["bindings"]:
+                if binding["slot_index"] == 1:
+                    binding["slot_index"] = 2
+    for rule_slot in bad["personal_production"]["pattern_rule"]["slots"]:
+        if rule_slot["slot_index"] == 1:
+            rule_slot["slot_index"] = 2
+
     patch = {
         "formula": copy.deepcopy(bad["formula"]),
         "negative": copy.deepcopy(bad["negative"]),
