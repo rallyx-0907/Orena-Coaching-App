@@ -25,6 +25,7 @@ already store for Reading - now doing this job only.
 from __future__ import annotations
 
 import logging
+import re
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from typing import Any
@@ -135,6 +136,20 @@ def _options(item: Mapping[str, Any], label: str) -> list[str]:
         if isinstance(option, bool) or not isinstance(option, (str, int, float)):
             raise _Malformed(f"{label}: an option is not text")
         options.append(str(option).strip())
+    return _without_letter_labels(options)
+
+
+_OPTION_LABEL = re.compile(r"^\(?([A-Fa-f])[\.\)、．:：]\s*")
+
+
+def _without_letter_labels(options: list[str]) -> list[str]:
+    """The learner screen letters the options itself; a model that also wrote
+    "A. ", "B. "... would show each letter twice. Removed only when every option
+    carries its own letter in order, so an answer that merely starts with one
+    is left as written."""
+    matches = [_OPTION_LABEL.match(option) for option in options]
+    if options and all(match and match.group(1).upper() == chr(65 + index) for index, match in enumerate(matches)):
+        return [option[match.end():].strip() for option, match in zip(options, matches, strict=True)]
     return options
 
 

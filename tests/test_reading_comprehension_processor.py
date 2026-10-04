@@ -259,3 +259,13 @@ def test_no_provider_is_refused_without_asking():
     with pytest.raises(ReadingEvidenceError) as refused:
         process_article(_article("en"), support_code="vi", generate=None)
     assert refused.value.code == "reading_processor_unavailable"
+
+
+def test_letter_labels_a_model_wrote_are_removed_only_when_every_option_has_its_own_in_order():
+    from writing_coach.reading_comprehension import _without_letter_labels
+
+    assert _without_letter_labels(["A. 因为好吃", "B. 因为便宜", "C、因为新鲜"]) == ["因为好吃", "因为便宜", "因为新鲜"]
+    assert _without_letter_labels(["(a) forty", "(b) ten"]) == ["forty", "ten"]
+    # A real answer that starts with a letter, or labels out of order, are left as written.
+    assert _without_letter_labels(["A. Lincoln", "George Washington"]) == ["A. Lincoln", "George Washington"]
+    assert _without_letter_labels(["B. one", "A. two"]) == ["B. one", "A. two"]
