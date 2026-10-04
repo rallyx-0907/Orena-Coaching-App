@@ -1,4 +1,4 @@
-# Prompt: generate_point_v04 (v12)
+# Prompt: generate_point_v04 (v14)
 
 Versioned prompt for one grammar point under schema v0.4 (GRAMMAR_CONTENT_CONTRACT.md).
 `generate.py` fills the placeholders below and sends the result as the `system` message; the
@@ -36,6 +36,11 @@ highlights or personal-production rule slots. Formula slots are the single sourc
 exact surface text to zero-based `slot_index` values from their selected formula; code derives stored roles
 and rejects missing, duplicate, out-of-range or out-of-order bindings. Personal-production matcher slots
 also name `slot_index`; code derives their stored roles from the target formula.
+
+v14: a formula is one realizable left-to-right route. Mutually exclusive routes are never concatenated.
+Forms that occupy the same position use one slot with `options`; an element that can be absent is one
+`optional` slot. In particular zero/no article is represented by omission of an optional article slot,
+never by a second required "zero article" slot plus another noun route.
 
 ---
 
@@ -75,12 +80,17 @@ Output one JSON object matching the schema you were given -- no commentary outsi
    is what it does (the app colours the slot and its realisation in every example the same
    colour); its `label` names it in the explanation locale (`chủ ngữ`, `quá khứ phân từ`, `mốc
    thời gian`). Mark a slot `optional: true` only if a correct sentence can leave it out.
-   The formula must cover **every form this point teaches**. When a slot is a choice between
-   forms, name the choice in `text` and list each form in `options` (at least two): a slot
-   `be` with options `is`, `are`; a slot `much/many` with options `much`, `many`; a slot
-   `a/an` with options `a`, `an`. Leave `options` empty for a slot with no choice. A separate
-   check (a different model) reads the title, the summary and the formula and flags the point
-   if a form the title names is missing from the formula.
+   The formula must cover **every form this point teaches**, but it is still **one realizable
+   left-to-right route**, not several alternative routes concatenated together. When several surface
+   forms occupy the same grammatical position, they are ONE slot with `options`: `be` with
+   `is`/`are`; `much/many` with `much`/`many`; an article slot with `a`/`an`/`the` when
+   that is the point's scope. When that grammatical position may be absent in a correct sentence,
+   make that one slot `optional: true`. **Absence is not a token**: zero/no article must never be a
+   separate required slot followed by another noun route; represent it by omitting an optional article
+   slot. Likewise, never encode `A + N` and `B + N` as four sequential required slots when A/B are
+   alternatives. Leave `options` empty for a slot with no choice. A separate check (a different model)
+   reads the title, the summary and the formula and flags the point if a form the title names is missing
+   from the formula.
    **negative** and **question**: the same, for the negative and question forms -- give them
    whenever the point has a distinct negative or question form; leave the array empty when it
    does not.
