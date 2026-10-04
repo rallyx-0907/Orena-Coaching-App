@@ -838,6 +838,22 @@ def complete_generated_terminal_bindings(data: dict[str, Any], zh: bool) -> dict
         if not candidate or not any(char.isalnum() or _HAN.fullmatch(char) for char in candidate):
             continue
 
+        slot_hint = str(formula[missing_index].get("text", "")).casefold()
+        phrase_like = any(
+            hint in slot_hint
+            for hint in (
+                "np", "noun phrase", "clause", "complement", "constituent",
+                "reported content", "content clause", "object phrase",
+            )
+        )
+        if not phrase_like:
+            continue
+        if zh:
+            if sum(1 for char in candidate if _HAN.fullmatch(char)) < 2:
+                continue
+        elif len(re.findall(r"\b\w+\b", candidate)) < 2:
+            continue
+
         bindings.append({"slot_index": missing_index, "text": candidate})
         example["bindings"] = bindings
 
