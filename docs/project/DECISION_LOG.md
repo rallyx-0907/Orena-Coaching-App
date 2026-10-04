@@ -4134,3 +4134,32 @@ applies the same rule to the Admin content-pack page (export/import, item 2 of t
 the human to confirm. Such a page uses only existing kit blocks and copy in en/vi/zh, invents no component,
 and is named in `scripts/test_orena_screen_admin.mjs` KIT_PAGES with its reason. Every other Admin page stays
 on the pinned design (D-067).
+
+## D-129 - "Done" for a learning skill includes matching the design step by step; the human approves
+
+2026-10-05, explicit human instruction. The human tested the learning skills against the pinned prototype and
+found them unlike the design: different steps, and components the agents added that the prototype does not
+draw and that do not follow the Visual skin. D-109's audit scored "works" by function, not by design.
+
+1. **Done means both.** A learning skill is done only when it works *and* matches the pinned design step by
+   step:
+   - the same screens, in the same order;
+   - the same states (empty, in progress, result, error);
+   - the same actions and the same transitions;
+   - only components the prototype draws, in the Visual skin.
+   Function alone is not done; D-109's "works" verdicts are not design verdicts.
+2. **Priority, in this order.** First the learning skills, one at a time: Reading → Listening (with Dictation
+   and Shadowing) → Speaking/Pronunciation (with Free talk) → Writing → Vocabulary/Review → Grammar. Then the
+   cross-skill flows the design draws, including Orena's contextual entry points. Onboarding waits. Billing,
+   legal pages, VPS, the :8000 update and the operator content guide stop at their current gates.
+3. **Method, per skill.**
+   - Walk the prototype as a learner and write a scenario: the screen, state, action and transition of each
+     step, with a screenshot of each step.
+   - Walk the same scenario on :8021/next with sample content, with screenshots.
+   - Tabulate every deviation, classified as: missing step, wrong order, component not in the design, wrong
+     Visual skin, missing state, or different behaviour.
+   - Send the table, then fix. A component the prototype does not draw is removed; where the design does not
+     draw something, ask the human, never invent.
+4. **The human approves.** Each skill ends with its scenario sent to the human, who walks the prototype and
+   the app side by side. The next skill starts only after the human's approval. The human is the final
+   approver of "done" for every skill.
