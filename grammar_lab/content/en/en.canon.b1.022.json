@@ -1,0 +1,313 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b1.022",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.questions",
+  "level": {"framework": "cefr", "value": "B1", "rank": 3},
+  "prereqs": ["en.canon.a2.005"],
+  "contrasts": [],
+  "error_tags": ["sentence_structure"],
+  "source_refs": {"r5": ["b1-question-tags"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["b1-question-tags"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "câu hỏi tags", "en": "Question tags"},
+    "native_title": "Question tags",
+    "level": {"framework": "cefr", "value": "B1", "rank": 3},
+    "summary": {
+      "vi": "Câu hỏi đuôi (question tag) là một cụm ngắn ở cuối câu để xác nhận thông tin hoặc mời người nghe đồng tình.",
+      "en": "A question tag is a short phrase at the end of a statement that checks information or invites agreement."
+    },
+    "sub": {"vi": "xác nhận thông tin", "en": "checking information"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn xác nhận điều mình vừa nói là đúng, đặc biệt trong giao tiếp thân mật.",
+      "en": "When you want to check that what you just said is correct, especially in friendly conversation."
+    },
+    {
+      "vi": "Khi bạn muốn mời người nghe đồng tình hoặc phản hồi, thay vì hỏi trực tiếp.",
+      "en": "When you want to invite the listener to agree or respond, rather than asking a direct question."
+    },
+    {
+      "vi": "Khi bạn đã khá chắc về thông tin nhưng vẫn muốn người nghe xác nhận.",
+      "en": "When you are fairly sure about the information but still want the listener to confirm it."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}},
+      {
+        "text": "O/C",
+        "role": "object",
+        "label": {"vi": "tân ngữ / bổ ngữ", "en": "object / complement"},
+        "optional": true
+      },
+      {
+        "text": "aux",
+        "role": "aux",
+        "label": {"vi": "trợ động từ", "en": "auxiliary"},
+        "options": [
+          {"text": "is"},
+          {"text": "are"},
+          {"text": "was"},
+          {"text": "were"},
+          {"text": "do"},
+          {"text": "does"},
+          {"text": "did"},
+          {"text": "have"},
+          {"text": "has"},
+          {"text": "had"},
+          {"text": "can"},
+          {"text": "could"},
+          {"text": "will"},
+          {"text": "would"},
+          {"text": "should"},
+          {"text": "must"}
+        ]
+      },
+      {
+        "text": "pronoun",
+        "role": "subject",
+        "label": {"vi": "đại từ", "en": "pronoun"},
+        "options": [
+          {"text": "I"},
+          {"text": "you"},
+          {"text": "he"},
+          {"text": "she"},
+          {"text": "it"},
+          {"text": "we"},
+          {"text": "they"}
+        ]
+      }
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "aux",
+          "role": "aux",
+          "label": {"vi": "trợ động từ", "en": "auxiliary"},
+          "options": [
+            {"text": "isn't"},
+            {"text": "aren't"},
+            {"text": "wasn't"},
+            {"text": "weren't"},
+            {"text": "don't"},
+            {"text": "doesn't"},
+            {"text": "didn't"},
+            {"text": "haven't"},
+            {"text": "hasn't"},
+            {"text": "hadn't"},
+            {"text": "can't"},
+            {"text": "couldn't"},
+            {"text": "won't"},
+            {"text": "wouldn't"},
+            {"text": "shouldn't"},
+            {"text": "mustn't"}
+          ]
+        },
+        {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}},
+        {
+          "text": "O/C",
+          "role": "object",
+          "label": {"vi": "tân ngữ / bổ ngữ", "en": "object / complement"},
+          "optional": true
+        },
+        {
+          "text": "aux",
+          "role": "aux",
+          "label": {"vi": "trợ động từ", "en": "auxiliary"},
+          "options": [
+            {"text": "is"},
+            {"text": "are"},
+            {"text": "was"},
+            {"text": "were"},
+            {"text": "do"},
+            {"text": "does"},
+            {"text": "did"},
+            {"text": "have"},
+            {"text": "has"},
+            {"text": "had"},
+            {"text": "can"},
+            {"text": "could"},
+            {"text": "will"},
+            {"text": "would"},
+            {"text": "should"},
+            {"text": "must"}
+          ]
+        },
+        {
+          "text": "pronoun",
+          "role": "subject",
+          "label": {"vi": "đại từ", "en": "pronoun"},
+          "options": [
+            {"text": "I"},
+            {"text": "you"},
+            {"text": "he"},
+            {"text": "she"},
+            {"text": "it"},
+            {"text": "we"},
+            {"text": "they"}
+          ]
+        }
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "It's cold today, isn't it?",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 4, "role": "verb"},
+        {"start": 5, "end": 15, "role": "object"},
+        {"start": 17, "end": 22, "role": "aux"},
+        {"start": 23, "end": 25, "role": "subject"}
+      ],
+      "annotation": {
+        "vi": "Câu khẳng định dùng 'is', đuôi phủ định 'isn't' + đại từ 'it'.",
+        "en": "Affirmative statement with 'is', negative tag 'isn't' + pronoun 'it'."
+      },
+      "translation": {"vi": "Hôm nay lạnh nhỉ?", "en": "It's cold today, isn't it?"}
+    },
+    {
+      "text": "You don't know him, do you?",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 9, "role": "aux"},
+        {"start": 10, "end": 14, "role": "verb"},
+        {"start": 15, "end": 18, "role": "object"},
+        {"start": 20, "end": 22, "role": "aux"},
+        {"start": 23, "end": 26, "role": "subject"}
+      ],
+      "annotation": {
+        "vi": "Câu phủ định dùng 'don't', đuôi khẳng định 'do' + đại từ 'you'.",
+        "en": "Negative statement with 'don't', positive tag 'do' + pronoun 'you'."
+      },
+      "translation": {"vi": "Bạn không biết anh ấy phải không?", "en": "You don't know him, do you?"}
+    },
+    {
+      "text": "She can swim, can't she?",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 7, "role": "verb"},
+        {"start": 8, "end": 12, "role": "object"},
+        {"start": 14, "end": 19, "role": "aux"},
+        {"start": 20, "end": 23, "role": "subject"}
+      ],
+      "annotation": {
+        "vi": "Câu khẳng định dùng 'can', đuôi phủ định 'can't' + đại từ 'she'.",
+        "en": "Affirmative statement with 'can', negative tag 'can't' + pronoun 'she'."
+      },
+      "translation": {"vi": "Cô ấy biết bơi phải không?", "en": "She can swim, can't she?"}
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Động từ thường ở hiện tại đơn dùng trợ động từ 'does' trong câu hỏi đuôi, không dùng 'is'.",
+        "en": "A lexical verb in the present simple uses the auxiliary 'does' in the tag, not 'is'."
+      },
+      "error_tag": "sentence_structure",
+      "l1": ["vi"],
+      "wrong": "She works here, isn't she?",
+      "right": "She works here, doesn't she?"
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "You're ready, ___?",
+      "options": [
+        {"text": "aren't you", "error_tag": null},
+        {"text": "are you", "error_tag": "sentence_structure"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu khẳng định dùng đuôi phủ định: 'aren't you'.",
+        "en": "An affirmative statement takes a negative tag: 'aren't you'."
+      }
+    },
+    {
+      "q": "She works here, ___?",
+      "options": [
+        {"text": "doesn't she", "error_tag": null},
+        {"text": "isn't she", "error_tag": "sentence_structure"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Động từ thường 'works' dùng trợ động từ 'does' trong đuôi: 'doesn't she'.",
+        "en": "The lexical verb 'works' uses the auxiliary 'does' in the tag: 'doesn't she'."
+      }
+    },
+    {
+      "q": "They left early, ___?",
+      "options": [{"text": "didn't they", "error_tag": null}, {"text": "don't they", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu ở quá khứ đơn dùng 'didn't' trong đuôi: 'didn't they'.",
+        "en": "A past simple statement uses 'didn't' in the tag: 'didn't they'."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu khẳng định về bản thân và thêm câu hỏi đuôi phủ định để xác nhận.",
+      "en": "Write an affirmative sentence about yourself and add a negative question tag to check it."
+    },
+    "placeholder": "I'm ...,",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"any_of": ["isn't", "aren't", "can't"], "role": "aux"},
+        {"any_of": ["I", "she", "it"], "role": "subject"}
+      ]
+    },
+    "sample": {"text": "I'm a student, aren't I?"}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v15",
+    "run_id": "generate.1791101520",
+    "generated_at": "2026-10-04T08:12:00Z",
+    "r5_source": {
+      "ids": ["b1-question-tags"],
+      "content_version": 2,
+      "content_hash": "da0fc9d34a5664f0c87ef16b9bf6f93c72fa3f0ca923dcc28a93908277109971",
+      "corrections": [
+        {
+          "r5_id": "b1-question-tags",
+          "issue": "R5 examples include 'They left early, didn't they?' but the formula did not cover past simple tags.",
+          "fix": "Added past simple auxiliary options (did/didn't) to the formula and negative formula."
+        },
+        {
+          "r5_id": "b1-question-tags",
+          "issue": "R5 mistakes list includes 'Tom is late, isn't Tom?' but the required error tag is sentence_structure; the mistake is about pronoun use, which is a sentence structure issue.",
+          "fix": "Kept the mistake but tagged it as sentence_structure and provided a clear reason."
+        },
+        {
+          "r5_id": "b1-question-tags",
+          "issue": "R5 did not provide a structured formula with slots and bindings.",
+          "fix": "Added a full formula with slots, roles, labels, and options, plus example bindings."
+        },
+        {
+          "r5_id": "b1-question-tags",
+          "issue": "R5 guided practice included a production prompt but no personal production card.",
+          "fix": "Added personal_production with prompt, placeholder, target_form, pattern_rule, and sample."
+        }
+      ]
+    }
+  },
+  "review": null
+}

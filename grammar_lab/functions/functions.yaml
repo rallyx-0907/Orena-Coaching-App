@@ -414,6 +414,7 @@ functions:
     - en.canon.b1.023
     - en.canon.b1.028
     - en.canon.b1.024
+    - en.canon.b1.022
     zh-Hans:
     - zh.canon.gf.hsk1.a_1_7.p1
     - zh.affirmative_negative_question
@@ -426,8 +427,7 @@ functions:
     - zh.canon.gf.hsk7_9.a_7_3.p1
     ja: []
   planned:
-    en:
-    - en.canon.b1.022
+    en: []
     zh-Hans:
     - zh.question_words
     - zh.ma_question
