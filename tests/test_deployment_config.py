@@ -23,7 +23,7 @@ def test_production_https_callback_and_secure_cookie() -> None:
         "PUBLIC_BASE_URL": "https://becoming.example.com/",
         "GOOGLE_CLIENT_ID": "client-id",
         "GOOGLE_CLIENT_SECRET": "client-secret",
-        "SESSION_SECRET": "session-secret",
+        "SESSION_SECRET": "session-secret-for-tests-0123456789abcdef",
     })
     assert resolved.public_base_url == "https://becoming.example.com"
     assert resolved.google_redirect_uri == f"https://becoming.example.com{CALLBACK_PATH}"
@@ -74,7 +74,7 @@ def test_production_rejects_invalid_ports_and_unsafe_hosts(public_base_url: str)
             "PUBLIC_BASE_URL": public_base_url,
             "GOOGLE_CLIENT_ID": "client-id",
             "GOOGLE_CLIENT_SECRET": "client-secret",
-            "SESSION_SECRET": "session-secret",
+            "SESSION_SECRET": "session-secret-for-tests-0123456789abcdef",
         })
 
 

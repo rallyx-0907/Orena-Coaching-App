@@ -535,7 +535,7 @@ def _cut_model_line(line: _ResolvedModelLine, source: Path) -> bytes:
         if not cut.exists():
             _MODEL_CACHE.mkdir(parents=True, exist_ok=True)
             completed = subprocess.run(
-                ["ffmpeg", "-hide_banner", "-loglevel", "error", "-nostdin", "-y",
+                ["ffmpeg", "-protocol_whitelist", "file,pipe", "-hide_banner", "-loglevel", "error", "-nostdin", "-y",
                  "-ss", f"{start_ms / 1000:.3f}", "-t", f"{span / 1000:.3f}", "-i", str(source),
                  "-vn", "-ac", "1", "-ar", "24000", "-c:a", "libopus", "-b:a", "32k", "-f", "webm", str(partial)],
                 capture_output=True, check=False, timeout=30,

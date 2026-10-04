@@ -117,10 +117,32 @@ def upsert_auth_user(info: dict[str, Any]) -> dict[str, Any]:
         raise HTTPException(400, str(exc)) from exc
 
 
+def _local_admin_allowed(environ: Any = None) -> bool:
+    """Signed-out "local developer" admin is for a machine's own address only (security review 2026-10-04).
+
+    With authentication off, every visitor used to be an administrator outside production. A deployment whose
+    public address is not this machine's (a domain, a LAN address) - or one that only forgot APP_ENV - now
+    gets no admin at all, unless the operator says ALLOW_LOCAL_ADMIN=1 on purpose."""
+
+    from urllib.parse import urlsplit
+
+    values = os.environ if environ is None else environ
+    if str(values.get("ALLOW_LOCAL_ADMIN", "")).strip().casefold() in {"1", "true", "yes", "on"}:
+        return True
+    base = str(values.get("PUBLIC_BASE_URL", "")).strip()
+    host = (urlsplit(base).hostname or "") if base else "localhost"
+    return host in {"localhost", "127.0.0.1", "::1"}
+
+
+LOCAL_ADMIN_ALLOWED = _local_admin_allowed()
+
+
 def require_admin(request: Request) -> dict[str, Any]:
     if not AUTH_ENABLED:
         if DEPLOYMENT.production:
             raise HTTPException(503, "Production authentication is not configured.")
+        if not LOCAL_ADMIN_ALLOWED:
+            raise HTTPException(503, "Authentication is not configured for this address.")
         return {"google_sub":"local-admin","email":"local","name":"Local developer","role":"admin"}
     sub = str(request.session.get("user_sub") or "")
     user = auth_user(sub)
@@ -356,7 +378,8 @@ def auth_logout(request: Request):
 @router.get("/api/me")
 def api_me(request: Request) -> dict[str, Any]:
     if not AUTH_ENABLED:
-        return {"authenticated":True,"mode":"local","name":"Local user","email":"","picture":"","role":"admin","is_admin":True}
+        admin = LOCAL_ADMIN_ALLOWED
+        return {"authenticated":True,"mode":"local","name":"Local user","email":"","picture":"","role":"admin" if admin else "user","is_admin":admin}
     sub = str(request.session.get("user_sub") or "")
     user = auth_user(sub)
     if not user:
@@ -379,7 +402,7 @@ def api_session_bootstrap(request: Request, response: Response) -> dict[str, Any
     """Return the compact authenticated session contract for web/mobile clients."""
     response.headers["Cache-Control"] = "no-store"
     if not AUTH_ENABLED:
-        role = "admin"
+        role = "admin" if LOCAL_ADMIN_ALLOWED else "user"
         mode = "local"
     else:
         sub = str(request.session.get("user_sub") or "")

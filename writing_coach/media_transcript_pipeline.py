@@ -150,7 +150,7 @@ def _run(args: list[str], timeout: int) -> subprocess.CompletedProcess[bytes] | 
 
 
 def _probe_seconds(path: Path) -> float:
-    result = _run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", str(path)], 60)
+    result = _run(["ffprobe", "-protocol_whitelist", "file,pipe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", str(path)], 60)
     if result is None or result.returncode != 0:
         return 0.0
     try:
@@ -165,7 +165,7 @@ def audio_chunks(source: Path, work: Path, chunk_seconds: int = CHUNK_SECONDS) -
     pattern = work / "chunk-%03d.mp3"
     result = _run(
         [
-            "ffmpeg", "-nostdin", "-v", "error", "-i", str(source), "-vn", "-ac", "1", "-ar", "16000",
+            "ffmpeg", "-protocol_whitelist", "file,pipe", "-nostdin", "-v", "error", "-i", str(source), "-vn", "-ac", "1", "-ar", "16000",
             "-c:a", "libmp3lame", "-b:a", "48k", "-f", "segment", "-segment_time", str(chunk_seconds),
             "-reset_timestamps", "1", str(pattern),
         ],

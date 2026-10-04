@@ -1187,7 +1187,8 @@ def pack_import_reading(item: Any, admin: Mapping[str, Any], *, pack_id: str) ->
         # The engine takes texts for an approved source only: approve it here, then import the pack again.
         return {"result": "waiting_for_source_approval", "source_id": source["id"]}
     if found is None:
-        rights = {key: value for key, value in (data.get("rights") or {}).items() if value is not None}
+        allowed = ("can_republish", "can_adapt", "attribution_required", "license_note")
+        rights = {key: value for key, value in (data.get("rights") or {}).items() if key in allowed and value is not None}
         job = _engine().submit(SubmittedInput(
             kind="text", text=data["body"], url=str(data.get("canonical_url") or ""), title=str(data.get("title") or ""),
             author=str(data.get("author") or ""), language=str(data.get("language") or ""),

@@ -215,7 +215,47 @@ APP_VERSION = os.getenv(
 )
 SCHEMA_VERSION = 11
 
-app = FastAPI(title="Orena", version=APP_VERSION)
+_PRODUCTION = APP_ENV == "production"
+# The schema browser is a developer tool: not served by a production deployment (security review 2026-10-04).
+app = FastAPI(title="Orena", version=APP_VERSION, docs_url=None if _PRODUCTION else "/docs",
+              redoc_url=None if _PRODUCTION else "/redoc", openapi_url=None if _PRODUCTION else "/openapi.json")
+
+
+# One sliding window per route group, per account (writing_coach/core/http_security.py RATE_GROUPS).
+_ROUTE_LIMITERS: dict[str, Any] = {}
+
+
+@app.middleware("http")
+async def refuse_cross_site_changes_and_harden_responses(request: Request, call_next):
+    """Every route: a browser changes something only from this site; every answer carries the hardening
+    headers (writing_coach/core/http_security.py)."""
+
+    from writing_coach.agent.ratelimit import SlidingWindowLimiter
+    from writing_coach.core.http_security import hardening_headers, origin_refusal, rate_group
+
+    refusal = origin_refusal(request.method, request.url.path, request.headers)
+    # Real accounts only: the single-user local mode (tests, a lane runtime) has no one to protect from.
+    group = rate_group(request.method, request.url.path) if refusal is None and AUTH_ENABLED else None
+    wait = None
+    if group is not None:
+        name, limit, window = group
+        account = str((request.scope.get("session") or {}).get("user_sub") or "local")
+        limiter = _ROUTE_LIMITERS.setdefault(name, SlidingWindowLimiter(limit, window, max_keys=50_000))
+        wait = limiter.check(account)
+    if wait is not None:
+        response = JSONResponse(status_code=429, headers={"Retry-After": str(max(1, int(wait) + 1))}, content={
+            "detail": error_detail("rate_limited", "Too many requests; try again in a moment.", retryable=True)})
+    elif refusal is not None:
+        logging.getLogger(__name__).warning("cross-site change refused: %s %s (%s)", request.method,
+                                            request.url.path, refusal)  # fmt: skip
+        response = JSONResponse(status_code=403, content={"detail": error_detail(
+            "origin_refused", "This change must come from Orena's own page.", retryable=False)})
+    else:
+        response = await call_next(request)
+    https = str(os.getenv("PUBLIC_BASE_URL", "")).strip().casefold().startswith("https://")
+    for name, value in hardening_headers(response.headers, https=https).items():
+        response.headers[name] = value
+    return response
 
 
 # The Writing endpoints that carry learner prose, and the largest body any of

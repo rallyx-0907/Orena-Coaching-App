@@ -245,13 +245,22 @@ async def _import_one(
     }
 
 
+def _require_library_admin(request: Request) -> dict[str, Any]:
+    """The import and archive routes are an administrator's: with no guard installed they are closed (503),
+    never open to whoever is signed in (security review 2026-10-04)."""
+
+    if _admin_guard is None:
+        raise HTTPException(503, "Book import is not configured here.")
+    return _admin_guard(request) or {}
+
+
 @router.post("/import")
 async def import_books(
     request: Request,
     files: list[UploadFile] = File(...),
     learning_language: str = Form(...),
 ) -> dict[str, Any]:
-    admin = _admin_guard(request) if _admin_guard else {}
+    admin = _require_library_admin(request)
     repository, asset_store = _require_backend()
     language = _require_language(learning_language)
     if not files:
@@ -397,8 +406,7 @@ def archive_book(book_id: str, request: Request) -> dict[str, Any]:
     """Admin recovery for a wrong or duplicate import - hides the book from
     every learner-facing read without deleting its row or assets (see
     `PostgresReadingLibraryRepository.archive_book`)."""
-    if _admin_guard:
-        _admin_guard(request)
+    _require_library_admin(request)
     repository, _asset = _require_backend()
     archived = _call_repository(lambda: repository.archive_book(book_id))
     if not archived:

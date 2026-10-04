@@ -22,7 +22,6 @@ second one invented here.
 from __future__ import annotations
 
 import logging
-import mimetypes
 from pathlib import Path
 from collections.abc import Callable, Mapping
 from typing import Any
@@ -171,6 +170,14 @@ def learner_source(payload: LearnerSourceIn) -> dict[str, Any]:
     return {**result, "media_id": entry.media_id}
 
 
+_SERVED_TYPES = {
+    ".mp4": "video/mp4", ".m4v": "video/mp4", ".mov": "video/quicktime", ".webm": "video/webm",
+    ".mkv": "video/x-matroska", ".mp3": "audio/mpeg", ".m4a": "audio/mp4", ".aac": "audio/aac",
+    ".wav": "audio/wav", ".ogg": "audio/ogg", ".opus": "audio/ogg", ".flac": "audio/flac",
+    ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp",
+}
+
+
 @router.get("/files/{key:path}")
 def stored_media_file(key: str, variant: str = "") -> Any:
     """Serve bytes this application stores under an opaque, validated key.
@@ -199,11 +206,19 @@ def stored_media_file(key: str, variant: str = "") -> Any:
         raise orena_http_error(404, "media_asset_not_found", "This media file is not available.")
     if variant and variant != "thumb":
         raise orena_http_error(422, "media_asset_variant_invalid", "Unsupported media variant.")
-    content_type = "image/jpeg" if variant == "thumb" else (mimetypes.guess_type(key)[0] or "application/octet-stream")
+    # The type comes from a fixed map of media and image suffixes, never guessed from a name a learner chose:
+    # anything else is served as opaque bytes, sandboxed, so a file can never run as a page on this origin.
+    suffix = Path(key).suffix.casefold()
+    content_type = "image/jpeg" if variant == "thumb" else _SERVED_TYPES.get(suffix, "application/octet-stream")
     return Response(
         content=payload,
         media_type=content_type,
-        headers={"Cache-Control": "private, max-age=3600" if private else "public, max-age=31536000, immutable"},
+        headers={
+            "Cache-Control": "private, max-age=3600" if private else "public, max-age=31536000, immutable",
+            "X-Content-Type-Options": "nosniff",
+            "Content-Security-Policy": "default-src 'none'; sandbox",
+            "Content-Disposition": "inline; filename=media" + (suffix if suffix in _SERVED_TYPES else ".bin"),
+        },
     )
 
 

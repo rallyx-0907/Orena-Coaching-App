@@ -215,6 +215,14 @@ class CommonsVoice:
 
     @staticmethod
     def _request(url: str) -> bytes:
+        # The address comes from the Commons API answer: only Wikimedia's own HTTPS hosts are fetched, never a
+        # file: or internal address a tampered answer could name (security review 2026-10-04).
+        from urllib.parse import urlsplit
+
+        parts = urlsplit(url)
+        host = (parts.hostname or "").casefold()
+        if parts.scheme != "https" or not (host == "wikimedia.org" or host.endswith(".wikimedia.org")):
+            raise ValueError("word audio is fetched from Wikimedia over HTTPS only")
         request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
         with urllib.request.urlopen(request, timeout=REQUEST_TIMEOUT) as response:  # noqa: S310
             return response.read(MAX_AUDIO_BYTES + 1)

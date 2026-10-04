@@ -140,6 +140,7 @@ def normalize_audio_to_pcm16_wav(
             completed = subprocess.run(
                 [
                     "ffmpeg",
+                    "-protocol_whitelist", "file,pipe",
                     "-hide_banner",
                     "-loglevel",
                     "error",

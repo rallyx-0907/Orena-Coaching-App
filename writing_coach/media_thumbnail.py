@@ -64,9 +64,15 @@ def _run(args: list[str], *, timeout: int = _TIMEOUT_SECONDS) -> subprocess.Comp
         return None
 
 
+# ffprobe's format names for the media Orena accepts, and the container formats that point at other inputs.
+ALLOWED_FORMATS = frozenset({"mov", "mp4", "m4a", "3gp", "3g2", "mj2", "matroska", "webm", "ogg", "mp3", "wav",
+                             "flac", "aac", "avi"})
+REFUSED_FORMATS = frozenset({"hls", "applehttp", "concat", "dash", "sdp", "image2", "ffconcat", "tee", "data"})
+
+
 def probe_media(path: Path) -> MediaProbe:
     """Read media facts only; ffprobe is the authority over file extensions."""
-    result = _run(["ffprobe", "-v", "error", "-print_format", "json", "-show_format", "-show_streams", str(path)])
+    result = _run(["ffprobe", "-protocol_whitelist", "file,pipe", "-v", "error", "-print_format", "json", "-show_format", "-show_streams", str(path)])
     if result is None or result.returncode != 0:
         raise ValueError("The media file could not be read.")
     try:
@@ -79,6 +85,10 @@ def probe_media(path: Path) -> MediaProbe:
         raise ValueError("The media file could not be read.") from exc
     if not video and not audio:
         raise ValueError("The file is not audio or video media.")
+    # A playlist or concat list would make the decoder fetch other files or addresses: only real media formats.
+    formats = {name.strip() for name in str(payload.get("format", {}).get("format_name") or "").split(",") if name.strip()}
+    if not formats & ALLOWED_FORMATS or formats & REFUSED_FORMATS:
+        raise ValueError("The file is not a supported audio or video format.")
     return MediaProbe(
         duration_ms=max(0, round(duration * 1000)),
         media_type="video" if video else "audio",
@@ -90,7 +100,7 @@ def probe_media(path: Path) -> MediaProbe:
 
 
 def _luma_is_usable(path: Path) -> bool:
-    result = _run(["ffmpeg", "-nostdin", "-v", "error", "-i", str(path), "-frames:v", "1", "-vf", "scale=32:18", "-f", "rawvideo", "-pix_fmt", "gray", "pipe:1"])
+    result = _run(["ffmpeg", "-protocol_whitelist", "file,pipe", "-nostdin", "-v", "error", "-i", str(path), "-frames:v", "1", "-vf", "scale=32:18", "-f", "rawvideo", "-pix_fmt", "gray", "pipe:1"])
     if result is None or result.returncode != 0 or not result.stdout:
         return False
     return sum(result.stdout) / len(result.stdout) >= 12
@@ -109,7 +119,7 @@ def video_frame_thumbnail(path: Path, *, duration_ms: int, width: int = 640) -> 
             frame = root / f"frame-{fraction}.jpg"
             at = max(0.05, min(duration * fraction, max(0.05, duration - 0.05)))
             result = _run([
-                "ffmpeg", "-nostdin", "-v", "error", "-ss", f"{at:.3f}", "-i", str(path),
+                "ffmpeg", "-protocol_whitelist", "file,pipe", "-nostdin", "-v", "error", "-ss", f"{at:.3f}", "-i", str(path),
                 "-frames:v", "1", "-vf", f"scale={width}:-2", "-q:v", "3", "-f", "image2", "-y", str(frame),
             ])
             if result is not None and result.returncode == 0 and frame.is_file() and _luma_is_usable(frame):
@@ -123,7 +133,7 @@ def embedded_audio_artwork(path: Path) -> bytes | None:
     with tempfile.TemporaryDirectory(prefix="orena-media-art-", dir=_TEMP_ROOT) as temporary:
         cover = Path(temporary) / "cover.jpg"
         result = _run([
-            "ffmpeg", "-nostdin", "-v", "error", "-i", str(path), "-an", "-c:v", "copy", "-frames:v", "1", "-y", str(cover),
+            "ffmpeg", "-protocol_whitelist", "file,pipe", "-nostdin", "-v", "error", "-i", str(path), "-an", "-c:v", "copy", "-frames:v", "1", "-y", str(cover),
         ])
         if result is None or result.returncode != 0 or not cover.is_file():
             return None

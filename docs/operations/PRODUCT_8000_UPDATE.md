@@ -19,6 +19,14 @@ that the Reading worker runs as its own service (`reading-worker`, added to `com
 
 ## Steps
 
+0. **Check the settings the new version requires** (security review, 2026-10-04):
+   - with `APP_ENV=production`, `SESSION_SECRET` must be at least 32 characters, or the app refuses to start.
+     Check only its length, never print it:
+     `docker exec ai-writing-coach-writing-coach-1 python -c "import os; print(len(os.environ.get('SESSION_SECRET','')) >= 32)"`.
+     Changing it signs everyone out once;
+   - with authentication off, the signed-out "local developer" admin now exists only when `PUBLIC_BASE_URL` is
+     this machine's own address (`localhost`, `127.0.0.1`), or with `ALLOW_LOCAL_ADMIN=1` set on purpose.
+
 1. **Back up :8000 (reads only).**
 
    ```powershell

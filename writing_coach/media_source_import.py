@@ -146,9 +146,8 @@ def _safe_suffix(raw: str) -> str:
     legitimate import fail.
     """
     suffix = Path(raw).suffix.casefold()
-    if suffix.startswith(".") and 1 < len(suffix) <= 8 and suffix[1:].isalnum():
-        return suffix
-    return ".bin"
+    # Only a media suffix is kept: a name like `x.html` must never become a stored `.html` (security review).
+    return suffix if suffix in DIRECT_MEDIA_SUFFIXES else ".bin"
 
 
 def _transcript_duration_ms(acquisition: MediaAcquisition) -> int:
