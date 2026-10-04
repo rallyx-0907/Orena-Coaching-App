@@ -96,6 +96,13 @@ _RULE_FUNCTIONS = {
 }
 
 
+def _incremental_result_cost(result: Any) -> float | None:
+    """Actual spend in this run: replaying a cached completion costs nothing."""
+    if result.cached:
+        return 0.0
+    return result.usage.cost_usd(result.model)
+
+
 @dataclass
 class GenerateOutcome:
     point_id: str
@@ -1910,14 +1917,14 @@ class Generator:
         if check_items:
             blocks.append({"type": "check", "items": check_items})
 
-        cost = result.usage.cost_usd(result.model) or 0.0
+        cost = _incremental_result_cost(result) or 0.0
         cached = result.cached
         prompt_version = PROMPT_VERSION
         schema_version = existing.get("schema_version", "0.2")
         if with_story:
             story_result, story_block = self._generate_story(existing, locales, mode=story_mode)
             blocks.append(story_block)
-            story_cost = story_result.usage.cost_usd(story_result.model)
+            story_cost = _incremental_result_cost(story_result)
             cost = (cost + story_cost) if story_cost is not None else cost
             cached = cached and story_result.cached
             prompt_version = f"{PROMPT_VERSION}+{STORY_PROMPT_VERSION}"
@@ -2123,7 +2130,7 @@ class Generator:
                 repair_context = "Provider/schema failure: " + str(exc)[:1200]
                 continue
 
-            attempt_cost = result.usage.cost_usd(result.model)
+            attempt_cost = _incremental_result_cost(result)
             if attempt_cost is None:
                 cost_known = False
             else:
@@ -2175,7 +2182,7 @@ class Generator:
                         all_cached = False
                         break
 
-                    patch_cost = structure_patch.usage.cost_usd(structure_patch.model)
+                    patch_cost = _incremental_result_cost(structure_patch)
                     if patch_cost is None:
                         cost_known = False
                     else:
@@ -2245,7 +2252,7 @@ class Generator:
                         all_cached = False
                         break
 
-                    patch_cost = patch_result.usage.cost_usd(patch_result.model)
+                    patch_cost = _incremental_result_cost(patch_result)
                     if patch_cost is None:
                         cost_known = False
                     else:
