@@ -14,6 +14,7 @@ import { toast } from '../../kit/toast.js';
 import { syncImports } from '../../shell/context.js';
 import { deleteWithUndo, onImportsChanged } from '../../product/import-undo.js';
 import { languages } from '../../copy/index.js';
+import { meaningLanguageLabel } from '../../product/vocabulary-meaning.js';
 import { t } from './copy.js';
 import { isDeferred } from '../../shell/routes.js';
 import {
@@ -25,6 +26,12 @@ import {
    placeholder guess the truncated export makes when it cannot read real sample data, not a real
    count; §1 "read the source, not a copy"). */
 const TABS = ['content', 'language', 'collections', 'active', 'due'];
+
+/* The kit's small tag naming a meaning's language when it is not the support language (D-124). */
+function meaningTag(language) {
+  const label = meaningLanguageLabel(language, languages().support, languages().ui);
+  return label ? html` <span class="o-tag">${label}</span>` : '';
+}
 
 function tabLabel(id, dueCount) {
   return {
@@ -82,7 +89,7 @@ function contentPanel(rows, language, menuFor) {
 function languageRow(row, language) {
   return html`<div class="s-library-lang-row">
     <span class="s-library-chip">${row.kind === 'phrase' ? t('typePhrase') : sc('word')}</span>
-    <button type="button" class="s-library-lang-row__text" data-word-open="${row.word}"><span class="s-library-lang-row__word" lang="${langAttr(language)}">${row.word}</span>${row.sub ? html`<span class="s-library-lang-row__sub">${row.sub}</span>` : ''}</button>
+    <button type="button" class="s-library-lang-row__text" data-word-open="${row.word}"><span class="s-library-lang-row__word" lang="${langAttr(language)}">${row.word}</span>${row.sub ? html`<span class="s-library-lang-row__sub">${row.sub}${meaningTag(row.subLanguage)}</span>` : ''}</button>
     ${row.isNew ? html`<span class="${cls('s-library-chip', 's-library-chip--new')}">${t('newBadge')}</span>` : html`${masteryBars({ filled: row.filled })}`}
     <button type="button" class="s-library-lang-row__play" data-play="${row.word}" aria-label="${sc('pronunciation')}">${raw(icon('volume-2', { size: 18 }))}</button>
   </div>`;

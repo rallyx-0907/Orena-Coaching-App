@@ -51,6 +51,10 @@ export function reviewCard(word, item, supportLang = '') {
     if (meaning) {
       card.meaning = meaning;
       card.hasMeaning = true;
+      // Not in the support language (D-124): the card says which language it is.
+      card.meaningLanguage = vocabularyMeaning(row, supportLang)?.source === 'other_language'
+        ? vocabularyMeaning(row, supportLang).language
+        : '';
       // The support line is the same localization when the card had no meaning of its own.
       if (card.support === meaning) {
         card.support = '';

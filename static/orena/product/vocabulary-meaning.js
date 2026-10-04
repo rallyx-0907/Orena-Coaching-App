@@ -35,6 +35,20 @@ export function localizedMeaning(item, supportLanguage) {
   return null;
 }
 
+/* The label a meaning carries when it is not in the learner's support language (D-124): the
+   language's own name in the interface language ("Tiếng Anh", "English", "英语"), from the
+   browser's language data - no table to keep. Empty when the meaning is in the support language
+   or its language is unknown, so a label is never shown for nothing. */
+export function meaningLanguageLabel(language, supportLanguage, ui = 'en') {
+  const code = lower(language);
+  if (!code || code === lower(supportLanguage)) return '';
+  try {
+    return new Intl.DisplayNames([ui || 'en'], { type: 'language' }).of(code) || code;
+  } catch {
+    return code;
+  }
+}
+
 /* The meaning to show: this language's localization, else the learner's own note, else the
    sense's localization in another language (tagged with that language so a caller can say so),
    else null. The sense's own-language definition is not a localization and is not chosen here. */

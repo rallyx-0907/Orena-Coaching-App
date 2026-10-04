@@ -23,6 +23,7 @@ import { masteryBars } from '../../kit/components.js';
 import { langAttr } from '../../kit/lang.js';
 import { shellCopy } from '../../copy/shell.js';
 import { languages } from '../../copy/index.js';
+import { meaningLanguageLabel } from '../../product/vocabulary-meaning.js';
 import { api } from '../../infrastructure/api.js';
 import { readCollection } from '../collection/actions.js';
 import { flushQueue, withWaiting } from '../../product/review-queue.js';
@@ -51,6 +52,12 @@ import {
   gradeOutcome,
   countsForSession,
 } from './model.js';
+
+/* The kit's small tag naming a meaning's language when it is not the support language (D-124). */
+function meaningTag(language) {
+  const label = meaningLanguageLabel(language, languages().support, languages().ui);
+  return label ? html` <span class="o-tag">${label}</span>` : '';
+}
 
 function posMarkup(pos) {
   if (!pos) return '';
@@ -94,7 +101,7 @@ function wordCardMarkup(card, eyebrow) {
         <button type="button" class="s-review-icon" data-save style="background:${card.savedBg};color:${card.savedColor}" aria-label="${t(card.saved ? 'unsaveWord' : 'saveWord')}" aria-pressed="${card.saved ? 'true' : 'false'}">${raw(icon('bookmark-check', { size: 19 }))}</button>
       </div>
     </div>
-    ${card.hasMeaning ? html`<div class="s-review-card__meaning"><div class="s-review-card__meaning-text">${card.meaning}</div>${card.hasSupport ? html`<div class="s-review-card__support">${card.support}</div>` : ''}</div>` : ''}
+    ${card.hasMeaning ? html`<div class="s-review-card__meaning"><div class="s-review-card__meaning-text">${card.meaning}${meaningTag(card.meaningLanguage)}</div>${card.hasSupport ? html`<div class="s-review-card__support">${card.support}</div>` : ''}</div>` : ''}
     ${card.hasExample ? html`<div class="s-review-card__example" lang="${langAttr(cardLang)}">“${card.exampleParts.map((part) => html`<span class="${cls(part.hit && 's-review-card__hit')}">${part.value}</span>`)}”</div>` : ''}
     ${card.script === 'hanzi' ? strokesMarkup({ word: card.word, prefix: 's-review', label: t('strokeOrder'), buttonLabel: t('practiseStrokes'), buttonAttr: 'data-practise-strokes', buttonClass: 's-review-strokes-btn' }) : ''}
     ${footer.length ? html`<div class="s-review-card__footer">${footer}</div>` : ''}

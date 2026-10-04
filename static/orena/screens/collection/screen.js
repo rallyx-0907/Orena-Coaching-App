@@ -14,6 +14,7 @@ import { heroMedia, masteryBars } from '../../kit/components.js';
 import { langAttr, langSpan } from '../../kit/lang.js';
 import { api } from '../../infrastructure/api.js';
 import { languages } from '../../copy/index.js';
+import { meaningLanguageLabel } from '../../product/vocabulary-meaning.js';
 import { shellCopy } from '../../copy/shell.js';
 import { t } from './copy.js';
 import { collectionViewModel } from './model.js';
@@ -27,6 +28,12 @@ import { readCollection, keepCollectionWords } from './actions.js';
    already-correct, already-shared pattern My Library's languageRow() uses for the same "row with a
    nested play button" shape (static/orena/screens/library/screen.js) - a non-button row plus a real
    <button> for play, never a role="button" span. */
+/* The kit's small tag naming a meaning's language when it is not the support language (D-124). */
+function meaningTag(language) {
+  const label = meaningLanguageLabel(language, languages().support, languages().ui);
+  return label ? html` <span class="o-tag">${label}</span>` : '';
+}
+
 function wordRowMarkup(word) {
   const badge = word.isNew
     ? html`<span class="s-collection-word__new">${t('collectionNewBadge')}</span>`
@@ -34,7 +41,7 @@ function wordRowMarkup(word) {
   return html`<div class="s-collection-word" role="button" tabindex="0" data-word-open data-word="${word.id}">
     <span class="s-collection-word__body">
       <span class="s-collection-word__title" lang="${langAttr(word.lang)}">${word.word}</span>
-      <span class="s-collection-word__meaning">${word.meaning}</span>
+      <span class="s-collection-word__meaning"><span lang="${langAttr(word.meaningLanguage || languages().support)}">${word.meaning}</span>${meaningTag(word.meaningLanguage)}</span>
     </span>
     ${badge}
     <button type="button" class="s-collection-word__play" data-word-play data-word="${word.id}" aria-label="${t('collectionPlay')}">${raw(icon('volume-2', { size: 18 }))}</button>

@@ -80,11 +80,18 @@ export function wordMeaning(item = {}, supportLanguage = 'en') {
   return vocabularyMeaning(item, supportLanguage)?.text || String(item.source_fragment || '').trim();
 }
 
+/* The language of that meaning when it is the sense's meaning in another language (D-124). */
+export function wordMeaningLanguage(item = {}, supportLanguage = 'en') {
+  const meaning = vocabularyMeaning(item, supportLanguage);
+  return meaning?.source === 'other_language' ? meaning.language : '';
+}
+
 export function languageRows(items = [], supportLanguage = 'en') {
   return (items || []).map((item) => ({
     word: item.word || '',
     kind: wordKindOf(item.word),
     sub: wordMeaning(item, supportLanguage),
+    subLanguage: wordMeaningLanguage(item, supportLanguage),
     isNew: isNewWord(item),
     filled: masteryFilled(item),
   }));

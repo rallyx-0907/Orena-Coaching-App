@@ -22,15 +22,19 @@ import { collectionWordKey } from './actions.js';
    definitions); this picks the one that matches, then any meaning that is not the word's own
    target-language definition, then whatever is first - it never assumes a language (rule:
    no hardcoding a support locale). */
-export function supportMeaning(card = {}, support = '') {
+export function supportMeaningEntry(card = {}, support = '') {
   const meanings = Array.isArray(card.meanings) ? card.meanings : [];
   const target = String(card.identity?.language || '');
   const wanted = String(support || '');
   const exact = meanings.find((meaning) => String(meaning?.language || '') === wanted && meaning?.text);
-  if (exact) return String(exact.text);
+  if (exact) return { text: String(exact.text), language: wanted };
   const other = meanings.find((meaning) => String(meaning?.language || '') !== target && meaning?.text);
-  if (other) return String(other.text);
-  return String(meanings[0]?.text || '');
+  if (other) return { text: String(other.text), language: String(other.language || '') };
+  return { text: String(meanings[0]?.text || ''), language: String(meanings[0]?.language || '') };
+}
+
+export function supportMeaning(card = {}, support = '') {
+  return supportMeaningEntry(card, support).text;
 }
 
 /* Mastery bars: 4 bars, `review_stage` (0-4, already the backend's own clamp point elsewhere -
@@ -50,6 +54,8 @@ export function wordRow(card = {}, support = '') {
     // precise source and costs nothing extra to read).
     lang: String(card.identity?.language || ''),
     meaning: supportMeaning(card, support),
+    // The meaning's language when it is not the support language (D-124): the row labels it.
+    meaningLanguage: supportMeaningEntry(card, support).language,
     isNew: !saved,
     filled: saved ? stage : 0,
     total: 4,
