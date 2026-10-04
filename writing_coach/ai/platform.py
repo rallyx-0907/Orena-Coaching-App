@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import os
+from datetime import UTC, datetime, timedelta
 from time import perf_counter
 from enum import Enum
 from pathlib import Path
@@ -904,6 +905,70 @@ def admin_ai_provider_credential_delete(
 def admin_ai_operations(request: Request, limit: int = 100) -> dict[str, Any]:
     _require_admin(request)
     return AIControlPlane(_installed_platform_repository()).operations(limit=limit)
+
+
+# Audio capabilities are reported per minute of audio; every other one per call.
+_PER_MINUTE = frozenset({"speech_asr"})
+COST_REPORT_GAPS = (
+    "Per learner: the operation telemetry is anonymous by design; only Orena agent turns carry an account "
+    "(agent.turn rows), so cost per learner exists for the agent only.",
+    "Per Orena turn: a turn is one to four agent_turn_fast rounds; the per-turn cost is in the agent.turn "
+    "timeline report, not here.",
+    "Infrastructure (hosting, database, storage, bandwidth) is not measured: unknown.",
+    "Audio rates are provider list prices (ai/pricing.py); the Azure pronunciation rate is to be checked "
+    "against the Azure bill.",
+    "Calls before 2026-10-04 for speech recognition and pronunciation scoring were never recorded.",
+)
+
+
+def cost_report(rows: list[dict[str, Any]], *, days: int, since: datetime) -> dict[str, Any]:
+    """The ledger rows as the cost report reads them: by day, and by feature x provider x model with a unit
+    cost - per priced call, or per audio minute for speech recognition. An average over nothing is null."""
+
+    by_day: dict[str, dict[str, Any]] = {}
+    by_feature: dict[tuple[str, str, str], dict[str, Any]] = {}
+    for row in rows:
+        day = by_day.setdefault(row["day"], {"day": row["day"], "calls": 0, "usd": 0.0, "unpriced_calls": 0})
+        day["calls"] += row["calls"]
+        day["usd"] += row["usd"]
+        day["unpriced_calls"] += row["unpriced_calls"]
+        key = (row["capability"] or "", row["provider"] or "", row["model"] or "")
+        item = by_feature.setdefault(key, {"capability": key[0], "provider": key[1] or None, "model": key[2] or None,
+                                           "calls": 0, "failures": 0, "priced_calls": 0, "unpriced_calls": 0,
+                                           "usd": 0.0, "prompt_tokens": 0, "completion_tokens": 0,
+                                           "audio_seconds": 0.0})  # fmt: skip
+        for name in ("calls", "failures", "priced_calls", "unpriced_calls", "usd", "prompt_tokens",
+                     "completion_tokens", "audio_seconds"):  # fmt: skip
+            item[name] += row[name]
+    features = []
+    for item in by_feature.values():
+        item["usd"] = round(item["usd"], 8)
+        if item["capability"] in _PER_MINUTE:
+            minutes = item["audio_seconds"] / 60
+            item["unit"], item["usd_per_unit"] = "audio_minute", round(item["usd"] / minutes, 6) if minutes else None
+        else:
+            item["unit"] = "call"
+            item["usd_per_unit"] = round(item["usd"] / item["priced_calls"], 6) if item["priced_calls"] else None
+        features.append(item)
+    features.sort(key=lambda entry: -entry["usd"])
+    return {
+        "since": since.isoformat(), "days": days, "currency": "USD",
+        "by_day": [dict(day, usd=round(day["usd"], 8)) for day in sorted(by_day.values(), key=lambda d: d["day"], reverse=True)],
+        "by_feature": features, "gaps": list(COST_REPORT_GAPS),
+    }
+
+
+@router.get("/costs")
+def admin_ai_costs(request: Request, days: int = 30) -> dict[str, Any]:
+    """AI cost by day and by feature, provider and model, from the shared ledger (no UI yet: UI_BACKEND_GAPS)."""
+
+    _require_admin(request)
+    bounded = max(1, min(int(days), 90))
+    now = datetime.now(UTC)
+    since = datetime(now.year, now.month, now.day, tzinfo=UTC) - timedelta(days=bounded - 1)
+    reader = getattr(_installed_platform_repository(), "ai_cost_rows", None)
+    rows = reader(since) if callable(reader) else []
+    return cost_report(rows, days=bounded, since=since)
 
 
 @router.put("/config", deprecated=True)

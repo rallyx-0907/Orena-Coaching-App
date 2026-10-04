@@ -8,7 +8,7 @@ from datetime import UTC, datetime, timezone
 from pathlib import Path
 from typing import Protocol
 
-from sqlalchemy import Engine, select
+from sqlalchemy import Engine, select, text
 from sqlalchemy.orm import Session
 
 from writing_coach.ai.config import (
@@ -302,6 +302,10 @@ class SQLitePlatformRepository:
     def list_ai_operation_events(self, limit: int = 100) -> list[dict]:
         return []
 
+    def ai_cost_rows(self, since: datetime) -> list[dict]:
+        # Telemetry is PostgreSQL-only: nothing to report from the archive store.
+        return []
+
 
 class PostgresPlatformRepository:
     """PostgreSQL platform configuration backed by Alembic-owned storage."""
@@ -517,3 +521,40 @@ class PostgresPlatformRepository:
             safe["created_at"] = row.created_at.isoformat()
             events.append(safe)
         return events
+
+    def ai_cost_rows(self, since: datetime) -> list[dict]:
+        """The AI ledger grouped by UTC day, capability, provider and model (cost report, 2026-10-04).
+
+        Sums only what the rows recorded: estimated USD, priced and unpriced calls, tokens and audio seconds.
+        No learner is named: the operation telemetry is anonymous by design.
+        """
+
+        query = text(
+            "WITH ops AS (SELECT created_at, payload::jsonb AS p FROM audit_logs "
+            "WHERE action = 'ai.operation' AND created_at >= :since) "
+            "SELECT to_char(date_trunc('day', created_at AT TIME ZONE 'UTC'), 'YYYY-MM-DD') AS day, "
+            "p ->> 'capability' AS capability, p ->> 'provider' AS provider, p ->> 'model' AS model, "
+            "COUNT(*) AS calls, COUNT(*) FILTER (WHERE p ->> 'outcome' = 'failure') AS failures, "
+            "COUNT(*) FILTER (WHERE p -> 'cost' ->> 'state' = 'estimated') AS priced_calls, "
+            "COUNT(*) FILTER (WHERE p ->> 'outcome' = 'success' AND p ->> 'provider' IS NOT NULL "
+            "AND COALESCE(p -> 'cost' ->> 'state', '') <> 'estimated') AS unpriced_calls, "
+            "COALESCE(SUM((p -> 'cost' ->> 'amount')::numeric), 0) AS usd, "
+            "COALESCE(SUM((p -> 'usage' ->> 'prompt_tokens')::bigint), 0) AS prompt_tokens, "
+            "COALESCE(SUM((p -> 'usage' ->> 'completion_tokens')::bigint), 0) AS completion_tokens, "
+            "COALESCE(SUM((p -> 'usage' ->> 'audio_seconds')::numeric), 0) AS audio_seconds, "
+            "AVG((p ->> 'latency_ms')::numeric) AS avg_latency_ms "
+            "FROM ops GROUP BY 1, 2, 3, 4 ORDER BY 1 DESC, usd DESC"
+        )
+        with self.engine.connect() as connection:
+            rows = connection.execute(query, {"since": since}).mappings().all()
+        return [
+            {
+                "day": row["day"], "capability": row["capability"], "provider": row["provider"], "model": row["model"],
+                "calls": int(row["calls"]), "failures": int(row["failures"]), "priced_calls": int(row["priced_calls"]),
+                "unpriced_calls": int(row["unpriced_calls"]), "usd": round(float(row["usd"]), 8),
+                "prompt_tokens": int(row["prompt_tokens"]), "completion_tokens": int(row["completion_tokens"]),
+                "audio_seconds": round(float(row["audio_seconds"]), 3),
+                "avg_latency_ms": round(float(row["avg_latency_ms"])) if row["avg_latency_ms"] is not None else None,
+            }
+            for row in rows
+        ]

@@ -107,3 +107,31 @@ def test_a_silent_take_azure_answered_is_still_billed(recorded):
         _azure(silent).assess_bytes(b"webm", filename="t.webm", content_type="audio/webm", language="en",
                                     reference_text="Good.")  # fmt: skip
     assert recorded[0]["cost"]["state"] == "estimated" and recorded[0]["usage"]["audio_seconds"] == 2.0
+
+
+# --- the cost report (GET /api/admin/ai/costs) -----------------------------------------------------------
+
+
+def test_the_cost_report_gives_a_unit_cost_per_call_and_per_audio_minute():
+    from datetime import UTC, datetime
+
+    from writing_coach.ai.platform import cost_report
+
+    rows = [
+        {"day": "2026-10-04", "capability": "writing_evaluator", "provider": "gemini", "model": "m", "calls": 4,
+         "failures": 0, "priced_calls": 4, "unpriced_calls": 0, "usd": 0.008, "prompt_tokens": 1, "completion_tokens": 1,
+         "audio_seconds": 0.0},
+        {"day": "2026-10-03", "capability": "speech_asr", "provider": "groq", "model": "w", "calls": 3, "failures": 1,
+         "priced_calls": 2, "unpriced_calls": 0, "usd": 0.0004, "prompt_tokens": 0, "completion_tokens": 0,
+         "audio_seconds": 120.0},
+        {"day": "2026-10-04", "capability": "learner_dictionary", "provider": None, "model": None, "calls": 2,
+         "failures": 2, "priced_calls": 0, "unpriced_calls": 0, "usd": 0.0, "prompt_tokens": 0, "completion_tokens": 0,
+         "audio_seconds": 0.0},
+    ]  # fmt: skip
+    report = cost_report(rows, days=7, since=datetime(2026, 9, 28, tzinfo=UTC))
+    features = {f["capability"]: f for f in report["by_feature"]}
+    assert features["writing_evaluator"]["unit"] == "call" and features["writing_evaluator"]["usd_per_unit"] == 0.002
+    assert features["speech_asr"]["unit"] == "audio_minute" and features["speech_asr"]["usd_per_unit"] == 0.0002
+    assert features["learner_dictionary"]["usd_per_unit"] is None, "an average over nothing is null, never 0"
+    assert [d["day"] for d in report["by_day"]] == ["2026-10-04", "2026-10-03"]
+    assert report["gaps"], "the report says what it cannot measure"
