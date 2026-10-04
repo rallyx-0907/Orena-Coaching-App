@@ -38,6 +38,8 @@ from dataclasses import dataclass, field, replace
 from types import MappingProxyType
 from typing import Any
 
+from pydantic import ValidationError
+
 from writing_coach.agent import learner_copy
 from writing_coach.agent.capability_registry import CapabilityRegistry
 from writing_coach.agent.context import TurnInput, build_tier1
@@ -53,7 +55,14 @@ from writing_coach.agent.address import ADDRESS_VERSION, Address, address_note, 
 from writing_coach.agent.greeting import built as built_greeting
 from writing_coach.agent.greeting import states_a_fact
 from writing_coach.agent.honesty import ClaimGate, nothing_done, offer, offer_instead
-from writing_coach.agent.notes import CORRECT, note_intent, notes_the_message_changes
+from writing_coach.agent.notes import (
+    CORRECT,
+    asks_to_remember_unaccented,
+    confirmed_note,
+    note_intent,
+    notes_the_message_changes,
+    unaccented_wish,
+)
 from writing_coach.agent.notes import nudge as note_nudge
 from writing_coach.agent.identity import IdentityQuestion
 from writing_coach.agent.events import (
@@ -64,6 +73,7 @@ from writing_coach.agent.events import (
     SegmentDelta,
     SegmentEnd,
     SessionEvent,
+    SuggestionEvent,
     ToolCallEvent,
     ToolResultEvent,
     TurnStream,
@@ -74,6 +84,7 @@ from writing_coach.agent.limits import DEFAULT_LIMITS, AgentLimits
 from writing_coach.agent.contract import OPENING_MAX_CHARS
 from writing_coach.agent.events import Display
 from writing_coach.agent.outputs import (
+    KEEP_NOTE_INTENT,
     KIND_BY_SOURCE,
     REPLY_TOOL_NAMES,
     ReplyOutputs,
@@ -97,6 +108,7 @@ from writing_coach.agent.redaction import redact_for_provider
 from writing_coach.agent.locale import to_internal
 from writing_coach.agent.schemas import CoachNote, TurnRequest
 from writing_coach.agent.session import SessionCache, ToolResultRecord
+from writing_coach.agent.timeline import TurnTimeline
 from writing_coach.agent.tools import (
     FORBIDDEN_ARGUMENTS,
     LearnerScope,
@@ -106,6 +118,13 @@ from writing_coach.agent.tools import (
 )
 from writing_coach.core.request_context import LANGUAGE_CODE_CTX, USER_KEY_CTX
 
+EVIDENCE_NUDGE = (
+    "This asks for a conclusion about the learner's own learning. You have read none of their records: call "
+    "get_recommended_next_activities (what to study) or get_learning_weaknesses (what goes wrong, weak areas) "
+    "now, then answer only from what it shows. Where it shows too little, say there is not enough data yet; never "
+    "rank skills against each other from counts of different kinds."
+)
+SCREEN_HELP_REPLY_TOOLS = frozenset({"suggest_next"})  # S1: an answer and follow-ups; no preference change
 _log = logging.getLogger(__name__)
 
 Meter = Callable[[str, str, int, str], None]  # (user_key, feature, amount, request_id)
@@ -163,6 +182,10 @@ class AgentRuntime:
     clock: Callable[[], float] = time.monotonic
     new_trace_id: Callable[[], str] = lambda: uuid.uuid4().hex
     max_output_tokens: int = 1024
+    # One record per turn (agent/timeline.py): where the time went, for the latency and cost baseline.
+    record_turn: Callable[[str, dict], None] | None = None
+    # The staging daily spend cap (agent/budget.py): seconds until it resets when reached, else None.
+    spend_guard: Callable[[], float | None] | None = None
     turn_limiter: SlidingWindowLimiter = field(init=False)
     read_limiter: SlidingWindowLimiter = field(init=False)
 
@@ -181,7 +204,7 @@ class AgentRuntime:
     def run(
         self, request: TurnRequest, learner: LearnerScope, *, should_stop: Callable[[], bool] = never_stop
     ) -> Iterator[Event]:
-        return _Turn(self, request, learner, should_stop).events()
+        return _Turn(self, request, learner, should_stop).timed_events()
 
 
 class _Turn:
@@ -204,29 +227,71 @@ class _Turn:
         # What is streamed; an action is never reported as done (agent/honesty.py).
         self.gate = ClaimGate(interface=request.context.locale.interface, support=request.context.locale.support)
         self.provider_rounds = 0
+        self.screen_help = False  # set per turn by the decision (F-13)
+        self.needs_evidence = False  # a conclusion about the learner's learning: read before answering (3.1)
+        self.read_attempted = False  # a read was started this turn, whatever came of it
         self.address_offered_now = False
         self.notes_asked: tuple[CoachNote, ...] = ()  # coach notes the message changes (agent/notes.py)
         self.notes_verdict_logged = False  # one "agent notes" verdict line per turn, never two
         self.notes_intent: str | None = None  # correct | forget, by rule (agent/notes.py)
+        self.note_confirmed: str | None = None  # the learner tapped to keep these words (agent/notes.py)
+        self.unaccented_keep = False  # a keep request typed without diacritics: asked back, not kept
         self.coach_notes: tuple[CoachNote, ...] = ()
         self.snapshot: dict | None = None
         # The learner's address for this turn (§5.6): used, never logged or stored (contract §10).
         self.address: Address = default_address(request.context.locale.support)
         self.deadline = runtime.clock() + runtime.limits.turn_timeout_seconds
+        self.timeline = TurnTimeline(runtime.clock)
 
     # --- the turn ------------------------------------------------------------
+
+    def timed_events(self) -> Iterator[Event]:
+        """The turn's events, with its timeline recorded once at the end, however it ends."""
+
+        outcome = "abandoned"  # the client left before the turn ended
+        try:
+            for event in self.events():
+                if event.name in ("segment_delta", "segment_end"):
+                    self.timeline.mark_once("first_visible")
+                elif event.name == "error":
+                    outcome = f"error:{getattr(event, 'error_class', 'unknown')}"
+                elif event.name == "done" and not outcome.startswith("error"):
+                    outcome = "success"
+                yield event
+        finally:
+            self._record_turn(outcome)
+
+    def _record_turn(self, outcome: str) -> None:
+        if self.rt.record_turn is None:
+            return
+        context = self.request.context
+        self.timeline.facts.update(
+            surface=context.surface, activity_type=context.activity_type, opening=self.opening,
+            screen_help=self.screen_help, target=self.locale.target, interface=self.locale.interface,
+            support=self.locale.support, selected_type=context.selected_item.type if context.selected_item else None,
+            provider_rounds=self.provider_rounds, input_tokens=self.usage_in if self.usage_known else None,
+            output_tokens=self.usage_out if self.usage_known else None, evidence_count=len(self.evidence_ids),
+        )
+        try:
+            self.rt.record_turn(self.learner.user_key, self.timeline.record(trace_id=self.trace_id, outcome=outcome))
+        except Exception:  # telemetry never costs the learner the answer
+            _log.warning("agent turn timeline not recorded", exc_info=True, extra={"trace_id": self.trace_id})
 
     def events(self) -> Iterator[Event]:
         session, _ = self.rt.sessions.open(self.request.session_id, self.learner.user_key)
         yield self.stream.emit(SessionEvent(session_id=session.agent_session_id, contract_version=self.stream.version))
         try:
             turn = TurnInput.from_request(self.request)
+            # A changed target language starts from a clean context: nothing kept in the other one is read (3.3).
+            session = session.for_target(self.locale.target)
             tier1 = build_tier1(turn, session)
             self.address = tier1.address
             self.gate.address = tier1.address
             questions = {DecisionQuestion.CAPABILITY}
             if not self.opening:  # an opening turn has no message to ask about
                 questions.add(DecisionQuestion.IDENTITY_QUESTION)
+                questions.add(DecisionQuestion.SCREEN_HELP)
+                questions.add(DecisionQuestion.NEEDS_TOOLS)
             decisions = self.rt.decider.decide(
                 DecisionState(turn=turn, tier1=tier1, registry=self.rt.capabilities), frozenset(questions)
             )
@@ -273,13 +338,22 @@ class _Turn:
         here = [self.rt.capabilities.get(i) for i in decisions.capability_ids]
         snapshot = self._opening_snapshot() if self.opening else None
         self.snapshot, self.coach_notes = snapshot, tier1.coach_notes
+        self.screen_help = decisions.screen_help
+        self.needs_evidence = decisions.needs_tools is True
         if not self.opening:
             self.notes_asked = notes_the_message_changes(turn.message, tier1.coach_notes)
             self.notes_intent = note_intent(turn.message) if self.notes_asked else None
-            self.gate.hold_all = bool(self.notes_asked)  # it may be written again: nothing streams early
+            self.note_confirmed = confirmed_note(turn.message)
+            self.unaccented_keep = to_internal(self.locale.support) == "vi" and asks_to_remember_unaccented(turn.message)
+            # It may be written again (a note to change or keep, records to read first) or replaced by the server's
+            # question (a keep request without diacritics): nothing streams early.
+            self.gate.hold_all = (bool(self.notes_asked) or self.needs_evidence or self.note_confirmed is not None
+                                  or self.unaccented_keep)  # fmt: skip
         messages = opening_messages(
-            turn, tier1, [c for c in here if c], session, opening=self.opening, snapshot=snapshot
+            turn, tier1, [c for c in here if c], session, opening=self.opening, snapshot=snapshot,
+            screen_help=self.screen_help,
         )
+        self.timeline.mark("context_built")
         outputs = ReplyOutputs(
             client=self.request.client,
             interface=self.locale.interface,
@@ -292,8 +366,11 @@ class _Turn:
             address_chosen=tier1.address.chosen,
             notes={note.id: note.weight for note in tier1.coach_notes},
             correcting=tuple(n.id for n in self.notes_asked) if self.notes_intent == CORRECT else (),
+            asked=tuple(n.id for n in self.notes_asked),
+            notes_intent=self.notes_intent,
             learner_words=turn.message or "",
             address_terms=tier1.address.pair,
+            unaccented_keep=self.unaccented_keep,
         )
         if mirrored is not None:
             outputs.memory_updates.append(MemoryUpdateEvent(op="upsert", note=mirrored))
@@ -307,7 +384,8 @@ class _Turn:
         yield from self._rounds(messages, outputs)
         if self.should_stop():
             return
-        if not "".join(self.text).strip() and not outputs.actions and not self.notes_asked:
+        if (not "".join(self.text).strip() and not outputs.actions and not self.notes_asked
+                and self.note_confirmed is None and not self.unaccented_keep):  # fmt: skip
             # Nothing to say (or only whitespace) and nothing offered is not an answer: the learner is told,
             # and it is not metered. An action with no words is answered by its offer (agent/honesty.py).
             raise ProviderUnavailable("the provider answered with nothing")
@@ -338,7 +416,9 @@ class _Turn:
 
     def _rounds(self, messages: list[ProviderMessage], outputs: ReplyOutputs) -> Iterator[Event]:
         # An opening turn reads nothing itself: the server gave it the snapshot (S13 has no tool_call).
-        read_specs = () if self.opening else tuple(
+        # A screen-help turn (F-13) is answered from the screen's context: the server offers it no read tool, so
+        # no learner data is read to explain a screen, and no action or note: nothing that was not asked for.
+        read_specs = () if self.opening or self.screen_help else tuple(
             ProviderToolSpec.from_tool(tool)
             for tool in self.rt.tools.tools()
             if self.learner.contract_language in tool.languages
@@ -346,8 +426,11 @@ class _Turn:
         reply_specs = reply_tool_specs(
             self.request.client, self.locale.target, version=self.stream.version, opening=self.opening
         )
+        if self.screen_help:
+            # Canonical stream S1 (contract §12): an answer, follow-up questions, nothing else.
+            reply_specs = tuple(spec for spec in reply_specs if spec.name in SCREEN_HELP_REPLY_TOOLS)
         limit = self.rt.limits.max_tool_iterations_per_turn
-        nudged = notes_nudged = False
+        nudged = notes_nudged = evidence_nudged = False
         for round_index in range(limit + 1):
             remaining = self.deadline - self.rt.clock()
             if remaining <= 0:
@@ -362,7 +445,9 @@ class _Turn:
             round_text: list[str] = []
             calls: list[ToolCallRequest] = []
             self.provider_rounds += 1
+            self.timeline.round_started()
             for item in self.rt.provider.stream(request, should_stop=self.should_stop):
+                self.timeline.round_event()
                 if self.should_stop():
                     return
                 if self.rt.clock() > self.deadline:
@@ -376,6 +461,8 @@ class _Turn:
                         self.usage_known = False  # never a guessed zero (R5 counts what was reported)
                     self.usage_in += item.input_tokens or 0
                     self.usage_out += item.output_tokens or 0
+                    self.timeline.round_finished(input_tokens=item.input_tokens, output_tokens=item.output_tokens,
+                                                 cached=item.cached_input_tokens, tool_calls=len(calls))
                     if item.finish_reason not in NORMAL_FINISH:
                         _log.warning("agent provider round ended abnormally: %s", item.finish_reason,
                                      extra={"trace_id": self.trace_id})  # fmt: skip
@@ -396,9 +483,13 @@ class _Turn:
                             return  # the learner left: nothing more is sent
                         yield self.stream.emit(SegmentDelta(index=0, lang=self.locale.support, text_delta=chunk))
             if not calls:
+                if self.needs_evidence and not self.read_attempted and not evidence_nudged and round_index < limit:
+                    evidence_nudged = True
+                    self._ask_again(messages, round_text, EVIDENCE_NUDGE, why="answered without reading the records")
+                    continue
                 if self._note_unchanged(outputs) and not notes_nudged and round_index < limit:
                     notes_nudged = True
-                    self._ask_again(messages, round_text, note_nudge(self.notes_asked, self.notes_intent or CORRECT))
+                    self._ask_again(messages, round_text, self._note_nudge())
                     continue
                 if self.text or outputs.actions or nudged or round_index >= limit:
                     return
@@ -409,7 +500,16 @@ class _Turn:
                 continue
             messages.append(ProviderMessage(role="assistant", content="".join(round_text), tool_calls=tuple(calls)))
             read_any = False
+            offered = {spec.name for spec in offer}
             for call in calls:
+                if call.name not in offered:
+                    # A tool the server did not offer this round never runs, whatever the model asks for: an
+                    # opening or screen-help turn reads nothing, and the last round may only answer (F-13).
+                    _log.warning("agent model called a tool it was not offered: %s", call.name,
+                                 extra={"trace_id": self.trace_id})  # fmt: skip
+                    messages.append(ProviderMessage(role="tool", content="unavailable: not offered in this turn",
+                                                    tool_call_id=call.id))  # fmt: skip
+                    continue
                 if call.name in REPLY_TOOL_NAMES:
                     answer = outputs.handle(call.name, call.arguments, known_evidence=frozenset(self.evidence_ids))
                 else:
@@ -419,7 +519,7 @@ class _Turn:
             if not read_any and round_text:
                 if self._note_unchanged(outputs) and not notes_nudged and round_index < limit:
                     notes_nudged = True
-                    self._ask_again(messages, "", note_nudge(self.notes_asked, self.notes_intent or CORRECT))
+                    self._ask_again(messages, "", self._note_nudge())
                     continue
                 return  # the answer is written and its extras are attached
 
@@ -432,14 +532,48 @@ class _Turn:
             _log.warning("agent notes: failed before a verdict", extra={"trace_id": self.trace_id})
 
     def _note_unchanged(self, outputs: ReplyOutputs) -> bool:
-        return bool(self.notes_asked) and not outputs.note_changed
+        return (bool(self.notes_asked) or self.note_confirmed is not None) and not outputs.note_changed
 
-    def _ask_again(self, messages: list[ProviderMessage], round_text: str | list[str], ask: str) -> None:
+    def _keep_question(self, outputs: ReplyOutputs) -> str | None:
+        """A keep request typed without diacritics (human direction 2026-10-04): never refused in silence. Orena
+        asks back with the note it would keep, and a button whose label, sent back as the learner's next message,
+        confirms exactly those words (agent/notes.py `confirmed_note`); nothing is kept until the learner taps."""
+
+        if not self.unaccented_keep or outputs.note_changed:
+            return None
+        # For the operator: counts only, never the learner's words.
+        _log.warning("agent notes: a keep request without diacritics; asked to confirm", extra={"trace_id": self.trace_id})
+        interface, support = self.locale.interface, self.locale.support
+        wish = outputs.note_offer[1] if outputs.note_offer else unaccented_wish(self.request.message or "")
+        if wish:
+            label = learner_copy.text("notes.keep_label", interface=interface, support=support, text=wish)[1]
+            try:
+                button = SuggestionEvent(label=label, intent=KEEP_NOTE_INTENT)
+            except ValidationError:
+                button = None  # too long for a button: asked to type it again with its marks
+            if button is not None:
+                outputs.suggestions[:] = [button]
+                return learner_copy.text("notes.confirm", interface=interface, support=support,
+                                         address=self.address, text=wish)[1]  # fmt: skip
+        outputs.suggestions.clear()
+        return learner_copy.text("notes.retype", interface=interface, support=support, address=self.address)[1]
+
+    def _note_nudge(self) -> str:
+        if self.note_confirmed is not None and not self.notes_asked:
+            return (f"The learner tapped to keep this note: {self.note_confirmed!r}. Call remember_note with exactly "
+                    "these words as text now, then answer in one sentence.")  # fmt: skip
+        return note_nudge(self.notes_asked, self.notes_intent or CORRECT)
+
+    def _ask_again(self, messages: list[ProviderMessage], round_text: str | list[str], ask: str, *,
+                   why: str | None = None) -> None:
         """Once: the answer is set aside (nothing of it was streamed) and the model is asked again."""
 
         # For the operator (which model follows a correction on its own): counts only, no learner words.
-        _log.warning("agent notes: the model changed no note of %d; asked again", len(self.notes_asked),
-                     extra={"trace_id": self.trace_id})  # fmt: skip
+        if why is None:
+            _log.warning("agent notes: the model changed no note of %d; asked again", len(self.notes_asked),
+                         extra={"trace_id": self.trace_id})  # fmt: skip
+        else:
+            _log.warning("agent: %s; asked again", why, extra={"trace_id": self.trace_id})
         written = "".join(round_text)
         if written:
             messages.append(ProviderMessage(role="assistant", content=written))
@@ -457,10 +591,14 @@ class _Turn:
             # Never a tool call for another learner's data: refused before it starts (contract S8).
             return "refused: tools read only the signed-in learner's own data"
         label = learner_copy.text(f"tool.{tool.name}", interface=self.locale.interface, support=self.locale.support)[1]
+        self.timeline.tools.append(tool.name)
+        self.read_attempted = True
+        self.timeline.mark("tool_start")
         yield self.stream.emit(ToolCallEvent(tool=tool.name, label=label))
         try:
             with learner_context(self.learner):
                 result = self.rt.tools.invoke(tool.name, replace(self.learner, interface=self.locale.interface), args)
+            self.timeline.mark("tool_end")
         except ToolArgumentsInvalid:
             yield self._unavailable(tool.name)
             return "refused: arguments do not fit this tool's schema"
@@ -524,6 +662,11 @@ class _Turn:
         return self.address
 
     def _finish(self, outputs: ReplyOutputs) -> Iterator[Event]:
+        self.timeline.mark("final_ready")
+        question = None if self.opening else self._keep_question(outputs)
+        if question is not None:
+            outputs.actions.clear()  # the turn asks one thing: whether to keep the note
+        self.timeline.facts.update(actions=[a.type for a in outputs.actions], suggestions=len(outputs.suggestions))
         index = 0
         support = self.locale.support
         offer_lang = offer_text = action_type = None
@@ -549,14 +692,24 @@ class _Turn:
             if not outputs.suggestions:
                 for intent in opening_suggestions(self.request.context.known_surface):
                     outputs.suggest(intent)
+        elif question is not None:
+            # The server's question, not the model's words: nothing of the held answer was sent (hold_all).
+            self.gate.discard()
+            yield self.stream.emit(SegmentDelta(index=0, lang=support, text_delta=question))
+            text = question
         else:
             unchanged = None
-            if self.notes_asked and not self.notes_verdict_logged:
+            if (self.notes_asked or self.note_confirmed is not None) and not self.notes_verdict_logged:
                 self.notes_verdict_logged = True
                 _log.warning("agent notes: %s", "unchanged after asking again" if self._note_unchanged(outputs)
                              else "changed", extra={"trace_id": self.trace_id})  # fmt: skip
             if self._note_unchanged(outputs):  # asked twice and no note changed: said plainly (agent/notes.py)
-                unchanged = learner_copy.text("notes.unchanged", interface=self.locale.interface, support=support,
+                key = "notes.not_kept" if self.note_confirmed is not None and not self.notes_asked else "notes.unchanged"
+                unchanged = learner_copy.text(key, interface=self.locale.interface, support=support,
+                                              address=self.address)[1]  # fmt: skip
+            elif self.needs_evidence and not self.records:
+                # Asked to read and still read nothing: no conclusion about the learner is made up (3.1).
+                unchanged = learner_copy.text("evidence.unread", interface=self.locale.interface, support=support,
                                               address=self.address)[1]  # fmt: skip
             finished = self.gate.finish(
                 inline,
@@ -605,7 +758,7 @@ class _Turn:
         limit = self.rt.limits.max_recent_tool_results
 
         def change(state):
-            state = state.with_context(turn.context)
+            state = state.for_target(self.locale.target).with_context(turn.context)
             if not self.opening:  # an opening turn is not a learner turn (§3.2)
                 state = state.with_turn()
             if self.address_offered_now:

@@ -93,7 +93,8 @@ def test_a_target_other_than_the_session_language_is_refused_before_anything_run
 
 
 def test_a_turn_streams_contract_events(client):
-    enable([reply("Ôn 12 từ đến hạn trước nhé.")])
+    # "Nên học gì?" needs the learner's records (gate 3.1): a model that never reads is asked once more.
+    enable([reply("Ôn 12 từ đến hạn trước nhé."), reply("Ôn 12 từ đến hạn trước nhé.")])
     response = client.post("/api/agent/turn", json=body())
     assert response.status_code == 200
     assert response.headers["cache-control"] == "no-store"
@@ -229,3 +230,23 @@ def test_the_statuses_answer_as_contract_section_2_1_says(client):
     limited = client.post("/api/agent/turn", json=body())
     assert (limited.status_code, limited.json()) == (429, {"detail": "rate_limited"})
     assert limited.headers["retry-after"].isdigit() and int(limited.headers["retry-after"]) >= 1
+
+
+def test_a_turn_over_the_daily_spend_cap_is_the_contracts_429_and_reaches_no_provider(client):
+    from writing_coach.agent import api as agent_api
+
+    enable([])  # no round scripted: a provider call would fail the test
+    agent_api._runtime.spend_guard = lambda: 3600.0
+    response = client.post("/api/agent/turn", json=body())
+    assert response.status_code == 429 and response.headers["retry-after"] == "3600"
+
+
+def test_a_turn_refused_by_the_cap_is_not_counted_in_the_learners_window(client):
+    from writing_coach.agent import api as agent_api
+    from writing_coach.agent.limits import AgentLimits
+
+    enable([reply("Ok.")], limits=AgentLimits(turns_per_window=1))
+    agent_api._runtime.spend_guard = lambda: 60.0
+    assert client.post("/api/agent/turn", json=body()).status_code == 429
+    agent_api._runtime.spend_guard = None  # the cap resets: the one turn the window allows still runs
+    assert client.post("/api/agent/turn", json=body()).status_code == 200

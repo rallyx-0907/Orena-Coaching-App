@@ -10,6 +10,7 @@ from writing_coach import becoming_library
 from writing_coach.agent.coaching import recommendations, snapshot, weaknesses
 from writing_coach.agent.capability_registry import load_capability_registry
 from writing_coach.agent.fake_provider import FakeAgentTurnProvider, reply
+from writing_coach.agent.notes import asks_to_remember, asks_to_remember_unaccented, confirmed_note
 from writing_coach.agent.outputs import FORGET_NOTE, REMEMBER_NOTE, ReplyOutputs, reply_tool_specs
 from writing_coach.agent.provider import TextDelta, ToolCallRequest, TurnFinished
 from writing_coach.agent.runtime import AppReads, build_tool_registry
@@ -153,18 +154,19 @@ def test_a_recommended_item_can_be_opened_by_navigate(monkeypatch):
 # --- coach notes (layer 3, device memory) ------------------------------------------------------
 
 
-def outputs(notes=None, opening=False):
+def outputs(notes=None, opening=False, **asked):
     client = ClientInfo.model_validate({"ui_version": "t"})
     return ReplyOutputs(client=client, interface="vi", support="vi", target="zh-CN", version=4, opening=opening,
-                        notes=notes or {})  # fmt: skip
+                        notes=notes or {}, **asked)  # fmt: skip
 
 
 def test_a_note_the_learner_stated_is_kept_and_a_correction_replaces_it():
-    out = outputs({"n-old": 0.6, "address-vi": 1.0})
+    out = outputs({"n-old": 0.6, "address-vi": 1.0}, learner_words="Nhớ giúp mình: thi HSK4 vào tháng 12.")
     assert out.handle(REMEMBER_NOTE, {"kind": "goal", "text": "Thi HSK4 vào tháng 12"}, known_evidence=frozenset()).startswith("accepted")
     new = out.memory_updates[0]
     assert new.op == "upsert" and new.note["id"].startswith("n-") and new.note["weight"] == 0.6
     assert new.note["expires_at"] is None and new.note["kind"] == "goal"
+    out.correcting = out.asked = ("n-old",)  # the learner's next words correct that note: "À không, kỹ hơn"
     out.handle(REMEMBER_NOTE, {"kind": "preference", "text": "Giải thích kỹ hơn", "replaces": "n-old"}, known_evidence=frozenset())
     replaced = out.memory_updates[1]
     assert replaced.note["id"] == "n-old" and replaced.note["weight"] == 0.8  # reinforced
@@ -188,7 +190,7 @@ def test_what_is_not_a_learner_stated_note_is_refused(tool, args):
 
 
 def test_a_note_is_forgotten_on_request_and_nothing_is_kept_in_an_opening_turn():
-    out = outputs({"n-1": 0.6})
+    out = outputs({"n-1": 0.6}, learner_words="Quên ghi chú đó đi", asked=("n-1",), notes_intent="forget")
     out.handle(FORGET_NOTE, {"id": "n-1"}, known_evidence=frozenset())
     assert out.memory_updates[0].op == "remove" and out.memory_updates[0].note == {"id": "n-1"}
     assert outputs(opening=True).handle(REMEMBER_NOTE, {"kind": "goal", "text": "x"}, known_evidence=frozenset()).startswith("refused")
@@ -222,7 +224,7 @@ def test_saying_a_note_is_kept_is_true_when_the_turn_keeps_it():
          TurnFinished(0, 3, "tool_calls")),
     ]  # fmt: skip
     rt, _ = _runtime(rounds)
-    events = list(rt.run(_request(), ZH))
+    events = list(rt.run(_request("Nhớ giúp mình là mình muốn thi HSK4 vào tháng 12."), ZH))
     assert next(e for e in events if e.name == "segment_end").text == "Mình đã ghi nhớ mục tiêu HSK4 của bạn."
     # S14: a memory_update comes before the words that say it is applied
     assert [e.name for e in events][-3:] == ["memory_update", "segment_end", "done"]
@@ -256,3 +258,132 @@ def test_the_opening_turn_is_built_on_the_snapshot_and_reads_nothing_itself(monk
     assert json.loads(snap[len("snapshot: "):])["review_due"] == 3
     assert not {t.name for t in request.tools} & {"build_learning_snapshot", "get_due_review_summary"}  # no read tools
     assert "Never state a\n  number the snapshot does not hold" in next(m.content for m in request.messages if "opening turn" in m.content)
+
+
+
+# --- dogfood gate 3.2: the server, not the model, authorises a note ---------------------------------------
+
+
+@pytest.mark.parametrize("message", ["Mình muốn thi HSK4 vào tháng 12.", "I'm preparing for HSK4.", "我在准备HSK4。",
+                                     "Mình không nhớ là từ này nghĩa gì", "hay là thôi", "Sau này mình dùng từ này thế nào?",
+                                     "What do I say next time?", "mình nhớ là bài trước có từ này",
+                                     "Do you remember my level?", "Ghi nhớ từ này khó quá", "考试以后再说"])
+def test_a_fact_told_or_an_unclear_message_writes_no_note(message):
+    out = outputs({}, learner_words=message)
+    answer = out.handle(REMEMBER_NOTE, {"kind": "goal", "text": "Thi HSK4"}, known_evidence=frozenset())
+    assert answer.startswith("refused: the learner did not ask you to remember") and out.memory_updates == []
+
+
+@pytest.mark.parametrize("message", ["Nhớ giúp mình là mình muốn thi HSK4.", "Please remember that I'm aiming for HSK4.",
+                                     "记住我在准备HSK4。", "Từ giờ giải thích ngắn thôi", "From now on, explain in English"])
+def test_an_explicit_request_writes_the_note(message):
+    out = outputs({}, learner_words=message)
+    assert out.handle(REMEMBER_NOTE, {"kind": "goal", "text": "Thi HSK4"}, known_evidence=frozenset()).startswith("accepted")
+
+
+def test_a_note_the_learner_did_not_name_is_neither_replaced_nor_forgotten():
+    notes = {"n-goal": 0.6, "n-style": 0.6}
+    out = outputs(notes, learner_words="À không, giải thích kỹ hơn", correcting=("n-style",), asked=("n-style",),
+                  notes_intent="correct")  # fmt: skip
+    replaced = out.handle(REMEMBER_NOTE, {"kind": "goal", "text": "x", "replaces": "n-goal"}, known_evidence=frozenset())
+    assert replaced.startswith("refused: the learner's message does not correct that note")
+    forgotten = out.handle(FORGET_NOTE, {"id": "n-goal"}, known_evidence=frozenset())
+    assert forgotten.startswith("refused: the learner did not ask to forget") and out.memory_updates == []
+
+
+@pytest.mark.parametrize("message", ["nho giup minh la minh thich vi du ngan", "Tu gio giai thich ngan thoi nhe",
+                                     "ghi nho la minh muon thi HSK4 thang 12", "lan sau hay dung tieng Anh"])
+def test_a_request_typed_without_vietnamese_diacritics_is_recognised_as_unconfirmed(message):
+    assert asks_to_remember_unaccented(message) and not asks_to_remember(message)
+
+
+@pytest.mark.parametrize("message", ["Nhớ giúp mình là mình thích ví dụ ngắn", "minh khong nho la tu nay nghia gi",
+                                     "minh muon thi HSK4", "From now on, explain in English", "记住我在准备HSK4。"])
+def test_what_is_not_an_unaccented_keep_request_is_not_one(message):
+    assert not asks_to_remember_unaccented(message)
+
+
+def test_an_unaccented_request_keeps_nothing_and_proposes_the_note_for_confirmation():
+    out = outputs({}, learner_words="nho giup minh la minh thich vi du ngan", unaccented_keep=True)
+    answer = out.handle(REMEMBER_NOTE, {"kind": "preference", "text": "Mình thích ví dụ thật ngắn."}, known_evidence=frozenset())
+    assert answer.startswith("refused: typed without diacritics") and out.memory_updates == []
+    assert out.note_offer == ("preference", "Mình thích ví dụ thật ngắn.")
+
+
+def _suggestions(events):
+    return [(e.label, e.intent) for e in events if e.name == "suggestion"]
+
+
+def test_orena_asks_back_with_a_button_when_a_keep_request_has_no_diacritics():
+    """Human direction 2026-10-04: never refused in silence; asked back, and kept only when the learner taps."""
+
+    rounds = [
+        (TextDelta("Mình đã ghi nhớ rồi nhé."),
+         ToolCallRequest("c1", REMEMBER_NOTE, {"kind": "preference", "text": "Mình thích ví dụ thật ngắn."}),
+         TurnFinished(0, 3, "tool_calls")),
+    ]  # fmt: skip
+    rt, _ = _runtime(rounds)
+    events = list(rt.run(_request("nho giup minh la minh thich vi du ngan"), ZH))
+    assert not [e for e in events if e.name == "memory_update"]
+    assert next(e for e in events if e.name == "segment_end").text == "Bạn muốn mình ghi nhớ: “Mình thích ví dụ thật ngắn.”?"
+    assert _suggestions(events) == [("Ghi nhớ: Mình thích ví dụ thật ngắn.", "prompt.keep_note")]
+
+
+def test_the_learners_own_words_are_proposed_when_the_model_proposes_nothing():
+    rt, _ = _runtime([reply("Được thôi.")])
+    events = list(rt.run(_request("nho giup minh la minh thich vi du ngan"), ZH))
+    assert not [e for e in events if e.name == "memory_update"]
+    assert next(e for e in events if e.name == "segment_end").text == "Bạn muốn mình ghi nhớ: “minh thich vi du ngan”?"
+    assert _suggestions(events) == [("Ghi nhớ: minh thich vi du ngan", "prompt.keep_note")]
+
+
+def test_tapping_the_button_keeps_exactly_the_confirmed_note():
+    rounds = [
+        (TextDelta("Mình đã ghi nhớ: bạn thích ví dụ thật ngắn."),
+         ToolCallRequest("c1", REMEMBER_NOTE, {"kind": "preference", "text": "Mình thích ví dụ thật ngắn."}),
+         TurnFinished(0, 3, "tool_calls")),
+    ]  # fmt: skip
+    rt, _ = _runtime(rounds)
+    events = list(rt.run(_request("Ghi nhớ: Mình thích ví dụ thật ngắn."), ZH))
+    [update] = [e for e in events if e.name == "memory_update"]
+    assert update.op == "upsert" and update.note["text"] == "Mình thích ví dụ thật ngắn."
+    assert update.note["kind"] == "preference" and not _suggestions(events)
+
+
+def test_after_the_tap_a_different_note_is_refused_and_the_model_is_asked_once_more():
+    rounds = [
+        (ToolCallRequest("c1", REMEMBER_NOTE, {"kind": "preference", "text": "Thích ví dụ dài"}),
+         TurnFinished(0, 3, "tool_calls")),
+        (TextDelta("Mình đã ghi nhớ."),
+         ToolCallRequest("c2", REMEMBER_NOTE, {"kind": "preference", "text": "Mình thích ví dụ thật ngắn."}),
+         TurnFinished(0, 3, "tool_calls")),
+    ]  # fmt: skip
+    rt, provider = _runtime(rounds)
+    events = list(rt.run(_request("Ghi nhớ: Mình thích ví dụ thật ngắn."), ZH))
+    [update] = [e for e in events if e.name == "memory_update"]
+    assert update.note["text"] == "Mình thích ví dụ thật ngắn."
+    refusal = next(m.content for m in provider.requests[1].messages if m.role == "tool")
+    assert refusal.startswith("refused: keep exactly the words the learner confirmed")
+
+
+def test_the_confirmation_label_follows_the_interface_language():
+    out = outputs({}, learner_words="Remember: I like short examples.")
+    assert out.handle(REMEMBER_NOTE, {"kind": "preference", "text": "I like short examples."},
+                      known_evidence=frozenset()).startswith("accepted")  # fmt: skip
+    assert confirmed_note("记住：我喜欢短例子。") == "我喜欢短例子。"
+    assert confirmed_note("Ghi nhớ: Mình thích ví dụ thật ngắn.") == "Mình thích ví dụ thật ngắn."
+    assert confirmed_note("Ghi nhớ từ này khó quá") is None
+
+
+def test_a_model_that_offers_to_remember_writes_nothing_until_the_learner_asks():
+    """The model offers and keeps in one turn: the learner only told a fact, so nothing is kept or claimed."""
+
+    rounds = [
+        (TextDelta("Mình đã ghi nhớ mục tiêu HSK4 của bạn."),
+         ToolCallRequest("c1", REMEMBER_NOTE, {"kind": "goal", "text": "Thi HSK4 vào tháng 12"}),
+         TurnFinished(0, 3, "tool_calls")),
+    ]  # fmt: skip
+    rt, _ = _runtime(rounds)
+    events = list(rt.run(_request("Mình muốn thi HSK4 vào tháng 12."), ZH))
+    assert not [e for e in events if e.name == "memory_update"]
+    assert "ghi nhớ" not in next(e for e in events if e.name == "segment_end").text

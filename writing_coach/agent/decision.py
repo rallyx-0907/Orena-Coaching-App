@@ -23,6 +23,8 @@ from typing import Protocol
 from writing_coach.agent.capability_registry import CapabilityRegistry
 from writing_coach.agent.context import Tier1Context, TurnInput
 from writing_coach.agent.identity import IdentityQuestion, identity_question
+from writing_coach.agent.evidence_questions import needs_learner_evidence
+from writing_coach.agent.screen_help import is_screen_help
 
 
 class DecisionQuestion(StrEnum):
@@ -30,6 +32,7 @@ class DecisionQuestion(StrEnum):
     NEEDS_TOOLS = "needs_tools"
     IDENTITY_QUESTION = "identity_question"
     AUTHORIZATION = "authorization"
+    SCREEN_HELP = "screen_help"
 
 
 @dataclass(frozen=True)
@@ -38,6 +41,8 @@ class Decisions:
     needs_tools: bool | None = None  # None: let the model decide
     identity: IdentityQuestion | None = None  # the learner asked who, or which model, Orena is
     authorized: bool = True
+    # The learner asks what this screen is for (F-13): answered from the screen's context with no tool offered.
+    screen_help: bool = False
     reason: str | None = None
 
 
@@ -61,4 +66,13 @@ class RuleDecisionProvider:
         identity = None
         if DecisionQuestion.IDENTITY_QUESTION in questions:
             identity = identity_question(state.turn.message)
-        return Decisions(capability_ids=capability_ids, identity=identity)
+        screen_help = DecisionQuestion.SCREEN_HELP in questions and is_screen_help(state.turn.message)
+        # A conclusion about the learner's own learning must be read from their records (dogfood gate 3.1).
+        # A selection, an essay or an attempt in view makes the question about that piece, not the records; the
+        # ambient place (a content or lesson id) does not.
+        context = state.turn.context
+        in_view = bool(context.selected_item or context.essay_id or context.attempt_id)
+        needs_tools = True if (DecisionQuestion.NEEDS_TOOLS in questions and not screen_help
+                               and needs_learner_evidence(state.turn.message, in_view=in_view)) else None  # fmt: skip
+        return Decisions(capability_ids=capability_ids, identity=identity, screen_help=screen_help,
+                         needs_tools=needs_tools)  # fmt: skip

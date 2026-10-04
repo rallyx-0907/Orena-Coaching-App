@@ -8,7 +8,7 @@ from datetime import UTC, datetime, timezone
 from pathlib import Path
 from typing import Protocol
 
-from sqlalchemy import Engine, select, text
+from sqlalchemy import Engine, delete, select, text
 from sqlalchemy.orm import Session
 
 from writing_coach.ai.config import (
@@ -82,6 +82,7 @@ class PlatformRepository(Protocol):
         entity_id: str = "",
         payload: dict | None = None,
     ) -> None: ...
+    def delete_agent_turns_before(self, before: datetime, *, limit: int) -> int: ...
 
 
 class SQLitePlatformRepository:
@@ -302,6 +303,14 @@ class SQLitePlatformRepository:
     def list_ai_operation_events(self, limit: int = 100) -> list[dict]:
         return []
 
+    def delete_agent_turns_before(self, before: datetime, *, limit: int) -> int:
+        # No audit table in the frozen archive store: nothing was recorded, so nothing is swept.
+        return 0
+
+    def ai_spend_since(self, since: datetime) -> tuple[float, int]:
+        # No AI ledger here (telemetry is PostgreSQL-only): a spend cap must refuse, not read zero.
+        raise NotImplementedError("the AI spend ledger is PostgreSQL-only")
+
     def ai_cost_rows(self, since: datetime) -> list[dict]:
         # Telemetry is PostgreSQL-only: nothing to report from the archive store.
         return []
@@ -501,6 +510,41 @@ class PostgresPlatformRepository:
                     created_at=now,
                 )
             )
+
+    def delete_agent_turns_before(self, before: datetime, *, limit: int) -> int:
+        """The agent.turn retention sweep (agent/retention.py): delete at most `limit` `agent.turn` rows created
+        before `before`, the oldest first, and say how many went. Only that action: no other audit row - an
+        administrator's change, AI operation telemetry - is ever touched by it."""
+
+        bounded = max(1, min(int(limit), 50_000))
+        oldest = (
+            select(AuditLog.id)
+            .where(AuditLog.action == "agent.turn", AuditLog.created_at < before)
+            .order_by(AuditLog.created_at)
+            .limit(bounded)
+            .scalar_subquery()
+        )
+        with Session(self.engine) as session, session.begin():
+            result = session.execute(
+                delete(AuditLog)
+                .where(AuditLog.action == "agent.turn", AuditLog.id.in_(oldest))
+                .execution_options(synchronize_session=False)
+            )
+            return int(result.rowcount or 0)
+    def ai_spend_since(self, since: datetime) -> tuple[float, int]:
+        """Today's shared AI ledger (agent/budget.py): the estimated USD of priced calls since `since`, and how many
+        provider calls succeeded without a price."""
+
+        query = text(
+            "SELECT COALESCE(SUM((payload::jsonb -> 'cost' ->> 'amount')::numeric), 0), "
+            "COUNT(*) FILTER (WHERE payload::jsonb ->> 'outcome' = 'success' "
+            "AND payload::jsonb ->> 'provider' IS NOT NULL "
+            "AND COALESCE(payload::jsonb -> 'cost' ->> 'state', '') <> 'estimated') "
+            "FROM audit_logs WHERE action = 'ai.operation' AND created_at >= :since"
+        )
+        with self.engine.connect() as connection:
+            usd, unpriced = connection.execute(query, {"since": since}).one()
+        return float(usd or 0), int(unpriced or 0)
 
     def list_ai_operation_events(self, limit: int = 100) -> list[dict]:
         bounded = max(1, min(int(limit), 500))

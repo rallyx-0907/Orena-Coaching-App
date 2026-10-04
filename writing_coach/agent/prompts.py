@@ -92,9 +92,11 @@ Data and actions:
 - Use suggest_next, set_voice_style and add_reference only when they help this answer.
 
 Coach notes (context.coach_notes; the device keeps them):
-- Keep with remember_note only what the learner says directly about how they learn: a preference, a goal, a
-  plan, in their words. Never feelings, circumstances or health, and never what their records already show
-  (levels, scores, saved words, progress): the tools read those.
+- Keep with remember_note only what the learner asks you to remember, or a wish they state for the turns to
+  come ("from now on…"): a preference, a goal, a plan, in their words. A fact they only tell you is not a request:
+  ask whether they want it kept, and keep it when they say so (the server refuses a note nobody asked for).
+  Never feelings, circumstances or health, and never what their records already show (levels, scores, saved
+  words, progress): the tools read those.
 - When they correct one ("no, explain in more detail"), call remember_note with replaces set to its id; when
   they ask you to forget one, call forget_note with its id. Do it before you answer, whenever their message
   changes or cancels a note listed in context.coach_notes - a note on the list is there to be found. A note
@@ -108,6 +110,15 @@ OPENING = """This is an opening turn: the learner has not written anything yet.
   number the snapshot does not hold.
 - Then call suggest_next one to five times with the most useful next questions. You may offer at most two
   actions, none that needs a confirmation. Claim no error without evidence."""
+
+
+SCREEN_HELP = """The learner asks what this screen is for and what they can do here (explain_current_screen).
+- Answer from context.screen and context.capabilities_here only: what the screen is for (context.screen.purpose),
+  then what the learner can do here (the titles in context.capabilities_here), in two to four sentences.
+- That is the whole answer. Recommend no lesson, word or next step in your words and mention none of the
+  learner's own records: they asked about the screen. You may add follow-up questions with suggest_next.
+- Say nothing the screen does not do. With no purpose and nothing listed here, name the screen and say you have
+  nothing more about it."""
 
 
 def _language_name(contract_code: str | None, *, target: bool) -> str | None:
@@ -257,6 +268,7 @@ def opening_messages(
     *,
     opening: bool = False,
     snapshot: dict | None = None,
+    screen_help: bool = False,
 ) -> list[ProviderMessage]:
     context = json.dumps(context_document(turn, tier1, capabilities, session), ensure_ascii=False)
     messages = [
@@ -283,6 +295,8 @@ def opening_messages(
     if selected and turn.message is not None:
         # Restated next to the learner's words: the live run lost a selection that sat only in the context.
         messages.append(ProviderMessage(role="system", content=selected))
+    if screen_help and turn.message is not None:
+        messages.append(ProviderMessage(role="system", content=SCREEN_HELP))
     if turn.message is not None:
         messages.append(ProviderMessage(role="user", content=turn.message))
     return messages

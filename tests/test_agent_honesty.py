@@ -243,3 +243,47 @@ def test_through_a_turn_the_addressed_claim_gives_way_to_the_offer():
     events = list(rt.run(TurnRequest.model_validate(body), LearnerScope(user_key="u", language="zh")))
     text = next(e.text for e in events if e.name == "segment_end")
     assert text == "Bấm Lưu từ để thêm 我 vào từ vựng của em."  # S5 (v5), in the learner's address
+
+
+# --- dogfood gate 3.5: forms the audit found getting through -------------------------------------
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Mình đã đưa bạn tới phần Ngữ pháp.",
+        "I moved you to Grammar.",
+        "I've taken you to your review.",
+        "I've gone ahead and saved it.",
+        "Opening the review page now.",
+        "已为你保存。",
+        "已帮你打开复习。",
+        "我打开了设置。",
+        "我把它加入词库了。",
+        "我已经保存了。",
+        "我已经添加了",
+    ],
+)
+def test_more_ways_of_saying_it_acted_are_claims(text):
+    assert claims_acted(text)
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Mình sẽ đưa ra ví dụ cho bạn.",
+        "Mình đưa bạn đến phần Ôn tập nhé?",
+        "Adding a comma now makes it correct.",
+        "我打开了门。",
+        "我收藏了很多书。",
+        "我删除了文件。",
+        "我加入了俱乐部。",
+        "我把门打开了。",
+        "我开始了解你的学习情况。",
+        "Taken together, these words are due tomorrow.",
+        "You moved to Grammar yesterday.",
+        "Bạn muốn mình mở phần ôn tập không?",
+    ],
+)
+def test_their_harmless_neighbours_are_not(text):
+    assert not claims_acted(text)

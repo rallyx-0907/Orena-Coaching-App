@@ -767,6 +767,7 @@ app.include_router(learner_summary_router)
 # own services: the Writing review below and the usage store it meters with.
 from writing_coach.agent.api import agent_enabled, configure_agent, router as agent_router  # noqa: E402
 from writing_coach.agent.runtime import AppReads, build_agent_runtime  # noqa: E402
+from writing_coach.agent.retention import TurnTelemetryRetention, sweep_enabled  # noqa: E402
 
 
 def _agent_writing_review(essay_id: int) -> dict[str, Any] | None:
@@ -817,6 +818,44 @@ def _agent_grammar_lesson(grammar_id: str) -> dict[str, Any] | None:
         raise
 
 
+
+def _agent_spend_guard():
+    """The staging daily cap on the shared AI ledger (agent/budget.py); None when AGENT_DAILY_SPEND_CAP_USD is unset."""
+
+    from writing_coach.agent.budget import DailySpendGuard, cap_from_env
+
+    cap = cap_from_env(os.environ)
+    reader = getattr(_persistence_runtime.platform_repository, "ai_spend_since", None)
+    if cap is None:
+        return None
+    if not callable(reader):  # a cap with no ledger to read refuses every turn: it fails closed
+        return lambda: 3600.0
+    return DailySpendGuard(cap_usd=cap, read=reader)
+
+
+def _delete_agent_turns_before(before: datetime, limit: int) -> int:
+    deleter = getattr(_persistence_runtime.platform_repository, "delete_agent_turns_before", None)
+    return deleter(before, limit=limit) if callable(deleter) else 0
+
+
+# agent.turn rows are kept 90 days; the write path starts the sweep, at most once a day (agent/retention.py).
+# Off unless AGENT_TURN_RETENTION_SWEEP is switched on, after its independent review: off, nothing is deleted.
+_agent_turn_retention = TurnTelemetryRetention(
+    lambda before, limit: _delete_agent_turns_before(before, limit)
+) if sweep_enabled(os.environ) else None
+
+
+def _record_agent_turn(user_key: str, record: dict) -> None:
+    """One `agent.turn` row per turn (agent/timeline.py), linked to the learner's account like an audit row."""
+
+    writer = getattr(_persistence_runtime.platform_repository, "record_admin_event", None)
+    if callable(writer):
+        writer("agent.turn", actor=user_key, entity_type="agent_turn", entity_id=str(record.get("trace_id", "")),
+               payload=record)
+    if _agent_turn_retention is not None:
+        _agent_turn_retention.maybe_sweep()
+
+
 configure_agent(
     build_agent_runtime(
         writing_review=_agent_writing_review,
@@ -843,6 +882,8 @@ configure_agent(
             listening_recent=lambda limit: _specialized_learning_repository.list_recent_listening_progress_records(limit),
         ),
         record_usage=_persistence_runtime.product_repository.record_usage,
+        record_turn=_record_agent_turn,
+        spend_guard=_agent_spend_guard(),
     )
     if agent_enabled(os.environ, production=APP_ENV == "production")
     else None
