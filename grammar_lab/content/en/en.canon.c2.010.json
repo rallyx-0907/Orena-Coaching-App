@@ -1,0 +1,214 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.c2.010",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.information_structure",
+  "level": {"framework": "cefr", "value": "C2", "rank": 6},
+  "prereqs": ["en.canon.c2.009"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["c2-heavy-constituent-shift"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": ["c2-heavy-constituent-shift"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Heavy constituent shift", "en": "Heavy constituent shift"},
+    "native_title": "Heavy constituent shift",
+    "level": {"framework": "cefr", "value": "C2", "rank": 6},
+    "summary": {
+      "vi": "Cấu trúc này đặt thành phần dài (tân ngữ hoặc mệnh đề) về cuối câu để câu dễ xử lý hơn, trong giới hạn của động từ.",
+      "en": "This structure places a long constituent (object or clause) at the end of the sentence to reduce processing load, within the limits of the verb's pattern."
+    },
+    "sub": {"vi": "đảo thành phần nặng", "en": "heavy shift"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi tân ngữ là một cụm danh từ dài hoặc có mệnh đề bổ nghĩa, và bạn muốn đặt nó sau cụm giới từ ngắn.",
+      "en": "When the object is a long noun phrase or carries a modifying clause, and you want it to follow a short prepositional phrase."
+    },
+    {
+      "vi": "Khi bạn muốn nhấn mạnh thông tin mới bằng cách đưa nó ra cuối câu.",
+      "en": "When you want to give new information end-focus by placing it late in the sentence."
+    },
+    {
+      "vi": "Khi động từ cho phép cả hai trật tự (ví dụ: explain, attribute, introduce) và ngữ cảnh trang trọng phù hợp.",
+      "en": "When the verb licenses both orders (e.g. explain, attribute, introduce) and the formal context allows it."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}},
+      {
+        "text": "PP",
+        "role": "complement",
+        "label": {"vi": "cụm giới từ", "en": "prepositional phrase"}
+      },
+      {
+        "text": "heavy NP",
+        "role": "object",
+        "label": {"vi": "cụm danh từ nặng", "en": "heavy noun phrase"}
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "The team explained to the board the reasons for postponing the launch.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 8, "role": "subject"},
+        {"start": 9, "end": 18, "role": "verb"},
+        {"start": 19, "end": 31, "role": "complement"},
+        {"start": 32, "end": 69, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Tân ngữ dài được đặt sau cụm giới từ ngắn để câu dễ đọc.",
+        "en": "The long object is placed after the short prepositional phrase to make the sentence easier to process."
+      },
+      "translation": {
+        "vi": "Nhóm đã giải thích với hội đồng lý do hoãn ra mắt.",
+        "en": "The team explained to the board the reasons for postponing the launch."
+      }
+    },
+    {
+      "text": "We attributed to sampling error much of the variation observed in the first trial.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 3, "end": 13, "role": "verb"},
+        {"start": 14, "end": 31, "role": "complement"},
+        {"start": 32, "end": 81, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Cụm danh từ nặng theo sau cụm giới từ ngắn, giữ đúng mẫu của động từ attribute.",
+        "en": "The heavy noun phrase follows the short prepositional phrase, keeping the verb's licensed pattern."
+      },
+      "translation": {
+        "vi": "Chúng tôi quy phần lớn biến thiên quan sát được trong thử nghiệm đầu tiên cho lỗi chọn mẫu.",
+        "en": "We attributed to sampling error much of the variation observed in the first trial."
+      }
+    },
+    {
+      "text": "They gave the new staff a detailed introduction to the reporting system.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 5, "end": 9, "role": "verb"},
+        {"start": 10, "end": 23, "role": "complement"},
+        {"start": 24, "end": 71, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Đây là mẫu hai tân ngữ; tân ngữ dài đứng sau tân ngữ ngắn.",
+        "en": "This is the double-object pattern; the long object follows the short one."
+      },
+      "translation": {
+        "vi": "Họ đã giới thiệu chi tiết hệ thống báo cáo cho nhân viên mới.",
+        "en": "They gave the new staff a detailed introduction to the reporting system."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Mệnh đề bổ nghĩa đặt sau 'committee' gây hiểu nhầm là hội đồng do nhà cung cấp gây ra; cần tách bằng dấu phẩy và đại từ quan hệ.",
+        "en": "The modifying clause after 'committee' wrongly suggests the committee was caused by a supplier; a comma and relative pronoun are needed to attach it to 'delay'."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "We explained the reasons for the delay to the committee that had been caused by a supplier.",
+      "right": "We explained to the committee the reasons for the delay, which had been caused by a supplier."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "The committee attributed to internal error ___.",
+      "options": [
+        {"text": "the failure of the new system", "error_tag": null},
+        {
+          "text": "the failure of the new system to internal error",
+          "error_tag": "sentence_structure"
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Cụm danh từ nặng đứng sau cụm giới từ ngắn 'to internal error'.",
+        "en": "The heavy noun phrase follows the short prepositional phrase 'to internal error'."
+      }
+    },
+    {
+      "q": "She described ___.",
+      "options": [
+        {"text": "the problem to me", "error_tag": null},
+        {"text": "to me the problem", "error_tag": "sentence_structure"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Động từ 'describe' không cho phép đảo trật tự như 'explain'; mẫu tự nhiên là 'describe something to someone'.",
+        "en": "'Describe' does not license the shifted order like 'explain'; the natural pattern is 'describe something to someone'."
+      }
+    },
+    {
+      "q": "They introduced ___.",
+      "options": [
+        {"text": "to the new staff the reporting system", "error_tag": null},
+        {"text": "the reporting system to the new staff", "error_tag": "sentence_structure"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Với 'introduce', có thể đặt cụm giới từ ngắn trước tân ngữ dài để nhấn mạnh thông tin mới.",
+        "en": "With 'introduce', the short prepositional phrase can precede the long object to give end-focus to new information."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về việc bạn đã giải thích một vấn đề dài dòng cho ai đó, dùng cấu trúc đảo thành phần nặng.",
+      "en": "Write a sentence about explaining a lengthy issue to someone, using heavy constituent shift."
+    },
+    "placeholder": "I explained to ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"any_of": ["explained", "attributed", "gave"], "role": "verb"},
+        {"regex": "to\\s+\\w+", "role": "complement"}
+      ]
+    },
+    "sample": {"text": "I explained to the team the reasons for the delay."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791104436",
+    "generated_at": "2026-10-04T09:00:36Z",
+    "r5_source": {
+      "ids": ["c2-heavy-constituent-shift"],
+      "content_version": 2,
+      "content_hash": "9cc8fb1fab7d998ac5ea74177c325c8d9dcbca33490360206dd7bb383eac0f98",
+      "corrections": [
+        {
+          "r5_id": "c2-heavy-constituent-shift",
+          "issue": "Example 'It became apparent after several weeks of testing that the original design was unstable.' is extraposition, not heavy constituent shift of an object/complement.",
+          "fix": "Removed it; replaced with 'They gave the new staff a detailed introduction to the reporting system.' which shows heavy shift in a double-object pattern."
+        },
+        {
+          "r5_id": "c2-heavy-constituent-shift",
+          "issue": "Mistake example 'She described to me the problem.' was listed as incorrect, but it is grammatical in some contexts; the real issue is verb-specific licensing.",
+          "fix": "Replaced with a clearer mistake about ambiguous modifier attachment: 'We explained the reasons for the delay to the committee that had been caused by a supplier.'"
+        },
+        {
+          "r5_id": "c2-heavy-constituent-shift",
+          "issue": "Rules did not explicitly state that the shift is limited to verbs that license the resulting order.",
+          "fix": "Added a when_to_use condition and a quick-practice item contrasting 'explain' with 'describe' to highlight verb-specific licensing."
+        }
+      ]
+    }
+  },
+  "review": null
+}
