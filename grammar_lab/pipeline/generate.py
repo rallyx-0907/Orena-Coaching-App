@@ -1780,9 +1780,62 @@ class Generator:
             # evict it so a resumed run gets a genuinely fresh chance.
             self.llm.invalidate_cache(system=system, user=attempt_user, json_schema=provider_schema)
 
-            # Most live failures at B2/C1/C2 are confined to formula ordering,
-            # example spans and the deterministic production rule. Repair that
-            # small surface first instead of paying for a fresh full lesson.
+            # v13 binding failures are often caused by one malformed formula
+            # projection (for example mutually exclusive article routes written as
+            # sequential required slots). Repair only formula/variants, bindings and
+            # the production matcher before paying for another full lesson.
+            structure_repair_used = False
+            if can_repair_generation_structure(issues):
+                structure_repair_used = True
+                try:
+                    structure_patch = request_generation_structure_patch(
+                        self.llm,
+                        point_id=point_id,
+                        target_lang=existing["target_lang"],
+                        data=result.data,
+                        issues=issues,
+                        full_schema=schema,
+                    )
+                except LLMError as exc:
+                    if exc.usage is not None:
+                        patch_cost = exc.usage.cost_usd(self.llm.model)
+                        if patch_cost is None:
+                            cost_known = False
+                        else:
+                            total_cost += patch_cost
+                    all_cached = False
+                else:
+                    patch_cost = structure_patch.usage.cost_usd(structure_patch.model)
+                    if patch_cost is None:
+                        cost_known = False
+                    else:
+                        total_cost += patch_cost
+                    all_cached = all_cached and structure_patch.cached
+                    try:
+                        patched_data = apply_generation_structure_patch(
+                            result.data, structure_patch.data
+                        )
+                    except ValueError:
+                        pass
+                    else:
+                        result = replace(result, data=patched_data)
+                        point, contract_issues = assemble(result)
+                        issues = [
+                            *contract_issues,
+                            *validate_generated_point(self.lang, point, self.root),
+                        ]
+                        if not issues:
+                            save_point(self.lang, point, self.root)
+                            register_realization(point, self.root)
+                            return GenerateOutcome(
+                                point_id, "written",
+                                cost_usd=(total_cost if cost_known and total_cost else None),
+                                cached=all_cached,
+                            )
+
+            # Remaining semantic failures can still be confined to formula ordering,
+            # stored example spans and the deterministic production rule. Repair that
+            # small surface before paying for a fresh full lesson.
             targeted_repair_used = False
             if can_target_repair(issues):
                 targeted_repair_used = True
