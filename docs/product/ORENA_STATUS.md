@@ -84,6 +84,13 @@ IMPLEMENTING. This is a visibly testable slice, not Product Completion.
 The complete current UI/spec inventory and integrated Intelligence/Agent
 reconciliation, evidence, recommendations and action routing remain required.
 
+Grammar prerequisites (2026-10-04, `0d5732c`): contract PR67 and sample PR68
+integrated into codex/work after independent review and D-106 alias clarification.
+Renderer now supports canonical zh-Hans and L1 arrays; all13 drafts exercise
+the model and are refused by the learner feeder. Seven local gates pass.
+Store/API, migration and published EN/ZH lessons still absent: IMPLEMENTING,
+not learner REVIEWABLE. Evidence: GRAMMAR_INTEGRATION_CHECKPOINT.md.
+
 Listening entry correction (2026-10-04, `cab4773`) is IMPLEMENTING with functional
 browser review available at :8021: comprehension and Dictation select content;
 Speaking has one Pronunciation entry. Six curated EN/ZH lessons have admitted

@@ -35,10 +35,10 @@ Frame/route/code/status: `docs/design/canonical-ui/IMPLEMENTATION_MAP.md`.
 
 ## Last verified batch
 
-Listening entries (`cab4773`): comprehension and Dictation choose content; one
-Pronunciation entry. EN/ZH original audio/questions and phone browser verified.
-Local Python2810 pass/3 inherited; Node127/129. Full fidelity remains open.
-Evidence: docs/reviews/LISTENING_ENTRY_QUESTIONS_CHECKPOINT.md. D-121/D-122 preserved.
+Grammar prerequisites (`0d5732c`): PR67/68 integrated; D-106 alias contradiction
+corrected; zh-Hans/L1 array adapters fixed. Seven local gates pass; drafts unserved.
+Store/API and published EN/ZH content remain absent; migration not applied.
+Evidence: docs/reviews/GRAMMAR_INTEGRATION_CHECKPOINT.md. Listening `cab4773` preserved.
 Next: human review, then Product Completion; native remains frozen.
 
 Admin REVIEWABLE: six areas, sandbox routing, imports/EN/ZH lookup (`2931823`);
@@ -81,13 +81,13 @@ Historical D-098/D-099 commits: `PROJECT_STATE.md` "New learner UI migration".
 - Chinese evaluator: fix (1) landed (`871e2b9`, contract v2.7) and the benchmark
   measures recall (`fa93601`, v2); the live run that gives (4) its numbers waits
   for the human's go (provider cost).
-- D4 (D-104/D-105): code and migrations 0017-0023 on `codex/work`, applied to :8021 only; independently reviewed (LEARNER_RECORDS_D4_IMPLEMENTATION_REVIEW.md: delta APPROVE WITH CONDITIONS, `f30044a`). `ORENA_ACCOUNT_BACKBONE` on at :8021 only; flag-on browser QA round 2 at `9a7b190`: all six flows PASS. Open for the human: delete for an imported text (design draws none), media-import bound. Before :8000: ACCOUNT_RECORD_LIMITS rev 3 (approved with conditions, not built), upload media deletion (D-055(b)), code+schema one deployment unit. Admin slices 1-4 in /next; Grammar store waits for PR #67.
+- D4 (D-104/D-105): code and migrations 0017-0023 on `codex/work`, applied to :8021 only; independently reviewed (LEARNER_RECORDS_D4_IMPLEMENTATION_REVIEW.md: delta APPROVE WITH CONDITIONS, `f30044a`). `ORENA_ACCOUNT_BACKBONE` on at :8021 only; flag-on browser QA round 2 at `9a7b190`: all six flows PASS. Open for the human: delete for an imported text (design draws none), media-import bound. Before :8000: ACCOUNT_RECORD_LIMITS rev 3 (approved with conditions, not built), upload media deletion (D-055(b)), code+schema one deployment unit. Admin slices 1-4 in /next; Grammar Store/API remains.
 
 ## PENDING
 
 Human: none for :8011 (deferred, D-102);
-Independent review/gates for PR #67 (`pattern_rule`) and #68 (fixtures) from
-the Grammar Lab lane, then the approved canonical Grammar Store/API (D-111.4).
+PR67/68 independently reviewed and integrated; canonical Grammar Store/API remains
+(D-111.4). Upstream GitHub PR state is unverified; integration is local only.
 Architecture approval is not evidence that the runtime already exists.
 
 ## BLOCKED
@@ -138,5 +138,6 @@ is what switches `AGENT_LIVE` on :8011 (D-101 G).
 ## Grammar Lab (merged from `feature/grammar-lab`)
 
 Offline Phase 0: `docs/grammar_lab/SPEC.md`, `grammar_lab/` (separate tests).
-NEXT (D-111.4): review PR #67/#68/gates, build the approved Store/API and canonical
-HSK/GF-based ZH generation/validation. Legacy R5 is reference, never a fallback.
+NEXT (D-111.4): approved Store migration proposal/review/rehearsal, then Store/API
+and canonical HSK/GF generation/validation. Resolve proposed revision slot against
+media metadata 0024 before promotion. Legacy R5 is reference, never a fallback.
