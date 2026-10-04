@@ -145,16 +145,22 @@ Then summarize root cause, files changed, tests run, and residual risk.
     $args += @($prompt)
 
     Push-Location "grammar_lab"
+    $previousErrorActionPreference = $ErrorActionPreference
     try {
+        # Windows PowerShell 5.1 wraps native stderr as NativeCommandError.
+        # Codex writes informational banners/progress to stderr, so do not let
+        # ErrorActionPreference=Stop turn normal native output into an exception.
+        $ErrorActionPreference = "Continue"
         $output = & codex @args 2>&1
         $exitCode = [int]$LASTEXITCODE
     }
     finally {
+        $ErrorActionPreference = $previousErrorActionPreference
         Pop-Location
     }
 
     $output | ForEach-Object { Write-Host $_ }
-    return $exitCode
+    return [int]$exitCode
 }
 
 if (-not (Get-Command python -ErrorAction SilentlyContinue)) {
