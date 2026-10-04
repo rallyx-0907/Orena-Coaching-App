@@ -215,6 +215,8 @@ export function continuationTarget(item) {
   if (speaking) return speaking;
   const id = String(item?.id || '');
   const intent = item?.intent || null;
+  if (/^essay:\d+$/.test(id)) return { kind: 'write', routeId: 'writingDraft', params: { id } };
+  if (/^(article|book|text):.+/.test(id)) return { kind: 'reading', routeId: 'reader', params: { id } };
   if (/^(expression|essay):/.test(id) || intent === 'writing') {
     return { kind: 'write', routeId: 'writing' };
   }
@@ -238,10 +240,10 @@ export function continuationTarget(item) {
   return null;
 }
 
-const KIND_ICON = { write: 'pen-line', listen: 'headphones', grammar: 'languages', speak: 'mic' };
+const KIND_ICON = { write: 'pen-line', listen: 'headphones', grammar: 'languages', speak: 'mic', reading: 'book-open' };
 /* Reuses SKILL_TINT's own per-skill hues (now that SKILL_TINT carries a `listen` entry too) -
    never a second literal for the same token. */
-const KIND_TINT = { write: SKILL_TINT.write, listen: SKILL_TINT.listen, grammar: SKILL_TINT.grammar, speak: SKILL_TINT.speak };
+const KIND_TINT = { write: SKILL_TINT.write, listen: SKILL_TINT.listen, grammar: SKILL_TINT.grammar, speak: SKILL_TINT.speak, reading: SKILL_TINT.reading };
 
 /* Up to `limit` continuation rows (most-recent-first, memory.js's own order), each carrying enough
    to draw a row and to link to a real route. `place` (product/memory.js readPlace) is the only

@@ -134,7 +134,7 @@ import {
 // --- Continuation: device-memory entries mapped to a real, resumable route --------------------
 {
   assert.deepEqual(continuationTarget({ id: 'expression:9' }), { kind: 'write', routeId: 'writing' });
-  assert.deepEqual(continuationTarget({ id: 'essay:9' }), { kind: 'write', routeId: 'writing' });
+  assert.deepEqual(continuationTarget({ id: 'essay:9' }), { kind: 'write', routeId: 'writingDraft', params: { id: 'essay:9' } });
   assert.deepEqual(continuationTarget({ id: 'anything', intent: 'writing' }), { kind: 'write', routeId: 'writing' });
 
   assert.deepEqual(continuationTarget({ id: 'grammar:present-perfect' }), { kind: 'grammar', routeId: 'gconcept', params: { id: 'present-perfect' } });
