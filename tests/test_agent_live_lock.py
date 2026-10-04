@@ -151,14 +151,27 @@ def test_after_30_minutes_it_stops_naming_the_holder_and_leaves_the_lock(tmp_pat
     assert on_disk(path) == record
 
 
-def test_a_dead_pid_is_an_orphan_removed_reported_and_retried_at_once(tmp_path):
+def test_a_dead_pid_of_this_lane_is_an_orphan_removed_reported_and_retried_at_once(tmp_path):
     path, clock = tmp_path / "live-provider.lock", Clock()
-    held(path, clock, lane="grammar-lab", pid=4242)
+    held(path, clock, lane=LANE, pid=4242)  # a run of this lane that was killed outright
     said: list[str] = []
     taken = take(path, clock, alive=lambda pid: pid != 4242, said=said)
     assert clock.sleeps == []  # at once
     assert on_disk(path)["pid"] == os.getpid()
-    assert taken.notes == said == ["orphan lock removed: lane=grammar-lab reason=dead-pid"]
+    assert taken.notes == said == [f"orphan lock removed: lane={LANE} reason=dead-pid"]
+
+
+def test_another_lanes_pid_is_never_judged_from_here(tmp_path):
+    # 2026-09-28: a Grammar Lab lock one minute old (its pid from WSL or a container) was taken for dead and removed.
+    path, clock = tmp_path / "live-provider.lock", Clock()
+    record = held(path, clock, lane="grammar-lab", pid=714397)
+    with pytest.raises(lock.LockTimeout):
+        lock.acquire(LANE, 0.3, path=path, clock=clock, sleep=clock.sleep, alive=lambda pid: False,
+                     say=lambda _m: None, wait=60)  # fmt: skip
+    assert on_disk(path) == record  # left alone: it waited instead
+    held(path, clock, lane="grammar-lab", pid=714397, age=61 * 60)
+    taken = take(path, clock, alive=lambda pid: False)
+    assert taken.notes == ["orphan lock removed: lane=grammar-lab reason=stale"]  # only stale, after 60 min
 
 
 def test_a_lock_acquired_over_60_minutes_ago_is_stale(tmp_path):

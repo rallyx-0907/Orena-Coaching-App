@@ -17,8 +17,9 @@ single live-provider.lock of before is retired.
   removed in the same finally/trap that takes the sandbox down.
 - Held: look again every 30 s, for at most 30 min; then stop and name the lane and
   PID that hold it.
-- Orphan: its PID is no longer alive (Windows: OpenProcess; POSIX: os.kill(pid, 0)),
-  or acquired_at is more than 60 min ago. Remove it, say
+- Orphan: acquired_at is more than 60 min ago, or - for this lane's own lock only - its PID is no longer
+  alive (Windows: OpenProcess; POSIX: os.kill(pid, 0)); another lane's PID may live in WSL or a
+  container and is never judged from here. Remove it, say
   "orphan lock removed: lane=... reason=dead-pid|stale", and try again at once.
 - Remove it only when its lane and pid are the ones this run wrote.
 - Never stop another lane's containers.
@@ -179,7 +180,7 @@ def acquire(
         holder, mtime = _read(path)
         if mtime is None:
             continue  # released between the two looks: try again at once
-        reason = _orphan(holder, mtime, clock(), stale_after, alive)
+        reason = _orphan(holder, mtime, clock(), stale_after, alive, lane=lane)
         if reason and _remove_if_unchanged(path, holder, mtime):
             note = f"orphan lock removed: lane={(holder or {}).get('lane', '?')} reason={reason}"
             notes.append(note)
@@ -224,9 +225,15 @@ def acquire_groups(lane: str, cost_ceiling_usd: float, groups: list[str] | tuple
     return Locks(taken)
 
 
-def _orphan(holder: dict | None, mtime: float, now: float, stale_after: float, alive) -> str | None:
+def _orphan(
+    holder: dict | None, mtime: float, now: float, stale_after: float, alive, *, lane: str | None = None
+) -> str | None:
     pid = (holder or {}).get("pid")
-    if isinstance(pid, int) and not isinstance(pid, bool) and not alive(pid):
+    # A pid is judged only on this lane's own locks: another lane may run in WSL or a container, where its pid means
+    # nothing to this host (2026-09-28: a Grammar Lab lock one minute old was taken for dead and removed). Another
+    # lane's lock is an orphan only when stale.
+    own = lane is None or (holder or {}).get("lane") == lane
+    if own and isinstance(pid, int) and not isinstance(pid, bool) and not alive(pid):
         return "dead-pid"
     if now - _acquired(holder, mtime) > stale_after:
         return "stale"
