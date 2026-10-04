@@ -19,7 +19,8 @@ param(
     [string]$CodexModel = ""
 )
 
-$ErrorActionPreference = "Stop"\n$InvariantCulture = [System.Globalization.CultureInfo]::InvariantCulture
+$ErrorActionPreference = "Stop"
+$InvariantCulture = [System.Globalization.CultureInfo]::InvariantCulture
 
 function Invoke-Corpus {
     param(
