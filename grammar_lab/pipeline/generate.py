@@ -64,7 +64,7 @@ from grammar_lab.rules import en_morphology
 
 PROMPT_VERSION = "generate_point.v1"
 PROMPT_PATH = LAB_ROOT / "prompts" / "generate_point.md"
-PROMPT_VERSION_V04 = "generate_point_v04.v15"
+PROMPT_VERSION_V04 = "generate_point_v04.v16"
 PROMPT_PATH_V04 = LAB_ROOT / "prompts" / "generate_point_v04.md"
 V04_SEMANTIC_ATTEMPTS = 3
 PERSONAL_PRODUCTION_MAX_SLOTS = 4
