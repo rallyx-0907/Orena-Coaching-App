@@ -399,7 +399,7 @@ export function addPage({ view, t, href, sources = [] }) {
     fields.push({ id: 'title', kind: 'text', label: t('rdFieldTitle'), span: true, value: view.title || '' });
   }
   fields.push({ id: 'language', kind: 'seg', label: t('addLanguage'), options: [{ id: 'auto', label: t('addAuto'), on: (view.language || 'auto') === 'auto' }, { id: 'en', label: t('langEn'), on: view.language === 'en' }, { id: 'zh', label: t('langZh'), on: view.language === 'zh' }] });
-  fields.push({ id: 'source', kind: 'text', label: mode === 'url' ? t('addSourceOptional') : t('rdFieldSourceName'), value: view.source || '', placeholder: t('addSourceHint') });
+  fields.push({ id: 'source', kind: 'text', label: mode === 'url' ? t('addSourceOptional') : t('rdFieldSourceName'), value: sources.find((source) => source.id === view.registeredSource)?.name || view.source || '', readOnly: !!view.registeredSource, placeholder: t('addSourceHint') });
   fields.push({ id: 'author', kind: 'text', label: t('rdFieldAuthor'), value: view.author || '' });
   if (mode === 'text') fields.push({ id: 'sourceUrl', kind: 'text', label: t('addSourceUrl'), value: view.sourceUrl || '' });
   fields.push({ id: 'rights', kind: 'seg', label: t('rdRights'), span: true, options: [{ id: '', label: t('addRightsUnknown'), on: rights === '' }, { id: 'allowed', label: t('rdAnswerAllowed'), on: rights === 'allowed' }, { id: 'denied', label: t('rdAnswerDenied'), on: rights === 'denied' }], hint: risky ? t('addRiskNote') : '', hintTone: risky ? 'warn' : '' });

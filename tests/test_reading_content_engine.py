@@ -4,8 +4,8 @@ The engine is what makes the adapters, the deterministic processor and the two
 repositories one thing. What these tests hold: a submission becomes a job and
 nothing else happens inside the request, the worker turns that job into exactly
 one candidate, re-running the same input never produces a second one, a refusal
-that will never succeed does not burn three attempts, and nothing in the
-pipeline can publish.
+that will never succeed does not burn three attempts, and publication requires
+an explicitly cleared active source policy and deterministic admission.
 """
 from __future__ import annotations
 
@@ -94,6 +94,29 @@ def test_registered_source_is_refused_before_work_when_inactive(engine_parts):
     content.set_source_state(source["id"], "paused", actor="admin")
     with pytest.raises(ReadingSourceError, match="active"):
         engine.submit(SubmittedInput(kind="text", text=ARTICLE, source_id=source["id"]), actor="admin")
+
+
+def test_registered_manual_policy_does_not_grant_rights_to_an_unrelated_url(engine_parts):
+    engine, content, jobs = engine_parts
+    source = _cleared_source(content)
+    engine.adapters["url"] = lambda: DirectUrlAdapter(fetcher=_fetcher(PAGE))
+    engine.submit(SubmittedInput(kind="url", url="https://unrelated.example/a", language="en",
+                                source_id=source["id"]), actor="admin")
+    result = engine.process(jobs.claim("worker"))
+    article = content.get_article(result["article_id"])
+    assert article["status"] == "needs_review"
+    assert "can_republish" not in article["source"]["rights"]
+    assert "source_origin_mismatch" in article["analysis"]["admission"]["reasons"]
+
+
+def test_registered_name_owns_provenance_even_with_a_free_text_label(engine_parts):
+    engine, content, jobs = engine_parts
+    source = _cleared_source(content)
+    engine.submit(SubmittedInput(kind="text", text=ARTICLE, language="en", source_id=source["id"],
+                                source_name="Unrelated publisher"), actor="admin")
+    result = engine.process(jobs.claim("worker"))
+    article = content.get_article(result["article_id"])
+    assert article["source"]["metadata"]["source_name"] == source["name"]
 
 
 def test_pausing_source_after_submission_holds_the_candidate(engine_parts):

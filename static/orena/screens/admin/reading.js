@@ -197,7 +197,7 @@ export async function mountReading(shell, ctx) {
 
   /* ---- the review pane ---- */
   host.onInput((id, value) => {
-    if (routeId === 'adminAdd') { view[id] = value; return; }
+    if (routeId === 'adminAdd') { view[id] = value; if (id === 'registeredSource') host.paint(); return; }
     if (['title', 'topic', 'body'].includes(id)) { view.edit[id] = value; view.dirty = true; view.editError = ''; }
     if (id.startsWith('nt_')) {
       view.newTarget = { ...view.newTarget, [id.slice(3)]: value };

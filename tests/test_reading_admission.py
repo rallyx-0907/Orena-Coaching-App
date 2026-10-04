@@ -58,3 +58,24 @@ def test_attribution_requires_visible_article_evidence_not_registry_name_or_url(
 
 def test_missing_analysis_is_held():
     assert "analysis_missing" in decision(analysis={})["reasons"]
+
+
+def test_url_cannot_borrow_a_blank_origin_manual_source_policy():
+    outcome = decision(source_changes={"base_url": ""}, snapshot_changes={
+        "metadata": {"input_kind": "url"}, "canonical_url": "https://unrelated.example/article"})
+    assert outcome["decision"] == "review"
+    assert "source_origin_mismatch" in outcome["reasons"]
+
+
+@pytest.mark.parametrize("origin,url,admitted", [
+    ("https://owned.example", "https://owned.example/a", True),
+    ("https://owned.example:443", "https://owned.example/a", True),
+    ("https://owned.example", "https://other.example/a", False),
+    ("https://owned.example", "http://owned.example/a", False),
+    ("https://owned.example", "https://owned.example:8443/a", False),
+    ("https://[", "https://owned.example/a", False),
+])
+def test_fetched_url_is_bound_to_its_registered_origin(origin, url, admitted):
+    outcome = decision(source_changes={"base_url": origin}, snapshot_changes={
+        "metadata": {"input_kind": "url"}, "canonical_url": url})
+    assert (outcome["decision"] == "published") is admitted

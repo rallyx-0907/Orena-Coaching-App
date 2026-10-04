@@ -742,8 +742,8 @@ def set_article_status(
 ) -> dict[str, Any]:
     """Publish, unpublish, reject or archive - always an admin's own act.
 
-    Nothing in the pipeline reaches this route, which is what "no auto-publish"
-    means in code rather than in a policy document.
+    Automatic admission happens atomically during candidate creation, not through
+    this operator transition route. Changes here retain the administrator's actor.
     """
     admin = _admin(request)
     _same_origin(request)

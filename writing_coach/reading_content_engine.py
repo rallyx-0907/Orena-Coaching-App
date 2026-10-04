@@ -28,6 +28,8 @@ from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
+from writing_coach.reading_admission import source_origin_matches
+
 from writing_coach.persistence.reading_content_repository import (
     MAX_TARGETS,
     ReadingContentRepository,
@@ -260,11 +262,14 @@ class ReadingContentEngine:
             # never a name guessed from a URL. Explicit per-text answers win.
             if submitted.source_id:
                 source = self.content.get_source(job["source_id"])
-                if source is not None and source["state"] == "active":
+                if source is not None:
+                    item = replace(item, metadata={**item.metadata, "source_name": source["name"]})
+                if (source is not None and source["state"] == "active"
+                        and (submitted.kind != "url" or source_origin_matches(source, item.canonical_url))):
                     inherited = {key: value for key, value in source["rights"].items() if key != "automation_allowed"}
                     origins = {key: "article" if key in item.rights else "source" for key in inherited}
                     item = replace(item, rights={**inherited, **item.rights}, metadata={
-                        **item.metadata, "source_name": item.metadata.get("source_name") or source["name"],
+                        **item.metadata, "source_name": source["name"],
                         "rights_known": True, "rights_origin": origins,
                     })
             # The last check before anything is written to the content tables.

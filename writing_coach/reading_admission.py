@@ -12,6 +12,18 @@ from urllib.parse import urlsplit
 ADMISSION_VERSION = "reading-admission/1"
 
 
+def source_origin_matches(source: Mapping[str, Any], canonical_url: str) -> bool:
+    """A registry policy may cover fetched URLs only on its explicit origin."""
+    try:
+        origin = urlsplit(str(source.get("base_url") or ""))
+        url = urlsplit(canonical_url)
+        return bool(origin.hostname and url.hostname and origin.scheme in {"http", "https"}
+                    and (origin.scheme, origin.hostname.casefold(), origin.port or (443 if origin.scheme == "https" else 80))
+                    == (url.scheme, url.hostname.casefold(), url.port or (443 if url.scheme == "https" else 80)))
+    except ValueError:
+        return False
+
+
 def automatic_admission(
     *, source: Mapping[str, Any], snapshot: Mapping[str, Any], language: str,
     body: str, analysis: Mapping[str, Any], targets: Sequence[Any],
@@ -38,9 +50,9 @@ def automatic_admission(
         snapshot.get("author") or snapshot.get("canonical_url")
     ):
         reasons.append("attribution_missing")
-    origin = urlsplit(str(source.get("base_url") or ""))
-    url = urlsplit(str(snapshot.get("canonical_url") or ""))
-    if origin.hostname and url.hostname and (origin.scheme, origin.netloc.casefold()) != (url.scheme, url.netloc.casefold()):
+    canonical_url = str(snapshot.get("canonical_url") or "")
+    fetched_url = (snapshot.get("metadata") or {}).get("input_kind") == "url"
+    if (fetched_url or (source.get("base_url") and canonical_url)) and not source_origin_matches(source, canonical_url):
         reasons.append("source_origin_mismatch")
     issues = analysis.get("quality_issues")
     if not isinstance(issues, list):
