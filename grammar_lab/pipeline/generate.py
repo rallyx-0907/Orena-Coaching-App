@@ -844,6 +844,13 @@ def complete_generated_terminal_bindings(data: dict[str, Any], zh: bool) -> dict
     return out
 
 
+def normalize_generated_structure(data: dict[str, Any], zh: bool) -> dict[str, Any]:
+    """Return the exact structural candidate that full assembly validates."""
+    out = normalize_generated_formula_order(data, zh)
+    out = complete_generated_terminal_bindings(out, zh)
+    return normalize_generated_formula_order(out, zh)
+
+
 def assemble_generated_example(
     raw: dict[str, Any], pattern: dict[str, Any], zh: bool, loc: Any, index: int,
 ) -> tuple[dict[str, Any], list[tuple[str, str, str]]]:
@@ -1861,9 +1868,7 @@ class Generator:
         if r5_records:
             user += "\n\nR5 source lesson(s) for this point (restructure, correct, complete):\n" + r5_source_text(r5_records)
         def assemble(result: Any) -> dict[str, Any]:
-            data = normalize_generated_formula_order(result.data, zh)
-            data = complete_generated_terminal_bindings(data, zh)
-            data = normalize_generated_formula_order(data, zh)
+            data = normalize_generated_structure(result.data, zh)
 
             illustration: dict[str, Any] = {"kind": ILLUSTRATION_FOR_POINT_TYPE[point_type]}
             if point_type == "tense_aspect":
@@ -2004,7 +2009,7 @@ class Generator:
             # at most two small structure-only repair calls.
             structure_repair_exhausted = False
             if can_repair_generation_structure(issues):
-                structure_data = result.data
+                structure_data = normalize_generated_structure(result.data, zh)
                 structure_issues = issues
                 for _structure_attempt in range(2):
                     try:
