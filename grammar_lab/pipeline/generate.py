@@ -365,8 +365,9 @@ def _generation_schema_v04(*, locales: list[str], l1s: list[str], error_tags: li
     Built per point, so nothing here needs if/then (not every provider's structured-output
     dialect supports it): the illustration kind is fixed by point_type in code, and only
     the data that kind needs is asked for. Things the model is bad at are moved to code:
-    spans are given as the substring and resolved to offsets by generate.py; zh pinyin is
-    given as [character, syllable] pairs so the alignment is explicit; and with a single
+    full-generation examples bind exact substrings to formula slot indexes and generate.py
+    derives stored span roles/offsets from those bindings; zh pinyin is given as
+    [character, syllable] pairs so the alignment is explicit; and with a single
     explanation locale every explanation field is a plain string that generate.py files
     under that locale (live DeepSeek runs kept malforming one-key locale objects inside
     arrays -- `[ "vi": "..." ]`)."""
@@ -476,7 +477,7 @@ The user message carries the app's current lesson(s) for this point ("R5"). Use 
 material: keep what is right (a good example, a real learner mistake, a clear rule), restructure
 it into this schema, **correct** anything wrong (a wrong rule, an ungrammatical example, a
 mistake that is not one, a level-inappropriate word) and **add** what is missing (the formula,
-the variants, spans, the comparison, the quick check). Do not carry an error over. List every
+the variants, formula-slot bindings for examples, the comparison, the quick check). Do not carry an error over. List every
 correction you made to R5's content in `r5_corrections` (which lesson, what was wrong, what you
 wrote instead) -- another model checks each one; leave it empty if R5 needed none. Scope stays
 this point's: if an R5 lesson covers more than this point, take only this point's part.
@@ -495,7 +496,7 @@ _ILLUSTRATION_INSTRUCTIONS = {
         "This point is about how a *word changes form*, so the app draws base + affix -> result: fill "
         "`morphology` with 1-4 items (e.g. book + -s -> books, city + -ies -> cities), covering the "
         "spelling cases a learner actually meets. If the formula keeps the base and the affix as "
-        "separate slots (`N` + `-s/-es`), span them separately in every example, in order: the base "
+        "separate slots (`N` + `-s/-es`), bind them separately in every example, in order: the base "
         "(`book`), then the affix alone (`s`). An irregular form with no separable affix (children) "
         "does not fit such a formula -- use regular forms in the examples."
     ),
