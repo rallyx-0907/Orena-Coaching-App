@@ -129,4 +129,11 @@ assert.equal(headlineKind(5), 'many');
   assert.equal(outage.detail.category, 'speech_asr_unconfigured', 'the real outage shape the screen treats as "provider unavailable"');
 }
 
+// A Chinese take is counted in characters (unitCount), so its tiles say characters in every interface language.
+{
+  const screen = fs.readFileSync(new URL('../static/orena/screens/free-talk/screen.js', import.meta.url), 'utf8');
+  assert.match(screen, /language === 'zh' \? \{ count: 'statChars', pace: 'statPaceUnitChars' \}/, 'the unit label follows the learning language');
+  assert.doesNotMatch(screen, /t\('statWords'\)|t\('statPaceUnit'\)/, 'no tile names its unit without the learning language');
+}
+
 console.log('Orena screen free-talk: model mapping (topics, clock, wave, counts, pace, result tiles, ledger facts, headline) and the real spoken-response captures: PASS');

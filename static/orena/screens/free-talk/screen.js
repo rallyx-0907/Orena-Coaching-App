@@ -61,6 +61,8 @@ export default async function freeTalk(element, ctx) {
   let topicText = '';
   let topicSituation = ''; // the picked/typed topic's own sentence, sent as the coaching `situation`
   let durationMs = DURATIONS_MS[0];
+  // The take is counted in the learning language's unit (model.js `unitCount`): characters for Chinese.
+  const unitKeys = language === 'zh' ? { count: 'statChars', pace: 'statPaceUnitChars' } : { count: 'statWords', pace: 'statPaceUnit' };
   let startedAt = 0;
   let ticker = 0;
   let takeMs = 0;
@@ -139,8 +141,8 @@ export default async function freeTalk(element, ctx) {
     return html`<section class="o-card o-card--24 s-ft__card s-ft__result">
       ${ok ? html`<p class="s-ft__headline">${headlineText(fixes.length)}</p>` : ''}
       <div class="s-ft__stats">
-        <div class="s-ft__stat"><span class="s-ft__stat-label">${t('statWords')}</span><span class="s-ft__stat-value">${stats.words}</span></div>
-        <div class="s-ft__stat"><span class="s-ft__stat-label">${t('statPace')}</span><span class="s-ft__stat-value">${speed} <span class="s-ft__stat-unit">${t('statPaceUnit')}</span></span></div>
+        <div class="s-ft__stat"><span class="s-ft__stat-label">${t(unitKeys.count)}</span><span class="s-ft__stat-value">${stats.words}</span></div>
+        <div class="s-ft__stat"><span class="s-ft__stat-label">${t('statPace')}</span><span class="s-ft__stat-value">${speed} <span class="s-ft__stat-unit">${t(unitKeys.pace)}</span></span></div>
         <div class="s-ft__stat"><span class="s-ft__stat-label">${t('statLinking')}</span><span class="s-ft__stat-value">${stats.linking}</span></div>
       </div>
       ${ok ? html`<div class="s-ft__scroll" data-scroll-region>
@@ -224,7 +226,7 @@ export default async function freeTalk(element, ctx) {
   function finish() {
     logSpeakingTask({
       kind: 'free_talk',
-      facts: ledgerFacts(resultStats(heard, takeMs, language), { words: t('statWords'), pace: t('statPace'), paceUnit: t('statPaceUnit') }),
+      facts: ledgerFacts(resultStats(heard, takeMs, language), { words: t(unitKeys.count), pace: t('statPace'), paceUnit: t(unitKeys.pace) }),
     });
     ctx.go(ctx.href('spsummary'));
   }
