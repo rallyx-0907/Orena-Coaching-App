@@ -1,0 +1,183 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b2.041",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.linking",
+  "level": {"framework": "cefr", "value": "B2", "rank": 4},
+  "prereqs": ["en.canon.b2.040"],
+  "contrasts": [],
+  "error_tags": ["sentence_structure"],
+  "source_refs": {"r5": ["b2-punctuation-with-complex-clauses", "c2-advanced-punctuation-as-syntax"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["b2-punctuation-with-complex-clauses", "c2-advanced-punctuation-as-syntax"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Punctuation with complex clauses", "en": "Punctuation with complex clauses"},
+    "native_title": "Punctuation with complex clauses",
+    "level": {"framework": "cefr", "value": "B2", "rank": 4},
+    "summary": {
+      "vi": "Dấu câu trong câu phức không chỉ để ngắt hơi mà còn thể hiện ranh giới mệnh đề và quan hệ diễn ngôn.",
+      "en": "Punctuation in complex sentences marks clause boundaries and discourse relations, not just pauses."
+    },
+    "sub": {"vi": "dấu câu mệnh đề", "en": "clause punctuation"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi mệnh đề phụ đứng trước mệnh đề chính, dùng dấu phẩy sau mệnh đề phụ.",
+      "en": "When a subordinate clause comes first, use a comma after it."
+    },
+    {
+      "vi": "Khi nối hai mệnh đề độc lập có quan hệ gần, dùng dấu chấm phẩy thay vì dấu phẩy.",
+      "en": "When joining two closely related independent clauses, use a semicolon instead of a comma."
+    },
+    {
+      "vi": "Khi muốn giải thích hoặc liệt kê sau một mệnh đề độc lập, dùng dấu hai chấm.",
+      "en": "When you want to elaborate or list after an independent clause, use a colon."
+    },
+    {
+      "vi": "Khi thông tin chỉ là bổ sung, dùng dấu phẩy để tách mệnh đề quan hệ không hạn định.",
+      "en": "When information is extra, use commas to set off a non-defining relative clause."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "subordinate clause",
+        "role": "connector",
+        "label": {"vi": "mệnh đề phụ", "en": "subordinate clause"}
+      },
+      {
+        "text": "independent clause",
+        "role": "other",
+        "label": {"vi": "mệnh đề chính", "en": "independent clause"}
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "Although the deadline was tight, we finished on time.",
+      "form": "affirmative",
+      "spans": [{"start": 0, "end": 31, "role": "connector"}, {"start": 33, "end": 52, "role": "other"}],
+      "annotation": {
+        "vi": "Mệnh đề phụ đứng trước, theo sau là dấu phẩy.",
+        "en": "Subordinate clause first, followed by a comma."
+      },
+      "translation": {
+        "vi": "Dù hạn gấp, chúng tôi hoàn thành đúng giờ.",
+        "en": "Although the deadline was tight, we finished on time."
+      }
+    },
+    {
+      "text": "Because the first option is cheaper, we chose it.",
+      "form": "affirmative",
+      "spans": [{"start": 0, "end": 35, "role": "connector"}, {"start": 37, "end": 48, "role": "other"}],
+      "annotation": {
+        "vi": "Mệnh đề phụ chỉ nguyên nhân đứng trước, theo sau là dấu phẩy.",
+        "en": "A reason subordinate clause comes first, followed by a comma."
+      },
+      "translation": {
+        "vi": "Vì phương án một rẻ hơn, chúng tôi chọn nó.",
+        "en": "Because the first option is cheaper, we chose it."
+      }
+    },
+    {
+      "text": "When the meeting ended, everyone left quickly.",
+      "form": "affirmative",
+      "spans": [{"start": 0, "end": 22, "role": "connector"}, {"start": 24, "end": 45, "role": "other"}],
+      "annotation": {
+        "vi": "Mệnh đề phụ chỉ thời gian đứng trước, theo sau là dấu phẩy.",
+        "en": "A time subordinate clause comes first, followed by a comma."
+      },
+      "translation": {
+        "vi": "Khi cuộc họp kết thúc, mọi người rời đi nhanh chóng.",
+        "en": "When the meeting ended, everyone left quickly."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Dùng dấu phẩy để nối hai mệnh đề độc lập là lỗi comma splice; cần dấu chấm phẩy hoặc liên từ.",
+        "en": "Using a comma to join two independent clauses is a comma splice; a semicolon or conjunction is needed."
+      },
+      "error_tag": "sentence_structure",
+      "l1": ["vi"],
+      "wrong": "The test was difficult, everyone passed.",
+      "right": "The test was difficult; however, everyone passed."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "___ the deadline was tight, we finished on time.",
+      "options": [{"text": "Although", "error_tag": null}, {"text": "Although,", "error_tag": "punctuation"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Mệnh đề phụ bắt đầu bằng 'Although' không cần dấu phẩy ngay sau nó.",
+        "en": "A subordinate clause starting with 'Although' does not need a comma immediately after it."
+      }
+    },
+    {
+      "q": "The first option is cheaper ___ the second is faster.",
+      "options": [{"text": ";", "error_tag": null}, {"text": ",", "error_tag": "punctuation"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Hai mệnh đề độc lập cần dấu chấm phẩy, không dùng dấu phẩy đơn.",
+        "en": "Two independent clauses need a semicolon, not a single comma."
+      }
+    },
+    {
+      "q": "There was one problem ___ nobody had the key.",
+      "options": [{"text": ":", "error_tag": null}, {"text": ",", "error_tag": "punctuation"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Dấu hai chấm giới thiệu phần giải thích sau mệnh đề độc lập.",
+        "en": "A colon introduces an explanation after an independent clause."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu phức có mệnh đề phụ đứng trước, dùng dấu phẩy đúng chỗ.",
+      "en": "Write a complex sentence with a subordinate clause first, using a comma correctly."
+    },
+    "placeholder": "Although ..., I ...",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"role": "connector", "any_of": ["although", "because", "when"]}]},
+    "sample": {"text": "Although it was raining, we went for a walk."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791011388",
+    "generated_at": "2026-10-03T07:09:48Z",
+    "r5_source": {
+      "ids": ["b2-punctuation-with-complex-clauses", "c2-advanced-punctuation-as-syntax"],
+      "content_version": 2,
+      "content_hash": "04ca9362b7e5cb7cce2ba8a3e54d2dddc12bff2b6ab3142895ac48fbf9494955",
+      "corrections": [
+        {
+          "r5_id": "b2-punctuation-with-complex-clauses",
+          "issue": "R5 included a C2 lesson (c2-advanced-punctuation-as-syntax) that is out of scope for this B2 point.",
+          "fix": "Removed the C2 lesson and kept only B2-level content."
+        },
+        {
+          "r5_id": "b2-punctuation-with-complex-clauses",
+          "issue": "R5's example 'My manager, who joined last year, is leaving.' uses a non-defining relative clause, which is not the main focus of this point (subordinate clause first + comma).",
+          "fix": "Replaced with examples that clearly show subordinate clause first + comma."
+        },
+        {
+          "r5_id": "b2-punctuation-with-complex-clauses",
+          "issue": "R5's mistake 'My only sister who lives abroad is visiting.' is about relative clause commas, not the core point of clause boundary punctuation.",
+          "fix": "Replaced with a comma splice mistake, which directly targets the point."
+        }
+      ]
+    }
+  },
+  "review": null
+}

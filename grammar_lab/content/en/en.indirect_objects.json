@@ -1,0 +1,203 @@
+{
+  "schema_version": "0.4",
+  "id": "en.indirect_objects",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.sentence_basics",
+  "level": {"framework": "cefr", "value": "A2", "rank": 2},
+  "prereqs": [],
+  "contrasts": [],
+  "error_tags": ["sentence_structure"],
+  "source_refs": {"r5": ["a2-basic-indirect-objects"]},
+  "point_type": "word_order",
+  "sequence": 1,
+  "aliases": ["a2-basic-indirect-objects"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Tân ngữ gián tiếp (give someone something)", "en": "Indirect objects"},
+    "native_title": "Indirect objects",
+    "level": {"framework": "cefr", "value": "A2", "rank": 2},
+    "summary": {
+      "vi": "Động từ như give, send, show, tell, buy, make có thể đứng trước người nhận rồi đến vật, hoặc đứng trước vật rồi đến to/for + người nhận.",
+      "en": "Verbs like give, send, show, tell, buy, and make can take the recipient before the thing, or the thing before to/for + recipient."
+    },
+    "sub": {"vi": "give someone something", "en": "give someone something"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói ai đó nhận được gì đó: give, send, show, tell, lend, pass.",
+      "en": "When you say who receives something: give, send, show, tell, lend, pass."
+    },
+    {
+      "vi": "Khi bạn làm gì đó có lợi cho ai: buy, make, get, cook, bring.",
+      "en": "When you do something for someone's benefit: buy, make, get, cook, bring."
+    },
+    {
+      "vi": "Khi người nhận là đại từ (me, him, her, us, them), trật tự người nhận trước vật thường tự nhiên hơn.",
+      "en": "When the recipient is a pronoun (me, him, her, us, them), the recipient-first order usually sounds more natural."
+    },
+    {
+      "vi": "Khi vật dài hoặc cần nhấn mạnh, đặt vật trước rồi đến to/for + người nhận.",
+      "en": "When the thing is long or needs emphasis, put the thing first and then to/for + recipient."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}},
+      {"text": "someone", "role": "object", "label": {"vi": "người nhận", "en": "recipient"}},
+      {"text": "something", "role": "object", "label": {"vi": "vật", "en": "thing"}}
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "do/does not",
+          "role": "aux",
+          "label": {"vi": "trợ động từ phủ định", "en": "negative auxiliary"},
+          "options": [{"text": "do not"}, {"text": "does not"}, {"text": "don't"}, {"text": "doesn't"}]
+        },
+        {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}},
+        {"text": "someone", "role": "object", "label": {"vi": "người nhận", "en": "recipient"}},
+        {"text": "something", "role": "object", "label": {"vi": "vật", "en": "thing"}}
+      ],
+      "question": [
+        {
+          "text": "Do/Does",
+          "role": "aux",
+          "label": {"vi": "trợ động từ nghi vấn", "en": "question auxiliary"},
+          "options": [{"text": "Do"}, {"text": "Does"}]
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}},
+        {"text": "someone", "role": "object", "label": {"vi": "người nhận", "en": "recipient"}},
+        {"text": "something", "role": "object", "label": {"vi": "vật", "en": "thing"}}
+      ]
+    },
+    "illustration": {"kind": "word_order"}
+  },
+  "examples": [
+    {
+      "text": "Please give me your number.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 6, "role": "subject"},
+        {"start": 7, "end": 11, "role": "verb"},
+        {"start": 12, "end": 14, "role": "object"},
+        {"start": 15, "end": 26, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "give + người nhận (me) + vật (your number)",
+        "en": "give + recipient (me) + thing (your number)"
+      },
+      "translation": {"vi": "Làm ơn cho tôi số của bạn.", "en": "Please give me your number."}
+    },
+    {
+      "text": "She sent a message to her teacher.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 8, "role": "verb"},
+        {"start": 9, "end": 18, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "sent + vật (a message) + to + người nhận (her teacher)",
+        "en": "sent + thing (a message) + to + recipient (her teacher)"
+      },
+      "translation": {"vi": "Cô ấy gửi tin nhắn cho giáo viên.", "en": "She sent a message to her teacher."}
+    },
+    {
+      "text": "Dad bought me a bag.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 10, "role": "verb"},
+        {"start": 11, "end": 13, "role": "object"},
+        {"start": 14, "end": 19, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "bought + người nhận (me) + vật (a bag)",
+        "en": "bought + recipient (me) + thing (a bag)"
+      },
+      "translation": {"vi": "Bố mua cho tôi một cái túi.", "en": "Dad bought me a bag."}
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Trộn hai trật tự: không đặt to + người nhận trước vật khi dùng cấu trúc hai tân ngữ.",
+        "en": "Mixing the two orders: do not put to + recipient before the thing in the double-object pattern."
+      },
+      "error_tag": "sentence_structure",
+      "l1": ["vi"],
+      "wrong": "She gave to me a ticket.",
+      "right": "She gave me a ticket."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "Can you pass ___ the salt?",
+      "options": [{"text": "me", "error_tag": null}, {"text": "to me", "error_tag": "sentence_structure"}],
+      "answer": 0,
+      "explain": {
+        "vi": "pass + người nhận (me) + vật (the salt). Không dùng to me trước vật.",
+        "en": "pass + recipient (me) + thing (the salt). Do not use to me before the thing."
+      }
+    },
+    {
+      "q": "He bought a gift ___ his mother.",
+      "options": [{"text": "for", "error_tag": null}, {"text": "to", "error_tag": "preposition"}],
+      "answer": 0,
+      "explain": {
+        "vi": "buy dùng for khi làm gì có lợi cho ai.",
+        "en": "buy uses for when doing something for someone's benefit."
+      }
+    },
+    {
+      "q": "___ you send me the file?",
+      "options": [{"text": "Can", "error_tag": null}, {"text": "Do", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu yêu cầu lịch sự dùng Can you + V + người nhận + vật.",
+        "en": "A polite request uses Can you + V + recipient + thing."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về việc bạn đã cho, gửi, hoặc mua gì cho ai.",
+      "en": "Write one sentence about something you gave, sent, or bought for someone."
+    },
+    "placeholder": "I gave my friend ...",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"role": "verb", "any_of": ["give", "gave", "sent", "bought"]}]},
+    "sample": {"text": "I gave my friend a book."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791011284",
+    "generated_at": "2026-10-03T07:08:04Z",
+    "r5_source": {
+      "ids": ["a2-basic-indirect-objects"],
+      "content_version": 2,
+      "content_hash": "05a2edb941295efc5166376bf02a6504720b2f47bac4bd9612bb0c412cb42348",
+      "corrections": [
+        {
+          "r5_id": "a2-basic-indirect-objects",
+          "issue": "R5 says 'Không trộn *give to me the book.' but the example 'She gave to me a ticket.' is also wrong and should be corrected.",
+          "fix": "Added the corrected version 'She gave me a ticket.' and explained the double-object order."
+        },
+        {
+          "r5_id": "a2-basic-indirect-objects",
+          "issue": "R5's contrast 'She sent me a photo ↔ She sent a photo to me.' is correct but the lesson did not show the for-beneficiary pattern clearly.",
+          "fix": "Added 'buy me coffee ↔ buy coffee for me' as a contrast and included buy/make in the formula and examples."
+        }
+      ]
+    }
+  },
+  "review": null
+}

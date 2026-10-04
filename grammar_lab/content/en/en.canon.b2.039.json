@@ -1,0 +1,215 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b2.039",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.contrast",
+  "level": {"framework": "cefr", "value": "B2", "rank": 4},
+  "prereqs": ["en.canon.b2.036"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["b2-concession-patterns"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["b2-concession-patterns"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Concession patterns", "en": "Concession patterns"},
+    "native_title": "Concession patterns",
+    "level": {"framework": "cefr", "value": "B2", "rank": 4},
+    "summary": {
+      "vi": "Các mẫu nhượng bộ nâng cao dùng để thừa nhận một sự thật rồi vẫn khẳng định điều ngược lại, với sắc thái trang trọng hoặc nhấn mạnh.",
+      "en": "Advanced concession patterns admit a fact and still assert the opposite, with a formal or emphatic tone."
+    },
+    "sub": {"vi": "nhượng bộ nâng cao", "en": "advanced concession"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn thừa nhận một điểm đúng nhưng vẫn giữ ý kiến ngược lại, đặc biệt trong văn viết trang trọng.",
+      "en": "When you want to admit a valid point but still maintain an opposing view, especially in formal writing."
+    },
+    {
+      "vi": "Khi bạn muốn nhấn mạnh mức độ của một tính từ hoặc trạng từ trong mệnh đề nhượng bộ.",
+      "en": "When you want to emphasise the degree of an adjective or adverb in a concessive clause."
+    },
+    {
+      "vi": "Khi bạn muốn tạo sự tương phản rõ ràng giữa hai mệnh đề trong một câu.",
+      "en": "When you want to create a clear contrast between two clauses in one sentence."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "Much as",
+        "role": "connector",
+        "label": {"vi": "liên từ nhượng bộ", "en": "concessive connector"}
+      },
+      {
+        "text": "S",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ mệnh đề thừa nhận", "en": "concessive clause subject"}
+      },
+      {
+        "text": "V",
+        "role": "verb",
+        "label": {"vi": "động từ mệnh đề thừa nhận", "en": "concessive clause verb"}
+      },
+      {
+        "text": "S",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ mệnh đề chính", "en": "main clause subject"}
+      },
+      {
+        "text": "V",
+        "role": "verb",
+        "label": {"vi": "động từ mệnh đề chính", "en": "main clause verb"}
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "Much as I respect her, I disagree with the decision.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 7, "role": "connector"},
+        {"start": 8, "end": 9, "role": "subject"},
+        {"start": 10, "end": 17, "role": "verb"},
+        {"start": 23, "end": 24, "role": "subject"},
+        {"start": 25, "end": 33, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Much as mở đầu mệnh đề nhượng bộ, sau đó là mệnh đề chính.",
+        "en": "Much as introduces the concessive clause, followed by the main clause."
+      },
+      "translation": {
+        "vi": "Dù rất tôn trọng cô ấy, tôi không đồng ý với quyết định đó.",
+        "en": "Much as I respect her, I disagree with the decision."
+      }
+    },
+    {
+      "text": "Tired as he was, he kept working.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 8, "role": "connector"},
+        {"start": 9, "end": 11, "role": "subject"},
+        {"start": 12, "end": 15, "role": "verb"},
+        {"start": 17, "end": 19, "role": "subject"},
+        {"start": 20, "end": 24, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Tính từ + as + chủ ngữ + động từ tạo nhượng bộ nhấn mạnh.",
+        "en": "Adjective + as + subject + verb creates emphatic concession."
+      },
+      "translation": {"vi": "Dù mệt, anh ấy vẫn tiếp tục làm việc.", "en": "Tired as he was, he kept working."}
+    },
+    {
+      "text": "No matter how hard I tried, I couldn't open it.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 13, "role": "connector"},
+        {"start": 19, "end": 20, "role": "subject"},
+        {"start": 21, "end": 26, "role": "verb"},
+        {"start": 28, "end": 29, "role": "subject"},
+        {"start": 30, "end": 43, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "No matter how + tính từ/trạng từ + mệnh đề diễn tả nỗ lực không thay đổi kết quả.",
+        "en": "No matter how + adjective/adverb + clause expresses effort that does not change the result."
+      },
+      "translation": {
+        "vi": "Dù tôi có cố gắng thế nào, tôi cũng không thể mở nó.",
+        "en": "No matter how hard I tried, I couldn't open it."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Mẫu đúng là tính từ + as + chủ ngữ + động từ, không đảo động từ lên trước chủ ngữ.",
+        "en": "The correct pattern is adjective + as + subject + verb; do not invert the verb before the subject."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "Tired as was he, he continued.",
+      "right": "Tired as he was, he continued."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "___ I respect her, I disagree with the decision.",
+      "options": [{"text": "Much as", "error_tag": null}, {"text": "Much like", "error_tag": "word_choice"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Much as là liên từ nhượng bộ, còn much like nghĩa là 'giống như'.",
+        "en": "Much as is the concessive connector; much like means 'similar to'."
+      }
+    },
+    {
+      "q": "Tired ___ he was, he kept working.",
+      "options": [{"text": "as", "error_tag": null}, {"text": "though", "error_tag": "word_choice"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Cấu trúc nhượng bộ với tính từ dùng 'as' sau tính từ: Tired as he was.",
+        "en": "The concessive structure with an adjective uses 'as' after the adjective: Tired as he was."
+      }
+    },
+    {
+      "q": "No matter how ___ I tried, I couldn't open it.",
+      "options": [{"text": "hard", "error_tag": null}, {"text": "hardly", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {
+        "vi": "No matter how + trạng từ 'hard' (chăm chỉ, mạnh mẽ), không dùng 'hardly' (hầu như không).",
+        "en": "No matter how + adverb 'hard' (with effort), not 'hardly' (almost not)."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng 'Much as' để thừa nhận một điều rồi vẫn nêu ý ngược lại.",
+      "en": "Write a sentence using 'Much as' to admit something and still state an opposing view."
+    },
+    "placeholder": "Much as I ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "connector", "any_of": ["Much as"]},
+        {"role": "subject", "regex": "(?i)\\b(I|you|he|she|it|we|they)\\b"}
+      ]
+    },
+    "sample": {"text": "Much as I enjoy the city, I sometimes miss the quiet of the countryside."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791011389",
+    "generated_at": "2026-10-03T07:09:49Z",
+    "r5_source": {
+      "ids": ["b2-concession-patterns"],
+      "content_version": 2,
+      "content_hash": "1796066bdac69cb5bf217f908a234d34baa9172e87c9010a341cb2e4af2c8c2f",
+      "corrections": [
+        {
+          "r5_id": "b2-concession-patterns",
+          "issue": "R5 lists 'while/whereas' as concession patterns, but 'whereas' mainly marks contrast, not concession, and 'while' can be ambiguous.",
+          "fix": "Removed 'while/whereas' from the core formula and examples to keep the point focused on clear concession patterns: 'Much as', 'adjective/adverb + as/though', and 'no matter how'."
+        },
+        {
+          "r5_id": "b2-concession-patterns",
+          "issue": "R5 example 'While the plan is expensive, it may still be worthwhile' uses 'while' which is not a canonical concession pattern at B2 and can be read as time or contrast.",
+          "fix": "Replaced with 'No matter how hard I tried, I couldn't open it' to illustrate a clear concessive degree clause."
+        },
+        {
+          "r5_id": "b2-concession-patterns",
+          "issue": "R5 mistake 'No matter how I was tired, I kept going' is not a typical learner error for this pattern; the error is word order with adjective after 'how'.",
+          "fix": "Replaced with the more representative mistake 'Tired as was he, he continued' to target subject-verb inversion after adjective + as."
+        }
+      ]
+    }
+  },
+  "review": null
+}

@@ -1,0 +1,206 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b2.012",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.time_expression",
+  "level": {"framework": "cefr", "value": "B2", "rank": 4},
+  "prereqs": [],
+  "contrasts": [],
+  "error_tags": ["tense"],
+  "source_refs": {"r5": ["b2-it-s-time-past-form"]},
+  "point_type": "tense_aspect",
+  "sequence": 1,
+  "aliases": ["b2-it-s-time-past-form"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "It's time + past form", "en": "It's time + past form"},
+    "native_title": "It's time + past form",
+    "level": {"framework": "cefr", "value": "B2", "rank": 4},
+    "summary": {
+      "vi": "Cấu trúc It's time + mệnh đề với động từ ở dạng quá khứ dùng để nói rằng một việc nên được làm ngay bây giờ hoặc đã muộn.",
+      "en": "The pattern It's time + subject + past form says that something should be done now or is already overdue."
+    },
+    "sub": {"vi": "đã đến lúc", "en": "it's time + past"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói ai đó nên làm gì ngay bây giờ, không phải trong quá khứ.",
+      "en": "When you want to say someone should do something now, not in the past."
+    },
+    {
+      "vi": "Khi hành động đã muộn hoặc đáng lẽ phải xảy ra sớm hơn, thường với high time hoặc about time.",
+      "en": "When the action is late or should have happened earlier, often with high time or about time."
+    },
+    {
+      "vi": "Khi bạn muốn phê bình nhẹ hoặc thúc giục mà không dùng mệnh lệnh trực tiếp.",
+      "en": "When you want mild criticism or a push without using a direct command."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "It's", "role": "subject", "label": {"vi": "chủ ngữ giả", "en": "dummy subject"}},
+      {"text": "time", "role": "complement", "label": {"vi": "bổ ngữ", "en": "complement"}},
+      {
+        "text": "high/about",
+        "role": "marker",
+        "label": {"vi": "từ nhấn mạnh", "en": "intensifier"},
+        "optional": true,
+        "options": [{"text": "high"}, {"text": "about"}]
+      },
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ mệnh đề", "en": "clause subject"}},
+      {"text": "V-ed", "role": "verb", "label": {"vi": "động từ quá khứ", "en": "past form"}}
+    ],
+    "illustration": {"kind": "timeline", "timeline": {"shape": "point_past"}}
+  },
+  "examples": [
+    {
+      "text": "It's time we started the meeting.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 5, "end": 9, "role": "complement"},
+        {"start": 10, "end": 12, "role": "subject"},
+        {"start": 13, "end": 20, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "started là dạng quá khứ nhưng chỉ hành động hiện tại nên làm.",
+        "en": "started is past form but refers to a present action that should happen."
+      },
+      "translation": {"vi": "Đã đến lúc chúng ta bắt đầu cuộc họp.", "en": "It's time we started the meeting."}
+    },
+    {
+      "text": "It's high time you apologised.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 5, "end": 9, "role": "marker"},
+        {"start": 10, "end": 14, "role": "complement"},
+        {"start": 15, "end": 18, "role": "subject"},
+        {"start": 19, "end": 29, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "high time nhấn mạnh rằng việc xin lỗi đã muộn.",
+        "en": "high time stresses that the apology is overdue."
+      },
+      "translation": {"vi": "Đã quá lúc bạn phải xin lỗi rồi.", "en": "It's high time you apologised."}
+    },
+    {
+      "text": "It's about time they fixed the road.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 5, "end": 10, "role": "marker"},
+        {"start": 11, "end": 15, "role": "complement"},
+        {"start": 16, "end": 20, "role": "subject"},
+        {"start": 21, "end": 26, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "about time thể hiện sự sốt ruột, việc sửa đường nên xảy ra từ lâu.",
+        "en": "about time shows impatience; the road should have been fixed earlier."
+      },
+      "translation": {"vi": "Đã đến lúc họ sửa con đường rồi.", "en": "It's about time they fixed the road."}
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Sau It's time + chủ ngữ, tiếng Anh dùng dạng quá khứ để nói hành động hiện tại nên làm, không dùng will.",
+        "en": "After It's time + subject, English uses the past form for a present action that should happen, not will."
+      },
+      "error_tag": "tense",
+      "l1": ["vi"],
+      "wrong": "It's time we will leave.",
+      "right": "It's time we left."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "It's time we ___ this project.",
+      "options": [
+        {"text": "finished", "error_tag": null},
+        {"text": "finish", "error_tag": "tense"},
+        {"text": "will finish", "error_tag": "tense"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau It's time + chủ ngữ, dùng quá khứ đơn finished dù nghĩa là hiện tại.",
+        "en": "After It's time + subject, use the past simple finished even though the meaning is present."
+      }
+    },
+    {
+      "q": "It's high time she ___ her mind.",
+      "options": [{"text": "made up", "error_tag": null}, {"text": "makes up", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "High time + chủ ngữ + quá khứ đơn: made up.",
+        "en": "High time + subject + past simple: made up."
+      }
+    },
+    {
+      "q": "It's about time they ___ the truth.",
+      "options": [
+        {"text": "told", "error_tag": null},
+        {"text": "tell", "error_tag": "tense"},
+        {"text": "are telling", "error_tag": "tense"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "About time + chủ ngữ + quá khứ đơn: told.",
+        "en": "About time + subject + past simple: told."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng It's time + chủ ngữ + động từ quá khứ về việc bạn hoặc ai đó nên làm ngay bây giờ.",
+      "en": "Write one sentence using It's time + subject + past form about something you or someone should do now."
+    },
+    "placeholder": "It's time I ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "subject", "any_of": ["It's"]},
+        {"role": "complement", "any_of": ["time"]},
+        {
+          "role": "verb",
+          "regex": "\\b\\w+ed\\b|\\b(?:went|did|made|took|gave|had|left|met|paid|said|saw|told|thought|found|got|kept|put|ran|sat|stood|understood|wrote)\\b"
+        }
+      ]
+    },
+    "sample": {"text": "It's time I called my parents."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791011275",
+    "generated_at": "2026-10-03T07:07:55Z",
+    "r5_source": {
+      "ids": ["b2-it-s-time-past-form"],
+      "content_version": 2,
+      "content_hash": "9abf0239a49a735924dfc1e7d5ff75bf8d6ab0b1e266925ba62f45242d3336f8",
+      "corrections": [
+        {
+          "r5_id": "b2-it-s-time-past-form",
+          "issue": "R5 lists 'It's time to go home' as an example of the target pattern, but this lesson teaches It's time + subject + past form, not the to-infinitive variant.",
+          "fix": "Removed the to-infinitive example and kept only subject-clause examples with past form."
+        },
+        {
+          "r5_id": "b2-it-s-time-past-form",
+          "issue": "R5's mistake 'It's high time he apologises' is labelled as a target mistake, but the correct form 'It's high time he apologised' is already given; the mistake is real but the explanation should name the tense mechanism.",
+          "fix": "Kept the mistake and wrote a reason that explains the past-form-after-subject rule."
+        },
+        {
+          "r5_id": "b2-it-s-time-past-form",
+          "issue": "R5's guided practice includes a recognition item that simply repeats the example without checking form or meaning.",
+          "fix": "Replaced with quick-practice cloze items that test the past form after It's time + subject."
+        }
+      ]
+    }
+  },
+  "review": null
+}

@@ -1,0 +1,220 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b2.038",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.verb_patterns",
+  "level": {"framework": "cefr", "value": "B2", "rank": 4},
+  "prereqs": ["en.canon.b1.047"],
+  "contrasts": [],
+  "error_tags": ["preposition"],
+  "source_refs": {"r5": ["b2-dependent-prepositions"]},
+  "point_type": "other",
+  "sequence": 6,
+  "aliases": ["b2-dependent-prepositions"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Dependent giới từ", "en": "Dependent prepositions"},
+    "native_title": "Dependent prepositions",
+    "level": {"framework": "cefr", "value": "B2", "rank": 4},
+    "summary": {
+      "vi": "Nhiều tính từ, động từ và danh từ trong tiếng Anh đi với một giới từ cố định, và giới từ đó không thể suy ra từ nghĩa tiếng Việt.",
+      "en": "Many English adjectives, verbs and nouns take a fixed preposition, and that preposition cannot be guessed from the meaning of the word alone."
+    },
+    "sub": {"vi": "giới từ cố định", "en": "fixed prepositions"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn dùng một tính từ như interested, responsible, capable và cần giới từ theo sau.",
+      "en": "When you use an adjective such as interested, responsible or capable and need the preposition that follows it."
+    },
+    {
+      "vi": "Khi động từ như depend, contribute, succeed được theo sau bởi một giới từ cố định.",
+      "en": "When a verb such as depend, contribute or succeed is followed by its fixed preposition."
+    },
+    {
+      "vi": "Khi danh từ như reason, solution, increase, effect cần giới từ nối với phần bổ nghĩa.",
+      "en": "When a noun such as reason, solution, increase or effect needs a preposition to link it to its complement."
+    },
+    {
+      "vi": "Khi giới từ đứng trước động từ, bạn phải dùng dạng V-ing chứ không dùng động từ nguyên thể.",
+      "en": "When the preposition is followed by a verb, you need the -ing form, not the bare infinitive."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {
+        "text": "verb/adjective/noun",
+        "role": "verb",
+        "label": {"vi": "động từ / tính từ / danh từ", "en": "verb / adjective / noun"}
+      },
+      {
+        "text": "preposition",
+        "role": "marker",
+        "label": {"vi": "giới từ cố định", "en": "dependent preposition"},
+        "options": [{"text": "for"}, {"text": "of"}, {"text": "on"}, {"text": "to"}, {"text": "in"}]
+      },
+      {
+        "text": "N/V-ing",
+        "role": "object",
+        "label": {"vi": "tân ngữ / dạng V-ing", "en": "object / -ing form"}
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "She is responsible for training new staff.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 18, "role": "verb"},
+        {"start": 19, "end": 22, "role": "marker"},
+        {"start": 23, "end": 41, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "responsible luôn đi với for khi nói ai chịu trách nhiệm việc gì.",
+        "en": "responsible always takes for when saying who is in charge of something."
+      },
+      "translation": {
+        "vi": "Cô ấy chịu trách nhiệm đào tạo nhân viên mới.",
+        "en": "She is responsible for training new staff."
+      }
+    },
+    {
+      "text": "Success depends on careful planning.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 7, "role": "subject"},
+        {"start": 8, "end": 15, "role": "verb"},
+        {"start": 16, "end": 18, "role": "marker"},
+        {"start": 19, "end": 35, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "depend luôn đi với on, không dùng in hay of.",
+        "en": "depend always takes on, never in or of."
+      },
+      "translation": {
+        "vi": "Thành công phụ thuộc vào việc lập kế hoạch cẩn thận.",
+        "en": "Success depends on careful planning."
+      }
+    },
+    {
+      "text": "The policy contributed to reducing waste.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 10, "role": "subject"},
+        {"start": 11, "end": 22, "role": "verb"},
+        {"start": 23, "end": 25, "role": "marker"},
+        {"start": 26, "end": 40, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "to ở đây là giới từ, nên theo sau là V-ing chứ không phải động từ nguyên thể.",
+        "en": "Here to is a preposition, so it is followed by the -ing form, not the bare infinitive."
+      },
+      "translation": {
+        "vi": "Chính sách đã góp phần giảm rác thải.",
+        "en": "The policy contributed to reducing waste."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học dịch từ tiếng Việt và chọn giới từ theo cảm giác, nhưng responsible chỉ đi với for khi nói trách nhiệm.",
+        "en": "Learners translate from Vietnamese and choose a preposition by feel, but responsible takes for when talking about responsibility."
+      },
+      "error_tag": "preposition",
+      "l1": ["vi"],
+      "wrong": "She is responsible of the team.",
+      "right": "She is responsible for the team."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "Success depends ___ careful planning.",
+      "options": [
+        {"text": "on", "error_tag": null},
+        {"text": "in", "error_tag": "preposition"},
+        {"text": "of", "error_tag": "preposition"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "depend là động từ đi với giới từ cố định on.",
+        "en": "depend is a verb that takes the fixed preposition on."
+      }
+    },
+    {
+      "q": "The new policy contributed ___ reducing waste.",
+      "options": [{"text": "to", "error_tag": null}, {"text": "for", "error_tag": "preposition"}],
+      "answer": 0,
+      "explain": {
+        "vi": "contribute đi với to, và to ở đây là giới từ nên theo sau là V-ing.",
+        "en": "contribute takes to, and here to is a preposition, so it is followed by the -ing form."
+      }
+    },
+    {
+      "q": "We still need a solution ___ this problem.",
+      "options": [
+        {"text": "to", "error_tag": null},
+        {"text": "for", "error_tag": "preposition"},
+        {"text": "of", "error_tag": "preposition"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Danh từ solution đi với giới từ to, không dùng for hay of.",
+        "en": "The noun solution takes the preposition to, not for or of."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về trách nhiệm của bạn ở nhà hoặc ở lớp, dùng responsible for + V-ing.",
+      "en": "Write one sentence about something you are responsible for at home or in class, using responsible for + -ing."
+    },
+    "placeholder": "I am responsible for ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "verb", "any_of": ["am responsible", "is responsible"]},
+        {"role": "marker", "any_of": ["for"]},
+        {"role": "object", "regex": "\\b\\w+ing\\b"}
+      ]
+    },
+    "sample": {"text": "I am responsible for organizing the class trip."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791011384",
+    "generated_at": "2026-10-03T07:09:44Z",
+    "r5_source": {
+      "ids": ["b2-dependent-prepositions"],
+      "content_version": 2,
+      "content_hash": "a903941003ea3fb070a0e5def9c752dc97b619626faec860a89a32664e205c7e",
+      "corrections": [
+        {
+          "r5_id": "b2-dependent-prepositions",
+          "issue": "The R5 lesson lists 'responsible for ≠ responsible to' as a contrast, but does not explain that responsible to is used for a person or body you answer to, which is a different relation.",
+          "fix": "Kept the point's scope on the fixed preposition and wrote the common mistake as responsible of → responsible for, with the reason that the preposition is lexical, not translated."
+        },
+        {
+          "r5_id": "b2-dependent-prepositions",
+          "issue": "The R5 mistake 'This contributed to reduce costs' is correct as a mistake, but the lesson does not state the rule that to after contribute is a preposition and therefore takes V-ing.",
+          "fix": "Added the rule in when_to_use and in the annotation of the example 'The policy contributed to reducing waste.'"
+        },
+        {
+          "r5_id": "b2-dependent-prepositions",
+          "issue": "The R5 guided practice asks learners to 'identify the target form' in a sentence, which is not a usable production task for this point.",
+          "fix": "Replaced it with a personal production card that asks the learner to write one sentence with responsible for + -ing."
+        }
+      ]
+    }
+  },
+  "review": null
+}

@@ -1,0 +1,222 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.c1.011",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.information_structure",
+  "level": {"framework": "cefr", "value": "C1", "rank": 5},
+  "prereqs": ["en.adverbs.manner_degree"],
+  "contrasts": [],
+  "error_tags": ["sentence_structure"],
+  "source_refs": {"r5": ["c1-negative-adverbial-inversion", "b2-negative-adverbial-inversion"]},
+  "point_type": "word_order",
+  "sequence": 2,
+  "aliases": ["c1-negative-adverbial-inversion", "b2-negative-adverbial-inversion"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Negative trạng từial đảo ngữ", "en": "Negative adverbial inversion"},
+    "native_title": "Negative adverbial inversion",
+    "level": {"framework": "cefr", "value": "C1", "rank": 5},
+    "summary": {
+      "vi": "Khi một trạng từ phủ định hoặc giới hạn được đưa lên đầu câu, trợ động từ đứng trước chủ ngữ để tạo nhấn mạnh và sắc thái trang trọng.",
+      "en": "When a negative or limiting adverbial is fronted, the auxiliary moves before the subject to create emphasis and a formal effect."
+    },
+    "sub": {"vi": "đảo ngữ phủ định", "en": "negative inversion"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Dùng trong văn viết trang trọng, báo chí, diễn văn hoặc văn học khi muốn nhấn mạnh mạnh mẽ.",
+      "en": "Use in formal writing, journalism, speeches or literary prose when you want strong emphasis."
+    },
+    {
+      "vi": "Dùng khi trạng từ phủ định hoặc giới hạn như never, rarely, seldom, little, not until, only after, under no circumstances, at no time đứng đầu câu.",
+      "en": "Use when a negative or limiting adverbial such as never, rarely, seldom, little, not until, only after, under no circumstances, at no time comes first in the sentence."
+    },
+    {
+      "vi": "Dùng trong các cấu trúc ghép như no sooner ... than, hardly/scarcely ... when/before, not only ... but also.",
+      "en": "Use in paired frames such as no sooner ... than, hardly/scarcely ... when/before, not only ... but also."
+    },
+    {
+      "vi": "Tránh dùng trong hội thoại thông thường hoặc email hàng ngày vì nghe quá trang trọng.",
+      "en": "Avoid in ordinary conversation or everyday email because it sounds overly formal."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "negative/limiting adverbial",
+        "role": "marker",
+        "label": {"vi": "trạng từ phủ định/giới hạn", "en": "negative/limiting adverbial"},
+        "options": [
+          {"text": "never"},
+          {"text": "rarely"},
+          {"text": "seldom"},
+          {"text": "little"},
+          {"text": "not until"},
+          {"text": "only after"},
+          {"text": "under no circumstances"},
+          {"text": "at no time"}
+        ]
+      },
+      {
+        "text": "aux",
+        "role": "aux",
+        "label": {"vi": "trợ động từ", "en": "auxiliary"},
+        "options": [
+          {"text": "do"},
+          {"text": "does"},
+          {"text": "did"},
+          {"text": "have"},
+          {"text": "has"},
+          {"text": "had"},
+          {"text": "should"},
+          {"text": "can"},
+          {"text": "could"},
+          {"text": "will"},
+          {"text": "would"}
+        ]
+      },
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ chính", "en": "main verb"}}
+    ],
+    "illustration": {"kind": "word_order"}
+  },
+  "examples": [
+    {
+      "text": "Never have I seen such a crowded station.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 5, "role": "marker"},
+        {"start": 6, "end": 10, "role": "aux"},
+        {"start": 11, "end": 12, "role": "subject"},
+        {"start": 13, "end": 17, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Never đứng đầu câu → đảo trợ động từ have lên trước chủ ngữ I.",
+        "en": "Never at the front → auxiliary have moves before subject I."
+      },
+      "translation": {
+        "vi": "Chưa bao giờ tôi thấy một ga đông đúc như vậy.",
+        "en": "Never have I seen such a crowded station."
+      }
+    },
+    {
+      "text": "Not until midnight did the noise stop.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 18, "role": "marker"},
+        {"start": 19, "end": 22, "role": "aux"},
+        {"start": 23, "end": 32, "role": "subject"},
+        {"start": 33, "end": 37, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Cụm not until + thời gian đứng đầu → mệnh đề chính đảo với did.",
+        "en": "Fronted not until + time phrase → main clause inverts with did."
+      },
+      "translation": {"vi": "Mãi tới nửa đêm tiếng ồn mới dừng.", "en": "Not until midnight did the noise stop."}
+    },
+    {
+      "text": "No sooner had we deployed the update than the alarm sounded.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 9, "role": "marker"},
+        {"start": 10, "end": 13, "role": "aux"},
+        {"start": 14, "end": 16, "role": "subject"},
+        {"start": 17, "end": 25, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "No sooner đứng đầu → đảo had lên trước chủ ngữ; than đứng sau mệnh đề chính.",
+        "en": "No sooner at the front → had moves before the subject; than follows the main clause."
+      },
+      "translation": {
+        "vi": "Vừa mới triển khai bản cập nhật thì chuông báo động vang lên.",
+        "en": "No sooner had we deployed the update than the alarm sounded."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Cụm not until + mệnh đề phụ không đảo; chỉ mệnh đề chính mới đảo trợ động từ.",
+        "en": "The not until + subordinate clause does not invert; only the main clause inverts the auxiliary."
+      },
+      "error_tag": "sentence_structure",
+      "l1": ["vi"],
+      "wrong": "Not until did I arrive I understand the problem.",
+      "right": "Not until I arrived did I understand the problem."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "Never ___ I seen such a crowded station.",
+      "options": [{"text": "have", "error_tag": null}, {"text": "I have", "error_tag": "sentence_structure"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau trạng từ phủ định Never đứng đầu câu, trợ động từ have phải đứng trước chủ ngữ I.",
+        "en": "After fronted negative Never, the auxiliary have must come before the subject I."
+      }
+    },
+    {
+      "q": "No sooner had we deployed the update ___ the alarm sounded.",
+      "options": [{"text": "than", "error_tag": null}, {"text": "when", "error_tag": "sentence_structure"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Cấu trúc no sooner ... than là cặp cố định; không dùng when.",
+        "en": "The frame no sooner ... than is fixed; when is not used."
+      }
+    },
+    {
+      "q": "Not until midnight ___ the noise stop.",
+      "options": [{"text": "did", "error_tag": null}, {"text": "does", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Mệnh đề chính dùng thì quá khứ đơn nên trợ động từ là did, không phải does.",
+        "en": "The main clause is past simple, so the auxiliary is did, not does."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về bản thân dùng đảo ngữ với trạng từ phủ định hoặc giới hạn ở đầu câu.",
+      "en": "Write a sentence about yourself using inversion with a negative or limiting adverbial at the front."
+    },
+    "placeholder": "Never have I ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "marker", "any_of": ["never", "not until"]},
+        {"role": "aux", "any_of": ["did", "have", "had"]},
+        {"role": "subject", "regex": "\\b(I|you|he|she|it|we|they)\\b"}
+      ]
+    },
+    "sample": {"text": "Never have I felt so relieved after an exam."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791011445",
+    "generated_at": "2026-10-03T07:10:45Z",
+    "r5_source": {
+      "ids": ["c1-negative-adverbial-inversion", "b2-negative-adverbial-inversion"],
+      "content_version": 2,
+      "content_hash": "3905777db395ba1098024aa7a63dae66ebc41dd2289e16dee5da7ec324e99897",
+      "corrections": [
+        {
+          "r5_id": "c1-negative-adverbial-inversion",
+          "issue": "The R5 lesson lists 'Not only did the patch fix the bug, but it also reduced memory use' as an example of negative adverbial inversion, but the second clause 'but it also reduced memory use' is not inverted and the example mixes two different structures.",
+          "fix": "Replaced with a clean paired example: 'No sooner had we deployed the update than the alarm sounded.'"
+        },
+        {
+          "r5_id": "b2-negative-adverbial-inversion",
+          "issue": "The R5 lesson includes 'Under no circumstances should you open this door' as an example, but the explanation does not mention that this is a modal inversion and not a do-support inversion.",
+          "fix": "Added a note in the formula options that modal auxiliaries like should, can, could, will, would are also used, and kept the example."
+        }
+      ]
+    }
+  },
+  "review": null
+}

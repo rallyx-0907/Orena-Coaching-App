@@ -1,0 +1,219 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b2.015",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.voice_causative",
+  "level": {"framework": "cefr", "value": "B2", "rank": 4},
+  "prereqs": ["en.canon.b2.013"],
+  "contrasts": [],
+  "error_tags": ["sentence_structure"],
+  "source_refs": {"r5": ["b2-two-object-passive"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": ["b2-two-object-passive"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Two-object bị động", "en": "Two-object passive"},
+    "native_title": "Two-object passive",
+    "level": {"framework": "cefr", "value": "B2", "rank": 4},
+    "summary": {
+      "vi": "Với động từ có hai tân ngữ, câu bị động có thể lấy người nhận hoặc vật làm chủ ngữ, tùy động từ và ngữ cảnh.",
+      "en": "With verbs that take two objects, the passive can promote either the recipient or the thing to subject, depending on the verb and the context."
+    },
+    "sub": {"vi": "bị động hai tân ngữ", "en": "two-object passive"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nhấn mạnh người nhận hành động hơn là người thực hiện.",
+      "en": "When you want to focus on the person who receives the action rather than the doer."
+    },
+    {
+      "vi": "Khi người thực hiện không quan trọng, không biết hoặc không cần nêu ra.",
+      "en": "When the doer is unimportant, unknown, or better left unmentioned."
+    },
+    {
+      "vi": "Trong văn viết trang trọng như báo cáo, thông báo, email công việc.",
+      "en": "In formal writing such as reports, announcements, and work emails."
+    },
+    {
+      "vi": "Khi muốn giữ người nhận làm chủ đề của câu để mạch văn liền lạc.",
+      "en": "When you want to keep the recipient as the topic so the text stays coherent."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {
+        "text": "be",
+        "role": "aux",
+        "label": {"vi": "trợ động từ be", "en": "auxiliary be"},
+        "options": [{"text": "was"}, {"text": "were"}]
+      },
+      {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}},
+      {"text": "N", "role": "object", "label": {"vi": "tân ngữ còn lại", "en": "retained object"}}
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "be",
+          "role": "aux",
+          "label": {"vi": "trợ động từ be", "en": "auxiliary be"},
+          "options": [{"text": "was"}, {"text": "were"}]
+        },
+        {"text": "not", "role": "marker", "label": {"vi": "phủ định", "en": "negation"}},
+        {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}},
+        {"text": "N", "role": "object", "label": {"vi": "tân ngữ còn lại", "en": "retained object"}}
+      ],
+      "question": [
+        {
+          "text": "be",
+          "role": "aux",
+          "label": {"vi": "trợ động từ be", "en": "auxiliary be"},
+          "options": [{"text": "Was"}, {"text": "Were"}]
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}},
+        {"text": "N", "role": "object", "label": {"vi": "tân ngữ còn lại", "en": "retained object"}}
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "I was offered a new position.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 2, "end": 5, "role": "aux"},
+        {"start": 6, "end": 13, "role": "verb"},
+        {"start": 14, "end": 28, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Người nhận 'I' được đưa lên làm chủ ngữ; vật 'a new position' giữ lại làm tân ngữ.",
+        "en": "The recipient 'I' is promoted to subject; the thing 'a new position' is retained as object."
+      },
+      "translation": {"vi": "Tôi được đề nghị một vị trí mới.", "en": "I was offered a new position."}
+    },
+    {
+      "text": "She was sent a confirmation email.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 7, "role": "aux"},
+        {"start": 8, "end": 12, "role": "verb"},
+        {"start": 13, "end": 33, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Người nhận 'She' làm chủ ngữ; 'a confirmation email' là tân ngữ còn lại.",
+        "en": "The recipient 'She' is the subject; 'a confirmation email' is the retained object."
+      },
+      "translation": {"vi": "Cô ấy được gửi một email xác nhận.", "en": "She was sent a confirmation email."}
+    },
+    {
+      "text": "We were shown the new system.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 3, "end": 7, "role": "aux"},
+        {"start": 8, "end": 13, "role": "verb"},
+        {"start": 14, "end": 28, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Người nhận 'We' làm chủ ngữ; 'the new system' là tân ngữ còn lại.",
+        "en": "The recipient 'We' is the subject; 'the new system' is the retained object."
+      },
+      "translation": {"vi": "Chúng tôi được cho xem hệ thống mới.", "en": "We were shown the new system."}
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Khi vật làm chủ ngữ, người nhận còn lại thường cần giới từ 'to' trước nó; thiếu 'to' là lỗi cấu trúc câu.",
+        "en": "When the thing is the subject, the retained recipient normally needs 'to' before it; omitting 'to' is a sentence-structure error."
+      },
+      "error_tag": "sentence_structure",
+      "l1": ["vi"],
+      "wrong": "A refund was given me.",
+      "right": "A refund was given to me."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "I ___ offered a new position.",
+      "options": [{"text": "was", "error_tag": null}, {"text": "were", "error_tag": "agreement"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Chủ ngữ 'I' đi với 'was', không phải 'were'.",
+        "en": "The subject 'I' takes 'was', not 'were'."
+      }
+    },
+    {
+      "q": "She was ___ a confirmation email.",
+      "options": [{"text": "sent", "error_tag": null}, {"text": "send", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 'was' cần quá khứ phân từ 'sent', không dùng 'send'.",
+        "en": "After 'was' we need the past participle 'sent', not 'send'."
+      }
+    },
+    {
+      "q": "A refund was given ___ every customer.",
+      "options": [{"text": "to", "error_tag": null}, {"text": "for", "error_tag": "preposition"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Với 'give', người nhận còn lại dùng giới từ 'to', không dùng 'for'.",
+        "en": "With 'give', the retained recipient takes 'to', not 'for'."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu kể về một việc bạn đã được ai đó làm cho, dùng bị động hai tân ngữ.",
+      "en": "Write one sentence about something you were given, sent, or offered, using the two-object passive."
+    },
+    "placeholder": "I was given ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "aux", "any_of": ["was", "were"]},
+        {"role": "verb", "regex": "\\b(given|sent|offered|shown|told|paid|awarded|lent)\\b"}
+      ]
+    },
+    "sample": {"text": "I was given a second chance."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791011306",
+    "generated_at": "2026-10-03T07:08:26Z",
+    "r5_source": {
+      "ids": ["b2-two-object-passive"],
+      "content_version": 2,
+      "content_hash": "c111ba8ff025b4e8f10d3aef4409b8b7c6e9ea870438eef3662568337052ffb4",
+      "corrections": [
+        {
+          "r5_id": "b2-two-object-passive",
+          "issue": "The R5 lesson lists 'I was explained the problem' as a mistake, but 'explain' does not take the double-object pattern at all, so the correction 'The problem was explained to me' is right for a different reason than the lesson implies.",
+          "fix": "Kept only the 'A refund was given me' mistake, which is a genuine two-object passive error, and dropped the 'explain' example because it is outside this point's pattern."
+        },
+        {
+          "r5_id": "b2-two-object-passive",
+          "issue": "The R5 rules say the thing-subject passive 'often requires to/for before retained recipient' without distinguishing which verbs take 'to' and which take 'for'.",
+          "fix": "Narrowed the rule to 'to' for the give/send/offer/show/tell group taught here, and left 'for' out of the formula and examples."
+        },
+        {
+          "r5_id": "b2-two-object-passive",
+          "issue": "The R5 examples mix recipient-subject and thing-subject passives without marking which is which, so a learner cannot see the two patterns separately.",
+          "fix": "Used three recipient-subject examples in the main examples and kept the thing-subject pattern in the common mistake and quick practice, where the 'to' contrast is visible."
+        }
+      ]
+    }
+  },
+  "review": null
+}

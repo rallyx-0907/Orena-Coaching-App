@@ -1,0 +1,248 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.c1.003",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.aspect_viewpoint",
+  "level": {"framework": "cefr", "value": "C1", "rank": 5},
+  "prereqs": ["en.canon.b2.044"],
+  "contrasts": [],
+  "error_tags": ["tense"],
+  "source_refs": {"r5": ["c1-advanced-simple-vs-continuous-aspect", "c1-advanced-perfect-aspect"]},
+  "point_type": "tense_aspect",
+  "sequence": 1,
+  "aliases": ["c1-advanced-simple-vs-continuous-aspect", "c1-advanced-perfect-aspect"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Advanced simple vs continuous aspect", "en": "Advanced simple vs continuous aspect"},
+    "native_title": "Advanced simple vs continuous aspect",
+    "level": {"framework": "cefr", "value": "C1", "rank": 5},
+    "summary": {
+      "vi": "Phân biệt thể đơn và thể tiếp diễn ở trình độ C1: thể đơn trình bày sự việc như một sự thật ổn định hoặc đặc điểm, còn thể tiếp diễn trình bày sự việc đang diễn ra, tạm thời, đang thay đổi hoặc lặp lại có sắc thái đánh giá.",
+      "en": "The advanced simple vs continuous contrast: the simple presents a situation as a stable fact or characteristic, while the continuous presents it as unfolding, temporary, changing, or repeated with an evaluative stance."
+    },
+    "sub": {"vi": "thể đơn và tiếp diễn", "en": "simple vs continuous"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi một động từ như think, have, see, be, taste, appear đổi nghĩa tùy theo thể: thể đơn cho nghĩa trạng thái, thể tiếp diễn cho nghĩa hành động hoặc trải nghiệm tạm thời.",
+      "en": "When a verb such as think, have, see, be, taste, or appear changes meaning with aspect: the simple carries the state sense, the continuous the action or temporary-experience sense."
+    },
+    {
+      "vi": "Khi bạn muốn phân biệt đặc điểm lâu dài với hành vi tạm thời: thể đơn mô tả bản chất, thể tiếp diễn mô tả cách cư xử nhất thời.",
+      "en": "When you need to separate a lasting characteristic from temporary behaviour: the simple describes the nature, the continuous the behaviour at a particular time."
+    },
+    {
+      "vi": "Khi bạn muốn thể hiện sự thay đổi đang tiến triển hoặc xu hướng, dùng thể tiếp diễn thay vì thể đơn.",
+      "en": "When you want to show an unfolding change or trend, use the continuous rather than the simple."
+    },
+    {
+      "vi": "Khi thể tiếp diễn đi với always hoặc constantly để bình luận về hành vi lặp lại gây khó chịu hoặc đáng chú ý.",
+      "en": "When the continuous combines with always or constantly to comment on repeated behaviour that is irritating or striking."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {
+        "text": "be",
+        "role": "aux",
+        "label": {"vi": "trợ động từ", "en": "auxiliary"},
+        "options": [{"text": "am"}, {"text": "is"}, {"text": "are"}, {"text": "was"}, {"text": "were"}]
+      },
+      {
+        "text": "V-ing",
+        "role": "verb",
+        "label": {"vi": "động từ đuôi -ing", "en": "present participle"}
+      },
+      {
+        "text": "O/C",
+        "role": "complement",
+        "label": {"vi": "tân ngữ hoặc bổ ngữ", "en": "object or complement"},
+        "optional": true
+      }
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "be",
+          "role": "aux",
+          "label": {"vi": "trợ động từ", "en": "auxiliary"},
+          "options": [{"text": "am"}, {"text": "is"}, {"text": "are"}, {"text": "was"}, {"text": "were"}]
+        },
+        {"text": "not", "role": "marker", "label": {"vi": "phủ định", "en": "negation"}},
+        {
+          "text": "V-ing",
+          "role": "verb",
+          "label": {"vi": "động từ đuôi -ing", "en": "present participle"}
+        },
+        {
+          "text": "O/C",
+          "role": "complement",
+          "label": {"vi": "tân ngữ hoặc bổ ngữ", "en": "object or complement"},
+          "optional": true
+        }
+      ],
+      "question": [
+        {
+          "text": "be",
+          "role": "aux",
+          "label": {"vi": "trợ động từ", "en": "auxiliary"},
+          "options": [{"text": "Am"}, {"text": "Is"}, {"text": "Are"}, {"text": "Was"}, {"text": "Were"}]
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "V-ing",
+          "role": "verb",
+          "label": {"vi": "động từ đuôi -ing", "en": "present participle"}
+        },
+        {
+          "text": "O/C",
+          "role": "complement",
+          "label": {"vi": "tân ngữ hoặc bổ ngữ", "en": "object or complement"},
+          "optional": true
+        }
+      ]
+    },
+    "illustration": {"kind": "timeline", "timeline": {"shape": "ongoing_now"}}
+  },
+  "examples": [
+    {
+      "text": "The market is becoming increasingly volatile.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 10, "role": "subject"},
+        {"start": 11, "end": 13, "role": "aux"},
+        {"start": 14, "end": 22, "role": "verb"},
+        {"start": 23, "end": 44, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Thể tiếp diễn với become cho thấy sự thay đổi đang tiến triển, không phải một trạng thái cố định.",
+        "en": "The continuous with become shows an unfolding change, not a fixed state."
+      },
+      "translation": {
+        "vi": "Thị trường đang ngày càng biến động.",
+        "en": "The market is becoming increasingly volatile."
+      }
+    },
+    {
+      "text": "I am seeing the director tomorrow.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 2, "end": 4, "role": "aux"},
+        {"start": 5, "end": 11, "role": "verb"},
+        {"start": 12, "end": 33, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "See ở thể tiếp diễn đổi sang nghĩa 'gặp' và chỉ một cuộc hẹn đã sắp xếp, khác với nghĩa trạng thái 'hiểu' ở thể đơn.",
+        "en": "See in the continuous shifts to 'meet' and marks an arranged appointment, unlike the state sense 'understand' in the simple."
+      },
+      "translation": {"vi": "Tôi có lịch gặp giám đốc ngày mai.", "en": "I am seeing the director tomorrow."}
+    },
+    {
+      "text": "You're being unusually quiet today.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 3, "end": 6, "role": "aux"},
+        {"start": 7, "end": 12, "role": "verb"},
+        {"start": 13, "end": 34, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Be ở thể tiếp diễn mô tả hành vi tạm thời hôm nay, khác với tính cách lâu dài.",
+        "en": "Be in the continuous describes temporary behaviour today, as opposed to a lasting characteristic."
+      },
+      "translation": {"vi": "Hôm nay bạn đang im lặng khác thường.", "en": "You're being unusually quiet today."}
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "See với nghĩa 'hiểu' là động từ trạng thái, không dùng ở thể tiếp diễn; thể tiếp diễn sẽ đổi nghĩa thành 'gặp'.",
+        "en": "See meaning 'understand' is a state verb and does not take the continuous; the continuous would change the meaning to 'meet'."
+      },
+      "error_tag": "tense",
+      "l1": ["vi"],
+      "wrong": "I am seeing what you mean.",
+      "right": "I see what you mean."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "I ___ what you mean; the proposal needs more work.",
+      "options": [{"text": "see", "error_tag": null}, {"text": "am seeing", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "See với nghĩa 'hiểu' là trạng thái, nên dùng thể đơn; 'am seeing' mang nghĩa 'đang gặp'.",
+        "en": "See meaning 'understand' is a state, so the simple is required; 'am seeing' means 'meeting'."
+      }
+    },
+    {
+      "q": "She ___ about the offer at the moment, so she hasn't replied yet.",
+      "options": [{"text": "is thinking", "error_tag": null}, {"text": "thinks", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Think ở thể tiếp diễn chỉ quá trình suy nghĩ đang diễn ra; thể đơn 'thinks' chỉ ý kiến hoặc quan điểm.",
+        "en": "Think in the continuous marks an ongoing process of considering; the simple 'thinks' states an opinion or belief."
+      }
+    },
+    {
+      "q": "He ___ usually patient, but today he is being difficult.",
+      "options": [{"text": "is", "error_tag": null}, {"text": "is being", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Tính cách lâu dài dùng thể đơn 'is'; thể tiếp diễn 'is being' chỉ hành vi tạm thời.",
+        "en": "A lasting characteristic takes the simple 'is'; the continuous 'is being' marks temporary behaviour."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về hành vi tạm thời của một người quen, dùng thể tiếp diễn với be + tính từ để tương phản với tính cách thường ngày của họ.",
+      "en": "Write one sentence about someone you know behaving temporarily in a certain way, using the continuous with be + adjective to contrast with their usual character."
+    },
+    "placeholder": "My colleague is being ...",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"role": "aux", "any_of": ["am", "is"]}]},
+    "sample": {"text": "My colleague is being unusually patient with the new intern today."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791011423",
+    "generated_at": "2026-10-03T07:10:23Z",
+    "r5_source": {
+      "ids": ["c1-advanced-simple-vs-continuous-aspect", "c1-advanced-perfect-aspect"],
+      "content_version": 2,
+      "content_hash": "d7e521a0d5a62e0933d812e0b033afb56ea9a04cee574a59671d7b617ad8f47b",
+      "corrections": [
+        {
+          "r5_id": "c1-advanced-simple-vs-continuous-aspect",
+          "issue": "The R5 mistake pair 'He is always polite, but today he is being rude' was labelled incorrect, but the 'why' field itself admits it is a valid contrast; the real error is using the simple for temporary behaviour without an intended characteristic reading.",
+          "fix": "Replaced it with a genuine learner error: 'I am seeing what you mean' → 'I see what you mean', where see meaning 'understand' is a state verb and cannot take the continuous."
+        },
+        {
+          "r5_id": "c1-advanced-simple-vs-continuous-aspect",
+          "issue": "The R5 lesson had no structured formula, no negative or question variants, no spans, and no quick-practice items, so it could not be rendered as a grammar card.",
+          "fix": "Added the abstract formula S + be + V-ing (+ O/C), the negative and question variants, span-annotated examples, and three cloze questions with tagged distractors."
+        },
+        {
+          "r5_id": "c1-advanced-simple-vs-continuous-aspect",
+          "issue": "The R5 contrast list mixed a valid contrast pair with a non-contrast, and the lesson scope named 'Advanced perfect aspect' as a required contrast target even though this point's compare list is empty.",
+          "fix": "Dropped the compare section entirely and kept the aspect contrast inside the explanation and examples instead."
+        },
+        {
+          "r5_id": "c1-advanced-perfect-aspect",
+          "issue": "This R5 lesson belongs to a different grammar point (perfect aspect) and was included only as a contrast source; carrying its content into this lesson would teach a sibling topic.",
+          "fix": "Excluded it from the lesson content; only the simple-vs-continuous point is taught here."
+        }
+      ]
+    }
+  },
+  "review": null
+}

@@ -1,0 +1,235 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.c1.012",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.hypothetical_counterfactual",
+  "level": {"framework": "cefr", "value": "C1", "rank": 5},
+  "prereqs": ["en.canon.b2.005"],
+  "contrasts": [],
+  "error_tags": ["tense", "sentence_structure"],
+  "source_refs": {"r5": ["c1-conditional-inversion", "b2-conditional-inversion-introduction"]},
+  "point_type": "word_order",
+  "sequence": 1,
+  "aliases": ["c1-conditional-inversion", "b2-conditional-inversion-introduction"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "câu điều kiện đảo ngữ", "en": "Conditional inversion"},
+    "native_title": "Conditional inversion",
+    "level": {"framework": "cefr", "value": "C1", "rank": 5},
+    "summary": {
+      "vi": "Câu điều kiện đảo ngữ bỏ 'if' bằng cách đưa 'had', 'were' hoặc 'should' lên trước chủ ngữ, dùng trong văn phong trang trọng hoặc giả định không có thật.",
+      "en": "Conditional inversion drops 'if' by placing 'had', 'were' or 'should' before the subject, used in formal style or counterfactual hypotheses."
+    },
+    "sub": {"vi": "đảo ngữ điều kiện", "en": "conditional inversion"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Trong văn viết trang trọng, email công việc hoặc diễn ngôn học thuật, khi muốn nhấn mạnh điều kiện giả định.",
+      "en": "In formal writing, business emails or academic discourse, when you want to emphasise a hypothetical condition."
+    },
+    {
+      "vi": "Khi điều kiện là giả định không có thật ở quá khứ (third conditional) và bạn muốn câu văn gọn, có trọng lượng hơn.",
+      "en": "When the condition is a counterfactual in the past (third conditional) and you want a more compact, weighty sentence."
+    },
+    {
+      "vi": "Khi đưa ra lời khuyên hoặc yêu cầu mang tính trang trọng, ít khả năng xảy ra, dùng 'should' đảo ngữ.",
+      "en": "When giving formal, low-probability advice or requests, using inverted 'should'."
+    },
+    {
+      "vi": "Khi dùng khung giả định 'Were it not for' hoặc 'Had it not been for' để nói nếu không nhờ điều gì.",
+      "en": "When using the counterfactual frames 'Were it not for' or 'Had it not been for' to say if it were not for something."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "Had", "role": "aux", "label": {"vi": "trợ động từ đảo", "en": "inverted auxiliary"}},
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}},
+      {
+        "text": "result clause",
+        "role": "complement",
+        "label": {"vi": "mệnh đề kết quả", "en": "result clause"}
+      }
+    ],
+    "variants": {
+      "negative": [
+        {
+          "text": "Had",
+          "role": "aux",
+          "label": {"vi": "trợ động từ đảo", "en": "inverted auxiliary"}
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {"text": "not", "role": "marker", "label": {"vi": "phủ định", "en": "negation"}},
+        {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}},
+        {
+          "text": "result clause",
+          "role": "complement",
+          "label": {"vi": "mệnh đề kết quả", "en": "result clause"}
+        }
+      ]
+    },
+    "illustration": {"kind": "word_order"}
+  },
+  "examples": [
+    {
+      "text": "Had she taken the job, she would be in London now.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "aux"},
+        {"start": 4, "end": 7, "role": "subject"},
+        {"start": 8, "end": 13, "role": "verb"},
+        {"start": 23, "end": 49, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Điều kiện quá khứ không có thật, kết quả hiện tại.",
+        "en": "Past counterfactual condition, present result."
+      },
+      "translation": {
+        "vi": "Nếu cô ấy đã nhận việc, giờ cô ấy sẽ ở London.",
+        "en": "If she had taken the job, she would be in London now."
+      }
+    },
+    {
+      "text": "Had it not been for your warning, we would have deployed the faulty build.",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "aux"},
+        {"start": 4, "end": 6, "role": "subject"},
+        {"start": 7, "end": 10, "role": "marker"},
+        {"start": 11, "end": 15, "role": "verb"},
+        {"start": 34, "end": 73, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Khung giả định 'Had it not been for' nghĩa là nếu không nhờ.",
+        "en": "Counterfactual frame 'Had it not been for' meaning if it had not been for."
+      },
+      "translation": {
+        "vi": "Nếu không nhờ cảnh báo của bạn, chúng tôi đã triển khai bản lỗi.",
+        "en": "If it had not been for your warning, we would have deployed the faulty build."
+      }
+    },
+    {
+      "text": "Should you require assistance, contact the support team.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 6, "role": "aux"},
+        {"start": 7, "end": 10, "role": "subject"},
+        {"start": 11, "end": 18, "role": "verb"},
+        {"start": 31, "end": 55, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Đảo ngữ với 'should' diễn tả điều kiện trang trọng, ít khả năng.",
+        "en": "Inversion with 'should' expresses a formal, low-probability condition."
+      },
+      "translation": {
+        "vi": "Nếu bạn cần hỗ trợ, hãy liên hệ nhóm hỗ trợ.",
+        "en": "If you require assistance, contact the support team."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Khi đã dùng đảo ngữ với 'had', không giữ 'if' nữa; 'if' và đảo ngữ loại trừ nhau.",
+        "en": "When using inversion with 'had', do not keep 'if'; 'if' and inversion are mutually exclusive."
+      },
+      "error_tag": "sentence_structure",
+      "l1": ["vi"],
+      "wrong": "If had I known, I would have called.",
+      "right": "Had I known, I would have called."
+    },
+    {
+      "reason": {
+        "vi": "Sau đảo ngữ 'were', không dùng thêm 'was'; 'were' đã là dạng giả định.",
+        "en": "After inverted 'were', do not add 'was'; 'were' is already the hypothetical form."
+      },
+      "error_tag": "tense",
+      "l1": ["vi"],
+      "wrong": "Were I was you, I'd wait.",
+      "right": "Were I you, I'd wait."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "___ I known about the meeting, I would have attended.",
+      "options": [
+        {"text": "Had", "error_tag": null},
+        {"text": "If had", "error_tag": "sentence_structure"},
+        {"text": "Have", "error_tag": "tense"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Đảo ngữ với 'had' thay cho 'if I had known'.",
+        "en": "Inversion with 'had' replaces 'if I had known'."
+      }
+    },
+    {
+      "q": "___ it not for your help, we would have failed.",
+      "options": [
+        {"text": "Were", "error_tag": null},
+        {"text": "Was", "error_tag": "tense"},
+        {"text": "If were", "error_tag": "sentence_structure"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Khung giả định cố định 'Were it not for'.",
+        "en": "Fixed counterfactual frame 'Were it not for'."
+      }
+    },
+    {
+      "q": "___ you need further information, please let me know.",
+      "options": [
+        {"text": "Should", "error_tag": null},
+        {"text": "If should", "error_tag": "sentence_structure"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Đảo ngữ với 'should' diễn tả điều kiện trang trọng.",
+        "en": "Inversion with 'should' expresses a formal condition."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu điều kiện đảo ngữ về một tình huống giả định trong quá khứ của bạn.",
+      "en": "Write a conditional inversion sentence about a hypothetical situation in your past."
+    },
+    "placeholder": "Had I ...",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"role": "aux", "any_of": ["Had", "Should"]}]},
+    "sample": {"text": "Had I known about the deadline, I would have submitted the report earlier."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791011454",
+    "generated_at": "2026-10-03T07:10:54Z",
+    "r5_source": {
+      "ids": ["c1-conditional-inversion", "b2-conditional-inversion-introduction"],
+      "content_version": 2,
+      "content_hash": "aa002aac0038a29a12a19abe3f7bd523ca7d276272c54d3e771ca2e29b0554e6",
+      "corrections": [
+        {
+          "r5_id": "c1-conditional-inversion",
+          "issue": "Example 'Had she taken the job, she would be in London now.' is a mixed conditional but the R5 lesson did not explicitly label it as such, which could confuse learners about time reference.",
+          "fix": "Added annotation clarifying that it is a past counterfactual condition with a present result."
+        },
+        {
+          "r5_id": "c1-conditional-inversion",
+          "issue": "The mistake 'Were not for the backup, the outage would be worse.' was listed, but the correction 'Were it not for the backup, the outage would be worse.' was not clearly explained as requiring the dummy subject 'it'.",
+          "fix": "Included a common mistake entry with the reason that the counterfactual frame requires dummy subject 'it'."
+        },
+        {
+          "r5_id": "b2-conditional-inversion-introduction",
+          "issue": "The B2 lesson included examples and rules that overlap with C1, such as 'Were I in your position', which is more appropriate for C1 scope.",
+          "fix": "Focused the C1 lesson on the C1-specific scope: mixed-time result, negative support frames, and register, and omitted B2-level examples."
+        }
+      ]
+    }
+  },
+  "review": null
+}

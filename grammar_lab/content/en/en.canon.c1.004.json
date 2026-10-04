@@ -1,0 +1,221 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.c1.004",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.aspect_viewpoint",
+  "level": {"framework": "cefr", "value": "C1", "rank": 5},
+  "prereqs": ["en.canon.c1.003"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["c1-lexical-aspect-and-meaning-shifts", "c2-advanced-tense-aspect-viewpoint-shifts"]},
+  "point_type": "tense_aspect",
+  "sequence": 2,
+  "aliases": ["c1-lexical-aspect-and-meaning-shifts", "c2-advanced-tense-aspect-viewpoint-shifts"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Lexical aspect and meaning shifts", "en": "Lexical aspect and meaning shifts"},
+    "native_title": "Lexical aspect and meaning shifts",
+    "level": {"framework": "cefr", "value": "C1", "rank": 5},
+    "summary": {
+      "vi": "Điểm ngữ pháp này giải thích cách thể (aspect) từ vựng của động từ — trạng thái, hoạt động, thành tựu, khoảnh khắc — kết hợp với thì - thể để tạo ra nghĩa khác nhau, và cách dùng thể tiếp diễn có thể chuyển nghĩa của một động từ.",
+      "en": "This point explains how a verb's lexical aspect — state, activity, accomplishment, achievement — interacts with tense and aspect to produce different meanings, and how the progressive can shift a verb's meaning."
+    },
+    "sub": {"vi": "thể từ vựng", "en": "lexical aspect"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn cần phân biệt một trạng thái (know, own) với một hoạt động (think about, consider) để chọn đúng thì.",
+      "en": "When you need to distinguish a state (know, own) from an activity (think about, consider) in order to choose the right tense."
+    },
+    {
+      "vi": "Khi một động từ như have, be, love, think xuất hiện ở thể tiếp diễn và bạn muốn hiểu nghĩa của nó đã thay đổi thế nào.",
+      "en": "When a verb like have, be, love, or think appears in the progressive and you want to understand how its meaning has shifted."
+    },
+    {
+      "vi": "Khi bạn muốn diễn đạt một sự việc có điểm kết thúc (write a report) so với một quá trình không nhấn mạnh điểm kết thúc (was writing a report).",
+      "en": "When you want to express an event with an endpoint (write a report) versus a process where the endpoint is not asserted (was writing a report)."
+    },
+    {
+      "vi": "Khi bạn cần chọn giữa thì đơn và thì tiếp diễn để thay đổi cách người đọc hình dung sự việc là trọn vẹn, đang diễn ra, hay đã hoàn thành.",
+      "en": "When you need to choose between simple and progressive to change whether the reader views an event as whole, in progress, or completed."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {
+        "text": "V",
+        "role": "verb",
+        "label": {"vi": "động từ (thể từ vựng)", "en": "verb (lexical aspect)"}
+      },
+      {
+        "text": "O/C",
+        "role": "object",
+        "label": {"vi": "tân ngữ / bổ ngữ", "en": "object / complement"},
+        "optional": true
+      },
+      {
+        "text": "time",
+        "role": "time",
+        "label": {"vi": "trạng ngữ thời gian", "en": "time adverbial"},
+        "optional": true
+      }
+    ],
+    "illustration": {"kind": "timeline", "timeline": {"shape": "point_past"}}
+  },
+  "examples": [
+    {
+      "text": "She owns two apartments.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 8, "role": "verb"},
+        {"start": 9, "end": 23, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "own là trạng thái, không dùng tiếp diễn trong nghĩa sở hữu.",
+        "en": "own is a state; it does not take the progressive in its possession sense."
+      },
+      "translation": {"vi": "Cô ấy sở hữu hai căn hộ.", "en": "She owns two apartments."}
+    },
+    {
+      "text": "He was writing the report when I called.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 3, "end": 14, "role": "verb"},
+        {"start": 15, "end": 25, "role": "object"},
+        {"start": 26, "end": 39, "role": "time"}
+      ],
+      "annotation": {
+        "vi": "was writing cho thấy quá trình đang diễn ra, không khẳng định đã viết xong.",
+        "en": "was writing presents the process in progress; it does not assert completion."
+      },
+      "translation": {
+        "vi": "Anh ấy đang viết báo cáo khi tôi gọi.",
+        "en": "He was writing the report when I called."
+      }
+    },
+    {
+      "text": "He wrote the report in two hours.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 3, "end": 8, "role": "verb"},
+        {"start": 9, "end": 19, "role": "object"},
+        {"start": 20, "end": 32, "role": "time"}
+      ],
+      "annotation": {
+        "vi": "wrote với 'in two hours' nhấn mạnh điểm kết thúc: báo cáo đã hoàn thành.",
+        "en": "wrote with 'in two hours' asserts an endpoint: the report was completed."
+      },
+      "translation": {"vi": "Anh ấy viết xong báo cáo trong hai giờ.", "en": "He wrote the report in two hours."}
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "own là động từ trạng thái trong nghĩa sở hữu; thể tiếp diễn không dùng được vì nó biến trạng thái thành một hoạt động tạm thời.",
+        "en": "own is a stative verb in its possession sense; the progressive is not used because it would recast a state as a temporary activity."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "She is owning two apartments.",
+      "right": "She owns two apartments."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "She ___ two apartments in the city centre.",
+      "options": [{"text": "owns", "error_tag": null}, {"text": "is owning", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "own là trạng thái sở hữu, không dùng thể tiếp diễn.",
+        "en": "own is a state of possession; it does not take the progressive."
+      }
+    },
+    {
+      "q": "He ___ the report when I called him.",
+      "options": [{"text": "was writing", "error_tag": null}, {"text": "wrote", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Hành động đang diễn ra tại thời điểm bị ngắt quãng cần thì quá khứ tiếp diễn.",
+        "en": "An action in progress at the moment it was interrupted requires the past progressive."
+      }
+    },
+    {
+      "q": "He ___ the report in two hours.",
+      "options": [{"text": "wrote", "error_tag": null}, {"text": "was writing", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Cụm 'in two hours' nhấn mạnh điểm kết thúc, nên dùng thì quá khứ đơn để chỉ sự hoàn thành.",
+        "en": "The phrase 'in two hours' asserts an endpoint, so the simple past is used to express completion."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một việc bạn đã hoàn thành trong một khoảng thời gian cụ thể, dùng thì quá khứ đơn với động từ chỉ thành tựu.",
+      "en": "Write a sentence about something you completed within a specific time period, using the simple past with an accomplishment verb."
+    },
+    "placeholder": "I wrote ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {
+          "role": "verb",
+          "regex": "\\b(wrote|finished|completed|built|made|read|painted|cleaned|organized|prepared)\\b"
+        },
+        {
+          "role": "time",
+          "regex": "\\bin\\s+(\\d+|one|two|three|four|five|six|seven|eight|nine|ten|a few|several)\\s+(minutes?|hours?|days?|weeks?|months?|years?)\\b"
+        }
+      ]
+    },
+    "sample": {"text": "I wrote the report in two hours."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791011413",
+    "generated_at": "2026-10-03T07:10:13Z",
+    "r5_source": {
+      "ids": ["c1-lexical-aspect-and-meaning-shifts", "c2-advanced-tense-aspect-viewpoint-shifts"],
+      "content_version": 2,
+      "content_hash": "a5088385ac31b3908c00d59784c14ad2e614d6e75afaecf9befa5909bf8c559f",
+      "corrections": [
+        {
+          "r5_id": "c1-lexical-aspect-and-meaning-shifts",
+          "issue": "The R5 lesson includes examples and rules that belong to a C2 point (advanced tense/aspect viewpoint shifts), such as 'The 2022 survey found a decline in trust. This finding remains relevant today.' and 'I was waiting at the station when this woman comes over and asks for help.'",
+          "fix": "Removed those examples and rules; kept only content about lexical aspect and meaning shifts at C1 level."
+        },
+        {
+          "r5_id": "c1-lexical-aspect-and-meaning-shifts",
+          "issue": "The R5 lesson lists 'He was reaching the summit at noon.' as a mistake, but this sentence can be acceptable in specific contexts (e.g., describing a gradual approach).",
+          "fix": "Replaced with a clearer mistake: 'She is owning two apartments.' which is ungrammatical in the possession sense."
+        },
+        {
+          "r5_id": "c1-lexical-aspect-and-meaning-shifts",
+          "issue": "The R5 lesson does not provide a clear formula or structured explanation for the point.",
+          "fix": "Added a formula with abstract slots (S + V + O/C + time) and structured when_to_use conditions."
+        },
+        {
+          "r5_id": "c1-lexical-aspect-and-meaning-shifts",
+          "issue": "The R5 lesson includes guided practice items that are not suitable for the quick_practice format (e.g., recognition, contrast, correction, production).",
+          "fix": "Replaced with three cloze questions that test the point directly."
+        },
+        {
+          "r5_id": "c2-advanced-tense-aspect-viewpoint-shifts",
+          "issue": "This lesson is for C2 and covers a different point (advanced tense/aspect viewpoint shifts), not the C1 point 'Lexical aspect and meaning shifts'.",
+          "fix": "Excluded this lesson from the current point; it is not relevant to the C1 point."
+        }
+      ]
+    }
+  },
+  "review": null
+}

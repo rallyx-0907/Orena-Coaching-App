@@ -266,6 +266,10 @@ functions:
     - en.canon.a1.003
     - en.canon.b1.046
     - en.canon.c1.016
+    - en.indirect_objects
+    - en.canon.b2.036
+    - en.canon.b2.035
+    - en.canon.c1.029
     zh-Hans:
     - zh.canon.gf.hsk1.a_1_4_1_1.p1
     - zh.canon.gf.hsk1.a_1_4_2.p1
@@ -288,10 +292,6 @@ functions:
     ja: []
   planned:
     en:
-    - en.indirect_objects
-    - en.canon.b2.035
-    - en.canon.b2.036
-    - en.canon.c1.029
     - en.canon.c2.007
     - en.canon.c2.009
     zh-Hans:
@@ -349,6 +349,7 @@ functions:
     - en.canon.b1.043
     - en.canon.b2.021
     - en.canon.b1.031
+    - en.canon.b2.022
     zh-Hans:
     - zh.demonstratives
     - zh.canon.gf.hsk1.a_1_3_1.p1
@@ -357,8 +358,7 @@ functions:
     - zh.canon.gf.hsk6.a_6_2_1.p1
     ja: []
   planned:
-    en:
-    - en.canon.b2.022
+    en: []
     zh-Hans:
     - zh.canon.gf.hsk1.a_1_1_3.p1
     - zh.canon.gf.hsk2.a_2_1_2.p1
@@ -468,6 +468,7 @@ functions:
     - en.conjunctions.because_so
     - en.canon.b1.038
     - en.canon.b1.037
+    - en.canon.b2.041
     zh-Hans:
     - zh.canon.gf.hsk1.a_1_1_8.p1
     - zh.canon.gf.hsk2.a_2_1_8.p1
@@ -501,7 +502,6 @@ functions:
     ja: []
   planned:
     en:
-    - en.canon.b2.041
     - en.canon.c1.026
     zh-Hans:
     - zh.canon.gf.hsk1.a_1_4_4.p1
@@ -668,6 +668,9 @@ functions:
     - en.canon.b1.015
     - en.canon.b2.008
     - en.canon.b2.009
+    - en.canon.b2.014
+    - en.canon.c1.009
+    - en.canon.c2.001
     zh-Hans:
     - zh.canon.gf.hsk3.a_3_5_4.p1
     - zh.canon.r5.hsk3_7_b_ng_kh_n_ng
@@ -678,10 +681,7 @@ functions:
     ja: []
   planned:
     en:
-    - en.canon.b2.014
-    - en.canon.c1.009
     - en.canon.c1.010
-    - en.canon.c2.001
     zh-Hans:
     - zh.modal.hui
     - zh.modal.neng_keyi
@@ -710,19 +710,19 @@ functions:
     - en.gerund_after_preference
     - en.canon.b1.032
     - en.canon.b1.053
+    - en.canon.b2.011
+    - en.canon.b2.027
+    - en.canon.b2.024
+    - en.canon.b2.038
+    - en.canon.c1.022
+    - en.canon.c1.021
+    - en.canon.c1.018
     zh-Hans:
     - zh.canon.gf.hsk7_9.a_7_1_4_7.p1
     ja: []
   planned:
     en:
-    - en.canon.b2.011
-    - en.canon.b2.024
     - en.canon.b2.026
-    - en.canon.b2.027
-    - en.canon.b2.038
-    - en.canon.c1.018
-    - en.canon.c1.021
-    - en.canon.c1.022
     - en.canon.c2.013
     - en.canon.c2.017
     zh-Hans:
@@ -740,16 +740,16 @@ functions:
     - en.canon.c2.008
     - en.relative_clauses.who_which_that
     - en.canon.b1.030
+    - en.canon.b2.020
+    - en.canon.b2.023
+    - en.canon.b2.037
+    - en.canon.c1.020
     zh-Hans:
     - zh.canon.gf.hsk3.a_3_5_3.p1
     - zh.canon.gf.hsk6.a_6_2_6.p1
     ja: []
   planned:
     en:
-    - en.canon.b2.020
-    - en.canon.b2.023
-    - en.canon.b2.037
-    - en.canon.c1.020
     - en.canon.c2.005
     zh-Hans:
     - zh.canon.r5.hsk3_13_nh_ng_d_i_v_i
@@ -846,7 +846,8 @@ functions:
     en: Telling the time and date
     zh-Hans: 表达时间和日期
   realizations:
-    en: []
+    en:
+    - en.canon.b2.012
     zh-Hans:
     - zh.canon.gf.hsk2.a_2_1_6.p1
     - zh.canon.gf.hsk2.a_2_1_7_1.p1
@@ -860,8 +861,7 @@ functions:
     - zh.canon.gf.hsk7_9.a_7_1_5_3.p1
     ja: []
   planned:
-    en:
-    - en.canon.b2.012
+    en: []
     zh-Hans:
     - zh.dates_times
     - zh.cong_dao
@@ -914,7 +914,8 @@ functions:
     en: Cause and result
     zh-Hans: 原因和结果
   realizations:
-    en: []
+    en:
+    - en.canon.c1.024
     zh-Hans:
     - zh.canon.r5.hsk3_6_topic
     - zh.canon.r5.hsk4_9_topic
@@ -923,8 +924,7 @@ functions:
     - zh.canon.gf.hsk7_9.a_7_8_2.p1
     ja: []
   planned:
-    en:
-    - en.canon.c1.024
+    en: []
     zh-Hans:
     - zh.canon.gf.hsk2.a_2_5_3.p2
     - zh.yinwei_suoyi
@@ -941,7 +941,8 @@ functions:
     en: Contrast
     zh-Hans: 表示转折
   realizations:
-    en: []
+    en:
+    - en.canon.b2.039
     zh-Hans:
     - zh.canon.gf.hsk2.a_2_5_3.p1
     - zh.canon.r5.hsk3_3_topic_69
@@ -952,7 +953,6 @@ functions:
     ja: []
   planned:
     en:
-    - en.canon.b2.039
     - en.canon.c1.023
     zh-Hans:
     - zh.suiran_danshi
@@ -993,15 +993,15 @@ functions:
     en: Excluding
     zh-Hans: 表示排除
   realizations:
-    en: []
+    en:
+    - en.canon.c1.027
     zh-Hans:
     - zh.canon.r5.hsk5_10_topic
     - zh.canon.gf.hsk6.a_6_2_4_5.p1
     - zh.canon.gf.hsk7_9.a_7_1_7_2.p1
     ja: []
   planned:
-    en:
-    - en.canon.c1.027
+    en: []
     zh-Hans:
     - zh.chule_yiwai
     - zh.canon.r5.hsk5_5_scope
@@ -1028,12 +1028,12 @@ functions:
   realizations:
     en:
     - en.canon.b2.001
+    - en.canon.c1.004
+    - en.canon.c1.003
     zh-Hans: []
     ja: []
   planned:
     en:
-    - en.canon.c1.003
-    - en.canon.c1.004
     - en.canon.c1.005
     zh-Hans:
     - zh.canon.r5.hsk6_1_t_ng_t_c_n_ng_cao
@@ -1047,13 +1047,13 @@ functions:
     en:
     - en.canon.c2.002
     - en.canon.b2.005
+    - en.canon.c1.012
+    - en.canon.c1.019
     zh-Hans:
     - zh.canon.r5.hsk79_10_conditional_rhetoric
     ja: []
   planned:
-    en:
-    - en.canon.c1.012
-    - en.canon.c1.019
+    en: []
     zh-Hans:
     - zh.canon.gf.hsk7_9.a_7_5_2_6.p1
     ja: []
@@ -1068,12 +1068,12 @@ functions:
     - en.canon.b1.029
     - en.canon.b2.017
     - en.canon.b2.019
+    - en.canon.b2.018
+    - en.canon.c1.017
     zh-Hans: []
     ja: []
   planned:
     en:
-    - en.canon.b2.018
-    - en.canon.c1.017
     - en.canon.c2.014
     zh-Hans:
     - zh.canon.r5.hsk79_20_reporting_and_attribution
@@ -1090,15 +1090,15 @@ functions:
     - en.canon.c1.001
     - en.canon.c1.014
     - en.canon.c2.011
+    - en.canon.c1.011
+    - en.canon.c1.030
     zh-Hans: []
     ja: []
   planned:
     en:
     - en.canon.b2.029
     - en.canon.b2.030
-    - en.canon.c1.011
     - en.canon.c1.013
-    - en.canon.c1.030
     - en.canon.c2.004
     - en.canon.c2.010
     - en.canon.c2.015
@@ -1118,13 +1118,13 @@ functions:
     - en.canon.b2.016
     - en.canon.b1.014
     - en.canon.b1.034
+    - en.canon.b2.015
+    - en.canon.b2.013
+    - en.canon.b2.043
     zh-Hans: []
     ja: []
   planned:
-    en:
-    - en.canon.b2.013
-    - en.canon.b2.015
-    - en.canon.b2.043
+    en: []
     zh-Hans:
     - zh.canon.r5.hsk3_4_n_n_t_ng
     - zh.canon.r5.hsk4_2_n_ng_cao

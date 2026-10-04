@@ -1,0 +1,229 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.c1.022",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.verb_patterns",
+  "level": {"framework": "cefr", "value": "C1", "rank": 5},
+  "prereqs": ["en.canon.b2.001"],
+  "contrasts": [],
+  "error_tags": ["tense", "sentence_structure"],
+  "source_refs": {"r5": ["c1-perfect-and-passive-non-finites"]},
+  "point_type": "tense_aspect",
+  "sequence": 3,
+  "aliases": ["c1-perfect-and-passive-non-finites"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Perfect and bị động non-finites", "en": "Perfect and passive non-finites"},
+    "native_title": "Perfect and passive non-finites",
+    "level": {"framework": "cefr", "value": "C1", "rank": 5},
+    "summary": {
+      "vi": "Cấu trúc này dùng dạng nguyên thể và phân từ hoàn thành/bị động để diễn tả hành động xảy ra trước hoặc ở thể bị động trong mệnh đề không chia.",
+      "en": "This point uses perfect and passive non-finite forms to express an action that happened earlier or is passive within a non-finite clause."
+    },
+    "sub": {"vi": "hoàn thành & bị động", "en": "perfect & passive"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói một hành động đã hoàn tất trước một thời điểm hoặc hành động khác trong quá khứ, dùng dạng hoàn thành của nguyên thể hoặc phân từ.",
+      "en": "Use the perfect non-finite form when an action was completed before another past time or event."
+    },
+    {
+      "vi": "Khi chủ thể của mệnh đề không chia là đối tượng chịu tác động, dùng dạng bị động của nguyên thể hoặc phân từ.",
+      "en": "Use the passive non-finite form when the subject of the non-finite clause receives the action."
+    },
+    {
+      "vi": "Khi cần kết hợp cả ý hoàn thành và bị động, dùng dạng hoàn thành bị động (to have been + V3, having been + V3).",
+      "en": "Use the perfect passive non-finite form (to have been + V3, having been + V3) when both perfect and passive meanings are needed."
+    },
+    {
+      "vi": "Trong văn viết trang trọng hoặc học thuật, các dạng này giúp câu văn ngắn gọn và mạch lạc hơn.",
+      "en": "In formal or academic writing, these forms make sentences more concise and cohesive."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ chính", "en": "main verb"}},
+      {
+        "text": "to have been",
+        "role": "aux",
+        "label": {"vi": "trợ động từ hoàn thành bị động", "en": "perfect passive auxiliary"}
+      },
+      {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}}
+    ],
+    "illustration": {"kind": "timeline", "timeline": {"shape": "point_past"}}
+  },
+  "examples": [
+    {
+      "text": "The device appears to have been damaged during transport.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 10, "role": "subject"},
+        {"start": 11, "end": 18, "role": "verb"},
+        {"start": 19, "end": 31, "role": "aux"},
+        {"start": 32, "end": 39, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Hành động bị động xảy ra trước thời điểm hiện tại.",
+        "en": "Passive action happened before the present moment."
+      },
+      "translation": {
+        "vi": "Thiết bị có vẻ đã bị hư trong quá trình vận chuyển.",
+        "en": "The device appears to have been damaged during transport."
+      }
+    },
+    {
+      "text": "Having completed the analysis, the team drafted its report.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 6, "role": "aux"},
+        {"start": 7, "end": 16, "role": "verb"},
+        {"start": 31, "end": 39, "role": "subject"},
+        {"start": 40, "end": 47, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Hành động hoàn thành trước hành động chính.",
+        "en": "Action completed before the main action."
+      },
+      "translation": {
+        "vi": "Sau khi hoàn thành phân tích, nhóm đã soạn báo cáo.",
+        "en": "Having completed the analysis, the team drafted its report."
+      }
+    },
+    {
+      "text": "Having been warned about the risk, they changed the procedure.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 11, "role": "aux"},
+        {"start": 12, "end": 18, "role": "verb"},
+        {"start": 35, "end": 39, "role": "subject"},
+        {"start": 40, "end": 47, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Hành động bị động hoàn thành trước hành động chính.",
+        "en": "Passive action completed before the main action."
+      },
+      "translation": {
+        "vi": "Sau khi được cảnh báo về rủi ro, họ đã thay đổi quy trình.",
+        "en": "Having been warned about the risk, they changed the procedure."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Thiếu 'have' trong cấu trúc hoàn thành bị động; dạng đúng là 'to have been' + V3.",
+        "en": "Missing 'have' in the perfect passive structure; the correct form is 'to have been' + V3."
+      },
+      "error_tag": "tense",
+      "l1": ["vi"],
+      "wrong": "The device seems to been damaged.",
+      "right": "The device seems to have been damaged."
+    },
+    {
+      "reason": {
+        "vi": "Dùng sai dạng phân từ: cần 'having + V3' cho hành động chủ động hoàn thành, không dùng 'been' + tính từ.",
+        "en": "Wrong participle form: 'having + V3' is needed for an active perfect action, not 'been' + adjective."
+      },
+      "error_tag": "sentence_structure",
+      "l1": ["vi"],
+      "wrong": "Having been complete the test, the team left.",
+      "right": "Having completed the test, the team left."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "The software is expected ___ next month.",
+      "options": [
+        {"text": "to be updated", "error_tag": null},
+        {"text": "to been updated", "error_tag": "tense"},
+        {"text": "to update", "error_tag": "word_form"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 'expected' cần nguyên thể bị động 'to be updated' vì phần mềm được cập nhật.",
+        "en": "After 'expected', the passive infinitive 'to be updated' is needed because the software receives the update."
+      }
+    },
+    {
+      "q": "___ the report, she submitted it to the manager.",
+      "options": [
+        {"text": "Having finished", "error_tag": null},
+        {"text": "Having been finished", "error_tag": "word_form"},
+        {"text": "Have finished", "error_tag": "tense"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Hành động 'finish' do chủ ngữ 'she' thực hiện nên dùng phân từ hoàn thành chủ động 'Having finished'.",
+        "en": "The action 'finish' is performed by the subject 'she', so the active perfect participle 'Having finished' is used."
+      }
+    },
+    {
+      "q": "The building seems ___ in the earthquake.",
+      "options": [
+        {"text": "to have been destroyed", "error_tag": null},
+        {"text": "to have destroyed", "error_tag": "word_form"},
+        {"text": "to been destroyed", "error_tag": "tense"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Tòa nhà bị phá hủy nên cần dạng hoàn thành bị động 'to have been destroyed'.",
+        "en": "The building was destroyed, so the perfect passive form 'to have been destroyed' is needed."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một việc đã được hoàn thành trước một thời điểm trong quá khứ, dùng cấu trúc 'having + V3' hoặc 'to have been + V3'.",
+      "en": "Write a sentence about something that was completed before a past time, using 'having + V3' or 'to have been + V3'."
+    },
+    "placeholder": "Having ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "aux", "any_of": ["having", "to have been"]},
+        {"role": "verb", "regex": "\\b\\w+ed\\b|\\b\\w+en\\b"}
+      ]
+    },
+    "sample": {"text": "Having finished my homework, I went out with friends."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791011478",
+    "generated_at": "2026-10-03T07:11:18Z",
+    "r5_source": {
+      "ids": ["c1-perfect-and-passive-non-finites"],
+      "content_version": 2,
+      "content_hash": "e152038bf670532dd3496155d57fc99910d32c2c1b5806793a4807736d8106d8",
+      "corrections": [
+        {
+          "r5_id": "c1-perfect-and-passive-non-finites",
+          "issue": "The R5 lesson did not provide a clear formula for the target structures.",
+          "fix": "Added a formula with slots for subject, main verb, perfect passive auxiliary, and past participle."
+        },
+        {
+          "r5_id": "c1-perfect-and-passive-non-finites",
+          "issue": "The R5 lesson lacked a comparison section as required by the schema.",
+          "fix": "Added an empty compare array since no comparison targets were specified."
+        },
+        {
+          "r5_id": "c1-perfect-and-passive-non-finites",
+          "issue": "The R5 lesson did not include quick practice questions with error tags.",
+          "fix": "Added three quick practice questions with distractors tagged by error type."
+        },
+        {
+          "r5_id": "c1-perfect-and-passive-non-finites",
+          "issue": "The R5 lesson did not include a personal production task with a pattern rule.",
+          "fix": "Added a personal production card with a prompt, placeholder, sample, and a pattern rule using regex for past participles."
+        }
+      ]
+    }
+  },
+  "review": null
+}

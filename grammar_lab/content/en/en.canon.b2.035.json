@@ -1,0 +1,244 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b2.035",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.sentence_basics",
+  "level": {"framework": "cefr", "value": "B2", "rank": 4},
+  "prereqs": ["en.canon.b2.034"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["b2-ellipsis", "c1-ellipsis-and-substitution"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["b2-ellipsis", "c1-ellipsis-and-substitution"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ellipsis", "en": "Ellipsis"},
+    "native_title": "Ellipsis",
+    "level": {"framework": "cefr", "value": "B2", "rank": 4},
+    "summary": {
+      "vi": "Ellipsis là việc lược bỏ những phần đã rõ trong ngữ cảnh để tránh lặp lại, thường giữ lại trợ động từ hoặc động từ thay thế.",
+      "en": "Ellipsis is the omission of material that is recoverable from context, usually keeping an auxiliary or a substitute verb to avoid repetition."
+    },
+    "sub": {"vi": "lược bỏ trợ động từ", "en": "auxiliary ellipsis"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi hai mệnh đề song song có cùng động từ và bạn muốn tránh lặp lại động từ đó.",
+      "en": "When two parallel clauses share the same verb and you want to avoid repeating it."
+    },
+    {
+      "vi": "Khi trả lời ngắn gọn cho câu hỏi yes/no mà không cần lặp lại toàn bộ động từ.",
+      "en": "When giving a short answer to a yes/no question without repeating the full verb phrase."
+    },
+    {
+      "vi": "Khi so sánh hai sự việc và phần thứ hai đã rõ nghĩa từ phần thứ nhất.",
+      "en": "When comparing two situations and the second part is clear from the first."
+    },
+    {
+      "vi": "Khi dùng các từ thay thế như do, so, not, one/ones để thay cho phần đã nói.",
+      "en": "When using substitutes such as do, so, not, one/ones to replace what was already said."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {
+        "text": "aux",
+        "role": "aux",
+        "label": {"vi": "trợ động từ", "en": "auxiliary"},
+        "options": [
+          {"text": "do"},
+          {"text": "does"},
+          {"text": "did"},
+          {"text": "have"},
+          {"text": "has"},
+          {"text": "had"},
+          {"text": "can"},
+          {"text": "will"}
+        ]
+      },
+      {"text": "too", "role": "other", "label": {"vi": "cũng", "en": "too"}, "optional": true}
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "aux",
+          "role": "aux",
+          "label": {"vi": "trợ động từ", "en": "auxiliary"},
+          "options": [
+            {"text": "don't"},
+            {"text": "doesn't"},
+            {"text": "didn't"},
+            {"text": "haven't"},
+            {"text": "hasn't"},
+            {"text": "can't"},
+            {"text": "won't"}
+          ]
+        },
+        {
+          "text": "either",
+          "role": "other",
+          "label": {"vi": "cũng không", "en": "either"},
+          "optional": true
+        }
+      ],
+      "question": [
+        {
+          "text": "aux",
+          "role": "aux",
+          "label": {"vi": "trợ động từ", "en": "auxiliary"},
+          "options": [
+            {"text": "Do"},
+            {"text": "Does"},
+            {"text": "Did"},
+            {"text": "Have"},
+            {"text": "Has"},
+            {"text": "Can"},
+            {"text": "Will"}
+          ]
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}}
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "I haven't seen it, but my brother has.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 2, "end": 9, "role": "aux"},
+        {"start": 34, "end": 37, "role": "aux"}
+      ],
+      "annotation": {
+        "vi": "has thay cho has seen it, tránh lặp lại động từ.",
+        "en": "has stands for has seen it, avoiding repetition of the verb phrase."
+      },
+      "translation": {
+        "vi": "Tôi chưa xem nó, nhưng anh tôi đã xem.",
+        "en": "I haven't seen it, but my brother has."
+      }
+    },
+    {
+      "text": "She can play the guitar, and I can too.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 7, "role": "aux"},
+        {"start": 31, "end": 34, "role": "aux"},
+        {"start": 35, "end": 38, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "can thay cho can play the guitar; too đánh dấu sự tương đồng.",
+        "en": "can stands for can play the guitar; too marks the similarity."
+      },
+      "translation": {
+        "vi": "Cô ấy chơi guitar được, và tôi cũng vậy.",
+        "en": "She can play the guitar, and I can too."
+      }
+    },
+    {
+      "text": "Tom ordered the pasta, and Lea did as well.",
+      "form": "affirmative",
+      "spans": [{"start": 0, "end": 3, "role": "subject"}, {"start": 31, "end": 34, "role": "aux"}],
+      "annotation": {
+        "vi": "did thay cho ordered the pasta, giữ thì quá khứ đơn.",
+        "en": "did stands for ordered the pasta, keeping the past simple tense."
+      },
+      "translation": {"vi": "Tom gọi pasta, và Lea cũng vậy.", "en": "Tom ordered the pasta, and Lea did as well."}
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Trợ động từ phải khớp thì và thể với động từ bị lược bỏ; ở đây là hiện tại hoàn thành nên dùng has, không dùng does.",
+        "en": "The auxiliary must match the tense and aspect of the omitted verb phrase; here it is present perfect, so has is needed, not does."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "I haven't finished, but she does.",
+      "right": "I haven't finished, but she has."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "I haven't seen that film, but my sister ___.",
+      "options": [{"text": "has", "error_tag": null}, {"text": "does", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Động từ bị lược bỏ là seen that film ở thì hiện tại hoàn thành, nên trợ động từ phải là has.",
+        "en": "The omitted verb phrase is seen that film in the present perfect, so the auxiliary must be has."
+      }
+    },
+    {
+      "q": "She can swim, and I ___ too.",
+      "options": [{"text": "can", "error_tag": null}, {"text": "do", "error_tag": "word_choice"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Để thay cho can swim, ta dùng lại trợ động từ can, không dùng do.",
+        "en": "To replace can swim, we repeat the auxiliary can, not do."
+      }
+    },
+    {
+      "q": "Tom ordered the pasta, and Lea ___ as well.",
+      "options": [{"text": "did", "error_tag": null}, {"text": "does", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Động từ ordered ở quá khứ đơn, nên trợ động từ thay thế phải là did.",
+        "en": "The verb ordered is past simple, so the substitute auxiliary must be did."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về việc bạn và một người khác cùng làm hoặc cùng không làm gì đó, dùng trợ động từ thay thế.",
+      "en": "Write a sentence about you and someone else doing or not doing the same thing, using an auxiliary substitute."
+    },
+    "placeholder": "I can ..., and my friend ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "aux", "any_of": ["can", "did", "has"]},
+        {"role": "other", "any_of": ["too", "as well"]}
+      ]
+    },
+    "sample": {"text": "I can play the piano, and my sister can too."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791011372",
+    "generated_at": "2026-10-03T07:09:32Z",
+    "r5_source": {
+      "ids": ["b2-ellipsis", "c1-ellipsis-and-substitution"],
+      "content_version": 2,
+      "content_hash": "207742c49cfc57b20cf467c4f3a39f1d9c3c57044893d9ced68a69d5f8220569",
+      "corrections": [
+        {
+          "r5_id": "b2-ellipsis",
+          "issue": "The example 'I expected the task to be easier than it was.' was listed under ellipsis but does not clearly show ellipsis of a verb phrase; it is a comparative structure with a full clause.",
+          "fix": "Replaced with 'Tom ordered the pasta, and Lea did as well.' to clearly illustrate auxiliary ellipsis."
+        },
+        {
+          "r5_id": "b2-ellipsis",
+          "issue": "The mistake 'I gave Anna the red file and Ben the blue.' was marked as incorrect, but it is grammatical; the issue is ambiguity, not ungrammaticality.",
+          "fix": "Removed this from common_mistakes and kept only the clear auxiliary agreement error."
+        },
+        {
+          "r5_id": "c1-ellipsis-and-substitution",
+          "issue": "The lesson included C1-level substitution with 'do so' and 'so/not', which is beyond the B2 scope of this point.",
+          "fix": "Excluded 'do so' and 'so/not' from the formula and examples; focused on auxiliary ellipsis and do-substitution at B2."
+        }
+      ]
+    }
+  },
+  "review": null
+}

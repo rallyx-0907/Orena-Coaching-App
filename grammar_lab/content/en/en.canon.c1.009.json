@@ -1,0 +1,240 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.c1.009",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.possibility",
+  "level": {"framework": "cefr", "value": "C1", "rank": 5},
+  "prereqs": ["en.canon.c1.008"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["c1-hedging-with-modal-and-lexical-devices", "c1-hedging-academic-claims"]},
+  "point_type": "other",
+  "sequence": 3,
+  "aliases": ["c1-hedging-with-modal-and-lexical-devices", "c1-hedging-academic-claims"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {
+      "vi": "Hedging with động từ khuyết thiếu and lexical devices",
+      "en": "Hedging with modal and lexical devices"
+    },
+    "native_title": "Hedging with modal and lexical devices",
+    "level": {"framework": "cefr", "value": "C1", "rank": 5},
+    "summary": {
+      "vi": "Điểm ngữ pháp này dạy cách dùng động từ khuyết thiếu và các phương tiện từ vựng để giảm mức độ cam kết của người nói đối với một nhận định, giúp câu văn thận trọng và phù hợp với bằng chứng.",
+      "en": "This point teaches how to use modal verbs and lexical devices to lower the speaker's commitment to a claim, making statements cautious and proportionate to the evidence."
+    },
+    "sub": {"vi": "giảm nhẹ nhận định", "en": "hedging claims"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn trình bày một kết luận chưa chắc chắn hoặc chỉ đúng trong một số trường hợp.",
+      "en": "When you want to present a conclusion that is not certain or holds only in some cases."
+    },
+    {
+      "vi": "Khi bằng chứng chưa đủ mạnh để khẳng định chắc chắn, ví dụ trong báo cáo, bài luận hoặc thảo luận học thuật.",
+      "en": "When the evidence is not strong enough for a firm assertion, for example in reports, essays, or academic discussion."
+    },
+    {
+      "vi": "Khi bạn muốn dự đoán một khả năng mà không cam kết rằng nó sẽ xảy ra.",
+      "en": "When you want to predict a possibility without committing to it actually happening."
+    },
+    {
+      "vi": "Khi bạn cần giảm nhẹ một tuyên bố để tránh bị coi là quá chủ quan hoặc thiếu căn cứ.",
+      "en": "When you need to soften a claim to avoid sounding overly subjective or unsupported."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {
+        "text": "modal",
+        "role": "aux",
+        "label": {"vi": "động từ khuyết thiếu", "en": "modal verb"},
+        "options": [{"text": "may"}, {"text": "might"}, {"text": "could"}]
+      },
+      {"text": "V", "role": "verb", "label": {"vi": "động từ chính", "en": "main verb"}},
+      {
+        "text": "hedge",
+        "role": "other",
+        "label": {"vi": "từ/cụm giảm nhẹ", "en": "hedging device"},
+        "optional": true,
+        "options": [
+          {"text": "partly"},
+          {"text": "to some extent"},
+          {"text": "in part"},
+          {"text": "roughly"},
+          {"text": "relatively"}
+        ]
+      }
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "modal",
+          "role": "aux",
+          "label": {"vi": "động từ khuyết thiếu", "en": "modal verb"},
+          "options": [{"text": "may not"}, {"text": "might not"}, {"text": "could not"}]
+        },
+        {"text": "V", "role": "verb", "label": {"vi": "động từ chính", "en": "main verb"}}
+      ],
+      "question": [
+        {
+          "text": "modal",
+          "role": "aux",
+          "label": {"vi": "động từ khuyết thiếu", "en": "modal verb"},
+          "options": [{"text": "May"}, {"text": "Might"}, {"text": "Could"}]
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {"text": "V", "role": "verb", "label": {"vi": "động từ chính", "en": "main verb"}}
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "The pattern may be partly explained by differences in sampling.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 11, "role": "subject"},
+        {"start": 12, "end": 15, "role": "aux"},
+        {"start": 16, "end": 18, "role": "verb"},
+        {"start": 19, "end": 25, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "‘may’ giảm mức cam kết; ‘partly’ giới hạn phạm vi giải thích.",
+        "en": "‘may’ lowers commitment; ‘partly’ limits the scope of the explanation."
+      },
+      "translation": {
+        "vi": "Mô hình này có thể được giải thích một phần bởi sự khác biệt trong lấy mẫu.",
+        "en": "The pattern may be partly explained by differences in sampling."
+      }
+    },
+    {
+      "text": "These findings may appear to support a cautious interpretation.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 14, "role": "subject"},
+        {"start": 15, "end": 18, "role": "aux"},
+        {"start": 19, "end": 25, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "‘may’ giảm mức cam kết; ‘appear to’ là hedge từ vựng, thể hiện bằng chứng gián tiếp.",
+        "en": "‘may’ lowers commitment; ‘appear to’ is a lexical hedge, signalling indirect evidence."
+      },
+      "translation": {
+        "vi": "Những phát hiện này có thể dường như ủng hộ một cách hiểu thận trọng.",
+        "en": "These findings may appear to support a cautious interpretation."
+      }
+    },
+    {
+      "text": "The effect may be likely to be smaller in older populations.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 10, "role": "subject"},
+        {"start": 11, "end": 14, "role": "aux"},
+        {"start": 15, "end": 17, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "‘may’ giảm mức cam kết; ‘be likely to be’ diễn tả khả năng cao nhưng không chắc chắn.",
+        "en": "‘may’ lowers commitment; ‘be likely to be’ expresses a strong possibility without certainty."
+      },
+      "translation": {
+        "vi": "Tác động có thể có khả năng nhỏ hơn ở nhóm dân số lớn tuổi.",
+        "en": "The effect may be likely to be smaller in older populations."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học Việt thường dịch ‘có thể’ thành nhiều từ giảm nhẹ cùng lúc, dẫn đến chồng chất hedge không cần thiết.",
+        "en": "Vietnamese learners often translate ‘có thể’ with several hedging words at once, leading to unnecessary stacking."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "The effect may possibly perhaps be temporary.",
+      "right": "The effect may be temporary."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "The results ___ suggest a link between the two variables.",
+      "options": [{"text": "may", "error_tag": null}, {"text": "maybe", "error_tag": "word_choice"}],
+      "answer": 0,
+      "explain": {
+        "vi": "‘May’ là động từ khuyết thiếu đứng trước động từ chính; ‘maybe’ là trạng từ, không thể đứng trước động từ mà không có chủ ngữ.",
+        "en": "‘May’ is a modal verb before the main verb; ‘maybe’ is an adverb and cannot directly precede the verb without a subject."
+      }
+    },
+    {
+      "q": "The data ___ to show a gradual decline.",
+      "options": [{"text": "appear", "error_tag": null}, {"text": "appears", "error_tag": "agreement"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Chủ ngữ số nhiều ‘data’ đi với ‘appear’; ‘appears’ sai vì chia số ít.",
+        "en": "The plural subject ‘data’ takes ‘appear’; ‘appears’ is wrong because it is singular."
+      }
+    },
+    {
+      "q": "The policy ___ reduce administrative costs, but the evidence is limited.",
+      "options": [{"text": "could", "error_tag": null}, {"text": "could to", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau động từ khuyết thiếu ‘could’ là động từ nguyên mẫu không ‘to’; ‘could to’ là lỗi hình thức.",
+        "en": "After the modal ‘could’ comes the bare infinitive; ‘could to’ is a form error."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu nhận định thận trọng về một xu hướng hoặc kết quả bạn quan sát được, dùng ‘may’ hoặc ‘might’ và một từ giảm nhẹ như ‘partly’ hoặc ‘to some extent’.",
+      "en": "Write a cautious claim about a trend or result you have observed, using ‘may’ or ‘might’ and a hedging word such as ‘partly’ or ‘to some extent’."
+    },
+    "placeholder": "The results may ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "aux", "any_of": ["may"]}, {"role": "other", "any_of": ["partly"]}]
+    },
+    "sample": {"text": "The results may be partly explained by seasonal changes."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791011422",
+    "generated_at": "2026-10-03T07:10:22Z",
+    "r5_source": {
+      "ids": ["c1-hedging-with-modal-and-lexical-devices", "c1-hedging-academic-claims"],
+      "content_version": 2,
+      "content_hash": "abaa860ced9812eb741b6b12af54678191fad605d158f246197024d298fc6848",
+      "corrections": [
+        {
+          "r5_id": "c1-hedging-with-modal-and-lexical-devices",
+          "issue": "The R5 lesson lists ‘may/might/could’ as modal hedges but does not show the full pattern with a subject and main verb, nor does it distinguish modal from lexical hedges in the formula.",
+          "fix": "Added a formula with slots S + modal + V + optional hedge, and separate negative and question forms."
+        },
+        {
+          "r5_id": "c1-hedging-with-modal-and-lexical-devices",
+          "issue": "The R5 example ‘The policy could, in principle, reduce administrative costs’ contains a comma after ‘could’ that is not part of the target pattern and may confuse learners about slot order.",
+          "fix": "Replaced with a clean example ‘The effect may be likely to be smaller in older populations’ that follows the formula without punctuation inside the pattern."
+        },
+        {
+          "r5_id": "c1-hedging-academic-claims",
+          "issue": "The R5 mistake ‘The data perhaps definitely show a causal effect’ mixes a hedge and a booster, but the correction ‘The data suggest a possible causal effect’ changes the subject-verb agreement from plural ‘data’ to singular ‘suggest’ without explanation.",
+          "fix": "Wrote a new common mistake focused on over-stacking hedges: ‘The effect may possibly perhaps be temporary’ → ‘The effect may be temporary’, with a reason that explains the mechanism."
+        },
+        {
+          "r5_id": "c1-hedging-academic-claims",
+          "issue": "The R5 guided practice asks learners to ‘identify the target structure’ by repeating the whole example sentence, which does not test understanding of the hedge.",
+          "fix": "Replaced with three quick-practice cloze questions that test modal choice, subject-verb agreement, and bare infinitive after modals."
+        }
+      ]
+    }
+  },
+  "review": null
+}

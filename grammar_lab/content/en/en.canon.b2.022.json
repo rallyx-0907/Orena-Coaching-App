@@ -1,0 +1,236 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b2.022",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.pronoun_reference",
+  "level": {"framework": "cefr", "value": "B2", "rank": 4},
+  "prereqs": ["en.canon.b2.021"],
+  "contrasts": [],
+  "error_tags": ["sentence_structure"],
+  "source_refs": {"r5": ["b2-quantifier-relative-pronoun"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": ["b2-quantifier-relative-pronoun"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "từ chỉ lượng + đại từ quan hệ", "en": "Quantifier + relative pronoun"},
+    "native_title": "Quantifier + relative pronoun",
+    "level": {"framework": "cefr", "value": "B2", "rank": 4},
+    "summary": {
+      "vi": "Cấu trúc lượng từ + of + whom/which dùng để bình luận về một nhóm người hoặc vật đã xác định trong mệnh đề quan hệ không xác định.",
+      "en": "The quantifier + of + whom/which structure adds a comment about a known group of people or things in a non-defining relative clause."
+    },
+    "sub": {"vi": "lượng từ + whom/which", "en": "quantifier + whom/which"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói về một phần hoặc toàn bộ một nhóm người/vật đã được nhắc đến trước đó.",
+      "en": "When you want to talk about a part or all of a group of people or things already mentioned."
+    },
+    {
+      "vi": "Khi câu cần thêm thông tin phụ, không xác định, và thông tin đó đứng sau dấu phẩy.",
+      "en": "When the sentence needs extra, non-defining information set off by commas."
+    },
+    {
+      "vi": "Khi bạn muốn tránh dùng hai câu riêng biệt hoặc một câu bị tách rời bằng dấu phẩy.",
+      "en": "When you want to avoid two separate sentences or a comma splice."
+    },
+    {
+      "vi": "Khi đối tượng là người thì dùng whom, là vật thì dùng which.",
+      "en": "When the antecedent is people use whom; when it is things use which."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "N", "role": "subject", "label": {"vi": "danh từ chỉ nhóm", "en": "group noun"}},
+      {"text": ",", "role": "other", "label": {"vi": "dấu phẩy", "en": "comma"}},
+      {
+        "text": "quantifier",
+        "role": "other",
+        "label": {"vi": "lượng từ", "en": "quantifier"},
+        "options": [
+          {"text": "many"},
+          {"text": "some"},
+          {"text": "none"},
+          {"text": "both"},
+          {"text": "two"},
+          {"text": "several"}
+        ]
+      },
+      {"text": "of", "role": "marker", "label": {"vi": "giới từ of", "en": "of"}},
+      {
+        "text": "whom/which",
+        "role": "marker",
+        "label": {"vi": "đại từ quan hệ", "en": "relative pronoun"},
+        "options": [{"text": "whom"}, {"text": "which"}]
+      },
+      {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}}
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "She has three brothers, two of whom live abroad.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 22, "end": 23, "role": "other"},
+        {"start": 24, "end": 27, "role": "other"},
+        {"start": 28, "end": 30, "role": "marker"},
+        {"start": 31, "end": 35, "role": "marker"},
+        {"start": 36, "end": 40, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "hai trong số ba người anh/em trai — bình luận về một phần của nhóm đã biết",
+        "en": "two out of the three brothers — comments on a subset of a known group"
+      },
+      "translation": {
+        "vi": "Cô ấy có ba anh/em trai, hai người sống ở nước ngoài.",
+        "en": "She has three brothers, two of whom live abroad."
+      }
+    },
+    {
+      "text": "We tested five devices, none of which failed.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 22, "end": 23, "role": "other"},
+        {"start": 24, "end": 28, "role": "other"},
+        {"start": 29, "end": 31, "role": "marker"},
+        {"start": 32, "end": 37, "role": "marker"},
+        {"start": 38, "end": 44, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "không cái nào trong số năm thiết bị — bình luận về toàn bộ nhóm vật đã biết",
+        "en": "not one of the five devices — comments on the whole known group of things"
+      },
+      "translation": {
+        "vi": "Chúng tôi đã kiểm tra năm thiết bị, không cái nào bị lỗi.",
+        "en": "We tested five devices, none of which failed."
+      }
+    },
+    {
+      "text": "The guests, many of whom had travelled far, arrived early.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 10, "role": "subject"},
+        {"start": 10, "end": 11, "role": "other"},
+        {"start": 12, "end": 16, "role": "other"},
+        {"start": 17, "end": 19, "role": "marker"},
+        {"start": 20, "end": 24, "role": "marker"},
+        {"start": 25, "end": 38, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "nhiều người trong số khách — bình luận về một phần nhóm người đã biết",
+        "en": "many of the guests — comments on a subset of a known group of people"
+      },
+      "translation": {
+        "vi": "Những vị khách, nhiều người đã đi xa, đến sớm.",
+        "en": "The guests, many of whom had travelled far, arrived early."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Dùng 'them' tạo ra một mệnh đề độc lập nối bằng dấu phẩy (comma splice). Cần đại từ quan hệ 'whom' để tạo mệnh đề quan hệ không xác định.",
+        "en": "Using 'them' creates an independent clause joined by a comma (comma splice). You need the relative pronoun 'whom' to form a non-defining relative clause."
+      },
+      "error_tag": "sentence_structure",
+      "l1": ["vi"],
+      "wrong": "The students, many of them were tired, left early.",
+      "right": "The students, many of whom were tired, left early."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "She has three brothers, two of ___ live abroad.",
+      "options": [
+        {"text": "whom", "error_tag": null},
+        {"text": "which", "error_tag": "word_choice"},
+        {"text": "them", "error_tag": "sentence_structure"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Dùng 'whom' vì tiền ngữ là người (brothers). 'Which' dùng cho vật; 'them' tạo comma splice.",
+        "en": "Use 'whom' because the antecedent is people (brothers). 'Which' is for things; 'them' creates a comma splice."
+      }
+    },
+    {
+      "q": "We tested five devices, none of ___ failed.",
+      "options": [
+        {"text": "which", "error_tag": null},
+        {"text": "whom", "error_tag": "word_choice"},
+        {"text": "that", "error_tag": "sentence_structure"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Dùng 'which' vì tiền ngữ là vật (devices). 'Whom' dùng cho người; 'that' không đứng sau giới từ trong mệnh đề quan hệ không xác định.",
+        "en": "Use 'which' because the antecedent is things (devices). 'Whom' is for people; 'that' cannot follow a preposition in a non-defining relative clause."
+      }
+    },
+    {
+      "q": "The guests, many of ___ had travelled far, arrived early.",
+      "options": [
+        {"text": "whom", "error_tag": null},
+        {"text": "which", "error_tag": "word_choice"},
+        {"text": "them", "error_tag": "sentence_structure"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Dùng 'whom' vì tiền ngữ là người (guests). 'Which' dùng cho vật; 'them' tạo comma splice.",
+        "en": "Use 'whom' because the antecedent is people (guests). 'Which' is for things; 'them' creates a comma splice."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một nhóm người hoặc vật bạn biết, dùng cấu trúc lượng từ + of + whom/which.",
+      "en": "Write a sentence about a group of people or things you know, using quantifier + of + whom/which."
+    },
+    "placeholder": "I have several friends, some of whom ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "other", "any_of": ["many", "some", "none", "several", "two", "three"]},
+        {"role": "marker", "any_of": ["of"]},
+        {"role": "marker", "any_of": ["whom", "which"]}
+      ]
+    },
+    "sample": {"text": "I have several friends, some of whom live in Canada."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791011326",
+    "generated_at": "2026-10-03T07:08:46Z",
+    "r5_source": {
+      "ids": ["b2-quantifier-relative-pronoun"],
+      "content_version": 2,
+      "content_hash": "e19d4b369cb64e8b104bd166a2ac5b4645babaec22e0ddad0930f4b5f6178d21",
+      "corrections": [
+        {
+          "r5_id": "b2-quantifier-relative-pronoun",
+          "issue": "R5 examples include 'He proposed several changes, some of which were accepted.' which is correct, but the lesson does not provide a clear formula or highlight the non-defining comma structure.",
+          "fix": "Added a formula with slots for the group noun, comma, quantifier, of, whom/which, and verb, and highlighted these in the examples."
+        },
+        {
+          "r5_id": "b2-quantifier-relative-pronoun",
+          "issue": "R5 mistakes include 'I have two phones, both of that are old.' but 'that' is not used after a preposition in this structure; the error is better framed as using 'that' instead of 'which'.",
+          "fix": "Replaced with a more typical L1 Vietnamese error: using 'them' instead of 'whom' in a non-defining relative clause, causing a comma splice."
+        },
+        {
+          "r5_id": "b2-quantifier-relative-pronoun",
+          "issue": "R5 does not include quick practice or personal production with a clear pattern rule.",
+          "fix": "Added three quick-practice questions and a personal production card with a pattern rule that checks for quantifier + of + whom/which."
+        }
+      ]
+    }
+  },
+  "review": null
+}

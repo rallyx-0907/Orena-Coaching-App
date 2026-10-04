@@ -1,0 +1,319 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.c2.001",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.possibility",
+  "level": {"framework": "cefr", "value": "C2", "rank": 6},
+  "prereqs": ["en.canon.c1.009"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["c2-layered-modality-and-authorial-voice"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["c2-layered-modality-and-authorial-voice"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {
+      "vi": "Layered động từ khuyết thiếuity and authorial voice",
+      "en": "Layered modality and authorial voice"
+    },
+    "native_title": "Layered modality and authorial voice",
+    "level": {"framework": "cefr", "value": "C2", "rank": 6},
+    "summary": {
+      "vi": "Điểm này dạy cách xếp nhiều lớp nguồn nhận định (báo cáo, bằng chứng, quan điểm tác giả) lên cùng một mệnh đề để người đọc biết chính xác ai chắc chắn, ai bắt buộc, và tác giả đang đứng ở đâu.",
+      "en": "This point teaches how to layer several sources of stance (report, evidence, author's view) over one proposition so the reader knows exactly who is certain, who is obliged, and where the author stands."
+    },
+    "sub": {"vi": "lớp nguồn nhận định", "en": "layered stance sources"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn trích dẫn một nguồn (báo cáo, cơ quan, nghiên cứu) và muốn đặt mệnh đề phương thức bên trong phạm vi của nguồn đó.",
+      "en": "When you cite a source (a report, a regulator, a study) and want the modal proposition to fall inside that source's scope."
+    },
+    {
+      "vi": "Khi bạn muốn tách quan điểm của tác giả khỏi quan điểm của người được trích dẫn, thay vì trộn hai giọng thành một.",
+      "en": "When you want to separate the author's stance from the cited speaker's stance instead of blending the two voices into one."
+    },
+    {
+      "vi": "Khi bạn cần phân biệt nghĩa nhận thức (epistemic: có thể là vậy) với nghĩa nghĩa vụ (deontic: nên làm) trong cùng một động từ khuyết thiếu.",
+      "en": "When you need to distinguish an epistemic reading (it may be so) from a deontic reading (it should be done) in the same modal verb."
+    },
+    {
+      "vi": "Khi bạn muốn giảm mức độ chắc chắn của mình bằng một lớp bằng chứng (appears to, seems likely) mà không chồng thêm nhiều lớp thừa.",
+      "en": "When you want to lower your own commitment with one evidential layer (appears to, seems likely) without stacking redundant hedges."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {
+        "text": "reporting/evidential verb",
+        "role": "verb",
+        "label": {"vi": "động từ báo cáo/bằng chứng", "en": "reporting or evidential verb"},
+        "options": [{"text": "suggests"}, {"text": "argues"}, {"text": "appears"}, {"text": "seems"}]
+      },
+      {
+        "text": "that",
+        "role": "connector",
+        "label": {"vi": "liên từ bắt đầu mệnh đề", "en": "clause connector"},
+        "optional": true
+      },
+      {
+        "text": "S",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ mệnh đề bên trong", "en": "embedded subject"}
+      },
+      {
+        "text": "modal",
+        "role": "aux",
+        "label": {"vi": "động từ khuyết thiếu", "en": "modal auxiliary"},
+        "options": [
+          {"text": "may"},
+          {"text": "might"},
+          {"text": "should"},
+          {"text": "must"},
+          {"text": "is unlikely to"}
+        ]
+      },
+      {"text": "V", "role": "verb", "label": {"vi": "động từ chính", "en": "main verb"}},
+      {
+        "text": "complement",
+        "role": "complement",
+        "label": {"vi": "phần bổ sung", "en": "complement"},
+        "optional": true
+      }
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "reporting/evidential verb",
+          "role": "verb",
+          "label": {"vi": "động từ báo cáo/bằng chứng", "en": "reporting or evidential verb"},
+          "options": [{"text": "does not suggest"}, {"text": "does not argue"}, {"text": "does not appear"}]
+        },
+        {
+          "text": "that",
+          "role": "connector",
+          "label": {"vi": "liên từ bắt đầu mệnh đề", "en": "clause connector"},
+          "optional": true
+        },
+        {
+          "text": "S",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ mệnh đề bên trong", "en": "embedded subject"}
+        },
+        {
+          "text": "modal",
+          "role": "aux",
+          "label": {"vi": "động từ khuyết thiếu", "en": "modal auxiliary"},
+          "options": [{"text": "may"}, {"text": "might"}, {"text": "should"}, {"text": "must"}]
+        },
+        {"text": "V", "role": "verb", "label": {"vi": "động từ chính", "en": "main verb"}},
+        {
+          "text": "complement",
+          "role": "complement",
+          "label": {"vi": "phần bổ sung", "en": "complement"},
+          "optional": true
+        }
+      ],
+      "question": [
+        {
+          "text": "Aux",
+          "role": "aux",
+          "label": {"vi": "trợ động từ đảo lên đầu", "en": "fronted auxiliary"},
+          "options": [{"text": "Does"}, {"text": "Do"}]
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "reporting/evidential verb",
+          "role": "verb",
+          "label": {"vi": "động từ báo cáo/bằng chứng", "en": "reporting or evidential verb"},
+          "options": [{"text": "suggest"}, {"text": "argue"}, {"text": "appear"}]
+        },
+        {
+          "text": "that",
+          "role": "connector",
+          "label": {"vi": "liên từ bắt đầu mệnh đề", "en": "clause connector"},
+          "optional": true
+        },
+        {
+          "text": "S",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ mệnh đề bên trong", "en": "embedded subject"}
+        },
+        {
+          "text": "modal",
+          "role": "aux",
+          "label": {"vi": "động từ khuyết thiếu", "en": "modal auxiliary"},
+          "options": [{"text": "may"}, {"text": "might"}, {"text": "should"}, {"text": "must"}]
+        },
+        {"text": "V", "role": "verb", "label": {"vi": "động từ chính", "en": "main verb"}},
+        {
+          "text": "complement",
+          "role": "complement",
+          "label": {"vi": "phần bổ sung", "en": "complement"},
+          "optional": true
+        }
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "The report suggests that demand may weaken further.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 10, "role": "subject"},
+        {"start": 11, "end": 19, "role": "verb"},
+        {"start": 20, "end": 24, "role": "connector"},
+        {"start": 25, "end": 31, "role": "subject"},
+        {"start": 32, "end": 35, "role": "aux"},
+        {"start": 36, "end": 42, "role": "verb"},
+        {"start": 43, "end": 50, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Lớp ngoài (the report suggests) giới hạn mệnh đề bên trong: người báo cáo không tự khẳng định, chỉ nêu khả năng.",
+        "en": "The outer layer (the report suggests) scopes the inner proposition: the reporter does not assert it, only presents the possibility."
+      },
+      "translation": {
+        "vi": "Báo cáo gợi ý rằng nhu cầu có thể yếu thêm.",
+        "en": "The report suggests that demand may weaken further."
+      }
+    },
+    {
+      "text": "The regulator argues that firms should disclose these risks.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 13, "role": "subject"},
+        {"start": 14, "end": 20, "role": "verb"},
+        {"start": 21, "end": 25, "role": "connector"},
+        {"start": 26, "end": 31, "role": "subject"},
+        {"start": 32, "end": 38, "role": "aux"},
+        {"start": 39, "end": 47, "role": "verb"},
+        {"start": 48, "end": 59, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "should ở đây mang nghĩa nghĩa vụ (deontic) và thuộc về cơ quan quản lý, không phải tác giả.",
+        "en": "Here should carries a deontic reading and belongs to the regulator, not to the author."
+      },
+      "translation": {
+        "vi": "Cơ quan quản lý lập luận rằng các công ty nên công bố những rủi ro này.",
+        "en": "The regulator argues that firms should disclose these risks."
+      }
+    },
+    {
+      "text": "The discrepancy appears to have resulted from a configuration error.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 15, "role": "subject"},
+        {"start": 16, "end": 23, "role": "verb"},
+        {"start": 24, "end": 40, "role": "aux"},
+        {"start": 41, "end": 67, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "appears là lớp bằng chứng của tác giả: tác giả không khẳng định chắc, chỉ suy ra từ dữ liệu.",
+        "en": "Appears is the author's evidential layer: the author does not assert, only infers from the data."
+      },
+      "translation": {
+        "vi": "Sự chênh lệch có vẻ bắt nguồn từ một lỗi cấu hình.",
+        "en": "The discrepancy appears to have resulted from a configuration error."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học Việt thường dịch 'chắc chắn là' và 'có thể là' cùng lúc, tạo hai lớp nhận định xung đột trong một mệnh đề; tiếng Anh chỉ cần một lớp.",
+        "en": "Vietnamese learners often translate both 'chắc chắn là' and 'có thể là' at once, creating two conflicting stance layers in one proposition; English needs only one."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "The report definitely suggests that demand may possibly fall.",
+      "right": "The report suggests that demand may fall."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "The report ___ that demand may weaken further.",
+      "options": [{"text": "suggests", "error_tag": null}, {"text": "suggest", "error_tag": "agreement"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Chủ ngữ số ít 'The report' cần động từ số ít 'suggests'.",
+        "en": "The singular subject 'The report' requires the singular verb 'suggests'."
+      }
+    },
+    {
+      "q": "The regulator argues that firms ___ disclose these risks.",
+      "options": [{"text": "should", "error_tag": null}, {"text": "should to", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau động từ khuyết thiếu 'should' là động từ nguyên mẫu không 'to'.",
+        "en": "After the modal 'should' comes the bare infinitive, without 'to'."
+      }
+    },
+    {
+      "q": "The discrepancy ___ to have resulted from a configuration error.",
+      "options": [{"text": "appears", "error_tag": null}, {"text": "appear", "error_tag": "agreement"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Chủ ngữ số ít 'The discrepancy' cần 'appears'.",
+        "en": "The singular subject 'The discrepancy' requires 'appears'."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một báo cáo hoặc nguồn tin gần đây, dùng lớp nguồn (report/survey/study + suggests/argues/appears) rồi đặt một động từ khuyết thiếu (may/might/should/must) trong mệnh đề bên trong.",
+      "en": "Write one sentence about a recent report or source, using a source layer (report/survey/study + suggests/argues/appears) and then a modal (may/might/should/must) in the inner clause."
+    },
+    "placeholder": "The report suggests that ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "verb", "any_of": ["suggests", "argues", "appears"]},
+        {"role": "aux", "any_of": ["may", "should"]}
+      ]
+    },
+    "sample": {"text": "The survey suggests that remote work may reduce commuting stress."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791011543",
+    "generated_at": "2026-10-03T07:12:23Z",
+    "r5_source": {
+      "ids": ["c2-layered-modality-and-authorial-voice"],
+      "content_version": 2,
+      "content_hash": "e026dc5d7857ad9d14441ac6829e15af59674b06b66429b36c88df3d55756635",
+      "corrections": [
+        {
+          "r5_id": "c2-layered-modality-and-authorial-voice",
+          "issue": "R5's mistake example 'The report definitely suggests that demand may possibly fall' is labelled as over-layered, but the corrected version 'The report suggests that demand may fall' still keeps two layers (reporting verb + modal), which is the point of the lesson; the real error is the conflicting certainty adverbs, not the layering itself.",
+          "fix": "Rewrote the mistake as 'The report definitely suggests that demand may possibly fall' → 'The report suggests that demand may fall', and explained in the reason that the error is stacking conflicting stance adverbs (definitely + possibly), not using two grammatical layers."
+        },
+        {
+          "r5_id": "c2-layered-modality-and-authorial-voice",
+          "issue": "R5's second mistake example 'According to the company, we believe its product may be safe' is corrected to a sentence that no longer uses the target pattern at all, so the learner cannot see the same structure fixed.",
+          "fix": "Dropped that second mistake entry and kept one mistake entry, as the schema allows only one; the remaining entry shows the same structure with the conflicting layer removed."
+        },
+        {
+          "r5_id": "c2-layered-modality-and-authorial-voice",
+          "issue": "R5's example 'In our view, the policy is unlikely to achieve its stated objective' uses 'is unlikely to' as the modal layer, but the formula did not list this form, so the example could not be spanned.",
+          "fix": "Added 'is unlikely to' to the modal slot's options in the formula so the example can be represented, and kept the example as a clean C2 sentence."
+        },
+        {
+          "r5_id": "c2-layered-modality-and-authorial-voice",
+          "issue": "R5's guided practice items are diagnosis/contrast/repair/transformation prompts with no cloze questions, so they do not fit the quick_practice schema.",
+          "fix": "Replaced them with three cloze questions that test agreement and modal form inside the layered structure, each with a real learner error as the distractor."
+        }
+      ]
+    }
+  },
+  "review": null
+}

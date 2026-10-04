@@ -1,0 +1,200 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b2.043",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.voice_causative",
+  "level": {"framework": "cefr", "value": "B2", "rank": 4},
+  "prereqs": ["en.canon.b2.017"],
+  "contrasts": [],
+  "error_tags": ["sentence_structure"],
+  "source_refs": {},
+  "point_type": "other",
+  "sequence": 4,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Get bị động", "en": "Get Passive"},
+    "native_title": "Get Passive",
+    "level": {"framework": "cefr", "value": "B2", "rank": 4},
+    "summary": {
+      "vi": "Cấu trúc get + quá khứ phân từ diễn tả việc ai đó nhận được hoặc trải qua một hành động, thường là ngoài ý muốn.",
+      "en": "The get + past participle structure describes receiving or experiencing an action, often unintentionally."
+    },
+    "sub": {"vi": "bị động với get", "en": "get passive"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói ai đó nhận được một hành động, thường là ngoài ý muốn hoặc bất ngờ.",
+      "en": "When you want to say someone receives an action, often unintentionally or surprisingly."
+    },
+    {
+      "vi": "Khi muốn nhấn mạnh kết quả hoặc trạng thái sau hành động hơn là hành động đó do ai làm.",
+      "en": "When you want to emphasize the result or state after the action rather than who did it."
+    },
+    {
+      "vi": "Trong văn nói hoặc viết thân mật, khi muốn tránh cấu trúc bị động với be trang trọng hơn.",
+      "en": "In spoken or informal writing, when you want to avoid the more formal be-passive."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {
+        "text": "get",
+        "role": "aux",
+        "label": {"vi": "trợ động từ get", "en": "get auxiliary"},
+        "options": [{"text": "get"}, {"text": "gets"}, {"text": "got"}]
+      },
+      {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}}
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "don't/doesn't/didn't",
+          "role": "aux",
+          "label": {"vi": "trợ động từ phủ định", "en": "negative auxiliary"},
+          "options": [{"text": "don't"}, {"text": "doesn't"}, {"text": "didn't"}]
+        },
+        {
+          "text": "get",
+          "role": "aux",
+          "label": {"vi": "get", "en": "get"},
+          "options": [{"text": "get"}, {"text": "got"}]
+        },
+        {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}}
+      ],
+      "question": [
+        {
+          "text": "do/does/did",
+          "role": "aux",
+          "label": {"vi": "trợ động từ nghi vấn", "en": "question auxiliary"},
+          "options": [{"text": "do"}, {"text": "does"}, {"text": "did"}]
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "get",
+          "role": "aux",
+          "label": {"vi": "get", "en": "get"},
+          "options": [{"text": "get"}, {"text": "got"}]
+        },
+        {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}}
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "He got fired last week.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 3, "end": 6, "role": "aux"},
+        {"start": 7, "end": 12, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "nhận hành động sa thải ngoài ý muốn",
+        "en": "received the action of being fired unintentionally"
+      },
+      "translation": {"vi": "Anh ấy bị sa thải tuần trước.", "en": "He was fired last week."}
+    },
+    {
+      "text": "She didn't get invited to the party.",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 10, "role": "aux"},
+        {"start": 11, "end": 14, "role": "aux"},
+        {"start": 15, "end": 22, "role": "verb"}
+      ],
+      "annotation": {"vi": "không nhận được lời mời", "en": "did not receive the invitation"},
+      "translation": {"vi": "Cô ấy không được mời đến bữa tiệc.", "en": "She was not invited to the party."}
+    },
+    {
+      "text": "Did they get paid on time?",
+      "form": "question",
+      "spans": [
+        {"start": 0, "end": 3, "role": "aux"},
+        {"start": 4, "end": 8, "role": "subject"},
+        {"start": 9, "end": 12, "role": "aux"},
+        {"start": 13, "end": 17, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "hỏi liệu họ có nhận được tiền lương đúng hạn không",
+        "en": "asking whether they received their pay on time"
+      },
+      "translation": {"vi": "Họ có được trả lương đúng hạn không?", "en": "Were they paid on time?"}
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học dùng động từ nguyên mẫu thay vì quá khứ phân từ sau get.",
+        "en": "Learners use the base verb instead of the past participle after get."
+      },
+      "error_tag": "sentence_structure",
+      "l1": ["vi"],
+      "wrong": "He got fire last week.",
+      "right": "He got fired last week."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "She ___ promoted last month.",
+      "options": [{"text": "got", "error_tag": null}, {"text": "get", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Dùng 'got' vì câu ở quá khứ đơn.",
+        "en": "Use 'got' because the sentence is in the past simple."
+      }
+    },
+    {
+      "q": "They didn't get ___ for the extra work.",
+      "options": [{"text": "paid", "error_tag": null}, {"text": "pay", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 'get' trong cấu trúc bị động cần quá khứ phân từ 'paid'.",
+        "en": "After 'get' in the passive structure, the past participle 'paid' is needed."
+      }
+    },
+    {
+      "q": "Did he get ___ by the police?",
+      "options": [{"text": "arrested", "error_tag": null}, {"text": "arrest", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Cần quá khứ phân từ 'arrested' sau 'get' trong câu hỏi bị động.",
+        "en": "The past participle 'arrested' is needed after 'get' in the passive question."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một việc bạn đã trải qua ngoài ý muốn, dùng get + quá khứ phân từ.",
+      "en": "Write a sentence about something you experienced unintentionally, using get + past participle."
+    },
+    "placeholder": "I got ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "aux", "any_of": ["got"]},
+        {
+          "role": "verb",
+          "regex": "\\w+ed|\\b(?:broken|stolen|fired|paid|invited|arrested|hurt|cut|made|sent|told|given|taken|written|driven|eaten|seen|done|known|thrown|caught|found|held|kept|left|met|read|run|said|sold|shown|shut|sung|sat|slept|spent|stood|taught|thought|understood|won|worn)\\b"
+        }
+      ]
+    },
+    "sample": {"text": "I got caught in the rain yesterday."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791011411",
+    "generated_at": "2026-10-03T07:10:11Z"
+  },
+  "review": null
+}

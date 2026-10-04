@@ -1,0 +1,215 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.c1.019",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.hypothetical_counterfactual",
+  "level": {"framework": "cefr", "value": "C1", "rank": 5},
+  "prereqs": ["en.canon.c1.018"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["c1-were-subjunctive"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": ["c1-were-subjunctive"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Were-subjunctive", "en": "Were-subjunctive"},
+    "native_title": "Were-subjunctive",
+    "level": {"framework": "cefr", "value": "C1", "rank": 5},
+    "summary": {
+      "vi": "Were-subjunctive dùng were cho mọi ngôi để diễn tả tình huống giả định, không có thật hoặc trái với thực tế.",
+      "en": "The were-subjunctive uses were for every person to express a hypothetical, unreal, or counterfactual situation."
+    },
+    "sub": {"vi": "giả định trái thực tế", "en": "unreal hypotheticals"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Dùng trong mệnh đề if loại 2 để nói về điều không có thật ở hiện tại hoặc tương lai.",
+      "en": "Use it in second-conditional if-clauses for situations that are not true in the present or future."
+    },
+    {
+      "vi": "Dùng sau wish để diễn tả mong ước trái với hiện tại.",
+      "en": "Use it after wish to express a desire that is contrary to the present."
+    },
+    {
+      "vi": "Dùng sau as if / as though khi so sánh với điều không có thật.",
+      "en": "Use it after as if / as though when the comparison is unreal."
+    },
+    {
+      "vi": "Dùng trong đảo ngữ trang trọng: Were + chủ ngữ + ...",
+      "en": "Use it in formal inversion: Were + subject + ..."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "If",
+        "role": "marker",
+        "label": {"vi": "từ nối điều kiện", "en": "conditional marker"}
+      },
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {
+        "text": "were",
+        "role": "verb",
+        "label": {"vi": "động từ giả định", "en": "subjunctive verb"}
+      },
+      {"text": "complement", "role": "complement", "label": {"vi": "bổ ngữ", "en": "complement"}},
+      {
+        "text": "S",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ mệnh đề chính", "en": "main-clause subject"}
+      },
+      {"text": "would", "role": "aux", "label": {"vi": "trợ động từ", "en": "auxiliary"}},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên thể", "en": "base verb"}}
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "If I were in your position, I would wait.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "marker"},
+        {"start": 3, "end": 4, "role": "subject"},
+        {"start": 5, "end": 9, "role": "verb"},
+        {"start": 10, "end": 26, "role": "complement"},
+        {"start": 28, "end": 29, "role": "subject"},
+        {"start": 30, "end": 35, "role": "aux"},
+        {"start": 36, "end": 40, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "were đánh dấu tình huống giả định không có thật ở hiện tại.",
+        "en": "were marks a hypothetical situation that is not true in the present."
+      },
+      "translation": {
+        "vi": "Nếu tôi ở vị trí của bạn, tôi sẽ đợi.",
+        "en": "If I were in your position, I would wait."
+      }
+    },
+    {
+      "text": "If I were you, I would apologize.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "marker"},
+        {"start": 3, "end": 4, "role": "subject"},
+        {"start": 5, "end": 9, "role": "verb"},
+        {"start": 10, "end": 13, "role": "complement"},
+        {"start": 15, "end": 16, "role": "subject"},
+        {"start": 17, "end": 22, "role": "aux"},
+        {"start": 23, "end": 32, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "were trong mệnh đề if giả định, dùng cho mọi ngôi.",
+        "en": "were in a hypothetical if-clause, used for all persons."
+      },
+      "translation": {"vi": "Nếu tôi là bạn, tôi sẽ xin lỗi.", "en": "If I were you, I would apologize."}
+    },
+    {
+      "text": "If she were here, she would help us.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "marker"},
+        {"start": 3, "end": 6, "role": "subject"},
+        {"start": 7, "end": 11, "role": "verb"},
+        {"start": 12, "end": 16, "role": "complement"},
+        {"start": 18, "end": 21, "role": "subject"},
+        {"start": 22, "end": 27, "role": "aux"},
+        {"start": 28, "end": 32, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "were dùng với chủ ngữ số ít she trong tình huống giả định.",
+        "en": "were is used with the singular subject she in a hypothetical situation."
+      },
+      "translation": {
+        "vi": "Nếu cô ấy ở đây, cô ấy sẽ giúp chúng ta.",
+        "en": "If she were here, she would help us."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Trong câu điều kiện giả định, were dùng cho mọi ngôi; was làm mất tính giả định.",
+        "en": "In a hypothetical conditional, were is used for all persons; was loses the hypothetical meaning."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "If I was you, I would apologize.",
+      "right": "If I were you, I would apologize."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "If I ___ you, I would apologize.",
+      "options": [{"text": "were", "error_tag": null}, {"text": "was", "error_tag": "agreement"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Trong câu điều kiện giả định, were dùng cho mọi ngôi.",
+        "en": "In a hypothetical conditional, were is used for all persons."
+      }
+    },
+    {
+      "q": "I wish I ___ more confident.",
+      "options": [{"text": "were", "error_tag": null}, {"text": "am", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau wish diễn tả mong ước trái hiện tại, dùng were.",
+        "en": "After wish for a present unreal desire, use were."
+      }
+    },
+    {
+      "q": "He acts as if he ___ the manager.",
+      "options": [{"text": "were", "error_tag": null}, {"text": "is", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "as if + were diễn tả so sánh không có thật.",
+        "en": "as if + were expresses an unreal comparison."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về điều bạn sẽ làm nếu bạn ở vị trí của người khác.",
+      "en": "Write a sentence about what you would do if you were in someone else's position."
+    },
+    "placeholder": "If I were ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "marker", "any_of": ["if"]},
+        {"role": "verb", "any_of": ["were"]},
+        {"role": "aux", "any_of": ["would"]}
+      ]
+    },
+    "sample": {"text": "If I were in your position, I would wait."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791011483",
+    "generated_at": "2026-10-03T07:11:23Z",
+    "r5_source": {
+      "ids": ["c1-were-subjunctive"],
+      "content_version": 2,
+      "content_hash": "12ba770430edacdde078e0c6ad13ebe4c6de14e6d077ca0253ae593d3dbea568",
+      "corrections": [
+        {
+          "r5_id": "c1-were-subjunctive",
+          "issue": "The R5 mistake 'If I were at home yesterday, I answered the call.' is not a typical learner error for the were-subjunctive; it confuses factual past with irrealis, which is a contrast point, not a common mistake.",
+          "fix": "Replaced with a more typical mistake: using was instead of were in a hypothetical if-clause, e.g., 'If I was you, I would apologize.'"
+        },
+        {
+          "r5_id": "c1-were-subjunctive",
+          "issue": "The R5 example 'Were the evidence stronger, the conclusion would be more convincing.' uses inversion, which is a distinct formal pattern not covered by the basic formula.",
+          "fix": "Removed from examples to keep the lesson focused on the core if/wish/as if patterns; inversion is mentioned in when_to_use but not exemplified."
+        }
+      ]
+    }
+  },
+  "review": null
+}

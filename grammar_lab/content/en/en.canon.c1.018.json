@@ -1,0 +1,262 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.c1.018",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.verb_patterns",
+  "level": {"framework": "cefr", "value": "C1", "rank": 5},
+  "prereqs": ["en.canon.c1.016"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["c1-mandative-subjunctive"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["c1-mandative-subjunctive"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Mandative subjunctive", "en": "Mandative subjunctive"},
+    "native_title": "Mandative subjunctive",
+    "level": {"framework": "cefr", "value": "C1", "rank": 5},
+    "summary": {
+      "vi": "Thức giả định mệnh lệnh dùng động từ nguyên mẫu không chia sau các động từ, danh từ và tính từ chỉ yêu cầu, đề nghị hoặc sự cần thiết, đặc biệt trong văn phong trang trọng và học thuật.",
+      "en": "The mandative subjunctive uses the base form of the verb after verbs, nouns and adjectives of demand, recommendation or necessity, especially in formal and academic style."
+    },
+    "sub": {"vi": "đề nghị, yêu cầu", "en": "demand and recommendation"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Sau các động từ như recommend, insist, demand, suggest, propose, request, require khi mệnh đề that nêu một hành động cần được thực hiện.",
+      "en": "After verbs such as recommend, insist, demand, suggest, propose, request, require when the that-clause states an action that should be carried out."
+    },
+    {
+      "vi": "Sau các tính từ như essential, important, necessary, vital, crucial, imperative khi mệnh đề that nêu điều cần thiết.",
+      "en": "After adjectives such as essential, important, necessary, vital, crucial, imperative when the that-clause states a necessity."
+    },
+    {
+      "vi": "Sau các danh từ như requirement, recommendation, proposal, demand, insistence khi mệnh đề that nêu nội dung của yêu cầu đó.",
+      "en": "After nouns such as requirement, recommendation, proposal, demand, insistence when the that-clause states the content of the requirement."
+    },
+    {
+      "vi": "Trong văn bản trang trọng, học thuật hoặc hành chính; trong tiếng Anh thân mật, dạng should + động từ nguyên mẫu thường được dùng thay thế.",
+      "en": "In formal, academic or administrative writing; in informal English, should + base verb is often used instead."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {
+        "text": "recommend/insist/demand/require",
+        "role": "verb",
+        "label": {"vi": "động từ chỉ đề nghị, yêu cầu", "en": "verb of demand or recommendation"},
+        "options": [
+          {"text": "recommend"},
+          {"text": "insist"},
+          {"text": "demand"},
+          {"text": "require"},
+          {"text": "suggest"},
+          {"text": "propose"},
+          {"text": "request"}
+        ]
+      },
+      {"text": "that", "role": "marker", "label": {"vi": "từ nối that", "en": "that"}},
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ mệnh đề", "en": "clause subject"}},
+      {
+        "text": "V",
+        "role": "verb",
+        "label": {"vi": "động từ nguyên mẫu không chia", "en": "base verb"}
+      },
+      {
+        "text": "O/C",
+        "role": "object",
+        "label": {"vi": "tân ngữ hoặc bổ ngữ", "en": "object or complement"},
+        "optional": true
+      }
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "recommend/insist/demand/require",
+          "role": "verb",
+          "label": {"vi": "động từ chỉ đề nghị, yêu cầu", "en": "verb of demand or recommendation"},
+          "options": [{"text": "recommend"}, {"text": "insist"}, {"text": "demand"}, {"text": "require"}]
+        },
+        {"text": "that", "role": "marker", "label": {"vi": "từ nối that", "en": "that"}},
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ mệnh đề", "en": "clause subject"}},
+        {"text": "not", "role": "aux", "label": {"vi": "phủ định not", "en": "negative not"}},
+        {
+          "text": "V",
+          "role": "verb",
+          "label": {"vi": "động từ nguyên mẫu không chia", "en": "base verb"}
+        },
+        {
+          "text": "O/C",
+          "role": "object",
+          "label": {"vi": "tân ngữ hoặc bổ ngữ", "en": "object or complement"},
+          "optional": true
+        }
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "The committee recommended that the proposal be revised.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 13, "role": "subject"},
+        {"start": 14, "end": 25, "role": "verb"},
+        {"start": 26, "end": 30, "role": "marker"},
+        {"start": 31, "end": 43, "role": "subject"},
+        {"start": 44, "end": 46, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "be là dạng nguyên mẫu không chia của động từ to be trong mệnh đề giả định.",
+        "en": "be is the base form of the verb in the subjunctive clause."
+      },
+      "translation": {
+        "vi": "Ủy ban đề nghị sửa đề xuất.",
+        "en": "The committee recommended that the proposal be revised."
+      }
+    },
+    {
+      "text": "It is essential that every applicant provide evidence.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 3, "end": 5, "role": "verb"},
+        {"start": 16, "end": 20, "role": "marker"},
+        {"start": 21, "end": 36, "role": "subject"},
+        {"start": 37, "end": 44, "role": "verb"},
+        {"start": 45, "end": 53, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "provide không thêm -s dù chủ ngữ là every applicant.",
+        "en": "provide has no -s even though the subject is every applicant."
+      },
+      "translation": {
+        "vi": "Điều thiết yếu là mỗi ứng viên cung cấp bằng chứng.",
+        "en": "It is essential that every applicant provide evidence."
+      }
+    },
+    {
+      "text": "They insisted that he not attend the meeting.",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 5, "end": 13, "role": "verb"},
+        {"start": 14, "end": 18, "role": "marker"},
+        {"start": 19, "end": 21, "role": "subject"},
+        {"start": 22, "end": 25, "role": "aux"},
+        {"start": 26, "end": 32, "role": "verb"},
+        {"start": 33, "end": 44, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "not đứng trước động từ nguyên mẫu không chia để tạo dạng phủ định.",
+        "en": "not comes before the base verb to form the negative."
+      },
+      "translation": {
+        "vi": "Họ yêu cầu anh ấy không dự họp.",
+        "en": "They insisted that he not attend the meeting."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học Việt thường chia động từ theo chủ ngữ vì thói quen chia thì hiện tại đơn, nhưng thức giả định mệnh lệnh luôn dùng động từ nguyên mẫu không chia.",
+        "en": "Vietnamese learners often inflect the verb to agree with the subject out of present-tense habit, but the mandative subjunctive always uses the base form."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "They recommended that she applies immediately.",
+      "right": "They recommended that she apply immediately."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "The board demanded that the report ___ submitted by Friday.",
+      "options": [{"text": "be", "error_tag": null}, {"text": "is", "error_tag": "agreement"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau demand that, động từ to be ở dạng nguyên mẫu không chia là be.",
+        "en": "After demand that, the verb be appears in its base form."
+      }
+    },
+    {
+      "q": "It is vital that each member ___ the safety rules.",
+      "options": [{"text": "follow", "error_tag": null}, {"text": "follows", "error_tag": "agreement"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Mệnh đề giả định sau It is vital that dùng động từ nguyên mẫu không chia, không thêm -s.",
+        "en": "The subjunctive clause after It is vital that uses the base verb without -s."
+      }
+    },
+    {
+      "q": "The manager insisted that the team ___ the deadline.",
+      "options": [{"text": "meet", "error_tag": null}, {"text": "meets", "error_tag": "agreement"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau insist that, động từ nguyên mẫu không chia meet được dùng cho mọi chủ ngữ.",
+        "en": "After insist that, the base verb meet is used for every subject."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng thức giả định mệnh lệnh để nói về một yêu cầu hoặc đề nghị trong học tập hoặc công việc của bạn.",
+      "en": "Write one sentence using the mandative subjunctive to state a requirement or recommendation in your study or work."
+    },
+    "placeholder": "My supervisor recommended that I ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "verb", "any_of": ["recommended"]},
+        {"role": "marker", "any_of": ["that"]},
+        {
+          "role": "verb",
+          "regex": "\\b(be|have|do|go|take|make|provide|submit|attend|apply|remain|follow|meet|revise|complete|review|prepare|send|write|read|speak|use|keep|leave|start|stop|continue|accept|consider|discuss|ensure|establish|implement|maintain|perform|present|produce|publish|report|resolve|respond|return|schedule|select|support|update)\\b"
+        }
+      ]
+    },
+    "sample": {"text": "My supervisor recommended that I submit the draft by Friday."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791011480",
+    "generated_at": "2026-10-03T07:11:20Z",
+    "r5_source": {
+      "ids": ["c1-mandative-subjunctive"],
+      "content_version": 2,
+      "content_hash": "a454da7cc77ee0ffd05da11362f3a38912ccc35038c331866b3004ceb1a64038",
+      "corrections": [
+        {
+          "r5_id": "c1-mandative-subjunctive",
+          "issue": "R5's example 'It is essential that every applicant provide evidence' is correct, but the lesson did not include a negative form, which is a distinct pattern for this point.",
+          "fix": "Added a negative formula and a negative example: 'They insisted that he not attend the meeting.'"
+        },
+        {
+          "r5_id": "c1-mandative-subjunctive",
+          "issue": "R5's mistake 'It is essential that he is present' was labelled as a mandative error, but 'It is essential that he is present' can be grammatical with a factual reading; the error is not categorical.",
+          "fix": "Replaced it with a clear agreement error: 'They recommended that she applies immediately' → 'They recommended that she apply immediately.'"
+        },
+        {
+          "r5_id": "c1-mandative-subjunctive",
+          "issue": "R5 did not provide a structured formula with slots, roles and options.",
+          "fix": "Added a formula with subject, verb, marker, clause subject, base verb and optional object/complement, plus a negative variant."
+        },
+        {
+          "r5_id": "c1-mandative-subjunctive",
+          "issue": "R5's guided practice included a contrast task that was not represented in the final schema.",
+          "fix": "Removed the contrast task and added three quick-practice cloze questions with tagged distractors."
+        }
+      ]
+    }
+  },
+  "review": null
+}

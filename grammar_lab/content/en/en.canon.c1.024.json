@@ -1,0 +1,212 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.c1.024",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.reason_result",
+  "level": {"framework": "cefr", "value": "C1", "rank": 5},
+  "prereqs": ["en.canon.c1.023"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["c1-cause-result-purpose-relations"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["c1-cause-result-purpose-relations"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Cause/result/purpose relations", "en": "Cause/result/purpose relations"},
+    "native_title": "Cause/result/purpose relations",
+    "level": {"framework": "cefr", "value": "C1", "rank": 5},
+    "summary": {
+      "vi": "Cấu trúc này diễn đạt quan hệ nguyên nhân, kết quả và mục đích bằng cách chọn dạng mệnh đề, cụm danh từ hoặc liên kết diễn ngôn phù hợp với văn phong học thuật.",
+      "en": "This point expresses cause, result and purpose relations by choosing between clauses, noun phrases and discourse connectors according to academic register."
+    },
+    "sub": {"vi": "nguyên nhân, kết quả, mục đích", "en": "cause, result, purpose"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn cần nêu nguyên nhân bằng một mệnh đề đầy đủ (because/since/as + S + V) hoặc bằng một cụm danh từ (because of/due to/owing to + NP).",
+      "en": "When you need to state a cause either as a full clause (because/since/as + S + V) or as a noun phrase (because of/due to/owing to + NP)."
+    },
+    {
+      "vi": "Khi bạn muốn nêu kết quả ở cấp độ diễn ngôn bằng so, therefore, consequently hoặc thereby + V-ing.",
+      "en": "When you want to state a result at discourse level with so, therefore, consequently or thereby + V-ing."
+    },
+    {
+      "vi": "Khi bạn muốn diễn đạt mục đích bằng to/in order to/so as to + V, so that/in order that + clause, hoặc with a view to + V-ing/NP trong văn phong trang trọng.",
+      "en": "When you want to express purpose with to/in order to/so as to + V, so that/in order that + clause, or with a view to + V-ing/NP in formal register."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}},
+      {
+        "text": "because/since/as",
+        "role": "connector",
+        "label": {"vi": "liên từ nguyên nhân", "en": "cause connector"},
+        "options": [{"text": "because"}, {"text": "since"}, {"text": "as"}]
+      },
+      {
+        "text": "S",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ mệnh đề nguyên nhân", "en": "cause-clause subject"}
+      },
+      {
+        "text": "V",
+        "role": "verb",
+        "label": {"vi": "động từ mệnh đề nguyên nhân", "en": "cause-clause verb"}
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "The test was repeated because the initial result was inconsistent.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 8, "role": "subject"},
+        {"start": 9, "end": 21, "role": "verb"},
+        {"start": 22, "end": 29, "role": "connector"},
+        {"start": 30, "end": 48, "role": "subject"},
+        {"start": 49, "end": 65, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "because nối mệnh đề nguyên nhân với mệnh đề chính.",
+        "en": "because links the cause clause to the main clause."
+      },
+      "translation": {
+        "vi": "Bài kiểm tra được lặp lại vì kết quả ban đầu không nhất quán.",
+        "en": "The test was repeated because the initial result was inconsistent."
+      }
+    },
+    {
+      "text": "The delay was due to a network failure.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 9, "role": "subject"},
+        {"start": 10, "end": 13, "role": "verb"},
+        {"start": 14, "end": 20, "role": "connector"}
+      ],
+      "annotation": {
+        "vi": "due to + cụm danh từ diễn đạt nguyên nhân ở dạng danh hóa.",
+        "en": "due to + noun phrase expresses cause in nominal form."
+      },
+      "translation": {"vi": "Sự chậm trễ là do lỗi mạng.", "en": "The delay was due to a network failure."}
+    },
+    {
+      "text": "The team automated the process, thereby reducing manual errors.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 8, "role": "subject"},
+        {"start": 9, "end": 18, "role": "verb"},
+        {"start": 32, "end": 39, "role": "connector"},
+        {"start": 40, "end": 48, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "thereby + V-ing nêu kết quả gắn với hành động trước đó.",
+        "en": "thereby + V-ing states a result tied to the preceding action."
+      },
+      "translation": {
+        "vi": "Nhóm đã tự động hóa quy trình, qua đó giảm lỗi thủ công.",
+        "en": "The team automated the process, thereby reducing manual errors."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "due to cần một cụm danh từ, không phải mệnh đề hữu hạn; khi có mệnh đề phải dùng because/since/as.",
+        "en": "due to requires a noun phrase, not a finite clause; with a clause use because/since/as."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "Due to the server failed, the test stopped.",
+      "right": "Because the server failed, the test stopped."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "The experiment was cancelled ___ the equipment had malfunctioned.",
+      "options": [{"text": "because", "error_tag": null}, {"text": "due to", "error_tag": "preposition"}],
+      "answer": 0,
+      "explain": {
+        "vi": "because + mệnh đề hữu hạn; due to + cụm danh từ.",
+        "en": "because + finite clause; due to + noun phrase."
+      }
+    },
+    {
+      "q": "The interface was simplified ___ new users could navigate it easily.",
+      "options": [{"text": "so that", "error_tag": null}, {"text": "therefore", "error_tag": "word_choice"}],
+      "answer": 0,
+      "explain": {
+        "vi": "so that + mệnh đề mục đích; therefore nêu kết quả, không nêu mục đích.",
+        "en": "so that + purpose clause; therefore states a result, not a purpose."
+      }
+    },
+    {
+      "q": "The team reduced logging ___ save storage.",
+      "options": [{"text": "to", "error_tag": null}, {"text": "therefore", "error_tag": "sentence_structure"}],
+      "answer": 0,
+      "explain": {
+        "vi": "to + V diễn đạt mục đích; therefore không thể đứng trước động từ nguyên mẫu.",
+        "en": "to + V expresses purpose; therefore cannot precede a bare verb."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu nêu nguyên nhân cho một kết quả trong học tập hoặc công việc của bạn, dùng because + mệnh đề.",
+      "en": "Write one sentence giving a cause for a result in your study or work, using because + clause."
+    },
+    "placeholder": "I changed my study plan because ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "connector", "any_of": ["because"]},
+        {
+          "role": "subject",
+          "regex": "(?i)\\b(I|you|he|she|it|we|they|the\\s+\\w+|my\\s+\\w+|our\\s+\\w+)\\b"
+        },
+        {
+          "role": "verb",
+          "regex": "(?i)\\b(is|are|was|were|has|have|had|do|does|did|can|could|will|would|may|might|must|should|[a-z]+ed|[a-z]+s)\\b"
+        }
+      ]
+    },
+    "sample": {"text": "I changed my study plan because the original schedule was too tight."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791011497",
+    "generated_at": "2026-10-03T07:11:37Z",
+    "r5_source": {
+      "ids": ["c1-cause-result-purpose-relations"],
+      "content_version": 2,
+      "content_hash": "5fb57d123e1957d6da1d5200e84ac5b64cc1a530685c0c7ab6d3287fccecc56e",
+      "corrections": [
+        {
+          "r5_id": "c1-cause-result-purpose-relations",
+          "issue": "R5's example 'The team automated the process, thereby reducing manual errors.' was listed under cause/result but the formula did not include thereby + V-ing as a result pattern.",
+          "fix": "Added thereby + V-ing as a result connector in the formula and used it in an example."
+        },
+        {
+          "r5_id": "c1-cause-result-purpose-relations",
+          "issue": "R5's mistake 'We reduced logging therefore save storage.' was corrected to 'We reduced logging to save storage.' but the reason did not explain that therefore cannot precede a bare verb.",
+          "fix": "Clarified in the quick-practice explanation that therefore cannot precede a bare verb; purpose requires to + V."
+        },
+        {
+          "r5_id": "c1-cause-result-purpose-relations",
+          "issue": "R5's contrast 'because the system failed ↔ due to system failure' was not included in the compare section because the schema requires compare entries only for listed contrast targets, and none were listed.",
+          "fix": "Left compare empty as required by the schema; the contrast is covered in common_mistakes and quick_practice."
+        }
+      ]
+    }
+  },
+  "review": null
+}

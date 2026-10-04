@@ -1,0 +1,281 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.c1.017",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.reporting",
+  "level": {"framework": "cefr", "value": "C1", "rank": 5},
+  "prereqs": ["en.canon.b2.025"],
+  "contrasts": [],
+  "error_tags": ["tense", "word_form"],
+  "source_refs": {"r5": ["c1-perfect-infinitives-in-reporting"]},
+  "point_type": "tense_aspect",
+  "sequence": 1,
+  "aliases": ["c1-perfect-infinitives-in-reporting"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Perfect động từ nguyên mẫu in reporting", "en": "Perfect infinitives in reporting"},
+    "native_title": "Perfect infinitives in reporting",
+    "level": {"framework": "cefr", "value": "C1", "rank": 5},
+    "summary": {
+      "vi": "Cấu trúc to have + quá khứ phân từ diễn tả một sự việc xảy ra trước thời điểm được báo cáo hoặc được đánh giá.",
+      "en": "The perfect infinitive to have + past participle marks an event that happened before the moment of reporting or assessment."
+    },
+    "sub": {"vi": "báo cáo sự việc trước", "en": "earlier reported events"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn thuật lại một sự việc đã xảy ra trước lúc người ta nói hoặc viết về nó.",
+      "en": "When you report an event that happened before the moment someone says or writes about it."
+    },
+    {
+      "vi": "Khi dùng các động từ như seem, appear, claim, believe, report, think ở dạng bị động hoặc chủ động để đánh giá một sự việc trong quá khứ.",
+      "en": "When you use verbs such as seem, appear, claim, believe, report, think in passive or active form to assess a past event."
+    },
+    {
+      "vi": "Khi cần phân biệt rõ giữa tình trạng hiện tại (to be) và sự việc đã xảy ra (to have + V3).",
+      "en": "When you need to distinguish a current state (to be) from an event that already happened (to have + V3)."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {
+        "text": "be",
+        "role": "aux",
+        "label": {"vi": "trợ động từ bị động", "en": "passive auxiliary"},
+        "options": [{"text": "is"}, {"text": "are"}, {"text": "was"}, {"text": "were"}]
+      },
+      {
+        "text": "said/believed/reported",
+        "role": "verb",
+        "label": {"vi": "động từ báo cáo", "en": "reporting verb"},
+        "options": [{"text": "said"}, {"text": "believed"}, {"text": "reported"}, {"text": "thought"}]
+      },
+      {
+        "text": "to have",
+        "role": "aux",
+        "label": {"vi": "nguyên mẫu hoàn thành", "en": "perfect infinitive marker"}
+      },
+      {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}}
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "be",
+          "role": "aux",
+          "label": {"vi": "trợ động từ bị động", "en": "passive auxiliary"},
+          "options": [{"text": "is"}, {"text": "are"}, {"text": "was"}, {"text": "were"}]
+        },
+        {"text": "not", "role": "marker", "label": {"vi": "phủ định", "en": "negation"}},
+        {
+          "text": "said/believed/reported",
+          "role": "verb",
+          "label": {"vi": "động từ báo cáo", "en": "reporting verb"},
+          "options": [{"text": "said"}, {"text": "believed"}, {"text": "reported"}, {"text": "thought"}]
+        },
+        {
+          "text": "to have",
+          "role": "aux",
+          "label": {"vi": "nguyên mẫu hoàn thành", "en": "perfect infinitive marker"}
+        },
+        {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}}
+      ],
+      "question": [
+        {
+          "text": "be",
+          "role": "aux",
+          "label": {"vi": "trợ động từ bị động", "en": "passive auxiliary"},
+          "options": [{"text": "Is"}, {"text": "Are"}, {"text": "Was"}, {"text": "Were"}]
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "said/believed/reported",
+          "role": "verb",
+          "label": {"vi": "động từ báo cáo", "en": "reporting verb"},
+          "options": [{"text": "said"}, {"text": "believed"}, {"text": "reported"}, {"text": "thought"}]
+        },
+        {
+          "text": "to have",
+          "role": "aux",
+          "label": {"vi": "nguyên mẫu hoàn thành", "en": "perfect infinitive marker"}
+        },
+        {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}}
+      ]
+    },
+    "illustration": {"kind": "timeline", "timeline": {"shape": "point_past"}}
+  },
+  "examples": [
+    {
+      "text": "The company is believed to have overstated its earnings.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 11, "role": "subject"},
+        {"start": 12, "end": 14, "role": "aux"},
+        {"start": 15, "end": 23, "role": "verb"},
+        {"start": 24, "end": 31, "role": "aux"},
+        {"start": 32, "end": 42, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Sự việc khai quá doanh thu xảy ra trước thời điểm người ta tin.",
+        "en": "The overstating happened before the moment people believe it."
+      },
+      "translation": {
+        "vi": "Người ta tin rằng công ty đã khai quá doanh thu.",
+        "en": "People believe that the company overstated its earnings."
+      }
+    },
+    {
+      "text": "She appears to have misunderstood the question.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 11, "role": "verb"},
+        {"start": 12, "end": 19, "role": "aux"},
+        {"start": 20, "end": 33, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Việc hiểu sai xảy ra trước lúc người nói nhận xét.",
+        "en": "The misunderstanding happened before the speaker's assessment."
+      },
+      "translation": {
+        "vi": "Có vẻ cô ấy đã hiểu sai câu hỏi.",
+        "en": "It seems that she misunderstood the question."
+      }
+    },
+    {
+      "text": "The minister is reported to have resigned.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 12, "role": "subject"},
+        {"start": 13, "end": 15, "role": "aux"},
+        {"start": 16, "end": 24, "role": "verb"},
+        {"start": 25, "end": 32, "role": "aux"},
+        {"start": 33, "end": 41, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Việc từ chức xảy ra trước thời điểm có tin báo cáo.",
+        "en": "The resignation happened before the moment of the report."
+      },
+      "translation": {"vi": "Có tin bộ trưởng đã từ chức.", "en": "It is reported that the minister resigned."}
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học dùng quá khứ đơn thay vì nguyên mẫu hoàn thành, nên không đánh dấu được sự việc xảy ra trước thời điểm báo cáo.",
+        "en": "The learner uses the past simple instead of the perfect infinitive, so the earlier-than-reporting meaning is lost."
+      },
+      "error_tag": "tense",
+      "l1": ["vi"],
+      "wrong": "He is said to left early.",
+      "right": "He is said to have left early."
+    },
+    {
+      "reason": {
+        "vi": "Người học bỏ been trong nguyên mẫu hoàn thành bị động, khiến câu thiếu thành phần bị động.",
+        "en": "The learner omits been in the passive perfect infinitive, leaving the passive meaning incomplete."
+      },
+      "error_tag": "word_form",
+      "l1": ["vi"],
+      "wrong": "The files are believed to have deleted.",
+      "right": "The files are believed to have been deleted."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "The manuscript is thought to have ___ in the 15th century.",
+      "options": [
+        {"text": "been written", "error_tag": null},
+        {"text": "wrote", "error_tag": "tense"},
+        {"text": "written", "error_tag": "word_form"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sự việc được viết xảy ra trước thời điểm người ta nghĩ, và bị động nên cần to have been + V3.",
+        "en": "The writing happened before the moment people think, and the passive requires to have been + V3."
+      }
+    },
+    {
+      "q": "She claims to have ___ the report before the deadline.",
+      "options": [
+        {"text": "submitted", "error_tag": null},
+        {"text": "submit", "error_tag": "word_form"},
+        {"text": "submitting", "error_tag": "word_form"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau to have phải dùng quá khứ phân từ để diễn tả sự việc đã hoàn thành trước thời điểm tuyên bố.",
+        "en": "After to have, the past participle is required to show the event was completed before the claim."
+      }
+    },
+    {
+      "q": "The witness is reported to have ___ the scene before the police arrived.",
+      "options": [{"text": "left", "error_tag": null}, {"text": "leave", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau to have cần quá khứ phân từ left, không dùng động từ nguyên mẫu leave.",
+        "en": "After to have, the past participle left is needed, not the base form leave."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu kể lại một sự việc đã xảy ra trước thời điểm hiện tại, dùng cấu trúc to have + quá khứ phân từ.",
+      "en": "Write one sentence reporting an event that happened before now, using to have + past participle."
+    },
+    "placeholder": "The report is said to have ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "aux", "any_of": ["is"]},
+        {"role": "verb", "any_of": ["believed", "reported"]},
+        {"role": "aux", "any_of": ["to have"]},
+        {
+          "role": "verb",
+          "regex": "(?i)\\b[a-z]+(ed|en|ne|nt|de|ft|ld|rn|wn|un|ad|ut|it|et|ck|ng|st|lt|pt|wn|wn)\\b"
+        }
+      ]
+    },
+    "sample": {"text": "The manuscript is believed to have been written in the 15th century."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791011448",
+    "generated_at": "2026-10-03T07:10:48Z",
+    "r5_source": {
+      "ids": ["c1-perfect-infinitives-in-reporting"],
+      "content_version": 2,
+      "content_hash": "9d1292a521e2f7d7a0541c9a0734365bc1a7797e7431f668a2a156c3980d2665",
+      "corrections": [
+        {
+          "r5_id": "c1-perfect-infinitives-in-reporting",
+          "issue": "The R5 lesson lists 'He is said to left early' as a mistake but does not explain that the past simple cannot follow 'to' in this structure.",
+          "fix": "Added a common_mistakes entry with the same wrong/right pair and a reason that names the tense mechanism."
+        },
+        {
+          "r5_id": "c1-perfect-infinitives-in-reporting",
+          "issue": "The R5 lesson gives 'The files are believed to have deleted' as a mistake but does not state that the passive perfect infinitive needs 'been'.",
+          "fix": "Added a common_mistakes entry with the same wrong/right pair and a reason that names the missing passive auxiliary."
+        },
+        {
+          "r5_id": "c1-perfect-infinitives-in-reporting",
+          "issue": "The R5 lesson has no formula, no negative or question forms, and no quick practice.",
+          "fix": "Added the formula, negative and question variants, and three quick-practice items."
+        },
+        {
+          "r5_id": "c1-perfect-infinitives-in-reporting",
+          "issue": "The R5 lesson's guided practice includes a production prompt that is too open and does not specify the target form.",
+          "fix": "Replaced it with a personal_production card that gives a concrete prompt, placeholder, target form, and a deterministic pattern rule."
+        }
+      ]
+    }
+  },
+  "review": null
+}

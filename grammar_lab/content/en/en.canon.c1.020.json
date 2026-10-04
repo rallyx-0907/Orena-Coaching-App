@@ -1,0 +1,223 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.c1.020",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.relative",
+  "level": {"framework": "cefr", "value": "C1", "rank": 5},
+  "prereqs": ["en.canon.b2.023"],
+  "contrasts": [],
+  "error_tags": ["sentence_structure"],
+  "source_refs": {"r5": ["c1-fused-relative-clauses", "c2-fused-and-nominal-relatives"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["c1-fused-relative-clauses", "c2-fused-and-nominal-relatives"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Fused mệnh đề quan hệ", "en": "Fused relative clauses"},
+    "native_title": "Fused relative clauses",
+    "level": {"framework": "cefr", "value": "C1", "rank": 5},
+    "summary": {
+      "vi": "Mệnh đề quan hệ hỗn hợp (fused relative) dùng what, whoever, whatever, wherever, whichever vừa làm thành phần được nhắc tới vừa làm từ nối, không có tiền ngữ đứng trước.",
+      "en": "A fused relative uses what, whoever, whatever, wherever or whichever to serve as both the missing antecedent and the relative element, with no noun before it."
+    },
+    "sub": {"vi": "mệnh đề hỗn hợp", "en": "fused relatives"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói 'điều mà / người mà / bất cứ thứ gì mà' mà không cần danh từ tiền ngữ: What she said surprised me.",
+      "en": "When you mean 'the thing that / the person who / anything that' without a noun antecedent: What she said surprised me."
+    },
+    {
+      "vi": "Khi mệnh đề hỗn hợp làm chủ ngữ, tân ngữ hoặc bổ ngữ của mệnh đề chính: Take whatever you need.",
+      "en": "When the fused clause is the subject, object or complement of the main clause: Take whatever you need."
+    },
+    {
+      "vi": "Khi muốn diễn đạt nghĩa tự do lựa chọn (whoever, whatever, wherever, whichever): Whoever arrives first can start.",
+      "en": "When you want a free-choice meaning (whoever, whatever, wherever, whichever): Whoever arrives first can start."
+    },
+    {
+      "vi": "Khi cần câu văn trang trọng, súc tích thay cho 'the thing that...' trong văn viết C1.",
+      "en": "When you need a compact, formal alternative to 'the thing that...' in C1 writing."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "what/whoever/whatever/wherever/whichever",
+        "role": "marker",
+        "label": {"vi": "từ hỗn hợp", "en": "fused relative word"},
+        "options": [
+          {"text": "what"},
+          {"text": "whoever"},
+          {"text": "whatever"},
+          {"text": "wherever"},
+          {"text": "whichever"}
+        ]
+      },
+      {
+        "text": "S",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ mệnh đề phụ", "en": "embedded subject"}
+      },
+      {"text": "V", "role": "verb", "label": {"vi": "động từ mệnh đề phụ", "en": "embedded verb"}},
+      {
+        "text": "O/C",
+        "role": "object",
+        "label": {"vi": "tân ngữ / bổ ngữ mệnh đề phụ", "en": "embedded object or complement"},
+        "optional": true
+      },
+      {"text": "V", "role": "verb", "label": {"vi": "động từ mệnh đề chính", "en": "main verb"}}
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "What the report reveals is more serious than expected.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "marker"},
+        {"start": 5, "end": 15, "role": "subject"},
+        {"start": 16, "end": 23, "role": "verb"},
+        {"start": 24, "end": 26, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "What = 'điều mà', làm chủ ngữ cho 'is'; mệnh đề phụ dùng trật tự câu kể.",
+        "en": "What = 'the thing that', acting as subject of 'is'; the embedded clause keeps statement order."
+      },
+      "translation": {
+        "vi": "Điều mà báo cáo tiết lộ nghiêm trọng hơn dự kiến.",
+        "en": "What the report reveals is more serious than expected."
+      }
+    },
+    {
+      "text": "Whoever designed this system understood the constraints.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 7, "role": "marker"},
+        {"start": 8, "end": 16, "role": "verb"},
+        {"start": 17, "end": 28, "role": "subject"},
+        {"start": 29, "end": 39, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Whoever = 'bất kỳ ai', vừa là chủ ngữ của 'designed' vừa nối với mệnh đề chính; 'this system' là chủ ngữ của mệnh đề phụ.",
+        "en": "Whoever = 'any person who', serving as subject of 'designed' and linking to the main clause; 'this system' is the embedded subject."
+      },
+      "translation": {
+        "vi": "Bất kỳ ai thiết kế hệ thống này đều hiểu những hạn chế.",
+        "en": "Whoever designed this system understood the constraints."
+      }
+    },
+    {
+      "text": "Take whatever you need.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 5, "end": 13, "role": "marker"},
+        {"start": 14, "end": 17, "role": "subject"},
+        {"start": 18, "end": 22, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "whatever = 'bất cứ thứ gì', làm tân ngữ cho 'Take'; mệnh đề phụ 'you need' bổ nghĩa cho nó.",
+        "en": "whatever = 'anything that', the object of 'Take'; the embedded clause 'you need' completes it."
+      },
+      "translation": {"vi": "Lấy bất cứ thứ gì bạn cần.", "en": "Take whatever you need."}
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Khi đã có tiền ngữ 'the thing' thì phải dùng that/which, không dùng what; hoặc bỏ tiền ngữ để dùng mệnh đề hỗn hợp với what.",
+        "en": "With an explicit antecedent like 'the thing', use that/which, not what; or drop the antecedent and use the fused what."
+      },
+      "error_tag": "sentence_structure",
+      "l1": ["vi"],
+      "wrong": "The thing what concerns me is cost.",
+      "right": "What concerns me is cost."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "___ she proposed would require major investment.",
+      "options": [
+        {"text": "What", "error_tag": null},
+        {"text": "That", "error_tag": "sentence_structure"},
+        {"text": "Which", "error_tag": "sentence_structure"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Mệnh đề hỗn hợp làm chủ ngữ cần what; that/which không thể đứng một mình làm chủ ngữ khi thiếu tiền ngữ.",
+        "en": "A fused clause as subject needs what; that/which cannot stand alone as subject without an antecedent."
+      }
+    },
+    {
+      "q": "I don't know ___ she proposed.",
+      "options": [{"text": "what", "error_tag": null}, {"text": "what did", "error_tag": "sentence_structure"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Mệnh đề danh từ nhúng dùng trật tự câu kể: what + chủ ngữ + động từ, không đảo trợ động từ.",
+        "en": "An embedded nominal clause keeps statement order: what + subject + verb, with no auxiliary inversion."
+      }
+    },
+    {
+      "q": "___ finishes first should notify the coordinator.",
+      "options": [
+        {"text": "Whoever", "error_tag": null},
+        {"text": "Whomever", "error_tag": "word_choice"},
+        {"text": "Who", "error_tag": "sentence_structure"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Whoever làm chủ ngữ cho 'finishes'; whomever chỉ dùng cho chức năng tân ngữ, còn who đơn lẻ không tạo được mệnh đề hỗn hợp.",
+        "en": "Whoever is the subject of 'finishes'; whomever is only for object function, and bare who does not form a fused relative here."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về điều bạn cần hoặc điều ai đó đã nói, dùng mệnh đề hỗn hợp với what.",
+      "en": "Write one sentence about something you need or something someone said, using a fused relative with what."
+    },
+    "placeholder": "What I really need is ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "marker", "any_of": ["what", "whatever", "whoever"]},
+        {"role": "verb", "regex": "\\b(is|are|was|were|means|matters|counts|helps)\\b"}
+      ]
+    },
+    "sample": {"text": "What I really need is more time to prepare."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791011484",
+    "generated_at": "2026-10-03T07:11:24Z",
+    "r5_source": {
+      "ids": ["c1-fused-relative-clauses", "c2-fused-and-nominal-relatives"],
+      "content_version": 2,
+      "content_hash": "b8620a20339e5599ac38a502503dc3dd0fa020103ae8ad63108b330c9a181ae1",
+      "corrections": [
+        {
+          "r5_id": "c1-fused-relative-clauses",
+          "issue": "Lesson mixes C1 fused relatives with C2 nominal interrogative contrast and lists 'Wherever the team works' as a fused relative example without noting it is a free-choice adverbial, which blurs the point's scope.",
+          "fix": "Kept only the C1 fused-relative core (what/whoever/whatever/wherever/whichever as subject, object or complement) and dropped the C2 interrogative contrast from this lesson."
+        },
+        {
+          "r5_id": "c1-fused-relative-clauses",
+          "issue": "Mistake 'What did he say surprised me' is presented as a fused-relative error, but the real issue is embedded-clause word order, which belongs to nominal clauses.",
+          "fix": "Replaced it with the genuine fused-relative error 'The thing what concerns me is cost' and its two correct repairs."
+        },
+        {
+          "r5_id": "c2-fused-and-nominal-relatives",
+          "issue": "C2 lesson duplicates the C1 fused-relative content and adds nominal interrogatives, which is outside this point's scope.",
+          "fix": "Used only its fused-relative examples ('What she proposed would require major investment', 'Whoever finishes first should notify the coordinator') and left the interrogative material out."
+        }
+      ]
+    }
+  },
+  "review": null
+}

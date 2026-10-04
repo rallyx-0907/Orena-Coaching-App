@@ -1,0 +1,216 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.c1.021",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.verb_patterns",
+  "level": {"framework": "cefr", "value": "C1", "rank": 5},
+  "prereqs": ["en.canon.c1.019"],
+  "contrasts": [],
+  "error_tags": ["sentence_structure"],
+  "source_refs": {"r5": ["c1-advanced-non-finite-clauses"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": ["c1-advanced-non-finite-clauses"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Advanced non-finite clauses", "en": "Advanced non-finite clauses"},
+    "native_title": "Advanced non-finite clauses",
+    "level": {"framework": "cefr", "value": "C1", "rank": 5},
+    "summary": {
+      "vi": "Dùng mệnh đề không hữu hạn (to-infinitive, V-ing, V-ed, verbless) để nén thông tin khi chủ ngữ và quan hệ thời gian có thể khôi phục được.",
+      "en": "Use non-finite clauses (to-infinitive, V-ing, V-ed, verbless) to compress information when the subject and time relation are recoverable."
+    },
+    "sub": {"vi": "mệnh đề không hữu hạn", "en": "non-finite clauses"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nén một mệnh đề phụ thành cụm ngắn gọn, thường ở đầu câu, để câu văn trang trọng và cô đọng hơn.",
+      "en": "When you want to compress a subordinate clause into a short phrase, often at the start of a sentence, to make writing more formal and concise."
+    },
+    {
+      "vi": "Khi chủ ngữ của mệnh đề không hữu hạn trùng với chủ ngữ của mệnh đề chính, nên có thể lược bỏ mà không gây nhầm lẫn.",
+      "en": "When the subject of the non-finite clause is the same as the main clause subject, so it can be omitted without confusion."
+    },
+    {
+      "vi": "Khi quan hệ thời gian hoặc điều kiện được người đọc suy ra từ ngữ cảnh (trước, sau, nếu, bởi vì).",
+      "en": "When the time or condition relation is inferable from context (before, after, if, because)."
+    },
+    {
+      "vi": "Khi muốn tránh lặp lại chủ ngữ hoặc động từ 'be' trong văn viết học thuật, báo cáo, hoặc văn bản trang trọng.",
+      "en": "When you want to avoid repeating the subject or the verb 'be' in academic, report, or formal writing."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "Non-finite clause",
+        "role": "other",
+        "label": {"vi": "mệnh đề không hữu hạn", "en": "non-finite clause"}
+      },
+      {"text": ",", "role": "other", "label": {"vi": "dấu phẩy", "en": "comma"}},
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ chính", "en": "main verb"}},
+      {
+        "text": "O/C",
+        "role": "object",
+        "label": {"vi": "tân ngữ / bổ ngữ", "en": "object / complement"},
+        "optional": true
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "Having reviewed the evidence, the committee postponed its decision.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 28, "role": "other"},
+        {"start": 28, "end": 29, "role": "other"},
+        {"start": 30, "end": 43, "role": "subject"},
+        {"start": 44, "end": 53, "role": "verb"},
+        {"start": 54, "end": 66, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Mệnh đề không hữu hạn 'Having reviewed...' xảy ra trước hành động chính; chủ ngữ 'the committee' thực hiện cả hai hành động.",
+        "en": "The non-finite clause 'Having reviewed...' happens before the main action; the subject 'the committee' performs both actions."
+      },
+      "translation": {
+        "vi": "Sau khi xem xét bằng chứng, ủy ban đã hoãn quyết định.",
+        "en": "After reviewing the evidence, the committee postponed its decision."
+      }
+    },
+    {
+      "text": "If necessary, the procedure can be repeated.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 12, "role": "other"},
+        {"start": 12, "end": 13, "role": "other"},
+        {"start": 14, "end": 27, "role": "subject"},
+        {"start": 28, "end": 43, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Mệnh đề không hữu hạn 'If necessary' là dạng verbless, rút gọn từ 'If it is necessary'.",
+        "en": "The non-finite clause 'If necessary' is a verbless form, reduced from 'If it is necessary'."
+      },
+      "translation": {
+        "vi": "Nếu cần, quy trình có thể được lặp lại.",
+        "en": "If necessary, the procedure can be repeated."
+      }
+    },
+    {
+      "text": "The data collected last year remain relevant.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 8, "role": "subject"},
+        {"start": 9, "end": 28, "role": "other"},
+        {"start": 29, "end": 35, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Mệnh đề không hữu hạn 'collected last year' bổ nghĩa cho 'The data', tương đương 'which was collected last year'.",
+        "en": "The non-finite clause 'collected last year' modifies 'The data', equivalent to 'which was collected last year'."
+      },
+      "translation": {
+        "vi": "Dữ liệu thu thập năm ngoái vẫn còn liên quan.",
+        "en": "The data collected last year remain relevant."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Chủ ngữ của mệnh đề không hữu hạn bị treo (dangling): 'several errors' không thể là người xem xét báo cáo. Cần chủ ngữ thực hiện hành động.",
+        "en": "The non-finite clause has a dangling subject: 'several errors' cannot be the one reviewing the report. The subject must be the doer of the action."
+      },
+      "error_tag": "sentence_structure",
+      "l1": ["vi"],
+      "wrong": "Having reviewed the report, several errors were found.",
+      "right": "Having reviewed the report, we found several errors."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "___ the instructions carefully, she submitted the form.",
+      "options": [
+        {"text": "Having read", "error_tag": null},
+        {"text": "Reading", "error_tag": "tense"},
+        {"text": "Read", "error_tag": "word_form"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Hành động đọc xảy ra trước hành động nộp, nên dùng 'Having + V3' để chỉ thời gian trước.",
+        "en": "The reading happened before submitting, so 'Having + V3' is used to show an earlier action."
+      }
+    },
+    {
+      "q": "The report ___ last week contains several errors.",
+      "options": [{"text": "submitted", "error_tag": null}, {"text": "submitting", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Mệnh đề không hữu hạn 'submitted last week' là dạng V-ed rút gọn từ 'which was submitted last week'.",
+        "en": "The non-finite clause 'submitted last week' is a V-ed form reduced from 'which was submitted last week'."
+      }
+    },
+    {
+      "q": "___ in a hurry, the keys were left on the table.",
+      "options": [
+        {"text": "Leaving", "error_tag": "sentence_structure"},
+        {"text": "Left", "error_tag": "sentence_structure"},
+        {"text": "Having left", "error_tag": null}
+      ],
+      "answer": 2,
+      "explain": {
+        "vi": "Chủ ngữ 'the keys' không thể thực hiện hành động 'leave' trong mệnh đề không hữu hạn; cần chủ ngữ chỉ người. 'Having left' phù hợp nếu chủ ngữ là người.",
+        "en": "The subject 'the keys' cannot perform the action 'leave' in the non-finite clause; a human subject is needed. 'Having left' works if the subject is a person."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về bản thân, dùng mệnh đề không hữu hạn ở đầu câu để nén thông tin.",
+      "en": "Write a sentence about yourself, using a non-finite clause at the beginning to compress information."
+    },
+    "placeholder": "Having finished ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "other", "regex": "\\b(Having|After|Before|If|When|Although)\\b"},
+        {"role": "verb", "regex": "\\b\\w+ed\\b|\\b\\w+ing\\b"}
+      ]
+    },
+    "sample": {"text": "Having finished my work, I went for a walk."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791011478",
+    "generated_at": "2026-10-03T07:11:18Z",
+    "r5_source": {
+      "ids": ["c1-advanced-non-finite-clauses"],
+      "content_version": 2,
+      "content_hash": "d71e0da3a0b8732a52dec1a8068cf2346f59dcffa5fccef809408c45d0ae04a1",
+      "corrections": [
+        {
+          "r5_id": "c1-advanced-non-finite-clauses",
+          "issue": "R5 example 'Being completed the task, she left.' is ungrammatical; the correct form for a prior active event is 'Having completed the task, she left.'",
+          "fix": "Corrected to 'Having completed the task, she left.' in the common_mistakes section."
+        },
+        {
+          "r5_id": "c1-advanced-non-finite-clauses",
+          "issue": "R5 example 'The data collected last year remain relevant.' is correct but the explanation did not clarify that 'collected last year' is a reduced passive non-finite clause.",
+          "fix": "Added annotation clarifying the reduction from 'which was collected last year'."
+        },
+        {
+          "r5_id": "c1-advanced-non-finite-clauses",
+          "issue": "R5 guided practice included a contrast item that was not a contrast between this point and another; it was a restatement.",
+          "fix": "Removed the non-contrast item and kept only the correction and production items."
+        }
+      ]
+    }
+  },
+  "review": null
+}

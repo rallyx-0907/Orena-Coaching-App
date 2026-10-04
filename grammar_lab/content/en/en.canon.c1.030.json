@@ -1,0 +1,207 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.c1.030",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.information_structure",
+  "level": {"framework": "cefr", "value": "C1", "rank": 5},
+  "prereqs": ["en.canon.c1.029"],
+  "contrasts": [],
+  "error_tags": ["sentence_structure"],
+  "source_refs": {"r5": ["c1-sentence-rhythm-end-weight-and-end-focus", "c1-old-to-new-information-flow"]},
+  "point_type": "other",
+  "sequence": 5,
+  "aliases": ["c1-sentence-rhythm-end-weight-and-end-focus", "c1-old-to-new-information-flow"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {
+      "vi": "Sentence rhythm, end-weight and end-focus",
+      "en": "Sentence rhythm, end-weight and end-focus"
+    },
+    "native_title": "Sentence rhythm, end-weight and end-focus",
+    "level": {"framework": "cefr", "value": "C1", "rank": 5},
+    "summary": {
+      "vi": "Điểm ngữ pháp này giải thích cách sắp xếp các thành phần trong câu tiếng Anh để thông tin nặng và thông tin mới rơi vào cuối câu, nhờ đó câu dễ xử lý và có nhịp điệu tự nhiên hơn.",
+      "en": "This point explains how to arrange English clause elements so that heavy and new information falls at the end, making the sentence easier to process and more rhythmically natural."
+    },
+    "sub": {"vi": "trật tự và trọng lượng", "en": "weight and focus"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi chủ ngữ là một mệnh đề dài hoặc cụm danh từ nặng, và bạn muốn tránh để nó đứng đầu câu.",
+      "en": "When the subject is a long clause or a heavy noun phrase and you want to avoid putting it first."
+    },
+    {
+      "vi": "Khi bạn muốn đưa thông tin mới hoặc quan trọng nhất về cuối câu để người đọc chú ý.",
+      "en": "When you want the newest or most important information to land at the end of the clause for emphasis."
+    },
+    {
+      "vi": "Khi tân ngữ trực tiếp dài hơn nhiều so với tân ngữ gián tiếp hoặc cụm giới từ, và bạn muốn câu dễ đọc hơn.",
+      "en": "When the direct object is much longer than the indirect object or a prepositional phrase and you want the sentence to read more smoothly."
+    },
+    {
+      "vi": "Khi viết học thuật hoặc báo cáo, nơi câu cần mạch lạc và tránh dồn thông tin nặng vào đầu.",
+      "en": "In academic or report writing, where sentences need to be cohesive and avoid front-loading heavy information."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "It", "role": "subject", "label": {"vi": "chủ ngữ giả", "en": "dummy subject"}},
+      {
+        "text": "be",
+        "role": "verb",
+        "label": {"vi": "động từ liên kết", "en": "linking verb"},
+        "options": [{"text": "is"}, {"text": "was"}, {"text": "became"}, {"text": "seems"}]
+      },
+      {"text": "complement", "role": "complement", "label": {"vi": "bổ ngữ", "en": "complement"}},
+      {"text": "that-clause", "role": "other", "label": {"vi": "mệnh đề that", "en": "that-clause"}}
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "It became clear during the review that several assumptions were incorrect.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 3, "end": 9, "role": "verb"},
+        {"start": 10, "end": 15, "role": "complement"},
+        {"start": 34, "end": 73, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Mệnh đề that nặng được đẩy ra cuối câu; chủ ngữ giả 'It' giữ vị trí đầu.",
+        "en": "The heavy that-clause is shifted to the end; the dummy subject 'It' holds the opening position."
+      },
+      "translation": {
+        "vi": "Trong cuộc đánh giá, rõ ràng là một số giả định đã sai.",
+        "en": "During the review, it became clear that several assumptions were incorrect."
+      }
+    },
+    {
+      "text": "It seems likely that the new policy will reduce costs.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 3, "end": 8, "role": "verb"},
+        {"start": 9, "end": 15, "role": "complement"},
+        {"start": 16, "end": 53, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Cấu trúc extraposition với 'It' đưa mệnh đề that nặng ra cuối câu.",
+        "en": "Extraposition with 'It' moves the heavy that-clause to the end."
+      },
+      "translation": {
+        "vi": "Có vẻ như chính sách mới sẽ giảm chi phí.",
+        "en": "It seems likely that the new policy will reduce costs."
+      }
+    },
+    {
+      "text": "It was obvious that the team needed more time.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 3, "end": 6, "role": "verb"},
+        {"start": 7, "end": 14, "role": "complement"},
+        {"start": 15, "end": 45, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Chủ ngữ giả 'It' giữ vị trí đầu; mệnh đề that nặng ở cuối câu.",
+        "en": "The dummy subject 'It' holds the opening position; the heavy that-clause is at the end."
+      },
+      "translation": {
+        "vi": "Rõ ràng là nhóm cần thêm thời gian.",
+        "en": "It was obvious that the team needed more time."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học thường giữ nguyên mệnh đề chủ ngữ dài ở đầu câu, khiến câu nặng và khó xử lý; tiếng Anh có xu hướng đẩy mệnh đề nặng ra cuối bằng extraposition.",
+        "en": "Learners often keep the long subject clause at the beginning, making the sentence heavy and hard to process; English tends to shift the heavy clause to the end via extraposition."
+      },
+      "error_tag": "sentence_structure",
+      "l1": ["vi"],
+      "wrong": "That several assumptions were incorrect became clear to us during the review.",
+      "right": "It became clear to us during the review that several assumptions were incorrect."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "___ became clear during the meeting that the deadline would be missed.",
+      "options": [{"text": "It", "error_tag": null}, {"text": "That", "error_tag": "sentence_structure"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Cần chủ ngữ giả 'It' để mở đầu câu extraposition; dùng 'That' sẽ tạo chủ ngữ mệnh đề nặng.",
+        "en": "The dummy subject 'It' is needed to start the extraposition; using 'That' creates a heavy clause subject."
+      }
+    },
+    {
+      "q": "The committee gave ___ a detailed report containing twelve appendices.",
+      "options": [{"text": "us", "error_tag": null}, {"text": "to us", "error_tag": "preposition"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Với động từ 'give', tân ngữ gián tiếp đứng trước tân ngữ trực tiếp dài mà không cần giới từ.",
+        "en": "With 'give', the indirect object comes before the long direct object without a preposition."
+      }
+    },
+    {
+      "q": "What the team still lacked ___ reliable long-term data.",
+      "options": [{"text": "was", "error_tag": null}, {"text": "were", "error_tag": "agreement"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Chủ ngữ là mệnh đề 'What the team still lacked' số ít, nên động từ là 'was'.",
+        "en": "The subject is the singular clause 'What the team still lacked', so the verb is 'was'."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng cấu trúc extraposition với 'It' để nói về một điều gì đó trở nên rõ ràng trong quá khứ.",
+      "en": "Write a sentence using extraposition with 'It' to say that something became clear in the past."
+    },
+    "placeholder": "It became clear that ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "subject", "any_of": ["It"]},
+        {"role": "verb", "any_of": ["became", "was", "seems"]},
+        {"role": "other", "regex": "that\\s+\\w+"}
+      ]
+    },
+    "sample": {"text": "It became clear that the original plan needed revision."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791011535",
+    "generated_at": "2026-10-03T07:12:15Z",
+    "r5_source": {
+      "ids": ["c1-sentence-rhythm-end-weight-and-end-focus", "c1-old-to-new-information-flow"],
+      "content_version": 2,
+      "content_hash": "62785cc1923e03b3de5043d06c09f185ba9c221c7353d73ecb55753750578f4e",
+      "corrections": [
+        {
+          "r5_id": "c1-sentence-rhythm-end-weight-and-end-focus",
+          "issue": "The R5 mistake example 'That several assumptions were incorrect became clear to us during the review, although grammatically possible, is very heavy as subject.' is not a clean incorrect sentence; it mixes a grammatical comment into the example.",
+          "fix": "Replaced with a clean incorrect sentence: 'That several assumptions were incorrect became clear to us during the review.' and its corrected version 'It became clear to us during the review that several assumptions were incorrect.'"
+        },
+        {
+          "r5_id": "c1-sentence-rhythm-end-weight-and-end-focus",
+          "issue": "The R5 example 'The team presented to the board a detailed plan for reducing long-term costs.' is acceptable but the explanation does not clarify that this is heavy NP shift after a prepositional phrase.",
+          "fix": "Kept the example and added a clear annotation about heavy NP shift creating end-weight."
+        },
+        {
+          "r5_id": "c1-old-to-new-information-flow",
+          "issue": "The R5 lesson for old-to-new information flow is a sibling topic and not the target point; its content was not used except where it overlaps with end-weight and end-focus.",
+          "fix": "Excluded old-to-new information flow from the formula and examples; only kept the shared principle that new/heavy information tends toward the end."
+        }
+      ]
+    }
+  },
+  "review": null
+}

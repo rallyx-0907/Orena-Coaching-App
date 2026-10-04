@@ -1,0 +1,310 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b2.018",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.reporting",
+  "level": {"framework": "cefr", "value": "B2", "rank": 4},
+  "prereqs": ["en.canon.b1.029"],
+  "contrasts": [],
+  "error_tags": ["tense", "sentence_structure"],
+  "source_refs": {"r5": ["b2-reported-speech-tense-choice"]},
+  "point_type": "tense_aspect",
+  "sequence": 2,
+  "aliases": ["b2-reported-speech-tense-choice"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "câu tường thuật: tense choice", "en": "Reported speech: tense choice"},
+    "native_title": "Reported speech: tense choice",
+    "level": {"framework": "cefr", "value": "B2", "rank": 4},
+    "summary": {
+      "vi": "Câu tường thuật ở B2 không tự động lùi thì: người nói chọn thì để thể hiện thời điểm tường thuật, mức độ còn đúng của sự việc và quan điểm của mình.",
+      "en": "At B2, reported speech does not shift tense automatically: the reporter chooses the tense to show the reporting time, whether the fact still holds, and their own stance."
+    },
+    "sub": {"vi": "chọn thì khi tường thuật", "en": "tense choice in reports"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi động từ tường thuật ở quá khứ (said, told, explained) và bạn muốn cho thấy sự việc đã lùi về quá khứ so với lúc nói.",
+      "en": "When the reporting verb is past (said, told, explained) and you want to show the situation belonged to an earlier time."
+    },
+    {
+      "vi": "Khi sự việc vẫn còn đúng hoặc còn liên quan ở hiện tại, bạn có thể giữ thì hiện tại để nhấn mạnh điều đó.",
+      "en": "When the fact is still true or still relevant now, you can keep the present tense to signal that."
+    },
+    {
+      "vi": "Khi tường thuật ngay sau lời nói hoặc trong cùng một tình huống, thì hiện tại thường tự nhiên hơn.",
+      "en": "When you report immediately after the words were spoken or within the same situation, the present tense is often more natural."
+    },
+    {
+      "vi": "Khi bạn muốn thể hiện thái độ: lùi thì để tách khỏi lời nói, giữ thì để cho thấy bạn đồng tình hoặc thông tin vẫn đáng tin.",
+      "en": "When you want to show stance: backshift to distance yourself from the claim, keep the tense to show you accept it or it is still valid."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {
+        "text": "said/told/explained",
+        "role": "verb",
+        "label": {"vi": "động từ tường thuật", "en": "reporting verb"},
+        "options": [{"text": "said"}, {"text": "told"}, {"text": "explained"}]
+      },
+      {
+        "text": "that",
+        "role": "connector",
+        "label": {"vi": "từ nối", "en": "connector"},
+        "optional": true
+      },
+      {
+        "text": "S",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ mệnh đề tường thuật", "en": "reported clause subject"}
+      },
+      {
+        "text": "V",
+        "role": "verb",
+        "label": {"vi": "động từ mệnh đề tường thuật", "en": "reported clause verb"}
+      },
+      {
+        "text": "O/C",
+        "role": "object",
+        "label": {"vi": "tân ngữ/bổ ngữ", "en": "object/complement"},
+        "optional": true
+      }
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "said/told/explained",
+          "role": "verb",
+          "label": {"vi": "động từ tường thuật", "en": "reporting verb"},
+          "options": [{"text": "said"}, {"text": "told"}, {"text": "explained"}]
+        },
+        {
+          "text": "that",
+          "role": "connector",
+          "label": {"vi": "từ nối", "en": "connector"},
+          "optional": true
+        },
+        {
+          "text": "S",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ mệnh đề tường thuật", "en": "reported clause subject"}
+        },
+        {
+          "text": "did not / was not",
+          "role": "aux",
+          "label": {"vi": "trợ động từ phủ định", "en": "negative auxiliary"},
+          "options": [{"text": "did not"}, {"text": "was not"}, {"text": "were not"}]
+        },
+        {"text": "V", "role": "verb", "label": {"vi": "động từ chính", "en": "main verb"}},
+        {
+          "text": "O/C",
+          "role": "object",
+          "label": {"vi": "tân ngữ/bổ ngữ", "en": "object/complement"},
+          "optional": true
+        }
+      ],
+      "question": [
+        {
+          "text": "Did",
+          "role": "aux",
+          "label": {"vi": "trợ động từ nghi vấn", "en": "question auxiliary"}
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "say/tell/explain",
+          "role": "verb",
+          "label": {"vi": "động từ tường thuật", "en": "reporting verb"},
+          "options": [{"text": "say"}, {"text": "tell"}, {"text": "explain"}]
+        },
+        {
+          "text": "that",
+          "role": "connector",
+          "label": {"vi": "từ nối", "en": "connector"},
+          "optional": true
+        },
+        {
+          "text": "S",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ mệnh đề tường thuật", "en": "reported clause subject"}
+        },
+        {
+          "text": "V",
+          "role": "verb",
+          "label": {"vi": "động từ mệnh đề tường thuật", "en": "reported clause verb"}
+        },
+        {
+          "text": "O/C",
+          "role": "object",
+          "label": {"vi": "tân ngữ/bổ ngữ", "en": "object/complement"},
+          "optional": true
+        }
+      ]
+    },
+    "illustration": {"kind": "timeline", "timeline": {"shape": "unspecified_past"}}
+  },
+  "examples": [
+    {
+      "text": "Mia said she was feeling ill.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 4, "end": 8, "role": "verb"},
+        {"start": 9, "end": 12, "role": "subject"},
+        {"start": 13, "end": 24, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Lùi thì: lời nói ở hiện tại tiếp diễn được tường thuật bằng quá khứ tiếp diễn để cho thấy sự việc thuộc về thời điểm trước đó.",
+        "en": "Backshift: a present continuous statement is reported with past continuous to show the situation belonged to an earlier time."
+      },
+      "translation": {"vi": "Mia nói cô ấy thấy không khỏe.", "en": "Mia said she was feeling ill."}
+    },
+    {
+      "text": "The guide explained that the museum opens at nine.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 9, "role": "subject"},
+        {"start": 10, "end": 19, "role": "verb"},
+        {"start": 20, "end": 24, "role": "connector"},
+        {"start": 25, "end": 35, "role": "subject"},
+        {"start": 36, "end": 41, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Không lùi thì: giờ mở cửa vẫn còn đúng ở hiện tại, nên thì hiện tại giữ nguyên.",
+        "en": "No backshift: the opening time is still true now, so the present tense stays."
+      },
+      "translation": {
+        "vi": "Hướng dẫn viên nói bảo tàng mở lúc chín giờ.",
+        "en": "The guide explained that the museum opens at nine."
+      }
+    },
+    {
+      "text": "He told me he would call the next day.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 3, "end": 7, "role": "verb"},
+        {"start": 8, "end": 10, "role": "object"},
+        {"start": 11, "end": 13, "role": "subject"},
+        {"start": 14, "end": 24, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Lùi thì: will chuyển thành would và tomorrow chuyển thành the next day khi tường thuật từ góc nhìn quá khứ.",
+        "en": "Backshift: will becomes would and tomorrow becomes the next day when reporting from a past viewpoint."
+      },
+      "translation": {
+        "vi": "Anh ấy nói với tôi rằng hôm sau anh ấy sẽ gọi.",
+        "en": "He told me he would call the next day."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học máy móc lùi thì mọi động từ sau said, kể cả sự thật hiển nhiên vẫn còn đúng; ở B2, giữ thì hiện tại cho sự thật vẫn đúng là lựa chọn rõ nghĩa hơn.",
+        "en": "Learners mechanically backshift every verb after said, even permanent facts that are still true; at B2, keeping the present for a still-valid fact is the clearer choice."
+      },
+      "error_tag": "tense",
+      "l1": ["vi"],
+      "wrong": "The teacher said the Earth went around the Sun.",
+      "right": "The teacher said the Earth goes around the Sun."
+    },
+    {
+      "reason": {
+        "vi": "Khi tường thuật từ góc nhìn quá khứ, will phải chuyển thành would và trạng ngữ thời gian cũng phải đổi cho phù hợp; người học thường quên điều chỉnh cả hai.",
+        "en": "When reporting from a past viewpoint, will must become would and the time expression must shift too; learners often forget to adjust both."
+      },
+      "error_tag": "sentence_structure",
+      "l1": ["vi"],
+      "wrong": "He said he will call tomorrow.",
+      "right": "He said he would call the next day."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "She said she ___ the report the day before.",
+      "options": [
+        {"text": "had finished", "error_tag": null},
+        {"text": "has finished", "error_tag": "tense"},
+        {"text": "finishes", "error_tag": "tense"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Hành động gửi báo cáo xảy ra trước lời nói ở quá khứ, nên dùng quá khứ hoàn thành.",
+        "en": "The finishing happened before the past reporting, so the past perfect is used."
+      }
+    },
+    {
+      "q": "The scientist explained that water ___ at 100 degrees Celsius.",
+      "options": [{"text": "boils", "error_tag": null}, {"text": "boiled", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Đây là sự thật khoa học vẫn còn đúng, nên giữ thì hiện tại đơn sau explained.",
+        "en": "This is a scientific fact that is still true, so the present simple stays after explained."
+      }
+    },
+    {
+      "q": "He told me he ___ call me the next day.",
+      "options": [{"text": "would", "error_tag": null}, {"text": "will", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Lời hứa trong quá khứ được tường thuật bằng would, không phải will.",
+        "en": "A past promise is reported with would, not will."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu tường thuật điều ai đó đã nói với bạn, dùng động từ tường thuật ở quá khứ và chọn thì phù hợp với thời điểm và mức độ còn đúng của sự việc.",
+      "en": "Write a reported sentence about something someone told you, using a past reporting verb and choosing the tense that fits the time and whether the fact still holds."
+    },
+    "placeholder": "My friend said ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "verb", "any_of": ["said", "told", "explained"]},
+        {
+          "role": "verb",
+          "regex": "(was|were|had|would|could|might|did|opened|opens|boils|goes|go|live|lives|call|called|finish|finished|feel|felt|send|sent|work|worked|study|studied|travel|travelled|traveled|arrive|arrived|leave|left|start|started|need|needed|want|wanted|know|knew|think|thought|say|said|tell|told)"
+        }
+      ]
+    },
+    "sample": {"text": "My friend said she was moving to Da Nang the following month."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791011310",
+    "generated_at": "2026-10-03T07:08:30Z",
+    "r5_source": {
+      "ids": ["b2-reported-speech-tense-choice"],
+      "content_version": 2,
+      "content_hash": "ba511fa0573d4cb1938e7f4ed68babbb871892972d75164d48f33f80c0ef9c86",
+      "corrections": [
+        {
+          "r5_id": "b2-reported-speech-tense-choice",
+          "issue": "R5's mistake example 'He said he will call tomorrow in a past-shifted report' is not a natural learner error as written; it mixes a present-tense report with a past-shifted frame, which is confusing.",
+          "fix": "Replaced with the clearer learner error 'He said he will call tomorrow.' and its correction 'He said he would call the next day.'"
+        },
+        {
+          "r5_id": "b2-reported-speech-tense-choice",
+          "issue": "R5's explanation of the Earth example says backshift is 'possible in some narrative contexts', which is vague and does not help B2 learners decide.",
+          "fix": "Clarified that for still-valid general truths, keeping the present is the clearer and more natural choice at B2."
+        },
+        {
+          "r5_id": "b2-reported-speech-tense-choice",
+          "issue": "R5 lists 'Reporting passive' and 'Reporting verbs and patterns' as contrast targets, but the point's scope is tense choice only; including them would exceed the point.",
+          "fix": "Removed those contrast targets and kept the lesson focused on tense choice in reported speech."
+        }
+      ]
+    }
+  },
+  "review": null
+}

@@ -1,0 +1,228 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.c1.029",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.sentence_basics",
+  "level": {"framework": "cefr", "value": "C1", "rank": 5},
+  "prereqs": ["en.canon.c1.028"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["c1-academic-definitions-and-classifications"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": ["c1-academic-definitions-and-classifications"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {
+      "vi": "Academic definitions and classifications",
+      "en": "Academic definitions and classifications"
+    },
+    "native_title": "Academic definitions and classifications",
+    "level": {"framework": "cefr", "value": "C1", "rank": 5},
+    "summary": {
+      "vi": "Cấu trúc định nghĩa và phân loại học thuật dùng động từ liên kết, mệnh đề quan hệ và các mẫu phân nhóm để nêu đặc tính phân biệt và tiêu chí.",
+      "en": "Academic definition and classification structures use linking verbs, relative clauses and grouping patterns to state distinguishing properties and criteria."
+    },
+    "sub": {"vi": "định nghĩa & phân loại", "en": "defining & classifying"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi cần định nghĩa một thuật ngữ bằng đặc tính phân biệt, không lặp lại chính thuật ngữ đó.",
+      "en": "When you need to define a term by a distinguishing property, not by repeating the term itself."
+    },
+    {
+      "vi": "Khi phân chia một nhóm thành các tiểu loại và nêu rõ tiêu chí phân loại.",
+      "en": "When you divide a group into subtypes and state the classification criteria explicitly."
+    },
+    {
+      "vi": "Khi giới thiệu một khái niệm bằng cách nói nó thuộc về một phạm trù rộng hơn.",
+      "en": "When you introduce a concept by saying it belongs to a broader category."
+    },
+    {
+      "vi": "Khi cần làm rõ nghĩa của một từ hoặc cụm từ trong văn bản học thuật.",
+      "en": "When you need to clarify the meaning of a word or phrase in academic writing."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "X",
+        "role": "subject",
+        "label": {"vi": "thuật ngữ cần định nghĩa", "en": "term to define"}
+      },
+      {
+        "text": "is/refers to/is defined as",
+        "role": "verb",
+        "label": {"vi": "động từ định nghĩa", "en": "defining verb"},
+        "options": [{"text": "is"}, {"text": "refers to"}, {"text": "is defined as"}]
+      },
+      {
+        "text": "a/an",
+        "role": "other",
+        "label": {"vi": "mạo từ", "en": "article"},
+        "options": [{"text": "a"}, {"text": "an"}]
+      },
+      {
+        "text": "Y",
+        "role": "complement",
+        "label": {"vi": "phạm trù rộng hơn", "en": "broader category"}
+      },
+      {
+        "text": "that/which",
+        "role": "connector",
+        "label": {"vi": "đại từ quan hệ", "en": "relative pronoun"},
+        "options": [{"text": "that"}, {"text": "which"}]
+      },
+      {
+        "text": "V",
+        "role": "verb",
+        "label": {"vi": "đặc tính phân biệt", "en": "distinguishing property"}
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "A modal verb is an auxiliary that expresses meanings such as possibility or obligation.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 12, "role": "subject"},
+        {"start": 13, "end": 15, "role": "verb"},
+        {"start": 16, "end": 18, "role": "other"},
+        {"start": 19, "end": 28, "role": "complement"},
+        {"start": 29, "end": 33, "role": "connector"},
+        {"start": 34, "end": 43, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Định nghĩa bằng phạm trù rộng hơn và mệnh đề quan hệ nêu đặc tính phân biệt.",
+        "en": "Defines by broader category and a relative clause giving the distinguishing property."
+      },
+      "translation": {
+        "vi": "Động từ khiếm khuyết là trợ động từ diễn đạt các nghĩa như khả năng hoặc nghĩa vụ.",
+        "en": "A modal verb is an auxiliary that expresses meanings such as possibility or obligation."
+      }
+    },
+    {
+      "text": "A sensor is a device that detects changes in the environment.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 8, "role": "subject"},
+        {"start": 9, "end": 11, "role": "verb"},
+        {"start": 12, "end": 13, "role": "other"},
+        {"start": 14, "end": 20, "role": "complement"},
+        {"start": 21, "end": 25, "role": "connector"},
+        {"start": 26, "end": 33, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Định nghĩa bằng phạm trù rộng hơn và mệnh đề quan hệ nêu đặc tính phân biệt.",
+        "en": "Defines by broader category and a relative clause giving the distinguishing property."
+      },
+      "translation": {
+        "vi": "Cảm biến là một thiết bị phát hiện những thay đổi trong môi trường.",
+        "en": "A sensor is a device that detects changes in the environment."
+      }
+    },
+    {
+      "text": "A classifier is a form that assigns an item to a grammatical or semantic class.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 12, "role": "subject"},
+        {"start": 13, "end": 15, "role": "verb"},
+        {"start": 16, "end": 17, "role": "other"},
+        {"start": 18, "end": 22, "role": "complement"},
+        {"start": 23, "end": 27, "role": "connector"},
+        {"start": 28, "end": 35, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Định nghĩa bằng phạm trù rộng hơn và mệnh đề quan hệ nêu đặc tính phân biệt.",
+        "en": "Defines by broader category and a relative clause giving the distinguishing property."
+      },
+      "translation": {
+        "vi": "Một classifier là một hình thái gán một mục vào một lớp ngữ pháp hoặc ngữ nghĩa.",
+        "en": "A classifier is a form that assigns an item to a grammatical or semantic class."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Định nghĩa vòng tròn dùng lại chính thuật ngữ, không nêu đặc tính phân biệt.",
+        "en": "Circular definition reuses the term itself and gives no distinguishing property."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "A classifier is something that classifies.",
+      "right": "A classifier is a form that assigns an item to a grammatical or semantic class."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "A modal verb is ___ auxiliary that expresses possibility or obligation.",
+      "options": [{"text": "an", "error_tag": null}, {"text": "a", "error_tag": "article"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Dùng 'an' trước nguyên âm /ɔː/ trong 'auxiliary'.",
+        "en": "Use 'an' before the vowel sound in 'auxiliary'."
+      }
+    },
+    {
+      "q": "The system is divided ___ three categories.",
+      "options": [{"text": "into", "error_tag": null}, {"text": "in", "error_tag": "preposition"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Cấu trúc phân loại dùng 'divided into', không dùng 'divided in'.",
+        "en": "The classification structure uses 'divided into', not 'divided in'."
+      }
+    },
+    {
+      "q": "By 'uptime', we ___ the proportion of time a service remains available.",
+      "options": [{"text": "mean", "error_tag": null}, {"text": "are meaning", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Định nghĩa thuật ngữ dùng hiện tại đơn với 'mean', không dùng tiếp diễn.",
+        "en": "Defining a term uses present simple 'mean', not the continuous."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu định nghĩa một thuật ngữ trong lĩnh vực của bạn, dùng cấu trúc 'X is a/an Y that ...'.",
+      "en": "Write one sentence defining a term in your field, using 'X is a/an Y that ...'."
+    },
+    "placeholder": "A ... is a ... that ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "verb", "any_of": ["is"]}, {"role": "connector", "any_of": ["that"]}]
+    },
+    "sample": {"text": "A protocol is a set of rules that governs how data is exchanged between systems."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791011541",
+    "generated_at": "2026-10-03T07:12:21Z",
+    "r5_source": {
+      "ids": ["c1-academic-definitions-and-classifications"],
+      "content_version": 2,
+      "content_hash": "f15127e1851cf915914b88c7295be90f445797821e7e2ee1dc7377a2c9396ca4",
+      "corrections": [
+        {
+          "r5_id": "c1-academic-definitions-and-classifications",
+          "issue": "R5 example 'The system is divided in three categories' is ungrammatical for the classification pattern.",
+          "fix": "Corrected to 'The system is divided into three categories' and used as a common mistake with the right version."
+        },
+        {
+          "r5_id": "c1-academic-definitions-and-classifications",
+          "issue": "R5 mistake 'A classifier is something that classifies' is a circular definition but the correction was not integrated into the structured mistake entry.",
+          "fix": "Added as the common mistake with a clear reason and a corrected definition that gives a distinguishing property."
+        }
+      ]
+    }
+  },
+  "review": null
+}

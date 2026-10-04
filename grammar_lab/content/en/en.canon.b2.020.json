@@ -1,0 +1,227 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b2.020",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.relative",
+  "level": {"framework": "cefr", "value": "B2", "rank": 4},
+  "prereqs": ["en.canon.b1.030"],
+  "contrasts": [],
+  "error_tags": ["sentence_structure"],
+  "source_refs": {"r5": ["b2-advanced-relative-clauses", "c1-advanced-relative-structures"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["b2-advanced-relative-clauses", "c1-advanced-relative-structures"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Advanced mệnh đề quan hệ", "en": "Advanced relative clauses"},
+    "native_title": "Advanced relative clauses",
+    "level": {"framework": "cefr", "value": "B2", "rank": 4},
+    "summary": {
+      "vi": "Mệnh đề quan hệ nâng cao dùng whose, which chỉ cả mệnh đề, và when/where/why để bổ sung thông tin cho danh từ hoặc cho cả câu.",
+      "en": "Advanced relative clauses use whose, whole-clause which, and when/where/why to add information about a noun or an entire clause."
+    },
+    "sub": {"vi": "mệnh đề quan hệ nâng cao", "en": "advanced relatives"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói ai đó hoặc cái gì đó sở hữu một thứ gì khác, dùng whose thay cho of which/of whom.",
+      "en": "Use whose to show possession by a person, organisation, or thing instead of of which/of whom."
+    },
+    {
+      "vi": "Khi muốn bình luận về toàn bộ sự việc vừa nêu, dùng which sau dấu phẩy để chỉ cả mệnh đề trước.",
+      "en": "Use which after a comma to comment on the whole preceding clause, not just one noun."
+    },
+    {
+      "vi": "Khi nói về thời gian, địa điểm hoặc lý do, dùng when, where, why sau danh từ chỉ thời gian, nơi chốn, lý do.",
+      "en": "Use when, where, or why after a noun of time, place, or reason to add information about it."
+    },
+    {
+      "vi": "Khi muốn thêm thông tin không cần thiết cho câu, dùng mệnh đề không xác định với dấu phẩy; không dùng that trong trường hợp này.",
+      "en": "Use a non-defining clause with commas to add extra information; do not use that in this type of clause."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {
+        "text": "whose",
+        "role": "marker",
+        "label": {"vi": "từ quan hệ sở hữu", "en": "possessive relative marker"}
+      },
+      {"text": "N", "role": "object", "label": {"vi": "danh từ bị sở hữu", "en": "possessed noun"}},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}},
+      {
+        "text": "which",
+        "role": "marker",
+        "label": {"vi": "từ quan hệ chỉ cả mệnh đề", "en": "whole-clause relative marker"}
+      },
+      {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}},
+      {
+        "text": "when/where/why",
+        "role": "marker",
+        "label": {
+          "vi": "từ quan hệ chỉ thời gian/nơi chốn/lý do",
+          "en": "relative marker of time/place/reason"
+        },
+        "options": [{"text": "when"}, {"text": "where"}, {"text": "why"}]
+      },
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}}
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "The company, whose profits fell sharply, cut costs.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 11, "role": "subject"},
+        {"start": 13, "end": 18, "role": "marker"},
+        {"start": 19, "end": 26, "role": "object"},
+        {"start": 27, "end": 31, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "whose thay cho 'of which' để nói lợi nhuận thuộc về công ty.",
+        "en": "whose replaces 'of which' to show the profits belong to the company."
+      },
+      "translation": {
+        "vi": "Công ty, có lợi nhuận giảm mạnh, đã cắt chi phí.",
+        "en": "The company, whose profits fell sharply, cut costs."
+      }
+    },
+    {
+      "text": "He missed the deadline, which caused a delay.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 3, "end": 9, "role": "verb"},
+        {"start": 10, "end": 22, "role": "object"},
+        {"start": 24, "end": 29, "role": "marker"},
+        {"start": 30, "end": 36, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "which chỉ cả mệnh đề 'He missed the deadline', không chỉ danh từ deadline.",
+        "en": "which refers to the whole clause 'He missed the deadline', not just the noun deadline."
+      },
+      "translation": {
+        "vi": "Anh ấy lỡ hạn, điều đó gây ra sự chậm trễ.",
+        "en": "He missed the deadline, which caused a delay."
+      }
+    },
+    {
+      "text": "That was the year when everything changed.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 5, "end": 8, "role": "verb"},
+        {"start": 9, "end": 17, "role": "object"},
+        {"start": 18, "end": 22, "role": "marker"},
+        {"start": 23, "end": 33, "role": "subject"},
+        {"start": 34, "end": 41, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "when bổ sung thông tin cho danh từ chỉ thời gian 'the year'.",
+        "en": "when adds information about the time noun 'the year'."
+      },
+      "translation": {"vi": "Đó là năm mà mọi thứ thay đổi.", "en": "That was the year when everything changed."}
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Trong mệnh đề quan hệ không xác định chỉ cả mệnh đề, tiếng Anh chuẩn dùng which, không dùng that.",
+        "en": "In a non-defining relative clause referring to a whole clause, standard English uses which, not that."
+      },
+      "error_tag": "sentence_structure",
+      "l1": ["vi"],
+      "wrong": "He was late, that annoyed everyone.",
+      "right": "He was late, which annoyed everyone."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "The company, ___ profits fell sharply, cut costs.",
+      "options": [
+        {"text": "whose", "error_tag": null},
+        {"text": "who", "error_tag": "word_choice"},
+        {"text": "which", "error_tag": "word_choice"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Cần từ quan hệ sở hữu whose vì 'profits' thuộc về 'the company'.",
+        "en": "The possessive relative whose is needed because the profits belong to the company."
+      }
+    },
+    {
+      "q": "He missed the deadline, ___ caused a delay.",
+      "options": [{"text": "which", "error_tag": null}, {"text": "that", "error_tag": "sentence_structure"}],
+      "answer": 0,
+      "explain": {
+        "vi": "which chỉ cả mệnh đề trước; that không dùng trong mệnh đề không xác định.",
+        "en": "which refers to the whole preceding clause; that is not used in a non-defining clause."
+      }
+    },
+    {
+      "q": "That was the year ___ everything changed.",
+      "options": [
+        {"text": "when", "error_tag": null},
+        {"text": "where", "error_tag": "word_choice"},
+        {"text": "which", "error_tag": "word_choice"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "when dùng cho danh từ chỉ thời gian 'the year'.",
+        "en": "when is used with the time noun 'the year'."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một công ty hoặc tổ chức mà bạn biết, dùng whose để nói về một thứ thuộc về nó.",
+      "en": "Write one sentence about a company or organisation you know, using whose to say something that belongs to it."
+    },
+    "placeholder": "The company, whose ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "marker", "any_of": ["whose"]},
+        {"role": "verb", "regex": "\\b\\w+ed\\b|\\b\\w+s\\b|\\b(?:is|are|was|were|has|have|had)\\b"}
+      ]
+    },
+    "sample": {"text": "The company, whose profits fell sharply, cut costs."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791011313",
+    "generated_at": "2026-10-03T07:08:33Z",
+    "r5_source": {
+      "ids": ["b2-advanced-relative-clauses", "c1-advanced-relative-structures"],
+      "content_version": 2,
+      "content_hash": "7751b63946882cab1ea2298feefe97582a3ccc9467ace16e4f28f46764e497fa",
+      "corrections": [
+        {
+          "r5_id": "b2-advanced-relative-clauses",
+          "issue": "The R5 lesson mixes B2 and C1 content, including fused relatives and quantifier relatives that belong to the C1 lesson.",
+          "fix": "Kept only B2-level content: whose, whole-clause which, and where/when/why. Removed fused relatives and quantifier relatives from this point."
+        },
+        {
+          "r5_id": "b2-advanced-relative-clauses",
+          "issue": "The R5 example 'The reason why we left was simple.' is correct but the lesson does not show the formula or spans for why.",
+          "fix": "Added why as an option in the formula slot for time/place/reason markers and included a when example with spans."
+        },
+        {
+          "r5_id": "c1-advanced-relative-structures",
+          "issue": "The C1 lesson includes structures beyond this B2 point, such as preposition + whom/which and fused relatives.",
+          "fix": "Did not carry these into the B2 lesson; they remain in the C1 scope."
+        }
+      ]
+    }
+  },
+  "review": null
+}

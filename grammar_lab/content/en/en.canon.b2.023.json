@@ -1,0 +1,195 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b2.023",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.relative",
+  "level": {"framework": "cefr", "value": "B2", "rank": 4},
+  "prereqs": ["en.canon.b2.020"],
+  "contrasts": [],
+  "error_tags": ["sentence_structure"],
+  "source_refs": {"r5": ["b2-reduced-relative-clauses"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": ["b2-reduced-relative-clauses"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Reduced mệnh đề quan hệ", "en": "Reduced relative clauses"},
+    "native_title": "Reduced relative clauses",
+    "level": {"framework": "cefr", "value": "B2", "rank": 4},
+    "summary": {
+      "vi": "Mệnh đề quan hệ rút gọn dùng cụm phân từ, tính từ hoặc động từ nguyên thể để bổ nghĩa cho danh từ mà không cần đại từ quan hệ và động từ 'be'.",
+      "en": "Reduced relative clauses use a participle, adjective, or infinitive phrase to modify a noun without a relative pronoun and the verb 'be'."
+    },
+    "sub": {"vi": "mệnh đề rút gọn", "en": "reduced relatives"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi mệnh đề quan hệ ở dạng chủ động và thì tiếp diễn hoặc thói quen, có thể lược bỏ đại từ quan hệ và 'be', giữ lại V-ing.",
+      "en": "When the relative clause is active and in a progressive or habitual tense, you can drop the relative pronoun and 'be', keeping the V-ing form."
+    },
+    {
+      "vi": "Khi mệnh đề quan hệ ở dạng bị động, có thể lược bỏ đại từ quan hệ và 'be', giữ lại V3 (quá khứ phân từ).",
+      "en": "When the relative clause is passive, you can drop the relative pronoun and 'be', keeping the V3 (past participle)."
+    },
+    {
+      "vi": "Sau danh từ có first, last, only, next, hoặc so sánh nhất, có thể dùng cụm động từ nguyên thể có 'to' thay cho mệnh đề quan hệ đầy đủ.",
+      "en": "After nouns with first, last, only, next, or superlatives, you can use a to-infinitive phrase instead of a full relative clause."
+    },
+    {
+      "vi": "Khi mệnh đề quan hệ chứa tính từ hoặc cụm giới từ bổ nghĩa, có thể lược bỏ đại từ quan hệ và 'be', giữ lại tính từ hoặc cụm giới từ.",
+      "en": "When the relative clause contains an adjective or prepositional phrase, you can drop the relative pronoun and 'be', keeping the adjective or prepositional phrase."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "N", "role": "subject", "label": {"vi": "danh từ trung tâm", "en": "head noun"}},
+      {
+        "text": "V-ing",
+        "role": "verb",
+        "label": {"vi": "phân từ hiện tại", "en": "present participle"}
+      },
+      {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}},
+      {
+        "text": "to V",
+        "role": "verb",
+        "label": {"vi": "động từ nguyên thể có to", "en": "to-infinitive"}
+      },
+      {"text": "Adj", "role": "complement", "label": {"vi": "tính từ", "en": "adjective"}},
+      {
+        "text": "PrepP",
+        "role": "complement",
+        "label": {"vi": "cụm giới từ", "en": "prepositional phrase"}
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "The people waiting outside have tickets.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 10, "role": "subject"},
+        {"start": 11, "end": 18, "role": "verb"},
+        {"start": 19, "end": 26, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Mệnh đề quan hệ rút gọn: 'who are waiting' → 'waiting'; 'outside' là cụm giới từ bổ nghĩa.",
+        "en": "Reduced relative clause: 'who are waiting' → 'waiting'; 'outside' is a prepositional phrase modifier."
+      },
+      "translation": {"vi": "Những người đang chờ ngoài có vé.", "en": "The people waiting outside have tickets."}
+    },
+    {
+      "text": "The report published yesterday contains errors.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 10, "role": "subject"},
+        {"start": 11, "end": 20, "role": "verb"},
+        {"start": 21, "end": 30, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Mệnh đề quan hệ bị động rút gọn: 'that was published' → 'published'; 'yesterday' là trạng ngữ bổ nghĩa.",
+        "en": "Reduced passive relative clause: 'that was published' → 'published'; 'yesterday' is an adverbial modifier."
+      },
+      "translation": {
+        "vi": "Báo cáo công bố hôm qua có lỗi.",
+        "en": "The report published yesterday contains errors."
+      }
+    },
+    {
+      "text": "The first team to finish wins.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 14, "role": "subject"},
+        {"start": 15, "end": 24, "role": "verb"},
+        {"start": 25, "end": 29, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Mệnh đề quan hệ rút gọn với động từ nguyên thể có 'to' sau 'first'; 'wins' là vị ngữ chính.",
+        "en": "Reduced relative clause with a to-infinitive after 'first'; 'wins' is the main predicate."
+      },
+      "translation": {"vi": "Đội đầu tiên hoàn thành sẽ thắng.", "en": "The first team to finish wins."}
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Không thể rút gọn mệnh đề quan hệ chủ động ở thì quá khứ đơn bằng cách bỏ đại từ quan hệ và 'be' vì không có 'be' để bỏ; phải giữ mệnh đề đầy đủ hoặc dùng dạng khác.",
+        "en": "You cannot reduce an active simple past relative clause by dropping the relative pronoun and 'be' because there is no 'be' to drop; keep the full clause or use another form."
+      },
+      "error_tag": "sentence_structure",
+      "l1": ["vi"],
+      "wrong": "The man talked to Anna is my boss.",
+      "right": "The man who talked to Anna is my boss."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "The documents ___ yesterday were incomplete.",
+      "options": [{"text": "sent", "error_tag": null}, {"text": "sending", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Mệnh đề quan hệ bị động rút gọn dùng V3: 'that were sent' → 'sent'.",
+        "en": "Reduced passive relative clause uses V3: 'that were sent' → 'sent'."
+      }
+    },
+    {
+      "q": "The woman ___ by the window is my aunt.",
+      "options": [{"text": "standing", "error_tag": null}, {"text": "stood", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Mệnh đề quan hệ chủ động rút gọn dùng V-ing: 'who is standing' → 'standing'.",
+        "en": "Reduced active relative clause uses V-ing: 'who is standing' → 'standing'."
+      }
+    },
+    {
+      "q": "She is the only student ___ the scholarship.",
+      "options": [{"text": "to receive", "error_tag": null}, {"text": "receiving", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 'only' dùng động từ nguyên thể có 'to' trong mệnh đề quan hệ rút gọn.",
+        "en": "After 'only', use a to-infinitive in the reduced relative clause."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một người hoặc vật mà bạn biết, dùng mệnh đề quan hệ rút gọn.",
+      "en": "Write a sentence about a person or thing you know, using a reduced relative clause."
+    },
+    "placeholder": "The person ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "verb", "regex": "\\b\\w+ing\\b|\\b\\w+ed\\b|\\bto\\s+\\w+\\b"}]
+    },
+    "sample": {"text": "The woman standing by the door is my teacher."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791011331",
+    "generated_at": "2026-10-03T07:08:51Z",
+    "r5_source": {
+      "ids": ["b2-reduced-relative-clauses"],
+      "content_version": 2,
+      "content_hash": "fda7ec0080844c85829ea523a276d01bbcf4ca9c412773a7f0a84f99158c2949",
+      "corrections": [
+        {
+          "r5_id": "b2-reduced-relative-clauses",
+          "issue": "The R5 lesson lists 'The first team to finish wins.' as an example but does not explain that the to-infinitive reduction is restricted to contexts like first/last/only/superlative.",
+          "fix": "Added a when_to_use condition explaining the to-infinitive reduction after first, last, only, next, or superlatives."
+        },
+        {
+          "r5_id": "b2-reduced-relative-clauses",
+          "issue": "The R5 mistake 'The man talked to Anna is my boss.' is correct as a mistake, but the explanation 'If active past event, cannot simply use bare past form as reduced active relative' is vague.",
+          "fix": "Rewrote the reason to clarify that there is no 'be' to drop in an active simple past relative clause, so reduction is not possible that way."
+        }
+      ]
+    }
+  },
+  "review": null
+}

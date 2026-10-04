@@ -1,0 +1,276 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b2.014",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.possibility",
+  "level": {"framework": "cefr", "value": "B2", "rank": 4},
+  "prereqs": ["en.canon.b2.009"],
+  "contrasts": [],
+  "error_tags": ["tense", "sentence_structure"],
+  "source_refs": {"r5": ["b2-modal-perfect-passive"]},
+  "point_type": "tense_aspect",
+  "sequence": 4,
+  "aliases": ["b2-modal-perfect-passive"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "động từ khuyết thiếu perfect bị động", "en": "Modal perfect passive"},
+    "native_title": "Modal perfect passive",
+    "level": {"framework": "cefr", "value": "B2", "rank": 4},
+    "summary": {
+      "vi": "Cấu trúc này dùng để đánh giá hoặc suy đoán về một hành động bị động đã xảy ra trong quá khứ, với sắc thái như tiếc nuối, phỏng đoán hoặc kết luận.",
+      "en": "This structure evaluates or speculates about a passive action that happened in the past, with shades of regret, deduction, or conclusion."
+    },
+    "sub": {"vi": "suy đoán quá khứ bị động", "en": "past passive speculation"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói rằng một việc lẽ ra nên được làm nhưng đã không được làm, hoặc đã được làm không đúng cách.",
+      "en": "When you want to say that something should have been done but was not, or was done incorrectly."
+    },
+    {
+      "vi": "Khi bạn đưa ra phỏng đoán hoặc kết luận về một sự việc bị động trong quá khứ mà bạn không chắc chắn.",
+      "en": "When you make a guess or deduction about a past passive event that you are not certain about."
+    },
+    {
+      "vi": "Khi bạn muốn nhấn mạnh rằng hành động quan trọng hơn người thực hiện, và hành động đó đã xảy ra trước thời điểm nói.",
+      "en": "When you want to emphasise that the action matters more than the doer, and that the action happened before now."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {
+        "text": "modal",
+        "role": "aux",
+        "label": {"vi": "động từ khuyết thiếu", "en": "modal verb"},
+        "options": [
+          {"text": "must"},
+          {"text": "may"},
+          {"text": "might"},
+          {"text": "could"},
+          {"text": "should"}
+        ]
+      },
+      {
+        "text": "have been",
+        "role": "aux",
+        "label": {"vi": "trợ động từ hoàn thành + bị động", "en": "perfect + passive auxiliary"}
+      },
+      {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}}
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "modal",
+          "role": "aux",
+          "label": {"vi": "động từ khuyết thiếu", "en": "modal verb"},
+          "options": [
+            {"text": "must"},
+            {"text": "may"},
+            {"text": "might"},
+            {"text": "could"},
+            {"text": "should"}
+          ]
+        },
+        {"text": "not", "role": "aux", "label": {"vi": "phủ định", "en": "negation"}},
+        {
+          "text": "have been",
+          "role": "aux",
+          "label": {"vi": "trợ động từ hoàn thành + bị động", "en": "perfect + passive auxiliary"}
+        },
+        {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}}
+      ],
+      "question": [
+        {
+          "text": "modal",
+          "role": "aux",
+          "label": {"vi": "động từ khuyết thiếu", "en": "modal verb"},
+          "options": [
+            {"text": "must"},
+            {"text": "may"},
+            {"text": "might"},
+            {"text": "could"},
+            {"text": "should"}
+          ]
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "have been",
+          "role": "aux",
+          "label": {"vi": "trợ động từ hoàn thành + bị động", "en": "perfect + passive auxiliary"}
+        },
+        {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}}
+      ]
+    },
+    "illustration": {"kind": "timeline", "timeline": {"shape": "point_past"}}
+  },
+  "examples": [
+    {
+      "text": "The error should have been noticed earlier.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 9, "role": "subject"},
+        {"start": 10, "end": 16, "role": "aux"},
+        {"start": 17, "end": 26, "role": "aux"},
+        {"start": 27, "end": 34, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Lẽ ra lỗi đã được phát hiện sớm hơn, nhưng thực tế thì không.",
+        "en": "The error was supposed to be noticed earlier, but it was not."
+      },
+      "translation": {
+        "vi": "Lỗi lẽ ra nên được phát hiện sớm hơn.",
+        "en": "The error should have been noticed earlier."
+      }
+    },
+    {
+      "text": "The documents may have been sent to the wrong address.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 13, "role": "subject"},
+        {"start": 14, "end": 17, "role": "aux"},
+        {"start": 18, "end": 27, "role": "aux"},
+        {"start": 28, "end": 32, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Có thể tài liệu đã bị gửi sai địa chỉ, nhưng người nói không chắc.",
+        "en": "It is possible that the documents were sent to the wrong address, but the speaker is not certain."
+      },
+      "translation": {
+        "vi": "Có thể tài liệu đã bị gửi sai địa chỉ.",
+        "en": "The documents may have been sent to the wrong address."
+      }
+    },
+    {
+      "text": "The building must have been damaged in the storm.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 12, "role": "subject"},
+        {"start": 13, "end": 17, "role": "aux"},
+        {"start": 18, "end": 27, "role": "aux"},
+        {"start": 28, "end": 35, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Chắc chắn tòa nhà đã bị hư hại trong bão, dựa trên bằng chứng.",
+        "en": "It is certain that the building was damaged in the storm, based on evidence."
+      },
+      "translation": {
+        "vi": "Chắc tòa nhà đã bị hư do bão.",
+        "en": "The building must have been damaged in the storm."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học quên 'been' và dùng dạng chủ động thay vì bị động, khiến câu mang nghĩa chủ động sai.",
+        "en": "The learner omits 'been' and uses an active form instead of passive, making the sentence wrongly active."
+      },
+      "error_tag": "tense",
+      "l1": ["vi"],
+      "wrong": "The report should have checked.",
+      "right": "The report should have been checked."
+    },
+    {
+      "reason": {
+        "vi": "Sau động từ khuyết thiếu phải dùng 'have', không dùng 'has', vì modal không chia theo ngôi.",
+        "en": "After a modal verb, the auxiliary must be 'have', not 'has', because modals do not inflect for person."
+      },
+      "error_tag": "sentence_structure",
+      "l1": ["vi"],
+      "wrong": "The package might has been sent.",
+      "right": "The package might have been sent."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "The mistake ___ been corrected before the meeting.",
+      "options": [
+        {"text": "should have", "error_tag": null},
+        {"text": "should has", "error_tag": "agreement"},
+        {"text": "should have been", "error_tag": "sentence_structure"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 'should' dùng 'have', và câu này cần dạng bị động hoàn thành: should have been + V3. Ở đây 'been' đã có sẵn trong câu, nên chỉ cần 'should have'.",
+        "en": "After 'should' we use 'have', and this sentence needs the perfect passive: should have been + V3. Since 'been' is already in the sentence, only 'should have' is needed."
+      }
+    },
+    {
+      "q": "The window ___ broken by the storm last night.",
+      "options": [
+        {"text": "could have been", "error_tag": null},
+        {"text": "could have", "error_tag": "sentence_structure"},
+        {"text": "could been", "error_tag": "word_form"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Cần dạng bị động hoàn thành đầy đủ: could + have been + V3. Thiếu 'been' hoặc 'have' đều sai.",
+        "en": "The full perfect passive is needed: could + have been + V3. Missing 'been' or 'have' is incorrect."
+      }
+    },
+    {
+      "q": "The data ___ been checked before the report was published.",
+      "options": [{"text": "must have", "error_tag": null}, {"text": "must has", "error_tag": "agreement"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 'must' luôn dùng 'have', không dùng 'has'. Câu này cần dạng bị động hoàn thành: must have been + V3.",
+        "en": "After 'must' we always use 'have', not 'has'. This sentence needs the perfect passive: must have been + V3."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một việc lẽ ra nên được làm nhưng đã không được làm, dùng cấu trúc 'should have been + V3'.",
+      "en": "Write a sentence about something that should have been done but was not, using 'should have been + V3'."
+    },
+    "placeholder": "The problem should have been ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "aux", "any_of": ["should", "must", "may"]},
+        {"role": "aux", "any_of": ["have been"]},
+        {
+          "role": "verb",
+          "regex": "\\w+ed|\\b(?:sent|checked|noticed|damaged|handled|corrected|published|broken|done|made|given|taken|written|seen|known|shown|told|found|left|built|lost|paid|read|run|said|sold|spent|taught|thought|understood|won)\\b"
+        }
+      ]
+    },
+    "sample": {"text": "The problem should have been solved before the deadline."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791011307",
+    "generated_at": "2026-10-03T07:08:27Z",
+    "r5_source": {
+      "ids": ["b2-modal-perfect-passive"],
+      "content_version": 2,
+      "content_hash": "221c129c1a1a58110b15c2fbf2471d9c16c745fbc822b0c7b22f9bf3a4ae6423",
+      "corrections": [
+        {
+          "r5_id": "b2-modal-perfect-passive",
+          "issue": "R5 examples include 'The decision could have been handled better.' which is correct, but the lesson lacks a clear negative and question form.",
+          "fix": "Added negative and question formula variants and ensured examples cover affirmative only, with quick practice testing negative and question forms."
+        },
+        {
+          "r5_id": "b2-modal-perfect-passive",
+          "issue": "R5 common mistakes include 'The package might has been sent.' but the error tag was not specified.",
+          "fix": "Tagged the mistake as 'sentence_structure' and provided a clear reason about modal + have."
+        },
+        {
+          "r5_id": "b2-modal-perfect-passive",
+          "issue": "R5 does not include a personal production task with a pattern rule.",
+          "fix": "Added a personal production card with a deterministic pattern rule matching the target form."
+        }
+      ]
+    }
+  },
+  "review": null
+}

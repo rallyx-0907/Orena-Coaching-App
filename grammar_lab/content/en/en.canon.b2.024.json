@@ -1,0 +1,232 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b2.024",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.verb_patterns",
+  "level": {"framework": "cefr", "value": "B2", "rank": 4},
+  "prereqs": [],
+  "contrasts": [],
+  "error_tags": ["sentence_structure", "word_form"],
+  "source_refs": {"r5": ["b2-participle-clauses"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": ["b2-participle-clauses"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "phân từ clauses", "en": "Participle clauses"},
+    "native_title": "Participle clauses",
+    "level": {"framework": "cefr", "value": "B2", "rank": 4},
+    "summary": {
+      "vi": "Mệnh đề phân từ dùng dạng V-ing hoặc V3 để nén thông tin trạng ngữ hoặc quan hệ, khi chủ thể của phân từ trùng với chủ thể của mệnh đề chính.",
+      "en": "Participle clauses use an -ing or past participle form to compress adverbial or relative information when the participle's subject matches the main clause subject."
+    },
+    "sub": {"vi": "rút gọn mệnh đề", "en": "reduced clauses"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn diễn đạt thời gian, nguyên nhân, điều kiện hoặc kết quả trong văn viết trang trọng, tránh lặp chủ ngữ.",
+      "en": "When you want to express time, cause, condition or result in formal writing and avoid repeating the subject."
+    },
+    {
+      "vi": "Khi chủ thể của hành động ở mệnh đề phụ trùng với chủ thể ở mệnh đề chính.",
+      "en": "When the subject of the subordinate action is the same as the subject of the main clause."
+    },
+    {
+      "vi": "Khi muốn rút gọn mệnh đề quan hệ bị động: 'the house that was built' → 'the house built'.",
+      "en": "When you want to reduce a passive relative clause: 'the house that was built' → 'the house built'."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "V-ing",
+        "role": "verb",
+        "label": {"vi": "phân từ hiện tại", "en": "present participle"}
+      },
+      {"text": "O", "role": "object", "label": {"vi": "tân ngữ", "en": "object"}, "optional": true},
+      {"text": ",", "role": "other", "label": {"vi": "dấu phẩy", "en": "comma"}},
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ chính", "en": "main verb"}},
+      {"text": "O", "role": "object", "label": {"vi": "tân ngữ", "en": "object"}, "optional": true}
+    ],
+    "variants": {
+      "negative": [
+        {"text": "Not", "role": "marker", "label": {"vi": "phủ định", "en": "negation"}},
+        {
+          "text": "V-ing",
+          "role": "verb",
+          "label": {"vi": "phân từ hiện tại", "en": "present participle"}
+        },
+        {
+          "text": "O",
+          "role": "object",
+          "label": {"vi": "tân ngữ", "en": "object"},
+          "optional": true
+        },
+        {"text": ",", "role": "other", "label": {"vi": "dấu phẩy", "en": "comma"}},
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {"text": "V", "role": "verb", "label": {"vi": "động từ chính", "en": "main verb"}},
+        {
+          "text": "O",
+          "role": "object",
+          "label": {"vi": "tân ngữ", "en": "object"},
+          "optional": true
+        }
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "Walking through the park, I saw an old friend.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 7, "role": "verb"},
+        {"start": 8, "end": 24, "role": "object"},
+        {"start": 24, "end": 25, "role": "other"},
+        {"start": 26, "end": 27, "role": "subject"},
+        {"start": 28, "end": 31, "role": "verb"},
+        {"start": 32, "end": 45, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Hành động 'walking' và 'saw' cùng chủ thể 'I'.",
+        "en": "The actions 'walking' and 'saw' share the same subject 'I'."
+      },
+      "translation": {
+        "vi": "Khi đi qua công viên, tôi gặp một người bạn cũ.",
+        "en": "While walking through the park, I saw an old friend."
+      }
+    },
+    {
+      "text": "Built in 1890, the house needs repairs.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 5, "role": "verb"},
+        {"start": 13, "end": 14, "role": "other"},
+        {"start": 15, "end": 24, "role": "subject"},
+        {"start": 25, "end": 30, "role": "verb"},
+        {"start": 31, "end": 38, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Phân từ quá khứ 'Built' mang nghĩa bị động, chủ thể là 'the house'.",
+        "en": "The past participle 'Built' has passive meaning; its subject is 'the house'."
+      },
+      "translation": {
+        "vi": "Được xây năm 1890, ngôi nhà cần sửa chữa.",
+        "en": "Built in 1890, the house needs repairs."
+      }
+    },
+    {
+      "text": "Not knowing the answer, she stayed silent.",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "marker"},
+        {"start": 4, "end": 11, "role": "verb"},
+        {"start": 12, "end": 22, "role": "object"},
+        {"start": 22, "end": 23, "role": "other"},
+        {"start": 24, "end": 27, "role": "subject"},
+        {"start": 28, "end": 34, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Phủ định 'Not' đứng trước phân từ hiện tại 'knowing'.",
+        "en": "The negative 'Not' comes before the present participle 'knowing'."
+      },
+      "translation": {
+        "vi": "Vì không biết câu trả lời, cô ấy im lặng.",
+        "en": "Not knowing the answer, she stayed silent."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Phân từ 'Driving' không cùng chủ thể với mệnh đề chính 'the rain started' — lỗi phân từ lơ lửng.",
+        "en": "The participle 'Driving' does not share its subject with the main clause 'the rain started' — a dangling participle."
+      },
+      "error_tag": "sentence_structure",
+      "l1": ["vi"],
+      "wrong": "Driving to work, the rain started.",
+      "right": "While I was driving to work, it started to rain."
+    },
+    {
+      "reason": {
+        "vi": "Dùng phân từ chủ động 'Built' trong khi nghĩa bị động mới đúng; cần phân từ quá khứ không có tân ngữ.",
+        "en": "Using active participle 'Built' when passive meaning is required; the past participle should not take an object."
+      },
+      "error_tag": "word_form",
+      "l1": ["vi"],
+      "wrong": "Built the bridge in 2010, it now needs repair.",
+      "right": "Built in 2010, the bridge now needs repair."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "___ through the park, I saw an old friend.",
+      "options": [{"text": "Walking", "error_tag": null}, {"text": "Walked", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Chủ thể 'I' thực hiện hành động 'walk', nên dùng phân từ hiện tại 'Walking'.",
+        "en": "The subject 'I' performs the action 'walk', so the present participle 'Walking' is correct."
+      }
+    },
+    {
+      "q": "___ in 1890, the house needs repairs.",
+      "options": [{"text": "Built", "error_tag": null}, {"text": "Building", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Ngôi nhà được xây (bị động), nên dùng phân từ quá khứ 'Built'.",
+        "en": "The house was built (passive), so the past participle 'Built' is correct."
+      }
+    },
+    {
+      "q": "Not ___ the answer, she stayed silent.",
+      "options": [{"text": "knowing", "error_tag": null}, {"text": "known", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Cô ấy không biết (chủ động), nên dùng phân từ hiện tại 'knowing'.",
+        "en": "She did not know (active), so the present participle 'knowing' is correct."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về bản thân dùng mệnh đề phân từ chỉ thời gian hoặc nguyên nhân.",
+      "en": "Write a sentence about yourself using a participle clause for time or reason."
+    },
+    "placeholder": "Walking home, I ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"role": "verb", "regex": "\\b\\w+ing\\b"}, {"role": "subject", "any_of": ["I"]}]
+    },
+    "sample": {"text": "Walking home, I saw a beautiful sunset."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v12",
+    "run_id": "generate.1791011326",
+    "generated_at": "2026-10-03T07:08:46Z",
+    "r5_source": {
+      "ids": ["b2-participle-clauses"],
+      "content_version": 2,
+      "content_hash": "197991873289cce189aa71b52b212ad5f7fb7dc15a491683b1c55eee359b8dcd",
+      "corrections": [
+        {
+          "r5_id": "b2-participle-clauses",
+          "issue": "R5 example 'The files stored on this server are encrypted.' is a reduced relative clause, not an adverbial participle clause; it belongs to a different point.",
+          "fix": "Replaced with 'Built in 1890, the house needs repairs.' which is a clear adverbial participle clause."
+        },
+        {
+          "r5_id": "b2-participle-clauses",
+          "issue": "R5 mistake 'Built the bridge in 2010, it now needs repair.' has an incorrect correction that still contains a dangling participle.",
+          "fix": "Corrected to 'Built in 2010, the bridge now needs repair.' with the subject 'the bridge' matching the participle."
+        }
+      ]
+    }
+  },
+  "review": null
+}
