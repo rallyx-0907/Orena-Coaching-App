@@ -731,6 +731,7 @@ def orena_licences(response: Response) -> dict[str, Any]:
         media=lambda: _media_library_store.list(),
         listening=lambda: [lesson_metadata(lesson) for lesson in catalog_lessons()],
         reading_sources=lambda: ReadingContentRepository(_agent_engine()).list_sources(),
+        reading_texts=lambda: ReadingContentRepository(_agent_engine()).published_credits(),
         books=_licence_books,
     )
 # One word, opened all the way (2026-09-23), for the canonical deep frames.

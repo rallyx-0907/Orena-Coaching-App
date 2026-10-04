@@ -114,6 +114,20 @@ def reading_source_credits(sources: Iterable[Mapping[str, Any]]) -> list[dict[st
     ]
 
 
+def reading_text_credits(texts: Iterable[Mapping[str, Any]]) -> list[dict[str, str]]:
+    """One row per published text whose rights carry a licence note (author, translator and terms)."""
+    return [
+        {
+            "title": _text(text.get("title")),
+            "creator": _text(text.get("author")),
+            "licence": _text(text.get("license_note")),
+            "source_url": _text(text.get("source_url")),
+        }
+        for text in texts
+        if _text(text.get("license_note"))
+    ]
+
+
 def book_credits(books: Iterable[Mapping[str, Any]]) -> list[dict[str, str]]:
     return [
         {"title": _text(book.get("title")), "creator": _text(book.get("author")),
@@ -129,6 +143,7 @@ def licences_payload(
     media: Callable[[], Iterable[Any]] | None = None,
     listening: Callable[[], Iterable[Mapping[str, Any]]] | None = None,
     reading_sources: Callable[[], Iterable[Mapping[str, Any]]] | None = None,
+    reading_texts: Callable[[], Iterable[Mapping[str, Any]]] | None = None,
     books: Callable[[], Iterable[Mapping[str, Any]]] | None = None,
 ) -> dict[str, Any]:
     """The page's data. A part whose owner is unavailable is an empty list, never an error."""
@@ -145,6 +160,7 @@ def licences_payload(
         safe(listening, listening_catalog_credits)
         + safe(media, media_credits)
         + safe(reading_sources, reading_source_credits)
+        + safe(reading_texts, reading_text_credits)
         + safe(books, book_credits)
     )
     # Two lessons cut from one source are one credit.

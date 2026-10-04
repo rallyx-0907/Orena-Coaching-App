@@ -412,6 +412,27 @@ def test_a_published_article_keeps_its_source_attribution(repository):
     assert detail["attribution"]["source_url"] == "https://example.com/news/rain"
 
 
+
+def test_published_credits_name_each_visible_text_with_its_licence_and_nothing_else(repository):
+    snapshot = repository.record_source_item(
+        source_id=repository.built_in_source_id("manual"), source_native_id="", canonical_url="https://example.org/fox",
+        title="The Fox", author="Aesop", published_at=None, language="en", body=BODY,
+        content_hash="f" * 64, metadata={"input_kind": "text"},
+        rights={"can_republish": True, "license_note": "Public domain. Translated by V. S. Vernon Jones (1912)."},
+    )
+    visible = repository.create_article(source_item_id=snapshot["id"], title="The Fox and the Grapes", body=BODY,
+        excerpt=BODY[:120], language="en", topic="", estimated_level="A2", estimated_confidence=0.5, word_count=28,
+        reading_time_seconds=60, analysis={}, targets=[])  # fmt: skip
+    hidden = _article(repository, body=BODY + " Hidden.")
+    repository.set_status(visible["id"], "published", actor="admin@example.com")
+    credits = repository.published_credits()
+    assert credits == [{
+        "title": "The Fox and the Grapes", "language": "en", "author": "Aesop", "source_url": "https://example.org/fox",
+        "source_name": credits[0]["source_name"],
+        "license_note": "Public domain. Translated by V. S. Vernon Jones (1912).",
+    }]
+    assert hidden["id"] not in {row["title"] for row in credits}
+
 def test_the_repository_never_rewrites_a_snapshot(repository):
     """The trigger enforces this on PostgreSQL; on SQLite the invariant is
     this test - no UPDATE is ever issued against a snapshot's own columns."""

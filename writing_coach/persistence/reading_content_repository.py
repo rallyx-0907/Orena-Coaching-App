@@ -1255,6 +1255,45 @@ class ReadingContentRepository:
             },
         }
 
+    def published_credits(self, *, limit: int = 5000) -> list[dict[str, Any]]:
+        """Each learner-visible text with the credit its rights record: title,
+        author, source address and licence note, read from the snapshot with the
+        recorded rights answers laid over it - the same rights the gate reads.
+        No body."""
+        query = (
+            select(
+                ReadingArticle.id,
+                ReadingArticle.title,
+                ReadingArticle.language,
+                ReadingSourceItem.original_author,
+                ReadingSourceItem.canonical_url,
+                ReadingSourceItem.rights_snapshot_json.label("rights_snapshot"),
+                ReadingSource.name.label("source_name"),
+                ReadingSource.automation_allowed.label("source_automation"),
+            )
+            .join(ReadingSourceItem, ReadingSourceItem.id == ReadingArticle.source_item_id)
+            .join(ReadingSource, ReadingSource.id == ReadingSourceItem.source_id)
+            .where(ReadingArticle.status == LEARNER_VISIBLE_STATUS)
+            .order_by(ReadingArticle.language, ReadingArticle.title, ReadingArticle.id)
+            .limit(max(1, int(limit)))
+        )
+        with self.engine.connect() as connection:
+            rows = connection.execute(query).all()
+            decisions = self._rights_decisions(connection, [row.id for row in rows])
+        credits = []
+        for row in rows:
+            answered = [entry["answers"] for entry in decisions.get(row.id, [])]
+            effective = overlay_rights(row.rights_snapshot, answered, row.source_automation)
+            credits.append({
+                "title": row.title,
+                "language": row.language,
+                "author": row.original_author,
+                "source_url": row.canonical_url,
+                "source_name": row.source_name,
+                "license_note": str(effective.get("license_note") or ""),
+            })
+        return credits
+
     def published_count(self, *, language: str | None = None) -> int:
         query = select(func.count()).select_from(ReadingArticle).where(
             ReadingArticle.status == LEARNER_VISIBLE_STATUS

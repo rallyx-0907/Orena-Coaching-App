@@ -55,6 +55,17 @@ def test_content_credits_come_from_their_owners_and_a_missing_owner_is_empty() -
     assert {dataset["id"] for dataset in payload["datasets"]} >= {"cc-cedict", "wiktionary-vi", "open-dsl-dict"}
 
 
+
+def test_each_published_text_is_credited_with_its_author_and_licence_note() -> None:
+    payload = licences_payload(reading_texts=lambda: [
+        {"title": "The Fox and the Grapes", "author": "Aesop", "source_url": "https://www.gutenberg.org/ebooks/21",
+         "license_note": "Public domain. Translated by V. S. Vernon Jones (1912)."},
+        {"title": "No terms recorded", "author": "", "source_url": "", "license_note": ""},
+    ])
+    assert payload["content"] == [{"title": "The Fox and the Grapes", "creator": "Aesop",
+                                   "licence": "Public domain. Translated by V. S. Vernon Jones (1912).",
+                                   "source_url": "https://www.gutenberg.org/ebooks/21"}]
+
 def test_the_licences_route_answers_without_a_provider() -> None:
     async def run():
         async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app_module.app), base_url="http://testserver") as client:
