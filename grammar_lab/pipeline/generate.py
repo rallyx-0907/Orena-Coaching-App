@@ -2000,9 +2000,10 @@ class Generator:
                 )
 
             # The provider/JSON schema accepted this response, so complete()
-            # cached it. Domain-semantic rejection makes that cache entry unsafe:
-            # evict it so a resumed run gets a genuinely fresh chance.
-            self.llm.invalidate_cache(system=system, user=attempt_user, json_schema=provider_schema)
+            # cached it. Keep that paid candidate while deterministic/targeted
+            # repair is attempted: a later code fix can then re-evaluate the same
+            # lesson without buying the full generation again. We invalidate only
+            # immediately before intentionally requesting a fresh full candidate.
 
             # v13 binding failures are projection failures, not a reason to
             # buy the whole lesson again. Keep the accepted lesson prose and make
@@ -2140,6 +2141,12 @@ class Generator:
             if targeted_repair_used or structure_repair_exhausted or (contract_failure and attempt >= 2):
                 break
 
+            # We are deliberately about to buy a fresh full candidate.
+            # Only now evict the accepted-but-invalid response from the full
+            # generation cache.
+            self.llm.invalidate_cache(
+                system=system, user=attempt_user, json_schema=provider_schema
+            )
             repair_context = (
                 "\n".join(
                     f"- {issue.code} at {issue.path}: {issue.message}" for issue in issues[:8]
