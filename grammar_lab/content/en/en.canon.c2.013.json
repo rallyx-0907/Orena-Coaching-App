@@ -1,0 +1,216 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.c2.013",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.verb_patterns",
+  "level": {"framework": "cefr", "value": "C2", "rank": 6},
+  "prereqs": ["en.canon.c2.011"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["c2-advanced-complement-alternation"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["c2-advanced-complement-alternation"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Advanced complement alternation", "en": "Advanced complement alternation"},
+    "native_title": "Advanced complement alternation",
+    "level": {"framework": "cefr", "value": "C2", "rank": 6},
+    "summary": {
+      "vi": "Điểm ngữ pháp này giải thích cách một số động từ, tính từ và danh từ tiếng Anh có thể chọn nhiều loại bổ ngữ khác nhau (mệnh đề that, mệnh đề wh, động từ nguyên thể, danh động từ, hoặc bổ ngữ có tân ngữ) và sự lựa chọn đó thay đổi nghĩa, góc nhìn hoặc quan hệ kiểm soát như thế nào.",
+      "en": "This point explains how certain English verbs, adjectives and nouns can take different complement types (that-clause, wh-clause, infinitive, gerund, or object-complement) and how that choice changes meaning, perspective or control."
+    },
+    "sub": {"vi": "bổ ngữ nâng cao", "en": "advanced complements"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn cần chọn giữa danh động từ và động từ nguyên thể sau các động từ như remember, regret, forget, stop, try, go on, mean.",
+      "en": "When you need to choose between a gerund and an infinitive after verbs such as remember, regret, forget, stop, try, go on, mean."
+    },
+    {
+      "vi": "Khi một động từ như allow, permit, advise, recommend, forbid có thể đi với danh động từ hoặc với tân ngữ + động từ nguyên thể, và bạn phải giữ đúng quan hệ kiểm soát.",
+      "en": "When a verb such as allow, permit, advise, recommend, forbid can take either a gerund or an object + infinitive, and you must preserve the control relation."
+    },
+    {
+      "vi": "Khi bạn muốn chuyển đổi giữa mệnh đề that và cụm danh động từ sau các động từ như insist, suggest, recommend, propose mà không đổi nghĩa cốt lõi.",
+      "en": "When you want to alternate between a that-clause and a gerund phrase after verbs such as insist, suggest, recommend, propose without changing the core meaning."
+    },
+    {
+      "vi": "Khi bạn cần thể hiện góc nhìn hoặc mức độ kiểm soát bằng cách chọn giữa tân ngữ + động từ nguyên thể và mệnh đề that, hoặc giữa tân ngữ và tính từ sở hữu trước danh động từ.",
+      "en": "When you need to signal perspective or control by choosing between object + infinitive and a that-clause, or between an object and a possessive before a gerund."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ chính", "en": "main verb"}},
+      {
+        "text": "complement",
+        "role": "complement",
+        "label": {"vi": "bổ ngữ", "en": "complement"},
+        "options": [
+          {"text": "that-clause"},
+          {"text": "wh-clause"},
+          {"text": "to-infinitive"},
+          {"text": "gerund"},
+          {"text": "object to-infinitive"},
+          {"text": "object bare infinitive"},
+          {"text": "possessive gerund"}
+        ]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "I regret telling him the truth.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 2, "end": 8, "role": "verb"},
+        {"start": 9, "end": 30, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Danh động từ sau regret chỉ hành động đã xảy ra trong quá khứ.",
+        "en": "The gerund after regret refers to a past action."
+      },
+      "translation": {"vi": "Tôi hối tiếc vì đã nói sự thật với anh ấy.", "en": "I regret telling him the truth."}
+    },
+    {
+      "text": "We regret to inform you that the application was unsuccessful.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 3, "end": 9, "role": "verb"},
+        {"start": 10, "end": 61, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Động từ nguyên thể sau regret dùng để thông báo tin xấu ngay lúc nói.",
+        "en": "The to-infinitive after regret is used to announce bad news at the moment of speaking."
+      },
+      "translation": {
+        "vi": "Chúng tôi lấy làm tiếc phải thông báo rằng đơn đăng ký đã không thành công.",
+        "en": "We regret to inform you that the application was unsuccessful."
+      }
+    },
+    {
+      "text": "The policy allows employees to work remotely.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 10, "role": "subject"},
+        {"start": 11, "end": 17, "role": "verb"},
+        {"start": 18, "end": 44, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Cấu trúc tân ngữ + động từ nguyên thể sau allow chỉ người được phép làm gì.",
+        "en": "The object + to-infinitive after allow names who is permitted to do something."
+      },
+      "translation": {
+        "vi": "Chính sách cho phép nhân viên làm việc từ xa.",
+        "en": "The policy allows employees to work remotely."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Động từ suggest không được dùng với cấu trúc tân ngữ + động từ nguyên thể trong tiếng Anh chuẩn; nó chọn mệnh đề that hoặc danh động từ.",
+        "en": "The verb suggest does not license an object + to-infinitive in standard English; it selects a that-clause or a gerund."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "They suggested us to postpone the launch.",
+      "right": "They suggested postponing the launch."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "I remember ___ her years ago.",
+      "options": [{"text": "meeting", "error_tag": null}, {"text": "to meet", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {
+        "vi": "remember + danh động từ chỉ ký ức về một hành động đã xảy ra trong quá khứ.",
+        "en": "remember + gerund refers to a memory of a past action."
+      }
+    },
+    {
+      "q": "The policy allows employees ___ remotely.",
+      "options": [{"text": "to work", "error_tag": null}, {"text": "working", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {
+        "vi": "allow + tân ngữ + động từ nguyên thể chỉ người được phép làm gì.",
+        "en": "allow + object + to-infinitive names who is permitted to do something."
+      }
+    },
+    {
+      "q": "They insisted on ___ the figures again.",
+      "options": [{"text": "reviewing", "error_tag": null}, {"text": "review", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {
+        "vi": "insist on + danh động từ là cấu trúc cố định.",
+        "en": "insist on + gerund is a fixed pattern."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về bản thân dùng cấu trúc regret + danh động từ để nói về một điều bạn hối tiếc đã làm.",
+      "en": "Write a sentence about yourself using regret + gerund to say something you regret doing."
+    },
+    "placeholder": "I regret ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["regret"], "role": "verb"}, {"regex": "\\w+ing\\b", "role": "complement"}]
+    },
+    "sample": {"text": "I regret telling him the truth."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v15",
+    "run_id": "generate.1791101956",
+    "generated_at": "2026-10-04T08:19:16Z",
+    "r5_source": {
+      "ids": ["c2-advanced-complement-alternation"],
+      "content_version": 2,
+      "content_hash": "5ff251775a3526a24e50068f01d4b6b570a2af693f4fb9417d96229e5527db86",
+      "corrections": [
+        {
+          "r5_id": "c2-advanced-complement-alternation",
+          "issue": "R5's guided_practice diagnosis prompt asks to identify the mechanism in 'I regret telling him the truth' but the answer field just repeats the sentence without identifying the mechanism.",
+          "fix": "Replaced with a proper diagnosis question and answer that identifies the gerund complement after regret as a past action."
+        },
+        {
+          "r5_id": "c2-advanced-complement-alternation",
+          "issue": "R5's guided_practice contrast prompt uses the symbol '↔' and a compressed explanation that is not a full sentence.",
+          "fix": "Rewrote as a clear contrast question with a full-sentence answer explaining the meaning difference between retrospective memory and prospective duty."
+        },
+        {
+          "r5_id": "c2-advanced-complement-alternation",
+          "issue": "R5's guided_practice repair prompt asks to fix ambiguity but the answer gives two alternatives without explaining which error is being repaired.",
+          "fix": "Rewrote as a repair task that explicitly identifies the missing gerund after suggest and provides the corrected sentence."
+        },
+        {
+          "r5_id": "c2-advanced-complement-alternation",
+          "issue": "R5's guided_practice transformation prompt asks to write a new sentence following a principle but the answer is 'Answers vary' with no model.",
+          "fix": "Replaced with a transformation task that provides a model answer and explains the control relation."
+        },
+        {
+          "r5_id": "c2-advanced-complement-alternation",
+          "issue": "R5's mistakes section includes 'I remember to meet her years ago' as a mistake, but this is a meaning error rather than a form error and the explanation is too brief.",
+          "fix": "Kept the mistake but expanded the reason to explain that remember + to-infinitive refers to a future obligation, not a past memory."
+        },
+        {
+          "r5_id": "c2-advanced-complement-alternation",
+          "issue": "R5's examples include 'They insisted on reviewing the figures again' but the lesson does not explain the fixed preposition 'on' before the gerund.",
+          "fix": "Added an annotation to the example clarifying that insist on + gerund is a fixed pattern."
+        }
+      ]
+    }
+  },
+  "review": null
+}

@@ -1,0 +1,204 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.c2.009",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.sentence_basics",
+  "level": {"framework": "cefr", "value": "C2", "rank": 6},
+  "prereqs": ["en.canon.c2.008"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["c2-parenthetical-grammar"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": ["c2-parenthetical-grammar"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Parenthetical grammar", "en": "Parenthetical grammar"},
+    "native_title": "Parenthetical grammar",
+    "level": {"framework": "cefr", "value": "C2", "rank": 6},
+    "summary": {
+      "vi": "Cấu trúc chen ngang (parenthetical) là một thành phần được đặt trong dấu phẩy, dấu gạch ngang hoặc ngoặc đơn để thêm bình luận, thái độ, nguồn tin hoặc diễn giải mà không làm thay đổi mệnh đề chính.",
+      "en": "A parenthetical is a comment, stance, attribution or reformulation set off by commas, dashes or parentheses that does not become part of the host clause's core argument."
+    },
+    "sub": {"vi": "chen ngang", "en": "parentheticals"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn thêm thái độ hoặc đánh giá cá nhân (in my view, as expected) mà không biến nó thành mệnh đề chính.",
+      "en": "When you want to add a stance or personal evaluation (in my view, as expected) without making it the main clause."
+    },
+    {
+      "vi": "Khi bạn muốn chèn một điều kiện hoặc giả định (if approved, if the board agrees) ngay giữa câu.",
+      "en": "When you want to insert a condition or assumption (if approved, if the board agrees) in the middle of a sentence."
+    },
+    {
+      "vi": "Khi bạn muốn đưa thông tin nền hoặc giải thích thêm mà không làm nặng mệnh đề chính.",
+      "en": "When you want to add background information or a clarification without weighing down the main clause."
+    },
+    {
+      "vi": "Khi bạn muốn nêu nguồn tin hoặc cách diễn đạt lại (according to the report, or rather) trong văn viết trang trọng.",
+      "en": "When you want to cite a source or reformulate (according to the report, or rather) in formal writing."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {"text": ",", "role": "other", "label": {"vi": "dấu phẩy mở", "en": "opening comma"}},
+      {
+        "text": "parenthetical",
+        "role": "other",
+        "label": {"vi": "thành phần chen ngang", "en": "parenthetical"}
+      },
+      {"text": ",", "role": "other", "label": {"vi": "dấu phẩy đóng", "en": "closing comma"}},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ chính", "en": "main verb"}},
+      {"text": "C", "role": "complement", "label": {"vi": "bổ ngữ", "en": "complement"}}
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "The result, as expected, was statistically significant.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 10, "role": "subject"},
+        {"start": 10, "end": 11, "role": "other"},
+        {"start": 12, "end": 23, "role": "other"},
+        {"start": 23, "end": 24, "role": "other"},
+        {"start": 25, "end": 28, "role": "verb"},
+        {"start": 29, "end": 54, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Thành phần chen ngang 'as expected' đặt giữa chủ ngữ và động từ, không làm thay đổi mệnh đề chính.",
+        "en": "The parenthetical 'as expected' sits between subject and verb without changing the main clause."
+      },
+      "translation": {
+        "vi": "Kết quả, như dự kiến, có ý nghĩa thống kê.",
+        "en": "The result, as expected, was statistically significant."
+      }
+    },
+    {
+      "text": "The proposal, if the board approves it, will take effect in July.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 12, "role": "subject"},
+        {"start": 12, "end": 13, "role": "other"},
+        {"start": 14, "end": 38, "role": "other"},
+        {"start": 38, "end": 39, "role": "other"},
+        {"start": 40, "end": 49, "role": "verb"},
+        {"start": 50, "end": 64, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Mệnh đề điều kiện chen ngang giữa chủ ngữ và động từ chính, giới hạn phạm vi của đề xuất.",
+        "en": "The conditional clause is parenthetical between subject and main verb, limiting the proposal's scope."
+      },
+      "translation": {
+        "vi": "Đề xuất, nếu hội đồng duyệt, sẽ có hiệu lực vào tháng Bảy.",
+        "en": "The proposal, if the board approves it, will take effect in July."
+      }
+    },
+    {
+      "text": "The second explanation, in my view, is more plausible.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 22, "role": "subject"},
+        {"start": 22, "end": 23, "role": "other"},
+        {"start": 24, "end": 34, "role": "other"},
+        {"start": 34, "end": 35, "role": "other"},
+        {"start": 36, "end": 38, "role": "verb"},
+        {"start": 39, "end": 53, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Cụm giới từ 'in my view' chen ngang thể hiện thái độ người nói, không phải mệnh đề chính.",
+        "en": "The prepositional phrase 'in my view' is parenthetical, expressing stance rather than being the main clause."
+      },
+      "translation": {
+        "vi": "Cách giải thích thứ hai, theo tôi, hợp lý hơn.",
+        "en": "The second explanation, in my view, is more plausible."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học quên dấu phẩy mở trước thành phần chen ngang, khiến ranh giới giữa chủ ngữ và thành phần chen ngang không rõ.",
+        "en": "The learner omits the opening comma before the parenthetical, so the boundary between subject and parenthetical is unclear."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "The result as expected, was significant.",
+      "right": "The result, as expected, was significant."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "The proposal ___ if the board approves it, will take effect in July.",
+      "options": [{"text": ",", "error_tag": null}, {"text": " ", "error_tag": "punctuation"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Cần dấu phẩy mở trước mệnh đề điều kiện chen ngang để tách nó khỏi chủ ngữ.",
+        "en": "An opening comma is needed before the parenthetical conditional clause to separate it from the subject."
+      }
+    },
+    {
+      "q": "The revised model ___ uses fewer parameters performed better.",
+      "options": [{"text": "(which", "error_tag": null}, {"text": "which", "error_tag": "punctuation"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Thành phần chen ngang dùng ngoặc đơn cần dấu mở ngoặc để đánh dấu ranh giới.",
+        "en": "A parenthetical using parentheses needs the opening parenthesis to mark its boundary."
+      }
+    },
+    {
+      "q": "The policy ___ if approved, will start in July.",
+      "options": [{"text": "—", "error_tag": null}, {"text": ",", "error_tag": "punctuation"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Dấu gạch ngang dài có thể thay dấu phẩy để tạo ngắt mạnh hơn cho thành phần chen ngang.",
+        "en": "An em dash can replace commas to create a stronger interruption for the parenthetical."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một kết quả hoặc quyết định, chèn một thành phần chen ngang như 'as expected' hoặc 'in my view' giữa chủ ngữ và động từ.",
+      "en": "Write a sentence about a result or decision, inserting a parenthetical such as 'as expected' or 'in my view' between the subject and the verb."
+    },
+    "placeholder": "The result, as expected, ...",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["as expected", "in my view"], "role": "other"}]},
+    "sample": {"text": "The result, as expected, was statistically significant."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v15",
+    "run_id": "generate.1791101911",
+    "generated_at": "2026-10-04T08:18:31Z",
+    "r5_source": {
+      "ids": ["c2-parenthetical-grammar"],
+      "content_version": 2,
+      "content_hash": "700569e95d888e5dd5a6900c74118e35008cfdbfb96335e3c8e08379651d1735",
+      "corrections": [
+        {
+          "r5_id": "c2-parenthetical-grammar",
+          "issue": "R5 example 'The proposal—if the board approves it—will take effect in July.' uses em dashes, but the formula and quick practice only model commas; the punctuation variant is not represented in the structured formula.",
+          "fix": "Kept the example but added a quick-practice item that tests the em dash as an alternative delimiter, and noted in the explanation that dashes create a stronger interruption."
+        },
+        {
+          "r5_id": "c2-parenthetical-grammar",
+          "issue": "R5 mistake 'The proposal, if approved the board, will start in July.' is not a real learner error for this point; it is a passive-voice error unrelated to parenthetical punctuation.",
+          "fix": "Replaced it with a genuine parenthetical punctuation mistake: 'The result as expected, was significant.' → 'The result, as expected, was significant.'"
+        },
+        {
+          "r5_id": "c2-parenthetical-grammar",
+          "issue": "R5 lists 'The revised model (which uses fewer parameters) performed better.' as an example, but the formula does not include parentheses as a delimiter option.",
+          "fix": "Added a quick-practice item that tests the opening parenthesis, and kept the example in the lesson's scope without forcing it into the comma-only formula."
+        }
+      ]
+    }
+  },
+  "review": null
+}

@@ -1,0 +1,361 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.c2.007",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.sentence_basics",
+  "level": {"framework": "cefr", "value": "C2", "rank": 6},
+  "prereqs": ["en.canon.c2.006"],
+  "contrasts": [],
+  "error_tags": ["sentence_structure"],
+  "source_refs": {"r5": ["c2-deep-clause-embedding"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["c2-deep-clause-embedding"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Deep clause embedding", "en": "Deep clause embedding"},
+    "native_title": "Deep clause embedding",
+    "level": {"framework": "cefr", "value": "C2", "rank": 6},
+    "summary": {
+      "vi": "Điểm này dạy cách lồng nhiều mệnh đề phụ thuộc vào một câu mà vẫn giữ được chủ ngữ chính, phạm vi và mối liên hệ giữa các tầng nghĩa rõ ràng.",
+      "en": "This point teaches how to embed several dependent clauses in one sentence while keeping the main subject, scope and logical links between layers clear."
+    },
+    "sub": {"vi": "lồng mệnh đề sâu", "en": "deep embedding"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn cần thuật lại nhiều nguồn tin hoặc nhiều lớp nhận định trong một câu, ví dụ báo cáo dẫn lời chuyên gia dẫn lời nhà đầu tư.",
+      "en": "When you need to report several sources or layers of assessment in one sentence, for example a report citing experts who cite investors."
+    },
+    {
+      "vi": "Khi mệnh đề quan hệ hoặc mệnh đề danh từ cần nằm bên trong một cụm danh từ mà không làm mất dấu mệnh đề chính.",
+      "en": "When a relative or nominal clause must sit inside a noun phrase without losing track of the main clause."
+    },
+    {
+      "vi": "Khi bạn muốn thể hiện mức độ chắc chắn hoặc nguồn gốc của thông tin bằng cách xếp lớp các động từ tường thuật.",
+      "en": "When you want to signal certainty or the source of information by layering reporting verbs."
+    },
+    {
+      "vi": "Khi cần kiểm tra xem câu có thể tách thành hai hoặc ba câu độc lập mà vẫn giữ nguyên quan hệ logic hay không.",
+      "en": "When you need to check whether the sentence can be unpacked into two or three independent sentences without losing the logical relation."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ chính", "en": "main subject"}},
+      {
+        "text": "V reporting",
+        "role": "verb",
+        "label": {"vi": "động từ tường thuật", "en": "reporting verb"}
+      },
+      {
+        "text": "that",
+        "role": "marker",
+        "label": {"vi": "từ nối mệnh đề", "en": "clause marker"},
+        "optional": true
+      },
+      {
+        "text": "S2",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ mệnh đề cấp 2", "en": "second-layer subject"}
+      },
+      {
+        "text": "V2",
+        "role": "verb",
+        "label": {"vi": "động từ mệnh đề cấp 2", "en": "second-layer verb"}
+      },
+      {
+        "text": "that",
+        "role": "marker",
+        "label": {"vi": "từ nối mệnh đề cấp 3", "en": "third-layer marker"},
+        "optional": true
+      },
+      {
+        "text": "S3",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ mệnh đề cấp 3", "en": "third-layer subject"}
+      },
+      {
+        "text": "V3",
+        "role": "verb",
+        "label": {"vi": "động từ mệnh đề cấp 3", "en": "third-layer verb"}
+      },
+      {"text": "complement", "role": "complement", "label": {"vi": "bổ ngữ", "en": "complement"}}
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ chính", "en": "main subject"}},
+        {
+          "text": "do/does not",
+          "role": "aux",
+          "label": {"vi": "trợ động từ phủ định", "en": "negative auxiliary"},
+          "options": [{"text": "do not"}, {"text": "does not"}]
+        },
+        {
+          "text": "V reporting",
+          "role": "verb",
+          "label": {"vi": "động từ tường thuật", "en": "reporting verb"}
+        },
+        {
+          "text": "that",
+          "role": "marker",
+          "label": {"vi": "từ nối mệnh đề", "en": "clause marker"},
+          "optional": true
+        },
+        {
+          "text": "S2",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ mệnh đề cấp 2", "en": "second-layer subject"}
+        },
+        {
+          "text": "V2",
+          "role": "verb",
+          "label": {"vi": "động từ mệnh đề cấp 2", "en": "second-layer verb"}
+        },
+        {
+          "text": "that",
+          "role": "marker",
+          "label": {"vi": "từ nối mệnh đề cấp 3", "en": "third-layer marker"},
+          "optional": true
+        },
+        {
+          "text": "S3",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ mệnh đề cấp 3", "en": "third-layer subject"}
+        },
+        {
+          "text": "V3",
+          "role": "verb",
+          "label": {"vi": "động từ mệnh đề cấp 3", "en": "third-layer verb"}
+        },
+        {"text": "complement", "role": "complement", "label": {"vi": "bổ ngữ", "en": "complement"}}
+      ],
+      "question": [
+        {
+          "text": "Do/Does",
+          "role": "aux",
+          "label": {"vi": "trợ động từ nghi vấn", "en": "question auxiliary"},
+          "options": [{"text": "Do"}, {"text": "Does"}]
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ chính", "en": "main subject"}},
+        {
+          "text": "V reporting",
+          "role": "verb",
+          "label": {"vi": "động từ tường thuật", "en": "reporting verb"}
+        },
+        {
+          "text": "that",
+          "role": "marker",
+          "label": {"vi": "từ nối mệnh đề", "en": "clause marker"},
+          "optional": true
+        },
+        {
+          "text": "S2",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ mệnh đề cấp 2", "en": "second-layer subject"}
+        },
+        {
+          "text": "V2",
+          "role": "verb",
+          "label": {"vi": "động từ mệnh đề cấp 2", "en": "second-layer verb"}
+        },
+        {
+          "text": "that",
+          "role": "marker",
+          "label": {"vi": "từ nối mệnh đề cấp 3", "en": "third-layer marker"},
+          "optional": true
+        },
+        {
+          "text": "S3",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ mệnh đề cấp 3", "en": "third-layer subject"}
+        },
+        {
+          "text": "V3",
+          "role": "verb",
+          "label": {"vi": "động từ mệnh đề cấp 3", "en": "third-layer verb"}
+        },
+        {"text": "complement", "role": "complement", "label": {"vi": "bổ ngữ", "en": "complement"}}
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "The report argues that investors believe that demand will recover once interest rates fall.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 10, "role": "subject"},
+        {"start": 11, "end": 17, "role": "verb"},
+        {"start": 18, "end": 22, "role": "marker"},
+        {"start": 23, "end": 32, "role": "subject"},
+        {"start": 33, "end": 40, "role": "verb"},
+        {"start": 41, "end": 45, "role": "marker"},
+        {"start": 46, "end": 52, "role": "subject"},
+        {"start": 53, "end": 65, "role": "verb"},
+        {"start": 66, "end": 90, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Ba tầng mệnh đề: báo cáo → nhà đầu tư tin → cầu hồi phục; mỗi tầng có chủ ngữ và động từ riêng.",
+        "en": "Three clause layers: report → investors believe → demand recovers; each layer has its own subject and verb."
+      },
+      "translation": {
+        "vi": "Báo cáo lập luận rằng nhà đầu tư tin rằng cầu sẽ hồi phục khi lãi suất giảm.",
+        "en": "The report argues that investors believe that demand will recover once interest rates fall."
+      }
+    },
+    {
+      "text": "The study suggests that researchers believe that children acquire grammar through interaction.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 9, "role": "subject"},
+        {"start": 10, "end": 18, "role": "verb"},
+        {"start": 19, "end": 23, "role": "marker"},
+        {"start": 24, "end": 35, "role": "subject"},
+        {"start": 36, "end": 43, "role": "verb"},
+        {"start": 44, "end": 48, "role": "marker"},
+        {"start": 49, "end": 57, "role": "subject"},
+        {"start": 58, "end": 65, "role": "verb"},
+        {"start": 66, "end": 93, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Hai tầng mệnh đề danh từ lồng nhau: nghiên cứu gợi ý → nhà nghiên cứu tin → trẻ tiếp thu ngữ pháp qua tương tác.",
+        "en": "Two nested nominal clauses: the study suggests → researchers believe → children acquire grammar through interaction."
+      },
+      "translation": {
+        "vi": "Nghiên cứu gợi ý rằng các nhà nghiên cứu tin rằng trẻ tiếp thu ngữ pháp qua tương tác.",
+        "en": "The study suggests that researchers believe that children acquire grammar through interaction."
+      }
+    },
+    {
+      "text": "The memo notes that analysts expect that demand will fall once subsidies end.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 8, "role": "subject"},
+        {"start": 9, "end": 14, "role": "verb"},
+        {"start": 15, "end": 19, "role": "marker"},
+        {"start": 20, "end": 28, "role": "subject"},
+        {"start": 29, "end": 35, "role": "verb"},
+        {"start": 36, "end": 40, "role": "marker"},
+        {"start": 41, "end": 47, "role": "subject"},
+        {"start": 48, "end": 57, "role": "verb"},
+        {"start": 58, "end": 76, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Mệnh đề cấp 2 'analysts expect' chứa mệnh đề cấp 3 'demand will fall once subsidies end'.",
+        "en": "The second-layer clause 'analysts expect' contains the third-layer clause 'demand will fall once subsidies end'."
+      },
+      "translation": {
+        "vi": "Bản ghi chú lưu ý rằng các nhà phân tích dự đoán cầu sẽ giảm khi trợ cấp kết thúc.",
+        "en": "The memo notes that analysts expect that demand will fall once subsidies end."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học thường xếp quá nhiều mệnh đề quan hệ và đại từ 'it' vào một câu, khiến người đọc không xác định được 'it' hay 'that' trỏ về đâu. Cần tách thành hai câu hoặc thay đại từ bằng cụm danh từ rõ nghĩa.",
+        "en": "Learners often stack too many relative clauses and pronouns in one sentence, so readers cannot tell what 'it' or 'that' refers to. Unpack into separate sentences or replace pronouns with clear noun phrases."
+      },
+      "error_tag": "sentence_structure",
+      "l1": ["vi"],
+      "wrong": "The report that says analysts believe demand will recover was controversial because it was unclear what it referred to.",
+      "right": "The report was controversial. It argued that analysts expected demand to recover, but the basis for that expectation was unclear."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "The committee concluded ___ the evidence that had been presented was insufficient.",
+      "options": [
+        {"text": "that", "error_tag": null},
+        {"text": "what", "error_tag": "word_choice"},
+        {"text": "which", "error_tag": "word_choice"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau động từ tường thuật 'concluded', mệnh đề danh từ bắt đầu bằng 'that' để giới thiệu nội dung kết luận.",
+        "en": "After the reporting verb 'concluded', the nominal clause begins with 'that' to introduce the content of the conclusion."
+      }
+    },
+    {
+      "q": "The proposal ___ the board approved last month has already been revised twice.",
+      "options": [{"text": "that", "error_tag": null}, {"text": "what", "error_tag": "word_choice"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Mệnh đề quan hệ xác định bắt đầu bằng 'that' bổ nghĩa cho 'proposal'; 'what' không dùng làm đại từ quan hệ trong trường hợp này.",
+        "en": "The defining relative clause begins with 'that' and modifies 'proposal'; 'what' is not used as a relative pronoun here."
+      }
+    },
+    {
+      "q": "It is still unclear ___ the new policy will affect companies that depend on exports.",
+      "options": [
+        {"text": "whether", "error_tag": null},
+        {"text": "that", "error_tag": "word_choice"},
+        {"text": "if", "error_tag": "register"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau tính từ 'unclear', mệnh đề danh từ thường bắt đầu bằng 'whether' trong văn phong trang trọng; 'if' ít trang trọng hơn và 'that' không phù hợp ở đây.",
+        "en": "After the adjective 'unclear', the nominal clause typically begins with 'whether' in formal style; 'if' is less formal and 'that' does not fit here."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một báo cáo hoặc nghiên cứu mà bạn biết, trong đó có ít nhất hai tầng mệnh đề tường thuật.",
+      "en": "Write one sentence about a report or study you know, containing at least two layers of reported clauses."
+    },
+    "placeholder": "The report argues that ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"any_of": ["argues", "suggests", "notes"], "role": "verb"},
+        {"any_of": ["that"], "role": "marker"},
+        {"any_of": ["believe", "argues", "suggests"], "role": "verb"},
+        {"any_of": ["that"], "role": "marker"}
+      ]
+    },
+    "sample": {
+      "text": "The report argues that investors believe that demand will recover once interest rates fall."
+    }
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v15",
+    "run_id": "generate.1791101934",
+    "generated_at": "2026-10-04T08:18:54Z",
+    "r5_source": {
+      "ids": ["c2-deep-clause-embedding"],
+      "content_version": 2,
+      "content_hash": "3c1a1c87d2b84bfb3e6d8d495ecd66eb4a89a7dbfba5a2d1507a9ae6b0c88db9",
+      "corrections": [
+        {
+          "r5_id": "c2-deep-clause-embedding",
+          "issue": "R5 example 'The proposal that the committee recommended that we revise has been withdrawn.' is ungrammatical: 'recommended that we revise' cannot be a relative clause modifying 'proposal'.",
+          "fix": "Replaced with a grammatical example of a relative clause inside a noun phrase: 'The proposal that the board approved last month has already been revised twice.'"
+        },
+        {
+          "r5_id": "c2-deep-clause-embedding",
+          "issue": "R5 mistake example 'She said that he believes that the figures were wrong yesterday.' has ambiguous time attachment and mixes tense backshift.",
+          "fix": "Replaced with a clear sentence-structure mistake: 'The report that says analysts believe demand will recover was controversial because it was unclear what it referred to.' and its unpacked correction."
+        },
+        {
+          "r5_id": "c2-deep-clause-embedding",
+          "issue": "R5 did not provide a formula, negative/question forms, or formula-slot bindings for examples.",
+          "fix": "Added a full formula with slots, negative and question variants, and bindings for all three examples."
+        },
+        {
+          "r5_id": "c2-deep-clause-embedding",
+          "issue": "R5 guided practice items were diagnosis/contrast/repair/transformation prompts without a quick check or personal production card.",
+          "fix": "Added three quick-practice cloze questions and a personal production card with a deterministic pattern rule."
+        }
+      ]
+    }
+  },
+  "review": null
+}

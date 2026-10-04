@@ -1,0 +1,219 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.c2.012",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.comparison",
+  "level": {"framework": "cefr", "value": "C2", "rank": 6},
+  "prereqs": [],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["c2-marked-comparison-structures"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["c2-marked-comparison-structures"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Marked comparison structures", "en": "Marked comparison structures"},
+    "native_title": "Marked comparison structures",
+    "level": {"framework": "cefr", "value": "C2", "rank": 6},
+    "summary": {
+      "vi": "Cấu trúc so sánh đánh dấu dùng để tái định nghĩa, thể hiện tương quan hoặc nhấn mạnh mức độ thay vì chỉ so sánh đơn thuần.",
+      "en": "Marked comparison structures reframe, correlate, or intensify rather than simply compare."
+    },
+    "sub": {"vi": "so sánh đánh dấu", "en": "marked comparison"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn điều chỉnh lại trọng tâm của một nhận định, không chỉ nêu mức độ hơn kém.",
+      "en": "When you want to reframe the focus of a claim, not just state a degree."
+    },
+    {
+      "vi": "Khi hai đặc điểm thay đổi cùng nhau và bạn muốn thể hiện mối tương quan.",
+      "en": "When two qualities change together and you want to express covariation."
+    },
+    {
+      "vi": "Khi bạn muốn nhấn mạnh một đặc điểm nhờ một lý do hoặc bối cảnh cụ thể.",
+      "en": "When you want to intensify a quality in light of a specific reason or context."
+    },
+    {
+      "vi": "Khi bạn muốn nói một trạng thái vẫn tiếp diễn như trước, thường để tương phản với một thay đổi khác.",
+      "en": "When you want to say a state continues as before, often to contrast with another change."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {
+        "text": "be",
+        "role": "verb",
+        "label": {"vi": "động từ liên kết", "en": "linking verb"},
+        "options": [{"text": "is"}, {"text": "are"}, {"text": "was"}, {"text": "were"}]
+      },
+      {
+        "text": "not so much",
+        "role": "marker",
+        "label": {"vi": "dấu hiệu tái định nghĩa", "en": "reframing marker"}
+      },
+      {
+        "text": "X",
+        "role": "complement",
+        "label": {"vi": "thành phần bị gạt sang bên", "en": "downplayed element"}
+      },
+      {
+        "text": "as",
+        "role": "marker",
+        "label": {"vi": "dấu hiệu so sánh", "en": "comparison marker"}
+      },
+      {
+        "text": "Y",
+        "role": "complement",
+        "label": {"vi": "thành phần được nhấn mạnh", "en": "highlighted element"}
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "The issue is not so much cost as uncertainty.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 9, "role": "subject"},
+        {"start": 10, "end": 12, "role": "verb"},
+        {"start": 13, "end": 24, "role": "marker"},
+        {"start": 25, "end": 29, "role": "complement"},
+        {"start": 30, "end": 32, "role": "marker"},
+        {"start": 33, "end": 44, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Gạt 'cost' sang bên để nhấn mạnh 'uncertainty' là vấn đề thực sự.",
+        "en": "Downplays 'cost' to highlight 'uncertainty' as the real issue."
+      },
+      "translation": {
+        "vi": "Vấn đề không hẳn là chi phí mà là sự bất định.",
+        "en": "The issue is not so much cost as uncertainty."
+      }
+    },
+    {
+      "text": "The more complex the system becomes, the harder it is to maintain.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 16, "role": "subject"},
+        {"start": 17, "end": 27, "role": "verb"},
+        {"start": 28, "end": 35, "role": "marker"},
+        {"start": 37, "end": 47, "role": "complement"},
+        {"start": 48, "end": 50, "role": "marker"},
+        {"start": 51, "end": 53, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Hai mệnh đề so sánh tương quan: hệ càng phức tạp thì càng khó bảo trì.",
+        "en": "Two comparative clauses correlate: as the system grows more complex, maintenance grows harder."
+      },
+      "translation": {
+        "vi": "Hệ thống càng trở nên phức tạp thì càng khó bảo trì.",
+        "en": "The more complex the system becomes, the harder it is to maintain."
+      }
+    },
+    {
+      "text": "Her achievement is all the more impressive because resources were limited.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 15, "role": "subject"},
+        {"start": 16, "end": 18, "role": "verb"},
+        {"start": 19, "end": 31, "role": "marker"},
+        {"start": 32, "end": 42, "role": "complement"},
+        {"start": 43, "end": 50, "role": "marker"},
+        {"start": 51, "end": 73, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Nhấn mạnh mức độ nhờ lý do đi kèm: thành tích ấn tượng hơn vì nguồn lực hạn chế.",
+        "en": "Intensifies the quality in light of the reason: the achievement is more impressive because resources were limited."
+      },
+      "translation": {
+        "vi": "Thành tích của cô ấy càng ấn tượng vì nguồn lực hạn chế.",
+        "en": "Her achievement is all the more impressive because resources were limited."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Cấu trúc 'not so much X as Y' dùng 'as' để nối hai thành phần, không dùng 'than'.",
+        "en": "The pattern 'not so much X as Y' uses 'as' to link the two elements, not 'than'."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "The issue is not so much cost than uncertainty.",
+      "right": "The issue is not so much cost as uncertainty."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "The delay was not so much technical ___ managerial.",
+      "options": [{"text": "as", "error_tag": null}, {"text": "than", "error_tag": "other"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Cấu trúc 'not so much X as Y' cần 'as' để nối X và Y.",
+        "en": "The pattern 'not so much X as Y' requires 'as' to link X and Y."
+      }
+    },
+    {
+      "q": "The more carefully you plan, ___ likely you are to encounter problems.",
+      "options": [{"text": "the less", "error_tag": null}, {"text": "less", "error_tag": "sentence_structure"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Cấu trúc tương quan 'the + comparative..., the + comparative...' cần 'the' ở cả hai mệnh đề.",
+        "en": "The correlative structure 'the + comparative..., the + comparative...' requires 'the' in both clauses."
+      }
+    },
+    {
+      "q": "The proposal is all the more attractive ___ it requires no extra funding.",
+      "options": [{"text": "because", "error_tag": null}, {"text": "because of", "error_tag": "preposition"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 'all the more + adjective' dùng 'because' + mệnh đề, không dùng 'because of' + cụm danh từ.",
+        "en": "After 'all the more + adjective', use 'because' + clause, not 'because of' + noun phrase."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng 'not so much ... as ...' để tái định nghĩa một vấn đề hoặc đặc điểm.",
+      "en": "Write one sentence using 'not so much ... as ...' to reframe an issue or quality."
+    },
+    "placeholder": "The problem is not so much ... as ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["not so much"], "role": "marker"}, {"any_of": ["as"], "role": "marker"}]
+    },
+    "sample": {"text": "The delay is not so much technical as organizational."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v15",
+    "run_id": "generate.1791101959",
+    "generated_at": "2026-10-04T08:19:19Z",
+    "r5_source": {
+      "ids": ["c2-marked-comparison-structures"],
+      "content_version": 2,
+      "content_hash": "1e164286e3fc6a9c17b55e1ba525723bda386413f262a99bafdbc581e5e706a9",
+      "corrections": [
+        {
+          "r5_id": "c2-marked-comparison-structures",
+          "issue": "R5 example 'The second version is as reliable as ever, but considerably faster.' is listed under marked comparison structures but does not fit the formula taught here (not so much...as, the more...the more, all the more).",
+          "fix": "Removed this example from the structured lesson; the formula and examples now cover only the three marked comparison patterns named in the summary."
+        },
+        {
+          "r5_id": "c2-marked-comparison-structures",
+          "issue": "R5 mistake 'The more the system is complex, the harder maintenance becomes.' is corrected to 'The more complex the system becomes, the harder it is to maintain.' but the explanation says 'Comparative phrase should be the more complex' without noting the word order change in the second clause.",
+          "fix": "Wrote a clear common mistake entry for the 'not so much...than' error and kept the corrected correlative example in the examples section with full slot bindings."
+        }
+      ]
+    }
+  },
+  "review": null
+}
