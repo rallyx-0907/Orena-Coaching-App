@@ -20,6 +20,7 @@ from writing_coach.agent.retention import (
     SWEEP_INTERVAL_SECONDS,
     TURN_RETENTION_DAYS,
     TurnTelemetryRetention,
+    sweep_enabled,
 )
 
 NOON = datetime(2026, 10, 4, 12, 0, tzinfo=UTC)
@@ -47,6 +48,38 @@ def sweeper(rows: int = 0, *, fail: bool = False, clock: Clock | None = None):
 
     retention = TurnTelemetryRetention(delete, now=clock or Clock(), run=lambda work: work())
     return retention, calls
+
+
+@pytest.mark.parametrize("env", [{}, {"AGENT_TURN_RETENTION_SWEEP": ""}, {"AGENT_TURN_RETENTION_SWEEP": "0"},
+                                 {"AGENT_TURN_RETENTION_SWEEP": "false"}, {"AGENT_TURN_RETENTION_SWEEP": "off"}])
+def test_the_sweep_is_off_unless_switched_on(env):
+    """Human direction 2026-10-04: automatic deletion stays off until its independent review passes."""
+
+    assert sweep_enabled(env) is False
+
+
+@pytest.mark.parametrize("value", ["1", "true", "TRUE", "on", "yes"])
+def test_the_sweep_is_switched_on_only_by_its_environment_variable(value):
+    assert sweep_enabled({"AGENT_TURN_RETENTION_SWEEP": value}) is True
+
+
+def test_an_unclear_switch_refuses_to_start_rather_than_guess():
+    with pytest.raises(ValueError):
+        sweep_enabled({"AGENT_TURN_RETENTION_SWEEP": "maybe"})
+
+
+def test_the_app_deletes_nothing_when_the_sweep_is_off(monkeypatch):
+    import app
+
+    monkeypatch.delenv("AGENT_TURN_RETENTION_SWEEP", raising=False)
+    assert app._agent_turn_retention is None  # the test environment never sets it
+    deleted = []
+    monkeypatch.setattr(app, "_delete_agent_turns_before", lambda before, limit: deleted.append(before) or 0)
+    writes = []
+    monkeypatch.setattr(app._persistence_runtime.platform_repository, "record_admin_event",
+                        lambda *a, **k: writes.append(a), raising=False)  # fmt: skip
+    app._record_agent_turn("learner-1", {"trace_id": "t1"})
+    assert writes and not deleted
 
 
 def test_turn_telemetry_is_kept_ninety_days():

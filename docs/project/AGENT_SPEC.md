@@ -194,8 +194,11 @@ R27 (2026-10-04, sau khi PR #69 được merge) Người chủ dự án:
       Không cần action mới hay lưu trữ phía server.
     - Telemetry agent.turn trong audit_logs: giữ 90 ngày, dọn tự động (agent/retention.py). Xoá dữ liệu tự động là
       thay đổi vòng đời mang tính huỷ: cần review kiến trúc độc lập trước khi bật (AGENTS.md "Architecture review
-      authority"); người viết không tự duyệt.
+      authority"); người viết không tự duyệt. Tắt mặc định; chỉ bật bằng AGENT_TURN_RETENTION_SWEEP=true (giá trị lạ
+      thì không khởi động). Lane UI review độc lập trong mục kiểm tra kỹ thuật và bảo mật; đạt thì người chủ dự án
+      bật.
     - Slice 4 (giọng nói): giữ đề xuất (b936819), chưa làm.
+    - Sau khi lane UI báo dựng lại :8021: đo baseline (dưới 0,05 USD), rồi nhận lỗi test của người chủ dự án.
 ```
 
 Tiến độ lane (cập nhật mỗi slice):
@@ -275,7 +278,7 @@ Sau #69  9d1d297..7bfcbbf: F-13 trả lời "màn này để làm gì" từ màn
           trên sổ AI dùng chung (AGENT_DAILY_SPEND_CAP_USD, đóng khi không đọc được sổ); đề xuất Slice 4 (chưa làm).
 R27      Nhờ ghi nhớ không dấu: hỏi lại kèm nút, chỉ ghi khi bấm (notes.py, turn.py; test vi không dấu, xác nhận đúng
           chữ, chữ khác bị từ chối, nhãn theo ngôn ngữ interface). agent.turn giữ 90 ngày, dọn tự động (retention.py;
-          test unit và Postgres: chỉ dòng agent.turn cũ bị xoá, dòng audit khác giữ nguyên) - chờ review độc lập.
+          test unit và Postgres: chỉ dòng agent.turn cũ bị xoá, dòng audit khác giữ nguyên); tắt mặc định, bật bằng AGENT_TURN_RETENTION_SWEEP sau review độc lập của lane UI.
 Tiếp      PR mới vào codex/work (người chủ dự án merge khi CI xanh); lane UI dựng lại :8021 rồi lane này đo baseline
           (dưới 0,05 USD); quota dùng chung trước khi chạy nhiều worker (R26); Slice 4 chỉ là đề xuất.
 ```

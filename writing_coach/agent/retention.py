@@ -5,20 +5,40 @@ are kept for 90 days. The sweep needs no scheduler: the write path itself starts
 process, off the request thread, and removes older rows in bounded batches through a repository method that can
 delete `agent.turn` rows and nothing else. Deleting is idempotent, so several processes sweeping at once only
 repeat work. A failing sweep is logged and tried again the next day; it never costs a learner a turn.
+
+It is off by default (human direction 2026-10-04): automatic deletion is a destructive lifecycle change, so it
+runs only once `AGENT_TURN_RETENTION_SWEEP` is switched on, after its independent review has passed. Off, nothing
+is ever deleted and the rows simply stay.
 """
 
 from __future__ import annotations
 
 import logging
 import threading
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from datetime import UTC, datetime, timedelta
 
 TURN_RETENTION_DAYS = 90
 SWEEP_INTERVAL_SECONDS = 24 * 3600
 SWEEP_BATCH = 5000
 
+SWEEP_SWITCH = "AGENT_TURN_RETENTION_SWEEP"
+_ON = frozenset({"1", "true", "on", "yes"})
+_OFF = frozenset({"", "0", "false", "off", "no"})
+
 _log = logging.getLogger(__name__)
+
+
+def sweep_enabled(env: Mapping[str, str]) -> bool:
+    """True only when `AGENT_TURN_RETENTION_SWEEP` is switched on; unset is off. An unclear value refuses to start
+    rather than guess whether deleting was meant."""
+
+    value = str(env.get(SWEEP_SWITCH, "")).strip().casefold()
+    if value in _ON:
+        return True
+    if value in _OFF:
+        return False
+    raise ValueError(f"{SWEEP_SWITCH} must be one of {sorted(_ON | _OFF - {''})}")
 
 
 def _in_background(work: Callable[[], None]) -> None:
