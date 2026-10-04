@@ -157,6 +157,10 @@ function Get-ChangedPaths {
 }
 
 $baselinePaths = @(Get-ChangedPaths)
+$baselineOutsideDiff = (
+    (git diff --no-ext-diff --binary -- . ":(exclude)grammar_lab/**" | Out-String) +
+    (git diff --cached --no-ext-diff --binary -- . ":(exclude)grammar_lab/**" | Out-String)
+)
 
 for ($cycle = 1; $cycle -le $MaxCycles; $cycle++) {
     Write-Host ""
@@ -190,10 +194,14 @@ for ($cycle = 1; $cycle -le $MaxCycles; $cycle++) {
     $afterPaths = @(Get-ChangedPaths)
     $newPaths = @($afterPaths | Where-Object { $_ -notin $baselinePaths })
     $outOfScope = @($newPaths | Where-Object { $_ -notlike "grammar_lab/*" })
-    if ($outOfScope.Count -gt 0) {
+    $afterOutsideDiff = (
+        (git diff --no-ext-diff --binary -- . ":(exclude)grammar_lab/**" | Out-String) +
+        (git diff --cached --no-ext-diff --binary -- . ":(exclude)grammar_lab/**" | Out-String)
+    )
+    if ($outOfScope.Count -gt 0 -or $afterOutsideDiff -ne $baselineOutsideDiff) {
         Write-Error (
-            "Claude changed path(s) outside grammar_lab/**; stopping before replay: " +
-            ($outOfScope -join ", ")
+            "Claude changed content outside grammar_lab/**; stopping before replay. " +
+            "Review git diff manually."
         )
         exit 32
     }
