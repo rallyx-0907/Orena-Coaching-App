@@ -702,7 +702,8 @@ a.a-btn--primary:hover {
 [data-tone='err'].a-metric__value {
   color: var(--red);
 }
-[data-tone='warn'].a-kv__value {
+[data-tone='warn'].a-kv__value,
+[data-tone='warn'].a-metric__value {
   color: var(--amber);
 }
 [data-tone='dim'].a-metric__value {

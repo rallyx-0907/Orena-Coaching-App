@@ -16,10 +16,21 @@ const titleKey = {
 export function issueHref(item, href) {
   if (item.kind === 'transcript_missing') return href('adminMedia');
   if (item.kind === 'content_waiting') return href('adminVocab');
-  if (item.kind === 'import_failed') return href('adminJobs', {}, { status: 'failed' });
+  if (item.kind === 'import_failed' || item.kind === 'reading_jobs_failed') return href('adminJobs', {}, { status: 'failed' });
   if (item.section === 'ai' && item.subject) return capabilityHref(item.subject, href);
   if (item.provider) return href('adminProvider', { id: item.provider });
   return href(({ ai: 'adminAi', content: 'adminContent', imports: 'adminImports' })[item.section] || 'adminOperations');
+}
+
+/* D-111 point 5: every kind of content in the five states; a kind whose owner cannot be read says so. */
+function contentStates(states) {
+  if (!states) return t('opUnavailable');
+  const order = states.states || ['live', 'review', 'invalid', 'failed', 'processing'];
+  const tone = { invalid: 'warn', failed: 'err' };
+  return html`${metrics(order.map((state) => ({ label: t(`opSt_${state}`), value: value(states.totals?.[state]), tone: states.totals?.[state] ? tone[state] || '' : '' })), { columns: 5 })}${rows(Object.entries(states.kinds || {}).map(([kind, counts]) => ({
+    title: t(`opKind_${kind}`),
+    meta: counts ? order.map((state) => `${t(`opSt_${state}`)} ${value(counts[state])}`).join(' · ') : t('opUnavailable'),
+  })))}`;
 }
 
 function attention(data, href) {
@@ -43,9 +54,10 @@ export function controlPage(route, data, { href, filters = {}, offset = 0 } = {}
     body = html`<div class="a-overview-metrics">${metrics([
       { label: t('opActive'), value: d.activity?.available ? value(d.activity.active_7d) : t('opUnavailable') },
       { label: t('opNew'), value: d.accounts?.available ? value(d.accounts.new_7d) : t('opUnavailable') },
-      { label: t('opPublished'), value: value(d.content?.published) },
+      // Every kind, Reading included (content.states); the older count left Reading out.
+      { label: t('opPublished'), value: value(d.content?.states?.totals?.live ?? d.content?.published) },
       { label: t('opTotal'), value: d.accounts?.available ? value(d.accounts.total) : t('opUnavailable') },
-    ], { columns: 4 })}</div>${section('opAttention', attention(d.attention, href))}${section('opRuntime', kv([
+    ], { columns: 4 })}</div>${section('opContentStates', contentStates(d.content?.states))}${section('opAttention', attention(d.attention, href))}${section('opRuntime', kv([
       { key: t('opMode'), value: value(d.ai?.runtime_mode) },
     ]))}${section('opDomains', d.activity?.available ? rows((d.activity.domains || []).map((domain) => ({ title: key(domain.domain), right: value(domain.events), meta: t('opCount') }))) : t('opUnavailable'))}
     ${section('opDaily', d.activity?.available ? rows((d.activity.daily || []).slice(-7).map((day) => ({ title: day.date, right: value(day.learners), meta: t('opActiveFilter') }))) : t('opUnavailable'))}`;

@@ -133,6 +133,67 @@ def retention_windows(
     return result
 
 
+CONTENT_STATES = ("live", "review", "invalid", "failed", "processing")
+
+
+def content_states(
+    *,
+    reading: Mapping[str, Any] | None,
+    records: Iterable[Mapping[str, Any]],
+    transcript_missing: int = 0,
+) -> dict[str, Any]:
+    """Every kind of content in the five states the overview shows (D-111 point 5).
+
+    live: learners see it. review: waiting for an editor's decision (rights, a set to approve, a draft).
+    invalid: held because a validator failed - it cannot publish until fixed. failed: a job that broke and can
+    be retried. processing: in the pipeline now. A kind whose owner cannot be read is `None`, never zeros.
+    """
+
+    def blank() -> dict[str, int]:
+        return dict.fromkeys(CONTENT_STATES, 0)
+
+    kinds: dict[str, dict[str, int] | None] = {}
+    if reading is None:
+        kinds["reading"] = kinds["comprehension"] = None
+    else:
+        articles, jobs = reading.get("articles") or {}, reading.get("jobs") or {}
+        review = reading.get("review") or {}
+        kinds["reading"] = {
+            "live": int(articles.get("published", 0)),
+            "review": int(review.get("rights", 0)) + int(review.get("unscreened", 0)),
+            "invalid": int(review.get("invalid", 0)),
+            "failed": int(jobs.get("failed", 0)),
+            "processing": int(jobs.get("queued", 0)) + int(jobs.get("running", 0)),
+        }
+        sets = reading.get("sets") or {}
+        kinds["comprehension"] = {**blank(), "live": int(sets.get("approved", 0)),
+                                  "review": int(sets.get("draft", 0)) + int(sets.get("needs_review", 0)),
+                                  "invalid": int(sets.get("stale", 0))}  # fmt: skip
+    rows = list(records)
+    for kind in ("media", "book", "vocabulary"):
+        counts = blank()
+        for record in rows:
+            if record.get("kind") != kind:
+                continue
+            status = str(record.get("status") or "")
+            if status == "published":
+                counts["live"] += 1
+            elif status in {"review", "draft", "pending_review", "unpublished"}:
+                counts["review"] += 1
+            elif status == "processing":
+                counts["processing"] += 1
+            elif status == "failed":
+                counts["failed"] += 1
+        kinds[kind] = counts
+    if kinds.get("media") is not None:
+        kinds["media"]["invalid"] = int(transcript_missing)  # published or not, it has no usable transcript
+    totals = blank()
+    for counts in kinds.values():
+        for state in CONTENT_STATES:
+            totals[state] += (counts or {}).get(state, 0)
+    return {"kinds": kinds, "totals": totals, "states": list(CONTENT_STATES)}
+
+
 def needs_attention(
     *,
     capabilities: Iterable[Mapping[str, Any]] | None,
@@ -144,6 +205,7 @@ def needs_attention(
     content_waiting: int = 0,
     runtime: Mapping[str, Any] | None = None,
     legacy_route: Mapping[str, Any] | None = None,
+    reading_jobs_failed: int = 0,
 ) -> list[dict[str, Any]]:
     """Only problems an operator can act on, most severe first.
 
@@ -211,6 +273,9 @@ def needs_attention(
         items.append({"kind": "media_index_unreadable", "severity": "critical", "section": "operations"})
     if import_failures:
         items.append({"kind": "import_failed", "severity": "warning", "section": "imports", "count": int(import_failures)})
+    if reading_jobs_failed:  # retryable from Admin > Imports > Jobs (failed filter)
+        items.append({"kind": "reading_jobs_failed", "severity": "warning", "section": "reading",
+                      "count": int(reading_jobs_failed)})
     if transcript_missing:
         items.append({"kind": "transcript_missing", "severity": "warning", "section": "content", "count": int(transcript_missing)})
     learner_failures = int(facts.get("learner_impact_failures") or 0)

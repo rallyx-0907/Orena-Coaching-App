@@ -1069,6 +1069,22 @@ def _worker_health() -> dict[str, Any]:
     }
 
 
+def overview_states() -> dict[str, Any] | None:
+    """Reading's counts for Admin's overview (admin_metrics.content_states): articles, jobs and comprehension
+    sets per state, and why the waiting articles wait. None while the engine is not active here."""
+
+    try:
+        return {
+            "articles": _content().counts_by_status(),
+            "review": _content().review_reasons_summary(),
+            "jobs": _jobs().counts_by_status(),
+            "sets": _evidence().set_counts_by_status() if _state.evidence is not None else {},
+        }
+    except Exception:  # noqa: BLE001 - an inactive engine is "unavailable" on the overview, never an error
+        _logger.info("reading overview states unavailable", exc_info=True)
+        return None
+
+
 @router.get("/operations")
 def operations(request: Request, response: Response) -> dict[str, Any]:
     """Queue depth, article states and worker health, counted in the database."""

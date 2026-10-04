@@ -557,6 +557,15 @@ class ReadingEvidenceRepository:
                                    .where(ReadingComprehensionQuestion.id == question.id)
                                    .values(rank=rank, updated_at=moment))
 
+    def set_counts_by_status(self) -> dict[str, int]:
+        """Comprehension sets per review state, for Admin's overview (counted in the database)."""
+
+        with self.engine.connect() as connection:
+            rows = connection.execute(
+                select(ReadingComprehensionSet.status, func.count()).group_by(ReadingComprehensionSet.status)
+            ).all()
+        return {str(status): int(total) for status, total in rows}
+
     def discard_set(self, set_id: str, *, actor: str, now: datetime | None = None) -> bool:
         """Delete a set nobody ever served (draft, needs_review, rejected).
         One that reached learners is refused by the database."""

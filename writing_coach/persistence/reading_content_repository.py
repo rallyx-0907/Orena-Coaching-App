@@ -1303,6 +1303,30 @@ class ReadingContentRepository:
         with self.engine.connect() as connection:
             return int(connection.execute(query).scalar_one())
 
+    # Admission reasons that are about rights and source policy; any other reason is a validator that failed.
+    RIGHTS_REASONS = frozenset({"source_not_active", "automation_not_allowed", "rights_not_cleared",
+                                "attribution_unknown", "attribution_missing", "source_origin_mismatch"})
+
+    def review_reasons_summary(self, *, limit: int = 5000) -> dict[str, int]:
+        """Articles waiting in review, split by why: a rights or source-policy question, or a failed validator
+        ("invalid" on Admin's overview). An article an editor submitted by hand has no admission at all."""
+
+        with self.engine.connect() as connection:
+            rows = connection.execute(
+                select(ReadingArticle.analysis_json).where(ReadingArticle.status == "needs_review").limit(limit)
+            ).all()
+        summary = {"rights": 0, "invalid": 0, "unscreened": 0}
+        for (analysis,) in rows:
+            admission = (analysis or {}).get("admission") if isinstance(analysis, Mapping) else None
+            reasons = set((admission or {}).get("reasons") or [])
+            if not admission:
+                summary["unscreened"] += 1
+            elif reasons - self.RIGHTS_REASONS:
+                summary["invalid"] += 1
+            else:
+                summary["rights"] += 1
+        return summary
+
     def counts_by_status(self) -> dict[str, int]:
         with self.engine.connect() as connection:
             rows = connection.execute(

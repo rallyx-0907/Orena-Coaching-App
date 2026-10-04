@@ -56,6 +56,7 @@ from writing_coach.admin_content import (
 )
 from writing_coach.admin_metrics import (
     activity_days,
+    content_states,
     daily_series,
     day_keys,
     learner_segments,
@@ -610,6 +611,11 @@ def overview(request: Request, response: Response) -> dict[str, Any]:
     )
     records, sources = _content_records()
     content = _content_summary(records, sources)
+    from writing_coach.reading_admin_api import overview_states
+
+    reading_states = overview_states()
+    content["states"] = content_states(reading=reading_states, records=records,
+                                       transcript_missing=content["media"]["transcript_missing"])  # fmt: skip
     history = _history()
     week_ago = (now - timedelta(days=7)).isoformat()
     imports = (
@@ -641,6 +647,7 @@ def overview(request: Request, response: Response) -> dict[str, Any]:
             "learner_impact_failures": _learner_impact_failures(facts["operations"]),
         },
         legacy_route=_legacy_selection(facts["providers"]),
+        reading_jobs_failed=int(((reading_states or {}).get("jobs") or {}).get("failed", 0)),
     )
     return {
         "generated_at": now.isoformat(),
