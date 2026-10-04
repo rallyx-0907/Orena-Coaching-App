@@ -14,7 +14,7 @@ param(
     [double]$CostCeilingUsd = 0.02
 )
 
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = "Stop"\n$InvariantCulture = [System.Globalization.CultureInfo]::InvariantCulture
 
 function Invoke-CacheReplay {
     param([string]$Id)
@@ -51,7 +51,7 @@ function Invoke-OneShotGeneration {
         "--workers", "1",
         "--point-ids", $Id,
         "--one-shot",
-        "--cost-ceiling-usd", "$Ceiling"
+        "--cost-ceiling-usd", $Ceiling.ToString("0.####", $InvariantCulture)
     )
 
     $lines = & python @args 2>&1
