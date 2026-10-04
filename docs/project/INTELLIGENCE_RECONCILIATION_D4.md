@@ -169,3 +169,29 @@ D-107 point 6: not before Intelligence tests and E2E, and an independent review,
    copy). This file does not edit it.
 9. Activation stays a separate human gate: production never serves the agent (`agent/api.py:agent_enabled`), and
    `AGENT_LIVE` is flipped only on :8011 after the merge (D-101 G).
+
+## 7. E2E run on the throwaway stack (2026-10-04, local execution)
+
+`python scripts/agent_e2e/run.py` on `812c557` + the E2E scripts (merge of `codex/work` `88b1c81`): project
+`orena-agent-e2e` on :8016, PostgreSQL 17 on tmpfs at Alembic head, sign-in off, **no provider reached** (no key set,
+nothing billed). Each stack was taken down after its pass.
+
+| Pass | In-container harness (real app, real routes, scripted provider) | UI client (`transport.js` `liveTurn`, real HTTP) |
+| --- | --- | --- |
+| agent on, `ORENA_ACCOUNT_BACKBONE` off | 69 / 69 | 5 / 5 |
+| agent on, `ORENA_ACCOUNT_BACKBONE` on | 69 / 69 | 5 / 5 |
+| agent off | - | 2 / 2 (capabilities 404, a turn is `absent`) |
+
+What the harness covers, in EN and ZH: seeding through the routes (words, a server-scored dictation line, grammar
+completion) or, where the route needs a provider, through the same repository under the same request context (an
+essay review, a scored speaking take, a legacy client-scored dictation row, a reading set and attempt); every read
+tool through `POST /api/agent/turn` (19 tools; a refused or failed read is a failure); the data each tool read is the
+learner's own in the turn's language (writing history, speaking attempt, saved words, reading) and the other language
+sees nothing; F-2 holds (a client-scored line reads `verified: false`, `exact: null`); 409 on a target mismatch; S15
+identity in the learner's address; a language switch on the same session (F-6) answers; 429 with the turn budget
+spent; no row added to `works`, `work_turns`, `library_items`, `language_provenance` by agent turns, and metering rows
+written (`usage_events` +78). The UI client checks the same S15/409/429 statuses through its own live path.
+
+Not covered here: the live provider pass (I-18, I-22), which needs the human's approved cap; isolation between two
+accounts (sign-in is off; it stays on the PostgreSQL pytest); F-3, F-4, F-5, F-9 (recorded decisions or dependencies).
+Results JSON outside the repository.
