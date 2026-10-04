@@ -1430,7 +1430,9 @@ class Generator:
             # Most live failures at B2/C1/C2 are confined to formula ordering,
             # example spans and the deterministic production rule. Repair that
             # small surface first instead of paying for a fresh full lesson.
+            targeted_repair_used = False
             if can_target_repair(issues):
+                targeted_repair_used = True
                 repair_point = point
                 repair_issues = issues
                 for _repair_attempt in range(TARGETED_REPAIR_ATTEMPTS):
@@ -1482,6 +1484,13 @@ class Generator:
                 f"{issue.code} at {issue.path}: {issue.message}" for issue in issues[:8]
             )
             focused_hints = semantic_repair_hints(issues)
+            # A targeted repair already spent one extra provider call on the
+            # exact failing structure. If that still cannot validate, do not
+            # buy two more 8k-token full generations for the same candidate
+            # family. Let corpus orchestration quarantine/skip the hard point.
+            if targeted_repair_used:
+                break
+
             repair_context = (
                 "\n".join(
                     f"- {issue.code} at {issue.path}: {issue.message}" for issue in issues[:8]
@@ -1491,9 +1500,14 @@ class Generator:
                 + json.dumps(result.data, ensure_ascii=False, separators=(",", ":"))
             )
 
+        attempts_used = attempt
         return GenerateOutcome(
             point_id, "error",
-            reason=f"semantic validation failed after {V04_SEMANTIC_ATTEMPTS} attempts: {last_problem}",
+            reason=(
+                f"semantic validation failed after {attempts_used} full attempt(s)"
+                + (" plus targeted repair" if targeted_repair_used else "")
+                + f": {last_problem}"
+            ),
             cost_usd=(total_cost if cost_known and total_cost else None),
             cached=all_cached,
         )
