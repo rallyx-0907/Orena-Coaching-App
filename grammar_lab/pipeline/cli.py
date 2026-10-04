@@ -234,6 +234,10 @@ def generate_corpus_command(
         True, "--paid-repairs/--no-paid-repairs",
         help="Allow or forbid provider-backed structure/semantic repair calls after the full candidate.",
     ),
+    one_shot: bool = typer.Option(
+        False, "--one-shot",
+        help="Strict budget mode: one full candidate, no paid repairs, and no DeepSeek empty-response retry.",
+    ),
     regenerate_existing: bool = typer.Option(
         False, "--regenerate-existing",
         help="Also regenerate existing reviewed content so the final corpus passes through one prompt/schema pipeline.",
@@ -266,6 +270,10 @@ def generate_corpus_command(
         raise typer.BadParameter("must be between 1 and 16", param_hint="--workers")
     if max_full_attempts < 1 or max_full_attempts > 3:
         raise typer.BadParameter("must be between 1 and 3", param_hint="--max-full-attempts")
+
+    effective_max_full_attempts = 1 if one_shot else max_full_attempts
+    effective_paid_repairs = False if one_shot else paid_repairs
+    deepseek_empty_attempts = 1 if one_shot else 3
     if replay_cache_file is not None and not cache_only:
         raise typer.BadParameter("--replay-cache-file requires --cache-only", param_hint="--replay-cache-file")
     if replay_cache_file is not None and workers != 1:
@@ -314,7 +322,8 @@ def generate_corpus_command(
         f"generate-corpus: {len(candidates)} {mode} point(s) selected; "
         f"{normalized_skipped} already normalized skipped; "
         f"workers={workers}, provider={provider}, model={model}, "
-        f"max-full-attempts={max_full_attempts}, paid-repairs={paid_repairs}"
+        f"max-full-attempts={effective_max_full_attempts}, paid-repairs={effective_paid_repairs}"
+        + (", one-shot" if one_shot else "")
         + (", cache-only" if cache_only else "")
     )
     if not candidates:
@@ -333,12 +342,13 @@ def generate_corpus_command(
                 deepseek_thinking=deepseek_thinking,
                 cache_only=cache_only,
                 replay_cache_file=replay_cache_file,
+                deepseek_empty_attempts=deepseek_empty_attempts,
             ) as llm:
                 generator = Generator(
                     lang=lang_code, l1=l1, llm=llm, root=root,
                     allow_default_safe=False,
-                    max_full_attempts=max_full_attempts,
-                    paid_repairs=paid_repairs,
+                    max_full_attempts=effective_max_full_attempts,
+                    paid_repairs=effective_paid_repairs,
                 )
                 return generator.generate(
                     point_id,
@@ -417,8 +427,9 @@ def generate_corpus_command(
         "point_ids": requested_point_ids,
         "sample_per_level": sample_per_level,
         "workers": workers,
-        "max_full_attempts": max_full_attempts,
-        "paid_repairs": paid_repairs,
+        "max_full_attempts": effective_max_full_attempts,
+        "paid_repairs": effective_paid_repairs,
+        "one_shot": one_shot,
         "regenerate_existing": regenerate_existing,
         "regenerate_note": bool(regenerate_note),
         "already_normalized_skipped": normalized_skipped,
