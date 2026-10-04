@@ -101,8 +101,45 @@ function Invoke-Rescue {
     return $LASTEXITCODE
 }
 
+function Assert-CorpusComplete {
+    param([string[]]$Languages)
+
+    $scope = if ($Languages.Count -eq 2) { "all" } else { $Languages[0] }
+    $json = & python -m grammar_lab.pipeline.cli corpus-plan --lang $scope --json 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        throw "corpus-plan --json failed."
+    }
+
+    $plan = ($json | Out-String) | ConvertFrom-Json
+    $expected = if ($scope -eq "all") { 595 } elseif ($scope -eq "en") { 215 } else { 380 }
+
+    $generated = [int]($plan.counts.generated)
+    $ready = [int]($plan.counts.ready)
+    $blocked = [int]($plan.counts.blocked_metadata)
+    $unreviewed = [int]($plan.counts.generated_unreviewed_metadata)
+    $canonical = [int]($plan.canonical_total)
+
+    if (
+        $canonical -ne $expected -or
+        $generated -ne $expected -or
+        $ready -ne 0 -or
+        $blocked -ne 0 -or
+        $unreviewed -ne 0
+    ) {
+        throw (
+            "Corpus is not complete: canonical=$canonical generated=$generated ready=$ready " +
+            "blocked_metadata=$blocked generated_unreviewed_metadata=$unreviewed expected=$expected"
+        )
+    }
+
+    Write-Host "Corpus completeness assertion passed: $generated/$expected generated; no ready/blocked/unreviewed items."
+}
+
+
 function Invoke-FinalGates {
     param([string[]]$Languages)
+
+    Assert-CorpusComplete -Languages $Languages
 
     Write-Host ""
     Write-Host "=== FINAL GRAMMAR GATES ==="
