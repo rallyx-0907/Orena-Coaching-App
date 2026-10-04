@@ -607,7 +607,9 @@ def test_generate_v04_does_not_persist_after_three_semantic_failures(tmp_path: P
 
     second = make_generator(lab.root, httpx.MockTransport(handler)).generate("en.alpha")
     assert second.status == "error"
-    assert len(calls) == 6  # semantic-invalid cache entries were evicted, so retry is genuinely fresh
+    assert second.cached is True
+    assert second.cost_usd is None
+    assert len(calls) == 3  # all three paid candidates are replayed from cache
     assert path.read_text(encoding="utf-8") == before
 
 def test_semantic_repair_hints_are_targeted_by_failure_family() -> None:
