@@ -39,6 +39,8 @@ def _finish(reason: object) -> str:
 
     known = _FINISH.get(str(reason or ""))
     if known is None:
+        # For the operator (and the live runner): "missing" means the stream ended with no reason at all.
+        _log.warning("agent provider round ended abnormally: %s", reason or "missing")
         raise ProviderUnavailable(f"the provider round ended with an unknown reason {reason!r}")
     return known
 

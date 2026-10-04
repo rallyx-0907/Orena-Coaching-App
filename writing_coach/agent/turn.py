@@ -377,6 +377,8 @@ class _Turn:
                     self.usage_in += item.input_tokens or 0
                     self.usage_out += item.output_tokens or 0
                     if item.finish_reason not in NORMAL_FINISH:
+                        _log.warning("agent provider round ended abnormally: %s", item.finish_reason,
+                                     extra={"trace_id": self.trace_id})  # fmt: skip
                         # Fail closed (independent review 2026-10-04): a round cut off or ended for a reason that is
                         # not a normal stop is never shown as a complete answer.
                         raise ProviderUnavailable(f"the provider round ended with {item.finish_reason!r}")
