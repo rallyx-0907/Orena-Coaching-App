@@ -23,6 +23,7 @@ from grammar_lab.pipeline.generate import (
     assemble_generated_example,
     assemble_generated_personal_production,
     build_rule_table,
+    complete_generated_terminal_bindings,
     normalize_generated_formula_order,
     complete_literal_example_spans,
     pinyin_from_pairs,
@@ -947,6 +948,96 @@ def test_normalize_generated_formula_order_repairs_contraction_tag_surface_order
     ]
     assert [binding["slot_index"] for binding in out["examples"][0]["bindings"]] == [0, 1, 2, 4, 3]
     assert [slot["slot_index"] for slot in out["personal_production"]["pattern_rule"]["slots"]] == [2, 3, 4]
+
+
+
+def test_normalize_generated_formula_order_handles_repeated_surface_words() -> None:
+    data = {
+        "formula": [
+            {"text": "S", "role": "subject"},
+            {"text": "reporting verb", "role": "verb"},
+            {"text": "reported content", "role": "complement"},
+            {"text": "marker", "role": "marker"},
+        ],
+        "negative": [],
+        "question": [],
+        "examples": [{
+            "text": "It was reported that it had failed.",
+            "form": "affirmative",
+            "bindings": [
+                {"slot_index": 0, "text": "It"},
+                {"slot_index": 1, "text": "reported"},
+                {"slot_index": 2, "text": "it had failed"},
+                {"slot_index": 3, "text": "that"},
+            ],
+        }],
+        "personal_production": {
+            "target_form": "affirmative",
+            "pattern_rule": {"ordered": True, "slots": []},
+        },
+    }
+
+    out = normalize_generated_formula_order(data, False)
+
+    assert [slot["text"] for slot in out["formula"]] == [
+        "S", "reporting verb", "marker", "reported content",
+    ]
+
+
+def test_complete_generated_terminal_bindings_recovers_only_remaining_edge_phrase() -> None:
+    data = {
+        "formula": [
+            {"text": "V", "role": "verb"},
+            {"text": "recipient", "role": "object"},
+            {"text": "heavy NP/clause", "role": "object"},
+        ],
+        "negative": [],
+        "question": [],
+        "examples": [{
+            "text": "They explained to us the reasons for the sudden change.",
+            "form": "affirmative",
+            "bindings": [
+                {"slot_index": 0, "text": "explained"},
+                {"slot_index": 1, "text": "to us"},
+            ],
+        }],
+        "personal_production": {
+            "target_form": "affirmative",
+            "pattern_rule": {"ordered": True, "slots": []},
+        },
+    }
+
+    out = complete_generated_terminal_bindings(data, False)
+
+    assert out["examples"][0]["bindings"][-1] == {
+        "slot_index": 2,
+        "text": "the reasons for the sudden change",
+    }
+
+
+def test_complete_generated_terminal_bindings_stays_fail_closed_with_optional_ambiguity() -> None:
+    data = {
+        "formula": [
+            {"text": "V", "role": "verb"},
+            {"text": "optional adjunct", "role": "time", "optional": True},
+            {"text": "heavy NP/clause", "role": "object"},
+        ],
+        "negative": [],
+        "question": [],
+        "examples": [{
+            "text": "They explained yesterday the reasons.",
+            "form": "affirmative",
+            "bindings": [{"slot_index": 0, "text": "explained"}],
+        }],
+        "personal_production": {
+            "target_form": "affirmative",
+            "pattern_rule": {"ordered": True, "slots": []},
+        },
+    }
+
+    out = complete_generated_terminal_bindings(data, False)
+
+    assert out == data
 
 
 def test_pattern_rule_matches_contraction_suffix_literal_inside_token() -> None:
