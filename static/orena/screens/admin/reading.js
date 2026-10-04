@@ -45,7 +45,7 @@ export async function mountReading(shell, ctx) {
       case 'adminQueue': return { ...queuePage({ ...base, tab: view.tab, items: data.items, next: data.cursor, counts: counts() }), filterValue: view.q };
       case 'adminArticle': return articlePage({ ...base, article: data.article, sets: data.sets });
       case 'adminSet': return setPage({ ...base, set: data.set, article: data.article });
-      case 'adminAdd': return addPage(base);
+      case 'adminAdd': return addPage({ ...base, sources: data.sources });
       case 'adminSources': return { ...sourcesPage({ ...base, sources: data.sources }), filterValue: view.q };
       case 'adminSource': {
         const source = data.sources.find((item) => item.id === ctx.params.id);
@@ -80,7 +80,7 @@ export async function mountReading(shell, ctx) {
       } else if (routeId === 'adminSet') {
         data.set = await api.readingSet(ctx.params.id);
         data.article = await api.readingArticle(data.set.article_id).catch(() => null);
-      } else if (routeId === 'adminSources' || routeId === 'adminSource') {
+      } else if (routeId === 'adminSources' || routeId === 'adminSource' || routeId === 'adminAdd') {
         data.sources = (await api.readingSources()).items || [];
       } else if (routeId === 'adminReading') {
         const [ops, sources, review] = await Promise.all([
@@ -361,7 +361,7 @@ export async function mountReading(shell, ctx) {
   host.onFile((id, files) => { view.file = files[0] || null; view.error = ''; host.paint(); });
   host.on('add-another', () => { Object.assign(view, { last: null, url: '', title: '', body: '', file: null, error: '' }); host.paint(); });
   host.on('add-submit', async () => {
-    const submitted = submissionFrom({ mode: view.mode, title: view.title || '', body: view.body || '', url: view.url || '', language: view.language, source: view.source || '', author: view.author || '', sourceUrl: view.sourceUrl || '', rights: view.rights, adapt: view.adapt || '', attribution: view.attribution || '', license: view.license || '' });
+    const submitted = submissionFrom({ mode: view.mode, title: view.title || '', body: view.body || '', url: view.url || '', language: view.language, source: view.source || '', registeredSource: view.registeredSource || '', author: view.author || '', sourceUrl: view.sourceUrl || '', rights: view.rights, adapt: view.adapt || '', attribution: view.attribution || '', license: view.license || '' });
     const problem = submissionProblem(submitted, view.file);
     if (problem) { view.error = t(problem); host.paint(); return; }
     view.busy = true;
@@ -401,11 +401,6 @@ export async function mountReading(shell, ctx) {
     host.paint();
   });
 
-  if (routeId === 'adminAdd') {
-    view.loading = false;
-    host.paint();
-  } else {
-    load();
-  }
+  load();
   return () => host.cleanup();
 }

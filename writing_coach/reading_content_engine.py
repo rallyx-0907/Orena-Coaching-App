@@ -10,9 +10,9 @@ Two boundaries this file exists to keep:
 - **Nothing heavy happens in the admin's request.** `submit()` validates, mints
   a job and returns; the fetching, parsing and analysis happen in a worker
   process. An admin whose upstream is slow waits for a job id, not for a page.
-- **Nothing here publishes.** The engine's terminal state is a candidate in
-  `needs_review`. Making an article learner-visible is an admin's act, through
-  the repository, recorded with their name on it.
+- **Readiness is decided once at the content boundary.** Candidates await review
+  unless an active registered source explicitly permits automatic admission and
+  the deterministic rights, content and target gates pass atomically.
 
 Failure has two kinds and they are not treated alike. A refusal that will
 never succeed - a private address, an unsupported file type, an empty
@@ -23,6 +23,7 @@ comes back with an exponential backoff.
 from __future__ import annotations
 
 import logging
+from dataclasses import replace
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -69,6 +70,7 @@ PERMANENT_ERRORS = frozenset(
         # re-uploading the file is a new submission, not a retry.
         "upload_missing",
         "upload_unavailable",
+        "reading_rights_conflict",
     }
 )
 RETRY_BACKOFF = (timedelta(minutes=1), timedelta(minutes=5), timedelta(minutes=30))
@@ -123,6 +125,13 @@ class ReadingContentEngine:
         if kind not in JOB_TYPES:
             raise ReadingSourceError("unsupported_input", "This kind of source is not supported.")
         source_id = self.content.built_in_source_id(SOURCE_FOR_KIND[kind])
+        if submitted.source_id:
+            source = self.content.get_source(submitted.source_id)
+            if source is None or source["state"] != "active":
+                raise ReadingSourceError("reading_source_not_active", "Choose an active registered source.")
+            if submitted.language and submitted.language not in source["languages"]:
+                raise ReadingSourceError("reading_source_language_mismatch", "This source does not support that language.")
+            source_id = source["id"]
         digest = request_digest(submitted, source_id=source_id)
         asset_key = input_asset_key or self._store_upload(submitted, digest)
         job = self.jobs.enqueue(
@@ -199,6 +208,7 @@ class ReadingContentEngine:
             "language": submitted.language,
             "published_at": submitted.published_at,
             "source_name": submitted.source_name,
+            "source_id": submitted.source_id,
             "rights": dict(submitted.rights or {}),
         }
 
@@ -246,6 +256,17 @@ class ReadingContentEngine:
             if not self.jobs.advance_stage(job_id, "normalizing", worker_id=worker_id, now=now):
                 return lost
             item = adapter.normalize(raw)
+            # A selected registered source contributes its reviewed policy,
+            # never a name guessed from a URL. Explicit per-text answers win.
+            if submitted.source_id:
+                source = self.content.get_source(job["source_id"])
+                if source is not None and source["state"] == "active":
+                    inherited = {key: value for key, value in source["rights"].items() if key != "automation_allowed"}
+                    origins = {key: "article" if key in item.rights else "source" for key in inherited}
+                    item = replace(item, rights={**inherited, **item.rights}, metadata={
+                        **item.metadata, "source_name": item.metadata.get("source_name") or source["name"],
+                        "rights_known": True, "rights_origin": origins,
+                    })
             # The last check before anything is written to the content tables.
             if not self.jobs.advance_stage(job_id, "deduplicating", worker_id=worker_id, now=now):
                 return lost
@@ -264,6 +285,12 @@ class ReadingContentEngine:
                 now=now,
             )
             existing = self.content.article_for_source_item(snapshot["id"])
+            if snapshot.get("duplicate") and submitted.rights:
+                current = self.content.get_article(existing["id"]) if existing else None
+                effective = (current or {}).get("source", {}).get("rights_effective", snapshot["rights"])
+                if any(effective.get(key) != value for key, value in submitted.rights.items()):
+                    raise ReadingSourceError("reading_rights_conflict",
+                        "These bytes already have recorded rights. Open the existing article's rights review to change them.")
             if existing is not None:
                 # Idempotent by construction: these bytes already produced a
                 # candidate - including one an admin rejected, which is how a
@@ -286,10 +313,11 @@ class ReadingContentEngine:
             if not self.jobs.advance_stage(job_id, "analyzing", worker_id=worker_id, now=now):
                 return lost
             article = self._build_candidate(item, snapshot, now=now)
+            result_kind = "duplicate" if article.get("duplicate") else "article_created"
             finished = self.jobs.complete(
                 job_id,
                 worker_id=worker_id,
-                result_kind="article_created",
+                result_kind=result_kind,
                 article_id=article["id"],
                 source_item_id=snapshot["id"],
                 now=now,
@@ -302,7 +330,7 @@ class ReadingContentEngine:
             self._release_upload(job, finished)
             return {
                 "job_id": job_id,
-                "result_kind": "article_created",
+                "result_kind": result_kind,
                 "article_id": article["id"],
                 "source_item_id": snapshot["id"],
             }
@@ -325,13 +353,14 @@ class ReadingContentEngine:
             language=stored.get("language", ""),
             published_at=stored.get("published_at", ""),
             source_name=stored.get("source_name", ""),
+            source_id=stored.get("source_id", ""),
             rights=dict(stored.get("rights") or {}),
         )
 
     def _build_candidate(
         self, item: NormalizedSourceItem, snapshot: dict[str, Any], *, now: datetime | None
     ) -> dict[str, Any]:
-        """Measure, suggest, and hand the result to review - never to a learner.
+        """Measure and suggest before the repository's atomic admission gate.
 
         The quality issues are attached rather than acted on: "this text is
         shorter than an article" and "this is not the language it claims" are
@@ -376,6 +405,7 @@ class ReadingContentEngine:
                 for suggestion in suggestions
             ],
             now=now,
+            automatic_admission=True,
         )
 
     def _fail(

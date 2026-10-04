@@ -194,6 +194,7 @@ function evidenceFields(t, article, ui) {
     [t('rdEvHash'), String(source.content_hash || '').slice(0, 12) || '—'],
     [t('rdEvRevision'), num(article.content_revision, ui)],
   ];
+  if (analysis.admission) rows.push([t('rdAdmission'), t(analysis.admission.decision === 'published' ? 'rdAdmissionPublished' : 'rdAdmissionHeld')], [t('rdEvIssues'), (analysis.admission.reasons || []).map((code) => t.has(`rdIssue_${code}`) ? t(`rdIssue_${code}`) : code).join(', ') || t('rdEvNoIssues')]);
   return rows;
 }
 
@@ -379,7 +380,7 @@ export function setPage({ set, article, view, t, ui, href }) {
 
 /* ---- A21 add content --------------------------------------------------------------------------- */
 
-export function addPage({ view, t, href }) {
+export function addPage({ view, t, href, sources = [] }) {
   const mode = view.mode || 'url';
   const modes = ['url', 'text', 'file'];
   const rights = view.rights || '';
@@ -387,6 +388,7 @@ export function addPage({ view, t, href }) {
   const adapt = view.adapt || '';
   const attribution = view.attribution || '';
   const fields = [];
+  fields.push({ id: 'registeredSource', kind: 'select', label: t('addRegisteredSource'), hint: t('addRegisteredSourceHint'), options: [{ id: '', label: t('addIndividualSource'), on: !view.registeredSource }, ...sources.filter((source) => source.state === 'active').map((source) => ({ id: source.id, label: source.name, on: view.registeredSource === source.id }))] });
   if (mode === 'url') fields.push({ id: 'url', kind: 'text', label: t('addUrl'), span: true, value: view.url || '', placeholder: 'https://…' });
   if (mode === 'text') {
     fields.push({ id: 'title', kind: 'text', label: t('rdFieldTitle'), span: true, value: view.title || '' });

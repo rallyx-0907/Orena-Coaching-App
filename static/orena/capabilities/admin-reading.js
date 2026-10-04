@@ -134,9 +134,10 @@ export function tabOf(status) {
 
 /* What the operator typed becomes the multipart submission the engine takes. An absent answer is
    absent - not a refusal - so a rights question nobody answered arrives as no field at all. */
-export function submissionFrom({ mode, title = '', body = '', url = '', language = '', source = '', author = '', sourceUrl = '', rights = '', adapt = '', attribution = '', license = '' }) {
+export function submissionFrom({ mode, title = '', body = '', url = '', language = '', source = '', registeredSource = '', author = '', sourceUrl = '', rights = '', adapt = '', attribution = '', license = '' }) {
   const kind = ['url', 'text', 'file'].includes(mode) ? mode : 'text';
   const submitted = { kind };
+  if (registeredSource) submitted.source_id = registeredSource;
   if (kind === 'text') Object.assign(submitted, { text: body, title: title.trim() });
   if (kind === 'url') submitted.url = url.trim();
   if (kind === 'file') submitted.title = title.trim();

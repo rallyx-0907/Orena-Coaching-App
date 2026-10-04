@@ -510,6 +510,18 @@ the content boundary. Questionless media may offer Follow, Dictation and
 Pronunciation when ready, but must not advertise comprehension questions.
 Reuse the existing catalog/shared-media owner; entry never generates questions.
 
+Reading admission (D-111) uses the existing registered source, immutable source
+snapshot, article, target and review-event owners. An active source's explicit
+automation permission and cleared republication rights permit deterministic
+admission only after source identity, visible attribution, content quality and
+target grounding pass. Publication and approved target visibility are atomic;
+AI confidence never grants permission. Otherwise the candidate stays in review
+with recorded reasons. A duplicate import reuses its article; conflicting new
+rights assertions are refused and handled through the existing article rights
+review, never by rewriting the source snapshot. Free Reading can be ready without
+a comprehension set; it must not advertise the question capability until that
+separate persisted derivative passes admission. Opening either is a read.
+
 # 8. Speaking content — the Speaking Library
 
 Speaking is not just Listening reused. It should contain its own learning

@@ -131,6 +131,7 @@ assert.ok(!('can_republish' in text) && !('can_adapt' in text) && !('attribution
 assert.deepEqual(reading.submissionFrom({ mode: 'url', url: 'https://x.org/a', rights: 'allowed', adapt: 'denied', attribution: 'not_required' }), { kind: 'url', url: 'https://x.org/a', can_republish: true, can_adapt: false, attribution_required: false });
 assert.equal(reading.submissionFrom({ mode: 'url', url: ' https://x.org/a ', rights: 'allowed' }).can_republish, true);
 assert.equal(reading.submissionFrom({ mode: 'url', url: 'https://x.org/a', rights: 'denied' }).can_republish, false);
+assert.deepEqual(reading.submissionFrom({ mode: 'text', body: 'Owned text', registeredSource: 'registered-id' }), { kind: 'text', source_id: 'registered-id', text: 'Owned text', title: '' });
 assert.equal(reading.submissionProblem({ kind: 'url', url: 'nope' }), 'addErrUrl');
 assert.equal(reading.submissionProblem({ kind: 'text', text: '  ' }), 'addErrBody');
 assert.equal(reading.submissionProblem({ kind: 'file' }, null), 'addErrFile');
@@ -299,6 +300,11 @@ for (const routeId of model.ADMIN_ROUTE_IDS.filter((id) => id !== 'admin' && mod
   assert.equal(typeof cleanup, 'function', `${routeId}: an admin gets the page`);
   const page = element.querySelector('[data-part="page"]').innerHTML;
   assert.ok(page.includes('class="a-page'), `${routeId}: the page is drawn (${page.slice(0, 120)})`);
+  if (routeId === 'adminAdd') {
+    assert.ok(requests.some((request) => request.path === '/api/admin/reading/sources'));
+    assert.match(page, /option value="SRC"/);
+    assert.doesNotMatch(page, /option value="SRC2"/);
+  }
   for (const request of requests) {
     assert.ok(/^\/api\/(admin|media\/admin)\//.test(request.path), `${routeId}: ${request.path} is an admin route`);
     assert.ok(isGuarded(request), `${routeId}: ${request.method} ${request.path} is in tests/test_admin_authorization_matrix.py (anonymous 401, learner 403)`);

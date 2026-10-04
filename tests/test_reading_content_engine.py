@@ -20,7 +20,7 @@ from writing_coach.persistence.reading_content_repository import (  # noqa: E402
 )
 from writing_coach.persistence.reading_job_repository import ReadingJobRepository  # noqa: E402
 from writing_coach.reading_content_engine import ReadingContentEngine  # noqa: E402
-from writing_coach.reading_source_import import DirectUrlAdapter, SubmittedInput  # noqa: E402
+from writing_coach.reading_source_import import DirectUrlAdapter, ReadingSourceError, SubmittedInput  # noqa: E402
 from writing_coach.reading_worker import ReadingWorker  # noqa: E402
 
 ARTICLE = (
@@ -33,6 +33,126 @@ ARTICLE = (
 )
 
 PAGE = f"<html><head><title>Rain returns</title></head><body><article><p>{ARTICLE}</p></article></body></html>"
+
+ZH_ARTICLE = (
+    "周末，我们来到山上的森林。老师带着学生沿着小路慢慢走进松树林。"
+    "松树林里很安静，大家认真观察树木和地上的植物。远处有一片竹林，竹林旁边是一条清澈的小河。"
+    "朋友拿出相机拍照，记录森林里的风景。老师解释保护环境的重要性，也介绍了几种常见的植物。"
+    "大家把带来的食物和水放在书包里，没有在森林里留下垃圾。回家以后，学生写下观察到的事情。"
+)
+
+
+def _cleared_source(content, *, automation=True, republish=True):
+    source = content.create_source(slug="owned-test", name="Authored test source", source_type="manual",
+        base_url="", languages=["en", "zh"], rights={"can_republish": republish,
+        "can_adapt": True, "attribution_required": False, "automation_allowed": automation}, created_by="admin")
+    content.set_source_state(source["id"], "active", actor="admin")
+    return source
+
+
+@pytest.mark.parametrize("language,body", [("en", ARTICLE), ("zh", ZH_ARTICLE)])
+def test_cleared_registered_source_prepares_and_publishes_once(engine_parts, language, body):
+    engine, content, jobs = engine_parts
+    source = _cleared_source(content)
+    submitted = SubmittedInput(kind="text", title="A source-owned article", text=body,
+        language=language, source_id=source["id"])
+    job = engine.submit(submitted, actor="admin")
+    result = engine.process(jobs.claim("worker"))
+    article = content.get_article(result["article_id"])
+    assert article["status"] == "published"
+    assert article["analysis"]["admission"]["reasons"] == []
+    assert article["source"]["rights_state"]["can_republish"] == "allowed"
+    public = content.get_published_article(article["id"])
+    assert len(public["targets"]) >= 3
+    revision = article["content_revision"]
+    again = engine.submit(submitted, actor="admin")
+    assert again["id"] != job["id"]
+    duplicate = engine.process(jobs.claim("worker"))
+    assert duplicate["result_kind"] == "duplicate"
+    assert duplicate["article_id"] == article["id"]
+    assert content.get_article(article["id"])["content_revision"] == revision
+
+
+@pytest.mark.parametrize("automation,republish,body,rights", [
+    (False, True, ARTICLE, {}), (True, False, ARTICLE, {}),
+    (True, True, "A short paste.", {}), (True, True, ARTICLE, {"can_republish": False}),
+])
+def test_automatic_admission_holds_ineligible_content_for_review(engine_parts, automation, republish, body, rights):
+    engine, content, jobs = engine_parts
+    source = _cleared_source(content, automation=automation, republish=republish)
+    engine.submit(SubmittedInput(kind="text", text=body, language="en", source_id=source["id"], rights=rights), actor="admin")
+    result = engine.process(jobs.claim("worker"))
+    article = content.get_article(result["article_id"])
+    assert article["status"] == "needs_review"
+    assert article["analysis"]["admission"]["reasons"]
+    assert content.get_published_article(article["id"]) is None
+
+
+def test_registered_source_is_refused_before_work_when_inactive(engine_parts):
+    engine, content, _jobs = engine_parts
+    source = _cleared_source(content)
+    content.set_source_state(source["id"], "paused", actor="admin")
+    with pytest.raises(ReadingSourceError, match="active"):
+        engine.submit(SubmittedInput(kind="text", text=ARTICLE, source_id=source["id"]), actor="admin")
+
+
+def test_pausing_source_after_submission_holds_the_candidate(engine_parts):
+    engine, content, jobs = engine_parts
+    source = _cleared_source(content)
+    engine.submit(SubmittedInput(kind="text", text=ARTICLE, language="en", source_id=source["id"]), actor="admin")
+    content.set_source_state(source["id"], "paused", actor="admin")
+    result = engine.process(jobs.claim("worker"))
+    article = content.get_article(result["article_id"])
+    assert article["status"] == "needs_review"
+    assert "source_not_active" in article["analysis"]["admission"]["reasons"]
+
+
+def test_repeated_registered_input_does_not_analyze_again(engine_parts, monkeypatch):
+    engine, content, jobs = engine_parts
+    source = _cleared_source(content)
+    submitted = SubmittedInput(kind="text", text=ARTICLE, language="en", source_id=source["id"])
+    engine.submit(submitted, actor="admin")
+    first = engine.process(jobs.claim("worker"))
+    def forbidden(*args, **kwargs):
+        raise AssertionError("Duplicate source must reuse the existing candidate")
+    monkeypatch.setattr(ReadingContentEngine, "_build_candidate", forbidden)
+    engine.submit(submitted, actor="admin")
+    repeated = engine.process(jobs.claim("worker"))
+    assert repeated["article_id"] == first["article_id"]
+    assert repeated["result_kind"] == "duplicate"
+
+
+def test_lost_precheck_race_reports_reuse_without_republishing(engine_parts, monkeypatch):
+    engine, content, jobs = engine_parts
+    source = _cleared_source(content)
+    submitted = SubmittedInput(kind="text", text=ARTICLE, language="en", source_id=source["id"])
+    engine.submit(submitted, actor="admin")
+    first = engine.process(jobs.claim("worker"))
+    from writing_coach.persistence.reading_content_repository import ReadingContentRepository
+    monkeypatch.setattr(ReadingContentRepository, "article_for_source_item", lambda *args: None)
+    engine.submit(submitted, actor="admin")
+    repeated = engine.process(jobs.claim("worker"))
+    assert repeated["result_kind"] == "duplicate"
+    assert repeated["article_id"] == first["article_id"]
+    assert content.get_article(first["article_id"])["content_revision"] == 1
+
+
+def test_duplicate_import_cannot_silently_ignore_an_explicit_rights_denial(engine_parts):
+    engine, content, jobs = engine_parts
+    source = _cleared_source(content)
+    engine.submit(SubmittedInput(kind="text", text=ARTICLE, language="en", source_id=source["id"]), actor="admin")
+    first = engine.process(jobs.claim("worker"))
+    refused = engine.submit(SubmittedInput(kind="text", text=ARTICLE, language="en", source_id=source["id"],
+                                         rights={"can_republish": False}), actor="admin")
+    engine.process(jobs.claim("worker"))
+    job = jobs.get_job(refused["id"])
+    assert job["status"] == "failed"
+    assert job["last_error_code"] == "reading_rights_conflict"
+    assert job["attempt"] == 1
+    assert content.get_article(first["article_id"])["status"] == "published"
+    engine.submit(SubmittedInput(kind="text", text=ARTICLE, language="en", source_id=source["id"],
+                                rights={"can_republish": True}), actor="admin")
+    assert engine.process(jobs.claim("worker"))["result_kind"] == "duplicate"
 
 
 @pytest.fixture()

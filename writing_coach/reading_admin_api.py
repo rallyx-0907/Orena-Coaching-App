@@ -484,6 +484,7 @@ async def submit_content(
     language: str = Form(""),
     published_at: str = Form(""),
     source_name: str = Form(""),
+    source_id: str = Form(""),
     # No default answer. A rights question the submitter did not answer stays
     # unanswered in the snapshot: a `False` default would record a refusal
     # nobody made, and a reviewer would then be deciding against evidence that
@@ -519,6 +520,7 @@ async def submit_content(
         language=language.strip().casefold(),
         published_at=published_at.strip(),
         source_name=source_name.strip(),
+        source_id=source_id.strip(),
         rights={
             key: value
             for key, value in (

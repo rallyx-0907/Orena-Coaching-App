@@ -2,6 +2,7 @@
    table (copy.js). */
 
 export const en = {
+  jobErr_reading_rights_conflict: "These bytes already have different recorded rights. Open the existing article’s rights review to change them.",
   navContent: 'Content', navImports: 'Imports',
   impTitle: 'Imports', impSub: 'Bring content in, then follow what happened to it.',
   impImport: 'Import', impFollow: 'Follow up',
@@ -61,7 +62,7 @@ export const en = {
   jobErr_fetch_failed: 'The address could not be fetched', jobErr_worker_lost: 'The worker stopped reporting in', jobErr_attempts_exhausted: 'No attempts left',
   jobErr_internal_error: 'Something went wrong', jobErr_unknown: 'The job failed',
   impStage_queued: 'Queued', impStage_fetching: 'Fetching the page', impStage_normalizing: 'Extracting text', impStage_deduplicating: 'Checking for duplicates',
-  impStage_analyzing: 'Level and learning targets', impStage_building_candidate: 'Preparing for review', impStage_done: 'Ready for review',
+  impStage_analyzing: 'Level and learning targets', impStage_building_candidate: 'Preparing the article', impStage_done: 'Processed',
   impStage_upload: 'upload', impStage_archive: 'EPUB archive', impStage_parse: 'EPUB parsing', impStage_content: 'book content', impStage_storage: 'file storage',
   impStage_catalog: 'catalog database', impStage_source: 'reading the source', impStage_persistence: 'saving', impStage_validation: 'mapping and validation',
   // history
@@ -84,6 +85,7 @@ export const en = {
 };
 
 export const vi = {
+  jobErr_reading_rights_conflict: "Nội dung này đã có quyền khác được ghi nhận. Mở phần quyền của bài hiện có để thay đổi.",
   navContent: 'Nội dung', navImports: 'Nhập liệu',
   impTitle: 'Nhập liệu', impSub: 'Đưa nội dung vào, rồi theo dõi chuyện gì đã xảy ra với nó.',
   impImport: 'Nhập', impFollow: 'Theo dõi',
@@ -138,7 +140,7 @@ export const vi = {
   jobErr_fetch_failed: 'Không tải được địa chỉ', jobErr_worker_lost: 'Bộ xử lý ngừng báo cáo', jobErr_attempts_exhausted: 'Hết lượt thử',
   jobErr_internal_error: 'Đã xảy ra sự cố', jobErr_unknown: 'Tiến trình bị lỗi',
   impStage_queued: 'Đang chờ', impStage_fetching: 'Đang tải trang', impStage_normalizing: 'Đang trích văn bản', impStage_deduplicating: 'Kiểm tra trùng lặp',
-  impStage_analyzing: 'Trình độ và mục tiêu học', impStage_building_candidate: 'Chuẩn bị để duyệt', impStage_done: 'Sẵn sàng để duyệt',
+  impStage_analyzing: 'Trình độ và mục tiêu học', impStage_building_candidate: 'Chuẩn bị bài', impStage_done: 'Đã xử lý',
   impStage_upload: 'tải lên', impStage_archive: 'tệp nén EPUB', impStage_parse: 'phân tích EPUB', impStage_content: 'nội dung sách', impStage_storage: 'lưu tệp',
   impStage_catalog: 'cơ sở dữ liệu danh mục', impStage_source: 'đọc nguồn', impStage_persistence: 'lưu', impStage_validation: 'ghép cột và kiểm tra',
   impDomain_all: 'Tất cả', impDomain_book: 'Sách', impDomain_media: 'Phương tiện', impDomain_vocabulary: 'Từ vựng',
@@ -160,6 +162,7 @@ export const vi = {
 };
 
 export const zh = {
+  jobErr_reading_rights_conflict: "该内容已记录不同权限。请打开现有文章的权限审核进行修改。",
   navContent: '内容', navImports: '导入',
   impTitle: '导入', impSub: '把内容导入，然后跟进它的处理结果。',
   impImport: '导入', impFollow: '跟进',
@@ -214,7 +217,7 @@ export const zh = {
   jobErr_fetch_failed: '无法获取这个地址', jobErr_worker_lost: '工作进程停止了汇报', jobErr_attempts_exhausted: '没有剩余尝试次数',
   jobErr_internal_error: '出了点问题', jobErr_unknown: '任务失败',
   impStage_queued: '排队中', impStage_fetching: '获取页面', impStage_normalizing: '提取文本', impStage_deduplicating: '检查重复',
-  impStage_analyzing: '等级与学习目标', impStage_building_candidate: '准备审核', impStage_done: '可以审核了',
+  impStage_analyzing: '等级与学习目标', impStage_building_candidate: '准备文章', impStage_done: '处理完成',
   impStage_upload: '上传', impStage_archive: 'EPUB 压缩包', impStage_parse: 'EPUB 解析', impStage_content: '书籍内容', impStage_storage: '文件存储',
   impStage_catalog: '目录数据库', impStage_source: '读取来源', impStage_persistence: '保存', impStage_validation: '映射与校验',
   impDomain_all: '全部', impDomain_book: '书籍', impDomain_media: '媒体', impDomain_vocabulary: '词汇',

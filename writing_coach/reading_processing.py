@@ -423,20 +423,30 @@ def _en_candidates(body: str, sentences: list[str]) -> list[tuple[float, str, st
 
 
 def _zh_candidates(body: str, sentences: list[str]) -> list[tuple[float, str, str, str]]:
-    text = "".join(_zh_characters(body))
+    from writing_coach.linguistic_annotation import annotate
+
     counts: Counter[str] = Counter()
-    for size in (4, 3, 2):
-        for index in range(len(text) - size + 1):
-            piece = text[index : index + size]
-            if all(char in _ZH_COMMON for char in piece):
+    phrases: Counter[str] = Counter()
+    content_pos = {"noun", "proper_noun", "verb", "adjective", "adverb"}
+    for sentence in sentences:
+        tokens = annotate("zh", sentence, max_annotations=max(1, len(sentence)))
+        for index, token in enumerate(tokens):
+            word = token["fragment"]
+            if token["pos"] not in content_pos or len(word) < 2 or not all(_CJK.fullmatch(char) for char in word):
                 continue
-            counts[piece] += 1
+            counts[word] += 1
+            if index + 1 < len(tokens):
+                following = tokens[index + 1]
+                if (following["pos"] in content_pos and len(following["fragment"]) >= 2
+                        and token["end"] == following["start"]
+                        and all(_CJK.fullmatch(char) for char in following["fragment"])):
+                    phrases[word + following["fragment"]] += 1
     candidates: list[tuple[float, str, str, str]] = []
-    for piece, count in counts.items():
-        if count < 2:
-            continue
-        # A longer repeated sequence beats the shorter ones inside it.
-        candidates.append((count * 2.0 + len(piece) * 1.5, piece, "phrase" if len(piece) > 2 else "word", piece))
+    for word, count in counts.items():
+        candidates.append((count + min(len(word), 12) / 6.0, word, "word", word))
+    for phrase, count in phrases.items():
+        if count >= 2:
+            candidates.append((count * 2.0 + 2, phrase, "phrase", phrase))
     return candidates
 
 
