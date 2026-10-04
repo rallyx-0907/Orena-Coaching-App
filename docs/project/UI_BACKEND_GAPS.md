@@ -4806,3 +4806,20 @@ The human asked for an Admin page with AI cost by day, by feature and by learner
     then nothing is recorded and the page block says so;
   - **AC-3** the Azure pronunciation rate, to be checked against the bill;
   - **AC-4** infrastructure cost, which is not measured.
+
+## Legal pages: terms, privacy, refund (completion plan item 5, D-128), 2026-10-05
+
+Built at `/next#/legal/terms`, `#/legal/privacy`, `#/legal/refund` (`?lang=en|vi|zh` for review), from
+the drafts `docs/legal/DRAFT_*.md` as data (`scripts/build_orena_legal.mjs` -> `static/orena/legal/content.js`;
+`scripts/test_orena_legal.mjs` fails when the two differ). Drawn before sign-in, with no learner frame.
+Kit pieces only (page header, section heading); "Note to counsel" and the codebase appendix are stripped;
+every `[DECISION: ...]` / `[OPERATOR]` placeholder is shown as written. Open, for the human:
+
+- **LG-1 the text** is a draft: the human approves it (a gate), then fills the placeholders in the drafts and
+  rebuilds `content.js`.
+- **LG-2 Chinese** has no approved text: a Chinese interface reads the English text (`lang="en"`), and the
+  line under the title says so. Not machine-translated.
+- **LG-3 links**: nothing links to the pages yet (after approval). The design draws no legal link; the
+  candidates are the sign-in page, Profile/Settings ("⋯" or the account section) and the checkout step of
+  billing. The learner router does not know `legal/*`: an in-app link must load the page (`/next#/legal/...`
+  with a reload), or the router gains the routes when they are linked.

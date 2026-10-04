@@ -49,7 +49,23 @@ function failed(error) {
   app.querySelector('[data-reload]').addEventListener('click', () => location.reload());
 }
 
+/* The legal pages are read before signing in: drawn with no learner frame and no request for who the
+   learner is (legal/page.js). Moving to an address that is not a legal page starts the app as usual. */
+async function legalPages() {
+  const { legalAddress, renderLegal } = await import('./legal/page.js');
+  const address = legalAddress(location.hash);
+  if (!address) return false;
+  await renderLegal(app, address);
+  window.addEventListener('hashchange', () => {
+    const next = legalAddress(location.hash);
+    if (next) renderLegal(app, next);
+    else location.reload();
+  });
+  return true;
+}
+
 async function boot() {
+  if (/^#\/?legal\//.test(location.hash) && (await legalPages())) return;
   const brand = loadBrand();
   let learner;
   try {

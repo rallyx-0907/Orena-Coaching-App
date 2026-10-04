@@ -123,6 +123,7 @@ jobs:
           node scripts/test_orena_kit.mjs
           node scripts/test_orena_shell.mjs
           node scripts/test_orena_copy.mjs
+          node scripts/test_orena_legal.mjs
           node scripts/test_orena_copy_engine.mjs
           node scripts/test_orena_components.mjs
           node scripts/test_orena_screen_today.mjs
