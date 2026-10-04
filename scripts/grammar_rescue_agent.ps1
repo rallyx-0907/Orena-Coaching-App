@@ -133,33 +133,28 @@ RESCUE_BLOCKED
 Then summarize root cause, files changed, tests run, and residual risk.
 "@
 
-    $topHelp = (& codex --help 2>&1 | Out-String)
-    $execHelp = (& codex exec --help 2>&1 | Out-String)
-
-    $common = @()
+    $args = @(
+        "-c", 'approval_policy="never"',
+        "-c", 'sandbox_mode="workspace-write"',
+        "-c", "sandbox_workspace_write.network_access=false",
+        "exec"
+    )
     if ($RequestedModel) {
-        $common += @("--model", $RequestedModel)
+        $args += @("--model", $RequestedModel)
     }
-
-    if ($execHelp -match "(?m)^\s*--full-auto\b") {
-        $args = @("exec", "--full-auto") + $common + @($prompt)
-    } elseif ($topHelp -match "(?m)^\s*--full-auto\b") {
-        $args = @("--full-auto", "exec") + $common + @($prompt)
-    } else {
-        Write-Error "This Codex CLI exposes no supported --full-auto flag in top-level or exec help."
-        return 64
-    }
+    $args += @($prompt)
 
     Push-Location "grammar_lab"
     try {
         $output = & codex @args 2>&1
         $exitCode = [int]$LASTEXITCODE
-        $output | ForEach-Object { Write-Host $_ }
-        return $exitCode
     }
     finally {
         Pop-Location
     }
+
+    $output | ForEach-Object { Write-Host $_ }
+    return $exitCode
 }
 
 if (-not (Get-Command python -ErrorAction SilentlyContinue)) {
@@ -174,7 +169,7 @@ $baselineOutsideDiff = Get-OutsideGrammarDiff
 
 Write-Host "Grammar rescue agent (Codex): $PointId"
 Write-Host "Maximum rescue cycles: $MaxCycles"
-Write-Host "Codex mode: Full Auto inside grammar_lab workspace (sandboxed; network disabled by Codex Full Auto)"
+Write-Host "Codex mode: approval_policy=never, sandbox_mode=workspace-write, project root=grammar_lab"
 if ($AllowInitialPaidCandidate) {
     Write-Host "Initial DeepSeek candidate: authorized once; one-shot; soft ceiling USD $CostCeilingUsd"
 } else {
