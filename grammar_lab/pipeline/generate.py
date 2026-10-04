@@ -824,6 +824,12 @@ def request_generation_structure_patch(
 ) -> Any:
     """Repair only the v13 structural projection; learner-facing prose stays immutable."""
     patch_schema = _generation_structure_patch_schema(full_schema)
+    if llm.provider == "deepseek":
+        rule_props = (
+            patch_schema["properties"]["personal_production_pattern_rule"]["properties"]
+            ["slots"]["items"]["properties"]
+        )
+        rule_props["any_of"].pop("maxItems", None)
     system = """You repair ONLY the structural grammar projection of an already-written lesson.
 The lesson's prose and example sentences are immutable. Return a corrected structural object
 matching the schema.
