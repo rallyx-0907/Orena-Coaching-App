@@ -142,6 +142,22 @@ Write-Host "Grammar rescue agent: $PointId"
 Write-Host "Maximum cycles: $MaxCycles"
 Write-Host "Provider access: BLOCKED (wrapper replay is cache-only; Claude cannot run generate-corpus)."
 
+function Get-ChangedPaths {
+    $paths = @()
+    $lines = git status --porcelain=v1
+    foreach ($line in $lines) {
+        if ($line.Length -lt 4) { continue }
+        $path = $line.Substring(3).Trim()
+        if ($path -match " -> ") {
+            $path = ($path -split " -> ")[-1]
+        }
+        $paths += $path.Replace("\\", "/")
+    }
+    return @($paths | Sort-Object -Unique)
+}
+
+$baselinePaths = @(Get-ChangedPaths)
+
 for ($cycle = 1; $cycle -le $MaxCycles; $cycle++) {
     Write-Host ""
     Write-Host "=== Rescue cycle $cycle/$MaxCycles : cache-only replay ==="
@@ -169,6 +185,17 @@ for ($cycle = 1; $cycle -le $MaxCycles; $cycle++) {
     if ($agentExit -ne 0) {
         Write-Error "Claude Code exited with code $agentExit."
         exit 30
+    }
+
+    $afterPaths = @(Get-ChangedPaths)
+    $newPaths = @($afterPaths | Where-Object { $_ -notin $baselinePaths })
+    $outOfScope = @($newPaths | Where-Object { $_ -notlike "grammar_lab/*" })
+    if ($outOfScope.Count -gt 0) {
+        Write-Error (
+            "Claude changed path(s) outside grammar_lab/**; stopping before replay: " +
+            ($outOfScope -join ", ")
+        )
+        exit 32
     }
 
     Write-Host ""
