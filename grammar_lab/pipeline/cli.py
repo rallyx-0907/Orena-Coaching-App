@@ -197,6 +197,10 @@ def generate_corpus_command(
         False, "--cache-only",
         help="Never call the provider. Re-evaluate only completions already present in the local LLM cache.",
     ),
+    replay_cache_file: Path | None = typer.Option(
+        None, "--replay-cache-file",
+        help="Use one explicit LLM cache JSON as the first completion; intended for zero-spend recovery with --cache-only.",
+    ),
     with_story: bool = typer.Option(False, "--with-story", help="Also generate the optional story block."),
     story_mode: str = typer.Option("everyday", "--story-mode", help="Story mode passed to Generator."),
     cost_ceiling_usd: float = typer.Option(
@@ -252,6 +256,10 @@ def generate_corpus_command(
         raise typer.BadParameter("must be >= 0", param_hint="--sample-per-level")
     if workers < 1 or workers > 16:
         raise typer.BadParameter("must be between 1 and 16", param_hint="--workers")
+    if replay_cache_file is not None and not cache_only:
+        raise typer.BadParameter("--replay-cache-file requires --cache-only", param_hint="--replay-cache-file")
+    if replay_cache_file is not None and workers != 1:
+        raise typer.BadParameter("--replay-cache-file requires --workers 1", param_hint="--workers")
 
     initial_plan = plan_corpus(langs, root)
     candidates = generation_items(initial_plan, include_generated=regenerate_existing)
@@ -285,6 +293,11 @@ def generate_corpus_command(
         candidates = stratified_items(candidates, sample_per_level)
     if max_points:
         candidates = candidates[:max_points]
+    if replay_cache_file is not None and len(candidates) != 1:
+        raise typer.BadParameter(
+            "--replay-cache-file requires exactly one selected point",
+            param_hint="--point-ids",
+        )
     typer.echo(render_corpus(initial_plan))
     mode = "ready + generated needing normalization" if regenerate_existing else "ready"
     typer.echo(
@@ -308,6 +321,7 @@ def generate_corpus_command(
                 provider, model,
                 deepseek_thinking=deepseek_thinking,
                 cache_only=cache_only,
+                replay_cache_file=replay_cache_file,
             ) as llm:
                 generator = Generator(
                     lang=lang_code, l1=l1, llm=llm, root=root, allow_default_safe=False
@@ -381,6 +395,7 @@ def generate_corpus_command(
         "model": model,
         "deepseek_thinking": deepseek_thinking if provider == "deepseek" else None,
         "cache_only": cache_only,
+        "replay_cache_file": str(replay_cache_file) if replay_cache_file is not None else None,
         "with_story": with_story,
         "story_mode": story_mode if with_story else None,
         "cost_ceiling_usd": cost_ceiling_usd,
