@@ -62,6 +62,7 @@ from writing_coach.persistence.reading_job_repository import (
     ReadingJobRepository,
 )
 from writing_coach.reading_content_engine import ReadingContentEngine
+from writing_coach.reading_processing import content_fingerprint
 from writing_coach.reading_source_import import (
     MAX_FILE_BYTES,
     ReadingSourceError,
@@ -1099,3 +1100,128 @@ def operations(request: Request, response: Response) -> dict[str, Any]:
             "workers": _worker_health(),
         }
     )
+
+
+# -- content packs (docs/project/proposals/CONTENT_PACKS.md, v1) ----------------------------------------------
+# The Reading side of a pack: what leaves (published articles, their sources, approved sets) and how it comes
+# back in - through the source registry, the engine's own job and admission, and the set rules, never a row
+# copied as it was.
+
+_SOURCE_PACK_FIELDS = ("slug", "name", "source_type", "base_url", "languages")
+
+
+def pack_reading_items(*, source_slug_prefix: str = "", languages: tuple[str, ...] = ()) -> list[Any]:
+    from writing_coach.content_packs import PackItem
+
+    articles = _content().published_for_export(source_slug_prefix=source_slug_prefix, languages=languages)
+    sources = {source["slug"]: source for source in _content().list_sources()}
+    items: list[PackItem] = []
+    for slug in sorted({article["source_slug"] for article in articles}):
+        source = sources.get(slug)
+        if source is None:
+            continue
+        data = {key: source.get(key) for key in _SOURCE_PACK_FIELDS}
+        data["rights"] = dict(source.get("rights") or {})
+        items.append(PackItem(kind="reading_source", natural_key=slug, data=data, exported_status=str(source.get("state"))))
+    for article in articles:
+        sets = []
+        if _state.evidence is not None:
+            for found in _evidence().list_sets(article["origin_id"]):
+                if found.get("status") != "approved":
+                    continue
+                sets.append({
+                    "support_language": found.get("support_language"), "model": found.get("model") or "",
+                    "questions": [{key: question.get(key) for key in ("question_type", "prompt", "options", "correct_index",
+                                                                       "explanation", "evidence_text", "rank")}
+                                  for question in found.get("questions", []) if question.get("admin_approved")],
+                })  # fmt: skip
+        data = {**article, "comprehension_sets": sets}
+        key = f"{article['source_slug']}:{content_fingerprint(article['body'])[:32]}"
+        items.append(PackItem(kind="reading_article", natural_key=key, data=data))
+    return items
+
+
+def pack_reading_existing(item: Any) -> tuple[str | None, str | None]:
+    """(this environment's hash for the item's key, the article's source state) for the planner."""
+
+    from writing_coach.content_packs import content_hash
+
+    if item.kind == "reading_source":
+        source = next((s for s in _content().list_sources() if s["slug"] == item.data["slug"]), None)
+        if source is None:
+            return None, None
+        data = {key: source.get(key) for key in _SOURCE_PACK_FIELDS} | {"rights": dict(source.get("rights") or {})}
+        return content_hash(data), source.get("state")
+    slug = item.data["source_slug"]
+    source = next((s for s in _content().list_sources() if s["slug"] == slug), None)
+    found = _content().article_for_content(slug, content_fingerprint(item.data["body"]), fingerprint=content_fingerprint)
+    return (item.content_hash if found else None), (source or {}).get("state")
+
+
+def pack_import_reading(item: Any, admin: Mapping[str, Any], *, pack_id: str) -> dict[str, Any]:
+    """One Reading item, committed through the registry, the engine and the set rules."""
+
+    data = item.data
+    actor = _actor(admin)
+    if item.kind == "reading_source":
+        if any(s["slug"] == data["slug"] for s in _content().list_sources()):
+            return {"result": "kept_local"}
+        rights = data.get("rights") or {}
+        # Created unapproved, as every new source is: an administrator here approves it once (D-105).
+        created = _content().create_source(
+            slug=data["slug"], name=data["name"], source_type=str(data.get("source_type") or "manual"),
+            base_url=str(data.get("base_url") or ""), languages=list(data.get("languages") or []),
+            rights={key: rights.get(key) for key in ("automation_allowed", "can_republish", "can_adapt",
+                                                       "attribution_required", "license_note")},
+            created_by=actor,
+        )  # fmt: skip
+        _audit(admin, "admin.reading_source_created", entity_type="reading_source", entity_id=created["id"],
+               payload={"slug": created["slug"], "content_pack": pack_id})
+        return {"result": "source_created_for_review", "source_id": created["id"]}
+    slug = data["source_slug"]
+    source = next((s for s in _content().list_sources() if s["slug"] == slug), None)
+    if source is None:
+        return {"result": "failed", "category": "pack_source_missing"}
+    found = _content().article_for_content(slug, content_fingerprint(data["body"]), fingerprint=content_fingerprint)
+    if found is None and source.get("state") != "active":
+        # The engine takes texts for an approved source only: approve it here, then import the pack again.
+        return {"result": "waiting_for_source_approval", "source_id": source["id"]}
+    if found is None:
+        rights = {key: value for key, value in (data.get("rights") or {}).items() if value is not None}
+        job = _engine().submit(SubmittedInput(
+            kind="text", text=data["body"], url=str(data.get("canonical_url") or ""), title=str(data.get("title") or ""),
+            author=str(data.get("author") or ""), language=str(data.get("language") or ""),
+            published_at=str(data.get("published_at") or ""), source_name=source["name"], source_id=source["id"],
+            rights=rights,
+        ), actor=actor)  # fmt: skip
+        return {"result": "submitted", "job_id": job["id"], "note": "sets attach when the article is published; import again"}
+    attached = []
+    if found["status"] == "published" and _state.evidence is not None:
+        have = {s.get("support_language") for s in _evidence().list_sets(found["id"]) if s.get("status") == "approved"}
+        for pack_set in data.get("comprehension_sets") or []:
+            support = str(pack_set.get("support_language") or "")
+            if not support or support in have or not pack_set.get("questions"):
+                continue
+            attached.append(_attach_pack_set(admin, found["id"], support, pack_set, pack_id=pack_id))
+    return {"result": "present", "article_id": found["id"], "status": found["status"], "sets": attached}
+
+
+def _attach_pack_set(admin: Mapping[str, Any], article_id: str, support: str, pack_set: Mapping[str, Any], *,
+                     pack_id: str) -> dict[str, Any]:
+    """A pack's set is never imported as approved: it is re-created against this body, grounded again, and then
+    decided by the same automatic-approval rule as a freshly generated one (D-111)."""
+
+    article = _content().get_article(article_id)
+    try:
+        created = _evidence().create_set(
+            article_id, support_language=support, generator_version=GENERATOR_VERSION,
+            model=str(pack_set.get("model") or "")[:120], questions=question_inputs(pack_set["questions"]),
+            validation={"imported_from_pack": pack_id}, actor=_actor(admin),
+            expected_body_sha256=body_sha256(str((article or {}).get("body") or "")),
+        )  # fmt: skip
+    except ReadingEvidenceError as exc:
+        return {"support_language": support, "result": "refused", "category": exc.code}
+    if ((article or {}).get("automation") or {}).get("allowed") is not True:
+        return {"support_language": support, "result": "draft"}
+    decided = _approve_automatically(admin, created)
+    return {"support_language": support, "result": decided.get("status"), "reasons": decided["automatic_approval"]["reasons"]}

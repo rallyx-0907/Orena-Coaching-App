@@ -15,7 +15,7 @@ import { createHost } from './host.js';
 import { explain } from './reading.js';
 import { pageHead, skeleton } from './blocks.js';
 import { loadFailedBlock } from './reading-pages.js';
-import { booksPage, historyPage, hubPage, jobPage, jobsPage, mediaPage, sourceFormPage, vocabularyPage } from './imports-pages.js';
+import { booksPage, historyPage, hubPage, jobPage, jobsPage, mediaPage, packPage, sourceFormPage, vocabularyPage } from './imports-pages.js';
 
 export async function mountImports(shell, ctx) {
   const routeId = ctx.route.id;
@@ -31,6 +31,7 @@ export async function mountImports(shell, ctx) {
       files: [], previews: [], mappings: {}, step: 0, showAll: false, running: false, previewing: false, errors: [], results: null,
       metadata: { title: '', language: learning, meaning_language: languages().support || '', framework: '', level: '', topic: '', collection_id: '', rights_status: '', completeness: 'unknown', publish: false, attested: false },
     },
+    pack: { kinds: 'all', languages: 'all', sourcePrefix: 'sample-', collectionPrefix: 'sample-', file: null, plan: null, result: null, error: '', exporting: false, planning: false, importing: false },
     source: { name: '', url: '', type: 'direct_url', language: learning, can_republish: false, can_adapt: false, attribution_required: true, license: '', error: '', running: false },
     jobFilter: ctx.query.get('status') === 'failed' ? 'failed' : 'all',
     history: { kind: 'all', status: ctx.query.get('status') === 'failed' ? 'failed' : 'all', offset: 0 },
@@ -63,6 +64,7 @@ export async function mountImports(shell, ctx) {
       case 'adminImportMedia': return mediaPage({ ...base, media: view.media });
       case 'adminImportVocab': return vocabularyPage({ ...base, vocab: view.vocab });
       case 'adminImportSource': return sourceFormPage({ ...base, form: view.source });
+      case 'adminImportPack': return packPage({ ...base, pack: view.pack });
       case 'adminJobs': return jobsPage({ ...base, jobs: data.jobs, cursor: data.cursor, filter: view.jobFilter });
       case 'adminJob': return jobPage({ ...base, job: data.job });
       case 'adminHistory': return historyPage({ ...base, data: data.history, filters: view.history });
@@ -132,6 +134,7 @@ export async function mountImports(shell, ctx) {
     if (id === 'files') view.books.items = files.map((file) => ({ file, name: file.name, size: file.size, state: 'to_import' }));
     if (id === 'mediaFiles') view.media.items = [...view.media.items.filter((item) => !item.file), ...files.map((file) => ({ file, name: file.name, size: file.size, state: 'to_import' }))];
     if (id === 'vfiles') { view.vocab.files = files; view.vocab.errors = []; }
+    if (id === 'packFile') Object.assign(view.pack, { file: files[0] || null, plan: null, result: null, error: '' });
     host.paint();
   });
   host.on('books-import', async () => {
@@ -228,6 +231,7 @@ export async function mountImports(shell, ctx) {
       if (field === 'language') view.media.items = view.media.items.map((item) => ({ ...item, level: '' }));
     } else if (routeId === 'adminImportVocab' && field.startsWith('meta:')) view.vocab.metadata[field.slice(5)] = value;
     else if (routeId === 'adminImportSource') view.source[field] = value;
+    else if (routeId === 'adminImportPack') view.pack[field] = value;
     host.paint();
   });
   host.onInput((id, value) => {
@@ -243,7 +247,46 @@ export async function mountImports(shell, ctx) {
         }
       }
     } else if (routeId === 'adminImportSource' && id in view.source) view.source[id] = value;
+    else if (routeId === 'adminImportPack' && (id === 'sourcePrefix' || id === 'collectionPrefix')) view.pack[id] = value;
     if (routeId === 'adminImportMedia' && id === 'urls') host.paint();
+  });
+
+  /* ---- content packs ---- */
+  host.on('pack-export', async () => {
+    const pack = view.pack;
+    Object.assign(pack, { exporting: true, error: '' });
+    host.paint();
+    try {
+      const blob = await api.packExport({
+        kinds: pack.kinds === 'all' ? ['reading', 'vocabulary'] : [pack.kinds],
+        languages: pack.languages === 'all' ? [] : [pack.languages],
+        source_slug_prefix: pack.sourcePrefix.trim(), collection_prefix: pack.collectionPrefix.trim(),
+      });
+      const link = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: 'orena-content.orenapack' });
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(link.href), 10000);
+      host.toast(t('impPackSaved'));
+    } catch (error) {
+      pack.error = error?.category === 'pack_nothing_to_export' ? t('impPackNothing') : explain(error);
+    }
+    pack.exporting = false;
+    host.paint();
+  });
+  host.on('pack-plan', async () => {
+    const pack = view.pack;
+    Object.assign(pack, { planning: true, error: '', plan: null, result: null });
+    host.paint();
+    try { pack.plan = await api.packPlan(pack.file); } catch (error) { pack.error = explain(error); }
+    pack.planning = false;
+    host.paint();
+  });
+  host.on('pack-import', async () => {
+    const pack = view.pack;
+    Object.assign(pack, { importing: true, error: '' });
+    host.paint();
+    try { pack.result = await api.packImport(pack.file); } catch (error) { pack.error = explain(error); }
+    pack.importing = false;
+    host.paint();
   });
 
   /* ---- register a source ---- */
@@ -265,7 +308,7 @@ export async function mountImports(shell, ctx) {
     host.paint();
   });
 
-  if (['adminImportBooks', 'adminImportMedia', 'adminImportVocab', 'adminImportSource'].includes(routeId)) {
+  if (['adminImportBooks', 'adminImportMedia', 'adminImportVocab', 'adminImportSource', 'adminImportPack'].includes(routeId)) {
     view.loading = false;
     host.paint();
   } else {

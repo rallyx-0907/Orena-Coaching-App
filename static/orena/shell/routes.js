@@ -109,6 +109,7 @@ export const ROUTES = Object.freeze([
   { id: 'adminImportBooks', path: 'admin/imports/books', design: 'impBooks', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
   { id: 'adminImportMedia', path: 'admin/imports/media', design: 'impMedia', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
   { id: 'adminImportVocab', path: 'admin/imports/vocabulary', design: 'impVocab', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
+  { id: 'adminImportPack', path: 'admin/imports/packs', design: 'impPack', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
   { id: 'adminImportSource', path: 'admin/imports/sources', design: 'impSources', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
   { id: 'adminJobs', path: 'admin/imports/jobs', design: 'jobs', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
   { id: 'adminJob', path: 'admin/imports/jobs/:id', design: 'job', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },

@@ -890,6 +890,24 @@ configure_agent(
 )
 app.include_router(agent_router)
 
+# Content packs (docs/project/proposals/CONTENT_PACKS.md, v1): approved content moved between environments
+# through the same engines and rules as a fresh Admin import. Vocabulary is bound late: its helpers live below.
+from writing_coach.content_pack_api import configure_content_packs, router as content_pack_router  # noqa: E402
+
+configure_content_packs(
+    vocabulary_ids=lambda languages, prefix: [
+        collection["id"]
+        for language in (languages or ("en", "zh"))
+        for collection in (_persistence_runtime.vocabulary_repository.list_collections(language) or [])
+        if str(collection.get("id", "")).startswith(prefix)
+    ],
+    vocabulary_export=lambda collection_id: _vocabulary_pack_export(collection_id),
+    vocabulary_import=lambda data, **kwargs: _vocabulary_pack_import(data, **kwargs),
+    environment=os.getenv("ORENA_ENVIRONMENT_LABEL", "local"),
+    app_version=(ROOT / "VERSION").read_text(encoding="utf-8").strip() if (ROOT / "VERSION").is_file() else "",
+)
+app.include_router(content_pack_router)
+
 # Account work (I2 write path). Built from the flag and the schema, both
 # required: off is `disabled`, on without the tables is `unavailable`, and only
 # `active` constructs the repositories. The tables are read only when asked.
@@ -3311,6 +3329,77 @@ async def admin_vocabulary_source_preview(
                 }
             )
     return {"items": items}
+
+
+# What a vocabulary entry carries in a content pack: the record `import_source` takes, never an id or a learner field.
+VOCABULARY_PACK_RECORD_KEYS = (
+    "term", "language_code", "normalized_term", "identity_key", "sense_key", "pronunciations", "readings",
+    "short_meanings", "detailed_definitions", "part_of_speech", "examples", "usage_notes", "orthography", "level",
+    "framework", "topic", "content_origins",
+)
+
+
+def _vocabulary_pack_export(collection_id: str) -> dict[str, Any] | None:
+    """A published collection as a pack carries it: its metadata, its admission answers and its entries."""
+
+    repository = _persistence_runtime.vocabulary_repository
+    collection = repository.get_collection(collection_id, limit=5000)
+    if collection is None:
+        return None
+    provenance = collection.get("provenance") if isinstance(collection.get("provenance"), dict) else {}
+    admission = provenance.get("admission") if isinstance(provenance.get("admission"), dict) else {}
+    meanings = {m.get("language") for e in collection.get("entries", []) for m in (e.get("short_meanings") or [])
+                if isinstance(m, dict) and m.get("language") not in (None, "", "unknown")}  # fmt: skip
+    return {
+        "id": collection["id"], "title": collection.get("title", ""), "language_code": collection.get("language_code", ""),
+        "framework": collection.get("framework", ""), "level": collection.get("level", ""), "topic": collection.get("topic", ""),
+        "meaning_language": next(iter(meanings)) if len(meanings) == 1 else "",
+        "rights_status": admission.get("rights_status", ""), "completeness": admission.get("completeness", ""),
+        "label": provenance.get("label", ""),
+        "entries": [{key: entry.get(key) for key in VOCABULARY_PACK_RECORD_KEYS} for entry in collection.get("entries", [])],
+    }
+
+
+def _vocabulary_pack_import(data: dict[str, Any], *, imported_by: str, pack_id: str) -> dict[str, Any]:
+    """One pack collection through the same path a CSV import takes after parsing: the metadata normaliser, the
+    D-111 publication rule, `import_source`, localization, and publication only when every entry imported."""
+
+    metadata = {key: data.get(key) for key in ("title", "framework", "level", "topic", "meaning_language",
+                                                "rights_status", "completeness")}  # fmt: skip
+    metadata.update(language_code=data.get("language_code"), collection_id=data.get("id"),
+                    provenance={"label": data.get("label", ""), "content_pack": pack_id})  # fmt: skip
+    collection_metadata = _admin_vocabulary_metadata(json.dumps(metadata, ensure_ascii=False))
+    repository = _persistence_runtime.vocabulary_repository
+    if not repository.available():
+        raise ValueError("vocabulary persistence is not active here")
+    collection_id = collection_metadata["collection_id"]
+    requested, admission = _vocabulary_admission(collection_metadata, imported_by=imported_by)
+    provenance = {**collection_metadata.get("provenance", {}), "origin": "imported", "catalog_status": "pending_review",
+                  "admission": {**admission, "review_status": "pending_review", "publication_attested": False}}  # fmt: skip
+    collection = {**collection_metadata, "id": collection_id, "catalog_status": "pending_review", "origin": "imported",
+                  "provenance": provenance}  # fmt: skip
+    records = [{key: entry.get(key) for key in VOCABULARY_PACK_RECORD_KEYS}
+               | {"provenance": {"content_pack": pack_id, "origin": "content_pack"}} for entry in data.get("entries", [])]
+    source = {"filename": f"content-pack-{pack_id}", "format": "orena-content-pack",
+              "content_hash": hashlib.sha256(json.dumps(records, sort_keys=True, ensure_ascii=False).encode()).hexdigest(),
+              "skipped": [], "warnings": []}  # fmt: skip
+    if not _localization_table_available(repository):
+        records, _report = localize_records(records, collection_metadata["language_code"],
+                                            default_vocabulary_localization_sources())  # fmt: skip
+    result = repository.import_source(collection=collection, source=source, records=records, mapping={},
+                                      imported_by=imported_by)  # fmt: skip
+    if _localization_table_available(repository):
+        try:
+            materialize_localizations(repository, collection_metadata["language_code"],
+                                      default_vocabulary_localization_sources(), collection_id=collection_id)  # fmt: skip
+        except Exception:  # noqa: BLE001 - localization never undoes a completed import
+            logging.getLogger(__name__).warning("content pack: localization after import failed", exc_info=True)
+    status = "pending_review"
+    if requested == "published" and not int(result.get("failed") or 0):
+        repository.finalize_collection_publication(collection_id, admission=admission)
+        status = "published"
+    return {"collection_id": collection_id, "status": status, "imported": int(result.get("imported") or 0),
+            "duplicates": int(result.get("duplicates") or 0), "failed": int(result.get("failed") or 0)}
 
 
 @app.post("/api/admin/vocabulary/import", name="admin_vocabulary_source_import")

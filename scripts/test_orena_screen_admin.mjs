@@ -75,6 +75,11 @@ const model = await import('../static/orena/screens/admin/model.js');
 const shared = await import('../static/orena/capabilities/admin-ai.js');
 const { ROUTES, match, href, isAdminHash } = await import('../static/orena/shell/routes.js');
 
+/* Pages the design does not draw, built from existing kit blocks only by the human's decision (D-128): the
+   reason is required, and every key here must still not be a design page (the list cannot hide one). */
+const KIT_PAGES = Object.freeze({
+  impPack: 'D-128: content pack export/import, kit blocks only (human decision 2026-10-04, item 2 of the completion plan)',
+});
 /* ---- 1. routes: Admin is bare, admin-only, and on the pinned design's own keys ---------------- */
 const pin = fs.readFileSync('docs/design/canonical-ui/screens/Orena-Admin.dc.html', 'utf8');
 const adminRoutes = ROUTES.filter((route) => route.admin);
@@ -84,7 +89,7 @@ for (const route of adminRoutes) {
   assert.equal(route.screen, 'admin');
   /* The design's own page keys: a frame it draws through its `isReading`-style flags (queue, detail, add,
      cset) is named by the state script's go("...") calls; every other page by its route branch. */
-  if (route.id !== 'admin') assert.ok(pin.includes(`r==="${route.design}"`) || pin.includes(`"${route.design}"`), `${route.id}: "${route.design}" is a page of the pinned Admin design`);
+  if (route.id !== 'admin' && !KIT_PAGES[route.design]) assert.ok(pin.includes(`r==="${route.design}"`) || pin.includes(`"${route.design}"`), `${route.id}: "${route.design}" is a page of the pinned Admin design`);
 }
 assert.equal(match('#/admin/ai/provider/openai').params.id, 'openai');
 assert.equal(match('#/admin/ai/provider/openai/key').route.id, 'adminProviderKey');

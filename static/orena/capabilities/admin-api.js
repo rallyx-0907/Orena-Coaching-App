@@ -41,7 +41,23 @@ function files(field, list) {
   return form;
 }
 
+/* A content pack is a file, not JSON: the export answers bytes, read as a Blob for the operator to save. */
+async function packExport(body) {
+  const response = await fetch('/api/admin/content-packs/export', { method: 'POST', credentials: 'same-origin', cache: 'no-store', headers: JSON_HEADERS, body: JSON.stringify(body ?? {}) });
+  if (!response.ok) {
+    let detail = {};
+    try { detail = (await response.json()).detail || {}; } catch { detail = {}; }
+    const error = new Error(detail.message || 'export failed');
+    error.category = detail.category || 'unknown';
+    throw error;
+  }
+  return response.blob();
+}
+
 export const adminApi = {
+  packExport,
+  packPlan: (file) => request('/api/admin/content-packs/plan', { method: 'POST', body: files('file', [file]) }),
+  packImport: (file) => request('/api/admin/content-packs/import', { method: 'POST', body: files('file', [file]) }),
   overview: () => request('/api/admin/console/overview'),
   usersSummary: (days = 30) => request(`/api/admin/console/users/summary${query({ days })}`),
   users: (params) => request(`/api/admin/console/users${query(params)}`),

@@ -57,6 +57,7 @@ export function hubPage({ recent, failedJobs, t, href }) {
           row(t('impVocab'), t('impVocabNote'), href('adminImportVocab'), recent.vocabulary),
           row(t('impReading'), t('impReadingNote'), href('adminAdd')),
           row(t('impSources'), t('impSourcesNote'), href('adminImportSource')),
+          row(t('impPack'), t('impPackNote'), href('adminImportPack')),
         ]) })}
         ${block({ title: t('impFollow'), body: rowList([
           row(t('impJobs'), t('impJobsNote'), href('adminJobs'), null, failedJobs ? t('impFailedCount', { n: failedJobs }) : ''),
@@ -146,6 +147,40 @@ export function mediaPage({ media, t, ui, href }) {
         ${rowsBlock}
         ${entries.length ? formBlock({ span: true, fields: [], actions: [{ label: media.running ? t('impImporting') : t('impImportN', { n: importable }), kind: 'primary', a: 'media-import', disabled: !importable || media.running }] }) : ''}
         ${done ? stateBlock({ span: true, kind: 'ok', heading: t('impDoneSummary', { ok: media.items.filter((item) => ['published', 'review', 'unpublished', 'archived'].includes(item.state)).length, total: media.items.length }), actions: [{ label: t('impViewMedia'), kind: 'primary', size: 'sm', a: 'go', data: { to: href('adminMedia') } }] }) : ''}
+      </div>
+    </section>`,
+  };
+}
+
+/* ---- content packs (proposals/CONTENT_PACKS.md, v1) ---------------------------------------------- */
+
+const PACK_OUTCOME_TONE = { new: 'ok', identical: 'mute', changed: 'warn', submitted: 'ok', imported: 'ok', present: 'mute',
+  kept_local: 'mute', source_created_for_review: 'warn', waiting_for_source_approval: 'warn', failed: 'err' };
+
+export function packPage({ pack, t, href }) {
+  const exportFields = [
+    { id: 'kinds', kind: 'seg', label: t('impPackKinds'), options: ['all', 'reading', 'vocabulary'].map((id) => ({ id, label: t(`impPackKind_${id}`), on: pack.kinds === id })) },
+    { id: 'languages', kind: 'seg', label: t('impLanguage'), options: ['all', 'en', 'zh'].map((id) => ({ id, label: id === 'all' ? t('impPackAll') : t(id === 'en' ? 'langEn' : 'langZh'), on: pack.languages === id })) },
+    { id: 'sourcePrefix', label: t('impPackSourcePrefix'), value: pack.sourcePrefix, placeholder: 'sample-' },
+    { id: 'collectionPrefix', label: t('impPackCollectionPrefix'), value: pack.collectionPrefix, placeholder: 'sample-' },
+  ];
+  const rows = (pack.result?.items || pack.plan?.items || []).map((item) => {
+    const state = item.result || item.outcome;
+    return { title: item.natural_key, meta: t(`impPackKindOf_${item.kind}`), pills: [{ label: t(`impPackOut_${state}`), tone: PACK_OUTCOME_TONE[state] || 'mute' }] };
+  });
+  return {
+    title: t('impTitle'),
+    markup: html`<section class="a-page" data-screen-label="Content packs">
+      ${pageHead({ back: { href: href('adminImports'), label: t('impTitle') }, title: t('impPack'), sub: t('impPackSub') })}
+      <div class="a-blocks">
+        ${formBlock({ span: true, title: t('impPackExport'), fields: exportFields, actions: [{ label: pack.exporting ? t('impPackExporting') : t('impPackExportAction'), kind: 'primary', a: 'pack-export', disabled: pack.exporting }] })}
+        ${formBlock({ span: true, title: t('impPackImport'), fields: [{ id: 'packFile', kind: 'file', label: t('impPackFile'), span: true, fileLabel: pack.file ? pack.file.name : t('impPackChoose'), accept: '.orenapack', acceptAttr: '.orenapack,application/zip' }],
+          actions: [
+            { label: pack.planning ? t('impChecking') : t('impPackCheck'), kind: 'secondary', a: 'pack-plan', disabled: !pack.file || pack.planning || pack.importing },
+            { label: pack.importing ? t('impImporting') : t('impPackImportAction'), kind: 'primary', a: 'pack-import', disabled: !pack.plan || pack.importing },
+          ] })}
+        ${pack.error ? stateBlock({ span: true, kind: 'error', heading: pack.error }) : ''}
+        ${rows.length ? block({ span: true, title: t(pack.result ? 'impPackResult' : 'impPackPlan'), body: rowList(rows) }) : ''}
       </div>
     </section>`,
   };

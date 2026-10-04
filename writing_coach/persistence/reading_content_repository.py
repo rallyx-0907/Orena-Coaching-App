@@ -32,7 +32,7 @@ from __future__ import annotations
 import base64
 import json
 import uuid
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -1254,6 +1254,72 @@ class ReadingContentRepository:
                 "published_at": _iso(source_item.original_published_at) if source_item else None,
             },
         }
+
+    def article_for_content(
+        self, source_slug: str, content_hash: str, *, fingerprint: Callable[[str], str] | None = None
+    ) -> dict[str, Any] | None:
+        """The article this environment already holds with this text under that source, if any (pack dedupe).
+
+        A pack carries the article's text, which an editor may have changed after import, so the match is on the
+        text of each current article under the source (with the caller's `fingerprint`), and only falls back to
+        the snapshot hash. Bounded: one source's articles."""
+
+        with self.engine.connect() as connection:
+            rows = connection.execute(
+                select(ReadingArticle.id, ReadingArticle.status, ReadingArticle.body, ReadingSourceItem.content_hash)
+                .join(ReadingSourceItem, ReadingSourceItem.id == ReadingArticle.source_item_id)
+                .join(ReadingSource, ReadingSource.id == ReadingSourceItem.source_id)
+                # Not only current snapshots: texts that share one address (a collection on one page) supersede
+                # each other's snapshot while every article stays live.
+                .where(ReadingSource.slug == source_slug)
+                .limit(5000)
+            ).all()
+        for row in rows:
+            if row.content_hash == content_hash or (fingerprint is not None and fingerprint(row.body) == content_hash):
+                return {"id": str(row.id), "status": row.status}
+        return None
+
+    def published_for_export(
+        self, *, source_slug_prefix: str = "", languages: Sequence[str] = (), limit: int = 5000
+    ) -> list[dict[str, Any]]:
+        """Published articles as a content pack carries them (proposals/CONTENT_PACKS.md): the text a learner reads,
+        where it came from, and the rights as the gate reads them - the snapshot with the recorded answers laid
+        over it. No ids leave with them except as `origin_id`, and nothing about learners or review history."""
+
+        query = (
+            select(
+                ReadingArticle.id, ReadingArticle.title, ReadingArticle.body, ReadingArticle.language,
+                ReadingArticle.topic, ReadingArticle.subtopic, ReadingArticle.content_kind,
+                ReadingSourceItem.canonical_url, ReadingSourceItem.original_author,
+                ReadingSourceItem.original_published_at, ReadingSourceItem.rights_snapshot_json.label("rights_snapshot"),
+                ReadingSource.slug.label("source_slug"), ReadingSource.automation_allowed.label("source_automation"),
+            )
+            .join(ReadingSourceItem, ReadingSourceItem.id == ReadingArticle.source_item_id)
+            .join(ReadingSource, ReadingSource.id == ReadingSourceItem.source_id)
+            .where(ReadingArticle.status == LEARNER_VISIBLE_STATUS)
+            .order_by(ReadingSource.slug, ReadingArticle.published_at, ReadingArticle.id)
+            .limit(max(1, min(int(limit), 5000)))
+        )
+        if source_slug_prefix:
+            query = query.where(ReadingSource.slug.startswith(source_slug_prefix))
+        if languages:
+            query = query.where(ReadingArticle.language.in_(tuple(languages)))
+        with self.engine.connect() as connection:
+            rows = connection.execute(query).all()
+            decisions = self._rights_decisions(connection, [row.id for row in rows])
+        exported = []
+        for row in rows:
+            answered = [entry["answers"] for entry in decisions.get(row.id, [])]
+            effective = overlay_rights(row.rights_snapshot, answered, row.source_automation)
+            exported.append({
+                "origin_id": str(row.id), "title": row.title, "body": row.body, "language": row.language,
+                "topic": row.topic, "subtopic": row.subtopic, "content_kind": row.content_kind,
+                "canonical_url": row.canonical_url, "author": row.original_author,
+                "published_at": _iso(row.original_published_at), "source_slug": row.source_slug,
+                "rights": {key: effective.get(key) for key in ("can_republish", "can_adapt", "attribution_required",
+                                                                  "license_note") if key in effective},
+            })
+        return exported
 
     def published_credits(self, *, limit: int = 5000) -> list[dict[str, Any]]:
         """Each learner-visible text with the credit its rights record: title,

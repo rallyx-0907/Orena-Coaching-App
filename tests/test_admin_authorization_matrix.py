@@ -55,6 +55,9 @@ MATRIX = {
         "/api/admin/ai/credentials/groq/test", {"json": {"api_key": "sk-matrix"}}, {404}),
     ("GET", "/api/admin/ai/operations"): ("/api/admin/ai/operations", {}, {200}),
     ("GET", "/api/admin/ai/costs"): ("/api/admin/ai/costs", {}, {200}),
+    ("POST", "/api/admin/content-packs/export"): ("/api/admin/content-packs/export", {"json": {}}, {404, 503}),
+    ("POST", "/api/admin/content-packs/plan"): ("/api/admin/content-packs/plan", {}, {422}),
+    ("POST", "/api/admin/content-packs/import"): ("/api/admin/content-packs/import", {}, {422}),
     ("POST", "/api/admin/ai/test"): ("/api/admin/ai/test", {"json": {"provider": "no-such", "model": "m"}}, {400}),
     ("POST", "/api/admin/ai/test/{capability_key}"): ("/api/admin/ai/test/learner_dictionary", {}, {404, 409}),
     ("GET", "/api/admin/console/overview"): ("/api/admin/console/overview", {}, {200}),
@@ -225,7 +228,7 @@ def _request(app, method: str, path: str, body: dict, who: dict | None) -> httpx
 def test_the_matrix_covers_every_admin_route_the_app_serves():
     routes = _admin_routes()
     assert routes == set(MATRIX), f"unclassified: {sorted(routes - set(MATRIX))}; stale: {sorted(set(MATRIX) - routes)}"
-    assert len(routes) == 63  # includes Reading rights (D-105), shared-media rights review and the AI cost report
+    assert len(routes) == 66  # includes Reading rights (D-105), shared-media rights review, the AI cost report and content packs
 
 
 @pytest.mark.parametrize("route", sorted(MATRIX), ids=lambda route: f"{route[0]} {route[1]}")

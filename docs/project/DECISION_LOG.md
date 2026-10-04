@@ -4125,3 +4125,12 @@ clarified, no version bump (no id added or renamed).
      addresses on the new domain, DNS/Cloudflare, HTTPS, backup and restore, monitoring. It is
      rehearsed by restoring a :8000 backup into a fresh environment.
    - Content pack export/import in Admin, to move content between environments.
+
+## D-128 - Admin pages the design does not draw are built from existing kit blocks
+
+2026-10-04, explicit human instruction (completion plan, decision 2): the Admin AI-cost page and the legal
+pages (terms, privacy, refund) are built from the existing kit components, with no design frame. The UI lane
+applies the same rule to the Admin content-pack page (export/import, item 2 of the plan) and lists it here for
+the human to confirm. Such a page uses only existing kit blocks and copy in en/vi/zh, invents no component,
+and is named in `scripts/test_orena_screen_admin.mjs` KIT_PAGES with its reason. Every other Admin page stays
+on the pinned design (D-067).

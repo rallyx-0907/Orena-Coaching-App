@@ -320,3 +320,31 @@ def test_cleared_rights_and_a_complete_collection_publish_by_the_d111_rule(monke
         assert not stored or (admission.get("attested_by") == app_module.VOCABULARY_AUTO_PUBLISHER
                               and admission.get("auto_published") is True)  # fmt: skip
         assert [c["id"] for c in repository.list_collections("en")] == [f"auto-{rights}"], "learners see it"
+
+
+def test_a_vocabulary_collection_travels_in_a_content_pack_and_publishes_by_the_rule_there(monkeypatch, tmp_path) -> None:
+    from writing_coach.persistence.vocabulary_repository import sqlite_vocabulary_repository
+
+    source_repo = sqlite_vocabulary_repository(tmp_path / "a.db")
+    source_repo.initialize()
+    monkeypatch.setattr(app_module, "_persistence_runtime",
+                        replace(app_module._persistence_runtime, vocabulary_repository=source_repo))  # fmt: skip
+    app_module.configure_becoming_library_content(source_repo)
+    response = _request("POST", "/api/admin/vocabulary/import", data={
+        "metadata": json.dumps({"title": "[Mẫu kiểm thử] Pack words", "language_code": "en", "collection_id": "sample-pack",
+                                "rights_status": "internal_curated", "completeness": "complete", "meaning_language": "vi"}),
+        "mappings": json.dumps({"w.csv": {"term": "English", "short_meaning": "Vietnamese"}}),
+    }, files=[("files", ("w.csv", "English|Vietnamese\nticket|vé\nmap|bản đồ\n".encode(), "text/csv"))])
+    assert response.json()["collection"]["catalog_status"] == "published", response.text
+    exported = app_module._vocabulary_pack_export("sample-pack")
+    assert exported["meaning_language"] == "vi" and len(exported["entries"]) == 2
+    assert "id" not in exported["entries"][0], "no database id travels"
+
+    target_repo = sqlite_vocabulary_repository(tmp_path / "b.db")
+    target_repo.initialize()
+    monkeypatch.setattr(app_module, "_persistence_runtime",
+                        replace(app_module._persistence_runtime, vocabulary_repository=target_repo))  # fmt: skip
+    result = app_module._vocabulary_pack_import(exported, imported_by="admin", pack_id="p1")
+    assert result == {"collection_id": "sample-pack", "status": "published", "imported": 2, "duplicates": 0, "failed": 0}
+    landed = target_repo.get_collection("sample-pack", limit=10)
+    assert {m["text"] for e in landed["entries"] for m in e["short_meanings"]} == {"vé", "bản đồ"}
