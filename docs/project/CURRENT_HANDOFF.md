@@ -111,7 +111,8 @@ human gates. Never touch persistent volumes as cleanup.
 
 D-124: → vi policy open-dsl → vi.wiktionary (strict) → English labelled; built, NOT enabled
 until the human grades docs/reviews/evidence/d124-vi. Licences page + THIRD_PARTY_NOTICES done.
-Next (human 2026-10-04): S1 source list for approval, then Speaking/Progress partial cells.
+S1 loaded on :8021: 30 EN + 22 ZH published, per-text credits on Licences (7cab797/f6c0724).
+Next: comprehension sets (reading_generator unconfigured on :8021, needs human OK); S2 sources proposed.
 
 Grammar remains deferred. Human2026-10-04 accepts Reading -> vocabulary
 enrichment -> practice on publish -> Agent; Grammar later. Review bounded S1
