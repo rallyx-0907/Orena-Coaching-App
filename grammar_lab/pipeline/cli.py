@@ -226,6 +226,10 @@ def generate_corpus_command(
         5, "--workers",
         help="Concurrent LLM calls. Default 5; use 1 for the old serial behavior. Allowed range: 1-16.",
     ),
+    max_full_attempts: int = typer.Option(
+        3, "--max-full-attempts",
+        help="Hard cap on full lesson generations per point. Allowed range: 1-3; repairs may still use smaller cached/targeted calls.",
+    ),
     regenerate_existing: bool = typer.Option(
         False, "--regenerate-existing",
         help="Also regenerate existing reviewed content so the final corpus passes through one prompt/schema pipeline.",
@@ -256,6 +260,8 @@ def generate_corpus_command(
         raise typer.BadParameter("must be >= 0", param_hint="--sample-per-level")
     if workers < 1 or workers > 16:
         raise typer.BadParameter("must be between 1 and 16", param_hint="--workers")
+    if max_full_attempts < 1 or max_full_attempts > 3:
+        raise typer.BadParameter("must be between 1 and 3", param_hint="--max-full-attempts")
     if replay_cache_file is not None and not cache_only:
         raise typer.BadParameter("--replay-cache-file requires --cache-only", param_hint="--replay-cache-file")
     if replay_cache_file is not None and workers != 1:
@@ -303,7 +309,8 @@ def generate_corpus_command(
     typer.echo(
         f"generate-corpus: {len(candidates)} {mode} point(s) selected; "
         f"{normalized_skipped} already normalized skipped; "
-        f"workers={workers}, provider={provider}, model={model}"
+        f"workers={workers}, provider={provider}, model={model}, "
+        f"max-full-attempts={max_full_attempts}"
         + (", cache-only" if cache_only else "")
     )
     if not candidates:
@@ -324,7 +331,9 @@ def generate_corpus_command(
                 replay_cache_file=replay_cache_file,
             ) as llm:
                 generator = Generator(
-                    lang=lang_code, l1=l1, llm=llm, root=root, allow_default_safe=False
+                    lang=lang_code, l1=l1, llm=llm, root=root,
+                    allow_default_safe=False,
+                    max_full_attempts=max_full_attempts,
                 )
                 return generator.generate(
                     point_id,
@@ -403,6 +412,7 @@ def generate_corpus_command(
         "point_ids": requested_point_ids,
         "sample_per_level": sample_per_level,
         "workers": workers,
+        "max_full_attempts": max_full_attempts,
         "regenerate_existing": regenerate_existing,
         "regenerate_note": bool(regenerate_note),
         "already_normalized_skipped": normalized_skipped,
