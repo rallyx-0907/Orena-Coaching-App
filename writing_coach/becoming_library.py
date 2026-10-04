@@ -39,7 +39,7 @@ class LibraryVocabularyIn(BaseModel):
     source_fragment: str = Field(default="", max_length=1200)
     source_kind: str = Field(
         default="manual",
-        pattern=r"^(manual|dictionary|feedback|strength|reading|feed|collection)$",
+        pattern=r"^(manual|dictionary|feedback|strength|reading|listening|writing|speaking|feed|collection)$",
     )
     focus_note: str = Field(default="", max_length=2400)
     # Which reading of the word this is, when the caller knows - a dictionary

@@ -4,7 +4,7 @@ Before `a13e0a3` a deleted import kept its whole payload (title, text, link) in 
 `GET /api/works/{id}` served it. The fix tombstones new deletions; this script erases what the earlier ones left.
 
 What it does, and only this: for every `works` row with `kind = 'imported'` and `lifecycle = 'deleted'` whose payload
-holds anything beyond the tombstone keys `{id, form}`, it rewrites the payload to exactly `{id, form}`. Kept: the row,
+holds anything beyond the tombstone keys `{id, form, ref}`, it rewrites the payload to `{id, form}` plus, for a link or a file, a hash reference (`ref`) so devices can tell which import it was. Kept: the row,
 its version, sequence and timestamps (so no sync client sees a change), the source reference and the client id - the
 audit-safe metadata that integrity and history need. Dropped: title, text, url and anything else in the payload.
 
@@ -25,6 +25,7 @@ this repository's agents: the operator chooses the URL.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import sys
@@ -33,7 +34,7 @@ from typing import Any
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
 
-TOMBSTONE_KEYS = {"id", "form"}
+TOMBSTONE_KEYS = {"id", "form", "ref"}
 # Columns of these tables that are identifiers, versions, times and a digest - never content.
 SAFE_RECEIPT_COLUMNS = {
     "mutation_receipts": {"id", "incarnation_id", "language_code", "domain", "resource_id", "operation_id", "request_digest",
@@ -46,7 +47,12 @@ SAFE_RECEIPT_COLUMNS = {
 def tombstone_of(payload: Any) -> dict[str, str]:
     """What is left of an import payload: its client id and its form, nothing else."""
     body = payload if isinstance(payload, dict) else {}
-    return {"id": str(body.get("id") or ""), "form": str(body.get("form") or "text")}
+    form = str(body.get("form") or "text")
+    tomb = {"id": str(body.get("id") or ""), "form": form}
+    reference = str(body.get("mediaId") or "") if form == "upload" else str(body.get("url") or "") if form == "url" else ""
+    if reference:  # a content-free reference, the same as writing_coach.account_records_api.import_ref
+        tomb["ref"] = hashlib.sha256(f"orena.import-ref:{form}:{reference}".encode()).hexdigest()
+    return tomb
 
 
 def needs_scrub(payload: Any) -> bool:

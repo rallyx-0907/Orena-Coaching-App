@@ -9,6 +9,10 @@ import { langAttr, langSpan } from '../../kit/lang.js';
 import { emptyMarkup } from '../../kit/states.js';
 import { api } from '../../infrastructure/api.js';
 import { shellCopy as sc } from '../../copy/shell.js';
+import { moreButton, moreMenu } from '../../kit/overflow.js';
+import { toast } from '../../kit/toast.js';
+import { syncImports } from '../../shell/context.js';
+import { deleteWithUndo, onImportsChanged } from '../../product/import-undo.js';
 import { languages } from '../../copy/index.js';
 import { t } from './copy.js';
 import { isDeferred } from '../../shell/routes.js';
@@ -38,9 +42,8 @@ function tabsMarkup(active, dueCount) {
    learning language server-side (GET /api/collection and GET /api/library/vocabulary both read
    `current_language_code()`, writing_coach/collection_api.py / becoming_library.py) - never a
    guess, the actual language every row this call can return is in. */
-function contentPanel(rows, language) {
-  if (!rows.length) return html``;
-  return html`<div class="s-library-content-grid">${rows.map((row) => html`<button type="button" class="s-library-content-row" data-content="${row.contentId}">
+function contentRow(row, language) {
+  return html`<button type="button" class="s-library-content-row" data-content="${row.contentId}">
     <span class="s-library-content-row__body">
       <span class="s-library-content-row__type">${row.domain === 'media' ? sc('listening') : sc('content')}</span>
       <span class="s-library-content-row__title">${langSpan(row.title, language)}</span>
@@ -48,7 +51,32 @@ function contentPanel(rows, language) {
       <span class="s-library-content-row__progress"><span class="o-progress"><span style="width:${row.pct}%"></span></span><span class="s-library-content-row__pct">${row.pct}%</span></span>
     </span>
     <span class="s-library-content-row__chevron">${raw(icon('chevron-right', { size: 20 }))}</span>
-  </button>`)}</div>`;
+  </button>`;
+}
+
+/* A learner's own import: the same row with the design's "⋯" beside it (frame 14's overflow pattern), whose menu
+   holds "Delete from Orena" (D-107). Discover never offers it. */
+function ownContentRow(row, language, menuFor) {
+  const open = menuFor === row.importId;
+  return html`<div class="s-library-content-own">
+    <div class="s-library-content-row s-library-content-row--own">
+      <button type="button" class="s-library-content-row__main" data-content="${row.contentId}">
+        <span class="s-library-content-row__body">
+          <span class="s-library-content-row__type">${row.domain === 'media' ? sc('listening') : sc('content')}</span>
+          <span class="s-library-content-row__title">${langSpan(row.title, language)}</span>
+          <span class="s-library-content-row__progress"><span class="o-progress"><span style="width:${row.pct}%"></span></span><span class="s-library-content-row__pct">${row.pct}%</span></span>
+        </span>
+        <span class="s-library-content-row__chevron">${raw(icon('chevron-right', { size: 20 }))}</span>
+      </button>
+      ${moreButton({ label: t('more'), open, dataset: row.importId })}
+    </div>
+    ${open ? moreMenu({ items: [{ key: 'delete', label: t('deleteFromOrena') }], closeLabel: sc('close'), scope: row.importId }) : ''}
+  </div>`;
+}
+
+function contentPanel(rows, language, menuFor) {
+  if (!rows.length) return html``;
+  return html`<div class="s-library-content-grid">${rows.map((row) => (row.importId ? ownContentRow(row, language, menuFor) : contentRow(row, language)))}</div>`;
 }
 
 function languageRow(row, language) {
@@ -149,9 +177,13 @@ async function safe(promise, fallback) {
 
 export default async function library(element, ctx) {
   await useStyles('screens/library/library.css');
+  await useStyles('kit/overflow.css');
   const support = languages().support;
   const language = ctx.context.language;
   let active = 'content';
+  let menuFor = '';
+  // The account's view of the imports first, so a deletion made on another device is not shown here.
+  await syncImports(ctx.context.memory, language).catch(() => false);
 
   const [collection, vocabulary, collections, decks, queue] = await Promise.all([
     api.collection({ domains: ['reading', 'media'], limit: 24 }),
@@ -161,6 +193,13 @@ export default async function library(element, ctx) {
     safe(api.libraryReviewQueue(), { pinned: [], pinned_count: 0, due_count: 0, total: 0 }),
   ]);
 
+  const ownRows = () => {
+    const memory = ctx.context.memory?.value;
+    return [
+      ...(memory?.imports || []).map((item) => ({ importId: item.id, contentId: item.id, domain: 'reading', title: item.title || '', source: '', pct: 0 })),
+      ...(memory?.mediaImports || []).map((item) => ({ importId: item.id, contentId: `upload:${item.id}`, domain: 'media', title: item.title || '', source: '', pct: 0 })),
+    ];
+  };
   const rows = {
     content: contentRows(collection.entries || []),
     language: languageRows(vocabulary.items || [], support),
@@ -170,7 +209,7 @@ export default async function library(element, ctx) {
   const dueRows = dueListRows(queue);
 
   function panelFor(id) {
-    if (id === 'content') return contentPanel(rows.content, language);
+    if (id === 'content') return contentPanel([...ownRows(), ...rows.content], language, menuFor);
     if (id === 'language') return languagePanel(rows.language, language);
     if (id === 'collections') return collectionsPanel(rows.collections);
     if (id === 'active') return activePanel(stats);
@@ -199,6 +238,23 @@ export default async function library(element, ctx) {
     for (const button of element.querySelectorAll('[data-content]')) {
       button.addEventListener('click', () => ctx.go(ctx.href('content', { id: button.dataset.content })));
     }
+    for (const button of element.querySelectorAll('[data-more]')) {
+      button.addEventListener('click', () => {
+        menuFor = menuFor === button.dataset.more ? '' : button.dataset.more;
+        paint();
+      });
+    }
+    element.querySelector('[data-menu-close]')?.addEventListener('click', () => {
+      menuFor = '';
+      paint();
+    });
+    element.querySelector('[data-menu-item="delete"]')?.addEventListener('click', async () => {
+      const id = menuFor;
+      menuFor = '';
+      // Hidden at once with the design's toast and its Undo; the deletion is committed when that window ends.
+      deleteWithUndo(ctx.context.memory, id, { toast, text: t('deletedFromOrena'), undoLabel: sc('undo') });
+      paint();
+    });
     /* `#/collection/:id` (route `collection`) is a different, third backend concept - a curated
        vocabulary pack (concept A, C6 §2.1), fetched via GET /api/vocabulary/library/collections/{id};
        model.js's own comment says as much ("does not belong to a learner's own library"). Neither a
@@ -233,4 +289,9 @@ export default async function library(element, ctx) {
   }
 
   paint();
+  // An Undo (or the end of a window) elsewhere repaints the list while this room is the current one.
+  const stopListening = onImportsChanged(() => {
+    if (ctx.isCurrent && !ctx.isCurrent()) stopListening();
+    else paint();
+  });
 }

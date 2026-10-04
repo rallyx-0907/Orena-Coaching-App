@@ -299,7 +299,7 @@ export function phraseSavePayload(text, { meaning = '' } = {}) {
     word: value,
     definition: String(meaning || '').slice(0, 2400),
     source_fragment: value.slice(0, 1200),
-    source_kind: 'manual',
+    source_kind: 'listening',
   };
 }
 

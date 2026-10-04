@@ -10,6 +10,7 @@ import { langSpan, langAttr } from '../../kit/lang.js';
 import { emptyMarkup } from '../../kit/states.js';
 import { openSheet, sheetHead, fillSheet } from '../../kit/overlay.js';
 import { api } from '../../infrastructure/api.js';
+import { syncImports } from '../../shell/context.js';
 import { shellCopy as ts } from '../../copy/shell.js';
 import { t } from './copy.js';
 import {
@@ -204,6 +205,8 @@ export default async function discover(element, ctx) {
       api.libraryBooks(language).catch(() => ({ items: [] })),
       api.listeningLibrary(language).catch(() => ({ items: [] })),
       api.vocabularyLibraryCollections(language).catch(() => ({ items: [] })),
+      // The account's imports: a deletion made on another device leaves this list (no deletion is offered here).
+      syncImports(memory, language).catch(() => false),
     ]);
     const textEntries = (memory?.value?.imports || []).map((item) => entryFromTextImport(item));
     const mediaEntries = (memory?.value?.mediaImports || []).map((item) => entryFromMediaImport(item, continuation));

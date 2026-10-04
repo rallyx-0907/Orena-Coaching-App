@@ -3751,3 +3751,152 @@ E continues in parallel where it does not depend on D4 schema.
 The reviewer's N-1..N-6 are carried into implementation without reopening these decisions. For
 unavailable or dropped Grammar responses the learner UI uses the existing not-found shape; no new
 learner landing is invented.
+
+## D-107 — D4 accepted on the lane runtime; delete-import UX; separate media-import limits; merge forward to Intelligence
+
+**Date:** 2026-10-01. **Status:** Accepted (explicit human direction).
+
+1. **D4 lane acceptance is PASS** on :8021 (flag-on browser QA round 2 at `9a7b190`, all six flows). The
+   D4 account backbone is the accepted development baseline. `ORENA_ACCOUNT_BACKBONE` is not enabled
+   beyond :8021.
+2. **Deleting an import.** Canonical place: My Library -> imported item -> overflow menu ->
+   "Delete from Orena"; the same action in the imported item's Content Detail overflow menu. No
+   destructive delete directly on Discover. Deletion removes the import from the learner's library,
+   propagates a tombstone across devices, prevents a stale device from resurrecting it, deletes owned
+   uploaded media files, keeps only integrity/audit metadata, and never touches the learner's
+   original external source. A device that has learned of the deletion stops opening a stale cached
+   copy (promoted from P3 to production P2).
+3. **Media-import limits.** Media imports use a pool separate from text imports; text, URL and upload
+   imports do not all consume the `20 live / 360 total` text-import limits. Three rails: text-import
+   limits, a media-import item count (URL/YouTube and uploads share it), and an uploaded-media
+   storage-byte limit. Defaults are proposed from the limits proposal's measurements and storage
+   estimates, not chosen arbitrarily. An import that cannot sync because of a quota is never shown as
+   saved to the account; if local-only fallback remains, that state is shown to the learner explicitly.
+4. **Follow-up priorities.** Production P2: a cached deleted import usable after the deletion has
+   synchronized; Listening saved-word provenance missing (must converge with Reading provenance).
+   P3 stays: Conversation End state, draft conflict chooser, mic-blocked Free Talk copy, an open page
+   showing a removed highlight until reload, the hard-coded media thumbnail temp path.
+5. **Rollout gate beyond :8021.** The limits implementation completed and approved after measuring
+   draft autosave behaviour; delete-import UI and lifecycle implemented; uploaded-import deletion
+   removes owned media files; code and migrations 0017-0023 deployed together after a backup; the
+   relevant acceptance checks rerun.
+6. **Merge.** `codex/work` may be merged forward into `feature/orena-intelligence` and reconciled and
+   tested there. Intelligence is not merged back into `codex/work`, and `codex/work` is not merged into
+   `main`, until Intelligence tests/E2E and an independent review pass on this D4 baseline.
+
+## D-108 — Delete import with Undo; what a deletion keeps; verified scores only; no local-only import under sync; media metadata in PostgreSQL
+
+**Date:** 2026-10-01. **Status:** Accepted (explicit human direction).
+
+1. **Undo, not a confirmation.** "Delete from Orena" takes effect with an Undo, never a confirmation modal.
+2. **After an import is deleted:**
+   - the source content is gone;
+   - notes and highlights attached directly to that source are no longer served;
+   - learner history (Dictation, Shadowing, progress) is kept;
+   - saved words are kept, with their source marked deleted/unavailable;
+   - a stored excerpt is never used to reconstruct the deleted content.
+3. **Unverified dictation scores are hidden entirely.** Only a server-verified score may be used or repeated
+   by the Agent.
+4. **No local-only import while account sync is on.** An import the account does not accept is not kept on
+   the device as a substitute.
+5. **Media metadata authority.** Long term, media metadata uses PostgreSQL as its authority; the shared
+   media file (`index.json`) is not a writable source of truth.
+6. **Import listing paginates.** It is never silently limited to 50.
+7. **Separate quotas** for text imports, media item count and uploaded-media bytes (confirms D-107.3).
+8. **Merges.** Intelligence is not merged into `codex/work`, and `codex/work` is not merged into `main`, yet.
+
+## D-109 — The completion target is a complete, usable product, not deeper infrastructure hardening
+
+**Date:** 2026-10-01. **Status:** Accepted (explicit human direction).
+
+Orena is product-complete only when the content/admin side and the learner side exist as one connected
+system, in English and Chinese as equivalent products.
+
+1. **Content / Admin.** Books and reading content, listening media (audio, video, YouTube), vocabulary
+   collections, Grammar (canonical catalog -> generation -> validation -> review -> publish -> learner runtime)
+   and practice material generated from published content all enter, are processed, reviewed when needed,
+   published and reach learners without code changes. AI-generated content flows automatically where
+   confidence is sufficient; human review only where needed. Failed jobs are visible and recoverable. Admin can
+   see what is unpublished, invalid, waiting for review, failed or live. The learner library feels populated,
+   not like demo cards.
+2. **Learner.** Complete loops for Listening, Speaking, Reading, Writing, Vocabulary/Recall and Grammar, and one
+   Progress/Continue state across skills, with no unfinished system boundaries in a normal session.
+3. **Connected system.** Words met in Reading/Listening feed Vocabulary and review; grammar weaknesses seen in
+   Writing/Speaking connect to Grammar; imported content serves several activities; progress and attempts
+   persist across sessions; Orena Agent understands current content, language and meaningful history.
+4. **Orena Agent** is complete when it enhances the finished learning system inside each skill without a
+   competing source of truth.
+5. **English / Chinese** stay equivalent: same layouts and journeys, with Chinese-specific mechanics (characters,
+   pinyin, classifiers, particles) where needed.
+6. **Definition of done.** Learner: discover content, learn, practise, get useful feedback, save state, return,
+   continue, see progress. Admin: introduce or generate content, validate/review where needed, publish, and see
+   it usable by learners without editing code. Passing tests alone is not completion.
+7. **Priority.** Infrastructure hardening, rare races, migration polish and unusual multi-device edge cases are
+   secondary unless they cause data loss, a security/ownership problem, failure of a normal learning journey or
+   failure of the content publishing journey.
+
+## D-110 — The final target of Orena (source of truth for current and future planning)
+
+**Date:** 2026-10-02. **Status:** Accepted (explicit human direction). Extends D-109.
+
+Orena reaches a complete language-learning product with real content, usable immediately, before it goes public.
+
+1. **Learner product.** Today / Discover / My Library are the main entrances. Content is the centre; Reading,
+   Listening, Speaking, Writing, Vocabulary and Grammar are capabilities around content, not separate modules.
+   A learner can discover content -> learn -> practise -> get feedback -> save progress -> return and continue ->
+   see progress. Reading, Listening, Speaking, Writing, Vocabulary/Recall, Grammar, Continue and Progress each
+   have a working E2E journey. History, Speaking Summary, Overview, Rank, From Your Errors and every progress
+   surface reflect server data and are never empty when data exists. Books, articles, media and imported
+   content open and can be studied normally. Media used as a lesson has a usable transcript. Grammar has a real
+   store, API and content for EN and ZH. Orena Agent understands the current learning context and supports the
+   finished learning system.
+2. **Library before public.** Orena does not go public with a demo or thin library. EN and ZH each have reading
+   content, listening/media, books/long-form, vocabulary collections, a grammar curriculum and practice
+   material, across several levels, topics and content types. Discover and Library feel like a real world of
+   content.
+3. **Admin is Orena's control center.** It shows usage, engagement, learner activity, progress, content usage
+   and operational health; what is live, in review, invalid, processing or failed; manages Books, Reading,
+   Media, Vocabulary, Grammar and Practice; supports the content lifecycle from source/import/generation to
+   publish/archive; supports growing the library after public; adding and managing content needs no code change.
+4. **Content supply.** source/import/generation -> processing/enrichment -> validation -> review when needed ->
+   publish -> learner use. Content that meets the quality and rights gates may flow through automatically;
+   content that fails a quality or rights gate goes to review.
+5. **Product-complete means:** real content to learn at once; no main journey ends on an empty screen or an
+   unconnected capability; EN and ZH are both real products; Admin can operate and grow content; the library is
+   thick before public; normal-journey defects such as Books 503, media without a transcript, progress empty
+   despite server data, and Grammar without a runtime no longer exist.
+6. **Priority.** Rare edge cases, migration polish and infrastructure hardening do not decide completion unless
+   they cause data loss, a security/ownership issue, or break a normal learner or Admin journey.
+
+## D-111 — Auto-publish rule, library sources, media transcripts, Grammar build, Admin Overview, lane budget, durable lane store, leftovers, Agent gate
+
+**Date:** 2026-10-02. **Status:** Accepted (explicit human direction). Answers the D-109 audit questions.
+
+1. **Auto-publish.** Yes, without self-declared AI confidence. Content auto-publishes when its rights are cleared
+   and the deterministic schema, semantic and content validators all pass. Question sets auto-approve when the
+   grounding, answer and duplicate validators pass. Any failure, or unknown rights -> review queue.
+2. **Library sources.** Public domain, owned, licensed, explicit permission, and sources/APIs with clear usage
+   rights. Learner-imported private content never becomes public catalog. Bootstrap target per language:
+   30 Reading + 20 Listening + 10 Vocabulary collections, with a sensible level/topic spread. Rights are decided
+   at source policy where possible; texts from an already-cleared source are not re-approved one by one.
+   Unknown rights -> not published.
+3. **YouTube / media.** Public captions first; when missing or not good enough, speech recognition on the audio.
+   Paid fallback allowed within the spending cap. Media is not published as learning content without a usable
+   transcript; it stays draft/processing until it has one.
+4. **Grammar.** The Grammar Store/API architecture is approved to build. PR #67/#68 may merge when their current
+   reviews/gates pass; no parallel Grammar system. Chinese comes from the canonical HSK/GF catalog through the
+   generation/validation pipeline, not hand-written point by point. The old 269 EN / 239 ZH lessons stay retired
+   from the learner UI, usable only as reference/migration source.
+5. **Admin Overview: build now.** The Admin Content Engine is core product and must show live / review / invalid /
+   failed / processing.
+6. **Lane spending cap (:8021).** AI enrichment at most $10 per batch, speech recognition at most $5 per batch,
+   all automatic processing at most $25 per day. No unlimited background spend. Production budget is set after
+   real usage.
+7. **:8021 file store** is durable development/QA storage and must survive normal restart/recreate; it is not the
+   long-term production authority. The Books chapter 503 is a normal product bug to fix.
+8. **Test leftovers.** Archive the 18 Bridge articles, the 14 review test items, the tone/clip imports and other
+   test content from the learner-facing library. Keep evidence in QA reports; one failed-job example may stay in
+   Admin for Operations testing.
+9. **Agent.** Grammar does not block the whole Agent. The provider gate can open once the core content journeys
+   and Progress/return state work correctly. Grammar-specific Agent capability turns on after the Grammar
+   API/content is ready.

@@ -14,6 +14,8 @@ again - a client action, never a server merge of prose.
 """
 from __future__ import annotations
 
+import hashlib
+import logging
 import os
 import uuid
 from typing import Any
@@ -38,7 +40,9 @@ MAX_NOTE_CHARS = 600
 # device that made the item, so a removed id can never legitimately come back: a write that carries one is refused.
 MAX_TOMBSTONES = 500
 NOTE_TYPES = ('factual', 'reflection', 'question')
+_logger = logging.getLogger(__name__)
 MAX_IMPORTS = 20
+PENDING_SWEEP_PER_READ = 5  # a list read finishes at most this many owed file removals
 # Deleted imports are tombstones that are never removed, so "create, delete, create" would grow rows without bound
 # while the live count stays under MAX_IMPORTS. The total of an account's import rows, live and deleted, is bounded
 # separately (operator configuration, never a learner-facing number; limits review P1-1).
@@ -151,7 +155,8 @@ def _item_ids(payload: dict[str, Any]) -> list[str]:
 @router.get('/annotations/{content_id:path}')
 def get_annotations(content_id: str) -> dict[str, Any]:
     scope = work_api._scope()  # noqa: SLF001
-    row = _read(scope, 'annotation', _key(content_id, 'content_id_invalid'))
+    content_id = _key(content_id, 'content_id_invalid')
+    row = None if _text_import_deleted(scope, content_id) else _read(scope, 'annotation', content_id)
     if row is None:
         raise orena_http_error(404, 'annotation_not_found', 'Nothing kept for this text.', retryable=False)
     return {'annotation': _annotation_shape(row)}
@@ -161,6 +166,8 @@ def get_annotations(content_id: str) -> dict[str, Any]:
 def put_annotations(content_id: str, body: AnnotationSave) -> dict[str, Any]:
     scope = work_api._scope()  # noqa: SLF001
     content_id = _key(content_id, 'content_id_invalid')
+    if _text_import_deleted(scope, content_id):
+        raise orena_http_error(404, 'annotation_not_found', 'That text was deleted.', retryable=False)
     ids = [item.id for item in body.highlights] + [item.id for item in body.notes]
     if len(set(ids)) != len(ids):
         raise orena_http_error(422, 'annotation_duplicate_id', 'Each highlight and note has its own id.', retryable=False)
@@ -215,6 +222,13 @@ class ImportSave(BaseModel):
     provider: str = Field(default='', max_length=40)
 
 
+def import_ref(form: str, reference: str) -> str:
+    """A content-free reference to a media import's membership id (`url:<link>` or `upload:<media id>`): what a
+    tombstone keeps so a device can tell WHICH of its imports was deleted without the link or the file being
+    stored. A text import's membership id is its record id, so it needs none."""
+    return hashlib.sha256(f'orena.import-ref:{form}:{reference}'.encode()).hexdigest()
+
+
 def _import_uuid(value: str) -> str:
     try:
         return str(uuid.UUID(value))
@@ -228,7 +242,7 @@ def _import_shape(row: dict[str, Any]) -> dict[str, Any]:
     client = str(payload.get('id') or '')
     shape = {'id': f'{form}:{client}', 'form': form, 'title': str(payload.get('title') or ''),
              'text': str(payload.get('text') or ''), 'url': str(payload.get('url') or ''),
-             'version': int(row['version'])}
+             'version': int(row['version']), 'sequence': int(row.get('updated_sequence') or 0)}
     if form in {'url', 'upload'}:
         shape.update({'mediaId': str(payload.get('mediaId') or ''), 'kind': str(payload.get('kind') or ''),
                       'durationMs': payload.get('durationMs'), 'thumbnailUrl': str(payload.get('thumbnailUrl') or ''),
@@ -236,11 +250,46 @@ def _import_shape(row: dict[str, Any]) -> dict[str, Any]:
     return shape
 
 
+IMPORT_PAGE = 50
+DELETED_PAGE = 500
+
+
 @router.get('/imports')
-def list_imports(limit: int = Query(20, ge=1, le=work_api.LIST_LIMIT)) -> dict[str, Any]:
+def list_imports(limit: int = Query(IMPORT_PAGE, ge=1, le=IMPORT_PAGE), cursor: int | None = Query(None, ge=0),
+                 deletedLimit: int = Query(DELETED_PAGE, ge=1, le=DELETED_PAGE),
+                 deletedCursor: int | None = Query(None, ge=0),
+                 include: str = Query('both', pattern='^(both|imports|deleted)$')) -> dict[str, Any]:
+    """The learner's imports and the tombstones of deleted ones, newest first, in pages. Nothing is silently left out:
+    `nextCursor` / `nextDeletedCursor` name the next page of each list (null when it is the last), and a client pages
+    until both are null, asking (`include`) only for the list that still has pages. A cursor is the change sequence of
+    the last row of the page before."""
     scope = work_api._scope()  # noqa: SLF001
-    rows = _backbone().work.list_works(scope, kind='imported', source_kind='imported', limit=limit)
-    return {'imports': [_import_shape(row) for row in rows]}
+    work = _backbone().work
+    live = work.list_works(scope, kind='imported', source_kind='imported', limit=limit + 1, before=cursor) if include != 'deleted' else []
+    gone = (work.list_works(scope, kind='imported', source_kind='imported', limit=deletedLimit + 1, deleted=True, before=deletedCursor)
+            if include != 'imports' else [])
+    next_live = int(live[limit - 1]['updated_sequence']) if len(live) > limit else None
+    next_gone = int(gone[deletedLimit - 1]['updated_sequence']) if len(gone) > deletedLimit else None
+    live, gone = live[:limit], gone[:deletedLimit]
+    # The account's change position for imports as of this read, over ALL its import rows (not just this page): a
+    # device keeps it, and a record created later has a greater `sequence` - how a re-import by another device is
+    # told from the record this device deleted.
+    with work._engine.connect() as connection:  # noqa: SLF001
+        from sqlalchemy import text as sql
+
+        high_water = int(connection.execute(
+            sql("SELECT COALESCE(max(updated_sequence), 0) FROM works WHERE incarnation_id = :inc AND language_code = :lang "
+                "AND kind = 'imported'"), {'inc': scope.incarnation, 'lang': scope.language}).scalar_one())
+    swept = 0
+    for row in gone:
+        if (row['payload'] or {}).get('mediaPending') and swept < PENDING_SWEEP_PER_READ:
+            # A file removal an earlier deletion could not finish is completed on a later read (a few per read).
+            swept += 1
+            _finish_pending_media(scope, str(row['id']), row)
+    return {'highWater': high_water, 'imports': [_import_shape(row) for row in live], 'nextCursor': next_live,
+            'deleted': [{'id': f"{(row['payload'] or {}).get('form') or 'text'}:{(row['payload'] or {}).get('id') or ''}",
+                         'ref': str((row['payload'] or {}).get('ref') or '')} for row in gone],
+            'nextDeletedCursor': next_gone}
 
 
 @router.get('/imports/{import_id}')
@@ -300,6 +349,204 @@ def put_import(import_id: str, body: ImportSave) -> dict[str, Any]:
     )
 
 
+def _other_live_import_names(scope: Scope, media_id: str) -> bool:
+    """Whether a live import of this account (any language) still names the stored media. Two records can name the
+    same file (two devices kept it); the files go with the LAST one."""
+    from sqlalchemy import text as sql
+
+    with _backbone().work._engine.connect() as connection:  # noqa: SLF001
+        found = connection.execute(
+            sql("SELECT count(*) FROM works WHERE incarnation_id = :inc AND kind = 'imported' AND lifecycle <> 'deleted' "
+                "AND payload->>'form' = 'upload' AND payload->>'mediaId' = :media"),
+            {'inc': scope.incarnation, 'media': media_id},
+        ).scalar_one()
+    return found > 0
+
+
+def _source_candidates(source_id: str) -> list[str]:
+    """The forms a source id of a kept word can take for one import: a text's `text:<id>`; a stored upload as
+    `upload-<token>`, `media:upload-<token>` or `upload:upload-<token>`; a link as `url:<link>` (optionally behind the
+    same prefixes)."""
+    value = str(source_id or '')
+    out = [value]
+    for prefix in ('media:', 'upload:'):
+        for item in list(out):
+            if item.startswith(prefix):
+                out.append(item[len(prefix):])
+    return out
+
+
+def _deleted_source_filter(scope: Scope):
+    """A predicate over a provenance source id: True when it names an import this account has deleted (and has not
+    kept again). Built from the tombstones (ids and hash references) - never from any stored excerpt."""
+    from sqlalchemy import text as sql
+
+    with _backbone().work._engine.connect() as connection:  # noqa: SLF001
+        rows = connection.execute(
+            sql("SELECT lifecycle, payload FROM works WHERE incarnation_id = :inc AND language_code = :lang "
+                "AND kind = 'imported'"), {'inc': scope.incarnation, 'lang': scope.language}).mappings().all()
+    gone_text, gone_refs, live_text, live_refs = set(), set(), set(), set()
+    for row in rows:
+        payload = row['payload'] or {}
+        form = str(payload.get('form') or 'text')
+        deleted = row['lifecycle'] == 'deleted'
+        if form == 'text':
+            (gone_text if deleted else live_text).add(f"text:{payload.get('id')}")
+        elif deleted:
+            if payload.get('ref'):
+                gone_refs.add(str(payload['ref']))
+        else:
+            reference = str(payload.get('mediaId') or '') if form == 'upload' else str(payload.get('url') or '')
+            if reference:
+                live_refs.add(import_ref(form, reference))
+
+    def is_deleted(source_id: str) -> bool:
+        for item in _source_candidates(source_id):
+            if item in gone_text and item not in live_text:
+                return True
+            if item.startswith('upload-') and (ref := import_ref('upload', item)) in gone_refs and ref not in live_refs:
+                return True
+            if item.startswith('url:') and (ref := import_ref('url', item[4:])) in gone_refs and ref not in live_refs:
+                return True
+        return False
+
+    return is_deleted
+
+
+def _text_import_deleted(scope: Scope, content_id: str) -> bool:
+    """Whether a content id names an import this account has deleted - a text (`text:<id>`) or a link or file under any
+    of the forms a room files notes by (`url:<link>`, `upload:<id>`, `media:<id>`, `upload-<token>`). Its notes and
+    highlights are not served."""
+    value = str(content_id or '')
+    if value.startswith('text:'):
+        row = _backbone().work.get_work(scope, _work_id(scope, 'imported', value[5:]))
+        return row is not None and row['lifecycle'] == 'deleted'
+    if value.startswith(('url:', 'upload:', 'media:', 'upload-')):
+        return _deleted_source_filter(scope)(value)
+    return False
+
+
+def _normalized(value: str) -> str:
+    return ' '.join(str(value or '').casefold().split())
+
+
+MIN_FRAGMENT_CHARS = 12  # a shorter stored sentence is too generic to be told from another source's
+
+
+def _erase_derived_of_import(scope: Scope, form: str, client: str, reference: str, text_body: str = '') -> dict[str, int]:
+    """What a deleted import must not leave behind as a copy of itself (D-108): the notes and highlights written on it,
+    and the stored sentence of every kept word that was met in it. The words, their review history and the learner's
+    Dictation / Shadowing progress are kept; a kept word's source is marked unavailable (provenance reads say so).
+    Idempotent; returns counts only."""
+    from sqlalchemy import bindparam, text as sql
+
+    counts = {'annotations': 0, 'provenance': 0, 'words': 0}
+    base = f'text:{client}' if form == 'text' else (reference if form == 'upload' else f'url:{reference}')
+    sources = [base] + ([] if form == 'text' else [f'media:{base}', f'upload:{base}'])
+    sources = sorted(set(sources))
+    # Notes and highlights filed under the import, under whatever content id the room used for it.
+    with _backbone().work._engine.connect() as connection:  # noqa: SLF001
+        owned = connection.execute(
+            sql("SELECT id, version, source_id FROM works WHERE incarnation_id = :inc AND language_code = :lang "
+                "AND kind = 'annotation' AND lifecycle <> 'deleted' AND source_id IN :sources")
+            .bindparams(bindparam('sources', expanding=True)),
+            {'inc': scope.incarnation, 'lang': scope.language, 'sources': sources},
+        ).mappings().all()
+    for row in owned:
+        _commit(
+            scope, kind='annotation', ident=str(row['id']), operation_id=f'erase-{uuid.uuid4()}',
+            expected_version=int(row['version']), payload={}, source={'kind': 'content', 'id': str(row['source_id']), 'revision': ''},
+            lifecycle='deleted', conflict_code='annotation_conflict',
+        )
+        counts['annotations'] += 1
+    # Every kept word whose stored sentence occurs in the deleted TEXT loses it, whatever its provenance (a word kept
+    # before provenance existed, or whose attach failed, still carries the sentence): many such sentences together would
+    # rebuild the text.
+    body = _normalized(text_body)
+    if body:
+        with _backbone().work._engine.begin() as connection:  # noqa: SLF001
+            kept = connection.execute(
+                sql("SELECT id, source_fragment FROM saved_words WHERE user_id = :user AND language_code = :lang AND source_fragment <> ''"),
+                {'user': scope.account, 'lang': scope.language}).mappings().all()
+            for word in kept:
+                fragment = _normalized(word['source_fragment'])
+                if len(fragment) >= MIN_FRAGMENT_CHARS and fragment in body:
+                    connection.execute(sql("UPDATE saved_words SET source_fragment = '' WHERE id = :id"), {'id': word['id']})
+                    counts['words'] += 1
+    if not sources:
+        return counts
+    with _backbone().work._engine.begin() as connection:  # noqa: SLF001
+        found = connection.execute(
+            sql("SELECT id, saved_word_id, focus FROM language_provenance WHERE incarnation_id = :inc AND language_code = :lang "
+                "AND source_id IN :sources").bindparams(bindparam('sources', expanding=True)),
+            {'inc': scope.incarnation, 'lang': scope.language, 'sources': sources},
+        ).mappings().all()
+        for row in found:
+            focus = str(row['focus'] or '')
+            connection.execute(
+                sql("UPDATE language_provenance SET focus = '', availability = 'unavailable' WHERE id = :id"), {'id': row['id']})
+            counts['provenance'] += 1
+            fragment = connection.execute(
+                sql('SELECT source_fragment FROM saved_words WHERE id = :id AND user_id = :user'),
+                {'id': row['saved_word_id'], 'user': scope.account}).scalar()
+            fragment = str(fragment or '')
+            others = connection.execute(
+                sql("SELECT count(*) FROM language_provenance WHERE saved_word_id = :id AND availability <> 'unavailable' AND id <> :occ"),
+                {'id': row['saved_word_id'], 'occ': row['id']}).scalar_one()
+            if fragment and (not others or (focus and (fragment.casefold() in focus.casefold() or focus.casefold() in fragment.casefold()))):
+                connection.execute(sql("UPDATE saved_words SET source_fragment = '' WHERE id = :id AND user_id = :user"),
+                                   {'id': row['saved_word_id'], 'user': scope.account})
+                counts['words'] += 1
+    return counts
+
+
+def media_still_named(media_id: str) -> bool:
+    """Whether a LIVE upload import of the current account still names this stored media (False when the account
+    records are not kept at all: nothing can name it then). Used by the media delete route, so a file one device
+    deletes is not taken from another device's import of the same file."""
+    try:
+        scope = work_api._scope()  # noqa: SLF001
+    except Exception:  # noqa: BLE001 - records disabled or unavailable: no import names it
+        return False
+    return _other_live_import_names(scope, media_id)
+
+
+def _finish_pending_media(scope: Scope, ident: str, row: dict[str, Any]) -> bool | None:
+    """Complete the file removal an upload import's deletion owes, and only then clear its marker.
+
+    The tombstone keeps the opaque stored-media id as `mediaPending` until the files are confirmed gone, so a replay,
+    a repeated delete or a later list read can finish a removal that failed or was interrupted (files first, index
+    entry last - nothing is left orphaned). The files stay while another live import of the account names them.
+    Returns True/False for "removed"/"not removed", None when nothing was owed."""
+    held = row['payload'] or {}
+    media_id = str(held.get('mediaPending') or '')
+    if not media_id:
+        return None
+    done = False
+    removed = False
+    if _other_live_import_names(scope, media_id):
+        done = True  # the last live import will remove it; nothing is owed by this one
+    else:
+        try:
+            from writing_coach import media_library_api
+
+            removed = media_library_api.delete_owned_media(media_id, user_key=work_api._user_key(), language=scope.language)  # noqa: SLF001
+            done = True  # removed, or never ours / already gone: nothing further is owed
+        except Exception as exc:  # noqa: BLE001 - keep the marker; a retry completes it
+            _logger.warning('uploaded media could not be removed after an import was deleted: %s', type(exc).__name__)
+    if done:
+        cleared = {key: value for key, value in held.items() if key != 'mediaPending'}
+        try:
+            _commit(
+                scope, kind='imported', ident=ident, operation_id=f'sweep-{uuid.uuid4()}', expected_version=int(row['version']),
+                payload=cleared, source={'kind': 'imported', 'id': str(held.get('id') or ''), 'revision': ''},
+                lifecycle='deleted', conflict_code='import_conflict',
+            )
+        except Exception:  # noqa: BLE001 - a moved version means someone else already finished
+            pass
+    return removed if done else False
+
+
 @router.delete('/imports/{import_id}')
 def delete_import(import_id: str, operationId: str = Query(min_length=8, max_length=120),
                   expectedVersion: int = Query(ge=1)) -> dict[str, Any]:
@@ -310,14 +557,39 @@ def delete_import(import_id: str, operationId: str = Query(min_length=8, max_len
     row = _backbone().work.get_work(scope, ident)
     if row is None:
         raise orena_http_error(404, 'import_not_found', 'That import is not kept.', retryable=False)
+    if row['lifecycle'] == 'deleted':
+        # Already deleted (a retry, or a second device): nothing to commit; finish any file removal still owed.
+        return {'status': 'replay', 'version': int(row['version']), 'mediaDeleted': _finish_pending_media(scope, ident, row)}
+    form_of = str((row['payload'] or {}).get('form') or 'text')
+    reference = str((row['payload'] or {}).get('mediaId') or '') if form_of == 'upload' else str((row['payload'] or {}).get('url') or '')
     # A tombstone WITHOUT the content: deleting is erasing. Only what says which import this was stays (its id and
-    # form); the title, the text and the link are dropped from the stored row, not merely hidden from the reads.
-    tombstone = {'id': client, 'form': str((row['payload'] or {}).get('form') or 'text')}
-    return _commit(
+    # form, a hash reference, and for an upload the opaque stored-media id until its files are confirmed gone); the
+    # title, the text and the link are dropped from the stored row, not merely hidden from the reads.
+    held = row['payload'] or {}
+    form = str(held.get('form') or 'text')
+    media_id = str(held.get('mediaId') or '') if form == 'upload' else ''
+    tombstone = {'id': client, 'form': form}
+    if form == 'upload' and media_id:
+        tombstone['ref'] = import_ref('upload', media_id)
+        tombstone['mediaPending'] = media_id
+    elif form == 'url' and held.get('url'):
+        tombstone['ref'] = import_ref('url', str(held['url']))
+    outcome = _commit(
         scope, kind='imported', ident=ident, operation_id=operationId, expected_version=expectedVersion,
         payload=tombstone, source={'kind': 'imported', 'id': client, 'revision': ''},
         lifecycle='deleted', conflict_code='import_conflict',
     )
+    try:
+        _erase_derived_of_import(scope, form_of, client, reference, str((row['payload'] or {}).get('text') or '') if form_of == 'text' else '')
+    except Exception as exc:  # noqa: BLE001 - the import is gone; reads still mask a deleted source
+        _logger.warning('derived records of a deleted import could not be erased: %s', type(exc).__name__)
+    media_deleted = None
+    if media_id:
+        fresh = _backbone().work.get_work(scope, ident)
+        media_deleted = _finish_pending_media(scope, ident, fresh) if fresh else False
+        if media_deleted and _other_live_import_names(scope, media_id):
+            media_deleted = False  # kept: another live import still uses the file
+    return {**outcome, 'mediaDeleted': media_deleted}
 
 
 # --- Typed responses and Reading Transfer (I8, I9) --------------------------------------------------
@@ -399,11 +671,14 @@ def get_word_provenance(word: str) -> dict[str, Any]:
     if saved is None:
         raise orena_http_error(404, 'word_not_found', 'That word is not kept.', retryable=False)
     rows = _backbone().provenance.occurrences_for(scope, saved)
+    is_deleted = _deleted_source_filter(scope)
+    # A source that was deleted is reported unavailable and WITHOUT the stored sentence: an excerpt is never used to
+    # bring deleted content back (D-108.2).
     return {'occurrences': [
-        {'id': str(row['id']), 'reason': row['reason'], 'focus': row['focus'],
+        {'id': str(row['id']), 'reason': row['reason'], 'focus': '' if gone else row['focus'],
          'source': {'kind': row['source_kind'], 'id': row['source_id'], 'revision': row['source_revision']},
-         'availability': row['availability']}
-        for row in rows
+         'availability': 'unavailable' if gone else row['availability']}
+        for row in rows for gone in [bool(row['source_id']) and is_deleted(row['source_id'])]
     ]}
 
 

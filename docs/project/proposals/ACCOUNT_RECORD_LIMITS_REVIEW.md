@@ -206,3 +206,134 @@ points remain; none needs another full review.
 
 Enabling the backbone on :8000/:8010 remains a separate human gate; this proposal, once implemented and independently code
 reviewed, removes the P2-4 caps condition.
+
+## Re-check (rev 4)
+
+- **Reviewer:** Claude Opus 5.5, independent reviewer subagent, not the author. **Date:** 2026-10-01.
+- **Reviewed:** `ACCOUNT_RECORD_LIMITS.md` rev 4 at `91842bf` against D-107 (`DECISION_LOG.md`), the code it cites at HEAD
+  (`media_library_store.py`, `account_records_api.py`, `media_library_api.py`) and my own recomputation of its arithmetic.
+  I did not have the author's scratchpad (`autosave_measure.md`, `cadence*.cjs`), so the measurement is judged from the table
+  and method text in section 2.4 only. Document review; no Docker.
+
+### Verdict: APPROVE WITH CONDITIONS
+
+The rate re-derivation, the media pool, the byte rail and the refusal rule are sound in design, and the figures reproduce.
+Four P2s and several P3s need text edits before implementation starts; two of them (G1, G2) are larger than the
+document says and must be gates for anything beyond :8021, not "next round" items. No P0/P1.
+
+### Arithmetic, recomputed
+Drafts 9.0 x 15 x 365 = 49,275 and 3.7 x 15 x 60 = 3,330; mutations 93.5 M + 246.4 M + 49.95 M = 389.8 M, drafts 76%;
+receipts and change records about 242-245 GB (document: 244 GB). Media: 100 + 260 = 360 items and 1.47 GiB a year heavy,
+1,080 items and 4.4 GiB in three years, x 2.3 = 2,484 items and 10.1 GiB; typical 36 items and 0.18 GiB; aggregate about
+9.8 TiB a year at the target (document 9.7); 30 uploads x 64 MiB = 1.9 GiB an hour; index 2.34 M entries a year, about
+4.7 GB. All reproduce. Two wording errors: the rate section says the average heavy learner needs 62,050 mutations a year,
+"about 7 a day" (it is about 170 a day, 7 an hour); and section 2.4 says "the hard ceiling is one save per about 2.9 s"
+(about 21 a minute) and in the same paragraph a theoretical maximum of about 46 a minute (1.3 s). One of the two is wrong;
+see P3-9.
+
+### Are the defaults traceable safety rails, not learner-facing quotas?
+Yes for the rate, byte and tombstone rails: each states its derivation, floors exist, nothing is drawn to a learner. Two
+qualifications. (a) Only the draft cadence is measured; A2-A4 and the new A10-A12 (uploads and links per year, mean
+upload size 15 MiB) are labelled unmeasured, so D-107's "from measurements and storage estimates" is met as "estimates",
+openly. Upload size and frequency should be measured on the lane the same way before the byte and count defaults are
+fixed (condition 5). (b) The media **live** bound of 1,250 is 1.16x the heavy 3-year volume, below the document's own A7
+rule for learner-authored records (2x); only the 2,500 total meets it. Use 2,500 for both, or justify (P3-8).
+
+### Measurement validity and the 120 a minute rail
+The method is acceptable for a cadence bound: the real `draftSync` path on :8021, counted at the network layer, three
+typing models, 102 saves in 11.3 active minutes, all PUTs 200, no 409/429. It is scripted, one device, 11 minutes, so it
+supports a cadence per active minute, not A2-A4 or session length (the document says so). The pathological case (a
+pause after every word) is the right ceiling to test. The re-derivation holds: 120 a minute is 5.8x the worst measured
+minute (21), 2.9x two devices at the measured worst (42), 2.6x the one-device theoretical (46) and 1.3x two devices at the
+theoretical (92). The 3,600 an hour is 2.9x the worst measured hour (1,242). The worst measured cases are admitted with
+margin, including two devices. One check I would add: other mutation producers can add to a typing minute (annotation
+pushes at 9.3 a minute, a conversation turn, a provenance write); even stacked on a one-device theoretical maximum (46 +
+9 + 12 + 4 = 71) the rail admits them.
+
+### Media pool, byte accounting, tombstones, scope
+- **What counts.** Pool by `form`: `text` to the text pool (20 live, 360 total), `url` and `upload` to the media pool (1,250
+  live, 2,500 total, per account and language, all rows counted, tombstones included). Bytes: live uploads' original plus
+  thumbnail, per **account across languages** (right: bytes are a storage cost and a bilingual learner should not get two
+  ceilings of the expensive resource; the guard can sum by incarnation under the stream lock). Counts stay per language,
+  consistent with every other row rail.
+- **Freed.** Delete removes the files and the bytes leave the live sum. See P3-5: bytes should stay in the sum until the
+  removal is confirmed.
+- **Tombstones.** Each pool has its own total bound; a media tombstone carries no bytes. Correct.
+
+### Findings
+- **P2-6. Rate and byte checks run after the body is streamed.** 4.5 streams up to 64 MiB, then checks inside
+  `commit_mutation`, and "the uploads-per-hour rail and the stream lock bound it". The stream lock is taken at commit, so it
+  bounds nothing during the upload; an account at its byte or hourly limit can keep sending 64 MiB bodies that are stored,
+  rejected and deleted, which is bandwidth and disk churn bounded only by HTTP concurrency (and each refusal also rewrites
+  the whole media index, G1). **Required:** a cheap pre-check before accepting the body (rate window from the account's
+  recent upload records, live bytes plus declared `Content-Length` against the byte rail, live count), keeping the
+  in-transaction guard as the authority; and specify how `ORENA_LIMIT_UPLOADS_PER_HOUR` is counted (from `works.created_at`
+  of upload records, tombstones included, so delete-and-retry does not reset it).
+- **P2-7. Behaviour on a transient failure is unspecified for "account first, device second".** The rule that a quota
+  refusal is never presented as saved is right and matches D-107.3. But offline, a 5xx or a 429 are not quota refusals;
+  the document says only that a refusal "is shown through the sheet error pattern". **Required:** state that only a
+  definitive 422 `*_limit` blocks the import and shows the existing category error; a transient failure uses the same
+  failure pattern ("could not import, try again") and creates no device-only item while the backbone is `active`; a
+  local-only fallback stays a design gap for the human with an explicit label, as the document says. Also note that
+  device-only items created before this rule remain and are not claimed as saved.
+- **P2-8. G1 is larger than recorded and is a gate for anything beyond :8021.** `FileMediaLibraryStore.get()` reads and
+  integrity-hashes the **entire** `index.json` on every call, and every personal-media read goes through it: the file and
+  thumbnail route (once per image request), `visible_to` resolution, dictation/shadowing progress, `/api/media/my`. At about
+  2.3 M entries a year that is a multi-GB parse per request, not just a big file. `upsert` and `delete` rewrite the whole
+  file, and `_read` returns an empty map on a corrupt or unreadable index, after which `upsert` writes only the new entry:
+  a single failed read followed by any upload would erase every other account's entries. The lock is a per-process
+  threading lock. **Required:** record these three facts in G1 and make "personal media entries leave `index.json`"
+  (PostgreSQL, a schema decision reserved by AGENTS §7) a prerequisite for enabling beyond :8021, or at minimum a
+  guard that refuses to write after a failed read; do not present the per-account rails as sufficient.
+- **P2-9. G2 is a correctness gap well below the pool size.** `GET /api/imports` returns at most 50 and the device keeps 100
+  media records, so a new device sees at most the 50 newest imports of an account even though the pool admits 1,250; from
+  the 51st import "opens on a new device" is silently false. **Required:** page the list (or raise the limit with a cursor)
+  before the pool numbers are treated as usable; until then the effective product bound is 50 and should be stated.
+- **P3-1..P3-9:**
+  - **P3-1.** Section 4.5 "what exists" is stale at HEAD: `ImportSave` already has form `upload` and the media fields, and
+    `pushImport` already sends media records through `mediaBody`; the legend still cites HEAD `8481e33` and "uncommitted
+    edits". Refresh the facts.
+  - **P3-2.** For form `upload` the server must take `bytes` and ownership from the stored media entry (visible to the
+    account) and refuse an unknown or foreign `mediaId`, never from the client body, or the byte sum can be forged.
+  - **P3-3.** Uploads already stored without an import record (made before 39b9f12/9a7b190) are not in the byte sum; state
+    whether they are back-filled or ignored.
+  - **P3-4.** The embedded-artwork thumbnail is uncapped by the code (up to the file size); cap or resize it so a request
+    is bounded by 64 MiB plus a fixed thumbnail size.
+  - **P3-5.** Count removal-pending bytes (files not yet confirmed deleted) in the sum, or the retry window lets disk grow
+    beyond the rail; bound it by the 2,500 total rows x 64 MiB at worst.
+  - **P3-6.** Two import records can name one `mediaId` (two devices); deleting one record must not delete a file another live
+    record uses (delete on the last live reference).
+  - **P3-7.** Overshoot by concurrent uploads is bounded by concurrency, not by the stream lock; say so.
+  - **P3-8.** See above: live 1,250 versus the 2x rule.
+  - **P3-9.** Reconcile the 2.9 s ceiling with the 46 a minute theoretical and fix "7 a day" (conservative either way).
+
+### Refusal behaviour against D-107.3
+Uploads: a refusal stores nothing and adds nothing to the device, reported by category in the existing sheet error pattern.
+URL, YouTube and text imports: account first, device second while the backbone is `active` (a refused import is not
+shown as saved to the account); a local-only fallback is recognised as needing an explicit label and, correctly, **no
+drawn pattern exists, so both that label and the new refusal-category copy (en, vi, zh) are left as design gaps for the
+human and recorded in `UI_BACKEND_GAPS.md`** (CLAUDE.md rule 7). Nothing is invented. P2-7 closes the transient case.
+
+### Answers to Q13-Q16
+- **Q13 (pools by `form`).** Yes, with an explicit table `text -> text pool; url, upload -> media pool` in code, and a
+  rule that any future form (an article URL that stores fetched text) names its pool when added; do not infer the pool
+  from the presence of a link.
+- **Q14 (10 GiB, per account).** Acceptable as a safety rail and correctly per account across languages. Keep it a
+  configuration value, keep the capacity and any lower product allowance as the human's decision, and measure upload size
+  and frequency on the lane before fixing the default (condition 5).
+- **Q15 (account first, device second).** Yes for definitive refusals, with P2-7 for transient failures; a local-only
+  fallback only with a human-chosen explicit label.
+- **Q16 (G1).** The Principal Architect with the media owner, through the AGENTS §7 schema process; **before** enabling
+  beyond :8021, not after (P2-8).
+
+### Conditions to start implementation
+1. P2-6: pre-stream rate and size checks, hourly rail counted from upload records including tombstones.
+2. P2-7: transient-failure behaviour stated; no device-only item while `active`.
+3. P2-8 and P2-9: G1 and G2 restated as gates for anything beyond :8021 (index store move; paged imports list).
+4. P3-1..P3-9 applied in the text, notably P3-2 and P3-6.
+5. Measure upload size and frequency on the lane before the byte and count defaults are fixed; label PostgreSQL-only
+   results as local execution.
+
+Enabling the backbone beyond :8021 remains the human gate of D-107.5, which also requires the limits implemented and
+independently approved, delete-import and uploaded-file deletion implemented, and code and migrations deployed together
+after a backup.

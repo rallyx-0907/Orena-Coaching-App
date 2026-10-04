@@ -22,6 +22,7 @@ const KEYS = [
   'activeDueTitle', 'activeDueDesc', 'activeTransferDesc', 'activeSituationTitle', 'activeSituationDesc',
   'activeTimedDesc', 'stageRecall', 'stageUse', 'stageTransfer', 'stageFast',
   'collectionItems',
+  'more', 'deleteFromOrena', 'deletedFromOrena',
 ];
 
 export const t = defineCopy('library', {
@@ -46,6 +47,7 @@ export const t = defineCopy('library', {
     activeTimedDesc_other: 'Time to start and time to answer, {n} due words',
     stageRecall: 'Recall', stageUse: 'Use', stageTransfer: 'Transfer', stageFast: 'Fast retrieval',
     collectionItems_one: '{n} item', collectionItems_other: '{n} items',
+    more: 'More', deleteFromOrena: 'Delete from Orena', deletedFromOrena: 'Deleted from Orena',
   },
   vi: {
     tabContent: 'Nội dung đã lưu', tabLanguage: 'Từ & cụm đã lưu', tabCollections: 'Bộ sưu tập', tabActive: 'Vận dụng',
@@ -62,6 +64,7 @@ export const t = defineCopy('library', {
     activeTimedDesc_other: 'Tính giờ từ lúc bắt đầu đến lúc trả lời, {n} từ đến hạn',
     stageRecall: 'Nhớ lại', stageUse: 'Vận dụng', stageTransfer: 'Chuyển ngữ cảnh', stageFast: 'Nhớ nhanh',
     collectionItems_other: '{n} mục',
+    more: 'Thêm', deleteFromOrena: 'Xoá khỏi Orena', deletedFromOrena: 'Đã xoá khỏi Orena',
   },
   zh: {
     tabContent: '已保存内容', tabLanguage: '已保存词语', tabCollections: '合集', tabActive: '运用',
@@ -78,5 +81,6 @@ export const t = defineCopy('library', {
     activeTimedDesc_other: '计时从开始到作答，{n} 个待复习单词',
     stageRecall: '回忆', stageUse: '运用', stageTransfer: '语境迁移', stageFast: '快速回忆',
     collectionItems_other: '{n} 项',
+    more: '更多', deleteFromOrena: '从 Orena 删除', deletedFromOrena: '已从 Orena 删除',
   },
 });

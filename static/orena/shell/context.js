@@ -15,7 +15,9 @@ import { chooseInterface, setSupportFromProfile } from '../copy/index.js';
 import { INTERFACE_KEY } from '../product/languages.js';
 import { reconcileInterface, reviewFromProfile } from '../product/account-settings.js';
 import { clearPlace, sendPlace, syncContinuation } from '../product/continue-sync.js';
-import { attachProvenance, pullImports, pushImport, removeImport } from '../product/account-records.js';
+import { attachProvenance, pullImportState, pushImport, recordsFor, removeImport, settleMedia } from '../product/account-records.js';
+import { activateRemovedScope } from '../product/import-removed.js';
+import { flushPendingDelete, pendingImportIds } from '../product/import-undo.js';
 
 const listeners = new Set();
 const control = new AbortController();
@@ -84,12 +86,18 @@ export async function loadContext(storage = window.localStorage) {
   state.level = String(profile?.declared_level || '').trim();
   state.pinyin = profile?.pinyin !== 'off';
   state.due = Number.isFinite(Number(vocabulary?.summary?.due)) ? Math.max(0, Number(vocabulary.summary.due)) : 0;
-  setPlaceSink({ enter: sendPlace, clear: clearPlace, addImport: pushImport, removeImport, keepLanguage: attachProvenance });
+  setPlaceSink({ enter: sendPlace, clear: clearPlace, addImport: pushImport, removeImport, recordsFor, dropLocal: (id) => dropLocalAnnotations(storage, state.owner, id), keepLanguage: attachProvenance });
+  if (!pageHideBound && typeof window.addEventListener === 'function') {
+    pageHideBound = true;
+    // A deletion whose Undo window is open when the page goes away is committed, not lost.
+    window.addEventListener('pagehide', () => void flushPendingDelete());
+  }
   state.memory = learnerMemory(storage, state.owner, state.language);
+  activateRemovedScope(state.memory.scope);
   // The server's places, when it holds any; a failed read leaves the device list as it is.
   await syncContinuation(state.memory).catch(() => false);
   // Imports the account holds appear on this device too (a device value the server lacks stays, H-6).
-  state.memory.mergeImports(await pullImports(state.language).catch(() => []));
+  await syncImports(state.memory, state.language);
   applyServerReview(state.memory, profile);
   // The interface language is the account's, with the device as the first-paint cache.
   let deviceInterface = '';
@@ -116,6 +124,56 @@ function applyServerReview(memory, profile) {
   memory.setReview({ ...held, ...review, modes: { ...held.modes, ...review.modes } });
 }
 
+let pageHideBound = false;
+
+/* Notes and highlights written on a text import do not outlive it on this device (D-108.2). */
+export async function dropLocalAnnotations(storage, owner, id) {
+  if (!storage || !String(id).startsWith('text:')) return;
+  try {
+    const [{ setHighlights }, { setNotesForContent }] = await Promise.all([
+      import('../screens/reader/highlights.js'),
+      import('../screens/quick-sheet/model.js'),
+    ]);
+    setHighlights(storage, owner, id, []);
+    setNotesForContent(storage, owner, id, []);
+  } catch {
+    /* a store that cannot be written is not a reason to keep the import */
+  }
+}
+
+/* The account's imports into this device (a cache refresh): what the account holds arrives, what it says was
+   deleted leaves and stays gone, and a deletion this device made that the account has not heard yet is sent
+   again. Every screen that lists or opens imports calls this first, so a device that has learned of a deletion
+   never shows or opens a stale copy (D-107). Returns whether the device's lists changed. */
+export async function syncImports(memory, language) {
+  if (!memory) return false;
+  // Deletions an earlier page staged and never finished are committed; the window open in this page is left alone.
+  await memory.flushStaged?.(pendingImportIds());
+  const local = (memory.value?.mediaImports || []).map((item) => item.id);
+  const { ok, items, deletedIds, records = {}, sequences = {}, highWater = 0 } = await pullImportState(language, local);
+  if (!ok) return false; // nothing was read: nothing is learned, settled or reinstated
+  const dropped = memory.applyDeletions(deletedIds);
+  // Every deletion the account has not confirmed. A live record is THIS device's to delete when it knew it then, or
+  // when it was made at or before the list position this device had then; a record made after that is another
+  // device's re-import - the import is the learner's again, and that record is never touched.
+  for (const id of memory.debtIds?.() || []) {
+    if (memory.isStaged?.(id)) continue;
+    const debt = memory.debtFor(id);
+    const live = records[id] || [];
+    const mine = live.filter((uuid) => debt.owed.includes(uuid) || (sequences[uuid] ?? Infinity) <= debt.mark);
+    if (live.some((uuid) => !mine.includes(uuid))) memory.reinstate?.(id);
+    if (mine.length) void removeImport(id, { uuids: mine });
+    const media = debt.media && !(await settleMedia(id));
+    memory.setDebt?.(id, mine.length || media ? { owed: mine, mark: debt.mark, media } : null);
+  }
+  // Deleted elsewhere, then kept again by someone: a live record behind a removed marker with no deletion owed here.
+  for (const item of items) {
+    if (memory.isRemoved?.(item.id) && !memory.debtFor?.(item.id) && !memory.isStaged?.(item.id)) memory.reinstate?.(item.id);
+  }
+  memory.setImportMark?.(highWater);
+  return memory.mergeImports(items) || dropped;
+}
+
 /* The learner's learning language just changed (the server has already switched the session). Everything that is
    scoped to a language is brought over BEFORE the shell repaints: the profile - so its version, its declared
    level, its support language and its stored review settings are the new language's, not the old one's - the
@@ -128,9 +186,10 @@ export async function adoptLearningLanguage(code, storage = window.localStorage)
   const [profile] = await Promise.all([
     read('/api/learner-profile').catch(() => null),
     syncContinuation(memory).catch(() => false),
-    pullImports(next).then((items) => memory.mergeImports(items)).catch(() => false),
+    syncImports(memory, next).catch(() => false),
   ]);
   applyServerReview(memory, profile);
+  activateRemovedScope(memory.scope);
   updateContext({
     language: next,
     memory,

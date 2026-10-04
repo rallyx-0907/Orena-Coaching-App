@@ -38,3 +38,15 @@ INCARNATION_KEYED_TABLES = (
     "change_records",
     "language_provenance",
 )
+
+# File-based stores that hold learner-owned content outside PostgreSQL. A SQL deletion never reaches them, so the
+# workflow must call the named remover for each (D-107: deleting an uploaded import removes its files too).
+FILE_STORES = (
+    {
+        "name": "media_library",  # data/media_library/index.json (MEDIA_LIBRARY_ROOT) and the asset files it points at
+        "owned": "entries with library='personal' and provider='upload' whose source.owner == owner_token(user_key), "
+                 "in every learning language; their files under media/<provider_media_id>/ (original, thumbnail)",
+        "remove_one": "writing_coach.media_library_api.delete_owned_media",
+        "remove_account": "writing_coach.media_library_api.delete_all_owned_media",
+    },
+)

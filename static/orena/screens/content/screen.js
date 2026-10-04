@@ -10,6 +10,12 @@
    Reader's own concern, per the frame), no bulk actions, no toast on Save (the frame changes only
    the button's own label). */
 import { html, mount, cls } from '../../kit/html.js';
+import { moreButton, moreMenu } from '../../kit/overflow.js';
+import { toast } from '../../kit/toast.js';
+import { shellCopy } from '../../copy/shell.js';
+import { syncImports } from '../../shell/context.js';
+import { deleteWithUndo } from '../../product/import-undo.js';
+import { importMemberId, isRemovedContent } from '../../product/import-removed.js';
 import { useStyles } from '../../kit/styles.js';
 import { heroMedia, listRow, rowThumb } from '../../kit/components.js';
 import { langSpan, langAttr } from '../../kit/lang.js';
@@ -45,6 +51,8 @@ function minutesLabel(minutes) {
 }
 
 async function loadDetail(kind, id, ctx) {
+  // A deleted import is never opened again, whatever route reaches it (D-107).
+  if (isRemovedContent(`${kind}:${id}`)) throw new Error('This import was deleted.');
   if (kind === 'article') return normalizeArticle(await api.readingArticle(id));
   if (kind === 'book') return normalizeBook(await api.libraryBook(id));
   /* A lesson, a stored upload or a pasted link open through the one media resolver. A learner's
@@ -141,6 +149,9 @@ async function loadRelated(kind, id, language) {
 
 export default async function content(element, ctx) {
   await useStyles('screens/content/content.css');
+  await useStyles('kit/overflow.css');
+  // The account's imports first: a deletion made on another device must not leave a stale copy open here.
+  await syncImports(ctx.context.memory, ctx.context.language).catch(() => false);
   const parsed = parseContentId(ctx.params?.id);
   if (!parsed.kind) throw new Error(`Unknown content id: ${ctx.params?.id}`);
   const { kind, id, chapterId } = parsed;
@@ -156,7 +167,11 @@ export default async function content(element, ctx) {
   ]);
   if (!ctx.isCurrent()) return undefined;
 
-  const state = { saved: saved.saved, itemId: saved.itemId };
+  const state = { saved: saved.saved, itemId: saved.itemId, menu: false };
+  // Only the learner's own import can be deleted from here (D-107): a text or a link/file they brought in.
+  const memberId = importMemberId(contentId);
+  const memory = ctx.context.memory.value;
+  const own = Boolean(memberId) && [...(memory.imports || []), ...(memory.mediaImports || [])].some((item) => item.id === memberId);
   const place = placeFor(ctx.context.memory.value.continuation, contentId);
   const destination = primaryDestination(kind);
   const primaryLabel = destination === 'listening'
@@ -191,7 +206,9 @@ export default async function content(element, ctx) {
             <a class="o-btn o-btn--primary s-content__primary" href="${primaryHref}">${primaryLabel}</a>
             ${hasPractice ? html`<a class="s-content__ai" href="${ctx.href('checku', { id: contentId })}">${t('practiceThisText')}</a>` : ''}
             <button type="button" class="s-content__secondary" data-save aria-pressed="${state.saved ? 'true' : 'false'}">${state.saved ? t('saved') : t('save')}</button>
+            ${own ? html`<span data-more-slot>${moreButton({ label: t('more'), open: false, dataset: memberId })}</span>` : ''}
           </div>
+          ${own ? html`<div data-menu-slot></div>` : ''}
           ${detail.desc ? html`<p class="s-content__desc" lang="${langAttr(detail.language)}">${detail.desc}</p>` : ''}
           ${isMedia
             ? html`<div class="o-card s-content__transcript">
@@ -246,4 +263,28 @@ export default async function content(element, ctx) {
     button.setAttribute('aria-pressed', state.saved ? 'true' : 'false');
     button.textContent = state.saved ? t('saved') : t('save');
   });
+
+  if (own) {
+    const moreSlot = element.querySelector('[data-more-slot]');
+    const menuSlot = element.querySelector('[data-menu-slot]');
+    const drawMenu = () => {
+      mount(moreSlot, moreButton({ label: t('more'), open: state.menu, dataset: memberId }));
+      mount(menuSlot, state.menu ? moreMenu({ items: [{ key: 'delete', label: t('deleteFromOrena') }], closeLabel: shellCopy('close'), scope: memberId }) : html``);
+      moreSlot.querySelector('[data-more]').addEventListener('click', () => {
+        state.menu = !state.menu;
+        drawMenu();
+      });
+      menuSlot.querySelector('[data-menu-close]')?.addEventListener('click', () => {
+        state.menu = false;
+        drawMenu();
+      });
+      menuSlot.querySelector('[data-menu-item="delete"]')?.addEventListener('click', async () => {
+        state.menu = false;
+        // Hidden at once with the design's toast and its Undo; the deletion is committed when that window ends.
+        deleteWithUndo(ctx.context.memory, memberId, { toast, text: t('deletedFromOrena'), undoLabel: shellCopy('undo') });
+        ctx.go(ctx.href('library'));
+      });
+    };
+    drawMenu();
+  }
 }

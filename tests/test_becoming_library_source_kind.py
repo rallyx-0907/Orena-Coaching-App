@@ -1,7 +1,7 @@
 """Task A1: `LibraryVocabularyIn.source_kind` accepts the truthful values the
 system already needs — `reading` (existing repository/card usage), and the
-new `feed` (Daily Feed keep) and `collection` (Library-browsing save) — while
-still rejecting an unrecognized kind such as `listening`.
+new `feed` (Daily Feed keep) and `collection` (Library-browsing save) — and, since D-107, the kinds the /next sheets send for a word kept from Listening, Writing or Speaking
+(a 422 there meant no word could be kept from those rooms at all), while still rejecting an unrecognized kind.
 
 `LibraryVocabularyIn` is the Pydantic contract FastAPI validates
 `POST /api/library/vocabulary` against before the handler runs; a value this
@@ -15,7 +15,7 @@ from pydantic import ValidationError
 from writing_coach.becoming_library import LibraryVocabularyIn
 
 
-@pytest.mark.parametrize("source_kind", ["manual", "dictionary", "feedback", "strength", "reading", "feed", "collection"])
+@pytest.mark.parametrize("source_kind", ["manual", "dictionary", "feedback", "strength", "reading", "listening", "writing", "speaking", "feed", "collection"])
 def test_accepts_every_truthful_source_kind(source_kind: str) -> None:
     payload = LibraryVocabularyIn(word="harbour", source_kind=source_kind)
     assert payload.source_kind == source_kind
@@ -23,7 +23,7 @@ def test_accepts_every_truthful_source_kind(source_kind: str) -> None:
 
 def test_rejects_unrecognized_source_kind() -> None:
     with pytest.raises(ValidationError):
-        LibraryVocabularyIn(word="harbour", source_kind="listening")
+        LibraryVocabularyIn(word="harbour", source_kind="nonsense")
 
 
 def test_default_source_kind_is_manual() -> None:

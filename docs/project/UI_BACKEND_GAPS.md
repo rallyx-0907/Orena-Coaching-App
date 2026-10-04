@@ -4657,3 +4657,86 @@ Resolved by the human's D-105 decisions; AD-A, AD-B and AD-H above are closed by
   where removal lives is the human's call.
 - **P3 (new): a device left open keeps drawing a highlight another device removed until it reloads.** The server and
   the device store are correct; only the open page is stale.
+
+### Delete an import (D-107, 2026-10-01)
+
+- **Where.** My Library > Saved content lists the learner's own imports (text, link, file) first, each with the design's
+  "⋯" and its menu row (frame 14's overflow pattern, `kit/overflow.js`); the same "⋯" is in the import's Content Detail.
+  Both hold one action, "Delete from Orena" (en/vi/zh). Discover offers none. A result toast ("Deleted from Orena") uses
+  the design's toast.
+- **Not drawn, recorded for the human.** The pinned design draws a "⋯" only in the Reader, and draws no "⋯" in My Library or
+  Content Detail; it draws no destructive item style and **no confirmation** for any destructive action (the only
+  deletion it shows, "Delete audio", answers with a toast "Audio deletion would be confirmed here"). None is invented:
+  the action runs on the tap, in the neutral pill style, with no confirmation and no undo. A deletion of an uploaded file
+  cannot be undone. Human decision: a drawn confirmation (or an Undo window) for a destructive delete.
+- **Lifecycle.** The account keeps a content-free tombstone (id, form, and for a link or file a hash reference); an
+  uploaded file's original, thumbnail and index entry are deleted for their owner in this language only (404
+  otherwise); a link's external source is never touched. A deleted id is never reused or revived by a stale write. A
+  device that learns of the deletion (every sync, and when My Library, Discover or Content Detail opens) drops it and
+  never opens it again; a deletion made while offline is sent again at the next sync. The earlier P3 "stale cached
+  deleted import" is closed. The file store is in the D-055(b) enumeration (`FILE_STORES`).
+- **Left.** Notes and highlights the learner wrote on a deleted text stay in the device store and the account's
+  annotations row (unreachable, but not erased); a deleted upload's per-take history (dictation/shadowing progress) is not
+  erased. A link that cannot be re-acquired from its provider opens the load-error room, which offers no "⋯" - such an item
+  can be deleted from My Library. Account-level removal of all media files on account deletion has its remover
+  (`delete_all_owned_media`) but no workflow calls it yet (D-055).
+
+- **Review f8f5c91 fixes.** A file removal that fails is retryable: the tombstone keeps the opaque stored-media id as
+  `mediaPending` until the files are confirmed gone (files first, index entry last), and a repeated delete, a replay or
+  the next `GET /api/imports` finishes it. `GET /api/imports` returns every tombstone (up to 2,500), not the newest 50.
+  A device resends a deletion only for the account record ids it deleted (by record id and version); a record another
+  device made later is never deleted and clears the device's removed marker. An upload that never synced is deleted from
+  the server store too (owner-scoped; it stays while another live import of the account names it). The removed set is per
+  owner and language. Still open: P2-5 (derived records) goes to the human; P3-1 (a link `ref` is a guessable
+  fingerprint), P3-2 (receipts keep a content-derived digest until account deletion), P3-3 (tombstones made before
+  `f8f5c91` have no `ref`), P3-5 (the Reader keeps its own overflow styles), P3-6 (an upload whose index write is refused
+  leaves its files) and P3-8 (the server `kept` mark of a deleted import).
+
+- **Delta check 02511cc.** A deletion made before the device's first list read of a session (offline at load, a failed
+  first sync) is no longer reverted. A text import's own record is always owed; for a link or file, `GET /api/imports`
+  now returns each record's change `sequence` and a `highWater` position, the device keeps the position of its last
+  successful read, and at the next sync a live record made at or before the position at which it deleted is the one it
+  deleted (resent), while a later one is another device's re-import (the import is the learner's again). A failed list
+  read learns, settles and reinstates nothing. Reinstating keeps an older record's unconfirmed delete owed. An uploaded
+  file's stored copy is retried until confirmed; `DELETE /api/media/my/{id}` answers 503 (not 404) for an index it cannot
+  trust. A list read finishes at most five owed file removals. Limitation: a device that has never completed a list
+  read has no position, so a record that exists only on the account is treated as a re-import. Left for the limits
+  implementation: the 2,500 deleted-list cap should be derived from the configured text and media pool totals (360 +
+  2,500), and the full list wants an ETag or a `since` (up to about 375 KB per sync); a missing `index.json` with files on
+  disk is still read as a fresh start (P3-3).
+
+- **Review 94da741 (D-109): blocking items closed.** (B-1) Deleting a text import erases, from the account's kept words in
+  that language, every stored sentence that occurs in the deleted text (case and spacing ignored, 12 characters or
+  more), whatever the word's provenance; the repository serves no sentence for a word whose only places are deleted
+  imports (`PostgresSpecializedLearningRepository._served_fragment`), which every reader of a kept word goes through
+  (library list and detail, word cards, collection snippet, review cloze, word deep dive - so a deleted import's
+  sentence is never sent to the AI provider). A sentence shorter than 12 characters is not guessed at. (B-2) Notes and
+  highlights filed under a link or file import's content id (`url:`, `upload:`, `media:`, `upload-<token>`) get the same
+  404 on read and write and are erased at delete time.
+- **Follow-ups recorded, not done (D-109):**
+  - Two tabs of one browser can commit each other's open Undo window (the device store is last-writer-wins).
+  - `pagehide` is not fired when a mobile tab is merely backgrounded; the staged deletion is then committed at the next
+    load.
+  - `highWater` should come from the first page of a multi-page read (a record created mid-read can advance the mark
+    past one the device has not seen; benign today).
+  - A narrow in-flight race: deleting within a network round trip of importing, before the push response records the new
+    record id, can leave that record un-owed.
+  - `language_provenance` is updated in place at delete time (it is an event table); note it in the schema docs.
+  - The erase counts are logged only; there is no operator report of what a deletion removed.
+  - The Intelligence agent tools (`/api/agent/*`, owned by that lane) must apply the same deleted-source mask when
+    `codex/work` is merged forward, and `AGENT_CONTRACT` evidence excerpts must not carry a deleted source's sentence.
+  - Words kept from a deleted import before this change keep their stored sentence unless a provenance row marks them
+    (lane-only residue).
+
+### Delete-import follow-ups after the 3247d02 delta check (APPROVE, 2026-10-01; secondary under D-109)
+
+- The 12-character erase can remove a saved word's example sentence that also occurs verbatim in a live
+  source; skip words that still have a live provenance row.
+- Imports deleted before 94da741 keep provenance `availability = 'unknown'`, so such words still serve their
+  sentence (lane data only); backfill with the scrub script before any wider deployment.
+- After a link/file is re-imported, its notes cannot be kept with the account again (the erase tombstones the
+  annotation row terminally); erase to an empty active payload instead.
+- `_deleted_source_filter` reads every import row per annotation read/write for media ids; cache or index it
+  before the media pool grows.
+- The SQLite test twin does not mask fragments (test backend only); Intelligence agent tools must apply the
+  same deleted-source rule when that lane next merges forward.

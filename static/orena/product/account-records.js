@@ -191,9 +191,12 @@ function mediaBody(item) {
 }
 
 /* A text or media import the learner just made goes to the account; a text keeps the id the device already made. */
-export async function pushImport(item) {
+export async function pushImport(item, { fresh = false } = {}) {
   if (!item?.id || !(await recordsActive())) return false;
   const media = isMedia(item.id);
+  // What this page remembered of an earlier record for the same link (kept, since deleted - here or elsewhere) says
+  // nothing about a NEW import of it.
+  if (media && fresh) mediaRecords.delete(item.id);
   if (media && mediaRecords.get(item.id)?.size) return true; // already kept; opening it again is not a second import
   const ident = media ? crypto.randomUUID() : importUuid(item.id);
   try {
@@ -210,22 +213,61 @@ export async function pushImport(item) {
   }
 }
 
+/* The content-free reference a tombstone keeps for a media import (the server's `import_ref`): the same hash of
+   the form and the link or stored media id. Lets a device tell which of ITS imports was deleted elsewhere. */
+export async function importRef(memoryId) {
+  const subtle = globalThis.crypto?.subtle;
+  const match = /^(url|upload):(.+)$/.exec(String(memoryId || ''));
+  if (!subtle || !match) return '';
+  const digest = new Uint8Array(await subtle.digest('SHA-256', new TextEncoder().encode(`orena.import-ref:${match[1]}:${match[2]}`)));
+  return [...digest].map((byte) => byte.toString(16).padStart(2, '0')).join('');
+}
+
 /* The learner's imports the account holds, as the device's own shapes (so a new device opens and lists them): a text
-   as an import, a pasted link or an uploaded file as a media membership. */
-export async function pullImports(language) {
-  if (!(await recordsActive())) return [];
+   as an import, a pasted link or an uploaded file as a media membership - and which of this device's imports the
+   account says were deleted (`deletedIds`, membership ids; `localMediaIds` are the device's own link and file ids,
+   matched by their reference). An id the account still holds live is never reported deleted. */
+/* Every page of the account's imports and tombstones - never silently limited: it pages until the server says there
+   is no next page for either list. */
+async function readAllImports() {
+  const imports = [];
+  const deleted = [];
+  let highWater = 0;
+  let cursor = null;
+  let deletedCursor = null;
+  let include = 'both';
+  for (let page = 0; page < 400; page += 1) {
+    const body = await apiRef.imports({ cursor, deletedCursor, include });
+    imports.push(...(body.imports || []));
+    deleted.push(...(body.deleted || []));
+    highWater = Math.max(highWater, Number(body.highWater) || 0);
+    cursor = body.nextCursor ?? null;
+    deletedCursor = body.nextDeletedCursor ?? null;
+    if (cursor == null && deletedCursor == null) return { imports, deleted, highWater };
+    include = cursor != null && deletedCursor != null ? 'both' : cursor != null ? 'imports' : 'deleted';
+  }
+  throw new Error('The import listing did not end.');
+}
+
+export async function pullImportState(language, localMediaIds = []) {
+  if (!(await recordsActive())) return { ok: false, items: [], deletedIds: [], records: {}, sequences: {}, highWater: 0 };
   try {
-    const { imports } = await apiRef.imports();
+    const { imports, deleted, highWater } = await readAllImports();
     const out = [];
+    const records = {}; // membership id -> the live account record ids behind it
+    const sequences = {}; // record id -> its change sequence
     for (const item of imports) {
       importVersions.set(importUuid(item.id), item.version);
+      sequences[importUuid(item.id)] = Number.isFinite(item.sequence) ? item.sequence : Infinity;
       if (item.form === 'text') {
         out.push({ id: item.id, title: item.title, text: item.text, language, origin: 'imported', kind: 'text' });
+        records[item.id] = [importUuid(item.id)];
       } else if (item.form === 'url' || item.form === 'upload') {
         const reference = item.form === 'upload' ? item.mediaId : item.url;
         if (!reference) continue;
         const memoryId = `${item.form}:${reference}`;
         mediaRecords.set(memoryId, (mediaRecords.get(memoryId) || new Set()).add(importUuid(item.id)));
+        (records[memoryId] ||= []).push(importUuid(item.id));
         if (out.some((entry) => entry.id === memoryId)) continue;
         out.push({
           id: memoryId, title: item.title, kind: item.kind || '', language, origin: 'imported',
@@ -234,27 +276,66 @@ export async function pullImports(language) {
         });
       }
     }
-    return out;
+    const live = new Set(out.map((entry) => entry.id));
+    const refs = new Set(deleted.map((entry) => entry.ref).filter(Boolean));
+    const deletedIds = deleted.filter((entry) => String(entry.id).startsWith('text:') && !live.has(entry.id)).map((entry) => entry.id);
+    for (const id of localMediaIds) {
+      if (live.has(id) || !refs.size) continue;
+      if (refs.has(await importRef(id))) deletedIds.push(id);
+    }
+    return { ok: true, items: out, deletedIds, records, sequences, highWater };
   } catch {
-    return [];
+    return { ok: false, items: [], deletedIds: [], records: {}, sequences: {}, highWater: 0 };
   }
 }
 
-export async function removeImport(id) {
+export async function pullImports(language) {
+  return (await pullImportState(language)).items;
+}
+
+/* Confirm the stored copy of an uploaded file is gone (or was never this learner's): true on success or a 404, false
+   when it could not be reached or the library could not be trusted (503) - the caller tries again at the next sync. */
+export async function settleMedia(id) {
+  if (!String(id).startsWith('upload:')) return true;
+  try {
+    await apiRef.deleteMyMedia(String(id).slice(7));
+    return true;
+  } catch (error) {
+    return error?.status === 404;
+  }
+}
+
+/* The account record ids this device holds for a membership id right now (what a deletion here may delete). */
+export function recordsFor(id) {
   const idents = isMedia(id) ? [...(mediaRecords.get(id) || [])] : [importUuid(id)];
-  const held = idents.filter((ident) => importVersions.has(ident));
+  return idents.filter((ident) => importVersions.has(ident));
+}
+
+/* Delete an import from the account. `uuids` limits it to those record ids (the resend of an earlier deletion: only
+   records this device deleted, never a record another device made since). An uploaded file this device holds no
+   account record for - it never synced - is still deleted from the server's store (owner-scoped, idempotent). */
+export async function removeImport(id, { uuids = null } = {}) {
+  const held = recordsFor(id).filter((ident) => !uuids || uuids.includes(ident));
+  if (!uuids && String(id).startsWith('upload:') && !held.length) {
+    try {
+      await apiRef.deleteMyMedia(String(id).slice(7));
+    } catch {
+      /* not ours, already gone, or unreachable: nothing further to do from here */
+    }
+  }
   if (!held.length || !(await recordsActive())) return false;
   let removed = false;
   for (const ident of held) {
     try {
       await apiRef.deleteImport(ident, operationId(), importVersions.get(ident));
       importVersions.delete(ident);
+      mediaRecords.get(id)?.delete(ident);
       removed = true;
     } catch {
-      /* a record that could not be removed stays; the next list read shows it again */
+      /* a record that could not be removed stays; the next sync sends it again */
     }
   }
-  if (removed && isMedia(id)) mediaRecords.delete(id);
+  if (isMedia(id) && !mediaRecords.get(id)?.size) mediaRecords.delete(id);
   return removed;
 }
 
@@ -299,12 +380,16 @@ const PROVENANCE_REASONS = ['looked_up', 'from_reading', 'from_listening', 'from
 export async function attachProvenance(entry) {
   const word = String(entry?.term || '').trim();
   if (!word || !PROVENANCE_REASONS.includes(entry?.why) || !(await recordsActive())) return false;
-  const origin = String(entry.origin || '');
+  /* An id longer than the record's 200 characters is never cut (a cut id opens something else): the
+     occurrence is kept with its sentence and no source. */
+  const origin = String(entry.origin || '').length <= 200 ? String(entry.origin || '') : '';
   try {
     await apiRef.attachProvenance(word, {
       operationId: operationId(), reason: entry.why, focus: String(entry.context || '').slice(0, 1200),
       sourceKind: origin ? String(entry.kind || String(entry.why).replace(/^from_/, '') || 'origin').slice(0, 40) : '',
-      sourceId: origin.slice(0, 200),
+      sourceId: origin,
+      // Where inside the source (a Listening transcript segment); the record's own locator field.
+      sourceRevision: origin && entry.locator ? String(entry.locator).slice(0, 120) : '',
     });
     return true;
   } catch {
@@ -321,11 +406,17 @@ const REASON_OF_SOURCE = Object.freeze({
    a word the account does not hold answers 404 and the keep stands without provenance. `source` is the sheet's
    own `{kind, content_id}`; the sentence is the context the word was met in. */
 export function keepProvenance({ term, source, sentence }) {
+  const kind = String(source?.kind || '');
+  const id = String(source?.content_id || '');
   return attachProvenance({
     term,
-    why: REASON_OF_SOURCE[String(source?.kind || '')] || 'looked_up',
-    origin: source?.content_id || '',
-    kind: source?.kind || '',
+    why: REASON_OF_SOURCE[kind] || 'looked_up',
+    // Listening names its media by lesson id, `url:<link>` or `upload:`/stored id: filed as `media:<id>`,
+    // the content id the rest of the app (Today, Content Detail, Continue) already uses for it. Reading's
+    // ids already carry their kind.
+    origin: kind === 'listening' && id && !id.startsWith('media:') ? `media:${id}` : id,
+    kind,
     context: sentence || '',
+    locator: kind === 'listening' && source?.segment != null ? String(source.segment) : '',
   });
 }

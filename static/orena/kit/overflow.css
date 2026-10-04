@@ -1,0 +1,57 @@
+/* The overflow pattern of frame 14 (Reader): `rdMoreBtn` (34px, radius 10, the chip family) and the `rdMenuItems` row. */
+.o-more {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: 10px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 16px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.o-more[data-on="1"] {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--tint2);
+}
+.o-more-menu {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: var(--sh1);
+  animation: rise 0.18s ease;
+}
+.o-more-menu__item {
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 13.5px;
+  font-weight: 600;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+}
+.o-more-menu__spacer {
+  flex: 1;
+}
+.o-more-menu__close {
+  padding: 1px 6px;
+  color: var(--muted);
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

@@ -1,6 +1,7 @@
 // Content relationships and unfinished work, scoped to an authenticated owner.
 // Practice evidence remains in the existing PostgreSQL-backed capability APIs.
 const volatile = new Map();
+import { setRemovedImports } from './import-removed.js';
 import { restoreConversation } from './conversation.js';
 import { practiceIntentions } from './intent.js';
 import { readReviewSettings } from './recall-modes.js';
@@ -60,6 +61,18 @@ export function learnerMemory(storage, owner, language) {
     value = {
       imports: [],
       mediaImports: [],
+      /* Imports this device knows were deleted (membership ids, never content): they are not listed, not
+         re-added by a sync and not opened (product/import-removed.js). Bounded like the account's own. */
+      removedImports: [],
+      /* For each deleted import, the account RECORD ids this device knew when it deleted (and the account may still
+         hold): only those are ever sent a delete again. A record another device made later is never touched. */
+      removedRecords: {},
+      /* The account's change position (imports) as of this device's last successful list read. A record the account
+         holds with a greater sequence was made after it - another device's re-import - never the one deleted here. */
+      importMark: 0,
+      /* Imports hidden by "Delete from Orena" whose Undo window is open (or was when the page closed): the exact
+         snapshot to restore. The deletion itself is committed when the window ends. */
+      staged: {},
       kept: [],
       continuation: [],
       expressions: {},
@@ -102,6 +115,30 @@ export function learnerMemory(storage, owner, language) {
             x.text.length <= 12000,
         )
         .slice(0, 20);
+      value.removedImports = (Array.isArray(parsed.removedImports) ? parsed.removedImports : [])
+        .filter((x) => typeof x === 'string' && x.length <= 2100)
+        .slice(-400);
+      value.staged = Object.fromEntries(
+        Object.entries(parsed.staged && typeof parsed.staged === 'object' ? parsed.staged : {})
+          .filter(([id, snap]) => /^(text|url|upload):/.test(id) && snap && typeof snap === 'object')
+          .slice(-20),
+      );
+      value.importMark = Number.isFinite(parsed.importMark) && parsed.importMark > 0 ? Math.trunc(parsed.importMark) : 0;
+      // A deletion the account has not confirmed: { owed: record ids known when it was made, mark: the list position
+      // then, media: an uploaded file whose stored copy still has to be confirmed deleted }.
+      value.removedRecords = Object.fromEntries(
+        Object.entries(parsed.removedRecords && typeof parsed.removedRecords === 'object' ? parsed.removedRecords : {})
+          .filter(([id]) => /^(text|url|upload):/.test(id))
+          .slice(-400)
+          .map(([id, debt]) => {
+            const owed = Array.isArray(debt) ? debt : Array.isArray(debt?.owed) ? debt.owed : [];
+            return [id, {
+              owed: owed.filter((x) => typeof x === 'string').slice(0, 20),
+              mark: Number.isFinite(debt?.mark) && debt.mark > 0 ? Math.trunc(debt.mark) : 0,
+              media: debt?.media === true,
+            }];
+          }),
+      );
       value.kept = (Array.isArray(parsed.kept) ? parsed.kept : [])
         .filter((x) => typeof x === 'string')
         .slice(0, 100);
@@ -190,6 +227,13 @@ export function learnerMemory(storage, owner, language) {
   } catch {
     available = false;
   }
+  const scopeKey = `${owner}:${language}`;
+  setRemovedImports(value.removedImports, scopeKey);
+  const isImportId = (id) => /^(text|url|upload):/.test(String(id || ''));
+  const markRemoved = (id) => {
+    value.removedImports = [...value.removedImports.filter((x) => x !== id), id].slice(-400);
+    setRemovedImports(value.removedImports, scopeKey);
+  };
   const save = () => {
     try {
       storage.setItem(key, JSON.stringify(value));
@@ -385,7 +429,8 @@ export function learnerMemory(storage, owner, language) {
     /* The account's imports merged into this device's list (a cache refresh: it sends nothing). The
        device's own come first; the cap is the same 20 the server keeps. */
     mergeImports(list) {
-      const items = Array.isArray(list) ? list : [];
+      const gone = new Set(value.removedImports);
+      const items = (Array.isArray(list) ? list : []).filter((x) => !gone.has(x?.id));
       const known = new Set(value.imports.map((x) => x.id));
       const extra = items.filter((x) => x?.id && !/^(url|upload):/.test(x.id) && !known.has(x.id));
       const knownMedia = new Set(value.mediaImports.map((x) => x.id));
@@ -394,6 +439,133 @@ export function learnerMemory(storage, owner, language) {
       value.imports = [...value.imports, ...extra].slice(0, 20);
       value.mediaImports = [...value.mediaImports, ...media.map((x) => ({ ...x, language, origin: 'imported' }))].slice(0, 100);
       return save();
+    },
+    /* Imports the account says were deleted (elsewhere, or here and not yet confirmed): leave this device -
+       the lists, the saved place, the kept mark, anything written against them - and stay gone (a sync never
+       brings them back, no room opens them). Returns whether anything changed. */
+    applyDeletions(ids) {
+      let changed = false;
+      for (const id of Array.isArray(ids) ? ids : []) {
+        if (!isImportId(id)) continue;
+        if (!value.removedImports.includes(id)) {
+          markRemoved(id);
+          placeSink?.dropLocal?.(id);
+          changed = true;
+        }
+        const held = value.imports.length + value.mediaImports.length + value.kept.length + value.continuation.length
+          + (id in value.expressions ? 1 : 0) + (id in value.revisions ? 1 : 0) + (id in value.answers ? 1 : 0);
+        value.imports = value.imports.filter((x) => x.id !== id);
+        value.mediaImports = value.mediaImports.filter((x) => x.id !== id);
+        value.kept = value.kept.filter((x) => x !== id);
+        value.continuation = value.continuation.filter((x) => x.id !== id);
+        delete value.expressions[id];
+        delete value.revisions[id];
+        delete value.answers[id];
+        const after = value.imports.length + value.mediaImports.length + value.kept.length + value.continuation.length
+          + (id in value.expressions ? 1 : 0) + (id in value.revisions ? 1 : 0) + (id in value.answers ? 1 : 0);
+        if (after !== held) changed = true;
+      }
+      if (changed) save();
+      return changed;
+    },
+    isRemoved(id) {
+      return value.removedImports.includes(id);
+    },
+    /* "Delete from Orena" with Undo: hide the import everywhere at once (lists, saved place, kept mark, anything
+       written against it) but keep an exact snapshot; nothing is sent and nothing is erased until commitRemoval. */
+    stageRemoval(id) {
+      if (!isImportId(id) || value.staged[id]) return false;
+      const snap = {
+        imports: value.imports.findIndex((x) => x.id === id),
+        mediaImports: value.mediaImports.findIndex((x) => x.id === id),
+        continuation: value.continuation.findIndex((x) => x.id === id),
+        kept: value.kept.indexOf(id),
+      };
+      snap.import = snap.imports >= 0 ? value.imports[snap.imports] : null;
+      snap.media = snap.mediaImports >= 0 ? value.mediaImports[snap.mediaImports] : null;
+      snap.place = snap.continuation >= 0 ? value.continuation[snap.continuation] : null;
+      snap.expression = value.expressions[id] ?? null;
+      snap.revisions = value.revisions[id] ?? null;
+      snap.answer = value.answers[id] ?? null;
+      value.staged[id] = snap;
+      value.imports = value.imports.filter((x) => x.id !== id);
+      value.mediaImports = value.mediaImports.filter((x) => x.id !== id);
+      value.kept = value.kept.filter((x) => x !== id);
+      value.continuation = value.continuation.filter((x) => x.id !== id);
+      delete value.expressions[id];
+      delete value.revisions[id];
+      delete value.answers[id];
+      markRemoved(id); // hidden and unopenable while the window is open
+      save();
+      return true;
+    },
+    isStaged(id) {
+      return Boolean(value.staged[id]);
+    },
+    stagedIds() {
+      return Object.keys(value.staged);
+    },
+    /* Undo: the import comes back exactly - same place in its list, same saved place, same kept mark. */
+    undoRemoval(id) {
+      const snap = value.staged[id];
+      if (!snap) return false;
+      const put = (list, index, item) => {
+        if (item) list.splice(Math.min(Math.max(index, 0), list.length), 0, item);
+      };
+      put(value.imports, snap.imports, snap.import);
+      put(value.mediaImports, snap.mediaImports, snap.media);
+      put(value.continuation, snap.continuation, snap.place);
+      if (snap.kept >= 0) value.kept.splice(Math.min(snap.kept, value.kept.length), 0, id);
+      if (snap.expression != null) value.expressions[id] = snap.expression;
+      if (snap.revisions != null) value.revisions[id] = snap.revisions;
+      if (snap.answer != null) value.answers[id] = snap.answer;
+      delete value.staged[id];
+      value.removedImports = value.removedImports.filter((x) => x !== id);
+      setRemovedImports(value.removedImports, scopeKey);
+      save();
+      return true;
+    },
+    /* The Undo window ended (or the page is closing): the deletion is real - sent to the account, or recorded to be. */
+    commitRemoval(id) {
+      if (!value.staged[id]) return Promise.resolve(false);
+      delete value.staged[id];
+      return this.remove(id);
+    },
+    /* Deletions staged by an earlier page that never reached their end (Undo is not offered after a reload):
+       commit them now, except the ones whose window is open in this page. */
+    flushStaged(keep = []) {
+      return Promise.all(Object.keys(value.staged).filter((id) => !keep.includes(id)).map((id) => this.commitRemoval(id)));
+    },
+    /* A deletion the account has not confirmed, or null: { owed, mark, media } (see the load above). */
+    debtFor(id) {
+      return value.removedRecords[id] || null;
+    },
+    debtIds() {
+      return Object.keys(value.removedRecords);
+    },
+    /* Replace (or, with null, settle) the unconfirmed deletion of an import. */
+    setDebt(id, debt) {
+      if (debt) value.removedRecords[id] = debt;
+      else delete value.removedRecords[id];
+      save();
+    },
+    /* The account's position as of a successful list read; it only moves forward. */
+    setImportMark(mark) {
+      if (!Number.isFinite(mark) || mark <= value.importMark) return false;
+      value.importMark = Math.trunc(mark);
+      return save();
+    },
+    /* The same import was kept again by another device after this one deleted it: it is the learner's again here.
+       An older record this device still owes a delete for stays owed - only the marker that hid the import clears. */
+    reinstate(id) {
+      if (!value.removedImports.includes(id)) return false;
+      value.removedImports = value.removedImports.filter((x) => x !== id);
+      setRemovedImports(value.removedImports, scopeKey);
+      save();
+      return true;
+    },
+    get scope() {
+      return scopeKey;
     },
     /* A media membership record. Two kinds of id are accepted, and they mean
        different things: `url:` is a source the learner pasted and Orena can
@@ -408,6 +580,14 @@ export function learnerMemory(storage, owner, language) {
     addMedia({ id, title, kind, duration_ms, thumbnail_url, provider }) {
       const own = id.startsWith('url:') || id.startsWith('upload:');
       if (!own || !title) return false;
+      // Importing it again is a new decision: the earlier deletion no longer hides it on this device. (A delete the
+      // account has not confirmed stays owed for the OLD record - only the marker that hid the import clears.)
+      const wasRemoved = value.removedImports.includes(id);
+      if (wasRemoved) {
+        value.removedImports = value.removedImports.filter((x) => x !== id);
+        setRemovedImports(value.removedImports, scopeKey);
+      }
+      const existed = value.mediaImports.some((x) => x.id === id);
       const item = {
         id,
         title: String(title).slice(0, 500),
@@ -428,19 +608,33 @@ export function learnerMemory(storage, owner, language) {
         ...value.mediaImports.filter((x) => x.id !== id),
       ].slice(0, 100);
       save();
-      placeSink?.addImport?.(item);
+      // A new (or re-)import is kept with the account as a NEW record whatever this page believed about an earlier one; an
+      // item that was already listed is only re-sent when its first send never reached the account.
+      placeSink?.addImport?.(item, { fresh: !existed || wasRemoved });
       return true;
     },
     remove(id) {
+      if (isImportId(id)) {
+        markRemoved(id);
+        // What this deletion owes the account: the records this device knows now - and always a text's own record, whose
+        // id is the import's id - plus the list position, so a record made later by another device is told apart from
+        // any this device had not yet read (a delete before the first list read must not be lost).
+        const owed = (placeSink?.recordsFor?.(id) || []).map(String);
+        if (id.startsWith('text:') && !owed.includes(id.slice(5))) owed.push(id.slice(5));
+        value.removedRecords[id] = { owed: owed.slice(0, 20), mark: value.importMark, media: id.startsWith('upload:') };
+      }
       value.imports = value.imports.filter((x) => x.id !== id);
       value.mediaImports = value.mediaImports.filter((x) => x.id !== id);
       value.kept = value.kept.filter((x) => x !== id);
       value.continuation = value.continuation.filter((x) => x.id !== id);
       placeSink?.clear(id);
-      placeSink?.removeImport?.(id);
+      placeSink?.dropLocal?.(id);
+      const accountDeletion = placeSink?.removeImport?.(id);
       delete value.expressions[id];
       delete value.revisions[id];
+      delete value.answers[id];
       save();
+      return Promise.resolve(accountDeletion).catch(() => false);
     },
   };
 }

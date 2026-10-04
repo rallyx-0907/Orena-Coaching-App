@@ -34,6 +34,7 @@ import { encounter } from '../../product/encounter.js';
 import { openMedia } from '../../product/media-source.js';
 import { openWordSheet } from '../quick-sheet/sheet.js';
 import { openVocabFocus } from './vocab-sheet.js';
+import { keepProvenance } from '../../product/account-records.js';
 import { t } from './copy.js';
 import {
   nextSpeed, speedLabel, contentIdFor, mmss, minutesFrom, metaLine, mapLesson,
@@ -522,6 +523,8 @@ export default async function listening(element, ctx) {
       } else {
         await api.saveLibraryVocabulary(phraseSavePayload(text, { meaning: enc.meaning(seg.segment_id) || '' }));
         savedPhrases.add(text);
+        // The line kept as a phrase is recorded like a kept word: where it was met, and the sentence.
+        void keepProvenance({ term: text, source: { kind: 'listening', content_id: routeId, segment: seg.segment_id }, sentence: text });
         toast(t('phraseSaved'));
       }
     } catch {
@@ -555,6 +558,7 @@ export default async function listening(element, ctx) {
         lang: language,
         support,
         context: seg.original_text,
+        source: { kind: 'listening', content_id: routeId, segment: id },
         onPlay: () => playLine(id),
       });
       return;
