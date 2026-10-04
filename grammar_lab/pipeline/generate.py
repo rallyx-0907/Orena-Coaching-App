@@ -2291,12 +2291,10 @@ class Generator:
             if targeted_repair_used or structure_repair_exhausted or (contract_failure and attempt >= 2):
                 break
 
-            # We are deliberately about to buy a fresh full candidate.
-            # Only now evict the accepted-but-invalid response from the full
-            # generation cache.
-            self.llm.invalidate_cache(
-                system=system, user=attempt_user, json_schema=provider_schema
-            )
+            # A full semantic retry already has a different user prompt
+            # (repair context + attempt number), hence a different cache key.
+            # Keep every paid candidate: future deterministic fixes may make an
+            # earlier candidate valid without another provider call.
             repair_context = (
                 "\n".join(
                     f"- {issue.code} at {issue.path}: {issue.message}" for issue in issues[:8]
