@@ -662,7 +662,12 @@ def test_the_screen_is_named_in_the_interface_language():
     body["context"]["surface"] = "vocabulary.my_language"
     run(rt, TurnRequest.model_validate(body))
     context = _context_of(provider)
-    assert context["screen"] == {"name": "Thư viện của tôi"}
+    # §6.2: the UI publishes a purpose for every surface; the server passes it through as written.
+    from writing_coach.agent import surfaces
+
+    purpose = surfaces.purpose("vocabulary.my_language", "vi")
+    assert purpose
+    assert context["screen"] == {"name": "Thư viện của tôi", "purpose": purpose}
     titles = {c["id"]: c["title"] for c in context["capabilities_here"]}
     assert titles["vocabulary.words"] == rt.capabilities.get("vocabulary.words").title["vi"]
     assert all(title == rt.capabilities.get(cid).title["vi"] for cid, title in titles.items())
