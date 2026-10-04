@@ -133,19 +133,37 @@ RESCUE_BLOCKED
 Then summarize root cause, files changed, tests run, and residual risk.
 "@
 
-    $args = @(
-        "exec",
-        "--full-auto",
-        "-C", "grammar_lab",
-        "-c", "sandbox_workspace_write.network_access=false"
-    )
-    if ($RequestedModel) {
-        $args += @("--model", $RequestedModel)
-    }
-    $args += $prompt
+    $topHelp = (& codex --help 2>&1 | Out-String)
+    $execHelp = (& codex exec --help 2>&1 | Out-String)
 
-    & codex @args
-    return $LASTEXITCODE
+    $common = @()
+    if ($RequestedModel) {
+        $common += @("--model", $RequestedModel)
+    }
+
+    if ($execHelp -match "(?m)^\s*--full-auto\b") {
+        $args = @(
+            "exec",
+            "--full-auto",
+            "-C", "grammar_lab",
+            "-c", "sandbox_workspace_write.network_access=false"
+        ) + $common + @($prompt)
+    } elseif ($topHelp -match "(?m)^\s*--full-auto\b") {
+        $args = @(
+            "--full-auto",
+            "-C", "grammar_lab",
+            "-c", "sandbox_workspace_write.network_access=false",
+            "exec"
+        ) + $common + @($prompt)
+    } else {
+        Write-Error "This Codex CLI exposes no supported --full-auto flag in top-level or exec help."
+        return 64
+    }
+
+    $output = & codex @args 2>&1
+    $exitCode = [int]$LASTEXITCODE
+    $output | ForEach-Object { Write-Host $_ }
+    return $exitCode
 }
 
 if (-not (Get-Command python -ErrorAction SilentlyContinue)) {
