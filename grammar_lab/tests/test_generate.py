@@ -26,6 +26,7 @@ from grammar_lab.pipeline.generate import (
     complete_generated_single_gap_bindings,
     complete_generated_terminal_bindings,
     normalize_generated_formula_order,
+    normalize_generated_safe_joiner_slots,
     complete_literal_example_spans,
     pinyin_from_pairs,
     repair_personal_production_rule,
@@ -1301,6 +1302,77 @@ def test_complete_generated_single_gap_bindings_rejects_non_participle_v3_gap() 
     }
 
     out = complete_generated_single_gap_bindings(data, False)
+
+    assert out == data
+
+
+
+def test_normalize_generated_safe_joiner_slots_splits_aux_plus_not_and_remaps() -> None:
+    data = {
+        "formula": [{"text": "S", "role": "subject", "label": "subject", "optional": False, "options": []}],
+        "negative": [
+            {"text": "S", "role": "subject", "label": "subject", "optional": False, "options": []},
+            {"text": "aux + not", "role": "aux", "label": "negative auxiliary", "optional": False, "options": []},
+            {"text": "V", "role": "verb", "label": "verb", "optional": False, "options": []},
+        ],
+        "question": [],
+        "examples": [{
+            "text": "They did not leave.",
+            "form": "negative",
+            "bindings": [
+                {"slot_index": 0, "text": "They"},
+                {"slot_index": 1, "text": "did not"},
+                {"slot_index": 2, "text": "leave"},
+            ],
+        }],
+        "personal_production": {
+            "target_form": "negative",
+            "pattern_rule": {
+                "ordered": True,
+                "slots": [
+                    {"slot_index": 1, "any_of": ["did not"], "regex": ""},
+                    {"slot_index": 2, "any_of": [], "regex": r"\\b\\w+\\b"},
+                ],
+            },
+        },
+    }
+
+    out = normalize_generated_safe_joiner_slots(data, False)
+
+    assert [slot["text"] for slot in out["negative"]] == ["S", "aux", "not", "V"]
+    assert [slot["role"] for slot in out["negative"]] == ["subject", "aux", "marker", "verb"]
+    assert out["examples"][0]["bindings"] == [
+        {"slot_index": 0, "text": "They"},
+        {"slot_index": 1, "text": "did"},
+        {"slot_index": 2, "text": "not"},
+        {"slot_index": 3, "text": "leave"},
+    ]
+    assert out["personal_production"]["pattern_rule"]["slots"] == [
+        {"slot_index": 1, "any_of": ["did"], "regex": ""},
+        {"slot_index": 2, "any_of": ["not"], "regex": ""},
+        {"slot_index": 3, "any_of": [], "regex": r"\\b\\w+\\b"},
+    ]
+
+
+def test_normalize_generated_safe_joiner_slots_stays_fail_closed_for_ambiguous_surface() -> None:
+    data = {
+        "formula": [],
+        "negative": [
+            {"text": "aux + not", "role": "aux", "label": "negative auxiliary", "optional": False, "options": []},
+        ],
+        "question": [],
+        "examples": [{
+            "text": "They didn't leave.",
+            "form": "negative",
+            "bindings": [{"slot_index": 0, "text": "didn't"}],
+        }],
+        "personal_production": {
+            "target_form": "affirmative",
+            "pattern_rule": {"ordered": True, "slots": []},
+        },
+    }
+
+    out = normalize_generated_safe_joiner_slots(data, False)
 
     assert out == data
 
