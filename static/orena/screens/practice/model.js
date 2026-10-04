@@ -85,10 +85,8 @@ function firstOfType(items, type) {
   return items.find((item) => item && item.practice_type === type) || null;
 }
 
-/* Speak's modes: six are always real (no content id needed); three more (Pronunciation,
-   Shadowing, Retell) appear only when the Speaking library actually has an item of that type -
-   the catalogue ships empty by default (UI_BACKEND_GAPS SP-1), so on a fresh install only the six
-   bare modes render, which is correct, not a bug. */
+/* Generic Pronunciation opens the shared content chooser, including personal imports;
+   it never silently assigns the first catalogue item. Deferred modes remain excluded. */
 export function speakModes(items = []) {
   const list = Array.isArray(items) ? items : [];
   const modes = [
@@ -99,10 +97,9 @@ export function speakModes(items = []) {
     { key: 'mock', routeId: 'mock' },
     { key: 'sound', routeId: 'sound' },
   ];
-  const sentence = firstOfType(list, 'sentences') || firstOfType(list, 'clip');
-  if (sentence) modes.push({ key: 'speak', routeId: 'speak', params: { id: sentence.id }, level: sentence.level || '' });
+  modes.push({ key: 'speak', labelRouteId: 'speak', routeId: 'discover', query: { tab: 'listen', practice: 'pronunciation' } });
   const clip = firstOfType(list, 'clip');
-  if (clip) modes.push({ key: 'shadow', routeId: 'shadow', params: { id: String(clip.id).replace(/^media:/, '') }, level: clip.level || '' });
+  if (clip) modes.push({ key: 'shadow', labelRouteId: 'shadow', routeId: 'discover', query: { tab: 'listen', practice: 'pronunciation' } });
   const retell = firstOfType(list, 'retell');
   if (retell) modes.push({ key: 'retell', routeId: 'retell', params: { id: retell.id }, level: retell.level || '' });
   return shown(modes);

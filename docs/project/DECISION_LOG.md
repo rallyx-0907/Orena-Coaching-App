@@ -4026,3 +4026,22 @@ Design Contract carries only the workspace consequence. Shared Media Learning
 remains the media owner. This supersedes D-120's source-preparation retry inside
 learning, while preserving its original-voice rule, rights/access gates and truthful
 unavailable optional measurements. It authorizes no new schema or retention policy.
+
+
+## D-122 - Pronunciation chooses content; phone web defines the future native reference
+
+2026-10-04, explicit human correction: generic Pronunciation entry offers content
+choice rather than silently assigning the first catalogue item. Reuse Discover's
+approved cards/search/filter/import patterns with practice intent; selecting or
+changing media returns directly to shared Shadowing / Pronunciation, preserving
+the segment when the same source is chosen. Authored sentence lessons remain
+addressable; contextual recommendations and resume links keep their named source.
+
+Phone web is the review reference for future native layout and learning flow.
+The selected media and line are clear; the sentence/readings/meaning own the main
+space, with balanced controls and Hear/Record in view. The original embedded
+video is revealed while playing on phones, without replacing or preparing it.
+Initial positioning never autoplays. Existing canonical components and semantic
+tokens remain the design vocabulary. Native remains frozen; this changes neither
+Shared Media Learning nor D-121's preparation/readiness boundary. Human product
+approval still follows browser review.

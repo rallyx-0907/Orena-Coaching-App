@@ -365,3 +365,7 @@ approved web behaviour and the same design; it is not a redesign, a reduced
 feature set, a WebView shell or an Expo/Material reinterpretation, and it keeps
 tokens, hierarchy, navigation identity, states, accessibility and EN/ZH parity.
 A native-only flow or a separate state model is a product-memory regression.
+
+Responsive phone web is the review reference for future native layout and
+learning flow (D-122). Verify phone usability here before porting; native remains
+frozen, and human approval is still required for the product baseline.

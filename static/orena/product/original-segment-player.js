@@ -10,9 +10,10 @@ export function originalSegmentPlayer(source, {documentImpl=globalThis.document}
   root.className='o-original-segment-player';
   root.hidden=playback.kind!=='embed';
   root.innerHTML=mediaPlayer(playback,source.title,{startMs:source.line.startMs,endMs:source.line.endMs,controls:false});
-  let connected=false, finish=null, pending=null;
+  let connected=false, finish=null, pending=null, playingRange=null;
   const stop=()=>{
     pending=null;
+    playingRange=null;
     stopSegmentPlayback(root,playback);
     finish?.();finish=null;
   };
@@ -29,8 +30,13 @@ export function originalSegmentPlayer(source, {documentImpl=globalThis.document}
     else if(['error','blocked'].includes(event.detail.state)) stop();
   });
   root.addEventListener('orena:media-time',event=>{
-    if(finish && event.detail.time_ms >= Number(root.dataset.segmentEndMs || source.line.endMs)-150 && event.detail.player_state!==1) {
+    const {time_ms:time,player_state:state}=event.detail;
+    if (playingRange && state===1 && time>=playingRange.start-150 && time<playingRange.end) playingRange.started=true;
+    // seekTo is asynchronous: the first clock may still be the prior paused
+    // endpoint. Only a range that actually started can complete this playback.
+    if(finish && playingRange?.started && time >= playingRange.end-150 && state!==1) {
       finish();finish=null;
+      playingRange=null;
     }
   });
   return {
@@ -51,6 +57,7 @@ export function originalSegmentPlayer(source, {documentImpl=globalThis.document}
         finish=resolve;
         const start=source.line.startMs+from*1000;
         const end=Math.min(source.line.endMs,source.line.startMs+to*1000);
+        playingRange={start,end,started:false};
         root.dataset.segmentEndMs=String(end);
         pending={from:start,to:end,speed};
         begin();

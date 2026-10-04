@@ -29,14 +29,20 @@ import { href } from '../../shell/routes.js';
 import { api } from '../../infrastructure/api.js';
 import { acquireMedia } from '../../capabilities/media-acquisition.js';
 import { isSupportedMediaUrl } from '../../product/media-url.js';
+import { sourceFromLesson } from '../../product/speaking-source.js';
 import { t } from './copy.js';
 import { textStats, importErrorKey, urlMediaEntry, uploadMediaEntry } from './model.js';
 
 const STEP_LABEL = { type: 'stepType', text: 'stepText', url: 'stepUrl', processing: 'stepProcessing' };
 
-export async function openImport(ctx = {}) {
+export async function openImport(ctx = {}, { mediaRoute = 'listening' } = {}) {
   const context = ctx.context || {};
   const memory = context.memory || null;
+  const admittedForPractice = (id, result) => {
+    if (mediaRoute !== 'shadow') return true;
+    const source = sourceFromLesson(id, result, '', languages().support);
+    return source?.hasModelAudio && source.language === context.language && result.asset?.processing_state !== 'processing';
+  };
   const navigate = (routeId, params) => {
     const target = href(routeId, params);
     if (typeof ctx.go === 'function') ctx.go(target);
@@ -268,8 +274,13 @@ export async function openImport(ctx = {}) {
         return;
       }
       memory?.addMedia?.(entry);
+      if (!admittedForPractice(result.media_id, result)) {
+        state.processError = t('error_practice_unavailable');
+        paint();
+        return;
+      }
       sheetHandle?.close();
-      navigate('listening', { id: result.media_id });
+      navigate(mediaRoute, { id: result.media_id });
     } catch (error) {
       if (!alive) return;
       state.busy = false;
@@ -296,8 +307,7 @@ export async function openImport(ctx = {}) {
       const result = await acquireMedia({
         api,
         url: state.url.trim(),
-        // The translation target is the learner's support language, the same target Listening
-        // re-acquires it with (product/media-source.js); the learning language only keys the job.
+        // Prepare the support-language projection once at the import boundary (D-121).
         target: languages().support,
         owner: context.owner || 'local',
         language: context.language,
@@ -313,8 +323,13 @@ export async function openImport(ctx = {}) {
       }
       const entry = result.media_id ? uploadMediaEntry(result) : urlMediaEntry(state.url.trim(), result);
       memory?.addMedia?.(entry);
+      if (!admittedForPractice(entry.id, result)) {
+        state.processError = t('error_practice_unavailable');
+        paint();
+        return;
+      }
       sheetHandle?.close();
-      navigate('listening', { id: entry.id });
+      navigate(mediaRoute, { id: entry.id });
     } catch (error) {
       if (!alive) return;
       state.busy = false;

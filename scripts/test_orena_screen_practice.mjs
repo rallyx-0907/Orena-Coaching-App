@@ -28,8 +28,8 @@ import {
 // with the Coming-soon screens, so no entry to them is offered.
 {
   const bare = speakModes([]);
-  assert.equal(bare.length, 3, 'no speaking-library items yet -> only the three parameterless modes in this release (SP-1, H9)');
-  assert.deepEqual(bare.map((m) => m.key), ['freetalk', 'conv', 'situation']);
+  assert.equal(bare.length, 4, 'Pronunciation has a real content/import chooser even without public catalogue items');
+  assert.deepEqual(bare.map((m) => m.key), ['freetalk', 'conv', 'situation', 'speak']);
   for (const m of bare) assert.equal(m.params, undefined, 'a parameterless route carries no params object');
 
   const withItems = speakModes([
@@ -40,10 +40,13 @@ import {
   ]);
   assert.equal(withItems.length, 5, 'the two content-gated modes in this release appear once the library has a matching item each');
   const speak = withItems.find((m) => m.key === 'speak');
-  assert.deepEqual(speak.params, { id: 11 }, 'the first sentences item wins, not a later duplicate');
-  assert.equal(speak.level, 'B1');
+  assert.equal(speak.routeId, 'discover', 'Pronunciation starts with content choice');
+  assert.equal(speak.labelRouteId, 'speak');
+  assert.deepEqual(speak.query, { tab: 'listen', practice: 'pronunciation' });
+  assert.equal(speak.params, undefined, 'no arbitrary first lesson is selected');
   const shadow = withItems.find((m) => m.key === 'shadow');
-  assert.deepEqual(shadow.params, { id: '77' }, 'a clip id is unwrapped from its media: prefix for the shadow route');
+  assert.equal(shadow.routeId, 'discover');
+  assert.equal(shadow.labelRouteId, 'shadow');
   assert.equal(withItems.find((m) => m.key === 'retell'), undefined, 'Retell is deferred (H9) even when the library has an item');
 
   assert.deepEqual(speakModes(), speakModes([]), 'a missing list behaves like an empty one');

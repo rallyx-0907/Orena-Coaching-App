@@ -2,6 +2,26 @@
    04-Discover.html, 52-Filter-Sheet.html). screens/discover/model.js is DOM-free - imported
    directly, no globals to stub. */
 import assert from 'node:assert/strict';
+import { practiceCandidates, practiceHref, preparedMediaEntry } from '../static/orena/screens/discover/model.js';
+{
+  for (const language of ['en', 'zh']) {
+    const ready = entryFromMedia({lesson_id:'ready', language, available_modes:['shadowing']}, []);
+    const unavailable = entryFromMedia({lesson_id:'listen-only', language, available_modes:['listen']}, []);
+    assert.deepEqual(practiceCandidates([ready, unavailable, {kind:'upload',id:'upload:pending'}]), [ready]);
+    const href = (route, params, query) => ({route,params,query});
+    assert.deepEqual(practiceHref(ready, href, {source:'ready',segment:'line-2'}), {route:'shadow',params:{id:'ready'},query:{segment:'line-2'}});
+    assert.deepEqual(practiceHref(ready, href, {source:'other',segment:'line-2'}), {route:'shadow',params:{id:'ready'},query:{}});
+    const payload = {catalog:{lesson_id:'private'},asset:{processing_state:'ready'},playback:{kind:'embed'}};
+    const source = {hasModelAudio:true,language,title:'My media'};
+    const imported = preparedMediaEntry('upload:private',payload,source,language,[]);
+    assert.equal(imported.id,'media:private');
+    assert.deepEqual(practiceHref(imported,href,{source:'upload:private',segment:'line-2'}),{route:'shadow',params:{id:'private'},query:{segment:'line-2'}});
+    assert.equal(preparedMediaEntry('x',payload,{...source,hasModelAudio:false},language,[]),null);
+    assert.equal(preparedMediaEntry('x',payload,{...source,language:'other'},language,[]),null);
+    assert.equal(preparedMediaEntry('x',{...payload,asset:{processing_state:'processing'}},source,language,[]),null);
+    assert.deepEqual(practiceHref({speakingId:'speak:12'},href),{route:'speak',params:{id:'speak:12'},query:{}});
+  }
+}
 import {
   progressFromContinuation, entryFromArticle, entryFromBook, entryFromMedia, entryFromCollection,
   entryFromTextImport, entryFromMediaImport, filterOptions, typeLabel, matchesFilters,

@@ -30,6 +30,23 @@ const punctuatedSource=sourceFromLesson('a',punctuated,'s');
 const reading=await loadComparisonReference(punctuatedSource);
 assert.equal(reading.positionReadings.length,2,'reuse persisted character readings despite transcript punctuation');
 const {originalSegmentPlayer}=await import('../static/orena/product/original-segment-player.js');
+{
+  const listeners=new Map();
+  const frame={src:'https://www.youtube-nocookie.com/embed/B0p5SdkBydU',contentWindow:{postMessage(){}}};
+  const root={dataset:{mediaClock:'ready'},addEventListener:(name,fn)=>listeners.set(name,fn),querySelector:()=>frame};
+  const player=originalSegmentPlayer({hasModelAudio:true,title:'Prepared',playback:{kind:'embed',provider:'youtube',url:frame.src},line:{startMs:5000,endMs:10000}},{documentImpl:{createElement:()=>root}});
+  let finished=false;
+  const play=player.play().then(()=>{finished=true;});
+  const clock=detail=>listeners.get('orena:media-time')({detail});
+  clock({time_ms:10000,player_state:2}); // asynchronous seek still reports the previous paused endpoint
+  await Promise.resolve();
+  assert.equal(finished,false,'a stale pre-seek endpoint must not finish the new model playback');
+  clock({time_ms:5000,player_state:1});
+  clock({time_ms:10000,player_state:2});
+  await play;
+  assert.equal(finished,true);
+  player.stop();
+}
 const fakeRoot={dataset:{},addEventListener(){}};
 const videoSource={...punctuatedSource,playback:{kind:'video',provider:'orena',url:'/api/media/files/media/a/original.mp4'}};
 const video=originalSegmentPlayer(videoSource,{documentImpl:{createElement:()=>fakeRoot}});

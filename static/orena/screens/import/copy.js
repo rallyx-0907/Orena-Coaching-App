@@ -25,12 +25,13 @@ const SUPPORT_KEYS = [
   'error_unsupported_source_language', 'error_invalid_target_language',
   'error_media_job_unavailable',
   'error_media_upload_invalid', 'error_media_upload_unavailable',
-  'error_generic',
+  'error_generic', 'error_practice_unavailable',
 ];
 
 export const t = defineCopy('import', {
   layers: Object.fromEntries([...INTERFACE_KEYS.map((k) => [k, 'interface']), ...SUPPORT_KEYS.map((k) => [k, 'support'])]),
   en: {
+    error_practice_unavailable: 'Media saved. Pronunciation needs a playable original and a transcript in your learning language. Choose another media item.',
     stage_fetch: 'Fetching media',
     stage_transcribe: 'Preparing transcript',
     stage_segment: 'Preparing learning lines',
@@ -68,6 +69,7 @@ export const t = defineCopy('import', {
     error_generic: 'Something went wrong. Please try again.',
   },
   vi: {
+    error_practice_unavailable: 'Đã lưu media. Luyện phát âm cần bản gốc phát được và bản chép lời đúng ngôn ngữ đang học. Hãy chọn media khác.',
     stage_fetch: 'Đang lấy media',
     stage_transcribe: 'Đang xử lý bản ghi',
     stage_segment: 'Đang chuẩn bị câu học',
@@ -105,6 +107,7 @@ export const t = defineCopy('import', {
     error_generic: 'Đã có lỗi xảy ra. Vui lòng thử lại.',
   },
   zh: {
+    error_practice_unavailable: '媒体已保存。发音练习需要可播放的原声和当前学习语言的文字稿。请选择其他媒体。',
     stage_fetch: '正在获取媒体',
     stage_transcribe: '正在处理文字稿',
     stage_segment: '正在整理学习句子',

@@ -89,6 +89,7 @@ export default async function mountCompareWithModel(element, ctx) {
   let rec = { phase: TAKE.IDLE, levels: new Array(40).fill(0), elapsedMs: 0 };
   const contours = new Map(); // take id -> { you } once measured
   let playing = false;
+  let modelPreview = false;
   let playWord = null; // the word being played in "Word by word"
   let playToken = 0;
   let audioEl = null;
@@ -194,6 +195,8 @@ export default async function mountCompareWithModel(element, ctx) {
 
   /* ---- Playback ---- */
   function stopPlay() {
+    modelPreview = false;
+    q('[data-original-player]')?.classList.remove('is-model-playing');
     originalPlayer?.stop();
     finishAudio?.();
     finishAudio=null;
@@ -234,8 +237,16 @@ export default async function mountCompareWithModel(element, ctx) {
       else start();
     });
   }
-  const playModelLine = (token) => {
-    if (source.hasModelAudio && alive(token)) return originalPlayer.play({speed});
+  const playModelLine = (token, range = {}) => {
+    if (source.hasModelAudio && alive(token)) {
+      modelPreview = true;
+      q('[data-original-player]')?.classList.add('is-model-playing');
+      return originalPlayer.play({...range,speed}).finally(() => {
+        if (!alive(token)) return;
+        modelPreview = false;
+        q('[data-original-player]')?.classList.remove('is-model-playing');
+      });
+    }
     toast(t('modelUnavailable'));
     return Promise.resolve();
   };
@@ -267,7 +278,7 @@ export default async function mountCompareWithModel(element, ctx) {
           playWord = word.index;
           paint();
           const modelWord = modelWordFor(word);
-          if (modelWord) await originalPlayer.play({...wordSpan(modelWord),speed});
+          if (modelWord) await playModelLine(token, wordSpan(modelWord));
           if (word.offsetKnown) await playFile(take.url, token, wordSpan(word));
         }
       }
@@ -292,7 +303,7 @@ export default async function mountCompareWithModel(element, ctx) {
   function hearWordModel(word) {
     stopPlay();
     const modelWord = modelWordFor(word);
-    if (modelWord) void originalPlayer.play({...wordSpan(modelWord),speed});
+    if (modelWord) void playModelLine(playToken, wordSpan(modelWord));
     else toast(t('modelWordUnavailable'));
   }
 
@@ -325,10 +336,10 @@ export default async function mountCompareWithModel(element, ctx) {
     const at = lines.findIndex(line=>line.lineId===source.line.lineId);
     const busy = [TAKE.RECORDING,TAKE.PROCESSING].includes(rec.phase);
     return html`<div class="s-compare-source">
-      <div class="s-compare-source__title" lang="${langAttr(language)}">${source.title}</div>
+      <div class="s-compare-source__media"><div class="s-compare-source__title" lang="${langAttr(language)}">${source.title}</div>
+        <button type="button" class="s-compare-ghost" data-choose-media ${busy ? raw('disabled') : ''}>${t('chooseMedia')}</button></div>
       <div class="s-compare-source__actions">
         <button type="button" class="s-compare-ghost" data-listen-source ${busy ? raw('disabled') : ''}>${t('listenSource')}</button>
-        <button type="button" class="s-compare-ghost" data-choose-media ${busy ? raw('disabled') : ''}>${t('chooseMedia')}</button>
         <button type="button" class="o-iconbtn" data-source-line="${lines[at-1]?.lineId || ''}" aria-label="${t('previousLine')}" ${busy || at<=0 ? raw('disabled') : ''}>${raw(icon('chevron-left',{size:18}))}</button>
         <select class="s-compare-source__select" aria-label="${t('chooseLine')}" data-source-select ${busy ? raw('disabled') : ''}>
           ${lines.map(line=>html`<option value="${line.lineId}" ${line.lineId===source.line.lineId ? raw('selected') : ''}>${line.ordinal}. ${line.text}</option>`)}
@@ -599,13 +610,13 @@ export default async function mountCompareWithModel(element, ctx) {
       renderRoot,
       html`<div class="s-compare-header">
         <button type="button" class="o-iconbtn o-iconbtn--back" data-back aria-label="${shellCopy('back')}">${raw(icon('arrow-left', { size: 21 }))}</button>
-        <div class="s-compare-title-block"><div class="s-compare-title">${source.lessonId ? t('practiceTitle') : t('title')}</div><div class="s-compare-note">${t('subtitle')}</div></div>
+        <div class="s-compare-title-block"><div class="s-compare-title">${source.lessonId ? t('practiceTitle') : t('title')}</div><div class="s-compare-note s-compare-subtitle">${t('subtitle')}</div></div>
         ${takes.length ? pillsMarkup() : ''}
-        <button type="button" class="s-compare-history" data-attempts>${t('attemptHistory')}</button>
+        <button type="button" class="s-compare-history" data-attempts aria-label="${t('attemptHistory')}">${raw(icon('clock',{size:18}))}<span>${t('attemptHistory')}</span></button>
       </div>
       ${sourceNavigation()}
       <div class="s-compare-scroll${showRecord ? ' s-compare-scroll--record' : ''}" data-scroll-region>
-        ${source.playback?.kind === 'embed' ? html`<div data-original-player></div>` : ''}
+        ${source.playback?.kind === 'embed' ? html`<div class="s-compare-model-preview${modelPreview ? ' is-model-playing' : ''}" data-original-player></div>` : ''}
         ${showRecord ? recordCard() : ''}
         ${errorText ? html`<div class="s-compare-error"><b>${t('errorTitle')}</b> ${errorText}</div>` : ''}
         ${result ? summaryMarkup(view, take) : ''}
@@ -659,7 +670,7 @@ export default async function mountCompareWithModel(element, ctx) {
     element.querySelectorAll('[data-source-line]').forEach(button=>button.addEventListener('click',()=>goLine(button.dataset.sourceLine)));
     q('[data-source-select]')?.addEventListener('change',event=>goLine(event.target.value));
     q('[data-listen-source]')?.addEventListener('click',()=>ctx.go(ctx.href('listening',{id:source.lessonId},lineQuery)));
-    q('[data-choose-media]')?.addEventListener('click',()=>ctx.go(ctx.href('discover',{}, {tab:'listen'})));
+    q('[data-choose-media]')?.addEventListener('click',()=>ctx.go(ctx.href('discover',{}, {tab:'listen',practice:'pronunciation',source:source.lessonId,segment:source.line.lineId})));
     q('[data-back]').addEventListener('click', () => ctx.back());
     q('[data-attempts]').addEventListener('click', () => ctx.go(ctx.href('attempts', { id: ctx.params.id }, { ...lineQuery, attempt: selectedId })));
     element.querySelectorAll('[data-select]').forEach((button) => button.addEventListener('click', () => select(button.dataset.select)));

@@ -305,6 +305,9 @@ export function connectMediaPlayer(root,playback){
         onReady:()=>{
           if(controllers.get(root)!==controller)return;
           if(controller.startMs>0)controller.player.seekTo(controller.startMs/1000,true);
+          // Initial positioning is navigation, not a learner Play action. YouTube
+          // may start after seekTo; stop before announcing readiness to consumers.
+          controller.player.pauseVideo?.();
           mediaState(root,'ready');
           startClock(root,controller);
         },

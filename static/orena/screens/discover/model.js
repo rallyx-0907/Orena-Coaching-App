@@ -97,6 +97,7 @@ export function entryFromMedia(item, continuation) {
   return {
     id,
     kind: 'media',
+    availableModes: Array.isArray(item.available_modes) ? item.available_modes : [],
     mediaType: item.media_type === 'video' ? 'video' : 'audio',
     title: item.title || '',
     // languages-5 / finding A: `language` (writing_coach/listening_api.py `stored_media_metadata` /
@@ -309,4 +310,27 @@ export function hrefFor(entry, href) {
   return entry.kind === 'collection'
     ? href('collection', { id: entry.id.slice('collection:'.length) })
     : href('content', { id: entry.id });
+}
+
+// Capability admission comes from the shared server library, never a device import placeholder.
+export function practiceCandidates(entries) {
+  return entries.filter(entry => entry.kind === 'media' && entry.availableModes?.includes('shadowing'));
+}
+
+export function practiceHref(entry, href, { source = '', segment = '' } = {}) {
+  if (entry.speakingId) return href('speak', {id:entry.speakingId}, {});
+  const id = entry.id.slice('media:'.length);
+  return href('shadow', { id }, (source === id || entry.sourceAliases?.includes(source)) && segment ? { segment } : {});
+}
+
+export function preparedMediaEntry(itemId, payload, source, language, continuation) {
+  if (!source?.hasModelAudio || source.language !== language || payload.asset?.processing_state === 'processing') return null;
+  return {
+    ...entryFromMedia({
+      ...payload.catalog, lesson_id:payload.catalog?.lesson_id || itemId, title:source.title, language:source.language,
+      media_type:payload.playback.kind === 'audio' ? 'audio' : 'video',
+      duration_ms:payload.asset.duration_ms, poster_url:payload.asset.thumbnail_url, available_modes:['shadowing'],
+    }, continuation),
+    sourceAliases:[itemId],
+  };
 }
