@@ -63,7 +63,7 @@ from grammar_lab.rules import en_morphology
 
 PROMPT_VERSION = "generate_point.v1"
 PROMPT_PATH = LAB_ROOT / "prompts" / "generate_point.md"
-PROMPT_VERSION_V04 = "generate_point_v04.v12"
+PROMPT_VERSION_V04 = "generate_point_v04.v13"
 PROMPT_PATH_V04 = LAB_ROOT / "prompts" / "generate_point_v04.md"
 V04_SEMANTIC_ATTEMPTS = 3
 PERSONAL_PRODUCTION_MAX_SLOTS = 4
@@ -375,6 +375,44 @@ def _generation_schema_v04(*, locales: list[str], l1s: list[str], error_tags: li
     locale_map, pinyin_pairs, with_pinyin = items["locale_map"], items["pinyin_pairs"], items["with_pinyin"]
     slot, example, compare_item = items["slot"], items["example"], items["compare_item"]
     common_mistake, quick_practice_item = items["common_mistake"], items["quick_practice_item"]
+
+    # Full-point generation uses slot-index bindings instead of asking the model
+    # to duplicate formula roles inside example spans. The stored v0.4 schema is
+    # unchanged: assemble code derives each stored span role from the selected
+    # formula slot. Block-level review regeneration keeps the historical span
+    # shape through _item_schemas_v04.
+    generated_example = copy.deepcopy(example)
+    generated_example["required"] = [
+        "bindings" if name == "spans" else name
+        for name in generated_example["required"]
+    ]
+    generated_example["properties"].pop("spans", None)
+    generated_example["properties"]["bindings"] = {
+        "type": "array",
+        "minItems": 1,
+        "items": {
+            "type": "object",
+            "additionalProperties": False,
+            "required": ["slot_index", "text"],
+            "properties": {
+                "slot_index": {"type": "integer", "minimum": 0},
+                "text": {"type": "string", "minLength": 1},
+            },
+        },
+    }
+
+    generated_production = copy.deepcopy(items["personal_production"])
+    generated_rule_slot = (
+        generated_production["properties"]["pattern_rule"]["properties"]
+        ["slots"]["items"]
+    )
+    generated_rule_slot["required"] = [
+        "slot_index" if name == "role" else name
+        for name in generated_rule_slot["required"]
+    ]
+    generated_rule_slot["properties"].pop("role", None)
+    generated_rule_slot["properties"]["slot_index"] = {"type": "integer", "minimum": 0}
+
     formula = {"type": "array", "minItems": 1, "items": slot}
     mistake_count = max(1, len(error_tags))
     properties: dict[str, Any] = {
@@ -384,11 +422,14 @@ def _generation_schema_v04(*, locales: list[str], l1s: list[str], error_tags: li
         "formula": formula,
         "negative": {"type": "array", "items": slot},
         "question": {"type": "array", "items": slot},
-        "examples": {"type": "array", "minItems": V04_EXAMPLES, "maxItems": V04_EXAMPLES, "items": example},
+        "examples": {
+            "type": "array", "minItems": V04_EXAMPLES, "maxItems": V04_EXAMPLES,
+            "items": generated_example,
+        },
         "compare": {"type": "array", "minItems": len(contrast_with), "maxItems": len(contrast_with), "items": compare_item},
         "common_mistakes": {"type": "array", "minItems": mistake_count, "maxItems": mistake_count, "items": common_mistake},
         "quick_practice": {"type": "array", "minItems": 3, "maxItems": 3, "items": quick_practice_item},
-        "personal_production": items["personal_production"],
+        "personal_production": generated_production,
     }
     if zh:  # the point's own name is carried over, not generated, but its pinyin still has to be written
         properties["native_title_pinyin_pairs"] = pinyin_pairs
