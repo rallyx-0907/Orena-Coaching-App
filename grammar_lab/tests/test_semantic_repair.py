@@ -101,8 +101,10 @@ def test_generate_v04_uses_targeted_patch_before_regenerating_the_full_lesson(tm
     lab = _v04_lab(tmp_path)
     lab.write()
     bad = copy.deepcopy(CANNED_V04)
+    # Remove an abstract verb span. The deterministic literal recovery
+    # intentionally cannot infer V-s, so validation must reach targeted repair.
     bad["examples"][0]["spans"] = [
-        span for span in bad["examples"][0]["spans"] if span["role"] != "subject"
+        span for span in bad["examples"][0]["spans"] if span["role"] != "verb"
     ]
     calls: list[str] = []
 
