@@ -1,0 +1,269 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.c2.014",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.reporting",
+  "level": {"framework": "cefr", "value": "C2", "rank": 6},
+  "prereqs": ["en.canon.c2.013"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["c2-advanced-reporting-and-distancing"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["c2-advanced-reporting-and-distancing"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Advanced reporting and distancing", "en": "Advanced reporting and distancing"},
+    "native_title": "Advanced reporting and distancing",
+    "level": {"framework": "cefr", "value": "C2", "rank": 6},
+    "summary": {
+      "vi": "Cấu trúc này cho phép người viết trình bày một thông tin như lời đồn, cáo buộc hay suy đoán mà không tự khẳng định tính xác thực của nó.",
+      "en": "This structure lets a writer present a claim as hearsay, allegation or inference without asserting its truth."
+    },
+    "sub": {"vi": "nguồn tin & khoảng cách", "en": "sourcing & distance"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nêu một thông tin nhưng không muốn chịu trách nhiệm về tính đúng sai của nó.",
+      "en": "When you want to mention a claim without taking responsibility for whether it is true."
+    },
+    {
+      "vi": "Khi nguồn tin là báo cáo, điều tra hoặc lời đồn, và bạn cần nêu rõ nguồn đó.",
+      "en": "When the source is a report, an investigation or hearsay, and you need to name that source."
+    },
+    {
+      "vi": "Khi bạn suy luận từ bằng chứng gián tiếp và muốn đánh dấu mức độ chắc chắn thấp.",
+      "en": "When you infer from indirect evidence and want to mark a low level of certainty."
+    },
+    {
+      "vi": "Khi viết tin, báo cáo hoặc văn bản học thuật cần giữ giọng trung lập và tránh quy kết cá nhân.",
+      "en": "When writing news, reports or academic texts that need a neutral tone and avoid personal accusation."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {
+        "text": "be",
+        "role": "aux",
+        "label": {"vi": "trợ động từ", "en": "auxiliary"},
+        "options": [{"text": "is"}, {"text": "are"}, {"text": "was"}, {"text": "were"}]
+      },
+      {
+        "text": "reported/alleged/said/believed/thought",
+        "role": "verb",
+        "label": {"vi": "phân từ bị động", "en": "past participle"}
+      },
+      {
+        "text": "to have",
+        "role": "aux",
+        "label": {"vi": "nguyên mẫu hoàn thành", "en": "perfect infinitive auxiliary"}
+      },
+      {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}}
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "be",
+          "role": "aux",
+          "label": {"vi": "trợ động từ", "en": "auxiliary"},
+          "options": [{"text": "is"}, {"text": "are"}, {"text": "was"}, {"text": "were"}]
+        },
+        {"text": "not", "role": "particle", "label": {"vi": "phủ định", "en": "negation"}},
+        {
+          "text": "reported/alleged/said/believed/thought",
+          "role": "verb",
+          "label": {"vi": "phân từ bị động", "en": "past participle"}
+        },
+        {
+          "text": "to have",
+          "role": "aux",
+          "label": {"vi": "nguyên mẫu hoàn thành", "en": "perfect infinitive auxiliary"}
+        },
+        {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}}
+      ],
+      "question": [
+        {
+          "text": "be",
+          "role": "aux",
+          "label": {"vi": "trợ động từ", "en": "auxiliary"},
+          "options": [{"text": "Is"}, {"text": "Are"}, {"text": "Was"}, {"text": "Were"}]
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "reported/alleged/said/believed/thought",
+          "role": "verb",
+          "label": {"vi": "phân từ bị động", "en": "past participle"}
+        },
+        {
+          "text": "to have",
+          "role": "aux",
+          "label": {"vi": "nguyên mẫu hoàn thành", "en": "perfect infinitive auxiliary"}
+        },
+        {"text": "V3", "role": "verb", "label": {"vi": "quá khứ phân từ", "en": "past participle"}}
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "The company is alleged to have concealed the losses.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 11, "role": "subject"},
+        {"start": 12, "end": 14, "role": "aux"},
+        {"start": 15, "end": 22, "role": "verb"},
+        {"start": 23, "end": 30, "role": "aux"},
+        {"start": 31, "end": 40, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Cáo buộc được gán cho công ty nhưng người viết không khẳng định đó là sự thật.",
+        "en": "The allegation is attributed to the company, but the writer does not assert it as fact."
+      },
+      "translation": {
+        "vi": "Công ty bị cáo buộc đã che giấu các khoản lỗ.",
+        "en": "The company is alleged to have concealed the losses."
+      }
+    },
+    {
+      "text": "The company is believed to have overstated its earnings.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 11, "role": "subject"},
+        {"start": 12, "end": 14, "role": "aux"},
+        {"start": 15, "end": 23, "role": "verb"},
+        {"start": 24, "end": 31, "role": "aux"},
+        {"start": 32, "end": 42, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Sự việc khai quá doanh thu xảy ra trước thời điểm người ta tin.",
+        "en": "The overstating happened before the moment people believe it."
+      },
+      "translation": {
+        "vi": "Người ta tin rằng công ty đã khai quá doanh thu.",
+        "en": "People believe that the company overstated its earnings."
+      }
+    },
+    {
+      "text": "The minister is reported to have resigned.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 12, "role": "subject"},
+        {"start": 13, "end": 15, "role": "aux"},
+        {"start": 16, "end": 24, "role": "verb"},
+        {"start": 25, "end": 32, "role": "aux"},
+        {"start": 33, "end": 41, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Việc từ chức xảy ra trước thời điểm có tin báo cáo.",
+        "en": "The resignation happened before the moment of the report."
+      },
+      "translation": {"vi": "Có tin bộ trưởng đã từ chức.", "en": "It is reported that the minister resigned."}
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học ghép trạng từ chỉ khoảng cách (allegedly) với trạng từ chỉ sự chắc chắn (definitely), tạo ra mâu thuẫn về mức độ cam kết.",
+        "en": "The learner combines a distancing adverb (allegedly) with a certainty adverb (definitely), creating a contradiction in commitment."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "The company allegedly definitely falsified records.",
+      "right": "The company is alleged to have falsified records."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "The minister ___ to have known about the deal before it was signed.",
+      "options": [
+        {"text": "is believed", "error_tag": null},
+        {"text": "believes", "error_tag": "agreement"},
+        {"text": "is believing", "error_tag": "word_form"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Cấu trúc distancing dùng bị động: be + past participle + to have + V3. 'is believed' là dạng đúng.",
+        "en": "The distancing structure uses the passive: be + past participle + to have + V3. 'is believed' is the correct form."
+      }
+    },
+    {
+      "q": "It ___ that the negotiations have resumed.",
+      "options": [
+        {"text": "has been reported", "error_tag": null},
+        {"text": "has reported", "error_tag": "agreement"},
+        {"text": "is reporting", "error_tag": "word_form"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Cấu trúc 'It has been reported that...' dùng bị động hoàn thành để báo cáo một sự việc đã xảy ra.",
+        "en": "The 'It has been reported that...' frame uses the present perfect passive to report a past event."
+      }
+    },
+    {
+      "q": "The figures appear ___ after publication.",
+      "options": [
+        {"text": "to have been revised", "error_tag": null},
+        {"text": "to have revised", "error_tag": "word_form"},
+        {"text": "to be revising", "error_tag": "word_form"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 'appear' cần nguyên mẫu hoàn thành bị động 'to have been revised' vì số liệu được sửa, không tự sửa.",
+        "en": "After 'appear' we need the perfect passive infinitive 'to have been revised' because the figures were revised, not doing the revising."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một thông tin bạn nghe được nhưng không chắc chắn, dùng cấu trúc 'S + be + reported/alleged/said + to have + V3'.",
+      "en": "Write one sentence about something you heard but are not sure of, using 'S + be + reported/alleged/said + to have + V3'."
+    },
+    "placeholder": "The company is said to have ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"any_of": ["is"], "role": "aux"},
+        {"any_of": ["reported", "alleged", "said", "believed"], "role": "verb"},
+        {"any_of": ["to have"], "role": "aux"},
+        {"regex": "[a-z]+ed|[a-z]+en", "role": "verb"}
+      ]
+    },
+    "sample": {"text": "The company is said to have concealed the losses."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791112708",
+    "generated_at": "2026-10-04T11:18:28Z",
+    "r5_source": {
+      "ids": ["c2-advanced-reporting-and-distancing"],
+      "content_version": 2,
+      "content_hash": "b6fd2326af925194baba5cfa5ed32475cb0b5607d2195a84633dee9996bc0611",
+      "corrections": [
+        {
+          "r5_id": "c2-advanced-reporting-and-distancing",
+          "issue": "R5's example 'The company is alleged to have concealed the losses' is correct, but the lesson did not provide a formula or bindings for examples.",
+          "fix": "Added a formula with slots and bound each example to its formula slots."
+        },
+        {
+          "r5_id": "c2-advanced-reporting-and-distancing",
+          "issue": "R5's mistake 'The company allegedly definitely falsified records' is a real error, but the correction was not clearly explained as a conflict between distancing and certainty.",
+          "fix": "Rewrote the reason to name the mechanism: combining a distancing adverb with a certainty adverb creates contradictory commitment."
+        },
+        {
+          "r5_id": "c2-advanced-reporting-and-distancing",
+          "issue": "R5's guided practice included a transformation task with 'Answers vary', which is not a checkable item.",
+          "fix": "Replaced with three cloze questions that test the passive reporting structure and perfect infinitive."
+        }
+      ]
+    }
+  },
+  "review": null
+}
