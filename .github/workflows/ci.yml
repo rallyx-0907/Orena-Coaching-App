@@ -21,6 +21,13 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: "24"
+      # The media pipeline integration tests probe real files with ffprobe, as the
+      # application image does (its Dockerfile installs ffmpeg); the runner needs it too.
+      - name: Install ffmpeg (ffprobe) for media integration tests
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ffmpeg
+          ffprobe -version | head -n 1
       - run: pip install -r requirements.txt pytest
       - run: python -m nltk.downloader -q averaged_perceptron_tagger_eng
       - run: python scripts/validate_project_memory.py

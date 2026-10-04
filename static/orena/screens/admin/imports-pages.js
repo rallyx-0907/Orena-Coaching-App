@@ -22,6 +22,17 @@ const OUTCOME = {
 const outcome = (t, state) => { const [label, tone] = OUTCOME[state] || OUTCOME.queued; return { label: t(label), tone }; };
 
 /* A failure in words: the stage it stopped at and what happened, ours for a known category. */
+// Source ids are data; the dataset's own name is shown, credited as its licence asks.
+const SOURCE_LABELS = { 'cc-cedict': 'CC-CEDICT', local_marian: 'Marian (offline)' };
+
+function languageName(code, ui) {
+  try {
+    return new Intl.DisplayNames([ui || 'en'], { type: 'language' }).of(code) || code;
+  } catch {
+    return code;
+  }
+}
+
 export function failureText(t, item) {
   const reason = t.has(`impErr_${item.code}`) ? t(`impErr_${item.code}`) : item.message ? t('impServerReason', { detail: item.message }) : t('impErr_unknown');
   const stage = item.stage && t.has(`impStage_${item.stage}`) ? t('impFailedAt', { stage: t(`impStage_${item.stage}`) }) : '';
@@ -189,6 +200,29 @@ export function vocabularyPage({ vocab, t, ui, href }) {
       meta: row.status === 'failed' ? (row.failure_reason ? t('impServerReason', { detail: row.failure_reason }) : t('impErr_unknown')) : t('impVocabResult', { imported: num(row.imported, ui), duplicates: num(row.duplicates, ui), skipped: num(row.skipped, ui) }),
       pills: [{ label: row.status === 'imported' ? t('impDone') : row.status === 'skipped' ? t('impSkipped') : t('impFailed'), tone: row.status === 'imported' ? 'ok' : row.status === 'skipped' ? 'mute' : 'err' }],
     }));
+    // Each support language's localizations for this import, and where they came from (D-124).
+    const reports = new Map();
+    for (const item of vocab.results.items || []) {
+      for (const report of item.localizations || []) {
+        const sum = reports.get(report.language) || { listed: 0, added: {}, missing: 0 };
+        sum.listed += Number(report.from_list) || 0;
+        sum.missing += Number(report.missing) || 0;
+        for (const [source, n] of Object.entries(report.added || {})) sum.added[source] = (sum.added[source] || 0) + (Number(n) || 0);
+        reports.set(report.language, sum);
+      }
+    }
+    for (const [language, sum] of reports) {
+      const parts = [
+        ...(sum.listed ? [t('impMeaningsListed', { n: num(sum.listed, ui) })] : []),
+        ...Object.entries(sum.added).map(([source, n]) => t('impMeaningsFrom', { n: num(n, ui), source: SOURCE_LABELS[source] || source })),
+        ...(sum.missing ? [t('impMeaningsMissing', { n: num(sum.missing, ui) })] : []),
+      ];
+      rows.push({
+        title: t('impMeaningsTitle', { language: languageName(language, ui) }),
+        meta: parts.join(' · '),
+        pills: [{ label: sum.missing ? t('impMeaningsIncomplete') : t('impDone'), tone: sum.missing ? 'warn' : 'ok' }],
+      });
+    }
     const collection = vocab.results.collection || {};
     blocks.push(block({ span: true, title: t('impResult'), actions: [
       ...(collection.collection_id || collection.id ? [{ label: t('impOpenCollection'), kind: 'primary', size: 'sm', a: 'go', data: { to: href('adminCollection', { id: collection.collection_id || collection.id }) } }] : []),
