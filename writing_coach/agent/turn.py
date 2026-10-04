@@ -97,6 +97,7 @@ from writing_coach.agent.redaction import redact_for_provider
 from writing_coach.agent.locale import to_internal
 from writing_coach.agent.schemas import CoachNote, TurnRequest
 from writing_coach.agent.session import SessionCache, ToolResultRecord
+from writing_coach.agent.timeline import TurnTimeline
 from writing_coach.agent.tools import (
     FORBIDDEN_ARGUMENTS,
     LearnerScope,
@@ -164,6 +165,8 @@ class AgentRuntime:
     clock: Callable[[], float] = time.monotonic
     new_trace_id: Callable[[], str] = lambda: uuid.uuid4().hex
     max_output_tokens: int = 1024
+    # One record per turn (agent/timeline.py): where the time went, for the latency and cost baseline.
+    record_turn: Callable[[str, dict], None] | None = None
     turn_limiter: SlidingWindowLimiter = field(init=False)
     read_limiter: SlidingWindowLimiter = field(init=False)
 
@@ -182,7 +185,7 @@ class AgentRuntime:
     def run(
         self, request: TurnRequest, learner: LearnerScope, *, should_stop: Callable[[], bool] = never_stop
     ) -> Iterator[Event]:
-        return _Turn(self, request, learner, should_stop).events()
+        return _Turn(self, request, learner, should_stop).timed_events()
 
 
 class _Turn:
@@ -215,8 +218,41 @@ class _Turn:
         # The learner's address for this turn (§5.6): used, never logged or stored (contract §10).
         self.address: Address = default_address(request.context.locale.support)
         self.deadline = runtime.clock() + runtime.limits.turn_timeout_seconds
+        self.timeline = TurnTimeline(runtime.clock)
 
     # --- the turn ------------------------------------------------------------
+
+    def timed_events(self) -> Iterator[Event]:
+        """The turn's events, with its timeline recorded once at the end, however it ends."""
+
+        outcome = "abandoned"  # the client left before the turn ended
+        try:
+            for event in self.events():
+                if event.name in ("segment_delta", "segment_end"):
+                    self.timeline.mark_once("first_visible")
+                elif event.name == "error":
+                    outcome = f"error:{getattr(event, 'error_class', 'unknown')}"
+                elif event.name == "done" and not outcome.startswith("error"):
+                    outcome = "success"
+                yield event
+        finally:
+            self._record_turn(outcome)
+
+    def _record_turn(self, outcome: str) -> None:
+        if self.rt.record_turn is None:
+            return
+        context = self.request.context
+        self.timeline.facts.update(
+            surface=context.surface, activity_type=context.activity_type, opening=self.opening,
+            screen_help=self.screen_help, target=self.locale.target, interface=self.locale.interface,
+            support=self.locale.support, selected_type=context.selected_item.type if context.selected_item else None,
+            provider_rounds=self.provider_rounds, input_tokens=self.usage_in if self.usage_known else None,
+            output_tokens=self.usage_out if self.usage_known else None, evidence_count=len(self.evidence_ids),
+        )
+        try:
+            self.rt.record_turn(self.learner.user_key, self.timeline.record(trace_id=self.trace_id, outcome=outcome))
+        except Exception:  # telemetry never costs the learner the answer
+            _log.warning("agent turn timeline not recorded", exc_info=True, extra={"trace_id": self.trace_id})
 
     def events(self) -> Iterator[Event]:
         session, _ = self.rt.sessions.open(self.request.session_id, self.learner.user_key)
@@ -285,6 +321,7 @@ class _Turn:
             turn, tier1, [c for c in here if c], session, opening=self.opening, snapshot=snapshot,
             screen_help=self.screen_help,
         )
+        self.timeline.mark("context_built")
         outputs = ReplyOutputs(
             client=self.request.client,
             interface=self.locale.interface,
@@ -372,7 +409,9 @@ class _Turn:
             round_text: list[str] = []
             calls: list[ToolCallRequest] = []
             self.provider_rounds += 1
+            self.timeline.round_started()
             for item in self.rt.provider.stream(request, should_stop=self.should_stop):
+                self.timeline.round_event()
                 if self.should_stop():
                     return
                 if self.rt.clock() > self.deadline:
@@ -386,6 +425,8 @@ class _Turn:
                         self.usage_known = False  # never a guessed zero (R5 counts what was reported)
                     self.usage_in += item.input_tokens or 0
                     self.usage_out += item.output_tokens or 0
+                    self.timeline.round_finished(input_tokens=item.input_tokens, output_tokens=item.output_tokens,
+                                                 cached=item.cached_input_tokens, tool_calls=len(calls))
                     if item.finish_reason not in NORMAL_FINISH:
                         _log.warning("agent provider round ended abnormally: %s", item.finish_reason,
                                      extra={"trace_id": self.trace_id})  # fmt: skip
@@ -476,10 +517,13 @@ class _Turn:
             # Never a tool call for another learner's data: refused before it starts (contract S8).
             return "refused: tools read only the signed-in learner's own data"
         label = learner_copy.text(f"tool.{tool.name}", interface=self.locale.interface, support=self.locale.support)[1]
+        self.timeline.tools.append(tool.name)
+        self.timeline.mark("tool_start")
         yield self.stream.emit(ToolCallEvent(tool=tool.name, label=label))
         try:
             with learner_context(self.learner):
                 result = self.rt.tools.invoke(tool.name, replace(self.learner, interface=self.locale.interface), args)
+            self.timeline.mark("tool_end")
         except ToolArgumentsInvalid:
             yield self._unavailable(tool.name)
             return "refused: arguments do not fit this tool's schema"
@@ -543,6 +587,8 @@ class _Turn:
         return self.address
 
     def _finish(self, outputs: ReplyOutputs) -> Iterator[Event]:
+        self.timeline.mark("final_ready")
+        self.timeline.facts.update(actions=[a.type for a in outputs.actions], suggestions=len(outputs.suggestions))
         index = 0
         support = self.locale.support
         offer_lang = offer_text = action_type = None

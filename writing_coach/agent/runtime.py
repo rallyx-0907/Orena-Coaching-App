@@ -118,6 +118,7 @@ def build_agent_runtime(
     reads: AppReads = AppReads(),
     provider: AgentTurnProvider | None = None,
     limits: AgentLimits = DEFAULT_LIMITS,
+    record_turn: Callable[[str, dict], None] | None = None,
 ) -> AgentRuntime:
     tools = build_tool_registry(
         writing_review=writing_review, writing_history=writing_history, reads=reads, limits=limits
@@ -134,4 +135,5 @@ def build_agent_runtime(
         sessions=SessionCache(limits=limits),
         limits=limits,
         meter=meter,
+        record_turn=record_turn,
     )

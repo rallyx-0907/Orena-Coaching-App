@@ -817,6 +817,16 @@ def _agent_grammar_lesson(grammar_id: str) -> dict[str, Any] | None:
         raise
 
 
+
+def _record_agent_turn(user_key: str, record: dict) -> None:
+    """One `agent.turn` row per turn (agent/timeline.py), linked to the learner's account like an audit row."""
+
+    writer = getattr(_persistence_runtime.platform_repository, "record_admin_event", None)
+    if callable(writer):
+        writer("agent.turn", actor=user_key, entity_type="agent_turn", entity_id=str(record.get("trace_id", "")),
+               payload=record)
+
+
 configure_agent(
     build_agent_runtime(
         writing_review=_agent_writing_review,
@@ -843,6 +853,7 @@ configure_agent(
             listening_recent=lambda limit: _specialized_learning_repository.list_recent_listening_progress_records(limit),
         ),
         record_usage=_persistence_runtime.product_repository.record_usage,
+        record_turn=_record_agent_turn,
     )
     if agent_enabled(os.environ, production=APP_ENV == "production")
     else None
