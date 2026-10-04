@@ -56,6 +56,7 @@ from grammar_lab.pipeline.validate import (
     QUICK_PRACTICE_BLANK,
     ZH_HANS,
     _PINYIN_SYLLABLE,
+    Issue,
     pattern_rule_matches,
     validate_generated_point,
 )
@@ -630,6 +631,138 @@ def assemble_example(raw: dict[str, Any], zh: bool, loc: Any) -> dict[str, Any]:
     if zh:
         example["pinyin"] = pinyin_from_pairs(text, raw.get("pinyin_pairs"))
     return example
+
+
+
+def _formula_for_generated_form(pattern: dict[str, Any], form: str) -> list[dict[str, Any]] | None:
+    if form == "affirmative":
+        return pattern["formula"]
+    return pattern.get("variants", {}).get(form)
+
+
+def assemble_generated_example(
+    raw: dict[str, Any], pattern: dict[str, Any], zh: bool, loc: Any, index: int,
+) -> tuple[dict[str, Any], list[tuple[str, str, str]]]:
+    """Assemble a full-generation example from formula-slot bindings.
+
+    The provider never assigns a role. It identifies the selected formula slot
+    by zero-based index and quotes the exact surface substring. Code derives the
+    stored role from that slot and requires every non-optional slot exactly once.
+    """
+    text = target_text(raw["text"], zh)
+    form = raw["form"]
+    formula = _formula_for_generated_form(pattern, form)
+    example: dict[str, Any] = {
+        "text": text,
+        "form": form,
+        "spans": [],
+        "annotation": loc(raw["annotation"]),
+        "translation": loc(raw["translation"]),
+    }
+    if zh:
+        example["pinyin"] = pinyin_from_pairs(text, raw.get("pinyin_pairs"))
+
+    # The normal validator owns the form-without-variant error.
+    if formula is None:
+        return example, []
+
+    problems: list[tuple[str, str, str]] = []
+    by_index: dict[int, str] = {}
+    for binding_index, binding in enumerate(raw.get("bindings") or []):
+        slot_index = binding.get("slot_index")
+        path = f"examples[{index}].bindings[{binding_index}]"
+        if not isinstance(slot_index, int) or not 0 <= slot_index < len(formula):
+            problems.append((
+                path + ".slot_index",
+                "generation.binding_slot_invalid",
+                f"slot_index {slot_index!r} is outside the {form} formula of {len(formula)} slot(s)",
+            ))
+            continue
+        if slot_index in by_index:
+            problems.append((
+                path + ".slot_index",
+                "generation.binding_slot_duplicate",
+                f"formula slot {slot_index} is bound more than once",
+            ))
+            continue
+        by_index[slot_index] = target_text(str(binding["text"]), zh)
+
+    required = {i for i, slot in enumerate(formula) if not slot.get("optional")}
+    missing = sorted(required - set(by_index))
+    for slot_index in missing:
+        problems.append((
+            f"examples[{index}].bindings",
+            "generation.binding_required_slot_missing",
+            f"required {form} formula slot {slot_index} ({formula[slot_index]['text']!r}) has no binding",
+        ))
+
+    cursor = 0
+    spans: list[dict[str, Any]] = []
+    for slot_index in sorted(by_index):
+        needle = by_index[slot_index]
+        start = text.find(needle, cursor)
+        if start < 0:
+            problems.append((
+                f"examples[{index}].bindings",
+                "generation.binding_text_order",
+                f"slot {slot_index} binding {needle!r} is not an exact substring after the previous bound slot",
+            ))
+            continue
+        end = start + len(needle)
+        spans.append({"start": start, "end": end, "role": formula[slot_index]["role"]})
+        cursor = end
+
+    example["spans"] = spans
+    return example, problems
+
+
+def assemble_generated_personal_production(
+    raw: dict[str, Any], pattern: dict[str, Any], zh: bool, loc: Any,
+) -> tuple[dict[str, Any], list[tuple[str, str, str]]]:
+    """Map generation-only pattern-rule slot indexes to stored formula roles."""
+    target_form = raw["target_form"]
+    formula = _formula_for_generated_form(pattern, target_form)
+    problems: list[tuple[str, str, str]] = []
+    slots: list[dict[str, Any]] = []
+    seen: set[int] = set()
+
+    for index, raw_slot in enumerate(raw["pattern_rule"]["slots"]):
+        slot_index = raw_slot.get("slot_index")
+        path = f"personal_production.pattern_rule.slots[{index}].slot_index"
+        if formula is None or not isinstance(slot_index, int) or not 0 <= slot_index < len(formula):
+            problems.append((
+                path,
+                "generation.rule_slot_invalid",
+                f"slot_index {slot_index!r} does not name a slot in the {target_form} formula",
+            ))
+            continue
+        if slot_index in seen:
+            problems.append((
+                path,
+                "generation.rule_slot_duplicate",
+                f"formula slot {slot_index} is used more than once in pattern_rule",
+            ))
+            continue
+        seen.add(slot_index)
+        stored = {
+            key: value
+            for key, value in raw_slot.items()
+            if key != "slot_index" and value not in (None, "", [])
+        }
+        stored["role"] = formula[slot_index]["role"]
+        slots.append(stored)
+
+    block: dict[str, Any] = {
+        "prompt": loc(raw["prompt"]),
+        "placeholder": target_text(raw["placeholder"], zh),
+        "target_form": target_form,
+        "pattern_rule": {"ordered": raw["pattern_rule"]["ordered"], "slots": slots},
+        "sample": {"text": target_text(raw["sample"], zh)},
+    }
+    if zh:
+        block["placeholder_pinyin"] = pinyin_from_pairs(block["placeholder"], raw.get("placeholder_pinyin_pairs"))
+        block["sample"]["pinyin"] = pinyin_from_pairs(block["sample"]["text"], raw.get("sample_pinyin_pairs"))
+    return block, problems
 
 
 def assemble_compare_item(item: dict[str, Any], zh: bool, loc: Any) -> dict[str, Any]:
@@ -1361,14 +1494,20 @@ class Generator:
                 pattern["variants"] = variants
             pattern["illustration"] = illustration
 
-            examples = [assemble_example(raw, zh, loc) for raw in data["examples"]]
-            sanitize_example_spans(examples, pattern)
-            complete_literal_example_spans(examples, pattern)
-            align_formula_order_from_examples(examples, pattern)
+            generation_problems: list[tuple[str, str, str]] = []
+            examples: list[dict[str, Any]] = []
+            for example_index, raw in enumerate(data["examples"]):
+                example, problems = assemble_generated_example(raw, pattern, zh, loc, example_index)
+                examples.append(example)
+                generation_problems.extend(problems)
+
             compare = [assemble_compare_item(item, zh, loc) for item in data["compare"]]
             quick_practice = [assemble_quick_practice_item(item, zh, loc) for item in data["quick_practice"]]
             mistakes = [assemble_common_mistake(raw, zh, loc) for raw in data["common_mistakes"]]
-            personal_production = assemble_personal_production(data["personal_production"], zh, loc)
+            personal_production, production_problems = assemble_generated_personal_production(
+                data["personal_production"], pattern, zh, loc
+            )
+            generation_problems.extend(production_problems)
             repair_personal_production_rule(personal_production, pattern, examples, zh)
 
             point = {
@@ -1410,7 +1549,13 @@ class Generator:
                 }
             if existing.get("blocks"):
                 point["blocks"] = existing["blocks"]
-            return {"schema_version": point.pop("schema_version"), **point}
+            assembled = {"schema_version": point.pop("schema_version"), **point}
+            file = f"content/{self.lang}/{point_id}.json"
+            contract_issues = [
+                Issue(file=file, path=path, code=code, message=message)
+                for path, code, message in generation_problems
+            ]
+            return assembled, contract_issues
 
         total_cost = 0.0
         cost_known = True
@@ -1452,8 +1597,8 @@ class Generator:
                 total_cost += attempt_cost
             all_cached = all_cached and result.cached
 
-            point = assemble(result)
-            issues = validate_generated_point(self.lang, point, self.root)
+            point, contract_issues = assemble(result)
+            issues = [*contract_issues, *validate_generated_point(self.lang, point, self.root)]
             if not issues:
                 save_point(self.lang, point, self.root)
                 register_realization(point, self.root)
