@@ -31,6 +31,12 @@ v12: bounds personal-production rules for weak-schema providers. A rule has at m
 `any_of` has at most eight literals. Open-class vocabulary is never enumerated; the rule matches only
 grammar-bearing markers/forms. Formula/example instructions also require a left-to-right role-order self-check.
 
+v13: full-point generation no longer asks the model to repeat semantic `role` labels inside example
+highlights or personal-production rule slots. Formula slots are the single source of truth. Examples bind
+exact surface text to zero-based `slot_index` values from their selected formula; code derives stored roles
+and rejects missing, duplicate, out-of-range or out-of-order bindings. Personal-production matcher slots
+also name `slot_index`; code derives their stored roles from the target formula.
+
 ---
 
 You are writing one grammar lesson for Orena, a language-learning app. This is the lesson's
@@ -81,25 +87,22 @@ Output one JSON object matching the schema you were given -- no commentary outsi
 4. **Illustration**: {illustration_instruction}
 5. **examples**: exactly {num_examples} clean, natural sentences in {target_lang} at this
    level. `form` says which formula the sentence follows (`affirmative`, or `negative`/`question`
-   when you gave that variant -- use at least one of those if you gave any). `spans` marks
-   the concrete parts of the sentence that realise the formula, using the same `role` values.
-   Every required **role** in the selected formula must be represented, and no span may use a
-   role absent from that formula. **Before returning JSON, simulate the highlighted spans from left to
-   right against that example's selected formula. The span roles must occur in the same order as the
-   formula roles; if they do not, rewrite the formula or the example rather than returning the mismatch.**
-   When a formula has repeated roles (for example S ... S or
-   V ... V), schema v0.4 has no slot id, so do not invent a one-to-one slot identity; give the
-   natural concrete spans in sentence order and let the role-level validator handle the
-   ambiguity. Prefer a single slot with `options` for alternatives rather than several
-   sequential required slots: e.g. one quantifier slot with options `few/a few/little/a little`,
-   not four required quantifier slots; one connector slot with alternative forms, not every
-   connector as a required step. Do not highlight words whose role the formula does not name.
-   Give each span as the exact substring of `text`; the code resolves it to offsets.
-   If an example uses a contraction such as `don't` / `doesn't` / `isn't`, prefer one
-   auxiliary slot whose text/options include that surface form rather than splitting a
-   contraction into artificial pieces. `annotation` is a
-   short note on what the highlighted part does (e.g. "bắt đầu trong quá khứ → vẫn đúng bây
-   giờ"), `translation` a natural translation.
+   when you gave that variant -- use at least one of those if you gave any). The selected formula's
+   slot indexes are zero-based from left to right: 0, 1, 2, ...
+   `bindings` says which exact substring of the unchanged sentence realises each formula slot.
+   Each binding contains only `slot_index` and `text`; **never repeat or invent a role here**.
+   Bind every non-optional formula slot exactly once. An optional slot may be omitted when that
+   sentence genuinely does not realise it. Do not bind punctuation.
+   Before returning JSON, walk the selected formula from slot 0 to the end and verify that each
+   bound `text` occurs as an exact substring of the sentence in the same left-to-right order.
+   If the sentence cannot realise the formula that way, rewrite the formula or the example.
+   Prefer a single slot with `options` for alternatives rather than several sequential required
+   slots: e.g. one quantifier slot with options `few/a few/little/a little`, not four required
+   quantifier slots; one connector slot with alternative forms, not every connector as a required
+   step. If an example uses a contraction such as `don't` / `doesn't` / `isn't`, prefer one
+   formula slot whose text/options represent the actual surface unit cleanly rather than inventing
+   overlapping bindings. `annotation` is a short note on what the bound grammar does (e.g.
+   "bắt đầu trong quá khứ → vẫn đúng bây giờ"), `translation` a natural translation.
 6. **compare**: one entry per id listed above under "compare required" (none if none).
    `this_meaning`/`this_example` describe this point, `other_meaning`/`other_example` the
    point named in `with`, so a learner sees exactly where they diverge.
@@ -124,13 +127,16 @@ Output one JSON object matching the schema you were given -- no commentary outsi
    `我去过……`). `target_form`: which formula the sentence follows (usually `affirmative`).
    `sample`: one clean model sentence in {target_lang} that follows that formula.
    **pattern_rule** is how code decides, without any model, whether a learner's sentence really used the
-   pattern. Use **1-4 rule slots total**. `slots` lists the roles of the `target_form` formula whose presence proves the pattern is used
-   (skip a role any sentence has, like `subject` -- pick the ones that carry the point: the auxiliary and
-   the participle, the particle, the marker). Each slot has its `role` and exactly one matcher: `any_of`
-   (a list of the exact words or characters, with contractions) OR `regex` (a case-insensitive regular
-   expression, for productive forms a list cannot cover -- e.g. `-ing`, regular plurals, possessive `'s`).
-   Fill the matcher you do not use with an empty list / empty string. An `any_of` list has **at most 8 literals**
-   and is only for a small closed grammar set (for example `am/is/are`, `have/has`, `了/过`).
+   pattern. Use **1-4 rule slots total**. The `target_form` formula is zero-based from left to right;
+   each matcher slot names the grammar-bearing formula slot by `slot_index` rather than repeating its
+   semantic role. Skip generic slots any sentence has, such as an ordinary subject; choose the slots that
+   carry this grammar point (for example the auxiliary, participle, particle, marker). Each rule slot has
+   `slot_index` and exactly one matcher: `any_of` (a list of exact closed-set words or characters,
+   including contractions) OR `regex` (a case-insensitive regular expression for productive forms a
+   list cannot cover -- e.g. `-ing`, regular plurals, possessive `'s`).
+   Fill the matcher you do not use with an empty list / empty string. `slot_index` must exist in the
+   selected `target_form` formula. An `any_of` list has **at most 8 literals** and is only for a small
+   closed grammar set (for example `am/is/are`, `have/has`, `了/过`).
    **Never enumerate open-class vocabulary** such as ordinary verbs, nouns, adjectives, adverbs, topics,
    objects, places, or example words. If the grammar-bearing form is productive, use one focused regex on
    that grammar-bearing role (for example an `-ing` or `-ly` form); if a role carries no grammar signal,
