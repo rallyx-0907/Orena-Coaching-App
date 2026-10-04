@@ -24,7 +24,7 @@ import hashlib
 import json
 import re
 import time
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -1431,7 +1431,7 @@ class Generator:
             # example spans and the deterministic production rule. Repair that
             # small surface first instead of paying for a fresh full lesson.
             if can_target_repair(issues):
-                repair_data = result.data
+                repair_point = point
                 repair_issues = issues
                 for _repair_attempt in range(TARGETED_REPAIR_ATTEMPTS):
                     try:
@@ -1439,7 +1439,7 @@ class Generator:
                             self.llm,
                             point_id=point_id,
                             target_lang=existing["target_lang"],
-                            data=repair_data,
+                            point=repair_point,
                             issues=repair_issues,
                         )
                     except LLMError as exc:
@@ -1460,23 +1460,22 @@ class Generator:
                     all_cached = all_cached and patch_result.cached
 
                     try:
-                        repair_data = apply_semantic_patch(repair_data, patch_result.data)
+                        repair_point = apply_semantic_patch(
+                            repair_point, patch_result.data, repair_issues
+                        )
                     except ValueError:
                         break
 
-                    repaired_result = replace(result, data=repair_data)
-                    repaired_point = assemble(repaired_result)
-                    repair_issues = validate_generated_point(self.lang, repaired_point, self.root)
+                    repair_issues = validate_generated_point(self.lang, repair_point, self.root)
                     if not repair_issues:
-                        save_point(self.lang, repaired_point, self.root)
-                        register_realization(repaired_point, self.root)
+                        save_point(self.lang, repair_point, self.root)
+                        register_realization(repair_point, self.root)
                         return GenerateOutcome(
                             point_id, "written",
                             cost_usd=(total_cost if cost_known and total_cost else None),
                             cached=all_cached,
                         )
 
-                result = replace(result, data=repair_data)
                 issues = repair_issues
 
             last_problem = "; ".join(
