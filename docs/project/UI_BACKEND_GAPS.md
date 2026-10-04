@@ -4784,3 +4784,22 @@ Architecture and proposed schema: `docs/project/proposals/VOCABULARY_LOCALIZATIO
   language) and PostgreSQL library search (also matches localization glosses). Accepted by the
   human: legacy `GET /api/vocabulary` (old UI) shows no meaning for such words; the SQLite test
   backend's library search covers the learner's own fields only.
+
+## Admin: AI cost report (human request 2026-10-04)
+
+The human asked for an Admin page with AI cost by day, by feature and by learner. The pinned
+`Orena-Admin.dc.html` draws no such page: its AI area shows only a provider's "Usage · last 24 h"
+(requests, failures, average latency). By CLAUDE.md rules 4 and 7, no page is invented.
+
+- Built, backend only: `GET /api/admin/ai/costs?days=N` (1-90, admin-only). It reads the shared
+  `ai.operation` ledger and returns totals by UTC day and by feature x provider x model, with a unit
+  cost: per priced call, or per audio minute for speech recognition. It also returns its own gaps.
+- Recorded since 2026-10-04: Groq speech recognition and Azure pronunciation scoring, with audio
+  seconds and list-price cost (catalog 2026-10-04.v2).
+- Open, needs a human decision or a design frame:
+  - **AC-1** a design frame for the cost page;
+  - **AC-2** cost per learner. The operation telemetry is anonymous by design; only Orena agent
+    turns carry an account (`agent.turn`, Intelligence lane). Linking every provider call to a
+    learner is a privacy decision;
+  - **AC-3** the Azure pronunciation rate, to be checked against the bill;
+  - **AC-4** infrastructure cost, which is not measured.

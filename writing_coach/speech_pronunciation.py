@@ -8,6 +8,7 @@ import os
 import re
 import subprocess
 import tempfile
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from collections.abc import Callable
@@ -291,10 +292,33 @@ class AzureSpeechPronunciationProvider:
         locale = self._locale(language).casefold()
         return "IPA" if locale == "en-us" else "SAPI" if locale == "zh-cn" else ""
 
-    def assess_bytes(
+    def assess_bytes(self, audio_bytes: bytes, **kwargs: Any) -> SpeechPronunciationResult:
+        """Every Azure request in the shared AI ledger (ai/audio_telemetry.py): the seconds Azure received, once it
+        answered 200 - a silent take it scored as nothing was still billed."""
+
+        from writing_coach.ai.audio_telemetry import record_audio_operation
+
+        meter: dict[str, float] = {}
+        started = time.perf_counter()
+        try:
+            result = self._assess(audio_bytes, meter=meter, **kwargs)
+        except Exception as exc:
+            billed = meter.get("seconds")
+            record_audio_operation("pronunciation_evaluator", provider=self.provider_id,
+                                   model="pronunciation-assessment", outcome="success" if billed is not None else "failure",
+                                   latency_ms=int((time.perf_counter() - started) * 1000), audio_seconds=billed,
+                                   error=None if billed is not None else exc)  # fmt: skip
+            raise
+        record_audio_operation("pronunciation_evaluator", provider=self.provider_id, model="pronunciation-assessment",
+                               outcome="success", latency_ms=int((time.perf_counter() - started) * 1000),
+                               audio_seconds=meter.get("seconds"))  # fmt: skip
+        return result
+
+    def _assess(
         self,
         audio_bytes: bytes,
         *,
+        meter: dict[str, float],
         filename: str,
         content_type: str,
         language: str,
@@ -363,6 +387,9 @@ class AzureSpeechPronunciationProvider:
         if response is None:
             raise SpeechPronunciationRequestFailed()
 
+        if response.status_code == 200:
+            # 16 kHz mono 16-bit PCM after the 44-byte header: the seconds Azure processed and bills.
+            meter["seconds"] = max(0, len(normalized) - 44) / 32000
         if response.status_code == 413:
             raise SpeechPronunciationPayloadTooLarge()
         if response.status_code != 200:
