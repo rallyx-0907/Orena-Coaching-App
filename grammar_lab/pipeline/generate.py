@@ -641,6 +641,112 @@ def _formula_for_generated_form(pattern: dict[str, Any], form: str) -> list[dict
     return pattern.get("variants", {}).get(form)
 
 
+
+def normalize_generated_formula_order(data: dict[str, Any], zh: bool) -> dict[str, Any]:
+    """Reorder raw v13 formula slots only when unchanged examples prove the surface order.
+
+    This is deterministic structural normalization, not grammar inference. Each binding
+    must name an exact substring that occurs uniquely in its example. Those observed
+    positions create ordering constraints between existing slot indexes. If the
+    constraints are acyclic, formula slots and every dependent slot_index are remapped.
+    """
+    out = copy.deepcopy(data)
+    form_keys = {"affirmative": "formula", "negative": "negative", "question": "question"}
+
+    for form, key in form_keys.items():
+        formula = out.get(key) or []
+        if len(formula) < 2:
+            continue
+
+        edges: set[tuple[int, int]] = set()
+        used_example = False
+        for example in out.get("examples", []):
+            if example.get("form") != form:
+                continue
+            text = target_text(str(example.get("text", "")), zh)
+            located: list[tuple[int, int, int]] = []
+            valid = True
+            for binding in example.get("bindings") or []:
+                slot_index = binding.get("slot_index")
+                if not isinstance(slot_index, int) or not 0 <= slot_index < len(formula):
+                    valid = False
+                    break
+                needle = target_text(str(binding.get("text", "")), zh)
+                if not needle:
+                    valid = False
+                    break
+                starts: list[int] = []
+                start = text.find(needle)
+                while start >= 0:
+                    starts.append(start)
+                    start = text.find(needle, start + 1)
+                if len(starts) != 1:
+                    valid = False
+                    break
+                begin = starts[0]
+                located.append((begin, begin + len(needle), slot_index))
+            if not valid or len(located) < 2:
+                continue
+
+            located.sort()
+            if any(located[i][1] > located[i + 1][0] for i in range(len(located) - 1)):
+                continue
+            used_example = True
+            for left, right in zip(located, located[1:]):
+                if left[2] != right[2]:
+                    edges.add((left[2], right[2]))
+
+        if not used_example or not edges:
+            continue
+
+        incoming = {index: 0 for index in range(len(formula))}
+        outgoing: dict[int, set[int]] = {index: set() for index in range(len(formula))}
+        for left, right in edges:
+            if right not in outgoing[left]:
+                outgoing[left].add(right)
+                incoming[right] += 1
+
+        ready = [index for index in range(len(formula)) if incoming[index] == 0]
+        order: list[int] = []
+        while ready:
+            ready.sort()
+            current = ready.pop(0)
+            order.append(current)
+            for nxt in sorted(outgoing[current]):
+                incoming[nxt] -= 1
+                if incoming[nxt] == 0:
+                    ready.append(nxt)
+
+        if len(order) != len(formula) or order == list(range(len(formula))):
+            continue
+
+        remap = {old: new for new, old in enumerate(order)}
+        out[key] = [formula[old] for old in order]
+
+        for example in out.get("examples", []):
+            if example.get("form") != form:
+                continue
+            for binding in example.get("bindings") or []:
+                slot_index = binding.get("slot_index")
+                if slot_index in remap:
+                    binding["slot_index"] = remap[slot_index]
+
+        production = out.get("personal_production") or {}
+        if production.get("target_form") == form:
+            rule = production.get("pattern_rule") or {}
+            for rule_slot in rule.get("slots") or []:
+                slot_index = rule_slot.get("slot_index")
+                if slot_index in remap:
+                    rule_slot["slot_index"] = remap[slot_index]
+            if rule.get("ordered"):
+                rule["slots"] = sorted(
+                    rule.get("slots") or [],
+                    key=lambda slot: slot.get("slot_index", len(formula)),
+                )
+
+    return out
+
+
 def assemble_generated_example(
     raw: dict[str, Any], pattern: dict[str, Any], zh: bool, loc: Any, index: int,
 ) -> tuple[dict[str, Any], list[tuple[str, str, str]]]:
@@ -1655,7 +1761,7 @@ class Generator:
         if r5_records:
             user += "\n\nR5 source lesson(s) for this point (restructure, correct, complete):\n" + r5_source_text(r5_records)
         def assemble(result: Any) -> dict[str, Any]:
-            data = result.data
+            data = normalize_generated_formula_order(result.data, zh)
 
             illustration: dict[str, Any] = {"kind": ILLUSTRATION_FOR_POINT_TYPE[point_type]}
             if point_type == "tense_aspect":
