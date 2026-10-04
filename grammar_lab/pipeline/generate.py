@@ -780,10 +780,14 @@ def _generation_structure_patch_schema(full_schema: dict[str, Any]) -> dict[str,
 
 
 def _generation_structure_context(
-    point_id: str, data: dict[str, Any], issues: list[Any],
+    point_id: str, title: str, data: dict[str, Any], issues: list[Any],
 ) -> dict[str, Any]:
     return {
         "point_id": point_id,
+        "title": title,
+        "summary": data["summary"],
+        "sub": data["sub"],
+        "when_to_use": data["when_to_use"],
         "issues": [
             {"code": issue.code, "path": issue.path, "message": issue.message}
             for issue in issues[:12]
@@ -812,6 +816,7 @@ def request_generation_structure_patch(
     llm: LLMClient,
     *,
     point_id: str,
+    title: str,
     target_lang: str,
     data: dict[str, Any],
     issues: list[Any],
@@ -846,7 +851,7 @@ Rules:
     user = (
         f"Repair the structural projection for {point_id} ({target_lang}).\n"
         + json.dumps(
-            _generation_structure_context(point_id, data, issues),
+            _generation_structure_context(point_id, title, data, issues),
             ensure_ascii=False,
             separators=(",", ":"),
         )
@@ -1791,6 +1796,7 @@ class Generator:
                     structure_patch = request_generation_structure_patch(
                         self.llm,
                         point_id=point_id,
+                        title=header["native_title"],
                         target_lang=existing["target_lang"],
                         data=result.data,
                         issues=issues,
