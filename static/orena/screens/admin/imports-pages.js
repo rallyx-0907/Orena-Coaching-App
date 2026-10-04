@@ -122,6 +122,8 @@ export function mediaPage({ media, t, ui, href }) {
     ? [{ id: 'urls', kind: 'area', label: t('impMediaUrls'), span: true, rows: 3, value: media.urls || '', placeholder: 'https://…' }]
     : [{ id: 'mediaFiles', kind: 'file', label: t('impMediaFile'), span: true, fileLabel: entries.length ? t('impFilesChosen', { n: entries.length }) : t('impChooseMedia'), accept: t('impMediaAccept'), acceptAttr: 'video/*,audio/*', multiple: true }];
   fields.push({ id: 'language', kind: 'seg', label: t('impLanguage'), options: ['en', 'zh'].map((code) => ({ id: code, label: t(code === 'en' ? 'langEn' : 'langZh'), on: media.language === code })) });
+  // D-111: the operator's rights declaration at import. Unconfirmed rights go to review; confirmed ones may publish.
+  fields.push({ id: 'rights', kind: 'seg', label: t('impRights'), options: ['unknown', 'cleared'].map((value) => ({ id: value, label: t(`impRights_${value}`), on: (media.rights || 'unknown') === value })) });
   const rowsBlock = entries.length ? block({ span: true, title: t('impQueue'), body: rowList(entries.map(({ item, index }) => ({
     title: item.title || item.name || item.url,
     meta: mediaMeta(t, ui, item),

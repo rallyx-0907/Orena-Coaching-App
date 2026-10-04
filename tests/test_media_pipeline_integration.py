@@ -136,3 +136,20 @@ def test_shared_media_must_be_published_for_direct_learner_access(status):
     from tests.test_media_lifecycle import _entry
     from writing_coach.media_library_store import visible_to
     assert not visible_to(_entry(status=status), user_key="learner", language="en")
+
+
+@pytest.mark.parametrize(("declared", "rights"), [(True, "cleared"), (None, "unknown")])
+def test_an_upload_carries_the_operators_rights_declaration(tmp_path, monkeypatch, declared, rights):
+    """D-111: a shared upload is cleared only when the operator says so at import; otherwise it waits for review."""
+
+    from writing_coach import media_thumbnail
+    monkeypatch.setattr(media_thumbnail, "_TEMP_ROOT", tmp_path)
+    monkeypatch.setenv("MEDIA_PIPELINE_INLINE", "1")
+    monkeypatch.delenv("MEDIA_RIGHTS_CLEARED_PROVIDERS", raising=False)
+    store = FileMediaLibraryStore(tmp_path / "index")
+    importer = MediaSourceImporter(None, store, FilesystemBookAssetStore(tmp_path / "assets"),
+                                   pipeline=MediaPipeline(ledger=SpendLedger(tmp_path / "spend.json")))  # fmt: skip
+    path = tmp_path / "voice.wav"
+    path.write_bytes(_tone())
+    entry = importer.import_upload(path, filename=path.name, language="en", imported_by="admin", rights_cleared=declared)
+    assert store.get(entry.media_id).source["rights"] == rights

@@ -60,9 +60,10 @@ export const adminApi = {
     return request('/api/admin/console/imports/books', { method: 'POST', body: form });
   },
   importMediaUrl: (item, language) => request('/api/admin/console/imports/media', json('POST', { language, items: [item] })),
-  importMediaFile: (file, language) => {
+  importMediaFile: (file, language, rightsCleared = false) => {
     const form = files('file', [file]);
     form.append('language', language);
+    if (rightsCleared) form.append('rights_cleared', 'true');
     return request('/api/admin/console/imports/media-upload', { method: 'POST', body: form });
   },
   mediaPreview: (urls, language) => request('/api/media/admin/preview', json('POST', { urls, language })),

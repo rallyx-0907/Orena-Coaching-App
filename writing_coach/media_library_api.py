@@ -407,6 +407,7 @@ async def admin_upload(
     file: list[UploadFile] = File(default=[]),
     language: str = Form(default="en"),
     batch_id: str = Form(default="", max_length=80),
+    rights_cleared: str = Form(default="", max_length=8),
 ) -> dict[str, Any]:
     """Import audio/video files an operator holds, into the shared library."""
     user = _require_admin(request)
@@ -421,7 +422,8 @@ async def admin_upload(
             with TempMediaFile(suffix=Path(filename).suffix or ".bin") as temp:
                 await _stream_upload(upload, temp.path)
                 entry = importer.import_upload(
-                    temp.path, filename=filename, language=selected, imported_by=imported_by, library="shared", batch_id=batch_id
+                    temp.path, filename=filename, language=selected, imported_by=imported_by, library="shared", batch_id=batch_id,
+                    rights_cleared=True if rights_cleared.strip().casefold() == "true" else None,
                 )
             rows.append({"url": filename, "status": "ok", "detail": "Imported.", "media_id": entry.media_id, "lesson_id": ""})
         except UnsafeMediaFetch as exc:

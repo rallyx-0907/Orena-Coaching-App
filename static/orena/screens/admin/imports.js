@@ -26,7 +26,7 @@ export async function mountImports(shell, ctx) {
   const view = {
     loading: true, failed: false,
     books: { items: [], language: learning, running: false },
-    media: { tab: 'url', urls: '', items: [], language: learning, checking: false, running: false },
+    media: { tab: 'url', urls: '', items: [], language: learning, rights: 'unknown', checking: false, running: false },
     vocab: {
       files: [], previews: [], mappings: {}, step: 0, showAll: false, running: false, previewing: false, errors: [], results: null,
       metadata: { title: '', language: learning, meaning_language: languages().support || '', framework: '', level: '', topic: '', collection_id: '', rights_status: '', completeness: 'unknown', publish: false, attested: false },
@@ -163,7 +163,7 @@ export async function mountImports(shell, ctx) {
   host.on('media-import', async () => {
     view.media.running = true;
     host.paint();
-    await importMedia(api, view.media.items, view.media.language, () => host.paint());
+    await importMedia(api, view.media.items, view.media.language, () => host.paint(), { rightsCleared: view.media.rights === 'cleared' });
     view.media.running = false;
     for (const item of view.media.items) if (item.contentId && item.state !== 'failed') item.state = 'processing';
     await refreshMedia();
@@ -225,7 +225,7 @@ export async function mountImports(shell, ctx) {
     if (routeId === 'adminImportBooks') view.books[field] = value;
     else if (routeId === 'adminImportMedia') {
       view.media[field] = value;
-      view.media.items = view.media.items.map((item) => ({ ...item, level: '' }));
+      if (field === 'language') view.media.items = view.media.items.map((item) => ({ ...item, level: '' }));
     } else if (routeId === 'adminImportVocab' && field.startsWith('meta:')) view.vocab.metadata[field.slice(5)] = value;
     else if (routeId === 'adminImportSource') view.source[field] = value;
     host.paint();

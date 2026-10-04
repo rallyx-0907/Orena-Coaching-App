@@ -162,11 +162,11 @@ export async function checkMediaUrls(api = adminApi, urls, language) {
   }
 }
 
-export async function importMedia(api = adminApi, items, language, onUpdate) {
+export async function importMedia(api = adminApi, items, language, onUpdate, { rightsCleared = false } = {}) {
   const pending = items.filter((item) => item.state === 'ready' || (item.file && item.state === 'to_import'));
   return runQueue(pending, async (item) => {
     if (item.file) {
-      const response = await api.importMediaFile(item.file, language);
+      const response = await api.importMediaFile(item.file, language, rightsCleared);
       return mediaOutcome((response.items || [])[0]);
     }
     const response = await api.importMediaUrl({
@@ -175,6 +175,8 @@ export async function importMedia(api = adminApi, items, language, onUpdate) {
       level: item.level || null,
       topic: item.topic || null,
       tags: item.tags || [],
+      // Only a confirmation is sent; an unconfirmed import leaves rights to the source policy and review.
+      rights_cleared: rightsCleared ? true : null,
     }, language);
     return mediaOutcome((response.items || [])[0]);
   }, onUpdate);

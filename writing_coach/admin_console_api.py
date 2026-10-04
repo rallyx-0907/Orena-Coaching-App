@@ -1322,6 +1322,7 @@ async def import_media_upload(
     response: Response,
     file: list[UploadFile] = File(default=[]),
     language: str = Form(default="en"),
+    rights_cleared: str = Form(default="", max_length=8),
 ) -> dict[str, Any]:
     """Import audio/video files; a file already in the library is not stored twice.
 
@@ -1348,7 +1349,7 @@ async def import_media_upload(
                        "detail": "This file is already in the library.", "media_id": existing, "lesson_id": ""}
             else:
                 try:
-                    result = await media_library_api.admin_upload(request, [upload], language, batch_id)
+                    result = await media_library_api.admin_upload(request, [upload], language, batch_id, rights_cleared)
                 except HTTPException as exc:
                     category = _error_category(exc, "media_import_unavailable")
                     _receipt(admin, "media", {"source": upload.filename or "upload", "language": selected,

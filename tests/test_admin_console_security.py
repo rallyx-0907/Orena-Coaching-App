@@ -40,7 +40,7 @@ def fakes(setup, monkeypatch):  # noqa: F811 - pytest fixture reuse
     """Importers that store what they are given, so outcomes are observable."""
     uploads: list[str] = []
 
-    async def admin_upload(request, file, language, batch_id=""):
+    async def admin_upload(request, file, language, batch_id="", rights_cleared=""):
         rows = []
         for item in file:
             await asyncio.sleep(0.05)  # long enough for a second request to overlap

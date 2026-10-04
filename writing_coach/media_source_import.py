@@ -391,8 +391,12 @@ class MediaSourceImporter:
         title: str = "",
         owner_key: str = "",
         batch_id: str = "",
+        rights_cleared: bool | None = None,
     ) -> MediaLibraryEntry:
-        """Store an audio/video file Orena is given, with its own thumbnail."""
+        """Store an audio/video file Orena is given, with its own thumbnail.
+
+        `rights_cleared` is the operator's declaration at import (D-111): True clears rights for publication,
+        anything else leaves them to review."""
         if library == "personal" and not owner_key:
             raise ValueError("a personal file needs its owner")
         probe = probe_media(path)
@@ -425,7 +429,7 @@ class MediaSourceImporter:
         )
         # Both libraries persist through the same store: `personal` rows are
         # simply never listed by a browse read and are only resolvable by id.
-        return self.prepare(entry, batch_id=batch_id)
+        return self.prepare(entry, declared=rights_cleared if library == "shared" else None, batch_id=batch_id)
 
     # -- internal --------------------------------------------------------------
 
