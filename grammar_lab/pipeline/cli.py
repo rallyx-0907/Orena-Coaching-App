@@ -230,6 +230,10 @@ def generate_corpus_command(
         3, "--max-full-attempts",
         help="Hard cap on full lesson generations per point. Allowed range: 1-3; repairs may still use smaller cached/targeted calls.",
     ),
+    paid_repairs: bool = typer.Option(
+        True, "--paid-repairs/--no-paid-repairs",
+        help="Allow or forbid provider-backed structure/semantic repair calls after the full candidate.",
+    ),
     regenerate_existing: bool = typer.Option(
         False, "--regenerate-existing",
         help="Also regenerate existing reviewed content so the final corpus passes through one prompt/schema pipeline.",
@@ -310,7 +314,7 @@ def generate_corpus_command(
         f"generate-corpus: {len(candidates)} {mode} point(s) selected; "
         f"{normalized_skipped} already normalized skipped; "
         f"workers={workers}, provider={provider}, model={model}, "
-        f"max-full-attempts={max_full_attempts}"
+        f"max-full-attempts={max_full_attempts}, paid-repairs={paid_repairs}"
         + (", cache-only" if cache_only else "")
     )
     if not candidates:
@@ -334,6 +338,7 @@ def generate_corpus_command(
                     lang=lang_code, l1=l1, llm=llm, root=root,
                     allow_default_safe=False,
                     max_full_attempts=max_full_attempts,
+                    paid_repairs=paid_repairs,
                 )
                 return generator.generate(
                     point_id,
@@ -413,6 +418,7 @@ def generate_corpus_command(
         "sample_per_level": sample_per_level,
         "workers": workers,
         "max_full_attempts": max_full_attempts,
+        "paid_repairs": paid_repairs,
         "regenerate_existing": regenerate_existing,
         "regenerate_note": bool(regenerate_note),
         "already_normalized_skipped": normalized_skipped,
