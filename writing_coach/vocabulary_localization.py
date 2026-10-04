@@ -23,8 +23,12 @@ for its pairs and re-running preparation - no product code changes.
 from __future__ import annotations
 
 import copy
+import gzip
+import json
 import os
 import re
+from functools import lru_cache
+from pathlib import Path
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any, Protocol
@@ -102,6 +106,130 @@ class ChineseDictionarySource:
             for sense in senses
             if (meaning := chinese_lexicon.short_meaning(sense.term))
         }
+
+
+_VI_GLOSSES = Path(__file__).resolve().parent / "localization_data" / "vi_glosses.json.gz"
+_POS_FAMILY = (("noun", "noun"), ("verb", "verb"), ("adj", "adj"), ("adv", "adv"), ("pron", "pron"),
+               ("prep", "prep"), ("conj", "conj"), ("interj", "intj"), ("intj", "intj"), ("num", "num"))
+
+
+def _pos_family(part_of_speech: str) -> str:
+    value = str(part_of_speech or "").strip().casefold()
+    return next((family for prefix, family in _POS_FAMILY if value.startswith(prefix)), "")
+
+
+@lru_cache(maxsize=1)
+def _vi_glosses() -> dict[str, Any]:
+    try:
+        data = json.loads(gzip.decompress(_VI_GLOSSES.read_bytes()))
+    except (OSError, ValueError):
+        return {}
+    return data if data.get("format") == "orena.vi-glosses.v2" else {}
+
+
+# A Vietnamese Wiktionary gloss that points elsewhere ("xem ...", "như ...", "dạng ...") or
+# names a grammatical form is not a meaning of the sense (human rule, 2026-10-04).
+_VI_CROSS_REFERENCE = re.compile(
+    r"^(xem|như|dạng|biến thể|viết tắt|số nhiều|quá khứ|phân từ|ngôi thứ|cách viết khác|từ cổ của)(\s|$)",
+    re.IGNORECASE,
+)
+
+
+def _english_keys(text: str, pos: str) -> tuple[list[str], str]:
+    word = " ".join(str(text or "").split())
+    if word.startswith("to "):
+        word, pos = word[3:].strip(), pos or "verb"
+    return ([word] if word[:1].isupper() else [word, word.casefold()]), pos
+
+
+def _chosen_english(sense: SenseInput) -> list[str]:
+    """The English words of the sense the card shows: its first dictionary sense."""
+
+    first = sense.meanings.get("en", "").split(";")[0]
+    return [part.strip() for part in first.split(",") if part.strip()]
+
+
+class _VietnameseDictionarySource:
+    """Shared shape of the two English-keyed Vietnamese sources; a Chinese sense reaches them
+    through its chosen English dictionary sense - a pivot over dictionaries, never a model."""
+
+    method = "dictionary"
+    key = ""
+
+    def available(self) -> bool:
+        return bool(_vi_glosses().get(self.key))
+
+    def provenance(self) -> dict[str, Any]:
+        source = (_vi_glosses().get("sources") or {}).get(self.key) or {}
+        return {"source": self.source_id, "release": source.get("release", ""), "license": source.get("license", "")}
+
+    def _english(self, text: str, pos: str) -> str:  # pragma: no cover - per source
+        raise NotImplementedError
+
+    def localize(self, target: str, support: str, senses: Sequence[SenseInput]) -> dict[str, str]:
+        if support != "vi" or target not in {"en", "zh"}:
+            return {}
+        result: dict[str, str] = {}
+        for sense in senses:
+            if target == "en":
+                gloss = self._english(sense.term, _pos_family(sense.part_of_speech))
+            else:
+                gloss = next((g for word in _chosen_english(sense) if (g := self._english(word, ""))), "")
+            if gloss:
+                result[sense.key] = gloss
+        return result
+
+
+class OpenDslSource(_VietnameseDictionarySource):
+    """-> vi from open-dsl-dict (English Wiktionary translation tables), first in line."""
+
+    source_id = "open-dsl-dict"
+    key = "opendsl"
+
+    def _english(self, text: str, pos: str) -> str:
+        keys, pos = _english_keys(text, pos)
+        for key in keys:
+            rows = _vi_glosses()["opendsl"].get(key) or []
+            matching = [gloss for row_pos, _sense, gloss in rows if not pos or row_pos == pos]
+            if not pos and len({row_pos for row_pos, _s, _g in rows}) > 1:
+                continue  # several parts of speech and none chosen: not this sense's meaning
+            if matching:
+                return matching[0]
+        return ""
+
+
+class WiktionaryVietnameseSource(_VietnameseDictionarySource):
+    """-> vi from Vietnamese Wiktionary, only where it matches the chosen sense deterministically:
+    the part of speech agrees (or the word has only one), that part of speech has exactly one
+    usable gloss (several are several senses, and nothing says which one the card shows), the
+    gloss is not a cross-reference, and it is not empty."""
+
+    source_id = "wiktionary-vi"
+    key = "viwikt"
+
+    def _english(self, text: str, pos: str) -> str:
+        keys, pos = _english_keys(text, pos)
+        data = _vi_glosses()
+        for key in keys:
+            senses = data["viwikt"].get(key) or []
+            if not pos and len({p for p, _g in senses}) > 1:
+                continue
+            usable = [
+                gloss for sense_pos, gloss in senses
+                if (not pos or sense_pos == pos) and gloss and not _VI_CROSS_REFERENCE.match(gloss)
+            ]
+            same_pos = [gloss for sense_pos, gloss in senses if not pos or sense_pos == pos]
+            if len(same_pos) == 1 and usable:
+                return usable[0]
+            if len(same_pos) > 1:
+                continue
+            reverse = data.get("viwikt_reverse", {}).get(key) or []
+            if not pos and len({p for p, _w in reverse}) > 1:
+                continue
+            for word_pos, vi in reverse:
+                if (not pos or word_pos == pos) and vi:
+                    return vi
+        return ""
 
 
 class PivotTranslationSource:
@@ -287,6 +415,9 @@ def localize_records(
 def default_sources() -> list[LocalizationSource]:
     """The registered sources for this deployment: data first, then enabled offline pivots."""
 
+    # The Vietnamese sources (OpenDslSource, then WiktionaryVietnameseSource) are built and
+    # measured (D-124) but are not default sources until the human has graded their samples;
+    # they are enabled by adding them here, in that order.
     sources: list[LocalizationSource] = [ChineseDictionarySource()]
     pairs = enabled_pivot_pairs()
     if pairs:

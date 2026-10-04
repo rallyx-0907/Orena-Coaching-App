@@ -134,3 +134,27 @@ def test_localization_never_reaches_an_ai_capability(monkeypatch) -> None:
     monkeypatch.setattr(ai_platform, "generate_structured", boom)
     completed, _ = localize_records(_records("word\n市场\n", "zh"), "zh", loc.default_sources())
     assert completed[0]["short_meanings"][0]["text"].startswith("marketplace")
+
+
+def test_vietnamese_sources_follow_the_human_policy_and_are_not_yet_default() -> None:
+    from writing_coach.vocabulary_localization import (
+        OpenDslSource,
+        SenseInput,
+        WiktionaryVietnameseSource,
+        _VI_CROSS_REFERENCE,
+    )
+
+    dsl, wikt = OpenDslSource(), WiktionaryVietnameseSource()
+    assert dsl.available() and wikt.available()
+    assert dsl.provenance()["license"].startswith("CC BY-SA")
+    # open-dsl-dict first: an English noun, and a Chinese sense through its chosen English sense.
+    assert dsl.localize("en", "vi", [SenseInput("1", "copper", "noun")]) == {"1": "đồng"}
+    assert dsl.localize("zh", "vi", [SenseInput("1", "篮子", "", {"en": "basket"})]) == {"1": "cái rổ, cái giỏ"}
+    # Vietnamese Wiktionary only for one unambiguous sense: "copper" has two noun senses there
+    # (the metal, and slang for a policeman), so nothing is taken.
+    assert wikt.localize("en", "vi", [SenseInput("1", "copper", "noun")]) == {}
+    # Cross-references and grammatical-form glosses are never meanings.
+    assert _VI_CROSS_REFERENCE.match("xem motar") and _VI_CROSS_REFERENCE.match("như trở nên")
+    assert not _VI_CROSS_REFERENCE.match("xembo") and not _VI_CROSS_REFERENCE.match("nước")
+    assert dsl.localize("en", "fr", [SenseInput("1", "copper", "noun")]) == {}
+    assert {"open-dsl-dict", "wiktionary-vi"}.isdisjoint(s.source_id for s in loc.default_sources())

@@ -1,0 +1,17 @@
+﻿language,collection,words,list (curated vi),viwikt,enwikt-vi,opendsl,any dictionary,list + dictionaries
+en,toeic-600-essential,35,100%,80%,31%,6%,83%,100%
+en,common-3000,35,100%,100%,91%,83%,100%,100%
+en,cefr-b2,2,100%,100%,50%,0%,100%,100%
+en,cefr-c1,2,100%,50%,50%,0%,50%,100%
+en,cefr-c2,2,100%,100%,100%,0%,100%,100%
+en,ALL,76,100%,89%,62%,41%,91%,100%
+en,"agreement with curated vi (word overlap, of answered)",,,45/68,30/47,29/31,,
+zh,hsk-1,33,100%,97%,79%,97%,97%,100%
+zh,hsk-2,32,100%,81%,59%,78%,84%,100%
+zh,hsk-3,3,100%,100%,100%,67%,100%,100%
+zh,hsk-4,3,100%,100%,33%,33%,100%,100%
+zh,hsk-5,3,100%,100%,67%,33%,100%,100%
+zh,hsk-6,3,100%,100%,67%,33%,100%,100%
+zh,hsk-7-9,3,100%,100%,67%,0%,100%,100%
+zh,ALL,80,100%,91%,69%,78%,92%,100%
+zh,"agreement with curated vi (word overlap, of answered)",,,64/73,25/55,56/62,,

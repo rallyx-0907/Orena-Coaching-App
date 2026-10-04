@@ -1,0 +1,7 @@
+en|copper
+en|marble
+zh|市场
+zh|松树
+zh|竹林
+zh|篮子
+zh|观察
