@@ -973,8 +973,32 @@ def _backbone_tables():
         return None
 
 
-configure_work(build_backbone(_persistence_runtime.engine, _backbone_tables()))
+_account_backbone = build_backbone(_persistence_runtime.engine, _backbone_tables())
+configure_work(_account_backbone)
 app.include_router(work_router)
+
+
+def _billing_service():
+    """Billing (completion plan item 4) exists only when switched on, on PostgreSQL, with the account backbone;
+    a gateway without keys and a plan without an approved price are simply not offered (human gates)."""
+
+    from writing_coach.billing.service import billing_enabled, build_gateways, load_prices, BillingService
+
+    if not billing_enabled(os.environ) or _persistence_runtime.engine is None or not _account_backbone.is_active:
+        return None
+    from writing_coach.persistence.billing_repository import PostgresBillingRepository
+    from writing_coach.persistence.commerce_repository import PostgresCommerceRepository
+
+    return BillingService(orders=PostgresBillingRepository(_persistence_runtime.engine),
+                          commerce=PostgresCommerceRepository(_persistence_runtime.engine),
+                          gateways=build_gateways(os.environ), prices=load_prices(os.environ))
+
+
+from writing_coach.billing_api import configure_billing, router as billing_router  # noqa: E402
+
+configure_billing(service=_billing_service(), backbone=_account_backbone, admin_guard=require_admin,
+                  public_base_url=os.getenv("PUBLIC_BASE_URL", ""))
+app.include_router(billing_router)
 app.include_router(account_records_router)
 app.include_router(learner_activity_router)
 configure_learner_activity(lambda since: _specialized_learning_repository.activity_timestamps(since))

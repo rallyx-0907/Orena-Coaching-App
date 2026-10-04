@@ -4823,3 +4823,17 @@ every `[DECISION: ...]` / `[OPERATOR]` placeholder is shown as written. Open, fo
   candidates are the sign-in page, Profile/Settings ("⋯" or the account section) and the checkout step of
   billing. The learner router does not know `legal/*`: an in-app link must load the page (`/next#/legal/...`
   with a reload), or the router gains the routes when they are linked.
+
+## Billing (completion plan item 4), 2026-10-05
+
+Backend built and off (`proposals/BILLING_GATEWAYS.md`): payOS (domestic prepaid VietQR) and Polar (merchant
+of record) behind one layer, order table proposed as migration `20261005_0027`.
+
+- **BL-1 plans and checkout screen**: the design draws no plans, price or checkout page. Profile shows only
+  "Plus plan" as text. A learner cannot start a checkout from the UI until a frame exists, or the human
+  decides to build it from kit blocks (D-128). The API is ready (`GET /api/billing/offers`, `POST /api/billing/checkout`).
+- **BL-2 renewal reminder**: domestic access is prepaid and does not renew itself. The design draws no
+  reminder (a notice before the end, a new QR). It needs a frame, or a decision on where it lives.
+- **BL-3 admin orders**: refunds of domestic payments are recorded through
+  `POST /api/admin/billing/orders/{code}/refund`. The Admin design (`Orena Admin.dc.html`) has no orders page
+  yet, so this has no screen.

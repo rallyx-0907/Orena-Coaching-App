@@ -56,6 +56,7 @@ MATRIX = {
     ("GET", "/api/admin/ai/operations"): ("/api/admin/ai/operations", {}, {200}),
     ("GET", "/api/admin/ai/costs"): ("/api/admin/ai/costs", {}, {200}),
     ("GET", "/api/admin/ai/costs/accounts"): ("/api/admin/ai/costs/accounts", {}, {200}),
+    ("POST", "/api/admin/billing/orders/{order_code}/refund"): ("/api/admin/billing/orders/100001/refund", {"json": {"note": "test"}}, {503}),
     ("POST", "/api/admin/content-packs/export"): ("/api/admin/content-packs/export", {"json": {}}, {404, 503}),
     ("POST", "/api/admin/content-packs/plan"): ("/api/admin/content-packs/plan", {}, {422}),
     ("POST", "/api/admin/content-packs/import"): ("/api/admin/content-packs/import", {}, {422}),
@@ -229,7 +230,7 @@ def _request(app, method: str, path: str, body: dict, who: dict | None) -> httpx
 def test_the_matrix_covers_every_admin_route_the_app_serves():
     routes = _admin_routes()
     assert routes == set(MATRIX), f"unclassified: {sorted(routes - set(MATRIX))}; stale: {sorted(set(MATRIX) - routes)}"
-    assert len(routes) == 67  # includes Reading rights (D-105), shared-media rights review, the AI cost report (and per account) and content packs
+    assert len(routes) == 68  # includes Reading rights (D-105), shared-media rights review, the AI cost report (and per account), content packs and the billing refund record
 
 
 @pytest.mark.parametrize("route", sorted(MATRIX), ids=lambda route: f"{route[0]} {route[1]}")

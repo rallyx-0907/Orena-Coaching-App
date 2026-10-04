@@ -480,6 +480,8 @@ class UserIsolationMiddleware(BaseHTTPMiddleware):
             or path == "/api/readiness"
             or path == "/api/platform/languages"
             or path == "/api/auth/native/exchange"
+            # A payment gateway's signed event has no session: its signature is the proof (billing_api.py).
+            or path.startswith("/api/billing/webhooks/")
             or path.startswith("/auth/")
             or path.startswith("/static/")
             or path.startswith("/orena-assets/")
