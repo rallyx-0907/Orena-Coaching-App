@@ -266,11 +266,14 @@ class LLMClient:
         deepseek_thinking: str = "off",
         cache_only: bool = False,
         replay_cache_file: Path | None = None,
+        deepseek_empty_attempts: int = 3,
     ) -> None:
         if provider not in PROVIDERS:
             raise ValueError(f"unknown provider {provider!r}; expected one of {sorted(PROVIDERS)}")
         if deepseek_thinking not in DEEPSEEK_THINKING_LEVELS:
             raise ValueError(f"unknown deepseek_thinking {deepseek_thinking!r}; expected one of {sorted(DEEPSEEK_THINKING_LEVELS)}")
+        if deepseek_empty_attempts < 1 or deepseek_empty_attempts > 3:
+            raise ValueError("deepseek_empty_attempts must be between 1 and 3")
         self.provider = provider
         self.model = model
         self.cache_dir = cache_dir
@@ -278,6 +281,7 @@ class LLMClient:
         self.cache_only = cache_only
         self.replay_cache_file = replay_cache_file
         self._replay_cache_consumed = False
+        self.deepseek_empty_attempts = deepseek_empty_attempts
         self.api_key = api_key if api_key is not None else os.environ.get(_ENV_VAR_BY_PROVIDER[provider], "")
         self._client = httpx.Client(transport=transport, timeout=timeout)
 
@@ -491,8 +495,11 @@ class LLMClient:
             body["reasoning_effort"] = self.deepseek_thinking
         spent_input = 0
         spent_output = 0
-        last_message = "DeepSeek returned empty content 3 times (a known json_object-mode issue per its own docs)"
-        for attempt in range(3):
+        last_message = (
+            f"DeepSeek returned empty content {self.deepseek_empty_attempts} time(s) "
+            "(json_object-mode empty response)"
+        )
+        for attempt in range(self.deepseek_empty_attempts):
             response = self._post(DEEPSEEK_API_URL, body, headers={
                 "authorization": f"Bearer {self.api_key}",
                 "content-type": "application/json",
@@ -505,7 +512,10 @@ class LLMClient:
                 raise LLMError(f"response had no choices: {response!r}", usage=LLMUsage(spent_input, spent_output))
             content = choices[0]["message"]["content"]
             if not content:
-                last_message = f"DeepSeek returned empty content on attempt {attempt + 1}/3"
+                last_message = (
+                    f"DeepSeek returned empty content on attempt "
+                    f"{attempt + 1}/{self.deepseek_empty_attempts}"
+                )
                 continue
             try:
                 data = json.loads(content)
