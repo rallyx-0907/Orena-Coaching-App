@@ -19,6 +19,14 @@ continuity/fidelity limitations do not reopen them as the active slice. No full-
 S2 Listening/Media basic coverage is REVIEWABLE (`c315bd2`); next is Admin control-center basic coverage,
 then canonical Grammar and integrated Intelligence/Agent under existing review gates.
 Deep fidelity, cross-device completeness, edge cases and performance follow basic coverage.
+Human2026-10-04 defers Grammar; continue other Product Completion gaps.
+S3 learner collection actions are functionally browser-verified at :8021:
+Add all saves only missing words through existing vocabulary/SRS; Start review
+counts saved words and reads complete collection-scoped rows. EN/ZH save2 ->
+review -> grade -> reload/reopen and 360x740 controls verified; no new AI
+telemetry. Local Python2814 pass/3 inherited fail/370 skip; Node128/130.
+Status remains IMPLEMENTING: full fidelity and collection enrichment/publishing
+breadth are open. Evidence: docs/reviews/VOCABULARY_COLLECTION_CHECKPOINT.md.
 Books evidence remains in `docs/reviews/S8_BOOKS_BROWSER_CHECKPOINT.md` unchanged.
 
 S6 Admin media rights review/publication is REVIEWABLE (`71ddcd4`): EN/ZH upload,

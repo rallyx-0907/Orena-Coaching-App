@@ -48,6 +48,10 @@ Individual skill implementation or backend/test status does not establish readin
 
 Current sequence:
 
+Human sequencing update2026-10-04: defer Grammar and continue other basic
+Product Completion gaps. The current bounded slice is S3's collection learner
+save -> scoped review -> reopen, reusing the existing vocabulary/SRS owners.
+
 1. Preserve accepted Progress and Books work; do not reopen them for non-blocking completeness or fidelity.
 2. Finish preserved Listening/Media to basic browser-usable coverage: imports, usable transcripts, core line actions, Dictation, Shadowing and truthful unavailable states in EN/ZH.
 Current immediate priority (human, 2026-10-03): repair My Library overlap and

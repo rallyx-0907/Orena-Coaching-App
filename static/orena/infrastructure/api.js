@@ -287,6 +287,7 @@ export const api={
     if(params.level)query.set('level',String(params.level));
     if(params.limit!=null)query.set('limit',String(params.limit));
     if(params.offset!=null)query.set('offset',String(params.offset));
+    if(params.includeReview)query.set('include_review','true');
     const suffix=query.toString()?`?${query.toString()}`:'';
     return request(`/api/vocabulary/library/collections/${encodeURIComponent(collectionId)}${suffix}`);
   },

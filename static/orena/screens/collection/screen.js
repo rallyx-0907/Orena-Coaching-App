@@ -1,5 +1,6 @@
 /* Collection Detail (frame 21, D2 §6): a curated vocabulary pack (concept A, C6 §2.1) - cover,
-   progress, "Start review" scoped to it, and its word list. Data:
+   progress, "Start review" scoped to it, and its word list. Explicit Add all
+   reuses saved vocabulary; browsing never creates a learner relationship. Data:
    GET /api/vocabulary/library/collections/{id} (app.py becoming_vocabulary_library_collection_
    detail); word meanings read the learner's support language from the card's own meanings[]
    (model.js#supportMeaning), never a hardcoded field. Saving one word is a different screen's
@@ -16,6 +17,7 @@ import { languages } from '../../copy/index.js';
 import { shellCopy } from '../../copy/shell.js';
 import { t } from './copy.js';
 import { collectionViewModel } from './model.js';
+import { readCollection, keepCollectionWords } from './actions.js';
 
 /* The row opens Word Detail (cw.wc.onOpen) and also carries a real, separately-activatable play
    control - two interactive targets on one row. HTML forbids nesting interactive content inside
@@ -58,8 +60,8 @@ function screenMarkup(model) {
         ${hero}
         <div class="s-collection-bar"><span style="width:${model.percent}%"></span></div>
         <div class="s-collection-actions">
-          <button type="button" class="s-collection-cta" data-review>${t.plural('collectionStartReview', model.wordCount)}</button>
-          <button type="button" class="s-collection-save" data-save>${t('collectionSave')}</button>
+          <button type="button" class="s-collection-cta" data-review${model.savedCount ? '' : raw(' disabled')}>${t.plural('collectionStartReview', model.savedCount)}</button>
+          <button type="button" class="s-collection-save" data-save${model.missingCount ? '' : raw(' disabled')}>${t(model.missingCount ? 'collectionSave' : 'collectionSaved')}</button>
         </div>
         ${model.description ? html`<p class="s-collection-desc">${model.description}</p>` : ''}
       </div>
@@ -95,45 +97,64 @@ export default async function collectionScreen(element, ctx) {
   const collectionId = ctx.params?.id || '';
   mount(element, html`<div class="s-collection">${loadingMarkup(t('collectionLoading'))}</div>`);
 
-  const data = await api.vocabularyLibraryCollection(collectionId, { limit: 5000 });
+  let data = await readCollection(collectionId, api.vocabularyLibraryCollection);
   if (!ctx.isCurrent()) return;
   const { support } = languages();
-  const model = collectionViewModel(data, support);
+  let model = collectionViewModel(data, support);
 
-  mount(element, screenMarkup(model));
-  element.querySelector('[data-back]').addEventListener('click', () => ctx.back());
-  element.querySelector('[data-review]').addEventListener('click', () => {
-    ctx.go(ctx.href('review', {}, { collection: model.id }));
-  });
-  element.querySelector('[data-save]').addEventListener('click', () => {
-    // Backend gap: no endpoint or device-memory concept saves/bookmarks a whole curated
-    // collection (concept A) - only an individual word (POST /api/library/vocabulary). See
-    // the surface report ("colSave") for why this stays a toast rather than an invented
-    // persistence mechanism.
-    toast(t('collectionSaveUnavailable'));
-  });
-  // The row is a role="button" div (not a real <button> - see wordRowMarkup's comment), so its
-  // open behaviour is wired by hand: click, and Enter/Space on keydown (the same activation a
-  // native button gives for free). Both ignore an event whose target is the nested play button -
-  // that control is a real <button> and handles its own activation (including its own native
-  // Enter/Space), and its click handler already stops the event from bubbling here too.
-  element.querySelectorAll('[data-word-open]').forEach((row) => {
-    const open = () => ctx.go(ctx.href('word', { id: row.dataset.word }));
-    row.addEventListener('click', (event) => {
-      if (event.target.closest('[data-word-play]')) return;
-      open();
-    });
-    row.addEventListener('keydown', (event) => {
-      if (event.target.closest('[data-word-play]')) return;
-      if (event.key !== 'Enter' && event.key !== ' ') return;
-      event.preventDefault();
-      open();
-    });
-  });
-  element.querySelectorAll('[data-word-play]').forEach((play) => {
-    play.addEventListener('click', (event) => {
+  function paint() {
+    model = collectionViewModel(data, support);
+    mount(element, screenMarkup(model));
+  }
+
+  paint();
+  let saving = false;
+  const click = async (event) => {
+    const target = event.target.closest('button, [data-word-open]');
+    if (!target || !element.contains(target)) return;
+    if (target.hasAttribute('data-back')) ctx.back();
+    else if (target.hasAttribute('data-review') && model.savedCount && !saving) {
+      ctx.go(ctx.href('review', {}, { collection: model.id }));
+    } else if (target.hasAttribute('data-save') && !saving && model.missingCount) {
+      saving = true;
+      target.disabled = true;
+      target.textContent = t('collectionSaving', { n: 0, total: model.missingCount });
+      element.querySelector('[data-review]').disabled = true;
+      try {
+        const result = await keepCollectionWords(data, {
+          language: ctx.context.language,
+          save: api.saveLibraryVocabulary,
+          isCurrent: ctx.isCurrent,
+          onProgress: (n, total) => {
+            if (ctx.isCurrent()) target.textContent = t('collectionSaving', { n, total });
+          },
+        });
+        if (!ctx.isCurrent()) return;
+        // Each successful word is already persisted. Retry reads that truth and
+        // skips it, preserving its schedule and all previously held words.
+        data.progress = { ...data.progress, learned_count: data.items.filter((card) => card.saved).length };
+        toast(result.error ? t('collectionSaveFailed', { n: result.added, remaining: result.remaining })
+          : t.plural('collectionAdded', result.added));
+        paint();
+      } catch {
+        if (ctx.isCurrent()) { toast(t('collectionActionFailed')); paint(); }
+      } finally { saving = false; }
+    } else if (target.hasAttribute('data-word-play')) {
       event.stopPropagation();
-      playWord(play, play.dataset.word);
-    });
-  });
+      playWord(target, target.dataset.word);
+    } else if (target.hasAttribute('data-word-open')) {
+      ctx.go(ctx.href('word', { id: target.dataset.word }));
+    }
+  };
+  element.addEventListener('click', click);
+  const keydown = (event) => {
+    if (!event.target.matches('[data-word-open]') || !['Enter', ' '].includes(event.key)) return;
+    event.preventDefault();
+    ctx.go(ctx.href('word', { id: event.target.dataset.word }));
+  };
+  element.addEventListener('keydown', keydown);
+  return () => {
+    element.removeEventListener('click', click);
+    element.removeEventListener('keydown', keydown);
+  };
 }

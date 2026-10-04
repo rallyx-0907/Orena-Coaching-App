@@ -35,32 +35,31 @@ Frame/route/code/status: `docs/design/canonical-ui/IMPLEMENTATION_MAP.md`.
 
 ## Last verified batch
 
-Grammar prerequisites (`0d5732c`): PR67/68 integrated; D-106 alias contradiction
-corrected; zh-Hans/L1 array adapters fixed. Seven local gates pass; drafts unserved.
-Store/API and published EN/ZH content remain absent; migration not applied.
-Evidence: docs/reviews/GRAMMAR_INTEGRATION_CHECKPOINT.md. Listening `cab4773` preserved.
-Next: human review, then Product Completion; native remains frozen.
+S3 collection learner actions (2026-10-04): explicit Add all reuses saved words;
+scoped review reads complete collection-owned rows, no first200 truncation.
+EN/ZH import -> save2 -> review -> grade -> reload/reopen verified at :8021,
+360x740 controls visible; no new AI telemetry. Local Python2814 pass/3 inherited
+fail/370 skip; Node128/130 (one date fixture, one human-owned contract edit).
+Evidence: docs/reviews/VOCABULARY_COLLECTION_CHECKPOINT.md. IMPLEMENTING: full
+fidelity and S3 enrichment/publication breadth remain open. Grammar deferred
+by human 2026-10-04; preserve the prerequisite checkpoint below.
+
+Grammar prerequisites (`0d5732c`): PR67/68 integrated, adapters verified; drafts
+unserved, no Store/API or migration. GRAMMAR_INTEGRATION_CHECKPOINT.md retains evidence.
 
 Admin REVIEWABLE: six areas, sandbox routing, imports/EN/ZH lookup (`2931823`);
 Azure/Skin (`7857d43`) local125/Node/review pass. Azure browser evidence/limits:
 AZURE_VISUAL_SKIN_BROWSER_CHECKPOINT.md. Existing EPUB evidence unchanged.
 
-S6 (`71ddcd4`): REVIEWABLE. EN/ZH rights review -> Publish -> Listening with VI
-meanings; reload/restart, withdrawal/Archive/Restore, 390x844 verified. Atomic
-rights gates and held-transcript resolver fixed. Local Python260, Ruff/Node/ESM,
-independent review pass. QA archived. Evidence: S6_ADMIN_MEDIA_BROWSER_CHECKPOINT.md.
+S6 (`71ddcd4`): REVIEWABLE; EN/ZH rights/publish/lifecycle and390x844 evidence:
+S6_ADMIN_MEDIA_BROWSER_CHECKPOINT.md. QA archived; preserve this accepted slice.
 
-S2 corrections (`637d0b2`, D-116): EN/ZH desktop/390x844, ZH 89/89 VI meanings
-after reload/restart, Dictation/Shadowing return, playback chrome, word audio and
-directional strokes verified on :8021. Orena AI copy supersedes paid-resource wording.
-Prior tests/timing/level limitations: S2_MEDIA_BASIC_BROWSER_CHECKPOINT.md.
+S2 (`637d0b2`, D-116): EN/ZH desktop/390x844, translation and skill returns verified;
+evidence/limits: S2_MEDIA_BASIC_BROWSER_CHECKPOINT.md. Listening `cab4773` preserved.
 
 ## DONE
 
-Design pinned and governed (D-088 - D-093); foundation at `/next`; agent
-contract v4 (D-095); copy engine fixes; Wave A destinations and Wave B
-workspaces (REVIEWABLE); the Writing request minimum per learning language.
-Historical D-098/D-099 commits: `PROJECT_STATE.md` "New learner UI migration".
+Foundation/Wave A/B REVIEWABLE; history: PROJECT_STATE.md "New learner UI migration".
 
 ## IN PROGRESS
 
@@ -69,8 +68,7 @@ Historical D-098/D-099 commits: `PROJECT_STATE.md` "New learner UI migration".
   Errors; evidence and remaining fidelity gates: `docs/reviews/S4_PROGRESS_BROWSER_CHECKPOINT.md`.
   S2 media work is preserved. Full UI/spec + Intelligence (D-112) remain required.
 - Books storage: resolved by shared :8021 volume; old Alice assets lost.
-  S8a (`b7380b1`): EPUB body/count and Admin learner-link fixes; local Python
-  2726 pass/370 skip, independent code APPROVE. Browser evidence: `S8_BOOKS_BROWSER_CHECKPOINT.md`.
+  S8a (`b7380b1`): body/count/Admin-link fixes; evidence: S8_BOOKS_BROWSER_CHECKPOINT.md.
   Finish EN/ZH continuity/fidelity; no full Books completion claim.
 - Human review: Wave A/B.
 - Chinese writing evaluator recall: causes and fix options in
@@ -114,15 +112,18 @@ human gates. Never touch persistent volumes as cleanup.
 
 ## NEXT EXACT TASK
 
+Grammar is deferred by explicit human instruction2026-10-04. Review the bounded
+S3 collection learner flow at :8021, then continue remaining basic Product
+Completion gaps under ROADMAP; do not resume Grammar Store/API now.
+
 Preserve Admin/Azure (`2931823`/`7857d43`); OpenAI operator acceptance remains.
 
 Current phase: basic functional coverage first (human instruction, 2026-10-02).
 Preserve accepted Books/Progress; do not reopen them or restart a full-app audit.
 S2 basic Listening and S6 Admin media rights/publish are REVIEWABLE; stop deepening
 those paths. My Library accepted. D-119 shared Compare and D-121 readiness repair:
-review the bounded correction above, then resume basic coverage. Prior EN86/ZH75
-assessment retained; fresh take/full fidelity and optional model pitch remain open.
-Historical evidence: COMPARE_MODEL_BROWSER_CHECKPOINT.md.
+retain their checkpoints. Prior EN86/ZH75 assessment retained; fresh take/full
+fidelity/model pitch remain open: COMPARE_MODEL_BROWSER_CHECKPOINT.md.
 Preserve S6/control plane. Azure review passes; mobile unverified.
 Basic coverage first; ASR within D-111.6 caps.
 
@@ -138,6 +139,6 @@ is what switches `AGENT_LIVE` on :8011 (D-101 G).
 ## Grammar Lab (merged from `feature/grammar-lab`)
 
 Offline Phase 0: `docs/grammar_lab/SPEC.md`, `grammar_lab/` (separate tests).
-NEXT (D-111.4): approved Store migration proposal/review/rehearsal, then Store/API
+DEFERRED by human2026-10-04 (D-111.4): Store migration proposal/review/rehearsal, then Store/API
 and canonical HSK/GF generation/validation. Resolve proposed revision slot against
 media metadata 0024 before promotion. Legacy R5 is reference, never a fallback.

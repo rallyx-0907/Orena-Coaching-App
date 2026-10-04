@@ -3706,6 +3706,7 @@ def becoming_vocabulary_library_collection_detail(
     level: str = Query(default=""),
     limit: int = Query(default=100, ge=1, le=5000),
     offset: int = Query(default=0, ge=0),
+    include_review: bool = Query(default=False),
 ) -> dict[str, Any]:
     collection = _persisted_vocabulary_collection(
         collection_id,
@@ -3748,6 +3749,10 @@ def becoming_vocabulary_library_collection_detail(
         items.append(card)
     collection["items"] = items
     collection["progress"] = _vocabulary_collection_progress(entries, saved_by_word)
+    if include_review:
+        # The collection's own saved rows, resolved by the existing owner above.
+        # No scan of the learner's whole library and no dictionary generation.
+        collection["review_items"] = list(saved_by_word.values())
     return collection
 # === BECOMING VOCABULARY LIBRARY CATALOG ROUTES END ===
 

@@ -13,6 +13,7 @@ membership flag.
 from __future__ import annotations
 
 import asyncio
+from copy import deepcopy
 
 import httpx
 import pytest
@@ -112,3 +113,46 @@ def test_unpublished_collection_detail_never_leaks_an_internal_file_path() -> No
     assert "vocabulary_collections.py" not in serialized
     assert "writing_coach/languages" not in serialized
     assert "writing_coach\\languages" not in serialized
+
+
+@pytest.mark.parametrize("language,word", [("en", "invoice"), ("zh", "书")])
+def test_collection_review_projects_only_its_saved_rows_without_provider_work(monkeypatch, language, word):
+    entry = {"word": word, "normalized_word": word, "language_code": language,
+             "definition": "persisted source meaning"}
+    catalog = {"id": "review-pack", "language_code": language, "item_count": 1,
+               "entries": [entry]}
+    calls = []
+
+    def saved(candidates):
+        assert LANGUAGE_CODE_CTX.get() == language
+        calls.append(candidates)
+        return {word: {"word": word, "review_stage": 3, "next_review_at": "2099-01-01",
+                       "due": False, "schedule": {"got_it": {"days": 21}}}}
+
+    monkeypatch.setattr(app_module, "_persisted_vocabulary_collection", lambda *a, **k: deepcopy(catalog))
+    monkeypatch.setattr(app_module, "saved_vocabulary_state", saved)
+    monkeypatch.setattr(app_module, "save_library_vocabulary", lambda *a, **k: pytest.fail("opening must not save"))
+    ordinary = _get("/api/vocabulary/library/collections/review-pack").json()
+    assert "review_items" not in ordinary
+    for _ in range(2):
+        response = _get("/api/vocabulary/library/collections/review-pack?include_review=true")
+        assert response.status_code == 200
+        row = response.json()["review_items"][0]
+        assert row["word"] == word
+        assert row["review_stage"] == 3
+        assert row["next_review_at"] == "2099-01-01"
+    assert calls == [(word,)] * 3
+
+
+def test_collection_review_does_not_limit_members_to_first_200_saved_words(monkeypatch):
+    entries = [{"word": f"term{n}", "normalized_word": f"term{n}", "language_code": "en"}
+               for n in range(205)]
+    catalog = {"id": "large-pack", "language_code": "en", "item_count": len(entries), "entries": entries}
+    monkeypatch.setattr(app_module, "_persisted_vocabulary_collection", lambda *a, **k: deepcopy(catalog))
+    monkeypatch.setattr(app_module, "saved_vocabulary_state", lambda candidates:
+                        {word: {"word": word, "review_stage": 1} for word in candidates})
+    response = _get("/api/vocabulary/library/collections/large-pack?include_review=true&limit=5000")
+    assert response.status_code == 200
+    rows = response.json()["review_items"]
+    assert len(rows) == 205
+    assert rows[-1]["word"] == "term204"
