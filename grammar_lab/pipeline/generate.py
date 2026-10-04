@@ -958,15 +958,23 @@ _GENERATION_STRUCTURE_DERIVATIVE_CODES = {
 
 
 def can_repair_generation_structure(issues: list[Any]) -> bool:
-    """Repair raw v13 formula/binding failures without rewriting lesson prose."""
-    codes = [str(getattr(issue, "code", "")) for issue in issues]
-    return (
-        any(code.startswith("generation.") for code in codes)
-        and all(
-            code.startswith("generation.") or code in _GENERATION_STRUCTURE_DERIVATIVE_CODES
-            for code in codes
-        )
+    """Any raw v13 binding failure must be repaired before buying another lesson."""
+    return any(
+        str(getattr(issue, "code", "")).startswith("generation.")
+        for issue in issues
     )
+
+
+def generation_structure_repair_issues(issues: list[Any]) -> list[Any]:
+    """Only the issues a structure-only patch is allowed to act on."""
+    return [
+        issue
+        for issue in issues
+        if (
+            str(getattr(issue, "code", "")).startswith("generation.")
+            or str(getattr(issue, "code", "")) in _GENERATION_STRUCTURE_DERIVATIVE_CODES
+        )
+    ]
 
 
 def _generation_structure_patch_schema(full_schema: dict[str, Any]) -> dict[str, Any]:
@@ -2036,7 +2044,7 @@ class Generator:
                             title=header["native_title"],
                             target_lang=existing["target_lang"],
                             data=structure_data,
-                            issues=structure_issues,
+                            issues=generation_structure_repair_issues(structure_issues),
                             full_schema=schema,
                         )
                     except LLMError as exc:
