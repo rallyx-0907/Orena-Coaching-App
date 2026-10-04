@@ -383,11 +383,30 @@ def _is_learnable_phrase(parts: list[str]) -> bool:
     return len(parts) == 2 and parts[1] in _PARTICLES and parts[0] not in _FUNCTION_WORDS
 
 
+_CONTEXT_LIMIT = 300
+
+
 def _context_for(sentences: list[str], needle: str) -> str:
+    """The sentence that holds `needle`, or - for a sentence past the limit - a
+    window of it around `needle`, cut at spaces. Always a verbatim piece of the
+    text that contains the target: admission checks exactly that, and a context
+    with an added ellipsis is a quotation the text does not contain."""
     lowered = needle.lower()
     for sentence in sentences:
-        if lowered in sentence.lower():
-            return sentence if len(sentence) <= 300 else sentence[:297] + "…"
+        at = sentence.lower().find(lowered)
+        if at < 0:
+            continue
+        if len(sentence) <= _CONTEXT_LIMIT:
+            return sentence
+        start = max(0, min(at - _CONTEXT_LIMIT // 3, len(sentence) - _CONTEXT_LIMIT))
+        end = start + _CONTEXT_LIMIT
+        if start > 0:
+            space = sentence.find(" ", start, at)
+            start = space + 1 if space >= 0 else start
+        if end < len(sentence):
+            space = sentence.rfind(" ", at + len(needle), end)
+            end = space if space >= 0 else end
+        return sentence[start:end].strip()
     return ""
 
 

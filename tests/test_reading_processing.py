@@ -248,3 +248,15 @@ def test_chinese_targets_use_real_words_without_cross_sentence_ngrams():
 @pytest.mark.parametrize("language", ["en", "zh"])
 def test_targets_on_an_empty_body_are_empty_not_invented(language):
     assert suggest_targets("", language, limit=8) == []
+
+
+def test_a_target_in_a_very_long_sentence_gets_a_verbatim_window_of_it():
+    # One quoted exchange the splitter reads as one sentence, well past the context limit.
+    filler = " ".join(["the woodcutter walked slowly"] * 20)
+    body = f"{filler}, and then the stepmother whispered about the thicket, {filler}."
+    suggestions = suggest_targets(body, "en", limit=8)
+    assert suggestions
+    for suggestion in suggestions:
+        assert len(suggestion.context) <= 300
+        assert suggestion.context in body, "a context is a quotation the text contains"
+        assert suggestion.text.casefold() in suggestion.context.casefold()

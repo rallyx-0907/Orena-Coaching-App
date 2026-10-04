@@ -9,14 +9,21 @@ from collections.abc import Mapping, Sequence
 from typing import Any
 from urllib.parse import urlsplit
 
+from writing_coach.reading_processing import normalize_url
+
 ADMISSION_VERSION = "reading-admission/1"
 
 
 def source_origin_matches(source: Mapping[str, Any], canonical_url: str) -> bool:
-    """A registry policy may cover fetched URLs only on its explicit origin."""
+    """A registry policy may cover fetched URLs only on its explicit origin.
+
+    Both sides are compared in the one canonical spelling `normalize_url` gives a
+    document address (lower-case host, no `www.`): a canonical URL is stored in
+    that spelling, so a base URL left as typed (`https://www.gutenberg.org`)
+    would otherwise never match its own texts."""
     try:
-        origin = urlsplit(str(source.get("base_url") or ""))
-        url = urlsplit(canonical_url)
+        origin = urlsplit(normalize_url(str(source.get("base_url") or "")))
+        url = urlsplit(normalize_url(canonical_url))
         return bool(origin.hostname and url.hostname and origin.scheme in {"http", "https"}
                     and (origin.scheme, origin.hostname.casefold(), origin.port or (443 if origin.scheme == "https" else 80))
                     == (url.scheme, url.hostname.casefold(), url.port or (443 if url.scheme == "https" else 80)))

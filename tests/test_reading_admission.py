@@ -74,6 +74,10 @@ def test_url_cannot_borrow_a_blank_origin_manual_source_policy():
     ("https://owned.example", "http://owned.example/a", False),
     ("https://owned.example", "https://owned.example:8443/a", False),
     ("https://[", "https://owned.example/a", False),
+    # A canonical URL is stored without `www.`; a base URL typed with it is the same origin.
+    ("https://www.owned.example", "https://owned.example/a", True),
+    ("https://owned.example", "https://www.owned.example/a", True),
+    ("https://www.owned.example", "https://sub.owned.example/a", False),
 ])
 def test_fetched_url_is_bound_to_its_registered_origin(origin, url, admitted):
     outcome = decision(source_changes={"base_url": origin}, snapshot_changes={
