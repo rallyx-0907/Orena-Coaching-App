@@ -2145,6 +2145,8 @@ class Generator:
 
             point, contract_issues = assemble(result)
             issues = [*contract_issues, *validate_generated_point(self.lang, point, self.root)]
+            targeted_repair_used = False
+            structure_repair_exhausted = False
             if not issues:
                 save_point(self.lang, point, self.root)
                 register_realization(point, self.root)
@@ -2169,7 +2171,6 @@ class Generator:
             # v13 binding failures are projection failures, not a reason to
             # buy the whole lesson again. Keep the accepted lesson prose and make
             # at most two small structure-only repair calls.
-            structure_repair_exhausted = False
             if can_repair_generation_structure(issues):
                 structure_data = normalize_generated_structure(result.data, zh)
                 structure_issues = issues
@@ -2232,7 +2233,6 @@ class Generator:
             # Remaining semantic failures can still be confined to formula ordering,
             # stored example spans and the deterministic production rule. Repair that
             # small surface before paying for a fresh full lesson.
-            targeted_repair_used = False
             if can_target_repair(issues):
                 targeted_repair_used = True
                 repair_point = point
