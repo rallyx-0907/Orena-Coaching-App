@@ -937,6 +937,11 @@ def add_target(
     existing = _guarded(lambda: _content().get_article(article_id))
     if existing is None:
         raise orena_http_error(404, "reading_article_not_found", "That article is not in the catalog.")
+    if any(item["canonical_form"] == (payload.canonical_form.strip() or payload.text.strip().casefold())
+           for item in existing["targets"]):
+        # One target per form on an article, rejected ones included (they keep the
+        # decision). Said as a conflict, not as the engine being unavailable.
+        raise orena_http_error(409, "reading_target_exists", "This article already has a target with that form.")
     target = _guarded(
         lambda: _content().add_target(
             article_id,

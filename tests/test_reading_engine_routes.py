@@ -244,6 +244,18 @@ def test_a_target_decision_is_recorded_as_the_admins(setup):
     assert decided["admin_approved"] is True and decided["machine_suggested"] is True
 
 
+
+def test_adding_a_target_whose_form_the_article_already_has_is_a_conflict_not_an_outage(setup):
+    call(setup["admin"], "POST", "/api/admin/reading/jobs", data={"kind": "text", "text": ARTICLE})
+    outcome = setup["engine"].process(setup["jobs"].claim("worker-1"))
+    target = call(setup["admin"], "GET", f"/api/admin/reading/articles/{outcome['article_id']}").json()["targets"][0]
+    call(setup["admin"], "POST", f"/api/admin/reading/articles/{outcome['article_id']}/targets/{target['id']}",
+         json={"approved": False})
+    again = call(setup["admin"], "POST", f"/api/admin/reading/articles/{outcome['article_id']}/targets",
+                 json={"text": target["text"], "canonical_form": target["canonical_form"], "context": target["context"]})
+    assert again.status_code == 409
+    assert again.json()["detail"]["category"] == "reading_target_exists"
+
 def test_a_rights_question_nobody_answered_is_not_recorded_as_a_refusal(setup):
     """The form's defaults must not become assertions in the snapshot."""
     call(setup["admin"], "POST", "/api/admin/reading/jobs", data={"kind": "text", "text": ARTICLE})
