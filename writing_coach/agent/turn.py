@@ -38,6 +38,8 @@ from dataclasses import dataclass, field, replace
 from types import MappingProxyType
 from typing import Any
 
+from pydantic import ValidationError
+
 from writing_coach.agent import learner_copy
 from writing_coach.agent.capability_registry import CapabilityRegistry
 from writing_coach.agent.context import TurnInput, build_tier1
@@ -53,7 +55,14 @@ from writing_coach.agent.address import ADDRESS_VERSION, Address, address_note, 
 from writing_coach.agent.greeting import built as built_greeting
 from writing_coach.agent.greeting import states_a_fact
 from writing_coach.agent.honesty import ClaimGate, nothing_done, offer, offer_instead
-from writing_coach.agent.notes import CORRECT, note_intent, notes_the_message_changes
+from writing_coach.agent.notes import (
+    CORRECT,
+    asks_to_remember_unaccented,
+    confirmed_note,
+    note_intent,
+    notes_the_message_changes,
+    unaccented_wish,
+)
 from writing_coach.agent.notes import nudge as note_nudge
 from writing_coach.agent.identity import IdentityQuestion
 from writing_coach.agent.events import (
@@ -64,6 +73,7 @@ from writing_coach.agent.events import (
     SegmentDelta,
     SegmentEnd,
     SessionEvent,
+    SuggestionEvent,
     ToolCallEvent,
     ToolResultEvent,
     TurnStream,
@@ -74,6 +84,7 @@ from writing_coach.agent.limits import DEFAULT_LIMITS, AgentLimits
 from writing_coach.agent.contract import OPENING_MAX_CHARS
 from writing_coach.agent.events import Display
 from writing_coach.agent.outputs import (
+    KEEP_NOTE_INTENT,
     KIND_BY_SOURCE,
     REPLY_TOOL_NAMES,
     ReplyOutputs,
@@ -223,6 +234,8 @@ class _Turn:
         self.notes_asked: tuple[CoachNote, ...] = ()  # coach notes the message changes (agent/notes.py)
         self.notes_verdict_logged = False  # one "agent notes" verdict line per turn, never two
         self.notes_intent: str | None = None  # correct | forget, by rule (agent/notes.py)
+        self.note_confirmed: str | None = None  # the learner tapped to keep these words (agent/notes.py)
+        self.unaccented_keep = False  # a keep request typed without diacritics: asked back, not kept
         self.coach_notes: tuple[CoachNote, ...] = ()
         self.snapshot: dict | None = None
         # The learner's address for this turn (§5.6): used, never logged or stored (contract §10).
@@ -330,8 +343,12 @@ class _Turn:
         if not self.opening:
             self.notes_asked = notes_the_message_changes(turn.message, tier1.coach_notes)
             self.notes_intent = note_intent(turn.message) if self.notes_asked else None
-            # It may be written again (a note to change, records to read first): nothing streams early.
-            self.gate.hold_all = bool(self.notes_asked) or self.needs_evidence
+            self.note_confirmed = confirmed_note(turn.message)
+            self.unaccented_keep = to_internal(self.locale.support) == "vi" and asks_to_remember_unaccented(turn.message)
+            # It may be written again (a note to change or keep, records to read first) or replaced by the server's
+            # question (a keep request without diacritics): nothing streams early.
+            self.gate.hold_all = (bool(self.notes_asked) or self.needs_evidence or self.note_confirmed is not None
+                                  or self.unaccented_keep)  # fmt: skip
         messages = opening_messages(
             turn, tier1, [c for c in here if c], session, opening=self.opening, snapshot=snapshot,
             screen_help=self.screen_help,
@@ -353,6 +370,7 @@ class _Turn:
             notes_intent=self.notes_intent,
             learner_words=turn.message or "",
             address_terms=tier1.address.pair,
+            unaccented_keep=self.unaccented_keep,
         )
         if mirrored is not None:
             outputs.memory_updates.append(MemoryUpdateEvent(op="upsert", note=mirrored))
@@ -366,7 +384,8 @@ class _Turn:
         yield from self._rounds(messages, outputs)
         if self.should_stop():
             return
-        if not "".join(self.text).strip() and not outputs.actions and not self.notes_asked:
+        if (not "".join(self.text).strip() and not outputs.actions and not self.notes_asked
+                and self.note_confirmed is None and not self.unaccented_keep):  # fmt: skip
             # Nothing to say (or only whitespace) and nothing offered is not an answer: the learner is told,
             # and it is not metered. An action with no words is answered by its offer (agent/honesty.py).
             raise ProviderUnavailable("the provider answered with nothing")
@@ -470,7 +489,7 @@ class _Turn:
                     continue
                 if self._note_unchanged(outputs) and not notes_nudged and round_index < limit:
                     notes_nudged = True
-                    self._ask_again(messages, round_text, note_nudge(self.notes_asked, self.notes_intent or CORRECT))
+                    self._ask_again(messages, round_text, self._note_nudge())
                     continue
                 if self.text or outputs.actions or nudged or round_index >= limit:
                     return
@@ -500,7 +519,7 @@ class _Turn:
             if not read_any and round_text:
                 if self._note_unchanged(outputs) and not notes_nudged and round_index < limit:
                     notes_nudged = True
-                    self._ask_again(messages, "", note_nudge(self.notes_asked, self.notes_intent or CORRECT))
+                    self._ask_again(messages, "", self._note_nudge())
                     continue
                 return  # the answer is written and its extras are attached
 
@@ -513,7 +532,37 @@ class _Turn:
             _log.warning("agent notes: failed before a verdict", extra={"trace_id": self.trace_id})
 
     def _note_unchanged(self, outputs: ReplyOutputs) -> bool:
-        return bool(self.notes_asked) and not outputs.note_changed
+        return (bool(self.notes_asked) or self.note_confirmed is not None) and not outputs.note_changed
+
+    def _keep_question(self, outputs: ReplyOutputs) -> str | None:
+        """A keep request typed without diacritics (human direction 2026-10-04): never refused in silence. Orena
+        asks back with the note it would keep, and a button whose label, sent back as the learner's next message,
+        confirms exactly those words (agent/notes.py `confirmed_note`); nothing is kept until the learner taps."""
+
+        if not self.unaccented_keep or outputs.note_changed:
+            return None
+        # For the operator: counts only, never the learner's words.
+        _log.warning("agent notes: a keep request without diacritics; asked to confirm", extra={"trace_id": self.trace_id})
+        interface, support = self.locale.interface, self.locale.support
+        wish = outputs.note_offer[1] if outputs.note_offer else unaccented_wish(self.request.message or "")
+        if wish:
+            label = learner_copy.text("notes.keep_label", interface=interface, support=support, text=wish)[1]
+            try:
+                button = SuggestionEvent(label=label, intent=KEEP_NOTE_INTENT)
+            except ValidationError:
+                button = None  # too long for a button: asked to type it again with its marks
+            if button is not None:
+                outputs.suggestions[:] = [button]
+                return learner_copy.text("notes.confirm", interface=interface, support=support,
+                                         address=self.address, text=wish)[1]  # fmt: skip
+        outputs.suggestions.clear()
+        return learner_copy.text("notes.retype", interface=interface, support=support, address=self.address)[1]
+
+    def _note_nudge(self) -> str:
+        if self.note_confirmed is not None and not self.notes_asked:
+            return (f"The learner tapped to keep this note: {self.note_confirmed!r}. Call remember_note with exactly "
+                    "these words as text now, then answer in one sentence.")  # fmt: skip
+        return note_nudge(self.notes_asked, self.notes_intent or CORRECT)
 
     def _ask_again(self, messages: list[ProviderMessage], round_text: str | list[str], ask: str, *,
                    why: str | None = None) -> None:
@@ -614,6 +663,9 @@ class _Turn:
 
     def _finish(self, outputs: ReplyOutputs) -> Iterator[Event]:
         self.timeline.mark("final_ready")
+        question = None if self.opening else self._keep_question(outputs)
+        if question is not None:
+            outputs.actions.clear()  # the turn asks one thing: whether to keep the note
         self.timeline.facts.update(actions=[a.type for a in outputs.actions], suggestions=len(outputs.suggestions))
         index = 0
         support = self.locale.support
@@ -640,14 +692,20 @@ class _Turn:
             if not outputs.suggestions:
                 for intent in opening_suggestions(self.request.context.known_surface):
                     outputs.suggest(intent)
+        elif question is not None:
+            # The server's question, not the model's words: nothing of the held answer was sent (hold_all).
+            self.gate.discard()
+            yield self.stream.emit(SegmentDelta(index=0, lang=support, text_delta=question))
+            text = question
         else:
             unchanged = None
-            if self.notes_asked and not self.notes_verdict_logged:
+            if (self.notes_asked or self.note_confirmed is not None) and not self.notes_verdict_logged:
                 self.notes_verdict_logged = True
                 _log.warning("agent notes: %s", "unchanged after asking again" if self._note_unchanged(outputs)
                              else "changed", extra={"trace_id": self.trace_id})  # fmt: skip
             if self._note_unchanged(outputs):  # asked twice and no note changed: said plainly (agent/notes.py)
-                unchanged = learner_copy.text("notes.unchanged", interface=self.locale.interface, support=support,
+                key = "notes.not_kept" if self.note_confirmed is not None and not self.notes_asked else "notes.unchanged"
+                unchanged = learner_copy.text(key, interface=self.locale.interface, support=support,
                                               address=self.address)[1]  # fmt: skip
             elif self.needs_evidence and not self.records:
                 # Asked to read and still read nothing: no conclusion about the learner is made up (3.1).

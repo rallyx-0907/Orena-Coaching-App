@@ -183,6 +183,19 @@ R26 (2026-10-04) Review kiến trúc độc lập (người review do người c
     tài khoản và cửa sổ thời gian) rồi mới nghĩ tới lưu trữ mới. Không phản đối daily_usage và phần nối app.py cho
     dark merge. Dark merge vào codex/work: người chủ dự án đồng ý (2026-10-04), agent tắt mặc định; chỉ bật trên
     staging :8011 sau khi live đạt.
+R27 (2026-10-04, sau khi PR #69 được merge) Người chủ dự án:
+    - Runtime: :8021 là runtime của lane UI. Lane này không tự dựng lại :8021. Người chủ dự án nhờ lane UI dựng lại
+      (AGENT_DAILY_SPEND_CAP_USD=1, giữ container cũ để quay lại) khi lane đó rảnh; lane này đo baseline độ trễ và
+      chi phí (dưới 0,05 USD) sau khi lane UI báo xong. Không bao giờ tự khởi động lại Docker; việc đó chỉ người chủ
+      dự án làm.
+    - Nhờ ghi nhớ bằng tiếng Việt không dấu: không từ chối âm thầm. Orena hỏi lại ("Bạn muốn mình ghi nhớ: …?") kèm
+      nút; chỉ ghi khi người học bấm. Làm trong hợp đồng: nút là suggestion (prompt.keep_note) có nhãn "Ghi nhớ: …"
+      (lớp interface), bấm vào thì nhãn thành tin nhắn tiếp theo (§4), server chỉ nhận đúng những chữ đã xác nhận.
+      Không cần action mới hay lưu trữ phía server.
+    - Telemetry agent.turn trong audit_logs: giữ 90 ngày, dọn tự động (agent/retention.py). Xoá dữ liệu tự động là
+      thay đổi vòng đời mang tính huỷ: cần review kiến trúc độc lập trước khi bật (AGENTS.md "Architecture review
+      authority"); người viết không tự duyệt.
+    - Slice 4 (giọng nói): giữ đề xuất (b936819), chưa làm.
 ```
 
 Tiến độ lane (cập nhật mỗi slice):
@@ -255,8 +268,16 @@ Live     2026-10-04 notes, coaching, claims trên gemini-3.5-flash-lite, ghim ch
           lưu note; sửa thay đúng note (cùng id) và xoá đúng note - cả hai sau lời nhắc của server (vòng 1 không gọi
           tool). Lượt mở đầu nêu dữ kiện từ snapshot ("3 từ đến hạn ôn"); câu mời do server viết, đúng ngôn ngữ, không
           câu nào nói đã làm. Tới segment đầu: trung vị 3,99 s, chậm nhất 5,94 s.
-Tiếp      Dark merge vào codex/work (agent tắt mặc định; người chủ dự án merge), rồi bật trên staging :8011; quota
-          dùng chung trước khi chạy nhiều worker (R26); rồi Slice 4 (§26).
+Merge    PR #69 (dark merge, agent tắt mặc định) đã vào codex/work; CI xanh trên 57c4e27 (run 37195960228).
+Sau #69  9d1d297..7bfcbbf: F-13 trả lời "màn này để làm gì" từ màn hình, không read tool; timeline một dòng
+          agent.turn mỗi lượt cho baseline; gate 3.1-3.5 (kết luận về việc học phải đọc bản ghi; server duyệt mọi lần
+          ghi note theo lời người học; đổi ngôn ngữ học bỏ ngữ cảnh cũ; bắt thêm câu "đã làm"); trần chi tiêu theo ngày
+          trên sổ AI dùng chung (AGENT_DAILY_SPEND_CAP_USD, đóng khi không đọc được sổ); đề xuất Slice 4 (chưa làm).
+R27      Nhờ ghi nhớ không dấu: hỏi lại kèm nút, chỉ ghi khi bấm (notes.py, turn.py; test vi không dấu, xác nhận đúng
+          chữ, chữ khác bị từ chối, nhãn theo ngôn ngữ interface). agent.turn giữ 90 ngày, dọn tự động (retention.py;
+          test unit và Postgres: chỉ dòng agent.turn cũ bị xoá, dòng audit khác giữ nguyên) - chờ review độc lập.
+Tiếp      PR mới vào codex/work (người chủ dự án merge khi CI xanh); lane UI dựng lại :8021 rồi lane này đo baseline
+          (dưới 0,05 USD); quota dùng chung trước khi chạy nhiều worker (R26); Slice 4 chỉ là đề xuất.
 ```
 
 ---

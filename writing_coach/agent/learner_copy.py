@@ -93,6 +93,32 @@ CATALOG: Mapping[str, CopyEntry] = MappingProxyType(
              "vi": "{self_cap} chưa sửa hay xoá ghi chú nào của {user}. {user_cap} nói rõ ghi chú nào cần sửa hoặc xoá nhé?",
              "zh-CN": "{self}还没有修改或删除{user}的笔记。请告诉{self}要修改或删除哪一条？"},
         ),
+        # A keep request typed without Vietnamese diacritics (agent/notes.py): asked back, never refused in silence;
+        # kept only when the learner taps `notes.keep_label` (human direction 2026-10-04).
+        "notes.confirm": _entry(
+            CopyLayer.SUPPORT,
+            {"en": "Do you want me to remember: “{text}”?", "vi": "{user_cap} muốn {self} ghi nhớ: “{text}”?",
+             "zh-CN": "{user}想让{self}记住：“{text}”吗？"},
+        ),
+        # The button's label is the learner's next message (contract §4): agent/notes.py reads it back.
+        "notes.keep_label": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Remember: {text}", "vi": "Ghi nhớ: {text}", "zh-CN": "记住：{text}"},
+        ),
+        # The wish is too long to fit on a button: the learner is asked to type it with its marks.
+        "notes.retype": _entry(
+            CopyLayer.SUPPORT,
+            {"en": "Do you want me to remember this? Please type it again with its accents.",
+             "vi": "{user_cap} muốn {self} ghi nhớ điều này? {user_cap} gõ lại có dấu giúp {self} nhé.",
+             "zh-CN": "{user}想让{self}记住这件事吗？请带声调符号再输入一次。"},
+        ),
+        # Tapped to keep a note, and the model kept none even when asked again.
+        "notes.not_kept": _entry(
+            CopyLayer.SUPPORT,
+            {"en": "I haven't kept it yet. Could you tap it again?",
+             "vi": "{self_cap} chưa ghi nhớ được. {user_cap} bấm lại giúp {self} nhé?",
+             "zh-CN": "{self}还没有记下。请再点一次？"},
+        ),
         # The opening greeting when the model's names no fact of the snapshot (agent/greeting.py): one fact, from
         # the snapshot, never a generic line (human direction 2026-09-28).
         "opening.due": _entry(

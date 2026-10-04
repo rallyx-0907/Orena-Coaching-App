@@ -767,6 +767,7 @@ app.include_router(learner_summary_router)
 # own services: the Writing review below and the usage store it meters with.
 from writing_coach.agent.api import agent_enabled, configure_agent, router as agent_router  # noqa: E402
 from writing_coach.agent.runtime import AppReads, build_agent_runtime  # noqa: E402
+from writing_coach.agent.retention import TurnTelemetryRetention  # noqa: E402
 
 
 def _agent_writing_review(essay_id: int) -> dict[str, Any] | None:
@@ -832,6 +833,15 @@ def _agent_spend_guard():
     return DailySpendGuard(cap_usd=cap, read=reader)
 
 
+def _delete_agent_turns_before(before: datetime, limit: int) -> int:
+    deleter = getattr(_persistence_runtime.platform_repository, "delete_agent_turns_before", None)
+    return deleter(before, limit=limit) if callable(deleter) else 0
+
+
+# agent.turn rows are kept 90 days; the write path starts the sweep, at most once a day (agent/retention.py).
+_agent_turn_retention = TurnTelemetryRetention(_delete_agent_turns_before)
+
+
 def _record_agent_turn(user_key: str, record: dict) -> None:
     """One `agent.turn` row per turn (agent/timeline.py), linked to the learner's account like an audit row."""
 
@@ -839,6 +849,7 @@ def _record_agent_turn(user_key: str, record: dict) -> None:
     if callable(writer):
         writer("agent.turn", actor=user_key, entity_type="agent_turn", entity_id=str(record.get("trace_id", "")),
                payload=record)
+    _agent_turn_retention.maybe_sweep()
 
 
 configure_agent(

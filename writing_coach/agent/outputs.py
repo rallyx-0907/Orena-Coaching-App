@@ -59,7 +59,7 @@ from writing_coach.agent.address import (
     valid_term,
 )
 from writing_coach.agent.events import ActionEvent, Display, MemoryUpdateEvent, SuggestionEvent, make_action
-from writing_coach.agent.notes import FORGET, asks_to_remember
+from writing_coach.agent.notes import FORGET, asks_to_remember, confirmed_note, same_note
 from writing_coach.agent.provider import ProviderToolSpec
 from writing_coach.agent.schemas import ClientInfo
 
@@ -75,6 +75,10 @@ PROMPT_INTENTS: Mapping[str, str] = MappingProxyType(
 )
 if set(PROMPT_INTENTS) & set(SURFACES) or not all(i.startswith(PROMPT_NAMESPACE) for i in PROMPT_INTENTS):
     raise RuntimeError("a prompt intent is in the prompt. namespace and is never a navigation intent")
+# The button that confirms a note asked back (agent/turn.py): the server's alone, never offered to the model.
+KEEP_NOTE_INTENT = "prompt.keep_note"
+if KEEP_NOTE_INTENT in PROMPT_INTENTS or KEEP_NOTE_INTENT in SURFACES:
+    raise RuntimeError("the keep-note button is the server's, and a prompt intent")
 
 # The domain a record belongs to, by the evidence source a tool read it as (§5.5 `kind`).
 KIND_BY_SOURCE: Mapping[str, str] = MappingProxyType(
@@ -321,6 +325,10 @@ class ReplyOutputs:
     address_terms: tuple[str | None, str | None] = (None, None)  # the pair in use
     address_offered_now: bool = False
     memory_updates: list[MemoryUpdateEvent] = field(default_factory=list)
+    # A keep request typed without Vietnamese diacritics (agent/notes.py): nothing is kept on it; the note the model
+    # proposes, (kind, text), is put to the learner to confirm with a button (human direction 2026-10-04).
+    unaccented_keep: bool = False
+    note_offer: tuple[str, str] | None = None
 
     # --- ids the turn has seen ------------------------------------------------
 
@@ -515,9 +523,18 @@ class ReplyOutputs:
             return "refused: replaces names a coach note the learner has (not an address note: use set_address)"
         # The server, not the model, decides a note may be written (dogfood gate 3.2): a new note only when the
         # learner asks for it in so many words; a replacement only of the note their message corrects.
+        if replaces is None and self.unaccented_keep:
+            if self.note_offer is None:
+                self.note_offer = (str(kind), text.strip())
+            return ("refused: typed without diacritics, so the server asks the learner to confirm this note with a "
+                    "button - do not say it is kept, and do not ask about it yourself")  # fmt: skip
         if replaces is None and not asks_to_remember(self.learner_words):
             return ("refused: the learner did not ask you to remember anything - if it seems worth keeping, "
                     "ask them in words, and keep it only when they say so")  # fmt: skip
+        confirmed = confirmed_note(self.learner_words)
+        if replaces is None and confirmed is not None and not same_note(text, confirmed):
+            # The learner tapped to keep these very words (notes.keep_label): nothing else is kept on that tap.
+            return f"refused: keep exactly the words the learner confirmed: {confirmed}"
         if replaces is not None and str(replaces) not in self.correcting:
             return "refused: the learner's message does not correct that note"
         if self._note_updates() >= MAX_NOTE_UPDATES:
