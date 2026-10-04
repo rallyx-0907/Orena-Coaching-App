@@ -596,7 +596,7 @@ def test_generate_v04_does_not_persist_after_three_semantic_failures(tmp_path: P
 
     outcome = make_generator(lab.root, httpx.MockTransport(handler)).generate("en.alpha")
     assert outcome.status == "error"
-    assert "semantic validation failed after 3 attempts" in outcome.reason
+    assert "semantic validation failed after 3 full attempt(s)" in outcome.reason
     assert len(calls) == 3
     assert path.read_text(encoding="utf-8") == before
 
