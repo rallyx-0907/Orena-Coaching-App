@@ -23,6 +23,7 @@ from typing import Protocol
 from writing_coach.agent.capability_registry import CapabilityRegistry
 from writing_coach.agent.context import Tier1Context, TurnInput
 from writing_coach.agent.identity import IdentityQuestion, identity_question
+from writing_coach.agent.evidence_questions import needs_learner_evidence
 from writing_coach.agent.screen_help import is_screen_help
 
 
@@ -66,4 +67,8 @@ class RuleDecisionProvider:
         if DecisionQuestion.IDENTITY_QUESTION in questions:
             identity = identity_question(state.turn.message)
         screen_help = DecisionQuestion.SCREEN_HELP in questions and is_screen_help(state.turn.message)
-        return Decisions(capability_ids=capability_ids, identity=identity, screen_help=screen_help)
+        # A conclusion about the learner's own learning must be read from their records (dogfood gate 3.1).
+        needs_tools = True if (DecisionQuestion.NEEDS_TOOLS in questions and not screen_help
+                               and needs_learner_evidence(state.turn.message)) else None  # fmt: skip
+        return Decisions(capability_ids=capability_ids, identity=identity, screen_help=screen_help,
+                         needs_tools=needs_tools)  # fmt: skip

@@ -68,3 +68,53 @@ def test_another_account_never_sees_the_first_ones_session():
     assert "ephemeral" not in other_text and "two flagged syllables" not in other_text
     assert next(e for e in events if e.name == "session").session_id != session_id, "a foreign id opens a new session"
     assert {learner.user_key for learner, _, _ in seen} == {"learner-1"}, "the tool read only the first learner"
+
+
+# --- 3.1: a conclusion about the learner's learning is read from their records ---------------------------
+
+import pytest  # noqa: E402
+
+from writing_coach.agent import learner_copy  # noqa: E402
+from writing_coach.agent.evidence_questions import needs_learner_evidence  # noqa: E402
+from writing_coach.agent.turn import EVIDENCE_NUDGE  # noqa: E402
+
+VI_ZH = LearnerScope(user_key="learner-1", language="zh")
+
+
+@pytest.mark.parametrize("message", ["Hôm nay mình nên học gì?", "Mình hay sai gì nhất?", "Mình yếu phần nào?",
+                                     "What should I study today?", "What do I keep getting wrong?", "我应该学什么？",
+                                     "我经常犯什么错？", "我的弱点是什么？"])
+def test_a_question_about_the_learners_own_learning_needs_their_records(message):
+    assert needs_learner_evidence(message)
+
+
+@pytest.mark.parametrize("message", ["Từ này nghĩa là gì?", "Màn này dùng để làm gì?", "What is a gerund?", "这个词怎么读？"])
+def test_other_questions_do_not(message):
+    assert not needs_learner_evidence(message)
+
+
+def _ask(message, rounds):
+    rt, provider = runtime(rounds, tools=registry())
+    body = turn_request(message).model_dump(mode="json", exclude_none=True)
+    body["context"].pop("selected_item", None)
+    body["context"]["surface"] = "orena.home"
+    events = list(rt.run(TurnRequest.model_validate(body), VI_ZH))
+    return events, provider
+
+
+def test_an_answer_written_without_reading_is_asked_again_and_answered_from_the_read():
+    events, provider = _ask("Mình hay sai gì nhất?", [
+        reply("Bạn hay sai ngữ pháp nhất."),  # a conclusion from nothing: set aside, never streamed
+        call_tools(("c1", "get_test_items", {})),
+        reply("Hai âm tiết bị đánh dấu."),
+    ])
+    assert any(EVIDENCE_NUDGE == m.content for m in provider.requests[1].messages)
+    text = "".join(e.text_delta for e in events if e.name == "segment_delta")
+    assert "ngữ pháp" not in text and "Hai âm tiết" in text
+
+
+def test_a_model_that_never_reads_gets_the_plain_not_enough_data_answer():
+    events, _ = _ask("Mình yếu phần nào?", [reply("Bạn yếu phần nói."), reply("Bạn yếu phần nói, chắc chắn.")])
+    said = next(e for e in events if e.name == "segment_end").text
+    assert "yếu phần nói" not in said
+    assert said == learner_copy.text("evidence.unread", interface="vi", support="vi")[1]

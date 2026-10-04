@@ -93,7 +93,8 @@ def test_a_target_other_than_the_session_language_is_refused_before_anything_run
 
 
 def test_a_turn_streams_contract_events(client):
-    enable([reply("Ôn 12 từ đến hạn trước nhé.")])
+    # "Nên học gì?" needs the learner's records (gate 3.1): a model that never reads is asked once more.
+    enable([reply("Ôn 12 từ đến hạn trước nhé."), reply("Ôn 12 từ đến hạn trước nhé.")])
     response = client.post("/api/agent/turn", json=body())
     assert response.status_code == 200
     assert response.headers["cache-control"] == "no-store"

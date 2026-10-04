@@ -107,6 +107,12 @@ from writing_coach.agent.tools import (
 )
 from writing_coach.core.request_context import LANGUAGE_CODE_CTX, USER_KEY_CTX
 
+EVIDENCE_NUDGE = (
+    "This asks for a conclusion about the learner's own learning. You have read none of their records: call "
+    "get_recommended_next_activities (what to study) or get_learning_weaknesses (what goes wrong, weak areas) "
+    "now, then answer only from what it shows. Where it shows too little, say there is not enough data yet; never "
+    "rank skills against each other from counts of different kinds."
+)
 SCREEN_HELP_REPLY_TOOLS = frozenset({"suggest_next", "set_voice_style"})
 _log = logging.getLogger(__name__)
 
@@ -209,6 +215,7 @@ class _Turn:
         self.gate = ClaimGate(interface=request.context.locale.interface, support=request.context.locale.support)
         self.provider_rounds = 0
         self.screen_help = False  # set per turn by the decision (F-13)
+        self.needs_evidence = False  # a conclusion about the learner's learning: read before answering (3.1)
         self.address_offered_now = False
         self.notes_asked: tuple[CoachNote, ...] = ()  # coach notes the message changes (agent/notes.py)
         self.notes_verdict_logged = False  # one "agent notes" verdict line per turn, never two
@@ -268,6 +275,7 @@ class _Turn:
             if not self.opening:  # an opening turn has no message to ask about
                 questions.add(DecisionQuestion.IDENTITY_QUESTION)
                 questions.add(DecisionQuestion.SCREEN_HELP)
+                questions.add(DecisionQuestion.NEEDS_TOOLS)
             decisions = self.rt.decider.decide(
                 DecisionState(turn=turn, tier1=tier1, registry=self.rt.capabilities), frozenset(questions)
             )
@@ -314,11 +322,13 @@ class _Turn:
         here = [self.rt.capabilities.get(i) for i in decisions.capability_ids]
         snapshot = self._opening_snapshot() if self.opening else None
         self.snapshot, self.coach_notes = snapshot, tier1.coach_notes
+        self.screen_help = decisions.screen_help
+        self.needs_evidence = decisions.needs_tools is True
         if not self.opening:
             self.notes_asked = notes_the_message_changes(turn.message, tier1.coach_notes)
             self.notes_intent = note_intent(turn.message) if self.notes_asked else None
-            self.gate.hold_all = bool(self.notes_asked)  # it may be written again: nothing streams early
-        self.screen_help = decisions.screen_help
+            # It may be written again (a note to change, records to read first): nothing streams early.
+            self.gate.hold_all = bool(self.notes_asked) or self.needs_evidence
         messages = opening_messages(
             turn, tier1, [c for c in here if c], session, opening=self.opening, snapshot=snapshot,
             screen_help=self.screen_help,
@@ -398,7 +408,7 @@ class _Turn:
             # Canonical stream S1 (contract §12): an answer, follow-up questions, nothing else.
             reply_specs = tuple(spec for spec in reply_specs if spec.name in SCREEN_HELP_REPLY_TOOLS)
         limit = self.rt.limits.max_tool_iterations_per_turn
-        nudged = notes_nudged = False
+        nudged = notes_nudged = evidence_nudged = False
         for round_index in range(limit + 1):
             remaining = self.deadline - self.rt.clock()
             if remaining <= 0:
@@ -451,6 +461,10 @@ class _Turn:
                             return  # the learner left: nothing more is sent
                         yield self.stream.emit(SegmentDelta(index=0, lang=self.locale.support, text_delta=chunk))
             if not calls:
+                if self.needs_evidence and not self.records and not evidence_nudged and round_index < limit:
+                    evidence_nudged = True
+                    self._ask_again(messages, round_text, EVIDENCE_NUDGE, why="answered without reading the records")
+                    continue
                 if self._note_unchanged(outputs) and not notes_nudged and round_index < limit:
                     notes_nudged = True
                     self._ask_again(messages, round_text, note_nudge(self.notes_asked, self.notes_intent or CORRECT))
@@ -498,12 +512,16 @@ class _Turn:
     def _note_unchanged(self, outputs: ReplyOutputs) -> bool:
         return bool(self.notes_asked) and not outputs.note_changed
 
-    def _ask_again(self, messages: list[ProviderMessage], round_text: str | list[str], ask: str) -> None:
+    def _ask_again(self, messages: list[ProviderMessage], round_text: str | list[str], ask: str, *,
+                   why: str | None = None) -> None:
         """Once: the answer is set aside (nothing of it was streamed) and the model is asked again."""
 
         # For the operator (which model follows a correction on its own): counts only, no learner words.
-        _log.warning("agent notes: the model changed no note of %d; asked again", len(self.notes_asked),
-                     extra={"trace_id": self.trace_id})  # fmt: skip
+        if why is None:
+            _log.warning("agent notes: the model changed no note of %d; asked again", len(self.notes_asked),
+                         extra={"trace_id": self.trace_id})  # fmt: skip
+        else:
+            _log.warning("agent: %s; asked again", why, extra={"trace_id": self.trace_id})
         written = "".join(round_text)
         if written:
             messages.append(ProviderMessage(role="assistant", content=written))
@@ -626,6 +644,10 @@ class _Turn:
                              else "changed", extra={"trace_id": self.trace_id})  # fmt: skip
             if self._note_unchanged(outputs):  # asked twice and no note changed: said plainly (agent/notes.py)
                 unchanged = learner_copy.text("notes.unchanged", interface=self.locale.interface, support=support,
+                                              address=self.address)[1]  # fmt: skip
+            elif self.needs_evidence and not self.records:
+                # Asked to read and still read nothing: no conclusion about the learner is made up (3.1).
+                unchanged = learner_copy.text("evidence.unread", interface=self.locale.interface, support=support,
                                               address=self.address)[1]  # fmt: skip
             finished = self.gate.finish(
                 inline,

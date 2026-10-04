@@ -80,6 +80,13 @@ CATALOG: Mapping[str, CopyEntry] = MappingProxyType(
         ),
         # Said when the learner changed or cancelled a coach note and none was changed, even when asked again
         # (agent/notes.py): the truth, never "there is no such note".
+        # A question about the learner's own learning that no record was read for (dogfood gate 3.1).
+        "evidence.unread": _entry(
+            CopyLayer.SUPPORT,
+            {"en": "I couldn't read your learning records just now, so I can't say that yet. Please ask again in a moment.",
+             "vi": "{self_cap} chưa đọc được dữ liệu học của {user} lúc này, nên chưa thể kết luận. {user_cap} hỏi lại sau một chút nhé.",
+             "zh-CN": "{self}现在没能读取{user}的学习记录，所以还不能下结论。请稍后再问一次。"},
+        ),
         "notes.unchanged": _entry(
             CopyLayer.SUPPORT,
             {"en": "I haven't changed your notes yet. Could you say which one to change or forget?",
