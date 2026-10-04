@@ -1849,10 +1849,15 @@ class Generator:
     num_examples: int = 2
     r5_root: Path | None = None  # the app's grammar data (r5_source.DEFAULT_R5_ROOT when None)
     allow_default_safe: bool = False  # explicit override for points whose metadata was never reviewed
+    max_full_attempts: int = V04_SEMANTIC_ATTEMPTS
 
     def generate(
         self, point_id: str, *, regenerate_note: str | None = None, with_story: bool = False, story_mode: str = "everyday"
     ) -> GenerateOutcome:
+        if self.max_full_attempts < 1 or self.max_full_attempts > V04_SEMANTIC_ATTEMPTS:
+            raise ValueError(
+                f"max_full_attempts must be between 1 and {V04_SEMANTIC_ATTEMPTS}, got {self.max_full_attempts}"
+            )
         if story_mode not in STORY_MODES:
             raise ValueError(f"story_mode must be one of {sorted(STORY_MODES)}, got {story_mode!r}")
         # Fail closed before any provider call: stale catalogue or unreviewed (default_safe) metadata.
@@ -2103,11 +2108,11 @@ class Generator:
         repair_context = ""
         last_problem = ""
 
-        for attempt in range(1, V04_SEMANTIC_ATTEMPTS + 1):
+        for attempt in range(1, self.max_full_attempts + 1):
             attempt_user = user
             if repair_context:
                 attempt_user += (
-                    f"\n\nRepair attempt {attempt}/{V04_SEMANTIC_ATTEMPTS}. "
+                    f"\n\nRepair attempt {attempt}/{self.max_full_attempts}. "
                     "The previous full JSON candidate failed deterministic validation. "
                     "Return a fresh complete JSON object that fixes every issue below without changing the requested grammar scope:\n"
                     + repair_context
@@ -2118,7 +2123,7 @@ class Generator:
                     schema_name="grammar_point_v04", max_tokens=V04_MAX_TOKENS,
                 )
             except LLMError as exc:
-                if exc.usage is None or attempt >= V04_SEMANTIC_ATTEMPTS:
+                if exc.usage is None or attempt >= self.max_full_attempts:
                     raise
                 attempt_cost = exc.usage.cost_usd(self.llm.model)
                 if attempt_cost is None:
