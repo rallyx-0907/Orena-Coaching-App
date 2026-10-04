@@ -265,6 +265,7 @@ class LLMClient:
         timeout: float = 120.0,
         deepseek_thinking: str = "off",
         cache_only: bool = False,
+        replay_cache_file: Path | None = None,
     ) -> None:
         if provider not in PROVIDERS:
             raise ValueError(f"unknown provider {provider!r}; expected one of {sorted(PROVIDERS)}")
@@ -275,6 +276,8 @@ class LLMClient:
         self.cache_dir = cache_dir
         self.deepseek_thinking = deepseek_thinking
         self.cache_only = cache_only
+        self.replay_cache_file = replay_cache_file
+        self._replay_cache_consumed = False
         self.api_key = api_key if api_key is not None else os.environ.get(_ENV_VAR_BY_PROVIDER[provider], "")
         self._client = httpx.Client(transport=transport, timeout=timeout)
 
@@ -312,6 +315,31 @@ class LLMClient:
         if cached is not None:
             usage = LLMUsage(cached["usage"]["input_tokens"], cached["usage"]["output_tokens"])
             return LLMResult(cached["data"], usage, self.model, self.provider, cached=True)
+
+        if self.replay_cache_file is not None and not self._replay_cache_consumed:
+            self._replay_cache_consumed = True
+            try:
+                replay = read_json(self.replay_cache_file)
+            except (OSError, ValueError) as exc:
+                raise LLMError(f"cannot read replay cache file {self.replay_cache_file}: {exc}") from exc
+            if replay.get("provider") != self.provider or replay.get("model") != self.model:
+                raise LLMError(
+                    "replay cache file provider/model mismatch: "
+                    f"{replay.get('provider')}:{replay.get('model')}"
+                )
+            data = replay.get("data")
+            problems = schema_problems(data, json_schema) if check_schema else []
+            if problems:
+                raise LLMError(
+                    "replay cache file does not match the requested schema: "
+                    + "; ".join(problems[:5])
+                )
+            usage_raw = replay.get("usage") or {}
+            usage = LLMUsage(
+                int(usage_raw.get("input_tokens", 0)),
+                int(usage_raw.get("output_tokens", 0)),
+            )
+            return LLMResult(data, usage, self.model, self.provider, cached=True)
 
         if self.cache_only:
             raise LLMError(
