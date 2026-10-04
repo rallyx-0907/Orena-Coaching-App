@@ -251,7 +251,9 @@ def generate_corpus_command(
 
     initial_plan = plan_corpus(langs, root)
     candidates = generation_items(initial_plan, include_generated=regenerate_existing)
-    requested_point_ids = [item.strip() for item in point_ids.split(",") if item.strip()]
+    requested_point_ids = list(dict.fromkeys(
+        item.strip() for item in point_ids.split(",") if item.strip()
+    ))
     if requested_point_ids:
         by_id = {item[2]: item for item in candidates}
         unavailable = [point_id for point_id in requested_point_ids if point_id not in by_id]
