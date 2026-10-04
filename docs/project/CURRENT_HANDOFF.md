@@ -35,10 +35,10 @@ Frame/route/code/status: `docs/design/canonical-ui/IMPLEMENTATION_MAP.md`.
 
 ## Last verified batch
 
-Pronunciation entry/phone correction (D-122): ready content chooser, direct practice,
-source/segment reuse, readable sentence and Hear/Record within phone viewport.
-EN/ZH/VI and zero preparation POSTs verified; D-121 preserved.
-Evidence: docs/reviews/PRONUNCIATION_ENTRY_PHONE_CHECKPOINT.md.
+Practice continuation: substantiated unfinished work with reasons; visits in Recent,
+source alias dedup and exact resume. ZH draft/media and phone browser verified.
+Local Node125/127; two inherited failures; shared read-only EN/ZH gates pass.
+Evidence: docs/reviews/PRACTICE_CONTINUATION_CHECKPOINT.md. D-121/D-122 preserved.
 Next: human review, then Product Completion; native remains frozen.
 
 Admin REVIEWABLE: six areas, sandbox routing, imports/EN/ZH lookup (`2931823`);

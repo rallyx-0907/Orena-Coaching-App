@@ -84,6 +84,16 @@ IMPLEMENTING. This is a visibly testable slice, not Product Completion.
 The complete current UI/spec inventory and integrated Intelligence/Agent
 reconciliation, evidence, recommendations and action routing remain required.
 
+Practice continuation correction (2026-10-04) is verified at :8021 `/next#/practice`:
+Continue now requires an actual unsubmitted draft, unfinished conversation, or
+partially read available text, with a visible reason and exact resume destination.
+Visit-only entries move to Recently opened; media aliases deduplicate and retain
+the selected original segment. No inferred mastery, new learner-state store or
+provider work. EN/ZH gates and real Chinese draft/media/phone journeys verified;
+evidence and limitations: `docs/reviews/PRACTICE_CONTINUATION_CHECKPOINT.md`.
+Full fidelity gate remains open; the milestone stays IMPLEMENTING and is available
+for browser review. No human product approval is inferred.
+
 My Library correction (2026-10-03): Saved content/language text now uses bounded
 block lines rather than overflowing inline spans. Saved words open Word Detail;
 Back/reload retain the selected tab. Desktop and 390x844 :8021 browser verified; learner
