@@ -51,6 +51,7 @@ functions:
     - en.canon.b1.040
     - en.canon.c2.003
     - en.quantifiers.few_little
+    - en.canon.b2.033
     zh-Hans:
     - zh.measure_words.basic
     - zh.canon.gf.hsk1.a_1_2_1.p1
@@ -60,8 +61,7 @@ functions:
     - zh.canon.gf.hsk7_9.a_7_1_4_2.p1
     ja: []
   planned:
-    en:
-    - en.canon.b2.033
+    en: []
     zh-Hans:
     - zh.liang_er
     - zh.canon.gf.hsk2.a_2_4_1.p1

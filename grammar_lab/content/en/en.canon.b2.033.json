@@ -1,0 +1,213 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b2.033",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.quantity",
+  "level": {"framework": "cefr", "value": "B2", "rank": 4},
+  "prereqs": ["en.canon.b1.040"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["b2-complex-quantifiers"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["b2-complex-quantifiers"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Complex từ chỉ lượng", "en": "Complex quantifiers"},
+    "native_title": "Complex quantifiers",
+    "level": {"framework": "cefr", "value": "B2", "rank": 4},
+    "summary": {
+      "vi": "Các lượng từ phức hợp như a large number of, a great deal of, plenty of, hardly any và the majority of giúp diễn đạt số lượng chính xác hơn theo tính đếm được và văn phong.",
+      "en": "Complex quantifiers such as a large number of, a great deal of, plenty of, hardly any and the majority of express quantity more precisely according to countability and register."
+    },
+    "sub": {"vi": "lượng từ phức hợp", "en": "complex quantifiers"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nhấn mạnh số lượng lớn của danh từ đếm được số nhiều trong văn viết trang trọng hơn.",
+      "en": "When you want to emphasise a large quantity of a plural countable noun in more formal writing."
+    },
+    {
+      "vi": "Khi nói về lượng lớn của danh từ không đếm được mà không dùng much hay a lot of.",
+      "en": "When talking about a large amount of an uncountable noun without using much or a lot of."
+    },
+    {
+      "vi": "Khi muốn diễn đạt số lượng gần như bằng không hoặc đủ dùng trong ngữ cảnh trung tính.",
+      "en": "When expressing a quantity that is almost zero or sufficient in a neutral context."
+    },
+    {
+      "vi": "Khi cần nói về phần lớn một nhóm cụ thể đã được xác định trước đó.",
+      "en": "When you need to talk about the majority of a specific group already identified."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "quantifier",
+        "role": "other",
+        "label": {"vi": "lượng từ phức hợp", "en": "complex quantifier"},
+        "options": [
+          {"text": "a large number of"},
+          {"text": "a great deal of"},
+          {"text": "plenty of"},
+          {"text": "hardly any"},
+          {"text": "the majority of"}
+        ]
+      },
+      {"text": "N", "role": "object", "label": {"vi": "danh từ", "en": "noun"}},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}}
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "A large number of students applied for the scholarship.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 17, "role": "other"},
+        {"start": 18, "end": 26, "role": "object"},
+        {"start": 27, "end": 34, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "a large number of + danh từ đếm được số nhiều, động từ chia số nhiều.",
+        "en": "a large number of + plural countable noun, plural verb agreement."
+      },
+      "translation": {
+        "vi": "Nhiều sinh viên đã nộp đơn xin học bổng.",
+        "en": "A large number of students applied for the scholarship."
+      }
+    },
+    {
+      "text": "A great deal of time is required for this project.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 15, "role": "other"},
+        {"start": 16, "end": 20, "role": "object"},
+        {"start": 21, "end": 23, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "a great deal of + danh từ không đếm được, động từ chia số ít.",
+        "en": "a great deal of + uncountable noun, singular verb agreement."
+      },
+      "translation": {
+        "vi": "Rất nhiều thời gian được yêu cầu cho dự án này.",
+        "en": "A great deal of time is required for this project."
+      }
+    },
+    {
+      "text": "Hardly any evidence supports the claim.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 10, "role": "other"},
+        {"start": 11, "end": 19, "role": "object"},
+        {"start": 20, "end": 28, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "hardly any + danh từ không đếm được, nghĩa là hầu như không có.",
+        "en": "hardly any + uncountable noun, meaning almost none."
+      },
+      "translation": {
+        "vi": "Hầu như không có bằng chứng nào ủng hộ tuyên bố đó.",
+        "en": "Hardly any evidence supports the claim."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "People là danh từ đếm được số nhiều, nên dùng number thay vì amount; amount chỉ đi với danh từ không đếm được.",
+        "en": "People is a plural countable noun, so number is used instead of amount; amount only goes with uncountable nouns."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "A large amount of people attended the meeting.",
+      "right": "A large number of people attended the meeting."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "There were ___ mistakes in the report.",
+      "options": [
+        {"text": "a great many", "error_tag": null},
+        {"text": "a great deal of", "error_tag": "word_choice"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Mistakes là danh từ đếm được số nhiều, nên dùng a great many; a great deal of chỉ đi với danh từ không đếm được.",
+        "en": "Mistakes is a plural countable noun, so a great many is correct; a great deal of only goes with uncountable nouns."
+      }
+    },
+    {
+      "q": "The majority of the participants ___ agreed with the proposal.",
+      "options": [{"text": "have", "error_tag": null}, {"text": "has", "error_tag": "agreement"}],
+      "answer": 0,
+      "explain": {
+        "vi": "The majority of + danh từ số nhiều chia động từ số nhiều (have).",
+        "en": "The majority of + plural noun takes a plural verb (have)."
+      }
+    },
+    {
+      "q": "We don't have ___ information about the new policy.",
+      "options": [{"text": "much", "error_tag": null}, {"text": "many", "error_tag": "word_choice"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Information là danh từ không đếm được, nên dùng much; many chỉ đi với danh từ đếm được số nhiều.",
+        "en": "Information is an uncountable noun, so much is correct; many only goes with plural countable nouns."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một lượng lớn thứ gì đó bạn cần cho học tập hoặc công việc, dùng a great deal of hoặc a large number of.",
+      "en": "Write a sentence about a large amount of something you need for study or work, using a great deal of or a large number of."
+    },
+    "placeholder": "I need a great deal of ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"any_of": ["a great deal of", "a large number of"], "role": "other"},
+        {"regex": "[a-z]+", "role": "object"}
+      ]
+    },
+    "sample": {"text": "I need a great deal of time to finish this project."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v13",
+    "run_id": "generate.1791097128",
+    "generated_at": "2026-10-04T06:58:48Z",
+    "r5_source": {
+      "ids": ["b2-complex-quantifiers"],
+      "content_version": 2,
+      "content_hash": "44d9b42ba805687964a86837e904a7bdd201f01955d6849d5dfd2478c881a7f4",
+      "corrections": [
+        {
+          "r5_id": "b2-complex-quantifiers",
+          "issue": "R5 example 'There were a great deal of mistakes.' is ungrammatical because a great deal of cannot modify a plural countable noun.",
+          "fix": "Replaced with 'There were a great many mistakes.' and added a large number of as an alternative in the correction."
+        },
+        {
+          "r5_id": "b2-complex-quantifiers",
+          "issue": "R5 mistake 'A large amount of people attended.' is correctly identified, but the explanation does not mention that amount is restricted to uncountable nouns.",
+          "fix": "Added explicit reason: amount only goes with uncountable nouns; people is plural countable, so number is required."
+        },
+        {
+          "r5_id": "b2-complex-quantifiers",
+          "issue": "R5 lacks a clear formula and slot bindings for examples.",
+          "fix": "Added a three-slot formula (quantifier + noun + verb) with options and bound each example to the formula slots."
+        },
+        {
+          "r5_id": "b2-complex-quantifiers",
+          "issue": "R5 guided practice includes a production prompt that is too broad and does not specify a single usable pattern.",
+          "fix": "Replaced with a focused personal production card using a great deal of / a large number of and a deterministic pattern rule."
+        }
+      ]
+    }
+  },
+  "review": null
+}
