@@ -928,6 +928,74 @@ def test_generate_v04_structure_failure_never_buys_a_second_full_lesson(tmp_path
     ]
 
 
+
+def test_generate_v04_mixed_structural_issue_repairs_structure_before_full_retry(tmp_path: Path) -> None:
+    lab = _v04_lab(tmp_path)
+    lab.write()
+
+    bad = _answer(copy.deepcopy(CANNED_V04))
+    bad["formula"].insert(1, {
+        "text": "required marker",
+        "role": "marker",
+        "label": "dấu bắt buộc",
+        "optional": False,
+        "options": [],
+    })
+    for example in bad["examples"]:
+        if example["form"] == "affirmative":
+            for binding in example["bindings"]:
+                if binding["slot_index"] == 1:
+                    binding["slot_index"] = 2
+    for rule_slot in bad["personal_production"]["pattern_rule"]["slots"]:
+        if rule_slot["slot_index"] == 1:
+            rule_slot["slot_index"] = 2
+
+    # Add an unrelated semantic issue: structure repair must still run first
+    # instead of skipping directly to a fresh full lesson.
+    bad["quick_practice"][0]["q"] = "He goes to school."
+
+    good_structure = _answer(copy.deepcopy(CANNED_V04))
+    patch = {
+        "formula": copy.deepcopy(good_structure["formula"]),
+        "negative": copy.deepcopy(good_structure["negative"]),
+        "question": copy.deepcopy(good_structure["question"]),
+        "examples": [
+            {"index": index, "bindings": copy.deepcopy(example["bindings"])}
+            for index, example in enumerate(good_structure["examples"])
+        ],
+        "personal_production_pattern_rule": copy.deepcopy(
+            good_structure["personal_production"]["pattern_rule"]
+        ),
+    }
+
+    calls: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        sent = json.loads(request.content)
+        tool_name = sent["tool_choice"]["name"]
+        calls.append(tool_name)
+        if tool_name == "emit_grammar_point_v04":
+            payload = bad
+        elif tool_name == "emit_grammar_point_v04_structure_patch":
+            payload = patch
+        else:
+            raise AssertionError(tool_name)
+        return httpx.Response(200, json={
+            "content": [{"type": "tool_use", "name": tool_name, "input": payload}],
+            "usage": {"input_tokens": 100, "output_tokens": 100},
+        })
+
+    outcome = make_generator(lab.root, httpx.MockTransport(handler)).generate("en.alpha")
+
+    assert outcome.status == "error"
+    # The first extra provider action must be the small structure patch, not a
+    # second full lesson.
+    assert calls[:2] == [
+        "emit_grammar_point_v04",
+        "emit_grammar_point_v04_structure_patch",
+    ]
+
+
 def test_apply_generation_structure_patch_changes_only_structural_projection() -> None:
     data = _answer(CANNED_V04)
     before = copy.deepcopy(data)
