@@ -64,7 +64,7 @@ from grammar_lab.rules import en_morphology
 
 PROMPT_VERSION = "generate_point.v1"
 PROMPT_PATH = LAB_ROOT / "prompts" / "generate_point.md"
-PROMPT_VERSION_V04 = "generate_point_v04.v14"
+PROMPT_VERSION_V04 = "generate_point_v04.v15"
 PROMPT_PATH_V04 = LAB_ROOT / "prompts" / "generate_point_v04.md"
 V04_SEMANTIC_ATTEMPTS = 3
 PERSONAL_PRODUCTION_MAX_SLOTS = 4
@@ -950,6 +950,9 @@ Rules:
   in addition to another article route. Represent zero article by omitting an optional
   article/determiner slot.
 - Keep a slot abstract where the examples vary lexically (S, V, N, NP, clause, etc.).
+- English contractions are surface units when splitting them would overlap or reorder bindings.
+  For a question-tag surface such as "isn't it", prefer one auxiliary slot for "isn't" followed
+  by the pronoun slot; never place the pronoun before a later separate "n't" slot.
 - Each unchanged example must bind every non-optional slot of its selected form exactly once,
   using an exact substring, in slot order. Optional slots may be omitted.
 - Do not fake coverage by marking a genuinely required grammar-bearing slot optional.
