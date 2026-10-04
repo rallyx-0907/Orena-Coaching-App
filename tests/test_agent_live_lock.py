@@ -278,9 +278,12 @@ def test_the_heartbeat_thread_keeps_the_lock_alive_until_release(tmp_path):
     path = tmp_path / "live-provider.lock"
     taken = lock.acquire(LANE, 0.3, path=path, say=lambda _m: None).start_heartbeat(interval=0.05)
     first = on_disk(path)["heartbeat_at"]
-    deadline = time.monotonic() + 3
-    while on_disk(path)["heartbeat_at"] == first and time.monotonic() < deadline:
-        time.sleep(0.02)
+    # Read seldom: on Windows a reader holding the file makes a beat's replace wait for the next beat.
+    deadline = time.monotonic() + 15
+    while time.monotonic() < deadline:
+        time.sleep(0.3)
+        if on_disk(path)["heartbeat_at"] != first:
+            break
     assert on_disk(path)["heartbeat_at"] != first
     taken.release()
     assert not path.exists()
