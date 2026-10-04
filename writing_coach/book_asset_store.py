@@ -106,6 +106,16 @@ class FilesystemBookAssetStore:
         path = self._path_for(key)
         path.unlink(missing_ok=True)
 
+    def list_prefix(self, prefix: str) -> list[str]:
+        """Every key stored directly under `prefix/`, sorted. Read-only; the prefix is
+        validated like a key, so it can never name anything outside the root."""
+        directory = self._path_for(prefix)
+        if not directory.is_dir():
+            return []
+        return sorted(
+            f"{prefix.rstrip('/')}/{path.name}" for path in directory.iterdir() if path.is_file()
+        )
+
     def delete_prefix(self, prefix: str) -> int:
         """Remove every file stored under `prefix/` and return how many went. Idempotent; the prefix is validated
         like a key, so it can never name anything outside the root."""

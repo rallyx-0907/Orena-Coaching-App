@@ -178,6 +178,8 @@ import { sizeBucketOf, READER_SIZE, READER_DEFAULTS } from '../static/orena/prod
   assert.equal(byId.mic.disabled, false, 'requesting the permission is a real effect even when it cannot be revoked from script');
   assert.equal(byId.learnerAudio.disabled, true, 'no delete-audio route exists');
   assert.equal(byId.history.disabled, false, 'a real navigation to Progress needs no backend');
+  assert.equal(byId.licences.kind, 'action');
+  assert.equal(byId.licences.disabled, false, 'Licences and data sources reads GET /api/licences');
 
   const withoutEvidence = planRows({ plan: null, features: {}, micOn: false, micState: undefined });
   const byId2 = Object.fromEntries(withoutEvidence.map((r) => [r.id, r]));
@@ -200,7 +202,7 @@ import { sizeBucketOf, READER_SIZE, READER_DEFAULTS } from '../static/orena/prod
   assert.equal(rowsForTab('learning', inputs).length, 7);
   assert.equal(rowsForTab('review', inputs).length, 4);
   assert.equal(rowsForTab('notifications', inputs).length, 4);
-  assert.equal(rowsForTab('plan', inputs).length, 7);
+  assert.equal(rowsForTab('plan', inputs).length, 8, 'plan tab: the seven rows plus Licences and data sources (D-124)');
   assert.deepEqual(rowsForTab('nonsense', inputs), [], 'an unknown tab id is empty, never throws');
 }
 

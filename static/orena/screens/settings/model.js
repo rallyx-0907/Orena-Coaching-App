@@ -146,6 +146,8 @@ export function planRows({ plan, features, micOn, micState }) {
     // No route deletes a learner's stored audio/media - UI_BACKEND_GAPS.md N-31.
     { id: 'learnerAudio', kind: 'action', disabled: true },
     { id: 'history', kind: 'action', disabled: false },
+    // Who made the dictionaries, recordings and texts, and under which licence (D-124).
+    { id: 'licences', kind: 'action', disabled: false },
   ];
 }
 

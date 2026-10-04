@@ -22,7 +22,7 @@ import { html, mount, raw } from '../../kit/html.js';
 import { icon } from '../../kit/icons.js';
 import { openSheet, fillSheet, sheetHead } from '../../kit/overlay.js';
 import { useStyles } from '../../kit/styles.js';
-import { listRow, segmentedControl, pageHeader } from '../../kit/components.js';
+import { listRow, sectionHead, segmentedControl, pageHeader } from '../../kit/components.js';
 import { toast } from '../../kit/toast.js';
 import { api } from '../../infrastructure/api.js';
 import { shellCopy } from '../../copy/shell.js';
@@ -121,7 +121,7 @@ function barControl(row) {
 }
 
 function actionControl(row) {
-  const label = { plan: t('manageAction'), learnerAudio: t('deleteAudioAction'), history: t('openAction') }[row.id] || '';
+  const label = { plan: t('manageAction'), learnerAudio: t('deleteAudioAction'), history: t('openAction'), licences: t('openAction') }[row.id] || '';
   return html`<button type="button" class="s-settings-action" data-action-row="${row.id}" ${row.disabled ? 'disabled' : ''}>${label}</button>`;
 }
 
@@ -371,6 +371,36 @@ export default async function settingsScreen(element, ctx) {
     const row = currentRows().find((r) => r.id === id);
     if (!row || row.disabled) return;
     if (id === 'history') return ctx.go(ctx.href('progress', {}, { tab: 'history' }));
+    if (id === 'licences') return openLicences();
+  }
+
+  /* Licences and data sources: the kit's sheet of rows, one per dataset, text or recording, each
+     naming its licence and who made it, and linking to the source. */
+  async function openLicences() {
+    let data = null;
+    try {
+      data = await api.licences();
+    } catch {
+      toast(t('licencesLoadError'));
+      return;
+    }
+    const section = (title, rows) => html`<div class="s-settings-licences__group">${sectionHead({ title, size: 'sm' })}${rows.length ? rows : html`<div class="c-row__sub">${t('licencesNone')}</div>`}</div>`;
+    const row = (title, sub, href) => listRow({ tag: href ? 'a' : 'div', href, title, sub, chevron: Boolean(href), className: 's-settings-licences__row' });
+    const datasets = (data.datasets || []).map((item) => row(item.name, [item.licence, item.attribution].filter(Boolean).join(' · '), item.source_url));
+    const content = (data.content || []).map((item) => row(item.title, [item.creator, item.licence].filter(Boolean).join(' · '), item.source_url));
+    const audio = (data.audio || []).map((item) => row(String(item.voice || item.reading || '').replace(/^File:/, ''), [item.reading, item.attribution].filter(Boolean).join(' · '), /^https?:/.test(item.source) ? item.source : ''));
+    openSheet({
+      label: t('licencesLabel'),
+      className: 's-settings-licences',
+      render(sheet, handle) {
+        fillSheet(sheet, handle, html`${sheetHead({ title: t('licencesLabel'), closeLabel: shellCopy('close') })}<div class="o-sheet__body">${section(t('licencesData'), datasets)}${section(t('licencesContent'), content)}${section(t('licencesAudio'), audio)}</div>`);
+        for (const link of sheet.querySelectorAll('a.s-settings-licences__row')) {
+          link.target = '_blank';
+          link.rel = 'noopener noreferrer';
+        }
+        return null;
+      },
+    });
   }
 
   function onClick(event) {

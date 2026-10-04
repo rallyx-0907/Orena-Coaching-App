@@ -482,6 +482,26 @@ class WordAudioLibrary:
     def audio_bytes(self, key: str) -> bytes:
         return self._store.get(key)
 
+    def credits(self, *, limit: int = 500) -> list[WordAudio]:
+        """What every stored recording may be played under, for the licences page.
+
+        Read from the records kept beside the bytes; a store that cannot list
+        its keys has nothing to say here rather than a guess.
+        """
+        lister = getattr(self._store, "list_prefix", None)
+        if lister is None:
+            return []
+        records: list[WordAudio] = []
+        for key in lister("word-audio"):
+            if not key.endswith(".json") or len(records) >= limit:
+                continue
+            try:
+                payload = json.loads(self._store.get(key).decode("utf-8"))
+            except (AssetNotFound, ValueError, KeyError):
+                continue
+            records.append(WordAudio.from_dict(str(payload.get("key") or ""), payload))
+        return records
+
     def pronounce(
         self, *, identity_key: str, term: str, language: str, reading: str, single_reading: bool
     ) -> WordAudio | None:

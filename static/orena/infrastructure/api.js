@@ -547,5 +547,7 @@ export const api={
   // The streak and this week's active days, derived from server records (D4 I14). `tz` is the learner's own
   // IANA timezone: a day is a calendar day in it.
   learnerActivity:(tz)=>request(`/api/learner-activity?tz=${encodeURIComponent(tz||'UTC')}`),
+  // Licences and data sources for Settings (datasets, content credits, each word recording).
+  licences:()=>request('/api/licences'),
   learnerSummary:(window)=>request(`/api/learner-summary?window=${encodeURIComponent(window)}`),
 };

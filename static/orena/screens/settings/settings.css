@@ -191,3 +191,15 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* Licences and data sources: an attribution is read in full, never cut to one line. */
+.s-settings-licences__row .c-row__title,
+.s-settings-licences__row .c-row__sub {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
+}
+.s-settings-licences__group + .s-settings-licences__group {
+  margin-top: 20px;
+}

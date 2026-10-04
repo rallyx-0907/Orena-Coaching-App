@@ -705,6 +705,34 @@ configure_word_audio(
     lambda: WordAudioLibrary(FilesystemBookAssetStore(_word_audio_root), default_voices())
 )
 app.include_router(word_audio_router)
+
+
+def _licence_books() -> list[dict[str, Any]]:
+    if _persistence_runtime.engine is None:
+        return []
+    repository = PostgresReadingLibraryRepository(_persistence_runtime.engine)
+    books: list[dict[str, Any]] = []
+    for language in ("en", "zh"):
+        books.extend(repository.list_books(learning_language=language).get("items") or [])
+    return books
+
+
+@app.get("/api/licences", name="orena_licences")
+def orena_licences(response: Response) -> dict[str, Any]:
+    """Licences and data sources for the learner's Settings page: the vendored datasets and
+    bundled assets, and the per-item credits stored with content (each word recording, each
+    listening source, each registered reading source, each book). Read-only."""
+    from writing_coach.licences import licences_payload
+    from writing_coach.listening_catalog import catalog_lessons, lesson_metadata
+
+    response.headers["Cache-Control"] = "no-store"
+    return licences_payload(
+        word_audio=lambda: WordAudioLibrary(FilesystemBookAssetStore(_word_audio_root), ()).credits(),
+        media=lambda: _media_library_store.list(),
+        listening=lambda: [lesson_metadata(lesson) for lesson in catalog_lessons()],
+        reading_sources=lambda: ReadingContentRepository(_agent_engine()).list_sources(),
+        books=_licence_books,
+    )
 # One word, opened all the way (2026-09-23), for the canonical deep frames.
 # Also no schema: the explained half is cached in the asset store beside the
 # audio, keyed by the same (entry identity, reading) the audio is keyed by, and
