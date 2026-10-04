@@ -84,6 +84,13 @@ IMPLEMENTING. This is a visibly testable slice, not Product Completion.
 The complete current UI/spec inventory and integrated Intelligence/Agent
 reconciliation, evidence, recommendations and action routing remain required.
 
+Listening entry correction (2026-10-04, `cab4773`) is IMPLEMENTING with functional
+browser review available at :8021: comprehension and Dictation select content;
+Speaking has one Pronunciation entry. Six curated EN/ZH lessons have admitted
+questions; original excerpt/evidence playback and honest session results are
+verified. Private imports without questions retain their other ready modes.
+Full fidelity remains open. Evidence: LISTENING_ENTRY_QUESTIONS_CHECKPOINT.md.
+
 Practice continuation correction (2026-10-04) is verified at :8021 `/next#/practice`:
 Continue now requires an actual unsubmitted draft, unfinished conversation, or
 partially read available text, with a visible reason and exact resume destination.

@@ -503,6 +503,13 @@ work remains distinct: a new recording, submitted writing response or explicit
 Agent/context question may legitimately execute its own assessment/feedback/model
 request. Merely opening its source does not.
 
+Listening comprehension (D-123) requires an admitted, persisted question set:
+prompts, choices, answer keys and explanations bound to canonical transcript
+evidence. Source changes require rebuilding/reviewing that derivative once at
+the content boundary. Questionless media may offer Follow, Dictation and
+Pronunciation when ready, but must not advertise comprehension questions.
+Reuse the existing catalog/shared-media owner; entry never generates questions.
+
 # 8. Speaking content — the Speaking Library
 
 Speaking is not just Listening reused. It should contain its own learning

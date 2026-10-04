@@ -4045,3 +4045,19 @@ Initial positioning never autoplays. Existing canonical components and semantic
 tokens remain the design vocabulary. Native remains frozen; this changes neither
 Shared Media Learning nor D-121's preparation/readiness boundary. Human product
 approval still follows browser review.
+
+## D-123 - Listening practice separates comprehension and Dictation
+
+2026-10-04, explicit human correction and confirmed grouping: the Listen group
+offers Listening comprehension (Nghe hiểu) and Dictation (Chép chính tả), each
+with content choice. Speaking has one Pronunciation entry, whose media practice
+is shared Shadowing; remove duplicate cards. Canonical Follow remains the media
+exploration workspace, not a second pronunciation entry.
+
+Comprehension listens to original media, answers admitted source-bound questions,
+then shows checked answers and evidence. Persist reusable question derivatives
+through the existing catalog/shared-content owner before offering this mode;
+never generate them on entry. Questionless imports retain other ready modes.
+This is not a claim of licensed TOEIC exam content. D-121 readiness and shared
+media identity remain binding. Session results add no learner persistence or
+mastery model. Native remains frozen; product approval requires human review.
