@@ -177,6 +177,31 @@ def test_chinese_pinyin_and_base_form_from_local_tagger() -> None:
     assert result["part_of_speech"] == "noun"
 
 
+def test_chinese_word_gets_cc_cedict_senses_without_a_provider() -> None:
+    provider = RecordingTranslationProvider(fail=True)
+    service, provider = _service(translation_provider=provider)
+
+    result = service.lookup("松树", "山上有很多松树。", "zh", "vi").to_dict()
+
+    assert result["definitions"] == [
+        {"part_of_speech": "", "definition": "pine"},
+        {"part_of_speech": "", "definition": "pine tree"},
+    ]
+    # Vietnamese is not English: the dictionary senses are on the sheet and the
+    # meaning still goes to the translation engine (here down), not to a model.
+    assert result["meanings"] == []
+    assert result["available"] is True
+
+
+def test_chinese_word_for_an_english_support_language_is_the_dictionary_meaning() -> None:
+    service, provider = _service()
+
+    result = service.lookup("学习", "我每天学习中文。", "zh", "en").to_dict()
+
+    assert result["meanings"] == [{"text": "to learn; to study", "source": "dictionary"}]
+    assert provider.calls == []
+
+
 def test_phrase_gets_no_part_of_speech() -> None:
     service, provider = _service()
 

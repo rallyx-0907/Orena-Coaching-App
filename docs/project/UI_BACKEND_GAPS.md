@@ -4686,3 +4686,27 @@ Resolved by the human's D-105 decisions; AD-A, AD-B and AD-H above are closed by
   before the media pool grows.
 - The SQLite test twin does not mask fragments (test backend only); Intelligence agent tools must apply the
   same deleted-source rule when that lane next merges forward.
+
+## Vocabulary localization (D-124), 2026-10-04
+
+Architecture and proposed schema: `docs/project/proposals/VOCABULARY_LOCALIZATION.md`.
+
+- **VL-1 Localization table not yet authorized.** `vocabulary_sense_localizations` is proposed
+  (`migrations/proposed/20261004_0025_…`). Until review and authorization, support-language
+  glosses can be added only to unpublished senses (in `short_meanings`); a published collection
+  cannot gain a new support language.
+- **VL-2 No direct bilingual data for → vi.** zh → en comes from the vendored CC-CEDICT; en → vi
+  and zh → vi have no open dataset vendored. Candidates (Wiktionary/kaikki CC BY-SA, FreeDict
+  eng-vie) are a human data/licence choice. Offline Marian pivot (`services/local_translation`)
+  needs its models provisioned and its quality sampled before a pair is enabled.
+- **VL-3 Visible CC-CEDICT attribution.** CC BY-SA 4.0 requires credit where its senses are
+  shown; the pinned design draws no credit line on cards or Word Detail. Data carries
+  `origin: dictionary` and provenance (source, release, licence). Placement is a design decision;
+  required before public release.
+- **VL-4 Unihan `kVietnamese` is not a Hán-Việt field.** It mixes Hán-Việt and Nôm readings in
+  no stated order (森 → "chùm" before "sâm"), so it is not shown as Hán-Việt. A curated Hán-Việt
+  source would be needed for that feature.
+- **VL-5 Learner copies of a meaning.** `saved_words.translation_vi` / `definition` copy one
+  language at save time and several new-UI models read them. For catalog-linked words (with
+  `entry_id`) the meaning must be rendered from the sense's localization for the current support
+  language (proposal §6); the columns stay as learner notes for free-typed words (D4 hold).

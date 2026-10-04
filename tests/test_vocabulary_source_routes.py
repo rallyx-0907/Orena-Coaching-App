@@ -235,3 +235,46 @@ def test_batch_import_keeps_a_bad_source_isolated(monkeypatch, tmp_path) -> None
     # learner-visible merely because a later source failed.
     assert response.json()["collection"]["catalog_status"] == "pending_review"
     assert repository.list_collections("en") == []
+
+
+def test_chinese_import_completes_missing_meanings_from_the_dictionary(tmp_path, monkeypatch) -> None:
+    from writing_coach.ai import platform as ai_platform
+    from writing_coach.persistence.vocabulary_repository import sqlite_vocabulary_repository
+
+    def boom(*args, **kwargs):
+        raise AssertionError("an import must not call a model")
+
+    monkeypatch.setattr(ai_platform, "generate_structured", boom)
+    repository = sqlite_vocabulary_repository(tmp_path / "vocabulary.db")
+    repository.initialize()
+    runtime = replace(app_module._persistence_runtime, vocabulary_repository=repository)
+    monkeypatch.setattr(app_module, "_persistence_runtime", runtime)
+    app_module.configure_becoming_library_content(repository)
+
+    imported = _request(
+        "POST",
+        "/api/admin/vocabulary/import",
+        data={
+            "metadata": json.dumps(
+                {
+                    "title": "Forest words",
+                    "language_code": "zh",
+                    "collection_id": "test-forest-words-zh",
+                    "rights_status": "internal_curated",
+                    "completeness": "complete",
+                }
+            )
+        },
+        files=[("files", ("forest.csv", "word\n松树\n竹林\n".encode(), "text/csv"))],
+    )
+    assert imported.status_code == 200, imported.text
+    item = imported.json()["items"][0]
+    assert item["imported"] == 2
+    assert item["dictionary"] == {"source": "CC-CEDICT", "readings": 2, "meanings": 2, "not_found": 0}
+
+    entries, total = repository.list_entries("test-forest-words-zh")
+    assert total == 2
+    pine = next(entry for entry in entries if entry["term"] == "松树")
+    assert pine["short_meanings"] == [{"language": "en", "text": "pine; pine tree", "origin": "dictionary"}]
+    assert pine["readings"][0]["text"] == "sōng shù"
+    assert pine["provenance"]["dictionary"]["source"] == "cc-cedict"

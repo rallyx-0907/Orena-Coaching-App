@@ -138,6 +138,7 @@ from writing_coach.core.support_languages import (
     support_language_uses_cjk,
 )
 from writing_coach.vocabulary_cards import vocabulary_card_from_catalog_entry
+from writing_coach.vocabulary_dictionary import complete_from_dictionary
 from writing_coach.vocabulary_source_import import (
     VocabularySourceError,
     detect_vocabulary_mapping,
@@ -3243,15 +3244,21 @@ async def admin_vocabulary_source_import(
             )
             if not normalized["records"]:
                 raise VocabularySourceError("The source has no valid vocabulary rows to import.")
+            # Readings and dictionary meanings the source left out are dataset
+            # facts: looked up in the vendored dictionary here, once, never
+            # generated (AI cost reduction plan P1, D-121).
+            records, dictionary_summary = complete_from_dictionary(
+                normalized["records"], collection_metadata["language_code"]
+            )
             result = repository.import_source(
                 collection=collection,
                 source=normalized,
-                records=normalized["records"],
+                records=records,
                 mapping=mapping,
                 imported_by=imported_by,
             )
             collection_persisted = True
-            results.append(result)
+            results.append({**result, "dictionary": dictionary_summary})
         except (VocabularySourceError, ValueError) as exc:
             results.append(failed_source_result(
                 filename=filename,

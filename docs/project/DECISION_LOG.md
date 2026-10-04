@@ -4061,3 +4061,22 @@ never generate them on entry. Questionless imports retain other ready modes.
 This is not a claim of licensed TOEIC exam content. D-121 readiness and shared
 media identity remain binding. Session results add no learner persistence or
 mastery model. Native remains frozen; product approval requires human review.
+
+## D-124 - Vocabulary is localization of one sense, not AI enrichment
+
+2026-10-04, explicit human instruction (two messages, replacing a rejected proposal to batch
+`learner_dictionary` over every vocabulary import). Vocabulary is canonical sense → meaning in
+the learner's support language → card/SRS. A sense exists once; localized meanings are
+separate reusable records keyed by (sense, support language); `meaning_vi` / `translation_vi`
+is one localization, never the meaning model. Adding a support language is "add a
+localization source, materialize glosses", not a product-code change, and duplicates no corpus.
+Lifecycle: import → normalize/sense identity → localize → validate → persist → publish →
+render; learner use after publication is read-only and costs zero provider tokens. Sources are
+deterministic/open lexical data first, then free/offline translation infrastructure where
+direct bilingual data is missing; no paid model in ingestion, localization, publishing,
+opening, review or SRS. No decorative generated card content. Contextual AI explanation stays a
+separate learner-requested capability. This applies the cost plan's rule 1 and implements its P1
+(CC-CEDICT + Unihan vendored, CC BY-SA 4.0 / Unicode licence, named in data provenance;
+visible learner attribution is an open pre-release gate). Schema:
+`proposals/VOCABULARY_LOCALIZATION.md`; its table needs independent review and authorization
+before promotion. Native frozen; product approval still follows browser review.

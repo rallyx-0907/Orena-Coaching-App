@@ -41,7 +41,7 @@
     "lane": "unified_baseline_and_ui_lane"
   },
   "last_verified_application_commit": "e74735b615bf37c3f44c75e86e6466bc14b38dd3",
-  "last_verified_batch": "reading_registered_source_admission_en_zh",
+  "last_verified_batch": "vocabulary_localization_cc_cedict_step1",
   "current_program_stage": {
     "id": "ORENA_PRODUCT_COMPLETION",
     "name": "Coherent content-first web product completion",
@@ -50,7 +50,7 @@
   "current_primary_workstream": {
     "id": "orena_product_completion_d110_d111",
     "status": "in_progress",
-    "next_task": "Human defers Grammar and accepts Reading -> vocabulary enrichment -> practice on publish -> Agent, Grammar later. Bounded S1 registered-source admission implemented: deterministic EN/ZH processing, source rights/origin/attribution/target gates, atomic publication, immutable snapshot reuse and explicit rights-conflict refusal. Browser-owned imports -> publication -> Free Reading/reopen verified at :8021, EN/ZH phone360x740; no new provider telemetry. QA articles archived after evidence. Final focused159 pass; broad run2838 pass/4 fail/370 skip; D4 suite-only failure unresolved (focused current/clean HEAD pass). Node128/130; full fidelity and production gate open. Review Reading source checkpoint, then S3 source vocabulary enrichment under existing owners; S1 level/source breadth and S7 questions remain open. Preserve accepted media/S3/Books/Progress; no production/schema changes."
+    "next_task": "D-124: vocabulary is (sense, support language) localization, not AI enrichment; no paid provider in vocabulary ingestion/localization. Step 1 done locally: CC-CEDICT+Unihan vendored (cost plan P1), ZH import completion (pinyin, en meaning) and provider-free ZH lookup senses; focused 335 pass. Next: server-side per-card meaning for the support language and UI off translation_vi (no schema); localization source registry and validation; independent review of proposed 0025 localization table; provision free Marian pivot and sample quality; open-data choice for -> vi is human (VL-2). Grammar deferred; Agent gated; preserve accepted S1/S2/S3/S4/S6/S8 checkpoints."
   },
   "design": {
     "web_is_visual_source_of_truth": true,
@@ -205,7 +205,8 @@
     "new_learner_ui_d088_at_next_until_the_d091_cutover_old_ui_at_root_is_replaced_not_preserved",
     "grammar_contract_and_fixtures_integrated_screens_wait_for_store_api_and_published_content",
     "eight_design_screens_are_coming_soon_until_a_backend_exists",
-    "platform_admin_moves_into_the_new_ui_d101_old_admin_untouched_until_cutover"
+    "platform_admin_moves_into_the_new_ui_d101_old_admin_untouched_until_cutover",
+    "vocabulary_localization_table_proposed_needs_review_and_vi_open_data_choice_d124"
   ],
   "last_verified_at": "2026-10-04"
 }

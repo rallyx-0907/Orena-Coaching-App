@@ -35,14 +35,11 @@ Frame/route/code/status: `docs/design/canonical-ui/IMPLEMENTATION_MAP.md`.
 
 ## Last verified batch
 
-S1 Reading source admission (e74735b): active registry policy, grounded
-EN/ZH targets and cleared rights admit atomically; unknown/mismatched origins,
-attribution or conflicting duplicate rights stay held/refused. Browser import ->
-Free Reading -> reopen verified; provider telemetry unchanged. QA archived.
-Final focused159 pass; broad2838 pass/4 fail/370 skip (D4 suite-only unresolved);
-Node128/130. READING_SOURCE_ADMISSION_CHECKPOINT.md holds scope/evidence.
-IMPLEMENTING: level validation, source breadth, enrichment/questions/fidelity open.
-Preserve S3 a8e7914: VOCABULARY_COLLECTION_CHECKPOINT.md. Grammar deferred.
+D-124 vocabulary localization step 1 (local): CC-CEDICT+Unihan vendored (cost plan P1);
+ZH imports gain pinyin/`en` meaning, ZH lookup senses, zero provider calls; focused 335 pass.
+(sense, support language) table PROPOSED only: `proposals/VOCABULARY_LOCALIZATION.md`, VL-1..5.
+S1 source admission (e74735b): READING_SOURCE_ADMISSION_CHECKPOINT.md; level/source breadth,
+enrichment/questions/fidelity open. Preserve S3 a8e7914: VOCABULARY_COLLECTION_CHECKPOINT.md. Grammar deferred.
 
 Grammar prerequisites (`0d5732c`): PR67/68 integrated, adapters verified; drafts
 unserved, no Store/API or migration. GRAMMAR_INTEGRATION_CHECKPOINT.md retains evidence.
@@ -111,6 +108,10 @@ deployment, destructive lifecycle, and new learner-owned persistence remain
 human gates. Never touch persistent volumes as cleanup.
 
 ## NEXT EXACT TASK
+
+D-124: (1) server per-card `meaning` for the support language, UI off `translation_vi`;
+(2) localization sources + validation; (3) review/authorize 0025; (4) free Marian pivot sample.
+No paid provider in vocabulary. → vi open data is the human's choice (VL-2).
 
 Grammar remains deferred. Human2026-10-04 accepts Reading -> vocabulary
 enrichment -> practice on publish -> Agent; Grammar later. Review bounded S1

@@ -1,8 +1,9 @@
 """Non-LLM word/phrase lookup for Reading.
 
 A learner tapping a word wants a fast, deterministic answer: the shared local
-tagger, then the shared vocabulary catalog, then (English only) a monolingual
-dictionary, then - only as a last resort - the reading-specific machine
+tagger, then the shared vocabulary catalog, then a dictionary (English: a
+monolingual API; Chinese: the vendored CC-CEDICT pack), then - only as a last
+resort - the reading-specific machine
 translation engine. None of these are a language model; Explain
 (`POST /api/dictionary/contextual`) is the only AI surface a selection can
 reach, and it is a separate, explicit request.
@@ -16,6 +17,7 @@ from dataclasses import dataclass
 from typing import Any, Protocol
 
 from writing_coach.core.support_languages import normalize_support_language
+from writing_coach.languages.chinese import lexicon as chinese_lexicon
 from writing_coach.linguistic_annotation import annotate
 from writing_coach.media_ingestion import primary_language
 from writing_coach.persistence.vocabulary_repository import VocabularyContentUnavailable
@@ -128,6 +130,17 @@ def _safe_find_entry(
         return None
 
 
+def _safe_chinese_senses(word: str) -> tuple[str, ...]:
+    try:
+        for entry in chinese_lexicon.lookup(word):
+            senses = chinese_lexicon.meaning_senses(entry)
+            if senses:
+                return senses
+    except chinese_lexicon.LexiconUnavailable:
+        return ()
+    return ()
+
+
 def _safe_english_dictionary(
     lookup: Callable[[str], dict[str, Any] | None], word: str
 ) -> dict[str, Any] | None:
@@ -200,6 +213,21 @@ class ReadingLookupService:
                 part_of_speech = str(entry.get("part_of_speech") or "").strip()
             if not base_form:
                 base_form = str(entry.get("term") or "").strip()
+
+        if source == "zh" and selection:
+            # The vendored CC-CEDICT pack: dictionary senses for a Chinese word
+            # without a provider (AI cost reduction plan P1). English is its
+            # own language, so for an English support language the first
+            # senses are the meaning; any other language still goes to the
+            # translation engine below, with these senses on the sheet.
+            entry_senses = _safe_chinese_senses(selection)
+            definitions.extend(
+                LookupDefinition("", sense) for sense in entry_senses[:_MAX_DICTIONARY_DEFINITIONS]
+            )
+            if not meanings and target == "en" and entry_senses:
+                meanings.append(LookupMeaning("; ".join(entry_senses[:_MAX_DICTIONARY_DEFINITIONS]), "dictionary"))
+            if not base_form and entry_senses:
+                base_form = selection
 
         is_single_word = bool(selection) and len(selection.split()) == 1
         if source == "en" and is_single_word:
