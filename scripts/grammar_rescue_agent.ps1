@@ -14,7 +14,8 @@ param(
     [double]$CostCeilingUsd = 0.02
 )
 
-$ErrorActionPreference = "Stop"\n$InvariantCulture = [System.Globalization.CultureInfo]::InvariantCulture
+$ErrorActionPreference = "Stop"
+$InvariantCulture = [System.Globalization.CultureInfo]::InvariantCulture
 
 function Invoke-CacheReplay {
     param([string]$Id)
