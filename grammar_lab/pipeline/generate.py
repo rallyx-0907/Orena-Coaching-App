@@ -1789,9 +1789,7 @@ class Generator:
             # projection (for example mutually exclusive article routes written as
             # sequential required slots). Repair only formula/variants, bindings and
             # the production matcher before paying for another full lesson.
-            structure_repair_used = False
             if can_repair_generation_structure(issues):
-                structure_repair_used = True
                 try:
                     structure_patch = request_generation_structure_patch(
                         self.llm,
