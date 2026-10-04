@@ -9,7 +9,8 @@
    have no backend source and why): GET /api/learner-summary for per-domain activity, GET
    /api/library/vocabulary/summary (via product/rank.js) for the rank ladder, and
    essays()/practiceOutcomes()/readingEvidence()/speakingAttempts() plus learner-summary's own
-   listening observations for Evidence and History. */
+   listening observations for Evidence and History, and GET /api/cross-skill-cue with the due count
+   for Overview's "Next" rows (model.js `buildNextRows`). */
 import { html, mount, raw } from '../../kit/html.js';
 import { icon } from '../../kit/icons.js';
 import { useStyles } from '../../kit/styles.js';
@@ -36,6 +37,7 @@ import {
   filterEvidence,
   historyGroups,
   resolveMediaEvidence,
+  buildNextRows,
 } from './model.js';
 
 const TAB_COPY_KEY = { Overview: 'tabOverview', Trends: 'tabTrends', KU: 'tabKU', Evidence: 'tabEvidence', Rank: 'tabRank', History: 'tabHistory' };
@@ -200,7 +202,7 @@ export default async function progressScreen(element, ctx) {
   }
 
   async function renderOverview() {
-    const [summary, rankPayload, activity, sources] = await Promise.all([getSummary(state.range), getRank(), getActivity(), getEvidenceSources()]);
+    const [summary, rankPayload, activity, sources, cue] = await Promise.all([getSummary(state.range), getRank(), getActivity(), getEvidenceSources(), api.crossSkillCue().catch(() => null)]);
     const days = state.range === '7d' ? 7 : state.range === '30d' ? 30 : 90;
     const speaking = days == null ? sources.speaking : sources.speaking.filter(row => Date.parse(row.created_at) >= Date.now() - days * 86400000);
     const skills = buildSkillRows(summary, speaking);
@@ -240,9 +242,16 @@ export default async function progressScreen(element, ctx) {
         </button>`)}
       </div>
     </div>`;
+    const next = buildNextRows(rankPayload, cue, sources.library);
+    const nextRows = next.map((row) => html`<button type="button" class="s-progress-next" data-go="${ctx.href(row.route, row.params, row.query)}">
+      <span class="s-progress-next__body">
+        <span class="s-progress-next__title">${t(`next_${row.key}`)}</span>
+        <span class="s-progress-next__reason">${row.key === 'review' ? t('nextDueReason', { count: row.count }) : langSpan(row.text, context.language)}</span>
+      </span>
+    </button>`);
     const nextCard = html`<div class="s-progress-card">
       <div class="s-progress-card__title">${t('nextTitle')}</div>
-      ${emptyMarkup({ text: t('nextEmpty'), iconName: 'lightbulb' })}
+      ${next.length ? nextRows : emptyMarkup({ text: t('nextEmpty'), iconName: 'lightbulb' })}
     </div>`;
     return html`${hero}<div class="s-progress-grid2">${story}${skillsCard}</div><div class="s-progress-grid2">${kuCard}${nextCard}</div>`;
   }

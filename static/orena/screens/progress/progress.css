@@ -111,6 +111,34 @@
   font-size: 15px;
   font-weight: 600;
 }
+.s-progress-next {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px;
+  border-radius: 16px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--text);
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+.s-progress-next__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.s-progress-next__title {
+  font-size: 14.5px;
+  font-weight: 600;
+}
+.s-progress-next__reason {
+  font-size: 13px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
 .s-progress-card__head {
   display: flex;
   justify-content: space-between;

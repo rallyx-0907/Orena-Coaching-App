@@ -1103,7 +1103,7 @@ Every value below renders `0` (a chart, its zero state) until measured.
 | PG-8  | Recent evidence per skill                     | LearnerSummary latest observations → `EvidenceItem` projection                                      | L     | IN_PROGRESS                |
 | PG-9  | Rank panel                                    | none → SH-4                                                                                         | L     | BLOCKED `[DEF]`            |
 | PG-10 | 18-week heatmap                               | none → per-day activity                                                                             | L     | BLOCKED `[DEF]` `[REVIEW]` |
-| PG-11 | Next action                                   | `practiceRecommendation`, `crossSkillCue`, `reviewCue` → one contract                               | L     | IN_PROGRESS                |
+| PG-11 | Next action                                   | due words, then `crossSkillCue` (coaching order) shown; listening cue opens no lesson; no duration  | L     | IN_PROGRESS                |
 | PG-12 | Improving over four weeks                     | only comparable measures may show a trend → series where comparable, `0` otherwise                  | L     | BLOCKED `[DEF]`            |
 | PG-13 | Recurring errors                              | `error-memory` covers Writing → cross-domain read model                                             | L     | IN_PROGRESS                |
 | PG-14 | "Dựa trên gì" counts                          | derivable → after PG-7                                                                              | L     | IN_PROGRESS                |

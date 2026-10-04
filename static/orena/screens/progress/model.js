@@ -240,3 +240,29 @@ export function filterEvidence(items, filter) {
 export function historyGroups(items, windowDays = 30, now = new Date()) {
   return groupByDay(sortByRecency(withinWindow(items, windowDays, now)), now);
 }
+
+/* Overview's "Next, based on evidence": the same order the agent's coaching recommendations use
+   (writing_coach/agent/coaching.py `recommendations`) - due words first, then the app's one
+   cross-skill cue - read from the records, never a model. A row is kept only when it can open its
+   place: a listening cue names a media asset, not a lesson the app opens, so it is not listed. The
+   design's duration slot stays empty: no study time is measured (rule 40). */
+export function buildNextRows(vocabularySummary, cue, library) {
+  const rows = [];
+  const due = Number(vocabularySummary?.summary?.due) || 0;
+  if (due > 0) rows.push({ key: 'review', count: due, route: 'review', params: {}, query: {} });
+  const action = cue?.available === true && cue.action && typeof cue.action === 'object' ? cue.action : null;
+  const evidence = typeof cue?.evidence === 'string' ? cue.evidence.trim() : '';
+  if (!action) return rows;
+  if (action.kind === 'review' && action.essay_id) {
+    rows.push({ key: 'writing', text: evidence, route: 'writingDraft', params: { id: String(action.essay_id) }, query: {} });
+  } else if (action.kind === 'reading' && action.article_id) {
+    rows.push({ key: 'reading', text: evidence, route: 'reader', params: { id: `article:${action.article_id}` }, query: {} });
+  } else if (action.kind === 'speaking' && action.asset_id) {
+    const lessons = Array.isArray(library?.items) ? library.items : [];
+    const lesson = lessons.find((item) => item.media_object_id === action.asset_id);
+    if (lesson?.lesson_id) {
+      rows.push({ key: 'speaking', text: evidence, route: 'attempts', params: { id: `media:${lesson.lesson_id}` }, query: action.segment_id ? { segment: action.segment_id } : {} });
+    }
+  }
+  return rows;
+}

@@ -10,6 +10,7 @@ import {
   tabFromQuery,
   SKILL_ROWS,
   buildSkillRows,
+  buildNextRows,
   buildKuStages,
   latestMeasure,
   weekStrip,
@@ -254,6 +255,20 @@ import { withinWindow, sortByRecency, dayBucket, groupByDay } from '../static/or
   const groups = historyGroups(items, 30, now);
   assert.equal(groups.length, 1, 'the 30-day-old item falls outside the window');
   assert.equal(groups[0].key, 'today');
+}
+
+// Overview "Next, based on evidence": coaching.recommendations' order, from the records only.
+{
+  assert.deepEqual(buildNextRows({ summary: { due: 0 } }, { available: false }, null), [], 'nothing due and no cue: no rows, the honest empty state');
+  const library = { items: [{ media_object_id: 'asset-1', lesson_id: 'lesson-1' }] };
+  const rows = buildNextRows({ summary: { due: 2 } }, { available: true, evidence: ' A line ', action: { kind: 'speaking', asset_id: 'asset-1', segment_id: 'asset-1:000' } }, library);
+  assert.deepEqual(rows.map((r) => r.key), ['review', 'speaking'], 'due words first, then the cue');
+  assert.equal(rows[0].count, 2);
+  assert.deepEqual(rows[1], { key: 'speaking', text: 'A line', route: 'attempts', params: { id: 'media:lesson-1' }, query: { segment: 'asset-1:000' } });
+  assert.deepEqual(buildNextRows(null, { available: true, evidence: 'x', action: { kind: 'speaking', asset_id: 'gone' } }, library), [], 'a cue whose lesson the catalogue no longer has is not offered');
+  assert.equal(buildNextRows(null, { available: true, evidence: 'T', action: { kind: 'reading', article_id: 7 } }, null)[0].params.id, 'article:7', 'Reader ids are article:<id>');
+  assert.equal(buildNextRows(null, { available: true, evidence: 'E', action: { kind: 'review', essay_id: 5 } }, null)[0].route, 'writingDraft');
+  assert.deepEqual(buildNextRows(null, { available: true, evidence: 'L', action: { kind: 'listening', asset_id: 'a' } }, null), [], 'a listening cue names no lesson to open');
 }
 
 // languages-5 / finding A: screen.js marks a writing prompt/draft, a read article's title and a
