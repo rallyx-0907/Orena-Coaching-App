@@ -90,6 +90,30 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
+  # The Reading engine's worker (writing_coach/reading_worker.py): the process that takes a submitted
+  # text, address or file from the queue to a candidate or a published article (D-111). Without it,
+  # every Reading job an operator submits in Admin stays queued. Same image, same database and the same
+  # asset volume as the web service; no port, nothing learner-facing.
+  reading-worker:
+    image: ai-writing-coach:local
+    restart: unless-stopped
+    command: ["python", "-m", "writing_coach.reading_worker"]
+    environment:
+      APP_ENV: ${APP_ENV:-development}
+      PERSISTENCE_BACKEND: ${PERSISTENCE_BACKEND:-postgresql}
+      POSTGRES_RUNTIME_URL: ${POSTGRES_RUNTIME_URL:-postgresql+psycopg://becoming:becoming-local-dev@postgres:5432/becoming}
+      READING_LIBRARY_ASSET_ROOT: /data/reading_library_assets
+      READING_WORKER_CONCURRENCY: ${READING_WORKER_CONCURRENCY:-1}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      writing-coach:
+        condition: service_started
+    volumes:
+      - writing_data:/data
+      - ./writing_coach:/app/writing_coach:ro
+      - ./VERSION:/app/VERSION:ro
+
   writing-coach-tests:
     profiles:
       - test

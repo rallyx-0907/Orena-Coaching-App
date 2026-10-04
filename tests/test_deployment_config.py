@@ -133,3 +133,13 @@ def test_environment_example_remains_a_usable_development_configuration() -> Non
     assert "SQLite is retained only for explicit tests" in example
     assert "Production-like staging additionally requires APP_BIND_HOST=127.0.0.1" in example
     assert (root / "VERSION").read_text(encoding="utf-8").strip() == "1.4.0"
+
+
+def test_the_reading_worker_runs_as_its_own_restarting_service_on_the_shared_data_volume():
+    root = Path(__file__).resolve().parents[1]
+    compose = (root / "compose.yaml").read_text(encoding="utf-8")
+    block = compose.split("\n  reading-worker:\n", 1)[1].split("\n\n  ", 1)[0]
+    assert 'command: ["python", "-m", "writing_coach.reading_worker"]' in block
+    assert "restart: unless-stopped" in block
+    assert "writing_data:/data" in block and "READING_LIBRARY_ASSET_ROOT: /data/reading_library_assets" in block
+    assert "ports:" not in block, "the worker serves nothing"
