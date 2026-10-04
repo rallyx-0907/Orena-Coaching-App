@@ -35,6 +35,9 @@ services:
       MEDIA_LIBRARY_ROOT: /data/media_library
       MEDIA_LIBRARY_ASSET_ROOT: /data/media_library_assets
       READING_LIBRARY_ASSET_ROOT: /data/reading_library_assets
+      # Word recordings (with their licences) and explained words: on the volume too, or a recreate loses them.
+      WORD_AUDIO_ASSET_ROOT: /data/word_audio
+      WORD_DEEP_ASSET_ROOT: /data/word_deep
       # The key that encrypts saved provider credentials. Passed through from
       # the environment and never written here: without it the console refuses
       # to save a key and says so, which is the correct closed state.
