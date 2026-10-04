@@ -73,6 +73,14 @@ def _patterns(
         rf"|(?:{zme}|已经)?(?:帮|为|给){zyou}{zh}(?:下来?|好)?了"
         rf"|(?:帮|为|给){zyou}{zh}好"
         rf"|(?:保存|添加|收藏|删除)(?:好|成功)了"
+        # Dogfood gate 3.5: forms the audit found getting through.
+        rf"|\b{me}\s+(?:vừa\s+)?(?:đã\s+)?(?:đưa|dẫn)\s+{you}\s+(?:tới|đến|sang|vào)\b"
+        r"|\bI(?:'ve|\s+have)?\s+(?:just\s+)?(?:moved|taken|brought|sent|switched|navigated)\s+you\b"
+        rf"|\bI(?:'ve|\s+have)?\s+gone\s+ahead\s+and\s+{_EN_DONE}\b"
+        r"|^\W*(?:opening|saving|adding|moving\s+you|taking\s+you)\b[^.!?\n]{0,40}?\bnow\b"
+        rf"|已(?:经)?(?:帮|为|给){zyou}(?:{zh})"
+        rf"|{zme}(?:已经|已)?(?:{zh})了(?!解)"
+        rf"|{zme}(?:已经|已)?把[^。！？\n]{{0,20}}?(?:{zh})[^。！？\n]{{0,10}}?(?:了(?!解)|好)"
     )
     # A completion with no actor: false only beside a pending button.
     stated = re.compile(
