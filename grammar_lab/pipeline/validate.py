@@ -873,6 +873,22 @@ def pattern_rule_matches(ordered: bool, matchers: list[Any], text: str, zh: bool
     ``matchers`` holds, per slot, a compiled regex or a list of literal alternatives. Literals match whole
     words (EN) or substrings (ZH). Ordered rules need the slots to match left to right without overlap."""
     normalized = text.casefold().replace("\u2019", "'")
+
+    # If the rule explicitly models a contraction suffix as its own slot
+    # (is + n't, I + 've, she + 'll), expose an internal token boundary
+    # before that suffix for matching only. Stored text is never changed.
+    contraction_suffixes = {"n't", "'m", "'re", "'s", "'ve", "'ll", "'d"}
+    split_suffixes = {
+        str(literal).casefold().replace("\u2019", "'")
+        for matcher in matchers
+        if isinstance(matcher, list)
+        for literal in matcher
+        if str(literal).casefold().replace("\u2019", "'") in contraction_suffixes
+    }
+    if not zh:
+        for suffix in sorted(split_suffixes, key=len, reverse=True):
+            normalized = normalized.replace(suffix, " " + suffix)
+
     position = 0
     for matcher in matchers:
         best = None
