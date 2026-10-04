@@ -206,6 +206,10 @@ def generate_corpus_command(
         0, "--max-points",
         help="Optional bound for one invocation; 0 means every selected point until cost ceiling.",
     ),
+    point_ids: str = typer.Option(
+        "", "--point-ids",
+        help="Optional comma-separated canonical point IDs; selects only those currently eligible points.",
+    ),
     sample_per_level: int = typer.Option(
         0, "--sample-per-level",
         help="Smoke mode: take the first N selected candidates from every language/level group; 0 disables.",
@@ -247,6 +251,16 @@ def generate_corpus_command(
 
     initial_plan = plan_corpus(langs, root)
     candidates = generation_items(initial_plan, include_generated=regenerate_existing)
+    requested_point_ids = [item.strip() for item in point_ids.split(",") if item.strip()]
+    if requested_point_ids:
+        by_id = {item[2]: item for item in candidates}
+        unavailable = [point_id for point_id in requested_point_ids if point_id not in by_id]
+        if unavailable:
+            raise typer.BadParameter(
+                "not currently eligible in the selected language/status: " + ", ".join(unavailable),
+                param_hint="--point-ids",
+            )
+        candidates = [by_id[point_id] for point_id in requested_point_ids]
     normalized_skipped = 0
     if regenerate_existing and not regenerate_note:
         already_normalized = {
@@ -359,6 +373,7 @@ def generate_corpus_command(
         "story_mode": story_mode if with_story else None,
         "cost_ceiling_usd": cost_ceiling_usd,
         "max_points": max_points,
+        "point_ids": requested_point_ids,
         "sample_per_level": sample_per_level,
         "workers": workers,
         "regenerate_existing": regenerate_existing,
