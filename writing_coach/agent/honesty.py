@@ -36,6 +36,8 @@ _VI_MEMORY = "ghi nhớ|ghi lại"  # what a memory_update does: true when the t
 _EN_DONE = r"(?:saved|added|removed|deleted|opened|started)"
 _ZH_ACT = "保存|添加|加入|删除|移除|收藏|打开|开始"
 _ZH_MEMORY = "记录|记下"
+# What the app itself saves, opens or starts: the objects that make "我…了" a claim, not a lesson sentence.
+_ZH_APP_OBJECT = "它|这个词|这个字|该词|设置|页面|复习|词库|生词本|收藏夹|笔记|练习|课程|你的"
 
 
 # Who Orena is and who the learner is, in a claim: the defaults, plus the learner's own address (contract v5
@@ -74,13 +76,18 @@ def _patterns(
         rf"|(?:帮|为|给){zyou}{zh}好"
         rf"|(?:保存|添加|收藏|删除)(?:好|成功)了"
         # Dogfood gate 3.5: forms the audit found getting through.
-        rf"|\b{me}\s+(?:vừa\s+)?(?:đã\s+)?(?:đưa|dẫn)\s+{you}\s+(?:tới|đến|sang|vào)\b"
+        # Past only (đã/vừa): "Mình đưa bạn đến phần Ôn tập nhé?" is an offer, not a claim (review P2-4).
+        rf"|\b{me}\s+(?:vừa|đã|vừa\s+đã)\s+(?:đưa|dẫn)\s+{you}\s+(?:tới|đến|sang|vào)\b"
         r"|\bI(?:'ve|\s+have)?\s+(?:just\s+)?(?:moved|taken|brought|sent|switched|navigated)\s+you\b"
         rf"|\bI(?:'ve|\s+have)?\s+gone\s+ahead\s+and\s+{_EN_DONE}\b"
-        r"|^\W*(?:opening|saving|adding|moving\s+you|taking\s+you)\b[^.!?\n]{0,40}?\bnow\b"
+        # A bare gerund only with an app object: "Adding a comma now makes it correct" is grammar (review P2-3).
+        r"|^\W*(?:opening|saving|adding)\s+(?:it|that|this\s+word|the\s+(?:page|review|word|lesson|section)|your)\b"
+        r"[^.!?\n]{0,30}?\bnow\b"
+        r"|^\W*(?:moving|taking)\s+you\b[^.!?\n]{0,40}?\bnow\b"
         rf"|已(?:经)?(?:帮|为|给){zyou}(?:{zh})"
-        rf"|{zme}(?:已经|已)?(?:{zh})了(?!解)"
-        rf"|{zme}(?:已经|已)?把[^。！？\n]{{0,20}}?(?:{zh})[^。！？\n]{{0,10}}?(?:了(?!解)|好)"
+        # "我打开了门", "我收藏了很多书" are lesson sentences: only the app's own objects make it a claim (P2-2).
+        rf"|{zme}(?:已经|已)?(?:{zh})了(?:{_ZH_APP_OBJECT})"
+        rf"|{zme}(?:已经|已)?把(?:{_ZH_APP_OBJECT})[^。！？\n]{{0,12}}?(?:{zh})[^。！？\n]{{0,10}}?(?:了(?!解)|好)"
     )
     # A completion with no actor: false only beside a pending button.
     stated = re.compile(

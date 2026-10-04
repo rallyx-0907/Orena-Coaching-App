@@ -264,7 +264,9 @@ def test_the_opening_turn_is_built_on_the_snapshot_and_reads_nothing_itself(monk
 
 
 @pytest.mark.parametrize("message", ["Mình muốn thi HSK4 vào tháng 12.", "I'm preparing for HSK4.", "我在准备HSK4。",
-                                     "Mình không nhớ là từ này nghĩa gì", "hay là thôi"])
+                                     "Mình không nhớ là từ này nghĩa gì", "hay là thôi", "Sau này mình dùng từ này thế nào?",
+                                     "What do I say next time?", "mình nhớ là bài trước có từ này",
+                                     "Do you remember my level?", "Ghi nhớ từ này khó quá", "考试以后再说"])
 def test_a_fact_told_or_an_unclear_message_writes_no_note(message):
     out = outputs({}, learner_words=message)
     answer = out.handle(REMEMBER_NOTE, {"kind": "goal", "text": "Thi HSK4"}, known_evidence=frozenset())

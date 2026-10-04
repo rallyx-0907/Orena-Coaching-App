@@ -118,3 +118,40 @@ def test_a_model_that_never_reads_gets_the_plain_not_enough_data_answer():
     said = next(e for e in events if e.name == "segment_end").text
     assert "yếu phần nói" not in said
     assert said == learner_copy.text("evidence.unread", interface="vi", support="vi")[1]
+
+
+@pytest.mark.parametrize("message", [
+    "Câu này mình nên làm gì tiếp?", "What should I focus on in this passage?", "What do I get wrong in this sentence?",
+    "how am I doing on this essay?", "时间不足", "这句话哪里不足", "考试要学什么", "phần yếu tố quan trọng",
+])
+def test_a_question_about_what_is_in_view_is_not_a_records_question(message):
+    assert not needs_learner_evidence(message)
+
+
+def test_a_selection_in_view_keeps_the_gate_out():
+    assert not needs_learner_evidence("Mình hay sai gì nhất?", in_view=True)
+
+
+def test_a_records_question_whose_read_fails_gets_the_plain_answer():
+    from tests.test_agent_turn import registry as make_registry
+
+    rt, _ = runtime([call_tools(("c1", "get_test_items", {})), reply("Bạn yếu phần nói.")],
+                    tools=make_registry(fail_with=RuntimeError("down")))
+    body = turn_request("Mình yếu phần nào?").model_dump(mode="json", exclude_none=True)
+    body["context"].pop("selected_item", None)
+    events = list(rt.run(TurnRequest.model_validate(body), VI_ZH))
+    said = next(e for e in events if e.name == "segment_end").text
+    assert said == learner_copy.text("evidence.unread", interface="vi", support="vi")[1]
+
+
+def test_a_tool_called_in_the_last_round_where_none_is_offered_never_runs():
+    from writing_coach.agent.limits import AgentLimits
+
+    seen = []
+    rt, provider = runtime(
+        [call_tools(("c1", "get_test_items", {})), call_tools(("c2", "get_test_items", {})), reply("Ok.")],
+        tools=registry(seen), limits=AgentLimits(max_tool_iterations_per_turn=1),
+    )
+    list(rt.run(_request("en", selected={"type": "word", "text": "x", "lang": "en"}), EN))
+    assert provider.requests[1].tools == (), "the last round offers nothing"
+    assert len(seen) == 1, "the call made in the round that offered nothing did not run"

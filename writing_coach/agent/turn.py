@@ -113,7 +113,7 @@ EVIDENCE_NUDGE = (
     "now, then answer only from what it shows. Where it shows too little, say there is not enough data yet; never "
     "rank skills against each other from counts of different kinds."
 )
-SCREEN_HELP_REPLY_TOOLS = frozenset({"suggest_next", "set_voice_style"})
+SCREEN_HELP_REPLY_TOOLS = frozenset({"suggest_next"})  # S1: an answer and follow-ups; no preference change
 _log = logging.getLogger(__name__)
 
 Meter = Callable[[str, str, int, str], None]  # (user_key, feature, amount, request_id)
@@ -216,6 +216,7 @@ class _Turn:
         self.provider_rounds = 0
         self.screen_help = False  # set per turn by the decision (F-13)
         self.needs_evidence = False  # a conclusion about the learner's learning: read before answering (3.1)
+        self.read_attempted = False  # a read was started this turn, whatever came of it
         self.address_offered_now = False
         self.notes_asked: tuple[CoachNote, ...] = ()  # coach notes the message changes (agent/notes.py)
         self.notes_verdict_logged = False  # one "agent notes" verdict line per turn, never two
@@ -461,7 +462,7 @@ class _Turn:
                             return  # the learner left: nothing more is sent
                         yield self.stream.emit(SegmentDelta(index=0, lang=self.locale.support, text_delta=chunk))
             if not calls:
-                if self.needs_evidence and not self.records and not evidence_nudged and round_index < limit:
+                if self.needs_evidence and not self.read_attempted and not evidence_nudged and round_index < limit:
                     evidence_nudged = True
                     self._ask_again(messages, round_text, EVIDENCE_NUDGE, why="answered without reading the records")
                     continue
@@ -540,6 +541,7 @@ class _Turn:
             return "refused: tools read only the signed-in learner's own data"
         label = learner_copy.text(f"tool.{tool.name}", interface=self.locale.interface, support=self.locale.support)[1]
         self.timeline.tools.append(tool.name)
+        self.read_attempted = True
         self.timeline.mark("tool_start")
         yield self.stream.emit(ToolCallEvent(tool=tool.name, label=label))
         try:

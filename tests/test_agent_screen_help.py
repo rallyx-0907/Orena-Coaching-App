@@ -55,7 +55,7 @@ def test_screen_help_is_answered_from_the_screen_with_no_tool_offered(surface, i
     events = run(rt, _request(SCREEN_QUESTIONS[interface][0], surface, interface))
     request = provider.requests[0]
     offered = {spec.name for spec in request.tools}
-    assert offered <= {"suggest_next", "set_voice_style"}, "no read tool, action or note to explain a screen (S1)"
+    assert offered <= {"suggest_next"}, "no read tool, action or note to explain a screen (S1)"
     assert len(provider.requests) == 1, "one provider round, no tool round-trip"
     assert not [e for e in events if e.name in {"tool_call", "tool_result", "evidence", "action"}]
     assert seen == [], "no learner data is read"
@@ -75,7 +75,7 @@ def test_the_regression_question_reaches_no_tool_even_when_the_model_asks_for_on
     events = run(rt, _request("Màn này dùng để làm gì?", "reading.workspace", "vi"))
     assert seen == []
     assert not [e for e in events if e.name in {"tool_call", "tool_result", "evidence"}]
-    assert all({spec.name for spec in r.tools} <= {"suggest_next", "set_voice_style"} for r in provider.requests)
+    assert all({spec.name for spec in r.tools} <= {"suggest_next"} for r in provider.requests)
 
 
 def test_a_recommendation_question_still_gets_its_tools():

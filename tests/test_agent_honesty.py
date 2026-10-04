@@ -270,6 +270,13 @@ def test_more_ways_of_saying_it_acted_are_claims(text):
     "text",
     [
         "Mình sẽ đưa ra ví dụ cho bạn.",
+        "Mình đưa bạn đến phần Ôn tập nhé?",
+        "Adding a comma now makes it correct.",
+        "我打开了门。",
+        "我收藏了很多书。",
+        "我删除了文件。",
+        "我加入了俱乐部。",
+        "我把门打开了。",
         "我开始了解你的学习情况。",
         "Taken together, these words are due tomorrow.",
         "You moved to Grammar yesterday.",

@@ -51,11 +51,17 @@ def note_intent(message: str | None) -> str:
 # ("từ giờ", "from now on", "以后"). Telling a fact ("Mình đang luyện HSK4") is not a request, and neither is
 # not remembering something ("mình không nhớ là…", "I don't remember", "我不记得").
 _REMEMBER = re.compile(
-    r"(?i)(?<!không )(?<!chẳng )(?<!chưa )(?<!đừng )\bnhớ (?:giúp|giùm|hộ|là|rằng|cho|nhé|giúp mình|điều này|cái này)\b"
-    r"|\b(?:ghi nhớ|ghi lại|ghi chú lại|lưu lại điều|từ giờ|từ nay|lần sau|sau này|về sau)\b"
-    r"|(?<!\bi )(?<!n't )(?<!not )\bremember (?:that|this|to|i|i'm|my|me)\b"
-    r"|\b(?:keep in mind|note that|make a note|take note|from now on|next time|going forward|in future|in the future)\b"
-    r"|(?<!不)记住|帮我记|记一下|请记得|你要记得|以后|从现在起|从今以后|今后|下次"
+    # "mình nhớ là bài trước…" is the learner remembering, not a request (review P2-6).
+    r"(?i)(?<!không )(?<!chẳng )(?<!chưa )(?<!đừng )(?<!mình )(?<!tôi )(?<!em )(?<!tớ )"
+    r"\bnhớ (?:giúp|giùm|hộ|là|rằng|cho|nhé|giúp mình|điều này|cái này)\b"
+    # "ghi nhớ từ này" is memorising a word; only "ghi nhớ" of a statement is a request.
+    r"|\b(?:ghi nhớ|ghi lại|ghi chú lại) (?:là|rằng|giúp|giùm|hộ|điều này|nhé)\b"
+    r"|\b(?:từ giờ|từ nay|từ bây giờ)\b|\blần sau (?:hãy|nhớ|đừng|cứ)\b"
+    r"|(?<!\bi )(?<!n't )(?<!not )(?<!you )\bremember (?:that|this|to|i|i'm|my|me)\b"
+    r"|\b(?:keep in mind|note that|make a note|take note|from now on|going forward)\b"
+    r"|\bnext time,? (?:please|always|don't|do not|use|explain|give|answer)\b"
+    r"|(?<!不)记住|帮我记|记一下|请记得|你要记得|从现在起|从今以后"
+    r"|(?:以后|今后|下次)(?:请|你|都|要|用|给我|别|不要)"
 )
 
 
