@@ -910,19 +910,19 @@ def test_generate_v04_structure_failure_never_buys_a_second_full_lesson(tmp_path
     outcome = generator.generate("en.alpha")
 
     assert outcome.status == "error"
+    # The second bounded structure attempt is identical here, so the LLM
+    # cache serves it without another provider request.
     assert calls == [
         "emit_grammar_point_v04",
         "emit_grammar_point_v04_structure_patch",
-        "emit_grammar_point_v04_structure_patch",
     ]
 
-    # Structural rejection keeps the already-paid full candidate and patches
+    # Structural rejection keeps the already-paid full candidate and patch
     # cached. Re-evaluating after a code fix must not hit the provider again.
     again = generator.generate("en.alpha")
     assert again.status == "error"
     assert calls == [
         "emit_grammar_point_v04",
-        "emit_grammar_point_v04_structure_patch",
         "emit_grammar_point_v04_structure_patch",
     ]
 
