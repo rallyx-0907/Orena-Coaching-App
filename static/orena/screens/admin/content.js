@@ -41,7 +41,7 @@ export async function mountContent(shell, ctx) {
     switch (routeId) {
       case 'adminBooks': case 'adminMedia': case 'adminVocab': return { ...listPage({ ...base, kind, data: data.list, loading: view.loading }), filterValue: view.q };
       case 'adminBook': return bookPage({ ...base, detail: data.detail });
-      case 'adminMediaItem': return mediaPage({ ...base, detail: data.detail });
+      case 'adminMediaItem': return mediaPage({ ...base, detail: data.detail, form: data.form });
       case 'adminCollection': return collectionPage({ ...base, detail: data.detail, form: data.form });
       default: return homePage({ ...base, counts: data.counts });
     }
@@ -49,6 +49,23 @@ export async function mountContent(shell, ctx) {
   host.setBuilder(build, { filter: ['adminBooks', 'adminMedia', 'adminVocab'].includes(routeId) });
 
   const filters = () => ({ kind, q: view.q, status: view.status === 'all' ? '' : view.status, offset: 0 });
+  let processingTimer = 0;
+  function watchProcessing() {
+    clearTimeout(processingTimer);
+    if (kind !== 'media' || !['queued', 'running'].includes(data.detail?.record?.processing?.state)) return;
+    processingTimer = setTimeout(async () => {
+      if (!host.alive()) return;
+      if (!view.busy) {
+        try {
+          const detail = await api.contentDetail('media', ctx.params.id);
+          if (!host.alive()) return;
+          data.detail = detail;
+          host.paint();
+        } catch { /* Retain the last confirmed state; next read may recover. */ }
+      }
+      watchProcessing();
+    }, 2500);
+  }
 
   async function load({ append = false } = {}) {
     view.loading = true;
@@ -62,6 +79,7 @@ export async function mountContent(shell, ctx) {
         data.detail = await api.contentDetail(kind, ctx.params.id);
         const admission = data.detail.admission || {};
         if (kind === 'vocabulary') data.form = { rights: admission.rights_status || '', completeness: admission.completeness || 'unknown', attested: false };
+        if (kind === 'media') data.form = { rights: data.detail.source?.rights || 'unknown', license: data.detail.source?.license || '', attested: false };
       } else {
         data.counts = await contentCounts(api);
       }
@@ -72,6 +90,7 @@ export async function mountContent(shell, ctx) {
     if (!host.alive()) return;
     view.loading = false;
     host.paint();
+    watchProcessing();
   }
 
   host.on('go', (control, dataset) => ctx.go(dataset.to));
@@ -86,18 +105,38 @@ export async function mountContent(shell, ctx) {
   });
 
   host.on('lifecycle', async (control, dataset) => {
+    if (view.busy) return;
     const intent = dataset.intent;
     const [title, body, danger] = CONFIRM[intent];
-    const answer = await host.confirm({ title: t(title), body: t(body), cancel: t('actCancel'), confirm: t(`ctAct_${intent}`), danger });
+    const answer = await host.confirm({ title: t(kind === 'media' && intent === 'publish' ? 'ctMediaPublishTitle' : title), body: t(kind === 'media' && intent === 'publish' ? 'ctMediaPublishBody' : body), cancel: t('actCancel'), confirm: t(`ctAct_${intent}`), danger });
     if (!answer.confirmed) return;
     view.error = '';
+    view.busy = true;
+    host.paint();
     try {
       await applyLifecycle(api, kind, ctx.params.id, intent);
       host.toast(t(DONE[intent]));
       data.detail = await api.contentDetail(kind, ctx.params.id);
+      watchProcessing();
     } catch (error) {
       view.error = explain(error);
     }
+    view.busy = false;
+    host.paint();
+  });
+
+  host.on('media-rights-save', async () => {
+    if (view.busy) return;
+    view.busy = true;
+    view.error = '';
+    host.paint();
+    try {
+      await api.reviewMediaRights(ctx.params.id, { rights: data.form.rights, license: data.form.license, attested: data.form.attested });
+      data.detail = await api.contentDetail(kind, ctx.params.id);
+      data.form.attested = false;
+      host.toast(t('ctRightsSaved'));
+    } catch (error) { view.error = explain(error); }
+    view.busy = false;
     host.paint();
   });
 
@@ -120,5 +159,5 @@ export async function mountContent(shell, ctx) {
   });
 
   load();
-  return () => { clearTimeout(timer); host.cleanup(); };
+  return () => { clearTimeout(timer); clearTimeout(processingTimer); host.cleanup(); };
 }

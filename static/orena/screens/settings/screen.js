@@ -33,7 +33,7 @@ import { readReaderSettings, writeReaderSettings, sizeBucketOf, SIZE_BUCKETS } f
 import { readStage, writeStage, transcriptDefaults } from '../../product/transcript-stage.js';
 import { readReviewSettings } from '../../product/recall-modes.js';
 import { MIC_STATES, watchMicrophone } from '../../capabilities/mic-readiness.js';
-import { appearance, setAppearance } from '../../kit/device.js';
+import { appearance, setAppearance, palette, setPalette } from '../../kit/device.js';
 import { appendNativeName } from '../../kit/lang.js';
 import { t } from './copy.js';
 import { TABS, tabFromQuery, rowsForTab, barPercent, usesPicker } from './model.js';
@@ -92,6 +92,7 @@ function choiceOptions(row) {
   if (row.id === 'support') return row.options.map((opt) => ({ value: opt.code, label: opt.label, selected: opt.code === row.value }));
   if (row.id === 'interface') return row.options.map((opt) => ({ value: opt.code, label: opt.label, selected: opt.code === row.value }));
   if (row.id === 'theme') return row.options.map((value) => ({ value, label: t(THEME_LABEL_KEY[value]), selected: value === row.value }));
+  if (row.id === 'palette') return row.options.map((value) => ({ value, label: t(`palette_${value}`), selected: value === row.value }));
   if (row.id === 'readerSize') return row.options.map((size) => ({ value: size, label: t(`size${size}`), selected: size === row.value }));
   // sessionLength: plain numerals, identical in every locale.
   return row.options.map((value) => ({ value, label: value, selected: value === row.value }));
@@ -202,6 +203,7 @@ export default async function settingsScreen(element, ctx) {
         autoscroll: stage.autoscroll,
         meaning: stage.meaning,
         theme: appearance(),
+        palette: palette(),
       },
       review: { modes: reviewSettings?.modes },
       plan: {
@@ -317,6 +319,7 @@ export default async function settingsScreen(element, ctx) {
     if (rowId === 'support') return onSupportPick(value);
     if (rowId === 'interface') return onInterfacePick(value);
     if (rowId === 'theme') return onThemePick(value);
+    if (rowId === 'palette') { setPalette(value); paintTab(); return; }
     if (rowId === 'readerSize') return onReaderSizePick(value);
     // sessionLength is always disabled today (model.js) - nothing to wire.
   }

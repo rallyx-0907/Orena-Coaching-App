@@ -191,8 +191,8 @@ export const api={
   /* How a word sounds, at the reading it was kept at. The answer says what
      it may be played under - the licence and who recorded it - because that
      is the condition a Commons clip is available on at all. */
-  wordAudio:(word,reading='')=>retryOnce(
-    ()=>request(`/api/library/vocabulary/${encodeURIComponent(word)}/audio${reading?`?reading=${encodeURIComponent(reading)}`:''}`),
+  wordAudio:(word,reading='',lookup=false)=>retryOnce(
+    ()=>request(`/api/library/vocabulary/${encodeURIComponent(word)}/audio?reading=${encodeURIComponent(reading)}${lookup?'&lookup=true':''}`),
     isTransientRequestError,
   ),
   /* The learner's own study sets. A Deck is Vocabulary's - a set to review
@@ -287,6 +287,7 @@ export const api={
     if(params.level)query.set('level',String(params.level));
     if(params.limit!=null)query.set('limit',String(params.limit));
     if(params.offset!=null)query.set('offset',String(params.offset));
+    if(params.includeReview)query.set('include_review','true');
     const suffix=query.toString()?`?${query.toString()}`:'';
     return request(`/api/vocabulary/library/collections/${encodeURIComponent(collectionId)}${suffix}`);
   },
@@ -377,7 +378,9 @@ export const api={
   // administrator's import or a learner's own file - into the same acquisition
   // payload `/import` answers with, so the encounter has one shape to render.
   // The admin routes are admin-gated server-side, not here.
-  mediaMy:(mediaId)=>request(`/api/media/my/${encodeURIComponent(mediaId)}`),
+  mediaMy:(mediaId,support='')=>request(`/api/media/my/${encodeURIComponent(mediaId)}${support?`?target_language=${encodeURIComponent(support)}`:''}`),
+  prepareMedia:(payload)=>request('/api/media-learning/source',{method:'POST',headers:JSON_HEADERS,body:JSON.stringify(payload)}),
+  mediaSource:(url,target)=>request(`/api/media/source?source_url=${encodeURIComponent(url)}&target_language=${encodeURIComponent(target||'')}`),
   /* The owner-scoped delete of a learner's own stored upload (404 for anything else); idempotent. */
   deleteMyMedia:(mediaId)=>request(`/api/media/my/${encodeURIComponent(mediaId)}`,{method:'DELETE'}),
   mediaUpload:(file,language)=>{
@@ -416,6 +419,7 @@ export const api={
   // invited to record, so the room can be honest up front instead of after a
   // take they already made.
   speechStatus:()=>request('/api/speech/status'),
+  speakingModelReference:(lessonId,segmentId)=>request(`/api/speaking/model-reference/${encodeURIComponent(lessonId)}/${encodeURIComponent(segmentId)}`,{method:'POST'}),
   transcribeSpeech:(blob,language,filename='recording.webm')=>{
     const form=new FormData();
     form.append('file',blob,filename);
@@ -450,10 +454,11 @@ export const api={
     headers:JSON_HEADERS,
     body:JSON.stringify(payload||{}),
   }),
-  speakingAttempts:(limit=20,assetId='',segmentId='')=>{
+  speakingAttempts:(limit=20,assetId='',segmentId='',since='')=>{
     const params=new URLSearchParams({limit:String(limit)});
     if(assetId)params.set('asset_id',String(assetId));
     if(segmentId)params.set('segment_id',String(segmentId));
+    if(since)params.set('since',String(since));
     return request(`/api/speech/attempts?${params.toString()}`);
   },
   listeningProgress:(assetId)=>request(`/api/listening/progress?asset_id=${encodeURIComponent(assetId||'')}`),

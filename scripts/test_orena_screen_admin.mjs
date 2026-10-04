@@ -92,9 +92,8 @@ assert.equal(match('#/admin/ai/capability/learner_dictionary').route.id, 'adminC
 assert.equal(href('adminAi', {}, { tab: 'route' }), '#/admin/ai?tab=route');
 for (const hash of ['#/admin', '#/admin/ai', '#/admin?x=1', '#admin/ai']) assert.ok(isAdminHash(hash), `${hash} is an admin address`);
 for (const hash of ['#/today', '#/administrator', '#/', '']) assert.ok(!isAdminHash(hash), `${hash} is not`);
-/* Only what the staging draws is in the navigation: AI & Models, Content (with Reading) and Imports.
-   Overview, Users and Operations are out of scope. */
-assert.deepEqual(model.AREAS.map((area) => area.id), ['ai', 'content', 'imports']);
+/* Basic Product Completion includes all six approved operator areas. */
+assert.deepEqual(model.AREAS.map((area) => area.id), ['overview', 'ai', 'users', 'content', 'imports', 'operations']);
 assert.equal(model.areaOf('adminCapability'), 'ai');
 assert.equal(model.areaOf('adminQueue'), 'content');
 assert.equal(model.areaOf('adminJob'), 'imports');
@@ -390,7 +389,7 @@ requests.length = 0;
   requests.length = 0;
   let went = '';
   await screen(new Fake(), ctxFor({ isAdmin: true }, 'admin', { replace: (address) => { went = address; } }));
-  assert.equal(went, '#/admin/ai');
+  assert.equal(went, '#/admin/overview');
   assert.deepEqual(requests, [], 'redirecting is not a request');
 }
 

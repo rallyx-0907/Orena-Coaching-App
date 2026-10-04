@@ -7,10 +7,9 @@
    prototype's own from-scratch `acf()`/synthesized model contour, SCRATCH/inventory/
    C5-listening-dictation-speaking.md §5).
 
-   What the frame draws and this build leaves out, for want of a measurement (rule 40), is listed in
-   the wave report: a word-level model/you pitch comparison and timing (no provider measures the
-   model recording's own words, so the model line is drawn whole, beside the learner's), and the
-   frame's written coaching tips (D-076: nothing here describes the audio in words). */
+   Paired word plots follow the approved frame. Learner plots use measured audio and provider
+   word intervals; model word plots/timing stay unavailable until source word intervals exist.
+   Prototype demonstration contours and coaching claims are never substituted for evidence. */
 import { html, mount, raw, cls } from '../../kit/html.js';
 import { icon } from '../../kit/icons.js';
 import { useStyles } from '../../kit/styles.js';
@@ -20,8 +19,10 @@ import { shellCopy } from '../../copy/shell.js';
 import { languages } from '../../copy/index.js';
 import { api } from '../../infrastructure/api.js';
 import { registerActionHandler } from '../../agent/dispatcher.js';
+import { originalSegmentPlayer } from '../../product/original-segment-player.js';
 import { loadSpeakingSource, segmentOf } from '../../product/speaking-source.js';
 import { lineUnits } from '../../product/speaking-line.js';
+import { comparisonReference, decorateComparison, pairWord, pairedTiming, readingFor } from '../../product/compare-reference.js';
 import { toneOf } from '../../capabilities/pronunciation-result.js';
 import { decodeAudio, analyse } from '../../capabilities/audio-analysis.js';
 import { createSpeakingRecorder, TAKE } from '../../product/speaking-recorder.js';
@@ -30,8 +31,8 @@ import { micStateFor } from '../speak/model.js';
 import { openMicState, micGate } from '../mic/sheet.js';
 import { t } from './copy.js';
 import {
-  ringColor, scoreLabelKey, headlineKey, wordStatus, statusTone, tileMinWidth, wordDetailFor, defaultWordIndex,
-  chipsFor, metricLineFor, axisFor, CHART, chartLines, hasVoice, wordBands, PLAYBACK_MODES, nextSpeed, playPlan, pillsFor, toneKey,
+  ringColor, scoreLabelKey, headlineKey, wordStatus, pronunciationStatusKey, statusTone, tileMinWidth, wordDetailFor, defaultWordIndex,
+  chipsFor, metricLineFor, axisFor, CHART, chartLines, hasVoice, wordPitchLines, wordPages, PLAYBACK_MODES, nextSpeed, playPlan, pillsFor, toneKey,
 } from './model.js';
 
 const filled = (name, size) => raw(icon(name, { size }).replace('fill="none"', 'fill="currentColor"'));
@@ -43,7 +44,6 @@ const ERROR_KEY = {
   microphone: 'errMic', unsupported: 'errMic', recording_failed: 'errMic', too_long: 'errTooLong', audio_unsupported: 'errAudio', line_invalid: 'errLine',
 };
 const seconds = (ms) => (ms / 1000).toFixed(2);
-const WIDE = 680; // the whole-line chart's plot width, in its own viewBox units
 
 /* The provider's own miscue verdict on a word, translated - a type this copy table has no key for
    still reads as "not passed" rather than the raw provider string. */
@@ -55,44 +55,65 @@ function errorLabel(errorType) {
 
 export default async function mountCompareWithModel(element, ctx) {
   await useStyles('screens/compare/compare.css');
+  await useStyles('capabilities/original-segment-player.css');
   const language = ctx.context?.language || 'en';
   const { ui, support } = languages();
   const segmentId = segmentOf(ctx.query);
-  const lineQuery = segmentId ? { segment: segmentId } : {};
 
-  mount(element, html`<div class="s-compare-loading">${raw(icon('mic', { size: 22 }))}</div>`);
+  mount(element, '');
   element.classList.add('s-compare-root');
 
-  const source = await loadSpeakingSource(ctx.params.id, { api, support, language, segmentId });
+  const source = await loadSpeakingSource(ctx.params.id, { api, support, language, owner: ctx.context.owner || 'local', segmentId });
   if (!ctx.isCurrent()) return undefined;
-  ctx.setCrumb(t('title'));
+  const lineQuery = { segment:source.line.lineId };
+  const lines = source.lines || [];
+  ctx.setCrumb(source.lessonId ? t('practiceTitle') : t('title'));
+  ctx.context?.memory?.enter?.({id:source.sourceId, title:source.title,
+    intent:'speaking_compare', segment:source.line.lineId});
 
   const key = lineKey(source.sourceId, source.line.lineId);
   let takes = await listTakes(key);
   if (!ctx.isCurrent()) return undefined;
+  mount(element,'');
+  const renderRoot=document.createElement('div');
+  renderRoot.className='s-compare-body';
+  element.append(renderRoot);
 
   const requested = ctx.query.get('attempt');
   let selectedId = takes.some((item) => item.id === requested) ? requested : takes[0]?.id || '';
   let wordSel = null;
   let tab = 'pitch';
-  let mode = PLAYBACK_MODES[0];
+  let mode = source.hasModelAudio ? PLAYBACK_MODES[0] : 'you_only';
   let speed = 1;
   let errorText = '';
   let rec = { phase: TAKE.IDLE, levels: new Array(40).fill(0), elapsedMs: 0 };
   const contours = new Map(); // take id -> { you } once measured
-  let modelContour = null; // { model } once measured, for the whole line
   let playing = false;
+  let modelPreview = false;
   let playWord = null; // the word being played in "Word by word"
   let playToken = 0;
   let audioEl = null;
+  let finishAudio = null;
   let revealSelection = true; // the first paint, and every change of attempt, brings the selection into view
+  let tileWidth = Math.max(1, element.clientWidth - 48);
+  let sizing = null;
+  let reference = null;
+  const originalPlayer = originalSegmentPlayer(source);
+
 
   const q = (selector) => element.querySelector(selector);
   const takeOf = (id) => takes.find((item) => item.id === id) || null;
   const selectedTake = () => takeOf(selectedId);
-  const viewNow = () => viewOfTake(selectedTake());
+  const viewNow = () => decorateComparison(viewOfTake(selectedTake()), source, reference);
+  const modelWordFor = (word) => pairWord(source.line.text, viewNow()?.words || [], word?.index, reference?.words || [], language);
+  async function readReference() {
+    reference=await comparisonReference(source,{owner:ctx.context.owner || 'local',support});
+    if(ctx.isCurrent()) paint();
+  }
+
   const openWord = () => {
     const view = viewNow();
+    if (playWord != null && view?.words?.[playWord]) return playWord;
     if (wordSel != null && view?.words?.[wordSel]) return wordSel;
     return defaultWordIndex(view);
   };
@@ -115,7 +136,7 @@ export default async function mountCompareWithModel(element, ctx) {
     language,
     facts: (finished) => [
       { label: t('metricAccuracy'), value: finished.accuracy },
-      { label: t('metricFluency'), value: finished.fluencyMeasured ? finished.fluency : 0 },
+      ...(finished.fluencyMeasured ? [{ label: t('metricFluency'), value: finished.fluency }] : []),
     ],
     on: {
       change(next) {
@@ -169,37 +190,24 @@ export default async function mountCompareWithModel(element, ctx) {
       const you = take?.blob ? await decodeAudio(take.blob).then((decoded) => analyse(decoded)).catch(() => null) : null;
       contours.set(id, { you });
     }
-    if (source.hasModelAudio && !modelContour) {
-      modelContour = 'loading';
-      const model = await decodeAudio(source.modelAudioUrl(source.line.lineId)).then((decoded) => analyse(decoded)).catch(() => null);
-      modelContour = { model };
-    }
     if (ctx.isCurrent() && selectedId === id) paint();
   }
 
   /* ---- Playback ---- */
   function stopPlay() {
+    modelPreview = false;
+    q('[data-original-player]')?.classList.remove('is-model-playing');
+    originalPlayer?.stop();
+    finishAudio?.();
+    finishAudio=null;
     playToken++;
     audioEl?.pause();
     audioEl = null;
-    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
     playing = false;
     playWord = null;
   }
   const alive = (token) => token === playToken && ctx.isCurrent();
 
-  function say(text, token) {
-    return new Promise((resolve) => {
-      if (!alive(token) || !('speechSynthesis' in window)) return resolve();
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = language === 'zh' ? 'zh-CN' : 'en-US';
-      utterance.rate = 0.9 * speed;
-      utterance.onend = () => resolve();
-      utterance.onerror = () => resolve();
-      window.speechSynthesis.speak(utterance);
-    });
-  }
   function playFile(url, token, { from = 0, to = Infinity } = {}) {
     return new Promise((resolve) => {
       if (!url || !alive(token)) return resolve();
@@ -207,7 +215,9 @@ export default async function mountCompareWithModel(element, ctx) {
       const el = new Audio(url);
       audioEl = el;
       el.playbackRate = speed;
-      const done = () => resolve();
+      let settled=false;
+      const done = () => {if(settled)return;settled=true;if(finishAudio===done)finishAudio=null;resolve();};
+      finishAudio=done;
       el.addEventListener('ended', done, { once: true });
       el.addEventListener('error', done, { once: true });
       if (Number.isFinite(to)) {
@@ -219,6 +229,7 @@ export default async function mountCompareWithModel(element, ctx) {
         });
       }
       const start = () => {
+        if (!alive(token) || audioEl !== el) { el.pause(); done(); return; }
         if (from > 0) el.currentTime = from;
         el.play().catch(done);
       };
@@ -226,7 +237,19 @@ export default async function mountCompareWithModel(element, ctx) {
       else start();
     });
   }
-  const playModelLine = (token) => (source.hasModelAudio ? playFile(source.modelAudioUrl(source.line.lineId), token) : say(source.line.text, token));
+  const playModelLine = (token, range = {}) => {
+    if (source.hasModelAudio && alive(token)) {
+      modelPreview = true;
+      q('[data-original-player]')?.classList.add('is-model-playing');
+      return originalPlayer.play({...range,speed}).finally(() => {
+        if (!alive(token)) return;
+        modelPreview = false;
+        q('[data-original-player]')?.classList.remove('is-model-playing');
+      });
+    }
+    toast(t('modelUnavailable'));
+    return Promise.resolve();
+  };
   const wordSpan = (word) => ({ from: Math.max(0, word.offsetMs / 1000 - 0.08), to: (word.offsetMs + word.durationMs) / 1000 + 0.08 });
 
   async function playAll() {
@@ -252,11 +275,11 @@ export default async function mountCompareWithModel(element, ctx) {
       else if (step === 'words') {
         for (const word of view.words) {
           if (!alive(token)) return;
-          if (!word.offsetKnown) continue;
           playWord = word.index;
           paint();
-          await say(word.text, token);
-          await playFile(take.url, token, wordSpan(word));
+          const modelWord = modelWordFor(word);
+          if (modelWord) await playModelLine(token, wordSpan(modelWord));
+          if (word.offsetKnown) await playFile(take.url, token, wordSpan(word));
         }
       }
     }
@@ -279,7 +302,9 @@ export default async function mountCompareWithModel(element, ctx) {
   }
   function hearWordModel(word) {
     stopPlay();
-    void say(word.text, playToken);
+    const modelWord = modelWordFor(word);
+    if (modelWord) void playModelLine(playToken, wordSpan(modelWord));
+    else toast(t('modelWordUnavailable'));
   }
 
   /* ---- Markup ---- */
@@ -294,14 +319,35 @@ export default async function mountCompareWithModel(element, ctx) {
   }
 
   function tokensMarkup() {
-    const units = lineUnits(source.line.text, language).filter((unit) => unit.unit);
+    const units = lineUnits(source.line.text, language);
     const syllables = language === 'zh' ? String(source.line.reading || '').split(/\s+/).filter(Boolean) : [];
-    const aligned = language === 'zh' && syllables.length === units.length;
-    return units.map((unit, at) => {
-      const reading = aligned ? syllables[at] : '';
-      const tone = reading ? toneOf(reading) : null;
-      return html`<span class="s-compare-token"><span class="s-compare-token__sub" style="color:${tone && tone < 5 ? `var(--tone${tone})` : 'var(--text3)'}">${reading || raw('&nbsp;')}</span><span class="s-compare-token__word" lang="${langAttr(language)}">${unit.text}</span></span>`;
+    const aligned = language === 'zh' && syllables.length === units.filter(unit=>unit.unit).length;
+    let spokenAt = 0;
+    return units.map((unit) => {
+      if (!unit.unit) return unit.text.trim() ? html`<span class="s-compare-token"><span class="s-compare-token__sub" aria-hidden="true">${raw('&nbsp;')}</span><span class="s-compare-token__word" lang="${langAttr(language)}">${unit.text}</span></span>` : '';
+      const reading = aligned ? syllables[spokenAt++] : readingFor(unit.text, reference, language, unit.start);
+      const tone = language === 'zh' && reading ? toneOf(reading) : null;
+      return html`<span class="s-compare-token"><span class="s-compare-token__sub" title="${reading ? '' : t('readingUnavailable')}" style="color:${tone && tone < 5 ? `var(--tone${tone})` : 'var(--text3)'}">${reading || '—'}</span><span class="s-compare-token__word" lang="${langAttr(language)}">${unit.text}</span></span>`;
     });
+  }
+
+  function sourceNavigation() {
+    if (!source.lessonId) return '';
+    const at = lines.findIndex(line=>line.lineId===source.line.lineId);
+    const busy = [TAKE.RECORDING,TAKE.PROCESSING].includes(rec.phase);
+    return html`<div class="s-compare-source">
+      <div class="s-compare-source__media"><div class="s-compare-source__title" lang="${langAttr(language)}">${source.title}</div>
+        <button type="button" class="s-compare-ghost" data-choose-media ${busy ? raw('disabled') : ''}>${t('chooseMedia')}</button></div>
+      <div class="s-compare-source__actions">
+        <button type="button" class="s-compare-ghost" data-listen-source ${busy ? raw('disabled') : ''}>${t('listenSource')}</button>
+        <button type="button" class="o-iconbtn" data-source-line="${lines[at-1]?.lineId || ''}" aria-label="${t('previousLine')}" ${busy || at<=0 ? raw('disabled') : ''}>${raw(icon('chevron-left',{size:18}))}</button>
+        <select class="s-compare-source__select" aria-label="${t('chooseLine')}" data-source-select ${busy ? raw('disabled') : ''}>
+          ${lines.map(line=>html`<option value="${line.lineId}" ${line.lineId===source.line.lineId ? raw('selected') : ''}>${line.ordinal}. ${line.text}</option>`)}
+        </select>
+        <button type="button" class="o-iconbtn" data-source-line="${lines[at+1]?.lineId || ''}" aria-label="${t('nextLine')}" ${busy || at>=lines.length-1 ? raw('disabled') : ''}>${raw(icon('chevron-right',{size:18}))}</button>
+        <span class="s-compare-note">${t('linePosition',{n:at+1,total:lines.length})}</span>
+      </div>
+    </div>`;
   }
 
   function liveLine() {
@@ -317,15 +363,20 @@ export default async function mountCompareWithModel(element, ctx) {
       <div class="s-compare-record__top">
         <span class="s-compare-tag">${tagLabel()}</span>
         <div class="s-compare-record__tools">
-          <button type="button" class="s-compare-tool" data-fk="hear" data-hear-line>${raw(icon('volume-2', { size: 17 }))}${t('hearModel')}</button>
+          <button type="button" class="s-compare-tool" data-fk="hear" data-hear-line ${source.hasModelAudio ? '' : raw('disabled')} title="${source.hasModelAudio ? '' : t('modelUnavailable')}">${raw(icon('volume-2', { size: 17 }))}${t('hearModel')}</button>
           <button type="button" class="s-compare-speed" data-fk="speed" data-speed>${t('speedUnit', { n: speed })}</button>
         </div>
       </div>
-      <div class="s-compare-tokens">${tokensMarkup()}</div>
+      <div class="s-compare-record__content"><div class="s-compare-tokens">${tokensMarkup()}</div>
+      ${support !== language ? html`<p class="s-compare-note" lang="${langAttr(support)}">${source.line.meaning || t('meaningUnavailable')}</p>` : ''}
+      ${source.hasModelAudio ? '' : html`<p class="s-compare-note">${t('modelUnavailable')}</p>`}
+      </div>
       <div class="s-compare-recrow">
         <button type="button" class="s-compare-mic${recording ? ' is-rec' : ''}" data-fk="mic" data-mic aria-pressed="${recording}" aria-label="${recording ? t('stop') : t('record')}"${processing ? raw(' disabled') : ''} style="${recording ? `box-shadow:0 0 0 ${Math.round(4 + Math.max(...rec.levels, 0) * 18)}px var(--ring),var(--sh2)` : ''}">${recording ? html`<span class="s-compare-mic__stop"></span>` : raw(icon('mic', { size: 28 }))}</button>
         <div class="s-compare-recrow__status">
           <div class="s-compare-recrow__title" style="color:${recording ? 'var(--red)' : 'var(--text)'}">${title}</div>
+          <div class="s-compare-note" data-record-status>${t(recording ? 'recordingSub' : processing ? 'assessingSub' : 'readySub', {s:Math.floor(rec.elapsedMs/1000)})}</div>
+          ${processing ? html`<progress class="o-loading__progress" aria-label="${t('assessingTitle')}"></progress>` : ''}
           ${recording ? html`<svg viewBox="0 0 300 60" class="s-compare-live" aria-hidden="true"><polyline data-live points="${liveLine()}" fill="none" stroke="var(--green)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></polyline></svg>` : ''}
         </div>
       </div>
@@ -351,29 +402,37 @@ export default async function mountCompareWithModel(element, ctx) {
     </svg>`;
   }
 
-  function summaryChart(view, take) {
-    const you = contours.get(take.id);
-    const model = modelContour;
-    if (!you || you === 'loading' || (source.hasModelAudio && (!model || model === 'loading'))) return html`<div class="s-compare-chart s-compare-chart--wait s-compare-chart--wide"></div>`;
-    const youOk = hasVoice(you.you);
-    const modelOk = source.hasModelAudio && hasVoice(model?.model);
-    const bands = youOk ? wordBands(view, you.you.duration) : [];
-    return html`${chartMarkup({ width: WIDE, model: modelOk ? chartLines(model.model.contour, { to: model.model.duration, width: WIDE }) : [], you: youOk ? chartLines(you.you.contour, { to: you.you.duration, width: WIDE }) : [], bands })}
-      ${!modelOk ? html`<p class="s-compare-note">${t(source.hasModelAudio ? 'modelNotMeasured' : 'modelUnavailable')}</p>` : ''}
-      ${!youOk ? html`<p class="s-compare-note">${t('yourLineUnavailable')}</p>` : ''}`;
+  function pitchPair(word, take, width = 100) {
+    const you=contours.get(take.id)?.you, model=reference?.model, modelWord=modelWordFor(word);
+    const values=[...[you, model].flatMap((audio,at)=>{
+      const span=at===0 ? word : modelWord;
+      return span?.offsetKnown ? (audio?.contour || []).filter(p=>p.st!=null && p.t>=span.offsetMs/1000 && p.t<=(span.offsetMs+span.durationMs)/1000).map(p=>Math.abs(p.st)) : [];
+    })];
+    const range=Math.max(2,...values.map(v=>v*1.15));
+    return {model:wordPitchLines(model,modelWord,{width,range}),you:wordPitchLines(you,word,{width,range}),modelWord};
   }
 
-  function tilesMarkup(view) {
-    const min = view.words.reduce((sum, word) => sum + tileMinWidth(word.text, language), 0) + 6 * (view.words.length - 1);
-    return html`<div class="s-compare-tiles"><div class="s-compare-tiles__row" style="min-width:${min}px">${view.words.map((word) => {
+  function miniPitch(lines, who, reason, processing = false) {
+    return html`<span class="s-compare-tile__voice"><span>${t(who)}</span>${lines.length
+      ? html`<svg viewBox="0 0 100 90" preserveAspectRatio="none" aria-hidden="true">${lines.map(points => html`<polyline points="${points}" fill="none" stroke="${who==='legendModel'?'var(--accent)':'var(--green)'}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"></polyline>`)}</svg>`
+      : html`<span class="s-compare-tile__missing" title="${reason}" aria-label="${reason}">${processing ? html`<span class="o-spinner"></span>` : '—'}</span>`}</span>`;
+  }
+
+  function tilesMarkup(view, take) {
+    const pages = wordPages(view.words, tileWidth, language);
+    const pageAt = Math.max(0, pages.findIndex(page => page.some(word => word.index === (playWord ?? openWord()))));
+    const page = pages[pageAt] || [];
+    const analysis = contours.get(take.id);
+    return html`<div class="s-compare-tiles"><div class="s-compare-tiles__row">${page.map((word) => {
       const status = wordStatus(word);
       const tone = statusTone(status);
       const on = openWord() === word.index || playWord === word.index;
       const ring = on ? `inset 0 0 0 2px ${playWord === word.index ? 'var(--accent)' : tone.stroke}` : 'none';
       const bg = status === 'ok' && on ? 'var(--green-soft)' : tone.bg;
-      const sub = language === 'zh' && word.pinyin ? word.pinyin : word.scoreKnown === false ? '' : String(word.score);
-      return html`<button type="button" class="s-compare-tile" data-word="${word.index}" data-fk="word-${word.index}" aria-pressed="${openWord() === word.index}" style="min-width:${tileMinWidth(word.text, language)}px;background:${bg};box-shadow:${ring}"><span class="s-compare-tile__word" lang="${langAttr(language)}" style="color:${tone.ink}">${word.text}</span><span class="s-compare-tile__sub" style="color:${tone.sub}">${sub || raw('&nbsp;')}</span></button>`;
-    })}</div></div>`;
+      const sub = word.reading || word.pinyin || '';
+      const pair = pitchPair(word,take);
+      return html`<button type="button" class="s-compare-tile" data-word="${word.index}" data-fk="word-${word.index}" aria-pressed="${openWord() === word.index}" style="min-width:${Math.min(tileWidth, tileMinWidth(word.text, language))}px;flex-grow:${Math.max(1, word.durationMs || 0)};background:${bg};box-shadow:${ring}"><span class="s-compare-tile__word" lang="${langAttr(language)}" style="color:${tone.ink}">${word.text}</span><span class="s-compare-tile__sub" style="color:${tone.sub}">${sub || raw('&nbsp;')}</span><span class="s-compare-tile__pair">${miniPitch(pair.model, 'legendModel', t(pair.modelWord ? 'pitchUnavailable' : 'modelWordUnavailable'), !reference || reference.alignmentState==='processing')}<span class="s-compare-tile__divider"></span>${miniPitch(pair.you, 'legendYou', t('pitchUnavailable'), !analysis || analysis==='loading')}</span></button>`;
+    })}</div>${pages.length > 1 ? html`<div class="s-compare-wordnav"><button type="button" class="o-iconbtn" data-word="${pages[pageAt - 1]?.[0]?.index ?? 0}" data-fk="previous-words" aria-label="${t('previousWords')}"${pageAt === 0 ? raw(' disabled') : ''}>${raw(icon('chevron-left', {size:18}))}</button><span>${t('wordRange', {from:page[0].index + 1, to:page.at(-1).index + 1, total:view.words.length})}</span><button type="button" class="o-iconbtn" data-word="${pages[pageAt + 1]?.[0]?.index ?? 0}" data-fk="next-words" aria-label="${t('nextWords')}"${pageAt === pages.length - 1 ? raw(' disabled') : ''}>${raw(icon('chevron-right', {size:18}))}</button></div>` : ''}</div>`;
   }
 
   function ringMarkup(score) {
@@ -410,45 +469,40 @@ export default async function mountCompareWithModel(element, ctx) {
           <span><i class="s-compare-swatch s-compare-swatch--bad"></i>${t('legendNeedsWork')}</span>
         </div>
       </div>
-      ${summaryChart(view, take)}
-      ${view.words.length ? tilesMarkup(view) : ''}
+      ${view.words.length ? tilesMarkup(view, take) : ''}
       ${axis ? html`<div class="s-compare-axis">${t('axisRight', { model: axis.modelS, you: axis.youS })}</div>` : ''}
     </div>`;
   }
 
   function wordChart(detail, take) {
     const analysis = contours.get(take.id);
-    if (!analysis || analysis === 'loading') return html`<div class="s-compare-chart s-compare-chart--wait"></div>`;
-    if (!detail.offsetKnown || !hasVoice(analysis.you)) return html`<p class="s-compare-note">${t('yourLineUnavailable')}</p>`;
-    const from = Math.max(0, detail.offsetMs / 1000 - 0.1);
-    const to = (detail.offsetMs + detail.durationMs) / 1000 + 0.1;
-    const lines = chartLines(analysis.you.contour, { from, to });
-    return lines.length ? chartMarkup({ model: [], you: lines }) : html`<p class="s-compare-note">${t('yourLineUnavailable')}</p>`;
+    if (!analysis || analysis === 'loading' || !reference || reference.alignmentState === 'processing') return html`<div class="s-compare-chart s-compare-chart--wait" role="status" aria-label="${t('referenceAlignment')}"><span class="o-spinner"></span></div>`;
+    const pair=pitchPair(detail,take,CHART.width);
+    if (!pair.model.length && !pair.you.length) return html`<p class="s-compare-note">${t('pitchUnavailable')}</p>`;
+    return html`${chartMarkup(pair)}${!pair.you.length ? html`<p class="s-compare-note">${t('yourLineUnavailable')}</p>` : ''}`;
   }
 
   function panelMarkup(detail, take) {
     if (tab === 'timing') {
-      const analysis = contours.get(take.id);
-      const total = analysis && analysis !== 'loading' && analysis.you?.duration ? analysis.you.duration : (take.ms || 0) / 1000;
-      const start = detail.offsetMs / 1000;
-      const end = (detail.offsetMs + detail.durationMs) / 1000;
-      const left = total > 0 ? Math.min(100, (start / total) * 100) : 0;
-      const width = total > 0 ? Math.max(1, Math.min(100 - left, ((end - start) / total) * 100)) : 0;
+      const modelWord=modelWordFor(detail);
+      const timing=pairedTiming(detail,modelWord,viewNow().words,reference?.words || []);
+      const row=(span,who,color)=>html`<span class="s-compare-timing__who" style="color:${color}">${t(who)}</span><div class="s-compare-timing__track">${span ? html`<span style="left:${(span.from/timing.total*100).toFixed(1)}%;width:${((span.to-span.from)/timing.total*100).toFixed(1)}%;background:${color}"></span>` : ''}</div>`;
+      const spanText=(span,who)=>html`<span><span class="s-compare-muted">${t(who)} </span>${span ? t('timingSpan',{from:span.from.toFixed(2),to:span.to.toFixed(2)}) : t(who==='legendModel'?'modelWordUnavailable':'wordUnavailable')}</span>`;
+      const delta=timing.deltaMs;
       return html`<div class="s-compare-panel">
-        <div class="s-compare-panel__title">${t('timingTitle', { word: detail.text })}</div>
-        ${
-          detail.offsetKnown
-            ? html`<div class="s-compare-timing"><span class="s-compare-timing__who" style="color:var(--green)">${t('legendYou')}</span><div class="s-compare-timing__track"><span style="left:${left.toFixed(1)}%;width:${width.toFixed(1)}%;background:var(--green)"></span></div>
-              <span></span><div class="s-compare-timing__axis"><span>0 s</span><span>${total > 0 ? `${total.toFixed(2)} s` : ''}</span></div></div>
-              <div class="s-compare-panel__body"><span><span class="s-compare-muted">${t('legendYou')} </span>${t('timingSpan', { from: start.toFixed(2), to: end.toFixed(2) })}</span><span class="s-compare-muted">${t('timingNote')}</span></div>`
-            : html`<p class="s-compare-note">${t('wordUnavailable')}</p>`
-        }
+        <div class="s-compare-panel__title">${t('timingTitle',{word:detail.text})}</div>
+        <div class="s-compare-timing">${row(timing.model,'legendModel','var(--accent)')}${row(timing.you,'legendYou','var(--green)')}
+          <span></span><div class="s-compare-timing__axis"><span>0 s</span><span>${timing.total.toFixed(2)} s</span></div>
+        </div>
+        <div class="s-compare-panel__body">${spanText(timing.model,'legendModel')}${spanText(timing.you,'legendYou')}
+          ${delta==null ? '' : html`<span>${t(delta===0?'timingSame':delta>0?'timingLonger':'timingShorter',{s:(Math.abs(delta)/1000).toFixed(2)})}</span>`}
+          <span class="s-compare-muted">${t('timingCompared')}</span>
+        </div>
       </div>`;
     }
     if (tab === 'pron') {
-      const bad = detail.status === 'unclear';
       const ok = detail.status === 'ok';
-      const title = bad ? t('pronNotRecognised') : ok ? t('pronRecognised') : errorLabel(detail.errorType);
+      const title = t(pronunciationStatusKey(detail));
       const ink = ok ? 'var(--green)' : 'var(--red)';
       const heard = viewNow()?.heard;
       return html`<div class="s-compare-panel">
@@ -467,7 +521,8 @@ export default async function mountCompareWithModel(element, ctx) {
     return html`<div class="s-compare-panel">
       <div class="s-compare-panel__title">${toneTitle ? t('toneTitle', { word: detail.text, pinyin: detail.pinyin, n: detail.toneTarget, name: t(toneKey(detail.toneTarget)) }) : t('pitchTitle', { word: detail.text })}</div>
       ${wordChart(detail, take)}
-      <div class="s-compare-legend"><span><i style="background:var(--green)"></i>${t('legendYou')}</span></div>
+      <div class="s-compare-legend"><span><i style="background:var(--accent)"></i>${t('legendModel')}</span><span><i style="background:var(--green)"></i>${t('legendYou')}</span></div>
+      ${modelWordFor(detail) ? '' : html`<p class="s-compare-note">${t('modelWordUnavailable')}</p>`}
     </div>`;
   }
 
@@ -485,7 +540,7 @@ export default async function mountCompareWithModel(element, ctx) {
     const rows = [
       ...(language === 'zh' && detail.toneTarget != null ? [{ label: t('rowTone'), value: `${detail.toneTarget} · ${t(toneKey(detail.toneTarget))}`, ink: 'var(--text)', kind: '' }] : []),
       ...(detail.offsetKnown ? [{ label: t('rowStart'), value: `${seconds(detail.offsetMs)} s`, ink: 'var(--text)', kind: '' }, { label: t('rowLength'), value: `${seconds(detail.durationMs)} s`, ink: 'var(--text)', kind: '' }] : []),
-      { label: t('rowPron'), value: detail.status === 'unclear' ? t('valueUnclear') : detail.status === 'ok' ? t('valuePassed') : t('valueNotPassed'), ink: detail.status === 'ok' ? 'var(--green)' : 'var(--red)', kind: detail.status === 'ok' ? 'ok' : 'bad' },
+      { label: t('rowPron'), value: t(pronunciationStatusKey(detail)), ink: detail.status === 'ok' ? 'var(--green)' : 'var(--red)', kind: detail.status === 'ok' ? 'ok' : 'bad' },
     ];
     return html`<div class="s-compare-card s-compare-detail">
       <div class="s-compare-detail__a">
@@ -498,7 +553,7 @@ export default async function mountCompareWithModel(element, ctx) {
           }
         </div>
         <div class="s-compare-detail__word"><span lang="${langAttr(language)}">${detail.text}</span><button type="button" class="s-compare-round" data-fk="hear-word" data-hear-word title="${t('hearWord')}" aria-label="${t('hearWord')}">${raw(icon('volume-2', { size: 18 }))}</button></div>
-        <div class="s-compare-detail__sub">${detail.pinyin ? html`<span class="s-compare-detail__reading">${detail.pinyin}</span>` : ''}<span class="s-compare-status" style="background:${tone.pillBg};color:${tone.pillInk}">${t(tone.pillKey)}</span></div>
+        <div class="s-compare-detail__sub">${detail.reading ? html`<span class="s-compare-detail__reading">${detail.reading}</span>` : ''}<span class="s-compare-status" style="background:${tone.pillBg};color:${tone.pillInk}">${t(tone.pillKey)}</span></div>
         ${finding ? html`<div class="s-compare-tip"><span class="s-compare-tip__icon">${raw(icon('lightbulb', { size: 18 }))}</span><span>${finding}</span></div>` : ''}
       </div>
       <div class="s-compare-detail__b">
@@ -518,8 +573,8 @@ export default async function mountCompareWithModel(element, ctx) {
 
   function barMarkup() {
     return html`<div class="s-compare-bar">
-      <button type="button" class="s-compare-bar__play" data-fk="play" data-play><span class="s-compare-bar__disc">${playing ? filled('pause', 14) : filled('play', 14)}</span><span data-pb-label>${playing ? t('stop') : t('play')}</span></button>
-      <div class="s-compare-bar__modes" data-pb-modes>${PLAYBACK_MODES.map((m) => html`<button type="button" class="${cls('s-compare-bar__mode', mode === m && 's-compare-bar__mode--on')}" data-mode="${m}" data-fk="mode-${m}" aria-pressed="${mode === m}">${t(MODE_KEY[m])}</button>`)}</div>
+      <button type="button" class="s-compare-bar__play" data-fk="play" data-play aria-label="${playing ? t('stop') : t('play')}"><span class="s-compare-bar__disc">${playing ? filled('pause', 14) : filled('play', 14)}</span><span data-pb-label>${playing ? t('stop') : t('play')}</span></button>
+      <div class="s-compare-bar__modes" data-pb-modes>${PLAYBACK_MODES.map((m) => html`<button type="button" class="${cls('s-compare-bar__mode', mode === m && 's-compare-bar__mode--on')}" data-mode="${m}" data-fk="mode-${m}" ${!source.hasModelAudio && ['model_only','model_then_you'].includes(m) ? raw('disabled') : ''} aria-pressed="${mode === m}">${t(MODE_KEY[m])}</button>`)}</div>
       <button type="button" class="s-compare-bar__speed" data-fk="speed-bar" data-speed><span data-pb-label class="s-compare-muted">${t('speed')} </span>${t('speedUnit', { n: speed })}</button>
       <button type="button" class="s-compare-bar__again" data-fk="again" data-again>${raw(icon('rotate-cw', { size: 18, stroke: 2.2 }))}${t('tryAgain')}</button>
     </div>`;
@@ -528,6 +583,11 @@ export default async function mountCompareWithModel(element, ctx) {
   function paintLive() {
     const line = q('[data-live]');
     if (line) line.setAttribute('points', liveLine());
+    const status = q('[data-record-status]');
+    if (status && rec.phase === TAKE.RECORDING) {
+      const text=t('recordingSub',{s:Math.floor(rec.elapsedMs/1000)});
+      if (status.textContent !== text) status.textContent=text;
+    }
     const mic = q('[data-mic]');
     if (mic && rec.phase === TAKE.RECORDING) mic.style.boxShadow = `0 0 0 ${Math.round(4 + Math.max(...rec.levels, 0) * 18)}px var(--ring),var(--sh2)`;
   }
@@ -545,23 +605,29 @@ export default async function mountCompareWithModel(element, ctx) {
     const result = Boolean(take && view?.measured);
     const showRecord = !result || recording || processing || Boolean(errorText);
 
+    originalPlayer?.park(element);
     mount(
-      element,
+      renderRoot,
       html`<div class="s-compare-header">
         <button type="button" class="o-iconbtn o-iconbtn--back" data-back aria-label="${shellCopy('back')}">${raw(icon('arrow-left', { size: 21 }))}</button>
-        <div class="s-compare-title-block"><div class="s-compare-title">${t('title')}</div></div>
-        <button type="button" class="s-compare-history" data-attempts>${t('attemptHistory')}</button>
-      </div>
-      <div class="s-compare-scroll" data-scroll-region>
+        <div class="s-compare-title-block"><div class="s-compare-title">${source.lessonId ? t('practiceTitle') : t('title')}</div><div class="s-compare-note s-compare-subtitle">${t('subtitle')}</div></div>
         ${takes.length ? pillsMarkup() : ''}
+        <button type="button" class="s-compare-history" data-attempts aria-label="${t('attemptHistory')}">${raw(icon('clock',{size:18}))}<span>${t('attemptHistory')}</span></button>
+      </div>
+      ${sourceNavigation()}
+      <div class="s-compare-scroll${showRecord ? ' s-compare-scroll--record' : ''}" data-scroll-region>
+        ${source.playback?.kind === 'embed' ? html`<div class="s-compare-model-preview${modelPreview ? ' is-model-playing' : ''}" data-original-player></div>` : ''}
         ${showRecord ? recordCard() : ''}
         ${errorText ? html`<div class="s-compare-error"><b>${t('errorTitle')}</b> ${errorText}</div>` : ''}
         ${result ? summaryMarkup(view, take) : ''}
         ${result && view.words.length ? detailMarkup(view, take) : ''}
-        <p class="s-compare-privacy">${t('privacyNote')}</p>
       </div>
       ${result ? barMarkup() : ''}`,
     );
+    if (originalPlayer) {
+      if(source.playback.kind === 'embed') originalPlayer.attach(q('[data-original-player]'));
+      else originalPlayer.attach(element);
+    }
     bind();
     const region = q('[data-scroll-region]');
     if (region) region.scrollTop = scrollTop;
@@ -575,7 +641,16 @@ export default async function mountCompareWithModel(element, ctx) {
       reveal(pills, pills?.querySelector('.s-compare-pill--active'));
       reveal(tiles, tiles?.querySelector('[aria-pressed="true"]'));
     }
-    if (focusKey) q(`[data-fk="${focusKey}"]`)?.focus({ preventScroll: true });
+    if (focusKey) {
+      const target = q(`[data-fk="${focusKey}"]`);
+      const pagingEnd = target?.disabled && ['previous-words', 'next-words'].includes(focusKey);
+      (pagingEnd ? q('.s-compare-tile[aria-pressed="true"]') : target)?.focus({ preventScroll: true });
+    }
+    if (sizing) {
+      sizing.disconnect();
+      sizing.observe(element);
+      sizing.observe(q('[data-scroll-region]'));
+    }
   }
 
   /* Scrolls a horizontal strip so one child is inside it (the strip only - never the page). */
@@ -587,11 +662,21 @@ export default async function mountCompareWithModel(element, ctx) {
   }
 
   function bind() {
+    const goLine = id => {
+      if (!id || recorder.busy) return;
+      stopPlay();
+      ctx.go(ctx.href('compare',{id:source.sourceId},{segment:id}));
+    };
+    element.querySelectorAll('[data-source-line]').forEach(button=>button.addEventListener('click',()=>goLine(button.dataset.sourceLine)));
+    q('[data-source-select]')?.addEventListener('change',event=>goLine(event.target.value));
+    q('[data-listen-source]')?.addEventListener('click',()=>ctx.go(ctx.href('listening',{id:source.lessonId},lineQuery)));
+    q('[data-choose-media]')?.addEventListener('click',()=>ctx.go(ctx.href('discover',{}, {tab:'listen',practice:'pronunciation',source:source.lessonId,segment:source.line.lineId})));
     q('[data-back]').addEventListener('click', () => ctx.back());
     q('[data-attempts]').addEventListener('click', () => ctx.go(ctx.href('attempts', { id: ctx.params.id }, { ...lineQuery, attempt: selectedId })));
     element.querySelectorAll('[data-select]').forEach((button) => button.addEventListener('click', () => select(button.dataset.select)));
     element.querySelectorAll('[data-word]').forEach((button) => {
       button.addEventListener('click', () => {
+        stopPlay();
         wordSel = Number(button.dataset.word);
         paint();
       });
@@ -632,9 +717,19 @@ export default async function mountCompareWithModel(element, ctx) {
   wordSel = takes.length ? defaultWordIndex(viewNow()) : null;
   paint();
   if (selectedId) void measure(selectedId);
+  sizing = new ResizeObserver(() => {
+    const measured = Math.max(1, q('.s-compare-tiles__row')?.clientWidth || element.clientWidth - 48);
+    if (Math.abs(measured - tileWidth) < 1 || !ctx.isCurrent()) return;
+    tileWidth = measured;
+    paint();
+  });
+  sizing.observe(element);
+  sizing.observe(q('[data-scroll-region]'));
+  void readReference();
 
   const releasers = [
     registerActionHandler('play_model', () => {
+      if (!source.hasModelAudio) return { ok: false, reason: 'model_unavailable' };
       stopPlay();
       void playModelLine(playToken);
       return { ok: true };
@@ -661,6 +756,8 @@ export default async function mountCompareWithModel(element, ctx) {
   ];
 
   return () => {
+    originalPlayer?.dispose();
+    sizing.disconnect();
     releasers.forEach((release) => release());
     recorder.dispose();
     stopPlay();

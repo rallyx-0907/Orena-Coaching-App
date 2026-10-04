@@ -2,9 +2,212 @@
 
 Branch: `codex/work`
 
-CURRENT_MILESTONE: ORENA_WEB_GOLDEN_STAR_V1
+CURRENT_MILESTONE: ORENA_PRODUCT_COMPLETION
 
 STATUS: IMPLEMENTING
+
+Current execution program: `docs/project/ROADMAP.md` (D-110–D-113);
+`PRODUCT_COMPLETION_PLAN.md` supplies audit/slice detail and `CURRENT_HANDOFF.md`
+the active position. Historical R21 and separate skill-release sequencing are superseded.
+Today / Discover / Orena / Practice Hub / My Library / Progress lead into
+content and its learning capabilities. Admin is the operational control center;
+substantial validated EN/ZH libraries are required before public release.
+
+Current phase: basic functional coverage of the whole approved learner/Admin app first
+(human instruction, 2026-10-02). Preserve accepted Books and Progress; their historical
+continuity/fidelity limitations do not reopen them as the active slice. No full-app re-audit.
+S2 Listening/Media basic coverage is REVIEWABLE (`c315bd2`); next is Admin control-center basic coverage,
+then canonical Grammar and integrated Intelligence/Agent under existing review gates.
+Deep fidelity, cross-device completeness, edge cases and performance follow basic coverage.
+Human2026-10-04 defers Grammar; continue other Product Completion gaps.
+S3 learner collection actions are functionally browser-verified at :8021:
+Add all saves only missing words through existing vocabulary/SRS; Start review
+counts saved words and reads complete collection-scoped rows. EN/ZH save2 ->
+review -> grade -> reload/reopen and 360x740 controls verified; no new AI
+telemetry. Local Python2814 pass/3 inherited fail/370 skip; Node128/130.
+Status remains IMPLEMENTING: full fidelity and collection enrichment/publishing
+breadth are open. Evidence: docs/reviews/VOCABULARY_COLLECTION_CHECKPOINT.md.
+S1 Reading registered-source admission (e74735b): imported content binds to
+the existing registry/snapshot/article owner. Cleared active source automation,
+URL identity, visible attribution, content quality and grounded target checks
+admit atomically; failures stay in review, conflicting duplicate rights are
+refused. Chinese targets now follow shared token boundaries instead of character
+n-grams. Owned EN/ZH import -> publication -> Free Reading -> reopen verified
+at :8021; phone360x740 and zero new provider telemetry. QA articles archived.
+Final focused159 pass, broad2838 pass/4 fail/370 skip; D4 suite-only failure
+unresolved despite focused current/clean HEAD passes. Node128/130. Full fidelity,
+level calibration, corpus breadth, vocabulary enrichment and persisted questions
+remain open; IMPLEMENTING. Evidence: READING_SOURCE_ADMISSION_CHECKPOINT.md.
+Next accepted order: vocabulary enrichment, practice on publish, Agent; Grammar later.
+
+Books evidence remains in `docs/reviews/S8_BOOKS_BROWSER_CHECKPOINT.md` unchanged.
+
+S6 Admin media rights review/publication is REVIEWABLE (`71ddcd4`): EN/ZH upload,
+attested rights review, publish and learner Content -> Listening with transcript
+and VI meanings verified on :8021. Withdrawal unpublishes; Restore does not
+auto-publish. Completed held transcripts now resolve for learners. Desktop and
+390x844 form verified; QA fixtures archived. Local focused Python 260 pass,
+Ruff/Node/ESM pass; independent review APPROVE, not human approval or CI PASS.
+Evidence: `docs/reviews/S6_ADMIN_MEDIA_BROWSER_CHECKPOINT.md`. Admin import queue
+now refreshes actual preparation stages/progress; Overview/Users/Operations
+are connected in the current reconciliation below.
+
+Reported EPUB import correction (`7fab9d7`): explicit ZIP directories no longer
+fail as unsafe paths. The actual Alchemist file imports and opens in Admin with
+two source chapters/42,990 words. Local EPUB/API59 tests and Ruff pass;
+independent security review APPROVE. Evidence: `docs/reviews/EPUB_DIRECTORY_IMPORT_FIX.md`.
+Existing Books status and Admin execution order remain unchanged.
+
+Admin control-center reconciliation (2026-10-03) is REVIEWABLE at :8021.
+Preserved the previously completed encrypted credential storage, connection test,
+masked state/removal and provider/model capability configuration. Missing
+AI_PROVIDER_SECRETS_KEY was a sandbox provisioning regression, now repaired;
+LEGACY was deferred R2 activation, not missing configuration implementation.
+The existing reviewed migration populated seven missing text configurations,
+preserving Writing. Static8 activation readiness passed; capability routing is
+enabled on :8021 only. Production/public activation remains human-gated.
+
+The new UI now connects Overview, Users and Operations to existing Admin APIs,
+including masked account details, real runtime/service health, recent AI telemetry,
+workers, source polling and issue-to-action links. Imports/media detail refresh
+actual transcript processing stages and preserve published/review/archive state.
+Unknown duration stays indeterminate. Cloud credentials now require HTTPS;
+credential-free local Ollama HTTP remains supported. Gemini/DeepSeek request
+adapters omit unsupported seed fields without adding retries or failover.
+
+Browser evidence: Overview desktop, Users and account language profiles,
+Operations showing PostgreSQL/configured credential store/capability routing,
+dictionary primary test, model Save/reload/request routing, and real EN/ZH lookup with VI meaning.
+Local focused Python 278 pass; Admin/copy/ESM gates pass; independent review
+APPROVE. This is not CI PASS or human product approval. New credential entry
+was not performed by the agent; prior credential implementation remains valid.
+Speech recognition/pronunciation/Speaking capability routing remains reserved
+and is truthfully unavailable; existing service status is reported separately.
+Outstanding browser acceptance and bounded limitations are recorded in
+`docs/reviews/ADMIN_BASIC_CONTROL_BROWSER_CHECKPOINT.md`.
+
+Azure correction was resolved to REVIEWABLE by `7857d43`: Speech and OpenAI now
+reuse encrypted Admin credentials/test/removal. Saved Speech feeds the existing
+EN/ZH pronunciation adapter dynamically; OpenAI uses operator deployments for
+supported structured-text routes. Reserved speech routing remains separate.
+Browser Speech authentication passed; OpenAI is honestly unconfigured and still
+needs operator credential/deployment acceptance. Visual Skin EN/ZH authority,
+four accents and light/dark treatment are connected without changing approved
+brand assets. Evidence/limits: `docs/reviews/AZURE_VISUAL_SKIN_BROWSER_CHECKPOINT.md`.
+
+S4 (2026-10-02): Progress/History, Speaking Attempts/Summary and Writing-derived
+From Your Errors now use real server records at `/next` on :8021. Reading/media
+return links work; unverifiable scores remain unavailable; local speaking state
+uses existing account/language scope. EN/ZH browser journeys and phone viewport
+checks are recorded in `docs/reviews/S4_PROGRESS_BROWSER_CHECKPOINT.md`.
+Independent code review passed; full fidelity gate remains open, so S4 stays
+IMPLEMENTING. This is a visibly testable slice, not Product Completion.
+The complete current UI/spec inventory and integrated Intelligence/Agent
+reconciliation, evidence, recommendations and action routing remain required.
+
+Grammar prerequisites (2026-10-04, `0d5732c`): contract PR67 and sample PR68
+integrated into codex/work after independent review and D-106 alias clarification.
+Renderer now supports canonical zh-Hans and L1 arrays; all13 drafts exercise
+the model and are refused by the learner feeder. Seven local gates pass.
+Store/API, migration and published EN/ZH lessons still absent: IMPLEMENTING,
+not learner REVIEWABLE. Evidence: GRAMMAR_INTEGRATION_CHECKPOINT.md.
+
+Listening entry correction (2026-10-04, `cab4773`) is IMPLEMENTING with functional
+browser review available at :8021: comprehension and Dictation select content;
+Speaking has one Pronunciation entry. Six curated EN/ZH lessons have admitted
+questions; original excerpt/evidence playback and honest session results are
+verified. Private imports without questions retain their other ready modes.
+Full fidelity remains open. Evidence: LISTENING_ENTRY_QUESTIONS_CHECKPOINT.md.
+
+Practice continuation correction (2026-10-04) is verified at :8021 `/next#/practice`:
+Continue now requires an actual unsubmitted draft, unfinished conversation, or
+partially read available text, with a visible reason and exact resume destination.
+Visit-only entries move to Recently opened; media aliases deduplicate and retain
+the selected original segment. No inferred mastery, new learner-state store or
+provider work. EN/ZH gates and real Chinese draft/media/phone journeys verified;
+evidence and limitations: `docs/reviews/PRACTICE_CONTINUATION_CHECKPOINT.md`.
+Full fidelity gate remains open; the milestone stays IMPLEMENTING and is available
+for browser review. No human product approval is inferred.
+
+My Library correction (2026-10-03): Saved content/language text now uses bounded
+block lines rather than overflowing inline spans. Saved words open Word Detail;
+Back/reload retain the selected tab. Desktop and 390x844 :8021 browser verified; learner
+collections/decks detail remains truthfully unavailable. Speaking basic completion
+is now active by human priority: shared loading and unsupported Fluency display
+corrected. My Library accepted by the human. Compare UI correction is IMPLEMENTING:
+source-word timing, IPA/pinyin and real paired plots are implemented. Fresh EN Azure
+take 86 shows IPA, Model/You pitch and measured timing; pronunciation details and
+Model-to-You playback transitions exercised, desktop/390x844. Some words have no
+measurable pitch and remain honestly unavailable (not a pronunciation verdict).
+Back/Continue resumes the same Compare sentence via Today/Practice Hub; clip-backed
+Pronunciation is now reachable. Server History and ZH pinyin/recorder verified.
+Fresh ZH take75, learner pitch/timing and server History verified. Model pitch on
+this ZH source remains honestly unavailable; extraction refinement deferred.
+Contradictory verdict labels corrected locally; fresh UI/theme checks remain.
+Human D-119 merges media Shadowing / Pronunciation into the shared recorder/Compare.
+Content Detail and Listening offer Listen / Shadowing; any usable media transcript
+provides a segment picker, previous/next and support meaning. Choose media opens
+Discover's Listen/Watch tab. ZH real video (7 segments), second-line selection,
+return to Listening at22s and desktop/390x844 entry browser verified; EN video6
+lines, IPA and line2 return7s verified. EN/ZH mapping gates pass locally.
+New recording through the merged entry remains to
+verify; previous real EN/ZH assessments are preserved evidence.
+YouTube import (Me at the zoo,4 lines) also browser-opens the shared recorder;
+regional language tags and supported embeds share Listening's validated gates.
+Pronunciation entry/phone correction (2026-10-04, D-122) is REVIEWABLE at :8021
+(096240d): generic entry chooses content; personal/curated media goes directly to
+shared practice; Choose media preserves intent and same-source segment. Phone
+heading/source controls are compact, sentence/meaning scroll within the card and
+Hear/Record stay visible, including while the original video plays. Initial seek
+no longer autoplays or drifts lines; stale endpoint cannot end a new model play.
+EN/ZH/VI verified. Native remains frozen; phone web is its future review reference.
+Evidence/limits: PRONUNCIATION_ENTRY_PHONE_CHECKPOINT.md.
+
+Current correction (2026-10-04, D-121): imported YouTube NkYwdZhkHF0 reuses canonical
+original segment playback in Compare and Scripted Pronunciation. Workspace entry
+does not extract/download/assess source audio or translate missing source meanings.
+Configured translation and language readings are materialized at content preparation;
+legacy IPA reuses persisted dictionary facts only, and missing optional readings,
+measured word intervals/model contour remain unavailable without workspace work.
+ZH Listening -> Shadowing line2 -> Hear -> leave/reopen/reload/restart verified;
+source-preparation routes zero, Pinyin/meaning and segment identity preserved.
+EN canonical VIDEO playback and Vietnamese interface verified. At390x844, Hear
+and Record stay visible, long text/meaning scroll inside the card.
+Private ready transcripts awaiting public rights review no longer fail Speaking;
+YouTube embed audio admission and absent JS runtime corrected. Image definition includes Node24
+and bundled yt-dlp EJS. Only original video voice is permitted (D-120).
+Bounded local checks and independent code review pass; full-suite inherited failures
+and exact evidence are recorded in CONTENT_READINESS_BROWSER_CHECKPOINT.md.
+No fresh learner assessment or whole-product fidelity/completion claim.
+Prior take 83/history is historical after sandbox QA database loss. Evidence:
+`docs/reviews/COMPARE_MODEL_BROWSER_CHECKPOINT.md` and the prior Library checkpoint.
+
+WEB_REVIEW_TARGET: http://127.0.0.1:8021/next
+
+S2 evidence: `docs/reviews/S2_MEDIA_BASIC_BROWSER_CHECKPOINT.md`; local Python 2738 pass/370 skip.
+Reported YouTube B0p5SdkBydU blocker corrected (`eea4d06`, `eb8aa31`): real import,
+transcript, playback and VI support meanings on :8021; desktop/390x844, reload/restart
+and automatic processing completion verified. Processing/resource states are visible.
+Support meaning is core Listening (D-115). D-116 corrections (`637d0b2`) retain
+89/89 VI meanings on the reported ZH source through reload/restart and connected
+rooms; EN/ZH desktop/phone, player chrome, lookup audio and stroke direction verified.
+Import shows actual stages/progress and Orena AI copy without paid-resource wording.
+Dictionary-first lookup and durable derived cache avoid repeated preparation;
+long selected text/actions wrap within the viewport. No synthetic word highlight:
+old sources without real word timestamps disable it. Levels are reviewed,
+explicitly source-declared, or honestly unassessed. Full Python before final audio
+delta: 2744 pass/370 skip; final focused 50 pass. Node 122/123 with inherited Word
+date fixture failure reproduced on clean HEAD; independent review no P0/P1/P2.
+Failed earlier imports need re-import; prior unavailable-translation observation is superseded.
+Real EN/ZH import/transcript journeys and YouTube playback work; live microphone assessment and live Agent are not claimed.
+No whole-product-completion, public-release or CI PASS is claimed.
+Uncommitted completion work must be verified and checkpointed per slice.
+Rare infrastructure edge cases are secondary unless they threaten data,
+ownership/security or a normal learner/Admin journey.
+
+The Golden Star narrative and runtime/test figures below are historical
+execution evidence. They do not define the current milestone, review runtime,
+Grammar fallback, sync status or completion order.
 
 The three findings from the earlier capability-direction review are closed in
 `docs/project/GOLDEN_STAR_COMPLETION.md`. Golden Star remains IMPLEMENTING.

@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
-from typing import Any, Literal, Mapping
+from datetime import UTC, datetime
+from collections.abc import Mapping
+from typing import Any, Literal
+import re
+import json
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Query
 from pydantic import BaseModel, Field
 
 from writing_coach.core.errors import orena_http_error
@@ -39,7 +42,7 @@ from writing_coach.media_learning import (
     SegmentTranslation,
     TranscriptSegment,
 )
-from writing_coach.media_translation import MediaTranslationStatus
+from writing_coach.media_translation import MediaTranslationStatus, build_translation_batches
 from writing_coach.media_api import media_translation_service
 from writing_coach.media_api import serialize_media_acquisition
 from writing_coach.media_ingestion import MediaAcquisition
@@ -146,8 +149,11 @@ def stored_media_payload(media_id: str, target_language: str = "") -> dict[str, 
         return None
     target = resolve_support_language(get_learner_profile().get("native_language"), target_language)
     stored = (entry.lesson or {}).get("payload") if entry.lesson else None
-    if isinstance(stored, Mapping):
+    processing = dict(entry.processing or {})
+    if isinstance(stored, Mapping) and processing.get("state", "ready") in {"ready", "held"}:
         response = _stored_acquisition_response(entry, stored)
+        response["catalog"]["readings_by_segment"] = (stored.get("catalog") or {}).get("readings_by_segment") or {}
+        response["processing"] = processing
         media_object = _media_object_from_stored(stored, entry)
         meanings_outcome = resolve_segment_meanings(
             asset_id=str(stored.get("asset", {}).get("asset_id") or entry.media_id),
@@ -156,7 +162,7 @@ def stored_media_payload(media_id: str, target_language: str = "") -> dict[str, 
             source_language=media_object.asset.source_language,
             preauthored=media_object.translations,
             cache=_translation_cache,
-            translate=_curated_translator(media_object),
+            translate=None,
             provider_model=_translation_provider_model(),
         )
         if meanings_outcome.meanings:
@@ -180,10 +186,16 @@ def stored_media_payload(media_id: str, target_language: str = "") -> dict[str, 
             },
             "failure_kind": meanings_outcome.failure_kind,
         }
-        pinyin = dict(pinyin_for_segments(media_object.transcript.segments)) if media_object.transcript else {}
+        # New prepared lessons own their reading artifact. Old admitted lessons
+        # retain the deterministic compatibility projection, with no provider.
+        pinyin = dict((stored.get("catalog") or {}).get("pinyin_by_segment") or {})
+        if not pinyin and media_object.transcript:
+            pinyin = dict(pinyin_for_segments(media_object.transcript.segments))
         if media_object.asset.source_language.strip().casefold().startswith("zh") and pinyin:
             response["catalog"]["pinyin_by_segment"] = pinyin
-            response["catalog"]["pinyin_chars_by_segment"] = align_readings(media_object.transcript.segments, pinyin)
+            response["catalog"]["pinyin_chars_by_segment"] = (stored.get("catalog") or {}).get("pinyin_chars_by_segment") or align_readings(media_object.transcript.segments, pinyin)
+        elif media_object.asset.source_language.strip().casefold().startswith("en") and not response["catalog"].get("readings_by_segment"):
+            response["catalog"]["readings_by_segment"] = _cached_source_readings(media_object.transcript.segments)
         return response
     # No transcript: an imported file or a direct media URL. The learner gets
     # the player and the truth, which is the same 'source only' room a
@@ -196,6 +208,7 @@ def stored_media_payload(media_id: str, target_language: str = "") -> dict[str, 
         "translation": {"status": "unavailable", "target_language": target, "source": None, "failure_kind": None},
     }
     response["catalog"] = stored_media_metadata(entry)
+    response["processing"] = processing
     return response
 
 
@@ -237,9 +250,9 @@ def _stored_asset(entry: MediaLibraryEntry) -> dict[str, Any]:
         "source_type": entry.source.get("type", "imported-media"),
         "title": entry.title,
         "source_language": entry.language,
-        "processing_state": MediaProcessingState.READY.value,
+        "processing_state": ("processing" if entry.status == "processing" else "failed") if entry.processing and entry.processing.get("state") != "ready" else MediaProcessingState.READY.value,
         "duration_ms": entry.duration_ms or None,
-        "transcript_available": entry.lesson is not None,
+        "transcript_available": bool(entry.lesson) and (not entry.processing or entry.processing.get("state") in {"ready", "held"}),
         "translation_available": False,
         "thumbnail_url": public_thumbnail_url(entry),
     }
@@ -251,6 +264,12 @@ def stored_media_metadata(entry: MediaLibraryEntry) -> dict[str, Any]:
     payload = lesson.get("payload") or {}
     transcript = payload.get("transcript") or {}
     segments = transcript.get("segments") or []
+    # A source declaration is not a reviewed/estimated learner level.
+    pattern = r"\bHSK\s*([1-6])(?:\s*[-–—]\s*([1-6]))?\b" if entry.language == "zh" else r"\bCEFR\s*([ABC][12])\b"
+    declared = re.search(pattern, entry.title, re.IGNORECASE)
+    source_level = ""
+    if declared:
+        source_level = (f"HSK {declared[1]}" + (f"–{declared[2]}" if declared[2] else "")) if entry.language == "zh" else declared[1].upper()
     return {
         "lesson_id": entry.media_id,
         "media_object_id": entry.media_id,
@@ -260,6 +279,7 @@ def stored_media_metadata(entry: MediaLibraryEntry) -> dict[str, Any]:
         "topic": str(lesson.get("topic") or ""),
         "subtopics": [],
         "level": entry.level,
+        "source_declared_level": source_level,
         "estimated_level": entry.level,
         "reviewed_level": entry.level or None,
         "level_source": "editorial-review" if entry.level else "not-estimated",
@@ -267,15 +287,15 @@ def stored_media_metadata(entry: MediaLibraryEntry) -> dict[str, Any]:
         "duration_ms": entry.duration_ms,
         "excerpt_start_ms": int((segments[0] or {}).get("start_ms") or 0) if segments else 0,
         "excerpt_end_ms": int((segments[-1] or {}).get("end_ms") or entry.duration_ms) if segments else entry.duration_ms,
-        "available_modes": ["listen"] if segments else [],
+        "available_modes": ["listen", "active", "dictation", "shadowing"] if segments else [],
         "content_tags": list(lesson.get("tags") or []),
         "vocabulary": [],
         "speech_speed": None,
         "artwork": str(lesson.get("topic") or "listen"),
         "poster_url": public_thumbnail_url(entry),
         "playback_kind": playback_for(entry)["kind"],
-        "published_state": "published",
-        "curation_state": "reviewed",
+        "published_state": entry.status,
+        "curation_state": str(lesson.get("curation") or "reviewed"),
         "is_development_candidate": False,
         "is_shared_import": entry.library == "shared",
         "media_type": entry.media_type,
@@ -450,10 +470,12 @@ def _shared_entries(
     level_key = (level or "").strip().casefold()
     topic_key = (topic or "").strip().casefold()
     tag_key = (tag or "").strip().casefold()
+    from writing_coach.media_transcript_pipeline import usable_transcript
     return [
         entry
         for entry in entries
         if entry.library == "shared"
+        and usable_transcript(entry)[0]
         and (not level_key or entry.level.casefold() == level_key)
         and (not topic_key or str((entry.lesson or {}).get("topic") or "").casefold() == topic_key)
         and (not tag_key or tag_key in {str(item).casefold() for item in (entry.lesson or {}).get("tags", [])})
@@ -468,6 +490,29 @@ def configure_listening_translation_cache(cache: Any) -> None:
 
     global _translation_cache
     _translation_cache = cache
+
+
+def _cached_source_readings(segments: Any) -> dict[str, Any]:
+    """Legacy IPA from persisted dictionary facts only; never a provider lookup."""
+    dictionary = getattr(_translation_cache, "get_dictionary", None)
+    if not dictionary:
+        return {}
+    facts = {}
+    positions = {}
+    for segment in segments or ():
+        projected = []
+        for match in re.finditer(r"[^\W_]+(?:['’-][^\W_]+)*", segment.original_text):
+            key = match.group().casefold()
+            if key not in facts:
+                try:
+                    row = dictionary(key)
+                    facts[key] = str(json.loads(row["payload_json"]).get("phonetic") or "") if row else ""
+                except Exception:  # optional persisted fact; failure must not acquire a replacement
+                    facts[key] = ""
+            if facts[key]:
+                projected.append({"text": match.group(), "start": match.start(), "end": match.end(), "reading": facts[key]})
+        positions[segment.segment_id] = projected
+    return positions
 
 
 def _translation_provider_model() -> str:
@@ -486,20 +531,49 @@ def _curated_translator(media_object: Any):
         return None
 
     def translate(segments: Any, target_language: str) -> dict[str, str]:
-        partial = MediaLearningObject(
-            asset=media_object.asset,
-            transcript=MediaTranscript(
-                media_object.asset.asset_id,
-                media_object.asset.source_language,
-                tuple(segments),
-            ),
-        )
-        result = service.translate(partial, target_language)
-        if result.status is not MediaTranslationStatus.READY:
+        batches = build_translation_batches(tuple(segments))
+        if batches is None:
             return {}
-        return {item.segment_id: item.translated_meaning for item in result.media_object.translations}
+        generated: dict[str, str] = {}
+        for batch in batches:
+            partial = MediaLearningObject(
+                asset=media_object.asset,
+                transcript=MediaTranscript(
+                    media_object.asset.asset_id,
+                    media_object.asset.source_language,
+                    tuple(batch),
+                ),
+            )
+            result = service.translate(partial, target_language)
+            if result.status is not MediaTranslationStatus.READY:
+                break
+            generated.update({item.segment_id: item.translated_meaning for item in result.media_object.translations})
+        # Preserve completed batches in the persistent segment cache even if
+        # a later provider request fails. The next open retries only missing lines.
+        return generated
 
     return translate
+
+
+def prepare_media_meanings(entry: MediaLibraryEntry, target_language: str):
+    """Materialize at the content boundary; learner GETs only read these rows.
+
+    The existing persisted cache owns revision/language/provider identity. Never
+    pay for a result when this runtime cannot persist it for the next capability.
+    This function needs no learner request context and is called by preparation.
+    """
+    stored = (entry.lesson or {}).get("payload") or {}
+    media_object = _media_object_from_stored(stored, entry)
+    return resolve_segment_meanings(
+        asset_id=media_object.asset.asset_id,
+        segments=media_object.transcript.segments if media_object.transcript else (),
+        support_language=target_language,
+        source_language=media_object.asset.source_language,
+        preauthored=media_object.translations,
+        cache=_translation_cache,
+        translate=_curated_translator(media_object) if _translation_cache is not None else None,
+        provider_model=_translation_provider_model(),
+    )
 
 
 @router.get("/library/{lesson_id}")
@@ -540,7 +614,7 @@ def open_listening_library_lesson(
         source_language=media_object.asset.source_language,
         preauthored=media_object.translations,
         cache=_translation_cache,
-        translate=_curated_translator(media_object),
+        translate=None,
         provider_model=_translation_provider_model(),
     )
     if outcome.meanings:
@@ -576,6 +650,8 @@ def open_listening_library_lesson(
     metadata["pinyin_by_segment"] = pinyin
     # One reading under each character, where the line and its reading agree (DC-3).
     metadata["pinyin_chars_by_segment"] = align_readings(segments, pinyin)
+    if media_object.asset.source_language.strip().casefold().startswith("en"):
+        metadata["readings_by_segment"] = _cached_source_readings(segments)
     response["catalog"] = metadata
     return response
 
@@ -654,7 +730,7 @@ def save_listening_progress(payload: ListeningProgressIn) -> dict[str, Any]:
         values["presentation"] = "revealed"
     # The flag is the level: the two can never disagree.
     values["last_used_hint"] = values["last_hint_level"] > 0
-    values["updated_at"] = datetime.now(timezone.utc).isoformat()
+    values["updated_at"] = datetime.now(UTC).isoformat()
     line = _require_progress_line(values["asset_id"], values["segment_id"])
     # The stored score is the server's (D-103.2): the browser's best_* fields stay in the body for the
     # frozen clients and are ignored. Only a checked answer is scored; every other write moves no score.
@@ -694,7 +770,7 @@ def save_shadowing_progress(payload: ShadowingProgressIn) -> dict[str, Any]:
     values = payload.model_dump() if hasattr(payload, "model_dump") else payload.dict()
     values["asset_id"] = _clean_identity(values["asset_id"], "asset_id")
     values["segment_id"] = _clean_identity(values["segment_id"], "segment_id")
-    values["updated_at"] = datetime.now(timezone.utc).isoformat()
+    values["updated_at"] = datetime.now(UTC).isoformat()
     _require_progress_line(values["asset_id"], values["segment_id"])
     try:
         item = repository.save_shadowing_progress_record(values)

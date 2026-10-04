@@ -122,8 +122,13 @@ jobs:
           node scripts/test_orena_screen_discover.mjs
           node scripts/test_orena_screen_content.mjs
           node scripts/test_orena_screen_practice.mjs
+          node scripts/test_orena_practice_continuation.mjs
+          node scripts/test_orena_listening_entries.mjs
+          node scripts/test_orena_listening_questions.mjs
           node scripts/test_orena_screen_library.mjs
           node scripts/test_orena_screen_collection.mjs
+          node scripts/test_orena_collection_actions.mjs
+          node scripts/test_orena_vocabulary_meaning.mjs
           node scripts/test_orena_screen_word.mjs
           node scripts/test_orena_screen_grammar.mjs
           node scripts/test_orena_screen_search.mjs
@@ -146,6 +151,9 @@ jobs:
           node scripts/test_orena_screen_situation.mjs
           node scripts/test_orena_screen_speak.mjs
           node scripts/test_orena_screen_compare.mjs
+          node scripts/test_orena_compare_reference.mjs
+          node scripts/test_orena_content_readiness.mjs
+          node scripts/test_orena_media_speaking.mjs
           node scripts/test_orena_screen_attempts.mjs
           node scripts/test_orena_screen_speak-summary.mjs
           node scripts/test_orena_screen_review.mjs

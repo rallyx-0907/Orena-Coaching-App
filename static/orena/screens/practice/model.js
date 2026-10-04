@@ -16,6 +16,7 @@
    library or the Reading queue is temporarily empty, that skill's section simply does not render
    that visit, the same way the design's own Continue section disappears when it is empty. */
 import { isDeferred } from '../../shell/routes.js';
+import { speakingResumeTarget } from '../../product/speaking-resume.js';
 
 /* Every mode maps to a real shell/routes.js entry; its label is that route's own crumb, already
    translated in copy/shell.js (shellCopy) - this file only decides *which* routes belong to which
@@ -43,7 +44,7 @@ const WRITE_ICONS = { writing: 'pen-line', rewrite: 'repeat', timedwr: 'timer' }
 /* 'keyboard' (design PH_MAP "Dictation":"kbd") and 'repeat' (design PH_MAP "Shadowing":"repeat",
    the same icon Speak's own Shadowing mode already uses) - both already present in kit/icons.js,
    no sync needed. */
-const LISTEN_ICONS = { dictation: 'keyboard', shadow: 'repeat' };
+const LISTEN_ICONS = { dictation: 'keyboard', listening: 'headphones' };
 const VOCAB_ICONS = { review: 'bookmark-check', timed: 'timer', transfer: 'arrow-left-right', feed: 'flame' };
 const GRAMMAR_ICONS = { grammarlib: 'book-open' };
 /* 'book-open' (design PH_MAP "Start Reading Practice":"book" - the same path as Lucide's
@@ -84,10 +85,8 @@ function firstOfType(items, type) {
   return items.find((item) => item && item.practice_type === type) || null;
 }
 
-/* Speak's modes: six are always real (no content id needed); three more (Pronunciation,
-   Shadowing, Retell) appear only when the Speaking library actually has an item of that type -
-   the catalogue ships empty by default (UI_BACKEND_GAPS SP-1), so on a fresh install only the six
-   bare modes render, which is correct, not a bug. */
+/* Generic Pronunciation opens the shared content chooser, including personal imports;
+   it never silently assigns the first catalogue item. Deferred modes remain excluded. */
 export function speakModes(items = []) {
   const list = Array.isArray(items) ? items : [];
   const modes = [
@@ -98,10 +97,7 @@ export function speakModes(items = []) {
     { key: 'mock', routeId: 'mock' },
     { key: 'sound', routeId: 'sound' },
   ];
-  const sentence = firstOfType(list, 'sentences');
-  if (sentence) modes.push({ key: 'speak', routeId: 'speak', params: { id: sentence.id }, level: sentence.level || '' });
-  const clip = firstOfType(list, 'clip');
-  if (clip) modes.push({ key: 'shadow', routeId: 'shadow', params: { id: String(clip.id).replace(/^media:/, '') }, level: clip.level || '' });
+  modes.push({ key: 'speak', labelRouteId: 'speak', routeId: 'discover', query: { tab: 'listen', practice: 'pronunciation' } });
   const retell = firstOfType(list, 'retell');
   if (retell) modes.push({ key: 'retell', routeId: 'retell', params: { id: retell.id }, level: retell.level || '' });
   return shown(modes);
@@ -122,29 +118,15 @@ export function writeModes() {
   ]);
 }
 
-/* One Listening library item (GET /api/listening/library) whose `available_modes`
-   (listening_catalog.py PRACTICE_MODES: exactly `listen`/`active`/`dictation`/`shadowing`, no
-   others) includes the given mode - the same firstOfType pattern speakModes() uses above, just
-   keyed by array membership instead of a single `practice_type` field. */
-function firstWithMode(items, mode) {
-  return items.find((item) => item && Array.isArray(item.available_modes) && item.available_modes.includes(mode)) || null;
-}
-
-/* Listen's two modes reachable without an id this screen must invent: Dictation and Shadowing,
-   gated on the Listening library actually having an item whose `available_modes` carries that
-   mode (empty catalogue -> empty result, correct, not a bug - same shape as speakModes() above).
-   The design's other Listen modes have no comparable real source and stay out (rule 40):
-   "React / Reuse" and "Retell" (its own "Use what you hear" group) have no `available_modes`
-   value at all in the schema (PRACTICE_MODES has no react/retell entry), and "Continue listening"
-   (its own "Continue" group) is device-memory continuation, already surfaced by
-   continuationRows() below, not a catalogue-backed mode. */
+/* Human correction: listening comprehension and dictation are separate choices,
+   both choose content before practice. Speaking owns the single pronunciation /
+   shadowing entry. Only lessons with materialized questions admit comprehension. */
 export function listenModes(items = []) {
   const list = Array.isArray(items) ? items : [];
   const modes = [];
-  const dictation = firstWithMode(list, 'dictation');
-  if (dictation) modes.push({ key: 'dictation', routeId: 'dictation', params: { id: dictation.lesson_id }, level: dictation.level || '' });
-  const shadowing = firstWithMode(list, 'shadowing');
-  if (shadowing) modes.push({ key: 'shadow', routeId: 'shadow', params: { id: shadowing.lesson_id }, level: shadowing.level || '' });
+  if (list.some(item => item?.comprehension_count > 0)) modes.push({ key: 'listening', labelRouteId: 'listenQuestions', routeId: 'discover', query: { tab: 'listen', practice: 'listening' } });
+  // Personal prepared imports also support dictation; the chooser owns admission.
+  modes.push({ key: 'dictation', labelRouteId: 'dictation', routeId: 'discover', query: { tab: 'listen', practice: 'dictation' } });
   return modes;
 }
 
@@ -213,8 +195,12 @@ export function buildSkillSections(data = {}) {
    out rather than guessed at (rule 40) - it is still there next time the learner opens the room
    that owns it, just not resumable from this hub. */
 export function continuationTarget(item) {
+  const speaking = speakingResumeTarget(item);
+  if (speaking) return speaking;
   const id = String(item?.id || '');
   const intent = item?.intent || null;
+  if (/^essay:\d+$/.test(id)) return { kind: 'write', routeId: 'writingDraft', params: { id } };
+  if (/^(article|book|text):.+/.test(id)) return { kind: 'reading', routeId: 'reader', params: { id } };
   if (/^(expression|essay):/.test(id) || intent === 'writing') {
     return { kind: 'write', routeId: 'writing' };
   }
@@ -238,10 +224,10 @@ export function continuationTarget(item) {
   return null;
 }
 
-const KIND_ICON = { write: 'pen-line', listen: 'headphones', grammar: 'languages', speak: 'mic' };
+const KIND_ICON = { write: 'pen-line', listen: 'headphones', grammar: 'languages', speak: 'mic', reading: 'book-open' };
 /* Reuses SKILL_TINT's own per-skill hues (now that SKILL_TINT carries a `listen` entry too) -
    never a second literal for the same token. */
-const KIND_TINT = { write: SKILL_TINT.write, listen: SKILL_TINT.listen, grammar: SKILL_TINT.grammar, speak: SKILL_TINT.speak };
+const KIND_TINT = { write: SKILL_TINT.write, listen: SKILL_TINT.listen, grammar: SKILL_TINT.grammar, speak: SKILL_TINT.speak, reading: SKILL_TINT.reading };
 
 /* Up to `limit` continuation rows (most-recent-first, memory.js's own order), each carrying enough
    to draw a row and to link to a real route. `place` (product/memory.js readPlace) is the only

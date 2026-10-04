@@ -152,7 +152,9 @@ export function mistakeOf(point, support = 'en', native = '') {
   const list = (Array.isArray(point?.common_mistakes) ? point.common_mistakes : []).filter((entry) => entry?.wrong && entry?.right);
   if (!list.length) return null;
   const l1 = String(native || '').trim().toLowerCase();
-  const entry = (l1 && list.find((item) => String(item.l1 || '').toLowerCase() === l1)) || list[0];
+  const entry = (l1 && list.find((item) =>
+    (Array.isArray(item.l1) ? item.l1 : [item.l1])
+      .some((locale) => String(locale || '').toLowerCase() === l1))) || list[0];
   return {
     wrong: String(entry.wrong),
     wrongPinyin: pinyinOf(entry.wrong_pinyin),
@@ -195,7 +197,7 @@ export function headerOf(point, support = 'en') {
   return {
     title: String(header.native_title || ''),
     titlePinyin: pinyinOf(header.native_title_pinyin),
-    lang: point?.target_lang === 'zh' ? 'zh' : 'en',
+    lang: ['zh', 'zh-Hans'].includes(point?.target_lang) ? 'zh' : 'en',
     level: levelCode(point?.level || header.level),
     sub: contractText(header.sub, support),
     summary: contractText(header.summary, support),

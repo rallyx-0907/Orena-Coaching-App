@@ -1,6 +1,6 @@
 /* Scripted Pronunciation (frame 15, `#/speak/:id`; D-091). One line, said and assessed: the
    target sentence as tappable tokens, model/mine playback, a mic recorder, and a result card with
-   a score ring, three metrics and the ASR line. There is no "next line" control (confirmed against
+   a score ring, three metric slots and the ASR line. There is no "next line" control (confirmed against
    the source, SCRATCH/inventory/D5-speaking.md - neither Scripted Pronunciation nor Compare With
    Model draws one), so this room works the one line `product/speaking-source.js` resolves from
    the route (the first of the source, or the segment a link names).
@@ -9,8 +9,8 @@
    (the line + its model audio, when the source has one), `POST /api/speech/pronunciation`
    (`capabilities/speaking-take.js`, unchanged, through `product/speaking-recorder.js`), the
    audio-free record it keeps (`POST /api/speech/attempts`), and this tab's own take list
-   (`product/take-store.js`, D-076). A measurement the provider did not return is 0 in its
-   component, never guessed (rule 40). */
+   (`product/take-store.js`, D-076). Unreturned Fluency remains unavailable, with no score
+   track or session fact, instead of being represented as a measured zero. */
 import { html, mount, raw, cls } from '../../kit/html.js';
 import { icon } from '../../kit/icons.js';
 import { markGlyph } from '../../kit/brand.js';
@@ -22,6 +22,8 @@ import { api } from '../../infrastructure/api.js';
 import { askOrena } from '../../shell/agent-bridge.js';
 import { registerActionHandler } from '../../agent/dispatcher.js';
 import { loadSpeakingSource, segmentOf } from '../../product/speaking-source.js';
+import { originalSegmentPlayer } from '../../product/original-segment-player.js';
+import { pairWord } from '../../product/compare-reference.js';
 import { pronunciationView } from '../../capabilities/pronunciation-result.js';
 import { createSpeakingRecorder, TAKE, MAX_TAKE_MS } from '../../product/speaking-recorder.js';
 import { lineKey, listTakes, viewOfTake, bestTake, attemptIdOf } from '../../product/take-store.js';
@@ -43,15 +45,17 @@ function errorLabel(errorType) {
 
 export default async function mountScriptedPronunciation(element, ctx) {
   await useStyles('screens/speak/speak.css');
+  await useStyles('capabilities/original-segment-player.css');
   const language = ctx.context?.language || 'en';
   const support = languages().support;
   const segmentId = segmentOf(ctx.query);
   const lineQuery = segmentId ? { segment: segmentId } : {};
 
-  mount(element, html`<div class="s-speak-loading">${raw(icon('mic', { size: 22 }))}</div>`);
+  // This lesson route's delayed loading skeleton is owned by the router.
+  mount(element, '');
   element.classList.add('s-speak-root');
 
-  const source = await loadSpeakingSource(ctx.params.id, { api, support, language, segmentId });
+  const source = await loadSpeakingSource(ctx.params.id, { api, support, language, owner: ctx.context.owner || 'local', segmentId });
   if (!ctx.isCurrent()) return undefined;
   ctx.setCrumb(source.title);
   ctx.context?.memory?.enter?.({ id: source.sourceId, title: source.title, intent: 'speaking', segment: source.line.lineId, excerpt: source.line.text });
@@ -59,6 +63,11 @@ export default async function mountScriptedPronunciation(element, ctx) {
   const key = lineKey(source.sourceId, source.line.lineId);
   let takes = await listTakes(key);
   if (!ctx.isCurrent()) return undefined;
+  mount(element, '');
+  const renderRoot = document.createElement('div');
+  renderRoot.style.display = 'contents';
+  element.append(renderRoot);
+  const originalPlayer = originalSegmentPlayer(source);
 
   /* Coming back to a line that already has attempts shows the newest one again, as it was: the
      full assessment when this tab still holds it, the smaller shape a reopened attempt has
@@ -68,7 +77,6 @@ export default async function mountScriptedPronunciation(element, ctx) {
   let rec = { phase: TAKE.IDLE, error: null, levels: new Array(WAVE_BARS).fill(0), elapsedMs: 0 }; // what the recorder last said
   let tokenSel = null; // index of a tapped word, once a result exists
   let playing = null; // 'model' | 'mine' | null
-  let modelAudio = null;
   let takeAudio = null;
 
   const q = (selector) => element.querySelector(selector);
@@ -85,7 +93,7 @@ export default async function mountScriptedPronunciation(element, ctx) {
     language,
     facts: (finished) => [
       { label: t('metricAccuracy'), value: finished.accuracy },
-      { label: t('metricFluency'), value: finished.fluencyMeasured ? finished.fluency : 0 },
+      ...(finished.fluencyMeasured ? [{ label: t('metricFluency'), value: finished.fluency }] : []),
     ],
     on: {
       change(next) {
@@ -140,9 +148,8 @@ export default async function mountScriptedPronunciation(element, ctx) {
   }
 
   function stopPlayback() {
-    modelAudio?.pause();
+    originalPlayer?.stop();
     takeAudio?.pause();
-    modelAudio = null;
     takeAudio = null;
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) window.speechSynthesis.cancel();
     playing = null;
@@ -171,6 +178,7 @@ export default async function mountScriptedPronunciation(element, ctx) {
     if (ctx.isCurrent()) paint();
   }
   function playModel() {
+    if (source.lessonId && !source.hasModelAudio) return;
     if (playing === 'model') {
       stopPlayback();
       paint();
@@ -179,19 +187,26 @@ export default async function mountScriptedPronunciation(element, ctx) {
     stopPlayback();
     playing = 'model';
     if (source.hasModelAudio) {
-      modelAudio = new Audio(source.modelAudioUrl(source.line.lineId));
-      modelAudio.addEventListener('ended', () => ended('model'), { once: true });
-      modelAudio.addEventListener('error', () => ended('model'), { once: true });
-      modelAudio.play().catch(() => ended('model'));
-    } else {
+      originalPlayer?.play().then(() => ended('model'));
+    } else if (!source.lessonId) {
       speak(source.line.text, () => ended('model'));
     }
     paint();
   }
-  function playModelWord(word) {
+  function playModelWord(index) {
+    if (source.lessonId && !source.hasModelAudio) return;
+    if (source.hasModelAudio) {
+      const word = pairWord(source.line.text, view.words, index, source.line.wordTimings, source.language);
+      if (!word) return;
+      stopPlayback();
+      playing = 'model';
+      originalPlayer.play({from:word.offsetMs/1000,to:(word.offsetMs+word.durationMs)/1000}).then(() => ended('model'));
+      paint();
+      return;
+    }
     stopPlayback();
     playing = 'model';
-    speak(word, () => ended('model'));
+    speak(view.words[index]?.text || '', () => ended('model'));
     paint();
   }
   function playMine() {
@@ -234,7 +249,7 @@ export default async function mountScriptedPronunciation(element, ctx) {
       ${detail.pinyin ? html`<div class="s-speak-detail__reading">${t('expectedReading', { reading: detail.pinyin })}</div>` : ''}
       <div class="s-speak-detail__issue">${label}${detail.weakest ? ` · ${t('weakestOf', { u: detail.weakest.label, n: detail.weakest.score })}` : ''}</div>
       <div class="s-speak-detail__actions">
-        <button type="button" class="s-speak-mini" data-word-model="${detail.index}">${filled('play', 14)}${t('modelWord')}</button>
+        <button type="button" class="s-speak-mini" data-word-model="${detail.index}"${source.hasModelAudio && !pairWord(source.line.text,view.words,detail.index,source.line.wordTimings,source.language) ? raw(' disabled') : ''}>${filled('play', 14)}${t('modelWord')}</button>
         <button type="button" class="s-speak-mini s-speak-mini--ghost" data-close-detail>${t('close')}</button>
       </div>
     </div>`;
@@ -274,7 +289,7 @@ export default async function mountScriptedPronunciation(element, ctx) {
       </div>
       ${
         metrics.length
-          ? html`<div class="s-speak-metrics">${metrics.map((m) => html`<div class="s-speak-metric"><div class="s-speak-metric__row"><span>${t(`metric${m.key[0].toUpperCase()}${m.key.slice(1)}`)}</span><b>${m.value}</b></div><div class="s-speak-metric__track"><i style="width:${Math.max(0, Math.min(100, m.value))}%;background:${m.ink}"></i></div></div>`)}</div>`
+          ? html`<div class="s-speak-metrics">${metrics.map((m) => html`<div class="s-speak-metric"><div class="s-speak-metric__row"><span>${t(`metric${m.key[0].toUpperCase()}${m.key.slice(1)}`)}</span><b>${m.value ?? '—'}</b></div>${m.value == null ? '' : html`<div class="s-speak-metric__track"><i style="width:${Math.max(0, Math.min(100, m.value))}%;background:${m.ink}"></i></div>`}</div>`)}</div>`
           : ''
       }
       ${recognizedText() ? html`<div class="s-speak-asr">${t('asrLabel')} <i lang="${langAttr(language)}">“${recognizedText()}”</i> ${t('asrNote')}</div>` : ''}
@@ -304,8 +319,9 @@ export default async function mountScriptedPronunciation(element, ctx) {
     const bars = recording ? liveWave(rec.levels) : restingWave();
     const tail = [t('segmentN', { n: source.line.ordinal }), source.level].filter(Boolean).join(' · ');
 
+    originalPlayer?.park(element);
     mount(
-      element,
+      renderRoot,
       html`<div class="s-speak-header">
         <button type="button" class="o-iconbtn o-iconbtn--back" data-back aria-label="${shellCopy('back')}">${raw(icon('arrow-left', { size: 21 }))}</button>
         <div class="s-speak-title-block">
@@ -315,6 +331,7 @@ export default async function mountScriptedPronunciation(element, ctx) {
         ${takes.length ? html`<button type="button" class="s-speak-compare" data-go-compare>${t('compare')}</button>` : ''}
       </div>
       <div class="s-speak-scroll" data-scroll-region>
+        ${source.playback?.kind === 'embed' ? html`<div data-original-player></div>` : ''}
         <div class="s-speak-card">
           <div class="s-speak-label">${t('targetSentence')}</div>
           <div class="s-speak-line" lang="${langAttr(language)}">${tokenMarkup(shown)}</div>
@@ -338,6 +355,8 @@ export default async function mountScriptedPronunciation(element, ctx) {
         ${resultMarkup()}
       </div>`,
     );
+    if (originalPlayer) originalPlayer.attach(source.playback.kind === 'embed' ? q('[data-original-player]') : element);
+    if (source.lessonId && !source.hasModelAudio) element.querySelectorAll('[data-play-model],[data-word-model]').forEach(button => { button.disabled = true; });
     bind();
     const region = q('[data-scroll-region]');
     if (region) region.scrollTop = scrollTop;
@@ -374,7 +393,7 @@ export default async function mountScriptedPronunciation(element, ctx) {
       tokenSel = null;
       paint();
     });
-    q('[data-word-model]')?.addEventListener('click', () => playModelWord(view.words[Number(q('[data-word-model]').dataset.wordModel)]?.text || ''));
+    q('[data-word-model]')?.addEventListener('click', () => playModelWord(Number(q('[data-word-model]').dataset.wordModel)));
   }
 
   paint();
@@ -388,6 +407,7 @@ export default async function mountScriptedPronunciation(element, ctx) {
   };
   const releasers = [
     registerActionHandler('play_model', () => {
+      if (source.lessonId && !source.hasModelAudio) return { ok: false, reason: 'unavailable' };
       playModel();
       return { ok: true };
     }),
@@ -417,5 +437,6 @@ export default async function mountScriptedPronunciation(element, ctx) {
     releasers.forEach((release) => release());
     recorder.dispose();
     stopPlayback();
+    originalPlayer?.dispose();
   };
 }

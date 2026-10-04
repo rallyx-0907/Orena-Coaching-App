@@ -41,6 +41,10 @@ export function headlineKey(score) {
    otherwise the score band frame 15 uses for a word (85 / 65), and a word the provider flagged is
    never better than 'weak'. A word reopened from an older attempt has no score (D-076), only the
    provider's flag. */
+export function pronunciationStatusKey(detail) {
+  return detail.status === 'unclear' ? 'valueUnclear' : detail.status === 'ok' ? 'valuePassed' : 'valueNotPassed';
+}
+
 export function wordStatus(word) {
   if (!word) return 'ok';
   if (String(word.errorType || '').toLowerCase() === 'omission') return 'unclear';
@@ -78,7 +82,8 @@ export function wordDetailFor(view, index) {
   return {
     index,
     text: word.text,
-    pinyin: word.pinyin,
+      pinyin: word.pinyin,
+      reading: word.reading || word.pinyin || '',
     score: word.score,
     scoreKnown: word.scoreKnown !== false,
     flagged: word.flagged,
@@ -151,10 +156,32 @@ export const CHART = Object.freeze({ width: 272, height: 90, x: 40, y: 20, range
    {t, st}). `from`/`to` (seconds) scope it to a word's window; without them, the whole take.
    `width` is the plot's own width: the word detail's chart is the component's 272, the whole-line
    chart in the summary card is wider. */
-export function chartLines(points, { from = 0, to = null, width = CHART.width } = {}) {
+export function chartLines(points, { from = 0, to = null, width = CHART.width, range = CHART.range } = {}) {
   if (!points?.length) return [];
   const end = to ?? points[points.length - 1].t;
-  return contourPolylines(points, { width, height: CHART.height, range: CHART.range, from, to: end, span: end });
+  return contourPolylines(points, { width, height: CHART.height, range, from, to: end, span: end });
+}
+
+export function wordPitchLines(analysis, word, options = {}) {
+  if (!word?.offsetKnown || !hasVoice(analysis)) return [];
+  const from = Math.max(0, word.offsetMs / 1000);
+  const to = from + word.durationMs / 1000;
+  return to > from ? chartLines(analysis.contour, { from, to, width: 100, ...options }) : [];
+}
+
+/* Keep the prototype's word tiles inside the viewport. Pages use the measured
+   tile geometry, and every word stays reachable without horizontal scrolling. */
+export function wordPages(words, width, language) {
+  const pages = [];
+  let page = [], used = 0;
+  for (const word of words || []) {
+    const size = Math.min(Math.max(1, width), tileMinWidth(word.text, language));
+    if (page.length && used + 6 + size > width) { pages.push(page); page = []; used = 0; }
+    used += (page.length ? 6 : 0) + size;
+    page.push(word);
+  }
+  if (page.length) pages.push(page);
+  return pages;
 }
 
 /* Whether a contour has any voiced frame at all: a take of silence draws no line, and says so. */

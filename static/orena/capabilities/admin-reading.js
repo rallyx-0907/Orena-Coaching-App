@@ -134,9 +134,10 @@ export function tabOf(status) {
 
 /* What the operator typed becomes the multipart submission the engine takes. An absent answer is
    absent - not a refusal - so a rights question nobody answered arrives as no field at all. */
-export function submissionFrom({ mode, title = '', body = '', url = '', language = '', source = '', author = '', sourceUrl = '', rights = '', adapt = '', attribution = '', license = '' }) {
+export function submissionFrom({ mode, title = '', body = '', url = '', language = '', source = '', registeredSource = '', author = '', sourceUrl = '', rights = '', adapt = '', attribution = '', license = '' }) {
   const kind = ['url', 'text', 'file'].includes(mode) ? mode : 'text';
   const submitted = { kind };
+  if (registeredSource) submitted.source_id = registeredSource;
   if (kind === 'text') Object.assign(submitted, { text: body, title: title.trim() });
   if (kind === 'url') submitted.url = url.trim();
   if (kind === 'file') submitted.title = title.trim();
@@ -217,7 +218,7 @@ export function setIsStale(set) {
 
 /* Where a learner opens content in the new UI: the same address the Discover cards use. */
 export function learnerAddress(kind, id, chapterId = '') {
-  const suffix = kind === 'book' && chapterId ? `/${chapterId}` : '';
+  const suffix = kind === 'book' && chapterId ? `:${chapterId}` : '';
   /* The learner UI files a Reading article under `article:` (screens/content/model.js). */
   const filed = kind === 'reading' ? 'article' : kind;
   return `#/content/${encodeURIComponent(`${filed}:${id}${suffix}`)}`;

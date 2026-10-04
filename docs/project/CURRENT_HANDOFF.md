@@ -2,78 +2,72 @@
 
 ## Governance
 
-Purpose: current execution state only. Change when the active lane, verified
-batch, gates or next task changes. Do not store secrets, product philosophy or
-unverified claims. Product intent and technical authority follow
-`PROJECT_MEMORY.md`; local verification does not imply CI pass, human product
-approval, or production readiness.
+Purpose: execution position. Change when work/gates change. Do not store secrets or unverified claims.
+Authority: `PROJECT_MEMORY.md`. Local checks are not CI/product approval.
+
+Product completion covers the full approved UI/spec capability and flow inventory.
+
+Program: `ROADMAP.md` (D-113); R21/mobile/skill releases are historical.
 
 ## Current branch / lane
 
-`codex/work` is the baseline and the UI lane. It is the UI lane (D-066, D-098)
-whichever agent works it: a Claude session continues here, not on `claude/<task>`. `feature/orena-intelligence`
+`codex/work` is the baseline/UI lane (D-066, D-098) for either agent. `feature/orena-intelligence`
 builds Agent Intelligence (D-085) against `AGENT_CONTRACT.md` v5 (D-092, D-094,
 D-095, D-096), which is edited only on `codex/work`. Verified history:
 `PROJECT_STATE.md` "New learner UI migration".
 
-New learner UI (D-088 - D-091): the pinned design is built at `/next` and
-replaces the old UI at `/` in one cutover. Between slices `/` is the old UI,
-unchanged; `/next` holds the built surfaces; both share one domain layer; no
-learner-data schema changes; the agent runs on the contract mock and nothing
-calls `/api/agent/*` until the human says the intelligence lane is integrated.
-The intelligence lane integrates against `/next`. Frame → route → code →
-status: `docs/design/canonical-ui/IMPLEMENTATION_MAP.md`.
+New UI (D-088..D-091): `/next` replaces `/` in one cutover; both share domains.
+Agent stays on the contract mock until Intelligence integration is authorized.
+Frame/route/code/status: `docs/design/canonical-ui/IMPLEMENTATION_MAP.md`.
 
-- Foundation: REVIEWABLE.
-- Wave A destinations: REVIEWABLE (`f13c542`) - built, reviewed, integrated,
-  re-checked in the browser, language layer finished, every API reader checked
-  against captured real payloads (`scripts/fixtures/api/`). Reviewable at
-  http://127.0.0.1:8021/next (isolated stack) until the 8011 sandbox is migrated.
-- Lane runtime :8021 (D-111.7, durable QA store): `orena-next-verify-web` and `-worker` share the named
-  volume `orena-next-verify-media` at `/lanedata` (media, reading assets, word audio/deep roots); `/rundata` is
-  tmpfs for SQLite scratch only; `ORENA_ACCOUNT_BACKBONE=on` here only. Recreate copies env by name only.
-- Wave B workspaces: REVIEWABLE (`161d917`) - reading (Reader, Check,
-  Discussion, Reading Transfer), listening (Workspace, Dictation, Shadowing,
-  React, Respond), speaking (Scripted, Compare, Attempts, Summary, Free Talk,
-  Conversation, Situation), writing (Writing, Compare Versions), review (Review,
-  Feed, From Your Errors), Orena (Home, panel, voice, on the mock), Onboarding
-  and the shared overlays. Each is one commit, independently reviewed and fixed.
-  Routes with no backend are the design's Coming soon screen
-  (IMPLEMENTATION_MAP `coming-soon`). The two Grammar screens wait for the
-  contract below.
+- Foundation/Wave A/B: REVIEWABLE; inventory in IMPLEMENTATION_MAP.md.
+- QA :8021: web uses durable PG volume `orena-next-verify-postgres` (schema0023); old
+  ephemeral PG retained, old QA records lost. Media volume `orena-next-verify-media` at
+  `/lanedata`; `/rundata` SQLite scratch only. Worker stopped. `ORENA_ACCOUNT_BACKBONE=on`
+  here only. Recreate copies env by name only. Recovery authorized 2026-10-03.
+- Wave B (`161d917`): REVIEWABLE; backend-less routes stay Coming soon,
+  Orena uses the mock; Grammar waits for its canonical runtime.
 - Agent UI side: contract v5 on the mock; Orena's entry points hide when the
   agent is absent.
-- Grammar: Grammar Lab replaces R5 (D-100; PR #66 merged at `f86a2bf`). The two
-  Grammar screens (frames 44 and 47) are built on the merged contract (`b83142d`,
-  status building: no content until the lane's 13-point fixture, its PR B, is
-  placed behind `product/grammar-source.js`; open items G-1..G-9 in
-  UI_BACKEND_GAPS); its PR A
-  patches the contract and adds the "Try it yourself" rule, and until then the
-  card never concludes the pattern was used. `/api/grammar/v1/*` waits for its
-  own architecture review.
+- Grammar Lab replaces R5 (D-100, PR#66 `f86a2bf`); screens44/47 (`b83142d`)
+  wait for canonical fixtures behind grammar-source.js. G-1..G-9: UI_BACKEND_GAPS.
+  No false pattern-used claim. Store/API waits for architecture review.
 
 ## Last verified batch
 
-2026-09-29, the D-098 batch (`5d9d64c`..`3f2cc23`), local: every node gate in
-ci.yml (114), the browser ESM graph and the memory validator pass; each learner
-change was checked in the browser on the isolated stack (en/vi/zh, both themes,
-desktop and phone touch; the Settings picker at all four rule-49 sizes). Full
-pytest on a clean export of `3f2cc23` (SQLite, CI backend): `2450 passed, 195 skipped`. The isolated stack
-mounts the checkout read-only, so a real upload cannot be stored there; the
-upload route is covered by `tests/test_media_learner_upload.py` (real WAV,
-ffprobe) instead.
+D-124 vocabulary localization step 1 (local): CC-CEDICT+Unihan vendored (cost plan P1);
+ZH imports gain pinyin/`en` meaning, ZH lookup senses, zero provider calls; focused 335 pass.
+(sense, support language) table PROPOSED only: `proposals/VOCABULARY_LOCALIZATION.md`, VL-1..5.
+S1 source admission (e74735b): READING_SOURCE_ADMISSION_CHECKPOINT.md; level/source breadth,
+enrichment/questions/fidelity open. Preserve S3 a8e7914: VOCABULARY_COLLECTION_CHECKPOINT.md. Grammar deferred.
+
+Grammar prerequisites (`0d5732c`): PR67/68 integrated, adapters verified; drafts
+unserved, no Store/API or migration. GRAMMAR_INTEGRATION_CHECKPOINT.md retains evidence.
+
+Admin REVIEWABLE: six areas, sandbox routing, imports/EN/ZH lookup (`2931823`);
+Azure/Skin (`7857d43`) local125/Node/review pass. Azure browser evidence/limits:
+AZURE_VISUAL_SKIN_BROWSER_CHECKPOINT.md. Existing EPUB evidence unchanged.
+
+S6 (`71ddcd4`): REVIEWABLE; EN/ZH rights/publish/lifecycle and390x844 evidence:
+S6_ADMIN_MEDIA_BROWSER_CHECKPOINT.md. QA archived; preserve this accepted slice.
+
+S2 (`637d0b2`, D-116): EN/ZH desktop/390x844, translation and skill returns verified;
+evidence/limits: S2_MEDIA_BASIC_BROWSER_CHECKPOINT.md. Listening `cab4773` preserved.
 
 ## DONE
 
-Design pinned and governed (D-088 - D-093); foundation at `/next`; agent
-contract v4 (D-095); copy engine fixes; Wave A destinations and Wave B
-workspaces (REVIEWABLE); the Writing request minimum per learning language.
-The D-098 and D-099 items (2026-09-29, `5d9d64c`..`b83142d`); commit list in
-`PROJECT_STATE.md` "New learner UI migration".
+Foundation/Wave A/B REVIEWABLE; history: PROJECT_STATE.md "New learner UI migration".
 
 ## IN PROGRESS
 
-- Human review of Wave A and Wave B.
+- Product completion (D-110–D-113): `ROADMAP.md` owns order; `PRODUCT_COMPLETION_PLAN.md` supplies
+  audit/slice detail. S4 (`a15d3c2`) has testable server-backed Progress/Attempts/Summary/
+  Errors; evidence and remaining fidelity gates: `docs/reviews/S4_PROGRESS_BROWSER_CHECKPOINT.md`.
+  S2 media work is preserved. Full UI/spec + Intelligence (D-112) remain required.
+- Books storage: resolved by shared :8021 volume; old Alice assets lost.
+  S8a (`b7380b1`): body/count/Admin-link fixes; evidence: S8_BOOKS_BROWSER_CHECKPOINT.md.
+  Finish EN/ZH continuity/fidelity; no full Books completion claim.
+- Human review: Wave A/B.
 - Chinese writing evaluator recall: causes and fix options in
   `ZH_WRITING_EVALUATOR_RECALL.md`; no change until the human chooses a fix.
 - H2, the declared level: `proposals/DECLARED_LEVEL_STORAGE.md`, independently
@@ -82,12 +76,14 @@ The D-098 and D-099 items (2026-09-29, `5d9d64c`..`b83142d`); commit list in
 - Chinese evaluator: fix (1) landed (`871e2b9`, contract v2.7) and the benchmark
   measures recall (`fa93601`, v2); the live run that gives (4) its numbers waits
   for the human's go (provider cost).
-- D4 (D-104/D-105): code and migrations 0017-0023 on `codex/work`, applied to :8021 only; independently reviewed (LEARNER_RECORDS_D4_IMPLEMENTATION_REVIEW.md: delta APPROVE WITH CONDITIONS, `f30044a`). `ORENA_ACCOUNT_BACKBONE` on at :8021 only; flag-on browser QA round 2 at `9a7b190`: all six flows PASS. Open for the human: delete for an imported text (design draws none), media-import bound. Before :8000: ACCOUNT_RECORD_LIMITS rev 3 (approved with conditions, not built), upload media deletion (D-055(b)), code+schema one deployment unit. Admin slices 1-4 in /next; Grammar store waits for PR #67.
+- D4 (D-104/D-105): code and migrations 0017-0023 on `codex/work`, applied to :8021 only; independently reviewed (LEARNER_RECORDS_D4_IMPLEMENTATION_REVIEW.md: delta APPROVE WITH CONDITIONS, `f30044a`). `ORENA_ACCOUNT_BACKBONE` on at :8021 only; flag-on browser QA round 2 at `9a7b190`: all six flows PASS. Open for the human: delete for an imported text (design draws none), media-import bound. Before :8000: ACCOUNT_RECORD_LIMITS rev 3 (approved with conditions, not built), upload media deletion (D-055(b)), code+schema one deployment unit. Admin slices 1-4 in /next; Grammar Store/API remains.
 
 ## PENDING
 
 Human: none for :8011 (deferred, D-102);
-PR #67 (`pattern_rule`) and #68 (fixtures) from the Grammar Lab lane.
+PR67/68 independently reviewed and integrated; canonical Grammar Store/API remains
+(D-111.4). Upstream GitHub PR state is unverified; integration is local only.
+Architecture approval is not evidence that the runtime already exists.
 
 ## BLOCKED
 
@@ -111,26 +107,40 @@ Production, preview, provider credentials, OAuth/DNS/Cloudflare, billing,
 deployment, destructive lifecycle, and new learner-owned persistence remain
 human gates. Never touch persistent volumes as cleanup.
 
-## Agent lane
-
-See `AGENT_SPEC.md` §0 (D-085).
-
 ## NEXT EXACT TASK
 
-UI lane, per D-101 as amended by D-102: D2 (shared modules out of `ui/`, gate), D3 (the matrix,
-sent once), D4 (persistence proposal with H2), E Admin, F Grammar, D7 the `MISSING` cells, G Orena,
-integration QA, then the PR `codex/work` -> `main`; :8000 is updated only after the human merges.
-Milestone A is TOOLING_READY / DEPLOYMENT_DEFERRED: :8011 is not run or migrated unless asked.
-QA runs on the lane runtime (:8021 or a local port). C after D3, when Docker is free.
+D-124 next: (2) localization sources + validation; (3) review/authorize 0025; (4) free Marian
+pivot sample. (1) read path by support language done (`product/vocabulary-meaning.js`).
+No paid provider in vocabulary. → vi open data is the human's choice (VL-2).
+
+Grammar remains deferred. Human2026-10-04 accepts Reading -> vocabulary
+enrichment -> practice on publish -> Agent; Grammar later. Review bounded S1
+source admission, then S3 vocabulary/context enrichment through existing owners.
+Source/level breadth and S7 persisted questions remain open; no new learner schema.
+
+Preserve Admin/Azure (`2931823`/`7857d43`); OpenAI operator acceptance remains.
+
+Current phase: basic functional coverage first (human instruction, 2026-10-02).
+Preserve accepted Books/Progress; do not reopen them or restart a full-app audit.
+S2 basic Listening and S6 Admin media rights/publish are REVIEWABLE; stop deepening
+those paths. My Library accepted. D-119 shared Compare and D-121 readiness repair:
+retain their checkpoints. Prior EN86/ZH75 assessment retained; fresh take/full
+fidelity/model pitch remain open: COMPARE_MODEL_BROWSER_CHECKPOINT.md.
+Preserve S6/control plane. Azure review passes; mobile unverified.
+Basic coverage first; ASR within D-111.6 caps.
+
+Follow `ROADMAP.md` and D-110..D-114 for remaining coverage, evidence and gates.
+Agent remains gated; Grammar-specific capability needs its canonical runtime.
+
+QA: :8021 only. :8011 deferred; :8000 human-gated. No auto-merge
+to main; tests/records alone do not prove public readiness.
 
 Intelligence lane: D-085 against `AGENT_CONTRACT.md` v5; merge `codex/work` forward; its merged PR
 is what switches `AGENT_LIVE` on :8011 (D-101 G).
 
 ## Grammar Lab (merged from `feature/grammar-lab`)
 
-Phase 0 of `docs/grammar_lab/SPEC.md`: an isolated, offline, file-based content
-pipeline in `grammar_lab/` (own `pyproject.toml`, own tests) and
-`docs/grammar_lab/`. It does not import app code, the app does not import it,
-and app CI does not collect its tests; no app code, router, engine, migration or
-runtime is involved. NEXT: human review of `docs/grammar_lab/PHASE0_DECISIONS.md`
-(including how lab point IDs join the R5 Concept IDs, SPEC §8); phase 1 waits.
+Offline Phase 0: `docs/grammar_lab/SPEC.md`, `grammar_lab/` (separate tests).
+DEFERRED by human2026-10-04 (D-111.4): Store migration proposal/review/rehearsal, then Store/API
+and canonical HSK/GF generation/validation. Resolve proposed revision slot against
+media metadata 0024 before promotion. Legacy R5 is reference, never a fallback.

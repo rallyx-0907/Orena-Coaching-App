@@ -10,6 +10,14 @@
    frame (`orena-script.js`: `segs`, `prevLine`, `cycleSpeed`, `modes`, `modeHint`), restated as
    pure functions over the real transcript - not its prototype timers or canned data. */
 import { wordSpans, activeWordIndex } from '../../capabilities/word-timeline.js';
+import { primaryLanguage } from '../../kit/lang.js';
+import { playbackAvailable } from '../../capabilities/media-player.js';
+export { primaryLanguage } from '../../kit/lang.js';
+
+export function transcriptState(payload) {
+  if (payload?.transcript?.segments?.length) return 'ready';
+  return payload?.asset?.processing_state === 'processing' ? 'processing' : 'unavailable';
+}
 
 /* The design's own cycle: 1x -> 0.75x -> 0.5x -> 1.25x -> 1x. */
 export const SPEEDS = Object.freeze([1, 0.75, 0.5, 1.25]);
@@ -58,10 +66,6 @@ export function metaLine(parts, sep = ' · ') {
    language against "zh", so only the primary subtag counts (an acquisition payload, unlike a stored
    catalog entry, carries the provider's tag). A provider that could not tell ("und") leaves the
    choice to the caller's fallback - the learner's own learning language - rather than a guess. */
-export function primaryLanguage(tag, fallback = 'en') {
-  const primary = String(tag || '').trim().toLowerCase().split(/[-_]/)[0];
-  return !primary || primary === 'und' ? fallback : primary;
-}
 
 function finiteOrNull(value) {
   if (value == null || value === '') return null;
@@ -90,6 +94,7 @@ export function mapLesson(payload, { levelLabel = (lv) => lv, fallbackLanguage =
     topic: catalog.topic || '',
     level: catalog.level || '',
     levelText: catalog.level ? levelLabel(catalog.level) : '',
+    sourceLevel: catalog.source_declared_level || '',
     // Number(null) is 0: an unmeasured length (a provider that reports none) stays null, never "0 min".
     durationMs: finiteOrNull(catalog.duration_ms ?? asset.duration_ms),
     excerptStartMs: finiteOrNull(catalog.excerpt_start_ms) ?? 0,
@@ -103,7 +108,7 @@ export function mapLesson(payload, { levelLabel = (lv) => lv, fallbackLanguage =
     modes: {
       follow: true, // Follow always exists - it is the room's own default state, not a catalogue gate.
       active: modes.includes('active'),
-      shadowing: modes.includes('shadowing'),
+      shadowing: transcriptState(payload) === 'ready' && playbackAvailable(payload?.playback),
       dictation: modes.includes('dictation'),
     },
     rights: catalog.source || null,
@@ -205,8 +210,18 @@ export function currentTokenIndex(segment, tokens, timeMs) {
     const span = spans[word];
     return tokens.findIndex((token) => span.start < token.end && span.end > token.start);
   }
-  return estimatedTokenIndex(tokens, (at - start) / (end - start));
+  return -1; // Segment timing cannot establish which word is being spoken.
 }
+
+export function currentTokenIndices(segment, tokens, timeMs) {
+  const spans = wordSpans(segment);
+  const index = activeWordIndex(spans, timeMs);
+  if (index < 0 || timeMs < segment.start_ms || timeMs >= segment.end_ms) return [];
+  const span = spans[index];
+  return tokens.flatMap((token, at) => span.start < token.end && span.end > token.start ? [at] : []);
+}
+
+export function hasWordTiming(segment) { return Boolean(wordSpans(segment)); }
 
 /* ---- Rows and modes ---------------------------------------------------------------------- */
 

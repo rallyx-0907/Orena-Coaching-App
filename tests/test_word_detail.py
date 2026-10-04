@@ -305,6 +305,14 @@ def test_endpoint_is_unavailable_only_when_neither_path_answers(monkeypatch) -> 
     assert body["available"] is False and body["claim"] == "word_detail_unavailable"
 
 
+def test_dictionary_first_sheet_does_not_wait_for_contextual_provider(monkeypatch) -> None:
+    _configure(monkeypatch, EN_LOOKUP)
+    monkeypatch.setattr(word_detail, "_gloss", lambda *args: pytest.fail("dictionary-first must not call AI"))
+    body = word_detail.word_detail(_request(depth="sheet", contextual=False))
+    assert body["available"] is True
+    assert body["meaningSource"] == "dictionary"
+
+
 def test_endpoint_refuses_text_that_is_not_in_the_visible_context(monkeypatch) -> None:
     _configure(monkeypatch, EN_LOOKUP)
     with pytest.raises(HTTPException) as caught:

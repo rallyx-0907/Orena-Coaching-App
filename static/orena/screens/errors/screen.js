@@ -1,4 +1,4 @@
-/* From Your Errors (frame 50, `#/from-your-errors`; D-091). Real practice-outcome evidence only
+/* From Your Errors (frame 50, `#/from-your-errors`; D-091). Real evidence only: targeted-practice outcomes AND the learner's own reviews
    (2026-09-28 human decision: Grammar Lab, not R5, owns grammar content - this screen reads no
    `/api/library/grammar*`/`/api/grammar/*` route). Each drill item is the learner's own flagged
    sentence from a targeted Writing practice attempt (`GET /api/practice-outcomes`) joined with that
@@ -20,10 +20,13 @@ import { languages } from '../../copy/index.js';
 import { langAttr } from '../../kit/lang.js';
 import { api } from '../../infrastructure/api.js';
 import { t } from './copy.js';
+import { t as writingCopy } from '../writing/copy.js';
 import {
   outcomesWithIssues,
   essayIdsOf,
   buildDrillItems,
+  buildEssayDrillItems,
+  mergeDrillItems,
   isCorrect,
   initialResults,
   recordCheck,
@@ -58,18 +61,39 @@ export default async function mountErrors(element, ctx) {
 
   const outcomesPayload = await api.practiceOutcomes(20).catch(() => null);
   if (!ctx.isCurrent()) return undefined;
+  if (outcomesPayload === null) throw new Error('writing_history_unavailable');
   const outcomes = outcomesWithIssues(outcomesPayload, 10);
   const essayIds = essayIdsOf(outcomes);
-  const essays = await Promise.all(essayIds.map((id) => api.essay(id).catch(() => null)));
+  const readEssay = id => api.essay(id).catch(error => {
+    if (error.status === 404 || error.status === 410) return null;
+    throw error;
+  });
+  const essays = await Promise.all(essayIds.map(readEssay));
   if (!ctx.isCurrent()) return undefined;
   const issuesByEssay = {};
   essayIds.forEach((id, i) => {
     issuesByEssay[id] = Array.isArray(essays[i]?.issues) ? essays[i].issues : [];
   });
-  const items = buildDrillItems(outcomes, issuesByEssay);
+  const fromOutcomes = buildDrillItems(outcomes, issuesByEssay);
+  /* The learner's own recent reviews, newest first: a review with fixes is a source of drills even when no targeted
+     practice was run on it. Only essays in the language being learned. */
+  const reviewed = await api.essays().catch(() => null);
+  if (!ctx.isCurrent()) return undefined;
+  if (reviewed === null) throw new Error('writing_history_unavailable');
+  const recent = (Array.isArray(reviewed) ? reviewed : [])
+    .filter((row) => row && row.overall != null && (!row.language_code || row.language_code === (ctx.context?.language || 'en')))
+    .slice(0, 6);
+  const recentEssays = (await Promise.all(recent.map((row) => (essays.find((e) => e && Number(e.id) === Number(row.id)) ? essays.find((e) => e && Number(e.id) === Number(row.id)) : readEssay(row.id))))).filter(Boolean);
+  if (!ctx.isCurrent()) return undefined;
+  const label = (category) => {
+    const key = `cat_${category}`;
+    return writingCopy.has?.(key) ? writingCopy(key) : category.replace(/_/g, ' ');
+  };
+  const items = mergeDrillItems(fromOutcomes, buildEssayDrillItems(recentEssays, { labelOf: label }));
+  const essayLanguage = new Map([...essays, ...recentEssays].filter(Boolean).map((e) => [Number(e.id), e.language_code]));
   /* The learner's Writing is in the language they are learning; each sentence is marked with the
      language its essay declares (`GET /api/essays/{id}` `language_code`), else the active one. */
-  const languageOf = (item) => langAttr(essays[essayIds.indexOf(item.essayId)]?.language_code || ctx.context?.language || 'en');
+  const languageOf = (item) => langAttr(essayLanguage.get(item.essayId) || item.language || ctx.context?.language || 'en');
 
   const state = { index: 0, text: items[0]?.bad || '', result: null, wrongBefore: 0, results: initialResults(items) };
 

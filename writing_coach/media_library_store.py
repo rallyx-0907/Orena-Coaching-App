@@ -61,6 +61,18 @@ class MediaLibraryEntry:
     # before this field existed holds rows that were, by being in it, published
     # - which is why the default is the only honest one.
     status: str = "published"
+    # Where the transcript pipeline is for this item (stage, reason it is held,
+    # attempts, checks, spend). `None` for an item that never went through it.
+    # Kept apart from `lesson` on purpose: `lesson is not None` already means
+    # "has a usable transcript" to every reader of this index.
+    processing: Mapping[str, Any] | None = None
+
+
+# `processing` is a transcript still being made; `review` is one that is held for a
+# person (a failed check, unknown rights, a provider failure, a spending cap). Neither
+# is ever shown to a learner who is not the owner of a personal import.
+HELD_STATES = frozenset({"processing", "review"})
+STATES = frozenset({"published", "unpublished", "archived"}) | HELD_STATES
 
 
 class MediaIndexUnavailable(RuntimeError):
@@ -99,7 +111,7 @@ LEGACY_OWNER_KEY = "legacy"
 
 
 def owner_token(user_key: str) -> str:
-    return hashlib.sha256(f"orena-media-owner:{user_key}".encode("utf-8")).hexdigest()[:32]
+    return hashlib.sha256(f"orena-media-owner:{user_key}".encode()).hexdigest()[:32]
 
 
 def visible_to(entry: MediaLibraryEntry, *, user_key: str, language: str) -> bool:
@@ -110,7 +122,7 @@ def visible_to(entry: MediaLibraryEntry, *, user_key: str, language: str) -> boo
     refusal does not reveal that the identity exists.
     """
     if entry.library != "personal":
-        return True
+        return entry.status == "published"
     owner = entry.source.get(OWNER_FIELD, "")
     expected = owner_token(user_key)
     if owner:
@@ -141,8 +153,10 @@ def validate_entry(entry: MediaLibraryEntry) -> MediaLibraryEntry:
     # the shelf for now, `archived` is retired. None of them is a deletion -
     # the bytes, the provenance and the transcript survive all three, so a
     # decision can be taken back.
-    if entry.status not in {"published", "unpublished", "archived"}:
+    if entry.status not in STATES:
         raise ValueError("status is invalid")
+    if entry.processing is not None and not isinstance(entry.processing, Mapping):
+        raise ValueError("processing is invalid")
     if entry.language not in {"en", "zh"}:
         raise ValueError("language is invalid")
     if entry.level and entry.level not in (EN_LEVELS if entry.language == "en" else ZH_LEVELS):
@@ -278,4 +292,15 @@ class FileMediaLibraryStore:
                 return False
             del entries[media_id]
             self._write(entries)
-        return True
+            return True
+
+    def update_if_present(self, media_id: str, change: Any) -> MediaLibraryEntry | None:
+        """A processing job may change a live entry, never resurrect a deleted one."""
+        with self._writer:
+            entries = self._read_for_write()
+            if media_id not in entries:
+                return None
+            entry = validate_entry(change(entries[media_id]))
+            entries[media_id] = entry
+            self._write(entries)
+            return entry

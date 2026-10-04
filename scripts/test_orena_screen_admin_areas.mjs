@@ -73,6 +73,12 @@ const source = (extra = {}) => ({ id: 'SRC', slug: 'gutenberg', name: 'Gutenberg
 const job = (extra = {}) => ({ id: 'J', job_type: 'ingest_text', status: 'failed', stage: 'fetching', attempt: 1, max_attempts: 3, last_error_code: 'fetch_failed', last_error: 'boom', result_kind: '', result_article_id: '', submitted_by: 'admin', created_at: NOW, finished_at: null, ...extra });
 
 fixtureFor = (method, url) => {
+  if (url === '/api/admin/console/overview') return ok({ accounts: { available: true, total: 1 }, activity: { available: true, active_7d: 1 }, content: { published: 2 }, attention: [] });
+  if (url === '/api/admin/console/users/summary') return ok({ available: true, accounts: { available: true, total: 1 }, activity: { available: true, active_7d: 1 } });
+  if (url === '/api/admin/console/users') return ok({ available: true, items: [{ id: 'U', display_name: 'Test user', email_masked: 'u***@example.org', languages: ['en', 'zh'] }], total: 1 });
+  if (url === '/api/admin/console/users/U') return ok({ available: true, id: 'U', display_name: 'Test user', profiles: [], activity: [] });
+  if (url === '/api/admin/console/runtime') return ok({ ai: { learner_runtime_mode: 'legacy', credential_store: 'configured' }, stores: {} });
+  if (url === '/api/admin/ai/operations') return ok({ has_data: false, recent: [], by_capability: [] });
   const ok = (body) => ({ body });
   if (url === '/api/admin/reading/operations') return ok({ queue: { failed: 1, completed: 2 }, articles: { published: 1, needs_review: 1, rejected: 1, archived: 1 }, published: 1, recent: [] });
   if (url === '/api/admin/reading/sources') return ok({ items: [source(), source({ id: 'SRC2', name: 'Draft source', state: 'needs_review' })] });
@@ -125,6 +131,7 @@ assert.ok(!('can_republish' in text) && !('can_adapt' in text) && !('attribution
 assert.deepEqual(reading.submissionFrom({ mode: 'url', url: 'https://x.org/a', rights: 'allowed', adapt: 'denied', attribution: 'not_required' }), { kind: 'url', url: 'https://x.org/a', can_republish: true, can_adapt: false, attribution_required: false });
 assert.equal(reading.submissionFrom({ mode: 'url', url: ' https://x.org/a ', rights: 'allowed' }).can_republish, true);
 assert.equal(reading.submissionFrom({ mode: 'url', url: 'https://x.org/a', rights: 'denied' }).can_republish, false);
+assert.deepEqual(reading.submissionFrom({ mode: 'text', body: 'Owned text', registeredSource: 'registered-id' }), { kind: 'text', source_id: 'registered-id', text: 'Owned text', title: '' });
 assert.equal(reading.submissionProblem({ kind: 'url', url: 'nope' }), 'addErrUrl');
 assert.equal(reading.submissionProblem({ kind: 'text', text: '  ' }), 'addErrBody');
 assert.equal(reading.submissionProblem({ kind: 'file' }, null), 'addErrFile');
@@ -143,7 +150,7 @@ assert.equal(reading.questionsEditable(at('needs_review')), true);
 assert.deepEqual(reading.setProgress(set()), { total: 2, approved: 1, rejected: 0, undecided: 1 });
 assert.equal(reading.setIsStale(at('needs_review', { anchored: false })), true);
 assert.equal(reading.learnerAddress('reading', 'abc'), '#/content/article%3Aabc');
-assert.equal(reading.learnerAddress('book', 'b1', 'c1'), '#/content/book%3Ab1%2Fc1');
+assert.equal(reading.learnerAddress('book', 'b1', 'c1'), '#/content/book%3Ab1%3Ac1');
 assert.equal(match(reading.learnerAddress('reading', 'abc')).route.id, 'content', 'the learner link is an address the new UI serves');
 /* Imports. */
 assert.deepEqual(imports.vocabularyProblems({ files: [], metadata: {} }).map((p) => p.key), ['validationFiles', 'validationTitle']);
@@ -165,7 +172,11 @@ assert.equal(content.COLLECTION_STATES.restore, 'unpublished', 'restoring never 
 assert.equal(content.canPublish({ attested: false }), false);
 assert.deepEqual(content.publishChecks({ rights: 'licensed', completeness: 'complete', attested: true }).map((c) => c.pass), [true, true, true]);
 assert.equal(content.publishChecks({ rights: 'restricted', completeness: 'partial', attested: false })[0].level, 'strong');
-assert.equal(content.learnerLink(record('book'), { book: { chapters: [{ id: 'C1' }] } }), '#/content/book%3AB%2FC1');
+const bookLearnerLink = content.learnerLink(record('book'), { book: { chapters: [{ id: 'C1' }] } });
+const { parseContentId } = await import('../static/orena/screens/content/model.js');
+assert.deepEqual(parseContentId(decodeURIComponent(bookLearnerLink.slice('#/content/'.length))),
+  { kind: 'book', id: 'B', chapterId: 'C1' }, 'Admin book link must resolve through the actual learner route parser');
+assert.equal(bookLearnerLink, '#/content/book%3AB%3AC1');
 assert.equal(content.learnerLink(record('media', { status: 'archived' }), {}), '', 'an unpublished item has no learner link');
 /* Tray: the memory and the clock. */
 tray.clear();
@@ -279,7 +290,7 @@ const guarded = [...matrix.matchAll(/\("(GET|POST|PUT|DELETE)", "(\/api\/[^"]+)"
 assert.ok(guarded.length > 40);
 const isGuarded = (request) => guarded.some((g) => g.method === request.method && g.pattern.test(request.path));
 const screen = (await import('../static/orena/screens/admin/screen.js')).default;
-const paramsFor = { adminArticle: 'A', adminSet: 'S', adminSource: 'SRC', adminBook: 'B', adminMediaItem: 'M', adminCollection: 'V', adminJob: 'J' };
+const paramsFor = { adminUser: 'U', adminArticle: 'A', adminSet: 'S', adminSource: 'SRC', adminBook: 'B', adminMediaItem: 'M', adminCollection: 'V', adminJob: 'J' };
 for (const routeId of model.ADMIN_ROUTE_IDS.filter((id) => id !== 'admin' && model.areaOf(id) !== 'ai')) {
   requests.length = 0;
   const element = new Fake();
@@ -289,6 +300,11 @@ for (const routeId of model.ADMIN_ROUTE_IDS.filter((id) => id !== 'admin' && mod
   assert.equal(typeof cleanup, 'function', `${routeId}: an admin gets the page`);
   const page = element.querySelector('[data-part="page"]').innerHTML;
   assert.ok(page.includes('class="a-page'), `${routeId}: the page is drawn (${page.slice(0, 120)})`);
+  if (routeId === 'adminAdd') {
+    assert.ok(requests.some((request) => request.path === '/api/admin/reading/sources'));
+    assert.match(page, /option value="SRC"/);
+    assert.doesNotMatch(page, /option value="SRC2"/);
+  }
   for (const request of requests) {
     assert.ok(/^\/api\/(admin|media\/admin)\//.test(request.path), `${routeId}: ${request.path} is an admin route`);
     assert.ok(isGuarded(request), `${routeId}: ${request.method} ${request.path} is in tests/test_admin_authorization_matrix.py (anonymous 401, learner 403)`);

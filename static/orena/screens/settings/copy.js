@@ -5,6 +5,7 @@
 import { defineCopy } from '../../copy/index.js';
 
 const KEYS = [
+  'paletteLabel', 'paletteSub', 'palette_indigo', 'palette_orchid', 'palette_blue', 'palette_rose',
   'tabLanguages', 'tabLearning', 'tabReview', 'tabNotifications', 'tabPlan',
   'targetLabel', 'targetSub', 'supportLabel', 'supportSub', 'interfaceLabel', 'interfaceSub',
   'themeLabel', 'themeSub', 'themeLight', 'themeDark', 'themeSystem',
@@ -25,6 +26,7 @@ const KEYS = [
 export const t = defineCopy('settings', {
   layers: Object.fromEntries(KEYS.map((key) => [key, 'interface'])),
   en: {
+    paletteLabel: 'Accent', paletteSub: 'Colour for actions and selection', palette_indigo: 'Indigo', palette_orchid: 'Orchid', palette_blue: 'Blue', palette_rose: 'Rose',
     tabLanguages: 'Languages', tabLearning: 'Learning', tabReview: 'Review',
     tabNotifications: 'Notifications', tabPlan: 'Plan & privacy',
     targetLabel: 'Target language', targetSub: "What you're learning",
@@ -60,6 +62,7 @@ export const t = defineCopy('settings', {
     conflictError: 'Someone changed this. Reopen Settings.',
   },
   vi: {
+    paletteLabel: 'Màu nhấn', paletteSub: 'Màu thao tác và lựa chọn', palette_indigo: 'Chàm', palette_orchid: 'Tím lan', palette_blue: 'Xanh', palette_rose: 'Hồng',
     tabLanguages: 'Ngôn ngữ', tabLearning: 'Học tập', tabReview: 'Ôn tập',
     tabNotifications: 'Thông báo', tabPlan: 'Gói & quyền riêng tư',
     targetLabel: 'Ngôn ngữ đang học', targetSub: 'Ngôn ngữ bạn đang học',
@@ -95,6 +98,7 @@ export const t = defineCopy('settings', {
     conflictError: 'Có người vừa thay đổi mục này. Hãy mở lại Cài đặt.',
   },
   zh: {
+    paletteLabel: '强调色', paletteSub: '操作和选中状态的颜色', palette_indigo: '靛蓝', palette_orchid: '兰紫', palette_blue: '蓝色', palette_rose: '玫瑰',
     tabLanguages: '语言', tabLearning: '学习', tabReview: '复习',
     tabNotifications: '通知', tabPlan: '套餐与隐私',
     targetLabel: '学习语言', targetSub: '你正在学习的语言',

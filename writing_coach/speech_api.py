@@ -44,6 +44,7 @@ SINCE_MAX_DAYS = 7
 router = APIRouter(prefix="/api/speech", tags=["speech"])
 _speech_asr_provider: SpeechAsrProvider | None = None
 _speech_pronunciation_provider: SpeechPronunciationProvider | None = None
+_speech_pronunciation_resolver: Any = None
 _speaking_attempt_repository: Any = None
 
 
@@ -52,9 +53,10 @@ def configure_speech_asr(provider: SpeechAsrProvider | None) -> None:
     _speech_asr_provider = provider
 
 
-def configure_speech_pronunciation(provider: SpeechPronunciationProvider | None) -> None:
-    global _speech_pronunciation_provider
+def configure_speech_pronunciation(provider: SpeechPronunciationProvider | None, *, resolver: Any = None) -> None:
+    global _speech_pronunciation_provider, _speech_pronunciation_resolver
     _speech_pronunciation_provider = provider
+    _speech_pronunciation_resolver = resolver
 
 
 def configure_speaking_attempt_repository(repository: Any) -> None:
@@ -74,13 +76,14 @@ def _provider() -> SpeechAsrProvider:
 
 
 def _pronunciation_provider() -> SpeechPronunciationProvider:
-    if _speech_pronunciation_provider is None:
+    provider = _speech_pronunciation_resolver() if _speech_pronunciation_resolver else _speech_pronunciation_provider
+    if provider is None:
         raise orena_http_error(
             503,
             "pronunciation_unconfigured",
             "Pronunciation assessment is not configured.",
         )
-    return _speech_pronunciation_provider
+    return provider
 
 
 _UPLOAD_READ_CHUNK_BYTES = 1024 * 1024
@@ -309,7 +312,8 @@ async def _read_upload_limited(file: UploadFile, *, max_bytes: int) -> bytes:
 def speech_status() -> dict[str, Any]:
     # Pronunciation is its own capability: a room that scores a line asks this
     # before inviting a take. Which provider answers stays infrastructure.
-    pronunciation = {"configured": _speech_pronunciation_provider is not None}
+    current_pronunciation = _speech_pronunciation_resolver() if _speech_pronunciation_resolver else _speech_pronunciation_provider
+    pronunciation = {"configured": current_pronunciation is not None}
     provider = _speech_asr_provider
     if provider is None:
         return {"configured": False, "provider": None, "model": None, "pronunciation": pronunciation}

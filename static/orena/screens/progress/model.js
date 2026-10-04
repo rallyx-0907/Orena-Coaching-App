@@ -1,23 +1,6 @@
-/* Progress screen (D-091): pure data mapping, DOM-free so scripts/test_orena_screen_progress.mjs
-   can exercise it without a browser. screen.js fetches, this module shapes, screen.js paints.
-
-   Backend reality this maps to real numbers, never invents (Design Contract rule 40):
-   - GET /api/learner-summary?window= (writing_coach/learner_summary.py) never claims a trend
-     (every domain's growth.status is "unavailable" - no domain has a comparable measurement
-     today) and tracks no daily time, no streak, no per-skill proficiency percentage. Overview's
-     hero time/streak, the Skills rows' percentage+delta, the whole Trends tab and the whole
-     Knowing->Using funnel have no real source anywhere in this codebase (confirmed by reading
-     writing_coach/learner_summary.py and grepping for study_time/streak/minutes_studied - no
-     hits). Each renders its rule-40 zero or an honest empty state; see the surface report.
-   - GET /api/library/vocabulary/summary, read through product/rank.js, is the one real ladder
-     position (rank/band/rankName) and real progress-to-next (mastered words vs. nextRankWords) -
-     the design's "gems" is relabelled to real "words mastered", never invented.
-   - Evidence/History reuse essays()/readingEvidence()/speakingAttempts() (per the brief) plus
-     learner-summary's own listening observations (dated, real) to cover the one domain those
-     three do not. GET /api/practice-outcomes is NOT a listening/dictation feed (confirmed by
-     reading writing_coach/becoming_outcomes.py: it is grammar re-practice on an essay) - unlike
-     ui/history.js, this module files it under writing rather than mislabelling it dictation. */
+/* Progress maps existing server evidence into the pinned six-tab surface. Activity and streak use learner-activity; latest verified checks/reviews use learner-summary and speech attempts. Rank uses the vocabulary ladder. Time, comparable trends and unmeasured transfer stages remain explicitly unavailable. */
 import { withinWindow, sortByRecency, groupByDay } from '../../product/activity-log.js';
+import { attemptRow } from '../../product/speaking-history.js';
 
 /* Six tabs (Overview, Trends, Knowing -> Using, Evidence, Rank, History), the design's own `pgTab`
    values (orena-script.js `nav()`), as local UI state on one route - not six routes. Profile's own
@@ -40,25 +23,76 @@ export const SKILL_ROWS = [
   { key: 'writing', domain: 'writing' },
 ];
 
-/* No proficiency-percentage or trend-delta measure exists for any domain (learner_summary's
-   growth.status is always "unavailable") - only whether the domain has recorded any activity at
-   all in the window, which is real. pct/delta are always the rule-40 zero. */
-export function buildSkillRows(summary) {
+const isNumber = (value) => typeof value === 'number' && Number.isFinite(value);
+const unverifiedProducer = (producer) => !producer || /stub|synthetic|unverified/i.test(String(producer));
+
+/* The latest REAL, server-verified measure of one domain on a 0-100 scale, or null: the figure the Skills bar shows.
+   It is a latest value, never a trend (every domain's `growth.status` is "unavailable": no comparable measure exists),
+   and a domain with nothing verified has no figure at all (D-103.4, D-108.3).
+   - writing: the newest scored review (`overall`);
+   - listening: no verified score; client-reported Dictation accuracy is activity only;
+   - reading: the newest check, correct / total;
+   - speaking: the newest take whose pronunciation was measured by the provider (a stub is not a measure);
+   - vocabulary: no per-skill score exists. */
+export function latestMeasure(domain, observations) {
+  const list = Array.isArray(observations) ? observations : [];
+  for (const o of list) {
+    if (o?.synthetic) continue;
+    if (domain === 'writing' && o.measure === 'overall' && isNumber(o.value)) return Math.round(o.value);
+    // Dictation accuracy is reported by the browser, not recomputed/verified by the server.
+    // Keep the recorded activity, but never turn that value into a proficiency measure.
+    if (domain === 'reading' && o.measure === 'comprehension_matched' && Number(o.value?.total) > 0) {
+      return Math.round((Number(o.value.correct || 0) / Number(o.value.total)) * 100);
+    }
+    if (domain === 'speaking' && o.measure === 'speaking_dimensions' && isNumber(o.value?.pronunciation) && !unverifiedProducer(o.producer?.pronunciation)) {
+      return Math.round(o.value.pronunciation);
+    }
+  }
+  return null;
+}
+
+/* Per skill: the real recorded activity in the window (`activityCount`) and the latest verified measure (`score`,
+   null when there is none). `pct` is the bar - the score, else 0 - and `delta` stays null: no trend is measured. */
+export function buildSkillRows(summary, speakingAttempts = []) {
   const domains = summary && typeof summary === 'object' ? summary.domains || {} : {};
   return SKILL_ROWS.map(({ key, domain }) => {
     const d = domains[domain];
     const activity = d && d.activity ? d.activity : null;
     const activityCount = activity ? Number(activity.count || 0) + Number(activity.undated || 0) : 0;
-    return { key, domain, activityCount, hasActivity: activityCount > 0, pct: 0, delta: null };
+    const verifiedSpeaking = domain === 'speaking' ? speakingAttempts.map(attemptRow).sort((a, b) => b.at - a.at).find(row => row.overall != null) : null;
+    const score = verifiedSpeaking?.overall ?? latestMeasure(domain, d?.observations);
+    const countLabel = `${activityCount}${activity?.countKind === 'at_least' ? '+' : ''}`;
+    return { key, domain, activityCount, countLabel, hasActivity: activityCount > 0, score, pct: score ?? 0, delta: null };
   });
 }
 
-/* Recognized / Recalled / Used / Transferred / Fast retrieval (P3, ORENA_DESIGN_SPEC.md
-   §22/§996-3009). No owner in this codebase computes any of the five - not a partial measure,
-   zero. Kept as a function (not a constant) so a future real source has one place to plug in. */
+/* Recognized / Recalled / Used / Transferred / Fast retrieval (P3, ORENA_DESIGN_SPEC.md §22). Only "Recalled" has a
+   recorded source: the learner's successful vocabulary recalls (`language` domain, `successful_recalls_all_time`). The
+   other four have no owner anywhere, so their count is null - drawn as a dash, not as a zero that looks measured. */
 export const KU_STAGE_KEYS = ['recognized', 'recalled', 'used', 'transferred', 'fastRetrieval'];
-export function buildKuStages() {
-  return KU_STAGE_KEYS.map((key) => ({ key, count: 0 }));
+export function buildKuStages(summary) {
+  const recalls = (summary?.domains?.language?.observations || []).find((o) => o?.measure === 'successful_recalls_all_time' && isNumber(o.value));
+  return KU_STAGE_KEYS.map((key) => {
+    const count = key === 'recalled' && recalls ? Math.round(recalls.value) : null;
+    const bounded = summary?.domains?.language?.activity?.countKind === 'at_least';
+    return { key, count, countLabel: count == null ? null : `${count}${bounded ? '+' : ''}` };
+  });
+}
+
+/* The seven days of this week as the account recorded them (`GET /api/learner-activity`): a day with recorded
+   activity or not - the only per-day fact that exists; no minutes. */
+export function weekStrip(activity) {
+  const days = Array.isArray(activity?.week?.days) ? activity.week.days : [];
+  return days.map((day) => ({ date: day.date, active: Boolean(day.active), future: Boolean(day.future) }));
+}
+
+/* The story card's real figures: the streak, the days active this week, and what each skill recorded in the window. */
+export function storyFacts(activity, skills) {
+  return {
+    streak: Number.isFinite(activity?.streak?.days) ? activity.streak.days : null,
+    activeDays: Number.isFinite(activity?.week?.done_days) ? activity.week.done_days : null,
+    counts: (skills || []).filter((row) => row.hasActivity).map((row) => ({ key: row.key, count: row.countLabel ?? row.activityCount })),
+  };
 }
 
 /* product/rank.js's own shape, re-exposed with the "words to next rank" number the design's
@@ -154,8 +188,10 @@ export function buildSpeakingEvidence(speaking) {
     at: a.created_at || null,
     domain: 'speaking',
     assetId: a.asset_id || null,
+    segmentId: a.segment_id || null,
     responseText: clip(a.transcript_text),
-    score: roundOrNull(a?.dimensions?.pronunciation),
+    // Only a server-verified score is shown (D-108.3): a stub-measured attempt is listed with no figure.
+    score: attemptRow(a).overall,
   }));
 }
 
@@ -168,13 +204,25 @@ export function buildListeningEvidence(summary) {
     id: `listening:${o.ref?.id || index}`,
     at: o.observedAt || null,
     domain: 'listening',
-    score: roundOrNull(o.value),
+    score: null,
+    assetId: String(o.ref?.id || '').split('#')[0] || null,
+    segmentId: String(o.ref?.id || '').split('#').slice(1).join('#') || null,
     assisted: Boolean(o.assisted),
   }));
 }
 
 export function mergeEvidence({ writing = [], reading = [], speaking = [], listening = [] } = {}) {
   return sortByRecency([...writing, ...reading, ...speaking, ...listening]);
+}
+
+/* History keeps the attempt. Only the current, accessible catalogue can provide its source route. */
+export function resolveMediaEvidence(items, library) {
+  const lessons = Array.isArray(library?.items) ? library.items : [];
+  return items.map((item) => {
+    if (!['speaking', 'listening'].includes(item.domain)) return item;
+    const source = lessons.find((lesson) => lesson.media_object_id === item.assetId);
+    return { ...item, lessonId: source?.lesson_id || null };
+  });
 }
 
 /* 'All' | 'listening' | 'speaking' | 'review' | 'reading' | 'writing' (the design's own evFilters

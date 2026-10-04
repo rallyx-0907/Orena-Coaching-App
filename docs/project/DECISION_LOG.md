@@ -3900,3 +3900,183 @@ Orena reaches a complete language-learning product with real content, usable imm
 9. **Agent.** Grammar does not block the whole Agent. The provider gate can open once the core content journeys
    and Progress/return state work correctly. Grammar-specific Agent capability turns on after the Grammar
    API/content is ready.
+## D-112 — Product completion requires the full UI/flow inventory and integrated Intelligence
+
+2026-10-02, explicit human instruction. The accepted handoff is preparation, not delivery.
+Every important element/action/state/transition in the current new Orena learner and Admin spec
+must work in the browser or show an explicitly truthful unavailable state. Completion includes
+Orena Intelligence, its existing reconciliation work, and Orena Agent together: real learner
+context/evidence, recommendations, Today/Practice routing, From Your Errors, targeted practice,
+WHY/HOW and Progress/contextual explanations. They reuse existing learner-data authority;
+account/language scope and deleted-source boundaries hold. No invented learner history, scores,
+weaknesses or fake personalization. General/unavailable states are honest fallbacks, not evidence
+of completed personalization. Desktop/mobile and EN/ZH browser journeys are required after each
+slice. A substantial real validated EN/ZH content library is required before public release.
+Truthful Progress → Books learner verification → transcript-backed Media remain the next slices,
+not the complete program. Paid-provider/public-deployment gates are unchanged.
+
+## D-113 — Reconcile current execution authority with Product Completion
+
+2026-10-02, explicit human instruction. ROADMAP owns the current coherent content-first
+Product Completion program; R21/mobile-first execution and separate Writing → Speaking →
+Reading → Listening public-release sequencing are historical, explicitly superseded as current
+instructions. Native remains frozen. Preserve historical decisions and evidence unchanged.
+The Product North Star, content model and pinned UI/Design Contract keep their existing domains;
+PROJECT_MEMORY routes precedence, machine state records verified truth, handoff active position,
+and ORENA_STATUS capability state. No additional product-authority document is created.
+Public readiness requires the new UI as the actual product, full connected learner/Admin journeys,
+integrated Intelligence + Agent, truthful evidence and substantial real EN/ZH content. Individual
+skill/backend/test completion is insufficient. D-110–D-112 decisions remain settled. Continue
+valid unfinished implementation immediately after reconciliation, using actual browser evidence.
+
+
+## D-114 - Basic whole-product coverage before deep refinement
+
+2026-10-02, explicit human instruction. Continue preserved Listening/Media on codex/work;
+do not reopen accepted Books/Progress or restart a full-app audit. Complete normal
+browser-usable EN/ZH Listening with real imports/transcripts and its existing connected
+practice/context paths, truthful unavailable states, then move to the next major basic gap.
+Complete basic functional coverage of the full approved learner/Admin UI before deep
+fidelity, cross-device completeness, edge cases, performance or infrastructure refinement.
+Data safety, ownership/security and normal journey blockers still take priority. This
+supersedes stale NEXT instructions to deepen Books/Progress, without rewriting their evidence.
+
+## D-115 - Listening support meaning and visible AI processing
+
+2026-10-02, explicit human instruction following the B0p5SdkBydU import report.
+Support-language translation is a core Listening journey, not optional enrichment
+that can be declared complete while missing. A wait exceeding 2-3 seconds needs
+a visible processing state. When source transcript/translation is absent and a
+paid service is required, disclose Orena's AI processing and resource use.
+Disclosures must reflect real processing stages/provenance; cached/editorial,
+same-language and local-provider paths must not falsely claim a paid API action.
+Orena Agent/Intelligence activation and existing provider/budget gates remain unchanged.
+
+## D-116 - Listening correction and application-wide truthful loading
+
+2026-10-02, explicit human correction. Supersedes D-115's user-visible paid-service
+disclosure wording only: say Orena AI is processing; never mention paid APIs in
+the learner wait screen. Provider/budget gates remain in force. Apply visible
+loading and a progress bar across the app for waits beyond 2-3 seconds; known
+stages show actual step progress, unknown duration stays indeterminate, never
+invented percent/time. Dictionary meaning, pronunciation and Chinese stroke
+support belong to lookup. Word highlighting requires genuine word timestamps;
+segment timing is not word evidence. Practice handoffs reuse scoped media and
+support meaning, and long learning text must fit/wrap within its workspace.
+
+## D-117 - Admin reconciliation under nonpublic Product Completion
+
+2026-10-03, explicit human instruction. Preserve completed admin/control-center
+credential security and capability configuration. Missing sandbox encryption key
+is provisioning; LEGACY is deferred activation, not missing UI implementation.
+Reevaluate historical activation holds against operating the current nonpublic
+Product Completion runtime; they must not automatically obstruct supported Admin
+journeys. This does not authorize production/public routing or credential exposure.
+Admin completion requires actual operator journeys in all six approved areas;
+unsupported controls must be unavailable. Stop deepening basic-complete areas
+and return to the remaining basic app gaps; hardening follows broad coverage.
+
+## D-118 - Azure Admin scope and approved Visual Skin supplements
+
+2026-10-03, explicit human direction: complete both Azure Speech and Azure
+OpenAI configuration/runtime using existing Admin security and supported domain
+adapters. This does not activate production/public routing or reserved speech
+capability pickers.
+
+The supplied Visual Skin EN (requested as “Orena Visual Skin (2).html”) and ZH
+exports own visual language, palette/accent and light/dark treatment. Existing
+screen-specific canonical prototypes retain composition/layout/interaction.
+ZH keeps product parity with its typography/content treatment. Outdated skin
+logos, marks, icons and artwork are excluded; approved brand assets always win.
+Update the existing Design Contract, never a competing authority document.
+
+## D-119 - One media Shadowing / Pronunciation learning flow
+
+2026-10-03, explicit human instruction supersedes the separate simultaneous
+Shadowing interaction: usable transcript-backed video/media offers Listen and
+Shadowing / Pronunciation. Practice selects a real segment, hears its source
+model, records, receives assessment, compares and retries in one shared runtime.
+It is not restricted to a seeded sentence or separate Speaking catalogue.
+Old Shadowing/Pronunciation links preserve the chosen segment and use this runtime;
+Listening return preserves that segment. Unsupported transcript, timing or pitch
+remains truthful. Composition reuses canonical Pronunciation/Compare components;
+Visual Skin EN/ZH owns treatment, approved brand remains unchanged.
+
+## D-120 - Original media voice remains the pronunciation model
+
+2026-10-03, explicit human decision: media Shadowing / Pronunciation uses only
+the original video voice. Do not replace an unusable source excerpt with generated
+speech or present synthetic timing/pitch as original evidence. A line that cannot
+be prepared has a truthful learner-facing state and another-line/retry action.
+
+## D-121 - Content readiness precedes learning; reusable source work is materialized once
+
+2026-10-03, explicit human instruction repairing the imported-media Shadowing
+regression. Import/preparation happens at the content boundary; learning happens
+after readiness. Required source artifacts use stable content/revision/kind/
+language/config identity and existing storage/execution owners, are materialized
+once and reused across capabilities and returns. Navigation cannot acquire,
+transcribe, translate, synthesize or assess the source again. No blanket provider
+fan-out during import. Canonical original segment playback is Shadowing's model;
+separate segment audio is prepared only when genuinely required, before admission.
+New learner recordings/responses/questions remain legitimate new compute.
+
+Content Architecture §7.1 and Content Execution Architecture §3 own the contract;
+Design Contract carries only the workspace consequence. Shared Media Learning
+remains the media owner. This supersedes D-120's source-preparation retry inside
+learning, while preserving its original-voice rule, rights/access gates and truthful
+unavailable optional measurements. It authorizes no new schema or retention policy.
+
+
+## D-122 - Pronunciation chooses content; phone web defines the future native reference
+
+2026-10-04, explicit human correction: generic Pronunciation entry offers content
+choice rather than silently assigning the first catalogue item. Reuse Discover's
+approved cards/search/filter/import patterns with practice intent; selecting or
+changing media returns directly to shared Shadowing / Pronunciation, preserving
+the segment when the same source is chosen. Authored sentence lessons remain
+addressable; contextual recommendations and resume links keep their named source.
+
+Phone web is the review reference for future native layout and learning flow.
+The selected media and line are clear; the sentence/readings/meaning own the main
+space, with balanced controls and Hear/Record in view. The original embedded
+video is revealed while playing on phones, without replacing or preparing it.
+Initial positioning never autoplays. Existing canonical components and semantic
+tokens remain the design vocabulary. Native remains frozen; this changes neither
+Shared Media Learning nor D-121's preparation/readiness boundary. Human product
+approval still follows browser review.
+
+## D-123 - Listening practice separates comprehension and Dictation
+
+2026-10-04, explicit human correction and confirmed grouping: the Listen group
+offers Listening comprehension (Nghe hiểu) and Dictation (Chép chính tả), each
+with content choice. Speaking has one Pronunciation entry, whose media practice
+is shared Shadowing; remove duplicate cards. Canonical Follow remains the media
+exploration workspace, not a second pronunciation entry.
+
+Comprehension listens to original media, answers admitted source-bound questions,
+then shows checked answers and evidence. Persist reusable question derivatives
+through the existing catalog/shared-content owner before offering this mode;
+never generate them on entry. Questionless imports retain other ready modes.
+This is not a claim of licensed TOEIC exam content. D-121 readiness and shared
+media identity remain binding. Session results add no learner persistence or
+mastery model. Native remains frozen; product approval requires human review.
+
+## D-124 - Vocabulary is localization of one sense, not AI enrichment
+
+2026-10-04, explicit human instruction (two messages, replacing a rejected proposal to batch
+`learner_dictionary` over every vocabulary import). Vocabulary is canonical sense → meaning in
+the learner's support language → card/SRS. A sense exists once; localized meanings are
+separate reusable records keyed by (sense, support language); `meaning_vi` / `translation_vi`
+is one localization, never the meaning model. Adding a support language is "add a
+localization source, materialize glosses", not a product-code change, and duplicates no corpus.
+Lifecycle: import → normalize/sense identity → localize → validate → persist → publish →
+render; learner use after publication is read-only and costs zero provider tokens. Sources are
+deterministic/open lexical data first, then free/offline translation infrastructure where
+direct bilingual data is missing; no paid model in ingestion, localization, publishing,
+opening, review or SRS. No decorative generated card content. Contextual AI explanation stays a
+separate learner-requested capability. This applies the cost plan's rule 1 and implements its P1
+(CC-CEDICT + Unihan vendored, CC BY-SA 4.0 / Unicode licence, named in data provenance;
+visible learner attribution is an open pre-release gate). Schema:
+`proposals/VOCABULARY_LOCALIZATION.md`; its table needs independent review and authorization
+before promotion. Native frozen; product approval still follows browser review.

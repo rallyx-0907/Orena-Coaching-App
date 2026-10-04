@@ -40,17 +40,17 @@
     "expected_development_branch": "codex/work",
     "lane": "unified_baseline_and_ui_lane"
   },
-  "last_verified_application_commit": "161d9175795d7c6bc798c8078fefdb4528aa5efc",
-  "last_verified_batch": "new_learner_ui_wave_a_destinations_and_wave_b_workspaces_local_verification",
+  "last_verified_application_commit": "e74735b615bf37c3f44c75e86e6466bc14b38dd3",
+  "last_verified_batch": "vocabulary_localization_cc_cedict_step1",
   "current_program_stage": {
-    "id": "R21",
-    "name": "Mobile Release Readiness",
-    "status": "human_gate"
+    "id": "ORENA_PRODUCT_COMPLETION",
+    "name": "Coherent content-first web product completion",
+    "status": "in_progress"
   },
   "current_primary_workstream": {
-    "id": "new_learner_ui_product_complete_d102",
+    "id": "orena_product_completion_d110_d111",
     "status": "in_progress",
-    "next_task": "D-101/D-102: D2 shared modules out of ui/, D3 matrix, D4 persistence proposal (H2), E Admin, F Grammar, D7 MISSING cells, G Orena, integration QA on codex/work, PR codex/work -> main; :8000 updated only after the human merges. :8011 deployment deferred."
+    "next_task": "D-124: vocabulary is (sense, support language) localization, not AI enrichment; no paid provider in vocabulary ingestion/localization. Step 1 done locally: CC-CEDICT+Unihan vendored (cost plan P1), ZH import completion (pinyin, en meaning) and provider-free ZH lookup senses; focused 335 pass. Next: server-side per-card meaning for the support language and UI off translation_vi (no schema); localization source registry and validation; independent review of proposed 0025 localization table; provision free Marian pivot and sample quality; open-data choice for -> vi is human (VL-2). Grammar deferred; Agent gated; preserve accepted S1/S2/S3/S4/S6/S8 checkpoints."
   },
   "design": {
     "web_is_visual_source_of_truth": true,
@@ -194,7 +194,7 @@
   ],
   "current_p0": [],
   "current_p1": [
-    "grammar_breadth_remains_a_human_review_question",
+    "canonical_grammar_store_api_approved_d111_runtime_and_en_zh_content_not_yet_reviewable",
     "cross_device_continuity_design_specified_schema_and_sync_activation_gated",
     "startup_auto_alembic_conflicts_with_D002_requires_explicit_operator_migration",
     "reading_library_breadth_requires_rights_decisions_per_text",
@@ -203,9 +203,10 @@
     "historical_non_ci_matrices_reference_removed_wrappers_or_frozen_native",
     "art_bible_rules_written_real_book_cover_and_audio_artwork_assets_still_absent",
     "new_learner_ui_d088_at_next_until_the_d091_cutover_old_ui_at_root_is_replaced_not_preserved",
-    "grammar_screens_wait_for_the_grammar_content_contract_r5_is_being_retired",
+    "grammar_contract_and_fixtures_integrated_screens_wait_for_store_api_and_published_content",
     "eight_design_screens_are_coming_soon_until_a_backend_exists",
-    "platform_admin_moves_into_the_new_ui_d101_old_admin_untouched_until_cutover"
+    "platform_admin_moves_into_the_new_ui_d101_old_admin_untouched_until_cutover",
+    "vocabulary_localization_table_proposed_needs_review_and_vi_open_data_choice_d124"
   ],
-  "last_verified_at": "2026-09-29"
+  "last_verified_at": "2026-10-04"
 }

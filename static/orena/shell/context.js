@@ -17,6 +17,8 @@ import { reconcileInterface, reviewFromProfile } from '../product/account-settin
 import { clearPlace, sendPlace, syncContinuation } from '../product/continue-sync.js';
 import { attachProvenance, pullImportState, pushImport, recordsFor, removeImport, settleMedia } from '../product/account-records.js';
 import { activateRemovedScope } from '../product/import-removed.js';
+import { setSpeakingSessionScope } from '../product/speaking-session.js';
+import { setTakeStoreScope } from '../product/take-store.js';
 import { flushPendingDelete, pendingImportIds } from '../product/import-undo.js';
 
 const listeners = new Set();
@@ -93,6 +95,8 @@ export async function loadContext(storage = window.localStorage) {
     window.addEventListener('pagehide', () => void flushPendingDelete());
   }
   state.memory = learnerMemory(storage, state.owner, state.language);
+  setSpeakingSessionScope(state.memory.scope);
+  setTakeStoreScope(state.memory.scope);
   activateRemovedScope(state.memory.scope);
   // The server's places, when it holds any; a failed read leaves the device list as it is.
   await syncContinuation(state.memory).catch(() => false);
@@ -211,6 +215,8 @@ export function context() {
 
 export function updateContext(patch) {
   Object.assign(state, patch);
+  setSpeakingSessionScope(state.memory?.scope || '');
+  setTakeStoreScope(state.memory?.scope || '');
   if ('pinyin' in patch || 'language' in patch) applyLearningLanguage();
   emit();
 }

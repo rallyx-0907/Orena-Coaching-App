@@ -197,6 +197,24 @@ def test_no_provider_means_truthful_unavailable_not_a_guess() -> None:
     assert outcome.meanings == ()
 
 
+def test_partial_translation_is_preserved_and_only_missing_lines_are_retried() -> None:
+    cache = MemoryCache()
+    first = _resolve(cache=cache, translate=lambda segments, target: {segments[0].segment_id: "first meaning"})
+    assert first.status == "unavailable"
+    assert first.failure_kind == "translation_incomplete"
+    assert len(first.meanings) == 1
+    seen = []
+
+    def finish(segments, target):
+        seen.extend(segment.segment_id for segment in segments)
+        return {segment.segment_id: "remaining meaning" for segment in segments}
+
+    second = _resolve(cache=cache, translate=finish)
+    assert second.status == "ready"
+    assert seen == [SEGMENTS[1].segment_id]
+    assert second.meanings[0].translated_meaning == "first meaning"
+
+
 # --- L: Chinese Pinyin -------------------------------------------------------
 
 def test_pinyin_is_a_reading_of_the_hanzi_not_a_translation() -> None:

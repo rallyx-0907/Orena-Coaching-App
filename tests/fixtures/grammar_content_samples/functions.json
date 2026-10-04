@@ -1,0 +1,82 @@
+[
+  {
+    "id": "fn.comparison",
+    "title": {
+      "vi": "So sánh hơn",
+      "en": "Comparison",
+      "zh-Hans": "比较"
+    }
+  },
+  {
+    "id": "fn.completed_past",
+    "title": {
+      "vi": "Việc đã xong trong quá khứ",
+      "en": "Completed past action",
+      "zh-Hans": "过去已完成的动作"
+    }
+  },
+  {
+    "id": "fn.condition_real",
+    "title": {
+      "vi": "Điều kiện có thể xảy ra",
+      "en": "Real condition",
+      "zh-Hans": "可能发生的条件"
+    }
+  },
+  {
+    "id": "fn.existence",
+    "title": {
+      "vi": "Nói cái gì đó có ở đâu",
+      "en": "Existence",
+      "zh-Hans": "谈论存在"
+    }
+  },
+  {
+    "id": "fn.habit_fact",
+    "title": {
+      "vi": "Nói về thói quen, sự thật",
+      "en": "Habits and facts",
+      "zh-Hans": "谈论习惯和事实"
+    }
+  },
+  {
+    "id": "fn.object_disposal",
+    "title": {
+      "vi": "Nhấn mạnh kết quả xử lý một vật cụ thể",
+      "zh-Hans": "强调对具体事物的处理结果",
+      "en": "Stressing the result of handling an object"
+    }
+  },
+  {
+    "id": "fn.ongoing_now",
+    "title": {
+      "vi": "Việc đang diễn ra",
+      "en": "Ongoing action",
+      "zh-Hans": "正在进行的动作"
+    }
+  },
+  {
+    "id": "fn.past_experience",
+    "title": {
+      "vi": "Trải nghiệm đã từng",
+      "en": "Past experience",
+      "zh-Hans": "谈论经历"
+    }
+  },
+  {
+    "id": "fn.quantity",
+    "title": {
+      "vi": "Số lượng, số nhiều",
+      "en": "Quantity and plurality",
+      "zh-Hans": "数量与复数"
+    }
+  },
+  {
+    "id": "fn.reference",
+    "title": {
+      "vi": "Chỉ định người/vật (đã biết hay chưa)",
+      "en": "Reference",
+      "zh-Hans": "指代"
+    }
+  }
+]

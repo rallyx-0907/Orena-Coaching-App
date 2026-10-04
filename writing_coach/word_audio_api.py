@@ -15,6 +15,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from typing import Any
+import hashlib
 
 from fastapi import APIRouter, Query, Response
 
@@ -43,7 +44,7 @@ def _shelf() -> WordAudioLibrary:
 
 
 @router.get("/vocabulary/{word}/audio", name="orena_word_audio")
-def word_audio(word: str, reading: str = Query("", max_length=240)) -> dict[str, Any]:
+def word_audio(word: str, reading: str = Query("", max_length=240), lookup: bool = Query(False)) -> dict[str, Any]:
     """Is there a pronunciation of this word, at this reading, and whose is it?
 
     `reason` is a stable key a surface can say rather than guess at:
@@ -54,6 +55,18 @@ def word_audio(word: str, reading: str = Query("", max_length=240)) -> dict[str,
 
     readings = catalog_readings(word)
     identity = entry_identity_for(word, reading)
+    lookup_audio = lookup is True and not readings and not identity["entry_identity_key"]
+    if lookup_audio:
+        # A pronunciation cache key for an encountered term is not a catalogue
+        # entry, a saved vocabulary identity or a learner-owned record.
+        term = word.strip()
+        language = _language()
+        if not term or len(term) > 80 or not all(ch.isalpha() or ch in " '-" for ch in term):
+            return {"available": False, "reason": "no_entry", "readings": []}
+        if language == "zh" and not str(reading).strip():
+            return {"available": False, "reason": "reading_ambiguous", "readings": []}
+        digest = hashlib.sha256(f"{language}\0{term}\0{reading}".encode()).hexdigest()
+        identity = {"entry_identity_key": f"encounter-audio:{digest}", "reading_key": str(reading).strip()}
     if not identity["entry_identity_key"]:
         # The same two cases the link decision has, told apart so the surface
         # can say which: a word the catalogue does not know, and a word it
@@ -65,7 +78,7 @@ def word_audio(word: str, reading: str = Query("", max_length=240)) -> dict[str,
         term=word,
         language=_language(),
         reading=identity["reading_key"],
-        single_reading=len(readings) <= 1,
+        single_reading=(len(readings) <= 1) if not lookup_audio else _language() != "zh",
     )
     if found is None:
         return {"available": False, "reason": "not_found", "readings": readings}

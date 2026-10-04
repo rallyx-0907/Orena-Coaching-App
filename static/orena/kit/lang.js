@@ -64,6 +64,13 @@ export function appendNativeName(translated, nativeName) {
    a wrong one. */
 const KNOWN = new Set(['en', 'vi', 'zh']);
 
+/* A regional provider tag describes the same learning language. An unknown tag
+   uses only the caller's explicit fallback, never a script-based guess. */
+export function primaryLanguage(tag, fallback = 'en') {
+  const primary = String(tag || '').trim().toLowerCase().split(/[-_]/)[0];
+  return !primary || primary === 'und' ? fallback : primary;
+}
+
 export function knownLang(code) {
   const value = String(code || '').trim().toLowerCase();
   return KNOWN.has(value) ? value : '';

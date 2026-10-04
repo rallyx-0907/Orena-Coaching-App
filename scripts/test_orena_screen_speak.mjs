@@ -18,9 +18,9 @@ import {
 } from '../static/orena/screens/speak/model.js';
 import { parseSpeakingId, segmentOf, sourceFromCatalogItem, sourceFromLesson, loadSpeakingSource } from '../static/orena/product/speaking-source.js';
 import { pronunciationView } from '../static/orena/capabilities/pronunciation-result.js';
-import { recordTake, richView, viewOfTake, noteAttemptId, attemptIdOf, lineKey, listTakes } from '../static/orena/product/take-store.js';
+import { recordTake, richView, viewOfTake, noteAttemptId, attemptIdOf, lineKey, listTakes, setTakeStoreScope } from '../static/orena/product/take-store.js';
 import { createSpeakingRecorder, TAKE } from '../static/orena/product/speaking-recorder.js';
-import { readSpeakingSession } from '../static/orena/product/speaking-session.js';
+import { readSpeakingSession, setSpeakingSessionScope } from '../static/orena/product/speaking-session.js';
 
 function fixture(name) {
   return JSON.parse(readFileSync(new URL(`./fixtures/api/${name}`, import.meta.url)));
@@ -105,14 +105,15 @@ assert.equal(view.measured, true);
   assert.equal(detail.ink, 'var(--red)');
 }
 
-/* --- metricsFor: Accuracy / Fluency / Completeness; rule 40 - unmeasured fluency reads 0 --- */
+/* --- metricsFor: Accuracy / Fluency / Completeness; unsupported fluency remains unavailable --- */
 {
   assert.deepEqual(metricsFor(pronunciationView(null)), [], 'nothing measured: no cells');
   const measured = metricsFor(view);
   assert.deepEqual(measured.map((m) => m.key), ['accuracy', 'fluency', 'completeness']);
   assert.deepEqual(measured.map((m) => m.value), [80, 88, 95]);
   const noFluency = metricsFor(pronunciationView({ ...RESULT, fluency_score: null }, { language: 'en' }));
-  assert.equal(noFluency.find((m) => m.key === 'fluency').value, 0, 'rule 40: not returned = 0, never guessed');
+  assert.equal(noFluency.find((m) => m.key === 'fluency').value, null, 'an unsupported provider metric is unavailable, never a measured zero');
+  assert.equal(noFluency.find((m) => m.key === 'fluency').ink, 'var(--muted)', 'unavailable metrics must not encode a poor score');
   assert.equal(metricsFor({ measured: true, reduced: true, overall: 70 }).length, 0, 'a reopened attempt knows only its overall score');
 }
 
@@ -206,8 +207,8 @@ assert.equal(segmentOf(null), '');
     assert.equal(named.line.lineId, later.segment_id);
     assert.equal(named.line.ordinal, 3);
   }
-  // A segment that does not exist falls back to the first line rather than to nothing.
-  assert.equal(sourceFromLesson('en-science-cosmic-calendar', payload, 'no-such-segment').line.lineId, segment.segment_id);
+  // A missing named segment must not silently open a different sentence.
+  assert.equal(sourceFromLesson('en-science-cosmic-calendar', payload, 'no-such-segment'), null);
 }
 
 /* --- loadSpeakingSource: a fake api, both id shapes, and the language gate --- */
@@ -283,6 +284,18 @@ assert.equal(segmentOf(null), '');
 
 /* --- The recorder: a finished take becomes ONE attempt (the take emits its result twice) --- */
 {
+  setTakeStoreScope('account-a:en');
+  const key = lineKey('media:shared', 'line');
+  await recordTake(key, { blob: null, ms: 1500, view });
+  setTakeStoreScope('account-b:en');
+  assert.deepEqual(await listTakes(lineKey('media:shared', 'line')), [], 'another account cannot read retained takes');
+  setTakeStoreScope('account-a:zh');
+  assert.deepEqual(await listTakes(lineKey('media:shared', 'line')), [], 'another learning language has its own takes');
+  setTakeStoreScope('account-a:en');
+  assert.equal((await listTakes(lineKey('media:shared', 'line'))).length, 1);
+  setTakeStoreScope('');
+}
+{
   const store = new Map();
   globalThis.window = { sessionStorage: { getItem: (k) => store.get(k) ?? null, setItem: (k, v) => store.set(k, v) } };
   let clock = 0;
@@ -294,6 +307,7 @@ assert.equal(segmentOf(null), '');
   };
   const fakeRecorder = { start: async () => true, stop: async () => ({ blob: new Blob(['x'.repeat(4000)]), url: 'blob:r' }), cleanup() {}, discard() {}, snapshot: () => ({}) };
   const source = sourceFromLesson('rec-lesson', fixture('listening_library_lesson.en.json'));
+  setSpeakingSessionScope('test-account:en');
   const key = lineKey(source.sourceId, source.line.lineId);
   const seen = [];
   const failures = [];
@@ -313,6 +327,7 @@ assert.equal(segmentOf(null), '');
   const takes = await listTakes(key);
   assert.equal(takes.length, 1, 'one recording, one attempt - not two');
   assert.equal(readSpeakingSession().filter((entry) => entry.contentId === source.sourceId).length, 1, 'and one task in the session ledger');
+  assert.equal(readSpeakingSession().find((entry) => entry.contentId === source.sourceId).attemptId, 'server-attempt-1', 'the ledger joins the server by identity');
   const finished = seen.at(-1).latest;
   assert.equal(finished.list.length, 1);
   assert.equal(finished.view.overall, 82);

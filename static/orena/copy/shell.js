@@ -10,6 +10,7 @@ const KEYS = [
   'limited', 'account', 'cantOpen', 'offlineTitle',
   'lang_en', 'lang_zh', 'learningLabel',
   'content', 'listening', 'dictation', 'reader', 'pronunciation', 'compareWithModel', 'review', 'writing',
+  'listeningComprehension',
   'compareVersions', 'checkUnderstanding', 'collection', 'word', 'grammar', 'settings', 'shadowing', 'freeTalk',
   'conversation', 'situationReaction', 'retell', 'reactReuse', 'timedRecall', 'contextTransfer', 'dailyFeed',
   'contextRewrite', 'timedWriting', 'readingTransfer', 'readingComplete', 'attemptHistory', 'speakingSummary',
@@ -20,6 +21,7 @@ const KEYS = [
 export const shellCopy = defineCopy('shell', {
   layers: Object.fromEntries(KEYS.map((key) => [key, 'interface'])),
   en: {
+    listeningComprehension: 'Listening comprehension',
     mainNavigation: 'Main', skipToContent: 'Skip to content',
     today: 'Today', discover: 'Discover', orena: 'Orena', practiceHub: 'Practice Hub', practiceShort: 'Practice',
     myLibrary: 'My Library', libraryShort: 'Library', progress: 'Progress', profile: 'Profile',
@@ -43,6 +45,7 @@ export const shellCopy = defineCopy('shell', {
     soundTone: 'Sound / Tone', fromYourErrors: 'From your errors', welcome: 'Welcome', admin: 'Platform admin',
   },
   vi: {
+    listeningComprehension: 'Nghe hiểu',
     mainNavigation: 'Điều hướng chính', skipToContent: 'Đến nội dung',
     today: 'Hôm nay', discover: 'Khám phá', orena: 'Orena', practiceHub: 'Luyện tập', practiceShort: 'Luyện tập',
     myLibrary: 'Thư viện của tôi', libraryShort: 'Thư viện', progress: 'Tiến độ', profile: 'Hồ sơ',
@@ -66,6 +69,7 @@ export const shellCopy = defineCopy('shell', {
     soundTone: 'Âm và thanh điệu', fromYourErrors: 'Từ lỗi của bạn', welcome: 'Chào mừng', admin: 'Quản trị nền tảng',
   },
   zh: {
+    listeningComprehension: '听力理解',
     mainNavigation: '主导航', skipToContent: '跳至内容',
     today: '今天', discover: '发现', orena: 'Orena', practiceHub: '练习中心', practiceShort: '练习',
     myLibrary: '我的书库', libraryShort: '书库', progress: '进度', profile: '个人',

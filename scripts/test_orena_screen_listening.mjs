@@ -57,7 +57,7 @@ assert.equal(metaLine([null, undefined]), '');
   assert.equal(lesson.excerptStartMs, 1000);
   assert.equal(lesson.excerptEndMs, 47000);
   assert.deepEqual(lesson.vocabulary, ['galaxy', 'solar system', 'extinct']);
-  assert.deepEqual(lesson.modes, { follow: true, active: true, shadowing: false, dictation: true });
+  assert.deepEqual(lesson.modes, { follow: true, active: true, shadowing: true, dictation: true });
   assert.equal(lesson.playbackKind, 'video');
 }
 
@@ -125,8 +125,8 @@ assert.equal(metaLine([null, undefined]), '');
   assert.equal(estimatedTokenIndex(tokens, 5), 2, 'clamped');
   assert.equal(estimatedTokenIndex([], 0.5), -1);
   const seg = { start_ms: 1000, end_ms: 5000, original_text: 'aa bbbb cc' };
-  assert.equal(currentTokenIndex(seg, tokens, 1000), 0);
-  assert.equal(currentTokenIndex(seg, tokens, 3400), 1);
+  assert.equal(currentTokenIndex(seg, tokens, 1000), -1, 'segment timing does not prove word timing');
+  assert.equal(currentTokenIndex(seg, tokens, 3400), -1);
   assert.equal(currentTokenIndex(seg, tokens, 999), -1, 'outside the segment nothing is marked');
   assert.equal(currentTokenIndex(seg, tokens, 5000), -1);
   const timed = { ...seg, words: [
@@ -136,7 +136,7 @@ assert.equal(metaLine([null, undefined]), '');
   assert.equal(currentTokenIndex(timed, tokens, 1550), -1, 'a real pause between words is not the previous word continuing');
   assert.equal(currentTokenIndex(timed, tokens, 4500), 2);
   const mismatched = { ...seg, words: [{ text: 'zz', start_ms: 1000, end_ms: 2000 }] };
-  assert.equal(currentTokenIndex(mismatched, tokens, 1200), 0, 'timing that does not reconcile with the line is ignored wholesale - the estimate stands');
+  assert.equal(currentTokenIndex(mismatched, tokens, 1200), -1, 'mismatched timing must never invent a word position');
 }
 
 /* --- the frame's mode, row and line-step rules --- */
@@ -269,7 +269,8 @@ assert.equal(listenedMinutesLabel(NaN), null);
   const calls = [];
   const acquired = { asset: { asset_id: 'youtube:abc', title: 'Clip', source_language: 'en-GB', duration_ms: 61000, thumbnail_url: 'https://img/x.jpg' }, playback: { kind: 'youtube', url: 'https://www.youtube.com/embed/abc' }, transcript: { segments: [] }, translations: [] };
   const api = {
-    importMedia: async (body) => { calls.push(['import', body.source_url, body.target_language]); return acquired; },
+    importMedia: async () => { throw new Error('a lesson open cannot import'); },
+    mediaSource: async (url, target) => { calls.push(['source-read', url, target]); return acquired; },
     mediaImportStatus: async () => { throw new Error('not resumable'); },
     mediaMy: async (id) => { calls.push(['my', id]); return { asset: { asset_id: id }, playback: { kind: 'audio' } }; },
     listeningLibraryLesson: async (id, support) => { calls.push(['lesson', id, support]); return { asset: { asset_id: id } }; },
@@ -281,7 +282,7 @@ assert.equal(listenedMinutesLabel(NaN), null);
   await openMedia('upload-1f', { api, support: 'vi', language: 'en' });
   await openMedia('en-x', { api, support: 'vi', language: 'en' });
   assert.deepEqual(calls, [
-    ['import', 'https://youtu.be/abc', 'vi'],
+    ['source-read', 'https://youtu.be/abc', 'vi'],
     ['my', 'upload-1f'],
     ['lesson', 'upload-1f', 'vi'],
     ['lesson', 'en-x', 'vi'],

@@ -11,8 +11,11 @@ import { emptyMarkup } from '../../kit/states.js';
 import { href, byId } from '../../shell/routes.js';
 import { api } from '../../infrastructure/api.js';
 import { shellCopy } from '../../copy/shell.js';
+import { languages } from '../../copy/index.js';
+import { openSheet, sheetHead, fillSheet } from '../../kit/overlay.js';
+import { loadPendingRows, recentRows, recentMediaFacts } from './continuation.js';
 import { t } from './copy.js';
-import { SKILL_ORDER, SKILL_ICONS, SKILL_TINT, SKILL_BUILDERS, buildSkillSections, continuationRows, writeRecommendation } from './model.js';
+import { SKILL_ORDER, SKILL_ICONS, SKILL_TINT, SKILL_BUILDERS, buildSkillSections, writeRecommendation } from './model.js';
 
 const SKILL_LABEL_KEY = {
   speak: 'skillSpeak',
@@ -42,7 +45,7 @@ function tileMarkup(skill, mode) {
     radius: 18,
     pad: '14px',
     leading: rowIconSwatch({ iconName: SKILL_ICONS[skill][mode.key] || 'target', tint: SKILL_TINT[skill] }),
-    title: modeLabel(mode.routeId),
+    title: modeLabel(mode.labelRouteId || mode.routeId),
     sub: modeMeta(skill, mode),
     className: 's-practice-tile',
     dataset: { go: href(mode.routeId, mode.params, mode.query) },
@@ -59,7 +62,7 @@ function hubRowMarkup(skill, mode) {
     variant: 'outline',
     radius: 14,
     pad: '13px 18px',
-    title: modeLabel(mode.routeId),
+    title: modeLabel(mode.labelRouteId || mode.routeId),
     trailing: meta ? html`<span class="s-practice-hubrow__meta">${meta}</span>` : null,
     chevron: true,
     className: 's-practice-hubrow',
@@ -79,13 +82,14 @@ function sectionMarkup(skill, modes) {
 }
 
 function continueRowLabel(routeId) {
-  return shellCopy(byId(routeId).crumb);
+  return shellCopy(byId(routeId === 'compare' ? 'speak' : routeId).crumb);
 }
 
 function continueSub(row) {
-  if (row.place) return `${row.place.index}/${row.place.total}`;
-  if (row.context) return row.context;
-  return '';
+  if (row.reason === 'reading') return t('readingReason', { n: row.percent });
+  if (row.reason) return t(`${row.reason}Reason`);
+  if (row.line) return t('recentLine', { n: row.line.index, total: row.line.total });
+  return t('recentReason');
 }
 
 /* languages-5 / finding A: `row.title` is the real content this continuation entry resumes - an
@@ -94,7 +98,7 @@ function continueSub(row) {
    field exists on device-memory continuation, kit/lang.js's own "the learner's learning language
    the screen already read" source). Only `row.title` is marked, not the leading interface label
    before it. */
-function continueRowMarkup(row, language) {
+function continueRowMarkup(row, language, recent = false) {
   return listRow({
     variant: 'shadow',
     radius: 18,
@@ -102,7 +106,8 @@ function continueRowMarkup(row, language) {
     leading: rowIconSwatch({ iconName: row.icon, tint: row.tint }),
     title: html`${continueRowLabel(row.routeId)} · ${langSpan(row.title, language)}`,
     sub: continueSub(row),
-    trailing: html`<span class="s-practice-pill">${t('continueCta')}</span>`,
+    trailing: recent ? null : html`<span class="s-practice-pill">${t('continueCta')}</span>`,
+    chevron: recent,
     className: 's-practice-continue-row',
     dataset: { go: href(row.routeId, row.params, row.query) },
   });
@@ -120,16 +125,40 @@ function recommendationMarkup(rec, skill) {
 }
 
 async function renderHub(element, ctx, data) {
-  const continuation = continuationRows(ctx.context.memory?.value?.continuation || []);
+  const memory = ctx.context.memory?.value || {};
+  const continuation = await loadPendingRows(ctx.context.memory, ctx.context.language);
+  if (!ctx.isCurrent()) return;
+  const recent = recentRows(memory.continuation);
   const sections = buildSkillSections(data);
   const language = ctx.context.language;
   mount(
     element,
     html`<div class="s-practice">
-      ${continuation.length ? html`<div class="s-practice-continue">${continuation.map((row) => continueRowMarkup(row, language))}</div>` : ''}
+      <section class="s-practice-continue">
+        ${sectionHead({ title: t('continueTitle'), action: recent.length ? { label: t('recentTitle'), dataset: { recent: '' } } : null })}
+        ${continuation.length ? continuation.map((row) => continueRowMarkup(row, language)) : html`<p class="s-practice-empty">${t('nothingPending')}</p>`}
+      </section>
       ${sections.map(({ skill, modes }) => sectionMarkup(skill, modes))}
     </div>`,
   );
+  let recentOpening = false;
+  element.querySelector('[data-recent]')?.addEventListener('click', async event => {
+    if (recentOpening) return;
+    recentOpening = true;
+    const button = event.currentTarget;
+    button.disabled = true;
+    const facts = await recentMediaFacts(memory.continuation || [], { api, language, support: languages().support, owner: ctx.context.owner, memory: ctx.context.memory });
+    recentOpening = false;
+    button.disabled = false;
+    if (!ctx.isCurrent()) return;
+    const rows = recentRows(memory.continuation, facts);
+    openSheet({ label: t('recentTitle'), render(sheet, handle) {
+      fillSheet(sheet, handle, html`${sheetHead({ title: t('recentTitle'), closeLabel: shellCopy('close') })}
+        <div class="s-practice-recent"><p class="s-practice-empty">${t('recentExplanation')}</p>
+          ${rows.length ? rows.map(row => continueRowMarkup(row, language, true)) : html`<p class="s-practice-empty">${t('noRecent')}</p>`}
+        </div>`);
+    } });
+  });
 }
 
 /* A skill with real modes right now (`modes.length`) renders its row list; a skill this build

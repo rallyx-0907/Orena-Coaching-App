@@ -15,6 +15,8 @@
      collection's words the learner has met in their own reading/listening content - always 0.
    Both are recorded in the surface report as backend gaps, not guessed at. */
 
+import { collectionWordKey } from './actions.js';
+
 /* A word's meaning in the learner's support language. `card.meanings` is a flat
    {language,text}[] the backend already resolved (support_translations + short/detailed
    definitions); this picks the one that matches, then any meaning that is not the word's own
@@ -76,6 +78,8 @@ export function collectionViewModel(collection = {}, support = '') {
     wordCount,
     metInSources: 0, // rule 40: no source-encounter aggregate exists for a collection
     percent,
+    savedCount: new Set(items.filter((card) => card.saved).map(collectionWordKey)).size,
+    missingCount: new Set(items.filter((card) => !card.saved && card.headword).map(collectionWordKey)).size,
     words: items.map((card) => wordRow(card, support)),
   };
 }

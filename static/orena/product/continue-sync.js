@@ -17,6 +17,8 @@ const JSON_HEADERS = { 'Content-Type': 'application/json' };
 export function placeKind(entry) {
   const id = String(entry?.id || '');
   if (!id || id.length > 255) return '';
+  // Speaking over media keeps its position on the same existing content relationship.
+  if (id.startsWith('media:') && ['speaking', 'speaking_compare'].includes(entry?.intent)) return 'listening';
   const experience = continuationExperience(entry);
   if (id.startsWith('book:')) return 'book';
   if (experience === 'reading') return 'reading';

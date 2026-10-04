@@ -14,7 +14,7 @@
 .s-spsummary-scroll {
   flex: 1;
   min-height: 0;
-  overflow-y: auto;
+  overflow: hidden;
   max-width: 640px;
   margin: 0 auto;
   width: 100%;
@@ -25,6 +25,7 @@
 }
 
 .s-spsummary-hero {
+  flex: none;
   position: relative;
   overflow: hidden;
   border-radius: 24px;
@@ -81,6 +82,8 @@
 }
 
 .s-spsummary-card {
+  flex: 1;
+  min-height: 0;
   border-radius: 24px;
   background: var(--surface);
   box-shadow: var(--sh1);
@@ -95,6 +98,9 @@
 }
 
 .s-spsummary-tasks {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -150,6 +156,7 @@
 }
 
 .s-spsummary-actions {
+  flex: none;
   display: flex;
   gap: 10px;
   flex-wrap: wrap;

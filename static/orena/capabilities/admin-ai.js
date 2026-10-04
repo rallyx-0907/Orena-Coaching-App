@@ -57,7 +57,7 @@ export function mergeProviders(config, catalog) {
    provider it would fall back to, or none. */
 export function removalConsequences(providerId, capabilities, providers) {
   const name = (id) => providers.find((item) => item.id === id)?.name || id;
-  return (capabilities || [])
+  const consequences = (capabilities || [])
     .filter((capability) => capability.config?.provider === providerId && capability.config?.enabled !== false)
     .map((capability) => ({
       key: capability.key,
@@ -65,6 +65,8 @@ export function removalConsequences(providerId, capabilities, providers) {
         ? name(capability.config.backup_provider)
         : '',
     }));
+  if (providerId === 'azure-speech') consequences.push({ key: 'pronunciation_evaluator', fallback: '' });
+  return consequences;
 }
 
 /* The route editor's starting values for a capability: what is saved, or the first configured
@@ -164,6 +166,7 @@ export function providerStatus(provider, test) {
 /* Which capabilities a provider serves, and in which role. */
 export function providerUsedBy(capabilities, providerId) {
   const used = [];
+  if (providerId === 'azure-speech') used.push({ key: 'pronunciation_evaluator', role: 'primary', model: 'pronunciation-assessment' });
   for (const capability of capabilities || []) {
     const config = capability.config;
     if (!config) continue;
@@ -342,7 +345,7 @@ export function createAiAdmin({ api = adminApi, onChange = () => {} } = {}) {
      result (Save & test); a plain save leaves the provider untested. */
   async function saveProvider(id, { baseUrl = '', apiKey = '', defaultModel = '', remember = false } = {}) {
     const started = performance.now();
-    const check = await api.testProvider(id, providerBody({ baseUrl, apiKey }));
+    const check = await api.testProvider(id, providerBody({ baseUrl, apiKey, defaultModel }));
     const time = Math.round(performance.now() - started);
     if (!check.ok) {
       state.providerTests.set(id, { state: 'failed', reason: failureReason(check), at: Date.now() });

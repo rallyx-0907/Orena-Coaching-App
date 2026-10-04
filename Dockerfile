@@ -1,4 +1,8 @@
+FROM node:24-bookworm-slim AS youtube-js
 FROM python:3.12-slim
+
+# yt-dlp's bundled YouTube challenge solver needs a supported JS runtime.
+COPY --from=youtube-js /usr/local/bin/node /usr/local/bin/node
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1

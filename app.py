@@ -97,6 +97,7 @@ from writing_coach.listening_api import (
     configure_listening_progress,
     configure_listening_translation_cache,
     stored_media_payload,
+    prepare_media_meanings,
     router as listening_progress_router,
 )
 from writing_coach.media_library_api import (
@@ -137,6 +138,7 @@ from writing_coach.core.support_languages import (
     support_language_uses_cjk,
 )
 from writing_coach.vocabulary_cards import vocabulary_card_from_catalog_entry
+from writing_coach.vocabulary_dictionary import complete_from_dictionary
 from writing_coach.vocabulary_source_import import (
     VocabularySourceError,
     detect_vocabulary_mapping,
@@ -426,7 +428,20 @@ if _persistence_runtime.backend == "postgresql" and not AUTH_ENABLED:
         )
 
 _learning_repository = _persistence_runtime.learning_repository
-_learning_cache = SQLiteLearningCacheRepository(lambda: SQLiteLearningRepository(lambda: current_db_path(DB_PATH).with_name("learning_cache.db")).connect())
+def _learning_cache_path() -> Path:
+    # Derived dictionary/translation data only. Keep it with configured durable
+    # media rather than a per-container scratch DB, so reloads/restarts do not
+    # repeat provider work. PostgreSQL still owns all learner records.
+    configured = os.getenv("LEARNING_CACHE_DB", "").strip()
+    media_root = os.getenv("MEDIA_LIBRARY_ROOT", "").strip()
+    if configured:
+        return Path(configured)
+    if media_root:
+        return Path(media_root) / "learning_cache.db"
+    return current_db_path(DB_PATH).with_name("learning_cache.db")
+
+
+_learning_cache = SQLiteLearningCacheRepository(lambda: SQLiteLearningRepository(_learning_cache_path).connect())
 _specialized_learning_repository = _persistence_runtime.specialized_learning_repository
 
 
@@ -554,7 +569,7 @@ app.include_router(contextual_dictionary_router)
 app.include_router(word_detail_router)
 app.include_router(reading_translation_router)
 configure_speech_asr(_speech_asr_provider)
-configure_speech_pronunciation(build_speech_pronunciation_provider())
+configure_speech_pronunciation(build_speech_pronunciation_provider(), resolver=build_speech_pronunciation_provider)
 configure_speaking_attempt_repository(
     _specialized_learning_repository
     if _persistence_runtime.backend == "postgresql"
@@ -601,15 +616,29 @@ _media_library_asset_root = Path(
 )
 _media_library_store = FileMediaLibraryStore(_media_library_root)
 _media_library_assets = FilesystemBookAssetStore(_media_library_asset_root)
+from writing_coach.media_spend import SpendLedger
+from writing_coach.media_transcript_pipeline import MediaPipeline
+from writing_coach.media_providers.youtube_audio import download_audio
+
+_media_pipeline = MediaPipeline(
+    ledger=SpendLedger(_media_library_root / "processing-spend.json"),
+    asr=_speech_asr_provider,
+    ingestion=_media_ingestion_service,
+    youtube_audio=download_audio,
+    meanings=prepare_media_meanings,
+    english_reading=lambda word: lookup_dictionary(word, language="en", allow_ai=False, persist=False).get("phonetic", ""),
+    workers=1,
+)
 configure_media_library(
     _media_library_store,
     _media_library_assets,
-    MediaSourceImporter(_media_ingestion_service, _media_library_store, _media_library_assets),
+    MediaSourceImporter(_media_ingestion_service, _media_library_store, _media_library_assets, pipeline=_media_pipeline),
     admin_guard=require_admin,
     language_supported=is_enabled,
 )
 configure_media_library_payload(stored_media_payload)
 configure_listening_media_library(_media_library_store)
+_media_pipeline.recover(_media_library_store, _media_library_assets)
 app.include_router(media_library_router)
 app.include_router(media_library_upload_router)
 # Canonical Reading evidence (D-075): the one Reading read contract every
@@ -875,6 +904,13 @@ def configure_admin_console_from_runtime() -> None:
             transcript_fallback=_media_fallback_mode,
         ),
         runtime_facts=lambda: {
+            "services": describe_runtime_services(
+                media_translation=(_media_translation_provider_id, _media_translation_provider),
+                reading_translation=(_reading_translation_provider_id, _reading_translation_provider),
+                speech_recognition=_speech_asr_provider,
+                pronunciation=build_speech_pronunciation_provider(),
+                transcript_fallback=_media_fallback_mode,
+            ),
             "schema": schema_facts(engine),
             "account_backbone": _backbone_state(
                 present=_backbone_schema_present(_backbone_tables()), asked=_backbone_requested()
@@ -2041,7 +2077,7 @@ def chinese_dictionary_ai(word: str) -> dict[str, Any]:
     return result
 
 
-def lookup_dictionary(word: str) -> dict[str, Any]:
+def lookup_dictionary(word: str, *, language: str | None = None, allow_ai: bool = True, persist: bool = True) -> dict[str, Any]:
     clean = normalise_lookup_word(word)
     cache_key = clean.casefold()
 
@@ -2058,7 +2094,7 @@ def lookup_dictionary(word: str) -> dict[str, Any]:
 
     payload = None
 
-    if is_chinese():
+    if language == "zh" or (language is None and is_chinese()):
         try:
             payload = chinese_dictionary_ai(clean)
             payload["cached"] = False
@@ -2118,6 +2154,8 @@ def lookup_dictionary(word: str) -> dict[str, Any]:
             payload = None
 
         if payload is None:
+            if not allow_ai:
+                return {"phonetic": ""}
             try:
                 payload = dictionary_ai_fallback(clean)
                 payload["cached"] = False
@@ -2127,11 +2165,12 @@ def lookup_dictionary(word: str) -> dict[str, Any]:
                     "Dictionary service is unavailable and AI fallback failed.",
                 ) from exc
 
-    _learning_cache.put_dictionary(
-        cache_key,
-        payload,
-        datetime.now().astimezone().isoformat(timespec="seconds"),
-    )
+    if persist:
+        _learning_cache.put_dictionary(
+            cache_key,
+            payload,
+            datetime.now().astimezone().isoformat(timespec="seconds"),
+        )
 
     return payload
 
@@ -3293,15 +3332,21 @@ async def admin_vocabulary_source_import(
             )
             if not normalized["records"]:
                 raise VocabularySourceError("The source has no valid vocabulary rows to import.")
+            # Readings and dictionary meanings the source left out are dataset
+            # facts: looked up in the vendored dictionary here, once, never
+            # generated (AI cost reduction plan P1, D-121).
+            records, dictionary_summary = complete_from_dictionary(
+                normalized["records"], collection_metadata["language_code"]
+            )
             result = repository.import_source(
                 collection=collection,
                 source=normalized,
-                records=normalized["records"],
+                records=records,
                 mapping=mapping,
                 imported_by=imported_by,
             )
             collection_persisted = True
-            results.append(result)
+            results.append({**result, "dictionary": dictionary_summary})
         except (VocabularySourceError, ValueError) as exc:
             results.append(failed_source_result(
                 filename=filename,
@@ -3756,6 +3801,7 @@ def becoming_vocabulary_library_collection_detail(
     level: str = Query(default=""),
     limit: int = Query(default=100, ge=1, le=5000),
     offset: int = Query(default=0, ge=0),
+    include_review: bool = Query(default=False),
 ) -> dict[str, Any]:
     collection = _persisted_vocabulary_collection(
         collection_id,
@@ -3798,6 +3844,10 @@ def becoming_vocabulary_library_collection_detail(
         items.append(card)
     collection["items"] = items
     collection["progress"] = _vocabulary_collection_progress(entries, saved_by_word)
+    if include_review:
+        # The collection's own saved rows, resolved by the existing owner above.
+        # No scan of the learner's whole library and no dictionary generation.
+        collection["review_items"] = list(saved_by_word.values())
     return collection
 # === BECOMING VOCABULARY LIBRARY CATALOG ROUTES END ===
 

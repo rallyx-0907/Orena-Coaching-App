@@ -165,7 +165,7 @@ export default async function mountWordDetail(element, ctx) {
 
   if (!detail && !item) throw new Error(`Word Detail: no lookup and no saved record for "${word}"`);
 
-  let card = mapWordCard(word, { detail, item });
+  let card = mapWordCard(word, { detail, item, supportLanguage: languages().support });
   const deepRows = mapDeepWord(detail);
   const clips = mapClips(clipsPayload);
 
@@ -266,7 +266,7 @@ export default async function mountWordDetail(element, ctx) {
           // it with the delete we just confirmed, the one signal `mapWordCard` cannot get right
           // on its own for this transition (rule 40 - don't let a stale snapshot outrank a real
           // action that just happened).
-          card = mapWordCard(word, { detail: detail ? { ...detail, saved: false } : detail, item });
+          card = mapWordCard(word, { detail: detail ? { ...detail, saved: false } : detail, item, supportLanguage: languages().support });
           await paint();
           toast(
             t('removedToast'),
@@ -275,7 +275,7 @@ export default async function mountWordDetail(element, ctx) {
                   undo: async () => {
                     const restored = await api.restoreLibraryVocabulary(payload).catch(() => null);
                     item = restored?.item || item;
-                    card = mapWordCard(word, { detail, item });
+                    card = mapWordCard(word, { detail, item, supportLanguage: languages().support });
                     await paint();
                   },
                   undoLabel: shellCopy('undo'),
@@ -285,7 +285,7 @@ export default async function mountWordDetail(element, ctx) {
         } else {
           const saved = await api.saveLibraryVocabulary(savePayload(card));
           item = saved?.item || item;
-          card = mapWordCard(word, { detail, item });
+          card = mapWordCard(word, { detail, item, supportLanguage: languages().support });
           await paint();
           toast(t('savedToast'));
         }

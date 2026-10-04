@@ -87,18 +87,18 @@ export function detailFor(view, index) {
 }
 
 /* The three fixed metric cells the frame always draws (D5 §2: "hint-placeholder-count='3'") -
-   Accuracy / Fluency / Completeness (frame 15's `spMetrics`), each the real measured value or 0
-   when the provider did not return it (rule 40), never omitted (the grid's own shape is fixed at
+   Accuracy / Fluency / Completeness (frame 15's `spMetrics`), each the real measured value or null
+   when the provider did not return it (shown as unavailable), never omitted (the grid's own shape is fixed at
    3). A reopened attempt (`view.reduced`) knows only its overall score: it draws no metric cells
    rather than three zeros that were measured and simply not kept. */
 export function metricsFor(view) {
   if (!view?.measured || view.reduced) return [];
   const cells = [
     { key: 'accuracy', value: view.accuracy },
-    { key: 'fluency', value: view.fluencyMeasured ? view.fluency : 0 },
+    { key: 'fluency', value: view.fluencyMeasured ? view.fluency : null },
     { key: 'completeness', value: view.completeness },
   ];
-  return cells.map((cell) => ({ ...cell, ink: scoreInk(cell.value) }));
+  return cells.map((cell) => ({ ...cell, ink: cell.value == null ? 'var(--muted)' : scoreInk(cell.value) }));
 }
 
 /* The state pill above the mic (`spStateBg/Color/Label`): idle and a finished take both read

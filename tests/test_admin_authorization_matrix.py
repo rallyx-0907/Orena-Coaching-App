@@ -40,6 +40,8 @@ ROUTE = {"enabled": True, "provider": "no-such-provider", "model": "m"}
 
 # (method, path template) -> (concrete path, request body, statuses an administrator may get)
 MATRIX = {
+    ("POST", "/api/admin/console/content/media/{media_id}/rights"): (
+        "/api/admin/console/content/media/not-present/rights", {"json": {"rights": "unknown"}}, {404}),
     ("GET", "/api/admin/ai/catalog"): ("/api/admin/ai/catalog", {}, {200}),
     ("GET", "/api/admin/ai/config"): ("/api/admin/ai/config", {}, {200}),
     ("PUT", "/api/admin/ai/config"): ("/api/admin/ai/config", {"json": {"provider": "no-such", "model": "m"}}, {400}),
@@ -198,7 +200,7 @@ def _request(app, method: str, path: str, body: dict, who: dict | None) -> httpx
 def test_the_matrix_covers_every_admin_route_the_app_serves():
     routes = _admin_routes()
     assert routes == set(MATRIX), f"unclassified: {sorted(routes - set(MATRIX))}; stale: {sorted(set(MATRIX) - routes)}"
-    assert len(routes) == 61  # six comprehension-set routes (D-082), the rights route (D-105)
+    assert len(routes) == 62  # includes Reading rights (D-105) and shared-media rights review
 
 
 @pytest.mark.parametrize("route", sorted(MATRIX), ids=lambda route: f"{route[0]} {route[1]}")

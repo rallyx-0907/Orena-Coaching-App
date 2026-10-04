@@ -79,10 +79,10 @@ shape).
 | 46 | Discussion | `#/read/:id/discuss` | focus | `screens/discussion/` | reviewable |
 | 06 | Listening Workspace | `#/listen/:id` | focus | `screens/listening/` | reviewable |
 | 07 | Dictation | `#/listen/:id/dictation` | focus | `screens/dictation/` | reviewable |
-| 28 | Shadowing | `#/listen/:id/shadow` | focus | `screens/shadowing/` | reviewable |
+| 28 | Shadowing / Pronunciation (D-119) | `#/listen/:id/shadow` | focus | `screens/compare/` | reviewable; shared recorder |
 | 33 | React / Reuse | `#/listen/:id/react` | focus | `screens/react/` | reviewable |
 | 45 | Respond to Content | `#/respond/:id` | focus | `screens/respond/` | reviewable |
-| 15 | Scripted Pronunciation | `#/speak/:id` | focus | `screens/speak/` | reviewable |
+| 15 | Scripted Pronunciation (D-119) | `#/speak/:id` | focus | `screens/compare/` | reviewable; shared recorder |
 | 16 | Compare With Model | `#/speak/:id/compare` | focus | `screens/compare/` | reviewable |
 | 41 | Attempt History | `#/speak/:id/attempts` | focus | `screens/attempts/` | reviewable |
 | 42 | Speaking Summary | `#/speak-summary` | focus | `screens/speak-summary/` | reviewable |
@@ -113,14 +113,14 @@ also imports: `capabilities/admin-api.js` (client), `capabilities/admin-format.j
 `capabilities/admin-ai.js` (AI control-plane rules and the session controller), `admin-reading.js`
 (Reading rules and requests), `admin-imports.js` (importer rules and flows), `admin-content.js`
 (catalogue lifecycle and publish admission), `admin-tray.js` (the progress tray's memory and clock). Routes are `bare`
-(no learner frame): the Admin draws its own shell (`screens/admin/frame.js`). Only what the staging
-draws is in the navigation - AI & Models, Content (with its Reading pipeline) and Imports.
-Overview, Users, Operations and the Practice generator are out of the staging scope and are not
-drawn. The old console stays at `/#/admin` until the cutover.
+(no learner frame): the Admin draws its own shell (`screens/admin/frame.js`).
+Product Completion supersedes the earlier staging-only scope: Overview, AI & Models,
+Users, Content (including Reading), Imports and Operations are connected to the
+existing backend. The Practice generator still has no working backend and is unavailable. The old console stays at `/#/admin` until the cutover.
 
 | Frame | Screen | Route | Shell | Code | Gate | Status |
 | --- | --- | --- | --- | --- | --- | --- |
-| Admin shell (rail, header, phone chips) | Platform Admin | `#/admin` (opens `#/admin/ai`) | Admin's own | `screens/admin/{screen,frame,model,blocks}.js`, `admin.css` | `scripts/test_orena_screen_admin.mjs` | building (2026-09-30, slice 1) |
+| Admin shell (rail, header, phone chips) | Platform Admin | `#/admin` (opens `#/admin/overview`) | Admin's own | `screens/admin/{screen,frame,model,blocks}.js`, `admin.css` | `scripts/test_orena_screen_admin.mjs` | building (2026-09-30, slice 1) |
 | No access | Admin access required | any `#/admin/...` for a non-admin | Admin's own | `screens/admin/no-access.js`; `main.js` (internal-review gate) | `test_orena_screen_admin.mjs` (zero requests) | building |
 | A2 AI & Models | Providers, Capability routing | `#/admin/ai` (`?tab=route`) | Admin's own | `screens/admin/ai-pages.js` `listPage`, `ai.js` | `test_orena_screen_admin.mjs` | building |
 | A3 Provider configure | Write-only key, endpoint | `#/admin/ai/provider/:id/key` | Admin's own | `ai-pages.js` `keyPage` | same | building |
@@ -143,7 +143,8 @@ drawn. The old console stays at `/#/admin` until the cutover.
 | Reading jobs, A29 Job detail, A30 History | Jobs, retry, history | `#/admin/imports/jobs`, `#/admin/imports/jobs/:id`, `#/admin/imports/history` | Admin's own | `imports-pages.js` | same | building |
 | Progress tray | Global tray | every Admin place | Admin's own | `screens/admin/tray.js`, `capabilities/admin-tray.js` | same | building |
 | Grammar Lab package import | not drawn by the Admin design | - | - | not built: no grammar store or `/api/grammar/v1/*` (D-100) | - | blocked (see `UI_BACKEND_GAPS.md`) |
-| A1 Overview, A6-A7 Users, A24-A27 Practice generator, A31-A34 Operations | out of staging scope | - | - | - | - | not drawn |
+| A1 Overview, A6-A7 Users, A31-A34 Operations | Overview, accounts, runtime, workers, polling, errors | `#/admin/overview`, `#/admin/users`, `#/admin/users/:id`, `#/admin/operations` and children | Admin's own | `screens/admin/control{,-pages}.js` | `test_orena_admin_control.mjs`, `test_orena_screen_admin_areas.mjs`; ADMIN_BASIC_CONTROL_BROWSER_CHECKPOINT.md | REVIEWABLE (2026-10-03) |
+| A24-A27 Practice generator | unavailable: no generation backend | - | - | - | - | not built |
 
 ## Retired by the cutover
 

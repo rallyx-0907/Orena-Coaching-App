@@ -87,6 +87,21 @@ class EpubImportError(Exception):
         super().__init__(f"{category}: {detail}" if detail else category)
 
 
+_CJK_CHARACTER = re.compile("[㐀-䶿一-鿿豈-﫿]")
+# Full-width and CJK punctuation is neither an ideograph nor a word.
+_CJK_PUNCTUATION = re.compile(r"[\u3000-\u303f\uff00-\uff0f\uff1a-\uff20\uff3b-\uff40\uff5b-\uff65]")
+
+
+def _reading_units(text: str) -> int:
+    return len(_CJK_CHARACTER.findall(text)) + len(
+        _CJK_PUNCTUATION.sub(" ", _CJK_CHARACTER.sub(" ", text)).split()
+    )
+
+
+def _metadata_identity(value: str) -> str:
+    return "".join(char for char in value.casefold() if char.isalnum())
+
+
 @dataclass(frozen=True)
 class ParsedChapter:
     chapter_key: str
@@ -96,7 +111,9 @@ class ParsedChapter:
 
     @property
     def word_count(self) -> int:
-        return sum(len(p.split()) for p in self.paragraphs)
+        # Chinese has no spaces: each ideograph is one unit, and the rest of
+        # the text is counted in whitespace-separated words.
+        return sum(_reading_units(paragraph) for paragraph in self.paragraphs)
 
 
 @dataclass(frozen=True)
@@ -195,7 +212,11 @@ def _safe_member_name(name: str) -> str:
     if normalized.startswith("/") or posixpath.isabs(normalized):
         raise EpubImportError("unsafe_archive_entry", name)
     parts = normalized.split("/")
-    if any(part in ("", "..") for part in parts if part != normalized.rstrip("/")) or ".." in parts:
+    # ZIP directories conventionally end in one slash. Only that final empty
+    # component is valid; empty interior components and traversal stay unsafe.
+    if normalized.endswith("/"):
+        parts = parts[:-1]
+    if any(part in ("", "..") for part in parts):
         raise EpubImportError("unsafe_archive_entry", name)
     return normalized
 
@@ -300,6 +321,11 @@ def _project_block_elements(
         emit_direct_text(parent, pending)
 
     def process(element: ElementTree.Element) -> None:
+        # Publisher-marked notices are not learning text. Keep the original
+        # EPUB and its rights metadata; omit only this marked subtree from the
+        # reader projection, including when it shares a file with a chapter.
+        if "pg-boilerplate" in (element.get("class") or "").split():
+            return
         tag = _local(element.tag)
         if tag == "hr":
             projected.append(("break", None, None))
@@ -644,7 +670,15 @@ def parse_epub(data: bytes) -> ParsedBook:
         href = str(document["href"])
         blocks = document["blocks"]
         types = set(document["types"]) | explicit_types.get(href, set())
-        words = sum(len(str(block.get("text", "")).split()) for block in blocks if block["type"] == "paragraph")
+        words = sum(_reading_units(str(block.get("text", ""))) for block in blocks if block["type"] == "paragraph")
+        headings = [str(block["text"]) for block in blocks if block["type"] == "heading"]
+        # Use the EPUB's own title and author, not a chapter-name dictionary.
+        # Punctuation variants in publisher typography do not change identity.
+        metadata_title_page = (
+            index <= first_body_index and words < 150 and len(headings) >= 2
+            and bool(title and author) and _metadata_identity(headings[0]) == _metadata_identity(title)
+            and _metadata_identity(headings[1]) in {_metadata_identity(author), _metadata_identity("by " + author)}
+        )
         linked, total = _link_block_ratio(document["document"], document_href=href, spine_hrefs=spine_hrefs)
         classification = "chapter"
         if not blocks:
@@ -657,8 +691,11 @@ def parse_epub(data: bytes) -> ParsedBook:
             classification = "back_matter"
         elif types & {"titlepage", "title-page", "copyright-page", "frontmatter"}:
             classification = "front_matter"
-        elif "project gutenberg license" in " ".join(
-            str(block.get("text", "")).casefold() for block in blocks
+        elif metadata_title_page:
+            classification = "front_matter"
+        elif blocks[0]["type"] == "heading" and re.fullmatch(
+            r"(?:the full )?project gutenberg(?:™)? license",
+            " ".join(str(blocks[0].get("text", "")).casefold().split()),
         ):
             classification = "back_matter"
         elif referenced_hrefs and href not in referenced_hrefs and index < first_body_index and words < 150:

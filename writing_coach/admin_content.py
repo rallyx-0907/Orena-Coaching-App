@@ -101,7 +101,14 @@ def media_record(entry: Any) -> dict[str, Any]:
 
     segments = _segments(entry)
     lesson = entry.lesson if isinstance(entry.lesson, Mapping) else {}
-    reprocessable = bool(entry.canonical_url) and entry.provider in _REPROCESSABLE_PROVIDERS
+    reprocessable = entry.provider == "upload" or (bool(entry.canonical_url) and entry.provider in _REPROCESSABLE_PROVIDERS)
+    actions = _media_actions(getattr(entry, "status", "published"), reprocessable)
+    if entry.status == "unpublished":
+        actions.remove("republish")
+    if entry.status in {"review", "unpublished"} and entry.source.get("rights") == "cleared":
+        from writing_coach.media_transcript_pipeline import usable_transcript
+        if (entry.processing or {}).get("state", "ready") in {"ready", "held"} and usable_transcript(entry)[0]:
+            actions.append("republish" if entry.status == "unpublished" else "publish")
     return {
         "kind": "media",
         "id": entry.media_id,
@@ -123,7 +130,8 @@ def media_record(entry: Any) -> dict[str, Any]:
             "transcript": "available" if segments else "missing",
         },
         "issues": [] if segments else ["transcript_missing"],
-        "actions": _media_actions(getattr(entry, "status", "published"), reprocessable),
+        "processing": dict(getattr(entry, "processing", None) or {}),
+        "actions": actions,
     }
 
 
@@ -137,12 +145,14 @@ def _media_actions(status: str, reprocessable: bool) -> list[str]:
     genuine mistake is a separate, deliberate path.
     """
     actions = ["preview"]
-    if reprocessable:
+    if reprocessable and status != "archived":
         actions.append("reprocess")
     if status == "published":
         actions += ["unpublish", "archive"]
     elif status == "unpublished":
         actions += ["republish", "archive"]
+    elif status in {"processing", "review"}:
+        actions.append("archive")
     else:
         actions.append("restore")
     return actions

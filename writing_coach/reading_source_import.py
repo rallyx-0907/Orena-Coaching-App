@@ -79,6 +79,7 @@ class SubmittedInput:
     language: str = ""
     published_at: str = ""
     source_name: str = ""
+    source_id: str = ""
     rights: dict[str, Any] = field(default_factory=dict)
 
 

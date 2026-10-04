@@ -11,12 +11,15 @@ import { emptyMarkup } from '../../kit/states.js';
 import { openSheet, sheetHead, fillSheet } from '../../kit/overlay.js';
 import { api } from '../../infrastructure/api.js';
 import { syncImports } from '../../shell/context.js';
+import { openMedia } from '../../product/media-source.js';
+import { sourceFromLesson } from '../../product/speaking-source.js';
 import { shellCopy as ts } from '../../copy/shell.js';
+import { languages } from '../../copy/index.js';
 import { t } from './copy.js';
 import {
   entryFromArticle, entryFromBook, entryFromMedia, entryFromCollection,
   entryFromTextImport, entryFromMediaImport, filterOptions, visibleEntries,
-  presentCard, hrefFor, typeLabel, hasAnyFilter, filterCount,
+  presentCard, hrefFor, typeLabel, hasAnyFilter, filterCount, practiceCandidates, practiceHref, preparedMediaEntry,
 } from './model.js';
 
 const TAB_LABEL_KEY = { all: 'tabAll', read: 'tabRead', listen: 'tabListen', collections: 'tabCollections', imported: 'tabImported' };
@@ -37,27 +40,34 @@ export default async function discover(element, ctx) {
   await useStyles('screens/discover/discover.css');
   const learner = ctx.context;
   const language = learner.language;
+  const support = languages().support;
   const memory = learner.memory;
   const continuation = memory?.value?.continuation || [];
+  const practice = ['pronunciation','dictation','listening'].includes(ctx.query.get('practice')) ? ctx.query.get('practice') : '';
+  const pronunciation = practice === 'pronunciation';
+  const practiceLabel = pronunciation ? 'pronunciation' : practice === 'listening' ? 'listeningComprehension' : practice;
+  if (practice) ctx.setCrumb(ts(practiceLabel));
+  const practicePlace = { source: ctx.query.get('source'), segment: ctx.query.get('segment'), intent: practice };
 
-  const state = { tab: 'all', query: '', filters: emptyFilters(), entries: [], loading: true, failed: false };
+  const state = { tab: practice ? 'all' : TABS.includes(ctx.query.get('tab')) ? ctx.query.get('tab') : 'all', query: '', filters: emptyFilters(), entries: [], loading: true, failed: false };
   let sheetHandle = null;
 
   mount(
     element,
     html`<div class="s-discover">
       <div class="o-pagehead">
-        <h1 class="o-h1">${ts('discover')}</h1>
+        <h1 class="o-h1">${practice ? ts(practiceLabel) : ts('discover')}</h1>
         <div class="s-discover__actions">
           <button type="button" class="o-btn o-btn--secondary" data-filters>${raw(icon('list-filter', { size: 16 }))}${t('filters')}<span data-filtercount></span></button>
-          <button type="button" class="o-btn o-btn--primary" data-import>+ ${t('importAction')}</button>
+          ${practice === 'listening' ? '' : html`<button type="button" class="o-btn o-btn--primary" data-import>+ ${t('importAction')}</button>`}
         </div>
       </div>
       <div class="o-search">
         ${raw(icon('search', { size: 18 }))}
-        <input type="search" autocomplete="off" placeholder="${t('searchPlaceholder')}" data-query>
+        <input type="search" autocomplete="off" placeholder="${t(practice ? 'practiceSearch' : 'searchPlaceholder')}" data-query>
       </div>
-      <div class="o-tabs" data-tabs></div>
+      ${practice ? html`<p class="o-muted">${t(pronunciation ? 'choosePracticeMedia' : practice === 'dictation' ? 'chooseDictationMedia' : 'chooseListeningMedia')}</p>` : ''}
+      <div class="o-tabs" data-tabs ${practice ? raw('hidden') : ''}></div>
       <div class="s-discover__results" data-results-row></div>
       <div data-results></div>
     </div>`,
@@ -75,6 +85,7 @@ export default async function discover(element, ctx) {
   }
 
   function paintTabs() {
+    if (practice) return;
     mount(
       tabsEl,
       html`${TABS.map((id) => html`<button type="button" class="o-tab" role="tab" aria-selected="${state.tab === id ? 'true' : 'false'}" data-tab="${id}"><span>${t(TAB_LABEL_KEY[id])}</span><span class="o-tab__bar"></span></button>`)}`,
@@ -112,8 +123,9 @@ export default async function discover(element, ctx) {
       mount(
         resultsEl,
         html`<div class="s-discover__grid">${list.map((entry) => {
-          const card = presentCard(entry, t);
-          return mediaCard({ ...card, title: langSpan(card.title, card.titleLang), dataset: { go: hrefFor(entry, ctx.href) } });
+          // Navigation history is not completion of this newly chosen practice.
+          const card = presentCard(practice ? {...entry,started:false,progressPct:null} : entry, t);
+          return mediaCard({ ...card, title: langSpan(card.title, card.titleLang), dataset: { go: practice ? practiceHref(entry, ctx.href, practicePlace) : hrefFor(entry, ctx.href) } });
         })}</div>`,
       );
     }
@@ -183,9 +195,9 @@ export default async function discover(element, ctx) {
     });
   });
 
-  root.querySelector('[data-import]').addEventListener('click', () => {
+  root.querySelector('[data-import]')?.addEventListener('click', () => {
     import('../import/sheet.js')
-      .then((module) => module.openImport(ctx))
+      .then((module) => module.openImport(ctx, { mediaRoute: pronunciation ? 'shadow' : practice === 'dictation' ? 'dictation' : 'listening' }))
       .catch((error) => console.error('[Orena] Import is not available yet', error));
   });
 
@@ -200,11 +212,12 @@ export default async function discover(element, ctx) {
   paintResults();
 
   async function load() {
-    const [articles, books, media, collections] = await Promise.all([
+    const [articles, books, media, collections, speaking] = await Promise.all([
       api.readingArticles(language).catch(() => ({ items: [] })),
       api.libraryBooks(language).catch(() => ({ items: [] })),
       api.listeningLibrary(language).catch(() => ({ items: [] })),
       api.vocabularyLibraryCollections(language).catch(() => ({ items: [] })),
+      pronunciation ? api.speakingLibrary(language).catch(() => ({items:[]})) : Promise.resolve({items:[]}),
       // The account's imports: a deletion made on another device leaves this list (no deletion is offered here).
       syncImports(memory, language).catch(() => false),
     ]);
@@ -218,6 +231,21 @@ export default async function discover(element, ctx) {
       ...textEntries,
       ...mediaEntries,
     ];
+    if (practice) {
+      const privateMedia = await Promise.all((practice === 'listening' ? [] : memory?.value?.mediaImports || []).map(async item => {
+        try {
+          const payload = await openMedia(item.id, {api, support, language, owner:learner.owner});
+          const source = sourceFromLesson(item.id, payload, '', support);
+          return preparedMediaEntry(item.id, payload, source, language, continuation);
+        } catch { return null; }
+      }));
+      const authored = pronunciation ? (speaking.items || []).filter(item=>item.practice_type === 'sentences').map(item=>({
+        id:item.id, speakingId:item.id, kind:'text', title:item.title || '', language:item.language || language,
+        author:'',level:item.level || '',topic:'',image:'',
+      })) : [];
+      const candidates = [...practiceCandidates(state.entries, practice), ...practiceCandidates(privateMedia.filter(Boolean), practice), ...authored];
+      state.entries = [...new Map(candidates.map(entry=>[entry.id,entry])).values()];
+    }
   }
 
   await load();

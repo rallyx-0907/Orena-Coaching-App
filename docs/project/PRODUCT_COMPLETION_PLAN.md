@@ -16,12 +16,43 @@ and see it usable by learners without editing code.
 
 ## Decisions applied (D-110, D-111, 2026-10-02) - read before section 3
 
+D-112: completion is judged against the full pinned UI/spec inventory: Today, Discover, Orena Agent/Intelligence,
+Practice Hub, My Library, Progress, Active Reading/Reading Practice, Listening/Media/Dictation/Shadowing,
+Speaking, Writing, Vocabulary/Recall, Grammar, Books, imports, Profile/language/settings and Admin
+Overview/Content/Imports/Operations/AI & Models/Users. Every important element, action, state and transition
+needs a browser-testable path or an explicit truthful unavailable state. Backend support alone is insufficient.
+Orena Intelligence and its existing reconciliation work are integrated completion scope: existing learner authority,
+account/language-scoped evidence, recommendations, WHY/HOW, weakness-based practice and action/source routing
+must be verified in final learner flows. Agent is its conversational interface, not another learner-data authority.
+No invented history/scores/weaknesses/personalization or reconstruction of deleted source excerpts. Public readiness
+also requires a substantial validated real EN/ZH library. S4, Books and Media are next slices, not the whole target.
+
+### S4 implementation checkpoint — 2026-10-02
+
+Browser-testable at :8021 `/next#/progress`, `/next#/speak-summary`, `/next#/from-your-errors` and
+Speaking Attempt History. Real server activity, verified latest checks/reviews, bounded count labels, vocabulary
+rank, audio-free server attempts and Writing-derived correction drills are connected. Reading UUID and media
+asset-to-lesson return links were repaired in browser QA. Client Dictation scores and stub Speaking scores are
+not quoted; server score provenance overrides local take facts. Local takes/session ledgers use existing account/
+language scope. Request failures show errors; deleted essay details are skipped without reconstructing excerpts.
+Trends, unmeasured KU stages, dated Recall history, awards and personalized next steps remain explicitly unavailable.
+EN/ZH browser paths and phone-width layouts were checked; local Node gates: 123/124 pass, inherited date-sensitive
+Word-detail failure reproduced on clean HEAD. This is **IMPLEMENTING**, not full fidelity/CI/product approval:
+live design-source access, physical touch/light-theme browser checks and broader Intelligence integration remain open.
+Evidence: `docs/reviews/S4_PROGRESS_BROWSER_CHECKPOINT.md`. Unfinished Books/media changes are preserved.
+
 D-110 is the final target and the source of truth for planning; D-111 answers every question in section 5.
 The slice order below supersedes section 3's order where they differ.
 
 - **Running now:** S4 Progress tells the truth; S8a Books open (chapter 503 is a normal bug, the lane store must
   be durable, D-111.7); S2 media becomes a lesson (captions first, ASR fallback within the cap, never published
   without a usable transcript, D-111.3).
+- **Books storage update (2026-10-02, `88b1c81`):** web and worker share
+  `orena-next-verify-media` at `/lanedata`; the ephemeral-storage root cause is
+  resolved without an application-code change. The old Alice EPUB was lost and
+  cannot be recovered. S8a still needs real rights-cleared book imports and
+  learner/restart/resume verification; the older audit's missing chapter assets
+  are historical evidence, not a reason to reopen the resolved storage fix.
 - **Next, in order:**
   1. Archive test leftovers from the learner library (D-111.8), keeping one failed-job example in Admin.
   2. **Admin Overview** now (D-111.5): live / review / invalid / failed / processing, then the D-110.3 control
@@ -242,6 +273,17 @@ word-level pinyin, coaching quality on correct sentences, classifier/particle pr
 - Learning language restored to `en`, interface `vi` (`GET /api/account-settings`).
 
 ## 7. Method notes
+
+### Active Listening corrections (2026-10-02)
+
+Continue the preserved Listening implementation; do not reopen Books or a full-app audit.
+1. Preserve support-language meanings and reuse scoped server payloads across Listening,
+   Dictation and Shadowing; verify reload and return navigation on the reported Chinese source.
+2. Correct player chrome, honest word timing, viewport wrapping and imported level presentation.
+3. Make lookup loading explicit, connect pronunciation and stroke data, animate actual stroke paths.
+4. Standardize visible waiting/progress based on real stages; say Orena AI, without pricing copy.
+5. Verify the reported journeys in the browser (EN/ZH and phone), then checkpoint current truth.
+This is an implementation checklist under the existing authorities, not a new product authority.
 
 - Admin writes need an `Origin` header equal to the host (the console sends it); a bare `curl` gets `admin_origin_required`.
 - Shell-passed Chinese text was mangled on this Windows host; Chinese form fields must be sent from UTF-8 files. Findings

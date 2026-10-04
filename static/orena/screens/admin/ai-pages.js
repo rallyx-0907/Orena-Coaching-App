@@ -253,8 +253,11 @@ export function keyPage({ state, view, t, href }) {
       hint: stored ? t('keyHint') : '',
     });
   }
-  fields.push({ id: 'endpoint', kind: 'text', label: t('fieldEndpoint'), value: form.endpoint ?? provider.configuration?.endpoint_url ?? '' });
-  if (known.length) {
+  fields.push({ id: 'endpoint', kind: 'text', label: t('fieldEndpoint'), value: form.endpoint ?? provider.configuration?.endpoint_url ?? '',
+    hint: provider.id === 'azure-speech' ? t('azureSpeechHint') : '' });
+  if (provider.id === 'azure-openai') {
+    fields.push({ id: 'model', kind: 'text', label: t('fieldDefaultModel'), value: form.model || provider.default_model || '', hint: t('azureDeploymentHint') });
+  } else if (provider.id !== 'azure-speech' && known.length) {
     const chosen = form.model || provider.default_model || known[0];
     fields.push({ id: 'model', kind: 'seg', label: t('fieldDefaultModel'), options: known.map((model) => ({ id: model, label: model, on: model === chosen })) });
   }

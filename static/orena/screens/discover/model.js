@@ -97,6 +97,8 @@ export function entryFromMedia(item, continuation) {
   return {
     id,
     kind: 'media',
+    availableModes: Array.isArray(item.available_modes) ? item.available_modes : [],
+    comprehensionCount: Number(item.comprehension_count) || 0,
     mediaType: item.media_type === 'video' ? 'video' : 'audio',
     title: item.title || '',
     // languages-5 / finding A: `language` (writing_coach/listening_api.py `stored_media_metadata` /
@@ -309,4 +311,27 @@ export function hrefFor(entry, href) {
   return entry.kind === 'collection'
     ? href('collection', { id: entry.id.slice('collection:'.length) })
     : href('content', { id: entry.id });
+}
+
+// Capability admission comes from the shared server library, never a device import placeholder.
+export function practiceCandidates(entries, intent = 'pronunciation') {
+  return entries.filter(entry => entry.kind === 'media' && (intent === 'listening' ? entry.comprehensionCount > 0 : entry.availableModes?.includes(intent === 'dictation' ? 'dictation' : 'shadowing')));
+}
+
+export function practiceHref(entry, href, { source = '', segment = '', intent = 'pronunciation' } = {}) {
+  if (entry.speakingId) return href('speak', {id:entry.speakingId}, {});
+  const id = entry.id.slice('media:'.length);
+  return href(intent === 'dictation' ? 'dictation' : intent === 'listening' ? 'listenQuestions' : 'shadow', { id }, (source === id || entry.sourceAliases?.includes(source)) && segment ? { segment } : {});
+}
+
+export function preparedMediaEntry(itemId, payload, source, language, continuation) {
+  if (!source?.hasModelAudio || source.language !== language || (payload.asset?.processing_state && payload.asset.processing_state !== 'ready')) return null;
+  return {
+    ...entryFromMedia({
+      ...payload.catalog, lesson_id:payload.catalog?.lesson_id || itemId, title:source.title, language:source.language,
+      media_type:payload.playback.kind === 'audio' ? 'audio' : 'video',
+      duration_ms:payload.asset.duration_ms, poster_url:payload.asset.thumbnail_url, available_modes:['shadowing','dictation'],
+    }, continuation),
+    sourceAliases:[itemId],
+  };
 }

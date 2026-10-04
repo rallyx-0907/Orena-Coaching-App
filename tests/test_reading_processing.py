@@ -236,6 +236,15 @@ def test_targets_are_deterministic_and_never_duplicate_a_form():
     assert len({target.canonical_form for target in first}) == len(first)
 
 
+def test_chinese_targets_use_real_words_without_cross_sentence_ngrams():
+    body = "我们在松树林里散步。老师在松树林里学习。朋友在松树林里拍照。松树林里有一条小路。竹林旁边有松树。"
+    targets = suggest_targets(body, "zh", limit=8)
+    forms = {target.canonical_form for target in targets}
+    assert "松树" in forms  # The shared tagger's actual noun boundary, not a substring window.
+    assert not forms & {"在松树林", "松树林里", "树林里散", "的松树"}
+    assert all(target.text in target.context and target.context in body for target in targets)
+
+
 @pytest.mark.parametrize("language", ["en", "zh"])
 def test_targets_on_an_empty_body_are_empty_not_invented(language):
     assert suggest_targets("", language, limit=8) == []

@@ -1,5 +1,20 @@
 # Orena Design Contract
 
+## Visual Skin authority (2026-10-03)
+
+Explicit human direction adds `docs/design/canonical-ui/screens/Orena Visual Skin EN.html`
+(the supplied “Orena Visual Skin (2).html” export) and `Orena Visual Skin ZH.html`
+as visual-language authority. Screen-specific canonical prototypes still own
+composition, layout and interaction; these two skins own palette/accent variants,
+light/dark mappings, surfaces, contrast, typography, spacing and component treatment.
+They do not create a second product design for Chinese. Reuse EN/ZH interaction
+and layout, applying the ZH typography/content treatment where appropriate.
+The skins contain outdated brand artwork: current approved `assets/brand/orena/`
+always wins for logos, marks, icons and artwork. Never copy those obsolete assets.
+Compare changed UI against both its screen prototype and the relevant skin before
+claiming visual completion. The shared token file remains the single colour owner;
+measured accessibility corrections remain documented rather than weakening gates.
+
 ## Governance
 
 **Purpose:** say how the learner-facing UI is built and judged, so that what
@@ -271,6 +286,12 @@ the design project `e6dc1cb2-72d0-40b4-a916-5dcd47e17cc0` in Claude Design,
 
 ## The learner language contract
 
+**Content readiness (D-121).** Learning workspaces never expose source-preparation
+or provider/job progress UI for already-admitted content. Preparation belongs to
+import/content readiness; required learning controls are usable on entry. An
+unready capability stays outside the workspace. Learner recording/submission
+assessment retains its own action-specific processing state.
+
 Orena has three language layers, and none is inferred from another (D-079;
 `docs/product/ORENA_LANGUAGE_COHERENCE.md` owns the full contract).
 
@@ -332,8 +353,19 @@ in addition to `docs/project/REVIEW_POLICY.md`:
 
 ## Native (frozen)
 
+Loading across the app (human correction, 2026-10-02): waits beyond 2-3 seconds
+show a visible loading state and progress bar. Known processing stages show
+the actual current step and completed steps; unknown duration stays indeterminate.
+Never invent percent completion or remaining time. Preserve already loaded learning
+content during enrichment and reuse scoped resources across practice handoffs.
+AI processing copy says Orena AI is processing, without pricing/resource-cost wording.
+
 Native mobile is frozen (D-046, 2026-09-06). When it thaws, it ports the
 approved web behaviour and the same design; it is not a redesign, a reduced
 feature set, a WebView shell or an Expo/Material reinterpretation, and it keeps
 tokens, hierarchy, navigation identity, states, accessibility and EN/ZH parity.
 A native-only flow or a separate state model is a product-memory regression.
+
+Responsive phone web is the review reference for future native layout and
+learning flow (D-122). Verify phone usability here before porting; native remains
+frozen, and human approval is still required for the product baseline.

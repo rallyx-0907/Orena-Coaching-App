@@ -81,8 +81,8 @@ def test_imported_media_reports_transcript_state_and_reprocess_only_for_url_sour
     assert captionless["issues"] == ["transcript_missing"]
 
     upload = content.media_record(_entry("upload-1", provider="upload", url="", segments=None))
-    # An upload cannot be read again, but it can still be taken off the shelf.
-    assert upload["actions"] == ["preview", "unpublish", "archive"]
+    # A retained upload now has the same transcript retry path as a URL.
+    assert upload["actions"] == ["preview", "reprocess", "unpublish", "archive"]
     assert upload["issues"] == ["transcript_missing"]
 
 
@@ -92,7 +92,7 @@ def test_only_actionable_missing_transcripts_need_attention():
         content.media_record(_entry("upload-b", provider="upload", url="", segments=None)),
         content.media_record(_entry("youtube-c")),
     ]
-    assert content.transcript_attention_count(records) == 1
+    assert content.transcript_attention_count(records) == 2
 
 
 def test_curated_media_comes_from_the_code_owned_catalog_and_is_read_only():

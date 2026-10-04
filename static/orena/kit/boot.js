@@ -46,6 +46,8 @@
     for (var i = 0; i < langs.length && !ui; i += 1) ui = match(langs[i]);
   }
   root.lang = ui || 'en';
+  var palette = stored('orena.palette');
+  root.dataset.palette = ['indigo', 'orchid', 'blue', 'rose'].indexOf(palette) >= 0 ? palette : 'indigo';
   theme();
   device();
   if (dark.addEventListener) {

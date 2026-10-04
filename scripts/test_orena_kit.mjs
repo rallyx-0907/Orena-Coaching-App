@@ -43,6 +43,20 @@ function norm(value) {
 
 const tokens = fs.readFileSync(path.join(ROOT, 'kit/tokens.css'), 'utf8');
 const device = fs.readFileSync(path.join(ROOT, 'kit/device.css'), 'utf8');
+// Human-approved Visual Skin owns visual treatment; screen pins still own composition.
+const skins = ['EN', 'ZH'].map((lang) => {
+  const exported = fs.readFileSync(`docs/design/canonical-ui/screens/Orena Visual Skin ${lang}.html`, 'utf8');
+  const template = /<script type="__bundler\/template">([\s\S]*?)<\/script>/.exec(exported);
+  assert.ok(template, `${lang}: original Visual Skin template present`);
+  return JSON.parse(template[1]);
+});
+const skinDark = vars(/const D = \{([^}]+)\}/.exec(skins[0])[1].replace(/'([^']+)'\s*:\s*'([^']+)'/g, '$1:$2;'));
+const skinPage = /document.body.style.background = dark \? '([^']+) fixed'/.exec(skins[0])[1];
+for (const source of skins) {
+  assert.ok(source.includes(skinPage));
+  assert.ok(source.includes(skinDark['ai-soft'].toUpperCase()));
+  assert.ok(source.includes(skinDark['ai-ink'].toUpperCase()));
+}
 
 // 1. Tokens: both themes, exactly the design's - except the smallest AA adjustments the human
 // approved (D-093, rule 41) and the two tokens they added (a fill for white-on-violet controls, the
@@ -59,7 +73,8 @@ for (const theme of ['dark', 'light']) {
   for (const prototypeOnly of ['bezel', 'frame-border']) delete design[prototypeOnly];
   assert.deepEqual(Object.keys(ours).sort(), [...Object.keys(design), ...ADDED].sort(), `${theme}: the design's token names plus the D-093 additions`);
   for (const [name, value] of Object.entries(design)) {
-    const expected = ADJUSTED[theme][name] ? norm(ADJUSTED[theme][name]) : value;
+    const skinValue = theme === 'dark' ? ({ page: skinPage, 'ai-soft': skinDark['ai-soft'], 'ai-ink': skinDark['ai-ink'] })[name] : null;
+    const expected = norm(ADJUSTED[theme][name] || skinValue || value);
     assert.equal(ours[name], expected, `${theme} --${name} is ${ADJUSTED[theme][name] ? 'the D-093 value' : "the design's value"}`);
   }
 }
@@ -90,6 +105,12 @@ function lum(hex) {
 function contrast(a, b) {
   const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p);
   return (x + 0.05) / (y + 0.05);
+}
+// Oklch mixing with black scales linear RGB by the cube of the retained share.
+// The darker action step must carry small white labels in every new palette.
+for (const [, name, base] of tokens.matchAll(/data-palette="(orchid|blue|rose)"\]\s*\{\s*--palette-base:\s*(#[\da-f]+);/gi)) {
+  const ratio = 1.05 / (lum(base) * .9 ** 3 + .05);
+  assert.ok(ratio >= 4.5, `${name}: white/action fill ${ratio.toFixed(2)}:1 needs AA`);
 }
 // Every pair the design draws as text or an icon on a ground. Interface text here is small
 // (11-15px, the bold ones below 18.66px), so AA is 4.5:1 for every pair, in both themes.

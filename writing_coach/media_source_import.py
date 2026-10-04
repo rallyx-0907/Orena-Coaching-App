@@ -20,9 +20,10 @@ import hashlib
 import logging
 import uuid
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Mapping
+from collections.abc import Mapping
+from typing import Any
 from urllib.parse import urlsplit
 
 from writing_coach.book_asset_store import BookAssetStore
@@ -80,7 +81,7 @@ class MediaSourceImportReport:
 
 
 def _now() -> str:
-    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    return datetime.now(UTC).isoformat().replace("+00:00", "Z")
 
 
 def public_thumbnail_url(entry: MediaLibraryEntry) -> str:
@@ -261,10 +262,29 @@ def _write_failure(exc: OSError) -> MediaLibraryWriteFailed:
 class MediaSourceImporter:
     """Detect, acquire, normalise, persist — reusing M1 acquisition throughout."""
 
-    def __init__(self, ingestion: MediaIngestionService, store: MediaLibraryStore, asset_store: BookAssetStore) -> None:
+    def __init__(self, ingestion: MediaIngestionService, store: MediaLibraryStore, asset_store: BookAssetStore, *, pipeline: Any = None) -> None:
         self._ingestion = ingestion
         self._store = store
         self._asset_store = asset_store
+        self.pipeline = pipeline
+
+    def prepare(self, entry: MediaLibraryEntry, *, declared: bool | None = None, batch_id: str = "") -> MediaLibraryEntry:
+        """The same transcript admission step for URL and file imports."""
+        from writing_coach.media_transcript_pipeline import Candidate, lines_from_payload, rights_for_source, usable_transcript
+
+        rights, basis = rights_for_source(entry.provider, entry.canonical_url, declared=declared)
+        valid, reason = usable_transcript(entry)
+        entry = _entry_with(entry, source={**entry.source, "rights": rights, "rights_basis": basis},
+                            status="processing" if self.pipeline else ("published" if valid and rights == "cleared" else "review"))
+        self._store.upsert(entry)
+        if self.pipeline:
+            cues = tuple(lines_from_payload((entry.lesson or {}).get("payload")))
+            self.pipeline.enqueue(self._store, self._asset_store, entry.media_id,
+                                  batch_id=batch_id or self.pipeline.new_batch(), candidate=Candidate(cues=cues))
+        elif not valid:
+            entry = _entry_with(entry, processing={"state": "failed", "reason": reason, "stage": "transcribe"})
+            self._store.upsert(entry)
+        return self._store.get(entry.media_id) or entry
 
     # -- admin -----------------------------------------------------------------
 
@@ -273,11 +293,29 @@ class MediaSourceImporter:
         entry, acquisition = self._from_url(url, language=language, imported_by="preview", persist_media=False)
         return self._preview_payload(entry, acquisition)
 
+    def import_personal_url(self, url: str, *, language: str, owner_key: str) -> MediaLibraryEntry:
+        if not owner_key:
+            raise ValueError("a personal source needs its owner")
+        host = (urlsplit(url).hostname or "").casefold()
+        if host not in {"youtu.be", "youtube.com"} and not host.endswith(".youtube.com"):
+            suffix = _safe_suffix(urlsplit(url).path)
+            if suffix not in DIRECT_MEDIA_SUFFIXES:
+                raise UnsupportedMediaAddress
+            with TempMediaFile(suffix=suffix) as temp:
+                download_bounded(url, temp.path)
+                return self.import_upload(temp.path, filename=Path(urlsplit(url).path).name,
+                                          language=language, imported_by="learner", library="personal", owner_key=owner_key)
+        entry, _ = self._from_url(url, language=language, imported_by="learner", persist_media=True)
+        entry = _entry_with(entry, media_id=f"source-{uuid.uuid4().hex}", library="personal",
+                            source={**entry.source, OWNER_FIELD: owner_token(owner_key)})
+        return self.prepare(entry)
+
     def import_urls(
         self, items: list[Mapping[str, Any]], *, language: str, imported_by: str
     ) -> MediaSourceImportReport:
         """Import a batch. One bad source is one error row, never a lost batch."""
         results: list[MediaSourceImportItem] = []
+        batch_id = self.pipeline.new_batch() if self.pipeline else ""
         for item in items:
             url = str(item.get("url") or "").strip()
             try:
@@ -291,7 +329,7 @@ class MediaSourceImporter:
             # Persist is its own step so its failures are its own: an OSError
             # here is the library, and an OSError above was something else.
             try:
-                self._store.upsert(entry)
+                entry = self.prepare(entry, declared=item.get("rights_cleared"), batch_id=batch_id)
             except OSError as exc:
                 results.append(self._failed(url, _write_failure(exc)))
                 continue
@@ -352,6 +390,7 @@ class MediaSourceImporter:
         library: str = "shared",
         title: str = "",
         owner_key: str = "",
+        batch_id: str = "",
     ) -> MediaLibraryEntry:
         """Store an audio/video file Orena is given, with its own thumbnail."""
         if library == "personal" and not owner_key:
@@ -386,8 +425,7 @@ class MediaSourceImporter:
         )
         # Both libraries persist through the same store: `personal` rows are
         # simply never listed by a browse read and are only resolvable by id.
-        self._store.upsert(entry)
-        return entry
+        return self.prepare(entry, batch_id=batch_id)
 
     # -- internal --------------------------------------------------------------
 

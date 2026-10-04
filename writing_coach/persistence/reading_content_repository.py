@@ -694,17 +694,41 @@ class ReadingContentRepository:
         targets: Sequence[TargetInput],
         subtopic: str = "",
         status: str = "needs_review",
+        automatic_admission: bool = False,
         actor: str = "orena:reading-engine",
         now: datetime | None = None,
     ) -> dict[str, Any]:
         """One candidate article and its targets, in one transaction.
 
-        `status` is `needs_review`: the engine proposes, an admin publishes.
-        Nothing here can make an article learner-visible.
+        Default candidates await review. The engine may request deterministic
+        admission under an active source's reviewed rights and automation policy.
+        The decision, targets and publication are committed together.
         """
         moment = _now(now)
         article_id = uuid.uuid4()
         with self.engine.begin() as connection:
+            admitted = False
+            prepared_analysis = dict(analysis or {})
+            if automatic_admission:
+                from writing_coach.reading_admission import automatic_admission as check_admission
+
+                snapshot_row = connection.execute(select(ReadingSourceItem).where(
+                    ReadingSourceItem.id == _uuid(source_item_id)).with_for_update()).first()
+                if snapshot_row is None:
+                    raise ValueError("Source snapshot not found")
+                existing = connection.execute(select(ReadingArticle).where(
+                    ReadingArticle.source_item_id == snapshot_row.id)).first()
+                if existing is not None:
+                    return {**_article(existing), "duplicate": True}
+                source_row = connection.execute(select(ReadingSource).where(
+                    ReadingSource.id == snapshot_row.source_id).with_for_update()).first()
+                decision = check_admission(source=_source(source_row), snapshot=_item(snapshot_row),
+                    language=language, body=body, analysis=prepared_analysis, targets=targets,
+                    min_targets=MIN_TARGETS, max_targets=MAX_TARGETS)
+                prepared_analysis["admission"] = decision
+                admitted = decision["decision"] == "published" and status == "needs_review"
+                if admitted:
+                    status = LEARNER_VISIBLE_STATUS
             connection.execute(
                 insert(ReadingArticle).values(
                     id=article_id,
@@ -723,8 +747,9 @@ class ReadingContentRepository:
                     reading_time_seconds=int(reading_time_seconds),
                     is_adapted=False,
                     adaptation_json={},
-                    analysis_json=dict(analysis or {}),
+                    analysis_json=prepared_analysis,
                     status=status,
+                    published_at=moment if admitted else None,
                     content_revision=1,
                     created_at=moment,
                     updated_at=moment,
@@ -743,6 +768,7 @@ class ReadingContentRepository:
                         estimated_level=target.estimated_level,
                         rank=target.rank,
                         machine_suggested=target.machine_suggested,
+                        admin_approved=admitted,
                         created_at=moment,
                         updated_at=moment,
                     )
@@ -753,9 +779,14 @@ class ReadingContentRepository:
                 actor=actor,
                 action="created",
                 reason="",
-                changes={"targets": len(targets), "estimated_level": estimated_level},
+                changes={"targets": len(targets), "estimated_level": estimated_level,
+                         **({"admission": decision} if automatic_admission else {})},
                 now=moment,
             )
+            if admitted:
+                self._record_event(connection, article_id=article_id, actor=actor,
+                    action="auto_published", reason="",
+                    changes={"admission": decision, "automatically_approved_targets": len(targets)}, now=moment)
             row = connection.execute(
                 select(ReadingArticle).where(ReadingArticle.id == article_id)
             ).first()

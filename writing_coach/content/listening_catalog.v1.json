@@ -398,6 +398,38 @@
         "dictation",
         "beginner",
         "new"
+      ],
+      "comprehension": [
+        {
+          "id": "en-daily-pen-in-my-bag:q1",
+          "prompt": "What does the speaker ask Anna for?",
+          "options": [
+            "A pen",
+            "A bag",
+            "A book"
+          ],
+          "correct_index": 0,
+          "explanation": "The speaker asks Anna whether she has a pen.",
+          "evidence_segment_ids": [
+            "commons-voa-anna-pen:000"
+          ],
+          "evidence_text": "Anna, do you have a pen?"
+        },
+        {
+          "id": "en-daily-pen-in-my-bag:q2",
+          "prompt": "Where is Anna’s pen?",
+          "options": [
+            "On the table",
+            "In her bag",
+            "At home"
+          ],
+          "correct_index": 1,
+          "explanation": "Anna says she has a pen in her bag.",
+          "evidence_segment_ids": [
+            "commons-voa-anna-pen:001"
+          ],
+          "evidence_text": "Yes. I have a pen in my bag."
+        }
       ]
     },
     {
@@ -445,6 +477,38 @@
         "dictation",
         "beginner",
         "new"
+      ],
+      "comprehension": [
+        {
+          "id": "zh-daily-what-is-this:q1",
+          "prompt": "“那”最后指的是什么？",
+          "options": [
+            "杂志",
+            "字典",
+            "书"
+          ],
+          "correct_index": 1,
+          "explanation": "李红说：“那不是杂志。那是字典。”",
+          "evidence_segment_ids": [
+            "commons-zh-lesson-7-dialogue-1:000"
+          ],
+          "evidence_text": "王明：这是什么？李红：这是书。王明：那是什么？李红：那是钢笔。王明：那是杂志吗？李红：不，那不是杂志。那是字典。"
+        },
+        {
+          "id": "zh-daily-what-is-this:q2",
+          "prompt": "王明问“那是什么”时，李红说是什么？",
+          "options": [
+            "钢笔",
+            "杂志",
+            "书"
+          ],
+          "correct_index": 0,
+          "explanation": "李红回答：“那是钢笔。”",
+          "evidence_segment_ids": [
+            "commons-zh-lesson-7-dialogue-1:000"
+          ],
+          "evidence_text": "王明：这是什么？李红：这是书。王明：那是什么？李红：那是钢笔。王明：那是杂志吗？李红：不，那不是杂志。那是字典。"
+        }
       ]
     },
     {
@@ -490,6 +554,38 @@
         "dictation",
         "beginner",
         "new"
+      ],
+      "comprehension": [
+        {
+          "id": "zh-culture-nationalities:q1",
+          "prompt": "艾美是哪国人？",
+          "options": [
+            "中国人",
+            "美国人",
+            "英国人"
+          ],
+          "correct_index": 0,
+          "explanation": "欧文说：“她是艾美，她是中国人。”",
+          "evidence_segment_ids": [
+            "commons-zh-lesson-1-dialogue-2:001"
+          ],
+          "evidence_text": "欧文：她是艾美，她是中国人。他是东尼，他是美国人。"
+        },
+        {
+          "id": "zh-culture-nationalities:q2",
+          "prompt": "谁是美国人？",
+          "options": [
+            "金妮",
+            "艾美",
+            "东尼"
+          ],
+          "correct_index": 2,
+          "explanation": "欧文说：“他是东尼，他是美国人。”",
+          "evidence_segment_ids": [
+            "commons-zh-lesson-1-dialogue-2:001"
+          ],
+          "evidence_text": "欧文：她是艾美，她是中国人。他是东尼，他是美国人。"
+        }
       ]
     },
     {
@@ -537,6 +633,38 @@
         "dictation",
         "beginner",
         "new"
+      ],
+      "comprehension": [
+        {
+          "id": "zh-culture-where-are-you-from:q1",
+          "prompt": "欧文是哪国人？",
+          "options": [
+            "美国人",
+            "英国人",
+            "法国人"
+          ],
+          "correct_index": 1,
+          "explanation": "欧文回答：“不是，我是英国人。”",
+          "evidence_segment_ids": [
+            "commons-zh-lesson-1-dialogue-2:003"
+          ],
+          "evidence_text": "欧文：不是，我是英国人。你呢？你是哪国人？"
+        },
+        {
+          "id": "zh-culture-where-are-you-from:q2",
+          "prompt": "金妮是哪国人？",
+          "options": [
+            "法国人",
+            "英国人",
+            "中国人"
+          ],
+          "correct_index": 0,
+          "explanation": "金妮说：“我是法国人。”",
+          "evidence_segment_ids": [
+            "commons-zh-lesson-1-dialogue-2:004"
+          ],
+          "evidence_text": "金妮：我是法国人。"
+        }
       ]
     },
     {
@@ -582,6 +710,38 @@
         "recommended",
         "new",
         "dictation"
+      ],
+      "comprehension": [
+        {
+          "id": "en-science-cosmic-calendar:q1",
+          "prompt": "On the cosmic calendar, when did the first stars form?",
+          "options": [
+            "January 5",
+            "January 9",
+            "In September"
+          ],
+          "correct_index": 0,
+          "explanation": "The first stars formed on January 5; the first galaxies formed on January 9.",
+          "evidence_segment_ids": [
+            "commons-royalsociety-cosmic-calendar:002"
+          ],
+          "evidence_text": "The first stars formed on the 5th of January and the first galaxies formed on the 9th"
+        },
+        {
+          "id": "en-science-cosmic-calendar:q2",
+          "prompt": "When did our Solar System and Earth form on this calendar?",
+          "options": [
+            "In May",
+            "In September",
+            "On December 25"
+          ],
+          "correct_index": 1,
+          "explanation": "The speaker places the formation of our Solar System and Earth in September.",
+          "evidence_segment_ids": [
+            "commons-royalsociety-cosmic-calendar:003"
+          ],
+          "evidence_text": "For the thin disk of the Milky Way Galaxy didn't form until May Our Solar System and Earth formed in September"
+        }
       ]
     },
     {
@@ -627,6 +787,38 @@
         "recommended",
         "new",
         "dictation"
+      ],
+      "comprehension": [
+        {
+          "id": "zh-technology-search-wikipedia:q1",
+          "prompt": "输入要找的内容后，相关条目会在哪里展开？",
+          "options": [
+            "下方",
+            "另一个网站",
+            "最上方"
+          ],
+          "correct_index": 0,
+          "explanation": "说明中说：“相关条目会在下方展开。”",
+          "evidence_segment_ids": [
+            "commons-zh-wikipedia-tutorial-1:002"
+          ],
+          "evidence_text": "相关条目会在下方展开"
+        },
+        {
+          "id": "zh-technology-search-wikipedia:q2",
+          "prompt": "按哪个按钮可以直接找输入的条目？",
+          "options": [
+            "放大镜",
+            "首页",
+            "语言选项"
+          ],
+          "correct_index": 0,
+          "explanation": "说明中说：“按「放大镜」可以直接找你输入的条目”。",
+          "evidence_segment_ids": [
+            "commons-zh-wikipedia-tutorial-1:004"
+          ],
+          "evidence_text": "按「放大镜」可以直接找你输入的条目"
+        }
       ]
     }
   ]

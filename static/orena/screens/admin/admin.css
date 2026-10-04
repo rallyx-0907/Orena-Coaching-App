@@ -724,6 +724,23 @@ a.a-btn--primary:hover {
   gap: 4px;
   min-width: 0;
 }
+
+/* A1 Overview: standalone surface metrics across the page, not a nested KPI panel. */
+.a-overview-metrics {
+  grid-column: 1 / -1;
+}
+.a-overview-metrics .a-metrics {
+  grid-template-columns: var(--a-cols4);
+  gap: 14px;
+}
+.a-overview-metrics .a-metric {
+  background: var(--surface);
+  border-radius: 18px;
+  box-shadow: var(--sh1);
+  padding: 16px;
+  gap: 6px;
+}
+.a-overview-metrics .a-metric__value { font-size: 26px; }
 .a-metric__label {
   font-size: 13px;
   color: var(--muted);
@@ -1639,7 +1656,7 @@ a.a-btn--primary:hover {
   font-size: 12.5px;
 }
 .a-text--original {
-  font-family: 'Source Serif 4', Georgia, serif;
+  font-family: Literata, 'Noto Serif SC', Georgia, serif;
 }
 .a-disclose {
   display: flex;
@@ -1661,7 +1678,7 @@ a.a-btn--primary:hover {
   color: var(--muted);
 }
 .a-serif {
-  font-family: 'Source Serif 4', Georgia, serif;
+  font-family: Literata, 'Noto Serif SC', Georgia, serif;
   font-size: 17px;
   line-height: 1.75;
 }

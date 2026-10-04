@@ -809,6 +809,7 @@ def content_detail(kind: str, content_id: str, request: Request, response: Respo
                 },
                 "source": {
                     "url": entry.canonical_url, "provider": entry.provider, "license": entry.source.get("license", ""),
+                    "rights": entry.source.get("rights", "unknown"),
                     "review_status": entry.source.get("review_status", ""), "imported_by": entry.source.get("imported_by", ""),
                 },
                 "learner_link": _learner_link(f"media:{entry.media_id}", "follow"),
@@ -964,7 +965,7 @@ def runtime(request: Request, response: Response) -> dict[str, Any]:
             "activation": "human_gated",
             "health_rules": _health_rules(),
         },
-        "services": [{"id": key, **value} for key, value in _state.runtime_services.items()],
+        "services": [{"id": key, **value} for key, value in facts.get("services", _state.runtime_services).items()],
         # Imports run inside the request that starts them; there is no queue.
         "background_jobs": "none",
         # Plans exist in the product model but billing is not enabled anywhere
@@ -1131,6 +1132,44 @@ def restore_book(book_id: str, request: Request, response: Response) -> dict[str
     return {"restored": True, "id": book_id}
 
 
+class MediaRightsIn(BaseModel):
+    rights: str = Field(default="unknown", max_length=20)
+    license: str = Field(default="", max_length=1000)
+    attested: bool = False
+
+
+@router.post("/content/media/{media_id}/rights")
+def review_media_rights(media_id: str, payload: MediaRightsIn, request: Request, response: Response) -> dict[str, Any]:
+    admin = _admin(request)
+    _same_origin(request)
+    _no_store(response)
+    rights = payload.rights.strip().casefold()
+    note = payload.license.strip()
+    if rights not in {"unknown", "cleared", "denied"}:
+        raise orena_http_error(422, "media_rights_invalid", "Choose unknown, cleared or denied rights.")
+    if rights == "cleared" and (not payload.attested or not note):
+        raise orena_http_error(422, "media_rights_attestation_required", "Cleared rights need a permission note and confirmation.")
+    store = _state.media_store
+    if store is None:
+        raise orena_http_error(503, "media_library_unavailable", "The media library is unavailable.")
+
+    def change(entry):
+        if entry.library != "shared":
+            raise orena_http_error(404, "content_not_found", "This media is not in the shared library.")
+        if rights == "cleared" and (entry.processing or {}).get("state") in {"queued", "running"}:
+            raise orena_http_error(409, "media_processing_active", "Wait for processing to finish before reviewing rights.")
+        source = {**entry.source, "rights": rights, "license": note, "review_status": "approved" if rights == "cleared" else rights}
+        status = "unpublished" if entry.status == "published" and rights != "cleared" else entry.status
+        return replace(entry, source=source, status=status)
+
+    updated = store.update_if_present(media_id, change)
+    if updated is None:
+        raise orena_http_error(404, "content_not_found", "This media is not in the shared library.")
+    _audit(admin, "admin.content.rights", entity_type="media", entity_id=media_id,
+           payload={"rights": rights, "license": note, "attested": payload.attested, "outcome": "ok"})
+    return {"record": media_record(updated)}
+
+
 @router.post("/content/media/{media_id}/status")
 def set_media_status(media_id: str, payload: MediaStatusIn, request: Request, response: Response) -> dict[str, Any]:
     """Take a media item off the shelf, retire it, or put it back.
@@ -1151,12 +1190,34 @@ def set_media_status(media_id: str, payload: MediaStatusIn, request: Request, re
     entry = store.get(media_id) if store is not None else None
     if entry is None or entry.library != "shared":
         raise orena_http_error(404, "content_not_found", "This media is not in the shared library.")
-    previous = getattr(entry, "status", "published")
-    if previous != wanted:
-        store.upsert(replace(entry, status=wanted))
+    transition = {}
+
+    def change(current):
+        if current.library != "shared":
+            raise orena_http_error(404, "content_not_found", "This media is not in the shared library.")
+        previous = current.status
+        target = wanted
+        if target == "published" and previous == "archived" and (current.processing or {}).get("state") == "cancelled":
+            target = "review"
+        if target == "published":
+            from writing_coach.media_transcript_pipeline import usable_transcript
+            if current.processing and current.processing.get("state") not in {"ready", "held"}:
+                raise orena_http_error(409, "media_transcript_required", "Transcript processing must finish before publishing.")
+            if not usable_transcript(current)[0]:
+                raise orena_http_error(409, "media_transcript_required", "A usable transcript is required before publishing.")
+            if current.source.get("rights") != "cleared":
+                raise orena_http_error(409, "media_rights_required", "Source rights must be cleared before publishing.")
+        processing = dict(current.processing or {})
+        if target == "archived" and processing.get("state") in {"queued", "running"}:
+            processing.update(state="cancelled", reason="archived")
+        transition.update({"from": previous, "to": target, "outcome": "unchanged" if previous == target else "ok"})
+        return replace(current, status=target, processing=processing or None)
+
+    refreshed = store.update_if_present(media_id, change)
+    if refreshed is None:
+        raise orena_http_error(404, "content_not_found", "This media is not in the shared library.")
     _audit(admin, "admin.content.status", entity_type="media", entity_id=media_id,
-           payload={"from": previous, "to": wanted, "outcome": "unchanged" if previous == wanted else "ok"})
-    refreshed = store.get(media_id)
+           payload=transition)
     return {"record": media_record(refreshed) if refreshed is not None else None}
 
 
@@ -1169,6 +1230,11 @@ def reprocess_media(media_id: str, request: Request, response: Response) -> dict
     entry = store.get(media_id) if store is not None else None
     if entry is None or entry.library != "shared":
         raise orena_http_error(404, "content_not_found", "This media is not in the shared library.")
+    if media_library_api.retry_transcript(media_id):
+        refreshed = store.get(media_id)
+        _audit(admin, "admin.content.reprocess", entity_type="media", entity_id=media_id,
+               payload={"outcome": "queued"})
+        return {"item": {"status": "ok", "media_id": media_id}, "record": media_record(refreshed)}
     if not entry.canonical_url or entry.provider not in {"youtube", "direct"}:
         raise orena_http_error(409, "media_reprocess_unsupported", "Only media imported from a URL can be read again.")
     lesson = entry.lesson if isinstance(entry.lesson, Mapping) else {}
@@ -1264,6 +1330,7 @@ async def import_media_upload(
     _same_origin(request)
     _no_store(response)
     selected = language.strip().casefold()
+    batch_id = media_library_api.new_transcript_batch()
     rows: list[dict[str, Any]] = []
     for upload in file or []:
         digest = await _upload_digest(upload)
@@ -1274,7 +1341,7 @@ async def import_media_upload(
                        "detail": "This file is already in the library.", "media_id": existing, "lesson_id": ""}
             else:
                 try:
-                    result = await media_library_api.admin_upload(request, [upload], language)
+                    result = await media_library_api.admin_upload(request, [upload], language, batch_id)
                 except HTTPException as exc:
                     category = _error_category(exc, "media_import_unavailable")
                     _receipt(admin, "media", {"source": upload.filename or "upload", "language": selected,

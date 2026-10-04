@@ -24,6 +24,7 @@ import { langAttr } from '../../kit/lang.js';
 import { shellCopy } from '../../copy/shell.js';
 import { languages } from '../../copy/index.js';
 import { api } from '../../infrastructure/api.js';
+import { readCollection } from '../collection/actions.js';
 import { flushQueue, withWaiting } from '../../product/review-queue.js';
 import { t } from './copy.js';
 import {
@@ -37,8 +38,6 @@ import { strokesMarkup, hydrateStrokes } from './strokes.js';
 import {
   queueScope,
   buildQueue,
-  collectionWordSet,
-  filterByWordSet,
   progressCounts,
   progressPercent,
   scheduleLabel,
@@ -179,11 +178,10 @@ export default async function mountReview(element, ctx) {
     const row = (page?.items || []).find((r) => String(r.word || '').trim().toLowerCase() === target);
     queue = buildQueue(row ? [row] : []);
   } else if (scope.mode === 'collection') {
-    const [collectionPayload, savedPage] = await Promise.all([
-      api.vocabularyLibraryCollection(scope.collection, { limit: 500 }).catch(() => null),
-      api.libraryVocabulary({ order: 'due', limit: 200 }).catch(() => null),
-    ]);
-    queue = buildQueue(filterByWordSet(savedPage?.items, collectionWordSet(collectionPayload)));
+    const collectionPayload = await readCollection(scope.collection,
+      api.vocabularyLibraryCollection, { includeReview: true });
+    if (collectionPayload.language_code !== ctx.context.language) throw new Error('Collection language changed');
+    queue = buildQueue(collectionPayload.review_items);
   } else {
     const page = await api.libraryVocabulary({ status: 'due', order: 'due', limit: 50 }).catch(() => null);
     queue = buildQueue(page?.items);

@@ -31,17 +31,18 @@ import {
 import { activeCanonicalSegment } from '../../capabilities/transcript-timeline.js';
 import { readStage, writeStage, transcriptDefaults } from '../../product/transcript-stage.js';
 import { encounter } from '../../product/encounter.js';
-import { openMedia } from '../../product/media-source.js';
+import { openMedia, rememberMedia } from '../../product/media-source.js';
+import { processingProgressMarkup } from '../../kit/states.js';
 import { openWordSheet } from '../quick-sheet/sheet.js';
 import { openVocabFocus } from './vocab-sheet.js';
 import { keepProvenance } from '../../product/account-records.js';
 import { t } from './copy.js';
 import {
   nextSpeed, speedLabel, contentIdFor, mmss, minutesFrom, metaLine, mapLesson,
-  wordTokens, hanTokens, currentTokenIndex, rowTone, modeHintKey, selectionAfterModeChange,
+  wordTokens, hanTokens, currentTokenIndices, hasWordTiming, rowTone, modeHintKey, selectionAfterModeChange,
   previousIndex, nextIndex, vocabularyForSegment, placeFor, dictationLinesCompleted,
   pickNextRecommendation, progressPercent, msAtSeekFraction, timeLabel, reachedEnd, listenedMinutesLabel,
-  phraseSaveable, phraseSavePayload, phraseSaved,
+  phraseSaveable, phraseSavePayload, phraseSaved, transcriptState,
 } from './model.js';
 
 export default async function listening(element, ctx) {
@@ -94,16 +95,18 @@ export default async function listening(element, ctx) {
   let wordHighlight = stageRaw.wordhl !== false;
   let moreOpen = false;
   let selectedId = null;
-  let currentId = segments.some((seg) => seg.segment_id === place.segmentId) ? place.segmentId : (segments[0]?.segment_id || null);
+  const explicitSegment = ctx.query.get('segment') || ctx.query.get('seg');
+  const requestedSegment = explicitSegment || place.segmentId;
+  let currentId = segments.some((seg) => seg.segment_id === requestedSegment) ? requestedSegment : (segments[0]?.segment_id || null);
   let playing = false;
   let bounded = false; // a line is being played to its end; reaching the clip's end then is not "media completed"
-  let timeMs = lesson.excerptStartMs;
+  let timeMs = explicitSegment ? (segments.find(seg=>seg.segment_id===currentId)?.start_ms ?? lesson.excerptStartMs) : lesson.excerptStartMs;
   let ended = false;
   let playedMs = 0;
   let lastTickAt = null;
   let rememberedId = '';
   let lastActiveIndex = -2; // which segment the clock last said we are in (-1: between lines)
-  let seekingTo = null; // a line the learner just asked for: the clock is ignored until it gets there
+  let seekingTo = explicitSegment ? {id:currentId,at:Date.now()} : null;
   const savedPhrases = new Set(); // segment texts known to be saved this session
   const tokenCache = new Map();
 
@@ -140,7 +143,7 @@ export default async function listening(element, ctx) {
       <button type="button" class="o-iconbtn o-iconbtn--back" data-back aria-label="${s('back')}">${raw(icon('arrow-left', { size: 21 }))}</button>
       <div class="s-listening__titles">
         <div class="s-listening__title" lang="${langAttr(language)}">${lesson.title}</div>
-        <div class="s-listening__meta">${metaLine([kindLabel, lesson.levelText, durationMinutes != null ? `${durationMinutes} ${t.plural('minutesLabel', durationMinutes)}` : ''])}</div>
+        <div class="s-listening__meta">${metaLine([kindLabel, payload.transcript_origin === 'generated_asr' ? t('generatedTranscript') : '', lesson.levelText || (lesson.sourceLevel ? t('sourceLevel', {level: lesson.sourceLevel}) : t('levelUnknown')), durationMinutes != null ? `${durationMinutes} ${t.plural('minutesLabel', durationMinutes)}` : ''])}</div>
       </div>
       <div class="s-listening__modes" data-modes role="group"></div>
     </div>
@@ -149,7 +152,7 @@ export default async function listening(element, ctx) {
         <div class="s-listening__player${lesson.posterUrl ? '' : ' is-bare'}" data-player>
           ${lesson.posterUrl ? html`<img src="${posterUrl(lesson.posterUrl)}" alt="">` : ''}
           ${playbackOk ? raw(mediaPlayer(lesson.playback, lesson.title, {
-            startMs: lesson.excerptStartMs, endMs: lesson.excerptEndMs, poster: lesson.posterUrl, controls: false,
+            startMs: timeMs, endMs: lesson.excerptEndMs, poster: lesson.posterUrl, controls: false,
           })) : html`<div class="s-listening__unavailable">${t('playbackUnavailable')}</div>`}
           ${playbackOk ? html`<button type="button" class="s-listening__playbtn" data-play aria-label="${t('playPause')}">${raw(icon('play', { size: 24 }))}</button>
           <div class="s-listening__time" data-time></div>` : ''}
@@ -178,12 +181,10 @@ export default async function listening(element, ctx) {
   /* ---------------------------------------------------------------- modes ---- */
   function modesMarkup() {
     const list = [
-      { id: 'follow', label: t('modeFollow'), on: lesson.modes.follow },
-      { id: 'active', label: t('modeActive'), on: lesson.modes.active },
+      { id: 'follow', label: s('listening'), on: true },
       { id: 'shadow', label: t('modeShadowing'), on: lesson.modes.shadowing },
-    ].filter((m) => m.on);
-    if (list.length < 2) return html``;
-    return html`${list.map((item) => html`<button type="button" class="s-listening__mode" data-mode="${item.id}" aria-pressed="${item.id === 'shadow' ? 'false' : String(mode === item.id)}">${item.label}</button>`)}`;
+    ];
+    return html`${list.map((item) => html`<button type="button" class="s-listening__mode" data-mode="${item.id}" ${item.on ? '' : raw('disabled')} title="${item.on ? '' : t('transcriptUnavailable')}" aria-pressed="${item.id === 'shadow' ? 'false' : 'true'}">${item.label}</button>`)}`;
   }
   function paintModes() {
     const holder = element.querySelector('[data-modes]');
@@ -206,11 +207,21 @@ export default async function listening(element, ctx) {
 
   /* ---------------------------------------------------------------- player ---- */
   function paintTime() {
+    element.querySelector('.s-listening__player')?.classList.toggle('is-playing', playing);
     if (timeEl) timeEl.textContent = timeLabel(timeMs, lesson.excerptStartMs, clipEndMs);
     if (seekFillEl) seekFillEl.style.width = `${progressPercent(timeMs, lesson.excerptStartMs, clipEndMs)}%`;
     const glyph = element.querySelector('[data-play]');
     if (glyph) mount(glyph, raw(icon(playing ? 'pause' : 'play', { size: 24 })));
   }
+
+  let chromeTimer = null;
+  function revealPlayerChrome() {
+    playerEl.classList.add('show-chrome');
+    clearTimeout(chromeTimer);
+    chromeTimer = setTimeout(() => playerEl.classList.remove('show-chrome'), 2000);
+  }
+  playerEl.addEventListener('pointermove', revealPlayerChrome);
+  playerEl.addEventListener('pointerdown', revealPlayerChrome);
 
   function onMediaTime(event) {
     const detail = event.detail || {};
@@ -220,7 +231,9 @@ export default async function listening(element, ctx) {
       timeMs = now;
       lastTickAt = now;
     }
+    const wasPlaying = playing;
     playing = detail.player_state === 1;
+    if (playing && !wasPlaying) revealPlayerChrome();
     if (!playing) lastTickAt = null;
     paintTime();
     if (seekingTo) {
@@ -249,6 +262,7 @@ export default async function listening(element, ctx) {
   if (playbackOk) {
     playerEl.addEventListener('orena:media-time', onMediaTime);
     connectMediaPlayer(playerEl, lesson.playback);
+    if (explicitSegment) seekPlayback(playerEl, lesson.playback, timeMs);
     playerEl.querySelector('[data-play]')?.addEventListener('click', () => {
       bounded = false;
       togglePlayback(playerEl, lesson.playback);
@@ -285,13 +299,14 @@ export default async function listening(element, ctx) {
   }
 
   /* ---------------------------------------------------------------- controls row ---- */
-  function pill({ id, label, iconName, iconAfter = false, pressed = null, variant = '', title = '', aria = '' }) {
+  function pill({ id, label, iconName, iconAfter = false, pressed = null, variant = '', title = '', aria = '', disabled = false }) {
     const glyph = iconName ? raw(icon(iconName, { size: iconName === 'play' ? 14 : 15 })) : '';
-    return html`<button type="button" class="s-listening__pill${variant ? ` s-listening__pill--${variant}` : ''}" data-act="${id}"${pressed != null ? raw(` aria-pressed="${String(pressed)}"`) : ''}${title ? raw(` title="${title.replace(/"/g, '&quot;')}"`) : ''}${aria ? raw(` aria-label="${aria.replace(/"/g, '&quot;')}"`) : ''}>${iconAfter ? html`${label}${glyph}` : html`${glyph}${label}`}</button>`;
+    return html`<button type="button" class="s-listening__pill${variant ? ` s-listening__pill--${variant}` : ''}" data-act="${id}"${disabled ? raw(' disabled') : ''}${pressed != null ? raw(` aria-pressed="${String(pressed)}"`) : ''}${title ? raw(` title="${title.replace(/"/g, '&quot;')}"`) : ''}${aria ? raw(` aria-label="${aria.replace(/"/g, '&quot;')}"`) : ''}>${iconAfter ? html`${label}${glyph}` : html`${glyph}${label}`}</button>`;
   }
 
   function toggles(prefix) {
-    return html`${pill({ id: 'auto', label: t('autoScroll'), pressed: autoScroll, variant: 'toggle' })}${pill({ id: 'wordhl', label: t('wordHighlight'), pressed: wordHighlight, variant: 'toggle', title: t('wordHighlightHint') })}`;
+    const timed = segments.some(hasWordTiming);
+    return html`${pill({ id: 'auto', label: t('autoScroll'), pressed: autoScroll, variant: 'toggle' })}${pill({ id: 'wordhl', label: t('wordHighlight'), pressed: timed && wordHighlight, disabled: !timed, variant: 'toggle', title: t('wordHighlightHint') })}`;
   }
 
   function controlsMarkup() {
@@ -361,6 +376,10 @@ export default async function listening(element, ctx) {
   }
 
   function rowsMarkup() {
+    if (!segments.length) {
+      const processing = transcriptState(payload) === 'processing';
+      return html`<div class="s-listening__transcript-state" role="status">${processing ? html`<span class="o-spinner" aria-hidden="true"></span>${processingProgressMarkup(payload.processing?.stage, Object.fromEntries(['fetch','transcribe','segment','translate','ready'].map(stage => [stage,t(`stage_${stage}`)])))}` : ''}${t(processing && payload.processing?.stage === 'transcribe' ? 'aiTranscript' : processing ? 'transcriptProcessing' : 'transcriptUnavailable')} <button type="button" class="o-btn o-btn--secondary o-btn--sm" data-refresh>${t('refreshStatus')}</button></div>`;
+    }
     return segments.map((seg) => {
       const tone = rowTone({ isCurrent: seg.segment_id === currentId, isSelected: seg.segment_id === selectedId, endMs: seg.end_ms, timeMs });
       const meaning = showTrans ? enc.meaning(seg.segment_id) : '';
@@ -378,6 +397,7 @@ export default async function listening(element, ctx) {
   function paintRows() {
     const keep = rowsEl.scrollTop;
     mount(rowsEl, html`${rowsMarkup()}`);
+    rowsEl.querySelector('[data-refresh]')?.addEventListener('click', () => window.location.reload());
     rowsEl.scrollTop = keep;
     paintWordHighlight();
   }
@@ -394,17 +414,19 @@ export default async function listening(element, ctx) {
   });
 
   /* The word being spoken, marked on the current row only. */
-  let markedEl = null;
+  let markedEls = [];
   function paintWordHighlight() {
-    if (markedEl) { markedEl.classList.remove('is-word-current'); markedEl = null; }
+    for (const el of markedEls) el.classList.remove('is-word-current');
+    markedEls = [];
     if (!wordHighlight || !playing) return;
     const seg = segOf(currentId);
     if (!seg) return;
-    const at = currentTokenIndex(seg, tokensOf(seg), timeMs);
-    if (at < 0) return;
+    const indices = currentTokenIndices(seg, tokensOf(seg), timeMs);
     const row = rowsEl.querySelector(`[data-seg="${CSS.escape(seg.segment_id)}"]`);
-    const el = row?.querySelector(`[data-tok="${at}"]`);
-    if (el) { el.classList.add('is-word-current'); markedEl = el; }
+    for (const at of indices) {
+      const el = row?.querySelector(`[data-tok="${at}"]`);
+      if (el) { el.classList.add('is-word-current'); markedEls.push(el); }
+    }
   }
 
   function onRowTap(id) {
@@ -647,6 +669,29 @@ export default async function listening(element, ctx) {
   rememberPlace(true);
   scrollRowIntoView(currentId);
 
+  // A stored import can finish after the Import sheet's polling window.
+  // Re-enter the same workspace when it changes; keep manual refresh available
+  // if a status request fails, and never poll after the learner leaves.
+  let processingTimer = null;
+  if (transcriptState(payload) === 'processing' && payload.asset?.asset_id) {
+    const refreshProcessing = async () => {
+      if (!ctx.isCurrent()) return;
+      try {
+        const updated = await api.mediaMy(payload.asset.asset_id, support);
+        if (!ctx.isCurrent()) return;
+        if (updated?.asset?.processing_state !== 'processing') {
+          rememberMedia(lessonId, { support, language: c.language, owner: c.owner || 'local' }, updated);
+          ctx.go(ctx.href('listening', { id: lessonId }));
+          return;
+        }
+        payload.processing = updated.processing;
+        paintRows();
+      } catch { /* The explicit refresh action remains available. */ }
+      if (ctx.isCurrent()) processingTimer = setTimeout(refreshProcessing, 3000);
+    };
+    processingTimer = setTimeout(refreshProcessing, 3000);
+  }
+
   /* AGENT_CONTRACT.md §7: `play_model` = "play reference audio" - here, the selected (or
      current) transcript line. Listening has no learner take of its own (`play_user`/
      `say_again`/`compare_with_model` do not apply: there is nothing to compare or re-record). */
@@ -658,6 +703,10 @@ export default async function listening(element, ctx) {
   });
 
   return () => {
+    clearTimeout(chromeTimer);
+    playerEl.removeEventListener('pointermove', revealPlayerChrome);
+    playerEl.removeEventListener('pointerdown', revealPlayerChrome);
+    clearTimeout(processingTimer);
     releasePlayModel();
     if (playbackOk) {
       playerEl.removeEventListener('orena:media-time', onMediaTime);

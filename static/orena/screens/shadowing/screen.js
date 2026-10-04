@@ -33,6 +33,7 @@ import { createSpeakingTake, TAKE } from '../../capabilities/speaking-take.js';
 import { createLocalAudioRecorder } from '../../capabilities/audio-recorder.js';
 import { watchMicrophone } from '../../capabilities/mic-readiness.js';
 import { t } from './copy.js';
+import { openMedia } from '../../product/media-source.js';
 import {
   mapLesson,
   startIndex,
@@ -72,7 +73,7 @@ function waveMarkup() {
 export default async function mountShadowing(element, ctx) {
   const support = languages().support;
   const lessonId = String(ctx.params?.id || '').trim();
-  const [payload] = await Promise.all([api.listeningLibraryLesson(lessonId, support), useStyles('screens/shadowing/shadowing.css')]);
+  const [payload] = await Promise.all([openMedia(lessonId, {api, support, language: ctx.context.language, owner: ctx.context.owner || 'local', alive: () => ctx.isCurrent()}), useStyles('screens/shadowing/shadowing.css')]);
   if (!ctx.isCurrent()) return undefined;
 
   const lesson = mapLesson(payload);

@@ -384,3 +384,6 @@
   display: flex;
   flex: none;
 }
+.s-qs__stroke-preview { display: inline-flex; width: 56px; height: 56px; }
+.s-qs__stroke-preview .stroke-glyph__on { fill: var(--text); }
+.s-qs__stroke-preview .stroke-glyph__off { fill: var(--border); }

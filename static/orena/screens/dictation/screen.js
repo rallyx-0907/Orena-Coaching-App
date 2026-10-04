@@ -38,6 +38,7 @@ import {
 } from '../../capabilities/media-player.js';
 import { dictationEvidence, recoverListeningEvidence } from '../../product/evidence.js';
 import { t } from './copy.js';
+import { openMedia } from '../../product/media-source.js';
 import {
   mapLesson,
   startIndex,
@@ -71,7 +72,7 @@ function waveMarkup(seed) {
 export default async function mountDictation(element, ctx) {
   const support = languages().support;
   const lessonId = String(ctx.params?.id || '').trim();
-  const [payload] = await Promise.all([api.listeningLibraryLesson(lessonId, support), useStyles('screens/dictation/dictation.css')]);
+  const [payload] = await Promise.all([openMedia(lessonId, {api, support, language: ctx.context.language, owner: ctx.context.owner || 'local', alive: () => ctx.isCurrent()}), useStyles('screens/dictation/dictation.css')]);
   if (!ctx.isCurrent()) return undefined;
 
   const lesson = mapLesson(payload);
@@ -112,8 +113,9 @@ export default async function mountDictation(element, ctx) {
       <button type="button" class="o-iconbtn o-iconbtn--back" data-back aria-label="${shellCopy('back')}">${raw(icon('arrow-left', { size: 21 }))}</button>
       <div class="s-dict__headcol">
         <div class="s-dict__title" data-title></div>
-        <div class="s-dict__sub" data-sub lang="${langAttr(lesson.language)}"></div>
+        <div class="s-dict__sub" data-sub ${langAttr(lesson.language)}></div>
       </div>
+      <button type="button" class="o-btn o-btn--link" data-choose>${t('chooseLesson')}</button>
     </div>
     <div class="s-dict__dots" data-dots></div>
     <div class="s-dict__card">
@@ -140,6 +142,7 @@ export default async function mountDictation(element, ctx) {
   );
   const q = (selector) => element.querySelector(selector);
   q('[data-back]').addEventListener('click', () => ctx.back());
+  q('[data-choose]').addEventListener('click', () => ctx.go(ctx.href('discover', {}, {tab:'listen',practice:'dictation',source:lessonId,segment:segment().id})));
 
   const mediaRoot = q('[data-media]');
   const hasClip = playbackAvailable(lesson.playback);

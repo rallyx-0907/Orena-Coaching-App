@@ -91,7 +91,11 @@ export function contractText(value, support = 'en') {
   if (value == null) return '';
   if (typeof value === 'string') return value;
   if (typeof value !== 'object') return '';
-  const code = guidanceLocale(support, Object.keys(value));
+  // GCC authored locale maps use zh-Hans; the learner profile uses zh.
+  // Resolve that contract key locally, retaining EN fallback for absent glosses.
+  const target = String(support || '').toLowerCase();
+  const code = (target === 'zh' || target === 'zh-hans') && Object.hasOwn(value, 'zh-Hans')
+    ? 'zh-Hans' : guidanceLocale(support, Object.keys(value));
   const text = value[code] ?? value.en;
   return typeof text === 'string' ? text : '';
 }

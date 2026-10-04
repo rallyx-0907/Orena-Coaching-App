@@ -82,6 +82,8 @@ def _normalized_rate_limit_headers(headers: object) -> dict[str, int | None]:
 # must not claim it is independently supported yet.
 _TEXT_OPTION_KEYS = frozenset({"temperature"})
 _PROVIDER_DEFINITIONS = (
+    ProviderDefinition('azure-openai', 'Azure OpenAI', 'cloud', 'server-managed', _STRUCTURED_TEXT_OPERATIONS, _TEXT_OPTION_KEYS),
+    ProviderDefinition('azure-speech', 'Azure Speech', 'cloud', 'server-managed', frozenset({AIOperation.PRONUNCIATION_EVALUATION}), frozenset()),
     ProviderDefinition(
         id="ollama",
         name="Ollama",
@@ -368,6 +370,7 @@ class OpenAICompatibleProvider:
         models_env: str,
         default_models: tuple[str, ...] = (),
         model_filter: str = "",
+        supports_seed: bool = True,
         credential_override: dict[str, Any] | None = None,
     ) -> None:
         credential_override = credential_override or {}
@@ -387,6 +390,7 @@ class OpenAICompatibleProvider:
         self.default_models = list(default_models)
         self.default_model_override = str(credential_override.get("default_model") or "").strip()
         self.model_filter = model_filter
+        self.supports_seed = supports_seed
         self.timeout = int(os.getenv("CLOUD_AI_TIMEOUT", "180"))
         self._last_rate_limit = _normalized_rate_limit_headers(None)
 
@@ -402,6 +406,8 @@ class OpenAICompatibleProvider:
         return models[0] if models else ""
 
     def _headers(self) -> dict[str, str]:
+        if self.id == 'azure-openai':
+            return {'api-key': self.api_key, 'Content-Type': 'application/json'}
         return {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
@@ -496,6 +502,9 @@ class OpenAICompatibleProvider:
             return sorted(dict.fromkeys(self.allowed_models))
         if self.default_models:
             return list(self.default_models)
+        if self.id == 'azure-openai':
+            # Resource model catalogues are not operator-created deployments.
+            return []
 
         try:
             response, native_gemini = self._model_catalog_request()
@@ -515,6 +524,8 @@ class OpenAICompatibleProvider:
             raise AIProviderNotConfigured(f"{self.name} is not configured on the server.")
         if self.allowed_models:
             return sorted(dict.fromkeys(self.allowed_models))
+        if self.id == 'azure-openai':
+            raise AIProviderNotConfigured('Enter an Azure OpenAI deployment name.')
 
         try:
             response, native_gemini = self._model_catalog_request()
@@ -544,7 +555,10 @@ class OpenAICompatibleProvider:
             headers=self._headers(),
             json=body,
             timeout=self.timeout,
+            **({'allow_redirects': False} if self.id == 'azure-openai' else {}),
         )
+        if self.id == 'azure-openai' and 300 <= response.status_code < 400:
+            raise AIProviderError('Azure OpenAI redirect refused.')
         self._last_rate_limit = _normalized_rate_limit_headers(getattr(response, "headers", None))
         if response.status_code >= 400:
             detail = _error_detail(response)
@@ -587,7 +601,7 @@ class OpenAICompatibleProvider:
             "response_format": {"type": "json_object"},
             "temperature": temperature,
         }
-        if seed is not None:
+        if seed is not None and self.supports_seed:
             body["seed"] = seed
 
         try:
@@ -648,7 +662,7 @@ class OpenAICompatibleProvider:
             "response_format": {"type": "json_object"},
             "temperature": temperature,
         }
-        if seed is not None:
+        if seed is not None and self.supports_seed:
             body["seed"] = seed
         try:
             envelope = self._post_chat(body)
@@ -862,8 +876,14 @@ def _count(value: object) -> int | None:
 
 
 def build_providers(provider_credentials: dict[str, dict[str, Any]] | None = None) -> dict[str, Any]:
+    from writing_coach.ai.azure import AzureSpeechControlProvider
     provider_credentials = provider_credentials or {}
     return {
+        'azure-speech': AzureSpeechControlProvider(provider_credentials.get('azure-speech')),
+        'azure-openai': OpenAICompatibleProvider(
+            provider_id='azure-openai', name='Azure OpenAI', api_key_env='AZURE_OPENAI_API_KEY',
+            base_url_env='AZURE_OPENAI_BASE_URL', default_base_url='', models_env='AZURE_OPENAI_DEPLOYMENTS',
+            credential_override=provider_credentials.get('azure-openai')),
         "ollama": OllamaProvider(provider_credentials.get("ollama")),
         "openai": OpenAICompatibleProvider(
             provider_id="openai",
@@ -879,6 +899,7 @@ def build_providers(provider_credentials: dict[str, dict[str, Any]] | None = Non
         "deepseek": OpenAICompatibleProvider(
             provider_id="deepseek",
             name="DeepSeek API",
+            supports_seed=False,
             api_key_env="DEEPSEEK_API_KEY",
             base_url_env="DEEPSEEK_BASE_URL",
             default_base_url="https://api.deepseek.com",
@@ -909,6 +930,9 @@ def build_providers(provider_credentials: dict[str, dict[str, Any]] | None = Non
             models_env="GEMINI_MODELS",
             default_models=(),
             model_filter="gemini-text",
+            # Gemini's OpenAI compatibility transport does not accept seed.
+            # Adapt the first request rather than relying on a legacy retry.
+            supports_seed=False,
             credential_override=provider_credentials.get("gemini"),
         ),
     }
