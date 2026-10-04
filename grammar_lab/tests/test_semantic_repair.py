@@ -88,6 +88,21 @@ def test_can_target_repair_only_accepts_the_small_structural_failure_surface() -
     assert not can_target_repair([])
 
 
+def test_patch_schema_does_not_mistake_rule_rejects_example_for_span_repair() -> None:
+    point = _assembled_point()
+    issues = [
+        _Issue(
+            "personal_production.rule_rejects_example",
+            "examples[0].text",
+            "pattern rule did not match",
+        )
+    ]
+    schema = patch_schema(point, issues)
+    examples = schema["properties"]["example_spans"]
+
+    assert examples["minItems"] == examples["maxItems"] == 0
+
+
 def test_patch_schema_only_requires_affected_examples() -> None:
     point = _assembled_point()
     issues = [_Issue("example.formula_role_missing", "examples[1].spans")]
