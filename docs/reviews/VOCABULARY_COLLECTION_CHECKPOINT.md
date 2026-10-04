@@ -2,7 +2,8 @@
 
 MILESTONE=ORENA_PRODUCT_COMPLETION / S3 learner actions
 STATUS=IMPLEMENTING (functional browser review available; full fidelity open)
-Implementation commit and exact independent review are recorded below after checkpoint.
+COMMIT=a8e7914e7fcc7dd53c354882bf73a4d76ab335b1
+Exact independent review and final validation are recorded below.
 Base: d94715c29a6400d897134ac8e968bfb523ba5cac, codex/work.
 WEB_URL=http://127.0.0.1:8021/next
 WEB_ROUTE=#/collection/qa-collection-practice-20261004-zh
@@ -85,15 +86,17 @@ lookup are outside this tested sequence; no new behavior was added to them.
 - Focused Python:106 passed,0 failed,0 skipped,2 warnings across vocabulary
   library routes/catalog/cards, review grades, paging and bounded library reads.
 - Full local Python:2814 passed,3 failed,370 skipped,19 warnings in218.83s.
+  Command: python -m pytest -q -p no:cacheprovider test_app.py tests.
   All three failures reproduced on a clean d94715c archive: provider definitions
   expectation predates Azure; structured-text-only operation expectation predates
   speech; media lifecycle expects republish. Exact tests:
-  test_ai_capabilities::test_static_text_provider_definitions_need_no_credentials_or_network;
-  test_ai_capability_config::test_static_validation_and_provider_id_parity_require_no_network;
-  test_media_lifecycle::test_the_console_reports_the_state_and_the_actions_that_fit_it.
+  tests/test_ai_capabilities.py::test_static_text_provider_definitions_need_no_credentials_or_network;
+  tests/test_ai_capability_config.py::test_static_validation_and_provider_id_parity_require_no_network;
+  tests/test_media_lifecycle.py::test_the_console_reports_the_state_and_the_actions_that_fit_it.
 - Ruff --no-cache app.py tests/test_vocabulary_library_route.py: pass.
-- Project-memory and architecture validators, diff hygiene: see final checkpoint
-  validation below. No CI execution or CI PASS claim.
+- python scripts/validate_project_memory.py and python scripts/validate_architecture.py:
+  PASS after memory updates. git diff --check and git diff --cached --check: PASS.
+  No CI execution or CI PASS claim.
 
 Python ran in a disposable image with repository read-only, SQLite isolated CI
 backend, tmpfs databases and PG/OAuth cleared. Sandbox runtime remains PostgreSQL.
@@ -140,4 +143,23 @@ learning controls. Full app completion is not claimed.
 
 ## Exact checkpoint
 
-Pending exact commit binding and final memory-validator/Git status evidence.
+Independent Codex reviewer /root/collection_review inspected git show of
+a8e7914e7fcc7dd53c354882bf73a4d76ab335b1 against
+d94715c29a6400d897134ac8e968bfb523ba5cac and re-ran the action gate: PASS,
+zero code P0/P1/P2. Initial exact-commit verdict REQUEST CHANGES was solely for
+the pending SHA/validator/status evidence in this document; these fields are
+now supplied. The same independent reviewer confirmed the evidence blocker
+closed: final bounded verdict APPROVE, no implementation findings. Browser/full
+fidelity limits remain explicit above; this does not grant human product approval.
+
+Post-implementation Git status was exactly:
+
+```text
+ M docs/project/DESIGN_CONTRACT.md
+```
+
+This is the preserved human-owned edit and was not staged. The following
+checkpoint commit updates this evidence document only; no implementation changes.
+Memory/architecture validators and diff hygiene pass locally after the memory
+transaction. No unresolved implementation finding; full fidelity/whole S3
+completion remain open as specified above.
