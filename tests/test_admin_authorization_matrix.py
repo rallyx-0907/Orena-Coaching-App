@@ -14,6 +14,7 @@ import asyncio
 import base64
 import inspect
 import json
+import time
 
 import httpx
 import pytest
@@ -158,9 +159,32 @@ ADMIN_ONLY_WITHOUT_ADMIN_IN_PATH = {
 }
 
 
+class _IssuedAnHourAgo(TimestampSigner):
+    """A session issued at a fixed moment an hour before now.
+
+    Signing with the current second made the cookie's age zero, and itsdangerous
+    refuses a signature whose age is negative: any step of the system clock
+    between signing and the middleware's check (NTP on a CI runner, a WSL2/Docker
+    clock correction during a slow run) turned an administrator into nobody and
+    the matrix answered 401. An hour of age is far inside the 14-day session
+    lifetime and far outside any clock step.
+    """
+
+    def get_timestamp(self) -> int:
+        return int(time.time()) - 3600
+
+
+def _session_secret() -> str:
+    """The secret the installed SessionMiddleware verifies with, not a module global read later."""
+    for middleware in app_module.app.user_middleware:
+        if getattr(middleware.cls, "__name__", "") == "SessionMiddleware":
+            return str(middleware.kwargs.get("secret_key"))
+    return auth_support.SESSION_SECRET or "local-single-user-mode"
+
+
 def _cookie(user_sub: str) -> str:
     encoded = base64.b64encode(json.dumps({"user_sub": user_sub}).encode("utf-8"))
-    return TimestampSigner(auth_support.SESSION_SECRET or "local-single-user-mode").sign(encoded).decode("utf-8")
+    return _IssuedAnHourAgo(_session_secret()).sign(encoded).decode("utf-8")
 
 
 @pytest.fixture()
@@ -250,3 +274,17 @@ def test_every_admin_seam_is_wired_to_the_one_guard():
     assert "require_admin(request)" in inspect.getsource(app_module.admin_readiness_summary)
     assert "require_admin(request)" in inspect.getsource(app_module.admin_vocabulary_source_preview)
     assert "require_admin(request)" in inspect.getsource(app_module.admin_vocabulary_source_import)
+
+
+def test_an_administrator_session_survives_a_clock_step_back(secured, monkeypatch):
+    """The flake this file had: a clock step between signing and checking made
+    the session's age negative and the administrator a 401."""
+    cookie = _cookie(ADMIN["google_sub"])
+    stepped_back = time.time() - 5
+    monkeypatch.setattr(time, "time", lambda: stepped_back)
+
+    async def run():
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=secured), base_url="http://testserver") as client:
+            return await client.get("/api/admin/console/overview", headers={"cookie": f"writing_coach_session={cookie}"})
+
+    assert asyncio.run(run()).status_code == 200
