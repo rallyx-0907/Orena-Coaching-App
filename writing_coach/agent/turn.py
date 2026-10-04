@@ -336,6 +336,8 @@ class _Turn:
             address_chosen=tier1.address.chosen,
             notes={note.id: note.weight for note in tier1.coach_notes},
             correcting=tuple(n.id for n in self.notes_asked) if self.notes_intent == CORRECT else (),
+            asked=tuple(n.id for n in self.notes_asked),
+            notes_intent=self.notes_intent,
             learner_words=turn.message or "",
             address_terms=tier1.address.pair,
         )

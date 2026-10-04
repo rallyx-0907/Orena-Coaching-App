@@ -47,6 +47,24 @@ def note_intent(message: str | None) -> str:
     if _FORGET.search(text) and not _NEW_WISH.search(text):
         return FORGET
     return CORRECT
+# A request to keep something (dogfood gate 3.2): the learner asks, in so many words, or states a standing wish
+# ("từ giờ", "from now on", "以后"). Telling a fact ("Mình đang luyện HSK4") is not a request, and neither is
+# not remembering something ("mình không nhớ là…", "I don't remember", "我不记得").
+_REMEMBER = re.compile(
+    r"(?i)(?<!không )(?<!chẳng )(?<!chưa )(?<!đừng )\bnhớ (?:giúp|giùm|hộ|là|rằng|cho|nhé|giúp mình|điều này|cái này)\b"
+    r"|\b(?:ghi nhớ|ghi lại|ghi chú lại|lưu lại điều|từ giờ|từ nay|lần sau|sau này|về sau)\b"
+    r"|(?<!\bi )(?<!n't )(?<!not )\bremember (?:that|this|to|i|i'm|my|me)\b"
+    r"|\b(?:keep in mind|note that|make a note|take note|from now on|next time|going forward|in future|in the future)\b"
+    r"|(?<!不)记住|帮我记|记一下|请记得|你要记得|以后|从现在起|从今以后|今后|下次"
+)
+
+
+def asks_to_remember(message: str | None) -> bool:
+    """The learner asks Orena to keep something, or states a wish for the turns to come."""
+
+    return bool(message) and bool(_REMEMBER.search(unicodedata.normalize("NFC", message)))
+
+
 _NOTE_WORD = re.compile(r"(?i)\b(?:ghi chú|lưu ý|note|notes)\b|笔记|那条|记录")
 _EN_STOP = frozenset({"that", "this", "with", "have", "from", "they", "them", "more", "less", "like", "want"})
 

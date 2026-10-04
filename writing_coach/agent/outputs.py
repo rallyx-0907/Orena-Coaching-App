@@ -59,6 +59,7 @@ from writing_coach.agent.address import (
     valid_term,
 )
 from writing_coach.agent.events import ActionEvent, Display, MemoryUpdateEvent, SuggestionEvent, make_action
+from writing_coach.agent.notes import FORGET, asks_to_remember
 from writing_coach.agent.provider import ProviderToolSpec
 from writing_coach.agent.schemas import ClientInfo
 
@@ -313,6 +314,9 @@ class ReplyOutputs:
     notes: Mapping[str, float] = field(default_factory=dict)  # coach note id -> weight, as the device sent them
     # A turn the server read as correcting these notes (agent/notes.py): a correction replaces, it never forgets.
     correcting: tuple[str, ...] = ()
+    # The notes this message names as changed, and how (agent/notes.py): what a replace or a forget may touch (3.2).
+    asked: tuple[str, ...] = ()
+    notes_intent: str | None = None
     learner_words: str = ""  # this turn's message: a gendered or casual term must come from it
     address_terms: tuple[str | None, str | None] = (None, None)  # the pair in use
     address_offered_now: bool = False
@@ -509,6 +513,13 @@ class ReplyOutputs:
             return f"refused: at most {MAX_NOTE_CHARS} characters"
         if replaces is not None and (str(replaces) not in self.notes or str(replaces).startswith("address-")):
             return "refused: replaces names a coach note the learner has (not an address note: use set_address)"
+        # The server, not the model, decides a note may be written (dogfood gate 3.2): a new note only when the
+        # learner asks for it in so many words; a replacement only of the note their message corrects.
+        if replaces is None and not asks_to_remember(self.learner_words):
+            return ("refused: the learner did not ask you to remember anything - if it seems worth keeping, "
+                    "ask them in words, and keep it only when they say so")  # fmt: skip
+        if replaces is not None and str(replaces) not in self.correcting:
+            return "refused: the learner's message does not correct that note"
         if self._note_updates() >= MAX_NOTE_UPDATES:
             return f"refused: at most {MAX_NOTE_UPDATES} notes a turn"
         weight = min(1.0, self.notes[str(replaces)] + REINFORCE) if replaces is not None else NEW_NOTE_WEIGHT
@@ -532,6 +543,8 @@ class ReplyOutputs:
         if note_id in self.correcting:
             return ("refused: the learner corrected this note with a new wish, they did not ask to forget it - call "
                     "remember_note with replaces set to its id and the new wish")  # fmt: skip
+        if note_id not in self.asked or self.notes_intent != FORGET:
+            return "refused: the learner did not ask to forget that note"
         self.memory_updates.append(MemoryUpdateEvent(op="remove", note={"id": note_id}))
         return f"accepted: {note_id} is forgotten; you may say so"
 
