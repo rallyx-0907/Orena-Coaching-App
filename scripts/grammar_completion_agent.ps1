@@ -19,7 +19,7 @@ param(
     [string]$CodexModel = ""
 )
 
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = "Stop"\n$InvariantCulture = [System.Globalization.CultureInfo]::InvariantCulture
 
 function Invoke-Corpus {
     param(
@@ -45,7 +45,7 @@ function Invoke-Corpus {
     if ($CacheOnly) {
         $args += "--cache-only"
     } else {
-        $args += @("--cost-ceiling-usd", "$Ceiling")
+        $args += @("--cost-ceiling-usd", $Ceiling.ToString("0.####", $InvariantCulture))
     }
 
     $lines = & python @args 2>&1
@@ -68,7 +68,7 @@ function Get-Spend {
 
     $matches = [regex]::Matches($Text, "USD\s+([0-9]+(?:\.[0-9]+)?)\s+spent")
     if ($matches.Count -eq 0) { return 0.0 }
-    return [double]$matches[$matches.Count - 1].Groups[1].Value
+    return [double]::Parse($matches[$matches.Count - 1].Groups[1].Value, $InvariantCulture)
 }
 
 function Test-NoCandidates {
