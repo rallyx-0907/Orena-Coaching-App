@@ -279,8 +279,18 @@ Sau #69  9d1d297..7bfcbbf: F-13 trả lời "màn này để làm gì" từ màn
 R27      Nhờ ghi nhớ không dấu: hỏi lại kèm nút, chỉ ghi khi bấm (notes.py, turn.py; test vi không dấu, xác nhận đúng
           chữ, chữ khác bị từ chối, nhãn theo ngôn ngữ interface). agent.turn giữ 90 ngày, dọn tự động (retention.py;
           test unit và Postgres: chỉ dòng agent.turn cũ bị xoá, dòng audit khác giữ nguyên); tắt mặc định, bật bằng AGENT_TURN_RETENTION_SWEEP sau review độc lập của lane UI.
-Tiếp      PR mới vào codex/work (người chủ dự án merge khi CI xanh); lane UI dựng lại :8021 rồi lane này đo baseline
-          (dưới 0,05 USD); quota dùng chung trước khi chạy nhiều worker (R26); Slice 4 chỉ là đề xuất.
+Merge    PR #70 vào codex/work (27187dd). Lane UI dựng lại :8021 trên 27187dd với AGENT_DAILY_SPEND_CAP_USD=1, giữ
+          container cũ (orena-next-verify-web-before-spend-cap).
+Baseline 2026-10-04 trên :8021 (trần 0,05 USD; khóa gemini-text; không đổi cấu hình runtime): 10/10 lượt đạt, zh-CN,
+          support vi, gemini-3.5-flash-lite qua agent_turn_fast; chi phí thật 0,02716 USD theo sổ AI; không vòng nào
+          kết thúc bất thường. Tới chữ đầu tiên người học thấy: trung vị 2,39 s, chậm nhất 5,67 s; provider chiếm 97%
+          thời gian phía server. Theo loại lượt (vòng; token vào/ra; tới chữ đầu): screen help 1; 246/57; 1,2 s -
+          mở đầu 2; 2135/45; 2,0-2,5 s - hỏi từ (get_word_detail) 2; 7467/79; 2,2-2,3 s - điểm yếu (2 read) 3;
+          12863/174; 3,4-3,6 s - bước tiếp theo (get_recommended_next_activities + action) 5; 18178/170; 5,6-5,7 s.
+          Thấy khi đo: bước tiếp theo chỉ còn câu mời "Bấm Ôn ngay để bắt đầu ôn." và tốn 5 vòng; screen help đoán sai
+          công dụng của vocabulary.my_language vì surfaces.json chưa có purpose (§6.2, chờ IMPLEMENTATION_MAP).
+Tiếp      Nhận lỗi test của người chủ dự án (R27); quota dùng chung trước khi chạy nhiều worker (R26); bật dọn
+          agent.turn sau review của lane UI; Slice 4 chỉ là đề xuất.
 ```
 
 ---
