@@ -88,12 +88,12 @@ functions:
     - en.canon.b2.032
     - en.canon.b2.034
     - en.canon.c1.025
+    - en.canon.b1.039
     zh-Hans:
     - zh.canon.gf.hsk7_9.a_7_1_7_1.p1
     ja: []
   planned:
     en:
-    - en.canon.b1.039
     - en.canon.c2.006
     - en.canon.c2.016
     zh-Hans:
@@ -717,12 +717,12 @@ functions:
     - en.canon.c1.022
     - en.canon.c1.021
     - en.canon.c1.018
+    - en.canon.b2.026
     zh-Hans:
     - zh.canon.gf.hsk7_9.a_7_1_4_7.p1
     ja: []
   planned:
     en:
-    - en.canon.b2.026
     - en.canon.c2.013
     - en.canon.c2.017
     zh-Hans:

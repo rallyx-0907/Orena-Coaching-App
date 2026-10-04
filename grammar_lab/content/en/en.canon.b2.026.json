@@ -1,0 +1,205 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b2.026",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.verb_patterns",
+  "level": {"framework": "cefr", "value": "B2", "rank": 4},
+  "prereqs": ["en.canon.a2.008"],
+  "contrasts": [],
+  "error_tags": ["sentence_structure", "word_form"],
+  "source_refs": {"r5": ["b2-infinitive-clauses"]},
+  "point_type": "other",
+  "sequence": 4,
+  "aliases": ["b2-infinitive-clauses"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "động từ nguyên mẫu clauses", "en": "Infinitive clauses"},
+    "native_title": "Infinitive clauses",
+    "level": {"framework": "cefr", "value": "B2", "rank": 4},
+    "summary": {
+      "vi": "Mệnh đề nguyên mẫu với 'to' có thể làm chủ ngữ, bổ ngữ, hoặc trạng ngữ chỉ mục đích, và có thể có chủ ngữ riêng qua 'for + NP'.",
+      "en": "To-infinitive clauses can act as subject, complement, or purpose adverbial, and can take their own subject with 'for + NP'."
+    },
+    "sub": {"vi": "mệnh đề nguyên mẫu", "en": "infinitive clauses"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nêu một hành động hoặc trạng thái mang tính khái quát, không gắn với thời gian cụ thể.",
+      "en": "When you want to state an action or state in a general way, not tied to a specific time."
+    },
+    {
+      "vi": "Khi chủ ngữ của mệnh đề nguyên mẫu khác với chủ ngữ của mệnh đề chính, dùng 'for + NP'.",
+      "en": "When the infinitive clause has a different subject from the main clause, use 'for + NP'."
+    },
+    {
+      "vi": "Khi muốn diễn đạt mục đích của hành động chính, dùng 'to + V'.",
+      "en": "When you want to express the purpose of the main action, use 'to + V'."
+    },
+    {
+      "vi": "Khi muốn nhấn mạnh bằng cách đưa mệnh đề nguyên mẫu ra sau với 'it' làm chủ ngữ giả.",
+      "en": "When you want to emphasize by extraposing the infinitive clause with 'it' as a dummy subject."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "to",
+        "role": "marker",
+        "label": {"vi": "dấu hiệu nguyên mẫu", "en": "infinitive marker"}
+      },
+      {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên mẫu", "en": "base verb"}},
+      {"text": "O", "role": "object", "label": {"vi": "tân ngữ", "en": "object"}, "optional": true}
+    ],
+    "variants": {
+      "negative": [
+        {"text": "not", "role": "marker", "label": {"vi": "phủ định", "en": "negation"}},
+        {
+          "text": "to",
+          "role": "marker",
+          "label": {"vi": "dấu hiệu nguyên mẫu", "en": "infinitive marker"}
+        },
+        {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên mẫu", "en": "base verb"}}
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "To ignore the warning would be risky.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "marker"},
+        {"start": 3, "end": 9, "role": "verb"},
+        {"start": 10, "end": 21, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Mệnh đề nguyên mẫu làm chủ ngữ của câu.",
+        "en": "The infinitive clause acts as the subject of the sentence."
+      },
+      "translation": {"vi": "Bỏ qua cảnh báo sẽ rủi ro.", "en": "To ignore the warning would be risky."}
+    },
+    {
+      "text": "It is important for staff to read the policy.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 26, "end": 28, "role": "marker"},
+        {"start": 29, "end": 33, "role": "verb"},
+        {"start": 34, "end": 44, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Mệnh đề nguyên mẫu với chủ ngữ riêng 'for staff', đóng vai trò bổ ngữ sau tính từ.",
+        "en": "Infinitive clause with its own subject 'for staff', functioning as complement after an adjective."
+      },
+      "translation": {
+        "vi": "Quan trọng là nhân viên đọc chính sách.",
+        "en": "It is important for staff to read the policy."
+      }
+    },
+    {
+      "text": "She opened the file to check the figures.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 20, "end": 22, "role": "marker"},
+        {"start": 23, "end": 28, "role": "verb"},
+        {"start": 29, "end": 40, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Mệnh đề nguyên mẫu chỉ mục đích của hành động chính.",
+        "en": "Infinitive clause expressing the purpose of the main action."
+      },
+      "translation": {
+        "vi": "Cô ấy mở file để kiểm tra số liệu.",
+        "en": "She opened the file to check the figures."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Thiếu 'for' trước chủ ngữ của mệnh đề nguyên mẫu khi chủ ngữ này khác với chủ ngữ chính.",
+        "en": "Missing 'for' before the subject of the infinitive clause when it differs from the main clause subject."
+      },
+      "error_tag": "sentence_structure",
+      "l1": ["vi"],
+      "wrong": "It is important everyone to understand.",
+      "right": "It is important for everyone to understand."
+    },
+    {
+      "reason": {
+        "vi": "Động từ 'suggest' không được dùng với cấu trúc nguyên mẫu có chủ ngữ; cần dùng mệnh đề 'that' hoặc danh động từ.",
+        "en": "The verb 'suggest' does not license the infinitive pattern with a subject; use a that-clause or gerund instead."
+      },
+      "error_tag": "word_form",
+      "l1": ["vi"],
+      "wrong": "I suggested him to go.",
+      "right": "I suggested that he go. / I suggested going."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "It is important ___ everyone to understand the rules.",
+      "options": [{"text": "for", "error_tag": null}, {"text": "to", "error_tag": "preposition"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Dùng 'for' trước chủ ngữ của mệnh đề nguyên mẫu khi chủ ngữ này khác với chủ ngữ chính.",
+        "en": "Use 'for' before the subject of the infinitive clause when it differs from the main clause subject."
+      }
+    },
+    {
+      "q": "She opened the file ___ the figures.",
+      "options": [{"text": "to check", "error_tag": null}, {"text": "for check", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {"vi": "Dùng 'to + V' để diễn đạt mục đích.", "en": "Use 'to + V' to express purpose."}
+    },
+    {
+      "q": "I suggested ___.",
+      "options": [
+        {"text": "that he go", "error_tag": null},
+        {"text": "him to go", "error_tag": "sentence_structure"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "'Suggest' không dùng với cấu trúc nguyên mẫu có chủ ngữ; dùng mệnh đề 'that' hoặc danh động từ.",
+        "en": "'Suggest' does not take the infinitive pattern with a subject; use a that-clause or gerund."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về việc bạn cần làm gì đó, dùng mệnh đề nguyên mẫu với 'to'.",
+      "en": "Write a sentence about something you need to do, using a to-infinitive clause."
+    },
+    "placeholder": "I need to ...",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["to"], "role": "marker"}]},
+    "sample": {"text": "I need to finish my report by Friday."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v14",
+    "run_id": "generate.1791098856",
+    "generated_at": "2026-10-04T07:27:36Z",
+    "r5_source": {
+      "ids": ["b2-infinitive-clauses"],
+      "content_version": 2,
+      "content_hash": "ca197935bca2431d6684bbf66a122551c0a3512682a97de68382d42c384ecd3f",
+      "corrections": [
+        {
+          "r5_id": "b2-infinitive-clauses",
+          "issue": "The R5 lesson lists 'I suggested him to go' as a mistake but does not explain that 'suggest' does not license the infinitive pattern; it only gives the correction.",
+          "fix": "Added a clear reason in common_mistakes explaining that 'suggest' requires a that-clause or gerund, not an infinitive with a subject."
+        },
+        {
+          "r5_id": "b2-infinitive-clauses",
+          "issue": "The R5 lesson includes a contrast between 'To leave now would be a mistake' and 'It would be a mistake to leave now' but does not explain the extraposition clearly.",
+          "fix": "Included the extraposition pattern in when_to_use and provided a clear example in the examples section."
+        }
+      ]
+    }
+  },
+  "review": null
+}

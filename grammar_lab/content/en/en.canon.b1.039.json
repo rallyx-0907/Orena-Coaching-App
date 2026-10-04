@@ -1,0 +1,173 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.b1.039",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.reference",
+  "level": {"framework": "cefr", "value": "B1", "rank": 3},
+  "prereqs": ["en.articles.zero"],
+  "contrasts": [],
+  "error_tags": ["article"],
+  "source_refs": {"r5": ["b1-articles-beyond-basics", "b1-generic-reference-and-zero-article"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["b1-articles-beyond-basics", "b1-generic-reference-and-zero-article"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "mạo từ beyond basics", "en": "Articles beyond basics"},
+    "native_title": "Articles beyond basics",
+    "level": {"framework": "cefr", "value": "B1", "rank": 3},
+    "summary": {
+      "vi": "Chọn a/an, the hoặc không dùng mạo từ dựa trên việc người nghe có xác định được danh từ hay không và danh từ đó được nói chung hay nói cụ thể.",
+      "en": "Choose a/an, the, or no article based on whether the listener can identify the noun and whether it is meant generally or specifically."
+    },
+    "sub": {"vi": "mạo từ nâng cao", "en": "articles in context"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Dùng a/an khi nhắc đến một thành viên chưa xác định của nhóm danh từ đếm được số ít.",
+      "en": "Use a/an for one unidentified member of a singular countable group."
+    },
+    {
+      "vi": "Dùng the khi người nghe đã biết chính xác bạn nói đến vật/người nào nhờ lần nhắc trước, ngữ cảnh, hoặc vì nó là duy nhất.",
+      "en": "Use the when the listener can identify exactly which thing or person you mean from a previous mention, the situation, or because it is unique."
+    },
+    {
+      "vi": "Không dùng mạo từ trước danh từ số nhiều hoặc không đếm được khi nói chung về cả loại đó.",
+      "en": "Use no article before plural or uncountable nouns when speaking generally about the whole class."
+    },
+    {
+      "vi": "Không dùng a/an trực tiếp trước danh từ không đếm được hoặc số nhiều.",
+      "en": "Do not use a/an directly before uncountable or plural nouns."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "article",
+        "role": "other",
+        "label": {"vi": "mạo từ", "en": "article"},
+        "optional": true,
+        "options": [{"text": "a"}, {"text": "an"}, {"text": "the"}]
+      },
+      {"text": "N", "role": "object", "label": {"vi": "danh từ", "en": "noun"}}
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "I bought a book. The book is about space.",
+      "form": "affirmative",
+      "spans": [{"start": 9, "end": 10, "role": "other"}, {"start": 11, "end": 15, "role": "object"}],
+      "annotation": {
+        "vi": "Lần đầu dùng a vì người nghe chưa biết cuốn sách nào; lần sau dùng the vì đã nhắc đến.",
+        "en": "First mention uses a because the listener does not know which book; second mention uses the because it was already introduced."
+      },
+      "translation": {
+        "vi": "Tôi mua một cuốn sách. Cuốn sách đó nói về không gian.",
+        "en": "I bought a book. The book is about space."
+      }
+    },
+    {
+      "text": "Books can change how we think.",
+      "form": "affirmative",
+      "spans": [{"start": 0, "end": 5, "role": "object"}],
+      "annotation": {
+        "vi": "Không dùng mạo từ trước danh từ số nhiều khi nói chung về sách.",
+        "en": "No article before a plural noun when speaking generally about books."
+      },
+      "translation": {"vi": "Sách có thể thay đổi cách chúng ta nghĩ.", "en": "Books can change how we think."}
+    },
+    {
+      "text": "She studies economics at university.",
+      "form": "affirmative",
+      "spans": [{"start": 12, "end": 21, "role": "object"}],
+      "annotation": {
+        "vi": "Không dùng mạo từ trước tên môn học và trong cụm at university khi nói về hoạt động chung.",
+        "en": "No article before a subject name and in the fixed phrase at university when referring to the general activity."
+      },
+      "translation": {"vi": "Cô ấy học kinh tế ở đại học.", "en": "She studies economics at university."}
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "advice là danh từ không đếm được, nên không thể dùng a/an trực tiếp; cần some hoặc a piece of.",
+        "en": "advice is uncountable, so a/an cannot be used directly; use some or a piece of."
+      },
+      "error_tag": "article",
+      "l1": ["vi"],
+      "wrong": "I need an advice.",
+      "right": "I need some advice."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "I saw ___ dog in the park. It was very friendly.",
+      "options": [{"text": "a", "error_tag": null}, {"text": "the", "error_tag": "article"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Lần đầu nhắc đến con chó chưa xác định nên dùng a.",
+        "en": "First mention of an unidentified dog takes a."
+      }
+    },
+    {
+      "q": "___ information is important in modern society.",
+      "options": [{"text": "The", "error_tag": "article"}, {"text": "No article", "error_tag": null}],
+      "answer": 1,
+      "explain": {
+        "vi": "Khi nói chung về thông tin, danh từ không đếm được không dùng mạo từ.",
+        "en": "When speaking generally about information, the uncountable noun takes no article."
+      }
+    },
+    {
+      "q": "She gave me ___ useful book about space.",
+      "options": [{"text": "a", "error_tag": null}, {"text": "an", "error_tag": "article"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Dùng a trước tính từ bắt đầu bằng phụ âm /j/ trong useful.",
+        "en": "Use a before an adjective beginning with the consonant sound /j/ in useful."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một cuốn sách bạn đã mua, dùng a cho lần đầu và the cho lần nhắc lại.",
+      "en": "Write a sentence about a book you bought, using a for the first mention and the for the second."
+    },
+    "placeholder": "I bought a book. The book ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["a", "the"], "role": "other"}, {"regex": "[a-z]+", "role": "object"}]
+    },
+    "sample": {"text": "I bought a book. The book is about space."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v14",
+    "run_id": "generate.1791098846",
+    "generated_at": "2026-10-04T07:27:26Z",
+    "r5_source": {
+      "ids": ["b1-articles-beyond-basics", "b1-generic-reference-and-zero-article"],
+      "content_version": 2,
+      "content_hash": "1d0ba9810bcb937ee28f132a2a90accbd2062eba144fe318ba892c5c9f3e5f7c",
+      "corrections": [
+        {
+          "r5_id": "b1-articles-beyond-basics",
+          "issue": "The R5 lesson lists 'I need an advice' as a mistake but does not correct the article error directly; it suggests 'some advice' or 'a piece of advice' without explaining that a/an cannot be used with uncountable nouns.",
+          "fix": "Added a common_mistakes entry with wrong 'I need an advice' and right 'I need some advice', explaining that advice is uncountable and a/an cannot be used directly."
+        },
+        {
+          "r5_id": "b1-generic-reference-and-zero-article",
+          "issue": "The R5 lesson includes 'The children need opportunities to play' as a mistake, but the correction 'Children need opportunities to play' is correct only if the intended meaning is generic; the original could be correct in a specific context.",
+          "fix": "Did not carry this over as a mistake because it is context-dependent; instead focused on the clear uncountable error with advice."
+        }
+      ]
+    }
+  },
+  "review": null
+}
