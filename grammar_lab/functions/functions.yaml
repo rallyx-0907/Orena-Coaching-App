@@ -943,6 +943,7 @@ functions:
   realizations:
     en:
     - en.canon.b2.039
+    - en.canon.c1.023
     zh-Hans:
     - zh.canon.gf.hsk2.a_2_5_3.p1
     - zh.canon.r5.hsk3_3_topic_69
@@ -952,8 +953,7 @@ functions:
     - zh.canon.r5.hsk79_19_argument_concession_counterclaim
     ja: []
   planned:
-    en:
-    - en.canon.c1.023
+    en: []
     zh-Hans:
     - zh.suiran_danshi
     - zh.canon.r5.hsk4_4_topic_105
@@ -1094,11 +1094,11 @@ functions:
     - en.canon.c1.030
     - en.canon.b2.030
     - en.canon.b2.029
+    - en.canon.c1.013
     zh-Hans: []
     ja: []
   planned:
     en:
-    - en.canon.c1.013
     - en.canon.c2.004
     - en.canon.c2.010
     - en.canon.c2.015
@@ -1140,11 +1140,11 @@ functions:
     en:
     - en.canon.c2.018
     - en.canon.b2.040
+    - en.canon.c1.028
     zh-Hans: []
     ja: []
   planned:
-    en:
-    - en.canon.c1.028
+    en: []
     zh-Hans:
     - zh.canon.r5.hsk6_20_register_control
     - zh.canon.r5.hsk79_21_legal_administrative_register_patterns

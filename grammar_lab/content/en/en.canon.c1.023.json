@@ -1,0 +1,200 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.c1.023",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.contrast",
+  "level": {"framework": "cefr", "value": "C1", "rank": 5},
+  "prereqs": ["en.canon.c1.021"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["c1-advanced-concession", "c2-advanced-concession-and-counterargument"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["c1-advanced-concession", "c2-advanced-concession-and-counterargument"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Advanced concession", "en": "Advanced concession"},
+    "native_title": "Advanced concession",
+    "level": {"framework": "cefr", "value": "C1", "rank": 5},
+    "summary": {
+      "vi": "Cấu trúc nhượng bộ nâng cao dùng trật tự đảo hoặc wh-ever để thừa nhận một trở ngại nhưng vẫn giữ nguyên khẳng định chính.",
+      "en": "Advanced concession uses inverted or wh-ever structures to acknowledge an obstacle while keeping the main claim intact."
+    },
+    "sub": {"vi": "nhượng bộ nâng cao", "en": "advanced concession"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn thừa nhận một đặc điểm hoặc mức độ trước khi khẳng định điều ngược lại, với giọng văn trang trọng.",
+      "en": "When you want to acknowledge a quality or degree before asserting the opposite, in a formal register."
+    },
+    {
+      "vi": "Khi cần nói rằng dù nỗ lực đến đâu, kết quả chính vẫn không thay đổi.",
+      "en": "When you need to say that no matter how much effort is made, the main outcome does not change."
+    },
+    {
+      "vi": "Khi muốn nhấn mạnh rằng khẳng định chính đúng trong mọi tình huống có thể xảy ra.",
+      "en": "When you want to stress that the main claim holds across every possible situation."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "however",
+        "role": "connector",
+        "label": {"vi": "liên từ nhượng bộ", "en": "concessive connector"}
+      },
+      {"text": "Adv", "role": "complement", "label": {"vi": "trạng từ", "en": "adverb"}},
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}},
+      {
+        "text": "main clause",
+        "role": "other",
+        "label": {"vi": "mệnh đề chính", "en": "main clause"}
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "However carefully you test the system, some uncertainty will remain.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 7, "role": "connector"},
+        {"start": 8, "end": 17, "role": "complement"},
+        {"start": 18, "end": 21, "role": "subject"},
+        {"start": 22, "end": 26, "role": "verb"},
+        {"start": 39, "end": 67, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "However + trạng từ mở rộng phạm vi mức độ, giữ mệnh đề chính không đổi.",
+        "en": "However + adverb scopes degree and keeps the main clause unchanged."
+      },
+      "translation": {
+        "vi": "Dù bạn kiểm tra hệ thống cẩn thận đến đâu, vẫn còn một mức bất định.",
+        "en": "However carefully you test the system, some uncertainty will remain."
+      }
+    },
+    {
+      "text": "However hard we tried, we could not reproduce the error.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 7, "role": "connector"},
+        {"start": 8, "end": 12, "role": "complement"},
+        {"start": 13, "end": 15, "role": "subject"},
+        {"start": 16, "end": 21, "role": "verb"},
+        {"start": 23, "end": 55, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "However + trạng từ diễn tả mức độ nỗ lực, mệnh đề chính vẫn giữ nguyên.",
+        "en": "However + adverb expresses degree of effort; the main clause stays unchanged."
+      },
+      "translation": {
+        "vi": "Dù chúng tôi cố gắng đến đâu, chúng tôi vẫn không tái hiện được lỗi.",
+        "en": "However hard we tried, we could not reproduce the error."
+      }
+    },
+    {
+      "text": "However carefully you plan, problems may arise.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 7, "role": "connector"},
+        {"start": 8, "end": 17, "role": "complement"},
+        {"start": 18, "end": 21, "role": "subject"},
+        {"start": 22, "end": 26, "role": "verb"},
+        {"start": 28, "end": 46, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "However + trạng từ mở rộng phạm vi mức độ, giữ mệnh đề chính không đổi.",
+        "en": "However + adverb scopes degree and keeps the main clause unchanged."
+      },
+      "translation": {
+        "vi": "Dù bạn lên kế hoạch cẩn thận đến đâu, vấn đề vẫn có thể phát sinh.",
+        "en": "However carefully you plan, problems may arise."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "As ở đầu câu thường được hiểu là 'bởi vì', không tạo được cấu trúc nhượng bộ có đảo.",
+        "en": "As at the start is usually read as 'because' and does not create the inverted concessive pattern."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "As he was reluctant, he agreed to continue.",
+      "right": "Reluctant as he was, he agreed to continue."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "___ as she was, she finished the report on time.",
+      "options": [{"text": "Tired", "error_tag": null}, {"text": "Tiring", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau đảo nhượng bộ cần tính từ miêu tả trạng thái của chủ ngữ, không dùng phân từ -ing.",
+        "en": "The inverted concessive needs an adjective describing the subject's state, not an -ing participle."
+      }
+    },
+    {
+      "q": "However ___ you plan, problems may arise.",
+      "options": [{"text": "carefully", "error_tag": null}, {"text": "careful", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {
+        "vi": "However trong nhượng bộ mức độ bổ nghĩa cho trạng từ, nên cần carefully.",
+        "en": "However in degree concession modifies an adverb, so carefully is required."
+      }
+    },
+    {
+      "q": "Try ___ we might, we could not solve the problem.",
+      "options": [{"text": "as", "error_tag": null}, {"text": "though", "error_tag": "word_choice"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Khung cố định là try as + chủ ngữ + might, không dùng though ở đây.",
+        "en": "The fixed frame is try as + subject + might; though does not fit here."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu nhượng bộ nâng cao về một việc bạn đã cố gắng nhưng không thành.",
+      "en": "Write an advanced concessive sentence about something you tried hard to do but could not."
+    },
+    "placeholder": "Try as I might, ...",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["might", "may"], "role": "verb"}]},
+    "sample": {"text": "Try as I might, I could not finish the project on time."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v15",
+    "run_id": "generate.1791101622",
+    "generated_at": "2026-10-04T08:13:42Z",
+    "r5_source": {
+      "ids": ["c1-advanced-concession", "c2-advanced-concession-and-counterargument"],
+      "content_version": 2,
+      "content_hash": "5d7732952d719a92096bd63dd2a06ea14d38855fd4318a77ded3c68c7c5d9cb9",
+      "corrections": [
+        {
+          "r5_id": "c1-advanced-concession",
+          "issue": "The R5 example 'However carefully you test the system, some uncertainty will remain' was listed under a formula that did not include however + adverb.",
+          "fix": "Added however + adverb as a covered form in the formula and used it as an example."
+        },
+        {
+          "r5_id": "c1-advanced-concession",
+          "issue": "The R5 mistake 'As he was reluctant, he agreed to continue' was presented as a direct error, but as can mean 'because' and the sentence is grammatical with a different meaning.",
+          "fix": "Reframed the mistake as a meaning/register error: as does not create the marked concessive pattern; the correct form is 'Reluctant as he was, he agreed to continue.'"
+        },
+        {
+          "r5_id": "c2-advanced-concession-and-counterargument",
+          "issue": "The C2 lesson included discourse-level counterargument connectors (nevertheless, even so) that are outside this C1 point's scope.",
+          "fix": "Excluded those connectors and kept only the C1 marked concession structures (adjective/adverb inversion, try as, however + adverb, wh-ever)."
+        }
+      ]
+    }
+  },
+  "review": null
+}

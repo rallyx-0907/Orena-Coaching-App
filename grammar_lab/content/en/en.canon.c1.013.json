@@ -1,0 +1,206 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.c1.013",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.information_structure",
+  "level": {"framework": "cefr", "value": "C1", "rank": 5},
+  "prereqs": ["en.canon.b1.055"],
+  "contrasts": [],
+  "error_tags": ["sentence_structure"],
+  "source_refs": {"r5": ["c1-so-such-inversion"]},
+  "point_type": "word_order",
+  "sequence": 3,
+  "aliases": ["c1-so-such-inversion"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "So/such đảo ngữ", "en": "So/such inversion"},
+    "native_title": "So/such inversion",
+    "level": {"framework": "cefr", "value": "C1", "rank": 5},
+    "summary": {
+      "vi": "Cấu trúc đảo ngữ với 'so' và 'such' đưa thành phần nhấn mạnh lên đầu câu, theo sau là trợ động từ và chủ ngữ, rồi mệnh đề 'that' chỉ kết quả.",
+      "en": "So/such inversion fronts an emphatic adjective, adverb, or noun phrase, followed by an auxiliary and subject, then a that-clause of result."
+    },
+    "sub": {"vi": "đảo ngữ nhấn mạnh", "en": "emphatic inversion"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nhấn mạnh mức độ cực cao của một tính từ, trạng từ hoặc cụm danh từ trong văn viết trang trọng.",
+      "en": "When you want to emphasise an extreme degree of an adjective, adverb, or noun phrase in formal writing."
+    },
+    {
+      "vi": "Khi câu có mệnh đề kết quả với 'that' và bạn muốn đặt trọng tâm vào nguyên nhân.",
+      "en": "When the sentence has a result clause with 'that' and you want to focus on the cause."
+    },
+    {
+      "vi": "Trong diễn ngôn học thuật, báo chí hoặc văn học để tạo nhịp điệu và sắc thái trang trọng.",
+      "en": "In academic, journalistic, or literary discourse to create rhythm and a formal tone."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "So", "role": "marker", "label": {"vi": "từ nhấn mạnh", "en": "degree marker"}},
+      {
+        "text": "adj/adv",
+        "role": "complement",
+        "label": {"vi": "tính từ/trạng từ", "en": "adjective/adverb"},
+        "optional": true
+      },
+      {"text": "aux", "role": "aux", "label": {"vi": "trợ động từ", "en": "auxiliary"}},
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {
+        "text": "that-clause",
+        "role": "other",
+        "label": {"vi": "mệnh đề kết quả", "en": "result clause"}
+      }
+    ],
+    "illustration": {"kind": "word_order"}
+  },
+  "examples": [
+    {
+      "text": "So intense was the pressure that several staff resigned.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "marker"},
+        {"start": 3, "end": 10, "role": "complement"},
+        {"start": 11, "end": 14, "role": "aux"},
+        {"start": 15, "end": 27, "role": "subject"},
+        {"start": 28, "end": 55, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Nhấn mạnh mức độ áp lực; đảo ngữ với 'was'.",
+        "en": "Emphasises the degree of pressure; inversion with 'was'."
+      },
+      "translation": {
+        "vi": "Áp lực dữ dội đến mức vài nhân viên nghỉ việc.",
+        "en": "The pressure was so intense that several staff resigned."
+      }
+    },
+    {
+      "text": "So rapidly did demand increase that supply could not keep up.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "marker"},
+        {"start": 3, "end": 10, "role": "complement"},
+        {"start": 11, "end": 14, "role": "aux"},
+        {"start": 15, "end": 21, "role": "subject"},
+        {"start": 31, "end": 60, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Đảo ngữ với trợ động từ 'did' khi động từ chính ở dạng nguyên thể.",
+        "en": "Inversion with auxiliary 'did' when the main verb is in base form."
+      },
+      "translation": {
+        "vi": "Nhu cầu tăng nhanh đến mức nguồn cung không theo kịp.",
+        "en": "Demand increased so rapidly that supply could not keep up."
+      }
+    },
+    {
+      "text": "Such was the confusion that the meeting was postponed.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "marker"},
+        {"start": 5, "end": 8, "role": "aux"},
+        {"start": 9, "end": 22, "role": "subject"},
+        {"start": 23, "end": 53, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Đảo ngữ với 'such' + be + cụm danh từ.",
+        "en": "Inversion with 'such' + be + noun phrase."
+      },
+      "translation": {
+        "vi": "Sự hỗn loạn lớn đến mức cuộc họp bị hoãn.",
+        "en": "The confusion was such that the meeting was postponed."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Khi đảo ngữ với 'so', trợ động từ phải đứng trước chủ ngữ; người học thường giữ trật tự thường.",
+        "en": "In so-inversion, the auxiliary must precede the subject; learners often keep normal word order."
+      },
+      "error_tag": "sentence_structure",
+      "l1": ["vi"],
+      "wrong": "So difficult the task was that we stopped.",
+      "right": "So difficult was the task that we stopped."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "___ was the storm that all flights were cancelled.",
+      "options": [{"text": "So severe", "error_tag": null}, {"text": "So severely", "error_tag": "word_form"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 'so' cần tính từ 'severe' bổ nghĩa cho danh từ 'storm', không dùng trạng từ.",
+        "en": "After 'so' we need the adjective 'severe' to modify the noun 'storm', not the adverb."
+      }
+    },
+    {
+      "q": "So quickly ___ that we couldn't follow.",
+      "options": [
+        {"text": "did he speak", "error_tag": null},
+        {"text": "he spoke", "error_tag": "sentence_structure"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Cấu trúc đảo ngữ yêu cầu trợ động từ 'did' đứng trước chủ ngữ 'he'.",
+        "en": "Inversion requires the auxiliary 'did' before the subject 'he'."
+      }
+    },
+    {
+      "q": "Such ___ the impact that the policy was changed.",
+      "options": [{"text": "was", "error_tag": null}, {"text": "were", "error_tag": "agreement"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Chủ ngữ 'the impact' số ít nên dùng 'was', không dùng 'were'.",
+        "en": "The subject 'the impact' is singular, so use 'was', not 'were'."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng đảo ngữ với 'so' hoặc 'such' để nhấn mạnh một trải nghiệm của bạn.",
+      "en": "Write a sentence using so/such inversion to emphasise one of your experiences."
+    },
+    "placeholder": "So ... that ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["So", "Such"], "role": "marker"}, {"any_of": ["was", "did"], "role": "aux"}]
+    },
+    "sample": {"text": "So rewarding was the experience that I decided to volunteer again."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v15",
+    "run_id": "generate.1791101602",
+    "generated_at": "2026-10-04T08:13:22Z",
+    "r5_source": {
+      "ids": ["c1-so-such-inversion"],
+      "content_version": 2,
+      "content_hash": "325da801257e81f1c87f73028afffb89d9bf9daea09c3ea3ee1af2e73cd0ad0e",
+      "corrections": [
+        {
+          "r5_id": "c1-so-such-inversion",
+          "issue": "R5's formula for 'such' inversion was incomplete: it only listed 'Such + be + noun phrase + that-clause' but did not include the 'so' inversion pattern as a separate formula, and the examples mixed both without clear slot bindings.",
+          "fix": "Added a complete formula for 'so' inversion with slots So + adj/adv + aux + S + that-clause, and kept 'such' inversion as a separate example with its own bindings."
+        },
+        {
+          "r5_id": "c1-so-such-inversion",
+          "issue": "R5's mistake 'Such difficult was the task that...' was corrected to 'Such was the difficulty of the task that...', but the explanation did not clarify that 'such' fronts a noun phrase, not an adjective alone.",
+          "fix": "Included a common mistake that targets the missing inversion after 'so', and explained the auxiliary-subject order requirement."
+        },
+        {
+          "r5_id": "c1-so-such-inversion",
+          "issue": "R5's guided practice included a production prompt that was too vague and did not specify the target structure clearly.",
+          "fix": "Replaced with a personal production prompt that asks for a sentence using so/such inversion, with a clear pattern rule and sample."
+        }
+      ]
+    }
+  },
+  "review": null
+}

@@ -1,0 +1,237 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.c1.028",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.register_style",
+  "level": {"framework": "cefr", "value": "C1", "rank": 5},
+  "prereqs": ["en.canon.c1.027"],
+  "contrasts": [],
+  "error_tags": ["register"],
+  "source_refs": {"r5": ["c1-register-driven-grammar", "c2-register-driven-syntax"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["c1-register-driven-grammar", "c2-register-driven-syntax"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Register-driven grammar", "en": "Register-driven grammar"},
+    "native_title": "Register-driven grammar",
+    "level": {"framework": "cefr", "value": "C1", "rank": 5},
+    "summary": {
+      "vi": "Điểm ngữ pháp này dạy cách chọn dạng câu (chủ động/bị động, rút gọn, danh từ hoá, đại từ bất định) sao cho khớp với văn phong và người đọc, chứ không chỉ đúng ngữ pháp.",
+      "en": "This point teaches how to choose sentence forms (active/passive, contractions, nominalisation, impersonal subjects) so they match the register and audience, not just grammatical correctness."
+    },
+    "sub": {"vi": "chọn dạng theo văn phong", "en": "form follows register"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi viết email công việc và cần giọng lịch sự, trung tính, tránh rút gọn quá đà.",
+      "en": "When writing a work email and you need a polite, neutral tone without overusing contractions."
+    },
+    {
+      "vi": "Khi viết báo cáo học thuật và muốn giảm vai trò cá nhân bằng bị động hoặc chủ ngữ bất định.",
+      "en": "When writing an academic report and you want to reduce personal agency with passive or impersonal subjects."
+    },
+    {
+      "vi": "Khi chuyển cùng một nội dung giữa hội thoại, email chuyên nghiệp và văn bản học thuật.",
+      "en": "When shifting the same content between conversation, professional email and academic prose."
+    },
+    {
+      "vi": "Khi cần quyết định giữ chủ động hay chuyển sang bị động/danh từ hoá để phù hợp thể loại.",
+      "en": "When deciding whether to keep the active voice or switch to passive/nominalisation to fit the genre."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}},
+      {"text": "O", "role": "object", "label": {"vi": "tân ngữ", "en": "object"}, "optional": true},
+      {
+        "text": "register marker",
+        "role": "marker",
+        "label": {"vi": "dấu hiệu văn phong", "en": "register marker"},
+        "optional": true,
+        "options": [{"text": "could"}, {"text": "please"}, {"text": "kindly"}]
+      }
+    ],
+    "variants": {
+      "negative": [
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {
+          "text": "aux",
+          "role": "aux",
+          "label": {"vi": "trợ động từ", "en": "auxiliary"},
+          "options": [{"text": "do not"}, {"text": "does not"}, {"text": "cannot"}]
+        },
+        {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}},
+        {
+          "text": "O",
+          "role": "object",
+          "label": {"vi": "tân ngữ", "en": "object"},
+          "optional": true
+        }
+      ],
+      "question": [
+        {
+          "text": "aux",
+          "role": "aux",
+          "label": {"vi": "trợ động từ", "en": "auxiliary"},
+          "options": [{"text": "Could"}, {"text": "Can"}, {"text": "Would"}]
+        },
+        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}},
+        {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}},
+        {
+          "text": "O",
+          "role": "object",
+          "label": {"vi": "tân ngữ", "en": "object"},
+          "optional": true
+        }
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "Could you send me the revised file by Friday?",
+      "form": "question",
+      "spans": [
+        {"start": 0, "end": 5, "role": "aux"},
+        {"start": 6, "end": 9, "role": "subject"},
+        {"start": 10, "end": 14, "role": "verb"},
+        {"start": 15, "end": 34, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Câu hỏi lịch sự với 'Could' phù hợp email công việc.",
+        "en": "A polite question with 'Could' suits a work email."
+      },
+      "translation": {
+        "vi": "Bạn có thể gửi cho tôi file đã sửa trước thứ Sáu không?",
+        "en": "Could you send me the revised file by Friday?"
+      }
+    },
+    {
+      "text": "Please ensure that all fields are completed before submission.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 6, "role": "subject"},
+        {"start": 7, "end": 13, "role": "verb"},
+        {"start": 14, "end": 43, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "'Please' + mệnh lệnh gián tiếp giữ giọng chuyên nghiệp, không quá gay gắt.",
+        "en": "'Please' plus an indirect directive keeps a professional, non-abrasive tone."
+      },
+      "translation": {
+        "vi": "Vui lòng đảm bảo mọi trường được điền trước khi nộp.",
+        "en": "Please ensure that all fields are completed before submission."
+      }
+    },
+    {
+      "text": "The findings indicate a statistically meaningful difference.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 12, "role": "subject"},
+        {"start": 13, "end": 21, "role": "verb"},
+        {"start": 22, "end": 59, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Chủ ngữ bất định 'The findings' + động từ trung tính tạo giọng học thuật.",
+        "en": "The impersonal subject 'The findings' with a neutral verb creates an academic tone."
+      },
+      "translation": {
+        "vi": "Kết quả cho thấy một khác biệt có ý nghĩa thống kê.",
+        "en": "The findings indicate a statistically meaningful difference."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Trộn lẫn từ ngữ trang trọng theo công thức ('kindly revert') với từ quá thân mật ('stuff', 'ASAP') khiến văn phong không nhất quán.",
+        "en": "Mixing formulaic formal words ('kindly revert') with very informal ones ('stuff', 'ASAP') makes the register inconsistent."
+      },
+      "error_tag": "register",
+      "l1": ["vi"],
+      "wrong": "Kindly revert back to me ASAP with the stuff.",
+      "right": "Please reply as soon as possible with the requested documents."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "___ you send me the revised file by Friday?",
+      "options": [{"text": "Could", "error_tag": null}, {"text": "Can you", "error_tag": "sentence_structure"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Trong email công việc, 'Could you' lịch sự hơn 'Can you' và phù hợp văn phong chuyên nghiệp.",
+        "en": "In a work email, 'Could you' is more polite than 'Can you' and fits a professional register."
+      }
+    },
+    {
+      "q": "Please ensure that all fields ___ completed before submission.",
+      "options": [{"text": "are", "error_tag": null}, {"text": "is", "error_tag": "agreement"}],
+      "answer": 0,
+      "explain": {
+        "vi": "'All fields' là số nhiều nên dùng 'are', giữ đúng ngữ pháp và văn phong trang trọng.",
+        "en": "'All fields' is plural, so 'are' is correct and keeps the formal register."
+      }
+    },
+    {
+      "q": "The findings ___ a statistically meaningful difference.",
+      "options": [{"text": "indicate", "error_tag": null}, {"text": "indicates", "error_tag": "agreement"}],
+      "answer": 0,
+      "explain": {
+        "vi": "'The findings' số nhiều nên động từ 'indicate' không thêm -s; đây là dạng học thuật chuẩn.",
+        "en": "'The findings' is plural, so the verb 'indicate' takes no -s; this is the standard academic form."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu bạn sẽ dùng trong email công việc để nhờ đồng nghiệp gửi tài liệu trước thứ Sáu, dùng cấu trúc lịch sự với 'Could you'.",
+      "en": "Write a sentence you would use in a work email to ask a colleague to send a document by Friday, using the polite 'Could you' structure."
+    },
+    "placeholder": "Could you ...",
+    "target_form": "question",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"any_of": ["Could"], "role": "aux"},
+        {"any_of": ["you"], "role": "subject"},
+        {"regex": "[a-z]+", "role": "verb"}
+      ]
+    },
+    "sample": {"text": "Could you send me the updated report by Friday?"}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v15",
+    "run_id": "generate.1791101635",
+    "generated_at": "2026-10-04T08:13:55Z",
+    "r5_source": {
+      "ids": ["c1-register-driven-grammar", "c2-register-driven-syntax"],
+      "content_version": 2,
+      "content_hash": "7a182de59866bde009a599f997f4138fc526b41ffbde04446df541ea34bb035f",
+      "corrections": [
+        {
+          "r5_id": "c1-register-driven-grammar",
+          "issue": "The R5 lesson mixes C1 and C2 content and includes a C2-level contrast ('Who did you speak to? ↔ To whom did you speak?') that is outside this C1 point's scope.",
+          "fix": "Removed the C2 contrast and kept only C1-level register-driven grammar examples and rules."
+        },
+        {
+          "r5_id": "c1-register-driven-grammar",
+          "issue": "The R5 mistake 'The lunch was consumed by me at noon.' is an unmotivated passive, but the correction 'I had lunch at noon.' changes the verb from 'consume' to 'have', which is a different lexical choice, not just a register fix.",
+          "fix": "Replaced with a single register mistake that keeps the same proposition: 'Kindly revert back to me ASAP with the stuff.' corrected to 'Please reply as soon as possible with the requested documents.'"
+        },
+        {
+          "r5_id": "c2-register-driven-syntax",
+          "issue": "The R5 lesson is C2-level and includes contrasts and examples beyond this C1 point's scope.",
+          "fix": "Did not carry over C2 content; used only C1-appropriate material from the C1 lesson."
+        }
+      ]
+    }
+  },
+  "review": null
+}
