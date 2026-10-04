@@ -109,10 +109,9 @@ human gates. Never touch persistent volumes as cleanup.
 
 ## NEXT EXACT TASK
 
-D-124 (human 2026-10-04): → vi from the list, then Wiktionary (kaikki, en+vi editions),
-then open-dsl-dict (CC BY-SA only); no machine translation. Measure coverage per source and
-export 100-item samples for the human; English fallback labelled; Hán-Việt only if Wiktionary
-separates it from Nôm; licences page + THIRD_PARTY_NOTICES. No paid provider in vocabulary.
+D-124: → vi policy open-dsl → vi.wiktionary (strict) → English labelled; built, NOT enabled
+until the human grades docs/reviews/evidence/d124-vi. Licences page + THIRD_PARTY_NOTICES done.
+Next (human 2026-10-04): S1 source list for approval, then Speaking/Progress partial cells.
 
 Grammar remains deferred. Human2026-10-04 accepts Reading -> vocabulary
 enrichment -> practice on publish -> Agent; Grammar later. Review bounded S1
