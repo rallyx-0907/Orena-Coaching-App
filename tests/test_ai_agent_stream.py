@@ -443,3 +443,38 @@ def test_gemini_flash_lite_is_priced():
 
     cost = estimate_token_cost("gemini", "gemini-3.5-flash-lite", {"prompt_tokens": 1_000_000, "completion_tokens": 1_000_000})
     assert cost["state"] != "unpriced" and cost["amount"] == pytest.approx(2.80)
+
+
+# --- independent review 2026-10-04: an abnormal end is never a normal stop ---------------------------------------
+
+
+@pytest.mark.parametrize(("sent", "seen"), [("length", "length"), ("content_filter", "content_filter"), (None, "missing")])
+def test_an_abnormal_end_is_passed_on_as_it_is(monkeypatch, sent, seen):
+    chunks = [delta(content="Xin ")] + ([finish(sent)] if sent else []) + [b"data: [DONE]"]
+    post_returning(monkeypatch, StreamResponse(chunks))
+    assert run(provider(monkeypatch))[-1].finish_reason == seen
+
+
+def test_tool_calls_that_end_with_stop_are_a_tool_round(monkeypatch):
+    call = {"index": 0, "id": "c1", "function": {"name": "get_x", "arguments": "{}"}}
+    post_returning(monkeypatch, StreamResponse([delta(tool_calls=[call]), finish("stop"), b"data: [DONE]"]))
+    assert run(provider(monkeypatch))[-1].finish_reason == "tool_calls"
+
+
+def test_an_abnormal_end_is_a_failure_in_the_telemetry_with_its_usage(monkeypatch, telemetry):
+    events = [ChatTextDelta("Chào"), ChatFinished("content_filter", prompt_tokens=50, completion_tokens=4)]
+    list(stream(monkeypatch, Selected(events=events)))
+    (record,) = telemetry
+    assert record["outcome"] == "failure" and record["error_class"] == "abnormal_finish"
+    assert record["usage"]["prompt_tokens"] == 50
+
+
+def test_the_adapter_fails_closed_on_an_unknown_end():
+    from writing_coach.agent.errors import ProviderUnavailable
+    from writing_coach.agent.platform_provider import PlatformAgentTurnProvider
+
+    adapter = PlatformAgentTurnProvider()
+    with pytest.raises(ProviderUnavailable):
+        list(adapter._convert(iter([ChatTextDelta("a"), ChatFinished("content_filter")])))
+    with pytest.raises(ProviderUnavailable):
+        list(adapter._convert(iter([ChatFinished("missing")])))

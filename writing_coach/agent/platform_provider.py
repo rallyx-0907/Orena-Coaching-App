@@ -33,6 +33,16 @@ _log = logging.getLogger(__name__)
 _FINISH = {"stop": "stop", "tool_calls": "tool_calls", "length": "length"}
 
 
+def _finish(reason: object) -> str:
+    """The round's end as the agent knows it. An unknown or missing reason (a safety stop, a stream cut short) is
+    never read as a normal stop: the round fails closed (independent review 2026-10-04)."""
+
+    known = _FINISH.get(str(reason or ""))
+    if known is None:
+        raise ProviderUnavailable(f"the provider round ended with an unknown reason {reason!r}")
+    return known
+
+
 def wire_message(message: ProviderMessage) -> dict[str, Any]:
     if message.role == "tool":
         return {"role": "tool", "tool_call_id": message.tool_call_id, "content": message.content}
@@ -111,7 +121,7 @@ class PlatformAgentTurnProvider:
                     yield TurnFinished(
                         input_tokens=event.prompt_tokens,
                         output_tokens=event.completion_tokens,
-                        finish_reason=_FINISH.get(event.finish_reason, "stop"),
+                        finish_reason=_finish(event.finish_reason),
                         cached_input_tokens=event.cached_tokens or 0,
                     )
         except (AIProviderError, AICapabilityError) as exc:

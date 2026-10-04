@@ -807,7 +807,13 @@ class OpenAICompatibleProvider:
                 arguments="".join(slot["arguments"]),
                 extra=slot["extra"],
             )
-        reason = "tool_calls" if order else ("length" if finish_reason == "length" else "stop")
+        # The provider's own reason, never normalised to a normal stop (independent review 2026-10-04): tool calls with
+        # "stop" (Gemini's way) are a tool round; anything else - "length", a safety or content filter, or no reason
+        # at all (a stream cut short) - is passed on as it is, and the caller fails closed on it.
+        if order and finish_reason in ("tool_calls", "stop"):
+            reason = "tool_calls"
+        else:
+            reason = finish_reason or "missing"
         details = usage.get("prompt_tokens_details") if isinstance(usage.get("prompt_tokens_details"), dict) else {}
         yield ChatFinished(
             finish_reason=reason,

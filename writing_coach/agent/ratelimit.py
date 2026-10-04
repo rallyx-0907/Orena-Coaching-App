@@ -11,6 +11,13 @@ anonymous caller before the agent sees it, so a limit per IP would only merge
 learners behind one address. The windows live in this process and each worker
 counts its own; how many learners are remembered is bounded, least recently
 seen forgotten first.
+
+Best effort, not a quota (independent review 2026-10-04, P2): with N workers a
+learner can make up to N times the limit, and a restart forgets every window.
+It protects one process from a burst; it is not the account's spending limit.
+An authoritative shared quota (per account, across workers) is required before
+a multi-worker or public rollout of the agent - an activation condition, not
+this module's job (AGENT_SPEC §0 R26).
 """
 
 from __future__ import annotations

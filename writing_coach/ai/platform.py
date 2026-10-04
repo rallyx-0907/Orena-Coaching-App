@@ -431,7 +431,11 @@ def stream_agent_turn(
                 record("failure", error_class="client_abandoned")
             raise
         if finished is not None:
-            record("success", finished=finished)
+            # A round that did not end normally is a failure in the telemetry too, with its usage kept (it may be paid).
+            if finished.finish_reason in ("stop", "tool_calls"):
+                record("success", finished=finished)
+            else:
+                record("failure", finished=finished, error_class="abnormal_finish")
 
     return recorded()
 

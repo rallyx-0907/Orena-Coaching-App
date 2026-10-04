@@ -82,6 +82,7 @@ from writing_coach.agent.outputs import (
 )
 from writing_coach.agent.prompts import opening_messages
 from writing_coach.agent.provider import (
+    NORMAL_FINISH,
     AgentTurnProvider,
     ProviderMessage,
     ProviderToolSpec,
@@ -367,11 +368,7 @@ class _Turn:
                 if self.rt.clock() > self.deadline:
                     raise ProviderUnavailable("turn timed out")
                 if isinstance(item, TextDelta) and item.text:
-                    round_text.append(item.text)
-                    self.text.append(item.text)
-                    if not self.opening:  # an opening greeting is sent whole, once it fits
-                        for chunk in self.gate.feed(item.text):
-                            yield self.stream.emit(SegmentDelta(index=0, lang=self.locale.support, text_delta=chunk))
+                    round_text.append(item.text)  # held until the round ends: evidence before any claim
                 elif isinstance(item, ToolCallRequest):
                     calls.append(item)
                 elif isinstance(item, TurnFinished):
@@ -379,8 +376,23 @@ class _Turn:
                         self.usage_known = False  # never a guessed zero (R5 counts what was reported)
                     self.usage_in += item.input_tokens or 0
                     self.usage_out += item.output_tokens or 0
+                    if item.finish_reason not in NORMAL_FINISH:
+                        # Fail closed (independent review 2026-10-04): a round cut off or ended for a reason that is
+                        # not a normal stop is never shown as a complete answer.
+                        raise ProviderUnavailable(f"the provider round ended with {item.finish_reason!r}")
             if self.should_stop():
                 return
+            if any(call.name not in REPLY_TOOL_NAMES for call in calls):
+                # Text written in the same round as a read was written before its evidence (independent review
+                # 2026-10-04, P1): it never reaches the learner, and the model answers again once it has read.
+                round_text = []
+            elif round_text:
+                self.text.extend(round_text)
+                if not self.opening:  # an opening greeting is sent whole, once it fits
+                    for chunk in self.gate.feed("".join(round_text)):
+                        if self.should_stop():
+                            return  # the learner left: nothing more is sent
+                        yield self.stream.emit(SegmentDelta(index=0, lang=self.locale.support, text_delta=chunk))
             if not calls:
                 if self._note_unchanged(outputs) and not notes_nudged and round_index < limit:
                     notes_nudged = True

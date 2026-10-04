@@ -42,7 +42,7 @@ class TurnFinished:
 
     input_tokens: int | None
     output_tokens: int | None
-    finish_reason: Literal["stop", "tool_calls", "length"]
+    finish_reason: Literal["stop", "tool_calls", "length"]  # anything else is refused at the adapter (fail closed)
     cached_input_tokens: int = 0
 
 
@@ -95,3 +95,8 @@ class AgentTurnProvider(Protocol):
     def stream(
         self, request: ProviderTurnRequest, *, should_stop: Callable[[], bool] = never_stop
     ) -> Iterator[ProviderEvent]: ...
+
+
+# A round is an answer only when it ended normally; "length" (cut off) or any other end is a failure, never an
+# answer (independent review 2026-10-04).
+NORMAL_FINISH = frozenset({"stop", "tool_calls"})
