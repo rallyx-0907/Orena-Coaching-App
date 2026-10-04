@@ -1673,9 +1673,10 @@ class Generator:
             focused_hints = semantic_repair_hints(issues)
             # A targeted repair already spent one extra provider call on the
             # exact failing structure. If that still cannot validate, do not
-            # buy two more 8k-token full generations for the same candidate
-            # family. Let corpus orchestration quarantine/skip the hard point.
-            if targeted_repair_used:
+            # buy two more 8k-token full generations. Likewise, v13 binding
+            # contract failures get one feedback retry, then fail closed.
+            contract_failure = any(issue.code.startswith("generation.") for issue in issues)
+            if targeted_repair_used or (contract_failure and attempt >= 2):
                 break
 
             repair_context = (
