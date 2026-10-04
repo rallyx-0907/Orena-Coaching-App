@@ -74,6 +74,12 @@ assert.deepEqual(
   'a real day count from the real schedule, not the frame\'s canned "review in N days" formula',
 );
 assert.deepEqual(dueInfo({ due: false, next_review_at: '2099-01-01T00:00:00' }, now).key, 'dueInDays');
+// Past and today, with `due` not set, are due today - against the same fixed clock.
+assert.deepEqual(dueInfo({ due: false, next_review_at: '2026-09-20T09:00:00' }, now), { key: 'dueToday' }, 'a past date is due today');
+assert.deepEqual(dueInfo({ due: false, next_review_at: '2026-09-27T09:00:00' }, now), { key: 'dueToday' }, 'exactly now is due today');
+// A date that cannot be read is no due line at all, never a guess.
+assert.equal(dueInfo({ due: false, next_review_at: 'not-a-date' }, now), null, 'an unreadable date reports nothing');
+assert.equal(dueInfo({ due: true }, now), null, 'no date, no due line, even when flagged due');
 
 /* --- highlightExample: only a real occurrence is highlighted --- */
 assert.deepEqual(highlightExample('', 'buffer'), [], 'no example, no parts');
@@ -95,9 +101,12 @@ assert.equal(zhCard.saved, false);
 assert.equal(zhCard.hasLevel, false, 'no level in either answer: the chip is left out, not shown empty');
 assert.equal(zhCard.hasSchedule, false, 'an unsaved word has no mastery footer to draw at all');
 
+/* mapWordCard reads the real clock (it takes no `now`), so its saved item is scheduled relative
+   to it, far enough ahead that the day count cannot cross a boundary while the test runs. */
+const inFiveDays = new Date(Date.now() + 5 * 86400000).toISOString();
 const savedCard = mapWordCard('buffer', {
   detail: { headword: 'buffer', script: 'latin', ipa: '/ˈbʌfər/', partOfSpeech: 'noun', contextMeaning: 'extra time or space kept in reserve', saved: true, audioUrl: '/a.mp3' },
-  item: { word: 'buffer', level: 'B1', review_stage: 2, stage_label: 'Reinforcing', due: false, next_review_at: '2026-10-02T00:00:00', translation_vi: 'khoảng đệm', source_fragment: 'Keep a buffer before the deadline.' },
+  item: { word: 'buffer', level: 'B1', review_stage: 2, stage_label: 'Reinforcing', due: false, next_review_at: inFiveDays, translation_vi: 'khoảng đệm', source_fragment: 'Keep a buffer before the deadline.' },
   supportLanguage: 'vi',
 });
 /* D-124: the support line is the sense's localization for the learner's support language. A
@@ -117,7 +126,7 @@ assert.equal(savedCard.stageKey, 'stageReinforcing');
 assert.equal(savedCard.filled, 2);
 assert.equal(savedCard.hasSupport, true);
 assert.equal(savedCard.support, 'khoảng đệm');
-assert.ok(savedCard.due && savedCard.due.key === 'dueInDays');
+assert.deepEqual(savedCard.due, { key: 'dueInDays', n: 5 });
 assert.ok(savedCard.exampleParts.some((part) => part.hit), 'the saved source sentence highlights the real headword');
 
 const unknownCard = mapWordCard('zzznope', { detail: null, item: null });
