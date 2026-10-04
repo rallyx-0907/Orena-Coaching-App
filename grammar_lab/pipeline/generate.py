@@ -1841,7 +1841,15 @@ class Generator:
                 targeted_repair_used = True
                 repair_point = point
                 repair_issues = issues
-                for _repair_attempt in range(TARGETED_REPAIR_ATTEMPTS):
+                rule_only_repair = all(
+                    issue.code.startswith("personal_production.")
+                    for issue in repair_issues
+                )
+                repair_attempts = max(
+                    TARGETED_REPAIR_ATTEMPTS,
+                    2 if rule_only_repair else 1,
+                )
+                for _repair_attempt in range(repair_attempts):
                     try:
                         patch_result = request_semantic_patch(
                             self.llm,
