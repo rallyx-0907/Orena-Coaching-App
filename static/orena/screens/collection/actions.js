@@ -25,7 +25,6 @@ export function collectionSavePayload(card) {
   const language = card.identity?.language;
   const meanings = card.meanings || [];
   const primary = meanings.find((entry) => entry.language === language);
-  const vi = meanings.find((entry) => entry.language === 'vi');
   const example = (card.examples || []).find((entry) => entry.language === language);
   const reading = card.readings?.[0];
   return {
@@ -34,7 +33,8 @@ export function collectionSavePayload(card) {
     reading: (typeof reading === 'string' ? reading : reading?.text) || card.pronunciation || '',
     part_of_speech: card.part_of_speech || '',
     definition: primary?.text || '',
-    translation_vi: vi?.text || '',
+    // No support-language copy: the saved word is linked to its sense, and its meaning in the
+    // learner's support language is rendered from the sense's localizations (D-124).
     source_fragment: example?.text || '',
     source_kind: 'collection',
   };

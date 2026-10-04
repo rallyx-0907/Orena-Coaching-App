@@ -10,7 +10,9 @@ for (const [language, word] of [['en', 'book'], ['zh', '书']]) {
   assert.equal(body.word, word);
   assert.equal(body.source_kind, 'collection');
   assert.equal(body.definition, 'source definition');
-  assert.equal(body.translation_vi, 'sách');
+  // D-124: the saved word links to its sense; no support-language meaning is copied into it.
+  assert.equal(body.translation_vi, undefined);
+  assert.ok(!Object.values(body).includes('sách'));
   assert.equal(body.source_fragment, `${word}.`);
   assert.equal(body.reading, card.pronunciation);
   assert.equal(collectionSavePayload({ ...card, readings: ['persisted reading'] }).reading, 'persisted reading');

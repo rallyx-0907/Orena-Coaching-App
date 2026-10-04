@@ -98,7 +98,17 @@ assert.equal(zhCard.hasSchedule, false, 'an unsaved word has no mastery footer t
 const savedCard = mapWordCard('buffer', {
   detail: { headword: 'buffer', script: 'latin', ipa: '/ˈbʌfər/', partOfSpeech: 'noun', contextMeaning: 'extra time or space kept in reserve', saved: true, audioUrl: '/a.mp3' },
   item: { word: 'buffer', level: 'B1', review_stage: 2, stage_label: 'Reinforcing', due: false, next_review_at: '2026-10-02T00:00:00', translation_vi: 'khoảng đệm', source_fragment: 'Keep a buffer before the deadline.' },
+  supportLanguage: 'vi',
 });
+/* D-124: the support line is the sense's localization for the learner's support language. A
+   learner record's older `translation_vi` is only the Vietnamese localization, never shown to
+   another support language, and the sense's own localization wins over it. */
+const bufferItem = { word: 'buffer', translation_vi: 'khoảng đệm' };
+assert.equal(mapWordCard('buffer', { item: bufferItem, supportLanguage: 'en' }).hasSupport, false);
+assert.equal(mapWordCard('buffer', { item: bufferItem, supportLanguage: 'zh' }).hasSupport, false);
+const localized = { ...bufferItem, short_meanings: [{ language: 'vi', text: 'vùng đệm' }, { language: 'fr', text: 'tampon' }] };
+assert.equal(mapWordCard('buffer', { item: localized, supportLanguage: 'vi' }).support, 'vùng đệm');
+assert.equal(mapWordCard('buffer', { item: localized, supportLanguage: 'fr' }).support, 'tampon');
 assert.equal(savedCard.saved, true);
 assert.equal(savedCard.savedBg, 'var(--amber-soft)');
 assert.equal(savedCard.hasLevel, true);

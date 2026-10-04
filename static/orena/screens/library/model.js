@@ -8,6 +8,8 @@
    screen paints - no fetch, no DOM, no copy lookup (labels are chosen by the caller, which has the
    translated strings; this module only says which label a row needs, by a stable key). */
 
+import { vocabularyMeaning } from '../../product/vocabulary-meaning.js';
+
 /* ---- Content tab: reading + media entries from GET /api/collection?domains=reading,media ---- */
 
 /* Which two domains this tab draws (the "Saved Content" section, ML1 §A) - not writing/speaking/
@@ -71,22 +73,11 @@ export function masteryFilled(item = {}, total = 4) {
   return Math.max(0, Math.min(total, Math.trunc(stage)));
 }
 
-/* The meaning line under a saved word. `definition` is whatever free text the learner was shown
-   when they saved it, in no fixed language - it is kept as-is. `translation_vi` is the one
-   contract field that IS hardcoded to Vietnamese (SCRATCH/inventory/C6 §2.4, a recorded backend
-   gap under the multilingual invariant); it is read only when the learner's support language is
-   Vietnamese, and only as a fallback, so it can never surface as a wrong-language meaning for an
-   English- or Chinese-support learner - the honest gap for them is an empty sub-line, not this
-   field mis-shown, and `source_fragment` is tried first-language-agnostic since it is the exact
-   text the word was met in. */
+/* The meaning line under a saved word: the word's sense in the learner's support language, then
+   the learner's own note, then the sense in another language (product/vocabulary-meaning.js,
+   D-124), and only then the sentence the word was met in. No language is named here. */
 export function wordMeaning(item = {}, supportLanguage = 'en') {
-  const definition = String(item.definition || '').trim();
-  if (definition) return definition;
-  if (supportLanguage === 'vi') {
-    const vi = String(item.translation_vi || '').trim();
-    if (vi) return vi;
-  }
-  return String(item.source_fragment || '').trim();
+  return vocabularyMeaning(item, supportLanguage)?.text || String(item.source_fragment || '').trim();
 }
 
 export function languageRows(items = [], supportLanguage = 'en') {

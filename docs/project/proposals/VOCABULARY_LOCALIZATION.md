@@ -128,11 +128,15 @@ Grammar slot at promotion (CURRENT_HANDOFF already records that slot question).
 
 ## 6. Read path
 
-`GET` collection detail, review queue and saved-word payloads gain one field per card,
-`meaning: {language, text, source}`, resolved on the server for the request's support language:
-localization(sense, support) → source meaning in support → localization in the configured
-neutral language → none. The UI renders `meaning` and stops choosing a language itself. Pure
-read; no provider.
+Built 2026-10-04 (no schema): the server already returns each saved word and catalogue card with
+the sense's localizations, every one tagged by language (`short_meanings[]`,
+`support_translations{}`). One shared, pure function, `static/orena/product/vocabulary-meaning.js`,
+chooses for the learner's current support language: the sense's localization → the learner's own
+note → the sense's localization in another language (tagged) → none. Review, Word and My Library
+use it; Collection "Add all" no longer copies a support-language meaning into the saved word. The
+learner record's older `translation_vi` is read only as the Vietnamese localization, after the
+sense's own. Once the table exists, the server fills the same tagged list from it; the client does
+not change. Pure read; no provider.
 
 ## 7. What is buildable before §5 is approved
 
@@ -140,8 +144,8 @@ read; no provider.
   a `LocalizationStore` port. Until the table exists, the store writes into `short_meanings` of
   **unpublished** senses only (today's rule) and reports published senses as "needs the
   localization table".
-- §6's server-side `meaning` resolution over today's data, and moving the UI off
-  `translation_vi` for catalog-linked words.
+- §6's read path over today's data, and moving the UI off `translation_vi` for catalog-linked
+  words (done 2026-10-04).
 - CC-CEDICT completion at import and in lookup (done 2026-10-04).
 - Provisioning the free Marian models on the lane runtime and sampling pivot quality for
   zh→vi and en→vi before any pair is enabled.

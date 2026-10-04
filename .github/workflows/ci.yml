@@ -128,6 +128,7 @@ jobs:
           node scripts/test_orena_screen_library.mjs
           node scripts/test_orena_screen_collection.mjs
           node scripts/test_orena_collection_actions.mjs
+          node scripts/test_orena_vocabulary_meaning.mjs
           node scripts/test_orena_screen_word.mjs
           node scripts/test_orena_screen_grammar.mjs
           node scripts/test_orena_screen_search.mjs

@@ -25,6 +25,7 @@ const HAN = /[㐀-鿿]/;
    working unchanged. */
 export { dueInfo } from '../../product/due-schedule.js';
 import { dueInfo } from '../../product/due-schedule.js';
+import { localizedMeaning } from '../../product/vocabulary-meaning.js';
 
 /* languages-5 / finding A: the one legitimate script check in this build. A saved word carries no
    per-item language field from the backend at all - `SavedWord.language_code`
@@ -130,7 +131,7 @@ export function highlightExample(example, word) {
 /* The word card (`wdWC`): the header, the meaning block, the example and the mastery footer, from
    whichever of the two answers actually carries each field. `detail` may be null (the lookup
    failed); `item` may be null (the word is not in the learner's saved list yet). */
-export function mapWordCard(word, { detail = null, item = null } = {}) {
+export function mapWordCard(word, { detail = null, item = null, supportLanguage = '' } = {}) {
   // `detail.available === false` (`claim: "word_detail_unavailable"`) means the lookup could
   // not resolve this word at all - but individual fields on `detail` (e.g. `partOfSpeech`, which
   // the backend can still fill from an independent heuristic) can still come back non-empty even
@@ -142,7 +143,9 @@ export function mapWordCard(word, { detail = null, item = null } = {}) {
   const pos = text(resolvedDetail?.partOfSpeech) || text(item?.part_of_speech);
   const level = text(item?.level);
   const meaning = text(resolvedDetail?.contextMeaning) || text(item?.definition);
-  const support = text(item?.translation_vi);
+  // The sense's localization for the learner's support language (D-124), never a fixed language.
+  const localized = text(localizedMeaning(item, supportLanguage)?.text);
+  const support = localized && localized !== meaning ? localized : '';
   const example = text(item?.source_fragment && item.source_fragment !== meaning ? item.source_fragment : '');
   // `item` is the fresher signal once the learner has saved/unsaved in this session (the lookup's
   // own `saved` flag is only as fresh as when it was fetched); on first load, with no local
@@ -265,7 +268,6 @@ export function savePayload(card) {
     phonetic: text(card?.ipa),
     part_of_speech: text(card?.pos),
     definition: text(card?.meaning),
-    translation_vi: text(card?.support),
     source_kind: 'dictionary',
   };
 }

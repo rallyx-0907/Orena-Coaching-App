@@ -100,6 +100,7 @@ const bareItem = {
 const backfilled = reviewCard('health', bareItem, 'vi');
 assert.equal(backfilled.hasMeaning, true, 'a real catalogue translation fills the blank meaning');
 assert.equal(backfilled.meaning, 'sức khỏe');
+assert.equal(backfilled.hasSupport, false, 'the same localization is not drawn twice, as meaning and support line');
 assert.equal(backfilled.hasExample, true);
 assert.ok(backfilled.exampleParts.some((part) => part.hit), 'the real catalogue example highlights the headword');
 assert.equal(backfilled.saved, true);

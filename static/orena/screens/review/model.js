@@ -15,6 +15,7 @@
 
 import { mapWordCard, cardLanguage, highlightExample } from '../word/model.js';
 import { worthKeeping } from '../../product/review-queue.js';
+import { vocabularyMeaning } from '../../product/vocabulary-meaning.js';
 
 function text(value) {
   return String(value ?? '').trim();
@@ -42,16 +43,19 @@ function pickLang(list, lang) {
    meaning, it only looks in the one other real place the backend already put one. */
 export function reviewCard(word, item, supportLang = '') {
   const row = item || {};
-  const card = mapWordCard(word, { item });
+  const card = mapWordCard(word, { item, supportLanguage: supportLang });
   if (!card.hasMeaning) {
     const meaning =
-      pickLang(row?.short_meanings, supportLang) ||
-      pickLang(row?.detailed_definitions, supportLang) ||
-      text(row?.support_translations?.[supportLang]) ||
-      text(row?.translation_vi);
+      text(vocabularyMeaning(row, supportLang)?.text) ||
+      pickLang(row?.detailed_definitions, supportLang);
     if (meaning) {
       card.meaning = meaning;
       card.hasMeaning = true;
+      // The support line is the same localization when the card had no meaning of its own.
+      if (card.support === meaning) {
+        card.support = '';
+        card.hasSupport = false;
+      }
     }
   }
   if (!card.hasExample) {
