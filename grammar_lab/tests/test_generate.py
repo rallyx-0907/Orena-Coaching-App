@@ -1089,6 +1089,31 @@ def test_complete_generated_terminal_bindings_recovers_only_remaining_edge_phras
     }
 
 
+
+def test_complete_generated_terminal_bindings_does_not_guess_non_phrase_slots() -> None:
+    data = {
+        "formula": [
+            {"text": "S", "role": "subject"},
+            {"text": "V", "role": "verb"},
+        ],
+        "negative": [],
+        "question": [],
+        "examples": [{
+            "text": "She works.",
+            "form": "affirmative",
+            "bindings": [{"slot_index": 0, "text": "She"}],
+        }],
+        "personal_production": {
+            "target_form": "affirmative",
+            "pattern_rule": {"ordered": True, "slots": []},
+        },
+    }
+
+    out = complete_generated_terminal_bindings(data, False)
+
+    assert out == data
+
+
 def test_complete_generated_terminal_bindings_stays_fail_closed_with_optional_ambiguity() -> None:
     data = {
         "formula": [
