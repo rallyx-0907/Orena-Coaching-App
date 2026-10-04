@@ -923,6 +923,8 @@ def test_generate_v04_structure_failure_never_buys_a_second_full_lesson(tmp_path
     # cached. Re-evaluating after a code fix must not hit the provider again.
     again = generator.generate("en.alpha")
     assert again.status == "error"
+    assert again.cached is True
+    assert again.cost_usd is None
     assert calls == [
         "emit_grammar_point_v04",
         "emit_grammar_point_v04_structure_patch",
