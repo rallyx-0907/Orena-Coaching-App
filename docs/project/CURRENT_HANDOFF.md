@@ -109,8 +109,8 @@ human gates. Never touch persistent volumes as cleanup.
 
 ## NEXT EXACT TASK
 
-D-124 next: (2) localization sources + validation; (3) review/authorize 0025; (4) free Marian
-pivot sample. (1) read path by support language done (`product/vocabulary-meaning.js`).
+D-124: read path+source registry done; 0025 rev2 reviewed (APPROVE w/ cond.), PG16 100k
+rehearsed; needs human OK (:8021). Next: free Marian zh/en→vi sample; →vi data: human (VL-2).
 No paid provider in vocabulary. → vi open data is the human's choice (VL-2).
 
 Grammar remains deferred. Human2026-10-04 accepts Reading -> vocabulary

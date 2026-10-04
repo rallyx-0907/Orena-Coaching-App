@@ -1,6 +1,8 @@
 # Vocabulary localization: one sense, many support languages
 
-**Status:** PROPOSED 2026-10-04. Direction is the human's (2026-10-04, recorded as D-124);
+**Status:** PROPOSED, revision 2 (2026-10-04), after the independent review
+`VOCABULARY_LOCALIZATION.REVIEW.md` (APPROVE WITH CONDITIONS on rev 1; responses in §9).
+Direction is the human's (2026-10-04, recorded as D-124);
 the schema in §5 needs independent architecture review and the human's authorization before
 it moves from `migrations/proposed/` into `versions/` (`AGENTS.md` "Architecture review
 authority"). Everything outside §5 is buildable on the existing schema and is marked so.
@@ -89,42 +91,52 @@ Han present for zh); not a bookkeeping sense (`CL:`, `variant of`, `see …`); t
 licensed for publication. A rejected candidate falls through to the next source and is counted
 in the preparation report.
 
-## 5. Schema (PROPOSED — needs review and authorization)
+## 5. Schema (PROPOSED — needs rehearsal and authorization)
 
-New table, content-owned (not learner-owned):
+New table, content-owned (not learner-owned), rev 2:
 
 ```
 vocabulary_sense_localizations
   id               uuid pk
   entry_id         uuid not null  → vocabulary_entries.id  ON DELETE CASCADE
-  support_language varchar(20) not null
+  support_language varchar(20) not null      -- normalized primary tag
   gloss            text not null
-  source           varchar(80) not null     -- 'source-list' | 'curated' | 'cc-cedict' | 'marian-pivot' | …
-  source_version   varchar(120) not null    -- dataset release / model id + digest
-  method           varchar(40) not null     -- 'source' | 'dictionary' | 'pivot_translation'
-  validation       json not null            -- rule version and checks passed
+  source           varchar(80) not null      -- 'source-list' | 'curated' | 'cc-cedict' | 'local_marian' | 'legacy-…'
+  source_version   varchar(120) not null     -- dataset release / model id; never empty
+  method           varchar(40) not null      -- source | curated | dictionary | pivot_translation | reviewed_batch
+  selected         boolean not null default false
+  selection_reason text not null default ''
+  validation       jsonb (PostgreSQL) / json (SQLite) not null   -- rule version, checks; audit only
   created_at, updated_at timestamptz not null
-  unique (entry_id, support_language)
-  check (support_language <> '' and gloss <> '')
+  unique (entry_id, support_language, source)
+  unique (entry_id, support_language) WHERE selected      -- one selected gloss per sense × language
+  check (support_language, gloss, source, source_version all non-empty); check (method in …)
 ```
 
-- Localizations are **additive** to a published sense: inserting one does not mutate the sense
-  row or its published snapshot, so a new support language reaches a published collection
-  without a new version. Replacing an existing localization is an operator action with a
-  recorded reason (same principle as the sense's immutability).
-- Backfill (in the same migration, idempotent): every `short_meanings` item whose language is a
-  support language and is not the sense's own language → one row, `source` from its `origin`;
-  curated `support_translations` via the curated loader at startup is not migrated (it is code).
-- `short_meanings` stays the **source corpus's** own meanings (and the sense's own-language
-  definition); it stops being where support-language glosses accumulate.
-- `saved_words.translation_vi` / `definition` are **not dropped** (learner data, `AGENTS.md` §7
-  hold): for a word with `entry_id`, render ignores them in favour of the sense's localization;
-  for a free-typed word without `entry_id`, they remain the learner's own note, shown as such.
-  The client stops writing `translation_vi` on catalog saves.
+- **Alternates and audit (review P1-2).** Each source's gloss is its own row; exactly one is
+  `selected`. Re-selecting is an operator action that writes `selection_reason`; the replaced row
+  stays, so the rows are the history. Precedence (source list > curated > dictionary > pivot) is
+  decided in code, never by insert order.
+- **Additive to published content.** Inserting a localization mutates neither the sense row nor a
+  published membership snapshot, so a new support language reaches a published collection without
+  a new version. ON DELETE CASCADE removes a retired entry's localizations with it (entries are
+  never deleted by the application today; `saved_words.entry_id` is SET NULL).
+- **Backfill** (rev 2): `short_meanings` items in a support language other than the sense's own,
+  tags normalized to their primary subtag; origins mapped explicitly (`source`, `curated`,
+  `dictionary`; `prepared` → `legacy-prepared`, unverified; others → `legacy-unknown`); duplicates
+  kept as alternates with the highest-priority origin selected; over-length legacy glosses kept and
+  marked; entries read in chunks. One transaction; re-runnable only after a downgrade.
+- `short_meanings` stays the **source corpus's** own meanings and stops being where
+  support-language glosses accumulate once the table is live.
+- `saved_words.translation_vi` / `definition` are **not dropped** (learner data, `AGENTS.md` §7).
+- No extra `(support_language, entry_id)` index (review P2-5): the read path is
+  `entry_id IN (…) AND support_language = ? AND selected`, served by the partial unique index.
+- **Rollout (review P3-3).** Schema first, as an operator step after a backup; then code. Until the
+  table exists, or while it is empty, the read path uses `short_meanings` exactly as today.
 
-Proposed revision: `migrations/proposed/20261004_0025_vocabulary_sense_localizations.py`. Its
-`down_revision` is resolved against the open media-entries 0024 proposal and the deferred
-Grammar slot at promotion (CURRENT_HANDOFF already records that slot question).
+Proposed revision: `migrations/proposed/20261004_0025_vocabulary_sense_localizations.py`, parented
+on the current head `20260930_0023`; re-parented on 0024 at promotion if that proposal is
+promoted first (the tables are independent).
 
 ## 6. Read path
 
@@ -137,6 +149,14 @@ use it; Collection "Add all" no longer copies a support-language meaning into th
 learner record's older `translation_vi` is read only as the Vietnamese localization, after the
 sense's own. Once the table exists, the server fills the same tagged list from it; the client does
 not change. Pure read; no provider.
+
+**Projection order with snapshots (review P1-1).** Localizations are not part of the membership
+snapshot contract, and `_VOCABULARY_CONTENT_SNAPSHOT_FIELDS` never gains a localization field. A
+card is projected as: entry row → membership `content_snapshot` (if any) → additive merge of the
+**selected** localization rows, per support language. A snapshot's own item for a language is kept
+over the table row only as an explicit collection-scoped override; otherwise the table row is added
+for any language the snapshot lacks. A test covers a published entry shown through a snapshot plus a
+newly inserted `vi` row.
 
 ## 7. What is buildable before §5 is approved
 
@@ -159,3 +179,28 @@ not change. Pure read; no provider.
    decision. Required before public release.
 3. Whether a one-time paid Tier-1 precompute is ever wanted for quality, as a separately
    authorized batch.
+
+## 9. Review responses (rev 2)
+
+| Finding | Response |
+| --- | --- |
+| P1-1 snapshot vs table order | §6: entry → snapshot → additive merge of selected rows; snapshot never carries localizations; test required with the read-path change. |
+| P1-2 single row, no audit | §5: rows keyed by source, one `selected`, `selection_reason`; replaced rows kept. |
+| P2-1 origin mapping | Explicit map incl. `curated`; `legacy-prepared` (unverified) and `legacy-unknown`; non-empty `source_version` enforced by CHECK. |
+| P2-2 hygiene | Primary-tag normalization, origin priority on duplicates (alternates kept), over-length marked. |
+| P2-3 idempotency wording, volume | Reworded; chunked reads and inserts; rehearsal at 100k required (condition 4, open). |
+| P2-4 JSON type | JSONB on PostgreSQL, JSON on SQLite; audit only. |
+| P2-5 index | Dropped; the partial unique index serves the read path. |
+| P2-6 chain | Parented on 0023; re-parent on 0024 at promotion if needed; README updated at promotion. |
+| P3-1 cascade | Recorded in §5. |
+| P3-2 `translation_vi` writes | Recorded as a human decision: `accbbfb` stopped copying a support-language meaning into the saved word on Collection "Add all" (D-124). The old UI at `/` reads `definition \|\| translation_vi`, so a word added that way in `/next` shows no Vietnamese line in the old UI until the cutover. |
+| P3-3 rollout | §5 rollout; read path tolerates absent/empty table. |
+
+Rehearsal (2026-10-04, throwaway PostgreSQL 16 on tmpfs, chain 0001→0023 then 0025): 100,000
+seeded entries with mixed origins/tags/over-length/unknown items → upgrade 5.3 s, 166,668 rows,
+133,334 selected (exactly the expected split); probes refused a second selected row for one
+sense × language, an empty `source_version` and an unknown `method`; down/up restored the same
+counts. The rehearsal first caught an untyped backfill table that could not bind JSONB, fixed in
+rev 2. SQLite cannot run the Alembic chain (0010 alters constraints), so the SQLite test backend
+gets the table from the ORM mirror when the read path is built. Open before promotion: the human's
+authorization, scoped to :8021.
