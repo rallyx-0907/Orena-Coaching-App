@@ -380,6 +380,53 @@ def test_cache_is_shared_across_client_instances_with_the_same_cache_dir(tmp_pat
 
 
 
+
+def test_explicit_replay_cache_file_is_used_without_provider_request(tmp_path: Path) -> None:
+    replay_file = tmp_path / "paid.json"
+    replay_file.write_text(json.dumps({
+        "provider": "deepseek",
+        "model": "deepseek-flash",
+        "cached_at": "2026-10-04T00:00:00Z",
+        "usage": {"input_tokens": 10, "output_tokens": 5},
+        "data": {"greeting": "hi"},
+    }), encoding="utf-8")
+    calls: list[httpx.Request] = []
+    c = LLMClient(
+        "deepseek", "deepseek-flash",
+        api_key="k", cache_dir=tmp_path / "cache",
+        transport=_deepseek_transport(calls),
+        cache_only=True,
+        replay_cache_file=replay_file,
+    )
+
+    result = c.complete(system="different", user="different", json_schema=SCHEMA)
+
+    assert result.cached is True
+    assert result.data == {"greeting": "hi"}
+    assert len(calls) == 0
+
+
+def test_explicit_replay_cache_file_is_consumed_once(tmp_path: Path) -> None:
+    replay_file = tmp_path / "paid.json"
+    replay_file.write_text(json.dumps({
+        "provider": "deepseek",
+        "model": "deepseek-flash",
+        "cached_at": "2026-10-04T00:00:00Z",
+        "usage": {"input_tokens": 10, "output_tokens": 5},
+        "data": {"greeting": "hi"},
+    }), encoding="utf-8")
+    c = LLMClient(
+        "deepseek", "deepseek-flash",
+        api_key="k", cache_dir=tmp_path / "cache",
+        cache_only=True,
+        replay_cache_file=replay_file,
+    )
+
+    c.complete(system="s", user="u", json_schema=SCHEMA)
+    with pytest.raises(LLMError, match="cache-only mode"):
+        c.complete(system="other", user="other", json_schema=SCHEMA)
+
+
 def test_cache_only_mode_replays_cache_but_blocks_provider_on_miss(tmp_path: Path) -> None:
     calls: list[httpx.Request] = []
     transport = _anthropic_transport(calls)
