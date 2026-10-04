@@ -33,6 +33,16 @@ const library = await import('../static/orena/screens/grammar/model.js');
 const concept = await import('../static/orena/screens/grammar-concept/model.js');
 const { CONTENT_BASE, grammarCatalog, grammarPoint, contractText, levelCode, targetOfId } = source;
 
+// The canonical contract uses zh-Hans in authored content, while profile/UI
+// language remains zh. It must never render Chinese as English or lose its gloss.
+assert.equal(contractText({ vi: 'Trải nghiệm', en: 'Experience', 'zh-Hans': '经历' }, 'zh'), '经历');
+assert.equal(contractText({ vi: 'Trải nghiệm', en: 'Experience', 'zh-Hans': '经历' }, 'zh-Hans'), '经历');
+assert.equal(concept.headerOf({ target_lang: 'zh-Hans', header: { native_title: '过' } }).lang, 'zh');
+assert.equal(concept.mistakeOf({ common_mistakes: [
+  { wrong: 'first', right: 'first fixed', l1: ['vi'] },
+  { wrong: 'second', right: 'second fixed', l1: ['en', 'zh-Hans'] },
+] }, 'en', 'en').wrong, 'second', 'canonical l1 arrays select the learner-specific mistake');
+
 const notFound = () => Object.assign(new Error('Request failed (404)'), { status: 404 });
 function stubFetch(files) {
   const calls = [];
@@ -244,6 +254,41 @@ const served = {
   assert.equal(timelineBlock?.type, 'timeline');
   assert.equal(timelineBlock?.stage, 'pattern');
   assert.equal(classifyArchetype({ id: 'x', title: 'x', kind: '', learning_model: { blocks: [timelineBlock] } }), 'temporal_aspect');
+}
+
+// Upstream PR68 corpus is draft-only, never a lesson catalogue. Exercise real
+// model shapes without promoting these incomplete locale maps to approved.
+{
+  const base = 'tests/fixtures/grammar_content_samples/';
+  const index = JSON.parse(fs.readFileSync(`${base}index.json`, 'utf8'));
+  assert.equal(index.sample, true);
+  assert.equal(index.approved, false);
+  assert.equal(index.points.length, 13);
+  const points = index.points.map((row) => JSON.parse(fs.readFileSync(`${base}${row.file}`, 'utf8')));
+  assert.equal(points.filter((point) => point.target_lang === 'en').length, 10);
+  assert.equal(points.filter((point) => point.target_lang === 'zh-Hans').length, 3);
+  const functions = JSON.parse(fs.readFileSync(`${base}functions.json`, 'utf8'));
+  for (const point of points) {
+    assert.equal(point.status, 'draft_ai');
+    assert.equal(point.schema_version, '0.4');
+    assert.equal(point.id, index.points.find((row) => row.id === point.id).id);
+    const view = concept.conceptView(point, { support: 'vi', native: 'vi' });
+    assert.equal(view.header.title, point.header.native_title);
+    assert.equal(view.header.lang, point.target_lang === 'zh-Hans' ? 'zh' : 'en');
+    assert.ok(view.pattern.length && view.examples.length && view.quiz.length, point.id);
+    assert.equal(view.quiz.length, point.quick_practice.length, `${point.id}: no question silently discarded`);
+    for (const question of view.quiz) assert.ok(question.options.length >= 2);
+    const stub = stubFetch({ [`${CONTENT_BASE}/points/${point.id}.json`]: point });
+    assert.deepEqual(await grammarPoint(point.id, { targetLang: view.header.lang, ...stub }), { point: null });
+    for (const key of ['provenance', 'review', 'flags']) assert.equal(Object.hasOwn(point, key), false);
+    const fn = functions.find((entry) => entry.id === point.function);
+    assert.ok(fn, point.function);
+    for (const locale of ['vi', 'en', 'zh-Hans']) assert.ok(fn.title[locale]);
+  }
+  for (const lang of ['en', 'zh']) {
+    const stub = stubFetch({ [`${CONTENT_BASE}/catalog.${lang}.json`]: index.points });
+    assert.deepEqual(await grammarCatalog(lang, stub), [], 'draft corpus stays outside admitted learning');
+  }
 }
 
 console.log('Orena Grammar surface (Library + Concept) on the grammar content contract, seam, fixtures test-only: PASS');
