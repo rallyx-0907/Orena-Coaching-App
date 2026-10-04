@@ -580,6 +580,35 @@ def test_generate_v04_retries_semantic_validation_with_feedback(tmp_path: Path) 
     assert validate_lang("en", lab.root).ok
 
 
+
+def test_generate_v04_honors_one_full_attempt_hard_cap(tmp_path: Path) -> None:
+    lab = _v04_lab(tmp_path)
+    lab.write()
+    bad = copy.deepcopy(CANNED_V04)
+    bad["quick_practice"][0]["q"] = "He goes to school."
+    calls: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(request)
+        sent = json.loads(request.content)
+        return httpx.Response(200, json={
+            "content": [{
+                "type": "tool_use",
+                "name": sent["tool_choice"]["name"],
+                "input": _answer(bad),
+            }],
+            "usage": {"input_tokens": 500, "output_tokens": 300},
+        })
+
+    generator = make_generator(lab.root, httpx.MockTransport(handler))
+    generator.max_full_attempts = 1
+    outcome = generator.generate("en.alpha")
+
+    assert outcome.status == "error"
+    assert "semantic validation failed after 1 full attempt(s)" in outcome.reason
+    assert len(calls) == 1
+
+
 def test_generate_v04_does_not_persist_after_three_semantic_failures(tmp_path: Path) -> None:
     lab = _v04_lab(tmp_path)
     lab.write()
