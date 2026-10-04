@@ -19,6 +19,7 @@ from grammar_lab.pipeline.generate import (
     _normalize_seg,
     _story_generation_schema,
     align_formula_order_from_examples,
+    apply_generation_structure_patch,
     assemble_generated_example,
     assemble_generated_personal_production,
     build_rule_table,
@@ -799,6 +800,80 @@ def test_resolve_spans_follows_sentence_order_so_an_affix_lands_after_its_base()
     spans = resolve_spans(text, [{"text": "book", "role": "object"}, {"text": "s", "role": "other"}])
     assert [(text[s["start"]:s["end"]], s["start"]) for s in spans] == [("book", 14), ("s", 18)]
 
+
+
+
+def test_generate_v04_repairs_formula_binding_structure_without_rewriting_lesson(tmp_path: Path) -> None:
+    lab = _v04_lab(tmp_path)
+    lab.write()
+
+    bad = copy.deepcopy(CANNED_V04)
+    bad["formula"] = [bad["formula"][1], bad["formula"][0]]
+    good_answer = _answer(CANNED_V04)
+    patch = {
+        "formula": copy.deepcopy(good_answer["formula"]),
+        "negative": copy.deepcopy(good_answer["negative"]),
+        "question": copy.deepcopy(good_answer["question"]),
+        "examples": [
+            {"index": index, "bindings": copy.deepcopy(example["bindings"])}
+            for index, example in enumerate(good_answer["examples"])
+        ],
+        "personal_production_pattern_rule": copy.deepcopy(
+            good_answer["personal_production"]["pattern_rule"]
+        ),
+    }
+    calls: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        sent = json.loads(request.content)
+        tool_name = sent["tool_choice"]["name"]
+        calls.append(tool_name)
+        if tool_name == "emit_grammar_point_v04":
+            payload = _answer(bad)
+        elif tool_name == "emit_grammar_point_v04_structure_patch":
+            payload = patch
+        else:
+            raise AssertionError(tool_name)
+        return httpx.Response(200, json={
+            "content": [{"type": "tool_use", "name": tool_name, "input": payload}],
+            "usage": {"input_tokens": 100, "output_tokens": 100},
+        })
+
+    outcome = make_generator(lab.root, httpx.MockTransport(handler)).generate("en.alpha")
+
+    assert outcome.status == "written", outcome.reason
+    assert calls == ["emit_grammar_point_v04", "emit_grammar_point_v04_structure_patch"]
+    point = load_point("en", "en.alpha", lab.root)
+    assert point["header"]["summary"] == CANNED_V04["summary"]
+    assert [example["text"] for example in point["examples"]] == [
+        example["text"] for example in CANNED_V04["examples"]
+    ]
+    assert [slot["role"] for slot in point["pattern"]["formula"]] == ["subject", "verb"]
+
+
+def test_apply_generation_structure_patch_changes_only_structural_projection() -> None:
+    data = _answer(CANNED_V04)
+    before = copy.deepcopy(data)
+    patch = {
+        "formula": copy.deepcopy(data["formula"]),
+        "negative": copy.deepcopy(data["negative"]),
+        "question": copy.deepcopy(data["question"]),
+        "examples": [
+            {"index": index, "bindings": copy.deepcopy(example["bindings"])}
+            for index, example in enumerate(data["examples"])
+        ],
+        "personal_production_pattern_rule": copy.deepcopy(
+            data["personal_production"]["pattern_rule"]
+        ),
+    }
+
+    out = apply_generation_structure_patch(data, patch)
+
+    assert data == before
+    assert out["summary"] == before["summary"]
+    assert out["when_to_use"] == before["when_to_use"]
+    assert [x["text"] for x in out["examples"]] == [x["text"] for x in before["examples"]]
+    assert out["quick_practice"] == before["quick_practice"]
 
 
 def test_generated_example_bindings_derive_roles_and_require_every_nonoptional_slot() -> None:
