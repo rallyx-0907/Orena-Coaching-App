@@ -906,9 +906,20 @@ def test_generate_v04_structure_failure_never_buys_a_second_full_lesson(tmp_path
             "usage": {"input_tokens": 100, "output_tokens": 100},
         })
 
-    outcome = make_generator(lab.root, httpx.MockTransport(handler)).generate("en.alpha")
+    generator = make_generator(lab.root, httpx.MockTransport(handler))
+    outcome = generator.generate("en.alpha")
 
     assert outcome.status == "error"
+    assert calls == [
+        "emit_grammar_point_v04",
+        "emit_grammar_point_v04_structure_patch",
+        "emit_grammar_point_v04_structure_patch",
+    ]
+
+    # Structural rejection keeps the already-paid full candidate and patches
+    # cached. Re-evaluating after a code fix must not hit the provider again.
+    again = generator.generate("en.alpha")
+    assert again.status == "error"
     assert calls == [
         "emit_grammar_point_v04",
         "emit_grammar_point_v04_structure_patch",
