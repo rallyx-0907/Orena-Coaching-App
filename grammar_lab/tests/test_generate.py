@@ -23,6 +23,7 @@ from grammar_lab.pipeline.generate import (
     assemble_generated_example,
     assemble_generated_personal_production,
     build_rule_table,
+    complete_generated_single_gap_bindings,
     complete_generated_terminal_bindings,
     normalize_generated_formula_order,
     complete_literal_example_spans,
@@ -1088,6 +1089,72 @@ def test_complete_generated_terminal_bindings_recovers_only_remaining_edge_phras
         "text": "the reasons for the sudden change",
     }
 
+
+
+
+def test_complete_generated_single_gap_bindings_recovers_v3_between_exact_anchors() -> None:
+    data = {
+        "formula": [
+            {"text": "S", "role": "subject"},
+            {"text": "be", "role": "aux"},
+            {"text": "stance adverb", "role": "other"},
+            {"text": "V3", "role": "verb"},
+            {"text": "to-infinitive", "role": "complement"},
+        ],
+        "negative": [],
+        "question": [],
+        "examples": [{
+            "text": "The minister was widely reported to have resigned.",
+            "form": "affirmative",
+            "bindings": [
+                {"slot_index": 0, "text": "The minister"},
+                {"slot_index": 1, "text": "was"},
+                {"slot_index": 2, "text": "widely"},
+                {"slot_index": 4, "text": "to have resigned"},
+            ],
+        }],
+        "personal_production": {
+            "target_form": "affirmative",
+            "pattern_rule": {"ordered": True, "slots": []},
+        },
+    }
+
+    out = complete_generated_single_gap_bindings(data, False)
+
+    assert out["examples"][0]["bindings"][-1] == {
+        "slot_index": 3,
+        "text": "reported",
+    }
+
+
+def test_complete_generated_single_gap_bindings_rejects_non_participle_v3_gap() -> None:
+    data = {
+        "formula": [
+            {"text": "S", "role": "subject"},
+            {"text": "be", "role": "aux"},
+            {"text": "V3", "role": "verb"},
+            {"text": "to-infinitive", "role": "complement"},
+        ],
+        "negative": [],
+        "question": [],
+        "examples": [{
+            "text": "The minister was quickly to resign.",
+            "form": "affirmative",
+            "bindings": [
+                {"slot_index": 0, "text": "The minister"},
+                {"slot_index": 1, "text": "was"},
+                {"slot_index": 3, "text": "to resign"},
+            ],
+        }],
+        "personal_production": {
+            "target_form": "affirmative",
+            "pattern_rule": {"ordered": True, "slots": []},
+        },
+    }
+
+    out = complete_generated_single_gap_bindings(data, False)
+
+    assert out == data
 
 
 def test_complete_generated_terminal_bindings_does_not_guess_non_phrase_slots() -> None:
