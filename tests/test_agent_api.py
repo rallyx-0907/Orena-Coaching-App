@@ -230,3 +230,12 @@ def test_the_statuses_answer_as_contract_section_2_1_says(client):
     limited = client.post("/api/agent/turn", json=body())
     assert (limited.status_code, limited.json()) == (429, {"detail": "rate_limited"})
     assert limited.headers["retry-after"].isdigit() and int(limited.headers["retry-after"]) >= 1
+
+
+def test_a_turn_over_the_daily_spend_cap_is_the_contracts_429_and_reaches_no_provider(client):
+    from writing_coach.agent import api as agent_api
+
+    enable([])  # no round scripted: a provider call would fail the test
+    agent_api._runtime.spend_guard = lambda: 3600.0
+    response = client.post("/api/agent/turn", json=body())
+    assert response.status_code == 429 and response.headers["retry-after"] == "3600"

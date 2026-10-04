@@ -8,7 +8,7 @@ from datetime import UTC, datetime, timezone
 from pathlib import Path
 from typing import Protocol
 
-from sqlalchemy import Engine, select
+from sqlalchemy import Engine, select, text
 from sqlalchemy.orm import Session
 
 from writing_coach.ai.config import (
@@ -302,6 +302,9 @@ class SQLitePlatformRepository:
     def list_ai_operation_events(self, limit: int = 100) -> list[dict]:
         return []
 
+    def ai_spend_since(self, since: datetime) -> tuple[float, int]:
+        return 0.0, 0
+
 
 class PostgresPlatformRepository:
     """PostgreSQL platform configuration backed by Alembic-owned storage."""
@@ -497,6 +500,21 @@ class PostgresPlatformRepository:
                     created_at=now,
                 )
             )
+
+    def ai_spend_since(self, since: datetime) -> tuple[float, int]:
+        """Today's shared AI ledger (agent/budget.py): the estimated USD of priced calls since `since`, and how many
+        provider calls succeeded without a price."""
+
+        query = text(
+            "SELECT COALESCE(SUM((payload::jsonb -> 'cost' ->> 'amount')::numeric), 0), "
+            "COUNT(*) FILTER (WHERE payload::jsonb ->> 'outcome' = 'success' "
+            "AND payload::jsonb ->> 'provider' IS NOT NULL "
+            "AND COALESCE(payload::jsonb -> 'cost' ->> 'state', '') <> 'estimated') "
+            "FROM audit_logs WHERE action = 'ai.operation' AND created_at >= :since"
+        )
+        with self.engine.connect() as connection:
+            usd, unpriced = connection.execute(query, {"since": since}).one()
+        return float(usd or 0), int(unpriced or 0)
 
     def list_ai_operation_events(self, limit: int = 100) -> list[dict]:
         bounded = max(1, min(int(limit), 500))

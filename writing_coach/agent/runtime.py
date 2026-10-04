@@ -119,6 +119,7 @@ def build_agent_runtime(
     provider: AgentTurnProvider | None = None,
     limits: AgentLimits = DEFAULT_LIMITS,
     record_turn: Callable[[str, dict], None] | None = None,
+    spend_guard: Callable[[], float | None] | None = None,
 ) -> AgentRuntime:
     tools = build_tool_registry(
         writing_review=writing_review, writing_history=writing_history, reads=reads, limits=limits
@@ -136,4 +137,5 @@ def build_agent_runtime(
         limits=limits,
         meter=meter,
         record_turn=record_turn,
+        spend_guard=spend_guard,
     )

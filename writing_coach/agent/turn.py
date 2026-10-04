@@ -173,6 +173,8 @@ class AgentRuntime:
     max_output_tokens: int = 1024
     # One record per turn (agent/timeline.py): where the time went, for the latency and cost baseline.
     record_turn: Callable[[str, dict], None] | None = None
+    # The staging daily spend cap (agent/budget.py): seconds until it resets when reached, else None.
+    spend_guard: Callable[[], float | None] | None = None
     turn_limiter: SlidingWindowLimiter = field(init=False)
     read_limiter: SlidingWindowLimiter = field(init=False)
 

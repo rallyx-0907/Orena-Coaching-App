@@ -818,6 +818,20 @@ def _agent_grammar_lesson(grammar_id: str) -> dict[str, Any] | None:
 
 
 
+def _agent_spend_guard():
+    """The staging daily cap on the shared AI ledger (agent/budget.py); None when AGENT_DAILY_SPEND_CAP_USD is unset."""
+
+    from writing_coach.agent.budget import DailySpendGuard, cap_from_env
+
+    cap = cap_from_env(os.environ)
+    reader = getattr(_persistence_runtime.platform_repository, "ai_spend_since", None)
+    if cap is None:
+        return None
+    if not callable(reader):  # a cap with no ledger to read refuses every turn: it fails closed
+        return lambda: 3600.0
+    return DailySpendGuard(cap_usd=cap, read=reader)
+
+
 def _record_agent_turn(user_key: str, record: dict) -> None:
     """One `agent.turn` row per turn (agent/timeline.py), linked to the learner's account like an audit row."""
 
@@ -854,6 +868,7 @@ configure_agent(
         ),
         record_usage=_persistence_runtime.product_repository.record_usage,
         record_turn=_record_agent_turn,
+        spend_guard=_agent_spend_guard(),
     )
     if agent_enabled(os.environ, production=APP_ENV == "production")
     else None
