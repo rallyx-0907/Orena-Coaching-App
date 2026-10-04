@@ -690,3 +690,48 @@ def test_a_stale_set_refuses_a_new_submit_with_its_reason(setup):
     assert late.status_code == 422
     assert late.json()["detail"]["category"] == "reading_set_stale"
     assert _attempts(setup) == 0
+
+
+# ---- D-111 automatic approval of a comprehension set -------------------------------------
+
+def _automated_article(setup, language="en"):
+    article_id = _article(setup, language)
+    _publish(setup, article_id)
+    _rights_post(setup, article_id, {"automation_allowed": True, "reason": "source cleared for automation"})
+    return article_id
+
+
+def test_a_set_whose_validators_pass_approves_itself_where_automation_is_allowed(setup):
+    article_id = _automated_article(setup)
+    created = call(setup.app, "POST", f"/api/admin/reading/articles/{article_id}/comprehension-sets",
+                   json={"support_language": "vi"})
+    assert created.status_code == 201, created.text
+    body = created.json()
+    assert body["automatic_approval"]["decision"] == "approved", body["automatic_approval"]
+    stored = setup.evidence.get_set(body["id"])
+    assert stored["status"] == "approved"
+    assert stored["reviewed_by"] == "orena:auto-approval"
+    assert any(item["action"] == "admin.reading_comprehension_set_auto_decision" for item in setup.audited)
+
+
+def test_a_set_asking_one_question_twice_waits_for_an_administrator(setup):
+    article_id = _automated_article(setup)
+    twice = _draft("en")
+    twice["questions"][1]["prompt"] = "  how LONG? "
+    twice["questions"][0]["prompt"] = "How long?"
+    setup.provider.scripted[1] = twice
+    created = call(setup.app, "POST", f"/api/admin/reading/articles/{article_id}/comprehension-sets",
+                   json={"support_language": "vi"}).json()
+    assert created["automatic_approval"] == {"version": "reading-comprehension-approval/1", "decision": "review",
+                                             "reasons": ["duplicate_questions"]}
+    assert setup.evidence.get_set(created["id"])["status"] == "needs_review"
+
+
+def test_without_automation_permission_a_new_set_stays_a_draft(setup):
+    article_id = _article(setup)
+    _publish(setup, article_id)
+    _rights_post(setup, article_id, {"automation_allowed": False, "reason": "manual review only"})
+    created = call(setup.app, "POST", f"/api/admin/reading/articles/{article_id}/comprehension-sets",
+                   json={"support_language": "vi"}).json()
+    assert created["status"] == "draft"
+    assert created["automatic_approval"]["reasons"] == ["automation_not_allowed"]

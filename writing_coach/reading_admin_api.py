@@ -50,7 +50,12 @@ from writing_coach.persistence.reading_evidence_repository import (
     body_sha256,
     question_inputs,
 )
-from writing_coach.reading_comprehension import GENERATOR_VERSION, process_article
+from writing_coach.reading_comprehension import (
+    AUTO_APPROVAL_ACTOR,
+    GENERATOR_VERSION,
+    automatic_approval,
+    process_article,
+)
 from writing_coach.persistence.reading_job_repository import (
     MAX_JOB_PAGE,
     InvalidCursor,
@@ -850,7 +855,33 @@ def generate_comprehension_set(
     _audit(admin, "admin.reading_comprehension_set_created", entity_type="reading_comprehension_set",
            entity_id=created["id"], payload={"article_id": article_id, "questions": len(created["questions"]),
                                              "support_language": support, "model": model})
-    return created
+    if (article.get("automation") or {}).get("allowed") is not True:
+        # The article's automation permission (source default or override, D-106)
+        # governs every automatic decision about it; without it the set waits.
+        return {**created, "automatic_approval": {"decision": "review", "reasons": ["automation_not_allowed"]}}
+    return _approve_automatically(admin, created)
+
+
+def _approve_automatically(admin: Mapping[str, Any], created: dict[str, Any]) -> dict[str, Any]:
+    """D-111: in an article whose automation is allowed, a set whose validators
+    pass is approved by the rule, as the rule's own actor; one that does not, or that the store refuses (another set already
+    approved for this article and language, an edit in between), stays for an
+    administrator in `needs_review` with the reasons beside it."""
+    decision = automatic_approval(created.get("questions") or [])
+    reason = "D-111 automatic approval: grounding, answer and duplicate validators passed"
+    try:
+        for question in created.get("questions") or []:
+            if decision["decision"] == "approved":
+                _evidence().decide_question(created["id"], question["id"], decision="approve", actor=AUTO_APPROVAL_ACTOR)
+        _evidence().transition(created["id"], "needs_review", actor=AUTO_APPROVAL_ACTOR)
+        if decision["decision"] == "approved":
+            _evidence().transition(created["id"], "approved", actor=AUTO_APPROVAL_ACTOR, reason=reason)
+    except ReadingEvidenceError as exc:
+        decision = {**decision, "decision": "review", "reasons": [*decision["reasons"], exc.code]}
+    found = _evidence().get_set(created["id"]) or created
+    _audit(admin, "admin.reading_comprehension_set_auto_decision", entity_type="reading_comprehension_set",
+           entity_id=created["id"], payload=decision)
+    return {**found, "automatic_approval": decision}
 
 
 def _written_set(admin: Mapping[str, Any], article_id: str, article: Mapping[str, Any],

@@ -205,6 +205,35 @@ def _validate(raw: Mapping[str, Any], body: str) -> tuple[list[dict[str, Any]], 
     return kept[:MAX_QUESTIONS], issues
 
 
+AUTO_APPROVAL_VERSION = "reading-comprehension-approval/1"
+AUTO_APPROVAL_ACTOR = "orena:auto-approval"
+
+
+def _prompt_key(prompt: str) -> str:
+    return " ".join(str(prompt or "").casefold().split())
+
+
+def automatic_approval(questions: list[Mapping[str, Any]]) -> dict[str, Any]:
+    """D-111: a set approves itself when the grounding, answer and duplicate
+    validators pass. Grounding and answers are already enforced per question by
+    `_validate` (a question that failed either is not in the set); this adds the
+    set-level checks - enough questions, and no question asked twice."""
+    reasons: list[str] = []
+    if len(questions) < MIN_QUESTIONS:
+        reasons.append("too_few_questions")
+    for item in questions:
+        options = item.get("options") or []
+        if not 0 <= int(item.get("correct_index", -1)) < len(options):
+            reasons.append("answer_invalid")
+        if item.get("question_type") not in SPANLESS_TYPES and not item.get("evidence_text"):
+            reasons.append("evidence_missing")
+    prompts = [_prompt_key(item.get("prompt", "")) for item in questions]
+    if len(set(prompts)) != len(prompts):
+        reasons.append("duplicate_questions")
+    reasons = list(dict.fromkeys(reasons))
+    return {"version": AUTO_APPROVAL_VERSION, "decision": "review" if reasons else "approved", "reasons": reasons}
+
+
 def process_article(
     article: Mapping[str, Any],
     *,
