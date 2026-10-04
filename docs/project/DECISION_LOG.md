@@ -4100,3 +4100,28 @@ ID is never sent or emitted, and until the canonical Grammar Store/API serves po
 `book:<id>:<chapter>`, `media:`), one namespace for UI context and agent payloads, owned by
 contract §6.1; tools may accept a bare id from an older client, never emit one. Contract v5 text
 clarified, no version bump (no id added or renamed).
+
+## D-127 - Runtime roles: :8000 is the local product, :8021 the lane's dev runtime (supplements D-102)
+
+2026-10-04, explicit human instruction. Supplements D-102; its merge path stands.
+
+1. **:8000 is the product, run locally.** It behaves exactly as the product will: real Google sign-up
+   and sign-in, real content added through Admin, payments in test mode, learning as a real user.
+   When everything passes on :8000, the whole system moves to a VPS.
+2. **:8021 stays the lane's development runtime.** It holds only the test-sample set used to check
+   functions (labelled sample sources, D-111 flows). Real content is loaded on :8000 only.
+3. **No lane touches :8000.** Only the human updates it, through a PR `codex/work` -> `main`. No lane
+   restarts Docker either: :8000 runs on the same engine.
+4. **Completion plan additions.**
+   - A safe :8000 update: backup and restore scripts for the database and the file directories, a
+     migration rehearsal on a copy of :8000's data before the real run, and a check that both the
+     database and the files sit on persistent volumes.
+   - Billing, only after the technical and security review: a payment gateway suited to a Vietnamese
+     merchant, in test mode on :8000 through the existing domain. It covers plans, entitlements per
+     account (quota), renewal, cancellation, refunds and signature-checked webhooks, with the
+     per-feature cost report for pricing.
+   - Terms of use, privacy policy and refund policy pages, with content approved by the human.
+   - A VPS runbook: production environment variables and secrets, Google OAuth and webhook return
+     addresses on the new domain, DNS/Cloudflare, HTTPS, backup and restore, monitoring. It is
+     rehearsed by restoring a :8000 backup into a fresh environment.
+   - Content pack export/import in Admin, to move content between environments.
