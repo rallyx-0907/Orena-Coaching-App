@@ -58,6 +58,33 @@ export function mapTurns(turns) {
    MAX_BODY_CHARACTERS), named once so the input stops at it instead of refusing a longer send. */
 export const MAX_BODY_CHARACTERS = 4000;
 
+/* The text a Discussion is about, as the tutor's `context` (LEX-022): the frame's thread is "about this text",
+   so a question such as "Why did the author say this?" is answered from the text itself, not from nothing.
+   A text that fits is sent whole; a longer one is sent from the paragraph the learner was reading (`at`, the
+   Reader's paragraph index), then the paragraphs before it while room remains, within `limit` characters. */
+export function passageFor(paragraphs, { at = -1, limit = MAX_BODY_CHARACTERS } = {}) {
+  const texts = (Array.isArray(paragraphs) ? paragraphs : []).map((block) => ({ pi: block?.pi, text: String(block?.text || '').trim() })).filter((block) => block.text);
+  const whole = texts.map((block) => block.text).join('\n\n');
+  if (whole.length <= limit) return whole;
+  const start = Math.max(0, texts.findIndex((block) => block.pi === at));
+  const picked = [];
+  let used = 0;
+  for (let index = start; index < texts.length; index += 1) {
+    const cost = texts[index].text.length + (picked.length ? 2 : 0);
+    if (used + cost > limit) break;
+    picked.push(index);
+    used += cost;
+  }
+  for (let index = start - 1; index >= 0; index -= 1) {
+    const cost = texts[index].text.length + 2;
+    if (used + cost > limit) break;
+    picked.unshift(index);
+    used += cost;
+  }
+  if (!picked.length) return texts[start].text.slice(0, limit);
+  return picked.map((index) => texts[index].text).join('\n\n');
+}
+
 export function canSend(text, maxLength = MAX_BODY_CHARACTERS) {
   const trimmed = String(text || '').trim();
   return trimmed.length > 0 && trimmed.length <= maxLength;

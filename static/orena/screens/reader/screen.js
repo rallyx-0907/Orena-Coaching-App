@@ -1116,7 +1116,13 @@ export default async function mountReader(element, ctx) {
       paintTop();
       return;
     }
-    if (key === 'discuss') goTo('discussion');
+    if (key === 'discuss') {
+      // Where the learner was reading, so a long text's discussion starts from that passage (LEX-022).
+      const anchor = readingAnchor();
+      const pi = /^p(\d+)s/.exec(anchor?.seg || '')?.[1];
+      stopSpeech();
+      ctx.go(ctx.href('discussion', { id: contentId }, pi != null ? { at: pi } : {}));
+    }
     else if (key === 'respond') goTo('respond');
     else if (key === 'transfer') goTo('rtransfer');
   }

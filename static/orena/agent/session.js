@@ -28,7 +28,13 @@ export function buildRequest({ trigger = 'message', message = '', context = {}, 
     supported_intents: [...(client.supported_intents || [])],
   };
   const ctx = {};
-  for (const field of CONTEXT_FIELDS) if (context[field] != null && context[field] !== '') ctx[field] = context[field];
+  // An id is a string on the wire (contract §3, the server's `_ID` pattern); a surface that holds one as a number
+  // (an essay from /api/evaluate) must not have its turn refused as malformed (LEX-022).
+  for (const field of CONTEXT_FIELDS) {
+    const value = context[field];
+    if (value == null || value === '') continue;
+    ctx[field] = typeof value === 'number' ? String(value) : value;
+  }
   const support = toContractLang(languages.support);
   const target = toContractLang(languages.target);
   ctx.locale = {

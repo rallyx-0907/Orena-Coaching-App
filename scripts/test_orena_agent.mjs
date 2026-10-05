@@ -4,6 +4,13 @@
    reducer, the dispatcher, device memory and the intent map behave as the contract says; the live
    transport answers every §2.1 status and §4.1 fallback as the contract's tables say. */
 import assert from 'node:assert/strict';
+
+// LEX-022: a context id held as a number (an essay from /api/evaluate) goes out as the string the server expects.
+{
+  const { buildRequest } = await import('../static/orena/agent/session.js');
+  const request = buildRequest({ context: { surface: 'writing.review', activity_type: 'writing', essay_id: 42 }, languages: { interface: 'en', support: 'vi', target: 'zh' } });
+  assert.equal(request.context.essay_id, '42');
+}
 import fs from 'node:fs';
 
 const text = fs.readFileSync('docs/project/AGENT_CONTRACT.md', 'utf8');

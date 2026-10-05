@@ -4,6 +4,18 @@
    text_discussion_turn_response.json) so a screen field read that does not exist in the real
    backend shape fails here. */
 import assert from 'node:assert/strict';
+
+// LEX-022: the tutor is given the text being discussed - whole when it fits, else from where the learner read.
+{
+  const { passageFor } = await import('../static/orena/screens/discussion/model.js');
+  const short = [{ pi: 0, text: '我们屋后有半亩隙地。' }, { pi: 1, text: '父亲说：花生的好处很多。' }];
+  assert.equal(passageFor(short), '我们屋后有半亩隙地。\n\n父亲说：花生的好处很多。');
+  const long = Array.from({ length: 10 }, (_, pi) => ({ pi, text: `P${pi} ` + 'x'.repeat(95) }));
+  const from6 = passageFor(long, { at: 6, limit: 320 });
+  assert.ok(from6.startsWith('P5') || from6.startsWith('P6'), 'starts at or just before the paragraph being read');
+  assert.ok(from6.includes('P6') && from6.length <= 320, 'holds the paragraph read, within the limit');
+  assert.equal(passageFor([]), '');
+}
 import { readFileSync } from 'node:fs';
 
 const { parseContentId, discussionSourceFor, newRequestId, mapTurns, canSend, isSendKey, optimisticTurn, MAX_BODY_CHARACTERS } = await import(

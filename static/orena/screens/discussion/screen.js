@@ -25,8 +25,10 @@ import { shellCopy } from '../../copy/shell.js';
 import { supportLanguage } from '../../product/languages.js';
 import { api } from '../../infrastructure/api.js';
 import { t } from './copy.js';
+import { loadReadable } from '../reader/source.js';
 import {
   parseContentId, discussionSourceFor, newRequestId, mapTurns, canSend, isSendKey, optimisticTurn, MAX_BODY_CHARACTERS,
+  passageFor,
 } from './model.js';
 
 async function loadTitle(kind, id, chapterId, ctx) {
@@ -74,10 +76,14 @@ export default async function mountDiscussion(element, ctx) {
   const parsed = parseContentId(contentId);
   const source = discussionSourceFor(parsed);
 
-  const [title, initial] = await Promise.all([
+  const [title, initial, readable] = await Promise.all([
     loadTitle(parsed.kind, parsed.id, parsed.chapterId, ctx),
     api.textDiscussion(source.source_kind, source.source_id).catch(() => ({ turns: [] })),
+    // The text itself, so the tutor answers about it (LEX-022); a text it cannot read leaves the context empty.
+    ['article', 'book', 'text'].includes(parsed.kind) ? loadReadable(parsed, ctx.context.memory).catch(() => null) : Promise.resolve(null),
   ]);
+  const at = Number.parseInt(ctx.query?.get?.('at') || '', 10);
+  const passage = readable ? passageFor(readable.paragraphs, { at: Number.isFinite(at) ? at : -1 }) : '';
   if (!ctx.isCurrent()) return undefined;
 
   let turns = mapTurns(initial.turns);
@@ -126,7 +132,7 @@ export default async function mountDiscussion(element, ctx) {
     field.value = '';
     paintThread(true);
     try {
-      const response = await api.sendDiscussionTurn({ ...source, body: question, context: '', request_id: newRequestId() });
+      const response = await api.sendDiscussionTurn({ ...source, body: question, context: passage, request_id: newRequestId() });
       if (!ctx.isCurrent()) return;
       const fresh = await api.textDiscussion(source.source_kind, source.source_id).catch(() => null);
       if (!ctx.isCurrent()) return;
