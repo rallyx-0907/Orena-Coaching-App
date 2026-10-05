@@ -4200,3 +4200,18 @@ Reviewer's direction over the frame. This is a recorded design adaptation, not a
 - a short caption sits under each icon on every breakpoint (the Reviewer's follow-up: one strategy, not
   hover-only on a desk), and the full name is the tooltip and the accessible name; the row stays one line;
 - an aid that cannot apply to the text is not shown (pinyin for an English text).
+
+## D-132 - A word nobody recorded is spoken by Azure neural TTS, once, under a 5 USD cap (LEX-010)
+
+2026-10-05, explicit human decision on UX review LEX-010.
+- **Commons first.** Recordings on Wikimedia Commons stay the first source.
+- **Azure second, once.** A word with no recording is synthesised by Azure neural text-to-speech on the server
+  (the paid Azure account), once. The audio is stored under the word's (identity, reading) key and played from
+  storage afterwards; Azure is never asked again for that reading.
+- **Chinese is told its reading.** The dictionary's tone-marked pinyin becomes SSML `phoneme` (numbered tones),
+  so a character with several readings is said as this entry means it. Checked on 行, 长, 了, 还 and 得.
+- **Spending.** Total cap 5 USD for word audio (`word_tts`, `WORD_TTS_SPEND_CAP_USD`), recorded in the AI
+  ledger. The actual cost is reported after each batch.
+- **Device voice is the fallback only.** It is used only when Azure fails, is offline or is at its cap, and it
+  is labelled as the device's voice.
+- **The learner sees the source:** a recording and its author, a synthesised voice, or the device's voice.

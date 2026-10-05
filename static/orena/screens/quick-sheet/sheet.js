@@ -71,6 +71,32 @@ function playUrl(url, button = null) {
   }
 }
 
+/* The device's own voice (LEX-010): used only when the server's synthesised voice failed or the app is
+   offline, and always labelled as the device's. False when the device has no voice for the language. */
+function speakOnDevice(text, lang) {
+  try {
+    if (!('speechSynthesis' in window) || typeof SpeechSynthesisUtterance === 'undefined') return false;
+    const wanted = lang === 'zh' ? 'zh' : 'en';
+    const voices = window.speechSynthesis.getVoices?.() || [];
+    if (voices.length && !voices.some((voice) => String(voice.lang || '').toLowerCase().startsWith(wanted))) return false;
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = lang === 'zh' ? 'zh-CN' : 'en-US';
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utterance);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/* Where a pronunciation came from, in words the learner reads (LEX-010): a recording and its author, a
+   synthesised voice, or the device's own. */
+function audioSourceLabel(result) {
+  if (result?.source === 'azure-tts' || result?.license === 'generated') return t('sourceSynthesized');
+  const who = String(result?.attribution || '').trim();
+  return who ? t('sourceRecording', { who }) : '';
+}
+
 function askWordDeeper(word, lang, source) {
   askOrena({
     surface: surfaceFor(source, 'vocabulary.word'),
@@ -266,14 +292,25 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
           const result = await api.wordAudio(target, card.reading, true);
           if (!alive) return;
           audioBusy = false;
-          audioAttribution = result?.available ? String(result.attribution || '') : '';
-          paint();
-          if (result?.available && result.url) playUrl(result.url, sheetEl.querySelector('[data-play]'));
-          else {
+          if (result?.available && result.url) {
+            audioAttribution = audioSourceLabel(result);
+            paint();
+            playUrl(result.url, sheetEl.querySelector('[data-play]'));
+          } else if (result?.reason === 'synthesis_unavailable' && speakOnDevice(target, lang)) {
+            audioAttribution = t('sourceDevice');
+            paint();
+          } else {
             audioMissing = true;
             paint();
           }
-        } catch { if (alive) toast(t('noAudioSource')); }
+        } catch {
+          // Offline, or the server could not be reached: the device's own voice, said to be the device's.
+          if (!alive) return;
+          audioBusy = false;
+          if (speakOnDevice(target, lang)) audioAttribution = t('sourceDevice');
+          else audioMissing = true;
+          paint();
+        }
         finally { if (audioBusy) { audioBusy = false; if (alive) paint(); } }
       }
     });

@@ -315,6 +315,10 @@ class SQLitePlatformRepository:
         # Telemetry is PostgreSQL-only: nothing to report from the archive store.
         return []
 
+    def ai_spend_for_capability(self, capability: str) -> float:
+        # No ledger here: a spend cap must refuse, not read zero.
+        raise NotImplementedError("the AI spend ledger is PostgreSQL-only")
+
     def record_ai_cost(self, user_key: str, event: dict) -> bool:
         return False
 
@@ -554,6 +558,16 @@ class PostgresPlatformRepository:
         with self.engine.connect() as connection:
             usd, unpriced = connection.execute(query, {"since": since}).one()
         return float(usd or 0), int(unpriced or 0)
+
+    def ai_spend_for_capability(self, capability: str) -> float:
+        """All the estimated USD one capability has spent, ever (a lifetime cap, e.g. word TTS's 5 USD)."""
+
+        query = text(
+            "SELECT COALESCE(SUM((payload::jsonb -> 'cost' ->> 'amount')::numeric), 0) FROM audit_logs "
+            "WHERE action = 'ai.operation' AND payload::jsonb ->> 'capability' = :capability"
+        )
+        with self.engine.connect() as connection:
+            return float(connection.execute(query, {"capability": str(capability)}).scalar_one() or 0)
 
     def list_ai_operation_events(self, limit: int = 100) -> list[dict]:
         bounded = max(1, min(int(limit), 500))

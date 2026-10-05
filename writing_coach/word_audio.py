@@ -38,7 +38,8 @@ answers `None` about.
    other voice - a synthetic reading of the wrong sound is the same mistake as
    the wrong recording.
 
-Nothing here is a paid provider, and no credential is required or read.
+Azure neural speech (`word_audio_azure.py`) speaks a word nobody recorded, once, under a lifetime spend cap;
+it reads the Azure Speech credential the pronunciation check already uses.
 """
 from __future__ import annotations
 
@@ -490,6 +491,12 @@ class WordAudioLibrary:
     def audio_bytes(self, key: str) -> bytes:
         return self._store.get(key)
 
+    def synthesis_failed(self) -> bool:
+        """Whether a synthesising voice was asked on this request and could not answer (error, offline, cap):
+        the surface then may use the device's own voice, and says so."""
+
+        return any(getattr(voice, "last_failed", False) for voice in self._voices)
+
     def credits(self, *, limit: int = 500) -> list[WordAudio]:
         """What every stored recording may be played under, for the licences page.
 
@@ -570,6 +577,9 @@ class WordAudioLibrary:
 
 
 def default_voices() -> tuple[Voice, ...]:
-    """Real recordings first, a local voice second. Nothing else."""
+    """Real recordings first; then Azure neural speech for a word nobody recorded (LEX-010, capped and kept once
+    made); then a local voice when one is configured."""
 
-    return (CommonsVoice(), KokoroVoice())
+    from writing_coach.word_audio_azure import AzureVoice
+
+    return (CommonsVoice(), AzureVoice(), KokoroVoice())

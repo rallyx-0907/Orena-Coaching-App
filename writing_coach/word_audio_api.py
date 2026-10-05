@@ -73,7 +73,8 @@ def word_audio(word: str, reading: str = Query("", max_length=240), lookup: bool
         # knows too many readings of.
         reason = "reading_ambiguous" if len(readings) > 1 else "no_entry"
         return {"available": False, "reason": reason, "readings": readings}
-    found = _shelf().pronounce(
+    shelf = _shelf()  # one library for the request: its voices remember whether synthesis failed
+    found = shelf.pronounce(
         identity_key=identity["entry_identity_key"],
         term=word,
         language=_language(),
@@ -81,7 +82,10 @@ def word_audio(word: str, reading: str = Query("", max_length=240), lookup: bool
         single_reading=(len(readings) <= 1) if not lookup_audio else _language() != "zh",
     )
     if found is None:
-        return {"available": False, "reason": "not_found", "readings": readings}
+        # `synthesis_unavailable`: nobody recorded it and the synthesising voice failed, is offline or is at its
+        # spend cap - the surface may then use the device's own voice and say so (LEX-010).
+        reason = "synthesis_unavailable" if shelf.synthesis_failed() else "not_found"
+        return {"available": False, "reason": reason, "readings": readings}
     payload = found.as_dict()
     # The key is what the second route serves; the surface builds its own URL
     # from it rather than being handed a provider's.
