@@ -210,46 +210,80 @@ _WORD = re.compile(r"\S+")
 _MARKUP = re.compile(r"\[/?[A-Z][A-Z0-9_]{2,}(?:[ =][^\]\n]*)?\]|(?i:</?(?:button|action|btn)\b[^>\n]*>)")
 
 
-# Markdown in a segment (UX review LEX-006): a segment is plain text, spoken and shown as it is (contract §3), so
-# its markers are taken out - a heading, a quote or a rule keeps its words and loses its mark, a list item becomes
-# a "•" line, emphasis and code lose their marks, a link keeps its words. Line marks are read at the start of a
-# line: the gate cuts at every line break, so a line's mark is at the start of what it is given.
-_MD_LINE = (
-    (re.compile(r"(?m)^[ \t]*#{1,6}[ \t]+"), ""),  # heading
-    (re.compile(r"(?m)^[ \t]*>[ \t]?"), ""),  # quote
-    (re.compile(r"(?m)^[ \t]*(?:-{3,}|\*{3,}|_{3,})[ \t]*$"), ""),  # rule
-    (re.compile(r"(?m)^[ \t]*[-*+][ \t]+"), "• "),  # list item
-)
-_MD_INLINE = (
-    (re.compile(r"\[([^\]\n]+)\]\([^)\s]+\)"), r"\1"),  # link: its words
-    (re.compile(r"\*\*|__"), ""),  # strong
-    (re.compile(r"(?<![\w*])\*(?=\S)([^*\n]+?)(?<=\S)\*(?![\w*])"), r"\1"),  # emphasis
-    (re.compile(r"`+"), ""),  # code
-    # A stray emphasis mark against a word ("是*热闹*的": no word boundary in Chinese); "3 * 4" keeps its star.
-    (re.compile(r"(?<=[^\s\d])\*|\*(?=[^\s\d])"), ""),
-)
+# Markdown in a segment (contract §5.1, LEX-006 reopened): the client renders a subset - headings, bold, italic,
+# lists, `> ` quotes, inline code, http(s) links - so that subset is kept. What is not in it goes: a link to
+# anything but the web (an app command, "[Open word](command:navigate?…)"), label and all - going somewhere is an
+# action, never a link; and a rule. Run-together "•" separators become a list, one item a line. Line marks are read
+# at the start of a line: the gate cuts at every line break, so a line's mark is at the start of what it is given.
+_NON_WEB_LINK = re.compile(r"\[[^\]\n]*\]\((?!https?://)[^)\n]*\)")
+_RULE = re.compile(r"(?m)^[ \t]*(?:-{3,}|\*{3,}|_{3,})[ \t]*$")
+_BULLET = re.compile(r"[ \t]*•[ \t]*")
 
 
-def _plain(text: str) -> str:
-    for pattern, replacement in _MD_LINE + _MD_INLINE:
-        text = pattern.sub(replacement, text)
-    return text
+def _grouped(line: str) -> str:
+    """"a • b • c" (or a "• a" line) as list items, one a line; any other line as it is."""
+
+    if line.lstrip().startswith("•") or line.count("•") >= 2:
+        items = [item.strip() for item in _BULLET.split(line) if item.strip()]
+        return "\n".join(f"- {item}" for item in items)
+    return line
 
 
 def strip_markup(text: str) -> str:
-    cleaned = _plain(_MARKUP.sub("", text))
+    cleaned = _RULE.sub("", _NON_WEB_LINK.sub("", _MARKUP.sub("", text)))
+    if "•" in cleaned:
+        cleaned = "".join(_grouped(line[:-1]) + "\n" if line.endswith("\n") else _grouped(line)
+                          for line in cleaned.splitlines(keepends=True))  # fmt: skip
     return re.sub(r"[ \t]{2,}", " ", cleaned) if cleaned != text else text
+
+
+# A `reference` segment is plain text (§5.1): the target-language words to be heard, with no mark at all.
+_PLAIN = (
+    (re.compile(r"(?m)^[ \t]*#{1,6}[ \t]+"), ""),  # heading
+    (re.compile(r"(?m)^[ \t]*>[ \t]?"), ""),  # quote
+    (re.compile(r"(?m)^[ \t]*(?:[-*+•]|\d+\.)[ \t]+"), ""),  # list item
+    (re.compile(r"\[([^\]\n]+)\]\([^)\s]+\)"), r"\1"),  # link: its words
+    (re.compile(r"\*\*|__|`+"), ""),  # strong, code
+    (re.compile(r"(?<=[^\s\d])\*|\*(?=[^\s\d])"), ""),  # emphasis ("是*热闹*的"; "3 * 4" keeps its star)
+)
+
+
+# A link not yet closed on its line: "[label" or "[label](payload". A full stop inside it ("command:navigate?
+# {…vocabulary.word…}") is no sentence end - the link is cut only whole, so it can be judged whole.
+_OPEN_LINK = re.compile(r"\[[^\]\n]*$|\[[^\]\n]*\]\([^)\n]*$")
+
+
+def _sentence_end(text: str) -> int | None:
+    """Where the first whole sentence of `text` ends, never inside an open link; None while there is none."""
+
+    for found in _BOUNDARY.finditer(text):
+        if not _OPEN_LINK.search(text[: found.start()]):
+            return found.end()
+    return None
+
+
+def plain_text(text: str) -> str:
+    for pattern, replacement in _PLAIN:
+        text = pattern.sub(replacement, text)
+    return _RULE.sub("", text).strip()
 
 
 def _bare(word: str) -> str:
     return word.strip(".,!?;:…").casefold()
 
 
-def offers_a_button(sentence: str, support: str) -> bool:
-    """Whether a sentence offers a button in the model's own words (then it is the server's to write)."""
+def offers_a_button(sentence: str, support: str, *, interface: str | None = None) -> bool:
+    """Whether a sentence offers a button in the model's own words (then it is the server's to write) - in the
+    support language or the interface one, where a button's label lives ("Tap Open word", LEX-006). Never in a
+    third language: an English example sentence for a learner of English is not an offer."""
 
     if _question(sentence):
         return False  # "Bạn đã bấm Lưu từ chưa?" asks; it offers nothing
+    languages = dict.fromkeys(lang for lang in (support, interface) if lang)
+    return any(_offers_in(sentence, lang) for lang in languages)
+
+
+def _offers_in(sentence: str, support: str) -> bool:
     pattern = _OFFER_VERB.get(support, _OFFER_VERB["en"])
     lang = support if support in _FILLERS else "en"
     for found in pattern.finditer(sentence):
@@ -330,7 +364,7 @@ def offer_instead(
     pending = offer_text is not None if pending is None else pending
 
     def drop(part: str) -> bool:
-        if offers_a_button(part, support):
+        if offers_a_button(part, support, interface=interface):
             return True
         if pending:
             return claims_done(part, remembered=remembered, action=action, address=address)
@@ -369,8 +403,8 @@ class ClaimGate:
     def feed(self, delta: str) -> list[str]:
         self._partial += delta
         out: list[str] = []
-        while (end := _BOUNDARY.search(self._partial)) is not None:
-            sentence, self._partial = self._partial[: end.end()], self._partial[end.end() :]
+        while (end := _sentence_end(self._partial)) is not None:
+            sentence, self._partial = self._partial[:end], self._partial[end:]
             sentence = strip_markup(sentence)
             if not sentence.strip():
                 continue
@@ -378,7 +412,7 @@ class ClaimGate:
                 self.hold_all
                 or self._held
                 or claims_done(sentence, address=self.address)
-                or offers_a_button(sentence, self._support)
+                or offers_a_button(sentence, self._support, interface=self._interface)
             ):
                 self._held.append(sentence)
             else:
@@ -411,7 +445,7 @@ class ClaimGate:
         pending = offer_text is not None if pending is None else pending
 
         def drop(part: str) -> bool:
-            if offers_a_button(part, self._support):
+            if offers_a_button(part, self._support, interface=self._interface):
                 return True
             if pending:
                 return claims_done(part, remembered=remembered, action=action, address=self.address)
