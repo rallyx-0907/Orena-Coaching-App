@@ -18,6 +18,12 @@ from writing_coach import media_interaction, word_detail
 CONTRACTS = Path(__file__).resolve().parents[1] / "docs" / "design" / "canonical-ui" / "data-contracts"
 
 
+@pytest.fixture(autouse=True)
+def _no_shared_cache(monkeypatch):
+    # app.py installs the process cache when it is imported; these tests count provider calls themselves.
+    monkeypatch.setattr(word_detail, "_cache", None)
+
+
 def contract(name: str) -> dict[str, Any]:
     return json.loads((CONTRACTS / f"{name}.json").read_text(encoding="utf-8"))
 
@@ -273,7 +279,7 @@ def test_the_first_layer_asks_only_for_a_short_gloss(monkeypatch) -> None:
 
     body = word_detail.word_detail(_request(depth="sheet"))
 
-    assert seen["properties"] == ["context_meaning"] and seen["tokens"] <= 200
+    assert seen["properties"] == ["context_meaning", "why_here"] and seen["tokens"] <= 200
     assert body["contextMeaning"] == "went dark" and body["meaningSource"] == "context"
     assert body["depth"] == "sheet"
     assert body["usageVerdict"] is None and body["deeper"]["coreIdea"] == "", "the rest is asked for later"

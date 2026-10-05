@@ -165,16 +165,17 @@ def test_translate_endpoint_returns_each_paragraph_meaning(client) -> None:
     }
 
 
-def test_translate_endpoint_reports_an_unavailable_engine_as_a_state(client, monkeypatch) -> None:
+def test_translate_endpoint_reports_a_failed_engine_as_a_retryable_error(client, monkeypatch) -> None:
     http, _ = client
     reading_translation_api.configure_reading_translation(
         ReadingTranslationService(RecordingProvider(fail=True))
     )
     response = http.post("/api/reading/translate", json=_body())
 
-    assert response.status_code == 200
-    assert response.json()["status"] == "unavailable"
-    assert response.json()["translations"] == []
+    assert response.status_code == 503
+    detail = response.json()["detail"]
+    assert detail["category"] == "translation_unavailable"
+    assert detail["retryable"] is True
 
 
 def test_translate_endpoint_refuses_text_in_another_learning_language(client) -> None:
@@ -235,10 +236,10 @@ def test_translate_endpoint_is_unavailable_until_configured(monkeypatch) -> None
     assert response.json()["detail"]["category"] == "reading_translation_unavailable"
 
 
-def test_resolve_reading_translation_provider_defaults_to_local() -> None:
-    assert resolve_reading_translation_provider_id("", groq_key="") == "local"
+def test_resolve_reading_translation_provider_defaults_to_the_platform_ai() -> None:
+    assert resolve_reading_translation_provider_id("", groq_key="") == "ai"
     # Reading never inherits Listening's Groq default just because a key exists.
-    assert resolve_reading_translation_provider_id("", groq_key="sk-1") == "local"
+    assert resolve_reading_translation_provider_id("", groq_key="sk-1") == "ai"
 
 
 def test_resolve_reading_translation_provider_accepts_explicit_local() -> None:

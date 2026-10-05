@@ -50,6 +50,8 @@ def test_hsts_only_over_https_and_a_route_keeps_its_own_value():
 def test_paid_and_upload_routes_are_in_a_rate_group_and_polls_are_not():
     assert rate_group("POST", "/api/evaluate")[0] == "writing_ai"
     assert rate_group("POST", "/api/speech/transcribe")[0] == "speech_ai"
+    assert rate_group("POST", "/api/reading/translate")[0] == "reading_ai"
+    assert rate_group("POST", "/api/reading/summary")[0] == "reading_ai"
     assert rate_group("POST", "/api/media-learning/import")[0] == "media_learning"
     assert rate_group("POST", "/api/media-learning/import/status") is None
     assert rate_group("GET", "/api/evaluate") is None

@@ -400,8 +400,8 @@ def _explanation_schema() -> dict[str, Any]:
 def _gloss_schema() -> dict[str, Any]:
     return {
         "type": "object",
-        "properties": {"context_meaning": {"type": "string"}},
-        "required": ["context_meaning"],
+        "properties": {"context_meaning": {"type": "string"}, "why_here": {"type": "string"}},
+        "required": ["context_meaning", "why_here"],
     }
 
 
@@ -425,19 +425,22 @@ def meaning_in_context(payload: MediaExplainIn) -> dict[str, Any]:
                 "content": (
                     f"You are a dictionary for a learner of {source_name}. Answer in {target_name}. "
                     "Give context_meaning: what the selected text means in this sentence, as one short "
-                    "clause a dictionary would give for this use. No explanation, no examples."
+                    "clause a dictionary would give for this use. Also give why_here: one short sentence saying "
+                    "why the selected text has that meaning in this sentence, naming what in the sentence "
+                    "shows it. No lecture, no examples."
                 ),
             },
             {"role": "user", "content": f"SELECTED TEXT:\n{source}\n\nCONTEXT:\n{payload.context.strip() or source}"},
         ],
         schema=_gloss_schema(),
-        max_output_tokens=120,
+        max_output_tokens=200,
     )
     return {
         "source_language": language,
         "target_language": target,
         "selected_text": source,
         "context_meaning": str(raw.get("context_meaning") or "").strip()[:300],
+        "why_here": str(raw.get("why_here") or "").strip()[:300],
     }
 
 

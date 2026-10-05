@@ -154,6 +154,8 @@ def _safe_english_dictionary(
 def _safe_machine_translation(
     service: ReadingTranslationService, source: str, target: str, text: str
 ) -> str | None:
+    if getattr(service, "uses_ai", False):
+        return None  # a word's meaning in its sentence is /word-detail's; this lookup never reaches the AI platform
     try:
         result = service.translate(source, target, [TextSegment("selection", text)])
     except Exception:

@@ -27,6 +27,13 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from writing_coach import media_interaction
 from writing_coach.core.errors import orena_http_error
+from writing_coach.reading_derived import (
+    KIND_EXPLANATION,
+    KIND_GLOSS,
+    DerivedCache,
+    content_key,
+    normalize_text,
+)
 
 router = APIRouter(prefix="/api/dictionary", tags=["dictionary"])
 
@@ -55,14 +62,61 @@ _lookup: Callable[[str, str, str, str], Any] | None = None
 _saved_terms: Callable[[tuple[str, ...]], set[str]] | None = None
 
 
+# Contextual answers are generated once and reused (proposals/READING_ON_DEMAND.md). None until app.py installs it.
+_cache: DerivedCache | None = None
+
+
 def configure_word_detail(
     *,
     lookup: Callable[[str, str, str, str], Any] | None,
     saved_terms: Callable[[tuple[str, ...]], set[str]] | None,
+    cache: DerivedCache | None = None,
 ) -> None:
-    global _lookup, _saved_terms
+    global _lookup, _saved_terms, _cache
     _lookup = lookup
     _saved_terms = saved_terms
+    _cache = cache
+
+
+class _ProviderFailed(Exception):
+    """The provider could not answer (unreachable, not configured, malformed): worth trying again."""
+
+
+def _persists(content_id: str | None) -> bool:
+    """Only text an administrator published may reach the shared table. A learner's own imported text (a book
+    chapter, anything without a content id) is cached in this process only: D-104 keeps what is derived from it
+    with the account, and no account-bound cache exists yet."""
+
+    return str(content_id or "").startswith("article:")
+
+
+def _through_cache(
+    kind: str,
+    source: str,
+    target: str,
+    text: str,
+    context: str,
+    content_id: str | None,
+    compute: Callable[[], dict[str, Any] | None],
+) -> tuple[dict[str, Any] | None, str]:
+    """(answer, status): status is ready, empty (the provider answered nothing) or provider_error (retryable).
+    A failure and an empty answer are never cached."""
+
+    key = content_key(kind, source, normalize_text(text).casefold(), normalize_text(context))
+    persist = _persists(content_id)
+    if _cache is not None:
+        hit = _cache.get(kind, target, key, persist=persist)
+        if hit is not None:
+            return hit, "ready"
+    try:
+        result = compute()
+    except _ProviderFailed:
+        return None, "provider_error"
+    if result is None:
+        return None, "empty"
+    if _cache is not None:
+        _cache.put_many(kind, target, source, [(key, result)], persist=persist)
+    return result, "ready"
 
 
 def usage_verdict(judgement: object) -> str | None:
@@ -141,7 +195,7 @@ def project_word_detail(
         "deeper": {
             "coreIdea": _text(said.get("core_idea")),
             "mentalModel": _text(said.get("mental_model")),
-            "whyHere": _text(said.get("judgement_reason")) or _text(said.get("usage_note")),
+            "whyHere": _text(said.get("judgement_reason")) or _text(said.get("usage_note")) or _text(said.get("why_here")),
             "contrast": [
                 {"term": _text(item.get("term")), "note": _text(item.get("note"))}
                 for item in said.get("contrast") or ()
@@ -203,6 +257,9 @@ class WordDetailIn(BaseModel):
     source_language: str = Field(min_length=2, max_length=32)
     target_language: str = Field(min_length=2, max_length=32)
     question: str = Field(default="", max_length=400)
+    # Which published content the text comes from (`article:<uuid>`), when it is one: only then is the answer kept in
+    # the shared table. Absent for a learner's own text.
+    content_id: str | None = Field(default=None, max_length=200)
     # What was asked and answered before, so a follow-up can build on it.
     history: list[media_interaction.TutorTurn] = Field(default_factory=list, max_length=6)
 
@@ -220,6 +277,7 @@ class SentenceSheetIn(BaseModel):
     source_language: str = Field(min_length=2, max_length=32)
     target_language: str = Field(min_length=2, max_length=32)
     question: str = Field(default="", max_length=400)
+    content_id: str | None = Field(default=None, max_length=200)
     history: list[media_interaction.TutorTurn] = Field(default_factory=list, max_length=6)
 
     @field_validator("target_language")
@@ -229,7 +287,7 @@ class SentenceSheetIn(BaseModel):
 
 
 def _gloss(text: str, context: str, source: str, target: str) -> dict[str, Any] | None:
-    """A short contextual gloss, or None when the capability is unavailable."""
+    """A short contextual gloss (meaning here, and why); None when it answered nothing; _ProviderFailed when down."""
     try:
         result = media_interaction.meaning_in_context(
             media_interaction.MediaExplainIn(
@@ -238,13 +296,13 @@ def _gloss(text: str, context: str, source: str, target: str) -> dict[str, Any] 
         )
     except HTTPException as exc:
         if exc.status_code in {502, 503}:
-            return None
+            raise _ProviderFailed from exc
         raise
     return result if _text(result.get("context_meaning")) else None
 
 
 def _explain(text: str, context: str, source: str, target: str, question: str) -> dict[str, Any] | None:
-    """The contextual explanation, or None when the capability is unavailable."""
+    """The contextual explanation; None when it answered nothing; _ProviderFailed when the provider is down."""
     try:
         result = media_interaction.explain_media_text(
             media_interaction.MediaExplainIn(
@@ -257,7 +315,7 @@ def _explain(text: str, context: str, source: str, target: str, question: str) -
         )
     except HTTPException as exc:
         if exc.status_code in {502, 503}:
-            return None
+            raise _ProviderFailed from exc
         raise
     return result if _text(result.get("summary")) else None
 
@@ -333,12 +391,19 @@ def word_detail(payload: WordDetailIn) -> dict[str, Any]:
             "available": bool(answer),
             "claim": "word_detail_answer" if answer else "word_detail_unavailable",
         }
-    if not payload.contextual:
-        explanation = None
-    elif payload.depth == "sheet":
-        explanation = _gloss(text, context, source, payload.target_language)
-    else:
-        explanation = _explain(text, context, source, payload.target_language, "")
+    target = payload.target_language
+    explanation: dict[str, Any] | None = None
+    status = "skipped"
+    if payload.contextual and payload.depth == "sheet":
+        explanation, status = _through_cache(
+            KIND_GLOSS, source, target, text, context, payload.content_id,
+            lambda: _gloss(text, context, source, target),
+        )  # fmt: skip
+    elif payload.contextual:
+        explanation, status = _through_cache(
+            KIND_EXPLANATION, source, target, text, context, payload.content_id,
+            lambda: _explain(text, context, source, target, ""),
+        )  # fmt: skip
     detail = project_word_detail(
         selection=text,
         context=context,
@@ -356,6 +421,9 @@ def word_detail(payload: WordDetailIn) -> dict[str, Any]:
         "followUps": [_text(item) for item in (explanation or {}).get("follow_ups") or () if _text(item)],
         "available": available,
         "claim": "word_detail" if available else "word_detail_unavailable",
+        # "ready" | "empty" (answered nothing: no contextual meaning) | "provider_error" (try again) | "skipped".
+        "contextStatus": status,
+        "retryable": status == "provider_error",
     }
 
 
@@ -373,18 +441,18 @@ def sentence_sheet(payload: SentenceSheetIn) -> dict[str, Any]:
             "available": bool(answer),
             "claim": "sentence_answer" if answer else "sentence_sheet_unavailable",
         }
-    explanation = _explain(
-        sentence,
-        payload.context.strip() or sentence,
-        source,
-        payload.target_language,
-        "",
-    )
+    sheet_context = payload.context.strip() or sentence
+    explanation, status = _through_cache(
+        KIND_EXPLANATION, source, payload.target_language, sentence, sheet_context, payload.content_id,
+        lambda: _explain(sentence, sheet_context, source, payload.target_language, ""),
+    )  # fmt: skip
     if explanation is None:
         return {
             "available": False,
             "claim": "sentence_sheet_unavailable",
             "sentence": sentence,
+            "contextStatus": status,
+            "retryable": status == "provider_error",
         }
     return {
         **project_sentence_sheet(
@@ -400,4 +468,6 @@ def sentence_sheet(payload: SentenceSheetIn) -> dict[str, Any]:
         "answer": "",
         "available": True,
         "claim": "sentence_sheet",
+        "contextStatus": status,
+        "retryable": False,
     }

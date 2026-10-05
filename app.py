@@ -69,12 +69,17 @@ from writing_coach.media_translation import (
 )
 from writing_coach.reading_lookup import ReadingLookupService
 from writing_coach.word_detail import configure_word_detail, router as word_detail_router
+from writing_coach.persistence.reading_derived_repository import ReadingDerivedRepository
+from writing_coach.reading_derived import DerivedCache
+from writing_coach.reading_summary import ReadingSummaryService
 from writing_coach.reading_translation import (
+    PlatformAITranslationProvider,
     ReadingTranslationService,
     resolve_reading_translation_provider_id,
 )
 from writing_coach.reading_translation_api import (
     configure_reading_lookup,
+    configure_reading_summary,
     configure_reading_translation,
     router as reading_translation_router,
 )
@@ -576,12 +581,22 @@ _reading_translation_provider = (
         base_url=os.getenv("GROQ_BASE_URL", "https://api.groq.com/openai/v1"),
     )
     if _reading_translation_provider_id == "groq"
+    else PlatformAITranslationProvider()
+    if _reading_translation_provider_id == "ai"
     else LocalHttpTranslationProvider(
         os.getenv("LOCAL_TRANSLATION_URL", "http://local-translator:8090")
     )
 )
-_reading_translation_service = ReadingTranslationService(_reading_translation_provider)
+# One cache for every on-demand Reading answer (translation, summary, contextual meaning); the shared table is
+# used only for published text and only once the proposed migration 20261005_0028 is applied.
+_reading_derived_cache = DerivedCache(
+    ReadingDerivedRepository(_persistence_runtime.engine) if _persistence_runtime.engine is not None else None
+)
+_reading_translation_service = ReadingTranslationService(
+    _reading_translation_provider, cache=_reading_derived_cache
+)
 configure_reading_translation(_reading_translation_service)
+configure_reading_summary(ReadingSummaryService(_reading_derived_cache))
 
 
 def _reading_english_dictionary(word: str) -> dict[str, Any] | None:
@@ -606,6 +621,7 @@ configure_vocabulary_support_language(
 configure_word_detail(
     lookup=_reading_lookup_service.lookup,
     saved_terms=saved_vocabulary_words,
+    cache=_reading_derived_cache,
 )
 configure_media_timing(
     MediaTimingService(

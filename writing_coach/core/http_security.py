@@ -74,6 +74,9 @@ RATE_GROUPS: tuple[tuple[str, tuple[str, ...], int, int], ...] = (
     ("essay_ai", ("/api/essays/",), 30, 600),
     ("dictionary_ai", ("/api/dictionary/",), 120, 600),
     ("speech_ai", ("/api/speech/transcribe", "/api/speech/pronunciation", "/api/speech/evaluation"), 60, 600),
+    # On-demand Reading answers (a sentence's meaning, a summary): cached after the first, so a learner's own use
+    # stays far below this; it only stops a script walking a corpus through the provider.
+    ("reading_ai", ("/api/reading/translate", "/api/reading/summary"), 300, 600),
     ("media_learning", ("/api/media-learning/upload", "/api/media-learning/source", "/api/media-learning/translate",
                         "/api/media-learning/import#"), 30, 3600),
 )

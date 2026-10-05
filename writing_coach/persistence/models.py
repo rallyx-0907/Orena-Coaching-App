@@ -653,6 +653,30 @@ class AICostRecord(Base):
     audio_seconds: Mapped[Decimal | None] = mapped_column(Numeric(10, 3), nullable=True)
 
 
+class ReadingDerivedText(Base):
+    """What Reading generates on demand for PUBLISHED text, kept once (proposed migration 20261005_0028).
+
+    Content-addressed: the primary key is (kind, content_hash, target_language); the hash is of the normalized
+    text and its language (writing_coach/reading_derived.py). Nothing here belongs to an account and nothing
+    derived from a learner's own imported text is ever written."""
+
+    __tablename__ = "reading_derived_texts"
+    __table_args__ = (
+        CheckConstraint("kind IN ('translation', 'summary', 'gloss', 'explanation')", name="ck_reading_derived_kind"),
+        CheckConstraint("length(content_hash) = 64", name="ck_reading_derived_hash"),
+        Index("ix_reading_derived_texts_created", "created_at"),
+    )
+
+    kind: Mapped[str] = mapped_column(String(16), primary_key=True)
+    content_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
+    target_language: Mapped[str] = mapped_column(String(16), primary_key=True)
+    source_language: Mapped[str] = mapped_column(String(16), nullable=False)
+    payload: Mapped[dict] = mapped_column(JSON, nullable=False)
+    provider: Mapped[str] = mapped_column(String(40), default="", nullable=False)
+    model: Mapped[str] = mapped_column(String(160), default="", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
 class VocabularySenseLocalization(Base):
     """A sense's meaning in one support language, from one source (D-124, 20261004_0025).
 
