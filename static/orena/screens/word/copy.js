@@ -22,9 +22,9 @@ const LAYERS = {
   playWord: 'interface', saveWord: 'interface', unsaveWord: 'interface',
   noAudio: 'interface', savedToast: 'interface', removedToast: 'interface',
   strokePracticeTitle: 'interface', strokeCount: 'interface', strokeLoading: 'interface',
-  strokeUnavailable: 'support', watchStrokes: 'interface', writeIt: 'interface', nextCharacter: 'interface',
-  strokeWatching: 'support', strokeStep: 'support', strokeTryAgain: 'support',
-  strokeComplete: 'support', playClip: 'interface',
+  strokeUnavailable: 'interface', watchStrokes: 'interface', writeIt: 'interface', nextCharacter: 'interface',
+  strokeWatching: 'interface', strokeStep: 'interface', strokeTryAgain: 'interface',
+  strokeComplete: 'interface', playClip: 'interface',
   // languages-4 (1) / finding B.1: the part-of-speech chip's closed value space
   // (writing_coach/linguistic_annotation.py ALLOWED_POS), mapped to interface copy - see
   // model.js's posLabel().

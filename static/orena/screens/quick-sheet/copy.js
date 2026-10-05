@@ -25,11 +25,12 @@ const INTERFACE_KEYS = [
   // Stroke Practice (frame 60), reused from the Word Quick Sheet's "Practise strokes" - the exact
   // key set `screens/word/stroke-sheet.js#mountStrokeSheet` needs from whichever `t` calls it.
   'strokePracticeTitle', 'strokeCount', 'strokeLoading', 'watchStrokes', 'writeIt', 'nextCharacter',
+  // The panel's status is system feedback, so it follows the interface like its buttons (LEX-017).
+  'strokeUnavailable', 'strokeWatching', 'strokeStep', 'strokeTryAgain', 'strokeComplete',
 ];
 const SUPPORT_KEYS = [
   'sourceSentence', 'meaningHere', 'meaningNotPrepared', 'noGlossNotice', 'whyHereFallback',
   'translationNotPrepared', 'structureNotPrepared', 'vocabEmpty', 'translationFailed', 'whyHereLoading',
-  'strokeUnavailable', 'strokeWatching', 'strokeStep', 'strokeTryAgain', 'strokeComplete',
 ];
 
 export const t = defineCopy('quick-sheet', {
