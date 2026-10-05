@@ -45,6 +45,9 @@ assert.equal(surfaceTitle('not.a.real.surface'), '', 'an id with no route resolv
 assert.equal(contextLabel({ label: 'Present perfect · Grammar' }, t), 'Present perfect · Grammar', 'an explicit caller label is used as-is');
 assert.equal(contextLabel({ selected_item: { type: 'word', text: '是' }, surface: 'vocabulary.word' }, t), '是 · Word');
 assert.equal(contextLabel({ selected_item: { type: 'sentence', text: 'I moved here in 2019.' } }, t), 'I moved here in 2019. · Sentence', 'the item\'s own kind label is used even with no resolvable surface');
+// LEX-013: a dragged part of a sentence (not ending like one) is a "Part", as the server's opening says.
+assert.equal(contextLabel({ selected_item: { type: 'sentence', text: '我们屋' } }, t), '我们屋 · Part');
+assert.equal(contextLabel({ selected_item: { type: 'sentence', text: '“让它荒着怪可惜的。”' } }, t), '“让它荒着怪可惜的。” · Sentence');
 assert.equal(contextLabel({ surface: 'writing.review' }, t), 'Writing', 'no selected item -> the surface title alone');
 assert.equal(contextLabel({}, t), '', 'nothing real to show -> empty, never invented (rule 40)');
 

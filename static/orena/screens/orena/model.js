@@ -16,6 +16,8 @@ export function surfaceTitle(surfaceId) {
   return route ? shellCopy(route.crumb) : '';
 }
 
+const SENTENCE_END = /[。！？.!?…]+[\s"'”’」』）)\]】]*$/;
+
 const ITEM_KIND_KEY = Object.freeze({
   word: 'kindWord',
   sentence: 'kindSentence',
@@ -42,7 +44,11 @@ export function contextParts(context = {}, t) {
   const label = String(context.label || '').trim();
   if (label) return { text: label, lang: '', kind: '' };
   const item = context.selected_item;
-  const kindKey = item && ITEM_KIND_KEY[item.type];
+  // A "sentence" whose text does not end like one is a part of a sentence the learner dragged across
+  // (LEX-013): the server's own rule (writing_coach/agent/outputs.py `_SENTENCE_END`), so the pill and the
+  // opening say the same thing.
+  const part = item?.type === 'sentence' && !SENTENCE_END.test(String(item.text || '').trim());
+  const kindKey = item && (part ? 'kindPart' : ITEM_KIND_KEY[item.type]);
   const kind = kindKey ? t(kindKey) : surfaceTitle(context.surface);
   const text = String(item?.text || '').trim();
   return { text, lang: text ? String(item?.lang || '') : '', kind };
