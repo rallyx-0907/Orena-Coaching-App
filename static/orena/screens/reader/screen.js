@@ -136,10 +136,28 @@ export default async function mountReader(element, ctx) {
 
   /* ---- per-visit state ---- */
   let menuOpen = ''; // 'aa' | 'aids' | 'more' | ''
-  let translationOn = false;
-  let vocabLensOn = true; // frame 14 opens with the vocabulary lens on (rdLens: true)
-  let posOn = false;
-  let pinyinOn = isZh && ctx.context.pinyin !== false;
+  // The learner's aid choices last for this visit (LEX-024): a trip to a word's detail and Back keeps them.
+  // Kept in the tab's session, not on the device, so a translation turned on here never asks for every later text.
+  const AIDS_KEY = 'orena.reader.aids.v1';
+  const keptAids = (() => {
+    try {
+      return JSON.parse(window.sessionStorage.getItem(AIDS_KEY) || 'null') || {};
+    } catch {
+      return {};
+    }
+  })();
+  const keptAid = (key, fallback) => (typeof keptAids[key] === 'boolean' ? keptAids[key] : fallback);
+  let translationOn = keptAid('translation', false);
+  let vocabLensOn = keptAid('vocab', true); // frame 14 opens with the vocabulary lens on (rdLens: true)
+  let posOn = keptAid('pos', false);
+  let pinyinOn = isZh && keptAid('pinyin', ctx.context.pinyin !== false);
+  function keepAids() {
+    try {
+      window.sessionStorage.setItem(AIDS_KEY, JSON.stringify({ translation: translationOn, vocab: vocabLensOn, pos: posOn, pinyin: pinyinOn }));
+    } catch {
+      /* Not kept: the next visit opens with the defaults. */
+    }
+  }
   let notesOpen = false;
   let summaryOpen = false;
   let summary = { state: 'idle', bullets: [] }; // 'idle' | 'loading' | 'ready' | 'failed'
@@ -1046,6 +1064,7 @@ export default async function mountReader(element, ctx) {
     }
     if (key === 'translation') {
       translationOn = !translationOn;
+      keepAids();
       paintTop();
       if (translationOn) {
         paintBody();
@@ -1055,12 +1074,14 @@ export default async function mountReader(element, ctx) {
     }
     if (key === 'vocab') {
       vocabLensOn = !vocabLensOn;
+      keepAids();
       paintTop();
       paintBody();
       return;
     }
     if (key === 'pos') {
       posOn = !posOn;
+      keepAids();
       if (!posOn) picked = '';
       paintTop();
       if (posOn) await ensureAnnotations();
@@ -1069,6 +1090,7 @@ export default async function mountReader(element, ctx) {
     }
     if (key === 'pinyin') {
       pinyinOn = !pinyinOn;
+      keepAids();
       paintTop();
       if (pinyinOn) await ensureAnnotations();
       paintBody();
@@ -1208,7 +1230,7 @@ export default async function mountReader(element, ctx) {
 
   /* ---- boot ---- */
 
-  if (isZh) await ensureAnnotations();
+  if (isZh || posOn) await ensureAnnotations();
   if (!ctx.isCurrent()) return undefined;
   paintAll();
 
@@ -1218,6 +1240,8 @@ export default async function mountReader(element, ctx) {
   };
   restore();
   syncPosition();
+  // A translation the learner had on earlier in this visit is asked for again (from the shared cache).
+  if (translationOn) void ensureTranslation();
 
   /* "Show in text" from Check Understanding (cuShowInText): the evidence sentence is brought into
      view and opened in its Sentence Quick Sheet. */

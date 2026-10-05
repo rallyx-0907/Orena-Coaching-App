@@ -180,10 +180,12 @@ export default async function mountCheck(element, ctx) {
 
   /* Words the learner kept from this text (the Reader's own "saved from this text" read); unknown
      when the library cannot be read, and then the figure is left out rather than guessed. */
+  let keptWords = null; // the words kept from this text, once read
   async function keptFromText() {
     try {
       const doc = await loadReadable({ kind, id }, ctx.context.memory);
       const saved = await loadSavedFromText(doc);
+      keptWords = saved ? saved.words : null;
       return saved ? saved.count : null;
     } catch {
       return null;
@@ -194,11 +196,43 @@ export default async function mountCheck(element, ctx) {
   let busy = false;
   let done = false;
 
+  /* The check keeps its place for this visit (LEX-024): "Show in text", practising this text's words or any
+     other side trip comes back to the same question, its verdict, or the result - not to question 1. Kept per
+     set in the tab's session; Retry clears it. */
+  const placeKey = `orena.check.v1:${setId}`;
+  const session = (() => {
+    try {
+      return window.sessionStorage;
+    } catch {
+      return null;
+    }
+  })();
+  function savePlace() {
+    try {
+      session?.setItem(placeKey, JSON.stringify({ graded, index, done, operationId, startedAt }));
+    } catch {
+      /* A session that cannot keep it just starts over next time. */
+    }
+  }
+  (() => {
+    try {
+      const kept = JSON.parse(session?.getItem(placeKey) || 'null');
+      if (!kept || typeof kept !== 'object') return;
+      for (const question of questions) if (kept.graded?.[question.id]) graded[question.id] = kept.graded[question.id];
+      index = Math.min(Math.max(0, Number(kept.index) || 0), questions.length - 1);
+      done = kept.done === true;
+      if (kept.operationId) operationId = String(kept.operationId);
+    } catch {
+      /* Unreadable: start at the first question. */
+    }
+  })();
+
   /* The card scrolls in itself (rule 49). A repaint for the same question - grading it - keeps the
      place the learner had scrolled to; the next question starts at the top. */
   let shownIndex = -1;
   function paint() {
     if (!ctx.isCurrent()) return;
+    savePlace();
     const previous = element.querySelector('.s-check__card');
     const keep = previous && shownIndex === index ? previous.scrollTop : 0;
     shownIndex = index;
@@ -209,7 +243,8 @@ export default async function mountCheck(element, ctx) {
       // The frame's "Go deeper" row, in its order (cuDeeper).
       const deeper = [
         { key: 'retry', label: t('retryQuestions') },
-        { key: 'feed', label: t('practiceVocabulary') },
+        // This text's kept words (LEX-024); none kept, nothing of this text to practise, so no chip.
+        ...(keptWords?.length ? [{ key: 'words', label: t('practiceVocabulary') }] : []),
         { key: 'rtransfer', label: shellCopy('readingTransfer') },
         { key: 'discussion', label: t('discussThisText') },
         { key: 'respond', label: t('writeResponse') },
@@ -328,12 +363,16 @@ export default async function mountCheck(element, ctx) {
           done = false;
           operationId = newOperationId();
           paint();
-        } else if (key === 'feed') ctx.go(ctx.href('feed'));
+        } else if (key === 'words') ctx.go(ctx.href('review', {}, { words: keptWords.join(',') }));
         else ctx.go(ctx.href(key, { id: contentId }));
       });
     });
   }
 
   paint();
+  // The result's "Practice vocabulary" names this text's kept words; read them once, then redraw if it shows.
+  keptFromText().then(() => {
+    if (done && keptWords?.length && ctx.isCurrent()) paint();
+  });
   return undefined;
 }

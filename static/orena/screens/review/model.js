@@ -86,6 +86,10 @@ export function queueScope(query = {}) {
   if (word) return { mode: 'word', word };
   const collection = param(query, 'collection');
   if (collection) return { mode: 'collection', collection };
+  // The words kept from one text (LEX-024): a Reading result's practice reviews exactly them.
+  const words = param(query, 'words');
+  const list = words ? [...new Set(words.split(',').map((w) => w.trim().toLowerCase()).filter(Boolean))] : [];
+  if (list.length) return { mode: 'words', words: list };
   return { mode: 'due' };
 }
 

@@ -99,7 +99,7 @@ export default async function mountReaderComplete(element, ctx) {
           <span class="s-rcomplete__next-chev">${raw(icon('chevron-right', { size: 20 }))}</span>
         </button>
         <div class="s-rcomplete__actions">
-          <button type="button" class="s-rcomplete__secondary" data-review>${t('reviewSavedWords')}</button>
+          ${savedFrom?.words?.length ? html`<button type="button" class="s-rcomplete__secondary" data-review>${t('reviewSavedWords')}</button>` : ''}
           <button type="button" class="s-rcomplete__secondary" data-transfer>${shellCopy('readingTransfer')}</button>
           <button type="button" class="s-rcomplete__primary" data-back>${t('backTo', { place: shellCopy(originPlaceKey(origin)) })}</button>
         </div>
@@ -112,7 +112,8 @@ export default async function mountReaderComplete(element, ctx) {
     else if (next.kind === 'article') ctx.go(ctx.href('content', { id: next.id }));
     else ctx.go(ctx.href('discover'));
   });
-  element.querySelector('[data-review]')?.addEventListener('click', () => ctx.go(ctx.href('review')));
+  // This text's kept words, not the general due queue (LEX-024).
+  element.querySelector('[data-review]')?.addEventListener('click', () => ctx.go(ctx.href('review', {}, { words: (savedFrom?.words || []).join(',') })));
   element.querySelector('[data-transfer]')?.addEventListener('click', () => ctx.go(ctx.href('rtransfer', { id: contentId })));
   element.querySelector('[data-back]')?.addEventListener('click', () => ctx.go(ctx.href(originRouteId(origin))));
 

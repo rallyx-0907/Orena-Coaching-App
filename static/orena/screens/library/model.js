@@ -8,6 +8,7 @@
    screen paints - no fetch, no DOM, no copy lookup (labels are chosen by the caller, which has the
    translated strings; this module only says which label a row needs, by a stable key). */
 
+import { placeFor } from '../content/model.js';
 import { vocabularyMeaning } from '../../product/vocabulary-meaning.js';
 
 /* ---- Content tab: reading + media entries from GET /api/collection?domains=reading,media ---- */
@@ -31,22 +32,23 @@ export function contentRouteId(domain, id) {
 
 /* One collection entry -> one Content-tab row.
 
-   No entry here carries a real reading/listening position: `/api/collection` never measures one
-   (reading position is device memory, per-device, and keyed by an old-style id this account-level
-   read cannot join to - SCRATCH/inventory/C4 §2.7), so `pct` is honestly 0 rather than a guess.
-   Rule 40 (CLAUDE.md, "The UI" §0): a metric the backend does not measure renders 0, not an
-   omitted bar - and this frame draws the bar unconditionally (no `sc-if` around it), so a bar is
-   drawn, at 0%. */
-export function contentRows(entries = []) {
+   `pct` is the learner's own place in it - the continuation record Content Detail reads (placeFor),
+   keyed by the same content id - so My Library and the content's own page show the same progress
+   (LEX-024). A content never opened has no place and shows 0%: this frame draws the bar
+   unconditionally (rule 40: a metric not measured renders 0, never a guess). */
+export function contentRows(entries = [], continuation = []) {
   return (entries || [])
     .filter((entry) => CONTENT_DOMAINS.includes(entry?.ref?.domain))
-    .map((entry) => ({
-      contentId: contentRouteId(entry.ref.domain, entry.ref.id),
-      domain: entry.ref.domain,
-      title: entry.title || '',
-      source: entry.snippet || '',
-      pct: 0,
-    }));
+    .map((entry) => {
+      const contentId = contentRouteId(entry.ref.domain, entry.ref.id);
+      return {
+        contentId,
+        domain: entry.ref.domain,
+        title: entry.title || '',
+        source: entry.snippet || '',
+        pct: placeFor(continuation, contentId).percent,
+      };
+    });
 }
 
 /* ---- Saved-Language tab: GET /api/library/vocabulary (paged) ---- */

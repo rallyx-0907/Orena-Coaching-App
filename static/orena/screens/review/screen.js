@@ -37,6 +37,7 @@ import {
 import { mountStrokeSheet } from '../word/stroke-sheet.js';
 import { strokesMarkup, hydrateStrokes } from './strokes.js';
 import {
+  filterByWordSet,
   queueScope,
   buildQueue,
   progressCounts,
@@ -184,6 +185,9 @@ export default async function mountReview(element, ctx) {
     const target = String(scope.word).trim().toLowerCase();
     const row = (page?.items || []).find((r) => String(r.word || '').trim().toLowerCase() === target);
     queue = buildQueue(row ? [row] : []);
+  } else if (scope.mode === 'words') {
+    const page = await api.libraryVocabulary({ limit: 100, order: 'recent' }).catch(() => null);
+    queue = buildQueue(filterByWordSet(page?.items, new Set(scope.words)));
   } else if (scope.mode === 'collection') {
     const collectionPayload = await readCollection(scope.collection,
       api.vocabularyLibraryCollection, { includeReview: true });

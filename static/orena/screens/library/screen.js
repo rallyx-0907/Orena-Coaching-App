@@ -16,6 +16,7 @@ import { deleteWithUndo, onImportsChanged } from '../../product/import-undo.js';
 import { languages } from '../../copy/index.js';
 import { meaningLanguageLabel } from '../../product/vocabulary-meaning.js';
 import { t } from './copy.js';
+import { placeFor } from '../content/model.js';
 import { isDeferred } from '../../shell/routes.js';
 import {
   contentRows, languageRows, collectionsAndDecks, dueStats, dueListRows,
@@ -204,12 +205,12 @@ export default async function library(element, ctx) {
   const ownRows = () => {
     const memory = ctx.context.memory?.value;
     return [
-      ...(memory?.imports || []).map((item) => ({ importId: item.id, contentId: item.id, domain: 'reading', title: item.title || '', source: '', pct: 0 })),
-      ...(memory?.mediaImports || []).map((item) => ({ importId: item.id, contentId: `upload:${item.id}`, domain: 'media', title: item.title || '', source: '', pct: 0 })),
+      ...(memory?.imports || []).map((item) => ({ importId: item.id, contentId: item.id, domain: 'reading', title: item.title || '', source: '', pct: placeFor(memory?.continuation, item.id).percent })),
+      ...(memory?.mediaImports || []).map((item) => ({ importId: item.id, contentId: `upload:${item.id}`, domain: 'media', title: item.title || '', source: '', pct: placeFor(memory?.continuation, `upload:${item.id}`).percent })),
     ];
   };
   const rows = {
-    content: contentRows(collection.entries || []),
+    content: contentRows(collection.entries || [], ctx.context.memory?.value?.continuation || []),
     language: languageRows(vocabulary.items || [], support),
     collections: collectionsAndDecks(collections.collections || [], decks.items || []),
   };

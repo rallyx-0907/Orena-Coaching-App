@@ -430,7 +430,8 @@ export function savedFromSentences(items, sentences) {
     bySentence.get(fragment).add(word);
     words.add(word);
   }
-  return { bySentence, count: words.size };
+  // `words`: the kept words themselves, so a practice of "this text's words" can ask for exactly them (LEX-024).
+  return { bySentence, count: words.size, words: [...words] };
 }
 
 export { squash };
