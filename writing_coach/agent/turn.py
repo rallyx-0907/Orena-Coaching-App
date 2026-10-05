@@ -91,6 +91,7 @@ from writing_coach.agent.outputs import (
     ReplyOutputs,
     opening_suggestions,
     reply_tool_specs,
+    selection_kind,
 )
 from writing_coach.agent.prompts import opening_messages
 from writing_coach.agent.provider import (
@@ -423,9 +424,10 @@ class _Turn:
         snapshot's review reminder or "what is this screen for". From copy: no model, no read (§3.2 read-only)."""
 
         selected = self.request.context.selected_item
-        kind = selected.type if selected.type in ("word", "sentence") else "item"
+        kind = selection_kind(selected.type, selected.text)  # a dragged part of a sentence is "this part"
         interface, support = self.locale.interface, self.locale.support
-        lang, greeting = learner_copy.text(f"opening.selection.{kind}", interface=interface, support=support,
+        greeting_key = "item" if kind == "part" else kind
+        lang, greeting = learner_copy.text(f"opening.selection.{greeting_key}", interface=interface, support=support,
                                            address=self.address)  # fmt: skip
         self.timeline.mark("final_ready")
         self.timeline.facts.update(actions=[], suggestions=len(SELECTION_PROMPTS[kind]))

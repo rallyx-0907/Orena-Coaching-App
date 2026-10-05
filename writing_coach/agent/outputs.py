@@ -23,6 +23,7 @@ action's id was read from, and absent when there is none.
 
 from __future__ import annotations
 
+import re
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
 from types import MappingProxyType
@@ -85,9 +86,24 @@ SELECTION_PROMPTS: Mapping[str, tuple[str, ...]] = MappingProxyType(
     {
         "word": ("prompt.word_meaning", "prompt.word_usage"),
         "sentence": ("prompt.sentence_meaning", "prompt.sentence_grammar"),
+        "part": ("prompt.part_meaning", "prompt.part_in_sentence"),
         "item": ("prompt.explain_selection",),
     }
 )
+# What ends a sentence, before any closing quote or bracket. A "sentence" selection that does not end so is a part
+# of one the learner dragged over (the Reader sends a span as a sentence with its sentence id, LEX-013): it is
+# "this part", never "this sentence". A heading with no full stop reads as a part too, which is still true.
+_SENTENCE_END = re.compile(r"[。！？.!?…]+[\s\"'”’」』）)\]】]*$")
+
+
+def selection_kind(selected_type: str, text: str | None) -> str:
+    """word, sentence, part (of a sentence) or item: what an opening on this selection speaks of."""
+
+    if selected_type == "word":
+        return "word"
+    if selected_type == "sentence":
+        return "sentence" if text and _SENTENCE_END.search(text.strip()) else "part"
+    return "item"
 if any(i in SURFACES or not i.startswith(PROMPT_NAMESPACE) for v in SELECTION_PROMPTS.values() for i in v):
     raise RuntimeError("a selection prompt is a prompt intent, never a navigation intent")
 

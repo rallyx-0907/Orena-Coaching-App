@@ -505,6 +505,16 @@ CATALOG: Mapping[str, CopyEntry] = MappingProxyType(
             CopyLayer.INTERFACE,
             {"en": "Explain the grammar here", "vi": "Giải thích ngữ pháp câu này", "zh-CN": "解释这句话的语法"},
         ),
+        # Part of a sentence the learner dragged over (LEX-013 follow-up): never called "this sentence".
+        "prompt.part_meaning": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "What does this part mean?", "vi": "Phần này nghĩa là gì?", "zh-CN": "这部分是什么意思？"},
+        ),
+        "prompt.part_in_sentence": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Explain this part in the sentence", "vi": "Giải thích phần này trong câu",
+             "zh-CN": "解释这部分在句中的意思"},
+        ),
         "prompt.explain_selection": _entry(
             CopyLayer.INTERFACE,
             {"en": "Explain this", "vi": "Giải thích phần này", "zh-CN": "解释一下这个"},
