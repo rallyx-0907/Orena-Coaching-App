@@ -353,3 +353,29 @@ def test_lookup_endpoint_is_unavailable_until_configured(monkeypatch) -> None:
 
     assert response.status_code == 503
     assert response.json()["detail"]["category"] == "reading_lookup_unavailable"
+
+
+def test_a_class_the_dictionary_never_gives_the_word_is_the_taggers_error() -> None:
+    """LEX-026: the tagger reads "lonely" in "I'm lonely" as an adverb; the dictionary knows it only as an
+    adjective, so the adjective stands. A class the dictionary does list is the tagger's to choose."""
+
+    def dictionary(word: str):
+        senses = {
+            "lonely": [{"part_of_speech": "adjective", "definition": "Sad because one has no friends."}],
+            "book": [
+                {"part_of_speech": "noun", "definition": "A written work."},
+                {"part_of_speech": "verb", "definition": "To reserve."},
+            ],
+        }
+        return {"definitions": senses[word]}
+
+    service, _provider = _service(english_dictionary=dictionary)
+    assert service.lookup("lonely", "\u201cI'm lonely,\u201d she said.", "en", "en").to_dict()["part_of_speech"] == "adjective"
+    # "book" may be a noun or a verb: whichever the tagger read here is kept, never replaced by the dictionary's.
+    from writing_coach.reading_lookup import LookupDefinition, _reconciled_part_of_speech
+
+    both = [LookupDefinition("noun", "A written work."), LookupDefinition("verb", "To reserve.")]
+    assert _reconciled_part_of_speech("verb", both) == "verb"
+    assert _reconciled_part_of_speech("noun", both) == "noun"
+    assert _reconciled_part_of_speech("adverb", []) == "adverb"
+

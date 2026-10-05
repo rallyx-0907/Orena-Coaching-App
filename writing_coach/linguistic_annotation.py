@@ -134,12 +134,18 @@ def _english_lemma(word: str) -> str:
     return lower
 
 
+# Curly quotes the Treebank tokenizer does not split from a word ("“I" became one token, tagged as an
+# adjective). Each is swapped for its straight form, one character for one, so the spans still index `source`.
+_STRAIGHT_QUOTES = str.maketrans({"“": '"', "”": '"', "„": '"', "‘": "'", "’": "'"})
+
+
 def _english_annotations(source: str, limit: int) -> list[dict[str, Any]]:
-    spans = list(_EN_TOKENIZER.span_tokenize(source))[:limit]
-    tokens = [source[start:end] for start, end in spans]
+    plain = source.translate(_STRAIGHT_QUOTES)
+    spans = list(_EN_TOKENIZER.span_tokenize(plain))[:limit]
+    tokens = [plain[start:end] for start, end in spans]
     return [
         {
-            "fragment": token,
+            "fragment": source[start:end],
             "start": start,
             "end": end,
             "pos": english_pos(tag),

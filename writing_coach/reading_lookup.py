@@ -141,6 +141,20 @@ def _safe_chinese_senses(word: str) -> tuple[str, ...]:
     return ()
 
 
+def _reconciled_part_of_speech(tagged: str, definitions: list[LookupDefinition]) -> str:
+    """The tagger's class for the word where it stands, unless the dictionary says the word is never that.
+
+    The tagger reads the sentence; the dictionary knows which classes a word can have at all. A tagger label the
+    dictionary does not list for the word is a tagger error - "lonely" tagged as an adverb in "I'm lonely",
+    where the dictionary knows it only as an adjective (LEX-026) - and the dictionary's first class stands.
+    With no dictionary classes, the tagger's answer stands."""
+
+    listed = [item.part_of_speech.strip().casefold() for item in definitions if item.part_of_speech.strip()]
+    if not listed or not tagged or tagged.casefold() in listed:
+        return tagged
+    return listed[0]
+
+
 def _safe_english_dictionary(
     lookup: Callable[[str], dict[str, Any] | None], word: str
 ) -> dict[str, Any] | None:
@@ -248,6 +262,7 @@ class ReadingLookupService:
                     pronunciation = str(payload.get("phonetic") or "").strip()
                 if not audio_url:
                     audio_url = str(payload.get("audio") or "").strip()
+                part_of_speech = _reconciled_part_of_speech(part_of_speech, definitions)
 
         if not meanings and target != source:
             translated = _safe_machine_translation(self._translation_service, source, target, selection)
