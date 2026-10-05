@@ -269,3 +269,29 @@ def test_letter_labels_a_model_wrote_are_removed_only_when_every_option_has_its_
     # A real answer that starts with a letter, or labels out of order, are left as written.
     assert _without_letter_labels(["A. Lincoln", "George Washington"]) == ["A. Lincoln", "George Washington"]
     assert _without_letter_labels(["B. one", "A. two"]) == ["B. one", "A. two"]
+
+
+def test_an_explanation_written_in_chinese_for_a_vietnamese_learner_is_set_aside():
+    """LEX-025: a Vietnamese-support set came back with whole Chinese explanations; such a question is not kept,
+    while a Vietnamese explanation that quotes the passage is."""
+
+    data = _valid("zh")
+    data["questions"].append({
+        "question_type": "detail", "prompt": "Who?", "options": ["小明", "老师", "妈妈", "司机"], "correct_index": 0,
+        "explanation": "小明错过了早班火车，所以他在站台上等了四十分钟，这说明他很耐心。", "evidence_text": SPANS["zh"][0],
+    })
+    data["questions"][0]["explanation"] = "Đáp án đúng vì bài viết nói “他在寒冷的站台上等了四十分钟”."
+    processed = process_article(_article("zh"), support_code="vi", generate=Provider(data))
+    kept = [question["explanation"] for question in processed.questions]
+    assert any("Đáp án đúng" in text for text in kept)
+    assert not any(text.startswith("小明错过了") for text in kept)
+    assert any("not in the support language" in issue for issue in processed.validation["issues"])
+
+
+def test_a_chinese_support_language_keeps_chinese_explanations():
+    from writing_coach.reading_comprehension import explanation_in_support_language
+
+    assert explanation_in_support_language("小明错过了早班火车。", "zh")
+    assert not explanation_in_support_language("小明错过了早班火车，所以他等了四十分钟。", "vi")
+    assert explanation_in_support_language("Vì 小明 đến muộn nên phải chờ.", "vi")
+

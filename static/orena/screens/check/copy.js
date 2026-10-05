@@ -14,8 +14,11 @@ const INTERFACE_KEYS = [
   'correctLabel', 'missedLabel',
   'qtype_main_idea', 'qtype_detail', 'qtype_inference', 'qtype_vocabulary_in_context',
   'qtype_cause_effect', 'qtype_sequence', 'qtype_authors_purpose', 'qtype_reference',
+  'verdictCorrect', 'verdictIncorrect',
 ];
-const SUPPORT_KEYS = ['verdictCorrect', 'verdictIncorrect'];
+// The verdict is the system's status, so it follows the interface like the controls around it (LEX-025); the
+// explanation under it is content in the support language.
+const SUPPORT_KEYS = [];
 
 export const t = defineCopy('check', {
   layers: {

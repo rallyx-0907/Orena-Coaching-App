@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import logging
 import re
+import unicodedata
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from typing import Any
@@ -177,7 +178,29 @@ def question_list(raw: Mapping[str, Any]) -> list[Any] | None:
     return value if isinstance(value, list) else None
 
 
-def _validate(raw: Mapping[str, Any], body: str) -> tuple[list[dict[str, Any]], list[str]]:
+# Quoted passage words an explanation may cite in the learning language ("…", “…”, 「…」, 《…》, '…').
+_QUOTED = re.compile(r"[\"“”「」『』《》‘’'][^\"“”「」『』《》‘’']{0,120}[\"“”「」『』《》‘’']")
+_HAN = re.compile(r"[\u3400-\u9fff]")
+# Above this share of Hanzi outside its quotations an explanation is written in Chinese, not in the support
+# language the set was asked for (LEX-025: Vietnamese-support sets came back with whole Chinese explanations).
+MAX_FOREIGN_HAN_SHARE = 0.4
+
+
+def explanation_in_support_language(explanation: str, support_code: str) -> bool:
+    """Whether an explanation is written in the support language rather than in Chinese.
+
+    Only a non-Chinese support language is checked: quoted passage words are allowed, a Chinese explanation is
+    not."""
+    if not support_code or support_code.split("-", 1)[0].casefold() == "zh":
+        return True
+    own = _QUOTED.sub(" ", str(explanation or ""))
+    letters = [ch for ch in own if not ch.isspace() and not unicodedata.category(ch).startswith("P")]
+    if not letters:
+        return True
+    return sum(1 for ch in letters if _HAN.match(ch)) / len(letters) <= MAX_FOREIGN_HAN_SHARE
+
+
+def _validate(raw: Mapping[str, Any], body: str, support_code: str = "") -> tuple[list[dict[str, Any]], list[str]]:
     """Keep the questions that are well formed and grounded; say why others
     went. The caller has checked that `questions` is a list; a question whose
     structure is not the schema's is set aside with its reason, never allowed
@@ -203,6 +226,8 @@ def _validate(raw: Mapping[str, Any], body: str) -> tuple[list[dict[str, Any]], 
             issues.append(f"{label}: unknown type {qtype!r}")
         elif not prompt or not explanation:
             issues.append(f"{label}: missing prompt or explanation")
+        elif not explanation_in_support_language(explanation, support_code):
+            issues.append(f"{label}: its explanation is not in the support language")
         elif not 2 <= len(options) <= 6 or any(not value for value in options) or \
                 len({value.casefold() for value in options}) != len(options):
             issues.append(f"{label}: options must be 2-6, non-empty and distinct")
@@ -271,7 +296,7 @@ def process_article(
         # erroring - raises here and is never retried: asking again would not
         # change the answer, and the administrator has to see it.
         try:
-            return _checked(_ask(generate, messages), body, retries)
+            return _checked(_ask(generate, messages), body, retries, support_code)
         except UnusableResult as exc:
             if attempt == RETRIES_ON_UNUSABLE_RESULT:
                 raise
@@ -311,7 +336,7 @@ def _ask(generate: Callable[..., Any], messages: list[dict[str, str]]) -> Any:
         ) from exc
 
 
-def _checked(result: Any, body: str, retries: list[dict[str, Any]]) -> Processed:
+def _checked(result: Any, body: str, retries: list[dict[str, Any]], support_code: str = "") -> Processed:
     """A usable draft from one provider result, or the refusal saying why not."""
     data = getattr(result, "data", result)
     if not isinstance(data, Mapping):
@@ -320,7 +345,7 @@ def _checked(result: Any, body: str, retries: list[dict[str, Any]]) -> Processed
     if returned is None:
         raise UnusableResult("reading_processor_failed", "The AI provider's questions are not a list.")
     try:
-        questions, issues = _validate(data, body)
+        questions, issues = _validate(data, body, support_code)
     except Exception as exc:  # noqa: BLE001 - a malformed answer is unusable, never a 500
         _logger.warning("reading comprehension: a provider answer could not be validated", exc_info=True)
         raise UnusableResult("reading_processor_failed", "The AI provider's questions could not be read.") from exc

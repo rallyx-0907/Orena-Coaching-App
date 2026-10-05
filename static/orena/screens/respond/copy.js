@@ -20,7 +20,7 @@ const layers = {
   promptSummaryMedia: 'support', promptSummaryReading: 'support',
   promptReactionMedia: 'support', promptReactionReading: 'support',
   promptContinuationMedia: 'support', promptContinuationReading: 'support',
-  subtitleSuffix: 'support', sourceLabel: 'interface',
+  subtitleSuffix: 'interface', sourceLabel: 'interface',
   sourceKindVideo: 'interface', sourceKindAudio: 'interface', sourceKindArticle: 'interface', sourceKindBook: 'interface', sourceKindText: 'interface',
   placeholder: 'support', wordsLabel: 'interface', getFeedback: 'interface',
   wordsTile: 'interface', usesSource: 'interface', fixesLabel: 'interface', nextStepLabel: 'interface',
