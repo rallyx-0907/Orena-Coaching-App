@@ -46,9 +46,6 @@ NAMES = sorted(
         "bookmark",
         "bookmark-check",
         "case-lower",
-        # Reading Aids as icon toggles (LEX-009, D-131): the vocabulary lens and word roles.
-        "scan-text",
-        "tags",
         "check",
         "chevron-down",
         "chevron-left",

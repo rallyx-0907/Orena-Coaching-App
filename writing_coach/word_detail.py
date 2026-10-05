@@ -132,6 +132,10 @@ def _text(value: object) -> str:
     return str(value or "").strip()
 
 
+def _fold(value: object) -> str:
+    return re.sub(r"[\s;,.。，；]+", " ", _text(value)).strip().casefold()
+
+
 def _join(items: object) -> str:
     return "\n".join(_text(item) for item in items or () if _text(item))
 
@@ -168,6 +172,19 @@ def project_word_detail(
     else:
         meaning, source = "", "none"
 
+    # The word's common meaning beside the one it has here (LEX-018, D-133), in the support language only:
+    # the gloss's own `common_meaning`, else a dictionary meaning the lookup gave in the support language
+    # (a collection sense or a translation; its English definitions only for an English support language).
+    # Not repeated when it is the meaning already shown.
+    general = _text(said.get("common_meaning"))
+    if not general:
+        if meanings:
+            general = dictionary_meaning
+        elif found.get("definitions") and _text(found.get("target_language")).casefold() == "en":
+            general = dictionary_meaning
+    if _fold(general) == _fold(meaning):
+        general = ""
+
     part_of_speech = _text(found.get("part_of_speech"))
     if not part_of_speech:
         for item in said.get("vocabulary") or ():
@@ -189,6 +206,7 @@ def project_word_detail(
         "ipa": pronunciation if script == "latin" and pronunciation else None,
         "partOfSpeech": part_of_speech or None,
         "contextMeaning": meaning,
+        "generalMeaning": general,
         "contextSentence": _text(context),
         "audioUrl": _text(found.get("audio_url")),
         "saved": bool(saved),

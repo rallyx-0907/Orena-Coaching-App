@@ -95,6 +95,15 @@
 .s-reader__pill--aa {
   font-size: 14px;
 }
+.s-reader__pill--aids {
+  gap: 5px;
+  padding: 0 10px;
+  min-width: 34px;
+}
+.s-reader__pill-count {
+  font-size: 13px;
+  line-height: 1;
+}
 .s-reader__pill--more {
   width: 34px;
   padding: 0;
@@ -358,6 +367,21 @@
   font-weight: 700;
   margin-left: 3px;
   line-height: 1;
+  /* A button now (LEX-014): the number opens and folds its note. */
+  position: relative;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+/* The 18px number keeps a 44px touch target without growing the line. */
+.s-reader__notemark::after {
+  content: '';
+  position: absolute;
+  inset: -13px;
+}
+.s-reader__notemark[aria-expanded='true'] {
+  background: var(--amber);
+  color: var(--badge-ink);
 }
 
 .s-reader__article .s-reader__translation {

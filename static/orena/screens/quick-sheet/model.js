@@ -128,6 +128,8 @@ export function mapWordCard(word, { detail = null, item = null } = {}) {
     hasContent,
     pos,
     meaning,
+    // What the word commonly means, beside what it means here (LEX-018): shown only under a contextual meaning.
+    generalMeaning: detail?.meaningSource === 'context' || detail?.meaningSource === 'contextual' ? text(detail?.generalMeaning) : '',
     example: text(detail?.deeper?.examples?.[0]),
     exampleParts: highlightExample(detail?.deeper?.examples?.[0], headword),
     audioUrl: text(detail?.audioUrl),

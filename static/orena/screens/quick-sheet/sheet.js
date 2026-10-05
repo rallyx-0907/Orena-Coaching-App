@@ -202,7 +202,11 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
       <div class="s-qs__card">
         ${meaningPending()
           ? html`<div class="s-qs__meaning" role="status"><span class="o-spinner"></span></div>`
-          : html`${card.meaningIsContextual ? html`<div class="s-qs__eyebrow">${t('meaningHere')}</div>` : ''}<div class="s-qs__meaning">${card.meaning}</div>`}
+          : html`${card.meaningIsContextual ? html`<div class="s-qs__eyebrow">${t('meaningHere')}</div>` : ''}<div class="s-qs__meaning">${card.meaning}</div>${
+              card.generalMeaning
+                ? html`<div class="s-qs__general"><span class="s-qs__general-label">${t('commonMeaning')}</span> ${card.generalMeaning}</div>`
+                : ''
+            }`}
       </div>
       ${sourceQuoteMarkup()}
       ${strokeMarkup()}

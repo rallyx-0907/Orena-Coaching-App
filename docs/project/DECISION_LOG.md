@@ -4215,3 +4215,34 @@ Reviewer's direction over the frame. This is a recorded design adaptation, not a
 - **Device voice is the fallback only.** It is used only when Azure fails, is offline or is at its cap, and it
   is labelled as the device's voice.
 - **The learner sees the source:** a recording and its author, a synthesised voice, or the device's voice.
+
+## D-133 - Reading friction decisions: notes as badges, icon Aids, Visual Skin stroke panel, common meaning
+
+2026-10-05, explicit human decisions on UX review LEX-014, LEX-015, LEX-016 and LEX-018. Each one departs from
+the pinned frame where the frame draws otherwise.
+
+- **LEX-014 notes.**
+  - At rest, a note is only its number at the sentence.
+  - Tapping the number opens the frame's note card (the note, its sentence, "Edit in sentence"). Its head or
+    the number folds it back.
+  - The always-visible collapsed preview row the frame draws is not used.
+- **LEX-015 Aids.**
+  - The Reader's aids are named by icons the prototype draws (D-088's Lucide set), not by the word "Aids".
+  - The trigger is the lightbulb with the number of aids on. Its accessible name and tooltip are
+    "Reading aids · n".
+  - The vocabulary lens uses whole-word, replacing the lane's own scan-text.
+  - Where the prototype has no icon for a function, the closest one it draws is used.
+- **LEX-016 stroke panel.**
+  - The character selector and the three actions take the Visual Skin ZH stroke component's treatment:
+    - neutral surface2 tiles with a border2 ring;
+    - the practised character in full ink;
+    - Watch strokes as the skin's secondary "Show stroke order";
+    - Write it as tertiary;
+    - Next character as ghost.
+  - There is no default purple-outline control.
+- **LEX-018 common meaning.**
+  - The Word Quick Sheet shows the word's common meaning, in the support language, under "Meaning here".
+  - It comes from the same short gloss call (`common_meaning`, cached with it); otherwise from a dictionary
+    sense in the support language. It is never an English sense shown to a learner with another support
+    language.
+  - WordDetail gains `generalMeaning`; the pinned contract file is unchanged (UI_BACKEND_GAPS, RD-4).

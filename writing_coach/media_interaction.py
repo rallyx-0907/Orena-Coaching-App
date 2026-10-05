@@ -403,8 +403,12 @@ def _explanation_schema() -> dict[str, Any]:
 def _gloss_schema() -> dict[str, Any]:
     return {
         "type": "object",
-        "properties": {"context_meaning": {"type": "string"}, "why_here": {"type": "string"}},
-        "required": ["context_meaning", "why_here"],
+        "properties": {
+            "context_meaning": {"type": "string"},
+            "why_here": {"type": "string"},
+            "common_meaning": {"type": "string"},
+        },
+        "required": ["context_meaning", "why_here", "common_meaning"],
     }
 
 
@@ -430,7 +434,9 @@ def meaning_in_context(payload: MediaExplainIn) -> dict[str, Any]:
                     "Give context_meaning: what the selected text means in this sentence, as one short "
                     "clause a dictionary would give for this use. Also give why_here: one short sentence saying "
                     "why the selected text has that meaning in this sentence, naming what in the sentence "
-                    "shows it. No lecture, no examples."
+                    "shows it. Also give common_meaning: what this word most commonly means, for this reading and "
+                    "part of speech, as a short dictionary gloss of at most two senses separated by '; ' - the "
+                    "learner's general meaning to carry to other sentences. No lecture, no examples."
                 ),
             },
             {"role": "user", "content": f"SELECTED TEXT:\n{source}\n\nCONTEXT:\n{payload.context.strip() or source}"},
@@ -444,6 +450,7 @@ def meaning_in_context(payload: MediaExplainIn) -> dict[str, Any]:
         "selected_text": source,
         "context_meaning": str(raw.get("context_meaning") or "").strip()[:300],
         "why_here": str(raw.get("why_here") or "").strip()[:300],
+        "common_meaning": str(raw.get("common_meaning") or "").strip()[:200],
     }
 
 

@@ -153,7 +153,8 @@ export default async function mountReader(element, ctx) {
   let picked = ''; // word-role tap: "seg|word"
   let highlights = storage ? loadHighlights(storage, owner, contentId) : [];
   let alive = true;
-  const expandedNotes = new Set();
+  // The sentences whose notes are open (LEX-014, D-133): at rest a note is only its number at the sentence.
+  const openNoteSegs = new Set();
   const translations = new Map(); // sentence segment id -> meaning (D-130: the sentence is the shared unit)
   let translationState = 'idle'; // 'idle' | 'loading' | 'ready' | 'failed'
   const annotations = new Map(); // segment -> tokens (offsets relative to the sentence)
@@ -317,8 +318,9 @@ export default async function mountReader(element, ctx) {
     return html`<button type="button" class="s-reader__toggle" data-act="toggle" data-key="${key}" data-on="${on ? 1 : 0}" aria-pressed="${on ? 'true' : 'false'}" aria-label="${label}" title="${label}">${raw(icon(iconName, { size: 17 }))}</button>`;
   }
 
-  function pill(key, label, on, extra = '') {
-    return html`<button type="button" class="${cls('s-reader__pill', extra)}" data-act="menu" data-key="${key}" data-on="${on ? 1 : 0}" aria-expanded="${menuOpen === key ? 'true' : 'false'}">${label}</button>`;
+  function pill(key, label, on, extra = '', name = '') {
+    const named = name ? raw(` aria-label="${String(name).replace(/"/g, '&quot;')}" title="${String(name).replace(/"/g, '&quot;')}"`) : '';
+    return html`<button type="button" class="${cls('s-reader__pill', extra)}" data-act="menu" data-key="${key}" data-on="${on ? 1 : 0}" aria-expanded="${menuOpen === key ? 'true' : 'false'}"${named}>${label}</button>`;
   }
 
   const KIND_LABEL = { article: 'kindArticle', book: 'kindBook', text: 'kindText' };
@@ -349,7 +351,15 @@ export default async function mountReader(element, ctx) {
         ${toggleBtn('theme', dark, t('themeDark'), 'moon')}
         ${toggleBtn('listen', listening, listening ? t('listenPause') : t('listen'), 'volume-2')}
         ${toggleBtn('bookmark', savedState.saved, t('saveLabel'), 'bookmark')}
-        ${pill('aids', html`${t('aidsLabel')}${aids ? ` · ${aids}` : ''}`, menuOpen === 'aids' || translationOn || vocabLensOn || posOn)}
+        ${pill(
+          'aids',
+          // An icon the design draws (lightbulb) says "help for reading" where the word "Aids" did not (LEX-015, D-133);
+          // the full name is the button's accessible name and tooltip, the number is how many aids are on.
+          html`${raw(icon('lightbulb', { size: 17 }))}${aids ? html`<span class="s-reader__pill-count">${aids}</span>` : ''}`,
+          menuOpen === 'aids' || translationOn || vocabLensOn || posOn,
+          's-reader__pill--aids',
+          aids ? `${t('aidsLabel')} · ${aids}` : t('aidsLabel'),
+        )}
         ${practice ? '' : pill('more', '⋯', menuOpen === 'more' || notesOpen || summaryOpen, 's-reader__pill--more')}
       </div>
     </div>`;
@@ -376,7 +386,7 @@ export default async function mountReader(element, ctx) {
       // Pinyin is offered only for a Chinese text: an aid that cannot apply is not shown (D-131).
       items = html`<div class="s-reader__aids" role="group" aria-label="${t('aidsLabel')}">${
         canTranslate ? aidToggle('translation', 'languages', t('translationAid', { lang }), t('aidShortTranslation', { lang }), translationOn) : ''
-      }${aidToggle('vocab', 'scan-text', t('vocabLensAid'), t('aidShortLens'), vocabLensOn)}${aidToggle('pos', 'tags', t('wordRolesAid'), t('aidShortRoles'), posOn)}${
+      }${aidToggle('vocab', 'whole-word', t('vocabLensAid'), t('aidShortLens'), vocabLensOn)}${aidToggle('pos', 'tags', t('wordRolesAid'), t('aidShortRoles'), posOn)}${
         isZh ? aidToggle('pinyin', 'case-lower', t('pinyinAid'), t('aidShortPinyin'), pinyinOn) : ''
       }</div>`;
     } else {
@@ -488,28 +498,30 @@ export default async function mountReader(element, ctx) {
       offset += piece.text.length;
       return pieceMarkup(piece, s.seg, start, ranges);
     })}${
-      mark ? html`<span class="s-reader__notemark">${mark}</span>` : ''
+      mark
+        ? html`<button type="button" class="s-reader__notemark" data-act="note-toggle" data-seg="${s.seg}" aria-expanded="${openNoteSegs.has(s.seg) ? 'true' : 'false'}" aria-label="${openNoteSegs.has(s.seg) ? t('noteCollapse') : t('noteExpand')}">${mark}</button>`
+        : ''
     }</span>${isZh ? '' : ' '}`;
   }
 
+  /* An open note: the frame's expanded card (number, "Your note · when", the note, the sentence, "Edit in
+     sentence"). It is shown only after the learner taps the note's number, and its head folds it back to
+     that number (LEX-014, D-133). */
   function noteCard(entry) {
-    const expanded = expandedNotes.has(entry.note.id);
-    return html`<div class="s-reader__note" data-expanded="${expanded ? 1 : 0}">
-      <button type="button" class="s-reader__note-head" data-act="note-toggle" data-id="${entry.note.id}" aria-expanded="${expanded ? 'true' : 'false'}" title="${expanded ? t('noteCollapse') : t('noteExpand')}">
+    return html`<div class="s-reader__note" data-expanded="1">
+      <button type="button" class="s-reader__note-head" data-act="note-toggle" data-seg="${entry.seg}" aria-expanded="true" title="${t('noteCollapse')}">
         <span class="s-reader__note-num">${entry.num}</span>
         <span class="s-reader__note-body"><span class="s-reader__note-label">${t('yourNote', { when: relativeWhen(entry.note.at, languages().ui) })}</span><span class="s-reader__note-text">${entry.note.text}</span></span>
         <span class="s-reader__note-chev">${raw(icon('chevron-down', { size: 16, stroke: 2.2 }))}</span>
       </button>
-      ${expanded
-        ? html`<div class="s-reader__note-expanded"><div class="s-reader__note-src" lang="${langAttr(language)}">“${entry.sentence}”</div><button type="button" class="s-reader__note-edit" data-act="note-edit" data-seg="${entry.seg}">${t('editInSentence')}</button></div>`
-        : ''}
+      <div class="s-reader__note-expanded"><div class="s-reader__note-src" lang="${langAttr(language)}">“${entry.sentence}”</div><button type="button" class="s-reader__note-edit" data-act="note-edit" data-seg="${entry.seg}">${t('editInSentence')}</button></div>
     </div>`;
   }
 
   function blockMarkup(block, notes) {
     if (block.type === 'break') return html`<hr class="s-reader__break">`;
     if (block.type === 'heading') return html`<h2 class="s-reader__heading" lang="${langAttr(language)}">${block.text}</h2>`;
-    const cards = notes.all.filter((entry) => sentenceBySeg.get(entry.seg) && block.sentences.some((s) => s.seg === entry.seg));
+    const cards = notes.all.filter((entry) => openNoteSegs.has(entry.seg) && sentenceBySeg.get(entry.seg) && block.sentences.some((s) => s.seg === entry.seg));
     return html`<div>
       <p class="s-reader__paragraph" lang="${langAttr(language)}" data-tl="${isZh ? 'zh' : ''}">${block.sentences.map((s) => sentenceMarkup(s, notes.numBySeg))}</p>
       ${cards.length ? html`<div class="s-reader__notes">${cards.map(noteCard)}</div>` : ''}
@@ -1143,9 +1155,10 @@ export default async function mountReader(element, ctx) {
       const next = doc.neighbours?.next;
       if (next) goTo('reader', { id: contentIdFor('book', `${doc.bookId}:${next.id}`) });
     } else if (act === 'note-toggle') {
-      if (expandedNotes.has(id)) expandedNotes.delete(id);
-      else expandedNotes.add(id);
+      if (openNoteSegs.has(seg)) openNoteSegs.delete(seg);
+      else openNoteSegs.add(seg);
       paintBody();
+      element.querySelector(`.s-reader__notemark[data-seg="${seg}"]`)?.focus({ preventScroll: true });
     } else if (act === 'note-edit') openNoteFor(seg);
     else if (act === 'note-open') openNoteFor(seg);
     else if (act === 'sel-translate') openSentence('Translation');

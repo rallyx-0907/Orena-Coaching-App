@@ -140,16 +140,16 @@ export function mountStrokeSheet(sheet, handle, { word, titleWord = word, chines
       html`
       <div class="s-word-chars">
         ${state.chars.map(
-          (c, i) => html`<button type="button" class="${cls('s-word-char', i === state.index && 'is-selected')}" data-char="${i}" lang="zh">${c.ch}</button>`,
+          (c, i) => html`<button type="button" class="${cls('s-word-char', i === state.index && 'is-selected')}" data-char="${i}" lang="zh" aria-pressed="${i === state.index ? 'true' : 'false'}">${c.ch}</button>`,
         )}
       </div>
       <div class="s-word-info">${state.loading ? t('strokeLoading') : item?.available ? t.plural('strokeCount', count) : ''}</div>
       ${stageMarkup()}
       <div class="s-word-status" style="color:${status.color}">${status.text}</div>
       <div class="s-word-actions">
-        <button type="button" class="o-btn o-btn--secondary" data-watch>${t('watchStrokes')}</button>
-        <button type="button" class="o-btn o-btn--secondary s-word-action--accent" data-write>${t('writeIt')}</button>
-        <button type="button" class="o-btn o-btn--primary" data-next>${t('nextCharacter')}</button>
+        <button type="button" class="o-btn s-word-action s-word-action--soft" data-watch>${raw(icon('play', { size: 15 }))}${t('watchStrokes')}</button>
+        <button type="button" class="o-btn s-word-action s-word-action--plain" data-write>${raw(icon('pen-line', { size: 15 }))}${t('writeIt')}</button>
+        <button type="button" class="o-btn s-word-action s-word-action--ghost" data-next>${t('nextCharacter')}${raw(icon('arrow-right', { size: 15 }))}</button>
       </div>`,
     );
     bindBody();

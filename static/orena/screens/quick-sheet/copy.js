@@ -29,7 +29,7 @@ const INTERFACE_KEYS = [
   'strokeUnavailable', 'strokeWatching', 'strokeStep', 'strokeTryAgain', 'strokeComplete',
 ];
 const SUPPORT_KEYS = [
-  'sourceSentence', 'meaningHere', 'meaningNotPrepared', 'noGlossNotice', 'whyHereFallback',
+  'sourceSentence', 'meaningHere', 'commonMeaning', 'meaningNotPrepared', 'noGlossNotice', 'whyHereFallback',
   'translationNotPrepared', 'structureNotPrepared', 'vocabEmpty', 'translationFailed', 'whyHereLoading',
 ];
 
@@ -55,7 +55,7 @@ export const t = defineCopy('quick-sheet', {
     addNote: 'Add note', notePlaceholder: 'Your note stays attached to this sentence…', deleteNote: 'Delete note',
     saveVocab: 'Save', unsaveVocab: 'Saved',
     sourceSentence: 'Source sentence',
-    meaningHere: 'Meaning here',
+    meaningHere: 'Meaning here', commonMeaning: 'Common meaning',
     meaningNotPrepared: 'Contextual meaning not prepared for this word.',
     noGlossNotice: 'No prepared gloss for this word yet. Ask Orena for a contextual explanation.',
     whyHereFallback: 'Ask Orena for the reason it appears here.',
@@ -90,7 +90,7 @@ export const t = defineCopy('quick-sheet', {
     addNote: 'Thêm ghi chú', notePlaceholder: 'Ghi chú của bạn sẽ gắn với câu này…', deleteNote: 'Xoá ghi chú',
     saveVocab: 'Lưu', unsaveVocab: 'Đã lưu',
     sourceSentence: 'Câu gốc',
-    meaningHere: 'Nghĩa ở đây',
+    meaningHere: 'Nghĩa ở đây', commonMeaning: 'Nghĩa thường gặp',
     meaningNotPrepared: 'Nghĩa theo ngữ cảnh chưa được chuẩn bị cho từ này.',
     noGlossNotice: 'Chưa có sẵn giải thích cho từ này. Hãy hỏi Orena để được giải thích theo ngữ cảnh.',
     whyHereFallback: 'Hỏi Orena vì sao từ này xuất hiện ở đây.',
@@ -125,7 +125,7 @@ export const t = defineCopy('quick-sheet', {
     addNote: '添加笔记', notePlaceholder: '你的笔记会一直附在这句话上…', deleteNote: '删除笔记',
     saveVocab: '收藏', unsaveVocab: '已收藏',
     sourceSentence: '原句',
-    meaningHere: '含义',
+    meaningHere: '含义', commonMeaning: '常见意思',
     meaningNotPrepared: '这个词还没有准备好语境含义。',
     noGlossNotice: '这个词还没有准备好的释义。问问 Orena，获取语境化的解释。',
     whyHereFallback: '问问 Orena，这个词为什么会出现在这里。',

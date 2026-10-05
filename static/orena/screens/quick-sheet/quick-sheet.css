@@ -154,6 +154,17 @@
 .s-qs__card .s-qs__meaning {
   color: var(--text);
 }
+/* LEX-018: the word's common meaning under the meaning it has here - the design card's second, quieter meaning
+   line (frame 53's `qsWC.vi` under `qsWC.meaning`), labelled so it is not read as this sentence's meaning. */
+.s-qs__general {
+  margin-top: 6px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.s-qs__general-label {
+  font-weight: 600;
+}
 .s-qs__source-text {
   font-family: Literata, 'Noto Serif SC', Georgia, serif;
   font-size: 15.5px;

@@ -60,6 +60,8 @@ export function mountReaderLexical({ root, unitOf, onTapWord, onTapSentence, onS
     const target = elementOf(event.target);
     const unit = unitOf(target);
     if (!unit || !root.contains(unit)) return;
+    // A control inside the sentence (a note's number) is its own action, not a tap on the sentence.
+    if (target?.closest?.('[data-act]')) return;
     // A learner who dragged a selection meant that selection (evaluateSelection below), not a tap
     // on whatever character the drag happened to end on.
     if (selectedText().length >= 2) return;

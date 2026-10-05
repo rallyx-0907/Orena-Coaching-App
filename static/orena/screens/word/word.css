@@ -310,22 +310,27 @@
   flex-wrap: wrap;
   justify-content: center;
 }
+/* Character tiles in the Visual Skin ZH stroke component's treatment (LEX-016, D-133): a surface2 tile with a
+   1.5px border2 ring; the character not being practised is the faded "guide" ink, the one being practised is
+   full ink with a stronger neutral ring - no accent outline or tint. Size is frame 60's (52px, r14). */
 .s-word-char {
   width: 52px;
   height: 52px;
   border-radius: 14px;
-  border: 1.5px solid var(--border2);
-  background: var(--surface);
-  color: var(--text);
+  border: 0;
+  background: var(--surface2);
+  box-shadow: inset 0 0 0 1.5px var(--border2);
+  color: var(--muted);
   font-family: 'Noto Sans SC', 'PingFang SC', sans-serif;
   font-size: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
 }
 .s-word-char.is-selected {
-  border-color: var(--accent);
-  background: var(--accent-soft);
+  color: var(--text);
+  box-shadow: inset 0 0 0 1.5px var(--muted);
 }
 .s-word-info {
   font-size: 14px;
@@ -380,15 +385,38 @@
   flex-wrap: wrap;
   justify-content: center;
 }
+/* The three actions in Visual Skin button treatments (LEX-016, D-133), at frame 60's size: Watch strokes is
+   the skin's own "Show stroke order" (secondary: accent-soft fill, no border), Write it the tertiary (surface,
+   neutral border2), Next character the ghost (no fill, accent text). */
 .s-word-actions .o-btn {
   height: 44px;
+  min-height: 44px;
   padding: 0 16px;
   border-radius: 12px;
   font-size: 14px;
+  font-weight: 600;
+  gap: 8px;
 }
-.s-word-action--accent {
-  border-color: var(--accent);
-  color: var(--accent);
+.s-word-action--soft {
+  border: 0;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+.s-word-action--plain {
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--text);
+}
+.s-word-action--plain:hover {
+  background: var(--surface2);
+}
+.s-word-action--ghost {
+  border: 0;
+  background: none;
+  color: var(--accent-text);
+}
+.s-word-action--ghost:hover {
+  background: var(--surface2);
 }
 
 @keyframes s-word-shake {

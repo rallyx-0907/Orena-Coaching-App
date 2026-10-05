@@ -4848,3 +4848,10 @@ of record) behind one layer, order table proposed as migration `20261005_0027`.
 - **RD-3 on-request persistence**: translation, summary and contextual meaning are cached in process memory
   until migration `20261005_0028_reading_derived_texts` (proposed, `READING_ON_DEMAND.md`) is reviewed and
   authorized. They are regenerated after a restart.
+- **RD-4 WordDetail `generalMeaning`** (LEX-018, D-133):
+  - The server adds `generalMeaning` (string, may be empty) to WordDetail: the word's common meaning in the
+    support language, beside `contextMeaning`.
+  - The pinned `data-contracts/WordDetail.json` predates it and is not edited (it is design source). This
+    entry is the record of the extension until a design revision carries it.
+  - A gloss cached before this change has no `common_meaning`; it falls back to a support-language dictionary
+    sense or stays empty until regenerated.
