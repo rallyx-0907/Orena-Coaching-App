@@ -435,6 +435,8 @@ def opening_request(**extra):
     body.pop("message")
     body.update(trigger="open", **extra)
     body["context"]["surface"] = "orena.home"
+    # S13: Orena Home opened on nothing selected; an opening on a selection is LEX-008's own path.
+    body["context"].pop("selected_item", None)
     return TurnRequest.model_validate(body)
 
 

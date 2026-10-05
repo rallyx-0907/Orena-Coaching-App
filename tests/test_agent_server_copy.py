@@ -58,6 +58,8 @@ def request(message, *, interface="vi", support="vi", notes=(), trigger="message
         body["context"]["address"] = addressed
     if message is not None:
         body["message"] = message
+    if trigger == "open":  # S13 opens on nothing selected; an opening on a selection is LEX-008's own path
+        del body["context"]["selected_item"]
     return TurnRequest.model_validate(body)
 
 

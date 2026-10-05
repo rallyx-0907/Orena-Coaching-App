@@ -210,8 +210,34 @@ _WORD = re.compile(r"\S+")
 _MARKUP = re.compile(r"\[/?[A-Z][A-Z0-9_]{2,}(?:[ =][^\]\n]*)?\]|(?i:</?(?:button|action|btn)\b[^>\n]*>)")
 
 
+# Markdown in a segment (UX review LEX-006): a segment is plain text, spoken and shown as it is (contract §3), so
+# its markers are taken out - a heading, a quote or a rule keeps its words and loses its mark, a list item becomes
+# a "•" line, emphasis and code lose their marks, a link keeps its words. Line marks are read at the start of a
+# line: the gate cuts at every line break, so a line's mark is at the start of what it is given.
+_MD_LINE = (
+    (re.compile(r"(?m)^[ \t]*#{1,6}[ \t]+"), ""),  # heading
+    (re.compile(r"(?m)^[ \t]*>[ \t]?"), ""),  # quote
+    (re.compile(r"(?m)^[ \t]*(?:-{3,}|\*{3,}|_{3,})[ \t]*$"), ""),  # rule
+    (re.compile(r"(?m)^[ \t]*[-*+][ \t]+"), "• "),  # list item
+)
+_MD_INLINE = (
+    (re.compile(r"\[([^\]\n]+)\]\([^)\s]+\)"), r"\1"),  # link: its words
+    (re.compile(r"\*\*|__"), ""),  # strong
+    (re.compile(r"(?<![\w*])\*(?=\S)([^*\n]+?)(?<=\S)\*(?![\w*])"), r"\1"),  # emphasis
+    (re.compile(r"`+"), ""),  # code
+    # A stray emphasis mark against a word ("是*热闹*的": no word boundary in Chinese); "3 * 4" keeps its star.
+    (re.compile(r"(?<=[^\s\d])\*|\*(?=[^\s\d])"), ""),
+)
+
+
+def _plain(text: str) -> str:
+    for pattern, replacement in _MD_LINE + _MD_INLINE:
+        text = pattern.sub(replacement, text)
+    return text
+
+
 def strip_markup(text: str) -> str:
-    cleaned = _MARKUP.sub("", text)
+    cleaned = _plain(_MARKUP.sub("", text))
     return re.sub(r"[ \t]{2,}", " ", cleaned) if cleaned != text else text
 
 
