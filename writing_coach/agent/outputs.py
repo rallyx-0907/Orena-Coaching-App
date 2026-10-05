@@ -60,6 +60,7 @@ from writing_coach.agent.address import (
     valid_term,
 )
 from writing_coach.agent.events import ActionEvent, Display, MemoryUpdateEvent, SuggestionEvent, make_action
+from writing_coach.agent.honesty import plain_text
 from writing_coach.agent.notes import FORGET, asks_to_remember, confirmed_note, same_note
 from writing_coach.agent.provider import ProviderToolSpec
 from writing_coach.agent.schemas import ClientInfo
@@ -639,7 +640,7 @@ class ReplyOutputs:
             return f"refused: a reference is up to {MAX_REFERENCE_CHARS} characters in {self.target}"
         if len(self.references) >= MAX_REFERENCES:
             return "refused: at most three references"
-        self.references.append((lang, text.strip()))
+        self.references.append((lang, plain_text(text)))  # a reference segment is plain text (§5.1)
         return "accepted"
 
 
