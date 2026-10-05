@@ -161,7 +161,7 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
         </div>
         <div class="s-qs__icons">
           <button type="button" class="s-qs__iconbtn" data-play aria-label="${t('playWord')}" aria-busy="${audioBusy}"${audioBusy ? raw(' disabled') : ''}>${audioBusy ? html`<span class="o-spinner"></span>` : raw(icon('volume-2', { size: 19 }))}</button>
-          <button type="button" class="s-qs__iconbtn" data-save style="background:${card.savedBg};color:${card.savedColor}" aria-label="${t(card.saved ? 'unsaveWord' : 'saveWord')}">${raw(icon('bookmark-check', { size: 19 }))}</button>
+          <button type="button" class="s-qs__iconbtn" data-save style="background:${card.savedBg};color:${card.savedColor}" aria-label="${t('saveWord')}" aria-pressed="${card.saved ? 'true' : 'false'}">${raw(icon('bookmark-check', { size: 19 }))}</button>
         </div>
       </div>
       <div class="s-qs__card">
