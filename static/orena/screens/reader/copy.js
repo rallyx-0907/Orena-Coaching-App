@@ -24,7 +24,7 @@ const KEYS = [
   'chapters', 'markAsFinished', 'nextChapterCta', 'endNoteChapter', 'endNoteArticle', 'endNoteText',
   'translationUnavailable', 'listenStarted', 'listenStopped', 'listenUnavailable',
   'writeResponse', 'kindArticle', 'kindBook', 'kindText', 'modeActive', 'pageOf',
-  'summaryGenerated', 'summaryLoading', 'summaryFailed', 'summaryStays', 'retry', 'translationFailed',
+  'summaryGenerated', 'summaryLoading', 'summaryFailed', 'summaryStays', 'retry', 'translationFailed', 'translationLoading',
   'practiceTitle', 'minutes', 'endNotePractice',
 ];
 
@@ -52,7 +52,7 @@ export const t = defineCopy('reader', {
     listenUnavailable: 'Read-aloud is not available on this device',
     writeResponse: 'Write a response', kindArticle: 'Article', kindBook: 'Book', kindText: 'Imported text', modeActive: 'Active Reading', pageOf: 'p. {n} of {total}',
     practiceTitle: 'Reading Practice', minutes: '{n} min', endNotePractice: 'End of text · {n} questions, then the next reading.',
-    summaryGenerated: 'Generated on request', summaryLoading: 'Writing the summary…', summaryFailed: 'The summary could not be made right now.', summaryStays: 'The text stays in place; close this panel to keep reading.', retry: 'Retry', translationFailed: 'The translation could not be made right now.',
+    summaryGenerated: 'Generated on request', summaryLoading: 'Writing the summary…', summaryFailed: 'The summary could not be made right now.', summaryStays: 'The text stays in place; close this panel to keep reading.', retry: 'Retry', translationFailed: 'The translation could not be made right now.', translationLoading: 'Translating…',
   },
   vi: {
     readingAppearance: 'Giao diện đọc', aa: 'Aa', aaSmaller: 'Chữ nhỏ hơn', aaLarger: 'Chữ lớn hơn', aidsLabel: 'Hỗ trợ', moreLabel: 'Thêm',
@@ -76,7 +76,7 @@ export const t = defineCopy('reader', {
     listenUnavailable: 'Thiết bị này không hỗ trợ đọc to',
     writeResponse: 'Viết phản hồi', kindArticle: 'Bài viết', kindBook: 'Sách', kindText: 'Văn bản đã nhập', modeActive: 'Đọc chủ động', pageOf: 'tr. {n}/{total}',
     practiceTitle: 'Luyện đọc', minutes: '{n} phút', endNotePractice: 'Hết bài · {n} câu hỏi, rồi sang bài đọc tiếp theo.',
-    summaryGenerated: 'Tạo khi bạn yêu cầu', summaryLoading: 'Đang viết bản tóm tắt…', summaryFailed: 'Chưa tạo được bản tóm tắt lúc này.', summaryStays: 'Văn bản vẫn ở nguyên chỗ; đóng bảng này để đọc tiếp.', retry: 'Thử lại', translationFailed: 'Chưa dịch được lúc này.',
+    summaryGenerated: 'Tạo khi bạn yêu cầu', summaryLoading: 'Đang viết bản tóm tắt…', summaryFailed: 'Chưa tạo được bản tóm tắt lúc này.', summaryStays: 'Văn bản vẫn ở nguyên chỗ; đóng bảng này để đọc tiếp.', retry: 'Thử lại', translationFailed: 'Chưa dịch được lúc này.', translationLoading: 'Đang dịch…',
   },
   zh: {
     readingAppearance: '阅读外观', aa: 'Aa', aaSmaller: '缩小文字', aaLarger: '放大文字', aidsLabel: '辅助', moreLabel: '更多',
@@ -100,6 +100,6 @@ export const t = defineCopy('reader', {
     listenUnavailable: '此设备不支持朗读',
     writeResponse: '写一段回应', kindArticle: '文章', kindBook: '书', kindText: '导入的文本', modeActive: '主动阅读', pageOf: '第 {n}/{total} 页',
     practiceTitle: '阅读练习', minutes: '{n} 分钟', endNotePractice: '本文结束 · {n} 道题，然后进入下一篇。',
-    summaryGenerated: '按需生成', summaryLoading: '正在生成摘要…', summaryFailed: '暂时无法生成摘要。', summaryStays: '原文保持不动；关闭此面板即可继续阅读。', retry: '重试', translationFailed: '暂时无法翻译。',
+    summaryGenerated: '按需生成', summaryLoading: '正在生成摘要…', summaryFailed: '暂时无法生成摘要。', summaryStays: '原文保持不动；关闭此面板即可继续阅读。', retry: '重试', translationFailed: '暂时无法翻译。', translationLoading: '正在翻译…',
   },
 });

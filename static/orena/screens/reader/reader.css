@@ -696,3 +696,9 @@
 .s-reader__aside-tag { font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 6px; background: var(--surface2); color: var(--muted); }
 .s-reader__summary { margin: 0; padding-left: 18px; font-size: 15px; line-height: 1.6; color: var(--text); }
 .s-reader__aside-foot { font-size: 13px; color: var(--muted); }
+
+/* LEX-004: the pending translation, in the slot it will fill - two kit bones, a short translation's height. */
+.s-reader__article .s-reader__translation--pending { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.s-reader__translation--pending .o-bone { display: block; height: 11px; border-radius: 6px; }
+.s-reader__translation--pending .o-bone:first-child { width: 92%; }
+.s-reader__translation--pending .o-bone:last-child { width: 64%; }

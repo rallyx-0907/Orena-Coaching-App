@@ -165,8 +165,9 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
         </div>
       </div>
       <div class="s-qs__card">
-        ${card.meaningIsContextual ? html`<div class="s-qs__eyebrow">${t('meaningHere')}</div>` : ''}
-        <div class="s-qs__meaning">${card.meaning}</div>
+        ${meaningPending()
+          ? html`<div class="s-qs__meaning" role="status"><span class="o-spinner"></span></div>`
+          : html`${card.meaningIsContextual ? html`<div class="s-qs__eyebrow">${t('meaningHere')}</div>` : ''}<div class="s-qs__meaning">${card.meaning}</div>`}
       </div>
       ${sourceQuoteMarkup()}
       ${strokeMarkup()}
@@ -184,12 +185,19 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
       </div>
       <div class="s-qs__card">
         <div class="s-qs__eyebrow">${t('meaningHere')}</div>
-        <div class="s-qs__meaning">${t('meaningNotPrepared')}</div>
+        <div class="s-qs__meaning"${contextualPending ? raw(' role="status"') : ''}>${contextualPending ? html`<span class="o-spinner"></span>` : t('meaningNotPrepared')}</div>
       </div>
       ${strokeMarkup()}
       ${sentence ? html`<div class="s-qs__source"><div class="s-qs__eyebrow">${sourceLabel()}</div><div class="s-qs__source-text" lang="${langAttr(lang)}">${sentence}</div></div>` : ''}
-      <div class="s-qs__notice">${t('noGlossNotice')}</div>
+      ${contextualPending ? '' : html`<div class="s-qs__notice">${t('noGlossNotice')}</div>`}
     `;
+  }
+
+  /* LEX-007: while this sentence's own meaning is still being asked for, the meaning slot waits; the
+     quick dictionary answer (often in another language than the learner's support language) is shown
+     only if no contextual meaning arrives. */
+  function meaningPending() {
+    return contextualPending && !card.meaningIsContextual;
   }
 
   /* The word in the sentence it was met in, the word marked (frame 53's quote; LEX-003, R-16). */
@@ -221,7 +229,7 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
       ${audioBusy ? html`<progress class="o-loading__progress" aria-label="${t('playWord')}"></progress>` : ''}
       ${audioAttribution ? html`<div class="s-qs__notice">${audioAttribution}</div>` : ''}
       <div class="s-qs__actions">
-        <button type="button" class="o-btn o-btn--primary s-qs__grow" data-save-cta${loading ? raw(' disabled') : ''}>${t('saveWordCta')}</button>
+        <button type="button" class="o-btn o-btn--primary s-qs__grow" data-save-cta aria-pressed="${card.saved ? 'true' : 'false'}"${loading ? raw(' disabled') : ''}>${card.saved ? t('savedWordCta') : t('saveWordCta')}</button>
         <button type="button" class="s-qs__ask s-qs__grow" data-ask>${markGlyph({ size: 20, symbol: 'ol-intel-still' })} ${t('askDeeper')}</button>
       </div>
       ${loading ? '' : whyMarkup()}

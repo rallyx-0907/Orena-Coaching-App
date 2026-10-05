@@ -242,7 +242,13 @@ export default async function mountReader(element, ctx) {
     if (translationLoad) return translationLoad;
     const target = support();
     if (!target || target === language) return null; // nothing to translate into: the aid is not offered
-    const missing = [...sentenceBySeg.values()].filter((s) => !translations.has(s.seg));
+    // The paragraph being read first, then outwards from it, so the meaning the learner is looking
+    // at arrives first (LEX-004).
+    const here = Number(/^p(\d+)/.exec(readingAnchor()?.seg || '')?.[1] ?? 0);
+    const paraOf = (seg) => Number(/^p(\d+)/.exec(seg)?.[1] ?? 0);
+    const missing = [...sentenceBySeg.values()]
+      .filter((s) => !translations.has(s.seg))
+      .sort((a, b) => Math.abs(paraOf(a.seg) - here) - Math.abs(paraOf(b.seg) - here) || paraOf(a.seg) - paraOf(b.seg));
     if (!missing.length) {
       translationState = 'ready';
       return null;
@@ -440,7 +446,9 @@ export default async function mountReader(element, ctx) {
   function translationMarkup(block) {
     const meaning = paragraphMeaning(block.sentences.map((s) => s.seg), translations, support());
     if (meaning) return html`<p class="s-reader__translation" lang="${langAttr(support())}">${meaning}</p>`;
-    if (translationState === 'loading') return html`<p class="s-reader__translation s-reader__translation--state" role="status"><span class="o-spinner"></span></p>`;
+    // LEX-004: a visible placeholder in each paragraph's own slot while its meaning is asked for,
+    // sized like a short translation so the text below moves little when it arrives.
+    if (translationState === 'loading') return html`<div class="s-reader__translation s-reader__translation--pending" role="status" aria-label="${t('translationLoading')}"><span class="o-bone"></span><span class="o-bone"></span></div>`;
     if (translationState === 'failed') {
       return html`<p class="s-reader__translation s-reader__translation--state">${t('translationFailed')} <button type="button" class="s-reader__retry" data-act="translation-retry">${t('retry')}</button></p>`;
     }
@@ -568,9 +576,29 @@ export default async function mountReader(element, ctx) {
     mount(topEl, topMarkup());
   }
 
+  /* The sentence at the top of the reading region, and how far below the region's top it sits: a
+     repaint (a translation arriving, a note, an aid) keeps that sentence where it was (LEX-004). */
+  function readingAnchor() {
+    const top = scrollEl.getBoundingClientRect().top;
+    for (const el of scrollEl.querySelectorAll('[data-sentence]')) {
+      const box = el.getBoundingClientRect();
+      if (box.bottom > top + 1) return { seg: el.dataset.segment, offset: box.top - top };
+    }
+    return null;
+  }
+
+  function restoreAnchor(anchor) {
+    if (!anchor) return;
+    const el = scrollEl.querySelector(`[data-sentence][data-segment="${anchor.seg}"]`);
+    if (!el) return;
+    const shift = el.getBoundingClientRect().top - scrollEl.getBoundingClientRect().top - anchor.offset;
+    if (Math.abs(shift) > 0.5) scrollEl.scrollTop += shift;
+  }
+
   function paintBody() {
     if (!alive) return;
     const top = scrollEl.scrollTop;
+    const anchor = top > 0 ? readingAnchor() : null;
     const notes = collectNotes();
     const split = (notesOpen || summaryOpen) && device() !== 'mobile';
     mount(
@@ -585,6 +613,7 @@ export default async function mountReader(element, ctx) {
       </div>`,
     );
     scrollEl.scrollTop = top;
+    restoreAnchor(anchor);
   }
 
   function paintSel() {
