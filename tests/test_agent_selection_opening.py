@@ -78,6 +78,42 @@ def test_another_selected_kind_gets_a_general_question():
     assert text == "Bạn muốn biết gì về phần này?" and [i for _, i in suggestions] == ["prompt.explain_selection"]
 
 
+@pytest.mark.parametrize("span", ["我们屋", "半亩隙地", "meticulous records", "后有"])
+def test_part_of_a_sentence_is_called_this_part_not_this_sentence(span):
+    """LEX-013 follow-up: the Reader keeps a dragged span and sends it as a sentence with its sentence id."""
+
+    rt, provider = _runtime([])
+    selected = {"type": "sentence", "id": "p0s0", "text": span, "lang": "zh-CN"}
+    text, suggestions = _shown(list(rt.run(_open(selected), ZH)))
+    assert text == "Bạn muốn biết gì về phần này?"
+    assert suggestions == [("Phần này nghĩa là gì?", "prompt.part_meaning"),
+                           ("Giải thích phần này trong câu", "prompt.part_in_sentence")]  # fmt: skip
+    assert provider.requests == []
+
+
+@pytest.mark.parametrize("sentence", ["我们屋后有半亩隙地。", "“你们爱吃花生么？”", "She kept meticulous records.",
+                                      "Is it here?", "花生的好处很多……"])  # fmt: skip
+def test_a_whole_sentence_keeps_the_sentence_wording(sentence):
+    rt, _ = _runtime([])
+    selected = {"type": "sentence", "id": "p0s0", "text": sentence, "lang": "zh-CN"}
+    text, suggestions = _shown(list(rt.run(_open(selected), ZH)))
+    assert text == "Bạn muốn biết gì về câu này?" and suggestions[0][1] == "prompt.sentence_meaning"
+
+
+@pytest.mark.parametrize(("interface", "label"), [("en", "What does this part mean?"), ("zh-CN", "这部分是什么意思？")])
+def test_the_part_labels_follow_the_interface_language(interface, label):
+    rt, _ = _runtime([])
+    selected = {"type": "sentence", "id": "p0s0", "text": "我们屋", "lang": "zh-CN"}
+    _, suggestions = _shown(list(rt.run(_open(selected, interface=interface), ZH)))
+    assert suggestions[0][0] == label
+
+
+def test_the_prompt_explains_a_part_within_its_whole_sentence():
+    from writing_coach.agent.prompts import INSTRUCTION
+
+    assert "only part of a sentence" in INSTRUCTION
+
+
 def test_an_opening_with_nothing_selected_is_unchanged():
     rt, provider = _runtime([reply("Chào bạn! Hôm nay bạn có 5 từ đến hạn ôn.")])
     list(rt.run(_open(None), ZH))
