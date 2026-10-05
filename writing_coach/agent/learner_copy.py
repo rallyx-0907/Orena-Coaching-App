@@ -472,6 +472,43 @@ CATALOG: Mapping[str, CopyEntry] = MappingProxyType(
             CopyLayer.INTERFACE,
             {"en": "What Orena remembers", "vi": "Orena ghi nhớ gì", "zh-CN": "Orena 记住的内容"},
         ),
+        # Orena opened on a selection (UX review LEX-008): the greeting asks about what was selected, and the ways
+        # forward are questions about it - no review reminder, no "what is this screen for" (agent/turn.py).
+        "opening.selection.word": _entry(
+            CopyLayer.SUPPORT,
+            {"en": "What would you like to know about this word?", "vi": "{user_cap} muốn biết gì về từ này?",
+             "zh-CN": "{user}想了解这个词的什么？"},
+        ),
+        "opening.selection.sentence": _entry(
+            CopyLayer.SUPPORT,
+            {"en": "What would you like to know about this sentence?", "vi": "{user_cap} muốn biết gì về câu này?",
+             "zh-CN": "{user}想了解这句话的什么？"},
+        ),
+        "opening.selection.item": _entry(
+            CopyLayer.SUPPORT,
+            {"en": "What would you like to know about this?", "vi": "{user_cap} muốn biết gì về phần này?",
+             "zh-CN": "{user}想了解这部分的什么？"},
+        ),
+        "prompt.word_meaning": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "What does this word mean here?", "vi": "Từ này nghĩa là gì ở đây?", "zh-CN": "这个词在这里是什么意思？"},
+        ),
+        "prompt.word_usage": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "How is this word used?", "vi": "Từ này dùng thế nào?", "zh-CN": "这个词怎么用？"},
+        ),
+        "prompt.sentence_meaning": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "What does this sentence mean?", "vi": "Câu này nghĩa là gì?", "zh-CN": "这句话是什么意思？"},
+        ),
+        "prompt.sentence_grammar": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Explain the grammar here", "vi": "Giải thích ngữ pháp câu này", "zh-CN": "解释这句话的语法"},
+        ),
+        "prompt.explain_selection": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Explain this", "vi": "Giải thích phần này", "zh-CN": "解释一下这个"},
+        ),
         "prompt.review_due": _entry(
             CopyLayer.INTERFACE,
             {"en": "Review due words", "vi": "Ôn từ đến hạn", "zh-CN": "复习到期的词"},

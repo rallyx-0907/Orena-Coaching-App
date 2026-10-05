@@ -86,6 +86,7 @@ from writing_coach.agent.events import Display
 from writing_coach.agent.outputs import (
     KEEP_NOTE_INTENT,
     KIND_BY_SOURCE,
+    SELECTION_PROMPTS,
     REPLY_TOOL_NAMES,
     ReplyOutputs,
     opening_suggestions,
@@ -295,7 +296,9 @@ class _Turn:
             decisions = self.rt.decider.decide(
                 DecisionState(turn=turn, tier1=tier1, registry=self.rt.capabilities), frozenset(questions)
             )
-            if decisions.identity is not None:
+            if self.opening and self.request.context.selected_item is not None:
+                yield from self._selection_opening()
+            elif decisions.identity is not None:
                 yield from self._identity(decisions.identity)
             else:
                 yield from self._model_turn(turn, tier1, decisions, session)
@@ -412,6 +415,24 @@ class _Turn:
             address=self.address,
         )
         yield self.stream.emit(SegmentEnd(index=0, lang=lang, text=answer, voice_style="neutral_explain"))
+        yield self.stream.emit(DoneEvent(usage=Usage(input_tokens=0, output_tokens=0), trace_id=self.trace_id))
+
+    def _selection_opening(self) -> Iterator[Event]:
+        """Orena opened on a selection (UX review LEX-008): the learner came to ask about it, so the greeting asks
+        what they want to know about this word or sentence, and the ways forward are questions about it - not the
+        snapshot's review reminder or "what is this screen for". From copy: no model, no read (§3.2 read-only)."""
+
+        selected = self.request.context.selected_item
+        kind = selected.type if selected.type in ("word", "sentence") else "item"
+        interface, support = self.locale.interface, self.locale.support
+        lang, greeting = learner_copy.text(f"opening.selection.{kind}", interface=interface, support=support,
+                                           address=self.address)  # fmt: skip
+        self.timeline.mark("final_ready")
+        self.timeline.facts.update(actions=[], suggestions=len(SELECTION_PROMPTS[kind]))
+        yield self.stream.emit(SegmentEnd(index=0, lang=lang, text=greeting, voice_style="neutral_explain"))
+        for intent in SELECTION_PROMPTS[kind]:
+            label = learner_copy.text(intent, interface=interface, support=support)[1]
+            yield self.stream.emit(SuggestionEvent(label=label, intent=intent))
         yield self.stream.emit(DoneEvent(usage=Usage(input_tokens=0, output_tokens=0), trace_id=self.trace_id))
 
     def _rounds(self, messages: list[ProviderMessage], outputs: ReplyOutputs) -> Iterator[Event]:

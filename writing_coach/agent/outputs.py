@@ -79,6 +79,17 @@ if set(PROMPT_INTENTS) & set(SURFACES) or not all(i.startswith(PROMPT_NAMESPACE)
 KEEP_NOTE_INTENT = "prompt.keep_note"
 if KEEP_NOTE_INTENT in PROMPT_INTENTS or KEEP_NOTE_INTENT in SURFACES:
     raise RuntimeError("the keep-note button is the server's, and a prompt intent")
+# The ways forward when Orena is opened on a selection (UX review LEX-008), by what was selected; the server's own,
+# each keyed to its label copy (agent/learner_copy.py). A word, a sentence, or anything else selected.
+SELECTION_PROMPTS: Mapping[str, tuple[str, ...]] = MappingProxyType(
+    {
+        "word": ("prompt.word_meaning", "prompt.word_usage"),
+        "sentence": ("prompt.sentence_meaning", "prompt.sentence_grammar"),
+        "item": ("prompt.explain_selection",),
+    }
+)
+if any(i in SURFACES or not i.startswith(PROMPT_NAMESPACE) for v in SELECTION_PROMPTS.values() for i in v):
+    raise RuntimeError("a selection prompt is a prompt intent, never a navigation intent")
 
 # The domain a record belongs to, by the evidence source a tool read it as (§5.5 `kind`).
 KIND_BY_SOURCE: Mapping[str, str] = MappingProxyType(
