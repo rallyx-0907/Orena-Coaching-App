@@ -1050,8 +1050,10 @@ def normalize_generated_safe_joiner_slots(data: dict[str, Any], zh: bool) -> dic
     The stored UI draws '+' between slots, so a provider slot such as
     ``aux + not`` is structurally invalid. For English ``X + not`` only, split
     the slot when every affected surface binding also has the exact form
-    ``<X surface> not``. Indexes in examples and personal production are
-    remapped together. Anything ambiguous remains untouched and fails closed.
+    ``<X surface> not``. A closed negative-auxiliary option list instead permits
+    an atomic ``aux not`` slot, preserving contracted surfaces. Indexes in
+    examples and personal production are remapped together. Anything ambiguous
+    remains untouched and fails closed.
     """
     if zh:
         return copy.deepcopy(data)
@@ -1059,10 +1061,50 @@ def normalize_generated_safe_joiner_slots(data: dict[str, Any], zh: bool) -> dic
     out = copy.deepcopy(data)
     form_keys = {"affirmative": "formula", "negative": "negative", "question": "question"}
 
+    def negative_auxiliary(surface: Any) -> bool:
+        if not isinstance(surface, str):
+            return False
+        return re.fullmatch(
+            r"(?:(?:am|is|are|was|were|be|do|does|did|have|has|had|"
+            r"can|could|will|would|shall|should|may|might|must|need|dare)\s+not"
+            r"|cannot|(?:is|are|was|were|do|does|did|have|has|had|ca|could|"
+            r"wo|would|sha|should|might|must|need|dare)n['’]t)",
+            surface.strip(), flags=re.IGNORECASE,
+        ) is not None
+
     for form, key in form_keys.items():
         formula = out.get(key) or []
         if not formula:
             continue
+
+        # A contracted negative auxiliary is one surface unit. If a closed
+        # option list and every consumer prove that interpretation, keep it
+        # atomic rather than inventing separate spans for e.g. "didn't".
+        for old_index, slot in enumerate(formula):
+            parts = [part.strip() for part in str(slot.get("text", "")).split("+")]
+            options = slot.get("options") or []
+            if (
+                len(parts) != 2 or parts[0].casefold() not in {"aux", "auxiliary"}
+                or parts[1].casefold() != "not" or slot.get("role") != "aux"
+                or not options
+                or not all(negative_auxiliary(option.get("text")) for option in options)
+            ):
+                continue
+            surfaces = [
+                binding.get("text")
+                for example in out.get("examples", []) if example.get("form") == form
+                for binding in example.get("bindings") or []
+                if binding.get("slot_index") == old_index
+            ]
+            production = out.get("personal_production") or {}
+            if production.get("target_form") == form:
+                rules = (production.get("pattern_rule") or {}).get("slots") or []
+                affected = [rule for rule in rules if rule.get("slot_index") == old_index]
+                if any(rule.get("regex") or not rule.get("any_of") for rule in affected):
+                    continue
+                surfaces.extend(literal for rule in affected for literal in rule["any_of"])
+            if surfaces and all(negative_auxiliary(surface) for surface in surfaces):
+                slot["text"] = " ".join(parts)
 
         split_old: dict[int, tuple[str, dict[str, Any], dict[str, Any]]] = {}
         for old_index, slot in enumerate(formula):

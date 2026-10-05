@@ -1377,6 +1377,71 @@ def test_normalize_generated_safe_joiner_slots_stays_fail_closed_for_ambiguous_s
     assert out == data
 
 
+def _compound_negative_auxiliary_data() -> dict:
+    return {
+        "formula": [],
+        "negative": [{
+            "text": "aux + not", "role": "aux", "label": "negative auxiliary",
+            "optional": False,
+            "options": [{"text": text} for text in ("did not", "has not", "cannot")],
+        }],
+        "question": [],
+        "examples": [{
+            "text": "They didn't.", "form": "negative",
+            "bindings": [{"slot_index": 0, "text": "didn't"}],
+            "annotation": {"en": "Negative ellipsis"},
+            "translation": {"en": "They didn't."},
+        }],
+        "personal_production": {
+            "target_form": "negative",
+            "pattern_rule": {"ordered": True, "slots": [{
+                "slot_index": 0, "any_of": ["didn't", "has not", "cannot"], "regex": "",
+            }]},
+        },
+    }
+
+
+def test_normalize_generated_safe_joiner_slots_preserves_atomic_negative_auxiliary() -> None:
+    data = _compound_negative_auxiliary_data()
+    original = copy.deepcopy(data)
+    out = normalize_generated_safe_joiner_slots(data, False)
+    expected = copy.deepcopy(data)
+    expected["negative"][0]["text"] = "aux not"
+    assert out == expected
+    assert data == original
+    assert normalize_generated_safe_joiner_slots(out, False) == out
+    example, problems = assemble_generated_example(
+        out["examples"][0], {"variants": {"negative": out["negative"]}},
+        False, lambda value: value, 0,
+    )
+    assert not problems
+    assert len(example["spans"]) == 1
+    span = example["spans"][0]
+    assert example["text"][span["start"]:span["end"]] == "didn't"
+    assert span["role"] == "aux"
+
+
+def test_normalize_generated_safe_joiner_slots_atomic_auxiliary_fails_closed() -> None:
+    baseline = _compound_negative_auxiliary_data()
+    cases = []
+    for surface in ("ain't", "did not leave", "not", "did"):
+        data = copy.deepcopy(baseline)
+        data["examples"][0]["bindings"][0]["text"] = surface
+        cases.append(data)
+    data = copy.deepcopy(baseline)
+    data["negative"][0]["options"].append({"text": "leave not"})
+    cases.append(data)
+    data = copy.deepcopy(baseline)
+    data["personal_production"]["pattern_rule"]["slots"][0]["regex"] = ".*"
+    cases.append(data)
+    data = copy.deepcopy(baseline)
+    data["personal_production"]["pattern_rule"]["slots"][0]["any_of"] = ["did not leave"]
+    cases.append(data)
+    for data in cases:
+        assert normalize_generated_safe_joiner_slots(data, False) == data
+    assert normalize_generated_safe_joiner_slots(baseline, True) == baseline
+
+
 def test_complete_generated_terminal_bindings_does_not_guess_non_phrase_slots() -> None:
     data = {
         "formula": [

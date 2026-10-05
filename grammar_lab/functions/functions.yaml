@@ -1097,11 +1097,11 @@ functions:
     - en.canon.c1.013
     - en.canon.c2.004
     - en.canon.c2.010
+    - en.canon.c2.015
     zh-Hans: []
     ja: []
   planned:
-    en:
-    - en.canon.c2.015
+    en: []
     zh-Hans:
     - zh.canon.r5.hsk5_12_topic
     - zh.canon.r5.hsk6_7_topic_172

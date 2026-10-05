@@ -1,0 +1,281 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.c2.015",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.information_structure",
+  "level": {"framework": "cefr", "value": "C2", "rank": 6},
+  "prereqs": ["en.canon.c2.014"],
+  "contrasts": [],
+  "error_tags": ["sentence_structure"],
+  "source_refs": {"r5": ["c2-cross-sentence-ellipsis"]},
+  "point_type": "other",
+  "sequence": 4,
+  "aliases": ["c2-cross-sentence-ellipsis"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Cross-sentence ellipsis", "en": "Cross-sentence ellipsis"},
+    "native_title": "Cross-sentence ellipsis",
+    "level": {"framework": "cefr", "value": "C2", "rank": 6},
+    "summary": {
+      "vi": "Phép tỉnh lược liên câu dùng trợ động từ hoặc động từ thay thế để khôi phục nội dung đã nói ở câu trước, nhưng phải khớp về thì, cực tính và phương thức.",
+      "en": "Cross-sentence ellipsis uses an auxiliary or substitute verb to recover material from a previous sentence, while matching tense, polarity and modality."
+    },
+    "sub": {"vi": "tỉnh lược liên câu", "en": "cross-sentence ellipsis"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn lặp lại một hành động hoặc trạng thái đã nêu ở câu trước mà không cần nhắc lại toàn bộ động từ và tân ngữ.",
+      "en": "When you want to repeat an action or state from a previous sentence without repeating the full verb phrase."
+    },
+    {
+      "vi": "Khi hai câu có cùng thì và cùng cực tính (khẳng định/phủ định), và bạn dùng trợ động từ tương ứng để thay thế.",
+      "en": "When two sentences share the same tense and polarity, and you use the matching auxiliary as the substitute."
+    },
+    {
+      "vi": "Khi bạn dùng so, neither, too, either để nối hai chủ thể với cùng một nội dung đã nói trước đó.",
+      "en": "When you use so, neither, too or either to link two subjects to the same previously stated content."
+    },
+    {
+      "vi": "Khi antecedent ở câu trước rõ ràng và không bị cạnh tranh bởi các danh từ khác trong cùng ngữ cảnh.",
+      "en": "When the antecedent in the previous sentence is clear and not competed for by other nouns in the same context."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "S1",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ câu một", "en": "subject of sentence one"}
+      },
+      {
+        "text": "V",
+        "role": "verb",
+        "label": {"vi": "động từ câu một", "en": "verb of sentence one"}
+      },
+      {
+        "text": "O",
+        "role": "object",
+        "label": {"vi": "tân ngữ câu một", "en": "object of sentence one"},
+        "optional": true
+      },
+      {
+        "text": "S2",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ câu hai", "en": "subject of sentence two"}
+      },
+      {
+        "text": "aux",
+        "role": "aux",
+        "label": {"vi": "trợ động từ thay thế", "en": "substitute auxiliary"},
+        "options": [
+          {"text": "do"},
+          {"text": "does"},
+          {"text": "did"},
+          {"text": "have"},
+          {"text": "has"},
+          {"text": "had"},
+          {"text": "can"},
+          {"text": "could"}
+        ]
+      },
+      {
+        "text": "too/either",
+        "role": "marker",
+        "label": {"vi": "từ nối đồng tình", "en": "additive marker"},
+        "optional": true,
+        "options": [{"text": "too"}, {"text": "either"}]
+      }
+    ],
+    "variants": {
+      "negative": [
+        {
+          "text": "S1",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ câu một", "en": "subject of sentence one"}
+        },
+        {
+          "text": "V",
+          "role": "verb",
+          "label": {"vi": "động từ câu một", "en": "verb of sentence one"}
+        },
+        {
+          "text": "O",
+          "role": "object",
+          "label": {"vi": "tân ngữ câu một", "en": "object of sentence one"},
+          "optional": true
+        },
+        {
+          "text": "S2",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ câu hai", "en": "subject of sentence two"}
+        },
+        {
+          "text": "aux not",
+          "role": "aux",
+          "label": {"vi": "trợ động từ phủ định", "en": "negative auxiliary"},
+          "options": [
+            {"text": "do not"},
+            {"text": "does not"},
+            {"text": "did not"},
+            {"text": "have not"},
+            {"text": "has not"},
+            {"text": "had not"},
+            {"text": "cannot"},
+            {"text": "could not"}
+          ]
+        },
+        {
+          "text": "either",
+          "role": "marker",
+          "label": {"vi": "từ nối phủ định", "en": "negative additive marker"},
+          "optional": true
+        }
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "The first test produced an error. The second did too.",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 14, "role": "subject"},
+        {"start": 15, "end": 23, "role": "verb"},
+        {"start": 24, "end": 32, "role": "object"},
+        {"start": 34, "end": 44, "role": "subject"},
+        {"start": 45, "end": 48, "role": "aux"},
+        {"start": 49, "end": 52, "role": "marker"}
+      ],
+      "annotation": {
+        "vi": "did thay thế cho produced an error ở câu trước.",
+        "en": "did substitutes for produced an error from the previous sentence."
+      },
+      "translation": {
+        "vi": "Bài kiểm tra đầu tiên tạo ra lỗi. Bài thứ hai cũng vậy.",
+        "en": "The first test produced an error. The second did too."
+      }
+    },
+    {
+      "text": "I expected prices to fall. They didn't.",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 2, "end": 10, "role": "verb"},
+        {"start": 11, "end": 25, "role": "object"},
+        {"start": 27, "end": 31, "role": "subject"},
+        {"start": 32, "end": 38, "role": "aux"}
+      ],
+      "annotation": {
+        "vi": "didn't thay thế cho expected prices to fall ở câu trước.",
+        "en": "didn't substitutes for expected prices to fall from the previous sentence."
+      },
+      "translation": {
+        "vi": "Tôi kỳ vọng giá giảm. Chúng đã không giảm.",
+        "en": "I expected prices to fall. They didn't."
+      }
+    },
+    {
+      "text": "Mira has completed the review. Sam hasn't.",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 5, "end": 18, "role": "verb"},
+        {"start": 19, "end": 29, "role": "object"},
+        {"start": 31, "end": 34, "role": "subject"},
+        {"start": 35, "end": 41, "role": "aux"}
+      ],
+      "annotation": {
+        "vi": "hasn't thay thế cho has completed the review ở câu trước.",
+        "en": "hasn't substitutes for has completed the review from the previous sentence."
+      },
+      "translation": {
+        "vi": "Mira đã hoàn thành bản đánh giá. Sam thì chưa.",
+        "en": "Mira has completed the review. Sam hasn't."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Trợ động từ thay thế phải khớp với thì của câu trước; failed là quá khứ đơn nên cần did, không phải has.",
+        "en": "The substitute auxiliary must match the tense of the previous sentence; failed is simple past, so did is required, not has."
+      },
+      "error_tag": "sentence_structure",
+      "l1": ["vi"],
+      "wrong": "The first model failed. The second has too.",
+      "right": "The first model failed. The second did too."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "The first model failed. The second ___ too.",
+      "options": [{"text": "did", "error_tag": null}, {"text": "has", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu trước dùng thì quá khứ đơn (failed), nên trợ động từ thay thế phải là did.",
+        "en": "The previous sentence uses simple past (failed), so the substitute auxiliary must be did."
+      }
+    },
+    {
+      "q": "I expected prices to fall. They ___.",
+      "options": [{"text": "didn't", "error_tag": null}, {"text": "don't", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu trước dùng thì quá khứ đơn (expected), nên trợ động từ phủ định phải là didn't.",
+        "en": "The previous sentence uses simple past (expected), so the negative auxiliary must be didn't."
+      }
+    },
+    {
+      "q": "Mira has completed the review. Sam ___.",
+      "options": [{"text": "hasn't", "error_tag": null}, {"text": "didn't", "error_tag": "tense"}],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu trước dùng thì hiện tại hoàn thành (has completed), nên trợ động từ phủ định phải là hasn't.",
+        "en": "The previous sentence uses present perfect (has completed), so the negative auxiliary must be hasn't."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết hai câu liên tiếp: câu đầu nêu một hành động hoặc trạng thái, câu sau dùng trợ động từ thay thế để tránh lặp lại.",
+      "en": "Write two consecutive sentences: the first states an action or state, the second uses a substitute auxiliary to avoid repetition."
+    },
+    "placeholder": "The first report was accurate. The second ...",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"role": "marker", "any_of": ["either", "too"]}]},
+    "sample": {"text": "The first report was accurate. The second was too."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791121606",
+    "generated_at": "2026-10-04T13:46:46Z",
+    "r5_source": {
+      "ids": ["c2-cross-sentence-ellipsis"],
+      "content_version": 2,
+      "content_hash": "a51a50b3fcb23ef2f3ce61354760047ddd90ae1bc78c16d8d323d0531b98dc54",
+      "corrections": [
+        {
+          "r5_id": "c2-cross-sentence-ellipsis",
+          "issue": "R5's example 'The old system could handle the load. The new one can too.' uses a different modal (could vs can) across sentences, which is not a clean cross-sentence ellipsis because the antecedent modal does not match.",
+          "fix": "Replaced with 'The first test produced an error. The second did too.' and 'I expected prices to fall. They didn't.' and 'Mira has completed the review. Sam hasn't.' to keep tense and modality consistent."
+        },
+        {
+          "r5_id": "c2-cross-sentence-ellipsis",
+          "issue": "R5's mistake 'I expected demand to fall after prices rose and supply tightened. It didn't.' is ambiguous because 'it' can refer to demand, prices or supply; the correction 'Demand did not fall.' is not a cross-sentence ellipsis but a full repetition.",
+          "fix": "Replaced with a tense-mismatch mistake: 'The first model failed. The second has too.' corrected to 'The first model failed. The second did too.'"
+        },
+        {
+          "r5_id": "c2-cross-sentence-ellipsis",
+          "issue": "R5's guided practice includes a transformation prompt with no clear answer and a diagnosis prompt that merely repeats the example.",
+          "fix": "Replaced with three focused cloze questions that test tense agreement in the substitute auxiliary."
+        }
+      ]
+    }
+  },
+  "review": null
+}
