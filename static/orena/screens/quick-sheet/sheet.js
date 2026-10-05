@@ -161,6 +161,13 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
     </div>`;
   }
 
+  /* Where the pronunciation came from, or that there is none (LEX-010/011), in one line reserved under the
+     word from the moment the sheet opens, so the answer arriving never moves the sheet's actions (LEX-012). */
+  function audioSourceMarkup() {
+    const text = audioMissing ? t('noAudioSource') : audioAttribution;
+    return html`<div class="s-qs__audiosrc" role="status"${text ? raw(` title="${String(text).replace(/"/g, '&quot;')}"`) : ''}>${text}</div>`;
+  }
+
   function strokeMarkup() {
     if (card.script !== 'hanzi') return '';
     return html`<div class="s-qs__stroke">
@@ -185,6 +192,7 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
         <div class="s-qs__wordblock">
           <div class="s-qs__word" lang="${langAttr(card.script === 'hanzi' ? 'zh' : 'en')}">${card.word}</div>
           ${metaMarkup()}
+          ${audioSourceMarkup()}
         </div>
         <div class="s-qs__icons">
           <button type="button" class="s-qs__iconbtn" data-play aria-label="${audioMissing ? t('noAudioSource') : t('playWord')}" aria-busy="${audioBusy}"${audioMissing ? raw(' aria-disabled="true" data-missing="1"') : ''}${audioBusy ? raw(' disabled') : ''}>${audioBusy ? html`<span class="o-spinner"></span>` : raw(icon(audioMissing ? 'ban' : 'volume-2', { size: 19 }))}</button>
@@ -254,8 +262,6 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
     return html`
       ${loading ? html`<div class="s-qs__word" lang="${langAttr(lang)}">${target}</div><div role="status"><span class="o-spinner"></span> ${t('lookupLoading')}</div>` : card.hasContent ? contentMarkup() : fallbackMarkup()}
       ${audioBusy ? html`<progress class="o-loading__progress" aria-label="${t('playWord')}"></progress>` : ''}
-      ${audioAttribution ? html`<div class="s-qs__notice">${audioAttribution}</div>` : ''}
-      ${audioMissing ? html`<div class="s-qs__notice" role="status">${t('noAudioSource')}</div>` : ''}
       <div class="s-qs__actions">
         <button type="button" class="o-btn o-btn--primary s-qs__grow" data-save-cta aria-pressed="${card.saved ? 'true' : 'false'}"${loading ? raw(' disabled') : ''}>${card.saved ? t('savedWordCta') : t('saveWordCta')}</button>
         <button type="button" class="s-qs__ask s-qs__grow" data-ask>${markGlyph({ size: 20, symbol: 'ol-intel-still' })} ${t('askDeeper')}</button>
