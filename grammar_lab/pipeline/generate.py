@@ -1254,9 +1254,93 @@ def normalize_generated_safe_joiner_slots(data: dict[str, Any], zh: bool) -> dic
     return out
 
 
+def normalize_generated_nested_context_slots(data: dict[str, Any], zh: bool) -> dict[str, Any]:
+    """Drop proven discourse context, never a second grammar realization.
+
+    Numbered sentence/clause placeholders with no options denote context;
+    explicit substitute/ellipsis slots denote the highlight. Require unique
+    exact spans, at least one strict nesting witness, and valid non-overlapping
+    surviving bindings in every example. A production rule constraining the
+    context cannot be translated mechanically, so it vetoes removal. Unknown
+    language realizations and richer context contracts remain fail-closed.
+    """
+    out = copy.deepcopy(data)
+    if zh:
+        return out
+    realizations = {
+        "one", "ones", "do so", "does so", "did so", "done so", "doing so",
+        "so", "not", "to", "not to", "neither", "former", "latter", "this", "that",
+    }
+    for form, key in {"affirmative": "formula", "negative": "negative", "question": "question"}.items():
+        formula = out.get(key) or []
+        examples = [ex for ex in out.get("examples", []) if ex.get("form") == form]
+        for index in reversed(range(len(formula))):
+            slot = formula[index]
+            if (slot.get("role") not in {"subject", "other"} or slot.get("options")
+                    or re.fullmatch(r"(?:S\d+|sentence(?:\s+\d+)?|clause(?:\s+\d+)?)",
+                                    str(slot.get("text", "")), re.IGNORECASE) is None):
+                continue
+            production = out.get("personal_production") or {}
+            rules = (production.get("pattern_rule") or {}).get("slots") or []
+            if production.get("target_form") == form and any(
+                type(rule.get("slot_index")) is not int
+                or not 0 <= rule["slot_index"] < len(formula)
+                or rule["slot_index"] == index for rule in rules
+            ):
+                continue
+            witnessed = False
+            safe = bool(examples)
+            for example in examples:
+                text = target_text(str(example.get("text", "")), False)
+                bindings = example.get("bindings") or []
+                indexes = [b.get("slot_index") for b in bindings]
+                if (any(type(i) is not int or not 0 <= i < len(formula) for i in indexes)
+                        or len(set(indexes)) != len(indexes) or index not in indexes):
+                    safe = False
+                    break
+                context = next(b for b in bindings if b["slot_index"] == index)
+                outer = target_text(str(context.get("text", "")), False)
+                if not outer or text.count(outer) != 1:
+                    safe = False
+                    break
+                for binding in bindings:
+                    inner_index = binding["slot_index"]
+                    if inner_index == index:
+                        continue
+                    inner = target_text(str(binding.get("text", "")), False)
+                    if inner and inner != outer and inner in outer:
+                        taught = formula[inner_index]
+                        hint = str(taught.get("text", "")).casefold()
+                        if (hint not in {"substitute", "substitution", "ellipsis"}
+                                or inner.casefold() not in realizations
+                                or outer.count(inner) != 1 or text.count(inner) != 1
+                                or re.search(r"(?<!\w)" + re.escape(inner) + r"(?!\w)", outer) is None):
+                            safe = False
+                            break
+                        witnessed = True
+                surviving = [b for b in bindings if b["slot_index"] != index]
+                if not safe or not _locate_generated_bindings(text, surviving, False):
+                    safe = False
+                    break
+            if not safe or not witnessed:
+                continue
+            formula.pop(index)
+            for example in examples:
+                example["bindings"] = [b for b in example["bindings"] if b["slot_index"] != index]
+                for binding in example["bindings"]:
+                    if binding["slot_index"] > index:
+                        binding["slot_index"] -= 1
+            if production.get("target_form") == form:
+                for rule in rules:
+                    if rule["slot_index"] > index:
+                        rule["slot_index"] -= 1
+    return out
+
+
 def normalize_generated_structure(data: dict[str, Any], zh: bool) -> dict[str, Any]:
     """Return the exact structural candidate that full assembly validates."""
     out = normalize_generated_safe_joiner_slots(data, zh)
+    out = normalize_generated_nested_context_slots(out, zh)
     out = normalize_generated_formula_order(out, zh)
     out = complete_generated_single_gap_bindings(out, zh)
     out = complete_generated_terminal_bindings(out, zh)

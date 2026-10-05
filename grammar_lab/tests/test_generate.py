@@ -27,6 +27,7 @@ from grammar_lab.pipeline.generate import (
     complete_generated_terminal_bindings,
     normalize_generated_formula_order,
     normalize_generated_safe_joiner_slots,
+    normalize_generated_structure,
     complete_literal_example_spans,
     pinyin_from_pairs,
     repair_personal_production_rule,
@@ -36,6 +37,73 @@ from grammar_lab.pipeline.generate import (
 from grammar_lab.pipeline.llm_client import LLMClient
 from grammar_lab.pipeline.validate import pattern_rule_matches, validate_lang
 from grammar_lab.tests.conftest import Lab
+
+
+def _nested_substitution_candidate(inner: str, outer: str) -> dict:
+    return {
+        "formula": [
+            {"text": "S1", "role": "subject", "options": []},
+            {"text": "S2", "role": "subject", "options": []},
+            {"text": "substitute", "role": "other", "options": [{"text": "one"}, {"text": "not"}]},
+        ],
+        "negative": [], "question": [],
+        "examples": [{"form": "affirmative", "text": "We compared devices; " + outer + ".",
+                      "bindings": [{"slot_index": 0, "text": "We compared devices"},
+                                   {"slot_index": 1, "text": outer},
+                                   {"slot_index": 2, "text": inner}]}],
+        "personal_production": {"target_form": "affirmative", "pattern_rule": {
+            "ordered": True, "slots": [{"slot_index": 2, "any_of": [inner], "regex": ""}]}},
+    }
+
+
+def test_nested_one_context_collapses_and_remaps_production() -> None:
+    data = _nested_substitution_candidate("one", "the newer one was easier to maintain")
+    original = copy.deepcopy(data)
+    out = normalize_generated_structure(data, False)
+    assert [slot["text"] for slot in out["formula"]] == ["S1", "substitute"]
+    assert out["examples"][0]["bindings"] == [
+        {"slot_index": 0, "text": "We compared devices"}, {"slot_index": 1, "text": "one"}]
+    assert out["personal_production"]["pattern_rule"]["slots"][0]["slot_index"] == 1
+    assert out["examples"][0]["text"] == original["examples"][0]["text"]
+    assert data == original
+    assert normalize_generated_structure(out, False) == out
+
+
+def test_nested_not_to_context_collapses() -> None:
+    data = _nested_substitution_candidate("not to", "others chose not to")
+    out = normalize_generated_structure(data, False)
+    assert len(out["formula"]) == 2
+    assert out["examples"][0]["bindings"][-1] == {"slot_index": 1, "text": "not to"}
+    assert out["examples"][0]["text"] == data["examples"][0]["text"]
+
+
+def test_nested_substitution_ambiguous_context_stays_fail_closed() -> None:
+    data = _nested_substitution_candidate("one", "one replaced another one")
+    assert normalize_generated_structure(data, False) == data
+    data = _nested_substitution_candidate("one", "the newer one was easier to maintain")
+    data["formula"][1]["options"] = [{"text": "was"}]
+    assert normalize_generated_structure(data, False) == data
+    data["formula"][1]["options"] = []
+    data["personal_production"]["pattern_rule"]["slots"].append(
+        {"slot_index": 1, "any_of": [], "regex": ".+"})
+    assert normalize_generated_structure(data, False) == data
+
+
+def test_cached_discourse_candidate_normalizes_without_changing_sentences() -> None:
+    cache = Path(__file__).resolve().parents[1] / ".cache" / "llm" / "deepseek" / (
+        "69d1dac29320f8838796fc23c7dc8a7ee28704ae7920967d6c87f60689056133.json")
+    data = json.loads(cache.read_text(encoding="utf-8"))["data"]
+    original = copy.deepcopy(data)
+    out = normalize_generated_structure(data, False)
+    assert [slot["text"] for slot in out["formula"]] == ["S1", "substitute"]
+    assert out["personal_production"] == original["personal_production"]
+    for index, raw in enumerate(out["examples"]):
+        assert raw["text"] == original["examples"][index]["text"]
+        _example, problems = assemble_generated_example(
+            raw, {"formula": out["formula"]}, False, lambda value: value, index)
+        assert problems == []
+    assert data == original
+
 
 CANNED_BLOCKS = {
     "formula": {"parts": ["He / She / It", "V + s"]},

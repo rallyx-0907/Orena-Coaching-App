@@ -1,0 +1,192 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.c2.016",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.reference",
+  "level": {"framework": "cefr", "value": "C2", "rank": 6},
+  "prereqs": ["en.canon.c2.015"],
+  "contrasts": [],
+  "error_tags": ["coherence"],
+  "source_refs": {"r5": ["c2-discourse-substitution-chains"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": ["c2-discourse-substitution-chains"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Discourse substitution chains", "en": "Discourse substitution chains"},
+    "native_title": "Discourse substitution chains",
+    "level": {"framework": "cefr", "value": "C2", "rank": 6},
+    "summary": {
+      "vi": "Điểm này dạy cách dùng các từ thay thế như one/ones, do so, so/not, former/latter và this/that để nối các câu trong một đoạn mà vẫn giữ rõ nghĩa tham chiếu.",
+      "en": "This point teaches how to use substitutes such as one/ones, do so, so/not, former/latter and this/that to link sentences in a discourse while keeping reference clear."
+    },
+    "sub": {"vi": "chuỗi thay thế", "en": "substitution chains"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn tránh lặp lại một danh từ, động từ hoặc mệnh đề đã xuất hiện ở câu trước.",
+      "en": "When you want to avoid repeating a noun, verb or clause that appeared in a previous sentence."
+    },
+    {
+      "vi": "Khi bạn cần nối nhiều câu trong một đoạn văn mà vẫn giữ mạch lạc và tránh mơ hồ.",
+      "en": "When you need to link several sentences in a paragraph while keeping coherence and avoiding ambiguity."
+    },
+    {
+      "vi": "Khi bạn muốn thể hiện sự tương phản hoặc tương đồng giữa các thực thể đã được nhắc đến.",
+      "en": "When you want to show contrast or similarity between entities already mentioned."
+    },
+    {
+      "vi": "Khi bạn muốn thay thế một mệnh đề hoặc ý kiến mà không cần lặp lại toàn bộ nội dung.",
+      "en": "When you want to substitute a clause or an opinion without repeating the whole content."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S1", "role": "subject", "label": {"vi": "câu thứ nhất", "en": "first sentence"}},
+      {
+        "text": "substitute",
+        "role": "other",
+        "label": {"vi": "từ thay thế", "en": "substitute"},
+        "options": [
+          {"text": "one"},
+          {"text": "ones"},
+          {"text": "do so"},
+          {"text": "so"},
+          {"text": "not"},
+          {"text": "former"},
+          {"text": "latter"},
+          {"text": "this"},
+          {"text": "that"}
+        ]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "The first proposal reduced costs; the second did so as well. This shared advantage made both attractive.",
+      "form": "affirmative",
+      "spans": [{"start": 0, "end": 32, "role": "subject"}, {"start": 45, "end": 51, "role": "other"}],
+      "annotation": {
+        "vi": "did so thay thế cho 'reduced costs'; this thay thế cho toàn bộ lợi thế chung.",
+        "en": "did so substitutes for 'reduced costs'; this substitutes for the shared advantage."
+      },
+      "translation": {
+        "vi": "Đề xuất đầu tiên giảm chi phí; đề xuất thứ hai cũng vậy. Lợi thế chung này khiến cả hai đều hấp dẫn.",
+        "en": "The first proposal reduced costs; the second did so as well. This shared advantage made both attractive."
+      }
+    },
+    {
+      "text": "Some teams adopted the new process; others chose not to.",
+      "form": "affirmative",
+      "spans": [{"start": 0, "end": 34, "role": "subject"}, {"start": 49, "end": 55, "role": "other"}],
+      "annotation": {
+        "vi": "not to thay thế cho 'adopt the new process' ở dạng phủ định.",
+        "en": "not to substitutes for 'adopt the new process' in negative form."
+      },
+      "translation": {
+        "vi": "Một số đội áp dụng quy trình mới; những đội khác chọn không làm vậy.",
+        "en": "Some teams adopted the new process; others chose not to."
+      }
+    },
+    {
+      "text": "The older device was reliable, but the newer one was easier to maintain.",
+      "form": "affirmative",
+      "spans": [{"start": 0, "end": 29, "role": "subject"}, {"start": 45, "end": 48, "role": "other"}],
+      "annotation": {
+        "vi": "one thay thế cho 'device' đã nhắc ở trước.",
+        "en": "one substitutes for 'device' mentioned earlier."
+      },
+      "translation": {
+        "vi": "Thiết bị cũ đáng tin cậy, nhưng cái mới hơn thì dễ bảo trì hơn.",
+        "en": "The older device was reliable, but the newer one was easier to maintain."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Đại từ 'it' không có tiền ngữ rõ ràng vì có thể chỉ phương pháp thứ hai, việc giảm chi phí, hoặc cả sự việc; cần dùng cụm danh từ cụ thể để tái lập tham chiếu.",
+        "en": "'It' has no clear antecedent because it could refer to the second method, the cost reduction, or the whole fact; a specific noun phrase is needed to reset reference."
+      },
+      "error_tag": "coherence",
+      "l1": ["vi"],
+      "wrong": "The first method reduced cost. The second did so. It was important.",
+      "right": "Both methods reduced cost, and this shared effect was important."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "The first proposal reduced costs; the second did ___ as well.",
+      "options": [{"text": "so", "error_tag": null}, {"text": "it", "error_tag": "coherence"}],
+      "answer": 0,
+      "explain": {
+        "vi": "'did so' thay thế cho động từ 'reduced costs' đã xuất hiện trước đó.",
+        "en": "'did so' substitutes for the verb phrase 'reduced costs' mentioned earlier."
+      }
+    },
+    {
+      "q": "Some teams adopted the new process; others chose ___.",
+      "options": [{"text": "not to", "error_tag": null}, {"text": "not", "error_tag": "sentence_structure"}],
+      "answer": 0,
+      "explain": {
+        "vi": "'not to' thay thế cho 'to adopt the new process' ở dạng phủ định.",
+        "en": "'not to' substitutes for 'to adopt the new process' in negative form."
+      }
+    },
+    {
+      "q": "The older device was reliable, but the newer ___ was easier to maintain.",
+      "options": [{"text": "one", "error_tag": null}, {"text": "it", "error_tag": "coherence"}],
+      "answer": 0,
+      "explain": {
+        "vi": "'one' thay thế cho danh từ đếm được 'device' đã nhắc trước.",
+        "en": "'one' substitutes for the countable noun 'device' mentioned earlier."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về hai thứ bạn đã so sánh, dùng 'one' hoặc 'ones' để thay thế danh từ đã nhắc.",
+      "en": "Write a sentence about two things you compared, using 'one' or 'ones' to substitute a noun already mentioned."
+    },
+    "placeholder": "I compared two ...; the first one ...",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["one"], "role": "other"}]},
+    "sample": {
+      "text": "I compared two laptops; the first one was cheaper, but the second one had a better screen."
+    }
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791215303",
+    "generated_at": "2026-10-05T15:48:23Z",
+    "r5_source": {
+      "ids": ["c2-discourse-substitution-chains"],
+      "content_version": 2,
+      "content_hash": "07b7af7ac996a6574a7f7a14862d352f48c1d8ba056faa9dad566ea1edd7478e",
+      "corrections": [
+        {
+          "r5_id": "c2-discourse-substitution-chains",
+          "issue": "R5 example 'The first proposal reduced costs; the second did so as well. This shared advantage made both attractive.' uses 'did so' but the formula in R5 does not specify the substitute slot clearly.",
+          "fix": "Added a formula with a substitute slot that includes 'do so' as an option, and bound the example to the formula slots."
+        },
+        {
+          "r5_id": "c2-discourse-substitution-chains",
+          "issue": "R5 mistake example 'We need new equipment, so we bought a new one.' is ungrammatical because 'equipment' is uncountable and cannot be substituted by 'one'.",
+          "fix": "Replaced with a coherence mistake about unclear pronoun reference, which is a real learner error at C2."
+        },
+        {
+          "r5_id": "c2-discourse-substitution-chains",
+          "issue": "R5 guided practice includes a transformation task with 'Answers vary', which is not suitable for a structured quick practice.",
+          "fix": "Replaced with three cloze questions that test substitution choices with clear correct answers."
+        }
+      ]
+    }
+  },
+  "review": null
+}
