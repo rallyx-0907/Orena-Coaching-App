@@ -445,10 +445,14 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
 
 /* ------------------------------------------------------------------- Sentence Quick Sheet -- */
 
-export async function openSentenceSheet(ctx = {}, { sentence, lang, context = '', source = null, onOpen, onClose, onNote } = {}) {
+export async function openSentenceSheet(ctx = {}, { sentence, focus = '', lang, context = '', source = null, onOpen, onClose, onNote } = {}) {
   await useStyles('screens/quick-sheet/quick-sheet.css');
   const target = String(sentence || '').trim();
   if (!target) return null;
+  // The part of the sentence the learner selected (LEX-013): Translation, Save highlight and Ask deeper act
+  // on exactly that span; the note stays attached to the sentence, as the frame says.
+  const span = String(focus || '').trim();
+  const subject = span && span !== target ? span : target;
   const support = languages().support;
   const owner = ctx.context?.owner || 'local';
   const storage = (() => {
@@ -465,7 +469,7 @@ export async function openSentenceSheet(ctx = {}, { sentence, lang, context = ''
   let translation = { state: 'loading', text: '' }; // the sentence's meaning, from the Reader's own shared source
   let tab = 'Translation';
   const canHighlight = Boolean(storage && source?.content_id && source?.segment);
-  const highlightOn = () => canHighlight && isHighlighted(loadHighlights(storage, owner, source.content_id), source.segment, target);
+  const highlightOn = () => canHighlight && isHighlighted(loadHighlights(storage, owner, source.content_id), source.segment, subject);
   let noteType = 'factual';
   let noteDraft = '';
 
@@ -497,7 +501,7 @@ export async function openSentenceSheet(ctx = {}, { sentence, lang, context = ''
       return;
     }
     try {
-      const response = await api.readingTranslate({ source_language: lang, target_language: support, content_id: source?.content_id || undefined, segments: [{ segment_id: 's0', text: target }] });
+      const response = await api.readingTranslate({ source_language: lang, target_language: support, content_id: source?.content_id || undefined, segments: [{ segment_id: 's0', text: subject }] });
       const meaning = response?.status === 'ready' ? String(response.translations?.[0]?.translated_meaning || '').trim() : '';
       translation = meaning ? { state: 'ready', text: meaning } : { state: 'failed', text: '' };
     } catch {
@@ -508,7 +512,7 @@ export async function openSentenceSheet(ctx = {}, { sentence, lang, context = ''
 
   function toggleSentenceHighlight() {
     if (!canHighlight) return;
-    toggleHighlight(storage, owner, source.content_id, { segment: source.segment, sentence: target });
+    toggleHighlight(storage, owner, source.content_id, { segment: source.segment, sentence: subject });
     scheduleAnnotationPush(storage, owner, source.content_id);
     paint();
     onNote?.();
@@ -586,7 +590,7 @@ export async function openSentenceSheet(ctx = {}, { sentence, lang, context = ''
 
   function bind() {
     sheetEl.querySelector('[data-sheet-close]')?.addEventListener('click', () => handle.close());
-    sheetEl.querySelector('[data-ask]')?.addEventListener('click', () => askSentenceDeeper(target, lang, source));
+    sheetEl.querySelector('[data-ask]')?.addEventListener('click', () => askSentenceDeeper(subject, lang, source));
     sheetEl.querySelector('[data-save-highlight]')?.addEventListener('click', toggleSentenceHighlight);
     sheetEl.querySelector('[data-translate-retry]')?.addEventListener('click', loadTranslation);
     sheetEl.querySelectorAll('[data-tab]').forEach((button) => button.addEventListener('click', () => { tab = button.dataset.tab; paint(); }));

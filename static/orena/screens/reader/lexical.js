@@ -86,7 +86,11 @@ export function mountReaderLexical({ root, unitOf, onTapWord, onTapSentence, onS
     if (!selection || selection.isCollapsed || !selection.rangeCount) return;
     const range = selection.getRangeAt(0);
     if (!root.contains(range.commonAncestorContainer)) return;
-    const text = squash(selection.toString());
+    // The learner's own span (frame 14 keeps it as `selText`), read without the pinyin stacked above the
+    // characters or a note's number: those are reading aids, not the text (LEX-013).
+    const piece = range.cloneContents();
+    piece.querySelectorAll?.('.s-reader__py, .s-reader__notemark').forEach((node) => node.remove());
+    const text = squash(piece.textContent);
     if (text.length < 2) return;
     // The sentence the selection starts in (frame 14's `rdMouseUp` reads the anchor node).
     const unit = unitOf(elementOf(selection.anchorNode)) || unitOf(elementOf(range.commonAncestorContainer));

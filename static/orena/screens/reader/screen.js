@@ -305,6 +305,7 @@ export default async function mountReader(element, ctx) {
     return { all, numBySeg };
   }
 
+  const flat = (value) => String(value ?? '').replace(/\s+/g, ' ').trim();
   const highlighted = (seg) => {
     const s = sentenceBySeg.get(seg);
     return Boolean(s) && isHighlighted(highlights, seg, s.text);
@@ -407,15 +408,72 @@ export default async function mountReader(element, ctx) {
     return html`${Array.from(text).map((ch) => (/\s/.test(ch) ? ch : pystackMarkup(ch, '')))}`;
   }
 
-  function pieceMarkup(piece, seg) {
-    if (!piece.word) return plainMarkup(piece.text);
+  /* The learner's highlighted spans in one sentence, as [start, end) offsets into its text (LEX-013).
+     A highlight of the whole sentence is the sentence's own `is-highlighted`, not a span. */
+  function spanRanges(s, joined) {
+    const whole = flat(s.text);
+    const ranges = [];
+    for (const item of highlights) {
+      if (item.segment !== s.seg) continue;
+      const text = flat(item.sentence);
+      if (!text || text === whole) continue;
+      const at = joined.indexOf(text);
+      if (at >= 0) ranges.push([at, at + text.length]);
+    }
+    return ranges;
+  }
+
+  const inRanges = (ranges, i) => ranges.some(([a, b]) => i >= a && i < b);
+
+  /* `text` starting at `start` in the sentence, with the highlighted characters marked. */
+  function markedText(text, start, ranges) {
+    if (!ranges.length) return text;
+    const out = [];
+    let run = '';
+    let runOn = null;
+    let i = start;
+    for (const ch of Array.from(text)) {
+      const on = inRanges(ranges, i);
+      if (runOn !== null && on !== runOn) {
+        out.push(runOn ? html`<mark class="s-reader__hl">${run}</mark>` : run);
+        run = '';
+      }
+      run += ch;
+      runOn = on;
+      i += ch.length;
+    }
+    if (run) out.push(runOn ? html`<mark class="s-reader__hl">${run}</mark>` : run);
+    return html`${out}`;
+  }
+
+  function stackMarked(hanzi, syllable, on) {
+    return on ? html`<mark class="s-reader__hl">${pystackMarkup(hanzi, syllable)}</mark>` : pystackMarkup(hanzi, syllable);
+  }
+
+  function pieceMarkup(piece, seg, start = 0, ranges = []) {
+    if (!piece.word) {
+      if (!ranges.length) return plainMarkup(piece.text);
+      if (!stacked()) return markedText(piece.text, start, ranges);
+      let i = start;
+      return html`${Array.from(piece.text).map((ch) => {
+        const at = i;
+        i += ch.length;
+        return /\s/.test(ch) ? ch : stackMarked(ch, '', inRanges(ranges, at));
+      })}`;
+    }
     const role = piece.role;
     const isPicked = picked === `${seg}|${piece.text}`;
     const attrs = `${role ? ` data-role="${role}"` : ''}${piece.saved ? ' data-saved="1"' : ''}`;
     const chars = piece.pinyin.length ? piece.pinyin : Array.from(piece.text).map((h) => ({ h, p: '' }));
-    return html`<span class="${cls('s-reader__w', isPicked && 'is-picked')}" data-w="${piece.text}"${raw(attrs)}>${
-      stacked() ? chars.map((c) => pystackMarkup(c.h, c.p)) : piece.text
-    }</span>`;
+    let i = start;
+    const inner = stacked()
+      ? chars.map((c) => {
+          const at = i;
+          i += String(c.h).length;
+          return ranges.length ? stackMarked(c.h, c.p, inRanges(ranges, at)) : pystackMarkup(c.h, c.p);
+        })
+      : markedText(piece.text, start, ranges);
+    return html`<span class="${cls('s-reader__w', isPicked && 'is-picked')}" data-w="${piece.text}"${raw(attrs)}>${inner}</span>`;
   }
 
   function sentenceMarkup(s, numBySeg) {
@@ -423,7 +481,13 @@ export default async function mountReader(element, ctx) {
     const saved = savedWords.get(s.text) || new Set();
     const pieces = segmentSentence(s.raw, tokens, { saved });
     const mark = numBySeg.get(s.seg);
-    return html`<span class="${cls('s-reader__sentence', highlighted(s.seg) && 'is-highlighted', selected?.seg === s.seg && 'is-selected')}" data-sentence data-segment="${s.seg}">${pieces.map((piece) => pieceMarkup(piece, s.seg))}${
+    const ranges = spanRanges(s, pieces.map((piece) => piece.text).join(''));
+    let offset = 0;
+    return html`<span class="${cls('s-reader__sentence', highlighted(s.seg) && 'is-highlighted', selected?.seg === s.seg && 'is-selected')}" data-sentence data-segment="${s.seg}">${pieces.map((piece) => {
+      const start = offset;
+      offset += piece.text.length;
+      return pieceMarkup(piece, s.seg, start, ranges);
+    })}${
       mark ? html`<span class="s-reader__notemark">${mark}</span>` : ''
     }</span>${isZh ? '' : ' '}`;
   }
@@ -495,7 +559,7 @@ export default async function mountReader(element, ctx) {
     const rows = notes.map((entry) => ({ seg: entry.seg, kind: entry.note.type, text: entry.note.text, sentence: entry.sentence }));
     for (const item of highlights) {
       const s = sentenceBySeg.get(item.segment);
-      if (s && highlighted(item.segment)) rows.push({ seg: item.segment, kind: 'highlight', text: s.text, sentence: '' });
+      if (s && flat(item.sentence)) rows.push({ seg: item.segment, kind: 'highlight', text: flat(item.sentence), sentence: '' });
     }
     const order = (seg) => {
       const m = /^p(\d+)s(\d+)$/.exec(seg);
@@ -560,10 +624,10 @@ export default async function mountReader(element, ctx) {
 
   function seltbMarkup() {
     if (!selected || sheetOpen) return '';
-    const on = highlighted(selected.seg);
+    const on = isHighlighted(highlights, selected.seg, selected.span || selected.text);
     const button = (act, iconName, label) =>
       html`<button type="button" class="s-reader__seltb-btn" data-act="${act}" aria-label="${label}">${raw(icon(iconName, { size: 17 }))}<span class="s-reader__seltb-label">${label}</span></button>`;
-    return html`<div class="s-reader__seltb" role="toolbar" aria-label="${selected.text.slice(0, 80)}">
+    return html`<div class="s-reader__seltb" role="toolbar" aria-label="${(selected.span || selected.text).slice(0, 80)}">
       ${button('sel-translate', 'languages', t('selTranslate'))}
       ${button('sel-highlight', 'highlighter', on ? t('selHighlighted') : t('selHighlight'))}
       ${button('sel-note', 'pen-line', t('selNote'))}
@@ -641,10 +705,13 @@ export default async function mountReader(element, ctx) {
 
   /* ---- selection ---- */
 
-  function select(seg) {
+  /* `span` is the text the learner dragged across (frame 14's `selText`): the actions keep that exact
+     span; the sentence around it is its context. A tap, or a drag over the whole sentence, has none. */
+  function select(seg, span = '') {
     const s = sentenceBySeg.get(seg);
     if (!s) return;
-    selected = { seg, text: s.text };
+    const own = flat(span);
+    selected = { seg, text: s.text, span: own && own !== flat(s.text) && flat(s.text).includes(own) ? own : '' };
     paintSel();
   }
 
@@ -694,6 +761,7 @@ export default async function mountReader(element, ctx) {
     stopSpeech();
     const handle = await openSentenceSheet(ctx, {
       sentence: s.text,
+      focus: selected.span,
       lang: language,
       source: { ...source, segment: s.seg },
       onOpen: onSheetOpen,
@@ -727,15 +795,15 @@ export default async function mountReader(element, ctx) {
     else select(seg);
   }
 
-  function onSelect({ unit }) {
-    select(unit.dataset.segment);
+  function onSelect({ unit, text }) {
+    select(unit.dataset.segment, text);
   }
 
   function toggleSelectedHighlight() {
     if (!selected || !storage) return;
     const s = sentenceBySeg.get(selected.seg);
     if (!s) return;
-    const result = toggleHighlight(storage, owner, contentId, { segment: s.seg, sentence: s.text });
+    const result = toggleHighlight(storage, owner, contentId, { segment: s.seg, sentence: selected.span || s.text });
     if (!result.on) for (const gone of highlights) if (!result.list.some((item) => item.id === gone.id)) noteRemoved(contentId, gone.id);
     highlights = result.list;
     scheduleAnnotationPush(storage, owner, contentId);
@@ -753,13 +821,14 @@ export default async function mountReader(element, ctx) {
     if (!selected) return;
     const s = sentenceBySeg.get(selected.seg);
     if (!s) return;
+    const text = selected.span || s.text;
     clearSelection();
     stopSpeech();
     askOrena({
       surface: 'reading.workspace',
       activity_type: 'reading',
       content_id: contentId,
-      selected_item: { type: 'sentence', id: s.seg, text: s.text },
+      selected_item: { type: 'sentence', id: s.seg, text },
     });
   }
 
