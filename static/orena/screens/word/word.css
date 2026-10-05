@@ -364,6 +364,10 @@
 .s-word-stage .stroke-glyph__off {
   fill: var(--border2);
 }
+/* The radical's strokes in the design's radical colour, as in the Quick Sheet's stroke order (one writer). */
+.s-word-stage .stroke-glyph__rad {
+  fill: var(--hz-radical);
+}
 .s-word-ink {
   position: absolute;
   inset: 0;

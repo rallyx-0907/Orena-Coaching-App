@@ -121,7 +121,7 @@ export function mountStrokeSheet(sheet, handle, { word, titleWord = word, chines
     }
     const count = Number(item.data.stroke_count) || 0;
     const upto = state.mode === 'watch' ? state.watchUpto : state.done ? count : state.traceIndex;
-    const glyph = raw(glyphSvg(item.data, { upto, size: GLYPH_SIZE, animate: state.mode === 'watch' && upto < count, className: state.mode === 'trace' ? 'is-tracing' : '' }));
+    const glyph = raw(glyphSvg(item.data, { upto, size: GLYPH_SIZE, animate: state.mode === 'watch' && upto < count, className: state.mode === 'trace' ? 'is-tracing' : '', radical: true }));
     const ink =
       state.mode === 'trace'
         ? html`<svg class="s-word-ink" viewBox="0 0 ${GLYPH_SIZE} ${GLYPH_SIZE}" data-ink></svg>`
