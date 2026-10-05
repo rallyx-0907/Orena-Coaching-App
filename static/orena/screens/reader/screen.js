@@ -358,6 +358,12 @@ export default async function mountReader(element, ctx) {
     return html`<button type="button" class="s-reader__menu-item" data-act="item" data-key="${key}" data-on="${on ? 1 : 0}"${toggle ? raw(` aria-pressed="${on ? 'true' : 'false'}"`) : ''}>${label}</button>`;
   }
 
+  /* A Reading Aid as an icon toggle (D-131, LEX-009): the icon with a filled active state; its name is
+     the tooltip and the accessible name on a desk, and a short caption under it on a phone. */
+  function aidToggle(key, iconName, label, caption, on) {
+    return html`<button type="button" class="s-reader__aid" data-act="item" data-key="${key}" data-on="${on ? 1 : 0}" aria-pressed="${on ? 'true' : 'false'}" aria-label="${label}" title="${label}">${raw(icon(iconName, { size: 18 }))}<span class="s-reader__aid-caption" aria-hidden="true">${caption}</span></button>`;
+  }
+
   function menuMarkup() {
     if (!menuOpen) return '';
     let items = '';
@@ -365,9 +371,13 @@ export default async function mountReader(element, ctx) {
       items = html`<button type="button" class="s-reader__menu-item" data-act="item" data-key="aa-smaller" aria-label="${t('aaSmaller')}">A−</button><button type="button" class="s-reader__menu-item" data-act="item" data-key="aa-larger" aria-label="${t('aaLarger')}">A+</button><span class="s-reader__menu-item s-reader__menu-item--flat">${readerSizePx(settings.size)}px</span>`;
     } else if (menuOpen === 'aids') {
       const canTranslate = Boolean(support()) && support() !== language; // no aid that could only answer "nothing to translate"
-      items = html`${canTranslate ? menuItem('translation', t('translationAid', { lang: String(support() || '').toUpperCase() }), { on: translationOn, toggle: true }) : ''}${menuItem('vocab', t('vocabLensAid'), { on: vocabLensOn, toggle: true })}${menuItem('pos', t('wordRolesAid'), { on: posOn, toggle: true })}${
-        isZh ? menuItem('pinyin', t('pinyinAid'), { on: pinyinOn, toggle: true }) : html`<span class="s-reader__menu-item s-reader__menu-item--flat s-reader__menu-item--note">${t('pinyinNotApplicable')}</span>`
-      }`;
+      const lang = String(support() || '').toUpperCase();
+      // Pinyin is offered only for a Chinese text: an aid that cannot apply is not shown (D-131).
+      items = html`<div class="s-reader__aids" role="group" aria-label="${t('aidsLabel')}">${
+        canTranslate ? aidToggle('translation', 'languages', t('translationAid', { lang }), t('aidShortTranslation', { lang }), translationOn) : ''
+      }${aidToggle('vocab', 'scan-text', t('vocabLensAid'), t('aidShortLens'), vocabLensOn)}${aidToggle('pos', 'tags', t('wordRolesAid'), t('aidShortRoles'), posOn)}${
+        isZh ? aidToggle('pinyin', 'case-lower', t('pinyinAid'), t('aidShortPinyin'), pinyinOn) : ''
+      }</div>`;
     } else {
       items = html`${menuItem('notes', t('notesLabel', { n: collectNotes().all.length }), { on: notesOpen, toggle: true })}${menuItem('summary', t('summaryLabel'), { on: summaryOpen, toggle: true })}${menuItem(
         'save',

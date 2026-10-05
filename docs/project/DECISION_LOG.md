@@ -4188,3 +4188,15 @@ draw and that do not follow the Visual skin. D-109's audit scored "works" by fun
    `READY_FOR_VERIFY`, and never marks them `VERIFIED`.
 7. **Live AI**: no live provider call without the provider lock. Data or cache is used for QA where
    possible, and every on-demand feature caches its result.
+
+## D-131 - Reading Aids are icon-first toggles (design adaptation, LEX-009)
+
+2026-10-05, explicit human decision on UX review LEX-009. Frame 14 draws the Reading Aids (support-language
+meaning, vocabulary lens, word roles, pinyin) as four equal-weight text pills. The independent Learning
+Experience Reviewer found them word-heavy and tall: they wrap to two rows on a phone. The human chose the
+Reviewer's direction over the frame. This is a recorded design adaptation, not a precedent for other pills:
+- each aid is an icon toggle with a clear filled active state and `aria-pressed`;
+- Lucide icons come from the pinned package: `languages`, `scan-text`, `tags`, `case-lower`;
+- on a desk, the name is the tooltip and the accessible name;
+- on a phone, a short caption sits under each icon, so the row stays one line;
+- an aid that cannot apply to the text is not shown (pinyin for an English text).
