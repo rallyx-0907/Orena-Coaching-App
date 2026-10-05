@@ -9,7 +9,7 @@ import { defineCopy } from '../../copy/index.js';
 
 const INTERFACE_KEYS = [
   'labelWord', 'labelSentence', 'lookupLoading',
-  'playWord', 'saveWord', 'unsaveWord',
+  'playWord', 'saveWord', 'unsaveWord', 'noAudioSource', // system labels of the speaker: interface layer (LEX-011)
   'posUnknown', 'strokeOrder', 'practiseStrokes',
   'saveWordCta', 'askDeeper', 'whyHere', 'fullWordDetail',
   'savedToast', 'removedToast',
@@ -28,7 +28,6 @@ const INTERFACE_KEYS = [
 const SUPPORT_KEYS = [
   'sourceSentence', 'meaningHere', 'meaningNotPrepared', 'noGlossNotice', 'whyHereFallback',
   'translationNotPrepared', 'structureNotPrepared', 'vocabEmpty', 'translationFailed', 'whyHereLoading',
-  'noAudioSource',
   'strokeUnavailable', 'strokeWatching', 'strokeStep', 'strokeTryAgain', 'strokeComplete',
 ];
 
