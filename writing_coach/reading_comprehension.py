@@ -43,7 +43,8 @@ from writing_coach.persistence.reading_evidence_repository import (
 _logger = logging.getLogger(__name__)
 
 READING_COMPREHENSION_CAPABILITY = "reading_generator"
-GENERATOR_VERSION = "reading-comprehension/1"
+# /2: an explanation must be written in the set's support language (LEX-025); a /1 set predates that check.
+GENERATOR_VERSION = "reading-comprehension/2"
 MIN_QUESTIONS, MAX_QUESTIONS = 3, 6
 # One more request when a result arrives but cannot make a set (no questions,
 # or too few grounded ones). Never for a provider that failed.
