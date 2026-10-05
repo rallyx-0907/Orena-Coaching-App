@@ -14,6 +14,26 @@ Object.defineProperty(globalThis, 'navigator', { value: { languages: ['en-US'], 
 globalThis.document = { documentElement: { lang: 'en', dataset: {} } };
 
 const { t } = await import('../static/orena/screens/orena/copy.js');
+
+// LEX-006: Orena's answers render their Markdown meaning, never its syntax, and never a command link.
+{
+  const { richText, richInline, hasBlocks, plainText } = await import('../static/orena/kit/rich-text.js');
+  const reply = '### 花生\n**Nghĩa chính:** đậu phộng\n\n- 我爱吃花生。 *Tôi thích ăn lạc.*\n- `huāshēng`\n\n> Hạt nằm dưới đất.\n\n[Open word](command:navigate?{"route":"word","params":{"word":"花生"}}) Tap Open word';
+  const out = String(richText(reply));
+  assert.ok(out.includes('<p class="o-rich__h">花生</p>'), 'a heading is a heading');
+  assert.ok(out.includes('<strong>Nghĩa chính:</strong>'), 'bold is bold');
+  assert.ok(out.includes('<ul class="o-rich__list"><li>我爱吃花生。 <em>Tôi thích ăn lạc.</em></li>'), 'a list with emphasis');
+  assert.ok(out.includes('<code class="o-rich__code">huāshēng</code>'), 'inline code');
+  assert.ok(out.includes('<blockquote class="o-rich__quote">Hạt nằm dưới đất.</blockquote>'), 'a quote');
+  for (const syntax of ['**', '###', '](', 'command:', '{"route"', '&gt; ']) assert.ok(!out.includes(syntax), `no ${syntax} syntax shown`);
+  assert.ok(!out.includes('Open word</a>'), 'an app command is not link text (its action card names it)');
+  assert.ok(String(richInline('[docs](https://example.com/a(b)c)')).includes('href="https://example.com/a(b)c"'), 'a web link with brackets stays a link');
+  assert.ok(String(richInline('<img src=x onerror=1> **ok**')).startsWith('&lt;img'), 'everything is escaped first');
+  assert.ok(!String(richInline('Đang viết **nghĩa', { streaming: true })).includes('**'), 'an unclosed marker is held back while streaming');
+  assert.equal(hasBlocks('one line'), false);
+  assert.equal(hasBlocks('- item'), true);
+  assert.equal(plainText('**Nghĩa:** đậu phộng [Open word](command:navigate?{}) và *lạc*'), 'Nghĩa: đậu phộng  và lạc');
+}
 const { setLanguages } = await import('../static/orena/copy/index.js');
 const {
   surfaceTitle,

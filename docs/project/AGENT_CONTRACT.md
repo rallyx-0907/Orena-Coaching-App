@@ -184,6 +184,12 @@ A reply is a list of segments, not one string, so mixed-language speech and refe
 { "index": 1, "lang": "zh-CN", "text": "是", "voice_style": "reference" }
 ```
 
+A segment's `text` may use a Markdown subset, which the client renders as its meaning, never as syntax (LEX-006):
+headings, **bold**, *italic*, bulleted and numbered lists, `> ` quotes, inline `code`, and `http(s)` links. A
+`reference` segment is plain text. Going somewhere in the app is always an `action` event (`navigate`, §7), never
+a link written into the text: the client drops a non-web link, label and all, rather than show a command payload.
+A simple question gets a short answer: the meaning first, then grouped readings and examples, one per line.
+
 ### 5.2 `voice_style` (closed enum)
 
 ```text

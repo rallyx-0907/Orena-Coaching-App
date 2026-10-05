@@ -10,9 +10,19 @@ import { fromContractLang } from '../../agent/contract.js';
 import { t } from './copy.js';
 import { actionCardMarkup, evidenceMarkup, hasCard } from './cards.js';
 import { offerableActions, errorText } from './model.js';
+import { richText, richInline, hasBlocks } from '../../kit/rich-text.js';
 
-function segmentsMarkup(prefix, segments) {
-  return segments.map((segment) => html`<span lang="${langAttr(fromContractLang(segment.lang))}" class="${segment.voice_style === 'reference' ? `${prefix}__ref` : ''}">${segment.text}</span>`);
+/* A segment's text is Markdown (LEX-006): its meaning is rendered - headings, bold, lists, quotes, web links -
+   never its syntax, and an app command written as a link is dropped (the action is its own card). A
+   reference segment (a word to hear) stays plain. `streaming` holds back a marker not yet closed. */
+function segmentsMarkup(prefix, segments, streaming) {
+  return segments.map((segment) => {
+    const lang = langAttr(fromContractLang(segment.lang));
+    if (segment.voice_style === 'reference') return html`<span lang="${lang}" class="${prefix}__ref">${segment.text}</span>`;
+    return hasBlocks(segment.text)
+      ? html`<div lang="${lang}">${richText(segment.text, { streaming })}</div>`
+      : html`<span lang="${lang}">${richInline(segment.text, { streaming })}</span>`;
+  });
 }
 
 function errorMarkup(prefix, error) {
@@ -34,7 +44,7 @@ export function messageMarkup(message, { surface, ranActions, supported }) {
   return html`<div class="${prefix}__row ${prefix}__row--orena">
     <div class="${prefix}__msg">
       ${withMark ? intelChip({ size: 28, mark: 22 }) : ''}
-      ${segments.length ? html`<div class="${prefix}__bubble ${prefix}__bubble--orena">${segmentsMarkup(prefix, segments)}</div>` : ''}
+      ${segments.length ? html`<div class="${prefix}__bubble ${prefix}__bubble--orena">${segmentsMarkup(prefix, segments, !message.done)}</div>` : ''}
       ${errorInline ? errorMarkup(prefix, message.error) : ''}
     </div>
     ${message.evidence?.length ? html`<div class="${prefix}__sources">${message.evidence.map((evidence) => evidenceMarkup(evidence))}</div>` : ''}

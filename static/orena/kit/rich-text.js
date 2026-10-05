@@ -1,0 +1,158 @@
+/* Orena's written answers, read as the learner should see them (LEX-006): the Markdown a reply carries -
+   headings, bold, italic, lists, quotes, inline code and web links - rendered as their meaning, never as the
+   syntax. Everything is escaped first (kit/html.js); only the markup made here is trusted.
+
+   A link that is not a web link (`command:navigate?{…}` and the like) is not shown at all - neither its label nor
+   its payload: the action it names is offered as a real, named action card beside the answer
+   (AGENT_CONTRACT §4 actions), not as link text.
+
+   While a reply streams, a bold or italic marker whose closing half has not arrived yet is held back, so the
+   learner never sees a stray `**` that the next chunk would have closed. */
+
+import { raw, esc } from './html.js';
+
+const WEB_LINK = /^(https?:\/\/|mailto:)/i;
+
+/* `[label](target)` with a balanced target, found by scanning rather than one regex: a payload may hold
+   brackets, braces and quotes. Returns [{ type: 'text'|'link', … }]. */
+function splitLinks(text) {
+  const parts = [];
+  let at = 0;
+  let cursor = 0;
+  while (cursor < text.length) {
+    const open = text.indexOf('[', cursor);
+    if (open < 0) break;
+    const close = text.indexOf('](', open + 1);
+    if (close < 0) break;
+    const label = text.slice(open + 1, close);
+    if (label.includes('\n') || label.includes('[')) {
+      cursor = open + 1;
+      continue;
+    }
+    let depth = 1;
+    let end = close + 2;
+    for (; end < text.length && depth; end += 1) {
+      if (text[end] === '(') depth += 1;
+      else if (text[end] === ')') depth -= 1;
+      else if (text[end] === '\n') break;
+    }
+    if (depth) {
+      cursor = open + 1;
+      continue;
+    }
+    if (open > at) parts.push({ type: 'text', value: text.slice(at, open) });
+    parts.push({ type: 'link', label, target: text.slice(close + 2, end - 1).trim() });
+    at = end;
+    cursor = end;
+  }
+  if (at < text.length) parts.push({ type: 'text', value: text.slice(at) });
+  return parts;
+}
+
+/* Emphasis and code inside escaped text. `streaming` holds back an unclosed trailing marker. */
+function marks(escaped, streaming) {
+  let text = escaped;
+  if (streaming) {
+    if ((text.match(/\*\*/g) || []).length % 2) text = text.replace(/\*\*(?!.*\*\*)/s, '');
+    if ((text.match(/`/g) || []).length % 2) text = text.replace(/`(?!.*`)/s, '');
+  }
+  return text
+    .replace(/`([^`\n]+)`/g, '<code class="o-rich__code">$1</code>')
+    .replace(/\*\*([^*\n](?:[^\n]*?[^*\n])?)\*\*/g, '<strong>$1</strong>')
+    .replace(/__([^_\n](?:[^\n]*?[^_\n])?)__/g, '<strong>$1</strong>')
+    .replace(/(^|[^*\w])\*([^*\s](?:[^*\n]*?[^*\s])?)\*(?!\*)/g, '$1<em>$2</em>')
+    .replace(/(^|[^_\w])_([^_\s](?:[^_\n]*?[^_\s])?)_(?![_\w])/g, '$1<em>$2</em>');
+}
+
+/* One line's inline content as markup. */
+export function richInline(text, { streaming = false } = {}) {
+  return raw(
+    splitLinks(String(text ?? ''))
+      .map((part) => {
+        if (part.type === 'text') return marks(esc(part.value), streaming);
+        if (!WEB_LINK.test(part.target)) return ''; // an app command is an action card, not link text
+        return `<a class="o-rich__link" href="${esc(part.target)}" target="_blank" rel="noopener noreferrer">${marks(esc(part.label), false)}</a>`;
+      })
+      .join(''),
+  );
+}
+
+const BLOCK = /^\s*(#{1,6}\s|[-*+•]\s|\d+[.)]\s|>\s?)/m;
+
+/* Whether a text needs block layout (headings, lists, quotes or more than one paragraph). */
+export function hasBlocks(text) {
+  const value = String(text ?? '');
+  return BLOCK.test(value) || /\n/.test(value.trim());
+}
+
+/* A whole answer as blocks: headings, lists (bulleted and numbered), quotes and paragraphs; a single line
+   break inside a paragraph stays a line break. */
+export function richText(text, { streaming = false } = {}) {
+  const lines = String(text ?? '').replace(/\r\n?/g, '\n').split('\n');
+  const out = [];
+  let paragraph = [];
+  let list = null; // { tag: 'ul'|'ol', items: [] }
+  let quote = [];
+
+  const flushParagraph = () => {
+    if (paragraph.length) out.push(`<p class="o-rich__p">${paragraph.map((line) => richInline(line, { streaming })).join('<br>')}</p>`);
+    paragraph = [];
+  };
+  const flushList = () => {
+    if (list) out.push(`<${list.tag} class="o-rich__list">${list.items.map((item) => `<li>${richInline(item, { streaming })}</li>`).join('')}</${list.tag}>`);
+    list = null;
+  };
+  const flushQuote = () => {
+    if (quote.length) out.push(`<blockquote class="o-rich__quote">${quote.map((line) => richInline(line, { streaming })).join('<br>')}</blockquote>`);
+    quote = [];
+  };
+  const flush = () => {
+    flushParagraph();
+    flushList();
+    flushQuote();
+  };
+
+  for (const line of lines) {
+    const heading = /^\s*(#{1,6})\s+(.*)$/.exec(line);
+    const bullet = /^\s*[-*+•]\s+(.*)$/.exec(line);
+    const numbered = /^\s*\d+[.)]\s+(.*)$/.exec(line);
+    const quoted = /^\s*>\s?(.*)$/.exec(line);
+    if (!line.trim()) {
+      flush();
+    } else if (heading) {
+      flush();
+      out.push(`<p class="o-rich__h">${richInline(heading[2], { streaming })}</p>`);
+    } else if (bullet || numbered) {
+      flushParagraph();
+      flushQuote();
+      const tag = bullet ? 'ul' : 'ol';
+      if (list && list.tag !== tag) flushList();
+      if (!list) list = { tag, items: [] };
+      list.items.push((bullet || numbered)[1]);
+    } else if (quoted) {
+      flushParagraph();
+      flushList();
+      quote.push(quoted[1]);
+    } else {
+      flushList();
+      flushQuote();
+      paragraph.push(line.trim());
+    }
+  }
+  flush();
+  return raw(`<div class="o-rich">${out.join('')}</div>`);
+}
+
+/* The same answer as plain words, for the voice: no syntax read aloud, no command link. */
+export function plainText(text) {
+  return splitLinks(String(text ?? ''))
+    .map((part) => (part.type === 'text' ? part.value : WEB_LINK.test(part.target) ? part.label : ''))
+    .join('')
+    .replace(/^\s*(#{1,6}|[-*+•]|\d+[.)]|>)\s+/gm, '')
+    .replace(/(\*\*|__|`)/g, '')
+    .replace(/(^|\s)[*_](\S)/g, '$1$2')
+    .replace(/(\S)[*_](?=\s|$|[.,;:!?])/g, '$1')
+    .replace(/[ \t]+\n/g, '\n')
+    .trim();
+}
+

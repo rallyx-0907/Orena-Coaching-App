@@ -1,6 +1,7 @@
 /* Pure data/logic for Orena Home, the Contextual Orena panel, full-screen voice and the coach-
    notes sheet (D1 §6, E5 §6-7). No DOM: scripts/test_orena_screen_orena.mjs exercises every
    export directly. */
+import { plainText } from '../../kit/rich-text.js';
 import { intentRoute } from '../../agent/intents.js';
 import { ACTIONS } from '../../agent/contract.js';
 import { byId } from '../../shell/routes.js';
@@ -123,7 +124,8 @@ export function speakableText(reply) {
   if (!reply?.done || reply.error || reply.metered === 'soft_limited' || !Array.isArray(reply.segments)) return '';
   return reply.segments
     .filter((segment) => segment.voice_style !== 'reference')
-    .map((segment) => String(segment.text || '').trim())
+    // The voice says the words, never the Markdown or a command link (LEX-006).
+    .map((segment) => plainText(segment.text))
     .filter(Boolean)
     .join(' ');
 }
