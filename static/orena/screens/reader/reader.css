@@ -360,6 +360,41 @@
   /* A reading aid, not the text: a drag across the characters does not take the pinyin with it (LEX-013). */
   -webkit-user-select: none;
   user-select: none;
+  /* Frame 14's 1px either side, so neighbouring syllables never run together (LEX-019). */
+  padding: 0 1px;
+}
+
+/* With pinyin stacked (LEX-019), as frame 14 builds it: a word is one inline-flex group, so its characters
+   never wrap apart; and every word cue - kept-word fill, key-word and word-type underline - sits on the
+   characters, the learning text, while the pinyin above stays a quiet aid. (A cue on the word itself cannot
+   reach characters inside their stacks, so it is moved to them.) */
+.s-reader__article[data-stacked="1"] .s-reader__w {
+  display: inline-flex;
+  vertical-align: bottom;
+}
+.s-reader__article[data-stacked="1"] .s-reader__w[data-saved] {
+  background: none;
+}
+.s-reader__article[data-stacked="1"] .s-reader__w[data-saved] .s-reader__hz {
+  background: color-mix(in oklab, var(--skill-vocab) 22%, transparent);
+}
+.s-reader__article[data-stacked="1"][data-lens] .s-reader__w[data-saved] .s-reader__hz {
+  text-decoration: underline dotted;
+  text-decoration-color: var(--skill-vocab);
+  text-underline-offset: 4px;
+}
+.s-reader__article[data-stacked="1"][data-pos] .s-reader__w[data-role] .s-reader__hz {
+  text-decoration: underline dotted;
+  text-decoration-color: color-mix(in oklab, var(--role) 55%, transparent);
+  text-underline-offset: 4px;
+}
+.s-reader__article[data-stacked="1"] .s-reader__w.is-picked[data-role] {
+  background: none;
+}
+.s-reader__article[data-stacked="1"] .s-reader__w.is-picked[data-role] .s-reader__hz {
+  color: var(--role);
+  background: color-mix(in oklab, var(--role) 18%, transparent);
+  text-decoration-color: var(--role);
 }
 
 .s-reader__notemark {
