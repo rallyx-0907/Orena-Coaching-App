@@ -390,3 +390,6 @@
 
 /* Retry after a provider failure (D-130): a text action in the panel's own line. */
 .s-qs__retry { border: 0; background: none; padding: 0; color: var(--accent-text); font: inherit; font-weight: 600; cursor: pointer; }
+
+/* LEX-010: a word with no recording - the speaker shows it is unavailable, beside the sheet's own notice. */
+.s-qs__iconbtn[data-missing="1"] { color: var(--muted); opacity: 0.6; cursor: default; }

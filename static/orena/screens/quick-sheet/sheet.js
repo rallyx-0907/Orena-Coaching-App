@@ -118,6 +118,7 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
   let strokes = null;
   let audioBusy = false;
   let audioAttribution = '';
+  let audioMissing = false; // asked, and no recording exists for this word (LEX-010)
   let contextualPending = true; // the meaning in this sentence is still being asked for
   let contextualFailed = false; // the provider failed (contextStatus provider_error): offer Retry
 
@@ -160,7 +161,7 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
           ${metaMarkup()}
         </div>
         <div class="s-qs__icons">
-          <button type="button" class="s-qs__iconbtn" data-play aria-label="${t('playWord')}" aria-busy="${audioBusy}"${audioBusy ? raw(' disabled') : ''}>${audioBusy ? html`<span class="o-spinner"></span>` : raw(icon('volume-2', { size: 19 }))}</button>
+          <button type="button" class="s-qs__iconbtn" data-play aria-label="${audioMissing ? t('noAudioSource') : t('playWord')}" aria-busy="${audioBusy}"${audioMissing ? raw(' aria-disabled="true" data-missing="1"') : ''}${audioBusy ? raw(' disabled') : ''}>${audioBusy ? html`<span class="o-spinner"></span>` : raw(icon(audioMissing ? 'ban' : 'volume-2', { size: 19 }))}</button>
           <button type="button" class="s-qs__iconbtn" data-save style="background:${card.savedBg};color:${card.savedColor}" aria-label="${t('saveWord')}" aria-pressed="${card.saved ? 'true' : 'false'}">${raw(icon('bookmark-check', { size: 19 }))}</button>
         </div>
       </div>
@@ -228,6 +229,7 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
       ${loading ? html`<div class="s-qs__word" lang="${langAttr(lang)}">${target}</div><div role="status"><span class="o-spinner"></span> ${t('lookupLoading')}</div>` : card.hasContent ? contentMarkup() : fallbackMarkup()}
       ${audioBusy ? html`<progress class="o-loading__progress" aria-label="${t('playWord')}"></progress>` : ''}
       ${audioAttribution ? html`<div class="s-qs__notice">${audioAttribution}</div>` : ''}
+      ${audioMissing ? html`<div class="s-qs__notice" role="status">${t('noAudioSource')}</div>` : ''}
       <div class="s-qs__actions">
         <button type="button" class="o-btn o-btn--primary s-qs__grow" data-save-cta aria-pressed="${card.saved ? 'true' : 'false'}"${loading ? raw(' disabled') : ''}>${card.saved ? t('savedWordCta') : t('saveWordCta')}</button>
         <button type="button" class="s-qs__ask s-qs__grow" data-ask>${markGlyph({ size: 20, symbol: 'ol-intel-still' })} ${t('askDeeper')}</button>
@@ -257,7 +259,7 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
     sheetEl.querySelector('[data-play]')?.addEventListener('click', async () => {
       if (card.audioUrl) playUrl(card.audioUrl, sheetEl.querySelector('[data-play]'));
       else {
-        if (audioBusy) return;
+        if (audioBusy || audioMissing) return;
         audioBusy = true;
         paint();
         try {
@@ -267,7 +269,10 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
           audioAttribution = result?.available ? String(result.attribution || '') : '';
           paint();
           if (result?.available && result.url) playUrl(result.url, sheetEl.querySelector('[data-play]'));
-          else toast(t('noAudioSource'));
+          else {
+            audioMissing = true;
+            paint();
+          }
         } catch { if (alive) toast(t('noAudioSource')); }
         finally { if (audioBusy) { audioBusy = false; if (alive) paint(); } }
       }

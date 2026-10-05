@@ -4197,6 +4197,6 @@ Experience Reviewer found them word-heavy and tall: they wrap to two rows on a p
 Reviewer's direction over the frame. This is a recorded design adaptation, not a precedent for other pills:
 - each aid is an icon toggle with a clear filled active state and `aria-pressed`;
 - Lucide icons come from the pinned package: `languages`, `scan-text`, `tags`, `case-lower`;
-- on a desk, the name is the tooltip and the accessible name;
-- on a phone, a short caption sits under each icon, so the row stays one line;
+- a short caption sits under each icon on every breakpoint (the Reviewer's follow-up: one strategy, not
+  hover-only on a desk), and the full name is the tooltip and the accessible name; the row stays one line;
 - an aid that cannot apply to the text is not shown (pinyin for an English text).

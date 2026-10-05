@@ -358,8 +358,8 @@ export default async function mountReader(element, ctx) {
     return html`<button type="button" class="s-reader__menu-item" data-act="item" data-key="${key}" data-on="${on ? 1 : 0}"${toggle ? raw(` aria-pressed="${on ? 'true' : 'false'}"`) : ''}>${label}</button>`;
   }
 
-  /* A Reading Aid as an icon toggle (D-131, LEX-009): the icon with a filled active state; its name is
-     the tooltip and the accessible name on a desk, and a short caption under it on a phone. */
+  /* A Reading Aid as an icon toggle (D-131, LEX-009): the icon with a filled active state and a short
+     caption under it on every breakpoint; the full name is the tooltip and the accessible name. */
   function aidToggle(key, iconName, label, caption, on) {
     return html`<button type="button" class="s-reader__aid" data-act="item" data-key="${key}" data-on="${on ? 1 : 0}" aria-pressed="${on ? 'true' : 'false'}" aria-label="${label}" title="${label}">${raw(icon(iconName, { size: 18 }))}<span class="s-reader__aid-caption" aria-hidden="true">${caption}</span></button>`;
   }
