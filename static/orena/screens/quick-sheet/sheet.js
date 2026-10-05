@@ -55,6 +55,11 @@ import { pullIntoDevice, scheduleAnnotationPush, noteRemoved } from '../reader/a
 import { keepProvenance } from '../../product/account-records.js';
 import { glyphSvg } from '../../product/hanzi-strokes.js';
 
+// Frame 53's looping stroke animation: one stroke per step (Stroke Practice's own pace), then a pause
+// before the character writes itself again (the frame's delayBetweenLoops).
+const STROKE_STEP_MS = 700;
+const STROKE_LOOP_HOLD_MS = 1400;
+
 let audio = null;
 function playUrl(url, button = null) {
   try {
@@ -168,12 +173,60 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
     return html`<div class="s-qs__audiosrc" role="status"${text ? raw(` title="${String(text).replace(/"/g, '&quot;')}"`) : ''}>${text}</div>`;
   }
 
+  /* Frame 53's stroke order: each character in its own 76px tile, writing itself stroke by stroke on a loop
+     (the frame's looping character animation), so the order is seen in the sheet; "Practise strokes" is only
+     for writing it yourself. Reduced motion shows the whole character still. */
+  const strokeLoop = { upto: [], timer: 0, hold: 0 };
+  const reducedMotion = () => Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
+
+  function tileGlyph(character, index) {
+    const count = Number(character?.stroke_count) || character?.stroke_paths?.length || 0;
+    const upto = reducedMotion() ? count : Math.min(strokeLoop.upto[index] ?? 0, count);
+    return raw(glyphSvg(character, { upto, animate: upto < count }));
+  }
+
+  function strokeTick() {
+    const characters = strokes?.characters || [];
+    if (!alive || !sheetEl?.isConnected) return stopStrokeLoop();
+    let finished = true;
+    characters.forEach((character, index) => {
+      const count = Number(character?.stroke_count) || character?.stroke_paths?.length || 0;
+      if ((strokeLoop.upto[index] ?? 0) < count) {
+        strokeLoop.upto[index] = (strokeLoop.upto[index] ?? 0) + 1;
+        finished = false;
+      }
+      const tile = sheetEl.querySelector(`[data-stroke-tile="${index}"]`);
+      if (tile) mount(tile, html`${tileGlyph(character, index)}`);
+    });
+    if (finished) {
+      clearInterval(strokeLoop.timer);
+      strokeLoop.timer = 0;
+      strokeLoop.hold = window.setTimeout(startStrokeLoop, STROKE_LOOP_HOLD_MS);
+    }
+  }
+
+  function startStrokeLoop() {
+    stopStrokeLoop();
+    if (!alive || !strokes?.characters?.length || reducedMotion()) return;
+    strokeLoop.upto = strokes.characters.map(() => 0);
+    strokeLoop.timer = window.setInterval(strokeTick, STROKE_STEP_MS);
+  }
+
+  function stopStrokeLoop() {
+    clearInterval(strokeLoop.timer);
+    clearTimeout(strokeLoop.hold);
+    strokeLoop.timer = 0;
+    strokeLoop.hold = 0;
+  }
+
   function strokeMarkup() {
     if (card.script !== 'hanzi') return '';
     return html`<div class="s-qs__stroke">
       <div class="s-qs__eyebrow">${t('strokeOrder')}</div>
-      ${strokes?.characters?.map(character => html`<span class="s-qs__stroke-preview">${raw(glyphSvg(character, {upto: character.stroke_count}))}</span>`) || ''}
-      <button type="button" class="o-btn o-btn--secondary o-btn--sm" data-practise-strokes>${raw(icon('pencil', { size: 16 }))} ${t('practiseStrokes')}</button>
+      ${strokes?.characters?.length
+        ? html`<div class="s-qs__stroke-tiles" lang="zh">${strokes.characters.map((character, index) => html`<span class="s-qs__stroke-tile" data-stroke-tile="${index}">${tileGlyph(character, index)}</span>`)}</div>`
+        : ''}
+      <button type="button" class="o-btn o-btn--secondary o-btn--sm s-qs__stroke-practise" data-practise-strokes>${raw(icon('pencil', { size: 16 }))} ${t('practiseStrokes')}</button>
     </div>`;
   }
 
@@ -402,6 +455,7 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
             if (!alive) return;
             strokes = result;
             paint();
+            startStrokeLoop();
           }).catch(() => {});
         }
         (async () => {
@@ -439,6 +493,7 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
         })();
         return () => {
           alive = false;
+          stopStrokeLoop();
         };
       },
       onClose: () => onClose?.(),
