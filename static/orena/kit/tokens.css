@@ -144,6 +144,8 @@
   --skill-write: #7B4FD8;
   --skill-vocab: #F2B705;
   --skill-grammar: #4867EC;
+  /* A character's radical strokes in the stroke-order animation: the design's stroke writer `radicalColor`. */
+  --hz-radical: #FF7A3D;
   /* The brand mark's disc, as the design draws it behind ol-mark / ol-intel (brand artwork,
      D-090), and the toast's fixed ink surface. */
   --mark-disc: radial-gradient(circle at 30% 20%, #2B2158, #150F2E 72%);

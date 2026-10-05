@@ -28,14 +28,18 @@ function escapeAttr(value) {
    in full, and the rest of it faint (or absent when `faint` is false). The
    pack's glyph box has y running upward, so every renderer flips it once -
    without the transform the character renders upside down. */
-export function glyphSvg(character, { upto = 0, size = 1024, faint = true, className = '', animate = false } = {}) {
+export function glyphSvg(character, { upto = 0, size = 1024, faint = true, className = '', animate = false, radical = false } = {}) {
   const paths = character?.stroke_paths || [];
+  // `radical`: the radical's strokes (the pack's radStrokes) are drawn in their own colour, as the design's
+  // stroke writer draws them (radicalColor).
+  const radicalSet = new Set(radical ? (character?.radical_strokes || []).map(Number) : []);
+  const on = (at) => (radicalSet.has(at) ? 'stroke-glyph__on stroke-glyph__rad' : 'stroke-glyph__on');
   const drawn = paths
     .map((path, at) =>
       animate && at === upto && character?.medians?.[at]?.length
-        ? `<defs><mask id="stroke-watch-${at}" maskUnits="userSpaceOnUse" x="0" y="-200" width="1024" height="1400"><path d="${character.medians[at].map(([x,y], index) => `${index ? 'L' : 'M'}${Number(x)} ${Number(y)}`).join(' ')}" fill="none" stroke="white" stroke-width="200" stroke-linecap="round" stroke-linejoin="round" pathLength="1" class="stroke-glyph__reveal"></path></mask></defs>${faint ? `<path d="${escapeAttr(path)}" class="stroke-glyph__off"></path>` : ''}<path d="${escapeAttr(path)}" class="stroke-glyph__on" mask="url(#stroke-watch-${at})"></path>`
+        ? `<defs><mask id="stroke-watch-${at}" maskUnits="userSpaceOnUse" x="0" y="-200" width="1024" height="1400"><path d="${character.medians[at].map(([x,y], index) => `${index ? 'L' : 'M'}${Number(x)} ${Number(y)}`).join(' ')}" fill="none" stroke="white" stroke-width="200" stroke-linecap="round" stroke-linejoin="round" pathLength="1" class="stroke-glyph__reveal"></path></mask></defs>${faint ? `<path d="${escapeAttr(path)}" class="stroke-glyph__off"></path>` : ''}<path d="${escapeAttr(path)}" class="${on(at)}" mask="url(#stroke-watch-${at})"></path>`
         : at < upto
-        ? `<path d="${escapeAttr(path)}" class="stroke-glyph__on"></path>`
+        ? `<path d="${escapeAttr(path)}" class="${on(at)}"></path>`
         : faint
           ? `<path d="${escapeAttr(path)}" class="stroke-glyph__off"></path>`
           : '',

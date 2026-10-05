@@ -410,6 +410,7 @@
 .s-qs__stroke-tile .stroke-glyph { width: 100%; height: 100%; }
 .s-qs__stroke-tile .stroke-glyph__on { fill: var(--accent); }
 .s-qs__stroke-tile .stroke-glyph__off { fill: var(--border2); }
+.s-qs__stroke-tile .stroke-glyph__rad { fill: var(--hz-radical); }
 .s-qs__stroke-practise { align-self: flex-start; margin-top: 10px; }
 
 /* Retry after a provider failure (D-130): a text action in the panel's own line. */

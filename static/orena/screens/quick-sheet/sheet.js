@@ -182,7 +182,7 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
   function tileGlyph(character, index) {
     const count = Number(character?.stroke_count) || character?.stroke_paths?.length || 0;
     const upto = reducedMotion() ? count : Math.min(strokeLoop.upto[index] ?? 0, count);
-    return raw(glyphSvg(character, { upto, animate: upto < count }));
+    return raw(glyphSvg(character, { upto, animate: upto < count, radical: true }));
   }
 
   function strokeTick() {
