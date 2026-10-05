@@ -244,9 +244,20 @@ export function steppedSize(size, direction) {
    its real position in the book; an article/imported text has no page to invent, so it shows the
    same real reading percent the progress bar measures. Parts the backend did not give are absent,
    never a placeholder. */
-export function toolbarMeta({ isBook, chapterTitle = '', author = '', level = '', chapterIndex, chapterTotal, percent }) {
-  const position = isBook && Number.isInteger(chapterIndex) && Number.isInteger(chapterTotal) ? `${chapterIndex + 1}/${chapterTotal}` : `${percent}%`;
-  return metaLine([isBook ? chapterTitle : author, isBook ? '' : level, position]);
+/* The frame's "p. N of M" (rdPageLabel): a page is five sentences; the page shown is the one the
+   reading position is on, never before the first. */
+export function pageOf(sentenceCount, percent) {
+  const total = Math.max(1, Math.ceil((Number(sentenceCount) || 0) / 5));
+  const n = Math.min(total, Math.max(1, Math.ceil(((Number(percent) || 0) / 100) * total)));
+  return { n, total };
+}
+
+/* The toolbar's second line, as the frame builds it (`rdDocMeta · rdPageLabel`): source, kind,
+   level and reading mode, then the page; a book names its chapter and position instead of a source.
+   Labels come from the caller in the learner's language; missing parts are left out. */
+export function toolbarMeta({ isBook, chapterTitle = '', author = '', level = '', chapterIndex, chapterTotal, kindLabel = '', modeLabel = '', pageLabel = '' }) {
+  const chapter = isBook && Number.isInteger(chapterIndex) && Number.isInteger(chapterTotal) ? `${chapterIndex + 1}/${chapterTotal}` : '';
+  return metaLine([isBook ? chapterTitle : author, kindLabel, level, modeLabel, chapter, pageLabel]);
 }
 
 /* ------------------------------------------------------------------------------- End of text --- */
@@ -341,6 +352,48 @@ export function translationTurns(paragraphs, { perTurn = 12, chars = TRANSLATE_L
   });
   if (current.length) turns.push(current);
   return turns;
+}
+
+/* The sentences to translate, in turns the endpoint accepts: one segment per sentence, its id the
+   sentence's own segment id ("p3s2"). A sentence is the unit the Reader and the Sentence Quick Sheet
+   share (D-130), so a sentence translated here is never translated again for the sheet. */
+export function sentenceTurns(sentences, { perTurn = 24, chars = TRANSLATE_LIMITS.text } = {}) {
+  const turns = [];
+  let current = [];
+  let used = 0;
+  for (const sentence of sentences) {
+    const value = String(sentence?.text || '').slice(0, chars);
+    if (!value) continue;
+    if (current.length && (current.length >= perTurn || used + value.length > chars)) {
+      turns.push(current);
+      current = [];
+      used = 0;
+    }
+    current.push({ segment_id: sentence.seg, text: value });
+    used += value.length;
+  }
+  if (current.length) turns.push(current);
+  return turns;
+}
+
+/* A translate answer as { segmentId -> meaning }; only a `ready` answer carries meanings. */
+export function sentenceTranslationsFrom(response) {
+  const out = new Map();
+  if (response?.status !== 'ready') return out;
+  for (const item of response.translations || []) {
+    const id = String(item?.segment_id || '');
+    const meaning = String(item?.translated_meaning || '').trim();
+    if (id && meaning) out.set(id, meaning);
+  }
+  return out;
+}
+
+/* A paragraph's meaning, from its sentences' meanings, in order; '' until every sentence has one
+   (half a paragraph is not shown as if it were the whole). Chinese joins without spaces. */
+export function paragraphMeaning(segs, meanings, targetLanguage) {
+  const parts = segs.map((seg) => meanings.get(seg) || '');
+  if (!parts.length || parts.some((part) => !part)) return '';
+  return parts.join(String(targetLanguage || '').startsWith('zh') ? '' : ' ');
 }
 
 /* A translate answer as { paragraphIndex -> meaning }; only a `ready` answer carries meanings. */

@@ -10,10 +10,8 @@
    mounted once and only the thread repaints, so the box keeps focus, and a question that could not
    be answered is put back in the box (with the toast) instead of being lost.
 
-   Not drawn here: the first Orena bubble the frame seeds into every new thread ("I'm attached to
-   "<title>". Ask what a part means ..."), dropped under rule 50 - it restates the header's own
-   subtitle and the five starter chips, so a new thread shows only the chips and the input bar;
-   and no error visual inside the thread (the frame draws none for this screen; the generic toast -
+   The thread opens with Orena's own first bubble, as the frame seeds every thread ("I'm attached to
+   "<title>". Ask what a part means ..."; D-129 R-31). Not drawn here: no error visual inside the thread (the frame draws none for this screen; the generic toast -
    already the app's shared mechanism for a real, transient failure - carries the
    503/409 message instead of inventing new per-screen error UI). */
 import { html, mount, raw } from '../../kit/html.js';
@@ -62,8 +60,8 @@ function bubbleMarkup(turn, learnerLang) {
   </div>`;
 }
 
-function threadMarkup(turns, thinking, learnerLang) {
-  return html`${turns.map((turn) => bubbleMarkup(turn, learnerLang))}${
+function threadMarkup(turns, thinking, learnerLang, intro = '') {
+  return html`${intro ? bubbleMarkup({ isAssistant: true, body: intro }, learnerLang) : ''}${turns.map((turn) => bubbleMarkup(turn, learnerLang))}${
     thinking
       ? html`<div class="s-discussion__thinking">${intelChip({ size: 30, mark: 24, state: 'thinking' })}${t('thinking')}</div>`
       : ''
@@ -114,7 +112,7 @@ export default async function mountDiscussion(element, ctx) {
   const field = element.querySelector('[data-input]');
 
   function paintThread(thinking) {
-    mount(thread, threadMarkup(turns, thinking, supportLang));
+    mount(thread, threadMarkup(turns, thinking, supportLang, title ? t('intro', { title }) : ''));
     thread.scrollTop = thread.scrollHeight;
   }
 

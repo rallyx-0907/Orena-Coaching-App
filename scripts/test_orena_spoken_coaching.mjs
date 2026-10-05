@@ -110,7 +110,7 @@ inServer('Never cite a source you were not given', 'no invented authority');
 
 // The judgement vocabulary is the shared one, so a spoken problem is named the
 // same way a written or a read one is.
-const spokenSchema = server.split('def _spoken_schema()')[1].split('def ')[0];
+const spokenSchema = server.split('def _spoken_base_schema()')[1].split('def ')[0];
 assert.ok(
   spokenSchema.includes('"enum": list(USAGE_JUDGEMENTS)'),
   'coaching must reuse the shared judgement vocabulary',

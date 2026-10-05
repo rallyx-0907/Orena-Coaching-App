@@ -22,6 +22,7 @@ import { langAttr } from '../../kit/lang.js';
 import { shellCopy } from '../../copy/shell.js';
 import { api } from '../../infrastructure/api.js';
 import { openLessonComplete } from '../lesson-complete/sheet.js';
+import { loadReadable, loadSavedFromText } from '../reader/source.js';
 import { t } from './copy.js';
 import {
   parseContentId,
@@ -90,13 +91,16 @@ function activeCardMarkup(question, index, total, result, supportLang) {
   </div>`;
 }
 
-function doneCardMarkup(summary, deeper) {
+function doneCardMarkup(summary, deeper, practice = null) {
   return html`<div class="s-check__done" data-scroll-region>
     <span class="s-check__blob s-check__blob--a"></span><span class="s-check__blob s-check__blob--b"></span>
     <div class="s-check__result-label">${t('resultLabel')}</div>
     <div class="s-check__score">${t('resultHeadline', { correct: summary.correctCount, total: summary.total })}</div>
     <div class="s-check__chips">${summary.chips.map((chip) => html`<span class="${chip.ok ? 's-check__chip' : 's-check__chip s-check__chip--bad'}">${chip.label} · ${chip.result}</span>`)}</div>
-    <div class="s-check__cta"><button type="button" class="s-check__continue" data-continue>${t('continueLabel')}</button></div>
+    <div class="s-check__cta"><button type="button" class="s-check__continue" data-continue>${practice ? t('nextReading') : t('continueLabel')}</button>${
+      practice ? html`<button type="button" class="s-check__exit" data-exit-practice>${t('exitPractice')}</button>` : ''
+    }</div>
+    ${practice?.preview ? html`<div class="s-check__upnext">${practice.preview}</div>` : ''}
     ${deeper.length
       ? html`<div class="s-check__deeper">
           <div class="s-check__deeper-head">${t('deeperHeading')}</div>
@@ -151,7 +155,40 @@ export default async function mountCheck(element, ctx) {
 
   const setId = setPayload.set.id;
   const supportLang = setPayload.support_language || '';
-  const operationId = newOperationId();
+  let operationId = newOperationId();
+  const startedAt = Date.now();
+  /* Practice mode (the frame's cuIsPractice): reached from the Reader's practice session. The next
+     reading is the server's own choice (GET /api/reading/practice/next); its preview line shows once
+     it is known, and nothing is shown when there is none. */
+  const practiceMode = ctx.query?.get?.('mode') === 'practice';
+  let practice = practiceMode ? { next: null, preview: '' } : null;
+  async function loadNextReading() {
+    try {
+      const value = await api.readingPracticeNext();
+      const nextId = value?.available ? value?.next?.article_id : '';
+      if (!nextId || nextId === id) return;
+      const article = await api.readingArticle(nextId).catch(() => null);
+      const minutes = Number.isFinite(article?.reading_time_seconds) && article.reading_time_seconds > 0 ? Math.max(1, Math.round(article.reading_time_seconds / 60)) : 0;
+      const title = [article?.title, article?.level, minutes ? t('minutes', { n: minutes }) : ''].filter(Boolean).join(' · ');
+      practice = { next: nextId, preview: title ? t('upNext', { title }) : '' };
+      if (done) paint();
+    } catch {
+      /* No next reading known: Next reading ends the session at Reading Complete. */
+    }
+  }
+  if (practiceMode) loadNextReading();
+
+  /* Words the learner kept from this text (the Reader's own "saved from this text" read); unknown
+     when the library cannot be read, and then the figure is left out rather than guessed. */
+  async function keptFromText() {
+    try {
+      const doc = await loadReadable({ kind, id }, ctx.context.memory);
+      const saved = await loadSavedFromText(doc);
+      return saved ? saved.count : null;
+    } catch {
+      return null;
+    }
+  }
   const graded = {}; // question id -> grade result
   let index = 0;
   let busy = false;
@@ -169,11 +206,15 @@ export default async function mountCheck(element, ctx) {
     const meta = [title, done ? t('progressDone') : progressLabel(Math.min(index, questions.length - 1), questions.length, t)].filter(Boolean).join(' · ');
     if (done) {
       const summary = scoreSummary(questions, graded, t);
+      // The frame's "Go deeper" row, in its order (cuDeeper).
       const deeper = [
-        { key: 'discussion', label: t('discussThisText') },
+        { key: 'retry', label: t('retryQuestions') },
+        { key: 'feed', label: t('practiceVocabulary') },
         { key: 'rtransfer', label: shellCopy('readingTransfer') },
+        { key: 'discussion', label: t('discussThisText') },
+        { key: 'respond', label: t('writeResponse') },
       ];
-      mount(element, html`<div class="s-check">${headerMarkup(meta)}${progressBarMarkup(progressPercent(questions.length, questions.length))}${doneCardMarkup(summary, deeper)}</div>`);
+      mount(element, html`<div class="s-check">${headerMarkup(meta)}${progressBarMarkup(progressPercent(questions.length, questions.length))}${doneCardMarkup(summary, deeper, practice)}</div>`);
     } else {
       const pct = progressPercent(index, questions.length);
       mount(element, html`<div class="s-check">${headerMarkup(meta)}${progressBarMarkup(pct)}${activeCardMarkup(question, index, questions.length, graded[question.id], supportLang)}</div>`);
@@ -240,10 +281,18 @@ export default async function mountCheck(element, ctx) {
     const fraction = measured && Number.isInteger(measured.correct) && Number.isInteger(measured.total)
       ? `${measured.correct}/${measured.total}`
       : answered ? `${summary.correctCount}/${answered}` : '';
+    /* The frame's three figures, from what was measured (D-130: no XP): the score, the words kept
+       from this text, and the minutes this check took. */
+    const minutes = Math.max(1, Math.round((Date.now() - startedAt) / 60000));
+    const kept = await keptFromText();
     openLessonComplete(ctx, {
       title: shellCopy('checkUnderstanding'),
       measured,
-      facts: [{ label: t('correctLabel'), value: fraction }],
+      facts: [
+        { label: t('correctLabel'), value: fraction },
+        ...(kept == null ? [] : [{ label: t('newWordsLabel'), value: String(kept) }]),
+        { label: t('minutesLabel'), value: String(minutes) },
+      ],
     });
   }
 
@@ -255,13 +304,32 @@ export default async function mountCheck(element, ctx) {
         grade(question, Number(button.dataset.option));
       });
     });
-    element.querySelector('[data-show-in-text]')?.addEventListener('click', () => ctx.go(ctx.href('reader', { id: contentId })));
+    /* "Show in text" opens the Reader at the evidence sentence with its Sentence Quick Sheet, as the
+       frame does (cuShowInText). */
+    element.querySelector('[data-show-in-text]')?.addEventListener('click', () => {
+      const result = graded[questions[index]?.id];
+      ctx.go(ctx.href('reader', { id: contentId }, { evidence: result?.evidence_fragment || '' }));
+    });
     element.querySelector('[data-next]')?.addEventListener('click', () => advance());
-    element.querySelector('[data-continue]')?.addEventListener('click', () => ctx.back());
+    // Continue ends the check where the frame does (cuContinue): Reading Complete, or in practice the
+    // next reading.
+    element.querySelector('[data-continue]')?.addEventListener('click', () => {
+      if (practice?.next) ctx.go(ctx.href('reader', { id: `article:${practice.next}` }, { mode: 'practice' }));
+      else ctx.go(ctx.href('rcomplete', { id: contentId }));
+    });
+    element.querySelector('[data-exit-practice]')?.addEventListener('click', () => ctx.go(ctx.href('practice')));
     element.querySelectorAll('[data-deeper]').forEach((button) => {
       button.addEventListener('click', () => {
-        const target = button.dataset.deeper === 'discussion' ? 'discussion' : 'rtransfer';
-        ctx.go(ctx.href(target, { id: contentId }));
+        const key = button.dataset.deeper;
+        if (key === 'retry') {
+          // The same set again, from its first question, as a new attempt.
+          for (const question of questions) delete graded[question.id];
+          index = 0;
+          done = false;
+          operationId = newOperationId();
+          paint();
+        } else if (key === 'feed') ctx.go(ctx.href('feed'));
+        else ctx.go(ctx.href(key, { id: contentId }));
       });
     });
   }

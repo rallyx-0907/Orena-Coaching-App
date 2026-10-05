@@ -7,7 +7,7 @@ import { defineCopy } from '../../copy/index.js';
 const INTERFACE_KEYS = [
   'subtitleSuffix', 'placeholder', 'send', 'thinking',
   'starterMeaning', 'starterAuthor', 'starterGrammar', 'starterInterpret', 'starterTrue',
-  'unavailable', 'full',
+  'unavailable', 'full', 'intro',
 ];
 
 export const t = defineCopy('discussion', {
@@ -20,6 +20,7 @@ export const t = defineCopy('discussion', {
     starterTrue: 'Is this true?',
     unavailable: 'The tutor could not answer just now. Please try again.',
     full: 'This conversation has reached its limit of {n} turns.',
+    intro: 'I’m attached to “{title}”. Ask what a part means, why the author says something, or how you’d interpret it — the thread stays with this text.',
   },
   vi: {
     subtitleSuffix: 'cuộc trò chuyện này gắn với bài đọc',
@@ -29,6 +30,7 @@ export const t = defineCopy('discussion', {
     starterTrue: 'Điều này có đúng không?',
     unavailable: 'Trợ lý chưa thể trả lời lúc này. Vui lòng thử lại.',
     full: 'Cuộc trò chuyện này đã đạt giới hạn {n} lượt.',
+    intro: 'Mình đang gắn với “{title}”. Hãy hỏi một đoạn nghĩa là gì, vì sao tác giả viết như vậy, hoặc bạn hiểu ý đó thế nào — cuộc trò chuyện này gắn với bài đọc.',
   },
   zh: {
     subtitleSuffix: '此对话与这篇文章关联',
@@ -38,5 +40,6 @@ export const t = defineCopy('discussion', {
     starterTrue: '这是真的吗？',
     unavailable: '助教暂时无法回答，请再试一次。',
     full: '这段对话已达到 {n} 轮的上限。',
+    intro: '我已关联到《{title}》。可以问某一部分是什么意思、作者为什么这样写，或者你会怎样理解它——这段对话与这篇文章关联。',
   },
 });

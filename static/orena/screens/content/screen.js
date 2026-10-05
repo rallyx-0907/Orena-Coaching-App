@@ -166,6 +166,8 @@ export default async function content(element, ctx) {
     loadRelated(kind, id, language),
   ]);
   if (!ctx.isCurrent()) return undefined;
+  // The breadcrumb names the content itself, as the frame does (crumbScreen: the item's title).
+  if (detail.title) ctx.setCrumb(detail.title);
 
   const state = { saved: saved.saved, itemId: saved.itemId, menu: false };
   // Only the learner's own import can be deleted from here (D-107): a text or a link/file they brought in.
@@ -205,7 +207,7 @@ export default async function content(element, ctx) {
           <div class="s-content__actions">
             <a class="o-btn o-btn--primary s-content__primary" href="${primaryHref}">${primaryLabel}</a>
             ${destination === 'listening' && detail.canShadow ? html`<a class="s-content__secondary" href="${ctx.href('shadow', { id: kind === 'upload' ? uploadMediaId(id) : id })}">${shellCopy('shadowing')}</a>` : ''}
-            ${hasPractice ? html`<a class="s-content__ai" href="${ctx.href('checku', { id: contentId })}">${t('practiceThisText')}</a>` : ''}
+            ${hasPractice ? html`<a class="s-content__ai" href="${ctx.href('reader', { id: contentId }, { mode: 'practice' })}">${t('practiceThisText')}</a>` : ''}
             <button type="button" class="s-content__secondary" data-save aria-pressed="${state.saved ? 'true' : 'false'}">${state.saved ? t('saved') : t('save')}</button>
             ${own ? html`<span data-more-slot>${moreButton({ label: t('more'), open: false, dataset: memberId })}</span>` : ''}
           </div>

@@ -34,6 +34,9 @@ export async function loadReadable(parsed, memory) {
       language: String(article?.language || ''),
       author: String(article?.attribution?.author || ''),
       level: String(article?.level || ''),
+      topic: String(article?.topic || ''),
+      // The article's own reading time, whole minutes (practice mode's meta line).
+      minutes: Number.isFinite(article?.reading_time_seconds) && article.reading_time_seconds > 0 ? Math.max(1, Math.round(article.reading_time_seconds / 60)) : 0,
       blocks,
       paragraphs: paragraphsOf(blocks),
       isBook: false,
@@ -93,12 +96,19 @@ export function realContentIdOf(doc) {
    `loadHasPractice` makes the same check): a 404 is "Free Reading, no set", not an error. Books and
    imported texts have no comprehension-question contract today. */
 export async function loadHasQuiz(kind, id) {
-  if (kind !== 'article') return false;
+  return (await loadQuizSize(kind, id)) > 0;
+}
+
+/* How many questions the text's practice set has (0 when it has none): the practice end note says
+   it ("End of text · 4 questions, then the next reading."). */
+export async function loadQuizSize(kind, id) {
+  if (kind !== 'article') return 0;
   try {
-    await api.readingPracticeSet(id);
-    return true;
+    const payload = await api.readingPracticeSet(id);
+    const questions = payload?.set?.questions;
+    return Array.isArray(questions) && questions.length ? questions.length : 1;
   } catch {
-    return false;
+    return 0;
   }
 }
 

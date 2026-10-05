@@ -32,6 +32,8 @@ import { href } from '../../shell/routes.js';
 import { languages } from '../../copy/index.js';
 import { api } from '../../infrastructure/api.js';
 import { askOrena } from '../../shell/agent-bridge.js';
+import { markGlyph } from '../../kit/brand.js';
+import { loadHighlights, isHighlighted, toggleHighlight } from '../reader/highlights.js';
 import { t } from './copy.js';
 import {
   contextFor,
@@ -41,6 +43,7 @@ import {
   wordSavePayload,
   wordRestorePayload,
   mapSentenceSheet,
+  highlightExample,
   vocabSavePayload,
   noteKeyFor,
   noteTypeColorKey,
@@ -115,6 +118,8 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
   let strokes = null;
   let audioBusy = false;
   let audioAttribution = '';
+  let contextualPending = true; // the meaning in this sentence is still being asked for
+  let contextualFailed = false; // the provider failed (contextStatus provider_error): offer Retry
 
   function posMarkup() {
     const label = posLabel(card.pos, t);
@@ -160,9 +165,10 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
         </div>
       </div>
       <div class="s-qs__card">
+        ${card.meaningIsContextual ? html`<div class="s-qs__eyebrow">${t('meaningHere')}</div>` : ''}
         <div class="s-qs__meaning">${card.meaning}</div>
       </div>
-      ${card.example ? html`<div class="s-qs__example" lang="${langAttr(lang)}">${card.exampleParts.map((p) => (p.hit ? html`<mark>${p.value}</mark>` : p.value))}</div>` : ''}
+      ${sourceQuoteMarkup()}
       ${strokeMarkup()}
       ${masteryMarkup()}
     `;
@@ -186,6 +192,22 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
     `;
   }
 
+  /* The word in the sentence it was met in, the word marked (frame 53's quote; LEX-003, R-16). */
+  function sourceQuoteMarkup() {
+    const quote = card.contextSentence || String(sentence || '').trim();
+    if (!quote) return '';
+    return html`<div class="s-qs__example" lang="${langAttr(lang)}">“${highlightExample(quote, card.word).map((p) => (p.hit ? html`<mark>${p.value}</mark>` : p.value))}”</div>`;
+  }
+
+  /* "Why here?": this sentence's own reason (D-130). While it is being asked for, a short status;
+     without one, the row is not shown - never an "ask Orena" stand-in for an answer the sheet offers. */
+  function whyMarkup() {
+    if (card.whyHere) return html`<button type="button" class="s-qs__why" data-why>${t('whyHere')} — <span class="s-qs__why-text">${card.whyHere}</span></button>`;
+    if (contextualPending && !loading) return html`<div class="s-qs__why" role="status">${t('whyHere')} — <span class="s-qs__why-text"><span class="o-spinner"></span> ${t('whyHereLoading')}</span></div>`;
+    if (contextualFailed) return html`<div class="s-qs__why">${t('whyHere')} — <span class="s-qs__why-text">${t('translationFailed')} <button type="button" class="s-qs__retry" data-why-retry>${t('retry')}</button></span></div>`;
+    return '';
+  }
+
   // "Source sentence" alone, or "Source sentence · {title}" once the caller has told us where the
   // word was met (`source.title`, optional - a caller with no title to give just gets the label).
   function sourceLabel() {
@@ -195,15 +217,15 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
 
   function bodyMarkup() {
     return html`
-      ${loading ? html`<div class="s-qs__word" lang="${langAttr(lang)}">${target}</div><div role="status"><span class="o-spinner"></span> ${t('lookupLoading')}</div><progress class="o-loading__progress" aria-label="${t('lookupLoading')}"></progress>` : card.hasContent ? contentMarkup() : fallbackMarkup()}
+      ${loading ? html`<div class="s-qs__word" lang="${langAttr(lang)}">${target}</div><div role="status"><span class="o-spinner"></span> ${t('lookupLoading')}</div>` : card.hasContent ? contentMarkup() : fallbackMarkup()}
       ${audioBusy ? html`<progress class="o-loading__progress" aria-label="${t('playWord')}"></progress>` : ''}
       ${audioAttribution ? html`<div class="s-qs__notice">${audioAttribution}</div>` : ''}
       <div class="s-qs__actions">
         <button type="button" class="o-btn o-btn--primary s-qs__grow" data-save-cta${loading ? raw(' disabled') : ''}>${t('saveWordCta')}</button>
-        <button type="button" class="s-qs__ask s-qs__grow" data-ask>${raw(icon('audio-lines', { size: 20 }))} ${t('askDeeper')}</button>
+        <button type="button" class="s-qs__ask s-qs__grow" data-ask>${markGlyph({ size: 20, symbol: 'ol-intel-still' })} ${t('askDeeper')}</button>
       </div>
-      <button type="button" class="s-qs__why" data-why>${t('whyHere')} — <span class="s-qs__why-text">${card.whyHere || t('whyHereFallback')}</span></button>
-      ${card.saved ? html`<button type="button" class="s-qs__detail" data-detail>${t('fullWordDetail')} ${raw(icon('arrow-right', { size: 16 }))}</button>` : ''}
+      ${loading ? '' : whyMarkup()}
+      ${loading ? '' : html`<button type="button" class="s-qs__detail" data-detail>${t('fullWordDetail')} ${raw(icon('arrow-right', { size: 16 }))}</button>`}
     `;
   }
 
@@ -250,6 +272,7 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
       if (typeof ctx.go === 'function') ctx.go(href('word', { id: card.word }));
     });
     sheetEl.querySelector('[data-practise-strokes]')?.addEventListener('click', openStroke);
+    sheetEl.querySelector('[data-why-retry]')?.addEventListener('click', () => askContextual());
   }
 
   async function toggleSave() {
@@ -304,6 +327,7 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
     });
   }
 
+  let askContextual = () => {};
   let handle = null;
   if (!ctx.isCurrent || ctx.isCurrent()) {
     handle = openSheet({
@@ -331,11 +355,21 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
           loading = false;
           card = mapWordCard(target, { detail, item });
           paint();
-          api.wordDetail({depth: 'sheet', text: target, context: ctxText, source_language: lang, target_language: support}).then(enriched => {
-            if (!alive) return;
-            const next = mapWordCard(target, {detail: enriched, item});
-            if (next.hasContent) { detail = enriched; card = next; paint(); }
-          }).catch(() => {});
+          askContextual = () => {
+            contextualPending = true;
+            contextualFailed = false;
+            paint();
+            api.wordDetail({depth: 'sheet', text: target, context: ctxText, source_language: lang, target_language: support, content_id: source?.content_id || undefined}).then(enriched => {
+              if (!alive) return;
+              contextualFailed = enriched?.contextStatus === 'provider_error' && Boolean(enriched?.retryable);
+              const next = mapWordCard(target, {detail: enriched, item});
+              if (next.hasContent) { detail = enriched; card = next; }
+            }).catch(() => { contextualFailed = true; }).finally(() => {
+              contextualPending = false;
+              if (alive) paint();
+            });
+          };
+          askContextual();
           if (detail?.saved) {
             item = await fetchSavedItem(target);
             if (!alive) return;
@@ -372,7 +406,10 @@ export async function openSentenceSheet(ctx = {}, { sentence, lang, context = ''
   let alive = true;
   let sheetEl = null;
   let sheetData = { available: false, translation: '', structure: [], vocabulary: [] };
+  let translation = { state: 'loading', text: '' }; // the sentence's meaning, from the Reader's own shared source
   let tab = 'Translation';
+  const canHighlight = Boolean(storage && source?.content_id && source?.segment);
+  const highlightOn = () => canHighlight && isHighlighted(loadHighlights(storage, owner, source.content_id), source.segment, target);
   let noteType = 'factual';
   let noteDraft = '';
 
@@ -386,8 +423,39 @@ export async function openSentenceSheet(ctx = {}, { sentence, lang, context = ''
     return html`<div class="s-qs__tabs">${tabs.map(([id, label]) => html`<button type="button" class="${cls('s-qs__tab', tab === id && 'is-active')}" data-tab="${id}" aria-selected="${tab === id}">${label}</button>`)}</div>`;
   }
 
+  /* The Translation tab asks the same per-sentence translation the Reader's aid uses
+     (POST /api/reading/translate, cached server-side per sentence; D-130): loading at once, the
+     meaning, or a short retry line. */
   function translationMarkup() {
-    return html`<div class="s-qs__panel">${sheetData.available && sheetData.translation ? sheetData.translation : t('translationNotPrepared')}</div>`;
+    if (translation.text) return html`<div class="s-qs__panel" lang="${langAttr(support)}">${translation.text}</div>`;
+    if (translation.state === 'loading') return html`<div class="s-qs__panel" role="status"><span class="o-spinner"></span></div>`;
+    return html`<div class="s-qs__panel">${t('translationFailed')} <button type="button" class="s-qs__retry" data-translate-retry>${t('retry')}</button></div>`;
+  }
+
+  async function loadTranslation() {
+    translation = { state: 'loading', text: '' };
+    paint();
+    if (!support || support === lang) {
+      translation = { state: 'none', text: sheetData.translation || '' };
+      paint();
+      return;
+    }
+    try {
+      const response = await api.readingTranslate({ source_language: lang, target_language: support, content_id: source?.content_id || undefined, segments: [{ segment_id: 's0', text: target }] });
+      const meaning = response?.status === 'ready' ? String(response.translations?.[0]?.translated_meaning || '').trim() : '';
+      translation = meaning ? { state: 'ready', text: meaning } : { state: 'failed', text: '' };
+    } catch {
+      translation = { state: 'failed', text: '' };
+    }
+    if (alive) paint();
+  }
+
+  function toggleSentenceHighlight() {
+    if (!canHighlight) return;
+    toggleHighlight(storage, owner, source.content_id, { segment: source.segment, sentence: target });
+    scheduleAnnotationPush(storage, owner, source.content_id);
+    paint();
+    onNote?.();
   }
 
   function structureMarkup() {
@@ -437,11 +505,11 @@ export async function openSentenceSheet(ctx = {}, { sentence, lang, context = ''
 
   function bodyMarkup() {
     return html`
-      <div class="s-qs__sentence" lang="${langAttr(lang)}">${target}</div>
       ${tabsMarkup()}
       ${panelMarkup()}
       <div class="s-qs__actions">
-        <button type="button" class="s-qs__ask s-qs__grow" data-ask>${raw(icon('audio-lines', { size: 20 }))} ${t('askDeeper')}</button>
+        ${canHighlight ? html`<button type="button" class="o-btn o-btn--primary s-qs__grow" data-save-highlight aria-pressed="${highlightOn() ? 'true' : 'false'}">${highlightOn() ? t('highlightSaved') : t('saveHighlight')}</button>` : ''}
+        <button type="button" class="s-qs__ask s-qs__grow" data-ask>${markGlyph({ size: 20, symbol: 'ol-intel-still' })} ${t('askDeeper')}</button>
       </div>
     `;
   }
@@ -463,6 +531,8 @@ export async function openSentenceSheet(ctx = {}, { sentence, lang, context = ''
   function bind() {
     sheetEl.querySelector('[data-sheet-close]')?.addEventListener('click', () => handle.close());
     sheetEl.querySelector('[data-ask]')?.addEventListener('click', () => askSentenceDeeper(target, lang, source));
+    sheetEl.querySelector('[data-save-highlight]')?.addEventListener('click', toggleSentenceHighlight);
+    sheetEl.querySelector('[data-translate-retry]')?.addEventListener('click', loadTranslation);
     sheetEl.querySelectorAll('[data-tab]').forEach((button) => button.addEventListener('click', () => { tab = button.dataset.tab; paint(); }));
     sheetEl.querySelectorAll('[data-vocab-save]').forEach((button) => button.addEventListener('click', () => toggleVocabSave(Number(button.dataset.vocabSave))));
     if (tab === 'Note') {
@@ -526,11 +596,12 @@ export async function openSentenceSheet(ctx = {}, { sentence, lang, context = ''
             .then((changed) => { if (changed && alive) paint(); })
             .catch(() => {});
         }
+        loadTranslation();
         (async () => {
           const ctxText = context || target;
           let response = null;
           try {
-            response = await api.sentenceSheet({ text: target, context: ctxText, source_language: lang, target_language: support });
+            response = await api.sentenceSheet({ text: target, context: ctxText, source_language: lang, target_language: support, content_id: source?.content_id || undefined });
           } catch {
             response = null;
           }

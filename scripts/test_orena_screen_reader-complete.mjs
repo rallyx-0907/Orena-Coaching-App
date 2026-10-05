@@ -51,7 +51,10 @@ assert.equal(originRouteId('constructor'), 'discover', 'a prototype key is not a
   const lastChapter = { kind: 'book', isBook: true, bookId: 'b', neighbours: { next: null } };
   assert.equal(nextPick({ doc: lastChapter, articles, continuation: [] }).kind, 'discover');
   const first = { kind: 'article', id: articles[0].id, isBook: false };
-  assert.deepEqual(nextPick({ doc: first, articles, continuation: [] }), { kind: 'article', title: articles[1].title, id: `article:${articles[1].id}` }, 'another article, never this one');
+  assert.deepEqual(nextPick({ doc: first, articles, continuation: [] }), { kind: 'article', title: articles[1].title, id: `article:${articles[1].id}`, sameTheme: false }, 'another article, never this one');
+  // "Next · same theme" (frame 40): an article on the same topic is offered before any other.
+  const themed = [{ id: 'a1', title: 'One', topic: 'food' }, { id: 'a2', title: 'Two', topic: 'work' }, { id: 'a3', title: 'Three', topic: 'work' }];
+  assert.deepEqual(nextPick({ doc: { kind: 'article', id: 'a2', isBook: false, topic: 'work' }, articles: themed, continuation: [] }), { kind: 'article', title: 'Three', id: 'article:a3', sameTheme: true });
   const finished = [{ id: `article:${articles[1].id}`, title: 'x', place: { index: 1, total: 1, within: 100 } }];
   assert.equal(nextPick({ doc: first, articles, continuation: finished }).kind, 'discover', 'a finished article is not offered next');
   const inProgress = [{ id: `article:${articles[1].id}`, title: 'x', place: { index: 1, total: 1, within: 40 } }];

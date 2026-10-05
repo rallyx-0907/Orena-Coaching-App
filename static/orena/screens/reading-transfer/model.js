@@ -106,6 +106,8 @@ export function coachRequest({ answer, mode, sentence, language, support }) {
     source_language: language,
     target_language: support,
     situation: `${task}\nSource sentence: ${sentence}`.slice(0, COACH_LIMITS.situation),
+    // The restated sentence itself: the endpoint then also judges frame 39's two verdicts.
+    source_text: String(sentence ?? '').slice(0, 2000),
   };
 }
 
@@ -127,5 +129,8 @@ export function mapCoaching(raw) {
   const carried = list(raw?.carried, false);
   const landed = list(raw?.landed_differently, true);
   const improvement = String(raw?.next_attempt || '').trim() || String(raw?.another_way || '').trim();
-  return { available: Boolean(raw?.available) && Boolean(carried.length || landed.length), carried, landed, improvement };
+  // Frame 39's two tiles: whether the meaning came through, and an important idea left out.
+  const meaning = ['preserved', 'partly', 'lost'].includes(raw?.meaning_preserved) ? raw.meaning_preserved : '';
+  const missing = String(raw?.missing_idea || '').trim();
+  return { available: Boolean(meaning) || (Boolean(raw?.available) && Boolean(carried.length || landed.length)), carried, landed, improvement, meaning, missing };
 }

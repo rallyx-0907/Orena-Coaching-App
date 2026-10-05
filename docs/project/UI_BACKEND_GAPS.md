@@ -4837,3 +4837,14 @@ of record) behind one layer, order table proposed as migration `20261005_0027`.
 - **BL-3 admin orders**: refunds of domestic payments are recorded through
   `POST /api/admin/billing/orders/{code}/refund`. The Admin design (`Orena Admin.dc.html`) has no orders page
   yet, so this has no screen.
+
+## Reading batch to the design (D-129, D-130), 2026-10-05
+
+- **RD-1 article description**: Content Detail shows an article's description only from its own metadata
+  (D-130). `reading_articles` has no description field, and Admin import has no input for one, so the block is
+  hidden for every article today. This needs a field and an Admin input (schema: a human gate).
+- **RD-2 "Mark as known"** (Word Quick Sheet, frame 53): no endpoint marks a word known. The learning-state row
+  shows for a word with a review schedule, without the action.
+- **RD-3 on-request persistence**: translation, summary and contextual meaning are cached in process memory
+  until migration `20261005_0028_reading_derived_texts` (proposed, `READING_ON_DEMAND.md`) is reviewed and
+  authorized. They are regenerated after a restart.

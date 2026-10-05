@@ -309,6 +309,9 @@
   background: var(--accent-fill-press);
   transform: scale(0.97);
 }
+/* Practice mode (frame 20, cuIsPractice): "Exit practice" beside the primary, and the up-next line. */
+.s-check__exit { border: 0; background: none; color: var(--muted); font-size: 14px; font-weight: 600; }
+.s-check__upnext { position: relative; font-size: 13.5px; color: var(--muted); }
 .s-check__deeper {
   border-top: 1px solid var(--border);
   padding-top: 14px;

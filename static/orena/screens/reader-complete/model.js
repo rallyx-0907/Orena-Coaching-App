@@ -51,8 +51,11 @@ export function nextPick({ doc, articles, continuation }) {
       const entry = (Array.isArray(continuation) ? continuation : []).find((item) => item?.id === contentIdFor('article', id));
       return Number.isFinite(entry?.place?.within) && entry.place.within >= 100;
     };
-    const pick = (Array.isArray(articles) ? articles : []).find((item) => item?.id && String(item.id) !== String(doc.id) && item.title && !done(item.id));
-    if (pick) return { kind: 'article', title: String(pick.title), id: contentIdFor('article', pick.id) };
+    const open = (Array.isArray(articles) ? articles : []).filter((item) => item?.id && String(item.id) !== String(doc.id) && item.title && !done(item.id));
+    // The frame offers the next text "· same theme": one on the same topic first, any other after.
+    const sameTheme = doc.topic ? open.find((item) => item.topic === doc.topic) : null;
+    const pick = sameTheme || open[0];
+    if (pick) return { kind: 'article', title: String(pick.title), id: contentIdFor('article', pick.id), sameTheme: Boolean(sameTheme) };
   }
   return { kind: 'discover', title: '', id: '' };
 }

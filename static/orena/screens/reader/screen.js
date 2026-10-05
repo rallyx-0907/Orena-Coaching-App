@@ -17,9 +17,9 @@
      device-memory notes and highlights are this screen's (highlights.js), both listed in
      "Notes & highlights" (a docked panel on a desk, the design's bottom sheet on a phone);
    - the position: kept in device memory (`memory.enter`, furthest point read) and restored.
-   Summary has no backend (no summarisation endpoint exists anywhere in the API - checked): the menu
-   item answers with the design's own "not prepared" toast rather than a panel of invented bullets
-   (rule 40), recorded as a backend gap in the report. */
+   Summary is generated on request (D-130, POST /api/reading/summary): only when the learner opens
+   it, once - the server keeps it - shown in the frame's docked panel with its loading and retry
+   states. */
 import { html, mount, raw, cls } from '../../kit/html.js';
 import { icon } from '../../kit/icons.js';
 import { markGlyph } from '../../kit/brand.js';
@@ -39,7 +39,7 @@ import { t } from './copy.js';
 import { mountReaderLexical } from './lexical.js';
 import { loadHighlights, isHighlighted, toggleHighlight } from './highlights.js';
 import { pullIntoDevice, scheduleAnnotationPush, noteRemoved } from './annotations-sync.js';
-import { loadReadable, realContentIdOf, loadHasQuiz, loadSaved, loadSavedFromText } from './source.js';
+import { loadReadable, realContentIdOf, loadQuizSize, loadSaved, loadSavedFromText } from './source.js';
 import {
   parseContentId,
   contentIdFor,
@@ -57,8 +57,10 @@ import {
   readerSizePx,
   steppedSize,
   toolbarMeta,
-  translationTurns,
-  translationsFrom,
+  pageOf,
+  sentenceTurns,
+  sentenceTranslationsFrom,
+  paragraphMeaning,
   roleToast,
   squash,
 } from './model.js';
@@ -110,7 +112,11 @@ export default async function mountReader(element, ctx) {
   const owner = ctx.context.owner;
 
   const doc = await loadReadable(parsed, memory);
-  const [hasQuiz, savedInfo, savedFrom] = await Promise.all([loadHasQuiz(doc.kind, doc.id), loadSaved(doc.kind, doc, memory), loadSavedFromText(doc)]);
+  const [quizSize, savedInfo, savedFrom] = await Promise.all([loadQuizSize(doc.kind, doc.id), loadSaved(doc.kind, doc, memory), loadSavedFromText(doc)]);
+  const hasQuiz = quizSize > 0;
+  /* Practice mode (Content Detail's "Practice this text", the frame's startPractice): read, answer the
+     text's questions, go on to the next reading. Only a text that has questions can be practised. */
+  const practice = hasQuiz && ctx.query?.get?.('mode') === 'practice';
   if (!ctx.isCurrent()) return undefined;
   if (!doc.paragraphs.length) throw new Error('This text has nothing to read.');
 
@@ -131,10 +137,12 @@ export default async function mountReader(element, ctx) {
   /* ---- per-visit state ---- */
   let menuOpen = ''; // 'aa' | 'aids' | 'more' | ''
   let translationOn = false;
-  let vocabLensOn = false;
+  let vocabLensOn = true; // frame 14 opens with the vocabulary lens on (rdLens: true)
   let posOn = false;
   let pinyinOn = isZh && ctx.context.pinyin !== false;
   let notesOpen = false;
+  let summaryOpen = false;
+  let summary = { state: 'idle', bullets: [] }; // 'idle' | 'loading' | 'ready' | 'failed'
   let listening = false;
   let sheetOpen = false;
   let notesSheet = null;
@@ -146,7 +154,8 @@ export default async function mountReader(element, ctx) {
   let highlights = storage ? loadHighlights(storage, owner, contentId) : [];
   let alive = true;
   const expandedNotes = new Set();
-  const translations = new Map(); // paragraph index -> meaning
+  const translations = new Map(); // sentence segment id -> meaning (D-130: the sentence is the shared unit)
+  let translationState = 'idle'; // 'idle' | 'loading' | 'ready' | 'failed'
   const annotations = new Map(); // segment -> tokens (offsets relative to the sentence)
   const annotationLoads = new Map(); // paragraph index -> the one shared in-flight/finished request
   let translationLoad = null;
@@ -225,34 +234,36 @@ export default async function mountReader(element, ctx) {
     await Promise.all(workers);
   }
 
+  /* Translation on request (D-130): every sentence still missing a meaning is asked for, in turns;
+     the paragraphs show "loading" at once, fill in as turns answer, and a failure leaves a short
+     retry line - never a "not available" dead end. The server caches each sentence, so asking again
+     (here or in the Sentence Quick Sheet) never translates the same sentence twice. */
   function ensureTranslation() {
-    if (translations.size || translationLoad) return translationLoad;
+    if (translationLoad) return translationLoad;
     const target = support();
-    if (!target || target === language) {
-      translationOn = false;
-      toast(t('translationUnavailable'), { iconName: 'info' });
-      paintTop();
+    if (!target || target === language) return null; // nothing to translate into: the aid is not offered
+    const missing = [...sentenceBySeg.values()].filter((s) => !translations.has(s.seg));
+    if (!missing.length) {
+      translationState = 'ready';
       return null;
     }
+    translationState = 'loading';
+    paintBody();
     translationLoad = (async () => {
       let failed = false;
-      for (const turn of translationTurns(paragraphTexts)) {
+      for (const turn of sentenceTurns(missing)) {
         try {
-          const response = await api.readingTranslate({ source_language: language, target_language: target, segments: turn });
-          for (const [index, meaning] of translationsFrom(response)) translations.set(index, meaning);
+          const response = await api.readingTranslate({ source_language: language, target_language: target, content_id: contentId, segments: turn });
+          for (const [seg, meaning] of sentenceTranslationsFrom(response)) translations.set(seg, meaning);
           if (response?.status !== 'ready') failed = true;
         } catch {
           failed = true;
         }
         if (!alive) return;
-        if (translations.size) paintBody();
-      }
-      if (failed && !translations.size) {
-        translationOn = false;
-        toast(t('translationUnavailable'), { iconName: 'info' });
-        paintTop();
         paintBody();
       }
+      translationState = failed ? 'failed' : 'ready';
+      paintBody();
     })().finally(() => {
       translationLoad = null;
     });
@@ -303,15 +314,20 @@ export default async function mountReader(element, ctx) {
     return html`<button type="button" class="${cls('s-reader__pill', extra)}" data-act="menu" data-key="${key}" data-on="${on ? 1 : 0}" aria-expanded="${menuOpen === key ? 'true' : 'false'}">${label}</button>`;
   }
 
+  const KIND_LABEL = { article: 'kindArticle', book: 'kindBook', text: 'kindText' };
   const toolbarMetaText = () =>
-    toolbarMeta({
+    practice
+      ? toolbarMeta({ author: t('practiceTitle'), level: doc.level, kindLabel: '', modeLabel: doc.minutes ? t('minutes', { n: doc.minutes }) : '', pageLabel: t('pageOf', pageOf(sentenceBySeg.size, percent)) })
+      : toolbarMeta({
       isBook: doc.isBook,
       chapterTitle: doc.chapterTitle,
       author: doc.author,
       level: doc.level,
       chapterIndex: doc.neighbours?.index,
       chapterTotal: doc.neighbours?.total,
-      percent,
+      kindLabel: t(KIND_LABEL[doc.kind] || 'kindText'),
+      modeLabel: t('modeActive'),
+      pageLabel: t('pageOf', pageOf(sentenceBySeg.size, percent)),
     });
 
   function toolbarMarkup() {
@@ -327,7 +343,7 @@ export default async function mountReader(element, ctx) {
         ${toggleBtn('listen', listening, listening ? t('listenPause') : t('listen'), 'volume-2')}
         ${toggleBtn('bookmark', savedState.saved, t('saveLabel'), 'bookmark')}
         ${pill('aids', html`${t('aidsLabel')}${aids ? ` · ${aids}` : ''}`, menuOpen === 'aids' || translationOn || vocabLensOn || posOn)}
-        ${pill('more', '⋯', menuOpen === 'more' || notesOpen, 's-reader__pill--more')}
+        ${practice ? '' : pill('more', '⋯', menuOpen === 'more' || notesOpen || summaryOpen, 's-reader__pill--more')}
       </div>
     </div>`;
   }
@@ -342,15 +358,16 @@ export default async function mountReader(element, ctx) {
     if (menuOpen === 'aa') {
       items = html`<button type="button" class="s-reader__menu-item" data-act="item" data-key="aa-smaller" aria-label="${t('aaSmaller')}">A−</button><button type="button" class="s-reader__menu-item" data-act="item" data-key="aa-larger" aria-label="${t('aaLarger')}">A+</button><span class="s-reader__menu-item s-reader__menu-item--flat">${readerSizePx(settings.size)}px</span>`;
     } else if (menuOpen === 'aids') {
-      items = html`${menuItem('translation', t('translationAid'), { on: translationOn, toggle: true })}${menuItem('vocab', t('vocabLensAid'), { on: vocabLensOn, toggle: true })}${menuItem('pos', t('wordRolesAid'), { on: posOn, toggle: true })}${
+      const canTranslate = Boolean(support()) && support() !== language; // no aid that could only answer "nothing to translate"
+      items = html`${canTranslate ? menuItem('translation', t('translationAid', { lang: String(support() || '').toUpperCase() }), { on: translationOn, toggle: true }) : ''}${menuItem('vocab', t('vocabLensAid'), { on: vocabLensOn, toggle: true })}${menuItem('pos', t('wordRolesAid'), { on: posOn, toggle: true })}${
         isZh ? menuItem('pinyin', t('pinyinAid'), { on: pinyinOn, toggle: true }) : html`<span class="s-reader__menu-item s-reader__menu-item--flat s-reader__menu-item--note">${t('pinyinNotApplicable')}</span>`
       }`;
     } else {
-      items = html`${menuItem('notes', t('notesLabel', { n: collectNotes().all.length }), { on: notesOpen, toggle: true })}${menuItem('summary', t('summaryLabel'))}${menuItem(
+      items = html`${menuItem('notes', t('notesLabel', { n: collectNotes().all.length }), { on: notesOpen, toggle: true })}${menuItem('summary', t('summaryLabel'), { on: summaryOpen, toggle: true })}${menuItem(
         'save',
         savedState.saved ? t('savedLabel') : t('saveLabel'),
         { on: savedState.saved, toggle: true },
-      )}${menuItem('discuss', shellCopy('discussion'))}${menuItem('respond', shellCopy('respondToContent'))}${menuItem('transfer', shellCopy('readingTransfer'))}`;
+      )}${menuItem('discuss', shellCopy('discussion'))}${menuItem('respond', t('writeResponse'))}${menuItem('transfer', shellCopy('readingTransfer'))}`;
     }
     return html`<div class="s-reader__menu" role="group">${items}<span class="s-reader__menu-spacer"></span><button type="button" class="s-reader__menu-close" data-act="menu-close" aria-label="${shellCopy('close')}">${raw(icon('x', { size: 17 }))}</button></div>`;
   }
@@ -416,8 +433,18 @@ export default async function mountReader(element, ctx) {
     return html`<div>
       <p class="s-reader__paragraph" lang="${langAttr(language)}" data-tl="${isZh ? 'zh' : ''}">${block.sentences.map((s) => sentenceMarkup(s, notes.numBySeg))}</p>
       ${cards.length ? html`<div class="s-reader__notes">${cards.map(noteCard)}</div>` : ''}
-      ${translationOn && translations.get(block.pi) ? html`<p class="s-reader__translation" lang="${langAttr(support())}">${translations.get(block.pi)}</p>` : ''}
+      ${translationOn ? translationMarkup(block) : ''}
     </div>`;
+  }
+
+  function translationMarkup(block) {
+    const meaning = paragraphMeaning(block.sentences.map((s) => s.seg), translations, support());
+    if (meaning) return html`<p class="s-reader__translation" lang="${langAttr(support())}">${meaning}</p>`;
+    if (translationState === 'loading') return html`<p class="s-reader__translation s-reader__translation--state" role="status"><span class="o-spinner"></span></p>`;
+    if (translationState === 'failed') {
+      return html`<p class="s-reader__translation s-reader__translation--state">${t('translationFailed')} <button type="button" class="s-reader__retry" data-act="translation-retry">${t('retry')}</button></p>`;
+    }
+    return '';
   }
 
   function endMarkup() {
@@ -428,10 +455,10 @@ export default async function mountReader(element, ctx) {
             (chapter, i) => html`<button type="button" class="s-reader__chapter" data-act="chapter" data-id="${chapter.id}" aria-current="${chapter.id === doc.chapterId ? 'true' : 'false'}" title="${chapter.title}">${i + 1}</button>`,
           )}</div>`
         : ''}
-      <div class="s-reader__endnote">${t(info.endNoteKey, info.endNoteParams)}</div>
+      <div class="s-reader__endnote">${practice ? t('endNotePractice', { n: quizSize }) : t(info.endNoteKey, info.endNoteParams)}</div>
       <div class="s-reader__cta-row">
         <button type="button" class="s-reader__cta-primary" data-act="end-primary">${info.primaryIsCheck ? shellCopy('checkUnderstanding') : t('markAsFinished')}</button>
-        ${info.secondaryHas ? html`<button type="button" class="s-reader__cta-secondary" data-act="end-secondary">${t('markAsFinished')}</button>` : ''}
+        ${info.secondaryHas && !practice ? html`<button type="button" class="s-reader__cta-secondary" data-act="end-secondary">${t('markAsFinished')}</button>` : ''}
         ${info.hasNextChapter ? html`<button type="button" class="s-reader__cta-next" data-act="end-next">${t('nextChapterCta')}</button>` : ''}
       </div>
     </div>`;
@@ -471,9 +498,46 @@ export default async function mountReader(element, ctx) {
     )}</div>`;
   }
 
+  /* The frame's Summary panel: title, "Generated on request", the bullets, and its closing line. */
+  function summaryBodyMarkup() {
+    if (summary.state === 'ready') {
+      return html`<ul class="s-reader__summary" lang="${langAttr(support())}">${summary.bullets.map((line) => html`<li>${line}</li>`)}</ul><div class="s-reader__aside-foot">${t('summaryStays')}</div>`;
+    }
+    if (summary.state === 'failed') {
+      return html`<div class="s-reader__aside-empty">${t('summaryFailed')} <button type="button" class="s-reader__retry" data-act="summary-retry">${t('retry')}</button></div>`;
+    }
+    return html`<div class="s-reader__aside-empty" role="status"><span class="o-spinner"></span> ${t('summaryLoading')}</div>`;
+  }
+
+  function summaryHeadMarkup() {
+    return html`<div class="s-reader__aside-head"><div class="s-reader__aside-title">${t('summaryLabel')}</div><span class="s-reader__aside-tag">${t('summaryGenerated')}</span></div>`;
+  }
+
   function asideMarkup() {
-    if (!notesOpen || device() === 'mobile') return '';
+    if (device() === 'mobile') return '';
+    if (summaryOpen) return html`<aside class="s-reader__aside" data-aside>${summaryHeadMarkup()}${summaryBodyMarkup()}</aside>`;
+    if (!notesOpen) return '';
     return html`<aside class="s-reader__aside" data-aside><div class="s-reader__aside-title">${t('notesHighlights')}</div>${panelBodyMarkup()}</aside>`;
+  }
+
+  /* Asked for only when the learner opens Summary, never on opening the text (D-130). */
+  async function loadSummary() {
+    if (summary.state === 'loading' || summary.state === 'ready') return;
+    summary = { state: 'loading', bullets: [] };
+    paintBody();
+    if (summarySheet) refreshSummarySheet();
+    const target = support() || 'en';
+    const which = doc.kind === 'article' ? { article_id: doc.id } : doc.isBook ? { book_id: doc.bookId, chapter_id: doc.chapterId } : { text: paragraphTexts.join('\n\n') };
+    try {
+      const value = await api.readingSummary({ source_language: language, target_language: target, ...which });
+      const bullets = Array.isArray(value?.bullets) ? value.bullets.map((line) => String(line || '').trim()).filter(Boolean) : [];
+      summary = bullets.length ? { state: 'ready', bullets } : { state: 'failed', bullets: [] };
+    } catch {
+      summary = { state: 'failed', bullets: [] };
+    }
+    if (!alive) return;
+    paintBody();
+    if (summarySheet) refreshSummarySheet();
   }
 
   function seltbMarkup() {
@@ -508,7 +572,7 @@ export default async function mountReader(element, ctx) {
     if (!alive) return;
     const top = scrollEl.scrollTop;
     const notes = collectNotes();
-    const split = notesOpen && device() !== 'mobile';
+    const split = (notesOpen || summaryOpen) && device() !== 'mobile';
     mount(
       gridEl,
       html`<div class="${cls('s-reader__grid', split && 's-reader__grid--split')}">
@@ -595,7 +659,9 @@ export default async function mountReader(element, ctx) {
       source: { ...source, segment: s.seg },
       onOpen: onSheetOpen,
       onClose: onSentenceSheetClose,
+      // A note or a highlight saved from the sheet (its "Save highlight") shows in the text at once.
       onNote: () => {
+        if (storage) highlights = loadHighlights(storage, owner, contentId);
         paintBody();
         paintTop();
       },
@@ -681,6 +747,30 @@ export default async function mountReader(element, ctx) {
       onClose() {
         notesSheet = null;
         notesOpen = false;
+        if (alive) paintTop();
+      },
+    });
+  }
+
+  let summarySheet = null;
+  function refreshSummarySheet() {
+    if (!summarySheet) return;
+    fillSheet(summarySheet.element, summarySheet, html`${sheetHead({ title: t('summaryLabel'), closeLabel: shellCopy('close') })}<div class="o-sheet__body"><span class="s-reader__aside-tag">${t('summaryGenerated')}</span>${summaryBodyMarkup()}</div>`);
+  }
+  function openSummarySheet() {
+    summaryOpen = true;
+    summarySheet = openSheet({
+      label: t('summaryLabel'),
+      render(sheetEl, handle) {
+        summarySheet = handle;
+        refreshSummarySheet();
+        sheetEl.addEventListener('click', (event) => {
+          if (event.target.closest?.('[data-act="summary-retry"]')) loadSummary();
+        });
+      },
+      onClose() {
+        summarySheet = null;
+        summaryOpen = false;
         if (alive) paintTop();
       },
     });
@@ -864,6 +954,8 @@ export default async function mountReader(element, ctx) {
     }
     if (key === 'notes') {
       menuOpen = '';
+      summaryOpen = false;
+      if (summarySheet) summarySheet.close();
       if (notesOpen) closeNotes();
       else if (device() === 'mobile') {
         paintTop();
@@ -877,8 +969,24 @@ export default async function mountReader(element, ctx) {
     }
     if (key === 'summary') {
       menuOpen = '';
-      paintTop();
-      toast(t('summaryNotPrepared'), { iconName: 'info' });
+      if (summaryOpen) {
+        summaryOpen = false;
+        if (summarySheet) summarySheet.close();
+        paintTop();
+        paintBody();
+        return;
+      }
+      notesOpen = false;
+      if (notesSheet) notesSheet.close();
+      if (device() === 'mobile') {
+        paintTop();
+        openSummarySheet();
+      } else {
+        summaryOpen = true;
+        paintTop();
+        paintBody();
+      }
+      loadSummary();
       return;
     }
     if (key === 'save') {
@@ -918,8 +1026,10 @@ export default async function mountReader(element, ctx) {
     } else if (act === 'chapter') {
       if (id !== doc.chapterId) goTo('reader', { id: contentIdFor('book', `${doc.bookId}:${id}`) });
     } else if (act === 'end-primary') {
-      if (hasQuiz) goTo('checku');
-      else finish();
+      if (hasQuiz) {
+        stopSpeech();
+        ctx.go(ctx.href('checku', { id: contentId }, practice ? { mode: 'practice' } : {}));
+      } else finish();
     } else if (act === 'end-secondary') finish();
     else if (act === 'end-next') {
       const next = doc.neighbours?.next;
@@ -935,6 +1045,11 @@ export default async function mountReader(element, ctx) {
     else if (act === 'sel-highlight') toggleSelectedHighlight();
     else if (act === 'sel-ask') askAboutSelection();
     else if (act === 'sel-close') clearSelection();
+    else if (act === 'translation-retry') ensureTranslation();
+    else if (act === 'summary-retry') {
+      summary = { state: 'idle', bullets: [] };
+      loadSummary();
+    }
   }
   element.addEventListener('click', onClick);
 
@@ -974,6 +1089,21 @@ export default async function mountReader(element, ctx) {
   };
   restore();
   syncPosition();
+
+  /* "Show in text" from Check Understanding (cuShowInText): the evidence sentence is brought into
+     view and opened in its Sentence Quick Sheet. */
+  const evidence = squash(ctx.query?.get?.('evidence') || '');
+  if (evidence) {
+    const hit = [...sentenceBySeg.values()].find((s) => s.text.includes(evidence) || evidence.includes(s.text));
+    if (hit) {
+      scrollEl.scrollTop = 0;
+      requestAnimationFrame(() => {
+        scrollToSentence(hit.seg);
+        select(hit.seg);
+        openSentence('Translation');
+      });
+    }
+  }
   document.fonts?.ready?.then(() => {
     restore();
     syncPosition();

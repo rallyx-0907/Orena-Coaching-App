@@ -56,3 +56,6 @@
   gap: 10px;
   margin-top: 10px;
 }
+
+/* The page's own line under the title (frame 04). */
+.s-discover__sub { margin: 8px 0 0; color: var(--muted); font-size: 16px; line-height: 24px; }

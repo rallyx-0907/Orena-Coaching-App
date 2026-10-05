@@ -390,3 +390,28 @@ def test_a_chinese_line_to_say_again_must_be_chinese(monkeypatch) -> None:
     _provider(monkeypatch, {**payload, "say_again": "Instead of 不是, say 其实我是英国人."})
     zh = media_interaction.coach_spoken_response(media_interaction.SpokenResponseIn(transcript="不是，我是英国人。", source_language="zh", target_language="vi", situation=""))
     assert zh["say_again"] == ""
+
+
+def test_reading_transfer_asks_whether_the_meaning_came_through_only_with_a_source_sentence(monkeypatch) -> None:
+    """Frame 39's two verdicts (D-129 R-30): one call, only for a restated source sentence."""
+    answer = {
+        "carried": [], "landed_differently": [], "another_way": "", "next_attempt": "", "say_again": "",
+        "meaning_preserved": "partly", "missing_idea": "“tells us who we are”",
+    }
+    seen = _provider(monkeypatch, answer)
+    restated = media_interaction.coach_spoken_response(media_interaction.SpokenResponseIn(
+        transcript="Routines shape our days.", source_language="en", target_language="vi",
+        situation="Paraphrase", source_text="It gives shape to days and tells us who we are."))
+    assert restated["meaning_preserved"] == "partly" and restated["missing_idea"] == "“tells us who we are”"
+    assert "meaning_preserved" in seen[-1]["schema"]["required"] and "THE SOURCE SENTENCE" in seen[-1]["user"]
+
+    spoken = media_interaction.coach_spoken_response(media_interaction.SpokenResponseIn(
+        transcript="Routines shape our days.", source_language="en", target_language="vi", situation=""))
+    assert spoken["meaning_preserved"] is None and spoken["missing_idea"] == ""
+    assert "meaning_preserved" not in seen[-1]["schema"]["properties"]
+
+    _provider(monkeypatch, {**answer, "meaning_preserved": "excellent"})
+    odd = media_interaction.coach_spoken_response(media_interaction.SpokenResponseIn(
+        transcript="Routines shape our days.", source_language="en", target_language="vi",
+        situation="", source_text="It gives shape to days."))
+    assert odd["meaning_preserved"] is None  # outside the three verdicts: not shown

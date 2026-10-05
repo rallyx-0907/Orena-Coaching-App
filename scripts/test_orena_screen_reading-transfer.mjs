@@ -25,7 +25,7 @@ const backend = readFileSync(new URL('../writing_coach/media_interaction.py', im
 // 1. The request contract, from the backend's own model.
 const requestModel = backend.match(/class SpokenResponseIn\(BaseModel\):[\s\S]*?(?=\nclass |\n@)/)[0];
 const requestFields = [...requestModel.matchAll(/^    (\w+): /gm)].map((match) => match[1]);
-assert.deepEqual(requestFields.sort(), ['situation', 'source_language', 'target_language', 'transcript']);
+assert.deepEqual(requestFields.sort(), ['situation', 'source_language', 'source_text', 'target_language', 'transcript']);
 assert.equal(Number(requestModel.match(/transcript: str = Field\(min_length=1, max_length=(\d+)\)/)[1]), COACH_LIMITS.transcript, 'the transcript limit is the backend\'s');
 assert.equal(Number(requestModel.match(/situation: str = Field\(default="", max_length=(\d+)\)/)[1]), COACH_LIMITS.situation, 'the situation limit is the backend\'s');
 assert.ok(requestModel.includes('extra="forbid"'), 'the model forbids extra fields, so a request must carry exactly its own');
@@ -38,7 +38,7 @@ assert.ok(
 const handler = backend.slice(backend.indexOf('def coach_spoken_response'));
 const returned = handler.slice(handler.indexOf('    return {'), handler.indexOf('\n    }\n', handler.indexOf('    return {')));
 const responseKeys = [...returned.matchAll(/^        "(\w+)":/gm)].map((match) => match[1]);
-for (const key of ['available', 'carried', 'landed_differently', 'another_way', 'next_attempt']) {
+for (const key of ['available', 'carried', 'landed_differently', 'another_way', 'next_attempt', 'meaning_preserved', 'missing_idea']) {
   assert.ok(responseKeys.includes(key), `the response carries ${key}`);
 }
 const grounded = handler.slice(handler.indexOf('def _grounded'), handler.indexOf('carried = _grounded'));
@@ -50,6 +50,7 @@ assert.deepEqual(Object.keys(request).sort(), requestFields.sort());
 assert.equal(request.transcript, 'She could not reach them.', 'the answer is trimmed');
 assert.equal(request.source_language, 'en');
 assert.equal(request.target_language, 'vi');
+assert.equal(request.source_text, 'The grapes were out of reach.', 'the restated sentence itself goes with it, for the two verdicts of frame 39');
 assert.ok(request.situation.includes('The grapes were out of reach.'), 'the coach is told which sentence was worked on');
 assert.ok(request.situation.startsWith(MODES.find((mode) => mode.key === 'paraphrase').task));
 assert.notEqual(coachRequest({ answer: 'x', mode: 'inference', sentence: 's', language: 'en', support: 'en' }).situation, coachRequest({ answer: 'x', mode: 'context_shift', sentence: 's', language: 'en', support: 'en' }).situation, 'each mode gives the coach its own task');
@@ -138,7 +139,8 @@ assert.equal(coached.improvement, 'Keep the fox\'s reason in your version.', 'th
 // a single tile plus the one thing to try.
 const real = fixture('spoken_response.json');
 for (const key of ['available', 'carried', 'landed_differently', 'another_way', 'next_attempt']) assert.ok(key in real, `the real answer carries ${key}`);
-for (const key of Object.keys(request)) assert.ok(key in real, `the real answer echoes ${key}`);
+// source_text is the one request field the answer does not echo (the verdicts are its answer to it).
+for (const key of Object.keys(request).filter((key) => key !== 'source_text')) assert.ok(key in real, `the real answer echoes ${key}`);
 const mappedReal = mapCoaching(real);
 assert.equal(mappedReal.available, true);
 assert.equal(mappedReal.carried.length, real.carried.length);
@@ -161,8 +163,12 @@ assert.equal(mappedBoth.improvement, realBoth.next_attempt);
 assert.equal(mapCoaching({ carried: [], landed_differently: [], another_way: 'An alternative.', next_attempt: '' }).improvement, 'An alternative.', 'falls back to the alternative, never to invented text');
 assert.equal(mapCoaching({ carried: [{ quote: 'q', why: 'w' }], landed_differently: [], next_attempt: '', another_way: '', available: true }).improvement, '', 'nothing to try is nothing drawn');
 const nothing = mapCoaching({ available: false, carried: [], landed_differently: [], another_way: '', next_attempt: '', say_again: '' });
-assert.deepEqual(nothing, { available: false, carried: [], landed: [], improvement: '' }, 'the honest "nothing to point out" degrade');
-assert.deepEqual(mapCoaching(null), { available: false, carried: [], landed: [], improvement: '' }, 'no answer never throws');
+assert.deepEqual(nothing, { available: false, carried: [], landed: [], improvement: '', meaning: '', missing: '' }, 'the honest "nothing to point out" degrade');
+assert.deepEqual(mapCoaching(null), { available: false, carried: [], landed: [], improvement: '', meaning: '', missing: '' }, 'no answer never throws');
+// Frame 39's verdicts: one of the three, else nothing drawn; the missing idea as given.
+assert.deepEqual([mapCoaching({ meaning_preserved: 'partly', missing_idea: '“sour”' }).meaning, mapCoaching({ meaning_preserved: 'partly', missing_idea: '“sour”' }).missing], ['partly', '“sour”']);
+assert.equal(mapCoaching({ meaning_preserved: 'great' }).meaning, '');
+assert.equal(mapCoaching({ meaning_preserved: 'lost' }).available, true, 'a verdict alone is a result');
 assert.deepEqual(mapCoaching({ carried: [{ quote: '', why: 'w' }, { why: 'no quote' }, { quote: 'q' }], landed_differently: 'not a list' }).carried, [], 'an item without both a quotation and a reason is not shown');
 
 // 10. Every string is in all three languages with its layer, and the language-neutral request has no words of a language in it.

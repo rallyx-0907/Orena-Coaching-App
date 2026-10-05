@@ -301,6 +301,7 @@ export const api={
      has no business with any of that. */
   readingArticles:(languageCode,cursor)=>request(`/api/reading/articles?language=${encodeURIComponent(languageCode)}${cursor?`&cursor=${encodeURIComponent(cursor)}`:''}`),
   readingArticle:(articleId)=>request(`/api/reading/articles/${encodeURIComponent(articleId)}`),
+  readingSummary:(payload)=>request('/api/reading/summary',{method:'POST',headers:JSON_HEADERS,body:JSON.stringify(payload||{})}),
   libraryBooks:(languageCode,cursor)=>request(`/api/reading/library/books?learning_language=${encodeURIComponent(languageCode)}${cursor?`&cursor=${encodeURIComponent(cursor)}`:''}`),
   libraryBook:(bookId)=>request(`/api/reading/library/books/${encodeURIComponent(bookId)}`),
   libraryBookChapter:(bookId,chapterId)=>request(`/api/reading/library/books/${encodeURIComponent(bookId)}/chapters/${encodeURIComponent(chapterId)}`),

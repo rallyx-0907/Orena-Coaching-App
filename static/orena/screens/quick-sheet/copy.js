@@ -20,14 +20,14 @@ const INTERFACE_KEYS = [
   'posInterjection', 'posClassifier', 'posProperNoun', 'posOther',
   'tabTranslation', 'tabStructure', 'tabVocabulary', 'tabNote',
   'noteFactual', 'noteReflection', 'noteQuestion', 'addNote', 'notePlaceholder',
-  'deleteNote', 'saveVocab', 'unsaveVocab',
+  'deleteNote', 'saveVocab', 'unsaveVocab', 'saveHighlight', 'highlightSaved', 'retry',
   // Stroke Practice (frame 60), reused from the Word Quick Sheet's "Practise strokes" - the exact
   // key set `screens/word/stroke-sheet.js#mountStrokeSheet` needs from whichever `t` calls it.
   'strokePracticeTitle', 'strokeCount', 'strokeLoading', 'watchStrokes', 'writeIt', 'nextCharacter',
 ];
 const SUPPORT_KEYS = [
   'sourceSentence', 'meaningHere', 'meaningNotPrepared', 'noGlossNotice', 'whyHereFallback',
-  'translationNotPrepared', 'structureNotPrepared', 'vocabEmpty',
+  'translationNotPrepared', 'structureNotPrepared', 'vocabEmpty', 'translationFailed', 'whyHereLoading',
   'noAudioSource',
   'strokeUnavailable', 'strokeWatching', 'strokeStep', 'strokeTryAgain', 'strokeComplete',
 ];
@@ -40,7 +40,8 @@ export const t = defineCopy('quick-sheet', {
     playWord: 'Play pronunciation', saveWord: 'Save word', unsaveWord: 'Unsave word',
     posUnknown: 'Word', strokeOrder: 'Stroke order', practiseStrokes: 'Practise strokes',
     saveWordCta: 'Save word', askDeeper: 'Ask deeper', whyHere: 'Why here?', fullWordDetail: 'Full word detail',
-    savedToast: 'Saved', removedToast: 'Removed',
+    savedToast: 'Saved', removedToast: 'Removed', saveHighlight: 'Save highlight', highlightSaved: 'Highlighted', retry: 'Retry',
+    translationFailed: 'The translation could not be made right now.', whyHereLoading: 'Looking at this sentence…',
     stageNew: 'New', stageLearning: 'Learning', stageReinforcing: 'Reinforcing', stageAvailable: 'Known',
     dueToday: 'Due today', dueInDays_one: 'Review in {n} day', dueInDays_other: 'Review in {n} days',
     posNoun: 'noun', posVerb: 'verb', posAdjective: 'adjective', posAdverb: 'adverb', posPronoun: 'pronoun',
@@ -73,7 +74,8 @@ export const t = defineCopy('quick-sheet', {
     playWord: 'Phát âm', saveWord: 'Lưu từ', unsaveWord: 'Bỏ lưu từ',
     posUnknown: 'Từ', strokeOrder: 'Thứ tự nét', practiseStrokes: 'Luyện viết nét',
     saveWordCta: 'Lưu từ', askDeeper: 'Hỏi sâu hơn', whyHere: 'Vì sao ở đây?', fullWordDetail: 'Xem chi tiết từ',
-    savedToast: 'Đã lưu', removedToast: 'Đã xoá',
+    savedToast: 'Đã lưu', removedToast: 'Đã xoá', saveHighlight: 'Lưu tô sáng', highlightSaved: 'Đã tô sáng', retry: 'Thử lại',
+    translationFailed: 'Chưa dịch được lúc này.', whyHereLoading: 'Đang xem câu này…',
     stageNew: 'Mới', stageLearning: 'Đang học', stageReinforcing: 'Đang củng cố', stageAvailable: 'Đã thuộc',
     dueToday: 'Đến hạn ôn hôm nay', dueInDays_other: 'Ôn tập lại sau {n} ngày',
     posNoun: 'danh từ', posVerb: 'động từ', posAdjective: 'tính từ', posAdverb: 'trạng từ', posPronoun: 'đại từ',
@@ -106,7 +108,8 @@ export const t = defineCopy('quick-sheet', {
     playWord: '播放发音', saveWord: '收藏这个词', unsaveWord: '取消收藏',
     posUnknown: '词', strokeOrder: '笔顺', practiseStrokes: '练习笔顺',
     saveWordCta: '收藏这个词', askDeeper: '深入问 Orena', whyHere: '为什么在这里？', fullWordDetail: '查看词语详情',
-    savedToast: '已收藏', removedToast: '已移除',
+    savedToast: '已收藏', removedToast: '已移除', saveHighlight: '保存高亮', highlightSaved: '已高亮', retry: '重试',
+    translationFailed: '暂时无法翻译。', whyHereLoading: '正在查看这句话…',
     stageNew: '新词', stageLearning: '学习中', stageReinforcing: '巩固中', stageAvailable: '已掌握',
     dueToday: '今天需要复习', dueInDays_other: '{n} 天后复习',
     posNoun: '名词', posVerb: '动词', posAdjective: '形容词', posAdverb: '副词', posPronoun: '代词',

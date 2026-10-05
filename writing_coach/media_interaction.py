@@ -83,6 +83,9 @@ class SpokenResponseIn(BaseModel):
     # What the learner was asked to do. Without it, coaching has to guess at the
     # task and ends up marking ordinary choices as omissions.
     situation: str = Field(default="", max_length=1200)
+    # Reading Transfer (frame 39): the source sentence the learner restated. When given, the same call
+    # also judges whether its meaning came through and names an important idea left out.
+    source_text: str = Field(default="", max_length=2000)
 
     @field_validator("target_language")
     @classmethod
@@ -657,7 +660,19 @@ def explain_media_text(payload: MediaExplainIn) -> dict[str, Any]:
     }
 
 
-def _spoken_schema() -> dict[str, Any]:
+MEANING_VERDICTS = ("preserved", "partly", "lost")
+
+
+def _spoken_schema(*, with_meaning: bool = False) -> dict[str, Any]:
+    schema = _spoken_base_schema()
+    if with_meaning:
+        schema["properties"]["meaning_preserved"] = {"type": "string", "enum": list(MEANING_VERDICTS)}
+        schema["properties"]["missing_idea"] = {"type": "string"}
+        schema["required"] = [*schema["required"], "meaning_preserved", "missing_idea"]
+    return schema
+
+
+def _spoken_base_schema() -> dict[str, Any]:
     return {
         "type": "object",
         "properties": {
@@ -731,6 +746,7 @@ def coach_spoken_response(payload: SpokenResponseIn) -> dict[str, Any]:
     source_name = "Simplified Chinese" if language == "zh" else "English"
     transcript = payload.transcript.strip()
     situation = payload.situation.strip()
+    source_text = payload.source_text.strip()
     if not transcript:
         raise HTTPException(422, "A transcript is required.")
 
@@ -752,9 +768,19 @@ def coach_spoken_response(payload: SpokenResponseIn) -> dict[str, Any]:
         f"In say_again, give one sentence from what they said, corrected where needed, written "
         f"only in {source_name}: no explanation, no quotation marks, no {target_name}. Do not "
         "score, grade or estimate a level. Never cite a source you were not given."
+        + (
+            " The learner was restating THE SOURCE SENTENCE below. In meaning_preserved, say whether its "
+            "meaning came through: preserved, partly or lost. In missing_idea, name in a few words the most "
+            "important idea of the source sentence the learner left out, quoting the source's own words, or "
+            f"leave it empty when nothing important is missing. Write missing_idea in {target_name}, "
+            f"quoting {source_name} words exactly."
+            if source_text
+            else ""
+        )
     )
     user = (
         (f"THE SITUATION:\n{situation}\n\n" if situation else "")
+        + (f"THE SOURCE SENTENCE:\n{source_text}\n\n" if source_text else "")
         + f"WHAT RECOGNITION HEARD:\n{transcript}\n\n"
         + "Coach this spoken response."
     )
@@ -764,7 +790,7 @@ def coach_spoken_response(payload: SpokenResponseIn) -> dict[str, Any]:
             {"role": "system", "content": system},
             {"role": "user", "content": user},
         ],
-        schema=_spoken_schema(),
+        schema=_spoken_schema(with_meaning=bool(source_text)),
         max_output_tokens=1400,
     )
 
@@ -800,6 +826,11 @@ def coach_spoken_response(payload: SpokenResponseIn) -> dict[str, Any]:
         # One line to say again, in the learning language only (Orena Speaking 04).
         "say_again": _line_in_language(raw.get("say_again"), language),
         "available": bool(carried or landed),
+        # Reading Transfer only (with a source sentence); null / "" otherwise.
+        "meaning_preserved": (
+            str(raw.get("meaning_preserved")) if source_text and raw.get("meaning_preserved") in MEANING_VERDICTS else None
+        ),
+        "missing_idea": str(raw.get("missing_idea") or "").strip()[:300] if source_text else "",
         # Said in the payload as well as in the copy: this is derived from a
         # transcript, and it is not a measurement of speech.
         "claim": "spoken_response_coaching_from_transcript",

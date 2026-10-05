@@ -132,6 +132,9 @@ export function mapWordCard(word, { detail = null, item = null } = {}) {
     exampleParts: highlightExample(detail?.deeper?.examples?.[0], headword),
     audioUrl: text(detail?.audioUrl),
     whyHere: text(detail?.deeper?.whyHere),
+    // "Meaning here" (frame 53) only when the meaning is this sentence's own, not a dictionary sense.
+    meaningIsContextual: detail?.meaningSource === 'context' || detail?.meaningSource === 'contextual',
+    contextSentence: text(detail?.contextSentence),
     saved,
     savedBg: tone.bg,
     savedColor: tone.color,

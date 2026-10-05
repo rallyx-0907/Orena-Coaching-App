@@ -357,6 +357,10 @@
   line-height: 1.6;
   color: var(--muted);
 }
+/* On-request translation (D-130): the paragraph's meaning slot shows the kit spinner while it is
+   asked for, or one short line with Retry when the provider failed. */
+.s-reader__article .s-reader__translation--state { display: flex; align-items: center; gap: 8px; font-family: Outfit, sans-serif; font-size: 13px; }
+.s-reader__retry { border: 0; background: none; padding: 0; color: var(--accent-text); font: inherit; font-weight: 600; cursor: pointer; }
 
 /* Notes attached to a paragraph (frame 14's amber cards, Outfit). */
 .s-reader__notes {
@@ -685,3 +689,10 @@
   align-items: center;
   justify-content: center;
 }
+
+/* The Summary panel (frame 14, D-130): its head with the "Generated on request" tag, the bullets and
+   the closing line. */
+.s-reader__aside-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.s-reader__aside-tag { font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 6px; background: var(--surface2); color: var(--muted); }
+.s-reader__summary { margin: 0; padding-left: 18px; font-size: 15px; line-height: 1.6; color: var(--text); }
+.s-reader__aside-foot { font-size: 13px; color: var(--muted); }

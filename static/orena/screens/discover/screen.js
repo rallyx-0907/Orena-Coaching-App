@@ -56,7 +56,7 @@ export default async function discover(element, ctx) {
     element,
     html`<div class="s-discover">
       <div class="o-pagehead">
-        <h1 class="o-h1">${practice ? ts(practiceLabel) : ts('discover')}</h1>
+        <div><h1 class="o-h1">${practice ? ts(practiceLabel) : ts('discover')}</h1>${practice ? '' : html`<p class="s-discover__sub">${t('subtitle')}</p>`}</div>
         <div class="s-discover__actions">
           <button type="button" class="o-btn o-btn--secondary" data-filters>${raw(icon('list-filter', { size: 16 }))}${t('filters')}<span data-filtercount></span></button>
           ${practice === 'listening' ? '' : html`<button type="button" class="o-btn o-btn--primary" data-import>+ ${t('importAction')}</button>`}
@@ -211,9 +211,24 @@ export default async function discover(element, ctx) {
   paintTabs();
   paintResults();
 
+  /* Every published article, page by page (the endpoint pages with a cursor): the search and the
+     Read tab look across the whole catalogue, not only its first page (D-129 R-32). */
+  async function allReadingArticles(code) {
+    const items = [];
+    let cursor;
+    for (let page = 0; page < 20; page += 1) {
+      const value = await api.readingArticles(code, cursor).catch(() => null);
+      if (!value) break;
+      items.push(...(value.items || []));
+      cursor = value.next_cursor;
+      if (!cursor) break;
+    }
+    return { items };
+  }
+
   async function load() {
     const [articles, books, media, collections, speaking] = await Promise.all([
-      api.readingArticles(language).catch(() => ({ items: [] })),
+      allReadingArticles(language),
       api.libraryBooks(language).catch(() => ({ items: [] })),
       api.listeningLibrary(language).catch(() => ({ items: [] })),
       api.vocabularyLibraryCollections(language).catch(() => ({ items: [] })),

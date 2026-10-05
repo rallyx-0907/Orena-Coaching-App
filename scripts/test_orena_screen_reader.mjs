@@ -41,6 +41,7 @@ const {
   readerSizePx,
   steppedSize,
   toolbarMeta,
+  pageOf,
   translationTurns,
   translationsFrom,
   savedFromSentences,
@@ -225,11 +226,15 @@ assert.equal(furthest(undefined, 15), 15);
   assert.deepEqual(memory.value.continuation[0].place, { index: 1, total: 1 }, 'opened, not yet moved through');
 }
 
-// 11. The toolbar's second line: a book shows the chapter and its real position; an article shows
-// its author/source and level and the real reading percent; missing parts are absent.
-assert.equal(toolbarMeta({ isBook: true, chapterTitle: 'CHAPTER I', chapterIndex: 0, chapterTotal: 12, percent: 10 }), 'CHAPTER I · 1/12');
-assert.equal(toolbarMeta({ isBook: false, author: 'Aesop', level: 'B2', percent: 40 }), 'Aesop · B2 · 40%');
-assert.equal(toolbarMeta({ isBook: false, percent: 0 }), '0%');
+// 11. The toolbar's second line, as frame 14 builds it: source · kind · level · mode · page; a book
+// names its chapter and position; missing parts are absent (D-129 R-07).
+assert.equal(toolbarMeta({ isBook: false, author: 'The Slow Review', kindLabel: 'Article', level: 'B2', modeLabel: 'Active Reading', pageLabel: 'p. 1 of 3' }), 'The Slow Review · Article · B2 · Active Reading · p. 1 of 3');
+assert.equal(toolbarMeta({ isBook: true, chapterTitle: 'CHAPTER I', chapterIndex: 0, chapterTotal: 12, kindLabel: 'Book', pageLabel: 'p. 2 of 4' }), 'CHAPTER I · Book · 1/12 · p. 2 of 4');
+assert.equal(toolbarMeta({ isBook: false }), '');
+assert.deepEqual(pageOf(15, 0), { n: 1, total: 3 });
+assert.deepEqual(pageOf(15, 50), { n: 2, total: 3 });
+assert.deepEqual(pageOf(15, 100), { n: 3, total: 3 });
+assert.deepEqual(pageOf(0, 0), { n: 1, total: 1 });
 
 // 12. excerptFrom: a real paragraph opener nearest the learner's position, trimmed, never invented.
 assert.equal(excerptFrom(['First paragraph.', 'Second paragraph.', 'Third paragraph.'], 0), 'First paragraph.');

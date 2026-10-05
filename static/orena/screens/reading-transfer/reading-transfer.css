@@ -220,9 +220,6 @@
 .s-reading-transfer__tiles--single {
   grid-template-columns: 1fr;
 }
-:root[data-device='mobile'] .s-reading-transfer__tiles {
-  grid-template-columns: 1fr;
-}
 .s-reading-transfer__tile {
   padding: 13px 14px;
   border-radius: 14px;
@@ -233,6 +230,22 @@
 }
 .s-reading-transfer__tile--carried {
   background: var(--green-soft);
+}
+/* Frame 39's verdict tiles: the value under its label; "Yes" in green on green-soft, the others amber. */
+.s-reading-transfer__tile-value {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--amber);
+  overflow-wrap: anywhere;
+}
+.s-reading-transfer__tile-value--plain {
+  color: var(--text);
+}
+.s-reading-transfer__tile--kept {
+  background: var(--green-soft);
+}
+.s-reading-transfer__tile--kept .s-reading-transfer__tile-value {
+  color: var(--green);
 }
 .s-reading-transfer__tile-label {
   font-size: 12px;

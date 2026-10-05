@@ -20,7 +20,6 @@ export function loadingMarkup(label) {
     <div class="o-loading__hero"></div>
     <div class="o-bone" style="height:12px;width:100%"></div><div class="o-bone" style="height:12px;width:86%"></div><div class="o-bone" style="height:12px;width:64%"></div>
     <div class="o-loading__status"><span class="o-spinner"></span><div>${label}</div></div>
-    <progress class="o-loading__progress" aria-label="${label}"></progress>
   </div></div>`;
 }
 

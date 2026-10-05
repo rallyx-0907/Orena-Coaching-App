@@ -78,19 +78,15 @@ assert.deepEqual(placeFor([{ id: 'other', place: { within: 50 } }], 'article:x')
 
 // 7. Article/book/media/text normalisation: real fields carried through, an absent field is ''
 // or null, never a placeholder string or a guessed number.
-assert.deepEqual(normalizeArticle({ title: 'Sông Hồng', attribution: { author: 'Báo X' }, level: 'B1', reading_time_seconds: 300, body: 'ngắn' }), {
-  title: 'Sông Hồng', language: '', source: 'Báo X', level: 'B1', minutes: 5, desc: 'ngắn', image: '',
+// D-130: the description is the article's own metadata; the body is never presented as one.
+assert.deepEqual(normalizeArticle({ title: 'Sông Hồng', attribution: { author: 'Báo X' }, level: 'B1', reading_time_seconds: 300, body: 'ngắn', description: 'Mô tả bài' }), {
+  title: 'Sông Hồng', language: '', source: 'Báo X', level: 'B1', minutes: 5, desc: 'Mô tả bài', image: '',
 });
-assert.deepEqual(normalizeArticle({ title: 'No attribution', body: 'text' }), { title: 'No attribution', language: '', source: '', level: '', minutes: null, desc: 'text', image: '' });
+assert.deepEqual(normalizeArticle({ title: 'No attribution', body: 'text' }), { title: 'No attribution', language: '', source: '', level: '', minutes: null, desc: '', image: '' });
 // languages-5 / finding A: the article's own real language field
 // (reading_content_repository.py's `_article` projection), carried through untranslated.
 assert.equal(normalizeArticle({ title: 'x', body: '', language: 'zh' }).language, 'zh');
-{
-  const long = 'x'.repeat(400);
-  const article = normalizeArticle({ title: 'Long', body: long });
-  assert.ok(article.desc.length < long.length, 'a long body is truncated for the preview, not shown whole');
-  assert.ok(article.desc.endsWith('…'));
-}
+assert.equal(normalizeArticle({ title: 'Long', body: 'x'.repeat(400) }).desc, '', 'no description metadata: the block is hidden');
 
 assert.deepEqual(normalizeBook({ id: 'b1', title: 'Truyện', author: 'Tác giả', description: 'Mô tả' }), {
   title: 'Truyện', language: '', source: 'Tác giả', level: '', minutes: null, desc: 'Mô tả', image: '',

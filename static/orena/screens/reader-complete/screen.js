@@ -78,7 +78,7 @@ export default async function mountReaderComplete(element, ctx) {
 
   const origin = readOrigin();
   const next = nextPick({ doc, articles, continuation: memory.value.continuation });
-  const nextLabel = next.kind === 'chapter' ? t('nextChapter') : t('nextLabel');
+  const nextLabel = next.kind === 'chapter' ? t('nextChapter') : next.kind === 'discover' || next.sameTheme ? t('nextSameTheme') : t('nextLabel');
   const nextTitle = next.kind === 'discover' ? t('chooseNext') : next.title;
 
   mount(

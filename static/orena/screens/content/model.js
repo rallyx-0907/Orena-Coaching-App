@@ -93,11 +93,10 @@ export function placeFor(continuation, id) {
   return { started: true, percent: Math.max(0, Math.min(100, Math.round(within))) };
 }
 
-/* An article's list/detail JSON -> this screen's own fields. `desc` is the article's own text,
-   never app copy, so a short lead-in taken from its own body is not a rule-50 concern; it is
-   truncated only so the preview does not spoil/duplicate the whole piece the Reader will show. */
+/* An article's list/detail JSON -> this screen's own fields. `desc` is the article's own
+   description metadata when an administrator gave one (D-130): the block is hidden without it, and
+   the first lines of the body are never shown as a description. */
 export function normalizeArticle(article) {
-  const body = String(article?.body || '');
   return {
     title: String(article?.title || ''),
     // languages-5 / finding A: the article's own field (reading_content_repository.py's
@@ -106,7 +105,7 @@ export function normalizeArticle(article) {
     source: String(article?.attribution?.author || ''),
     level: String(article?.level || ''),
     minutes: minutesFrom(article?.reading_time_seconds),
-    desc: body.length > 320 ? `${body.slice(0, 320).trim()}…` : body,
+    desc: String(article?.description || article?.summary || '').trim(),
     image: '',
   };
 }

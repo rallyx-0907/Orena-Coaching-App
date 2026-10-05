@@ -6,17 +6,15 @@
    The coaching is the real `POST /api/dictionary/spoken-response` (see model.js for why it, and
    not the frame's client-side heuristic, is what this screen stands on). Consequences the frame
    does not draw, recorded in docs/project/UI_BACKEND_GAPS.md:
-   - the result's two tiles hold the endpoint's two real lists ("What carried", "What would land
-     differently"), each item a quotation of the learner's own words with its reason; the frame's
-     "Meaning preserved?" / "Missing important idea?" verdicts are not measured by anything real
-     and are not drawn (rule 40);
+   - the result's two tiles are the frame's own "Meaning preserved?" and "Missing important idea?",
+     judged by the same coaching call against the source sentence (D-129 R-30);
    - nothing is written to the learner's record - there is no Reading Transfer evidence contract -
      so "Finish" only leaves;
    - a failed check keeps the learner on the answer with their text intact (the toast is the
      app's drawn mechanism for a transient failure); the frame draws no error visual.
 
-   Not drawn here (rule 43/44): the frame's header suffix "active use of what you read" (rule 50 -
-   restates the place's name), a loading visual beyond the button's own "Checking…" label, a
+   The header's subtitle is the frame's "<title> · active use of what you read" (D-129 R-29).
+   Not drawn here (rule 43/44): a loading visual beyond the button's own "Checking…" label, a
    celebration, the agent panel. No agent action applies (there is no model to play and no take to
    replay), so none is registered. */
 import { html, mount, raw } from '../../kit/html.js';
@@ -77,7 +75,7 @@ function headerMarkup(title) {
     <button type="button" class="o-iconbtn o-iconbtn--back" data-back aria-label="${shellCopy('back')}">${raw(icon('arrow-left', { size: 21 }))}</button>
     <div class="s-reading-transfer__head-body">
       <div class="s-reading-transfer__title">${shellCopy('readingTransfer')}</div>
-      ${title ? html`<div class="s-reading-transfer__meta">${title}</div>` : ''}
+      <div class="s-reading-transfer__meta">${[title, t('activeUse')].filter(Boolean).join(' · ')}</div>
     </div>
   </div>`;
 }
@@ -147,28 +145,21 @@ export default async function mountReadingTransfer(element, ctx) {
       <div class="s-reading-transfer__prompt">${MODE_COPY[mode].prompt()}</div>`;
   }
 
-  function pointMarkup(point, withInstead) {
-    return html`<div class="s-reading-transfer__point">
-      <div class="s-reading-transfer__quote" lang="${langAttr(language)}">“${point.quote}”</div>
-      <div class="s-reading-transfer__why" lang="${langAttr(support)}">${point.why}</div>
-      ${withInstead && point.instead ? html`<div class="s-reading-transfer__instead"><b>${t('insteadLabel')}</b> · <span lang="${langAttr(language)}">${point.instead}</span></div>` : ''}
-    </div>`;
-  }
-
-  function tileMarkup(kind, label, points, withInstead) {
-    return html`<div class="${`s-reading-transfer__tile s-reading-transfer__tile--${kind}`}">
-      <div class="s-reading-transfer__tile-label">${label}</div>
-      ${points.map((point) => pointMarkup(point, withInstead))}
+  const VERDICT = { preserved: 'verdictYes', partly: 'verdictPartly', lost: 'verdictLost' };
+  function verdictTiles() {
+    if (!result.meaning) return '';
+    const kept = result.meaning === 'preserved';
+    return html`<div class="s-reading-transfer__tiles">
+      <div class="${kept ? 's-reading-transfer__tile s-reading-transfer__tile--kept' : 's-reading-transfer__tile'}"><div class="s-reading-transfer__tile-label">${t('meaningPreservedLabel')}</div><div class="s-reading-transfer__tile-value">${t(VERDICT[result.meaning])}</div></div>
+      <div class="s-reading-transfer__tile"><div class="s-reading-transfer__tile-label">${t('missingIdeaLabel')}</div><div class="s-reading-transfer__tile-value s-reading-transfer__tile-value--plain" lang="${langAttr(support)}">${result.missing ? t('keyIdea', { idea: result.missing }) : t('missingNone')}</div></div>
     </div>`;
   }
 
   function resultMarkup() {
-    const tiles = [];
-    if (result.carried.length) tiles.push(tileMarkup('carried', t('carriedLabel'), result.carried, false));
-    if (result.landed.length) tiles.push(tileMarkup('landed', t('landedLabel'), result.landed, true));
-    const nothing = !tiles.length && !result.improvement;
+    const tiles = verdictTiles();
+    const nothing = !tiles && !result.improvement;
     return html`<div class="s-reading-transfer__echo" lang="${langAttr(language)}">“${answer.trim()}”</div>
-      ${tiles.length ? html`<div class="${tiles.length === 1 ? 's-reading-transfer__tiles s-reading-transfer__tiles--single' : 's-reading-transfer__tiles'}">${tiles}</div>` : ''}
+      ${tiles}
       ${result.improvement ? html`<div class="s-reading-transfer__callout"><b>${t('improvementLabel')}</b> · <span lang="${langAttr(support)}">${result.improvement}</span></div>` : ''}
       ${nothing ? html`<div class="s-reading-transfer__empty">${t('notPrepared')}</div>` : ''}`;
   }
