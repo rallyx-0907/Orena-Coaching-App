@@ -49,6 +49,7 @@ import {
   noteTypeColorKey,
   loadNotes,
   addNote,
+  updateNote,
   deleteNote,
 } from './model.js';
 import { pullIntoDevice, scheduleAnnotationPush, noteRemoved } from '../reader/annotations-sync.js';
@@ -438,7 +439,7 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
 
 /* ------------------------------------------------------------------- Sentence Quick Sheet -- */
 
-export async function openSentenceSheet(ctx = {}, { sentence, focus = '', lang, context = '', source = null, onOpen, onClose, onNote } = {}) {
+export async function openSentenceSheet(ctx = {}, { sentence, focus = '', lang, context = '', source = null, editNoteId = '', onOpen, onClose, onNote } = {}) {
   await useStyles('screens/quick-sheet/quick-sheet.css');
   const target = String(sentence || '').trim();
   if (!target) return null;
@@ -465,6 +466,17 @@ export async function openSentenceSheet(ctx = {}, { sentence, focus = '', lang, 
   const highlightOn = () => canHighlight && isHighlighted(loadHighlights(storage, owner, source.content_id), source.segment, subject);
   let noteType = 'factual';
   let noteDraft = '';
+  // "Edit in sentence" (LEX-023): the note being rewritten - its text and type fill the composer, and the
+  // composer's button updates it instead of adding another.
+  let editing = '';
+  if (editNoteId && storage) {
+    const existing = loadNotes(storage, owner, key).find((note) => note.id === editNoteId);
+    if (existing) {
+      editing = existing.id;
+      noteDraft = existing.text;
+      noteType = existing.type;
+    }
+  }
 
   function tabsMarkup() {
     const tabs = [
@@ -541,11 +553,13 @@ export async function openSentenceSheet(ctx = {}, { sentence, focus = '', lang, 
 
   function noteMarkup() {
     const notes = storage ? loadNotes(storage, owner, key) : [];
+    // The note being edited is in the composer, not listed again beside it.
+    const others = notes.filter((note) => note.id !== editing);
     return html`<div class="s-qs__panel s-qs__panel--note">
       <div class="s-qs__notechips">${noteChip('factual', t('noteFactual'))}${noteChip('reflection', t('noteReflection'))}${noteChip('question', t('noteQuestion'))}</div>
       <textarea class="s-qs__textarea" rows="3" placeholder="${t('notePlaceholder')}" data-note-draft>${noteDraft}</textarea>
-      <button type="button" class="o-btn o-btn--primary" data-note-add>${t('addNote')}</button>
-      ${notes.length ? html`<div class="s-qs__notes">${notes.map(noteRow)}</div>` : ''}
+      <button type="button" class="o-btn o-btn--primary" data-note-add${noteDraft.trim() ? '' : raw(' disabled')}>${editing ? t('updateNote') : t('addNote')}</button>
+      ${others.length ? html`<div class="s-qs__notes">${others.map(noteRow)}</div>` : ''}
     </div>`;
   }
 
@@ -590,7 +604,12 @@ export async function openSentenceSheet(ctx = {}, { sentence, focus = '', lang, 
     sheetEl.querySelectorAll('[data-vocab-save]').forEach((button) => button.addEventListener('click', () => toggleVocabSave(Number(button.dataset.vocabSave))));
     if (tab === 'Note') {
       const draft = sheetEl.querySelector('[data-note-draft]');
-      draft?.addEventListener('input', () => { noteDraft = draft.value; });
+      draft?.addEventListener('input', () => {
+        noteDraft = draft.value;
+        // An empty note cannot be added: the button says so by being unavailable, without a repaint.
+        const add = sheetEl.querySelector('[data-note-add]');
+        if (add) add.disabled = !noteDraft.trim();
+      });
       sheetEl.querySelectorAll('[data-note-type]').forEach((button) => button.addEventListener('click', () => { noteType = button.dataset.noteType; paint(); }));
       sheetEl.querySelector('[data-note-add]')?.addEventListener('click', submitNote);
       sheetEl.querySelectorAll('[data-note-delete]').forEach((button) => button.addEventListener('click', () => {
@@ -608,7 +627,10 @@ export async function openSentenceSheet(ctx = {}, { sentence, focus = '', lang, 
 
   function submitNote() {
     if (!storage || !noteDraft.trim()) return;
-    const note = addNote(storage, owner, key, { type: noteType, text: noteDraft, content: source?.content_id || '' });
+    const note = editing
+      ? updateNote(storage, owner, key, editing, { type: noteType, text: noteDraft })
+      : addNote(storage, owner, key, { type: noteType, text: noteDraft, content: source?.content_id || '' });
+    editing = '';
     if (!note) return;
     if (source?.content_id) scheduleAnnotationPush(storage, owner, source.content_id);
     noteDraft = '';

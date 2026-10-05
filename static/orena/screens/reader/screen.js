@@ -515,7 +515,7 @@ export default async function mountReader(element, ctx) {
         <span class="s-reader__note-body"><span class="s-reader__note-label">${t('yourNote', { when: relativeWhen(entry.note.at, languages().ui) })}</span><span class="s-reader__note-text">${entry.note.text}</span></span>
         <span class="s-reader__note-chev">${raw(icon('chevron-down', { size: 16, stroke: 2.2 }))}</span>
       </button>
-      <div class="s-reader__note-expanded"><div class="s-reader__note-src" lang="${langAttr(language)}">“${entry.sentence}”</div><button type="button" class="s-reader__note-edit" data-act="note-edit" data-seg="${entry.seg}">${t('editInSentence')}</button></div>
+      <div class="s-reader__note-expanded"><div class="s-reader__note-src" lang="${langAttr(language)}">“${entry.sentence}”</div><button type="button" class="s-reader__note-edit" data-act="note-edit" data-seg="${entry.seg}" data-id="${entry.note.id}">${t('editInSentence')}</button></div>
     </div>`;
   }
 
@@ -767,7 +767,7 @@ export default async function mountReader(element, ctx) {
     openWordSheet(ctx, { word, lang: language, sentence: s.text, source: { ...source, segment: seg }, onOpen: onSheetOpen, onClose: onWordSheetClose });
   }
 
-  async function openSentence(tab) {
+  async function openSentence(tab, editNoteId = '') {
     if (!selected) return;
     const s = sentenceBySeg.get(selected.seg);
     if (!s) return;
@@ -775,6 +775,7 @@ export default async function mountReader(element, ctx) {
     const handle = await openSentenceSheet(ctx, {
       sentence: s.text,
       focus: selected.span,
+      editNoteId,
       lang: language,
       source: { ...source, segment: s.seg },
       onOpen: onSheetOpen,
@@ -911,12 +912,12 @@ export default async function mountReader(element, ctx) {
     scrollEl.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
   }
 
-  function openNoteFor(seg) {
+  function openNoteFor(seg, noteId = '') {
     scrollToSentence(seg);
     select(seg);
     if (notesSheet) notesSheet.close();
-    // The frame opens the sentence's own sheet on its Note tab.
-    queueMicrotask(() => openSentence('Note'));
+    // The frame opens the sentence's own sheet on its Note tab; "Edit in sentence" opens it on that note (LEX-023).
+    queueMicrotask(() => openSentence('Note', noteId));
   }
 
   /* ---- read-aloud (the browser's own speech synthesis) ---- */
@@ -1160,7 +1161,7 @@ export default async function mountReader(element, ctx) {
       else openNoteSegs.add(seg);
       paintBody();
       element.querySelector(`.s-reader__notemark[data-seg="${seg}"]`)?.focus({ preventScroll: true });
-    } else if (act === 'note-edit') openNoteFor(seg);
+    } else if (act === 'note-edit') openNoteFor(seg, id);
     else if (act === 'note-open') openNoteFor(seg);
     else if (act === 'sel-translate') openSentence('Translation');
     else if (act === 'sel-note') openSentence('Note');

@@ -48,6 +48,13 @@
   background: var(--accent-fill-press);
   transform: scale(0.97);
 }
+/* Disabled: the Visual Skin's disabled primary - surface3 with the quiet text tone, no press feedback. */
+.o-btn--primary:disabled {
+  background: var(--surface3);
+  color: var(--text3);
+  cursor: default;
+  transform: none;
+}
 /* Secondary: Discover "Filters", Filter sheet "Clear", Load error "Retry". */
 .o-btn--secondary {
   border-radius: 14px;

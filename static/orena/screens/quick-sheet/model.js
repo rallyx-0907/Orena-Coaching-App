@@ -311,6 +311,21 @@ export function addNote(storage, owner, key, { type, text: body, content = '' })
   return note;
 }
 
+/* An existing note rewritten in place (LEX-023): same id and time, new text and type, so the account keeps one
+   note rather than a copy. Returns the note, or null when it is gone or the text is empty. */
+export function updateNote(storage, owner, key, id, { type, text: body }) {
+  const value = text(body).slice(0, 600);
+  if (!value) return null;
+  const store = readStore(storage, owner);
+  const list = Array.isArray(store[key]) ? store[key] : [];
+  const at = list.findIndex((note) => note.id === id);
+  if (at < 0) return null;
+  const note = { ...list[at], type: NOTE_TYPES.includes(type) ? type : list[at].type, text: value };
+  store[key] = [...list.slice(0, at), note, ...list.slice(at + 1)];
+  writeStore(storage, owner, store);
+  return note;
+}
+
 export function deleteNote(storage, owner, key, id) {
   const store = readStore(storage, owner);
   const list = Array.isArray(store[key]) ? store[key] : [];
