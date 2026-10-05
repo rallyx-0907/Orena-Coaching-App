@@ -386,7 +386,7 @@ export default async function mountReader(element, ctx) {
       // Pinyin is offered only for a Chinese text: an aid that cannot apply is not shown (D-131).
       items = html`<div class="s-reader__aids" role="group" aria-label="${t('aidsLabel')}">${
         canTranslate ? aidToggle('translation', 'languages', t('translationAid', { lang }), t('aidShortTranslation', { lang }), translationOn) : ''
-      }${aidToggle('vocab', 'whole-word', t('vocabLensAid'), t('aidShortLens'), vocabLensOn)}${aidToggle('pos', 'tags', t('wordRolesAid'), t('aidShortRoles'), posOn)}${
+      }${aidToggle('vocab', 'target', t('vocabLensAid'), t('aidShortLens'), vocabLensOn)}${aidToggle('pos', 'tags', t('wordRolesAid'), t('aidShortRoles'), posOn)}${
         isZh ? aidToggle('pinyin', 'case-lower', t('pinyinAid'), t('aidShortPinyin'), pinyinOn) : ''
       }</div>`;
     } else {
@@ -407,8 +407,9 @@ export default async function mountReader(element, ctx) {
      character. With pinyin on, EVERY character of a Chinese text is such a column - punctuation and
      an unannotated run carry a blank reading - exactly as the frame builds them, so a line's
      characters share one baseline and one pitch. */
-  function pystackMarkup(hanzi, syllable) {
-    return html`<span class="s-reader__pystack"><span class="s-reader__py">${syllable || NBSP}</span><span>${hanzi}</span></span>`;
+  function pystackMarkup(hanzi, syllable, marked = false) {
+    // A highlight marks the character itself; the pinyin above it stays supporting information (LEX-013).
+    return html`<span class="s-reader__pystack"><span class="s-reader__py">${syllable || NBSP}</span><span class="${cls('s-reader__hz', marked && 's-reader__hl')}">${hanzi}</span></span>`;
   }
 
   const stacked = () => pinyinOn && isZh;
@@ -457,7 +458,7 @@ export default async function mountReader(element, ctx) {
   }
 
   function stackMarked(hanzi, syllable, on) {
-    return on ? html`<mark class="s-reader__hl">${pystackMarkup(hanzi, syllable)}</mark>` : pystackMarkup(hanzi, syllable);
+    return pystackMarkup(hanzi, syllable, on);
   }
 
   function pieceMarkup(piece, seg, start = 0, ranges = []) {
@@ -690,7 +691,7 @@ export default async function mountReader(element, ctx) {
     mount(
       gridEl,
       html`<div class="${cls('s-reader__grid', split && 's-reader__grid--split')}">
-        <article class="s-reader__article" style="font-size:${readerSizePx(settings.size)}px"${raw(`${posOn ? ' data-pos="1"' : ''}${vocabLensOn ? ' data-lens="1"' : ''}`)}>
+        <article class="s-reader__article" style="font-size:${readerSizePx(settings.size)}px"${raw(`${posOn ? ' data-pos="1"' : ''}${vocabLensOn ? ' data-lens="1"' : ''}${stacked() ? ' data-stacked="1"' : ''}`)}>
           ${legendMarkup()}
           ${paragraphs.map((block) => blockMarkup(block, notes))}
           ${endMarkup()}

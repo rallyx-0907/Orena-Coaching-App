@@ -299,6 +299,16 @@
   background: var(--green-soft);
   border-bottom: 2px solid var(--green);
 }
+/* With pinyin stacked above each character, a highlighted sentence marks its characters, not the column with
+   the pinyin row (LEX-013): the sentence box itself carries no fill there. */
+.s-reader__article[data-stacked="1"] .s-reader__sentence.is-highlighted {
+  background: none;
+  border-bottom: 0;
+}
+.s-reader__article[data-stacked="1"] .s-reader__sentence.is-highlighted .s-reader__hz {
+  background: var(--green-soft);
+  border-bottom: 2px solid var(--green);
+}
 /* A highlighted span inside a sentence (LEX-013): the sentence's own highlight look, on the learner's span. */
 .s-reader__hl {
   color: inherit;
