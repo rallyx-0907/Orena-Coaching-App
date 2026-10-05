@@ -117,23 +117,6 @@
   text-transform: uppercase;
   color: var(--muted);
 }
-.s-word-strokes__tiles {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.s-word-strokes__tile {
-  width: 76px;
-  height: 76px;
-  border-radius: 12px;
-  background: var(--surface2);
-  display: block;
-  color: var(--text);
-}
-.s-word-strokes__tile svg {
-  width: 100%;
-  height: 100%;
-}
 .s-word-strokes__btn {
   align-self: flex-start;
   height: 38px;

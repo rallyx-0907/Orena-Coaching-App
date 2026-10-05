@@ -396,21 +396,7 @@
   display: flex;
   flex: none;
 }
-/* Frame 53 stroke order, measured: 76px tiles, r12, surface2, 8px apart; the button on its own line 10px below.
-   Drawn strokes in the accent, the strokes still to come as a faint outline (the frame's writer colours). */
-.s-qs__stroke-tiles { display: flex; gap: 8px; flex-wrap: wrap; }
-.s-qs__stroke-tile {
-  display: inline-flex;
-  width: 76px;
-  height: 76px;
-  padding: 6px;
-  border-radius: 12px;
-  background: var(--surface2);
-}
-.s-qs__stroke-tile .stroke-glyph { width: 100%; height: 100%; }
-.s-qs__stroke-tile .stroke-glyph__on { fill: var(--accent); }
-.s-qs__stroke-tile .stroke-glyph__off { fill: var(--border2); }
-.s-qs__stroke-tile .stroke-glyph__rad { fill: var(--hz-radical); }
+/* Frame 53 stroke order: the tiles are kit/components.css `.o-stroke-tile`; the button on its own line below. */
 .s-qs__stroke-practise { align-self: flex-start; margin-top: 10px; }
 
 /* Retry after a provider failure (D-130): a text action in the panel's own line. */

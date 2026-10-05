@@ -29,6 +29,8 @@ import {
   posLabel,
 } from './model.js';
 import { mountStrokeSheet } from './stroke-sheet.js';
+import { createStrokeTiles } from './stroke-tiles.js';
+import { speakOnDevice } from '../../kit/device-voice.js';
 
 async function fetchItem(word) {
   try {
@@ -171,19 +173,17 @@ export default async function mountWordDetail(element, ctx) {
 
   ctx.setCrumb(card.word);
 
-  const glyphCache = new Map();
-  async function glyphOf(ch) {
-    if (glyphCache.has(ch)) return glyphCache.get(ch);
+  // Word Detail's stroke order is frame 53's: the same looping tiles as the Quick Sheet (LEX-021).
+  let strokeTiles = null;
+  async function loadStrokeTiles() {
+    if (strokeTiles) return strokeTiles;
     try {
-      const { glyphSvg } = await import('../../product/hanzi-strokes.js');
-      const payload = await api.chineseStrokeOrder(ch);
-      const data = (payload?.characters || [])[0] || null;
-      const svg = data ? glyphSvg(data, { upto: data.stroke_count, faint: false }) : '';
-      glyphCache.set(ch, svg);
-      return svg;
+      const payload = await api.chineseStrokeOrder(card.word);
+      strokeTiles = createStrokeTiles(payload?.characters || []);
     } catch {
-      return '';
+      strokeTiles = createStrokeTiles([]);
     }
+    return strokeTiles;
   }
 
   let audio = null;
@@ -205,12 +205,12 @@ export default async function mountWordDetail(element, ctx) {
     // evidence panel must always reflect the item this render's `card` was built from, never a
     // frozen snapshot from the first load (rule 40 - a deleted item leaves no evidence to show).
     const evidence = mapMasteryEvidence(item);
-    const strokeTiles = card.script === 'hanzi' ? await Promise.all([...card.word].filter((ch) => /[㐀-鿿]/.test(ch)).map(glyphOf)) : [];
+    const tiles = card.script === 'hanzi' ? await loadStrokeTiles() : null;
     const strokesMarkup =
       card.script === 'hanzi'
         ? html`<div class="s-word-strokes">
         <div class="s-word-strokes__label">${t('strokeOrder')}</div>
-        <div class="s-word-strokes__tiles">${strokeTiles.map((svg) => html`<span class="s-word-strokes__tile">${raw(svg)}</span>`)}</div>
+        ${tiles.markup()}
         <button type="button" class="o-btn o-btn--secondary s-word-strokes__btn" data-practise-strokes>${raw(icon('pencil', { size: 16 }))}${t('practiseStrokes')}</button>
       </div>`
         : '';
@@ -235,17 +235,26 @@ export default async function mountWordDetail(element, ctx) {
       </div>`,
     );
     bind();
+    strokeTiles?.start(element);
   }
 
   function bind() {
     element.querySelector('[data-back]').addEventListener('click', () => ctx.back());
+    // The same pronunciation the Quick Sheet plays (LEX-020): the word at its reading, looked up as a word met in
+    // a text when it is not in the catalogue, and the device's own voice - said to be the device's - only when
+    // the server's voice failed or could not be reached.
     element.querySelector('[data-play]')?.addEventListener('click', async () => {
+      const onDevice = () => {
+        if (speakOnDevice(word, language)) toast(t('sourceDevice'));
+        else toast(t('noAudio'));
+      };
       try {
-        const audioInfo = await api.wordAudio(word);
+        const audioInfo = await api.wordAudio(word, card.ipa || '', true);
         if (audioInfo?.available && audioInfo.url) playUrl(audioInfo.url);
+        else if (audioInfo?.reason === 'synthesis_unavailable') onDevice();
         else toast(t('noAudio'));
       } catch {
-        toast(t('noAudio'));
+        onDevice();
       }
     });
     element.querySelector('[data-save]')?.addEventListener('click', async () => {
@@ -327,5 +336,6 @@ export default async function mountWordDetail(element, ctx) {
 
   return () => {
     audio?.pause();
+    strokeTiles?.stop();
   };
 }

@@ -386,4 +386,20 @@
 /* The mask follows the vendored median from the actual start to the end of a stroke. */
 .stroke-glyph__reveal { stroke-dasharray: 1; stroke-dashoffset: 1; animation: stroke-reveal .7s linear forwards; }
 @keyframes stroke-reveal { to { stroke-dashoffset: 0; } }
+/* Stroke-order tiles (frames 53 and Word Detail, measured): 76px, r12, surface2, 8px apart. Drawn strokes in
+   the accent, the radical's in the radical colour, the strokes still to come as a faint outline - the design's
+   stroke writer colours, legible in both themes (LEX-021). word/stroke-tiles.js drives them. */
+.o-stroke-tiles { display: flex; gap: 8px; flex-wrap: wrap; }
+.o-stroke-tile {
+  display: inline-flex;
+  width: 76px;
+  height: 76px;
+  padding: 6px;
+  border-radius: 12px;
+  background: var(--surface2);
+}
+.o-stroke-tile .stroke-glyph { width: 100%; height: 100%; }
+.o-stroke-tile .stroke-glyph__on { fill: var(--accent); }
+.o-stroke-tile .stroke-glyph__off { fill: var(--border2); }
+.o-stroke-tile .stroke-glyph__rad { fill: var(--hz-radical); }
 @media (prefers-reduced-motion: reduce) { .stroke-glyph__reveal { animation-duration: .01s; } }
