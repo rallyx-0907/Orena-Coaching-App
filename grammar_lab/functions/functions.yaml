@@ -48,10 +48,10 @@ functions:
     - en.countable_uncountable
     - en.quantifiers.some_any
     - en.canon.a2.002
-    - en.canon.b1.040
-    - en.canon.c2.003
     - en.quantifiers.few_little
+    - en.canon.b1.040
     - en.canon.b2.033
+    - en.canon.c2.003
     zh-Hans:
     - zh.measure_words.basic
     - zh.canon.gf.hsk1.a_1_2_1.p1
@@ -84,18 +84,18 @@ functions:
     - en.articles.a_an
     - en.articles.the
     - en.articles.zero
+    - en.canon.b1.039
     - en.canon.b1.042
     - en.canon.b2.032
     - en.canon.b2.034
     - en.canon.c1.025
-    - en.canon.b1.039
     - en.canon.c2.006
+    - en.canon.c2.016
     zh-Hans:
     - zh.canon.gf.hsk7_9.a_7_1_7_1.p1
     ja: []
   planned:
-    en:
-    - en.canon.c2.016
+    en: []
     zh-Hans:
     - zh.canon.r5.hsk6_4_patterns
     - zh.canon.r5.hsk6_5_patterns
@@ -135,9 +135,9 @@ functions:
     - en.past_simple.regular_ed
     - en.past_simple.irregular
     - en.canon.b1.006
-    - en.canon.b1.009
     - en.canon.b1.007
     - en.canon.b1.008
+    - en.canon.b1.009
     - en.canon.b1.010
     - en.canon.b1.048
     zh-Hans:
@@ -160,8 +160,8 @@ functions:
     - en.present_perfect.experience
     - en.canon.b1.002
     - en.canon.b1.003
-    - en.canon.b1.016
     - en.canon.b1.004
+    - en.canon.b1.016
     zh-Hans:
     - zh.guo_experience
     ja: []
@@ -180,8 +180,8 @@ functions:
     - en.comparatives
     - en.superlatives
     - en.as_as
-    - en.canon.b2.042
     - en.canon.b1.045
+    - en.canon.b2.042
     - en.canon.c2.012
     zh-Hans:
     - zh.canon.gf.hsk1.a_1_1_7_2.p1
@@ -206,11 +206,11 @@ functions:
     zh-Hans: 可能发生的条件
   realizations:
     en:
+    - en.conditional_zero
     - en.conditional_first
     - en.unless
-    - en.conditional_zero
-    - en.canon.b1.026
     - en.canon.b1.025
+    - en.canon.b1.026
     - en.canon.b1.035
     - en.canon.b1.036
     - en.canon.b2.006
@@ -264,14 +264,14 @@ functions:
     en:
     - en.sentence_word_order
     - en.canon.a1.003
-    - en.canon.b1.046
-    - en.canon.c1.016
     - en.indirect_objects
-    - en.canon.b2.036
+    - en.canon.b1.046
     - en.canon.b2.035
+    - en.canon.b2.036
+    - en.canon.c1.016
     - en.canon.c1.029
-    - en.canon.c2.009
     - en.canon.c2.007
+    - en.canon.c2.009
     zh-Hans:
     - zh.canon.gf.hsk1.a_1_4_1_1.p1
     - zh.canon.gf.hsk1.a_1_4_2.p1
@@ -346,9 +346,9 @@ functions:
     - en.pronouns.subject_object
     - en.demonstratives
     - en.canon.b1.001
+    - en.canon.b1.031
     - en.canon.b1.043
     - en.canon.b2.021
-    - en.canon.b1.031
     - en.canon.b2.022
     zh-Hans:
     - zh.demonstratives
@@ -411,10 +411,10 @@ functions:
     - en.present_simple.do_questions
     - en.questions.wh
     - en.canon.a2.005
-    - en.canon.b1.023
-    - en.canon.b1.028
-    - en.canon.b1.024
     - en.canon.b1.022
+    - en.canon.b1.023
+    - en.canon.b1.024
+    - en.canon.b1.028
     zh-Hans:
     - zh.canon.gf.hsk1.a_1_7.p1
     - zh.affirmative_negative_question
@@ -464,10 +464,10 @@ functions:
   realizations:
     en:
     - en.conjunctions.and_but_or
-    - en.canon.b1.049
     - en.conjunctions.because_so
-    - en.canon.b1.038
     - en.canon.b1.037
+    - en.canon.b1.038
+    - en.canon.b1.049
     - en.canon.b2.041
     - en.canon.c1.026
     zh-Hans:
@@ -552,9 +552,9 @@ functions:
     zh-Hans: 过去正在进行的动作
   realizations:
     en:
-    - en.canon.b1.005
-    - en.past_simple_vs_continuous
     - en.past_continuous
+    - en.past_simple_vs_continuous
+    - en.canon.b1.005
     zh-Hans: []
     ja: []
   planned:
@@ -568,17 +568,17 @@ functions:
     zh-Hans: 计划和预测
   realizations:
     en:
+    - en.going_to.plans
+    - en.will.decisions
+    - en.present_continuous.arrangements
     - en.present_simple.schedules
+    - en.canon.b1.011
+    - en.canon.b1.012
+    - en.canon.b1.013
+    - en.canon.b2.002
     - en.canon.b2.003
     - en.canon.b2.004
     - en.canon.c1.006
-    - en.will.decisions
-    - en.present_continuous.arrangements
-    - en.going_to.plans
-    - en.canon.b1.012
-    - en.canon.b1.013
-    - en.canon.b1.011
-    - en.canon.b2.002
     zh-Hans:
     - zh.canon.gf.hsk1.a_1_1_2.p1
     - zh.canon.gf.hsk7_9.a_7_2_2_2.p1
@@ -598,12 +598,12 @@ functions:
     zh-Hans: 程度和方式
   realizations:
     en:
-    - en.canon.b1.044
-    - en.canon.b1.055
     - en.too_enough
     - en.adjectives_vs_adverbs
     - en.adverbs.manner_degree
+    - en.canon.b1.044
     - en.canon.b1.054
+    - en.canon.b1.055
     zh-Hans:
     - zh.canon.gf.hsk6.a_6_2_3.p2
     - zh.canon.gf.hsk7_9.a_7_1_4_1.p1
@@ -634,10 +634,10 @@ functions:
     - en.modals.must_have_to
     - en.modals.should
     - en.canon.b1.018
-    - en.canon.b1.020
-    - en.canon.b2.010
     - en.canon.b1.019
+    - en.canon.b1.020
     - en.canon.b1.021
+    - en.canon.b2.010
     zh-Hans:
     - zh.canon.gf.hsk2.a_2_1_1.p1
     - zh.canon.gf.hsk2.a_2_3.p1
@@ -661,17 +661,17 @@ functions:
     - en.canon.a1.002
     - en.canon.a2.003
     - en.modals.possibility
+    - en.canon.b1.015
     - en.canon.b1.017
     - en.canon.b2.007
-    - en.canon.c1.007
-    - en.canon.c1.008
-    - en.canon.b1.015
     - en.canon.b2.008
     - en.canon.b2.009
     - en.canon.b2.014
+    - en.canon.c1.007
+    - en.canon.c1.008
     - en.canon.c1.009
-    - en.canon.c2.001
     - en.canon.c1.010
+    - en.canon.c2.001
     zh-Hans:
     - zh.canon.gf.hsk3.a_3_5_4.p1
     - zh.canon.r5.hsk3_7_b_ng_kh_n_ng
@@ -697,34 +697,34 @@ functions:
   realizations:
     en:
     - en.canon.a1.004
+    - en.gerund_after_preference
     - en.infinitive_after_want_plan_need
     - en.infinitive_of_purpose
     - en.canon.a2.006
     - en.canon.a2.008
+    - en.canon.b1.032
     - en.canon.b1.033
     - en.canon.b1.047
     - en.canon.b1.050
     - en.canon.b1.052
-    - en.canon.b2.025
-    - en.canon.b2.044
-    - en.gerund_after_preference
-    - en.canon.b1.032
     - en.canon.b1.053
     - en.canon.b2.011
-    - en.canon.b2.027
     - en.canon.b2.024
-    - en.canon.b2.038
-    - en.canon.c1.022
-    - en.canon.c1.021
-    - en.canon.c1.018
+    - en.canon.b2.025
     - en.canon.b2.026
+    - en.canon.b2.027
+    - en.canon.b2.038
+    - en.canon.b2.044
+    - en.canon.c1.018
+    - en.canon.c1.021
+    - en.canon.c1.022
     - en.canon.c2.013
+    - en.canon.c2.017
     zh-Hans:
     - zh.canon.gf.hsk7_9.a_7_1_4_7.p1
     ja: []
   planned:
-    en:
-    - en.canon.c2.017
+    en: []
     zh-Hans:
     - zh.jianyu_qing_rang
     - zh.canon.r5.hsk5_1_ki_m_ng
@@ -737,7 +737,6 @@ functions:
     zh-Hans: 补充说明名词
   realizations:
     en:
-    - en.canon.c2.008
     - en.relative_clauses.who_which_that
     - en.canon.b1.030
     - en.canon.b2.020
@@ -745,6 +744,7 @@ functions:
     - en.canon.b2.037
     - en.canon.c1.020
     - en.canon.c2.005
+    - en.canon.c2.008
     zh-Hans:
     - zh.canon.gf.hsk3.a_3_5_3.p1
     - zh.canon.gf.hsk6.a_6_2_6.p1
@@ -779,8 +779,8 @@ functions:
     zh-Hans: 否定
   realizations:
     en:
-    - en.canon.c1.002
     - en.canon.b1.041
+    - en.canon.c1.002
     zh-Hans:
     - zh.canon.gf.hsk3.a_3_3_2_1.p1
     - zh.canon.r5.hsk4_8_topic_110
@@ -1028,8 +1028,8 @@ functions:
   realizations:
     en:
     - en.canon.b2.001
-    - en.canon.c1.004
     - en.canon.c1.003
+    - en.canon.c1.004
     - en.canon.c1.005
     zh-Hans: []
     ja: []
@@ -1045,10 +1045,10 @@ functions:
     zh-Hans: 假设与反事实
   realizations:
     en:
-    - en.canon.c2.002
     - en.canon.b2.005
     - en.canon.c1.012
     - en.canon.c1.019
+    - en.canon.c2.002
     zh-Hans:
     - zh.canon.r5.hsk79_10_conditional_rhetoric
     ja: []
@@ -1067,8 +1067,8 @@ functions:
     - en.canon.b1.027
     - en.canon.b1.029
     - en.canon.b2.017
-    - en.canon.b2.019
     - en.canon.b2.018
+    - en.canon.b2.019
     - en.canon.c1.017
     - en.canon.c2.014
     zh-Hans: []
@@ -1086,17 +1086,17 @@ functions:
   realizations:
     en:
     - en.canon.b2.028
+    - en.canon.b2.029
+    - en.canon.b2.030
     - en.canon.b2.031
     - en.canon.c1.001
-    - en.canon.c1.014
-    - en.canon.c2.011
     - en.canon.c1.011
-    - en.canon.c1.030
-    - en.canon.b2.030
-    - en.canon.b2.029
     - en.canon.c1.013
+    - en.canon.c1.014
+    - en.canon.c1.030
     - en.canon.c2.004
     - en.canon.c2.010
+    - en.canon.c2.011
     - en.canon.c2.015
     zh-Hans: []
     ja: []
@@ -1115,11 +1115,11 @@ functions:
     zh-Hans: 被动与使役结构
   realizations:
     en:
-    - en.canon.b2.016
     - en.canon.b1.014
     - en.canon.b1.034
-    - en.canon.b2.015
     - en.canon.b2.013
+    - en.canon.b2.015
+    - en.canon.b2.016
     - en.canon.b2.043
     zh-Hans: []
     ja: []
@@ -1138,9 +1138,9 @@ functions:
     zh-Hans: 语体与风格
   realizations:
     en:
-    - en.canon.c2.018
     - en.canon.b2.040
     - en.canon.c1.028
+    - en.canon.c2.018
     zh-Hans: []
     ja: []
   planned:

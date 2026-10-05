@@ -1,0 +1,192 @@
+{
+  "schema_version": "0.4",
+  "id": "en.canon.c2.017",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.verb_patterns",
+  "level": {"framework": "cefr", "value": "C2", "rank": 6},
+  "prereqs": ["en.canon.c2.016"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["c2-lexico-grammar-and-colligation"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": ["c2-lexico-grammar-and-colligation"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Lexico-grammar and colligation", "en": "Lexico-grammar and colligation"},
+    "native_title": "Lexico-grammar and colligation",
+    "level": {"framework": "cefr", "value": "C2", "rank": 6},
+    "summary": {
+      "vi": "Điểm này dạy rằng mỗi từ vựng đi kèm một môi trường ngữ pháp riêng (colligation), nên đổi từ gần nghĩa có thể buộc phải đổi luôn cấu trúc bổ ngữ.",
+      "en": "This point teaches that each lexical item selects its own grammatical environment (colligation), so swapping a near-synonym can force a change in complement structure."
+    },
+    "sub": {"vi": "từ vựng + cấu trúc", "en": "word + pattern"}
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn định dùng một từ gần nghĩa với từ đã biết nhưng không chắc nó chọn V-ing, to-infinitive, that-clause hay giới từ nào.",
+      "en": "When you want to use a near-synonym of a word you know but are unsure whether it takes V-ing, a to-infinitive, a that-clause or a preposition."
+    },
+    {
+      "vi": "Khi viết học thuật hoặc chuyên nghiệp, nơi việc dùng sai bổ ngữ bị coi là lỗi colligation chứ không chỉ là lỗi ngữ pháp.",
+      "en": "When writing academic or professional prose, where a wrong complement is treated as a colligation error, not just a grammar slip."
+    },
+    {
+      "vi": "Khi bạn muốn diễn đạt cùng một ý khuyến nghị, ngăn cản hay xu hướng bằng một động từ hoặc danh từ khác.",
+      "en": "When you want to express the same idea of recommending, preventing or tending by using a different verb or noun."
+    },
+    {
+      "vi": "Khi cần kiểm tra xem một cấu trúc nghe quen có thực sự được từ đó cho phép hay không, thay vì suy ra từ nghĩa từ điển.",
+      "en": "When you need to check whether a familiar-looking structure is actually licensed by that word, instead of inferring it from dictionary meaning."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "lexical item",
+        "role": "verb",
+        "label": {"vi": "từ vựng trung tâm", "en": "lexical item"}
+      },
+      {
+        "text": "complement pattern",
+        "role": "complement",
+        "label": {"vi": "cấu trúc bổ ngữ được từ đó chọn", "en": "complement pattern licensed by the item"}
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "The evidence suggests that demand is weakening.",
+      "form": "affirmative",
+      "spans": [{"start": 13, "end": 21, "role": "verb"}, {"start": 22, "end": 46, "role": "complement"}],
+      "annotation": {
+        "vi": "suggest chọn that-clause, không chọn cấu trúc suggest + tân ngữ + to-infinitive.",
+        "en": "suggest selects a that-clause, not the pattern suggest + object + to-infinitive."
+      },
+      "translation": {
+        "vi": "Bằng chứng cho thấy nhu cầu đang suy yếu.",
+        "en": "The evidence suggests that demand is weakening."
+      }
+    },
+    {
+      "text": "I suggest reviewing the figures before we publish them.",
+      "form": "affirmative",
+      "spans": [{"start": 2, "end": 9, "role": "verb"}, {"start": 10, "end": 31, "role": "complement"}],
+      "annotation": {
+        "vi": "suggest cũng chọn V-ing khi không nêu người nhận hành động.",
+        "en": "suggest also selects V-ing when the person acted on is not named."
+      },
+      "translation": {
+        "vi": "Tôi đề nghị xem lại số liệu trước khi công bố.",
+        "en": "I suggest reviewing the figures before we publish them."
+      }
+    },
+    {
+      "text": "The consultant advised us to delay the launch.",
+      "form": "affirmative",
+      "spans": [{"start": 15, "end": 22, "role": "verb"}, {"start": 23, "end": 45, "role": "complement"}],
+      "annotation": {
+        "vi": "advise chọn tân ngữ + to-infinitive, khác với suggest.",
+        "en": "advise selects object + to-infinitive, unlike suggest."
+      },
+      "translation": {
+        "vi": "Cố vấn khuyên chúng tôi hoãn việc ra mắt.",
+        "en": "The consultant advised us to delay the launch."
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học suy ra cấu trúc từ advise somebody to do và áp máy móc cho suggest, nhưng suggest không cho phép tân ngữ + to-infinitive trong tiếng Anh chuẩn trung tính.",
+        "en": "Learners infer the pattern from advise somebody to do and apply it mechanically to suggest, but suggest does not license object + to-infinitive in neutral standard English."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "The consultant suggested us to delay the launch.",
+      "right": "The consultant suggested delaying the launch."
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "The report recommends ___ the data before publication.",
+      "options": [
+        {"text": "checking", "error_tag": null},
+        {"text": "to check", "error_tag": "word_form"},
+        {"text": "us to check", "error_tag": "sentence_structure"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "recommend chọn V-ing khi không nêu người nhận hành động; không dùng recommend + to-infinitive hay recommend + tân ngữ + to-infinitive.",
+        "en": "recommend selects V-ing when the person acted on is not named; it does not take a bare to-infinitive or object + to-infinitive."
+      }
+    },
+    {
+      "q": "The new policy prevents employees ___ sharing confidential files.",
+      "options": [{"text": "from", "error_tag": null}, {"text": "to", "error_tag": "preposition"}],
+      "answer": 0,
+      "explain": {
+        "vi": "prevent chọn giới từ from + V-ing, không chọn to + V-ing.",
+        "en": "prevent selects the preposition from + V-ing, not to + V-ing."
+      }
+    },
+    {
+      "q": "She insisted ___ reviewing the contract before signing.",
+      "options": [
+        {"text": "on", "error_tag": null},
+        {"text": "to", "error_tag": "preposition"},
+        {"text": "for", "error_tag": "preposition"}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "insist chọn on + V-ing khi theo sau là hành động.",
+        "en": "insist selects on + V-ing when followed by an action."
+      }
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một việc bạn đề nghị ai đó làm, dùng suggest + V-ing hoặc suggest + that-clause.",
+      "en": "Write one sentence about something you suggested someone do, using suggest + V-ing or suggest + that-clause."
+    },
+    "placeholder": "I suggest ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"any_of": ["suggest", "suggests"], "role": "verb"},
+        {"regex": "(?:that\\s+\\w+|\\w+ing\\b)", "role": "complement"}
+      ]
+    },
+    "sample": {"text": "I suggest reviewing the figures before we publish them."}
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791241934",
+    "generated_at": "2026-10-05T23:12:14Z",
+    "r5_source": {
+      "ids": ["c2-lexico-grammar-and-colligation"],
+      "content_version": 2,
+      "content_hash": "14db4f4fd64b96c8d6918e7983e86ae5dc7bc517b2dfd311e8e8ab0ba1b26382",
+      "corrections": [
+        {
+          "r5_id": "c2-lexico-grammar-and-colligation",
+          "issue": "R5's example 'The evidence suggests demand to be weakening.' is listed as a mistake, but the corrected version 'The evidence suggests that demand is weakening.' is fine; however R5 also lists 'The consultant suggested us to delay the launch.' as a mistake and gives 'The consultant suggested delaying the launch.' as the correction, which is correct. The main issue is that R5's rules and examples mix several different colligation patterns without a single clear formula.",
+          "fix": "Restructured the lesson around one formula: lexical item + complement pattern, with examples showing suggest + that-clause, suggest + V-ing, and advise + object + to-infinitive. Kept the real learner mistake about suggest + object + to-infinitive and corrected it to suggest + V-ing."
+        },
+        {
+          "r5_id": "c2-lexico-grammar-and-colligation",
+          "issue": "R5's guided practice includes a transform task 'I advise you to check the data' → 'I suggest checking the data. / I suggest that you check the data.' This is valid, but R5 does not explicitly state that the complement pattern must change when the lexical item changes.",
+          "fix": "Added a when_to_use condition and a common mistake that make the link between lexical item and complement pattern explicit."
+        }
+      ]
+    }
+  },
+  "review": null
+}

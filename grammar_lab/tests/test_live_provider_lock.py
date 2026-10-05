@@ -174,13 +174,19 @@ def test_refresh_heartbeat_updates_only_the_owners_lock(tmp_path: Path) -> None:
 def test_heartbeat_thread_keeps_the_lock_fresh_and_stops(tmp_path: Path) -> None:
     path = tmp_path / "live-deepseek.lock"
     _write_lock(path, "grammar-lab", 4242, heartbeat_age=500)
-    stale = json.loads(path.read_text(encoding="utf-8"))["heartbeat_at"]
+
+    def heartbeat_at() -> str:
+        info = module._read_lock(path)
+        assert info is not None and info.heartbeat_at is not None
+        return info.heartbeat_at
+
+    stale = heartbeat_at()
     beater = module.Heartbeat("grammar-lab", ["deepseek"], directory=tmp_path, pid=4242, interval=0.01).start()
     deadline = time.monotonic() + 5
-    while time.monotonic() < deadline and json.loads(path.read_text(encoding="utf-8"))["heartbeat_at"] == stale:
+    while time.monotonic() < deadline and heartbeat_at() == stale:
         time.sleep(0.01)
     beater.stop()
-    assert json.loads(path.read_text(encoding="utf-8"))["heartbeat_at"] > stale
+    assert heartbeat_at() > stale
 
 
 def test_acquire_groups_heartbeats_locks_already_taken_while_waiting(tmp_path: Path) -> None:

@@ -238,7 +238,8 @@ def test_coverage_separates_catalog_from_generated_content(tmp_path: Path) -> No
     report = coverage_report("en")
     assert report["canonical_total"] == 215
     generated = len(load_points("en")) - len(report["content_outside_catalog"])
-    assert report["generated_total"] == generated and 0 < generated < 215  # content on disk grows; the catalogue does not
+    assert report["generated_total"] == generated
+    assert 0 < generated <= report["canonical_total"]  # generated content may reach full catalogue coverage
     assert report["missing_content_total"] == 215 - generated == len(report["missing_content"])
     assert report["approved_total"] == 0 and report["auto_ok_total"] == 0  # a draft is not approved
     assert report["validated_total"] <= report["generated_total"]

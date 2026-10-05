@@ -144,11 +144,23 @@ def _pid_alive(pid: int) -> bool:
     return True
 
 
-def _read_lock(path: Path) -> LockInfo | None:
-    try:
-        raw = path.read_text(encoding="utf-8")
-    except FileNotFoundError:
-        return None
+def _read_lock(
+    path: Path, *, attempts: int = 5, retry_delay: float = 0.002
+) -> LockInfo | None:
+    """Read a lock, tolerating the brief Windows sharing violation during atomic heartbeat replace."""
+    raw: str | None = None
+    for attempt in range(attempts):
+        try:
+            raw = path.read_text(encoding="utf-8")
+            break
+        except FileNotFoundError:
+            return None
+        except PermissionError:
+            if attempt + 1 >= attempts:
+                raise
+            time.sleep(retry_delay)
+
+    assert raw is not None
     data = json.loads(raw)
     return LockInfo(
         lane=data["lane"], pid=data["pid"], acquired_at=data["acquired_at"], cost_ceiling_usd=data["cost_ceiling_usd"],

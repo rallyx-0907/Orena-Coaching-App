@@ -58,6 +58,16 @@ be pairwise non-overlapping. For ellipsis/substitution, bind the minimal grammar
 Never require a formula slot whose realization strictly contains another slot's realization in the same
 example. Do not create discontinuous context slots or make a slot optional merely to avoid overlap.
 
+
+v18: a generic constituent slot such as `complement`, `object`, `clause`, `NP`, or `phrase`
+may itself absorb structurally different constituents across examples when that abstraction is the
+lesson's intended route. In that case keep the generic slot and leave `options` empty. Never put
+mini-formulas such as `NP + to-infinitive`, `NP + from + V-ing`, `on + V-ing`, or any other
+`+` sequence inside `options`. Those describe internal structure, not alternative surface forms
+of one slot. Bind the whole constituent as one contiguous realization of the generic slot.
+Use `options` only for true same-position surface alternatives such as `is`/`are`.
+
+
 ---
 
 You are writing one grammar lesson for Orena, a language-learning app. This is the lesson's

@@ -1337,9 +1337,103 @@ def normalize_generated_nested_context_slots(data: dict[str, Any], zh: bool) -> 
     return out
 
 
+def normalize_generated_common_prefix_options(data: dict[str, Any], zh: bool) -> dict[str, Any]:
+    """Factor a literal prefix only when all routes and consumers prove it.
+
+    Mixed arities, variable prefixes, unsupported grammatical forms and opaque
+    production regexes are deliberately left for validation to reject.
+    """
+    out = copy.deepcopy(data)
+    if zh:
+        return out
+    for form, key in {"affirmative": "formula", "negative": "negative", "question": "question"}.items():
+        # Work backwards so each successful expansion preserves earlier indexes.
+        for index in reversed(range(len(out.get(key) or []))):
+            slot = out[key][index]
+            options = slot.get("options") or []
+            routes = [str(option.get("text", "")).split("+") for option in options]
+            routes = [[part.strip() for part in route] for route in routes]
+            if not routes or any(len(route) < 2 for route in routes):
+                continue
+            prefix = routes[0][:-1]
+            if (any(route[:-1] != prefix for route in routes)
+                    or any(re.fullmatch(r"[a-z]+", part) is None for part in prefix)
+                    or any(route[-1] not in {"V-ing", "to-infinitive", "that-clause"} for route in routes)):
+                continue
+            tails = list(dict.fromkeys(route[-1] for route in routes))
+            shapes = {"V-ing": r"[A-Za-z]+ing\b.*", "to-infinitive": r"to\s+[A-Za-z]+\b.*",
+                      "that-clause": r"that\s+.+"}
+
+            def split(surface: Any) -> list[str] | None:
+                if not isinstance(surface, str):
+                    return None
+                match = re.fullmatch(
+                    r"\s*" + r"\s+".join("(" + re.escape(part) + ")" for part in prefix)
+                    + r"\s+(.+?)\s*", surface, flags=re.IGNORECASE)
+                if match is None:
+                    return None
+                tail = match.group(len(prefix) + 1)
+                if sum(re.fullmatch(shapes[kind], tail, re.IGNORECASE) is not None for kind in tails) != 1:
+                    return None
+                return list(match.groups())
+
+            examples = [example for example in out.get("examples", []) if example.get("form") == form]
+            affected = [binding for example in examples for binding in example.get("bindings", [])
+                        if binding.get("slot_index") == index]
+            if not examples or len(affected) != len(examples) or any(split(binding.get("text")) is None for binding in affected):
+                continue
+            if any(not any(re.fullmatch(shapes[kind], split(binding["text"])[-1], re.IGNORECASE)
+                           for binding in affected) for kind in tails):
+                continue
+            # Require exact, uniquely located, non-overlapping evidence in sentence text.
+            if any(target_text(example["text"], False).count(binding["text"]) != 1
+                   for example in examples for binding in example.get("bindings", [])
+                   if binding.get("slot_index") == index):
+                continue
+            if any(_locate_generated_bindings(target_text(example["text"], False), example.get("bindings", []), False) is None
+                   for example in examples):
+                continue
+            production = out.get("personal_production") or {}
+            rules = ((production.get("pattern_rule") or {}).get("slots") or []) if production.get("target_form") == form else []
+            selected = [rule for rule in rules if rule.get("slot_index") == index]
+            if any(rule.get("regex") or not rule.get("any_of") or any(split(value) is None for value in rule["any_of"])
+                   for rule in selected):
+                continue
+            if len(rules) + len(prefix) * len(selected) > PERSONAL_PRODUCTION_MAX_SLOTS:
+                continue
+            expanded = [{"text": part, "role": "marker", "label": part,
+                         "optional": bool(slot.get("optional")), "options": []} for part in prefix]
+            expanded.append({**copy.deepcopy(slot), "options": [{"text": tail} for tail in tails]})
+            out[key][index:index + 1] = expanded
+            for example in examples:
+                rewritten = []
+                for binding in example.get("bindings", []):
+                    old = binding.get("slot_index")
+                    if old == index:
+                        rewritten.extend({**binding, "slot_index": index + offset, "text": value}
+                                         for offset, value in enumerate(split(binding["text"])))
+                    else:
+                        rewritten.append({**binding, "slot_index": old + len(prefix) if isinstance(old, int) and old > index else old})
+                example["bindings"] = rewritten
+            if rules:
+                rewritten = []
+                for rule in rules:
+                    old = rule.get("slot_index")
+                    if old == index:
+                        values = [split(value) for value in rule["any_of"]]
+                        rewritten.extend({**rule, "slot_index": index + offset,
+                                          "any_of": list(dict.fromkeys(parts[offset] for parts in values))}
+                                         for offset in range(len(prefix) + 1))
+                    else:
+                        rewritten.append({**rule, "slot_index": old + len(prefix) if isinstance(old, int) and old > index else old})
+                production["pattern_rule"]["slots"] = rewritten
+    return out
+
+
 def normalize_generated_structure(data: dict[str, Any], zh: bool) -> dict[str, Any]:
     """Return the exact structural candidate that full assembly validates."""
-    out = normalize_generated_safe_joiner_slots(data, zh)
+    out = normalize_generated_common_prefix_options(data, zh)
+    out = normalize_generated_safe_joiner_slots(out, zh)
     out = normalize_generated_nested_context_slots(out, zh)
     out = normalize_generated_formula_order(out, zh)
     out = complete_generated_single_gap_bindings(out, zh)
