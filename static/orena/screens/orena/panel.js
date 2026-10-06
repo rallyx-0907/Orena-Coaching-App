@@ -35,7 +35,7 @@ import { setAgentHandler } from '../../shell/agent-bridge.js';
 import { t } from './copy.js';
 import { contextParts, latestSuggestions, thinkingText } from './model.js';
 import { messageMarkup } from './thread.js';
-import { runOffered } from './actions.js';
+import { runOffered, openIfAsked } from './actions.js';
 import { keepFocus } from './focus.js';
 import { createVoiceEngine, voiceRowMarkup, bindVoiceRow } from './voice.js';
 import { voiceSessionBody, voiceThread, chosenVoice } from '../../agent/live-voice.js';
@@ -155,7 +155,8 @@ export async function openOrenaPanel(context = {}, carry = null) {
     const text = String(input?.value || '').trim();
     if (!text || session.state().thinking) return;
     draft = '';
-    void runTurn('message', text);
+    // A typed "open …" opens the place the reply offers (§7 navigate-on-request).
+    void runTurn('message', text).then((reply) => openIfAsked({ message: text, reply, dispatcher, ranActions, repaint: paint }));
   }
 
   /* §4.1 `retry`: the last turn again as a new request, the learner's own tap. */

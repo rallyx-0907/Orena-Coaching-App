@@ -16,7 +16,7 @@ import { orenaPresent, onOrenaPresence } from '../../agent/presence.js';
 import { t } from './copy.js';
 import { homeSubtitle, latestSuggestions, thinkingText } from './model.js';
 import { messageMarkup } from './thread.js';
-import { runOffered } from './actions.js';
+import { runOffered, openIfAsked } from './actions.js';
 import { dockVoice, undockVoice } from './voice-dock.js';
 import { keepFocus } from './focus.js';
 import { createVoiceEngine, voiceRowMarkup, bindVoiceRow } from './voice.js';
@@ -134,7 +134,8 @@ export default async function mountOrena(element, ctx) {
     const text = String(input?.value || '').trim();
     if (!text || homeState().thinking) return;
     draft = '';
-    sendHomeMessage(text);
+    // A typed "open …" opens the place the reply offers (§7 navigate-on-request).
+    void sendHomeTurn(text).then((reply) => openIfAsked({ message: text, reply, dispatcher, ranActions, repaint: () => paint(homeState()) }));
   }
 
   // Coming back to Orena takes back a conversation the dock carried.

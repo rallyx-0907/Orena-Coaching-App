@@ -22,3 +22,24 @@ export async function runOffered({ dispatcher, action, ranActions, repaint }) {
   if (key) toast(t(key), { iconName: 'circle-alert' });
   return result;
 }
+
+/* §7: "the client never runs it without a learner tap, except `navigate` when the learner's message was itself
+   the request". The learner asked to open, go, play, listen to, watch or read something - in the words the
+   server's own rule reads (writing_coach/agent/outputs.py `asks_to_go`), in vi, en and zh - and the reply offers a
+   place: it opens now, and its button stays in the thread. Only `navigate`; every other action waits for a tap. */
+const ASKS_TO_GO = new RegExp(
+  '(?:^|[^\p{L}])(?:mở|đi tới|đi đến|đưa (?:mình|tôi|em) (?:tới|đến|sang)|chuyển (?:tới|sang)|open|go to|take me|show me)(?:$|[^\p{L}])'
+    + '|(?:^|[^\p{L}])cho (?:mình|tôi|em|tớ) (?:nghe|xem|đọc)(?:$|[^\p{L}])|(?:^|[^\p{L}])(?:play|listen to|watch|read me)(?:$|[^\p{L}])'
+    + '|打开|去|带我|进入|播放|我想听|我想看',
+  'iu',
+);
+
+export function asksToGo(message) {
+  return ASKS_TO_GO.test(String(message || ''));
+}
+
+export function openIfAsked({ message, reply, dispatcher, ranActions, repaint }) {
+  if (!asksToGo(message) || !reply || reply.error) return null;
+  const place = (reply.actions || []).find((action) => action?.type === 'navigate');
+  return place ? runOffered({ dispatcher, action: place, ranActions, repaint }) : null;
+}
