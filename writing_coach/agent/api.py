@@ -22,8 +22,9 @@ import math
 import threading
 from collections.abc import AsyncIterator, Iterator, Mapping
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
+from pydantic import ValidationError
 from starlette.concurrency import iterate_in_threadpool
 
 from writing_coach.agent.events import Event, sse_frame
@@ -32,6 +33,8 @@ from writing_coach.agent.ratelimit import SlidingWindowLimiter
 from writing_coach.agent.schemas import TurnRequest
 from writing_coach.agent.tools import LearnerScope
 from writing_coach.agent.turn import AgentRuntime
+from writing_coach.agent.voice_session import VoiceService
+from writing_coach.ai.live_voice import VoiceUnavailable
 
 router = APIRouter(prefix="/api/agent", tags=["agent"])
 
@@ -116,6 +119,66 @@ async def agent_turn(
         media_type="text/event-stream",
         headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"},
     )
+
+
+# --- live voice (contract §9, mode A: R28) -------------------------------------------------------------------------
+
+
+def voice_enabled(env: Mapping[str, str]) -> bool:
+    """Voice is on only where the agent is, and only when `AGENT_VOICE_ENABLED` says so."""
+
+    return str(env.get("AGENT_VOICE_ENABLED", "")).strip().casefold() in _TRUE
+
+
+def _voice(runtime: AgentRuntime) -> VoiceService:
+    if runtime.voice is None:
+        raise HTTPException(status_code=404, detail="Not Found")
+    return runtime.voice
+
+
+def _voice_session_allowed(runtime: AgentRuntime = Depends(_turn_allowed)) -> VoiceService:
+    return _voice(runtime)  # the daily spend cap and the learner's turn window count a session as a turn
+
+
+def _voice_call_allowed(runtime: AgentRuntime = Depends(_read_allowed)) -> VoiceService:
+    return _voice(runtime)
+
+
+@router.post("/voice/session")
+def agent_voice_session(body: dict = Body(...), voice: VoiceService = Depends(_voice_session_allowed)) -> dict:
+    learner = LearnerScope.from_request_context()
+    try:
+        target = to_internal(str(((body.get("context") or {}).get("locale") or {}).get("target") or ""))
+    except Exception:
+        target = ""
+    if target and target != learner.language:
+        raise HTTPException(status_code=409, detail="target_language_mismatch")
+    try:
+        return voice.open(body, learner)
+    except ValidationError as exc:
+        raise HTTPException(status_code=422, detail=exc.errors(include_url=False, include_context=False)) from exc
+    except VoiceUnavailable as exc:
+        raise HTTPException(status_code=503, detail="voice_unavailable") from exc
+
+
+@router.post("/voice/tool")
+def agent_voice_tool(body: dict = Body(...), voice: VoiceService = Depends(_voice_call_allowed)) -> dict:
+    calls = body.get("calls")
+    if not isinstance(calls, list) or not all(isinstance(c, dict) for c in calls) or len(calls) > 8:
+        raise HTTPException(status_code=422, detail="calls must be a list of at most 8 function calls")
+    heard = body.get("heard") if isinstance(body.get("heard"), str) else None
+    answer = voice.relay(str(body.get("voice_session_id") or ""), calls, LearnerScope.from_request_context(), heard)
+    if answer is None:
+        raise HTTPException(status_code=404, detail="voice_session_not_found")
+    return answer
+
+
+@router.post("/voice/end")
+def agent_voice_end(body: dict = Body(...), voice: VoiceService = Depends(_voice_call_allowed)) -> dict:
+    answer = voice.end(str(body.get("voice_session_id") or ""), LearnerScope.from_request_context())
+    if answer is None:
+        raise HTTPException(status_code=404, detail="voice_session_not_found")
+    return answer
 
 
 @router.get("/capabilities")

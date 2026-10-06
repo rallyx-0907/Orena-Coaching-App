@@ -57,6 +57,8 @@ services:
       APP_ENV: development
       PUBLIC_BASE_URL: http://127.0.0.1:${AGENT_LIVE_PORT:-8013}
       AGENT_ENABLED: "true"
+      # Live voice (R28): only for the voice check (voice_check.py sets it); text runs leave it off.
+      AGENT_VOICE_ENABLED: ${AGENT_VOICE_ENABLED:-false}
       PERSISTENCE_BACKEND: postgresql
       POSTGRES_RUNTIME_URL: postgresql+psycopg://live:live-throwaway@db:5432/agent_live
       # No sign-in: the one development learner of this throwaway database is the test account.
