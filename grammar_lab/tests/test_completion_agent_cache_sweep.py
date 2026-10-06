@@ -33,3 +33,21 @@ def test_completion_agent_reports_uncached_count_when_paid_generation_is_disable
     text = COMPLETION.read_text(encoding="utf-8")
     assert 'Free cache sweep complete' in text
     assert '$uncachedPointIds.Count' in text
+
+
+def test_paid_error_verifies_cached_candidate_before_codex_rescue() -> None:
+    text = COMPLETION.read_text(encoding="utf-8")
+
+    assert 'function Test-CacheMiss' in text
+
+    paid_start = text.index('--- One authorized one-shot candidate: $pointId ---')
+    block = text[paid_start:]
+
+    verify = 'Invoke-Corpus -Language $language -PointId $pointId -CacheOnly'
+    rescue = 'Invoke-Rescue -PointId $pointId'
+    assert verify in block
+    assert rescue in block
+    assert block.index(verify) < block.index(rescue)
+    assert 'Test-CacheMiss -Text $paidReplay.Text' in block
+    assert 'Codex rescue skipped because no cached paid candidate exists.' in block
+    assert 'Test-Written -Text $paidReplay.Text -PointId $pointId' in block
