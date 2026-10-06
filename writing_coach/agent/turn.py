@@ -66,6 +66,7 @@ from writing_coach.agent.notes import (
 from writing_coach.agent.notes import nudge as note_nudge
 from writing_coach.agent.identity import IdentityQuestion
 from writing_coach.agent.events import (
+    ActionEvent,
     DoneEvent,
     EvidenceEvent,
     MemoryUpdateEvent,
@@ -79,6 +80,7 @@ from writing_coach.agent.events import (
     TurnStream,
     Usage,
     error_event,
+    make_action,
 )
 from writing_coach.agent.limits import DEFAULT_LIMITS, AgentLimits
 from writing_coach.agent.contract import OPENING_MAX_CHARS
@@ -89,6 +91,7 @@ from writing_coach.agent.outputs import (
     SELECTION_PROMPTS,
     asks_about_status,
     asks_to_go,
+    opens_the_offer,
     REPLY_TOOL_NAMES,
     ReplyOutputs,
     opening_suggestions,
@@ -250,6 +253,7 @@ class _Turn:
         self.needs_evidence = False  # a conclusion about the learner's learning: read before answering (3.1)
         self.evidence_nudge = EVIDENCE_NUDGE  # what the model is asked when it answered without reading
         self.focused = False  # the turn is about what is in view (LEX-006, LEX-022)
+        self.offered: tuple[dict, ...] = ()  # the places this answer offered, kept for an "open it" next
         self.read_attempted = False  # a read was started this turn, whatever came of it
         self.address_offered_now = False
         self.notes_asked: tuple[CoachNote, ...] = ()  # coach notes the message changes (agent/notes.py)
@@ -318,6 +322,8 @@ class _Turn:
             )
             if self.opening and self.request.context.selected_item is not None:
                 yield from self._selection_opening()
+            elif (offered := self._offered_again(turn, session)) is not None:
+                yield from self._open_offered(offered)
             elif decisions.identity is not None:
                 yield from self._identity(decisions.identity)
             else:
@@ -746,6 +752,14 @@ class _Turn:
                                                   interface=self.locale.interface, support=support)  # fmt: skip
             offer_text = offer(first.type, first.label, first.payload, interface=self.locale.interface,
                                support=support, address=self._address(offer_lang))[1]  # fmt: skip
+            if not self.opening and first.type == "navigate" and asks_to_go(self.request.message):
+                # §7: a place the learner's own message asked for opens at once, and the sentence says so instead of
+                # asking for a tap. (Running other actions on request is voice's, R30.)
+                outputs.actions[0] = first.model_copy(update={"open": True})
+                offer_lang, offer_text = learner_copy.text("offer.now.navigate", interface=self.locale.interface,
+                                                           support=support, address=self.address)  # fmt: skip
+        self.offered = tuple({"type": a.type, "label": a.label, "payload": dict(a.payload)}
+                             for a in outputs.actions if a.type == "navigate")  # fmt: skip
         inline = offer_text if offer_lang == support else None  # in the answer's own language, or apart
         apart = offer_text if inline is None else None
         nothing = nothing_done(self.locale.interface, support, self._address(support))
@@ -822,6 +836,35 @@ class _Turn:
 
     # --- after a completed turn -------------------------------------------------
 
+    def _offered_again(self, turn: TurnInput, session) -> ActionEvent | None:
+        """"Open it" right after an offer: the place the last answer offered, as an action this client may run -
+        else None (then the model answers as usual)."""
+
+        if self.opening or not session.last_offers or not opens_the_offer(turn.message):
+            return None
+        offer_ = session.last_offers[0]
+        payload = dict(offer_.get("payload") or {})
+        if "navigate" not in self.stream.allowed_actions or payload.get("intent") not in self.stream.allowed_intents:
+            return None
+        try:
+            action = make_action("a1", "navigate", str(offer_.get("label") or ""), payload)
+        except (ValueError, ValidationError):
+            return None
+        return action.model_copy(update={"open": True})
+
+    def _open_offered(self, action: ActionEvent) -> Iterator[Event]:
+        """It opens at once (§7: the learner's message was the request), from copy, with no model call."""
+
+        lang, said = learner_copy.text("offer.now.navigate", interface=self.locale.interface,
+                                       support=self.locale.support, address=self.address)  # fmt: skip
+        self.offered = ({"type": action.type, "label": action.label, "payload": dict(action.payload)},)
+        self.timeline.mark("final_ready")
+        self.timeline.facts.update(actions=[action.type], suggestions=0)
+        yield self.stream.emit(SegmentDelta(index=0, lang=lang, text_delta=said))
+        yield self.stream.emit(SegmentEnd(index=0, lang=lang, text=said, voice_style="brief_ack"))
+        yield self.stream.emit(action)
+        yield self.stream.emit(DoneEvent(usage=Usage(input_tokens=0, output_tokens=0), trace_id=self.trace_id))
+
     def _keep(self, session, turn: TurnInput) -> None:
         limit = self.rt.limits.max_recent_tool_results
 
@@ -831,6 +874,8 @@ class _Turn:
                 state = state.with_turn()
             if self.address_offered_now:
                 state = state.with_address_asked()
+            if not self.opening:  # what this answer offered, for an "open it" next (an answer with none clears it)
+                state = state.with_offers(self.offered)
             for record in self.records:
                 state = state.with_tool_result(record, limit=limit)
             return state

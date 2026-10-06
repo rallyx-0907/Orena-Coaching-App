@@ -21,7 +21,7 @@ import secrets
 import threading
 import time
 from collections import OrderedDict
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field, replace
 from typing import Any
 
@@ -52,6 +52,9 @@ class AgentSessionState:
     turn_count: int = 0
     address_asked: bool = False  # the learner was asked once, this session, about an address pair
     target_language: str | None = None  # the contract target the kept context belongs to
+    # The places offered in the last answer (type, label, payload): "mở giúp tôi" / "open it" right after an offer
+    # opens that offer (text phone test 2026-10-06), and the next turn's model sees what it offered.
+    last_offers: tuple[Mapping[str, Any], ...] = ()
 
     def for_target(self, target: str | None) -> AgentSessionState:
         """The session as a turn in `target` may see it (dogfood gate 3.3).
@@ -68,7 +71,7 @@ class AgentSessionState:
         if self.target_language is None and not self.turn_count:
             return replace(self, target_language=target)
         return replace(self, target_language=target, current_app_context=None, last_selected_entity=None,
-                       active_learning_goal=None, recent_tool_results=(), voice_session_ref=None)
+                       active_learning_goal=None, recent_tool_results=(), voice_session_ref=None, last_offers=())
 
     def with_context(self, context: AppContextSnapshot) -> AgentSessionState:
         selected = context.selected_item or self.last_selected_entity
@@ -85,6 +88,11 @@ class AgentSessionState:
 
     def with_turn(self) -> AgentSessionState:
         return replace(self, turn_count=self.turn_count + 1)
+
+    def with_offers(self, offers: tuple[Mapping[str, Any], ...]) -> AgentSessionState:
+        """The places the last answer offered; every answer replaces them (an answer with none clears them)."""
+
+        return replace(self, last_offers=tuple(offers))
 
 
 class SessionCache:

@@ -208,6 +208,11 @@ def context_document(
         "earlier_in_session": [
             {"tool": record.tool, "summary": record.summary} for record in (session.recent_tool_results if session else ())
         ],
+        # What your last answer offered (a place to open): "open it" means that, not something new.
+        "offered_last_turn": [
+            {"label": offer.get("label"), "payload": dict(offer.get("payload") or {})}
+            for offer in (getattr(session, "last_offers", ()) if session else ())
+        ],
     }
     return redact_for_provider(document)
 

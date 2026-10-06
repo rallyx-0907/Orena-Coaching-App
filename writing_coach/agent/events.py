@@ -77,6 +77,8 @@ class Event(BaseModel):
             display = {key: value for key, value in (wire.pop("display") or {}).items() if value is not None}
             if display:
                 wire["display"] = display
+        if wire.get("open") is None:
+            wire.pop("open", None)  # an action only offered says nothing of opening
         return wire
 
 
@@ -180,6 +182,9 @@ class ActionEvent(Event):
     payload: dict[str, Any]
     risk: ActionRisk
     display: Display | None = None
+    # The learner's own words asked for this (§7; R30): the client runs it at once - a CONFIRM one through its own
+    # confirmation. Absent when it is only offered.
+    open: bool | None = None
 
     @model_validator(mode="after")
     def _allowlisted(self) -> ActionEvent:
