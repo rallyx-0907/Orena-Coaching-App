@@ -133,7 +133,9 @@ export function richText(text, { streaming = false } = {}) {
       flush();
     } else if (heading) {
       flush();
-      out.push(`<p class="o-rich__h">${richInline(heading[2], { streaming })}</p>`);
+      // A real heading element (LEX-006): # to ### is the answer's own heading, #### and below a sub-heading.
+      const level = heading[1].length <= 3 ? 3 : 4;
+      out.push(`<h${level} class="o-rich__h o-rich__h${level}">${richInline(heading[2], { streaming })}</h${level}>`);
     } else if (list && indented && (bullet || numbered)) {
       // An indented marker under an item is that item's own sub-list.
       list.items[list.items.length - 1].sub.push(bullet ? bullet[1] : numbered[2]);

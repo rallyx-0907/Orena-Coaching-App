@@ -390,7 +390,10 @@
    is the bubble's text at 600, lists and quotes keep the reading rhythm, code is mono, links the accent text. */
 .o-rich { display: flex; flex-direction: column; gap: 8px; }
 .o-rich__p { margin: 0; }
-.o-rich__h { margin: 0; font-weight: 600; }
+/* Headings are real h3/h4 (LEX-006): the answer's title a step above its text, a sub-heading at text size, both 600. */
+.o-rich__h { margin: 0; font-weight: 600; line-height: 1.35; }
+.o-rich__h3 { font-size: 1.12em; }
+.o-rich__h4 { font-size: 1em; }
 .o-rich__list { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; }
 /* A numbered example's own lines (its reading, its translation) sit under it as plain lines - no second bullet,
    no second indent - so the example reads as one group and a short translation keeps its line on a phone. */
