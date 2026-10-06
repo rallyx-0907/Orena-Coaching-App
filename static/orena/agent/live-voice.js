@@ -121,6 +121,7 @@ export function connectLiveVoice(session, { audio, mediaDevices = globalThis.nav
   let worklet = null;
   let source = null;
   let heard = ''; // what the learner has said in the current turn
+  let lastHeard = ''; // the learner's latest words, kept past the turn's end
   let said = ''; // what Orena has said in the current turn
   let playAt = 0;
   const playing = new Set();
@@ -199,7 +200,10 @@ export function connectLiveVoice(session, { audio, mediaDevices = globalThis.nav
   async function runTools(calls) {
     let answer = null;
     try {
-      answer = await post('/api/agent/voice/tool', { voice_session_id: id, calls, heard }, fetchImpl);
+      // The vendor's input transcript can arrive after its tool call: the learner's latest words go instead of an
+      // empty string, which the server would read as "they said nothing" and lose the open-on-request (R29).
+      const words = heard.trim() || lastHeard;
+      answer = await post('/api/agent/voice/tool', { voice_session_id: id, calls, ...(words ? { heard: words } : {}) }, fetchImpl);
     } catch (error) {
       if (error?.status === 404) return end('server');
       answer = { responses: calls.map((call) => ({ id: call.id, name: call.name, response: { error: 'unavailable' } })), events: [] };
@@ -240,6 +244,7 @@ export function connectLiveVoice(session, { audio, mediaDevices = globalThis.nav
     }
     if (content.inputTranscription?.text) {
       heard += content.inputTranscription.text;
+      if (heard.trim()) lastHeard = heard.trim();
       onLearner(heard);
     }
     if (content.outputTranscription?.text) {
