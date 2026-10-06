@@ -405,6 +405,8 @@ class _Turn:
             focused=self.focused,
             text_in_view=self.focused and context.selected_item is not None
             and context.selected_item.type in ("word", "sentence"),
+            selected_word=context.selected_item.text
+            if context.selected_item is not None and context.selected_item.type == "word" else None,
         )
         if mirrored is not None:
             outputs.memory_updates.append(MemoryUpdateEvent(op="upsert", note=mirrored))
