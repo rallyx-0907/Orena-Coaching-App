@@ -44,6 +44,10 @@ from grammar_lab.pipeline.ui_fixtures import DEMO_POINTS, fixture_dir, write_fix
 from grammar_lab.pipeline.run_context import new_run_id, resolve_run_id, run_dir, write_step
 from grammar_lab.pipeline.validate import ERROR_TAGS_PATH, LAB_ROOT, LANGS, apply_flags, validate_generated_point, validate_lang
 from grammar_lab.pipeline.verify import VerifyFlag, VerifyReport, verify_point
+from grammar_lab.pipeline.stabilize import (
+    build_stabilization_report, render_stabilization_report, run_cache_sweep,
+    write_stabilization_report,
+)
 
 app = typer.Typer(add_completion=False, no_args_is_help=True, help="Orena Grammar Lab pipeline.")
 
@@ -182,6 +186,48 @@ def corpus_plan_command(
         raise typer.BadParameter(str(exc), param_hint="--lang") from exc
     plan = plan_corpus(langs, root)
     typer.echo(json.dumps(plan, ensure_ascii=False, indent=2) if as_json else render_corpus(plan))
+
+
+@app.command("stabilize-corpus")
+def stabilize_corpus_command(
+    lang: str = typer.Option(..., "--lang", help="en | zh."),
+    skip_cache_sweep: bool = typer.Option(False, "--skip-cache-sweep", help="Audit current corpus without replaying local cache first."),
+    workers: int = typer.Option(4, "--workers", help="Parallel zero-provider cache readers (1-16)."),
+    as_json: bool = typer.Option(False, "--json", help="Print machine-readable report."),
+    out: Path | None = typer.Option(None, "--out", help="Report path; default .cache/stabilization/<lang>.json."),
+    root: Path = typer.Option(LAB_ROOT, "--root"),
+) -> None:
+    """One corpus-wide cache salvage plus deterministic structural/quality audit. Never pays a provider."""
+    if lang not in ("en", "zh"):
+        raise typer.BadParameter("expected en or zh", param_hint="--lang")
+    if workers < 1 or workers > 16:
+        raise typer.BadParameter("must be between 1 and 16", param_hint="--workers")
+
+    outcomes: list[dict[str, str]] = []
+    sweep_exit: int | None = None
+    sweep_log = ""
+    if not skip_cache_sweep:
+        sweep_exit, sweep_log, outcomes = run_cache_sweep(lang, root, workers=workers)
+
+    report = build_stabilization_report(lang, root, outcomes)
+    report["cache_sweep"] = {
+        "ran": not skip_cache_sweep,
+        "exit_code": sweep_exit,
+        "provider_calls_authorized": False,
+    }
+    report_path = out or (root / ".cache" / "stabilization" / f"{lang}.json")
+    write_stabilization_report(report, report_path)
+    if not skip_cache_sweep:
+        log_path = report_path.with_suffix(".cache.log")
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        log_path.write_text(sweep_log, encoding="utf-8")
+        report["cache_sweep"]["log"] = str(log_path)
+        write_stabilization_report(report, report_path)
+
+    typer.echo(json.dumps(report, ensure_ascii=False, indent=2) if as_json else render_stabilization_report(report))
+    if not as_json:
+        typer.echo(f"report: {report_path}")
+    raise typer.Exit(0 if report["accepted"] else 1)
 
 
 @app.command("generate-corpus")
