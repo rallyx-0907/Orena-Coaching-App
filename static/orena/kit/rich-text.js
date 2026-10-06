@@ -85,36 +85,45 @@ export function hasBlocks(text) {
   return BLOCK.test(value) || /\n/.test(value.trim());
 }
 
-/* A whole answer as blocks: headings, lists (bulleted and numbered), quotes and paragraphs; a single line
-   break inside a paragraph stays a line break. */
+/* A whole answer as blocks: headings, lists (bulleted and numbered, nested to any depth by indentation), quotes and
+   paragraphs; a single line break inside a paragraph stays a line break.
+
+   Lists follow CommonMark closely enough for a tutor's answer (LEX-006): an item's depth is its marker's indent;
+   an item may be only a marker ("1." with its content on the indented lines under it); a plain line right under
+   an item continues it; a blank line between items does not end the list - only a line back at the margin that is
+   not a list item does. So a numbered example keeps its number and holds its reading and translation, however the
+   answer nests them. */
+const LIST_LINE = /^([ \t]*)([-*+•]|\d+[.)])(?:[ \t]+(.*))?$/;
+const indentOf = (space) => [...space].reduce((width, ch) => width + (ch === '\t' ? 4 : 1), 0);
+
 export function richText(text, { streaming = false } = {}) {
   const lines = String(text ?? '').replace(/\r\n?/g, '\n').split('\n');
   const out = [];
   let paragraph = [];
-  // { tag: 'ul'|'ol', start, items: [{ lines: [], sub: [] }] }. An item holds its own continuation lines and an
-  // indented sub-list, so a numbered example with its reading and translation is one unit (LEX-006).
-  let list = null;
   let quote = [];
+  // The open lists, outermost first: { indent, tag, start, items: [{ lines: [], children: [list] }] }.
+  let stack = [];
+  let roots = [];
+  let blankInList = false;
 
+  const inline = (line) => richInline(line, { streaming });
+  const renderList = (list) => {
+    const start = list.tag === 'ol' && list.start > 1 ? ` start="${list.start}"` : '';
+    const items = list.items.map((item) => `<li>${item.lines.map(inline).join('<br>')}${item.children.map(renderList).join('')}</li>`);
+    return `<${list.tag} class="o-rich__list"${start}>${items.join('')}</${list.tag}>`;
+  };
   const flushParagraph = () => {
-    if (paragraph.length) out.push(`<p class="o-rich__p">${paragraph.map((line) => richInline(line, { streaming })).join('<br>')}</p>`);
+    if (paragraph.length) out.push(`<p class="o-rich__p">${paragraph.map(inline).join('<br>')}</p>`);
     paragraph = [];
   };
   const flushList = () => {
-    if (list) {
-      const items = list.items.map((item) => {
-        const body = item.lines.map((line) => richInline(line, { streaming })).join('<br>');
-        const sub = item.sub.length ? `<ul class="o-rich__list">${item.sub.map((line) => `<li>${richInline(line, { streaming })}</li>`).join('')}</ul>` : '';
-        return `<li>${body}${sub}</li>`;
-      });
-      // The number the answer wrote first stands, so "2." after a break is not drawn as 1 again.
-      const start = list.tag === 'ol' && list.start > 1 ? ` start="${list.start}"` : '';
-      out.push(`<${list.tag} class="o-rich__list"${start}>${items.join('')}</${list.tag}>`);
-    }
-    list = null;
+    for (const list of roots) out.push(renderList(list));
+    roots = [];
+    stack = [];
+    blankInList = false;
   };
   const flushQuote = () => {
-    if (quote.length) out.push(`<blockquote class="o-rich__quote">${quote.map((line) => richInline(line, { streaming })).join('<br>')}</blockquote>`);
+    if (quote.length) out.push(`<blockquote class="o-rich__quote">${quote.map(inline).join('<br>')}</blockquote>`);
     quote = [];
   };
   const flush = () => {
@@ -122,38 +131,74 @@ export function richText(text, { streaming = false } = {}) {
     flushList();
     flushQuote();
   };
+  const deepestItem = () => {
+    const list = stack[stack.length - 1];
+    return list ? list.items[list.items.length - 1] : null;
+  };
 
   for (const line of lines) {
     const heading = /^\s*(#{1,6})\s+(.*)$/.exec(line);
-    const bullet = /^\s*[-*+•]\s+(.*)$/.exec(line);
-    const numbered = /^\s*(\d+)[.)]\s+(.*)$/.exec(line);
-    const indented = /^(\s{2,}|	)/.test(line);
+    const listLine = LIST_LINE.exec(line);
     const quoted = /^\s*>\s?(.*)$/.exec(line);
     if (!line.trim()) {
-      flush();
-    } else if (heading) {
+      if (stack.length) blankInList = true;
+      else {
+        flushParagraph();
+        flushQuote();
+      }
+      continue;
+    }
+    if (heading) {
       flush();
       // A real heading element (LEX-006): # to ### is the answer's own heading, #### and below a sub-heading.
       const level = heading[1].length <= 3 ? 3 : 4;
       out.push(`<h${level} class="o-rich__h o-rich__h${level}">${richInline(heading[2], { streaming })}</h${level}>`);
-    } else if (list && indented && (bullet || numbered)) {
-      // An indented marker under an item is that item's own sub-list.
-      list.items[list.items.length - 1].sub.push(bullet ? bullet[1] : numbered[2]);
-    } else if (bullet || numbered) {
+      continue;
+    }
+    if (listLine) {
       flushParagraph();
       flushQuote();
-      const tag = bullet ? 'ul' : 'ol';
-      if (list && list.tag !== tag) flushList();
-      if (!list) list = { tag, start: numbered ? Number(numbered[1]) : 1, items: [] };
-      list.items.push({ lines: [bullet ? bullet[1] : numbered[2]], sub: [] });
-    } else if (quoted) {
-      flushParagraph();
+      const indent = indentOf(listLine[1]);
+      const marker = listLine[2];
+      const tag = /\d/.test(marker) ? 'ol' : 'ul';
+      const content = (listLine[3] || '').trim();
+      // Close the lists deeper than this line.
+      while (stack.length && stack[stack.length - 1].indent > indent) stack.pop();
+      let list = stack[stack.length - 1];
+      if (!list || indent > list.indent) {
+        // A new, deeper list: under the last item of the list it sits in, or a new top-level list.
+        list = { indent, tag, start: tag === 'ol' ? Number.parseInt(marker, 10) : 1, items: [] };
+        const parent = deepestItem();
+        if (parent) parent.children.push(list);
+        else roots.push(list);
+        stack.push(list);
+      } else if (list.tag !== tag) {
+        // The same depth, the other kind of list: a sibling list beside it.
+        const sibling = { indent, tag, start: tag === 'ol' ? Number.parseInt(marker, 10) : 1, items: [] };
+        stack.pop();
+        const parent = deepestItem();
+        if (parent) parent.children.push(sibling);
+        else roots.push(sibling);
+        stack.push(sibling);
+        list = sibling;
+      }
+      list.items.push({ lines: content ? [content] : [], children: [] });
+      blankInList = false;
+      continue;
+    }
+    if (stack.length) {
+      const indented = /^[ \t]{2,}/.test(line);
+      if (!blankInList || indented) {
+        // A plain line under an item continues it (lazy continuation), even across a blank line when indented.
+        deepestItem().lines.push(line.trim());
+        blankInList = false;
+        continue;
+      }
       flushList();
+    }
+    if (quoted) {
+      flushParagraph();
       quote.push(quoted[1]);
-    } else if (list) {
-      // A plain line right under an item continues it (CommonMark's lazy continuation): the example's reading
-      // and translation stay with the example.
-      list.items[list.items.length - 1].lines.push(line.trim());
     } else {
       flushQuote();
       paragraph.push(line.trim());

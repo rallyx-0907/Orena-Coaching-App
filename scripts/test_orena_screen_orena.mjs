@@ -33,7 +33,8 @@ const { t } = await import('../static/orena/screens/orena/copy.js');
   // A numbered example keeps its reading and translation (continuation lines, indented sub-list) and its number.
   const grouped = String(richText('1. 我爱吃花生。\nwǒ ài chī huāshēng\nTôi thích ăn lạc.\n\n2. 花生很便宜。\n   - Lạc rất rẻ.'));
   assert.ok(grouped.includes('<li>我爱吃花生。<br>wǒ ài chī huāshēng<br>Tôi thích ăn lạc.</li>'), 'continuation lines stay in their item');
-  assert.ok(grouped.includes('<ol class="o-rich__list" start="2"><li>花生很便宜。<ul class="o-rich__list"><li>Lạc rất rẻ.</li></ul></li>'), 'the second example is 2, with its sub-list');
+  // A blank line between the examples does not end the list (CommonMark): one ol, items 1 and 2.
+  assert.ok(grouped.includes('</li><li>花生很便宜。<ul class="o-rich__list"><li>Lạc rất rẻ.</li></ul></li></ol>') && (grouped.match(/<ol/g) || []).length === 1, 'the second example is item 2 of the same list, with its sub-list');
   // A reply the server split by language renders as one document: the line stays one line (LEX-006 retest).
   const { richSegments } = await import('../static/orena/kit/rich-text.js');
   const split = [
@@ -46,12 +47,16 @@ const { t } = await import('../static/orena/screens/orena/copy.js');
   assert.equal(joined.lang, 'vi');
   assert.ok(doc.includes('<h3 class="o-rich__h o-rich__h3">Từ vựng: <span lang="zh-CN">花生</span></h3>'), 'the heading stays whole, its Chinese word marked');
   assert.ok(doc.includes('<li><strong>Hanzi:</strong> <span lang="zh-CN">我喜欢吃花生。</span><ul class="o-rich__list"><li><strong>Bản dịch:</strong> Tôi thích ăn lạc.</li></ul></li>'), 'example 1 is one item with its translation');
-  assert.ok(doc.includes('start="2"') && !doc.includes('<li><strong>Hanzi:</strong> </li>'), 'no empty numbered item');
+  assert.ok(!doc.includes('<li><strong>Hanzi:</strong> </li>') && (doc.match(/<li><strong>Hanzi:/g) || []).length === 2, 'no empty numbered item; both examples are items');
   assert.ok(!/[\uE000-\uEFFF]/.test(doc), 'no marker left in the markup');
   assert.equal((doc.match(/<span/g) || []).length, (doc.match(/<\/span>/g) || []).length, 'every language span closes');
   // A reference segment (a word to hear, sent after the answer) stands on its own line, not glued to the last sentence.
   const withRef = String(richSegments([{ lang: 'vi', text: 'Lạc là món gia đình thích ăn.' }, { lang: 'zh-CN', text: '花生', voice_style: 'reference' }], { refClass: 'x__ref' }).markup);
   assert.ok(withRef.includes('<p class="o-rich__p">Lạc là món gia đình thích ăn.</p><p class="o-rich__p o-rich__refs"><span lang="zh-CN" class="x__ref">花生</span></p>'), 'the reference is its own line');
+  // LEX-006 retest: an example nested three deep (bullet 'Ví dụ' > bare '1.' > field bullets) keeps its number and fields.
+  const deep = String(richText(['* **Ví dụ:**', '    1.', '        * **Hanzi:** 妈妈煮了五香花生。', '        * **Bản dịch:** Mẹ đã luộc lạc.', '    2.', '        * **Hanzi:** 他吃花生。'].join('\n')));
+  assert.ok(deep.includes('<li><strong>Ví dụ:</strong><ol class="o-rich__list"><li><ul class="o-rich__list"><li><strong>Hanzi:</strong> 妈妈煮了五香花生。</li><li><strong>Bản dịch:</strong> Mẹ đã luộc lạc.</li></ul></li><li><ul class="o-rich__list"><li><strong>Hanzi:</strong> 他吃花生。</li></ul></li></ol></li>'), 'a bare numbered marker holds its indented fields');
+  assert.ok(!/<li>(?:<br>)*<\/li>/.test(deep) && !deep.includes('1.<br>'), 'no empty item, no stray marker text');
   assert.equal(hasBlocks('one line'), false);
   assert.equal(hasBlocks('- item'), true);
   assert.equal(plainText('**Nghĩa:** đậu phộng [Open word](command:navigate?{}) và *lạc*'), 'Nghĩa: đậu phộng  và lạc');
