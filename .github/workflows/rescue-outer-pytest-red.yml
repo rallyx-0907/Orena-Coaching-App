@@ -1,0 +1,24 @@
+name: Rescue Outer Pytest RED
+
+on:
+  push:
+    paths:
+      - '.github/workflows/rescue-outer-pytest-red.yml'
+
+jobs:
+  red:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e "grammar_lab[dev]"
+      - name: Confirm rescue ownership regression is red
+        shell: bash
+        run: |
+          set +e
+          python -m pytest grammar_lab/tests/test_rescue_agent_contract.py -q
+          status=$?
+          set -e
+          test "$status" -ne 0
