@@ -203,6 +203,8 @@ class AgentRuntime:
     record_turn: Callable[[str, dict], None] | None = None
     # The staging daily spend cap (agent/budget.py): seconds until it resets when reached, else None.
     spend_guard: Callable[[], float | None] | None = None
+    # Live voice, mode A (agent/voice_session.py, R28): None unless the server turns voice on.
+    voice: Any = None
     turn_limiter: SlidingWindowLimiter = field(init=False)
     read_limiter: SlidingWindowLimiter = field(init=False)
 

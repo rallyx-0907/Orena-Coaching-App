@@ -59,6 +59,10 @@ _AUDIO_CATALOG = MappingProxyType({
     # (Microsoft Learn Q&A 5608069, Nov 2025, US East). Not the invoice: check it against the Azure bill.
     ("azure-speech", "pronunciation-assessment"): AudioPricing("azure-speech", "pronunciation-assessment", "USD",
                                                                1.32, 0.0, 1.0, "ms-learn-qa-5608069-2025-11"),
+    # Gemini Live, a voice session's wall-clock time (agent/voice_session.py, R28): about $0.036 a minute, the list
+    # price AGENT_SPEC §41 carries (AGENT_VOICE_SLICE4 §2.2). Unverified: check it against the Gemini bill (Q11).
+    ("gemini", "gemini-3.8-live"): AudioPricing("gemini", "gemini-3.8-live", "USD", 2.16, 0.0, 1.0,
+                                                "agent-spec-41-list-price-unverified"),
 })
 
 
