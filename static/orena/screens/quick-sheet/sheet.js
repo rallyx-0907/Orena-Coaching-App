@@ -81,11 +81,12 @@ function audioSourceLabel(result) {
   return who ? t('sourceRecording', { who }) : '';
 }
 
-function askWordDeeper(word, lang, source) {
+function askWordDeeper(word, lang, source, sentence = '') {
   askOrena({
     surface: surfaceFor(source, 'vocabulary.word'),
     content_id: source?.content_id || undefined,
-    selected_item: { type: 'word', text: word, lang },
+    // The sentence the learner met the word in travels with it, so Orena explains it there (LEX-006).
+    selected_item: { type: 'word', text: word, lang, ...(sentence ? { sentence } : {}) },
   });
 }
 
@@ -313,8 +314,8 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
     });
     sheetEl.querySelector('[data-save]')?.addEventListener('click', toggleSave);
     sheetEl.querySelector('[data-save-cta]')?.addEventListener('click', toggleSave);
-    sheetEl.querySelector('[data-ask]')?.addEventListener('click', () => askWordDeeper(card.word, lang, source));
-    sheetEl.querySelector('[data-why]')?.addEventListener('click', () => askWordDeeper(card.word, lang, source));
+    sheetEl.querySelector('[data-ask]')?.addEventListener('click', () => askWordDeeper(card.word, lang, source, sentence));
+    sheetEl.querySelector('[data-why]')?.addEventListener('click', () => askWordDeeper(card.word, lang, source, sentence));
     sheetEl.querySelector('[data-detail]')?.addEventListener('click', () => {
       if (typeof ctx.go === 'function') ctx.go(href('word', { id: card.word }));
     });

@@ -10,6 +10,11 @@ import assert from 'node:assert/strict';
   const { buildRequest } = await import('../static/orena/agent/session.js');
   const request = buildRequest({ context: { surface: 'writing.review', activity_type: 'writing', essay_id: 42 }, languages: { interface: 'en', support: 'vi', target: 'zh' } });
   assert.equal(request.context.essay_id, '42');
+  // LEX-006: a word carries the sentence it was selected in.
+  const word = buildRequest({ context: { surface: 'reading.workspace', selected_item: { type: 'word', text: '花生', lang: 'zh', sentence: '你们那么爱吃花生。' } }, languages: { interface: 'en', support: 'vi', target: 'zh' } });
+  assert.deepEqual(word.context.selected_item, { type: 'word', text: '花生', lang: 'zh-CN', sentence: '你们那么爱吃花生。' });
+  const bare = buildRequest({ context: { surface: 'reading.workspace', selected_item: { type: 'word', text: '花生', lang: 'zh' } }, languages: { interface: 'en', support: 'vi', target: 'zh' } });
+  assert.equal('sentence' in bare.context.selected_item, false);
 }
 import fs from 'node:fs';
 

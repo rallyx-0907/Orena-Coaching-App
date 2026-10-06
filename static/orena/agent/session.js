@@ -47,7 +47,13 @@ export function buildRequest({ trigger = 'message', message = '', context = {}, 
   if (item && SELECTED_ITEM_TYPES.includes(item.type) && String(item.text || '').trim()) {
     ctx.selected_item =
       item.type === 'word'
-        ? { type: 'word', text: String(item.text).trim(), lang: toContractLang(item.lang || languages.target) }
+        ? {
+            type: 'word',
+            text: String(item.text).trim(),
+            lang: toContractLang(item.lang || languages.target),
+            // The sentence the word was selected in, so "here" can be answered (contract §3, LEX-006).
+            ...(String(item.sentence || '').trim() ? { sentence: String(item.sentence).trim().slice(0, 500) } : {}),
+          }
         : { type: item.type, ...(item.id ? { id: String(item.id) } : {}), text: String(item.text).trim() };
   }
   if (address && address.lang === support) {
