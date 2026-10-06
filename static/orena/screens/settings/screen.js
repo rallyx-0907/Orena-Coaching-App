@@ -240,6 +240,8 @@ export default async function settingsScreen(element, ctx) {
     element.querySelectorAll('[data-tab]').forEach((el) => {
       el.setAttribute('aria-pressed', String(el.dataset.tab === state.tab));
     });
+    // The selected tab is always fully in view in the sideways strip (BUG-09).
+    element.querySelector(`[data-tab="${CSS.escape(state.tab)}"]`)?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   }
 
   async function onTargetPick(code) {

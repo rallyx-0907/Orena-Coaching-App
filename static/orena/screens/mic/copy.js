@@ -6,7 +6,7 @@ import { defineCopy } from '../../copy/index.js';
 
 const INTERFACE_KEYS = [
   'permissionTitle', 'permissionAllow', 'permissionDismiss',
-  'blockedTitle', 'blockedRetry', 'blockedTypeInstead', 'blockedClose',
+  'blockedTitle', 'blockedRetry', 'blockedTypeInstead', 'blockedClose', 'unavailableTitle',
   'notheardTitle', 'notheardTryAgain', 'notheardCancel',
   'noisyTitle', 'noisyKeep', 'noisyRecordAgain',
   'providerTitle', 'providerRetry', 'providerContinue',
@@ -14,7 +14,7 @@ const INTERFACE_KEYS = [
 ];
 const SUPPORT_KEYS = [
   'permissionBody',
-  'blockedBodyFallback', 'blockedBodyNoFallback', 'blockedSteps', 'blockedStillBlocked',
+  'blockedBodyFallback', 'blockedBodyNoFallback', 'blockedSteps', 'blockedStillBlocked', 'insecureBody', 'unsupportedBody',
   'notheardBody', 'noisyBody', 'providerBody', 'offlineBody',
   'micOffTypeInstead',
 ];
@@ -24,6 +24,9 @@ export const t = defineCopy('mic', {
   en: {
     permissionTitle: 'Allow microphone', permissionAllow: 'Allow microphone', permissionDismiss: 'Not now',
     permissionBody: 'Orena listens only while you record. Audio is used to assess this attempt and is kept according to your privacy settings.',
+    unavailableTitle: 'Microphone unavailable',
+    insecureBody: 'Microphone access needs a secure (https) connection. Open Orena from its https address to record.',
+    unsupportedBody: 'This browser cannot record audio here.',
     blockedTitle: 'Microphone is blocked', blockedRetry: 'Retry', blockedTypeInstead: 'Type instead', blockedClose: 'Close',
     blockedBodyFallback: 'Your browser denied access. You can fix it in settings, or type your answer instead.',
     blockedBodyNoFallback: 'Your browser denied access. Pronunciation needs audio, so there is no text fallback here.',
@@ -42,6 +45,9 @@ export const t = defineCopy('mic', {
   vi: {
     permissionTitle: 'Cho phép dùng micro', permissionAllow: 'Cho phép micro', permissionDismiss: 'Để sau',
     permissionBody: 'Orena chỉ nghe khi bạn đang ghi âm. Âm thanh dùng để chấm lượt này và được giữ theo cài đặt quyền riêng tư của bạn.',
+    unavailableTitle: 'Không dùng được micro',
+    insecureBody: 'Micro chỉ dùng được qua kết nối bảo mật (https). Hãy mở Orena bằng địa chỉ https để ghi âm.',
+    unsupportedBody: 'Trình duyệt này không ghi âm được ở đây.',
     blockedTitle: 'Micro đang bị chặn', blockedRetry: 'Thử lại', blockedTypeInstead: 'Gõ thay vào đó', blockedClose: 'Đóng',
     blockedBodyFallback: 'Trình duyệt của bạn đã từ chối quyền truy cập. Bạn có thể sửa trong cài đặt, hoặc gõ câu trả lời thay vào đó.',
     blockedBodyNoFallback: 'Trình duyệt của bạn đã từ chối quyền truy cập. Phát âm cần có âm thanh nên ở đây không có cách gõ chữ thay thế.',
@@ -60,6 +66,9 @@ export const t = defineCopy('mic', {
   zh: {
     permissionTitle: '允许使用麦克风', permissionAllow: '允许麦克风', permissionDismiss: '暂不',
     permissionBody: 'Orena 只会在你录音时监听。录音用于评估本次练习，并按你的隐私设置保留。',
+    unavailableTitle: '无法使用麦克风',
+    insecureBody: '麦克风需要安全连接（https）。请用 https 地址打开 Orena 再录音。',
+    unsupportedBody: '此浏览器无法在这里录音。',
     blockedTitle: '麦克风被禁用了', blockedRetry: '重试', blockedTypeInstead: '改为输入', blockedClose: '关闭',
     blockedBodyFallback: '浏览器拒绝了访问权限。你可以在设置中修改，或者改为输入你的答案。',
     blockedBodyNoFallback: '浏览器拒绝了访问权限。发音练习需要用到音频，这里没有输入文字的替代方式。',

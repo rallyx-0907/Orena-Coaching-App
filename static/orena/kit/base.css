@@ -105,6 +105,11 @@ button:disabled {
   outline-offset: 2px;
   border-radius: 12px;
 }
+/* A landmark the router focuses for screen readers (main, tabindex=-1) is not a control: no ring around the
+   whole page, which mobile Safari otherwise draws after every navigation (mobile QA BUG-04). Real controls keep
+   theirs. */
+[tabindex="-1"]:focus,
+[tabindex="-1"]:focus-visible { outline: none; }
 
 .ic {
   display: block;

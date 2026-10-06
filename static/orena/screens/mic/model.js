@@ -9,8 +9,29 @@
 
 export const MIC_STATES = Object.freeze(['permission', 'blocked', 'notheard', 'noisy', 'provider', 'offline']);
 
-export function micStateSpec(state, { textFallback = true } = {}) {
+/* Whether this page can record at all, before any permission is asked (mobile QA BUG-01): a page that is not a
+   secure context (plain http on a LAN address) has no microphone API, so asking for permission would be a loop
+   that cannot succeed. `null` when recording is possible. */
+export function micUnavailableReason({ secure = globalThis.isSecureContext, mediaDevices = globalThis.navigator?.mediaDevices } = {}) {
+  if (secure === false) return 'insecure';
+  if (!mediaDevices?.getUserMedia) return 'unsupported';
+  return null;
+}
+
+export function micStateSpec(state, { textFallback = true, reason = null } = {}) {
   if (!MIC_STATES.includes(state)) return null;
+  if (state === 'blocked' && reason) {
+    // The blocked state, for a microphone this page can never reach: the real reason, and no Retry that cannot work.
+    return {
+      iconBg: 'var(--red-soft)', iconColor: 'var(--red)',
+      titleKey: 'unavailableTitle', bodyKey: reason === 'insecure' ? 'insecureBody' : 'unsupportedBody', stepsKey: '',
+      actions: [
+        textFallback
+          ? { key: 'typeInstead', labelKey: 'blockedTypeInstead', variant: 'primary' }
+          : { key: 'close', labelKey: 'blockedClose', variant: 'primary' },
+      ],
+    };
+  }
   if (state === 'permission') {
     return {
       iconBg: 'var(--accent-soft)', iconColor: 'var(--accent)',

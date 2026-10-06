@@ -23,7 +23,7 @@ import { useStyles } from '../../kit/styles.js';
 import { toast } from '../../kit/toast.js';
 import { watchMicrophone, MIC_STATES } from '../../capabilities/mic-readiness.js';
 import { t } from './copy.js';
-import { micStateSpec, gateStateFor } from './model.js';
+import { micStateSpec, gateStateFor, micUnavailableReason } from './model.js';
 
 /* Session-scoped: once the browser has actually granted the microphone this visit, later gated
    actions go straight through - the browser itself remembers the grant, so asking again inside the
@@ -50,8 +50,8 @@ function bodyMarkup(spec) {
    step resolves) - every other return value closes it, matching the source (every action here ends
    the sheet, directly or through `run()`). No head, no close button (the frame draws none): the
    shared scrim and Escape, already wired by kit/overlay.js, are the only other way out. */
-export async function openMicState(ctx = {}, { state, onAction, textFallback = true } = {}) {
-  const spec = micStateSpec(state, { textFallback });
+export async function openMicState(ctx = {}, { state, onAction, textFallback = true, reason = null } = {}) {
+  const spec = micStateSpec(state, { textFallback, reason });
   if (!spec) return null;
   await useStyles('screens/mic/mic.css');
   if (ctx.isCurrent && !ctx.isCurrent()) return null;
@@ -95,9 +95,23 @@ async function checkReadiness() {
 /* Runs `start()` once the microphone is actually ready, asking first when it has not been this
    session and explaining plainly when the browser has refused it - never a silent failure and
    never a guessed permission state. */
-export async function micGate(ctx, start) {
+export async function micGate(ctx, start, { textFallback = true } = {}) {
   if (granted) {
     start();
+    return;
+  }
+  // A page that cannot record never shows an Allow button: it says why (BUG-01).
+  const reason = micUnavailableReason();
+  if (reason) {
+    await openMicState(ctx, {
+      state: 'blocked',
+      reason,
+      textFallback,
+      onAction: (key) => {
+        if (key === 'typeInstead') toast(t('micOffTypeInstead'));
+        return undefined;
+      },
+    });
     return;
   }
   await openMicState(ctx, {

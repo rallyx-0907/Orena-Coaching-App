@@ -781,3 +781,38 @@
 /* In Dictation the hidden line map yields room first, so the card's actions always keep theirs (LEX-032). */
 :root[data-device="mobile"] .s-listening.is-dictation .s-listening__transcript { min-height: 96px; }
 :root[data-device="mobile"] .s-listening__dict .s-dict__actions { gap: 8px; }
+
+/* Typing with the phone keyboard open (mobile QA BUG-02): the room fits the visible area above the keyboard and
+   keeps only the task - transport, answer, hint, Check. Video, seek bar and the line map return when typing ends. */
+:root[data-device="mobile"] .s-listening.is-typing {
+  height: var(--ls-visible-h, 100%);
+  padding-bottom: 8px;
+}
+/* The player stays rendered (Replay still plays it), only out of sight: a hidden iframe can stop its media. */
+:root[data-device="mobile"] .s-listening.is-typing .s-listening__player {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  min-height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+:root[data-device="mobile"] .s-listening.is-typing .s-listening__seek,
+:root[data-device="mobile"] .s-listening.is-typing .s-listening__transcript,
+:root[data-device="mobile"] .s-listening.is-typing .s-listening__modes { display: none; }
+:root[data-device="mobile"] .s-listening.is-typing .s-listening__dict .s-dict__input { height: 72px; }
+
+/* Phone (mobile QA BUG-07): a long title wraps to two lines and then ends with an ellipsis, rather than being cut
+   on one line; the clock sits on its own scrim so it never mixes with the video's own overlay text. */
+:root[data-device="mobile"] .s-listening__title {
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-height: 1.3;
+}
+.s-listening__time {
+  padding: 2px 8px;
+  border-radius: 8px;
+  background: var(--scrim);
+}

@@ -179,7 +179,7 @@ export default async function mountCompareWithModel(element, ctx) {
   function record() {
     if (recorder.busy) return;
     stopPlay();
-    micGate(ctx, () => recorder.start());
+    micGate(ctx, () => recorder.start(), { textFallback: false }); // pronunciation has no typed fallback
   }
 
   /* ---- Measuring the audio (browser side) ---- */

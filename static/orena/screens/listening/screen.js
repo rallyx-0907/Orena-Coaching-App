@@ -356,10 +356,14 @@ export default async function listening(element, ctx) {
   function scrollRowIntoView(id) {
     const row = rowsEl?.querySelector(`[data-seg="${CSS.escape(id)}"]`);
     if (!row) return;
-    const top = row.offsetTop - rowsEl.offsetTop;
-    const bottom = top + row.offsetHeight;
-    if (top < rowsEl.scrollTop) rowsEl.scrollTop = Math.max(0, top - 8);
-    else if (bottom > rowsEl.scrollTop + rowsEl.clientHeight) rowsEl.scrollTop = bottom - rowsEl.clientHeight + 8;
+    // Measured against the region itself, not offsetParent: the line's first row (pinyin included) is never
+    // left under the Transcript header (mobile QA BUG-08).
+    const region = rowsEl.getBoundingClientRect();
+    const box = row.getBoundingClientRect();
+    const top = box.top - region.top + rowsEl.scrollTop;
+    const bottom = top + box.height;
+    if (top < rowsEl.scrollTop + 8) rowsEl.scrollTop = Math.max(0, top - 8);
+    else if (bottom > rowsEl.scrollTop + rowsEl.clientHeight - 8) rowsEl.scrollTop = Math.min(top - 8, bottom - rowsEl.clientHeight + 8);
   }
 
   /* The frame's `playSeg`: from the line's start to its end, then stop. */
@@ -618,6 +622,34 @@ export default async function listening(element, ctx) {
     playerEl.classList.toggle('is-veiled', mode === 'dictation' && !practice.revealed(currentId));
   }
 
+  /* Typing on a phone (mobile QA BUG-02): while the answer box has focus the on-screen keyboard takes half the
+     screen, so the room keeps only what the task needs - the line's transport, the answer, the hint and Check -
+     and gives the rest back when typing ends. The class is removed a moment after focus leaves, so a tap on Check
+     or Hint lands before the layout returns. The visible height follows `visualViewport`, so the card is laid out
+     above the keyboard rather than behind it. */
+  let typingTimer = 0;
+  const viewport = window.visualViewport || null;
+  function fitVisible() {
+    if (viewport) element.style.setProperty('--ls-visible-h', `${Math.round(viewport.height)}px`);
+  }
+  selectedSlot.addEventListener('focusin', (event) => {
+    if (!event.target.matches?.('.s-dict__input')) return;
+    clearTimeout(typingTimer);
+    fitVisible();
+    element.classList.add('is-typing');
+    // Safari scrolls the window to reveal a focused field; the room is the viewport, so it goes back to the top.
+    requestAnimationFrame(() => window.scrollTo(0, 0));
+  });
+  selectedSlot.addEventListener('focusout', () => {
+    clearTimeout(typingTimer);
+    typingTimer = setTimeout(() => {
+      if (document.activeElement?.matches?.('.s-dict__input')) return;
+      element.classList.remove('is-typing');
+      element.style.removeProperty('--ls-visible-h');
+    }, 300);
+  });
+  viewport?.addEventListener('resize', () => { if (element.classList.contains('is-typing')) fitVisible(); });
+
   /* The Dictation card is redrawn only when its line changes: replaying or the clock never rebuilds the answer
      box, so the learner's typing, focus and phone keyboard stay put. */
   let dictShownId = null;
@@ -865,6 +897,7 @@ export default async function listening(element, ctx) {
 
   return () => {
     clearTimeout(chromeTimer);
+    clearTimeout(typingTimer);
     playerEl.removeEventListener('pointermove', revealPlayerChrome);
     playerEl.removeEventListener('pointerdown', revealPlayerChrome);
     clearTimeout(processingTimer);

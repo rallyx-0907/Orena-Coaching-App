@@ -75,7 +75,8 @@ export async function loadContext(storage = window.localStorage) {
   ]);
   state.user = user;
   state.isAdmin = Boolean(user?.is_admin);
-  state.name = String(user?.name || '').trim();
+  // A local (no sign-in) session has no learner name: the server's placeholder is never shown (mobile QA BUG-06).
+  state.name = user?.mode === 'local' ? '' : String(user?.name || '').trim();
   state.initial = initialOf(state.name);
   state.picture = typeof user?.picture === 'string' && /^https:\/\//.test(user.picture) ? user.picture : '';
   state.owner = user?.email || user?.mode || 'local';

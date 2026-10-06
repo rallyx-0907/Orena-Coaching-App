@@ -3,7 +3,7 @@
    object (orena-script.js) exactly: icon tokens, which copy key each uses, the `blocked` state's
    real `textOK` branch, and `noisy`'s real button order (secondary drawn before primary). */
 import assert from 'node:assert/strict';
-import { MIC_STATES, micStateSpec, gateStateFor } from '../static/orena/screens/mic/model.js';
+import { MIC_STATES, micStateSpec, gateStateFor, micUnavailableReason } from '../static/orena/screens/mic/model.js';
 
 assert.deepEqual(MIC_STATES, ['permission', 'blocked', 'notheard', 'noisy', 'provider', 'offline']);
 assert.equal(micStateSpec('bogus'), null, 'no 7th state exists - never invent one');
@@ -71,3 +71,16 @@ assert.equal(gateStateFor('unsupported'), 'blocked');
 assert.equal(gateStateFor('checking'), null, 'still checking is not a failure to report yet');
 
 console.log('test_orena_screen_mic.mjs: Mic state sheet - the source\'s 6 states, real textOK/order, gate mapping: PASS');
+
+// BUG-01 (mobile QA): a page that cannot record says why, and offers no Retry or Allow that cannot work.
+{
+  assert.equal(micUnavailableReason({ secure: false, mediaDevices: undefined }), 'insecure');
+  assert.equal(micUnavailableReason({ secure: true, mediaDevices: undefined }), 'unsupported');
+  assert.equal(micUnavailableReason({ secure: true, mediaDevices: { getUserMedia() {} } }), null);
+  const insecure = micStateSpec('blocked', { reason: 'insecure' });
+  assert.equal(insecure.titleKey, 'unavailableTitle');
+  assert.equal(insecure.bodyKey, 'insecureBody');
+  assert.deepEqual(insecure.actions.map((a) => a.key), ['typeInstead'], 'no Retry when retrying cannot work');
+  assert.deepEqual(micStateSpec('blocked', { reason: 'unsupported', textFallback: false }).actions.map((a) => a.key), ['close']);
+}
+

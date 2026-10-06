@@ -203,3 +203,15 @@
 .s-settings-licences__group + .s-settings-licences__group {
   margin-top: 20px;
 }
+
+/* Phone (mobile QA BUG-09): the strip scrolls sideways on purpose - the last tab can scroll fully into view, the
+   right edge fades to say there is more, and the selected tab is brought into view (screen.js). */
+:root[data-device="mobile"] .s-settings__tabs {
+  scrollbar-width: none;
+  padding-right: 24px;
+  scroll-padding-inline: 16px;
+  -webkit-mask-image: linear-gradient(to right, var(--surface) calc(100% - 32px), transparent);
+  mask-image: linear-gradient(to right, var(--surface) calc(100% - 32px), transparent);
+}
+:root[data-device="mobile"] .s-settings__tabs::-webkit-scrollbar { display: none; }
+:root[data-device="mobile"] .s-settings__tabs .o-chip { flex: none; }
