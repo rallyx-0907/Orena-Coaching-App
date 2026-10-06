@@ -4246,3 +4246,15 @@ the pinned frame where the frame draws otherwise.
     sense in the support language. It is never an English sense shown to a learner with another support
     language.
   - WordDetail gains `generalMeaning`; the pinned contract file is unchanged (UI_BACKEND_GAPS, RD-4).
+
+## D-134 - Pinyin over Hanzi: words set apart, readings smaller, characters evenly spaced (LEX-019)
+
+2026-10-06, explicit human decision on UX review LEX-019. It departs from frame 14's pinyin measurements, which
+the Reviewer found hard to read even when matched exactly.
+
+- With pinyin on, each word is one group whose columns share the width of its widest reading. A word's
+  characters therefore stand evenly spaced, and each reading stays over its own character.
+- Words are set apart by a small gap (0.3em), so word boundaries read in both the pinyin row and the Hanzi row.
+- Pinyin is max(10.5px, .58em), below the frame's max(12.5px, .64em), with 1.5px either side. Two readings'
+  letters are always at least 3px apart.
+- Hanzi stay primary. Every word cue (kept word, key word, word type, highlight) stays on the Hanzi.
