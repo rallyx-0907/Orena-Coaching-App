@@ -536,6 +536,20 @@ CATALOG: Mapping[str, CopyEntry] = MappingProxyType(
 )
 
 
+def prompt_in_support(message: str | None, *, interface: str, support: str) -> str | None:
+    """A starter the learner tapped (a `prompt.*` label, sent as their message in the interface language,
+    contract §4), in the support language - what the model is given to answer, so it answers in that language
+    (LEX-006). None for anything the learner typed themselves."""
+
+    said = (message or "").strip()
+    if not said:
+        return None
+    for key, entry in CATALOG.items():
+        if key.startswith("prompt.") and entry.texts.get(interface) == said:
+            return entry.texts.get(support) or entry.texts[FALLBACK_LANGUAGE]
+    return None
+
+
 def layer_language(layer: CopyLayer, *, interface: str, support: str) -> str:
     return interface if layer is CopyLayer.INTERFACE else support
 

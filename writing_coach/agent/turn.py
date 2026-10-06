@@ -133,6 +133,12 @@ Meter = Callable[[str, str, int, str], None]  # (user_key, feature, amount, requ
 TURN_FEATURE = "agent.turn"
 OPEN_FEATURE = "agent.open"
 SNAPSHOT_TOOL = "build_learning_snapshot"
+FEEDBACK_NUDGE = (
+    "The learner asks why this feedback was given on their essay (essay_id {essay_id}). You have not read it: call "
+    "get_writing_feedback_items with that essay_id (and get_current_writing_evaluation if you need the whole "
+    "review) now, then explain from what it shows why this very feedback was given and what to do next. Nothing "
+    "about review or words due."
+)
 ANSWER_NUDGE = "[No answer was written. Answer the learner now, in words, in their support language.]"
 TOKENS_FEATURE = "agent.tokens"
 
@@ -231,6 +237,8 @@ class _Turn:
         self.provider_rounds = 0
         self.screen_help = False  # set per turn by the decision (F-13)
         self.needs_evidence = False  # a conclusion about the learner's learning: read before answering (3.1)
+        self.evidence_nudge = EVIDENCE_NUDGE  # what the model is asked when it answered without reading
+        self.focused = False  # the turn is about what is in view (LEX-006, LEX-022)
         self.read_attempted = False  # a read was started this turn, whatever came of it
         self.address_offered_now = False
         self.notes_asked: tuple[CoachNote, ...] = ()  # coach notes the message changes (agent/notes.py)
@@ -344,6 +352,14 @@ class _Turn:
         self.snapshot, self.coach_notes = snapshot, tier1.coach_notes
         self.screen_help = decisions.screen_help
         self.needs_evidence = decisions.needs_tools is True
+        context = self.request.context
+        selected = context.selected_item
+        # The turn is about what is in view: no review routing nobody asked for (LEX-006, LEX-022).
+        self.focused = not self.opening and bool(selected or context.essay_id)
+        if not self.opening and selected is not None and selected.type == "feedback_item" and context.essay_id:
+            # "Why was this feedback given?" (LEX-022): answered from that essay's review, read first.
+            self.needs_evidence = True
+            self.evidence_nudge = FEEDBACK_NUDGE.format(essay_id=json.dumps(context.essay_id))
         if not self.opening:
             self.notes_asked = notes_the_message_changes(turn.message, tier1.coach_notes)
             self.notes_intent = note_intent(turn.message) if self.notes_asked else None
@@ -353,9 +369,13 @@ class _Turn:
             # question (a keep request without diacritics): nothing streams early.
             self.gate.hold_all = (bool(self.notes_asked) or self.needs_evidence or self.note_confirmed is not None
                                   or self.unaccented_keep)  # fmt: skip
+        # A starter the learner tapped is in the interface language; the model is given it in the support language,
+        # so it answers in that one (LEX-006). Anything the learner typed reaches it as typed.
+        tapped = None if self.opening else learner_copy.prompt_in_support(
+            turn.message, interface=self.locale.interface, support=self.locale.support)  # fmt: skip
         messages = opening_messages(
-            turn, tier1, [c for c in here if c], session, opening=self.opening, snapshot=snapshot,
-            screen_help=self.screen_help,
+            replace(turn, message=tapped) if tapped else turn, tier1, [c for c in here if c], session,
+            opening=self.opening, snapshot=snapshot, screen_help=self.screen_help,
         )
         self.timeline.mark("context_built")
         outputs = ReplyOutputs(
@@ -375,6 +395,7 @@ class _Turn:
             learner_words=turn.message or "",
             address_terms=tier1.address.pair,
             unaccented_keep=self.unaccented_keep,
+            focused=self.focused,
         )
         if mirrored is not None:
             outputs.memory_updates.append(MemoryUpdateEvent(op="upsert", note=mirrored))
@@ -508,7 +529,7 @@ class _Turn:
             if not calls:
                 if self.needs_evidence and not self.read_attempted and not evidence_nudged and round_index < limit:
                     evidence_nudged = True
-                    self._ask_again(messages, round_text, EVIDENCE_NUDGE, why="answered without reading the records")
+                    self._ask_again(messages, round_text, self.evidence_nudge, why="answered without reading the records")
                     continue
                 if self._note_unchanged(outputs) and not notes_nudged and round_index < limit:
                     notes_nudged = True
