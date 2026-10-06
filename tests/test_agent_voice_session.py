@@ -83,7 +83,7 @@ def test_a_session_mints_a_one_use_token_with_the_setup_locked_in():
     instruction = setup["systemInstruction"]["parts"][0]["text"]
     assert instruction.startswith(INSTRUCTION) and VOICE_RULES in instruction and "context: " in instruction
     names = {d["name"] for d in setup["tools"][0]["functionDeclarations"]}
-    assert {"get_word_detail", "offer_button", "remember_note"} <= names
+    assert {"get_word_detail", "do_action", "remember_note"} <= names
     assert not names & {"propose_action", "cite_evidence", "set_voice_style", "add_reference", "suggest_next"}
     assert "inputAudioTranscription" in setup and "outputAudioTranscription" in setup
     assert answer["mode"] == "s2s" and answer["transport"] == "websocket"
@@ -128,14 +128,14 @@ def test_a_json_schema_becomes_a_gemini_function_schema():
 def test_a_spoken_button_is_filled_from_the_selection_and_judged_like_in_text():
     service = _service()
     sid = service.open(_body({"type": "word", "text": "花生", "lang": "zh-CN"}), LEARNER)["voice_session_id"]
-    save = {"id": "c1", "name": "offer_button", "args": {"action": "save_word"}}
+    save = {"id": "c1", "name": "do_action", "args": {"type": "save_word"}}
     answer = service.relay(sid, [save], LEARNER, heard="Lưu từ này giúp mình nhé")
     assert answer["responses"][0]["id"] == "c1" and answer["responses"][0]["response"]["result"].startswith("accepted")
     assert [e["event"] for e in answer["events"]] == ["action"]
     assert answer["events"][0]["data"]["type"] == "save_word"
     assert answer["events"][0]["data"]["payload"] == {"text": "花生", "lang": "zh-CN"}
     # D-135: My Library about a word not read as saved is refused, as in text
-    library = {"id": "c2", "name": "offer_button", "args": {"action": "open_word"}}
+    library = {"id": "c2", "name": "do_action", "args": {"type": "navigate", "intent": "vocabulary.word"}}
     refused = service.relay(sid, [library], LEARNER, heard="Mở từ này trong thư viện")
     assert refused["responses"][0]["response"]["result"].startswith("refused") and refused["events"] == []
 
@@ -143,7 +143,7 @@ def test_a_spoken_button_is_filled_from_the_selection_and_judged_like_in_text():
 def test_each_utterance_counts_its_buttons_afresh():
     service = _service()
     sid = service.open(_body({"type": "word", "text": "花生", "lang": "zh-CN"}), LEARNER)["voice_session_id"]
-    save = {"id": "c", "name": "offer_button", "args": {"action": "save_word"}}
+    save = {"id": "c", "name": "do_action", "args": {"type": "save_word"}}
     for said in ("Lưu từ này", "Lưu lại giúp mình", "Lưu từ này lần nữa"):
         answer = service.relay(sid, [save], LEARNER, heard=said)
         assert answer["responses"][0]["response"]["result"].startswith("accepted"), said

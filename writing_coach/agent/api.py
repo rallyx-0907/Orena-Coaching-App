@@ -184,6 +184,23 @@ def agent_voice_tool(body: dict = Body(...), voice: VoiceService = Depends(_voic
     return answer
 
 
+@router.post("/voice/context")
+def agent_voice_context(body: dict = Body(...), voice: VoiceService = Depends(_voice_call_allowed)) -> dict:
+    """The learner moved while the session stays open (R30): its context follows; the answer's `note` goes to the
+    model as a context line."""
+
+    context = body.get("context")
+    if not isinstance(context, dict):
+        raise HTTPException(status_code=422, detail="context must be an object")
+    try:
+        answer = voice.update_context(str(body.get("voice_session_id") or ""), context, LearnerScope.from_request_context())
+    except ValidationError as exc:
+        raise HTTPException(status_code=422, detail=exc.errors(include_url=False, include_context=False)) from exc
+    if answer is None:
+        raise HTTPException(status_code=404, detail="voice_session_not_found")
+    return answer
+
+
 @router.post("/voice/end")
 def agent_voice_end(body: dict = Body(...), voice: VoiceService = Depends(_voice_call_allowed)) -> dict:
     answer = voice.end(str(body.get("voice_session_id") or ""), LearnerScope.from_request_context())

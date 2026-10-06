@@ -64,6 +64,17 @@ SCENARIOS = [
     # the human's own settings and words (phone test 2026-10-06): learning English, interface and support English
     ("en-open-video", "en", {"interface": "en", "support": "en"}, {}, "Open any video in Listening.", None),
     ("en-open-video-vi", "en", {"interface": "en", "support": "en"}, {}, "Mở một video bất kỳ trong Listening.", None),
+    # R30: anything the app can do, at once when asked; following the learner; real speech in
+    ("r30-progress", "en", {"interface": "en", "support": "en"}, {}, "Go to my progress.", None),
+    ("r30-speaking-vi", "en", VI, {}, "Mở phần luyện nói giúp mình.", None),
+    ("r30-review", "en", {"interface": "en", "support": "en"}, {}, "Start a review of my due words.", None),
+    ("r30-move-play", "en", {"interface": "en", "support": "en"},
+     {"move": {"surface": "listening.workspace", "content_id": "media:en-science-cosmic-calendar",
+               "selected_item": {"type": "sentence", "id": "s1", "text": "Imagine the whole history of the universe."}}},
+     "Play the model audio for this sentence.", None),
+    ("r30-hear-vi", "zh", VI, {"audio": "vi-word-here.wav"}, "(spoken: a Vietnamese answer about 花生)", None),
+    ("r30-hear-en", "en", {"interface": "en", "support": "en"}, {"audio": "en-word.wav"},
+     "(spoken: an English answer about a peanut)", None),
     *[(f"voice-{v}", "zh", VI, {"voice": v}, "Chào bạn, hôm nay mình học gì?", None)
       for v in ("f-clear", "f-bright", "f-warm", "f-soft", "f-young", "f-gentle",
                 "m-calm", "m-lively", "m-friendly", "m-steady")],
@@ -73,15 +84,38 @@ SCENARIOS = [
 LEARNING_TARGET = {"zh": "zh-CN", "en": "en"}
 
 
+async def speak(ws, wav: Path) -> None:
+    """Say a recording as the microphone would: 16 kHz PCM in 100 ms frames, then a second of silence for VAD."""
+
+    import audioop  # the app image's Python 3.12 still has it
+
+    with wave.open(str(wav), "rb") as source:
+        pcm, rate = source.readframes(source.getnframes()), source.getframerate()
+    pcm, _ = audioop.ratecv(pcm, 2, 1, rate, 16000, None)
+    pcm += b"\x00\x00" * 16000
+    frame = 3200  # 100 ms of 16 kHz PCM16
+    for start in range(0, len(pcm), frame):
+        chunk = base64.b64encode(pcm[start:start + frame]).decode()
+        await ws.send(json.dumps({"realtimeInput": {"audio": {"data": chunk, "mimeType": "audio/pcm;rate=16000"}}}))
+        await asyncio.sleep(0.1)
+
+
 async def scenario(base: str, name: str, learning: str, locale: dict, extra: dict, said: str, barge: float | None,
                    audio_dir: Path) -> dict:  # fmt: skip
     target = (extra.get("selected_item") or {}).get("lang") or LEARNING_TARGET.get(learning, "zh-CN")
     extra = dict(extra)
     voice = extra.pop("voice", None)
+    move = extra.pop("move", None)  # a context update after the session opens (R30)
+    audio_in = extra.pop("audio", None)  # a WAV (24 kHz) said as microphone audio, not typed
     body = {"contract_version": 5,
-            "client": {"ui_version": "voice-check", "supported_actions": ["save_word", "navigate", "start_review"],
-                       "supported_intents": ["vocabulary.word", "vocabulary.my_language", "vocabulary.review_due",
-                                             "listening.workspace", "reading.workspace"]},
+            "client": {"ui_version": "voice-check",
+                       "supported_actions": ["save_word", "unsave_word", "navigate", "start_review", "play_model",
+                                             "say_again", "start_targeted_drill"],
+                       "supported_intents": ["home", "orena.home", "progress", "preferences", "vocabulary.word",
+                                             "vocabulary.my_language", "vocabulary.review_due", "listening.library",
+                                             "listening.workspace", "listening.dictation", "reading.library",
+                                             "reading.workspace", "speaking.library", "speaking.free_talk",
+                                             "writing.workspace"]},
             "context": {"surface": "reading.workspace" if extra.get("selected_item") else "orena.home",
                         "activity_type": "reading", "locale": {**locale, "target": target, "content": target},
                         **extra}}  # fmt: skip
@@ -117,10 +151,19 @@ async def scenario(base: str, name: str, learning: str, locale: dict, extra: dic
                 row["first_messages"].append(sorted(message))
             if "setupComplete" in message:  # an empty object: present, not truthy
                 row["setup_complete_ms"] = round((time.monotonic() - opened_at) * 1000)
+                if move:
+                    moved_status, moved = call(base, "POST", "/api/agent/voice/context",
+                                               {"voice_session_id": sid, "context": move})  # fmt: skip
+                    row["moved"] = moved_status
+                    await ws.send(json.dumps({"clientContent": {"turns": [{"role": "user", "parts": [
+                        {"text": moved.get("note", "")}]}], "turnComplete": False}}))  # fmt: skip
                 started = time.monotonic()
                 deadline = time.monotonic() + SCENARIO_SECONDS
-                await ws.send(json.dumps({"clientContent": {"turns": [{"role": "user", "parts": [{"text": said}]}],
-                                                            "turnComplete": True}}))  # fmt: skip
+                if audio_in:
+                    await speak(ws, audio_dir / audio_in)
+                else:
+                    await ws.send(json.dumps({"clientContent": {"turns": [{"role": "user", "parts": [{"text": said}]}],
+                                                                "turnComplete": True}}))  # fmt: skip
                 continue
             if message.get("toolCall"):
                 fcs = message["toolCall"].get("functionCalls") or []
@@ -160,7 +203,7 @@ async def scenario(base: str, name: str, learning: str, locale: dict, extra: dic
     audio = audio_dir / f"{name}.wav"
     with wave.open(str(audio), "wb") as out:
         out.setnchannels(1), out.setsampwidth(2), out.setframerate(24000), out.writeframes(bytes(pcm))
-    row.update(first_audio_ms=first_audio, said=" ".join(transcript).strip(), calls=calls,
+    row.update(first_audio_ms=first_audio, heard="".join(heard).strip(), said=" ".join(transcript).strip(), calls=calls,
                events=[e.get("event") for e in events], event_data=events, barge_in_stop_ms=stop_ms,
                barged=barge is not None, audio_seconds_heard=round(len(pcm) / 48000, 1),
                billed_seconds=ended.get("seconds"), audio_file=audio.name)  # fmt: skip
