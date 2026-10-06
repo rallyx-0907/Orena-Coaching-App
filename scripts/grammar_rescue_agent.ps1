@@ -120,6 +120,8 @@ NON-NEGOTIABLE CONTRACT
 - Preserve semantic content.
 - Add focused regression tests for the repaired failure family, including an ambiguous/fail-closed case where appropriate.
 - Run focused pytest only. Inspect git diff before finishing.
+- Inside Codex, run focused tests with `python -m pytest`; the outer wrapper has already verified `python` is on PATH.
+- Do not use `.venv`, `py`, or a hard-coded Python interpreter path.
 - If a safe deterministic fix cannot be proven, do not guess; report BLOCKED with exact evidence needed.
 
 IMPORTANT
