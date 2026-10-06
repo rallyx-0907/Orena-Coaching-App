@@ -1,0 +1,71 @@
+name: Stabilization Patch V2
+on:
+  push:
+    paths:
+      - '.github/workflows/stabilize-patch-v2.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e "grammar_lab[dev]"
+      - name: Patch CLI
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('grammar_lab/pipeline/cli.py')
+          text = path.read_text(encoding='utf-8')
+          anchor = 'from grammar_lab.pipeline.verify import VerifyFlag, VerifyReport, verify_point\n'
+          addition = '''from grammar_lab.pipeline.stabilize import (\n    build_stabilization_report, render_stabilization_report, run_cache_sweep,\n    write_stabilization_report,\n)\n'''
+          assert anchor in text
+          if 'build_stabilization_report' not in text:
+              text = text.replace(anchor, anchor + addition, 1)
+
+          command_anchor = '@app.command("generate-corpus")\n'
+          command = '''@app.command("stabilize-corpus")\ndef stabilize_corpus_command(\n    lang: str = typer.Option(..., "--lang", help="en | zh."),\n    skip_cache_sweep: bool = typer.Option(False, "--skip-cache-sweep", help="Audit current corpus without replaying local cache first."),\n    workers: int = typer.Option(4, "--workers", help="Parallel zero-provider cache readers (1-16)."),\n    as_json: bool = typer.Option(False, "--json", help="Print machine-readable report."),\n    out: Path | None = typer.Option(None, "--out", help="Report path; default .cache/stabilization/<lang>.json."),\n    root: Path = typer.Option(LAB_ROOT, "--root"),\n) -> None:\n    """One corpus-wide cache salvage plus deterministic structural/quality audit. Never pays a provider."""\n    if lang not in ("en", "zh"):\n        raise typer.BadParameter("expected en or zh", param_hint="--lang")\n    if workers < 1 or workers > 16:\n        raise typer.BadParameter("must be between 1 and 16", param_hint="--workers")\n\n    outcomes: list[dict[str, str]] = []\n    sweep_exit: int | None = None\n    sweep_log = ""\n    if not skip_cache_sweep:\n        sweep_exit, sweep_log, outcomes = run_cache_sweep(lang, root, workers=workers)\n\n    report = build_stabilization_report(lang, root, outcomes)\n    report["cache_sweep"] = {\n        "ran": not skip_cache_sweep,\n        "exit_code": sweep_exit,\n        "provider_calls_authorized": False,\n    }\n    report_path = out or (root / ".cache" / "stabilization" / f"{lang}.json")\n    write_stabilization_report(report, report_path)\n    if not skip_cache_sweep:\n        log_path = report_path.with_suffix(".cache.log")\n        log_path.parent.mkdir(parents=True, exist_ok=True)\n        log_path.write_text(sweep_log, encoding="utf-8")\n        report["cache_sweep"]["log"] = str(log_path)\n        write_stabilization_report(report, report_path)\n\n    typer.echo(json.dumps(report, ensure_ascii=False, indent=2) if as_json else render_stabilization_report(report))\n    if not as_json:\n        typer.echo(f"report: {report_path}")\n    raise typer.Exit(0 if report["accepted"] else 1)\n\n\n'''
+          assert command_anchor in text
+          if '@app.command("stabilize-corpus")' not in text:
+              text = text.replace(command_anchor, command + command_anchor, 1)
+          path.write_text(text, encoding='utf-8')
+          PY
+      - name: Focused stabilization tests
+        run: python -m pytest grammar_lab/tests/test_stabilize.py -q
+      - name: CLI smoke
+        shell: bash
+        run: |
+          set +e
+          python -m grammar_lab.pipeline.cli stabilize-corpus --lang zh --skip-cache-sweep --json > /tmp/stabilize.json
+          status=$?
+          set -e
+          test "$status" -eq 1
+          python - <<'PY'
+          import json
+          data=json.load(open('/tmp/stabilize.json', encoding='utf-8'))
+          assert data['lang']=='zh'
+          assert data['accepted'] is False
+          assert data['cache_sweep']['provider_calls_authorized'] is False
+          PY
+      - name: Full Grammar Lab suite
+        run: python -m pytest grammar_lab/tests -q
+      - name: Deterministic gates
+        run: |
+          python -m grammar_lab.pipeline.cli import-canonical --check
+          python -m grammar_lab.pipeline.cli sync-metadata --check
+          python -m grammar_lab.pipeline.cli seed-audit --lang all
+          python -m grammar_lab.pipeline.cli corpus-plan --lang all
+      - name: Commit verified CLI
+        shell: bash
+        run: |
+          git config user.name "CalisJI"
+          git config user.email "78250571+CalisJI@users.noreply.github.com"
+          git add grammar_lab/pipeline/cli.py
+          git commit -m "feat(grammar): add corpus stabilization command"
+          git push origin HEAD:feature/grammar-lab-pipeline
