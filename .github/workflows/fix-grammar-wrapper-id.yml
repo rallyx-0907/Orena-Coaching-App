@@ -1,0 +1,130 @@
+name: Grammar Wrapper ID Fix
+
+on:
+  push:
+
+permissions:
+  contents: write
+
+jobs:
+  fix-wrapper-id:
+    if: github.ref == 'refs/heads/feature/grammar-lab-pipeline'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Install Grammar Lab dev dependencies
+        run: python -m pip install -e "grammar_lab[dev]"
+
+      - name: Add regression test
+        shell: bash
+        run: |
+          cat > grammar_lab/tests/test_completion_agent_ids.py <<'PY'
+          from __future__ import annotations
+
+          import re
+          from pathlib import Path
+
+
+          REPO_ROOT = Path(__file__).resolve().parents[2]
+          COMPLETION = REPO_ROOT / "scripts" / "grammar_completion_agent.ps1"
+          RESCUE = REPO_ROOT / "scripts" / "grammar_rescue_agent.ps1"
+
+
+          def _completion_pattern() -> str:
+              text = COMPLETION.read_text(encoding="utf-8")
+              match = re.search(r"(?m)^\$PointIdPattern = '([^']+)'$", text)
+              assert match is not None, "completion agent must define one generic point-id pattern"
+              return match.group(1)
+
+
+          def test_completion_agent_parses_real_grammar_point_ids() -> None:
+              pattern = _completion_pattern()
+              output = "written              zh.modal.hui                                     cached\n"
+              match = re.search(
+                  rf"(?m)^(?:written|error|blocked_metadata)\s+({pattern})\s+",
+                  output,
+              )
+              assert match is not None
+              assert match.group(1) == "zh.modal.hui"
+              assert re.fullmatch(pattern, "en.past_simple")
+              assert re.fullmatch(pattern, "en.canon.c2.015")
+
+
+          def test_completion_and_rescue_share_generic_id_contract() -> None:
+              pattern = _completion_pattern()
+              completion = COMPLETION.read_text(encoding="utf-8")
+              rescue = RESCUE.read_text(encoding="utf-8")
+              assert '($PointIdPattern)\\s+' in completion
+              assert '^written\\s+$PointIdPattern\\s+' in completion
+              assert f"[ValidatePattern('^{pattern}$')]" in rescue
+              assert not re.fullmatch(pattern, "fr.modal.hui")
+          PY
+
+      - name: Confirm regression is red before patch
+        shell: bash
+        run: |
+          set +e
+          python -m pytest grammar_lab/tests/test_completion_agent_ids.py -q
+          status=$?
+          set -e
+          if [ "$status" -eq 0 ]; then
+            echo "Expected regression test to fail before production patch."
+            exit 1
+          fi
+          echo "RED confirmed."
+
+      - name: Patch completion and rescue wrappers
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          completion_path = Path("scripts/grammar_completion_agent.ps1")
+          text = completion_path.read_text(encoding="utf-8")
+
+          anchor = '$InvariantCulture = [System.Globalization.CultureInfo]::InvariantCulture\n'
+          replacement = anchor + "$PointIdPattern = '(?:en|zh)\\.[a-z0-9_-]+(?:\\.[a-z0-9_-]+)*'\n"
+          assert anchor in text
+          text = text.replace(anchor, replacement, 1)
+
+          old = '$m = [regex]::Match($Text, "(?m)^(?:written|error|blocked_metadata)\\s+((?:en|zh)\\.canon\\.[a-z0-9]+\\.[0-9]{3})\\s+")'
+          new = '$m = [regex]::Match($Text, "(?m)^(?:written|error|blocked_metadata)\\s+($PointIdPattern)\\s+")'
+          assert old in text
+          text = text.replace(old, new, 1)
+
+          old = 'return $Text -match "(?m)^written\\s+(?:en|zh)\\.canon\\.[a-z0-9]+\\.[0-9]{3}\\s+"'
+          new = 'return $Text -match "(?m)^written\\s+$PointIdPattern\\s+"'
+          assert old in text
+          text = text.replace(old, new, 1)
+          completion_path.write_text(text, encoding="utf-8")
+
+          rescue_path = Path("scripts/grammar_rescue_agent.ps1")
+          text = rescue_path.read_text(encoding="utf-8")
+          old = "[ValidatePattern('^(en|zh)\\.canon\\.[a-z0-9]+\\.[0-9]{3}$')]"
+          new = "[ValidatePattern('^(en|zh)\\.[a-z0-9_-]+(?:\\.[a-z0-9_-]+)*$')]"
+          assert old in text
+          text = text.replace(old, new, 1)
+          rescue_path.write_text(text, encoding="utf-8")
+          PY
+
+      - name: Run focused regression
+        run: python -m pytest grammar_lab/tests/test_completion_agent_ids.py -q
+
+      - name: Run full Grammar Lab suite
+        run: python -m pytest grammar_lab/tests -q
+
+      - name: Commit verified fix
+        shell: bash
+        run: |
+          git config user.name "CalisJI"
+          git config user.email "78250571+CalisJI@users.noreply.github.com"
+          git add scripts/grammar_completion_agent.ps1 scripts/grammar_rescue_agent.ps1 grammar_lab/tests/test_completion_agent_ids.py
+          git commit -m "fix(grammar): accept real point ids in completion wrappers"
+          git push origin HEAD:feature/grammar-lab-pipeline
