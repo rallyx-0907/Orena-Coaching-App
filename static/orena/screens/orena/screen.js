@@ -17,6 +17,7 @@ import { t } from './copy.js';
 import { homeSubtitle, latestSuggestions, thinkingText } from './model.js';
 import { messageMarkup } from './thread.js';
 import { runOffered } from './actions.js';
+import { dockVoice, undockVoice } from './voice-dock.js';
 import { keepFocus } from './focus.js';
 import { createVoiceEngine, voiceRowMarkup, bindVoiceRow } from './voice.js';
 import { subscribeHome, homeState, homeDispatcher, ensureOpening, sendHomeMessage, sendHomeTurn, retryHome, abortHome, takeComposerFocus, homeLiveVoice } from './home-session.js';
@@ -136,6 +137,15 @@ export default async function mountOrena(element, ctx) {
     sendHomeMessage(text);
   }
 
+  // Coming back to Orena takes back a conversation the dock carried.
+  const carried = undockVoice();
+  if (carried) {
+    voiceEngine = carried;
+    voiceMode = true;
+    voiceShown = true;
+    carried.setOnChange(() => paint(homeState()));
+  }
+
   function endVoice() {
     voiceEngine?.dispose();
     voiceEngine = null;
@@ -200,7 +210,8 @@ export default async function mountOrena(element, ctx) {
     unsubscribe();
     unsubscribePresence();
     unsubscribeContext();
-    voiceEngine?.dispose();
+    // A live conversation goes on after Orena opens a place: the dock carries it (human request 2026-10-06).
+    if (!dockVoice(voiceEngine)) voiceEngine?.dispose();
     // §2.1 429: leaving while Orena waits out a rate limit is the learner's cancel of that wait.
     if (homeState().waiting) abortHome();
   };

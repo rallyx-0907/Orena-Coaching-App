@@ -873,3 +873,42 @@
   font-size: 12.5px;
   color: var(--text3);
 }
+
+/* The live conversation carried onto another route (voice-dock.js): a small pill above everything, out of the
+   way of the page's own controls; Stop ends the conversation. */
+.s-orena-dock {
+  position: fixed;
+  left: 50%;
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  z-index: 60;
+}
+.s-orena-dock__pill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 6px 6px 8px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--ai-line);
+  box-shadow: var(--sh2);
+}
+.s-orena-dock__status {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ai-ink);
+  white-space: nowrap;
+}
+.s-orena-dock__stop {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: 0;
+  background: var(--ai-soft);
+  color: var(--ai-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+:root[data-device="mobile"] .s-orena-dock { bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
+:root[data-device="mobile"][data-focus='1'] .s-orena-dock { bottom: calc(12px + env(safe-area-inset-bottom, 0px)); right: 12px; left: auto; transform: none; }

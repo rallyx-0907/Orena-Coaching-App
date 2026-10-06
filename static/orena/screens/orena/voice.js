@@ -223,8 +223,9 @@ export function createVoiceEngine({ ctx = {}, send, onChange, abort, resume, onT
 
   const snapshot = () => ({ phase, heard, reply, speakOn, session: Boolean(link) });
 
+  let notify = onChange; // the surface drawing this engine: its screen, or the voice dock after a navigation
   function emit() {
-    if (!disposed) onChange?.(snapshot());
+    if (!disposed) notify?.(snapshot());
   }
 
   function setPhase(next) {
@@ -404,6 +405,10 @@ export function createVoiceEngine({ ctx = {}, send, onChange, abort, resume, onT
       emit();
     },
     state: snapshot,
+    /* A live conversation moves to another surface (voice-dock.js) without ending. */
+    setOnChange(next) {
+      notify = next;
+    },
     dispose() {
       disposed = true;
       live = false;

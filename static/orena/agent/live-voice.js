@@ -160,8 +160,16 @@ export function connectLiveVoice(session, { audio, mediaDevices = globalThis.nav
      quieter frames go as silence, so the stream stays continuous and the vendor's VAD sees no speech. */
   const ECHO_TAIL_S = 0.45;
   const BARGE_IN_RMS = 0.12;
+  // The lesson's own media is the same problem: a video playing on the page reaches the microphone, and Orena
+  // would take it for the learner. Every player in the app reports its clock on the document (media-player.js).
+  let mediaUntil = 0;
+  const onMediaClock = (event) => {
+    mediaUntil = event.detail?.player_state === 1 ? Date.now() + 700 : 0;
+  };
+  document.addEventListener('orena:media-time', onMediaClock);
+
   function echoGate(buffer) {
-    if (!playing.size && audio.output.currentTime > playAt + ECHO_TAIL_S) return buffer;
+    if (!playing.size && audio.output.currentTime > playAt + ECHO_TAIL_S && Date.now() > mediaUntil) return buffer;
     const frame = new Int16Array(buffer);
     let sum = 0;
     for (let i = 0; i < frame.length; i += 1) sum += (frame[i] / 0x8000) ** 2;
@@ -275,6 +283,7 @@ export function connectLiveVoice(session, { audio, mediaDevices = globalThis.nav
     closed = true;
     clearTimeout(capTimer);
     window.removeEventListener('pagehide', beacon);
+    document.removeEventListener('orena:media-time', onMediaClock);
     silence();
     stopMic();
     try { socket.close(); } catch { /* closed */ }
