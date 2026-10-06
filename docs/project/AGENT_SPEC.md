@@ -216,6 +216,18 @@ R28 (2026-10-06) Người chủ dự án: làm giọng thật (Slice 4) "chuẩn
     USD theo sổ): tên (vi) 1,0 s tới tiếng đầu; nghĩa từ đang chọn (vi, zh) có đọc tool, 2,0-2,7 s; en 2,1 s; ngắt
     lời dừng sau 30 ms; nút lưu từ qua offer_button. Lần đầu model nói "đã chuẩn bị sẵn nút" mà không có nút (rủi ro
     của chế độ A) - sửa bằng offer_button và lời dặn; còn phụ thuộc model.
+R29 (2026-10-06, sau bài thử trên iPhone: "mở một video trong Listening" không mở được, lặp lại, không chọn được
+    giọng) Người chủ dự án:
+    - Trong giọng nói, khi chính người học nói rõ muốn mở hay đi tới một nội dung, mở ngay (không chờ chạm); nút vẫn
+      hiện trong luồng hội thoại. Theo tiền lệ §7: navigate tự chạy khi lời người học chính là yêu cầu đó.
+    - Chọn giọng: khoảng 10 giọng hay nhất, 6 nữ và 4 nam; tên hiển thị không có tên nhà cung cấp.
+    Làm (2026-10-06): read tool find_content (agent/find_tools.py: thư viện nghe và bài đọc đã xuất bản, đúng ngôn
+    ngữ học, lọc theo loại, trình độ, chủ đề, chữ trong tên; mỗi mục có content_id); offer_button thêm open_content
+    (media: → listening.workspace, article:/book: → reading.workspace, content_id phải do tool trả về); khi lời người
+    học là yêu cầu mở/nghe/xem/đọc, /voice/tool trả thêm "open": <action id> để client mở ngay. GET
+    /api/agent/voice/voices (10 giọng, 6 nữ 4 nam, mã và nhãn của Orena), thân phiên nhận "voice". Lời dặn: việc
+    không làm được thì nói một lần rồi dừng. Kiểm live (≈ 0,05 USD; cả ngày ≈ 0,19 USD theo sổ): "Mở một video bất
+    kỳ trong Listening" → find_content → open_content → mở ngay; cả 10 giọng chạy, tiếng đầu 1,7-3,0 s.
 ```
 
 Tiến độ lane (cập nhật mỗi slice):

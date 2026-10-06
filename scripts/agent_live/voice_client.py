@@ -59,17 +59,28 @@ SCENARIOS = [
     ("en-word", "zh", {"interface": "en", "support": "en"}, {"selected_item": WORD}, "What does this word mean here?", None),
     ("zh-word", "en", {"interface": "zh-CN", "support": "zh-CN"},
      {"selected_item": {"type": "word", "text": "meticulous", "lang": "en"}}, "这个词是什么意思？", None),
+    # R29: open a lesson by voice, and every voice of the catalog
+    ("vi-open-video", "zh", VI, {}, "Mở một video bất kỳ trong Listening để mình nghe.", None),
+    *[(f"voice-{v}", "zh", VI, {"voice": v}, "Chào bạn, hôm nay mình học gì?", None)
+      for v in ("f-clear", "f-bright", "f-warm", "f-soft", "f-young", "f-gentle",
+                "m-calm", "m-lively", "m-friendly", "m-steady")],
 ]
 
 
 async def scenario(base: str, name: str, locale: dict, extra: dict, said: str, barge: float | None,
                    audio_dir: Path) -> dict:  # fmt: skip
     target = "zh-CN" if (extra.get("selected_item") or {}).get("lang", "zh-CN") == "zh-CN" else "en"
+    extra = dict(extra)
+    voice = extra.pop("voice", None)
     body = {"contract_version": 5,
             "client": {"ui_version": "voice-check", "supported_actions": ["save_word", "navigate", "start_review"],
-                       "supported_intents": ["vocabulary.word", "vocabulary.my_language", "vocabulary.review_due"]},
-            "context": {"surface": "reading.workspace", "activity_type": "reading",
-                        "locale": {**locale, "target": target, "content": target}, **extra}}  # fmt: skip
+                       "supported_intents": ["vocabulary.word", "vocabulary.my_language", "vocabulary.review_due",
+                                             "listening.workspace", "reading.workspace"]},
+            "context": {"surface": "reading.workspace" if extra.get("selected_item") else "orena.home",
+                        "activity_type": "reading", "locale": {**locale, "target": target, "content": target},
+                        **extra}}  # fmt: skip
+    if voice:
+        body["voice"] = voice
     status, opened = call(base, "POST", "/api/agent/voice/session", body)
     row: dict = {"scenario": name, "session_status": status}
     if status != 200:
@@ -114,6 +125,8 @@ async def scenario(base: str, name: str, locale: dict, extra: dict, said: str, b
                                    "calls": [{"id": fc.get("id"), "name": fc.get("name"), "args": fc.get("args") or {}}
                                              for fc in fcs]})  # fmt: skip
                 events.extend(relayed.get("events", []))
+                if relayed.get("open"):
+                    row["opened_action"] = relayed["open"]
                 await ws.send(json.dumps({"toolResponse": {"functionResponses": relayed.get("responses", [])}}))
                 continue
             content = message.get("serverContent") or {}

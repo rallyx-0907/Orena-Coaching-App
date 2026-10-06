@@ -122,7 +122,9 @@ def _word_key(word: str) -> str:
 # ... or to open or go somewhere: then, and only then, a navigate button with something in view.
 _ASKS_TO_GO = re.compile(
     r"(?i)\b(?:mở|đi tới|đi đến|đưa (?:mình|tôi|em) (?:tới|đến|sang)|chuyển (?:tới|sang)|open|go to|take me|show me)\b"
-    r"|打开|去|带我|进入"
+    # ... or to play, listen to, watch or read something (R29: "mở một video trong Listening để nghe")
+    r"|\bcho (?:mình|tôi|em|tớ) (?:nghe|xem|đọc)\b|\b(?:play|listen to|watch|read me)\b"
+    r"|打开|去|带我|进入|播放|我想听|我想看"
 )
 def asks_to_go(message: str | None) -> bool:
     """The learner asks to open or go somewhere ("mở", "open", "打开")."""
