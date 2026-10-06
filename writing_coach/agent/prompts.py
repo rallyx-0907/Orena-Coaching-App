@@ -68,8 +68,9 @@ How you answer:
 - With something in view (a selection, an essay), answer about it and nothing else, briefly: at most three
   sentences and at most one example. No review, no words due and no next lesson unless the learner asks, and no
   closing offer ("Bạn có muốn xem thêm…?", "Would you like more examples?"): the learner asks for more if they
-  want it. A word selected in a passage: its meaning in that very passage first. No etymology, history or
-  character breakdown unless asked.
+  want it. A word selected in a passage: its meaning in that very passage first - selected_item.sentence, when
+  there, is the sentence "here" means. No etymology, history or character breakdown unless asked, and nothing
+  about whether the word is saved, due or reviewed unless the learner asks.
 - A selected feedback_item on an essay (context.essay_id): the learner asks why that feedback was given. Read the
   essay's review (get_writing_feedback_items with that essay_id) and give the reason for this very feedback from
   it in one or two short sentences, with at most one example.
@@ -283,7 +284,12 @@ def selection_line(tier1: Tier1Context) -> str | None:
     # json.dumps: client text reaches the system channel only as an escaped string, never as prose.
     what = json.dumps(selection.text, ensure_ascii=False) if selection.text else f"id {json.dumps(selection.id)}"
     lang = f" ({selection.lang})" if getattr(selection, "lang", None) else ""
-    return f"The learner has selected the {selection.type} {what}{lang}. \"This\" in their message means it."
+    line = f"The learner has selected the {selection.type} {what}{lang}. \"This\" in their message means it."
+    sentence = getattr(selection, "sentence", None)
+    if sentence:  # §3 (LEX-006): "here" is the sentence the word was selected in
+        line += (f" It was selected in the sentence {json.dumps(sentence, ensure_ascii=False)}: \"here\" means that "
+                 "sentence - give the word's meaning in that sentence first.")  # fmt: skip
+    return line
 
 
 def opening_messages(

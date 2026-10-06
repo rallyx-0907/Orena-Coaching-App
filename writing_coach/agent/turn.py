@@ -54,7 +54,7 @@ from writing_coach.agent.errors import AgentError, ProviderUnavailable
 from writing_coach.agent.address import ADDRESS_VERSION, Address, address_note, default_address, mirrored_address
 from writing_coach.agent.greeting import built as built_greeting
 from writing_coach.agent.greeting import states_a_fact
-from writing_coach.agent.honesty import ClaimGate, nothing_done, offer, offer_instead
+from writing_coach.agent.honesty import ClaimGate, asks_for_heading, nothing_done, offer, offer_instead
 from writing_coach.agent.notes import (
     CORRECT,
     asks_to_remember_unaccented,
@@ -87,6 +87,7 @@ from writing_coach.agent.outputs import (
     KEEP_NOTE_INTENT,
     KIND_BY_SOURCE,
     SELECTION_PROMPTS,
+    asks_about_status,
     REPLY_TOOL_NAMES,
     ReplyOutputs,
     opening_suggestions,
@@ -357,6 +358,11 @@ class _Turn:
         # The turn is about what is in view: no review routing nobody asked for (LEX-006, LEX-022).
         self.focused = not self.opening and bool(selected or context.essay_id)
         self.gate.drop_more_offers = self.focused  # and no closing offer of more examples or a review
+        # nor a selected word's saved/due status, unless the learner asks about it
+        word_in_view = selected is not None and selected.type == "word"
+        self.gate.drop_status = self.focused and word_in_view and not asks_about_status(turn.message)
+        self.gate.status_word = selected.text if word_in_view else None
+        self.gate.heading_asked = not self.opening and asks_for_heading(turn.message)
         if not self.opening and selected is not None and selected.type == "feedback_item" and context.essay_id:
             # "Why was this feedback given?" (LEX-022): answered from that essay's review, read first.
             self.needs_evidence = True
