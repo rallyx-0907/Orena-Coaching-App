@@ -259,26 +259,14 @@ assert.equal(speakableText({ done: true, metered: 'ok', segments: [{ text: 'Hell
 
 console.log('Orena (Home/Contextual panel/voice/memory sheet): context label, real-suggestions-only starters, voice phase mapping, coach-notes sort, rule-40 subtitle, action/evidence real-fields-only rendering all hold: PASS');
 
-// §7 navigate-on-request for typed turns: an "open …" message opens the offered place; nothing else runs untapped.
-{
-  const { asksToGo, openIfAsked } = await import('../static/orena/screens/orena/actions.js');
-  for (const m of ['Mở video của stephen hawking', 'mở giúp tôi', 'Go to my progress', 'cho mình nghe bài này', '打开听力', 'Open the lesson']) assert.ok(asksToGo(m), m);
-  for (const m of ['what does this mean', 'tôi muốn hiểu câu này', 'lưu từ này']) assert.ok(!asksToGo(m), m);
-  const ran = [];
-  const dispatcher = { run: async (action) => { ran.push(action.id); return { ok: true }; } };
-  const reply = { actions: [{ id: 's1', type: 'save_word' }, { id: 'n1', type: 'navigate', payload: { intent: 'progress' } }] };
-  await openIfAsked({ message: 'mở trang tiến độ', reply, dispatcher, ranActions: new Set(), repaint: () => {} });
-  assert.deepEqual(ran, ['n1'], 'only the navigate runs');
-  await openIfAsked({ message: 'giải thích câu này', reply, dispatcher, ranActions: new Set(), repaint: () => {} });
-  assert.deepEqual(ran, ['n1'], 'a message that is not a request to go runs nothing');
-}
-
-// The server's mark decides: an action with open:true runs, whatever the words; without marks, the words decide.
+// §7: only an action the server marked open:true runs without a tap.
 {
   const { openIfAsked } = await import('../static/orena/screens/orena/actions.js');
   const ran = [];
   const dispatcher = { run: async (action) => { ran.push(action.id); return { ok: true }; } };
-  await openIfAsked({ message: 'ok', reply: { actions: [{ id: 'n0', type: 'navigate' }, { id: 'n2', type: 'navigate', open: true }] }, dispatcher, ranActions: new Set(), repaint: () => {} });
-  assert.deepEqual(ran, ['n2']);
+  await openIfAsked({ reply: { actions: [{ id: 'n0', type: 'navigate' }, { id: 'n2', type: 'navigate', open: true }] }, dispatcher, ranActions: new Set(), repaint: () => {} });
+  assert.deepEqual(ran, ['n2'], 'the marked action runs');
+  await openIfAsked({ reply: { actions: [{ id: 'n3', type: 'navigate' }] }, dispatcher, ranActions: new Set(), repaint: () => {} });
+  assert.deepEqual(ran, ['n2'], 'an unmarked offer waits for a tap');
 }
 

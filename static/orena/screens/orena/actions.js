@@ -23,27 +23,10 @@ export async function runOffered({ dispatcher, action, ranActions, repaint }) {
   return result;
 }
 
-/* §7: "the client never runs it without a learner tap, except `navigate` when the learner's message was itself
-   the request". The learner asked to open, go, play, listen to, watch or read something - in the words the
-   server's own rule reads (writing_coach/agent/outputs.py `asks_to_go`), in vi, en and zh - and the reply offers a
-   place: it opens now, and its button stays in the thread. Only `navigate`; every other action waits for a tap. */
-const ASKS_TO_GO = new RegExp(
-  '(?:^|[^\p{L}])(?:mở|đi tới|đi đến|đưa (?:mình|tôi|em) (?:tới|đến|sang)|chuyển (?:tới|sang)|open|go to|take me|show me)(?:$|[^\p{L}])'
-    + '|(?:^|[^\p{L}])cho (?:mình|tôi|em|tớ) (?:nghe|xem|đọc)(?:$|[^\p{L}])|(?:^|[^\p{L}])(?:play|listen to|watch|read me)(?:$|[^\p{L}])'
-    + '|打开|去|带我|进入|播放|我想听|我想看',
-  'iu',
-);
-
-export function asksToGo(message) {
-  return ASKS_TO_GO.test(String(message || ''));
-}
-
-/* The server marks an action that runs on request with `open: true` (§7); that mark decides. A server from before
-   the mark sends none, and then the learner's own words do, for `navigate` only. */
-export function openIfAsked({ message, reply, dispatcher, ranActions, repaint }) {
+/* §7: an action runs without a tap only when the server marked it `open: true` - the learner's own words asked for
+   it. The button stays in the thread; a CONFIRM-risk action still goes through the dispatcher's own confirmation. */
+export function openIfAsked({ reply, dispatcher, ranActions, repaint }) {
   if (!reply || reply.error) return null;
-  const actions = reply.actions || [];
-  const marked = actions.find((action) => action?.open === true);
-  const place = marked || (asksToGo(message) ? actions.find((action) => action?.type === 'navigate') : null);
-  return place ? runOffered({ dispatcher, action: place, ranActions, repaint }) : null;
+  const marked = (reply.actions || []).find((action) => action?.open === true);
+  return marked ? runOffered({ dispatcher, action: marked, ranActions, repaint }) : null;
 }
