@@ -34,6 +34,21 @@ const { t } = await import('../static/orena/screens/orena/copy.js');
   const grouped = String(richText('1. 我爱吃花生。\nwǒ ài chī huāshēng\nTôi thích ăn lạc.\n\n2. 花生很便宜。\n   - Lạc rất rẻ.'));
   assert.ok(grouped.includes('<li>我爱吃花生。<br>wǒ ài chī huāshēng<br>Tôi thích ăn lạc.</li>'), 'continuation lines stay in their item');
   assert.ok(grouped.includes('<ol class="o-rich__list" start="2"><li>花生很便宜。<ul class="o-rich__list"><li>Lạc rất rẻ.</li></ul></li>'), 'the second example is 2, with its sub-list');
+  // A reply the server split by language renders as one document: the line stays one line (LEX-006 retest).
+  const { richSegments } = await import('../static/orena/kit/rich-text.js');
+  const split = [
+    { lang: 'vi', text: '### Từ vựng: ' }, { lang: 'zh-CN', text: '花生' },
+    { lang: 'vi', text: '\n\n1.  **Hanzi:** ' }, { lang: 'zh-CN', text: '我喜欢吃花生。' },
+    { lang: 'vi', text: '\n    *   **Bản dịch:** Tôi thích ăn lạc.\n\n2.  **Hanzi:** ' }, { lang: 'zh-CN', text: '盘子里有很多花生。' },
+  ];
+  const joined = richSegments(split);
+  const doc = String(joined.markup);
+  assert.equal(joined.lang, 'vi');
+  assert.ok(doc.includes('<p class="o-rich__h">Từ vựng: <span lang="zh-CN">花生</span></p>'), 'the heading stays whole, its Chinese word marked');
+  assert.ok(doc.includes('<li><strong>Hanzi:</strong> <span lang="zh-CN">我喜欢吃花生。</span><ul class="o-rich__list"><li><strong>Bản dịch:</strong> Tôi thích ăn lạc.</li></ul></li>'), 'example 1 is one item with its translation');
+  assert.ok(doc.includes('start="2"') && !doc.includes('<li><strong>Hanzi:</strong> </li>'), 'no empty numbered item');
+  assert.ok(!/[\uE000-\uEFFF]/.test(doc), 'no marker left in the markup');
+  assert.equal((doc.match(/<span/g) || []).length, (doc.match(/<\/span>/g) || []).length, 'every language span closes');
   assert.equal(hasBlocks('one line'), false);
   assert.equal(hasBlocks('- item'), true);
   assert.equal(plainText('**Nghĩa:** đậu phộng [Open word](command:navigate?{}) và *lạc*'), 'Nghĩa: đậu phộng  và lạc');

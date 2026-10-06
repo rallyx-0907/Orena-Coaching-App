@@ -10,19 +10,17 @@ import { fromContractLang } from '../../agent/contract.js';
 import { t } from './copy.js';
 import { actionCardMarkup, evidenceMarkup, hasCard } from './cards.js';
 import { offerableActions, errorText } from './model.js';
-import { richText, richInline, hasBlocks } from '../../kit/rich-text.js';
+import { richSegments } from '../../kit/rich-text.js';
 
-/* A segment's text is Markdown (LEX-006): its meaning is rendered - headings, bold, lists, quotes, web links -
-   never its syntax, and an app command written as a link is dropped (the action is its own card). A
-   reference segment (a word to hear) stays plain. `streaming` holds back a marker not yet closed. */
+/* A reply's text is Markdown (LEX-006): its meaning is rendered - headings, bold, lists, quotes, web links -
+   never its syntax, and an app command written as a link is dropped (the action is its own card). The reply's
+   segments are rendered as ONE document (kit/rich-text.js richSegments), so a line the server split by
+   language stays one line; each run in another language keeps its own `lang`, and a reference segment (a word
+   to hear) its reference class. `streaming` holds back a marker not yet closed. */
 function segmentsMarkup(prefix, segments, streaming) {
-  return segments.map((segment) => {
-    const lang = langAttr(fromContractLang(segment.lang));
-    if (segment.voice_style === 'reference') return html`<span lang="${lang}" class="${prefix}__ref">${segment.text}</span>`;
-    return hasBlocks(segment.text)
-      ? html`<div lang="${lang}">${richText(segment.text, { streaming })}</div>`
-      : html`<span lang="${lang}">${richInline(segment.text, { streaming })}</span>`;
-  });
+  const langOf = (segment) => langAttr(fromContractLang(segment.lang));
+  const { lang, markup } = richSegments(segments, { streaming, langOf, refClass: `${prefix}__ref` });
+  return html`<div lang="${lang ? langAttr(fromContractLang(lang)) : ''}">${markup}</div>`;
 }
 
 function errorMarkup(prefix, error) {

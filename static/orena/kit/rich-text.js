@@ -174,3 +174,39 @@ export function plainText(text) {
     .trim();
 }
 
+/* A whole reply as one Markdown document, whatever its language runs (LEX-006). The server splits a reply into
+   segments by language (AGENT_CONTRACT §5.1), so one Markdown line - "1. **Hanzi:** 我喜欢吃花生。", or a
+   heading naming a Chinese word - arrives in several segments. Rendered one by one they broke apart (an empty
+   numbered item, an orphan sub-list, a heading cut in two). The segments are joined first; each run in another
+   language than the reply's own (and each `reference` segment) is wrapped in invisible private-use markers that
+   survive the Markdown pass, and become `<span lang>` afterwards. A marked run never holds a line break, so its
+   span always closes where it opened. Returns { lang: the reply's own language, markup }. */
+const RUN_OPEN = '\uE000';
+const RUN_CLOSE = '\uE001';
+const RUN_BASE = 0xe100;
+
+export function richSegments(segments, { streaming = false, langOf = (segment) => segment.lang, refClass = '' } = {}) {
+  const list = (Array.isArray(segments) ? segments : []).filter((segment) => segment && String(segment.text ?? ''));
+  const own = (list.find((segment) => segment.voice_style !== 'reference') || list[0])?.lang || '';
+  const runs = [];
+  const joined = list
+    .map((segment) => {
+      const text = String(segment.text);
+      const reference = segment.voice_style === 'reference';
+      if (!reference && (!segment.lang || segment.lang === own || text.includes('\n'))) return text;
+      runs.push(segment);
+      return RUN_OPEN + String.fromCharCode(RUN_BASE + runs.length - 1) + text + RUN_CLOSE;
+    })
+    .join('');
+  const body = String(hasBlocks(joined) ? richText(joined, { streaming }) : richInline(joined, { streaming }));
+  const html = body
+    .replace(new RegExp(`${RUN_OPEN}([\\uE100-\\uEFFF])`, 'g'), (whole, code) => {
+      const segment = runs[code.charCodeAt(0) - RUN_BASE];
+      if (!segment) return '';
+      const cls = segment.voice_style === 'reference' && refClass ? ` class="${esc(refClass)}"` : '';
+      return `<span lang="${esc(langOf(segment))}"${cls}>`;
+    })
+    .replace(new RegExp(RUN_CLOSE, 'g'), '</span>');
+  return { lang: own, markup: raw(html) };
+}
+
