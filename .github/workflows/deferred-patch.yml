@@ -1,0 +1,118 @@
+name: Completion Deferred Patch
+on:
+  push:
+    paths:
+      - '.github/workflows/deferred-patch.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e "grammar_lab[dev]"
+      - name: Apply deferred rescue orchestration
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path('scripts/grammar_completion_agent.ps1')
+          text = path.read_text(encoding='utf-8')
+
+          old = "$PointIdPattern = '(?:en|zh)\\.[a-z0-9_-]+(?:\\.[a-z0-9_-]+)*'\n"
+          new = old + '$RepoRoot = Split-Path -Parent $PSScriptRoot\n$DeferredStatePath = Join-Path $RepoRoot "grammar_lab\\.cache\\grammar_completion_deferred.txt"\n'
+          assert old in text and 'grammar_completion_deferred.txt' not in text
+          text = text.replace(old, new, 1)
+
+          anchor = 'function Get-ReadyPointIds {\n'
+          helpers = r'''function Get-DeferredPointIds {
+              if (-not (Test-Path -LiteralPath $DeferredStatePath)) {
+                  return @()
+              }
+              return @(
+                  Get-Content -LiteralPath $DeferredStatePath |
+                      ForEach-Object { $_.Trim() } |
+                      Where-Object { $_ }
+              )
+          }
+
+          function Add-DeferredPointId {
+              param([string]$PointId)
+
+              $directory = Split-Path -Parent $DeferredStatePath
+              if (-not (Test-Path -LiteralPath $directory)) {
+                  New-Item -ItemType Directory -Path $directory -Force | Out-Null
+              }
+
+              $existing = @(Get-DeferredPointIds)
+              if ($existing -notcontains $PointId) {
+                  Add-Content -LiteralPath $DeferredStatePath -Value $PointId -Encoding UTF8
+              }
+          }
+
+          '''
+          assert anchor in text and 'function Add-DeferredPointId' not in text
+          text = text.replace(anchor, helpers + anchor, 1)
+
+          old = '''    $output | ForEach-Object { Write-Host $_ }\n    return [int]$exitCode\n}'''
+          new = '''    $text = ($output | Out-String)\n    $output | ForEach-Object { Write-Host $_ }\n    return [pscustomobject]@{ ExitCode = $exitCode; Text = $text }\n}'''
+          assert old in text
+          text = text.replace(old, new, 1)
+
+          old = '''$spent = 0.0\n$processed = 0\n'''
+          new = '''$spent = 0.0\n$processed = 0\n$attemptedPointIds = [System.Collections.Generic.HashSet[string]]::new()\n$deferredPointIds = [System.Collections.Generic.HashSet[string]]::new()\nforeach ($deferredPointId in @(Get-DeferredPointIds)) {\n    [void]$deferredPointIds.Add($deferredPointId)\n}\nif ($deferredPointIds.Count -gt 0) {\n    Write-Host "Deferred points skipped until their contract is fixed: $($deferredPointIds.Count)"\n}\n'''
+          assert old in text
+          text = text.replace(old, new, 1)
+
+          text = text.replace('if ($MaxPoints -gt 0 -and $processed -ge $MaxPoints) {', 'if ($MaxPoints -gt 0 -and $attemptedPointIds.Count -ge $MaxPoints) {', 1)
+          text = text.replace('$remainingPointSlots = $MaxPoints - $processed', '$remainingPointSlots = $MaxPoints - $attemptedPointIds.Count', 1)
+
+          old = '''        $readyPointIds = @(Get-ReadyPointIds -Language $language)\n        if ($readyPointIds.Count -eq 0) {\n            Write-Host "$language has no ready points remaining."\n            break\n        }\n'''
+          new = '''        $readyPointIds = @(\n            Get-ReadyPointIds -Language $language |\n                Where-Object { -not $deferredPointIds.Contains($_) -and -not $attemptedPointIds.Contains($_) }\n        )\n        if ($readyPointIds.Count -eq 0) {\n            Write-Host "$language has no non-deferred ready points remaining in this run."\n            break\n        }\n'''
+          assert old in text
+          text = text.replace(old, new, 1)
+
+          cap = '$readyPointIds = @($readyPointIds | Select-Object -First $remainingPointSlots)\n        }\n\n        Write-Host ""\n'
+          capped = '$readyPointIds = @($readyPointIds | Select-Object -First $remainingPointSlots)\n        }\n\n        foreach ($readyPointId in $readyPointIds) {\n            [void]$attemptedPointIds.Add($readyPointId)\n        }\n\n        Write-Host ""\n'
+          assert cap in text
+          text = text.replace(cap, capped, 1)
+
+          inner = '''            if ($MaxPoints -gt 0 -and $processed -ge $MaxPoints) {\n                Write-Host "MaxPoints reached. Safe to resume with the same command."\n                Write-Host "Paid spend this run: USD $($spent.ToString('0.0000'))"\n                exit 0\n            }\n\n'''
+          assert text.count(inner) == 2, text.count(inner)
+          text = text.replace(inner, '', 2)
+
+          old = '''            $rescueExit = Invoke-Rescue -PointId $pointId\n            if ($rescueExit -ne 0) {\n                Write-Host "STOP: Codex rescue for $pointId exited with code $rescueExit."\n                Write-Host "No additional paid candidate was requested."\n                exit $rescueExit\n            }\n            $processed++\n'''
+          new = '''            $rescueResult = Invoke-Rescue -PointId $pointId\n            if ($rescueResult.ExitCode -ne 0) {\n                if ($rescueResult.Text -match "RESCUE_BLOCKED" -or $rescueResult.Text -match "RESCUE_NO_CHANGE") {\n                    Add-DeferredPointId -PointId $pointId\n                    [void]$deferredPointIds.Add($pointId)\n                    Write-Host "DEFERRED: $pointId; continuing with the remaining batch."\n                    continue\n                }\n                Write-Host "STOP: Codex rescue for $pointId exited with code $($rescueResult.ExitCode)."\n                Write-Host "No additional paid candidate was requested."\n                exit $rescueResult.ExitCode\n            }\n            $processed++\n'''
+          assert text.count(old) == 2, text.count(old)
+          text = text.replace(old, new, 2)
+
+          final_anchor = 'Invoke-FinalGates -Languages $languages\n'
+          deferred_gate = '''$remainingDeferred = [System.Collections.Generic.List[string]]::new()\nforeach ($language in $languages) {\n    foreach ($pointId in @(Get-ReadyPointIds -Language $language)) {\n        if ($deferredPointIds.Contains($pointId)) {\n            $remainingDeferred.Add($pointId)\n        }\n    }\n}\nif ($remainingDeferred.Count -gt 0) {\n    Write-Host "STOP: $($remainingDeferred.Count) deferred ready point(s) remain after all processable points."\n    $remainingDeferred | ForEach-Object { Write-Host "  deferred  $_" }\n    Write-Host "Deferred state: $DeferredStatePath"\n    exit 23\n}\n\n'''
+          assert final_anchor in text
+          text = text.replace(final_anchor, deferred_gate + final_anchor, 1)
+
+          path.write_text(text, encoding='utf-8')
+      - name: Focused regressions
+        run: python -m pytest grammar_lab/tests/test_completion_agent_deferred.py grammar_lab/tests/test_completion_agent_maxpoints.py grammar_lab/tests/test_completion_agent_cache_sweep.py -q
+      - name: Parse PowerShell
+        shell: pwsh
+        run: |
+          $tokens = $null
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path 'scripts/grammar_completion_agent.ps1'), [ref]$tokens, [ref]$errors) | Out-Null
+          if ($errors.Count -gt 0) { throw ($errors | Out-String) }
+      - name: Full Grammar Lab suite
+        run: python -m pytest grammar_lab/tests -q
+      - name: Commit verified fix
+        shell: bash
+        run: |
+          git config user.name "CalisJI"
+          git config user.email "78250571+CalisJI@users.noreply.github.com"
+          git add scripts/grammar_completion_agent.ps1
+          git commit -m "fix(grammar): defer blocked rescue points"
+          git push origin HEAD:feature/grammar-lab-pipeline
