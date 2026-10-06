@@ -229,8 +229,23 @@ def _grouped(line: str) -> str:
     return line
 
 
+# An English function word the model let slip between the characters of a Chinese sentence ("我们可以用花生做 and
+# 汤。", LEX-006): taken out, so the example matches its own pinyin and translation. Only where the Han text runs on
+# to a Chinese sentence end or the line's end with no Latin letter: "花生 and 豆子 are both nuts." is English and
+# stays, and so does a name or a term ("iPhone", "Python").
+_HAN = "㐀-䶿一-鿿"
+_HAN_STOPWORD = re.compile(
+    rf"(?m)(?<=[{_HAN}])[ \t]*\b(?:and|or|the|a|an|of|to|with|in|for|but|is)\b[ \t]*"
+    rf"(?=[{_HAN}][^A-Za-z\n]*(?:[。！？]|$))"
+)
+
+
+def _chinese_repaired(text: str) -> str:
+    return _HAN_STOPWORD.sub("", text)
+
+
 def strip_markup(text: str) -> str:
-    cleaned = _RULE.sub("", _NON_WEB_LINK.sub("", _MARKUP.sub("", text)))
+    cleaned = _chinese_repaired(_RULE.sub("", _NON_WEB_LINK.sub("", _MARKUP.sub("", text))))
     if "•" in cleaned:
         cleaned = "".join(_grouped(line[:-1]) + "\n" if line.endswith("\n") else _grouped(line)
                           for line in cleaned.splitlines(keepends=True))  # fmt: skip
@@ -265,7 +280,7 @@ def _sentence_end(text: str) -> int | None:
 def plain_text(text: str) -> str:
     for pattern, replacement in _PLAIN:
         text = pattern.sub(replacement, text)
-    return _RULE.sub("", text).strip()
+    return _chinese_repaired(_RULE.sub("", text)).strip()
 
 
 def _bare(word: str) -> str:
@@ -439,6 +454,11 @@ _ASKS_HEADING = re.compile(r"(?i)\b(?:tiêu đề|đề mục|heading|title)\b|�
 _BOLD_LINE = re.compile(r"^[ \t]*\*\*([^*\n]+?)\*\*[ \t]*:?[ \t]*(\n?)$")
 
 
+_TITLE_MAX = 80
+_SENTENCE_STOP = re.compile(r"[.!?。！？…]$")
+_LIST_ITEM = re.compile(r"^(?:[-*+•]|\d+[.)])\s")
+
+
 def asks_for_heading(message: str | None) -> bool:
     return bool(message) and bool(_ASKS_HEADING.search(message))
 
@@ -503,12 +523,19 @@ class ClaimGate:
         )
 
     def _headed(self, sentence: str) -> str:
-        if self.heading_asked and not self._heading_done:
-            if sentence.lstrip().startswith("#"):
-                self._heading_done = True
-            elif found := _BOLD_LINE.match(sentence):
-                self._heading_done = True
-                return f"### {found.group(1).strip()}\n"
+        """A heading the learner asked for (LEX-006): the answer's first line becomes one when it is a line of its
+        own and reads as a title - bold alone, or short with no sentence end and not a list item. Only the first."""
+
+        if not self.heading_asked or self._heading_done or not sentence.strip():
+            return sentence
+        self._heading_done = True
+        line = sentence.strip()
+        if line.startswith("#") or not sentence.endswith("\n"):
+            return sentence
+        if found := _BOLD_LINE.match(sentence):
+            return f"### {found.group(1).strip()}\n"
+        if len(line) <= _TITLE_MAX and not _SENTENCE_STOP.search(line) and not _LIST_ITEM.match(line):
+            return f"### {line}\n"
         return sentence
 
     def discard(self) -> None:
