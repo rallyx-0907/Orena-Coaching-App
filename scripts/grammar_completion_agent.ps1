@@ -239,6 +239,16 @@ foreach ($language in $languages) {
             break
         }
 
+        if ($MaxPoints -gt 0) {
+            $remainingPointSlots = $MaxPoints - $processed
+            if ($remainingPointSlots -le 0) {
+                Write-Host "MaxPoints reached. Safe to resume with the same command."
+                Write-Host "Paid spend this run: USD $($spent.ToString('0.0000'))"
+                exit 0
+            }
+            $readyPointIds = @($readyPointIds | Select-Object -First $remainingPointSlots)
+        }
+
         Write-Host ""
         Write-Host "--- Free cache sweep: $($readyPointIds.Count) ready point(s) ---"
         $uncachedPointIds = [System.Collections.Generic.List[string]]::new()
