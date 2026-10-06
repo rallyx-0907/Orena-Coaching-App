@@ -816,3 +816,15 @@
   border-radius: 8px;
   background: var(--scrim);
 }
+
+/* Longer interface languages (VI, mobile QA 2026-10-07): the Hint button and the Transcript title never break
+   inside a word; the mode hint gives way (one line, ellipsis) instead. */
+.s-listening__dict .s-dict__hint { flex: none; white-space: nowrap; }
+.s-listening__dict .s-dict__check { flex: none; white-space: nowrap; }
+.s-listening__transcript-title { flex: none; white-space: nowrap; }
+:root[data-device="mobile"] .s-listening__transcript-hint {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
