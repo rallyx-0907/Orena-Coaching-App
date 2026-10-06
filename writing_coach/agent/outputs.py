@@ -97,6 +97,12 @@ SELECTION_PROMPTS: Mapping[str, tuple[str, ...]] = MappingProxyType(
 _SENTENCE_END = re.compile(r"[。！？.!?…]+[\s\"'”’」』）)\]】]*$")
 
 
+# A message about review or words due: then a review may be offered even with something in view.
+_ASKS_REVIEW = re.compile(r"(?i)\b(?:ôn|ôn tập|đến hạn|review|due|revise|flashcards?)\b|复习|到期|温习")
+_UNASKED_REVIEW = ("refused: the learner asks about what is in view, not about review - answer that; offer no "
+                   "review or words due unless they ask")  # fmt: skip
+
+
 def selection_kind(selected_type: str, text: str | None) -> str:
     """word, sentence, part (of a sentence) or item: what an opening on this selection speaks of."""
 
@@ -357,6 +363,9 @@ class ReplyOutputs:
     # proposes, (kind, text), is put to the learner to confirm with a button (human direction 2026-10-04).
     unaccented_keep: bool = False
     note_offer: tuple[str, str] | None = None
+    # The turn is about what is in view - a selection, or an essay's feedback (LEX-006, LEX-022): no review button
+    # or "review due" suggestion unless the learner asks about review.
+    focused: bool = False
 
     # --- ids the turn has seen ------------------------------------------------
 
@@ -426,6 +435,8 @@ class ReplyOutputs:
         )
         if not allowed:
             return "refused: this app cannot do that here; say it in words instead"
+        if action_type == "start_review" and self._unasked_review():
+            return _UNASKED_REVIEW
         if self.opening and ACTIONS[action_type].risk is not ActionRisk.LOW:
             return "refused: an opening turn offers only actions that need no confirmation"
         refusal = self._provenance(action_type, payload)
@@ -448,6 +459,11 @@ class ReplyOutputs:
             f"accepted: {action.id}, shown as the button '{action.label}'. The learner has not tapped it: "
             "offer it by that label; do not say it is done."
         )
+
+    def _unasked_review(self) -> bool:
+        """Review offered while the learner asks about what is in view, and not about review (LEX-006)."""
+
+        return self.focused and not _ASKS_REVIEW.search(self.learner_words or "")
 
     def _provenance(self, action_type: str, payload: Mapping[str, Any]) -> str | None:
         """None when every id and word in the payload is one the turn may name."""
@@ -609,6 +625,8 @@ class ReplyOutputs:
         intent = args.get("intent")
         if intent not in PROMPT_INTENTS:
             return "refused: unknown intent"
+        if intent == "prompt.review_due" and self._unasked_review():
+            return _UNASKED_REVIEW
         limit = OPENING_MAX_SUGGESTIONS if self.opening else MAX_SUGGESTIONS
         if len(self.suggestions) >= limit or any(s.intent == intent for s in self.suggestions):
             return "refused: already suggested"
