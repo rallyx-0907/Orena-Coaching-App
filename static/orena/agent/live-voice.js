@@ -308,7 +308,22 @@ export function connectLiveVoice(session, { audio, mediaDevices = globalThis.nav
     onClosed(reason);
   }
 
-  return { end, interrupt: silence };
+  /* The learner's view changed (R30): the server learns it and returns a "[context] …" note, which the model is
+     given without answering it (turnComplete false). */
+  async function sendContext(context) {
+    if (closed || !context || typeof context !== 'object') return;
+    let answer;
+    try {
+      answer = await post('/api/agent/voice/context', { voice_session_id: id, context }, fetchImpl);
+    } catch (error) {
+      if (error?.status === 404) end('server');
+      return;
+    }
+    const note = String(answer?.note || '').trim();
+    if (note && ready && !closed) send({ clientContent: { turns: [{ role: 'user', parts: [{ text: note }] }], turnComplete: false } });
+  }
+
+  return { end, interrupt: silence, sendContext };
 }
 
 /* A live voice turn written into a conversation thread (the Home thread or a Contextual panel's), through the

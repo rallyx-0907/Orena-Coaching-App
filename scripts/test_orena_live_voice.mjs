@@ -70,4 +70,21 @@ const { createSession } = await import('../static/orena/agent/session.js');
   assert.equal('voice' in voiceSessionBody({ trigger: 'message' }), false);
 }
 
+// R30: the view a running conversation is told - the route's surface and ids, then a selection on top of it.
+{
+  const { setRouteView, setViewSelection, viewContext, onViewContext } = await import('../static/orena/shell/view-context.js');
+  const seen = [];
+  const stop = onViewContext((view) => seen.push(view));
+  setRouteView({ intent: 'listening.workspace' }, { id: 'youtube-x' });
+  assert.deepEqual(viewContext(), { surface: 'listening.workspace', content_id: 'media:youtube-x' });
+  setViewSelection({ type: 'sentence', id: 's1', text: 'It tests.' });
+  assert.equal(viewContext().selected_item.id, 's1');
+  setRouteView({ intent: 'progress' }, {});
+  assert.deepEqual(viewContext(), { surface: 'progress' }, 'a new route starts clean');
+  setRouteView({ intent: 'writing.review' }, { id: '42' });
+  assert.equal(viewContext().essay_id, '42');
+  stop();
+  assert.equal(seen.length, 4);
+}
+
 console.log('Orena live voice (§9 mode A): session body, PCM16 codecs, thread writing, server refusals: PASS');

@@ -417,6 +417,25 @@ server runs with `AGENT_VOICE_ENABLED` beside `AGENT_ENABLED`. While off, the ro
      reading. `offer_button` can offer `open_content`, which navigates to `listening.workspace` for `media:`
      content and to `reading.workspace` for `article:` or `book:` content. The content id always comes from a
      tool read. The session body lists both intents in `client.supported_intents`.
+   - R30, one generic tool: `do_action` replaces `offer_button`.
+     - Arguments: `type` from `client.supported_actions`, `intent` from `client.supported_intents`, and the optional
+       ids and fields of §7.
+     - The server fills in what is in view, builds the §7 payload and judges it like `propose_action`.
+     - A low-risk action the learner's own words asked for comes with `open` and runs at once. A CONFIRM action
+       (for example `unsave_word`) runs through the app's own confirm dialog, never silently. An action nobody
+       asked for is a button only.
+   - R30, context during a session.
+     - The client posts `POST /api/agent/voice/context { voice_session_id, context }` on every route change and
+       every line or word selection while the session runs, settled about 350 ms. `context` is the §3 context
+       without `locale`.
+     - The answer is `{ voice_session_id, note }`; 404 `voice_session_not_found`, 422 for a context that is not a
+       valid object.
+     - The client sends `note` on the socket as
+       `{ clientContent: { turns: [{ role: "user", parts: [{ text: note }] }], turnComplete: false } }`, so Orena
+       takes it in without answering it.
+     - Ids in view become ids actions may name.
+   - R30, recognition: the locked setup carries the session's support and target languages for input
+     transcription. Unclear or wrong-language input is answered "say it again", never acted on.
 5. **Voices (R29).**
    - `GET /api/agent/voice/voices?interface=<en|vi|zh-CN>` answers
      `{ default, voices: [{ id, gender: "female"|"male", label }] }`.

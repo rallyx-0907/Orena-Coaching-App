@@ -24,6 +24,7 @@ import { api } from '../../infrastructure/api.js';
 import { languages } from '../../copy/index.js';
 import { shellCopy as s } from '../../copy/shell.js';
 import { askOrena } from '../../shell/agent-bridge.js';
+import { setViewSelection } from '../../shell/view-context.js';
 import { registerActionHandler } from '../../agent/dispatcher.js';
 import {
   connectMediaPlayer, disconnectMediaPlayer, mediaPlayer, playbackAvailable, posterUrl,
@@ -182,6 +183,10 @@ export default async function listening(element, ctx) {
   function rememberPlace(force = false) {
     if (!force && currentId === rememberedId) return;
     rememberedId = currentId;
+    // The line in view, for an Orena conversation already running ("explain this sentence"). In Dictation the
+    // line's words are the answer, so only its id is shared, never its text.
+    const line = segOf(currentId);
+    if (line && mode !== 'dictation') setViewSelection({ type: 'sentence', id: line.segment_id, text: line.original_text });
     try {
       c.memory?.enter({ id: contentId, title: lesson.title, segment: currentId || '', intent: null });
     } catch {

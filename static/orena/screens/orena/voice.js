@@ -25,6 +25,7 @@ import { createLocalAudioRecorder } from '../../capabilities/audio-recorder.js';
 import { micGate, openMicState } from '../mic/sheet.js';
 import { micUnavailableReason } from '../mic/model.js';
 import { openVoiceSession, connectLiveVoice } from '../../agent/live-voice.js';
+import { onViewContext } from '../../shell/view-context.js';
 import { refreshLearningLanguage } from './language-sync.js';
 import { api } from '../../infrastructure/api.js';
 import { languages } from '../../copy/index.js';
@@ -128,6 +129,7 @@ export function createVoiceEngine({ ctx = {}, send, onChange, abort, resume, onT
   // fallback - when voice is off on this server (404), unavailable (503) or the session fails (§9: never another vendor).
   let link = null;
   let audio = null;
+  let stopView = () => {};
   let liveOff = !liveVoice;
 
   function closeAudio() {
@@ -190,6 +192,16 @@ export function createVoiceEngine({ ctx = {}, send, onChange, abort, resume, onT
     }
     if (disposed) return closeAudio();
     let turnHeard = '';
+    // While the session runs, Orena is told what the learner is looking at (R30): every route change and
+    // selection, settled for a moment so a burst of changes is one update.
+    let viewTimer = 0;
+    stopView();
+    stopView = onViewContext((view) => {
+      clearTimeout(viewTimer);
+      viewTimer = setTimeout(() => link?.sendContext(view), 350);
+    });
+    const unview = stopView;
+    stopView = () => { clearTimeout(viewTimer); unview(); };
     link = connectLiveVoice(session, {
       audio,
       onState: (next) => {
@@ -214,6 +226,8 @@ export function createVoiceEngine({ ctx = {}, send, onChange, abort, resume, onT
       },
       onClosed: (reason) => {
         link = null;
+        stopView();
+        stopView = () => {};
         closeAudio();
         if (disposed) return;
         setPhase('idle');

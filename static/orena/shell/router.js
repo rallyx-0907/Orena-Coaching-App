@@ -12,6 +12,7 @@
    - a lesson route shows the design's loading skeleton while it loads, and its load error with
      Back / Retry when it fails;
    - a route whose screen is not built yet shows the design's Coming soon screen. */
+import { setRouteView } from './view-context.js';
 import { beginNavigation } from '../infrastructure/navigation.js';
 import { mount } from '../kit/html.js';
 import { closeSheet } from '../kit/overlay.js';
@@ -172,6 +173,9 @@ export function createRouter({ frame, getContext }) {
     try {
       const screen = await loadScreen(route);
       if (mine !== generation) return;
+      // What a running Orena conversation is told the learner now sees: the route first, so what the screen
+      // selects while it mounts (a remembered line) is added on top of it.
+      setRouteView(route, found.params);
       const result = await screen(element, ctx);
       if (mine !== generation) {
         if (typeof result === 'function') result();
