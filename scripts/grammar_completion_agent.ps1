@@ -86,6 +86,11 @@ function Test-Written {
     return $Text -match "(?m)^written\s+$PointIdPattern\s+"
 }
 
+function Test-CacheMiss {
+    param([string]$Text)
+    return $Text -match "cache-only mode:\s+no cached completion"
+}
+
 function Get-ReadyPointIds {
     param([string]$Language)
 
@@ -275,7 +280,7 @@ foreach ($language in $languages) {
                 throw "Cache probe selected unexpected point $pointId while probing $readyPointId."
             }
 
-            if ($probe.Text -match "cache-only mode: no cached completion") {
+            if (Test-CacheMiss -Text $probe.Text) {
                 $uncachedPointIds.Add($readyPointId)
             } else {
                 $rescuePointIds.Add($readyPointId)
@@ -334,6 +339,22 @@ foreach ($language in $languages) {
 
             if ($paid.Text -notmatch "(?m)^error\s+$([regex]::Escape($pointId))\s+") {
                 throw "One-shot candidate for $pointId returned an unrecognized result."
+            }
+
+            Write-Host ""
+            Write-Host "--- Verify cached paid candidate before rescue: $pointId ---"
+            $paidReplay = Invoke-Corpus -Language $language -PointId $pointId -CacheOnly
+
+            if (Test-Written -Text $paidReplay.Text -PointId $pointId) {
+                $processed++
+                continue
+            }
+
+            if (Test-CacheMiss -Text $paidReplay.Text) {
+                Write-Host "STOP: paid attempt returned error, but no cached paid candidate exists."
+                Write-Host "Codex rescue skipped because no cached paid candidate exists."
+                Write-Host "No additional paid candidate was requested."
+                exit 22
             }
 
             Write-Host ""
