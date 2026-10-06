@@ -4303,3 +4303,23 @@ server's offer copy (learner_copy offer.*) in the interface layer.
 - **L-13: estimated word timing.** Word highlight is completed, not skipped. Without verified word timestamps it
   highlights by estimated timing within the line and is labelled "· est." as the frame draws it. With verified
   timings it uses them and drops "est.".
+
+## D-138 - Orena voice is a live conversation; spoken replies unlocked on phones
+
+2026-10-06, explicit human direction ("Orena không có chức năng live talk và nó cũng đang chưa phát ra tiếng được").
+
+- **Live talk.** Once the learner starts voice mode (the mic in the Home composer or the Contextual panel), Orena:
+  - listens, and ends the turn itself when the learner stops speaking (a pause of about 1.3 s);
+  - answers aloud;
+  - listens again;
+  - pauses after about 9 s with nothing said.
+
+  Tapping Stop while Orena speaks or thinks ends the conversation; tapping while it listens sends at once. This
+  replaces the frame's one-turn voice cycle (speaking, then idle).
+- **Same contract.** It is the existing cascade: record, `POST /api/speech/transcribe`, an ordinary agent turn,
+  then device speech. No real-time voice session (AGENT_CONTRACT §9) is built or called; that stays the
+  Intelligence lane's.
+- **Spoken replies on phones.** Mobile Safari speaks only from inside a tap. The learner's first tap on the mic or
+  a suggestion unlocks device speech for the visit.
+- **Recording format.** A recording's upload name follows the format the device recorded (an iPhone records mp4,
+  not webm).

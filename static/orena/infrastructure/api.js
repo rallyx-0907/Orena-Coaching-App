@@ -421,9 +421,13 @@ export const api={
   // take they already made.
   speechStatus:()=>request('/api/speech/status'),
   speakingModelReference:(lessonId,segmentId)=>request(`/api/speaking/model-reference/${encodeURIComponent(lessonId)}/${encodeURIComponent(segmentId)}`,{method:'POST'}),
-  transcribeSpeech:(blob,language,filename='recording.webm')=>{
+  transcribeSpeech:(blob,language,filename='')=>{
     const form=new FormData();
-    form.append('file',blob,filename);
+    // The file's name follows what the device actually recorded (iPhone Safari records mp4, not webm).
+    const type=String(blob?.type||'');
+    const ext=/mp4|m4a|aac/.test(type)?'m4a':/ogg/.test(type)?'ogg':/wav/.test(type)?'wav':'webm';
+    const name=`${String(filename||'recording').replace(/\.[a-z0-9]+$/i,'')}.${ext}`;
+    form.append('file',blob,name);
     if(language)form.append('language',language);
     return request('/api/speech/transcribe',{
       method:'POST',

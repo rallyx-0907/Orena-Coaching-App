@@ -32,6 +32,72 @@ import { sendHomeTurn, abortHome, ensureOpening, subscribeHome, homeState, reque
 
 const TTS_TAG = { en: 'en-US', vi: 'vi-VN', zh: 'zh-CN' };
 
+/* Mobile Safari speaks only from inside a tap: an utterance started later (after the reply arrives) is dropped in
+   silence. One silent utterance inside the learner's first tap unlocks speech for the rest of the visit. */
+let speechUnlocked = false;
+function unlockSpeech() {
+  if (speechUnlocked || typeof window.speechSynthesis?.speak !== 'function' || typeof SpeechSynthesisUtterance === 'undefined') return;
+  try {
+    const silent = new SpeechSynthesisUtterance(' ');
+    silent.volume = 0;
+    window.speechSynthesis.speak(silent);
+    speechUnlocked = true;
+  } catch {
+    /* speech stays unavailable; the reply is still on screen */
+  }
+}
+
+/* Live talk (human direction 2026-10-06, D-138): once the learner starts talking, Orena listens, hears when they
+   have finished, answers aloud and listens again, until they stop. End of speech is measured on the recorder's
+   own input: speech is a level clearly above the room's first moments; it is over after a pause. */
+const SILENCE_END_MS = 1300;
+const NO_SPEECH_MS = 9000;
+const MAX_TURN_MS = 30000;
+function watchSpeech(stream, onEnd) {
+  const Ctor = window.AudioContext || window.webkitAudioContext;
+  if (!stream || !Ctor) return () => {};
+  let context;
+  let timer = 0;
+  try {
+    context = new Ctor();
+    const analyser = context.createAnalyser();
+    analyser.fftSize = 1024;
+    context.createMediaStreamSource(stream).connect(analyser);
+    const buffer = new Uint8Array(analyser.fftSize);
+    const started = Date.now();
+    let floor = 0;
+    let samples = 0;
+    let spoke = false;
+    let quietSince = 0;
+    const level = () => {
+      analyser.getByteTimeDomainData(buffer);
+      let sum = 0;
+      for (const value of buffer) sum += ((value - 128) / 128) ** 2;
+      return Math.sqrt(sum / buffer.length);
+    };
+    timer = setInterval(() => {
+      const now = Date.now();
+      const rms = level();
+      if (now - started < 350) { floor = (floor * samples + rms) / (samples + 1); samples += 1; return; }
+      // A learner who starts at once must not raise the floor: the room is taken as at most a quiet hum.
+      const loud = rms > Math.max(0.02, Math.min(floor, 0.02) * 3);
+      if (loud) { spoke = true; quietSince = 0; } else if (spoke && !quietSince) quietSince = now;
+      const ended = spoke && quietSince && now - quietSince > SILENCE_END_MS;
+      if (ended || now - started > MAX_TURN_MS) { stop(); onEnd('spoke'); } else if (!spoke && now - started > NO_SPEECH_MS) { stop(); onEnd('silent'); }
+    }, 100);
+  } catch {
+    return () => {};
+  }
+  let stopped = false;
+  function stop() {
+    if (stopped) return;
+    stopped = true;
+    clearInterval(timer);
+    context?.close?.().catch?.(() => {});
+  }
+  return stop;
+}
+
 function ttsLang() {
   const support = String(languages().support || 'en').slice(0, 2);
   return TTS_TAG[support] || 'en-US';
@@ -52,6 +118,8 @@ export function createVoiceEngine({ ctx = {}, send, onChange, abort, resume, onT
   let speakOn = true;
   let recorder = null;
   let disposed = false;
+  let live = false; // the learner is in a live conversation: listen again after each answer
+  let stopWatch = () => {};
 
   const snapshot = () => ({ phase, heard, reply, speakOn });
 
@@ -75,11 +143,35 @@ export function createVoiceEngine({ ctx = {}, send, onChange, abort, resume, onT
       }
       const started = await recorder.start();
       if (disposed) return recorder.cleanup();
-      if (!started) return void openMicState(ctx, { state: 'blocked' });
+      if (!started) {
+        live = false;
+        return void openMicState(ctx, { state: 'blocked' });
+      }
       heard = '';
       reply = null;
       setPhase('listening');
+      // Live talk: the turn ends when the learner stops speaking; nobody needs to tap Send.
+      stopWatch();
+      stopWatch = watchSpeech(recorder.input?.(), (how) => {
+        if (disposed || phase !== 'listening') return;
+        if (how === 'silent') {
+          // Nothing said for a while: the conversation pauses instead of listening forever.
+          live = false;
+          recorder.discard?.();
+          recorder.cleanup?.();
+          setPhase('idle');
+          return;
+        }
+        void finish();
+      });
     });
+  }
+
+  /* After an answer: in a live conversation Orena listens again; otherwise it waits. */
+  function afterReply() {
+    if (disposed) return;
+    setPhase('idle');
+    if (live) void begin();
   }
 
   /* One question through to its answer: `text` is what the learner said (or a suggestion they
@@ -97,11 +189,12 @@ export function createVoiceEngine({ ctx = {}, send, onChange, abort, resume, onT
     }
     const toSpeak = speakOn ? speakableText(answer) : '';
     if (toSpeak && typeof window.speechSynthesis?.speak === 'function') speak(toSpeak);
-    else setPhase('idle');
+    else afterReply();
   }
 
   async function finish() {
     if (phase !== 'listening' || !recorder) return;
+    stopWatch();
     setPhase('thinking');
     const take = await recorder.stop();
     if (disposed) return;
@@ -111,7 +204,7 @@ export function createVoiceEngine({ ctx = {}, send, onChange, abort, resume, onT
     }
     let transcript = '';
     try {
-      const result = await api.transcribeSpeech(take.blob, '', 'orena-voice.webm');
+      const result = await api.transcribeSpeech(take.blob, '', 'orena-voice');
       transcript = String(result?.text || '').trim();
     } catch {
       // Not the mic sheet's "assessment" state: nothing is being scored here and no recording is kept.
@@ -121,6 +214,7 @@ export function createVoiceEngine({ ctx = {}, send, onChange, abort, resume, onT
     }
     if (disposed) return;
     if (!transcript) {
+      if (live) return void afterReply(); // a cough or a pause in a live conversation: just listen again
       setPhase('idle');
       void openMicState(ctx, { state: 'notheard' });
       return;
@@ -142,17 +236,17 @@ export function createVoiceEngine({ ctx = {}, send, onChange, abort, resume, onT
         started = true;
       };
       utterance.onend = () => {
-        if (phase === 'speaking') setPhase('idle');
+        if (phase === 'speaking') afterReply();
       };
       utterance.onerror = () => {
-        if (phase === 'speaking') setPhase('idle');
+        if (phase === 'speaking') afterReply();
       };
       window.speechSynthesis.cancel();
       window.speechSynthesis.speak(utterance);
       setTimeout(() => {
         if (!started && phase === 'speaking' && !disposed) {
           stopSpeaking();
-          setPhase('idle');
+          afterReply();
         }
       }, SPEECH_START_MS);
     } catch {
@@ -171,18 +265,25 @@ export function createVoiceEngine({ ctx = {}, send, onChange, abort, resume, onT
   return {
     /* The main button: start listening, send what was said, or stop whatever Orena is doing. */
     main() {
-      if (phase === 'idle') void begin();
-      else if (phase === 'listening') void finish();
+      unlockSpeech(); // inside the learner's tap, so the spoken answer can play later
+      if (phase === 'idle') {
+        live = true;
+        void begin();
+      } else if (phase === 'listening') void finish();
       else if (phase === 'speaking') {
+        // Stop talking ends the live conversation; the learner starts it again with the mic.
+        live = false;
         stopSpeaking();
         setPhase('idle');
       } else if (phase === 'thinking') {
+        live = false;
         abort?.();
         setPhase('idle');
       }
     },
     /* A suggestion tapped in the idle full-screen mode: asked as if it had been said. */
     ask(text) {
+      unlockSpeech();
       if (phase === 'idle' && String(text || '').trim()) void converse(String(text).trim());
     },
     toggleSpeak() {
@@ -197,6 +298,8 @@ export function createVoiceEngine({ ctx = {}, send, onChange, abort, resume, onT
     state: snapshot,
     dispose() {
       disposed = true;
+      live = false;
+      stopWatch();
       try {
         recorder?.discard?.();
         recorder?.cleanup?.();

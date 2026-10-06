@@ -338,5 +338,8 @@ export function createLocalAudioRecorder({
     error=null;
   }
 
-  return {start,stop,discard,cleanup,snapshot};
+  // The live microphone input while recording, for a caller that measures it (Orena's live talk: end of speech).
+  const input=()=>rawStream;
+
+  return {start,stop,discard,cleanup,snapshot,input};
 }
