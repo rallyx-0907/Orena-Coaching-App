@@ -526,7 +526,12 @@ class ClaimGate:
         """A heading the learner asked for (LEX-006): the answer's first line becomes one when it is a line of its
         own and reads as a title - bold alone, or short with no sentence end and not a list item. Only the first."""
 
-        if not self.heading_asked or self._heading_done or not sentence.strip():
+        if not self.heading_asked or not sentence.strip():
+            return sentence
+        if self._heading_done:  # after the first line, a bold-only short line is a sub-heading
+            found = _BOLD_LINE.match(sentence)
+            if found and sentence.endswith("\n") and len(found.group(1)) <= _TITLE_MAX:
+                return f"#### {found.group(1).strip()}\n"
             return sentence
         self._heading_done = True
         line = sentence.strip()

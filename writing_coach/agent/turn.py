@@ -403,6 +403,8 @@ class _Turn:
             address_terms=tier1.address.pair,
             unaccented_keep=self.unaccented_keep,
             focused=self.focused,
+            text_in_view=self.focused and context.selected_item is not None
+            and context.selected_item.type in ("word", "sentence"),
         )
         if mirrored is not None:
             outputs.memory_updates.append(MemoryUpdateEvent(op="upsert", note=mirrored))
