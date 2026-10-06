@@ -125,6 +125,7 @@ export default async function listening(element, ctx) {
   let barSeek = false; // the seek bar moved the time while paused: the line follows it
   let seekingTo = resumeAt ? {id:currentId,at:Date.now()} : null;
   const savedPhrases = new Set(); // segment texts known to be saved this session
+  let markedEls = []; // the word currently marked as spoken
   const tokenCache = new Map();
 
   const segOf = (id) => segments.find((seg) => seg.segment_id === id) || null;
@@ -494,8 +495,8 @@ export default async function listening(element, ctx) {
     if (rowEl) onRowTap(rowEl.dataset.seg);
   });
 
-  /* The word being spoken, marked on the current row only. */
-  let markedEls = [];
+  /* The word being spoken, marked on the current row only (`markedEls` is declared with the room's state:
+     a resumed line seeks during mount, and the clock can arrive before this point). */
   function paintWordHighlight() {
     for (const el of markedEls) el.classList.remove('is-word-current');
     markedEls = [];

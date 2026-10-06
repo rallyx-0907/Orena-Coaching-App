@@ -67,7 +67,8 @@ export async function loadComparisonReference(source, {onUpdate=()=>{}} = {}) {
   const state={readings:{},positionReadings:[...(source.line.positionReadings || [])],words,model:null,
     readingState:'unavailable',audioState:source.hasModelAudio?'ready':'unavailable',
     alignmentState:words.length?'ready':'unavailable'};
-  const units=lineUnits(source.line.text,source.language).filter(unit=>unit.unit);
+  // An authored Chinese reading has one syllable per Han character; a Latin word in the line has none (LEX-031).
+  const units=lineUnits(source.line.text,source.language).filter(unit=>unit.unit&&(source.language!=='zh'||/\p{Script=Han}/u.test(unit.text)));
   const authored=String(source.line.reading || '').split(/\s+/).filter(Boolean);
   if (authored.length===units.length) units.forEach((unit,at)=>{
     state.positionReadings.push({...unit,reading:authored[at]});

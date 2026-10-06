@@ -177,6 +177,16 @@ def test_chinese_pinyin_and_base_form_from_local_tagger() -> None:
     assert result["part_of_speech"] == "noun"
 
 
+def test_a_character_inside_a_longer_word_reads_only_itself() -> None:
+    """LEX-030: 科 tapped inside 维基百科 is kē, never the whole word's wéi jī bǎi kē."""
+    service, provider = _service()
+
+    context = "打开维基百科的首页"
+    assert service.lookup("科", context, "zh", "vi").to_dict()["pronunciation"] == "kē"
+    assert service.lookup("基百", context, "zh", "vi").to_dict()["pronunciation"] == "jī bǎi"
+    assert service.lookup("维基百科", context, "zh", "vi").to_dict()["pronunciation"] == "wéi jī bǎi kē"
+
+
 def test_chinese_word_gets_cc_cedict_senses_without_a_provider() -> None:
     provider = RecordingTranslationProvider(fail=True)
     service, provider = _service(translation_provider=provider)

@@ -12,7 +12,7 @@ reach, and it is a separate, explicit request.
 from __future__ import annotations
 
 import re
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from typing import Any, Protocol
 
@@ -106,10 +106,30 @@ def _local_token_facts(language: str, context: str, selection: str) -> dict[str,
     lemma = tokens[0]["lemma"] if single else ""
     return {
         "part_of_speech": tokens[0]["pos"] if single else "",
-        "pronunciation": " ".join(token["pronunciation"] for token in tokens if token["pronunciation"]),
+        "pronunciation": " ".join(
+            part for part in (_selected_reading(token, start, end) for token in tokens) if part
+        ),
         "base_form": lemma if single and language == "zh" else "",
         "lemma": lemma,
     }
+
+
+def _selected_reading(token: Mapping[str, Any], start: int, end: int) -> str:
+    """The reading of the part of `token` the learner selected.
+
+    A selection inside a longer word reads only its own characters (LEX-030: 科 in
+    维基百科 is kē, not wéi jī bǎi kē). Chinese readings have one syllable per
+    character, so the selected characters' syllables are taken by position; when
+    the count does not line up, no reading is given rather than a wrong one.
+    """
+    reading = str(token.get("pronunciation") or "")
+    t_start, t_end = int(token["start"]), int(token["end"])
+    if not reading or (start <= t_start and t_end <= end):
+        return reading
+    syllables = reading.split()
+    if len(syllables) != t_end - t_start:
+        return ""
+    return " ".join(syllables[max(start, t_start) - t_start : min(end, t_end) - t_start])
 
 
 def _catalog_candidates(selection: str, lemma: str) -> list[str]:

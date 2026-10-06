@@ -321,10 +321,12 @@ export default async function mountCompareWithModel(element, ctx) {
   function tokensMarkup() {
     const units = lineUnits(source.line.text, language);
     const syllables = language === 'zh' ? String(source.line.reading || '').split(/\s+/).filter(Boolean) : [];
-    const aligned = language === 'zh' && syllables.length === units.filter(unit=>unit.unit).length;
+    // One syllable per Han character: a Latin word inside the line ("Vector") has none and takes none (LEX-031).
+    const han = (unit) => /\p{Script=Han}/u.test(unit.text);
+    const aligned = language === 'zh' && syllables.length === units.filter((unit) => unit.unit && han(unit)).length;
     let spokenAt = 0;
     return units.map((unit) => {
-      if (!unit.unit) return unit.text.trim() ? html`<span class="s-compare-token"><span class="s-compare-token__sub" aria-hidden="true">${raw('&nbsp;')}</span><span class="s-compare-token__word" lang="${langAttr(language)}">${unit.text}</span></span>` : '';
+      if (!unit.unit || (language === 'zh' && !han(unit))) return unit.text.trim() ? html`<span class="s-compare-token"><span class="s-compare-token__sub" aria-hidden="true">${raw('&nbsp;')}</span><span class="s-compare-token__word" lang="${langAttr(language)}">${unit.text}</span></span>` : '';
       const reading = aligned ? syllables[spokenAt++] : readingFor(unit.text, reference, language, unit.start);
       const tone = language === 'zh' && reading ? toneOf(reading) : null;
       return html`<span class="s-compare-token"><span class="s-compare-token__sub" title="${reading ? '' : t('readingUnavailable')}" style="color:${tone && tone < 5 ? `var(--tone${tone})` : 'var(--text3)'}">${reading || '—'}</span><span class="s-compare-token__word" lang="${langAttr(language)}">${unit.text}</span></span>`;
