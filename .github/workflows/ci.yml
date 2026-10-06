@@ -171,6 +171,7 @@ jobs:
           node scripts/test_orena_screen_reader-complete.mjs
           node scripts/test_orena_screen_onboarding.mjs
           node scripts/test_orena_screen_orena.mjs
+          node scripts/test_orena_live_voice.mjs
           node scripts/test_orena_screen_writing.mjs
           node scripts/test_orena_screen_writing-compare.mjs
           node scripts/test_orena_screen_listening.mjs

@@ -37,7 +37,7 @@ The new UI may add, rename or drop flows. The agent therefore never names a rout
 ```text
 POST /api/agent/turn           request §3 → response: text/event-stream (§4), one stream per turn
 GET  /api/agent/capabilities   → registry (§8), filtered by the caller's locale
-POST /api/agent/voice/session  → §9 (provisional)
+POST /api/agent/voice/session  → §9 (with /voice/tool and /voice/end)
 ```
 
 Auth: the app's existing session. The server never trusts an identifier the model produces; the learner is always the authenticated caller.
@@ -369,20 +369,58 @@ The UI may use it for suggestions and "Ask Orena" entry points. The UI's drift t
 
 ---
 
-## 9. Voice session (provisional)
+## 9. Voice session (mode A, R28)
 
-```text
-POST /api/agent/voice/session
-  request:  { contract_version, session_id?, client, context, coach_notes }
-  response: { voice_session_id, mode: "s2s" | "cascade", transport: "webrtc" | "websocket",
-              connect: { url, ephemeral_token, expires_at } }
-```
+Live voice is speech-to-speech through the vendor the server chooses (R28; the vendor is server configuration, never named to the client). It is off unless the
+server runs with `AGENT_VOICE_ENABLED` beside `AGENT_ENABLED`. While off, the routes answer 404.
 
-- The client connects to `connect.url` with the short-lived token. A provider key never reaches the client.
-- Tool calls and actions still reach the client as §4 events over the turn stream associated with `voice_session_id`.
-- Sessions are capped (default 15 min); on expiry the client opens a new one transparently.
-- Raw audio is not stored. Mic states reuse the app's existing mic-readiness and recorder capabilities.
-- Fields here may change before a later version without breaking text mode.
+1. **Open a session.**
+   - Request: `POST /api/agent/voice/session` with a turn body without `message`:
+     `{ contract_version, session_id?, client, context, coach_notes }`.
+   - 200 response:
+     `{ voice_session_id, mode: "s2s", transport: "websocket", connect: { url, ephemeral_token, expires_at, setup }, max_seconds: 900 }`.
+   - Errors:
+     - 429 `rate_limited` with Retry-After (the daily cap and turn window apply first);
+     - 409 `target_language_mismatch`;
+     - 503 `voice_unavailable`;
+     - 404 while voice is off.
+2. **Connect.**
+   - Open a WebSocket to `connect.url + "?access_token=" + encodeURIComponent(ephemeral_token)`.
+   - Send `JSON.stringify(connect.setup)` as the first message. It only names the model; the server locks
+     everything else.
+   - Wait for a message that has the key `setupComplete`. Its value is `{}`, so the key is the signal.
+3. **The conversation.** All audio is PCM16 mono.
+
+   | | Message shape |
+   | --- | --- |
+   | Microphone, 16 kHz | `{ realtimeInput: { audio: { data: <base64>, mimeType: "audio/pcm;rate=16000" } } }` |
+   | Orena's audio, 24 kHz | `serverContent.modelTurn.parts[].inlineData.data` |
+   | Learner's words, shown in the thread | `serverContent.inputTranscription.text` |
+   | Orena's words, shown in the thread | `serverContent.outputTranscription.text` |
+   | Barge-in | `serverContent.interrupted`: the client stops playback at once and drops what is queued |
+   | End of Orena's turn | `serverContent.turnComplete` |
+
+   The provider's voice activity detection ends each utterance.
+4. **Tools.**
+   - On `{ toolCall: { functionCalls: [{ id, name, args }] } }`, the client posts `POST /api/agent/voice/tool` with
+     `{ voice_session_id, calls, heard }`, where `heard` is the latest input transcription.
+   - The answer is `{ responses, events }`. The client sends `{ toolResponse: { functionResponses: responses } }` on
+     the socket and renders `events` as ordinary §4 events: `tool_call`, `tool_result`, `evidence`, `action`,
+     `memory_update`.
+   - An action is a button the learner taps. Buttons come only through the server.
+   - 404 `voice_session_not_found` means the session is over.
+5. **End.**
+   - `POST /api/agent/voice/end { voice_session_id }` answers `{ voice_session_id, seconds }`. The client sends it
+     when the learner stops, leaves (sendBeacon on pagehide), the socket closes, or `max_seconds` pass.
+   - The server bills the session time into the shared ledger. A session never ended is billed at its cap.
+
+Rules:
+- A provider key never reaches the client.
+- Raw audio is not stored.
+- Failure is never a switch to another vendor. The client falls back to its own cascade (D-138: record,
+  `POST /api/speech/transcribe`, a §3 turn, device speech) for 404, 503 or a failed session.
+- Mobile Safari starts audio only from a gesture, so the client creates its audio contexts inside the learner's
+  tap.
 
 ---
 

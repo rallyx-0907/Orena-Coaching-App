@@ -19,7 +19,7 @@ import { messageMarkup } from './thread.js';
 import { runOffered } from './actions.js';
 import { keepFocus } from './focus.js';
 import { createVoiceEngine, voiceRowMarkup, bindVoiceRow } from './voice.js';
-import { subscribeHome, homeState, homeDispatcher, ensureOpening, sendHomeMessage, sendHomeTurn, retryHome, abortHome, takeComposerFocus } from './home-session.js';
+import { subscribeHome, homeState, homeDispatcher, ensureOpening, sendHomeMessage, sendHomeTurn, retryHome, abortHome, takeComposerFocus, homeLiveVoice } from './home-session.js';
 // Side-effect only: registers the Contextual Orena panel with shell/agent-bridge.js
 // (shell/agent-bridge.js's own dynamic import already does this at boot - this import exists so
 // scripts/validate_browser_esm_graph.mjs, which only walks static imports from each screen.js
@@ -148,6 +148,7 @@ export default async function mountOrena(element, ctx) {
     voiceEngine = createVoiceEngine({
       ctx,
       send: sendHomeTurn,
+      liveVoice: homeLiveVoice,
       abort: abortHome,
       onTextOnly: endVoice,
       onChange: () => paint(homeState()),

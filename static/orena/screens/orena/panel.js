@@ -38,6 +38,7 @@ import { messageMarkup } from './thread.js';
 import { runOffered } from './actions.js';
 import { keepFocus } from './focus.js';
 import { createVoiceEngine, voiceRowMarkup, bindVoiceRow } from './voice.js';
+import { voiceSessionBody, voiceThread } from '../../agent/live-voice.js';
 import { builtScreens, createOrenaDispatcher, requestLanguages } from './dispatcher-setup.js';
 
 /* The context pill's label: the selected item's own text (marked with the language it is in) and
@@ -181,6 +182,20 @@ export async function openOrenaPanel(context = {}, carry = null) {
     voiceEngine = createVoiceEngine({
       ctx: { isCurrent: () => true },
       send: (text) => runTurn('message', text),
+      // Live voice (§9 mode A) about this panel's context, written into this panel's thread.
+      liveVoice: () => {
+        const support = toContractLang(languages().support);
+        const body = voiceSessionBody(buildRequest({
+          trigger: 'message',
+          context,
+          languages: requestLanguages(),
+          sessionId: session.sessionId(),
+          client: { supported_actions: dispatcher.supported(), supported_intents: supportedIntents(builtScreens()) },
+          notes: memory.requestNotes(),
+          address: memory.addressFor(support),
+        }));
+        return { body, thread: voiceThread({ session, memory, notify: paint, lang: () => support }) };
+      },
       abort: abortTurn,
       // The mic sheet took this panel's place; when it has been answered, the panel comes back.
       resume: () => void openOrenaPanel(context, { session, ranActions, voice: true }),

@@ -8,6 +8,7 @@
    session while the device's thread is empty), coach-note upserts from `memory_update`, and the
    one dispatcher every Orena action button runs through. */
 import { createSession, buildRequest } from '../../agent/session.js';
+import { voiceSessionBody, voiceThread } from '../../agent/live-voice.js';
 import { turn } from '../../agent/transport.js';
 import { sharedMemory } from './memory-store.js';
 import { supportedIntents } from '../../agent/intents.js';
@@ -179,3 +180,22 @@ export function takeComposerFocus() {
 }
 
 export { href };
+
+/* Live voice on Home (§9 mode A): the session body is this thread's turn body without a message, and the voice
+   turns are written into this same thread and device memory. */
+export function homeLiveVoice() {
+  const inst = getHomeSession();
+  const support = toContractLang(languages().support);
+  const body = voiceSessionBody(buildRequest({
+    trigger: 'message',
+    context: { surface: 'orena.home' },
+    languages: requestLanguages(),
+    sessionId: inst.session.sessionId(),
+    client: { supported_actions: inst.dispatcher.supported(), supported_intents: supportedIntents(builtScreens()) },
+    notes: inst.memory.requestNotes(),
+    address: inst.memory.addressFor(support),
+  }));
+  const thread = voiceThread({ session: inst.session, memory: inst.memory, notify, persist: syncPersistence, lang: () => support });
+  return { body, thread };
+}
+

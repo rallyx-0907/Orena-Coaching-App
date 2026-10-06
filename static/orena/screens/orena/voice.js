@@ -23,6 +23,9 @@ import { useStyles } from '../../kit/styles.js';
 import { toast } from '../../kit/toast.js';
 import { createLocalAudioRecorder } from '../../capabilities/audio-recorder.js';
 import { micGate, openMicState } from '../mic/sheet.js';
+import { micUnavailableReason } from '../mic/model.js';
+import { openVoiceSession, connectLiveVoice } from '../../agent/live-voice.js';
+import { refreshLearningLanguage } from './language-sync.js';
 import { api } from '../../infrastructure/api.js';
 import { languages } from '../../copy/index.js';
 import { href } from '../../shell/routes.js';
@@ -111,7 +114,7 @@ function ttsLang() {
      started the recording - has been answered and this engine no longer exists (the Contextual
      panel reopens itself);
    - `onTextOnly()` runs when the reply says the voice session ended (§4.1 `text_only`). */
-export function createVoiceEngine({ ctx = {}, send, onChange, abort, resume, onTextOnly } = {}) {
+export function createVoiceEngine({ ctx = {}, send, onChange, abort, resume, onTextOnly, liveVoice = null } = {}) {
   let phase = 'idle'; // idle | listening | thinking | speaking
   let heard = '';
   let reply = null;
@@ -120,8 +123,99 @@ export function createVoiceEngine({ ctx = {}, send, onChange, abort, resume, onT
   let disposed = false;
   let live = false; // the learner is in a live conversation: listen again after each answer
   let stopWatch = () => {};
+  // Real live voice (§9 mode A, R28): the server's speech-to-speech session. The cascade above is only its
+  // fallback - when voice is off on this server (404), unavailable (503) or the session fails (§9: never another vendor).
+  let link = null;
+  let audio = null;
+  let liveOff = !liveVoice;
 
-  const snapshot = () => ({ phase, heard, reply, speakOn });
+  function closeAudio() {
+    for (const context of [audio?.input, audio?.output]) context?.close?.().catch?.(() => {});
+    audio = null;
+  }
+
+  /* Runs inside the learner's tap: mobile Safari starts audio only from a gesture, so both contexts are made and
+     resumed here, before anything waits on the network. */
+  function startLive() {
+    const Ctor = window.AudioContext || window.webkitAudioContext;
+    // A page that cannot record (not https) goes the cascade's way, whose gate says why (BUG-01).
+    if (micUnavailableReason() || !Ctor || typeof window.AudioWorkletNode !== 'function' || typeof window.WebSocket !== 'function') {
+      liveOff = true;
+      return false;
+    }
+    try {
+      audio = { input: new Ctor(), output: new Ctor() };
+      void audio.input.resume?.();
+      void audio.output.resume?.();
+    } catch {
+      closeAudio();
+      liveOff = true;
+      return false;
+    }
+    heard = '';
+    reply = null;
+    setPhase('thinking');
+    // The browser's own permission prompt appears when the session opens the microphone; a refusal ends the
+    // session with the blocked state.
+    void connect();
+    return true;
+  }
+
+  async function connect() {
+    if (disposed) return closeAudio();
+    const { body, thread } = liveVoice();
+    let session;
+    try {
+      session = await openVoiceSession(body);
+    } catch (error) {
+      closeAudio();
+      if (disposed) return;
+      if (error?.status === 409) void refreshLearningLanguage();
+      // Off here, unavailable, or over the day's limit: the device cascade carries the conversation instead.
+      liveOff = true;
+      live = true;
+      setPhase('idle');
+      void begin();
+      return;
+    }
+    if (disposed) return closeAudio();
+    let turnHeard = '';
+    link = connectLiveVoice(session, {
+      audio,
+      onState: (next) => {
+        if (!disposed && link) setPhase(next);
+      },
+      onLearner: (text) => {
+        turnHeard = text;
+        heard = text;
+        emit();
+      },
+      onOrena: (text) => thread.text(turnHeard, text),
+      onEvents: (events) => thread.events(turnHeard, events),
+      onTurnComplete: ({ heard: said, said: answer }) => {
+        thread.text(said || turnHeard, answer);
+        thread.done();
+        turnHeard = '';
+      },
+      onClosed: (reason) => {
+        link = null;
+        closeAudio();
+        if (disposed) return;
+        setPhase('idle');
+        if (reason === 'mic') void openMicState(ctx, { state: 'blocked' });
+      },
+    });
+  }
+
+  function stopLive() {
+    const current = link;
+    link = null;
+    current?.end('learner');
+    closeAudio();
+    setPhase('idle');
+  }
+
+  const snapshot = () => ({ phase, heard, reply, speakOn, session: Boolean(link) });
 
   function emit() {
     if (!disposed) onChange?.(snapshot());
@@ -266,7 +360,13 @@ export function createVoiceEngine({ ctx = {}, send, onChange, abort, resume, onT
     /* The main button: start listening, send what was said, or stop whatever Orena is doing. */
     main() {
       unlockSpeech(); // inside the learner's tap, so the spoken answer can play later
+      if (link || (audio && phase === 'thinking')) {
+        // A live session ends with the learner's tap, whatever Orena is doing.
+        stopLive();
+        return;
+      }
       if (phase === 'idle') {
+        if (!liveOff && startLive()) return;
         live = true;
         void begin();
       } else if (phase === 'listening') void finish();
@@ -288,6 +388,8 @@ export function createVoiceEngine({ ctx = {}, send, onChange, abort, resume, onT
     },
     toggleSpeak() {
       speakOn = !speakOn;
+      // In a live session the voice is the model's own audio: muting suspends its output.
+      if (audio?.output) void (speakOn ? audio.output.resume?.() : audio.output.suspend?.());
       if (!speakOn && phase === 'speaking') {
         stopSpeaking();
         setPhase('idle');
@@ -300,6 +402,9 @@ export function createVoiceEngine({ ctx = {}, send, onChange, abort, resume, onT
       disposed = true;
       live = false;
       stopWatch();
+      link?.end('learner');
+      link = null;
+      closeAudio();
       try {
         recorder?.discard?.();
         recorder?.cleanup?.();
@@ -313,7 +418,9 @@ export function createVoiceEngine({ ctx = {}, send, onChange, abort, resume, onT
 
 /* ------------------------------------------------------------------- Inline voice row --- */
 
-function mainLabel(phase) {
+function mainLabel(phase, session = false) {
+  // In a live session the main button only ends it: the server's voice detection ends each turn.
+  if (session) return t('stop');
   if (phase === 'listening') return t('voiceStopSend');
   return phase === 'idle' ? t('voiceStart') : t('stop');
 }
@@ -322,7 +429,7 @@ function mainLabel(phase) {
    speak toggle, main button, back to typing. The frame's own fixed lines ("Tap the mic and ask
    your question", "Say your question…", "Answering out loud · reply is in the chat") explain
    controls and state the screen already shows - dropped (rule 50); only what was heard is drawn. */
-export function voiceRowMarkup({ phase, heard, speakOn }, { fresh = false } = {}) {
+export function voiceRowMarkup({ phase, heard, speakOn, session = false }, { fresh = false } = {}) {
   const showStop = phase !== 'idle';
   // The source fades the row in when voice mode opens; a repaint of the same row must not replay it.
   return html`<div class="s-orena-vrow${fresh ? ' s-orena-vrow--in' : ''}">
@@ -332,7 +439,7 @@ export function voiceRowMarkup({ phase, heard, speakOn }, { fresh = false } = {}
       ${heard ? html`<div class="s-orena-vrow__line">“${heard}”</div>` : ''}
     </div>
     <button type="button" class="s-orena-vrow__speak${speakOn ? '' : ' s-orena-vrow__speak--off'}" data-voice-speak aria-label="${speakOn ? t('voiceReplyOn') : t('voiceReplyOff')}" title="${speakOn ? t('voiceReplyOn') : t('voiceReplyOff')}">${raw(icon('volume-2', { size: 17 }))}</button>
-    <button type="button" class="s-orena-vrow__main s-orena-voice-main s-orena-voice-main--${phase}" data-voice-main aria-label="${mainLabel(phase)}">${showStop ? raw(icon('square', { size: 12 })) : raw(icon('mic', { size: 19 }))}</button>
+    <button type="button" class="s-orena-vrow__main s-orena-voice-main s-orena-voice-main--${phase}" data-voice-main aria-label="${mainLabel(phase, session)}">${showStop ? raw(icon('square', { size: 12 })) : raw(icon('mic', { size: 19 }))}</button>
     <button type="button" class="s-orena-vrow__close" data-voice-close aria-label="${t('backToTyping')}" title="${t('backToTyping')}">${raw(icon('x', { size: 18 }))}</button>
   </div>`;
 }
@@ -358,7 +465,7 @@ function replyMarkup(reply) {
   return html`<div class="s-orena-voicefull__reply">${segments.map((segment) => html`<span lang="${langAttr(fromContractLang(segment.lang))}">${segment.text}</span>`)}</div>`;
 }
 
-function fullMarkup({ phase, heard, reply, speakOn }, suggestions, { fresh = false } = {}) {
+function fullMarkup({ phase, heard, reply, speakOn, session = false }, suggestions, { fresh = false } = {}) {
   const showStop = phase !== 'idle';
   const hintKey = voicePhaseHintKey(phase);
   return html`<div class="s-orena-voicefull${fresh ? ' s-orena-voicefull--in' : ''}">
@@ -377,7 +484,7 @@ function fullMarkup({ phase, heard, reply, speakOn }, suggestions, { fresh = fal
     ${phase === 'idle' && suggestions.length ? html`<div class="s-orena-voicefull__chips">${suggestions.map((s) => html`<button type="button" class="s-orena-voicefull__chip" data-voice-full-suggest="${s.label}">“${s.label}”</button>`)}</div>` : ''}
     <div class="s-orena-voicefull__controls">
       <button type="button" class="s-orena-voicefull__ghost" data-voice-full-type>${t('typeInstead')}</button>
-      <button type="button" class="s-orena-voicefull__main s-orena-voice-main s-orena-voice-main--${phase}" data-voice-full-main aria-label="${mainLabel(phase)}">${showStop ? raw(icon('square', { size: 20 })) : raw(icon('mic', { size: 30 }))}</button>
+      <button type="button" class="s-orena-voicefull__main s-orena-voice-main s-orena-voice-main--${phase}" data-voice-full-main aria-label="${mainLabel(phase, session)}">${showStop ? raw(icon('square', { size: 20 })) : raw(icon('mic', { size: 30 }))}</button>
       <button type="button" class="s-orena-voicefull__ghost${speakOn ? ' s-orena-voicefull__ghost--on' : ''}" data-voice-full-speak>${speakOn ? t('voiceReplyOn') : t('voiceReplyOff')}</button>
     </div>
     ${hintKey ? html`<div class="s-orena-voicefull__hint">${t(hintKey)}</div>` : ''}
