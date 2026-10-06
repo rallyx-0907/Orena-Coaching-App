@@ -81,6 +81,17 @@ function audioSourceLabel(result) {
   return who ? t('sourceRecording', { who }) : '';
 }
 
+/* The meaning in this sentence is asked of the provider; a request that never answers must still end, in the
+   sheet's own Retry, rather than leave "Đang xem câu này…" turning forever (LEX-028). */
+const CONTEXT_WAIT_MS = 45000;
+function withinTime(promise, ms) {
+  let timer = 0;
+  const late = new Promise((resolve, reject) => {
+    timer = setTimeout(() => reject(new Error('timed out')), ms);
+  });
+  return Promise.race([promise, late]).finally(() => clearTimeout(timer));
+}
+
 function askWordDeeper(word, lang, source, sentence = '') {
   askOrena({
     surface: surfaceFor(source, 'vocabulary.word'),
@@ -409,7 +420,7 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
             contextualPending = true;
             contextualFailed = false;
             paint();
-            api.wordDetail({depth: 'sheet', text: target, context: ctxText, source_language: lang, target_language: support, content_id: source?.content_id || undefined}).then(enriched => {
+            withinTime(api.wordDetail({depth: 'sheet', text: target, context: ctxText, source_language: lang, target_language: support, content_id: source?.content_id || undefined}), CONTEXT_WAIT_MS).then(enriched => {
               if (!alive) return;
               contextualFailed = enriched?.contextStatus === 'provider_error' && Boolean(enriched?.retryable);
               const next = mapWordCard(target, {detail: enriched, item});

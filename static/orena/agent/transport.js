@@ -78,19 +78,47 @@ function pause(ms, signal) {
   });
 }
 
+/* How long a turn may go without a word from the server - before its response starts, or between two events -
+   before the client gives the learner a retry instead of an idle panel (LEX-028). Generous: a turn can hold
+   several tool calls, and a slow local model takes tens of seconds per call. */
+export const TURN_IDLE_MS = 90000;
+const IDLE = Symbol('idle');
+
+function idleAfter(ms) {
+  let timer = 0;
+  const promise = new Promise((resolve) => {
+    timer = setTimeout(() => resolve(IDLE), ms);
+  });
+  return { promise, clear: () => clearTimeout(timer) };
+}
+
 /* The live path. Exported with its fetch and clock injectable so the gate can drive every §2.1
    status. */
-export async function* liveTurn(request, { signal, fetchImpl = globalThis.fetch, sleep = pause, signedOut = () => location.assign('/login'), log = console.error } = {}) {
+export async function* liveTurn(request, { signal, fetchImpl = globalThis.fetch, sleep = pause, signedOut = () => location.assign('/login'), log = console.error, idleMs = TURN_IDLE_MS } = {}) {
   for (;;) {
     let response;
+    // The request is the client's own to stop: the caller's stop, or a server that goes quiet (LEX-028).
+    const local = new AbortController();
+    const forward = () => local.abort();
+    signal?.addEventListener('abort', forward, { once: true });
     try {
-      response = await fetchImpl('/api/agent/turn', {
+      const idle = idleAfter(idleMs);
+      const asked = fetchImpl('/api/agent/turn', {
         method: 'POST',
         credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream' },
         body: JSON.stringify(request),
-        signal,
+        signal: local.signal,
       });
+      // If the wait runs out first, the request is aborted and rejects later: that is expected, not an error.
+      asked.catch(() => {});
+      response = await Promise.race([asked, idle.promise]);
+      idle.clear();
+      if (response === IDLE) {
+        local.abort();
+        if (!signal?.aborted) yield transportError();
+        return;
+      }
     } catch {
       if (!signal?.aborted) yield transportError();
       return;
@@ -120,9 +148,20 @@ export async function* liveTurn(request, { signal, fetchImpl = globalThis.fetch,
       return;
     }
     let ended = false;
-    for await (const item of parseEvents(bodyChunks(response.body))) {
-      yield item;
-      if (item.event === 'done' || item.event === 'error') {
+    const events = parseEvents(bodyChunks(response.body))[Symbol.asyncIterator]();
+    for (;;) {
+      const idle = idleAfter(idleMs);
+      const next = await Promise.race([events.next(), idle.promise]);
+      idle.clear();
+      if (next === IDLE) {
+        // The server went quiet mid-turn: stop it (aborting the request ends its body too), and give the learner
+        // a retry. The pending read then settles on its own; nothing waits for it.
+        local.abort();
+        break;
+      }
+      if (next.done) break;
+      yield next.value;
+      if (next.value.event === 'done' || next.value.event === 'error') {
         ended = true;
         break;
       }

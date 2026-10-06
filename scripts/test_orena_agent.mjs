@@ -16,6 +16,50 @@ import assert from 'node:assert/strict';
   const bare = buildRequest({ context: { surface: 'reading.workspace', selected_item: { type: 'word', text: '花生', lang: 'zh' } }, languages: { interface: 'en', support: 'vi', target: 'zh' } });
   assert.equal('sentence' in bare.context.selected_item, false);
 }
+
+// LEX-028: a turn never leaves an idle panel - Orena thinks until the reply starts, an empty turn is a retry,
+// and a server that goes quiet is stopped with a retry.
+{
+  const { createSession } = await import('../static/orena/agent/session.js');
+  const quiet = createSession({ log: () => {} });
+  quiet.learner('Giải thích 花生');
+  quiet.apply({ event: 'session', data: { session_id: 's1', contract_version: 5 } });
+  assert.equal(quiet.state().thinking, true, 'still thinking after the bookkeeping session event');
+  quiet.apply({ event: 'metered', data: { turn_ordinal: 1, budget_state: 'ok' } });
+  assert.equal(quiet.state().thinking, true, 'still thinking after metered');
+  quiet.apply({ event: 'done', data: { usage: {}, trace_id: 't' } });
+  const empty = quiet.lastReply();
+  assert.equal(quiet.state().thinking, false);
+  assert.deepEqual(empty.error, { class: 'transport', message: '', fallback: 'retry' }, 'an empty turn is a retry, not silence');
+
+  const answered = createSession({ log: () => {} });
+  answered.learner('Hi');
+  answered.apply({ event: 'segment_end', data: { index: 0, lang: 'vi', text: 'Chào bạn.', voice_style: 'neutral_explain' } });
+  answered.apply({ event: 'done', data: { usage: {}, trace_id: 't' } });
+  assert.equal(answered.lastReply().error ?? null, null, 'a real answer has no error');
+
+  const { liveTurn } = await import('../static/orena/agent/transport.js');
+  const neverAnswers = (url, init) => new Promise((resolve, reject) => init.signal.addEventListener('abort', () => reject(new Error('aborted'))));
+  const items = [];
+  for await (const item of liveTurn({}, { fetchImpl: neverAnswers, idleMs: 20, log: () => {} })) items.push(item);
+  assert.deepEqual(items, [{ event: 'error', data: { class: 'transport', message: '', fallback: 'retry' } }], 'a server that never answers ends in a retry');
+
+  const enc = new TextEncoder();
+  let stall;
+  // Like a real fetch, aborting the request errors its body.
+  const stalls = (url, init) => Promise.resolve({
+    status: 200,
+    headers: { get: () => null },
+    body: new ReadableStream({ start(controller) {
+      controller.enqueue(enc.encode('event: session\ndata: {"session_id":"s","contract_version":5}\n\n'));
+      stall = controller;
+      init.signal.addEventListener('abort', () => controller.error(new Error('aborted')));
+    } }),
+  });
+  const midway = [];
+  for await (const item of liveTurn({}, { fetchImpl: stalls, idleMs: 20, log: () => {} })) midway.push(item.event);
+  assert.deepEqual(midway, ['session', 'error'], 'a server that goes quiet mid-turn ends in a retry');
+}
 import fs from 'node:fs';
 
 const text = fs.readFileSync('docs/project/AGENT_CONTRACT.md', 'utf8');

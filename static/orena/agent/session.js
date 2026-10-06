@@ -147,8 +147,8 @@ export function createSession({ log = console.warn } = {}) {
         log('[Orena agent] ignored unknown event', event);
         return;
       }
-      thinking = false;
-      waiting = null;
+      // `session` and `metered` are bookkeeping that come first: Orena is still thinking until the reply itself
+      // (or a tool, an error, the end) arrives - otherwise a slow model left an idle panel (LEX-028).
       if (event === 'session') {
         sessionId = data.session_id || sessionId;
         return;
@@ -157,6 +157,8 @@ export function createSession({ log = console.warn } = {}) {
         current().metered = data.budget_state || null;
         return;
       }
+      thinking = false;
+      waiting = null;
       if (event === 'tool_call') {
         tool = { name: data.name, label: String(data.label || '') };
         thinking = true;
@@ -189,6 +191,11 @@ export function createSession({ log = console.warn } = {}) {
       } else if (event === 'done') {
         reply.done = true;
         tool = null;
+        // A turn that ended with nothing to show - no words, no action, no suggestion - is not an answer: the
+        // learner gets the client's own retry instead of silence (LEX-028).
+        if (!reply.segments.some((s) => String(s.text || '').trim()) && !reply.actions.length && !reply.suggestions.length && !reply.error) {
+          reply.error = { class: 'transport', message: '', fallback: 'retry' };
+        }
       }
       // memory_update, voice_state and audio_chunk are handled by the panel and voice mode.
     },

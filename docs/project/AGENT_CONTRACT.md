@@ -170,7 +170,7 @@ The client adds one class of its own, which a server never sends: `transport`, w
 
 A suggestion's `intent` is a prompt intent: it names the question the suggestion asks, in the `prompt.` namespace (`prompt.review_due`, `prompt.next_step`, `prompt.explain_word`, …). It is never a §6.1 surface or navigation id - going somewhere is an `action` (`navigate`). Tapping a suggestion sends its `label` as the learner's next message.
 
-The client shows Orena as thinking from the moment it sends a turn until the first event, and shows `tool_call.label` while a tool runs; there is no separate text-mode thinking event.
+The client shows Orena as thinking from the moment it sends a turn until the first event other than `session` and `metered` (which are bookkeeping and arrive first), and shows `tool_call.label` while a tool runs; there is no separate text-mode thinking event. A turn never leaves the learner with an idle panel (LEX-028): when nothing arrives from the server for 90 seconds - before the response starts or between two events - the client stops the request and shows its own `transport` error with `fallback: retry`; a turn that ends with `done` but no text, action or suggestion is shown the same way.
 
 ---
 
