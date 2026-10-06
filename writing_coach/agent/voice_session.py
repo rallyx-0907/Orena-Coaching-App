@@ -39,6 +39,7 @@ from writing_coach.agent.outputs import (
     REMEMBER_NOTE,
     SET_ADDRESS,
     ReplyOutputs,
+    asks_to_go,
     reply_tool_specs,
 )
 from writing_coach.agent.prompts import INSTRUCTION, context_document, selection_line, style_for
@@ -50,7 +51,51 @@ from writing_coach.agent.tools import FORBIDDEN_ARGUMENTS, LearnerScope, ToolArg
 _log = logging.getLogger(__name__)
 
 VOICE_MODEL = "gemini-3.8-live"
-VOICE_NAME = "Kore"
+
+
+@dataclass(frozen=True)
+class VoiceChoice:
+    """One of Orena's voices as the learner picks it: an id and labels of Orena's own, never the vendor's name."""
+
+    id: str
+    vendor_voice: str
+    gender: str
+    label: Mapping[str, str]
+
+
+# The learner's choice of Orena's voice (R29: about ten of the best, six female and four male). The vendor's voice
+# names stay here; the client sees only these ids and labels.
+VOICE_CATALOG: tuple[VoiceChoice, ...] = (
+    VoiceChoice("f-clear", "Kore", "female", {"en": "Clear", "vi": "Rõ ràng", "zh-CN": "清晰"}),
+    VoiceChoice("f-bright", "Aoede", "female", {"en": "Bright", "vi": "Tươi sáng", "zh-CN": "明亮"}),
+    VoiceChoice("f-warm", "Sulafat", "female", {"en": "Warm", "vi": "Ấm áp", "zh-CN": "温暖"}),
+    VoiceChoice("f-soft", "Achernar", "female", {"en": "Soft", "vi": "Nhẹ nhàng", "zh-CN": "柔和"}),
+    VoiceChoice("f-young", "Leda", "female", {"en": "Youthful", "vi": "Trẻ trung", "zh-CN": "年轻"}),
+    VoiceChoice("f-gentle", "Vindemiatrix", "female", {"en": "Gentle", "vi": "Dịu dàng", "zh-CN": "温柔"}),
+    VoiceChoice("m-calm", "Charon", "male", {"en": "Calm", "vi": "Điềm tĩnh", "zh-CN": "沉稳"}),
+    VoiceChoice("m-lively", "Puck", "male", {"en": "Lively", "vi": "Sôi nổi", "zh-CN": "活泼"}),
+    VoiceChoice("m-friendly", "Achird", "male", {"en": "Friendly", "vi": "Thân thiện", "zh-CN": "友好"}),
+    VoiceChoice("m-steady", "Orus", "male", {"en": "Steady", "vi": "Vững vàng", "zh-CN": "稳重"}),
+)
+DEFAULT_VOICE = "f-clear"
+_VOICES = {choice.id: choice for choice in VOICE_CATALOG}
+VOICE_NAME = _VOICES[DEFAULT_VOICE].vendor_voice
+
+
+def voice_catalog(interface: str) -> dict[str, Any]:
+    """GET /api/agent/voice/voices: Orena's voices, labelled in the interface language (en when it has none)."""
+
+    return {
+        "default": DEFAULT_VOICE,
+        "voices": [{"id": c.id, "gender": c.gender, "label": c.label.get(interface) or c.label["en"]}
+                   for c in VOICE_CATALOG],  # fmt: skip
+    }
+
+
+def vendor_voice(choice: object) -> str:
+    """The vendor voice for a learner's choice; an unknown or missing one is the default."""
+
+    return _VOICES.get(str(choice), _VOICES[DEFAULT_VOICE]).vendor_voice if choice else VOICE_NAME
 SESSION_SECONDS = 15 * 60  # §9: a voice session is capped at fifteen minutes
 # The reply tools a spoken turn may use: a button, a coach note, the address. Evidence ids, styles, references and
 # suggestions are a text thread's; the voice says what it read.
@@ -61,23 +106,33 @@ VOICE_REPLY_TOOLS = frozenset({REMEMBER_NOTE, FORGET_NOTE, SET_ADDRESS, OFFER_AD
 OFFER_BUTTON = "offer_button"
 OFFER_BUTTON_SPEC = ProviderToolSpec(
     OFFER_BUTTON,
-    "Show the learner a button they can tap: save_word (save the selected word), open_word (open the selected word "
-    "in their library) or start_review (review their due words). Call it whenever they ask for one of these.",
-    {"type": "object", "properties": {"action": {"type": "string", "enum": ["save_word", "open_word", "start_review"]},
-                                      "text": {"type": "string", "description": "the word; the selected one if left out"}},
+    "Show the learner a button: save_word (save the selected word), open_word (open the selected word in their "
+    "library), start_review (review their due words), or open_content (open a listening lesson or reading text: "
+    "first call find_content, then pass the content_id it returned). When the learner asked to open it, the app "
+    "opens it at once. Call it whenever they ask for one of these.",
+    {"type": "object", "properties": {
+        "action": {"type": "string", "enum": ["save_word", "open_word", "start_review", "open_content"]},
+        "text": {"type": "string", "description": "the word; the selected one if left out"},
+        "content_id": {"type": "string", "description": "for open_content: a content_id find_content returned"}},
      "required": ["action"]},
 )  # fmt: skip
+# Where a content_id opens (contract §6.1): a listening lesson or a reading text.
+OPENS_BY_PREFIX = {"media": "listening.workspace", "article": "reading.workspace", "book": "reading.workspace"}
 
 VOICE_RULES = """This is a live voice conversation: everything you say is heard, not read. These rules override any
 formatting rule above.
 - Speak the support language (context.languages.support), in one to three short spoken sentences. Chinese or
   English words are said as they are. No example unless the learner asks for one.
 - Plain speech only: no Markdown, asterisks, lists, headings, symbols, links or ids.
-- When the learner asks you to save a word, open it in their library or review their words, call offer_button with
-  that action first. Only after it is accepted may you say there is a button to tap; if it is refused, say why in
+- To find something to listen to or read, call find_content (by kind, level, topic or title words), then
+  offer_button with open_content and the content_id it returned.
+- When the learner asks you to save a word, open it in their library, review their words or open a lesson or text,
+  call offer_button with that action first. Only after it is accepted may you say there is a button to tap; if it is refused, say why in
   a sentence and never mention a button. Never say it is done, prepared or set up; never say you opened, saved or
   changed anything.
 - Read before you claim: a word's meaning or a conclusion about the learner's learning comes from a tool you called.
+- If you cannot do what the learner asks - no tool for it, or a tool refused or found nothing - say so once, in one
+  sentence ("Mình chưa mở được nội dung đó."), and stop. Never repeat yourself or ask the same thing again.
 - If the learner interrupts, stop and listen; answer what they said next."""
 
 
@@ -226,8 +281,8 @@ class VoiceService:
         instruction = self._instruction(turn, tier1, here, session_state)
         specs = self._tool_specs(request, learner)
         now = self.now()
-        token, expires = self.tokens.mint(live_setup(instruction, specs, model=self.model), now=now,
-                                          seconds=SESSION_SECONDS)  # fmt: skip
+        setup = live_setup(instruction, specs, model=self.model, voice=vendor_voice(body.get("voice")))
+        token, expires = self.tokens.mint(setup, now=now, seconds=SESSION_SECONDS)
         selected = request.context.selected_item
         outputs = ReplyOutputs(
             client=request.client, interface=request.context.locale.interface,
@@ -297,6 +352,10 @@ class VoiceService:
             return {"type": "navigate", "payload": {"intent": "vocabulary.word", "text": text, "lang": target}}
         if action == "start_review":
             return {"type": "start_review", "payload": {"scope": "due"}}
+        if action == "open_content":
+            content_id = str(args.get("content_id") or "")
+            intent = OPENS_BY_PREFIX.get(content_id.partition(":")[0], "listening.workspace")
+            return {"type": "navigate", "payload": {"intent": intent, "content_id": content_id}}
         return {"type": str(action), "payload": {}}
 
     # -- tool calls --------------------------------------------------------------------------------------------
@@ -315,13 +374,20 @@ class VoiceService:
             session.outputs.memory_updates.clear()
         responses: list[dict[str, Any]] = []
         events: list[Event] = []
+        opened: str | None = None
         for call in calls:
             name, args, call_id = str(call.get("name") or ""), call.get("args"), call.get("id")
             args = args if isinstance(args, Mapping) else {}
             if name == OFFER_BUTTON:
                 before = len(session.outputs.actions)
                 answer = session.outputs.handle(PROPOSE_ACTION, self._button(session, args), known_evidence=frozenset())
-                events.extend(session.outputs.actions[before:])
+                added = session.outputs.actions[before:]
+                events.extend(added)
+                # R29: a place the learner asked to go to opens at once (§7: navigate runs when the learner's own
+                # words were the request); the button stays in the thread.
+                if added and added[0].type == "navigate" and asks_to_go(session.outputs.learner_words):
+                    opened = added[0].id
+                    answer += " It opens now: say in a few words what is opening."
                 responses.append({"id": call_id, "name": name, "response": {"result": answer}})
                 continue
             if name in VOICE_REPLY_TOOLS:
@@ -334,7 +400,10 @@ class VoiceService:
                 result, read_events = self._read(session, name, args)
                 events.extend(read_events)
             responses.append({"id": call_id, "name": name, "response": result})
-        return {"responses": responses, "events": [{"event": e.name, "data": e.to_wire()} for e in events]}
+        answer = {"responses": responses, "events": [{"event": e.name, "data": e.to_wire()} for e in events]}
+        if opened is not None:
+            answer["open"] = opened  # the client runs this action now, without a tap (R29)
+        return answer
 
     def _read(self, session: VoiceSession, name: str, args: Mapping[str, Any]) -> tuple[dict[str, Any], list[Event]]:
         from writing_coach.agent.turn import learner_context  # the request context the repositories scope by

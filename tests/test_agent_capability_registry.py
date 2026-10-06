@@ -193,7 +193,7 @@ def test_the_plan_covers_the_specs_v1_tool_set():
         "get_current_writing_evaluation", "get_writing_feedback_items", "get_writing_history_summary",
         "get_grammar_point", "search_grammar_points", "get_grammar_mistakes_summary",
         "get_current_reading_context", "get_reading_progress", "get_reading_mistakes", "get_word_context_in_reading",
-        "get_current_listening_context", "get_listening_attempt", "get_listening_mistakes",
+        "get_current_listening_context", "get_listening_attempt", "find_content", "get_listening_mistakes",
         "build_learning_snapshot", "get_learning_weaknesses", "get_recommended_next_activities",
     }  # fmt: skip
     assert set(PLANNED_TOOLS) == spec_tools

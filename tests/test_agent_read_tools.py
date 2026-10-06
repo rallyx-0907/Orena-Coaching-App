@@ -27,7 +27,7 @@ def test_the_registered_tools_are_the_planned_ones_read_only_and_labelled():
         "get_saved_word_state", "get_word_detail", "get_writing_feedback_items", "get_writing_history_summary",
         "get_grammar_point", "search_grammar_points",
         "get_pronunciation_history", "get_pronunciation_attempt", "get_pronunciation_word_detail",
-        "get_current_listening_context", "get_listening_attempt",
+        "get_current_listening_context", "get_listening_attempt", "find_content",
         "get_current_reading_context", "get_reading_progress",
         "build_learning_snapshot", "get_learning_weaknesses", "get_recommended_next_activities",
     }  # fmt: skip

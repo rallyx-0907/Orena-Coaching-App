@@ -257,6 +257,14 @@ CATALOG: Mapping[str, CopyEntry] = MappingProxyType(
             CopyLayer.INTERFACE,
             {"en": "Words: {n}", "vi": "Từ: {n}", "zh-CN": "词：{n}"},
         ),
+        "tool.find_content": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Finding something to open", "vi": "Đang tìm bài", "zh-CN": "正在查找内容"},
+        ),
+        "result.find_content": _entry(
+            CopyLayer.INTERFACE,
+            {"en": "Found: {n}", "vi": "Tìm thấy: {n}", "zh-CN": "找到：{n}"},
+        ),
         "tool.get_current_listening_context": _entry(
             CopyLayer.INTERFACE,
             {"en": "Opening the lesson", "vi": "Đang mở bài nghe", "zh-CN": "正在打开听力课"},
