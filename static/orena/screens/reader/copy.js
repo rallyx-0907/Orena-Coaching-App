@@ -10,7 +10,9 @@
    that restates the buttons right under it. */
 import { defineCopy } from '../../copy/index.js';
 
-const SUPPORT = ['posLegendHint', 'roleNounHelp', 'roleVerbHelp', 'roleModifierHelp', 'roleConnectorHelp', 'rolePronounHelp', 'roleNumberHelp'];
+// The legend's "tap a word for its role" is an instruction, so it follows the interface (LEX-027); what a role
+// means, shown after the tap, is the learner's explanation in the support language.
+const SUPPORT = ['roleNounHelp', 'roleVerbHelp', 'roleModifierHelp', 'roleConnectorHelp', 'rolePronounHelp', 'roleNumberHelp'];
 const KEYS = [
   'readingAppearance', 'aa', 'aaSmaller', 'aaLarger', 'aidsLabel', 'moreLabel',
   'themeDark', 'listen', 'listenPause', 'saveLabel', 'savedLabel', 'savedToast', 'removedToast', 'saveFailed',
