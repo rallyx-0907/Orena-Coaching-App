@@ -302,6 +302,33 @@ export function vocabularyForSegment(vocabulary, text) {
   });
 }
 
+/* The line's own key words, when the lesson has no curated focus terms for it (D-137, L-11, Reviewer's
+   interim direction): the content words the local tagger finds in the line (`POST /api/media-learning/
+   annotate`, no AI), in the line's order, at most `max`. Function words, one-letter English words and
+   single-character Chinese verbs/particles are left out; a Latin word inside a Chinese line is not a
+   Chinese key word. These are the line's words, not words "at the learner's level": no level is claimed. */
+const KEY_POS = new Set(['noun', 'proper_noun', 'verb', 'adjective', 'adverb']);
+const EN_LIGHT = new Set(['be', 'is', 'am', 'are', 'was', 'were', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did', 'get', 'got', 'go', 'goes', 'went', 'make', 'made', 'say', 'said', 'just', 'very', 'really', 'also', 'not', 'only', 'then', 'there', 'here', 'now', 'so', 'too']);
+export function keyWordsFrom(annotations, language, max = 4) {
+  const zh = language === 'zh';
+  const seen = new Set();
+  const picked = [];
+  for (const item of Array.isArray(annotations) ? annotations : []) {
+    const word = String(item?.fragment || '').trim();
+    const pos = String(item?.pos || '');
+    if (!word || !KEY_POS.has(pos)) continue;
+    if (zh && (!/^\p{Script=Han}+$/u.test(word) || [...word].length < 2)) continue;
+    if (!zh && (word.length < 3 || EN_LIGHT.has(word.toLowerCase()) || !/^[\p{L}'’-]+$/u.test(word))) continue;
+    const key = word.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    picked.push(word);
+  }
+  // The longest words carry the most, but the learner reads them in the line's order.
+  const keep = new Set([...picked].sort((a, b) => [...b].length - [...a].length).slice(0, max));
+  return picked.filter((word) => keep.has(word));
+}
+
 /* A valid `context` for `POST /api/dictionary/word-detail` must contain the looked-up text (the
    server answers 422 otherwise - the catalogue term "galaxy" is not inside a line that says
    "galaxies"). The line is the context when it really holds the term; otherwise the term is its own

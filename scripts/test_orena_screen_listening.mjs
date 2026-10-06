@@ -10,7 +10,7 @@ import { readFileSync } from 'node:fs';
 import {
   SPEEDS, nextSpeed, speedLabel, contentIdFor, mmss, minutesFrom, metaLine, mapLesson,
   wordTokens, hanTokens, lookupContext, estimatedTokenIndex, currentTokenIndex, currentTokenIndices, wordHighlightEstimated, rowTone, modeHintKey,
-  selectionAfterModeChange, previousIndex, nextIndex, PHRASE_MAX, phraseSaveable, phraseSavePayload,
+  selectionAfterModeChange, previousIndex, nextIndex, keyWordsFrom, PHRASE_MAX, phraseSaveable, phraseSavePayload,
   phraseSaved, vocabularyForSegment, placeFor, dictationLinesCompleted,
   pickNextRecommendation, progressPercent, msAtSeekFraction, timeLabel, reachedEnd, listenedMinutesLabel,
 } from '../static/orena/screens/listening/model.js';
@@ -323,3 +323,24 @@ assert.equal(listenedMinutesLabel(NaN), null);
 }
 
 console.log('test_orena_screen_listening.mjs: Listening Workspace data mapping - real GET /api/listening/library/{id} captures (en+zh), rule 40 throughout: PASS');
+
+/* --- L-11 (D-137): a line without curated focus terms offers its own key words, no level claimed --- */
+{
+  const zh = [
+    { fragment: '现在', pos: 'other' }, { fragment: '看到', pos: 'verb' }, { fragment: '的', pos: 'particle' },
+    { fragment: '是', pos: 'verb' }, { fragment: '中文', pos: 'proper_noun' }, { fragment: '维基百科', pos: 'proper_noun' },
+    { fragment: '首页', pos: 'numeral' }, { fragment: 'Vector', pos: 'interjection' }, { fragment: '版', pos: 'noun' },
+  ];
+  assert.deepEqual(keyWordsFrom(zh, 'zh'), ['看到', '中文', '维基百科'], 'content words of two+ characters, in line order');
+  const en = [
+    { fragment: 'Destiny', pos: 'noun' }, { fragment: 'is', pos: 'verb' }, { fragment: 'ruthless', pos: 'adjective' },
+    { fragment: 'It', pos: 'pronoun' }, { fragment: 'tests', pos: 'verb' }, { fragment: 'burns', pos: 'verb' },
+    { fragment: 'refuse', pos: 'verb' }, { fragment: 'kings', pos: 'noun' }, { fragment: 'destiny', pos: 'noun' },
+  ];
+  const picked = keyWordsFrom(en, 'en');
+  assert.equal(picked.length, 4, 'at most four');
+  assert.ok(!picked.includes('is') && !picked.includes('It'), 'no function words');
+  assert.deepEqual(picked, ['Destiny', 'ruthless', 'tests', 'refuse'], 'the longest four, kept in the line order (a tie keeps the earlier word)');
+  assert.deepEqual(keyWordsFrom(null, 'en'), []);
+}
+

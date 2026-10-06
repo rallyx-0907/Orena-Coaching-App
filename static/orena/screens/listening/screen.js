@@ -45,7 +45,7 @@ import {
   nextSpeed, speedLabel, contentIdFor, mmss, minutesFrom, metaLine, mapLesson,
   wordTokens, hanTokens, currentTokenIndices, wordHighlightEstimated, rowTone, modeHintKey, selectionAfterModeChange,
   previousIndex, nextIndex, vocabularyForSegment, placeFor, dictationLinesCompleted,
-  pickNextRecommendation, progressPercent, msAtSeekFraction, timeLabel, reachedEnd, listenedMinutesLabel,
+  pickNextRecommendation, progressPercent, keyWordsFrom, msAtSeekFraction, timeLabel, reachedEnd, listenedMinutesLabel,
   phraseSaveable, phraseSavePayload, phraseSaved, transcriptState,
 } from './model.js';
 
@@ -670,6 +670,32 @@ export default async function listening(element, ctx) {
     if (ctx.isCurrent() && selectedId === seg.segment_id) paintSelected();
   }
 
+  /* Vocabulary Focus: the lesson's curated terms for the line, or else the line's own key words from the
+     local tagger (D-137 L-11: never an empty panel, never a claimed level). */
+  async function openVocab(id, seg) {
+    let terms = vocabularyForSegment(lesson.vocabulary, seg.original_text);
+    let curated = terms.length > 0;
+    if (!curated) {
+      try {
+        const res = await api.annotateMediaText({ text: seg.original_text, source_language: language });
+        terms = keyWordsFrom(res?.annotations, language);
+      } catch {
+        terms = [];
+      }
+      if (!ctx.isCurrent()) return;
+    }
+    const where = { n: indexOf(id) + 1, time: mmss(seg.start_ms) ?? '' };
+    openVocabFocus(ctx, {
+      label: curated ? t('segmentLabel', where) : t('lineWordsLabel', where),
+      terms,
+      lang: language,
+      support,
+      context: seg.original_text,
+      source: { kind: 'listening', content_id: routeId, segment: id },
+      onPlay: () => playLine(id),
+    });
+  }
+
   function onSelectedAction(action) {
     if (action === 'pick') {
       mode = 'active';
@@ -689,15 +715,7 @@ export default async function listening(element, ctx) {
     if (action === 'save-phrase') return togglePhrase(seg);
     if (action === 'vocab') {
       if (playing && playbackOk) togglePlayback(playerEl, lesson.playback);
-      openVocabFocus(ctx, {
-        label: t('segmentLabel', { n: indexOf(id) + 1, time: mmss(seg.start_ms) ?? '' }),
-        terms: vocabularyForSegment(lesson.vocabulary, seg.original_text),
-        lang: language,
-        support,
-        context: seg.original_text,
-        source: { kind: 'listening', content_id: routeId, segment: id },
-        onPlay: () => playLine(id),
-      });
+      void openVocab(id, seg);
       return;
     }
     if (action === 'dictation') { currentId = id; return onMode('dictation'); }
