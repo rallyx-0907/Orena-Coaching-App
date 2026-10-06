@@ -177,7 +177,8 @@ Then summarize root cause, files changed, tests run, and residual risk.
     }
 
     $output | ForEach-Object { Write-Host $_ }
-    return [int]$exitCode
+    $text = ($output | Out-String)
+    return [pscustomobject]@{ ExitCode = $exitCode; Text = $text }
 }
 
 if (-not (Get-Command python -ErrorAction SilentlyContinue)) {
@@ -247,10 +248,22 @@ for ($cycle = 1; $cycle -le $MaxCycles; $cycle++) {
 
     Write-Host ""
     Write-Host "=== Rescue cycle $cycle/$MaxCycles : Codex root-cause repair ==="
-    $agentExit = Invoke-CodexRepair -Id $PointId -Failure $replay.Text -RequestedModel $CodexModel -PythonExecutable $pythonExecutable
-    if ($agentExit -ne 0) {
-        Write-Error "Codex exited with code $agentExit."
+    $agent = Invoke-CodexRepair -Id $PointId -Failure $replay.Text -RequestedModel $CodexModel -PythonExecutable $pythonExecutable
+    if ($agent.ExitCode -ne 0) {
+        Write-Error "Codex exited with code $($agent.ExitCode)."
         exit 30
+    }
+    if ($agent.Text -match "(?m)^RESCUE_BLOCKED\s*$") {
+        Write-Error "Codex reported RESCUE_BLOCKED. Stopping immediately; another identical Codex cycle would not add evidence."
+        exit 41
+    }
+    if ($agent.Text -match "(?m)^RESCUE_NO_CHANGE\s*$") {
+        Write-Error "Codex reported RESCUE_NO_CHANGE. Stopping immediately; another identical Codex cycle would not add evidence."
+        exit 42
+    }
+    if ($agent.Text -notmatch "(?m)^RESCUE_PATCHED\s*$") {
+        Write-Error "Codex did not return a recognized rescue terminal status."
+        exit 33
     }
 
     $afterPaths = @(Get-ChangedPaths)
