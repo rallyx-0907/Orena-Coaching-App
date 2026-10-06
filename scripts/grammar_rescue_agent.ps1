@@ -91,7 +91,12 @@ function Get-OutsideGrammarDiff {
 }
 
 function Invoke-CodexRepair {
-    param([string]$Id, [string]$Failure, [string]$RequestedModel)
+    param(
+        [string]$Id,
+        [string]$Failure,
+        [string]$RequestedModel,
+        [string]$PythonExecutable
+    )
 
     $prompt = @"
 You are the Orena Grammar Rescue coding agent working in the current repository.
@@ -120,8 +125,8 @@ NON-NEGOTIABLE CONTRACT
 - Preserve semantic content.
 - Add focused regression tests for the repaired failure family, including an ambiguous/fail-closed case where appropriate.
 - Run focused pytest only. Inspect git diff before finishing.
-- Inside Codex, run focused tests with `python -m pytest`; the outer wrapper has already verified `python` is on PATH.
-- Do not use `.venv`, `py`, or a hard-coded Python interpreter path.
+- Use the exact interpreter in `$env:ORENA_PYTHON` for focused tests, for example: `& $env:ORENA_PYTHON -m pytest ...`.
+- Do not use `.venv`, `py`, or a bare `python` command inside Codex.
 - If a safe deterministic fix cannot be proven, do not guess; report BLOCKED with exact evidence needed.
 
 IMPORTANT
@@ -150,7 +155,10 @@ Then summarize root cause, files changed, tests run, and residual risk.
 
     Push-Location "grammar_lab"
     $previousErrorActionPreference = $ErrorActionPreference
+    $hadOrenaPython = Test-Path Env:ORENA_PYTHON
+    $previousOrenaPython = $env:ORENA_PYTHON
     try {
+        $env:ORENA_PYTHON = $PythonExecutable
         # Windows PowerShell 5.1 wraps native stderr as NativeCommandError.
         # Codex writes informational banners/progress to stderr, so do not let
         # ErrorActionPreference=Stop turn normal native output into an exception.
@@ -160,6 +168,11 @@ Then summarize root cause, files changed, tests run, and residual risk.
     }
     finally {
         $ErrorActionPreference = $previousErrorActionPreference
+        if ($hadOrenaPython) {
+            $env:ORENA_PYTHON = $previousOrenaPython
+        } else {
+            Remove-Item Env:ORENA_PYTHON -ErrorAction SilentlyContinue
+        }
         Pop-Location
     }
 
@@ -172,6 +185,15 @@ if (-not (Get-Command python -ErrorAction SilentlyContinue)) {
 }
 if (-not (Get-Command codex -ErrorAction SilentlyContinue)) {
     throw "codex is not available in PATH."
+}
+
+$pythonExecutableLines = & python -c "import sys; print(sys.executable)" 2>&1
+if ($LASTEXITCODE -ne 0) {
+    throw "Could not resolve the Python interpreter executable."
+}
+$pythonExecutable = (($pythonExecutableLines | Select-Object -First 1).ToString()).Trim()
+if (-not $pythonExecutable -or -not (Test-Path -LiteralPath $pythonExecutable)) {
+    throw "Resolved Python interpreter does not exist: $pythonExecutable"
 }
 
 $baselinePaths = @(Get-ChangedPaths)
@@ -225,7 +247,7 @@ for ($cycle = 1; $cycle -le $MaxCycles; $cycle++) {
 
     Write-Host ""
     Write-Host "=== Rescue cycle $cycle/$MaxCycles : Codex root-cause repair ==="
-    $agentExit = Invoke-CodexRepair -Id $PointId -Failure $replay.Text -RequestedModel $CodexModel
+    $agentExit = Invoke-CodexRepair -Id $PointId -Failure $replay.Text -RequestedModel $CodexModel -PythonExecutable $pythonExecutable
     if ($agentExit -ne 0) {
         Write-Error "Codex exited with code $agentExit."
         exit 30
