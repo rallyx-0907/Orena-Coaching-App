@@ -4855,3 +4855,20 @@ of record) behind one layer, order table proposed as migration `20261005_0027`.
     entry is the record of the extension until a design revision carries it.
   - A gloss cached before this change has no `common_meaning`; it falls back to a support-language dictionary
     sense or stays empty until regenerated.
+
+## Mobile QA (human iPhone report, 2026-10-06)
+
+- **MQ-1 Continue places carry no language** (BUG-05, partly).
+  - What happens: `GET /api/continue` lists the account's places without a language. On :8021 an English
+    learner's Today "For you" therefore offers `怎么搜索维基百科` (a Chinese video) under Continue.
+  - Why it is not fixed here: the place record is D4 learner-owned persistence (D-104, `AGENTS.md` §7
+    architecture hold). Adding a language to it, or scoping the list by language, is a contract and schema
+    decision for the human and an independent reviewer.
+  - Rejected interim: a client filter would have to guess each place's language.
+  - The rest of BUG-05 (Vietnamese copy with an English setting) did not reproduce in a fresh session. Every
+    layer followed Settings, and `GET /api/account-settings` showed learning, interface and support set to en.
+    It needs the device's steps to reproduce.
+- **MQ-2 Microphone on a phone needs https.**
+  - The app now says so instead of offering a permission loop (BUG-01).
+  - A trusted https address for :8021 needs Tailscale Serve, which must be enabled for the tailnet. That is an
+    admin action the lane cannot take.
