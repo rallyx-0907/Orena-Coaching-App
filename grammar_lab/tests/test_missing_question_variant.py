@@ -44,7 +44,7 @@ def _pronoun_candidate() -> dict:
     }
 
 
-def test_missing_question_variant_reuses_proven_base_formula_for_lexical_slot() -> None:
+def test_missing_question_variant_reuses_proven_base_formula_for_zh() -> None:
     data = _pronoun_candidate()
     original = copy.deepcopy(data)
 
@@ -77,10 +77,13 @@ def test_missing_question_variant_stays_fail_closed_when_required_binding_is_mis
     assert out["question"] == []
 
 
-def test_missing_question_variant_stays_fail_closed_for_form_sensitive_formula() -> None:
+def test_missing_question_variant_is_not_synthesized_for_english() -> None:
     data = _pronoun_candidate()
-    data["formula"][0]["role"] = "verb"
+    data["examples"][0]["text"] = "I work here."
+    data["examples"][0]["bindings"] = [{"slot_index": 0, "text": "I"}]
+    data["examples"][1]["text"] = "Do you work here?"
+    data["examples"][1]["bindings"] = [{"slot_index": 0, "text": "you"}]
 
-    out = normalize_generated_structure(data, True)
+    out = normalize_generated_structure(data, False)
 
     assert out["question"] == []
