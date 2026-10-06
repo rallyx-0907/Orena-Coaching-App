@@ -29,8 +29,9 @@ from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
 from typing import Any, Protocol
 
-from writing_coach.agent import learner_copy
+from writing_coach.agent import learner_copy, surfaces
 from writing_coach.agent.context import TurnInput, build_tier1
+from writing_coach.agent.contract import SURFACES, actions_for_version, intents_for_version
 from writing_coach.agent.events import Event, ToolCallEvent, ToolResultEvent, EvidenceEvent, Display
 from writing_coach.agent.outputs import (
     FORGET_NOTE,
@@ -97,50 +98,86 @@ def vendor_voice(choice: object) -> str:
     """The vendor voice for a learner's choice; an unknown or missing one is the default."""
 
     return _VOICES.get(str(choice), _VOICES[DEFAULT_VOICE]).vendor_voice if choice else VOICE_NAME
+
 SESSION_SECONDS = 15 * 60  # §9: a voice session is capped at fifteen minutes
-# The reply tools a spoken turn may use: a button, a coach note, the address. Evidence ids, styles, references and
-# suggestions are a text thread's; the voice says what it read.
+# The reply tools a spoken turn may use besides do_action: a coach note, the address. Evidence ids, styles,
+# references and suggestions are a text thread's; the voice says what it read.
 VOICE_REPLY_TOOLS = frozenset({REMEMBER_NOTE, FORGET_NOTE, SET_ADDRESS, OFFER_ADDRESS})
-# A spoken button, as one flat choice: the live run (2026-10-06) showed the voice model never filling
-# propose_action's nested payload for "save this word". The server fills the payload from the selection and judges
-# it as propose_action exactly (D-135, no unasked routing).
-OFFER_BUTTON = "offer_button"
-OFFER_BUTTON_SPEC = ProviderToolSpec(
-    OFFER_BUTTON,
-    "Show the learner a button: save_word (save the selected word), open_word (open the selected word in their "
-    "library), start_review (review their due words), or open_content (open a listening lesson or reading text: "
-    "first call find_content, then pass the content_id it returned). When the learner asked to open it, the app "
-    "opens it at once. Call it whenever they ask for one of these.",
-    {"type": "object", "properties": {
-        "action": {"type": "string", "enum": ["save_word", "open_word", "start_review", "open_content"]},
-        "text": {"type": "string", "description": "the word; the selected one if left out"},
-        "content_id": {"type": "string", "description": "for open_content: a content_id find_content returned"}},
-     "required": ["action"]},
-)  # fmt: skip
-# The learner asks for a lesson, a video or a text, not a review (R29 phone test): a review button is refused.
+
+# One tool for everything the app can do (R30, 2026-10-06: "an agent that can operate anything in the app"): every
+# §7 action the client declares, with flat arguments - the live run showed the voice model never filling
+# propose_action's nested payload. The server builds the payload, filling it from what is in view, and judges it as
+# propose_action exactly: the client's actions and intents, ids a tool returned, D-135, no unasked routing.
+DO_ACTION = "do_action"
+_DO_ACTION_ARGS: dict[str, Any] = {
+    "content_id": {"type": "string", "description": "a lesson or text: one find_content returned, or the one in view"},
+    "essay_id": {"type": "string", "description": "an essay a tool returned, or the one in view"},
+    "grammar_id": {"type": "string", "description": "a grammar point a tool returned"},
+    "text": {"type": "string", "description": "a word; the selected one if left out"},
+    "item_id": {"type": "string", "description": "a line or item; the selected one if left out"},
+    "scope": {"type": "string", "enum": ["due", "word"], "description": "start_review: all due words, or one word"},
+    "focus": {"type": "string", "enum": ["tone", "stress", "word"], "description": "start_targeted_drill"},
+    "item_ids": {"type": "array", "items": {"type": "string"}, "description": "start_targeted_drill: items to drill"},
+    "collection_id": {"type": "string", "description": "add_word_to_collection: a collection a tool returned"},
+}
+
+
+def do_action_spec(actions: Iterable[str], intents: Iterable[str]) -> ProviderToolSpec | None:
+    """The do_action tool for this client: only the actions and places it declared."""
+
+    actions, intents = sorted(actions), sorted(intents)
+    if not actions:
+        return None
+    properties: dict[str, Any] = {"type": {"type": "string", "enum": actions}}
+    if "navigate" in actions and intents:
+        properties["intent"] = {"type": "string", "enum": intents, "description": "navigate: the place to open"}
+    properties.update(_DO_ACTION_ARGS)
+    return ProviderToolSpec(
+        DO_ACTION,
+        "Do something in the app for the learner: open a place (navigate with an intent; a lesson or text with its "
+        "content_id - call find_content first), play the model audio, save or unsave a word, add it to a "
+        "collection, start a review, start a drill. When the learner asked for it, the app does it at once; "
+        "otherwise it shows a button. Fill only what the action needs; what is in view fills itself.",
+        {"type": "object", "properties": properties, "required": ["type"]},
+    )
+
+
+# The learner asks for a lesson, a video or a text, not a review (R29 phone test): a review action is refused.
 _ASKS_CONTENT = re.compile(
     r"(?i)\b(?:video|listening|reading|lesson|podcast|audio|bài nghe|bài đọc|bài học|nghe|đọc|xem)\b"
     r"|视频|听力|阅读|课文|节目"
 )
 _CONTENT_NOT_REVIEW = ("refused: the learner asked for a lesson, video or text, not a review - call find_content, "
-                       "then offer_button with open_content and a content_id it returned")  # fmt: skip
+                       "then do_action navigate with the content_id it returned")  # fmt: skip
+# The learner's own words ask for it to be done (R30): then the action runs at once, a CONFIRM one through the app's
+# own confirmation. Unclear words get a button.
+_ASKS_TO_DO = re.compile(
+    r"(?i)\b(?:hãy|giúp|làm ơn|bắt đầu|lưu|bỏ lưu|xoá|xóa|phát|nghe lại|đọc mẫu|luyện|ôn|thêm|cho (?:mình|tôi|em|tớ)"
+    r"|please|start|save|unsave|remove|play|repeat|practice|practise|review|add|let'?s|can you|could you)\b"
+    r"|请|开始|保存|删除|播放|练习|复习|添加|帮我|我想"
+)
 # Where a content_id opens (contract §6.1): a listening lesson or a reading text.
 OPENS_BY_PREFIX = {"media": "listening.workspace", "article": "reading.workspace", "book": "reading.workspace"}
+# Recognition hints (contract codes -> BCP-47): the learner speaks their support language and the one they learn,
+# often both in a sentence (phone test 2026-10-06: words heard in the wrong language).
+RECOGNITION_CODES = {"vi": "vi-VN", "en": "en-US", "zh-CN": "cmn-CN"}
 
 VOICE_RULES = """This is a live voice conversation: everything you say is heard, not read. These rules override any
 formatting rule above.
 - Speak the support language (context.languages.support), in one to three short spoken sentences. Chinese or
   English words are said as they are. No example unless the learner asks for one.
 - Plain speech only: no Markdown, asterisks, lists, headings, symbols, links or ids.
-- To find something to listen to or read, call find_content (by kind, level, topic or title words), then
-  offer_button with open_content and the content_id it returned.
-- When the learner asks you to save a word, open it in their library, review their words or open a lesson or text,
-  call offer_button with that action first. Only after it is accepted may you say there is a button to tap; if it is refused, say why in
-  a sentence and never mention a button. Never say it is done, prepared or set up; never say you opened, saved or
-  changed anything.
+- You can do anything the app can do for the learner with do_action: open any place, a lesson or a text (find it
+  with find_content first), play the model audio, save a word, start a review or a drill. When they ask, call it.
+  If it is accepted and they asked for it, it happens at once: say in a few words what is happening. Otherwise
+  there is a button to tap. If it is refused, say why in a sentence. Never claim something happened that a tool
+  did not accept.
 - Read before you claim: a word's meaning or a conclusion about the learner's learning comes from a tool you called.
+- When what you heard is unclear, makes no sense, or is in a language the learner does not use here, say you did
+  not catch it and ask them to say it again. Never act on it.
 - If you cannot do what the learner asks - no tool for it, or a tool refused or found nothing - say so once, in one
-  sentence ("Mình chưa mở được nội dung đó."), and stop. Never repeat yourself or ask the same thing again.
+  sentence, and stop. Never repeat yourself or ask the same thing again.
+- A line starting "[context]" tells you where the learner is now; use it, never answer it.
 - If the learner interrupts, stop and listen; answer what they said next."""
 
 
@@ -179,10 +216,22 @@ def function_declarations(specs: Iterable[ProviderToolSpec]) -> list[dict[str, A
     return [{"name": s.name, "description": s.description, "parameters": gemini_schema(s.parameters)} for s in specs]
 
 
+def recognition_languages(*codes: str | None) -> list[str]:
+    """The languages the learner speaks here, as recognition hints: support and target, in that order."""
+
+    out: list[str] = []
+    for code in codes:
+        bcp = RECOGNITION_CODES.get(str(code or ""))
+        if bcp and bcp not in out:
+            out.append(bcp)
+    return out
+
+
 def live_setup(instruction: str, specs: Iterable[ProviderToolSpec], *, model: str = VOICE_MODEL,
-               voice: str = VOICE_NAME) -> dict[str, Any]:  # fmt: skip
+               voice: str = VOICE_NAME, languages: Iterable[str] = ()) -> dict[str, Any]:  # fmt: skip
     """The session's setup, locked into its token: the client cannot change any of it."""
 
+    languages = list(languages)
     return {
         "model": f"models/{model}",
         "generationConfig": {
@@ -191,9 +240,39 @@ def live_setup(instruction: str, specs: Iterable[ProviderToolSpec], *, model: st
         },
         "systemInstruction": {"parts": [{"text": instruction}]},
         "tools": [{"functionDeclarations": function_declarations(specs)}],
-        "inputAudioTranscription": {},
+        # Recognition hints (verified accepted live 2026-10-06): heard in these languages, not guessed among all.
+        "inputAudioTranscription": {"languageCodes": languages} if languages else {},
         "outputAudioTranscription": {},
     }
+
+
+def _in_view(outputs: ReplyOutputs, context: Any) -> None:
+    """What is on the learner's screen, for judging the session's actions: the ids it may name, the selection."""
+
+    selected = context.selected_item
+    outputs.take_ref = context.take_ref
+    outputs.focused = bool(selected or context.essay_id)
+    outputs.text_in_view = selected is not None and selected.type in ("word", "sentence")
+    outputs.selected_word = selected.text if selected is not None and selected.type == "word" else None
+    for key in ("content_id", "lesson_id", "essay_id", "attempt_id"):
+        outputs.learn_ids(key, (getattr(context, key),))
+    if selected is not None and selected.id:
+        outputs.learn_ids("item_id", (selected.id,))
+
+
+def _context_note(context: Any) -> str:
+    """The learner's place now, as the line the client hands the model ("[context] …"): escaped data, never prose
+    a client could slip an instruction into."""
+
+    place = {
+        "surface": context.known_surface,
+        "screen": surfaces.name(context.known_surface, context.locale.interface) if context.known_surface else None,
+        "in_view": {key: getattr(context, key) for key in ("content_id", "lesson_id", "essay_id", "take_ref")
+                    if getattr(context, key)},
+        "selection": context.selected_item.model_dump(exclude_none=True) if context.selected_item else None,
+    }  # fmt: skip
+    data = json.dumps(redact_for_provider({k: v for k, v in place.items() if v}), ensure_ascii=False)
+    return f"[context] The learner is now here: {data}. \"This\" means what is in view."
 
 
 class VoiceTokens(Protocol):
@@ -289,20 +368,16 @@ class VoiceService:
         instruction = self._instruction(turn, tier1, here, session_state)
         specs = self._tool_specs(request, learner)
         now = self.now()
-        setup = live_setup(instruction, specs, model=self.model, voice=vendor_voice(body.get("voice")))
+        locale = request.context.locale
+        setup = live_setup(instruction, specs, model=self.model, voice=vendor_voice(body.get("voice")),
+                           languages=recognition_languages(locale.support, locale.target))  # fmt: skip
         token, expires = self.tokens.mint(setup, now=now, seconds=SESSION_SECONDS)
-        selected = request.context.selected_item
         outputs = ReplyOutputs(
-            client=request.client, interface=request.context.locale.interface,
-            support=request.context.locale.support, target=request.context.locale.target, version=request.version,
-            notes={note.id: note.weight for note in tier1.coach_notes}, address_terms=tier1.address.pair,
-            address_chosen=tier1.address.chosen, take_ref=request.context.take_ref,
-            focused=bool(selected or request.context.essay_id),
-            text_in_view=selected is not None and selected.type in ("word", "sentence"),
-            selected_word=selected.text if selected is not None and selected.type == "word" else None,
+            client=request.client, interface=locale.interface, support=locale.support, target=locale.target,
+            version=request.version, notes={note.id: note.weight for note in tier1.coach_notes},
+            address_terms=tier1.address.pair, address_chosen=tier1.address.chosen,
         )  # fmt: skip
-        for key in ("content_id", "lesson_id", "essay_id", "attempt_id"):
-            outputs.learn_ids(key, (getattr(request.context, key),))
+        _in_view(outputs, request.context)
         session = VoiceSession(
             voice_session_id=f"vs-{secrets.token_hex(8)}", user_key=learner.user_key, learner=learner,
             request=request, model=self.model, opened=self.sessions.clock(), outputs=outputs,
@@ -341,30 +416,56 @@ class VoiceService:
         reads = [ProviderToolSpec.from_tool(t) for t in self.runtime.tools.tools() if learner.contract_language in t.languages]
         replies = [s for s in reply_tool_specs(request.client, request.context.locale.target, version=request.version)
                    if s.name in VOICE_REPLY_TOOLS]  # fmt: skip
-        if request.client.allowed_actions & {"save_word", "navigate", "start_review"}:
-            replies.append(OFFER_BUTTON_SPEC)
-        return reads + replies
+        actions = request.client.allowed_actions & actions_for_version(request.version)
+        intents = request.client.allowed_intents & intents_for_version(request.version)
+        spec = do_action_spec(actions, intents)
+        return reads + replies + ([spec] if spec else [])
 
-    def _button(self, session: VoiceSession, args: Mapping[str, Any]) -> dict[str, Any]:
-        """offer_button as the propose_action it stands for: the payload filled from the selection."""
+    def _action(self, session: VoiceSession, args: Mapping[str, Any]) -> dict[str, Any]:
+        """do_action as the propose_action it stands for: the payload built from its flat arguments, what is not
+        given filled from what is in view (the selected word or line, the lesson, essay or take on screen)."""
 
         context = session.request.context
         selected = context.selected_item
-        text = args.get("text") if isinstance(args.get("text"), str) and args.get("text").strip() else (
-            selected.text if selected is not None and selected.type == "word" else None)  # fmt: skip
-        target = context.locale.target
-        action = args.get("action")
-        if action == "save_word":
-            return {"type": "save_word", "payload": {"text": text, "lang": target}}
-        if action == "open_word":
-            return {"type": "navigate", "payload": {"intent": "vocabulary.word", "text": text, "lang": target}}
-        if action == "start_review":
-            return {"type": "start_review", "payload": {"scope": "due"}}
-        if action == "open_content":
-            content_id = str(args.get("content_id") or "")
-            intent = OPENS_BY_PREFIX.get(content_id.partition(":")[0], "listening.workspace")
-            return {"type": "navigate", "payload": {"intent": intent, "content_id": content_id}}
-        return {"type": str(action), "payload": {}}
+
+        def given(key: str) -> str | None:
+            value = args.get(key)
+            return value.strip() if isinstance(value, str) and value.strip() else None
+
+        word = given("text") or (selected.text if selected is not None and selected.type == "word" else None)
+        item = given("item_id") or (selected.id if selected is not None and selected.id else None)
+        in_view = {"content_id": given("content_id") or context.content_id, "essay_id": given("essay_id") or context.essay_id,
+                   "grammar_id": given("grammar_id"), "take_ref": context.take_ref, "item_id": item,
+                   "text": word, "lang": context.locale.target}  # fmt: skip
+        kind = str(args.get("type") or "")
+        if kind == "navigate":
+            intent = given("intent")
+            if intent is None and given("content_id"):  # a lesson or text named by its id alone
+                intent = OPENS_BY_PREFIX.get(given("content_id").partition(":")[0])
+            payload: dict[str, Any] = {"intent": intent}
+            for name in SURFACES.get(str(intent), ()):
+                if in_view.get(name):
+                    payload[name] = in_view[name]
+            return {"type": kind, "payload": payload}
+        if kind in ("play_model", "say_again"):
+            return {"type": kind, "payload": {k: in_view[k] for k in ("content_id", "item_id") if in_view[k]}}
+        if kind in ("play_user", "compare_with_model"):
+            return {"type": kind, "payload": {k: in_view[k] for k in ("take_ref", "item_id") if in_view[k]}}
+        if kind in ("save_word", "unsave_word"):
+            return {"type": kind, "payload": {"text": word, "lang": context.locale.target}}
+        if kind == "add_word_to_collection":
+            payload = {"text": word, "lang": context.locale.target}
+            if given("collection_id"):
+                payload["target"] = {"system": "library", "id": given("collection_id")}
+            return {"type": kind, "payload": payload}
+        if kind == "start_review":
+            if args.get("scope") == "word" and word:
+                return {"type": kind, "payload": {"scope": "word", "text": word, "lang": context.locale.target}}
+            return {"type": kind, "payload": {"scope": "due"}}
+        if kind == "start_targeted_drill":
+            ids = [str(i) for i in args.get("item_ids") or () if str(i).strip()] or ([item] if item else [])
+            return {"type": kind, "payload": {"focus": args.get("focus") or "word", "item_ids": ids}}
+        return {"type": kind, "payload": {}}
 
     # -- tool calls --------------------------------------------------------------------------------------------
 
@@ -389,21 +490,21 @@ class VoiceService:
         for call in calls:
             name, args, call_id = str(call.get("name") or ""), call.get("args"), call.get("id")
             args = args if isinstance(args, Mapping) else {}
-            if name == OFFER_BUTTON and args.get("action") == "start_review" and _ASKS_CONTENT.search(
+            if name == DO_ACTION and args.get("type") == "start_review" and _ASKS_CONTENT.search(
                     session.outputs.learner_words or ""):  # fmt: skip
                 # The phone test: "open any video in Listening" got a review button that opened an empty Review.
                 responses.append({"id": call_id, "name": name, "response": {"result": _CONTENT_NOT_REVIEW}})
                 continue
-            if name == OFFER_BUTTON:
+            if name == DO_ACTION:
                 before = len(session.outputs.actions)
-                answer = session.outputs.handle(PROPOSE_ACTION, self._button(session, args), known_evidence=frozenset())
+                answer = session.outputs.handle(PROPOSE_ACTION, self._action(session, args), known_evidence=frozenset())
                 added = session.outputs.actions[before:]
                 events.extend(added)
-                # R29: a place the learner asked to go to opens at once (§7: navigate runs when the learner's own
-                # words were the request); the button stays in the thread.
-                if added and added[0].type == "navigate" and asks_to_go(session.outputs.learner_words):
+                # R29/R30: what the learner's own words asked for happens at once - a place opens (§7), a low-risk
+                # action runs, a CONFIRM one goes through the app's own confirmation; the button stays in the thread.
+                if added and self._asked_for(added[0], session.outputs.learner_words):
                     opened = added[0].id
-                    answer += " It opens now: say in a few words what is opening."
+                    answer += " It happens now: say in a few words what is happening."
                 responses.append({"id": call_id, "name": name, "response": {"result": answer}})
                 continue
             if name in VOICE_REPLY_TOOLS:
@@ -420,6 +521,32 @@ class VoiceService:
         if opened is not None:
             answer["open"] = opened  # the client runs this action now, without a tap (R29)
         return answer
+
+    @staticmethod
+    def _asked_for(action: Any, words: str | None) -> bool:
+        if action.type == "navigate":
+            return asks_to_go(words)
+        return bool(words) and bool(_ASKS_TO_DO.search(words))
+
+    # -- where the learner is now ----------------------------------------------------------------------------------
+
+    def update_context(self, voice_session_id: str, context: Mapping[str, Any], learner: LearnerScope) -> dict | None:
+        """The learner moved (another place, a lesson, a line): the session's context follows, so "this sentence"
+        or "this lesson" means what is on their screen now. Answers a note for the client to give the model as a
+        context line (it is not a turn: no answer is asked)."""
+
+        session = self.sessions.get(voice_session_id, learner.user_key)
+        if session is None:
+            return None
+        body = session.request.model_dump(mode="json", exclude_none=True, by_alias=True)
+        was = body.get("context", {})
+        moved = {**dict(context), "locale": was.get("locale")}  # the session's languages stay what it opened with
+        if "address" not in moved and "address" in was:
+            moved["address"] = was["address"]
+        request = TurnRequest.model_validate({**body, "context": moved, "trigger": "open"})
+        session.request = request
+        _in_view(session.outputs, request.context)
+        return {"voice_session_id": voice_session_id, "note": _context_note(request.context)}
 
     def _read(self, session: VoiceSession, name: str, args: Mapping[str, Any]) -> tuple[dict[str, Any], list[Event]]:
         from writing_coach.agent.turn import learner_context  # the request context the repositories scope by

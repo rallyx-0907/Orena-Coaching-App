@@ -89,13 +89,13 @@ def test_asked_to_open_a_video_orena_finds_it_and_the_client_opens_it_at_once():
     heard = "Mở một video bất kỳ trong Listening để nghe"
     found = service.relay(sid, [{"id": "f", "name": "find_content", "args": {"kind": "listening"}}], LEARNER, heard)
     assert found["responses"][0]["response"]["data"]["items"][0]["content_id"] == "media:zh-market-01"
-    offer = {"id": "o", "name": "offer_button", "args": {"action": "open_content", "content_id": "media:zh-market-01"}}
+    offer = {"id": "o", "name": "do_action", "args": {"type": "navigate", "content_id": "media:zh-market-01"}}
     opened = service.relay(sid, [offer], LEARNER, heard)
     (action,) = [e["data"] for e in opened["events"] if e["event"] == "action"]
     assert action["type"] == "navigate"
     assert action["payload"] == {"intent": "listening.workspace", "content_id": "media:zh-market-01"}
     assert opened["open"] == action["id"]  # R29: opened without a tap
-    assert "opens now" in opened["responses"][0]["response"]["result"]
+    assert "happens now" in opened["responses"][0]["response"]["result"]
 
 
 @pytest.mark.parametrize("late", ["", "   ", None])
@@ -106,7 +106,7 @@ def test_an_empty_transcript_keeps_the_learners_request(late):
     sid = service.open(_open_body(), LEARNER)["voice_session_id"]
     service.relay(sid, [{"id": "f", "name": "find_content", "args": {"kind": "listening"}}], LEARNER,
                   "Mở một video bất kỳ trong Listening")  # fmt: skip
-    offer = {"id": "o", "name": "offer_button", "args": {"action": "open_content", "content_id": "media:zh-market-01"}}
+    offer = {"id": "o", "name": "do_action", "args": {"type": "navigate", "content_id": "media:zh-market-01"}}
     assert "open" in service.relay(sid, [offer], LEARNER, late)
 
 
@@ -117,7 +117,7 @@ def test_asked_for_a_video_a_review_button_is_refused(asked):
 
     service = _service()
     sid = service.open(_open_body(), LEARNER)["voice_session_id"]
-    review = {"id": "r", "name": "offer_button", "args": {"action": "start_review"}}
+    review = {"id": "r", "name": "do_action", "args": {"type": "start_review"}}
     answer = service.relay(sid, [review], LEARNER, asked)
     assert answer["responses"][0]["response"]["result"].startswith("refused: the learner asked for a lesson")
     assert answer["events"] == []
@@ -128,7 +128,7 @@ def test_asked_for_a_review_a_review_button_is_given():
     body = _open_body()
     body["client"]["supported_actions"].append("start_review")
     sid = service.open(body, LEARNER)["voice_session_id"]
-    review = {"id": "r", "name": "offer_button", "args": {"action": "start_review"}}
+    review = {"id": "r", "name": "do_action", "args": {"type": "start_review"}}
     answer = service.relay(sid, [review], LEARNER, "Ôn từ đến hạn giúp mình")
     assert [e["event"] for e in answer["events"]] == ["action"]
 
@@ -138,7 +138,7 @@ def test_offered_without_being_asked_to_open_it_is_a_button_only():
     sid = service.open(_open_body(), LEARNER)["voice_session_id"]
     heard = "Có bài nghe nào về thời tiết không?"
     service.relay(sid, [{"id": "f", "name": "find_content", "args": {"query": "天气"}}], LEARNER, heard)
-    offer = {"id": "o", "name": "offer_button", "args": {"action": "open_content", "content_id": "media:zh-weather-02"}}
+    offer = {"id": "o", "name": "do_action", "args": {"type": "navigate", "content_id": "media:zh-weather-02"}}
     answer = service.relay(sid, [offer], LEARNER, heard)
     assert [e["event"] for e in answer["events"]] == ["action"] and "open" not in answer
 
@@ -146,7 +146,7 @@ def test_offered_without_being_asked_to_open_it_is_a_button_only():
 def test_a_content_id_no_tool_returned_is_refused():
     service = _service()
     sid = service.open(_open_body(), LEARNER)["voice_session_id"]
-    offer = {"id": "o", "name": "offer_button", "args": {"action": "open_content", "content_id": "media:made-up"}}
+    offer = {"id": "o", "name": "do_action", "args": {"type": "navigate", "content_id": "media:made-up"}}
     answer = service.relay(sid, [offer], LEARNER, "Mở bài nghe đó")
     assert answer["responses"][0]["response"]["result"].startswith("refused") and answer["events"] == []
     assert "open" not in answer
@@ -156,7 +156,7 @@ def test_find_content_is_offered_to_the_voice_model():
     post = Post()
     _service(post).open(_open_body(), LEARNER)
     names = {d["name"] for d in post.calls[0][2]["bidiGenerateContentSetup"]["tools"][0]["functionDeclarations"]}
-    assert {"find_content", "offer_button"} <= names
+    assert {"find_content", "do_action"} <= names
 
 
 # --- choosing the voice -------------------------------------------------------------------------------------------

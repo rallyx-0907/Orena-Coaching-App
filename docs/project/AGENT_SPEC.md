@@ -228,6 +228,15 @@ R29 (2026-10-06, sau bài thử trên iPhone: "mở một video trong Listening"
     /api/agent/voice/voices (10 giọng, 6 nữ 4 nam, mã và nhãn của Orena), thân phiên nhận "voice". Lời dặn: việc
     không làm được thì nói một lần rồi dừng. Kiểm live (≈ 0,05 USD; cả ngày ≈ 0,19 USD theo sổ): "Mở một video bất
     kỳ trong Listening" → find_content → open_content → mở ngay; cả 10 giọng chạy, tiếng đầu 1,7-3,0 s.
+R30 (2026-10-06, sau bài thử trên iPhone: "Orena phải là Agent toàn năng có thể thao tác bất kì điều gì trên app khi
+    người dùng yêu cầu và giữ kết nối liên tục"; nhận giọng sai ngôn ngữ) Người chủ dự án: việc an toàn mà chính
+    người học yêu cầu thì Orena làm ngay; việc cần xác nhận (bỏ lưu từ) đi qua hộp xác nhận của app; không yêu cầu
+    thì chỉ hiện nút. Làm: một tool do_action (tham số phẳng) cho mọi action §7 client khai báo, server dựng payload
+    từ phần đang xem và duyệt như propose_action; "open" khi lời người học là yêu cầu; POST
+    /api/agent/voice/context cập nhật ngữ cảnh khi người học chuyển màn hay chọn câu (trả "[context]" để client đưa
+    cho model); gợi ý ngôn ngữ nhận giọng (inputAudioTranscription.languageCodes: support + target, kiểm live được
+    nhận); nghe không rõ thì xin nói lại. Kiểm live (≈ 0,03 USD; cả ngày ≈ 0,24 USD): mở tiến độ, mở luyện nói, bắt
+    đầu ôn đều chạy ngay; sau cập nhật ngữ cảnh phát mẫu đúng bài và câu; giọng thật vi và en nhận đúng nguyên câu.
 ```
 
 Tiến độ lane (cập nhật mỗi slice):
