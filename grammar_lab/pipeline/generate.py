@@ -703,62 +703,121 @@ def _locate_generated_bindings(
 
 
 def normalize_generated_formula_order(data: dict[str, Any], zh: bool) -> dict[str, Any]:
-    """Reorder v13 formula slots when unchanged examples prove surface order.
+    """Reorder v13 formula slots only from complete, unambiguous consensus evidence.
 
-    This is structural normalization, not grammar inference. Exact provider
-    binding substrings are located in the unchanged sentence; their observed
-    left-to-right positions create ordering constraints between slot indexes.
+    Partial examples must never be merged into one synthetic ordering graph. A matching
+    example can vote only when it provides an exact binding for every formula slot and
+    every valid non-overlapping placement yields the same complete permutation. All
+    usable examples for the form must then agree on that permutation. Ambiguity,
+    conflicts, malformed complete bindings, or search exhaustion leave the candidate
+    unchanged.
     """
     out = copy.deepcopy(data)
     form_keys = {"affirmative": "formula", "negative": "negative", "question": "question"}
+
+    def complete_surface_order(
+        example: dict[str, Any], formula_len: int,
+    ) -> tuple[str, tuple[int, ...] | None]:
+        bindings = example.get("bindings") or []
+        if len(bindings) < formula_len:
+            return "incomplete", None
+        if len(bindings) != formula_len:
+            return "unsafe", None
+
+        indexes = [binding.get("slot_index") for binding in bindings]
+        if (
+            any(type(index) is not int or not 0 <= index < formula_len for index in indexes)
+            or len(set(indexes)) != formula_len
+            or set(indexes) != set(range(formula_len))
+        ):
+            return "unsafe", None
+
+        text = target_text(str(example.get("text", "")), zh)
+        items: list[tuple[int, str, list[tuple[int, int]]]] = []
+        for binding in bindings:
+            slot_index = binding["slot_index"]
+            needle = target_text(str(binding.get("text", "")), zh)
+            if not needle:
+                return "unsafe", None
+            positions: list[tuple[int, int]] = []
+            begin = text.find(needle)
+            while begin >= 0:
+                positions.append((begin, begin + len(needle)))
+                begin = text.find(needle, begin + 1)
+            if not positions:
+                return "unsafe", None
+            items.append((slot_index, needle, positions))
+
+        items.sort(key=lambda item: (len(item[2]), item[0]))
+        placed: dict[int, tuple[int, int, str]] = {}
+        orders: set[tuple[int, ...]] = set()
+        steps = 0
+        exhausted = False
+
+        def search(index: int) -> None:
+            nonlocal steps, exhausted
+            if exhausted or len(orders) > 1:
+                return
+            steps += 1
+            if steps > 4096:
+                exhausted = True
+                return
+            if index >= len(items):
+                orders.add(tuple(
+                    slot_index
+                    for slot_index, _position in sorted(
+                        placed.items(),
+                        key=lambda item: (item[1][0], item[1][1], item[0]),
+                    )
+                ))
+                return
+
+            slot_index, needle, positions = items[index]
+            for begin, finish in positions:
+                if any(
+                    not (finish <= other_begin or begin >= other_finish)
+                    for other_begin, other_finish, _other_needle in placed.values()
+                ):
+                    continue
+                placed[slot_index] = (begin, finish, needle)
+                search(index + 1)
+                placed.pop(slot_index, None)
+                if exhausted or len(orders) > 1:
+                    return
+
+        search(0)
+        if exhausted or len(orders) != 1:
+            return "unsafe", None
+        return "usable", next(iter(orders))
 
     for form, key in form_keys.items():
         formula = out.get(key) or []
         if len(formula) < 2:
             continue
 
-        edges: set[tuple[int, int]] = set()
+        consensus: tuple[int, ...] | None = None
+        unsafe = False
         used_example = False
         for example in out.get("examples", []):
             if example.get("form") != form:
                 continue
-            text = target_text(str(example.get("text", "")), zh)
-            located = _locate_generated_bindings(text, example.get("bindings") or [], zh)
-            if not located or len(located) < 2:
+            status, order = complete_surface_order(example, len(formula))
+            if status == "incomplete":
                 continue
-
-            surface = sorted(
-                (begin, finish, slot_index)
-                for slot_index, (begin, finish, _needle) in located.items()
-            )
+            if status != "usable" or order is None:
+                unsafe = True
+                break
             used_example = True
-            for left, right in zip(surface, surface[1:]):
-                if left[2] != right[2]:
-                    edges.add((left[2], right[2]))
+            if consensus is None:
+                consensus = order
+            elif consensus != order:
+                unsafe = True
+                break
 
-        if not used_example or not edges:
+        if unsafe or not used_example or consensus is None:
             continue
 
-        incoming = {index: 0 for index in range(len(formula))}
-        outgoing: dict[int, set[int]] = {index: set() for index in range(len(formula))}
-        for left, right in edges:
-            if left not in outgoing or right not in incoming:
-                continue
-            if right not in outgoing[left]:
-                outgoing[left].add(right)
-                incoming[right] += 1
-
-        ready = [index for index in range(len(formula)) if incoming[index] == 0]
-        order: list[int] = []
-        while ready:
-            ready.sort()
-            current = ready.pop(0)
-            order.append(current)
-            for nxt in sorted(outgoing[current]):
-                incoming[nxt] -= 1
-                if incoming[nxt] == 0:
-                    ready.append(nxt)
-
+        order = list(consensus)
         if len(order) != len(formula) or order == list(range(len(formula))):
             continue
 
