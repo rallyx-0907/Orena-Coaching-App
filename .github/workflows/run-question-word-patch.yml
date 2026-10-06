@@ -48,3 +48,5 @@ jobs:
           git add grammar_lab/pipeline/generate.py
           git commit -m "fix(grammar): normalize question-word position frame"
           git push origin HEAD:feature/grammar-lab-pipeline
+
+# rerun-after-fixture-contract
