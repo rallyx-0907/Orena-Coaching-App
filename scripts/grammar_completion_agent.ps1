@@ -21,6 +21,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 $InvariantCulture = [System.Globalization.CultureInfo]::InvariantCulture
+$PointIdPattern = '(?:en|zh)\.[a-z0-9_-]+(?:\.[a-z0-9_-]+)*'
 
 function Invoke-Corpus {
     param(
@@ -59,7 +60,7 @@ function Invoke-Corpus {
 function Get-OutcomePointId {
     param([string]$Text)
 
-    $m = [regex]::Match($Text, "(?m)^(?:written|error|blocked_metadata)\s+((?:en|zh)\.canon\.[a-z0-9]+\.[0-9]{3})\s+")
+    $m = [regex]::Match($Text, "(?m)^(?:written|error|blocked_metadata)\s+($PointIdPattern)\s+")
     if ($m.Success) { return $m.Groups[1].Value }
     return ""
 }
@@ -82,7 +83,7 @@ function Test-Written {
     if ($PointId) {
         return $Text -match "(?m)^written\s+$([regex]::Escape($PointId))\s+"
     }
-    return $Text -match "(?m)^written\s+(?:en|zh)\.canon\.[a-z0-9]+\.[0-9]{3}\s+"
+    return $Text -match "(?m)^written\s+$PointIdPattern\s+"
 }
 
 function Invoke-Rescue {

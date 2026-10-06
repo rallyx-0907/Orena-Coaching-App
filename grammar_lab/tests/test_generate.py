@@ -5,6 +5,7 @@ import re
 from pathlib import Path
 
 import httpx
+import pytest
 
 import json
 
@@ -92,6 +93,8 @@ def test_nested_substitution_ambiguous_context_stays_fail_closed() -> None:
 def test_cached_discourse_candidate_normalizes_without_changing_sentences() -> None:
     cache = Path(__file__).resolve().parents[1] / ".cache" / "llm" / "deepseek" / (
         "69d1dac29320f8838796fc23c7dc8a7ee28704ae7920967d6c87f60689056133.json")
+    if not cache.exists():
+        pytest.skip("requires local DeepSeek cache fixture")
     data = json.loads(cache.read_text(encoding="utf-8"))["data"]
     original = copy.deepcopy(data)
     out = normalize_generated_structure(data, False)

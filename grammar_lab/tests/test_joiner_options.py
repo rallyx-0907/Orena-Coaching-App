@@ -2,6 +2,8 @@ import copy
 import json
 from pathlib import Path
 
+import pytest
+
 from grammar_lab.pipeline.generate import (
     assemble_generated_example,
     normalize_generated_common_prefix_options,
@@ -67,6 +69,8 @@ def test_incompatible_or_ambiguous_routes_stay_unchanged():
 
 def test_cached_incompatible_candidate_is_not_rewritten():
     cache = Path(__file__).resolve().parents[1] / ".cache/llm/deepseek/c094e55175cccdb1fd1f2991195da218211fd41a767aa4113e7f3cf161c19f68.json"
+    if not cache.exists():
+        pytest.skip("requires local DeepSeek cache fixture")
     data = json.loads(cache.read_text(encoding="utf-8"))["data"]
     assert normalize_generated_structure(data, False) == data
     assert sum("+" in option["text"] for option in data["formula"][2]["options"]) == 3

@@ -1,6 +1,6 @@
 param(
     [Parameter(Mandatory = $true)]
-    [ValidatePattern('^(en|zh)\.canon\.[a-z0-9]+\.[0-9]{3}$')]
+    [ValidatePattern('^(en|zh)\.[a-z0-9_-]+(?:\.[a-z0-9_-]+)*$')]
     [string]$PointId,
 
     [ValidateRange(1, 12)]
