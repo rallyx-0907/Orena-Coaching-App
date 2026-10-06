@@ -18,13 +18,10 @@
 import { html, mount, raw } from '../../kit/html.js';
 import { icon } from '../../kit/icons.js';
 import { useStyles } from '../../kit/styles.js';
-import { toast } from '../../kit/toast.js';
-import { markGlyph } from '../../kit/brand.js';
 import { langAttr } from '../../kit/lang.js';
 import { shellCopy } from '../../copy/shell.js';
 import { languages } from '../../copy/index.js';
 import { api } from '../../infrastructure/api.js';
-import { askOrena } from '../../shell/agent-bridge.js';
 import { registerActionHandler } from '../../agent/dispatcher.js';
 import {
   connectMediaPlayer,
@@ -36,8 +33,8 @@ import {
   setPlaybackRate,
   segmentPlaybackDelayMs,
 } from '../../capabilities/media-player.js';
-import { dictationEvidence, recoverListeningEvidence } from '../../product/evidence.js';
 import { t } from './copy.js';
+import { createLinePractice } from './line-practice.js';
 import { openMedia } from '../../product/media-source.js';
 import {
   mapLesson,
@@ -48,15 +45,6 @@ import {
   dotStates,
   doneCount,
   progressBySegment,
-  previousEvidence,
-  checkAnswer,
-  chipsFor,
-  scoreOf,
-  scoreNoteKey,
-  hintNoteKey,
-  hintButton,
-  liveView,
-  MAX_HINT_LEVEL,
   clock,
 } from './model.js';
 
@@ -93,16 +81,9 @@ export default async function mountDictation(element, ctx) {
   if (!ctx.isCurrent()) return undefined;
   const memory = ctx.context?.memory || null;
   const byId = progressBySegment(progress?.items || []);
-  const localById = new Map(); // this session's latest real check per segment
   // `seg` is the Listening Workspace's hand-off key; `segment` is the one the Speaking rooms use.
   let index = Math.min(lesson.segments.length - 1, startIndex(lesson.segments, ctx.query?.get('seg') || ctx.query?.get('segment')));
   let rate = 1;
-  let answer = '';
-  let hintLevel = 0;
-  let checked = false;
-  let lastResult = null;
-  let evidence = null;
-  let recover = null; // set while this attempt's evidence began without the stored record
   let playTimer = 0;
   let playing = false;
 
@@ -153,24 +134,6 @@ export default async function mountDictation(element, ctx) {
   function segment() {
     return lesson.segments[index];
   }
-  function draftKey() {
-    return `${lesson.assetId || lesson.id}:${segment().id}`;
-  }
-  function saveDraft(value) {
-    try {
-      memory?.write(draftKey(), value, 'answers');
-    } catch {
-      /* device memory unavailable: the answer simply is not kept across a leave */
-    }
-  }
-  function readDraft() {
-    try {
-      return String(memory?.value?.answers?.[draftKey()] || '');
-    } catch {
-      return '';
-    }
-  }
-
   function paintHead() {
     setText(q('[data-title]'), t('headerTitle', { n: index + 1, total: lesson.segments.length }));
     setText(q('[data-sub]'), lesson.title);
@@ -217,210 +180,32 @@ export default async function mountDictation(element, ctx) {
     playTimer = setTimeout(() => setPlaying(false), delay);
   }
 
-  /* ---- Before Check: the answer box, the live strip, the hint row ---- */
-
-  function liveMarkup() {
-    const view = liveView({ expected: segment().text, answer, language: lesson.language, level: hintLevel });
-    return html`<div class="s-dict__livehead"><span class="s-dict__livelabel">${t('liveLabel')}</span><span class="s-dict__livecount">${t.plural('liveCount', view.total, { n: view.found, total: view.total })}</span></div>
-      <div class="s-dict__livechips" lang="${langAttr(lesson.language)}">
-        ${view.chips.map(
-          (chip) =>
-            html`<span class="s-dict__livechip s-dict__livechip--${chip.kind}">${chip.text}${chip.kind === 'ok' ? html`${raw(icon('check', { size: 14 }))}` : ''}</span>`,
-        )}
-      </div>`;
-  }
-
-  function paintLive() {
-    const box = q('[data-live]');
-    if (!box) return;
-    box.hidden = hintLevel <= 0;
-    if (hintLevel > 0) mount(box, liveMarkup());
-  }
-
-  function paintHint() {
-    const button = q('[data-hint]');
-    const note = q('[data-hint-note]');
-    if (!button || !note) return;
-    const view = hintButton(hintLevel);
-    setText(button, t(view.key, view.values));
-    button.disabled = view.disabled;
-    setText(note, t(hintNoteKey(hintLevel, lesson.language)));
-  }
-
-  function paintPre() {
-    mount(
-      q('[data-stage]'),
-      html`<textarea class="s-dict__input" data-input rows="3" lang="${langAttr(lesson.language)}" aria-label="${t('placeholder')}" placeholder="${t('placeholder')}">${answer}</textarea>
-      <div class="s-dict__live" data-live hidden></div>`,
-    );
-    mount(
-      q('[data-dock]'),
-      html`<div class="s-dict__hintrow">
-        <button type="button" class="s-dict__hint" data-hint></button>
-        <span class="s-dict__hintnote" data-hint-note></span>
-        <span class="s-dict__spacer"></span>
-        <button type="button" class="o-btn o-btn--primary s-dict__check" data-check>${t('checkButton')}</button>
-      </div>`,
-    );
-    const input = q('[data-input]');
-    input.addEventListener('input', (event) => {
-      answer = event.target.value;
-      saveDraft(answer);
-      if (hintLevel > 0) paintLive();
-    });
-    input.addEventListener('keydown', (event) => {
-      if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) {
-        event.preventDefault();
-        void check();
-      }
-    });
-    q('[data-hint]').addEventListener('click', () => {
-      if (hintLevel >= MAX_HINT_LEVEL) return;
-      hintLevel += 1;
-      paintHint();
-      paintLive();
-    });
-    q('[data-check]').addEventListener('click', () => void check());
-    paintHint();
-    paintLive();
-  }
-
-  /* ---- After Check: score, the two chip rows, Retry / Explain / Next ---- */
-
-  function paintPost() {
-    const seg = segment();
-    const score = scoreOf(lastResult);
-    const chips = chipsFor(lastResult, { expected: seg.text, answer, language: lesson.language });
-    const last = index >= lesson.segments.length - 1;
-    mount(
-      q('[data-stage]'),
-      html`<div class="s-dict__result">
-        <div class="s-dict__scorerow">
-          <span class="s-dict__score">${score.correct}/${score.total}</span>
-          <span class="s-dict__scorenote">${t(scoreNoteKey(score.tier))}</span>
-          ${hintLevel > 0 ? html`<span class="s-dict__hintbadge">${t('usedHintBadge')}</span>` : ''}
-        </div>
-        <div class="s-dict__chipblock">
-          <div class="s-dict__chiplabel">${t('youWrote')}</div>
-          <div class="s-dict__chips" lang="${langAttr(lesson.language)}">
-            ${chips.mine.map((chip) => html`<span class="s-dict__chip s-dict__chip--mine-${chip.kind}">${chip.text}</span>`)}
-            ${chips.mineEmpty ? html`<span class="s-dict__chipempty">${t('emptyAnswer')}</span>` : ''}
-          </div>
-        </div>
-        <div class="s-dict__chipblock">
-          <div class="s-dict__chiplabel">${t('transcript')}</div>
-          <div class="s-dict__chips" lang="${langAttr(lesson.language)}">
-            ${chips.src.map((chip) => html`<span class="s-dict__chip s-dict__chip--src-${chip.kind}">${chip.text}</span>`)}
-          </div>
-          ${seg.support ? html`<div class="s-dict__support">${seg.support}</div>` : ''}
-        </div>
-      </div>`,
-    );
-    mount(
-      q('[data-dock]'),
-      html`<div class="s-dict__actions">
-        <button type="button" class="s-dict__navbtn s-dict__retry" data-retry>${t('retry')}</button>
-        <button type="button" class="s-dict__ai" data-explain>${markGlyph({ size: 20, symbol: 'ol-intel-still' })}${t('explainLine')}</button>
-        <span class="s-dict__spacer"></span>
-        <button type="button" class="o-btn o-btn--primary s-dict__next" data-next>${last ? t('finish') : t('nextSegment')}</button>
-      </div>`,
-    );
-    q('[data-retry]').addEventListener('click', retry);
-    q('[data-explain]').addEventListener('click', () => {
-      askOrena({
-        surface: 'listening.dictation',
-        activity_type: 'listening',
-        // The contract's one namespace (§6.1, F-9): `media:<id>`.
-        content_id: `media:${lesson.id}`,
-        selected_item: { type: 'sentence', id: seg.id, text: seg.text, lang: lesson.language },
-      });
-    });
-    q('[data-next]').addEventListener('click', () => {
-      if (last) ctx.back();
+  /* One line's answer, hint, Check and saved evidence: the same piece the Listening workspace's
+     Dictation mode mounts (line-practice.js). */
+  const practice = createLinePractice({
+    lesson,
+    byId,
+    priorRead,
+    memory,
+    onChange: () => paintHead(),
+    onCheck: () => stopClip(),
+    onNext: () => {
+      if (index >= lesson.segments.length - 1) ctx.back();
       else goTo(index + 1);
-    });
-  }
+    },
+  });
+  const localById = practice.localById;
 
   function paintStage() {
-    if (checked) paintPost();
-    else paintPre();
+    const last = index >= lesson.segments.length - 1;
+    practice.show(segment(), { stage: q('[data-stage]'), dock: q('[data-dock]'), next: last ? t('finish') : t('nextSegment') });
     paintHead();
-  }
-
-  function ensureEvidence() {
-    const target = segment().id;
-    evidence = dictationEvidence({
-      asset: lesson.assetId,
-      segment: { segment_id: target, spoken_text: segment().text },
-      language: lesson.language,
-      previous: previousEvidence(byId.get(target)),
-    });
-    // The stored record could not be read at mount and this room has not saved this line yet: fold
-    // the server's copy into the evidence at save time instead of replacing it (never lowers a value).
-    recover = !priorRead && !byId.has(target)
-      ? recoverListeningEvidence(async () => {
-          const stored = await api.listeningProgress(lesson.assetId);
-          return (stored?.items || []).find((item) => item.segment_id === target) || {};
-        })
-      : null;
-  }
-
-  async function check() {
-    const seg = segment();
-    lastResult = checkAnswer({ expected: seg.text, answer, language: lesson.language });
-    checked = true;
-    const attempted = Boolean(answer.trim());
-    // A blank submission is not a real attempt (the evaluator itself refuses to align nothing
-    // against the line) - it shows the honest "everything missing" comparison and is never
-    // persisted, nor counted in the dots.
-    if (attempted) localById.set(seg.id, { exact: lastResult.exact });
-    stopClip();
-    paintStage();
-    if (!attempted) return;
-    evidence.compare(answer, { hintLevel });
-    let outgoing = evidence.value;
-    if (recover) {
-      try {
-        outgoing = await recover(outgoing);
-      } catch {
-        toast(t('progressUnread'));
-        return;
-      }
-    }
-    try {
-      const saved = await api.saveListeningProgress(outgoing);
-      if (saved?.item) {
-        // The stored score is the server's (D-103.2): once acknowledged it replaces the browser's own
-        // instant mark, which was only ever feedback.
-        byId.set(seg.id, saved.item);
-        localById.delete(seg.id);
-        paintHead();
-      }
-    } catch {
-      toast(t('saveFailed'));
-    }
-  }
-
-  function retry() {
-    answer = '';
-    saveDraft('');
-    hintLevel = 0;
-    checked = false;
-    lastResult = null;
-    ensureEvidence();
-    paintStage();
-    q('[data-input]')?.focus();
   }
 
   function goTo(nextIndex) {
     if (nextIndex < 0 || nextIndex >= lesson.segments.length) return;
     stopClip();
     index = nextIndex;
-    answer = readDraft();
-    hintLevel = 0;
-    checked = false;
-    lastResult = null;
-    ensureEvidence();
     paintPlayer();
     paintStage();
   }
@@ -436,8 +221,6 @@ export default async function mountDictation(element, ctx) {
   q('[data-prev]').addEventListener('click', () => goTo(index - 1));
   q('[data-skip]').addEventListener('click', () => goTo(index + 1));
 
-  answer = readDraft();
-  ensureEvidence();
   paintPlayer();
   paintStage();
 

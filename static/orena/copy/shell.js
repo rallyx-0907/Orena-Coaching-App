@@ -60,7 +60,7 @@ export const shellCopy = defineCopy('shell', {
     content: 'Nội dung', listening: 'Nghe', dictation: 'Chép chính tả', reader: 'Đọc', pronunciation: 'Phát âm',
     compareWithModel: 'So với mẫu', review: 'Ôn tập', writing: 'Viết', compareVersions: 'So sánh phiên bản',
     checkUnderstanding: 'Kiểm tra hiểu', collection: 'Bộ sưu tập', word: 'Từ', grammar: 'Ngữ pháp',
-    settings: 'Cài đặt', shadowing: 'Nói đuổi', freeTalk: 'Nói tự do', conversation: 'Hội thoại',
+    settings: 'Cài đặt', shadowing: 'Đọc theo', freeTalk: 'Nói tự do', conversation: 'Hội thoại',
     situationReaction: 'Phản xạ tình huống', retell: 'Kể lại', reactReuse: 'Phản hồi và dùng lại', timedRecall: 'Nhớ nhanh',
     contextTransfer: 'Chuyển ngữ cảnh', dailyFeed: 'Từ mỗi ngày', contextRewrite: 'Viết lại theo ngữ cảnh',
     timedWriting: 'Viết có giờ', readingTransfer: 'Vận dụng bài đọc', readingComplete: 'Đọc xong',

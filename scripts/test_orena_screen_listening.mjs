@@ -158,6 +158,7 @@ assert.equal(metaLine([null, undefined]), '');
   assert.equal(rowTone({ isCurrent: false, isSelected: false, endMs: 9000, timeMs: 5000 }), 'future');
   assert.equal(modeHintKey('follow'), 'hintFollow');
   assert.equal(modeHintKey('active'), 'hintActive');
+  assert.equal(modeHintKey('dictation'), 'hintDictation', 'Dictation mode says what to do (human direction 2026-10-06)');
   assert.equal(selectionAfterModeChange('active', 'seg:2'), 'seg:2', 'Active selects the line being played');
   assert.equal(selectionAfterModeChange('active', null), null);
   assert.equal(selectionAfterModeChange('follow', 'seg:2'), null, 'Follow clears the selection');

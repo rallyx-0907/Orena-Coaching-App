@@ -720,3 +720,53 @@
   color: var(--green);
 }
 .s-vocab__empty { color: var(--muted); font-size: 14.5px; padding: 24px; text-align: center; }
+
+/* ---- Dictation mode (human direction 2026-10-06): the line being written, in place ---- */
+/* A line not yet checked: its length as muted bars, never its words, reading or meaning. */
+.s-listening__row-hidden {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px 0;
+}
+.s-listening__bar {
+  display: block;
+  width: 34px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--surface2);
+}
+.s-listening__bar--han { width: 16px; }
+.s-listening__row.is-playing .s-listening__bar { background: var(--accent-soft); }
+.s-listening__dict { gap: 14px; background: var(--surface); box-shadow: var(--sh1); }
+.s-listening__dict-stage {
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 4px;
+  margin: -4px;
+}
+.s-listening__dict-dock { flex: none; }
+.s-listening__dict-dock:empty { display: none; }
+:root[data-device="mobile"] .s-listening__dict .s-dict__input { font-size: 16px; padding: 12px 14px; min-height: 0; }
+:root[data-device="mobile"] .s-listening__dict-stage { max-height: 34vh; }
+
+/* The phone has no "now playing" card: this is its way into the line's practice (LEX-029). */
+.s-listening__pill--pick { display: var(--hide-desktop); }
+
+/* Dictation, line unchecked: the picture is veiled (its captions would give the answer away); sound plays. */
+.s-listening__player.is-veiled iframe,
+.s-listening__player.is-veiled video,
+.s-listening__player.is-veiled > img { filter: blur(22px) brightness(.55); transform: scale(1.06); }
+.s-listening__player.is-veiled { overflow: hidden; }
+/* In the workspace the hint, its note and Check share one row, so the transcript keeps its room. */
+.s-listening__dict .s-dict__hintrow { flex-wrap: nowrap; }
+.s-listening__dict .s-dict__hintnote { flex: 1 1 auto; min-width: 0; }
+.s-listening__dict .s-dict__spacer { display: none; }
+:root[data-device="mobile"] .s-listening__dict .s-dict__input { height: 64px; }
+:root[data-device="mobile"] .s-listening__dict .s-dict__hint { padding: 10px 14px; }
+:root[data-device="mobile"] .s-listening__dict .s-dict__hintnote { font-size: 12.5px; line-height: 1.35; }
+:root[data-device="mobile"] .s-listening__dict .s-dict__check { padding-left: 18px; padding-right: 18px; }

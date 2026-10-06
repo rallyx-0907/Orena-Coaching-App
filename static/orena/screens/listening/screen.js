@@ -1,5 +1,6 @@
 /* Listening Workspace (design route `listening`, frame 06, D-091, D-088). A focus workspace
-   (Design Contract rules 47/49): the Follow / Active / Shadowing switch, a real player, a synced
+   (Design Contract rules 47/49): the Listening / Dictation switch (D-137, human direction 2026-10-06:
+   Dictation replaces the Shadowing tab and works in place; Shadowing stays a line action), a real player, a synced
    transcript, the selected-line actions (Active mode) or the "now playing" card (Follow), and an
    in-place end-of-media summary. See SCRATCH/reports/listening.md for the measurement diff, the
    rule-49 recomposition (N-6) and every backend gap.
@@ -37,6 +38,9 @@ import { openWordSheet } from '../quick-sheet/sheet.js';
 import { openVocabFocus } from './vocab-sheet.js';
 import { keepProvenance } from '../../product/account-records.js';
 import { t } from './copy.js';
+import { mapLesson as dictationLesson, progressBySegment } from '../dictation/model.js';
+import { createLinePractice } from '../dictation/line-practice.js';
+import { t as dictT } from '../dictation/copy.js';
 import {
   nextSpeed, speedLabel, contentIdFor, mmss, minutesFrom, metaLine, mapLesson,
   wordTokens, hanTokens, currentTokenIndices, wordHighlightEstimated, rowTone, modeHintKey, selectionAfterModeChange,
@@ -46,7 +50,7 @@ import {
 } from './model.js';
 
 export default async function listening(element, ctx) {
-  await useStyles('screens/listening/listening.css');
+  await Promise.all([useStyles('screens/listening/listening.css'), useStyles('screens/dictation/dictation.css')]);
   const c = ctx.context;
   const support = languages().support;
   const lessonId = ctx.params.id;
@@ -78,10 +82,19 @@ export default async function listening(element, ctx) {
   let nextRec = null;
   let savedBaseline = null;
   let dictProgressItems = [];
+  /* Dictation mode: the same line practice as the Dictation room, over this lesson's lines. Its stored
+     progress arrives with the side loads; until then a check folds the server's copy in at save time. */
+  const dictLesson = dictationLesson(payload);
+  const dictById = new Map();
+  let dictPriorRead = false;
   const sideLoads = Promise.allSettled([
     api.listeningLibrary(c.language).then((res) => { nextRec = pickNextRecommendation(res?.items, lesson.lessonId, lesson.topic); }),
     api.libraryVocabularySummary().then((res) => { savedBaseline = Number(res?.summary?.saved) || 0; }),
-    lesson.mediaObjectId ? api.listeningProgress(lesson.mediaObjectId).then((res) => { dictProgressItems = res?.items || []; }) : Promise.resolve(),
+    lesson.mediaObjectId ? api.listeningProgress(lesson.mediaObjectId).then((res) => {
+      dictProgressItems = res?.items || [];
+      for (const [id, item] of progressBySegment(dictProgressItems)) dictById.set(id, item);
+      dictPriorRead = true;
+    }) : Promise.resolve(),
   ]);
 
   /* The learner's transcript defaults are the device keys Settings writes (product/transcript-
@@ -100,13 +113,17 @@ export default async function listening(element, ctx) {
   let currentId = segments.some((seg) => seg.segment_id === requestedSegment) ? requestedSegment : (segments[0]?.segment_id || null);
   let playing = false;
   let bounded = false; // a line is being played to its end; reaching the clip's end then is not "media completed"
-  let timeMs = explicitSegment ? (segments.find(seg=>seg.segment_id===currentId)?.start_ms ?? lesson.excerptStartMs) : lesson.excerptStartMs;
+  // A named or remembered line reopens on that line, paused (L-09): coming back from Dictation, React or
+  // Shadowing never resets the learner to the first line.
+  const resumeAt = segments.some((seg) => seg.segment_id === requestedSegment);
+  let timeMs = resumeAt ? (segments.find(seg=>seg.segment_id===currentId)?.start_ms ?? lesson.excerptStartMs) : lesson.excerptStartMs;
   let ended = false;
   let playedMs = 0;
   let lastTickAt = null;
   let rememberedId = '';
   let lastActiveIndex = -2; // which segment the clock last said we are in (-1: between lines)
-  let seekingTo = explicitSegment ? {id:currentId,at:Date.now()} : null;
+  let barSeek = false; // the seek bar moved the time while paused: the line follows it
+  let seekingTo = resumeAt ? {id:currentId,at:Date.now()} : null;
   const savedPhrases = new Set(); // segment texts known to be saved this session
   const tokenCache = new Map();
 
@@ -118,6 +135,39 @@ export default async function listening(element, ctx) {
       tokenCache.set(seg.segment_id, isZh ? hanTokens(seg.original_text, lesson.pinyinChars[seg.segment_id]) : wordTokens(seg.original_text));
     }
     return tokenCache.get(seg.segment_id);
+  }
+
+  const dictationOn = lesson.modes.dictation && dictLesson.segments.length > 0;
+  const practice = createLinePractice({
+    lesson: dictLesson,
+    byId: dictById,
+    priorRead: () => dictPriorRead,
+    memory: c.memory || null,
+    onCheck: (line) => {
+      if (playing && playbackOk) togglePlayback(playerEl, lesson.playback);
+      paintVeil();
+      paintRows();
+      scrollRowIntoView(line.id);
+    },
+    onNext: (line) => {
+      const at = indexOf(line.id);
+      if (at >= segments.length - 1) { onMode('follow'); return; }
+      // The next line starts hidden and still: the learner plays it when ready.
+      currentId = segments[at + 1].segment_id;
+      seekingTo = { id: currentId, at: Date.now() };
+      if (playbackOk) seekPlayback(playerEl, lesson.playback, segments[at + 1].start_ms);
+      paintRows();
+      paintSelected();
+      rememberPlace(true);
+      scrollRowIntoView(currentId);
+    },
+  });
+
+  /* A hidden line: one muted bar per word (per character in Chinese), so its length is known and its
+     words are not. */
+  function hiddenBars(seg) {
+    const count = isZh ? [...String(seg.original_text).matchAll(/\p{Script=Han}/gu)].length : wordTokens(seg.original_text).filter((tok) => tok.core).length;
+    return html`${Array.from({ length: Math.max(1, Math.min(count, 24)) }, () => html`<span class="s-listening__bar${isZh ? ' s-listening__bar--han' : ''}"></span>`)}`;
   }
 
   function saveStage() {
@@ -162,7 +212,7 @@ export default async function listening(element, ctx) {
         <div class="s-listening__slot" data-selected-slot></div>
       </div>
       <div class="s-listening__transcript">
-        <div class="s-listening__transcript-head"><span class="s-listening__transcript-title">${t('transcript')}</span><span class="s-listening__transcript-hint" data-hint></span></div>
+        <div class="s-listening__transcript-head"><span class="s-listening__transcript-title">${t('transcript')}</span><span class="s-listening__transcript-hint" data-mode-hint></span></div>
         <div class="s-listening__transcript-body" data-scroll-region data-rows></div>
       </div>
     </div>
@@ -182,25 +232,37 @@ export default async function listening(element, ctx) {
   function modesMarkup() {
     const list = [
       { id: 'follow', label: s('listening'), on: true },
-      { id: 'shadow', label: t('modeShadowing'), on: lesson.modes.shadowing },
+      { id: 'dictation', label: s('dictation'), on: dictationOn },
     ];
-    return html`${list.map((item) => html`<button type="button" class="s-listening__mode" data-mode="${item.id}" ${item.on ? '' : raw('disabled')} title="${item.on ? '' : t('transcriptUnavailable')}" aria-pressed="${item.id === 'shadow' ? 'false' : 'true'}">${item.label}</button>`)}`;
+    const pressed = (id) => (id === 'dictation') === (mode === 'dictation');
+    return html`${list.map((item) => html`<button type="button" class="s-listening__mode" data-mode="${item.id}" ${item.on ? '' : raw('disabled')} title="${item.on ? '' : t('transcriptUnavailable')}" aria-pressed="${String(pressed(item.id))}">${item.label}</button>`)}`;
   }
   function paintModes() {
     const holder = element.querySelector('[data-modes]');
     mount(holder, modesMarkup());
     holder.querySelectorAll('[data-mode]').forEach((button) => button.addEventListener('click', () => onMode(button.dataset.mode)));
-    mount(element.querySelector('[data-hint]'), html`${t(modeHintKey(mode))}`);
+    mount(element.querySelector('[data-mode-hint]'), html`${t(modeHintKey(mode))}`);
   }
   function onMode(id) {
-    if (id === 'shadow') {
-      ctx.go(ctx.href('shadow', { id: routeId }, { seg: selectedId || currentId || '' }));
+    if (id === mode) return;
+    // Switching never plays on: the learner is on the same line, paused, in either mode.
+    if (playing && playbackOk) togglePlayback(playerEl, lesson.playback);
+    bounded = false;
+    if (id === 'dictation') {
+      mode = 'dictation';
+      selectedId = null;
+      paintModes();
+      paintControls();
+      paintRows();
+      paintSelected();
+      scrollRowIntoView(currentId);
       return;
     }
     mode = id;
     selectedId = selectionAfterModeChange(id, currentId);
     bounded = false;
     paintModes();
+    paintControls();
     paintRows();
     paintSelected();
   }
@@ -241,7 +303,10 @@ export default async function listening(element, ctx) {
       const arrived = target && timeMs >= target.start_ms - 200 && timeMs <= target.end_ms + 200;
       if (arrived || Date.now() - seekingTo.at > 1500) seekingTo = null;
     }
-    if (!seekingTo) {
+    // Only playback moves the current line: a paused player (a line just chosen, a return from practice)
+    // keeps the learner's line even when the player has not reported the new time yet (L-09).
+    if (!seekingTo && (playing || barSeek)) {
+      barSeek = false;
       const found = activeCanonicalSegment(segments, timeMs);
       const foundIndex = found ? indexOf(found.segment_id) : -1;
       if (foundIndex !== lastActiveIndex) {
@@ -262,15 +327,19 @@ export default async function listening(element, ctx) {
   if (playbackOk) {
     playerEl.addEventListener('orena:media-time', onMediaTime);
     connectMediaPlayer(playerEl, lesson.playback);
-    if (explicitSegment) seekPlayback(playerEl, lesson.playback, timeMs);
+    if (resumeAt) seekPlayback(playerEl, lesson.playback, timeMs);
     playerEl.querySelector('[data-play]')?.addEventListener('click', () => {
+      // Dictation plays only the line being written, and stops at its end.
+      if (mode === 'dictation' && !playing) return playLine(currentId);
       bounded = false;
       togglePlayback(playerEl, lesson.playback);
     });
     element.querySelector('[data-seek]')?.addEventListener('click', (event) => {
       const rect = event.currentTarget.getBoundingClientRect();
       const fraction = (event.clientX - rect.left) / rect.width;
+      if (mode === 'dictation') return; // the line being written is the only place Dictation plays
       bounded = false;
+      barSeek = true;
       seekPlayback(playerEl, lesson.playback, msAtSeekFraction(fraction, lesson.excerptStartMs, clipEndMs));
     });
   }
@@ -296,6 +365,7 @@ export default async function listening(element, ctx) {
     replaySegment(playerEl, lesson.playback, seg.start_ms, seg.end_ms, speed);
     paintRows();
     paintNowPlaying();
+    if (mode === 'dictation') { paintSelected(); rememberPlace(true); }
   }
 
   /* ---------------------------------------------------------------- controls row ---- */
@@ -317,6 +387,7 @@ export default async function listening(element, ctx) {
       ${playbackOk ? pill({ id: 'replay', label: t('replay'), iconName: 'rotate-ccw', variant: 'primary', aria: t('replayLine'), title: t('replayLine') }) : ''}
       ${playbackOk ? pill({ id: 'next', label: labelSpan(t('line')), iconName: 'skip-forward', iconAfter: true, aria: t('nextLine'), title: t('nextLine') }) : ''}
       ${playbackOk ? pill({ id: 'speed', label: speedLabel(speed), variant: 'speed' }) : ''}
+      ${mode === 'follow' && segOf(currentId) ? html`<button type="button" class="s-listening__pill s-listening__pill--pick" data-act="pick">${t('workOnThisLine')}</button>` : ''}
       <span class="s-listening__spacer"></span>
       ${showMeaningToggle ? html`<button type="button" class="s-listening__pill s-listening__pill--toggle" data-act="trans" aria-pressed="${String(showTrans)}"><span class="s-listening__trans-code">${support}</span><span class="s-listening__trans-label">${t('meaning')}</span></button>` : ''}
       <button type="button" class="s-listening__more" data-act="more" aria-pressed="${String(moreOpen)}" aria-label="${t('more')}" title="${t('more')}"><span class="s-listening__more-glyph">${raw(icon('ellipsis', { size: 18 }))}</span></button>
@@ -344,6 +415,7 @@ export default async function listening(element, ctx) {
       return;
     }
     if (action === 'replay') return playLine(selectedId || currentId);
+    if (action === 'pick') return onSelectedAction('pick');
     if (action === 'speed') {
       speed = nextSpeed(speed);
       if (playbackOk) setPlaybackRate(playerEl, lesson.playback, speed);
@@ -383,6 +455,14 @@ export default async function listening(element, ctx) {
     }
     return segments.map((seg) => {
       const tone = rowTone({ isCurrent: seg.segment_id === currentId, isSelected: seg.segment_id === selectedId, endMs: seg.end_ms, timeMs });
+      // Dictation: a line's words, reading and meaning stay hidden until it is checked.
+      const hidden = mode === 'dictation' && !practice.revealed(seg.segment_id);
+      if (hidden) {
+        return html`<button type="button" class="s-listening__row is-${tone}${seg.segment_id === currentId ? ' is-playing' : ''}" data-seg="${seg.segment_id}">
+          <span class="s-listening__row-time">${mmss(seg.start_ms) ?? ''}</span>
+          <span class="s-listening__row-main"><span class="s-listening__row-hidden" aria-label="${dictT('placeholder')}">${hiddenBars(seg)}</span></span>
+        </button>`;
+      }
       const meaning = showTrans ? enc.meaning(seg.segment_id) : '';
       const playingRow = seg.segment_id === currentId;
       return html`<button type="button" class="s-listening__row is-${tone}${playingRow ? ' is-playing' : ''}" data-seg="${seg.segment_id}">
@@ -433,6 +513,10 @@ export default async function listening(element, ctx) {
   function onRowTap(id) {
     const seg = segOf(id);
     if (!seg) return;
+    if (mode === 'dictation') {
+      playLine(id);
+      return;
+    }
     if (mode === 'active') {
       selectedId = id;
       playLine(id);
@@ -505,7 +589,35 @@ export default async function listening(element, ctx) {
 
   /* The frame shows one or the other: the selected line's actions in Active mode once a line is
      selected, the "now playing" card otherwise (which the phone does not draw). */
+  function dictationMarkup(seg) {
+    const at = indexOf(seg.segment_id);
+    return html`<div class="s-listening__selected s-listening__dict">
+      <div class="s-listening__selected-head">
+        <span class="s-listening__selected-label">${dictT('headerTitle', { n: at + 1, total: segments.length })} · ${mmss(seg.start_ms) ?? ''}</span>
+      </div>
+      <div class="s-listening__dict-stage" data-scroll-region data-dict-stage></div>
+      <div class="s-listening__dict-dock" data-dict-dock></div>
+    </div>`;
+  }
+
+  /* Dictation hides the picture while a line is unchecked: a video's own burned-in or provider captions
+     would show the answer. Sound stays; the picture returns once the line is checked. */
+  function paintVeil() {
+    playerEl.classList.toggle('is-veiled', mode === 'dictation' && !practice.revealed(currentId));
+  }
+
   function paintSelected() {
+    paintVeil();
+    if (mode === 'dictation') {
+      const seg = segOf(currentId);
+      const line = seg && dictLesson.segments.find((item) => item.id === seg.segment_id);
+      mount(selectedSlot, line ? dictationMarkup(seg) : html``);
+      if (line) {
+        const last = indexOf(seg.segment_id) >= segments.length - 1;
+        practice.show(line, { stage: selectedSlot.querySelector('[data-dict-stage]'), dock: selectedSlot.querySelector('[data-dict-dock]'), next: last ? dictT('finish') : dictT('nextSegment') });
+      }
+      return;
+    }
     const sel = mode === 'active' ? segOf(selectedId) : null;
     const cur = sel ? null : segOf(currentId);
     mount(selectedSlot, sel ? selectedMarkup(sel) : cur ? nowPlayingMarkup(cur) : html``);
@@ -563,6 +675,7 @@ export default async function listening(element, ctx) {
       selectedId = currentId;
       bounded = false;
       paintModes();
+      paintControls();
       paintRows();
       paintSelected();
       return;
@@ -586,7 +699,7 @@ export default async function listening(element, ctx) {
       });
       return;
     }
-    if (action === 'dictation') return ctx.go(ctx.href('dictation', { id: routeId }, { seg: id }));
+    if (action === 'dictation') { currentId = id; return onMode('dictation'); }
     if (action === 'explain') {
       askOrena({
         surface: 'listening.workspace',
@@ -658,7 +771,11 @@ export default async function listening(element, ctx) {
       if (playbackOk) replaySegment(playerEl, lesson.playback, lesson.excerptStartMs, null, speed);
       return;
     }
-    if (action === 'dictation-all') return ctx.go(ctx.href('dictation', { id: routeId }));
+    if (action === 'dictation-all') {
+      hideEnded();
+      currentId = segments[0]?.segment_id || currentId;
+      return onMode('dictation');
+    }
     if (action === 'saved') return ctx.go(ctx.href('library'));
     if (action === 'discover') return ctx.go(ctx.href('discover'));
   }
@@ -698,7 +815,7 @@ export default async function listening(element, ctx) {
      current) transcript line. Listening has no learner take of its own (`play_user`/
      `say_again`/`compare_with_model` do not apply: there is nothing to compare or re-record). */
   const releasePlayModel = registerActionHandler('play_model', () => {
-    const id = (mode === 'active' && selectedId) || currentId;
+    const id = (mode === 'active' && selectedId) || currentId; // Dictation: the line being written
     if (!id || !playbackOk) return { ok: false, reason: 'not_available' };
     playLine(id);
     return { ok: true };

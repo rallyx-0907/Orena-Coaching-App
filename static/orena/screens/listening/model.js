@@ -262,6 +262,7 @@ export function rowTone({ isCurrent, isSelected, endMs, timeMs }) {
 
 /* What the mode says a tap on a line does (`modeHint` in the frame's script). */
 export function modeHintKey(mode) {
+  if (mode === 'dictation') return 'hintDictation';
   return mode === 'active' ? 'hintActive' : 'hintFollow';
 }
 
