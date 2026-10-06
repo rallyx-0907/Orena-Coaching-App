@@ -108,7 +108,7 @@ export function connectLiveVoice(session, { audio, mediaDevices = globalThis.nav
     source = audio.input.createMediaStreamSource(stream);
     worklet = new AudioWorkletNode(audio.input, 'orena-pcm16-capture');
     worklet.port.onmessage = (event) => {
-      if (ready && !closed) send({ realtimeInput: { audio: { data: toBase64(event.data), mimeType: 'audio/pcm;rate=16000' } } });
+      if (ready && !closed) send({ realtimeInput: { audio: { data: toBase64(echoGate(event.data)), mimeType: 'audio/pcm;rate=16000' } } });
     };
     source.connect(worklet);
     onState('listening');
@@ -121,6 +121,20 @@ export function connectLiveVoice(session, { audio, mediaDevices = globalThis.nav
     source = null;
     worklet = null;
     stream = null;
+  }
+
+  /* While Orena is speaking (and a moment after), a phone's speaker leaks into its own microphone and mobile
+     Safari does not cancel the echo of Web Audio output: Orena heard itself and answered itself, over and over.
+     During that window only a clearly louder voice - the learner talking over Orena, which is barge-in - is sent;
+     quieter frames go as silence, so the stream stays continuous and the vendor's VAD sees no speech. */
+  const ECHO_TAIL_S = 0.45;
+  const BARGE_IN_RMS = 0.12;
+  function echoGate(buffer) {
+    if (!playing.size && audio.output.currentTime > playAt + ECHO_TAIL_S) return buffer;
+    const frame = new Int16Array(buffer);
+    let sum = 0;
+    for (let i = 0; i < frame.length; i += 1) sum += (frame[i] / 0x8000) ** 2;
+    return Math.sqrt(sum / frame.length) >= BARGE_IN_RMS ? buffer : new Int16Array(frame.length).buffer;
   }
 
   function play(base64) {
