@@ -4272,3 +4272,19 @@ server's offer copy (learner_copy offer.*) in the interface layer.
   and no offer to open it.
 - AGENT_CONTRACT §7 states both rules. The Intelligence lane implements them.
 
+
+## D-136 - Reading flow approved under D-129; Listening is next
+
+2026-10-06, explicit human approval.
+
+- **Reading is approved.** The Reading flow matches the design step by step (D-129).
+  - The Learning Experience Reviewer's final batch (UX_REVIEW_LOG.md, "Independent live verification", HEAD
+    ce747d5) is UI VERIFIED with Experience PARTIAL.
+  - Every UI issue LEX-003..LEX-028 is VERIFIED.
+- **Still open, not blocking the approval:**
+  - LEX-020: independent listening evidence for Word Detail pronunciation.
+  - LEX-011: the original unavailable-branch locale, which no longer reproduces naturally.
+  - Error-only branches not independently exercised: Summary Retry, the 45 s and 90 s timeouts.
+  - Content items LEX-001/002, deferred to Admin-managed content.
+- **Next:** the Listening flow, including Dictation and Shadowing, with the same D-129 rule (step-by-step design
+  match, human final approval).

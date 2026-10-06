@@ -109,6 +109,10 @@ human gates. Never touch persistent volumes as cleanup.
 
 ## NEXT EXACT TASK
 
+D-129 skill-by-skill design match (UI lane): Reading APPROVED by the human (D-136, 2026-10-06; review log
+docs/UX_REVIEW_LOG.md). Now: Listening (incl. Dictation, Shadowing) - audit each step against the pinned design,
+fix drift, then the independent Reviewer and the human's approval. Then Speaking, Writing, Vocabulary/Review, Grammar.
+
 D-124: → vi policy open-dsl → vi.wiktionary (strict) → English labelled; built, NOT enabled
 until the human grades docs/reviews/evidence/d124-vi. Licences page + THIRD_PARTY_NOTICES done.
 S1 loaded on :8021: 30 EN + 22 ZH published, per-text credits on Licences (7cab797/f6c0724).
