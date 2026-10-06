@@ -22,8 +22,10 @@ def test_completion_agent_sweeps_all_ready_ids_from_cache_before_paid_generation
 
     assert 'foreach ($readyPointId in $readyPointIds)' in sweep
     assert '$uncachedPointIds' in sweep
-    assert 'cache-only mode: no cached completion' in sweep
+    assert 'Test-CacheMiss -Text $probe.Text' in sweep
     assert '$rescuePointIds' in sweep
+    assert 'cache-only mode:' in text
+    assert 'no cached completion' in text
 
     paid_start = text.index('if (-not $AllowPaidCandidates)', sweep_start)
     assert paid_start > sweep_start
