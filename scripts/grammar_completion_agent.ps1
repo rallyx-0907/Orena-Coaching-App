@@ -86,6 +86,23 @@ function Test-Written {
     return $Text -match "(?m)^written\s+$PointIdPattern\s+"
 }
 
+function Get-ReadyPointIds {
+    param([string]$Language)
+
+    $json = & python -m grammar_lab.pipeline.cli corpus-plan --lang $Language --json 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        throw "corpus-plan --json failed for $Language."
+    }
+
+    $plan = ($json | Out-String) | ConvertFrom-Json
+    $report = $plan.languages.PSObject.Properties[$Language].Value
+    return @(
+        $report.items |
+            Where-Object { $_.status -eq "ready" } |
+            ForEach-Object { [string]$_.id }
+    )
+}
+
 function Invoke-Rescue {
     param([string]$PointId)
 
@@ -216,30 +233,74 @@ foreach ($language in $languages) {
             exit 0
         }
 
-        Write-Host ""
-        Write-Host "--- Probe next ready point from cache ---"
-        $probe = Invoke-Corpus -Language $language -CacheOnly
-
-        if (Test-NoCandidates -Text $probe.Text) {
+        $readyPointIds = @(Get-ReadyPointIds -Language $language)
+        if ($readyPointIds.Count -eq 0) {
             Write-Host "$language has no ready points remaining."
             break
         }
 
-        if (Test-Written -Text $probe.Text) {
+        Write-Host ""
+        Write-Host "--- Free cache sweep: $($readyPointIds.Count) ready point(s) ---"
+        $uncachedPointIds = [System.Collections.Generic.List[string]]::new()
+        $rescuePointIds = [System.Collections.Generic.List[string]]::new()
+
+        foreach ($readyPointId in $readyPointIds) {
+            if ($MaxPoints -gt 0 -and $processed -ge $MaxPoints) {
+                Write-Host "MaxPoints reached. Safe to resume with the same command."
+                Write-Host "Paid spend this run: USD $($spent.ToString('0.0000'))"
+                exit 0
+            }
+
+            $probe = Invoke-Corpus -Language $language -PointId $readyPointId -CacheOnly
+            if (Test-Written -Text $probe.Text -PointId $readyPointId) {
+                $processed++
+                continue
+            }
+
+            $pointId = Get-OutcomePointId -Text $probe.Text
+            if (-not $pointId) {
+                throw "Could not determine the selected point from generate-corpus output."
+            }
+            if ($pointId -ne $readyPointId) {
+                throw "Cache probe selected unexpected point $pointId while probing $readyPointId."
+            }
+
+            if ($probe.Text -match "cache-only mode: no cached completion") {
+                $uncachedPointIds.Add($readyPointId)
+            } else {
+                $rescuePointIds.Add($readyPointId)
+            }
+        }
+
+        Write-Host "Free cache sweep complete: $($uncachedPointIds.Count) uncached; $($rescuePointIds.Count) cached candidate(s) need rescue."
+
+        foreach ($pointId in $rescuePointIds) {
+            Write-Host ""
+            Write-Host "--- Codex rescue from cached candidate: $pointId ---"
+            $rescueExit = Invoke-Rescue -PointId $pointId
+            if ($rescueExit -ne 0) {
+                Write-Host "STOP: Codex rescue for $pointId exited with code $rescueExit."
+                Write-Host "No additional paid candidate was requested."
+                exit $rescueExit
+            }
             $processed++
+        }
+
+        if ($uncachedPointIds.Count -eq 0) {
             continue
         }
 
-        $pointId = Get-OutcomePointId -Text $probe.Text
-        if (-not $pointId) {
-            throw "Could not determine the selected point from generate-corpus output."
+        if (-not $AllowPaidCandidates) {
+            Write-Host "STOP: Free cache sweep complete; $($uncachedPointIds.Count) ready point(s) have no cache and paid candidates are disabled."
+            Write-Host "Resume with -AllowPaidCandidates -BudgetUsd <amount> only when you want to generate those uncached points."
+            exit 20
         }
 
-        if ($probe.Text -match "cache-only mode: no cached completion") {
-            if (-not $AllowPaidCandidates) {
-                Write-Host "STOP: $pointId has no cache and paid candidates are disabled."
-                Write-Host "Resume with -AllowPaidCandidates -BudgetUsd <amount> to continue generation."
-                exit 20
+        foreach ($pointId in $uncachedPointIds) {
+            if ($MaxPoints -gt 0 -and $processed -ge $MaxPoints) {
+                Write-Host "MaxPoints reached. Safe to resume with the same command."
+                Write-Host "Paid spend this run: USD $($spent.ToString('0.0000'))"
+                exit 0
             }
 
             $remaining = $BudgetUsd - $spent
@@ -264,20 +325,17 @@ foreach ($language in $languages) {
             if ($paid.Text -notmatch "(?m)^error\s+$([regex]::Escape($pointId))\s+") {
                 throw "One-shot candidate for $pointId returned an unrecognized result."
             }
-        } else {
-            Write-Host "Cached candidate for $pointId still fails validation; entering Codex rescue."
-        }
 
-        Write-Host ""
-        Write-Host "--- Codex rescue: $pointId ---"
-        $rescueExit = Invoke-Rescue -PointId $pointId
-        if ($rescueExit -ne 0) {
-            Write-Host "STOP: Codex rescue for $pointId exited with code $rescueExit."
-            Write-Host "No additional paid candidate was requested."
-            exit $rescueExit
+            Write-Host ""
+            Write-Host "--- Codex rescue: $pointId ---"
+            $rescueExit = Invoke-Rescue -PointId $pointId
+            if ($rescueExit -ne 0) {
+                Write-Host "STOP: Codex rescue for $pointId exited with code $rescueExit."
+                Write-Host "No additional paid candidate was requested."
+                exit $rescueExit
+            }
+            $processed++
         }
-
-        $processed++
     }
 }
 
