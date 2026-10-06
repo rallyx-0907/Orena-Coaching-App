@@ -4288,3 +4288,18 @@ server's offer copy (learner_copy offer.*) in the interface layer.
   - Content items LEX-001/002, deferred to Admin-managed content.
 - **Next:** the Listening flow, including Dictation and Shadowing, with the same D-129 rule (step-by-step design
   match, human final approval).
+
+## D-137 - Listening flow decisions on the D-129 audit (L-01, L-02, L-11, L-13)
+
+2026-10-06, explicit human decisions on the Listening audit.
+
+- **L-01: two modes.** The Listening workspace keeps two modes, Listening and Shadowing (D-119). Frame 06's third
+  tab, "Active", is not restored; the line actions stay behind "Work on this line". Hints name the modes the switch
+  shows.
+- **L-02: Compare room.** Shadowing stays the shared Pronunciation/Compare room of D-119 rather than frame 28's
+  card.
+- **L-11: suggested words.** When a line has no curated focus vocabulary, Vocabulary Focus suggests a few words
+  from that line at the learner's own level, instead of an empty state.
+- **L-13: estimated word timing.** Word highlight is completed, not skipped. Without verified word timestamps it
+  highlights by estimated timing within the line and is labelled "· est." as the frame draws it. With verified
+  timings it uses them and drops "est.".

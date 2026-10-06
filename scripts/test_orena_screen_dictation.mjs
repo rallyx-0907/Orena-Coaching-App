@@ -235,6 +235,10 @@ assert.deepEqual(previousEvidence({ checked_attempt_count: 3, best_accuracy_perc
   assert.equal(hintNoteKey(2), 'hintNoteLetters');
   assert.equal(hintNoteKey(3), 'hintNoteWords', 'the max level (MAX_HINT_LEVEL)');
   assert.equal(hintNoteKey(4), 'hintNoteWords', 'never past the last category, whatever level is passed in');
+  // L-05: a Chinese lesson's ladder names characters, not letters.
+  assert.equal(hintNoteKey(0, 'zh'), 'hintNoteStartHan');
+  assert.equal(hintNoteKey(2, 'zh'), 'hintNoteLettersHan');
+  assert.equal(hintNoteKey(1, 'zh'), 'hintNoteShapes');
 }
 
 /* --- liveView: the frame's "Live check" strip (design `dLive`), reach-limited, never the answer --- */

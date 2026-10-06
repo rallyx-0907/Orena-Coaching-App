@@ -7,18 +7,37 @@
 
 const isHan = (text) => /^\p{Script=Han}$/u.test(text);
 
-/* Chinese: one unit per Han character. Other languages: one unit per word. Punctuation and spaces
-   stay as they are written. Each unit knows its character range, so an assessed word can be laid
-   over it to mark the ones a provider flagged. */
+/* Chinese: one unit per Han character, and a run of Latin letters or digits inside the line (a name, "Vector")
+   is one word, not one cell per letter (L-03). Other languages: one unit per word. Punctuation and spaces stay as
+   they are written. Each unit knows its character range, so an assessed word can be laid over it to mark the ones
+   a provider flagged. */
+const isWordChar = (ch) => /^[\p{L}\p{N}]$/u.test(ch);
+
 export function lineUnits(text, language) {
   const units = [];
   const value = String(text || '');
   if (language === 'zh') {
     let at = 0;
+    let run = null; // the Latin/digit word being gathered
+    const close = () => {
+      if (run) units.push(run);
+      run = null;
+    };
     for (const ch of value) {
-      units.push({ text: ch, start: at, end: at + ch.length, unit: isHan(ch) });
+      if (isHan(ch)) {
+        close();
+        units.push({ text: ch, start: at, end: at + ch.length, unit: true });
+      } else if (isWordChar(ch)) {
+        if (!run) run = { text: '', start: at, end: at, unit: true };
+        run.text += ch;
+        run.end = at + ch.length;
+      } else {
+        close();
+        units.push({ text: ch, start: at, end: at + ch.length, unit: false });
+      }
       at += ch.length;
     }
+    close();
     return units;
   }
   const pattern = /[\p{L}\p{N}]+(?:['’-][\p{L}\p{N}]+)*/gu;

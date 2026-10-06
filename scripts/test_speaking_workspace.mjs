@@ -158,3 +158,13 @@ const unmeasured = freeResultHtml({ s, c: { coachingWorking: 'Đang xem…' }, t
 assert.match(unmeasured, /Lưu loát<\/span><span class="sp-bar"><i style="width:0%">/, 'an unmeasured fluency is 0, never a guess');
 
 console.log('Speaking workspace and free talk markup (PronunciationResult, EN/VI/ZH): PASS');
+
+// L-03: a Latin word inside a Chinese line is one word, not one cell per letter.
+{
+  const { lineUnits: units } = await import('../static/orena/product/speaking-line.js');
+  const zh = units('打开维基百科(Vector版)。', 'zh');
+  assert.deepEqual(zh.map((u) => u.text), ['打', '开', '维', '基', '百', '科', '(', 'Vector', '版', ')', '。']);
+  assert.equal(zh.find((u) => u.text === 'Vector').unit, true);
+  assert.deepEqual(zh.find((u) => u.text === 'Vector'), { text: 'Vector', start: 7, end: 13, unit: true });
+}
+

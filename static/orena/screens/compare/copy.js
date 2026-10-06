@@ -7,7 +7,8 @@ const LAYERS = {
   practiceTitle:'interface', chooseMedia:'interface', listenSource:'interface', chooseLine:'interface', previousLine:'interface', nextLine:'interface', linePosition:'interface', meaningUnavailable:'support',
   retryReference:'interface',
   referenceAudio:'support', referenceReading:'support', referenceAlignment:'support', referenceFailed:'support',
-  readySub:'support', recordingSub:'support', assessingSub:'support', readingUnavailable:'support',
+  // The recorder's status lines follow the interface like its title (L-06).
+  readySub:'interface', recordingSub:'interface', assessingSub:'interface', readingUnavailable:'interface',
   timingCompared:'support', timingLonger:'support', timingShorter:'support', timingSame:'support',
   subtitle: 'interface', wordRange: 'interface', previousWords: 'interface', nextWords: 'interface',
   pitchUnavailable: 'support', modelWordUnavailable: 'support',

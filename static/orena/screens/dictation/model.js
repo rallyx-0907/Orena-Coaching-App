@@ -220,10 +220,12 @@ export { verdictOf };
 
 /* The label beside the Hint button: a fixed category for the current level, never the answer's own
    text (design: `hintNote`, always present, even before a hint is asked for). */
-export function hintNoteKey(level) {
-  if (level <= 0) return 'hintNoteStart';
+export function hintNoteKey(level, language = 'en') {
+  // A Chinese lesson's second rung reveals each word's first character, not first letters (L-05).
+  const han = language === 'zh';
+  if (level <= 0) return han ? 'hintNoteStartHan' : 'hintNoteStart';
   if (level === 1) return 'hintNoteShapes';
-  if (level === 2) return 'hintNoteLetters';
+  if (level === 2) return han ? 'hintNoteLettersHan' : 'hintNoteLetters';
   return 'hintNoteWords';
 }
 

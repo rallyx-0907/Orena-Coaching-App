@@ -246,7 +246,7 @@ export default async function mountDictation(element, ctx) {
     const view = hintButton(hintLevel);
     setText(button, t(view.key, view.values));
     button.disabled = view.disabled;
-    setText(note, t(hintNoteKey(hintLevel)));
+    setText(note, t(hintNoteKey(hintLevel, lesson.language)));
   }
 
   function paintPre() {
