@@ -919,6 +919,12 @@ def _record_agent_turn(user_key: str, record: dict) -> None:
         _agent_turn_retention.maybe_sweep()
 
 
+def _agent_listening_library(language: str, level: str | None, topic: str | None) -> list:
+    from writing_coach.listening_api import listening_library as _listening_library
+
+    return _listening_library(language=language, level=level, topic=topic, tag=None).get("items", [])
+
+
 def _gemini_key() -> str:
     """The Gemini key the AI platform resolves (a stored credential, else GEMINI_API_KEY); never sent to a client."""
 
@@ -961,6 +967,11 @@ configure_agent(_with_voice(
             learner_summary=lambda window: _agent_learner_summary(window),
             cross_skill_cue=lambda: becoming_cross_skill_cue_get(),
             listening_recent=lambda limit: _specialized_learning_repository.list_recent_listening_progress_records(limit),
+            # find_content (R29): the learner's library pages, as their own routes compose them.
+            listening_library=lambda language, level, topic: _agent_listening_library(language, level, topic),
+            reading_articles=lambda language, level, topic, limit: ReadingContentRepository(_agent_engine()).list_published(
+                language=language, level=level, topic=topic, limit=limit
+            ).get("items", []),
         ),
         record_usage=_persistence_runtime.product_repository.record_usage,
         record_turn=_record_agent_turn,

@@ -293,6 +293,15 @@ _PLAN = (
         "sentence as selected_item.text.",
         evidence_source="reading.comprehension",
     ),
+    # --- finding content to open (R29) -------------------------------------------
+    PlannedTool(
+        "find_content",
+        "adapter",
+        "writing_coach.listening_api:listening_library",
+        "The learner's library pages, in the session's language: the listening library (curated and imported) and "
+        "the published reading articles, filtered by level, topic and title words; each item carries its content_id.",
+        composes=("writing_coach.persistence.reading_content_repository:ReadingContentRepository.list_published",),
+    ),
     # --- listening ---------------------------------------------------------------
     PlannedTool(
         "get_current_listening_context",

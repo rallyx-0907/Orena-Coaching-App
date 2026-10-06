@@ -33,7 +33,7 @@ from writing_coach.agent.ratelimit import SlidingWindowLimiter
 from writing_coach.agent.schemas import TurnRequest
 from writing_coach.agent.tools import LearnerScope
 from writing_coach.agent.turn import AgentRuntime
-from writing_coach.agent.voice_session import VoiceService
+from writing_coach.agent.voice_session import VoiceService, voice_catalog
 from writing_coach.ai.live_voice import VoiceUnavailable
 
 router = APIRouter(prefix="/api/agent", tags=["agent"])
@@ -159,6 +159,17 @@ def agent_voice_session(body: dict = Body(...), voice: VoiceService = Depends(_v
         raise HTTPException(status_code=422, detail=exc.errors(include_url=False, include_context=False)) from exc
     except VoiceUnavailable as exc:
         raise HTTPException(status_code=503, detail="voice_unavailable") from exc
+
+
+@router.get("/voice/voices")
+def agent_voice_voices(
+    interface: str = Query(default="en", max_length=16), voice: VoiceService = Depends(_voice_call_allowed)
+) -> dict:
+    """Orena's voices to choose from (R29), labelled in the interface language; the choice goes in the session body."""
+
+    if interface not in interface_languages():
+        raise HTTPException(status_code=422, detail="unknown interface language")
+    return voice_catalog(interface)
 
 
 @router.post("/voice/tool")

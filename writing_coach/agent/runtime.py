@@ -19,6 +19,7 @@ from writing_coach.agent.coaching import (
     _unavailable_summary,
     coaching_tools,
 )
+from writing_coach.agent.find_tools import ListeningLibrary, ReadingArticles, _nothing, find_tools
 from writing_coach.agent.grammar_tools import (
     GrammarLessonReader,
     GrammarLibraryReader,
@@ -74,6 +75,8 @@ class AppReads:
     learner_summary: LearnerSummaryReader = _unavailable_summary
     cross_skill_cue: CrossSkillCueReader = _no_cue
     listening_recent: ListeningRecent = _empty
+    listening_library: ListeningLibrary = _nothing  # find_content (R29)
+    reading_articles: ReadingArticles = _nothing
 
 
 def build_tool_registry(
@@ -105,6 +108,7 @@ def build_tool_registry(
             listening_recent=reads.listening_recent,
             reading_evidence=reads.reading_evidence,
         ),
+        *find_tools(listening_library=reads.listening_library, reading_articles=reads.reading_articles),
     ):
         registry.register(tool)
     return registry
