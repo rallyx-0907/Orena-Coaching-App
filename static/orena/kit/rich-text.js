@@ -186,19 +186,24 @@ const RUN_CLOSE = '\uE001';
 const RUN_BASE = 0xe100;
 
 export function richSegments(segments, { streaming = false, langOf = (segment) => segment.lang, refClass = '' } = {}) {
-  const list = (Array.isArray(segments) ? segments : []).filter((segment) => segment && String(segment.text ?? ''));
-  const own = (list.find((segment) => segment.voice_style !== 'reference') || list[0])?.lang || '';
+  const all = (Array.isArray(segments) ? segments : []).filter((segment) => segment && String(segment.text ?? ''));
+  // A `reference` segment is not part of the prose: the server sends it after the answer, a word to hear
+  // (add_reference). Joined into the document it ran on from the last sentence ("…。花生"), so it stands on its
+  // own line under the answer instead.
+  const references = all.filter((segment) => segment.voice_style === 'reference');
+  const list = all.filter((segment) => segment.voice_style !== 'reference');
+  const own = (list[0] || all[0])?.lang || '';
   const runs = [];
   const joined = list
     .map((segment) => {
       const text = String(segment.text);
-      const reference = segment.voice_style === 'reference';
-      if (!reference && (!segment.lang || segment.lang === own || text.includes('\n'))) return text;
+      if (!segment.lang || segment.lang === own || text.includes('\n')) return text;
       runs.push(segment);
       return RUN_OPEN + String.fromCharCode(RUN_BASE + runs.length - 1) + text + RUN_CLOSE;
     })
     .join('');
-  const body = String(hasBlocks(joined) ? richText(joined, { streaming }) : richInline(joined, { streaming }));
+  // With a reference line to add, the answer is laid out as blocks so the line has a place under it.
+  const body = String(hasBlocks(joined) || references.length ? richText(joined, { streaming }) : richInline(joined, { streaming }));
   const html = body
     .replace(new RegExp(`${RUN_OPEN}([\\uE100-\\uEFFF])`, 'g'), (whole, code) => {
       const segment = runs[code.charCodeAt(0) - RUN_BASE];
@@ -207,6 +212,11 @@ export function richSegments(segments, { streaming = false, langOf = (segment) =
       return `<span lang="${esc(langOf(segment))}"${cls}>`;
     })
     .replace(new RegExp(RUN_CLOSE, 'g'), '</span>');
-  return { lang: own, markup: raw(html) };
+  const refs = references.length
+    ? `<p class="o-rich__p o-rich__refs">${references
+        .map((segment) => `<span lang="${esc(langOf(segment))}"${refClass ? ` class="${esc(refClass)}"` : ''}>${esc(segment.text)}</span>`)
+        .join(' ')}</p>`
+    : '';
+  return { lang: own, markup: raw(refs && html ? html.replace(/<\/div>$/, `${refs}</div>`) : html || refs) };
 }
 

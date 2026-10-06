@@ -49,6 +49,9 @@ const { t } = await import('../static/orena/screens/orena/copy.js');
   assert.ok(doc.includes('start="2"') && !doc.includes('<li><strong>Hanzi:</strong> </li>'), 'no empty numbered item');
   assert.ok(!/[\uE000-\uEFFF]/.test(doc), 'no marker left in the markup');
   assert.equal((doc.match(/<span/g) || []).length, (doc.match(/<\/span>/g) || []).length, 'every language span closes');
+  // A reference segment (a word to hear, sent after the answer) stands on its own line, not glued to the last sentence.
+  const withRef = String(richSegments([{ lang: 'vi', text: 'Lạc là món gia đình thích ăn.' }, { lang: 'zh-CN', text: '花生', voice_style: 'reference' }], { refClass: 'x__ref' }).markup);
+  assert.ok(withRef.includes('<p class="o-rich__p">Lạc là món gia đình thích ăn.</p><p class="o-rich__p o-rich__refs"><span lang="zh-CN" class="x__ref">花生</span></p>'), 'the reference is its own line');
   assert.equal(hasBlocks('one line'), false);
   assert.equal(hasBlocks('- item'), true);
   assert.equal(plainText('**Nghĩa:** đậu phộng [Open word](command:navigate?{}) và *lạc*'), 'Nghĩa: đậu phộng  và lạc');
