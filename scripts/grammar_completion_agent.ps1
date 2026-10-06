@@ -22,6 +22,8 @@ param(
 $ErrorActionPreference = "Stop"
 $InvariantCulture = [System.Globalization.CultureInfo]::InvariantCulture
 $PointIdPattern = '(?:en|zh)\.[a-z0-9_-]+(?:\.[a-z0-9_-]+)*'
+$RepoRoot = Split-Path -Parent $PSScriptRoot
+$DeferredStatePath = Join-Path $RepoRoot "grammar_lab\.cache\grammar_completion_deferred.txt"
 
 function Invoke-Corpus {
     param(
@@ -91,6 +93,31 @@ function Test-CacheMiss {
     return $Text -match "cache-only mode:\s+no cached completion"
 }
 
+function Get-DeferredPointIds {
+    if (-not (Test-Path -LiteralPath $DeferredStatePath)) {
+        return @()
+    }
+    return @(
+        Get-Content -LiteralPath $DeferredStatePath |
+            ForEach-Object { $_.Trim() } |
+            Where-Object { $_ }
+    )
+}
+
+function Add-DeferredPointId {
+    param([string]$PointId)
+
+    $directory = Split-Path -Parent $DeferredStatePath
+    if (-not (Test-Path -LiteralPath $directory)) {
+        New-Item -ItemType Directory -Path $directory -Force | Out-Null
+    }
+
+    $existing = @(Get-DeferredPointIds)
+    if ($existing -notcontains $PointId) {
+        Add-Content -LiteralPath $DeferredStatePath -Value $PointId -Encoding UTF8
+    }
+}
+
 function Get-ReadyPointIds {
     param([string]$Language)
 
@@ -135,8 +162,9 @@ function Invoke-Rescue {
         $ErrorActionPreference = $previousErrorActionPreference
     }
 
+    $text = ($output | Out-String)
     $output | ForEach-Object { Write-Host $_ }
-    return [int]$exitCode
+    return [pscustomobject]@{ ExitCode = $exitCode; Text = $text }
 }
 
 function Assert-CorpusComplete {
@@ -215,6 +243,14 @@ if (-not (Get-Command codex -ErrorAction SilentlyContinue)) {
 $languages = if ($Lang -eq "all") { @("en", "zh") } else { @($Lang) }
 $spent = 0.0
 $processed = 0
+$attemptedPointIds = [System.Collections.Generic.HashSet[string]]::new()
+$deferredPointIds = [System.Collections.Generic.HashSet[string]]::new()
+foreach ($deferredPointId in @(Get-DeferredPointIds)) {
+    [void]$deferredPointIds.Add($deferredPointId)
+}
+if ($deferredPointIds.Count -gt 0) {
+    Write-Host "Deferred points skipped until their contract is fixed: $($deferredPointIds.Count)"
+}
 
 Write-Host "Orena Grammar Completion Agent"
 Write-Host "Languages: $($languages -join ', ')"
@@ -232,20 +268,23 @@ foreach ($language in $languages) {
     Write-Host "=============================="
 
     while ($true) {
-        if ($MaxPoints -gt 0 -and $processed -ge $MaxPoints) {
+        if ($MaxPoints -gt 0 -and $attemptedPointIds.Count -ge $MaxPoints) {
             Write-Host "MaxPoints reached. Safe to resume with the same command."
             Write-Host "Paid spend this run: USD $($spent.ToString('0.0000'))"
             exit 0
         }
 
-        $readyPointIds = @(Get-ReadyPointIds -Language $language)
+        $readyPointIds = @(
+            Get-ReadyPointIds -Language $language |
+                Where-Object { -not $deferredPointIds.Contains($_) -and -not $attemptedPointIds.Contains($_) }
+        )
         if ($readyPointIds.Count -eq 0) {
-            Write-Host "$language has no ready points remaining."
+            Write-Host "$language has no non-deferred ready points remaining in this run."
             break
         }
 
         if ($MaxPoints -gt 0) {
-            $remainingPointSlots = $MaxPoints - $processed
+            $remainingPointSlots = $MaxPoints - $attemptedPointIds.Count
             if ($remainingPointSlots -le 0) {
                 Write-Host "MaxPoints reached. Safe to resume with the same command."
                 Write-Host "Paid spend this run: USD $($spent.ToString('0.0000'))"
@@ -254,18 +293,16 @@ foreach ($language in $languages) {
             $readyPointIds = @($readyPointIds | Select-Object -First $remainingPointSlots)
         }
 
+        foreach ($readyPointId in $readyPointIds) {
+            [void]$attemptedPointIds.Add($readyPointId)
+        }
+
         Write-Host ""
         Write-Host "--- Free cache sweep: $($readyPointIds.Count) ready point(s) ---"
         $uncachedPointIds = [System.Collections.Generic.List[string]]::new()
         $rescuePointIds = [System.Collections.Generic.List[string]]::new()
 
         foreach ($readyPointId in $readyPointIds) {
-            if ($MaxPoints -gt 0 -and $processed -ge $MaxPoints) {
-                Write-Host "MaxPoints reached. Safe to resume with the same command."
-                Write-Host "Paid spend this run: USD $($spent.ToString('0.0000'))"
-                exit 0
-            }
-
             $probe = Invoke-Corpus -Language $language -PointId $readyPointId -CacheOnly
             if (Test-Written -Text $probe.Text -PointId $readyPointId) {
                 $processed++
@@ -292,11 +329,17 @@ foreach ($language in $languages) {
         foreach ($pointId in $rescuePointIds) {
             Write-Host ""
             Write-Host "--- Codex rescue from cached candidate: $pointId ---"
-            $rescueExit = Invoke-Rescue -PointId $pointId
-            if ($rescueExit -ne 0) {
-                Write-Host "STOP: Codex rescue for $pointId exited with code $rescueExit."
+            $rescueResult = Invoke-Rescue -PointId $pointId
+            if ($rescueResult.ExitCode -ne 0) {
+                if ($rescueResult.Text -match "RESCUE_BLOCKED" -or $rescueResult.Text -match "RESCUE_NO_CHANGE") {
+                    Add-DeferredPointId -PointId $pointId
+                    [void]$deferredPointIds.Add($pointId)
+                    Write-Host "DEFERRED: $pointId; continuing with the remaining batch."
+                    continue
+                }
+                Write-Host "STOP: Codex rescue for $pointId exited with code $($rescueResult.ExitCode)."
                 Write-Host "No additional paid candidate was requested."
-                exit $rescueExit
+                exit $rescueResult.ExitCode
             }
             $processed++
         }
@@ -312,12 +355,6 @@ foreach ($language in $languages) {
         }
 
         foreach ($pointId in $uncachedPointIds) {
-            if ($MaxPoints -gt 0 -and $processed -ge $MaxPoints) {
-                Write-Host "MaxPoints reached. Safe to resume with the same command."
-                Write-Host "Paid spend this run: USD $($spent.ToString('0.0000'))"
-                exit 0
-            }
-
             $remaining = $BudgetUsd - $spent
             if ($remaining -lt $PerPointCostCeilingUsd) {
                 Write-Host "STOP: remaining run budget USD $($remaining.ToString('0.0000')) is below the per-point ceiling."
@@ -359,15 +396,36 @@ foreach ($language in $languages) {
 
             Write-Host ""
             Write-Host "--- Codex rescue: $pointId ---"
-            $rescueExit = Invoke-Rescue -PointId $pointId
-            if ($rescueExit -ne 0) {
-                Write-Host "STOP: Codex rescue for $pointId exited with code $rescueExit."
+            $rescueResult = Invoke-Rescue -PointId $pointId
+            if ($rescueResult.ExitCode -ne 0) {
+                if ($rescueResult.Text -match "RESCUE_BLOCKED" -or $rescueResult.Text -match "RESCUE_NO_CHANGE") {
+                    Add-DeferredPointId -PointId $pointId
+                    [void]$deferredPointIds.Add($pointId)
+                    Write-Host "DEFERRED: $pointId; continuing with the remaining batch."
+                    continue
+                }
+                Write-Host "STOP: Codex rescue for $pointId exited with code $($rescueResult.ExitCode)."
                 Write-Host "No additional paid candidate was requested."
-                exit $rescueExit
+                exit $rescueResult.ExitCode
             }
             $processed++
         }
     }
+}
+
+$remainingDeferred = [System.Collections.Generic.List[string]]::new()
+foreach ($language in $languages) {
+    foreach ($pointId in @(Get-ReadyPointIds -Language $language)) {
+        if ($deferredPointIds.Contains($pointId)) {
+            $remainingDeferred.Add($pointId)
+        }
+    }
+}
+if ($remainingDeferred.Count -gt 0) {
+    Write-Host "STOP: $($remainingDeferred.Count) deferred ready point(s) remain after all processable points."
+    $remainingDeferred | ForEach-Object { Write-Host "  deferred  $_" }
+    Write-Host "Deferred state: $DeferredStatePath"
+    exit 23
 }
 
 Invoke-FinalGates -Languages $languages
