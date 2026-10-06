@@ -1,4 +1,4 @@
-name: Rescue Python Contract Patch
+name: Rescue Control Contract Patch
 
 on:
   push:
@@ -19,7 +19,7 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install -e "grammar_lab[dev]"
-      - name: Apply rescue interpreter patch
+      - name: Apply futile-rescue stop patch
         shell: python
         run: |
           from pathlib import Path
@@ -27,33 +27,13 @@ jobs:
           path = Path('scripts/grammar_rescue_agent.ps1')
           text = path.read_text(encoding='utf-8')
 
-          old = '''function Invoke-CodexRepair {\n    param([string]$Id, [string]$Failure, [string]$RequestedModel)\n'''
-          new = '''function Invoke-CodexRepair {\n    param(\n        [string]$Id,\n        [string]$Failure,\n        [string]$RequestedModel,\n        [string]$PythonExecutable\n    )\n'''
+          old = '''    $output | ForEach-Object { Write-Host $_ }\n    return [int]$exitCode\n}\n'''
+          new = '''    $output | ForEach-Object { Write-Host $_ }\n    $text = ($output | Out-String)\n    return [pscustomobject]@{ ExitCode = $exitCode; Text = $text }\n}\n'''
           assert old in text
           text = text.replace(old, new, 1)
 
-          old = '''- Run focused pytest only. Inspect git diff before finishing.\n- Inside Codex, run focused tests with `python -m pytest`; the outer wrapper has already verified `python` is on PATH.\n- Do not use `.venv`, `py`, or a hard-coded Python interpreter path.\n'''
-          new = '''- Run focused pytest only. Inspect git diff before finishing.\n- Use the exact interpreter in `$env:ORENA_PYTHON` for focused tests, for example: `& $env:ORENA_PYTHON -m pytest ...`.\n- Do not use `.venv`, `py`, or a bare `python` command inside Codex.\n'''
-          assert old in text
-          text = text.replace(old, new, 1)
-
-          old = '''    Push-Location "grammar_lab"\n    $previousErrorActionPreference = $ErrorActionPreference\n    try {\n'''
-          new = '''    Push-Location "grammar_lab"\n    $previousErrorActionPreference = $ErrorActionPreference\n    $hadOrenaPython = Test-Path Env:ORENA_PYTHON\n    $previousOrenaPython = $env:ORENA_PYTHON\n    try {\n        $env:ORENA_PYTHON = $PythonExecutable\n'''
-          assert old in text
-          text = text.replace(old, new, 1)
-
-          old = '''    finally {\n        $ErrorActionPreference = $previousErrorActionPreference\n        Pop-Location\n    }\n'''
-          new = '''    finally {\n        $ErrorActionPreference = $previousErrorActionPreference\n        if ($hadOrenaPython) {\n            $env:ORENA_PYTHON = $previousOrenaPython\n        } else {\n            Remove-Item Env:ORENA_PYTHON -ErrorAction SilentlyContinue\n        }\n        Pop-Location\n    }\n'''
-          assert old in text
-          text = text.replace(old, new, 1)
-
-          old = '''if (-not (Get-Command codex -ErrorAction SilentlyContinue)) {\n    throw "codex is not available in PATH."\n}\n\n$baselinePaths'''
-          new = '''if (-not (Get-Command codex -ErrorAction SilentlyContinue)) {\n    throw "codex is not available in PATH."\n}\n\n$pythonExecutableLines = & python -c "import sys; print(sys.executable)" 2>&1\nif ($LASTEXITCODE -ne 0) {\n    throw "Could not resolve the Python interpreter executable."\n}\n$pythonExecutable = (($pythonExecutableLines | Select-Object -First 1).ToString()).Trim()\nif (-not $pythonExecutable -or -not (Test-Path -LiteralPath $pythonExecutable)) {\n    throw "Resolved Python interpreter does not exist: $pythonExecutable"\n}\n\n$baselinePaths'''
-          assert old in text
-          text = text.replace(old, new, 1)
-
-          old = '''    $agentExit = Invoke-CodexRepair -Id $PointId -Failure $replay.Text -RequestedModel $CodexModel\n'''
-          new = '''    $agentExit = Invoke-CodexRepair -Id $PointId -Failure $replay.Text -RequestedModel $CodexModel -PythonExecutable $pythonExecutable\n'''
+          old = '''    $agentExit = Invoke-CodexRepair -Id $PointId -Failure $replay.Text -RequestedModel $CodexModel -PythonExecutable $pythonExecutable\n    if ($agentExit -ne 0) {\n        Write-Error "Codex exited with code $agentExit."\n        exit 30\n    }\n\n'''
+          new = '''    $agent = Invoke-CodexRepair -Id $PointId -Failure $replay.Text -RequestedModel $CodexModel -PythonExecutable $pythonExecutable\n    if ($agent.ExitCode -ne 0) {\n        Write-Error "Codex exited with code $($agent.ExitCode)."\n        exit 30\n    }\n    if ($agent.Text -match "(?m)^RESCUE_BLOCKED\\s*$") {\n        Write-Error "Codex reported RESCUE_BLOCKED. Stopping immediately; another identical Codex cycle would not add evidence."\n        exit 41\n    }\n    if ($agent.Text -match "(?m)^RESCUE_NO_CHANGE\\s*$") {\n        Write-Error "Codex reported RESCUE_NO_CHANGE. Stopping immediately; another identical Codex cycle would not add evidence."\n        exit 42\n    }\n    if ($agent.Text -notmatch "(?m)^RESCUE_PATCHED\\s*$") {\n        Write-Error "Codex did not return a recognized rescue terminal status."\n        exit 33\n    }\n\n'''
           assert old in text
           text = text.replace(old, new, 1)
 
@@ -75,5 +55,5 @@ jobs:
           git config user.name "CalisJI"
           git config user.email "78250571+CalisJI@users.noreply.github.com"
           git add scripts/grammar_rescue_agent.ps1
-          git commit -m "fix(grammar): pass explicit Python into Codex rescue"
+          git commit -m "fix(grammar): stop futile repeated Codex rescues"
           git push origin HEAD:feature/grammar-lab-pipeline
