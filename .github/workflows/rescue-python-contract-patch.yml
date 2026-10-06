@@ -1,0 +1,78 @@
+name: Rescue Python Contract Patch
+
+on:
+  push:
+    paths:
+      - '.github/workflows/rescue-python-contract-patch.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Apply rescue interpreter patch
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path('scripts/grammar_rescue_agent.ps1')
+          text = path.read_text(encoding='utf-8')
+
+          old = '''function Invoke-CodexRepair {\n    param([string]$Id, [string]$Failure, [string]$RequestedModel)\n'''
+          new = '''function Invoke-CodexRepair {\n    param(\n        [string]$Id,\n        [string]$Failure,\n        [string]$RequestedModel,\n        [string]$PythonExecutable\n    )\n'''
+          assert old in text
+          text = text.replace(old, new, 1)
+
+          old = '''- Run focused pytest only. Inspect git diff before finishing.\n- Inside Codex, run focused tests with `python -m pytest`; the outer wrapper has already verified `python` is on PATH.\n- Do not use `.venv`, `py`, or a hard-coded Python interpreter path.\n'''
+          new = '''- Run focused pytest only. Inspect git diff before finishing.\n- Use the exact interpreter in `$env:ORENA_PYTHON` for focused tests, for example: `& $env:ORENA_PYTHON -m pytest ...`.\n- Do not use `.venv`, `py`, or a bare `python` command inside Codex.\n'''
+          assert old in text
+          text = text.replace(old, new, 1)
+
+          old = '''    Push-Location "grammar_lab"\n    $previousErrorActionPreference = $ErrorActionPreference\n    try {\n'''
+          new = '''    Push-Location "grammar_lab"\n    $previousErrorActionPreference = $ErrorActionPreference\n    $hadOrenaPython = Test-Path Env:ORENA_PYTHON\n    $previousOrenaPython = $env:ORENA_PYTHON\n    try {\n        $env:ORENA_PYTHON = $PythonExecutable\n'''
+          assert old in text
+          text = text.replace(old, new, 1)
+
+          old = '''    finally {\n        $ErrorActionPreference = $previousErrorActionPreference\n        Pop-Location\n    }\n'''
+          new = '''    finally {\n        $ErrorActionPreference = $previousErrorActionPreference\n        if ($hadOrenaPython) {\n            $env:ORENA_PYTHON = $previousOrenaPython\n        } else {\n            Remove-Item Env:ORENA_PYTHON -ErrorAction SilentlyContinue\n        }\n        Pop-Location\n    }\n'''
+          assert old in text
+          text = text.replace(old, new, 1)
+
+          old = '''if (-not (Get-Command codex -ErrorAction SilentlyContinue)) {\n    throw "codex is not available in PATH."\n}\n\n$baselinePaths'''
+          new = '''if (-not (Get-Command codex -ErrorAction SilentlyContinue)) {\n    throw "codex is not available in PATH."\n}\n\n$pythonExecutableLines = & python -c "import sys; print(sys.executable)" 2>&1\nif ($LASTEXITCODE -ne 0) {\n    throw "Could not resolve the Python interpreter executable."\n}\n$pythonExecutable = (($pythonExecutableLines | Select-Object -First 1).ToString()).Trim()\nif (-not $pythonExecutable -or -not (Test-Path -LiteralPath $pythonExecutable)) {\n    throw "Resolved Python interpreter does not exist: $pythonExecutable"\n}\n\n$baselinePaths'''
+          assert old in text
+          text = text.replace(old, new, 1)
+
+          old = '''    $agentExit = Invoke-CodexRepair -Id $PointId -Failure $replay.Text -RequestedModel $CodexModel\n'''
+          new = '''    $agentExit = Invoke-CodexRepair -Id $PointId -Failure $replay.Text -RequestedModel $CodexModel -PythonExecutable $pythonExecutable\n'''
+          assert old in text
+          text = text.replace(old, new, 1)
+
+          path.write_text(text, encoding='utf-8')
+      - name: Focused contract test
+        run: python -m pytest grammar_lab/tests/test_rescue_agent_contract.py -q
+      - name: Parse PowerShell
+        shell: pwsh
+        run: |
+          $tokens = $null
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path 'scripts/grammar_rescue_agent.ps1'), [ref]$tokens, [ref]$errors) | Out-Null
+          if ($errors.Count -gt 0) { throw ($errors | Out-String) }
+      - name: Full Grammar Lab suite
+        run: python -m pytest grammar_lab/tests -q
+      - name: Commit verified patch
+        shell: bash
+        run: |
+          git config user.name "CalisJI"
+          git config user.email "78250571+CalisJI@users.noreply.github.com"
+          git add scripts/grammar_rescue_agent.ps1
+          git commit -m "fix(grammar): pass explicit Python into Codex rescue"
+          git push origin HEAD:feature/grammar-lab-pipeline
