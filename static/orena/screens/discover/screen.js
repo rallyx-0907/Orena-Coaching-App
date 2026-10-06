@@ -5,7 +5,7 @@
 import { html, mount, raw } from '../../kit/html.js';
 import { icon } from '../../kit/icons.js';
 import { useStyles } from '../../kit/styles.js';
-import { mediaCard } from '../../kit/components.js';
+import { mediaCard, headlineTitle } from '../../kit/components.js';
 import { langSpan, langAttr } from '../../kit/lang.js';
 import { emptyMarkup } from '../../kit/states.js';
 import { openSheet, sheetHead, fillSheet } from '../../kit/overlay.js';
@@ -125,7 +125,7 @@ export default async function discover(element, ctx) {
         html`<div class="s-discover__grid">${list.map((entry) => {
           // Navigation history is not completion of this newly chosen practice.
           const card = presentCard(practice ? {...entry,started:false,progressPct:null} : entry, t);
-          return mediaCard({ ...card, title: langSpan(card.title, card.titleLang), dataset: { go: practice ? practiceHref(entry, ctx.href, practicePlace) : hrefFor(entry, ctx.href) } });
+          return mediaCard({ ...card, title: langSpan(headlineTitle(card.title), card.titleLang), fullTitle: card.title, dataset: { go: practice ? practiceHref(entry, ctx.href, practicePlace) : hrefFor(entry, ctx.href) } });
         })}</div>`,
       );
     }

@@ -198,3 +198,14 @@ function has(markup, needle) {
 }
 
 console.log('Orena components: markup escapes data, renders only the parts it was given, no colour literal, icons known: PASS');
+
+// LEX-036: a media headline drops appended hashtags and keeps the whole title for disclosure.
+{
+  const { headlineTitle, mediaCard: card } = await import('../static/orena/kit/components.js');
+  assert.equal(headlineTitle('Kung Fu Panda 4 (Chinese Mandarin) #kungfupanda #learnchinese'), 'Kung Fu Panda 4 (Chinese Mandarin)');
+  assert.equal(headlineTitle('HSK1–2 My Daily Routine #中文 #hsk'), 'HSK1–2 My Daily Routine');
+  assert.equal(headlineTitle('C# basics'), 'C# basics', 'a # inside a word is not a hashtag');
+  assert.equal(headlineTitle('#shorts'), '#shorts', 'a title that is only hashtags stays');
+  assert.match(String(card({ title: 'A', fullTitle: 'A #b' })), /title="A #b"/);
+}
+

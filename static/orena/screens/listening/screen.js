@@ -164,6 +164,10 @@ export default async function listening(element, ctx) {
     },
   });
 
+  // Reached by the Dictation route (Practice Hub, Progress) the room opens in Dictation, on the remembered or
+  // named line (LEX-034): one Dictation experience, whichever way the learner came in.
+  if (dictationOn && (ctx.route?.id === 'dictation' || ctx.query.get('mode') === 'dictation')) mode = 'dictation';
+
   /* A hidden line: one muted bar per word (per character in Chinese), so its length is known and its
      words are not. */
   function hiddenBars(seg) {
@@ -239,6 +243,7 @@ export default async function listening(element, ctx) {
     return html`${list.map((item) => html`<button type="button" class="s-listening__mode" data-mode="${item.id}" ${item.on ? '' : raw('disabled')} title="${item.on ? '' : t('transcriptUnavailable')}" aria-pressed="${String(pressed(item.id))}">${item.label}</button>`)}`;
   }
   function paintModes() {
+    element.classList.toggle('is-dictation', mode === 'dictation');
     const holder = element.querySelector('[data-modes]');
     mount(holder, modesMarkup());
     holder.querySelectorAll('[data-mode]').forEach((button) => button.addEventListener('click', () => onMode(button.dataset.mode)));
@@ -306,7 +311,9 @@ export default async function listening(element, ctx) {
     }
     // Only playback moves the current line: a paused player (a line just chosen, a return from practice)
     // keeps the learner's line even when the player has not reported the new time yet (L-09).
-    if (!seekingTo && (playing || barSeek)) {
+    // In Dictation the line is the learner's choice: playback is bounded to it, and a late clock report from
+    // the line just checked must not pull the room back to it after Next segment (LEX-032).
+    if (!seekingTo && mode !== 'dictation' && (playing || barSeek)) {
       barSeek = false;
       const found = activeCanonicalSegment(segments, timeMs);
       const foundIndex = found ? indexOf(found.segment_id) : -1;
@@ -366,7 +373,7 @@ export default async function listening(element, ctx) {
     replaySegment(playerEl, lesson.playback, seg.start_ms, seg.end_ms, speed);
     paintRows();
     paintNowPlaying();
-    if (mode === 'dictation') { paintSelected(); rememberPlace(true); }
+    if (mode === 'dictation') { paintDictationCard(); rememberPlace(true); }
   }
 
   /* ---------------------------------------------------------------- controls row ---- */
@@ -390,11 +397,15 @@ export default async function listening(element, ctx) {
       ${playbackOk ? pill({ id: 'speed', label: speedLabel(speed), variant: 'speed' }) : ''}
       ${mode === 'follow' && segOf(currentId) ? html`<button type="button" class="s-listening__pill s-listening__pill--pick" data-act="pick">${t('workOnThisLine')}</button>` : ''}
       <span class="s-listening__spacer"></span>
-      ${showMeaningToggle ? html`<button type="button" class="s-listening__pill s-listening__pill--toggle" data-act="trans" aria-pressed="${String(showTrans)}"><span class="s-listening__trans-code">${support}</span><span class="s-listening__trans-label">${t('meaning')}</span></button>` : ''}
+      ${mode === 'dictation' ? '' : aidsMarkup()}`;
+  }
+
+  /* The listening aids act on visible text; in Dictation the text is hidden, so they step aside (LEX-035). */
+  function aidsMarkup() {
+    return html`${showMeaningToggle ? html`<button type="button" class="s-listening__pill s-listening__pill--toggle" data-act="trans" aria-pressed="${String(showTrans)}"><span class="s-listening__trans-code">${support}</span><span class="s-listening__trans-label">${t('meaning')}</span></button>` : ''}
       <button type="button" class="s-listening__more" data-act="more" aria-pressed="${String(moreOpen)}" aria-label="${t('more')}" title="${t('more')}"><span class="s-listening__more-glyph">${raw(icon('ellipsis', { size: 18 }))}</span></button>
       <span class="s-listening__secondary">${toggles()}</span>
-      ${moreOpen ? html`<div class="s-listening__drawer"><div class="s-listening__drawer-row">${toggles()}</div></div>` : ''}
-    `;
+      ${moreOpen ? html`<div class="s-listening__drawer"><div class="s-listening__drawer-row">${toggles()}</div></div>` : ''}`;
   }
 
   function paintControls() {
@@ -607,10 +618,21 @@ export default async function listening(element, ctx) {
     playerEl.classList.toggle('is-veiled', mode === 'dictation' && !practice.revealed(currentId));
   }
 
+  /* The Dictation card is redrawn only when its line changes: replaying or the clock never rebuilds the answer
+     box, so the learner's typing, focus and phone keyboard stay put. */
+  let dictShownId = null;
+  function paintDictationCard() {
+    paintVeil();
+    if (dictShownId === currentId && selectedSlot.querySelector('.s-listening__dict')) return;
+    paintSelected();
+  }
+
   function paintSelected() {
     paintVeil();
+    dictShownId = null;
     if (mode === 'dictation') {
       const seg = segOf(currentId);
+      dictShownId = currentId;
       const line = seg && dictLesson.segments.find((item) => item.id === seg.segment_id);
       mount(selectedSlot, line ? dictationMarkup(seg) : html``);
       if (line) {
@@ -627,6 +649,7 @@ export default async function listening(element, ctx) {
   }
   function paintNowPlaying() {
     if (mode === 'active' && segOf(selectedId)) return;
+    if (mode === 'dictation') { paintDictationCard(); return; }
     paintSelected();
   }
 

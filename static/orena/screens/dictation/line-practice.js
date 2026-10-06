@@ -35,6 +35,7 @@ export function createLinePractice({ lesson, byId, priorRead = true, memory = nu
   let dockEl = null;
   let answer = '';
   let hintLevel = 0;
+  let hintHidden = false; // the learner put the hint away to try unaided; the level it reached stays (LEX-033)
   let checked = false;
   let lastResult = null;
   let evidence = null;
@@ -78,8 +79,14 @@ export function createLinePractice({ lesson, byId, priorRead = true, memory = nu
   function paintLive() {
     const box = q('[data-live]');
     if (!box) return;
-    box.hidden = hintLevel <= 0;
-    if (hintLevel > 0) mount(box, liveMarkup());
+    box.hidden = hintLevel <= 0 || hintHidden;
+    if (hintLevel > 0 && !hintHidden) mount(box, liveMarkup());
+    const toggle = q('[data-hint-toggle]');
+    if (toggle) {
+      toggle.hidden = hintLevel <= 0;
+      setText(toggle, t(hintHidden ? 'hintShow' : 'hintHide'));
+      toggle.setAttribute('aria-pressed', String(!hintHidden));
+    }
   }
   function paintHint() {
     const button = q('[data-hint]');
@@ -96,6 +103,7 @@ export function createLinePractice({ lesson, byId, priorRead = true, memory = nu
       <div class="s-dict__live" data-live hidden></div>`);
     mount(dockEl, html`<div class="s-dict__hintrow">
       <button type="button" class="s-dict__hint" data-hint></button>
+      <button type="button" class="s-dict__hinttoggle" data-hint-toggle hidden></button>
       <span class="s-dict__hintnote" data-hint-note></span>
       <span class="s-dict__spacer"></span>
       <button type="button" class="o-btn o-btn--primary s-dict__check" data-check>${t('checkButton')}</button>
@@ -115,7 +123,12 @@ export function createLinePractice({ lesson, byId, priorRead = true, memory = nu
     q('[data-hint]').addEventListener('click', () => {
       if (hintLevel >= MAX_HINT_LEVEL) return;
       hintLevel += 1;
+      hintHidden = false;
       paintHint();
+      paintLive();
+    });
+    q('[data-hint-toggle]').addEventListener('click', () => {
+      hintHidden = !hintHidden;
       paintLive();
     });
     q('[data-check]').addEventListener('click', () => void check());
@@ -211,6 +224,7 @@ export function createLinePractice({ lesson, byId, priorRead = true, memory = nu
     answer = '';
     saveDraft('');
     hintLevel = 0;
+    hintHidden = false;
     checked = false;
     lastResult = null;
     results.delete(seg.id);
@@ -233,6 +247,7 @@ export function createLinePractice({ lesson, byId, priorRead = true, memory = nu
         const kept = results.get(line.id);
         answer = kept ? kept.answer : readDraft();
         hintLevel = kept ? kept.hintLevel : 0;
+        hintHidden = false;
         checked = Boolean(kept);
         lastResult = kept ? kept.lastResult : null;
         ensureEvidence();

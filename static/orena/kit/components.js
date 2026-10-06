@@ -30,6 +30,14 @@ function dataAttrs(dataset = {}) {
    background-image CSS value the caller already resolved (a URL or none) - not a colour. Pass
    `imageHeight` for a fixed-height image area (Today's rail cards); otherwise the block holds the
    16:10 ratio Discover and My Library draw. */
+/* A media title as a headline: hashtags a source appends ("… #kungfupanda #learnchinese") are incidental
+   metadata, not the title (LEX-036). The title itself is never shortened; a title that is only hashtags stays. */
+export function headlineTitle(value) {
+  const text = String(value ?? '').trim();
+  const stripped = text.replace(/(?:\s*[#＃][^\s#＃]+)+\s*$/u, '').replace(/\s*[#＃][^\s#＃]+/gu, '').trim();
+  return stripped || text;
+}
+
 export function mediaCard({
   image = '',
   imageHeight = null,
@@ -37,11 +45,14 @@ export function mediaCard({
   duration = '',
   progress = null,
   title,
+  fullTitle = '',
   meta = '',
   tags = [],
   dataset = {},
 } = {}) {
   const pct = progress == null ? null : Math.max(0, Math.min(100, Number(progress)));
+  // The headline is held to two lines (LEX-036); the source's whole title stays one hover/long-press away.
+  const full = String(fullTitle || '').trim();
   const imgRules = [image ? `background-image:${image}` : '', imageHeight ? `height:${px(imageHeight)}` : ''].filter(Boolean).join(';');
   return html`<button type="button" class="o-card o-card--hover c-media"${dataAttrs(dataset)}>
     <span class="c-media__img" style="${imgRules}">
@@ -50,7 +61,7 @@ export function mediaCard({
       ${pct != null ? html`<span class="c-media__progress"><span style="width:${pct}%"></span></span>` : ''}
     </span>
     <span class="c-media__body">
-      <span class="c-media__title">${title}</span>
+      <span class="c-media__title"${full ? raw(` title="${esc(full)}"`) : ''}>${title}</span>
       ${meta ? html`<span class="c-media__meta">${meta}</span>` : ''}
       ${tags.length ? html`<span class="c-media__tags">${tags.map((t) => html`<span class="${cls('o-tag', t.tone && `o-tag--${t.tone}`)}"${t.lang ? raw(` lang="${esc(t.lang)}"`) : ''}>${t.label}</span>`)}</span>` : ''}
     </span>

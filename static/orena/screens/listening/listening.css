@@ -752,7 +752,9 @@
 .s-listening__dict-dock { flex: none; }
 .s-listening__dict-dock:empty { display: none; }
 :root[data-device="mobile"] .s-listening__dict .s-dict__input { font-size: 16px; padding: 12px 14px; min-height: 0; }
-:root[data-device="mobile"] .s-listening__dict-stage { max-height: 34vh; }
+/* The phone's selected-line card does not shrink; the Dictation card must, or its result and Next segment slide
+   under the transcript (LEX-032 on the phone). Its stage scrolls inside it; the actions stay in view. */
+:root[data-device="mobile"] .s-listening__selected.s-listening__dict { flex: 0 1 auto; min-height: 0; overflow: hidden; }
 
 /* The phone has no "now playing" card: this is its way into the line's practice (LEX-029). */
 .s-listening__pill--pick { display: var(--hide-desktop); }
@@ -770,3 +772,9 @@
 :root[data-device="mobile"] .s-listening__dict .s-dict__hint { padding: 10px 14px; }
 :root[data-device="mobile"] .s-listening__dict .s-dict__hintnote { font-size: 12.5px; line-height: 1.35; }
 :root[data-device="mobile"] .s-listening__dict .s-dict__check { padding-left: 18px; padding-right: 18px; }
+
+/* Dictation keeps the hidden transcript as a quiet line map, not reading content (LEX-035). */
+.s-listening.is-dictation .s-listening__row { padding-top: 6px; padding-bottom: 6px; }
+.s-listening.is-dictation .s-listening__row-hidden { padding: 2px 0; gap: 5px; }
+.s-listening.is-dictation .s-listening__bar { height: 7px; }
+.s-listening.is-dictation .s-listening__row:not(.is-playing) .s-listening__row-time { color: var(--text3); }
