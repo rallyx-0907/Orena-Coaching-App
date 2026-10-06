@@ -90,7 +90,7 @@ jobs:
           fi
           echo "RED confirmed."
 
-      - name: Patch completion and rescue wrappers
+      - name: Patch wrappers and local-cache tests
         shell: bash
         run: |
           python - <<'PY'
@@ -98,17 +98,14 @@ jobs:
 
           completion_path = Path("scripts/grammar_completion_agent.ps1")
           text = completion_path.read_text(encoding="utf-8")
-
           anchor = '$InvariantCulture = [System.Globalization.CultureInfo]::InvariantCulture\n'
           replacement = anchor + "$PointIdPattern = '(?:en|zh)\\.[a-z0-9_-]+(?:\\.[a-z0-9_-]+)*'\n"
           assert anchor in text
           text = text.replace(anchor, replacement, 1)
-
           old = '$m = [regex]::Match($Text, "(?m)^(?:written|error|blocked_metadata)\\s+((?:en|zh)\\.canon\\.[a-z0-9]+\\.[0-9]{3})\\s+")'
           new = '$m = [regex]::Match($Text, "(?m)^(?:written|error|blocked_metadata)\\s+($PointIdPattern)\\s+")'
           assert old in text
           text = text.replace(old, new, 1)
-
           old = 'return $Text -match "(?m)^written\\s+(?:en|zh)\\.canon\\.[a-z0-9]+\\.[0-9]{3}\\s+"'
           new = 'return $Text -match "(?m)^written\\s+$PointIdPattern\\s+"'
           assert old in text
@@ -122,6 +119,26 @@ jobs:
           assert old in text
           text = text.replace(old, new, 1)
           rescue_path.write_text(text, encoding="utf-8")
+
+          generate_test = Path("grammar_lab/tests/test_generate.py")
+          text = generate_test.read_text(encoding="utf-8")
+          if "import pytest\n" not in text:
+              text = text.replace("import httpx\n", "import httpx\nimport pytest\n", 1)
+          old = '    data = json.loads(cache.read_text(encoding="utf-8"))["data"]\n    original = copy.deepcopy(data)'
+          new = '    if not cache.exists():\n        pytest.skip("requires local DeepSeek cache fixture")\n    data = json.loads(cache.read_text(encoding="utf-8"))["data"]\n    original = copy.deepcopy(data)'
+          assert old in text
+          text = text.replace(old, new, 1)
+          generate_test.write_text(text, encoding="utf-8")
+
+          joiner_test = Path("grammar_lab/tests/test_joiner_options.py")
+          text = joiner_test.read_text(encoding="utf-8")
+          if "import pytest\n" not in text:
+              text = text.replace("from pathlib import Path\n", "from pathlib import Path\n\nimport pytest\n", 1)
+          old = '    data = json.loads(cache.read_text(encoding="utf-8"))["data"]\n    assert normalize_generated_structure(data, False) == data'
+          new = '    if not cache.exists():\n        pytest.skip("requires local DeepSeek cache fixture")\n    data = json.loads(cache.read_text(encoding="utf-8"))["data"]\n    assert normalize_generated_structure(data, False) == data'
+          assert old in text
+          text = text.replace(old, new, 1)
+          joiner_test.write_text(text, encoding="utf-8")
           PY
 
       - name: Run focused regression
@@ -135,6 +152,6 @@ jobs:
         run: |
           git config user.name "CalisJI"
           git config user.email "78250571+CalisJI@users.noreply.github.com"
-          git add scripts/grammar_completion_agent.ps1 scripts/grammar_rescue_agent.ps1 grammar_lab/tests/test_completion_agent_ids.py
+          git add scripts/grammar_completion_agent.ps1 scripts/grammar_rescue_agent.ps1 grammar_lab/tests/test_completion_agent_ids.py grammar_lab/tests/test_generate.py grammar_lab/tests/test_joiner_options.py
           git commit -m "fix(grammar): accept real point ids in completion wrappers"
           git push origin HEAD:feature/grammar-lab-pipeline
