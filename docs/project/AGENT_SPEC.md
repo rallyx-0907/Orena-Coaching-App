@@ -199,6 +199,15 @@ R27 (2026-10-04, sau khi PR #69 được merge) Người chủ dự án:
       bật.
     - Slice 4 (giọng nói): giữ đề xuất (b936819), chưa làm.
     - Sau khi lane UI báo dựng lại :8021: đo baseline (dưới 0,05 USD), rồi nhận lỗi test của người chủ dự án.
+R28 (2026-10-06) Người chủ dự án: làm giọng thật (Slice 4) "chuẩn CSM" theo D5, sau bài thử trên iPhone (không có live
+    talk, không phát tiếng). Chọn:
+    - Chế độ A (s2s): provider nói thẳng (Gemini Live theo D4), không phải chế độ B server viết lời. Người chủ dự án
+      chấp nhận rằng lời nói không qua trọn các cổng của lượt chữ (ClaimGate, bằng chứng trước khẳng định). Server
+      vẫn giữ: persona và lời dặn khoá trong token (client không đổi được); tool chỉ đọc chạy ở server qua relay, đúng
+      phạm vi learner; action vẫn là nút cần chạm, server duyệt (D-135, không định tuyến không hỏi); key không tới
+      client; 15 phút; không lưu âm thanh.
+    - Đợt thử đầu: chỉ Gemini Live, khóa gemini-live, trần 1,00 USD/ngày, dừng ở 0,80.
+    - Chạy thật (staging :8021): trần chung AGENT_DAILY_SPEND_CAP_USD=1 cho cả chữ và giọng.
 ```
 
 Tiến độ lane (cập nhật mỗi slice):
