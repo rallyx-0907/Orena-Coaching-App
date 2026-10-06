@@ -145,7 +145,16 @@ export function createVoiceEngine({ ctx = {}, send, onChange, abort, resume, onT
       return false;
     }
     try {
-      audio = { input: new Ctor(), output: new Ctor() };
+      // The microphone context runs at 16 kHz, so the browser itself resamples the voice with its proper
+      // low-pass filter (a crude average let higher sounds fold back as noise, and recognition heard nonsense).
+      // A browser that refuses the rate gets its own, and the worklet averages it down as before.
+      let input;
+      try {
+        input = new Ctor({ sampleRate: 16000 });
+      } catch {
+        input = new Ctor();
+      }
+      audio = { input, output: new Ctor() };
       void audio.input.resume?.();
       void audio.output.resume?.();
     } catch {

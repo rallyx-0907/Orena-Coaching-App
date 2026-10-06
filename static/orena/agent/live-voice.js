@@ -134,9 +134,18 @@ export function connectLiveVoice(session, { audio, mediaDevices = globalThis.nav
   async function startMic() {
     stream = await mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, channelCount: 1 } });
     if (closed) return stopMic();
+    try {
+      source = audio.input.createMediaStreamSource(stream);
+    } catch {
+      // A browser that cannot feed a 16 kHz context from its microphone gets one at its own rate; the worklet
+      // averages it down instead.
+      try { await audio.input.close(); } catch { /* closed */ }
+      audio.input = new (globalThis.AudioContext || globalThis.webkitAudioContext)();
+      await audio.input.resume?.();
+      source = audio.input.createMediaStreamSource(stream);
+    }
     await audio.input.audioWorklet.addModule(WORKLET_URL);
     if (closed) return stopMic();
-    source = audio.input.createMediaStreamSource(stream);
     worklet = new AudioWorkletNode(audio.input, 'orena-pcm16-capture');
     worklet.port.onmessage = (event) => {
       if (ready && !closed) send({ realtimeInput: { audio: { data: toBase64(echoGate(event.data)), mimeType: 'audio/pcm;rate=16000' } } });
@@ -159,7 +168,12 @@ export function connectLiveVoice(session, { audio, mediaDevices = globalThis.nav
      During that window only a clearly louder voice - the learner talking over Orena, which is barge-in - is sent;
      quieter frames go as silence, so the stream stays continuous and the vendor's VAD sees no speech. */
   const ECHO_TAIL_S = 0.45;
-  const BARGE_IN_RMS = 0.12;
+  // How loud the learner must be to talk over Orena. A fixed 0.12 sat above a phone microphone's normal speech
+  // level, so a learner speaking over Orena or a playing lesson was cut into fragments the recognizer turned into
+  // nonsense. It now follows the echo: a frame passes when it is clearly louder than what the microphone has been
+  // picking up of Orena's or the lesson's audio.
+  let echoLevel = 0.02;
+  const BARGE_IN_RATIO = 2.5;
   // The lesson's own media is the same problem: a video playing on the page reaches the microphone, and Orena
   // would take it for the learner. Every player in the app reports its clock on the document (media-player.js).
   let mediaUntil = 0;
@@ -173,7 +187,10 @@ export function connectLiveVoice(session, { audio, mediaDevices = globalThis.nav
     const frame = new Int16Array(buffer);
     let sum = 0;
     for (let i = 0; i < frame.length; i += 1) sum += (frame[i] / 0x8000) ** 2;
-    return Math.sqrt(sum / frame.length) >= BARGE_IN_RMS ? buffer : new Int16Array(frame.length).buffer;
+    const rms = Math.sqrt(sum / frame.length);
+    if (rms >= Math.max(0.03, echoLevel * BARGE_IN_RATIO)) return buffer; // the learner, over the echo
+    echoLevel = echoLevel * 0.8 + rms * 0.2; // what the echo sounds like right now
+    return new Int16Array(frame.length).buffer;
   }
 
   function play(base64) {
