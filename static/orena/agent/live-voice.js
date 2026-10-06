@@ -43,7 +43,8 @@ async function post(path, body, fetchImpl) {
     data = null;
   }
   if (!response.ok) {
-    const category = String(data?.detail?.category || data?.category || '');
+    // The voice routes answer a category object, or the category as the plain detail string (/voice/context).
+    const category = String(data?.detail?.category || data?.category || (typeof data?.detail === 'string' ? data.detail : ''));
     throw new VoiceSessionError(response.status, category, Number(response.headers?.get?.('Retry-After')) || 0);
   }
   return data;
