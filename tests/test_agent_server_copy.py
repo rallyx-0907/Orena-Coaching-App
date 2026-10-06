@@ -181,13 +181,14 @@ def test_the_offer_is_in_the_learners_address_pair():
     assert segments(events)[0][1].endswith("Bấm Lưu từ để thêm 我 vào từ vựng của em.")
 
 
-def test_the_offer_is_in_the_interface_layer_apart_when_it_differs():
+def test_the_offer_is_in_the_support_language_quoting_the_interface_label():
+    # D-135 (2026-10-06) amends the 2026-09-28 practice: the offer sentence is support layer, inside the answer;
+    # the button's label it quotes stays interface layer (D-080).
     events, _ = run([(TextDelta("Nghĩa là tôi."), *SAVE)],
                     request("Lưu từ này giúp mình.", interface="en", support="vi"))  # fmt: skip
-    first, second = segments(events)[:2]
-    assert first == ("vi", "Nghĩa là tôi.")  # the answer, in the support language
-    assert second[0] == "en" and second[1].startswith("Tap ") and second[1].endswith(" to add 我 to your words.")
-    assert deltas(events, 1) == segments(events)[1][1]
+    (only,) = segments(events)
+    assert only == ("vi", "Nghĩa là tôi. Bấm Save word để thêm 我 vào từ vựng của bạn.")
+    assert deltas(events, 0) == only[1]
 
 
 # --- 2. a coach note changed or cancelled -------------------------------------------------------

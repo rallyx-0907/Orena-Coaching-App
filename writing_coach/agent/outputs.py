@@ -64,6 +64,7 @@ from writing_coach.agent.honesty import plain_text
 from writing_coach.agent.notes import FORGET, asks_to_remember, confirmed_note, same_note
 from writing_coach.agent.provider import ProviderToolSpec
 from writing_coach.agent.schemas import ClientInfo
+from writing_coach.vocabulary_library import normalize_vocabulary_word
 
 # Prompt intents (contract §4 `suggestion.intent`, v3): what a suggestion asks,
 # not where it goes, in the `prompt.` namespace. The contract leaves the
@@ -107,6 +108,15 @@ def asks_about_status(message: str | None) -> bool:
     """The learner asks about review, words due or whether a word is saved (LEX-006: else it is not told)."""
 
     return bool(message) and bool(_ASKS_REVIEW.search(message) or _ASKS_SAVED.search(message))
+
+
+# My Library: the learner's words (vocabulary.my_language) and a word's own page there (vocabulary.word). About a
+# word, offered only when a tool read found that word saved (D-135).
+MY_LIBRARY_INTENTS = frozenset({"vocabulary.my_language", "vocabulary.word"})
+
+
+def _word_key(word: str) -> str:
+    return normalize_vocabulary_word(word) or word.strip().casefold()
 
 
 # ... or to open or go somewhere: then, and only then, a navigate button with something in view.
@@ -382,6 +392,9 @@ class ReplyOutputs:
     # or "review due" suggestion unless the learner asks about review.
     focused: bool = False
     text_in_view: bool = False  # a selected word or sentence of a text: no navigate button unless asked
+    selected_word: str | None = None  # the word in view, when a word is selected
+    # Words a tool read found in the learner's library (`saved: true`): only these get a My Library button (D-135).
+    saved_words: set[str] = field(default_factory=set)
 
     # --- ids the turn has seen ------------------------------------------------
 
@@ -398,9 +411,12 @@ class ReplyOutputs:
         return str(value) in self.known_ids.get(key, {})
 
     def learn_from(self, value: Any, *, kind: str | None = None) -> None:
-        """Every id-keyed value anywhere in a tool's data or evidence reference."""
+        """Every id-keyed value anywhere in a tool's data or evidence reference, and every word it read as saved."""
 
         if isinstance(value, Mapping):
+            word = value.get("word")
+            if value.get("saved") is True and isinstance(word, str) and word.strip():
+                self.saved_words.add(_word_key(word))
             for key, item in value.items():
                 if str(key) in _ID_KEYS and not isinstance(item, (Mapping, list, tuple)):
                     self.learn_ids(str(key), (item,), kind=kind)
@@ -453,6 +469,10 @@ class ReplyOutputs:
             return "refused: this app cannot do that here; say it in words instead"
         if action_type == "start_review" and self._unasked_review():
             return _UNASKED_REVIEW
+        if action_type == "navigate" and (unsaved := self._unsaved_word(payload)):
+            return (f"refused: {unsaved} is not in the learner's library as far as any tool read shows - a My Library "
+                    "button is only for a saved word. If you have not read it, call get_saved_word_state first; if it "
+                    "is not saved, say it is not there and offer save_word if it helps.")  # fmt: skip
         if action_type == "navigate" and self.text_in_view and not _ASKS_TO_GO.search(self.learner_words or ""):
             # A word or sentence of a text in view (LEX-006): going elsewhere is routing too, unless the learner
             # asks to go. An essay or a grammar point in view keeps its way on (contract S9, grammar.point).
@@ -479,6 +499,16 @@ class ReplyOutputs:
             f"accepted: {action.id}, shown as the button '{action.label}'. The learner has not tapped it: "
             "offer it by that label; do not say it is done."
         )
+
+    def _unsaved_word(self, payload: Mapping[str, Any]) -> str | None:
+        """The word a My Library navigate is about, when no tool read found it saved (D-135); else None."""
+
+        if payload.get("intent") not in MY_LIBRARY_INTENTS:
+            return None
+        word = payload.get("text") or self.selected_word
+        if not isinstance(word, str) or not word.strip():
+            return None  # My Library itself, about no word: not this rule
+        return None if _word_key(word) in self.saved_words else word.strip()
 
     def _unasked_review(self) -> bool:
         """Review offered while the learner asks about what is in view, and not about review (LEX-006)."""

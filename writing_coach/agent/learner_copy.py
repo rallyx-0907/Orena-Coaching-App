@@ -43,34 +43,35 @@ def _entry(layer: CopyLayer, texts: dict[str, str]) -> CopyEntry:
 
 CATALOG: Mapping[str, CopyEntry] = MappingProxyType(
     {
-        # The one sentence that offers a proposed button (agent/honesty.py): the server's, never the model's,
-        # in the interface layer like the button it names, and in the learner's address pair (human direction
-        # 2026-09-28). Built from the action in hand (label, and the word it names): what tapping does.
+        # The one sentence that offers a proposed button (agent/honesty.py): the server's, never the model's, in the
+        # learner's address pair (human direction 2026-09-28). Support layer, like the rest of the reply; the label it
+        # quotes stays interface layer (D-135, amending the 2026-09-28 interface-layer practice; D-080). Built from the
+        # action in hand (label, and the word it names): what tapping does.
         "offer.save_word": _entry(
-            CopyLayer.INTERFACE,
+            CopyLayer.SUPPORT,
             {"en": "Tap {label} to add {text} to your words.", "vi": "Bấm {label} để thêm {text} vào từ vựng của {user}.",
              "zh-CN": "点击“{label}”，把{text}加入{user}的词汇。"},
         ),
         "offer.unsave_word": _entry(
-            CopyLayer.INTERFACE,
+            CopyLayer.SUPPORT,
             {"en": "Tap {label} to remove {text} from your words.", "vi": "Bấm {label} để bỏ {text} khỏi từ vựng của {user}.",
              "zh-CN": "点击“{label}”，把{text}从{user}的词汇中移除。"},
         ),
         "offer.add_word_to_collection": _entry(
-            CopyLayer.INTERFACE,
+            CopyLayer.SUPPORT,
             {"en": "Tap {label} to add {text} to the collection.", "vi": "Bấm {label} để thêm {text} vào bộ sưu tập.",
              "zh-CN": "点击“{label}”，把{text}加入收藏。"},
         ),
         "offer.start_review": _entry(
-            CopyLayer.INTERFACE,
+            CopyLayer.SUPPORT,
             {"en": "Tap {label} to start the review.", "vi": "Bấm {label} để bắt đầu ôn.", "zh-CN": "点击“{label}”开始复习。"},
         ),
         "offer.navigate": _entry(
-            CopyLayer.INTERFACE,
+            CopyLayer.SUPPORT,
             {"en": "Tap {label} to open it.", "vi": "Bấm {label} để mở.", "zh-CN": "点击“{label}”打开。"},
         ),
         "offer.action": _entry(
-            CopyLayer.INTERFACE,
+            CopyLayer.SUPPORT,
             {"en": "Tap {label} if you want to.", "vi": "Bấm {label} nếu {user} muốn.", "zh-CN": "需要的话，点击“{label}”。"},
         ),
         # Said when every sentence of an answer claimed Orena had changed something (agent/honesty.py).
