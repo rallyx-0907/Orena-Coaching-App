@@ -13,6 +13,16 @@ def _slot(text: str, role: str, label: str) -> dict:
     return {"text": text, "role": role, "label": {"vi": label}, "optional": False, "options": []}
 
 
+def _example(text: str, bindings: list[dict]) -> dict:
+    return {
+        "form": "question",
+        "text": text,
+        "bindings": bindings,
+        "annotation": {"vi": "Từ để hỏi giữ nguyên vị trí của phần cần hỏi."},
+        "translation": {"vi": "Câu hỏi mẫu."},
+    }
+
+
 def _candidate() -> dict:
     question = [
         _slot("S", "subject", "chủ ngữ"),
@@ -24,30 +34,21 @@ def _candidate() -> dict:
         "negative": [],
         "question": copy.deepcopy(question),
         "examples": [
-            {
-                "form": "question", "text": "你喜欢什么？",
-                "bindings": [
-                    {"slot_index": 0, "text": "你"},
-                    {"slot_index": 1, "text": "喜欢"},
-                    {"slot_index": 2, "text": "什么"},
-                ],
-            },
-            {
-                "form": "question", "text": "他找谁？",
-                "bindings": [
-                    {"slot_index": 0, "text": "他"},
-                    {"slot_index": 1, "text": "找"},
-                    {"slot_index": 2, "text": "谁"},
-                ],
-            },
-            {
-                "form": "question", "text": "你在哪儿工作？",
-                "bindings": [
-                    {"slot_index": 0, "text": "你"},
-                    {"slot_index": 1, "text": "在哪儿工作"},
-                    {"slot_index": 2, "text": "哪儿"},
-                ],
-            },
+            _example("你喜欢什么？", [
+                {"slot_index": 0, "text": "你"},
+                {"slot_index": 1, "text": "喜欢"},
+                {"slot_index": 2, "text": "什么"},
+            ]),
+            _example("他找谁？", [
+                {"slot_index": 0, "text": "他"},
+                {"slot_index": 1, "text": "找"},
+                {"slot_index": 2, "text": "谁"},
+            ]),
+            _example("你在哪儿工作？", [
+                {"slot_index": 0, "text": "你"},
+                {"slot_index": 1, "text": "在哪儿工作"},
+                {"slot_index": 2, "text": "哪儿"},
+            ]),
         ],
         "personal_production": {
             "target_form": "question",
