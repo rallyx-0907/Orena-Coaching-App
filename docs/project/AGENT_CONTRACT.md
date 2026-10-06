@@ -347,7 +347,8 @@ Rules:
 - An action with an unknown `type`, or not in `supported_actions`, is ignored and logged by the client.
 - An action is shown as a button; the client never runs it without a learner tap, except `navigate` when the learner's message was itself the request ("đưa tôi tới…").
 - A segment that comes with an action **offers** it: it never says or implies the action was done ("Mình lưu …", "Saved it for you", "我帮你保存了"). The learner does it by tapping or confirming. A `memory_update` is different: the device applies it without a tap, so a reply may say it is applied (S14).
-- A reply that names the button uses its `label` as the learner sees it (interface language), and does not describe the button or the interface: "Bấm Lưu từ để thêm 我 vào từ vựng của bạn."
+- A reply that names the button uses its `label` as the learner sees it (interface language), and does not describe the button or the interface: "Bấm Lưu từ để thêm 我 vào từ vựng của bạn." The sentence around the label - an offer, including the server's own offer copy - is in the `support` language like the rest of the reply; only the quoted label stays as the button reads (D-135).
+- A `navigate` to the learner's My Library about a word is offered only when that word is actually in their library (a tool read says so); a word not saved gets no My Library button and no offer to open it (D-135).
 - Words: the vocabulary library keys a word on its text and the **session's active learning language**. A word action whose `lang` is not the active learning language is not executed; the client logs it.
 - Ids in payloads (`content_id`, `grammar_id`, `essay_id`, `target.id`) come from tool reads, never from generation; `take_ref` only from the request's context.
 - Nothing due, a word not saved, an unknown or expired `take_ref`: the client says so in its own words and does nothing else.

@@ -4258,3 +4258,17 @@ the Reviewer found hard to read even when matched exactly.
 - Pinyin is max(10.5px, .58em), below the frame's max(12.5px, .64em), with 1.5px either side. Two readings'
   letters are always at least 3px apart.
 - Hanzi stay primary. Every word cue (kept word, key word, word type, highlight) stays on the Hanzi.
+
+## D-135 - Orena's offer sentence is in the support language; My Library is offered only for a word that is in it
+
+2026-10-06, explicit human direction on UX review LEX-006. It amends the 2026-09-28 practice of writing the
+server's offer copy (learner_copy offer.*) in the interface layer.
+
+- **Language.** The sentence that offers an action, such as "Bấm My Library để mở từ này", is support-layer text
+  addressed to the learner. It is in the support language, like the rest of the reply. The button's `label` stays
+  interface layer (D-080), and when the sentence names the button it quotes that label as the learner sees it.
+- **My Library.** A `navigate` to My Library about a word, and any offer to open it there, is given only when the
+  word is actually in the learner's library, as a tool read confirms. A word not saved gets no My Library button
+  and no offer to open it.
+- AGENT_CONTRACT §7 states both rules. The Intelligence lane implements them.
+
