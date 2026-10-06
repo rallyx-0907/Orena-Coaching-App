@@ -124,6 +124,12 @@ _ASKS_TO_GO = re.compile(
     r"(?i)\b(?:mở|đi tới|đi đến|đưa (?:mình|tôi|em) (?:tới|đến|sang)|chuyển (?:tới|sang)|open|go to|take me|show me)\b"
     r"|打开|去|带我|进入"
 )
+def asks_to_go(message: str | None) -> bool:
+    """The learner asks to open or go somewhere ("mở", "open", "打开")."""
+
+    return bool(message) and bool(_ASKS_TO_GO.search(message))
+
+
 _UNASKED_REVIEW = ("refused: the learner asks about what is in view, not about review - answer that; offer no "
                    "review or words due unless they ask")  # fmt: skip
 

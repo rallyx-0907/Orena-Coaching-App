@@ -88,6 +88,7 @@ from writing_coach.agent.outputs import (
     KIND_BY_SOURCE,
     SELECTION_PROMPTS,
     asks_about_status,
+    asks_to_go,
     REPLY_TOOL_NAMES,
     ReplyOutputs,
     opening_suggestions,
@@ -139,6 +140,13 @@ FEEDBACK_NUDGE = (
     "get_writing_feedback_items with that essay_id (and get_current_writing_evaluation if you need the whole "
     "review) now, then say from what it shows why this very feedback was given: the reason in one or two short "
     "sentences, and at most one example. Nothing about review or words due, and no offer of more."
+)
+# A status or navigation question about the word in view ("Mở từ này trong My Library", "Từ này lưu chưa?"):
+# answered with that status only (LEX-006 retest, tutor accuracy) - no explanation of the word nobody asked for.
+STATUS_ONLY = (
+    "The learner asks about this word's place in their library (whether it is saved, or to open it there), not "
+    "about its meaning. Read its state if you have not, answer that in one or two sentences, and offer the one "
+    "button that fits. Explain nothing about the word itself."
 )
 ANSWER_NUDGE = "[No answer was written. Answer the learner now, in words, in their support language.]"
 TOKENS_FEATURE = "agent.tokens"
@@ -384,6 +392,9 @@ class _Turn:
             replace(turn, message=tapped) if tapped else turn, tier1, [c for c in here if c], session,
             opening=self.opening, snapshot=snapshot, screen_help=self.screen_help,
         )
+        if self.focused and word_in_view and (asks_about_status(turn.message) or asks_to_go(turn.message)):
+            # said next to the learner's words, like the selection line
+            messages.insert(len(messages) - 1, ProviderMessage(role="system", content=STATUS_ONLY))
         self.timeline.mark("context_built")
         outputs = ReplyOutputs(
             client=self.request.client,
