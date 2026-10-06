@@ -136,8 +136,8 @@ SNAPSHOT_TOOL = "build_learning_snapshot"
 FEEDBACK_NUDGE = (
     "The learner asks why this feedback was given on their essay (essay_id {essay_id}). You have not read it: call "
     "get_writing_feedback_items with that essay_id (and get_current_writing_evaluation if you need the whole "
-    "review) now, then explain from what it shows why this very feedback was given and what to do next. Nothing "
-    "about review or words due."
+    "review) now, then say from what it shows why this very feedback was given: the reason in one or two short "
+    "sentences, and at most one example. Nothing about review or words due, and no offer of more."
 )
 ANSWER_NUDGE = "[No answer was written. Answer the learner now, in words, in their support language.]"
 TOKENS_FEATURE = "agent.tokens"
@@ -356,6 +356,7 @@ class _Turn:
         selected = context.selected_item
         # The turn is about what is in view: no review routing nobody asked for (LEX-006, LEX-022).
         self.focused = not self.opening and bool(selected or context.essay_id)
+        self.gate.drop_more_offers = self.focused  # and no closing offer of more examples or a review
         if not self.opening and selected is not None and selected.type == "feedback_item" and context.essay_id:
             # "Why was this feedback given?" (LEX-022): answered from that essay's review, read first.
             self.needs_evidence = True

@@ -381,6 +381,35 @@ def offer_instead(
     return kept
 
 
+# An offer of more (LEX-006 retest): "do you want more examples, or a review?" With something in view the answer is
+# about that; optional depth is the learner's to ask for, so such an offer is dropped (agent/turn.py `focused`).
+# A question that asks what the learner meant ("Bạn muốn hỏi nghĩa hay cách dùng?") offers nothing and stays.
+_MORE = "thêm|ôn|luyện|tìm hiểu|ví dụ|giải thích|xem|học tiếp"
+_OFFERS_MORE = MappingProxyType(
+    {
+        "vi": re.compile(
+            rf"(?i)^\W*(?:\w+\s+)?có\s+muốn\b.*?(?:{_MORE}).*?\b(?:không|chứ)\b\W*$"
+            r"|^\W*nếu\s+\w+(?:\s+\w+)?\s+muốn\b"
+        ),
+        "en": re.compile(
+            r"(?i)^\W*(?:would you like|do you want|want)\b.*\?\W*$"
+            r"|^\W*(?:if you(?:'d| would)? like|if you want|let me know if|feel free to ask)\b"
+        ),
+        "zh-CN": re.compile(
+            r"^\W*(?:你|您)?(?:想|要|需要)(?:我)?(?:再|继续|多)?.{0,30}(?:吗|么)[？?]\W*$"
+            r"|^\W*要不要.{0,30}[？?]\W*$|^\W*如果(?:你|您)(?:想|需要)"
+        ),
+    }
+)
+
+
+def offers_more(sentence: str, support: str) -> bool:
+    """Whether a sentence offers the learner more (examples, a review, more explanation) they did not ask for."""
+
+    pattern = _OFFERS_MORE.get(support)
+    return bool(pattern and pattern.search(strip_markup(sentence).strip()))
+
+
 class ClaimGate:
     """Streams an answer a sentence at a time, and holds it from its first possible claim or button offer on.
 
@@ -396,6 +425,7 @@ class ClaimGate:
         self._interface, self._support = interface, support
         self.hold_all = hold_all
         self.address: object = None  # the turn's address (§5.6), set once the request is read
+        self.drop_more_offers = False  # something is in view: no offer of more (LEX-006), set per turn
         self._partial = ""
         self._held: list[str] = []
         self.sent: list[str] = []
@@ -413,6 +443,7 @@ class ClaimGate:
                 or self._held
                 or claims_done(sentence, address=self.address)
                 or offers_a_button(sentence, self._support, interface=self._interface)
+                or (self.drop_more_offers and offers_more(sentence, self._support))
             ):
                 self._held.append(sentence)
             else:
@@ -442,6 +473,8 @@ class ClaimGate:
         self._held, self._partial = [], ""
         if replace_with is not None and not self.text:
             tail = [replace_with]
+        elif self.drop_more_offers:  # an offer of more is not a claim: dropping it says nothing in its place
+            tail = [part for part in tail if not offers_more(part, self._support)]
         pending = offer_text is not None if pending is None else pending
 
         def drop(part: str) -> bool:
