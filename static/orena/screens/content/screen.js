@@ -8,7 +8,8 @@
    Not drawn here (rule 43/44): no chapter list (the frame draws none - a book's chapters are the
    Reader's own concern, per the frame), no bulk actions, no toast on Save (the frame changes only
    the button's own label). */
-import { html, mount, cls } from '../../kit/html.js';
+import { html, mount, cls, raw } from '../../kit/html.js';
+import { icon } from '../../kit/icons.js';
 import { moreButton, moreMenu } from '../../kit/overflow.js';
 import { toast } from '../../kit/toast.js';
 import { shellCopy } from '../../copy/shell.js';
@@ -176,8 +177,10 @@ export default async function content(element, ctx) {
   const own = Boolean(memberId) && [...(memory.imports || []), ...(memory.mediaImports || [])].some((item) => item.id === memberId);
   const place = placeFor(ctx.context.memory.value.continuation, contentId);
   const destination = primaryDestination(kind);
+  // Media opens with the design's play mark: "▶ Start listening", or "▶ Continue watching" for a started video (L-08).
+  const resumeKey = detail.playbackKind === 'audio' ? 'continueListening' : 'continueWatching';
   const primaryLabel = destination === 'listening'
-    ? (place.started ? t('continueListening') : t('listen'))
+    ? html`${raw(icon('play', { size: 16 }))}${place.started ? t(resumeKey) : t('listen')}`
     : (place.started ? t('continueReading') : t('startReading'));
   const primaryHref = destination === 'listening' ? ctx.href('listening', { id: kind === 'upload' ? uploadMediaId(id) : id }) : ctx.href('reader', { id: contentId });
   const isMedia = Boolean(detail.segments && detail.segments.length);

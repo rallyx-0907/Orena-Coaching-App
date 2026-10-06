@@ -115,7 +115,6 @@ export default async function mountDictation(element, ctx) {
         <div class="s-dict__title" data-title></div>
         <div class="s-dict__sub" data-sub ${langAttr(lesson.language)}></div>
       </div>
-      <button type="button" class="o-btn o-btn--link" data-choose>${t('chooseLesson')}</button>
     </div>
     <div class="s-dict__dots" data-dots></div>
     <div class="s-dict__card">
@@ -142,7 +141,6 @@ export default async function mountDictation(element, ctx) {
   );
   const q = (selector) => element.querySelector(selector);
   q('[data-back]').addEventListener('click', () => ctx.back());
-  q('[data-choose]').addEventListener('click', () => ctx.go(ctx.href('discover', {}, {tab:'listen',practice:'dictation',source:lessonId,segment:segment().id})));
 
   const mediaRoot = q('[data-media]');
   const hasClip = playbackAvailable(lesson.playback);
