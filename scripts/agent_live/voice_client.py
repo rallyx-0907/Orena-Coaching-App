@@ -61,15 +61,21 @@ SCENARIOS = [
      {"selected_item": {"type": "word", "text": "meticulous", "lang": "en"}}, "这个词是什么意思？", None),
     # R29: open a lesson by voice, and every voice of the catalog
     ("vi-open-video", "zh", VI, {}, "Mở một video bất kỳ trong Listening để mình nghe.", None),
+    # the human's own settings and words (phone test 2026-10-06): learning English, interface and support English
+    ("en-open-video", "en", {"interface": "en", "support": "en"}, {}, "Open any video in Listening.", None),
+    ("en-open-video-vi", "en", {"interface": "en", "support": "en"}, {}, "Mở một video bất kỳ trong Listening.", None),
     *[(f"voice-{v}", "zh", VI, {"voice": v}, "Chào bạn, hôm nay mình học gì?", None)
       for v in ("f-clear", "f-bright", "f-warm", "f-soft", "f-young", "f-gentle",
                 "m-calm", "m-lively", "m-friendly", "m-steady")],
 ]
 
 
-async def scenario(base: str, name: str, locale: dict, extra: dict, said: str, barge: float | None,
+LEARNING_TARGET = {"zh": "zh-CN", "en": "en"}
+
+
+async def scenario(base: str, name: str, learning: str, locale: dict, extra: dict, said: str, barge: float | None,
                    audio_dir: Path) -> dict:  # fmt: skip
-    target = "zh-CN" if (extra.get("selected_item") or {}).get("lang", "zh-CN") == "zh-CN" else "en"
+    target = (extra.get("selected_item") or {}).get("lang") or LEARNING_TARGET.get(learning, "zh-CN")
     extra = dict(extra)
     voice = extra.pop("voice", None)
     body = {"contract_version": 5,
@@ -185,7 +191,7 @@ async def main() -> int:
                              "detail": str(answer)[:200]})  # fmt: skip
                 continue
             language = learning
-        row = await scenario(args.base, name, locale, extra, said, barge, out.parent)
+        row = await scenario(args.base, name, learning, locale, extra, said, barge, out.parent)
         spent += (row.get("billed_seconds") or 0) * USD_PER_SECOND
         row["spent_usd_so_far"] = round(spent, 4)
         rows.append(row)
