@@ -37,6 +37,8 @@ import { appearance, setAppearance, palette, setPalette } from '../../kit/device
 import { appendNativeName } from '../../kit/lang.js';
 import { t } from './copy.js';
 import { TABS, tabFromQuery, rowsForTab, barPercent, usesPicker } from './model.js';
+import { listVoices, chosenVoice, chooseVoice } from '../../agent/live-voice.js';
+import { toContractLang } from '../../agent/contract.js';
 
 const TAB_LABEL_KEY = { languages: 'tabLanguages', learning: 'tabLearning', review: 'tabReview', notifications: 'tabNotifications', plan: 'tabPlan' };
 /* Every row's sub reads t(`${id}Sub`) except these two: "Plan" has no chrome sub at all (its sub
@@ -94,6 +96,8 @@ function choiceOptions(row) {
   if (row.id === 'theme') return row.options.map((value) => ({ value, label: t(THEME_LABEL_KEY[value]), selected: value === row.value }));
   if (row.id === 'palette') return row.options.map((value) => ({ value, label: t(`palette_${value}`), selected: value === row.value }));
   if (row.id === 'readerSize') return row.options.map((size) => ({ value: size, label: t(`size${size}`), selected: size === row.value }));
+  // The server labels its voices in the interface language; no vendor name reaches the learner.
+  if (row.id === 'orenaVoice') return row.options.map((voice) => ({ value: voice.id, label: voice.label || voice.id, selected: voice.id === row.value }));
   // sessionLength: plain numerals, identical in every locale.
   return row.options.map((value) => ({ value, label: value, selected: value === row.value }));
 }
@@ -168,15 +172,17 @@ export default async function settingsScreen(element, ctx) {
     }
   }
 
-  const [languagesData, commerce, mic] = await Promise.all([
+  const [languagesData, commerce, mic, voices] = await Promise.all([
     api.languages().catch(() => null),
     api.productCommerce().catch(() => null),
     readMicState(),
+    listVoices(toContractLang(copyLanguages().ui)),
   ]);
   if (!ctx.isCurrent()) return undefined;
   state.languagesData = languagesData;
   state.commerce = commerce;
   state.mic = mic;
+  state.voices = voices;
 
   function buildInputs() {
     const context = ctx.context;
@@ -204,6 +210,7 @@ export default async function settingsScreen(element, ctx) {
         meaning: stage.meaning,
         theme: appearance(),
         palette: palette(),
+        voices: state.voices ? { ...state.voices, chosen: chosenVoice() } : null,
       },
       review: { modes: reviewSettings?.modes },
       plan: {
@@ -323,6 +330,7 @@ export default async function settingsScreen(element, ctx) {
     if (rowId === 'theme') return onThemePick(value);
     if (rowId === 'palette') { setPalette(value); paintTab(); return; }
     if (rowId === 'readerSize') return onReaderSizePick(value);
+    if (rowId === 'orenaVoice') { chooseVoice(value); paintTab(); return; }
     // sessionLength is always disabled today (model.js) - nothing to wire.
   }
 

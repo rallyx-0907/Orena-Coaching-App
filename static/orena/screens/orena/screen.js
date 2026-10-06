@@ -148,7 +148,8 @@ export default async function mountOrena(element, ctx) {
     voiceEngine = createVoiceEngine({
       ctx,
       send: sendHomeTurn,
-      liveVoice: homeLiveVoice,
+      // A place the learner asked for by voice opens at once (R29), through the same runner as a tap.
+      liveVoice: () => ({ ...homeLiveVoice(), open: (action) => runOffered({ dispatcher, action, ranActions, repaint: () => paint(homeState()) }) }),
       abort: abortHome,
       onTextOnly: endVoice,
       onChange: () => paint(homeState()),

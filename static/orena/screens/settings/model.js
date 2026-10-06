@@ -49,7 +49,7 @@ export function supportLanguageOptions(supportLanguages) {
 export const SEGMENTED_MAX_OPTIONS = 4;
 
 export function usesPicker(row) {
-  return row?.id === 'support' && Array.isArray(row.options) && row.options.length > SEGMENTED_MAX_OPTIONS;
+  return ['support', 'orenaVoice'].includes(row?.id) && Array.isArray(row.options) && row.options.length > SEGMENTED_MAX_OPTIONS;
 }
 
 export function interfaceLanguageOptions(locales = INTERFACE_LOCALES) {
@@ -90,11 +90,21 @@ function appearanceValue(value) {
   return APPEARANCE_VALUES.includes(value) ? value : 'system';
 }
 
-export function learningRows({ sizeBucket, autoscroll, meaning, theme, palette }) {
+/* Orena's voice (human request 2026-10-06, R29): offered only when the server's live voice is on and lists its
+   voices; the value is the learner's stored choice, else the server's default. */
+function voiceRow(voices) {
+  const list = Array.isArray(voices?.voices) ? voices.voices.filter((v) => v && v.id) : [];
+  if (!list.length) return [];
+  const value = list.some((v) => v.id === voices.chosen) ? voices.chosen : (voices.default || list[0].id);
+  return [{ id: 'orenaVoice', kind: 'choice', options: list, value, disabled: false }];
+}
+
+export function learningRows({ sizeBucket, autoscroll, meaning, theme, palette, voices = null }) {
   return [
     { id: 'theme', kind: 'choice', options: APPEARANCE_VALUES, value: appearanceValue(theme), disabled: false },
     { id: 'palette', kind: 'choice', options: ['indigo', 'orchid', 'blue', 'rose'], value: ['indigo', 'orchid', 'blue', 'rose'].includes(palette) ? palette : 'indigo', disabled: false },
     { id: 'readerSize', kind: 'choice', options: ['S', 'M', 'L'], value: sizeBucket, disabled: false },
+    ...voiceRow(voices),
     { id: 'autoscroll', kind: 'toggle', value: Boolean(autoscroll), disabled: false },
     { id: 'meaning', kind: 'toggle', value: Boolean(meaning), disabled: false },
     // No real mechanism anywhere in the app measures or drives either of these two (grepped

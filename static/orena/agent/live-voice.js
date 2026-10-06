@@ -49,10 +49,40 @@ async function post(path, body, fetchImpl) {
   return data;
 }
 
-/* The session body is a turn body without a message (§9). */
-export function voiceSessionBody(turnRequest) {
+/* Orena's voice, the learner's choice (§9, R29): kept on this device, sent with each session; the server locks it
+   into the session and uses its default for an unknown or missing id. */
+const VOICE_KEY = 'orena.voice.v1';
+export function chosenVoice(storage = globalThis.localStorage) {
+  try {
+    return String(storage?.getItem(VOICE_KEY) || '');
+  } catch {
+    return '';
+  }
+}
+export function chooseVoice(id, storage = globalThis.localStorage) {
+  try {
+    storage?.setItem(VOICE_KEY, String(id || ''));
+  } catch {
+    /* kept for this visit only */
+  }
+}
+
+/* The voices the server offers, labelled in the interface language. Null while voice is off (404). */
+export async function listVoices(interfaceLang, { fetchImpl = globalThis.fetch } = {}) {
+  try {
+    const response = await fetchImpl(`/api/agent/voice/voices?interface=${encodeURIComponent(interfaceLang || 'en')}`, { credentials: 'same-origin', headers: { Accept: 'application/json' } });
+    if (!response.ok) return null;
+    const data = await response.json();
+    return Array.isArray(data?.voices) && data.voices.length ? { default: String(data.default || ''), voices: data.voices } : null;
+  } catch {
+    return null;
+  }
+}
+
+/* The session body is a turn body without a message (§9), with the learner's voice when they chose one. */
+export function voiceSessionBody(turnRequest, { voice = '' } = {}) {
   const { trigger, message, ...rest } = turnRequest || {};
-  return { contract_version: CONTRACT_VERSION, ...rest };
+  return { contract_version: CONTRACT_VERSION, ...rest, ...(voice ? { voice } : {}) };
 }
 
 export function openVoiceSession(body, { fetchImpl = globalThis.fetch } = {}) {
@@ -175,7 +205,8 @@ export function connectLiveVoice(session, { audio, mediaDevices = globalThis.nav
       answer = { responses: calls.map((call) => ({ id: call.id, name: call.name, response: { error: 'unavailable' } })), events: [] };
     }
     if (closed) return;
-    if (Array.isArray(answer?.events) && answer.events.length) onEvents(answer.events);
+    // `open`: the learner asked in their own words to open this place - its action runs now, without a tap (R29).
+    if (Array.isArray(answer?.events) && answer.events.length) onEvents(answer.events, String(answer.open || ''));
     send({ toolResponse: { functionResponses: answer?.responses || [] } });
   }
 

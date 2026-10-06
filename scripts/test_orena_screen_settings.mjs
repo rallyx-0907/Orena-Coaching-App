@@ -381,3 +381,16 @@ import { sizeBucketOf, READER_SIZE, READER_DEFAULTS } from '../static/orena/prod
 }
 
 console.log('Settings: rows built from real data, every backend gap disabled and recorded, EN/VI/ZH covered: PASS');
+
+/* --- Orena's voice (R29): offered only when the server lists voices; the stored choice, else the default --- */
+{
+  const { learningRows: rows, usesPicker: picker } = await import('../static/orena/screens/settings/model.js');
+  assert.equal(rows({}).some((r) => r.id === 'orenaVoice'), false, 'voice off on this server: no row');
+  const voices = { default: 'f-clear', voices: [{ id: 'f-clear', label: 'Clear' }, { id: 'm-calm', label: 'Calm' }, { id: 'f-warm', label: 'Warm' }, { id: 'f-soft', label: 'Soft' }, { id: 'm-steady', label: 'Steady' }] };
+  const row = rows({ voices }).find((r) => r.id === 'orenaVoice');
+  assert.equal(row.value, 'f-clear', 'nothing chosen: the server default');
+  assert.equal(rows({ voices: { ...voices, chosen: 'm-calm' } }).find((r) => r.id === 'orenaVoice').value, 'm-calm');
+  assert.equal(rows({ voices: { ...voices, chosen: 'gone' } }).find((r) => r.id === 'orenaVoice').value, 'f-clear', 'a choice the server no longer offers falls back');
+  assert.equal(picker(row), true, 'ten voices are a picker, not a segmented control');
+}
+

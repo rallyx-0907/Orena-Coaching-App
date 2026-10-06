@@ -31,7 +31,8 @@ import { languages } from '../../copy/index.js';
 import { href } from '../../shell/routes.js';
 import { t } from './copy.js';
 import { voicePhaseMarkState, voicePhaseStatusKey, voicePhaseHintKey, speakableText, latestSuggestions, endsVoice, errorText } from './model.js';
-import { sendHomeTurn, abortHome, ensureOpening, subscribeHome, homeState, requestComposerFocus } from './home-session.js';
+import { sendHomeTurn, abortHome, ensureOpening, subscribeHome, homeState, requestComposerFocus, homeLiveVoice, homeDispatcher } from './home-session.js';
+import { runOffered } from './actions.js';
 
 const TTS_TAG = { en: 'en-US', vi: 'vi-VN', zh: 'zh-CN' };
 
@@ -163,7 +164,7 @@ export function createVoiceEngine({ ctx = {}, send, onChange, abort, resume, onT
 
   async function connect() {
     if (disposed) return closeAudio();
-    const { body, thread } = liveVoice();
+    const { body, thread, open } = liveVoice();
     let session;
     try {
       session = await openVoiceSession(body);
@@ -191,7 +192,12 @@ export function createVoiceEngine({ ctx = {}, send, onChange, abort, resume, onT
         emit();
       },
       onOrena: (text) => thread.text(turnHeard, text),
-      onEvents: (events) => thread.events(turnHeard, events),
+      onEvents: (events, openId) => {
+        thread.events(turnHeard, events);
+        // The learner asked to open it: the offered action runs now; its button stays in the thread (R29).
+        const action = openId ? events.find((item) => item?.event === 'action' && item.data?.id === openId)?.data : null;
+        if (action && typeof open === 'function') void open(action);
+      },
       onTurnComplete: ({ heard: said, said: answer }) => {
         thread.text(said || turnHeard, answer);
         thread.done();
@@ -509,9 +515,12 @@ export async function openVoiceFull() {
   root.setAttribute('aria-modal', 'true');
   root.setAttribute('aria-label', t('fullVoiceTitle'));
 
+  const fullRan = new Set();
   const engine = createVoiceEngine({
     send: (text) => sendHomeTurn(text),
     abort: abortHome,
+    // The rail's full-screen voice talks in the Home thread; an asked-for place opens at once (R29).
+    liveVoice: () => ({ ...homeLiveVoice(), open: (action) => runOffered({ dispatcher: homeDispatcher(), action, ranActions: fullRan, repaint: () => {} }) }),
     onTextOnly: () => {
       close();
       requestComposerFocus();

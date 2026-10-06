@@ -409,7 +409,23 @@ server runs with `AGENT_VOICE_ENABLED` beside `AGENT_ENABLED`. While off, the ro
      `memory_update`.
    - An action is a button the learner taps. Buttons come only through the server.
    - 404 `voice_session_not_found` means the session is over.
-5. **End.**
+   - R29, opening on request: when the learner's own words asked to open, play, listen to, watch or read a
+     place, the answer carries a top-level `open: "<action id>"`. The client runs that action at once, without a
+     tap (the §7 navigate-on-request precedent); the action event still arrives and its button stays in the
+     thread. With no `open`, only the button is drawn.
+   - The read tool `find_content` finds content in the learning language: the listening library and published
+     reading. `offer_button` can offer `open_content`, which navigates to `listening.workspace` for `media:`
+     content and to `reading.workspace` for `article:` or `book:` content. The content id always comes from a
+     tool read. The session body lists both intents in `client.supported_intents`.
+5. **Voices (R29).**
+   - `GET /api/agent/voice/voices?interface=<en|vi|zh-CN>` answers
+     `{ default, voices: [{ id, gender: "female"|"male", label }] }`.
+   - There are ten voices: `f-clear`, `f-bright`, `f-warm`, `f-soft`, `f-young`, `f-gentle`, `m-calm`, `m-lively`,
+     `m-friendly`, `m-steady`. Labels are in the interface language, and no vendor name appears.
+   - The route has the same gates as `/voice/tool`.
+   - The client keeps the learner's choice on the device and sends it as an optional `"voice": "<id>"` in the
+     session body. The server locks it into the token; an unknown or missing id uses the default.
+6. **End.**
    - `POST /api/agent/voice/end { voice_session_id }` answers `{ voice_session_id, seconds }`. The client sends it
      when the learner stops, leaves (sendBeacon on pagehide), the socket closes, or `max_seconds` pass.
    - The server bills the session time into the shared ledger. A session never ended is billed at its cap.

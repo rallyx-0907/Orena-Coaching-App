@@ -58,4 +58,16 @@ const { createSession } = await import('../static/orena/agent/session.js');
   await assert.rejects(openVoiceSession({}, { fetchImpl: fail(429, 'rate_limited') }), (error) => error.status === 429 && error.retryAfter === 7);
 }
 
+// R29: the learner's voice rides in the session body; with none chosen, no field (the server's default).
+{
+  const { chosenVoice, chooseVoice } = await import('../static/orena/agent/live-voice.js');
+  const store = new Map();
+  const storage = { getItem: (k) => store.get(k) ?? null, setItem: (k, v) => store.set(k, v) };
+  assert.equal(chosenVoice(storage), '');
+  chooseVoice('m-calm', storage);
+  assert.equal(chosenVoice(storage), 'm-calm');
+  assert.equal(voiceSessionBody({ trigger: 'message' }, { voice: 'm-calm' }).voice, 'm-calm');
+  assert.equal('voice' in voiceSessionBody({ trigger: 'message' }), false);
+}
+
 console.log('Orena live voice (§9 mode A): session body, PCM16 codecs, thread writing, server refusals: PASS');

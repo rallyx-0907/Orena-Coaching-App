@@ -38,7 +38,7 @@ import { messageMarkup } from './thread.js';
 import { runOffered } from './actions.js';
 import { keepFocus } from './focus.js';
 import { createVoiceEngine, voiceRowMarkup, bindVoiceRow } from './voice.js';
-import { voiceSessionBody, voiceThread } from '../../agent/live-voice.js';
+import { voiceSessionBody, voiceThread, chosenVoice } from '../../agent/live-voice.js';
 import { builtScreens, createOrenaDispatcher, requestLanguages } from './dispatcher-setup.js';
 
 /* The context pill's label: the selected item's own text (marked with the language it is in) and
@@ -193,8 +193,13 @@ export async function openOrenaPanel(context = {}, carry = null) {
           client: { supported_actions: dispatcher.supported(), supported_intents: supportedIntents(builtScreens()) },
           notes: memory.requestNotes(),
           address: memory.addressFor(support),
-        }));
-        return { body, thread: voiceThread({ session, memory, notify: paint, lang: () => support }) };
+        }), { voice: chosenVoice() });
+        return {
+          body,
+          thread: voiceThread({ session, memory, notify: paint, lang: () => support }),
+          // A place the learner asked for by voice opens at once (R29), through the same runner as a tap.
+          open: (action) => runOffered({ dispatcher, action, ranActions, repaint: paint }),
+        };
       },
       abort: abortTurn,
       // The mic sheet took this panel's place; when it has been answered, the panel comes back.
