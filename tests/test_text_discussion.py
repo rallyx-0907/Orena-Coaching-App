@@ -380,3 +380,21 @@ def test_sqlite_refuses_rather_than_storing_learner_conversation() -> None:
         repository.get_or_create_discussion(source_kind="story", source_id="x")
     with pytest.raises(RuntimeError, match="PostgreSQL runtime"):
         repository.export_discussions()
+
+
+def test_the_tutor_answers_in_the_learners_support_language_not_a_fixed_one(monkeypatch) -> None:
+    """LEX-022: the support language is the learner's, resolved like every other surface - never a fixed Vietnamese."""
+
+    from writing_coach import text_discussion
+    from writing_coach.core.support_languages import support_language
+
+    monkeypatch.setattr(text_discussion, "_profile", lambda: {"native_language": "en"})
+    assert text_discussion._support_language() == support_language("en").translation_label
+    monkeypatch.setattr(text_discussion, "_profile", lambda: {"support_language": "vi"})
+    assert text_discussion._support_language() == support_language("vi").translation_label
+
+
+def test_this_without_a_quote_means_the_passage_in_view() -> None:
+    from writing_coach import text_discussion
+
+    assert "do not ask them which sentence" in text_discussion._system_prompt("Vietnamese", "zh")

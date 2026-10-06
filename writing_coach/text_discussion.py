@@ -79,8 +79,15 @@ ANSWER_SCHEMA = {
 
 
 def _support_language() -> str:
-    profile = _profile() if _profile else {}
-    return str((profile or {}).get("support_language") or "vi")
+    """The learner's support language, resolved as every other learner surface resolves it (stored support
+    preference, then native language, then the product default) - never a fixed Vietnamese, and named for the
+    model (LEX-022)."""
+    from writing_coach.core.support_languages import resolve_support_language, support_language
+
+    profile = (_profile() if _profile else {}) or {}
+    code = resolve_support_language(profile.get("support_language"), profile.get("native_language"))
+    definition = support_language(code)
+    return definition.translation_label if definition else code
 
 
 def _system_prompt(support_language: str, learning_language: str) -> str:
@@ -91,7 +98,9 @@ def _system_prompt(support_language: str, learning_language: str) -> str:
         "Use the passage only as evidence for your answer - never restate the question, never "
         "announce what the learner is asking about, and never answer with a fixed template. "
         f"Quote the {learning_language} exactly when you quote it. Be concise: a learner reads "
-        "an answer, not an essay."
+        "an answer, not an essay. "
+        "When the learner says 'this' or 'here' without quoting anything, they mean the passage they are "
+        "looking at: answer about that passage, and do not ask them which sentence they mean."
     )
 
 

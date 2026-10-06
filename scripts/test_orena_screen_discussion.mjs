@@ -10,10 +10,11 @@ import assert from 'node:assert/strict';
   const { passageFor } = await import('../static/orena/screens/discussion/model.js');
   const short = [{ pi: 0, text: '我们屋后有半亩隙地。' }, { pi: 1, text: '父亲说：花生的好处很多。' }];
   assert.equal(passageFor(short), '我们屋后有半亩隙地。\n\n父亲说：花生的好处很多。');
+  // With a reading place, the passage is the paragraph being read - what "this" refers to.
+  assert.equal(passageFor(short, { at: 1 }), '父亲说：花生的好处很多。');
   const long = Array.from({ length: 10 }, (_, pi) => ({ pi, text: `P${pi} ` + 'x'.repeat(95) }));
-  const from6 = passageFor(long, { at: 6, limit: 320 });
-  assert.ok(from6.startsWith('P5') || from6.startsWith('P6'), 'starts at or just before the paragraph being read');
-  assert.ok(from6.includes('P6') && from6.length <= 320, 'holds the paragraph read, within the limit');
+  assert.ok(passageFor(long, { at: 6, limit: 320 }).startsWith('P6'), 'the paragraph being read');
+  assert.ok(passageFor(long, { limit: 320 }).startsWith('P0') && passageFor(long, { limit: 320 }).length <= 320, 'no place: from the start, within the limit');
   assert.equal(passageFor([]), '');
 }
 import { readFileSync } from 'node:fs';

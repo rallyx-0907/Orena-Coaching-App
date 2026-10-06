@@ -219,7 +219,15 @@ export default async function respondToContent(element, ctx) {
     footEl.querySelector('[data-act="feedback"]')?.addEventListener('click', onGetFeedback);
     footEl.querySelector('[data-act="revise"]')?.addEventListener('click', () => { result = null; paint(); });
     footEl.querySelector('[data-act="ask"]')?.addEventListener('click', () => {
-      askOrena({ surface: 'writing.review', activity_type: 'writing', essay_id: result?.id });
+      // "Ask Orena why" asks why about the feedback on screen, at once, with the essay attached (LEX-022).
+      const shown = result?.nextStep || result?.issues?.[0]?.why || result?.issues?.[0]?.quote || '';
+      askOrena({
+        surface: 'writing.review',
+        activity_type: 'writing',
+        essay_id: result?.id,
+        ...(shown ? { selected_item: { type: 'feedback_item', text: shown.slice(0, 500) } } : {}),
+        ask: t('askWhyQuestion'),
+      });
     });
     footEl.querySelector('[data-act="done"]')?.addEventListener('click', () => ctx.back());
   }

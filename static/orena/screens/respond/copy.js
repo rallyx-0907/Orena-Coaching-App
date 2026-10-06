@@ -24,7 +24,7 @@ const layers = {
   sourceKindVideo: 'interface', sourceKindAudio: 'interface', sourceKindArticle: 'interface', sourceKindBook: 'interface', sourceKindText: 'interface',
   placeholder: 'support', wordsLabel: 'interface', getFeedback: 'interface',
   wordsTile: 'interface', usesSource: 'interface', fixesLabel: 'interface', nextStepLabel: 'interface',
-  feedbackError: 'support', revise: 'interface', askOrenaWhy: 'interface', openSource: 'interface', done: 'interface',
+  feedbackError: 'support', askWhyQuestion: 'support', revise: 'interface', askOrenaWhy: 'interface', openSource: 'interface', done: 'interface',
 };
 
 export const t = defineCopy('respond', {
@@ -40,7 +40,7 @@ export const t = defineCopy('respond', {
     placeholder: 'Write your response…', wordsLabel_one: 'word', wordsLabel_other: 'words', getFeedback: 'Get feedback',
     wordsTile: 'Words', usesSource: 'Uses the source', fixesLabel: 'Fixes', nextStepLabel: 'Next step',
     feedbackError: "Feedback isn't available right now.",
-    revise: 'Revise', askOrenaWhy: 'Ask Orena why', openSource: 'Open source', done: 'Done',
+    revise: 'Revise', askOrenaWhy: 'Ask Orena why', askWhyQuestion: 'Why was this feedback given?', openSource: 'Open source', done: 'Done',
   },
   vi: {
     kindOpinion: 'Ý kiến', kindSummary: 'Tóm tắt', kindReaction: 'Phản ứng', kindContinuation: 'Tiếp nối',
@@ -53,7 +53,7 @@ export const t = defineCopy('respond', {
     placeholder: 'Viết phản hồi của bạn…', wordsLabel_other: 'từ', getFeedback: 'Nhận xét',
     wordsTile: 'Số từ', usesSource: 'Dùng nguồn', fixesLabel: 'Điểm cần sửa', nextStepLabel: 'Bước tiếp theo',
     feedbackError: 'Hiện chưa dùng được tính năng nhận xét.',
-    revise: 'Sửa lại', askOrenaWhy: 'Hỏi Orena vì sao', openSource: 'Xem nguồn', done: 'Xong',
+    revise: 'Sửa lại', askOrenaWhy: 'Hỏi Orena vì sao', askWhyQuestion: 'Vì sao nhận xét này được đưa ra?', openSource: 'Xem nguồn', done: 'Xong',
   },
   zh: {
     kindOpinion: '观点', kindSummary: '概括', kindReaction: '感想', kindContinuation: '续写',
@@ -66,6 +66,6 @@ export const t = defineCopy('respond', {
     placeholder: '写下你的回应…', wordsLabel_other: '字', getFeedback: '获取点评',
     wordsTile: '字数', usesSource: '用到来源', fixesLabel: '待修改', nextStepLabel: '下一步',
     feedbackError: '点评功能暂时不可用。',
-    revise: '修改', askOrenaWhy: '问问 Orena 为什么', openSource: '查看来源', done: '完成',
+    revise: '修改', askOrenaWhy: '问问 Orena 为什么', askWhyQuestion: '为什么会给出这条反馈？', openSource: '查看来源', done: '完成',
   },
 });

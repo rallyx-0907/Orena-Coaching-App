@@ -247,7 +247,9 @@ export async function openOrenaPanel(context = {}, carry = null) {
       sheetEl = element;
       handle = sheetHandle;
       paint();
-      if (!carry) void runTurn('open', '');
+      // A control that is itself a question opens on it (LEX-022); otherwise Orena opens with its greeting.
+      const asked = String(context.ask || '').trim();
+      if (!carry) void runTurn(asked ? 'message' : 'open', asked);
       return () => {
         closed = true;
         unsubscribePresence();

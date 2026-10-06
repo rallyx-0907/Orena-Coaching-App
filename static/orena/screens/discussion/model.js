@@ -58,12 +58,15 @@ export function mapTurns(turns) {
    MAX_BODY_CHARACTERS), named once so the input stops at it instead of refusing a longer send. */
 export const MAX_BODY_CHARACTERS = 4000;
 
-/* The text a Discussion is about, as the tutor's `context` (LEX-022): the frame's thread is "about this text",
-   so a question such as "Why did the author say this?" is answered from the text itself, not from nothing.
-   A text that fits is sent whole; a longer one is sent from the paragraph the learner was reading (`at`, the
-   Reader's paragraph index), then the paragraphs before it while room remains, within `limit` characters. */
+/* The passage a Discussion question is about, as the tutor's `context` (LEX-022) - "the passage the learner is
+   looking at" in the tutor's own prompt. When the Reader said where the learner was reading (`at`, its paragraph
+   index), that paragraph is the passage: a question such as "Why did the author say this?" then names it, and the
+   tutor answers about it instead of asking which sentence. Without a place, the text is sent whole when it fits,
+   else from its start, within `limit` characters. */
 export function passageFor(paragraphs, { at = -1, limit = MAX_BODY_CHARACTERS } = {}) {
   const texts = (Array.isArray(paragraphs) ? paragraphs : []).map((block) => ({ pi: block?.pi, text: String(block?.text || '').trim() })).filter((block) => block.text);
+  const here = texts.find((block) => block.pi === at);
+  if (here) return here.text.slice(0, limit);
   const whole = texts.map((block) => block.text).join('\n\n');
   if (whole.length <= limit) return whole;
   const start = Math.max(0, texts.findIndex((block) => block.pi === at));

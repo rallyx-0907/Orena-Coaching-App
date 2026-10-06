@@ -21,7 +21,9 @@ export function setAgentHandler(fn) {
 }
 
 /* context: { surface, activity_type?, content_id?, attempt_id?, essay_id?, lesson_id?,
-              selected_item?: { type, id?, text }, voice?: boolean, label?: string } */
+              selected_item?: { type, id?, text }, voice?: boolean, label?: string, ask?: string }
+   `ask`: a control that is itself a question ("Ask Orena why") opens Orena on that question, sent as the
+   learner's first message, instead of on a greeting (LEX-022). */
 export function askOrena(context = {}) {
   if (!orenaPresent()) return null;
   if (handler) return handler(context);
