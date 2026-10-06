@@ -30,6 +30,10 @@ const { t } = await import('../static/orena/screens/orena/copy.js');
   assert.ok(String(richInline('[docs](https://example.com/a(b)c)')).includes('href="https://example.com/a(b)c"'), 'a web link with brackets stays a link');
   assert.ok(String(richInline('<img src=x onerror=1> **ok**')).startsWith('&lt;img'), 'everything is escaped first');
   assert.ok(!String(richInline('Đang viết **nghĩa', { streaming: true })).includes('**'), 'an unclosed marker is held back while streaming');
+  // A numbered example keeps its reading and translation (continuation lines, indented sub-list) and its number.
+  const grouped = String(richText('1. 我爱吃花生。\nwǒ ài chī huāshēng\nTôi thích ăn lạc.\n\n2. 花生很便宜。\n   - Lạc rất rẻ.'));
+  assert.ok(grouped.includes('<li>我爱吃花生。<br>wǒ ài chī huāshēng<br>Tôi thích ăn lạc.</li>'), 'continuation lines stay in their item');
+  assert.ok(grouped.includes('<ol class="o-rich__list" start="2"><li>花生很便宜。<ul class="o-rich__list"><li>Lạc rất rẻ.</li></ul></li>'), 'the second example is 2, with its sub-list');
   assert.equal(hasBlocks('one line'), false);
   assert.equal(hasBlocks('- item'), true);
   assert.equal(plainText('**Nghĩa:** đậu phộng [Open word](command:navigate?{}) và *lạc*'), 'Nghĩa: đậu phộng  và lạc');

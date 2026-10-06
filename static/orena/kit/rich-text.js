@@ -91,7 +91,9 @@ export function richText(text, { streaming = false } = {}) {
   const lines = String(text ?? '').replace(/\r\n?/g, '\n').split('\n');
   const out = [];
   let paragraph = [];
-  let list = null; // { tag: 'ul'|'ol', items: [] }
+  // { tag: 'ul'|'ol', start, items: [{ lines: [], sub: [] }] }. An item holds its own continuation lines and an
+  // indented sub-list, so a numbered example with its reading and translation is one unit (LEX-006).
+  let list = null;
   let quote = [];
 
   const flushParagraph = () => {
@@ -99,7 +101,16 @@ export function richText(text, { streaming = false } = {}) {
     paragraph = [];
   };
   const flushList = () => {
-    if (list) out.push(`<${list.tag} class="o-rich__list">${list.items.map((item) => `<li>${richInline(item, { streaming })}</li>`).join('')}</${list.tag}>`);
+    if (list) {
+      const items = list.items.map((item) => {
+        const body = item.lines.map((line) => richInline(line, { streaming })).join('<br>');
+        const sub = item.sub.length ? `<ul class="o-rich__list">${item.sub.map((line) => `<li>${richInline(line, { streaming })}</li>`).join('')}</ul>` : '';
+        return `<li>${body}${sub}</li>`;
+      });
+      // The number the answer wrote first stands, so "2." after a break is not drawn as 1 again.
+      const start = list.tag === 'ol' && list.start > 1 ? ` start="${list.start}"` : '';
+      out.push(`<${list.tag} class="o-rich__list"${start}>${items.join('')}</${list.tag}>`);
+    }
     list = null;
   };
   const flushQuote = () => {
@@ -115,26 +126,33 @@ export function richText(text, { streaming = false } = {}) {
   for (const line of lines) {
     const heading = /^\s*(#{1,6})\s+(.*)$/.exec(line);
     const bullet = /^\s*[-*+•]\s+(.*)$/.exec(line);
-    const numbered = /^\s*\d+[.)]\s+(.*)$/.exec(line);
+    const numbered = /^\s*(\d+)[.)]\s+(.*)$/.exec(line);
+    const indented = /^(\s{2,}|	)/.test(line);
     const quoted = /^\s*>\s?(.*)$/.exec(line);
     if (!line.trim()) {
       flush();
     } else if (heading) {
       flush();
       out.push(`<p class="o-rich__h">${richInline(heading[2], { streaming })}</p>`);
+    } else if (list && indented && (bullet || numbered)) {
+      // An indented marker under an item is that item's own sub-list.
+      list.items[list.items.length - 1].sub.push(bullet ? bullet[1] : numbered[2]);
     } else if (bullet || numbered) {
       flushParagraph();
       flushQuote();
       const tag = bullet ? 'ul' : 'ol';
       if (list && list.tag !== tag) flushList();
-      if (!list) list = { tag, items: [] };
-      list.items.push((bullet || numbered)[1]);
+      if (!list) list = { tag, start: numbered ? Number(numbered[1]) : 1, items: [] };
+      list.items.push({ lines: [bullet ? bullet[1] : numbered[2]], sub: [] });
     } else if (quoted) {
       flushParagraph();
       flushList();
       quote.push(quoted[1]);
+    } else if (list) {
+      // A plain line right under an item continues it (CommonMark's lazy continuation): the example's reading
+      // and translation stay with the example.
+      list.items[list.items.length - 1].lines.push(line.trim());
     } else {
-      flushList();
       flushQuote();
       paragraph.push(line.trim());
     }
