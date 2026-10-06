@@ -38,8 +38,12 @@ export function asksToGo(message) {
   return ASKS_TO_GO.test(String(message || ''));
 }
 
+/* The server marks an action that runs on request with `open: true` (§7); that mark decides. A server from before
+   the mark sends none, and then the learner's own words do, for `navigate` only. */
 export function openIfAsked({ message, reply, dispatcher, ranActions, repaint }) {
-  if (!asksToGo(message) || !reply || reply.error) return null;
-  const place = (reply.actions || []).find((action) => action?.type === 'navigate');
+  if (!reply || reply.error) return null;
+  const actions = reply.actions || [];
+  const marked = actions.find((action) => action?.open === true);
+  const place = marked || (asksToGo(message) ? actions.find((action) => action?.type === 'navigate') : null);
   return place ? runOffered({ dispatcher, action: place, ranActions, repaint }) : null;
 }

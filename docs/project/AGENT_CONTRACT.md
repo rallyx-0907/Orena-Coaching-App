@@ -346,6 +346,12 @@ Rules:
 - `label` is in the `interface` language (`context.locale.interface`), ≤ 24 characters: a button is interface layer (D-080). The text an action's card explains (`display.reason`) stays in the `support` language.
 - An action with an unknown `type`, or not in `supported_actions`, is ignored and logged by the client.
 - An action is shown as a button; the client never runs it without a learner tap, except `navigate` when the learner's message was itself the request ("đưa tôi tới…").
+  - The server marks such an action with `"open": true` in its own data, in text turns and in voice (§9). The
+    client runs exactly the actions so marked, at once, and keeps their buttons in the thread.
+  - In text turns only `navigate` is ever marked. In voice, any low-risk action the learner asked for may be (R30).
+  - A CONFIRM-risk action marked `open` still goes through the UI's own confirmation.
+  - A short "open it" right after an offer ("mở giúp tôi", "open it", "打开它") is answered by the server with the
+    offered `navigate`, marked `open`, and a one-line "opening it now" reply in the support language.
 - A segment that comes with an action **offers** it: it never says or implies the action was done ("Mình lưu …", "Saved it for you", "我帮你保存了"). The learner does it by tapping or confirming. A `memory_update` is different: the device applies it without a tap, so a reply may say it is applied (S14).
 - A reply that names the button uses its `label` as the learner sees it (interface language), and does not describe the button or the interface: "Bấm Lưu từ để thêm 我 vào từ vựng của bạn." The sentence around the label - an offer, including the server's own offer copy - is in the `support` language like the rest of the reply; only the quoted label stays as the button reads (D-135).
 - A `navigate` to the learner's My Library about a word is offered only when that word is actually in their library (a tool read says so); a word not saved gets no My Library button and no offer to open it (D-135).

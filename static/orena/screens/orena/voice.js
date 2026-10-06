@@ -216,7 +216,7 @@ export function createVoiceEngine({ ctx = {}, send, onChange, abort, resume, onT
       onEvents: (events, openId) => {
         thread.events(turnHeard, events);
         // The learner asked to open it: the offered action runs now; its button stays in the thread (R29).
-        const action = openId ? events.find((item) => item?.event === 'action' && item.data?.id === openId)?.data : null;
+        const action = events.find((item) => item?.event === 'action' && (item.data?.open === true || (openId && item.data?.id === openId)))?.data || null;
         if (action && typeof open === 'function') void open(action);
       },
       onTurnComplete: ({ heard: said, said: answer }) => {

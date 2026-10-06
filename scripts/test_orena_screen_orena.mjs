@@ -273,3 +273,12 @@ console.log('Orena (Home/Contextual panel/voice/memory sheet): context label, re
   assert.deepEqual(ran, ['n1'], 'a message that is not a request to go runs nothing');
 }
 
+// The server's mark decides: an action with open:true runs, whatever the words; without marks, the words decide.
+{
+  const { openIfAsked } = await import('../static/orena/screens/orena/actions.js');
+  const ran = [];
+  const dispatcher = { run: async (action) => { ran.push(action.id); return { ok: true }; } };
+  await openIfAsked({ message: 'ok', reply: { actions: [{ id: 'n0', type: 'navigate' }, { id: 'n2', type: 'navigate', open: true }] }, dispatcher, ranActions: new Set(), repaint: () => {} });
+  assert.deepEqual(ran, ['n2']);
+}
+
