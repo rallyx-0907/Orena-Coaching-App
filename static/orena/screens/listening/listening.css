@@ -778,3 +778,6 @@
 .s-listening.is-dictation .s-listening__row-hidden { padding: 2px 0; gap: 5px; }
 .s-listening.is-dictation .s-listening__bar { height: 7px; }
 .s-listening.is-dictation .s-listening__row:not(.is-playing) .s-listening__row-time { color: var(--text3); }
+/* In Dictation the hidden line map yields room first, so the card's actions always keep theirs (LEX-032). */
+:root[data-device="mobile"] .s-listening.is-dictation .s-listening__transcript { min-height: 96px; }
+:root[data-device="mobile"] .s-listening__dict .s-dict__actions { gap: 8px; }
