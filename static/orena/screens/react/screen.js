@@ -139,7 +139,9 @@ export default async function reactReuse(element, ctx) {
       if (playing) togglePlayback(host, playback);
       else replaySegment(host, playback, seg.start_ms, seg.end_ms, 1);
     });
-    replaySegment(host, playback, seg.start_ms, seg.end_ms, 1);
+    // The Listen step opens paused on ▶ as the design does (nav("react",{playing:false})); the learner starts it.
+    // Starting it here played only when the browser still held a recent tap - from Listening, not on a direct
+    // open (L-10).
   }
   function releaseListen() {
     if (playerHost.current) disconnectMediaPlayer(playerHost.current);
