@@ -11,7 +11,7 @@ def test_completion_agent_sweeps_all_ready_ids_from_cache_before_paid_generation
     text = COMPLETION.read_text(encoding="utf-8")
 
     assert "function Get-ReadyPointIds" in text
-    assert '"corpus-plan", "--lang", $Language, "--json"' in text
+    assert "corpus-plan --lang $Language --json" in text
     assert '$readyPointIds = @(Get-ReadyPointIds -Language $language)' in text
     assert 'foreach ($readyPointId in $readyPointIds)' in text
     assert 'Invoke-Corpus -Language $language -PointId $readyPointId -CacheOnly' in text
@@ -23,7 +23,7 @@ def test_completion_agent_sweeps_all_ready_ids_from_cache_before_paid_generation
     assert 'foreach ($readyPointId in $readyPointIds)' in sweep
     assert '$uncachedPointIds' in sweep
     assert 'cache-only mode: no cached completion' in sweep
-    assert 'Invoke-Rescue -PointId $readyPointId' in sweep
+    assert '$rescuePointIds' in sweep
 
     paid_start = text.index('if (-not $AllowPaidCandidates)', sweep_start)
     assert paid_start > sweep_start
