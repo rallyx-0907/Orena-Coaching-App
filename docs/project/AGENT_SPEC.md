@@ -237,6 +237,17 @@ R30 (2026-10-06, sau bài thử trên iPhone: "Orena phải là Agent toàn năn
     cho model); gợi ý ngôn ngữ nhận giọng (inputAudioTranscription.languageCodes: support + target, kiểm live được
     nhận); nghe không rõ thì xin nói lại. Kiểm live (≈ 0,03 USD; cả ngày ≈ 0,24 USD): mở tiến độ, mở luyện nói, bắt
     đầu ôn đều chạy ngay; sau cập nhật ngữ cảnh phát mẫu đúng bài và câu; giọng thật vi và en nhận đúng nguyên câu.
+R31 (2026-10-07, sau PR #85) Người chủ dự án tạm gác việc agent ("Tạm thời gác lại cái này"). Ghi lại để làm sau,
+    từ bài thử chat chữ: "tôi hỏi 1 nghĩa 1 từ thì agent trả lời nhưng không hiện thị nó 1 cách rõ ràng hay dạng md
+    cho đẹp, kèm câu muốn lưu không thì tôi nhắn là Ok lưu thì nó không lưu mà lại gửi lặp lại 'Dựa trên hồ sơ học
+    tập của bạn với bài đọc ...'":
+    1. Nghĩa của từ trả về chữ phẳng: không tiêu đề từ, không in đậm nghĩa, không danh sách ví dụ (client đã hiển
+       thị tập con Markdown §5.1; đây là định dạng của câu trả lời).
+    2. "Ok lưu" ngay sau câu hỏi "muốn lưu không" không lưu: cần đường ngắn như "open it" (R30/#85) cho lời đồng ý
+       ngắn sau một đề xuất - chạy (open: true) đúng action vừa đề xuất (save_word), không bao giờ quay về tóm tắt
+       hồ sơ. Lưu ý: ở chế độ chữ hiện chỉ mở màn chạy ngay; lưu từ chạy ngay cần người chủ dự án mở rộng R30 cho chữ.
+    3. Câu mở đầu lặp "Dựa trên hồ sơ học tập của bạn…" xuất hiện khi người học hỏi điều cụ thể.
+    Chưa làm gì cho tới khi người chủ dự án mở lại.
 ```
 
 Tiến độ lane (cập nhật mỗi slice):
