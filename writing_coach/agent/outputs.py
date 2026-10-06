@@ -99,6 +99,16 @@ _SENTENCE_END = re.compile(r"[。！？.!?…]+[\s\"'”’」』）)\]】]*$")
 
 # A message about review or words due: then a review may be offered even with something in view.
 _ASKS_REVIEW = re.compile(r"(?i)\b(?:ôn|ôn tập|đến hạn|review|due|revise|flashcards?)\b|复习|到期|温习")
+# ... or about whether a word is saved: then the learner's status may be told with something in view.
+_ASKS_SAVED = re.compile(r"(?i)\b(?:lưu|đã lưu|saved?|my words|thư viện|library)\b|保存|收藏|生词本")
+
+
+def asks_about_status(message: str | None) -> bool:
+    """The learner asks about review, words due or whether a word is saved (LEX-006: else it is not told)."""
+
+    return bool(message) and bool(_ASKS_REVIEW.search(message) or _ASKS_SAVED.search(message))
+
+
 _UNASKED_REVIEW = ("refused: the learner asks about what is in view, not about review - answer that; offer no "
                    "review or words due unless they ask")  # fmt: skip
 

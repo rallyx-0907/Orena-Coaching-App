@@ -403,6 +403,46 @@ _OFFERS_MORE = MappingProxyType(
 )
 
 
+# The learner's own status - saved, in their list, due, to review (LEX-006 readiness check): a word read from their
+# records leaked into an answer about its meaning here ("Từ này … đã lưu của bạn và đến hạn ôn tập đấy!"). A
+# status keyword alone is no status statement - "复习 nghĩa là ôn tập" is a meaning - so it takes the learner too.
+_STATUS = MappingProxyType(
+    {
+        "vi": (re.compile(r"(?i)đã lưu|đã được lưu|danh sách từ|từ vựng đã lưu|thư viện|đến hạn|ôn tập|lịch ôn"),
+               re.compile(r"(?i)\b(?:của bạn|bạn đã|bạn có|bạn đang)\b")),
+        "en": (re.compile(r"(?i)\b(?:saved|due|review|word ?list|your words|library)\b"),
+               re.compile(r"(?i)\b(?:your|you've|you have|you're)\b")),
+        "zh-CN": (re.compile(r"已保存|已收藏|收藏|生词本|到期|复习"), re.compile(r"你的|您的|你已|您已|你今天|你还")),
+    }
+)
+
+
+# ... and about the word itself: "this word", or the word as selected. "Màn này giữ các từ bạn đã lưu" describes
+# a screen, not the word's status.
+_THIS_WORD = re.compile(r"(?i)\b(?:từ này|this word)\b|这个词|该词|此词")
+
+
+def states_status(sentence: str, support: str, word: str | None = None) -> bool:
+    """Whether a sentence tells the learner this word's status in their records (saved, due, to review)."""
+
+    patterns = _STATUS.get(support)
+    if not patterns:
+        return False
+    keyword, learner = patterns
+    about_word = bool(_THIS_WORD.search(sentence)) or bool(word and word in sentence)
+    return about_word and bool(keyword.search(sentence) and learner.search(sentence))
+
+
+# A learner who asks for a heading ("tiêu đề", "heading", "标题") gets one: a first line the model wrote in bold
+# alone becomes a "### " heading (LEX-006: bold on its own line is not a heading).
+_ASKS_HEADING = re.compile(r"(?i)\b(?:tiêu đề|đề mục|heading|title)\b|标题")
+_BOLD_LINE = re.compile(r"^[ \t]*\*\*([^*\n]+?)\*\*[ \t]*:?[ \t]*(\n?)$")
+
+
+def asks_for_heading(message: str | None) -> bool:
+    return bool(message) and bool(_ASKS_HEADING.search(message))
+
+
 def offers_more(sentence: str, support: str) -> bool:
     """Whether a sentence offers the learner more (examples, a review, more explanation) they did not ask for."""
 
@@ -426,6 +466,10 @@ class ClaimGate:
         self.hold_all = hold_all
         self.address: object = None  # the turn's address (§5.6), set once the request is read
         self.drop_more_offers = False  # something is in view: no offer of more (LEX-006), set per turn
+        self.drop_status = False  # ... and no saved/due/review status of the selected word unless asked
+        self.status_word: str | None = None  # that word, as selected
+        self.heading_asked = False  # the learner asked for a heading: a first bold-only line becomes one
+        self._heading_done = False
         self._partial = ""
         self._held: list[str] = []
         self.sent: list[str] = []
@@ -435,7 +479,7 @@ class ClaimGate:
         out: list[str] = []
         while (end := _sentence_end(self._partial)) is not None:
             sentence, self._partial = self._partial[:end], self._partial[end:]
-            sentence = strip_markup(sentence)
+            sentence = self._headed(strip_markup(sentence))
             if not sentence.strip():
                 continue
             if (
@@ -443,13 +487,29 @@ class ClaimGate:
                 or self._held
                 or claims_done(sentence, address=self.address)
                 or offers_a_button(sentence, self._support, interface=self._interface)
-                or (self.drop_more_offers and offers_more(sentence, self._support))
+                or self._unasked(sentence)
             ):
                 self._held.append(sentence)
             else:
                 out.append(sentence)
         self.sent.extend(out)
         return out
+
+    def _unasked(self, sentence: str) -> bool:
+        """What the learner did not ask for while something is in view: an offer of more, their records' status."""
+
+        return (self.drop_more_offers and offers_more(sentence, self._support)) or (
+            self.drop_status and states_status(sentence, self._support, self.status_word)
+        )
+
+    def _headed(self, sentence: str) -> str:
+        if self.heading_asked and not self._heading_done:
+            if sentence.lstrip().startswith("#"):
+                self._heading_done = True
+            elif found := _BOLD_LINE.match(sentence):
+                self._heading_done = True
+                return f"### {found.group(1).strip()}\n"
+        return sentence
 
     def discard(self) -> None:
         """Drops what is held and not yet sent (an answer that will be written again)."""
@@ -473,8 +533,8 @@ class ClaimGate:
         self._held, self._partial = [], ""
         if replace_with is not None and not self.text:
             tail = [replace_with]
-        elif self.drop_more_offers:  # an offer of more is not a claim: dropping it says nothing in its place
-            tail = [part for part in tail if not offers_more(part, self._support)]
+        else:  # an offer of more or a status line is not a claim: dropping it says nothing in its place
+            tail = [part for part in tail if not self._unasked(part)]
         pending = offer_text is not None if pending is None else pending
 
         def drop(part: str) -> bool:

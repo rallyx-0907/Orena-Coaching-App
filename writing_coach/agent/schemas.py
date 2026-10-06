@@ -96,6 +96,8 @@ class SelectedItem(_Incoming):
     id: str | None = Field(default=None, pattern=_ID)
     text: str | None = Field(default=None, min_length=1, max_length=500)
     lang: str | None = None
+    # A word selected in a text: the sentence it was selected in, as the learner sees it (§3, LEX-006).
+    sentence: str | None = Field(default=None, min_length=1, max_length=500)
 
     @field_validator("lang")
     @classmethod
