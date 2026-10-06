@@ -98,6 +98,41 @@ def test_asked_to_open_a_video_orena_finds_it_and_the_client_opens_it_at_once():
     assert "opens now" in opened["responses"][0]["response"]["result"]
 
 
+@pytest.mark.parametrize("late", ["", "   ", None])
+def test_an_empty_transcript_keeps_the_learners_request(late):
+    """The phone test: the client sent heard "" when the transcript came after the tool call."""
+
+    service = _service()
+    sid = service.open(_open_body(), LEARNER)["voice_session_id"]
+    service.relay(sid, [{"id": "f", "name": "find_content", "args": {"kind": "listening"}}], LEARNER,
+                  "Mở một video bất kỳ trong Listening")  # fmt: skip
+    offer = {"id": "o", "name": "offer_button", "args": {"action": "open_content", "content_id": "media:zh-market-01"}}
+    assert "open" in service.relay(sid, [offer], LEARNER, late)
+
+
+@pytest.mark.parametrize("asked", ["Open any video in Listening", "Mở một video bất kỳ trong Listening",
+                                   "我想看一个视频"])  # fmt: skip
+def test_asked_for_a_video_a_review_button_is_refused(asked):
+    """The phone test: a review button for "open a video" opened an empty Review page."""
+
+    service = _service()
+    sid = service.open(_open_body(), LEARNER)["voice_session_id"]
+    review = {"id": "r", "name": "offer_button", "args": {"action": "start_review"}}
+    answer = service.relay(sid, [review], LEARNER, asked)
+    assert answer["responses"][0]["response"]["result"].startswith("refused: the learner asked for a lesson")
+    assert answer["events"] == []
+
+
+def test_asked_for_a_review_a_review_button_is_given():
+    service = _service()
+    body = _open_body()
+    body["client"]["supported_actions"].append("start_review")
+    sid = service.open(body, LEARNER)["voice_session_id"]
+    review = {"id": "r", "name": "offer_button", "args": {"action": "start_review"}}
+    answer = service.relay(sid, [review], LEARNER, "Ôn từ đến hạn giúp mình")
+    assert [e["event"] for e in answer["events"]] == ["action"]
+
+
 def test_offered_without_being_asked_to_open_it_is_a_button_only():
     service = _service()
     sid = service.open(_open_body(), LEARNER)["voice_session_id"]

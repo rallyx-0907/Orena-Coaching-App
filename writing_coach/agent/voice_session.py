@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import secrets
 import threading
 import time
@@ -116,6 +117,13 @@ OFFER_BUTTON_SPEC = ProviderToolSpec(
         "content_id": {"type": "string", "description": "for open_content: a content_id find_content returned"}},
      "required": ["action"]},
 )  # fmt: skip
+# The learner asks for a lesson, a video or a text, not a review (R29 phone test): a review button is refused.
+_ASKS_CONTENT = re.compile(
+    r"(?i)\b(?:video|listening|reading|lesson|podcast|audio|bài nghe|bài đọc|bài học|nghe|đọc|xem)\b"
+    r"|视频|听力|阅读|课文|节目"
+)
+_CONTENT_NOT_REVIEW = ("refused: the learner asked for a lesson, video or text, not a review - call find_content, "
+                       "then offer_button with open_content and a content_id it returned")  # fmt: skip
 # Where a content_id opens (contract §6.1): a listening lesson or a reading text.
 OPENS_BY_PREFIX = {"media": "listening.workspace", "article": "reading.workspace", "book": "reading.workspace"}
 
@@ -367,6 +375,9 @@ class VoiceService:
         session = self.sessions.get(voice_session_id, learner.user_key)
         if session is None:
             return None
+        # An empty `heard` is a transcript that had not arrived yet, never an utterance of no words: it changes
+        # nothing (the phone test: "" cleared the request to open and the turn's buttons).
+        heard = heard if heard is not None and heard.strip() else None
         if heard is not None and heard[:2000] != session.outputs.learner_words:
             # A new utterance is a new turn: its buttons and notes are counted afresh (what was read stays known).
             session.outputs.learner_words = heard[:2000]  # what the learner just said: a note needs their words
@@ -378,6 +389,11 @@ class VoiceService:
         for call in calls:
             name, args, call_id = str(call.get("name") or ""), call.get("args"), call.get("id")
             args = args if isinstance(args, Mapping) else {}
+            if name == OFFER_BUTTON and args.get("action") == "start_review" and _ASKS_CONTENT.search(
+                    session.outputs.learner_words or ""):  # fmt: skip
+                # The phone test: "open any video in Listening" got a review button that opened an empty Review.
+                responses.append({"id": call_id, "name": name, "response": {"result": _CONTENT_NOT_REVIEW}})
+                continue
             if name == OFFER_BUTTON:
                 before = len(session.outputs.actions)
                 answer = session.outputs.handle(PROPOSE_ACTION, self._button(session, args), known_evidence=frozenset())
