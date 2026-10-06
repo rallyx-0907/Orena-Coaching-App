@@ -1,4 +1,4 @@
-name: Rescue Python Contract RED
+name: Rescue Control Contract RED
 
 on:
   push:
@@ -13,7 +13,7 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
-      - name: Confirm rescue Python contract is red
+      - name: Confirm rescue control contract is red
         shell: bash
         run: |
           set +e
