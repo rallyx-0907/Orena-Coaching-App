@@ -109,6 +109,11 @@ def asks_about_status(message: str | None) -> bool:
     return bool(message) and bool(_ASKS_REVIEW.search(message) or _ASKS_SAVED.search(message))
 
 
+# ... or to open or go somewhere: then, and only then, a navigate button with something in view.
+_ASKS_TO_GO = re.compile(
+    r"(?i)\b(?:mở|đi tới|đi đến|đưa (?:mình|tôi|em) (?:tới|đến|sang)|chuyển (?:tới|sang)|open|go to|take me|show me)\b"
+    r"|打开|去|带我|进入"
+)
 _UNASKED_REVIEW = ("refused: the learner asks about what is in view, not about review - answer that; offer no "
                    "review or words due unless they ask")  # fmt: skip
 
@@ -376,6 +381,7 @@ class ReplyOutputs:
     # The turn is about what is in view - a selection, or an essay's feedback (LEX-006, LEX-022): no review button
     # or "review due" suggestion unless the learner asks about review.
     focused: bool = False
+    text_in_view: bool = False  # a selected word or sentence of a text: no navigate button unless asked
 
     # --- ids the turn has seen ------------------------------------------------
 
@@ -446,6 +452,10 @@ class ReplyOutputs:
         if not allowed:
             return "refused: this app cannot do that here; say it in words instead"
         if action_type == "start_review" and self._unasked_review():
+            return _UNASKED_REVIEW
+        if action_type == "navigate" and self.text_in_view and not _ASKS_TO_GO.search(self.learner_words or ""):
+            # A word or sentence of a text in view (LEX-006): going elsewhere is routing too, unless the learner
+            # asks to go. An essay or a grammar point in view keeps its way on (contract S9, grammar.point).
             return _UNASKED_REVIEW
         if self.opening and ACTIONS[action_type].risk is not ActionRisk.LOW:
             return "refused: an opening turn offers only actions that need no confirmation"
