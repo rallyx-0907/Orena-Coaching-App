@@ -74,6 +74,12 @@ CATALOG: Mapping[str, CopyEntry] = MappingProxyType(
             CopyLayer.SUPPORT,
             {"en": "Tap {label} if you want to.", "vi": "Bấm {label} nếu {user} muốn.", "zh-CN": "需要的话，点击“{label}”。"},
         ),
+        # The learner's own words asked for it (§7; R30): it runs at once, so the sentence says so instead of asking
+        # for a tap (text phone test 2026-10-06: "Bấm Open the lesson để mở." after "mở giúp tôi").
+        "offer.now.navigate": _entry(
+            CopyLayer.SUPPORT,
+            {"en": "Opening it for you now.", "vi": "{self_cap} mở ngay cho {user}.", "zh-CN": "{self}现在就为{user}打开。"},
+        ),
         # Said when every sentence of an answer claimed Orena had changed something (agent/honesty.py).
         "honesty.nothing_done": _entry(
             CopyLayer.SUPPORT,

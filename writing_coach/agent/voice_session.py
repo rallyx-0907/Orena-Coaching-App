@@ -41,7 +41,7 @@ from writing_coach.agent.outputs import (
     REMEMBER_NOTE,
     SET_ADDRESS,
     ReplyOutputs,
-    asks_to_go,
+    asked_for,
     reply_tool_specs,
 )
 from writing_coach.agent.prompts import INSTRUCTION, context_document, selection_line, style_for
@@ -149,13 +149,6 @@ _ASKS_CONTENT = re.compile(
 )
 _CONTENT_NOT_REVIEW = ("refused: the learner asked for a lesson, video or text, not a review - call find_content, "
                        "then do_action navigate with the content_id it returned")  # fmt: skip
-# The learner's own words ask for it to be done (R30): then the action runs at once, a CONFIRM one through the app's
-# own confirmation. Unclear words get a button.
-_ASKS_TO_DO = re.compile(
-    r"(?i)\b(?:hãy|giúp|làm ơn|bắt đầu|lưu|bỏ lưu|xoá|xóa|phát|nghe lại|đọc mẫu|luyện|ôn|thêm|cho (?:mình|tôi|em|tớ)"
-    r"|please|start|save|unsave|remove|play|repeat|practice|practise|review|add|let'?s|can you|could you)\b"
-    r"|请|开始|保存|删除|播放|练习|复习|添加|帮我|我想"
-)
 # Where a content_id opens (contract §6.1): a listening lesson or a reading text.
 OPENS_BY_PREFIX = {"media": "listening.workspace", "article": "reading.workspace", "book": "reading.workspace"}
 # Recognition hints (contract codes -> BCP-47): the learner speaks their support language and the one they learn,
@@ -502,7 +495,8 @@ class VoiceService:
                 events.extend(added)
                 # R29/R30: what the learner's own words asked for happens at once - a place opens (§7), a low-risk
                 # action runs, a CONFIRM one goes through the app's own confirmation; the button stays in the thread.
-                if added and self._asked_for(added[0], session.outputs.learner_words):
+                if added and asked_for(added[0].type, session.outputs.learner_words):
+                    events[events.index(added[0])] = added[0].model_copy(update={"open": True})
                     opened = added[0].id
                     answer += " It happens now: say in a few words what is happening."
                 responses.append({"id": call_id, "name": name, "response": {"result": answer}})
@@ -521,12 +515,6 @@ class VoiceService:
         if opened is not None:
             answer["open"] = opened  # the client runs this action now, without a tap (R29)
         return answer
-
-    @staticmethod
-    def _asked_for(action: Any, words: str | None) -> bool:
-        if action.type == "navigate":
-            return asks_to_go(words)
-        return bool(words) and bool(_ASKS_TO_DO.search(words))
 
     # -- where the learner is now ----------------------------------------------------------------------------------
 

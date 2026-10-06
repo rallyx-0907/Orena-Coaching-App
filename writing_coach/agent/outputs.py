@@ -132,6 +132,39 @@ def asks_to_go(message: str | None) -> bool:
     return bool(message) and bool(_ASKS_TO_GO.search(message))
 
 
+# The learner's own words ask for it to be done (R30): then a low-risk action runs at once, a CONFIRM one through
+# the app's own confirmation. Unclear words get a button.
+_ASKS_TO_DO = re.compile(
+    r"(?i)\b(?:hãy|giúp|làm ơn|bắt đầu|lưu|bỏ lưu|xoá|xóa|phát|nghe lại|đọc mẫu|luyện|ôn|thêm|cho (?:mình|tôi|em|tớ)"
+    r"|please|start|save|unsave|remove|play|repeat|practice|practise|review|add|let'?s|can you|could you)\b"
+    r"|请|开始|保存|删除|播放|练习|复习|添加|帮我|我想"
+)
+
+
+def asks_to_do(message: str | None) -> bool:
+    return bool(message) and bool(_ASKS_TO_DO.search(message))
+
+
+def asked_for(action_type: str, message: str | None) -> bool:
+    """Whether the learner's own words were the request for this action (§7; R30): run it at once."""
+
+    return asks_to_go(message) if action_type == "navigate" else asks_to_do(message)
+
+
+# "Open it" right after an offer (text phone test 2026-10-06: "mở giúp tôi" fetched another item instead): a short
+# message that asks to open and names nothing new opens what the last answer offered.
+_OPEN_IT = re.compile(
+    r"(?i)^\s*(?:ok(?:ay)?,?\s*|ừ\s*|vâng\s*|được\s*|yes,?\s*|好的?[，,]?\s*)?"
+    r"(?:mở(?:\s+(?:giúp|giùm|hộ|cho)(?:\s+(?:tôi|mình|em|tớ))?|\s+(?:nó|đi|ra|đó|bài đó|cái đó|luôn|ngay))*"
+    r"|open(?:\s+(?:it|that|this|that one|it please))?(?:\s+please)?|go ahead|do it"
+    r"|打开(?:它|吧|那个)?|开吧)\s*[.!?。！？]*\s*$"
+)
+
+
+def opens_the_offer(message: str | None) -> bool:
+    return bool(message) and bool(_OPEN_IT.match(message))
+
+
 _UNASKED_REVIEW = ("refused: the learner asks about what is in view, not about review - answer that; offer no "
                    "review or words due unless they ask")  # fmt: skip
 
