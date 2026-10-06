@@ -316,7 +316,9 @@ export function connectLiveVoice(session, { audio, mediaDevices = globalThis.nav
     try {
       answer = await post('/api/agent/voice/context', { voice_session_id: id, context }, fetchImpl);
     } catch (error) {
-      if (error?.status === 404) end('server');
+      // Only the server saying this session is over ends it; a server without this route (404 without that
+      // category) just is not told about the view.
+      if (error?.status === 404 && error.category === 'voice_session_not_found') end('server');
       return;
     }
     const note = String(answer?.note || '').trim();
