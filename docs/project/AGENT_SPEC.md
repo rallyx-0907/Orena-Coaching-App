@@ -208,6 +208,14 @@ R28 (2026-10-06) Người chủ dự án: làm giọng thật (Slice 4) "chuẩn
       client; 15 phút; không lưu âm thanh.
     - Đợt thử đầu: chỉ Gemini Live, khóa gemini-live, trần 1,00 USD/ngày, dừng ở 0,80.
     - Chạy thật (staging :8021): trần chung AGENT_DAILY_SPEND_CAP_USD=1 cho cả chữ và giọng.
+    Làm (2026-10-06): POST /api/agent/voice/session, /voice/tool, /voice/end (agent/voice_session.py; token ở
+    ai/live_voice.py), tắt mặc định (AGENT_VOICE_ENABLED). Token v1alpha khoá setup (model gemini-3.8-live, giọng,
+    lời dặn và ngữ cảnh, tool); client gửi setup khác thì bị bỏ qua (kiểm live). Tool đọc chạy ở server qua relay,
+    nút qua offer_button (server điền payload từ phần đang chọn, duyệt như propose_action). Thời gian phiên tính vào
+    sổ AI (0,036 USD/phút, giá niêm yết chưa kiểm). Kiểm live (sandbox dùng một lần, khóa gemini-live, tổng ≈ 0,12
+    USD theo sổ): tên (vi) 1,0 s tới tiếng đầu; nghĩa từ đang chọn (vi, zh) có đọc tool, 2,0-2,7 s; en 2,1 s; ngắt
+    lời dừng sau 30 ms; nút lưu từ qua offer_button. Lần đầu model nói "đã chuẩn bị sẵn nút" mà không có nút (rủi ro
+    của chế độ A) - sửa bằng offer_button và lời dặn; còn phụ thuộc model.
 ```
 
 Tiến độ lane (cập nhật mỗi slice):
