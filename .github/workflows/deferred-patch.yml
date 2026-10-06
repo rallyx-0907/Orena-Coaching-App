@@ -116,3 +116,4 @@ jobs:
           git add scripts/grammar_completion_agent.ps1
           git commit -m "fix(grammar): defer blocked rescue points"
           git push origin HEAD:feature/grammar-lab-pipeline
+# rerun after cache-sweep contract update
