@@ -39,7 +39,7 @@ import { keepProvenance } from '../../product/account-records.js';
 import { t } from './copy.js';
 import {
   nextSpeed, speedLabel, contentIdFor, mmss, minutesFrom, metaLine, mapLesson,
-  wordTokens, hanTokens, currentTokenIndices, hasWordTiming, rowTone, modeHintKey, selectionAfterModeChange,
+  wordTokens, hanTokens, currentTokenIndices, wordHighlightEstimated, rowTone, modeHintKey, selectionAfterModeChange,
   previousIndex, nextIndex, vocabularyForSegment, placeFor, dictationLinesCompleted,
   pickNextRecommendation, progressPercent, msAtSeekFraction, timeLabel, reachedEnd, listenedMinutesLabel,
   phraseSaveable, phraseSavePayload, phraseSaved, transcriptState,
@@ -305,8 +305,9 @@ export default async function listening(element, ctx) {
   }
 
   function toggles(prefix) {
-    const timed = segments.some(hasWordTiming);
-    return html`${pill({ id: 'auto', label: t('autoScroll'), pressed: autoScroll, variant: 'toggle' })}${pill({ id: 'wordhl', label: t('wordHighlight'), pressed: timed && wordHighlight, disabled: !timed, variant: 'toggle', title: t('wordHighlightHint') })}`;
+    // Verified word timing when every line has it, otherwise the frame's estimate, labelled "· est." (D-137).
+    const estimated = wordHighlightEstimated(segments);
+    return html`${pill({ id: 'auto', label: t('autoScroll'), pressed: autoScroll, variant: 'toggle' })}${pill({ id: 'wordhl', label: t(estimated ? 'wordHighlightEst' : 'wordHighlight'), pressed: wordHighlight, variant: 'toggle', title: estimated ? t('wordHighlightHint') : '' })}`;
   }
 
   function controlsMarkup() {

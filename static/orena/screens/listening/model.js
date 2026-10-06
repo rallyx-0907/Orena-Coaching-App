@@ -193,10 +193,20 @@ export function estimatedTokenIndex(tokens, fraction) {
   return found;
 }
 
+/* The frame's estimate over the line's words only (punctuation is never "being spoken"): which
+   token index the share of the segment that has played has reached. -1 when the line has no word. */
+function estimatedWordIndex(segment, tokens, at) {
+  const words = tokens.flatMap((token, index) => (token.core ? [index] : []));
+  if (!words.length) return -1;
+  const fraction = (at - Number(segment.start_ms)) / (Number(segment.end_ms) - Number(segment.start_ms));
+  const pick = estimatedTokenIndex(words.map((index) => tokens[index]), fraction);
+  return pick < 0 ? -1 : words[pick];
+}
+
 /* The token being spoken at `timeMs`. Real word timing wins when the asset ships some that
-   reconciles with the line (capabilities/word-timeline.js: a wrong-word highlight is worse than
-   none, so it returns null wholesale otherwise); the segment-timing estimate is the fallback the
-   control's own "· est." label admits to. -1 outside the segment. */
+   reconciles with the line (capabilities/word-timeline.js returns null wholesale otherwise); without it
+   the frame's segment-timing estimate is used, and the control says "· est." (D-137, L-13). -1 outside
+   the segment, or in a real pause between timed words. */
 export function currentTokenIndex(segment, tokens, timeMs) {
   const at = Number(timeMs);
   const start = Number(segment?.start_ms);
@@ -210,18 +220,32 @@ export function currentTokenIndex(segment, tokens, timeMs) {
     const span = spans[word];
     return tokens.findIndex((token) => span.start < token.end && span.end > token.start);
   }
-  return -1; // Segment timing cannot establish which word is being spoken.
+  return estimatedWordIndex(segment, tokens, at);
 }
 
 export function currentTokenIndices(segment, tokens, timeMs) {
+  const at = Number(timeMs);
+  const start = Number(segment?.start_ms);
+  const end = Number(segment?.end_ms);
+  if (!tokens.length || !Number.isFinite(at) || !(end > start) || at < start || at >= end) return [];
   const spans = wordSpans(segment);
-  const index = activeWordIndex(spans, timeMs);
-  if (index < 0 || timeMs < segment.start_ms || timeMs >= segment.end_ms) return [];
+  if (!spans) {
+    const index = estimatedWordIndex(segment, tokens, at);
+    return index < 0 ? [] : [index];
+  }
+  const index = activeWordIndex(spans, at);
+  if (index < 0) return [];
   const span = spans[index];
-  return tokens.flatMap((token, at) => span.start < token.end && span.end > token.start ? [at] : []);
+  return tokens.flatMap((token, k) => span.start < token.end && span.end > token.start ? [k] : []);
 }
 
 export function hasWordTiming(segment) { return Boolean(wordSpans(segment)); }
+
+/* Whether the highlight is the estimate: any line without verified word timing is estimated, so the
+   control says "· est." unless every line is timed (D-137). */
+export function wordHighlightEstimated(segments) {
+  return !(Array.isArray(segments) && segments.length && segments.every(hasWordTiming));
+}
 
 /* ---- Rows and modes ---------------------------------------------------------------------- */
 

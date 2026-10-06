@@ -9,7 +9,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
   SPEEDS, nextSpeed, speedLabel, contentIdFor, mmss, minutesFrom, metaLine, mapLesson,
-  wordTokens, hanTokens, lookupContext, estimatedTokenIndex, currentTokenIndex, rowTone, modeHintKey,
+  wordTokens, hanTokens, lookupContext, estimatedTokenIndex, currentTokenIndex, currentTokenIndices, wordHighlightEstimated, rowTone, modeHintKey,
   selectionAfterModeChange, previousIndex, nextIndex, PHRASE_MAX, phraseSaveable, phraseSavePayload,
   phraseSaved, vocabularyForSegment, placeFor, dictationLinesCompleted,
   pickNextRecommendation, progressPercent, msAtSeekFraction, timeLabel, reachedEnd, listenedMinutesLabel,
@@ -125,8 +125,10 @@ assert.equal(metaLine([null, undefined]), '');
   assert.equal(estimatedTokenIndex(tokens, 5), 2, 'clamped');
   assert.equal(estimatedTokenIndex([], 0.5), -1);
   const seg = { start_ms: 1000, end_ms: 5000, original_text: 'aa bbbb cc' };
-  assert.equal(currentTokenIndex(seg, tokens, 1000), -1, 'segment timing does not prove word timing');
-  assert.equal(currentTokenIndex(seg, tokens, 3400), -1);
+  // D-137 (L-13): without verified word timing, the frame's estimate marks a word, and the control says "est.".
+  assert.equal(currentTokenIndex(seg, tokens, 1000), 0, 'the estimate starts on the first word');
+  assert.equal(currentTokenIndex(seg, tokens, 3400), 1, '"bbbb" owns 3/12..8/12 of the line');
+  assert.equal(currentTokenIndex(seg, tokens, 4900), 2);
   assert.equal(currentTokenIndex(seg, tokens, 999), -1, 'outside the segment nothing is marked');
   assert.equal(currentTokenIndex(seg, tokens, 5000), -1);
   const timed = { ...seg, words: [
@@ -136,7 +138,13 @@ assert.equal(metaLine([null, undefined]), '');
   assert.equal(currentTokenIndex(timed, tokens, 1550), -1, 'a real pause between words is not the previous word continuing');
   assert.equal(currentTokenIndex(timed, tokens, 4500), 2);
   const mismatched = { ...seg, words: [{ text: 'zz', start_ms: 1000, end_ms: 2000 }] };
-  assert.equal(currentTokenIndex(mismatched, tokens, 1200), -1, 'mismatched timing must never invent a word position');
+  assert.equal(currentTokenIndex(mismatched, tokens, 1200), 0, 'timing that does not match the line is not used; the labelled estimate is');
+  const punct = wordTokens('aa, bb.');
+  const pseg = { start_ms: 0, end_ms: 1000 };
+  assert.ok(currentTokenIndices(pseg, punct, 999).every((k) => punct[k].core), 'punctuation is never the word being spoken');
+  assert.deepEqual(currentTokenIndices(timed, tokens, 1550), [], 'a real pause between timed words marks nothing');
+  assert.equal(wordHighlightEstimated([seg, timed]), true, 'any untimed line makes the control say est.');
+  assert.equal(wordHighlightEstimated([timed]), false);
 }
 
 /* --- the frame's mode, row and line-step rules --- */
