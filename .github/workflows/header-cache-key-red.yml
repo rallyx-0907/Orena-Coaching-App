@@ -26,87 +26,67 @@ jobs:
 
           path = Path('grammar_lab/pipeline/generate.py')
           text = path.read_text(encoding='utf-8')
-          old = '''def _header_metadata(existing: dict[str, Any], locales: list[str]) -> dict[str, Any]:
-              """title/native_title/level: structural metadata, carried over, never generated.
 
-              Chinese learner-facing text is normalized here too.  The v0.4 generator already
-              normalizes every model-authored target-language field through ``target_text``;
-              leaving carried-over ``native_title`` untouched made deterministic validation reject
-              otherwise-valid cached candidates whose canonical title used display spaces around
-              symbols such as ``+``.
-              """
-              zh = existing.get("target_lang") == ZH_HANS
-              if "header" in existing:
-                  header = existing["header"]
-                  native = target_text(str(header["native_title"]), zh)
-                  return {"title": header["title"], "native_title": native, "level": dict(existing["level"])}
-              title = existing["title"]
-              native = title.get(existing["target_lang"]) or title.get("en") or title["vi"]
-              native = target_text(str(native), zh)
-              return {
-                  "title": {locale: title[locale] for locale in locales if locale in title} or {"vi": title["vi"]},
-                  "native_title": native,
-                  "level": dict(existing["level"]),
-              }
-          '''
-          new = '''def _header_metadata(existing: dict[str, Any], locales: list[str]) -> dict[str, Any]:
-              """Prompt-facing structural metadata, carried over exactly from the catalogue.
+          start = text.index('def _header_metadata(existing: dict[str, Any], locales: list[str]) -> dict[str, Any]:')
+          end = text.index('\n\ndef resolve_spans(', start)
+          replacement = '''def _header_metadata(existing: dict[str, Any], locales: list[str]) -> dict[str, Any]:
+    """Prompt-facing structural metadata, carried over exactly from the catalogue.
 
-              Keep this byte-for-byte stable with the canonical source because it participates in
-              the provider cache key. Learner-facing Chinese normalization happens only when the
-              assembled point is stored.
-              """
-              if "header" in existing:
-                  header = existing["header"]
-                  return {"title": header["title"], "native_title": header["native_title"], "level": dict(existing["level"])}
-              title = existing["title"]
-              native = title.get(existing["target_lang"]) or title.get("en") or title["vi"]
-              return {
-                  "title": {locale: title[locale] for locale in locales if locale in title} or {"vi": title["vi"]},
-                  "native_title": native,
-                  "level": dict(existing["level"]),
-              }
+    Keep this byte-for-byte stable with the canonical source because it participates in
+    the provider cache key. Learner-facing Chinese normalization happens only when the
+    assembled point is stored.
+    """
+    if "header" in existing:
+        header = existing["header"]
+        return {"title": header["title"], "native_title": header["native_title"], "level": dict(existing["level"])}
+    title = existing["title"]
+    native = title.get(existing["target_lang"]) or title.get("en") or title["vi"]
+    return {
+        "title": {locale: title[locale] for locale in locales if locale in title} or {"vi": title["vi"]},
+        "native_title": native,
+        "level": dict(existing["level"]),
+    }
 
 
-          def _stored_header_metadata(header: dict[str, Any], zh: bool) -> dict[str, Any]:
-              """Normalize only the learner-facing stored header, never prompt/cache input."""
-              out = copy.deepcopy(header)
-              out["native_title"] = target_text(str(out["native_title"]), zh)
-              return out
-          '''
-          old = '\n'.join(line[10:] if line.startswith('          ') else line for line in old.splitlines()) + '\n'
-          new = '\n'.join(line[10:] if line.startswith('          ') else line for line in new.splitlines()) + '\n'
-          if old not in text:
-              raise SystemExit('current _header_metadata block not found; refusing unsafe patch')
-          text = text.replace(old, new, 1)
+def _stored_header_metadata(header: dict[str, Any], zh: bool) -> dict[str, Any]:
+    """Normalize only the learner-facing stored header, never prompt/cache input."""
+    out = copy.deepcopy(header)
+    out["native_title"] = target_text(str(out["native_title"]), zh)
+    return out
+'''
+          text = text[:start] + replacement + text[end:]
 
-          old_assemble = '''            point = {
-              **{key: existing[key] for key in (
-          '''
-          new_assemble = '''            stored_header = _stored_header_metadata(header, zh)
+          anchor = '''            generation_problems.extend(production_problems)
+            repair_personal_production_rule(personal_production, pattern, examples, zh)
 
             point = {
-              **{key: existing[key] for key in (
-          '''
-          if old_assemble not in text:
-              raise SystemExit('point assembly anchor not found; refusing unsafe patch')
-          text = text.replace(old_assemble, new_assemble, 1)
+'''
+          if anchor not in text:
+              raise SystemExit('v0.4 point assembly anchor not found; refusing unsafe patch')
+          text = text.replace(
+              anchor,
+              '''            generation_problems.extend(production_problems)
+            repair_personal_production_rule(personal_production, pattern, examples, zh)
+            stored_header = _stored_header_metadata(header, zh)
 
-          old_header = '''                "header": {
-                    **header, "summary": loc(data["summary"]),
-                    "sub": loc(data["sub"]),
-                    **({"native_title_pinyin": pinyin_from_pairs(header["native_title"], data.get("native_title_pinyin_pairs"))} if zh else {}),
-                },
-          '''
-          new_header = '''                "header": {
-                    **stored_header, "summary": loc(data["summary"]),
-                    "sub": loc(data["sub"]),
-                    **({"native_title_pinyin": pinyin_from_pairs(stored_header["native_title"], data.get("native_title_pinyin_pairs"))} if zh else {}),
-                },
-          '''
-          if old_header not in text:
-              raise SystemExit('stored header assembly block not found; refusing unsafe patch')
-          text = text.replace(old_header, new_header, 1)
+            point = {
+''',
+              1,
+          )
+
+          old = '**header, "summary": loc(data["summary"]),'
+          if text.count(old) != 1:
+              raise SystemExit(f'expected one stored header expansion, found {text.count(old)}')
+          text = text.replace(old, '**stored_header, "summary": loc(data["summary"]),', 1)
+
+          old = 'pinyin_from_pairs(header["native_title"], data.get("native_title_pinyin_pairs"))'
+          if text.count(old) != 1:
+              raise SystemExit(f'expected one native-title pinyin call, found {text.count(old)}')
+          text = text.replace(
+              old,
+              'pinyin_from_pairs(stored_header["native_title"], data.get("native_title_pinyin_pairs"))',
+              1,
+          )
           path.write_text(text, encoding='utf-8')
 
           test = Path('grammar_lab/tests/test_zh_header_metadata.py')
