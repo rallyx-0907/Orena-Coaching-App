@@ -1,10 +1,11 @@
 # Proposal: a server-side practice session identity for Speaking Summary
 
-Status: **PROPOSED** (2026-10-07). Document only: no code, schema or migration is changed by this file.
-**Requires independent architecture review** (AGENTS.md §1: an implementer may not self-approve; learner
-persistence and schema are §7 holds) and **explicit human authorization before any migration is written or
-applied**. Process as D-054 / D-099: proposal -> independent review -> human approval -> code + migration + tests ->
-the human applies the migration to the sandbox. Production (8000) and preview (8010) are never touched.
+Status: **IMPLEMENTED ON BRANCH `claude/practice-session-identity`, AWAITING HUMAN REVIEW** (2026-10-07). Product
+decisions: D-142 (they override this text where they differ; section 9 records the answers). The revision
+`20261007_0029` is written but **NOT applied to any database** (only an ephemeral test database); nothing runs it at
+startup (D-002). The code is behind `ORENA_PRACTICE_SESSION`, default off, so merging it changes nothing until the
+human applies the migration to a lane runtime and turns the flag on. Review is the human's, directly on the branch
+(D-142); production (8000) and preview (8010) are never touched.
 
 Origin: D-141 (proposal approved, schema waits for the human), UI_BACKEND_GAPS S-15a, D-139 HD-8 ("this session while
 it has tasks; the last 7 days when the session is empty"), D-104 D4 item I7 (Summary is a read, "this session" is a
@@ -165,15 +166,29 @@ schema-present, flag-off runtime is therefore always safe, and turning the flag 
 5. **Reuse `works` (kind `session`).** Works are incarnation-keyed and backbone-gated; Speaking attempts are
    account-keyed and not. Mixing two owners for one concept. Rejected.
 
-## 9. Open questions for the human
+## 9. Open questions, resolved by D-142 (2026-10-07)
 
-- **Q1.** Idle timeout 30 minutes: right, or another value (15, 45, 60)?
-- **Q2.** Should typed Free Talk / Situation answers and unrecorded Conversation turns count as tasks (needs a row
-  per task, i.e. D4 I8 `response` works carrying the session id, which widens learner persistence), or only spoken
-  takes in v1?
-- **Q3.** Is "this session" only the live one, or should a learner later open a past session (needs list/read-by-id)?
-- **Q4.** Accept no backfill (older attempts only via the 7-day window)?
-- **Q5.** If any schema change is unwelcome now, accept alternative 2 (read-time derivation) instead?
-- **Q6.** Reviewer: who acts as the independent architecture reviewer (AGENTS.md §1), recorded in Git.
+- **Q1 (timeout).** 30 minutes of inactivity; qualifying activity refreshes the window; time is the server's. Done:
+  one constant, `PRACTICE_SESSION_IDLE_MINUTES`.
+- **Q2 (typed / unrecorded tasks).** No new learner persistence to count them. They count only if an existing durable
+  server-side record already represents them, and never as pronunciation/audio attempts. Implementation finding: no
+  durable record carries a session identity today (typed answers are `works` rows behind `ORENA_ACCOUNT_BACKBONE`,
+  unrecorded conversation turns and Situation reactions leave nothing), so in this slice they are **left out** and the
+  Summary must not claim them. A later slice may link `works` rows to the session id without new persistence.
+- **Q3 (past sessions).** Only the current session is needed; no history browsing, no `?session=<id>`.
+- **Q4 (backfill).** None: legacy rows keep `NULL` and are served by the 7-day fallback.
+- **Q5 (read-time clustering).** Not the canonical model for new activity (persisted identity chosen); it may later be
+  a read-only legacy approximation.
+- **Q6 (reviewer).** The human, directly on the branch; no other reviewer unless asked.
 
-Nothing in this proposal decides Q2/Q3 or the D-104 holds (general sync protocol, export format, deletion runtime).
+Nothing in this proposal decides the D-104 holds (general sync protocol, export format, deletion runtime).
+
+## 10. Implementation notes (branch)
+
+- Revision `20261007_0029_practice_session_id`, `down_revision = 20261004_0025` (the head in `migrations/versions/`;
+  the proposed 0024/0026-0028 sit outside the chain and are re-parented when promoted).
+- `POST /api/speech/attempts`: flag on -> the repository assigns the id under a per-(account, language) lock
+  (`pg_advisory_xact_lock` on PostgreSQL, a process lock on the SQLite test engine); a replay keeps the stored id.
+- `GET /api/speech/attempts?session=current` -> `{items, session, progress}`; `session` is null when idle > 30 minutes;
+  404 `practice_session_disabled` with the flag off; 422 when combined with `since`, `asset_id` or `segment_id`.
+- Client: Summary asks the server once; a 404 or a null session keeps today's client ledger and 7-day fallback.
