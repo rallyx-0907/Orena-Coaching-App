@@ -21,6 +21,10 @@ class AgentLimits:
     session_ttl_seconds: float = 30 * 60
     max_sessions: int = 10_000
     max_recent_tool_results: int = 8
+    # The conversation the model is shown (architecture target §5): turns, characters in all, characters in one.
+    max_recent_turns: int = 20
+    max_history_chars: int = 36_000
+    max_turn_chars: int = 20_000
     voice_session_cap_seconds: float = 15 * 60
     # Requests one learner may make in a sliding window (spec §22), per process.
     rate_window_seconds: float = 60.0

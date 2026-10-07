@@ -2,9 +2,11 @@
 
 A session holds what the next turn needs to resolve "this word" or "the line
 before": the last context, the last selection, a goal the learner stated, a
-bounded list of recent tool results, a voice-session reference and a turn
-count. It holds no chain of thought and no conversation transcript - the
-transcript is device memory (AGENTS.md §7).
+bounded list of recent tool results, the last turns as said (bounded, so the
+model sees the conversation: ORENA_INTELLIGENCE_ARCHITECTURE §4-5), a
+voice-session reference and a turn count. It holds no chain of thought. The
+turns live in this process for the session's life and are not stored anywhere:
+the durable transcript stays device memory (AGENTS.md §7, contract §10).
 
 A session belongs to the learner who opened it. Asking for it as anyone else
 answers exactly as for an id that never existed, so the cache cannot be used to
@@ -39,6 +41,14 @@ class ToolResultRecord:
 
 
 @dataclass(frozen=True)
+class ConversationTurn:
+    """One side of one exchange, as said: what the learner wrote (or said, once voice joins) or Orena answered."""
+
+    role: str  # "user" | "assistant"
+    text: str
+
+
+@dataclass(frozen=True)
 class AgentSessionState:
     agent_session_id: str
     user_key: str
@@ -55,6 +65,9 @@ class AgentSessionState:
     # The places offered in the last answer (type, label, payload): "mở giúp tôi" / "open it" right after an offer
     # opens that offer (text phone test 2026-10-06), and the next turn's model sees what it offered.
     last_offers: tuple[Mapping[str, Any], ...] = ()
+    # The turns just before this one, verbatim and bounded (architecture target §4-5): the model sees them, so a
+    # follow-up ("cho ví dụ khác", "đoạn thứ 3") has something to refer to. In this process only, like the rest.
+    recent_turns: tuple[ConversationTurn, ...] = ()
 
     def for_target(self, target: str | None) -> AgentSessionState:
         """The session as a turn in `target` may see it (dogfood gate 3.3).
@@ -71,7 +84,8 @@ class AgentSessionState:
         if self.target_language is None and not self.turn_count:
             return replace(self, target_language=target)
         return replace(self, target_language=target, current_app_context=None, last_selected_entity=None,
-                       active_learning_goal=None, recent_tool_results=(), voice_session_ref=None, last_offers=())
+                       active_learning_goal=None, recent_tool_results=(), voice_session_ref=None, last_offers=(),
+                       recent_turns=())
 
     def with_context(self, context: AppContextSnapshot) -> AgentSessionState:
         selected = context.selected_item or self.last_selected_entity
@@ -88,6 +102,19 @@ class AgentSessionState:
 
     def with_turn(self) -> AgentSessionState:
         return replace(self, turn_count=self.turn_count + 1)
+
+    def with_exchange(self, user: str, assistant: str, limits: AgentLimits) -> AgentSessionState:
+        """The learner's words and Orena's answer, appended; the oldest whole exchanges go first when the history
+        holds more than `max_recent_turns` turns or `max_history_chars` characters. The newest exchange stays."""
+
+        cap = limits.max_turn_chars
+        added = (ConversationTurn("user", user[:cap]), ConversationTurn("assistant", assistant[:cap]))
+        turns = (*self.recent_turns, *added)
+        while len(turns) > 2 and (
+            len(turns) > limits.max_recent_turns or sum(len(t.text) for t in turns) > limits.max_history_chars
+        ):
+            turns = turns[2:]
+        return replace(self, recent_turns=turns)
 
     def with_offers(self, offers: tuple[Mapping[str, Any], ...]) -> AgentSessionState:
         """The places the last answer offered; every answer replaces them (an answer with none clears them)."""

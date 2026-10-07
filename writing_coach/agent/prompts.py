@@ -329,6 +329,10 @@ def opening_messages(
         # specified"). The trigger is stated as a fixed user message; it carries no learner text.
         support_name = _language_name(tier1.contract_locale.support, target=False)
         messages.append(ProviderMessage(role="user", content=opening_trigger(support_name)))
+    if session is not None and turn.message is not None and not opening:
+        # The conversation so far, as it was said: what "that", "the one above" and "another" refer to.
+        for earlier in session.recent_turns:
+            messages.append(ProviderMessage(role=earlier.role, content=earlier.text))  # type: ignore[arg-type]
     style = style_for(tier1.contract_locale.support, tier1.address)
     if style and turn.message is not None:
         messages.append(ProviderMessage(role="system", content=style))

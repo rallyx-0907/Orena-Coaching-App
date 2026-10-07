@@ -253,6 +253,8 @@ class _Turn:
         self.needs_evidence = False  # a conclusion about the learner's learning: read before answering (3.1)
         self.evidence_nudge = EVIDENCE_NUDGE  # what the model is asked when it answered without reading
         self.focused = False  # the turn is about what is in view (LEX-006, LEX-022)
+        self.heard: str | None = None  # what the model was given as the learner's words, kept as the turn's history
+        self.said = ""  # what the learner was shown as the answer, kept the same way
         self.offered: tuple[dict, ...] = ()  # the places this answer offered, kept for an "open it" next
         self.read_attempted = False  # a read was started this turn, whatever came of it
         self.address_offered_now = False
@@ -396,6 +398,7 @@ class _Turn:
         # so it answers in that one (LEX-006). Anything the learner typed reaches it as typed.
         tapped = None if self.opening else learner_copy.prompt_in_support(
             turn.message, interface=self.locale.interface, support=self.locale.support)  # fmt: skip
+        self.heard = tapped or turn.message
         messages = opening_messages(
             replace(turn, message=tapped) if tapped else turn, tier1, [c for c in here if c], session,
             opening=self.opening, snapshot=snapshot, screen_help=self.screen_help,
@@ -466,6 +469,7 @@ class _Turn:
             f"identity.{question.value}", interface=self.locale.interface, support=self.locale.support,
             address=self.address,
         )
+        self.said = answer
         yield self.stream.emit(SegmentEnd(index=0, lang=lang, text=answer, voice_style="neutral_explain"))
         yield self.stream.emit(DoneEvent(usage=Usage(input_tokens=0, output_tokens=0), trace_id=self.trace_id))
 
@@ -804,6 +808,7 @@ class _Turn:
             for chunk in finished:
                 yield self.stream.emit(SegmentDelta(index=0, lang=support, text_delta=chunk))
             text = self.gate.text
+        self.said = text
         # The device applies a memory_update without a tap, so it comes before the words that say it is
         # applied (S14: memory_update -> segment_end); coach notes and the address (§5.4, §5.6).
         for update in outputs.memory_updates:
@@ -858,6 +863,7 @@ class _Turn:
         lang, said = learner_copy.text("offer.now.navigate", interface=self.locale.interface,
                                        support=self.locale.support, address=self.address)  # fmt: skip
         self.offered = ({"type": action.type, "label": action.label, "payload": dict(action.payload)},)
+        self.said = said
         self.timeline.mark("final_ready")
         self.timeline.facts.update(actions=[action.type], suggestions=0)
         yield self.stream.emit(SegmentDelta(index=0, lang=lang, text_delta=said))
@@ -872,6 +878,8 @@ class _Turn:
             state = state.for_target(self.locale.target).with_context(turn.context)
             if not self.opening:  # an opening turn is not a learner turn (§3.2)
                 state = state.with_turn()
+            if not self.opening and turn.message and self.said:  # the exchange, for the turns after it
+                state = state.with_exchange(self.heard or turn.message, self.said, self.rt.limits)
             if self.address_offered_now:
                 state = state.with_address_asked()
             if not self.opening:  # what this answer offered, for an "open it" next (an answer with none clears it)
